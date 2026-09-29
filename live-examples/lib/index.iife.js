@@ -33960,11 +33960,11 @@ while (n === a[++i] && n === a[++i] && n === a[++i] && n === a[++i] && n === a[+
 	*
 	* @module
 	*/
-	var formatter$2 = new Formatter();
+	var formatter$3 = new Formatter();
 	/**
 	* Formats a part's XML, with the relationships that anything in it that refers to other parts adds to.
 	*/
-	var xmlifyPart = (file, content, prettify, relationships, standalone = true) => (0, import_xml.default)(formatter$2.format(content, {
+	var xmlifyPart = (file, content, prettify, relationships, standalone = true) => (0, import_xml.default)(formatter$3.format(content, {
 		viewWrapper: {
 			View: content,
 			Relationships: relationships
@@ -34734,7 +34734,7 @@ while (n === a[++i] && n === a[++i] && n === a[++i] && n === a[++i] && n === a[+
 	*
 	* @module
 	*/
-	var formatter$1 = new Formatter();
+	var formatter$2 = new Formatter();
 	/**
 	* Converts XML string to JSON element structure.
 	*
@@ -34774,7 +34774,7 @@ while (n === a[++i] && n === a[++i] && n === a[++i] && n === a[++i] && n === a[+
 	*/
 	var createTextElementContents = (text) => {
 		var _textJson$elements$0$;
-		return (_textJson$elements$0$ = toJson((0, import_xml.default)(formatter$1.format(new Text({ text })))).elements[0].elements) !== null && _textJson$elements$0$ !== void 0 ? _textJson$elements$0$ : [];
+		return (_textJson$elements$0$ = toJson((0, import_xml.default)(formatter$2.format(new Text({ text })))).elements[0].elements) !== null && _textJson$elements$0$ !== void 0 ? _textJson$elements$0$ : [];
 	};
 	/**
 	* Adds xml:space="preserve" attribute to an element.
@@ -35222,6 +35222,149 @@ while (n === a[++i] && n === a[++i] && n === a[++i] && n === a[++i] && n === a[+
 		for (const { drawing, patch } of found) patch.patch(drawing, createTemplatePackage(parts, binaryParts, file, createContext(drawing.part.path)));
 	};
 	//#endregion
+	//#region src/patcher/notes.ts
+	/**
+	* Footnotes and endnotes for content inserted into an existing document.
+	*
+	* @module
+	*/
+	var formatter$1 = new Formatter();
+	var DOCUMENT_PATH = "word/document.xml";
+	var FOOTNOTES = {
+		path: "word/footnotes.xml",
+		rootName: "w:footnotes",
+		noteName: "w:footnote",
+		referenceName: "w:footnoteReference",
+		contentType: "application/vnd.openxmlformats-officedocument.wordprocessingml.footnotes+xml",
+		relationshipType: "http://schemas.openxmlformats.org/officeDocument/2006/relationships/footnotes",
+		create: {
+			part: () => new FootNotes(),
+			mark: () => new FootnoteRefRun(),
+			styles: () => [
+				new FootnoteText({}),
+				new FootnoteTextChar({}),
+				new FootnoteReferenceStyle({})
+			]
+		}
+	};
+	var ENDNOTES = {
+		path: "word/endnotes.xml",
+		rootName: "w:endnotes",
+		noteName: "w:endnote",
+		referenceName: "w:endnoteReference",
+		contentType: "application/vnd.openxmlformats-officedocument.wordprocessingml.endnotes+xml",
+		relationshipType: "http://schemas.openxmlformats.org/officeDocument/2006/relationships/endnotes",
+		create: {
+			part: () => new Endnotes(),
+			mark: () => new EndnoteRefRun(),
+			styles: () => [
+				new EndnoteText({}),
+				new EndnoteTextChar({}),
+				new EndnoteReferenceStyle({})
+			]
+		}
+	};
+	var formatElement = (component, context) => toJson((0, import_xml.default)(formatter$1.format(component, context))).elements[0];
+	var findIds = (element, names) => {
+		var _element$name, _element$attributes, _element$elements;
+		const id = names.includes((_element$name = element.name) !== null && _element$name !== void 0 ? _element$name : "") ? Number((_element$attributes = element.attributes) === null || _element$attributes === void 0 ? void 0 : _element$attributes["w:id"]) : NaN;
+		return [...Number.isInteger(id) ? [id] : [], ...((_element$elements = element.elements) !== null && _element$elements !== void 0 ? _element$elements : []).flatMap((child) => findIds(child, names))];
+	};
+	var withMark = (paragraph, mark) => {
+		var _paragraph$elements, _elements$;
+		const elements = (_paragraph$elements = paragraph.elements) !== null && _paragraph$elements !== void 0 ? _paragraph$elements : [];
+		const index = ((_elements$ = elements[0]) === null || _elements$ === void 0 ? void 0 : _elements$.name) === "w:pPr" ? 1 : 0;
+		return _objectSpread2(_objectSpread2({}, paragraph), {}, { elements: [
+			...elements.slice(0, index),
+			mark,
+			...elements.slice(index)
+		] });
+	};
+	var patchNotesOfKind = (kind, notes, parts, { createContext, addContentTypeOverride, renumberBookmarks }) => {
+		const givenNotes = new Map(Object.entries(notes).map(([id, note]) => [Number(id), note]));
+		const noteOfId = /* @__PURE__ */ new Map();
+		let highestId;
+		const renumber = (element) => {
+			var _element$attributes2, _highestId;
+			const note = element.name === kind.referenceName ? givenNotes.get(Number((_element$attributes2 = element.attributes) === null || _element$attributes2 === void 0 ? void 0 : _element$attributes2["w:id"])) : void 0;
+			if (note === void 0) return element.elements === void 0 ? element : _objectSpread2(_objectSpread2({}, element), {}, { elements: element.elements.map(renumber) });
+			highestId = ((_highestId = highestId) !== null && _highestId !== void 0 ? _highestId : [...parts.values()].flatMap((part) => findIds(part, [kind.noteName, kind.referenceName])).reduce((highest, id) => Math.max(highest, id), 0)) + 1;
+			noteOfId.set(highestId, note);
+			return _objectSpread2(_objectSpread2({}, element), {}, { attributes: _objectSpread2(_objectSpread2({}, element.attributes), {}, { "w:id": String(highestId) }) });
+		};
+		const findOrAddPart = () => {
+			var _parts$get;
+			const relationship = getFirstLevelElements((_parts$get = parts.get(relationshipsPathOf(DOCUMENT_PATH))) !== null && _parts$get !== void 0 ? _parts$get : {}, "Relationships").find((element) => {
+				var _element$attributes3;
+				return ((_element$attributes3 = element.attributes) === null || _element$attributes3 === void 0 ? void 0 : _element$attributes3.Type) === kind.relationshipType;
+			});
+			const path = relationship ? resolveTarget(DOCUMENT_PATH, String(relationship.attributes.Target)) : kind.path;
+			if (!parts.has(path)) {
+				parts.set(path, {
+					declaration: { attributes: {
+						version: "1.0",
+						encoding: "UTF-8",
+						standalone: "yes"
+					} },
+					elements: [formatElement(kind.create.part(), createContext(path))]
+				});
+				addContentTypeOverride(kind.contentType, `/${path}`);
+			}
+			if (!relationship) createContext(DOCUMENT_PATH).viewWrapper.Relationships.addRelationship(uniqueId(), kind.relationshipType, relativeTarget(DOCUMENT_PATH, path));
+			return path;
+		};
+		const write = () => {
+			if (noteOfId.size === 0) return;
+			const path = findOrAddPart();
+			const context = createContext(path);
+			const contentOfNote = new Map([...new Set(noteOfId.values())].map((note) => {
+				const mark = formatElement(kind.create.mark(), context);
+				return [note, renumberBookmarks(note.children.map((paragraph) => formatElement(paragraph, context)).map((paragraph, index) => index === 0 ? withMark(paragraph, mark) : paragraph))];
+			}));
+			getFirstLevelElements(parts.get(path), kind.rootName).push(...[...noteOfId].map(([id, note]) => ({
+				type: "element",
+				name: kind.noteName,
+				attributes: { "w:id": String(id) },
+				elements: [...contentOfNote.get(note)]
+			})));
+			const stylesPart = parts.get("word/styles.xml");
+			if (stylesPart) {
+				const styles = getFirstLevelElements(stylesPart, "w:styles");
+				const styleIds = new Set(styles.map((style) => {
+					var _style$attributes;
+					return (_style$attributes = style.attributes) === null || _style$attributes === void 0 ? void 0 : _style$attributes["w:styleId"];
+				}));
+				styles.push(...kind.create.styles().map((style) => formatElement(style, context)).filter((style) => {
+					var _style$attributes2;
+					return !styleIds.has((_style$attributes2 = style.attributes) === null || _style$attributes2 === void 0 ? void 0 : _style$attributes2["w:styleId"]);
+				}));
+			}
+		};
+		return {
+			renumber: (elements) => elements.map(renumber),
+			write
+		};
+	};
+	/**
+	* Creates the writer of the footnotes and endnotes that patches refer to.
+	*
+	* A patch refers to a note with a reference run, such as `new FootnoteReferenceRun(1)`, whose id is the note's in
+	* `footnotes`. Only references to the given notes are renumbered, and only the notes that are referred to are written.
+	*
+	* @param notes - The footnotes and endnotes, by the id the patches' reference runs are given
+	* @param parts - The document's XML parts, parsed, by their paths, which the notes are written to
+	* @param helpers - The patcher's helpers for what the notes refer to
+	*/
+	var patchNotes = ({ footnotes = {}, endnotes = {} }, parts, helpers) => {
+		const patchers = [patchNotesOfKind(FOOTNOTES, footnotes, parts, helpers), patchNotesOfKind(ENDNOTES, endnotes, parts, helpers)];
+		return {
+			renumber: (elements) => patchers.reduce((renumbered, patcher) => patcher.renumber(renumbered), elements),
+			write: () => {
+				for (const patcher of patchers) patcher.write();
+			}
+		};
+	};
+	//#endregion
 	//#region src/patcher/paragraph-split-inject.ts
 	var TokenNotFoundError = class extends Error {
 		constructor(token) {
@@ -35523,10 +35666,11 @@ while (n === a[++i] && n === a[++i] && n === a[++i] && n === a[++i] && n === a[+
 	* @param context - The document context for formatting
 	* @param keepOriginalStyles - Whether to preserve original text formatting
 	* @param recursive - Whether to replace every occurrence in a paragraph, rather than only the first
-	* @param renumberBookmarks - Renumbers the bookmarks the patch inserts, so they don't take an id the document uses
+	* @param renumberIds - Renumbers the bookmarks and note references the patch inserts, so they don't take an id the
+	* document uses
 	* @returns Result containing the modified element and whether a replacement occurred
 	*/
-	var replacer = ({ json, patch, patchText, context, keepOriginalStyles = true, recursive = true, renumberBookmarks = (elements) => elements }) => {
+	var replacer = ({ json, patch, patchText, context, keepOriginalStyles = true, recursive = true, renumberIds = (elements) => elements }) => {
 		const renderedParagraphs = findLocationOfText(json, patchText);
 		if (renderedParagraphs.length === 0) return {
 			element: json,
@@ -35538,7 +35682,7 @@ while (n === a[++i] && n === a[++i] && n === a[++i] && n === a[++i] && n === a[+
 			case PatchType.DOCUMENT: {
 				const parentElement = goToParentElementFromPath(json, renderedParagraph.pathToParagraph);
 				const elementIndex = getLastElementIndexFromPath(renderedParagraph.pathToParagraph);
-				parentElement.elements.splice(elementIndex, 1, ...formatChildren(patch, context, renumberBookmarks));
+				parentElement.elements.splice(elementIndex, 1, ...formatChildren(patch, context, renumberIds));
 				break;
 			}
 			case PatchType.PARAGRAPH:
@@ -35552,7 +35696,7 @@ while (n === a[++i] && n === a[++i] && n === a[++i] && n === a[++i] && n === a[+
 						renderedParagraph: paragraph,
 						patchText,
 						fromIndex,
-						children: formatChildren(patch, context, renumberBookmarks),
+						children: formatChildren(patch, context, renumberIds),
 						keepOriginalStyles
 					});
 					paragraph = renderParagraphNode({
@@ -35570,7 +35714,7 @@ while (n === a[++i] && n === a[++i] && n === a[++i] && n === a[++i] && n === a[+
 			didFindOccurrence: true
 		};
 	};
-	var formatChildren = (patch, context, renumberBookmarks) => renumberBookmarks(patch.children.flatMap((c) => {
+	var formatChildren = (patch, context, renumberIds) => renumberIds(patch.children.flatMap((c) => {
 		var _c$writtenAs;
 		return (_c$writtenAs = c.writtenAs) !== null && _c$writtenAs !== void 0 ? _c$writtenAs : c;
 	}).map((c) => toJson((0, import_xml.default)(formatter.format(c, context)))).map((c) => c.elements[0]));
@@ -35832,7 +35976,7 @@ while (n === a[++i] && n === a[++i] && n === a[++i] && n === a[++i] && n === a[+
 		var _ref = _asyncToGenerator(function* ({ outputType, data, patches, keepOriginalStyles, placeholderDelimiters = {
 			start: "{{",
 			end: "}}"
-		}, recursive = true }) {
+		}, recursive = true, footnotes, endnotes }) {
 			const zipContent = data instanceof import_jszip_min.default ? data : yield import_jszip_min.default.loadAsync(data);
 			const contexts = /* @__PURE__ */ new Map();
 			const themeColors = yield readThemeColors(zipContent);
@@ -35895,6 +36039,17 @@ while (n === a[++i] && n === a[++i] && n === a[++i] && n === a[++i] && n === a[+
 				} } },
 				stack: []
 			});
+			const notes = patchNotes({
+				footnotes,
+				endnotes
+			}, map, {
+				createContext,
+				addContentTypeOverride: (contentType, partName) => contentTypeOverrides.push({
+					contentType,
+					partName
+				}),
+				renumberBookmarks
+			});
 			patchDrawings({
 				parts: map,
 				binaryParts: binaryContentMap,
@@ -35931,10 +36086,14 @@ while (n === a[++i] && n === a[++i] && n === a[++i] && n === a[++i] && n === a[+
 						context,
 						keepOriginalStyles,
 						recursive,
-						renumberBookmarks
+						renumberIds: (elements) => notes.renumber(renumberBookmarks(elements))
 					});
 				}
-				const mediaDatas = imageReplacer.getMediaData(JSON.stringify(json), context.file.Media);
+			}
+			notes.write();
+			for (const [key, json] of map) {
+				if (!key.startsWith("word/") || key.endsWith(".xml.rels")) continue;
+				const mediaDatas = imageReplacer.getMediaData(JSON.stringify(json), file.Media);
 				if (mediaDatas.length > 0) {
 					hasMedia = true;
 					imageRelationshipAdditions.push({

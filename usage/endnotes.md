@@ -4,7 +4,7 @@
 
 Endnotes allow you to add references that appear at the end of the document. They are ideal for academic papers, research documents, and formal publications where lengthy citations would clutter the main text.
 
-?> For references that appear at the bottom of each page, see [Footnotes](usage/footnotes.md).
+?> For references that appear at the bottom of each page, see [Footnotes](usage/footnotes.md). To add endnotes to an existing document, see [Templates](usage/templates.md#footnotes-and-endnotes).
 
 ## Example
 

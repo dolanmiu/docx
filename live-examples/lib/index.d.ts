@@ -10465,7 +10465,7 @@ declare type PatchDetectorOptions = {
  *
  * @publicApi
  */
-export declare const patchDocument: <T extends PatchDocumentOutputType = PatchDocumentOutputType>({ outputType, data, patches, keepOriginalStyles, placeholderDelimiters, recursive, }: PatchDocumentOptions<T>) => Promise<OutputByType[T]>;
+export declare const patchDocument: <T extends PatchDocumentOutputType = PatchDocumentOutputType>({ outputType, data, patches, keepOriginalStyles, placeholderDelimiters, recursive, footnotes, endnotes, }: PatchDocumentOptions<T>) => Promise<OutputByType[T]>;
 
 /**
  * Options for patching a document.
@@ -10476,6 +10476,8 @@ export declare const patchDocument: <T extends PatchDocumentOutputType = PatchDo
  * @property keepOriginalStyles - Whether to preserve original text formatting
  * @property placeholderDelimiters - Custom delimiter characters for placeholders
  * @property recursive - Whether to replace every occurrence of a placeholder in a paragraph, rather than only the first
+ * @property footnotes - The footnotes that patches refer to with a `FootnoteReferenceRun`
+ * @property endnotes - The endnotes that patches refer to with an `EndnoteReferenceRun`
  */
 export declare type PatchDocumentOptions<T extends PatchDocumentOutputType = PatchDocumentOutputType> = {
     /** Output format type */
@@ -10496,6 +10498,17 @@ export declare type PatchDocumentOptions<T extends PatchDocumentOutputType = Pat
     }>;
     /** Replace every occurrence of a placeholder in a paragraph, rather than only the first (default: true) */
     readonly recursive?: boolean;
+    /**
+     * The footnotes that patches refer to, by the id given to their `FootnoteReferenceRun`s, as in a `Document`. Each
+     * reference a patch inserts gets a footnote of its own, with an id that none of the document's footnotes have
+     */
+    readonly footnotes?: Readonly<Record<string, {
+        readonly children: readonly Paragraph[];
+    }>>;
+    /** The endnotes that patches refer to, by the id given to their `EndnoteReferenceRun`s, as with footnotes */
+    readonly endnotes?: Readonly<Record<string, {
+        readonly children: readonly Paragraph[];
+    }>>;
 };
 
 /**
