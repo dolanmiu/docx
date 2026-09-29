@@ -4,7 +4,7 @@
 
 Footnotes allow you to add references that appear at the bottom of each page. They are useful for explanations, comments, or citations without interrupting the flow of the main text.
 
-?> For references that appear at the end of the document, see [Endnotes](usage/endnotes.md).
+?> For references that appear at the end of the document, see [Endnotes](usage/endnotes.md). To add footnotes to an existing document, see [Templates](usage/templates.md#footnotes-and-endnotes).
 
 ## Example
 

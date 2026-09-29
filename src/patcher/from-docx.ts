@@ -17,7 +17,7 @@ import type { File } from "@file/file";
 import type { FileChild } from "@file/file-child";
 import { type IMediaData, Media } from "@file/media";
 import { PackageParts } from "@file/package-part/package-part";
-import { Bookmark, ConcreteHyperlink, ExternalHyperlink, type ParagraphChild } from "@file/paragraph";
+import { Bookmark, ConcreteHyperlink, ExternalHyperlink, type Paragraph, type ParagraphChild } from "@file/paragraph";
 import { type RelationshipType, TargetModeType } from "@file/relationships/relationship/relationship";
 import type { IContext } from "@file/xml-components";
 import { encodeUtf8, uniqueId } from "@util/convenience-functions";
@@ -26,6 +26,7 @@ import type { OutputByType, OutputType } from "@util/output-type";
 import { findBookmarkIds, renumberBookmarksAvoiding } from "./bookmark-ids";
 import { appendContentType, appendContentTypeOverride } from "./content-types-manager";
 import { type DrawingPatch, patchDrawings, relationshipsPathOf } from "./drawing-patch";
+import { patchNotes } from "./notes";
 import { PatchType } from "./patch-type";
 import { appendRelationship, createRelationshipFile, getNextRelationshipIndex } from "./relationship-manager";
 import { replacer } from "./replacer";
@@ -112,6 +113,8 @@ export type PatchDocumentOutputType = OutputType;
  * @property keepOriginalStyles - Whether to preserve original text formatting
  * @property placeholderDelimiters - Custom delimiter characters for placeholders
  * @property recursive - Whether to replace every occurrence of a placeholder in a paragraph, rather than only the first
+ * @property footnotes - The footnotes that patches refer to with a `FootnoteReferenceRun`
+ * @property endnotes - The endnotes that patches refer to with an `EndnoteReferenceRun`
  */
 export type PatchDocumentOptions<T extends PatchDocumentOutputType = PatchDocumentOutputType> = {
     /** Output format type */
@@ -132,6 +135,13 @@ export type PatchDocumentOptions<T extends PatchDocumentOutputType = PatchDocume
     }>;
     /** Replace every occurrence of a placeholder in a paragraph, rather than only the first (default: true) */
     readonly recursive?: boolean;
+    /**
+     * The footnotes that patches refer to, by the id given to their `FootnoteReferenceRun`s, as in a `Document`. Each
+     * reference a patch inserts gets a footnote of its own, with an id that none of the document's footnotes have
+     */
+    readonly footnotes?: Readonly<Record<string, { readonly children: readonly Paragraph[] }>>;
+    /** The endnotes that patches refer to, by the id given to their `EndnoteReferenceRun`s, as with footnotes */
+    readonly endnotes?: Readonly<Record<string, { readonly children: readonly Paragraph[] }>>;
 };
 
 const imageReplacer = new ImageReplacer();
@@ -192,6 +202,8 @@ export const patchDocument = async <T extends PatchDocumentOutputType = PatchDoc
     keepOriginalStyles,
     placeholderDelimiters = { start: "{{", end: "}}" } as const,
     recursive = true,
+    footnotes,
+    endnotes,
 }: PatchDocumentOptions<T>): Promise<OutputByType[T]> => {
     const zipContent = data instanceof JSZip ? data : await JSZip.loadAsync(data);
     const contexts = new Map<string, IContext>();
@@ -299,6 +311,14 @@ export const patchDocument = async <T extends PatchDocumentOutputType = PatchDoc
         stack: [],
     });
 
+    // The footnotes and endnotes that the patches refer to are written once the patches are in, one for each reference
+    const notes = patchNotes({ footnotes, endnotes }, map, {
+        createContext,
+        // eslint-disable-next-line functional/immutable-data
+        addContentTypeOverride: (contentType, partName) => contentTypeOverrides.push({ contentType, partName }),
+        renumberBookmarks,
+    });
+
     // Drawings whose alt text holds a placeholder, such as charts, are patched first, so their patches only see the
     // template's own drawings, and not those the other patches add
     patchDrawings(
@@ -359,11 +379,18 @@ export const patchDocument = async <T extends PatchDocumentOutputType = PatchDoc
                 context,
                 keepOriginalStyles,
                 recursive,
-                renumberBookmarks,
+                renumberIds: (elements) => notes.renumber(renumberBookmarks(elements)),
             });
         }
+    }
 
-        const mediaDatas = imageReplacer.getMediaData(JSON.stringify(json), context.file.Media);
+    notes.write();
+
+    for (const [key, json] of map) {
+        if (!key.startsWith("word/") || key.endsWith(".xml.rels")) {
+            continue;
+        }
+        const mediaDatas = imageReplacer.getMediaData(JSON.stringify(json), file.Media);
         if (mediaDatas.length > 0) {
             hasMedia = true;
             // eslint-disable-next-line functional/immutable-data

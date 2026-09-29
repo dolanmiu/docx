@@ -41,6 +41,8 @@ interface Patch {
 
 The patcher also takes in a `keepOriginalStyles` boolean, which will preserve the styles of the patched text when set to true.
 
+It also takes in `footnotes` and `endnotes`, for the notes that patches refer to with a `FootnoteReferenceRun` or an `EndnoteReferenceRun`. See [Footnotes and endnotes](usage/templates.md#footnotes-and-endnotes).
+
 A patch can also be for a drawing whose alt text holds the placeholder, rather than for text: `ChartDataPatch` from `docx/charts` gives a chart made in Word new data, keeping its look. See [Charts in Templates](usage/chart-templates.md).
 
 ### How to patch existing document
