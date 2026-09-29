@@ -17,12 +17,13 @@ import type { File } from "@file/file";
 import type { FileChild } from "@file/file-child";
 import { type IMediaData, Media } from "@file/media";
 import { PackageParts } from "@file/package-part/package-part";
-import { ConcreteHyperlink, ExternalHyperlink, type ParagraphChild } from "@file/paragraph";
+import { Bookmark, ConcreteHyperlink, ExternalHyperlink, type ParagraphChild } from "@file/paragraph";
 import { type RelationshipType, TargetModeType } from "@file/relationships/relationship/relationship";
 import type { IContext } from "@file/xml-components";
 import { encodeUtf8, uniqueId } from "@util/convenience-functions";
 import type { OutputByType, OutputType } from "@util/output-type";
 
+import { findBookmarkIds, renumberBookmarksAvoiding } from "./bookmark-ids";
 import { appendContentType, appendContentTypeOverride } from "./content-types-manager";
 import { type DrawingPatch, patchDrawings, relationshipsPathOf } from "./drawing-patch";
 import { PatchType } from "./patch-type";
@@ -277,6 +278,9 @@ export const patchDocument = async <T extends PatchDocumentOutputType = PatchDoc
         map.set(key, json);
     }
 
+    // Bookmark ids must be unique within the document, so the bookmarks patches insert are kept clear of the template's
+    const renumberBookmarks = renumberBookmarksAvoiding([...map.values()].flatMap(findBookmarkIds));
+
     const createContext = (key: string): IContext => ({
         file,
         viewWrapper: {
@@ -329,29 +333,33 @@ export const patchDocument = async <T extends PatchDocumentOutputType = PatchDoc
                 json,
                 patch: {
                     ...patchValue,
-                    children: patchValue.children.map((element) => {
-                        // We need to replace external hyperlinks with concrete hyperlinks
-                        if (element instanceof ExternalHyperlink) {
-                            const concreteHyperlink = new ConcreteHyperlink(element.options.children, uniqueId());
-                            // eslint-disable-next-line functional/immutable-data
-                            relationshipAdditions.push({
-                                key,
-                                id: concreteHyperlink.linkId,
-                                type: "http://schemas.openxmlformats.org/officeDocument/2006/relationships/hyperlink",
-                                target: element.options.link,
-                                targetMode: TargetModeType.EXTERNAL,
-                            });
-                            return concreteHyperlink;
-                        } else {
-                            return element;
-                        }
-                    }),
+                    children: patchValue.children
+                        // A bookmark is written as its start, its children and its end, as it is in a paragraph
+                        .flatMap((element) => (element instanceof Bookmark ? [element.start, ...element.children, element.end] : [element]))
+                        .map((element) => {
+                            // We need to replace external hyperlinks with concrete hyperlinks
+                            if (element instanceof ExternalHyperlink) {
+                                const concreteHyperlink = new ConcreteHyperlink(element.options.children, uniqueId());
+                                // eslint-disable-next-line functional/immutable-data
+                                relationshipAdditions.push({
+                                    key,
+                                    id: concreteHyperlink.linkId,
+                                    type: "http://schemas.openxmlformats.org/officeDocument/2006/relationships/hyperlink",
+                                    target: element.options.link,
+                                    targetMode: TargetModeType.EXTERNAL,
+                                });
+                                return concreteHyperlink;
+                            } else {
+                                return element;
+                            }
+                        }),
                     // eslint-disable-next-line @typescript-eslint/no-explicit-any
                 } as any,
                 patchText,
                 context,
                 keepOriginalStyles,
                 recursive,
+                renumberBookmarks,
             });
         }
 

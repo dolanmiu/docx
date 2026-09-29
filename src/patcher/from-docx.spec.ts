@@ -1,6 +1,7 @@
 import JSZip from "jszip";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
+import { Formatter } from "@export/formatter";
 import { Packer } from "@export/packer/packer";
 import { File } from "@file/file";
 import { Header } from "@file/header";
@@ -934,6 +935,117 @@ describe("from-docx", () => {
                     }),
                 ).rejects.toThrow("Could not find content types file");
                 vi.restoreAllMocks();
+            });
+        });
+
+        describe("Bookmarks", () => {
+            // Patches a template with this body, and a header if there is one, and returns a reader for the patched parts
+            const patchTemplate = async (
+                { body, header }: { readonly body: string; readonly header?: string },
+                patches: Readonly<Record<string, IPatch>>,
+            ): Promise<(path: string) => Promise<string | undefined>> => {
+                const template = new JSZip()
+                    .file("[Content_Types].xml", `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>`)
+                    .file("word/document.xml", `<w:document><w:body>${body}</w:body></w:document>`);
+                if (header) {
+                    template.file("word/header1.xml", `<w:hdr>${header}</w:hdr>`);
+                }
+                vi.spyOn(JSZip, "loadAsync").mockResolvedValue(template);
+
+                const output = await patchDocument({ outputType: "uint8array", data: Buffer.from(""), patches });
+                // `JSZip.loadAsync` is mocked; the instance method reads the real output
+                const zip = await new JSZip().loadAsync(output);
+                return (path) => zip.file(path)?.async("text") ?? Promise.resolve(undefined);
+            };
+
+            // The id the bookmark was given when it was created
+            const bookmarkIdOf = (bookmark: Bookmark): number => new Formatter().format(bookmark.start)["w:bookmarkStart"]._attr["w:id"];
+
+            afterEach(() => {
+                vi.restoreAllMocks();
+            });
+
+            it("should insert a bookmark in a paragraph patch as its start, its children and its end", async () => {
+                const read = await patchTemplate(
+                    { body: `<w:p><w:r><w:t>See {{anchor}} now</w:t></w:r></w:p>` },
+                    { anchor: { type: PatchType.PARAGRAPH, children: [new Bookmark({ id: "anchor", children: [new TextRun("here")] })] } },
+                );
+
+                const document = toJson((await read("word/document.xml"))!);
+                const paragraph = document.elements![0].elements![0].elements![0];
+                const [left, start, text, end, right] = paragraph.elements!;
+
+                expect(traverse(document).map((p) => p.text)).to.deep.equal(["See here now"]);
+                expect([left, start, text, end, right].map((e) => e.name)).to.deep.equal([
+                    "w:r",
+                    "w:bookmarkStart",
+                    "w:r",
+                    "w:bookmarkEnd",
+                    "w:r",
+                ]);
+                expect(start.attributes!["w:name"]).to.equal("anchor");
+                expect(end.attributes!["w:id"]).to.equal(start.attributes!["w:id"]);
+            });
+
+            it("should add the relationship of a hyperlink in a bookmark in a paragraph patch", async () => {
+                const read = await patchTemplate(
+                    { body: `<w:p><w:r><w:t>{{link}}</w:t></w:r></w:p>` },
+                    {
+                        link: {
+                            type: PatchType.PARAGRAPH,
+                            children: [
+                                new Bookmark({
+                                    id: "link",
+                                    children: [new ExternalHyperlink({ link: "https://example.com", children: [new TextRun("Example")] })],
+                                }),
+                            ],
+                        },
+                    },
+                );
+
+                const [, relationshipId] = (await read("word/document.xml"))!.match(
+                    /<w:bookmarkStart [^>]*\/><w:hyperlink [^>]*r:id="([^"]+)"/,
+                )!;
+                expect(await read("word/_rels/document.xml.rels")).to.match(
+                    new RegExp(`Id="${relationshipId}"[^>]*Target="https://example.com" TargetMode="External"`),
+                );
+            });
+
+            it("should give an inserted bookmark a new id when the template already uses its id, in any part", async () => {
+                const bookmark = new Bookmark({ id: "inserted", children: [new TextRun("B")] });
+                const id = bookmarkIdOf(bookmark);
+                const read = await patchTemplate(
+                    {
+                        body:
+                            `<w:p><w:bookmarkStart w:id="${id}" w:name="existing"/><w:r><w:t>A</w:t></w:r><w:bookmarkEnd w:id="${id}"/></w:p>` +
+                            `<w:p><w:r><w:t>{{slot}}</w:t></w:r></w:p>`,
+                        header: `<w:p><w:bookmarkStart w:id="${id + 1}" w:name="header"/><w:bookmarkEnd w:id="${id + 1}"/></w:p>`,
+                    },
+                    { slot: { type: PatchType.DOCUMENT, children: [new Paragraph({ children: [bookmark] })] } },
+                );
+
+                const document = (await read("word/document.xml"))!;
+                expect(document).to.contain(`<w:bookmarkStart w:id="${id}" w:name="existing"/>`);
+                expect(document).to.contain(`<w:bookmarkStart w:name="inserted" w:id="${id + 2}"/>`);
+                expect(document.match(/<w:bookmarkEnd w:id="\d+"\/>/g)).to.deep.equal([
+                    `<w:bookmarkEnd w:id="${id}"/>`,
+                    `<w:bookmarkEnd w:id="${id + 2}"/>`,
+                ]);
+            });
+
+            it("should keep an inserted bookmark's id when the template does not use it", async () => {
+                const bookmark = new Bookmark({ id: "inserted", children: [new TextRun("B")] });
+                const id = bookmarkIdOf(bookmark);
+                const read = await patchTemplate(
+                    {
+                        body:
+                            `<w:p><w:bookmarkStart w:id="${id + 100}" w:name="existing"/><w:bookmarkEnd w:id="${id + 100}"/></w:p>` +
+                            `<w:p><w:r><w:t>{{slot}}</w:t></w:r></w:p>`,
+                    },
+                    { slot: { type: PatchType.DOCUMENT, children: [new Paragraph({ children: [bookmark] })] } },
+                );
+
+                expect(await read("word/document.xml")).to.contain(`<w:bookmarkStart w:name="inserted" w:id="${id}"/>`);
             });
         });
     });
