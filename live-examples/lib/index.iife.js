@@ -11299,13 +11299,8 @@ DOT: "dot" };
 	*/
 	var SymbolRun = class extends Run {
 		constructor(options) {
-			if (typeof options === "string") {
-				super({});
-				this.root.push(new Symbol$1(options));
-				return this;
-			}
-			super(options);
-			this.root.push(new Symbol$1(options.char, options.symbolfont));
+			super(typeof options === "string" ? {} : options);
+			this.root.push(typeof options === "string" ? new Symbol$1(options) : new Symbol$1(options.char, options.symbolfont));
 		}
 	};
 	//#endregion
@@ -16041,7 +16036,6 @@ EXTERNAL: "External" };
 	var ImageRun = class extends XmlComponent {
 		constructor(options) {
 			var _options$insertion;
-			var _super = (..._args) => (super(..._args), _defineProperty(this, "imageData", void 0), this);
 			const key = `${hashedId(options.data)}.${options.type}`;
 			const imageData = options.type === "svg" ? _objectSpread2(_objectSpread2({ type: options.type }, createImageData(options, key)), {}, { fallback: _objectSpread2({ type: options.fallback.type }, createImageData(_objectSpread2(_objectSpread2({}, options.fallback), {}, { transformation: options.transformation }), `${hashedId(options.fallback.data)}.${options.fallback.type}`)) }) : _objectSpread2({ type: options.type }, createImageData(options, key));
 			const drawing = new Drawing(imageData, {
@@ -16055,8 +16049,10 @@ EXTERNAL: "External" };
 			});
 			const properties = new RunProperties(options.run);
 			const revision = (_options$insertion = options.insertion) !== null && _options$insertion !== void 0 ? _options$insertion : options.deletion;
+			const rootName = options.insertion ? "w:ins" : options.deletion ? "w:del" : "w:r";
+			super(rootName);
+			_defineProperty(this, "imageData", void 0);
 			if (revision) {
-				_super(options.insertion ? "w:ins" : "w:del");
 				this.root.push(new ChangeAttributes({
 					id: revision.id,
 					author: revision.author,
@@ -16068,7 +16064,6 @@ EXTERNAL: "External" };
 				});
 				this.addChildElement(options.insertion && options.deletion ? createDeletion(options.deletion, run) : run);
 			} else {
-				_super("w:r");
 				this.root.push(properties);
 				this.root.push(drawing);
 			}
