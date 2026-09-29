@@ -146,29 +146,38 @@ export const resolveShapeSize = (
     // Unwrapped text, for a fitted width, and a first guess at the length along the text
     const natural = measureText(paragraphs);
     const guessAlong = typeof along === "number" ? along : natural.height / POINTS_PER_PIXEL + alongMargins;
-    const acrossLength =
+    const fitAcross = (alongSize: number): number =>
         across === "fitText"
             ? Math.ceil(
                   solveLength(
                       natural.width / POINTS_PER_PIXEL + acrossMargins + FIT_ALLOWANCE,
-                      (length) => textBox(length, guessAlong).across,
+                      (length) => textBox(length, alongSize).across,
                   ),
               )
             : across;
+    const fitAlong = (acrossSize: number, alongSize: number): number => {
+        if (along !== "fitText") {
+            return along;
+        }
+        // The text wraps at the text box's width, less its margins, unless wrapping is turned off
+        const wrapWidth = textOptions.wrap === false ? undefined : Math.max(0, textBox(acrossSize, alongSize).across - acrossMargins);
+        const textHeight = measureText(paragraphs, wrapWidth === undefined ? undefined : wrapWidth * POINTS_PER_PIXEL).height;
+        return Math.ceil(solveLength(textHeight / POINTS_PER_PIXEL + alongMargins, (length) => textBox(acrossSize, length).along));
+    };
 
-    // The text wraps at the text box's width, less its margins, unless wrapping is turned off
-    const wrapWidth = textOptions.wrap === false ? undefined : Math.max(0, textBox(acrossLength, guessAlong).across - acrossMargins);
-    const alongLength =
-        along === "fitText"
-            ? Math.ceil(
-                  solveLength(
-                      measureText(paragraphs, wrapWidth === undefined ? undefined : wrapWidth * POINTS_PER_PIXEL).height /
-                          POINTS_PER_PIXEL +
-                          alongMargins,
-                      (length) => textBox(acrossLength, length).along,
-                  ),
-              )
-            : along;
+    // The text box's width can depend on the shape's height too, as a rounded rectangle's corners grow with its
+    // shorter side, so the two lengths are worked out in turn until they settle
+    let acrossLength = fitAcross(guessAlong);
+    let alongLength = fitAlong(acrossLength, guessAlong);
+    for (let step = 0; step < 5; step++) {
+        const nextAcross = fitAcross(alongLength);
+        const nextAlong = fitAlong(nextAcross, alongLength);
+        if (nextAcross === acrossLength && nextAlong === alongLength) {
+            break;
+        }
+        acrossLength = nextAcross;
+        alongLength = nextAlong;
+    }
 
     return {
         ...transformation,
