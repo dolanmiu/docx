@@ -8,7 +8,7 @@
  *
  * @module
  */
-import { createBegin, createEnd } from "@file/paragraph/run/field";
+import { createBegin, createEnd, createSeparate } from "@file/paragraph/run/field";
 
 import { Run } from "../run";
 import { PageReferenceFieldInstruction } from "./pageref-field-instruction";
@@ -59,7 +59,7 @@ export type IPageReferenceOptions = {
 export class PageReference extends Run {
     public constructor(bookmarkId: string, options: IPageReferenceOptions = {}) {
         super({
-            children: [createBegin(true), new PageReferenceFieldInstruction(bookmarkId, options), createEnd()],
+            children: [createBegin(true), new PageReferenceFieldInstruction(bookmarkId, options), createSeparate(), createEnd()],
         });
     }
 }
