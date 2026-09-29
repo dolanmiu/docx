@@ -11,6 +11,7 @@ import type { Element } from "xml-js";
 import { type ThemeColorValues, themeColorValues } from "@file/theme/color-scheme";
 import type { ThemeColorName } from "@file/theme/theme-color";
 
+import { resolveTarget } from "./drawing-patch";
 import { toJson } from "./util";
 
 const THEME_RELATIONSHIP_TYPE = "http://schemas.openxmlformats.org/officeDocument/2006/relationships/theme";
@@ -69,7 +70,7 @@ const readTheme = async (zip: JSZip): Promise<Element | undefined> => {
     const relationships = await readPart(zip, "word/_rels/document.xml.rels");
     const theme = child(relationships, "Relationships")?.elements?.find((item) => item.attributes?.Type === THEME_RELATIONSHIP_TYPE);
     const target = theme?.attributes?.Target;
-    return typeof target === "string" ? readPart(zip, target.startsWith("/") ? target.slice(1) : `word/${target}`) : undefined;
+    return typeof target === "string" ? readPart(zip, resolveTarget("word/document.xml", target)) : undefined;
 };
 
 /**

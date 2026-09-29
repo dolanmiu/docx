@@ -235,7 +235,7 @@ describe("checkChartOptions", () => {
                 categories: [new Date("2025-01-01")] as unknown as readonly string[],
                 series: [{ name: "A", values: [1] }],
             }),
-        ).to.throw("Invalid category Wed Jan 01 2025");
+        ).to.throw("Invalid category 2025-01-01T00:00:00.000Z. Expected text or a finite number");
     });
 
     it("should throw for a series type or axis that isn't one, or a type on a bar chart", () => {
@@ -514,7 +514,7 @@ describe("checkChartOptions, for categories in groups", () => {
 
     it("should throw for a category in a group that is a date, or isn't text or a finite number", () => {
         expect(() => checkChartOptions(grouped([{ name: "2024", categories: [new Date("2024-01-01")] }]))).to.throw(
-            'in group "2024". Categories in groups are text or numbers, not dates',
+            'Invalid category 2024-01-01T00:00:00.000Z in group "2024". Categories in groups are text or numbers, not dates',
         );
         expect(() => checkChartOptions(grouped([{ name: "2024", categories: [Number.NaN] }]))).to.throw(
             'Invalid category NaN in group "2024". Expected text or a finite number',

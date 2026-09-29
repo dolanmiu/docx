@@ -73,6 +73,13 @@ describe("createPresetShape", () => {
         expect(tree["wps:wsp"][3]).to.deep.equal({ "wps:bodyPr": { _attr: { anchor: "ctr" } } });
     });
 
+    it("should write no text box and keep the default alignment when the shape has no paragraphs", () => {
+        const tree = new Formatter().format(createPresetShape({ geometry: { type: "rectangle" }, children: [], transformation }));
+
+        expect(tree["wps:wsp"]).to.have.length(3);
+        expect(tree["wps:wsp"][2]).to.deep.equal({ "wps:bodyPr": { _attr: {} } });
+    });
+
     it("should let text options override the vertical alignment", () => {
         const tree = new Formatter().format(
             createPresetShape({

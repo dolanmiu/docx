@@ -147,12 +147,12 @@ const doc = await patchDocument({
 fs.writeFileSync("My Document.docx", doc);
 ```
 
-| Option                                | Type                                                          | Notes                                                                                                                                                               |
-| ------------------------------------- | ------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| categories                            | `(string \| number \| Date)[]` \| `ChartCategoryGroup[]`      | For a chart with categories. Dates, and [groups](usage/chart-data.md#categories-in-groups), are for column, bar, line and area charts                               |
-| series                                | `{ name, values }[]` with categories, or `{ name, points }[]` | Each series' name, and a value for each category (`null` for a gap), or its points. A bubble chart's points each need a `size`, and a scatter chart's leave it out  |
-| high, low, close, open, volume, names | `(number \| null)[]`, `StockChartSeriesNames`                 | For a stock chart, in place of `series`, as for a [stock chart](usage/chart-stock.md). It takes `open` and `volume` if the template's chart has them, and only then |
-| description                           | `string`                                                      | The chart's alt text description. Default is a description of the new data, such as "Column chart, Sales. 2024: Q1 120, Q2 135." An empty one removes it            |
+| Option                                | Type                                                          | Notes                                                                                                                                                                             |
+| ------------------------------------- | ------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| categories                            | `(string \| number \| Date)[]` \| `ChartCategoryGroup[]`      | For a chart with categories. Dates are for column, bar, line, area and stock charts, and [groups](usage/chart-data.md#categories-in-groups) for column, bar, line and area charts |
+| series                                | `{ name, values }[]` with categories, or `{ name, points }[]` | Each series' name, and a value for each category (`null` for a gap), or its points. A bubble chart's points each need a `size`, and a scatter chart's leave it out                |
+| high, low, close, open, volume, names | `(number \| null)[]`, `StockChartSeriesNames`                 | For a stock chart, in place of `series`, as for a [stock chart](usage/chart-stock.md). It takes `open` and `volume` if the template's chart has them, and only then               |
+| description                           | `string`                                                      | The chart's alt text description. Default is a description of the new data, such as "Column chart, Sales. 2024: Q1 120, Q2 135." An empty one removes it                          |
 
 The data is checked when the patch is made, as a `ChartRun`'s is, and then against the template's chart: a pie chart has one series, pie and doughnut charts have no negative values, a scatter or bubble chart's series have points, and a stock chart has opening prices and volumes if the template's has them.
 

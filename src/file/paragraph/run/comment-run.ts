@@ -74,6 +74,7 @@ class CommentRangeAttributes extends XmlAttributeComponent<{ readonly id: number
  * @internal
  */
 class RootCommentsAttributes extends XmlAttributeComponent<{
+    readonly "xmlns:wpc"?: string;
     readonly "xmlns:cx"?: string;
     readonly "xmlns:cx1"?: string;
     readonly "xmlns:cx2"?: string;
@@ -108,6 +109,7 @@ class RootCommentsAttributes extends XmlAttributeComponent<{
     readonly "mc:Ignorable"?: string;
 }> {
     protected readonly xmlKeys = {
+        "xmlns:wpc": "xmlns:wpc",
         "xmlns:cx": "xmlns:cx",
         "xmlns:cx1": "xmlns:cx1",
         "xmlns:cx2": "xmlns:cx2",
@@ -399,6 +401,7 @@ export class Comments extends XmlComponent {
 
         this.root.push(
             new RootCommentsAttributes({
+                "xmlns:wpc": "http://schemas.microsoft.com/office/word/2010/wordprocessingCanvas",
                 "xmlns:cx": "http://schemas.microsoft.com/office/drawing/2014/chartex",
                 "xmlns:cx1": "http://schemas.microsoft.com/office/drawing/2015/9/8/chartex",
                 "xmlns:cx2": "http://schemas.microsoft.com/office/drawing/2015/10/21/chartex",

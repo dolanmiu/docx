@@ -99,8 +99,10 @@ const createNonVisualConnectorProperties = (connections: PresetShapeCoreOptions[
  *
  * Lines and connectors are written with `wps:cNvCnPr`, which says which shapes they are attached to,
  * and other shapes with `wps:cNvSpPr`.
- * A text box (`wps:txbx`) is written only when the shape has children, and its text is
- * centred vertically unless `textOptions` says otherwise.
+ * A shape without a `textFlow` has a text box (`wps:txbx`) only when it has at least one paragraph, since
+ * `w:txbxContent` can't be empty, and its text is centred vertically unless `textOptions` says otherwise. A shape in a
+ * text flow always has one: the first shape of the flow writes the text, or an empty paragraph if there is none, and
+ * the shapes after it link to it with `wps:linkedTxbx`. Its text starts at the top, so it can flow on from the bottom.
  *
  * ## XSD Schema
  * ```xml
@@ -143,8 +145,14 @@ export const createPresetShape = ({
                 ? createNonVisualConnectorProperties(connections)
                 : new BuilderElement({ name: "wps:cNvSpPr" }),
             createPresetShapeProperties({ transformation, geometry, fill, line, effects }),
-            ...(textFlow === undefined ? (children ? [createTextBox(children)] : []) : [createTextFlowBox(textFlow, children ?? [])]),
+            ...(textFlow === undefined
+                ? children?.length
+                    ? [createTextBox(children)]
+                    : []
+                : [createTextFlowBox(textFlow, children ?? [])]),
             // Text flows from the top of each shape of a flow into the next
-            createShapeTextProperties(textFlow === undefined && children ? { verticalAlignment: "center", ...textOptions } : textOptions),
+            createShapeTextProperties(
+                textFlow === undefined && children?.length ? { verticalAlignment: "center", ...textOptions } : textOptions,
+            ),
         ],
     });

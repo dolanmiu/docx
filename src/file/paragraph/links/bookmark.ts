@@ -97,6 +97,10 @@ export class Bookmark {
  * This element marks the beginning of a bookmarked region in the document.
  * It must be paired with a corresponding BookmarkEnd element with the same id.
  *
+ * The id must be unique in the document. `Bookmark` takes its ids from
+ * `bookmarkUniqueNumericId`, so take this one from it too, or it can be the
+ * same as a `Bookmark`'s.
+ *
  * Reference: http://officeopenxml.com/WPbookmark.php
  *
  * ## XSD Schema
@@ -114,7 +118,10 @@ export class Bookmark {
  *
  * @example
  * ```typescript
- * new BookmarkStart("myBookmark", 1);
+ * // A bookmark across two paragraphs
+ * const id = bookmarkUniqueNumericId();
+ * new Paragraph({ children: [new BookmarkStart("myBookmark", id), new TextRun("First")] });
+ * new Paragraph({ children: [new TextRun("Last"), new BookmarkEnd(id)] });
  * ```
  */
 export class BookmarkStart extends XmlComponent {
@@ -133,7 +140,8 @@ export class BookmarkStart extends XmlComponent {
  * Represents the end marker of a bookmark range.
  *
  * This element marks the end of a bookmarked region in the document.
- * It must be paired with a corresponding BookmarkStart element with the same id.
+ * It must be paired with a corresponding BookmarkStart element with the same id,
+ * taken from `bookmarkUniqueNumericId` (see `BookmarkStart`).
  *
  * Reference: http://officeopenxml.com/WPbookmark.php
  *
@@ -152,7 +160,9 @@ export class BookmarkStart extends XmlComponent {
  *
  * @example
  * ```typescript
- * new BookmarkEnd(1);
+ * const id = bookmarkUniqueNumericId();
+ * new BookmarkStart("myBookmark", id);
+ * new BookmarkEnd(id);
  * ```
  */
 export class BookmarkEnd extends XmlComponent {

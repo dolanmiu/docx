@@ -43,6 +43,9 @@ export type PackagePartOptions = {
     readonly content: XmlComponent | Uint8Array | { readonly files: readonly EmbeddedPackageFile[] };
 };
 
+// A folder, name or extension is one part of a path, without a separator or dots
+const PATH_PART = /^[\w-]+$/;
+
 // The folders under word/ that docx writes parts of its own in
 const RESERVED_FOLDERS = new Set(["_rels", "fonts", "media", "theme"]);
 
@@ -84,10 +87,17 @@ export class PackagePart {
 
     /**
      * @throws If the folder isn't a single folder name, or is one of the folders docx writes parts of its own in
+     * @throws If the name or the extension isn't a single part of a file name, which could lead out of the folder
      */
     public constructor(public readonly options: PackagePartOptions) {
-        if (!/^[\w-]+$/.test(options.folder) || RESERVED_FOLDERS.has(options.folder)) {
+        if (!PATH_PART.test(options.folder) || RESERVED_FOLDERS.has(options.folder)) {
             throw new Error(`Invalid package part folder "${options.folder}". Expected a folder name docx doesn't use, such as "charts"`);
+        }
+        if (!PATH_PART.test(options.name)) {
+            throw new Error(`Invalid package part name "${options.name}". Expected letters, digits, "_" and "-", such as "chart"`);
+        }
+        if (!PATH_PART.test(options.extension)) {
+            throw new Error(`Invalid package part extension "${options.extension}". Expected letters, digits, "_" and "-", such as "xml"`);
         }
     }
 
@@ -118,7 +128,7 @@ export class PackageParts {
     /**
      * @param contentTypes - Where each part's content type is added
      * @param existingPaths - The paths under word/ of the parts the package already has, such as a template's charts,
-     * which new parts are numbered after
+     * which new parts don't take
      */
     public constructor(
         private readonly contentTypes: Pick<ContentTypes, "addOverride">,
@@ -137,7 +147,7 @@ export class PackageParts {
         }
 
         const { folder, name, extension, contentType } = part.options;
-        // Numbered after the parts already added with the same folder and name, and the package's own
+        // The lowest number that no part already added with the same folder and name, or of the package's own, has
         const taken = new Set([...this.existingPaths, ...this.paths.values()]);
         let index = 1;
         while (taken.has(`${folder}/${name}${index}.${extension}`)) {

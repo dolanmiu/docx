@@ -97,6 +97,20 @@ describe("resolveShapeSize", () => {
         );
     });
 
+    it("should keep a line of text on one line when fitting a shape's width and height together", () => {
+        // A rounded rectangle's corners, and an octagon's, grow with its height, which narrows its text box
+        for (const [type, text] of [
+            ["roundedRectangle", "Rounded"],
+            ["octagon", "Stop"],
+        ] as const) {
+            const options = { type, adjustments: type === "roundedRectangle" ? { cornerRadius: 50 } : undefined, text };
+            const { width, height } = resolveShapeSize({ ...options, transformation: { width: "fitText", height: "fitText" } });
+            // The height fits one line, and the text isn't wrapped at the width
+            expect(resolveShapeSize({ ...options, transformation: { width, height: "fitText" } }).height).to.equal(height);
+            expect(resolveShapeSize({ ...options, transformation: { width: "fitText", height } }).width).to.be.at.most(width);
+        }
+    });
+
     it("should fit a custom shape like a rectangle", () => {
         expect(resolveShapeSize({ type: "custom", text: "Hi", transformation: { width: "fitText", height: 20 } })).to.deep.equal(
             resolveShapeSize({ type: "rectangle", text: "Hi", transformation: { width: "fitText", height: 20 } }),
