@@ -95,6 +95,35 @@ describe("Compiler", () => {
             );
         });
 
+        it("should give an image in an endnote a relationship from the endnotes part", async () => {
+            const image = new ImageRun({ type: "png", data: Buffer.from("", "base64"), transformation: { width: 10, height: 10 } });
+            const zipFile = compiler.compile(
+                new File({ sections: [], endnotes: { 1: { children: [new Paragraph({ children: [image] })] } } }),
+            );
+
+            expect(await zipFile.file("word/endnotes.xml")?.async("text")).to.contain('r:embed="rId1"');
+            expect(await zipFile.file("word/_rels/endnotes.xml.rels")?.async("text")).to.match(
+                /<Relationship Id="rId1" Type="http:\/\/schemas.openxmlformats.org\/officeDocument\/2006\/relationships\/image" Target="media\/[^"]+\.png"\/>/,
+            );
+        });
+
+        it("should write the numbering id of a list in an endnote, and define the list", async () => {
+            const zipFile = compiler.compile(
+                new File({
+                    numbering: {
+                        config: [{ reference: "endnote-list", levels: [{ level: 0, format: LevelFormat.DECIMAL, text: "%1." }] }],
+                    },
+                    endnotes: {
+                        1: { children: [new Paragraph({ text: "Listed", numbering: { reference: "endnote-list", level: 0 } })] },
+                    },
+                    sections: [],
+                }),
+            );
+
+            expect(await zipFile.file("word/endnotes.xml")?.async("text")).to.contain('<w:numId w:val="2"/>');
+            expect(await zipFile.file("word/numbering.xml")?.async("text")).to.contain('<w:num w:numId="2">');
+        });
+
         it("should pack all additional headers and footers", { timeout: 99999999 }, () => {
             const file = new File({
                 sections: [
@@ -365,6 +394,7 @@ describe("Compiler", () => {
                 customProperties: [{ name: "Project", value: "docx" }],
                 numbering: { config: [{ reference: "footer-list", levels: [{ level: 0, format: LevelFormat.DECIMAL, text: "%1." }] }] },
                 footnotes: { 1: { children: [new Paragraph({ children: [image()] })] } },
+                endnotes: { 1: { children: [new Paragraph({ children: [image()] })] } },
                 comments: { children: [{ id: 0, children: [new Paragraph({ children: [image()] })] }] },
                 sections: [
                     {
