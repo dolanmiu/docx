@@ -42,11 +42,11 @@ import { BuilderElement, type XmlComponent } from "@file/xml-components";
  * @publicApi
  */
 export const AlignmentType = {
-    /** Align Start */
+    /** Align Start: the left in a left-to-right paragraph, and the right in a `bidirectional` (right-to-left) paragraph */
     START: "start",
     /** Align Center */
     CENTER: "center",
-    /** End */
+    /** Align End: the right in a left-to-right paragraph, and the left in a `bidirectional` (right-to-left) paragraph */
     END: "end",
     /** Justified */
     BOTH: "both",
@@ -62,9 +62,9 @@ export const AlignmentType = {
     LOW_KASHIDA: "lowKashida",
     /** Thai Language Justification */
     THAI_DISTRIBUTE: "thaiDistribute",
-    /** Align Left */
+    /** Align Left: a paragraph stays on the left of the page even when it is `bidirectional` (right-to-left) */
     LEFT: "left",
-    /** Align Right */
+    /** Align Right: a paragraph stays on the right of the page even when it is `bidirectional` (right-to-left) */
     RIGHT: "right",
     /** Justified */
     JUSTIFIED: "both",

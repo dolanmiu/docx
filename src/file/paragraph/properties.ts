@@ -93,7 +93,11 @@ export type IParagraphStylePropertiesOptions = {
 export type IParagraphPropertiesOptionsBase = {
     /** Heading level (Heading1, Heading2, etc.) - applies predefined heading style */
     readonly heading?: (typeof HeadingLevel)[keyof typeof HeadingLevel];
-    /** Whether to render text right-to-left for bidirectional languages */
+    /**
+     * Whether to lay the paragraph out right-to-left, for languages such as Arabic and Hebrew.
+     * A right-to-left paragraph starts on the right of the page, so it is right-aligned unless `alignment` says otherwise.
+     * `alignment` `LEFT` and `RIGHT` still mean those sides of the page, while `START` and `END` follow the paragraph's direction.
+     */
     readonly bidirectional?: boolean;
     /** Whether to insert a page break before this paragraph */
     readonly pageBreakBefore?: boolean;
@@ -161,6 +165,22 @@ export type IParagraphPropertiesConfig = {
      * @default true
      */
     readonly implicitListParagraphStyle?: boolean;
+};
+
+type AlignmentValue = (typeof AlignmentType)[keyof typeof AlignmentType];
+
+/**
+ * The alignment to write for each side of the page in a right-to-left paragraph.
+ *
+ * Word and LibreOffice read `w:jc` `left` and `right` as the start and end of the paragraph, the same as
+ * `start` and `end` (ISO/IEC 29500-4 maps the transitional `left` and `right` onto the strict `start` and `end`,
+ * and [MS-OE376] 2.3.1.13 notes the same for Word 2007). So in a `w:bidi` paragraph `left` lands on the right
+ * side of the page. Swapping keeps `AlignmentType.LEFT` and `AlignmentType.RIGHT` on the side of the page they name.
+ * `left` and `right` are written rather than `end` and `start` because Word 2007 does not know `start` and `end`.
+ */
+const RIGHT_TO_LEFT_ALIGNMENTS: Partial<Record<AlignmentValue, AlignmentValue>> = {
+    left: "right",
+    right: "left",
 };
 
 /**
@@ -391,7 +411,7 @@ export class ParagraphProperties extends IgnoreIfEmptyXmlComponent {
         }
 
         if (options.alignment) {
-            this.push(createAlignment(options.alignment));
+            this.push(createAlignment((options.bidirectional && RIGHT_TO_LEFT_ALIGNMENTS[options.alignment]) || options.alignment));
         }
 
         if (options.outlineLevel !== undefined) {
