@@ -128,7 +128,7 @@ export class PackageParts {
     /**
      * @param contentTypes - Where each part's content type is added
      * @param existingPaths - The paths under word/ of the parts the package already has, such as a template's charts,
-     * which new parts are numbered after
+     * which new parts don't take
      */
     public constructor(
         private readonly contentTypes: Pick<ContentTypes, "addOverride">,
@@ -147,7 +147,7 @@ export class PackageParts {
         }
 
         const { folder, name, extension, contentType } = part.options;
-        // Numbered after the parts already added with the same folder and name, and the package's own
+        // The lowest number that no part already added with the same folder and name, or of the package's own, has
         const taken = new Set([...this.existingPaths, ...this.paths.values()]);
         let index = 1;
         while (taken.has(`${folder}/${name}${index}.${extension}`)) {

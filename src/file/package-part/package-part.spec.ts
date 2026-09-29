@@ -8,7 +8,7 @@ import { Footer, Header } from "@file/header";
 import { Paragraph, Run, TextRun } from "@file/paragraph";
 import { BuilderElement, type IContext, type IXmlableObject, XmlComponent } from "@file/xml-components";
 
-import { PackagePart, type PackagePartOptions } from "./package-part";
+import { PackagePart, type PackagePartOptions, PackageParts } from "./package-part";
 
 const CHART_TYPE = "application/vnd.openxmlformats-officedocument.drawingml.chart+xml";
 const CHART_RELATIONSHIP = "http://schemas.openxmlformats.org/officeDocument/2006/relationships/chart";
@@ -265,6 +265,21 @@ describe("PackagePart", () => {
             expect(await read(zip, "word/charts/chart1.xml")).to.equal(
                 '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>\n<c:chartSpace>\n  <c:chart/>\n</c:chartSpace>',
             );
+        });
+    });
+});
+
+describe("PackageParts", () => {
+    describe("#add()", () => {
+        it("should give a new part the lowest number that no part of the package has", () => {
+            const parts = new PackageParts(
+                { addOverride: () => undefined },
+                new Set(["charts/chart1.xml", "charts/chart3.xml", "charts/colors7.xml", "charts/_rels/chart9.xml.rels", "document.xml"]),
+            );
+
+            expect(parts.add(createChart())).to.equal("charts/chart2.xml");
+            expect(parts.add(createChart())).to.equal("charts/chart4.xml");
+            expect(parts.add(createWorkbook())).to.equal("embeddings/Microsoft_Excel_Worksheet1.xlsx");
         });
     });
 });

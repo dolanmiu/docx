@@ -208,7 +208,7 @@ export const patchDocument = async <T extends PatchDocumentOutputType = PatchDoc
                 // eslint-disable-next-line functional/immutable-data
                 addOverride: (contentType: string, partName: string) => contentTypeOverrides.push({ contentType, partName }),
             },
-            // New parts are numbered after the template's own, such as its charts
+            // New parts take numbers the template's own parts, such as its charts, don't have
             new Set(
                 Object.keys(zipContent.files)
                     .filter((path) => path.startsWith("word/"))
