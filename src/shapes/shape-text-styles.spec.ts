@@ -3,6 +3,7 @@ import { describe, expect, it } from "vitest";
 import { File } from "@file/file";
 import {
     ExternalHyperlink,
+    FootnoteReferenceRun,
     HeadingLevel,
     type IContext,
     type IStylesOptions,
@@ -213,6 +214,25 @@ describe("readTextParagraphs", () => {
             new Paragraph({ children: [new TextRun({ text: "a", break: 1 }), new TextRun({ children: [new Tab(), "b"] })] }),
         );
         expect(spans.map(({ text }) => text)).to.deep.equal(["\na", "\tb"]);
+    });
+
+    it("should read the text on both sides of a run in a run's children, in the outer run's formatting", () => {
+        const { spans } = readOne(
+            new Paragraph({
+                children: [
+                    new TextRun({ bold: true, children: ["Note", new FootnoteReferenceRun(1), " after"] }),
+                    new TextRun({ size: 24, children: ["a", new TextRun({ text: "b", font: "Arial" }), "c"] }),
+                ],
+            }),
+        );
+        // The footnote reference has no text, so it is left out as it is on its own
+        expect(spans).to.deep.equal([
+            { text: "Note", bold: true },
+            { text: " after", bold: true },
+            { text: "a", size: 12 },
+            { text: "b", font: "Arial" },
+            { text: "c", size: 12 },
+        ]);
     });
 
     it("should read the text of hyperlinks, and leave out runs without text", () => {

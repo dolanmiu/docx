@@ -296,7 +296,7 @@ const styleChain = ({ styles }: TextStyles, id: string | undefined, type: string
 /**
  * The text of a run, with tabs as `"\t"` and line breaks as `"\n"`, and its own formatting and character style.
  */
-const readRun = (run: TextRun, themeFonts: ThemeFonts): { readonly text: string; readonly format: RunFormat; readonly style?: string } => {
+const readRun = (run: Run, themeFonts: ThemeFonts): { readonly text: string; readonly format: RunFormat; readonly style?: string } => {
     // Formatting a run needs no document, as long as it has no fields or other parts that refer to one
     const xml = run.prepForXml(READING_CONTEXT) as { readonly "w:r": readonly XmlObject[] };
     const children = xml["w:r"];
@@ -318,10 +318,12 @@ const readRun = (run: TextRun, themeFonts: ThemeFonts): { readonly text: string;
 /**
  * The text runs in a paragraph, including those in hyperlinks. Pictures, shapes and other runs without text are left out.
  */
-const runsIn = (children: readonly unknown[]): readonly TextRun[] =>
-    children.flatMap((child): readonly TextRun[] => {
+const runsIn = (children: readonly unknown[]): readonly Run[] =>
+    children.flatMap((child): readonly Run[] => {
         if (child instanceof TextRun) {
-            return [child];
+            // A run with a run in its children is written as itself, that run, then a plain Run with its formatting for
+            // the children after it
+            return (child.writtenAs ?? [child]).filter((part): part is Run => part instanceof TextRun || part.constructor === Run);
         }
         if (child instanceof ExternalHyperlink) {
             return runsIn(child.options.children);
