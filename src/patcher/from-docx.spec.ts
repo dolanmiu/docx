@@ -1217,7 +1217,7 @@ describe("from-docx", () => {
                 expect(footnotes).to.contain("A footnote");
 
                 expect(await read("word/_rels/document.xml.rels")).to.match(
-                    new RegExp(`<Relationship Id="rId[^"]+" Type="${FOOTNOTES_RELATIONSHIP}" Target="footnotes.xml"/>`),
+                    /<Relationship Id="rId[^"]+" Type="http:\/\/schemas\.openxmlformats\.org\/officeDocument\/2006\/relationships\/footnotes" Target="footnotes\.xml"\/>/,
                 );
                 expect(await read("[Content_Types].xml")).to.contain(
                     '<Override ContentType="application/vnd.openxmlformats-officedocument.wordprocessingml.footnotes+xml" PartName="/word/footnotes.xml"/>',
@@ -1253,7 +1253,7 @@ describe("from-docx", () => {
                     `<w:endnote w:id="1"><w:p><w:r><w:rPr><w:rStyle w:val="EndnoteReference"/></w:rPr><w:endnoteRef/></w:r><w:r><w:t xml:space="preserve">An endnote</w:t></w:r></w:p></w:endnote>`,
                 );
                 expect(await read("word/_rels/document.xml.rels")).to.match(
-                    /<Relationship Id="rId[^"]+" Type="http:\/\/schemas.openxmlformats.org\/officeDocument\/2006\/relationships\/endnotes" Target="endnotes.xml"\/>/,
+                    /<Relationship Id="rId[^"]+" Type="http:\/\/schemas\.openxmlformats\.org\/officeDocument\/2006\/relationships\/endnotes" Target="endnotes\.xml"\/>/,
                 );
                 expect(await read("[Content_Types].xml")).to.contain('PartName="/word/endnotes.xml"');
                 expect((await read("word/styles.xml"))?.match(/w:styleId="[^"]+"/g)).to.deep.equal([
@@ -1376,7 +1376,7 @@ describe("from-docx", () => {
                 const [, relationshipId] = (await read("word/footnotes.xml"))!.match(/<a:blip r:embed="([^"]+)"/)!;
                 expect(await read("word/_rels/footnotes.xml.rels")).to.match(
                     new RegExp(
-                        `<Relationship Id="${relationshipId}" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/image" Target="media/[^"]+\\.png"/>`,
+                        `<Relationship Id="${relationshipId}" Type="http://schemas\\.openxmlformats\\.org/officeDocument/2006/relationships/image" Target="media/[^"]+\\.png"/>`,
                     ),
                 );
                 expect(await read("word/_rels/document.xml.rels")).not.to.contain("relationships/image");
