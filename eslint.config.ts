@@ -283,6 +283,17 @@ const config: Linter.Config<Linter.RulesRecord>[] = [
             "no-new-wrappers": "error",
             "no-param-reassign": "error",
             "no-redeclare": "error",
+            // The ES2015 build wraps a super() inside a branch in an arrow function when the class has fields, and
+            // Next.js Turbopack turns that arrow function into a plain function, which can't call super()
+            // https://github.com/dolanmiu/docx/issues/3473
+            "no-restricted-syntax": [
+                "error",
+                {
+                    selector:
+                        "CallExpression[callee.type='Super']:not(MethodDefinition[kind='constructor'] > FunctionExpression > BlockStatement > ExpressionStatement > CallExpression)",
+                    message: "Call super() once, as a statement of its own at the top level of the constructor.",
+                },
+            ],
             "no-return-await": "error",
             "no-sequences": "error",
             "no-shadow": "off",
