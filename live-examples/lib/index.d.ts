@@ -386,6 +386,7 @@ declare class Body_2 extends XmlComponent {
      * governs a given child of the body.
      */
     private readonly sectionParagraphs;
+    private readonly headingBookmarkIds;
     constructor();
     /**
      * Finds the section properties that govern a top-level child of the body.
@@ -418,7 +419,8 @@ declare class Body_2 extends XmlComponent {
      * Prepares the body element for XML serialization.
      *
      * Ensures that the last section's properties are placed as a direct child of the body
-     * element, as required by the OOXML specification.
+     * element, as required by the OOXML specification. Once the body is written, its tables
+     * of contents are filled in from its headings.
      *
      * @param context - The XML serialization context
      * @returns The prepared XML object or undefined
@@ -12114,6 +12116,11 @@ export declare const TableLayoutType: {
  * TableOfContents creates an auto-generated list of document headings
  * with page numbers. It uses a TOC field code to generate entries.
  *
+ * Unless it is given `cachedEntries` or `contentChildren`, it is written with an
+ * entry for each heading its options include, linked to a bookmark on the heading,
+ * so it isn't empty before Word updates it or in applications that don't update it.
+ * The page numbers are left for Word to fill in when it updates the field.
+ *
  * Reference: http://officeopenxml.com/WPtableOfContents.php
  *
  * @publicApi
@@ -12138,6 +12145,8 @@ export declare const TableLayoutType: {
  * ```
  */
 export declare class TableOfContents extends FileChild {
+    /** What it is filled in with from the headings, when it isn't given its content */
+    private readonly fromHeadings?;
     constructor(alias?: string, { contentChildren, cachedEntries, beginDirty, ...properties }?: ITableOfContentsOptions & {
         readonly contentChildren?: readonly (XmlComponent | string)[];
         /**
@@ -12148,6 +12157,13 @@ export declare class TableOfContents extends FileChild {
         readonly cachedEntries?: readonly ToCEntry[];
         readonly beginDirty?: boolean;
     });
+    /**
+     * Written empty, and filled in from the headings once the body it is in is written, unless it was given its content.
+     * The page numbers are aligned to the right of the text in its section.
+     */
+    prepForXml(context: IContext): IXmlableObject | undefined;
+    /** The width of the text in the section it is in */
+    private textWidthIn;
     private getTabStopsForLevel;
     private buildCachedContentRun;
     private buildCachedContentParagraphChild;

@@ -20910,6 +20910,421 @@ MAX: 9026 };
 		}
 	};
 	//#endregion
+	//#region src/file/table-of-contents/field-instruction.ts
+	/**
+	* Field Instruction module for Table of Contents.
+	*
+	* This module handles the generation of TOC field instruction text
+	* that controls how the table of contents is built.
+	*
+	* Reference: http://officeopenxml.com/WPfieldInstructions.php
+	*
+	* @module
+	*/
+	/**
+	* Represents a field instruction for a Table of Contents.
+	*
+	* The FieldInstruction class generates the TOC field code string that Word uses
+	* to determine how to build the table of contents, including which headings to include,
+	* formatting options, and other TOC-specific settings.
+	*
+	* Reference: http://officeopenxml.com/WPfieldInstructions.php
+	*
+	* ## XSD Schema
+	* ```xml
+	* <xsd:element name="instrText" type="CT_Text"/>
+	* ```
+	*
+	* @example
+	* ```typescript
+	* // Basic TOC field instruction
+	* new FieldInstruction({ headingStyleRange: "1-3" });
+	*
+	* // TOC with hyperlinks and custom styles
+	* new FieldInstruction({
+	*   hyperlink: true,
+	*   headingStyleRange: "1-3",
+	*   stylesWithLevels: [new StyleLevel("CustomStyle", 2)],
+	* });
+	* ```
+	*/
+	var FieldInstruction = class extends XmlComponent {
+		constructor(properties = {}) {
+			super("w:instrText");
+			_defineProperty(this, "properties", void 0);
+			this.properties = properties;
+			this.root.push(new TextAttributes({ space: SpaceType.PRESERVE }));
+			let instruction = "TOC";
+			if (this.properties.captionLabel) instruction = `${instruction} \\a "${this.properties.captionLabel}"`;
+			if (this.properties.entriesFromBookmark) instruction = `${instruction} \\b "${this.properties.entriesFromBookmark}"`;
+			if (this.properties.captionLabelIncludingNumbers) instruction = `${instruction} \\c "${this.properties.captionLabelIncludingNumbers}"`;
+			if (this.properties.sequenceAndPageNumbersSeparator) instruction = `${instruction} \\d "${this.properties.sequenceAndPageNumbersSeparator}"`;
+			if (this.properties.tcFieldIdentifier) instruction = `${instruction} \\f "${this.properties.tcFieldIdentifier}"`;
+			if (this.properties.hyperlink) instruction = `${instruction} \\h`;
+			if (this.properties.tcFieldLevelRange) instruction = `${instruction} \\l "${this.properties.tcFieldLevelRange}"`;
+			if (this.properties.pageNumbersEntryLevelsRange) instruction = `${instruction} \\n "${this.properties.pageNumbersEntryLevelsRange}"`;
+			if (this.properties.headingStyleRange) instruction = `${instruction} \\o "${this.properties.headingStyleRange}"`;
+			if (this.properties.entryAndPageNumberSeparator) instruction = `${instruction} \\p "${this.properties.entryAndPageNumberSeparator}"`;
+			if (this.properties.seqFieldIdentifierForPrefix) instruction = `${instruction} \\s "${this.properties.seqFieldIdentifierForPrefix}"`;
+			if (this.properties.stylesWithLevels && this.properties.stylesWithLevels.length) {
+				const styles = this.properties.stylesWithLevels.map((sl) => `${sl.styleName},${sl.level}`).join(",");
+				instruction = `${instruction} \\t "${styles}"`;
+			}
+			if (this.properties.useAppliedParagraphOutlineLevel) instruction = `${instruction} \\u`;
+			if (this.properties.preserveTabInEntries) instruction = `${instruction} \\w`;
+			if (this.properties.preserveNewLineInEntries) instruction = `${instruction} \\x`;
+			if (this.properties.hideTabAndPageNumbersInWebView) instruction = `${instruction} \\z`;
+			this.root.push(instruction);
+		}
+	};
+	//#endregion
+	//#region src/file/table-of-contents/sdt-content.ts
+	/**
+	* Structured Document Tag Content module.
+	*
+	* This module represents the content container for structured document tags,
+	* including table of contents elements.
+	*
+	* Reference: http://officeopenxml.com/WPtableOfContents.php
+	*
+	* @module
+	*/
+	/**
+	* Represents the content portion of a Structured Document Tag.
+	*
+	* The StructuredDocumentTagContent contains the actual content elements
+	* (paragraphs, tables, etc.) within a structured document tag, such as
+	* the paragraphs that make up a table of contents.
+	*
+	* Reference: http://officeopenxml.com/WPtableOfContents.php
+	*
+	* ## XSD Schema
+	* ```xml
+	* <xsd:complexType name="CT_SdtContentBlock">
+	*   <xsd:group ref="EG_ContentBlockContent" minOccurs="0" maxOccurs="unbounded"/>
+	* </xsd:complexType>
+	* ```
+	*
+	* @example
+	* ```typescript
+	* const content = new StructuredDocumentTagContent();
+	* content.addChildElement(new Paragraph("Content"));
+	* ```
+	*/
+	var StructuredDocumentTagContent = class extends XmlComponent {
+		constructor() {
+			super("w:sdtContent");
+		}
+	};
+	//#endregion
+	//#region src/file/table-of-contents/heading-entries.ts
+	/**
+	* Entries written into a table of contents from the headings of the document.
+	*
+	* A table of contents is a TOC field. Word fills in its entries when it updates the field. Until then, and in
+	* applications that don't update it, such as LibreOffice, it shows the entries it was last filled in with, and without
+	* any it is empty. So once the body is written, each table of contents that wasn't given `cachedEntries` or
+	* `contentChildren` is filled in from the headings its switches include, the way Word fills it in: each heading is
+	* bookmarked, and its entry links to the bookmark and gives its page with a PAGEREF field. The page numbers are left
+	* empty, because they depend on how the document is laid out. Word fills them in when it updates the field.
+	*
+	* @module
+	*/
+	/** The formatted tables of contents, with what each is filled in with, or undefined when it was given its content */
+	var writtenTables = /* @__PURE__ */ new WeakMap();
+	/**
+	* Records a formatted table of contents, so the paragraphs in it aren't taken for headings, with what to fill it in
+	* with from the headings once the body it is in is written. That is undefined when it was given its content.
+	*/
+	var recordTableOfContents = (table, fillWith) => {
+		writtenTables.set(table, fillWith);
+	};
+	/**
+	* The ids of the bookmarks on a body's headings: the first for its first bookmarked heading, and so on. Each is taken
+	* from the counter every bookmark shares, the first time it is needed, so a document packed again is written the same.
+	*/
+	var HeadingBookmarkIds = class {
+		constructor() {
+			_defineProperty(this, "ids", []);
+		}
+		get(index) {
+			var _this$ids, _this$ids$index;
+			(_this$ids$index = (_this$ids = this.ids)[index]) !== null && _this$ids$index !== void 0 || (_this$ids[index] = bookmarkUniqueNumericId());
+			return this.ids[index];
+		}
+	};
+	/** The name of a formatted element, or `_attr` for its parent's attributes */
+	var nameOf$1 = (element) => typeof element === "object" && element !== null ? Object.keys(element)[0] : void 0;
+	/** The children of a formatted element. An element with only attributes has them as its one child */
+	var childrenOf = (element) => {
+		const name = nameOf$1(element);
+		const content = name === void 0 ? void 0 : element[name];
+		return Array.isArray(content) ? content : content === void 0 ? [] : [content];
+	};
+	var childOf = (element, name) => childrenOf(element).find((child) => nameOf$1(child) === name);
+	var attributeOf = (element, attribute) => {
+		var _childOf;
+		return (_childOf = childOf(element, "_attr")) === null || _childOf === void 0 || (_childOf = _childOf._attr) === null || _childOf === void 0 ? void 0 : _childOf[attribute];
+	};
+	/** An attribute such as `w:val="2"` as a number. Imported XML gives it as a string */
+	var numberAttributeOf = (element, attribute) => {
+		const value = attributeOf(element, attribute);
+		return value === void 0 ? void 0 : Number(value);
+	};
+	/** The block-level containers of paragraphs: tables, their rows and cells, and content controls */
+	var BLOCK_CONTAINERS = /* @__PURE__ */ new Set([
+		"w:tbl",
+		"w:tr",
+		"w:tc",
+		"w:sdt",
+		"w:sdtContent",
+		"w:customXml"
+	]);
+	/**
+	* The paragraphs and the tables of contents, in the order they are in the body. A table of contents isn't looked into,
+	* so the paragraphs in it aren't taken for headings. Nor are paragraphs in text boxes, as in Word.
+	*/
+	var blocksOf = (elements) => elements.flatMap((element) => {
+		const name = nameOf$1(element);
+		if (name === "w:p" || writtenTables.has(element)) return [element];
+		return name !== void 0 && BLOCK_CONTAINERS.has(name) ? blocksOf(childrenOf(element)) : [];
+	});
+	/** The elements in a paragraph that its text is in. Deleted text, field instructions and drawings aren't */
+	var TEXT_CONTAINERS = /* @__PURE__ */ new Set([
+		"w:r",
+		"w:hyperlink",
+		"w:ins",
+		"w:moveTo",
+		"w:smartTag",
+		"w:customXml",
+		"w:sdt",
+		"w:sdtContent",
+		"w:fldSimple",
+		"w:dir",
+		"w:bdo"
+	]);
+	/** The text an element in a run stands for, such as `\t` for a tab. A page or column break isn't text */
+	var textOfRunContent = (element) => {
+		switch (nameOf$1(element)) {
+			case "w:t": return childrenOf(element).filter((child) => typeof child === "string").join("");
+			case "w:tab": return "	";
+			case "w:br": return [void 0, "textWrapping"].includes(attributeOf(element, "w:type")) ? "\n" : "";
+			case "w:cr": return "\n";
+			case "w:noBreakHyphen": return "-";
+			default: return "";
+		}
+	};
+	/** The text of a paragraph. Of a field, only its result is text, not its instruction */
+	var textOf = (paragraph) => {
+		const fields = [];
+		const read = (element) => {
+			const name = nameOf$1(element);
+			if (name !== void 0 && TEXT_CONTAINERS.has(name)) return childrenOf(element).map(read).join("");
+			if (name === "w:fldChar") {
+				const type = attributeOf(element, "w:fldCharType");
+				if (type === "begin") fields.push(false);
+				else if (type === "separate") fields[fields.length - 1] = true;
+				else fields.pop();
+				return "";
+			}
+			return fields.every(Boolean) ? textOfRunContent(element) : "";
+		};
+		return childrenOf(paragraph).map(read).join("");
+	};
+	/** The bookmarks started and ended in an element, in order */
+	var bookmarkMarksOf = (element) => {
+		const name = nameOf$1(element);
+		if (name === "w:bookmarkStart") return [{
+			start: true,
+			id: attributeOf(element, "w:id"),
+			name: attributeOf(element, "w:name")
+		}];
+		if (name === "w:bookmarkEnd") return [{
+			start: false,
+			id: attributeOf(element, "w:id")
+		}];
+		return name === void 0 || name === "_attr" ? [] : childrenOf(element).flatMap(bookmarkMarksOf);
+	};
+	/**
+	* The names of the bookmarks each paragraph is in, for the `\b` switch: those open where it starts, followed through the
+	* body, and those that start in it.
+	*/
+	var bookmarksOf = (paragraphs) => {
+		const open = /* @__PURE__ */ new Map();
+		return paragraphs.map((paragraph) => {
+			const marks = bookmarkMarksOf(paragraph);
+			const names = /* @__PURE__ */ new Set([...open.values(), ...marks.flatMap((mark) => mark.start ? [mark.name] : [])]);
+			for (const mark of marks) if (mark.start) open.set(mark.id, mark.name);
+			else open.delete(mark.id);
+			return names;
+		});
+	};
+	/** The details of each paragraph that could be a heading. The bookmarks it is in are only followed when needed */
+	var paragraphDetailsOf = (paragraphs, followBookmarks) => {
+		const bookmarks = followBookmarks ? bookmarksOf(paragraphs) : [];
+		return paragraphs.map((element, index) => {
+			var _bookmarks$index;
+			const properties = childOf(element, "w:pPr");
+			return {
+				element,
+				styleId: attributeOf(childOf(properties, "w:pStyle"), "w:val"),
+				outlineLevel: numberAttributeOf(childOf(properties, "w:outlineLvl"), "w:val"),
+				text: textOf(element),
+				bookmarks: (_bookmarks$index = bookmarks[index]) !== null && _bookmarks$index !== void 0 ? _bookmarks$index : /* @__PURE__ */ new Set()
+			};
+		});
+	};
+	/** The document's paragraph styles, by id, read from the styles as they are written */
+	var stylesOf = (context) => {
+		var _context$file;
+		const styles = (_context$file = context.file) === null || _context$file === void 0 || (_context$file = _context$file.Styles) === null || _context$file === void 0 ? void 0 : _context$file.prepForXml(context);
+		return new Map(childrenOf(styles).filter((style) => nameOf$1(style) === "w:style" && ["paragraph", void 0].includes(attributeOf(style, "w:type"))).map((style) => [attributeOf(style, "w:styleId"), {
+			name: attributeOf(childOf(style, "w:name"), "w:val"),
+			basedOn: attributeOf(childOf(style, "w:basedOn"), "w:val"),
+			outlineLevel: numberAttributeOf(childOf(childOf(style, "w:pPr"), "w:outlineLvl"), "w:val")
+		}]));
+	};
+	/** A range such as `1-3` */
+	var parseRange = (range) => {
+		const match = /^\s*(\d+)\s*-\s*(\d+)\s*$/.exec(range);
+		return match ? [Number(match[1]), Number(match[2])] : void 0;
+	};
+	var isWithin = (level, [from, to]) => level >= from && level <= to;
+	/** The level of a built-in heading style, Heading 1 to Heading 9, by its name, or by its id when it has no name */
+	var headingLevelOf = (styleId, styles) => {
+		var _styles$get$name, _styles$get;
+		if (styleId === void 0) return;
+		const match = /^heading ?([1-9])$/i.exec((_styles$get$name = (_styles$get = styles.get(styleId)) === null || _styles$get === void 0 ? void 0 : _styles$get.name) !== null && _styles$get$name !== void 0 ? _styles$get$name : styleId);
+		return match ? Number(match[1]) : void 0;
+	};
+	/**
+	* A style's outline level, from 0: its own, or else the one of the style it is based on. A built-in heading style has
+	* its heading's. Following the styles it is based on stops after as many as there are, in case they loop.
+	*/
+	var styleOutlineLevelOf = (styleId, styles, depth = 0) => {
+		var _style$outlineLevel;
+		if (styleId === void 0 || depth > styles.size) return;
+		const style = styles.get(styleId);
+		const heading = headingLevelOf(styleId, styles);
+		return (_style$outlineLevel = style === null || style === void 0 ? void 0 : style.outlineLevel) !== null && _style$outlineLevel !== void 0 ? _style$outlineLevel : heading === void 0 ? styleOutlineLevelOf(style === null || style === void 0 ? void 0 : style.basedOn, styles, depth + 1) : heading - 1;
+	};
+	/** A paragraph's outline level, from 0: its own, or else its style's */
+	var outlineLevelOf = (paragraph, styles) => {
+		var _paragraph$outlineLev;
+		return (_paragraph$outlineLev = paragraph.outlineLevel) !== null && _paragraph$outlineLev !== void 0 ? _paragraph$outlineLev : styleOutlineLevelOf(paragraph.styleId, styles);
+	};
+	/** The level a table of contents gives a paragraph, or undefined when it doesn't include it */
+	var levelIn = (properties, paragraph, styles) => {
+		var _styles$get2;
+		const { entriesFromBookmark, headingStyleRange, stylesWithLevels = [], useAppliedParagraphOutlineLevel } = properties;
+		if (paragraph.text.trim() === "" || entriesFromBookmark && !paragraph.bookmarks.has(entriesFromBookmark)) return;
+		const names = [paragraph.styleId, paragraph.styleId === void 0 ? void 0 : (_styles$get2 = styles.get(paragraph.styleId)) === null || _styles$get2 === void 0 ? void 0 : _styles$get2.name].filter((name) => name !== void 0).map((name) => name.toLowerCase());
+		const listed = stylesWithLevels.find((style) => names.includes(style.styleName.toLowerCase()));
+		if (listed) return listed.level;
+		const namesItsEntries = Boolean(headingStyleRange) || stylesWithLevels.length > 0 || Boolean(useAppliedParagraphOutlineLevel) || Boolean(properties.tcFieldIdentifier) || Boolean(properties.tcFieldLevelRange) || Boolean(properties.captionLabel) || Boolean(properties.captionLabelIncludingNumbers);
+		const headingRange = headingStyleRange ? parseRange(headingStyleRange) : namesItsEntries ? void 0 : [1, 9];
+		const heading = headingLevelOf(paragraph.styleId, styles);
+		if (headingRange && heading !== void 0 && isWithin(heading, headingRange)) return heading;
+		const outlineLevel = useAppliedParagraphOutlineLevel ? outlineLevelOf(paragraph, styles) : void 0;
+		return outlineLevel !== void 0 && isWithin(outlineLevel + 1, headingRange !== null && headingRange !== void 0 ? headingRange : [1, 9]) ? outlineLevel + 1 : void 0;
+	};
+	/** The runs of an entry's title. Tabs and line breaks are kept only when the table of contents keeps them (\w and \x) */
+	var titleRunsOf = (title, properties) => {
+		const text = properties.preserveTabInEntries ? title : title.replace(/\t/g, " ");
+		return (properties.preserveNewLineInEntries ? text.split("\n") : [text.replace(/\n/g, " ")]).map((line, index) => new TextRun({
+			break: index > 0 ? 1 : void 0,
+			children: line.split("	").flatMap((part, partIndex) => [...partIndex > 0 ? [new Tab()] : [], ...part === "" ? [] : [part]])
+		}));
+	};
+	/**
+	* The paragraph style of the entries at a level: the built-in TOC style, found by its name, "toc 1" to "toc 9". When
+	* the document doesn't have it, the entries are indented as Word's are, 220 twips a level.
+	*/
+	var entryStyleOf = (level, styles) => {
+		var _find;
+		const named = (_find = [...styles].find(([, style]) => {
+			var _style$name;
+			return ((_style$name = style.name) === null || _style$name === void 0 ? void 0 : _style$name.toLowerCase()) === `toc ${level}`;
+		})) === null || _find === void 0 ? void 0 : _find[0];
+		const id = named !== null && named !== void 0 ? named : `TOC${level}`;
+		return named !== void 0 || styles.has(id) || level === 1 ? { id } : {
+			id,
+			indent: (level - 1) * 220
+		};
+	};
+	/** The formatted content of a table of contents with its entries */
+	var contentOf = ({ properties, beginDirty, textWidth }, entries, styles, context) => {
+		var _parseRange;
+		const withoutPageNumbers = properties.pageNumbersEntryLevelsRange ? (_parseRange = parseRange(properties.pageNumbersEntryLevelsRange)) !== null && _parseRange !== void 0 ? _parseRange : [1, 9] : void 0;
+		const content = new StructuredDocumentTagContent();
+		entries.forEach((entry, index) => {
+			const hasPageNumber = withoutPageNumbers === void 0 || !isWithin(entry.level, withoutPageNumbers);
+			const children = [...titleRunsOf(entry.title, properties), ...hasPageNumber ? [new TextRun({ children: [properties.entryAndPageNumberSeparator || new Tab()] }), new PageReference(entry.bookmark, { hyperlink: properties.hyperlink })] : []];
+			const style = entryStyleOf(entry.level, styles);
+			content.addChildElement(new Paragraph({
+				style: style.id,
+				indent: style.indent === void 0 ? void 0 : { left: style.indent },
+				tabStops: [{
+					type: "right",
+					position: textWidth,
+					leader: "dot"
+				}],
+				children: [...index === 0 ? [new Run({ children: [
+					createBegin(beginDirty),
+					new FieldInstruction(properties),
+					createSeparate()
+				] })] : [], ...properties.hyperlink ? [new InternalHyperlink({
+					anchor: entry.bookmark,
+					children
+				})] : children]
+			}));
+		});
+		content.addChildElement(new Paragraph({ children: [new Run({ children: [createEnd()] })] }));
+		return content.prepForXml(context);
+	};
+	/** Puts a bookmark around the content of a formatted paragraph */
+	var bookmark = (paragraph, name, id, context) => {
+		const children = childrenOf(paragraph);
+		const start = children.findIndex((child) => nameOf$1(child) === "w:pPr") + 1;
+		paragraph["w:p"] = [
+			...children.slice(0, start),
+			new BookmarkStart(name, id).prepForXml(context),
+			...children.slice(start),
+			new BookmarkEnd(id).prepForXml(context)
+		];
+	};
+	/**
+	* Fills in the tables of contents in a formatted body from its headings, and bookmarks the headings they list. A
+	* table of contents that doesn't list any heading is left empty, for Word to fill in.
+	*/
+	var fillTablesOfContents = (body, context, bookmarkIds) => {
+		const blocks = blocksOf(childrenOf(body));
+		const tables = blocks.flatMap((block) => {
+			const options = writtenTables.get(block);
+			return options ? [[block, options]] : [];
+		});
+		if (tables.length === 0) return;
+		const styles = stylesOf(context);
+		const followBookmarks = tables.some(([, { properties }]) => Boolean(properties.entriesFromBookmark));
+		const headings = paragraphDetailsOf(blocks.filter((block) => nameOf$1(block) === "w:p"), followBookmarks).map((paragraph) => ({
+			paragraph,
+			levels: tables.map(([, { properties }]) => levelIn(properties, paragraph, styles))
+		})).filter(({ levels }) => levels.some((level) => level !== void 0)).map((heading, index) => _objectSpread2(_objectSpread2({}, heading), {}, { id: bookmarkIds.get(index) }));
+		for (const { paragraph, id } of headings) bookmark(paragraph.element, `_Toc${id}`, id, context);
+		tables.forEach(([table, options], index) => {
+			const entries = headings.flatMap(({ paragraph, levels, id }) => {
+				const level = levels[index];
+				return level === void 0 ? [] : [{
+					title: paragraph.text,
+					level,
+					bookmark: `_Toc${id}`
+				}];
+			});
+			if (entries.length === 0) return;
+			table["w:sdt"] = childrenOf(table).map((child) => nameOf$1(child) === "w:sdtContent" ? contentOf(options, entries, styles, context) : child);
+		});
+	};
+	//#endregion
 	//#region src/file/vertical-align/vertical-align.ts
 	/**
 	* Vertical alignment module for WordprocessingML documents.
@@ -21994,6 +22409,7 @@ MAX: 9026 };
 				"sectionParagraphs",
 				/* @__PURE__ */ new Map()
 			);
+			_defineProperty(this, "headingBookmarkIds", new HeadingBookmarkIds());
 		}
 		/**
 		* Finds the section properties that govern a top-level child of the body.
@@ -22041,7 +22457,8 @@ MAX: 9026 };
 		* Prepares the body element for XML serialization.
 		*
 		* Ensures that the last section's properties are placed as a direct child of the body
-		* element, as required by the OOXML specification.
+		* element, as required by the OOXML specification. Once the body is written, its tables
+		* of contents are filled in from its headings.
 		*
 		* @param context - The XML serialization context
 		* @returns The prepared XML object or undefined
@@ -22051,7 +22468,9 @@ MAX: 9026 };
 				this.root.splice(0, 1);
 				this.root.push(this.sections.pop());
 			}
-			return super.prepForXml(context);
+			const xml = super.prepForXml(context);
+			fillTablesOfContents(xml, context, this.headingBookmarkIds);
+			return xml;
 		}
 		/**
 		* Adds a block-level component to the body.
@@ -29301,113 +29720,6 @@ MAX: 9026 };
 		}
 	};
 	//#endregion
-	//#region src/file/table-of-contents/field-instruction.ts
-	/**
-	* Field Instruction module for Table of Contents.
-	*
-	* This module handles the generation of TOC field instruction text
-	* that controls how the table of contents is built.
-	*
-	* Reference: http://officeopenxml.com/WPfieldInstructions.php
-	*
-	* @module
-	*/
-	/**
-	* Represents a field instruction for a Table of Contents.
-	*
-	* The FieldInstruction class generates the TOC field code string that Word uses
-	* to determine how to build the table of contents, including which headings to include,
-	* formatting options, and other TOC-specific settings.
-	*
-	* Reference: http://officeopenxml.com/WPfieldInstructions.php
-	*
-	* ## XSD Schema
-	* ```xml
-	* <xsd:element name="instrText" type="CT_Text"/>
-	* ```
-	*
-	* @example
-	* ```typescript
-	* // Basic TOC field instruction
-	* new FieldInstruction({ headingStyleRange: "1-3" });
-	*
-	* // TOC with hyperlinks and custom styles
-	* new FieldInstruction({
-	*   hyperlink: true,
-	*   headingStyleRange: "1-3",
-	*   stylesWithLevels: [new StyleLevel("CustomStyle", 2)],
-	* });
-	* ```
-	*/
-	var FieldInstruction = class extends XmlComponent {
-		constructor(properties = {}) {
-			super("w:instrText");
-			_defineProperty(this, "properties", void 0);
-			this.properties = properties;
-			this.root.push(new TextAttributes({ space: SpaceType.PRESERVE }));
-			let instruction = "TOC";
-			if (this.properties.captionLabel) instruction = `${instruction} \\a "${this.properties.captionLabel}"`;
-			if (this.properties.entriesFromBookmark) instruction = `${instruction} \\b "${this.properties.entriesFromBookmark}"`;
-			if (this.properties.captionLabelIncludingNumbers) instruction = `${instruction} \\c "${this.properties.captionLabelIncludingNumbers}"`;
-			if (this.properties.sequenceAndPageNumbersSeparator) instruction = `${instruction} \\d "${this.properties.sequenceAndPageNumbersSeparator}"`;
-			if (this.properties.tcFieldIdentifier) instruction = `${instruction} \\f "${this.properties.tcFieldIdentifier}"`;
-			if (this.properties.hyperlink) instruction = `${instruction} \\h`;
-			if (this.properties.tcFieldLevelRange) instruction = `${instruction} \\l "${this.properties.tcFieldLevelRange}"`;
-			if (this.properties.pageNumbersEntryLevelsRange) instruction = `${instruction} \\n "${this.properties.pageNumbersEntryLevelsRange}"`;
-			if (this.properties.headingStyleRange) instruction = `${instruction} \\o "${this.properties.headingStyleRange}"`;
-			if (this.properties.entryAndPageNumberSeparator) instruction = `${instruction} \\p "${this.properties.entryAndPageNumberSeparator}"`;
-			if (this.properties.seqFieldIdentifierForPrefix) instruction = `${instruction} \\s "${this.properties.seqFieldIdentifierForPrefix}"`;
-			if (this.properties.stylesWithLevels && this.properties.stylesWithLevels.length) {
-				const styles = this.properties.stylesWithLevels.map((sl) => `${sl.styleName},${sl.level}`).join(",");
-				instruction = `${instruction} \\t "${styles}"`;
-			}
-			if (this.properties.useAppliedParagraphOutlineLevel) instruction = `${instruction} \\u`;
-			if (this.properties.preserveTabInEntries) instruction = `${instruction} \\w`;
-			if (this.properties.preserveNewLineInEntries) instruction = `${instruction} \\x`;
-			if (this.properties.hideTabAndPageNumbersInWebView) instruction = `${instruction} \\z`;
-			this.root.push(instruction);
-		}
-	};
-	//#endregion
-	//#region src/file/table-of-contents/sdt-content.ts
-	/**
-	* Structured Document Tag Content module.
-	*
-	* This module represents the content container for structured document tags,
-	* including table of contents elements.
-	*
-	* Reference: http://officeopenxml.com/WPtableOfContents.php
-	*
-	* @module
-	*/
-	/**
-	* Represents the content portion of a Structured Document Tag.
-	*
-	* The StructuredDocumentTagContent contains the actual content elements
-	* (paragraphs, tables, etc.) within a structured document tag, such as
-	* the paragraphs that make up a table of contents.
-	*
-	* Reference: http://officeopenxml.com/WPtableOfContents.php
-	*
-	* ## XSD Schema
-	* ```xml
-	* <xsd:complexType name="CT_SdtContentBlock">
-	*   <xsd:group ref="EG_ContentBlockContent" minOccurs="0" maxOccurs="unbounded"/>
-	* </xsd:complexType>
-	* ```
-	*
-	* @example
-	* ```typescript
-	* const content = new StructuredDocumentTagContent();
-	* content.addChildElement(new Paragraph("Content"));
-	* ```
-	*/
-	var StructuredDocumentTagContent = class extends XmlComponent {
-		constructor() {
-			super("w:sdtContent");
-		}
-	};
-	//#endregion
 	//#region src/file/table-of-contents/sdt-properties.ts
 	/**
 	* Structured Document Tag Properties module.
@@ -29487,6 +29799,11 @@ MAX: 9026 };
 	* TableOfContents creates an auto-generated list of document headings
 	* with page numbers. It uses a TOC field code to generate entries.
 	*
+	* Unless it is given `cachedEntries` or `contentChildren`, it is written with an
+	* entry for each heading its options include, linked to a bookmark on the heading,
+	* so it isn't empty before Word updates it or in applications that don't update it.
+	* The page numbers are left for Word to fill in when it updates the field.
+	*
 	* Reference: http://officeopenxml.com/WPtableOfContents.php
 	*
 	* @publicApi
@@ -29514,6 +29831,12 @@ MAX: 9026 };
 		constructor(alias = "Table of Contents", _ref = {}) {
 			let { contentChildren = [], cachedEntries = [], beginDirty = true } = _ref, properties = _objectWithoutProperties(_ref, _excluded$2);
 			super("w:sdt");
+			_defineProperty(
+				this,
+				/** What it is filled in with from the headings, when it isn't given its content */
+				"fromHeadings",
+				void 0
+			);
 			this.root.push(new StructuredDocumentTagProperties(alias));
 			const content = new StructuredDocumentTagContent();
 			const beginParagraphMandatoryChildren = [new Run({ children: [
@@ -29544,8 +29867,26 @@ MAX: 9026 };
 				for (const child of contentChildren) content.addChildElement(child);
 				const endParagraph = new Paragraph({ children: endParagraphMandatoryChildren });
 				content.addChildElement(endParagraph);
+				if (contentChildren.length === 0) this.fromHeadings = {
+					properties,
+					beginDirty
+				};
 			}
 			this.root.push(content);
+		}
+		/**
+		* Written empty, and filled in from the headings once the body it is in is written, unless it was given its content.
+		* The page numbers are aligned to the right of the text in its section.
+		*/
+		prepForXml(context) {
+			const xml = super.prepForXml(context);
+			recordTableOfContents(xml, this.fromHeadings && _objectSpread2(_objectSpread2({}, this.fromHeadings), {}, { textWidth: this.textWidthIn(context) }));
+			return xml;
+		}
+		/** The width of the text in the section it is in */
+		textWidthIn(context) {
+			var _context$file$Documen, _context$file;
+			return (_context$file$Documen = (_context$file = context.file) === null || _context$file === void 0 || (_context$file = _context$file.Document) === null || _context$file === void 0 || (_context$file = _context$file.View.Body.getSectionPropertiesFor(this)) === null || _context$file === void 0 ? void 0 : _context$file.AvailableTextWidth) !== null && _context$file$Documen !== void 0 ? _context$file$Documen : DEFAULT_AVAILABLE_WIDTH;
 		}
 		getTabStopsForLevel(level, pageWidth = 9025) {
 			return [{
