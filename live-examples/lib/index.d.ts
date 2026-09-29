@@ -482,6 +482,13 @@ export declare class Bookmark {
     readonly children: readonly ParagraphChild[];
     readonly end: BookmarkEnd;
     constructor(options: IBookmarkOptions);
+    /**
+     * The components written in this bookmark's place: its start, its children and its end. A bookmark in its
+     * children is written the same way, so one bookmark can hold another.
+     *
+     * @internal
+     */
+    get writtenAs(): readonly (ParagraphChild | BookmarkStart | BookmarkEnd)[];
 }
 
 /**

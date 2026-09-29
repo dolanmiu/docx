@@ -18043,7 +18043,7 @@ MAX: 9026 };
 	* });
 	* ```
 	*/
-	var Bookmark = class {
+	var Bookmark = class Bookmark {
 		constructor(options) {
 			_defineProperty(this, "start", void 0);
 			_defineProperty(this, "children", void 0);
@@ -18052,6 +18052,19 @@ MAX: 9026 };
 			this.start = new BookmarkStart(options.id, linkId);
 			this.children = options.children;
 			this.end = new BookmarkEnd(linkId);
+		}
+		/**
+		* The components written in this bookmark's place: its start, its children and its end. A bookmark in its
+		* children is written the same way, so one bookmark can hold another.
+		*
+		* @internal
+		*/
+		get writtenAs() {
+			return [
+				this.start,
+				...this.children.flatMap((child) => child instanceof Bookmark ? child.writtenAs : [child]),
+				this.end
+			];
 		}
 	};
 	/**
@@ -19099,9 +19112,7 @@ MAX: 9026 };
 			if (options.text) this.root.push(new TextRun(options.text));
 			if (options.children) for (const child of options.children) {
 				if (child instanceof Bookmark) {
-					this.root.push(child.start);
-					for (const textRun of child.children) this.root.push(textRun);
-					this.root.push(child.end);
+					this.root.push(...child.writtenAs);
 					continue;
 				}
 				this.root.push(child);
@@ -35809,11 +35820,7 @@ while (n === a[++i] && n === a[++i] && n === a[++i] && n === a[++i] && n === a[+
 					const patchText = `${start}${patchKey}${end}`;
 					replacer({
 						json,
-						patch: _objectSpread2(_objectSpread2({}, patchValue), {}, { children: patchValue.children.flatMap((element) => element instanceof Bookmark ? [
-							element.start,
-							...element.children,
-							element.end
-						] : [element]).map((element) => {
+						patch: _objectSpread2(_objectSpread2({}, patchValue), {}, { children: patchValue.children.flatMap((element) => element instanceof Bookmark ? element.writtenAs : [element]).map((element) => {
 							if (element instanceof ExternalHyperlink) {
 								const concreteHyperlink = new ConcreteHyperlink(element.options.children, uniqueId());
 								relationshipAdditions.push({
