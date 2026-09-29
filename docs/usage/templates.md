@@ -232,6 +232,46 @@ const doc = await patchDocument({
 fs.writeFileSync("My Document.docx", doc);
 ```
 
+### Footnotes and endnotes
+
+A patch refers to a footnote with a `FootnoteReferenceRun`, and the footnotes go in `footnotes`, as they do in a `Document` (see [Footnotes](usage/footnotes.md)). Endnotes work the same way, with `EndnoteReferenceRun` and `endnotes`:
+
+```ts live
+import * as fs from "fs";
+import { EndnoteReferenceRun, FootnoteReferenceRun, Paragraph, patchDocument, PatchType, TextRun } from "docx";
+
+const doc = await patchDocument({
+    outputType: "nodebuffer",
+    data: fs.readFileSync("./demo/assets/simple-template.docx"),
+    patches: {
+        name: {
+            type: PatchType.PARAGRAPH,
+            children: [new TextRun("John Doe"), new FootnoteReferenceRun(1)],
+        },
+        paragraph_replace: {
+            type: PatchType.DOCUMENT,
+            children: [
+                new Paragraph({
+                    children: [new TextRun("The report is due on Friday."), new EndnoteReferenceRun(1)],
+                }),
+            ],
+        },
+    },
+    footnotes: {
+        1: { children: [new Paragraph("Our new head of sales.")] },
+    },
+    endnotes: {
+        1: { children: [new Paragraph("Send it to the whole team.")] },
+    },
+});
+
+fs.writeFileSync("My Document.docx", doc);
+```
+
+The ids only link each reference to its note. In the patched document, each note is given an id that none of the template's own notes have, and Word numbers the notes in the order they appear. Each reference a patch inserts gets a note of its own, so a placeholder that is in the template twice gets two. Only the notes that a patch refers to are written.
+
+A template that has no footnotes or endnotes yet is given what they need, including the styles that show their numbers as superscript.
+
 ## Preserving Styles
 
 Set `keepOriginalStyles: true` to preserve the formatting of the placeholder text:

@@ -3,7 +3,9 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 import { Formatter } from "@export/formatter";
 import { Packer } from "@export/packer/packer";
+import { EndnoteReferenceRun } from "@file/endnotes";
 import { File } from "@file/file";
+import { FootnoteReferenceRun } from "@file/footnotes";
 import { Header } from "@file/header";
 import { PackagePart } from "@file/package-part";
 import { Bookmark, ExternalHyperlink, ImageRun, Paragraph, Run, TextRun } from "@file/paragraph";
@@ -1100,6 +1102,284 @@ describe("from-docx", () => {
                 );
 
                 expect(await read("word/document.xml")).to.contain(`<w:bookmarkStart w:name="inserted" w:id="${id}"/>`);
+            });
+        });
+
+        describe("Footnotes and endnotes", () => {
+            const W = "http://schemas.openxmlformats.org/wordprocessingml/2006/main";
+            const FOOTNOTES_RELATIONSHIP = "http://schemas.openxmlformats.org/officeDocument/2006/relationships/footnotes";
+            const FOOTNOTE_MARK = `<w:r><w:rPr><w:rStyle w:val="FootnoteReference"/></w:rPr><w:footnoteRef/></w:r>`;
+
+            // A template made in Word without footnotes or endnotes, which has no part for them
+            const templateWithoutNotes = ({
+                body,
+                relationships = true,
+                styles,
+            }: {
+                readonly body: string;
+                readonly relationships?: boolean;
+                readonly styles?: string;
+            }): JSZip => {
+                const template = new JSZip()
+                    .file(
+                        "[Content_Types].xml",
+                        `<?xml version="1.0" encoding="UTF-8" standalone="yes"?><Types xmlns="http://schemas.openxmlformats.org/package/2006/content-types"/>`,
+                    )
+                    .file("word/document.xml", `<w:document xmlns:w="${W}"><w:body>${body}</w:body></w:document>`);
+                if (relationships) {
+                    template.file(
+                        "word/_rels/document.xml.rels",
+                        `<?xml version="1.0" encoding="UTF-8" standalone="yes"?><Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships"/>`,
+                    );
+                }
+                if (styles !== undefined) {
+                    template.file("word/styles.xml", `<w:styles xmlns:w="${W}">${styles}</w:styles>`);
+                }
+                return template;
+            };
+
+            const patchWith = async (
+                template: Buffer | JSZip,
+                options: Omit<Parameters<typeof patchDocument>[0], "outputType" | "data">,
+            ): Promise<(path: string) => Promise<string | undefined>> => {
+                const zip = await JSZip.loadAsync(await patchDocument({ outputType: "nodebuffer", data: template, ...options }));
+                return (path) => zip.file(path)?.async("text") ?? Promise.resolve(undefined);
+            };
+
+            const noteWithText = (text: string): { readonly children: readonly Paragraph[] } => ({ children: [new Paragraph(text)] });
+
+            it("should write a footnote for a reference a patch inserts, with an id the template's footnotes don't have", async () => {
+                const template = await Packer.toBuffer(
+                    new File({
+                        sections: [
+                            {
+                                children: [
+                                    new Paragraph({ children: [new TextRun("Existing"), new FootnoteReferenceRun(1)] }),
+                                    new Paragraph("{{note}}"),
+                                ],
+                            },
+                        ],
+                        footnotes: { 1: noteWithText("Existing footnote") },
+                    }),
+                );
+                const read = await patchWith(template, {
+                    patches: { note: { type: PatchType.PARAGRAPH, children: [new TextRun("New"), new FootnoteReferenceRun(1)] } },
+                    footnotes: { 1: noteWithText("New footnote") },
+                });
+
+                const document = (await read("word/document.xml"))!;
+                expect(document.match(/<w:footnoteReference w:id="\d+"\/>/g)).to.deep.equal([
+                    '<w:footnoteReference w:id="1"/>',
+                    '<w:footnoteReference w:id="2"/>',
+                ]);
+                expect(document).to.match(
+                    /New<\/w:t><\/w:r><w:r><w:rPr><w:rStyle w:val="FootnoteReference"\/><\/w:rPr><w:footnoteReference w:id="2"\/>/,
+                );
+
+                const footnotes = (await read("word/footnotes.xml"))!;
+                expect(footnotes.match(/<w:footnote [^>]*>/g)).to.deep.equal([
+                    '<w:footnote w:type="separator" w:id="-1">',
+                    '<w:footnote w:type="continuationSeparator" w:id="0">',
+                    '<w:footnote w:id="1">',
+                    '<w:footnote w:id="2">',
+                ]);
+                expect(footnotes).to.contain("Existing footnote");
+                expect(footnotes).to.contain(
+                    `<w:footnote w:id="2"><w:p>${FOOTNOTE_MARK}<w:r><w:t xml:space="preserve">New footnote</w:t></w:r></w:p></w:footnote>`,
+                );
+
+                // The template already has the footnotes' part, and the footnote styles
+                expect((await read("word/_rels/document.xml.rels"))?.split(FOOTNOTES_RELATIONSHIP)).to.have.length(2);
+                expect((await read("[Content_Types].xml"))?.split('PartName="/word/footnotes.xml"')).to.have.length(2);
+                expect((await read("word/styles.xml"))?.split('w:styleId="FootnoteReference"')).to.have.length(2);
+            });
+
+            it("should add a part for the footnotes, its relationship, its content type and the missing footnote styles to a template without them", async () => {
+                const read = await patchWith(
+                    templateWithoutNotes({
+                        body: `<w:p><w:r><w:t>{{note}}</w:t></w:r></w:p>`,
+                        styles: `<w:style w:type="character" w:styleId="FootnoteReference"><w:name w:val="footnote reference"/><w:rPr><w:b/></w:rPr></w:style>`,
+                    }),
+                    {
+                        patches: { note: { type: PatchType.PARAGRAPH, children: [new FootnoteReferenceRun(1)] } },
+                        footnotes: { 1: noteWithText("A footnote") },
+                    },
+                );
+
+                expect(await read("word/document.xml")).to.contain('<w:footnoteReference w:id="1"/>');
+                const footnotes = (await read("word/footnotes.xml"))!;
+                expect(footnotes).to.match(/^<\?xml version="1.0" encoding="UTF-8" standalone="yes"\?><w:footnotes [^>]*xmlns:w="[^"]+"/);
+                expect(footnotes.match(/<w:footnote [^>]*>/g)).to.deep.equal([
+                    '<w:footnote w:type="separator" w:id="-1">',
+                    '<w:footnote w:type="continuationSeparator" w:id="0">',
+                    '<w:footnote w:id="1">',
+                ]);
+                expect(footnotes).to.contain("A footnote");
+
+                expect(await read("word/_rels/document.xml.rels")).to.match(
+                    new RegExp(`<Relationship Id="rId[^"]+" Type="${FOOTNOTES_RELATIONSHIP}" Target="footnotes.xml"/>`),
+                );
+                expect(await read("[Content_Types].xml")).to.contain(
+                    '<Override ContentType="application/vnd.openxmlformats-officedocument.wordprocessingml.footnotes+xml" PartName="/word/footnotes.xml"/>',
+                );
+
+                // The template's own footnote reference style is kept
+                const styles = (await read("word/styles.xml"))!;
+                expect(styles.match(/w:styleId="[^"]+"/g)).to.deep.equal([
+                    'w:styleId="FootnoteReference"',
+                    'w:styleId="FootnoteText"',
+                    'w:styleId="FootnoteTextChar"',
+                ]);
+                expect(styles).to.contain("<w:b/>");
+            });
+
+            it("should write endnotes as footnotes, adding the relationships part to a template without one", async () => {
+                const read = await patchWith(
+                    templateWithoutNotes({ body: `<w:p><w:r><w:t>{{note}}</w:t></w:r></w:p>`, relationships: false, styles: "" }),
+                    {
+                        patches: { note: { type: PatchType.PARAGRAPH, children: [new TextRun("Text"), new EndnoteReferenceRun(3)] } },
+                        endnotes: { 3: noteWithText("An endnote") },
+                    },
+                );
+
+                expect(await read("word/document.xml")).to.contain('<w:endnoteReference w:id="1"/>');
+                const endnotes = (await read("word/endnotes.xml"))!;
+                expect(endnotes.match(/<w:endnote [^>]*>/g)).to.deep.equal([
+                    '<w:endnote w:type="separator" w:id="-1">',
+                    '<w:endnote w:type="continuationSeparator" w:id="0">',
+                    '<w:endnote w:id="1">',
+                ]);
+                expect(endnotes).to.contain(
+                    `<w:endnote w:id="1"><w:p><w:r><w:rPr><w:rStyle w:val="EndnoteReference"/></w:rPr><w:endnoteRef/></w:r><w:r><w:t xml:space="preserve">An endnote</w:t></w:r></w:p></w:endnote>`,
+                );
+                expect(await read("word/_rels/document.xml.rels")).to.match(
+                    /<Relationship Id="rId[^"]+" Type="http:\/\/schemas.openxmlformats.org\/officeDocument\/2006\/relationships\/endnotes" Target="endnotes.xml"\/>/,
+                );
+                expect(await read("[Content_Types].xml")).to.contain('PartName="/word/endnotes.xml"');
+                expect((await read("word/styles.xml"))?.match(/w:styleId="[^"]+"/g)).to.deep.equal([
+                    'w:styleId="EndnoteText"',
+                    'w:styleId="EndnoteTextChar"',
+                    'w:styleId="EndnoteReference"',
+                ]);
+                expect(await read("word/footnotes.xml")).to.equal(undefined);
+            });
+
+            it("should give each reference a footnote of its own when a placeholder is patched more than once", async () => {
+                const read = await patchWith(
+                    templateWithoutNotes({
+                        body: `<w:p><w:r><w:t>{{note}} and {{note}}</w:t></w:r></w:p><w:p><w:r><w:t>{{block}}</w:t></w:r></w:p>`,
+                    }),
+                    {
+                        patches: {
+                            note: { type: PatchType.PARAGRAPH, children: [new FootnoteReferenceRun(1)] },
+                            block: {
+                                type: PatchType.DOCUMENT,
+                                children: [new Paragraph({ children: [new TextRun("Block"), new FootnoteReferenceRun(1)] })],
+                            },
+                        },
+                        footnotes: {
+                            1: {
+                                children: [
+                                    new Paragraph({
+                                        children: [
+                                            new ExternalHyperlink({ link: "https://example.com", children: [new TextRun("Source")] }),
+                                        ],
+                                    }),
+                                ],
+                            },
+                        },
+                    },
+                );
+
+                const ids = (await read("word/document.xml"))!.match(/<w:footnoteReference w:id="(\d+)"\/>/g);
+                expect(ids).to.have.length(3);
+                expect(new Set(ids).size).to.equal(3);
+
+                // The footnote's hyperlink is added once, and each copy of it refers to it
+                const footnotes = (await read("word/footnotes.xml"))!;
+                expect(footnotes.match(/<w:footnote w:id="\d+">/g)).to.deep.equal([
+                    '<w:footnote w:id="1">',
+                    '<w:footnote w:id="2">',
+                    '<w:footnote w:id="3">',
+                ]);
+                const [, relationshipId] = footnotes.match(/<w:hyperlink [^>]*r:id="([^"]+)"/)!;
+                expect(footnotes.split(`r:id="${relationshipId}"`)).to.have.length(4);
+                const relationships = (await read("word/_rels/footnotes.xml.rels"))!;
+                expect(relationships.match(/<Relationship /g)).to.have.length(1);
+                expect(relationships).to.contain(`Id="${relationshipId}"`);
+            });
+
+            it("should leave a reference to a footnote that isn't given as it is, and only write the footnotes that are referred to", async () => {
+                const template = await Packer.toBuffer(new File({ sections: [{ children: [new Paragraph("{{note}}")] }] }));
+                const read = await patchWith(template, {
+                    patches: { note: { type: PatchType.PARAGRAPH, children: [new FootnoteReferenceRun(5)] } },
+                    footnotes: { 1: noteWithText("Not referred to") },
+                    endnotes: { 1: noteWithText("Not referred to either") },
+                });
+
+                expect(await read("word/document.xml")).to.contain('<w:footnoteReference w:id="5"/>');
+                expect(await read("word/footnotes.xml")).not.to.contain("Not referred to");
+                expect(await read("word/endnotes.xml")).not.to.contain("Not referred to either");
+            });
+
+            it("should start a footnote with its number, after its first paragraph's properties", async () => {
+                const read = await patchWith(templateWithoutNotes({ body: `<w:p><w:r><w:t>{{note}}</w:t></w:r></w:p>` }), {
+                    patches: {
+                        note: { type: PatchType.PARAGRAPH, children: [new FootnoteReferenceRun(1), new FootnoteReferenceRun(2)] },
+                    },
+                    footnotes: {
+                        1: { children: [new Paragraph({ style: "FootnoteText", text: "First" }), new Paragraph("Second")] },
+                        2: { children: [new Paragraph({})] },
+                    },
+                });
+
+                const footnotes = (await read("word/footnotes.xml"))!;
+                expect(footnotes).to.contain(
+                    `<w:footnote w:id="1"><w:p><w:pPr><w:pStyle w:val="FootnoteText"/></w:pPr>${FOOTNOTE_MARK}<w:r><w:t xml:space="preserve">First</w:t></w:r></w:p>` +
+                        `<w:p><w:r><w:t xml:space="preserve">Second</w:t></w:r></w:p></w:footnote>`,
+                );
+                expect(footnotes).to.contain(`<w:footnote w:id="2"><w:p>${FOOTNOTE_MARK}</w:p></w:footnote>`);
+            });
+
+            it("should not change the footnotes' paragraphs, so they can be given to patchDocument again", async () => {
+                const footnotes = { 1: noteWithText("Reused") };
+                const patchOnce = async (): Promise<string | undefined> => {
+                    const read = await patchWith(templateWithoutNotes({ body: `<w:p><w:r><w:t>{{note}}</w:t></w:r></w:p>` }), {
+                        patches: { note: { type: PatchType.PARAGRAPH, children: [new FootnoteReferenceRun(1)] } },
+                        footnotes,
+                    });
+                    return read("word/footnotes.xml");
+                };
+
+                await patchOnce();
+                expect(await patchOnce()).to.contain(
+                    `<w:footnote w:id="1"><w:p>${FOOTNOTE_MARK}<w:r><w:t xml:space="preserve">Reused</w:t></w:r></w:p></w:footnote>`,
+                );
+            });
+
+            it("should add the relationship of an image in a footnote to the footnotes' relationships", async () => {
+                const read = await patchWith(templateWithoutNotes({ body: `<w:p><w:r><w:t>{{note}}</w:t></w:r></w:p>` }), {
+                    patches: { note: { type: PatchType.PARAGRAPH, children: [new FootnoteReferenceRun(1)] } },
+                    footnotes: {
+                        1: {
+                            children: [
+                                new Paragraph({
+                                    children: [
+                                        new ImageRun({ type: "png", data: Buffer.from(""), transformation: { width: 10, height: 10 } }),
+                                    ],
+                                }),
+                            ],
+                        },
+                    },
+                });
+
+                const [, relationshipId] = (await read("word/footnotes.xml"))!.match(/<a:blip r:embed="([^"]+)"/)!;
+                expect(await read("word/_rels/footnotes.xml.rels")).to.match(
+                    new RegExp(
+                        `<Relationship Id="${relationshipId}" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/image" Target="media/[^"]+\\.png"/>`,
+                    ),
+                );
+                expect(await read("word/_rels/document.xml.rels")).not.to.contain("relationships/image");
             });
         });
     });

@@ -9,7 +9,6 @@ import type { Element } from "xml-js";
 import { Formatter } from "@export/formatter";
 import type { IContext, XmlComponent } from "@file/xml-components";
 
-import type { RenumberBookmarks } from "./bookmark-ids";
 import { type IPatch, PatchType } from "./from-docx";
 import { findRunElementIndexWithToken, splitRunElement } from "./paragraph-split-inject";
 import { replaceTokenInParagraphElement } from "./paragraph-token-replacer";
@@ -18,6 +17,11 @@ import { findLocationOfText } from "./traverser";
 import { toJson } from "./util";
 
 const formatter = new Formatter();
+
+/**
+ * Renumbers the ids in content that is about to be inserted, such as its bookmarks', so they are unique in the document.
+ */
+type RenumberIds = (elements: readonly Element[]) => readonly Element[];
 
 // Marks where to split the run. U+FFFF is not allowed in XML, so it can never be in the document's own text.
 const SPLIT_TOKEN = "\uFFFF";
@@ -47,7 +51,8 @@ type IReplacerResult = {
  * @param context - The document context for formatting
  * @param keepOriginalStyles - Whether to preserve original text formatting
  * @param recursive - Whether to replace every occurrence in a paragraph, rather than only the first
- * @param renumberBookmarks - Renumbers the bookmarks the patch inserts, so they don't take an id the document uses
+ * @param renumberIds - Renumbers the bookmarks and note references the patch inserts, so they don't take an id the
+ * document uses
  * @returns Result containing the modified element and whether a replacement occurred
  */
 export const replacer = ({
@@ -57,7 +62,7 @@ export const replacer = ({
     context,
     keepOriginalStyles = true,
     recursive = true,
-    renumberBookmarks = (elements) => elements,
+    renumberIds = (elements) => elements,
 }: {
     readonly json: Element;
     readonly patch: IPatch;
@@ -65,7 +70,7 @@ export const replacer = ({
     readonly context: IContext;
     readonly keepOriginalStyles?: boolean;
     readonly recursive?: boolean;
-    readonly renumberBookmarks?: RenumberBookmarks;
+    readonly renumberIds?: RenumberIds;
 }): IReplacerResult => {
     const renderedParagraphs = findLocationOfText(json, patchText);
 
@@ -87,7 +92,7 @@ export const replacer = ({
                 const parentElement = goToParentElementFromPath(json, renderedParagraph.pathToParagraph);
                 const elementIndex = getLastElementIndexFromPath(renderedParagraph.pathToParagraph);
                 // eslint-disable-next-line functional/immutable-data
-                parentElement.elements!.splice(elementIndex, 1, ...formatChildren(patch, context, renumberBookmarks));
+                parentElement.elements!.splice(elementIndex, 1, ...formatChildren(patch, context, renumberIds));
                 break;
             }
             case PatchType.PARAGRAPH:
@@ -102,7 +107,7 @@ export const replacer = ({
                         renderedParagraph: paragraph,
                         patchText,
                         fromIndex,
-                        children: formatChildren(patch, context, renumberBookmarks),
+                        children: formatChildren(patch, context, renumberIds),
                         keepOriginalStyles,
                     });
 
@@ -120,8 +125,8 @@ export const replacer = ({
     return { element: json, didFindOccurrence: true };
 };
 
-const formatChildren = (patch: IPatch, context: IContext, renumberBookmarks: RenumberBookmarks): readonly Element[] =>
-    renumberBookmarks(
+const formatChildren = (patch: IPatch, context: IContext, renumberIds: RenumberIds): readonly Element[] =>
+    renumberIds(
         patch.children
             .flatMap((c) => (c as XmlComponent).writtenAs ?? (c as XmlComponent))
             .map((c) => toJson(xml(formatter.format(c, context))))
