@@ -169,6 +169,7 @@ describe("Comments", () => {
                 "w:comments": [
                     {
                         _attr: {
+                            "xmlns:wpc": "http://schemas.microsoft.com/office/word/2010/wordprocessingCanvas",
                             "xmlns:cx": "http://schemas.microsoft.com/office/drawing/2014/chartex",
                             "xmlns:cx1": "http://schemas.microsoft.com/office/drawing/2015/9/8/chartex",
                             "xmlns:cx2": "http://schemas.microsoft.com/office/drawing/2015/10/21/chartex",
