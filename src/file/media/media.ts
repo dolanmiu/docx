@@ -18,8 +18,9 @@ export type IMediaTransformation = {
         readonly top?: number;
         readonly left?: number;
     };
+    /** Display width in pixels, at 96 to the inch, not EMUs. Word won't open a drawing more than 225457 pixels wide */
     readonly width: number;
-    /** Display height in pixels */
+    /** Display height in pixels, at 96 to the inch, not EMUs. Word won't open a drawing more than 225457 pixels tall */
     readonly height: number;
     /** Optional flip transformations */
     readonly flip?: {

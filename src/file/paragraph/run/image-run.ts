@@ -29,7 +29,7 @@ import type { IMediaData } from "../../media/data";
  * it: use it instead of alternative text for images that carry no information, such as borders and flourishes.
  */
 type CoreImageOptions = DrawingLinkOptions & {
-    /** Size, position, rotation, and flip settings for the image. Width and height are specified in pixels. */
+    /** Size, position, rotation, and flip settings for the image. Width and height are in pixels, at 96 to the inch, not EMUs. */
     readonly transformation: IMediaTransformation;
     /** Floating layout options. When set, the image is positioned freely on the page rather than inline with text. Controls text wrapping, overlap, anchoring, and z-order. */
     readonly floating?: IFloating;
