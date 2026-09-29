@@ -74,6 +74,19 @@ describe("PackagePart", () => {
                 );
             }
         });
+
+        it("should throw for a name or extension that isn't a single part of a file name", () => {
+            for (const name of ["", "chart/", "../../document", "chart.old"]) {
+                expect(() => new PackagePart({ ...createChart().options, name })).to.throw(
+                    `Invalid package part name "${name}". Expected letters, digits, "_" and "-", such as "chart"`,
+                );
+            }
+            for (const extension of ["", ".xml", "../../document.xml", "xml/"]) {
+                expect(() => new PackagePart({ ...createChart().options, extension })).to.throw(
+                    `Invalid package part extension "${extension}". Expected letters, digits, "_" and "-", such as "xml"`,
+                );
+            }
+        });
     });
 
     describe("#addTo()", () => {
