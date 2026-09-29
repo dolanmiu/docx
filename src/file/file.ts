@@ -227,9 +227,11 @@ export class File {
             const externalFactory = new ExternalStylesFactory();
             const externalStyles = externalFactory.newInstance(options.externalStyles);
             // A style replaces an earlier one with its id. So the external styles replace docx's default styles, and the
-            // default styles given in styles.default replace the external ones
+            // default styles given in styles.default, then the paragraph and character styles, replace the external ones
             this.styles = new Styles({
                 ...externalStyles,
+                paragraphStyles: options.styles?.paragraphStyles,
+                characterStyles: options.styles?.characterStyles,
                 importedStyles: [
                     ...defaultStyles.filter((entry) => !isGiven(entry)).map(([, style]) => style),
                     ...externalStyles.importedStyles!,
