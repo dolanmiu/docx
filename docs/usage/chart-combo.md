@@ -1,6 +1,6 @@
 # Combo Charts
 
-A combo chart draws some series one way and some another, such as sales as columns and a target as a line. A series can also be drawn against a second value axis, on the right, when its numbers are on another scale, such as a percentage beside a number of units. Word calls these charts "Combo" charts.
+A combo chart draws some series one way and some another, such as sales as columns and a target as a line. A series can also be drawn against a second value axis, on the right or along the top of a bar chart, when its numbers are on another scale, such as a percentage beside a number of units. Word calls these charts "Combo" charts.
 
 [Charts](usage/charts.md) shows how to import `ChartRun` and add a chart to a document.
 
