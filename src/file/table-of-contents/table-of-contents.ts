@@ -13,9 +13,11 @@ import { InternalHyperlink, Paragraph, type TabStopDefinition } from "@file/para
 import { Run, Tab } from "@file/paragraph/run";
 import { createBegin, createEnd, createSeparate } from "@file/paragraph/run/field";
 import { Text } from "@file/paragraph/run/run-components/text";
-import type { XmlComponent } from "@file/xml-components";
+import { DEFAULT_AVAILABLE_WIDTH } from "@file/table/column-widths";
+import type { IContext, IXmlableObject, XmlComponent } from "@file/xml-components";
 
 import { FieldInstruction } from "./field-instruction";
+import { type HeadingEntriesOptions, recordTableOfContents } from "./heading-entries";
 import { StructuredDocumentTagContent } from "./sdt-content";
 import { StructuredDocumentTagProperties } from "./sdt-properties";
 import type { ITableOfContentsOptions } from "./table-of-contents-properties";
@@ -32,6 +34,11 @@ type ToCEntry = {
  *
  * TableOfContents creates an auto-generated list of document headings
  * with page numbers. It uses a TOC field code to generate entries.
+ *
+ * Unless it is given `cachedEntries` or `contentChildren`, it is written with an
+ * entry for each heading its options include, linked to a bookmark on the heading,
+ * so it isn't empty before Word updates it or in applications that don't update it.
+ * The page numbers are left for Word to fill in when it updates the field.
  *
  * Reference: http://officeopenxml.com/WPtableOfContents.php
  *
@@ -57,6 +64,9 @@ type ToCEntry = {
  * ```
  */
 export class TableOfContents extends FileChild {
+    /** What it is filled in with from the headings, when it isn't given its content */
+    private readonly fromHeadings?: Omit<HeadingEntriesOptions, "textWidth">;
+
     public constructor(
         alias: string = "Table of Contents",
         {
@@ -142,9 +152,28 @@ export class TableOfContents extends FileChild {
             });
 
             content.addChildElement(endParagraph);
+
+            if (contentChildren.length === 0) {
+                this.fromHeadings = { properties, beginDirty };
+            }
         }
 
         this.root.push(content);
+    }
+
+    /**
+     * Written empty, and filled in from the headings once the body it is in is written, unless it was given its content.
+     * The page numbers are aligned to the right of the text in its section.
+     */
+    public prepForXml(context: IContext): IXmlableObject | undefined {
+        const xml = super.prepForXml(context) as IXmlableObject;
+        recordTableOfContents(xml, this.fromHeadings && { ...this.fromHeadings, textWidth: this.textWidthIn(context) });
+        return xml;
+    }
+
+    /** The width of the text in the section it is in */
+    private textWidthIn(context: IContext): number {
+        return context.file?.Document?.View.Body.getSectionPropertiesFor(this)?.AvailableTextWidth ?? DEFAULT_AVAILABLE_WIDTH;
     }
 
     private getTabStopsForLevel(level: number, pageWidth: number = 9025): readonly TabStopDefinition[] {

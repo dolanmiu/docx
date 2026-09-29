@@ -2,9 +2,9 @@
 
 You can generate table of contents with `docx`. More information can be found [here](http://officeopenxml.com/WPtableOfContents.php).
 
-> Tables of Contents are fields and, by design, it's content is only generated or updated by Word. We can't do it programmatically.
-> This is why, when you open a the file, Word you will prompt the message "This document contains fields that may refer to other files. Do you want to update the fields in this document?".
-> You have say yes to Word generate the content of all table of contents.
+A Table of Contents is a field. `docx` writes it with an entry for each heading it includes, linked to the heading, so it isn't empty when the document is opened, whether or not the application updates fields.
+
+The page numbers depend on how the document is laid out on the page, which only the application that shows it knows, so `docx` leaves them for Word to fill in when it updates the field. With `updateFields` on, Word asks "This document contains fields that may refer to other files. Do you want to update the fields in this document?" when the document is opened. Say yes, and Word fills in the page numbers. Applications that don't update fields, such as LibreOffice, show the entries without page numbers until the table is updated there.
 
 The complete documentation can be found [here](https://www.ecma-international.org/publications/standards/Ecma-376.htm) (at Part 1, Page 1251).
 
@@ -12,7 +12,7 @@ The complete documentation can be found [here](https://www.ecma-international.or
 
 All you need to do is create a `TableOfContents` object and assign it to the document.
 
-**Note**: updateFields feature must be enabled for TableOfContents to update correctly.
+**Note**: turn on the `updateFields` feature, so Word fills in the page numbers when the document is opened.
 
 ```ts live
 import { Document, HeadingLevel, Paragraph, TableOfContents } from "docx";
@@ -39,6 +39,17 @@ const doc = new Document({
 });
 ```
 
+## Entries from the headings
+
+The entries are written for the paragraphs the options include, as Word includes them:
+
+- `headingStyleRange` (`\o`): paragraphs with the built-in heading styles in the range, such as `HeadingLevel.HEADING_1` to `HeadingLevel.HEADING_3` for `"1-3"`
+- `stylesWithLevels` (`\t`): paragraphs with the styles listed, by id or name, at their levels
+- `useAppliedParagraphOutlineLevel` (`\u`): paragraphs by their outline level, or their style's
+- `entriesFromBookmark` (`\b`): only the paragraphs in the bookmark
+
+With none of these, the headings Heading 1 to Heading 9 are included. Each entry uses the `TOC1` to `TOC9` paragraph style for its level. When the document doesn't define that style, the entry is indented as Word's is. A Table of Contents of captions or of TC fields (`captionLabel`, `captionLabelIncludingNumbers`, `tcFieldIdentifier` or `tcFieldLevelRange` alone) is left empty for Word to fill in.
+
 ## Table of Contents Options
 
 Here is the list of all options that you can use to generate your tables of contents:
@@ -64,7 +75,7 @@ Here is the list of all options that you can use to generate your tables of cont
 
 ## Cached entries
 
-By default, a Table of Contents is empty until Word regenerates the field. If you want the TOC to display entries immediately when the document is opened, you can provide pre-populated entries via the `cachedEntries` option. Word will still prompt to update the field, but the cached content is visible before that happens.
+By default, the entries are written from the headings, without page numbers. If you want to write the entries yourself, such as with page numbers you know, you can provide them via the `cachedEntries` option instead. Word will still prompt to update the field, but the cached content is visible before that happens.
 
 Each entry is a `ToCEntry` object with the following properties:
 

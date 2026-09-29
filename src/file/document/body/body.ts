@@ -6,6 +6,7 @@
  * @module
  */
 import { Paragraph, ParagraphProperties } from "@file/paragraph";
+import { HeadingBookmarkIds, fillTablesOfContents } from "@file/table-of-contents/heading-entries";
 import { type IContext, type IXmlableObject, XmlComponent } from "@file/xml-components";
 
 import { type ISectionPropertiesOptions, SectionProperties } from "./section-properties/section-properties";
@@ -61,6 +62,7 @@ export class Body extends XmlComponent {
      * governs a given child of the body.
      */
     private readonly sectionParagraphs = new Map<Paragraph, SectionProperties>();
+    private readonly headingBookmarkIds = new HeadingBookmarkIds();
 
     public constructor() {
         super("w:body");
@@ -123,7 +125,8 @@ export class Body extends XmlComponent {
      * Prepares the body element for XML serialization.
      *
      * Ensures that the last section's properties are placed as a direct child of the body
-     * element, as required by the OOXML specification.
+     * element, as required by the OOXML specification. Once the body is written, its tables
+     * of contents are filled in from its headings.
      *
      * @param context - The XML serialization context
      * @returns The prepared XML object or undefined
@@ -134,7 +137,9 @@ export class Body extends XmlComponent {
             this.root.push(this.sections.pop() as SectionProperties);
         }
 
-        return super.prepForXml(context);
+        const xml = super.prepForXml(context) as IXmlableObject;
+        fillTablesOfContents(xml, context, this.headingBookmarkIds);
+        return xml;
     }
 
     /**
