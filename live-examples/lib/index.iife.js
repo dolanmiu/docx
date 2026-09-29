@@ -8951,11 +8951,11 @@ var docx = (function(exports) {
 	* @publicApi
 	*/
 	var AlignmentType = {
-		/** Align Start */
+		/** Align Start: the left in a left-to-right paragraph, and the right in a `bidirectional` (right-to-left) paragraph */
 		START: "start",
 		/** Align Center */
 		CENTER: "center",
-		/** End */
+		/** Align End: the right in a left-to-right paragraph, and the left in a `bidirectional` (right-to-left) paragraph */
 		END: "end",
 		/** Justified */
 		BOTH: "both",
@@ -8971,9 +8971,9 @@ var docx = (function(exports) {
 		LOW_KASHIDA: "lowKashida",
 		/** Thai Language Justification */
 		THAI_DISTRIBUTE: "thaiDistribute",
-		/** Align Left */
+		/** Align Left: a paragraph stays on the left of the page even when it is `bidirectional` (right-to-left) */
 		LEFT: "left",
-		/** Align Right */
+		/** Align Right: a paragraph stays on the right of the page even when it is `bidirectional` (right-to-left) */
 		RIGHT: "right",
 		/** Justified */
 		JUSTIFIED: "both"
@@ -18901,6 +18901,19 @@ MAX: 9026 };
 	* @module
 	*/
 	/**
+	* The alignment to write for each side of the page in a right-to-left paragraph.
+	*
+	* Word and LibreOffice read `w:jc` `left` and `right` as the start and end of the paragraph, the same as
+	* `start` and `end` (ISO/IEC 29500-4 maps the transitional `left` and `right` onto the strict `start` and `end`,
+	* and [MS-OE376] 2.3.1.13 notes the same for Word 2007). So in a `w:bidi` paragraph `left` lands on the right
+	* side of the page. Swapping keeps `AlignmentType.LEFT` and `AlignmentType.RIGHT` on the side of the page they name.
+	* `left` and `right` are written rather than `end` and `start` because Word 2007 does not know `start` and `end`.
+	*/
+	var RIGHT_TO_LEFT_ALIGNMENTS = {
+		left: "right",
+		right: "left"
+	};
+	/**
 	* Represents paragraph properties (pPr) in a WordprocessingML document.
 	*
 	* The paragraph properties element specifies all formatting applied to a paragraph,
@@ -19063,7 +19076,7 @@ MAX: 9026 };
 			if (options.spacing) this.push(createSpacing(options.spacing));
 			if (options.indent) this.push(createIndent(options.indent));
 			if (options.contextualSpacing !== void 0) this.push(new OnOffElement("w:contextualSpacing", options.contextualSpacing));
-			if (options.alignment) this.push(createAlignment(options.alignment));
+			if (options.alignment) this.push(createAlignment(options.bidirectional && RIGHT_TO_LEFT_ALIGNMENTS[options.alignment] || options.alignment));
 			if (options.outlineLevel !== void 0) this.push(createOutlineLevel(options.outlineLevel));
 			if (options.suppressLineNumbers !== void 0) this.push(new OnOffElement("w:suppressLineNumbers", options.suppressLineNumbers));
 			if (options.autoSpaceEastAsianText !== void 0) this.push(new OnOffElement("w:autoSpaceDN", options.autoSpaceEastAsianText));

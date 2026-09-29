@@ -103,11 +103,11 @@ export declare const abstractNumUniqueNumericIdGen: () => UniqueNumericIdCreator
  * @publicApi
  */
 export declare const AlignmentType: {
-    /** Align Start */
+    /** Align Start: the left in a left-to-right paragraph, and the right in a `bidirectional` (right-to-left) paragraph */
     readonly START: "start";
     /** Align Center */
     readonly CENTER: "center";
-    /** End */
+    /** Align End: the right in a left-to-right paragraph, and the left in a `bidirectional` (right-to-left) paragraph */
     readonly END: "end";
     /** Justified */
     readonly BOTH: "both";
@@ -123,9 +123,9 @@ export declare const AlignmentType: {
     readonly LOW_KASHIDA: "lowKashida";
     /** Thai Language Justification */
     readonly THAI_DISTRIBUTE: "thaiDistribute";
-    /** Align Left */
+    /** Align Left: a paragraph stays on the left of the page even when it is `bidirectional` (right-to-left) */
     readonly LEFT: "left";
-    /** Align Right */
+    /** Align Right: a paragraph stays on the right of the page even when it is `bidirectional` (right-to-left) */
     readonly RIGHT: "right";
     /** Justified */
     readonly JUSTIFIED: "both";
@@ -6462,7 +6462,11 @@ export declare type IParagraphPropertiesOptions = {
 export declare type IParagraphPropertiesOptionsBase = {
     /** Heading level (Heading1, Heading2, etc.) - applies predefined heading style */
     readonly heading?: (typeof HeadingLevel)[keyof typeof HeadingLevel];
-    /** Whether to render text right-to-left for bidirectional languages */
+    /**
+     * Whether to lay the paragraph out right-to-left, for languages such as Arabic and Hebrew.
+     * A right-to-left paragraph starts on the right of the page, so it is right-aligned unless `alignment` says otherwise.
+     * `alignment` `LEFT` and `RIGHT` still mean those sides of the page, while `START` and `END` follow the paragraph's direction.
+     */
     readonly bidirectional?: boolean;
     /** Whether to insert a page break before this paragraph */
     readonly pageBreakBefore?: boolean;
