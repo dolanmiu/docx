@@ -16,12 +16,12 @@ describe("Relationships", () => {
         });
     });
 
-    describe("#copy()", () => {
+    describe(".copy()", () => {
         it("should copy the relationships, and add the ones added to the copy only to the copy", () => {
             const relationships = new Relationships();
             relationships.addRelationship(1, "http://schemas.openxmlformats.org/officeDocument/2006/relationships/styles", "styles.xml");
 
-            const copy = relationships.copy();
+            const copy = Relationships.copy(relationships);
             copy.addRelationship(2, "http://schemas.openxmlformats.org/officeDocument/2006/relationships/image", "media/image.png");
 
             expect(new Formatter().format(relationships)).to.deep.equal({

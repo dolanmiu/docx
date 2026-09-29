@@ -8,6 +8,7 @@ import xml from "xml";
 
 import type { File } from "@file/file";
 import { obfuscate } from "@file/fonts/obfuscate-ttf-to-odttf";
+import { Relationships } from "@file/relationships";
 import { encodeUtf8 } from "@util/convenience-functions";
 
 import { Formatter } from "../formatter";
@@ -242,7 +243,7 @@ export class Compiler {
             Relationships: {
                 data: (() => {
                     // Added to a copy, so packing the document again doesn't add them a second time
-                    const relationships = file.Document.Relationships.copy();
+                    const relationships = Relationships.copy(file.Document.Relationships);
                     documentMediaDatas.forEach((mediaData, i) => {
                         relationships.addRelationship(
                             documentRelationshipCount + i,
@@ -352,7 +353,7 @@ export class Compiler {
                 const mediaDatas = this.imageReplacer.getMediaData(xmlData, file.Media);
 
                 // Added to a copy, so packing the document again doesn't add them a second time
-                const relationships = headerWrapper.Relationships.copy();
+                const relationships = Relationships.copy(headerWrapper.Relationships);
                 mediaDatas.forEach((mediaData, i) => {
                     relationships.addRelationship(
                         i,
@@ -395,7 +396,7 @@ export class Compiler {
                 const mediaDatas = this.imageReplacer.getMediaData(xmlData, file.Media);
 
                 // Added to a copy, so packing the document again doesn't add them a second time
-                const relationships = footerWrapper.Relationships.copy();
+                const relationships = Relationships.copy(footerWrapper.Relationships);
                 mediaDatas.forEach((mediaData, i) => {
                     relationships.addRelationship(
                         i,
@@ -516,7 +517,7 @@ export class Compiler {
             FootNotesRelationships: {
                 data: (() => {
                     // Added to a copy, so packing the document again doesn't add them a second time
-                    const relationships = file.FootNotes.Relationships.copy();
+                    const relationships = Relationships.copy(file.FootNotes.Relationships);
                     footnoteMediaDatas.forEach((mediaData, i) => {
                         relationships.addRelationship(
                             footnoteRelationshipCount + i,
@@ -603,7 +604,7 @@ export class Compiler {
                       CommentsRelationships: {
                           data: (() => {
                               // Added to a copy, so packing the document again doesn't add them a second time
-                              const relationships = file.Comments.Relationships.copy();
+                              const relationships = Relationships.copy(file.Comments.Relationships);
                               commentMediaDatas.forEach((mediaData, i) => {
                                   relationships.addRelationship(
                                       commentRelationshipCount + i,
