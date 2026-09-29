@@ -6822,6 +6822,8 @@ declare type ISettingsOptions = {
     readonly trackRevisions?: boolean;
     /** Update fields when document is opened */
     readonly updateFields?: boolean;
+    /** Keep the document's embedded fonts when it is saved again, as Word's "Embed fonts in the file" option does */
+    readonly embedFonts?: boolean;
     /** Compatibility settings for older Word versions */
     readonly compatibility?: ICompatibilityOptions;
     /** Default distance between tab stops in twips */
@@ -11272,6 +11274,7 @@ export declare class SequentialIdentifier extends Run {
  * ```xml
  * <xsd:complexType name="CT_Settings">
  *   <xsd:sequence>
+ *     <xsd:element name="embedTrueTypeFonts" type="CT_OnOff" minOccurs="0"/>
  *     <xsd:element name="trackRevisions" type="CT_OnOff" minOccurs="0"/>
  *     <xsd:element name="defaultTabStop" type="CT_TwipsMeasure" minOccurs="0"/>
  *     <xsd:element name="autoHyphenation" type="CT_OnOff" minOccurs="0"/>

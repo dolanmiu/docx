@@ -27460,6 +27460,7 @@ MAX: 9026 };
 	* ```xml
 	* <xsd:complexType name="CT_Settings">
 	*   <xsd:sequence>
+	*     <xsd:element name="embedTrueTypeFonts" type="CT_OnOff" minOccurs="0"/>
 	*     <xsd:element name="trackRevisions" type="CT_OnOff" minOccurs="0"/>
 	*     <xsd:element name="defaultTabStop" type="CT_TwipsMeasure" minOccurs="0"/>
 	*     <xsd:element name="autoHyphenation" type="CT_OnOff" minOccurs="0"/>
@@ -27518,6 +27519,7 @@ MAX: 9026 };
 				Ignorable: "w14 w15 wp14"
 			}));
 			this.root.push(new OnOffElement("w:displayBackgroundShape", true));
+			if (options.embedFonts !== void 0) this.root.push(new OnOffElement("w:embedTrueTypeFonts", options.embedFonts));
 			if (options.trackRevisions !== void 0) this.root.push(new OnOffElement("w:trackRevisions", options.trackRevisions));
 			if (options.defaultTabStop !== void 0) this.root.push(new NumberValueElement("w:defaultTabStop", options.defaultTabStop));
 			if (((_options$hyphenation = options.hyphenation) === null || _options$hyphenation === void 0 ? void 0 : _options$hyphenation.autoHyphenation) !== void 0) this.root.push(new OnOffElement("w:autoHyphenation", options.hyphenation.autoHyphenation));
@@ -29072,7 +29074,7 @@ MAX: 9026 };
 	*/
 	var File = class {
 		constructor(options) {
-			var _options$creator, _options$revision, _options$lastModified, _options$comments, _options$customProper, _options$features, _options$features2, _options$hyphenation, _options$hyphenation2, _options$hyphenation3, _options$hyphenation4, _options$fonts;
+			var _options$creator, _options$revision, _options$lastModified, _options$comments, _options$customProper, _options$features, _options$features2, _options$fonts, _options$hyphenation, _options$hyphenation2, _options$hyphenation3, _options$hyphenation4, _options$fonts2;
 			_defineProperty(this, "currentRelationshipId", 1);
 			_defineProperty(this, "documentWrapper", void 0);
 			_defineProperty(this, "headers", []);
@@ -29127,6 +29129,7 @@ MAX: 9026 };
 				evenAndOddHeaders: options.evenAndOddHeaderAndFooters ? true : false,
 				trackRevisions: (_options$features = options.features) === null || _options$features === void 0 ? void 0 : _options$features.trackRevisions,
 				updateFields: (_options$features2 = options.features) === null || _options$features2 === void 0 ? void 0 : _options$features2.updateFields,
+				embedFonts: ((_options$fonts = options.fonts) === null || _options$fonts === void 0 ? void 0 : _options$fonts.length) ? true : void 0,
 				defaultTabStop: options.defaultTabStop,
 				hyphenation: {
 					autoHyphenation: (_options$hyphenation = options.hyphenation) === null || _options$hyphenation === void 0 ? void 0 : _options$hyphenation.autoHyphenation,
@@ -29162,7 +29165,7 @@ MAX: 9026 };
 			for (const section of options.sections) this.addSection(section);
 			if (options.footnotes) for (const key in options.footnotes) this.footnotesWrapper.View.createFootNote(parseFloat(key), options.footnotes[key].children);
 			if (options.endnotes) for (const key in options.endnotes) this.endnotesWrapper.View.createEndnote(parseFloat(key), options.endnotes[key].children);
-			this.fontWrapper = new FontWrapper((_options$fonts = options.fonts) !== null && _options$fonts !== void 0 ? _options$fonts : []);
+			this.fontWrapper = new FontWrapper((_options$fonts2 = options.fonts) !== null && _options$fonts2 !== void 0 ? _options$fonts2 : []);
 			this.theme = new Theme(options.theme);
 			this.documentWrapper.Relationships.addRelationship(this.currentRelationshipId++, "http://schemas.openxmlformats.org/officeDocument/2006/relationships/theme", "theme/theme1.xml");
 		}
