@@ -18314,6 +18314,7 @@ MAX: 9026 };
 			super({ children: [
 				createBegin(true),
 				new PageReferenceFieldInstruction(bookmarkId, options),
+				createSeparate(),
 				createEnd()
 			] });
 		}
