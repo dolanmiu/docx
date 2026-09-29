@@ -7,7 +7,7 @@
  * @module
  */
 // cspell:ignore txbx Txbx
-import { BuilderElement, type IContext, type IXmlableObject, type Paragraph, XmlComponent } from "docx";
+import { BuilderElement, type IContext, type IXmlableObject, Paragraph, XmlComponent } from "docx";
 
 // A stand-in for the document when a shape is written without one
 const NO_DOCUMENT = {};
@@ -42,7 +42,13 @@ class TextFlowBox extends XmlComponent {
                 ? new BuilderElement<{ readonly id: number }>({
                       name: "wps:txbx",
                       attributes: { id: { key: "id", value: id } },
-                      children: [new BuilderElement({ name: "w:txbxContent", children: [...this.children] })],
+                      // w:txbxContent can't be empty, so a flow without text has an empty paragraph, as Word writes
+                      children: [
+                          new BuilderElement({
+                              name: "w:txbxContent",
+                              children: this.children.length > 0 ? [...this.children] : [new Paragraph({})],
+                          }),
+                      ],
                   })
                 : new BuilderElement<{ readonly id: number; readonly sequence: number }>({
                       name: "wps:linkedTxbx",
@@ -57,6 +63,6 @@ class TextFlowBox extends XmlComponent {
  * a link to it in the shapes after it.
  *
  * @param flow - The flow's name
- * @param children - The flow's paragraphs, which the first shape of the flow writes
+ * @param children - The flow's paragraphs, which the first shape of the flow writes, or an empty paragraph if there are none
  */
 export const createTextFlowBox = (flow: string, children: readonly Paragraph[]): XmlComponent => new TextFlowBox(flow, children);

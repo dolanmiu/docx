@@ -54,4 +54,9 @@ describe("text flows", () => {
         const [box] = textOf(new Formatter().format(shape));
         expect(box["wps:txbx"][1]["w:txbxContent"]).to.have.length(2);
     });
+
+    it("should write an empty paragraph in the first shape of a flow without text, as a text box can't be empty", () => {
+        const [box] = textOf(new Formatter().format(flowing("empty")));
+        expect(box["wps:txbx"][1]["w:txbxContent"]).to.deep.equal([{ "w:p": {} }]);
+    });
 });
