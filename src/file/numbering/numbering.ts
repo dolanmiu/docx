@@ -260,13 +260,8 @@ export class Numbering extends XmlComponent {
      * @returns The prepared XML object
      */
     public prepForXml(context: IContext): IXmlableObject | undefined {
-        for (const numbering of this.abstractNumberingMap.values()) {
-            this.root.push(numbering);
-        }
-
-        for (const numbering of this.concreteNumberingMap.values()) {
-            this.root.push(numbering);
-        }
+        // Replace the definitions written before, after the attributes, so a document packed again doesn't repeat them
+        this.root.splice(1, this.root.length - 1, ...this.abstractNumberingMap.values(), ...this.concreteNumberingMap.values());
         return super.prepForXml(context);
     }
 

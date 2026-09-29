@@ -63,7 +63,8 @@ export class CustomProperties extends XmlComponent {
     }
 
     public prepForXml(context: IContext): IXmlableObject | undefined {
-        this.properties.forEach((x) => this.root.push(x));
+        // Replace the properties written before, after the attributes, so a document packed again doesn't repeat them
+        this.root.splice(1, this.root.length - 1, ...this.properties);
         return super.prepForXml(context);
     }
 

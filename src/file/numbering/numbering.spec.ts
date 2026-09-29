@@ -126,4 +126,20 @@ describe("Numbering", () => {
             });
         });
     });
+
+    describe("#prepForXml", () => {
+        it("should write each definition once, in order, when written again", () => {
+            const numbering = new Numbering({ config: [{ reference: "test-reference", levels: [{ level: 0 }] }] });
+
+            numbering.createConcreteNumberingInstance("test-reference", 0);
+            new Formatter().format(numbering);
+            // Such as a list first used in a header, which is written after the document
+            numbering.createConcreteNumberingInstance("test-reference", 1);
+            const tree = new Formatter().format(numbering);
+
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            const names = tree["w:numbering"].map((element: any) => Object.keys(element)[0]);
+            expect(names).to.deep.equal(["_attr", "w:abstractNum", "w:abstractNum", "w:num", "w:num", "w:num"]);
+        });
+    });
 });

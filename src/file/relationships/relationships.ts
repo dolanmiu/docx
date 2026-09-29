@@ -59,6 +59,21 @@ export class Relationships extends XmlComponent {
     }
 
     /**
+     * Creates a copy of the relationships given. Relationships added to the copy aren't added to them, so the compiler
+     * adds the ones it writes for a part, such as to its images, to a copy, and packing a document again doesn't add
+     * them a second time.
+     *
+     * Static, as `IContext` is public and has `Relationships`, so a new instance member would change the public API.
+     *
+     * @param relationships - The relationships to copy
+     */
+    public static copy(relationships: Relationships): Relationships {
+        const copy = new Relationships();
+        copy.root.push(...relationships.root.slice(1));
+        return copy;
+    }
+
+    /**
      * Gets the count of relationships in this collection.
      * Excludes the attributes element from the count.
      */

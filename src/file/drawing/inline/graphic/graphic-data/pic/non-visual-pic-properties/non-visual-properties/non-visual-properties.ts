@@ -68,6 +68,9 @@ export class NonVisualProperties extends XmlComponent {
             break;
         }
 
-        return super.prepForXml(context);
+        const result = super.prepForXml(context);
+        // Keep only the attributes, so the element is the same if the document is written again
+        this.root.splice(1);
+        return result;
     }
 }
