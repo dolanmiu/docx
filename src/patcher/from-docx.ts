@@ -459,11 +459,22 @@ export const patchDocument = async <T extends PatchDocumentOutputType = PatchDoc
 };
 
 /**
- * The element with an extra escape on each "&" in its text. xml-js reads "&amp;" in text as an "&" already escaped, and
- * would write a text's literal "&amp;", such as in a document about HTML, as "&".
+ * The element with an extra escape on each "&" in its text and attributes. xml-js reads "&amp;" in text as an "&"
+ * already escaped, and would write a text's literal "&amp;", such as in a document about HTML, as "&". It escapes the
+ * quotes in an attribute before `attributeValueFn` is given it, so that can't tell its "&quot;" from a literal one.
  */
 const withAmpersandsEscaped = (element: Element): Element => ({
     ...element,
+    ...(element.attributes === undefined
+        ? {}
+        : {
+              attributes: Object.fromEntries(
+                  Object.entries(element.attributes).map(([key, value]) => [
+                      key,
+                      value === undefined ? value : String(value).replace(/&/g, "&amp;"),
+                  ]),
+              ),
+          }),
     ...(element.elements === undefined
         ? {}
         : {
@@ -475,13 +486,8 @@ const withAmpersandsEscaped = (element: Element): Element => ({
 
 const toXml = (jsonObj: Element): string => {
     const output = js2xml(withAmpersandsEscaped(jsonObj), {
-        attributeValueFn: (str) =>
-            String(str)
-                .replace(/&(?!amp;|lt;|gt;|quot;|apos;)/g, "&amp;")
-                .replace(/</g, "&lt;")
-                .replace(/>/g, "&gt;")
-                .replace(/"/g, "&quot;")
-                .replace(/'/g, "&apos;"), // cspell:words apos
+        // xml-js has already escaped the quotes, and withAmpersandsEscaped each "&"
+        attributeValueFn: (str) => String(str).replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/'/g, "&apos;"), // cspell:words apos
     });
     return output;
 };

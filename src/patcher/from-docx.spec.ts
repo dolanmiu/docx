@@ -755,6 +755,37 @@ describe("from-docx", () => {
                 expect(document).to.contain("Write &amp;amp; for &amp; in HTML");
                 expect(document).to.contain("R&amp;amp;D &amp; more");
             });
+
+            it("should keep a literal &amp; and &lt; in the template's attributes and in a patch's", async () => {
+                const template = await Packer.toBuffer(
+                    new File({
+                        sections: [
+                            {
+                                children: [
+                                    new Paragraph({ children: [new Bookmark({ id: "Q&amp;A &lt;1&gt;", children: [new TextRun("A")] })] }),
+                                    new Paragraph("{{patch}}"),
+                                ],
+                            },
+                        ],
+                    }),
+                );
+                const zip = await JSZip.loadAsync(
+                    await patchDocument({
+                        outputType: "nodebuffer",
+                        data: template,
+                        patches: {
+                            patch: {
+                                type: PatchType.PARAGRAPH,
+                                children: [new Bookmark({ id: "R&amp;D & <2>", children: [new TextRun("B")] })],
+                            },
+                        },
+                    }),
+                );
+                const document = (await zip.file("word/document.xml")?.async("text")) ?? "";
+
+                expect(document).to.contain('w:name="Q&amp;amp;A &amp;lt;1&amp;gt;"');
+                expect(document).to.contain('w:name="R&amp;amp;D &amp; &lt;2&gt;"');
+            });
         });
 
         describe("A part whose relationships part is empty", () => {
