@@ -1464,7 +1464,7 @@ const doc = new Document({
 
 | `route`      | Path                                                                                      |
 | ------------ | ----------------------------------------------------------------------------------------- |
-| `"straight"` | A straight line between the two shapes (the default)                                      |
+| `"straight"` | A straight line between the two shapes, even through another shape                        |
 | `"elbow"`    | Horizontal and vertical lines with right-angled bends, like Word's elbow connector        |
 | `"curved"`   | A smooth curve that leaves and arrives square to the shapes, like Word's curved connector |
 

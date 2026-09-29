@@ -40,13 +40,17 @@ var docxCharts = (function(exports, docx) {
 		years: "yyyy"
 	};
 	/**
+	* A date as an error message writes it: ISO text in UTC, which is the same in every time zone, or "Invalid Date".
+	*/
+	var dateText$1 = (date) => Number.isFinite(date.getTime()) ? date.toISOString() : String(date);
+	/**
 	* Checks that a category is a date Excel can hold.
 	*
 	* @throws If it isn't a valid date from 1 March 1900 to 31 December 9999
 	*/
 	var checkDate = (date) => {
 		const time = date.getTime();
-		if (!(time >= FIRST_DATE && time < LAST_DATE + MILLISECONDS_PER_DAY)) throw new Error(`Invalid category date ${String(date)}. Expected a date from 1900-03-01 to 9999-12-31`);
+		if (!(time >= FIRST_DATE && time < LAST_DATE + MILLISECONDS_PER_DAY)) throw new Error(`Invalid category date ${dateText$1(date)}. Expected a date from 1900-03-01 to 9999-12-31`);
 	};
 	/**
 	* A date as Excel's serial number: days since 30 December 1899, with the time of day as a fraction. Dates are read in
@@ -153,9 +157,13 @@ var docxCharts = (function(exports, docx) {
 		if (value !== void 0 && !(value >= minimum && value <= maximum)) throw new Error(`Invalid ${option} ${value}. Expected a number from ${minimum} to ${maximum}`);
 	};
 	/**
-	* A value as an error message writes it: text in quotes, so "5" isn't mistaken for a number.
+	* A value as an error message writes it: text in quotes, so "5" isn't mistaken for a number, and a date as ISO text, so
+	* the message is the same in every time zone.
 	*/
-	var quoted$1 = (value) => typeof value === "string" ? `"${value}"` : String(value);
+	var quoted$1 = (value) => {
+		if (typeof value === "string") return `"${value}"`;
+		return value instanceof Date ? dateText$1(value) : String(value);
+	};
 	/**
 	* Checks that an option is a whole number in a range, if it is given.
 	*/
@@ -277,7 +285,7 @@ var docxCharts = (function(exports, docx) {
 			if (isGroup(categories[0])) return 1 + checkGroups(categories);
 			for (const category of categories) {
 				if (isGroup(category)) throw new Error(`Category group "${name}" holds categories and groups. A group holds one or the other`);
-				if (category instanceof Date) throw new Error(`Invalid category ${String(category)} in group "${name}". Categories in groups are text or numbers, not dates`);
+				if (category instanceof Date) throw new Error(`Invalid category ${quoted$1(category)} in group "${name}". Categories in groups are text or numbers, not dates`);
 				if (typeof category !== "string" && !Number.isFinite(category)) throw new Error(`Invalid category ${quoted$1(category)} in group "${name}". Expected text or a finite number`);
 			}
 			return 1;
@@ -304,7 +312,7 @@ var docxCharts = (function(exports, docx) {
 			dated.forEach(checkDate);
 			return;
 		}
-		for (const category of plain) if (typeof category !== "string" && !Number.isFinite(category)) throw new Error(`Invalid category ${String(category)}. Expected text or a finite number`);
+		for (const category of plain) if (typeof category !== "string" && !Number.isFinite(category)) throw new Error(`Invalid category ${quoted$1(category)}. Expected text or a finite number`);
 	};
 	var checkSeries = (series) => {
 		if (!Array.isArray(series) || series.length === 0) throw new Error("A chart needs at least one series");

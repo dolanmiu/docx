@@ -14281,6 +14281,16 @@ DOT: "dot" };
 		}
 	};
 	/**
+	* Converts a crop percentage to thousandths of a percent.
+	*
+	* @throws If the percentage isn't a number from 0 to 100
+	*/
+	var cropValue = (value, edge) => {
+		if (value === void 0) return;
+		if (!(value >= 0 && value <= 100)) throw new Error(`Invalid crop ${edge} ${value}. Expected a number from 0 to 100`);
+		return Math.round(value * 1e3);
+	};
+	/**
 	* Represents a source rectangle for blip fills.
 	*
 	* This element specifies a portion of the blip (image) to use as the fill.
@@ -14307,10 +14317,10 @@ DOT: "dot" };
 		constructor(crop) {
 			super("a:srcRect");
 			if (crop) this.root.push(new SourceRectangleAttributes({
-				left: crop.left === void 0 ? void 0 : Math.round(crop.left * 1e3),
-				top: crop.top === void 0 ? void 0 : Math.round(crop.top * 1e3),
-				right: crop.right === void 0 ? void 0 : Math.round(crop.right * 1e3),
-				bottom: crop.bottom === void 0 ? void 0 : Math.round(crop.bottom * 1e3)
+				left: cropValue(crop.left, "left"),
+				top: cropValue(crop.top, "top"),
+				right: cropValue(crop.right, "right"),
+				bottom: cropValue(crop.bottom, "bottom")
 			}));
 		}
 	};
@@ -16437,6 +16447,7 @@ EXTERNAL: "External" };
 		constructor(..._args3) {
 			super(..._args3);
 			_defineProperty(this, "xmlKeys", {
+				"xmlns:wpc": "xmlns:wpc",
 				"xmlns:cx": "xmlns:cx",
 				"xmlns:cx1": "xmlns:cx1",
 				"xmlns:cx2": "xmlns:cx2",
@@ -16677,6 +16688,7 @@ EXTERNAL: "External" };
 			_defineProperty(this, "isEmpty", void 0);
 			this.isEmpty = children.length === 0;
 			this.root.push(new RootCommentsAttributes({
+				"xmlns:wpc": "http://schemas.microsoft.com/office/word/2010/wordprocessingCanvas",
 				"xmlns:cx": "http://schemas.microsoft.com/office/drawing/2014/chartex",
 				"xmlns:cx1": "http://schemas.microsoft.com/office/drawing/2015/9/8/chartex",
 				"xmlns:cx2": "http://schemas.microsoft.com/office/drawing/2015/10/21/chartex",
@@ -18073,6 +18085,10 @@ MAX: 9026 };
 	* This element marks the beginning of a bookmarked region in the document.
 	* It must be paired with a corresponding BookmarkEnd element with the same id.
 	*
+	* The id must be unique in the document. `Bookmark` takes its ids from
+	* `bookmarkUniqueNumericId`, so take this one from it too, or it can be the
+	* same as a `Bookmark`'s.
+	*
 	* Reference: http://officeopenxml.com/WPbookmark.php
 	*
 	* ## XSD Schema
@@ -18090,7 +18106,10 @@ MAX: 9026 };
 	*
 	* @example
 	* ```typescript
-	* new BookmarkStart("myBookmark", 1);
+	* // A bookmark across two paragraphs
+	* const id = bookmarkUniqueNumericId();
+	* new Paragraph({ children: [new BookmarkStart("myBookmark", id), new TextRun("First")] });
+	* new Paragraph({ children: [new TextRun("Last"), new BookmarkEnd(id)] });
 	* ```
 	*/
 	var BookmarkStart = class extends XmlComponent {
@@ -18107,7 +18126,8 @@ MAX: 9026 };
 	* Represents the end marker of a bookmark range.
 	*
 	* This element marks the end of a bookmarked region in the document.
-	* It must be paired with a corresponding BookmarkStart element with the same id.
+	* It must be paired with a corresponding BookmarkStart element with the same id,
+	* taken from `bookmarkUniqueNumericId` (see `BookmarkStart`).
 	*
 	* Reference: http://officeopenxml.com/WPbookmark.php
 	*
@@ -18126,7 +18146,9 @@ MAX: 9026 };
 	*
 	* @example
 	* ```typescript
-	* new BookmarkEnd(1);
+	* const id = bookmarkUniqueNumericId();
+	* new BookmarkStart("myBookmark", id);
+	* new BookmarkEnd(id);
 	* ```
 	*/
 	var BookmarkEnd = class extends XmlComponent {
@@ -27021,6 +27043,7 @@ MAX: 9026 };
 	};
 	//#endregion
 	//#region src/file/package-part/package-part.ts
+	var PATH_PART = /^[\w-]+$/;
 	var RESERVED_FOLDERS = /* @__PURE__ */ new Set([
 		"_rels",
 		"fonts",
@@ -27059,6 +27082,7 @@ MAX: 9026 };
 	var PackagePart = class {
 		/**
 		* @throws If the folder isn't a single folder name, or is one of the folders docx writes parts of its own in
+		* @throws If the name or the extension isn't a single part of a file name, which could lead out of the folder
 		*/
 		constructor(options) {
 			_defineProperty(this, "options", void 0);
@@ -27071,7 +27095,9 @@ MAX: 9026 };
 			);
 			_defineProperty(this, "addedTo", /* @__PURE__ */ new WeakSet());
 			this.options = options;
-			if (!/^[\w-]+$/.test(options.folder) || RESERVED_FOLDERS.has(options.folder)) throw new Error(`Invalid package part folder "${options.folder}". Expected a folder name docx doesn't use, such as "charts"`);
+			if (!PATH_PART.test(options.folder) || RESERVED_FOLDERS.has(options.folder)) throw new Error(`Invalid package part folder "${options.folder}". Expected a folder name docx doesn't use, such as "charts"`);
+			if (!PATH_PART.test(options.name)) throw new Error(`Invalid package part name "${options.name}". Expected letters, digits, "_" and "-", such as "chart"`);
+			if (!PATH_PART.test(options.extension)) throw new Error(`Invalid package part extension "${options.extension}". Expected letters, digits, "_" and "-", such as "xml"`);
 		}
 		/**
 		* Adds the part to the package being written, once, and a relationship to it from the part being written.
@@ -27093,7 +27119,7 @@ MAX: 9026 };
 		/**
 		* @param contentTypes - Where each part's content type is added
 		* @param existingPaths - The paths under word/ of the parts the package already has, such as a template's charts,
-		* which new parts are numbered after
+		* which new parts don't take
 		*/
 		constructor(contentTypes, existingPaths = /* @__PURE__ */ new Set()) {
 			_defineProperty(this, "contentTypes", void 0);
@@ -35652,7 +35678,7 @@ while (n === a[++i] && n === a[++i] && n === a[++i] && n === a[++i] && n === a[+
 				return ((_item$attributes3 = item.attributes) === null || _item$attributes3 === void 0 ? void 0 : _item$attributes3.Type) === THEME_RELATIONSHIP_TYPE;
 			});
 			const target = theme === null || theme === void 0 || (_theme$attributes = theme.attributes) === null || _theme$attributes === void 0 ? void 0 : _theme$attributes.Target;
-			return typeof target === "string" ? readPart(zip, target.startsWith("/") ? target.slice(1) : `word/${target}`) : void 0;
+			return typeof target === "string" ? readPart(zip, resolveTarget("word/document.xml", target)) : void 0;
 		});
 		return function readTheme(_x3) {
 			return _ref2.apply(this, arguments);
@@ -35902,12 +35928,13 @@ while (n === a[++i] && n === a[++i] && n === a[++i] && n === a[++i] && n === a[+
 		};
 	}();
 	/**
-	* The element with an extra escape on each "&" in its text. xml-js reads "&amp;" in text as an "&" already escaped, and
-	* would write a text's literal "&amp;", such as in a document about HTML, as "&".
+	* The element with an extra escape on each "&" in its text and attributes. xml-js reads "&amp;" in text as an "&"
+	* already escaped, and would write a text's literal "&amp;", such as in a document about HTML, as "&". It escapes the
+	* quotes in an attribute before `attributeValueFn` is given it, so that can't tell its "&quot;" from a literal one.
 	*/
-	var withAmpersandsEscaped = (element) => _objectSpread2(_objectSpread2({}, element), element.elements === void 0 ? {} : { elements: element.elements.map((child) => child.type === "text" ? _objectSpread2(_objectSpread2({}, child), {}, { text: String(child.text).replace(/&/g, "&amp;") }) : withAmpersandsEscaped(child)) });
+	var withAmpersandsEscaped = (element) => _objectSpread2(_objectSpread2(_objectSpread2({}, element), element.attributes === void 0 ? {} : { attributes: Object.fromEntries(Object.entries(element.attributes).map(([key, value]) => [key, value === void 0 ? value : String(value).replace(/&/g, "&amp;")])) }), element.elements === void 0 ? {} : { elements: element.elements.map((child) => child.type === "text" ? _objectSpread2(_objectSpread2({}, child), {}, { text: String(child.text).replace(/&/g, "&amp;") }) : withAmpersandsEscaped(child)) });
 	var toXml = (jsonObj) => {
-		return (0, import_lib.js2xml)(withAmpersandsEscaped(jsonObj), { attributeValueFn: (str) => String(str).replace(/&(?!amp;|lt;|gt;|quot;|apos;)/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;").replace(/'/g, "&apos;") });
+		return (0, import_lib.js2xml)(withAmpersandsEscaped(jsonObj), { attributeValueFn: (str) => String(str).replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/'/g, "&apos;") });
 	};
 	//#endregion
 	//#region src/patcher/patch-detector.ts

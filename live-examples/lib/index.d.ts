@@ -495,7 +495,8 @@ export declare class Bookmark {
  * Represents the end marker of a bookmark range.
  *
  * This element marks the end of a bookmarked region in the document.
- * It must be paired with a corresponding BookmarkStart element with the same id.
+ * It must be paired with a corresponding BookmarkStart element with the same id,
+ * taken from `bookmarkUniqueNumericId` (see `BookmarkStart`).
  *
  * Reference: http://officeopenxml.com/WPbookmark.php
  *
@@ -514,7 +515,9 @@ export declare class Bookmark {
  *
  * @example
  * ```typescript
- * new BookmarkEnd(1);
+ * const id = bookmarkUniqueNumericId();
+ * new BookmarkStart("myBookmark", id);
+ * new BookmarkEnd(id);
  * ```
  */
 export declare class BookmarkEnd extends XmlComponent {
@@ -526,6 +529,10 @@ export declare class BookmarkEnd extends XmlComponent {
  *
  * This element marks the beginning of a bookmarked region in the document.
  * It must be paired with a corresponding BookmarkEnd element with the same id.
+ *
+ * The id must be unique in the document. `Bookmark` takes its ids from
+ * `bookmarkUniqueNumericId`, so take this one from it too, or it can be the
+ * same as a `Bookmark`'s.
  *
  * Reference: http://officeopenxml.com/WPbookmark.php
  *
@@ -544,7 +551,10 @@ export declare class BookmarkEnd extends XmlComponent {
  *
  * @example
  * ```typescript
- * new BookmarkStart("myBookmark", 1);
+ * // A bookmark across two paragraphs
+ * const id = bookmarkUniqueNumericId();
+ * new Paragraph({ children: [new BookmarkStart("myBookmark", id), new TextRun("First")] });
+ * new Paragraph({ children: [new TextRun("Last"), new BookmarkEnd(id)] });
  * ```
  */
 export declare class BookmarkStart extends XmlComponent {
@@ -9659,6 +9669,7 @@ export declare class PackagePart {
     private readonly addedTo;
     /**
      * @throws If the folder isn't a single folder name, or is one of the folders docx writes parts of its own in
+     * @throws If the name or the extension isn't a single part of a file name, which could lead out of the folder
      */
     constructor(options: PackagePartOptions);
     /**
@@ -9703,7 +9714,7 @@ declare class PackageParts {
     /**
      * @param contentTypes - Where each part's content type is added
      * @param existingPaths - The paths under word/ of the parts the package already has, such as a template's charts,
-     * which new parts are numbered after
+     * which new parts don't take
      */
     constructor(contentTypes: Pick<ContentTypes, "addOverride">, existingPaths?: ReadonlySet<string>);
     /**

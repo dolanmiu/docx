@@ -3075,7 +3075,7 @@ var docxShapes = (function(exports, docx) {
 				} },
 				children: [new docx.BuilderElement({
 					name: "w:txbxContent",
-					children: [...this.children]
+					children: this.children.length > 0 ? [...this.children] : [new docx.Paragraph({})]
 				})]
 			}) : new docx.BuilderElement({
 				name: "wps:linkedTxbx",
@@ -3097,7 +3097,7 @@ var docxShapes = (function(exports, docx) {
 	* a link to it in the shapes after it.
 	*
 	* @param flow - The flow's name
-	* @param children - The flow's paragraphs, which the first shape of the flow writes
+	* @param children - The flow's paragraphs, which the first shape of the flow writes, or an empty paragraph if there are none
 	*/
 	var createTextFlowBox = (flow, children) => new TextFlowBox(flow, children);
 	//#endregion
@@ -3133,8 +3133,10 @@ var docxShapes = (function(exports, docx) {
 	*
 	* Lines and connectors are written with `wps:cNvCnPr`, which says which shapes they are attached to,
 	* and other shapes with `wps:cNvSpPr`.
-	* A text box (`wps:txbx`) is written only when the shape has children, and its text is
-	* centred vertically unless `textOptions` says otherwise.
+	* A shape without a `textFlow` has a text box (`wps:txbx`) only when it has at least one paragraph, since
+	* `w:txbxContent` can't be empty, and its text is centred vertically unless `textOptions` says otherwise. A shape in a
+	* text flow always has one: the first shape of the flow writes the text, or an empty paragraph if there is none, and
+	* the shapes after it link to it with `wps:linkedTxbx`. Its text starts at the top, so it can flow on from the bottom.
 	*
 	* ## XSD Schema
 	* ```xml
@@ -3169,8 +3171,8 @@ var docxShapes = (function(exports, docx) {
 				line,
 				effects
 			}),
-			...textFlow === void 0 ? children ? [createTextBox(children)] : [] : [createTextFlowBox(textFlow, children !== null && children !== void 0 ? children : [])],
-			createShapeTextProperties(textFlow === void 0 && children ? _objectSpread2({ verticalAlignment: "center" }, textOptions) : textOptions)
+			...textFlow === void 0 ? (children === null || children === void 0 ? void 0 : children.length) ? [createTextBox(children)] : [] : [createTextFlowBox(textFlow, children !== null && children !== void 0 ? children : [])],
+			createShapeTextProperties(textFlow === void 0 && (children === null || children === void 0 ? void 0 : children.length) ? _objectSpread2({ verticalAlignment: "center" }, textOptions) : textOptions)
 		]
 	});
 	//#endregion
@@ -3724,7 +3726,10 @@ var docxShapes = (function(exports, docx) {
 	* The text runs in a paragraph, including those in hyperlinks. Pictures, shapes and other runs without text are left out.
 	*/
 	var runsIn = (children) => children.flatMap((child) => {
-		if (child instanceof docx.TextRun) return [child];
+		if (child instanceof docx.TextRun) {
+			var _child$writtenAs;
+			return ((_child$writtenAs = child.writtenAs) !== null && _child$writtenAs !== void 0 ? _child$writtenAs : [child]).filter((part) => part instanceof docx.TextRun || part.constructor === docx.Run);
+		}
 		if (child instanceof docx.ExternalHyperlink) return runsIn(child.options.children);
 		return child instanceof docx.XmlComponent && !(child instanceof docx.Run) ? runsIn(componentChildren(child)) : [];
 	});
@@ -7467,9 +7472,22 @@ var docxShapes = (function(exports, docx) {
 		const alongMargins = (turned ? margins.left + margins.right : margins.top + margins.bottom) / POINTS_PER_PIXEL;
 		const natural = measureText(paragraphs);
 		const guessAlong = typeof along === "number" ? along : natural.height / POINTS_PER_PIXEL + alongMargins;
-		const acrossLength = across === "fitText" ? Math.ceil(solveLength(natural.width / POINTS_PER_PIXEL + acrossMargins + FIT_ALLOWANCE, (length) => textBox(length, guessAlong).across)) : across;
-		const wrapWidth = textOptions.wrap === false ? void 0 : Math.max(0, textBox(acrossLength, guessAlong).across - acrossMargins);
-		const alongLength = along === "fitText" ? Math.ceil(solveLength(measureText(paragraphs, wrapWidth === void 0 ? void 0 : wrapWidth * POINTS_PER_PIXEL).height / POINTS_PER_PIXEL + alongMargins, (length) => textBox(acrossLength, length).along)) : along;
+		const fitAcross = (alongSize) => across === "fitText" ? Math.ceil(solveLength(natural.width / POINTS_PER_PIXEL + acrossMargins + FIT_ALLOWANCE, (length) => textBox(length, alongSize).across)) : across;
+		const fitAlong = (acrossSize, alongSize) => {
+			if (along !== "fitText") return along;
+			const wrapWidth = textOptions.wrap === false ? void 0 : Math.max(0, textBox(acrossSize, alongSize).across - acrossMargins);
+			const textHeight = measureText(paragraphs, wrapWidth === void 0 ? void 0 : wrapWidth * POINTS_PER_PIXEL).height;
+			return Math.ceil(solveLength(textHeight / POINTS_PER_PIXEL + alongMargins, (length) => textBox(acrossSize, length).along));
+		};
+		let acrossLength = fitAcross(guessAlong);
+		let alongLength = fitAlong(acrossLength, guessAlong);
+		for (let step = 0; step < 5; step++) {
+			const nextAcross = fitAcross(alongLength);
+			const nextAlong = fitAlong(nextAcross, alongLength);
+			if (nextAcross === acrossLength && nextAlong === alongLength) break;
+			acrossLength = nextAcross;
+			alongLength = nextAlong;
+		}
 		return _objectSpread2(_objectSpread2({}, transformation), {}, {
 			width: turned ? alongLength : acrossLength,
 			height: turned ? acrossLength : alongLength
