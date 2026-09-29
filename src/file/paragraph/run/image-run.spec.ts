@@ -1612,4 +1612,33 @@ describe("ImageRun", () => {
             expect(shapeProperties.map((child) => Object.keys(child)[0])).to.include("a:solidFill");
         });
     });
+
+    describe("size", () => {
+        // A 5.5 by 3.09375 inch image, given in EMUs instead of pixels
+        const emusAsPixels = { width: 5029200, height: 2828925 };
+
+        it("should throw for an inline image too big for Word to open, such as one sized in EMUs instead of pixels", () => {
+            expect(() => new ImageRun({ type: "jpg", data: Buffer.from(""), transformation: emusAsPixels })).toThrow(
+                "Invalid drawing width 47903130000 EMUs (5029200 pixels)",
+            );
+        });
+
+        it("should throw for a floating image too big for Word to open", () => {
+            expect(
+                () =>
+                    new ImageRun({
+                        type: "jpg",
+                        data: Buffer.from(""),
+                        transformation: { width: 528, height: 2828925 },
+                        floating: { horizontalPosition: { offset: 0 }, verticalPosition: { offset: 0 } },
+                    }),
+            ).toThrow("Invalid drawing height 26945510625 EMUs (2828925 pixels)");
+        });
+
+        it("should allow the largest image Word opens", () => {
+            expect(
+                () => new ImageRun({ type: "jpg", data: Buffer.from(""), transformation: { width: 225457, height: 225457 } }),
+            ).not.toThrow();
+        });
+    });
 });

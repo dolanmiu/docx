@@ -129,6 +129,8 @@ const doc = new Document({
 
 `docx` supports `jpeg`, `jpg`, `bmp`, `gif` and `png`
 
+The `width` and `height` in `transformation` are in pixels, at 96 to the inch, so `width: 528` is 5.5 inches wide. They aren't in EMUs, which floating offsets use. Word won't open a document with an image more than 225457 pixels wide or tall, so `docx` throws an error for one, such as an image sized in EMUs by mistake.
+
 ## Positioning
 
 > Positioning is the method on how to place the image on the document
