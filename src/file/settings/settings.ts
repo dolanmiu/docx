@@ -179,6 +179,8 @@ export type ISettingsOptions = {
     readonly trackRevisions?: boolean;
     /** Update fields when document is opened */
     readonly updateFields?: boolean;
+    /** Keep the document's embedded fonts when it is saved again, as Word's "Embed fonts in the file" option does */
+    readonly embedFonts?: boolean;
     /** Compatibility settings for older Word versions */
     readonly compatibility?: ICompatibilityOptions;
     /** Default distance between tab stops in twips */
@@ -215,6 +217,7 @@ export type IHyphenationOptions = {
  * ```xml
  * <xsd:complexType name="CT_Settings">
  *   <xsd:sequence>
+ *     <xsd:element name="embedTrueTypeFonts" type="CT_OnOff" minOccurs="0"/>
  *     <xsd:element name="trackRevisions" type="CT_OnOff" minOccurs="0"/>
  *     <xsd:element name="defaultTabStop" type="CT_TwipsMeasure" minOccurs="0"/>
  *     <xsd:element name="autoHyphenation" type="CT_OnOff" minOccurs="0"/>
@@ -279,6 +282,12 @@ export class Settings extends XmlComponent {
         this.root.push(new OnOffElement("w:displayBackgroundShape", true));
 
         // The elements are written in CT_Settings' order, which the schema requires
+        // Word and LibreOffice only write a document's embedded fonts back out when this is on, so without it
+        // the fonts are dropped the first time the document is saved again
+        if (options.embedFonts !== undefined) {
+            this.root.push(new OnOffElement("w:embedTrueTypeFonts", options.embedFonts));
+        }
+
         // https://c-rex.net/projects/samples/ooxml/e1/Part4/OOXML_P4_DOCX_trackRevisions_topic_ID0EKXKY.html
         if (options.trackRevisions !== undefined) {
             this.root.push(new OnOffElement("w:trackRevisions", options.trackRevisions));
