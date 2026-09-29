@@ -229,15 +229,31 @@ export class Compiler {
             },
         );
 
+        const endnoteXmlData = xml(
+            this.formatter.format(file.Endnotes.View, {
+                viewWrapper: file.Endnotes,
+                file,
+                stack: [],
+            }),
+            {
+                indent: prettify,
+                declaration: {
+                    encoding: "UTF-8",
+                },
+            },
+        );
+
         // The relationships to images come after the ones the XML added, such as to hyperlinks. Those are added only
         // the first time the document is packed, so counted after the XML, the images have the same ids every time
         const documentRelationshipCount = file.Document.Relationships.RelationshipCount + 1;
         const commentRelationshipCount = file.Comments.Relationships.RelationshipCount + 1;
         const footnoteRelationshipCount = file.FootNotes.Relationships.RelationshipCount + 1;
+        const endnoteRelationshipCount = file.Endnotes.Relationships.RelationshipCount + 1;
 
         const documentMediaDatas = this.imageReplacer.getMediaData(documentXmlData, file.Media);
         const commentMediaDatas = this.imageReplacer.getMediaData(commentXmlData, file.Media);
         const footnoteMediaDatas = this.imageReplacer.getMediaData(footnoteXmlData, file.Media);
+        const endnoteMediaDatas = this.imageReplacer.getMediaData(endnoteXmlData, file.Media);
 
         return {
             Relationships: {
@@ -542,35 +558,38 @@ export class Compiler {
                 path: "word/_rels/footnotes.xml.rels",
             },
             Endnotes: {
-                data: xml(
-                    this.formatter.format(file.Endnotes.View, {
-                        viewWrapper: file.Endnotes,
-                        file,
-                        stack: [],
-                    }),
-                    {
-                        indent: prettify,
-                        declaration: {
-                            encoding: "UTF-8",
-                        },
-                    },
-                ),
+                data: (() => {
+                    const xmlData = this.imageReplacer.replace(endnoteXmlData, endnoteMediaDatas, endnoteRelationshipCount);
+                    const referenedXmlData = this.numberingReplacer.replace(xmlData, file.Numbering.ConcreteNumbering);
+                    return referenedXmlData;
+                })(),
                 path: "word/endnotes.xml",
             },
             EndnotesRelationships: {
-                data: xml(
-                    this.formatter.format(file.Endnotes.Relationships, {
-                        viewWrapper: file.Endnotes,
-                        file,
-                        stack: [],
-                    }),
-                    {
-                        indent: prettify,
-                        declaration: {
-                            encoding: "UTF-8",
+                data: (() => {
+                    // Added to a copy, so packing the document again doesn't add them a second time
+                    const relationships = Relationships.copy(file.Endnotes.Relationships);
+                    endnoteMediaDatas.forEach((mediaData, i) => {
+                        relationships.addRelationship(
+                            endnoteRelationshipCount + i,
+                            "http://schemas.openxmlformats.org/officeDocument/2006/relationships/image",
+                            `media/${mediaData.fileName}`,
+                        );
+                    });
+                    return xml(
+                        this.formatter.format(relationships, {
+                            viewWrapper: file.Endnotes,
+                            file,
+                            stack: [],
+                        }),
+                        {
+                            indent: prettify,
+                            declaration: {
+                                encoding: "UTF-8",
+                            },
                         },
-                    },
-                ),
+                    );
+                })(),
                 path: "word/_rels/endnotes.xml.rels",
             },
             Settings: {
