@@ -64,5 +64,15 @@ describe("CustomProperties", () => {
                 ],
             });
         });
+
+        it("should write each property once when written again", () => {
+            const properties = new CustomProperties([{ name: "Address", value: "123" }]);
+
+            const first = new Formatter().format(properties);
+            const second = new Formatter().format(properties);
+
+            expect(second).to.deep.equal(first);
+            expect(second.Properties).to.have.length(2);
+        });
     });
 });

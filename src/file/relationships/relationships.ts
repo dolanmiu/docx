@@ -59,6 +59,17 @@ export class Relationships extends XmlComponent {
     }
 
     /**
+     * Creates a copy of these relationships. Relationships added to the copy aren't added to these, so the compiler
+     * adds the ones it writes for a part, such as to its images, to a copy, and packing a document again doesn't add
+     * them a second time.
+     */
+    public copy(): Relationships {
+        const copy = new Relationships();
+        copy.root.push(...this.root.slice(1));
+        return copy;
+    }
+
+    /**
      * Gets the count of relationships in this collection.
      * Excludes the attributes element from the count.
      */

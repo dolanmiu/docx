@@ -180,8 +180,6 @@ export class Compiler {
     }
 
     private xmlifyFile(file: File, prettify?: (typeof PrettifyType)[keyof typeof PrettifyType]): IXmlifyedFileMapping {
-        const documentRelationshipCount = file.Document.Relationships.RelationshipCount + 1;
-
         const documentXmlData = xml(
             this.formatter.format(file.Document.View, {
                 viewWrapper: file.Document,
@@ -197,7 +195,6 @@ export class Compiler {
             },
         );
 
-        const commentRelationshipCount = file.Comments.Relationships.RelationshipCount + 1;
         const commentXmlData = xml(
             this.formatter.format(file.Comments, {
                 viewWrapper: {
@@ -216,7 +213,6 @@ export class Compiler {
             },
         );
 
-        const footnoteRelationshipCount = file.FootNotes.Relationships.RelationshipCount + 1;
         const footnoteXmlData = xml(
             this.formatter.format(file.FootNotes.View, {
                 viewWrapper: file.FootNotes,
@@ -232,6 +228,12 @@ export class Compiler {
             },
         );
 
+        // The relationships to images come after the ones the XML added, such as to hyperlinks. Those are added only
+        // the first time the document is packed, so counted after the XML, the images have the same ids every time
+        const documentRelationshipCount = file.Document.Relationships.RelationshipCount + 1;
+        const commentRelationshipCount = file.Comments.Relationships.RelationshipCount + 1;
+        const footnoteRelationshipCount = file.FootNotes.Relationships.RelationshipCount + 1;
+
         const documentMediaDatas = this.imageReplacer.getMediaData(documentXmlData, file.Media);
         const commentMediaDatas = this.imageReplacer.getMediaData(commentXmlData, file.Media);
         const footnoteMediaDatas = this.imageReplacer.getMediaData(footnoteXmlData, file.Media);
@@ -239,22 +241,24 @@ export class Compiler {
         return {
             Relationships: {
                 data: (() => {
+                    // Added to a copy, so packing the document again doesn't add them a second time
+                    const relationships = file.Document.Relationships.copy();
                     documentMediaDatas.forEach((mediaData, i) => {
-                        file.Document.Relationships.addRelationship(
+                        relationships.addRelationship(
                             documentRelationshipCount + i,
                             "http://schemas.openxmlformats.org/officeDocument/2006/relationships/image",
                             `media/${mediaData.fileName}`,
                         );
                     });
 
-                    file.Document.Relationships.addRelationship(
-                        file.Document.Relationships.RelationshipCount + 1,
+                    relationships.addRelationship(
+                        relationships.RelationshipCount + 1,
                         "http://schemas.openxmlformats.org/officeDocument/2006/relationships/fontTable",
                         "fontTable.xml",
                     );
 
                     return xml(
-                        this.formatter.format(file.Document.Relationships, {
+                        this.formatter.format(relationships, {
                             viewWrapper: file.Document,
                             file,
                             stack: [],
@@ -315,23 +319,6 @@ export class Compiler {
                 ),
                 path: "docProps/core.xml",
             },
-            Numbering: {
-                data: xml(
-                    this.formatter.format(file.Numbering, {
-                        viewWrapper: file.Document,
-                        file,
-                        stack: [],
-                    }),
-                    {
-                        indent: prettify,
-                        declaration: {
-                            standalone: "yes",
-                            encoding: "UTF-8",
-                        },
-                    },
-                ),
-                path: "word/numbering.xml",
-            },
             FileRelationships: {
                 data: xml(
                     this.formatter.format(file.FileRelationships, {
@@ -364,8 +351,10 @@ export class Compiler {
                 );
                 const mediaDatas = this.imageReplacer.getMediaData(xmlData, file.Media);
 
+                // Added to a copy, so packing the document again doesn't add them a second time
+                const relationships = headerWrapper.Relationships.copy();
                 mediaDatas.forEach((mediaData, i) => {
-                    headerWrapper.Relationships.addRelationship(
+                    relationships.addRelationship(
                         i,
                         "http://schemas.openxmlformats.org/officeDocument/2006/relationships/image",
                         `media/${mediaData.fileName}`,
@@ -374,7 +363,7 @@ export class Compiler {
 
                 return {
                     data: xml(
-                        this.formatter.format(headerWrapper.Relationships, {
+                        this.formatter.format(relationships, {
                             viewWrapper: headerWrapper,
                             file,
                             stack: [],
@@ -405,8 +394,10 @@ export class Compiler {
                 );
                 const mediaDatas = this.imageReplacer.getMediaData(xmlData, file.Media);
 
+                // Added to a copy, so packing the document again doesn't add them a second time
+                const relationships = footerWrapper.Relationships.copy();
                 mediaDatas.forEach((mediaData, i) => {
-                    footerWrapper.Relationships.addRelationship(
+                    relationships.addRelationship(
                         i,
                         "http://schemas.openxmlformats.org/officeDocument/2006/relationships/image",
                         `media/${mediaData.fileName}`,
@@ -415,7 +406,7 @@ export class Compiler {
 
                 return {
                     data: xml(
-                        this.formatter.format(footerWrapper.Relationships, {
+                        this.formatter.format(relationships, {
                             viewWrapper: footerWrapper,
                             file,
                             stack: [],
@@ -524,15 +515,17 @@ export class Compiler {
             },
             FootNotesRelationships: {
                 data: (() => {
+                    // Added to a copy, so packing the document again doesn't add them a second time
+                    const relationships = file.FootNotes.Relationships.copy();
                     footnoteMediaDatas.forEach((mediaData, i) => {
-                        file.FootNotes.Relationships.addRelationship(
+                        relationships.addRelationship(
                             footnoteRelationshipCount + i,
                             "http://schemas.openxmlformats.org/officeDocument/2006/relationships/image",
                             `media/${mediaData.fileName}`,
                         );
                     });
                     return xml(
-                        this.formatter.format(file.FootNotes.Relationships, {
+                        this.formatter.format(relationships, {
                             viewWrapper: file.FootNotes,
                             file,
                             stack: [],
@@ -609,15 +602,17 @@ export class Compiler {
                       },
                       CommentsRelationships: {
                           data: (() => {
+                              // Added to a copy, so packing the document again doesn't add them a second time
+                              const relationships = file.Comments.Relationships.copy();
                               commentMediaDatas.forEach((mediaData, i) => {
-                                  file.Comments.Relationships.addRelationship(
+                                  relationships.addRelationship(
                                       commentRelationshipCount + i,
                                       "http://schemas.openxmlformats.org/officeDocument/2006/relationships/image",
                                       `media/${mediaData.fileName}`,
                                   );
                               });
                               return xml(
-                                  this.formatter.format(file.Comments.Relationships, {
+                                  this.formatter.format(relationships, {
                                       viewWrapper: {
                                           View: file.Comments,
                                           Relationships: file.Comments.Relationships,
@@ -737,6 +732,25 @@ export class Compiler {
             },
             // After every part that can refer to them, which adds them to the package as it is written
             PackageParts: xmlifyPackageParts(file, prettify),
+            // After every part that can have lists, such as headers and footers, as the lists they use are added to the
+            // numbering while they're written
+            Numbering: {
+                data: xml(
+                    this.formatter.format(file.Numbering, {
+                        viewWrapper: file.Document,
+                        file,
+                        stack: [],
+                    }),
+                    {
+                        indent: prettify,
+                        declaration: {
+                            standalone: "yes",
+                            encoding: "UTF-8",
+                        },
+                    },
+                ),
+                path: "word/numbering.xml",
+            },
             // Last, as parts are added to the package, with their content types, while the others are written
             ContentTypes: {
                 data: xml(

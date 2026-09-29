@@ -1,8 +1,10 @@
+import type JSZip from "jszip";
 import { afterAll, beforeAll, beforeEach, describe, expect, it, vi } from "vitest";
 
 import { File } from "@file/file";
 import { Footer, Header } from "@file/header";
-import { Bookmark, ImageRun, Paragraph, TextRun, WpsShapeRun } from "@file/paragraph";
+import { LevelFormat } from "@file/numbering";
+import { Bookmark, ExternalHyperlink, ImageRun, Paragraph, TextRun, WpsShapeRun } from "@file/paragraph";
 import * as convenienceFunctions from "@util/convenience-functions";
 
 import { Compiler } from "./next-compiler";
@@ -352,6 +354,77 @@ describe("Compiler", () => {
 
             expect(ids).to.have.length(6);
             expect(new Set(ids).size).to.equal(6);
+        });
+
+        it("should write the same package when a document is packed again", async () => {
+            // Packing again used to repeat the lists, custom properties, links on pictures and relationships the first
+            // pack wrote, which Word can't open. Apps pack again when a user downloads a document a second time
+            const image = (): ImageRun =>
+                new ImageRun({ type: "png", data: Buffer.from("", "base64"), transformation: { width: 10, height: 10 } });
+            const file = new File({
+                customProperties: [{ name: "Project", value: "docx" }],
+                numbering: { config: [{ reference: "footer-list", levels: [{ level: 0, format: LevelFormat.DECIMAL, text: "%1." }] }] },
+                footnotes: { 1: { children: [new Paragraph({ children: [image()] })] } },
+                comments: { children: [{ id: 0, children: [new Paragraph({ children: [image()] })] }] },
+                sections: [
+                    {
+                        headers: { default: new Header({ children: [new Paragraph({ children: [image()] })] }) },
+                        footers: {
+                            default: new Footer({
+                                children: [
+                                    new Paragraph({ text: "Listed", numbering: { reference: "footer-list", level: 0 } }),
+                                    new Paragraph({ children: [image()] }),
+                                ],
+                            }),
+                        },
+                        children: [
+                            new Paragraph({ text: "Bulleted", bullet: { level: 0 } }),
+                            new Paragraph({
+                                children: [
+                                    new ExternalHyperlink({ link: "https://example.com", children: [new TextRun("Link"), image()] }),
+                                ],
+                            }),
+                        ],
+                    },
+                ],
+            });
+            const partsOf = async (zipFile: JSZip): Promise<Record<string, string>> =>
+                Object.fromEntries(
+                    await Promise.all(
+                        Object.values(zipFile.files)
+                            .filter((entry) => !entry.dir)
+                            .map(async (entry) => [entry.name, await entry.async("text")]),
+                    ),
+                );
+
+            const first = await partsOf(compiler.compile(file));
+            const second = await partsOf(compiler.compile(file));
+
+            expect(second).to.deep.equal(first);
+        });
+
+        it("should define a list used only in a footer the first time a document is packed", async () => {
+            const file = new File({
+                numbering: { config: [{ reference: "footer-list", levels: [{ level: 0, format: LevelFormat.DECIMAL, text: "%1." }] }] },
+                sections: [
+                    {
+                        footers: {
+                            default: new Footer({
+                                children: [new Paragraph({ text: "Listed", numbering: { reference: "footer-list", level: 0 } })],
+                            }),
+                        },
+                        children: [],
+                    },
+                ],
+            });
+
+            const zipFile = compiler.compile(file);
+            const footer = await zipFile.file("word/footer1.xml")?.async("text");
+            const numbering = await zipFile.file("word/numbering.xml")?.async("text");
+            const [, numId] = footer?.match(/<w:numId w:val="(\d+)"\/>/) ?? [];
+
+            expect(numId).to.equal("2");
+            expect(numbering).to.contain(`<w:num w:numId="${numId}">`);
         });
 
         it("should call the format method X times equalling X files to be formatted", () => {
