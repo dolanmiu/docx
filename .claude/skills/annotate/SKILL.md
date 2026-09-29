@@ -107,4 +107,4 @@ Test: **would this sentence still make sense, and still be true, to someone read
 
 ## After Annotating
 
-Run `/fix-spelling` after all annotations are added. Annotations often introduce domain-specific words that trigger cspell false positives.
+Run `npm run cspell` after all annotations are added. Annotations often introduce domain-specific words that trigger cspell false positives; add real words to `words` in `.cspell.json`, and fix anything that is a typo.
