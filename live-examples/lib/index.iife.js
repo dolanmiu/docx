@@ -29109,16 +29109,20 @@ MAX: 9026 };
 			});
 			this.media = new Media();
 			if (options.externalStyles !== void 0) {
-				var _options$styles$defau, _options$styles;
+				var _options$styles$defau, _options$styles, _options$styles2, _options$styles3;
 				const given = (_options$styles$defau = (_options$styles = options.styles) === null || _options$styles === void 0 ? void 0 : _options$styles.default) !== null && _options$styles$defau !== void 0 ? _options$styles$defau : {};
 				const defaultStyles = Object.entries(createDefaultStyles(given));
 				const isGiven = ([key]) => given[key] !== void 0;
 				const externalStyles = new ExternalStylesFactory().newInstance(options.externalStyles);
-				this.styles = new Styles(_objectSpread2(_objectSpread2({}, externalStyles), {}, { importedStyles: [
-					...defaultStyles.filter((entry) => !isGiven(entry)).map(([, style]) => style),
-					...externalStyles.importedStyles,
-					...defaultStyles.filter(isGiven).map(([, style]) => style)
-				] }));
+				this.styles = new Styles(_objectSpread2(_objectSpread2({}, externalStyles), {}, {
+					paragraphStyles: (_options$styles2 = options.styles) === null || _options$styles2 === void 0 ? void 0 : _options$styles2.paragraphStyles,
+					characterStyles: (_options$styles3 = options.styles) === null || _options$styles3 === void 0 ? void 0 : _options$styles3.characterStyles,
+					importedStyles: [
+						...defaultStyles.filter((entry) => !isGiven(entry)).map(([, style]) => style),
+						...externalStyles.importedStyles,
+						...defaultStyles.filter(isGiven).map(([, style]) => style)
+					]
+				}));
 			} else if (options.styles) {
 				const defaultStyles = new DefaultStylesFactory().newInstance(options.styles.default);
 				this.styles = new Styles(_objectSpread2(_objectSpread2({}, defaultStyles), options.styles));

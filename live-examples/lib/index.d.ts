@@ -6941,9 +6941,9 @@ export declare type IStylesOptions = {
     readonly default?: IDefaultStylesOptions;
     /** Initial base XML component for styles root element */
     readonly initialStyles?: BaseXmlComponent;
-    /** Array of custom paragraph style definitions */
+    /** Array of custom paragraph style definitions. Each takes the place of a default or external style with its id */
     readonly paragraphStyles?: readonly IParagraphStyleOptions[];
-    /** Array of custom character style definitions */
+    /** Array of custom character style definitions. Each takes the place of a default or external style with its id */
     readonly characterStyles?: readonly ICharacterStyleOptions[];
     /** Array of styles imported from external sources */
     readonly importedStyles?: readonly (XmlComponent | StyleForParagraph | StyleForCharacter | ImportedXmlComponent)[];
