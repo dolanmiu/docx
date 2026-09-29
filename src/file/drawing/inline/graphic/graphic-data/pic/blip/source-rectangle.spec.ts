@@ -71,5 +71,33 @@ describe("SourceRectangle", () => {
                 },
             });
         });
+
+        it("should allow a crop of 0 and of 100 on an edge", () => {
+            const tree = new Formatter().format(new SourceRectangle({ left: 0, top: 100 }));
+
+            expect(tree).to.deep.equal({
+                "a:srcRect": {
+                    _attr: {
+                        l: 0,
+                        t: 100000,
+                    },
+                },
+            });
+        });
+
+        it("should throw when a crop edge is below 0", () => {
+            expect(() => new SourceRectangle({ left: -1 })).to.throw("Invalid crop left -1. Expected a number from 0 to 100");
+        });
+
+        it("should throw when a crop edge is above 100", () => {
+            expect(() => new SourceRectangle({ top: 101 })).to.throw("Invalid crop top 101. Expected a number from 0 to 100");
+        });
+
+        it("should throw when a crop edge isn't a finite number", () => {
+            expect(() => new SourceRectangle({ right: Number.NaN })).to.throw("Invalid crop right NaN. Expected a number from 0 to 100");
+            expect(() => new SourceRectangle({ bottom: Number.POSITIVE_INFINITY })).to.throw(
+                "Invalid crop bottom Infinity. Expected a number from 0 to 100",
+            );
+        });
     });
 });

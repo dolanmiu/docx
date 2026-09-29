@@ -50,6 +50,21 @@ class SourceRectangleAttributes extends XmlAttributeComponent<{
 }
 
 /**
+ * Converts a crop percentage to thousandths of a percent.
+ *
+ * @throws If the percentage isn't a number from 0 to 100
+ */
+const cropValue = (value: number | undefined, edge: keyof ICropOptions): number | undefined => {
+    if (value === undefined) {
+        return undefined;
+    }
+    if (!(value >= 0 && value <= 100)) {
+        throw new Error(`Invalid crop ${edge} ${value}. Expected a number from 0 to 100`);
+    }
+    return Math.round(value * 1000);
+};
+
+/**
  * Represents a source rectangle for blip fills.
  *
  * This element specifies a portion of the blip (image) to use as the fill.
@@ -79,10 +94,10 @@ export class SourceRectangle extends XmlComponent {
         if (crop) {
             this.root.push(
                 new SourceRectangleAttributes({
-                    left: crop.left === undefined ? undefined : Math.round(crop.left * 1000),
-                    top: crop.top === undefined ? undefined : Math.round(crop.top * 1000),
-                    right: crop.right === undefined ? undefined : Math.round(crop.right * 1000),
-                    bottom: crop.bottom === undefined ? undefined : Math.round(crop.bottom * 1000),
+                    left: cropValue(crop.left, "left"),
+                    top: cropValue(crop.top, "top"),
+                    right: cropValue(crop.right, "right"),
+                    bottom: cropValue(crop.bottom, "bottom"),
                 }),
             );
         }
