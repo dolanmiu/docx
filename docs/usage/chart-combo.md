@@ -43,7 +43,7 @@ The options of each way of drawing a series work as they do on its own chart. A 
 
 ## A Secondary Axis
 
-`axis: "secondary"` draws a series against a second value axis, on the right side of the chart:
+`axis: "secondary"` draws a series against a second value axis, on the right side of the chart, or along the top of a bar chart:
 
 ```ts live
 import { Document, Paragraph } from "docx";
@@ -154,9 +154,9 @@ const doc = new Document({
 
 ## Options
 
-| Property             | Type                                   | Notes    | Description                                                                   |
-| -------------------- | -------------------------------------- | -------- | ----------------------------------------------------------------------------- |
-| `series[].type`      | `"column"` \| `"line"` \| `"area"`     | Optional | How the series is drawn. Default is the chart's `type`. Not on bar charts     |
-| `series[].axis`      | `"primary"` \| `"secondary"`           | Optional | The value axis the series is drawn against. Default `"primary"`               |
-| `secondaryValueAxis` | `ChartValueAxis`                       | Optional | The secondary value axis, on the right. See [Chart Axes](usage/chart-axes.md) |
-| `stacking`           | `"none"` \| `"stacked"` \| `"percent"` | Optional | Stacks the series drawn as the chart's `type`. Default `"none"`               |
+| Property             | Type                                   | Notes    | Description                                                                                                    |
+| -------------------- | -------------------------------------- | -------- | -------------------------------------------------------------------------------------------------------------- |
+| `series[].type`      | `"column"` \| `"line"` \| `"area"`     | Optional | How the series is drawn. Default is the chart's `type`. Not on bar charts                                      |
+| `series[].axis`      | `"primary"` \| `"secondary"`           | Optional | The value axis the series is drawn against. Default `"primary"`                                                |
+| `secondaryValueAxis` | `ChartValueAxis`                       | Optional | The secondary value axis, on the right, or along the top of a bar chart. See [Chart Axes](usage/chart-axes.md) |
+| `stacking`           | `"none"` \| `"stacked"` \| `"percent"` | Optional | Stacks the series drawn as the chart's `type`. Default `"none"`                                                |

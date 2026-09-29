@@ -12,7 +12,7 @@ The axes are the lines along the sides of a chart, with the labels that say what
 | Radar                 | `categoryAxis` round the outside, and `valueAxis` up the first spoke        |
 | Pie and doughnut      | None                                                                        |
 
-A category axis shows the categories. A value axis shows numbers, and takes a range and a scale too. A column, bar, line or area chart can have a second value axis, `secondaryValueAxis`, on the right: see [Combo Charts](usage/chart-combo.md#a-secondary-axis).
+A category axis shows the categories. A value axis shows numbers, and takes a range and a scale too. A column, bar, line or area chart can have a second value axis, `secondaryValueAxis`, on the right, or along the top of a bar chart: see [Combo Charts](usage/chart-combo.md#a-secondary-axis).
 
 ## Titles
 
