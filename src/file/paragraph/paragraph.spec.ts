@@ -753,6 +753,28 @@ describe("Paragraph", () => {
         });
     });
 
+    it("should add a bookmark in a bookmark", () => {
+        const paragraph = new Paragraph({
+            children: [
+                new Bookmark({
+                    id: "outer",
+                    children: [new TextRun("A"), new Bookmark({ id: "inner", children: [new TextRun("B")] })],
+                }),
+            ],
+        });
+        const tree = new Formatter().format(paragraph)["w:p"] as readonly Record<string, { readonly _attr: Record<string, unknown> }>[];
+
+        expect(tree.map((element) => Object.keys(element)[0])).to.deep.equal([
+            "w:bookmarkStart",
+            "w:r",
+            "w:bookmarkStart",
+            "w:r",
+            "w:bookmarkEnd",
+            "w:bookmarkEnd",
+        ]);
+        expect([tree[0]["w:bookmarkStart"]._attr["w:name"], tree[2]["w:bookmarkStart"]._attr["w:name"]]).to.deep.equal(["outer", "inner"]);
+    });
+
     describe("#style", () => {
         it("should set the paragraph style to the given styleId", () => {
             const paragraph = new Paragraph({

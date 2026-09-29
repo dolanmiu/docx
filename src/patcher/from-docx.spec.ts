@@ -987,6 +987,29 @@ describe("from-docx", () => {
                 expect(end.attributes!["w:id"]).to.equal(start.attributes!["w:id"]);
             });
 
+            it("should insert a bookmark in a bookmark in a paragraph patch", async () => {
+                const read = await patchTemplate(
+                    { body: `<w:p><w:r><w:t>{{anchor}}</w:t></w:r></w:p>` },
+                    {
+                        anchor: {
+                            type: PatchType.PARAGRAPH,
+                            children: [
+                                new Bookmark({
+                                    id: "outer",
+                                    children: [new TextRun("A"), new Bookmark({ id: "inner", children: [new TextRun("B")] })],
+                                }),
+                            ],
+                        },
+                    },
+                );
+
+                const document = (await read("word/document.xml"))!;
+                expect(document.match(/<w:bookmark(Start|End)[^>]*\/>/g)).to.have.length(4);
+                expect(document).to.match(
+                    /<w:bookmarkStart w:name="outer" w:id="(\d+)"\/><w:r>.*?A.*?<\/w:r><w:bookmarkStart w:name="inner" w:id="(\d+)"\/><w:r>.*?B.*?<\/w:r><w:bookmarkEnd w:id="\2"\/><w:bookmarkEnd w:id="\1"\/>/,
+                );
+            });
+
             it("should add the relationship of a hyperlink in a bookmark in a paragraph patch", async () => {
                 const read = await patchTemplate(
                     { body: `<w:p><w:r><w:t>{{link}}</w:t></w:r></w:p>` },

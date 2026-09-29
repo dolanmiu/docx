@@ -335,7 +335,7 @@ export const patchDocument = async <T extends PatchDocumentOutputType = PatchDoc
                     ...patchValue,
                     children: patchValue.children
                         // A bookmark is written as its start, its children and its end, as it is in a paragraph
-                        .flatMap((element) => (element instanceof Bookmark ? [element.start, ...element.children, element.end] : [element]))
+                        .flatMap((element) => (element instanceof Bookmark ? element.writtenAs : [element]))
                         .map((element) => {
                             // We need to replace external hyperlinks with concrete hyperlinks
                             if (element instanceof ExternalHyperlink) {

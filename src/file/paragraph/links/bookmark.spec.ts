@@ -54,4 +54,18 @@ describe("Bookmark", () => {
 
         expect(new Set(ids).size).to.equal(3);
     });
+
+    describe("#writtenAs", () => {
+        it("should be the start, the children and the end", () => {
+            expect(bookmark.writtenAs).to.deep.equal([bookmark.start, ...bookmark.children, bookmark.end]);
+        });
+
+        it("should write a bookmark in the children the same way", () => {
+            const inner = new Bookmark({ id: "inner", children: [new TextRun("Inner")] });
+            const text = new TextRun("Outer");
+            const outer = new Bookmark({ id: "outer", children: [text, inner] });
+
+            expect(outer.writtenAs).to.deep.equal([outer.start, text, inner.start, ...inner.children, inner.end, outer.end]);
+        });
+    });
 });

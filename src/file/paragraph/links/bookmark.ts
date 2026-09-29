@@ -79,6 +79,16 @@ export class Bookmark {
         this.children = options.children;
         this.end = new BookmarkEnd(linkId);
     }
+
+    /**
+     * The components written in this bookmark's place: its start, its children and its end. A bookmark in its
+     * children is written the same way, so one bookmark can hold another.
+     *
+     * @internal
+     */
+    public get writtenAs(): readonly (ParagraphChild | BookmarkStart | BookmarkEnd)[] {
+        return [this.start, ...this.children.flatMap((child) => (child instanceof Bookmark ? child.writtenAs : [child])), this.end];
+    }
 }
 
 /**
