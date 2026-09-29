@@ -1,13 +1,14 @@
 // Table of contents
 
 import * as fs from "fs";
-import { Bookmark, File, HeadingLevel, Packer, Paragraph, StyleLevel, TableOfContents } from "docx";
+import { File, HeadingLevel, Packer, Paragraph, StyleLevel, TableOfContents } from "docx";
 
 // WordprocessingML docs for TableOfContents can be found here:
 // http://officeopenxml.com/WPtableOfContents.php
 
 // Let's define the properties for generate a TOC for heading 1-5 and MySpectacularStyle,
-// making the entries be hyperlinks for the paragraph
+// making the entries be hyperlinks for the paragraph. The entries are written from the headings,
+// and Word fills in their page numbers when it updates the fields
 const doc = new File({
     features: {
         updateFields: true,
@@ -45,39 +46,11 @@ const doc = new File({
                     hyperlink: true,
                     headingStyleRange: "1-5",
                     stylesWithLevels: [new StyleLevel("MySpectacularStyle", 1)],
-                    cachedEntries: [
-                        {
-                            title: "Header #1",
-                            level: 1,
-                            page: 1,
-                            href: "anchorForHeader1",
-                        },
-                        {
-                            title: "Header #2",
-                            level: 1,
-                            page: 2,
-                        },
-                        {
-                            title: "Header #2.1",
-                            level: 2,
-                        },
-                        {
-                            title: "My Spectacular Style #1",
-                            level: 1,
-                            page: 3,
-                        },
-                    ],
                 }),
                 new Paragraph({
                     text: "Header #1",
                     heading: HeadingLevel.HEADING_1,
                     pageBreakBefore: true,
-                    children: [
-                        new Bookmark({
-                            id: "anchorForHeader1",
-                            children: [],
-                        }),
-                    ],
                 }),
                 new Paragraph("I'm a little text very nicely written.'"),
                 new Paragraph({

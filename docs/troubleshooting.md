@@ -482,13 +482,13 @@ const doc = new Document({
 
 ## Table of Contents
 
-### TOC shows "Update this table"
+### TOC has no page numbers
 
-**Cause:** TOC fields need updating in Word.
+**Cause:** The page numbers depend on how the document is laid out, so `docx` writes the entries for the headings without them, and leaves them for Word to fill in when it updates the field.
 
 **Solution:**
 
-1. Set `updateFields: true` in document features:
+1. Set `updateFields: true` in document features, so Word asks to update the fields when the document is opened:
 
 ```ts live
 import { Document, HeadingLevel, Paragraph, TableOfContents } from "docx";
@@ -509,7 +509,7 @@ const doc = new Document({
 });
 ```
 
-2. When opening in Word, right-click the TOC and select "Update Field"
+2. Or, in Word, right-click the TOC and select "Update Field". In LibreOffice, right-click it and select "Update Index"
 
 ## Memory Issues
 
