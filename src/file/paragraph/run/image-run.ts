@@ -186,8 +186,13 @@ export class ImageRun extends XmlComponent {
         // Track-change wrappers: w:ins / w:del enclose the run so Word displays the image as an inserted or deleted
         // revision. An image inserted and then deleted is in both: w:ins > w:del > w:r
         const revision = options.insertion ?? options.deletion;
+        const rootName = options.insertion ? "w:ins" : options.deletion ? "w:del" : "w:r";
+
+        // One super() call, not one per branch: the build wraps a super() inside a branch in an arrow function, which
+        // Next.js Turbopack turns into a plain function, and a plain function can't call super()
+        super(rootName);
+
         if (revision) {
-            super(options.insertion ? "w:ins" : "w:del");
             this.root.push(
                 new ChangeAttributes({
                     id: revision.id,
@@ -198,7 +203,6 @@ export class ImageRun extends XmlComponent {
             const run = new BuilderElement({ name: "w:r", children: [properties, drawing] });
             this.addChildElement(options.insertion && options.deletion ? createDeletion(options.deletion, run) : run);
         } else {
-            super("w:r");
             this.root.push(properties);
             this.root.push(drawing);
         }

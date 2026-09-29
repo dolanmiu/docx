@@ -37,13 +37,7 @@ export type ISymbolRunOptions = {
  */
 export class SymbolRun extends Run {
     public constructor(options: ISymbolRunOptions | string) {
-        if (typeof options === "string") {
-            super({});
-            this.root.push(new Symbol(options));
-            return this;
-        }
-
-        super(options);
-        this.root.push(new Symbol(options.char, options.symbolfont));
+        super(typeof options === "string" ? {} : options);
+        this.root.push(typeof options === "string" ? new Symbol(options) : new Symbol(options.char, options.symbolfont));
     }
 }
