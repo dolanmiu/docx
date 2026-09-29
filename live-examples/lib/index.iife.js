@@ -34574,6 +34574,55 @@ while (n === a[++i] && n === a[++i] && n === a[++i] && n === a[++i] && n === a[+
 	};
 	_defineProperty(Packer, "compiler", new Compiler());
 	//#endregion
+	//#region src/patcher/bookmark-ids.ts
+	var bookmarkIdOf = (element) => {
+		var _element$attributes;
+		if (element.name !== "w:bookmarkStart" && element.name !== "w:bookmarkEnd") return;
+		const id = Number((_element$attributes = element.attributes) === null || _element$attributes === void 0 ? void 0 : _element$attributes["w:id"]);
+		return Number.isInteger(id) ? id : void 0;
+	};
+	/**
+	* Finds the id of every bookmark in an element, at any depth.
+	*
+	* @param element - The element to search, such as a part's root
+	* @returns The ids, once for each bookmarkStart and bookmarkEnd
+	*/
+	var findBookmarkIds = (element) => {
+		var _element$elements;
+		const id = bookmarkIdOf(element);
+		return [...id === void 0 ? [] : [id], ...((_element$elements = element.elements) !== null && _element$elements !== void 0 ? _element$elements : []).flatMap(findBookmarkIds)];
+	};
+	/**
+	* Creates a function that renumbers the bookmarks in content being inserted, so none takes an id the document
+	* already uses. Bookmark ids must be unique within a document, but a bookmark's id is chosen when it is created,
+	* without knowing which ids the template has.
+	*
+	* A bookmark keeps its id if nothing in the document uses it yet, and otherwise gets the next unused one. An id is
+	* renumbered the same way each time, so a bookmark's start and end still share one, even in separate patches.
+	*
+	* @param idsInDocument - The ids of the bookmarks already in the document
+	* @returns A function that returns the elements with their bookmarks renumbered
+	*/
+	var renumberBookmarksAvoiding = (idsInDocument) => {
+		const usedIds = new Set(idsInDocument);
+		const newIds = /* @__PURE__ */ new Map();
+		let highestId = idsInDocument.reduce((highest, id) => Math.max(highest, id), 0);
+		const newIdFor = (id) => {
+			const knownId = newIds.get(id);
+			if (knownId !== void 0) return knownId;
+			const newId = usedIds.has(id) ? highestId + 1 : id;
+			highestId = Math.max(highestId, newId);
+			usedIds.add(newId);
+			newIds.set(id, newId);
+			return newId;
+		};
+		const renumber = (element) => {
+			const id = bookmarkIdOf(element);
+			return _objectSpread2(_objectSpread2(_objectSpread2({}, element), id === void 0 ? {} : { attributes: _objectSpread2(_objectSpread2({}, element.attributes), {}, { "w:id": String(newIdFor(id)) }) }), element.elements === void 0 ? {} : { elements: element.elements.map(renumber) });
+		};
+		return (elements) => elements.map(renumber);
+	};
+	//#endregion
 	//#region src/patcher/util.ts
 	/**
 	* Utility functions for XML manipulation in document patching.
@@ -35369,9 +35418,10 @@ while (n === a[++i] && n === a[++i] && n === a[++i] && n === a[++i] && n === a[+
 	* @param context - The document context for formatting
 	* @param keepOriginalStyles - Whether to preserve original text formatting
 	* @param recursive - Whether to replace every occurrence in a paragraph, rather than only the first
+	* @param renumberBookmarks - Renumbers the bookmarks the patch inserts, so they don't take an id the document uses
 	* @returns Result containing the modified element and whether a replacement occurred
 	*/
-	var replacer = ({ json, patch, patchText, context, keepOriginalStyles = true, recursive = true }) => {
+	var replacer = ({ json, patch, patchText, context, keepOriginalStyles = true, recursive = true, renumberBookmarks = (elements) => elements }) => {
 		const renderedParagraphs = findLocationOfText(json, patchText);
 		if (renderedParagraphs.length === 0) return {
 			element: json,
@@ -35383,7 +35433,7 @@ while (n === a[++i] && n === a[++i] && n === a[++i] && n === a[++i] && n === a[+
 			case PatchType.DOCUMENT: {
 				const parentElement = goToParentElementFromPath(json, renderedParagraph.pathToParagraph);
 				const elementIndex = getLastElementIndexFromPath(renderedParagraph.pathToParagraph);
-				parentElement.elements.splice(elementIndex, 1, ...formatChildren(patch, context));
+				parentElement.elements.splice(elementIndex, 1, ...formatChildren(patch, context, renumberBookmarks));
 				break;
 			}
 			case PatchType.PARAGRAPH:
@@ -35397,7 +35447,7 @@ while (n === a[++i] && n === a[++i] && n === a[++i] && n === a[++i] && n === a[+
 						renderedParagraph: paragraph,
 						patchText,
 						fromIndex,
-						children: formatChildren(patch, context),
+						children: formatChildren(patch, context, renumberBookmarks),
 						keepOriginalStyles
 					});
 					paragraph = renderParagraphNode({
@@ -35415,10 +35465,10 @@ while (n === a[++i] && n === a[++i] && n === a[++i] && n === a[++i] && n === a[+
 			didFindOccurrence: true
 		};
 	};
-	var formatChildren = (patch, context) => patch.children.flatMap((c) => {
+	var formatChildren = (patch, context, renumberBookmarks) => renumberBookmarks(patch.children.flatMap((c) => {
 		var _c$writtenAs;
 		return (_c$writtenAs = c.writtenAs) !== null && _c$writtenAs !== void 0 ? _c$writtenAs : c;
-	}).map((c) => toJson((0, import_xml.default)(formatter.format(c, context)))).map((c) => c.elements[0]);
+	}).map((c) => toJson((0, import_xml.default)(formatter.format(c, context)))).map((c) => c.elements[0]));
 	/**
 	* Replaces the first occurrence of the placeholder from `fromIndex` on, splitting the run it starts in.
 	*
@@ -35726,6 +35776,7 @@ while (n === a[++i] && n === a[++i] && n === a[++i] && n === a[++i] && n === a[+
 				}
 				map.set(key, json);
 			}
+			const renumberBookmarks = renumberBookmarksAvoiding([...map.values()].flatMap(findBookmarkIds));
 			const createContext = (key) => ({
 				file,
 				viewWrapper: { Relationships: { addRelationship: (id, type, target, targetMode) => {
@@ -35758,7 +35809,11 @@ while (n === a[++i] && n === a[++i] && n === a[++i] && n === a[++i] && n === a[+
 					const patchText = `${start}${patchKey}${end}`;
 					replacer({
 						json,
-						patch: _objectSpread2(_objectSpread2({}, patchValue), {}, { children: patchValue.children.map((element) => {
+						patch: _objectSpread2(_objectSpread2({}, patchValue), {}, { children: patchValue.children.flatMap((element) => element instanceof Bookmark ? [
+							element.start,
+							...element.children,
+							element.end
+						] : [element]).map((element) => {
 							if (element instanceof ExternalHyperlink) {
 								const concreteHyperlink = new ConcreteHyperlink(element.options.children, uniqueId());
 								relationshipAdditions.push({
@@ -35774,7 +35829,8 @@ while (n === a[++i] && n === a[++i] && n === a[++i] && n === a[++i] && n === a[+
 						patchText,
 						context,
 						keepOriginalStyles,
-						recursive
+						recursive,
+						renumberBookmarks
 					});
 				}
 				const mediaDatas = imageReplacer.getMediaData(JSON.stringify(json), context.file.Media);
