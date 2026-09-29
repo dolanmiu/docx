@@ -228,6 +228,12 @@ export class File {
             const externalStyles = externalFactory.newInstance(options.externalStyles);
             // A style replaces an earlier one with its id. So the external styles replace docx's default styles, and the
             // default styles given in styles.default, then the paragraph and character styles, replace the external ones
+            //
+            // The paragraph and character styles are passed through rather than left to the caller, because this branch
+            // builds its own options for Styles instead of spreading options.styles. Without them, a document that
+            // combines a Word template's styles with its own named styles silently loses the named ones, and paragraphs
+            // that reference them fall back to Normal. Styles writes them after every imported style, so they win over
+            // an external or default style with their id, the same precedence they have without externalStyles
             this.styles = new Styles({
                 ...externalStyles,
                 paragraphStyles: options.styles?.paragraphStyles,

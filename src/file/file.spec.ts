@@ -734,6 +734,9 @@ describe("File", () => {
                     </w:styles>`,
             });
 
+            // A style id may be written only once, as may the document defaults. When docx's own Title or document
+            // defaults are written as well as the template's, Word can show docx's formatting instead of the template's,
+            // so only the external ones may be written
             const tree = new Formatter().format(doc.Styles)["w:styles"];
             const titles = tree.filter(
                 (child: { readonly "w:style"?: readonly { readonly _attr?: Record<string, string> }[] }) =>
@@ -779,6 +782,8 @@ describe("File", () => {
                 (child: { readonly "w:style"?: readonly { readonly _attr?: Record<string, string> }[] }) =>
                     child["w:style"]?.find((part) => part._attr)?._attr?.["w:styleId"],
             );
+            // The paragraph style with the external style's id replaces it, rather than being dropped or written
+            // alongside it, and the character style with a new id is added next to the template's styles
             expect(ids.filter((id: string) => id === "Quote")).to.have.length(1);
             expect(tree[ids.indexOf("Quote")]).to.deep.equal(
                 new Formatter().format(new StyleForParagraph({ id: "Quote", name: "Quote", run: { italics: true } })),
