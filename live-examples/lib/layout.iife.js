@@ -3071,6 +3071,7 @@ var docxLayout = (function(exports) {
 		let continued;
 		let carried;
 		let spaceAfter = 0;
+		let sectionSpaceAfter = 0;
 		/** Where the layout is at the start of a block, to lay out the blocks from it again */
 		const snapshot = (index) => ({
 			index,
@@ -3088,7 +3089,8 @@ var docxLayout = (function(exports) {
 			noteArea,
 			continued,
 			carried,
-			spaceAfter
+			spaceAfter,
+			sectionSpaceAfter
 		});
 		let blockStart;
 		let columnsStart;
@@ -3099,7 +3101,7 @@ var docxLayout = (function(exports) {
 		* out again only moves them between the columns of the same page
 		*/
 		const restore = (state) => {
-			({pageCount, pageNumber, top, pageBottom, position, column, columnTop, placedInColumn, deepest, columnBroken, pageNotes, noteArea, continued, carried, spaceAfter} = state);
+			({pageCount, pageNumber, top, pageBottom, position, column, columnTop, placedInColumn, deepest, columnBroken, pageNotes, noteArea, continued, carried, spaceAfter, sectionSpaceAfter} = state);
 			bottom = columnsBottom();
 		};
 		/** Stops laying out columns being balanced where they are too short for what has to go at the top of one */
@@ -3163,7 +3165,7 @@ var docxLayout = (function(exports) {
 		* are balanced: what is in them, up to the section's next block (`end`), is laid out again in the shortest columns it
 		* fits in, filled from the first, which halving the height tried finds. The next section starts below the lowest of
 		* the columns and the space after the paragraph each ends with, and its space before is only as much as is more than
-		* the space after the section's last paragraph.
+		* the space after the section's last paragraph: the empty one that ends it, when there is one.
 		*/
 		const endColumns = (end) => {
 			if (!columnBroken) balanceColumns(end);
@@ -3213,6 +3215,7 @@ var docxLayout = (function(exports) {
 			if (current.unsupported) throw new Unsupported(current.unsupported);
 			const continuous = continuesOnPage(previous, current);
 			if (continuous && previous.columns.length > 1 && (placedInColumn || column > 0)) endColumns(firstBlock);
+			sectionSpaceAfter = spaceAfter;
 			const before = sectionIndex;
 			sectionIndex = index;
 			if (continuous) {
@@ -3355,13 +3358,18 @@ var docxLayout = (function(exports) {
 		/**
 		* Places lines of a paragraph, breaking pages between them where they don't fit. A paragraph's first or last line
 		* isn't left alone on a page with widow control, and its lines stay together with keepLines. The space before a
-		* paragraph at the top of a page is left out.
+		* paragraph at the top of a page is left out, unless it is the first of the document or of its section.
 		*/
 		const placeLines = (lines, paragraph, isStart) => {
 			if (isStart && paragraph.keepLines && section().columns.length > 1 && linesHeight(lines) > pageBottom - top + TOLERANCE) throw new Unsupported("a paragraph kept together taller than a column");
+			/** The space above the paragraph's first line: at the top of a page, only the first of a section has any */
+			const spaceAbove = () => {
+				if (placedInColumn) return between(spaceAfter, paragraph.spaceBefore);
+				return sectionSpaceAfter !== void 0 && column === 0 ? between(sectionSpaceAfter, paragraph.spaceBefore) - sectionSpaceAfter : 0;
+			};
 			let index = 0;
 			while (index < lines.length) {
-				const space = placedInColumn && isStart && index === 0 ? between(spaceAfter, paragraph.spaceBefore) : 0;
+				const space = isStart && index === 0 ? spaceAbove() : 0;
 				const remaining = lines.slice(index);
 				const notesOf = (upTo) => notesIn(remaining.slice(0, upTo).flatMap(({ markers }) => markers));
 				const room = bottom - noteArea - position - space;
@@ -3392,7 +3400,10 @@ var docxLayout = (function(exports) {
 			}
 		};
 		const placeParagraph = (paragraph) => {
-			if (paragraph.pageBreakBefore && (placedInColumn || column > 0)) startPage();
+			if (paragraph.pageBreakBefore && (placedInColumn || column > 0)) {
+				startPage();
+				sectionSpaceAfter = void 0;
+			}
 			const groups = paragraph.lines.reduce((all, line) => {
 				const current = [...all[all.length - 1], line];
 				return line.breakAfter ? [
@@ -3566,15 +3577,22 @@ var docxLayout = (function(exports) {
 			};
 		};
 		const placeBlock = (block, index) => {
-			var _blocks3, _blocks4;
+			var _blocks5, _blocks6;
 			if (block.unsupported) throw new Unsupported(block.unsupported);
-			if (block.type === "paragraph" && block.sectionBreak) return;
-			if (block.type === "table") {
-				placeTable(fitted(block, section().columns[column]));
+			const width = section().columns[column];
+			if (block.type === "paragraph" && block.sectionBreak) {
+				var _blocks3, _blocks4;
+				const { spaceBefore, spaceAfter: after } = measureParagraph(block, width, (_blocks3 = blocks[index - 1]) === null || _blocks3 === void 0 ? void 0 : _blocks3.block, (_blocks4 = blocks[index + 1]) === null || _blocks4 === void 0 ? void 0 : _blocks4.block);
+				if (placedInColumn) position += between(spaceAfter, spaceBefore);
+				spaceAfter = after;
 				return;
 			}
-			const width = section().columns[column];
-			const paragraph = measureParagraph(block, width, (_blocks3 = blocks[index - 1]) === null || _blocks3 === void 0 ? void 0 : _blocks3.block, (_blocks4 = blocks[index + 1]) === null || _blocks4 === void 0 ? void 0 : _blocks4.block);
+			if (block.type === "table") {
+				placeTable(fitted(block, width));
+				sectionSpaceAfter = void 0;
+				return;
+			}
+			const paragraph = measureParagraph(block, width, (_blocks5 = blocks[index - 1]) === null || _blocks5 === void 0 ? void 0 : _blocks5.block, (_blocks6 = blocks[index + 1]) === null || _blocks6 === void 0 ? void 0 : _blocks6.block);
 			if (paragraph.keepNext && placedInColumn) {
 				const { height: needed, notes } = keptHeight(index, width);
 				const fitsHere = position + needed + moreNoteRoom(notes) <= bottom - noteArea + TOLERANCE;
@@ -3584,6 +3602,7 @@ var docxLayout = (function(exports) {
 				else if (!fitsHere && fitsBelow(top)) startPage();
 			}
 			placeParagraph(paragraph);
+			sectionSpaceAfter = void 0;
 		};
 		/** Lays out the blocks from one (`from`) to the one before another (`to`), starting their sections */
 		const placeBlocks = (from, to) => {
