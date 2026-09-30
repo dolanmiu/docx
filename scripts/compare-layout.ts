@@ -6,7 +6,8 @@
  *
  * The directory (default build/layout) has each document's .docx, and the text of LibreOffice's pages of it in a .txt,
  * with the pages split by form feeds, as pdftotext writes them, and of Word's in a .word.txt. A heading is on the last page with a line of only its
- * text, as its entry in the table of contents, before it, has its page number on the line too. So the headings of the
+ * text, as its entry in the table of contents, before it, has its page number on the line too. Spaces and tabs count as one
+ * space, because pdftotext writes a tab, or a wide gap, as several. So the headings of the
  * documents compared are each on a line of their own, and their pages are numbered from 1. It fails when a heading's page
  * number isn't LibreOffice's or Word's, or is left blank.
  */
@@ -32,6 +33,9 @@ const textOf = (element: Element): string => {
     return (element.elements ?? []).map(textOf).join("");
 };
 
+/** Text with each run of spaces and tabs as one space, and none at either end */
+const collapsed = (text: string): string => text.replace(/\s+/g, " ").trim();
+
 const paragraphsIn = (element: Element): readonly Element[] =>
     element.name === "w:p" ? [element] : (element.elements ?? []).flatMap(paragraphsIn);
 
@@ -48,7 +52,7 @@ const entriesOf = async (path: string): Promise<readonly { readonly title: strin
                 .map(textOf)
                 .join("");
             const split = text.lastIndexOf("\t");
-            return { title: text.slice(0, split).trim(), page: text.slice(split + 1).trim() };
+            return { title: collapsed(text.slice(0, split)), page: text.slice(split + 1).trim() };
         });
 };
 
@@ -57,7 +61,7 @@ const pagesOf = (path: string): readonly (readonly string[])[] | undefined =>
     existsSync(path)
         ? readFileSync(path, "utf8")
               .split("\f")
-              .map((page) => page.split("\n").map((line) => line.trim()))
+              .map((page) => page.split("\n").map(collapsed))
         : undefined;
 
 // What each document is compared with: LibreOffice's pages, and Word's when they are there (see scripts/compare-layout.sh)
