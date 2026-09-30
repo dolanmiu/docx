@@ -10,7 +10,16 @@
  *
  * @module
  */
-import { DEFAULT_MEASURER, type InlineItem, type LaidOutLine, type TextMeasurer, layoutLines } from "../text-layout";
+import {
+    type ContentWidths,
+    DEFAULT_MEASURER,
+    type InlineItem,
+    type LaidOutLine,
+    type TextMeasurer,
+    layoutLines,
+    measureContentWidths,
+} from "../text-layout";
+import { fitColumns } from "./column-widths";
 import { formatNumber } from "./number-format";
 import type { Block, DocumentContent, HeadersOrFooters, LayoutItem, ParagraphBlock, Section, TableBlock, TableRow } from "./read-document";
 
@@ -186,6 +195,40 @@ export const paginate = (
 
     const linesHeight = (lines: readonly LaidOutLine[]): number => sum(lines.map(({ height }) => height));
 
+    /** How narrow and how wide the paragraphs in a table cell can be */
+    const contentWidths = (stack: readonly Block[]): ContentWidths =>
+        stack
+            .filter((block): block is ParagraphBlock => block.type === "paragraph")
+            .reduce<ContentWidths>(
+                (widths, block) => {
+                    const { min, max } = measureContentWidths(itemsOf(block.items), {
+                        format: block.format,
+                        tabStops: block.tabStops,
+                        defaultTabStop,
+                        measurer,
+                    });
+                    return { min: Math.max(widths.min, min), max: Math.max(widths.max, max) };
+                },
+                { min: 0, max: 0 },
+            );
+
+    // Tables sized to their text, by the width they are in
+    // eslint-disable-next-line functional/prefer-readonly-type
+    const fittedTables = new Map<TableBlock, Map<number, TableBlock>>();
+    /** A table as it is laid out in a width: with its columns sized to their text, when Word sizes them so */
+    const fitted = (table: TableBlock, width: number): TableBlock => {
+        if (!table.fit) {
+            return table;
+        }
+        const byWidth = fittedTables.get(table) ?? new Map<number, TableBlock>();
+        // eslint-disable-next-line functional/immutable-data
+        fittedTables.set(table, byWidth);
+        const sized = byWidth.get(width) ?? fitColumns(table, width, contentWidths);
+        // eslint-disable-next-line functional/immutable-data
+        byWidth.set(width, sized);
+        return sized;
+    };
+
     /** The heights of blocks stacked in a width, with the space before and after each */
     const stackParts = (
         stack: readonly Block[],
@@ -193,7 +236,7 @@ export const paginate = (
     ): readonly { readonly height: number; readonly before: number; readonly after: number }[] =>
         stack.map((block, index) => {
             if (block.type === "table") {
-                return { height: sum(rowHeights(block)), before: 0, after: 0 };
+                return { height: sum(rowHeights(fitted(block, width))), before: 0, after: 0 };
             }
             const { lines, spaceBefore: before, spaceAfter: after } = measureParagraph(block, width, stack[index - 1], stack[index + 1]);
             return { height: linesHeight(lines), before, after };
@@ -535,7 +578,7 @@ export const paginate = (
                 paragraph:
                     block.type === "paragraph"
                         ? measureParagraph(block, cell.width, cell.blocks[index - 1], cell.blocks[index + 1])
-                        : { ...UNBROKEN, lines: [{ height: sum(rowHeights(block)), markers: markersOf(block) }] },
+                        : { ...UNBROKEN, lines: [{ height: sum(rowHeights(fitted(block, cell.width))), markers: markersOf(block) }] },
                 from: 0,
             })),
         );
@@ -656,7 +699,7 @@ export const paginate = (
         if (anchor.type === "table") {
             const [firstRow] = anchor.rows;
             return {
-                height: keptLines + lastAfter + (anchor.unsupported ? 0 : (rowHeights(anchor)[0] ?? 0)),
+                height: keptLines + lastAfter + (anchor.unsupported ? 0 : (rowHeights(fitted(anchor, width))[0] ?? 0)),
                 notes: [...keptNotes, ...notesIn(firstRow ? firstRow.cells.flatMap((cell) => cell.blocks.flatMap(markersOf)) : [])],
             };
         }
@@ -694,7 +737,7 @@ export const paginate = (
                 throw new Unsupported(block.unsupported);
             }
             if (block.type === "table") {
-                placeTable(block);
+                placeTable(fitted(block, section().columns[column]));
                 continue;
             }
             const width = section().columns[column];

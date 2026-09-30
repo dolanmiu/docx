@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import { DEFAULT_MEASURER, type InlineItem, type TextMeasurer, layoutLines } from "./line-breaking";
+import { DEFAULT_MEASURER, type InlineItem, type TextMeasurer, layoutLines, measureContentWidths } from "./line-breaking";
 import { measureLineHeight, measureTextWidth } from "./text-width";
 
 // Every character is 10 points wide, and a line is as tall as its font's size
@@ -213,5 +213,55 @@ describe("layoutLines", () => {
         expect(line.height).to.equal(measureLineHeight({ size: 11 }));
         expect(DEFAULT_MEASURER.measureWidth("Some text", { size: 11 })).to.equal(measureTextWidth("Some text", { size: 11 }));
         expect(layoutLines([text("Some text", 11)], { width: measureTextWidth("Some", { size: 11 }) + 1 })).to.have.length(2);
+    });
+});
+
+describe("measureContentWidths", () => {
+    const widthsOf = (items: readonly InlineItem[], options = {}): { readonly min: number; readonly max: number } =>
+        measureContentWidths(items, { measurer: MEASURER, ...options });
+
+    it("should measure a paragraph's widest word and its widest line, without the spaces at the end", () => {
+        expect(widthsOf([text("aa bbbb c   ")])).to.deep.equal({ min: 40, max: 90 });
+        // Words in several runs are one word, and a line breaks only at its breaks
+        expect(widthsOf([text("aa bb"), text("bb c"), { type: "break", kind: "line", font: {} }, text("dddddddddd")])).to.deep.equal({
+            min: 100,
+            max: 100,
+        });
+        expect(widthsOf([{ type: "box", width: 55, height: 10 }, { type: "marker", name: "b" }, text(" a")])).to.deep.equal({
+            min: 55,
+            max: 75,
+        });
+        expect(widthsOf([])).to.deep.equal({ min: 0, max: 0 });
+    });
+
+    it("should add the paragraph's indents, with the first line's own indent on its first word", () => {
+        const format = { indentLeft: 10, indentRight: 5, firstLineIndent: 20 };
+        // The first line is aaaa bb, from 30 points in, and bbbbbb can wrap to a line of its own
+        expect(widthsOf([text("aaaa bbbbbb")], { format })).to.deep.equal({ min: 75, max: 145 });
+        // With spaces before the first word, which stay on the first line
+        expect(widthsOf([text("  aaaaaa")], { format: { firstLineIndent: 5 } })).to.deep.equal({ min: 85, max: 85 });
+    });
+
+    it("should move the text after a tab to its stop, as on a line as long as it needs", () => {
+        // A list's number, then its text at the hanging indent
+        const hanging = { indentLeft: 40, firstLineIndent: -40 };
+        expect(widthsOf([text("1."), { type: "tab", font: {} }, text("aaa bb")], { format: hanging })).to.deep.equal({ min: 70, max: 100 });
+        // Right tab stops line the text after them up to the stop
+        const tabStops = [{ position: 100, alignment: "right" as const }];
+        expect(widthsOf([text("a"), { type: "tab", font: {} }, text("bb")], { tabStops })).to.deep.equal({ min: 20, max: 100 });
+        expect(
+            widthsOf([text("a"), { type: "tab", font: {} }, text("bb")], { tabStops: [{ position: 50, alignment: "center" }] }),
+        ).to.deep.equal({ min: 20, max: 60 });
+        // Past the paragraph's stops, the document's default ones, on any line
+        expect(widthsOf([text("a"), { type: "tab", font: {} }, text("b")], { defaultTabStop: 36 })).to.deep.equal({ min: 10, max: 46 });
+        expect(
+            widthsOf([text("a"), { type: "break", kind: "line", font: {} }, { type: "tab", font: {} }, text("b")], { defaultTabStop: 36 }),
+        ).to.deep.equal({ min: 10, max: 46 });
+    });
+
+    it("should measure with the widths of the fonts by default", () => {
+        const { min, max } = measureContentWidths([{ type: "text", text: "two words", font: { font: "Calibri", size: 11 } }], {});
+        expect(min).to.be.closeTo(measureTextWidth("words", { font: "Calibri", size: 11 }), 0.001);
+        expect(max).to.be.closeTo(measureTextWidth("two words", { font: "Calibri", size: 11 }), 0.001);
     });
 });

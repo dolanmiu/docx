@@ -415,12 +415,13 @@ describe("readDocument", () => {
             "w:tc": [{ "w:tcPr": properties }, ...paragraphs],
         });
 
-        it("should read each cell's width from the grid, less its margins, and its rows' heights and borders", () => {
+        it("should read each cell's width from the grid of a table laid out fixed, less its margins, and its rows' heights and borders", () => {
             const content = readBody([
                 {
                     "w:tbl": [
                         {
                             "w:tblPr": [
+                                { "w:tblLayout": { _attr: { "w:type": "fixed" } } },
                                 { "w:tblCellMar": [{ "w:top": { _attr: { "w:w": 20 } } }, { "w:left": { _attr: { "w:w": 100 } } }] },
                                 {
                                     "w:tblBorders": [
@@ -574,9 +575,9 @@ describe("readDocument", () => {
                     ]).blocks[0].block as TableBlock
                 ).unsupported;
             // The first column 1000 twips wide in one row, and 3000 in the next
-            expect(unsupportedOf([[1000], [2000]], [[3000], [undefined]])).to.equal("a table whose rows give a column different widths");
+            expect(unsupportedOf([[1000], [2000]], [[3000], [2000]])).to.equal("a table whose rows give a column different widths");
             // A cell over both columns as wide as the two, and widths a twip apart from rounding
-            expect(unsupportedOf([[1000], [2000]], [[3000, 2]], [[1001], [undefined]])).to.equal(undefined);
+            expect(unsupportedOf([[1000], [2000]], [[3000, 2]], [[1001], [2000]])).to.equal(undefined);
         });
 
         it("should lay a cell out at its own width in twips rather than the grid's, as Word does", () => {
@@ -596,6 +597,67 @@ describe("readDocument", () => {
             expect(widths({ "w:w": 3000 })).to.deep.equal([150, 100]);
             // A percentage is of the table's width, which the grid already has
             expect(widths({ "w:w": 2500, "w:type": "pct" })).to.deep.equal([50, 100]);
+        });
+
+        it("should size the columns of a table whose cells don't all have widths to their text, within its own width", () => {
+            const tableOf = (tableProperties: readonly object[], ...widths: readonly (object | undefined)[]): TableBlock =>
+                readBody([
+                    {
+                        "w:tbl": [
+                            { "w:tblPr": tableProperties },
+                            { "w:tblGrid": [{ "w:gridCol": { _attr: { "w:w": 1000 } } }, { "w:gridCol": { _attr: { "w:w": 2000 } } }] },
+                            { "w:tr": widths.map((width) => cell(width ? [{ "w:tcW": { _attr: width } }] : [], p(r(t("a"))))) },
+                        ],
+                    },
+                ]).blocks[0].block as TableBlock;
+            const tableWidth = (attributes: object): readonly object[] => [{ "w:tblW": { _attr: attributes } }];
+            // A cell with no width, or a width of nothing
+            expect(tableOf([], { "w:w": 3000 }, undefined).fit).to.deep.equal({});
+            expect(tableOf([], { "w:w": 3000 }, { "w:w": 0, "w:type": "auto" }).fit).to.deep.equal({});
+            // With the table's width in twips, or as a share of the width it is in
+            expect(tableOf(tableWidth({ "w:w": 9000, "w:type": "dxa" })).fit).to.equal(undefined);
+            expect(tableOf(tableWidth({ "w:w": 9000, "w:type": "dxa" }), undefined).fit).to.deep.equal({ width: 450 });
+            expect(tableOf(tableWidth({ "w:w": 2500, "w:type": "pct" }), undefined).fit).to.deep.equal({ share: 0.5 });
+            expect(tableOf(tableWidth({ "w:w": "50%", "w:type": "pct" }), undefined).fit).to.deep.equal({ share: 0.5 });
+            expect(tableOf(tableWidth({ "w:w": 0, "w:type": "auto" }), undefined).fit).to.deep.equal({});
+            expect(tableOf(tableWidth({ "w:type": "pct" }), undefined).fit).to.deep.equal({});
+            // Every cell with a width, or a table laid out fixed, which Word lays out at the grid's widths
+            expect(tableOf([], { "w:w": 3000 }, { "w:w": 2500, "w:type": "pct" }).fit).to.equal(undefined);
+            expect(tableOf([], { "w:w": 3000 }, { "w:type": "pct" }).fit).to.deep.equal({});
+            expect(tableOf([{ "w:tblLayout": { _attr: { "w:type": "fixed" } } }], undefined).fit).to.equal(undefined);
+            // The cells keep the widths they give themselves, and their margins either side, to be sized by
+            expect(
+                tableOf([], { "w:w": 3000 }, undefined).rows[0].cells.map(({ ownWidth, marginLeft, marginRight }) => ({
+                    ownWidth,
+                    marginLeft,
+                    marginRight,
+                })),
+            ).to.deep.equal([
+                { ownWidth: 150, marginLeft: 5.4, marginRight: 5.4 },
+                { ownWidth: undefined, marginLeft: 5.4, marginRight: 5.4 },
+            ]);
+        });
+
+        it("should stop at cells merged across columns, or a table in a cell, in a table given no widths", () => {
+            const unsupportedOf = (...cells: readonly object[]): string | undefined =>
+                (
+                    readBody([
+                        {
+                            "w:tbl": [
+                                { "w:tblGrid": [{ "w:gridCol": { _attr: { "w:w": 1000 } } }, { "w:gridCol": { _attr: { "w:w": 2000 } } }] },
+                                { "w:tr": cells },
+                            ],
+                        },
+                    ]).blocks[0].block as TableBlock
+                ).unsupported;
+            const inner = { "w:tbl": [{ "w:tr": [cell([], p(r(t("inner"))))] }] };
+            expect(unsupportedOf(cell([value("w:gridSpan", 2)], p(r(t("a")))))).to.equal(
+                "cells merged across columns in a table given no widths",
+            );
+            expect(unsupportedOf(cell([], inner, p()), cell([], p()))).to.equal("a table in a table given no widths");
+            // With widths, as Word keeps them
+            const width = { "w:tcW": { _attr: { "w:w": 3000 } } };
+            expect(unsupportedOf(cell([width, value("w:gridSpan", 2)], p(r(t("a")))))).to.equal(undefined);
         });
 
         it("should read the paragraphs in content controls and custom XML in a cell", () => {

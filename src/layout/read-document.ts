@@ -68,10 +68,14 @@ export type TableCell = {
     readonly column: number;
     /** The width of the text in the cell, in points: the cell's, less its margins */
     readonly width: number;
+    /** The width the cell gives itself, in points: its own, or for a share of the table's width, the grid's */
+    readonly ownWidth?: number;
     readonly blocks: readonly Block[];
-    /** The space above and below the text in the cell, in points */
+    /** The space around the text in the cell, in points */
     readonly marginTop: number;
     readonly marginBottom: number;
+    readonly marginLeft: number;
+    readonly marginRight: number;
     /** Whether it is the first of cells merged down the rows, or one of the rest */
     readonly verticalMerge?: "restart" | "continue";
 };
@@ -91,6 +95,12 @@ export type TableRow = {
 export type TableBlock = {
     readonly type: "table";
     readonly rows: readonly TableRow[];
+    /**
+     * Given when Word sizes the table's columns to their text, as it does when some of its cells have no widths, with the
+     * table's own width, in points or as a share of the width it is in. Its cells' widths are then worked out as it is
+     * laid out, in place of those read
+     */
+    readonly fit?: { readonly width?: number; readonly share?: number };
     readonly unsupported?: string;
 };
 
@@ -221,13 +231,13 @@ const DEFAULT_SECTION: Omit<Section, "headers" | "footers" | "columns"> = {
     titlePage: false,
     numberFormat: "decimal",
 };
-// The space either side of the text in a table cell, when the table doesn't give it: 0.075 inches
 const EMUS_PER_POINT = 12700;
-// Border widths are in eighths of a point
 /** How far apart, in points, the widths two rows give a column can be before they differ: rounding, not a choice */
 const WIDTH_TOLERANCE = 1;
-
+// Border widths are in eighths of a point
 const EIGHTHS_PER_POINT = 8;
+// Shares of a width, such as a table's of the page's, are in fiftieths of a percent, unless they are written with a %
+const FIFTIETHS_OF_A_PERCENT = 5000;
 // Formatting switches that don't change how a page reference writes the page's number
 // cspell:ignore mergeformatinet
 const PLAIN_FORMATS = new Set(["mergeformat", "charformat", "mergeformatinet"]);
@@ -562,8 +572,30 @@ const cellsOf = (elements: readonly unknown[]): readonly XmlObject[] =>
         return name === "w:customXml" ? cellsOf(contentOf(element)) : [];
     });
 
+/** A share of a width, as a fraction, from fiftieths of a percent or a percentage written with a % */
+const shareOf = (value: unknown): number | undefined => {
+    const amount = numberOf(value);
+    if (amount === undefined) {
+        return undefined;
+    }
+    return typeof value === "string" && value.trim().endsWith("%") ? amount / 100 : amount / FIFTIETHS_OF_A_PERCENT;
+};
+
+/** A table's own width (`w:tblW`): in points, or as a share of the width it is in. Neither when it is sized to its content */
+const readTableWidth = (properties: readonly XmlObject[]): NonNullable<TableBlock["fit"]> => {
+    const { "w:w": value, "w:type": type = "dxa" } = attributesOf(find(properties, "w:tblW"));
+    const width = type === "dxa" ? twips(value) : undefined;
+    const share = type === "pct" ? shareOf(value) : undefined;
+    return {
+        ...(width !== undefined && width > 0 ? { width } : {}),
+        ...(share !== undefined && share > 0 ? { share } : {}),
+    };
+};
+
 /**
- * Reads a table (`w:tbl`): the width, margins and content of each cell, and the height and borders of each row.
+ * Reads a table (`w:tbl`): the width, margins and content of each cell, and the height and borders of each row. Word
+ * sizes the columns of a table whose cells don't all have widths to their text, unless its layout is fixed, so those are
+ * worked out as it is laid out.
  */
 const readTable = (element: XmlObject, reader: Reader): TableBlock => {
     const children = contentOf(element).filter(isObject);
@@ -589,64 +621,74 @@ const readTable = (element: XmlObject, reader: Reader): TableBlock => {
 
     const gridWidth = (from: number, to: number): number => grid.slice(from, to).reduce((total, value) => total + value, 0);
 
-    const read = rows.map((row, rowIndex): { readonly row: TableRow; readonly edges: ReadonlyMap<number, number> } => {
-        const rowChildren = contentOf(row).filter(isObject);
-        const rowProperties = childrenOf(find(rowChildren, "w:trPr"));
-        const heightAttributes = attributesOf(find(rowProperties, "w:trHeight"));
-        const height = twips(heightAttributes["w:val"]);
-        const { "w:hRule": rule } = heightAttributes;
-        const skipped = numberOf(attributesOf(find(rowProperties, "w:gridBefore"))["w:val"]) ?? 0;
-        // Where each cell's edges are, by the grid column they are at, to check the rows agree on them
-        const { cells, edges } = cellsOf(rowChildren).reduce<{
-            readonly column: number;
-            readonly cells: readonly TableCell[];
-            readonly edges: ReadonlyMap<number, number>;
-        }>(
-            ({ column, cells: done, edges: before }, cell) => {
-                const cellChildren = contentOf(cell).filter(isObject);
-                const cellProperties = childrenOf(find(cellChildren, "w:tcPr"));
-                const span = numberOf(attributesOf(find(cellProperties, "w:gridSpan"))["w:val"]) ?? 1;
-                const mergeElement = find(cellProperties, "w:vMerge");
-                const merge =
-                    mergeElement === undefined ? undefined : attributesOf(mergeElement)["w:val"] === "restart" ? "restart" : "continue";
-                const margins = { ...tableMargins, ...readCellMargins(find(cellProperties, "w:tcMar")) };
-                // Word lays a cell out at its own width in twips, when it has one, rather than the grid's
-                const { "w:w": ownWidth, "w:type": widthType = "dxa" } = attributesOf(find(cellProperties, "w:tcW"));
-                const inTwips = widthType === "dxa" ? (twips(ownWidth) ?? 0) : 0;
-                const width = inTwips > 0 ? inTwips : gridWidth(column, column + span);
-                return {
-                    column: column + span,
-                    edges: new Map([...before, [column + span, before.get(column)! + width]]),
-                    cells: [
-                        ...done,
-                        {
-                            column,
-                            width: width - margins.left - margins.right,
-                            blocks: readBlocks(cellChildren, reader, style),
-                            marginTop: margins.top,
-                            marginBottom: margins.bottom,
-                            ...(merge ? { verticalMerge: merge } : {}),
-                        },
-                    ],
-                };
-            },
-            { column: skipped, cells: [], edges: new Map([[skipped, gridWidth(0, skipped)]]) },
-        );
-        return {
-            edges,
-            row: {
-                cells,
-                // A height without a rule is the least the row can be, as Word writes it
-                ...(height !== undefined && rule !== "auto"
-                    ? { height: { value: height, rule: rule === "exact" ? "exact" : "atLeast" } }
-                    : {}),
-                header: onOff(rowProperties, "w:tblHeader") === true,
-                cantSplit: onOff(rowProperties, "w:cantSplit") === true,
-                borderTop: borderWidth(borders, rowIndex === 0 ? "w:top" : "w:insideH"),
-                borderBottom: rowIndex === rows.length - 1 ? borderWidth(borders, "w:bottom") : 0,
-            },
-        };
-    });
+    const read = rows.map(
+        (row, rowIndex): { readonly row: TableRow; readonly edges: ReadonlyMap<number, number>; readonly acrossColumns: boolean } => {
+            const rowChildren = contentOf(row).filter(isObject);
+            const rowProperties = childrenOf(find(rowChildren, "w:trPr"));
+            const heightAttributes = attributesOf(find(rowProperties, "w:trHeight"));
+            const height = twips(heightAttributes["w:val"]);
+            const { "w:hRule": rule } = heightAttributes;
+            const skipped = numberOf(attributesOf(find(rowProperties, "w:gridBefore"))["w:val"]) ?? 0;
+            // Where each cell's edges are, by the grid column they are at, to check the rows agree on them
+            const { cells, edges, acrossColumns } = cellsOf(rowChildren).reduce<{
+                readonly column: number;
+                readonly cells: readonly TableCell[];
+                readonly edges: ReadonlyMap<number, number>;
+                readonly acrossColumns: boolean;
+            }>(
+                ({ column, cells: done, edges: before, acrossColumns: across }, cell) => {
+                    const cellChildren = contentOf(cell).filter(isObject);
+                    const cellProperties = childrenOf(find(cellChildren, "w:tcPr"));
+                    const span = numberOf(attributesOf(find(cellProperties, "w:gridSpan"))["w:val"]) ?? 1;
+                    const mergeElement = find(cellProperties, "w:vMerge");
+                    const merge =
+                        mergeElement === undefined ? undefined : attributesOf(mergeElement)["w:val"] === "restart" ? "restart" : "continue";
+                    const margins = { ...tableMargins, ...readCellMargins(find(cellProperties, "w:tcMar")) };
+                    // Word lays a cell out at its own width in twips, when it has one, rather than the grid's. A share of the
+                    // table's width is the grid's
+                    const { "w:w": ownWidth, "w:type": widthType = "dxa" } = attributesOf(find(cellProperties, "w:tcW"));
+                    const inTwips = widthType === "dxa" ? (twips(ownWidth) ?? 0) : 0;
+                    const hasWidth = inTwips > 0 || (widthType === "pct" && (shareOf(ownWidth) ?? 0) > 0);
+                    const width = inTwips > 0 ? inTwips : gridWidth(column, column + span);
+                    return {
+                        column: column + span,
+                        edges: new Map([...before, [column + span, before.get(column)! + width]]),
+                        acrossColumns: across || span > 1,
+                        cells: [
+                            ...done,
+                            {
+                                column,
+                                width: width - margins.left - margins.right,
+                                ...(hasWidth ? { ownWidth: width } : {}),
+                                blocks: readBlocks(cellChildren, reader, style),
+                                marginTop: margins.top,
+                                marginBottom: margins.bottom,
+                                marginLeft: margins.left,
+                                marginRight: margins.right,
+                                ...(merge ? { verticalMerge: merge } : {}),
+                            },
+                        ],
+                    };
+                },
+                { column: skipped, cells: [], edges: new Map([[skipped, gridWidth(0, skipped)]]), acrossColumns: false },
+            );
+            return {
+                edges,
+                acrossColumns,
+                row: {
+                    cells,
+                    // A height without a rule is the least the row can be, as Word writes it
+                    ...(height !== undefined && rule !== "auto"
+                        ? { height: { value: height, rule: rule === "exact" ? "exact" : "atLeast" } }
+                        : {}),
+                    header: onOff(rowProperties, "w:tblHeader") === true,
+                    cantSplit: onOff(rowProperties, "w:cantSplit") === true,
+                    borderTop: borderWidth(borders, rowIndex === 0 ? "w:top" : "w:insideH"),
+                    borderBottom: rowIndex === rows.length - 1 ? borderWidth(borders, "w:bottom") : 0,
+                },
+            };
+        },
+    );
     // Cells over the same columns whose widths put a column's edge in different places in different rows, which Word
     // settles in a way not yet followed
     const edgesAt = new Map<number, number>();
@@ -658,13 +700,26 @@ const readTable = (element: XmlObject, reader: Reader): TableBlock => {
             return Math.abs(other - edge) > WIDTH_TOLERANCE;
         }),
     );
-    const unsupported = unequal
-        ? "a table whose rows give a column different widths"
-        : read
-              .flatMap(({ row }) => row.cells)
-              .flatMap(({ blocks }) => blocks)
-              .find((block) => block.unsupported !== undefined)?.unsupported;
-    return { type: "table", rows: read.map(({ row }) => row), ...(unsupported ? { unsupported } : {}) };
+    const tableCells = read.flatMap(({ row }) => row.cells);
+    const blocks = tableCells.flatMap((cell) => cell.blocks);
+    const fits =
+        attributesOf(find(properties, "w:tblLayout"))["w:type"] !== "fixed" && tableCells.some(({ ownWidth }) => ownWidth === undefined);
+    // How Word sizes the columns of a table given no widths with cells across columns, or a table in a cell, isn't
+    // followed yet
+    const unfitted = read.some(({ acrossColumns }) => acrossColumns)
+        ? "cells merged across columns in a table given no widths"
+        : blocks.some(({ type }) => type === "table")
+          ? "a table in a table given no widths"
+          : undefined;
+    const unsupported =
+        (fits ? unfitted : unequal ? "a table whose rows give a column different widths" : undefined) ??
+        blocks.find((block) => block.unsupported !== undefined)?.unsupported;
+    return {
+        type: "table",
+        rows: read.map(({ row }) => row),
+        ...(fits ? { fit: readTableWidth(properties) } : {}),
+        ...(unsupported ? { unsupported } : {}),
+    };
 };
 
 /**

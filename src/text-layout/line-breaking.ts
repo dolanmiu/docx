@@ -249,6 +249,81 @@ const widthAfterTab = (tokens: readonly Token[], measurer: TextMeasurer): number
 };
 
 /**
+ * A paragraph's tab stops in order, and those of its first line, where a hanging indent is a stop too.
+ */
+const stopsOf = (
+    tabStops: readonly TabStop[],
+    { indentLeft = 0, firstLineIndent = 0 }: ParagraphFormat,
+): { readonly stops: readonly TabStop[]; readonly firstLineStops: readonly TabStop[] } => {
+    const stops = [...tabStops].sort((a, b) => a.position - b.position);
+    const firstLineStops =
+        firstLineIndent < 0
+            ? [...stops, { position: indentLeft, alignment: "left" as const }].sort((a, b) => a.position - b.position)
+            : stops;
+    return { stops, firstLineStops };
+};
+
+/** How wide a paragraph is, in points, with its indents */
+export type ContentWidths = {
+    /** The narrowest it can be: its widest word or picture, which a line can't break */
+    readonly min: number;
+    /** On lines as long as it needs: its widest line, broken only where it has breaks */
+    readonly max: number;
+};
+
+/**
+ * Measures how narrow and how wide a paragraph can be, which Word sizes the columns of tables whose cells have no widths
+ * by. Spaces at the end of a line take no room, as they don't when it wraps.
+ *
+ * @param items - The paragraph's content, in order
+ */
+export const measureContentWidths = (
+    items: readonly InlineItem[],
+    {
+        format = {},
+        tabStops = [],
+        defaultTabStop = DEFAULT_TAB_STOP,
+        measurer = DEFAULT_MEASURER,
+    }: Omit<LineLayoutOptions, "width" | "markFont">,
+): ContentWidths => {
+    const { indentLeft = 0, indentRight = 0, firstLineIndent = 0 } = format;
+    const { stops, firstLineStops } = stopsOf(tabStops, format);
+    return segmentsOf(items).reduce<ContentWidths>(
+        (widths, { tokens }, segmentIndex) => {
+            const first = segmentIndex === 0;
+            let position = indentLeft + (first ? firstLineIndent : 0);
+            let end = position;
+            let { min } = widths;
+            for (const [index, token] of tokens.entries()) {
+                if (token.type === "marker") {
+                    continue;
+                }
+                if (token.type === "space") {
+                    position += widthOf(token.pieces, measurer);
+                    continue;
+                }
+                if (token.type === "tab") {
+                    const stop = nextStop(position, first ? firstLineStops : stops, defaultTabStop, Infinity)!;
+                    const after = widthAfterTab(tokens.slice(index + 1), measurer);
+                    const shift = stop.alignment === "left" ? 0 : stop.alignment === "center" ? after / 2 : after;
+                    position = Math.max(position, stop.position - shift);
+                    end = position;
+                    continue;
+                }
+                const tokenWidth = token.type === "box" ? token.width : widthOf(token.pieces, measurer);
+                // The first word of a line starts where it is, and any other can wrap to the start of a line
+                const start = end === indentLeft + (first ? firstLineIndent : 0) ? position : indentLeft;
+                min = Math.max(min, start + tokenWidth + indentRight);
+                position += tokenWidth;
+                end = position;
+            }
+            return { min, max: Math.max(widths.max, min, end + indentRight) };
+        },
+        { min: 0, max: 0 },
+    );
+};
+
+/**
  * Breaks a paragraph into lines, as Word breaks it.
  *
  * @param items - The paragraph's content, in order
@@ -260,11 +335,7 @@ export const layoutLines = (
     const { indentLeft = 0, indentRight = 0, firstLineIndent = 0, lineSpacing } = format;
     const limit = width - indentRight;
     const markHeight = measurer.measureLineHeight(markFont);
-    const stops = [...tabStops].sort((a, b) => a.position - b.position);
-    const firstLineStops =
-        firstLineIndent < 0
-            ? [...stops, { position: indentLeft, alignment: "left" as const }].sort((a, b) => a.position - b.position)
-            : stops;
+    const { stops, firstLineStops } = stopsOf(tabStops, format);
     const parts = segmentsOf(items);
     // A page or column break at the end of a paragraph has the paragraph's mark on its line, as Word lays it out from
     // Word 2013, rather than on a line of its own on the next page
