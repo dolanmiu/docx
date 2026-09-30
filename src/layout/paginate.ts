@@ -109,6 +109,7 @@ type Snapshot = {
     readonly continued: NoteLines | undefined;
     readonly carried: NoteLines | undefined;
     readonly spaceAfter: number;
+    readonly sectionSpaceAfter: number | undefined;
 };
 
 /** Thrown to stop laying out at something that can't be laid out yet */
@@ -365,6 +366,10 @@ export const paginate = (
     let carried: NoteLines | undefined;
     // The space after the last paragraph, which goes before what is next on the page
     let spaceAfter = 0;
+    // Until something of the section is placed, the space after the paragraph before it, or 0 at the start of the
+    // document. The space before the section's first paragraph isn't left out at the top of a page, but only as much of it
+    // as is more than this goes there
+    let sectionSpaceAfter: number | undefined = 0;
 
     /** Where the layout is at the start of a block, to lay out the blocks from it again */
     const snapshot = (index: number): Snapshot => ({
@@ -384,6 +389,7 @@ export const paginate = (
         continued,
         carried,
         spaceAfter,
+        sectionSpaceAfter,
     });
     // Where the block being laid out started, and where the block started whose text the page's columns start with
     let blockStart: Snapshot | undefined;
@@ -413,6 +419,7 @@ export const paginate = (
             continued,
             carried,
             spaceAfter,
+            sectionSpaceAfter,
         } = state);
         bottom = columnsBottom();
     };
@@ -500,7 +507,7 @@ export const paginate = (
      * are balanced: what is in them, up to the section's next block (`end`), is laid out again in the shortest columns it
      * fits in, filled from the first, which halving the height tried finds. The next section starts below the lowest of
      * the columns and the space after the paragraph each ends with, and its space before is only as much as is more than
-     * the space after the section's last paragraph.
+     * the space after the section's last paragraph: the empty one that ends it, when there is one.
      */
     const endColumns = (end: number): void => {
         if (!columnBroken) {
@@ -564,6 +571,7 @@ export const paginate = (
         if (continuous && previous.columns.length > 1 && (placedInColumn || column > 0)) {
             endColumns(firstBlock);
         }
+        sectionSpaceAfter = spaceAfter;
         const before = sectionIndex;
         sectionIndex = index;
         if (continuous) {
@@ -741,16 +749,25 @@ export const paginate = (
     /**
      * Places lines of a paragraph, breaking pages between them where they don't fit. A paragraph's first or last line
      * isn't left alone on a page with widow control, and its lines stay together with keepLines. The space before a
-     * paragraph at the top of a page is left out.
+     * paragraph at the top of a page is left out, unless it is the first of the document or of its section.
      */
     const placeLines = (lines: readonly LaidOutLine[], paragraph: MeasuredParagraph, isStart: boolean): void => {
         if (isStart && paragraph.keepLines && section().columns.length > 1 && linesHeight(lines) > pageBottom - top + TOLERANCE) {
             // Word moves it to a new page, where it breaks it across only the first column of each page
             throw new Unsupported("a paragraph kept together taller than a column");
         }
+        /** The space above the paragraph's first line: at the top of a page, only the first of a section has any */
+        const spaceAbove = (): number => {
+            if (placedInColumn) {
+                return between(spaceAfter, paragraph.spaceBefore);
+            }
+            return sectionSpaceAfter !== undefined && column === 0
+                ? between(sectionSpaceAfter, paragraph.spaceBefore) - sectionSpaceAfter
+                : 0;
+        };
         let index = 0;
         while (index < lines.length) {
-            const space = placedInColumn && isStart && index === 0 ? between(spaceAfter, paragraph.spaceBefore) : 0;
+            const space = isStart && index === 0 ? spaceAbove() : 0;
             const remaining = lines.slice(index);
             const notesOf = (upTo: number): readonly string[] => notesIn(remaining.slice(0, upTo).flatMap(({ markers }) => markers));
             const room = bottom - noteArea - position - space;
@@ -804,6 +821,8 @@ export const paginate = (
     const placeParagraph = (paragraph: MeasuredParagraph): void => {
         if (paragraph.pageBreakBefore && (placedInColumn || column > 0)) {
             startPage();
+            // Its space before is left out below the page break, as it is below one in the text
+            sectionSpaceAfter = undefined;
         }
         // Lines up to each page or column break, which start the rest on a new page, or in the next column
         const groups = paragraph.lines.reduce<readonly (readonly LaidOutLine[])[]>(
@@ -1021,15 +1040,23 @@ export const paginate = (
         if (block.unsupported) {
             throw new Unsupported(block.unsupported);
         }
+        const width = section().columns[column];
         if (block.type === "paragraph" && block.sectionBreak) {
-            // The empty paragraph that ends a section takes no room, in Word and LibreOffice
+            // The empty paragraph that ends a section takes no room, in Word and LibreOffice. In Word, the space around it
+            // is still its own: the space after the paragraph before and its space before are the larger of the two, and
+            // its space after goes before the next section, where LibreOffice has the space after the paragraph before
+            const { spaceBefore, spaceAfter: after } = measureParagraph(block, width, blocks[index - 1]?.block, blocks[index + 1]?.block);
+            if (placedInColumn) {
+                position += between(spaceAfter, spaceBefore);
+            }
+            spaceAfter = after;
             return;
         }
         if (block.type === "table") {
-            placeTable(fitted(block, section().columns[column]));
+            placeTable(fitted(block, width));
+            sectionSpaceAfter = undefined;
             return;
         }
-        const width = section().columns[column];
         const paragraph = measureParagraph(block, width, blocks[index - 1]?.block, blocks[index + 1]?.block);
         if (paragraph.keepNext && placedInColumn) {
             const { height: needed, notes } = keptHeight(index, width);
@@ -1048,6 +1075,7 @@ export const paginate = (
             }
         }
         placeParagraph(paragraph);
+        sectionSpaceAfter = undefined;
     };
 
     /** Lays out the blocks from one (`from`) to the one before another (`to`), starting their sections */
