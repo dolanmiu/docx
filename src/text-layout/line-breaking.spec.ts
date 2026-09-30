@@ -24,9 +24,10 @@ describe("layoutLines", () => {
         expect(heightsOf([text("aaaa bbbbbb")])).to.deep.equal([10, 10]);
     });
 
-    it("should make each line as tall as the tallest text on it, and the last as tall as the paragraph's mark too", () => {
+    it("should make each line as tall as the tallest text on it, whatever the size of the paragraph's mark", () => {
         expect(heightsOf([text("aaaa "), text("bbbb", 20), text(" cccc")])).to.deep.equal([20, 10]);
-        expect(heightsOf([text("aaaa bbbb cccc")], 100, { markFont: { size: 14 } })).to.deep.equal([10, 14]);
+        expect(heightsOf([text("aaaa bbbb cccc")], 100, { markFont: { size: 14 } })).to.deep.equal([10, 10]);
+        expect(heightsOf([text("aaaa bbbb cccc", 8)], 100, { markFont: { size: 11 } })).to.deep.equal([8, 8]);
     });
 
     it("should give an empty paragraph one line as tall as its mark, or its spaces", () => {
@@ -82,8 +83,12 @@ describe("layoutLines", () => {
         );
         expect(lines).to.deep.equal([
             { height: 10, markers: [], breakAfter: "page" },
-            { height: 12, markers: ["after"], breakAfter: "column" },
+            { height: 10, markers: ["after"], breakAfter: "column" },
         ]);
+        // With no text on its line, the break's line is as tall as the mark
+        expect(
+            layoutLines([{ type: "break", kind: "page", font: {} }], { width: 100, measurer: MEASURER, markFont: { size: 12 } }),
+        ).to.deep.equal([{ height: 12, markers: [], breakAfter: "page" }]);
     });
 
     it("should put the text after a page break at the end of a paragraph, or a line break, on a line of its own", () => {
@@ -94,7 +99,7 @@ describe("layoutLines", () => {
         });
         expect(lines).to.deep.equal([
             { height: 10, markers: [], breakAfter: "page" },
-            { height: 12, markers: [] },
+            { height: 10, markers: [] },
         ]);
         expect(heightsOf([text("aa"), { type: "break", kind: "line", font: {} }], 100, { markFont: { size: 12 } })).to.deep.equal([10, 12]);
     });
