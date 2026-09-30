@@ -2,14 +2,15 @@ import { describe, expect, it, vi } from "vitest";
 
 import { Formatter } from "@export/formatter";
 import { File } from "@file/file";
-import { HeadingLevel, PageReference, Paragraph, SimpleField, TextRun } from "@file/paragraph";
+import { HeadingLevel, PageNumber, PageReference, Paragraph, SimpleField, TextRun } from "@file/paragraph";
 import { Run } from "@file/paragraph/run";
 import { createBegin, createEnd, createSeparate } from "@file/paragraph/run/field";
 import { TableOfContents } from "@file/table-of-contents";
 import { type IContext, type IXmlableObject, XmlComponent } from "@file/xml-components";
 
 import { Body } from "./body";
-import { type PageNumberEstimator, fillPageNumbers } from "./page-numbers";
+import { type PageNumberEstimator, fillPageNumbers, fillPartPageNumbers } from "./page-numbers";
+import { Footer, Header } from "../../header";
 
 /** An estimator that places the bookmarks given */
 const placing =
@@ -45,6 +46,10 @@ const textOf = (element: unknown): string => {
 };
 
 const paragraphsOf = (body: IXmlableObject): readonly unknown[] => (body as { readonly "w:body": readonly unknown[] })["w:body"];
+
+/** The paragraphs of a formatted header or footer */
+const partParagraphsOf = (part: IXmlableObject): readonly unknown[] =>
+    (Object.values(part)[0] as readonly unknown[]).filter((element) => "w:p" in (element as object));
 
 /** A field's instruction */
 class Instruction extends XmlComponent {
@@ -114,6 +119,7 @@ describe("fillPageNumbers", () => {
                 new Paragraph({ children: fieldWithResult("PAGEREF target \\p", "above") }),
                 new Paragraph({ children: fieldWithResult("PAGEREF target \\* roman", "ii") }),
                 new Paragraph({ children: fieldWithResult("PAGEREF target \\* MERGEFORMAT", "1") }),
+                new Paragraph({ children: fieldWithResult('PAGEREF target \\# "00"', "03") }),
                 new Paragraph({ children: fieldWithResult('PAGEREF "target"', "1") }),
                 new Paragraph({ children: fieldWithResult("PAGE", "1") }),
                 new Paragraph({ children: fieldWithResult("PAGEREF", "1") }),
@@ -121,7 +127,7 @@ describe("fillPageNumbers", () => {
             { target: "3" },
         );
 
-        expect(paragraphsOf(body).map(textOf)).to.deep.equal(["above", "ii", "3", "3", "1", "1"]);
+        expect(paragraphsOf(body).map(textOf)).to.deep.equal(["above", "ii", "3", "03", "3", "1", "1"]);
     });
 
     it("should write the page numbers of page references in the results of other fields, such as a table of contents", () => {
@@ -209,6 +215,111 @@ describe("fillPageNumbers", () => {
 
         expect(estimate).toHaveBeenCalledTimes(1);
         expect(textOf(table)).to.equal("One\t2Two\t3");
+    });
+
+    describe("numbers of pages", () => {
+        const counting =
+            (pageCount?: number, ...sectionPageCounts: readonly (number | undefined)[]): PageNumberEstimator =>
+            () => ({ bookmarks: new Map(), ...(pageCount === undefined ? {} : { pageCount }), sectionPageCounts });
+        const pageOf = (): Paragraph =>
+            new Paragraph({ children: [new TextRun({ children: [PageNumber.TOTAL_PAGES_IN_SECTION, " of ", PageNumber.TOTAL_PAGES] })] });
+        // The body's paragraphs, without the properties of its last section
+        const formatted = (file: File): readonly unknown[] =>
+            paragraphsOf(
+                (
+                    new Formatter().format(file.Document.View, { file, viewWrapper: file.Document, stack: [] } as unknown as IContext) as {
+                        readonly "w:document": readonly IXmlableObject[];
+                    }
+                )["w:document"][1],
+            ).filter((element) => "w:p" in (element as object));
+
+        it("should write the number of pages of the document into NUMPAGES fields, and of their section into SECTIONPAGES fields", () => {
+            const file = new File({
+                pageNumbers: counting(5, 3, 2),
+                sections: [
+                    { children: [pageOf(), new Paragraph({ children: [new SimpleField("NUMPAGES", "old")] })] },
+                    { children: [pageOf()] },
+                ],
+            });
+
+            expect(formatted(file).map(textOf)).to.deep.equal(["3 of 5", "5", "", "2 of 5"]);
+        });
+
+        it("should leave the fields of numbers of pages it doesn't know, or that are in a format of their own, as they are", () => {
+            const file = new File({
+                pageNumbers: counting(undefined, undefined),
+                sections: [
+                    {
+                        children: [
+                            new Paragraph({ children: fieldWithResult("NUMPAGES", "4") }),
+                            new Paragraph({ children: fieldWithResult("SECTIONPAGES", "2") }),
+                            new Paragraph({ children: fieldWithResult("NUMPAGES \\* roman", "iv") }),
+                            new Paragraph({ children: fieldWithResult('SECTIONPAGES \\# "00"', "02") }),
+                        ],
+                    },
+                ],
+            });
+
+            expect(formatted(file).map(textOf)).to.deep.equal(["4", "2", "iv", "02"]);
+            const formats = new File({
+                pageNumbers: counting(4, 2),
+                sections: [
+                    {
+                        children: [
+                            new Paragraph({ children: fieldWithResult("NUMPAGES \\* roman", "iv") }),
+                            new Paragraph({ children: fieldWithResult('SECTIONPAGES \\# "00"', "02") }),
+                            new Paragraph({ children: fieldWithResult("NUMPAGES \\* MERGEFORMAT", "1") }),
+                        ],
+                    },
+                ],
+            });
+            expect(formatted(formats).map(textOf)).to.deep.equal(["iv", "02", "4"]);
+        });
+
+        it("should write the numbers into the headers and footers once the body is written, for the sections whose pages they are on", () => {
+            const header = new Header({ children: [pageOf(), new Paragraph({ children: [new PageReference("target")] })] });
+            const footer = (): Footer => new Footer({ children: [pageOf()] });
+            const file = new File({
+                pageNumbers: () => ({ bookmarks: new Map([["target", "4"]]), pageCount: 7, sectionPageCounts: [2, 2, 3] }),
+                sections: [
+                    { headers: { default: header }, footers: { default: footer() }, children: [new Paragraph("a")] },
+                    // The header and footer of the section before are on its pages too
+                    { children: [new Paragraph("b")] },
+                    { footers: { default: footer() }, children: [new Paragraph("c")] },
+                ],
+            });
+            const partText = (wrapper: File["Headers"][number] | File["Footers"][number]): readonly string[] =>
+                partParagraphsOf(
+                    new Formatter().format(wrapper.View, { file, viewWrapper: wrapper, stack: [] } as unknown as IContext),
+                ).map(textOf);
+            const [firstHeader] = file.Headers;
+            const [firstFooter, lastFooter] = file.Footers;
+
+            // Not before the body is written
+            expect(partText(firstHeader)).to.deep.equal([" of ", ""]);
+            formatted(file);
+            // The header is on the pages of sections of 2 and 3 pages, so the number of its section's pages is left blank
+            expect(partText(firstHeader)).to.deep.equal([" of 7", "4"]);
+            expect(partText(firstFooter)).to.deep.equal(["2 of 7"]);
+            expect(partText(lastFooter)).to.deep.equal(["3 of 7"]);
+        });
+
+        it("should leave the numbers in headers blank without an estimator, or outside a document", () => {
+            const file = new File({ sections: [{ headers: { default: new Header({ children: [pageOf()] }) }, children: [] }] });
+            formatted(file);
+            const [wrapper] = file.Headers;
+
+            expect(
+                partParagraphsOf(
+                    new Formatter().format(wrapper.View, { file, viewWrapper: wrapper, stack: [] } as unknown as IContext),
+                ).map(textOf),
+            ).to.deep.equal([" of "]);
+            expect(partParagraphsOf(new Formatter().format(wrapper.View, { stack: [] } as unknown as IContext)).map(textOf)).to.deep.equal([
+                " of ",
+            ]);
+            // A header or footer with nothing to write
+            expect(() => fillPartPageNumbers(undefined, { file } as unknown as IContext, 1)).not.to.throw();
+        });
     });
 
     it("should leave the page references blank without an estimator", () => {

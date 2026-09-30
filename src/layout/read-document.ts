@@ -27,6 +27,7 @@ import {
     fontOf,
     getTextStyles,
     isObject,
+    isOff,
     numberOf,
     onOff,
     readParagraphFormat,
@@ -39,10 +40,14 @@ import {
 import { formatNumber } from "./number-format";
 
 /**
- * A paragraph's content: text, tabs, breaks, pictures and bookmarks, and the results of page references, which depend
- * on the pages being worked out.
+ * A paragraph's content: text, tabs, breaks, pictures and bookmarks, and the results of fields that depend on the pages
+ * being worked out: the page of a bookmark a page reference refers to, and the number of pages of the document or of the
+ * section it is in.
  */
-export type LayoutItem = InlineItem | { readonly type: "pageReference"; readonly bookmark: string; readonly font: TextFont };
+export type LayoutItem =
+    | InlineItem
+    | { readonly type: "pageReference"; readonly bookmark: string; readonly font: TextFont }
+    | { readonly type: "pageCount"; readonly scope: "document" | "section"; readonly font: TextFont };
 
 export type ParagraphBlock = {
     readonly type: "paragraph";
@@ -75,6 +80,8 @@ export type TableRow = {
     readonly height?: { readonly value: number; readonly rule: "atLeast" | "exact" };
     /** Whether it is repeated at the top of each page the table is on */
     readonly header: boolean;
+    /** Whether it moves to the next page whole, rather than breaking across the pages, when it doesn't fit */
+    readonly cantSplit: boolean;
     /** The width of the border above the row, and, for the last row, below it, in points */
     readonly borderTop: number;
     readonly borderBottom: number;
@@ -113,6 +120,8 @@ export type Section = {
     readonly start: "nextPage" | "continuous" | "evenPage" | "oddPage" | "nextColumn";
     /** Whether its first page has a header and footer of its own */
     readonly titlePage: boolean;
+    /** The width of each of its columns, from the first: the width of the page's text for a section of one column */
+    readonly columns: readonly number[];
     readonly numberFormat: string;
     /** The number of its first page, when it doesn't carry on from the section before */
     readonly firstNumber?: number;
@@ -137,6 +146,12 @@ export type DocumentContent = {
      * as it is with the compatibility setting `doNotUseHTMLParagraphAutoSpacing`, rather than the larger of them
      */
     readonly addsParagraphSpacing: boolean;
+    /** The footnotes the body refers to, by the names of the markers at their references */
+    readonly footnotes: ReadonlyMap<string, readonly Block[]>;
+    /** What is above the footnotes at the bottom of a page: the paragraph of the line that separates them from the text */
+    readonly footnoteSeparator: readonly Block[];
+    /** The endnotes the body refers to, in order, after their separator: they follow the body, as Word lays them out */
+    readonly endnotes: readonly Block[];
     /** Why none of it can be laid out, when a setting of the whole document changes its lines in ways not yet followed */
     readonly unsupported?: string;
 };
@@ -150,13 +165,21 @@ type NumberingLevel = {
     readonly run: RunFormat;
 };
 
+type NoteKind = "footnote" | "endnote";
+
+/** What a reference to a footnote or endnote shows: its number, and, for a footnote, the marker its note is placed by */
+type NoteReference = { readonly label: string; readonly marker?: string };
+
+/** Reads the footnote or endnote a reference in the body refers to, and numbers it */
+type NoteReader = { readonly read: (kind: NoteKind, id: string) => NoteReference };
+
 /** A complex field being read */
 type OpenField = {
     // eslint-disable-next-line functional/prefer-readonly-type
     instruction: string;
     // eslint-disable-next-line functional/prefer-readonly-type
     inResult: boolean;
-    /** Whether its result is a page reference's, which is worked out rather than read */
+    /** Whether its result depends on the pages, so it is worked out rather than read */
     // eslint-disable-next-line functional/prefer-readonly-type
     replaced: boolean;
 };
@@ -166,6 +189,10 @@ type OpenField = {
  * paragraph to the next.
  */
 type Reader = {
+    /** Reads the notes the references refer to: the body's. References elsewhere have no notes */
+    readonly notes?: NoteReader;
+    /** The number of the footnote or endnote being read, which the mark at its start shows */
+    readonly noteNumber?: string;
     readonly styles: TextStyles;
     /** The levels of each list, by the id its paragraphs refer to it by */
     readonly numbering: ReadonlyMap<string, readonly NumberingLevel[]>;
@@ -179,7 +206,7 @@ type Reader = {
 };
 
 // Word's defaults for a section that doesn't give its page: Letter, with inch margins
-const DEFAULT_SECTION: Omit<Section, "headers" | "footers"> = {
+const DEFAULT_SECTION: Omit<Section, "headers" | "footers" | "columns"> = {
     pageWidth: 612,
     pageHeight: 792,
     marginTop: 72,
@@ -210,26 +237,49 @@ const contentOf = (element: XmlObject): readonly unknown[] => {
     return Array.isArray(content) ? content : [content];
 };
 
+// How wide the number of a footnote or endnote is, next to text of its size: Word writes it in superscript
+const SUPERSCRIPT_WIDTH = 0.65;
+
+/**
+ * The number of a footnote or endnote, at its reference or at the start of the note: as narrow as superscript, and as tall
+ * as its font, as LibreOffice lays it out.
+ */
+const noteNumber = (text: string, font: TextFont): LayoutItem => ({
+    type: "text",
+    text,
+    font: { ...font, scale: (font.scale ?? 100) * SUPERSCRIPT_WIDTH },
+});
+
 const twips = (value: unknown): number | undefined => {
     const amount = numberOf(value);
     return amount === undefined ? undefined : amount / TWIPS_PER_POINT;
 };
 
-/**
- * The bookmark a PAGEREF field refers to, unless it shows something other than the page's number: its position relative
- * to the bookmark (`\p`), or the number in a format of its own. As docx writes the page numbers.
- */
-const pageReferenceOf = (instruction: string): string | undefined => {
-    const match = /^\s*PAGEREF\s+("?)([^\s"\\]+)\1(.*)$/i.exec(instruction);
-    if (!match) {
-        return undefined;
-    }
-    const [, , bookmark, switches] = match;
+/** Whether a field's switches give its number a format of its own, such as `\* roman`, or a picture, such as `\# "00"` */
+const hasOwnFormat = (switches: string): boolean => {
     const formats = [...switches.matchAll(/\\\*\s*"?([^\s"\\]+)/g)].map(([, format]) => format.toLowerCase());
-    return /\\p\b/i.test(switches) || formats.some((format) => !PLAIN_FORMATS.has(format)) ? undefined : bookmark;
+    return /\\#/.test(switches) || formats.some((format) => !PLAIN_FORMATS.has(format));
 };
 
-/** Whether what is read now is shown: not in a field's instruction, nor in the result of a page reference */
+/**
+ * The result of a field that depends on the pages being worked out, as docx writes it: the page of the bookmark a PAGEREF
+ * field refers to, or the number of pages of the document (NUMPAGES) or of its section (SECTIONPAGES). Undefined for other
+ * fields, and for those that show something else: a page's position relative to the bookmark (`\p`), or a number in a
+ * format of its own.
+ */
+const workedOutResultOf = (instruction: string, font: TextFont): LayoutItem | undefined => {
+    const reference = /^\s*PAGEREF\s+("?)([^\s"\\]+)\1(.*)$/i.exec(instruction);
+    if (reference) {
+        const [, , bookmark, switches] = reference;
+        return /\\p\b/i.test(switches) || hasOwnFormat(switches) ? undefined : { type: "pageReference", bookmark, font };
+    }
+    const count = /^\s*(NUMPAGES|SECTIONPAGES)\b(.*)$/i.exec(instruction);
+    return count && !hasOwnFormat(count[2])
+        ? { type: "pageCount", scope: count[1].toUpperCase() === "NUMPAGES" ? "document" : "section", font }
+        : undefined;
+};
+
+/** Whether what is read now is shown: not in a field's instruction, nor in a result that is worked out */
 const isShown = ({ fields }: Reader): boolean => fields.every((field) => field.inResult && !field.replaced);
 
 /** Adds the tab stops of a paragraph, or of its style, to those of the styles before */
@@ -273,7 +323,7 @@ const readDrawing = (element: XmlObject, reader: Reader): readonly LayoutItem[] 
 };
 
 /**
- * Reads a field character (`w:fldChar`). A page reference's result is replaced with the page it refers to.
+ * Reads a field character (`w:fldChar`). The result of a field that depends on the pages is worked out, rather than read.
  */
 const readFieldCharacter = (element: XmlObject, font: TextFont, reader: Reader): readonly LayoutItem[] => {
     const type = attributesOf(element["w:fldChar"])["w:fldCharType"];
@@ -286,13 +336,13 @@ const readFieldCharacter = (element: XmlObject, font: TextFont, reader: Reader):
         // eslint-disable-next-line functional/immutable-data
         fields.pop();
     } else if (type === "separate" && field) {
-        const bookmark = pageReferenceOf(field.instruction);
+        const result = workedOutResultOf(field.instruction, font);
         // eslint-disable-next-line functional/immutable-data
         field.inResult = true;
-        if (bookmark !== undefined && isShown(reader)) {
+        if (result !== undefined && isShown(reader)) {
             // eslint-disable-next-line functional/immutable-data
             field.replaced = true;
-            return [{ type: "pageReference", bookmark, font }];
+            return [result];
         }
     }
     return [];
@@ -354,9 +404,19 @@ const readRun = (element: XmlObject, paragraphRun: RunFormat, reader: Reader): r
                 return [{ type: "text", text: "\u2011", font }];
             case "w:sym":
                 return [{ type: "text", text: "\u25a0", font }];
-            case "w:endnoteReference":
-                // Its number, as Word writes it in superscript
-                return [{ type: "text", text: "1", font: { ...font, size: (font.size ?? 10) * 0.65 } }];
+            case "w:footnoteReference":
+            case "w:endnoteReference": {
+                const note = reader.notes?.read(
+                    name === "w:footnoteReference" ? "footnote" : "endnote",
+                    String(attributesOf(child[name])["w:id"]),
+                );
+                return note === undefined
+                    ? []
+                    : [...(note.marker ? [{ type: "marker" as const, name: note.marker }] : []), noteNumber(note.label, font)];
+            }
+            case "w:footnoteRef":
+            case "w:endnoteRef":
+                return reader.noteNumber === undefined ? [] : [noteNumber(reader.noteNumber, font)];
             case "w:drawing":
                 return readDrawing(child, reader);
             case "mc:AlternateContent": {
@@ -367,8 +427,6 @@ const readRun = (element: XmlObject, paragraphRun: RunFormat, reader: Reader): r
             case "w:pict":
             case "w:object":
                 return reader.inHeader ? [] : "a VML drawing";
-            case "w:footnoteReference":
-                return "a footnote";
             default:
                 return [];
         }
@@ -396,10 +454,8 @@ const readInline = (elements: readonly unknown[], paragraphRun: RunFormat, reade
             return readInline(childrenOf(find(childrenOf(element[name]), "w:sdtContent")), paragraphRun, reader);
         }
         if (name === "w:fldSimple") {
-            const bookmark = pageReferenceOf(String(attributesOf(element[name])["w:instr"]));
-            return bookmark !== undefined && isShown(reader)
-                ? [{ type: "pageReference", bookmark, font: fontOf(paragraphRun) }]
-                : readInline(contentOf(element), paragraphRun, reader);
+            const result = workedOutResultOf(String(attributesOf(element[name])["w:instr"]), fontOf(paragraphRun));
+            return result !== undefined && isShown(reader) ? [result] : readInline(contentOf(element), paragraphRun, reader);
         }
         if (name === "w:bookmarkStart") {
             const bookmark = stringOf(attributesOf(element[name])["w:name"]);
@@ -581,6 +637,7 @@ const readTable = (element: XmlObject, reader: Reader): TableBlock => {
             // A height without a rule is the least the row can be, as Word writes it
             ...(height !== undefined && rule !== "auto" ? { height: { value: height, rule: rule === "exact" ? "exact" : "atLeast" } } : {}),
             header: onOff(rowProperties, "w:tblHeader") === true,
+            cantSplit: onOff(rowProperties, "w:cantSplit") === true,
             borderTop: borderWidth(borders, rowIndex === 0 ? "w:top" : "w:insideH"),
             borderBottom: rowIndex === rows.length - 1 ? borderWidth(borders, "w:bottom") : 0,
         };
@@ -632,6 +689,24 @@ const readReferences = (
             .filter(([type, blocks]) => blocks !== undefined && ["default", "first", "even"].includes(type)),
     );
 
+// The space between columns when a section doesn't give it: half an inch
+const DEFAULT_COLUMN_SPACE = 36;
+
+/**
+ * The width of each of a section's columns (`w:cols`), from the width of its page's text: columns of the same width with
+ * the same space between them, unless the section gives each column's width.
+ */
+const readColumns = (element: unknown, width: number): readonly number[] => {
+    const attributes = attributesOf(element);
+    const given = childrenOf(element).filter((child) => "w:col" in child);
+    if (isOff(attributes["w:equalWidth"]) && given.length > 0) {
+        return given.map((column) => twips(attributesOf(column["w:col"])["w:w"]) ?? 0);
+    }
+    const count = Math.max(1, numberOf(attributes["w:num"]) ?? 1);
+    const space = twips(attributes["w:space"]) ?? DEFAULT_COLUMN_SPACE;
+    return Array.from({ length: count }, () => (width - space * (count - 1)) / count);
+};
+
 /**
  * Reads a section's properties (`w:sectPr`): its pages, how it starts, and its headers and footers. A section that
  * doesn't give a header or footer for a kind of page has the one of the section before.
@@ -641,39 +716,41 @@ const readSection = (element: unknown, readPart: (id: string) => readonly Block[
     const size = attributesOf(find(properties, "w:pgSz"));
     const margins = attributesOf(find(properties, "w:pgMar"));
     const numbering = attributesOf(find(properties, "w:pgNumType"));
-    const columns = find(properties, "w:cols");
     const grid = attributesOf(find(properties, "w:docGrid"))["w:type"];
     const start = valueOf(properties, "w:type");
     const format = stringOf(numbering["w:fmt"]) ?? "decimal";
     const firstNumber = numberOf(numbering["w:start"]);
-    const columnCount = Math.max(
-        numberOf(attributesOf(columns)["w:num"]) ?? 1,
-        childrenOf(columns).filter((child) => "w:col" in child).length,
-    );
+    const pageWidth = twips(size["w:w"]) ?? DEFAULT_SECTION.pageWidth;
+    const marginLeft = twips(margins["w:left"] ?? margins["w:start"]) ?? DEFAULT_SECTION.marginLeft;
+    const marginRight = twips(margins["w:right"] ?? margins["w:end"]) ?? DEFAULT_SECTION.marginRight;
+    const gutter = twips(margins["w:gutter"]) ?? DEFAULT_SECTION.gutter;
+    const columns = readColumns(find(properties, "w:cols"), pageWidth - marginLeft - marginRight - gutter);
     const unsupported =
-        columnCount > 1
-            ? "columns"
-            : grid === "lines" || grid === "linesAndChars" || grid === "snapToChars"
-              ? "a document grid"
-              : numbering["w:chapStyle"] !== undefined || formatNumber(1, format) === undefined
-                ? "page numbers in a format not yet written"
-                : find(properties, "w:textDirection") !== undefined
-                  ? "text that runs down the page"
+        grid === "lines" || grid === "linesAndChars" || grid === "snapToChars"
+            ? "a document grid"
+            : numbering["w:chapStyle"] !== undefined || formatNumber(1, format) === undefined
+              ? "page numbers in a format not yet written"
+              : find(properties, "w:textDirection") !== undefined
+                ? "text that runs down the page"
+                : // A paragraph that goes on into a column of another width would need its lines broken again
+                  columns.some((width) => width !== columns[0])
+                  ? "columns of different widths"
                   : undefined;
     const headers = readReferences(properties, "w:headerReference", readPart);
     const footers = readReferences(properties, "w:footerReference", readPart);
     return {
-        pageWidth: twips(size["w:w"]) ?? DEFAULT_SECTION.pageWidth,
+        pageWidth,
         pageHeight: twips(size["w:h"]) ?? DEFAULT_SECTION.pageHeight,
         marginTop: twips(margins["w:top"]) ?? DEFAULT_SECTION.marginTop,
         marginBottom: twips(margins["w:bottom"]) ?? DEFAULT_SECTION.marginBottom,
-        marginLeft: twips(margins["w:left"] ?? margins["w:start"]) ?? DEFAULT_SECTION.marginLeft,
-        marginRight: twips(margins["w:right"] ?? margins["w:end"]) ?? DEFAULT_SECTION.marginRight,
+        marginLeft,
+        marginRight,
         header: twips(margins["w:header"]) ?? DEFAULT_SECTION.header,
         footer: twips(margins["w:footer"]) ?? DEFAULT_SECTION.footer,
-        gutter: twips(margins["w:gutter"]) ?? DEFAULT_SECTION.gutter,
+        gutter,
         start: start !== undefined && START_TYPES.has(start as Section["start"]) ? (start as Section["start"]) : "nextPage",
         titlePage: onOff(properties, "w:titlePg") === true,
+        columns,
         numberFormat: format,
         ...(firstNumber === undefined ? {} : { firstNumber }),
         headers: { ...previous?.headers, ...headers },
@@ -772,7 +849,48 @@ export const readDocument = (body: IXmlableObject, context: IContext): DocumentC
         return parts.get(id);
     };
 
-    const reader = readerOf(false);
+    // The footnotes and endnotes, by their ids, and the separators above them
+    const noteElements = (kind: NoteKind): ReadonlyMap<string, XmlObject> => {
+        const wrapper = kind === "footnote" ? context.file.FootNotes : context.file.Endnotes;
+        const xml = wrapper.View.prepForXml({ ...context, viewWrapper: wrapper, stack: [] }) as XmlObject;
+        const notes = childrenOf(Object.values(xml)[0]).filter((child) => `w:${kind}` in child);
+        return new Map(
+            notes.map((note) => {
+                const attributes = attributesOf(note[`w:${kind}`]);
+                return [String(attributes["w:type"] === "separator" ? "separator" : attributes["w:id"]), note] as const;
+            }),
+        );
+    };
+    const notesByKind = { footnote: noteElements("footnote"), endnote: noteElements("endnote") };
+    const readNoteContent = (kind: NoteKind, id: string, label?: string): readonly Block[] => {
+        const note = notesByKind[kind].get(id);
+        return note === undefined
+            ? []
+            : readBlocks(contentOf(note), { ...readerOf(false), ...(label === undefined ? {} : { noteNumber: label }) });
+    };
+    const footnotes = new Map<string, readonly Block[]>();
+    // eslint-disable-next-line functional/prefer-readonly-type
+    const endnotes: Block[] = [];
+    const noteCounts = { footnote: 0, endnote: 0 };
+    // Footnotes are numbered 1, 2, 3 and endnotes i, ii, iii, as Word numbers them unless the document says otherwise
+    const readNote = (kind: NoteKind, id: string): NoteReference => {
+        // eslint-disable-next-line functional/immutable-data
+        noteCounts[kind]++;
+        const label = formatNumber(noteCounts[kind], kind === "footnote" ? "decimal" : "lowerRoman")!;
+        const content = readNoteContent(kind, id, label);
+        if (kind === "endnote") {
+            // eslint-disable-next-line functional/immutable-data
+            endnotes.push(...content);
+            return { label };
+        }
+        // A name no bookmark can have, as bookmarks' names have no spaces
+        const marker = `footnote ${noteCounts[kind]}`;
+        // eslint-disable-next-line functional/immutable-data
+        footnotes.set(marker, content);
+        return { label, marker };
+    };
+
+    const reader: Reader = { ...readerOf(false), notes: { read: readNote } };
     // eslint-disable-next-line functional/prefer-readonly-type
     const sections: Section[] = [];
     // eslint-disable-next-line functional/prefer-readonly-type
@@ -816,5 +934,12 @@ export const readDocument = (body: IXmlableObject, context: IContext): DocumentC
         addSection(undefined);
     }
 
-    return { blocks, sections, ...readSettings(context) };
+    return {
+        blocks,
+        sections,
+        footnotes,
+        footnoteSeparator: footnotes.size > 0 ? readNoteContent("footnote", "separator") : [],
+        endnotes: endnotes.length > 0 ? [...readNoteContent("endnote", "separator"), ...endnotes] : [],
+        ...readSettings(context),
+    };
 };

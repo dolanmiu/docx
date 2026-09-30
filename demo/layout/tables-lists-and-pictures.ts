@@ -59,6 +59,9 @@ const table = (rows: number, seed: number): Table =>
 
 const doc = new Document({
     pageNumbers: estimatePageNumbers,
+    // Times New Roman at 12 points, rather than the 10 points it is without a size: LibreOffice's lines of it at 10 points
+    // are a twip taller than the font's line height, which adds up over a page
+    styles: { default: { document: { run: { size: 24 } } } },
     numbering: {
         config: [
             {

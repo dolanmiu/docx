@@ -23,6 +23,7 @@ const SECTION: Section = {
     gutter: 0,
     start: "nextPage",
     titlePage: false,
+    columns: [80],
     numberFormat: "decimal",
     headers: {},
     footers: {},
@@ -52,6 +53,9 @@ const document = (blocks: readonly (Block | readonly [Block, number])[], changes
     defaultTabStop: 36,
     evenAndOddHeaders: false,
     addsParagraphSpacing: false,
+    footnotes: new Map(),
+    footnoteSeparator: [],
+    endnotes: [],
     ...changes,
 });
 
@@ -62,6 +66,7 @@ const pagesOf = (content: DocumentContent, pageNumbers?: ReadonlyMap<string, str
 const row = (cells: readonly (readonly Block[])[], changes: Partial<TableRow> = {}): TableRow => ({
     cells: cells.map((blocks, column) => ({ column, width: 80, blocks, marginTop: 0, marginBottom: 0 })),
     header: false,
+    cantSplit: false,
     borderTop: 0,
     borderBottom: 0,
     ...changes,
@@ -94,7 +99,11 @@ describe("paginate", () => {
     });
 
     it("should lay out a document without content on one page", () => {
-        expect(paginate(document([]), { measurer: MEASURER })).to.deep.equal({ bookmarks: new Map(), pageCount: 1 });
+        expect(paginate(document([]), { measurer: MEASURER })).to.deep.equal({
+            bookmarks: new Map(),
+            pageCount: 1,
+            sectionPageCounts: [1],
+        });
     });
 
     it("should put a bookmark on the line its text starts on", () => {
@@ -197,6 +206,8 @@ describe("paginate", () => {
                     ["heading", "1"],
                 ]),
                 pageCount: 1,
+                // The section the layout stopped in has no number of pages
+                sectionPageCounts: [undefined],
                 stoppedAt: "a thing",
             });
         });
@@ -259,13 +270,13 @@ describe("paginate", () => {
     });
 
     describe("tables", () => {
-        it("should move a row that doesn't fit to the next page whole, and repeat the header rows there", () => {
+        it("should move a row kept whole that doesn't fit to the next page, and repeat the header rows there", () => {
             const content = document([
                 paragraph("a", 3),
                 table([
                     row([[paragraph("header", 1)]], { header: true }),
                     row([[paragraph("one", 2)], [paragraph("side", 1)]]),
-                    row([[paragraph("two", 2)]]),
+                    row([[paragraph("two", 2)]], { cantSplit: true }),
                     row([[paragraph("three", 2)]]),
                 ]),
                 paragraph("b", 1),
@@ -347,9 +358,97 @@ describe("paginate", () => {
             expect(pagesOf(content)).to.deep.equal({ wide: "1", merged: "1", c: "1", d: "1", e: "1", f: "1" });
         });
 
-        it("should stop at a row taller than a page", () => {
-            const result = paginate(document([paragraph("a", 1), table([row([[paragraph("tall", 9)]])])]), { measurer: MEASURER });
-            expect(result).to.deep.equal({ bookmarks: new Map([["a", "1"]]), pageCount: 2, stoppedAt: "a table row taller than a page" });
+        it("should break a row that doesn't fit across pages, between the lines of its cells, below the header rows", () => {
+            const content = document([
+                paragraph("a", 1),
+                table([
+                    row([[paragraph("head", 1)]], { header: true }),
+                    row([
+                        [withItems(paragraph("tall", 9), [{ type: "marker", name: "tallEnd" }])],
+                        [paragraph("first", 4), paragraph("second", 3)],
+                        // A cell without paragraphs
+                        [],
+                    ]),
+                ]),
+                paragraph("after", 3),
+                paragraph("next", 1),
+            ]);
+            // 5 lines of the row fit below a and the header, and the first line of second with them: widow control doesn't
+            // hold lines back in a row that breaks. On the next page, the header and the 4 lines left of tall leave room
+            // for 2 lines, so after moves on, with the widow control of its 3 lines
+            expect(pagesOf(content)).to.deep.equal({
+                a: "1",
+                head: "1",
+                tall: "1",
+                tallEnd: "2",
+                first: "1",
+                second: "1",
+                after: "3",
+                next: "3",
+            });
+        });
+
+        it("should leave out the space before a paragraph at the top of a cell's part on the next page, and move a row none of whose lines fit", () => {
+            const spaced = paragraph("spaced", 2, { spaceBefore: 30 });
+            const content = document([
+                paragraph("a", 5),
+                table([row([[paragraph("cell", 1), spaced]], { borderTop: 1 })]),
+                paragraph("b", 4),
+                table([row([[paragraph("moved", 2, { spaceBefore: 5 })]])]),
+            ]);
+            // cell's line fits below a, and spaced moves to the next page without its space, so b fits below it. No line of
+            // moved fits below its space before on that page, so its row moves to the next
+            expect(pagesOf(content)).to.deep.equal({ a: "1", cell: "1", spaced: "2", b: "2", moved: "3" });
+        });
+
+        it("should move a row kept whole, of an exact height, or whose text fits but not its height, to the next page", () => {
+            const content = document([
+                paragraph("a", 5),
+                table([row([[paragraph("kept", 3)]], { cantSplit: true })]),
+                paragraph("b", 2),
+                table([row([[paragraph("exact", 1)]], { height: { value: 40, rule: "exact" } })]),
+                paragraph("c", 2),
+                table([row([[paragraph("atLeast", 1)]], { height: { value: 40, rule: "atLeast" } })]),
+                paragraph("d", 1),
+            ]);
+            expect(pagesOf(content)).to.deep.equal({ a: "1", kept: "2", b: "2", exact: "3", c: "3", atLeast: "4", d: "4" });
+            const tall = document([table([row([[paragraph("tall", 1)]], { height: { value: 80, rule: "atLeast" } })])]);
+            expect(paginate(tall, { measurer: MEASURER }).stoppedAt).to.equal("a table row taller than a page");
+        });
+
+        it("should stop at a row kept whole that is taller than a page", () => {
+            const result = paginate(document([paragraph("a", 1), table([row([[paragraph("tall", 9)]], { cantSplit: true })])]), {
+                measurer: MEASURER,
+            });
+            expect(result).to.deep.equal({
+                bookmarks: new Map([["a", "1"]]),
+                pageCount: 2,
+                sectionPageCounts: [undefined],
+                stoppedAt: "a table row taller than a page",
+            });
+        });
+
+        it("should stop at a row that breaks across pages with merged cells, a set height, or a table in it", () => {
+            const stoppedAt = (breaking: TableRow): string | undefined =>
+                paginate(document([paragraph("a", 5), table([breaking])]), { measurer: MEASURER }).stoppedAt;
+            expect(stoppedAt(mergedRow(merged("restart", [paragraph("merged", 4)])))).to.equal(
+                "a table row with merged cells across pages",
+            );
+            expect(stoppedAt(row([[paragraph("set", 4)]], { height: { value: 50, rule: "atLeast" } }))).to.equal(
+                "a table row of a set height across pages",
+            );
+            expect(stoppedAt(row([[paragraph("beside", 4)], [table([row([[paragraph("inner", 1)]])])]]))).to.equal(
+                "a table in a table row across pages",
+            );
+            // A table in a cell of a row that moves to the next page whole is laid out there
+            expect(stoppedAt(row([[table([row([[paragraph("inner", 3)]])])]]))).to.equal(undefined);
+        });
+
+        it("should stop at a line in a table cell taller than a page", () => {
+            const tall = paragraph("tall", 1, { lineSpacing: { rule: "exact", height: 100 } });
+            expect(paginate(document([table([row([[tall]])])]), { measurer: MEASURER }).stoppedAt).to.equal(
+                "a table row taller than a page",
+            );
         });
 
         it("should lay out paragraphs and tables in cells, with the space around them", () => {
@@ -434,7 +533,7 @@ describe("paginate", () => {
                     [paragraph("b", 4), 1],
                 ],
                 {
-                    sections: [SECTION, { ...SECTION, pageWidth: 190 }],
+                    sections: [SECTION, { ...SECTION, pageWidth: 190, columns: [170] }],
                 },
             );
             // Two words to a line: 2 lines each
@@ -454,11 +553,351 @@ describe("paginate", () => {
             expect(paginate(content, { measurer: MEASURER })).to.deep.equal({
                 bookmarks: new Map([["a", "1"]]),
                 pageCount: 1,
+                sectionPageCounts: [1, undefined],
                 stoppedAt: "columns",
             });
             expect(paginate({ ...content, sections: [{ ...SECTION, unsupported: "columns" }] }, { measurer: MEASURER }).stoppedAt).to.equal(
                 "columns",
             );
+        });
+    });
+
+    describe("columns", () => {
+        const COLUMNS: Section = { ...SECTION, columns: [80, 80] };
+        const columnBreak: LayoutItem = { type: "break", kind: "column", font: {} };
+        const pageBreak: LayoutItem = { type: "break", kind: "page", font: {} };
+
+        it("should fill each column of a page before the next page", () => {
+            const content = document([paragraph("a", 5), paragraph("b", 4), paragraph("c", 6), paragraph("d", 1)], { sections: [COLUMNS] });
+            // b's last 2 lines and c's first 4 are in the second column
+            expect(pagesOf(content)).to.deep.equal({ a: "1", b: "1", c: "1", d: "2" });
+        });
+
+        it("should start the next column at a column break, and a new page at a page break or a column break in the last column", () => {
+            const content = document(
+                [
+                    withItems(paragraph("a", 1), [columnBreak]),
+                    withItems(paragraph("b", 1), [pageBreak]),
+                    withItems(paragraph("c", 1), [columnBreak]),
+                    withItems(paragraph("d", 1), [columnBreak]),
+                    paragraph("e", 1),
+                ],
+                { sections: [COLUMNS] },
+            );
+            expect(pagesOf(content)).to.deep.equal({ a: "1", b: "1", c: "2", d: "2", e: "3" });
+            // In a section of one column, a column break starts a new page
+            expect(pagesOf(document([withItems(paragraph("a", 1), [columnBreak]), paragraph("b", 1)]))).to.deep.equal({ a: "1", b: "2" });
+        });
+
+        it("should start a page break before a paragraph at the top of a column after the first on a new page", () => {
+            const content = document([withItems(paragraph("a", 1), [columnBreak]), paragraph("b", 1, { pageBreakBefore: true })], {
+                sections: [COLUMNS],
+            });
+            expect(pagesOf(content)).to.deep.equal({ a: "1", b: "2" });
+        });
+
+        it("should move a paragraph kept with the next to the next column", () => {
+            const content = document([paragraph("a", 6), paragraph("heading", 1, { keepNext: true }), paragraph("b", 2)], {
+                sections: [COLUMNS],
+            });
+            expect(pagesOf(content)).to.deep.equal({ a: "1", heading: "1", b: "1" });
+        });
+
+        it("should start a continuous section's columns below the text before it on the page", () => {
+            const content = document(
+                [
+                    [paragraph("a", 3), 0],
+                    [paragraph("b", 6), 1],
+                    [paragraph("c", 3), 1],
+                ],
+                { sections: [SECTION, { ...COLUMNS, start: "continuous" }] },
+            );
+            // The second column starts below a too, so b's last 2 lines leave room for 2 of c's 3, which widow control moves on
+            expect(pagesOf(content)).to.deep.equal({ a: "1", b: "1", c: "2" });
+        });
+
+        it("should keep a paragraph with the next on a new page when they fit there, below a continuous section that starts low", () => {
+            const content = document(
+                [
+                    [paragraph("a", 4), 0],
+                    [paragraph("heading", 1, { keepNext: true }), 1],
+                    [paragraph("b", 3), 1],
+                ],
+                { sections: [SECTION, { ...SECTION, start: "continuous" }] },
+            );
+            // The heading and b need 4 lines, more than are left below a, but not more than a new page has
+            expect(pagesOf(content)).to.deep.equal({ a: "1", heading: "2", b: "2" });
+        });
+
+        it("should stop at columns balanced before a continuous section break, and at a section that starts in the next column", () => {
+            const balanced = document(
+                [
+                    [paragraph("a", 3), 0],
+                    [paragraph("b", 1), 1],
+                ],
+                { sections: [COLUMNS, { ...SECTION, start: "continuous" }] },
+            );
+            expect(paginate(balanced, { measurer: MEASURER }).stoppedAt).to.equal("columns balanced before a continuous section break");
+            // Nothing is on the page to balance
+            const atTop = document(
+                [
+                    [withItems(paragraph("a", 1), [pageBreak]), 0],
+                    [paragraph("b", 1), 1],
+                ],
+                { sections: [COLUMNS, { ...SECTION, start: "continuous" }] },
+            );
+            expect(pagesOf(atTop)).to.deep.equal({ a: "1", b: "2" });
+            const nextColumn = document(
+                [
+                    [paragraph("a", 1), 0],
+                    [paragraph("b", 1), 1],
+                ],
+                { sections: [SECTION, { ...COLUMNS, start: "nextColumn" }] },
+            );
+            expect(paginate(nextColumn, { measurer: MEASURER }).stoppedAt).to.equal("a section that starts in the next column");
+            // In sections of one column, a section that starts in the next column starts on a new page
+            const onePerPage = document(
+                [
+                    [paragraph("a", 1), 0],
+                    [paragraph("b", 1), 1],
+                ],
+                { sections: [SECTION, { ...SECTION, start: "nextColumn" }] },
+            );
+            expect(pagesOf(onePerPage)).to.deep.equal({ a: "1", b: "2" });
+        });
+
+        it("should stop at footnotes in columns, and at header rows repeated in a column", () => {
+            const noted = document([withItems(paragraph("a", 1), [{ type: "marker", name: "footnote 1" }])], {
+                sections: [COLUMNS],
+                footnotes: new Map([["footnote 1", [paragraph("note", 1)]]]),
+            });
+            expect(paginate(noted, { measurer: MEASURER }).stoppedAt).to.equal("a footnote in columns");
+            const headed = document(
+                [
+                    paragraph("a", 5),
+                    table([row([[paragraph("header", 1)]], { header: true }), row([[paragraph("row", 2)]], { cantSplit: true })]),
+                ],
+                { sections: [COLUMNS] },
+            );
+            expect(paginate(headed, { measurer: MEASURER }).stoppedAt).to.equal("a table's header rows repeated in a column");
+        });
+    });
+
+    describe("footnotes and endnotes", () => {
+        // The separator above the footnotes: an empty paragraph, a line tall
+        const SEPARATOR: ParagraphBlock = { type: "paragraph", items: [], format: {}, tabStops: [], markFont: {} };
+        const noted = (block: ParagraphBlock, ...notes: readonly string[]): ParagraphBlock =>
+            withItems(
+                block,
+                notes.map((note) => ({ type: "marker", name: note })),
+            );
+        const withNotes = (blocks: Parameters<typeof document>[0], notes: Record<string, readonly Block[]>): DocumentContent =>
+            document(blocks, { footnotes: new Map(Object.entries(notes)), footnoteSeparator: [SEPARATOR] });
+
+        it("should leave room at the bottom of a page for the footnotes of its lines, below their separator", () => {
+            const content = withNotes([paragraph("a", 4), noted(paragraph("b", 1), "footnote 1"), paragraph("c", 1)], {
+                "footnote 1": [paragraph("note", 1)],
+            });
+            // The separator and the footnote take 2 lines, so c goes on the next page. Bookmarks in footnotes aren't placed
+            expect(pagesOf(content)).to.deep.equal({ a: "1", b: "1", c: "2" });
+        });
+
+        it("should move a line to the next page with its footnote when they don't both fit", () => {
+            const content = withNotes([paragraph("a", 5), noted(paragraph("b", 1), "footnote 1")], {
+                "footnote 1": [paragraph("note", 1)],
+            });
+            expect(pagesOf(content)).to.deep.equal({ a: "1", b: "2" });
+        });
+
+        it("should stop at a footnote that would break across pages, or that is taller than a page", () => {
+            const breaking = withNotes([paragraph("a", 4), noted(paragraph("b", 1), "footnote 1")], {
+                "footnote 1": [paragraph("note", 4)],
+            });
+            expect(paginate(breaking, { measurer: MEASURER }).stoppedAt).to.equal("a footnote across pages");
+            const tall = withNotes([noted(paragraph("b", 1), "footnote 1")], {
+                "footnote 1": [paragraph("note", 1, { lineSpacing: { rule: "exact", height: 70 } })],
+            });
+            expect(paginate(tall, { measurer: MEASURER }).stoppedAt).to.equal("a footnote across pages");
+            // A footnote of paragraphs, or a table, could break between them
+            const paragraphs = withNotes([paragraph("a", 5), noted(paragraph("b", 1), "footnote 1")], {
+                "footnote 1": [paragraph("one", 1), paragraph("two", 1)],
+            });
+            expect(paginate(paragraphs, { measurer: MEASURER }).stoppedAt).to.equal("a footnote across pages");
+            const tabled = withNotes([paragraph("a", 5), noted(paragraph("b", 1), "footnote 1")], {
+                "footnote 1": [table([row([[paragraph("cell", 1)]])])],
+            });
+            expect(paginate(tabled, { measurer: MEASURER }).stoppedAt).to.equal("a footnote across pages");
+            // LibreOffice continues a footnote of more than a line, even one widow control would keep together
+            const short = withNotes([paragraph("a", 3), noted(paragraph("b", 1), "footnote 1")], { "footnote 1": [paragraph("note", 3)] });
+            expect(paginate(short, { measurer: MEASURER }).stoppedAt).to.equal("a footnote across pages");
+            const empty = withNotes([paragraph("a", 6), noted(paragraph("b", 1), "footnote 1")], { "footnote 1": [] });
+            expect(pagesOf(empty)).to.deep.equal({ a: "1", b: "2" });
+        });
+
+        it("should stop at a footnote that can't be laid out", () => {
+            const unsupported = { ...paragraph("note", 1), unsupported: "an equation" };
+            const content = withNotes([noted(paragraph("b", 1), "footnote 1")], { "footnote 1": [unsupported] });
+            expect(paginate(content, { measurer: MEASURER }).stoppedAt).to.equal("an equation");
+        });
+
+        it("should put the space between footnotes, but not before the separator or after the last footnote", () => {
+            const content = document([noted(paragraph("a", 1), "footnote 1", "footnote 2"), paragraph("b", 2), paragraph("c", 1)], {
+                footnotes: new Map([
+                    ["footnote 1", [paragraph("one", 1, { spaceAfter: 10 })]],
+                    ["footnote 2", [paragraph("two", 1, { spaceBefore: 5, spaceAfter: 30 })]],
+                ]),
+                footnoteSeparator: [{ ...SEPARATOR, format: { spaceBefore: 20 } }],
+            });
+            // The separator, the footnotes and the 10 points between them take 4 lines, leaving 3 for a and b
+            expect(pagesOf(content)).to.deep.equal({ a: "1", b: "1", c: "2" });
+        });
+
+        it("should leave room for the footnotes of table rows, and stop at a row with footnotes that would break", () => {
+            const note = { "footnote 1": [paragraph("note", 1)] };
+            const fits = withNotes(
+                [paragraph("a", 3), table([row([[noted(paragraph("cell", 2), "footnote 1")]])]), paragraph("b", 1)],
+                note,
+            );
+            expect(pagesOf(fits)).to.deep.equal({ a: "1", cell: "1", b: "2" });
+            const kept = withNotes(
+                [paragraph("a", 4), table([row([[noted(paragraph("cell", 2), "footnote 1")]], { cantSplit: true })])],
+                note,
+            );
+            expect(pagesOf(kept)).to.deep.equal({ a: "1", cell: "2" });
+            const breaking = withNotes([paragraph("a", 4), table([row([[noted(paragraph("cell", 2), "footnote 1")]])])], note);
+            expect(paginate(breaking, { measurer: MEASURER }).stoppedAt).to.equal("a footnote in a table row across pages");
+            const tall = withNotes([table([row([[noted(paragraph("cell", 6), "footnote 1")]], { cantSplit: true })])], note);
+            expect(paginate(tall, { measurer: MEASURER }).stoppedAt).to.equal("a footnote across pages");
+            // A row that fits, but whose footnote of more than a line doesn't
+            const long = withNotes([paragraph("a", 3), table([row([[noted(paragraph("cell", 2), "footnote 1")]], { cantSplit: true })])], {
+                "footnote 1": [paragraph("note", 2)],
+            });
+            expect(paginate(long, { measurer: MEASURER }).stoppedAt).to.equal("a footnote across pages");
+        });
+
+        it("should keep a paragraph with the next on the page only when their footnotes fit too", () => {
+            const note = { "footnote 1": [paragraph("note", 1)] };
+            const heading = paragraph("heading", 1, { keepNext: true });
+            const content = withNotes(
+                [
+                    paragraph("a", 3),
+                    heading,
+                    { ...paragraph("b", 3), items: [{ type: "marker", name: "footnote 1" }, ...paragraph("b", 3).items] },
+                ],
+                note,
+            );
+            // Without its footnote, b's 3 lines would fit below the heading
+            expect(pagesOf(content)).to.deep.equal({ a: "1", heading: "2", b: "2" });
+            const beforeTable = withNotes([paragraph("a", 4), heading, table([row([[noted(paragraph("cell", 1), "footnote 1")]])])], note);
+            expect(pagesOf(beforeTable)).to.deep.equal({ a: "1", heading: "2", cell: "2" });
+            const kept = withNotes(
+                [paragraph("a", 2), noted(paragraph("kept", 1, { keepNext: true }), "footnote 1"), paragraph("b", 3)],
+                note,
+            );
+            expect(pagesOf(kept)).to.deep.equal({ a: "1", kept: "2", b: "2" });
+        });
+
+        it("should lay the endnotes out after the body", () => {
+            const content = document([paragraph("a", 6)], { endnotes: [SEPARATOR, paragraph("end", 2)] });
+            expect(paginate(content, { measurer: MEASURER })).to.deep.equal({
+                bookmarks: new Map([
+                    ["a", "1"],
+                    ["end", "2"],
+                ]),
+                pageCount: 2,
+                sectionPageCounts: [2],
+            });
+        });
+    });
+
+    describe("numbers of pages", () => {
+        /** A paragraph of 7 letters and a number of pages, which wraps when the number is 2 digits */
+        const counted = (name: string, scope: "document" | "section"): ParagraphBlock => ({
+            ...paragraph(name, 1),
+            items: [
+                { type: "marker", name },
+                { type: "text", text: "abcdefg", font: {} },
+                { type: "pageCount", scope, font: {} },
+            ],
+        });
+
+        it("should write the number of pages given into the fields that show it, which can change how lines wrap", () => {
+            const blocks = [counted("a", "document"), paragraph("b", 5), paragraph("c", 1)];
+            // Blank, and one digit, a is a line; two digits, it wraps, and c moves on
+            expect(pagesOf(document(blocks))).to.deep.equal({ a: "1", b: "1", c: "1" });
+            expect(Object.fromEntries(paginate(document(blocks), { measurer: MEASURER, pageCount: 3 }).bookmarks)).to.deep.equal({
+                a: "1",
+                b: "1",
+                c: "1",
+            });
+            expect(Object.fromEntries(paginate(document(blocks), { measurer: MEASURER, pageCount: 12 }).bookmarks)).to.deep.equal({
+                a: "1",
+                b: "1",
+                c: "2",
+            });
+        });
+
+        it("should lay out a header with the number of pages of the section whose page it is on", () => {
+            const header = [counted("header", "section")];
+            const content = document(
+                [
+                    [paragraph("a", 5), 0],
+                    [paragraph("b", 1), 0],
+                    [paragraph("c", 5), 1],
+                    [paragraph("d", 1), 1],
+                ],
+                {
+                    sections: [
+                        { ...SECTION, headers: { default: header } },
+                        { ...SECTION, headers: { default: header } },
+                    ],
+                },
+            );
+            // The header of 2 lines leaves room for 5, and of 1 line, for 6
+            const { bookmarks } = paginate(content, { measurer: MEASURER, sectionPageCounts: [12, 3] });
+            expect(Object.fromEntries(bookmarks)).to.deep.equal({ a: "1", b: "2", c: "3", d: "3" });
+        });
+
+        it("should count the pages of each section, but not of those that share a page, have a blank page, or have no paragraphs", () => {
+            const countsOf = (blocks: Parameters<typeof document>[0], sections: readonly Section[]): readonly (number | undefined)[] =>
+                paginate(document(blocks, { sections }), { measurer: MEASURER }).sectionPageCounts;
+            expect(
+                countsOf(
+                    [
+                        [paragraph("a", 8), 0],
+                        [paragraph("b", 1), 1],
+                    ],
+                    [SECTION, SECTION],
+                ),
+            ).to.deep.equal([2, 1]);
+            expect(
+                countsOf(
+                    [
+                        [paragraph("a", 1), 0],
+                        [paragraph("b", 1), 1],
+                        [paragraph("c", 1), 2],
+                    ],
+                    [SECTION, { ...SECTION, start: "continuous" }, SECTION],
+                ),
+            ).to.deep.equal([undefined, undefined, 1]);
+            expect(
+                countsOf(
+                    [
+                        [paragraph("a", 1), 0],
+                        [paragraph("b", 1), 1],
+                    ],
+                    [SECTION, { ...SECTION, start: "oddPage" }],
+                ),
+            ).to.deep.equal([undefined, undefined]);
+            expect(
+                countsOf(
+                    [
+                        [paragraph("a", 1), 0],
+                        [paragraph("b", 1), 2],
+                    ],
+                    [SECTION, SECTION, SECTION],
+                ),
+            ).to.deep.equal([1, undefined, 1]);
         });
     });
 
@@ -505,6 +944,7 @@ describe("paginate", () => {
             expect(paginate(content, { measurer: MEASURER })).to.deep.equal({
                 bookmarks: new Map(),
                 pageCount: 0,
+                sectionPageCounts: [undefined],
                 stoppedAt: "an equation",
             });
         });
@@ -515,6 +955,7 @@ describe("paginate", () => {
         expect(paginate(content, { measurer: MEASURER })).to.deep.equal({
             bookmarks: new Map([["a", "1"]]),
             pageCount: 1,
+            sectionPageCounts: [undefined],
             stoppedAt: "a footnote",
         });
         expect(paginate(document([paragraph("a", 1)], { unsupported: "hyphenation" }), { measurer: MEASURER }).stoppedAt).to.equal(

@@ -30,8 +30,14 @@ const paragraphs = (count: number, seed: number): readonly Paragraph[] =>
         (_, index) => new Paragraph({ children: [new TextRun(text(60 + ((seed * 29 + index * 41) % 130), seed + index))] }),
     );
 
+// With the number of pages, which docx/layout writes too
 const pageNumberFooter = new Footer({
-    children: [new Paragraph({ alignment: AlignmentType.CENTER, children: [new TextRun({ children: ["Page ", PageNumber.CURRENT] })] })],
+    children: [
+        new Paragraph({
+            alignment: AlignmentType.CENTER,
+            children: [new TextRun({ children: ["Page ", PageNumber.CURRENT, " of ", PageNumber.TOTAL_PAGES] })],
+        }),
+    ],
 });
 
 // Five lines, which reach below the top margin

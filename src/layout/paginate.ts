@@ -1,16 +1,18 @@
 /**
  * Lays out a document's pages as Word does, to find the page each bookmark starts on.
  *
- * Each page's body is filled from the top, between the page's margins, or its header and footer where they are taller.
+ * Each page's body is filled from the top, between the page's margins, or its header and footer where they are taller,
+ * and in columns, the first column and then the next.
  * Paragraphs break into lines, and pages break between lines, as their keep and widow control settings allow. Table
- * rows move to the next page whole, and the table's header rows are repeated there. It stops at the first thing it
- * can't lay out yet, and the bookmarks after it aren't placed.
+ * rows break across pages between the lines of their cells, unless they are kept whole, and the table's header rows are
+ * repeated on each page. The footnotes of each page's lines take room at its bottom, and the endnotes follow the body.
+ * It stops at the first thing it can't lay out yet, and the bookmarks after it aren't placed.
  *
  * @module
  */
 import { DEFAULT_MEASURER, type InlineItem, type LaidOutLine, type TextMeasurer, layoutLines } from "../text-layout";
 import { formatNumber } from "./number-format";
-import type { Block, DocumentContent, HeadersOrFooters, LayoutItem, ParagraphBlock, Section, TableBlock } from "./read-document";
+import type { Block, DocumentContent, HeadersOrFooters, LayoutItem, ParagraphBlock, Section, TableBlock, TableRow } from "./read-document";
 
 /**
  * Where the pages of a document broke.
@@ -20,6 +22,11 @@ export type Pagination = {
     readonly bookmarks: ReadonlyMap<string, string>;
     /** How many pages were laid out */
     readonly pageCount: number;
+    /**
+     * How many pages each section has, in order: undefined for a section that shares a page with another, that has a
+     * blank page before or after it, or that wasn't laid out to its end
+     */
+    readonly sectionPageCounts: readonly (number | undefined)[];
     /** What it stopped at, when it couldn't lay out all of the document */
     readonly stoppedAt?: string;
 };
@@ -27,6 +34,9 @@ export type Pagination = {
 export type PaginateOptions = {
     /** The page numbers of bookmarks, which the results of the page references to them are. Those not in it are blank */
     readonly pageNumbers?: ReadonlyMap<string, string>;
+    /** The number of pages of the document, and of each section, which page count fields show. They are blank without */
+    readonly pageCount?: number;
+    readonly sectionPageCounts?: readonly (number | undefined)[];
     readonly measurer?: TextMeasurer;
 };
 
@@ -51,26 +61,86 @@ const TOLERANCE = 0.01;
 // eslint-disable-next-line functional/prefer-readonly-type
 const laidOutLines = new WeakMap<TextMeasurer, WeakMap<ParagraphBlock, Map<number, readonly LaidOutLine[]>>>();
 
+/** How a table in a table cell is placed when its row breaks across pages: whole, as a line that can't be broken */
+const UNBROKEN: Omit<MeasuredParagraph, "lines"> = {
+    spaceBefore: 0,
+    spaceAfter: 0,
+    keepNext: false,
+    keepLines: true,
+    widowControl: false,
+    pageBreakBefore: false,
+};
+
+/** A paragraph in a table cell, and the first of its lines not yet placed */
+type CellParagraph = { readonly paragraph: MeasuredParagraph; readonly from: number };
+
 /** Thrown to stop laying out at something that can't be laid out yet */
 class Unsupported extends Error {}
 
 const sum = (values: readonly number[]): number => values.reduce((total, value) => total + value, 0);
 
 /**
+ * How many of a paragraph's lines, from one of them, fit in the room left on a page (`fits`), and how many of those go on
+ * it (`count`): with widow control, a paragraph's first line isn't left alone at the bottom of a page, nor its last line
+ * at the top of the next, and with keepLines, a paragraph that doesn't fit moves to the next page whole. The footnotes
+ * of the first lines take room at the bottom of the page too (`notesRoom`, from the number of lines).
+ */
+const linesThatFit = (
+    lines: readonly LaidOutLine[],
+    room: number,
+    { keepLines, widowControl }: Pick<MeasuredParagraph, "keepLines" | "widowControl">,
+    isFirstLine: boolean,
+    notesRoom: (count: number) => number = () => 0,
+): { readonly fits: number; readonly count: number } => {
+    const ends = lines.map((_, line) => sum(lines.slice(0, line + 1).map(({ height }) => height)));
+    const fits = ends.findIndex((end, line) => end + notesRoom(line + 1) > room + TOLERANCE);
+    if (fits === -1) {
+        return { fits: lines.length, count: lines.length };
+    }
+    if (keepLines && isFirstLine) {
+        return { fits, count: 0 };
+    }
+    if (!widowControl || lines.length < 2) {
+        return { fits, count: fits };
+    }
+    // Leave at least two lines on the next page, and don't leave the first line alone on this one
+    const withoutWidow = lines.length - fits === 1 ? fits - 1 : fits;
+    return { fits, count: isFirstLine && withoutWidow === 1 ? 0 : withoutWidow };
+};
+
+/**
  * Lays out a document's pages, and finds the page each bookmark starts on.
  */
 export const paginate = (
     content: DocumentContent,
-    { pageNumbers = new Map(), measurer = DEFAULT_MEASURER }: PaginateOptions = {},
+    {
+        pageNumbers = new Map(),
+        pageCount: givenPageCount,
+        sectionPageCounts: givenSectionPageCounts = [],
+        measurer = DEFAULT_MEASURER,
+    }: PaginateOptions = {},
 ): Pagination => {
-    const { blocks, sections, defaultTabStop, evenAndOddHeaders, addsParagraphSpacing } = content;
+    const { sections, defaultTabStop, evenAndOddHeaders, addsParagraphSpacing, footnotes, footnoteSeparator, endnotes } = content;
+    // The body, and then its endnotes, which Word lays out after it
+    const blocks = [...content.blocks, ...endnotes.map((block) => ({ block, section: sections.length - 1 }))];
     /** The space between two paragraphs: the larger of the space after the first and before the second, or both */
     const between = (after: number, before: number): number => (addsParagraphSpacing ? after + before : Math.max(after, before));
 
+    // The section being laid out
+    let sectionIndex = 0;
+
+    /** The text of the results of fields that depend on the pages, from the numbers given */
     const itemsOf = (items: readonly LayoutItem[]): readonly InlineItem[] =>
-        items.map((item) =>
-            item.type === "pageReference" ? { type: "text", text: pageNumbers.get(item.bookmark) ?? "", font: item.font } : item,
-        );
+        items.map((item) => {
+            if (item.type === "pageReference") {
+                return { type: "text", text: pageNumbers.get(item.bookmark) ?? "", font: item.font };
+            }
+            if (item.type === "pageCount") {
+                const count = item.scope === "document" ? givenPageCount : givenSectionPageCounts[sectionIndex];
+                return { type: "text", text: count === undefined ? "" : String(count), font: item.font };
+            }
+            return item;
+        });
 
     // eslint-disable-next-line functional/prefer-readonly-type
     const byParagraph = laidOutLines.get(measurer) ?? new WeakMap<ParagraphBlock, Map<number, readonly LaidOutLine[]>>();
@@ -85,7 +155,7 @@ export const paginate = (
                 markFont: paragraph.markFont,
                 measurer,
             });
-        if (paragraph.items.some(({ type }) => type === "pageReference")) {
+        if (paragraph.items.some(({ type }) => type === "pageReference" || type === "pageCount")) {
             return layOut();
         }
         const byWidth = byParagraph.get(paragraph) ?? new Map<number, readonly LaidOutLine[]>();
@@ -116,22 +186,27 @@ export const paginate = (
 
     const linesHeight = (lines: readonly LaidOutLine[]): number => sum(lines.map(({ height }) => height));
 
-    /**
-     * The height of blocks stacked in a width, such as those in a table cell or a header, with the space before the
-     * first and after the last
-     */
-    const stackHeight = (stack: readonly Block[], width: number): number => {
-        const parts = stack.map((block, index) => {
+    /** The heights of blocks stacked in a width, with the space before and after each */
+    const stackParts = (
+        stack: readonly Block[],
+        width: number,
+    ): readonly { readonly height: number; readonly before: number; readonly after: number }[] =>
+        stack.map((block, index) => {
             if (block.type === "table") {
                 return { height: sum(rowHeights(block)), before: 0, after: 0 };
             }
             const { lines, spaceBefore: before, spaceAfter: after } = measureParagraph(block, width, stack[index - 1], stack[index + 1]);
             return { height: linesHeight(lines), before, after };
         });
-        return (
-            sum(parts.map(({ height, before }, index) => height + (index === 0 ? before : between(parts[index - 1].after, before)))) +
-            (parts[parts.length - 1]?.after ?? 0)
-        );
+
+    /**
+     * The height of blocks stacked in a width, such as those in a table cell or a header, with the space before the
+     * first and after the last, unless it is left out
+     */
+    const stackHeight = (stack: readonly Block[], width: number, withOuterSpace = true): number => {
+        const parts = stackParts(stack, width);
+        const outer = withOuterSpace ? (parts[0]?.before ?? 0) + (parts[parts.length - 1]?.after ?? 0) : 0;
+        return sum(parts.map(({ height, before }, index) => height + (index === 0 ? 0 : between(parts[index - 1].after, before)))) + outer;
     };
 
     /**
@@ -155,7 +230,7 @@ export const paginate = (
                     // The rest of the merge is in the same column of the grid, which cells spanning columns can put at another index
                     const span = rows
                         .slice(rowIndex + 1)
-                        .findIndex((row) => row.cells.find(({ column }) => column === cell.column)?.verticalMerge !== "continue");
+                        .findIndex((row) => row.cells.find((other) => other.column === cell.column)?.verticalMerge !== "continue");
                     const last = span === -1 ? rows.length - 1 : rowIndex + span;
                     const missing = cellHeight(cell) - sum(current.slice(rowIndex, last + 1));
                     return missing > 0 && rows[last].height?.rule !== "exact"
@@ -173,20 +248,32 @@ export const paginate = (
 
     // The state of the page being filled
     const bookmarks = new Map<string, string>();
-    const headerHeights = new Map<readonly Block[], number>();
+    // The height of each header and footer, by the section it is in, whose number of pages it can show
+    // eslint-disable-next-line functional/prefer-readonly-type
+    const headerHeights = new Map<readonly Block[], Map<number, number>>();
     let pageCount = 0;
     let pageNumber = 0;
-    let sectionIndex = 0;
+    // The first and last page of each section, and the sections whose pages aren't theirs alone
+    const firstPages = new Map<number, number>([[0, 1]]);
+    const lastPages = new Map<number, number>();
+    const sharingPages = new Set<number>();
     // Where the page's body starts and ends, and where the next line goes, in points from the top of the page
     let top = 0;
     let bottom = 0;
     let position = 0;
-    // Whether anything is on the page yet
-    let placedOnPage = false;
+    // The column being filled, from the first, and where the page's columns start, below what is above them on the page
+    let column = 0;
+    let columnTop = 0;
+    // Whether anything is in the column yet: on the page, for a page of one column
+    let placedInColumn = false;
+    // The footnotes at the bottom of the page, by their markers, and the room they take with their separator
+    let pageNotes: readonly string[] = [];
+    let noteArea = 0;
     // The space after the last paragraph, which goes before what is next on the page
     let spaceAfter = 0;
 
     const section = (): Section => sections[sectionIndex];
+    /** The width of the text across the page, as its headers, footers and footnotes are */
     const textWidth = (current = section()): number => current.pageWidth - current.marginLeft - current.marginRight - current.gutter;
 
     const partHeight = (parts: HeadersOrFooters, isFirst: boolean): number => {
@@ -198,9 +285,10 @@ export const paginate = (
         if (part.some((block) => block.unsupported !== undefined)) {
             throw new Unsupported(part.find((block) => block.unsupported !== undefined)!.unsupported);
         }
-        const height = headerHeights.get(part) ?? stackHeight(part, textWidth());
+        const bySection = headerHeights.get(part) ?? new Map<number, number>();
+        const height = bySection.get(sectionIndex) ?? stackHeight(part, textWidth());
         // eslint-disable-next-line functional/immutable-data
-        headerHeights.set(part, height);
+        headerHeights.set(part, bySection.set(sectionIndex, height));
         return height;
     };
 
@@ -214,12 +302,36 @@ export const paginate = (
         top = current.marginTop < 0 ? -current.marginTop : Math.max(current.marginTop, headerBottom);
         bottom = current.pageHeight - (current.marginBottom < 0 ? -current.marginBottom : Math.max(current.marginBottom, footerTop));
         position = top;
-        placedOnPage = false;
+        column = 0;
+        columnTop = top;
+        placedInColumn = false;
+        spaceAfter = 0;
+        pageNotes = [];
+        noteArea = 0;
+    };
+
+    /** Moves to the top of the next column, or of the next page after the last column */
+    const nextColumn = (): void => {
+        if (column + 1 >= section().columns.length) {
+            startPage();
+            return;
+        }
+        column++;
+        position = columnTop;
+        placedInColumn = false;
         spaceAfter = 0;
     };
 
     const startSection = (index: number): void => {
         const previous = section();
+        // eslint-disable-next-line functional/immutable-data
+        lastPages.set(sectionIndex, pageCount);
+        // A section with no paragraphs of its own, which isn't laid out
+        for (let skipped = sectionIndex + 1; skipped < index; skipped++) {
+            // eslint-disable-next-line functional/immutable-data
+            sharingPages.add(skipped);
+        }
+        const before = sectionIndex;
         sectionIndex = index;
         const current = section();
         if (current.unsupported) {
@@ -227,21 +339,81 @@ export const paginate = (
         }
         const samePage = previous.pageWidth === current.pageWidth && previous.pageHeight === current.pageHeight;
         if (current.start === "continuous" && samePage) {
+            if (previous.columns.length > 1 && (placedInColumn || column > 0)) {
+                throw new Unsupported("columns balanced before a continuous section break");
+            }
+            // The section's columns start below what is on the page
+            column = 0;
+            columnTop = position;
+            // eslint-disable-next-line functional/immutable-data
+            firstPages.set(index, pageCount);
+            // eslint-disable-next-line functional/immutable-data
+            sharingPages.add(before).add(index);
             return;
+        }
+        if (current.start === "nextColumn" && (previous.columns.length > 1 || current.columns.length > 1)) {
+            throw new Unsupported("a section that starts in the next column");
         }
         const nextNumber = current.firstNumber ?? pageNumber + 1;
         if ((current.start === "evenPage" && nextNumber % 2 !== 0) || (current.start === "oddPage" && nextNumber % 2 === 0)) {
-            // A blank page, so the section starts on an even or odd page
+            // A blank page, so the section starts on an even or odd page, which isn't either section's
             pageCount++;
             pageNumber++;
+            // eslint-disable-next-line functional/immutable-data
+            sharingPages.add(before).add(index);
         }
         startPage(true);
+        // eslint-disable-next-line functional/immutable-data
+        firstPages.set(index, pageCount);
+    };
+
+    /**
+     * The room footnotes take at the bottom of the page: the separator's line above them, and their paragraphs, without
+     * the space before the first or after the last, as LibreOffice lays them out
+     */
+    const areaOf = (notes: readonly string[]): number => {
+        if (notes.length === 0) {
+            return 0;
+        }
+        const stack = [...footnoteSeparator, ...notes.flatMap((name) => footnotes.get(name)!)];
+        const unsupported = stack.find((block) => block.unsupported !== undefined)?.unsupported;
+        if (unsupported) {
+            throw new Unsupported(unsupported);
+        }
+        return stackHeight(stack, textWidth(), false);
+    };
+
+    const notesIn = (markers: readonly string[]): readonly string[] => markers.filter((name) => footnotes.has(name));
+
+    /** The room footnotes take below those on the page already */
+    const moreNoteRoom = (notes: readonly string[]): number => {
+        if (notes.length > 0 && section().columns.length > 1) {
+            throw new Unsupported("a footnote in columns");
+        }
+        return notes.length === 0 ? 0 : areaOf([...pageNotes, ...notes]) - noteArea;
+    };
+
+    /** Puts footnotes at the bottom of the page */
+    const addNotes = (notes: readonly string[]): void => {
+        if (notes.length > 0) {
+            pageNotes = [...pageNotes, ...notes];
+            noteArea = areaOf(pageNotes);
+        }
+    };
+
+    /**
+     * Whether a footnote could continue on the next page, as LibreOffice continues any footnote of more than a line that
+     * doesn't fit below its reference. Which of its lines it keeps with the reference isn't followed yet.
+     */
+    const canBreak = (name: string): boolean => {
+        const [first, ...rest] = footnotes.get(name)!;
+        return rest.length > 0 || first?.type === "table" || (first !== undefined && measureParagraph(first, textWidth()).lines.length > 1);
     };
 
     const mark = (names: readonly string[]): void => {
         const text = formatNumber(pageNumber, section().numberFormat)!;
         for (const name of names) {
-            if (!bookmarks.has(name)) {
+            if (!bookmarks.has(name) && !footnotes.has(name)) {
                 // eslint-disable-next-line functional/immutable-data
                 bookmarks.set(name, text);
             }
@@ -256,24 +428,20 @@ export const paginate = (
     const placeLines = (lines: readonly LaidOutLine[], paragraph: MeasuredParagraph, isStart: boolean): void => {
         let index = 0;
         while (index < lines.length) {
-            const space = placedOnPage && isStart && index === 0 ? between(spaceAfter, paragraph.spaceBefore) : 0;
-            const room = bottom - position - space;
+            const space = placedInColumn && isStart && index === 0 ? between(spaceAfter, paragraph.spaceBefore) : 0;
             const remaining = lines.slice(index);
-            // How many of the lines fit on the page
-            const ends = remaining.map((_, line) => sum(remaining.slice(0, line + 1).map(({ height }) => height)));
-            const fits = ends.filter((end) => end <= room + TOLERANCE).length;
-            let count = fits;
-            if (fits < remaining.length) {
-                const isFirstLine = isStart && index === 0;
-                if (paragraph.keepLines && isFirstLine) {
-                    count = 0;
-                } else if (paragraph.widowControl && remaining.length >= 2) {
-                    // Leave at least two lines on the next page, and don't leave the first line alone on this one
-                    count = remaining.length - count === 1 ? count - 1 : count;
-                    count = isFirstLine && count === 1 ? 0 : count;
-                }
+            const notesOf = (upTo: number): readonly string[] => notesIn(remaining.slice(0, upTo).flatMap(({ markers }) => markers));
+            const room = bottom - noteArea - position - space;
+            const isFirstLine = isStart && index === 0;
+            const { fits, count: kept } = linesThatFit(remaining, room, paragraph, isFirstLine, (upTo) => moreNoteRoom(notesOf(upTo)));
+            // A line that fits, but not with its footnotes, moves to the next page with them, unless they could break
+            const withoutNotes = linesThatFit(remaining, room, paragraph, isFirstLine).fits;
+            const tooTall = fits === 0 && !placedInColumn && notesOf(1).length > 0;
+            if (tooTall || (withoutNotes > fits && notesOf(fits + 1).some(canBreak))) {
+                throw new Unsupported("a footnote across pages");
             }
-            if (count === 0 && !placedOnPage) {
+            let count = kept;
+            if (count === 0 && !placedInColumn) {
                 // Nothing fits on an empty page, so as much as fits goes on it, and at least a line
                 count = Math.max(1, fits);
             }
@@ -283,20 +451,21 @@ export const paginate = (
                     mark(line.markers);
                     position += line.height;
                 }
-                placedOnPage = true;
+                addNotes(notesOf(count));
+                placedInColumn = true;
                 index += count;
             }
             if (index < lines.length) {
-                startPage();
+                nextColumn();
             }
         }
     };
 
     const placeParagraph = (paragraph: MeasuredParagraph): void => {
-        if (paragraph.pageBreakBefore && placedOnPage) {
+        if (paragraph.pageBreakBefore && (placedInColumn || column > 0)) {
             startPage();
         }
-        // Lines up to each page or column break, which start the rest on a new page
+        // Lines up to each page or column break, which start the rest on a new page, or in the next column
         const groups = paragraph.lines.reduce<readonly (readonly LaidOutLine[])[]>(
             (all, line) => {
                 const last = all[all.length - 1];
@@ -306,12 +475,114 @@ export const paginate = (
             [[]],
         );
         for (const [index, group] of groups.entries()) {
-            if (index > 0) {
+            if (index > 0 && groups[index - 1][groups[index - 1].length - 1].breakAfter === "column") {
+                nextColumn();
+            } else if (index > 0) {
                 startPage();
             }
             placeLines(group, paragraph, index === 0);
         }
         ({ spaceAfter } = paragraph);
+    };
+
+    /**
+     * Fills a cell's part of a row that breaks across pages: as many of the lines left of its paragraphs as fit in the
+     * room. The space before a paragraph at the top of the part on the next page is left out, as it is at the top of a
+     * page.
+     */
+    const fillCell = (
+        paragraphs: readonly CellParagraph[],
+        room: number,
+        isFirstPart: boolean,
+    ): { readonly height: number; readonly lines: readonly LaidOutLine[]; readonly rest: readonly CellParagraph[] } => {
+        let used = 0;
+        let previousAfter: number | undefined;
+        let placed: readonly LaidOutLine[] = [];
+        for (const [index, { paragraph, from }] of paragraphs.entries()) {
+            const space =
+                from > 0
+                    ? 0
+                    : previousAfter === undefined
+                      ? isFirstPart
+                          ? paragraph.spaceBefore
+                          : 0
+                      : between(previousAfter, paragraph.spaceBefore);
+            const remaining = paragraph.lines.slice(from);
+            // Widow control and keepLines don't hold lines back in a row that breaks across pages, as in Word and LibreOffice
+            const { fits: count } = linesThatFit(remaining, room - used - space, paragraph, from === 0);
+            if (count > 0) {
+                used += space + linesHeight(remaining.slice(0, count));
+                placed = [...placed, ...remaining.slice(0, count)];
+            }
+            if (count < remaining.length) {
+                return { height: used, lines: placed, rest: [{ paragraph, from: from + count }, ...paragraphs.slice(index + 1)] };
+            }
+            previousAfter = paragraph.spaceAfter;
+        }
+        // The space after the last paragraph, as much of it as there is room for
+        return { height: Math.min(used + (previousAfter ?? 0), Math.max(used, room)), lines: placed, rest: [] };
+    };
+
+    /**
+     * Places a row that doesn't fit on the page by breaking it across pages between the lines of its cells, as Word
+     * breaks a row unless it is kept whole. A row none of whose lines fit moves to the next page. The table's header rows
+     * are repeated above the rest of it on each page.
+     */
+    const splitRow = (row: TableRow, height: number, startTablePage: () => void): void => {
+        // A table in a cell is measured as a line that doesn't break, which is enough to tell whether the row breaks
+        let parts = row.cells.map((cell): readonly CellParagraph[] =>
+            cell.blocks.map((block, index) => ({
+                paragraph:
+                    block.type === "paragraph"
+                        ? measureParagraph(block, cell.width, cell.blocks[index - 1], cell.blocks[index + 1])
+                        : { ...UNBROKEN, lines: [{ height: sum(rowHeights(block)), markers: markersOf(block) }] },
+                from: 0,
+            })),
+        );
+        let isFirstPart = true;
+        for (;;) {
+            const borders = row.borderTop + row.borderBottom;
+            const room = bottom - noteArea - position - borders;
+            const first = isFirstPart;
+            const filled = parts.map((paragraphs, cell) =>
+                fillCell(paragraphs, room - row.cells[cell].marginTop - row.cells[cell].marginBottom, first),
+            );
+            const placesLines = filled.some(({ lines }) => lines.length > 0);
+            const isLastPart = filled.every(({ rest }) => rest.length === 0);
+            if (placesLines && !isLastPart) {
+                if (row.cells.some(({ verticalMerge }) => verticalMerge !== undefined)) {
+                    throw new Unsupported("a table row with merged cells across pages");
+                }
+                if (row.height !== undefined && row.height.value >= height - borders - TOLERANCE) {
+                    throw new Unsupported("a table row of a set height across pages");
+                }
+                if (row.cells.some((cell) => cell.blocks.some(({ type }) => type === "table"))) {
+                    throw new Unsupported("a table in a table row across pages");
+                }
+            }
+            // A row whose text fits, but not the height it is set to, moves to the next page whole, as in LibreOffice
+            const fitsWhole = !isFirstPart || position + height <= bottom - noteArea + TOLERANCE;
+            if ((!placesLines || !fitsWhole) && !placedInColumn) {
+                throw new Unsupported("a table row taller than a page");
+            }
+            if (placesLines && (fitsWhole || !isLastPart)) {
+                mark(filled.flatMap(({ lines }) => lines.flatMap(({ markers }) => markers)));
+            }
+            if (placesLines && isLastPart && fitsWhole) {
+                const tallest = Math.max(
+                    ...filled.map((part, cell) => row.cells[cell].marginTop + part.height + row.cells[cell].marginBottom),
+                );
+                // A row that moved to the next page whole is as tall there as it is anywhere
+                position += (isFirstPart ? height - borders : tallest) + borders;
+                placedInColumn = true;
+                return;
+            }
+            startTablePage();
+            if (placesLines && !isLastPart) {
+                parts = filled.map(({ rest }) => rest);
+                isFirstPart = false;
+            }
+        }
     };
 
     const placeTable = (table: TableBlock): void => {
@@ -321,20 +592,43 @@ export const paginate = (
         // The space after the paragraph before the table
         position += spaceAfter;
         spaceAfter = 0;
+        // A new page for the table, with its header rows repeated at the top, unless the row going on it is one of them
+        const startTablePage = (index: number): void => {
+            nextColumn();
+            if (index >= headerRows && headerRows > 0) {
+                if (column > 0) {
+                    throw new Unsupported("a table's header rows repeated in a column");
+                }
+                position += repeated;
+            }
+        };
+        /** Whether a row fits on the page, with its footnotes */
+        const rowFits = (height: number, notes: readonly string[]): boolean =>
+            position + height + moreNoteRoom(notes) <= bottom - noteArea + TOLERANCE;
         for (const [index, row] of table.rows.entries()) {
             const height = heights[index];
-            if (position + height > bottom + TOLERANCE && placedOnPage) {
-                startPage();
-                if (index >= headerRows && headerRows > 0) {
-                    position += repeated;
+            const markers = row.cells.flatMap((cell) => cell.blocks.flatMap(markersOf));
+            const notes = notesIn(markers);
+            if (!rowFits(height, notes) && position + height <= bottom - noteArea + TOLERANCE && notes.some(canBreak)) {
+                throw new Unsupported("a footnote across pages");
+            }
+            if (!rowFits(height, notes) && !row.cantSplit && row.height?.rule !== "exact") {
+                if (notes.length > 0) {
+                    throw new Unsupported("a footnote in a table row across pages");
                 }
+                splitRow(row, height, () => startTablePage(index));
+                continue;
             }
-            if (height > bottom - position + TOLERANCE) {
-                throw new Unsupported("a table row taller than a page");
+            if (!rowFits(height, notes) && placedInColumn) {
+                startTablePage(index);
             }
-            mark(row.cells.flatMap((cell) => cell.blocks.flatMap(markersOf)));
+            if (!rowFits(height, notes)) {
+                throw new Unsupported(notes.length > 0 ? "a footnote across pages" : "a table row taller than a page");
+            }
+            mark(markers);
+            addNotes(notes);
             position += height;
-            placedOnPage = true;
+            placedInColumn = true;
         }
     };
 
@@ -342,7 +636,7 @@ export const paginate = (
      * The room the paragraphs kept with the next one, from this one, need on the page: all of them, and the start of
      * the block they are kept with, from where the next line would go.
      */
-    const keptHeight = (index: number, width: number): number => {
+    const keptHeight = (index: number, width: number): { readonly height: number; readonly notes: readonly string[] } => {
         const chain = blocks.slice(index).findIndex(({ block, section: blockSection }, offset) => {
             const following = blocks[index + offset + 1];
             return !(block.type === "paragraph" && block.format.keepNext === true && following && following.section === blockSection);
@@ -357,15 +651,32 @@ export const paginate = (
             ),
         );
         const lastAfter = kept[kept.length - 1]?.spaceAfter ?? spaceAfter;
+        const keptNotes = notesIn(kept.flatMap(({ lines }) => lines.flatMap(({ markers }) => markers)));
         const anchor = blocks[index + chain].block;
         if (anchor.type === "table") {
-            return keptLines + lastAfter + (anchor.unsupported ? 0 : (rowHeights(anchor)[0] ?? 0));
+            const [firstRow] = anchor.rows;
+            return {
+                height: keptLines + lastAfter + (anchor.unsupported ? 0 : (rowHeights(anchor)[0] ?? 0)),
+                notes: [...keptNotes, ...notesIn(firstRow ? firstRow.cells.flatMap((cell) => cell.blocks.flatMap(markersOf)) : [])],
+            };
         }
         // As much of the next paragraph as can't be left at the bottom of a page on its own
         const next = measured(index + chain);
         const firstLines = next.keepLines || (next.widowControl && next.lines.length <= 3) ? next.lines.length : next.widowControl ? 2 : 1;
-        return keptLines + between(lastAfter, next.spaceBefore) + linesHeight(next.lines.slice(0, firstLines));
+        const nextLines = next.lines.slice(0, firstLines);
+        return {
+            height: keptLines + between(lastAfter, next.spaceBefore) + linesHeight(nextLines),
+            notes: [...keptNotes, ...notesIn(nextLines.flatMap(({ markers }) => markers))],
+        };
     };
+
+    /** The number of pages of each section whose pages are its alone, and that was laid out to its end */
+    const countsOf = (): readonly (number | undefined)[] =>
+        sections.map((_, index) => {
+            const first = firstPages.get(index);
+            const last = lastPages.get(index);
+            return first === undefined || last === undefined || sharingPages.has(index) ? undefined : last - first + 1;
+        });
 
     try {
         if (content.unsupported) {
@@ -386,12 +697,15 @@ export const paginate = (
                 placeTable(block);
                 continue;
             }
-            const width = textWidth();
+            const width = section().columns[column];
             const paragraph = measureParagraph(block, width, blocks[index - 1]?.block, blocks[index + 1]?.block);
-            if (paragraph.keepNext && placedOnPage) {
-                const needed = keptHeight(index, width);
-                if (position + needed > bottom + TOLERANCE && needed <= bottom - top + TOLERANCE) {
-                    startPage();
+            if (paragraph.keepNext && placedInColumn) {
+                const { height: needed, notes } = keptHeight(index, width);
+                const fitsHere = position + needed + moreNoteRoom(notes) <= bottom - noteArea + TOLERANCE;
+                // Where what is kept together would start: the top of the next column, or of a new page after the last
+                const nextTop = column + 1 < section().columns.length ? columnTop : top;
+                if (!fitsHere && needed + areaOf(notes) <= bottom - nextTop + TOLERANCE) {
+                    nextColumn();
                 }
             }
             placeParagraph(paragraph);
@@ -400,7 +714,9 @@ export const paginate = (
         if (!(error instanceof Unsupported)) {
             throw error;
         }
-        return { bookmarks, pageCount, stoppedAt: error.message };
+        return { bookmarks, pageCount, sectionPageCounts: countsOf(), stoppedAt: error.message };
     }
-    return { bookmarks, pageCount };
+    // eslint-disable-next-line functional/immutable-data
+    lastPages.set(sectionIndex, pageCount);
+    return { bookmarks, pageCount, sectionPageCounts: countsOf() };
 };
