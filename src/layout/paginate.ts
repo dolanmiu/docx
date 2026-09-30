@@ -351,7 +351,8 @@ export const paginate = (
     let columnTop = 0;
     // Whether anything is in the column yet: on the page, for a page of one column
     let placedInColumn = false;
-    // The bottom of the tallest of the columns before the one being filled, and whether a column break started one
+    // The bottom of the lowest of the columns before the one being filled, with the space after its last paragraph when it
+    // ends with one, and whether a column break started one
     let deepest = 0;
     let columnBroken = false;
     // The page whose columns are being balanced, and the height they are being laid out in
@@ -483,7 +484,7 @@ export const paginate = (
             startPage();
             return;
         }
-        deepest = Math.max(deepest, position);
+        deepest = Math.max(deepest, position + spaceAfter);
         column++;
         position = columnTop;
         placedInColumn = false;
@@ -495,15 +496,20 @@ export const paginate = (
         current.start === "continuous" && previous.pageWidth === current.pageWidth && previous.pageHeight === current.pageHeight;
 
     /**
-     * Balances the columns on the page before a continuous section break, as Word and LibreOffice do: what is in them,
-     * up to the section's next block (`end`), is laid out again in the shortest columns it fits in, filled from the
-     * first, which halving the height tried finds. The section after goes below the tallest column.
+     * Ends the columns on the page before a continuous section break, as Word does. Unless a column break is in them, they
+     * are balanced: what is in them, up to the section's next block (`end`), is laid out again in the shortest columns it
+     * fits in, filled from the first, which halving the height tried finds. The next section starts below the lowest of
+     * the columns and the space after the paragraph each ends with, and its space before is only as much as is more than
+     * the space after the section's last paragraph.
      */
-    const balanceColumns = (end: number): void => {
-        if (columnBroken) {
-            // Word hasn't shown yet how it balances columns with a column break
-            throw new Unsupported("a column break in columns balanced before a continuous section break");
+    const endColumns = (end: number): void => {
+        if (!columnBroken) {
+            balanceColumns(end);
         }
+        position = Math.max(deepest, position + spaceAfter) - spaceAfter;
+    };
+
+    const balanceColumns = (end: number): void => {
         const from = columnsStart!;
         const page = pageCount;
         const layOut = (height: number): void => {
@@ -535,12 +541,11 @@ export const paginate = (
         layOut(tall);
         balancing = undefined;
         bottom = pageBottom;
-        position = Math.max(deepest, position);
     };
 
     /**
      * Starts a section, from its first block (`firstBlock`): on a new page, or below what is on the page for a continuous
-     * one, after balancing the columns before it
+     * one, after the columns before it are ended
      */
     const startSection = (index: number, firstBlock: number): void => {
         const previous = section();
@@ -557,7 +562,7 @@ export const paginate = (
         }
         const continuous = continuesOnPage(previous, current);
         if (continuous && previous.columns.length > 1 && (placedInColumn || column > 0)) {
-            balanceColumns(firstBlock);
+            endColumns(firstBlock);
         }
         const before = sectionIndex;
         sectionIndex = index;
@@ -739,6 +744,10 @@ export const paginate = (
      * paragraph at the top of a page is left out.
      */
     const placeLines = (lines: readonly LaidOutLine[], paragraph: MeasuredParagraph, isStart: boolean): void => {
+        if (isStart && paragraph.keepLines && section().columns.length > 1 && linesHeight(lines) > pageBottom - top + TOLERANCE) {
+            // Word moves it to a new page, where it breaks it across only the first column of each page
+            throw new Unsupported("a paragraph kept together taller than a column");
+        }
         let index = 0;
         while (index < lines.length) {
             const space = placedInColumn && isStart && index === 0 ? between(spaceAfter, paragraph.spaceBefore) : 0;
@@ -780,6 +789,8 @@ export const paginate = (
                     mark(line.markers);
                     position += line.height;
                 }
+                // The space after the paragraph before is above these lines now, and this one's comes at its end
+                spaceAfter = 0;
                 placeNotes(notesOf(count));
                 placedInColumn = true;
                 index += count;
@@ -985,6 +996,10 @@ export const paginate = (
         const lastAfter = kept[kept.length - 1]?.spaceAfter ?? spaceAfter;
         const keptNotes = notesIn(kept.flatMap(({ lines }) => lines.flatMap(({ markers }) => markers)));
         const anchor = blocks[index + chain].block;
+        if (anchor.type === "paragraph" && anchor.sectionBreak) {
+            // The paragraph that ends the section takes no room, so they are kept with nothing
+            return { height: keptLines, notes: keptNotes };
+        }
         if (anchor.type === "table") {
             const [firstRow] = anchor.rows;
             return {
@@ -1006,9 +1021,8 @@ export const paginate = (
         if (block.unsupported) {
             throw new Unsupported(block.unsupported);
         }
-        const next = sections[sectionIndex + 1];
-        if (block.type === "paragraph" && block.sectionBreak && next !== undefined && continuesOnPage(section(), next)) {
-            // The empty paragraph of a section break before a continuous section takes no room, in Word and LibreOffice
+        if (block.type === "paragraph" && block.sectionBreak) {
+            // The empty paragraph that ends a section takes no room, in Word and LibreOffice
             return;
         }
         if (block.type === "table") {

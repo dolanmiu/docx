@@ -699,11 +699,6 @@ describe("paginate", () => {
                 expect(pagesOf(balanced([paragraph("a", 1), paragraph("kept", 4)]))).to.include({ b: "1", c: "1" });
             });
 
-            it("should break a paragraph kept together that is taller than a column, as it breaks on a page", () => {
-                // 5 lines and 4, rather than 7 and 2
-                expect(pagesOf(balanced([paragraph("kept", 9, { keepLines: true })], COLUMNS, 2))).to.include({ b: "1", c: "2" });
-            });
-
             it("should keep a paragraph with the next in the same column", () => {
                 // 6 lines and 4, rather than 5 and 5, which would leave the heading at the bottom of the first column
                 const kept = [...lines("a", 4), paragraph("heading", 1, { keepNext: true }), ...lines("r", 5)];
@@ -738,11 +733,30 @@ describe("paginate", () => {
                 expect(pagesOf(content)).to.include({ d4: "1", b: "1", c: "2" });
             });
 
-            it("should put the space after the section's last paragraph before the next section's", () => {
-                // 3 lines and 2, then the space after the last line, in the shorter column, and b
-                const spaced = balanced([...lines("a", 4), paragraph("last", 1, { spaceAfter: 10 })]);
-                expect(pagesOf(spaced)).to.include({ b: "1", c: "2" });
-                expect(pagesOf(balanced([...lines("a", 4), paragraph("last", 1)]))).to.include({ b: "1", c: "1" });
+            it("should start the next section below each column's last paragraph and the space after it, as Word does", () => {
+                // 3 lines and 2, with space after the last, in the shorter column: 10 points leave it as low as the first
+                // column, and 20 put it lower
+                expect(pagesOf(balanced([...lines("a", 4), paragraph("last", 1, { spaceAfter: 10 })]))).to.include({ b: "1", c: "1" });
+                expect(pagesOf(balanced([...lines("a", 4), paragraph("last", 1, { spaceAfter: 20 })]))).to.include({ b: "1", c: "2" });
+                // 3 lines and 2, with 10 points after the first column's last
+                const firstSpaced = [...lines("a", 2), paragraph("mid", 1, { spaceAfter: 10 }), ...lines("r", 2)];
+                expect(pagesOf(balanced(firstSpaced))).to.include({ b: "1", c: "2" });
+            });
+
+            it("should put only as much of the next section's space before as is more than the last paragraph's space after", () => {
+                const content = document(
+                    [
+                        ...[...lines("a", 4), paragraph("last", 1, { spaceAfter: 10 })].map((block): readonly [Block, number] => [
+                            block,
+                            0,
+                        ]),
+                        [paragraph("b", 3, { spaceBefore: 20 }), 1],
+                        [paragraph("c", 1), 1],
+                    ],
+                    { sections: [COLUMNS, { ...SECTION, start: "continuous" }] },
+                );
+                // The columns end 30 points down, and b starts 10 points below them, to fill the page
+                expect(pagesOf(content)).to.include({ b: "1", c: "2" });
             });
 
             it("should not balance columns with nothing in them on the page", () => {
@@ -761,11 +775,14 @@ describe("paginate", () => {
                 expect(paginate(headed, { measurer: MEASURER }).stoppedAt).to.equal("a table's header rows repeated in a column");
             });
 
-            it("should stop at a column break in the columns it balances, but not at one on a page before", () => {
-                const broken = balanced([withItems(paragraph("a", 1), [columnBreak]), paragraph("d", 1)]);
-                expect(paginate(broken, { measurer: MEASURER }).stoppedAt).to.equal(
-                    "a column break in columns balanced before a continuous section break",
+            it("should leave columns with a column break in them as they are, as Word does, but not those of the next page", () => {
+                // The second column has the column break's line and d's 4 lines, rather than 3 lines and 2 in the third
+                const broken = balanced(
+                    [withItems(paragraph("a", 1), [columnBreak]), ...lines("d", 4)],
+                    { ...SECTION, columns: [80, 80, 80] },
+                    2,
                 );
+                expect(pagesOf(broken)).to.include({ d4: "1", b: "1", c: "2" });
                 // The column break in the last column starts the second page, whose columns are balanced
                 const before = balanced([
                     withItems(paragraph("a", 1), [columnBreak]),
@@ -789,7 +806,7 @@ describe("paginate", () => {
             expect(pagesOf(content)).to.deep.equal({ a: "1", heading: "2", b: "2" });
         });
 
-        it("should give the empty paragraph of a section break no room before a continuous section on pages of the same size", () => {
+        it("should give the empty paragraph that ends a section no room, and keep the paragraph before it with nothing", () => {
             const sectionBreak: ParagraphBlock = { ...paragraph("break", 0), items: [], sectionBreak: true };
             const content = (next: Section): DocumentContent =>
                 document(
@@ -797,14 +814,24 @@ describe("paginate", () => {
                         [paragraph("a", 7), 0],
                         [sectionBreak, 0],
                         [paragraph("b", 1), 1],
-                        [sectionBreak, 1],
                     ],
                     { sections: [SECTION, next] },
                 );
-            // a fills the first page, and b starts the second
+            // a fills the first page, and b starts the second, below the page, on the same page or on pages of another size
             expect(pagesOf(content({ ...SECTION, start: "continuous" }))).to.deep.equal({ a: "1", b: "2" });
-            // Before a section on pages of another size, the paragraph's line starts the second page, and b the third
-            expect(pagesOf(content({ ...SECTION, start: "continuous", pageHeight: 100 }))).to.deep.equal({ a: "1", b: "3" });
+            expect(pagesOf(content(SECTION))).to.deep.equal({ a: "1", b: "2" });
+            expect(pagesOf(content({ ...SECTION, start: "continuous", pageHeight: 100 }))).to.deep.equal({ a: "1", b: "2" });
+            // The heading kept with the next is the section's last line, on the first page
+            const kept = document(
+                [
+                    [paragraph("a", 6), 0],
+                    [paragraph("heading", 1, { keepNext: true }), 0],
+                    [sectionBreak, 0],
+                    [paragraph("b", 1), 1],
+                ],
+                { sections: [SECTION, { ...SECTION, start: "continuous" }] },
+            );
+            expect(pagesOf(kept)).to.deep.equal({ a: "1", heading: "1", b: "2" });
         });
 
         it("should stop at a section that starts in the next column", () => {
@@ -825,6 +852,13 @@ describe("paginate", () => {
                 { sections: [SECTION, { ...SECTION, start: "nextColumn" }] },
             );
             expect(pagesOf(onePerPage)).to.deep.equal({ a: "1", b: "2" });
+        });
+
+        it("should stop at a paragraph kept together that is taller than a column, which Word lays out in the first column only", () => {
+            const kept = (lines: number): DocumentContent =>
+                document([paragraph("kept", lines, { keepLines: true })], { sections: [COLUMNS] });
+            expect(paginate(kept(8), { measurer: MEASURER }).stoppedAt).to.equal("a paragraph kept together taller than a column");
+            expect(pagesOf(kept(7))).to.deep.equal({ kept: "1" });
         });
 
         it("should stop at footnotes in columns, and at header rows repeated in a column", () => {
