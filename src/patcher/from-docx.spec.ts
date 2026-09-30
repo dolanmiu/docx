@@ -740,9 +740,37 @@ describe("from-docx", () => {
             });
         });
 
-        describe("A hyperlink in a placeholder with formatting", () => {
+        describe("Hyperlinks", () => {
             afterEach(() => {
                 vi.restoreAllMocks();
+            });
+
+            it("should add a hyperlink's relationship only to the parts that have its placeholder", async () => {
+                vi.spyOn(JSZip, "loadAsync").mockResolvedValue(
+                    new JSZip()
+                        .file("word/document.xml", `<w:document><w:body><w:p><w:r><w:t>Body</w:t></w:r></w:p></w:body></w:document>`)
+                        .file("word/header1.xml", `<w:hdr><w:p><w:r><w:t>{{link}}</w:t></w:r></w:p></w:hdr>`)
+                        .file("word/styles.xml", `<w:styles/>`)
+                        .file("[Content_Types].xml", `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>`),
+                );
+
+                const output = await patchDocument({
+                    outputType: "uint8array",
+                    data: Buffer.from(""),
+                    patches: {
+                        link: {
+                            type: PatchType.PARAGRAPH,
+                            children: [new ExternalHyperlink({ link: "https://example.com", children: [new TextRun("Example")] })],
+                        },
+                    },
+                });
+
+                const patched = await new JSZip().loadAsync(output);
+                expect(await patched.file("word/_rels/header1.xml.rels")!.async("text")).to.contain(
+                    'Target="https://example.com" TargetMode="External"',
+                );
+                expect(patched.file("word/_rels/document.xml.rels")).to.equal(null);
+                expect(patched.file("word/_rels/styles.xml.rels")).to.equal(null);
             });
 
             // https://github.com/dolanmiu/docx/issues/3265
