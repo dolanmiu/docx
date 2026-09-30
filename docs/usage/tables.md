@@ -110,6 +110,10 @@ When `columnWidths` is omitted, `docx` derives the grid for you from the table's
 
 !> Microsoft Word lays tables out from the `width`s and only treats the grid as a hint, but Google Docs, Apple Pages, QuickLook and many other readers lay tables out from the grid alone and ignore percentage widths. Earlier versions of `docx` wrote a placeholder grid of 100 twips per column, which made every table with percentage widths collapse to one character per column in those readers. If you set `columnWidths` yourself, make sure the values are real twips that match your intended widths, or proportions of a table with a `width`.
 
+### Cell Margins
+
+Cells have the margins Word gives the tables it makes: 0.075 inches (108 twips) on the left and right, and none above or below. They come from Normal Table, the default table style `docx` writes. Without it, Word gives cells no margins, and their text touches the borders. Set `margins` on a table, or on a cell, to give them others. Styles from `externalStyles` with a Normal Table of their own use theirs.
+
 ### Set Indent
 
 ```ts live

@@ -359,4 +359,29 @@ describe("Default Styles", () => {
             ],
         });
     });
+
+    it("NormalTableStyle#constructor gives tables the cell margins Word gives the tables it makes", () => {
+        expect(new Formatter().format(new defaultStyles.NormalTableStyle())).to.deep.equal({
+            "w:style": [
+                { _attr: { "w:type": "table", "w:styleId": "TableNormal", "w:default": true } },
+                { "w:name": { _attr: { "w:val": "Normal Table" } } },
+                { "w:uiPriority": { _attr: { "w:val": 99 } } },
+                { "w:semiHidden": EMPTY_OBJECT },
+                { "w:unhideWhenUsed": EMPTY_OBJECT },
+                {
+                    "w:tblPr": [
+                        { "w:tblInd": { _attr: { "w:type": "dxa", "w:w": 0 } } },
+                        {
+                            "w:tblCellMar": [
+                                { "w:top": { _attr: { "w:type": "dxa", "w:w": 0 } } },
+                                { "w:left": { _attr: { "w:type": "dxa", "w:w": 108 } } },
+                                { "w:bottom": { _attr: { "w:type": "dxa", "w:w": 0 } } },
+                                { "w:right": { _attr: { "w:type": "dxa", "w:w": 108 } } },
+                            ],
+                        },
+                    ],
+                },
+            ],
+        });
+    });
 });

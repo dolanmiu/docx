@@ -27,6 +27,7 @@ import {
     type IBaseCharacterStyleOptions,
     type IBaseParagraphStyleOptions,
     ListParagraph,
+    NormalTableStyle,
     StrongStyle,
     StyleForParagraph,
     TitleStyle,
@@ -95,11 +96,16 @@ export type IDefaultStylesOptions = {
  */
 export const createDefaultStyles = (
     options: IDefaultStylesOptions = {},
-): { readonly normal: XmlComponent } & { readonly [Key in keyof IDefaultStylesOptions]-?: XmlComponent } => ({
+): { readonly normal: XmlComponent; readonly normalTable: XmlComponent } & {
+    readonly [Key in keyof IDefaultStylesOptions]-?: XmlComponent;
+} => ({
     // The style of paragraphs that don't name one, which the headings and others are based on. It has no formatting, so
     // it changes nothing in Word, which takes Normal as the default paragraph style anyway. A style with its id, such as
     // one in paragraphStyles or externalStyles, takes its place
     normal: new StyleForParagraph({ id: "Normal", name: "Normal", quickFormat: true }),
+    // The default style of tables, with the cell margins Word gives the tables it makes. A style with its id, such as
+    // one in externalStyles, takes its place
+    normalTable: new NormalTableStyle(),
     document: new DocumentDefaults(options.document ?? {}),
     title: new TitleStyle({
         run: {

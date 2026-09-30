@@ -221,7 +221,8 @@ describe("Styles", () => {
                         { "w:qFormat": EMPTY_OBJECT },
                     ],
                 });
-                expect(defaults(styles)).to.deep.equal(["Normal"]);
+                // And Normal Table, the default table style
+                expect(defaults(styles)).to.deep.equal(["Normal", "TableNormal"]);
             });
 
             it("is a Normal from paragraphStyles, which takes the place of docx's", () => {
@@ -229,7 +230,7 @@ describe("Styles", () => {
                     ...new DefaultStylesFactory().newInstance(),
                     paragraphStyles: [{ id: "Normal", name: "Normal", run: { size: 24 } }],
                 });
-                expect(defaults(styles)).to.deep.equal(["Normal"]);
+                expect(defaults(styles)).to.deep.equal(["TableNormal", "Normal"]);
                 expect(stylesOf(styles).filter(({ id }) => id === "Normal")).to.have.length(1);
             });
 

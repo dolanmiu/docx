@@ -645,6 +645,23 @@ describe("File", () => {
     });
 
     describe("#externalStyles", () => {
+        /** The formatted styles with the id given */
+        const stylesWithId = (file: File, id: string): readonly string[] => {
+            const children: readonly object[] = new Formatter().format(file.Styles)["w:styles"];
+            return children.map((child) => JSON.stringify(child)).filter((child) => child.includes(`"w:styleId":"${id}"`));
+        };
+
+        it("should write Normal Table, the default table style, unless the external styles have their own", () => {
+            expect(stylesWithId(new File({ sections: [] }), "TableNormal")).to.have.length(1);
+            const own = new File({
+                sections: [],
+                externalStyles: `<w:styles xmlns:w="main"><w:style w:type="table" w:default="1" w:styleId="TableNormal"><w:name w:val="Their Table"/></w:style></w:styles>`,
+            });
+            const styles = stylesWithId(own, "TableNormal");
+            expect(styles).to.have.length(1);
+            expect(styles[0]).to.include("Their Table");
+        });
+
         it("should work with external styles", () => {
             const doc = new File({
                 sections: [],
