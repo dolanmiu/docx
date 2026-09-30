@@ -439,12 +439,12 @@ describe("readDocument", () => {
             ]);
             expect(rows[0].cells[0]).to.deep.include({ width: 300 - 5 - 3, marginTop: 1, marginBottom: 2 });
             // After the column it skips, the cell is in the second column
-            expect(rows[1].cells[0]).to.deep.include({ width: 200 - 5 - 5.4, verticalMerge: "continue" });
-            expect(rows[2].cells.map(({ width, verticalMerge }) => ({ width, verticalMerge }))).to.deep.equal([
-                { width: 100 - 5 - 5.4, verticalMerge: "restart" },
-                { width: 200 - 5 - 5.4, verticalMerge: undefined },
+            expect(rows[1].cells[0]).to.deep.include({ column: 1, width: 200 - 5 - 5.4, verticalMerge: "continue" });
+            expect(rows[2].cells.map(({ column, width, verticalMerge }) => ({ column, width, verticalMerge }))).to.deep.equal([
+                { column: 0, width: 100 - 5 - 5.4, verticalMerge: "restart" },
+                { column: 1, width: 200 - 5 - 5.4, verticalMerge: undefined },
                 // The third column has no width
-                { width: -10.4, verticalMerge: undefined },
+                { column: 2, width: -10.4, verticalMerge: undefined },
             ]);
         });
 

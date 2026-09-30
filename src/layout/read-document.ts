@@ -58,6 +58,8 @@ export type ParagraphBlock = {
 };
 
 export type TableCell = {
+    /** The column of the table's grid the cell starts in, counted from 0 */
+    readonly column: number;
     /** The width of the text in the cell, in points: the cell's, less its margins */
     readonly width: number;
     readonly blocks: readonly Block[];
@@ -562,6 +564,7 @@ const readTable = (element: XmlObject, reader: Reader): TableBlock => {
                     cells: [
                         ...done,
                         {
+                            column,
                             width: width - margins.left - margins.right,
                             blocks: readBlocks(cellChildren, reader, style),
                             marginTop: margins.top,

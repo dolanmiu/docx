@@ -148,11 +148,14 @@ export const paginate = (
         });
         return rows.reduce<readonly number[]>(
             (all, { cells }, rowIndex) =>
-                cells.reduce((current, cell, cellIndex) => {
+                cells.reduce((current, cell) => {
                     if (cell.verticalMerge !== "restart") {
                         return current;
                     }
-                    const span = rows.slice(rowIndex + 1).findIndex((row) => row.cells[cellIndex]?.verticalMerge !== "continue");
+                    // The rest of the merge is in the same column of the grid, which cells spanning columns can put at another index
+                    const span = rows
+                        .slice(rowIndex + 1)
+                        .findIndex((row) => row.cells.find(({ column }) => column === cell.column)?.verticalMerge !== "continue");
                     const last = span === -1 ? rows.length - 1 : rowIndex + span;
                     const missing = cellHeight(cell) - sum(current.slice(rowIndex, last + 1));
                     return missing > 0 && rows[last].height?.rule !== "exact"

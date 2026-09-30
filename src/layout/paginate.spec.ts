@@ -2,7 +2,7 @@ import { describe, expect, it } from "vitest";
 
 import type { ParagraphFormat, TextMeasurer } from "../text-layout";
 import { paginate } from "./paginate";
-import type { Block, DocumentContent, LayoutItem, ParagraphBlock, Section, TableBlock, TableRow } from "./read-document";
+import type { Block, DocumentContent, LayoutItem, ParagraphBlock, Section, TableBlock, TableCell, TableRow } from "./read-document";
 
 // Every character is 10 points wide, and a line is as tall as its font's size, 10 points unless it says otherwise
 const MEASURER: TextMeasurer = {
@@ -60,12 +60,28 @@ const pagesOf = (content: DocumentContent, pageNumbers?: ReadonlyMap<string, str
     Object.fromEntries(paginate(content, { measurer: MEASURER, pageNumbers }).bookmarks);
 
 const row = (cells: readonly (readonly Block[])[], changes: Partial<TableRow> = {}): TableRow => ({
-    cells: cells.map((blocks) => ({ width: 80, blocks, marginTop: 0, marginBottom: 0 })),
+    cells: cells.map((blocks, column) => ({ column, width: 80, blocks, marginTop: 0, marginBottom: 0 })),
     header: false,
     borderTop: 0,
     borderBottom: 0,
     ...changes,
 });
+
+/** A cell merged down the rows, in the first column unless it says otherwise */
+const merged = (verticalMerge: "restart" | "continue", blocks: readonly Block[] = [], column = 0): TableCell => ({
+    column,
+    width: 80,
+    blocks,
+    marginTop: 0,
+    marginBottom: 0,
+    verticalMerge,
+});
+
+/** A row with a merged cell in its first column, and cells with these blocks after it */
+const mergedRow = (first: TableCell, cells: readonly (readonly Block[])[] = [], changes: Partial<TableRow> = {}): TableRow => {
+    const { cells: rest, ...properties } = row([[], ...cells], changes);
+    return { ...properties, cells: [first, ...rest.slice(1)] };
+};
 
 const table = (rows: readonly TableRow[]): TableBlock => ({ type: "table", rows });
 
@@ -272,30 +288,23 @@ describe("paginate", () => {
             // 20 + 20 + 5 + 10 leaves 15 points: room for b
             expect(pagesOf(content)).to.deep.equal({ margins: "1", atLeast: "1", exact: "1", last: "1", b: "1" });
             const margined = document([
-                { type: "table", rows: [{ ...row([]), cells: [{ width: 80, blocks: cell("x"), marginTop: 30, marginBottom: 30 }] }] },
+                {
+                    type: "table",
+                    rows: [{ ...row([]), cells: [{ column: 0, width: 80, blocks: cell("x"), marginTop: 30, marginBottom: 30 }] }],
+                },
                 paragraph("b", 1),
             ]);
             expect(pagesOf(margined)).to.deep.equal({ x: "1", b: "2" });
         });
 
         it("should make the last of rows a merged cell spans taller when its text needs the room", () => {
-            const merged = (verticalMerge: "restart" | "continue", blocks: readonly Block[] = []): TableRow["cells"][number] => ({
-                width: 80,
-                blocks,
-                marginTop: 0,
-                marginBottom: 0,
-                verticalMerge,
-            });
             const content = document([
                 table([
-                    {
-                        ...row([[paragraph("left", 1)]]),
-                        cells: [merged("restart", [paragraph("merged", 5)]), ...row([[paragraph("r1", 1)]]).cells],
-                    },
-                    { ...row([[paragraph("r2", 1)]]), cells: [merged("continue"), ...row([[paragraph("r2", 1)]]).cells] },
+                    mergedRow(merged("restart", [paragraph("merged", 5)]), [[paragraph("r1", 1)]]),
+                    mergedRow(merged("continue"), [[paragraph("r2", 1)]]),
                 ]),
                 paragraph("b", 2),
-                { ...table([{ ...row([]), cells: [merged("restart", [paragraph("short", 1)])] }]) },
+                table([mergedRow(merged("restart", [paragraph("short", 1)]))]),
                 paragraph("c", 1),
             ]);
             // The two rows are 5 lines tall, as the merged cell is, so b's 2 lines fill the page and c starts the next
@@ -303,26 +312,39 @@ describe("paginate", () => {
         });
 
         it("should give a cell without paragraphs only its margins, and a merge that ends before the last row the rows it spans", () => {
-            const merged = (verticalMerge: "restart" | "continue", blocks: readonly Block[] = []): TableRow["cells"][number] => ({
-                width: 80,
-                blocks,
-                marginTop: 0,
-                marginBottom: 0,
-                verticalMerge,
-            });
             const content = document([
                 table([
-                    { ...row([]), cells: [merged("restart", [paragraph("merged", 3)]), ...row([[paragraph("r1", 1)]]).cells] },
-                    { ...row([]), cells: [merged("continue")] },
-                    { ...row([[]]), height: { value: 15, rule: "atLeast" } },
-                    { ...row([]), cells: [merged("restart", [paragraph("short", 1)]), ...row([[paragraph("tall", 2)]]).cells] },
-                    { ...row([]), cells: [merged("restart", [paragraph("exact", 3)])], height: { value: 5, rule: "exact" } },
+                    mergedRow(merged("restart", [paragraph("merged", 3)]), [[paragraph("r1", 1)]]),
+                    mergedRow(merged("continue")),
+                    row([[]], { height: { value: 15, rule: "atLeast" } }),
+                    mergedRow(merged("restart", [paragraph("short", 1)]), [[paragraph("tall", 2)]]),
+                    mergedRow(merged("restart", [paragraph("exact", 3)]), [], { height: { value: 5, rule: "exact" } }),
                 ]),
                 paragraph("b", 1),
                 paragraph("c", 1),
             ]);
             // 30 for the first merge, 15 for the empty cell's row, 20 for the short merge beside 2 lines, and 5: 70
             expect(pagesOf(content)).to.deep.include({ merged: "1", short: "1", exact: "1", b: "2" });
+        });
+
+        it("should find the rest of a merged cell in its grid column, after a cell that spans several", () => {
+            const content = document([
+                table([
+                    // The first cell spans the first two columns, so the merged cell is in the third, as in the next row
+                    {
+                        ...row([[paragraph("wide", 1)]]),
+                        cells: [row([[paragraph("wide", 1)]]).cells[0], merged("restart", [paragraph("merged", 5)], 2)],
+                    },
+                    {
+                        ...row([[paragraph("c", 1)], [paragraph("d", 1)]]),
+                        cells: [...row([[paragraph("c", 1)], [paragraph("d", 1)]]).cells, merged("continue", [], 2)],
+                    },
+                ]),
+                paragraph("e", 1),
+                paragraph("f", 1),
+            ]);
+            // The two rows are 5 lines tall, as the merged cell is, so e and f fill the page
+            expect(pagesOf(content)).to.deep.equal({ wide: "1", merged: "1", c: "1", d: "1", e: "1", f: "1" });
         });
 
         it("should stop at a row taller than a page", () => {
