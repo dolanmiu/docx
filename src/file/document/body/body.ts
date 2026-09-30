@@ -9,7 +9,16 @@ import { Paragraph, ParagraphProperties } from "@file/paragraph";
 import { HeadingBookmarkIds, fillTablesOfContents } from "@file/table-of-contents/heading-entries";
 import { type IContext, type IXmlableObject, XmlComponent } from "@file/xml-components";
 
+import { type PageNumberEstimator, fillPageNumbers } from "./page-numbers";
 import { type ISectionPropertiesOptions, SectionProperties } from "./section-properties/section-properties";
+
+/**
+ * Options for the body of a document.
+ */
+export type IBodyOptions = {
+    /** Works out the page each bookmark is on, to write the page numbers of page references. See {@link PageNumberEstimator} */
+    readonly pageNumbers?: PageNumberEstimator;
+};
 
 /**
  * Represents the document body in a WordprocessingML document.
@@ -63,9 +72,11 @@ export class Body extends XmlComponent {
      */
     private readonly sectionParagraphs = new Map<Paragraph, SectionProperties>();
     private readonly headingBookmarkIds = new HeadingBookmarkIds();
+    private readonly pageNumbers?: PageNumberEstimator;
 
-    public constructor() {
+    public constructor({ pageNumbers }: IBodyOptions = {}) {
         super("w:body");
+        this.pageNumbers = pageNumbers;
     }
 
     /**
@@ -126,7 +137,8 @@ export class Body extends XmlComponent {
      *
      * Ensures that the last section's properties are placed as a direct child of the body
      * element, as required by the OOXML specification. Once the body is written, its tables
-     * of contents are filled in from its headings.
+     * of contents are filled in from its headings, and, when the body has a page number
+     * estimator, its page references are given their page numbers.
      *
      * @param context - The XML serialization context
      * @returns The prepared XML object or undefined
@@ -139,6 +151,9 @@ export class Body extends XmlComponent {
 
         const xml = super.prepForXml(context) as IXmlableObject;
         fillTablesOfContents(xml, context, this.headingBookmarkIds);
+        if (this.pageNumbers) {
+            fillPageNumbers(xml, context, this.pageNumbers);
+        }
         return xml;
     }
 

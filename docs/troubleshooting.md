@@ -511,6 +511,26 @@ const doc = new Document({
 
 2. Or, in Word, right-click the TOC and select "Update Field". In LibreOffice, right-click it and select "Update Index"
 
+3. Or write the page numbers with the document, by giving it `pageNumbers: estimatePageNumbers` from `docx/layout`, which lays out its pages as Word would. This also fills them in for applications that don't update fields, such as LibreOffice when it converts a document to PDF. See [Layout](usage/layout.md):
+
+```ts live
+import { Document, HeadingLevel, Paragraph, TableOfContents } from "docx";
+import { estimatePageNumbers } from "docx/layout";
+
+const doc = new Document({
+    pageNumbers: estimatePageNumbers,
+    sections: [
+        {
+            children: [
+                new TableOfContents("Contents", { hyperlink: true, headingStyleRange: "1-3" }),
+                new Paragraph({ text: "Introduction", heading: HeadingLevel.HEADING_1 }),
+                new Paragraph({ text: "Getting started", heading: HeadingLevel.HEADING_2 }),
+            ],
+        },
+    ],
+});
+```
+
 ## Memory Issues
 
 ### "JavaScript heap out of memory"

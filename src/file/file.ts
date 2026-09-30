@@ -202,7 +202,7 @@ export class File {
         this.endnotesWrapper = new EndnotesWrapper();
         this.contentTypes = new ContentTypes();
         this.packageParts = new PackageParts(this.contentTypes);
-        this.documentWrapper = new DocumentWrapper({ background: options.background });
+        this.documentWrapper = new DocumentWrapper({ background: options.background, pageNumbers: options.pageNumbers });
         this.settings = new Settings({
             compatibilityModeVersion: options.compatabilityModeVersion,
             compatibility: options.compatibility,

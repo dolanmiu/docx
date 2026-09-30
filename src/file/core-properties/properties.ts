@@ -15,7 +15,7 @@ import { StringContainer, XmlAttributeComponent, XmlComponent } from "@file/xml-
 import { dateTimeValue } from "@util/values";
 
 import type { ICustomPropertyOptions } from "../custom-properties";
-import type { IDocumentBackgroundOptions } from "../document";
+import type { IDocumentBackgroundOptions, PageNumberEstimator } from "../document";
 import { DocumentAttributes } from "../document/document-attributes";
 import type { ISectionOptions } from "../file";
 import type { INumberingOptions } from "../numbering";
@@ -49,6 +49,7 @@ import type { IThemeOptions } from "../theme";
  * @property fonts - Font configurations
  * @property hyphenation - Hyphenation settings
  * @property theme - The document's theme: its colors, and its fonts for headings and body text
+ * @property pageNumbers - Works out the page each bookmark is on, so the page numbers of tables of contents and page references are written with the document
  */
 export type IPropertiesOptions = {
     readonly sections: readonly ISectionOptions[];
@@ -96,6 +97,12 @@ export type IPropertiesOptions = {
      * from Office 2016 to 2021 unless the options change it
      */
     readonly theme?: IThemeOptions;
+    /**
+     * Works out the page each bookmark is on, so the page numbers of the document's tables of contents and page
+     * references are written with it, rather than left blank until Word updates them. Give it `estimatePageNumbers`
+     * from `docx/layout`, which lays out the document's pages as Word would
+     */
+    readonly pageNumbers?: PageNumberEstimator;
 };
 
 /**

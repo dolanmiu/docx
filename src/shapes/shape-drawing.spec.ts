@@ -14,7 +14,7 @@ import {
     drawingStyledParagraphs,
     layoutShapeDrawing,
 } from "./shape-drawing";
-import { measureTextWidth } from "./text-metrics";
+import { measureTextWidth } from "../text-layout";
 
 const EMUS_PER_PIXEL = 9525;
 

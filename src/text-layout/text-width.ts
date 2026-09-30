@@ -49,7 +49,16 @@ export type LineSpacing =
       };
 
 /**
- * The formatting of a paragraph that changes how tall it is or where its lines wrap. Lengths are in points.
+ * A tab stop a paragraph or its style sets, or clears, in points from the left edge of the text.
+ */
+export type TabStopSetting = {
+    readonly position: number;
+    readonly alignment: "left" | "right" | "center" | "decimal" | "bar" | "clear";
+};
+
+/**
+ * The formatting of a paragraph that changes how tall it is, where its lines wrap, or where pages break around it.
+ * Lengths are in points.
  */
 export type ParagraphFormat = {
     readonly spaceBefore?: number;
@@ -61,6 +70,15 @@ export type ParagraphFormat = {
     readonly firstLineIndent?: number;
     /** Leaves out the space before and after the paragraph next to a paragraph of the same style */
     readonly contextualSpacing?: boolean;
+    /** Keeps the paragraph on the same page as the next one */
+    readonly keepNext?: boolean;
+    /** Keeps the paragraph's lines on one page */
+    readonly keepLines?: boolean;
+    readonly pageBreakBefore?: boolean;
+    /** Keeps the first and last lines of the paragraph from being alone on a page */
+    readonly widowControl?: boolean;
+    /** The tab stops the paragraph, or its style, sets or clears. Those of its styles are added to them */
+    readonly tabs?: readonly TabStopSetting[];
 };
 
 /**

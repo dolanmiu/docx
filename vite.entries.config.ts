@@ -24,6 +24,7 @@ const ENTRIES: Readonly<Record<string, Entry>> = {
     watermarks: { name: "watermarks", global: "docxWatermarks" },
     charts: { name: "charts", global: "docxCharts" },
     math: { name: "math", global: "docxMath" },
+    layout: { name: "layout", global: "docxLayout" },
 };
 
 // API Extractor, which bundles the declarations, copies in those of any module that isn't a library, so it would copy
@@ -51,7 +52,8 @@ const buildTypes = ({ name }: Entry): Plugin => ({
     name: "docx-entry-types",
     apply: "build",
     closeBundle: () => {
-        // Where the declarations are written before they are bundled
+        // Where the declarations are written before they are bundled. They keep their folders in src, as an entry can
+        // import src/text-layout, which is shared by the entries that measure text
         const types = resolve(__dirname, "build/types", name);
         const source = resolve(__dirname, "src", name);
         const output = resolve(__dirname, `dist/${name}.d.ts`);
@@ -67,7 +69,7 @@ const buildTypes = ({ name }: Entry): Plugin => ({
             removeComments: false,
             declarationMap: false,
             sourceMap: false,
-            rootDir: source,
+            rootDir: resolve(__dirname, "src"),
             declarationDir: types,
             paths: { docx: [DOCX_TYPES] },
         };
@@ -84,7 +86,7 @@ const buildTypes = ({ name }: Entry): Plugin => ({
             ExtractorConfig.prepare({
                 configObject: {
                     projectFolder: __dirname,
-                    mainEntryPointFilePath: resolve(types, "index.d.ts"),
+                    mainEntryPointFilePath: resolve(types, name, "index.d.ts"),
                     compiler: {
                         overrideTsconfig: {
                             compilerOptions: {

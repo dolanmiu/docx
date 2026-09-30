@@ -8,7 +8,8 @@ import type { DocPropertiesOptions, DrawingLinkOptions, Paragraph } from "docx";
 
 import type { IShapeConnectorOptions } from "./shape-connector";
 import type { IShapeGroupChildOptions } from "./shape-drawing";
-import { WORD_DEFAULT_STYLES, readTextParagraphs } from "./shape-text-styles";
+import { WORD_DEFAULT_STYLES } from "../text-layout";
+import { readTextParagraphs } from "./shape-text-styles";
 
 type Step = {
     readonly id?: string;

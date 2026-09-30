@@ -11,7 +11,7 @@ import { XmlComponent } from "@file/xml-components";
 import type { ConcreteHyperlink, Paragraph } from "../paragraph";
 import type { Table } from "../table";
 import type { TableOfContents } from "../table-of-contents";
-import { Body } from "./body";
+import { Body, type PageNumberEstimator } from "./body";
 import { DocumentAttributes } from "./document-attributes";
 import { DocumentBackground, type IDocumentBackgroundOptions } from "./document-background";
 
@@ -19,12 +19,15 @@ import { DocumentBackground, type IDocumentBackgroundOptions } from "./document-
  * Options for creating a Document element.
  *
  * @property background - Optional background settings for the document
+ * @property pageNumbers - Works out the page each bookmark is on, to write the page numbers of page references
  *
  * @see {@link Document}
  */
 export type IDocumentOptions = {
     /** Optional background settings for the document */
     readonly background?: IDocumentBackgroundOptions;
+    /** Works out the page each bookmark is on, to write the page numbers of page references. See {@link PageNumberEstimator} */
+    readonly pageNumbers?: PageNumberEstimator;
 };
 
 /**
@@ -119,7 +122,7 @@ export class Document extends XmlComponent {
                 "w14 w15 wp14",
             ),
         );
-        this.body = new Body();
+        this.body = new Body({ pageNumbers: options.pageNumbers });
         if (options.background) {
             this.root.push(new DocumentBackground(options.background));
         }

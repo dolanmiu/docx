@@ -33,7 +33,7 @@ import {
 } from "./shape-drawing";
 import type { ShapeLayout } from "./shape-layout";
 import { createDrawingProperties, createUniformEffectExtent } from "./shape-run-data";
-import type { TextStyles } from "./shape-text-styles";
+import type { TextStyles } from "../text-layout";
 
 /**
  * A shape, picture, group or connector on a canvas. It takes the same options as a child of a {@link ShapeGroupRun}.

@@ -5,8 +5,7 @@ import { File } from "@file/file";
 import { type IContext, Paragraph } from "docx";
 
 import { createTextParagraphs, resolveShapeSize } from "./shape-text-size";
-import { type TextStyles, getTextStyles } from "./shape-text-styles";
-import { measureLineHeight, measureTextWidth } from "./text-metrics";
+import { type TextStyles, getTextStyles, measureLineHeight, measureTextWidth } from "../text-layout";
 
 const PIXELS_PER_POINT = 4 / 3;
 
