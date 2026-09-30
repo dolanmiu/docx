@@ -2647,9 +2647,9 @@ var docxLayout = (function(exports) {
 					started: true
 				});
 			}
-			if (!end) finish(line, void 0, line.started ? markHeight : 0);
+			if (!end) finish(line);
 			else {
-				const breakHeight = Math.max(measurer.measureLineHeight(end.font), isLast ? markHeight : 0);
+				const breakHeight = Math.max(measurer.measureLineHeight(end.font), isLast && !line.started ? markHeight : 0);
 				finish(_objectSpread2(_objectSpread2({}, line), {}, {
 					natural: Math.max(line.natural, breakHeight),
 					started: true
