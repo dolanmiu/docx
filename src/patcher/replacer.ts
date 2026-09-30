@@ -171,9 +171,7 @@ const replaceOccurrenceInParagraph = ({
     const { left, right } = splitRunElement(runElementToBeReplaced, SPLIT_TOKEN);
     const runProperties = runElementToBeReplaced.elements!.find((e) => e.type === "element" && e.name === "w:rPr");
 
-    // Only runs take run properties. Other content, such as a hyperlink, would not be valid with them.
-    const newRunElements =
-        keepOriginalStyles && runProperties ? children.map((e) => (e.name === "w:r" ? withRunProperties(e, runProperties) : e)) : children;
+    const newRunElements = keepOriginalStyles && runProperties ? children.map((e) => withRunPropertiesOnRuns(e, runProperties)) : children;
     // The text after the placeholder is the document's own, so it keeps its formatting either way
     const patchedRightElement = runProperties ? { ...right, elements: [runProperties, ...right.elements!] } : right;
 
@@ -181,6 +179,21 @@ const replaceOccurrenceInParagraph = ({
     paragraphElement.elements!.splice(index, 1, left, ...newRunElements, patchedRightElement);
 
     return index + 1 + newRunElements.length;
+};
+
+/**
+ * Gives the runs of inserted content the placeholder's run properties. Content such as a hyperlink can't take run
+ * properties itself, so its runs take them, and its text is formatted as the text around it is. Runs inside a run, such
+ * as in its text box, are that content's own, and are left alone.
+ */
+const withRunPropertiesOnRuns = (element: Element, originalRunProperties: Element): Element => {
+    if (element.name === "w:r") {
+        return withRunProperties(element, originalRunProperties);
+    }
+
+    return element.elements
+        ? { ...element, elements: element.elements.map((e) => withRunPropertiesOnRuns(e, originalRunProperties)) }
+        : element;
 };
 
 /**

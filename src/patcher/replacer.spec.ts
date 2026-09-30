@@ -6,6 +6,7 @@ import type { File } from "@file/file";
 import type { FileChild } from "@file/file-child";
 import { FootnoteReferenceRun } from "@file/footnotes/footnote/run/reference-run";
 import { ConcreteHyperlink, Paragraph, type ParagraphChild, TextRun } from "@file/paragraph";
+import { WpsShapeRun } from "@file/paragraph/run/wps-shape-run";
 import { Table, TableCell, TableRow } from "@file/table";
 
 import { PatchType } from "./from-docx";
@@ -1199,16 +1200,59 @@ describe("replacer", () => {
                 expect(namesOf(paragraph.elements![1].elements![0].elements)).to.deep.equal(["w:b", "w:bCs"]);
             });
 
-            it("should only give the original run properties to inserted runs, not to content such as a hyperlink", () => {
+            it("should give the original run properties to the runs in a hyperlink, not to the hyperlink itself", () => {
                 const paragraph = createParagraph(createRun(italic, createText("{{ph}}")));
 
                 replaceWith({ elements: [paragraph] }, [new ConcreteHyperlink([new TextRun("link")], "rId1")]);
 
+                const hyperlink = paragraph.elements![1];
                 expect(paragraph.elements!.map((e) => [e.name, namesOf(e.elements)])).to.deep.equal([
                     ["w:r", ["w:rPr", "w:t"]],
                     ["w:hyperlink", ["w:r"]],
                     ["w:r", ["w:rPr", "w:t"]],
                 ]);
+                expect(namesOf(hyperlink.elements![0].elements)).to.deep.equal(["w:rPr", "w:t"]);
+                expect(namesOf(hyperlink.elements![0].elements![0].elements)).to.deep.equal(["w:i"]);
+            });
+
+            it("should keep the properties a run in a hyperlink sets itself, such as its color", () => {
+                const paragraph = createParagraph(
+                    createRun(
+                        {
+                            type: "element",
+                            name: "w:rPr",
+                            elements: [
+                                { type: "element", name: "w:color", attributes: { "w:val": "FF0000" } },
+                                { type: "element", name: "w:sz", attributes: { "w:val": "56" } },
+                            ],
+                        },
+                        createText("{{ph}}"),
+                    ),
+                );
+
+                replaceWith({ elements: [paragraph] }, [
+                    new ConcreteHyperlink([new TextRun({ text: "link", color: "0563C1", underline: {} })], "rId1"),
+                ]);
+
+                expect(paragraph.elements![1].elements![0].elements![0].elements).toMatchObject([
+                    { name: "w:color", attributes: { "w:val": "0563C1" } },
+                    { name: "w:sz", attributes: { "w:val": "56" } },
+                    { name: "w:u" },
+                ]);
+            });
+
+            it("should leave the runs in an inserted run's text box as they are", () => {
+                const paragraph = createParagraph(createRun(italic, createText("{{ph}}")));
+
+                replaceWith({ elements: [paragraph] }, [
+                    new WpsShapeRun({ type: "wps", children: [new Paragraph("Inside")], transformation: { width: 100, height: 100 } }),
+                ]);
+
+                const runsIn = (element: Element): readonly Element[] =>
+                    (element.elements ?? []).flatMap((e) => (e.name === "w:r" ? [e, ...runsIn(e)] : runsIn(e)));
+                const shapeRun = paragraph.elements![1];
+                expect(namesOf(shapeRun.elements)).to.deep.equal(["w:rPr", "w:drawing"]);
+                expect(runsIn(shapeRun).map((run) => namesOf(run.elements))).to.deep.equal([["w:t"]]);
             });
         });
     });

@@ -740,6 +740,48 @@ describe("from-docx", () => {
             });
         });
 
+        describe("A hyperlink in a placeholder with formatting", () => {
+            afterEach(() => {
+                vi.restoreAllMocks();
+            });
+
+            // https://github.com/dolanmiu/docx/issues/3265
+            it("should link to the address, with the link's text formatted as the placeholder is", async () => {
+                vi.spyOn(JSZip, "loadAsync").mockResolvedValue(
+                    new JSZip()
+                        .file(
+                            "word/document.xml",
+                            `<w:document><w:body><w:p><w:r><w:rPr><w:sz w:val="56"/></w:rPr><w:t>{{link}}</w:t></w:r></w:p></w:body></w:document>`,
+                        )
+                        .file("[Content_Types].xml", `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>`),
+                );
+
+                const output = await patchDocument({
+                    outputType: "uint8array",
+                    data: Buffer.from(""),
+                    patches: {
+                        link: {
+                            type: PatchType.PARAGRAPH,
+                            children: [
+                                new ExternalHyperlink({
+                                    link: "https://example.com/projects/1",
+                                    children: [new TextRun({ text: "Project details", color: "0563C1", underline: {} })],
+                                }),
+                            ],
+                        },
+                    },
+                });
+
+                const patched = await new JSZip().loadAsync(output);
+                const [, relationshipId] = (await patched.file("word/document.xml")!.async("text")).match(
+                    /<w:hyperlink [^>]*r:id="([^"]+)"><w:r><w:rPr><w:color w:val="0563C1"\/><w:sz w:val="56"\/><w:u w:val="single"\/><\/w:rPr>/,
+                )!;
+                expect(await patched.file("word/_rels/document.xml.rels")!.async("text")).to.match(
+                    new RegExp(`Id="${relationshipId}"[^>]*Target="https://example.com/projects/1" TargetMode="External"`),
+                );
+            });
+        });
+
         describe("Text with an escaped ampersand", () => {
             it("should keep a literal &amp; in the template's text and in a patch's", async () => {
                 const template = await Packer.toBuffer(
