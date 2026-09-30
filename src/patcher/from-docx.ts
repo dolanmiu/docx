@@ -436,11 +436,15 @@ export const patchDocument = async <T extends PatchDocumentOutputType = PatchDoc
                 return;
             }
 
+            // The relationships of the patch's hyperlinks, which the part only gets if the placeholder is in it
+            // eslint-disable-next-line functional/prefer-readonly-type
+            const hyperlinkRelationships: IRelationshipAddition[] = [];
+
             // TODO: mutates json. Make it immutable
             // The replacer patches every occurrence in one pass, and never searches the content it inserts,
             // so a patch that contains its own placeholder is fine
             // https://github.com/dolanmiu/docx/issues/2267
-            replacer({
+            const { didFindOccurrence } = replacer({
                 json: element,
                 patch: {
                     ...patchValue,
@@ -452,7 +456,7 @@ export const patchDocument = async <T extends PatchDocumentOutputType = PatchDoc
                             if (child instanceof ExternalHyperlink) {
                                 const concreteHyperlink = new ConcreteHyperlink(child.options.children, uniqueId());
                                 // eslint-disable-next-line functional/immutable-data
-                                relationshipAdditions.push({
+                                hyperlinkRelationships.push({
                                     key,
                                     id: concreteHyperlink.linkId,
                                     type: "http://schemas.openxmlformats.org/officeDocument/2006/relationships/hyperlink",
@@ -472,6 +476,11 @@ export const patchDocument = async <T extends PatchDocumentOutputType = PatchDoc
                 recursive,
                 renumberIds: (elements) => notes.renumber(renumberBookmarks(elements)),
             });
+
+            if (didFindOccurrence) {
+                // eslint-disable-next-line functional/immutable-data
+                relationshipAdditions.push(...hyperlinkRelationships);
+            }
         };
 
         for (const [patchKey, patchValue] of patchesInOrder) {

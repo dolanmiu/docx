@@ -1000,8 +1000,8 @@ describe("drawing-patch", () => {
                 expect(await read(zip, "word/glossary/_rels/document.xml.rels")).to.contain(
                     'Target="https://example.com" TargetMode="External"',
                 );
-                // The document has its own relationship to the address, as every part does, but not the glossary's
-                expect((await read(zip, "word/_rels/document.xml.rels"))?.match(/example\.com/g)).to.have.length(1);
+                // The placeholder isn't in the document, so it has no relationship to the address
+                expect(await read(zip, "word/_rels/document.xml.rels")).not.to.contain("example.com");
             });
         });
     });
