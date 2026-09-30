@@ -95,6 +95,6 @@ export default defineConfig({
             ],
         },
         include: ["**/src/**/*.spec.ts", "**/packages/**/*.spec.ts"],
-        exclude: [...configDefaults.exclude, "**/build/**", "**/demo/**", "**/docs/**", "**/scripts/**"],
+        exclude: [...configDefaults.exclude, "**/build/**", "**/demo/**", "**/docs/**", "**/scripts/**", ".claude/**"],
     },
 });
