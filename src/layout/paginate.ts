@@ -1,7 +1,8 @@
 /**
  * Lays out a document's pages as Word does, to find the page each bookmark starts on.
  *
- * Each page's body is filled from the top, between the page's margins, or its header and footer where they are taller.
+ * Each page's body is filled from the top, between the page's margins, or its header and footer where they are taller,
+ * and in columns, the first column and then the next.
  * Paragraphs break into lines, and pages break between lines, as their keep and widow control settings allow. Table
  * rows break across pages between the lines of their cells, unless they are kept whole, and the table's header rows are
  * repeated on each page. The footnotes of each page's lines take room at its bottom, and the endnotes follow the body.
@@ -205,7 +206,7 @@ export const paginate = (
                     // The rest of the merge is in the same column of the grid, which cells spanning columns can put at another index
                     const span = rows
                         .slice(rowIndex + 1)
-                        .findIndex((row) => row.cells.find(({ column }) => column === cell.column)?.verticalMerge !== "continue");
+                        .findIndex((row) => row.cells.find((other) => other.column === cell.column)?.verticalMerge !== "continue");
                     const last = span === -1 ? rows.length - 1 : rowIndex + span;
                     const missing = cellHeight(cell) - sum(current.slice(rowIndex, last + 1));
                     return missing > 0 && rows[last].height?.rule !== "exact"
@@ -231,8 +232,11 @@ export const paginate = (
     let top = 0;
     let bottom = 0;
     let position = 0;
-    // Whether anything is on the page yet
-    let placedOnPage = false;
+    // The column being filled, from the first, and where the page's columns start, below what is above them on the page
+    let column = 0;
+    let columnTop = 0;
+    // Whether anything is in the column yet: on the page, for a page of one column
+    let placedInColumn = false;
     // The footnotes at the bottom of the page, by their markers, and the room they take with their separator
     let pageNotes: readonly string[] = [];
     let noteArea = 0;
@@ -240,6 +244,7 @@ export const paginate = (
     let spaceAfter = 0;
 
     const section = (): Section => sections[sectionIndex];
+    /** The width of the text across the page, as its headers, footers and footnotes are */
     const textWidth = (current = section()): number => current.pageWidth - current.marginLeft - current.marginRight - current.gutter;
 
     const partHeight = (parts: HeadersOrFooters, isFirst: boolean): number => {
@@ -267,10 +272,24 @@ export const paginate = (
         top = current.marginTop < 0 ? -current.marginTop : Math.max(current.marginTop, headerBottom);
         bottom = current.pageHeight - (current.marginBottom < 0 ? -current.marginBottom : Math.max(current.marginBottom, footerTop));
         position = top;
-        placedOnPage = false;
+        column = 0;
+        columnTop = top;
+        placedInColumn = false;
         spaceAfter = 0;
         pageNotes = [];
         noteArea = 0;
+    };
+
+    /** Moves to the top of the next column, or of the next page after the last column */
+    const nextColumn = (): void => {
+        if (column + 1 >= section().columns.length) {
+            startPage();
+            return;
+        }
+        column++;
+        position = columnTop;
+        placedInColumn = false;
+        spaceAfter = 0;
     };
 
     const startSection = (index: number): void => {
@@ -282,7 +301,16 @@ export const paginate = (
         }
         const samePage = previous.pageWidth === current.pageWidth && previous.pageHeight === current.pageHeight;
         if (current.start === "continuous" && samePage) {
+            if (previous.columns.length > 1 && (placedInColumn || column > 0)) {
+                throw new Unsupported("columns balanced before a continuous section break");
+            }
+            // The section's columns start below what is on the page
+            column = 0;
+            columnTop = position;
             return;
+        }
+        if (current.start === "nextColumn" && (previous.columns.length > 1 || current.columns.length > 1)) {
+            throw new Unsupported("a section that starts in the next column");
         }
         const nextNumber = current.firstNumber ?? pageNumber + 1;
         if ((current.start === "evenPage" && nextNumber % 2 !== 0) || (current.start === "oddPage" && nextNumber % 2 === 0)) {
@@ -312,7 +340,12 @@ export const paginate = (
     const notesIn = (markers: readonly string[]): readonly string[] => markers.filter((name) => footnotes.has(name));
 
     /** The room footnotes take below those on the page already */
-    const moreNoteRoom = (notes: readonly string[]): number => (notes.length === 0 ? 0 : areaOf([...pageNotes, ...notes]) - noteArea);
+    const moreNoteRoom = (notes: readonly string[]): number => {
+        if (notes.length > 0 && section().columns.length > 1) {
+            throw new Unsupported("a footnote in columns");
+        }
+        return notes.length === 0 ? 0 : areaOf([...pageNotes, ...notes]) - noteArea;
+    };
 
     /** Puts footnotes at the bottom of the page */
     const addNotes = (notes: readonly string[]): void => {
@@ -349,7 +382,7 @@ export const paginate = (
     const placeLines = (lines: readonly LaidOutLine[], paragraph: MeasuredParagraph, isStart: boolean): void => {
         let index = 0;
         while (index < lines.length) {
-            const space = placedOnPage && isStart && index === 0 ? between(spaceAfter, paragraph.spaceBefore) : 0;
+            const space = placedInColumn && isStart && index === 0 ? between(spaceAfter, paragraph.spaceBefore) : 0;
             const remaining = lines.slice(index);
             const notesOf = (upTo: number): readonly string[] => notesIn(remaining.slice(0, upTo).flatMap(({ markers }) => markers));
             const room = bottom - noteArea - position - space;
@@ -357,12 +390,12 @@ export const paginate = (
             const { fits, count: kept } = linesThatFit(remaining, room, paragraph, isFirstLine, (upTo) => moreNoteRoom(notesOf(upTo)));
             // A line that fits, but not with its footnotes, moves to the next page with them, unless they could break
             const withoutNotes = linesThatFit(remaining, room, paragraph, isFirstLine).fits;
-            const tooTall = fits === 0 && !placedOnPage && notesOf(1).length > 0;
+            const tooTall = fits === 0 && !placedInColumn && notesOf(1).length > 0;
             if (tooTall || (withoutNotes > fits && notesOf(fits + 1).some(canBreak))) {
                 throw new Unsupported("a footnote across pages");
             }
             let count = kept;
-            if (count === 0 && !placedOnPage) {
+            if (count === 0 && !placedInColumn) {
                 // Nothing fits on an empty page, so as much as fits goes on it, and at least a line
                 count = Math.max(1, fits);
             }
@@ -373,20 +406,20 @@ export const paginate = (
                     position += line.height;
                 }
                 addNotes(notesOf(count));
-                placedOnPage = true;
+                placedInColumn = true;
                 index += count;
             }
             if (index < lines.length) {
-                startPage();
+                nextColumn();
             }
         }
     };
 
     const placeParagraph = (paragraph: MeasuredParagraph): void => {
-        if (paragraph.pageBreakBefore && placedOnPage) {
+        if (paragraph.pageBreakBefore && (placedInColumn || column > 0)) {
             startPage();
         }
-        // Lines up to each page or column break, which start the rest on a new page
+        // Lines up to each page or column break, which start the rest on a new page, or in the next column
         const groups = paragraph.lines.reduce<readonly (readonly LaidOutLine[])[]>(
             (all, line) => {
                 const last = all[all.length - 1];
@@ -396,7 +429,9 @@ export const paginate = (
             [[]],
         );
         for (const [index, group] of groups.entries()) {
-            if (index > 0) {
+            if (index > 0 && groups[index - 1][groups[index - 1].length - 1].breakAfter === "column") {
+                nextColumn();
+            } else if (index > 0) {
                 startPage();
             }
             placeLines(group, paragraph, index === 0);
@@ -481,7 +516,7 @@ export const paginate = (
             }
             // A row whose text fits, but not the height it is set to, moves to the next page whole, as in LibreOffice
             const fitsWhole = !isFirstPart || position + height <= bottom - noteArea + TOLERANCE;
-            if ((!placesLines || !fitsWhole) && !placedOnPage) {
+            if ((!placesLines || !fitsWhole) && !placedInColumn) {
                 throw new Unsupported("a table row taller than a page");
             }
             if (placesLines && (fitsWhole || !isLastPart)) {
@@ -493,7 +528,7 @@ export const paginate = (
                 );
                 // A row that moved to the next page whole is as tall there as it is anywhere
                 position += (isFirstPart ? height - borders : tallest) + borders;
-                placedOnPage = true;
+                placedInColumn = true;
                 return;
             }
             startTablePage();
@@ -513,8 +548,11 @@ export const paginate = (
         spaceAfter = 0;
         // A new page for the table, with its header rows repeated at the top, unless the row going on it is one of them
         const startTablePage = (index: number): void => {
-            startPage();
+            nextColumn();
             if (index >= headerRows && headerRows > 0) {
+                if (column > 0) {
+                    throw new Unsupported("a table's header rows repeated in a column");
+                }
                 position += repeated;
             }
         };
@@ -535,7 +573,7 @@ export const paginate = (
                 splitRow(row, height, () => startTablePage(index));
                 continue;
             }
-            if (!rowFits(height, notes) && placedOnPage) {
+            if (!rowFits(height, notes) && placedInColumn) {
                 startTablePage(index);
             }
             if (!rowFits(height, notes)) {
@@ -544,7 +582,7 @@ export const paginate = (
             mark(markers);
             addNotes(notes);
             position += height;
-            placedOnPage = true;
+            placedInColumn = true;
         }
     };
 
@@ -605,13 +643,13 @@ export const paginate = (
                 placeTable(block);
                 continue;
             }
-            const width = textWidth();
+            const width = section().columns[column];
             const paragraph = measureParagraph(block, width, blocks[index - 1]?.block, blocks[index + 1]?.block);
-            if (paragraph.keepNext && placedOnPage) {
+            if (paragraph.keepNext && placedInColumn) {
                 const { height: needed, notes } = keptHeight(index, width);
                 const fitsHere = position + needed + moreNoteRoom(notes) <= bottom - noteArea + TOLERANCE;
-                if (!fitsHere && needed + areaOf(notes) <= bottom - top + TOLERANCE) {
-                    startPage();
+                if (!fitsHere && needed + areaOf(notes) <= bottom - columnTop + TOLERANCE) {
+                    nextColumn();
                 }
             }
             placeParagraph(paragraph);

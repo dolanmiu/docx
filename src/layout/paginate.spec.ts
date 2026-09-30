@@ -23,6 +23,7 @@ const SECTION: Section = {
     gutter: 0,
     start: "nextPage",
     titlePage: false,
+    columns: [80],
     numberFormat: "decimal",
     headers: {},
     footers: {},
@@ -521,7 +522,7 @@ describe("paginate", () => {
                     [paragraph("b", 4), 1],
                 ],
                 {
-                    sections: [SECTION, { ...SECTION, pageWidth: 190 }],
+                    sections: [SECTION, { ...SECTION, pageWidth: 190, columns: [170] }],
                 },
             );
             // Two words to a line: 2 lines each
@@ -546,6 +547,114 @@ describe("paginate", () => {
             expect(paginate({ ...content, sections: [{ ...SECTION, unsupported: "columns" }] }, { measurer: MEASURER }).stoppedAt).to.equal(
                 "columns",
             );
+        });
+    });
+
+    describe("columns", () => {
+        const COLUMNS: Section = { ...SECTION, columns: [80, 80] };
+        const columnBreak: LayoutItem = { type: "break", kind: "column", font: {} };
+        const pageBreak: LayoutItem = { type: "break", kind: "page", font: {} };
+
+        it("should fill each column of a page before the next page", () => {
+            const content = document([paragraph("a", 5), paragraph("b", 4), paragraph("c", 6), paragraph("d", 1)], { sections: [COLUMNS] });
+            // b's last 2 lines and c's first 4 are in the second column
+            expect(pagesOf(content)).to.deep.equal({ a: "1", b: "1", c: "1", d: "2" });
+        });
+
+        it("should start the next column at a column break, and a new page at a page break or a column break in the last column", () => {
+            const content = document(
+                [
+                    withItems(paragraph("a", 1), [columnBreak]),
+                    withItems(paragraph("b", 1), [pageBreak]),
+                    withItems(paragraph("c", 1), [columnBreak]),
+                    withItems(paragraph("d", 1), [columnBreak]),
+                    paragraph("e", 1),
+                ],
+                { sections: [COLUMNS] },
+            );
+            expect(pagesOf(content)).to.deep.equal({ a: "1", b: "1", c: "2", d: "2", e: "3" });
+            // In a section of one column, a column break starts a new page
+            expect(pagesOf(document([withItems(paragraph("a", 1), [columnBreak]), paragraph("b", 1)]))).to.deep.equal({ a: "1", b: "2" });
+        });
+
+        it("should start a page break before a paragraph at the top of a column after the first on a new page", () => {
+            const content = document([withItems(paragraph("a", 1), [columnBreak]), paragraph("b", 1, { pageBreakBefore: true })], {
+                sections: [COLUMNS],
+            });
+            expect(pagesOf(content)).to.deep.equal({ a: "1", b: "2" });
+        });
+
+        it("should move a paragraph kept with the next to the next column", () => {
+            const content = document([paragraph("a", 6), paragraph("heading", 1, { keepNext: true }), paragraph("b", 2)], {
+                sections: [COLUMNS],
+            });
+            expect(pagesOf(content)).to.deep.equal({ a: "1", heading: "1", b: "1" });
+        });
+
+        it("should start a continuous section's columns below the text before it on the page", () => {
+            const content = document(
+                [
+                    [paragraph("a", 3), 0],
+                    [paragraph("b", 6), 1],
+                    [paragraph("c", 3), 1],
+                ],
+                { sections: [SECTION, { ...COLUMNS, start: "continuous" }] },
+            );
+            // The second column starts below a too, so b's last 2 lines leave room for 2 of c's 3, which widow control moves on
+            expect(pagesOf(content)).to.deep.equal({ a: "1", b: "1", c: "2" });
+        });
+
+        it("should stop at columns balanced before a continuous section break, and at a section that starts in the next column", () => {
+            const balanced = document(
+                [
+                    [paragraph("a", 3), 0],
+                    [paragraph("b", 1), 1],
+                ],
+                { sections: [COLUMNS, { ...SECTION, start: "continuous" }] },
+            );
+            expect(paginate(balanced, { measurer: MEASURER }).stoppedAt).to.equal("columns balanced before a continuous section break");
+            // Nothing is on the page to balance
+            const atTop = document(
+                [
+                    [withItems(paragraph("a", 1), [pageBreak]), 0],
+                    [paragraph("b", 1), 1],
+                ],
+                { sections: [COLUMNS, { ...SECTION, start: "continuous" }] },
+            );
+            expect(pagesOf(atTop)).to.deep.equal({ a: "1", b: "2" });
+            const nextColumn = document(
+                [
+                    [paragraph("a", 1), 0],
+                    [paragraph("b", 1), 1],
+                ],
+                { sections: [SECTION, { ...COLUMNS, start: "nextColumn" }] },
+            );
+            expect(paginate(nextColumn, { measurer: MEASURER }).stoppedAt).to.equal("a section that starts in the next column");
+            // In sections of one column, a section that starts in the next column starts on a new page
+            const onePerPage = document(
+                [
+                    [paragraph("a", 1), 0],
+                    [paragraph("b", 1), 1],
+                ],
+                { sections: [SECTION, { ...SECTION, start: "nextColumn" }] },
+            );
+            expect(pagesOf(onePerPage)).to.deep.equal({ a: "1", b: "2" });
+        });
+
+        it("should stop at footnotes in columns, and at header rows repeated in a column", () => {
+            const noted = document([withItems(paragraph("a", 1), [{ type: "marker", name: "footnote 1" }])], {
+                sections: [COLUMNS],
+                footnotes: new Map([["footnote 1", [paragraph("note", 1)]]]),
+            });
+            expect(paginate(noted, { measurer: MEASURER }).stoppedAt).to.equal("a footnote in columns");
+            const headed = document(
+                [
+                    paragraph("a", 5),
+                    table([row([[paragraph("header", 1)]], { header: true }), row([[paragraph("row", 2)]], { cantSplit: true })]),
+                ],
+                { sections: [COLUMNS] },
+            );
+            expect(paginate(headed, { measurer: MEASURER }).stoppedAt).to.equal("a table's header rows repeated in a column");
         });
     });
 

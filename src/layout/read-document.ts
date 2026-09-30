@@ -27,6 +27,7 @@ import {
     fontOf,
     getTextStyles,
     isObject,
+    isOff,
     numberOf,
     onOff,
     readParagraphFormat,
@@ -115,6 +116,8 @@ export type Section = {
     readonly start: "nextPage" | "continuous" | "evenPage" | "oddPage" | "nextColumn";
     /** Whether its first page has a header and footer of its own */
     readonly titlePage: boolean;
+    /** The width of each of its columns, from the first: the width of the page's text for a section of one column */
+    readonly columns: readonly number[];
     readonly numberFormat: string;
     /** The number of its first page, when it doesn't carry on from the section before */
     readonly firstNumber?: number;
@@ -199,7 +202,7 @@ type Reader = {
 };
 
 // Word's defaults for a section that doesn't give its page: Letter, with inch margins
-const DEFAULT_SECTION: Omit<Section, "headers" | "footers"> = {
+const DEFAULT_SECTION: Omit<Section, "headers" | "footers" | "columns"> = {
     pageWidth: 612,
     pageHeight: 792,
     marginTop: 72,
@@ -674,6 +677,24 @@ const readReferences = (
             .filter(([type, blocks]) => blocks !== undefined && ["default", "first", "even"].includes(type)),
     );
 
+// The space between columns when a section doesn't give it: half an inch
+const DEFAULT_COLUMN_SPACE = 36;
+
+/**
+ * The width of each of a section's columns (`w:cols`), from the width of its page's text: columns of the same width with
+ * the same space between them, unless the section gives each column's width.
+ */
+const readColumns = (element: unknown, width: number): readonly number[] => {
+    const attributes = attributesOf(element);
+    const given = childrenOf(element).filter((child) => "w:col" in child);
+    if (isOff(attributes["w:equalWidth"]) && given.length > 0) {
+        return given.map((column) => twips(attributesOf(column["w:col"])["w:w"]) ?? 0);
+    }
+    const count = Math.max(1, numberOf(attributes["w:num"]) ?? 1);
+    const space = twips(attributes["w:space"]) ?? DEFAULT_COLUMN_SPACE;
+    return Array.from({ length: count }, () => (width - space * (count - 1)) / count);
+};
+
 /**
  * Reads a section's properties (`w:sectPr`): its pages, how it starts, and its headers and footers. A section that
  * doesn't give a header or footer for a kind of page has the one of the section before.
@@ -683,39 +704,37 @@ const readSection = (element: unknown, readPart: (id: string) => readonly Block[
     const size = attributesOf(find(properties, "w:pgSz"));
     const margins = attributesOf(find(properties, "w:pgMar"));
     const numbering = attributesOf(find(properties, "w:pgNumType"));
-    const columns = find(properties, "w:cols");
     const grid = attributesOf(find(properties, "w:docGrid"))["w:type"];
     const start = valueOf(properties, "w:type");
     const format = stringOf(numbering["w:fmt"]) ?? "decimal";
     const firstNumber = numberOf(numbering["w:start"]);
-    const columnCount = Math.max(
-        numberOf(attributesOf(columns)["w:num"]) ?? 1,
-        childrenOf(columns).filter((child) => "w:col" in child).length,
-    );
     const unsupported =
-        columnCount > 1
-            ? "columns"
-            : grid === "lines" || grid === "linesAndChars" || grid === "snapToChars"
-              ? "a document grid"
-              : numbering["w:chapStyle"] !== undefined || formatNumber(1, format) === undefined
-                ? "page numbers in a format not yet written"
-                : find(properties, "w:textDirection") !== undefined
-                  ? "text that runs down the page"
-                  : undefined;
+        grid === "lines" || grid === "linesAndChars" || grid === "snapToChars"
+            ? "a document grid"
+            : numbering["w:chapStyle"] !== undefined || formatNumber(1, format) === undefined
+              ? "page numbers in a format not yet written"
+              : find(properties, "w:textDirection") !== undefined
+                ? "text that runs down the page"
+                : undefined;
+    const pageWidth = twips(size["w:w"]) ?? DEFAULT_SECTION.pageWidth;
+    const marginLeft = twips(margins["w:left"] ?? margins["w:start"]) ?? DEFAULT_SECTION.marginLeft;
+    const marginRight = twips(margins["w:right"] ?? margins["w:end"]) ?? DEFAULT_SECTION.marginRight;
+    const gutter = twips(margins["w:gutter"]) ?? DEFAULT_SECTION.gutter;
     const headers = readReferences(properties, "w:headerReference", readPart);
     const footers = readReferences(properties, "w:footerReference", readPart);
     return {
-        pageWidth: twips(size["w:w"]) ?? DEFAULT_SECTION.pageWidth,
+        pageWidth,
         pageHeight: twips(size["w:h"]) ?? DEFAULT_SECTION.pageHeight,
         marginTop: twips(margins["w:top"]) ?? DEFAULT_SECTION.marginTop,
         marginBottom: twips(margins["w:bottom"]) ?? DEFAULT_SECTION.marginBottom,
-        marginLeft: twips(margins["w:left"] ?? margins["w:start"]) ?? DEFAULT_SECTION.marginLeft,
-        marginRight: twips(margins["w:right"] ?? margins["w:end"]) ?? DEFAULT_SECTION.marginRight,
+        marginLeft,
+        marginRight,
         header: twips(margins["w:header"]) ?? DEFAULT_SECTION.header,
         footer: twips(margins["w:footer"]) ?? DEFAULT_SECTION.footer,
-        gutter: twips(margins["w:gutter"]) ?? DEFAULT_SECTION.gutter,
+        gutter,
         start: start !== undefined && START_TYPES.has(start as Section["start"]) ? (start as Section["start"]) : "nextPage",
         titlePage: onOff(properties, "w:titlePg") === true,
+        columns: readColumns(find(properties, "w:cols"), pageWidth - marginLeft - marginRight - gutter),
         numberFormat: format,
         ...(firstNumber === undefined ? {} : { firstNumber }),
         headers: { ...previous?.headers, ...headers },

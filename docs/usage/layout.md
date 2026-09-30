@@ -73,7 +73,7 @@ The pages are laid out with the widths and heights of the characters of the font
 - footnotes, which take room at the bottom of the page their reference is on, and endnotes, which follow the text
 - pictures in the line
 - tables, with their rows' heights, cell margins and borders. Rows break across pages between the lines of their cells, unless they are kept whole (`cantSplit`), and header rows are repeated on each page a table is on
-- sections, with their page sizes, margins, headers and footers, how they start, and their page numbering, such as roman numerals
+- sections, with their page sizes, margins, columns, headers and footers, how they start, and their page numbering, such as roman numerals
 
 ## What it leaves blank
 
@@ -82,7 +82,7 @@ It stops at the first thing it can't lay out yet, and the page numbers of the he
 - a picture or shape that text wraps around, a text box, or a text frame
 - an equation
 - a footnote of more than a line that doesn't fit below its reference, which Word continues on the next page
-- columns
+- columns before a continuous section break, which Word evens out so the next section starts below the longest, footnotes in columns, and a table's header rows repeated at the top of a column
 - a table row kept whole that is taller than a page, and a row that breaks across pages with merged cells, a table or a footnote in it, or a height set taller than its text
 - a document that hyphenates its words
 

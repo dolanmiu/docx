@@ -5,11 +5,11 @@
  * Usage: npm run run-ts -- scripts/compare-layout.ts [directory]
  *
  * The directory (default build/layout) has each document's .docx, and the text of LibreOffice's pages of it in a .txt,
- * with the pages split by form feeds, as pdftotext writes them, and of Word's in a .word.txt. A heading is on the last page with a line of only its
- * text, as its entry in the table of contents, before it, has its page number on the line too. Spaces and tabs count as one
- * space, because pdftotext writes a tab, or a wide gap, as several. So the headings of the
- * documents compared are each on a line of their own, and their pages are numbered from 1. It fails when a heading's page
- * number isn't LibreOffice's or Word's, or is left blank.
+ * with the pages split by form feeds, as pdftotext writes them, and of Word's in a .word.txt. A heading is on the last
+ * page with a line of only its text, as its entry in the table of contents, before it, has its page number on the line
+ * too. Spaces and tabs count as one space, because pdftotext can write a tab, or a wide gap, as several. So the headings
+ * of the documents compared are each on a line of their own, and their pages are numbered from 1. It fails when a
+ * heading's page number isn't LibreOffice's or Word's, or is left blank.
  */
 import { existsSync, readFileSync, readdirSync } from "node:fs";
 import { join } from "node:path";

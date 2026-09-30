@@ -614,6 +614,8 @@ describe("readDocument", () => {
                 gutter: 10,
                 start: "oddPage",
                 titlePage: true,
+                // The width of the page's text: 612 less the margins and the gutter
+                columns: [458],
                 numberFormat: "upperRoman",
                 firstNumber: 3,
                 headers: {},
@@ -622,10 +624,25 @@ describe("readDocument", () => {
             expect(section(value("w:type", "sideways")).sections[0].start).to.equal("nextPage");
         });
 
-        it("should mark sections with columns, a line grid, chapter numbers or text down the page as unsupported", () => {
-            expect(section({ "w:cols": { _attr: { "w:num": 2 } } }).sections[0].unsupported).to.equal("columns");
-            expect(section({ "w:cols": [{ "w:col": {} }, { "w:col": {} }] }).sections[0].unsupported).to.equal("columns");
-            expect(section({ "w:cols": { _attr: { "w:space": 720 } } }).sections[0].unsupported).to.equal(undefined);
+        it("should read the width of each column: the same, with the space between them, or each its own", () => {
+            const columnsOf = (columns: object): readonly number[] => section({ "w:cols": columns }).sections[0].columns;
+            // The page's text is 468 points wide, with half an inch between columns unless the section says otherwise
+            expect(columnsOf({ _attr: { "w:num": 2 } })).to.deep.equal([216, 216]);
+            expect(columnsOf({ _attr: { "w:num": 3, "w:space": 360 } })).to.deep.equal([144, 144, 144]);
+            expect(columnsOf({ _attr: { "w:space": 720 } })).to.deep.equal([468]);
+            expect(
+                columnsOf([
+                    { _attr: { "w:equalWidth": 0 } },
+                    { "w:col": { _attr: { "w:w": 4000, "w:space": 720 } } },
+                    { "w:col": { _attr: {} } },
+                ]),
+            ).to.deep.equal([200, 0]);
+            // Columns of their own widths are only read when the section says their widths aren't the same
+            expect(columnsOf([{ _attr: { "w:num": 2 } }, { "w:col": { _attr: { "w:w": 4000 } } }])).to.deep.equal([216, 216]);
+            expect(section().sections[0].columns).to.deep.equal([468]);
+        });
+
+        it("should mark sections with a line grid, chapter numbers or text down the page as unsupported", () => {
             expect(section({ "w:docGrid": { _attr: { "w:type": "lines" } } }).sections[0].unsupported).to.equal("a document grid");
             expect(section({ "w:pgNumType": { _attr: { "w:chapStyle": 1 } } }).sections[0].unsupported).to.equal(
                 "page numbers in a format not yet written",

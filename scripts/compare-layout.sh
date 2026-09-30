@@ -40,13 +40,14 @@ for demo in "${DEMOS[@]}"; do
     FILES+=("$(basename "$demo").docx")
 done
 
-# The PDF has the blank pages LibreOffice adds before a section that starts on an odd or even page, as Word prints them
+# The PDF has the blank pages LibreOffice adds before a section that starts on an odd or even page, as Word prints them.
+# Its text is written in reading order, so the columns of a page come one after the other, rather than side by side
 LAY_OUT='for docx in "$@"; do
     soffice ${PROFILE:+"-env:UserInstallation=file://$PROFILE"} --headless \
         --convert-to "pdf:writer_pdf_Export:{\"IsSkipEmptyPages\":{\"type\":\"boolean\",\"value\":\"false\"}}" "$docx" > /dev/null 2>&1
-    pdftotext -layout "${docx%.docx}.pdf" "${docx%.docx}.txt"
+    pdftotext "${docx%.docx}.pdf" "${docx%.docx}.txt"
     if [ -f "${docx%.docx}.word.pdf" ]; then
-        pdftotext -layout "${docx%.docx}.word.pdf" "${docx%.docx}.word.txt"
+        pdftotext "${docx%.docx}.word.pdf" "${docx%.docx}.word.txt"
     fi
 done'
 if [ -n "${SHAPE_RENDER_IMAGE:-}" ]; then
