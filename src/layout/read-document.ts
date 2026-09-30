@@ -30,6 +30,7 @@ import {
     isOff,
     numberOf,
     onOff,
+    readCellMargins,
     readParagraphFormat,
     readRunFormat,
     spansOf,
@@ -221,7 +222,6 @@ const DEFAULT_SECTION: Omit<Section, "headers" | "footers" | "columns"> = {
     numberFormat: "decimal",
 };
 // The space either side of the text in a table cell, when the table doesn't give it: 0.075 inches
-const DEFAULT_CELL_MARGIN = 5.4;
 const EMUS_PER_POINT = 12700;
 // Border widths are in eighths of a point
 const EIGHTHS_PER_POINT = 8;
@@ -533,21 +533,6 @@ const borderWidth = (borders: readonly XmlObject[], name: string): number => {
     return style === undefined || style === "nil" || style === "none" ? 0 : (numberOf(attributes["w:sz"]) ?? 0) / EIGHTHS_PER_POINT;
 };
 
-/** The margins of the cells of a table (`w:tblCellMar`), or of one cell (`w:tcMar`), in points */
-const readCellMargins = (element: unknown): Partial<Record<"top" | "bottom" | "left" | "right", number>> => {
-    const children = childrenOf(element);
-    const side = (...names: readonly string[]): number | undefined =>
-        names.map((name) => twips(attributesOf(find(children, name))["w:w"])).find((value) => value !== undefined);
-    return Object.fromEntries(
-        Object.entries({
-            top: side("w:top"),
-            bottom: side("w:bottom"),
-            left: side("w:start", "w:left"),
-            right: side("w:end", "w:right"),
-        }).filter(([, value]) => value !== undefined),
-    );
-};
-
 /** The rows of a table, or of a content control or custom XML in it */
 const rowsOf = (elements: readonly unknown[]): readonly XmlObject[] =>
     elements.filter(isObject).flatMap((element) => {
@@ -581,11 +566,16 @@ const readTable = (element: XmlObject, reader: Reader): TableBlock => {
     const children = contentOf(element).filter(isObject);
     const properties = childrenOf(find(children, "w:tblPr"));
     const style = valueOf(properties, "w:tblStyle");
+    // The margins of the table's style, or of the default table style when it has none that is a table style, and the
+    // styles it is based on, then its own. Without any, Word gives cells none
+    const ownStyles = styleChain(reader.styles, style, "table");
+    const tableStyles = ownStyles.length > 0 ? ownStyles : styleChain(reader.styles, reader.styles.defaultTableStyle, "table");
     const tableMargins = {
         top: 0,
         bottom: 0,
-        left: DEFAULT_CELL_MARGIN,
-        right: DEFAULT_CELL_MARGIN,
+        left: 0,
+        right: 0,
+        ...Object.assign({}, ...tableStyles.map(({ cellMargins }) => cellMargins)),
         ...readCellMargins(find(properties, "w:tblCellMar")),
     };
     const borders = childrenOf(find(properties, "w:tblBorders"));
@@ -610,11 +600,10 @@ const readTable = (element: XmlObject, reader: Reader): TableBlock => {
                 const merge =
                     mergeElement === undefined ? undefined : attributesOf(mergeElement)["w:val"] === "restart" ? "restart" : "continue";
                 const margins = { ...tableMargins, ...readCellMargins(find(cellProperties, "w:tcMar")) };
-                const columns = grid.slice(column, column + span);
-                const width =
-                    columns.length > 0
-                        ? columns.reduce((total, value) => total + value, 0)
-                        : (twips(attributesOf(find(cellProperties, "w:tcW"))["w:w"]) ?? 0);
+                // Word lays a cell out at its own width in twips, when it has one, rather than the grid's
+                const { "w:w": ownWidth, "w:type": widthType = "dxa" } = attributesOf(find(cellProperties, "w:tcW"));
+                const inTwips = widthType === "dxa" ? (twips(ownWidth) ?? 0) : 0;
+                const width = inTwips > 0 ? inTwips : grid.slice(column, column + span).reduce((total, value) => total + value, 0);
                 return {
                     column: column + span,
                     cells: [

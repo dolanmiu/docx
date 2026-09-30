@@ -522,6 +522,54 @@ describe("readDocument", () => {
             expect((first.blocks[0] as ParagraphBlock).items).to.deep.equal([{ type: "text", text: "in a table", font: {} }]);
         });
 
+        it("should give cells the margins of the table's style, or the default table style, or none as Word does", () => {
+            const marginsOf = (options: Partial<IPropertiesOptions>, style?: string): readonly number[] => {
+                const [first] = (
+                    readBody(
+                        [
+                            {
+                                "w:tbl": [
+                                    { "w:tblPr": style ? [value("w:tblStyle", style)] : [] },
+                                    { "w:tblGrid": [{ "w:gridCol": { _attr: { "w:w": 2000 } } }] },
+                                    { "w:tr": [cell([], p(r(t("a"))))] },
+                                ],
+                            },
+                        ],
+                        options,
+                    ).blocks[0].block as TableBlock
+                ).rows[0].cells;
+                return [Math.round((100 - first.width) * 10) / 10, first.marginTop];
+            };
+            const padded = `<w:style w:type="table" w:styleId="Padded"><w:basedOn w:val="TableNormal"/><w:tblPr><w:tblCellMar><w:top w:w="50" w:type="dxa"/><w:left w:w="200" w:type="dxa"/></w:tblCellMar></w:tblPr></w:style>`;
+            // docx's Normal Table: 5.4 points on the left and right
+            expect(marginsOf({})).to.deep.equal([10.8, 0]);
+            // A table style's margins, over those of the style it is based on
+            expect(marginsOf({ externalStyles: `<w:styles xmlns:w="main">${padded}</w:styles>` }, "Padded")).to.deep.equal([15.4, 2.5]);
+            // A table style that doesn't give margins, or no default table style: none
+            const bare = `<w:styles xmlns:w="main"><w:style w:type="table" w:styleId="TableNormal"><w:name w:val="Normal Table"/></w:style></w:styles>`;
+            expect(marginsOf({ externalStyles: bare }, "TableNormal")).to.deep.equal([0, 0]);
+            expect(marginsOf({ externalStyles: bare })).to.deep.equal([0, 0]);
+        });
+
+        it("should lay a cell out at its own width in twips rather than the grid's, as Word does", () => {
+            const widths = (width: object): readonly number[] =>
+                (
+                    readBody([
+                        {
+                            "w:tbl": [
+                                { "w:tblGrid": [{ "w:gridCol": { _attr: { "w:w": 1000 } } }, { "w:gridCol": { _attr: { "w:w": 2000 } } }] },
+                                { "w:tr": [cell([{ "w:tcW": { _attr: width } }], p(r(t("a")))), cell([], p(r(t("b"))))] },
+                            ],
+                        },
+                    ]).blocks[0].block as TableBlock
+                ).rows[0].cells.map((tableCell) => Math.round(tableCell.width + 10.8));
+            expect(widths({ "w:w": 3000, "w:type": "dxa" })).to.deep.equal([150, 100]);
+            // Without a type, a width is in twips
+            expect(widths({ "w:w": 3000 })).to.deep.equal([150, 100]);
+            // A percentage is of the table's width, which the grid already has
+            expect(widths({ "w:w": 2500, "w:type": "pct" })).to.deep.equal([50, 100]);
+        });
+
         it("should read the paragraphs in content controls and custom XML in a cell", () => {
             const content = readBody([
                 {
