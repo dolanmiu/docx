@@ -58,7 +58,7 @@ export type LineLayoutOptions = {
     readonly tabStops?: readonly TabStop[];
     /** The distance between the document's default tab stops, in points. Default is half an inch */
     readonly defaultTabStop?: number;
-    /** The font of the paragraph's mark, which sets the height of an empty paragraph and of its last line */
+    /** The font of the paragraph's mark, which sets the height of a line with no text on it, such as an empty paragraph's */
     readonly markFont?: TextFont;
     readonly measurer?: TextMeasurer;
 };
@@ -358,9 +358,10 @@ export const layoutLines = (
         }
 
         if (!end) {
-            finish(line, undefined, line.started ? markHeight : 0);
+            // The mark adds nothing to the height of a line with text, as Word and LibreOffice lay it out
+            finish(line);
         } else {
-            const breakHeight = Math.max(measurer.measureLineHeight(end.font), isLast ? markHeight : 0);
+            const breakHeight = Math.max(measurer.measureLineHeight(end.font), isLast && !line.started ? markHeight : 0);
             finish({ ...line, natural: Math.max(line.natural, breakHeight), started: true }, end.kind === "line" ? undefined : end.kind);
         }
         first = false;

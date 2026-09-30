@@ -24,6 +24,10 @@ RUN sed -i -e '/^URIs:/d' -e 's|^# \(http://snapshot.debian.org/.*\)|URIs: \1|' 
     && ln -s /opt/libreoffice*/program/soffice /usr/local/bin/soffice \
     && rm -rf /tmp/LibreOffice_* /var/lib/apt/lists/*
 
+# LibreOffice has no font for Calibri Light, the heading font of Office's theme and of docx's default styles, and would
+# draw it in Noto Serif, whose lines are taller
+COPY fonts.conf /etc/fonts/local.conf
+
 # LibreOffice keeps its settings in the home directory
 ENV HOME=/tmp
 WORKDIR /work
