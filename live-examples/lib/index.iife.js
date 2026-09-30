@@ -36362,10 +36362,19 @@ while (n === a[++i] && n === a[++i] && n === a[++i] && n === a[++i] && n === a[+
 		const runElementToBeReplaced = paragraphElement.elements[index];
 		const { left, right } = splitRunElement(runElementToBeReplaced, SPLIT_TOKEN);
 		const runProperties = runElementToBeReplaced.elements.find((e) => e.type === "element" && e.name === "w:rPr");
-		const newRunElements = keepOriginalStyles && runProperties ? children.map((e) => e.name === "w:r" ? withRunProperties(e, runProperties) : e) : children;
+		const newRunElements = keepOriginalStyles && runProperties ? children.map((e) => withRunPropertiesOnRuns(e, runProperties)) : children;
 		const patchedRightElement = runProperties ? _objectSpread2(_objectSpread2({}, right), {}, { elements: [runProperties, ...right.elements] }) : right;
 		paragraphElement.elements.splice(index, 1, left, ...newRunElements, patchedRightElement);
 		return index + 1 + newRunElements.length;
+	};
+	/**
+	* Gives the runs of inserted content the placeholder's run properties. Content such as a hyperlink can't take run
+	* properties itself, so its runs take them, and its text is formatted as the text around it is. Runs inside a run, such
+	* as in its text box, are that content's own, and are left alone.
+	*/
+	var withRunPropertiesOnRuns = (element, originalRunProperties) => {
+		if (element.name === "w:r") return withRunProperties(element, originalRunProperties);
+		return element.elements ? _objectSpread2(_objectSpread2({}, element), {}, { elements: element.elements.map((e) => withRunPropertiesOnRuns(e, originalRunProperties)) }) : element;
 	};
 	/**
 	* Gives a run the placeholder's run properties. A run can only have one w:rPr, so properties the run
@@ -36836,12 +36845,13 @@ while (n === a[++i] && n === a[++i] && n === a[++i] && n === a[++i] && n === a[+
 						});
 						return;
 					}
-					replacer({
+					const hyperlinkRelationships = [];
+					const { didFindOccurrence } = replacer({
 						json: element,
 						patch: _objectSpread2(_objectSpread2({}, patchValue), {}, { children: patchValue.children.flatMap((child) => child instanceof Bookmark ? child.writtenAs : [child]).map((child) => {
 							if (child instanceof ExternalHyperlink) {
 								const concreteHyperlink = new ConcreteHyperlink(child.options.children, uniqueId());
-								relationshipAdditions.push({
+								hyperlinkRelationships.push({
 									key,
 									id: concreteHyperlink.linkId,
 									type: "http://schemas.openxmlformats.org/officeDocument/2006/relationships/hyperlink",
@@ -36857,6 +36867,7 @@ while (n === a[++i] && n === a[++i] && n === a[++i] && n === a[++i] && n === a[+
 						recursive,
 						renumberIds: (elements) => notes.renumber(renumberBookmarks(elements))
 					});
+					if (didFindOccurrence) relationshipAdditions.push(...hyperlinkRelationships);
 				};
 				for (const [patchKey, patchValue] of patchesInOrder) patchPlaceholder(json, patchKey, patchValue);
 			}

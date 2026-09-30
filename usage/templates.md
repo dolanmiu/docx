@@ -364,6 +364,8 @@ const doc = await patchDocument({
 fs.writeFileSync("My Document.docx", doc);
 ```
 
+The text of a link, such as an `ExternalHyperlink`'s, is formatted as the placeholder is too. Formatting that a run sets itself, such as the link's color, is kept.
+
 ## Headers and Footers
 
 Placeholders in headers and footers are also replaced:
