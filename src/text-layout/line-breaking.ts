@@ -337,10 +337,11 @@ export const layoutLines = (
     const markHeight = measurer.measureLineHeight(markFont);
     const { stops, firstLineStops } = stopsOf(tabStops, format);
     const parts = segmentsOf(items);
-    // A page or column break at the end of a paragraph has the paragraph's mark on its line, as Word lays it out from
-    // Word 2013, rather than on a line of its own on the next page
+    // A page break at the end of a paragraph has the paragraph's mark on its line, as Word lays it out from Word 2013,
+    // rather than on a line of its own on the next page. A column break's mark is on a line at the top of the next column,
+    // in Word and LibreOffice
     const [previous, last] = parts.slice(-2);
-    const endsWithBreak = parts.length > 1 && previous.end!.kind !== "line" && last.tokens.every((token) => token.type === "marker");
+    const endsWithBreak = parts.length > 1 && previous.end!.kind === "page" && last.tokens.every((token) => token.type === "marker");
     const segments = endsWithBreak ? [...parts.slice(0, -2), { tokens: [...previous.tokens, ...last.tokens], end: previous.end }] : parts;
 
     // eslint-disable-next-line functional/prefer-readonly-type

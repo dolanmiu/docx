@@ -74,7 +74,7 @@ The pages are laid out with the widths and heights of the characters of the font
 - footnotes, which take room at the bottom of the page their reference is on, and continue at the bottom of the next page when they don't fit, and endnotes, which follow the text
 - pictures in the line
 - tables, with their columns' widths (`columnWidths`, or their cells' widths), their rows' heights, cell margins and borders. The columns of a table given no widths are sized to their text, as Word sizes them: each as wide as its longest line, or narrower when they don't all fit, but never narrower than its longest word, and a column whose cells give it a width keeps it. Rows break across pages between the lines of their cells, unless they are kept whole (`cantSplit`), and header rows are repeated on each page a table is on
-- sections, with their page sizes, margins, columns, headers and footers, how they start, and their page numbering, such as roman numerals
+- sections, with their page sizes, margins, columns, headers and footers, how they start, and their page numbering, such as roman numerals. Columns before a continuous section break are evened out, as Word evens them out, unless a column break is in them, and the next section starts below the longest
 
 ## What it leaves blank
 
@@ -83,7 +83,7 @@ It stops at the first thing it can't lay out yet, and the page numbers of the he
 - a picture or shape that text wraps around, a text box, or a text frame
 - an equation
 - a footnote that doesn't fit below its reference, when it has several paragraphs or a table, would leave only one of its lines on either page, is too long for the next page too, or is referred to from a line that widow control, keeping lines together or keeping with the next paragraph could hold back
-- columns of different widths, columns before a continuous section break, which Word evens out so the next section starts below the longest, footnotes in columns, and a table's header rows repeated at the top of a column
+- columns of different widths, footnotes in columns, a table's header rows repeated at the top of a column, and a paragraph kept together that is taller than a column
 - a table row kept whole that is taller than a page, a row whose footnote doesn't fit below it, and a row that breaks across pages with merged cells, a table or a footnote in it, or a height set taller than its text
 - a table whose rows give a column different widths, and a table given no widths with cells merged across its columns or a table in a cell
 - a document that hyphenates its words
