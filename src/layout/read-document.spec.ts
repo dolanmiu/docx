@@ -302,8 +302,21 @@ describe("readDocument", () => {
                 p(field("begin"), instruction("PAGEREF a \\* roman"), field("separate"), r(t("iv")), field("end")),
                 p(field("begin"), instruction('PAGEREF "a" \\* MERGEFORMAT'), field("separate"), r(t("4")), field("end")),
                 p(field("begin"), instruction("PAGEREF"), field("separate"), r(t("?")), field("end")),
+                p(field("begin"), instruction('PAGEREF a \\# "00"'), field("separate"), r(t("04")), field("end")),
             ]);
-            expect([0, 1, 2, 3].map((index) => textOf(content, index))).to.deep.equal(["above", "iv", "[a]", "?"]);
+            expect([0, 1, 2, 3, 4].map((index) => textOf(content, index))).to.deep.equal(["above", "iv", "[a]", "?", "04"]);
+        });
+
+        it("should read the results of NUMPAGES and SECTIONPAGES fields as the numbers of pages they show", () => {
+            const content = readBody([
+                p(field("begin"), instruction("NUMPAGES \\* MERGEFORMAT"), field("separate"), r(t("9")), field("end")),
+                p({ "w:fldSimple": [{ _attr: { "w:instr": "SECTIONPAGES" } }, r(t("3"))] }),
+                p(field("begin"), instruction("NUMPAGES \\* roman"), field("separate"), r(t("ix")), field("end")),
+            ]);
+            expect(itemsOf(content, 0)).to.deep.equal([{ type: "pageCount", scope: "document", font: {} }]);
+            expect(itemsOf(content, 1)).to.deep.equal([{ type: "pageCount", scope: "section", font: {} }]);
+            // In a format of its own, its result is read as it is
+            expect(textOf(content, 2)).to.equal("ix");
         });
 
         it("should ignore field characters and instructions outside a field", () => {

@@ -4,6 +4,7 @@ import { Formatter } from "@export/formatter";
 import { File } from "@file/file";
 import {
     Bookmark,
+    type EstimatedPageNumbers,
     FrameAnchorType,
     HeadingLevel,
     type IContext,
@@ -11,6 +12,7 @@ import {
     type IPropertiesOptions,
     type IXmlableObject,
     PageBreak,
+    PageNumber,
     PageReference,
     Paragraph,
     TabStopType,
@@ -23,18 +25,20 @@ import { estimatePageNumbers } from "./estimate-page-numbers";
 const contextOf = (file: File): IContext => ({ file, viewWrapper: file.Document, stack: [] }) as unknown as IContext;
 
 /** The page numbers a document is written with */
-const pageNumbersOf = (options: IPropertiesOptions): Record<string, string> => {
-    let pages: ReadonlyMap<string, string> = new Map();
+const estimateOf = (options: IPropertiesOptions): EstimatedPageNumbers => {
+    let estimate: EstimatedPageNumbers = { bookmarks: new Map() };
     const file = new File({
         ...options,
         pageNumbers: (body, context) => {
-            ({ bookmarks: pages } = estimatePageNumbers(body, context));
-            return { bookmarks: pages };
+            estimate = estimatePageNumbers(body, context);
+            return estimate;
         },
     });
     new Formatter().format(file.Document.View, contextOf(file));
-    return Object.fromEntries(pages);
+    return estimate;
 };
+
+const pageNumbersOf = (options: IPropertiesOptions): Record<string, string> => Object.fromEntries(estimateOf(options).bookmarks);
 
 // A text frame, which the layout doesn't follow yet
 const FRAME: IFrameOptions = {
@@ -94,6 +98,24 @@ describe("estimatePageNumbers", () => {
             ],
         });
         expect(pages).to.deep.equal({ before: "1" });
+    });
+
+    it("should work out the number of pages of the document and of each section, when it lays out all of it", () => {
+        const estimate = estimateOf({
+            sections: [
+                {
+                    children: [
+                        heading("First", "first"),
+                        new Paragraph({ children: [new TextRun("Text"), new PageBreak(), new TextRun("More")] }),
+                    ],
+                },
+                { children: [new Paragraph({ children: [new TextRun({ children: ["Page 1 of ", PageNumber.TOTAL_PAGES] })] })] },
+            ],
+        });
+        expect(estimate).to.deep.include({ pageCount: 3, sectionPageCounts: [2, 1] });
+        const stopped = estimateOf({ sections: [{ children: [new Paragraph({ frame: FRAME, children: [new TextRun("Framed")] })] }] });
+        expect(stopped.pageCount).to.equal(undefined);
+        expect(stopped.sectionPageCounts).to.deep.equal([undefined]);
     });
 
     it("should place nothing without a document to lay out", () => {

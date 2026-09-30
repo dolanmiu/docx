@@ -22,6 +22,11 @@ export type Pagination = {
     readonly bookmarks: ReadonlyMap<string, string>;
     /** How many pages were laid out */
     readonly pageCount: number;
+    /**
+     * How many pages each section has, in order: undefined for a section that shares a page with another, that has a
+     * blank page before or after it, or that wasn't laid out to its end
+     */
+    readonly sectionPageCounts: readonly (number | undefined)[];
     /** What it stopped at, when it couldn't lay out all of the document */
     readonly stoppedAt?: string;
 };
@@ -29,6 +34,9 @@ export type Pagination = {
 export type PaginateOptions = {
     /** The page numbers of bookmarks, which the results of the page references to them are. Those not in it are blank */
     readonly pageNumbers?: ReadonlyMap<string, string>;
+    /** The number of pages of the document, and of each section, which page count fields show. They are blank without */
+    readonly pageCount?: number;
+    readonly sectionPageCounts?: readonly (number | undefined)[];
     readonly measurer?: TextMeasurer;
 };
 
@@ -105,7 +113,12 @@ const linesThatFit = (
  */
 export const paginate = (
     content: DocumentContent,
-    { pageNumbers = new Map(), measurer = DEFAULT_MEASURER }: PaginateOptions = {},
+    {
+        pageNumbers = new Map(),
+        pageCount: givenPageCount,
+        sectionPageCounts: givenSectionPageCounts = [],
+        measurer = DEFAULT_MEASURER,
+    }: PaginateOptions = {},
 ): Pagination => {
     const { sections, defaultTabStop, evenAndOddHeaders, addsParagraphSpacing, footnotes, footnoteSeparator, endnotes } = content;
     // The body, and then its endnotes, which Word lays out after it
@@ -113,10 +126,21 @@ export const paginate = (
     /** The space between two paragraphs: the larger of the space after the first and before the second, or both */
     const between = (after: number, before: number): number => (addsParagraphSpacing ? after + before : Math.max(after, before));
 
+    // The section being laid out
+    let sectionIndex = 0;
+
+    /** The text of the results of fields that depend on the pages, from the numbers given */
     const itemsOf = (items: readonly LayoutItem[]): readonly InlineItem[] =>
-        items.map((item) =>
-            item.type === "pageReference" ? { type: "text", text: pageNumbers.get(item.bookmark) ?? "", font: item.font } : item,
-        );
+        items.map((item) => {
+            if (item.type === "pageReference") {
+                return { type: "text", text: pageNumbers.get(item.bookmark) ?? "", font: item.font };
+            }
+            if (item.type === "pageCount") {
+                const count = item.scope === "document" ? givenPageCount : givenSectionPageCounts[sectionIndex];
+                return { type: "text", text: count === undefined ? "" : String(count), font: item.font };
+            }
+            return item;
+        });
 
     // eslint-disable-next-line functional/prefer-readonly-type
     const byParagraph = laidOutLines.get(measurer) ?? new WeakMap<ParagraphBlock, Map<number, readonly LaidOutLine[]>>();
@@ -131,7 +155,7 @@ export const paginate = (
                 markFont: paragraph.markFont,
                 measurer,
             });
-        if (paragraph.items.some(({ type }) => type === "pageReference")) {
+        if (paragraph.items.some(({ type }) => type === "pageReference" || type === "pageCount")) {
             return layOut();
         }
         const byWidth = byParagraph.get(paragraph) ?? new Map<number, readonly LaidOutLine[]>();
@@ -224,10 +248,15 @@ export const paginate = (
 
     // The state of the page being filled
     const bookmarks = new Map<string, string>();
-    const headerHeights = new Map<readonly Block[], number>();
+    // The height of each header and footer, by the section it is in, whose number of pages it can show
+    // eslint-disable-next-line functional/prefer-readonly-type
+    const headerHeights = new Map<readonly Block[], Map<number, number>>();
     let pageCount = 0;
     let pageNumber = 0;
-    let sectionIndex = 0;
+    // The first and last page of each section, and the sections whose pages aren't theirs alone
+    const firstPages = new Map<number, number>([[0, 1]]);
+    const lastPages = new Map<number, number>();
+    const sharingPages = new Set<number>();
     // Where the page's body starts and ends, and where the next line goes, in points from the top of the page
     let top = 0;
     let bottom = 0;
@@ -256,9 +285,10 @@ export const paginate = (
         if (part.some((block) => block.unsupported !== undefined)) {
             throw new Unsupported(part.find((block) => block.unsupported !== undefined)!.unsupported);
         }
-        const height = headerHeights.get(part) ?? stackHeight(part, textWidth());
+        const bySection = headerHeights.get(part) ?? new Map<number, number>();
+        const height = bySection.get(sectionIndex) ?? stackHeight(part, textWidth());
         // eslint-disable-next-line functional/immutable-data
-        headerHeights.set(part, height);
+        headerHeights.set(part, bySection.set(sectionIndex, height));
         return height;
     };
 
@@ -294,6 +324,14 @@ export const paginate = (
 
     const startSection = (index: number): void => {
         const previous = section();
+        // eslint-disable-next-line functional/immutable-data
+        lastPages.set(sectionIndex, pageCount);
+        // A section with no paragraphs of its own, which isn't laid out
+        for (let skipped = sectionIndex + 1; skipped < index; skipped++) {
+            // eslint-disable-next-line functional/immutable-data
+            sharingPages.add(skipped);
+        }
+        const before = sectionIndex;
         sectionIndex = index;
         const current = section();
         if (current.unsupported) {
@@ -307,6 +345,10 @@ export const paginate = (
             // The section's columns start below what is on the page
             column = 0;
             columnTop = position;
+            // eslint-disable-next-line functional/immutable-data
+            firstPages.set(index, pageCount);
+            // eslint-disable-next-line functional/immutable-data
+            sharingPages.add(before).add(index);
             return;
         }
         if (current.start === "nextColumn" && (previous.columns.length > 1 || current.columns.length > 1)) {
@@ -314,11 +356,15 @@ export const paginate = (
         }
         const nextNumber = current.firstNumber ?? pageNumber + 1;
         if ((current.start === "evenPage" && nextNumber % 2 !== 0) || (current.start === "oddPage" && nextNumber % 2 === 0)) {
-            // A blank page, so the section starts on an even or odd page
+            // A blank page, so the section starts on an even or odd page, which isn't either section's
             pageCount++;
             pageNumber++;
+            // eslint-disable-next-line functional/immutable-data
+            sharingPages.add(before).add(index);
         }
         startPage(true);
+        // eslint-disable-next-line functional/immutable-data
+        firstPages.set(index, pageCount);
     };
 
     /**
@@ -624,6 +670,14 @@ export const paginate = (
         };
     };
 
+    /** The number of pages of each section whose pages are its alone, and that was laid out to its end */
+    const countsOf = (): readonly (number | undefined)[] =>
+        sections.map((_, index) => {
+            const first = firstPages.get(index);
+            const last = lastPages.get(index);
+            return first === undefined || last === undefined || sharingPages.has(index) ? undefined : last - first + 1;
+        });
+
     try {
         if (content.unsupported) {
             throw new Unsupported(content.unsupported);
@@ -658,7 +712,9 @@ export const paginate = (
         if (!(error instanceof Unsupported)) {
             throw error;
         }
-        return { bookmarks, pageCount, stoppedAt: error.message };
+        return { bookmarks, pageCount, sectionPageCounts: countsOf(), stoppedAt: error.message };
     }
-    return { bookmarks, pageCount };
+    // eslint-disable-next-line functional/immutable-data
+    lastPages.set(sectionIndex, pageCount);
+    return { bookmarks, pageCount, sectionPageCounts: countsOf() };
 };

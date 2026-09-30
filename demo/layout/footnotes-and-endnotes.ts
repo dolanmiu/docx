@@ -6,9 +6,11 @@ import * as fs from "fs";
 import {
     Document,
     EndnoteReferenceRun,
+    Footer,
     FootnoteReferenceRun,
     HeadingLevel,
     Packer,
+    PageNumber,
     Paragraph,
     Table,
     TableCell,
@@ -60,6 +62,16 @@ const doc = new Document({
     },
     sections: [
         {
+            // The number of pages counts those of the endnotes
+            footers: {
+                default: new Footer({
+                    children: [
+                        new Paragraph({
+                            children: [new TextRun({ children: ["Page ", PageNumber.CURRENT, " of ", PageNumber.TOTAL_PAGES] })],
+                        }),
+                    ],
+                }),
+            },
             children: [
                 new TableOfContents("Contents", { hyperlink: true, headingStyleRange: "1-2" }),
                 ...Array.from({ length: 9 }, (_, chapter) => [

@@ -40,10 +40,14 @@ import {
 import { formatNumber } from "./number-format";
 
 /**
- * A paragraph's content: text, tabs, breaks, pictures and bookmarks, and the results of page references, which depend
- * on the pages being worked out.
+ * A paragraph's content: text, tabs, breaks, pictures and bookmarks, and the results of fields that depend on the pages
+ * being worked out: the page of a bookmark a page reference refers to, and the number of pages of the document or of the
+ * section it is in.
  */
-export type LayoutItem = InlineItem | { readonly type: "pageReference"; readonly bookmark: string; readonly font: TextFont };
+export type LayoutItem =
+    | InlineItem
+    | { readonly type: "pageReference"; readonly bookmark: string; readonly font: TextFont }
+    | { readonly type: "pageCount"; readonly scope: "document" | "section"; readonly font: TextFont };
 
 export type ParagraphBlock = {
     readonly type: "paragraph";
@@ -175,7 +179,7 @@ type OpenField = {
     instruction: string;
     // eslint-disable-next-line functional/prefer-readonly-type
     inResult: boolean;
-    /** Whether its result is a page reference's, which is worked out rather than read */
+    /** Whether its result depends on the pages, so it is worked out rather than read */
     // eslint-disable-next-line functional/prefer-readonly-type
     replaced: boolean;
 };
@@ -251,21 +255,31 @@ const twips = (value: unknown): number | undefined => {
     return amount === undefined ? undefined : amount / TWIPS_PER_POINT;
 };
 
-/**
- * The bookmark a PAGEREF field refers to, unless it shows something other than the page's number: its position relative
- * to the bookmark (`\p`), or the number in a format of its own. As docx writes the page numbers.
- */
-const pageReferenceOf = (instruction: string): string | undefined => {
-    const match = /^\s*PAGEREF\s+("?)([^\s"\\]+)\1(.*)$/i.exec(instruction);
-    if (!match) {
-        return undefined;
-    }
-    const [, , bookmark, switches] = match;
+/** Whether a field's switches give its number a format of its own, such as `\* roman`, or a picture, such as `\# "00"` */
+const hasOwnFormat = (switches: string): boolean => {
     const formats = [...switches.matchAll(/\\\*\s*"?([^\s"\\]+)/g)].map(([, format]) => format.toLowerCase());
-    return /\\p\b/i.test(switches) || formats.some((format) => !PLAIN_FORMATS.has(format)) ? undefined : bookmark;
+    return /\\#/.test(switches) || formats.some((format) => !PLAIN_FORMATS.has(format));
 };
 
-/** Whether what is read now is shown: not in a field's instruction, nor in the result of a page reference */
+/**
+ * The result of a field that depends on the pages being worked out, as docx writes it: the page of the bookmark a PAGEREF
+ * field refers to, or the number of pages of the document (NUMPAGES) or of its section (SECTIONPAGES). Undefined for other
+ * fields, and for those that show something else: a page's position relative to the bookmark (`\p`), or a number in a
+ * format of its own.
+ */
+const workedOutResultOf = (instruction: string, font: TextFont): LayoutItem | undefined => {
+    const reference = /^\s*PAGEREF\s+("?)([^\s"\\]+)\1(.*)$/i.exec(instruction);
+    if (reference) {
+        const [, , bookmark, switches] = reference;
+        return /\\p\b/i.test(switches) || hasOwnFormat(switches) ? undefined : { type: "pageReference", bookmark, font };
+    }
+    const count = /^\s*(NUMPAGES|SECTIONPAGES)\b(.*)$/i.exec(instruction);
+    return count && !hasOwnFormat(count[2])
+        ? { type: "pageCount", scope: count[1].toUpperCase() === "NUMPAGES" ? "document" : "section", font }
+        : undefined;
+};
+
+/** Whether what is read now is shown: not in a field's instruction, nor in a result that is worked out */
 const isShown = ({ fields }: Reader): boolean => fields.every((field) => field.inResult && !field.replaced);
 
 /** Adds the tab stops of a paragraph, or of its style, to those of the styles before */
@@ -309,7 +323,7 @@ const readDrawing = (element: XmlObject, reader: Reader): readonly LayoutItem[] 
 };
 
 /**
- * Reads a field character (`w:fldChar`). A page reference's result is replaced with the page it refers to.
+ * Reads a field character (`w:fldChar`). The result of a field that depends on the pages is worked out, rather than read.
  */
 const readFieldCharacter = (element: XmlObject, font: TextFont, reader: Reader): readonly LayoutItem[] => {
     const type = attributesOf(element["w:fldChar"])["w:fldCharType"];
@@ -322,13 +336,13 @@ const readFieldCharacter = (element: XmlObject, font: TextFont, reader: Reader):
         // eslint-disable-next-line functional/immutable-data
         fields.pop();
     } else if (type === "separate" && field) {
-        const bookmark = pageReferenceOf(field.instruction);
+        const result = workedOutResultOf(field.instruction, font);
         // eslint-disable-next-line functional/immutable-data
         field.inResult = true;
-        if (bookmark !== undefined && isShown(reader)) {
+        if (result !== undefined && isShown(reader)) {
             // eslint-disable-next-line functional/immutable-data
             field.replaced = true;
-            return [{ type: "pageReference", bookmark, font }];
+            return [result];
         }
     }
     return [];
@@ -440,10 +454,8 @@ const readInline = (elements: readonly unknown[], paragraphRun: RunFormat, reade
             return readInline(childrenOf(find(childrenOf(element[name]), "w:sdtContent")), paragraphRun, reader);
         }
         if (name === "w:fldSimple") {
-            const bookmark = pageReferenceOf(String(attributesOf(element[name])["w:instr"]));
-            return bookmark !== undefined && isShown(reader)
-                ? [{ type: "pageReference", bookmark, font: fontOf(paragraphRun) }]
-                : readInline(contentOf(element), paragraphRun, reader);
+            const result = workedOutResultOf(String(attributesOf(element[name])["w:instr"]), fontOf(paragraphRun));
+            return result !== undefined && isShown(reader) ? [result] : readInline(contentOf(element), paragraphRun, reader);
         }
         if (name === "w:bookmarkStart") {
             const bookmark = stringOf(attributesOf(element[name])["w:name"]);

@@ -61,6 +61,7 @@ The page numbers are written into:
 
 - the entries of each [Table of Contents](usage/table-of-contents.md) filled in from the headings
 - each [`PageReference`](usage/bookmarks.md#page-references), unless it shows its position relative to the bookmark (`useRelativePosition`)
+- the [number of pages](usage/page-numbers.md#total-number-of-pages) of the document (`PageNumber.TOTAL_PAGES`) and of each section (`PageNumber.TOTAL_PAGES_IN_SECTION`), in the text, headers and footers. A section's is left blank when it shares a page with another section, or has a blank page before or after it
 
 ## What it follows
 

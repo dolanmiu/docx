@@ -12,12 +12,20 @@ import { readDocument } from "./read-document";
 // lines of a table of contents wrap
 const PASSES = 3;
 
-const sameNumbers = (one: ReadonlyMap<string, string>, other: ReadonlyMap<string, string>): boolean =>
-    one.size === other.size && [...one].every(([name, page]) => other.get(name) === page);
+/** An estimate each pass works out, with the number of pages of each section */
+type Pass = EstimatedPageNumbers & { readonly sectionPageCounts: readonly (number | undefined)[] };
+
+const sameNumbers = (one: Pass, other: Pass): boolean =>
+    one.bookmarks.size === other.bookmarks.size &&
+    [...one.bookmarks].every(([name, page]) => other.bookmarks.get(name) === page) &&
+    one.pageCount === other.pageCount &&
+    one.sectionPageCounts.length === other.sectionPageCounts.length &&
+    one.sectionPageCounts.every((count, index) => other.sectionPageCounts[index] === count);
 
 /**
- * Works out the page each bookmark of a document starts on, by laying out its pages as Word does, so the page numbers
- * of its tables of contents and page references are written with it. Give it to a document as its `pageNumbers`:
+ * Works out the page each bookmark of a document starts on, and how many pages the document and each of its sections
+ * have, by laying out its pages as Word does, so the page numbers of its tables of contents and page references, and its
+ * numbers of pages, are written with it. Give it to a document as its `pageNumbers`:
  *
  * ```ts
  * new Document({ pageNumbers: estimatePageNumbers, sections: [...] });
@@ -40,9 +48,15 @@ export const estimatePageNumbers = (body: IXmlableObject, context: IContext): Es
         return { bookmarks: new Map() };
     }
     const content = readDocument(body, context);
-    const layOut = (pages: ReadonlyMap<string, string>, pass: number): ReadonlyMap<string, string> => {
-        const { bookmarks } = paginate(content, { pageNumbers: pages });
-        return pass >= PASSES || sameNumbers(bookmarks, pages) ? bookmarks : layOut(bookmarks, pass + 1);
+    const layOut = (before: Pass, pass: number): Pass => {
+        const { bookmarks, pageCount, sectionPageCounts, stoppedAt } = paginate(content, {
+            pageNumbers: before.bookmarks,
+            pageCount: before.pageCount,
+            sectionPageCounts: before.sectionPageCounts,
+        });
+        // The number of pages is known only when all of the document was laid out
+        const estimate = { bookmarks, sectionPageCounts, ...(stoppedAt === undefined ? { pageCount } : {}) };
+        return pass >= PASSES || sameNumbers(estimate, before) ? estimate : layOut(estimate, pass + 1);
     };
-    return { bookmarks: layOut(new Map(), 1) };
+    return layOut({ bookmarks: new Map(), sectionPageCounts: [] }, 1);
 };

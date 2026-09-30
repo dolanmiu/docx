@@ -7,7 +7,8 @@
  *
  * @module
  */
-import { InitializableXmlComponent, type XmlComponent } from "@file/xml-components";
+import { fillPartPageNumbers } from "@file/document/body/page-numbers";
+import { type IContext, type IXmlableObject, InitializableXmlComponent, type XmlComponent } from "@file/xml-components";
 
 import type { Paragraph } from "../paragraph";
 import type { Table } from "../table";
@@ -96,5 +97,15 @@ export class Header extends InitializableXmlComponent {
 
     public add(item: Paragraph | Table): void {
         this.root.push(item);
+    }
+
+    /**
+     * Formats the header, with the page numbers worked out for its document written into its fields, when the document's
+     * body is written with an estimate of its pages.
+     */
+    public override prepForXml(context: IContext): IXmlableObject | undefined {
+        const xml = super.prepForXml(context);
+        fillPartPageNumbers(xml, context, this.refId);
+        return xml;
     }
 }

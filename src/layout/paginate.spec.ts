@@ -99,7 +99,11 @@ describe("paginate", () => {
     });
 
     it("should lay out a document without content on one page", () => {
-        expect(paginate(document([]), { measurer: MEASURER })).to.deep.equal({ bookmarks: new Map(), pageCount: 1 });
+        expect(paginate(document([]), { measurer: MEASURER })).to.deep.equal({
+            bookmarks: new Map(),
+            pageCount: 1,
+            sectionPageCounts: [1],
+        });
     });
 
     it("should put a bookmark on the line its text starts on", () => {
@@ -202,6 +206,8 @@ describe("paginate", () => {
                     ["heading", "1"],
                 ]),
                 pageCount: 1,
+                // The section the layout stopped in has no number of pages
+                sectionPageCounts: [undefined],
                 stoppedAt: "a thing",
             });
         });
@@ -414,7 +420,12 @@ describe("paginate", () => {
             const result = paginate(document([paragraph("a", 1), table([row([[paragraph("tall", 9)]], { cantSplit: true })])]), {
                 measurer: MEASURER,
             });
-            expect(result).to.deep.equal({ bookmarks: new Map([["a", "1"]]), pageCount: 2, stoppedAt: "a table row taller than a page" });
+            expect(result).to.deep.equal({
+                bookmarks: new Map([["a", "1"]]),
+                pageCount: 2,
+                sectionPageCounts: [undefined],
+                stoppedAt: "a table row taller than a page",
+            });
         });
 
         it("should stop at a row that breaks across pages with merged cells, a set height, or a table in it", () => {
@@ -542,6 +553,7 @@ describe("paginate", () => {
             expect(paginate(content, { measurer: MEASURER })).to.deep.equal({
                 bookmarks: new Map([["a", "1"]]),
                 pageCount: 1,
+                sectionPageCounts: [1, undefined],
                 stoppedAt: "columns",
             });
             expect(paginate({ ...content, sections: [{ ...SECTION, unsupported: "columns" }] }, { measurer: MEASURER }).stoppedAt).to.equal(
@@ -780,7 +792,99 @@ describe("paginate", () => {
                     ["end", "2"],
                 ]),
                 pageCount: 2,
+                sectionPageCounts: [2],
             });
+        });
+    });
+
+    describe("numbers of pages", () => {
+        /** A paragraph of 7 letters and a number of pages, which wraps when the number is 2 digits */
+        const counted = (name: string, scope: "document" | "section"): ParagraphBlock => ({
+            ...paragraph(name, 1),
+            items: [
+                { type: "marker", name },
+                { type: "text", text: "abcdefg", font: {} },
+                { type: "pageCount", scope, font: {} },
+            ],
+        });
+
+        it("should write the number of pages given into the fields that show it, which can change how lines wrap", () => {
+            const blocks = [counted("a", "document"), paragraph("b", 5), paragraph("c", 1)];
+            // Blank, and one digit, a is a line; two digits, it wraps, and c moves on
+            expect(pagesOf(document(blocks))).to.deep.equal({ a: "1", b: "1", c: "1" });
+            expect(Object.fromEntries(paginate(document(blocks), { measurer: MEASURER, pageCount: 3 }).bookmarks)).to.deep.equal({
+                a: "1",
+                b: "1",
+                c: "1",
+            });
+            expect(Object.fromEntries(paginate(document(blocks), { measurer: MEASURER, pageCount: 12 }).bookmarks)).to.deep.equal({
+                a: "1",
+                b: "1",
+                c: "2",
+            });
+        });
+
+        it("should lay out a header with the number of pages of the section whose page it is on", () => {
+            const header = [counted("header", "section")];
+            const content = document(
+                [
+                    [paragraph("a", 5), 0],
+                    [paragraph("b", 1), 0],
+                    [paragraph("c", 5), 1],
+                    [paragraph("d", 1), 1],
+                ],
+                {
+                    sections: [
+                        { ...SECTION, headers: { default: header } },
+                        { ...SECTION, headers: { default: header } },
+                    ],
+                },
+            );
+            // The header of 2 lines leaves room for 5, and of 1 line, for 6
+            const { bookmarks } = paginate(content, { measurer: MEASURER, sectionPageCounts: [12, 3] });
+            expect(Object.fromEntries(bookmarks)).to.deep.equal({ a: "1", b: "2", c: "3", d: "3" });
+        });
+
+        it("should count the pages of each section, but not of those that share a page, have a blank page, or have no paragraphs", () => {
+            const countsOf = (blocks: Parameters<typeof document>[0], sections: readonly Section[]): readonly (number | undefined)[] =>
+                paginate(document(blocks, { sections }), { measurer: MEASURER }).sectionPageCounts;
+            expect(
+                countsOf(
+                    [
+                        [paragraph("a", 8), 0],
+                        [paragraph("b", 1), 1],
+                    ],
+                    [SECTION, SECTION],
+                ),
+            ).to.deep.equal([2, 1]);
+            expect(
+                countsOf(
+                    [
+                        [paragraph("a", 1), 0],
+                        [paragraph("b", 1), 1],
+                        [paragraph("c", 1), 2],
+                    ],
+                    [SECTION, { ...SECTION, start: "continuous" }, SECTION],
+                ),
+            ).to.deep.equal([undefined, undefined, 1]);
+            expect(
+                countsOf(
+                    [
+                        [paragraph("a", 1), 0],
+                        [paragraph("b", 1), 1],
+                    ],
+                    [SECTION, { ...SECTION, start: "oddPage" }],
+                ),
+            ).to.deep.equal([undefined, undefined]);
+            expect(
+                countsOf(
+                    [
+                        [paragraph("a", 1), 0],
+                        [paragraph("b", 1), 2],
+                    ],
+                    [SECTION, SECTION, SECTION],
+                ),
+            ).to.deep.equal([1, undefined, 1]);
         });
     });
 
@@ -827,6 +931,7 @@ describe("paginate", () => {
             expect(paginate(content, { measurer: MEASURER })).to.deep.equal({
                 bookmarks: new Map(),
                 pageCount: 0,
+                sectionPageCounts: [undefined],
                 stoppedAt: "an equation",
             });
         });
@@ -837,6 +942,7 @@ describe("paginate", () => {
         expect(paginate(content, { measurer: MEASURER })).to.deep.equal({
             bookmarks: new Map([["a", "1"]]),
             pageCount: 1,
+            sectionPageCounts: [undefined],
             stoppedAt: "a footnote",
         });
         expect(paginate(document([paragraph("a", 1)], { unsupported: "hyphenation" }), { measurer: MEASURER }).stoppedAt).to.equal(
