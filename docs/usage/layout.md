@@ -70,6 +70,7 @@ The pages are laid out with the widths and heights of the characters of the font
 - spacing before and after paragraphs, line spacing, indents and tab stops
 - keeping a paragraph with the next, keeping its lines together, widow and orphan control, and page breaks
 - numbered and bulleted lists
+- footnotes, which take room at the bottom of the page their reference is on, and endnotes, which follow the text
 - pictures in the line
 - tables, with their rows' heights, cell margins and borders. Rows break across pages between the lines of their cells, unless they are kept whole (`cantSplit`), and header rows are repeated on each page a table is on
 - sections, with their page sizes, margins, headers and footers, how they start, and their page numbering, such as roman numerals
@@ -80,9 +81,9 @@ It stops at the first thing it can't lay out yet, and the page numbers of the he
 
 - a picture or shape that text wraps around, a text box, or a text frame
 - an equation
-- a footnote
+- a footnote of more than a line that doesn't fit below its reference, which Word continues on the next page
 - columns
-- a table row kept whole that is taller than a page, and a row that breaks across pages with merged cells, a table in it, or a height set taller than its text
+- a table row kept whole that is taller than a page, and a row that breaks across pages with merged cells, a table or a footnote in it, or a height set taller than its text
 - a document that hyphenates its words
 
 A wrong page number is worse than a blank one, so it doesn't guess.

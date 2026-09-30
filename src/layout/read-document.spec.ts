@@ -107,8 +107,9 @@ describe("readDocument", () => {
             ]);
             expect(
                 itemsOf(content).map((item) => (item.type === "break" ? item.kind : item.type === "text" ? item.text : item.type)),
-            ).to.deep.equal(["a", "tab", "tab", "page", "column", "line", "line", "‑", "■", "1", "CAPS"]);
-            expect(itemsOf(content)[9]).to.deep.equal({ type: "text", text: "1", font: { size: 6.5 } });
+            ).to.deep.equal(["a", "tab", "tab", "page", "column", "line", "line", "‑", "■", "i", "CAPS"]);
+            // An endnote's number, in superscript, and numbered as Word numbers endnotes
+            expect(itemsOf(content)[9]).to.deep.equal({ type: "text", text: "i", font: { scale: 65 } });
         });
 
         it("should read the text in hyperlinks, insertions, content controls and other elements that hold runs, but not deletions", () => {
@@ -185,6 +186,49 @@ describe("readDocument", () => {
         });
     });
 
+    describe("footnotes and endnotes", () => {
+        it("should read the footnotes the body refers to, by the markers at their references, with the separator above them", () => {
+            const content = readBody(
+                [
+                    p(r(t("a"), { "w:footnoteReference": { _attr: { "w:id": 1 } } })),
+                    p(r({ "w:footnoteReference": { _attr: { "w:id": 7 } } })),
+                ],
+                { footnotes: { 1: { children: [new Paragraph("Note")] } } },
+            );
+            // A reference is the marker its footnote is placed by, and the footnote's number, in superscript
+            expect(itemsOf(content)).to.deep.equal([
+                { type: "text", text: "a", font: {} },
+                { type: "marker", name: "footnote 1" },
+                { type: "text", text: "1", font: { scale: 65 } },
+            ]);
+            // The footnote starts with its number
+            expect((content.footnotes.get("footnote 1")![0] as ParagraphBlock).items).to.deep.equal([
+                { type: "text", text: "1", font: { scale: 65 } },
+                { type: "text", text: "Note", font: {} },
+            ]);
+            // A reference to a footnote the document doesn't have is numbered, and has nothing to place
+            expect(itemsOf(content, 1)).to.deep.include({ type: "text", text: "2", font: { scale: 65 } });
+            expect(content.footnotes.get("footnote 2")).to.deep.equal([]);
+            // The separator's paragraph, whose line is as tall as its mark
+            expect(content.footnoteSeparator).to.have.length(1);
+            expect((content.footnoteSeparator[0] as ParagraphBlock).items).to.deep.equal([]);
+            expect(content.endnotes).to.deep.equal([]);
+        });
+
+        it("should read the endnotes the body refers to, after their separator, numbered as Word numbers them", () => {
+            const content = readBody(
+                [p(r({ "w:endnoteReference": { _attr: { "w:id": 1 } } }), r({ "w:endnoteReference": { _attr: { "w:id": 2 } } }))],
+                { endnotes: { 1: { children: [new Paragraph("First")] }, 2: { children: [new Paragraph("Second")] } } },
+            );
+            expect(itemsOf(content).map((item) => (item.type === "text" ? item.text : item.type))).to.deep.equal(["i", "ii"]);
+            expect(
+                content.endnotes.map((block) => (block as ParagraphBlock).items.map((item) => (item.type === "text" ? item.text : ""))),
+            ).to.deep.equal([[], ["i", "First"], ["ii", "Second"]]);
+            expect(content.footnotes.size).to.equal(0);
+            expect(content.footnoteSeparator).to.deep.equal([]);
+        });
+    });
+
     describe("drawings", () => {
         const drawing = (child: object): object => r({ "w:drawing": [child] });
 
@@ -209,7 +253,6 @@ describe("readDocument", () => {
             );
             expect(paragraphOf(readBody([p(r({ "w:pict": [] }))])).unsupported).to.equal("a VML drawing");
             expect(paragraphOf(readBody([p(r({ "w:object": [] }))])).unsupported).to.equal("a VML drawing");
-            expect(paragraphOf(readBody([p(r({ "w:footnoteReference": { _attr: { "w:id": 1 } } }))])).unsupported).to.equal("a footnote");
         });
 
         it("should read the drawing Word reads of those with a fallback for older versions", () => {
@@ -493,8 +536,8 @@ describe("readDocument", () => {
         });
 
         it("should mark a table with something unsupported in a cell as unsupported", () => {
-            const content = readBody([{ "w:tbl": [{ "w:tr": [{ "w:tc": [p(r({ "w:footnoteReference": {} }))] }] }] }]);
-            expect((content.blocks[0].block as TableBlock).unsupported).to.equal("a footnote");
+            const content = readBody([{ "w:tbl": [{ "w:tr": [{ "w:tc": [p({ "m:oMath": [] })] }] }] }]);
+            expect((content.blocks[0].block as TableBlock).unsupported).to.equal("an equation");
         });
     });
 
@@ -631,13 +674,20 @@ describe("readDocument", () => {
             expect(read.footers).to.deep.equal({});
         });
 
-        it("should leave out drawings and VML in headers, which don't take room in them, and read a header once", () => {
+        it("should leave out drawings, VML and footnote references in headers, which don't take room in them, and read a header once", () => {
             const file = new File({ sections: [{ headers: { default: new Header({ children: [] }) }, children: [] }] });
             const [wrapper] = file.Headers;
-            // A watermark, and a picture text would flow around in the body
+            // A watermark, a picture text would flow around in the body, and a footnote reference, which has no note there
             // eslint-disable-next-line functional/immutable-data
             wrapper.View.prepForXml = (): IXmlableObject => ({
-                "w:hdr": [p(r({ "w:pict": [] }), r({ "w:drawing": [{ "wp:anchor": [{ "wp:wrapSquare": {} }] }] }), r(t("text")))],
+                "w:hdr": [
+                    p(
+                        r({ "w:pict": [] }),
+                        r({ "w:drawing": [{ "wp:anchor": [{ "wp:wrapSquare": {} }] }] }),
+                        r({ "w:footnoteReference": { _attr: { "w:id": 1 } } }),
+                        r(t("text")),
+                    ),
+                ],
             });
             const id = `rId${wrapper.View.ReferenceId}`;
             const content = readDocument(

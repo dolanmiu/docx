@@ -4,9 +4,10 @@ import { Formatter } from "@export/formatter";
 import { File } from "@file/file";
 import {
     Bookmark,
-    FootnoteReferenceRun,
+    FrameAnchorType,
     HeadingLevel,
     type IContext,
+    type IFrameOptions,
     type IPropertiesOptions,
     type IXmlableObject,
     PageBreak,
@@ -33,6 +34,15 @@ const pageNumbersOf = (options: IPropertiesOptions): Record<string, string> => {
     });
     new Formatter().format(file.Document.View, contextOf(file));
     return Object.fromEntries(pages);
+};
+
+// A text frame, which the layout doesn't follow yet
+const FRAME: IFrameOptions = {
+    type: "absolute",
+    position: { x: 1000, y: 1000 },
+    width: 2000,
+    height: 1000,
+    anchor: { horizontal: FrameAnchorType.PAGE, vertical: FrameAnchorType.PAGE },
 };
 
 const heading = (text: string, bookmark: string): Paragraph =>
@@ -73,12 +83,11 @@ describe("estimatePageNumbers", () => {
 
     it("should leave the bookmarks after something it can't lay out without page numbers", () => {
         const pages = pageNumbersOf({
-            footnotes: { 1: { children: [new Paragraph("Note")] } },
             sections: [
                 {
                     children: [
                         heading("Before", "before"),
-                        new Paragraph({ children: [new TextRun("Noted"), new FootnoteReferenceRun(1)] }),
+                        new Paragraph({ frame: FRAME, children: [new TextRun("In a text frame")] }),
                         heading("After", "after"),
                     ],
                 },

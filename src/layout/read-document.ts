@@ -139,6 +139,12 @@ export type DocumentContent = {
      * as it is with the compatibility setting `doNotUseHTMLParagraphAutoSpacing`, rather than the larger of them
      */
     readonly addsParagraphSpacing: boolean;
+    /** The footnotes the body refers to, by the names of the markers at their references */
+    readonly footnotes: ReadonlyMap<string, readonly Block[]>;
+    /** What is above the footnotes at the bottom of a page: the paragraph of the line that separates them from the text */
+    readonly footnoteSeparator: readonly Block[];
+    /** The endnotes the body refers to, in order, after their separator: they follow the body, as Word lays them out */
+    readonly endnotes: readonly Block[];
     /** Why none of it can be laid out, when a setting of the whole document changes its lines in ways not yet followed */
     readonly unsupported?: string;
 };
@@ -151,6 +157,14 @@ type NumberingLevel = {
     readonly paragraph: ParagraphFormat;
     readonly run: RunFormat;
 };
+
+type NoteKind = "footnote" | "endnote";
+
+/** What a reference to a footnote or endnote shows: its number, and, for a footnote, the marker its note is placed by */
+type NoteReference = { readonly label: string; readonly marker?: string };
+
+/** Reads the footnote or endnote a reference in the body refers to, and numbers it */
+type NoteReader = { readonly read: (kind: NoteKind, id: string) => NoteReference };
 
 /** A complex field being read */
 type OpenField = {
@@ -168,6 +182,10 @@ type OpenField = {
  * paragraph to the next.
  */
 type Reader = {
+    /** Reads the notes the references refer to: the body's. References elsewhere have no notes */
+    readonly notes?: NoteReader;
+    /** The number of the footnote or endnote being read, which the mark at its start shows */
+    readonly noteNumber?: string;
     readonly styles: TextStyles;
     /** The levels of each list, by the id its paragraphs refer to it by */
     readonly numbering: ReadonlyMap<string, readonly NumberingLevel[]>;
@@ -211,6 +229,19 @@ const contentOf = (element: XmlObject): readonly unknown[] => {
     const content = element[nameOf(element)];
     return Array.isArray(content) ? content : [content];
 };
+
+// How wide the number of a footnote or endnote is, next to text of its size: Word writes it in superscript
+const SUPERSCRIPT_WIDTH = 0.65;
+
+/**
+ * The number of a footnote or endnote, at its reference or at the start of the note: as narrow as superscript, and as tall
+ * as its font, as LibreOffice lays it out.
+ */
+const noteNumber = (text: string, font: TextFont): LayoutItem => ({
+    type: "text",
+    text,
+    font: { ...font, scale: (font.scale ?? 100) * SUPERSCRIPT_WIDTH },
+});
 
 const twips = (value: unknown): number | undefined => {
     const amount = numberOf(value);
@@ -356,9 +387,19 @@ const readRun = (element: XmlObject, paragraphRun: RunFormat, reader: Reader): r
                 return [{ type: "text", text: "\u2011", font }];
             case "w:sym":
                 return [{ type: "text", text: "\u25a0", font }];
-            case "w:endnoteReference":
-                // Its number, as Word writes it in superscript
-                return [{ type: "text", text: "1", font: { ...font, size: (font.size ?? 10) * 0.65 } }];
+            case "w:footnoteReference":
+            case "w:endnoteReference": {
+                const note = reader.notes?.read(
+                    name === "w:footnoteReference" ? "footnote" : "endnote",
+                    String(attributesOf(child[name])["w:id"]),
+                );
+                return note === undefined
+                    ? []
+                    : [...(note.marker ? [{ type: "marker" as const, name: note.marker }] : []), noteNumber(note.label, font)];
+            }
+            case "w:footnoteRef":
+            case "w:endnoteRef":
+                return reader.noteNumber === undefined ? [] : [noteNumber(reader.noteNumber, font)];
             case "w:drawing":
                 return readDrawing(child, reader);
             case "mc:AlternateContent": {
@@ -369,8 +410,6 @@ const readRun = (element: XmlObject, paragraphRun: RunFormat, reader: Reader): r
             case "w:pict":
             case "w:object":
                 return reader.inHeader ? [] : "a VML drawing";
-            case "w:footnoteReference":
-                return "a footnote";
             default:
                 return [];
         }
@@ -775,7 +814,48 @@ export const readDocument = (body: IXmlableObject, context: IContext): DocumentC
         return parts.get(id);
     };
 
-    const reader = readerOf(false);
+    // The footnotes and endnotes, by their ids, and the separators above them
+    const noteElements = (kind: NoteKind): ReadonlyMap<string, XmlObject> => {
+        const wrapper = kind === "footnote" ? context.file.FootNotes : context.file.Endnotes;
+        const xml = wrapper.View.prepForXml({ ...context, viewWrapper: wrapper, stack: [] }) as XmlObject;
+        const notes = childrenOf(Object.values(xml)[0]).filter((child) => `w:${kind}` in child);
+        return new Map(
+            notes.map((note) => {
+                const attributes = attributesOf(note[`w:${kind}`]);
+                return [String(attributes["w:type"] === "separator" ? "separator" : attributes["w:id"]), note] as const;
+            }),
+        );
+    };
+    const notesByKind = { footnote: noteElements("footnote"), endnote: noteElements("endnote") };
+    const readNoteContent = (kind: NoteKind, id: string, label?: string): readonly Block[] => {
+        const note = notesByKind[kind].get(id);
+        return note === undefined
+            ? []
+            : readBlocks(contentOf(note), { ...readerOf(false), ...(label === undefined ? {} : { noteNumber: label }) });
+    };
+    const footnotes = new Map<string, readonly Block[]>();
+    // eslint-disable-next-line functional/prefer-readonly-type
+    const endnotes: Block[] = [];
+    const noteCounts = { footnote: 0, endnote: 0 };
+    // Footnotes are numbered 1, 2, 3 and endnotes i, ii, iii, as Word numbers them unless the document says otherwise
+    const readNote = (kind: NoteKind, id: string): NoteReference => {
+        // eslint-disable-next-line functional/immutable-data
+        noteCounts[kind]++;
+        const label = formatNumber(noteCounts[kind], kind === "footnote" ? "decimal" : "lowerRoman")!;
+        const content = readNoteContent(kind, id, label);
+        if (kind === "endnote") {
+            // eslint-disable-next-line functional/immutable-data
+            endnotes.push(...content);
+            return { label };
+        }
+        // A name no bookmark can have, as bookmarks' names have no spaces
+        const marker = `footnote ${noteCounts[kind]}`;
+        // eslint-disable-next-line functional/immutable-data
+        footnotes.set(marker, content);
+        return { label, marker };
+    };
+
+    const reader: Reader = { ...readerOf(false), notes: { read: readNote } };
     // eslint-disable-next-line functional/prefer-readonly-type
     const sections: Section[] = [];
     // eslint-disable-next-line functional/prefer-readonly-type
@@ -819,5 +899,12 @@ export const readDocument = (body: IXmlableObject, context: IContext): DocumentC
         addSection(undefined);
     }
 
-    return { blocks, sections, ...readSettings(context) };
+    return {
+        blocks,
+        sections,
+        footnotes,
+        footnoteSeparator: footnotes.size > 0 ? readNoteContent("footnote", "separator") : [],
+        endnotes: endnotes.length > 0 ? [...readNoteContent("endnote", "separator"), ...endnotes] : [],
+        ...readSettings(context),
+    };
 };

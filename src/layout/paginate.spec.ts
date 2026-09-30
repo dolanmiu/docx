@@ -52,6 +52,9 @@ const document = (blocks: readonly (Block | readonly [Block, number])[], changes
     defaultTabStop: 36,
     evenAndOddHeaders: false,
     addsParagraphSpacing: false,
+    footnotes: new Map(),
+    footnoteSeparator: [],
+    endnotes: [],
     ...changes,
 });
 
@@ -543,6 +546,132 @@ describe("paginate", () => {
             expect(paginate({ ...content, sections: [{ ...SECTION, unsupported: "columns" }] }, { measurer: MEASURER }).stoppedAt).to.equal(
                 "columns",
             );
+        });
+    });
+
+    describe("footnotes and endnotes", () => {
+        // The separator above the footnotes: an empty paragraph, a line tall
+        const SEPARATOR: ParagraphBlock = { type: "paragraph", items: [], format: {}, tabStops: [], markFont: {} };
+        const noted = (block: ParagraphBlock, ...notes: readonly string[]): ParagraphBlock =>
+            withItems(
+                block,
+                notes.map((note) => ({ type: "marker", name: note })),
+            );
+        const withNotes = (blocks: Parameters<typeof document>[0], notes: Record<string, readonly Block[]>): DocumentContent =>
+            document(blocks, { footnotes: new Map(Object.entries(notes)), footnoteSeparator: [SEPARATOR] });
+
+        it("should leave room at the bottom of a page for the footnotes of its lines, below their separator", () => {
+            const content = withNotes([paragraph("a", 4), noted(paragraph("b", 1), "footnote 1"), paragraph("c", 1)], {
+                "footnote 1": [paragraph("note", 1)],
+            });
+            // The separator and the footnote take 2 lines, so c goes on the next page. Bookmarks in footnotes aren't placed
+            expect(pagesOf(content)).to.deep.equal({ a: "1", b: "1", c: "2" });
+        });
+
+        it("should move a line to the next page with its footnote when they don't both fit", () => {
+            const content = withNotes([paragraph("a", 5), noted(paragraph("b", 1), "footnote 1")], {
+                "footnote 1": [paragraph("note", 1)],
+            });
+            expect(pagesOf(content)).to.deep.equal({ a: "1", b: "2" });
+        });
+
+        it("should stop at a footnote that would break across pages, or that is taller than a page", () => {
+            const breaking = withNotes([paragraph("a", 4), noted(paragraph("b", 1), "footnote 1")], {
+                "footnote 1": [paragraph("note", 4)],
+            });
+            expect(paginate(breaking, { measurer: MEASURER }).stoppedAt).to.equal("a footnote across pages");
+            const tall = withNotes([noted(paragraph("b", 1), "footnote 1")], {
+                "footnote 1": [paragraph("note", 1, { lineSpacing: { rule: "exact", height: 70 } })],
+            });
+            expect(paginate(tall, { measurer: MEASURER }).stoppedAt).to.equal("a footnote across pages");
+            // A footnote of paragraphs, or a table, could break between them
+            const paragraphs = withNotes([paragraph("a", 5), noted(paragraph("b", 1), "footnote 1")], {
+                "footnote 1": [paragraph("one", 1), paragraph("two", 1)],
+            });
+            expect(paginate(paragraphs, { measurer: MEASURER }).stoppedAt).to.equal("a footnote across pages");
+            const tabled = withNotes([paragraph("a", 5), noted(paragraph("b", 1), "footnote 1")], {
+                "footnote 1": [table([row([[paragraph("cell", 1)]])])],
+            });
+            expect(paginate(tabled, { measurer: MEASURER }).stoppedAt).to.equal("a footnote across pages");
+            // LibreOffice continues a footnote of more than a line, even one widow control would keep together
+            const short = withNotes([paragraph("a", 3), noted(paragraph("b", 1), "footnote 1")], { "footnote 1": [paragraph("note", 3)] });
+            expect(paginate(short, { measurer: MEASURER }).stoppedAt).to.equal("a footnote across pages");
+            const empty = withNotes([paragraph("a", 6), noted(paragraph("b", 1), "footnote 1")], { "footnote 1": [] });
+            expect(pagesOf(empty)).to.deep.equal({ a: "1", b: "2" });
+        });
+
+        it("should stop at a footnote that can't be laid out", () => {
+            const unsupported = { ...paragraph("note", 1), unsupported: "an equation" };
+            const content = withNotes([noted(paragraph("b", 1), "footnote 1")], { "footnote 1": [unsupported] });
+            expect(paginate(content, { measurer: MEASURER }).stoppedAt).to.equal("an equation");
+        });
+
+        it("should put the space between footnotes, but not before the separator or after the last footnote", () => {
+            const content = document([noted(paragraph("a", 1), "footnote 1", "footnote 2"), paragraph("b", 2), paragraph("c", 1)], {
+                footnotes: new Map([
+                    ["footnote 1", [paragraph("one", 1, { spaceAfter: 10 })]],
+                    ["footnote 2", [paragraph("two", 1, { spaceBefore: 5, spaceAfter: 30 })]],
+                ]),
+                footnoteSeparator: [{ ...SEPARATOR, format: { spaceBefore: 20 } }],
+            });
+            // The separator, the footnotes and the 10 points between them take 4 lines, leaving 3 for a and b
+            expect(pagesOf(content)).to.deep.equal({ a: "1", b: "1", c: "2" });
+        });
+
+        it("should leave room for the footnotes of table rows, and stop at a row with footnotes that would break", () => {
+            const note = { "footnote 1": [paragraph("note", 1)] };
+            const fits = withNotes(
+                [paragraph("a", 3), table([row([[noted(paragraph("cell", 2), "footnote 1")]])]), paragraph("b", 1)],
+                note,
+            );
+            expect(pagesOf(fits)).to.deep.equal({ a: "1", cell: "1", b: "2" });
+            const kept = withNotes(
+                [paragraph("a", 4), table([row([[noted(paragraph("cell", 2), "footnote 1")]], { cantSplit: true })])],
+                note,
+            );
+            expect(pagesOf(kept)).to.deep.equal({ a: "1", cell: "2" });
+            const breaking = withNotes([paragraph("a", 4), table([row([[noted(paragraph("cell", 2), "footnote 1")]])])], note);
+            expect(paginate(breaking, { measurer: MEASURER }).stoppedAt).to.equal("a footnote in a table row across pages");
+            const tall = withNotes([table([row([[noted(paragraph("cell", 6), "footnote 1")]], { cantSplit: true })])], note);
+            expect(paginate(tall, { measurer: MEASURER }).stoppedAt).to.equal("a footnote across pages");
+            // A row that fits, but whose footnote of more than a line doesn't
+            const long = withNotes([paragraph("a", 3), table([row([[noted(paragraph("cell", 2), "footnote 1")]], { cantSplit: true })])], {
+                "footnote 1": [paragraph("note", 2)],
+            });
+            expect(paginate(long, { measurer: MEASURER }).stoppedAt).to.equal("a footnote across pages");
+        });
+
+        it("should keep a paragraph with the next on the page only when their footnotes fit too", () => {
+            const note = { "footnote 1": [paragraph("note", 1)] };
+            const heading = paragraph("heading", 1, { keepNext: true });
+            const content = withNotes(
+                [
+                    paragraph("a", 3),
+                    heading,
+                    { ...paragraph("b", 3), items: [{ type: "marker", name: "footnote 1" }, ...paragraph("b", 3).items] },
+                ],
+                note,
+            );
+            // Without its footnote, b's 3 lines would fit below the heading
+            expect(pagesOf(content)).to.deep.equal({ a: "1", heading: "2", b: "2" });
+            const beforeTable = withNotes([paragraph("a", 4), heading, table([row([[noted(paragraph("cell", 1), "footnote 1")]])])], note);
+            expect(pagesOf(beforeTable)).to.deep.equal({ a: "1", heading: "2", cell: "2" });
+            const kept = withNotes(
+                [paragraph("a", 2), noted(paragraph("kept", 1, { keepNext: true }), "footnote 1"), paragraph("b", 3)],
+                note,
+            );
+            expect(pagesOf(kept)).to.deep.equal({ a: "1", kept: "2", b: "2" });
+        });
+
+        it("should lay the endnotes out after the body", () => {
+            const content = document([paragraph("a", 6)], { endnotes: [SEPARATOR, paragraph("end", 2)] });
+            expect(paginate(content, { measurer: MEASURER })).to.deep.equal({
+                bookmarks: new Map([
+                    ["a", "1"],
+                    ["end", "2"],
+                ]),
+                pageCount: 2,
+            });
         });
     });
 

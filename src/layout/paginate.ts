@@ -4,7 +4,8 @@
  * Each page's body is filled from the top, between the page's margins, or its header and footer where they are taller.
  * Paragraphs break into lines, and pages break between lines, as their keep and widow control settings allow. Table
  * rows break across pages between the lines of their cells, unless they are kept whole, and the table's header rows are
- * repeated on each page. It stops at the first thing it can't lay out yet, and the bookmarks after it aren't placed.
+ * repeated on each page. The footnotes of each page's lines take room at its bottom, and the endnotes follow the body.
+ * It stops at the first thing it can't lay out yet, and the bookmarks after it aren't placed.
  *
  * @module
  */
@@ -72,18 +73,20 @@ const sum = (values: readonly number[]): number => values.reduce((total, value) 
 /**
  * How many of a paragraph's lines, from one of them, fit in the room left on a page (`fits`), and how many of those go on
  * it (`count`): with widow control, a paragraph's first line isn't left alone at the bottom of a page, nor its last line
- * at the top of the next, and with keepLines, a paragraph that doesn't fit moves to the next page whole.
+ * at the top of the next, and with keepLines, a paragraph that doesn't fit moves to the next page whole. The footnotes
+ * of the first lines take room at the bottom of the page too (`notesRoom`, from the number of lines).
  */
 const linesThatFit = (
     lines: readonly LaidOutLine[],
     room: number,
     { keepLines, widowControl }: Pick<MeasuredParagraph, "keepLines" | "widowControl">,
     isFirstLine: boolean,
+    notesRoom: (count: number) => number = () => 0,
 ): { readonly fits: number; readonly count: number } => {
     const ends = lines.map((_, line) => sum(lines.slice(0, line + 1).map(({ height }) => height)));
-    const fits = ends.filter((end) => end <= room + TOLERANCE).length;
-    if (fits === lines.length) {
-        return { fits, count: fits };
+    const fits = ends.findIndex((end, line) => end + notesRoom(line + 1) > room + TOLERANCE);
+    if (fits === -1) {
+        return { fits: lines.length, count: lines.length };
     }
     if (keepLines && isFirstLine) {
         return { fits, count: 0 };
@@ -103,7 +106,9 @@ export const paginate = (
     content: DocumentContent,
     { pageNumbers = new Map(), measurer = DEFAULT_MEASURER }: PaginateOptions = {},
 ): Pagination => {
-    const { blocks, sections, defaultTabStop, evenAndOddHeaders, addsParagraphSpacing } = content;
+    const { sections, defaultTabStop, evenAndOddHeaders, addsParagraphSpacing, footnotes, footnoteSeparator, endnotes } = content;
+    // The body, and then its endnotes, which Word lays out after it
+    const blocks = [...content.blocks, ...endnotes.map((block) => ({ block, section: sections.length - 1 }))];
     /** The space between two paragraphs: the larger of the space after the first and before the second, or both */
     const between = (after: number, before: number): number => (addsParagraphSpacing ? after + before : Math.max(after, before));
 
@@ -156,22 +161,27 @@ export const paginate = (
 
     const linesHeight = (lines: readonly LaidOutLine[]): number => sum(lines.map(({ height }) => height));
 
-    /**
-     * The height of blocks stacked in a width, such as those in a table cell or a header, with the space before the
-     * first and after the last
-     */
-    const stackHeight = (stack: readonly Block[], width: number): number => {
-        const parts = stack.map((block, index) => {
+    /** The heights of blocks stacked in a width, with the space before and after each */
+    const stackParts = (
+        stack: readonly Block[],
+        width: number,
+    ): readonly { readonly height: number; readonly before: number; readonly after: number }[] =>
+        stack.map((block, index) => {
             if (block.type === "table") {
                 return { height: sum(rowHeights(block)), before: 0, after: 0 };
             }
             const { lines, spaceBefore: before, spaceAfter: after } = measureParagraph(block, width, stack[index - 1], stack[index + 1]);
             return { height: linesHeight(lines), before, after };
         });
-        return (
-            sum(parts.map(({ height, before }, index) => height + (index === 0 ? before : between(parts[index - 1].after, before)))) +
-            (parts[parts.length - 1]?.after ?? 0)
-        );
+
+    /**
+     * The height of blocks stacked in a width, such as those in a table cell or a header, with the space before the
+     * first and after the last, unless it is left out
+     */
+    const stackHeight = (stack: readonly Block[], width: number, withOuterSpace = true): number => {
+        const parts = stackParts(stack, width);
+        const outer = withOuterSpace ? (parts[0]?.before ?? 0) + (parts[parts.length - 1]?.after ?? 0) : 0;
+        return sum(parts.map(({ height, before }, index) => height + (index === 0 ? 0 : between(parts[index - 1].after, before)))) + outer;
     };
 
     /**
@@ -223,6 +233,9 @@ export const paginate = (
     let position = 0;
     // Whether anything is on the page yet
     let placedOnPage = false;
+    // The footnotes at the bottom of the page, by their markers, and the room they take with their separator
+    let pageNotes: readonly string[] = [];
+    let noteArea = 0;
     // The space after the last paragraph, which goes before what is next on the page
     let spaceAfter = 0;
 
@@ -256,6 +269,8 @@ export const paginate = (
         position = top;
         placedOnPage = false;
         spaceAfter = 0;
+        pageNotes = [];
+        noteArea = 0;
     };
 
     const startSection = (index: number): void => {
@@ -278,10 +293,48 @@ export const paginate = (
         startPage(true);
     };
 
+    /**
+     * The room footnotes take at the bottom of the page: the separator's line above them, and their paragraphs, without
+     * the space before the first or after the last, as LibreOffice lays them out
+     */
+    const areaOf = (notes: readonly string[]): number => {
+        if (notes.length === 0) {
+            return 0;
+        }
+        const stack = [...footnoteSeparator, ...notes.flatMap((name) => footnotes.get(name)!)];
+        const unsupported = stack.find((block) => block.unsupported !== undefined)?.unsupported;
+        if (unsupported) {
+            throw new Unsupported(unsupported);
+        }
+        return stackHeight(stack, textWidth(), false);
+    };
+
+    const notesIn = (markers: readonly string[]): readonly string[] => markers.filter((name) => footnotes.has(name));
+
+    /** The room footnotes take below those on the page already */
+    const moreNoteRoom = (notes: readonly string[]): number => (notes.length === 0 ? 0 : areaOf([...pageNotes, ...notes]) - noteArea);
+
+    /** Puts footnotes at the bottom of the page */
+    const addNotes = (notes: readonly string[]): void => {
+        if (notes.length > 0) {
+            pageNotes = [...pageNotes, ...notes];
+            noteArea = areaOf(pageNotes);
+        }
+    };
+
+    /**
+     * Whether a footnote could continue on the next page, as LibreOffice continues any footnote of more than a line that
+     * doesn't fit below its reference. Which of its lines it keeps with the reference isn't followed yet.
+     */
+    const canBreak = (name: string): boolean => {
+        const [first, ...rest] = footnotes.get(name)!;
+        return rest.length > 0 || first?.type === "table" || (first !== undefined && measureParagraph(first, textWidth()).lines.length > 1);
+    };
+
     const mark = (names: readonly string[]): void => {
         const text = formatNumber(pageNumber, section().numberFormat)!;
         for (const name of names) {
-            if (!bookmarks.has(name)) {
+            if (!bookmarks.has(name) && !footnotes.has(name)) {
                 // eslint-disable-next-line functional/immutable-data
                 bookmarks.set(name, text);
             }
@@ -298,7 +351,16 @@ export const paginate = (
         while (index < lines.length) {
             const space = placedOnPage && isStart && index === 0 ? between(spaceAfter, paragraph.spaceBefore) : 0;
             const remaining = lines.slice(index);
-            const { fits, count: kept } = linesThatFit(remaining, bottom - position - space, paragraph, isStart && index === 0);
+            const notesOf = (upTo: number): readonly string[] => notesIn(remaining.slice(0, upTo).flatMap(({ markers }) => markers));
+            const room = bottom - noteArea - position - space;
+            const isFirstLine = isStart && index === 0;
+            const { fits, count: kept } = linesThatFit(remaining, room, paragraph, isFirstLine, (upTo) => moreNoteRoom(notesOf(upTo)));
+            // A line that fits, but not with its footnotes, moves to the next page with them, unless they could break
+            const withoutNotes = linesThatFit(remaining, room, paragraph, isFirstLine).fits;
+            const tooTall = fits === 0 && !placedOnPage && notesOf(1).length > 0;
+            if (tooTall || (withoutNotes > fits && notesOf(fits + 1).some(canBreak))) {
+                throw new Unsupported("a footnote across pages");
+            }
             let count = kept;
             if (count === 0 && !placedOnPage) {
                 // Nothing fits on an empty page, so as much as fits goes on it, and at least a line
@@ -310,6 +372,7 @@ export const paginate = (
                     mark(line.markers);
                     position += line.height;
                 }
+                addNotes(notesOf(count));
                 placedOnPage = true;
                 index += count;
             }
@@ -343,8 +406,8 @@ export const paginate = (
 
     /**
      * Fills a cell's part of a row that breaks across pages: as many of the lines left of its paragraphs as fit in the
-     * room, as the paragraphs' widow control and keepLines allow. The space before a paragraph at the top of the part on
-     * the next page is left out, as it is at the top of a page.
+     * room. The space before a paragraph at the top of the part on the next page is left out, as it is at the top of a
+     * page.
      */
     const fillCell = (
         paragraphs: readonly CellParagraph[],
@@ -398,7 +461,7 @@ export const paginate = (
         let isFirstPart = true;
         for (;;) {
             const borders = row.borderTop + row.borderBottom;
-            const room = bottom - position - borders;
+            const room = bottom - noteArea - position - borders;
             const first = isFirstPart;
             const filled = parts.map((paragraphs, cell) =>
                 fillCell(paragraphs, room - row.cells[cell].marginTop - row.cells[cell].marginBottom, first),
@@ -417,7 +480,7 @@ export const paginate = (
                 }
             }
             // A row whose text fits, but not the height it is set to, moves to the next page whole, as in LibreOffice
-            const fitsWhole = !isFirstPart || position + height <= bottom + TOLERANCE;
+            const fitsWhole = !isFirstPart || position + height <= bottom - noteArea + TOLERANCE;
             if ((!placesLines || !fitsWhole) && !placedOnPage) {
                 throw new Unsupported("a table row taller than a page");
             }
@@ -455,19 +518,31 @@ export const paginate = (
                 position += repeated;
             }
         };
+        /** Whether a row fits on the page, with its footnotes */
+        const rowFits = (height: number, notes: readonly string[]): boolean =>
+            position + height + moreNoteRoom(notes) <= bottom - noteArea + TOLERANCE;
         for (const [index, row] of table.rows.entries()) {
             const height = heights[index];
-            if (position + height > bottom + TOLERANCE && !row.cantSplit && row.height?.rule !== "exact") {
+            const markers = row.cells.flatMap((cell) => cell.blocks.flatMap(markersOf));
+            const notes = notesIn(markers);
+            if (!rowFits(height, notes) && position + height <= bottom - noteArea + TOLERANCE && notes.some(canBreak)) {
+                throw new Unsupported("a footnote across pages");
+            }
+            if (!rowFits(height, notes) && !row.cantSplit && row.height?.rule !== "exact") {
+                if (notes.length > 0) {
+                    throw new Unsupported("a footnote in a table row across pages");
+                }
                 splitRow(row, height, () => startTablePage(index));
                 continue;
             }
-            if (position + height > bottom + TOLERANCE && placedOnPage) {
+            if (!rowFits(height, notes) && placedOnPage) {
                 startTablePage(index);
             }
-            if (height > bottom - position + TOLERANCE) {
-                throw new Unsupported("a table row taller than a page");
+            if (!rowFits(height, notes)) {
+                throw new Unsupported(notes.length > 0 ? "a footnote across pages" : "a table row taller than a page");
             }
-            mark(row.cells.flatMap((cell) => cell.blocks.flatMap(markersOf)));
+            mark(markers);
+            addNotes(notes);
             position += height;
             placedOnPage = true;
         }
@@ -477,7 +552,7 @@ export const paginate = (
      * The room the paragraphs kept with the next one, from this one, need on the page: all of them, and the start of
      * the block they are kept with, from where the next line would go.
      */
-    const keptHeight = (index: number, width: number): number => {
+    const keptHeight = (index: number, width: number): { readonly height: number; readonly notes: readonly string[] } => {
         const chain = blocks.slice(index).findIndex(({ block, section: blockSection }, offset) => {
             const following = blocks[index + offset + 1];
             return !(block.type === "paragraph" && block.format.keepNext === true && following && following.section === blockSection);
@@ -492,14 +567,23 @@ export const paginate = (
             ),
         );
         const lastAfter = kept[kept.length - 1]?.spaceAfter ?? spaceAfter;
+        const keptNotes = notesIn(kept.flatMap(({ lines }) => lines.flatMap(({ markers }) => markers)));
         const anchor = blocks[index + chain].block;
         if (anchor.type === "table") {
-            return keptLines + lastAfter + (anchor.unsupported ? 0 : (rowHeights(anchor)[0] ?? 0));
+            const [firstRow] = anchor.rows;
+            return {
+                height: keptLines + lastAfter + (anchor.unsupported ? 0 : (rowHeights(anchor)[0] ?? 0)),
+                notes: [...keptNotes, ...notesIn(firstRow ? firstRow.cells.flatMap((cell) => cell.blocks.flatMap(markersOf)) : [])],
+            };
         }
         // As much of the next paragraph as can't be left at the bottom of a page on its own
         const next = measured(index + chain);
         const firstLines = next.keepLines || (next.widowControl && next.lines.length <= 3) ? next.lines.length : next.widowControl ? 2 : 1;
-        return keptLines + between(lastAfter, next.spaceBefore) + linesHeight(next.lines.slice(0, firstLines));
+        const nextLines = next.lines.slice(0, firstLines);
+        return {
+            height: keptLines + between(lastAfter, next.spaceBefore) + linesHeight(nextLines),
+            notes: [...keptNotes, ...notesIn(nextLines.flatMap(({ markers }) => markers))],
+        };
     };
 
     try {
@@ -524,8 +608,9 @@ export const paginate = (
             const width = textWidth();
             const paragraph = measureParagraph(block, width, blocks[index - 1]?.block, blocks[index + 1]?.block);
             if (paragraph.keepNext && placedOnPage) {
-                const needed = keptHeight(index, width);
-                if (position + needed > bottom + TOLERANCE && needed <= bottom - top + TOLERANCE) {
+                const { height: needed, notes } = keptHeight(index, width);
+                const fitsHere = position + needed + moreNoteRoom(notes) <= bottom - noteArea + TOLERANCE;
+                if (!fitsHere && needed + areaOf(notes) <= bottom - top + TOLERANCE) {
                     startPage();
                 }
             }
