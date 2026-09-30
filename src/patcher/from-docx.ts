@@ -30,6 +30,7 @@ import { patchNotes } from "./notes";
 import { PatchType } from "./patch-type";
 import { appendRelationship, createRelationshipFile, getNextRelationshipIndex } from "./relationship-manager";
 import { replacer } from "./replacer";
+import { patchTableRows } from "./table-rows";
 import { readThemeColors } from "./theme-colors";
 import { toJson } from "./util";
 
@@ -100,6 +101,52 @@ type IRelationshipAddition = {
 export type IPatch = ParagraphPatch | FilePatch;
 
 /**
+ * Patch definition that repeats the rows of a table in the template, once for each row of data, so a table can be
+ * designed in Word and filled in with any number of rows.
+ *
+ * The rows it repeats are those that hold its fields: placeholders made of the patch's key, a dot and the field's name,
+ * such as `{{items.name}}` and `{{items.price}}` for the patch `items`. Each copy's fields are patched with a row's
+ * patches, by their field's name, and the other rows of the table, such as its header, are kept as they are. Rows next
+ * to each other are repeated together, such as a row for an item and a row for its notes.
+ *
+ * A field that a row has no patch for is left empty. With no rows, the rows are removed, and so is a table left with
+ * none. The other patches are applied after the rows are repeated, so a placeholder of theirs in a repeated row, such as
+ * `{{currency}}`, is patched in every copy.
+ *
+ * @example
+ * ```typescript
+ * const text = (value: string): IPatch => ({ type: PatchType.PARAGRAPH, children: [new TextRun(value)] });
+ *
+ * await patchDocument({
+ *   outputType: "nodebuffer",
+ *   data: template,
+ *   patches: {
+ *     items: {
+ *       type: PatchType.TABLE_ROWS,
+ *       rows: [
+ *         { name: text("Apples"), price: text("1.20") },
+ *         { name: text("Pears"), price: text("0.90") },
+ *       ],
+ *     },
+ *   },
+ * });
+ * ```
+ *
+ * @publicApi
+ */
+export type TableRowsPatch = {
+    /** Indicates this patch repeats the rows of a table */
+    readonly type: typeof PatchType.TABLE_ROWS;
+    /**
+     * The patches for each copy of the rows, by the name of the field they patch, such as `name` for `{{items.name}}`.
+     * A field's patch can repeat rows of a table in the copy in turn, whose fields are then such as
+     * `{{items.parts.name}}`. When those fields are in the copy's own row, rather than in a table in it, the row is
+     * repeated for each part, with its item's fields, and an item without parts has no row
+     */
+    readonly rows: readonly Readonly<Record<string, IPatch | TableRowsPatch | undefined>>[];
+};
+
+/**
  * Output format types for patched documents.
  */
 export type PatchDocumentOutputType = OutputType;
@@ -122,10 +169,10 @@ export type PatchDocumentOptions<T extends PatchDocumentOutputType = PatchDocume
     /** Input document data */
     readonly data: InputDataType;
     /**
-     * Mapping of placeholder keys to patch content, or to a {@link DrawingPatch}, such as `docx/charts`' `ChartDataPatch`,
-     * for a drawing whose alt text holds the placeholder
+     * Mapping of placeholder keys to patch content, to a {@link TableRowsPatch} that repeats the rows of a table, or to a
+     * {@link DrawingPatch}, such as `docx/charts`' `ChartDataPatch`, for a drawing whose alt text holds the placeholder
      */
-    readonly patches: Readonly<Record<string, IPatch | DrawingPatch>>;
+    readonly patches: Readonly<Record<string, IPatch | TableRowsPatch | DrawingPatch>>;
     /** Preserve original formatting of replaced text (default: true) */
     readonly keepOriginalStyles?: boolean;
     /** Custom placeholder delimiters (default: {{ and }}) */
@@ -142,6 +189,45 @@ export type PatchDocumentOptions<T extends PatchDocumentOutputType = PatchDocume
     readonly footnotes?: Readonly<Record<string, { readonly children: readonly Paragraph[] }>>;
     /** The endnotes that patches refer to, by the id given to their `EndnoteReferenceRun`s, as with footnotes */
     readonly endnotes?: Readonly<Record<string, { readonly children: readonly Paragraph[] }>>;
+};
+
+/**
+ * Throws if a patch, or a patch for a field of one of its rows, isn't one `patchDocument` can apply, such as a patch
+ * from JavaScript without its children.
+ *
+ * @param key - The patch's key, such as "items", or for a field of a row, such as "items.name"
+ * @param inTableRow - Whether the patch is for a field of a row, where a drawing patch can't be
+ */
+const assertValidPatch = (
+    key: string,
+    patch: IPatch | TableRowsPatch | DrawingPatch,
+    { inTableRow }: { readonly inTableRow: boolean },
+): void => {
+    if (patch?.type === PatchType.TABLE_ROWS && Array.isArray(patch.rows)) {
+        for (const row of patch.rows as readonly unknown[]) {
+            if (typeof row !== "object" || row === null) {
+                throw new Error(`Invalid patch "${key}". Expected each of its rows to be an object of patches, by the name of their field`);
+            }
+            for (const [field, fieldPatch] of Object.entries(row as TableRowsPatch["rows"][number])) {
+                // A field without a patch is left empty
+                if (fieldPatch !== undefined) {
+                    assertValidPatch(`${key}.${field}`, fieldPatch, { inTableRow: true });
+                }
+            }
+        }
+        return;
+    }
+
+    const valid =
+        patch?.type === PatchType.DRAWING
+            ? !inTableRow && typeof patch.patch === "function"
+            : patch?.type !== PatchType.TABLE_ROWS && Array.isArray(patch?.children);
+    if (!valid) {
+        const others = inTableRow
+            ? "or { type: PatchType.TABLE_ROWS, rows: [...] }"
+            : "{ type: PatchType.TABLE_ROWS, rows: [...] }, or a drawing patch such as ChartDataPatch from docx/charts";
+        throw new Error(`Invalid patch "${key}". Expected { type: PatchType.PARAGRAPH or PatchType.DOCUMENT, children: [...] }, ${others}`);
+    }
 };
 
 const imageReplacer = new ImageReplacer();
@@ -245,13 +331,7 @@ export const patchDocument = async <T extends PatchDocumentOutputType = PatchDoc
     const { start, end } = placeholderDelimiters;
 
     for (const [key, patch] of Object.entries(patches)) {
-        const valid = patch?.type === PatchType.DRAWING ? typeof patch.patch === "function" : Array.isArray(patch?.children);
-        if (!valid) {
-            throw new Error(
-                `Invalid patch "${key}". Expected { type: PatchType.PARAGRAPH or PatchType.DOCUMENT, children: [...] }, ` +
-                    "or a drawing patch such as ChartDataPatch from docx/charts",
-            );
-        }
+        assertValidPatch(key, patch, { inTableRow: false });
     }
 
     for (const [key, value] of Object.entries(zipContent.files)) {
@@ -332,6 +412,15 @@ export const patchDocument = async <T extends PatchDocumentOutputType = PatchDoc
         createContext,
     );
 
+    const textPatches = Object.entries(patches).flatMap(([key, patch]) =>
+        patch.type === PatchType.DRAWING ? [] : [[key, patch] as const],
+    );
+    // Rows of tables are repeated first, so the other patches fill their placeholders in every copy of a row
+    const patchesInOrder = [
+        ...textPatches.filter(([, patch]) => patch.type === PatchType.TABLE_ROWS),
+        ...textPatches.filter(([, patch]) => patch.type !== PatchType.TABLE_ROWS),
+    ];
+
     for (const [key, json] of [...map]) {
         if (!key.startsWith("word/") || key.endsWith(".xml.rels")) {
             continue;
@@ -340,47 +429,53 @@ export const patchDocument = async <T extends PatchDocumentOutputType = PatchDoc
         // eslint-disable-next-line functional/immutable-data
         contexts.set(key, context);
 
-        for (const [patchKey, patchValue] of Object.entries(patches)) {
-            if (patchValue.type === PatchType.DRAWING) {
-                continue;
+        // Patches a placeholder in an element of the part: its root, or a copy of the rows of a table that a patch repeats
+        const patchPlaceholder = (element: Element, patchKey: string, patchValue: IPatch | TableRowsPatch): void => {
+            if (patchValue.type === PatchType.TABLE_ROWS) {
+                patchTableRows({ json: element, key: patchKey, patch: patchValue, delimiters: { start, end }, patchPlaceholder });
+                return;
             }
-            const patchText = `${start}${patchKey}${end}`;
+
             // TODO: mutates json. Make it immutable
             // The replacer patches every occurrence in one pass, and never searches the content it inserts,
             // so a patch that contains its own placeholder is fine
             // https://github.com/dolanmiu/docx/issues/2267
             replacer({
-                json,
+                json: element,
                 patch: {
                     ...patchValue,
                     children: patchValue.children
                         // A bookmark is written as its start, its children and its end, as it is in a paragraph
-                        .flatMap((element) => (element instanceof Bookmark ? element.writtenAs : [element]))
-                        .map((element) => {
+                        .flatMap((child) => (child instanceof Bookmark ? child.writtenAs : [child]))
+                        .map((child) => {
                             // We need to replace external hyperlinks with concrete hyperlinks
-                            if (element instanceof ExternalHyperlink) {
-                                const concreteHyperlink = new ConcreteHyperlink(element.options.children, uniqueId());
+                            if (child instanceof ExternalHyperlink) {
+                                const concreteHyperlink = new ConcreteHyperlink(child.options.children, uniqueId());
                                 // eslint-disable-next-line functional/immutable-data
                                 relationshipAdditions.push({
                                     key,
                                     id: concreteHyperlink.linkId,
                                     type: "http://schemas.openxmlformats.org/officeDocument/2006/relationships/hyperlink",
-                                    target: element.options.link,
+                                    target: child.options.link,
                                     targetMode: TargetModeType.EXTERNAL,
                                 });
                                 return concreteHyperlink;
                             } else {
-                                return element;
+                                return child;
                             }
                         }),
                     // eslint-disable-next-line @typescript-eslint/no-explicit-any
                 } as any,
-                patchText,
+                patchText: `${start}${patchKey}${end}`,
                 context,
                 keepOriginalStyles,
                 recursive,
                 renumberIds: (elements) => notes.renumber(renumberBookmarks(elements)),
             });
+        };
+
+        for (const [patchKey, patchValue] of patchesInOrder) {
+            patchPlaceholder(json, patchKey, patchValue);
         }
     }
 

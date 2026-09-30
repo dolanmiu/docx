@@ -3,8 +3,10 @@ import type { Element } from "xml-js";
 
 import type { IViewWrapper } from "@file/document-wrapper";
 import type { File } from "@file/file";
+import type { FileChild } from "@file/file-child";
 import { FootnoteReferenceRun } from "@file/footnotes/footnote/run/reference-run";
 import { ConcreteHyperlink, Paragraph, type ParagraphChild, TextRun } from "@file/paragraph";
+import { Table, TableCell, TableRow } from "@file/table";
 
 import { PatchType } from "./from-docx";
 import { replacer } from "./replacer";
@@ -931,6 +933,45 @@ describe("replacer", () => {
 
                 // The replaced paragraph is no longer in the document, and its text box was left alone
                 expect(traverse({ elements: [textBoxRun] }).map((p) => p.text)).to.deep.equal(["{{ph}}"]);
+            });
+        });
+
+        describe("document type in a table cell", () => {
+            const createParagraph = (text: string): Element => ({
+                type: "element",
+                name: "w:p",
+                elements: [
+                    { type: "element", name: "w:r", elements: [{ type: "element", name: "w:t", elements: [{ type: "text", text }] }] },
+                ],
+            });
+
+            // Patches the placeholder in a cell with these paragraphs, and returns the names of the cell's elements
+            const patchCell = (cellElements: readonly Element[], children: readonly FileChild[]): readonly (string | undefined)[] => {
+                const cell: Element = { type: "element", name: "w:tc", elements: [...cellElements] };
+                replacer({
+                    json: {
+                        elements: [{ type: "element", name: "w:tbl", elements: [{ type: "element", name: "w:tr", elements: [cell] }] }],
+                    },
+                    patch: { type: PatchType.DOCUMENT, children },
+                    patchText: "{{ph}}",
+                    context: { file: {} as unknown as File, viewWrapper: { Relationships: {} } as unknown as IViewWrapper, stack: [] },
+                });
+                return cell.elements!.map((e) => e.name);
+            };
+
+            const TABLE = new Table({ rows: [new TableRow({ children: [new TableCell({ children: [new Paragraph("A")] })] })] });
+
+            it("should end the cell with a paragraph when a table replaces its last paragraph, as Word requires", () => {
+                expect(patchCell([createParagraph("{{ph}}")], [TABLE])).to.deep.equal(["w:tbl", "w:p"]);
+            });
+
+            it("should leave a paragraph in the cell when nothing replaces its only paragraph", () => {
+                expect(patchCell([createParagraph("{{ph}}")], [])).to.deep.equal(["w:p"]);
+            });
+
+            it("should not add a paragraph when the patch ends with one, or the cell's last paragraph isn't replaced", () => {
+                expect(patchCell([createParagraph("{{ph}}")], [TABLE, new Paragraph("B")])).to.deep.equal(["w:tbl", "w:p"]);
+                expect(patchCell([createParagraph("{{ph}}"), createParagraph("B")], [TABLE])).to.deep.equal(["w:tbl", "w:p"]);
             });
         });
 

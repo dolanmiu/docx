@@ -39,6 +39,8 @@ interface Patch {
 | type     | `PatchType`                       | Required | `DOCUMENT`, `PARAGRAPH`                                                                                                              |
 | children | `FileChild[] or ParagraphChild[]` | Required | The contents to replace with. A `FileChild` is a `Paragraph` or `Table`, whereas a `ParagraphChild` is typical `Paragraph` children. |
 
+A patch can also repeat the rows of a table in the template, once for each row of data, keeping the table's look: `{ type: PatchType.TABLE_ROWS, rows: [...] }`, where each row gives the patches for its copy's fields, such as `{{items.name}}`. See [TABLE_ROWS Type](usage/templates.md#table_rows-type).
+
 The patcher also takes in a `keepOriginalStyles` boolean, which will preserve the styles of the patched text when set to true.
 
 It also takes in `footnotes` and `endnotes`, for the notes that patches refer to with a `FootnoteReferenceRun` or an `EndnoteReferenceRun`. See [Footnotes and endnotes](usage/templates.md#footnotes-and-endnotes).
