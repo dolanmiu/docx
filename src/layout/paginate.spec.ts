@@ -64,7 +64,7 @@ const pagesOf = (content: DocumentContent, pageNumbers?: ReadonlyMap<string, str
     Object.fromEntries(paginate(content, { measurer: MEASURER, pageNumbers }).bookmarks);
 
 const row = (cells: readonly (readonly Block[])[], changes: Partial<TableRow> = {}): TableRow => ({
-    cells: cells.map((blocks, column) => ({ column, width: 80, blocks, marginTop: 0, marginBottom: 0 })),
+    cells: cells.map((blocks, column) => ({ column, width: 80, blocks, marginTop: 0, marginBottom: 0, marginLeft: 0, marginRight: 0 })),
     header: false,
     cantSplit: false,
     borderTop: 0,
@@ -79,6 +79,8 @@ const merged = (verticalMerge: "restart" | "continue", blocks: readonly Block[] 
     blocks,
     marginTop: 0,
     marginBottom: 0,
+    marginLeft: 0,
+    marginRight: 0,
     verticalMerge,
 });
 
@@ -285,6 +287,27 @@ describe("paginate", () => {
             expect(pagesOf(content)).to.deep.equal({ a: "1", header: "1", one: "1", side: "1", two: "2", three: "2", b: "2" });
         });
 
+        it("should size the columns of a table given no widths to their text, in the width it is in", () => {
+            const words: ParagraphBlock = {
+                type: "paragraph",
+                items: [{ type: "text", text: "aa bb cc dd ee", font: {} }],
+                format: {},
+                tabStops: [],
+                markFont: {},
+            };
+            const [cell] = row([[words]]).cells;
+            const narrow = table([{ ...row([]), cells: [{ ...cell, width: 20 }] }]);
+            // At the 20 points it is read with, its 5 lines break the row across the pages. Sized to its text, it is as wide
+            // as the page's text, and its 2 lines leave room for b
+            expect(pagesOf(document([paragraph("a", 4), narrow, paragraph("b", 1)]))).to.deep.equal({ a: "1", b: "2" });
+            expect(pagesOf(document([paragraph("a", 4), { ...narrow, fit: {} }, paragraph("b", 1)]))).to.deep.equal({ a: "1", b: "1" });
+            // In a cell of a table, in the cell's width
+            const outer = table([{ ...row([]), cells: [{ ...cell, blocks: [{ ...narrow, fit: {} }] }] }]);
+            expect(pagesOf(document([paragraph("a", 4), outer, paragraph("b", 1)]))).to.deep.equal({ a: "1", b: "1" });
+            const halfWidth = table([{ ...row([]), cells: [{ ...cell, width: 40, blocks: [{ ...narrow, fit: {} }] }] }]);
+            expect(pagesOf(document([paragraph("a", 4), halfWidth, paragraph("b", 1)]))).to.deep.equal({ a: "1", b: "2" });
+        });
+
         it("should make rows as tall as their tallest cell, their margins and borders, or their own height", () => {
             const cell = (name: string): readonly Block[] => [paragraph(name, 1)];
             const content = document([
@@ -301,7 +324,14 @@ describe("paginate", () => {
             const margined = document([
                 {
                     type: "table",
-                    rows: [{ ...row([]), cells: [{ column: 0, width: 80, blocks: cell("x"), marginTop: 30, marginBottom: 30 }] }],
+                    rows: [
+                        {
+                            ...row([]),
+                            cells: [
+                                { column: 0, width: 80, blocks: cell("x"), marginTop: 30, marginBottom: 30, marginLeft: 0, marginRight: 0 },
+                            ],
+                        },
+                    ],
                 },
                 paragraph("b", 1),
             ]);
