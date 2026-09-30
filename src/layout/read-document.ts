@@ -161,6 +161,8 @@ export type DocumentContent = {
     readonly footnotes: ReadonlyMap<string, readonly Block[]>;
     /** What is above the footnotes at the bottom of a page: the paragraph of the line that separates them from the text */
     readonly footnoteSeparator: readonly Block[];
+    /** What is above them instead when a footnote continues from the page before: the paragraph of a longer line */
+    readonly footnoteContinuationSeparator: readonly Block[];
     /** The endnotes the body refers to, in order, after their separator: they follow the body, as Word lays them out */
     readonly endnotes: readonly Block[];
     /** Why none of it can be laid out, when a setting of the whole document changes its lines in ways not yet followed */
@@ -930,7 +932,8 @@ export const readDocument = (body: IXmlableObject, context: IContext): DocumentC
         return new Map(
             notes.map((note) => {
                 const attributes = attributesOf(note[`w:${kind}`]);
-                return [String(attributes["w:type"] === "separator" ? "separator" : attributes["w:id"]), note] as const;
+                const type = attributes["w:type"];
+                return [String(type === "separator" || type === "continuationSeparator" ? type : attributes["w:id"]), note] as const;
             }),
         );
     };
@@ -1012,6 +1015,7 @@ export const readDocument = (body: IXmlableObject, context: IContext): DocumentC
         sections,
         footnotes,
         footnoteSeparator: footnotes.size > 0 ? readNoteContent("footnote", "separator") : [],
+        footnoteContinuationSeparator: footnotes.size > 0 ? readNoteContent("footnote", "continuationSeparator") : [],
         endnotes: endnotes.length > 0 ? [...readNoteContent("endnote", "separator"), ...endnotes] : [],
         ...readSettings(context),
     };

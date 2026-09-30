@@ -1,5 +1,5 @@
-// Page numbers worked out by docx/layout for pages with footnotes at their bottom, which take room from the text, and a
-// document with endnotes after its text. It is one of the documents scripts/compare-layout.sh checks against LibreOffice.
+// Page numbers worked out by docx/layout for pages with footnotes at their bottom, which take room from the text, one of
+// them continued on the next page, and a document with endnotes after its text. It is one of the documents scripts/compare-layout.sh checks against LibreOffice.
 // See docs/usage/layout.md.
 
 import * as fs from "fs";
@@ -25,11 +25,14 @@ const WORDS = "the letters were sent from the harbour office to the families of 
 const text = (words: number, seed: number): string =>
     Array.from({ length: words }, (_, index) => WORDS[(index * 7 + seed * 5) % WORDS.length]).join(" ");
 
-// Footnotes of a line each: the layout stops at a footnote of more lines that doesn't fit below its reference, which Word
-// and LibreOffice continue on the next page
+// Footnotes of a line, and every seventh of several, which continues at the bottom of the next page when it doesn't fit
+// below its reference
 const FOOTNOTES = Array.from({ length: 40 }, (_, index) => index + 1);
 const footnotes = Object.fromEntries(
-    FOOTNOTES.map((id) => [id, { children: [new Paragraph({ children: [new TextRun(text(3 + ((id * 17) % 8), id))] })] }]),
+    FOOTNOTES.map((id) => [
+        id,
+        { children: [new Paragraph({ children: [new TextRun(text(id % 7 === 3 ? 160 + ((id * 13) % 40) : 3 + ((id * 17) % 8), id))] })] },
+    ]),
 );
 const endnotes = Object.fromEntries(
     [1, 2, 3, 4, 5, 6].map((id) => [id, { children: [new Paragraph(text(30 + id * 11, id)), new Paragraph(text(20, id + 3))] }]),
