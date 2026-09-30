@@ -244,6 +244,40 @@ describe("paginate", () => {
             expect(pagesOf(content)).to.deep.equal({ a: "1", b: "2", c: "3" });
         });
 
+        it("should keep the space before the first paragraph of the document and of a section at the top of a page, as Word does", () => {
+            // a's 10 points before and 6 lines fill the page
+            expect(pagesOf(document([paragraph("a", 6, { spaceBefore: 10 }), paragraph("b", 1)]))).to.deep.equal({ a: "1", b: "2" });
+            const sectionBreak: ParagraphBlock = { ...paragraph("break", 0), items: [], sectionBreak: true };
+            const newPage = (before: readonly Block[]): DocumentContent =>
+                document(
+                    [
+                        [paragraph("a", 1), 0],
+                        ...before.map((block): readonly [Block, number] => [block, 0]),
+                        [paragraph("b", 6, { spaceBefore: 10 }), 1],
+                        [paragraph("c", 1), 1],
+                    ],
+                    { sections: [SECTION, SECTION] },
+                );
+            expect(pagesOf(newPage([]))).to.deep.equal({ a: "1", b: "2", c: "3" });
+            // Only as much of it as is more than the space after the empty paragraph that ends the section before
+            expect(pagesOf(newPage([{ ...sectionBreak, format: { spaceAfter: 10 } }]))).to.deep.equal({ a: "1", b: "2", c: "2" });
+            // The first paragraph of a continuous section, kept with the next on a new page, keeps it too, but not after a
+            // page break before it
+            const continuous = (first: ParagraphFormat): DocumentContent =>
+                document(
+                    [
+                        [paragraph("a", 6), 0],
+                        [sectionBreak, 0],
+                        [paragraph("heading", 1, { spaceBefore: 20, ...first }), 1],
+                        [paragraph("b", 4), 1],
+                        [paragraph("c", 1), 1],
+                    ],
+                    { sections: [SECTION, { ...SECTION, start: "continuous" }] },
+                );
+            expect(pagesOf(continuous({ keepNext: true }))).to.deep.equal({ a: "1", heading: "2", b: "2", c: "3" });
+            expect(pagesOf(continuous({ pageBreakBefore: true }))).to.deep.equal({ a: "1", heading: "2", b: "2", c: "2" });
+        });
+
         it("should leave out the space between paragraphs of the same style with contextual spacing", () => {
             const spaced = { spaceBefore: 30, contextualSpacing: true };
             const content = document([
@@ -759,6 +793,23 @@ describe("paginate", () => {
                 expect(pagesOf(content)).to.include({ b: "1", c: "2" });
             });
 
+            it("should put all of the next section's space before below the columns when an empty paragraph ends them, as Word does", () => {
+                const sectionBreak: ParagraphBlock = { ...paragraph("break", 0), items: [], sectionBreak: true };
+                const content = document(
+                    [
+                        ...[...lines("a", 4), paragraph("last", 1, { spaceAfter: 10 }), sectionBreak].map(
+                            (block): readonly [Block, number] => [block, 0],
+                        ),
+                        [paragraph("b", 2, { spaceBefore: 20 }), 1],
+                        [paragraph("c", 1), 1],
+                    ],
+                    { sections: [COLUMNS, { ...SECTION, start: "continuous" }] },
+                );
+                // The columns end 30 points down, with the space after last in the second, and b starts 20 points below
+                // them, rather than 10, so c doesn't fit below it
+                expect(pagesOf(content)).to.include({ b: "1", c: "2" });
+            });
+
             it("should not balance columns with nothing in them on the page", () => {
                 const atTop = document(
                     [
@@ -832,6 +883,37 @@ describe("paginate", () => {
                 { sections: [SECTION, { ...SECTION, start: "continuous" }] },
             );
             expect(pagesOf(kept)).to.deep.equal({ a: "1", heading: "1", b: "2" });
+        });
+
+        it("should keep the space before and after the empty paragraph that ends a section, as Word does", () => {
+            const sectionBreak: ParagraphBlock = { ...paragraph("break", 0), items: [], sectionBreak: true };
+            const content = (end: ParagraphBlock, spaceBefore: number): DocumentContent =>
+                document(
+                    [
+                        [paragraph("a", 2, { spaceAfter: 10 }), 0],
+                        [end, 0],
+                        [paragraph("b", 2, { spaceBefore }), 1],
+                        [paragraph("c", 1), 1],
+                    ],
+                    { sections: [SECTION, { ...SECTION, start: "continuous" }] },
+                );
+            // a's 10 points after go before the empty paragraph and b's 20 before after it, rather than the larger of the
+            // two, 20, so c doesn't fit below b
+            expect(pagesOf(content(sectionBreak, 20))).to.deep.equal({ a: "1", b: "1", c: "2" });
+            // Its own space after is the larger with b's space before: 10 below a, and 10 more, so c fits
+            expect(pagesOf(content({ ...sectionBreak, format: { spaceAfter: 10 } }, 10))).to.deep.equal({ a: "1", b: "1", c: "1" });
+            // At the top of a page, after a page break, its space before is left out, as any paragraph's is, so b and c
+            // fill the page below it
+            const atTop = document(
+                [
+                    [withItems(paragraph("a", 1), [{ type: "break", kind: "page", font: {} }]), 0],
+                    [{ ...sectionBreak, format: { spaceBefore: 30 } }, 0],
+                    [paragraph("b", 6), 1],
+                    [paragraph("c", 1), 1],
+                ],
+                { sections: [SECTION, { ...SECTION, start: "continuous" }] },
+            );
+            expect(pagesOf(atTop)).to.deep.equal({ a: "1", b: "2", c: "2" });
         });
 
         it("should stop at a section that starts in the next column", () => {
