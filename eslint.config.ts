@@ -20,6 +20,8 @@ const config: Linter.Config<Linter.RulesRecord>[] = [
             "eslint.config.ts",
             "**/demo/**",
             "**/scripts/**",
+            // Worktrees Claude Code makes for other branches, which have their own copies of the source
+            ".claude/**",
         ],
     },
     eslint.configs.recommended,
