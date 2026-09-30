@@ -59,6 +59,8 @@ export type ParagraphBlock = {
     /** The font of its mark */
     readonly markFont: TextFont;
     readonly style?: string;
+    /** Whether it is empty but for its section's properties, as docx writes the end of each section but the last */
+    readonly sectionBreak?: boolean;
     /** Why it can't be laid out, when it can't */
     readonly unsupported?: string;
 };
@@ -989,15 +991,24 @@ export const readDocument = (body: IXmlableObject, context: IContext): DocumentC
                 // A bookmark between paragraphs starts with the next one
                 bookmarks = [...bookmarks, String(attributesOf(element[name])["w:name"])];
             } else {
+                const sectionProperties =
+                    name === "w:p" ? find(childrenOf(find(contentOf(element).filter(isObject), "w:pPr")), "w:sectPr") : undefined;
                 for (const block of readBlocks([element], reader)) {
                     const markers = bookmarks.map((marker) => ({ type: "marker" as const, name: marker }));
                     const marked = block.type === "paragraph" && markers.length > 0;
+                    const sectionBreak =
+                        sectionProperties !== undefined && block.type === "paragraph" && block.items.length === 0 && !marked;
                     // eslint-disable-next-line functional/immutable-data
-                    blocks.push({ block: marked ? { ...block, items: [...markers, ...block.items] } : block, section: sections.length });
+                    blocks.push({
+                        block: marked
+                            ? { ...block, items: [...markers, ...block.items] }
+                            : sectionBreak
+                              ? { ...block, sectionBreak }
+                              : block,
+                        section: sections.length,
+                    });
                     bookmarks = marked ? [] : bookmarks;
                 }
-                const sectionProperties =
-                    name === "w:p" ? find(childrenOf(find(contentOf(element).filter(isObject), "w:pPr")), "w:sectPr") : undefined;
                 if (sectionProperties !== undefined) {
                     addSection(sectionProperties);
                 }

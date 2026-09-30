@@ -70,20 +70,31 @@ describe("layoutLines", () => {
         expect(heightsOf([{ type: "break", kind: "line", font: {} }])).to.deep.equal([10, 10]);
     });
 
-    it("should mark the lines that end with a page or column break, with the paragraph's mark on the last break's line", () => {
+    it("should mark the lines that end with a page or column break, with the paragraph's mark on a page break's line at its end", () => {
         const lines = layoutLines(
             [
                 text("aa"),
-                { type: "break", kind: "page", font: {} },
-                text("bb"),
                 { type: "break", kind: "column", font: {} },
+                text("bb"),
+                { type: "break", kind: "page", font: {} },
                 { type: "marker", name: "after" },
             ],
             { width: 100, measurer: MEASURER, markFont: { size: 12 } },
         );
         expect(lines).to.deep.equal([
-            { height: 10, markers: [], breakAfter: "page" },
-            { height: 10, markers: ["after"], breakAfter: "column" },
+            { height: 10, markers: [], breakAfter: "column" },
+            { height: 10, markers: ["after"], breakAfter: "page" },
+        ]);
+        // After a column break at its end, the mark is on a line of its own, at the top of the next column
+        expect(
+            layoutLines([text("aa"), { type: "break", kind: "column", font: {} }, { type: "marker", name: "after" }], {
+                width: 100,
+                measurer: MEASURER,
+                markFont: { size: 12 },
+            }),
+        ).to.deep.equal([
+            { height: 10, markers: [], breakAfter: "column" },
+            { height: 12, markers: ["after"] },
         ]);
         // With no text on its line, the break's line is as tall as the mark
         expect(

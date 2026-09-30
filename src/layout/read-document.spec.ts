@@ -719,6 +719,22 @@ describe("readDocument", () => {
             expect(itemsOf(content, 1)[0]).to.deep.equal({ type: "marker", name: "before" });
         });
 
+        it("should mark an empty paragraph that holds its section's properties as a section break", () => {
+            const content = readBody([
+                p(pPr({ "w:sectPr": [] })),
+                p(pPr({ "w:sectPr": [] }), r(t("text"))),
+                { "w:bookmarkStart": { _attr: { "w:name": "before", "w:id": 1 } } },
+                p(pPr({ "w:sectPr": [] })),
+                p(),
+            ]);
+            expect(content.blocks.map(({ block }) => (block as ParagraphBlock).sectionBreak)).to.deep.equal([
+                true,
+                undefined,
+                undefined,
+                undefined,
+            ]);
+        });
+
         it("should put each block in the section it ends with, and give a body without sections one of Word's defaults", () => {
             const content = readBody([p(pPr({ "w:sectPr": [] })), p(r(t("last")))]);
             expect(content.blocks.map(({ section }) => section)).to.deep.equal([0, 1]);

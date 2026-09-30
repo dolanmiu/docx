@@ -2,7 +2,8 @@
  * Lays out a document's pages as Word does, to find the page each bookmark starts on.
  *
  * Each page's body is filled from the top, between the page's margins, or its header and footer where they are taller,
- * and in columns, the first column and then the next.
+ * and in columns, the first column and then the next. The columns on the page before a continuous section break are
+ * balanced, as short as what is in them fits in.
  * Paragraphs break into lines, and pages break between lines, as their keep and widow control settings allow. Table
  * rows break across pages between the lines of their cells, unless they are kept whole, and the table's header rows are
  * repeated on each page. The footnotes of each page's lines take room at its bottom, and one that doesn't fit below its
@@ -90,8 +91,31 @@ type StackPart = { readonly height: number; readonly before: number; readonly af
 /** Some of the lines of a footnote's paragraph: those on the page it starts on, or those it continues with on the next */
 type NoteLines = { readonly paragraph: ParagraphBlock; readonly lines: readonly LaidOutLine[] };
 
+/** Where the layout was at the start of a block, from which the blocks can be laid out again */
+type Snapshot = {
+    readonly index: number;
+    readonly pageCount: number;
+    readonly pageNumber: number;
+    readonly top: number;
+    readonly pageBottom: number;
+    readonly position: number;
+    readonly column: number;
+    readonly columnTop: number;
+    readonly placedInColumn: boolean;
+    readonly deepest: number;
+    readonly columnBroken: boolean;
+    readonly pageNotes: readonly string[];
+    readonly noteArea: number;
+    readonly continued: NoteLines | undefined;
+    readonly carried: NoteLines | undefined;
+    readonly spaceAfter: number;
+};
+
 /** Thrown to stop laying out at something that can't be laid out yet */
 class Unsupported extends Error {}
+
+/** Thrown to stop laying out columns being balanced in a height they don't fit in */
+class Overflow extends Error {}
 
 const sum = (values: readonly number[]): number => values.reduce((total, value) => total + value, 0);
 
@@ -316,8 +340,10 @@ export const paginate = (
     const firstPages = new Map<number, number>([[0, 1]]);
     const lastPages = new Map<number, number>();
     const sharingPages = new Set<number>();
-    // Where the page's body starts and ends, and where the next line goes, in points from the top of the page
+    // Where the page's body starts and ends, where its columns end, and where the next line goes, in points from the top
+    // of the page
     let top = 0;
+    let pageBottom = 0;
     let bottom = 0;
     let position = 0;
     // The column being filled, from the first, and where the page's columns start, below what is above them on the page
@@ -325,6 +351,11 @@ export const paginate = (
     let columnTop = 0;
     // Whether anything is in the column yet: on the page, for a page of one column
     let placedInColumn = false;
+    // The bottom of the tallest of the columns before the one being filled, and whether a column break started one
+    let deepest = 0;
+    let columnBroken = false;
+    // The page whose columns are being balanced, and the height they are being laid out in
+    let balancing: { readonly page: number; readonly height: number } | undefined;
     // The footnotes at the bottom of the page, by their markers, and the room they take with their separator
     let pageNotes: readonly string[] = [];
     let noteArea = 0;
@@ -333,6 +364,64 @@ export const paginate = (
     let carried: NoteLines | undefined;
     // The space after the last paragraph, which goes before what is next on the page
     let spaceAfter = 0;
+
+    /** Where the layout is at the start of a block, to lay out the blocks from it again */
+    const snapshot = (index: number): Snapshot => ({
+        index,
+        pageCount,
+        pageNumber,
+        top,
+        pageBottom,
+        position,
+        column,
+        columnTop,
+        placedInColumn,
+        deepest,
+        columnBroken,
+        pageNotes,
+        noteArea,
+        continued,
+        carried,
+        spaceAfter,
+    });
+    // Where the block being laid out started, and where the block started whose text the page's columns start with
+    let blockStart: Snapshot | undefined;
+    let columnsStart: Snapshot | undefined;
+
+    /** The bottom of the page's columns: the page's, or less when they are being balanced */
+    const columnsBottom = (): number => (balancing?.page === pageCount ? Math.min(pageBottom, columnTop + balancing.height) : pageBottom);
+
+    /**
+     * Goes back to where the layout was at the start of a block. The bookmarks placed since are kept, as laying the blocks
+     * out again only moves them between the columns of the same page
+     */
+    const restore = (state: Snapshot): void => {
+        ({
+            pageCount,
+            pageNumber,
+            top,
+            pageBottom,
+            position,
+            column,
+            columnTop,
+            placedInColumn,
+            deepest,
+            columnBroken,
+            pageNotes,
+            noteArea,
+            continued,
+            carried,
+            spaceAfter,
+        } = state);
+        bottom = columnsBottom();
+    };
+
+    /** Stops laying out columns being balanced where they are too short for what has to go at the top of one */
+    const stopIfBalancing = (): void => {
+        if (balancing?.page === pageCount) {
+            throw new Overflow();
+        }
+    };
 
     const section = (): Section => sections[sectionIndex];
     /** The width of the text across the page, as its headers, footers and footnotes are */
@@ -355,6 +444,10 @@ export const paginate = (
     };
 
     const startPage = (isFirstOfSection = false): void => {
+        if (balancing !== undefined && pageCount >= balancing.page) {
+            // The columns being balanced don't fit on their page in the height they are laid out in
+            throw new Overflow();
+        }
         const current = section();
         pageNumber = isFirstOfSection && current.firstNumber !== undefined ? current.firstNumber : pageNumber + 1;
         // A header or footer taller than the margin pushes the body away from it, unless the margin is negative
@@ -362,11 +455,15 @@ export const paginate = (
         const footerTop = current.footer + partHeight(current.footers, isFirstOfSection);
         pageCount++;
         top = current.marginTop < 0 ? -current.marginTop : Math.max(current.marginTop, headerBottom);
-        bottom = current.pageHeight - (current.marginBottom < 0 ? -current.marginBottom : Math.max(current.marginBottom, footerTop));
+        pageBottom = current.pageHeight - (current.marginBottom < 0 ? -current.marginBottom : Math.max(current.marginBottom, footerTop));
         position = top;
         column = 0;
         columnTop = top;
+        bottom = columnsBottom();
         placedInColumn = false;
+        deepest = 0;
+        columnBroken = false;
+        columnsStart = blockStart;
         spaceAfter = 0;
         pageNotes = [];
         continued = carried;
@@ -386,14 +483,68 @@ export const paginate = (
             startPage();
             return;
         }
+        deepest = Math.max(deepest, position);
         column++;
         position = columnTop;
         placedInColumn = false;
         spaceAfter = 0;
     };
 
-    const startSection = (index: number): void => {
+    /** Whether a section starts on the page the section before it ends on: a continuous one, on pages of the same size */
+    const continuesOnPage = (previous: Section, current: Section): boolean =>
+        current.start === "continuous" && previous.pageWidth === current.pageWidth && previous.pageHeight === current.pageHeight;
+
+    /**
+     * Balances the columns on the page before a continuous section break, as Word and LibreOffice do: what is in them,
+     * up to the section's next block (`end`), is laid out again in the shortest columns it fits in, filled from the
+     * first, which halving the height tried finds. The section after goes below the tallest column.
+     */
+    const balanceColumns = (end: number): void => {
+        if (columnBroken) {
+            // Word hasn't shown yet how it balances columns with a column break
+            throw new Unsupported("a column break in columns balanced before a continuous section break");
+        }
+        const from = columnsStart!;
+        const page = pageCount;
+        const layOut = (height: number): void => {
+            balancing = { page, height };
+            restore(from);
+            placeBlocks(from.index, end);
+        };
+        const fitsIn = (height: number): boolean => {
+            try {
+                layOut(height);
+                return true;
+            } catch (error) {
+                if (error instanceof Overflow) {
+                    return false;
+                }
+                throw error;
+            }
+        };
+        let short = 0;
+        let tall = pageBottom - columnTop;
+        while (tall - short > TOLERANCE) {
+            const middle = (short + tall) / 2;
+            if (fitsIn(middle)) {
+                tall = middle;
+            } else {
+                short = middle;
+            }
+        }
+        layOut(tall);
+        balancing = undefined;
+        bottom = pageBottom;
+        position = Math.max(deepest, position);
+    };
+
+    /**
+     * Starts a section, from its first block (`firstBlock`): on a new page, or below what is on the page for a continuous
+     * one, after balancing the columns before it
+     */
+    const startSection = (index: number, firstBlock: number): void => {
         const previous = section();
+        const current = sections[index];
         // eslint-disable-next-line functional/immutable-data
         lastPages.set(sectionIndex, pageCount);
         // A section with no paragraphs of its own, which isn't laid out
@@ -401,17 +552,16 @@ export const paginate = (
             // eslint-disable-next-line functional/immutable-data
             sharingPages.add(skipped);
         }
-        const before = sectionIndex;
-        sectionIndex = index;
-        const current = section();
         if (current.unsupported) {
             throw new Unsupported(current.unsupported);
         }
-        const samePage = previous.pageWidth === current.pageWidth && previous.pageHeight === current.pageHeight;
-        if (current.start === "continuous" && samePage) {
-            if (previous.columns.length > 1 && (placedInColumn || column > 0)) {
-                throw new Unsupported("columns balanced before a continuous section break");
-            }
+        const continuous = continuesOnPage(previous, current);
+        if (continuous && previous.columns.length > 1 && (placedInColumn || column > 0)) {
+            balanceColumns(firstBlock);
+        }
+        const before = sectionIndex;
+        sectionIndex = index;
+        if (continuous) {
             // The section's columns start below what is on the page
             column = 0;
             columnTop = position;
@@ -613,6 +763,10 @@ export const paginate = (
             }
             let count = kept;
             if (count === 0 && !placedInColumn) {
+                // Columns being balanced are too short for lines that would go at the top of a column as tall as the page's
+                if (linesThatFit(remaining, room + pageBottom - bottom, paragraph, isFirstLine).count > 0) {
+                    stopIfBalancing();
+                }
                 // Nothing fits on an empty page, so as much as fits goes on it, and at least a line
                 count = Math.max(1, fits);
             }
@@ -651,6 +805,7 @@ export const paginate = (
         );
         for (const [index, group] of groups.entries()) {
             if (index > 0 && groups[index - 1][groups[index - 1].length - 1].breakAfter === "column") {
+                columnBroken = true;
                 nextColumn();
             } else if (index > 0) {
                 startPage();
@@ -738,6 +893,7 @@ export const paginate = (
             // A row whose text fits, but not the height it is set to, moves to the next page whole, as in LibreOffice
             const fitsWhole = !isFirstPart || position + height <= bottom - noteArea + TOLERANCE;
             if ((!placesLines || !fitsWhole) && !placedInColumn) {
+                stopIfBalancing();
                 throw new Unsupported("a table row taller than a page");
             }
             if (placesLines && (fitsWhole || !isLastPart)) {
@@ -798,6 +954,7 @@ export const paginate = (
                 startTablePage(index);
             }
             if (!rowFits(height, notes)) {
+                stopIfBalancing();
                 throw new Unsupported(notes.length > 0 ? "a footnote across pages" : "a table row taller than a page");
             }
             mark(markers);
@@ -845,6 +1002,57 @@ export const paginate = (
         };
     };
 
+    const placeBlock = (block: Block, index: number): void => {
+        if (block.unsupported) {
+            throw new Unsupported(block.unsupported);
+        }
+        const next = sections[sectionIndex + 1];
+        if (block.type === "paragraph" && block.sectionBreak && next !== undefined && continuesOnPage(section(), next)) {
+            // The empty paragraph of a section break before a continuous section takes no room, in Word and LibreOffice
+            return;
+        }
+        if (block.type === "table") {
+            placeTable(fitted(block, section().columns[column]));
+            return;
+        }
+        const width = section().columns[column];
+        const paragraph = measureParagraph(block, width, blocks[index - 1]?.block, blocks[index + 1]?.block);
+        if (paragraph.keepNext && placedInColumn) {
+            const { height: needed, notes } = keptHeight(index, width);
+            const fitsHere = position + needed + moreNoteRoom(notes) <= bottom - noteArea + TOLERANCE;
+            if (!fitsHere && position + needed + leastNoteRoom(notes.slice(0, -1), notes.slice(-1)) <= bottom - noteArea + TOLERANCE) {
+                // They fit only with a footnote continued on the next page
+                throw new Unsupported("a footnote across pages");
+            }
+            // What is kept together moves to the next column, or to a new page when the columns of this one start too low
+            // for it, unless it is too tall for those too
+            const fitsBelow = (from: number): boolean => needed + areaOf(notes, undefined, carried) <= bottom - from + TOLERANCE;
+            if (!fitsHere && column + 1 < section().columns.length && fitsBelow(columnTop)) {
+                nextColumn();
+            } else if (!fitsHere && fitsBelow(top)) {
+                startPage();
+            }
+        }
+        placeParagraph(paragraph);
+    };
+
+    /** Lays out the blocks from one (`from`) to the one before another (`to`), starting their sections */
+    const placeBlocks = (from: number, to: number): void => {
+        for (let index = from; index < to; index++) {
+            const { block, section: blockSection } = blocks[index];
+            const startsSection = blockSection !== sectionIndex;
+            if (startsSection) {
+                startSection(blockSection, index);
+            }
+            blockStart = snapshot(index);
+            if (startsSection || columnsStart === undefined) {
+                // The section's columns start with its first block, on the page it starts on or below what is on it
+                columnsStart = blockStart;
+            }
+            placeBlock(block, index);
+        }
+    };
+
     /** The number of pages of each section whose pages are its alone, and that was laid out to its end */
     const countsOf = (): readonly (number | undefined)[] =>
         sections.map((_, index) => {
@@ -861,34 +1069,7 @@ export const paginate = (
             throw new Unsupported(section().unsupported);
         }
         startPage(true);
-        for (const [index, { block, section: blockSection }] of blocks.entries()) {
-            if (blockSection !== sectionIndex) {
-                startSection(blockSection);
-            }
-            if (block.unsupported) {
-                throw new Unsupported(block.unsupported);
-            }
-            if (block.type === "table") {
-                placeTable(fitted(block, section().columns[column]));
-                continue;
-            }
-            const width = section().columns[column];
-            const paragraph = measureParagraph(block, width, blocks[index - 1]?.block, blocks[index + 1]?.block);
-            if (paragraph.keepNext && placedInColumn) {
-                const { height: needed, notes } = keptHeight(index, width);
-                const fitsHere = position + needed + moreNoteRoom(notes) <= bottom - noteArea + TOLERANCE;
-                if (!fitsHere && position + needed + leastNoteRoom(notes.slice(0, -1), notes.slice(-1)) <= bottom - noteArea + TOLERANCE) {
-                    // They fit only with a footnote continued on the next page
-                    throw new Unsupported("a footnote across pages");
-                }
-                // Where what is kept together would start: the top of the next column, or of a new page after the last
-                const nextTop = column + 1 < section().columns.length ? columnTop : top;
-                if (!fitsHere && needed + areaOf(notes, undefined, carried) <= bottom - nextTop + TOLERANCE) {
-                    nextColumn();
-                }
-            }
-            placeParagraph(paragraph);
-        }
+        placeBlocks(0, blocks.length);
         if (carried !== undefined) {
             // The rest of a footnote continued from the last page goes on a page of its own
             startPage();

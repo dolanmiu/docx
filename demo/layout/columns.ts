@@ -1,6 +1,7 @@
 // Page numbers worked out by docx/layout for sections in columns: text that fills each column of a page before the next,
-// column breaks, and a section in columns that starts below the text before it on the same page. It is one of the
-// documents scripts/compare-layout.sh checks against LibreOffice. See docs/usage/layout.md.
+// column breaks, a section in columns that starts below the text before it on the same page, and columns evened out
+// before a continuous section break, so the next section starts below the longest. It is one of the documents
+// scripts/compare-layout.sh checks against LibreOffice. See docs/usage/layout.md.
 
 import * as fs from "fs";
 import { ColumnBreak, Document, HeadingLevel, Packer, Paragraph, SectionType, TableOfContents, TextRun } from "docx";
@@ -51,11 +52,13 @@ const doc = new Document({
             ],
         },
         {
-            properties: { type: SectionType.NEXT_PAGE, column: { count: 3, space: 360 } },
+            // Three columns, below the two before them evened out
+            properties: { type: SectionType.CONTINUOUS, column: { count: 3, space: 360 } },
             children: [...chapter("The lighthouse", 5, 3), ...chapter("The boats", 3, 4)],
         },
         {
-            properties: { type: SectionType.NEXT_PAGE },
+            // One column, below the three before it evened out
+            properties: { type: SectionType.CONTINUOUS },
             children: [...chapter("What was found", 3, 5)],
         },
     ],
