@@ -551,6 +551,34 @@ describe("readDocument", () => {
             expect(marginsOf({ externalStyles: bare })).to.deep.equal([0, 0]);
         });
 
+        it("should stop at a table whose rows give a column different widths, which Word settles in a way not yet followed", () => {
+            const unsupportedOf = (...rows: readonly (readonly (readonly [number | undefined, number?])[])[]): string | undefined =>
+                (
+                    readBody([
+                        {
+                            "w:tbl": [
+                                { "w:tblGrid": [{ "w:gridCol": { _attr: { "w:w": 1000 } } }, { "w:gridCol": { _attr: { "w:w": 2000 } } }] },
+                                ...rows.map((cells) => ({
+                                    "w:tr": cells.map(([width, span]) =>
+                                        cell(
+                                            [
+                                                ...(width === undefined ? [] : [{ "w:tcW": { _attr: { "w:w": width, "w:type": "dxa" } } }]),
+                                                ...(span === undefined ? [] : [value("w:gridSpan", span)]),
+                                            ],
+                                            p(r(t("a"))),
+                                        ),
+                                    ),
+                                })),
+                            ],
+                        },
+                    ]).blocks[0].block as TableBlock
+                ).unsupported;
+            // The first column 1000 twips wide in one row, and 3000 in the next
+            expect(unsupportedOf([[1000], [2000]], [[3000], [undefined]])).to.equal("a table whose rows give a column different widths");
+            // A cell over both columns as wide as the two, and widths a twip apart from rounding
+            expect(unsupportedOf([[1000], [2000]], [[3000, 2]], [[1001], [undefined]])).to.equal(undefined);
+        });
+
         it("should lay a cell out at its own width in twips rather than the grid's, as Word does", () => {
             const widths = (width: object): readonly number[] =>
                 (
