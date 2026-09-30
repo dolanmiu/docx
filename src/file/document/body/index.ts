@@ -4,4 +4,5 @@
  * @module
  */
 export * from "./body";
+export * from "./page-numbers";
 export * from "./section-properties";

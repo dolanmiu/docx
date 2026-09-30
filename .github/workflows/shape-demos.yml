@@ -34,6 +34,12 @@ jobs:
                   SHAPE_RENDER_IMAGE: docx-shape-renderer
             - name: Compare the pages with the reference images
               run: npm run run-ts -- scripts/compare-shape-renders.ts build/shape-demos
+            # The layout demos' tables of contents have their page numbers from docx/layout. Each should be the page the
+            # same image's LibreOffice puts the heading on
+            - name: Compare docx/layout's page numbers with LibreOffice's
+              run: scripts/compare-layout.sh build/layout
+              env:
+                  SHAPE_RENDER_IMAGE: docx-shape-renderer
             - name: Upload the pages and their differences
               if: always()
               uses: actions/upload-artifact@v4

@@ -62,6 +62,7 @@
 
 - Advanced Features
     - [Table of Contents](usage/table-of-contents.md)
+        - [Layout](usage/layout.md)
     - [Tabs](usage/tabs.md)
     - [Change Tracking](usage/change-tracking.md)
     - [Math](usage/math.md)

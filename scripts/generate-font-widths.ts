@@ -1,25 +1,27 @@
 /**
- * Generates src/shapes/text-metrics/font-widths.ts: how wide each character is
- * in the fonts Word documents use most, so shapes can be sized to fit their text.
+ * Generates src/text-layout/font-widths.ts: how wide each character is
+ * in the fonts Word documents use most, so shapes can be sized to fit their text and pages laid out.
  *
  * The widths come from fonts with an open license that are made to have the same widths as Word's fonts:
  * Carlito (Calibri), Caladea (Cambria), and Liberation Sans, Serif and Mono (Arial, Times New Roman and Courier New).
- * They are in the Debian packages fonts-crosextra-carlito, fonts-crosextra-caladea and fonts-liberation2, and in the
- * image scripts/shape-demos/Dockerfile builds.
+ * Carlito and Liberation are in the Debian packages fonts-crosextra-carlito and fonts-liberation2. Caladea is the one
+ * LibreOffice installs with itself: the one in Debian's fonts-crosextra-caladea (20200211) has narrower letters and
+ * shorter lines than Cambria. They are all in the image scripts/shape-demos/Dockerfile builds.
  *
  * Usage:
  *   npm run run-ts -- scripts/generate-font-widths.ts <directory with the .ttf files>
  *
  * To copy the fonts out of the image:
  *   docker run --rm --platform linux/amd64 -v "$PWD/build/fonts:/out" docx-shape-renderer \
- *     sh -c 'cp /usr/share/fonts/truetype/crosextra/*.ttf /usr/share/fonts/truetype/liberation/*.ttf /out/'
+ *     sh -c 'cp /usr/share/fonts/truetype/crosextra/Carlito-*.ttf /usr/share/fonts/truetype/liberation/*.ttf /out/ &&
+ *       cp "$(ls -d /opt/libreoffice*)"/share/fonts/truetype/Caladea-*.ttf /out/'
  */
 // cspell:ignore hhea hmtx cmap Caladea crosextra
 import { execSync } from "node:child_process";
 import { readFileSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 
-const OUTPUT = "src/shapes/text-metrics/font-widths.ts";
+const OUTPUT = "src/text-layout/font-widths.ts";
 
 // Each font Word documents use, and the font files with the same widths
 const FONTS = [

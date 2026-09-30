@@ -33,7 +33,7 @@ import {
 } from "./shape-drawing";
 import type { ShapeLayout } from "./shape-layout";
 import { createDrawingProperties } from "./shape-run-data";
-import type { TextStyles } from "./shape-text-styles";
+import type { TextStyles } from "../text-layout";
 
 export type { IShapeGroupChildOptions, IShapeNestedGroupOptions, IShapePictureOptions } from "./shape-drawing";
 export type { ShapeFlowLayout, ShapeGridLayout, ShapeLane, ShapeLayout, ShapeLayoutDirection, ShapeTreeLayout } from "./shape-layout";

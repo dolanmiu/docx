@@ -5,8 +5,9 @@
  */
 import { type IContext, type IXmlableObject, type Paragraph, XmlComponent } from "docx";
 
+import { type TextStyles, WORD_DEFAULT_STYLES, getTextStyles, hasDefaultParagraphSpacing } from "../../text-layout";
 import { createTextParagraphs } from "../shape-text-size";
-import { type TextStyles, WORD_DEFAULT_STYLES, getTextStyles, hasDefaultParagraphSpacing, readTextParagraphs } from "../shape-text-styles";
+import { readTextParagraphs } from "../shape-text-styles";
 
 /**
  * Everything about a drawing's text that the document's styles can change: how its paragraphs, and those written for

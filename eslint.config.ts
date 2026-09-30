@@ -390,13 +390,22 @@ const config: Linter.Config<Linter.RulesRecord>[] = [
             ],
         },
     },
-    // docx's optional entries, docx/shapes (src/shapes), docx/watermarks (src/watermarks) and docx/charts (src/charts), are
-    // built on docx's public API. They import docx by name, so their builds leave docx out and the package has one copy of
-    // each class and id counter. docx doesn't import them. Specs may import docx's internals, such as the Formatter.
-    // docx/math (src/math) re-exports docx's math, which docx still exports and keeps in src/file/paragraph/math
+    // docx's optional entries, docx/shapes (src/shapes), docx/watermarks (src/watermarks), docx/charts (src/charts) and
+    // docx/layout (src/layout), are built on docx's public API. They import docx by name, so their builds leave docx out
+    // and the package has one copy of each class and id counter. docx doesn't import them. Specs may import docx's
+    // internals, such as the Formatter. docx/math (src/math) re-exports docx's math, which docx still exports and keeps in
+    // src/file/paragraph/math. src/text-layout measures text for docx/shapes and docx/layout, and each bundles a copy
     {
         files: ["src/**/*.ts"],
-        ignores: ["src/shapes/**", "src/watermarks/**", "src/charts/**", "src/math/**", "**/*.spec.ts"],
+        ignores: [
+            "src/shapes/**",
+            "src/watermarks/**",
+            "src/charts/**",
+            "src/math/**",
+            "src/layout/**",
+            "src/text-layout/**",
+            "**/*.spec.ts",
+        ],
         rules: {
             "no-restricted-imports": [
                 "error",
@@ -405,7 +414,7 @@ const config: Linter.Config<Linter.RulesRecord>[] = [
                     patterns: [
                         { group: ["docx/*"], message: "docx doesn't import its optional entries, such as docx/shapes" },
                         {
-                            regex: "(^|/)(shapes|watermarks|charts)(/|$)",
+                            regex: "(^|/)(shapes|watermarks|charts|layout|text-layout)(/|$)",
                             message: "docx doesn't import its optional entries, such as docx/shapes",
                         },
                     ],
@@ -414,7 +423,7 @@ const config: Linter.Config<Linter.RulesRecord>[] = [
         },
     },
     {
-        files: ["src/shapes/*.ts", "src/watermarks/*.ts", "src/charts/*.ts", "src/math/*.ts"],
+        files: ["src/shapes/*.ts", "src/watermarks/*.ts", "src/charts/*.ts", "src/math/*.ts", "src/layout/*.ts", "src/text-layout/*.ts"],
         ignores: ["**/*.spec.ts"],
         rules: {
             "no-restricted-imports": [
@@ -425,14 +434,14 @@ const config: Linter.Config<Linter.RulesRecord>[] = [
                             group: ["@file/*", "@util/*", "@export/*", "@shared", "@shared/*"],
                             message: 'Optional entries import docx from "docx"',
                         },
-                        { regex: "^\\.\\./", message: 'Optional entries import docx from "docx"' },
+                        { regex: "^\\.\\./(?!text-layout(/|$))", message: 'Optional entries import docx from "docx"' },
                     ],
                 },
             ],
         },
     },
     {
-        files: ["src/shapes/*/*.ts", "src/watermarks/*/*.ts", "src/charts/*/*.ts"],
+        files: ["src/shapes/*/*.ts", "src/watermarks/*/*.ts", "src/charts/*/*.ts", "src/layout/*/*.ts"],
         ignores: ["**/*.spec.ts"],
         rules: {
             "no-restricted-imports": [
@@ -443,7 +452,7 @@ const config: Linter.Config<Linter.RulesRecord>[] = [
                             group: ["@file/*", "@util/*", "@export/*", "@shared", "@shared/*"],
                             message: 'Optional entries import docx from "docx"',
                         },
-                        { regex: "^\\.\\./\\.\\./", message: 'Optional entries import docx from "docx"' },
+                        { regex: "^\\.\\./\\.\\./(?!text-layout(/|$))", message: 'Optional entries import docx from "docx"' },
                     ],
                 },
             ],

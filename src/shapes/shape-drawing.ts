@@ -48,8 +48,8 @@ import type { ConnectorEnd, ConnectorLabel, ConnectorSide, IShapeConnectorOption
 import { type ShapeLane, type ShapeLayout, type ShapeLayoutDirection, layoutItems } from "./shape-layout";
 import { type ShapeBaseOptions, type WithPresetShape, createPresetShapeData, getShapeOverhang } from "./shape-run-data";
 import { createTextParagraphs, resolveShapeSize } from "./shape-text-size";
-import { type TextStyles, WORD_DEFAULT_STYLES, readTextParagraphs } from "./shape-text-styles";
-import { measureText } from "./text-metrics";
+import { type TextStyles, WORD_DEFAULT_STYLES, measureText } from "../text-layout";
+import { readTextParagraphs } from "./shape-text-styles";
 
 /**
  * A picture in a {@link ShapeGroupRun} or {@link ShapeCanvasRun}. Connectors can attach to the middle of its sides.
