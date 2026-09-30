@@ -491,6 +491,81 @@ describe("Table", () => {
             expect(gridOf(new Formatter().format(table))).to.deep.equal([col(1000), col(2000)]);
         });
 
+        /** Each cell's w:tcW attributes, row by row */
+        const cellWidthsOf = (tableTree: any): any =>
+            tableTree["w:tbl"]
+                .filter((x: any) => x["w:tr"])
+                .map((row: any) =>
+                    row["w:tr"]
+                        .filter((x: any) => x["w:tc"])
+                        .map(
+                            (cell: any) =>
+                                cell["w:tc"].find((x: any) => x["w:tcPr"])?.["w:tcPr"].find((x: any) => x["w:tcW"])?.["w:tcW"]._attr,
+                        ),
+                );
+        const dxa = (width: number): any => ({ "w:type": "dxa", "w:w": width });
+
+        it("gives each cell without a width the width of its columns, so Word keeps them rather than fitting the text", () => {
+            const table = twoColumnTable({ columnWidths: [3000, 6000] });
+
+            expect(cellWidthsOf(new Formatter().format(table))).to.deep.equal([[dxa(3000), dxa(6000)]]);
+        });
+
+        it("gives a cell spanning columns their total width, and the cells inserted for rowSpan theirs", () => {
+            const table = new Table({
+                columnWidths: [1000, 2000, 3000],
+                rows: [
+                    new TableRow({
+                        children: [
+                            new TableCell({ columnSpan: 2, children: [new Paragraph("a")] }),
+                            new TableCell({ rowSpan: 2, children: [new Paragraph("b")] }),
+                        ],
+                    }),
+                    new TableRow({
+                        children: [new TableCell({ children: [new Paragraph("c")] }), new TableCell({ children: [new Paragraph("d")] })],
+                    }),
+                ],
+            });
+
+            expect(cellWidthsOf(new Formatter().format(table))).to.deep.equal([
+                [dxa(3000), dxa(3000)],
+                [dxa(1000), dxa(2000), dxa(3000)],
+            ]);
+        });
+
+        it("keeps a cell's own width over its columns' widths", () => {
+            const table = percentTable({ columnWidths: [1000, 2000] });
+
+            expect(cellWidthsOf(new Formatter().format(table))[0]).to.deep.equal([
+                { "w:type": "pct", "w:w": 4500 },
+                { "w:type": "pct", "w:w": 500 },
+            ]);
+        });
+
+        it("gives no width to a cell past the columns given, or over columns of no width", () => {
+            expect(cellWidthsOf(new Formatter().format(twoColumnTable({ columnWidths: [3000] })))).to.deep.equal([[dxa(3000), undefined]]);
+            expect(cellWidthsOf(new Formatter().format(twoColumnTable({ columnWidths: [0, 3000] })))).to.deep.equal([
+                [undefined, dxa(3000)],
+            ]);
+        });
+
+        it("scales the cells' widths up to the table's width when it is wider than the columns, as Word and LibreOffice do", () => {
+            // Columns given as proportions of a table the page's width
+            const proportions = twoColumnTable({ width: { size: 100, type: WidthType.PERCENTAGE }, columnWidths: [20, 80] });
+            expect(cellWidthsOf(new Formatter().format(proportions))).to.deep.equal([[dxa(1805), dxa(7221)]]);
+            const wider = twoColumnTable({ width: { size: 9026, type: WidthType.DXA }, columnWidths: [2000, 3000] });
+            expect(cellWidthsOf(new Formatter().format(wider))).to.deep.equal([[dxa(3610), dxa(5416)]]);
+            // A table narrower than its columns, or without a width, keeps them
+            const narrower = twoColumnTable({ width: { size: 3000, type: WidthType.DXA }, columnWidths: [2000, 3000] });
+            expect(cellWidthsOf(new Formatter().format(narrower))).to.deep.equal([[dxa(2000), dxa(3000)]]);
+            // The grid is written as given
+            expect(gridOf(new Formatter().format(proportions))).to.deep.equal([col(20), col(80)]);
+        });
+
+        it("gives cells no width when the grid is derived rather than given", () => {
+            expect(cellWidthsOf(new Formatter().format(twoColumnTable()))).to.deep.equal([[undefined, undefined]]);
+        });
+
         it("exposes the grid widths through ColumnWidths", () => {
             expect(percentTable().ColumnWidths).to.deep.equal([8123, 903]);
             expect(percentTable({ columnWidths: [1000, 2000] }).ColumnWidths).to.deep.equal([1000, 2000]);
