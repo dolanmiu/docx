@@ -702,7 +702,9 @@ export const paginate = (
             if (paragraph.keepNext && placedInColumn) {
                 const { height: needed, notes } = keptHeight(index, width);
                 const fitsHere = position + needed + moreNoteRoom(notes) <= bottom - noteArea + TOLERANCE;
-                if (!fitsHere && needed + areaOf(notes) <= bottom - columnTop + TOLERANCE) {
+                // Where what is kept together would start: the top of the next column, or of a new page after the last
+                const nextTop = column + 1 < section().columns.length ? columnTop : top;
+                if (!fitsHere && needed + areaOf(notes) <= bottom - nextTop + TOLERANCE) {
                     nextColumn();
                 }
             }

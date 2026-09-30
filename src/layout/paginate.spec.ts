@@ -616,6 +616,19 @@ describe("paginate", () => {
             expect(pagesOf(content)).to.deep.equal({ a: "1", b: "1", c: "2" });
         });
 
+        it("should keep a paragraph with the next on a new page when they fit there, below a continuous section that starts low", () => {
+            const content = document(
+                [
+                    [paragraph("a", 4), 0],
+                    [paragraph("heading", 1, { keepNext: true }), 1],
+                    [paragraph("b", 3), 1],
+                ],
+                { sections: [SECTION, { ...SECTION, start: "continuous" }] },
+            );
+            // The heading and b need 4 lines, more than are left below a, but not more than a new page has
+            expect(pagesOf(content)).to.deep.equal({ a: "1", heading: "2", b: "2" });
+        });
+
         it("should stop at columns balanced before a continuous section break, and at a section that starts in the next column", () => {
             const balanced = document(
                 [
