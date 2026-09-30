@@ -5,7 +5,7 @@ import type { IViewWrapper } from "@file/document-wrapper";
 import type { File } from "@file/file";
 import type { FileChild } from "@file/file-child";
 import { FootnoteReferenceRun } from "@file/footnotes/footnote/run/reference-run";
-import { ConcreteHyperlink, Paragraph, type ParagraphChild, TextRun } from "@file/paragraph";
+import { Bookmark, ConcreteHyperlink, Paragraph, type ParagraphChild, TextRun } from "@file/paragraph";
 import { WpsShapeRun } from "@file/paragraph/run/wps-shape-run";
 import { Table, TableCell, TableRow } from "@file/table";
 
@@ -1238,6 +1238,20 @@ describe("replacer", () => {
                     { name: "w:color", attributes: { "w:val": "0563C1" } },
                     { name: "w:sz", attributes: { "w:val": "56" } },
                     { name: "w:u" },
+                ]);
+            });
+
+            it("should leave content without runs, such as a bookmark's start and end, as it is", () => {
+                const paragraph = createParagraph(createRun(italic, createText("{{ph}}")));
+
+                replaceWith({ elements: [paragraph] }, [new Bookmark({ id: "anchor", children: [new TextRun("here")] })]);
+
+                expect(paragraph.elements!.map((e) => [e.name, namesOf(e.elements)])).to.deep.equal([
+                    ["w:r", ["w:rPr", "w:t"]],
+                    ["w:bookmarkStart", []],
+                    ["w:r", ["w:rPr", "w:t"]],
+                    ["w:bookmarkEnd", []],
+                    ["w:r", ["w:rPr", "w:t"]],
                 ]);
             });
 
