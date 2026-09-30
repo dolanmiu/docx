@@ -23769,6 +23769,9 @@ MAX: 9026 };
 	var TableCellProperties = class extends IgnoreIfEmptyXmlComponent {
 		constructor(options) {
 			super("w:tcPr", options.includeIfEmpty);
+			_defineProperty(this, "hasWidth", void 0);
+			_defineProperty(this, "hasColumnWidth", false);
+			this.hasWidth = options.width !== void 0;
 			if (options.width) this.root.push(createTableWidthElement("w:tcW", options.width));
 			if (options.columnSpan) this.root.push(new GridSpan(options.columnSpan));
 			if (options.verticalMerge) this.root.push(new VerticalMerge(options.verticalMerge));
@@ -23785,6 +23788,19 @@ MAX: 9026 };
 			if (options.deletion) this.root.push(new DeletedTableCell(options.deletion));
 			if (options.cellMerge) this.root.push(new CellMerge(options.cellMerge));
 			if (options.revision) this.root.push(new TableCellPropertiesChange(options.revision));
+		}
+		/**
+		* Gives a cell without a width of its own the width of the table's columns it spans, in twips.
+		*
+		* @internal
+		*/
+		setColumnWidth(twips) {
+			if (this.hasWidth) return;
+			this.root.splice(0, this.hasColumnWidth ? 1 : 0, createTableWidthElement("w:tcW", {
+				size: twips,
+				type: WidthType.DXA
+			}));
+			this.hasColumnWidth = true;
 		}
 	};
 	var TableCellPropertiesChange = class extends XmlComponent {
@@ -23844,9 +23860,19 @@ MAX: 9026 };
 				"options",
 				void 0
 			);
+			_defineProperty(this, "properties", void 0);
 			this.options = options;
-			this.root.push(new TableCellProperties(options));
+			this.properties = new TableCellProperties(options);
+			this.root.push(this.properties);
 			for (const child of options.children) this.root.push(child);
+		}
+		/**
+		* Gives the cell, unless it has a width of its own, the width of the table's columns it spans, in twips.
+		*
+		* @internal
+		*/
+		setColumnWidth(twips) {
+			this.properties.setColumnWidth(twips);
 		}
 		prepForXml(context) {
 			if (!(this.root[this.root.length - 1] instanceof Paragraph)) this.root.push(new Paragraph({}));
@@ -24711,6 +24737,7 @@ MAX: 9026 };
 					columnIndex += cell.options.columnSpan || 1;
 				});
 			});
+			this.setCellWidths(DEFAULT_AVAILABLE_WIDTH);
 			this.resolvedColumnWidths = columnWidths !== null && columnWidths !== void 0 ? columnWidths : resolveColumnWidths({
 				rows,
 				width: this.width,
@@ -24767,6 +24794,7 @@ MAX: 9026 };
 		* serializing.
 		*/
 		prepForXml(context) {
+			this.setCellWidths(this.resolveAvailableWidth(context));
 			if (this.columnWidths === void 0) {
 				this.resolvedColumnWidths = resolveColumnWidths({
 					rows: this.rows,
@@ -24777,6 +24805,29 @@ MAX: 9026 };
 				this.root[gridIndex] = new TableGrid(this.resolvedColumnWidths, this.columnWidthsRevision);
 			}
 			return super.prepForXml(context);
+		}
+		/**
+		* Gives each cell without a width of its own the width of the `columnWidths` it spans, as Word sizes the columns of
+		* cells without a width to their content, whatever the grid says. When the table's width is wider than the columns
+		* add up to, they are scaled up to fill it, as Word and LibreOffice lay them out, so columns given as proportions
+		* keep them.
+		*/
+		setCellWidths(availableWidth) {
+			var _resolvePreferredWidt;
+			if (this.columnWidths === void 0) return;
+			const total = this.columnWidths.reduce((sum, columnWidth) => sum + columnWidth, 0);
+			const tableWidth = (_resolvePreferredWidt = resolvePreferredWidth(this.width, availableWidth)) !== null && _resolvePreferredWidt !== void 0 ? _resolvePreferredWidt : 0;
+			const scale = total > 0 && tableWidth > total ? tableWidth / total : 1;
+			for (const row of this.rows) {
+				let column = 0;
+				for (const cell of row.cells) {
+					const span = cell.options.columnSpan || 1;
+					const spanned = this.columnWidths.slice(column, column + span);
+					const cellWidth = Math.round(spanned.reduce((sum, columnWidth) => sum + columnWidth, 0) * scale);
+					if (spanned.length === span && cellWidth > 0) cell.setColumnWidth(cellWidth);
+					column += span;
+				}
+			}
 		}
 		/**
 		* Finds the width in twips available to this table from the serialization context:
@@ -28714,6 +28765,39 @@ MAX: 9026 };
 			}, options));
 		}
 	};
+	/**
+	* Represents the Normal Table style, the default style of tables.
+	*
+	* It gives cells the margins Word gives the tables it makes: 108 twips (0.075 inches) on the left and right. Without a
+	* default table style, Word gives cells no margins, so their text touches the borders, where LibreOffice and other
+	* applications use these margins.
+	*/
+	var NormalTableStyle = class extends Style {
+		constructor() {
+			super({
+				type: "table",
+				styleId: "TableNormal",
+				default: true
+			}, {
+				name: "Normal Table",
+				uiPriority: 99,
+				semiHidden: true,
+				unhideWhenUsed: true
+			});
+			this.root.push(new TableProperties({
+				indent: {
+					size: 0,
+					type: WidthType.DXA
+				},
+				cellMargin: {
+					top: 0,
+					left: 108,
+					bottom: 0,
+					right: 108
+				}
+			}));
+		}
+	};
 	//#endregion
 	//#region src/file/styles/styles.ts
 	/** The name of a formatted element, such as `w:style`, or `_attr` for its parent's attributes */
@@ -29006,6 +29090,7 @@ MAX: 9026 };
 				name: "Normal",
 				quickFormat: true
 			}),
+			normalTable: new NormalTableStyle(),
 			document: new DocumentDefaults((_options$document = options.document) !== null && _options$document !== void 0 ? _options$document : {}),
 			title: new TitleStyle(_objectSpread2({ run: { size: 56 } }, options.title)),
 			heading1: new Heading1Style(_objectSpread2({ run: {

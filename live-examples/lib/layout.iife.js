@@ -2353,12 +2353,12 @@ var docxLayout = (function(exports) {
 			return {
 				id: stringOf(attributes["w:styleId"]),
 				isDefault: attributes["w:default"] !== void 0 && !isOff(attributes["w:default"]),
-				definition: {
+				definition: _objectSpread2({
 					type: (_stringOf = stringOf(attributes["w:type"])) !== null && _stringOf !== void 0 ? _stringOf : "paragraph",
 					basedOn: valueOf(children, "w:basedOn"),
 					run: readRunFormat(find(children, "w:rPr"), themeFonts),
 					paragraph: readParagraphFormat(find(children, "w:pPr"))
-				}
+				}, attributes["w:type"] === "table" ? { cellMargins: readCellMargins(find(childrenOf(find(children, "w:tblPr")), "w:tblCellMar")) } : {})
 			};
 		}).filter((style) => style.id !== void 0);
 		const defaultStyle = (type) => {
@@ -2372,8 +2372,22 @@ var docxLayout = (function(exports) {
 			styles: byId,
 			defaultParagraphStyle: defaultStyle("paragraph"),
 			defaultCharacterStyle: defaultStyle("character"),
+			defaultTableStyle: defaultStyle("table"),
 			themeFonts
 		};
+	};
+	/**
+	* Reads the margins of a table's cells (`w:tblCellMar`), or of one cell (`w:tcMar`), in points.
+	*/
+	var readCellMargins = (element) => {
+		const children = childrenOf(element);
+		const side = (...names) => names.map((name) => scaled(numberOf(attributesOf(find(children, name))["w:w"]), 20)).find((value) => value !== void 0);
+		return Object.fromEntries(Object.entries({
+			top: side("w:top"),
+			bottom: side("w:bottom"),
+			left: side("w:start", "w:left"),
+			right: side("w:end", "w:right")
+		}).filter(([, value]) => value !== void 0));
 	};
 	var stylesRead = /* @__PURE__ */ new WeakMap();
 	/**
@@ -3289,8 +3303,9 @@ var docxLayout = (function(exports) {
 		titlePage: false,
 		numberFormat: "decimal"
 	};
-	var DEFAULT_CELL_MARGIN = 5.4;
 	var EMUS_PER_POINT = 12700;
+	/** How far apart, in points, the widths two rows give a column can be before they differ: rounding, not a choice */
+	var WIDTH_TOLERANCE = 1;
 	var EIGHTHS_PER_POINT = 8;
 	var PLAIN_FORMATS = /* @__PURE__ */ new Set([
 		"mergeformat",
@@ -3591,17 +3606,6 @@ var docxLayout = (function(exports) {
 		const style = attributes["w:val"];
 		return style === void 0 || style === "nil" || style === "none" ? 0 : ((_numberOf4 = numberOf(attributes["w:sz"])) !== null && _numberOf4 !== void 0 ? _numberOf4 : 0) / EIGHTHS_PER_POINT;
 	};
-	/** The margins of the cells of a table (`w:tblCellMar`), or of one cell (`w:tcMar`), in points */
-	var readCellMargins = (element) => {
-		const children = childrenOf(element);
-		const side = (...names) => names.map((name) => twips(attributesOf(find(children, name))["w:w"])).find((value) => value !== void 0);
-		return Object.fromEntries(Object.entries({
-			top: side("w:top"),
-			bottom: side("w:bottom"),
-			left: side("w:start", "w:left"),
-			right: side("w:end", "w:right")
-		}).filter(([, value]) => value !== void 0));
-	};
 	/** The rows of a table, or of a content control or custom XML in it */
 	var rowsOf = (elements) => elements.filter(isObject).flatMap((element) => {
 		const name = nameOf(element);
@@ -3624,18 +3628,21 @@ var docxLayout = (function(exports) {
 		const children = contentOf(element).filter(isObject);
 		const properties = childrenOf(find(children, "w:tblPr"));
 		const style = valueOf(properties, "w:tblStyle");
-		const tableMargins = _objectSpread2({
+		const ownStyles = styleChain(reader.styles, style, "table");
+		const tableStyles = ownStyles.length > 0 ? ownStyles : styleChain(reader.styles, reader.styles.defaultTableStyle, "table");
+		const tableMargins = _objectSpread2(_objectSpread2({
 			top: 0,
 			bottom: 0,
-			left: DEFAULT_CELL_MARGIN,
-			right: DEFAULT_CELL_MARGIN
-		}, readCellMargins(find(properties, "w:tblCellMar")));
+			left: 0,
+			right: 0
+		}, Object.assign({}, ...tableStyles.map(({ cellMargins }) => cellMargins))), readCellMargins(find(properties, "w:tblCellMar")));
 		const borders = childrenOf(find(properties, "w:tblBorders"));
 		const grid = childrenOf(find(children, "w:tblGrid")).filter((child) => "w:gridCol" in child).map((column) => {
 			var _twips;
 			return (_twips = twips(attributesOf(column["w:gridCol"])["w:w"])) !== null && _twips !== void 0 ? _twips : 0;
 		});
 		const rows = rowsOf(children);
+		const gridWidth = (from, to) => grid.slice(from, to).reduce((total, value) => total + value, 0);
 		const read = rows.map((row, rowIndex) => {
 			var _numberOf5;
 			const rowChildren = contentOf(row).filter(isObject);
@@ -3644,7 +3651,7 @@ var docxLayout = (function(exports) {
 			const height = twips(heightAttributes["w:val"]);
 			const { "w:hRule": rule } = heightAttributes;
 			const skipped = (_numberOf5 = numberOf(attributesOf(find(rowProperties, "w:gridBefore"))["w:val"])) !== null && _numberOf5 !== void 0 ? _numberOf5 : 0;
-			const { cells } = cellsOf(rowChildren).reduce(({ column, cells: done }, cell) => {
+			const { cells, edges } = cellsOf(rowChildren).reduce(({ column, cells: done, edges: before }, cell) => {
 				var _numberOf6, _twips2;
 				const cellChildren = contentOf(cell).filter(isObject);
 				const cellProperties = childrenOf(find(cellChildren, "w:tcPr"));
@@ -3652,10 +3659,12 @@ var docxLayout = (function(exports) {
 				const mergeElement = find(cellProperties, "w:vMerge");
 				const merge = mergeElement === void 0 ? void 0 : attributesOf(mergeElement)["w:val"] === "restart" ? "restart" : "continue";
 				const margins = _objectSpread2(_objectSpread2({}, tableMargins), readCellMargins(find(cellProperties, "w:tcMar")));
-				const columns = grid.slice(column, column + span);
-				const width = columns.length > 0 ? columns.reduce((total, value) => total + value, 0) : (_twips2 = twips(attributesOf(find(cellProperties, "w:tcW"))["w:w"])) !== null && _twips2 !== void 0 ? _twips2 : 0;
+				const { "w:w": ownWidth, "w:type": widthType = "dxa" } = attributesOf(find(cellProperties, "w:tcW"));
+				const inTwips = widthType === "dxa" ? (_twips2 = twips(ownWidth)) !== null && _twips2 !== void 0 ? _twips2 : 0 : 0;
+				const width = inTwips > 0 ? inTwips : gridWidth(column, column + span);
 				return {
 					column: column + span,
+					edges: new Map([...before, [column + span, before.get(column) + width]]),
 					cells: [...done, _objectSpread2({
 						column,
 						width: width - margins.left - margins.right,
@@ -3666,22 +3675,32 @@ var docxLayout = (function(exports) {
 				};
 			}, {
 				column: skipped,
-				cells: []
+				cells: [],
+				edges: /* @__PURE__ */ new Map([[skipped, gridWidth(0, skipped)]])
 			});
-			return _objectSpread2(_objectSpread2({ cells }, height !== void 0 && rule !== "auto" ? { height: {
-				value: height,
-				rule: rule === "exact" ? "exact" : "atLeast"
-			} } : {}), {}, {
-				header: onOff(rowProperties, "w:tblHeader") === true,
-				cantSplit: onOff(rowProperties, "w:cantSplit") === true,
-				borderTop: borderWidth(borders, rowIndex === 0 ? "w:top" : "w:insideH"),
-				borderBottom: rowIndex === rows.length - 1 ? borderWidth(borders, "w:bottom") : 0
-			});
+			return {
+				edges,
+				row: _objectSpread2(_objectSpread2({ cells }, height !== void 0 && rule !== "auto" ? { height: {
+					value: height,
+					rule: rule === "exact" ? "exact" : "atLeast"
+				} } : {}), {}, {
+					header: onOff(rowProperties, "w:tblHeader") === true,
+					cantSplit: onOff(rowProperties, "w:cantSplit") === true,
+					borderTop: borderWidth(borders, rowIndex === 0 ? "w:top" : "w:insideH"),
+					borderBottom: rowIndex === rows.length - 1 ? borderWidth(borders, "w:bottom") : 0
+				})
+			};
 		});
-		const unsupported = (_read$flatMap$flatMap = read.flatMap(({ cells }) => cells).flatMap(({ blocks }) => blocks).find((block) => block.unsupported !== void 0)) === null || _read$flatMap$flatMap === void 0 ? void 0 : _read$flatMap$flatMap.unsupported;
+		const edgesAt = /* @__PURE__ */ new Map();
+		const unsupported = read.some(({ edges }) => [...edges].some(([column, edge]) => {
+			var _edgesAt$get;
+			const other = (_edgesAt$get = edgesAt.get(column)) !== null && _edgesAt$get !== void 0 ? _edgesAt$get : edge;
+			edgesAt.set(column, other);
+			return Math.abs(other - edge) > WIDTH_TOLERANCE;
+		})) ? "a table whose rows give a column different widths" : (_read$flatMap$flatMap = read.flatMap(({ row }) => row.cells).flatMap(({ blocks }) => blocks).find((block) => block.unsupported !== void 0)) === null || _read$flatMap$flatMap === void 0 ? void 0 : _read$flatMap$flatMap.unsupported;
 		return _objectSpread2({
 			type: "table",
-			rows: read
+			rows: read.map(({ row }) => row)
 		}, unsupported ? { unsupported } : {});
 	};
 	/**

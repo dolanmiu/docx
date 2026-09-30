@@ -5712,12 +5712,12 @@ var docxShapes = (function(exports, docx) {
 			return {
 				id: stringOf(attributes["w:styleId"]),
 				isDefault: attributes["w:default"] !== void 0 && !isOff(attributes["w:default"]),
-				definition: {
+				definition: _objectSpread2({
 					type: (_stringOf = stringOf(attributes["w:type"])) !== null && _stringOf !== void 0 ? _stringOf : "paragraph",
 					basedOn: valueOf(children, "w:basedOn"),
 					run: readRunFormat(find(children, "w:rPr"), themeFonts),
 					paragraph: readParagraphFormat(find(children, "w:pPr"))
-				}
+				}, attributes["w:type"] === "table" ? { cellMargins: readCellMargins(find(childrenOf(find(children, "w:tblPr")), "w:tblCellMar")) } : {})
 			};
 		}).filter((style) => style.id !== void 0);
 		const defaultStyle = (type) => {
@@ -5731,8 +5731,22 @@ var docxShapes = (function(exports, docx) {
 			styles: byId,
 			defaultParagraphStyle: defaultStyle("paragraph"),
 			defaultCharacterStyle: defaultStyle("character"),
+			defaultTableStyle: defaultStyle("table"),
 			themeFonts
 		};
+	};
+	/**
+	* Reads the margins of a table's cells (`w:tblCellMar`), or of one cell (`w:tcMar`), in points.
+	*/
+	var readCellMargins = (element) => {
+		const children = childrenOf(element);
+		const side = (...names) => names.map((name) => scaled(numberOf(attributesOf(find(children, name))["w:w"]), 20)).find((value) => value !== void 0);
+		return Object.fromEntries(Object.entries({
+			top: side("w:top"),
+			bottom: side("w:bottom"),
+			left: side("w:start", "w:left"),
+			right: side("w:end", "w:right")
+		}).filter(([, value]) => value !== void 0));
 	};
 	var stylesRead = /* @__PURE__ */ new WeakMap();
 	/**

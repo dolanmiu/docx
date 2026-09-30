@@ -7447,8 +7447,10 @@ export declare type ITableOptions = {
      * Widths of the grid columns (`w:tblGrid`) in twips (twentieths of a point).
      *
      * Word treats the grid as a hint and lays the table out from `width` and the cells'
-     * widths, but Google Docs, Apple Pages and QuickLook lay the table out from the grid
-     * alone and ignore percentage widths. When omitted, the grid is derived from `width`
+     * widths, sizing columns whose cells have no width to their content, so each cell
+     * without a `width` of its own is given the width of the columns it spans, scaled up
+     * to the table's `width` when that is wider. Google Docs, Apple Pages and QuickLook
+     * lay the table out from the grid alone and ignore percentage widths. When omitted, the grid is derived from `width`
      * and the cells' widths, resolved against the page (or, for nested tables, the
      * parent cell) when the document is packed, so the table renders the same in every
      * consumer. Supply explicit values to take full control of the grid.
@@ -12036,6 +12038,13 @@ export declare class Table extends FileChild {
      */
     prepForXml(context: IContext): IXmlableObject | undefined;
     /**
+     * Gives each cell without a width of its own the width of the `columnWidths` it spans, as Word sizes the columns of
+     * cells without a width to their content, whatever the grid says. When the table's width is wider than the columns
+     * add up to, they are scaled up to fill it, as Word and LibreOffice lay them out, so columns given as proportions
+     * keep them.
+     */
+    private setCellWidths;
+    /**
      * Finds the width in twips available to this table from the serialization context:
      * the parent cell for a nested table, otherwise the text width of the section the
      * table belongs to (the first section for headers, footers and other parts). Falls
@@ -12126,7 +12135,14 @@ export declare class TableCell extends XmlComponent {
     readonly options: WithHexColors<Omit<ITableCellOptions, "revision">> & {
         readonly revision?: WithHexColors<NonNullable<ITableCellOptions["revision"]>>;
     };
+    private readonly properties;
     constructor(options: ITableCellOptions);
+    /**
+     * Gives the cell, unless it has a width of its own, the width of the table's columns it spans, in twips.
+     *
+     * @internal
+     */
+    setColumnWidth(twips: number): void;
     prepForXml(context: IContext): IXmlableObject | undefined;
 }
 

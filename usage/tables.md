@@ -104,9 +104,15 @@ const doc = new Document({
 });
 ```
 
+Word lays a table out from its cells' widths, and sizes the columns of cells without one to their text, whatever the grid says. So `docx` gives each cell without a `width` of its own the width of the columns it spans, and Word keeps the widths you asked for. When the table's `width` is wider than its columns add up to, the cells' widths are scaled up to fill it, as Word and LibreOffice lay the columns out, so `columnWidths: [20, 80]` in a table 100% wide gives columns of 20% and 80% there. The grid is written as given, though, and readers that go by the grid alone take those as 20 and 80 twips. Without a `width`, a table is as wide as its columns.
+
 When `columnWidths` is omitted, `docx` derives the grid for you from the table's `width` and the cells' `width`s. Percentages are resolved against the actual page size and margins of the section the table is in (or the parent cell for nested tables) when the document is packed, and columns without a width share whatever is left equally. So a 100% wide table with 90% / 10% cells on a default A4 page gets a grid of `[8123, 903]`, and a table with no widths at all gets equal, full-width columns.
 
 !> Microsoft Word lays tables out from the `width`s and only treats the grid as a hint, but Google Docs, Apple Pages, QuickLook and many other readers lay tables out from the grid alone and ignore percentage widths. Earlier versions of `docx` wrote a placeholder grid of 100 twips per column, which made every table with percentage widths collapse to one character per column in those readers. If you set `columnWidths` yourself, make sure the values are real twips that match your intended widths.
+
+### Cell Margins
+
+Cells have the margins Word gives the tables it makes: 0.075 inches (108 twips) on the left and right, and none above or below. They come from Normal Table, the default table style `docx` writes. Without it, Word gives cells no margins, and their text touches the borders. Set `margins` on a table, or on a cell, to give them others. Styles from `externalStyles` with a Normal Table of their own use theirs.
 
 ### Set Indent
 
