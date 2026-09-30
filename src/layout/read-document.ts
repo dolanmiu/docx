@@ -75,6 +75,8 @@ export type TableRow = {
     readonly height?: { readonly value: number; readonly rule: "atLeast" | "exact" };
     /** Whether it is repeated at the top of each page the table is on */
     readonly header: boolean;
+    /** Whether it moves to the next page whole, rather than breaking across the pages, when it doesn't fit */
+    readonly cantSplit: boolean;
     /** The width of the border above the row, and, for the last row, below it, in points */
     readonly borderTop: number;
     readonly borderBottom: number;
@@ -581,6 +583,7 @@ const readTable = (element: XmlObject, reader: Reader): TableBlock => {
             // A height without a rule is the least the row can be, as Word writes it
             ...(height !== undefined && rule !== "auto" ? { height: { value: height, rule: rule === "exact" ? "exact" : "atLeast" } } : {}),
             header: onOff(rowProperties, "w:tblHeader") === true,
+            cantSplit: onOff(rowProperties, "w:cantSplit") === true,
             borderTop: borderWidth(borders, rowIndex === 0 ? "w:top" : "w:insideH"),
             borderBottom: rowIndex === rows.length - 1 ? borderWidth(borders, "w:bottom") : 0,
         };

@@ -71,7 +71,7 @@ The pages are laid out with the widths and heights of the characters of the font
 - keeping a paragraph with the next, keeping its lines together, widow and orphan control, and page breaks
 - numbered and bulleted lists
 - pictures in the line
-- tables, with their rows' heights, cell margins and borders. Header rows are repeated on each page a table is on
+- tables, with their rows' heights, cell margins and borders. Rows break across pages between the lines of their cells, unless they are kept whole (`cantSplit`), and header rows are repeated on each page a table is on
 - sections, with their page sizes, margins, headers and footers, how they start, and their page numbering, such as roman numerals
 
 ## What it leaves blank
@@ -82,7 +82,7 @@ It stops at the first thing it can't lay out yet, and the page numbers of the he
 - an equation
 - a footnote
 - columns
-- a table row taller than a page
+- a table row kept whole that is taller than a page, and a row that breaks across pages with merged cells, a table in it, or a height set taller than its text
 - a document that hyphenates its words
 
 A wrong page number is worse than a blank one, so it doesn't guess.

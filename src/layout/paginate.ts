@@ -3,14 +3,14 @@
  *
  * Each page's body is filled from the top, between the page's margins, or its header and footer where they are taller.
  * Paragraphs break into lines, and pages break between lines, as their keep and widow control settings allow. Table
- * rows move to the next page whole, and the table's header rows are repeated there. It stops at the first thing it
- * can't lay out yet, and the bookmarks after it aren't placed.
+ * rows break across pages between the lines of their cells, unless they are kept whole, and the table's header rows are
+ * repeated on each page. It stops at the first thing it can't lay out yet, and the bookmarks after it aren't placed.
  *
  * @module
  */
 import { DEFAULT_MEASURER, type InlineItem, type LaidOutLine, type TextMeasurer, layoutLines } from "../text-layout";
 import { formatNumber } from "./number-format";
-import type { Block, DocumentContent, HeadersOrFooters, LayoutItem, ParagraphBlock, Section, TableBlock } from "./read-document";
+import type { Block, DocumentContent, HeadersOrFooters, LayoutItem, ParagraphBlock, Section, TableBlock, TableRow } from "./read-document";
 
 /**
  * Where the pages of a document broke.
@@ -51,10 +51,50 @@ const TOLERANCE = 0.01;
 // eslint-disable-next-line functional/prefer-readonly-type
 const laidOutLines = new WeakMap<TextMeasurer, WeakMap<ParagraphBlock, Map<number, readonly LaidOutLine[]>>>();
 
+/** How a table in a table cell is placed when its row breaks across pages: whole, as a line that can't be broken */
+const UNBROKEN: Omit<MeasuredParagraph, "lines"> = {
+    spaceBefore: 0,
+    spaceAfter: 0,
+    keepNext: false,
+    keepLines: true,
+    widowControl: false,
+    pageBreakBefore: false,
+};
+
+/** A paragraph in a table cell, and the first of its lines not yet placed */
+type CellParagraph = { readonly paragraph: MeasuredParagraph; readonly from: number };
+
 /** Thrown to stop laying out at something that can't be laid out yet */
 class Unsupported extends Error {}
 
 const sum = (values: readonly number[]): number => values.reduce((total, value) => total + value, 0);
+
+/**
+ * How many of a paragraph's lines, from one of them, fit in the room left on a page (`fits`), and how many of those go on
+ * it (`count`): with widow control, a paragraph's first line isn't left alone at the bottom of a page, nor its last line
+ * at the top of the next, and with keepLines, a paragraph that doesn't fit moves to the next page whole.
+ */
+const linesThatFit = (
+    lines: readonly LaidOutLine[],
+    room: number,
+    { keepLines, widowControl }: Pick<MeasuredParagraph, "keepLines" | "widowControl">,
+    isFirstLine: boolean,
+): { readonly fits: number; readonly count: number } => {
+    const ends = lines.map((_, line) => sum(lines.slice(0, line + 1).map(({ height }) => height)));
+    const fits = ends.filter((end) => end <= room + TOLERANCE).length;
+    if (fits === lines.length) {
+        return { fits, count: fits };
+    }
+    if (keepLines && isFirstLine) {
+        return { fits, count: 0 };
+    }
+    if (!widowControl || lines.length < 2) {
+        return { fits, count: fits };
+    }
+    // Leave at least two lines on the next page, and don't leave the first line alone on this one
+    const withoutWidow = lines.length - fits === 1 ? fits - 1 : fits;
+    return { fits, count: isFirstLine && withoutWidow === 1 ? 0 : withoutWidow };
+};
 
 /**
  * Lays out a document's pages, and finds the page each bookmark starts on.
@@ -257,22 +297,9 @@ export const paginate = (
         let index = 0;
         while (index < lines.length) {
             const space = placedOnPage && isStart && index === 0 ? between(spaceAfter, paragraph.spaceBefore) : 0;
-            const room = bottom - position - space;
             const remaining = lines.slice(index);
-            // How many of the lines fit on the page
-            const ends = remaining.map((_, line) => sum(remaining.slice(0, line + 1).map(({ height }) => height)));
-            const fits = ends.filter((end) => end <= room + TOLERANCE).length;
-            let count = fits;
-            if (fits < remaining.length) {
-                const isFirstLine = isStart && index === 0;
-                if (paragraph.keepLines && isFirstLine) {
-                    count = 0;
-                } else if (paragraph.widowControl && remaining.length >= 2) {
-                    // Leave at least two lines on the next page, and don't leave the first line alone on this one
-                    count = remaining.length - count === 1 ? count - 1 : count;
-                    count = isFirstLine && count === 1 ? 0 : count;
-                }
-            }
+            const { fits, count: kept } = linesThatFit(remaining, bottom - position - space, paragraph, isStart && index === 0);
+            let count = kept;
             if (count === 0 && !placedOnPage) {
                 // Nothing fits on an empty page, so as much as fits goes on it, and at least a line
                 count = Math.max(1, fits);
@@ -314,6 +341,106 @@ export const paginate = (
         ({ spaceAfter } = paragraph);
     };
 
+    /**
+     * Fills a cell's part of a row that breaks across pages: as many of the lines left of its paragraphs as fit in the
+     * room, as the paragraphs' widow control and keepLines allow. The space before a paragraph at the top of the part on
+     * the next page is left out, as it is at the top of a page.
+     */
+    const fillCell = (
+        paragraphs: readonly CellParagraph[],
+        room: number,
+        isFirstPart: boolean,
+    ): { readonly height: number; readonly lines: readonly LaidOutLine[]; readonly rest: readonly CellParagraph[] } => {
+        let used = 0;
+        let previousAfter: number | undefined;
+        let placed: readonly LaidOutLine[] = [];
+        for (const [index, { paragraph, from }] of paragraphs.entries()) {
+            const space =
+                from > 0
+                    ? 0
+                    : previousAfter === undefined
+                      ? isFirstPart
+                          ? paragraph.spaceBefore
+                          : 0
+                      : between(previousAfter, paragraph.spaceBefore);
+            const remaining = paragraph.lines.slice(from);
+            // Widow control and keepLines don't hold lines back in a row that breaks across pages, as in Word and LibreOffice
+            const { fits: count } = linesThatFit(remaining, room - used - space, paragraph, from === 0);
+            if (count > 0) {
+                used += space + linesHeight(remaining.slice(0, count));
+                placed = [...placed, ...remaining.slice(0, count)];
+            }
+            if (count < remaining.length) {
+                return { height: used, lines: placed, rest: [{ paragraph, from: from + count }, ...paragraphs.slice(index + 1)] };
+            }
+            previousAfter = paragraph.spaceAfter;
+        }
+        // The space after the last paragraph, as much of it as there is room for
+        return { height: Math.min(used + (previousAfter ?? 0), Math.max(used, room)), lines: placed, rest: [] };
+    };
+
+    /**
+     * Places a row that doesn't fit on the page by breaking it across pages between the lines of its cells, as Word
+     * breaks a row unless it is kept whole. A row none of whose lines fit moves to the next page. The table's header rows
+     * are repeated above the rest of it on each page.
+     */
+    const splitRow = (row: TableRow, height: number, startTablePage: () => void): void => {
+        // A table in a cell is measured as a line that doesn't break, which is enough to tell whether the row breaks
+        let parts = row.cells.map((cell): readonly CellParagraph[] =>
+            cell.blocks.map((block, index) => ({
+                paragraph:
+                    block.type === "paragraph"
+                        ? measureParagraph(block, cell.width, cell.blocks[index - 1], cell.blocks[index + 1])
+                        : { ...UNBROKEN, lines: [{ height: sum(rowHeights(block)), markers: markersOf(block) }] },
+                from: 0,
+            })),
+        );
+        let isFirstPart = true;
+        for (;;) {
+            const borders = row.borderTop + row.borderBottom;
+            const room = bottom - position - borders;
+            const first = isFirstPart;
+            const filled = parts.map((paragraphs, cell) =>
+                fillCell(paragraphs, room - row.cells[cell].marginTop - row.cells[cell].marginBottom, first),
+            );
+            const placesLines = filled.some(({ lines }) => lines.length > 0);
+            const isLastPart = filled.every(({ rest }) => rest.length === 0);
+            if (placesLines && !isLastPart) {
+                if (row.cells.some(({ verticalMerge }) => verticalMerge !== undefined)) {
+                    throw new Unsupported("a table row with merged cells across pages");
+                }
+                if (row.height !== undefined && row.height.value >= height - borders - TOLERANCE) {
+                    throw new Unsupported("a table row of a set height across pages");
+                }
+                if (row.cells.some((cell) => cell.blocks.some(({ type }) => type === "table"))) {
+                    throw new Unsupported("a table in a table row across pages");
+                }
+            }
+            // A row whose text fits, but not the height it is set to, moves to the next page whole, as in LibreOffice
+            const fitsWhole = !isFirstPart || position + height <= bottom + TOLERANCE;
+            if ((!placesLines || !fitsWhole) && !placedOnPage) {
+                throw new Unsupported("a table row taller than a page");
+            }
+            if (placesLines && (fitsWhole || !isLastPart)) {
+                mark(filled.flatMap(({ lines }) => lines.flatMap(({ markers }) => markers)));
+            }
+            if (placesLines && isLastPart && fitsWhole) {
+                const tallest = Math.max(
+                    ...filled.map((part, cell) => row.cells[cell].marginTop + part.height + row.cells[cell].marginBottom),
+                );
+                // A row that moved to the next page whole is as tall there as it is anywhere
+                position += (isFirstPart ? height - borders : tallest) + borders;
+                placedOnPage = true;
+                return;
+            }
+            startTablePage();
+            if (placesLines && !isLastPart) {
+                parts = filled.map(({ rest }) => rest);
+                isFirstPart = false;
+            }
+        }
+    };
+
     const placeTable = (table: TableBlock): void => {
         const heights = rowHeights(table);
         const headerRows = table.rows.findIndex(({ header }) => !header);
@@ -321,13 +448,21 @@ export const paginate = (
         // The space after the paragraph before the table
         position += spaceAfter;
         spaceAfter = 0;
+        // A new page for the table, with its header rows repeated at the top, unless the row going on it is one of them
+        const startTablePage = (index: number): void => {
+            startPage();
+            if (index >= headerRows && headerRows > 0) {
+                position += repeated;
+            }
+        };
         for (const [index, row] of table.rows.entries()) {
             const height = heights[index];
+            if (position + height > bottom + TOLERANCE && !row.cantSplit && row.height?.rule !== "exact") {
+                splitRow(row, height, () => startTablePage(index));
+                continue;
+            }
             if (position + height > bottom + TOLERANCE && placedOnPage) {
-                startPage();
-                if (index >= headerRows && headerRows > 0) {
-                    position += repeated;
-                }
+                startTablePage(index);
             }
             if (height > bottom - position + TOLERANCE) {
                 throw new Unsupported("a table row taller than a page");

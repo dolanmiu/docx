@@ -62,6 +62,7 @@ const pagesOf = (content: DocumentContent, pageNumbers?: ReadonlyMap<string, str
 const row = (cells: readonly (readonly Block[])[], changes: Partial<TableRow> = {}): TableRow => ({
     cells: cells.map((blocks, column) => ({ column, width: 80, blocks, marginTop: 0, marginBottom: 0 })),
     header: false,
+    cantSplit: false,
     borderTop: 0,
     borderBottom: 0,
     ...changes,
@@ -259,13 +260,13 @@ describe("paginate", () => {
     });
 
     describe("tables", () => {
-        it("should move a row that doesn't fit to the next page whole, and repeat the header rows there", () => {
+        it("should move a row kept whole that doesn't fit to the next page, and repeat the header rows there", () => {
             const content = document([
                 paragraph("a", 3),
                 table([
                     row([[paragraph("header", 1)]], { header: true }),
                     row([[paragraph("one", 2)], [paragraph("side", 1)]]),
-                    row([[paragraph("two", 2)]]),
+                    row([[paragraph("two", 2)]], { cantSplit: true }),
                     row([[paragraph("three", 2)]]),
                 ]),
                 paragraph("b", 1),
@@ -347,9 +348,92 @@ describe("paginate", () => {
             expect(pagesOf(content)).to.deep.equal({ wide: "1", merged: "1", c: "1", d: "1", e: "1", f: "1" });
         });
 
-        it("should stop at a row taller than a page", () => {
-            const result = paginate(document([paragraph("a", 1), table([row([[paragraph("tall", 9)]])])]), { measurer: MEASURER });
+        it("should break a row that doesn't fit across pages, between the lines of its cells, below the header rows", () => {
+            const content = document([
+                paragraph("a", 1),
+                table([
+                    row([[paragraph("head", 1)]], { header: true }),
+                    row([
+                        [withItems(paragraph("tall", 9), [{ type: "marker", name: "tallEnd" }])],
+                        [paragraph("first", 4), paragraph("second", 3)],
+                        // A cell without paragraphs
+                        [],
+                    ]),
+                ]),
+                paragraph("after", 3),
+                paragraph("next", 1),
+            ]);
+            // 5 lines of the row fit below a and the header, and the first line of second with them: widow control doesn't
+            // hold lines back in a row that breaks. On the next page, the header and the 4 lines left of tall leave room
+            // for 2 lines, so after moves on, with the widow control of its 3 lines
+            expect(pagesOf(content)).to.deep.equal({
+                a: "1",
+                head: "1",
+                tall: "1",
+                tallEnd: "2",
+                first: "1",
+                second: "1",
+                after: "3",
+                next: "3",
+            });
+        });
+
+        it("should leave out the space before a paragraph at the top of a cell's part on the next page, and move a row none of whose lines fit", () => {
+            const spaced = paragraph("spaced", 2, { spaceBefore: 30 });
+            const content = document([
+                paragraph("a", 5),
+                table([row([[paragraph("cell", 1), spaced]], { borderTop: 1 })]),
+                paragraph("b", 4),
+                table([row([[paragraph("moved", 2, { spaceBefore: 5 })]])]),
+            ]);
+            // cell's line fits below a, and spaced moves to the next page without its space, so b fits below it. No line of
+            // moved fits below its space before on that page, so its row moves to the next
+            expect(pagesOf(content)).to.deep.equal({ a: "1", cell: "1", spaced: "2", b: "2", moved: "3" });
+        });
+
+        it("should move a row kept whole, of an exact height, or whose text fits but not its height, to the next page", () => {
+            const content = document([
+                paragraph("a", 5),
+                table([row([[paragraph("kept", 3)]], { cantSplit: true })]),
+                paragraph("b", 2),
+                table([row([[paragraph("exact", 1)]], { height: { value: 40, rule: "exact" } })]),
+                paragraph("c", 2),
+                table([row([[paragraph("atLeast", 1)]], { height: { value: 40, rule: "atLeast" } })]),
+                paragraph("d", 1),
+            ]);
+            expect(pagesOf(content)).to.deep.equal({ a: "1", kept: "2", b: "2", exact: "3", c: "3", atLeast: "4", d: "4" });
+            const tall = document([table([row([[paragraph("tall", 1)]], { height: { value: 80, rule: "atLeast" } })])]);
+            expect(paginate(tall, { measurer: MEASURER }).stoppedAt).to.equal("a table row taller than a page");
+        });
+
+        it("should stop at a row kept whole that is taller than a page", () => {
+            const result = paginate(document([paragraph("a", 1), table([row([[paragraph("tall", 9)]], { cantSplit: true })])]), {
+                measurer: MEASURER,
+            });
             expect(result).to.deep.equal({ bookmarks: new Map([["a", "1"]]), pageCount: 2, stoppedAt: "a table row taller than a page" });
+        });
+
+        it("should stop at a row that breaks across pages with merged cells, a set height, or a table in it", () => {
+            const stoppedAt = (breaking: TableRow): string | undefined =>
+                paginate(document([paragraph("a", 5), table([breaking])]), { measurer: MEASURER }).stoppedAt;
+            expect(stoppedAt(mergedRow(merged("restart", [paragraph("merged", 4)])))).to.equal(
+                "a table row with merged cells across pages",
+            );
+            expect(stoppedAt(row([[paragraph("set", 4)]], { height: { value: 50, rule: "atLeast" } }))).to.equal(
+                "a table row of a set height across pages",
+            );
+            expect(stoppedAt(row([[paragraph("beside", 4)], [table([row([[paragraph("inner", 1)]])])]]))).to.equal(
+                "a table in a table row across pages",
+            );
+            // A table in a cell of a row that moves to the next page whole is laid out there
+            expect(stoppedAt(row([[table([row([[paragraph("inner", 3)]])])]]))).to.equal(undefined);
+        });
+
+        it("should stop at a line in a table cell taller than a page", () => {
+            const tall = paragraph("tall", 1, { lineSpacing: { rule: "exact", height: 100 } });
+            expect(paginate(document([table([row([[tall]])])]), { measurer: MEASURER }).stoppedAt).to.equal(
+                "a table row taller than a page",
+            );
         });
 
         it("should lay out paragraphs and tables in cells, with the space around them", () => {
