@@ -11,7 +11,7 @@
 <li><a href="../modules/index.html">index</a></li>
 <li><a href="" aria-current="page">PatchType</a></li></ul>
 <h1>Variable PatchType<code class="tsd-tag">Const</code></h1></div>
-<div class="tsd-signature"><span class="tsd-kind-variable">PatchType</span><span class="tsd-signature-symbol">:</span> <span class="tsd-signature-symbol">{</span> <span class="tsd-kind-property">DOCUMENT</span><span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">&quot;file&quot;</span><span class="tsd-signature-symbol">;</span> <span class="tsd-kind-property">DRAWING</span><span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">&quot;drawing&quot;</span><span class="tsd-signature-symbol">;</span> <span class="tsd-kind-property">PARAGRAPH</span><span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">&quot;paragraph&quot;</span> <span class="tsd-signature-symbol">}</span><span class="tsd-signature-symbol"> = ...</span></div>
+<div class="tsd-signature"><span class="tsd-kind-variable">PatchType</span><span class="tsd-signature-symbol">:</span> <span class="tsd-signature-symbol">{</span><br/>    <span class="tsd-kind-property">DOCUMENT</span><span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">&quot;file&quot;</span><span class="tsd-signature-symbol">;</span><br/>    <span class="tsd-kind-property">DRAWING</span><span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">&quot;drawing&quot;</span><span class="tsd-signature-symbol">;</span><br/>    <span class="tsd-kind-property">PARAGRAPH</span><span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">&quot;paragraph&quot;</span><span class="tsd-signature-symbol">;</span><br/>    <span class="tsd-kind-property">TABLE_ROWS</span><span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">&quot;tableRows&quot;</span><span class="tsd-signature-symbol">;</span><br/><span class="tsd-signature-symbol">}</span><span class="tsd-signature-symbol"> = ...</span></div>
 <div class="tsd-comment tsd-typography"><p>Patch type enumeration.</p>
 <p>Determines how the replacement content should be inserted into the document.</p>
 </div>
@@ -30,12 +30,17 @@ in Word. See <a href="../classes/index.DrawingPatch.html" class="tsd-kind-class"
 <li class="tsd-parameter">
 <h5 id="paragraph"><code class="tsd-tag">Readonly</code><span class="tsd-kind-property">PARAGRAPH</span><span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">&quot;paragraph&quot;</span></h5>
 <div class="tsd-comment tsd-typography"><p>Replace content within paragraphs (inline replacement)</p>
+</div></li>
+<li class="tsd-parameter">
+<h5 id="table_rows"><code class="tsd-tag">Readonly</code><span class="tsd-kind-property">TABLE_ROWS</span><span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">&quot;tableRows&quot;</span></h5>
+<div class="tsd-comment tsd-typography"><p>Repeat the rows of a table that hold the placeholder's fields, such as <code>{{items.name}}</code>, once for each row of
+data. See <a href="../types/index.TableRowsPatch.html" class="tsd-kind-type-alias">TableRowsPatch</a></p>
 </div></li></ul></div>
 <div class="tsd-comment tsd-typography">
 <div class="tsd-tag-publicApi">
 <h4 class="tsd-anchor-link" id="public-api">Public Api<a href="#public-api" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="../assets/icons.svg#icon-anchor"></use></svg></a></h4></div></div><aside class="tsd-sources">
 <ul>
-<li>Defined in <a href="https://github.com/dolanmiu/docx/blob/42aa5eb59d42944006bd5cc18dc3c9213ad0f844/src/patcher/patch-type.ts#L14">patcher/patch-type.ts:14</a></li></ul></aside></div>
+<li>Defined in <a href="https://github.com/dolanmiu/docx/blob/8ff4f6baac0620429fc343ef221de33c98b5ad60/src/patcher/patch-type.ts#L14">patcher/patch-type.ts:14</a></li></ul></aside></div>
 <div class="col-sidebar">
 <div class="page-menu">
 <div class="tsd-navigation settings">

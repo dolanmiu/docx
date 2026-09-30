@@ -137,6 +137,71 @@ const doc = await patchDocument({
 fs.writeFileSync("My Document.docx", doc);
 ```
 
+### TABLE_ROWS Type
+
+Use `PatchType.TABLE_ROWS` to fill a table designed in the template with any number of rows. The table keeps its look, such as its header, borders and shading, and each row of data gets its own copy of the template's row.
+
+The row to repeat holds the patch's fields: placeholders made of the patch's key, a dot and the field's name, such as `{{items.name}}` and `{{items.price}}` for the patch `items`. Each of `rows` gives the patches for one copy, by the name of the field they patch. A field's patch is a `PARAGRAPH` or `DOCUMENT` patch, as above.
+
+```ts live
+import * as fs from "fs";
+import { Document, IPatch, Packer, Paragraph, patchDocument, PatchType, ShadingType, Table, TableCell, TableRow, TextRun } from "docx";
+
+// The template, made here as it would be in Word: a header, and a row with the fields
+const header = (text: string) =>
+    new TableCell({
+        shading: { type: ShadingType.CLEAR, fill: "1F4E79" },
+        children: [new Paragraph({ children: [new TextRun({ text, bold: true, color: "FFFFFF" })] })],
+    });
+
+const template = new Document({
+    sections: [
+        {
+            children: [
+                new Table({
+                    columnWidths: [4000, 2000],
+                    rows: [
+                        new TableRow({ tableHeader: true, children: [header("Fruit"), header("Price")] }),
+                        new TableRow({
+                            children: [
+                                new TableCell({ children: [new Paragraph("{{items.name}}")] }),
+                                new TableCell({ children: [new Paragraph("£{{items.price}}")] }),
+                            ],
+                        }),
+                    ],
+                }),
+            ],
+        },
+    ],
+});
+
+const text = (value: string): IPatch => ({ type: PatchType.PARAGRAPH, children: [new TextRun(value)] });
+
+const doc = await patchDocument({
+    outputType: "nodebuffer",
+    data: await Packer.toBuffer(template), // or fs.readFileSync("template.docx")
+    patches: {
+        items: {
+            type: PatchType.TABLE_ROWS,
+            rows: [
+                { name: text("Apples"), price: text("0.40") },
+                { name: text("Pears"), price: text("0.55") },
+                { name: text("Figs"), price: text("0.30") },
+            ],
+        },
+    },
+});
+
+fs.writeFileSync("My Document.docx", doc);
+```
+
+- **Other placeholders**: The rows are repeated before the other patches are applied, so a placeholder of another patch in the repeated row, such as `{{currency}}`, is patched in every copy.
+- **More than one row for each item**: Rows next to each other that hold the fields are repeated together, such as a row for an item and a row under it for its notes.
+- **Missing fields**: A field that a row has no patch for, or whose patch is `undefined`, is left empty.
+- **No rows**: With no rows, the rows are removed and the rest of the table, such as its header, is kept. A table left with no rows at all is removed.
+- **Tables in tables**: A field's patch can be a `TABLE_ROWS` patch too, to repeat rows of a table in the repeated row. Its fields are then such as `{{orders.items.name}}`. When they are in the repeated row itself, rather than in a table in it, the row is repeated for each item, with its order's fields, and an order without items has no row.
+- **Bookmarks and ids**: Like content pasted in Word, only the first copy keeps the row's bookmarks, and the ids Word gives its paragraphs, rows and content controls, as these must be unique in a document.
+
 ## Advanced Patches
 
 ### Images
@@ -346,6 +411,7 @@ const invoice = {
 };
 
 // The template, made here as it would be in Word
+const cell = (text: string) => new TableCell({ children: [new Paragraph(text)] });
 const template = new Document({
     sections: [
         {
@@ -353,7 +419,14 @@ const template = new Document({
                 new Paragraph("Invoice {{invoice_number}}"),
                 new Paragraph("Date: {{invoice_date}}"),
                 new Paragraph("Bill to: {{customer_name}}"),
-                new Paragraph("{{line_items}}"),
+                new Table({
+                    rows: [
+                        new TableRow({ tableHeader: true, children: [cell("Item"), cell("Qty"), cell("Price")] }),
+                        new TableRow({
+                            children: [cell("{{line_items.name}}"), cell("{{line_items.qty}}"), cell("${{line_items.price}}")],
+                        }),
+                    ],
+                }),
                 new Paragraph("Total: {{total}}"),
             ],
         },
@@ -377,30 +450,12 @@ const doc = await patchDocument({
             children: [new TextRun(invoice.customer)],
         },
         line_items: {
-            type: PatchType.DOCUMENT,
-            children: [
-                new Table({
-                    rows: [
-                        new TableRow({
-                            children: [
-                                new TableCell({ children: [new Paragraph("Item")] }),
-                                new TableCell({ children: [new Paragraph("Qty")] }),
-                                new TableCell({ children: [new Paragraph("Price")] }),
-                            ],
-                        }),
-                        ...invoice.items.map(
-                            (item) =>
-                                new TableRow({
-                                    children: [
-                                        new TableCell({ children: [new Paragraph(item.name)] }),
-                                        new TableCell({ children: [new Paragraph(String(item.qty))] }),
-                                        new TableCell({ children: [new Paragraph(`$${item.price.toFixed(2)}`)] }),
-                                    ],
-                                }),
-                        ),
-                    ],
-                }),
-            ],
+            type: PatchType.TABLE_ROWS,
+            rows: invoice.items.map((item) => ({
+                name: { type: PatchType.PARAGRAPH, children: [new TextRun(item.name)] },
+                qty: { type: PatchType.PARAGRAPH, children: [new TextRun(String(item.qty))] },
+                price: { type: PatchType.PARAGRAPH, children: [new TextRun(item.price.toFixed(2))] },
+            })),
         },
         total: {
             type: PatchType.PARAGRAPH,

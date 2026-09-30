@@ -10571,10 +10571,10 @@ export declare type PatchDocumentOptions<T extends PatchDocumentOutputType = Pat
     /** Input document data */
     readonly data: InputDataType;
     /**
-     * Mapping of placeholder keys to patch content, or to a {@link DrawingPatch}, such as `docx/charts`' `ChartDataPatch`,
-     * for a drawing whose alt text holds the placeholder
+     * Mapping of placeholder keys to patch content, to a {@link TableRowsPatch} that repeats the rows of a table, or to a
+     * {@link DrawingPatch}, such as `docx/charts`' `ChartDataPatch`, for a drawing whose alt text holds the placeholder
      */
-    readonly patches: Readonly<Record<string, IPatch | DrawingPatch>>;
+    readonly patches: Readonly<Record<string, IPatch | TableRowsPatch | DrawingPatch>>;
     /** Preserve original formatting of replaced text (default: true) */
     readonly keepOriginalStyles?: boolean;
     /** Custom placeholder delimiters (default: {{ and }}) */
@@ -10614,6 +10614,11 @@ export declare const PatchType: {
     readonly DOCUMENT: "file";
     /** Replace content within paragraphs (inline replacement) */
     readonly PARAGRAPH: "paragraph";
+    /**
+     * Repeat the rows of a table that hold the placeholder's fields, such as `{{items.name}}`, once for each row of
+     * data. See {@link TableRowsPatch}
+     */
+    readonly TABLE_ROWS: "tableRows";
     /**
      * Change a drawing whose alt text holds the placeholder, and the parts it refers to, such as the data of a chart made
      * in Word. See {@link DrawingPatch}
@@ -12352,6 +12357,52 @@ export declare class TableRowProperties extends IgnoreIfEmptyXmlComponent {
 export declare class TableRowPropertiesChange extends XmlComponent {
     constructor(options: ITableRowPropertiesChangeOptions);
 }
+
+/**
+ * Patch definition that repeats the rows of a table in the template, once for each row of data, so a table can be
+ * designed in Word and filled in with any number of rows.
+ *
+ * The rows it repeats are those that hold its fields: placeholders made of the patch's key, a dot and the field's name,
+ * such as `{{items.name}}` and `{{items.price}}` for the patch `items`. Each copy's fields are patched with a row's
+ * patches, by their field's name, and the other rows of the table, such as its header, are kept as they are. Rows next
+ * to each other are repeated together, such as a row for an item and a row for its notes.
+ *
+ * A field that a row has no patch for is left empty. With no rows, the rows are removed, and so is a table left with
+ * none. The other patches are applied after the rows are repeated, so a placeholder of theirs in a repeated row, such as
+ * `{{currency}}`, is patched in every copy.
+ *
+ * @example
+ * ```typescript
+ * const text = (value: string): IPatch => ({ type: PatchType.PARAGRAPH, children: [new TextRun(value)] });
+ *
+ * await patchDocument({
+ *   outputType: "nodebuffer",
+ *   data: template,
+ *   patches: {
+ *     items: {
+ *       type: PatchType.TABLE_ROWS,
+ *       rows: [
+ *         { name: text("Apples"), price: text("1.20") },
+ *         { name: text("Pears"), price: text("0.90") },
+ *       ],
+ *     },
+ *   },
+ * });
+ * ```
+ *
+ * @publicApi
+ */
+export declare type TableRowsPatch = {
+    /** Indicates this patch repeats the rows of a table */
+    readonly type: typeof PatchType.TABLE_ROWS;
+    /**
+     * The patches for each copy of the rows, by the name of the field they patch, such as `name` for `{{items.name}}`.
+     * A field's patch can repeat rows of a table in the copy in turn, whose fields are then such as
+     * `{{items.parts.name}}`. When those fields are in the copy's own row, rather than in a table in it, the row is
+     * repeated for each part, with its item's fields, and an item without parts has no row
+     */
+    readonly rows: readonly Readonly<Record<string, IPatch | TableRowsPatch | undefined>>[];
+};
 
 export declare type TableVerticalAlign = (typeof VerticalAlignTable)[keyof typeof VerticalAlignTable];
 

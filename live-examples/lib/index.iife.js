@@ -35525,6 +35525,11 @@ while (n === a[++i] && n === a[++i] && n === a[++i] && n === a[++i] && n === a[+
 		/** Replace content within paragraphs (inline replacement) */
 		PARAGRAPH: "paragraph",
 		/**
+		* Repeat the rows of a table that hold the placeholder's fields, such as `{{items.name}}`, once for each row of
+		* data. See {@link TableRowsPatch}
+		*/
+		TABLE_ROWS: "tableRows",
+		/**
 		* Change a drawing whose alt text holds the placeholder, and the parts it refers to, such as the data of a chart made
 		* in Word. See {@link DrawingPatch}
 		*/
@@ -36296,9 +36301,15 @@ while (n === a[++i] && n === a[++i] && n === a[++i] && n === a[++i] && n === a[+
 		const paragraphsToPatch = patch.type === PatchType.DOCUMENT ? withoutNestedParagraphs(paragraphsInPatchOrder) : paragraphsInPatchOrder;
 		for (const renderedParagraph of paragraphsToPatch) switch (patch.type) {
 			case PatchType.DOCUMENT: {
+				var _children;
 				const parentElement = goToParentElementFromPath(json, renderedParagraph.pathToParagraph);
 				const elementIndex = getLastElementIndexFromPath(renderedParagraph.pathToParagraph);
-				parentElement.elements.splice(elementIndex, 1, ...formatChildren(patch, context, renumberIds));
+				const children = formatChildren(patch, context, renumberIds);
+				const endParagraph = parentElement.name === "w:tc" && elementIndex === parentElement.elements.length - 1 && ((_children = children[children.length - 1]) === null || _children === void 0 ? void 0 : _children.name) !== "w:p" ? [{
+					type: "element",
+					name: "w:p"
+				}] : [];
+				parentElement.elements.splice(elementIndex, 1, ...children, ...endParagraph);
 				break;
 			}
 			case PatchType.PARAGRAPH:
@@ -36448,6 +36459,118 @@ while (n === a[++i] && n === a[++i] && n === a[++i] && n === a[++i] && n === a[+
 	var goToParentElementFromPath = (json, path) => goToElementFromPath(json, path.slice(0, path.length - 1));
 	var getLastElementIndexFromPath = (path) => path[path.length - 1];
 	//#endregion
+	//#region src/patcher/table-rows.ts
+	var EMPTY = {
+		type: PatchType.PARAGRAPH,
+		children: []
+	};
+	/**
+	* Repeats the rows of the tables in an element that hold the patch's fields, such as `{{items.name}}` for the key
+	* "items", once for each of the patch's rows, and patches the fields in each copy with the row's patches.
+	*
+	* @param json - The element to patch, such as a part's root
+	* @param key - The patch's key, such as "items"
+	* @param patch - The rows of data
+	* @param delimiters - The placeholders' delimiters
+	* @param patchPlaceholder - Patches a field in a copy of the rows, as `patchDocument` patches a placeholder
+	*/
+	var patchTableRows = ({ json, key, patch, delimiters: { start, end }, patchPlaceholder }) => {
+		const fieldStart = `${start}${key}.`;
+		for (const rows of findRowsToRepeat(json, fieldStart)) {
+			const fields = fieldsIn(rows.elements, fieldStart, end);
+			const copies = patch.rows.flatMap((row, index) => {
+				const copy = {
+					type: "element",
+					name: "w:tbl",
+					elements: [...index === 0 ? rows.elements.map(copyOf) : withoutIds(rows.elements)]
+				};
+				const fieldPatches = new Map(Object.entries(row).flatMap(([field, p]) => p === void 0 ? [] : [[field, p]]));
+				for (const [field, fieldPatch] of fieldPatches) patchPlaceholder(copy, `${key}.${field}`, fieldPatch);
+				for (const field of fields.filter((f) => !fieldPatches.has(f))) patchPlaceholder(copy, `${key}.${field}`, EMPTY);
+				return copy.elements;
+			});
+			rows.parent.elements.splice(rows.parent.elements.indexOf(rows.elements[0]), rows.elements.length, ...copies);
+			if (rows.table && !hasRows(rows.table.element)) rows.table.parent.elements.splice(rows.table.parent.elements.indexOf(rows.table.element), 1);
+		}
+	};
+	/**
+	* The rows that hold a field, grouped into the rows next to each other in a table, which are repeated together.
+	*/
+	var findRowsToRepeat = (json, fieldStart) => {
+		const found = findLocationOfText(json, fieldStart).flatMap((paragraph) => {
+			const row = rowHolding(json, paragraph.pathToParagraph);
+			return row ? [row] : [];
+		});
+		const rows = found.filter((row) => !found.some((other) => isInside(row.path, other.path))).filter((row, index, all) => all.findIndex((other) => other.row === row.row) === index);
+		return [...new Set(rows.map((row) => row.parent))].flatMap((parent) => {
+			const siblingRows = parent.elements.filter((e) => e.name === "w:tr");
+			const positions = rows.filter((row) => row.parent === parent).map((row) => siblingRows.indexOf(row.row)).sort((a, b) => a - b);
+			const { table } = rows.find((row) => row.parent === parent);
+			return positions.reduce((all, position) => {
+				const previous = all[all.length - 1];
+				return (previous === null || previous === void 0 ? void 0 : previous[previous.length - 1]) === position - 1 ? [...all.slice(0, -1), [...previous, position]] : [...all, [position]];
+			}, []).map((group) => {
+				const first = parent.elements.indexOf(siblingRows[group[0]]);
+				const last = parent.elements.indexOf(siblingRows[group[group.length - 1]]);
+				return {
+					parent,
+					table,
+					elements: parent.elements.slice(first, last + 1)
+				};
+			});
+		});
+	};
+	/**
+	* The row nearest to the paragraph at the end of the path that holds it, if it is in a table.
+	*/
+	var rowHolding = (json, pathToParagraph) => {
+		let element = json;
+		let row;
+		let table;
+		for (let i = 1; i < pathToParagraph.length; i++) {
+			const child = element.elements[pathToParagraph[i]];
+			if (child.name === "w:tbl") table = {
+				element: child,
+				parent: element
+			};
+			if (child.name === "w:tr") row = {
+				parent: element,
+				table,
+				row: child,
+				path: pathToParagraph.slice(0, i + 1)
+			};
+			element = child;
+		}
+		return row;
+	};
+	var isInside = (path, ancestorPath) => path.length > ancestorPath.length && ancestorPath.every((index, i) => path[i] === index);
+	var hasRows = (table) => {
+		var _table$elements;
+		return ((_table$elements = table.elements) !== null && _table$elements !== void 0 ? _table$elements : []).some((e) => e.name === "w:tr" || e.name !== "w:tblPr" && e.name !== "w:tblGrid" && hasRows(e));
+	};
+	/**
+	* The names of the fields in the elements, such as "name" for `{{items.name}}`.
+	*/
+	var fieldsIn = (elements, fieldStart, end) => {
+		const fields = findLocationOfText({ elements: [...elements] }, fieldStart).flatMap(({ text }) => text.split(fieldStart).slice(1).flatMap((after) => {
+			const fieldEnd = after.indexOf(end);
+			return fieldEnd > 0 ? [after.slice(0, fieldEnd)] : [];
+		}));
+		return [...new Set(fields)];
+	};
+	var copyOf = (element) => JSON.parse(JSON.stringify(element));
+	var ATTRIBUTES_TO_REMOVE = ["w14:paraId", "w14:textId"];
+	var ELEMENTS_TO_REMOVE = ["w:bookmarkStart", "w:bookmarkEnd"];
+	/**
+	* A copy of elements without what must be unique in a document, so they can be in the document more than once.
+	*
+	* @param parent - The elements' parent, as a content control's id is an element in its properties
+	*/
+	var withoutIds = (elements, parent) => elements.filter((e) => {
+		var _e$name;
+		return !ELEMENTS_TO_REMOVE.includes((_e$name = e.name) !== null && _e$name !== void 0 ? _e$name : "") && !((parent === null || parent === void 0 ? void 0 : parent.name) === "w:sdtPr" && e.name === "w:id");
+	}).map((e) => _objectSpread2(_objectSpread2(_objectSpread2({}, e), e.attributes === void 0 ? {} : { attributes: Object.fromEntries(Object.entries(e.attributes).filter(([name]) => !ATTRIBUTES_TO_REMOVE.includes(name))) }), e.elements === void 0 ? {} : { elements: [...withoutIds(e.elements, e)] }));
+	//#endregion
 	//#region src/patcher/theme-colors.ts
 	var THEME_RELATIONSHIP_TYPE = "http://schemas.openxmlformats.org/officeDocument/2006/relationships/theme";
 	var COLOR_NAMES = /* @__PURE__ */ new Map([
@@ -36545,6 +36668,23 @@ while (n === a[++i] && n === a[++i] && n === a[++i] && n === a[++i] && n === a[+
 	*
 	* @module
 	*/
+	/**
+	* Throws if a patch, or a patch for a field of one of its rows, isn't one `patchDocument` can apply, such as a patch
+	* from JavaScript without its children.
+	*
+	* @param key - The patch's key, such as "items", or for a field of a row, such as "items.name"
+	* @param inTableRow - Whether the patch is for a field of a row, where a drawing patch can't be
+	*/
+	var assertValidPatch = (key, patch, { inTableRow }) => {
+		if ((patch === null || patch === void 0 ? void 0 : patch.type) === PatchType.TABLE_ROWS && Array.isArray(patch.rows)) {
+			for (const row of patch.rows) {
+				if (typeof row !== "object" || row === null) throw new Error(`Invalid patch "${key}". Expected each of its rows to be an object of patches, by the name of their field`);
+				for (const [field, fieldPatch] of Object.entries(row)) if (fieldPatch !== void 0) assertValidPatch(`${key}.${field}`, fieldPatch, { inTableRow: true });
+			}
+			return;
+		}
+		if (!((patch === null || patch === void 0 ? void 0 : patch.type) === PatchType.DRAWING ? !inTableRow && typeof patch.patch === "function" : (patch === null || patch === void 0 ? void 0 : patch.type) !== PatchType.TABLE_ROWS && Array.isArray(patch === null || patch === void 0 ? void 0 : patch.children))) throw new Error(`Invalid patch "${key}". Expected { type: PatchType.PARAGRAPH or PatchType.DOCUMENT, children: [...] }, ${inTableRow ? "or { type: PatchType.TABLE_ROWS, rows: [...] }" : "{ type: PatchType.TABLE_ROWS, rows: [...] }, or a drawing patch such as ChartDataPatch from docx/charts"}`);
+	};
 	var imageReplacer = new ImageReplacer();
 	var UTF16LE = new Uint8Array([255, 254]);
 	var UTF16BE = new Uint8Array([254, 255]);
@@ -36612,7 +36752,7 @@ while (n === a[++i] && n === a[++i] && n === a[++i] && n === a[++i] && n === a[+
 			const binaryContentMap = /* @__PURE__ */ new Map();
 			if (!(placeholderDelimiters === null || placeholderDelimiters === void 0 ? void 0 : placeholderDelimiters.start.trim()) || !(placeholderDelimiters === null || placeholderDelimiters === void 0 ? void 0 : placeholderDelimiters.end.trim())) throw new Error("Both start and end delimiters must be non-empty strings.");
 			const { start, end } = placeholderDelimiters;
-			for (const [key, patch] of Object.entries(patches)) if (!((patch === null || patch === void 0 ? void 0 : patch.type) === PatchType.DRAWING ? typeof patch.patch === "function" : Array.isArray(patch === null || patch === void 0 ? void 0 : patch.children))) throw new Error(`Invalid patch "${key}". Expected { type: PatchType.PARAGRAPH or PatchType.DOCUMENT, children: [...] }, or a drawing patch such as ChartDataPatch from docx/charts`);
+			for (const [key, patch] of Object.entries(patches)) assertValidPatch(key, patch, { inTableRow: false });
 			for (const [key, value] of Object.entries(zipContent.files)) {
 				const binaryValue = yield value.async("uint8array");
 				const startBytes = binaryValue.slice(0, 2);
@@ -36676,35 +36816,49 @@ while (n === a[++i] && n === a[++i] && n === a[++i] && n === a[++i] && n === a[+
 					end
 				}
 			}, createContext);
+			const textPatches = Object.entries(patches).flatMap(([key, patch]) => patch.type === PatchType.DRAWING ? [] : [[key, patch]]);
+			const patchesInOrder = [...textPatches.filter(([, patch]) => patch.type === PatchType.TABLE_ROWS), ...textPatches.filter(([, patch]) => patch.type !== PatchType.TABLE_ROWS)];
 			for (const [key, json] of [...map]) {
 				if (!key.startsWith("word/") || key.endsWith(".xml.rels")) continue;
 				const context = createContext(key);
 				contexts.set(key, context);
-				for (const [patchKey, patchValue] of Object.entries(patches)) {
-					if (patchValue.type === PatchType.DRAWING) continue;
-					const patchText = `${start}${patchKey}${end}`;
+				const patchPlaceholder = (element, patchKey, patchValue) => {
+					if (patchValue.type === PatchType.TABLE_ROWS) {
+						patchTableRows({
+							json: element,
+							key: patchKey,
+							patch: patchValue,
+							delimiters: {
+								start,
+								end
+							},
+							patchPlaceholder
+						});
+						return;
+					}
 					replacer({
-						json,
-						patch: _objectSpread2(_objectSpread2({}, patchValue), {}, { children: patchValue.children.flatMap((element) => element instanceof Bookmark ? element.writtenAs : [element]).map((element) => {
-							if (element instanceof ExternalHyperlink) {
-								const concreteHyperlink = new ConcreteHyperlink(element.options.children, uniqueId());
+						json: element,
+						patch: _objectSpread2(_objectSpread2({}, patchValue), {}, { children: patchValue.children.flatMap((child) => child instanceof Bookmark ? child.writtenAs : [child]).map((child) => {
+							if (child instanceof ExternalHyperlink) {
+								const concreteHyperlink = new ConcreteHyperlink(child.options.children, uniqueId());
 								relationshipAdditions.push({
 									key,
 									id: concreteHyperlink.linkId,
 									type: "http://schemas.openxmlformats.org/officeDocument/2006/relationships/hyperlink",
-									target: element.options.link,
+									target: child.options.link,
 									targetMode: TargetModeType.EXTERNAL
 								});
 								return concreteHyperlink;
-							} else return element;
+							} else return child;
 						}) }),
-						patchText,
+						patchText: `${start}${patchKey}${end}`,
 						context,
 						keepOriginalStyles,
 						recursive,
 						renumberIds: (elements) => notes.renumber(renumberBookmarks(elements))
 					});
-				}
+				};
+				for (const [patchKey, patchValue] of patchesInOrder) patchPlaceholder(json, patchKey, patchValue);
 			}
 			notes.write();
 			for (const [key, json] of map) {
