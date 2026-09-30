@@ -61,6 +61,7 @@ The page numbers are written into:
 
 - the entries of each [Table of Contents](usage/table-of-contents.md) filled in from the headings
 - each [`PageReference`](usage/bookmarks.md#page-references), unless it shows its position relative to the bookmark (`useRelativePosition`)
+- the [number of pages](usage/page-numbers.md#total-number-of-pages) of the document (`PageNumber.TOTAL_PAGES`) and of each section (`PageNumber.TOTAL_PAGES_IN_SECTION`), in the text, headers and footers. A section's is left blank when it shares a page with another section, or has a blank page before or after it
 
 ## What it follows
 
@@ -70,9 +71,10 @@ The pages are laid out with the widths and heights of the characters of the font
 - spacing before and after paragraphs, line spacing, indents and tab stops
 - keeping a paragraph with the next, keeping its lines together, widow and orphan control, and page breaks
 - numbered and bulleted lists
+- footnotes, which take room at the bottom of the page their reference is on, and endnotes, which follow the text
 - pictures in the line
-- tables, with their rows' heights, cell margins and borders. Header rows are repeated on each page a table is on
-- sections, with their page sizes, margins, headers and footers, how they start, and their page numbering, such as roman numerals
+- tables, with their rows' heights, cell margins and borders. Rows break across pages between the lines of their cells, unless they are kept whole (`cantSplit`), and header rows are repeated on each page a table is on
+- sections, with their page sizes, margins, columns, headers and footers, how they start, and their page numbering, such as roman numerals
 
 ## What it leaves blank
 
@@ -80,9 +82,9 @@ It stops at the first thing it can't lay out yet, and the page numbers of the he
 
 - a picture or shape that text wraps around, a text box, or a text frame
 - an equation
-- a footnote
-- columns
-- a table row taller than a page
+- a footnote of more than a line that doesn't fit below its reference, which Word continues on the next page
+- columns of different widths, columns before a continuous section break, which Word evens out so the next section starts below the longest, footnotes in columns, and a table's header rows repeated at the top of a column
+- a table row kept whole that is taller than a page, and a row that breaks across pages with merged cells, a table or a footnote in it, or a height set taller than its text
 - a document that hyphenates its words
 
 A wrong page number is worse than a blank one, so it doesn't guess.

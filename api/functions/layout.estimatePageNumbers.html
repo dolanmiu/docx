@@ -16,17 +16,19 @@
 <li class="">
 <div class="tsd-signature tsd-anchor-link" id="estimatepagenumbers"><span class="tsd-kind-call-signature">estimatePageNumbers</span><span class="tsd-signature-symbol">(</span><br/>    <span class="tsd-kind-parameter">body</span><span class="tsd-signature-symbol">:</span> <a href="../interfaces/index.IXmlableObject.html" class="tsd-signature-type tsd-kind-interface">IXmlableObject</a><span class="tsd-signature-symbol">,</span><br/>    <span class="tsd-kind-parameter">context</span><span class="tsd-signature-symbol">:</span> <a href="../types/index.IContext.html" class="tsd-signature-type tsd-kind-type-alias">IContext</a><span class="tsd-signature-symbol">,</span><br/><span class="tsd-signature-symbol">)</span><span class="tsd-signature-symbol">:</span> <a href="../types/index.EstimatedPageNumbers.html" class="tsd-signature-type tsd-kind-type-alias">EstimatedPageNumbers</a><a href="#estimatepagenumbers" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="../assets/icons.svg#icon-anchor"></use></svg></a></div>
 <div class="tsd-description">
-<div class="tsd-comment tsd-typography"><p>Works out the page each bookmark of a document starts on, by laying out its pages as Word does, so the page numbers
-of its tables of contents and page references are written with it. Give it to a document as its <code>pageNumbers</code>:</p>
+<div class="tsd-comment tsd-typography"><p>Works out the page each bookmark of a document starts on, and how many pages the document and each of its sections
+have, by laying out its pages as Word does, so the page numbers of its tables of contents and page references, and its
+numbers of pages, are written with it. Give it to a document as its <code>pageNumbers</code>:</p>
 <pre><code class="ts"><span class="hl-4">new</span><span class="hl-1"> </span><span class="hl-6">Document</span><span class="hl-1">({ </span><span class="hl-2">pageNumbers:</span><span class="hl-1"> </span><span class="hl-2">estimatePageNumbers</span><span class="hl-1">, </span><span class="hl-2">sections:</span><span class="hl-1"> [...] });</span>
 </code><button type="button">Copy</button></pre>
 
 <p>The pages are laid out with the widths and heights of the fonts Word documents use most, such as Calibri, Cambria,
 Arial and Times New Roman. It follows paragraphs' spacing, indents, line spacing, tab stops and keep settings, widow
-and orphan control, lists, pictures in the line, tables, page and section breaks, and each section's page size,
-margins, headers, footers and page numbering.</p>
+and orphan control, lists, pictures in the line, tables, whose rows break across pages, footnotes and endnotes, page,
+column and section breaks, and each section's page size, margins, columns, headers, footers and page numbering.</p>
 <p>It stops at the first thing it can't lay out yet: a drawing that text flows around, a text box or frame, an equation,
-a footnote, columns, or a table row taller than a page. The page references to bookmarks after it are left blank, for
+a footnote that continues on the next page, columns evened out before a continuous section break, or a table row kept
+whole that is taller than a page. The page references to bookmarks after it are left blank, for
 Word to fill in when it updates the fields.</p>
 </div>
 <div class="tsd-parameters">
@@ -39,7 +41,7 @@ Word to fill in when it updates the fields.</p>
 <div class="tsd-tag-publicApi">
 <h4 class="tsd-anchor-link" id="public-api">Public Api<a href="#public-api" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="../assets/icons.svg#icon-anchor"></use></svg></a></h4></div></div><aside class="tsd-sources">
 <ul>
-<li>Defined in <a href="https://github.com/dolanmiu/docx/blob/0307c6556df4cd636bcab5160950d8d6dab44b05/src/layout/estimate-page-numbers.ts#L37">layout/estimate-page-numbers.ts:37</a></li></ul></aside></div></li></ul></section></div>
+<li>Defined in <a href="https://github.com/dolanmiu/docx/blob/3f5a17cd1031587eea88933f561271949795417c/src/layout/estimate-page-numbers.ts#L46">layout/estimate-page-numbers.ts:46</a></li></ul></aside></div></li></ul></section></div>
 <div class="col-sidebar">
 <div class="page-menu">
 <div class="tsd-navigation settings">

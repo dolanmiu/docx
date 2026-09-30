@@ -74,13 +74,13 @@ These properties appear in Word's File > Info panel and in file properties.
 
 ### Document Behavior
 
-| Property                   | Type                                                   | Description                                                                                                                         |
-| -------------------------- | ------------------------------------------------------ | ----------------------------------------------------------------------------------------------------------------------------------- |
-| background                 | `IDocumentBackgroundOptions`                           | Document background                                                                                                                 |
-| features                   | `{ trackRevisions?: boolean; updateFields?: boolean }` | Feature flags                                                                                                                       |
-| evenAndOddHeaderAndFooters | `boolean`                                              | Different odd/even headers                                                                                                          |
-| hyphenation                | `IHyphenationOptions`                                  | Hyphenation settings                                                                                                                |
-| pageNumbers                | `PageNumberEstimator`                                  | Writes the page numbers of tables of contents and page references, with `estimatePageNumbers` from [`docx/layout`](usage/layout.md) |
+| Property                   | Type                                                   | Description                                                                                                                                                   |
+| -------------------------- | ------------------------------------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| background                 | `IDocumentBackgroundOptions`                           | Document background                                                                                                                                           |
+| features                   | `{ trackRevisions?: boolean; updateFields?: boolean }` | Feature flags                                                                                                                                                 |
+| evenAndOddHeaderAndFooters | `boolean`                                              | Different odd/even headers                                                                                                                                    |
+| hyphenation                | `IHyphenationOptions`                                  | Hyphenation settings                                                                                                                                          |
+| pageNumbers                | `PageNumberEstimator`                                  | Writes the page numbers of tables of contents and page references, and the numbers of pages, with `estimatePageNumbers` from [`docx/layout`](usage/layout.md) |
 
 ### Compatibility
 

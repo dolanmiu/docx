@@ -21253,7 +21253,7 @@ MAX: 9026 };
 		};
 	};
 	/** The formatted content of a table of contents with its entries */
-	var contentOf = ({ properties, beginDirty, textWidth }, entries, styles, context) => {
+	var contentOf$1 = ({ properties, beginDirty, textWidth }, entries, styles, context) => {
 		var _parseRange;
 		const withoutPageNumbers = properties.pageNumbersEntryLevelsRange ? (_parseRange = parseRange(properties.pageNumbersEntryLevelsRange)) !== null && _parseRange !== void 0 ? _parseRange : [1, 9] : void 0;
 		const content = new StructuredDocumentTagContent();
@@ -21321,7 +21321,7 @@ MAX: 9026 };
 				}];
 			});
 			if (entries.length === 0) return;
-			table["w:sdt"] = childrenOf(table).map((child) => nameOf$2(child) === "w:sdtContent" ? contentOf(options, entries, styles, context) : child);
+			table["w:sdt"] = childrenOf(table).map((child) => nameOf$2(child) === "w:sdtContent" ? contentOf$1(options, entries, styles, context) : child);
 		});
 	};
 	//#endregion
@@ -21331,6 +21331,11 @@ MAX: 9026 };
 		"charformat",
 		"mergeformatinet"
 	]);
+	/** Whether a field's switches give its number a format of its own, such as `\* roman`, or a picture, such as `\# "00"` */
+	var hasOwnFormat = (switches) => {
+		const formats = [...switches.matchAll(/\\\*\s*"?([^\s"\\]+)/g)].map(([, format]) => format.toLowerCase());
+		return /\\#/.test(switches) || formats.some((format) => !PLAIN_FORMATS.has(format));
+	};
 	/**
 	* The bookmark a PAGEREF field refers to, unless the field shows something other than the page's number: its
 	* position relative to the bookmark (`\p`), or the number in a format of its own (`\* roman`).
@@ -21339,10 +21344,27 @@ MAX: 9026 };
 		const match = /^\s*PAGEREF\s+("?)([^\s"\\]+)\1(.*)$/i.exec(instruction);
 		if (!match) return;
 		const [, , bookmark, switches] = match;
-		const formats = [...switches.matchAll(/\\\*\s*"?([^\s"\\]+)/g)].map(([, format]) => format.toLowerCase());
-		return /\\p\b/i.test(switches) || formats.some((format) => !PLAIN_FORMATS.has(format)) ? void 0 : bookmark;
+		return /\\p\b/i.test(switches) || hasOwnFormat(switches) ? void 0 : bookmark;
+	};
+	/** The number of pages a NUMPAGES or SECTIONPAGES field shows, unless it writes it in a format of its own */
+	var pageCountOf = (instruction) => {
+		const match = /^\s*(NUMPAGES|SECTIONPAGES)\b(.*)$/i.exec(instruction);
+		if (!match || hasOwnFormat(match[2])) return;
+		return match[1].toUpperCase() === "NUMPAGES" ? "document" : "section";
+	};
+	/** The result of a field that shows a page's number or a number of pages, or undefined to leave it as it is */
+	var resultFrom = (instruction, { bookmarks, pageCount }, sectionPageCount) => {
+		const bookmark = bookmarkOf(instruction);
+		if (bookmark !== void 0) return bookmarks.get(bookmark);
+		const count = pageCountOf(instruction);
+		const value = count === "document" ? pageCount : count === "section" ? sectionPageCount : void 0;
+		return value === void 0 ? void 0 : String(value);
 	};
 	var nameOf$1 = (element) => typeof element === "object" && element !== null && !Array.isArray(element) ? Object.keys(element)[0] : void 0;
+	var contentOf = (element) => {
+		const content = element[nameOf$1(element)];
+		return Array.isArray(content) ? content : [];
+	};
 	var attributeOf = (element, name, attribute) => {
 		var _holder$_attr;
 		const content = element[name];
@@ -21351,10 +21373,10 @@ MAX: 9026 };
 	};
 	var textElement = (text) => ({ "w:t": [{ _attr: { "xml:space": "preserve" } }, text] });
 	/**
-	* Writes the estimated page numbers into the results of the PAGEREF fields in the elements, in order. A field's result
-	* is written just after its `separate` field character, and any result it had is taken out.
+	* Writes the results the filling works out into the fields in the elements, in order. A field's result is written just
+	* after its `separate` field character, and any result it had is taken out.
 	*/
-	var fillFields = (elements, open, pages) => {
+	var fillFields = (elements, open, filling) => {
 		for (let index = 0; index < elements.length; index++) {
 			const element = elements[index];
 			const name = nameOf$1(element);
@@ -21367,48 +21389,105 @@ MAX: 9026 };
 					inResult: false
 				});
 				else if (type === "separate" && current) {
-					const bookmark = bookmarkOf(current.instruction);
 					current.inResult = true;
-					current.page = bookmark === void 0 ? void 0 : pages.get(bookmark);
-					if (current.page !== void 0) {
-						elements.splice(index + 1, 0, textElement(current.page));
+					current.result = filling.resultOf(current.instruction);
+					if (current.result !== void 0) {
+						elements.splice(index + 1, 0, textElement(current.result));
 						index++;
 					}
 				} else if (type === "end") open.pop();
-			} else if (name === "w:instrText" && current && !current.inResult) {
-				const content = element[name];
-				current.instruction += content.filter((part) => typeof part === "string").join("");
-			} else if ((name === "w:t" || name === "w:tab" || name === "w:br" || name === "w:cr") && (current === null || current === void 0 ? void 0 : current.page) !== void 0) {
+			} else if (name === "w:instrText" && current && !current.inResult) current.instruction += contentOf(element).filter((part) => typeof part === "string").join("");
+			else if ((name === "w:t" || name === "w:tab" || name === "w:br" || name === "w:cr") && (current === null || current === void 0 ? void 0 : current.result) !== void 0) {
 				elements.splice(index, 1);
 				index--;
-			} else if (name === "w:fldSimple") fillSimpleField(element, pages);
+			} else if (name === "w:fldSimple") fillSimpleField(element, filling);
 			else {
 				const content = element[name];
-				if (Array.isArray(content)) fillFields(content, open, pages);
+				if (Array.isArray(content)) fillFields(content, open, filling);
+				if (name === "w:p") filling.afterParagraph(element);
 			}
 		}
 	};
 	/**
-	* Writes the page number into a simple field (`w:fldSimple`) that is a PAGEREF field: its runs are its result.
+	* Writes the result into a simple field (`w:fldSimple`) whose result the filling works out: its runs are its result.
 	*/
-	var fillSimpleField = (element, pages) => {
-		const bookmark = bookmarkOf(String(attributeOf(element, "w:fldSimple", "w:instr")));
-		const page = bookmark === void 0 ? void 0 : pages.get(bookmark);
+	var fillSimpleField = (element, filling) => {
+		const result = filling.resultOf(String(attributeOf(element, "w:fldSimple", "w:instr")));
 		const content = element["w:fldSimple"];
-		if (page === void 0) {
-			fillFields(content, [], pages);
+		if (result === void 0) {
+			fillFields(content, [], filling);
 			return;
 		}
-		element["w:fldSimple"] = [...content.filter((child) => nameOf$1(child) === "_attr"), { "w:r": [textElement(page)] }];
+		element["w:fldSimple"] = [...content.filter((child) => nameOf$1(child) === "_attr"), { "w:r": [textElement(result)] }];
+	};
+	/** The section properties (`w:sectPr`) in the elements, in order: those of the paragraphs that end sections, and the last */
+	var sectionPropertiesIn = (elements) => elements.flatMap((element) => {
+		const name = nameOf$1(element);
+		if (name === void 0 || name === "_attr") return [];
+		return name === "w:sectPr" ? [element] : sectionPropertiesIn(contentOf(element));
+	});
+	/** Whether a paragraph ends a section: whether its properties have the section's */
+	var endsSection = (paragraph) => contentOf(paragraph).some((child) => nameOf$1(child) === "w:pPr" && contentOf(child).some((part) => nameOf$1(part) === "w:sectPr"));
+	/**
+	* The number of pages each header and footer shows in its SECTIONPAGES fields, by the id of the relationship to it:
+	* that of the sections whose pages it is on, when they all have the same. A section without a header or footer of a kind
+	* has the one of the section before, as Word lays them out.
+	*/
+	var partPageCountsOf = (body, sectionPageCounts) => {
+		const countsOfParts = sectionPropertiesIn([body]).reduce((all, properties) => {
+			var _all;
+			const references = contentOf(properties).flatMap((child) => {
+				const name = nameOf$1(child);
+				return name === "w:headerReference" || name === "w:footerReference" ? [[`${name} ${String(attributeOf(child, name, "w:type"))}`, String(attributeOf(child, name, "r:id"))]] : [];
+			});
+			return [...all, new Map([...(_all = all[all.length - 1]) !== null && _all !== void 0 ? _all : [], ...references])];
+		}, []).reduce((counts, parts, section) => {
+			for (const id of parts.values()) {
+				var _counts$get;
+				counts.set(id, [...(_counts$get = counts.get(id)) !== null && _counts$get !== void 0 ? _counts$get : [], sectionPageCounts[section]]);
+			}
+			return counts;
+		}, /* @__PURE__ */ new Map());
+		return new Map([...countsOfParts].flatMap(([id, [first, ...rest]]) => first !== void 0 && rest.every((count) => count === first) ? [[id, first]] : []));
+	};
+	/** The estimate of each document's pages, and the numbers of pages its headers and footers show, once its body is written */
+	var estimates = /* @__PURE__ */ new WeakMap();
+	/**
+	* Writes the page numbers the estimator works out into the fields of a formatted body that show them: the PAGEREF fields
+	* in its tables of contents and elsewhere, and its NUMPAGES and SECTIONPAGES fields. A field whose number the estimator
+	* didn't work out is left as it is. The estimate is kept for the document's headers and footers.
+	*/
+	var fillPageNumbers = (body, context, estimator) => {
+		const estimate = estimator(body, context);
+		const { sectionPageCounts = [] } = estimate;
+		let section = 0;
+		fillFields([body], [], {
+			resultOf: (instruction) => resultFrom(instruction, estimate, sectionPageCounts[section]),
+			afterParagraph: (paragraph) => {
+				section += endsSection(paragraph) ? 1 : 0;
+			}
+		});
+		if (context.file) estimates.set(context.file, {
+			estimate,
+			partPageCounts: partPageCountsOf(body, sectionPageCounts)
+		});
 	};
 	/**
-	* Writes the page numbers the estimator works out into the page references of a formatted body: the PAGEREF fields in
-	* its tables of contents and elsewhere. A field whose bookmark the estimator didn't place is left as it is.
+	* Writes the page numbers worked out for the document a header or footer is in into the fields of the formatted header or
+	* footer that show them, once the document's body is written.
+	*
+	* @param part - The formatted header or footer, if it has anything to write
+	* @param context - The context it was formatted in, with the document it is in
+	* @param referenceId - The number of the relationship to it
 	*/
-	var fillPageNumbers = (body, context, estimate) => {
-		const { bookmarks } = estimate(body, context);
-		if (bookmarks.size === 0) return;
-		fillFields([body], [], bookmarks);
+	var fillPartPageNumbers = (part, context, referenceId) => {
+		const written = context.file && estimates.get(context.file);
+		if (!part || !written) return;
+		const sectionPageCount = written.partPageCounts.get(`rId${referenceId}`);
+		fillFields([part], [], {
+			resultOf: (instruction) => resultFrom(instruction, written.estimate, sectionPageCount),
+			afterParagraph: () => void 0
+		});
 	};
 	//#endregion
 	//#region src/file/vertical-align/vertical-align.ts
@@ -26013,6 +26092,15 @@ MAX: 9026 };
 		add(item) {
 			this.root.push(item);
 		}
+		/**
+		* Formats the footer, with the page numbers worked out for its document written into its fields, when the document's
+		* body is written with an estimate of its pages.
+		*/
+		prepForXml(context) {
+			const xml = super.prepForXml(context);
+			fillPartPageNumbers(xml, context, this.refId);
+			return xml;
+		}
 	};
 	//#endregion
 	//#region src/file/footer-wrapper.ts
@@ -26535,6 +26623,15 @@ MAX: 9026 };
 		}
 		add(item) {
 			this.root.push(item);
+		}
+		/**
+		* Formats the header, with the page numbers worked out for its document written into its fields, when the document's
+		* body is written with an estimate of its pages.
+		*/
+		prepForXml(context) {
+			const xml = super.prepForXml(context);
+			fillPartPageNumbers(xml, context, this.refId);
+			return xml;
 		}
 	};
 	//#endregion
@@ -36951,6 +37048,7 @@ while (n === a[++i] && n === a[++i] && n === a[++i] && n === a[++i] && n === a[+
 	exports.eighthPointMeasureValue = eighthPointMeasureValue;
 	exports.encodeUtf8 = encodeUtf8;
 	exports.fillPageNumbers = fillPageNumbers;
+	exports.fillPartPageNumbers = fillPartPageNumbers;
 	exports.hashedId = hashedId;
 	exports.hexColorValue = hexColorValue;
 	exports.hpsMeasureValue = hpsMeasureValue;

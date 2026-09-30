@@ -3512,7 +3512,8 @@ declare class EndnotesWrapper implements IViewWrapper {
 }
 
 /**
- * The page each bookmark of a document starts on, as a {@link PageNumberEstimator} works it out.
+ * The page each bookmark of a document starts on, and the number of pages of the document and of each of its sections,
+ * as a {@link PageNumberEstimator} works them out.
  *
  * @publicApi
  */
@@ -3522,6 +3523,13 @@ export declare type EstimatedPageNumbers = {
      * name. The page references to a bookmark that isn't in it are left blank.
      */
     readonly bookmarks: ReadonlyMap<string, string>;
+    /** The number of pages of the document, which its NUMPAGES fields show. They are left blank without it */
+    readonly pageCount?: number;
+    /**
+     * The number of pages of each of the document's sections, in order, which the SECTIONPAGES fields in the section, and
+     * in headers and footers only on its pages, show. Those of a section whose number is undefined are left blank.
+     */
+    readonly sectionPageCounts?: readonly (number | undefined)[];
 };
 
 /**
@@ -3748,10 +3756,21 @@ declare type FilePatch = {
 };
 
 /**
- * Writes the page numbers the estimator works out into the page references of a formatted body: the PAGEREF fields in
- * its tables of contents and elsewhere. A field whose bookmark the estimator didn't place is left as it is.
+ * Writes the page numbers the estimator works out into the fields of a formatted body that show them: the PAGEREF fields
+ * in its tables of contents and elsewhere, and its NUMPAGES and SECTIONPAGES fields. A field whose number the estimator
+ * didn't work out is left as it is. The estimate is kept for the document's headers and footers.
  */
-export declare const fillPageNumbers: (body: IXmlableObject, context: IContext, estimate: PageNumberEstimator) => void;
+export declare const fillPageNumbers: (body: IXmlableObject, context: IContext, estimator: PageNumberEstimator) => void;
+
+/**
+ * Writes the page numbers worked out for the document a header or footer is in into the fields of the formatted header or
+ * footer that show them, once the document's body is written.
+ *
+ * @param part - The formatted header or footer, if it has anything to write
+ * @param context - The context it was formatted in, with the document it is in
+ * @param referenceId - The number of the relationship to it
+ */
+export declare const fillPartPageNumbers: (part: IXmlableObject | undefined, context: IContext, referenceId: number) => void;
 
 /**
  * Options for embedding a font in the document.
@@ -3860,6 +3879,11 @@ declare class Footer_2 extends InitializableXmlComponent {
     constructor(referenceNumber: number, initContent?: XmlComponent);
     get ReferenceId(): number;
     add(item: Paragraph | Table): void;
+    /**
+     * Formats the footer, with the page numbers worked out for its document written into its fields, when the document's
+     * body is written with an estimate of its pages.
+     */
+    prepForXml(context: IContext): IXmlableObject | undefined;
 }
 
 /**
@@ -4208,6 +4232,11 @@ declare class Header_2 extends InitializableXmlComponent {
     constructor(referenceNumber: number, initContent?: XmlComponent);
     get ReferenceId(): number;
     add(item: Paragraph | Table): void;
+    /**
+     * Formats the header, with the page numbers worked out for its document written into its fields, when the document's
+     * body is written with an estimate of its pages.
+     */
+    prepForXml(context: IContext): IXmlableObject | undefined;
 }
 
 /**
@@ -10077,8 +10106,9 @@ export declare class PageNumberElement extends EmptyElement {
 }
 
 /**
- * Works out which page each bookmark of a document starts on, from the body of the document as it is written, so the
- * page numbers of its tables of contents and page references can be written with it.
+ * Works out which page each bookmark of a document starts on, and how many pages the document and its sections have,
+ * from the body of the document as it is written, so the page numbers of its tables of contents, page references and
+ * page counts can be written with it.
  *
  * `estimatePageNumbers`, from `docx/layout`, is one. Give it to a document as its `pageNumbers`.
  *

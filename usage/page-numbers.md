@@ -95,6 +95,8 @@ const doc = new Document({
 });
 ```
 
+Word and LibreOffice work out the number of pages when they lay the document out. It is written blank, for applications that show it as it is written, unless the document is given `pageNumbers: estimatePageNumbers` from `docx/layout`, which works it out when the document is written. See [Layout](usage/layout.md).
+
 ## Both
 
 You can combine the two to get "Page 2 of 10" effect:
