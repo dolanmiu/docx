@@ -2,6 +2,7 @@
 
 import * as fs from "fs";
 import { AlignmentType, Document, Footer, Header, Packer, PageBreak, PageNumber, NumberFormat, Paragraph, TextRun } from "docx";
+import { estimatePageNumbers } from "docx/layout";
 
 const header = new Header({
     children: [
@@ -25,6 +26,8 @@ const footer = new Footer({
 });
 
 const doc = new Document({
+    // Works out the number of pages in each section, which LibreOffice leaves blank
+    pageNumbers: estimatePageNumbers,
     sections: [
         {
             properties: {
@@ -43,7 +46,7 @@ const doc = new Document({
             },
             children: [
                 new Paragraph({
-                    children: [new TextRun("Section 1"), new PageBreak(), new TextRun("Section 1"), new PageBreak()],
+                    children: [new TextRun("Section 1"), new PageBreak(), new TextRun("Section 1")],
                 }),
             ],
         },
@@ -64,7 +67,7 @@ const doc = new Document({
             },
             children: [
                 new Paragraph({
-                    children: [new TextRun("Section 2"), new PageBreak(), new TextRun("Section 2"), new PageBreak()],
+                    children: [new TextRun("Section 2"), new PageBreak(), new TextRun("Section 2")],
                 }),
             ],
         },
