@@ -868,8 +868,9 @@ export const paginate = (
                           : 0
                       : between(previousAfter, paragraph.spaceBefore);
             const remaining = paragraph.lines.slice(from);
-            // Widow control and keepLines don't hold lines back in a row that breaks across pages, as in Word and LibreOffice
-            const { fits: count } = linesThatFit(remaining, room - used - space, paragraph, from === 0);
+            // Widow control and keepLines hold lines back in a row that breaks across pages, as in Word, where LibreOffice
+            // lets them go (`word-rules.docx` P8, `word-rules2.docx` Q3)
+            const { count } = linesThatFit(remaining, room - used - space, paragraph, from === 0);
             if (count > 0) {
                 used += space + linesHeight(remaining.slice(0, count));
                 placed = [...placed, ...remaining.slice(0, count)];
@@ -907,7 +908,12 @@ export const paginate = (
             const filled = parts.map((paragraphs, cell) =>
                 fillCell(paragraphs, room - row.cells[cell].marginTop - row.cells[cell].marginBottom, first),
             );
-            const placesLines = filled.some(({ lines }) => lines.length > 0);
+            // The row only breaks where each of its cells with lines left keeps some of them on the page, as in Word. When
+            // widow control or keepLines hold back all of a cell's lines, the row moves to the next page whole
+            // (`word-rules2.docx` Q3c)
+            const placesLines =
+                filled.some(({ lines }) => lines.length > 0) &&
+                parts.every((paragraphs, cell) => paragraphs.length === 0 || filled[cell].lines.length > 0);
             const isLastPart = filled.every(({ rest }) => rest.length === 0);
             if (placesLines && !isLastPart) {
                 if (row.cells.some(({ verticalMerge }) => verticalMerge !== undefined)) {
@@ -929,20 +935,20 @@ export const paginate = (
             if (placesLines && (fitsWhole || !isLastPart)) {
                 mark(filled.flatMap(({ lines }) => lines.flatMap(({ markers }) => markers)));
             }
+            const tallest = Math.max(...filled.map((part, cell) => row.cells[cell].marginTop + part.height + row.cells[cell].marginBottom));
             if (placesLines && isLastPart && fitsWhole) {
-                const tallest = Math.max(
-                    ...filled.map((part, cell) => row.cells[cell].marginTop + part.height + row.cells[cell].marginBottom),
-                );
                 // A row that moved to the next page whole is as tall there as it is anywhere
                 position += (isFirstPart ? height - borders : tallest) + borders;
                 placedInColumn = true;
                 return;
             }
-            startTablePage();
             if (placesLines && !isLastPart) {
+                // The part of the row on this page or in this column, which columns being balanced end below
+                position += tallest + borders;
                 parts = filled.map(({ rest }) => rest);
                 isFirstPart = false;
             }
+            startTablePage();
         }
     };
 
