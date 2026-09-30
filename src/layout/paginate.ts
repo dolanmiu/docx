@@ -5,7 +5,8 @@
  * and in columns, the first column and then the next.
  * Paragraphs break into lines, and pages break between lines, as their keep and widow control settings allow. Table
  * rows break across pages between the lines of their cells, unless they are kept whole, and the table's header rows are
- * repeated on each page. The footnotes of each page's lines take room at its bottom, and the endnotes follow the body.
+ * repeated on each page. The footnotes of each page's lines take room at its bottom, and one that doesn't fit below its
+ * reference continues at the bottom of the next page. The endnotes follow the body.
  * It stops at the first thing it can't lay out yet, and the bookmarks after it aren't placed.
  *
  * @module
@@ -83,6 +84,12 @@ const UNBROKEN: Omit<MeasuredParagraph, "lines"> = {
 /** A paragraph in a table cell, and the first of its lines not yet placed */
 type CellParagraph = { readonly paragraph: MeasuredParagraph; readonly from: number };
 
+/** The height of a block stacked with others, and the space before and after it */
+type StackPart = { readonly height: number; readonly before: number; readonly after: number };
+
+/** Some of the lines of a footnote's paragraph: those on the page it starts on, or those it continues with on the next */
+type NoteLines = { readonly paragraph: ParagraphBlock; readonly lines: readonly LaidOutLine[] };
+
 /** Thrown to stop laying out at something that can't be laid out yet */
 class Unsupported extends Error {}
 
@@ -129,7 +136,16 @@ export const paginate = (
         measurer = DEFAULT_MEASURER,
     }: PaginateOptions = {},
 ): Pagination => {
-    const { sections, defaultTabStop, evenAndOddHeaders, addsParagraphSpacing, footnotes, footnoteSeparator, endnotes } = content;
+    const {
+        sections,
+        defaultTabStop,
+        evenAndOddHeaders,
+        addsParagraphSpacing,
+        footnotes,
+        footnoteSeparator,
+        footnoteContinuationSeparator,
+        endnotes,
+    } = content;
     // The body, and then its endnotes, which Word lays out after it
     const blocks = [...content.blocks, ...endnotes.map((block) => ({ block, section: sections.length - 1 }))];
     /** The space between two paragraphs: the larger of the space after the first and before the second, or both */
@@ -230,10 +246,7 @@ export const paginate = (
     };
 
     /** The heights of blocks stacked in a width, with the space before and after each */
-    const stackParts = (
-        stack: readonly Block[],
-        width: number,
-    ): readonly { readonly height: number; readonly before: number; readonly after: number }[] =>
+    const stackParts = (stack: readonly Block[], width: number): readonly StackPart[] =>
         stack.map((block, index) => {
             if (block.type === "table") {
                 return { height: sum(rowHeights(fitted(block, width))), before: 0, after: 0 };
@@ -246,8 +259,11 @@ export const paginate = (
      * The height of blocks stacked in a width, such as those in a table cell or a header, with the space before the
      * first and after the last, unless it is left out
      */
-    const stackHeight = (stack: readonly Block[], width: number, withOuterSpace = true): number => {
-        const parts = stackParts(stack, width);
+    const stackHeight = (stack: readonly Block[], width: number, withOuterSpace = true): number =>
+        heightOf(stackParts(stack, width), withOuterSpace);
+
+    /** The height of stacked parts, with the space between them, and before the first and after the last unless left out */
+    const heightOf = (parts: readonly StackPart[], withOuterSpace: boolean): number => {
         const outer = withOuterSpace ? (parts[0]?.before ?? 0) + (parts[parts.length - 1]?.after ?? 0) : 0;
         return sum(parts.map(({ height, before }, index) => height + (index === 0 ? 0 : between(parts[index - 1].after, before)))) + outer;
     };
@@ -312,6 +328,9 @@ export const paginate = (
     // The footnotes at the bottom of the page, by their markers, and the room they take with their separator
     let pageNotes: readonly string[] = [];
     let noteArea = 0;
+    // The rest of a footnote continued from the page before, above the page's own, and of one continued on the next page
+    let continued: NoteLines | undefined;
+    let carried: NoteLines | undefined;
     // The space after the last paragraph, which goes before what is next on the page
     let spaceAfter = 0;
 
@@ -350,7 +369,15 @@ export const paginate = (
         placedInColumn = false;
         spaceAfter = 0;
         pageNotes = [];
-        noteArea = 0;
+        continued = carried;
+        carried = undefined;
+        noteArea = areaOf([]);
+        if (continued !== undefined && current.columns.length > 1) {
+            throw new Unsupported("a footnote in columns");
+        }
+        if (noteArea > bottom - top + TOLERANCE) {
+            throw new Unsupported("a footnote across more than two pages");
+        }
     };
 
     /** Moves to the top of the next column, or of the next page after the last column */
@@ -411,19 +438,33 @@ export const paginate = (
     };
 
     /**
-     * The room footnotes take at the bottom of the page: the separator's line above them, and their paragraphs, without
-     * the space before the first or after the last, as LibreOffice lays them out
+     * The room footnotes take at the bottom of the page: the separator's line above them, the rest of a footnote
+     * continued from the page before (`from`), their paragraphs, and the first lines of one continued on the next page
+     * (`split`), without the space before the first or after the last, as LibreOffice lays them out
      */
-    const areaOf = (notes: readonly string[]): number => {
-        if (notes.length === 0) {
+    const areaOf = (notes: readonly string[], split?: NoteLines, from = continued): number => {
+        if (notes.length === 0 && split === undefined && from === undefined) {
             return 0;
         }
-        const stack = [...footnoteSeparator, ...notes.flatMap((name) => footnotes.get(name)!)];
+        const separator = from === undefined ? footnoteSeparator : footnoteContinuationSeparator;
+        const stack = [
+            ...separator,
+            ...(from === undefined ? [] : [from.paragraph]),
+            ...notes.flatMap((name) => footnotes.get(name)!),
+            ...(split === undefined ? [] : [split.paragraph]),
+        ];
         const unsupported = stack.find((block) => block.unsupported !== undefined)?.unsupported;
         if (unsupported) {
             throw new Unsupported(unsupported);
         }
-        return stackHeight(stack, textWidth(), false);
+        // The lines continued from the page before have no space before them
+        const parts = stackParts(stack, textWidth()).map((part, index) => {
+            if (from !== undefined && index === separator.length) {
+                return { ...part, height: linesHeight(from.lines), before: 0 };
+            }
+            return split !== undefined && index === stack.length - 1 ? { ...part, height: linesHeight(split.lines) } : part;
+        });
+        return heightOf(parts, false);
     };
 
     const notesIn = (markers: readonly string[]): readonly string[] => markers.filter((name) => footnotes.has(name));
@@ -445,9 +486,88 @@ export const paginate = (
     };
 
     /**
-     * Whether a footnote could continue on the next page, as LibreOffice continues any footnote of more than a line that
-     * doesn't fit below its reference. Which of its lines it keeps with the reference isn't followed yet.
+     * The paragraph of a footnote that can continue on the next page with two of its lines or more on each: a footnote of
+     * one paragraph of 4 lines or more, not kept together
      */
+    const continuable = (name: string): ParagraphBlock | undefined => {
+        const [first, ...rest] = footnotes.get(name)!;
+        return rest.length === 0 &&
+            first?.type === "paragraph" &&
+            first.format.keepLines !== true &&
+            linesOf(first, textWidth()).length >= 4
+            ? first
+            : undefined;
+    };
+
+    /**
+     * The least room the footnotes of lines take below those on the page: all of those of the lines before the last
+     * (`before`), and of the last line's (`last`), the last continued on the next page after two of its lines, when it can be
+     */
+    const leastNoteRoom = (before: readonly string[], last: readonly string[]): number => {
+        const room = moreNoteRoom([...before, ...last]);
+        const paragraph = last.length === 0 ? undefined : continuable(last[last.length - 1]);
+        return paragraph === undefined
+            ? room
+            : areaOf([...pageNotes, ...before, ...last.slice(0, -1)], { paragraph, lines: linesOf(paragraph, textWidth()).slice(0, 2) }) -
+                  noteArea;
+    };
+
+    /**
+     * Puts the footnotes of the lines placed at the bottom of the page: all of them, or where they don't fit, as many
+     * lines of the last as fit, with the rest of it continued at the bottom of the next page, as Word and LibreOffice
+     * continue it. The footnote takes the rest of the page then, so what follows goes on the next.
+     */
+    const placeNotes = (notes: readonly string[]): void => {
+        if (notes.length === 0 || moreNoteRoom(notes) <= bottom - noteArea - position + TOLERANCE) {
+            addNotes(notes);
+            return;
+        }
+        const whole = [...pageNotes, ...notes.slice(0, -1)];
+        const paragraph = continuable(notes[notes.length - 1])!;
+        const lines = linesOf(paragraph, textWidth());
+        const count = lines.findIndex(
+            (_, line) => areaOf(whole, { paragraph, lines: lines.slice(0, line + 1) }) > bottom - position + TOLERANCE,
+        );
+        // Word's widow control in footnotes isn't known, so neither page gets only one of its lines
+        if (count > lines.length - 2) {
+            throw new Unsupported("a footnote across pages with a line on its own");
+        }
+        pageNotes = [...whole, notes[notes.length - 1]];
+        noteArea = bottom - position;
+        carried = { paragraph, lines: lines.slice(count) };
+    };
+
+    /**
+     * Stops where a line fits on the page without its footnotes (`notes`), which don't fit below it (`below`, less those
+     * of the lines before, `before`), and Word might put it on the page with only a part of one, which isn't followed: a
+     * line of one on its own, one of several paragraphs, or one continued with others after it
+     */
+    const stopAtPartOfFootnote = (before: readonly string[], notes: readonly string[], below: number): void => {
+        const index = notes.findIndex((_, note) => moreNoteRoom([...before, ...notes.slice(0, note + 1)]) > below + TOLERANCE);
+        const [first, ...rest] = footnotes.get(notes[index]) ?? [];
+        if (first === undefined) {
+            // The line has no footnotes that don't fit, but those of the lines before, or an empty one
+            return;
+        }
+        if (first.type === "table") {
+            throw new Unsupported("a footnote of several paragraphs across pages");
+        }
+        const firstLine = { paragraph: first, lines: linesOf(first, textWidth()).slice(0, 1) };
+        if (areaOf([...pageNotes, ...before, ...notes.slice(0, index)], firstLine) - noteArea > below + TOLERANCE) {
+            // None of it fits, so the line goes on the next page with it
+            return;
+        }
+        if (rest.length > 0) {
+            throw new Unsupported("a footnote of several paragraphs across pages");
+        }
+        throw new Unsupported(
+            index < notes.length - 1 || first.format.keepLines === true
+                ? "a footnote across pages"
+                : "a footnote across pages with a line on its own",
+        );
+    };
+
+    /** Whether a footnote could continue on the next page: one of more than a line */
     const canBreak = (name: string): boolean => {
         const [first, ...rest] = footnotes.get(name)!;
         return rest.length > 0 || first?.type === "table" || (first !== undefined && measureParagraph(first, textWidth()).lines.length > 1);
@@ -476,17 +596,29 @@ export const paginate = (
             const notesOf = (upTo: number): readonly string[] => notesIn(remaining.slice(0, upTo).flatMap(({ markers }) => markers));
             const room = bottom - noteArea - position - space;
             const isFirstLine = isStart && index === 0;
-            const { fits, count: kept } = linesThatFit(remaining, room, paragraph, isFirstLine, (upTo) => moreNoteRoom(notesOf(upTo)));
-            // A line that fits, but not with its footnotes, moves to the next page with them, unless they could break
-            const withoutNotes = linesThatFit(remaining, room, paragraph, isFirstLine).fits;
-            const tooTall = fits === 0 && !placedInColumn && notesOf(1).length > 0;
-            if (tooTall || (withoutNotes > fits && notesOf(fits + 1).some(canBreak))) {
-                throw new Unsupported("a footnote across pages");
+            // The footnotes of the lines before the last go on the page whole, and the last of the last line's can continue
+            const { fits, count: kept } = linesThatFit(remaining, room, paragraph, isFirstLine, (upTo) =>
+                leastNoteRoom(notesOf(upTo - 1), notesIn(remaining[upTo - 1].markers)),
+            );
+            if (fits === 0 && !placedInColumn && (notesOf(1).length > 0 || continued !== undefined)) {
+                throw new Unsupported(notesOf(1).length > 0 ? "a footnote across pages" : "a footnote across more than two pages");
+            }
+            // A line that fits, but not with its footnotes, moves to the next page with them, unless Word might put it here
+            // with a part of one. That can only be when the footnotes of the lines before it all fit, rather than one
+            // continuing on the next page
+            const above = room - linesHeight(remaining.slice(0, fits));
+            const splits = fits > 0 && moreNoteRoom(notesOf(fits)) > above + TOLERANCE;
+            if (linesThatFit(remaining, room, paragraph, isFirstLine).fits > fits && !splits) {
+                stopAtPartOfFootnote(notesOf(fits), notesIn(remaining[fits].markers), above - remaining[fits].height);
             }
             let count = kept;
             if (count === 0 && !placedInColumn) {
                 // Nothing fits on an empty page, so as much as fits goes on it, and at least a line
                 count = Math.max(1, fits);
+            }
+            if (count < fits && splits) {
+                // Widow control or keepLines would hold back the line of a footnote continued on the next page
+                throw new Unsupported("a footnote across pages");
             }
             if (count > 0) {
                 position += space;
@@ -494,7 +626,7 @@ export const paginate = (
                     mark(line.markers);
                     position += line.height;
                 }
-                addNotes(notesOf(count));
+                placeNotes(notesOf(count));
                 placedInColumn = true;
                 index += count;
             }
@@ -653,7 +785,7 @@ export const paginate = (
             const markers = row.cells.flatMap((cell) => cell.blocks.flatMap(markersOf));
             const notes = notesIn(markers);
             if (!rowFits(height, notes) && position + height <= bottom - noteArea + TOLERANCE && notes.some(canBreak)) {
-                throw new Unsupported("a footnote across pages");
+                throw new Unsupported("a footnote in a table row across pages");
             }
             if (!rowFits(height, notes) && !row.cantSplit && row.height?.rule !== "exact") {
                 if (notes.length > 0) {
@@ -745,13 +877,21 @@ export const paginate = (
             if (paragraph.keepNext && placedInColumn) {
                 const { height: needed, notes } = keptHeight(index, width);
                 const fitsHere = position + needed + moreNoteRoom(notes) <= bottom - noteArea + TOLERANCE;
+                if (!fitsHere && position + needed + leastNoteRoom(notes.slice(0, -1), notes.slice(-1)) <= bottom - noteArea + TOLERANCE) {
+                    // They fit only with a footnote continued on the next page
+                    throw new Unsupported("a footnote across pages");
+                }
                 // Where what is kept together would start: the top of the next column, or of a new page after the last
                 const nextTop = column + 1 < section().columns.length ? columnTop : top;
-                if (!fitsHere && needed + areaOf(notes) <= bottom - nextTop + TOLERANCE) {
+                if (!fitsHere && needed + areaOf(notes, undefined, carried) <= bottom - nextTop + TOLERANCE) {
                     nextColumn();
                 }
             }
             placeParagraph(paragraph);
+        }
+        if (carried !== undefined) {
+            // The rest of a footnote continued from the last page goes on a page of its own
+            startPage();
         }
     } catch (error) {
         if (!(error instanceof Unsupported)) {

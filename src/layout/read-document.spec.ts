@@ -209,9 +209,11 @@ describe("readDocument", () => {
             // A reference to a footnote the document doesn't have is numbered, and has nothing to place
             expect(itemsOf(content, 1)).to.deep.include({ type: "text", text: "2", font: { scale: 65 } });
             expect(content.footnotes.get("footnote 2")).to.deep.equal([]);
-            // The separator's paragraph, whose line is as tall as its mark
+            // The separators' paragraphs, whose lines are as tall as their marks
             expect(content.footnoteSeparator).to.have.length(1);
             expect((content.footnoteSeparator[0] as ParagraphBlock).items).to.deep.equal([]);
+            expect(content.footnoteContinuationSeparator).to.have.length(1);
+            expect((content.footnoteContinuationSeparator[0] as ParagraphBlock).items).to.deep.equal([]);
             expect(content.endnotes).to.deep.equal([]);
         });
 
@@ -226,6 +228,7 @@ describe("readDocument", () => {
             ).to.deep.equal([[], ["i", "First"], ["ii", "Second"]]);
             expect(content.footnotes.size).to.equal(0);
             expect(content.footnoteSeparator).to.deep.equal([]);
+            expect(content.footnoteContinuationSeparator).to.deep.equal([]);
         });
     });
 
