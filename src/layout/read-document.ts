@@ -720,6 +720,11 @@ const readSection = (element: unknown, readPart: (id: string) => readonly Block[
     const start = valueOf(properties, "w:type");
     const format = stringOf(numbering["w:fmt"]) ?? "decimal";
     const firstNumber = numberOf(numbering["w:start"]);
+    const pageWidth = twips(size["w:w"]) ?? DEFAULT_SECTION.pageWidth;
+    const marginLeft = twips(margins["w:left"] ?? margins["w:start"]) ?? DEFAULT_SECTION.marginLeft;
+    const marginRight = twips(margins["w:right"] ?? margins["w:end"]) ?? DEFAULT_SECTION.marginRight;
+    const gutter = twips(margins["w:gutter"]) ?? DEFAULT_SECTION.gutter;
+    const columns = readColumns(find(properties, "w:cols"), pageWidth - marginLeft - marginRight - gutter);
     const unsupported =
         grid === "lines" || grid === "linesAndChars" || grid === "snapToChars"
             ? "a document grid"
@@ -727,11 +732,10 @@ const readSection = (element: unknown, readPart: (id: string) => readonly Block[
               ? "page numbers in a format not yet written"
               : find(properties, "w:textDirection") !== undefined
                 ? "text that runs down the page"
-                : undefined;
-    const pageWidth = twips(size["w:w"]) ?? DEFAULT_SECTION.pageWidth;
-    const marginLeft = twips(margins["w:left"] ?? margins["w:start"]) ?? DEFAULT_SECTION.marginLeft;
-    const marginRight = twips(margins["w:right"] ?? margins["w:end"]) ?? DEFAULT_SECTION.marginRight;
-    const gutter = twips(margins["w:gutter"]) ?? DEFAULT_SECTION.gutter;
+                : // A paragraph that goes on into a column of another width would need its lines broken again
+                  columns.some((width) => width !== columns[0])
+                  ? "columns of different widths"
+                  : undefined;
     const headers = readReferences(properties, "w:headerReference", readPart);
     const footers = readReferences(properties, "w:footerReference", readPart);
     return {
@@ -746,7 +750,7 @@ const readSection = (element: unknown, readPart: (id: string) => readonly Block[
         gutter,
         start: start !== undefined && START_TYPES.has(start as Section["start"]) ? (start as Section["start"]) : "nextPage",
         titlePage: onOff(properties, "w:titlePg") === true,
-        columns: readColumns(find(properties, "w:cols"), pageWidth - marginLeft - marginRight - gutter),
+        columns,
         numberFormat: format,
         ...(firstNumber === undefined ? {} : { firstNumber }),
         headers: { ...previous?.headers, ...headers },
