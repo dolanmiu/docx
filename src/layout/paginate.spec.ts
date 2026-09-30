@@ -902,6 +902,18 @@ describe("paginate", () => {
             expect(pagesOf(content(sectionBreak, 20))).to.deep.equal({ a: "1", b: "1", c: "2" });
             // Its own space after is the larger with b's space before: 10 below a, and 10 more, so c fits
             expect(pagesOf(content({ ...sectionBreak, format: { spaceAfter: 10 } }, 10))).to.deep.equal({ a: "1", b: "1", c: "1" });
+            // At the top of a page, after a page break, its space before is left out, as any paragraph's is, so b and c
+            // fill the page below it
+            const atTop = document(
+                [
+                    [withItems(paragraph("a", 1), [{ type: "break", kind: "page", font: {} }]), 0],
+                    [{ ...sectionBreak, format: { spaceBefore: 30 } }, 0],
+                    [paragraph("b", 6), 1],
+                    [paragraph("c", 1), 1],
+                ],
+                { sections: [SECTION, { ...SECTION, start: "continuous" }] },
+            );
+            expect(pagesOf(atTop)).to.deep.equal({ a: "1", b: "2", c: "2" });
         });
 
         it("should stop at a section that starts in the next column", () => {
