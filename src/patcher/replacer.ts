@@ -91,8 +91,12 @@ export const replacer = ({
             case PatchType.DOCUMENT: {
                 const parentElement = goToParentElementFromPath(json, renderedParagraph.pathToParagraph);
                 const elementIndex = getLastElementIndexFromPath(renderedParagraph.pathToParagraph);
+                const children = formatChildren(patch, context, renumberIds);
+                // A cell must end with a paragraph. Word finds a cell that ends with a table, or is empty, unreadable
+                const endsCell = parentElement.name === "w:tc" && elementIndex === parentElement.elements!.length - 1;
+                const endParagraph = endsCell && children[children.length - 1]?.name !== "w:p" ? [{ type: "element", name: "w:p" }] : [];
                 // eslint-disable-next-line functional/immutable-data
-                parentElement.elements!.splice(elementIndex, 1, ...formatChildren(patch, context, renumberIds));
+                parentElement.elements!.splice(elementIndex, 1, ...children, ...endParagraph);
                 break;
             }
             case PatchType.PARAGRAPH:

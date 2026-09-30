@@ -11,7 +11,7 @@ import { PackagePart } from "@file/package-part";
 import { Bookmark, ExternalHyperlink, ImageRun, Paragraph, Run, TextRun } from "@file/paragraph";
 import { BuilderElement, type IContext, type IXmlableObject, XmlComponent } from "@file/xml-components";
 
-import { type IPatch, PatchType, patchDocument } from "./from-docx";
+import { type IPatch, type PatchDocumentOptions, PatchType, type TableRowsPatch, patchDocument } from "./from-docx";
 import { traverse } from "./traverser";
 import { toJson } from "./util";
 
@@ -1102,6 +1102,117 @@ describe("from-docx", () => {
                 );
 
                 expect(await read("word/document.xml")).to.contain(`<w:bookmarkStart w:name="inserted" w:id="${id}"/>`);
+            });
+        });
+
+        describe("Table rows", () => {
+            // Patches a template with this body, and a header if there is one, and returns a reader for the patched parts
+            const patchTemplate = async (
+                { body, header }: { readonly body: string; readonly header?: string },
+                patches: PatchDocumentOptions["patches"],
+            ): Promise<(path: string) => Promise<string | undefined>> => {
+                const template = new JSZip()
+                    .file("[Content_Types].xml", `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>`)
+                    .file("word/document.xml", `<w:document><w:body>${body}</w:body></w:document>`);
+                if (header) {
+                    template.file("word/header1.xml", `<w:hdr>${header}</w:hdr>`);
+                }
+                vi.spyOn(JSZip, "loadAsync").mockResolvedValue(template);
+
+                const output = await patchDocument({ outputType: "uint8array", data: Buffer.from(""), patches });
+                // `JSZip.loadAsync` is mocked; the instance method reads the real output
+                const zip = await new JSZip().loadAsync(output);
+                return (path) => zip.file(path)?.async("text") ?? Promise.resolve(undefined);
+            };
+
+            const text = (value: string): IPatch => ({ type: PatchType.PARAGRAPH, children: [new TextRun(value)] });
+            const cell = (value: string): string => `<w:tc><w:p><w:r><w:t>${value}</w:t></w:r></w:p></w:tc>`;
+            const TABLE = `<w:tbl><w:tblPr/><w:tblGrid/><w:tr>${cell("Name")}${cell("Price")}</w:tr><w:tr>${cell("{{items.name}}")}${cell("{{currency}}{{items.price}}")}</w:tr></w:tbl>`;
+            const textsOf = (xml: string | undefined): readonly string[] => traverse(toJson(xml!)).map((p) => p.text);
+
+            afterEach(() => {
+                vi.restoreAllMocks();
+            });
+
+            it("should repeat the rows, and then patch the other placeholders in every copy, whatever the order of the patches", async () => {
+                const read = await patchTemplate(
+                    { body: TABLE },
+                    {
+                        currency: text("£"),
+                        items: {
+                            type: PatchType.TABLE_ROWS,
+                            rows: [
+                                { name: text("Apples"), price: text("1.20") },
+                                { name: text("Pears"), price: undefined },
+                            ],
+                        },
+                    },
+                );
+
+                expect(textsOf(await read("word/document.xml"))).to.deep.equal(["Name", "Price", "Apples", "£1.20", "Pears", "£"]);
+            });
+
+            it("should repeat the rows of a table in a header", async () => {
+                const read = await patchTemplate(
+                    { body: "<w:p/>", header: TABLE },
+                    { items: { type: PatchType.TABLE_ROWS, rows: [{ name: text("Apples"), price: text("1.20") }] } },
+                );
+
+                expect(textsOf(await read("word/header1.xml"))).to.deep.equal(["Name", "Price", "Apples", "{{currency}}1.20"]);
+            });
+
+            it("should add a relationship for the hyperlink in each copy of a row", async () => {
+                const link = (url: string): IPatch => ({
+                    type: PatchType.PARAGRAPH,
+                    children: [new ExternalHyperlink({ link: url, children: [new TextRun(url)] })],
+                });
+                const read = await patchTemplate(
+                    { body: TABLE },
+                    {
+                        items: {
+                            type: PatchType.TABLE_ROWS,
+                            rows: [{ name: link("https://example.com/apples") }, { name: link("https://example.com/pears") }],
+                        },
+                    },
+                );
+
+                const relationshipIds = [...(await read("word/document.xml"))!.matchAll(/<w:hyperlink [^>]*r:id="([^"]+)"/g)].map(
+                    (m) => m[1],
+                );
+                const relationships = (await read("word/_rels/document.xml.rels"))!;
+                expect(relationshipIds).to.have.length(2);
+                expect(relationships).to.match(new RegExp(`Id="${relationshipIds[0]}"[^>]*Target="https://example.com/apples"`));
+                expect(relationships).to.match(new RegExp(`Id="${relationshipIds[1]}"[^>]*Target="https://example.com/pears"`));
+            });
+
+            it("should throw for a row's field that isn't a patch, naming the field", async () => {
+                await expect(
+                    patchTemplate(
+                        { body: TABLE },
+                        { items: { type: PatchType.TABLE_ROWS, rows: [{ name: "Apples" as unknown as IPatch }] } },
+                    ),
+                ).rejects.toThrow(
+                    'Invalid patch "items.name". Expected { type: PatchType.PARAGRAPH or PatchType.DOCUMENT, children: [...] }, or { type: PatchType.TABLE_ROWS, rows: [...] }',
+                );
+            });
+
+            it("should throw for a drawing patch for a row's field", async () => {
+                const drawing = { type: PatchType.DRAWING, patch: () => undefined } as unknown as IPatch;
+                await expect(
+                    patchTemplate({ body: TABLE }, { items: { type: PatchType.TABLE_ROWS, rows: [{ name: drawing }] } }),
+                ).rejects.toThrow('Invalid patch "items.name"');
+            });
+
+            it("should throw for rows that aren't objects, or a table rows patch without rows", async () => {
+                await expect(
+                    patchTemplate(
+                        { body: TABLE },
+                        { items: { type: PatchType.TABLE_ROWS, rows: [null as unknown as TableRowsPatch["rows"][number]] } },
+                    ),
+                ).rejects.toThrow('Invalid patch "items". Expected each of its rows to be an object of patches');
+                await expect(
+                    patchTemplate({ body: TABLE }, { items: { type: PatchType.TABLE_ROWS } as unknown as TableRowsPatch }),
+                ).rejects.toThrow('Invalid patch "items"');
             });
         });
 
