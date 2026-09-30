@@ -140,7 +140,8 @@ export type TableRowsPatch = {
     /**
      * The patches for each copy of the rows, by the name of the field they patch, such as `name` for `{{items.name}}`.
      * A field's patch can repeat rows of a table in the copy in turn, whose fields are then such as
-     * `{{items.parts.name}}`
+     * `{{items.parts.name}}`. When those fields are in the copy's own row, rather than in a table in it, the row is
+     * repeated for each part, with its item's fields, and an item without parts has no row
      */
     readonly rows: readonly Readonly<Record<string, IPatch | TableRowsPatch | undefined>>[];
 };

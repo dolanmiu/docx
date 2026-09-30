@@ -256,6 +256,32 @@ describe("patchTableRows", () => {
         ]);
     });
 
+    it("should repeat a repeated row for each row of a table rows patch whose fields are in the row itself, and not in a table in it", () => {
+        const json = patchBody(table(row("Customer", "Item"), row("{{orders.customer}}", "{{orders.items.name}}")), {
+            orders: {
+                type: PatchType.TABLE_ROWS,
+                rows: [
+                    {
+                        customer: text("Ada"),
+                        items: { type: PatchType.TABLE_ROWS, rows: [{ name: text("Apples") }, { name: text("Pears") }] },
+                    },
+                    { customer: text("Grace"), items: { type: PatchType.TABLE_ROWS, rows: [{ name: text("Figs") }] } },
+                    { customer: text("Linus"), items: { type: PatchType.TABLE_ROWS, rows: [] } },
+                ],
+            },
+        });
+
+        // A row for each item, with its order's fields, and none for an order without items
+        expect(tablesOf(json)).to.deep.equal([
+            [
+                ["Customer", "Item"],
+                ["Ada", "Apples"],
+                ["Ada", "Pears"],
+                ["Grace", "Figs"],
+            ],
+        ]);
+    });
+
     it("should leave text that starts a field without a name, or without an end, as it is", () => {
         const json = patchBody(table(row("{{items.name}}", "{{items.}} {{items.price")), { items: ITEMS });
 

@@ -199,7 +199,7 @@ fs.writeFileSync("My Document.docx", doc);
 - **More than one row for each item**: Rows next to each other that hold the fields are repeated together, such as a row for an item and a row under it for its notes.
 - **Missing fields**: A field that a row has no patch for, or whose patch is `undefined`, is left empty.
 - **No rows**: With no rows, the rows are removed and the rest of the table, such as its header, is kept. A table left with no rows at all is removed.
-- **Tables in tables**: A field's patch can be a `TABLE_ROWS` patch too, to repeat rows of a table in the repeated row. Its fields are then such as `{{orders.items.name}}`.
+- **Tables in tables**: A field's patch can be a `TABLE_ROWS` patch too, to repeat rows of a table in the repeated row. Its fields are then such as `{{orders.items.name}}`. When they are in the repeated row itself, rather than in a table in it, the row is repeated for each item, with its order's fields, and an order without items has no row.
 - **Bookmarks and ids**: Like content pasted in Word, only the first copy keeps the row's bookmarks, and the ids Word gives its paragraphs, rows and content controls, as these must be unique in a document.
 
 ## Advanced Patches
