@@ -9,8 +9,9 @@
  * page with a line of only its text, as its entry in the table of contents, before it, has its page number on the line
  * too. Spaces and tabs count as one space, because pdftotext can write a tab, or a wide gap, as several. So the headings
  * of the documents compared are each on a line of their own, and their pages are numbered from 1. It fails when a
- * heading's page number isn't LibreOffice's or Word's, or is left blank, and when the number of pages written into a
- * NUMPAGES field isn't the number of pages of LibreOffice's or Word's PDF.
+ * heading's page number isn't LibreOffice's or Word's, or is left blank, when the number of pages written into a NUMPAGES
+ * field isn't the number of pages of LibreOffice's or Word's PDF, and when there is no text of LibreOffice's pages of a
+ * document, as when it couldn't convert it.
  */
 import { existsSync, readFileSync, readdirSync } from "node:fs";
 import { join } from "node:path";
@@ -105,6 +106,8 @@ const REFERENCES = [
 
 const counts = new Map(REFERENCES.map(({ name }) => [name, { compared: 0, matched: 0 }]));
 const pageCounts = new Map(REFERENCES.map(({ name }) => [name, { compared: 0, matched: 0 }]));
+// The documents LibreOffice didn't lay out, which aren't compared
+const notLaidOut: string[] = [];
 for (const name of readdirSync(directory)
     .filter((file) => file.endsWith(".docx"))
     .sort()) {
@@ -114,6 +117,10 @@ for (const name of readdirSync(directory)
         return pages ? [{ ...reference, pages }] : [];
     });
     console.log(`\n${name}`);
+    if (!references.some((reference) => reference.name === "LibreOffice")) {
+        console.log("  FAIL  LibreOffice didn't lay it out");
+        notLaidOut.push(name);
+    }
     for (const { title, page } of entries) {
         const results = references.map(({ name: reference, pages }) => {
             const found = String(pages.findLastIndex((lines) => lines.includes(title)) + 1);
@@ -155,4 +162,9 @@ for (const [reference, { compared, matched }] of pageCounts) {
         console.log(`${matched} of ${compared} numbers of pages are ${reference}'s`);
     }
 }
-process.exit([...counts.values(), ...pageCounts.values()].every(({ compared, matched }) => compared === matched) ? 0 : 1);
+if (notLaidOut.length > 0) {
+    console.log(`LibreOffice didn't lay out ${notLaidOut.join(", ")}`);
+}
+process.exit(
+    notLaidOut.length === 0 && [...counts.values(), ...pageCounts.values()].every(({ compared, matched }) => compared === matched) ? 0 : 1,
+);
