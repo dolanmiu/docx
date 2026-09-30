@@ -2621,7 +2621,7 @@ var docxLayout = (function(exports) {
 		const { stops, firstLineStops } = stopsOf(tabStops, format);
 		const parts = segmentsOf(items);
 		const [previous, last] = parts.slice(-2);
-		const segments = parts.length > 1 && previous.end.kind !== "line" && last.tokens.every((token) => token.type === "marker") ? [...parts.slice(0, -2), {
+		const segments = parts.length > 1 && previous.end.kind === "page" && last.tokens.every((token) => token.type === "marker") ? [...parts.slice(0, -2), {
 			tokens: [...previous.tokens, ...last.tokens],
 			end: previous.end
 		}] : parts;
@@ -2850,7 +2850,8 @@ var docxLayout = (function(exports) {
 	* Lays out a document's pages as Word does, to find the page each bookmark starts on.
 	*
 	* Each page's body is filled from the top, between the page's margins, or its header and footer where they are taller,
-	* and in columns, the first column and then the next.
+	* and in columns, the first column and then the next. The columns on the page before a continuous section break are
+	* balanced, as short as what is in them fits in.
 	* Paragraphs break into lines, and pages break between lines, as their keep and widow control settings allow. Table
 	* rows break across pages between the lines of their cells, unless they are kept whole, and the table's header rows are
 	* repeated on each page. The footnotes of each page's lines take room at its bottom, and one that doesn't fit below its
@@ -2876,6 +2877,8 @@ var docxLayout = (function(exports) {
 	};
 	/** Thrown to stop laying out at something that can't be laid out yet */
 	var Unsupported = class extends Error {};
+	/** Thrown to stop laying out columns being balanced in a height they don't fit in */
+	var Overflow = class extends Error {};
 	var sum = (values) => values.reduce((total, value) => total + value, 0);
 	/**
 	* How many of a paragraph's lines, from one of them, fit in the room left on a page (`fits`), and how many of those go on
@@ -3054,16 +3057,55 @@ var docxLayout = (function(exports) {
 		const lastPages = /* @__PURE__ */ new Map();
 		const sharingPages = /* @__PURE__ */ new Set();
 		let top = 0;
+		let pageBottom = 0;
 		let bottom = 0;
 		let position = 0;
 		let column = 0;
 		let columnTop = 0;
 		let placedInColumn = false;
+		let deepest = 0;
+		let columnBroken = false;
+		let balancing;
 		let pageNotes = [];
 		let noteArea = 0;
 		let continued;
 		let carried;
 		let spaceAfter = 0;
+		/** Where the layout is at the start of a block, to lay out the blocks from it again */
+		const snapshot = (index) => ({
+			index,
+			pageCount,
+			pageNumber,
+			top,
+			pageBottom,
+			position,
+			column,
+			columnTop,
+			placedInColumn,
+			deepest,
+			columnBroken,
+			pageNotes,
+			noteArea,
+			continued,
+			carried,
+			spaceAfter
+		});
+		let blockStart;
+		let columnsStart;
+		/** The bottom of the page's columns: the page's, or less when they are being balanced */
+		const columnsBottom = () => (balancing === null || balancing === void 0 ? void 0 : balancing.page) === pageCount ? Math.min(pageBottom, columnTop + balancing.height) : pageBottom;
+		/**
+		* Goes back to where the layout was at the start of a block. The bookmarks placed since are kept, as laying the blocks
+		* out again only moves them between the columns of the same page
+		*/
+		const restore = (state) => {
+			({pageCount, pageNumber, top, pageBottom, position, column, columnTop, placedInColumn, deepest, columnBroken, pageNotes, noteArea, continued, carried, spaceAfter} = state);
+			bottom = columnsBottom();
+		};
+		/** Stops laying out columns being balanced where they are too short for what has to go at the top of one */
+		const stopIfBalancing = () => {
+			if ((balancing === null || balancing === void 0 ? void 0 : balancing.page) === pageCount) throw new Overflow();
+		};
 		const section = () => sections[sectionIndex];
 		/** The width of the text across the page, as its headers, footers and footnotes are */
 		const textWidth = (current = section()) => current.pageWidth - current.marginLeft - current.marginRight - current.gutter;
@@ -3078,17 +3120,22 @@ var docxLayout = (function(exports) {
 			return height;
 		};
 		const startPage = (isFirstOfSection = false) => {
+			if (balancing !== void 0 && pageCount >= balancing.page) throw new Overflow();
 			const current = section();
 			pageNumber = isFirstOfSection && current.firstNumber !== void 0 ? current.firstNumber : pageNumber + 1;
 			const headerBottom = current.header + partHeight(current.headers, isFirstOfSection);
 			const footerTop = current.footer + partHeight(current.footers, isFirstOfSection);
 			pageCount++;
 			top = current.marginTop < 0 ? -current.marginTop : Math.max(current.marginTop, headerBottom);
-			bottom = current.pageHeight - (current.marginBottom < 0 ? -current.marginBottom : Math.max(current.marginBottom, footerTop));
+			pageBottom = current.pageHeight - (current.marginBottom < 0 ? -current.marginBottom : Math.max(current.marginBottom, footerTop));
 			position = top;
 			column = 0;
 			columnTop = top;
+			bottom = columnsBottom();
 			placedInColumn = false;
+			deepest = 0;
+			columnBroken = false;
+			columnsStart = blockStart;
 			spaceAfter = 0;
 			pageNotes = [];
 			continued = carried;
@@ -3103,23 +3150,72 @@ var docxLayout = (function(exports) {
 				startPage();
 				return;
 			}
+			deepest = Math.max(deepest, position + spaceAfter);
 			column++;
 			position = columnTop;
 			placedInColumn = false;
 			spaceAfter = 0;
 		};
-		const startSection = (index) => {
+		/** Whether a section starts on the page the section before it ends on: a continuous one, on pages of the same size */
+		const continuesOnPage = (previous, current) => current.start === "continuous" && previous.pageWidth === current.pageWidth && previous.pageHeight === current.pageHeight;
+		/**
+		* Ends the columns on the page before a continuous section break, as Word does. Unless a column break is in them, they
+		* are balanced: what is in them, up to the section's next block (`end`), is laid out again in the shortest columns it
+		* fits in, filled from the first, which halving the height tried finds. The next section starts below the lowest of
+		* the columns and the space after the paragraph each ends with, and its space before is only as much as is more than
+		* the space after the section's last paragraph.
+		*/
+		const endColumns = (end) => {
+			if (!columnBroken) balanceColumns(end);
+			position = Math.max(deepest, position + spaceAfter) - spaceAfter;
+		};
+		const balanceColumns = (end) => {
+			const from = columnsStart;
+			const page = pageCount;
+			const layOut = (height) => {
+				balancing = {
+					page,
+					height
+				};
+				restore(from);
+				placeBlocks(from.index, end);
+			};
+			const fitsIn = (height) => {
+				try {
+					layOut(height);
+					return true;
+				} catch (error) {
+					if (error instanceof Overflow) return false;
+					throw error;
+				}
+			};
+			let short = 0;
+			let tall = pageBottom - columnTop;
+			while (tall - short > TOLERANCE) {
+				const middle = (short + tall) / 2;
+				if (fitsIn(middle)) tall = middle;
+				else short = middle;
+			}
+			layOut(tall);
+			balancing = void 0;
+			bottom = pageBottom;
+		};
+		/**
+		* Starts a section, from its first block (`firstBlock`): on a new page, or below what is on the page for a continuous
+		* one, after the columns before it are ended
+		*/
+		const startSection = (index, firstBlock) => {
 			var _current$firstNumber;
 			const previous = section();
+			const current = sections[index];
 			lastPages.set(sectionIndex, pageCount);
 			for (let skipped = sectionIndex + 1; skipped < index; skipped++) sharingPages.add(skipped);
+			if (current.unsupported) throw new Unsupported(current.unsupported);
+			const continuous = continuesOnPage(previous, current);
+			if (continuous && previous.columns.length > 1 && (placedInColumn || column > 0)) endColumns(firstBlock);
 			const before = sectionIndex;
 			sectionIndex = index;
-			const current = section();
-			if (current.unsupported) throw new Unsupported(current.unsupported);
-			const samePage = previous.pageWidth === current.pageWidth && previous.pageHeight === current.pageHeight;
-			if (current.start === "continuous" && samePage) {
-				if (previous.columns.length > 1 && (placedInColumn || column > 0)) throw new Unsupported("columns balanced before a continuous section break");
+			if (continuous) {
 				column = 0;
 				columnTop = position;
 				firstPages.set(index, pageCount);
@@ -3262,6 +3358,7 @@ var docxLayout = (function(exports) {
 		* paragraph at the top of a page is left out.
 		*/
 		const placeLines = (lines, paragraph, isStart) => {
+			if (isStart && paragraph.keepLines && section().columns.length > 1 && linesHeight(lines) > pageBottom - top + TOLERANCE) throw new Unsupported("a paragraph kept together taller than a column");
 			let index = 0;
 			while (index < lines.length) {
 				const space = placedInColumn && isStart && index === 0 ? between(spaceAfter, paragraph.spaceBefore) : 0;
@@ -3275,7 +3372,10 @@ var docxLayout = (function(exports) {
 				const splits = fits > 0 && moreNoteRoom(notesOf(fits)) > above + TOLERANCE;
 				if (linesThatFit(remaining, room, paragraph, isFirstLine).fits > fits && !splits) stopAtPartOfFootnote(notesOf(fits), notesIn(remaining[fits].markers), above - remaining[fits].height);
 				let count = kept;
-				if (count === 0 && !placedInColumn) count = Math.max(1, fits);
+				if (count === 0 && !placedInColumn) {
+					if (linesThatFit(remaining, room + pageBottom - bottom, paragraph, isFirstLine).count > 0) stopIfBalancing();
+					count = Math.max(1, fits);
+				}
 				if (count < fits && splits) throw new Unsupported("a footnote across pages");
 				if (count > 0) {
 					position += space;
@@ -3283,6 +3383,7 @@ var docxLayout = (function(exports) {
 						mark(line.markers);
 						position += line.height;
 					}
+					spaceAfter = 0;
 					placeNotes(notesOf(count));
 					placedInColumn = true;
 					index += count;
@@ -3301,8 +3402,10 @@ var docxLayout = (function(exports) {
 				] : [...all.slice(0, -1), current];
 			}, [[]]);
 			for (const [index, group] of groups.entries()) {
-				if (index > 0 && groups[index - 1][groups[index - 1].length - 1].breakAfter === "column") nextColumn();
-				else if (index > 0) startPage();
+				if (index > 0 && groups[index - 1][groups[index - 1].length - 1].breakAfter === "column") {
+					columnBroken = true;
+					nextColumn();
+				} else if (index > 0) startPage();
 				placeLines(group, paragraph, index === 0);
 			}
 			({spaceAfter} = paragraph);
@@ -3368,7 +3471,10 @@ var docxLayout = (function(exports) {
 					if (row.cells.some((cell) => cell.blocks.some(({ type }) => type === "table"))) throw new Unsupported("a table in a table row across pages");
 				}
 				const fitsWhole = !isFirstPart || position + height <= bottom - noteArea + TOLERANCE;
-				if ((!placesLines || !fitsWhole) && !placedInColumn) throw new Unsupported("a table row taller than a page");
+				if ((!placesLines || !fitsWhole) && !placedInColumn) {
+					stopIfBalancing();
+					throw new Unsupported("a table row taller than a page");
+				}
 				if (placesLines && (fitsWhole || !isLastPart)) mark(filled.flatMap(({ lines }) => lines.flatMap(({ markers }) => markers)));
 				if (placesLines && isLastPart && fitsWhole) {
 					const tallest = Math.max(...filled.map((part, cell) => row.cells[cell].marginTop + part.height + row.cells[cell].marginBottom));
@@ -3410,7 +3516,10 @@ var docxLayout = (function(exports) {
 					continue;
 				}
 				if (!rowFits(height, notes) && placedInColumn) startTablePage(index);
-				if (!rowFits(height, notes)) throw new Unsupported(notes.length > 0 ? "a footnote across pages" : "a table row taller than a page");
+				if (!rowFits(height, notes)) {
+					stopIfBalancing();
+					throw new Unsupported(notes.length > 0 ? "a footnote across pages" : "a table row taller than a page");
+				}
 				mark(markers);
 				addNotes(notes);
 				position += height;
@@ -3436,6 +3545,10 @@ var docxLayout = (function(exports) {
 			const lastAfter = (_kept$spaceAfter = (_kept = kept[kept.length - 1]) === null || _kept === void 0 ? void 0 : _kept.spaceAfter) !== null && _kept$spaceAfter !== void 0 ? _kept$spaceAfter : spaceAfter;
 			const keptNotes = notesIn(kept.flatMap(({ lines }) => lines.flatMap(({ markers }) => markers)));
 			const anchor = blocks[index + chain].block;
+			if (anchor.type === "paragraph" && anchor.sectionBreak) return {
+				height: keptLines,
+				notes: keptNotes
+			};
 			if (anchor.type === "table") {
 				var _rowHeights$;
 				const [firstRow] = anchor.rows;
@@ -3452,6 +3565,37 @@ var docxLayout = (function(exports) {
 				notes: [...keptNotes, ...notesIn(nextLines.flatMap(({ markers }) => markers))]
 			};
 		};
+		const placeBlock = (block, index) => {
+			var _blocks3, _blocks4;
+			if (block.unsupported) throw new Unsupported(block.unsupported);
+			if (block.type === "paragraph" && block.sectionBreak) return;
+			if (block.type === "table") {
+				placeTable(fitted(block, section().columns[column]));
+				return;
+			}
+			const width = section().columns[column];
+			const paragraph = measureParagraph(block, width, (_blocks3 = blocks[index - 1]) === null || _blocks3 === void 0 ? void 0 : _blocks3.block, (_blocks4 = blocks[index + 1]) === null || _blocks4 === void 0 ? void 0 : _blocks4.block);
+			if (paragraph.keepNext && placedInColumn) {
+				const { height: needed, notes } = keptHeight(index, width);
+				const fitsHere = position + needed + moreNoteRoom(notes) <= bottom - noteArea + TOLERANCE;
+				if (!fitsHere && position + needed + leastNoteRoom(notes.slice(0, -1), notes.slice(-1)) <= bottom - noteArea + TOLERANCE) throw new Unsupported("a footnote across pages");
+				const fitsBelow = (from) => needed + areaOf(notes, void 0, carried) <= bottom - from + TOLERANCE;
+				if (!fitsHere && column + 1 < section().columns.length && fitsBelow(columnTop)) nextColumn();
+				else if (!fitsHere && fitsBelow(top)) startPage();
+			}
+			placeParagraph(paragraph);
+		};
+		/** Lays out the blocks from one (`from`) to the one before another (`to`), starting their sections */
+		const placeBlocks = (from, to) => {
+			for (let index = from; index < to; index++) {
+				const { block, section: blockSection } = blocks[index];
+				const startsSection = blockSection !== sectionIndex;
+				if (startsSection) startSection(blockSection, index);
+				blockStart = snapshot(index);
+				if (startsSection || columnsStart === void 0) columnsStart = blockStart;
+				placeBlock(block, index);
+			}
+		};
 		/** The number of pages of each section whose pages are its alone, and that was laid out to its end */
 		const countsOf = () => sections.map((_, index) => {
 			const first = firstPages.get(index);
@@ -3462,25 +3606,7 @@ var docxLayout = (function(exports) {
 			if (content.unsupported) throw new Unsupported(content.unsupported);
 			if (section().unsupported) throw new Unsupported(section().unsupported);
 			startPage(true);
-			for (const [index, { block, section: blockSection }] of blocks.entries()) {
-				var _blocks3, _blocks4;
-				if (blockSection !== sectionIndex) startSection(blockSection);
-				if (block.unsupported) throw new Unsupported(block.unsupported);
-				if (block.type === "table") {
-					placeTable(fitted(block, section().columns[column]));
-					continue;
-				}
-				const width = section().columns[column];
-				const paragraph = measureParagraph(block, width, (_blocks3 = blocks[index - 1]) === null || _blocks3 === void 0 ? void 0 : _blocks3.block, (_blocks4 = blocks[index + 1]) === null || _blocks4 === void 0 ? void 0 : _blocks4.block);
-				if (paragraph.keepNext && placedInColumn) {
-					const { height: needed, notes } = keptHeight(index, width);
-					const fitsHere = position + needed + moreNoteRoom(notes) <= bottom - noteArea + TOLERANCE;
-					if (!fitsHere && position + needed + leastNoteRoom(notes.slice(0, -1), notes.slice(-1)) <= bottom - noteArea + TOLERANCE) throw new Unsupported("a footnote across pages");
-					const nextTop = column + 1 < section().columns.length ? columnTop : top;
-					if (!fitsHere && needed + areaOf(notes, void 0, carried) <= bottom - nextTop + TOLERANCE) nextColumn();
-				}
-				placeParagraph(paragraph);
-			}
+			placeBlocks(0, blocks.length);
 			if (carried !== void 0) startPage();
 		} catch (error) {
 			if (!(error instanceof Unsupported)) throw error;
@@ -4195,19 +4321,20 @@ var docxLayout = (function(exports) {
 				else if (name === "w:sectPr") addSection(element[name]);
 				else if (name === "w:bookmarkStart") bookmarks = [...bookmarks, String(attributesOf(element[name])["w:name"])];
 				else {
+					const sectionProperties = name === "w:p" ? find(childrenOf(find(contentOf(element).filter(isObject), "w:pPr")), "w:sectPr") : void 0;
 					for (const block of readBlocks([element], reader)) {
 						const markers = bookmarks.map((marker) => ({
 							type: "marker",
 							name: marker
 						}));
 						const marked = block.type === "paragraph" && markers.length > 0;
+						const sectionBreak = sectionProperties !== void 0 && block.type === "paragraph" && block.items.length === 0 && !marked;
 						blocks.push({
-							block: marked ? _objectSpread2(_objectSpread2({}, block), {}, { items: [...markers, ...block.items] }) : block,
+							block: marked ? _objectSpread2(_objectSpread2({}, block), {}, { items: [...markers, ...block.items] }) : sectionBreak ? _objectSpread2(_objectSpread2({}, block), {}, { sectionBreak }) : block,
 							section: sections.length
 						});
 						bookmarks = marked ? [] : bookmarks;
 					}
-					const sectionProperties = name === "w:p" ? find(childrenOf(find(contentOf(element).filter(isObject), "w:pPr")), "w:sectPr") : void 0;
 					if (sectionProperties !== void 0) addSection(sectionProperties);
 				}
 			}
