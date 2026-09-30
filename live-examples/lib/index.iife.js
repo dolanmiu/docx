@@ -21054,21 +21054,21 @@ MAX: 9026 };
 		}
 	};
 	/** The name of a formatted element, or `_attr` for its parent's attributes */
-	var nameOf$1 = (element) => typeof element === "object" && element !== null ? Object.keys(element)[0] : void 0;
+	var nameOf$2 = (element) => typeof element === "object" && element !== null ? Object.keys(element)[0] : void 0;
 	/** The children of a formatted element. An element with only attributes has them as its one child */
 	var childrenOf = (element) => {
-		const name = nameOf$1(element);
+		const name = nameOf$2(element);
 		const content = name === void 0 ? void 0 : element[name];
 		return Array.isArray(content) ? content : content === void 0 ? [] : [content];
 	};
-	var childOf = (element, name) => childrenOf(element).find((child) => nameOf$1(child) === name);
-	var attributeOf = (element, attribute) => {
+	var childOf = (element, name) => childrenOf(element).find((child) => nameOf$2(child) === name);
+	var attributeOf$1 = (element, attribute) => {
 		var _childOf;
 		return (_childOf = childOf(element, "_attr")) === null || _childOf === void 0 || (_childOf = _childOf._attr) === null || _childOf === void 0 ? void 0 : _childOf[attribute];
 	};
 	/** An attribute such as `w:val="2"` as a number. Imported XML gives it as a string */
 	var numberAttributeOf = (element, attribute) => {
-		const value = attributeOf(element, attribute);
+		const value = attributeOf$1(element, attribute);
 		return value === void 0 ? void 0 : Number(value);
 	};
 	/** The block-level containers of paragraphs: tables, their rows and cells, and content controls */
@@ -21085,7 +21085,7 @@ MAX: 9026 };
 	* so the paragraphs in it aren't taken for headings. Nor are paragraphs in text boxes, as in Word.
 	*/
 	var blocksOf = (elements) => elements.flatMap((element) => {
-		const name = nameOf$1(element);
+		const name = nameOf$2(element);
 		if (name === "w:p" || writtenTables.has(element)) return [element];
 		return name !== void 0 && BLOCK_CONTAINERS.has(name) ? blocksOf(childrenOf(element)) : [];
 	});
@@ -21105,10 +21105,10 @@ MAX: 9026 };
 	]);
 	/** The text an element in a run stands for, such as `\t` for a tab. A page or column break isn't text */
 	var textOfRunContent = (element) => {
-		switch (nameOf$1(element)) {
+		switch (nameOf$2(element)) {
 			case "w:t": return childrenOf(element).filter((child) => typeof child === "string").join("");
 			case "w:tab": return "	";
-			case "w:br": return [void 0, "textWrapping"].includes(attributeOf(element, "w:type")) ? "\n" : "";
+			case "w:br": return [void 0, "textWrapping"].includes(attributeOf$1(element, "w:type")) ? "\n" : "";
 			case "w:cr": return "\n";
 			case "w:noBreakHyphen": return "-";
 			default: return "";
@@ -21118,10 +21118,10 @@ MAX: 9026 };
 	var textOf = (paragraph) => {
 		const fields = [];
 		const read = (element) => {
-			const name = nameOf$1(element);
+			const name = nameOf$2(element);
 			if (name !== void 0 && TEXT_CONTAINERS.has(name)) return childrenOf(element).map(read).join("");
 			if (name === "w:fldChar") {
-				const type = attributeOf(element, "w:fldCharType");
+				const type = attributeOf$1(element, "w:fldCharType");
 				if (type === "begin") fields.push(false);
 				else if (type === "separate") fields[fields.length - 1] = true;
 				else fields.pop();
@@ -21133,15 +21133,15 @@ MAX: 9026 };
 	};
 	/** The bookmarks started and ended in an element, in order */
 	var bookmarkMarksOf = (element) => {
-		const name = nameOf$1(element);
+		const name = nameOf$2(element);
 		if (name === "w:bookmarkStart") return [{
 			start: true,
-			id: attributeOf(element, "w:id"),
-			name: attributeOf(element, "w:name")
+			id: attributeOf$1(element, "w:id"),
+			name: attributeOf$1(element, "w:name")
 		}];
 		if (name === "w:bookmarkEnd") return [{
 			start: false,
-			id: attributeOf(element, "w:id")
+			id: attributeOf$1(element, "w:id")
 		}];
 		return name === void 0 || name === "_attr" ? [] : childrenOf(element).flatMap(bookmarkMarksOf);
 	};
@@ -21167,7 +21167,7 @@ MAX: 9026 };
 			const properties = childOf(element, "w:pPr");
 			return {
 				element,
-				styleId: attributeOf(childOf(properties, "w:pStyle"), "w:val"),
+				styleId: attributeOf$1(childOf(properties, "w:pStyle"), "w:val"),
 				outlineLevel: numberAttributeOf(childOf(properties, "w:outlineLvl"), "w:val"),
 				text: textOf(element),
 				bookmarks: (_bookmarks$index = bookmarks[index]) !== null && _bookmarks$index !== void 0 ? _bookmarks$index : /* @__PURE__ */ new Set()
@@ -21178,9 +21178,9 @@ MAX: 9026 };
 	var stylesOf = (context) => {
 		var _context$file;
 		const styles = (_context$file = context.file) === null || _context$file === void 0 || (_context$file = _context$file.Styles) === null || _context$file === void 0 ? void 0 : _context$file.prepForXml(context);
-		return new Map(childrenOf(styles).filter((style) => nameOf$1(style) === "w:style" && ["paragraph", void 0].includes(attributeOf(style, "w:type"))).map((style) => [attributeOf(style, "w:styleId"), {
-			name: attributeOf(childOf(style, "w:name"), "w:val"),
-			basedOn: attributeOf(childOf(style, "w:basedOn"), "w:val"),
+		return new Map(childrenOf(styles).filter((style) => nameOf$2(style) === "w:style" && ["paragraph", void 0].includes(attributeOf$1(style, "w:type"))).map((style) => [attributeOf$1(style, "w:styleId"), {
+			name: attributeOf$1(childOf(style, "w:name"), "w:val"),
+			basedOn: attributeOf$1(childOf(style, "w:basedOn"), "w:val"),
 			outlineLevel: numberAttributeOf(childOf(childOf(style, "w:pPr"), "w:outlineLvl"), "w:val")
 		}]));
 	};
@@ -21285,7 +21285,7 @@ MAX: 9026 };
 	/** Puts a bookmark around the content of a formatted paragraph */
 	var bookmark = (paragraph, name, id, context) => {
 		const children = childrenOf(paragraph);
-		const start = children.findIndex((child) => nameOf$1(child) === "w:pPr") + 1;
+		const start = children.findIndex((child) => nameOf$2(child) === "w:pPr") + 1;
 		paragraph["w:p"] = [
 			...children.slice(0, start),
 			new BookmarkStart(name, id).prepForXml(context),
@@ -21306,7 +21306,7 @@ MAX: 9026 };
 		if (tables.length === 0) return;
 		const styles = stylesOf(context);
 		const followBookmarks = tables.some(([, { properties }]) => Boolean(properties.entriesFromBookmark));
-		const headings = paragraphDetailsOf(blocks.filter((block) => nameOf$1(block) === "w:p"), followBookmarks).map((paragraph) => ({
+		const headings = paragraphDetailsOf(blocks.filter((block) => nameOf$2(block) === "w:p"), followBookmarks).map((paragraph) => ({
 			paragraph,
 			levels: tables.map(([, { properties }]) => levelIn(properties, paragraph, styles))
 		})).filter(({ levels }) => levels.some((level) => level !== void 0)).map((heading, index) => _objectSpread2(_objectSpread2({}, heading), {}, { id: bookmarkIds.get(index) }));
@@ -21321,8 +21321,94 @@ MAX: 9026 };
 				}];
 			});
 			if (entries.length === 0) return;
-			table["w:sdt"] = childrenOf(table).map((child) => nameOf$1(child) === "w:sdtContent" ? contentOf(options, entries, styles, context) : child);
+			table["w:sdt"] = childrenOf(table).map((child) => nameOf$2(child) === "w:sdtContent" ? contentOf(options, entries, styles, context) : child);
 		});
+	};
+	//#endregion
+	//#region src/file/document/body/page-numbers.ts
+	var PLAIN_FORMATS = /* @__PURE__ */ new Set([
+		"mergeformat",
+		"charformat",
+		"mergeformatinet"
+	]);
+	/**
+	* The bookmark a PAGEREF field refers to, unless the field shows something other than the page's number: its
+	* position relative to the bookmark (`\p`), or the number in a format of its own (`\* roman`).
+	*/
+	var bookmarkOf = (instruction) => {
+		const match = /^\s*PAGEREF\s+("?)([^\s"\\]+)\1(.*)$/i.exec(instruction);
+		if (!match) return;
+		const [, , bookmark, switches] = match;
+		const formats = [...switches.matchAll(/\\\*\s*"?([^\s"\\]+)/g)].map(([, format]) => format.toLowerCase());
+		return /\\p\b/i.test(switches) || formats.some((format) => !PLAIN_FORMATS.has(format)) ? void 0 : bookmark;
+	};
+	var nameOf$1 = (element) => typeof element === "object" && element !== null && !Array.isArray(element) ? Object.keys(element)[0] : void 0;
+	var attributeOf = (element, name, attribute) => {
+		var _holder$_attr;
+		const content = element[name];
+		const holder = Array.isArray(content) ? content.find((child) => nameOf$1(child) === "_attr") : content;
+		return holder === null || holder === void 0 || (_holder$_attr = holder._attr) === null || _holder$_attr === void 0 ? void 0 : _holder$_attr[attribute];
+	};
+	var textElement = (text) => ({ "w:t": [{ _attr: { "xml:space": "preserve" } }, text] });
+	/**
+	* Writes the estimated page numbers into the results of the PAGEREF fields in the elements, in order. A field's result
+	* is written just after its `separate` field character, and any result it had is taken out.
+	*/
+	var fillFields = (elements, open, pages) => {
+		for (let index = 0; index < elements.length; index++) {
+			const element = elements[index];
+			const name = nameOf$1(element);
+			if (name === void 0 || name === "_attr") continue;
+			const current = open[open.length - 1];
+			if (name === "w:fldChar") {
+				const type = attributeOf(element, name, "w:fldCharType");
+				if (type === "begin") open.push({
+					instruction: "",
+					inResult: false
+				});
+				else if (type === "separate" && current) {
+					const bookmark = bookmarkOf(current.instruction);
+					current.inResult = true;
+					current.page = bookmark === void 0 ? void 0 : pages.get(bookmark);
+					if (current.page !== void 0) {
+						elements.splice(index + 1, 0, textElement(current.page));
+						index++;
+					}
+				} else if (type === "end") open.pop();
+			} else if (name === "w:instrText" && current && !current.inResult) {
+				const content = element[name];
+				current.instruction += content.filter((part) => typeof part === "string").join("");
+			} else if ((name === "w:t" || name === "w:tab" || name === "w:br" || name === "w:cr") && (current === null || current === void 0 ? void 0 : current.page) !== void 0) {
+				elements.splice(index, 1);
+				index--;
+			} else if (name === "w:fldSimple") fillSimpleField(element, pages);
+			else {
+				const content = element[name];
+				if (Array.isArray(content)) fillFields(content, open, pages);
+			}
+		}
+	};
+	/**
+	* Writes the page number into a simple field (`w:fldSimple`) that is a PAGEREF field: its runs are its result.
+	*/
+	var fillSimpleField = (element, pages) => {
+		const bookmark = bookmarkOf(String(attributeOf(element, "w:fldSimple", "w:instr")));
+		const page = bookmark === void 0 ? void 0 : pages.get(bookmark);
+		const content = element["w:fldSimple"];
+		if (page === void 0) {
+			fillFields(content, [], pages);
+			return;
+		}
+		element["w:fldSimple"] = [...content.filter((child) => nameOf$1(child) === "_attr"), { "w:r": [textElement(page)] }];
+	};
+	/**
+	* Writes the page numbers the estimator works out into the page references of a formatted body: the PAGEREF fields in
+	* its tables of contents and elsewhere. A field whose bookmark the estimator didn't place is left as it is.
+	*/
+	var fillPageNumbers = (body, context, estimate) => {
+		const { bookmarks } = estimate(body, context);
+		if (bookmarks.size === 0) return;
+		fillFields([body], [], bookmarks);
 	};
 	//#endregion
 	//#region src/file/vertical-align/vertical-align.ts
@@ -22396,7 +22482,7 @@ MAX: 9026 };
 	* ```
 	*/
 	var Body = class extends XmlComponent {
-		constructor() {
+		constructor({ pageNumbers } = {}) {
 			super("w:body");
 			_defineProperty(this, "sections", []);
 			_defineProperty(
@@ -22410,6 +22496,8 @@ MAX: 9026 };
 				/* @__PURE__ */ new Map()
 			);
 			_defineProperty(this, "headingBookmarkIds", new HeadingBookmarkIds());
+			_defineProperty(this, "pageNumbers", void 0);
+			this.pageNumbers = pageNumbers;
 		}
 		/**
 		* Finds the section properties that govern a top-level child of the body.
@@ -22458,7 +22546,8 @@ MAX: 9026 };
 		*
 		* Ensures that the last section's properties are placed as a direct child of the body
 		* element, as required by the OOXML specification. Once the body is written, its tables
-		* of contents are filled in from its headings.
+		* of contents are filled in from its headings, and, when the body has a page number
+		* estimator, its page references are given their page numbers.
 		*
 		* @param context - The XML serialization context
 		* @returns The prepared XML object or undefined
@@ -22470,6 +22559,7 @@ MAX: 9026 };
 			}
 			const xml = super.prepForXml(context);
 			fillTablesOfContents(xml, context, this.headingBookmarkIds);
+			if (this.pageNumbers) fillPageNumbers(xml, context, this.pageNumbers);
 			return xml;
 		}
 		/**
@@ -25484,7 +25574,7 @@ MAX: 9026 };
 				"w16sdtdh",
 				"w16se"
 			], "w14 w15 wp14"));
-			this.body = new Body();
+			this.body = new Body({ pageNumbers: options.pageNumbers });
 			if (options.background) this.root.push(new DocumentBackground(options.background));
 			this.root.push(this.body);
 		}
@@ -29541,7 +29631,10 @@ MAX: 9026 };
 			this.endnotesWrapper = new EndnotesWrapper();
 			this.contentTypes = new ContentTypes();
 			this.packageParts = new PackageParts(this.contentTypes);
-			this.documentWrapper = new DocumentWrapper({ background: options.background });
+			this.documentWrapper = new DocumentWrapper({
+				background: options.background,
+				pageNumbers: options.pageNumbers
+			});
 			this.settings = new Settings({
 				compatibilityModeVersion: options.compatabilityModeVersion,
 				compatibility: options.compatibility,
@@ -36857,6 +36950,7 @@ while (n === a[++i] && n === a[++i] && n === a[++i] && n === a[++i] && n === a[+
 	exports.docPropertiesUniqueNumericIdGen = docPropertiesUniqueNumericIdGen;
 	exports.eighthPointMeasureValue = eighthPointMeasureValue;
 	exports.encodeUtf8 = encodeUtf8;
+	exports.fillPageNumbers = fillPageNumbers;
 	exports.hashedId = hashedId;
 	exports.hexColorValue = hexColorValue;
 	exports.hpsMeasureValue = hpsMeasureValue;

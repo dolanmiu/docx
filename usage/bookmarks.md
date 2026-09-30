@@ -103,7 +103,7 @@ const doc = new Document({
 });
 ```
 
-This creates dynamic text like "See Chapter 1 on page 5" that updates automatically.
+This creates dynamic text like "See Chapter 1 on page 5" that updates automatically. The page number is blank until Word updates the field, unless the document is given `pageNumbers: estimatePageNumbers` from `docx/layout`, which works it out when the document is written. See [Layout](usage/layout.md).
 
 ## Complete Example
 

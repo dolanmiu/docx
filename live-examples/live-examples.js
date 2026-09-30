@@ -30,6 +30,7 @@
         "docx/watermarks": { file: "watermarks", global: "docxWatermarks" },
         "docx/charts": { file: "charts", global: "docxCharts" },
         "docx/math": { file: "math", global: "docxMath" },
+        "docx/layout": { file: "layout", global: "docxLayout" },
     };
 
     // docx-preview draws these as empty space

@@ -74,12 +74,13 @@ These properties appear in Word's File > Info panel and in file properties.
 
 ### Document Behavior
 
-| Property                   | Type                                                   | Description                |
-| -------------------------- | ------------------------------------------------------ | -------------------------- |
-| background                 | `IDocumentBackgroundOptions`                           | Document background        |
-| features                   | `{ trackRevisions?: boolean; updateFields?: boolean }` | Feature flags              |
-| evenAndOddHeaderAndFooters | `boolean`                                              | Different odd/even headers |
-| hyphenation                | `IHyphenationOptions`                                  | Hyphenation settings       |
+| Property                   | Type                                                   | Description                                                                                                                         |
+| -------------------------- | ------------------------------------------------------ | ----------------------------------------------------------------------------------------------------------------------------------- |
+| background                 | `IDocumentBackgroundOptions`                           | Document background                                                                                                                 |
+| features                   | `{ trackRevisions?: boolean; updateFields?: boolean }` | Feature flags                                                                                                                       |
+| evenAndOddHeaderAndFooters | `boolean`                                              | Different odd/even headers                                                                                                          |
+| hyphenation                | `IHyphenationOptions`                                  | Hyphenation settings                                                                                                                |
+| pageNumbers                | `PageNumberEstimator`                                  | Writes the page numbers of tables of contents and page references, with `estimatePageNumbers` from [`docx/layout`](usage/layout.md) |
 
 ### Compatibility
 
@@ -115,6 +116,7 @@ These properties appear in Word's File > Info panel and in file properties.
 | fonts                      | ` FontOptions[]`                                         | Optional |
 | hyphenation                | `IHyphenationOptions`                                    | Optional |
 | theme                      | `IThemeOptions`                                          | Optional |
+| pageNumbers                | `PageNumberEstimator`                                    | Optional |
 
 ### Change background color of Document
 

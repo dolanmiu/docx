@@ -3309,494 +3309,7 @@ var docxShapes = (function(exports, docx) {
 		}
 	};
 	//#endregion
-	//#region \0@oxc-project+runtime@0.150.0/helpers/esm/objectWithoutPropertiesLoose.js
-	function _objectWithoutPropertiesLoose(r, e) {
-		if (null == r) return {};
-		var t = {};
-		for (var n in r) if ({}.hasOwnProperty.call(r, n)) {
-			if (e.includes(n)) continue;
-			t[n] = r[n];
-		}
-		return t;
-	}
-	//#endregion
-	//#region \0@oxc-project+runtime@0.150.0/helpers/esm/objectWithoutProperties.js
-	function _objectWithoutProperties(e, t) {
-		if (null == e) return {};
-		var o, r, i = _objectWithoutPropertiesLoose(e, t);
-		if (Object.getOwnPropertySymbols) {
-			var s = Object.getOwnPropertySymbols(e);
-			for (r = 0; r < s.length; r++) o = s[r], t.includes(o) || {}.propertyIsEnumerable.call(e, o) && (i[o] = e[o]);
-		}
-		return i;
-	}
-	//#endregion
-	//#region src/shapes/shape-floating.ts
-	/**
-	* Floating shapes whose size or position is a percentage of the page, its margins or the space between them
-	* (`wp14:sizeRelH`, `wp14:sizeRelV`, `wp14:pctPosHOffset` and `wp14:pctPosVOffset`), which Word keeps as percentages
-	* when the page changes.
-	*
-	* Reference: [MS-ODRAWXML] 2.3.2, the wordprocessingDrawing 2010 schema
-	*
-	* @module
-	*/
-	var _excluded = [
-		"horizontalPosition",
-		"verticalPosition",
-		"sizeRelativeTo"
-	];
-	/**
-	* The sizes, in pixels, of the areas of the library's default page, A4 with 1-inch margins, which a percentage size or
-	* offset is written with for applications that don't read percentages.
-	*/
-	var PAGE = {
-		width: 11906 / 15,
-		height: 16838 / 15,
-		margin: 96
-	};
-	var BETWEEN_MARGINS = {
-		width: PAGE.width - 2 * PAGE.margin,
-		height: PAGE.height - 2 * PAGE.margin
-	};
-	var WIDTH_BASES = {
-		betweenMargins: ["margin", BETWEEN_MARGINS.width],
-		page: ["page", PAGE.width],
-		leftMargin: ["leftMargin", PAGE.margin],
-		rightMargin: ["rightMargin", PAGE.margin],
-		insideMargin: ["insideMargin", PAGE.margin],
-		outsideMargin: ["outsideMargin", PAGE.margin]
-	};
-	var HEIGHT_BASES = {
-		betweenMargins: ["margin", BETWEEN_MARGINS.height],
-		page: ["page", PAGE.height],
-		topMargin: ["topMargin", PAGE.margin],
-		bottomMargin: ["bottomMargin", PAGE.margin],
-		insideMargin: ["insideMargin", PAGE.margin],
-		outsideMargin: ["outsideMargin", PAGE.margin]
-	};
-	var POSITION_BASES = {
-		[docx.HorizontalPositionRelativeFrom.MARGIN]: BETWEEN_MARGINS.width,
-		[docx.HorizontalPositionRelativeFrom.PAGE]: PAGE.width,
-		[docx.HorizontalPositionRelativeFrom.LEFT_MARGIN]: PAGE.margin,
-		[docx.HorizontalPositionRelativeFrom.RIGHT_MARGIN]: PAGE.margin,
-		[docx.HorizontalPositionRelativeFrom.INSIDE_MARGIN]: PAGE.margin,
-		[docx.HorizontalPositionRelativeFrom.OUTSIDE_MARGIN]: PAGE.margin
-	};
-	var VERTICAL_POSITION_BASES = {
-		[docx.VerticalPositionRelativeFrom.MARGIN]: BETWEEN_MARGINS.height,
-		[docx.VerticalPositionRelativeFrom.PAGE]: PAGE.height,
-		[docx.VerticalPositionRelativeFrom.TOP_MARGIN]: PAGE.margin,
-		[docx.VerticalPositionRelativeFrom.BOTTOM_MARGIN]: PAGE.margin,
-		[docx.VerticalPositionRelativeFrom.INSIDE_MARGIN]: PAGE.margin,
-		[docx.VerticalPositionRelativeFrom.OUTSIDE_MARGIN]: PAGE.margin
-	};
-	var EMUS_PER_PIXEL$6 = 9525;
-	/**
-	* Reads a percentage, such as `"50%"`, as a number, such as 50.
-	*
-	* @returns The number, or nothing if the value is a number of pixels or EMUs
-	* @throws If the value is a percentage that isn't a number of 0 or more
-	*/
-	var percentageOf = (value, option) => {
-		if (typeof value === "number" || !value.endsWith("%")) return;
-		const percentage = Number(value.slice(0, -1));
-		if (!(value.length > 1 && percentage >= 0)) throw new Error(`Invalid ${option} "${value}". Expected a percentage of 0 or more, such as "50%"`);
-		return percentage;
-	};
-	/**
-	* The size, in pixels, of what a floating shape's percentage width and height are percentages of, on the library's
-	* default page.
-	*/
-	var relativeSizeBase = (floating) => {
-		var _floating$sizeRelativ, _floating$sizeRelativ2, _floating$sizeRelativ3, _floating$sizeRelativ4;
-		return {
-			width: WIDTH_BASES[(_floating$sizeRelativ = (_floating$sizeRelativ2 = floating.sizeRelativeTo) === null || _floating$sizeRelativ2 === void 0 ? void 0 : _floating$sizeRelativ2.width) !== null && _floating$sizeRelativ !== void 0 ? _floating$sizeRelativ : "betweenMargins"][1],
-			height: HEIGHT_BASES[(_floating$sizeRelativ3 = (_floating$sizeRelativ4 = floating.sizeRelativeTo) === null || _floating$sizeRelativ4 === void 0 ? void 0 : _floating$sizeRelativ4.height) !== null && _floating$sizeRelativ3 !== void 0 ? _floating$sizeRelativ3 : "betweenMargins"][1]
-		};
-	};
-	/**
-	* An offset in EMUs, for a position given as a percentage: the percentage of the base on the library's default page.
-	*
-	* @throws If the percentage is of a base it can't be of, such as a column
-	*/
-	var offsetOf$1 = (offset, relative, bases) => {
-		const percentage = offset === void 0 ? void 0 : percentageOf(offset, "offset");
-		if (percentage === void 0) return offset;
-		if (!(relative in bases)) throw new Error(`Invalid offset "${offset}". A percentage offset needs a position relative to the page, the space between its margins, or one of its margins`);
-		return Math.round(bases[relative] * percentage / 100 * EMUS_PER_PIXEL$6);
-	};
-	/**
-	* The floating options for a drawing, with percentage offsets turned into EMUs, as they are on the library's default page.
-	*
-	* @throws If a percentage offset is of a base it can't be of, such as a column
-	*/
-	var toImageFloating = (_ref) => {
-		var _horizontalPosition$r, _verticalPosition$rel;
-		let { horizontalPosition, verticalPosition, sizeRelativeTo: _ } = _ref;
-		return _objectSpread2(_objectSpread2({}, _objectWithoutProperties(_ref, _excluded)), {}, {
-			horizontalPosition: _objectSpread2(_objectSpread2({}, horizontalPosition), {}, { offset: offsetOf$1(horizontalPosition.offset, (_horizontalPosition$r = horizontalPosition.relative) !== null && _horizontalPosition$r !== void 0 ? _horizontalPosition$r : docx.HorizontalPositionRelativeFrom.PAGE, POSITION_BASES) }),
-			verticalPosition: _objectSpread2(_objectSpread2({}, verticalPosition), {}, { offset: offsetOf$1(verticalPosition.offset, (_verticalPosition$rel = verticalPosition.relative) !== null && _verticalPosition$rel !== void 0 ? _verticalPosition$rel : docx.VerticalPositionRelativeFrom.PAGE, VERTICAL_POSITION_BASES) })
-		});
-	};
-	var thousandths = (percentage) => percentage === void 0 ? void 0 : Math.round(percentage * 1e3);
-	/**
-	* A position with a percentage offset, for applications that read the Word 2010 drawing extensions, and its offset in
-	* EMUs for those that don't, as Word writes a position that older versions can't read.
-	*/
-	var withPercentage = ([attributes, offset], name, percentage) => [attributes, { "mc:AlternateContent": [{ "mc:Choice": [{ _attr: { Requires: "wp14" } }, { [name]: [`${percentage}`] }] }, { "mc:Fallback": [offset] }] }];
-	/**
-	* Adds the percentages to a formatted drawing: offsets in place of the positions' offsets, and sizes after the graphic,
-	* where Word writes them.
-	*/
-	var addPercentages = (xml, { width, height, horizontal, vertical }) => {
-		const anchor = (children) => [
-			...children.map((child) => {
-				if ("wp:positionH" in child && horizontal !== void 0) return { "wp:positionH": withPercentage(child["wp:positionH"], "wp14:pctPosHOffset", horizontal) };
-				return "wp:positionV" in child && vertical !== void 0 ? { "wp:positionV": withPercentage(child["wp:positionV"], "wp14:pctPosVOffset", vertical) } : child;
-			}),
-			...width ? [{ "wp14:sizeRelH": [{ _attr: { relativeFrom: width.relativeFrom } }, { "wp14:pctWidth": [`${width.percentage}`] }] }] : [],
-			...height ? [{ "wp14:sizeRelV": [{ _attr: { relativeFrom: height.relativeFrom } }, { "wp14:pctHeight": [`${height.percentage}`] }] }] : []
-		];
-		const [floating] = xml["w:drawing"];
-		return { "w:drawing": [{ "wp:anchor": anchor(floating["wp:anchor"]) }] };
-	};
-	/**
-	* A floating drawing with a percentage size or position.
-	*/
-	var RelativeDrawing = class extends docx.XmlComponent {
-		constructor(drawing, placement) {
-			super("w:drawing");
-			_defineProperty(this, "drawing", void 0);
-			_defineProperty(this, "placement", void 0);
-			this.drawing = drawing;
-			this.placement = placement;
-		}
-		prepForXml(context) {
-			return addPercentages(this.drawing.prepForXml(context), this.placement);
-		}
-	};
-	/**
-	* Writes a floating drawing's percentage size and position, if it has any, so Word keeps them as percentages.
-	*
-	* @param drawing - The drawing, with its size and position in pixels and EMUs on the library's default page
-	* @param size - The width and height the shape was given
-	*/
-	var withRelativePlacement = (drawing, floating, size) => {
-		var _floating$sizeRelativ5, _floating$sizeRelativ6, _floating$sizeRelativ7, _floating$sizeRelativ8;
-		if (!floating) return drawing;
-		const widthPercentage = percentageOf(size.width, "width");
-		const heightPercentage = percentageOf(size.height, "height");
-		const placement = {
-			width: widthPercentage === void 0 ? void 0 : {
-				relativeFrom: WIDTH_BASES[(_floating$sizeRelativ5 = (_floating$sizeRelativ6 = floating.sizeRelativeTo) === null || _floating$sizeRelativ6 === void 0 ? void 0 : _floating$sizeRelativ6.width) !== null && _floating$sizeRelativ5 !== void 0 ? _floating$sizeRelativ5 : "betweenMargins"][0],
-				percentage: thousandths(widthPercentage)
-			},
-			height: heightPercentage === void 0 ? void 0 : {
-				relativeFrom: HEIGHT_BASES[(_floating$sizeRelativ7 = (_floating$sizeRelativ8 = floating.sizeRelativeTo) === null || _floating$sizeRelativ8 === void 0 ? void 0 : _floating$sizeRelativ8.height) !== null && _floating$sizeRelativ7 !== void 0 ? _floating$sizeRelativ7 : "betweenMargins"][0],
-				percentage: thousandths(heightPercentage)
-			},
-			horizontal: thousandths(floating.horizontalPosition.offset === void 0 ? void 0 : percentageOf(floating.horizontalPosition.offset, "offset")),
-			vertical: thousandths(floating.verticalPosition.offset === void 0 ? void 0 : percentageOf(floating.verticalPosition.offset, "offset"))
-		};
-		return Object.values(placement).every((value) => value === void 0) ? drawing : new RelativeDrawing(drawing, placement);
-	};
-	//#endregion
-	//#region src/shapes/shape-text-styles.ts
-	/**
-	* Reads the formatting that decides how much room a shape's text takes up: the document's default font and paragraph
-	* spacing, its paragraph and character styles, and the formatting of each paragraph and run. Not part of the public API.
-	*
-	* Formatting is combined as Word combines it: the document's defaults, then the paragraph's style and the styles it is
-	* based on, then the run's character style and the styles it is based on, then the paragraph's or run's own formatting.
-	*
-	* @module
-	*/
-	var OFFICE_THEME_FONTS = {
-		headings: "Calibri Light",
-		body: "Calibri"
-	};
-	/**
-	* Word's own defaults: 10pt Times New Roman with single spacing, Office's theme, and a Normal paragraph style with no
-	* formatting as the default, as `docx` writes it.
-	*/
-	var WORD_DEFAULT_STYLES = {
-		run: {},
-		paragraph: {},
-		styles: /* @__PURE__ */ new Map([["Normal", {
-			type: "paragraph",
-			run: {},
-			paragraph: {}
-		}]]),
-		defaultParagraphStyle: "Normal",
-		themeFonts: OFFICE_THEME_FONTS
-	};
-	var SMALL_CAPS_SCALE = .8;
-	var TWIPS_PER_POINT = 20;
-	var SINGLE_LINE = 240;
-	/**
-	* A context for formatting parts of the document to read them. Formatting paragraph properties that refer to a
-	* numbering adds the numbering to the document, so this context's document leaves it out.
-	*/
-	var READING_CONTEXT = {
-		stack: [],
-		file: { Numbering: { createConcreteNumberingInstance: () => void 0 } }
-	};
-	var componentChildren = (component) => component.root;
-	var isObject = (value) => typeof value === "object" && value !== null && !Array.isArray(value);
-	/**
-	* The children of an element in a formatted tree. An element with children is an array, and one without is an object.
-	*/
-	var childrenOf = (element) => Array.isArray(element) ? element.filter(isObject) : [];
-	var attributesOf = (element) => {
-		const holder = Array.isArray(element) ? element.find((child) => isObject(child) && "_attr" in child) : element;
-		return isObject(holder) && isObject(holder._attr) ? holder._attr : {};
-	};
-	var find = (children, name) => {
-		var _children$find;
-		return (_children$find = children.find((child) => name in child)) === null || _children$find === void 0 ? void 0 : _children$find[name];
-	};
-	var numberOf = (value) => {
-		const parsed = typeof value === "string" ? Number.parseFloat(value) : value;
-		return typeof parsed === "number" && Number.isFinite(parsed) ? parsed : void 0;
-	};
-	var stringOf = (value) => typeof value === "string" && value.length > 0 ? value : void 0;
-	var scaled = (value, divisor) => value === void 0 ? void 0 : value / divisor;
-	var isOff = (value) => value === false || value === 0 || value === "false" || value === "0" || value === "off";
-	/**
-	* An on/off property, such as `w:b`: on when present, unless its value says otherwise.
-	*/
-	var onOff = (children, name) => {
-		const element = children.find((child) => name in child);
-		return element ? !isOff(attributesOf(element[name])["w:val"]) : void 0;
-	};
-	var withoutUndefined = (object) => Object.fromEntries(Object.entries(object).filter(([, value]) => value !== void 0));
-	/**
-	* Combines formatting, with later formatting overriding earlier formatting.
-	*/
-	var combine = (formats) => formats.reduce((all, format) => _objectSpread2(_objectSpread2({}, all), withoutUndefined(format)), {});
-	/**
-	* The font a theme font refers to: `majorHAnsi` and the other major fonts are the theme's font for headings, and the
-	* minor fonts its font for body text.
-	*/
-	var themeFontOf = (theme, themeFonts) => {
-		if (typeof theme !== "string") return;
-		if (theme.startsWith("major")) return themeFonts.headings;
-		return theme.startsWith("minor") ? themeFonts.body : void 0;
-	};
-	/**
-	* Reads run properties (`w:rPr`). A font of the theme (`w:asciiTheme`) takes the place of the font named beside it.
-	*/
-	var readRunFormat = (element, themeFonts) => {
-		var _ref, _ref2, _themeFontOf;
-		const children = childrenOf(element);
-		const fonts = attributesOf(find(children, "w:rFonts"));
-		return withoutUndefined({
-			font: (_ref = (_ref2 = (_themeFontOf = themeFontOf(fonts["w:asciiTheme"], themeFonts)) !== null && _themeFontOf !== void 0 ? _themeFontOf : stringOf(fonts["w:ascii"])) !== null && _ref2 !== void 0 ? _ref2 : themeFontOf(fonts["w:hAnsiTheme"], themeFonts)) !== null && _ref !== void 0 ? _ref : stringOf(fonts["w:hAnsi"]),
-			size: scaled(numberOf(attributesOf(find(children, "w:sz"))["w:val"]), 2),
-			bold: onOff(children, "w:b"),
-			allCaps: onOff(children, "w:caps"),
-			smallCaps: onOff(children, "w:smallCaps"),
-			hidden: onOff(children, "w:vanish"),
-			characterSpacing: scaled(numberOf(attributesOf(find(children, "w:spacing"))["w:val"]), TWIPS_PER_POINT),
-			scale: numberOf(attributesOf(find(children, "w:w"))["w:val"])
-		});
-	};
-	var readLineSpacing = (spacing) => {
-		const line = numberOf(spacing["w:line"]);
-		if (line === void 0) return;
-		const rule = spacing["w:lineRule"];
-		return rule === "exact" || rule === "atLeast" ? {
-			rule,
-			height: line / TWIPS_PER_POINT
-		} : {
-			rule: "multiple",
-			multiple: line / SINGLE_LINE
-		};
-	};
-	/**
-	* Reads paragraph properties (`w:pPr`).
-	*/
-	var readParagraphFormat = (element) => {
-		const children = childrenOf(element);
-		const spacing = attributesOf(find(children, "w:spacing"));
-		const indent = attributesOf(find(children, "w:ind"));
-		const twips = (...names) => scaled(names.map((name) => numberOf(indent[name])).find((value) => value !== void 0), TWIPS_PER_POINT);
-		const hanging = twips("w:hanging");
-		return withoutUndefined({
-			spaceBefore: scaled(numberOf(spacing["w:before"]), TWIPS_PER_POINT),
-			spaceAfter: scaled(numberOf(spacing["w:after"]), TWIPS_PER_POINT),
-			lineSpacing: readLineSpacing(spacing),
-			indentLeft: twips("w:start", "w:left"),
-			indentRight: twips("w:end", "w:right"),
-			firstLineIndent: hanging === void 0 ? twips("w:firstLine") : -hanging,
-			contextualSpacing: onOff(children, "w:contextualSpacing")
-		});
-	};
-	var valueOf = (children, name) => stringOf(attributesOf(find(children, name))["w:val"]);
-	/**
-	* Reads the fonts of a document's theme (`a:theme`), once it is formatted.
-	*/
-	var readThemeFonts = (xml) => {
-		const scheme = childrenOf(find(childrenOf(find(childrenOf(xml["a:theme"]), "a:themeElements")), "a:fontScheme"));
-		const latin = (name) => attributesOf(find(childrenOf(find(scheme, name)), "a:latin")).typeface;
-		return {
-			headings: latin("a:majorFont"),
-			body: latin("a:minorFont")
-		};
-	};
-	/**
-	* Reads the document's defaults and styles from its styles part (`w:styles`), once it is formatted, with the fonts of
-	* its theme.
-	*/
-	var readTextStyles = (xml, themeFonts = OFFICE_THEME_FONTS) => {
-		const root = childrenOf(xml["w:styles"]);
-		const defaults = root.filter((child) => "w:docDefaults" in child).map((child) => childrenOf(child["w:docDefaults"]));
-		const styles = root.filter((child) => "w:style" in child).map((child) => {
-			var _stringOf;
-			const children = childrenOf(child["w:style"]);
-			const attributes = attributesOf(child["w:style"]);
-			return {
-				id: stringOf(attributes["w:styleId"]),
-				isDefault: attributes["w:default"] !== void 0 && !isOff(attributes["w:default"]),
-				definition: {
-					type: (_stringOf = stringOf(attributes["w:type"])) !== null && _stringOf !== void 0 ? _stringOf : "paragraph",
-					basedOn: valueOf(children, "w:basedOn"),
-					run: readRunFormat(find(children, "w:rPr"), themeFonts),
-					paragraph: readParagraphFormat(find(children, "w:pPr"))
-				}
-			};
-		}).filter((style) => style.id !== void 0);
-		const defaultStyle = (type) => {
-			var _styles$find;
-			return (_styles$find = styles.find((style) => style.isDefault && style.definition.type === type)) === null || _styles$find === void 0 ? void 0 : _styles$find.id;
-		};
-		const byId = new Map(styles.map((style) => [style.id, style.definition]));
-		return {
-			run: combine(defaults.map((children) => readRunFormat(find(childrenOf(find(children, "w:rPrDefault")), "w:rPr"), themeFonts))),
-			paragraph: combine(defaults.map((children) => readParagraphFormat(find(childrenOf(find(children, "w:pPrDefault")), "w:pPr")))),
-			styles: byId,
-			defaultParagraphStyle: defaultStyle("paragraph"),
-			defaultCharacterStyle: defaultStyle("character"),
-			themeFonts
-		};
-	};
-	var stylesRead = /* @__PURE__ */ new WeakMap();
-	/**
-	* The styles of the document being written, with the fonts of its theme, or Word's defaults when the context has no
-	* document.
-	*/
-	var getTextStyles = (context) => {
-		var _stylesRead$get;
-		const { file } = context;
-		const styles = file === null || file === void 0 ? void 0 : file.Styles;
-		if (!styles) return WORD_DEFAULT_STYLES;
-		const read = (_stylesRead$get = stylesRead.get(styles)) !== null && _stylesRead$get !== void 0 ? _stylesRead$get : readTextStyles(styles.prepForXml(READING_CONTEXT), readThemeFonts(file.Theme.prepForXml(READING_CONTEXT)));
-		stylesRead.set(styles, read);
-		return read;
-	};
-	/**
-	* A style and the styles it is based on, from the one at the bottom to the style itself. A style that isn't of the
-	* given type, or that is based on itself, ends the chain.
-	*/
-	var styleChain = ({ styles }, id, type) => {
-		const walk = (current, seen) => {
-			const style = current === void 0 || seen.has(current) ? void 0 : styles.get(current);
-			return (style === null || style === void 0 ? void 0 : style.type) === type ? [...walk(style.basedOn, /* @__PURE__ */ new Set([...seen, current])), style] : [];
-		};
-		return walk(id, /* @__PURE__ */ new Set());
-	};
-	/**
-	* The text of a run, with tabs as `"\t"` and line breaks as `"\n"`, and its own formatting and character style.
-	*/
-	var readRun = (run, themeFonts) => {
-		const children = run.prepForXml(READING_CONTEXT)["w:r"];
-		const properties = find(children, "w:rPr");
-		return {
-			text: children.map((child) => {
-				if ("w:t" in child) return child["w:t"].filter((part) => typeof part === "string").join("");
-				if ("w:tab" in child) return "	";
-				return "w:br" in child || "w:cr" in child ? "\n" : "";
-			}).join(""),
-			format: readRunFormat(properties, themeFonts),
-			style: valueOf(childrenOf(properties), "w:rStyle")
-		};
-	};
-	/**
-	* The text runs in a paragraph, including those in hyperlinks. Pictures, shapes and other runs without text are left out.
-	*/
-	var runsIn = (children) => children.flatMap((child) => {
-		if (child instanceof docx.TextRun) {
-			var _child$writtenAs;
-			return ((_child$writtenAs = child.writtenAs) !== null && _child$writtenAs !== void 0 ? _child$writtenAs : [child]).filter((part) => part instanceof docx.TextRun || part.constructor === docx.Run);
-		}
-		if (child instanceof docx.ExternalHyperlink) return runsIn(child.options.children);
-		return child instanceof docx.XmlComponent && !(child instanceof docx.Run) ? runsIn(componentChildren(child)) : [];
-	});
-	/**
-	* The parts of run formatting that change the font text is measured in.
-	*/
-	var fontOf = ({ font, size, bold, characterSpacing, scale }) => withoutUndefined({
-		font,
-		size,
-		bold,
-		characterSpacing,
-		scale
-	});
-	/**
-	* A span of text in its formatting: capitals for all caps, and smaller capitals for the small letters of small caps.
-	*/
-	var spansOf = (text, format) => {
-		var _font$size;
-		const { allCaps, smallCaps, hidden } = format;
-		const font = fontOf(format);
-		if (hidden) return [];
-		if (allCaps || !smallCaps) return [_objectSpread2(_objectSpread2({}, font), {}, { text: allCaps ? text.toUpperCase() : text })];
-		const small = _objectSpread2(_objectSpread2({}, font), {}, { size: ((_font$size = font.size) !== null && _font$size !== void 0 ? _font$size : 10) * SMALL_CAPS_SCALE });
-		return text.split(new RegExp("(\\p{Ll}+)", "u")).filter((part) => part.length > 0).map((part) => new RegExp("^\\p{Ll}", "u").test(part) ? _objectSpread2(_objectSpread2({}, small), {}, { text: part.toUpperCase() }) : _objectSpread2(_objectSpread2({}, font), {}, { text: part }));
-	};
-	/**
-	* Reads a paragraph's text and formatting, as the document's styles format it.
-	*/
-	var readParagraph = (paragraph, styles) => {
-		var _properties$prepForXm, _valueOf;
-		const [properties, ...children] = componentChildren(paragraph);
-		const propertyChildren = childrenOf((_properties$prepForXm = properties.prepForXml(READING_CONTEXT)) === null || _properties$prepForXm === void 0 ? void 0 : _properties$prepForXm["w:pPr"]);
-		const style = (_valueOf = valueOf(propertyChildren, "w:pStyle")) !== null && _valueOf !== void 0 ? _valueOf : styles.defaultParagraphStyle;
-		const paragraphStyles = styleChain(styles, style, "paragraph");
-		const paragraphRun = combine([styles.run, ...paragraphStyles.map(({ run }) => run)]);
-		return {
-			spans: runsIn(children).flatMap((run) => {
-				const { text, format, style: runStyle } = readRun(run, styles.themeFonts);
-				const characterStyles = styleChain(styles, runStyle !== null && runStyle !== void 0 ? runStyle : styles.defaultCharacterStyle, "character");
-				return spansOf(text, combine([
-					paragraphRun,
-					...characterStyles.map(({ run: styleRun }) => styleRun),
-					format
-				]));
-			}),
-			font: fontOf(combine([paragraphRun, readRunFormat(find(propertyChildren, "w:rPr"), styles.themeFonts)])),
-			format: combine([
-				styles.paragraph,
-				...paragraphStyles.map(({ paragraph: format }) => format),
-				readParagraphFormat(propertyChildren)
-			]),
-			style
-		};
-	};
-	/**
-	* Reads the text and formatting of a shape's paragraphs, as the document's styles format them.
-	*/
-	var readTextParagraphs = (paragraphs, styles) => paragraphs.map((paragraph) => readParagraph(paragraph, styles));
-	/**
-	* Whether a paragraph in the default style, without formatting of its own, has space before or after it.
-	*/
-	var hasDefaultParagraphSpacing = (styles) => {
-		const { spaceBefore = 0, spaceAfter = 0 } = combine([styles.paragraph, ...styleChain(styles, styles.defaultParagraphStyle, "paragraph").map(({ paragraph }) => paragraph)]);
-		return spaceBefore !== 0 || spaceAfter !== 0;
-	};
-	//#endregion
-	//#region src/shapes/text-metrics/font-widths.ts
+	//#region src/text-layout/font-widths.ts
 	/**
 	* The characters the widths are for, in order: printable ASCII, Latin-1, and common punctuation.
 	*/
@@ -4214,7 +3727,7 @@ var docxShapes = (function(exports, docx) {
 		},
 		{
 			name: "Cambria",
-			lineHeight: 1150,
+			lineHeight: 1172,
 			regular: [
 				220,
 				286,
@@ -4229,19 +3742,19 @@ var docxShapes = (function(exports, docx) {
 				427,
 				554,
 				205,
-				329,
-				206,
+				332,
+				205,
 				490,
-				517,
-				362,
-				472,
-				461,
-				492,
-				475,
-				470,
-				470,
-				485,
-				478,
+				554,
+				554,
+				554,
+				554,
+				554,
+				554,
+				554,
+				554,
+				554,
+				554,
 				264,
 				264,
 				554,
@@ -4249,64 +3762,64 @@ var docxShapes = (function(exports, docx) {
 				554,
 				422,
 				885,
-				599,
-				579,
-				519,
-				625,
-				540,
-				509,
-				539,
-				696,
-				343,
-				304,
-				630,
-				501,
-				888,
-				693,
-				599,
-				533,
-				599,
-				613,
-				453,
-				557,
+				623,
+				611,
+				562,
+				662,
+				575,
+				537,
+				611,
 				687,
-				598,
-				889,
+				324,
+				307,
+				629,
+				537,
+				815,
+				681,
+				653,
+				568,
+				653,
+				621,
+				496,
+				593,
+				648,
+				604,
+				921,
 				571,
-				557,
-				507,
+				570,
+				538,
 				350,
 				490,
 				350,
 				554,
 				371,
-				151,
-				470,
-				520,
-				421,
-				520,
+				285,
+				488,
+				547,
 				441,
-				313,
-				459,
-				554,
-				277,
-				255,
-				525,
+				555,
+				488,
+				303,
+				494,
+				552,
+				278,
+				266,
+				524,
 				271,
-				813,
+				832,
 				558,
-				480,
-				520,
-				501,
-				396,
-				392,
-				325,
-				546,
-				470,
-				720,
+				531,
+				556,
+				547,
+				414,
+				430,
+				338,
+				552,
+				504,
+				774,
 				483,
-				482,
-				428,
+				504,
+				455,
 				387,
 				316,
 				387,
@@ -4319,94 +3832,94 @@ var docxShapes = (function(exports, docx) {
 				609,
 				316,
 				500,
-				261,
+				285,
 				851,
 				417,
-				491,
+				488,
 				554,
 				332,
 				851,
-				278,
+				285,
 				375,
 				554,
 				407,
 				407,
-				151,
+				285,
 				544,
 				588,
-				106,
+				282,
 				285,
 				407,
 				428,
-				491,
-				829,
-				867,
-				866,
+				488,
+				865,
+				890,
+				865,
 				422,
-				599,
-				599,
-				599,
-				599,
-				599,
-				599,
+				623,
+				623,
+				623,
+				623,
+				623,
+				623,
 				866,
-				519,
-				540,
-				540,
-				540,
-				540,
-				343,
-				343,
-				343,
-				343,
-				662,
-				693,
-				599,
-				599,
-				599,
-				599,
-				599,
+				562,
+				575,
+				575,
+				575,
+				575,
+				324,
+				324,
+				324,
+				324,
+				665,
+				681,
+				653,
+				653,
+				653,
+				653,
+				653,
 				554,
 				653,
-				687,
-				687,
-				687,
-				687,
-				557,
+				648,
+				648,
+				648,
+				648,
+				570,
 				574,
 				605,
-				470,
-				470,
-				470,
-				470,
-				470,
-				470,
-				708,
-				421,
+				488,
+				488,
+				488,
+				488,
+				488,
+				488,
+				752,
 				441,
-				441,
-				441,
-				441,
-				277,
-				277,
-				277,
-				277,
+				488,
+				488,
+				488,
+				488,
+				278,
+				278,
+				278,
+				278,
 				530,
 				558,
-				480,
-				480,
-				480,
-				480,
-				480,
+				531,
+				531,
+				531,
+				531,
+				531,
 				554,
-				490,
-				546,
-				546,
-				546,
-				546,
-				482,
+				531,
+				552,
+				552,
+				552,
+				552,
+				504,
 				547,
-				482,
+				504,
 				500,
 				1e3,
 				221,
@@ -4432,19 +3945,19 @@ var docxShapes = (function(exports, docx) {
 				453,
 				592,
 				232,
-				311,
-				230,
+				337,
+				232,
 				505,
-				533,
-				458,
-				507,
-				508,
-				553,
-				520,
-				538,
-				494,
-				556,
-				534,
+				592,
+				592,
+				592,
+				592,
+				592,
+				592,
+				592,
+				592,
+				592,
+				592,
 				280,
 				280,
 				592,
@@ -4452,64 +3965,64 @@ var docxShapes = (function(exports, docx) {
 				592,
 				452,
 				921,
-				653,
-				634,
+				652,
+				651,
+				573,
+				705,
+				578,
 				551,
-				664,
-				559,
-				534,
-				586,
-				719,
-				358,
-				340,
-				680,
-				541,
-				845,
-				686,
-				647,
-				593,
-				647,
-				640,
-				473,
-				587,
+				646,
+				722,
+				350,
+				341,
+				682,
+				551,
+				846,
+				679,
 				695,
-				632,
-				959,
-				616,
-				587,
-				554,
+				614,
+				695,
+				662,
+				513,
+				639,
+				676,
+				634,
+				961,
+				619,
+				604,
+				566,
 				368,
 				505,
 				368,
 				592,
 				371,
-				184,
-				525,
-				568,
-				450,
-				570,
-				513,
-				335,
-				508,
-				600,
+				285,
+				535,
+				591,
+				469,
+				597,
+				531,
+				326,
+				520,
+				597,
+				314,
+				302,
+				592,
 				308,
-				297,
-				589,
-				311,
-				891,
+				890,
 				604,
-				530,
-				573,
-				559,
-				454,
-				444,
+				569,
+				597,
+				591,
+				461,
+				459,
 				365,
-				609,
-				519,
-				779,
+				597,
+				531,
+				798,
 				525,
-				521,
-				464,
+				531,
+				479,
 				393,
 				320,
 				393,
@@ -4519,97 +4032,97 @@ var docxShapes = (function(exports, docx) {
 				469,
 				556,
 				587,
-				604,
+				641,
 				320,
 				533,
-				294,
+				285,
 				851,
 				420,
-				531,
+				522,
 				592,
 				337,
 				851,
-				311,
+				285,
 				378,
 				592,
 				437,
 				437,
-				183,
+				285,
 				605,
 				588,
-				140,
+				276,
 				285,
 				437,
 				436,
-				531,
-				897,
-				904,
-				970,
+				522,
+				941,
+				976,
+				941,
 				452,
-				653,
-				653,
-				653,
-				653,
-				653,
-				653,
+				652,
+				652,
+				652,
+				652,
+				652,
+				652,
 				880,
-				551,
-				559,
-				559,
-				559,
-				559,
-				358,
-				358,
-				358,
-				358,
+				573,
+				578,
+				578,
+				578,
+				578,
+				350,
+				350,
+				350,
+				350,
 				709,
-				686,
-				647,
-				647,
-				647,
-				647,
-				647,
+				679,
+				695,
+				695,
+				695,
+				695,
+				695,
 				592,
 				695,
-				695,
-				695,
-				695,
-				695,
-				587,
+				676,
+				676,
+				676,
+				676,
+				604,
 				617,
 				677,
-				525,
-				525,
-				525,
-				525,
-				525,
-				525,
+				535,
+				535,
+				535,
+				535,
+				535,
+				535,
 				794,
-				450,
-				513,
-				513,
-				513,
-				513,
-				308,
-				308,
-				308,
-				311,
+				469,
+				531,
+				531,
+				531,
+				531,
+				314,
+				314,
+				314,
+				314,
 				572,
 				604,
-				530,
-				530,
-				530,
-				530,
-				530,
+				569,
+				569,
+				569,
+				569,
+				569,
 				592,
 				569,
-				609,
-				609,
-				609,
-				609,
-				521,
+				597,
+				597,
+				597,
+				597,
+				531,
 				591,
-				521,
+				531,
 				500,
 				1e3,
 				235,
@@ -5854,7 +5367,7 @@ var docxShapes = (function(exports, docx) {
 		}
 	];
 	//#endregion
-	//#region src/shapes/text-metrics/text-width.ts
+	//#region src/text-layout/text-width.ts
 	/**
 	* Estimates how much space text takes up, from the widths of the characters in common fonts.
 	*
@@ -6022,6 +5535,524 @@ var docxShapes = (function(exports, docx) {
 			height: measured.reduce((total, { height }) => total + height, 0)
 		};
 	};
+	//#endregion
+	//#region src/text-layout/text-styles.ts
+	var OFFICE_THEME_FONTS = {
+		headings: "Calibri Light",
+		body: "Calibri"
+	};
+	/**
+	* Word's own defaults: 10pt Times New Roman with single spacing, Office's theme, and a Normal paragraph style with no
+	* formatting as the default, as `docx` writes it.
+	*/
+	var WORD_DEFAULT_STYLES = {
+		run: {},
+		paragraph: {},
+		styles: /* @__PURE__ */ new Map([["Normal", {
+			type: "paragraph",
+			run: {},
+			paragraph: {}
+		}]]),
+		defaultParagraphStyle: "Normal",
+		themeFonts: OFFICE_THEME_FONTS
+	};
+	var SMALL_CAPS_SCALE = .8;
+	var SINGLE_LINE = 240;
+	/**
+	* A context for formatting parts of the document to read them. Formatting paragraph properties that refer to a
+	* numbering adds the numbering to the document, so this context's document leaves it out.
+	*/
+	var READING_CONTEXT = {
+		stack: [],
+		file: { Numbering: { createConcreteNumberingInstance: () => void 0 } }
+	};
+	var isObject = (value) => typeof value === "object" && value !== null && !Array.isArray(value);
+	/**
+	* The children of an element in a formatted tree. An element with children is an array, and one without is an object.
+	*/
+	var childrenOf = (element) => Array.isArray(element) ? element.filter(isObject) : [];
+	var attributesOf = (element) => {
+		const holder = Array.isArray(element) ? element.find((child) => isObject(child) && "_attr" in child) : element;
+		return isObject(holder) && isObject(holder._attr) ? holder._attr : {};
+	};
+	var find = (children, name) => {
+		var _children$find;
+		return (_children$find = children.find((child) => name in child)) === null || _children$find === void 0 ? void 0 : _children$find[name];
+	};
+	var numberOf = (value) => {
+		const parsed = typeof value === "string" ? Number.parseFloat(value) : value;
+		return typeof parsed === "number" && Number.isFinite(parsed) ? parsed : void 0;
+	};
+	var stringOf = (value) => typeof value === "string" && value.length > 0 ? value : void 0;
+	var scaled = (value, divisor) => value === void 0 ? void 0 : value / divisor;
+	var isOff = (value) => value === false || value === 0 || value === "false" || value === "0" || value === "off";
+	/**
+	* An on/off property, such as `w:b`: on when present, unless its value says otherwise.
+	*/
+	var onOff = (children, name) => {
+		const element = children.find((child) => name in child);
+		return element ? !isOff(attributesOf(element[name])["w:val"]) : void 0;
+	};
+	var withoutUndefined = (object) => Object.fromEntries(Object.entries(object).filter(([, value]) => value !== void 0));
+	/**
+	* Combines formatting, with later formatting overriding earlier formatting.
+	*/
+	var combine = (formats) => formats.reduce((all, format) => _objectSpread2(_objectSpread2({}, all), withoutUndefined(format)), {});
+	var valueOf = (children, name) => stringOf(attributesOf(find(children, name))["w:val"]);
+	/**
+	* The font a theme font refers to: `majorHAnsi` and the other major fonts are the theme's font for headings, and the
+	* minor fonts its font for body text.
+	*/
+	var themeFontOf = (theme, themeFonts) => {
+		if (typeof theme !== "string") return;
+		if (theme.startsWith("major")) return themeFonts.headings;
+		return theme.startsWith("minor") ? themeFonts.body : void 0;
+	};
+	/**
+	* Reads run properties (`w:rPr`). A font of the theme (`w:asciiTheme`) takes the place of the font named beside it.
+	*/
+	var readRunFormat = (element, themeFonts) => {
+		var _ref, _ref2, _themeFontOf;
+		const children = childrenOf(element);
+		const fonts = attributesOf(find(children, "w:rFonts"));
+		return withoutUndefined({
+			font: (_ref = (_ref2 = (_themeFontOf = themeFontOf(fonts["w:asciiTheme"], themeFonts)) !== null && _themeFontOf !== void 0 ? _themeFontOf : stringOf(fonts["w:ascii"])) !== null && _ref2 !== void 0 ? _ref2 : themeFontOf(fonts["w:hAnsiTheme"], themeFonts)) !== null && _ref !== void 0 ? _ref : stringOf(fonts["w:hAnsi"]),
+			size: scaled(numberOf(attributesOf(find(children, "w:sz"))["w:val"]), 2),
+			bold: onOff(children, "w:b"),
+			allCaps: onOff(children, "w:caps"),
+			smallCaps: onOff(children, "w:smallCaps"),
+			hidden: onOff(children, "w:vanish"),
+			characterSpacing: scaled(numberOf(attributesOf(find(children, "w:spacing"))["w:val"]), 20),
+			scale: numberOf(attributesOf(find(children, "w:w"))["w:val"])
+		});
+	};
+	var readLineSpacing = (spacing) => {
+		const line = numberOf(spacing["w:line"]);
+		if (line === void 0) return;
+		const rule = spacing["w:lineRule"];
+		return rule === "exact" || rule === "atLeast" ? {
+			rule,
+			height: line / 20
+		} : {
+			rule: "multiple",
+			multiple: line / SINGLE_LINE
+		};
+	};
+	var TAB_ALIGNMENTS = {
+		left: "left",
+		start: "left",
+		right: "right",
+		end: "right",
+		center: "center",
+		decimal: "decimal",
+		bar: "bar",
+		clear: "clear",
+		num: "left"
+	};
+	/**
+	* Reads the tab stops of paragraph properties (`w:tabs`).
+	*/
+	var readTabs = (element) => {
+		const tabs = childrenOf(element).filter((child) => "w:tab" in child);
+		return tabs.length === 0 ? void 0 : tabs.map((tab) => {
+			var _numberOf, _TAB_ALIGNMENTS$Strin;
+			const attributes = attributesOf(tab["w:tab"]);
+			return {
+				position: ((_numberOf = numberOf(attributes["w:pos"])) !== null && _numberOf !== void 0 ? _numberOf : 0) / 20,
+				alignment: (_TAB_ALIGNMENTS$Strin = TAB_ALIGNMENTS[String(attributes["w:val"])]) !== null && _TAB_ALIGNMENTS$Strin !== void 0 ? _TAB_ALIGNMENTS$Strin : "left"
+			};
+		});
+	};
+	/**
+	* Reads paragraph properties (`w:pPr`).
+	*/
+	var readParagraphFormat = (element) => {
+		const children = childrenOf(element);
+		const spacing = attributesOf(find(children, "w:spacing"));
+		const indent = attributesOf(find(children, "w:ind"));
+		const twips = (...names) => scaled(names.map((name) => numberOf(indent[name])).find((value) => value !== void 0), 20);
+		const hanging = twips("w:hanging");
+		return withoutUndefined({
+			spaceBefore: scaled(numberOf(spacing["w:before"]), 20),
+			spaceAfter: scaled(numberOf(spacing["w:after"]), 20),
+			lineSpacing: readLineSpacing(spacing),
+			indentLeft: twips("w:start", "w:left"),
+			indentRight: twips("w:end", "w:right"),
+			firstLineIndent: hanging === void 0 ? twips("w:firstLine") : -hanging,
+			contextualSpacing: onOff(children, "w:contextualSpacing"),
+			keepNext: onOff(children, "w:keepNext"),
+			keepLines: onOff(children, "w:keepLines"),
+			pageBreakBefore: onOff(children, "w:pageBreakBefore"),
+			widowControl: onOff(children, "w:widowControl"),
+			tabs: readTabs(find(children, "w:tabs"))
+		});
+	};
+	/**
+	* Reads the fonts of a document's theme (`a:theme`), once it is formatted.
+	*/
+	var readThemeFonts = (xml) => {
+		const scheme = childrenOf(find(childrenOf(find(childrenOf(xml["a:theme"]), "a:themeElements")), "a:fontScheme"));
+		const latin = (name) => attributesOf(find(childrenOf(find(scheme, name)), "a:latin")).typeface;
+		return {
+			headings: latin("a:majorFont"),
+			body: latin("a:minorFont")
+		};
+	};
+	/**
+	* Reads the document's defaults and styles from its styles part (`w:styles`), once it is formatted, with the fonts of
+	* its theme.
+	*/
+	var readTextStyles = (xml, themeFonts = OFFICE_THEME_FONTS) => {
+		const root = childrenOf(xml["w:styles"]);
+		const defaults = root.filter((child) => "w:docDefaults" in child).map((child) => childrenOf(child["w:docDefaults"]));
+		const styles = root.filter((child) => "w:style" in child).map((child) => {
+			var _stringOf;
+			const children = childrenOf(child["w:style"]);
+			const attributes = attributesOf(child["w:style"]);
+			return {
+				id: stringOf(attributes["w:styleId"]),
+				isDefault: attributes["w:default"] !== void 0 && !isOff(attributes["w:default"]),
+				definition: {
+					type: (_stringOf = stringOf(attributes["w:type"])) !== null && _stringOf !== void 0 ? _stringOf : "paragraph",
+					basedOn: valueOf(children, "w:basedOn"),
+					run: readRunFormat(find(children, "w:rPr"), themeFonts),
+					paragraph: readParagraphFormat(find(children, "w:pPr"))
+				}
+			};
+		}).filter((style) => style.id !== void 0);
+		const defaultStyle = (type) => {
+			var _styles$find;
+			return (_styles$find = styles.find((style) => style.isDefault && style.definition.type === type)) === null || _styles$find === void 0 ? void 0 : _styles$find.id;
+		};
+		const byId = new Map(styles.map((style) => [style.id, style.definition]));
+		return {
+			run: combine(defaults.map((children) => readRunFormat(find(childrenOf(find(children, "w:rPrDefault")), "w:rPr"), themeFonts))),
+			paragraph: combine(defaults.map((children) => readParagraphFormat(find(childrenOf(find(children, "w:pPrDefault")), "w:pPr")))),
+			styles: byId,
+			defaultParagraphStyle: defaultStyle("paragraph"),
+			defaultCharacterStyle: defaultStyle("character"),
+			themeFonts
+		};
+	};
+	var stylesRead = /* @__PURE__ */ new WeakMap();
+	/**
+	* The styles of the document being written, with the fonts of its theme, or Word's defaults when the context has no
+	* document.
+	*/
+	var getTextStyles = (context) => {
+		var _stylesRead$get;
+		const { file } = context;
+		const styles = file === null || file === void 0 ? void 0 : file.Styles;
+		if (!styles) return WORD_DEFAULT_STYLES;
+		const read = (_stylesRead$get = stylesRead.get(styles)) !== null && _stylesRead$get !== void 0 ? _stylesRead$get : readTextStyles(styles.prepForXml(READING_CONTEXT), readThemeFonts(file.Theme.prepForXml(READING_CONTEXT)));
+		stylesRead.set(styles, read);
+		return read;
+	};
+	/**
+	* A style and the styles it is based on, from the one at the bottom to the style itself. A style that isn't of the
+	* given type, or that is based on itself, ends the chain.
+	*/
+	var styleChain = ({ styles }, id, type) => {
+		const walk = (current, seen) => {
+			const style = current === void 0 || seen.has(current) ? void 0 : styles.get(current);
+			return (style === null || style === void 0 ? void 0 : style.type) === type ? [...walk(style.basedOn, /* @__PURE__ */ new Set([...seen, current])), style] : [];
+		};
+		return walk(id, /* @__PURE__ */ new Set());
+	};
+	/**
+	* The parts of run formatting that change the font text is measured in.
+	*/
+	var fontOf = ({ font, size, bold, characterSpacing, scale }) => withoutUndefined({
+		font,
+		size,
+		bold,
+		characterSpacing,
+		scale
+	});
+	/**
+	* A span of text in its formatting: capitals for all caps, and smaller capitals for the small letters of small caps.
+	*/
+	var spansOf = (text, format) => {
+		var _font$size;
+		const { allCaps, smallCaps, hidden } = format;
+		const font = fontOf(format);
+		if (hidden) return [];
+		if (allCaps || !smallCaps) return [_objectSpread2(_objectSpread2({}, font), {}, { text: allCaps ? text.toUpperCase() : text })];
+		const small = _objectSpread2(_objectSpread2({}, font), {}, { size: ((_font$size = font.size) !== null && _font$size !== void 0 ? _font$size : 10) * SMALL_CAPS_SCALE });
+		return text.split(new RegExp("(\\p{Ll}+)", "u")).filter((part) => part.length > 0).map((part) => new RegExp("^\\p{Ll}", "u").test(part) ? _objectSpread2(_objectSpread2({}, small), {}, { text: part.toUpperCase() }) : _objectSpread2(_objectSpread2({}, font), {}, { text: part }));
+	};
+	/**
+	* Whether a paragraph in the default style, without formatting of its own, has space before or after it.
+	*/
+	var hasDefaultParagraphSpacing = (styles) => {
+		const { spaceBefore = 0, spaceAfter = 0 } = combine([styles.paragraph, ...styleChain(styles, styles.defaultParagraphStyle, "paragraph").map(({ paragraph }) => paragraph)]);
+		return spaceBefore !== 0 || spaceAfter !== 0;
+	};
+	new RegExp("[\\p{Script=Han}\\p{Script=Hiragana}\\p{Script=Katakana}\\p{Script=Hangul}]", "u");
+	//#endregion
+	//#region \0@oxc-project+runtime@0.150.0/helpers/esm/objectWithoutPropertiesLoose.js
+	function _objectWithoutPropertiesLoose(r, e) {
+		if (null == r) return {};
+		var t = {};
+		for (var n in r) if ({}.hasOwnProperty.call(r, n)) {
+			if (e.includes(n)) continue;
+			t[n] = r[n];
+		}
+		return t;
+	}
+	//#endregion
+	//#region \0@oxc-project+runtime@0.150.0/helpers/esm/objectWithoutProperties.js
+	function _objectWithoutProperties(e, t) {
+		if (null == e) return {};
+		var o, r, i = _objectWithoutPropertiesLoose(e, t);
+		if (Object.getOwnPropertySymbols) {
+			var s = Object.getOwnPropertySymbols(e);
+			for (r = 0; r < s.length; r++) o = s[r], t.includes(o) || {}.propertyIsEnumerable.call(e, o) && (i[o] = e[o]);
+		}
+		return i;
+	}
+	//#endregion
+	//#region src/shapes/shape-floating.ts
+	/**
+	* Floating shapes whose size or position is a percentage of the page, its margins or the space between them
+	* (`wp14:sizeRelH`, `wp14:sizeRelV`, `wp14:pctPosHOffset` and `wp14:pctPosVOffset`), which Word keeps as percentages
+	* when the page changes.
+	*
+	* Reference: [MS-ODRAWXML] 2.3.2, the wordprocessingDrawing 2010 schema
+	*
+	* @module
+	*/
+	var _excluded = [
+		"horizontalPosition",
+		"verticalPosition",
+		"sizeRelativeTo"
+	];
+	/**
+	* The sizes, in pixels, of the areas of the library's default page, A4 with 1-inch margins, which a percentage size or
+	* offset is written with for applications that don't read percentages.
+	*/
+	var PAGE = {
+		width: 11906 / 15,
+		height: 16838 / 15,
+		margin: 96
+	};
+	var BETWEEN_MARGINS = {
+		width: PAGE.width - 2 * PAGE.margin,
+		height: PAGE.height - 2 * PAGE.margin
+	};
+	var WIDTH_BASES = {
+		betweenMargins: ["margin", BETWEEN_MARGINS.width],
+		page: ["page", PAGE.width],
+		leftMargin: ["leftMargin", PAGE.margin],
+		rightMargin: ["rightMargin", PAGE.margin],
+		insideMargin: ["insideMargin", PAGE.margin],
+		outsideMargin: ["outsideMargin", PAGE.margin]
+	};
+	var HEIGHT_BASES = {
+		betweenMargins: ["margin", BETWEEN_MARGINS.height],
+		page: ["page", PAGE.height],
+		topMargin: ["topMargin", PAGE.margin],
+		bottomMargin: ["bottomMargin", PAGE.margin],
+		insideMargin: ["insideMargin", PAGE.margin],
+		outsideMargin: ["outsideMargin", PAGE.margin]
+	};
+	var POSITION_BASES = {
+		[docx.HorizontalPositionRelativeFrom.MARGIN]: BETWEEN_MARGINS.width,
+		[docx.HorizontalPositionRelativeFrom.PAGE]: PAGE.width,
+		[docx.HorizontalPositionRelativeFrom.LEFT_MARGIN]: PAGE.margin,
+		[docx.HorizontalPositionRelativeFrom.RIGHT_MARGIN]: PAGE.margin,
+		[docx.HorizontalPositionRelativeFrom.INSIDE_MARGIN]: PAGE.margin,
+		[docx.HorizontalPositionRelativeFrom.OUTSIDE_MARGIN]: PAGE.margin
+	};
+	var VERTICAL_POSITION_BASES = {
+		[docx.VerticalPositionRelativeFrom.MARGIN]: BETWEEN_MARGINS.height,
+		[docx.VerticalPositionRelativeFrom.PAGE]: PAGE.height,
+		[docx.VerticalPositionRelativeFrom.TOP_MARGIN]: PAGE.margin,
+		[docx.VerticalPositionRelativeFrom.BOTTOM_MARGIN]: PAGE.margin,
+		[docx.VerticalPositionRelativeFrom.INSIDE_MARGIN]: PAGE.margin,
+		[docx.VerticalPositionRelativeFrom.OUTSIDE_MARGIN]: PAGE.margin
+	};
+	var EMUS_PER_PIXEL$6 = 9525;
+	/**
+	* Reads a percentage, such as `"50%"`, as a number, such as 50.
+	*
+	* @returns The number, or nothing if the value is a number of pixels or EMUs
+	* @throws If the value is a percentage that isn't a number of 0 or more
+	*/
+	var percentageOf = (value, option) => {
+		if (typeof value === "number" || !value.endsWith("%")) return;
+		const percentage = Number(value.slice(0, -1));
+		if (!(value.length > 1 && percentage >= 0)) throw new Error(`Invalid ${option} "${value}". Expected a percentage of 0 or more, such as "50%"`);
+		return percentage;
+	};
+	/**
+	* The size, in pixels, of what a floating shape's percentage width and height are percentages of, on the library's
+	* default page.
+	*/
+	var relativeSizeBase = (floating) => {
+		var _floating$sizeRelativ, _floating$sizeRelativ2, _floating$sizeRelativ3, _floating$sizeRelativ4;
+		return {
+			width: WIDTH_BASES[(_floating$sizeRelativ = (_floating$sizeRelativ2 = floating.sizeRelativeTo) === null || _floating$sizeRelativ2 === void 0 ? void 0 : _floating$sizeRelativ2.width) !== null && _floating$sizeRelativ !== void 0 ? _floating$sizeRelativ : "betweenMargins"][1],
+			height: HEIGHT_BASES[(_floating$sizeRelativ3 = (_floating$sizeRelativ4 = floating.sizeRelativeTo) === null || _floating$sizeRelativ4 === void 0 ? void 0 : _floating$sizeRelativ4.height) !== null && _floating$sizeRelativ3 !== void 0 ? _floating$sizeRelativ3 : "betweenMargins"][1]
+		};
+	};
+	/**
+	* An offset in EMUs, for a position given as a percentage: the percentage of the base on the library's default page.
+	*
+	* @throws If the percentage is of a base it can't be of, such as a column
+	*/
+	var offsetOf$1 = (offset, relative, bases) => {
+		const percentage = offset === void 0 ? void 0 : percentageOf(offset, "offset");
+		if (percentage === void 0) return offset;
+		if (!(relative in bases)) throw new Error(`Invalid offset "${offset}". A percentage offset needs a position relative to the page, the space between its margins, or one of its margins`);
+		return Math.round(bases[relative] * percentage / 100 * EMUS_PER_PIXEL$6);
+	};
+	/**
+	* The floating options for a drawing, with percentage offsets turned into EMUs, as they are on the library's default page.
+	*
+	* @throws If a percentage offset is of a base it can't be of, such as a column
+	*/
+	var toImageFloating = (_ref) => {
+		var _horizontalPosition$r, _verticalPosition$rel;
+		let { horizontalPosition, verticalPosition, sizeRelativeTo: _ } = _ref;
+		return _objectSpread2(_objectSpread2({}, _objectWithoutProperties(_ref, _excluded)), {}, {
+			horizontalPosition: _objectSpread2(_objectSpread2({}, horizontalPosition), {}, { offset: offsetOf$1(horizontalPosition.offset, (_horizontalPosition$r = horizontalPosition.relative) !== null && _horizontalPosition$r !== void 0 ? _horizontalPosition$r : docx.HorizontalPositionRelativeFrom.PAGE, POSITION_BASES) }),
+			verticalPosition: _objectSpread2(_objectSpread2({}, verticalPosition), {}, { offset: offsetOf$1(verticalPosition.offset, (_verticalPosition$rel = verticalPosition.relative) !== null && _verticalPosition$rel !== void 0 ? _verticalPosition$rel : docx.VerticalPositionRelativeFrom.PAGE, VERTICAL_POSITION_BASES) })
+		});
+	};
+	var thousandths = (percentage) => percentage === void 0 ? void 0 : Math.round(percentage * 1e3);
+	/**
+	* A position with a percentage offset, for applications that read the Word 2010 drawing extensions, and its offset in
+	* EMUs for those that don't, as Word writes a position that older versions can't read.
+	*/
+	var withPercentage = ([attributes, offset], name, percentage) => [attributes, { "mc:AlternateContent": [{ "mc:Choice": [{ _attr: { Requires: "wp14" } }, { [name]: [`${percentage}`] }] }, { "mc:Fallback": [offset] }] }];
+	/**
+	* Adds the percentages to a formatted drawing: offsets in place of the positions' offsets, and sizes after the graphic,
+	* where Word writes them.
+	*/
+	var addPercentages = (xml, { width, height, horizontal, vertical }) => {
+		const anchor = (children) => [
+			...children.map((child) => {
+				if ("wp:positionH" in child && horizontal !== void 0) return { "wp:positionH": withPercentage(child["wp:positionH"], "wp14:pctPosHOffset", horizontal) };
+				return "wp:positionV" in child && vertical !== void 0 ? { "wp:positionV": withPercentage(child["wp:positionV"], "wp14:pctPosVOffset", vertical) } : child;
+			}),
+			...width ? [{ "wp14:sizeRelH": [{ _attr: { relativeFrom: width.relativeFrom } }, { "wp14:pctWidth": [`${width.percentage}`] }] }] : [],
+			...height ? [{ "wp14:sizeRelV": [{ _attr: { relativeFrom: height.relativeFrom } }, { "wp14:pctHeight": [`${height.percentage}`] }] }] : []
+		];
+		const [floating] = xml["w:drawing"];
+		return { "w:drawing": [{ "wp:anchor": anchor(floating["wp:anchor"]) }] };
+	};
+	/**
+	* A floating drawing with a percentage size or position.
+	*/
+	var RelativeDrawing = class extends docx.XmlComponent {
+		constructor(drawing, placement) {
+			super("w:drawing");
+			_defineProperty(this, "drawing", void 0);
+			_defineProperty(this, "placement", void 0);
+			this.drawing = drawing;
+			this.placement = placement;
+		}
+		prepForXml(context) {
+			return addPercentages(this.drawing.prepForXml(context), this.placement);
+		}
+	};
+	/**
+	* Writes a floating drawing's percentage size and position, if it has any, so Word keeps them as percentages.
+	*
+	* @param drawing - The drawing, with its size and position in pixels and EMUs on the library's default page
+	* @param size - The width and height the shape was given
+	*/
+	var withRelativePlacement = (drawing, floating, size) => {
+		var _floating$sizeRelativ5, _floating$sizeRelativ6, _floating$sizeRelativ7, _floating$sizeRelativ8;
+		if (!floating) return drawing;
+		const widthPercentage = percentageOf(size.width, "width");
+		const heightPercentage = percentageOf(size.height, "height");
+		const placement = {
+			width: widthPercentage === void 0 ? void 0 : {
+				relativeFrom: WIDTH_BASES[(_floating$sizeRelativ5 = (_floating$sizeRelativ6 = floating.sizeRelativeTo) === null || _floating$sizeRelativ6 === void 0 ? void 0 : _floating$sizeRelativ6.width) !== null && _floating$sizeRelativ5 !== void 0 ? _floating$sizeRelativ5 : "betweenMargins"][0],
+				percentage: thousandths(widthPercentage)
+			},
+			height: heightPercentage === void 0 ? void 0 : {
+				relativeFrom: HEIGHT_BASES[(_floating$sizeRelativ7 = (_floating$sizeRelativ8 = floating.sizeRelativeTo) === null || _floating$sizeRelativ8 === void 0 ? void 0 : _floating$sizeRelativ8.height) !== null && _floating$sizeRelativ7 !== void 0 ? _floating$sizeRelativ7 : "betweenMargins"][0],
+				percentage: thousandths(heightPercentage)
+			},
+			horizontal: thousandths(floating.horizontalPosition.offset === void 0 ? void 0 : percentageOf(floating.horizontalPosition.offset, "offset")),
+			vertical: thousandths(floating.verticalPosition.offset === void 0 ? void 0 : percentageOf(floating.verticalPosition.offset, "offset"))
+		};
+		return Object.values(placement).every((value) => value === void 0) ? drawing : new RelativeDrawing(drawing, placement);
+	};
+	//#endregion
+	//#region src/shapes/shape-text-styles.ts
+	/**
+	* Reads the text and formatting of a shape's paragraphs, as the document's styles format them. Not part of the public
+	* API.
+	*
+	* The formatting is read as it is written, with the readers docx/shapes shares with docx/layout.
+	*
+	* @module
+	*/
+	var componentChildren = (component) => component.root;
+	/**
+	* The text of a run, with tabs as `"\t"` and line breaks as `"\n"`, and its own formatting and character style.
+	*/
+	var readRun = (run, themeFonts) => {
+		const children = run.prepForXml(READING_CONTEXT)["w:r"];
+		const properties = find(children, "w:rPr");
+		return {
+			text: children.map((child) => {
+				if ("w:t" in child) return child["w:t"].filter((part) => typeof part === "string").join("");
+				if ("w:tab" in child) return "	";
+				return "w:br" in child || "w:cr" in child ? "\n" : "";
+			}).join(""),
+			format: readRunFormat(properties, themeFonts),
+			style: valueOf(childrenOf(properties), "w:rStyle")
+		};
+	};
+	/**
+	* The text runs in a paragraph, including those in hyperlinks. Pictures, shapes and other runs without text are left out.
+	*/
+	var runsIn = (children) => children.flatMap((child) => {
+		if (child instanceof docx.TextRun) {
+			var _child$writtenAs;
+			return ((_child$writtenAs = child.writtenAs) !== null && _child$writtenAs !== void 0 ? _child$writtenAs : [child]).filter((part) => part instanceof docx.TextRun || part.constructor === docx.Run);
+		}
+		if (child instanceof docx.ExternalHyperlink) return runsIn(child.options.children);
+		return child instanceof docx.XmlComponent && !(child instanceof docx.Run) ? runsIn(componentChildren(child)) : [];
+	});
+	/**
+	* Reads a paragraph's text and formatting, as the document's styles format it.
+	*/
+	var readParagraph = (paragraph, styles) => {
+		var _properties$prepForXm, _valueOf;
+		const [properties, ...children] = componentChildren(paragraph);
+		const propertyChildren = childrenOf((_properties$prepForXm = properties.prepForXml(READING_CONTEXT)) === null || _properties$prepForXm === void 0 ? void 0 : _properties$prepForXm["w:pPr"]);
+		const style = (_valueOf = valueOf(propertyChildren, "w:pStyle")) !== null && _valueOf !== void 0 ? _valueOf : styles.defaultParagraphStyle;
+		const paragraphStyles = styleChain(styles, style, "paragraph");
+		const paragraphRun = combine([styles.run, ...paragraphStyles.map(({ run }) => run)]);
+		return {
+			spans: runsIn(children).flatMap((run) => {
+				const { text, format, style: runStyle } = readRun(run, styles.themeFonts);
+				const characterStyles = styleChain(styles, runStyle !== null && runStyle !== void 0 ? runStyle : styles.defaultCharacterStyle, "character");
+				return spansOf(text, combine([
+					paragraphRun,
+					...characterStyles.map(({ run: styleRun }) => styleRun),
+					format
+				]));
+			}),
+			font: fontOf(combine([paragraphRun, readRunFormat(find(propertyChildren, "w:rPr"), styles.themeFonts)])),
+			format: combine([
+				styles.paragraph,
+				...paragraphStyles.map(({ paragraph: format }) => format),
+				readParagraphFormat(propertyChildren)
+			]),
+			style
+		};
+	};
+	/**
+	* Reads the text and formatting of a shape's paragraphs, as the document's styles format them.
+	*/
+	var readTextParagraphs = (paragraphs, styles) => paragraphs.map((paragraph) => readParagraph(paragraph, styles));
 	//#endregion
 	//#region src/shapes/connector/shape-guides.ts
 	var ANGLE_UNITS_PER_RADIAN = 108e5 / Math.PI;

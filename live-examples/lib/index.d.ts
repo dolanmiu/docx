@@ -387,7 +387,8 @@ declare class Body_2 extends XmlComponent {
      */
     private readonly sectionParagraphs;
     private readonly headingBookmarkIds;
-    constructor();
+    private readonly pageNumbers?;
+    constructor({ pageNumbers }?: IBodyOptions);
     /**
      * Finds the section properties that govern a top-level child of the body.
      *
@@ -420,7 +421,8 @@ declare class Body_2 extends XmlComponent {
      *
      * Ensures that the last section's properties are placed as a direct child of the body
      * element, as required by the OOXML specification. Once the body is written, its tables
-     * of contents are filled in from its headings.
+     * of contents are filled in from its headings, and, when the body has a page number
+     * estimator, its page references are given their page numbers.
      *
      * @param context - The XML serialization context
      * @returns The prepared XML object or undefined
@@ -3510,6 +3512,19 @@ declare class EndnotesWrapper implements IViewWrapper {
 }
 
 /**
+ * The page each bookmark of a document starts on, as a {@link PageNumberEstimator} works it out.
+ *
+ * @publicApi
+ */
+export declare type EstimatedPageNumbers = {
+    /**
+     * The number of the page each bookmark starts on, as the page shows it, such as `"3"` or `"iv"`, by the bookmark's
+     * name. The page references to a bookmark that isn't in it are left blank.
+     */
+    readonly bookmarks: ReadonlyMap<string, string>;
+};
+
+/**
  * Represents an external hyperlink to a URL outside the document.
  *
  * External hyperlinks create a relationship to an external resource (URL).
@@ -3731,6 +3746,12 @@ declare type FilePatch = {
     /** Content to insert (paragraphs, tables, etc.) */
     readonly children: readonly FileChild[];
 };
+
+/**
+ * Writes the page numbers the estimator works out into the page references of a formatted body: the PAGEREF fields in
+ * its tables of contents and elsewhere. A field whose bookmark the estimator didn't place is left as it is.
+ */
+export declare const fillPageNumbers: (body: IXmlableObject, context: IContext, estimate: PageNumberEstimator) => void;
 
 /**
  * Options for embedding a font in the document.
@@ -4654,6 +4675,14 @@ export declare type IBaseParagraphStyleOptions = {
     readonly run?: IRunStylePropertiesOptions;
 } & IStyleOptions;
 
+/**
+ * Options for the body of a document.
+ */
+export declare type IBodyOptions = {
+    /** Works out the page each bookmark is on, to write the page numbers of page references. See {@link PageNumberEstimator} */
+    readonly pageNumbers?: PageNumberEstimator;
+};
+
 export declare type IBodyPropertiesOptions = {
     readonly wrap?: (typeof TextWrappingType)[keyof typeof TextWrappingType];
     readonly verticalAnchor?: VerticalAnchor;
@@ -5299,12 +5328,15 @@ export declare type IDocumentHeader = {
  * Options for creating a Document element.
  *
  * @property background - Optional background settings for the document
+ * @property pageNumbers - Works out the page each bookmark is on, to write the page numbers of page references
  *
  * @see {@link Document}
  */
 export declare type IDocumentOptions = {
     /** Optional background settings for the document */
     readonly background?: IDocumentBackgroundOptions;
+    /** Works out the page each bookmark is on, to write the page numbers of page references. See {@link PageNumberEstimator} */
+    readonly pageNumbers?: PageNumberEstimator;
 };
 
 /**
@@ -6581,6 +6613,7 @@ export declare type IPatch = ParagraphPatch | FilePatch;
  * @property fonts - Font configurations
  * @property hyphenation - Hyphenation settings
  * @property theme - The document's theme: its colors, and its fonts for headings and body text
+ * @property pageNumbers - Works out the page each bookmark is on, so the page numbers of tables of contents and page references are written with the document
  */
 export declare type IPropertiesOptions = {
     readonly sections: readonly ISectionOptions[];
@@ -6618,6 +6651,12 @@ export declare type IPropertiesOptions = {
      * from Office 2016 to 2021 unless the options change it
      */
     readonly theme?: IThemeOptions;
+    /**
+     * Works out the page each bookmark is on, so the page numbers of the document's tables of contents and page
+     * references are written with it, rather than left blank until Word updates them. Give it `estimatePageNumbers`
+     * from `docx/layout`, which lays out the document's pages as Word would
+     */
+    readonly pageNumbers?: PageNumberEstimator;
 };
 
 /**
@@ -10036,6 +10075,19 @@ export declare const PageNumber: {
 export declare class PageNumberElement extends EmptyElement {
     constructor();
 }
+
+/**
+ * Works out which page each bookmark of a document starts on, from the body of the document as it is written, so the
+ * page numbers of its tables of contents and page references can be written with it.
+ *
+ * `estimatePageNumbers`, from `docx/layout`, is one. Give it to a document as its `pageNumbers`.
+ *
+ * @param body - The document's body, formatted to be written as XML
+ * @param context - The context the body was formatted in, with the document it is in
+ *
+ * @publicApi
+ */
+export declare type PageNumberEstimator = (body: IXmlableObject, context: IContext) => EstimatedPageNumbers;
 
 /**
  * Specifies the separator character between chapter number and page number.
