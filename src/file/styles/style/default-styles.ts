@@ -10,9 +10,12 @@
  */
 import { LineRuleType } from "@file/paragraph";
 import { UnderlineType } from "@file/paragraph/run/underline";
+import { TableProperties } from "@file/table/table-properties";
+import { WidthType } from "@file/table/table-width";
 
 import { type IBaseCharacterStyleOptions, StyleForCharacter } from "./character-style";
 import { type IBaseParagraphStyleOptions, type IParagraphStyleOptions, StyleForParagraph } from "./paragraph-style";
+import { Style } from "./style";
 
 /**
  * Base class for heading styles.
@@ -353,5 +356,27 @@ export class HyperlinkStyle extends StyleForCharacter {
             },
             ...options,
         });
+    }
+}
+
+/**
+ * Represents the Normal Table style, the default style of tables.
+ *
+ * It gives cells the margins Word gives the tables it makes: 108 twips (0.075 inches) on the left and right. Without a
+ * default table style, Word gives cells no margins, so their text touches the borders, where LibreOffice and other
+ * applications use these margins.
+ */
+export class NormalTableStyle extends Style {
+    public constructor() {
+        super(
+            { type: "table", styleId: "TableNormal", default: true },
+            { name: "Normal Table", uiPriority: 99, semiHidden: true, unhideWhenUsed: true },
+        );
+        this.root.push(
+            new TableProperties({
+                indent: { size: 0, type: WidthType.DXA },
+                cellMargin: { top: 0, left: 108, bottom: 0, right: 108 },
+            }),
+        );
     }
 }

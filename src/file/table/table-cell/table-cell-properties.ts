@@ -15,7 +15,7 @@ import { IgnoreIfEmptyXmlComponent, XmlComponent } from "@file/xml-components";
 
 import { type IShadingAttributesProperties, createShading } from "../../shading";
 import { type ITableCellMarginOptions, createCellMargin } from "../table-properties/table-cell-margin";
-import { type ITableWidthProperties, createTableWidthElement } from "../table-width";
+import { type ITableWidthProperties, WidthType, createTableWidthElement } from "../table-width";
 import {
     GridSpan,
     type ITableCellBorders,
@@ -142,8 +142,13 @@ export type ITableCellPropertiesChangeOptions = ITableCellPropertiesOptionsBase 
  * ```
  */
 export class TableCellProperties extends IgnoreIfEmptyXmlComponent {
+    private readonly hasWidth: boolean;
+    // eslint-disable-next-line functional/prefer-readonly-type
+    private hasColumnWidth = false;
+
     public constructor(options: ITableCellPropertiesOptions) {
         super("w:tcPr", options.includeIfEmpty);
+        this.hasWidth = options.width !== undefined;
 
         if (options.width) {
             this.root.push(createTableWidthElement("w:tcW", options.width));
@@ -199,6 +204,21 @@ export class TableCellProperties extends IgnoreIfEmptyXmlComponent {
         if (options.revision) {
             this.root.push(new TableCellPropertiesChange(options.revision));
         }
+    }
+
+    /**
+     * Gives a cell without a width of its own the width of the table's columns it spans, in twips.
+     *
+     * @internal
+     */
+    public setColumnWidth(twips: number): void {
+        if (this.hasWidth) {
+            return;
+        }
+        // The width is the first of the cell's properties, and replaces one given before
+        this.root.splice(0, this.hasColumnWidth ? 1 : 0, createTableWidthElement("w:tcW", { size: twips, type: WidthType.DXA }));
+        // eslint-disable-next-line functional/immutable-data
+        this.hasColumnWidth = true;
     }
 }
 

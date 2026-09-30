@@ -37,11 +37,18 @@ export type ThemeFonts = {
 // Office's, which a document's theme has unless the document gives others
 const OFFICE_THEME_FONTS: ThemeFonts = { headings: "Calibri Light", body: "Calibri" };
 
+/**
+ * The margins of a table's cells, or of one cell, in points.
+ */
+export type CellMargins = Partial<Record<"top" | "bottom" | "left" | "right", number>>;
+
 type StyleDefinition = {
     readonly type: string;
     readonly basedOn?: string;
     readonly run: RunFormat;
     readonly paragraph: ParagraphFormat;
+    /** The margins a table style gives its cells */
+    readonly cellMargins?: CellMargins;
 };
 
 /**
@@ -57,6 +64,8 @@ export type TextStyles = {
     readonly defaultParagraphStyle?: string;
     /** The style of runs that don't give one */
     readonly defaultCharacterStyle?: string;
+    /** The style of tables that don't give one, usually "TableNormal" */
+    readonly defaultTableStyle?: string;
     /** The theme's fonts, for text in them */
     readonly themeFonts: ThemeFonts;
 };
@@ -272,6 +281,9 @@ export const readTextStyles = (xml: XmlObject, themeFonts: ThemeFonts = OFFICE_T
                     basedOn: valueOf(children, "w:basedOn"),
                     run: readRunFormat(find(children, "w:rPr"), themeFonts),
                     paragraph: readParagraphFormat(find(children, "w:pPr")),
+                    ...(attributes["w:type"] === "table"
+                        ? { cellMargins: readCellMargins(find(childrenOf(find(children, "w:tblPr")), "w:tblCellMar")) }
+                        : {}),
                 },
             };
         })
@@ -287,8 +299,28 @@ export const readTextStyles = (xml: XmlObject, themeFonts: ThemeFonts = OFFICE_T
         // Styles marks Normal as the default when no paragraph style is, as Word takes it
         defaultParagraphStyle: defaultStyle("paragraph"),
         defaultCharacterStyle: defaultStyle("character"),
+        defaultTableStyle: defaultStyle("table"),
         themeFonts,
     };
+};
+
+/**
+ * Reads the margins of a table's cells (`w:tblCellMar`), or of one cell (`w:tcMar`), in points.
+ */
+export const readCellMargins = (element: unknown): CellMargins => {
+    const children = childrenOf(element);
+    const side = (...names: readonly string[]): number | undefined =>
+        names
+            .map((name) => scaled(numberOf(attributesOf(find(children, name))["w:w"]), TWIPS_PER_POINT))
+            .find((value) => value !== undefined);
+    return Object.fromEntries(
+        Object.entries({
+            top: side("w:top"),
+            bottom: side("w:bottom"),
+            left: side("w:start", "w:left"),
+            right: side("w:end", "w:right"),
+        }).filter(([, value]) => value !== undefined),
+    );
 };
 
 const stylesRead = new WeakMap<object, TextStyles>();

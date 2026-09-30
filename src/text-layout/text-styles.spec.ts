@@ -128,6 +128,28 @@ describe("getTextStyles", () => {
         });
     });
 
+    it("should read the margins table styles give cells, and which table style is the default", () => {
+        const styles = getTextStyles(
+            contextOf(
+                new File({
+                    externalStyles: `<w:styles xmlns:w="main">
+    <w:style w:type="table" w:styleId="Padded">
+        <w:basedOn w:val="TableNormal"/>
+        <w:tblPr><w:tblCellMar><w:top w:w="50" w:type="dxa"/><w:start w:w="200" w:type="dxa"/></w:tblCellMar></w:tblPr>
+    </w:style>
+</w:styles>`,
+                    sections: [],
+                }),
+            ),
+        );
+        // docx's Normal Table, with the margins Word gives the tables it makes
+        expect(styles.defaultTableStyle).to.equal("TableNormal");
+        expect(styles.styles.get("TableNormal")?.cellMargins).to.deep.equal({ top: 0, bottom: 0, left: 5.4, right: 5.4 });
+        expect(styles.styles.get("Padded")?.cellMargins).to.deep.equal({ top: 2.5, left: 10 });
+        // Other styles have none
+        expect(styles.styles.get("Normal")).not.to.have.property("cellMargins");
+    });
+
     it("should read the fonts of the document's theme where styles and text use them", () => {
         const styles = getTextStyles(
             contextOf(

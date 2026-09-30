@@ -190,4 +190,25 @@ describe("TableCellProperties", () => {
             });
         });
     });
+
+    describe("#setColumnWidth", () => {
+        it("should put the width of the cell's columns first, replacing one given before", () => {
+            const properties = new TableCellProperties({ columnSpan: 2 });
+            properties.setColumnWidth(1000);
+            properties.setColumnWidth(3000);
+
+            expect(new Formatter().format(properties)).to.deep.equal({
+                "w:tcPr": [{ "w:tcW": { _attr: { "w:type": "dxa", "w:w": 3000 } } }, { "w:gridSpan": { _attr: { "w:val": 2 } } }],
+            });
+        });
+
+        it("should keep the cell's own width", () => {
+            const properties = new TableCellProperties({ width: { size: 50, type: WidthType.PERCENTAGE } });
+            properties.setColumnWidth(3000);
+
+            expect(new Formatter().format(properties)).to.deep.equal({
+                "w:tcPr": [{ "w:tcW": { _attr: { "w:type": "pct", "w:w": 2500 } } }],
+            });
+        });
+    });
 });

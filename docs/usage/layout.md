@@ -73,7 +73,7 @@ The pages are laid out with the widths and heights of the characters of the font
 - numbered and bulleted lists
 - footnotes, which take room at the bottom of the page their reference is on, and endnotes, which follow the text
 - pictures in the line
-- tables, with their rows' heights, cell margins and borders. Rows break across pages between the lines of their cells, unless they are kept whole (`cantSplit`), and header rows are repeated on each page a table is on
+- tables, with their columns' widths (`columnWidths`, or their cells' widths), their rows' heights, cell margins and borders. Rows break across pages between the lines of their cells, unless they are kept whole (`cantSplit`), and header rows are repeated on each page a table is on
 - sections, with their page sizes, margins, columns, headers and footers, how they start, and their page numbering, such as roman numerals
 
 ## What it leaves blank
@@ -85,6 +85,7 @@ It stops at the first thing it can't lay out yet, and the page numbers of the he
 - a footnote of more than a line that doesn't fit below its reference, which Word continues on the next page
 - columns of different widths, columns before a continuous section break, which Word evens out so the next section starts below the longest, footnotes in columns, and a table's header rows repeated at the top of a column
 - a table row kept whole that is taller than a page, and a row that breaks across pages with merged cells, a table or a footnote in it, or a height set taller than its text
+- a table whose rows give a column different widths
 - a document that hyphenates its words
 
 A wrong page number is worse than a blank one, so it doesn't guess.
@@ -92,6 +93,8 @@ A wrong page number is worse than a blank one, so it doesn't guess.
 ## How close it is
 
 Text in fonts other than those five is measured as the most similar of them, so its page numbers are rougher. Aptos, Office's default font since 2023, is measured as Arial.
+
+Word sizes the columns of a table given no widths to their text, where the layout makes them equal, so the page numbers after such a table can be off. Give tables `columnWidths`, or widths on their cells, which Word keeps.
 
 Each change to `docx/layout` is checked against LibreOffice's layout of a set of documents. Word lays out some things differently from LibreOffice, so keep `updateFields` on if the page numbers must be exact once the document is opened in Word.
 

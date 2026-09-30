@@ -10,7 +10,7 @@ import { FileChild } from "@file/file-child";
 import type { IContext, IXmlableObject, XmlComponent } from "@file/xml-components";
 
 import type { AlignmentType } from "../paragraph";
-import { DEFAULT_AVAILABLE_WIDTH, resolveColumnWidths } from "./column-widths";
+import { DEFAULT_AVAILABLE_WIDTH, resolveColumnWidths, resolvePreferredWidth } from "./column-widths";
 import { type ITableGridChangeOptions, TableGrid } from "./grid";
 import { TableCell, VerticalMergeType } from "./table-cell";
 import type { ITableCellSpacingProperties } from "./table-cell-spacing";
@@ -39,8 +39,10 @@ export type ITableOptions = {
      * Widths of the grid columns (`w:tblGrid`) in twips (twentieths of a point).
      *
      * Word treats the grid as a hint and lays the table out from `width` and the cells'
-     * widths, but Google Docs, Apple Pages and QuickLook lay the table out from the grid
-     * alone and ignore percentage widths. When omitted, the grid is derived from `width`
+     * widths, sizing columns whose cells have no width to their content, so each cell
+     * without a `width` of its own is given the width of the columns it spans, scaled up
+     * to the table's `width` when that is wider. Google Docs, Apple Pages and QuickLook
+     * lay the table out from the grid alone and ignore percentage widths. When omitted, the grid is derived from `width`
      * and the cells' widths, resolved against the page (or, for nested tables, the
      * parent cell) when the document is packed, so the table renders the same in every
      * consumer. Supply explicit values to take full control of the grid.
@@ -157,6 +159,8 @@ export class Table extends FileChild {
             });
         });
 
+        this.setCellWidths(DEFAULT_AVAILABLE_WIDTH);
+
         // The grid is derived here (against the default page) so that a table formatted
         // on its own is already sensible; it is re-resolved against the real page or
         // parent cell in prepForXml.
@@ -226,6 +230,7 @@ export class Table extends FileChild {
      * serializing.
      */
     public prepForXml(context: IContext): IXmlableObject | undefined {
+        this.setCellWidths(this.resolveAvailableWidth(context));
         if (this.columnWidths === undefined) {
             // eslint-disable-next-line functional/immutable-data
             this.resolvedColumnWidths = resolveColumnWidths({
@@ -238,6 +243,33 @@ export class Table extends FileChild {
         }
 
         return super.prepForXml(context);
+    }
+
+    /**
+     * Gives each cell without a width of its own the width of the `columnWidths` it spans, as Word sizes the columns of
+     * cells without a width to their content, whatever the grid says. When the table's width is wider than the columns
+     * add up to, they are scaled up to fill it, as Word and LibreOffice lay them out, so columns given as proportions
+     * keep them.
+     */
+    private setCellWidths(availableWidth: number): void {
+        if (this.columnWidths === undefined) {
+            return;
+        }
+        const total = this.columnWidths.reduce((sum, columnWidth) => sum + columnWidth, 0);
+        const tableWidth = resolvePreferredWidth(this.width, availableWidth) ?? 0;
+        const scale = total > 0 && tableWidth > total ? tableWidth / total : 1;
+        for (const row of this.rows) {
+            let column = 0;
+            for (const cell of row.cells) {
+                const span = cell.options.columnSpan || 1;
+                const spanned = this.columnWidths.slice(column, column + span);
+                const cellWidth = Math.round(spanned.reduce((sum, columnWidth) => sum + columnWidth, 0) * scale);
+                if (spanned.length === span && cellWidth > 0) {
+                    cell.setColumnWidth(cellWidth);
+                }
+                column += span;
+            }
+        }
     }
 
     /**

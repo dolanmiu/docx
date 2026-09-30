@@ -75,16 +75,28 @@ export class TableCell extends XmlComponent {
         readonly revision?: WithHexColors<NonNullable<ITableCellOptions["revision"]>>;
     };
 
+    private readonly properties: TableCellProperties;
+
     public constructor(options: ITableCellOptions) {
         super("w:tc");
         // Declared with the types it had before theme colors, which a minor release can't change
         this.options = options as TableCell["options"];
 
-        this.root.push(new TableCellProperties(options));
+        this.properties = new TableCellProperties(options);
+        this.root.push(this.properties);
 
         for (const child of options.children) {
             this.root.push(child);
         }
+    }
+
+    /**
+     * Gives the cell, unless it has a width of its own, the width of the table's columns it spans, in twips.
+     *
+     * @internal
+     */
+    public setColumnWidth(twips: number): void {
+        this.properties.setColumnWidth(twips);
     }
 
     public prepForXml(context: IContext): IXmlableObject | undefined {

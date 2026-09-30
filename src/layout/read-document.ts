@@ -30,6 +30,7 @@ import {
     isOff,
     numberOf,
     onOff,
+    readCellMargins,
     readParagraphFormat,
     readRunFormat,
     spansOf,
@@ -221,9 +222,11 @@ const DEFAULT_SECTION: Omit<Section, "headers" | "footers" | "columns"> = {
     numberFormat: "decimal",
 };
 // The space either side of the text in a table cell, when the table doesn't give it: 0.075 inches
-const DEFAULT_CELL_MARGIN = 5.4;
 const EMUS_PER_POINT = 12700;
 // Border widths are in eighths of a point
+/** How far apart, in points, the widths two rows give a column can be before they differ: rounding, not a choice */
+const WIDTH_TOLERANCE = 1;
+
 const EIGHTHS_PER_POINT = 8;
 // Formatting switches that don't change how a page reference writes the page's number
 // cspell:ignore mergeformatinet
@@ -533,21 +536,6 @@ const borderWidth = (borders: readonly XmlObject[], name: string): number => {
     return style === undefined || style === "nil" || style === "none" ? 0 : (numberOf(attributes["w:sz"]) ?? 0) / EIGHTHS_PER_POINT;
 };
 
-/** The margins of the cells of a table (`w:tblCellMar`), or of one cell (`w:tcMar`), in points */
-const readCellMargins = (element: unknown): Partial<Record<"top" | "bottom" | "left" | "right", number>> => {
-    const children = childrenOf(element);
-    const side = (...names: readonly string[]): number | undefined =>
-        names.map((name) => twips(attributesOf(find(children, name))["w:w"])).find((value) => value !== undefined);
-    return Object.fromEntries(
-        Object.entries({
-            top: side("w:top"),
-            bottom: side("w:bottom"),
-            left: side("w:start", "w:left"),
-            right: side("w:end", "w:right"),
-        }).filter(([, value]) => value !== undefined),
-    );
-};
-
 /** The rows of a table, or of a content control or custom XML in it */
 const rowsOf = (elements: readonly unknown[]): readonly XmlObject[] =>
     elements.filter(isObject).flatMap((element) => {
@@ -581,11 +569,16 @@ const readTable = (element: XmlObject, reader: Reader): TableBlock => {
     const children = contentOf(element).filter(isObject);
     const properties = childrenOf(find(children, "w:tblPr"));
     const style = valueOf(properties, "w:tblStyle");
+    // The margins of the table's style, or of the default table style when it has none that is a table style, and the
+    // styles it is based on, then its own. Without any, Word gives cells none
+    const ownStyles = styleChain(reader.styles, style, "table");
+    const tableStyles = ownStyles.length > 0 ? ownStyles : styleChain(reader.styles, reader.styles.defaultTableStyle, "table");
     const tableMargins = {
         top: 0,
         bottom: 0,
-        left: DEFAULT_CELL_MARGIN,
-        right: DEFAULT_CELL_MARGIN,
+        left: 0,
+        right: 0,
+        ...Object.assign({}, ...tableStyles.map(({ cellMargins }) => cellMargins)),
         ...readCellMargins(find(properties, "w:tblCellMar")),
     };
     const borders = childrenOf(find(properties, "w:tblBorders"));
@@ -594,15 +587,22 @@ const readTable = (element: XmlObject, reader: Reader): TableBlock => {
         .map((column) => twips(attributesOf(column["w:gridCol"])["w:w"]) ?? 0);
     const rows = rowsOf(children);
 
-    const read = rows.map((row, rowIndex): TableRow => {
+    const gridWidth = (from: number, to: number): number => grid.slice(from, to).reduce((total, value) => total + value, 0);
+
+    const read = rows.map((row, rowIndex): { readonly row: TableRow; readonly edges: ReadonlyMap<number, number> } => {
         const rowChildren = contentOf(row).filter(isObject);
         const rowProperties = childrenOf(find(rowChildren, "w:trPr"));
         const heightAttributes = attributesOf(find(rowProperties, "w:trHeight"));
         const height = twips(heightAttributes["w:val"]);
         const { "w:hRule": rule } = heightAttributes;
         const skipped = numberOf(attributesOf(find(rowProperties, "w:gridBefore"))["w:val"]) ?? 0;
-        const { cells } = cellsOf(rowChildren).reduce<{ readonly column: number; readonly cells: readonly TableCell[] }>(
-            ({ column, cells: done }, cell) => {
+        // Where each cell's edges are, by the grid column they are at, to check the rows agree on them
+        const { cells, edges } = cellsOf(rowChildren).reduce<{
+            readonly column: number;
+            readonly cells: readonly TableCell[];
+            readonly edges: ReadonlyMap<number, number>;
+        }>(
+            ({ column, cells: done, edges: before }, cell) => {
                 const cellChildren = contentOf(cell).filter(isObject);
                 const cellProperties = childrenOf(find(cellChildren, "w:tcPr"));
                 const span = numberOf(attributesOf(find(cellProperties, "w:gridSpan"))["w:val"]) ?? 1;
@@ -610,13 +610,13 @@ const readTable = (element: XmlObject, reader: Reader): TableBlock => {
                 const merge =
                     mergeElement === undefined ? undefined : attributesOf(mergeElement)["w:val"] === "restart" ? "restart" : "continue";
                 const margins = { ...tableMargins, ...readCellMargins(find(cellProperties, "w:tcMar")) };
-                const columns = grid.slice(column, column + span);
-                const width =
-                    columns.length > 0
-                        ? columns.reduce((total, value) => total + value, 0)
-                        : (twips(attributesOf(find(cellProperties, "w:tcW"))["w:w"]) ?? 0);
+                // Word lays a cell out at its own width in twips, when it has one, rather than the grid's
+                const { "w:w": ownWidth, "w:type": widthType = "dxa" } = attributesOf(find(cellProperties, "w:tcW"));
+                const inTwips = widthType === "dxa" ? (twips(ownWidth) ?? 0) : 0;
+                const width = inTwips > 0 ? inTwips : gridWidth(column, column + span);
                 return {
                     column: column + span,
+                    edges: new Map([...before, [column + span, before.get(column)! + width]]),
                     cells: [
                         ...done,
                         {
@@ -630,23 +630,41 @@ const readTable = (element: XmlObject, reader: Reader): TableBlock => {
                     ],
                 };
             },
-            { column: skipped, cells: [] },
+            { column: skipped, cells: [], edges: new Map([[skipped, gridWidth(0, skipped)]]) },
         );
         return {
-            cells,
-            // A height without a rule is the least the row can be, as Word writes it
-            ...(height !== undefined && rule !== "auto" ? { height: { value: height, rule: rule === "exact" ? "exact" : "atLeast" } } : {}),
-            header: onOff(rowProperties, "w:tblHeader") === true,
-            cantSplit: onOff(rowProperties, "w:cantSplit") === true,
-            borderTop: borderWidth(borders, rowIndex === 0 ? "w:top" : "w:insideH"),
-            borderBottom: rowIndex === rows.length - 1 ? borderWidth(borders, "w:bottom") : 0,
+            edges,
+            row: {
+                cells,
+                // A height without a rule is the least the row can be, as Word writes it
+                ...(height !== undefined && rule !== "auto"
+                    ? { height: { value: height, rule: rule === "exact" ? "exact" : "atLeast" } }
+                    : {}),
+                header: onOff(rowProperties, "w:tblHeader") === true,
+                cantSplit: onOff(rowProperties, "w:cantSplit") === true,
+                borderTop: borderWidth(borders, rowIndex === 0 ? "w:top" : "w:insideH"),
+                borderBottom: rowIndex === rows.length - 1 ? borderWidth(borders, "w:bottom") : 0,
+            },
         };
     });
-    const unsupported = read
-        .flatMap(({ cells }) => cells)
-        .flatMap(({ blocks }) => blocks)
-        .find((block) => block.unsupported !== undefined)?.unsupported;
-    return { type: "table", rows: read, ...(unsupported ? { unsupported } : {}) };
+    // Cells over the same columns whose widths put a column's edge in different places in different rows, which Word
+    // settles in a way not yet followed
+    const edgesAt = new Map<number, number>();
+    const unequal = read.some(({ edges }) =>
+        [...edges].some(([column, edge]) => {
+            const other = edgesAt.get(column) ?? edge;
+            // eslint-disable-next-line functional/immutable-data
+            edgesAt.set(column, other);
+            return Math.abs(other - edge) > WIDTH_TOLERANCE;
+        }),
+    );
+    const unsupported = unequal
+        ? "a table whose rows give a column different widths"
+        : read
+              .flatMap(({ row }) => row.cells)
+              .flatMap(({ blocks }) => blocks)
+              .find((block) => block.unsupported !== undefined)?.unsupported;
+    return { type: "table", rows: read.map(({ row }) => row), ...(unsupported ? { unsupported } : {}) };
 };
 
 /**
