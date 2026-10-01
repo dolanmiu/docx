@@ -7,8 +7,8 @@
  * the page when the section before has as many columns and one is left, and on a new page otherwise.
  * Paragraphs break into lines, and pages break between lines, as their keep and widow control settings allow. Table
  * rows break across pages between the lines of their cells, unless they are kept whole, and the table's header rows are
- * repeated on each page. The footnotes of each page's lines take room at its bottom, and one that doesn't fit below its
- * reference continues at the bottom of the next page. The endnotes follow the body.
+ * repeated at the top of each page and column. The footnotes of each page's lines take room at its bottom, and one that
+ * doesn't fit below its reference continues at the bottom of the next page. The endnotes follow the body.
  * It stops at the first thing it can't lay out yet, and the bookmarks after it aren't placed.
  *
  * @module
@@ -586,10 +586,13 @@ export const paginate = (
     const balanceColumns = (end: number): void => {
         const from = columnsStart!;
         const page = pageCount;
+        // The empty paragraph that ends the section after a table isn't evened out with the rest. Word puts its line below
+        // the last column, so 20 rows go 10 and 10 with it below the second (`word-header-columns.docx` H1 and H8)
+        const balanced = endsAfterTable(end - 1) ? end - 1 : end;
         const layOut = (height: number): void => {
             balancing = { page, height };
             restore(from);
-            placeBlocks(from.index, end);
+            placeBlocks(from.index, balanced);
         };
         const fitsIn = (height: number): boolean => {
             try {
@@ -615,6 +618,7 @@ export const paginate = (
         layOut(tall);
         balancing = undefined;
         bottom = pageBottom;
+        placeBlocks(balanced, end);
     };
 
     /**
@@ -991,7 +995,7 @@ export const paginate = (
     /**
      * Places a row that doesn't fit on the page by breaking it across pages between the lines of its cells, as Word
      * breaks a row unless it is kept whole. A row none of whose lines fit moves to the next page. The table's header rows
-     * are repeated above the rest of it on each page.
+     * are repeated above the rest of it on each page and in each column.
      */
     const splitRow = (row: TableRow, height: number, startTablePage: () => void): void => {
         // A table in a cell is measured as a line that doesn't break, which is enough to tell whether the row breaks
@@ -1064,13 +1068,11 @@ export const paginate = (
         // The space after the paragraph before the table
         position += spaceAfter;
         spaceAfter = 0;
-        // A new page for the table, with its header rows repeated at the top, unless the row going on it is one of them
+        // A new column or page for the table, with its header rows repeated at the top, unless the row going on it is one
+        // of them. Word and LibreOffice repeat them at the top of each column, as of each page (`word-rules2.docx` Q4)
         const startTablePage = (index: number): void => {
             nextColumn();
-            if (index >= headerRows && headerRows > 0) {
-                if (column > 0) {
-                    throw new Unsupported("a table's header rows repeated in a column");
-                }
+            if (index >= headerRows) {
                 position += repeated;
             }
         };
@@ -1164,17 +1166,27 @@ export const paginate = (
         };
     };
 
+    /**
+     * Whether a block is the empty paragraph that ends a section right after a table. Word gives it a line of its own, as
+     * there is no line of a paragraph before it for its mark to go on (`word-header-columns.docx` H1 to H4, H7 and H8),
+     * where LibreOffice gives it no room
+     */
+    const endsAfterTable = (index: number): boolean => {
+        const block = blocks[index]?.block;
+        return block?.type === "paragraph" && block.sectionBreak === true && blocks[index - 1]?.block.type === "table";
+    };
+
     const placeBlock = (block: Block, index: number): void => {
         if (block.unsupported) {
             throw new Unsupported(block.unsupported);
         }
         const width = section().columns[column];
-        if (block.type === "paragraph" && block.sectionBreak) {
-            // The empty paragraph that ends a section takes no room, in Word and LibreOffice. In Word, the space around it
-            // is still its own: the space after the paragraph before and its space before are the larger of the two, and
-            // the next section's space before is only as much as is more than its space after, where LibreOffice has the
-            // space after the paragraph before. Its space after is never on the page itself, so contextual spacing leaves
-            // nothing more of it out
+        if (block.type === "paragraph" && block.sectionBreak && !endsAfterTable(index)) {
+            // The empty paragraph that ends a section after a paragraph takes no room, in Word and LibreOffice. In Word, the
+            // space around it is still its own: the space after the paragraph before and its space before are the larger of
+            // the two, and the next section's space before is only as much as is more than its space after, where
+            // LibreOffice has the space after the paragraph before. Its space after is never on the page itself, so
+            // contextual spacing leaves nothing more of it out
             const { spaceBefore } = measureParagraph(block, width, blocks[index - 1]?.block);
             if (placedInColumn) {
                 position += between(spaceAfter, spaceBefore);

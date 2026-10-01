@@ -1064,9 +1064,42 @@ describe("paginate", () => {
                 expect(pagesOf(atTop)).to.deep.equal({ a: "1", b: "2" });
             });
 
-            it("should stop at a table's header rows repeated in a column of those it balances", () => {
-                const headed = balanced([table([row([[paragraph("header", 1)]], { header: true }), row([[paragraph("row", 3)]])])]);
-                expect(paginate(headed, { measurer: MEASURER }).stoppedAt).to.equal("a table's header rows repeated in a column");
+            it("should repeat a table's header rows at the top of each column it balances", () => {
+                const rows = lines("r", 3).map((block) => row([[block]]));
+                const headed = balanced([table([row([[paragraph("header", 1)]], { header: true }), ...rows])], COLUMNS, 4);
+                // The header and 2 rows, and the header and the last row, so the columns are 3 lines tall, rather than 2
+                // and 2 without the header in the second, and c doesn't fit below b's 4 lines
+                expect(pagesOf(headed)).to.include({ r2: "1", r3: "1", b: "1", c: "2" });
+            });
+
+            it("should stop at what it can't lay out in the columns it balances, though it can in a column as tall as the page", () => {
+                // The row of a merged cell fits in the first column, but breaks across the columns as short as they fit in
+                const headed = balanced([table([mergedRow(merged("restart", [paragraph("merged", 4)]))])]);
+                expect(paginate(headed, { measurer: MEASURER }).stoppedAt).to.equal("a table row with merged cells across pages");
+            });
+
+            it("should put the line of the empty paragraph that ends the section after a table below the last column, as Word does", () => {
+                const ended = (mark: number, after: number): DocumentContent => {
+                    const sectionBreak: ParagraphBlock = {
+                        ...paragraph("break", 0),
+                        items: [],
+                        markFont: { size: mark },
+                        sectionBreak: true,
+                    };
+                    return document(
+                        [
+                            [table(lines("r", 4).map((block) => row([[block]]))), 0],
+                            [sectionBreak, 0],
+                            [paragraph("b", after), 1],
+                            [paragraph("c", 1), 1],
+                        ],
+                        { sections: [COLUMNS, { ...SECTION, start: "continuous" }] },
+                    );
+                };
+                // 2 rows and 2, and the empty paragraph's line below the second, so c doesn't fit below b's 4 lines
+                expect(pagesOf(ended(10, 4))).to.include({ r3: "1", b: "1", c: "2" });
+                // A mark 3 lines tall goes below the rows evened out, rather than with them, 4 lines and its 3
+                expect(pagesOf(ended(30, 2))).to.include({ r3: "1", b: "1", c: "2" });
             });
 
             it("should leave columns with a column break in them as they are, as Word does, but not those of the next page", () => {
@@ -1126,6 +1159,20 @@ describe("paginate", () => {
                 { sections: [SECTION, { ...SECTION, start: "continuous" }] },
             );
             expect(pagesOf(kept)).to.deep.equal({ a: "1", heading: "1", b: "2" });
+        });
+
+        it("should give the empty paragraph that ends a section a line of its own after a table, as Word does", () => {
+            const sectionBreak: ParagraphBlock = { ...paragraph("break", 0), items: [], sectionBreak: true };
+            const content = document(
+                [
+                    [table(Array.from({ length: 6 }, (_, index) => row([[paragraph(`r${index + 1}`, 1)]]))), 0],
+                    [sectionBreak, 0],
+                    [paragraph("b", 1), 1],
+                ],
+                { sections: [SECTION, { ...SECTION, start: "continuous" }] },
+            );
+            // The 6 rows and the empty paragraph's line fill the page
+            expect(pagesOf(content)).to.include({ r6: "1", b: "2" });
         });
 
         describe("the space around the empty paragraph that ends a section", () => {
@@ -1424,20 +1471,33 @@ describe("paginate", () => {
             });
         });
 
-        it("should stop at footnotes in columns, and at header rows repeated in a column", () => {
+        it("should stop at footnotes in columns", () => {
             const noted = document([withItems(paragraph("a", 1), [{ type: "marker", name: "footnote 1" }])], {
                 sections: [COLUMNS],
                 footnotes: new Map([["footnote 1", [paragraph("note", 1)]]]),
             });
             expect(paginate(noted, { measurer: MEASURER }).stoppedAt).to.equal("a footnote in columns");
-            const headed = document(
-                [
-                    paragraph("a", 5),
-                    table([row([[paragraph("header", 1)]], { header: true }), row([[paragraph("row", 2)]], { cantSplit: true })]),
-                ],
-                { sections: [COLUMNS] },
+        });
+
+        it("should repeat a table's header rows at the top of each column, as Word does", () => {
+            const header = row([[paragraph("header", 1)]], { header: true });
+            const rows = Array.from({ length: 9 }, (_, index) => row([[paragraph(`r${index + 1}`, 1)]]));
+            const content = document([paragraph("a", 5), table([header, ...rows])], { sections: [COLUMNS] });
+            // a, the header and r1 fill the first column, and the header and 6 rows the second, so r8 starts the next page
+            expect(pagesOf(content)).to.include({ r1: "1", r2: "1", r7: "1", r8: "2" });
+        });
+
+        it("should repeat a table's header rows above the rest of a row that breaks across columns", () => {
+            const tall = withItems(paragraph("tall", 8), [{ type: "marker", name: "end" }]);
+            const content = document(
+                [paragraph("a", 4), table([row([[paragraph("header", 1)]], { header: true }), row([[tall]])]), paragraph("b", 1)],
+                {
+                    sections: [COLUMNS],
+                },
             );
-            expect(paginate(headed, { measurer: MEASURER }).stoppedAt).to.equal("a table's header rows repeated in a column");
+            // 2 of tall's lines below a and the header, and its other 6 below the header in the second column, which leaves
+            // no room for b
+            expect(pagesOf(content)).to.include({ tall: "1", end: "1", b: "2" });
         });
     });
 
