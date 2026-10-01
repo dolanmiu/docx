@@ -427,9 +427,16 @@ export const readFontFile = (data: FontData): readonly FontFace[] => {
  * too, and with one that is italic, or not, as the text is, when there is one.
  */
 export const createFontFileMeasurer = (faces: readonly FontFace[], fallback: TextMeasurer = DEFAULT_MEASURER): TextMeasurer => {
+    // The face of each font, bold or not, and italic or not, as text is measured many times in each
+    const chosen = new Map<string, FontFace | undefined>();
     const faceOf = ({ font = DEFAULT_FONT, bold = false, italic = false }: TextFont): FontFace | undefined => {
-        const named = faces.filter((face) => face.name.toLowerCase() === font.toLowerCase() && face.bold === bold);
-        return named.find((face) => face.italic === italic) ?? named[0];
+        const key = `${font.toLowerCase()}|${bold}|${italic}`;
+        if (!chosen.has(key)) {
+            const named = faces.filter((face) => face.name.toLowerCase() === font.toLowerCase() && face.bold === bold);
+            // eslint-disable-next-line functional/immutable-data
+            chosen.set(key, named.find((face) => face.italic === italic) ?? named[0]);
+        }
+        return chosen.get(key);
     };
     return {
         measureWidth: (text, font) => {
