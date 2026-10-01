@@ -2717,7 +2717,7 @@ var docxLayout = (function(exports) {
 			}
 			if (!end) finish(line);
 			else {
-				const breakHeight = Math.max(measurer.measureLineHeight(end.font), isLast && !line.started ? markHeight : 0);
+				const breakHeight = isLast && !line.started ? markHeight : measurer.measureLineHeight(end.font);
 				finish(_objectSpread2(_objectSpread2({}, line), {}, {
 					natural: Math.max(line.started ? line.natural : 0, breakHeight),
 					started: true
@@ -3091,27 +3091,34 @@ var docxLayout = (function(exports) {
 			const outer = withOuterSpace ? ((_parts$0$before = (_parts$ = parts[0]) === null || _parts$ === void 0 ? void 0 : _parts$.before) !== null && _parts$0$before !== void 0 ? _parts$0$before : 0) + ((_parts$after = (_parts = parts[parts.length - 1]) === null || _parts === void 0 ? void 0 : _parts.after) !== null && _parts$after !== void 0 ? _parts$after : 0) : 0;
 			return sum(parts.map(({ height, before }, index) => height + (index === 0 ? 0 : between(parts[index - 1].after, before)))) + outer;
 		};
+		const cellHeight = (cell) => cell.marginTop + stackHeight(cell.blocks, cell.width) + cell.marginBottom;
+		/** The cells merged down several rows of a table: the row each starts in, its last row, and the height its text needs */
+		const mergesOf = ({ rows }) => rows.flatMap(({ cells }, first) => cells.filter(({ verticalMerge }) => verticalMerge === "restart").map((cell) => {
+			const span = rows.slice(first + 1).findIndex((row) => {
+				var _row$cells$find;
+				return ((_row$cells$find = row.cells.find((other) => other.column === cell.column)) === null || _row$cells$find === void 0 ? void 0 : _row$cells$find.verticalMerge) !== "continue";
+			});
+			return {
+				first,
+				last: span === -1 ? rows.length - 1 : first + span,
+				height: cellHeight(cell)
+			};
+		}));
 		/**
 		* The height of each row of a table: its tallest cell, with the cell's margins, or the row's own height, and its
 		* borders. Cells merged down several rows make the last of them taller when their text needs more room.
 		*/
-		const rowHeights = ({ rows }) => {
-			const cellHeight = (cell) => cell.marginTop + stackHeight(cell.blocks, cell.width) + cell.marginBottom;
+		const rowHeights = (table, merges = mergesOf(table)) => {
+			const { rows } = table;
 			const heights = rows.map(({ cells, height, borderTop, borderBottom }) => {
 				const natural = Math.max(0, ...cells.filter(({ verticalMerge }) => verticalMerge === void 0).map(cellHeight));
 				return (height === void 0 ? natural : height.rule === "exact" ? height.value : Math.max(height.value, natural)) + borderTop + borderBottom;
 			});
-			return rows.reduce((all, { cells }, rowIndex) => cells.reduce((current, cell) => {
+			return merges.reduce((current, { first, last, height }) => {
 				var _rows$last$height;
-				if (cell.verticalMerge !== "restart") return current;
-				const span = rows.slice(rowIndex + 1).findIndex((row) => {
-					var _row$cells$find;
-					return ((_row$cells$find = row.cells.find((other) => other.column === cell.column)) === null || _row$cells$find === void 0 ? void 0 : _row$cells$find.verticalMerge) !== "continue";
-				});
-				const last = span === -1 ? rows.length - 1 : rowIndex + span;
-				const missing = cellHeight(cell) - sum(current.slice(rowIndex, last + 1));
+				const missing = height - sum(current.slice(first, last + 1));
 				return missing > 0 && ((_rows$last$height = rows[last].height) === null || _rows$last$height === void 0 ? void 0 : _rows$last$height.rule) !== "exact" ? current.map((value, index) => index === last ? value + missing : value) : current;
-			}, all), heights);
+			}, heights);
 		};
 		const markersOf = (block) => block.type === "paragraph" ? block.items.flatMap((item) => item.type === "marker" ? [item.name] : []) : block.rows.flatMap(({ cells }) => cells.flatMap((cell) => cell.blocks.flatMap(markersOf)));
 		const bookmarks = /* @__PURE__ */ new Map();
@@ -3511,10 +3518,7 @@ var docxLayout = (function(exports) {
 			}
 		};
 		const placeParagraph = (paragraph, keptWithPrevious) => {
-			if (paragraph.pageBreakBefore && (placedInColumn || column > 0)) {
-				startPage();
-				sectionSpaceAfter = void 0;
-			}
+			if (paragraph.pageBreakBefore && (placedInColumn || column > 0)) startPage();
 			const groups = paragraph.lines.reduce((all, line) => {
 				const current = [...all[all.length - 1], line];
 				return line.breakAfter ? [
@@ -3613,7 +3617,8 @@ var docxLayout = (function(exports) {
 			}
 		};
 		const placeTable = (table) => {
-			const heights = rowHeights(table);
+			const merges = mergesOf(table);
+			const heights = rowHeights(table, merges);
 			const headerRows = table.rows.findIndex(({ header }) => !header);
 			const repeated = headerRows > 0 ? sum(heights.slice(0, headerRows)) : 0;
 			position += spaceAfter;
@@ -3627,18 +3632,25 @@ var docxLayout = (function(exports) {
 			};
 			/** Whether a row fits on the page, with its footnotes */
 			const rowFits = (height, notes) => position + height + moreNoteRoom(notes) <= bottom - noteArea + TOLERANCE;
+			const markersIn = (row) => row.cells.flatMap((cell) => cell.blocks.flatMap(markersOf));
 			for (const [index, row] of table.rows.entries()) {
 				var _row$height;
 				const height = heights[index];
-				const markers = row.cells.flatMap((cell) => cell.blocks.flatMap(markersOf));
+				const markers = markersIn(row);
 				const notes = notesIn(markers);
 				if (!rowFits(height, notes) && position + height <= bottom - noteArea + TOLERANCE && notes.some(canBreak)) throw new Unsupported("a footnote in a table row across pages");
-				if (!rowFits(height, notes) && !row.cantSplit && ((_row$height = row.height) === null || _row$height === void 0 ? void 0 : _row$height.rule) !== "exact") {
+				const keptWhole = row.cantSplit || ((_row$height = row.height) === null || _row$height === void 0 ? void 0 : _row$height.rule) === "exact";
+				if (!rowFits(height, notes) && keptWhole && placedInColumn) startTablePage(index);
+				for (const { last, height: needed } of merges.filter(({ first }) => first === index)) {
+					const reached = heights.slice(index, last + 1).findIndex((_, offset) => sum(heights.slice(index, index + offset + 1)) >= needed - TOLERANCE);
+					const rows = table.rows.slice(index, reached === -1 ? last + 1 : index + reached + 1);
+					if (rows.length > 1 && !rowFits(sum(heights.slice(index, index + rows.length)), notesIn(rows.flatMap(markersIn)))) throw new Unsupported("a table row with merged cells across pages");
+				}
+				if (!rowFits(height, notes) && !keptWhole) {
 					if (notes.length > 0) throw new Unsupported("a footnote in a table row across pages");
 					splitRow(row, height, () => startTablePage(index));
 					continue;
 				}
-				if (!rowFits(height, notes) && placedInColumn) startTablePage(index);
 				if (!rowFits(height, notes)) {
 					stopIfBalancing();
 					throw new Unsupported(notes.length > 0 ? "a footnote across pages" : "a table row taller than a page");
