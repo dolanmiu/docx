@@ -154,6 +154,11 @@ describe("readDocument", () => {
             }
         });
 
+        it("should read a tab in the text as a tab, as Word lays it out and docx writes those of a TextRun's text", () => {
+            const content = readBody([p(r(t("a\tb\t")), r(rPr({ "w:vanish": {} }), t("hidden\t")))]);
+            expect(itemsOf(content).map((item) => (item.type === "text" ? item.text : item.type))).to.deep.equal(["a", "tab", "b", "tab"]);
+        });
+
         it("should read the text in hyperlinks, insertions, content controls and other elements that hold runs, but not deletions", () => {
             const content = readBody([
                 p(
@@ -257,6 +262,8 @@ describe("readDocument", () => {
             expect(content.footnoteContinuationSeparator).to.have.length(1);
             expect((content.footnoteContinuationSeparator[0] as ParagraphBlock).items).to.deep.equal([]);
             expect(content.endnotes).to.deep.equal([]);
+            // Each footnote's number, by its marker
+            expect(Object.fromEntries(content.footnoteNumbers)).to.deep.equal({ "footnote 1": "1", "footnote 2": "2" });
         });
 
         it("should read the endnotes the body refers to, after their separator, numbered as Word numbers them", () => {
@@ -268,6 +275,8 @@ describe("readDocument", () => {
             expect(
                 content.endnotes.map((block) => (block as ParagraphBlock).items.map((item) => (item.type === "text" ? item.text : ""))),
             ).to.deep.equal([[], ["i", "First"], ["ii", "Second"]]);
+            // The number of the endnote each block is in, but the separator's
+            expect(content.endnotes.map((block) => content.endnoteNumbers.get(block))).to.deep.equal([undefined, "i", "ii"]);
             expect(content.footnotes.size).to.equal(0);
             expect(content.footnoteSeparator).to.deep.equal([]);
             expect(content.footnoteContinuationSeparator).to.deep.equal([]);

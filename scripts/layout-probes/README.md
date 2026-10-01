@@ -37,6 +37,7 @@ table style and each cell's width.
 | `word-character-widths`     | W, S, B and H: how wide Word draws each of the 1,995 characters of the width tables' ranges in Calibri, Cambria, Arial, Times New Roman and Courier New, plain and bold, and which font it draws those its fonts lack in; how wide each space is; whether lines break after each space; and whether a word before one at the end of a line stays on the line. Its `.json` has each paragraph's characters, for the reader. `scripts/generate-font-widths.ts` checks the width tables against what the reader reads                                               | `word-character-widths.py`     |
 | `word-units`                | U1 to U8: lengths written with units, as docx writes a length given as a string, such as `"1in"` or `"12pt"`: whether Word reads them in a page's size and margins, a run's size, indents, character spacing, a table's widths and row height and the space between columns, and how it rounds a margin of a fraction of a twip and a size of a fraction of a half-point                                                                                                                                                                                         | `word-units.py`                |
 | `word-units2`               | V1 to V6: how Word reads a length with a unit that isn't a whole number of twips or half-points, measured across the page: indents and a margin in each unit, negative ones, sizes, character spacing, a table's column and a row's height                                                                                                                                                                                                                                                                                                                       | `word-units.py`                |
+| `word-positions`            | H1 to H3, X1 to X9 and Y1: the header and footer of the blank page Word adds before a section on an odd or even page, which page it adds it before a section numbered from its own first number, and where each line is across and down the page with indents, alignment, a list, a right tab, a table, columns and a footnote, against `layoutDocument`                                                                                                                                                                                                         | `word-positions.py`            |
 | `fsplit`                    | How a footnote that doesn't fit below its reference goes on to the next page. Laid out in LibreOffice only, so it has no PDF from Word: Word's split of an 8-line footnote is `word-rules` P7b                                                                                                                                                                                                                                                                                                                                                                   | `pagelines.py`                 |
 
 ## Make a probe's `.docx`
@@ -74,6 +75,15 @@ in Homebrew (`brew install poppler`). For Word's PDF of `word-rules2`:
 ```bash
 pdftotext -bbox-layout scripts/layout-probes/word-rules2.pdf build/word-probes/word-rules2.html
 python3 scripts/layout-probes/word-rules2.py build/word-probes/word-rules2.html
+```
+
+`word-positions.py` compares the PDF with the layout `word-positions.ts` writes beside its `.docx`, from
+`layoutDocument`:
+
+```bash
+npm run run-ts -- scripts/layout-probes/word-positions.ts
+pdftotext -bbox-layout scripts/layout-probes/word-positions.pdf build/word-probes/word-positions.html
+python3 scripts/layout-probes/word-positions.py build/word-probes/word-positions.html build/word-probes/word-positions.layout.json
 ```
 
 `word-unicode.read.ts` and `word-unicode2.read.ts` are TypeScript, for `Intl.Segmenter`, which they check Thai's line breaks with:

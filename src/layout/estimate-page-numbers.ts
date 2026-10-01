@@ -14,24 +14,10 @@ import type {
 } from "docx";
 
 import { DEFAULT_MEASURER, type TextMeasurer } from "../text-layout";
+import { knownPageCount, layOutPasses } from "./layout-passes";
 import { type MeasureWidth, measurerOf } from "./measure-width";
-import { paginate } from "./paginate";
 import { type DocumentContent, readDocument } from "./read-document";
 import { readDocx } from "./read-docx";
-
-// How many times the pages are laid out again with the page numbers of the pass before, which can change how the
-// lines of a table of contents wrap
-const PASSES = 3;
-
-/** An estimate each pass works out, with the number of pages of each section */
-type Pass = EstimatedPageNumbers & { readonly sectionPageCounts: readonly (number | undefined)[] };
-
-const sameNumbers = (one: Pass, other: Pass): boolean =>
-    one.bookmarks.size === other.bookmarks.size &&
-    [...one.bookmarks].every(([name, page]) => other.bookmarks.get(name) === page) &&
-    one.pageCount === other.pageCount &&
-    one.sectionPageCounts.length === other.sectionPageCounts.length &&
-    one.sectionPageCounts.every((count, index) => other.sectionPageCounts[index] === count);
 
 /** What a document is read into: a template patchDocument patched, or the body of a document being written */
 const contentOf = (document: IXmlableObject | PatchedTemplate, context?: IContext): DocumentContent | undefined =>
@@ -42,18 +28,13 @@ const estimateWith = (content: DocumentContent | undefined, measurer: TextMeasur
     if (!content) {
         return { bookmarks: new Map() };
     }
-    const layOut = (before: Pass, pass: number): Pass => {
-        const { bookmarks, pageCount, sectionPageCounts, stoppedAt } = paginate(content, {
-            measurer,
-            pageNumbers: before.bookmarks,
-            pageCount: before.pageCount,
-            sectionPageCounts: before.sectionPageCounts,
-        });
-        // The number of pages is known only when all of the document was laid out
-        const estimate = { bookmarks, sectionPageCounts, ...(stoppedAt === undefined ? { pageCount } : {}) };
-        return pass >= PASSES || sameNumbers(estimate, before) ? estimate : layOut(estimate, pass + 1);
+    const pagination = layOutPasses(content, measurer);
+    const pageCount = knownPageCount(pagination);
+    return {
+        bookmarks: pagination.bookmarks,
+        sectionPageCounts: pagination.sectionPageCounts,
+        ...(pageCount === undefined ? {} : { pageCount }),
     };
-    return layOut({ bookmarks: new Map(), sectionPageCounts: [] }, 1);
 };
 
 /**

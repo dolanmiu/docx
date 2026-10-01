@@ -5,9 +5,19 @@ import * as docx from "docx";
 import * as layout from ".";
 
 describe("docx/layout", () => {
-    it("should export the estimators of page numbers and the Pretext measurer, which docx doesn't", () => {
-        expect(Object.keys(layout).sort()).to.deep.equal(["estimatePageNumbers", "estimatePageNumbersWith", "measureWithPretext"]);
+    it("should export the estimators of page numbers, the layout of a document's pages and the Pretext measurer, which docx doesn't", () => {
+        expect(Object.keys(layout).sort()).to.deep.equal([
+            "estimatePageNumbers",
+            "estimatePageNumbersWith",
+            "layoutDocument",
+            "measureWithPretext",
+        ]);
         expect(Object.keys(layout).filter((name) => name in docx)).to.deep.equal([]);
+    });
+
+    it("should lay out a document's pages", () => {
+        expectTypeOf(layout.layoutDocument).parameter(0).toEqualTypeOf<docx.Document>();
+        expectTypeOf(layout.layoutDocument).returns.toEqualTypeOf<layout.DocumentLayout>();
     });
 
     it("should give documents an estimator of page numbers", () => {

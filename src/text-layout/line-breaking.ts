@@ -90,6 +90,13 @@ export type LaidOutLine = {
     readonly markers: readonly string[];
     /** Whether the line ends with a page or column break */
     readonly breakAfter?: "page" | "column";
+    /**
+     * The text on the line, with the spaces where it wraps and a tab as `\t`. A picture or a break adds nothing to it, so
+     * the texts of a paragraph's lines, one after the other, are its text
+     */
+    readonly text: string;
+    /** How far its text goes from where the line starts, in points, without the spaces at its end */
+    readonly textWidth: number;
 };
 
 type Piece = { readonly text: string; readonly font: TextFont };
@@ -212,6 +219,9 @@ const charactersOf = (pieces: readonly Piece[]): readonly (readonly Piece[])[] =
 const widthOf = (pieces: readonly Piece[], measurer: TextMeasurer): number =>
     pieces.reduce((total, { text, font }) => total + measurer.measureWidth(text, font), 0);
 
+// Most words are in one font, so their text needn't be joined
+const textOf = (pieces: readonly Piece[]): string => (pieces.length === 1 ? pieces[0].text : pieces.map(({ text }) => text).join(""));
+
 /**
  * The height of single-spaced lines, with this line spacing. Word doesn't round it: Calibri 11 is 268.55 twips, and
  * 289.82 at 259 twips' multiple spacing, where LibreOffice rounds them to whole twips, 269 and 290.
@@ -230,6 +240,10 @@ const spaced = (natural: number, spacing: LineSpacing | undefined): number => {
 type LineState = {
     /** Where the next token starts, in points from the left edge of the text */
     readonly position: number;
+    /** Where the line starts, and where the last of its words, pictures or tabs ends */
+    readonly start: number;
+    readonly end: number;
+    readonly text: string;
     /** The tallest text or picture on it, in points */
     readonly natural: number;
     readonly markers: readonly string[];
@@ -393,8 +407,12 @@ export const layoutLines = (
     let first = true;
     for (const [segmentIndex, { tokens, end }] of segments.entries()) {
         const isLast = segmentIndex === segments.length - 1;
+        const start = indentLeft + (first ? firstLineIndent : 0);
         let line: LineState = {
-            position: indentLeft + (first ? firstLineIndent : 0),
+            position: start,
+            start,
+            end: start,
+            text: "",
             natural: 0,
             markers: [],
             pending: [],
@@ -410,11 +428,23 @@ export const layoutLines = (
                 height: spaced(natural, lineSpacing),
                 markers: [...state.markers, ...state.pending],
                 ...(breakAfter ? { breakAfter } : {}),
+                text: state.text,
+                textWidth: Math.max(0, state.end - state.start),
             });
         };
         const wrap = (state: LineState): LineState => {
             finish({ ...state, pending: [] });
-            return { position: indentLeft, natural: 0, markers: [], pending: state.pending, started: false, first: false };
+            return {
+                position: indentLeft,
+                start: indentLeft,
+                end: indentLeft,
+                text: "",
+                natural: 0,
+                markers: [],
+                pending: state.pending,
+                started: false,
+                first: false,
+            };
         };
         /** Puts the bookmarks waiting for the next word, picture or tab on the line it is on */
         const place = (state: LineState): LineState => ({ ...state, markers: [...state.markers, ...state.pending], pending: [] });
@@ -426,7 +456,12 @@ export const layoutLines = (
             }
             if (token.type === "space") {
                 const height = Math.max(...token.pieces.map(({ font }) => measurer.measureLineHeight(font)));
-                line = { ...line, position: line.position + widthOf(token.pieces, measurer), natural: Math.max(line.natural, height) };
+                line = {
+                    ...line,
+                    position: line.position + widthOf(token.pieces, measurer),
+                    text: line.text + textOf(token.pieces),
+                    natural: Math.max(line.natural, height),
+                };
                 continue;
             }
             if (token.type === "tab") {
@@ -436,7 +471,7 @@ export const layoutLines = (
                     (line.started ? nextStop(indentLeft, stops, defaultTabStop, limitOf(lines.length + 1)) : undefined);
                 if (stop === undefined) {
                     // No stop before the end of the line: the text after the tab starts where it is
-                    line = { ...line, natural: Math.max(line.natural, height), started: true };
+                    line = { ...line, end: line.position, text: `${line.text}\t`, natural: Math.max(line.natural, height), started: true };
                     continue;
                 }
                 if (stop.position <= line.position + TOLERANCE) {
@@ -446,12 +481,8 @@ export const layoutLines = (
                 line = place(line);
                 const after = widthAfterTab(tokens.slice(index + 1), measurer);
                 const shift = stop.alignment === "left" ? 0 : stop.alignment === "center" ? after / 2 : after;
-                line = {
-                    ...line,
-                    position: Math.max(line.position, stop.position - shift),
-                    natural: Math.max(line.natural, height),
-                    started: true,
-                };
+                const position = Math.max(line.position, stop.position - shift);
+                line = { ...line, position, end: position, text: `${line.text}\t`, natural: Math.max(line.natural, height), started: true };
                 continue;
             }
             const tokenWidth = token.type === "box" ? token.width : widthOf(token.pieces, measurer);
@@ -471,11 +502,17 @@ export const layoutLines = (
                     if (placed && line.position + characterWidth > limitOf() + TOLERANCE && limitOf(lines.length + 1) - indentLeft > 0) {
                         line = wrap({ ...line, natural: Math.max(line.natural, tokenHeight), started: true });
                     }
-                    line = { ...line, position: line.position + characterWidth };
+                    line = {
+                        ...line,
+                        position: line.position + characterWidth,
+                        end: line.position + characterWidth,
+                        text: line.text + textOf(character),
+                    };
                     placed = true;
                 }
             } else {
-                line = { ...line, position: line.position + tokenWidth };
+                const text = token.type === "word" ? textOf(token.pieces) : "";
+                line = { ...line, position: line.position + tokenWidth, end: line.position + tokenWidth, text: line.text + text };
             }
             line = { ...line, natural: Math.max(line.natural, tokenHeight), started: true };
         }

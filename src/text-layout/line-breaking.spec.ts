@@ -146,8 +146,8 @@ describe("layoutLines", () => {
             { width: 100, measurer: MEASURER, markFont: { size: 12 } },
         );
         expect(lines).to.deep.equal([
-            { height: 10, markers: [], breakAfter: "column" },
-            { height: 10, markers: ["after"], breakAfter: "page" },
+            { height: 10, markers: [], breakAfter: "column", text: "aa", textWidth: 20 },
+            { height: 10, markers: ["after"], breakAfter: "page", text: "bb", textWidth: 20 },
         ]);
         // After a column break at its end, the mark is on a line of its own, at the top of the next column
         expect(
@@ -157,13 +157,13 @@ describe("layoutLines", () => {
                 markFont: { size: 12 },
             }),
         ).to.deep.equal([
-            { height: 10, markers: [], breakAfter: "column" },
-            { height: 12, markers: ["after"] },
+            { height: 10, markers: [], breakAfter: "column", text: "aa", textWidth: 20 },
+            { height: 12, markers: ["after"], text: "", textWidth: 0 },
         ]);
         // With no text on its line, the break's line is as tall as the mark
         expect(
             layoutLines([{ type: "break", kind: "page", font: {} }], { width: 100, measurer: MEASURER, markFont: { size: 12 } }),
-        ).to.deep.equal([{ height: 12, markers: [], breakAfter: "page" }]);
+        ).to.deep.equal([{ height: 12, markers: [], breakAfter: "page", text: "", textWidth: 0 }]);
     });
 
     it("should make a line of only spaces before a page break at the end of a paragraph as tall as the mark, as Word does", () => {
@@ -187,8 +187,8 @@ describe("layoutLines", () => {
             markFont: { size: 12 },
         });
         expect(lines).to.deep.equal([
-            { height: 10, markers: [], breakAfter: "page" },
-            { height: 10, markers: [] },
+            { height: 10, markers: [], breakAfter: "page", text: "aa", textWidth: 20 },
+            { height: 10, markers: [], text: "bb", textWidth: 20 },
         ]);
         expect(heightsOf([text("aa"), { type: "break", kind: "line", font: {} }], 100, { markFont: { size: 12 } })).to.deep.equal([10, 12]);
     });
@@ -368,6 +368,74 @@ describe("layoutLines", () => {
                 ],
             }),
         ).to.deep.equal([14]);
+    });
+
+    it("should give each line its text, with the spaces where it wraps, and how far its text goes from its start", () => {
+        const textsOf = (items: readonly InlineItem[], options = {}): readonly (readonly [string, number])[] =>
+            layoutLines(items, { width: 100, measurer: MEASURER, ...options }).map((line) => [line.text, line.textWidth] as const);
+        // The space after bbbb wraps with it, and takes no room
+        expect(textsOf([text("aaaa bbbb cccc")])).to.deep.equal([
+            ["aaaa bbbb ", 90],
+            ["cccc", 40],
+        ]);
+        // From where each line starts: the first 20 points in, and the rest 10
+        expect(textsOf([text("aaaa bbbb")], { format: { indentLeft: 10, firstLineIndent: 10 } })).to.deep.equal([
+            ["aaaa ", 40],
+            ["bbbb", 40],
+        ]);
+        // A picture, a bookmark and a break add nothing to the text, and a picture's width counts
+        expect(
+            textsOf([
+                { type: "marker", name: "m" },
+                text("aa "),
+                { type: "box", width: 30, height: 10 },
+                { type: "break", kind: "line", font: {} },
+                text("bb"),
+            ]),
+        ).to.deep.equal([
+            ["aa ", 60],
+            ["bb", 20],
+        ]);
+        // An empty line has no text
+        expect(textsOf([])).to.deep.equal([["", 0]]);
+    });
+
+    it("should give a line with tabs its text up to its last stop, with each tab as \\t", () => {
+        const tab: InlineItem = { type: "tab", font: {} };
+        // "12" ends at the right stop at 100
+        expect(
+            layoutLines([text("aa"), tab, text("12")], {
+                width: 100,
+                measurer: MEASURER,
+                tabStops: [{ position: 100, alignment: "right" }],
+            }),
+        ).to.deep.include({ height: 10, markers: [], text: "aa\t12", textWidth: 100 });
+        // With no stop before the end of the line, the text after the tab carries on where it is
+        expect(layoutLines([text("a"), tab], { width: 100, measurer: MEASURER, defaultTabStop: 200 })).to.deep.equal([
+            { height: 10, markers: [], text: "a\t", textWidth: 10 },
+        ]);
+    });
+
+    it("should split the text of a word wider than a line between the lines it is broken across", () => {
+        // cspell:disable
+        const textsOf = (items: readonly InlineItem[], options = {}): readonly string[] =>
+            layoutLines(items, { width: 100, measurer: MEASURER, ...options }).map((line) => line.text);
+        expect(textsOf([text("abcdefghijklmnopqrstuvwxy")])).to.deep.equal(["abcdefghij", "klmnopqrst", "uvwxy"]);
+        expect(
+            layoutLines([text("abcdefghijklmnopqrstuvwxy")], { width: 100, measurer: MEASURER }).map((line) => line.textWidth),
+        ).to.deep.equal([100, 100, 50]);
+        // After a first line indent of 20, and from 20 points left of the other lines with a hanging indent
+        expect(textsOf([text("abcdefghijklmnopqrstuvwxy")], { format: { firstLineIndent: 20 } })).to.deep.equal([
+            "abcdefgh",
+            "ijklmnopqr",
+            "stuvwxy",
+        ]);
+        expect(textsOf([text("abcdefghijklmnopqrstuvwxy")], { format: { indentLeft: 20, firstLineIndent: -20 } })).to.deep.equal([
+            "abcdefghij",
+            "klmnopqr",
+            "stuvwxy",
+        ]);
+        // cspell:enable
     });
 
     it("should measure with the widths of the fonts by default", () => {
