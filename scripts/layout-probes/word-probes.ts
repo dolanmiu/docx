@@ -24,6 +24,7 @@
 // lines are one-line paragraphs. A probe named with a number, such as "U2a 48", has its reference or table on that line
 // of the page.
 import * as fs from "fs";
+import * as path from "path";
 import JSZip from "jszip";
 import {
     BorderStyle,
@@ -813,6 +814,7 @@ export const probeBuffer = async (document: Document = probeDocument()): Promise
 };
 
 if (process.argv[1]?.endsWith("word-probes.ts")) {
-    fs.mkdirSync("build/word-probes", { recursive: true });
-    probeBuffer().then((buffer) => fs.writeFileSync(process.argv[2] ?? "build/word-probes/word-probes.docx", buffer));
+    const output = process.argv[2] ?? "build/word-probes/word-probes.docx";
+    fs.mkdirSync(path.dirname(output), { recursive: true });
+    probeBuffer().then((buffer) => fs.writeFileSync(output, buffer));
 }
