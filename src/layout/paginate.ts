@@ -24,7 +24,7 @@ import {
     layoutLines,
     measureContentWidths,
 } from "../text-layout";
-import { fitColumns } from "./column-widths";
+import { fitColumns, tableWidths } from "./column-widths";
 import { formatNumber } from "./number-format";
 import type {
     Block,
@@ -296,22 +296,23 @@ export const paginate = (
 
     const linesHeight = (lines: readonly LaidOutLine[]): number => sum(lines.map(({ height }) => height));
 
-    /** How narrow and how wide the paragraphs in a table cell can be */
+    /** How narrow and how wide the paragraphs and tables in a table cell can be */
     const contentWidths = (stack: readonly Block[]): ContentWidths =>
-        stack
-            .filter((block): block is ParagraphBlock => block.type === "paragraph")
-            .reduce<ContentWidths>(
-                (widths, block) => {
-                    const { min, max } = measureContentWidths(itemsOf(block.items), {
-                        format: block.format,
-                        tabStops: block.tabStops,
-                        defaultTabStop,
-                        measurer,
-                    });
-                    return { min: Math.max(widths.min, min), max: Math.max(widths.max, max) };
-                },
-                { min: 0, max: 0 },
-            );
+        stack.reduce<ContentWidths>(
+            (widths, block) => {
+                const { min, max } =
+                    block.type === "table"
+                        ? tableWidths(block, contentWidths)
+                        : measureContentWidths(itemsOf(block.items), {
+                              format: block.format,
+                              tabStops: block.tabStops,
+                              defaultTabStop,
+                              measurer,
+                          });
+                return { min: Math.max(widths.min, min), max: Math.max(widths.max, max) };
+            },
+            { min: 0, max: 0 },
+        );
 
     // Tables sized to their text, or with columns widened for long words, by the width they are in
     // eslint-disable-next-line functional/prefer-readonly-type

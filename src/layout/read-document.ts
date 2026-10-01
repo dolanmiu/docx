@@ -68,6 +68,8 @@ export type ParagraphBlock = {
 export type TableCell = {
     /** The column of the table's grid the cell starts in, counted from 0 */
     readonly column: number;
+    /** How many columns of the grid the cell is across, when it is across more than one */
+    readonly span?: number;
     /** The width of the text in the cell, in points: the cell's, less its margins */
     readonly width: number;
     /** The width the cell gives itself, in points: its own, or for a share of the table's width, the grid's */
@@ -109,6 +111,9 @@ export type TableBlock = {
      * cells are merged across columns
      */
     readonly widen?: { readonly width?: number; readonly share?: number; readonly acrossColumns: boolean };
+    /** The width of the borders left and right of the table, in points */
+    readonly borderLeft?: number;
+    readonly borderRight?: number;
     readonly unsupported?: string;
 };
 
@@ -244,6 +249,8 @@ const DEFAULT_SECTION: Omit<Section, "headers" | "footers" | "columns"> = {
 const EMUS_PER_POINT = 12700;
 /** How far apart, in points, the widths two rows give a column can be before they differ: rounding, not a choice */
 const WIDTH_TOLERANCE = 1;
+/** The most columns a table in Word can have */
+const MOST_COLUMNS = 63;
 // Border widths are in eighths of a point
 const EIGHTHS_PER_POINT = 8;
 // Shares of a width, such as a table's of the page's, are in fiftieths of a percent, unless they are written with a %
@@ -633,7 +640,7 @@ const readTable = (element: XmlObject, reader: Reader): TableBlock => {
     const gridWidth = (from: number, to: number): number => grid.slice(from, to).reduce((total, value) => total + value, 0);
 
     const read = rows.map(
-        (row, rowIndex): { readonly row: TableRow; readonly edges: ReadonlyMap<number, number>; readonly acrossColumns: boolean } => {
+        (row, rowIndex): { readonly row: TableRow; readonly edges: ReadonlyMap<number, number>; readonly end: number } => {
             const rowChildren = contentOf(row).filter(isObject);
             const rowProperties = childrenOf(find(rowChildren, "w:trPr"));
             const heightAttributes = attributesOf(find(rowProperties, "w:trHeight"));
@@ -641,13 +648,16 @@ const readTable = (element: XmlObject, reader: Reader): TableBlock => {
             const { "w:hRule": rule } = heightAttributes;
             const skipped = numberOf(attributesOf(find(rowProperties, "w:gridBefore"))["w:val"]) ?? 0;
             // Where each cell's edges are, by the grid column they are at, to check the rows agree on them
-            const { cells, edges, acrossColumns } = cellsOf(rowChildren).reduce<{
+            const {
+                cells,
+                edges,
+                column: end,
+            } = cellsOf(rowChildren).reduce<{
                 readonly column: number;
                 readonly cells: readonly TableCell[];
                 readonly edges: ReadonlyMap<number, number>;
-                readonly acrossColumns: boolean;
             }>(
-                ({ column, cells: done, edges: before, acrossColumns: across }, cell) => {
+                ({ column, cells: done, edges: before }, cell) => {
                     const cellChildren = contentOf(cell).filter(isObject);
                     const cellProperties = childrenOf(find(cellChildren, "w:tcPr"));
                     const span = numberOf(attributesOf(find(cellProperties, "w:gridSpan"))["w:val"]) ?? 1;
@@ -664,11 +674,11 @@ const readTable = (element: XmlObject, reader: Reader): TableBlock => {
                     return {
                         column: column + span,
                         edges: new Map([...before, [column + span, before.get(column)! + width]]),
-                        acrossColumns: across || span > 1,
                         cells: [
                             ...done,
                             {
                                 column,
+                                ...(span > 1 ? { span } : {}),
                                 width: width - margins.left - margins.right,
                                 ...(hasWidth ? { ownWidth: width } : {}),
                                 blocks: readBlocks(cellChildren, reader, style),
@@ -681,11 +691,11 @@ const readTable = (element: XmlObject, reader: Reader): TableBlock => {
                         ],
                     };
                 },
-                { column: skipped, cells: [], edges: new Map([[skipped, gridWidth(0, skipped)]]), acrossColumns: false },
+                { column: skipped, cells: [], edges: new Map([[skipped, gridWidth(0, skipped)]]) },
             );
             return {
                 edges,
-                acrossColumns,
+                end,
                 row: {
                     cells,
                     // A height without a rule is the least the row can be, as Word writes it
@@ -715,13 +725,10 @@ const readTable = (element: XmlObject, reader: Reader): TableBlock => {
     const blocks = tableCells.flatMap((cell) => cell.blocks);
     const fixed = attributesOf(find(properties, "w:tblLayout"))["w:type"] === "fixed";
     const fits = !fixed && tableCells.some(({ ownWidth }) => ownWidth === undefined);
-    // How Word sizes the columns of a table given no widths with cells across columns, or a table in a cell, isn't
-    // followed yet
-    const unfitted = read.some(({ acrossColumns }) => acrossColumns)
-        ? "cells merged across columns in a table given no widths"
-        : blocks.some(({ type }) => type === "table")
-          ? "a table in a table given no widths"
-          : undefined;
+    // How Word lays out a table of more columns than it can have isn't known, and sizing one to its text would count a
+    // column for each it says it has, however many
+    const columns = read.reduce((most, { end }) => Math.max(most, end), 0);
+    const unfitted = columns > MOST_COLUMNS ? `a table given no widths of more than ${MOST_COLUMNS} columns` : undefined;
     const unsupported =
         (fits ? unfitted : unequal ? "a table whose rows give a column different widths" : undefined) ??
         blocks.find((block) => block.unsupported !== undefined)?.unsupported;
@@ -730,8 +737,10 @@ const readTable = (element: XmlObject, reader: Reader): TableBlock => {
         rows: read.map(({ row }) => row),
         ...(fits ? { fit: readTableWidth(properties) } : {}),
         ...(!fits && !fixed
-            ? { widen: { ...readTableWidth(properties), acrossColumns: read.some(({ acrossColumns }) => acrossColumns) } }
+            ? { widen: { ...readTableWidth(properties), acrossColumns: tableCells.some(({ span }) => span !== undefined) } }
             : {}),
+        borderLeft: borderWidth(borders, "w:left"),
+        borderRight: borderWidth(borders, "w:right"),
         ...(unsupported ? { unsupported } : {}),
     };
 };
