@@ -77,6 +77,29 @@ Word still asks when:
 - a table of contents is given `beginDirty: true`
 - the document has a `SequentialIdentifier`, a SEQ field, which is written for Word to number
 
+## Templates
+
+[`patchDocument`](usage/templates.md) writes the page numbers of a template it fills in too, when it is given `estimatePageNumbers` as its `pageNumbers`. The pages are laid out once the patches are in, so the numbers are those of the filled-in document:
+
+```ts
+import * as fs from "fs";
+import { Paragraph, patchDocument, PatchType } from "docx";
+import { estimatePageNumbers } from "docx/layout";
+
+const doc = await patchDocument({
+    outputType: "nodebuffer",
+    data: fs.readFileSync("Report template.docx"),
+    patches: {
+        summary: { type: PatchType.DOCUMENT, children: [new Paragraph("The harbour was rebuilt after the storm.")] },
+    },
+    pageNumbers: estimatePageNumbers,
+});
+```
+
+The template is read as Word saved it, with its styles, theme, lists, settings, headers, footers and notes, and the numbers are written into its tables of contents, page references and numbers of pages, in its text, headers and footers. The numbers a template was saved with are those of the template before it was filled in, so one that `docx/layout` can't work out, after something it can't lay out, is left blank rather than kept. Its page references and tables of contents are written clean, as a document's are, so Word shows them as they are (see [Opening the document in Word](#opening-the-document-in-word)). What `estimatePageNumbersWith` returns works the same way.
+
+`patchDocument` doesn't add entries to a table of contents for the headings patches add. Word adds them when it updates the table.
+
 ## What it follows
 
 The pages are laid out with the widths and heights of the characters of the fonts Word documents use most: Calibri, Cambria, Arial, Times New Roman and Courier New, and the heights of the lines of the Chinese, Japanese and Korean fonts Office has, such as MS Mincho, Yu Gothic, SimSun, Microsoft YaHei, PMingLiU and Malgun Gothic. It follows:
@@ -109,6 +132,7 @@ It stops at the first thing it can't lay out yet, and the page numbers of the he
 - a document that hyphenates its words, compresses its punctuation, or uses Word's strict rules for the characters that can't start a line
 - page numbers in Thai and Hindi words (`thaiCounting` and `hindiCounting`), and page numbers Word writes as an error: any in `none`, 0 in Hebrew, Arabic, Thai and Hindi digits and Chicago's symbols, and those past where a format's letters run out, such as 781 in letters. Page numbers in Hebrew past 100, and in Hindi letters past 75 (`hindiVowels`) and 37 (`hindiConsonants`), haven't been checked in Word yet
 - a chapter number from a heading in a table
+- a document in compatibility mode, which Word lays out as an older version of Word did: one saved by Word 2010 or earlier, or by an application that writes an older mode, such as LibreOffice, or given an older `compatibility` `version`
 
 A wrong page number is worse than a blank one, so it doesn't guess.
 
@@ -116,7 +140,7 @@ A wrong page number is worse than a blank one, so it doesn't guess.
 
 Text in fonts other than those five is measured as the most similar of them, so its page numbers are rougher. Aptos, Office's default font since 2023, is measured as Arial. In a browser, text can be measured in the fonts the page has instead (see [Measuring with a page's fonts](#measuring-with-a-pages-fonts)). Letters the fonts have no widths for, such as Greek, Cyrillic, Hebrew, Arabic and Thai, are measured as an average letter of the font, and East Asian fonts Office doesn't have as MS Mincho or MS Gothic.
 
-Each change to `docx/layout` is checked against LibreOffice's layout of a set of documents. Word lays out some things differently from LibreOffice, so turn `updateFields` on if the page numbers must be Word's own once the document is opened in Word: Word then asks to update the fields, and works them out again. LibreOffice rounds the height of each line to whole twips, 269 for Calibri 11, so where a line only just fits on a page, it can be on the next page in LibreOffice and on this one in Word, and in `docx/layout`, which follows Word.
+Each change to `docx/layout` is checked against LibreOffice's layout of a set of documents, and against the pages Word marked in documents it saved. Word lays out some things differently from LibreOffice, so turn `updateFields` on if the page numbers must be Word's own once the document is opened in Word: Word then asks to update the fields, and works them out again. LibreOffice rounds the height of each line to whole twips, 269 for Calibri 11, so where a line only just fits on a page, it can be on the next page in LibreOffice and on this one in Word, and in `docx/layout`, which follows Word.
 
 Laying out a document takes about 0.3 seconds per 100 pages in Node.
 

@@ -39,7 +39,7 @@ describe("measureWithPretext", () => {
     it("should take Pretext's module, and give a way to measure text to the estimator", () => {
         expectTypeOf<PretextModule>().toExtend<layout.Pretext<PreparedTextWithSegments>>();
         expectTypeOf(layout.measureWithPretext<PreparedTextWithSegments>).returns.toEqualTypeOf<layout.MeasureWidth>();
-        expectTypeOf(layout.estimatePageNumbersWith).returns.toEqualTypeOf<docx.PageNumberEstimator>();
+        expectTypeOf(layout.estimatePageNumbersWith).returns.toEqualTypeOf<docx.PageNumberEstimator & docx.TemplatePageNumberEstimator>();
         expectTypeOf(layout.estimatePageNumbersWith).parameter(0).toEqualTypeOf<layout.EstimatePageNumbersOptions>();
     });
 });

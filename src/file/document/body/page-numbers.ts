@@ -18,6 +18,8 @@
 import { isDirtyWithoutPageNumbers } from "@file/paragraph/run/field";
 import type { IContext, IXmlableObject } from "@file/xml-components";
 
+import { type ElementTree, fillBodyFields, fillPartFields } from "./page-number-fields";
+
 /**
  * The page each bookmark of a document starts on, and the number of pages of the document and of each of its sections,
  * as a {@link PageNumberEstimator} works them out.
@@ -53,221 +55,52 @@ export type EstimatedPageNumbers = {
  */
 export type PageNumberEstimator = (body: IXmlableObject, context: IContext) => EstimatedPageNumbers;
 
-/** A formatted element, such as `{ "w:r": [...] }` */
-type Element = Record<string, unknown>;
+/** A formatted element, such as `{ "w:r": [...] }`, or its attributes, or text */
+type Element = unknown;
 
-/** A complex field being read: its instruction, and whether its result has been reached */
-type OpenField = {
-    // eslint-disable-next-line functional/prefer-readonly-type
-    instruction: string;
-    // eslint-disable-next-line functional/prefer-readonly-type
-    inResult: boolean;
-    /** The result it is written with */
-    // eslint-disable-next-line functional/prefer-readonly-type
-    result?: string;
-};
-
-/** How the fields of a part of a document are filled in */
-type FieldFilling = {
-    /** The result of a field, from its instruction, or undefined to leave the field as it is */
-    readonly resultOf: (instruction: string) => string | undefined;
-    /** Called after each paragraph, whose properties can end a section */
-    readonly afterParagraph: (paragraph: Element) => void;
-};
-
-// Formatting switches that don't change how a number is written
-// cspell:ignore mergeformatinet
-const PLAIN_FORMATS = new Set(["mergeformat", "charformat", "mergeformatinet"]);
-
-/** Whether a field's switches give its number a format of its own, such as `\* roman`, or a picture, such as `\# "00"` */
-const hasOwnFormat = (switches: string): boolean => {
-    const formats = [...switches.matchAll(/\\\*\s*"?([^\s"\\]+)/g)].map(([, format]) => format.toLowerCase());
-    return /\\#/.test(switches) || formats.some((format) => !PLAIN_FORMATS.has(format));
-};
-
-/**
- * The bookmark a PAGEREF field refers to, unless the field shows something other than the page's number: its
- * position relative to the bookmark (`\p`), or the number in a format of its own (`\* roman`).
- */
-const bookmarkOf = (instruction: string): string | undefined => {
-    const match = /^\s*PAGEREF\s+("?)([^\s"\\]+)\1(.*)$/i.exec(instruction);
-    if (!match) {
-        return undefined;
-    }
-    const [, , bookmark, switches] = match;
-    return /\\p\b/i.test(switches) || hasOwnFormat(switches) ? undefined : bookmark;
-};
-
-/** The number of pages a NUMPAGES or SECTIONPAGES field shows, unless it writes it in a format of its own */
-const pageCountOf = (instruction: string): "document" | "section" | undefined => {
-    const match = /^\s*(NUMPAGES|SECTIONPAGES)\b(.*)$/i.exec(instruction);
-    if (!match || hasOwnFormat(match[2])) {
-        return undefined;
-    }
-    return match[1].toUpperCase() === "NUMPAGES" ? "document" : "section";
-};
-
-/** The result of a field that shows a page's number or a number of pages, or undefined to leave it as it is */
-const resultFrom = (instruction: string, { bookmarks, pageCount }: EstimatedPageNumbers, sectionPageCount?: number): string | undefined => {
-    const bookmark = bookmarkOf(instruction);
-    if (bookmark !== undefined) {
-        return bookmarks.get(bookmark);
-    }
-    const count = pageCountOf(instruction);
-    const value = count === "document" ? pageCount : count === "section" ? sectionPageCount : undefined;
-    return value === undefined ? undefined : String(value);
-};
-
-const nameOf = (element: unknown): string | undefined =>
-    typeof element === "object" && element !== null && !Array.isArray(element) ? Object.keys(element)[0] : undefined;
-
-const contentOf = (element: Element): readonly unknown[] => {
-    const content = element[nameOf(element)!];
-    return Array.isArray(content) ? content : [];
-};
-
-const attributeOf = (element: Element, name: string, attribute: string): unknown => {
-    const content = element[name];
-    const holder = Array.isArray(content) ? content.find((child) => nameOf(child) === "_attr") : content;
-    return (holder as { readonly _attr?: Record<string, unknown> } | undefined)?._attr?.[attribute];
+const nameOf = (element: Element): string | undefined => {
+    const name = typeof element === "object" && element !== null && !Array.isArray(element) ? Object.keys(element)[0] : undefined;
+    return name === "_attr" ? undefined : name;
 };
 
 const textElement = (text: string): Element => ({ "w:t": [{ _attr: { "xml:space": "preserve" } }, text] });
 
-/**
- * Writes clean the beginning of a field that is dirty only without page numbers, such as a page reference, so Word
- * shows its result as it is written and doesn't ask to update the fields
- */
-const writeClean = (begin: Element): void => {
-    const attributes = (begin["w:fldChar"] as { readonly _attr: Record<string, unknown> })._attr;
-    // eslint-disable-next-line functional/immutable-data
-    begin["w:fldChar"] = { _attr: Object.fromEntries(Object.entries(attributes).filter(([key]) => key !== "w:dirty")) };
-};
-
-/**
- * Writes the results the filling works out into the fields in the elements, in order. A field's result is written just
- * after its `separate` field character, and any result it had is taken out.
- */
-// eslint-disable-next-line functional/prefer-readonly-type
-const fillFields = (elements: unknown[], open: OpenField[], filling: FieldFilling): void => {
-    for (let index = 0; index < elements.length; index++) {
-        const element = elements[index];
-        const name = nameOf(element);
-        if (name === undefined || name === "_attr") {
-            continue;
-        }
-        const current = open[open.length - 1];
-        if (name === "w:fldChar") {
-            const type = attributeOf(element as Element, name, "w:fldCharType");
-            if (type === "begin") {
-                // eslint-disable-next-line functional/immutable-data
-                open.push({ instruction: "", inResult: false });
-                if (isDirtyWithoutPageNumbers(element)) {
-                    writeClean(element as Element);
-                }
-            } else if (type === "separate" && current) {
-                // eslint-disable-next-line functional/immutable-data
-                current.inResult = true;
-                // eslint-disable-next-line functional/immutable-data
-                current.result = filling.resultOf(current.instruction);
-                if (current.result !== undefined) {
-                    // eslint-disable-next-line functional/immutable-data
-                    elements.splice(index + 1, 0, textElement(current.result));
-                    index++;
-                }
-            } else if (type === "end") {
-                // eslint-disable-next-line functional/immutable-data
-                open.pop();
-            }
-        } else if (name === "w:instrText" && current && !current.inResult) {
-            // An instruction is written as its attributes and its text
+/** The elements docx formats to write a document */
+const FORMATTED: ElementTree<Element> = {
+    nameOf,
+    contentOf: (element) => {
+        const content = (element as Record<string, unknown>)[nameOf(element)!];
+        return Array.isArray(content) ? content : undefined;
+    },
+    attributeOf: (element, attribute) => {
+        const content = (element as Record<string, unknown>)[nameOf(element)!];
+        const holder = Array.isArray(content)
+            ? content.find((child) => typeof child === "object" && child !== null && "_attr" in child)
+            : content;
+        return (holder as { readonly _attr?: Record<string, unknown> } | undefined)?._attr?.[attribute];
+    },
+    // An instruction is written as its attributes and its text
+    textOf: (element) =>
+        FORMATTED.contentOf(element)!
+            .filter((part) => typeof part === "string")
+            .join(""),
+    textElement,
+    // A field docx writes dirty only without page numbers, such as a page reference, is written clean, so Word shows
+    // its result as it is written and doesn't ask to update the fields
+    writeClean: (begin) => {
+        if (isDirtyWithoutPageNumbers(begin)) {
+            const attributes = ((begin as Record<string, unknown>)["w:fldChar"] as { readonly _attr: Record<string, unknown> })._attr;
             // eslint-disable-next-line functional/immutable-data
-            current.instruction += contentOf(element as Element)
-                .filter((part) => typeof part === "string")
-                .join("");
-        } else if ((name === "w:t" || name === "w:tab" || name === "w:br" || name === "w:cr") && current?.result !== undefined) {
-            // The result it was written with
-            // eslint-disable-next-line functional/immutable-data
-            elements.splice(index, 1);
-            index--;
-        } else if (name === "w:fldSimple") {
-            fillSimpleField(element as Element, filling);
-        } else {
-            const content = (element as Element)[name];
-            if (Array.isArray(content)) {
-                fillFields(content, open, filling);
-            }
-            if (name === "w:p") {
-                filling.afterParagraph(element as Element);
-            }
+            (begin as Record<string, unknown>)["w:fldChar"] = {
+                _attr: Object.fromEntries(Object.entries(attributes).filter(([key]) => key !== "w:dirty")),
+            };
         }
-    }
-};
-
-/**
- * Writes the result into a simple field (`w:fldSimple`) whose result the filling works out: its runs are its result.
- */
-const fillSimpleField = (element: Element, filling: FieldFilling): void => {
-    const result = filling.resultOf(String(attributeOf(element, "w:fldSimple", "w:instr")));
-    const content = element["w:fldSimple"] as readonly unknown[];
-    if (result === undefined) {
-        // eslint-disable-next-line functional/prefer-readonly-type
-        fillFields(content as unknown[], [], filling);
-        return;
-    }
-    const attributes = content.filter((child) => nameOf(child) === "_attr");
-    // eslint-disable-next-line functional/immutable-data
-    element["w:fldSimple"] = [...attributes, { "w:r": [textElement(result)] }];
-};
-
-/** The section properties (`w:sectPr`) in the elements, in order: those of the paragraphs that end sections, and the last */
-const sectionPropertiesIn = (elements: readonly unknown[]): readonly Element[] =>
-    elements.flatMap((element): readonly Element[] => {
-        const name = nameOf(element);
-        if (name === undefined || name === "_attr") {
-            return [];
-        }
-        return name === "w:sectPr" ? [element as Element] : sectionPropertiesIn(contentOf(element as Element));
-    });
-
-/** Whether a paragraph ends a section: whether its properties have the section's */
-const endsSection = (paragraph: Element): boolean =>
-    contentOf(paragraph).some(
-        (child) => nameOf(child) === "w:pPr" && contentOf(child as Element).some((part) => nameOf(part) === "w:sectPr"),
-    );
-
-/**
- * The number of pages each header and footer shows in its SECTIONPAGES fields, by the id of the relationship to it:
- * that of the sections whose pages it is on, when they all have the same. A section without a header or footer of a kind
- * has the one of the section before, as Word lays them out.
- */
-const partPageCountsOf = (body: IXmlableObject, sectionPageCounts: readonly (number | undefined)[]): ReadonlyMap<string, number> => {
-    const partsOfSections = sectionPropertiesIn([body]).reduce<readonly ReadonlyMap<string, string>[]>((all, properties) => {
-        const references = contentOf(properties).flatMap((child) => {
-            const name = nameOf(child);
-            return name === "w:headerReference" || name === "w:footerReference"
-                ? [
-                      [
-                          `${name} ${String(attributeOf(child as Element, name, "w:type"))}`,
-                          String(attributeOf(child as Element, name, "r:id")),
-                      ] as const,
-                  ]
-                : [];
-        });
-        return [...all, new Map([...(all[all.length - 1] ?? []), ...references])];
-    }, []);
-    const countsOfParts = partsOfSections.reduce((counts, parts, section) => {
-        for (const id of parts.values()) {
-            // eslint-disable-next-line functional/immutable-data
-            counts.set(id, [...(counts.get(id) ?? []), sectionPageCounts[section]]);
-        }
-        return counts;
-    }, new Map<string, readonly (number | undefined)[]>());
-    return new Map(
-        [...countsOfParts].flatMap(([id, [first, ...rest]]) =>
-            first !== undefined && rest.every((count) => count === first) ? [[id, first] as const] : [],
-        ),
-    );
+    },
+    setSimpleFieldResult: (element, text) => {
+        const attributes = FORMATTED.contentOf(element)!.filter((child) => typeof child === "object" && child !== null && "_attr" in child);
+        // eslint-disable-next-line functional/immutable-data
+        (element as Record<string, unknown>)["w:fldSimple"] = [...attributes, { "w:r": [textElement(text)] }];
+    },
 };
 
 /** The estimate of each document's pages, and the numbers of pages its headers and footers show, once its body is written */
@@ -281,16 +114,9 @@ const estimates = new WeakMap<object, { readonly estimate: EstimatedPageNumbers;
  */
 export const fillPageNumbers = (body: IXmlableObject, context: IContext, estimator: PageNumberEstimator): void => {
     const estimate = estimator(body, context);
-    const { sectionPageCounts = [] } = estimate;
-    let section = 0;
-    fillFields([body], [], {
-        resultOf: (instruction) => resultFrom(instruction, estimate, sectionPageCounts[section]),
-        afterParagraph: (paragraph) => {
-            section += endsSection(paragraph) ? 1 : 0;
-        },
-    });
+    const partPageCounts = fillBodyFields(FORMATTED, body, estimate, { blank: false });
     if (context.file) {
-        estimates.set(context.file, { estimate, partPageCounts: partPageCountsOf(body, sectionPageCounts) });
+        estimates.set(context.file, { estimate, partPageCounts });
     }
 };
 
@@ -307,9 +133,5 @@ export const fillPartPageNumbers = (part: IXmlableObject | undefined, context: I
     if (!part || !written) {
         return;
     }
-    const sectionPageCount = written.partPageCounts.get(`rId${referenceId}`);
-    fillFields([part], [], {
-        resultOf: (instruction) => resultFrom(instruction, written.estimate, sectionPageCount),
-        afterParagraph: () => undefined,
-    });
+    fillPartFields(FORMATTED, part, written.estimate, { blank: false, sectionPageCount: written.partPageCounts.get(`rId${referenceId}`) });
 };

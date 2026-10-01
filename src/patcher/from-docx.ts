@@ -27,6 +27,7 @@ import { findBookmarkIds, renumberBookmarksAvoiding } from "./bookmark-ids";
 import { appendContentType, appendContentTypeOverride } from "./content-types-manager";
 import { type DrawingPatch, patchDrawings, relationshipsPathOf } from "./drawing-patch";
 import { patchNotes } from "./notes";
+import { type TemplatePageNumberEstimator, fillTemplatePageNumbers } from "./page-numbers";
 import { PatchType } from "./patch-type";
 import { appendRelationship, createRelationshipFile, getNextRelationshipIndex } from "./relationship-manager";
 import { replacer } from "./replacer";
@@ -46,6 +47,7 @@ export type InputDataType = Buffer | string | number[] | Uint8Array | ArrayBuffe
 export { PatchType } from "./patch-type";
 export { DrawingPatch } from "./drawing-patch";
 export type { TemplateDrawing, TemplatePackage, TemplatePart } from "./drawing-patch";
+export type { PatchedTemplate, TemplatePageNumberEstimator } from "./page-numbers";
 
 /**
  * Patch definition for paragraph-level replacement.
@@ -162,6 +164,7 @@ export type PatchDocumentOutputType = OutputType;
  * @property recursive - Whether to replace every occurrence of a placeholder in a paragraph, rather than only the first
  * @property footnotes - The footnotes that patches refer to with a `FootnoteReferenceRun`
  * @property endnotes - The endnotes that patches refer to with an `EndnoteReferenceRun`
+ * @property pageNumbers - Works out the page each bookmark is on, to write the page numbers of page references
  */
 export type PatchDocumentOptions<T extends PatchDocumentOutputType = PatchDocumentOutputType> = {
     /** Output format type */
@@ -189,6 +192,12 @@ export type PatchDocumentOptions<T extends PatchDocumentOutputType = PatchDocume
     readonly footnotes?: Readonly<Record<string, { readonly children: readonly Paragraph[] }>>;
     /** The endnotes that patches refer to, by the id given to their `EndnoteReferenceRun`s, as with footnotes */
     readonly endnotes?: Readonly<Record<string, { readonly children: readonly Paragraph[] }>>;
+    /**
+     * Works out the page each bookmark of the patched document is on, and how many pages it has, so the page numbers of
+     * its tables of contents and page references, and its numbers of pages, are written with it, rather than left as they
+     * were in the template. Give it `estimatePageNumbers` from `docx/layout`. See {@link TemplatePageNumberEstimator}
+     */
+    readonly pageNumbers?: TemplatePageNumberEstimator;
 };
 
 /**
@@ -290,6 +299,7 @@ export const patchDocument = async <T extends PatchDocumentOutputType = PatchDoc
     recursive = true,
     footnotes,
     endnotes,
+    pageNumbers,
 }: PatchDocumentOptions<T>): Promise<OutputByType[T]> => {
     const zipContent = data instanceof JSZip ? data : await JSZip.loadAsync(data);
     const contexts = new Map<string, IContext>();
@@ -535,6 +545,11 @@ export const patchDocument = async <T extends PatchDocumentOutputType = PatchDoc
         map.set(relationshipKey, relationshipsJson);
 
         appendRelationship(relationshipsJson, id, type, target, targetMode);
+    }
+
+    // The pages are worked out once everything is patched in
+    if (pageNumbers) {
+        fillTemplatePageNumbers(map, pageNumbers);
     }
 
     // The parts that patches added to the package, such as charts, which add their own parts as they are written, such

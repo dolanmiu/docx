@@ -1563,5 +1563,43 @@ describe("from-docx", () => {
                 expect(await read("word/_rels/document.xml.rels")).not.to.contain("relationships/image");
             });
         });
+
+        describe("Page numbers", () => {
+            const W = "http://schemas.openxmlformats.org/wordprocessingml/2006/main";
+            // A page reference, with the page Word wrote for it before the template was patched
+            const PAGE_REFERENCE =
+                '<w:r><w:fldChar w:fldCharType="begin"/></w:r><w:r><w:instrText xml:space="preserve"> PAGEREF _Toc1 \\h </w:instrText></w:r>' +
+                '<w:r><w:fldChar w:fldCharType="separate"/></w:r><w:r><w:t>9</w:t></w:r><w:r><w:fldChar w:fldCharType="end"/></w:r>';
+            const template = (): JSZip =>
+                new JSZip()
+                    .file("[Content_Types].xml", `<Types xmlns="http://schemas.openxmlformats.org/package/2006/content-types"/>`)
+                    .file(
+                        "word/document.xml",
+                        `<w:document xmlns:w="${W}"><w:body><w:p>${PAGE_REFERENCE}</w:p><w:p><w:r><w:t>{{name}}</w:t></w:r></w:p></w:body></w:document>`,
+                    );
+            const patches = { name: { type: PatchType.PARAGRAPH, children: [new TextRun("Ada")] } } as const;
+            const documentOf = async (output: Buffer): Promise<string> =>
+                (await JSZip.loadAsync(output)).file("word/document.xml")!.async("text");
+
+            it("should write the page numbers the estimator works out for the patched template", async () => {
+                const pageNumbers = vi.fn(({ parts }: { readonly parts: ReadonlyMap<string, unknown> }) => {
+                    // The estimate is of the template once it is patched
+                    expect(JSON.stringify(parts.get("word/document.xml"))).to.contain("Ada");
+                    return { bookmarks: new Map([["_Toc1", "4"]]) };
+                });
+                const document = await documentOf(
+                    await patchDocument({ outputType: "nodebuffer", data: template(), patches, pageNumbers }),
+                );
+                expect(pageNumbers).toHaveBeenCalledOnce();
+                expect(document).to.contain('<w:fldChar w:fldCharType="separate"/><w:t xml:space="preserve">4</w:t></w:r><w:r/>');
+                expect(document).not.to.contain("<w:t>9</w:t>");
+            });
+
+            it("should leave the template's page numbers as they are without an estimator", async () => {
+                expect(await documentOf(await patchDocument({ outputType: "nodebuffer", data: template(), patches }))).to.contain(
+                    "<w:t>9</w:t>",
+                );
+            });
+        });
     });
 });

@@ -280,7 +280,7 @@ export const readParagraphFormat = (element: unknown): ParagraphFormat => {
 /**
  * Reads the fonts of a document's theme (`a:theme`), once it is formatted.
  */
-const readThemeFonts = (xml: XmlObject): ThemeFonts => {
+export const readThemeFonts = (xml: XmlObject): ThemeFonts => {
     const elements = childrenOf(find(childrenOf(xml["a:theme"]), "a:themeElements"));
     const scheme = childrenOf(find(elements, "a:fontScheme"));
     // Every font of a theme has a font for Latin text

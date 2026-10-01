@@ -920,20 +920,14 @@ const readSection = (element: unknown, readPart: (id: string) => readonly Block[
 
 /**
  * Reads the levels of each list in the document's numbering (`w:numbering`), by the ids its paragraphs refer to it by:
- * its number, and the placeholder docx writes before it is given one.
+ * its number, and any other name it has, such as the placeholder docx writes before it is given one.
  */
-const readNumbering = (context: IContext, styles: TextStyles): ReadonlyMap<string, readonly NumberingLevel[]> => {
-    const numbering = context.file.Numbering;
-    // The lists that styles number their paragraphs in are added to the document as its styles are written, after its
-    // body, so they are added now to be read
-    for (const style of styles.styles.values()) {
-        const placeholder = /^\{(.+)-(\d+)\}$/.exec(style.numbering?.id ?? "");
-        if (placeholder) {
-            numbering.createConcreteNumberingInstance(placeholder[1], Number(placeholder[2]));
-        }
-    }
-    const xml = numbering.prepForXml(READING_CONTEXT) as XmlObject;
-    const root = childrenOf(xml["w:numbering"]);
+const readNumbering = (
+    xml: XmlObject | undefined,
+    styles: TextStyles,
+    otherIds: ReadonlyMap<string, string>,
+): ReadonlyMap<string, readonly NumberingLevel[]> => {
+    const root = childrenOf(xml?.["w:numbering"]);
     const abstract = new Map(
         root
             .filter((child) => "w:abstractNum" in child)
@@ -943,13 +937,14 @@ const readNumbering = (context: IContext, styles: TextStyles): ReadonlyMap<strin
                     .map((level) => {
                         const levelChildren = childrenOf(level["w:lvl"]);
                         return {
-                            index: numberOf(attributesOf(level["w:lvl"])["w:ilvl"])!,
+                            index: numberOf(attributesOf(level["w:lvl"])["w:ilvl"]) ?? 0,
                             level: {
                                 ...withoutUndefined({ style: valueOf(levelChildren, "w:pStyle") }),
                                 format: valueOf(levelChildren, "w:numFmt") ?? "decimal",
                                 text: stringOf(attributesOf(find(levelChildren, "w:lvlText"))["w:val"]) ?? "",
                                 suffix: valueOf(levelChildren, "w:suff") ?? "tab",
-                                start: numberOf(attributesOf(find(levelChildren, "w:start"))["w:val"])!,
+                                // A level that doesn't give its first number starts at 0
+                                start: numberOf(attributesOf(find(levelChildren, "w:start"))["w:val"]) ?? 0,
                                 paragraph: readParagraphFormat(find(levelChildren, "w:pPr")),
                                 run: readRunFormat(find(levelChildren, "w:rPr"), styles.themeFonts),
                             },
@@ -964,19 +959,28 @@ const readNumbering = (context: IContext, styles: TextStyles): ReadonlyMap<strin
                 return [String(attributesOf(child["w:abstractNum"])["w:abstractNumId"]), byIndex] as const;
             }),
     );
-    // Each list refers to one of the definitions docx writes with it
-    const byNumber = root
-        .filter((child) => "w:num" in child)
-        .map((child) => {
-            const abstractId = String(numberOf(attributesOf(find(childrenOf(child["w:num"]), "w:abstractNumId"))["w:val"]));
-            return [String(attributesOf(child["w:num"])["w:numId"]), abstract.get(abstractId)!] as const;
-        });
-    const numbers = new Map(byNumber);
-    const placeholders = numbering.ConcreteNumbering.map(
-        (concrete) => [`{${concrete.reference}-${concrete.instance}}`, numbers.get(String(concrete.numId))!] as const,
+    // Each list refers to one of the definitions
+    const numbers = new Map(
+        root
+            .filter((child) => "w:num" in child)
+            .flatMap((child) => {
+                const abstractId = String(numberOf(attributesOf(find(childrenOf(child["w:num"]), "w:abstractNumId"))["w:val"]));
+                const levels = abstract.get(abstractId);
+                return levels ? [[String(attributesOf(child["w:num"])["w:numId"]), levels] as const] : [];
+            }),
     );
-    return new Map([...byNumber, ...placeholders]);
+    return new Map([
+        ...numbers,
+        ...[...otherIds].flatMap(([other, id]) => {
+            const levels = numbers.get(id);
+            return levels ? [[other, levels] as const] : [];
+        }),
+    ]);
 };
+
+// The compatibility mode of Word 2013 and later, which lay out pages as Word does today. A document in an older one, or
+// without one, is laid out as that version of Word laid it out
+const CURRENT_COMPATIBILITY_MODE = 15;
 
 /**
  * The document's own lists of the characters that can't start a line (`w:noLineBreaksBefore`) and can't end one
@@ -998,11 +1002,19 @@ const readKinsokuLists = (settings: readonly XmlObject[]): NonNullable<LineBreak
  * Reads the parts of the document's settings (`w:settings`) that change how it is laid out.
  */
 const readSettings = (
-    context: IContext,
+    xml: XmlObject | undefined,
 ): Pick<DocumentContent, "defaultTabStop" | "evenAndOddHeaders" | "addsParagraphSpacing" | "breakRules" | "unsupported"> => {
-    const settings = childrenOf((context.file.Settings.prepForXml(READING_CONTEXT) as XmlObject)["w:settings"]);
+    const settings = childrenOf(xml?.["w:settings"]);
+    const compatibility = childrenOf(find(settings, "w:compat"));
     const lists = readKinsokuLists(settings);
     const spacingControl = valueOf(settings, "w:characterSpacingControl");
+    const mode = numberOf(
+        attributesOf(
+            compatibility.find(
+                (child) => "w:compatSetting" in child && attributesOf(child["w:compatSetting"])["w:name"] === "compatibilityMode",
+            )?.["w:compatSetting"],
+        )["w:val"],
+    );
     // Word's strict rules, and its compression of punctuation, aren't known yet
     const unsupported =
         onOff(settings, "w:autoHyphenation") === true
@@ -1011,13 +1023,72 @@ const readSettings = (
               ? "the strict rules for the characters that can't start a line"
               : spacingControl !== undefined && spacingControl !== "doNotCompress"
                 ? "punctuation compressed"
-                : undefined;
+                : mode === undefined || mode < CURRENT_COMPATIBILITY_MODE
+                  ? "a document in compatibility mode"
+                  : undefined;
     return {
         defaultTabStop: twips(attributesOf(find(settings, "w:defaultTabStop"))["w:val"]) ?? 36,
         evenAndOddHeaders: onOff(settings, "w:evenAndOddHeaders") === true,
-        addsParagraphSpacing: onOff(childrenOf(find(settings, "w:compat")), "w:doNotUseHTMLParagraphAutoSpacing") === true,
+        addsParagraphSpacing: onOff(compatibility, "w:doNotUseHTMLParagraphAutoSpacing") === true,
         ...(Object.keys(lists).length > 0 ? { breakRules: { lists } } : {}),
         ...(unsupported ? { unsupported } : {}),
+    };
+};
+
+/**
+ * The parts of a document other than its body that it is read with, as elements formatted as docx writes them: those of
+ * a document being written, or those of a .docx (see `read-docx.ts`).
+ */
+export type DocumentParts = {
+    /** Its defaults and styles, with the fonts of its theme */
+    readonly styles: TextStyles;
+    /** Its numbering (`w:numbering`), if it has any */
+    readonly numbering?: XmlObject;
+    /** Other ids its lists are referred to by, with the number of the list each is: the placeholders docx writes */
+    readonly otherListIds?: ReadonlyMap<string, string>;
+    /** Its settings (`w:settings`), if it has any */
+    readonly settings?: XmlObject;
+    /** The content of each header and footer, by the id of the relationship to it: its attributes, paragraphs and tables */
+    readonly headersAndFooters: ReadonlyMap<string, readonly unknown[]>;
+    /** Its footnotes (`w:footnotes`), if it has any */
+    readonly footnotes?: XmlObject;
+    /** Its endnotes (`w:endnotes`), if it has any */
+    readonly endnotes?: XmlObject;
+};
+
+/**
+ * The parts of the document being written, formatted to be read.
+ */
+const partsOfFile = (context: IContext): DocumentParts => {
+    const { file } = context;
+    const styles = getTextStyles(context);
+    // The lists that styles number their paragraphs in are added to the document as its styles are written, after its
+    // body, so they are added now to be read
+    for (const style of styles.styles.values()) {
+        const placeholder = /^\{(.+)-(\d+)\}$/.exec(style.numbering?.id ?? "");
+        if (placeholder) {
+            file.Numbering.createConcreteNumberingInstance(placeholder[1], Number(placeholder[2]));
+        }
+    }
+    // Formatting a part needs a context with the part in it
+    const format = (wrapper: { readonly View: { readonly prepForXml: (context: IContext) => unknown } }): XmlObject =>
+        wrapper.View.prepForXml({ ...context, viewWrapper: wrapper as unknown as IContext["viewWrapper"], stack: [] }) as XmlObject;
+    return {
+        styles,
+        numbering: file.Numbering.prepForXml(READING_CONTEXT) as XmlObject,
+        // docx writes a placeholder for each list in the paragraphs, before it is given its number
+        otherListIds: new Map(
+            file.Numbering.ConcreteNumbering.map((concrete) => [`{${concrete.reference}-${concrete.instance}}`, String(concrete.numId)]),
+        ),
+        settings: file.Settings.prepForXml(READING_CONTEXT) as XmlObject,
+        // A header or footer is written with its attributes and its paragraphs and tables
+        headersAndFooters: new Map(
+            [...file.Headers, ...file.Footers].map(
+                (wrapper) => [`rId${wrapper.View.ReferenceId}`, Object.values(format(wrapper))[0] as readonly unknown[]] as const,
+            ),
+        ),
+        footnotes: format(file.FootNotes),
+        endnotes: format(file.Endnotes),
     };
 };
 
@@ -1027,29 +1098,32 @@ const readSettings = (
  * @param body - The formatted body (`w:body`)
  * @param context - The context it was formatted in, with the document it is in
  */
-export const readDocument = (body: IXmlableObject, context: IContext): DocumentContent => {
-    const styles = getTextStyles(context);
-    const numbering = readNumbering(context, styles);
+export const readDocument = (body: IXmlableObject, context: IContext): DocumentContent =>
+    readContent(body as XmlObject, partsOfFile(context));
+
+/**
+ * Reads a document's body (`w:body`), with the other parts of the document.
+ */
+export const readContent = (body: XmlObject, parts: DocumentParts): DocumentContent => {
+    const { styles } = parts;
+    const numbering = readNumbering(parts.numbering, styles, parts.otherListIds ?? new Map());
     const readerOf = (inHeader: boolean): Reader => ({ styles, numbering, inHeader, fields: [], counters: new Map() });
 
     // Each header and footer, the first time a section refers to it
-    const parts = new Map<string, readonly Block[] | undefined>();
+    const headersAndFooters = new Map<string, readonly Block[] | undefined>();
     const readPart = (id: string): readonly Block[] | undefined => {
-        if (!parts.has(id)) {
-            const wrapper = [...context.file.Headers, ...context.file.Footers].find(({ View }) => `rId${View.ReferenceId}` === id);
-            const xml = wrapper?.View.prepForXml({ ...context, viewWrapper: wrapper, stack: [] }) as XmlObject | undefined;
-            // A header or footer is written with its attributes and its paragraphs and tables
+        if (!headersAndFooters.has(id)) {
+            const content = parts.headersAndFooters.get(id);
             // eslint-disable-next-line functional/immutable-data
-            parts.set(id, xml && readBlocks(Object.values(xml)[0] as readonly unknown[], readerOf(true)));
+            headersAndFooters.set(id, content && readBlocks(content, readerOf(true)));
         }
-        return parts.get(id);
+        return headersAndFooters.get(id);
     };
 
     // The footnotes and endnotes, by their ids, and the separators above them
     const noteElements = (kind: NoteKind): ReadonlyMap<string, XmlObject> => {
-        const wrapper = kind === "footnote" ? context.file.FootNotes : context.file.Endnotes;
-        const xml = wrapper.View.prepForXml({ ...context, viewWrapper: wrapper, stack: [] }) as XmlObject;
-        const notes = childrenOf(Object.values(xml)[0]).filter((child) => `w:${kind}` in child);
+        const xml = kind === "footnote" ? parts.footnotes : parts.endnotes;
+        const notes = childrenOf(xml && Object.values(xml)[0]).filter((child) => `w:${kind}` in child);
         return new Map(
             notes.map((note) => {
                 const attributes = attributesOf(note[`w:${kind}`]);
@@ -1135,7 +1209,7 @@ export const readDocument = (body: IXmlableObject, context: IContext): DocumentC
         }
     };
     // The body is written with its section's properties at its end, if nothing else
-    read(Object.values(body as XmlObject)[0] as readonly unknown[]);
+    read(contentOf(body));
     if (sections.length === 0 || blocks.some(({ section }) => section >= sections.length)) {
         addSection(undefined);
     }
@@ -1147,6 +1221,6 @@ export const readDocument = (body: IXmlableObject, context: IContext): DocumentC
         footnoteSeparator: footnotes.size > 0 ? readNoteContent("footnote", "separator") : [],
         footnoteContinuationSeparator: footnotes.size > 0 ? readNoteContent("footnote", "continuationSeparator") : [],
         endnotes: endnotes.length > 0 ? [...readNoteContent("endnote", "separator"), ...endnotes] : [],
-        ...readSettings(context),
+        ...readSettings(parts.settings),
     };
 };

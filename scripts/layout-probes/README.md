@@ -125,3 +125,18 @@ heights over many lines.
 When Word's rule for something isn't known, write a probe in the shape of `word-rules2.ts`, with a reader for its PDF, and have
 it saved from Word as a PDF with the same name as its `.docx`. Commit the `.docx`, the PDF and the reader beside the
 script, and leave out LibreOffice's PDFs, `pdftotext`'s HTML, SVG pages and Word's `~$` lock files.
+
+## Documents saved from Word
+
+Each `<demo>.word.docx` is a layout demo, as `scripts/compare-layout.sh` writes it, opened in Word 16 for Mac in Print
+Layout, with No to updating the fields, and saved as a Word Document once Word had laid out all its pages (2026-10-01).
+Word writes a `w:lastRenderedPageBreak` where each page began, and the number of pages in `docProps/app.xml`.
+
+`scripts/compare-layout.sh` copies them into its output directory, and `scripts/compare-layout.ts` lays each out through
+the `.docx` adapter, as `patchDocument` lays out a template, and compares the page of each heading in its table of
+contents with the page Word marked it on. Word's PDFs of the same documents showed where Word writes the marks, and where
+it doesn't (see `wordPagesOf` in `scripts/compare-layout.ts`).
+
+`columns` and `long-table-of-contents` aren't here: Word writes no mark where a column break starts a page, nor in a
+table of contents, so their marks don't have all of Word's pages. Word's PDFs of them put all their headings on the
+pages docx/layout puts them on.
