@@ -68,7 +68,7 @@ The page numbers are written into:
 The pages are laid out with the widths and heights of the characters of the fonts Word documents use most: Calibri, Cambria, Arial, Times New Roman and Courier New. It follows:
 
 - the document's styles, and each paragraph's and run's own formatting: fonts, sizes, bold, capitals, and hidden text
-- spacing before and after paragraphs, line spacing, indents and tab stops. Contextual spacing (`contextualSpacing`) leaves out only its paragraph's own share of the space between it and a paragraph of the same style, as Word does: all of its space after, or as much of its space before as is more than the space after the paragraph above it
+- spacing before and after paragraphs, line spacing, indents and tab stops
 - keeping a paragraph with the next, keeping its lines together, widow and orphan control, and page breaks
 - numbered and bulleted lists
 - footnotes, which take room at the bottom of the page their reference is on, and continue at the bottom of the next page when they don't fit, and endnotes, which follow the text
