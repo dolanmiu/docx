@@ -1175,6 +1175,22 @@ describe("paginate", () => {
             expect(pagesOf(content)).to.include({ r6: "1", b: "2" });
         });
 
+        it("should put the space after the empty paragraph's line after a table below it, as for any line, as Word does", () => {
+            const sectionBreak: ParagraphBlock = { ...paragraph("break", 0), items: [], format: { spaceAfter: 10 }, sectionBreak: true };
+            const content = document(
+                [
+                    [table(Array.from({ length: 5 }, (_, index) => row([[paragraph(`r${index + 1}`, 1)]]))), 0],
+                    [sectionBreak, 0],
+                    [paragraph("b", 1, { spaceBefore: 10 }), 1],
+                ],
+                { sections: [SECTION, { ...SECTION, start: "continuous" }] },
+            );
+            // Its 10 after and b's 10 before are the larger of the two below its line, so b doesn't fit on the page. In
+            // Word's `columns`, the heading after its table is a line and 12 points below it, the larger of the empty
+            // paragraph's 5 after and the heading's 12 before
+            expect(pagesOf(content)).to.include({ r5: "1", b: "2" });
+        });
+
         describe("the space around the empty paragraph that ends a section", () => {
             const sectionBreak: ParagraphBlock = { ...paragraph("break", 0), items: [], sectionBreak: true };
             /**
