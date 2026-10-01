@@ -36,8 +36,14 @@ SOFFICE="${SOFFICE:-soffice}"
 
 mkdir -p "$OUT"
 find "$OUT" -maxdepth 1 \( \( -name "*.docx" -not -name "*.word.docx" \) -o -name "*.txt" -o \( -name "*.pdf" -not -name "*.word.pdf" \) \) -delete
-for saved in scripts/layout-probes/*.word.docx; do
-    if [ -f "$saved" ] && [ ! -f "$OUT/$(basename "$saved")" ]; then
+# Without them, Word's own pages wouldn't be compared at all, and the comparison would pass without them
+SAVED=(scripts/layout-probes/*.word.docx)
+if [ ! -f "${SAVED[0]}" ]; then
+    echo "No documents saved from Word in scripts/layout-probes: run this from the root of the repository" >&2
+    exit 1
+fi
+for saved in "${SAVED[@]}"; do
+    if [ ! -f "$OUT/$(basename "$saved")" ]; then
         cp "$saved" "$OUT/"
     fi
 done
