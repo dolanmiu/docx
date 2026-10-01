@@ -13,6 +13,7 @@ import { PageOrientation } from "./properties";
 import { DocumentGridType } from "./properties/doc-grid";
 import { LineNumberRestartFormat } from "./properties/line-number";
 import { PageBorderOffsetFrom } from "./properties/page-borders";
+import { PageNumberSeparator } from "./properties/page-number";
 import { PageTextDirectionType } from "./properties/page-text-direction";
 import { SectionType } from "./properties/section-type";
 import { SectionProperties, sectionMarginDefaults, sectionPageSizeDefaults } from "./section-properties";
@@ -274,6 +275,15 @@ describe("SectionProperties", () => {
             expect(pgNumType).to.deep.equal({
                 "w:pgNumType": { _attr: { "w:fmt": "upperRoman" } },
             });
+        });
+
+        it("should write the heading level of chapter numbers, and an en dash between them and page numbers as enDash", () => {
+            const properties = new SectionProperties({
+                page: { pageNumbers: { chapterHeadingLevel: 2, separator: PageNumberSeparator.EN_DASH } },
+            });
+            const tree = new Formatter().format(properties);
+            const pgNumType = tree["w:sectPr"].find((item: any) => item["w:pgNumType"] !== undefined);
+            expect(pgNumType).to.deep.equal({ "w:pgNumType": { _attr: { "w:chapSep": "enDash", "w:chapStyle": 2 } } });
         });
 
         it("should create section properties with a page number type by default", () => {

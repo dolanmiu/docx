@@ -357,7 +357,7 @@ describe("readDocument", () => {
                             style: { run: { bold: true } },
                         },
                         { level: 2, format: LevelFormat.UPPER_ROMAN, text: "", suffix: LevelSuffix.NOTHING },
-                        { level: 3, format: LevelFormat.DECIMAL_ENCLOSED_CIRCLE, text: "%4", alignment: AlignmentType.START },
+                        { level: 3, format: LevelFormat.THAI_COUNTING, text: "%4", alignment: AlignmentType.START },
                         // A level without a format is in decimal, and one it refers to that doesn't exist is at 1
                         { level: 4, text: "%5.%7" },
                     ],
@@ -410,6 +410,98 @@ describe("readDocument", () => {
             const content = readBody([p(pPr({ "w:numPr": [value("w:ilvl", 0), value("w:numId", 1)] }), r(t("a")))]);
             expect(itemsOf(content).map((part) => part.type)).to.deep.equal(["text", "tab", "text"]);
             expect(textOf(content).endsWith("a")).to.equal(true);
+        });
+    });
+
+    describe("lists given by styles", () => {
+        const numbering = {
+            config: [
+                {
+                    reference: "chapters",
+                    levels: [
+                        { level: 0, format: LevelFormat.DECIMAL, text: "Chapter %1" },
+                        { level: 1, format: LevelFormat.UPPER_LETTER, text: "%1.%2", style: { style: "Linked" } },
+                    ],
+                },
+            ],
+        };
+
+        it("should number a paragraph in its style's list, at the level the style gives, and note the number of a heading", () => {
+            const content = readWritten({
+                numbering,
+                styles: {
+                    paragraphStyles: [
+                        { id: "Heading1", name: "Heading 1", paragraph: { numbering: { reference: "chapters", level: 0 } } },
+                        { id: "Heading2", name: "heading 2", paragraph: { numbering: { reference: "chapters", level: 1 } } },
+                        { id: "Based", name: "Based", basedOn: "Heading2" },
+                    ],
+                },
+                sections: [
+                    {
+                        children: [
+                            new Paragraph({ heading: HeadingLevel.HEADING_1, children: [new TextRun("Start")] }),
+                            new Paragraph({ heading: HeadingLevel.HEADING_2, children: [new TextRun("Part")] }),
+                            new Paragraph({ style: "Based", children: [new TextRun("Based")] }),
+                            new Paragraph({ heading: HeadingLevel.HEADING_3, children: [new TextRun("Unnumbered")] }),
+                        ],
+                    },
+                ],
+            });
+            expect([0, 1, 2, 3].map((index) => textOf(content, index))).to.deep.equal([
+                "Chapter 1Start",
+                "1.APart",
+                "1.BBased",
+                "Unnumbered",
+            ]);
+            // A heading is one of Word's by its style's name, in any case. As a chapter number, its number is its level's text
+            // from the first number to the last
+            expect([0, 1, 2, 3].map((index) => paragraphOf(content, index).heading)).to.deep.equal([
+                { level: 1, chapter: "1" },
+                { level: 2, chapter: "1.A" },
+                undefined,
+                { level: 3 },
+            ]);
+        });
+
+        it("should number a paragraph of a style that gives no level at the level that is for the style, or the first", () => {
+            const style = (id: string, numPr: string): string =>
+                `<w:style w:type="paragraph" w:styleId="${id}"><w:name w:val="${id}"/><w:pPr><w:numPr>${numPr}</w:numPr></w:pPr></w:style>`;
+            const content = readWritten({
+                numbering,
+                externalStyles: `<w:styles xmlns:w="main">${style("Linked", '<w:numId w:val="{chapters-0}"/>')}${style(
+                    "Unlinked",
+                    '<w:numId w:val="{chapters-0}"/>',
+                )}</w:styles>`,
+                sections: [
+                    {
+                        children: [
+                            new Paragraph({ style: "Unlinked", children: [new TextRun("first")] }),
+                            new Paragraph({ style: "Linked", children: [new TextRun("linked")] }),
+                        ],
+                    },
+                ],
+            });
+            expect([0, 1].map((index) => textOf(content, index))).to.deep.equal(["Chapter 1first", "1.Alinked"]);
+        });
+
+        it("should number a paragraph that gives its own level in its style's list, and in its own list when it gives one", () => {
+            const content = readBody(
+                [
+                    p(pPr(value("w:pStyle", "Heading1"), { "w:numPr": [value("w:ilvl", 1)] }), r(t("own level"))),
+                    p(pPr(value("w:pStyle", "Heading1"), { "w:numPr": [value("w:numId", 0)] }), r(t("no list"))),
+                ],
+                {
+                    numbering,
+                    styles: {
+                        paragraphStyles: [
+                            { id: "Heading1", name: "heading 1", paragraph: { numbering: { reference: "chapters", level: 0 } } },
+                        ],
+                    },
+                },
+            );
+            expect([0, 1].map((index) => textOf(content, index))).to.deep.equal(["1.Aown level", "no list"]);
+            // Word passes over a heading numbered by itself, or taken out of its style's list, as a chapter heading
+            expect([0, 1].map((index) => paragraphOf(content, index).heading)).to.deep.equal([{ level: 1, chapter: "1.A" }, { level: 1 }]);
         });
     });
 
@@ -829,6 +921,22 @@ describe("readDocument", () => {
             expect(section(value("w:type", "sideways")).sections[0].start).to.equal("nextPage");
         });
 
+        it("should read the level of the headings that number chapters, and what goes between their numbers and the page's", () => {
+            const chaptersOf = (attributes: object): object | undefined =>
+                section({ "w:pgNumType": { _attr: attributes } }).sections[0].chapters;
+            // Word puts a hyphen when the section doesn't say
+            expect(chaptersOf({ "w:chapStyle": 1 })).to.deep.equal({ level: 1, separator: "-" });
+            expect(
+                ["hyphen", "period", "colon", "emDash", "enDash"].map((separator) =>
+                    chaptersOf({ "w:chapStyle": 9, "w:chapSep": separator }),
+                ),
+            ).to.deep.equal(["-", ".", ":", "\u2014", "\u2013"].map((separator) => ({ level: 9, separator })));
+            // There are only 9 levels of headings
+            expect(chaptersOf({ "w:chapStyle": 0 })).to.equal(undefined);
+            expect(chaptersOf({ "w:chapStyle": 10 })).to.equal(undefined);
+            expect(chaptersOf({ "w:chapSep": "colon" })).to.equal(undefined);
+        });
+
         it("should read the width of each column: the same, with the space between them, or each its own", () => {
             const columnsOf = (columns: object): readonly number[] => section({ "w:cols": columns }).sections[0].columns;
             // The page's text is 468 points wide, with half an inch between columns unless the section says otherwise
@@ -847,16 +955,13 @@ describe("readDocument", () => {
             expect(section().sections[0].columns).to.deep.equal([468]);
         });
 
-        it("should mark sections with a line grid, chapter numbers or text down the page as unsupported, but not columns of different widths", () => {
+        it("should mark sections with a line grid, page numbers in a format not yet written or text down the page as unsupported, but not columns of different widths", () => {
             const given = (...widths: readonly number[]): object => ({
                 "w:cols": [{ _attr: { "w:equalWidth": 0 } }, ...widths.map((width) => ({ "w:col": { _attr: { "w:w": width } } }))],
             });
             expect(section(given(4000, 3000)).sections[0].unsupported).to.equal(undefined);
             expect(section({ "w:docGrid": { _attr: { "w:type": "lines" } } }).sections[0].unsupported).to.equal("a document grid");
-            expect(section({ "w:pgNumType": { _attr: { "w:chapStyle": 1 } } }).sections[0].unsupported).to.equal(
-                "page numbers in a format not yet written",
-            );
-            expect(section({ "w:pgNumType": { _attr: { "w:fmt": "hebrew1" } } }).sections[0].unsupported).to.equal(
+            expect(section({ "w:pgNumType": { _attr: { "w:fmt": "none" } } }).sections[0].unsupported).to.equal(
                 "page numbers in a format not yet written",
             );
             expect(section({ "w:textDirection": { _attr: { "w:val": "tbRl" } } }).sections[0].unsupported).to.equal(

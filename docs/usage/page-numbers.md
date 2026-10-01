@@ -214,21 +214,33 @@ const doc = new Document({
 });
 ```
 
-### Page Number Separator
+### Chapter Numbers
 
-You can also set the chapter number separator style using the `separator` property:
+Page numbers can start with the number of the chapter they are in, such as 2-5 for page 5 of chapter 2. Give the level of the headings that start chapters as `chapterHeadingLevel`, from 1 for `HeadingLevel.HEADING_1` to 9, and number those headings through their style, as Word does. The chapter number is the heading's number, from its first number to its last, so a heading numbered "Chapter 2" gives 2. Pages before the first numbered heading have no chapter number. Set what goes between the two numbers with `separator`:
 
 ```ts live
-import { Document, Footer, PageNumber, PageNumberSeparator, Paragraph, TextRun } from "docx";
+import { AlignmentType, Document, Footer, HeadingLevel, LevelFormat, PageNumber, PageNumberSeparator, Paragraph, TextRun } from "docx";
 
 const doc = new Document({
+    numbering: {
+        config: [
+            {
+                reference: "chapters",
+                levels: [{ level: 0, format: LevelFormat.DECIMAL, text: "Chapter %1", alignment: AlignmentType.LEFT }],
+            },
+        ],
+    },
+    styles: {
+        paragraphStyles: [{ id: "Heading1", name: "Heading 1", paragraph: { numbering: { reference: "chapters", level: 0 } } }],
+    },
     sections: [
         {
             properties: {
                 page: {
                     pageNumbers: {
                         start: 1,
-                        separator: PageNumberSeparator.EM_DASH, // e.g. "1—1"
+                        chapterHeadingLevel: 1,
+                        separator: PageNumberSeparator.EM_DASH, // "1—1"
                     },
                 },
             },
@@ -237,13 +249,16 @@ const doc = new Document({
                     children: [new Paragraph({ children: [new TextRun({ children: ["Page ", PageNumber.CURRENT] })] })],
                 }),
             },
-            children: [new Paragraph("Document content")],
+            children: [
+                new Paragraph({ heading: HeadingLevel.HEADING_1, children: [new TextRun("The coast")] }),
+                new Paragraph("Document content"),
+            ],
         },
     ],
 });
 ```
 
-Available separators: `COLON`, `EM_DASH`, `EN_DASH`, `HYPHEN`, `PERIOD`.
+Available separators: `COLON`, `EM_DASH`, `EN_DASH`, `HYPHEN` (the default), `PERIOD`.
 
 ## Examples
 
