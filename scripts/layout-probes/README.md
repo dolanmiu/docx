@@ -22,6 +22,7 @@ table style and each cell's width.
 | `word-contextual`    | X1 and Y1: contextual spacing next to the empty paragraph that ends a section, whose space after is never on the page itself, and with `doNotUseHTMLParagraphAutoSpacing`. `word-contextual-adding` is the second document it writes, with that setting                                                                                                                         | `word-contextual.py`  |
 | `word-tables`        | T1 to T13: the widths Word gives table columns from `columnWidths`, cell widths and table widths, and a word longer than its column (T7)                                                                                                                                                                                                                                        | `pagelines.py`        |
 | `word-autofit`       | A1 to D1: the widths Word gives the columns of tables whose cells have no widths, which it sizes to their text                                                                                                                                                                                                                                                                  | `word-autofit.py`     |
+| `word-long-words`    | L1 to L8: how Word widens a column for a word longer than its cells give it, in tables whose cells all have widths, and what it takes from the other columns. `word-long-words-layout.ts` prints docx/layout's widths for them                                                                                                                                                  | `word-autofit.py`     |
 | `word-probes`        | U1 to U8: the widths of tables given no widths with merged cells or tables in cells, footnotes continued, footnotes in table rows and in columns, rows with merged cells, a table in a cell or a set height across pages, rows taller than a page, the space before a continuous section's first paragraph with a page break before it, and lines of only spaces before a break | `word-probes.py`      |
 | `fsplit`             | How a footnote that doesn't fit below its reference goes on to the next page. Laid out in LibreOffice only, so it has no PDF from Word: Word's split of an 8-line footnote is `word-rules` P7b                                                                                                                                                                                  | `pagelines.py`        |
 
@@ -64,7 +65,7 @@ python3 scripts/layout-probes/word-rules2.py build/word-probes/word-rules2.html
 
 `word-balance.py` reads `word-balance`, `word-balance2` and `word-keep-together`, and `word-contextual.py` reads both
 documents `word-contextual.ts` writes, `word-contextual` and `word-contextual-adding`. `word-autofit.py` reads the borders
-of the tables too, from each page as SVG:
+of the tables of `word-autofit` and `word-long-words` too, from each page as SVG:
 
 ```bash
 pdftotext -bbox-layout scripts/layout-probes/word-autofit.pdf build/word-probes/word-autofit.html
