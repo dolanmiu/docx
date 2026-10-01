@@ -220,13 +220,22 @@ export const paginate = (
     const measureParagraph = (paragraph: ParagraphBlock, width: number, before?: Block, after?: Block): MeasuredParagraph => {
         const { format } = paragraph;
         const lines = linesOf(paragraph, width);
-        // With contextual spacing, there is no space between paragraphs of the same style
-        const sameStyle = (other?: Block): boolean =>
-            format.contextualSpacing === true && other?.type === "paragraph" && other.style === paragraph.style;
+        // With contextual spacing, Word leaves out a paragraph's own share of the space between it and one of the same
+        // style next to it: the first's space after, and the part of the second's space before that is more than the
+        // first's space after. The other paragraph's share stays, so 200 after a contextual paragraph and 400 before the
+        // next leave 200, where LibreOffice leaves 400 (`word-rules.docx` P1, `word-rules2.docx` Q1). With the space after
+        // and before added, each paragraph's share is its own
+        const contextual = (one: ParagraphBlock, other?: Block): boolean =>
+            one.format.contextualSpacing === true && other?.type === "paragraph" && other.style === one.style;
+        const spaceBefore = format.spaceBefore ?? 0;
+        const shareBefore =
+            before?.type === "paragraph" && contextual(before, paragraph) && !addsParagraphSpacing
+                ? Math.max(0, spaceBefore - (before.format.spaceAfter ?? 0))
+                : spaceBefore;
         return {
             lines,
-            spaceBefore: sameStyle(before) ? 0 : (format.spaceBefore ?? 0),
-            spaceAfter: sameStyle(after) ? 0 : (format.spaceAfter ?? 0),
+            spaceBefore: contextual(paragraph, before) ? 0 : shareBefore,
+            spaceAfter: contextual(paragraph, after) ? 0 : (format.spaceAfter ?? 0),
             keepNext: format.keepNext === true,
             keepLines: format.keepLines === true,
             // Word controls widows and orphans unless a paragraph or its style turns it off

@@ -310,6 +310,67 @@ describe("paginate", () => {
             ]);
             expect(pagesOf(content)).to.deep.equal({ a: "1", b: "1", c: "2" });
         });
+
+        describe("contextual spacing on one of two paragraphs of the same style", () => {
+            /** The space between two paragraphs of a line each, from how many lines of 10 points fit below them on the page */
+            const spaceBetween = (first: ParagraphBlock, second: ParagraphBlock, changes: Partial<DocumentContent> = {}): number => {
+                const lines = Array.from({ length: 5 }, (_, index) => paragraph(`line ${index}`, 1));
+                const pages = pagesOf(document([first, second, ...lines], changes));
+                return 50 - 10 * lines.filter((_, index) => pages[`line ${index}`] === "1").length;
+            };
+            const contextual = { contextualSpacing: true };
+
+            it("should leave out the first's space after, and keep as much of the second's space before as is more, as Word does", () => {
+                // Word's results scaled down from twips: 200 after a contextual paragraph and 400 before the next leave 200
+                // (`word-rules2.docx` Q1a), 400 and 200 leave none (`word-rules.docx` P1d), and so do 400 and 400 (Q1c),
+                // where LibreOffice leaves 400, 200 and 400
+                expect(spaceBetween(paragraph("a", 1, { spaceAfter: 20, ...contextual }), paragraph("b", 1, { spaceBefore: 40 }))).to.equal(
+                    20,
+                );
+                expect(spaceBetween(paragraph("a", 1, { spaceAfter: 40, ...contextual }), paragraph("b", 1, { spaceBefore: 20 }))).to.equal(
+                    0,
+                );
+                expect(spaceBetween(paragraph("a", 1, { spaceAfter: 40, ...contextual }), paragraph("b", 1, { spaceBefore: 40 }))).to.equal(
+                    0,
+                );
+            });
+
+            it("should leave out the part of the second's space before that is more than the first's space after, as Word does", () => {
+                // 200 after and 400 before a contextual paragraph leave 200 (Q1b), and 400 and 200 leave 400 (P1e), as do
+                // 400 and 400 (Q1d)
+                expect(spaceBetween(paragraph("a", 1, { spaceAfter: 20 }), paragraph("b", 1, { spaceBefore: 40, ...contextual }))).to.equal(
+                    20,
+                );
+                expect(spaceBetween(paragraph("a", 1, { spaceAfter: 40 }), paragraph("b", 1, { spaceBefore: 20, ...contextual }))).to.equal(
+                    40,
+                );
+                expect(spaceBetween(paragraph("a", 1, { spaceAfter: 40 }), paragraph("b", 1, { spaceBefore: 40, ...contextual }))).to.equal(
+                    40,
+                );
+            });
+
+            it("should leave out both shares with contextual spacing on both, and neither between paragraphs of different styles", () => {
+                const both = (secondStyle?: string): number =>
+                    spaceBetween(
+                        paragraph("a", 1, { spaceAfter: 40, ...contextual }),
+                        paragraph("b", 1, { spaceBefore: 20, ...contextual }, secondStyle),
+                    );
+                // `word-rules.docx` P1c and P1f
+                expect(both()).to.equal(0);
+                expect(both("Other")).to.equal(40);
+            });
+
+            it("should leave out only the contextual paragraph's own space with the space after and before added", () => {
+                const adding = { addsParagraphSpacing: true };
+                expect(spaceBetween(paragraph("a", 1, { spaceAfter: 20 }), paragraph("b", 1, { spaceBefore: 10 }), adding)).to.equal(30);
+                expect(
+                    spaceBetween(paragraph("a", 1, { spaceAfter: 20, ...contextual }), paragraph("b", 1, { spaceBefore: 10 }), adding),
+                ).to.equal(10);
+                expect(
+                    spaceBetween(paragraph("a", 1, { spaceAfter: 20 }), paragraph("b", 1, { spaceBefore: 10, ...contextual }), adding),
+                ).to.equal(20);
+            });
+        });
     });
 
     describe("breaks", () => {
