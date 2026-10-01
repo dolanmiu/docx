@@ -442,7 +442,11 @@ export const layoutLines = (
                     for (const character of characters) {
                         const characterWidth = measurer.measureWidth(character, font);
                         // Each line is as long as it is, for lines of different widths, and one with no room takes the rest
-                        if (placed && line.position + characterWidth > limitOf() + TOLERANCE && limitOf(lines.length + 1) - indentLeft > 0) {
+                        if (
+                            placed &&
+                            line.position + characterWidth > limitOf() + TOLERANCE &&
+                            limitOf(lines.length + 1) - indentLeft > 0
+                        ) {
                             line = wrap({ ...line, natural: Math.max(line.natural, tokenHeight), started: true });
                         }
                         line = { ...line, position: line.position + characterWidth };
