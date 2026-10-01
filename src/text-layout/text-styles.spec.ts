@@ -99,13 +99,13 @@ describe("getTextStyles", () => {
                     externalStyles: `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
 <w:styles xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main">
     <w:docDefaults>
-        <w:rPrDefault><w:rPr><w:rFonts w:asciiTheme="minorHAnsi" w:hAnsi="Aptos"/><w:sz w:val="24"/><w:b w:val="0"/></w:rPr></w:rPrDefault>
+        <w:rPrDefault><w:rPr><w:rFonts w:asciiTheme="minorHAnsi" w:hAnsi="Aptos"/><w:kern w:val="2"/><w:sz w:val="24"/><w:b w:val="0"/></w:rPr></w:rPrDefault>
         <w:pPrDefault><w:pPr><w:spacing w:after="160" w:line="278" w:lineRule="auto"/></w:pPr></w:pPrDefault>
     </w:docDefaults>
     <w:style w:type="paragraph" w:styleId="Quote">
         <w:name w:val="Quote"/>
         <w:pPr><w:spacing w:before="120" w:line="300" w:lineRule="exact"/><w:ind w:start="720" w:end="360" w:hanging="360"/><w:contextualSpacing/></w:pPr>
-        <w:rPr><w:caps w:val="off"/><w:spacing w:val="10"/><w:w w:val="90"/></w:rPr>
+        <w:rPr><w:i/><w:caps w:val="off"/><w:spacing w:val="10"/><w:w w:val="90"/></w:rPr>
     </w:style>
     <w:style w:type="paragraph" w:styleId="Tall">
         <w:name w:val="Tall"/>
@@ -117,14 +117,15 @@ describe("getTextStyles", () => {
                 }),
             ),
         );
-        // The theme's font for body text takes the place of the font named beside it
-        expect(styles.run).to.deep.equal({ font: "Calibri", size: 12, bold: false });
+        // The theme's font for body text takes the place of the font named beside it. Text is kerned from 1 point, as in
+        // Word's own defaults
+        expect(styles.run).to.deep.equal({ font: "Calibri", size: 12, bold: false, kerning: 1 });
         expect(styles.paragraph).to.deep.equal({ spaceAfter: 8, lineSpacing: { rule: "multiple", multiple: 278 / 240 } });
         expect(styles.styles.get("Quote")).to.deep.equal({
             type: "paragraph",
             name: "Quote",
             basedOn: undefined,
-            run: { allCaps: false, characterSpacing: 0.5, scale: 90 },
+            run: { italic: true, allCaps: false, characterSpacing: 0.5, scale: 90 },
             paragraph: {
                 spaceBefore: 6,
                 lineSpacing: { rule: "exact", height: 15 },
@@ -163,6 +164,14 @@ describe("getTextStyles", () => {
         expect(styles.styles.get("Padded")?.cellMargins).to.deep.equal({ top: 2.5, left: 10 });
         // Other styles have none
         expect(styles.styles.get("Normal")).not.to.have.property("cellMargins");
+    });
+
+    it("should read the size kerning starts at, in half-points or with its unit", () => {
+        expect(readRunFormat([{ "w:kern": { _attr: { "w:val": 28 } } }], WORD_DEFAULT_STYLES.themeFonts)).to.deep.equal({ kerning: 14 });
+        expect(readRunFormat([{ "w:kern": { _attr: { "w:val": "1.5pt" } } }], WORD_DEFAULT_STYLES.themeFonts)).to.deep.equal({
+            kerning: 1.5,
+        });
+        expect(readRunFormat([{ "w:i": {} }], WORD_DEFAULT_STYLES.themeFonts)).to.deep.equal({ italic: true });
     });
 
     it("should read the fonts of the document's theme where styles and text use them", () => {

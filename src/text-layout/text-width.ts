@@ -20,6 +20,8 @@ export type TextFont = {
     readonly bold?: boolean;
     /** Measured in the font's italics, or bold italics */
     readonly italic?: boolean;
+    /** Kerns pairs of characters in text of this size or larger, in points (`w:kern`). Not kerned when it isn't given */
+    readonly kerning?: number;
     /** Space added after each character, in points */
     readonly characterSpacing?: number;
     /** How wide the characters are drawn, as a percentage of their width */

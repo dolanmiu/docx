@@ -82,6 +82,23 @@ describe("layoutLines", () => {
         expect(heightsOf([text("aa"), text(" ", 16), text("bb")])).to.deep.equal([16]);
     });
 
+    it("should measure the pieces of a word in the same font together, so they are kerned across runs as Word kerns them", () => {
+        // cspell:ignore AVAVAVAV
+        // "AV" kerned is 15 points, rather than 20
+        const kerning: TextMeasurer = {
+            measureWidth: (value) => [...value].length * 10 - value.split("AV").length * 5 + 5,
+            measureLineHeight: () => 10,
+        };
+        const linesOf = (items: readonly InlineItem[]): number => layoutLines(items, { width: 90, measurer: kerning }).length;
+        const piece = (value: string, font = {}): InlineItem => ({ type: "text", text: value, font });
+        // "AVAVAVAV" has 4 pairs kerned, 2 of them across the pieces, so it is 60 points, and " aa" fits after it. Measured
+        // apart, the pieces are 65 points
+        expect(linesOf([piece("AVA"), piece("VAV", {}), piece("AV aa")])).to.equal(1);
+        // Pieces in different fonts aren't, nor pieces of the same font with different formatting
+        expect(linesOf([piece("AVA"), piece("VAV", { bold: true }), piece("AV aa")])).to.equal(2);
+        expect(linesOf([piece("AVA", { size: 10 }), piece("VAV", { size: 11 }), piece("AV aa", { size: 10 })])).to.equal(2);
+    });
+
     it("should space the lines as the paragraph says", () => {
         const lines = [text("aaaa bbbb cccc")];
         expect(heightsOf(lines, 100, { format: { lineSpacing: { rule: "multiple", multiple: 1.5 } } })).to.deep.equal([15, 15]);

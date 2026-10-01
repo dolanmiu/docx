@@ -1,6 +1,6 @@
 # Layout
 
-<!-- cspell:ignore Aptos chenglou Carlito -->
+<!-- cspell:ignore Aptos chenglou Carlito GPOS -->
 
 !> Layout requires an understanding of [Table of Contents](usage/table-of-contents.md) and [Bookmarks](usage/bookmarks.md).
 
@@ -183,7 +183,7 @@ A blank page that Word adds so a section starts on an odd or even page has nothi
 
 The pages are laid out with the widths and heights of the characters of the fonts Word documents use most: Calibri, Cambria, Arial, Times New Roman and Courier New, and the heights of the lines of the Chinese, Japanese and Korean fonts Office has, such as MS Mincho, Yu Gothic, SimSun, Microsoft YaHei, PMingLiU and Malgun Gothic. The widths are those of the letters of Western and Central European languages, Turkish, Vietnamese, Greek and Cyrillic, of punctuation and the spaces other than U+0020, and of currency signs, arrows and mathematical symbols, as Word draws them in each font, plain, bold, italic and bold italic. It follows:
 
-- the document's styles, and each paragraph's and run's own formatting: fonts, sizes, bold, italics, capitals, and hidden text. Chinese, Japanese and Korean are in the run's East Asian font (`font: { eastAsia }`), or in MS Mincho when that font has none of their characters, as Word draws them. A right-to-left run (`rightToLeft`) is in the run's font, size, bold and italics for complex scripts (`font: { cs }`, `sizeComplexScript`, `boldComplexScript`, `italicsComplexScript`), as Word draws it
+- the document's styles, and each paragraph's and run's own formatting: fonts, sizes, bold, italics, kerning, which is measured with fonts' files (see [Measuring fonts from their files](#measuring-fonts-from-their-files)), capitals, and hidden text. Chinese, Japanese and Korean are in the run's East Asian font (`font: { eastAsia }`), or in MS Mincho when that font has none of their characters, as Word draws them. A right-to-left run (`rightToLeft`) is in the run's font, size, bold and italics for complex scripts (`font: { cs }`, `sizeComplexScript`, `boldComplexScript`, `italicsComplexScript`), as Word draws it
 - lengths given with units, such as `margin: { top: "1in" }`, `size: "12pt"` or a table's `width: { size: "6in", type: WidthType.DXA }`, as well as those given in numbers. Word reads each as a whole number of twips: rounded down from inches, points and picas, and to the nearest from centimeters and millimeters, and a size in points rounded down to a half-point, so `size: "10.75pt"` is 10.5 points. It reads the minus sign of a negative length as the whole number's only, and adds the fraction: `"-10.7pt"` is -9.3 points
 - where lines break, as Word breaks them: at spaces, and at en, em, four-per-em and ideographic spaces, which go past the end of a line as spaces do, after hyphens, en and em dashes and zero-width spaces, and between Chinese and Japanese characters. Word doesn't break lines at the other spaces, such as the thin space, so neither does the layout. In text in Japanese or Chinese (`language: { eastAsia: "ja-JP" }`), Word's lists keep characters such as closing brackets and `、` from starting a line, and opening brackets from ending one, so the character before moves to the next line with it. Text with no East Asian language, or in Korean or English, has no such rules in Word. Korean, Thai and the other scripts without spaces between words break at their spaces, as Word breaks them, and a word wider than the line breaks after the last character that fits. A paragraph's `wordWrap`, which writes Word's "Allow Latin text to wrap in the middle of a word", lets the words of runs in an East Asian font or language break anywhere, as Word breaks them. Right-to-left paragraphs (`bidirectional`) break where left-to-right ones do
 - spacing before and after paragraphs, line spacing, indents and tab stops. A line in one font is as tall as Word makes it, to a fraction of a twip (a twentieth of a point): 268.55 twips for Calibri 11. A line in several fonts is as tall as the tallest of them. Contextual spacing (`contextualSpacing`) leaves out only its paragraph's own share of the space between it and a paragraph of the same style, as Word does: all of its space after, or as much of its space before as is more than the space after the paragraph above it
@@ -210,7 +210,7 @@ It stops at the first thing it can't lay out yet, and the page numbers of the he
 - a footnote in a table row that holds back lines of a cell beside it, which would fit on the page above the footnote, and a table row that fits on an empty page, but not with its footnote
 - a table whose rows give a column different widths, a table given no widths of more than 63 columns, more than Word allows, and, in a table whose cells all have widths, a word longer than the table can make room for, a long word in a table wider than its cells, or one in a table with cells merged across its columns
 - a long word in a cell merged across the columns of a table given no widths, which Word makes room for in a way not yet followed: a word longer than those columns' longest words together, when the table is narrowed to fit, or than their longest lines together, when more than one of them has anything in it
-- a character whose width in its font isn't known, so its line may not be where Word puts it: a letter or symbol its font doesn't have, which Word draws in another font, such as most mathematical symbols in Calibri, Arial and Courier New, which Word draws in Cambria Math; a few that Word drew in a way their widths can't be read from, such as Ž and Ё in Courier New; and a symbol font's own symbol, such as Wingdings' tick (`SymbolRun`), or a symbol whose character isn't four hexadecimal digits
+- a character whose width in its font isn't known, so its line may not be where Word puts it: a letter or symbol its font doesn't have, or its font's file has no glyph for, which Word draws in another font, such as most mathematical symbols in Calibri, Arial and Courier New, which Word draws in Cambria Math; a few that Word drew in a way their widths can't be read from, such as Ž and Ё in Courier New; and a symbol font's own symbol, such as Wingdings' tick (`SymbolRun`), or a symbol whose character isn't four hexadecimal digits
 - a document that hyphenates its words, compresses its punctuation, or uses Word's strict rules for the characters that can't start a line
 - a size given in a unit other than points, such as `size: "1cm"`, which Word ignores where no style gives a size, and a negative length of a fraction of a centimeter or millimeter
 - a paragraph justified for Arabic with a medium or high kashida (`MEDIUM_KASHIDA` and `HIGH_KASHIDA`), and Thai or Arabic text in one justified for Thai or with a low kashida, whose lines Word hasn't been seen breaking, and a justified or distributed line that only fits with its spaces squeezed when it has an en, em or ideographic space, which Word hasn't been seen squeezing
@@ -225,7 +225,7 @@ A wrong page number is worse than a blank one, so it doesn't guess.
 
 ## How close it is
 
-Text in fonts other than those five is measured as the most similar of them, so its page numbers are rougher. Aptos, Office's default font since 2023, is measured as Arial. In a browser, text can be measured in the fonts the page has instead (see [Measuring with a page's fonts](#measuring-with-a-pages-fonts)). Characters the width tables don't have, such as Hebrew, Arabic and Thai letters, box drawing, shapes such as the bullets ● and ■, and emoji, are measured as an average letter of the font, or an em for emoji, and East Asian fonts Office doesn't have as MS Mincho or MS Gothic.
+Text in fonts other than those five is measured as the most similar of them, so its page numbers are rougher. Aptos, Office's default font since 2023, is measured as Arial. Given the fonts' files, text is measured in them as Word measures it (see [Measuring fonts from their files](#measuring-fonts-from-their-files)), and in a browser, it can be measured in the fonts the page has instead (see [Measuring with a page's fonts](#measuring-with-a-pages-fonts)). Characters the width tables don't have, such as Hebrew, Arabic and Thai letters, box drawing, shapes such as the bullets ● and ■, and emoji, are measured as an average letter of the font, or an em for emoji, and East Asian fonts Office doesn't have as MS Mincho or MS Gothic.
 
 Each change to `docx/layout` is checked against LibreOffice's layout of a set of documents, and against the pages Word marked in documents it saved. Word lays out some things differently from LibreOffice, so turn `updateFields` on if the page numbers must be Word's own once the document is opened in Word: Word then asks to update the fields, and works them out again. LibreOffice rounds the height of each line to whole twips, 269 for Calibri 11, so where a line only just fits on a page, it can be on the next page in LibreOffice and on this one in Word, and in `docx/layout`, which follows Word.
 
@@ -291,3 +291,35 @@ const estimatePageNumbers = estimatePageNumbersWith({
 ```
 
 Space between characters, and text scaled wider or narrower, are added to what it measures, as the document's formatting gives them.
+
+## Measuring fonts from their files
+
+To measure text in other fonts as Word does, in Node or in a browser, give `estimatePageNumbersWith` their font files, as `fonts`:
+
+```ts
+import { readFile } from "node:fs/promises";
+import { Document } from "docx";
+import { estimatePageNumbersWith } from "docx/layout";
+
+const doc = new Document({
+    pageNumbers: estimatePageNumbersWith({
+        fonts: [
+            { data: await readFile("Aptos.ttf") },
+            { data: await readFile("Aptos-Bold.ttf") },
+            { data: await readFile("Aptos-Italic.ttf") },
+        ],
+    }),
+    styles: { default: { document: { run: { font: "Aptos", size: 24 } } } },
+    sections: [...],
+});
+```
+
+In a browser, give it the bytes of a file the page fetched, such as `await (await fetch("Aptos.ttf")).arrayBuffer()`. `docx` doesn't come with any font files.
+
+- **The files** are TrueType or OpenType fonts (`.ttf` or `.otf`), or collections of them (`.ttc`), as bytes: a `Uint8Array`, such as a Node `Buffer`, or an `ArrayBuffer`. Web fonts (`.woff` and `.woff2`) are compressed, and can't be read.
+- **Each file is one face of a font,** such as Aptos Bold, and its name and whether it is bold or italic are read from it. Give a file for each face the document uses. Bold text in a font without a bold file is measured as it would be without the files, and italic text without an italic file is measured with the upright one. To measure a font with a file of another name, give the name the document uses, such as `{ data: carlito, name: "Calibri" }`.
+- **Widths** are the font's own. The layout stops at a character the file has no glyph for, as Word draws it in another font (see [What it leaves blank](#what-it-leaves-blank)).
+- **Kerning** is applied as Word applies it: only to text that asks for it, with `kern` on a run or a style (`w:kern`), and only to text of that size or larger. `kern: 2` kerns text from 1 point, as Word's own Normal template does. The pairs are the font's, from its `GPOS` table, or its `kern` table when it has no `GPOS` table, and pairs across runs in the same font are kerned too.
+- **The height of a line** is the font's, as Word works it out: its ascent and descent for Windows and the gap between lines it adds to them, or its typographic ascent, descent and line gap when the font says to use them, as Aptos does.
+
+Text in fonts without files is measured as it is without them: with the width tables, or as `measureWidth` measures it when it is given too.

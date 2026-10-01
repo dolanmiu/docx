@@ -29,6 +29,7 @@ import {
     TextRun,
     patchDocument,
 } from "docx";
+import { buildTestFont } from "tests/font-file";
 
 import { estimatePageNumbers, estimatePageNumbersWith } from "./estimate-page-numbers";
 import type { FontToMeasure } from "./measure-width";
@@ -336,5 +337,56 @@ describe("estimatePageNumbersWith", () => {
 
     it("should work out the page numbers of a template once patchDocument has patched it, as estimatePageNumbers does", async () => {
         expect(resultsOf(await patchedTemplateOf(estimatePageNumbersWith({})))).to.deep.equal(["3", "3"]);
+    });
+
+    describe("with font files", () => {
+        // A font whose letters and spaces are an em wide, so 9 points of it fill a line of the page with 50 of them
+        const WIDE = buildTestFont({
+            name: "Probe Wide",
+            advances: Object.fromEntries([..." abcdefghijklmnopqrstuvwxyz"].map((letter) => [letter, 1000])),
+            windows: { ascent: 1000, descent: 1000 },
+        });
+        // A page of 9-point text in it: 100 words of 4 letters and a space, 500 ems, take 10 lines of 18 points
+        const words = "abcd ".repeat(100).trim();
+        const document = (font: string): IPropertiesOptions => ({
+            sections: [
+                {
+                    children: [
+                        heading("First", "first"),
+                        ...Array.from({ length: 30 }, () => new Paragraph({ children: [new TextRun({ text: words, font, size: 18 })] })),
+                        heading("Last", "last"),
+                    ],
+                },
+            ],
+        });
+
+        it("should measure text in the fonts it is given from their files", () => {
+            // Measured from the file, the 30 paragraphs take 300 lines of 18 points, 38 to a page
+            const estimator = estimatePageNumbersWith({ fonts: [{ data: WIDE }] });
+            expect(pageNumbersOf(document("Probe Wide"), estimator)).to.deep.include({ first: "1", last: "8" });
+            // Measured as Arial, as without the file, they take 150 lines of about 10 points
+            expect(pageNumbersOf(document("Probe Wide"))).to.deep.include({ first: "1", last: "3" });
+            expect(pageNumbersOf(document("Probe Wide"), estimatePageNumbersWith({ fonts: [] }))).to.deep.include({ first: "1", last: "3" });
+        });
+
+        it("should give the fonts in a file the name the caller gives them", () => {
+            const estimator = estimatePageNumbersWith({ fonts: [{ data: WIDE.slice().buffer, name: "Calibri" }] });
+            expect(pageNumbersOf(document("Calibri"), estimator)).to.deep.include({ last: "8" });
+            expect(pageNumbersOf(document("Probe Wide"), estimator)).to.deep.include({ last: "3" });
+        });
+
+        it("should measure text in other fonts as the options say", () => {
+            // Calibri half an em to a character, with Probe Wide from its file
+            const measureWidth = vi.fn((text: string, font: FontToMeasure) => (text.length * font.size) / 2);
+            const estimator = estimatePageNumbersWith({ fonts: [{ data: WIDE }], measureWidth });
+            expect(pageNumbersOf(document("Probe Wide"), estimator)).to.deep.include({ last: "8" });
+            expect(measureWidth.mock.calls.map(([, font]) => font.name)).not.to.include("Probe Wide");
+            pageNumbersOf(document("Calibri"), estimator);
+            expect(measureWidth.mock.calls.map(([, font]) => font.name)).to.include("Calibri");
+        });
+
+        it("should throw for a file that isn't a font", () => {
+            expect(() => estimatePageNumbersWith({ fonts: [{ data: new Uint8Array(16) }] })).to.throw("isn't a TrueType or OpenType font");
+        });
     });
 });

@@ -236,8 +236,31 @@ const othersOf = (pieces: readonly Piece[]): readonly Piece[] =>
 /** How many characters pieces have */
 const lengthOf = (pieces: readonly Piece[]): number => pieces.reduce((total, { text }) => total + [...text].length, 0);
 
-const widthOf = (pieces: readonly Piece[], measurer: TextMeasurer): number =>
-    pieces.reduce((total, { text, font }) => total + measurer.measureWidth(text, font), 0);
+/** Whether two pieces of text are in the same font, with the same formatting */
+const sameFont = (one: TextFont, other: TextFont): boolean =>
+    Object.keys(one).length === Object.keys(other).length &&
+    Object.entries(one).every(([key, value]) => other[key as keyof TextFont] === value);
+
+/**
+ * How wide pieces of text are. Pieces next to each other in the same font are measured together, so the pairs of
+ * characters across them are kerned, as Word kerns them across runs (word-fonts.docx F4).
+ */
+const widthOf = (pieces: readonly Piece[], measurer: TextMeasurer): number => {
+    if (pieces.length === 0) {
+        return 0;
+    }
+    let total = 0;
+    let [{ text, font }] = pieces;
+    for (const piece of pieces.slice(1)) {
+        if (sameFont(font, piece.font)) {
+            text += piece.text;
+            continue;
+        }
+        total += measurer.measureWidth(text, font);
+        ({ text, font } = piece);
+    }
+    return total + measurer.measureWidth(text, font);
+};
 
 // Most words are in one font, so their text needn't be joined
 const textOf = (pieces: readonly Piece[]): string => (pieces.length === 1 ? pieces[0].text : pieces.map(({ text }) => text).join(""));
