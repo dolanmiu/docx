@@ -2931,8 +2931,8 @@ var docxLayout = (function(exports) {
 	* the page when the section before has as many columns and one is left, and on a new page otherwise.
 	* Paragraphs break into lines, and pages break between lines, as their keep and widow control settings allow. Table
 	* rows break across pages between the lines of their cells, unless they are kept whole, and the table's header rows are
-	* repeated on each page. The footnotes of each page's lines take room at its bottom, and one that doesn't fit below its
-	* reference continues at the bottom of the next page. The endnotes follow the body.
+	* repeated at the top of each page and column. The footnotes of each page's lines take room at its bottom, and one that
+	* doesn't fit below its reference continues at the bottom of the next page. The endnotes follow the body.
 	* It stops at the first thing it can't lay out yet, and the bookmarks after it aren't placed.
 	*
 	* @module
@@ -3291,13 +3291,14 @@ var docxLayout = (function(exports) {
 		const balanceColumns = (end) => {
 			const from = columnsStart;
 			const page = pageCount;
+			const balanced = endsAfterTable(end - 1) ? end - 1 : end;
 			const layOut = (height) => {
 				balancing = {
 					page,
 					height
 				};
 				restore(from);
-				placeBlocks(from.index, end);
+				placeBlocks(from.index, balanced);
 			};
 			const fitsIn = (height) => {
 				try {
@@ -3318,6 +3319,7 @@ var docxLayout = (function(exports) {
 			layOut(tall);
 			balancing = void 0;
 			bottom = pageBottom;
+			placeBlocks(balanced, end);
 		};
 		/**
 		* Starts a section, from its first block (`firstBlock`): on a new page, or below what is on the page for a continuous
@@ -3596,7 +3598,7 @@ var docxLayout = (function(exports) {
 		/**
 		* Places a row that doesn't fit on the page by breaking it across pages between the lines of its cells, as Word
 		* breaks a row unless it is kept whole. A row none of whose lines fit moves to the next page. The table's header rows
-		* are repeated above the rest of it on each page.
+		* are repeated above the rest of it on each page and in each column.
 		*/
 		const splitRow = (row, height, startTablePage) => {
 			let parts = row.cells.map((cell) => cell.blocks.map((block, index) => ({
@@ -3648,10 +3650,7 @@ var docxLayout = (function(exports) {
 			spaceAfter = 0;
 			const startTablePage = (index) => {
 				nextColumn();
-				if (index >= headerRows && headerRows > 0) {
-					if (column > 0) throw new Unsupported("a table's header rows repeated in a column");
-					position += repeated;
-				}
+				if (index >= headerRows) position += repeated;
 			};
 			/** Whether a row fits on the page, with its footnotes */
 			const rowFits = (height, notes) => position + height + moreNoteRoom(notes) <= bottom - noteArea + TOLERANCE;
@@ -3724,13 +3723,23 @@ var docxLayout = (function(exports) {
 				notes: [...keptNotes, ...notesIn(nextLines.flatMap(({ markers }) => markers))]
 			};
 		};
+		/**
+		* Whether a block is the empty paragraph that ends a section right after a table. Word gives it a line of its own, as
+		* there is no line of a paragraph before it for its mark to go on (`word-header-columns.docx` H1 to H4, H7 and H8),
+		* where LibreOffice gives it no room
+		*/
+		const endsAfterTable = (index) => {
+			var _blocks$index, _blocks3;
+			const block = (_blocks$index = blocks[index]) === null || _blocks$index === void 0 ? void 0 : _blocks$index.block;
+			return (block === null || block === void 0 ? void 0 : block.type) === "paragraph" && block.sectionBreak === true && ((_blocks3 = blocks[index - 1]) === null || _blocks3 === void 0 ? void 0 : _blocks3.block.type) === "table";
+		};
 		const placeBlock = (block, index) => {
-			var _blocks4, _blocks5;
+			var _blocks5, _blocks6;
 			if (block.unsupported) throw new Unsupported(block.unsupported);
 			const width = section().columns[column];
-			if (block.type === "paragraph" && block.sectionBreak) {
-				var _blocks3;
-				const { spaceBefore } = measureParagraph(block, width, (_blocks3 = blocks[index - 1]) === null || _blocks3 === void 0 ? void 0 : _blocks3.block);
+			if (block.type === "paragraph" && block.sectionBreak && !endsAfterTable(index)) {
+				var _blocks4;
+				const { spaceBefore } = measureParagraph(block, width, (_blocks4 = blocks[index - 1]) === null || _blocks4 === void 0 ? void 0 : _blocks4.block);
 				if (placedInColumn) position += between(spaceAfter, spaceBefore);
 				spaceAfter = 0;
 				return;
@@ -3740,7 +3749,7 @@ var docxLayout = (function(exports) {
 				sectionSpaceAfter = void 0;
 				return;
 			}
-			const paragraph = measureParagraph(block, width, (_blocks4 = blocks[index - 1]) === null || _blocks4 === void 0 ? void 0 : _blocks4.block, (_blocks5 = blocks[index + 1]) === null || _blocks5 === void 0 ? void 0 : _blocks5.block);
+			const paragraph = measureParagraph(block, width, (_blocks5 = blocks[index - 1]) === null || _blocks5 === void 0 ? void 0 : _blocks5.block, (_blocks6 = blocks[index + 1]) === null || _blocks6 === void 0 ? void 0 : _blocks6.block);
 			if (paragraph.keepNext && placedInColumn) {
 				const { height: needed, notes } = keptHeight(index, width);
 				const fitsHere = position + needed + moreNoteRoom(notes) <= bottom - noteArea + TOLERANCE;
