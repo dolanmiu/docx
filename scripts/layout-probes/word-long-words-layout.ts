@@ -1,5 +1,5 @@
-// Prints the width docx/layout gives each column of the probe tables of word-long-words.ts, in twips, as
-// word-long-words.py prints Word's, to compare with word-long-words.word.txt.
+// Prints the width docx/layout gives each column of the probe tables of word-long-words.ts, in twips, to compare with
+// Word's, which word-autofit.py reads from word-long-words.pdf.
 //
 // Usage: npm run run-ts -- scripts/layout-probes/word-long-words-layout.ts
 import { Packer } from "docx";

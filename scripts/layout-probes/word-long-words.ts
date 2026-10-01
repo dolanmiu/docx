@@ -1,6 +1,6 @@
 // Probes of how Word widens a column for a word longer than the width its cells give it, in tables whose cells all have
 // widths, after `word-tables.docx` T7. Each table's first row names the table and its columns, and the borders show
-// where each column starts and ends, which word-long-words.py reads from a PDF of it. Calibri 11, with docx's Normal
+// where each column starts and ends, which word-autofit.py reads from a PDF of it. Calibri 11, with docx's Normal
 // Table style, so cells have margins of 108 twips. The page's text is 9026 twips wide.
 //
 // L1: a long word in the first of three columns, the others of long text, one of them with a long word of its own
@@ -12,7 +12,7 @@
 // L7: a word longer than the page's text
 // L8: a long word in a table laid out fixed
 //
-// Usage: npm run run-ts -- scripts/layout-probes/word-long-words.ts [path of the .docx]
+// Usage: npm run run-ts -- scripts/layout-probes/word-long-words.ts   (writes build/word-probes/word-long-words.docx)
 import * as fs from "fs";
 import { Document, type IPropertiesOptions, Packer, Paragraph, Table, TableCell, TableLayoutType, TableRow, WidthType } from "docx";
 
@@ -87,5 +87,6 @@ export const probeDocument = (options: Partial<IPropertiesOptions> = {}): Docume
     });
 
 if (process.argv[1]?.endsWith("word-long-words.ts")) {
-    Packer.toBuffer(probeDocument()).then((buffer) => fs.writeFileSync(process.argv[2] ?? "My Document.docx", buffer));
+    fs.mkdirSync("build/word-probes", { recursive: true });
+    Packer.toBuffer(probeDocument()).then((buffer) => fs.writeFileSync("build/word-probes/word-long-words.docx", buffer));
 }
