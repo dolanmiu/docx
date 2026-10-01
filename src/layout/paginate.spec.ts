@@ -1009,35 +1009,63 @@ describe("paginate", () => {
             expect(pagesOf(kept)).to.deep.equal({ a: "1", heading: "1", b: "2" });
         });
 
-        it("should keep the space before and after the empty paragraph that ends a section, as Word does", () => {
+        describe("the space around the empty paragraph that ends a section", () => {
             const sectionBreak: ParagraphBlock = { ...paragraph("break", 0), items: [], sectionBreak: true };
-            const content = (end: ParagraphBlock, spaceBefore: number): DocumentContent =>
-                document(
+            /**
+             * The space between a paragraph of a line at the end of a section and the next section's first, on the same page,
+             * from how many lines of 10 points fit below them
+             */
+            const spaceAcross = (last: ParagraphBlock, end: ParagraphBlock, first: ParagraphBlock): number => {
+                const lines = Array.from({ length: 5 }, (_, index) => paragraph(`line ${index}`, 1));
+                const pages = pagesOf(
+                    document([[last, 0], [end, 0], [first, 1], ...lines.map((line): readonly [Block, number] => [line, 1])], {
+                        sections: [SECTION, { ...SECTION, start: "continuous" }],
+                    }),
+                );
+                return 50 - 10 * lines.filter((_, index) => pages[`line ${index}`] === "1").length;
+            };
+            const endAfter = (spaceAfter: number, style?: string): ParagraphBlock => ({ ...sectionBreak, format: { spaceAfter }, style });
+
+            it("should collapse the space after the section's last paragraph and before the next's with the empty paragraph's, not each other, as Word does", () => {
+                // 10 after and 20 before, with the empty paragraph's spacing at 0, are 30, where LibreOffice has 20
+                expect(spaceAcross(paragraph("a", 1, { spaceAfter: 10 }), sectionBreak, paragraph("b", 1, { spaceBefore: 20 }))).to.equal(
+                    30,
+                );
+            });
+
+            it("should put the empty paragraph's space after only where the next section's space before is less, as Word does", () => {
+                // 0 after the last line, 20 after the empty paragraph and 0 before leave none (`word-rules2.docx` Q6b and
+                // Q7b), 40 after a paragraph of another style leaves 40 (`word-contextual.docx` X1c), and 40 before leaves 20
+                expect(spaceAcross(paragraph("a", 1), endAfter(20), paragraph("b", 1))).to.equal(0);
+                expect(spaceAcross(paragraph("a", 1, { spaceAfter: 40 }, "Other"), endAfter(20), paragraph("b", 1))).to.equal(40);
+                expect(spaceAcross(paragraph("a", 1), endAfter(20), paragraph("b", 1, { spaceBefore: 40 }))).to.equal(20);
+            });
+
+            it("should leave out the space of a paragraph with contextual spacing next to it, as Word does", () => {
+                const contextual = { contextualSpacing: true };
+                // 40 after a contextual last paragraph of the empty paragraph's style leave none (X1a), and so does 40 before
+                // a contextual first paragraph (X1b)
+                expect(spaceAcross(paragraph("a", 1, { spaceAfter: 40, ...contextual }), endAfter(20), paragraph("b", 1))).to.equal(0);
+                expect(spaceAcross(paragraph("a", 1), endAfter(20), paragraph("b", 1, { spaceBefore: 40, ...contextual }))).to.equal(0);
+                // An empty paragraph with contextual spacing, from its style, takes its space after from the next
+                // paragraph's space before only once
+                const contextualEnd: ParagraphBlock = { ...sectionBreak, format: { spaceAfter: 20, ...contextual } };
+                expect(spaceAcross(paragraph("a", 1), contextualEnd, paragraph("b", 1, { spaceBefore: 40 }))).to.equal(20);
+            });
+
+            it("should leave out the empty paragraph's space before at the top of a page, as any paragraph's", () => {
+                // After a page break, b and c fill the page below it
+                const atTop = document(
                     [
-                        [paragraph("a", 2, { spaceAfter: 10 }), 0],
-                        [end, 0],
-                        [paragraph("b", 2, { spaceBefore }), 1],
+                        [withItems(paragraph("a", 1), [{ type: "break", kind: "page", font: {} }]), 0],
+                        [{ ...sectionBreak, format: { spaceBefore: 30 } }, 0],
+                        [paragraph("b", 6), 1],
                         [paragraph("c", 1), 1],
                     ],
                     { sections: [SECTION, { ...SECTION, start: "continuous" }] },
                 );
-            // a's 10 points after go before the empty paragraph and b's 20 before after it, rather than the larger of the
-            // two, 20, so c doesn't fit below b
-            expect(pagesOf(content(sectionBreak, 20))).to.deep.equal({ a: "1", b: "1", c: "2" });
-            // Its own space after is the larger with b's space before: 10 below a, and 10 more, so c fits
-            expect(pagesOf(content({ ...sectionBreak, format: { spaceAfter: 10 } }, 10))).to.deep.equal({ a: "1", b: "1", c: "1" });
-            // At the top of a page, after a page break, its space before is left out, as any paragraph's is, so b and c
-            // fill the page below it
-            const atTop = document(
-                [
-                    [withItems(paragraph("a", 1), [{ type: "break", kind: "page", font: {} }]), 0],
-                    [{ ...sectionBreak, format: { spaceBefore: 30 } }, 0],
-                    [paragraph("b", 6), 1],
-                    [paragraph("c", 1), 1],
-                ],
-                { sections: [SECTION, { ...SECTION, start: "continuous" }] },
-            );
-            expect(pagesOf(atTop)).to.deep.equal({ a: "1", b: "2", c: "2" });
+                expect(pagesOf(atTop)).to.deep.equal({ a: "1", b: "2", c: "2" });
+            });
         });
 
         it("should start a section in the next column of the page after the same columns, as Word does", () => {

@@ -229,7 +229,7 @@ export const paginate = (
             one.format.contextualSpacing === true && other?.type === "paragraph" && other.style === one.style;
         const spaceBefore = format.spaceBefore ?? 0;
         const shareBefore =
-            before?.type === "paragraph" && contextual(before, paragraph) && !addsParagraphSpacing
+            before?.type === "paragraph" && !before.sectionBreak && contextual(before, paragraph) && !addsParagraphSpacing
                 ? Math.max(0, spaceBefore - (before.format.spaceAfter ?? 0))
                 : spaceBefore;
         return {
@@ -382,6 +382,19 @@ export const paginate = (
     let sectionSpaceAfter: number | undefined = 0;
     // The column the section starts in: the first, unless it starts in the next column
     let sectionColumn = 0;
+
+    /** Whether nothing of the section is placed yet, in the column it starts in or the first of a page */
+    const atSectionStart = (): boolean => sectionSpaceAfter !== undefined && (column === 0 || column === sectionColumn);
+
+    /**
+     * The space above a paragraph with this space before, below what is above it. At the start of a section, that is only
+     * as much of it as is more than the space after the section's last paragraph. When that is the empty paragraph that
+     * ends the section, its space after isn't on the page itself, in Word: 0 after the section's last line, 200 after the
+     * empty paragraph and 0 before leave none (`word-rules2.docx` Q6b and Q7b, `word-contextual.docx` X1). When it is a
+     * paragraph of text, its space after is still to come, and the larger of the two goes there, as between any two
+     */
+    const spaceAboveOf = (spaceBefore: number): number =>
+        atSectionStart() ? spaceAfter + between(sectionSpaceAfter!, spaceBefore) - sectionSpaceAfter! : between(spaceAfter, spaceBefore);
 
     /** Where the layout is at the start of a block, to lay out the blocks from it again */
     const snapshot = (index: number): Snapshot => ({
@@ -536,7 +549,8 @@ export const paginate = (
      * fits in, filled from the first, which halving the height tried finds. Nor are they when a section in them started
      * in the next column, which Word leaves as they are (`word-next-column.docx` N6). The next section starts below the
      * lowest of the columns and the space after the paragraph each ends with, and its space before is only as much as is
-     * more than the space after the section's last paragraph: the empty one that ends it, when there is one.
+     * more than the space after the section's last paragraph: the empty one that ends it, when there is one, whose space
+     * after is not below the columns itself (`word-rules2.docx` Q7b).
      */
     const endColumns = (end: number): void => {
         if (!columnBroken && !startedInColumn()) {
@@ -610,7 +624,9 @@ export const paginate = (
             // Word starts it in the next column of the page's columns, but which width its lines are broken at isn't known
             throw new Unsupported("a section that starts in the next column of columns of other widths");
         }
-        sectionSpaceAfter = spaceAfter;
+        // The space after the empty paragraph that ends the section, when there is one, which isn't on the page itself
+        const end = blocks[firstBlock - 1].block;
+        sectionSpaceAfter = end.type === "paragraph" && end.sectionBreak ? (end.format.spaceAfter ?? 0) : spaceAfter;
         sectionColumn = 0;
         const before = sectionIndex;
         sectionIndex = index;
@@ -814,14 +830,7 @@ export const paginate = (
          * The space above the paragraph's first line: at the top of a page, or of the column its section starts in, only
          * the first of a section has any
          */
-        const spaceAbove = (): number => {
-            if (placedInColumn) {
-                return between(spaceAfter, paragraph.spaceBefore);
-            }
-            return sectionSpaceAfter !== undefined && (column === 0 || column === sectionColumn)
-                ? between(sectionSpaceAfter, paragraph.spaceBefore) - sectionSpaceAfter
-                : 0;
-        };
+        const spaceAbove = (): number => (placedInColumn || atSectionStart() ? spaceAboveOf(paragraph.spaceBefore) : 0);
         let index = 0;
         while (index < lines.length) {
             const space = isStart && index === 0 ? spaceAbove() : 0;
@@ -1075,7 +1084,7 @@ export const paginate = (
         const keptLines = sum(
             kept.map(
                 ({ lines, spaceBefore }, offset) =>
-                    linesHeight(lines) + between(offset === 0 ? spaceAfter : kept[offset - 1].spaceAfter, spaceBefore),
+                    linesHeight(lines) + (offset === 0 ? spaceAboveOf(spaceBefore) : between(kept[offset - 1].spaceAfter, spaceBefore)),
             ),
         );
         const lastAfter = kept[kept.length - 1]?.spaceAfter ?? spaceAfter;
@@ -1110,12 +1119,14 @@ export const paginate = (
         if (block.type === "paragraph" && block.sectionBreak) {
             // The empty paragraph that ends a section takes no room, in Word and LibreOffice. In Word, the space around it
             // is still its own: the space after the paragraph before and its space before are the larger of the two, and
-            // its space after goes before the next section, where LibreOffice has the space after the paragraph before
-            const { spaceBefore, spaceAfter: after } = measureParagraph(block, width, blocks[index - 1]?.block, blocks[index + 1]?.block);
+            // the next section's space before is only as much as is more than its space after, where LibreOffice has the
+            // space after the paragraph before. Its space after is never on the page itself, so contextual spacing leaves
+            // nothing more of it out
+            const { spaceBefore } = measureParagraph(block, width, blocks[index - 1]?.block);
             if (placedInColumn) {
                 position += between(spaceAfter, spaceBefore);
             }
-            spaceAfter = after;
+            spaceAfter = 0;
             return;
         }
         if (block.type === "table") {

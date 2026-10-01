@@ -14,6 +14,23 @@
 //
 // Y1: the space between two paragraphs, contextual on neither (a), the first (b, c), the second (d, e) and both (f)
 //
+// Word's results (Word 16 for Mac, saved as PDFs, Best for printing, 2026-10-01), in twips, with LibreOffice 26.8's:
+//
+// | Probe | Word | LibreOffice |
+// | ----- | ---- | ----------- |
+// | X1a   | 0    | 400         |
+// | X1b   | 0    | 400         |
+// | X1c   | 400  | 400         |
+// | Y1a   | 600  | 600         |
+// | Y1b   | 200  | 200         |
+// | Y1c   | 400  | 400         |
+// | Y1d   | 400  | 600         |
+// | Y1e   | 200  | 600         |
+// | Y1f   | 0    | 0           |
+//
+// In X1, the empty paragraph's 200 after is never on the page: it only takes from the next section's space before, as at
+// the top of a page. In Y1, contextual spacing leaves out the paragraph's own space, its space after or its space before.
+//
 // Usage: npm run run-ts -- scripts/layout-probes/word-contextual.ts [output directory]
 import * as fs from "fs";
 import * as path from "path";
