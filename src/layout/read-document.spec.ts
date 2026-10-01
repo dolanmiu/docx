@@ -688,6 +688,13 @@ describe("readDocument", () => {
             expect(tableOf([], [cell([width], p(r(t("a")))), cell([width], p(r(t("b"))))]).widen).to.deep.equal({ acrossColumns: false });
         });
 
+        it("should stop at a table given no widths of more columns than Word's 63, rather than count each of them", () => {
+            const across = (span: number): TableBlock =>
+                readBody([{ "w:tbl": [{ "w:tr": [cell([value("w:gridSpan", span)], p(r(t("a"))))] }] }]).blocks[0].block as TableBlock;
+            expect(across(63).unsupported).to.equal(undefined);
+            expect(across(2 ** 32).unsupported).to.equal("a table given no widths of more than 63 columns");
+        });
+
         it("should read the paragraphs in content controls and custom XML in a cell", () => {
             const content = readBody([
                 {

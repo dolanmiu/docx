@@ -249,6 +249,8 @@ const DEFAULT_SECTION: Omit<Section, "headers" | "footers" | "columns"> = {
 const EMUS_PER_POINT = 12700;
 /** How far apart, in points, the widths two rows give a column can be before they differ: rounding, not a choice */
 const WIDTH_TOLERANCE = 1;
+/** The most columns a table in Word can have */
+const MOST_COLUMNS = 63;
 // Border widths are in eighths of a point
 const EIGHTHS_PER_POINT = 8;
 // Shares of a width, such as a table's of the page's, are in fiftieths of a percent, unless they are written with a %
@@ -716,8 +718,12 @@ const readTable = (element: XmlObject, reader: Reader): TableBlock => {
     const blocks = tableCells.flatMap((cell) => cell.blocks);
     const fixed = attributesOf(find(properties, "w:tblLayout"))["w:type"] === "fixed";
     const fits = !fixed && tableCells.some(({ ownWidth }) => ownWidth === undefined);
+    // How Word lays out a table of more columns than it can have isn't known, and sizing one to its text would count a
+    // column for each it says it has, however many
+    const columns = Math.max(0, ...read.flatMap(({ edges }) => [...edges.keys()]));
+    const unfitted = columns > MOST_COLUMNS ? `a table given no widths of more than ${MOST_COLUMNS} columns` : undefined;
     const unsupported =
-        (!fits && unequal ? "a table whose rows give a column different widths" : undefined) ??
+        (fits ? unfitted : unequal ? "a table whose rows give a column different widths" : undefined) ??
         blocks.find((block) => block.unsupported !== undefined)?.unsupported;
     return {
         type: "table",
