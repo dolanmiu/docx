@@ -8,7 +8,7 @@
  *
  * @module
  */
-import { createBegin, createEnd, createSeparate } from "@file/paragraph/run/field";
+import { createBeginDirtyUntilWritten, createEnd, createSeparate } from "@file/paragraph/run/field";
 
 import { Run } from "../run";
 import { PageReferenceFieldInstruction } from "./pageref-field-instruction";
@@ -39,6 +39,9 @@ export type IPageReferenceOptions = {
  * The PAGEREF field displays the page number of the page containing
  * the specified bookmark, useful for cross-references like "see page 5".
  *
+ * It is written dirty, so Word fills in the page number when it opens the document, after asking to. When the
+ * document's `pageNumbers` writes the number, it is written as it is, and Word doesn't ask.
+ *
  * @publicApi
  *
  * @example
@@ -59,7 +62,12 @@ export type IPageReferenceOptions = {
 export class PageReference extends Run {
     public constructor(bookmarkId: string, options: IPageReferenceOptions = {}) {
         super({
-            children: [createBegin(true), new PageReferenceFieldInstruction(bookmarkId, options), createSeparate(), createEnd()],
+            children: [
+                createBeginDirtyUntilWritten(),
+                new PageReferenceFieldInstruction(bookmarkId, options),
+                createSeparate(),
+                createEnd(),
+            ],
         });
     }
 }

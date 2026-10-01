@@ -8,7 +8,7 @@
 
 Without it, their page numbers are blank until Word updates the fields, because they depend on how the document is laid out. Word only updates them when the document asks it to (`updateFields`) and the reader says yes, or when the reader updates the table. LibreOffice never fills in a table of contents' page numbers, so documents it converts to PDF have none.
 
-It is opt-in. The page numbers are estimates: Word still works them out again when it updates the fields.
+It is opt-in. The page numbers are estimates: Word still works them out again when it updates the fields, such as when the reader updates the table.
 
 ## Importing
 
@@ -32,8 +32,7 @@ import { estimatePageNumbers } from "docx/layout";
 const text = "The harbour was rebuilt after the storm, and this report sets out what it cost and what is left to do. ".repeat(12);
 
 const doc = new Document({
-    // Word still updates the page numbers when it opens the document
-    features: { updateFields: true },
+    // Without updateFields, Word shows the page numbers as they are written, and doesn't ask to update them
     pageNumbers: estimatePageNumbers,
     sections: [
         {
@@ -62,6 +61,18 @@ The page numbers are written into:
 - the entries of each [Table of Contents](usage/table-of-contents.md) filled in from the headings
 - each [`PageReference`](usage/bookmarks.md#page-references), unless it shows its position relative to the bookmark (`useRelativePosition`)
 - the [number of pages](usage/page-numbers.md#total-number-of-pages) of the document (`PageNumber.TOTAL_PAGES`) and of [each section](usage/page-numbers.md#total-number-of-pages-in-a-section) (`PageNumber.TOTAL_PAGES_IN_SECTION`), in the text, headers and footers. A section's is left blank when it shares a page with another section, or has a blank page before or after it
+
+## Opening the document in Word
+
+`docx` writes page references and tables of contents as fields for Word to update, so Word asks "This document contains fields that may refer to other files. Do you want to update the fields in this document?" when it opens the document. `updateFields` makes it ask too. When `docx/layout` writes the page number of a page reference, the field is written as it is, and so is a table of contents once all of its page numbers are written. Word then shows the numbers as they are written, and doesn't update them.
+
+So with every number written, leave `updateFields` off, and Word opens the document without asking. Word still asks when:
+
+- the document has `updateFields` on, which asks Word to update all of its fields
+- `docx/layout` stopped before a heading or bookmark (see [What it leaves blank](#what-it-leaves-blank)): the page references to it, and the tables of contents that list it, are left for Word to fill in
+- a page reference shows its position relative to the bookmark (`useRelativePosition`), which isn't written
+- a table of contents isn't filled in from the headings, because it was given `cachedEntries` or `contentChildren` or lists no heading, or it was given `beginDirty: true`
+- the document has a `SequentialIdentifier`, a SEQ field, which is written for Word to number
 
 ## What it follows
 
@@ -102,7 +113,7 @@ A wrong page number is worse than a blank one, so it doesn't guess.
 
 Text in fonts other than those five is measured as the most similar of them, so its page numbers are rougher. Aptos, Office's default font since 2023, is measured as Arial. In a browser, text can be measured in the fonts the page has instead (see [Measuring with a page's fonts](#measuring-with-a-pages-fonts)). Letters the fonts have no widths for, such as Greek, Cyrillic, Hebrew, Arabic and Thai, are measured as an average letter of the font, and East Asian fonts Office doesn't have as MS Mincho or MS Gothic.
 
-Each change to `docx/layout` is checked against LibreOffice's layout of a set of documents. Word lays out some things differently from LibreOffice, so keep `updateFields` on if the page numbers must be exact once the document is opened in Word. LibreOffice rounds the height of each line to whole twips, 269 for Calibri 11, so where a line only just fits on a page, it can be on the next page in LibreOffice and on this one in Word, and in `docx/layout`, which follows Word.
+Each change to `docx/layout` is checked against LibreOffice's layout of a set of documents. Word lays out some things differently from LibreOffice, so turn `updateFields` on if the page numbers must be Word's own once the document is opened in Word: Word then asks to update the fields, and works them out again. LibreOffice rounds the height of each line to whole twips, 269 for Calibri 11, so where a line only just fits on a page, it can be on the next page in LibreOffice and on this one in Word, and in `docx/layout`, which follows Word.
 
 Laying out a document takes about 0.3 seconds per 100 pages in Node.
 

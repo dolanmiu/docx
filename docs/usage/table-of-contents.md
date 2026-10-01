@@ -6,7 +6,7 @@ A Table of Contents is a field. `docx` writes it with an entry for each heading 
 
 The page numbers depend on how the document is laid out on the page, so `docx` leaves them for Word to fill in when it updates the field. With `updateFields` on, Word asks "This document contains fields that may refer to other files. Do you want to update the fields in this document?" when the document is opened. Say yes, and Word fills in the page numbers. Applications that don't update fields, such as LibreOffice, show the entries without page numbers until the table is updated there.
 
-To write the page numbers with the document, give it `pageNumbers: estimatePageNumbers` from `docx/layout`, which lays out its pages as Word would. See [Layout](usage/layout.md).
+To write the page numbers with the document, give it `pageNumbers: estimatePageNumbers` from `docx/layout`, which lays out its pages as Word would. Word then shows them as they are written, and doesn't ask to update the fields. See [Layout](usage/layout.md).
 
 The complete documentation can be found [here](https://www.ecma-international.org/publications/standards/Ecma-376.htm) (at Part 1, Page 1251).
 
@@ -142,10 +142,10 @@ const doc = new Document({
 
 These options control the TOC structure rather than field switches:
 
-| Option          | Type                         | Default | Description                                                                                                           |
-| --------------- | ---------------------------- | ------- | --------------------------------------------------------------------------------------------------------------------- |
-| contentChildren | `(XmlComponent \| string)[]` | `[]`    | Additional content to include inside the TOC between the field begin and end markers. Useful for placeholder entries. |
-| beginDirty      | `boolean`                    | `true`  | When `true`, marks the field as needing update, prompting Word to regenerate the TOC on open.                         |
+| Option          | Type                         | Default | Description                                                                                                                                                                                                                                                                                                                  |
+| --------------- | ---------------------------- | ------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| contentChildren | `(XmlComponent \| string)[]` | `[]`    | Additional content to include inside the TOC between the field begin and end markers. Useful for placeholder entries.                                                                                                                                                                                                        |
+| beginDirty      | `boolean`                    | `true`  | When `true`, marks the field as needing update, prompting Word to regenerate the TOC on open. When it isn't given, a table filled in from the headings isn't marked once the document's `pageNumbers` has written all of its page numbers, so Word doesn't ask (see [Layout](usage/layout.md#opening-the-document-in-word)). |
 
 ### Example with contentChildren
 

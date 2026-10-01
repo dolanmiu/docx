@@ -9,7 +9,7 @@
  *
  * @module
  */
-import { BuilderElement, type XmlComponent } from "@file/xml-components";
+import { BuilderElement, type IContext, type IXmlableObject, type XmlComponent } from "@file/xml-components";
 
 /**
  * Field character types that delimit field regions.
@@ -61,6 +61,39 @@ const createFieldChar = (type: (typeof FieldCharacterType)[keyof typeof FieldCha
  * field instructions, an optional separate character, field result, and an end character.
  */
 export const createBegin = (dirty?: boolean): XmlComponent => createFieldChar(FieldCharacterType.BEGIN, dirty);
+
+/** The formatted begin characters of the fields that are dirty only until their results are written */
+const dirtyUntilWritten = new WeakSet<object>();
+
+/** The beginning of a field that is dirty, so Word updates it, until its result is written */
+class BeginDirtyUntilWritten extends BuilderElement<IFieldCharAttributes> {
+    public constructor() {
+        super({
+            name: "w:fldChar",
+            attributes: {
+                type: { key: "w:fldCharType", value: FieldCharacterType.BEGIN },
+                dirty: { key: "w:dirty", value: true },
+            },
+        });
+    }
+
+    public prepForXml(context: IContext): IXmlableObject | undefined {
+        const xml = super.prepForXml(context)!;
+        dirtyUntilWritten.add(xml);
+        return xml;
+    }
+}
+
+/**
+ * Creates the beginning of a field whose result `docx` can write when the document is given page numbers, such as a
+ * page reference. It is written dirty, so Word updates the field when it opens the document, and asks to. Once its
+ * result is written, the field is no longer dirty (see {@link isDirtyUntilWritten}), so Word shows the result as it is.
+ */
+export const createBeginDirtyUntilWritten = (): XmlComponent => new BeginDirtyUntilWritten();
+
+/** Whether a formatted field character is the beginning of a field that is dirty only until its result is written */
+export const isDirtyUntilWritten = (element: unknown): boolean =>
+    typeof element === "object" && element !== null && dirtyUntilWritten.has(element);
 
 /**
  * Creates the separator between field code and field result in a complex field.

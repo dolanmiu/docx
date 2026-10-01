@@ -38,7 +38,8 @@ type ToCEntry = {
  * Unless it is given `cachedEntries` or `contentChildren`, it is written with an
  * entry for each heading its options include, linked to a bookmark on the heading,
  * so it isn't empty before Word updates it or in applications that don't update it.
- * The page numbers are left for Word to fill in when it updates the field.
+ * The page numbers are left for Word to fill in when it updates the field, unless the document's `pageNumbers`
+ * writes them.
  *
  * Reference: http://officeopenxml.com/WPtableOfContents.php
  *
@@ -72,7 +73,7 @@ export class TableOfContents extends FileChild {
         {
             contentChildren = [],
             cachedEntries = [],
-            beginDirty = true,
+            beginDirty,
             ...properties
         }: ITableOfContentsOptions & {
             readonly contentChildren?: readonly (XmlComponent | string)[];
@@ -82,6 +83,11 @@ export class TableOfContents extends FileChild {
              * Note that indentation should come from the paragraph styles defined on the document. By default the styles are TOC1, TOC2, etc. These can be overridden with stylesWithLevels (\t)
              */
             readonly cachedEntries?: readonly ToCEntry[];
+            /**
+             * Whether the field is written dirty, so Word updates the table when it opens the document, after asking to.
+             * Default is dirty, unless the table is filled in from the headings and the document's `pageNumbers` writes
+             * all of its page numbers: then Word shows it as it is, and doesn't ask.
+             */
             readonly beginDirty?: boolean;
         } = {},
     ) {
@@ -92,7 +98,7 @@ export class TableOfContents extends FileChild {
 
         const beginParagraphMandatoryChildren = [
             new Run({
-                children: [createBegin(beginDirty), new FieldInstruction(properties), createSeparate()],
+                children: [createBegin(beginDirty ?? true), new FieldInstruction(properties), createSeparate()],
             }),
         ];
 
