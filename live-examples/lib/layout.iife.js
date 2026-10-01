@@ -2960,14 +2960,16 @@ var docxLayout = (function(exports) {
 			return lines;
 		};
 		const measureParagraph = (paragraph, width, before, after) => {
-			var _format$spaceBefore, _format$spaceAfter;
+			var _format$spaceBefore, _before$format$spaceA, _format$spaceAfter;
 			const { format } = paragraph;
 			const lines = linesOf(paragraph, width);
-			const sameStyle = (other) => format.contextualSpacing === true && (other === null || other === void 0 ? void 0 : other.type) === "paragraph" && other.style === paragraph.style;
+			const contextual = (one, other) => one.format.contextualSpacing === true && (other === null || other === void 0 ? void 0 : other.type) === "paragraph" && other.style === one.style;
+			const spaceBefore = (_format$spaceBefore = format.spaceBefore) !== null && _format$spaceBefore !== void 0 ? _format$spaceBefore : 0;
+			const shareBefore = (before === null || before === void 0 ? void 0 : before.type) === "paragraph" && !before.sectionBreak && contextual(before, paragraph) && !addsParagraphSpacing ? Math.max(0, spaceBefore - ((_before$format$spaceA = before.format.spaceAfter) !== null && _before$format$spaceA !== void 0 ? _before$format$spaceA : 0)) : spaceBefore;
 			return {
 				lines,
-				spaceBefore: sameStyle(before) ? 0 : (_format$spaceBefore = format.spaceBefore) !== null && _format$spaceBefore !== void 0 ? _format$spaceBefore : 0,
-				spaceAfter: sameStyle(after) ? 0 : (_format$spaceAfter = format.spaceAfter) !== null && _format$spaceAfter !== void 0 ? _format$spaceAfter : 0,
+				spaceBefore: contextual(paragraph, before) ? 0 : shareBefore,
+				spaceAfter: contextual(paragraph, after) ? 0 : (_format$spaceAfter = format.spaceAfter) !== null && _format$spaceAfter !== void 0 ? _format$spaceAfter : 0,
 				keepNext: format.keepNext === true,
 				keepLines: format.keepLines === true,
 				widowControl: format.widowControl !== false,
@@ -3074,6 +3076,16 @@ var docxLayout = (function(exports) {
 		let spaceAfter = 0;
 		let sectionSpaceAfter = 0;
 		let sectionColumn = 0;
+		/** Whether nothing of the section is placed yet, in the column it starts in or the first of a page */
+		const atSectionStart = () => sectionSpaceAfter !== void 0 && (column === 0 || column === sectionColumn);
+		/**
+		* The space above a paragraph with this space before, below what is above it. At the start of a section, that is only
+		* as much of it as is more than the space after the section's last paragraph. When that is the empty paragraph that
+		* ends the section, its space after isn't on the page itself, in Word: 0 after the section's last line, 200 after the
+		* empty paragraph and 0 before leave none (`word-rules2.docx` Q6b and Q7b, `word-contextual.docx` X1). When it is a
+		* paragraph of text, its space after is still to come, and the larger of the two goes there, as between any two
+		*/
+		const spaceAboveOf = (spaceBefore) => atSectionStart() ? spaceAfter + between(sectionSpaceAfter, spaceBefore) - sectionSpaceAfter : between(spaceAfter, spaceBefore);
 		/** Where the layout is at the start of a block, to lay out the blocks from it again */
 		const snapshot = (index) => ({
 			index,
@@ -3177,7 +3189,8 @@ var docxLayout = (function(exports) {
 		* fits in, filled from the first, which halving the height tried finds. Nor are they when a section in them started
 		* in the next column, which Word leaves as they are (`word-next-column.docx` N6). The next section starts below the
 		* lowest of the columns and the space after the paragraph each ends with, and its space before is only as much as is
-		* more than the space after the section's last paragraph: the empty one that ends it, when there is one.
+		* more than the space after the section's last paragraph: the empty one that ends it, when there is one, whose space
+		* after is not below the columns itself (`word-rules2.docx` Q7b).
 		*/
 		const endColumns = (end) => {
 			if (!columnBroken && !startedInColumn()) balanceColumns(end);
@@ -3219,7 +3232,7 @@ var docxLayout = (function(exports) {
 		* one, after the columns before it are ended
 		*/
 		const startSection = (index, firstBlock) => {
-			var _current$firstNumber;
+			var _end$format$spaceAfte, _current$firstNumber;
 			const previous = section();
 			const current = sections[index];
 			lastPages.set(sectionIndex, pageCount);
@@ -3232,7 +3245,8 @@ var docxLayout = (function(exports) {
 			}
 			const inNextColumn = startsInNextColumn(previous, current);
 			if (inNextColumn && previous.columns.some((width, at) => width !== current.columns[at])) throw new Unsupported("a section that starts in the next column of columns of other widths");
-			sectionSpaceAfter = spaceAfter;
+			const end = blocks[firstBlock - 1].block;
+			sectionSpaceAfter = end.type === "paragraph" && end.sectionBreak ? (_end$format$spaceAfte = end.format.spaceAfter) !== null && _end$format$spaceAfte !== void 0 ? _end$format$spaceAfte : 0 : spaceAfter;
 			sectionColumn = 0;
 			const before = sectionIndex;
 			sectionIndex = index;
@@ -3394,10 +3408,7 @@ var docxLayout = (function(exports) {
 			* The space above the paragraph's first line: at the top of a page, or of the column its section starts in, only
 			* the first of a section has any
 			*/
-			const spaceAbove = () => {
-				if (placedInColumn) return between(spaceAfter, paragraph.spaceBefore);
-				return sectionSpaceAfter !== void 0 && (column === 0 || column === sectionColumn) ? between(sectionSpaceAfter, paragraph.spaceBefore) - sectionSpaceAfter : 0;
-			};
+			const spaceAbove = () => placedInColumn || atSectionStart() ? spaceAboveOf(paragraph.spaceBefore) : 0;
 			let index = 0;
 			while (index < lines.length) {
 				const space = isStart && index === 0 ? spaceAbove() : 0;
@@ -3584,7 +3595,7 @@ var docxLayout = (function(exports) {
 				return measureParagraph(blocks[offset].block, width, (_blocks = blocks[offset - 1]) === null || _blocks === void 0 ? void 0 : _blocks.block, (_blocks2 = blocks[offset + 1]) === null || _blocks2 === void 0 ? void 0 : _blocks2.block);
 			};
 			const kept = Array.from({ length: chain }, (_, offset) => measured(index + offset));
-			const keptLines = sum(kept.map(({ lines, spaceBefore }, offset) => linesHeight(lines) + between(offset === 0 ? spaceAfter : kept[offset - 1].spaceAfter, spaceBefore)));
+			const keptLines = sum(kept.map(({ lines, spaceBefore }, offset) => linesHeight(lines) + (offset === 0 ? spaceAboveOf(spaceBefore) : between(kept[offset - 1].spaceAfter, spaceBefore))));
 			const lastAfter = (_kept$spaceAfter = (_kept = kept[kept.length - 1]) === null || _kept === void 0 ? void 0 : _kept.spaceAfter) !== null && _kept$spaceAfter !== void 0 ? _kept$spaceAfter : spaceAfter;
 			const keptNotes = notesIn(kept.flatMap(({ lines }) => lines.flatMap(({ markers }) => markers)));
 			const anchor = blocks[index + chain].block;
@@ -3609,14 +3620,14 @@ var docxLayout = (function(exports) {
 			};
 		};
 		const placeBlock = (block, index) => {
-			var _blocks5, _blocks6;
+			var _blocks4, _blocks5;
 			if (block.unsupported) throw new Unsupported(block.unsupported);
 			const width = section().columns[column];
 			if (block.type === "paragraph" && block.sectionBreak) {
-				var _blocks3, _blocks4;
-				const { spaceBefore, spaceAfter: after } = measureParagraph(block, width, (_blocks3 = blocks[index - 1]) === null || _blocks3 === void 0 ? void 0 : _blocks3.block, (_blocks4 = blocks[index + 1]) === null || _blocks4 === void 0 ? void 0 : _blocks4.block);
+				var _blocks3;
+				const { spaceBefore } = measureParagraph(block, width, (_blocks3 = blocks[index - 1]) === null || _blocks3 === void 0 ? void 0 : _blocks3.block);
 				if (placedInColumn) position += between(spaceAfter, spaceBefore);
-				spaceAfter = after;
+				spaceAfter = 0;
 				return;
 			}
 			if (block.type === "table") {
@@ -3624,7 +3635,7 @@ var docxLayout = (function(exports) {
 				sectionSpaceAfter = void 0;
 				return;
 			}
-			const paragraph = measureParagraph(block, width, (_blocks5 = blocks[index - 1]) === null || _blocks5 === void 0 ? void 0 : _blocks5.block, (_blocks6 = blocks[index + 1]) === null || _blocks6 === void 0 ? void 0 : _blocks6.block);
+			const paragraph = measureParagraph(block, width, (_blocks4 = blocks[index - 1]) === null || _blocks4 === void 0 ? void 0 : _blocks4.block, (_blocks5 = blocks[index + 1]) === null || _blocks5 === void 0 ? void 0 : _blocks5.block);
 			if (paragraph.keepNext && placedInColumn) {
 				const { height: needed, notes } = keptHeight(index, width);
 				const fitsHere = position + needed + moreNoteRoom(notes) <= bottom - noteArea + TOLERANCE;
