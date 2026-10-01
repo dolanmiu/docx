@@ -3,7 +3,8 @@
  *
  * Each page's body is filled from the top, between the page's margins, or its header and footer where they are taller,
  * and in columns, the first column and then the next. The columns on the page before a continuous section break are
- * balanced, as short as what is in them fits in.
+ * balanced, as short as what is in them fits in. A section that starts in the next column starts in the next column of
+ * the page when the section before has the same columns and one is left, and on a new page otherwise.
  * Paragraphs break into lines, and pages break between lines, as their keep and widow control settings allow. Table
  * rows break across pages between the lines of their cells, unless they are kept whole, and the table's header rows are
  * repeated on each page. The footnotes of each page's lines take room at its bottom, and one that doesn't fit below its
@@ -503,6 +504,20 @@ export const paginate = (
         current.start === "continuous" && previous.pageWidth === current.pageWidth && previous.pageHeight === current.pageHeight;
 
     /**
+     * Whether a section starts in the next column of the page the section before it ends on, as Word starts one that
+     * starts in the next column when the section before has the same columns, on pages of the same size, and one is left
+     * after the column it ends in (`word-rules2.docx` Q5a). Otherwise it starts on a new page: after 2 columns into 3, 1
+     * into 2, or the last column started (Q5b to Q5d)
+     */
+    const startsInNextColumn = (previous: Section, current: Section): boolean =>
+        current.start === "nextColumn" &&
+        previous.pageWidth === current.pageWidth &&
+        previous.pageHeight === current.pageHeight &&
+        previous.columns.length === current.columns.length &&
+        previous.columns.every((width, index) => width === current.columns[index]) &&
+        column + 1 < current.columns.length;
+
+    /**
      * Ends the columns on the page before a continuous section break, as Word does. Unless a column break is in them, they
      * are balanced: what is in them, up to the section's next block (`end`), is laid out again in the shortest columns it
      * fits in, filled from the first, which halving the height tried finds. The next section starts below the lowest of
@@ -569,7 +584,20 @@ export const paginate = (
         }
         const continuous = continuesOnPage(previous, current);
         if (continuous && previous.columns.length > 1 && (placedInColumn || column > 0)) {
+            if (columnsStart!.pageCount === pageCount && columnsStart!.column > 0) {
+                // The columns on the page start with a section that started in the next column
+                throw new Unsupported("columns evened out after a section that starts in the next column");
+            }
             endColumns(firstBlock);
+        }
+        const inNextColumn = startsInNextColumn(previous, current);
+        if (inNextColumn && columnTop > top) {
+            // The columns start below what is on the page, after a continuous section break
+            throw new Unsupported("a section that starts in the next column of columns below text");
+        }
+        const first = blocks[firstBlock].block;
+        if (inNextColumn && first.type === "paragraph" && !first.sectionBreak && (first.format.spaceBefore ?? 0) > 0) {
+            throw new Unsupported("the space before a section's first paragraph in the next column");
         }
         sectionSpaceAfter = spaceAfter;
         const before = sectionIndex;
@@ -584,8 +612,14 @@ export const paginate = (
             sharingPages.add(before).add(index);
             return;
         }
-        if (current.start === "nextColumn" && (previous.columns.length > 1 || current.columns.length > 1)) {
-            throw new Unsupported("a section that starts in the next column");
+        if (inNextColumn) {
+            // The columns before it aren't evened out, and it starts at the top of the next column (`word-rules2.docx` Q5a)
+            nextColumn();
+            // eslint-disable-next-line functional/immutable-data
+            firstPages.set(index, pageCount);
+            // eslint-disable-next-line functional/immutable-data
+            sharingPages.add(before).add(index);
+            return;
         }
         const nextNumber = current.firstNumber ?? pageNumber + 1;
         if ((current.start === "evenPage" && nextNumber % 2 !== 0) || (current.start === "oddPage" && nextNumber % 2 === 0)) {
