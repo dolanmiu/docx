@@ -27,6 +27,7 @@ table style and each cell's width.
 | `word-probes`               | U1 to U8: the widths of tables given no widths with merged cells or tables in cells, footnotes continued, footnotes in table rows and in columns, rows with merged cells, a table in a cell or a set height across pages, rows taller than a page, the space before a continuous section's first paragraph with a page break before it, and lines of only spaces before a break                                                                               | `word-probes.py`               |
 | `word-header-columns`       | H1 to H8: a table's header rows repeated at the top of each column, in columns evened out before a continuous section break and on a second page, the columns of a table that goes on from the page before evened out, and the line of the empty paragraph that ends a section after a table                                                                                                                                                                  | `word-header-columns.py`       |
 | `word-footnotes-in-columns` | N1 to N12: footnotes in columns, which Word lays out in the columns too, one after the other from the first and evened out, whichever column they are referred to from, with every column ending above them. Below columns that start below text across the page, or are evened out above it, a footnote that wraps in a column, one too long for the room below its reference, and footnotes referred to from text across the page and from columns below it | `word-footnotes-in-columns.py` |
+| `word-line-heights`         | H and T1 to T4: the height of lines in each font, size and line spacing, measured over a page, and how a table row breaks across pages: with room for the table's bottom border below it and for the space after a cell's paragraph, rows of an at-least height with less room than their height, and a page that ends between rows                                                                                                                           | `word-line-heights.py`         |
 | `fsplit`                    | How a footnote that doesn't fit below its reference goes on to the next page. Laid out in LibreOffice only, so it has no PDF from Word: Word's split of an 8-line footnote is `word-rules` P7b                                                                                                                                                                                                                                                                | `pagelines.py`                 |
 
 ## Make a probe's `.docx`
@@ -85,6 +86,9 @@ pdftotext -bbox-layout scripts/layout-probes/word-probes.pdf build/word-probes/w
 for n in 1 2 3 4 5; do pdftocairo -svg -f $n -l $n scripts/layout-probes/word-probes.pdf build/word-probes/word-probes-$n.svg; done
 python3 scripts/layout-probes/word-probes.py build/word-probes/word-probes
 ```
+
+`word-line-heights.py` also measures the height of lines in other PDFs, such as `word-rules`' P3 and Word's PDFs of the
+layout demos, and the lines of the rows of `tables-across-pages` that break across pages: see the top of it.
 
 `pagelines.py` prints the lines of one page with their top, height, the gap from the line above in twips, and left
 edge, which shows where each column of a table starts:

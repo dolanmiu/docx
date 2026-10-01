@@ -15,7 +15,7 @@
 export type FontWidths = {
     /** The font's name */
     readonly name: string;
-    /** Height of a line of single-spaced text, in thousandths of an em */
+    /** Height of a line of single-spaced text, in thousandths of an em, unrounded */
     readonly lineHeight: number;
     /** Width of each character in {@link FONT_WIDTH_CHARACTERS}, in thousandths of an em */
     readonly regular: readonly number[];
@@ -32,7 +32,7 @@ export const FONT_WIDTH_CHARACTERS =
 export const FONT_WIDTHS: readonly FontWidths[] = [
     {
         name: "Calibri",
-        lineHeight: 1221,
+        lineHeight: 1220.703125,
         regular: [
             226, 326, 401, 498, 507, 715, 682, 221, 303, 303, 498, 498, 250, 306, 252, 386, 507, 507, 507, 507, 507, 507, 507, 507, 507,
             507, 268, 268, 498, 498, 498, 463, 894, 579, 544, 533, 615, 488, 459, 631, 623, 252, 319, 520, 420, 855, 646, 662, 517, 673,
@@ -58,7 +58,7 @@ export const FONT_WIDTHS: readonly FontWidths[] = [
     },
     {
         name: "Cambria",
-        lineHeight: 1172,
+        lineHeight: 1172.36328125,
         regular: [
             220, 286, 393, 619, 506, 890, 687, 237, 382, 382, 427, 554, 205, 332, 205, 490, 554, 554, 554, 554, 554, 554, 554, 554, 554,
             554, 264, 264, 554, 554, 554, 422, 885, 623, 611, 562, 662, 575, 537, 611, 687, 324, 307, 629, 537, 815, 681, 653, 568, 653,
@@ -84,7 +84,7 @@ export const FONT_WIDTHS: readonly FontWidths[] = [
     },
     {
         name: "Arial",
-        lineHeight: 1150,
+        lineHeight: 1149.90234375,
         regular: [
             278, 278, 355, 556, 556, 889, 667, 191, 333, 333, 389, 584, 278, 333, 278, 278, 556, 556, 556, 556, 556, 556, 556, 556, 556,
             556, 278, 278, 584, 584, 584, 556, 1015, 667, 667, 722, 722, 667, 611, 778, 722, 278, 500, 667, 556, 833, 722, 778, 667, 778,
@@ -110,7 +110,7 @@ export const FONT_WIDTHS: readonly FontWidths[] = [
     },
     {
         name: "Times New Roman",
-        lineHeight: 1150,
+        lineHeight: 1149.90234375,
         regular: [
             250, 333, 408, 500, 500, 833, 778, 180, 333, 333, 500, 564, 250, 333, 250, 278, 500, 500, 500, 500, 500, 500, 500, 500, 500,
             500, 278, 278, 564, 564, 564, 444, 921, 722, 667, 667, 722, 611, 556, 722, 722, 333, 389, 722, 611, 889, 722, 722, 556, 722,
@@ -136,7 +136,7 @@ export const FONT_WIDTHS: readonly FontWidths[] = [
     },
     {
         name: "Courier New",
-        lineHeight: 1133,
+        lineHeight: 1132.8125,
         regular: [
             600, 600, 600, 600, 600, 600, 600, 600, 600, 600, 600, 600, 600, 600, 600, 600, 600, 600, 600, 600, 600, 600, 600, 600, 600,
             600, 600, 600, 600, 600, 600, 600, 600, 600, 600, 600, 600, 600, 600, 600, 600, 600, 600, 600, 600, 600, 600, 600, 600, 600,

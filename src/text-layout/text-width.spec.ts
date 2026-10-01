@@ -55,6 +55,12 @@ describe("measureLineHeight", () => {
         expect(measureLineHeight()).to.be.closeTo(11.5, 0.01);
         expect(measureLineHeight({ font: "Calibri", size: 11 })).to.be.closeTo(13.43, 0.01);
     });
+
+    it("should not round the font's line height, as Word doesn't", () => {
+        // Calibri's lines are 2500 of its 2048 units: 268.55 twips at 11 points in Word, measured over 50 lines
+        expect(measureLineHeight({ font: "Calibri", size: 11 })).to.be.closeTo((2500 / 2048) * 11, 1e-9);
+        expect(measureLineHeight({ font: "Times New Roman", size: 10 })).to.be.closeTo((2355 / 2048) * 10, 1e-9);
+    });
 });
 
 describe("measureText", () => {

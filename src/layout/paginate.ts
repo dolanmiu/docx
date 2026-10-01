@@ -154,18 +154,19 @@ const sum = (values: readonly number[]): number => values.reduce((total, value) 
 /**
  * How many of a paragraph's lines, from one of them, fit in the room left on a page (`fits`), and how many of those go on
  * it (`count`): with widow control, a paragraph's first line isn't left alone at the bottom of a page, nor its last line
- * at the top of the next, and with keepLines, a paragraph that doesn't fit moves to the next page whole. The footnotes
- * of the first lines take room at the bottom of the page too (`notesRoom`, from the number of lines).
+ * at the top of the next, and with keepLines, a paragraph that doesn't fit moves to the next page whole. The first lines
+ * can need room below them too, for their footnotes, or for the space after a paragraph that ends in a table cell
+ * (`roomBelow`, from the number of lines).
  */
 const linesThatFit = (
     lines: readonly LaidOutLine[],
     room: number,
     { keepLines, widowControl }: Pick<MeasuredParagraph, "keepLines" | "widowControl">,
     isFirstLine: boolean,
-    notesRoom: (count: number) => number = () => 0,
+    roomBelow: (count: number) => number = () => 0,
 ): { readonly fits: number; readonly count: number } => {
     const ends = lines.map((_, line) => sum(lines.slice(0, line + 1).map(({ height }) => height)));
-    const fits = ends.findIndex((end, line) => end + notesRoom(line + 1) > room + TOLERANCE);
+    const fits = ends.findIndex((end, line) => end + roomBelow(line + 1) > room + TOLERANCE);
     if (fits === -1) {
         return { fits: lines.length, count: lines.length };
     }
@@ -1200,8 +1201,11 @@ export const paginate = (
                       : between(previousAfter, paragraph.spaceBefore);
             const remaining = paragraph.lines.slice(from);
             // Widow control and keepLines hold lines back in a row that breaks across pages, as in Word, where LibreOffice
-            // lets them go (`word-rules.docx` P8, `word-rules2.docx` Q3)
-            const { count } = linesThatFit(remaining, room - used - space, paragraph, from === 0);
+            // lets them go (`word-rules.docx` P8, `word-rules2.docx` Q3). A paragraph that ends in the cell's part on the
+            // page needs room for its space after there too, as in Word (`word-line-heights.docx` T2)
+            const { count } = linesThatFit(remaining, room - used - space, paragraph, from === 0, (upTo) =>
+                upTo === remaining.length ? paragraph.spaceAfter : 0,
+            );
             if (count > 0) {
                 used += space + linesHeight(remaining.slice(0, count));
                 placed = [...placed, ...remaining.slice(0, count)];
@@ -1211,16 +1215,18 @@ export const paginate = (
             }
             previousAfter = paragraph.spaceAfter;
         }
-        // The space after the last paragraph, as much of it as there is room for
-        return { height: Math.min(used + (previousAfter ?? 0), Math.max(used, room)), lines: placed, rest: [] };
+        return { height: used + (previousAfter ?? 0), lines: placed, rest: [] };
     };
 
     /**
      * Places a row that doesn't fit on the page by breaking it across pages between the lines of its cells, as Word
      * breaks a row unless it is kept whole. A row none of whose lines fit moves to the next page. The table's header rows
      * are repeated above the rest of it on each page and in each column.
+     *
+     * @param breakBorder - The border below the row on a page where the table breaks: the table's bottom border, which the
+     * last row has counted already
      */
-    const splitRow = (row: TableRow, height: number, startTablePage: () => void): void => {
+    const splitRow = (row: TableRow, height: number, breakBorder: number, startTablePage: () => void): void => {
         // A table in a cell is measured as a line that doesn't break, which is enough to tell whether the row breaks
         let parts = row.cells.map((cell): readonly CellParagraph[] =>
             cell.blocks.map((block, index) => ({
@@ -1234,15 +1240,17 @@ export const paginate = (
         let isFirstPart = true;
         for (;;) {
             const borders = row.borderTop + row.borderBottom;
-            const room = linesBottom() - position - borders;
+            const room = linesBottom() - position - borders - breakBorder;
             const first = isFirstPart;
             const filled = parts.map((paragraphs, cell) =>
                 fillCell(paragraphs, room - row.cells[cell].marginTop - row.cells[cell].marginBottom, first),
             );
             // The row only breaks where each of its cells with lines left keeps some of them on the page, as in Word. When
             // widow control or keepLines hold back all of a cell's lines, the row moves to the next page whole
-            // (`word-rules2.docx` Q3c)
+            // (`word-rules2.docx` Q3c). A row of an at-least height only breaks where the page has room for its height, and
+            // otherwise moves to the next page whole too (`word-line-heights.docx` T3)
             const placesLines =
+                (!isFirstPart || row.height === undefined || row.height.value <= room + TOLERANCE) &&
                 filled.some(({ lines }) => lines.length > 0) &&
                 parts.every((paragraphs, cell) => paragraphs.length === 0 || filled[cell].lines.length > 0);
             const isLastPart = filled.every(({ rest }) => rest.length === 0);
@@ -1250,15 +1258,12 @@ export const paginate = (
                 if (row.cells.some(({ verticalMerge }) => verticalMerge !== undefined)) {
                     throw new Unsupported("a table row with merged cells across pages");
                 }
-                if (row.height !== undefined && row.height.value >= height - borders - TOLERANCE) {
-                    throw new Unsupported("a table row of a set height across pages");
-                }
                 if (row.cells.some((cell) => cell.blocks.some(({ type }) => type === "table"))) {
                     throw new Unsupported("a table in a table row across pages");
                 }
             }
-            // A row whose text fits, but not the height it is set to, moves to the next page whole, as in LibreOffice
-            const fitsWhole = !isFirstPart || position + height <= linesBottom() + TOLERANCE;
+            // A row at the top of a page that doesn't fit there whole is taller than a page, which the layout stops at
+            const fitsWhole = !isFirstPart || position + height + breakBorder <= linesBottom() + TOLERANCE;
             if ((!placesLines || !fitsWhole) && !placedInColumn) {
                 stopIfBalancing();
                 throw new Unsupported("a table row taller than a page");
@@ -1275,7 +1280,7 @@ export const paginate = (
             }
             if (placesLines && !isLastPart) {
                 // The part of the row on this page or in this column, which columns being balanced end below
-                position += tallest + borders;
+                position += tallest + borders + breakBorder;
                 parts = filled.map(({ rest }) => rest);
                 isFirstPart = false;
             }
@@ -1316,15 +1321,20 @@ export const paginate = (
         const rowFits = (height: number, notes: readonly string[]): boolean =>
             position + height <= linesBottom(moreNoteRoom(notes)) + TOLERANCE;
         const markersIn = (row: TableRow): readonly string[] => row.cells.flatMap((cell) => cell.blocks.flatMap(markersOf));
+        // Where a table breaks across pages, Word draws its bottom border below the last of it on the page, which takes room
+        // there too, whether the table breaks between rows or in one (`word-line-heights.docx` T1 and T4)
+        const bottomBorder = table.rows[table.rows.length - 1]?.borderBottom ?? 0;
         for (const [index, row] of table.rows.entries()) {
+            const breakBorder = index < table.rows.length - 1 ? bottomBorder : 0;
             const height = heights[index];
+            const roomNeeded = height + breakBorder;
             const markers = markersIn(row);
             const notes = notesIn(markers);
-            if (!rowFits(height, notes) && position + height <= linesBottom() + TOLERANCE && notes.some(canBreak)) {
+            if (!rowFits(roomNeeded, notes) && position + roomNeeded <= linesBottom() + TOLERANCE && notes.some(canBreak)) {
                 throw new Unsupported("a footnote in a table row across pages");
             }
             const keptWhole = row.cantSplit || row.height?.rule === "exact";
-            if (!rowFits(height, notes) && keptWhole && placedInColumn) {
+            if (!rowFits(roomNeeded, notes) && keptWhole && placedInColumn) {
                 startTablePage(index);
             }
             for (const { last, height: needed } of merges.filter(({ first }) => first === index)) {
@@ -1340,14 +1350,14 @@ export const paginate = (
                     throw new Unsupported("a table row with merged cells across pages");
                 }
             }
-            if (!rowFits(height, notes) && !keptWhole) {
+            if (!rowFits(roomNeeded, notes) && !keptWhole) {
                 if (notes.length > 0) {
                     throw new Unsupported("a footnote in a table row across pages");
                 }
-                splitRow(row, height, () => startTablePage(index));
+                splitRow(row, height, breakBorder, () => startTablePage(index));
                 continue;
             }
-            if (!rowFits(height, notes)) {
+            if (!rowFits(roomNeeded, notes)) {
                 stopIfBalancing();
                 throw new Unsupported(notes.length > 0 ? "a footnote across pages" : "a table row taller than a page");
             }
