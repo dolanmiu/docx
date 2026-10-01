@@ -31,7 +31,7 @@
 // In X1, the empty paragraph's 200 after is never on the page: it only takes from the next section's space before, as at
 // the top of a page. In Y1, contextual spacing leaves out the paragraph's own space, its space after or its space before.
 //
-// Usage: npm run run-ts -- scripts/layout-probes/word-contextual.ts [output directory]
+// Usage: npm run run-ts -- scripts/layout-probes/word-contextual.ts [output directory, build/word-probes by default]
 import * as fs from "fs";
 import * as path from "path";
 
@@ -90,7 +90,7 @@ const document = (sections: ISectionOptions[], adds: boolean): Document =>
         sections,
     });
 
-const out = process.argv[2] ?? ".";
+const out = process.argv[2] ?? "build/word-probes";
 fs.mkdirSync(out, { recursive: true });
 Promise.all([
     Packer.toBuffer(document(sectionBreaks, false)).then((buffer) => fs.writeFileSync(path.join(out, "word-contextual.docx"), buffer)),

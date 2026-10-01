@@ -1,6 +1,6 @@
 # Reads the probes of word-contextual.ts from pdftotext -bbox-layout's HTML of PDFs of its two documents, and prints the
 # space each shows, in twips over the pitch of Calibri 11.
-# Usage: python3 word-contextual.py word-contextual.html word-contextual-adding.html
+# Usage: python3 scripts/layout-probes/word-contextual.py build/word-probes/word-contextual.html build/word-probes/word-contextual-adding.html
 import html
 import re
 import sys
