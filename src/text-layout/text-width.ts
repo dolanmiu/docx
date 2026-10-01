@@ -125,7 +125,7 @@ const AVERAGE_LETTER_INDEXES = [..."abcdefghijklmnopqrstuvwxyz"].map((letter) =>
 type EastAsianFont = {
     readonly name: string;
     /** The names it is also known by, in its own language, as Office's theme names them */
-    readonly aliases?: readonly string[];
+    readonly aliases: readonly string[];
     /** The height of its lines, in thousandths of an em: about 1.3 times the font's height, as Word lays them out */
     readonly lineHeight: number;
     /** Whether its Latin letters are all half an em wide */
@@ -172,7 +172,7 @@ const EAST_ASIAN_SANS = /gothic|ゴシック|hei|黑|黒|sans|고딕|pingfang/i;
 const eastAsianFontOf = (font: string): EastAsianFont | undefined => {
     const name = font.toLowerCase();
     const known = EAST_ASIAN_FONTS.find((candidate) =>
-        [candidate.name, ...(candidate.aliases ?? [])].some((alias) => alias.toLowerCase() === name),
+        [candidate.name, ...candidate.aliases].some((alias) => alias.toLowerCase() === name),
     );
     const similar = EAST_ASIAN_SANS.test(font) ? "MS Gothic" : "MS Mincho";
     return known ?? (EAST_ASIAN_NAME.test(font) ? EAST_ASIAN_FONTS.find((candidate) => candidate.name === similar) : undefined);

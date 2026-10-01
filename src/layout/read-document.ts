@@ -982,7 +982,7 @@ const readNumbering = (context: IContext, styles: TextStyles): ReadonlyMap<strin
  * The document's own lists of the characters that can't start a line (`w:noLineBreaksBefore`) and can't end one
  * (`w:noLineBreaksAfter`), which take the place of Word's for their language.
  */
-const readKinsokuLists = (settings: readonly XmlObject[]): LineBreakRules["lists"] =>
+const readKinsokuLists = (settings: readonly XmlObject[]): NonNullable<LineBreakRules["lists"]> =>
     settings.reduce<NonNullable<LineBreakRules["lists"]>>((lists, child) => {
         const name = nameOf(child);
         const attributes = attributesOf(child[name]);
@@ -1016,7 +1016,7 @@ const readSettings = (
         defaultTabStop: twips(attributesOf(find(settings, "w:defaultTabStop"))["w:val"]) ?? 36,
         evenAndOddHeaders: onOff(settings, "w:evenAndOddHeaders") === true,
         addsParagraphSpacing: onOff(childrenOf(find(settings, "w:compat")), "w:doNotUseHTMLParagraphAutoSpacing") === true,
-        ...(Object.keys(lists ?? {}).length > 0 ? { breakRules: { lists } } : {}),
+        ...(Object.keys(lists).length > 0 ? { breakRules: { lists } } : {}),
         ...(unsupported ? { unsupported } : {}),
     };
 };

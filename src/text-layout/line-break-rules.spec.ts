@@ -33,6 +33,10 @@ describe("findLineBreaks", () => {
     it("should keep a character and the marks on it together", () => {
         expect(breaksOf("か\u3099か")).to.deep.equal([2]);
         expect(breaksOf("永\u200d永")).to.deep.equal([]);
+        // Variation selectors, skin tones and tags go with the character before them
+        expect(breaksOf("永\ufe0f永")).to.deep.equal([2]);
+        expect(breaksOf("永\u{1f3fb}永")).to.deep.equal([2]);
+        expect(breaksOf("永\u{e0020}永")).to.deep.equal([2]);
         expect(extendsCharacter("\u0301")).to.equal(true);
         expect(extendsCharacter("a")).to.equal(false);
     });
