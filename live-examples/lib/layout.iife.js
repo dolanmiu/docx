@@ -2788,6 +2788,62 @@ var docxLayout = (function(exports) {
 	//#endregion
 	//#region src/layout/column-widths.ts
 	var sum$1 = (values) => values.reduce((total, value) => total + value, 0);
+	/** The largest of the values and the least given, without spreading them into `Math.max`, which takes too few for a long table */
+	var largest = (values, least = 0) => values.reduce((most, value) => Math.max(most, value), least);
+	/** How narrow and how wide the content of each cell of a table can be, with the cell's margins */
+	var measureCells = (table, measure) => new Map(table.rows.flatMap(({ cells }) => cells.map((cell) => {
+		const text = measure(cell.blocks);
+		const margins = cell.marginLeft + cell.marginRight;
+		return [cell, {
+			min: text.min + margins,
+			max: text.max + margins
+		}];
+	})));
+	/**
+	* Sizes the columns of a table to their text, as Word does (`word-probes.docx` U1), before they are fitted to the room. A
+	* column is as wide as its cells across it alone give it, or, without, as their widest line, and never narrower than
+	* their widest word. A column without a cell of its own is 0 wide (U1f). Then each cell across several columns, in the
+	* rows' order (U1u), shares what its widest line, or the width it gives itself (U1h), needs beyond their widths among
+	* them, in proportion to those. A column given a width shares by it, and is widened with the rest (U1g). Columns that
+	* are all 0 wide share it equally, which Word's probes didn't show.
+	*/
+	var sizeColumns = (table, content) => {
+		const cells = table.rows.flatMap((row) => row.cells);
+		const spanOf = (cell) => {
+			var _cell$span;
+			return (_cell$span = cell.span) !== null && _cell$span !== void 0 ? _cell$span : 1;
+		};
+		const count = largest(cells.map((cell) => cell.column + spanOf(cell)));
+		const columns = Array.from({ length: count }, (_, column) => {
+			const inColumn = cells.filter((cell) => cell.column === column && spanOf(cell) === 1);
+			const widths = inColumn.map((cell) => content.get(cell));
+			const min = largest(widths.map((cell) => cell.min));
+			const own = inColumn.flatMap(({ ownWidth }) => ownWidth === void 0 ? [] : [ownWidth]);
+			return {
+				min,
+				width: largest(own.length > 0 ? own : widths.map((cell) => cell.max), min),
+				given: own.length > 0
+			};
+		});
+		return cells.filter((cell) => spanOf(cell) > 1).reduce(({ columns: before, unsettled }, cell) => {
+			const { min, max } = content.get(cell);
+			const from = cell.column;
+			const to = from + spanOf(cell);
+			const covered = before.slice(from, to);
+			const widest = sum$1(covered.map(({ width }) => width));
+			const needed = cell.ownWidth === void 0 ? max : Math.max(min, cell.ownWidth);
+			const sharing = covered.filter(({ width }) => width > 0).length > 1;
+			const longWord = min > sum$1(covered.map((column) => column.min)) ? [min > widest && sharing ? "always" : "narrowed"] : [];
+			const share = (column) => widest > 0 ? column.width / widest : 1 / covered.length;
+			return {
+				columns: needed > widest ? before.map((column, index) => index >= from && index < to ? _objectSpread2(_objectSpread2({}, column), {}, { width: column.width + (needed - widest) * share(column) }) : column) : before,
+				unsettled: [...unsettled, ...longWord]
+			};
+		}, {
+			columns,
+			unsettled: []
+		});
+	};
 	/**
 	* Narrows columns to fit the room, toward their widest words, each by its share of the width they would give up. Columns
 	* whose widest words don't fit are as narrow as those.
@@ -2799,10 +2855,16 @@ var docxLayout = (function(exports) {
 	};
 	/**
 	* Sizes the columns of a table whose cells don't all have widths, as Word does, and gives each cell the width of its
-	* column, less its margins. A column is as wide as its cells give it, or, without, as its widest line of text, and never
-	* narrower than its widest word. A table with a width of its own has its columns widened in proportion to fill it.
-	* When the columns are too wide for the room, those sized to their text are narrowed toward their widest words, each by
-	* its share of the width they would give up, and those given widths keep them unless that isn't enough.
+	* columns, less its margins. A column is as wide as its cells across it alone give it, or, without, as their widest
+	* line of text, and never narrower than their widest word. A cell across several columns widens them, in proportion to
+	* their widths, where its widest line, or its own width, needs more. A table with a width of its own has its columns
+	* widened in proportion to fill it. When the columns are too wide for the room, those sized to their text are narrowed
+	* toward their widest words, each by its share of the width they would give up, and those given widths keep them unless
+	* that isn't enough.
+	*
+	* Word shares a word in a cell across several columns that is wider than their widest words together in a way not yet
+	* followed, when it is wider than their widest lines too, or when the columns are narrowed to the room. The table is
+	* then returned as unsupported.
 	*
 	* A table whose cells all have widths keeps them, unless a word is longer than its cell gives it. Word then widens that
 	* column to the word. A table with no width of its own grows, up to the room, and one with a width keeps it, and the
@@ -2816,30 +2878,12 @@ var docxLayout = (function(exports) {
 		var _tableWidth$width;
 		const { fit, widen, rows } = table;
 		if (!fit && !widen) return table;
-		const cells = rows.flatMap((row) => row.cells);
-		const content = new Map(cells.map((cell) => {
-			const text = measure(cell.blocks);
-			const margins = cell.marginLeft + cell.marginRight;
-			return [cell, {
-				min: text.min + margins,
-				max: text.max + margins
-			}];
-		}));
+		const content = measureCells(table, measure);
 		if (widen) {
-			if (!cells.some((cell) => content.get(cell).min > cell.ownWidth)) return table;
+			if (!rows.some(({ cells }) => cells.some((cell) => content.get(cell).min > cell.ownWidth))) return table;
 			if (widen.acrossColumns) return _objectSpread2(_objectSpread2({}, table), {}, { unsupported: "a word longer than its cell in a table with cells merged across columns" });
 		}
-		const count = Math.max(0, ...cells.map(({ column }) => column + 1));
-		const columns = Array.from({ length: count }, (_, column) => {
-			const inColumn = cells.filter((cell) => cell.column === column).map((cell) => _objectSpread2({ cell }, content.get(cell)));
-			const min = Math.max(0, ...inColumn.map((cell) => cell.min));
-			const own = inColumn.flatMap(({ cell }) => cell.ownWidth === void 0 ? [] : [cell.ownWidth]);
-			return {
-				min,
-				width: own.length > 0 ? Math.max(min, ...own) : Math.max(min, ...inColumn.map((cell) => cell.max)),
-				given: own.length > 0
-			};
-		});
+		const { columns, unsettled } = sizeColumns(table, content);
 		const total = sum$1(columns.map(({ width }) => width));
 		const tableWidth = fit !== null && fit !== void 0 ? fit : widen;
 		const target = (_tableWidth$width = tableWidth.width) !== null && _tableWidth$width !== void 0 ? _tableWidth$width : tableWidth.share === void 0 ? void 0 : tableWidth.share * available;
@@ -2848,6 +2892,7 @@ var docxLayout = (function(exports) {
 			if (sum$1(columns.map(({ min }) => min)) > room) return _objectSpread2(_objectSpread2({}, table), {}, { unsupported: "a word longer than its table can make room for" });
 			if (target !== void 0 && total < target) return _objectSpread2(_objectSpread2({}, table), {}, { unsupported: "a long word in a table wider than its cells" });
 		}
+		if (unsettled.includes("always") || unsettled.length > 0 && total > room) return _objectSpread2(_objectSpread2({}, table), {}, { unsupported: "a long word in cells merged across columns" });
 		const given = columns.filter((column) => column.given);
 		const sized = columns.filter((column) => !column.given);
 		const givenWidths = narrowed(given, room - sum$1(sized.map(({ min }) => min)));
@@ -2856,7 +2901,34 @@ var docxLayout = (function(exports) {
 			if (target !== void 0 && total < target && total > 0) return column.width * target / total;
 			return column.given ? givenWidths[given.indexOf(column)] : sizedWidths[sized.indexOf(column)];
 		});
-		return _objectSpread2(_objectSpread2({}, table), {}, { rows: rows.map((row) => _objectSpread2(_objectSpread2({}, row), {}, { cells: row.cells.map((cell) => _objectSpread2(_objectSpread2({}, cell), {}, { width: widths[cell.column] - cell.marginLeft - cell.marginRight })) })) });
+		return _objectSpread2(_objectSpread2({}, table), {}, { rows: rows.map((row) => _objectSpread2(_objectSpread2({}, row), {}, { cells: row.cells.map((cell) => {
+			var _cell$span2;
+			return _objectSpread2(_objectSpread2({}, cell), {}, { width: sum$1(widths.slice(cell.column, cell.column + ((_cell$span2 = cell.span) !== null && _cell$span2 !== void 0 ? _cell$span2 : 1))) - cell.marginLeft - cell.marginRight });
+		}) })) });
+	};
+	/**
+	* How narrow and how wide a table in a table cell is, as Word counts it to size the cell's column (`word-probes.docx` U1n
+	* to U1t): its own width in points, or, sized to its text, its columns' widest words and widest lines added up, or the
+	* widths of its cells added up. Half of each of its left and right borders is outside its columns.
+	*
+	* @param measure - How narrow and how wide the content of a cell can be, in points
+	*/
+	var tableWidths = (table, measure) => {
+		var _fit$width;
+		const { fit, rows, borderLeft = 0, borderRight = 0 } = table;
+		const borders = (borderLeft + borderRight) / 2;
+		if (fit !== void 0 && fit.width === void 0) {
+			const { columns } = sizeColumns(table, measureCells(table, measure));
+			return {
+				min: sum$1(columns.map(({ min }) => min)) + borders,
+				max: sum$1(columns.map((column) => column.width)) + borders
+			};
+		}
+		const width = (_fit$width = fit === null || fit === void 0 ? void 0 : fit.width) !== null && _fit$width !== void 0 ? _fit$width : largest(rows.map(({ cells }) => sum$1(cells.map((cell) => cell.width + cell.marginLeft + cell.marginRight))));
+		return {
+			min: width + borders,
+			max: width + borders
+		};
 	};
 	//#endregion
 	//#region src/layout/number-format.ts
@@ -3071,9 +3143,9 @@ var docxLayout = (function(exports) {
 			};
 		};
 		const linesHeight = (lines) => sum(lines.map(({ height }) => height));
-		/** How narrow and how wide the paragraphs in a table cell can be */
-		const contentWidths = (stack) => stack.filter((block) => block.type === "paragraph").reduce((widths, block) => {
-			const { min, max } = measureContentWidths(itemsOf(block.items), {
+		/** How narrow and how wide the paragraphs and tables in a table cell can be */
+		const contentWidths = (stack) => stack.reduce((widths, block) => {
+			const { min, max } = block.type === "table" ? tableWidths(block, contentWidths) : measureContentWidths(itemsOf(block.items), {
 				format: block.format,
 				tabStops: block.tabStops,
 				defaultTabStop,
@@ -4169,6 +4241,8 @@ var docxLayout = (function(exports) {
 	var EMUS_PER_POINT = 12700;
 	/** How far apart, in points, the widths two rows give a column can be before they differ: rounding, not a choice */
 	var WIDTH_TOLERANCE = 1;
+	/** The most columns a table in Word can have */
+	var MOST_COLUMNS = 63;
 	var EIGHTHS_PER_POINT = 8;
 	var FIFTIETHS_OF_A_PERCENT = 5e3;
 	var PLAIN_FORMATS = /* @__PURE__ */ new Set([
@@ -4531,7 +4605,7 @@ var docxLayout = (function(exports) {
 			const height = twips(heightAttributes["w:val"]);
 			const { "w:hRule": rule } = heightAttributes;
 			const skipped = (_numberOf5 = numberOf(attributesOf(find(rowProperties, "w:gridBefore"))["w:val"])) !== null && _numberOf5 !== void 0 ? _numberOf5 : 0;
-			const { cells, edges, acrossColumns } = cellsOf(rowChildren).reduce(({ column, cells: done, edges: before, acrossColumns: across }, cell) => {
+			const { cells, edges, column: end } = cellsOf(rowChildren).reduce(({ column, cells: done, edges: before }, cell) => {
 				var _numberOf6, _twips2, _shareOf;
 				const cellChildren = contentOf(cell).filter(isObject);
 				const cellProperties = childrenOf(find(cellChildren, "w:tcPr"));
@@ -4546,11 +4620,7 @@ var docxLayout = (function(exports) {
 				return {
 					column: column + span,
 					edges: new Map([...before, [column + span, before.get(column) + width]]),
-					acrossColumns: across || span > 1,
-					cells: [...done, _objectSpread2(_objectSpread2({
-						column,
-						width: width - margins.left - margins.right
-					}, hasWidth ? { ownWidth: width } : {}), {}, {
+					cells: [...done, _objectSpread2(_objectSpread2(_objectSpread2({ column }, span > 1 ? { span } : {}), {}, { width: width - margins.left - margins.right }, hasWidth ? { ownWidth: width } : {}), {}, {
 						blocks: readBlocks(cellChildren, reader, style),
 						marginTop: margins.top,
 						marginBottom: margins.bottom,
@@ -4561,12 +4631,11 @@ var docxLayout = (function(exports) {
 			}, {
 				column: skipped,
 				cells: [],
-				edges: /* @__PURE__ */ new Map([[skipped, gridWidth(0, skipped)]]),
-				acrossColumns: false
+				edges: /* @__PURE__ */ new Map([[skipped, gridWidth(0, skipped)]])
 			});
 			return {
 				edges,
-				acrossColumns,
+				end,
 				row: _objectSpread2(_objectSpread2({ cells }, height !== void 0 && rule !== "auto" ? { height: {
 					value: height,
 					rule: rule === "exact" ? "exact" : "atLeast"
@@ -4589,12 +4658,15 @@ var docxLayout = (function(exports) {
 		const blocks = tableCells.flatMap((cell) => cell.blocks);
 		const fixed = attributesOf(find(properties, "w:tblLayout"))["w:type"] === "fixed";
 		const fits = !fixed && tableCells.some(({ ownWidth }) => ownWidth === void 0);
-		const unfitted = read.some(({ acrossColumns }) => acrossColumns) ? "cells merged across columns in a table given no widths" : blocks.some(({ type }) => type === "table") ? "a table in a table given no widths" : void 0;
+		const unfitted = read.reduce((most, { end }) => Math.max(most, end), 0) > MOST_COLUMNS ? `a table given no widths of more than ${MOST_COLUMNS} columns` : void 0;
 		const unsupported = (_ref2 = fits ? unfitted : unequal ? "a table whose rows give a column different widths" : void 0) !== null && _ref2 !== void 0 ? _ref2 : (_blocks$find = blocks.find((block) => block.unsupported !== void 0)) === null || _blocks$find === void 0 ? void 0 : _blocks$find.unsupported;
 		return _objectSpread2(_objectSpread2(_objectSpread2({
 			type: "table",
 			rows: read.map(({ row }) => row)
-		}, fits ? { fit: readTableWidth(properties) } : {}), !fits && !fixed ? { widen: _objectSpread2(_objectSpread2({}, readTableWidth(properties)), {}, { acrossColumns: read.some(({ acrossColumns }) => acrossColumns) }) } : {}), unsupported ? { unsupported } : {});
+		}, fits ? { fit: readTableWidth(properties) } : {}), !fits && !fixed ? { widen: _objectSpread2(_objectSpread2({}, readTableWidth(properties)), {}, { acrossColumns: tableCells.some(({ span }) => span !== void 0) }) } : {}), {}, {
+			borderLeft: borderWidth(borders, "w:left"),
+			borderRight: borderWidth(borders, "w:right")
+		}, unsupported ? { unsupported } : {});
 	};
 	/**
 	* Reads the paragraphs and tables in a part of a document, such as a table cell or a header, and in the content controls
