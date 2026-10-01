@@ -2638,7 +2638,7 @@ var docxLayout = (function(exports) {
 				first
 			};
 			const finish = (state, breakAfter, extra = 0) => {
-				const natural = Math.max(state.natural, extra, state.started ? 0 : markHeight);
+				const natural = Math.max(state.started ? state.natural : markHeight, extra);
 				lines.push(_objectSpread2({
 					height: spaced(natural, lineSpacing),
 					markers: [...state.markers, ...state.pending]
@@ -2717,7 +2717,7 @@ var docxLayout = (function(exports) {
 			else {
 				const breakHeight = Math.max(measurer.measureLineHeight(end.font), isLast && !line.started ? markHeight : 0);
 				finish(_objectSpread2(_objectSpread2({}, line), {}, {
-					natural: Math.max(line.natural, breakHeight),
+					natural: Math.max(line.started ? line.natural : 0, breakHeight),
 					started: true
 				}), end.kind === "line" ? void 0 : end.kind);
 			}
@@ -3434,7 +3434,7 @@ var docxLayout = (function(exports) {
 			for (const [index, { paragraph, from }] of paragraphs.entries()) {
 				const space = from > 0 ? 0 : previousAfter === void 0 ? isFirstPart ? paragraph.spaceBefore : 0 : between(previousAfter, paragraph.spaceBefore);
 				const remaining = paragraph.lines.slice(from);
-				const { fits: count } = linesThatFit(remaining, room - used - space, paragraph, from === 0);
+				const { count } = linesThatFit(remaining, room - used - space, paragraph, from === 0);
 				if (count > 0) {
 					used += space + linesHeight(remaining.slice(0, count));
 					placed = [...placed, ...remaining.slice(0, count)];
@@ -3474,7 +3474,7 @@ var docxLayout = (function(exports) {
 				const room = bottom - noteArea - position - borders;
 				const first = isFirstPart;
 				const filled = parts.map((paragraphs, cell) => fillCell(paragraphs, room - row.cells[cell].marginTop - row.cells[cell].marginBottom, first));
-				const placesLines = filled.some(({ lines }) => lines.length > 0);
+				const placesLines = filled.some(({ lines }) => lines.length > 0) && parts.every((paragraphs, cell) => paragraphs.length === 0 || filled[cell].lines.length > 0);
 				const isLastPart = filled.every(({ rest }) => rest.length === 0);
 				if (placesLines && !isLastPart) {
 					if (row.cells.some(({ verticalMerge }) => verticalMerge !== void 0)) throw new Unsupported("a table row with merged cells across pages");
@@ -3487,17 +3487,18 @@ var docxLayout = (function(exports) {
 					throw new Unsupported("a table row taller than a page");
 				}
 				if (placesLines && (fitsWhole || !isLastPart)) mark(filled.flatMap(({ lines }) => lines.flatMap(({ markers }) => markers)));
+				const tallest = Math.max(...filled.map((part, cell) => row.cells[cell].marginTop + part.height + row.cells[cell].marginBottom));
 				if (placesLines && isLastPart && fitsWhole) {
-					const tallest = Math.max(...filled.map((part, cell) => row.cells[cell].marginTop + part.height + row.cells[cell].marginBottom));
 					position += (isFirstPart ? height - borders : tallest) + borders;
 					placedInColumn = true;
 					return;
 				}
-				startTablePage();
 				if (placesLines && !isLastPart) {
+					position += tallest + borders;
 					parts = filled.map(({ rest }) => rest);
 					isFirstPart = false;
 				}
+				startTablePage();
 			}
 		};
 		const placeTable = (table) => {
