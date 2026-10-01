@@ -1056,8 +1056,9 @@ describe("paginate", () => {
             expect(pagesOf(content(20))).to.deep.equal({ a: "1", b: "1", c: "1" });
             expect(pagesOf(content(30))).to.deep.equal({ a: "1", b: "1", c: "1" });
             expect(pagesOf(content(40))).to.deep.equal({ a: "1", b: "1", c: "2" });
-            // But not at the top of the column after, where a paragraph kept with the next moves
-            const moved = document(
+            // A first paragraph kept with the next stays at the top of the column with its space before, as it does at the
+            // top of a page, though its 60 before leave room for only its line, and the next goes on in the column after
+            const kept = document(
                 [
                     [paragraph("a", 1), 0],
                     [paragraph("b", 1, { keepNext: true, spaceBefore: 60 }), 1],
@@ -1070,7 +1071,7 @@ describe("paginate", () => {
                     ],
                 },
             );
-            expect(pagesOf(moved)).to.deep.equal({ a: "1", b: "1", c: "1" });
+            expect(pagesOf(kept)).to.deep.equal({ a: "1", b: "1", c: "1" });
         });
 
         it("should start a section in the next column of columns below text, and the next section below the longest, as Word does", () => {
