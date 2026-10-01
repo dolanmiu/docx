@@ -650,30 +650,42 @@ describe("readDocument", () => {
             ]);
         });
 
-        it("should stop at cells merged across columns, or a table in a cell, in a table given no widths", () => {
-            const unsupportedOf = (...cells: readonly object[]): string | undefined =>
-                (
-                    readBody([
-                        {
-                            "w:tbl": [
-                                { "w:tblGrid": [{ "w:gridCol": { _attr: { "w:w": 1000 } } }, { "w:gridCol": { _attr: { "w:w": 2000 } } }] },
-                                { "w:tr": cells },
-                            ],
-                        },
-                    ]).blocks[0].block as TableBlock
-                ).unsupported;
+        it("should read the columns a cell is across and the table's side borders, to size a table given no widths by", () => {
+            const tableOf = (properties: readonly object[], ...rows: readonly (readonly object[])[]): TableBlock =>
+                readBody([
+                    {
+                        "w:tbl": [
+                            { "w:tblPr": properties },
+                            { "w:tblGrid": [{ "w:gridCol": { _attr: { "w:w": 1000 } } }, { "w:gridCol": { _attr: { "w:w": 2000 } } }] },
+                            ...rows.map((cells) => ({ "w:tr": cells })),
+                        ],
+                    },
+                ]).blocks[0].block as TableBlock;
             const inner = { "w:tbl": [{ "w:tr": [cell([], p(r(t("inner"))))] }] };
-            expect(unsupportedOf(cell([value("w:gridSpan", 2)], p(r(t("a")))))).to.equal(
-                "cells merged across columns in a table given no widths",
-            );
-            expect(unsupportedOf(cell([], inner, p()), cell([], p()))).to.equal("a table in a table given no widths");
-            // With widths, as Word keeps them
+            const borders = {
+                "w:tblBorders": [
+                    { "w:left": { _attr: { "w:val": "single", "w:sz": 4 } } },
+                    { "w:right": { _attr: { "w:val": "single", "w:sz": 12 } } },
+                ],
+            };
+            const sized = tableOf([borders], [cell([value("w:gridSpan", 2)], p(r(t("a"))))], [cell([], inner, p()), cell([], p())]);
+            // Neither a cell across columns nor a table in a cell stops the layout. The cell keeps the columns it is across,
+            // and those of one column have none written
+            expect(sized).to.deep.include({ fit: {}, borderLeft: 0.5, borderRight: 1.5 });
+            expect(sized.unsupported).to.equal(undefined);
+            expect(sized.rows.map(({ cells }) => cells.map(({ column, span }) => ({ column, span })))).to.deep.equal([
+                [{ column: 0, span: 2 }],
+                [
+                    { column: 0, span: undefined },
+                    { column: 1, span: undefined },
+                ],
+            ]);
+            expect(tableOf([]).borderLeft).to.equal(0);
+            // A table whose cells all have widths has its columns widened for long words as it is laid out, unless they are
+            // merged across them
             const width = { "w:tcW": { _attr: { "w:w": 3000 } } };
-            expect(unsupportedOf(cell([width, value("w:gridSpan", 2)], p(r(t("a")))))).to.equal(undefined);
-            // Whose columns are widened for long words as they are laid out, unless they are merged across them
-            const merged = readBody([{ "w:tbl": [{ "w:tr": [cell([width, value("w:gridSpan", 2)], p(r(t("a"))))] }] }]).blocks[0]
-                .block as TableBlock;
-            expect(merged.widen).to.deep.equal({ acrossColumns: true });
+            expect(tableOf([], [cell([width, value("w:gridSpan", 2)], p(r(t("a"))))]).widen).to.deep.equal({ acrossColumns: true });
+            expect(tableOf([], [cell([width], p(r(t("a")))), cell([width], p(r(t("b"))))]).widen).to.deep.equal({ acrossColumns: false });
         });
 
         it("should read the paragraphs in content controls and custom XML in a cell", () => {

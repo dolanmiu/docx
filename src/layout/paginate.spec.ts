@@ -529,6 +529,60 @@ describe("paginate", () => {
             expect(kept.stoppedAt).to.equal("a word longer than its cell in a table with cells merged across columns");
         });
 
+        it("should size the columns of a table given no widths around a cell across them, and to a table in a cell", () => {
+            const words = (text: string): ParagraphBlock => ({
+                type: "paragraph",
+                items: [{ type: "text", text, font: {} }],
+                format: {},
+                tabStops: [],
+                markFont: {},
+            });
+            /** A cell of text, read 20 points wide, across columns when given */
+            const textCell = (column: number, blocks: readonly Block[], span?: number): TableCell => ({
+                ...row([blocks]).cells[0],
+                column,
+                width: 20,
+                ...(span === undefined ? {} : { span }),
+            });
+            const across = table([
+                { ...row([]), cells: [textCell(0, [words("aaa bbb ccc")], 2)] },
+                { ...row([]), cells: [textCell(0, [words("aaa")]), textCell(1, [words("bbb")])] },
+            ]);
+            // At the 20 points it is read with, the cell across both columns takes 3 lines, and b doesn't fit. Sized to its
+            // text, its columns are each 40 wide, so its text takes 2 lines across them, and leaves room for b
+            expect(pagesOf(document([paragraph("a", 3), across, paragraph("b", 1)]))).to.deep.equal({ a: "1", b: "2" });
+            expect(pagesOf(document([paragraph("a", 3), { ...across, fit: {} }, paragraph("b", 1)]))).to.deep.equal({ a: "1", b: "1" });
+            // A table in a cell is as narrow and as wide as its columns: 40 and 140 here, beside 20 and 110. Its column is
+            // narrowed to 50.5, and the other to 29.5, so the row takes 4 lines, which push b to the next page
+            const inner: TableBlock = { ...table([{ ...row([]), cells: [textCell(0, [words("aaaa bbbb cccc")])] }]), fit: {} };
+            const outer: TableBlock = {
+                ...table([{ ...row([]), cells: [textCell(0, [inner]), textCell(1, [words("ab cd ef gh")])] }]),
+                fit: {},
+            };
+            expect(pagesOf(document([paragraph("a", 3), outer, paragraph("b", 1)]))).to.deep.equal({ a: "1", b: "2" });
+        });
+
+        it("should stop at a long word in a cell across columns, which Word shares in a way not yet followed", () => {
+            const words = (text: string): ParagraphBlock => ({
+                type: "paragraph",
+                items: [{ type: "text", text, font: {} }],
+                format: {},
+                tabStops: [],
+                markFont: {},
+            });
+            const [first, second] = row([[words("a")], [words("b c")]]).cells;
+            const longWord: TableBlock = {
+                ...table([
+                    { ...row([]), cells: [{ ...first, span: 2, blocks: [words("abcdefg")] }] },
+                    { ...row([]), cells: [first, second] },
+                ]),
+                fit: {},
+            };
+            const { bookmarks, stoppedAt } = paginate(document([paragraph("a", 1), longWord, paragraph("b", 1)]), { measurer: MEASURER });
+            expect(stoppedAt).to.equal("a long word in cells merged across columns");
+            expect(Object.fromEntries(bookmarks)).to.deep.equal({ a: "1" });
+        });
+
         it("should make rows as tall as their tallest cell, their margins and borders, or their own height", () => {
             const cell = (name: string): readonly Block[] => [paragraph(name, 1)];
             const content = document([
