@@ -1071,6 +1071,13 @@ export const paginate = (
             const height = heights[index];
             const markers = markersIn(row);
             const notes = notesIn(markers);
+            if (!rowFits(height, notes) && position + height <= bottom - noteArea + TOLERANCE && notes.some(canBreak)) {
+                throw new Unsupported("a footnote in a table row across pages");
+            }
+            const keptWhole = row.cantSplit || row.height?.rule === "exact";
+            if (!rowFits(height, notes) && keptWhole && placedInColumn) {
+                startTablePage(index);
+            }
             for (const { last, height: needed } of merges.filter(({ first }) => first === index)) {
                 // The rows of the merge its cell's text reaches into, which go on the page together unless the page breaks
                 // across the cell's lines
@@ -1084,18 +1091,12 @@ export const paginate = (
                     throw new Unsupported("a table row with merged cells across pages");
                 }
             }
-            if (!rowFits(height, notes) && position + height <= bottom - noteArea + TOLERANCE && notes.some(canBreak)) {
-                throw new Unsupported("a footnote in a table row across pages");
-            }
-            if (!rowFits(height, notes) && !row.cantSplit && row.height?.rule !== "exact") {
+            if (!rowFits(height, notes) && !keptWhole) {
                 if (notes.length > 0) {
                     throw new Unsupported("a footnote in a table row across pages");
                 }
                 splitRow(row, height, () => startTablePage(index));
                 continue;
-            }
-            if (!rowFits(height, notes) && placedInColumn) {
-                startTablePage(index);
             }
             if (!rowFits(height, notes)) {
                 stopIfBalancing();

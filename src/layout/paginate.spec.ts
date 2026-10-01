@@ -690,6 +690,17 @@ describe("paginate", () => {
                 ]);
             expect(pagesOf(fitting(2))).to.deep.equal({ a: "1", merged: "1", r1: "1", r2: "1", r3: "2" });
             expect(pagesOf(fitting(1))).to.deep.equal({ a: "1", merged: "1", r1: "1", r2: "1", r3: "2" });
+            // A merge whose first row is kept whole, and doesn't fit, moves to the next page with it, where it fits
+            const kept = (changes: Partial<TableRow>): DocumentContent =>
+                document([
+                    paragraph("a", 6),
+                    table([
+                        mergedRow(merged("restart", [paragraph("merged", 3)]), [[paragraph("r1", 2)]], changes),
+                        mergedRow(merged("continue"), [[paragraph("r2", 1)]]),
+                    ]),
+                ]);
+            expect(pagesOf(kept({ cantSplit: true }))).to.deep.equal({ a: "1", merged: "2", r1: "2", r2: "2" });
+            expect(pagesOf(kept({ height: { value: 20, rule: "exact" } }))).to.deep.equal({ a: "1", merged: "2", r1: "2", r2: "2" });
         });
 
         it("should stop at a line in a table cell taller than a page", () => {
