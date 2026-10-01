@@ -1,10 +1,24 @@
 // Page numbers worked out by docx/layout for sections in columns: text that fills each column of a page before the next,
 // column breaks, a section in columns that starts below the text before it on the same page, and columns evened out
-// before a continuous section break, so the next section starts below the longest. It is one of the documents
-// scripts/compare-layout.sh checks against LibreOffice. See docs/usage/layout.md.
+// before a continuous section break, so the next section starts below the longest, with a table whose header row is
+// repeated at the top of each column it goes on into. It is one of the documents scripts/compare-layout.sh checks against
+// LibreOffice. See docs/usage/layout.md.
 
 import * as fs from "fs";
-import { ColumnBreak, Document, HeadingLevel, Packer, Paragraph, SectionType, TableOfContents, TextRun } from "docx";
+import {
+    ColumnBreak,
+    Document,
+    HeadingLevel,
+    Packer,
+    Paragraph,
+    SectionType,
+    Table,
+    TableCell,
+    TableOfContents,
+    TableRow,
+    TextRun,
+    WidthType,
+} from "docx";
 import { estimatePageNumbers } from "docx/layout";
 
 const WORDS = "the survey of the coast was made in the summer by boat and on foot from the lighthouse to the river mouth".split(" ");
@@ -24,6 +38,31 @@ const chapter = (title: string, parts: number, seed: number): readonly Paragraph
         ),
     ]).flat(),
 ];
+
+/** A table of a header row and rows of a day and what was seen, as wide as a column of three */
+const log = (entries: number, seed: number): Table =>
+    new Table({
+        width: { size: 2768, type: WidthType.DXA },
+        columnWidths: [700, 2068],
+        rows: [
+            new TableRow({
+                tableHeader: true,
+                children: ["Day", "What was seen"].map(
+                    (title) => new TableCell({ children: [new Paragraph({ children: [new TextRun({ text: title, bold: true })] })] }),
+                ),
+            }),
+            ...Array.from(
+                { length: entries },
+                (_, index) =>
+                    new TableRow({
+                        children: [
+                            new TableCell({ children: [new Paragraph(`${index + 1}`)] }),
+                            new TableCell({ children: [new Paragraph(text(4 + ((seed * 31 + index * 23) % 14), seed + index))] }),
+                        ],
+                    }),
+            ),
+        ],
+    });
 
 const doc = new Document({
     pageNumbers: estimatePageNumbers,
@@ -54,7 +93,7 @@ const doc = new Document({
         {
             // Three columns, below the two before them evened out
             properties: { type: SectionType.CONTINUOUS, column: { count: 3, space: 360 } },
-            children: [...chapter("The lighthouse", 5, 3), ...chapter("The boats", 3, 4)],
+            children: [...chapter("The lighthouse", 5, 3), ...chapter("The boats", 3, 4), log(24, 4)],
         },
         {
             // One column, below the three before it evened out
