@@ -48,6 +48,23 @@ describe("layoutLines", () => {
         expect(heightsOf(lines, 100, { format: { lineSpacing: { rule: "atLeast", height: 8 } } })).to.deep.equal([10, 10]);
     });
 
+    it("should keep lines as tall as the font is, unrounded, as Word does, rather than in whole twips as LibreOffice does", () => {
+        const twipsOf = (font: { readonly font: string; readonly size: number }, format = {}): number =>
+            layoutLines([{ type: "text", text: "Some text", font }], { width: 500, format })[0].height * 20;
+        const calibri = { font: "Calibri", size: 11 };
+        // Word's lines of Calibri 11 are 268.55 twips, and LibreOffice's 269
+        expect(twipsOf(calibri)).to.be.closeTo(268.5547, 0.0001);
+        // Times New Roman 10 is neither LibreOffice's 230 nor 231
+        expect(twipsOf({ font: "Times New Roman", size: 10 })).to.be.closeTo(229.9805, 0.0001);
+        // Multiple spacing of the unrounded height, 289.82 twips at 259, where LibreOffice has 290
+        expect(twipsOf(calibri, { lineSpacing: { rule: "multiple", multiple: 259 / 240 } })).to.be.closeTo(289.8153, 0.0001);
+        expect(twipsOf(calibri, { lineSpacing: { rule: "multiple", multiple: 1.5 } })).to.be.closeTo(402.832, 0.0001);
+        // An exact or at-least height stays as it is written
+        expect(twipsOf(calibri, { lineSpacing: { rule: "exact", height: 15 } })).to.equal(300);
+        expect(twipsOf(calibri, { lineSpacing: { rule: "atLeast", height: 20 } })).to.equal(400);
+        expect(twipsOf(calibri, { lineSpacing: { rule: "atLeast", height: 13 } })).to.be.closeTo(268.5547, 0.0001);
+    });
+
     it("should wrap inside the paragraph's indents", () => {
         const words = [text("aaa bbb ccc ddd")];
         // 80 points wide: two words to a line

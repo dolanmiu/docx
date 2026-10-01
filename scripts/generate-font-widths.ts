@@ -26,7 +26,9 @@ const OUTPUT = "src/text-layout/font-widths.ts";
 // Each font Word documents use, and the font files with the same widths
 const FONTS = [
     { name: "Calibri", regular: "Carlito-Regular.ttf", bold: "Carlito-Bold.ttf" },
-    { name: "Cambria", regular: "Caladea-Regular.ttf", bold: "Caladea-Bold.ttf" },
+    // Word's lines of Cambria are 2401 of its 2048 units, 257.92 twips at 11 points (scripts/layout-probes/word-line-heights.ts
+    // Hb), which Caladea, of 1000 units, rounds to 1172
+    { name: "Cambria", regular: "Caladea-Regular.ttf", bold: "Caladea-Bold.ttf", lineHeight: (2401 * 1000) / 2048 },
     { name: "Arial", regular: "LiberationSans-Regular.ttf", bold: "LiberationSans-Bold.ttf" },
     { name: "Times New Roman", regular: "LiberationSerif-Regular.ttf", bold: "LiberationSerif-Bold.ttf" },
     { name: "Courier New", regular: "LiberationMono-Regular.ttf", bold: "LiberationMono-Bold.ttf" },
@@ -51,7 +53,7 @@ const CHARACTERS = [
 type FontMetrics = {
     /** Width of each character in CHARACTERS, in thousandths of an em */
     readonly widths: readonly number[];
-    /** Height of a line of single-spaced text, in thousandths of an em */
+    /** Height of a line of single-spaced text, in thousandths of an em, unrounded */
     readonly lineHeight: number;
 };
 
@@ -113,7 +115,9 @@ const readFontMetrics = (path: string): FontMetrics => {
     const thousandths = (units: number): number => Math.round((units * 1000) / unitsPerEm);
     return {
         widths: CHARACTERS.map((code) => thousandths(advance(glyphOf(code)))),
-        lineHeight: thousandths(ascender - descender + lineGap),
+        // Not rounded, as Word doesn't round it: Calibri's 2500 units of 2048 are 1220.703125 thousandths, and lines of
+        // 268.55 twips at 11 points, where 1221 would be 268.62
+        lineHeight: ((ascender - descender + lineGap) * 1000) / unitsPerEm,
     };
 };
 
@@ -131,12 +135,12 @@ if (!directory) {
     process.exit(1);
 }
 
-const entries = FONTS.map(({ name, regular, bold }) => {
-    const plain = readFontMetrics(join(directory, regular));
-    const heavy = readFontMetrics(join(directory, bold));
+const entries = FONTS.map((font) => {
+    const plain = readFontMetrics(join(directory, font.regular));
+    const heavy = readFontMetrics(join(directory, font.bold));
     return `    {
-        name: "${name}",
-        lineHeight: ${plain.lineHeight},
+        name: "${font.name}",
+        lineHeight: ${"lineHeight" in font ? font.lineHeight : plain.lineHeight},
         regular: [${plain.widths.join(", ")}],
         bold: [${heavy.widths.join(", ")}],
     },`;
@@ -161,7 +165,7 @@ writeFileSync(
 export type FontWidths = {
     /** The font's name */
     readonly name: string;
-    /** Height of a line of single-spaced text, in thousandths of an em */
+    /** Height of a line of single-spaced text, in thousandths of an em, unrounded */
     readonly lineHeight: number;
     /** Width of each character in {@link FONT_WIDTH_CHARACTERS}, in thousandths of an em */
     readonly regular: readonly number[];

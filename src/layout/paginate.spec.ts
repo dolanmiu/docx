@@ -101,6 +101,24 @@ describe("paginate", () => {
         expect(paginate(content, { measurer: MEASURER }).pageCount).to.equal(2);
     });
 
+    it("should keep lines as tall as Word has them, unrounded, so that a line that only just fits stays on the page", () => {
+        const calibri = { font: "Calibri", size: 11 };
+        const line = (name: string): ParagraphBlock => ({
+            ...paragraph(name, 0),
+            items: [
+                { type: "marker", name },
+                { type: "text", text: "Text", font: calibri },
+            ],
+            markFont: calibri,
+        });
+        // 10 lines of Calibri 11 are 134.28 points in Word, and would be 134.5 in LibreOffice's lines of whole twips
+        const content = document(
+            Array.from({ length: 10 }, (_, index) => line(`line${index + 1}`)),
+            { sections: [{ ...SECTION, pageHeight: 134.3 + SECTION.marginTop + SECTION.marginBottom }] },
+        );
+        expect(paginate(content).bookmarks.get("line10")).to.equal("1");
+    });
+
     it("should lay out a document without content on one page", () => {
         expect(paginate(document([]), { measurer: MEASURER })).to.deep.equal({
             bookmarks: new Map(),
@@ -645,6 +663,77 @@ describe("paginate", () => {
             expect(after(4, { keepLines: true, widowControl: false })).to.deep.equal({ a: "1", cell: "2", third: "2" });
         });
 
+        it("should keep room in a row that breaks across pages for the space after a paragraph that ends there, as Word does", () => {
+            // A paragraph of 4 lines with 15 points after it, and a bookmark on its third line
+            const spaced: ParagraphBlock = {
+                ...paragraph("spaced", 0, { spaceAfter: 15 }),
+                items: [
+                    { type: "marker", name: "spaced" },
+                    { type: "text", text: "abcdefgh abcdefgh ", font: {} },
+                    { type: "marker", name: "third" },
+                    { type: "text", text: "abcdefgh abcdefgh", font: {} },
+                ],
+            };
+            const content = document([paragraph("a", 2), table([row([[spaced, paragraph("next", 1)], [paragraph("tall", 9)]])])]);
+            // Its 4 lines fit in the 50 points below a, but not with the space after them, so widow control leaves 2 there
+            expect(pagesOf(content)).to.deep.equal({ a: "1", spaced: "1", third: "2", next: "2", tall: "1" });
+        });
+
+        it("should keep room for the table's bottom border below the last of it on a page, where it breaks, as Word does", () => {
+            // A cell of 6 lines, with a bookmark on the fourth
+            const cell: ParagraphBlock = {
+                ...paragraph("cell", 0),
+                items: [
+                    { type: "marker", name: "cell" },
+                    { type: "text", text: "abcdefgh abcdefgh abcdefgh ", font: {} },
+                    { type: "marker", name: "fourth" },
+                    { type: "text", text: "abcdefgh abcdefgh abcdefgh", font: {} },
+                ],
+            };
+            // Borders of 1 point between rows, and 10 at the bottom
+            const content = document([
+                paragraph("a", 1),
+                table([
+                    row([[paragraph("first", 1)]], { borderTop: 1 }),
+                    row([[cell]], { borderTop: 1 }),
+                    row([[paragraph("last", 1)]], { borderTop: 1, borderBottom: 10 }),
+                ]),
+            ]);
+            // 4 lines of the second row fit in the 48 points below the first row, but not with the bottom border drawn below
+            // them where the row breaks (`word-line-heights.docx` T1)
+            expect(pagesOf(content)).to.deep.equal({ a: "1", first: "1", cell: "1", fourth: "2", last: "2" });
+            // 5 rows of a line and its border fit in the 60 points below a, but not with the bottom border below the fifth
+            // (T4)
+            const rows = Array.from({ length: 6 }, (_, index) =>
+                row([[paragraph(`row${index + 1}`, 1)]], { borderTop: 1, borderBottom: index === 5 ? 10 : 0 }),
+            );
+            expect(pagesOf(document([paragraph("a", 1), table(rows)]))).to.deep.equal({
+                a: "1",
+                row1: "1",
+                row2: "1",
+                row3: "1",
+                row4: "1",
+                row5: "2",
+                row6: "2",
+            });
+        });
+
+        it("should move a row of an at-least height to the next page whole, unless the page has room for its height, as Word does", () => {
+            const atLeast = (lines: number, room: number): Record<string, string> =>
+                pagesOf(
+                    document([
+                        paragraph("a", 7 - room),
+                        table([row([[paragraph("set", lines)], [paragraph("beside", 1)]], { height: { value: 45, rule: "atLeast" } })]),
+                    ]),
+                );
+            // With room for 4 of its 6 lines, but not its 45 points, it moves (`word-line-heights.docx` T3a). With room for
+            // 5 lines, it breaks, 4 and 2 with widow control (T3c)
+            expect(atLeast(6, 4)).to.deep.equal({ a: "1", set: "2", beside: "2" });
+            expect(atLeast(6, 5)).to.deep.equal({ a: "1", set: "1", beside: "1" });
+            // Shorter than its height, it moves too (T3d)
+            expect(atLeast(2, 4)).to.deep.equal({ a: "1", set: "2", beside: "2" });
+        });
+
         it("should move a row to the next page whole when widow control holds back all of a cell's lines, as Word does", () => {
             const content = document([
                 paragraph("a", 6),
@@ -694,14 +783,11 @@ describe("paginate", () => {
             });
         });
 
-        it("should stop at a row that breaks across pages with merged cells, a set height, or a table in it", () => {
+        it("should stop at a row that breaks across pages with merged cells or a table in it", () => {
             const stoppedAt = (breaking: TableRow): string | undefined =>
                 paginate(document([paragraph("a", 5), table([breaking])]), { measurer: MEASURER }).stoppedAt;
             expect(stoppedAt(mergedRow(merged("restart", [paragraph("merged", 4)])))).to.equal(
                 "a table row with merged cells across pages",
-            );
-            expect(stoppedAt(row([[paragraph("set", 4)]], { height: { value: 50, rule: "atLeast" } }))).to.equal(
-                "a table row of a set height across pages",
             );
             expect(stoppedAt(row([[paragraph("beside", 4)], [table([row([[paragraph("inner", 1)]])])]]))).to.equal(
                 "a table in a table row across pages",

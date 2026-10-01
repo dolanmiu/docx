@@ -8,7 +8,6 @@
  *
  * @module
  */
-import { TWIPS_PER_POINT } from "./text-styles";
 import { type LineSpacing, type ParagraphFormat, type TextFont, measureLineHeight, measureTextWidth } from "./text-width";
 
 /**
@@ -186,21 +185,17 @@ const widthOf = (pieces: readonly Piece[], measurer: TextMeasurer): number =>
     pieces.reduce((total, { text, font }) => total + measurer.measureWidth(text, font), 0);
 
 /**
- * A height in whole twips. LibreOffice's lines are whole twips tall: the font's line height, rounded, for most fonts
- * and sizes, and a twip taller for a few, such as Times New Roman at 10 points.
+ * The height of single-spaced lines, with this line spacing. Word doesn't round it: Calibri 11 is 268.55 twips, and
+ * 289.82 at 259 twips' multiple spacing, where LibreOffice rounds them to whole twips, 269 and 290.
  */
-const inTwips = (points: number): number => Math.round(points * TWIPS_PER_POINT) / TWIPS_PER_POINT;
-
-/** The height of single-spaced lines, with this line spacing, in whole twips */
 const spaced = (natural: number, spacing: LineSpacing | undefined): number => {
-    const single = inTwips(natural);
     if (!spacing) {
-        return single;
+        return natural;
     }
     if (spacing.rule === "multiple") {
-        return inTwips(single * spacing.multiple);
+        return natural * spacing.multiple;
     }
-    return spacing.rule === "exact" ? spacing.height : Math.max(single, spacing.height);
+    return spacing.rule === "exact" ? spacing.height : Math.max(natural, spacing.height);
 };
 
 /** A line being laid out */
