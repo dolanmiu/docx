@@ -5619,6 +5619,7 @@ var docxShapes = (function(exports, docx) {
 			font: (_ref = (_ref2 = (_themeFontOf = themeFontOf(fonts["w:asciiTheme"], themeFonts)) !== null && _themeFontOf !== void 0 ? _themeFontOf : stringOf(fonts["w:ascii"])) !== null && _ref2 !== void 0 ? _ref2 : themeFontOf(fonts["w:hAnsiTheme"], themeFonts)) !== null && _ref !== void 0 ? _ref : stringOf(fonts["w:hAnsi"]),
 			size: scaled(numberOf(attributesOf(find(children, "w:sz"))["w:val"]), 2),
 			bold: onOff(children, "w:b"),
+			italic: onOff(children, "w:i"),
 			allCaps: onOff(children, "w:caps"),
 			smallCaps: onOff(children, "w:smallCaps"),
 			hidden: onOff(children, "w:vanish"),
@@ -5776,10 +5777,11 @@ var docxShapes = (function(exports, docx) {
 	/**
 	* The parts of run formatting that change the font text is measured in.
 	*/
-	var fontOf = ({ font, size, bold, characterSpacing, scale }) => withoutUndefined({
+	var fontOf = ({ font, size, bold, italic, characterSpacing, scale }) => withoutUndefined({
 		font,
 		size,
 		bold,
+		italic,
 		characterSpacing,
 		scale
 	});

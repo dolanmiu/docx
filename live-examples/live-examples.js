@@ -7,9 +7,10 @@
  * it into an editor (Monaco) that knows docx's types, and the document is drawn again as the code changes. View turns
  * the editor back into the code, as changed.
  *
- * An example is a whole file, like a demo. It imports what it uses from "docx", or from an entry such as "docx/shapes",
- * and can use fs and Buffer as it would in Node, to read files in the demo folder and to write the .docx. The page shows
- * the .docx it writes, or else the last Document it makes, so an example doesn't have to write one.
+ * An example is a whole file, like a demo. It imports what it uses from "docx", from an entry such as "docx/shapes", or
+ * from one of the packages in PACKAGES, and can use fs and Buffer as it would in Node, to read files in the demo folder
+ * and to write the .docx. The page shows the .docx it writes, or else the last Document it makes, so an example doesn't
+ * have to write one.
  *
  * docx is loaded from live-examples/lib, which `npm run build.docs` fills from dist, so the examples use the docx the docs
  * describe rather than the last release.
@@ -31,6 +32,15 @@
         "docx/charts": { file: "charts", global: "docxCharts" },
         "docx/math": { file: "math", global: "docxMath" },
         "docx/layout": { file: "layout", global: "docxLayout" },
+    };
+
+    // Packages from npm an example can import too, from jsDelivr at the version the docs are written for: where each is, and
+    // its types, by the path the editor finds them at in node_modules and where they are in the package
+    const PACKAGES = {
+        "@chenglou/pretext": {
+            root: "https://cdn.jsdelivr.net/npm/@chenglou/pretext@0.0.9/",
+            types: { "index.d.ts": "dist/layout.d.ts", "analysis.d.ts": "dist/analysis.d.ts" },
+        },
     };
 
     // docx-preview draws these as empty space
@@ -109,6 +119,9 @@ declare module "stream" {
             .map(([name, { file }]) => [name, once(() => loadDocx().then(() => loadScript(`${LIB}${file}.iife.js`)))]),
     );
     const loadModule = (name) => (name === "docx" ? loadDocx() : entryLoaders[name]());
+    const packageLoaders = Object.fromEntries(
+        Object.entries(PACKAGES).map(([name, { root }]) => [name, once(() => import(`${root}+esm`))]),
+    );
 
     const importsOf = (source) => [...source.matchAll(/from\s+["']([^"']+)["']/g)].map(([, name]) => name);
 
@@ -165,9 +178,11 @@ declare module "stream" {
     /** Runs an example, and returns the .docx it makes: the one it writes with fs.writeFileSync, or else its last Document */
     const make = async (source) => {
         const imports = importsOf(source).filter((name) => name in MODULES);
-        const [{ transform }, files] = await Promise.all([
+        const packageNames = importsOf(source).filter((name) => name in PACKAGES);
+        const [{ transform }, files, packages] = await Promise.all([
             loadSucrase(),
             readRepositoryFiles(source),
+            Promise.all(packageNames.map(async (name) => [name, await packageLoaders[name]()])).then((loaded) => new Map(loaded)),
             loadDocx(),
             ...imports.map(loadModule),
         ]);
@@ -227,7 +242,12 @@ declare module "stream" {
             if (name in MODULES) {
                 return window[MODULES[name].global];
             }
-            throw new Error(`Examples can import docx, its entries such as docx/shapes, and fs, but not ${name}`);
+            if (packages.has(name)) {
+                return packages.get(name);
+            }
+            throw new Error(
+                `Examples can import docx, its entries such as docx/shapes, fs, and ${Object.keys(PACKAGES).join(", ")}, but not ${name}`,
+            );
         };
 
         await new AsyncFunction("require", "exports", "module", "Buffer", code)(require, {}, { exports: {} }, { from: bytesOf });
@@ -278,6 +298,22 @@ declare module "stream" {
             typescript.typescriptDefaults.addExtraLib(text, `file:///node_modules/docx/${file}.d.ts`);
         }
         typescript.typescriptDefaults.addExtraLib(NODE_TYPES, "file:///node-types.d.ts");
+        // A package's types only help with editing, so the editor works without those that can't be fetched
+        const packageTypes = await Promise.all(
+            Object.entries(PACKAGES).flatMap(([name, { root, types: files }]) =>
+                Object.entries(files).map(async ([file, path]) => [
+                    `file:///node_modules/${name}/${file}`,
+                    await fetch(`${root}${path}`)
+                        .then((response) => (response.ok ? response.text() : undefined))
+                        .catch(() => undefined),
+                ]),
+            ),
+        );
+        for (const [path, text] of packageTypes) {
+            if (text !== undefined) {
+                typescript.typescriptDefaults.addExtraLib(text, path);
+            }
+        }
 
         themeEditors();
         new MutationObserver(themeEditors).observe(document.documentElement, { attributes: true, attributeFilter: ["style"] });
