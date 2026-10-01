@@ -7,13 +7,18 @@ import sys
 from collections import defaultdict
 
 text = open(sys.argv[1]).read()
-LINES = []  # (page, yMin, yMax, xMin, xMax, text)
+# (page, yMin, yMax, xMin, xMax, text, label). A line that doesn't start with its probe's name, as the second line of a
+# footnote that wraps, has the label of the line before it in its block, the paragraph it goes on from
+LINES = []
 for p, page in enumerate(re.findall(r"<page.*?</page>", text, re.S), 1):
-    for line in re.findall(
-        r'<line xMin="([\d.]+)" yMin="([\d.]+)" xMax="([\d.]+)" yMax="([\d.]+)">(.*?)</line>', page, re.S
-    ):
-        words = " ".join(html.unescape(w) for w in re.findall(r">([^<]*)</word>", line[4]))
-        LINES.append((p, float(line[1]), float(line[3]), float(line[0]), float(line[2]), words))
+    for block in re.findall(r"<block.*?</block>", page, re.S):
+        label = ""
+        for line in re.findall(
+            r'<line xMin="([\d.]+)" yMin="([\d.]+)" xMax="([\d.]+)" yMax="([\d.]+)">(.*?)</line>', block, re.S
+        ):
+            words = " ".join(html.unescape(w) for w in re.findall(r">([^<]*)</word>", line[4]))
+            label = words if re.match(r"N\d+ ", words) else label
+            LINES.append((p, float(line[1]), float(line[3]), float(line[0]), float(line[2]), words, label))
 
 # A4 with 1440 margins: the body ends 72 points above the bottom of the page
 BODY_BOTTOM = 841.89 - 72
@@ -30,12 +35,12 @@ def up(y):
 
 def show(probe):
     name = f"{probe} "
-    found = [e for e in LINES if e[5].startswith(name)]
+    found = [e for e in LINES if e[6].startswith(name)]
     pages = sorted({e[0] for e in found})
     print(f"\n== {probe}")
     groups = defaultdict(list)
     for entry in found:
-        kind = "note" if " note " in entry[5] else "text"
+        kind = "note" if " note " in entry[6] else "text"
         groups[(entry[0], kind, round(entry[3]))].append(entry)
     for (page, kind, x), entries in sorted(groups.items()):
         print(
