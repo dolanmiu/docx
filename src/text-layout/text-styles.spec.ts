@@ -8,6 +8,7 @@ import {
     fontOf,
     getTextStyles,
     hasDefaultParagraphSpacing,
+    isEastAsianRun,
     readParagraphFormat,
     readRunFormat,
     spansOf,
@@ -303,13 +304,21 @@ describe("readRunFormat with East Asian text and complex scripts", () => {
     });
 });
 
+describe("isEastAsianRun", () => {
+    it("should be whether a run has an East Asian font or language", () => {
+        expect(isEastAsianRun({ eastAsiaFont: "SimSun" })).to.equal(true);
+        expect(isEastAsianRun({ eastAsiaFont: "Calibri", eastAsianLanguage: "ko-KR" })).to.equal(true);
+        expect(isEastAsianRun({ eastAsiaFont: "Calibri", eastAsianLanguage: "en-US" })).to.equal(false);
+        expect(isEastAsianRun({})).to.equal(false);
+    });
+});
+
 describe("spansOf", () => {
     // cspell:disable
     it("should put Chinese, Japanese and Korean in the run's East Asian font, or in MS Mincho where that has none, as Word does", () => {
         expect(spansOf("ab永永", { font: "Calibri", size: 12, eastAsiaFont: "Yu Mincho" })).to.deep.equal([
-            // The run is East Asian, by its font, so its words break anywhere with word wrap off
-            { font: "Calibri", size: 12, text: "ab", eastAsian: true },
-            { font: "Yu Mincho", size: 12, text: "永永", eastAsian: true },
+            { font: "Calibri", size: 12, text: "ab" },
+            { font: "Yu Mincho", size: 12, text: "永永" },
         ]);
         expect(spansOf("永a", { font: "Calibri", eastAsiaFont: "Calibri" })).to.deep.equal([
             { font: "MS Mincho", text: "永" },
@@ -324,14 +333,6 @@ describe("spansOf", () => {
             { font: "Arial", size: 14, bold: true, text: "ab" },
         ]);
         expect(spansOf("שלום", format)).to.deep.equal([{ font: "Calibri", size: 11, bold: true, text: "שלום" }]);
-    });
-
-    it("should give each span the run's East Asian language, and mark the runs of an East Asian language as East Asian", () => {
-        expect(spansOf("a永", { font: "Calibri", eastAsianLanguage: "zh-CN" })).to.deep.equal([
-            { font: "Calibri", text: "a", language: "zh-CN", eastAsian: true },
-            { font: "MS Mincho", text: "永", language: "zh-CN", eastAsian: true },
-        ]);
-        expect(spansOf("a", { eastAsianLanguage: "en-US" })).to.deep.equal([{ text: "a", language: "en-US" }]);
     });
 
     it("should keep marks in the font of the character they are on, and write capitals and small capitals in each font", () => {

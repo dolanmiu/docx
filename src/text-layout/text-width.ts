@@ -32,10 +32,6 @@ export type TextFont = {
 export type TextSpan = TextFont & {
     /** The text. `"\n"` starts a new line and `"\t"` moves to the next tab stop */
     readonly text: string;
-    /** The East Asian language of its run, such as `"ja-JP"`, which decides which characters can't start or end a line */
-    readonly language?: string;
-    /** Whether its run is East Asian, by its East Asian font or language, so its words break anywhere with word wrap off */
-    readonly eastAsian?: boolean;
 };
 
 /**

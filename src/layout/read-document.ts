@@ -28,6 +28,7 @@ import {
     find,
     fontOf,
     getTextStyles,
+    isEastAsianRun,
     isObject,
     isOff,
     kinsokuLanguageOf,
@@ -437,16 +438,14 @@ const readRun = (element: XmlObject, paragraphRun: RunFormat, reader: Reader): r
                         .filter((part) => typeof part === "string")
                         .join(""),
                     format,
-                ).map((span) => {
-                    const { text, language, eastAsian, ...spanFont } = span;
-                    return {
-                        type: "text" as const,
-                        text,
-                        font: spanFont,
-                        ...(language === undefined ? {} : { language }),
-                        ...(eastAsian ? { eastAsian } : {}),
-                    };
-                });
+                ).map(({ text, ...spanFont }) => ({
+                    type: "text" as const,
+                    text,
+                    font: spanFont,
+                    // Where its lines break depends on its language, and whether its run is East Asian
+                    ...(format.eastAsianLanguage === undefined ? {} : { language: format.eastAsianLanguage }),
+                    ...(isEastAsianRun(format) ? { eastAsian: true } : {}),
+                }));
             case "w:tab":
             case "w:ptab":
                 return format.hidden ? [] : [{ type: "tab", font }];

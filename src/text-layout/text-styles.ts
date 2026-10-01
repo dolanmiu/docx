@@ -438,11 +438,10 @@ const fontOfSlot = (format: RunFormat, slot: FontSlot): TextFont => {
 
 /**
  * A span of text in its formatting: in the run's font for its script, capitals for all caps, and smaller capitals for the
- * small letters of small caps. Text in an East Asian language has its language, and text of a run with an East Asian
- * font or language is marked as East Asian, for where its lines break.
+ * small letters of small caps.
  */
 export const spansOf = (text: string, format: RunFormat): readonly TextSpan[] => {
-    const { allCaps, smallCaps, hidden, rightToLeft, complexScript, eastAsianLanguage, eastAsiaFont } = format;
+    const { allCaps, smallCaps, hidden, rightToLeft, complexScript } = format;
     if (hidden) {
         return [];
     }
@@ -453,12 +452,8 @@ export const spansOf = (text: string, format: RunFormat): readonly TextSpan[] =>
         const slot = slotOf(character, last?.slot ?? "latin", complexRun);
         return last?.slot === slot ? [...all.slice(0, -1), { slot, text: last.text + character }] : [...all, { slot, text: character }];
     }, []);
-    const language = {
-        ...(eastAsianLanguage === undefined ? {} : { language: eastAsianLanguage }),
-        ...(isEastAsianFont(eastAsiaFont) || kinsokuLanguageOf(eastAsianLanguage) !== undefined ? { eastAsian: true } : {}),
-    };
     return parts.flatMap(({ slot, text: part }) => {
-        const font = { ...fontOfSlot(format, slot), ...language };
+        const font = fontOfSlot(format, slot);
         if (allCaps || !smallCaps) {
             return [{ ...font, text: allCaps ? part.toUpperCase() : part }];
         }
@@ -469,6 +464,13 @@ export const spansOf = (text: string, format: RunFormat): readonly TextSpan[] =>
             .map((piece) => (/^\p{Ll}/u.test(piece) ? { ...small, text: piece.toUpperCase() } : { ...font, text: piece }));
     });
 };
+
+/**
+ * Whether a run is East Asian, by its East Asian font or language, so its words break anywhere with word wrap off, as
+ * Word breaks them.
+ */
+export const isEastAsianRun = ({ eastAsiaFont, eastAsianLanguage }: RunFormat): boolean =>
+    isEastAsianFont(eastAsiaFont) || kinsokuLanguageOf(eastAsianLanguage) !== undefined;
 
 /**
  * Whether a paragraph in the default style, without formatting of its own, has space before or after it.
