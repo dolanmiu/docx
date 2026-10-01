@@ -251,6 +251,10 @@ describe("layoutLines", () => {
         expect(layoutLines([text("a".repeat(10))], { width: 100, measurer: wide })).to.have.length(4);
         // An accent stays with its letter: "aa" and "a\u0301a"
         expect(layoutLines([text("aaa\u0301a")], { width: 100, measurer: wide })).to.have.length(2);
+        // Also when the accent is in a run of its own: "a", "a\u0301" and "a" on lines of 70
+        expect(layoutLines([text("aa"), text("\u0301a", 12)], { width: 70, measurer: wide })).to.have.length(3);
+        // And a character joined to the one before it by a zero-width joiner stays with it: "a\u200db" and "aa"
+        expect(layoutLines([text("a\u200dbaa")], { width: 70, measurer: wide })).to.have.length(2);
     });
 
     it("should lay out pictures in the line, and wrap them as a word", () => {

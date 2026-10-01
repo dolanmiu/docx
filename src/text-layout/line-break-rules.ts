@@ -120,6 +120,9 @@ const breaksAround = (character: string): boolean => EAST_ASIAN.test(character) 
 /** Whether a character belongs to the one before it, so a line never breaks between them */
 export const extendsCharacter = isExtender;
 
+/** Whether a character joins the one after it to the one before it, as the zero-width joiner joins emoji */
+export const joinsNext = (character: string): boolean => character === "\u200d";
+
 /**
  * The list of Word's for a language, by its tag, such as `"zh-TW"`. Text in another language, or with none, has none: Word
  * lets any character start or end its lines.
@@ -176,7 +179,7 @@ export const findLineBreaks = (pieces: readonly LanguagePiece[], rules: LineBrea
     for (let index = 1; index < characters.length; index++) {
         const before = characters[index - 1];
         const after = characters[index];
-        if (isExtender(after) || before === "\u200d" || GLUE.has(before) || GLUE.has(after)) {
+        if (isExtender(after) || joinsNext(before) || GLUE.has(before) || GLUE.has(after)) {
             continue;
         }
         const opportunity =

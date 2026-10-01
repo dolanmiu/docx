@@ -8,7 +8,7 @@
  *
  * @module
  */
-import { type LineBreakRules, extendsCharacter, findLineBreaks } from "./line-break-rules";
+import { type LineBreakRules, extendsCharacter, findLineBreaks, joinsNext } from "./line-break-rules";
 import { type LineSpacing, type ParagraphFormat, type TextFont, measureLineHeight, measureTextWidth } from "./text-width";
 
 /**
@@ -174,6 +174,28 @@ const segmentsOf = (items: readonly InlineItem[], rules: LineBreakRules): readon
         };
     });
 };
+
+/**
+ * A word's characters, each with the marks on it and anything a zero-width joiner joins to it, which a line never breaks
+ * between, in the pieces of the fonts they are in.
+ */
+const charactersOf = (pieces: readonly Piece[]): readonly (readonly Piece[])[] =>
+    pieces.reduce<readonly (readonly Piece[])[]>(
+        (all, { text, font }) =>
+            [...text].reduce((characters, character) => {
+                const last = characters[characters.length - 1];
+                const lastPiece = last?.[last.length - 1];
+                if (!lastPiece || !(extendsCharacter(character) || joinsNext([...lastPiece.text].pop()!))) {
+                    return [...characters, [{ text: character, font }]];
+                }
+                const joined =
+                    lastPiece.font === font
+                        ? [...last.slice(0, -1), { text: `${lastPiece.text}${character}`, font }]
+                        : [...last, { text: character, font }];
+                return [...characters.slice(0, -1), joined];
+            }, all),
+        [],
+    );
 
 const widthOf = (pieces: readonly Piece[], measurer: TextMeasurer): number =>
     pieces.reduce((total, { text, font }) => total + measurer.measureWidth(text, font), 0);
@@ -429,29 +451,16 @@ export const layoutLines = (
             line = place(line);
             if (token.type === "word" && line.position + tokenWidth > limitOf() + TOLERANCE && limitOf() - indentLeft > 0) {
                 // A word wider than a line is broken across as many lines as it needs, after the last character that fits
-                // on each, and never between a character and the marks on it
+                // on each, and never between a character and the marks on it or what a zero-width joiner joins to it
                 let placed = false;
-                for (const { text, font } of token.pieces) {
-                    const characters = [...text].reduce<readonly string[]>(
-                        (all, character) =>
-                            all.length > 0 && extendsCharacter(character)
-                                ? [...all.slice(0, -1), `${all[all.length - 1]}${character}`]
-                                : [...all, character],
-                        [],
-                    );
-                    for (const character of characters) {
-                        const characterWidth = measurer.measureWidth(character, font);
-                        // Each line is as long as it is, for lines of different widths, and one with no room takes the rest
-                        if (
-                            placed &&
-                            line.position + characterWidth > limitOf() + TOLERANCE &&
-                            limitOf(lines.length + 1) - indentLeft > 0
-                        ) {
-                            line = wrap({ ...line, natural: Math.max(line.natural, tokenHeight), started: true });
-                        }
-                        line = { ...line, position: line.position + characterWidth };
-                        placed = true;
+                for (const character of charactersOf(token.pieces)) {
+                    const characterWidth = widthOf(character, measurer);
+                    // Each line is as long as it is, for lines of different widths, and one with no room takes the rest
+                    if (placed && line.position + characterWidth > limitOf() + TOLERANCE && limitOf(lines.length + 1) - indentLeft > 0) {
+                        line = wrap({ ...line, natural: Math.max(line.natural, tokenHeight), started: true });
                     }
+                    line = { ...line, position: line.position + characterWidth };
+                    placed = true;
                 }
             } else {
                 line = { ...line, position: line.position + tokenWidth };
