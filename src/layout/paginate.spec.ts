@@ -2137,6 +2137,13 @@ describe("paginate", () => {
             const unsupported = { ...paragraph("note", 1), unsupported: "an equation" };
             const content = withNotes([noted(paragraph("b", 1), "footnote 1")], { "footnote 1": [unsupported] });
             expect(paginate(content, { measurer: MEASURER }).stoppedAt).to.equal("an equation");
+            // Nor a table in it whose columns can't be sized, as in the text
+            const [cell] = row([[paragraph("cell", 1)]]).cells;
+            const unsized = { ...table([{ ...row([]), cells: [{ ...cell, width: 20, ownWidth: 20 }] }]), widen: { acrossColumns: true } };
+            const tabled = withNotes([noted(paragraph("b", 1), "footnote 1")], { "footnote 1": [unsized] });
+            expect(paginate(tabled, { measurer: MEASURER }).stoppedAt).to.equal(
+                "a word longer than its cell in a table with cells merged across columns",
+            );
         });
 
         it("should put the space between footnotes, but not before the separator or after the last footnote", () => {

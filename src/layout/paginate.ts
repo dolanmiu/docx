@@ -903,7 +903,7 @@ export const paginate = (
         /** A piece's paragraph, with only its lines in the piece, or its table's rows as a line that doesn't break */
         const measured = ({ block, start, end }: (typeof pieces)[number], index: number): MeasuredParagraph => {
             if (block.type === "table") {
-                return { ...UNBROKEN, lines: [{ height: sum(rowHeights(fitted(block, width)).slice(start, end)), markers: [] }] };
+                return { ...UNBROKEN, lines: [{ height: sum(rowHeights(sizedToPlace(block, width)).slice(start, end)), markers: [] }] };
             }
             const paragraph = measureParagraph(block, width, pieces[index - 1]?.block, pieces[index + 1]?.block);
             return { ...paragraph, lines: paragraph.lines.slice(start, end) };
