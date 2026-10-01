@@ -438,19 +438,52 @@ describe("paginate", () => {
                 paragraph("after", 3),
                 paragraph("next", 1),
             ]);
-            // 5 lines of the row fit below a and the header, and the first line of second with them: widow control doesn't
-            // hold lines back in a row that breaks. On the next page, the header and the 4 lines left of tall leave room
-            // for 2 lines, so after moves on, with the widow control of its 3 lines
+            // 5 lines of the row fit below a and the header, but the first line of second would be alone there, so widow
+            // control moves it to the next page. There, the header and the 4 lines left of tall leave room for 2 lines, so
+            // after moves on, with the widow control of its 3 lines
             expect(pagesOf(content)).to.deep.equal({
                 a: "1",
                 head: "1",
                 tall: "1",
                 tallEnd: "2",
                 first: "1",
-                second: "1",
+                second: "2",
                 after: "3",
                 next: "3",
             });
+        });
+
+        it("should keep widows and orphans of a row that breaks across pages, as Word does", () => {
+            // A cell of 4 lines, with a bookmark on the third
+            const cell = (format: ParagraphFormat = {}): ParagraphBlock => ({
+                ...paragraph("cell", 0, format),
+                items: [
+                    { type: "marker", name: "cell" },
+                    { type: "text", text: "abcdefgh abcdefgh ", font: {} },
+                    { type: "marker", name: "third" },
+                    { type: "text", text: "abcdefgh abcdefgh", font: {} },
+                ],
+            });
+            const after = (lines: number, format?: ParagraphFormat): Record<string, string> =>
+                pagesOf(document([paragraph("a", lines), table([row([[cell(format)]])])]));
+            // 3 lines fit below 4, but 2 go on to the next page, as Word splits them. LibreOffice splits them 3 and 1
+            expect(after(4)).to.deep.equal({ a: "1", cell: "1", third: "2" });
+            expect(after(4, { widowControl: false })).to.deep.equal({ a: "1", cell: "1", third: "1" });
+            // 1 line fits below 6, so the row moves to the next page
+            expect(after(6)).to.deep.equal({ a: "1", cell: "2", third: "2" });
+            expect(after(6, { widowControl: false })).to.deep.equal({ a: "1", cell: "1", third: "2" });
+            // Lines kept together move the row to the next page, with or without widow control
+            expect(after(4, { keepLines: true })).to.deep.equal({ a: "1", cell: "2", third: "2" });
+            expect(after(4, { keepLines: true, widowControl: false })).to.deep.equal({ a: "1", cell: "2", third: "2" });
+        });
+
+        it("should move a row to the next page whole when widow control holds back all of a cell's lines, as Word does", () => {
+            const content = document([
+                paragraph("a", 6),
+                table([row([[paragraph("left", 4)], [paragraph("right1", 1), paragraph("right2", 1)], []])]),
+            ]);
+            // The first line of right fits below a, but left's first line would be alone on the page
+            expect(pagesOf(content)).to.deep.equal({ a: "1", left: "2", right1: "2", right2: "2" });
         });
 
         it("should leave out the space before a paragraph at the top of a cell's part on the next page, and move a row none of whose lines fit", () => {
@@ -742,8 +775,15 @@ describe("paginate", () => {
 
             it("should break a table between its rows, and a row between its lines, across the columns", () => {
                 const rows = table([row([[paragraph("row", 2)]], { cantSplit: true }), row([[paragraph("split", 4)]])]);
-                // The table's 6 lines go 3 and 3
+                // The table's 6 lines go 4 and 2, as 3 and 3 would leave one line of split on its own in the first column
                 expect(pagesOf(balanced([rows], COLUMNS, 4))).to.include({ row: "1", split: "1", b: "1", c: "2" });
+                // A row's 4 lines go 2 below a, and 2 in the second column, and the next section starts below the first, the
+                // taller, so b's 4 lines fill the page
+                expect(pagesOf(balanced([paragraph("a", 1), table([row([[paragraph("four", 4)]])])], COLUMNS, 4))).to.include({
+                    four: "1",
+                    b: "1",
+                    c: "2",
+                });
             });
 
             it("should balance the columns on the last page of a section that goes on from the page before", () => {

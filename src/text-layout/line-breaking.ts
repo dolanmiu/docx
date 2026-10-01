@@ -358,7 +358,9 @@ export const layoutLines = (
             first,
         };
         const finish = (state: LineState, breakAfter?: LaidOutLine["breakAfter"], extra = 0): void => {
-            const natural = Math.max(state.natural, extra, state.started ? 0 : markHeight);
+            // Spaces add nothing to the height of a line with no text on it, which is as tall as its mark, as Word and
+            // LibreOffice lay it out
+            const natural = Math.max(state.started ? state.natural : markHeight, extra);
             // eslint-disable-next-line functional/immutable-data
             lines.push({
                 height: spaced(natural, lineSpacing),
@@ -434,7 +436,10 @@ export const layoutLines = (
             finish(line);
         } else {
             const breakHeight = Math.max(measurer.measureLineHeight(end.font), isLast && !line.started ? markHeight : 0);
-            finish({ ...line, natural: Math.max(line.natural, breakHeight), started: true }, end.kind === "line" ? undefined : end.kind);
+            finish(
+                { ...line, natural: Math.max(line.started ? line.natural : 0, breakHeight), started: true },
+                end.kind === "line" ? undefined : end.kind,
+            );
         }
         first = false;
     }

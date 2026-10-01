@@ -30,9 +30,14 @@ describe("layoutLines", () => {
         expect(heightsOf([text("aaaa bbbb cccc", 8)], 100, { markFont: { size: 11 } })).to.deep.equal([8, 8]);
     });
 
-    it("should give an empty paragraph one line as tall as its mark, or its spaces", () => {
+    it("should give an empty paragraph, or one of only spaces, one line as tall as its mark, as Word does", () => {
         expect(heightsOf([], 100, { markFont: { size: 12 } })).to.deep.equal([12]);
-        expect(heightsOf([text("   ", 16)], 100, { markFont: { size: 12 } })).to.deep.equal([16]);
+        expect(heightsOf([text("   ", 16)], 100, { markFont: { size: 12 } })).to.deep.equal([12]);
+        expect(heightsOf([text(" ", 8)], 100, { markFont: { size: 12 } })).to.deep.equal([12]);
+        // Spaces before a break are as tall as the break's text
+        expect(heightsOf([text("  ", 16), { type: "break", kind: "line", font: {} }, text("bb")])).to.deep.equal([10, 10]);
+        // With text on the line, its spaces count
+        expect(heightsOf([text("aa"), text(" ", 16), text("bb")])).to.deep.equal([16]);
     });
 
     it("should space the lines as the paragraph says", () => {
