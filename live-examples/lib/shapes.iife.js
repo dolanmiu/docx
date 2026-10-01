@@ -3317,7 +3317,7 @@ var docxShapes = (function(exports, docx) {
 	var FONT_WIDTHS = [
 		{
 			name: "Calibri",
-			lineHeight: 1221,
+			lineHeight: 1220.703125,
 			regular: [
 				226,
 				326,
@@ -3727,7 +3727,7 @@ var docxShapes = (function(exports, docx) {
 		},
 		{
 			name: "Cambria",
-			lineHeight: 1172,
+			lineHeight: 1172.36328125,
 			regular: [
 				220,
 				286,
@@ -4137,7 +4137,7 @@ var docxShapes = (function(exports, docx) {
 		},
 		{
 			name: "Arial",
-			lineHeight: 1150,
+			lineHeight: 1149.90234375,
 			regular: [
 				278,
 				278,
@@ -4547,7 +4547,7 @@ var docxShapes = (function(exports, docx) {
 		},
 		{
 			name: "Times New Roman",
-			lineHeight: 1150,
+			lineHeight: 1149.90234375,
 			regular: [
 				250,
 				333,
@@ -4957,7 +4957,7 @@ var docxShapes = (function(exports, docx) {
 		},
 		{
 			name: "Courier New",
-			lineHeight: 1133,
+			lineHeight: 1132.8125,
 			regular: [
 				600,
 				600,
