@@ -531,12 +531,16 @@ const readListNumber = (
     const numbering = childrenOf(find(properties, "w:numPr"));
     const ownId = valueOf(numbering, "w:numId") ?? numberOf(attributesOf(find(numbering, "w:numId"))["w:val"])?.toString();
     const ownLevel = numberOf(attributesOf(find(numbering, "w:ilvl"))["w:val"]);
-    const fromStyle = [...styleChain(reader.styles, style, "paragraph")].reverse().find((definition) => definition.numbering)?.numbering;
-    const id = ownId ?? fromStyle?.id ?? "";
+    // The list and level each from the nearest style that gives it, as a style based on another takes what it doesn't give
+    const fromStyle = styleChain(reader.styles, style, "paragraph").reduce<{ readonly id?: string; readonly level?: number }>(
+        (inherited, { numbering: given }) => ({ ...inherited, ...given }),
+        {},
+    );
+    const id = ownId ?? fromStyle.id ?? "";
     const levels = reader.numbering.get(id);
     // A style's list numbers it at the level it gives, or else at the level that is for it
     const linked = levels?.findIndex((other) => other?.style !== undefined && other.style === style) ?? -1;
-    const index = ownLevel ?? (ownId === undefined ? fromStyle?.level : undefined) ?? Math.max(linked, 0);
+    const index = ownLevel ?? (ownId === undefined ? fromStyle.level : undefined) ?? Math.max(linked, 0);
     const level = levels?.[index];
     if (!levels || !level) {
         return { items: [] };

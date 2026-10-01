@@ -47,8 +47,11 @@ type StyleDefinition = {
     /** Its name, such as "heading 1", by which Word finds its built-in styles */
     readonly name?: string;
     readonly basedOn?: string;
-    /** The list a paragraph style numbers its paragraphs in, and the level, when it gives one (`w:numPr`) */
-    readonly numbering?: { readonly id: string; readonly level?: number };
+    /**
+     * The list a paragraph style numbers its paragraphs in, and the level, when it gives either (`w:numPr`). A style
+     * based on another takes what it doesn't give from it
+     */
+    readonly numbering?: { readonly id?: string; readonly level?: number };
     readonly run: RunFormat;
     readonly paragraph: ParagraphFormat;
     /** The margins a table style gives its cells */
@@ -289,7 +292,9 @@ export const readTextStyles = (xml: XmlObject, themeFonts: ThemeFonts = OFFICE_T
                     type: stringOf(attributes["w:type"]) ?? "paragraph",
                     ...(name === undefined ? {} : { name }),
                     basedOn: valueOf(children, "w:basedOn"),
-                    ...(list === undefined ? {} : { numbering: { id: String(list), ...(level === undefined ? {} : { level }) } }),
+                    ...(list === undefined && level === undefined
+                        ? {}
+                        : { numbering: withoutUndefined({ id: list === undefined ? undefined : String(list), level }) }),
                     run: readRunFormat(find(children, "w:rPr"), themeFonts),
                     paragraph: readParagraphFormat(find(children, "w:pPr")),
                     ...(attributes["w:type"] === "table"

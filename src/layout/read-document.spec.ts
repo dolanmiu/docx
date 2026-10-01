@@ -484,6 +484,29 @@ describe("readDocument", () => {
             expect([0, 1].map((index) => textOf(content, index))).to.deep.equal(["Chapter 1first", "1.Alinked"]);
         });
 
+        it("should take a style's list and level each from the nearest style that gives it", () => {
+            const style = (id: string, basedOn: string, numPr: string): string =>
+                `<w:style w:type="paragraph" w:styleId="${id}"><w:name w:val="${id}"/>${basedOn ? `<w:basedOn w:val="${basedOn}"/>` : ""}<w:pPr><w:numPr>${numPr}</w:numPr></w:pPr></w:style>`;
+            const content = readWritten({
+                numbering,
+                externalStyles: `<w:styles xmlns:w="main">${style("Base", "", '<w:ilvl w:val="0"/><w:numId w:val="{chapters-0}"/>')}${style(
+                    "Derived",
+                    "Base",
+                    '<w:ilvl w:val="1"/>',
+                )}</w:styles>`,
+                sections: [
+                    {
+                        children: [
+                            new Paragraph({ style: "Base", children: [new TextRun("base")] }),
+                            new Paragraph({ style: "Derived", children: [new TextRun("derived")] }),
+                        ],
+                    },
+                ],
+            });
+            // The derived style's level, in the list of the style it is based on
+            expect([0, 1].map((index) => textOf(content, index))).to.deep.equal(["Chapter 1base", "1.Aderived"]);
+        });
+
         it("should number a paragraph that gives its own level in its style's list, and in its own list when it gives one", () => {
             const content = readBody(
                 [
