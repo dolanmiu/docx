@@ -628,6 +628,15 @@ describe("readDocument", () => {
             expect(tableOf([], { "w:w": 3000 }, { "w:w": 2500, "w:type": "pct" }).fit).to.equal(undefined);
             expect(tableOf([], { "w:w": 3000 }, { "w:type": "pct" }).fit).to.deep.equal({});
             expect(tableOf([{ "w:tblLayout": { _attr: { "w:type": "fixed" } } }], undefined).fit).to.equal(undefined);
+            // Every cell with a width, which Word widens a column of for a word longer than its cells give it, unless the
+            // table is laid out fixed
+            expect(tableOf([], { "w:w": 3000 }, { "w:w": 2500, "w:type": "pct" }).widen).to.deep.equal({ acrossColumns: false });
+            expect(tableOf(tableWidth({ "w:w": 9000, "w:type": "dxa" }), { "w:w": 3000 }).widen).to.deep.equal({
+                width: 450,
+                acrossColumns: false,
+            });
+            expect(tableOf([], { "w:w": 3000 }, undefined).widen).to.equal(undefined);
+            expect(tableOf([{ "w:tblLayout": { _attr: { "w:type": "fixed" } } }], { "w:w": 3000 }).widen).to.equal(undefined);
             // The cells keep the widths they give themselves, and their margins either side, to be sized by
             expect(
                 tableOf([], { "w:w": 3000 }, undefined).rows[0].cells.map(({ ownWidth, marginLeft, marginRight }) => ({
@@ -661,6 +670,10 @@ describe("readDocument", () => {
             // With widths, as Word keeps them
             const width = { "w:tcW": { _attr: { "w:w": 3000 } } };
             expect(unsupportedOf(cell([width, value("w:gridSpan", 2)], p(r(t("a")))))).to.equal(undefined);
+            // Whose columns are widened for long words as they are laid out, unless they are merged across them
+            const merged = readBody([{ "w:tbl": [{ "w:tr": [cell([width, value("w:gridSpan", 2)], p(r(t("a"))))] }] }]).blocks[0]
+                .block as TableBlock;
+            expect(merged.widen).to.deep.equal({ acrossColumns: true });
         });
 
         it("should read the paragraphs in content controls and custom XML in a cell", () => {

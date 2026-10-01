@@ -273,12 +273,15 @@ export const paginate = (
                 { min: 0, max: 0 },
             );
 
-    // Tables sized to their text, by the width they are in
+    // Tables sized to their text, or with columns widened for long words, by the width they are in
     // eslint-disable-next-line functional/prefer-readonly-type
     const fittedTables = new Map<TableBlock, Map<number, TableBlock>>();
-    /** A table as it is laid out in a width: with its columns sized to their text, when Word sizes them so */
+    /**
+     * A table as it is laid out in a width: with its columns sized to their text, or widened for words longer than its
+     * cells give them, when Word sizes them so
+     */
     const fitted = (table: TableBlock, width: number): TableBlock => {
-        if (!table.fit) {
+        if (!table.fit && !table.widen) {
             return table;
         }
         const byWidth = fittedTables.get(table) ?? new Map<number, TableBlock>();
@@ -287,6 +290,9 @@ export const paginate = (
         const sized = byWidth.get(width) ?? fitColumns(table, width, contentWidths);
         // eslint-disable-next-line functional/immutable-data
         byWidth.set(width, sized);
+        if (sized.unsupported) {
+            throw new Unsupported(sized.unsupported);
+        }
         return sized;
     };
 
