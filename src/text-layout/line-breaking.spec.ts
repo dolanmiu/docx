@@ -107,6 +107,20 @@ describe("layoutLines", () => {
         ).to.deep.equal([{ height: 12, markers: [], breakAfter: "page" }]);
     });
 
+    it("should make a line of only spaces before a page break at the end of a paragraph as tall as the mark, as Word does", () => {
+        const pageBreak = (size: number): InlineItem => ({ type: "break", kind: "page", font: { size } });
+        // word-probes.docx U8a6: 28-point spaces before a break of the paragraph's size
+        expect(heightsOf([text("     ", 28), pageBreak(11)], 100, { markFont: { size: 11 } })).to.deep.equal([11]);
+        // U8a7: the break 28-point too
+        expect(heightsOf([text("     ", 28), pageBreak(28)], 100, { markFont: { size: 11 } })).to.deep.equal([11]);
+        expect(heightsOf([pageBreak(28)], 100, { markFont: { size: 11 } })).to.deep.equal([11]);
+        // With text after it, the break's line is as tall as the break, and a line break's always is
+        expect(heightsOf([text("     ", 28), pageBreak(28), text("bb")], 100, { markFont: { size: 11 } })).to.deep.equal([28, 10]);
+        expect(
+            heightsOf([text("     ", 28), { type: "break", kind: "line", font: { size: 28 } }], 100, { markFont: { size: 11 } }),
+        ).to.deep.equal([28, 11]);
+    });
+
     it("should put the text after a page break at the end of a paragraph, or a line break, on a line of its own", () => {
         const lines = layoutLines([text("aa"), { type: "break", kind: "page", font: {} }, text("bb")], {
             width: 100,

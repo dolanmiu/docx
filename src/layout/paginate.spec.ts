@@ -261,8 +261,8 @@ describe("paginate", () => {
             expect(pagesOf(newPage([]))).to.deep.equal({ a: "1", b: "2", c: "3" });
             // Only as much of it as is more than the space after the empty paragraph that ends the section before
             expect(pagesOf(newPage([{ ...sectionBreak, format: { spaceAfter: 10 } }]))).to.deep.equal({ a: "1", b: "2", c: "2" });
-            // The first paragraph of a continuous section, kept with the next on a new page, keeps it too, but not after a
-            // page break before it
+            // The first paragraph of a continuous section keeps it too on a new page, kept with the next or after a page
+            // break before it
             const continuous = (first: ParagraphFormat): DocumentContent =>
                 document(
                     [
@@ -275,7 +275,41 @@ describe("paginate", () => {
                     { sections: [SECTION, { ...SECTION, start: "continuous" }] },
                 );
             expect(pagesOf(continuous({ keepNext: true }))).to.deep.equal({ a: "1", heading: "2", b: "2", c: "3" });
-            expect(pagesOf(continuous({ pageBreakBefore: true }))).to.deep.equal({ a: "1", heading: "2", b: "2", c: "2" });
+            expect(pagesOf(continuous({ pageBreakBefore: true }))).to.deep.equal({ a: "1", heading: "2", b: "2", c: "3" });
+        });
+
+        it("should keep the space before a continuous section's first paragraph with a page break before it, less the empty paragraph's space after, as Word does", () => {
+            // As word-probes.docx's U7: below the empty paragraph that ends the section before, with 10 points after
+            const sectionBreak: ParagraphBlock = { ...paragraph("break", 0), items: [], sectionBreak: true, format: { spaceAfter: 10 } };
+            const continuous = (before: ParagraphFormat, first: ParagraphFormat, lines: number): DocumentContent =>
+                document(
+                    [
+                        [paragraph("a", 1, before), 0],
+                        [sectionBreak, 0],
+                        [paragraph("b", lines, { pageBreakBefore: true, ...first }), 1],
+                        [paragraph("c", 1), 1],
+                        [paragraph("d", 1), 1],
+                    ],
+                    { sections: [SECTION, { ...SECTION, start: "continuous" }] },
+                );
+            // U7a: 30 points before are 20 below the top of the page, so b's 4 lines and c fill it
+            expect(pagesOf(continuous({}, { spaceBefore: 30 }, 4))).to.deep.equal({ a: "1", b: "2", c: "2", d: "3" });
+            // U7b: 5 points before are none, so b's 5 lines, c and d fill it
+            expect(pagesOf(continuous({}, { spaceBefore: 5 }, 5))).to.deep.equal({ a: "1", b: "2", c: "2", d: "2" });
+            // U7c: it is the empty paragraph's space after that counts, not the 40 after the section's last paragraph
+            expect(pagesOf(continuous({ spaceAfter: 40 }, { spaceBefore: 30 }, 4))).to.deep.equal({ a: "1", b: "2", c: "2", d: "3" });
+            // Below the section's first paragraph, a page break leaves out the space before the next
+            const later = document(
+                [
+                    [paragraph("a", 1), 0],
+                    [sectionBreak, 0],
+                    [paragraph("b", 1), 1],
+                    [paragraph("c", 6, { pageBreakBefore: true, spaceBefore: 30 }), 1],
+                    [paragraph("d", 1), 1],
+                ],
+                { sections: [SECTION, { ...SECTION, start: "continuous" }] },
+            );
+            expect(pagesOf(later)).to.deep.equal({ a: "1", b: "1", c: "2", d: "2" });
         });
 
         it("should keep the space before a new-page section's first paragraph less the empty paragraph's space after, with a page break before it or not, as Word does", () => {
@@ -624,6 +658,49 @@ describe("paginate", () => {
             );
             // A table in a cell of a row that moves to the next page whole is laid out there
             expect(stoppedAt(row([[table([row([[paragraph("inner", 3)]])])]]))).to.equal(undefined);
+        });
+
+        it("should stop at a merge that doesn't fit on the page with its cell's text, which Word breaks across pages", () => {
+            // As word-probes.docx's U4a: an 8-line cell merged down 2 rows, beside one-line cells, from line 47 of 51. Here
+            // a 4-line cell from line 5 of 7
+            const merge = (lines: number): TableBlock =>
+                table([
+                    mergedRow(merged("restart", [paragraph("merged", lines)]), [[paragraph("r1", 1)]]),
+                    mergedRow(merged("continue"), [[paragraph("r2", 1)]]),
+                ]);
+            const laidOut = (lines: number): ReturnType<typeof paginate> =>
+                paginate(document([paragraph("a", 4), merge(lines), paragraph("b", 1)]), { measurer: MEASURER });
+            // It stops before the merge's first row, so none of the cell's lines are given the page before Word's
+            expect(laidOut(4)).to.deep.include({
+                bookmarks: new Map([["a", "1"]]),
+                stoppedAt: "a table row with merged cells across pages",
+            });
+            // A merge that fits on the page is laid out
+            expect(Object.fromEntries(laidOut(3).bookmarks)).to.deep.equal({ a: "1", merged: "1", r1: "1", r2: "1", b: "2" });
+            // With the cell's text all in the rows on the page, the next row of the merge moves to the next page, as in Word
+            // (U4b)
+            const fitting = (first: number): DocumentContent =>
+                document([
+                    paragraph("a", 4),
+                    table([
+                        mergedRow(merged("restart", [paragraph("merged", 2)]), [[paragraph("r1", first)]]),
+                        mergedRow(merged("continue"), [[paragraph("r2", 1)]]),
+                        mergedRow(merged("continue"), [[paragraph("r3", 2)]], { cantSplit: true }),
+                    ]),
+                ]);
+            expect(pagesOf(fitting(2))).to.deep.equal({ a: "1", merged: "1", r1: "1", r2: "1", r3: "2" });
+            expect(pagesOf(fitting(1))).to.deep.equal({ a: "1", merged: "1", r1: "1", r2: "1", r3: "2" });
+            // A merge whose first row is kept whole, and doesn't fit, moves to the next page with it, where it fits
+            const kept = (changes: Partial<TableRow>): DocumentContent =>
+                document([
+                    paragraph("a", 6),
+                    table([
+                        mergedRow(merged("restart", [paragraph("merged", 3)]), [[paragraph("r1", 2)]], changes),
+                        mergedRow(merged("continue"), [[paragraph("r2", 1)]]),
+                    ]),
+                ]);
+            expect(pagesOf(kept({ cantSplit: true }))).to.deep.equal({ a: "1", merged: "2", r1: "2", r2: "2" });
+            expect(pagesOf(kept({ height: { value: 20, rule: "exact" } }))).to.deep.equal({ a: "1", merged: "2", r1: "2", r2: "2" });
         });
 
         it("should stop at a line in a table cell taller than a page", () => {

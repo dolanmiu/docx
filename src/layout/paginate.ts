@@ -24,7 +24,17 @@ import {
 } from "../text-layout";
 import { fitColumns } from "./column-widths";
 import { formatNumber } from "./number-format";
-import type { Block, DocumentContent, HeadersOrFooters, LayoutItem, ParagraphBlock, Section, TableBlock, TableRow } from "./read-document";
+import type {
+    Block,
+    DocumentContent,
+    HeadersOrFooters,
+    LayoutItem,
+    ParagraphBlock,
+    Section,
+    TableBlock,
+    TableCell,
+    TableRow,
+} from "./read-document";
 
 /**
  * Where the pages of a document broke.
@@ -303,36 +313,39 @@ export const paginate = (
         return sum(parts.map(({ height, before }, index) => height + (index === 0 ? 0 : between(parts[index - 1].after, before)))) + outer;
     };
 
+    const cellHeight = (cell: TableCell): number => cell.marginTop + stackHeight(cell.blocks, cell.width) + cell.marginBottom;
+
+    /** The cells merged down several rows of a table: the row each starts in, its last row, and the height its text needs */
+    const mergesOf = ({ rows }: TableBlock): readonly { readonly first: number; readonly last: number; readonly height: number }[] =>
+        rows.flatMap(({ cells }, first) =>
+            cells
+                .filter(({ verticalMerge }) => verticalMerge === "restart")
+                .map((cell) => {
+                    // The rest of the merge is in the same column of the grid, which cells spanning columns can put at another index
+                    const span = rows
+                        .slice(first + 1)
+                        .findIndex((row) => row.cells.find((other) => other.column === cell.column)?.verticalMerge !== "continue");
+                    return { first, last: span === -1 ? rows.length - 1 : first + span, height: cellHeight(cell) };
+                }),
+        );
+
     /**
      * The height of each row of a table: its tallest cell, with the cell's margins, or the row's own height, and its
      * borders. Cells merged down several rows make the last of them taller when their text needs more room.
      */
-    const rowHeights = ({ rows }: TableBlock): readonly number[] => {
-        const cellHeight = (cell: TableBlock["rows"][number]["cells"][number]): number =>
-            cell.marginTop + stackHeight(cell.blocks, cell.width) + cell.marginBottom;
+    const rowHeights = (table: TableBlock, merges = mergesOf(table)): readonly number[] => {
+        const { rows } = table;
         const heights = rows.map(({ cells, height, borderTop, borderBottom }) => {
             const natural = Math.max(0, ...cells.filter(({ verticalMerge }) => verticalMerge === undefined).map(cellHeight));
             const rowHeight = height === undefined ? natural : height.rule === "exact" ? height.value : Math.max(height.value, natural);
             return rowHeight + borderTop + borderBottom;
         });
-        return rows.reduce<readonly number[]>(
-            (all, { cells }, rowIndex) =>
-                cells.reduce((current, cell) => {
-                    if (cell.verticalMerge !== "restart") {
-                        return current;
-                    }
-                    // The rest of the merge is in the same column of the grid, which cells spanning columns can put at another index
-                    const span = rows
-                        .slice(rowIndex + 1)
-                        .findIndex((row) => row.cells.find((other) => other.column === cell.column)?.verticalMerge !== "continue");
-                    const last = span === -1 ? rows.length - 1 : rowIndex + span;
-                    const missing = cellHeight(cell) - sum(current.slice(rowIndex, last + 1));
-                    return missing > 0 && rows[last].height?.rule !== "exact"
-                        ? current.map((value, index) => (index === last ? value + missing : value))
-                        : current;
-                }, all),
-            heights,
-        );
+        return merges.reduce((current, { first, last, height }) => {
+            const missing = height - sum(current.slice(first, last + 1));
+            return missing > 0 && rows[last].height?.rule !== "exact"
+                ? current.map((value, index) => (index === last ? value + missing : value))
+                : current;
+        }, heights);
     };
 
     const markersOf = (block: Block): readonly string[] =>
@@ -897,13 +910,12 @@ export const paginate = (
     };
 
     const placeParagraph = (paragraph: MeasuredParagraph, keptWithPrevious: boolean): void => {
-        // At the start of a section on a new page, the page is already new, so the first paragraph keeps its space before
-        // there as it does without the break, less the empty paragraph's space after: 1440 before after 200 is 1240 in
-        // Word (word-rules2.docx Q2c)
+        // The first paragraph of a section keeps its space before at the top of the new page, less the empty paragraph's
+        // space after, as it does without the break: 1440 before after 200 is 1240 in Word, at the start of a section on a
+        // new page, which is already new (word-rules2.docx Q2c), or of a continuous one (word-probes.docx U7a). Any other
+        // paragraph's is left out below the page break, as it is below one in the text
         if (paragraph.pageBreakBefore && (placedInColumn || column > 0)) {
             startPage();
-            // Its space before is left out below the page break, as it is below one in the text
-            sectionSpaceAfter = undefined;
         }
         // Lines up to each page or column break, which start the rest on a new page, or in the next column
         const groups = paragraph.lines.reduce<readonly (readonly LaidOutLine[])[]>(
@@ -1034,7 +1046,8 @@ export const paginate = (
     };
 
     const placeTable = (table: TableBlock): void => {
-        const heights = rowHeights(table);
+        const merges = mergesOf(table);
+        const heights = rowHeights(table, merges);
         const headerRows = table.rows.findIndex(({ header }) => !header);
         const repeated = headerRows > 0 ? sum(heights.slice(0, headerRows)) : 0;
         // The space after the paragraph before the table
@@ -1053,22 +1066,37 @@ export const paginate = (
         /** Whether a row fits on the page, with its footnotes */
         const rowFits = (height: number, notes: readonly string[]): boolean =>
             position + height + moreNoteRoom(notes) <= bottom - noteArea + TOLERANCE;
+        const markersIn = (row: TableRow): readonly string[] => row.cells.flatMap((cell) => cell.blocks.flatMap(markersOf));
         for (const [index, row] of table.rows.entries()) {
             const height = heights[index];
-            const markers = row.cells.flatMap((cell) => cell.blocks.flatMap(markersOf));
+            const markers = markersIn(row);
             const notes = notesIn(markers);
             if (!rowFits(height, notes) && position + height <= bottom - noteArea + TOLERANCE && notes.some(canBreak)) {
                 throw new Unsupported("a footnote in a table row across pages");
             }
-            if (!rowFits(height, notes) && !row.cantSplit && row.height?.rule !== "exact") {
+            const keptWhole = row.cantSplit || row.height?.rule === "exact";
+            if (!rowFits(height, notes) && keptWhole && placedInColumn) {
+                startTablePage(index);
+            }
+            for (const { last, height: needed } of merges.filter(({ first }) => first === index)) {
+                // The rows of the merge its cell's text reaches into, which go on the page together unless the page breaks
+                // across the cell's lines
+                const reached = heights
+                    .slice(index, last + 1)
+                    .findIndex((_, offset) => sum(heights.slice(index, index + offset + 1)) >= needed - TOLERANCE);
+                const rows = table.rows.slice(index, reached === -1 ? last + 1 : index + reached + 1);
+                if (rows.length > 1 && !rowFits(sum(heights.slice(index, index + rows.length)), notesIn(rows.flatMap(markersIn)))) {
+                    // Word breaks the cell's lines with the row of the merge that crosses the page, where all of them would be
+                    // put on this page with its first row (word-probes.docx U4a)
+                    throw new Unsupported("a table row with merged cells across pages");
+                }
+            }
+            if (!rowFits(height, notes) && !keptWhole) {
                 if (notes.length > 0) {
                     throw new Unsupported("a footnote in a table row across pages");
                 }
                 splitRow(row, height, () => startTablePage(index));
                 continue;
-            }
-            if (!rowFits(height, notes) && placedInColumn) {
-                startTablePage(index);
             }
             if (!rowFits(height, notes)) {
                 stopIfBalancing();
