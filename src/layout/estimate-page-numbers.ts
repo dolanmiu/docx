@@ -3,8 +3,10 @@
  *
  * @module
  */
-import type { EstimatedPageNumbers, IContext, IXmlableObject } from "docx";
+import type { EstimatedPageNumbers, IContext, IXmlableObject, PageNumberEstimator } from "docx";
 
+import { DEFAULT_MEASURER, type TextMeasurer } from "../text-layout";
+import { type MeasureWidth, measurerOf } from "./measure-width";
 import { paginate } from "./paginate";
 import { readDocument } from "./read-document";
 
@@ -21,6 +23,26 @@ const sameNumbers = (one: Pass, other: Pass): boolean =>
     one.pageCount === other.pageCount &&
     one.sectionPageCounts.length === other.sectionPageCounts.length &&
     one.sectionPageCounts.every((count, index) => other.sectionPageCounts[index] === count);
+
+/** Lays out the pages until their page numbers stop changing, with a measurer */
+const estimateWith = (body: IXmlableObject, context: IContext, measurer: TextMeasurer): EstimatedPageNumbers => {
+    if (!context.file) {
+        return { bookmarks: new Map() };
+    }
+    const content = readDocument(body, context);
+    const layOut = (before: Pass, pass: number): Pass => {
+        const { bookmarks, pageCount, sectionPageCounts, stoppedAt } = paginate(content, {
+            measurer,
+            pageNumbers: before.bookmarks,
+            pageCount: before.pageCount,
+            sectionPageCounts: before.sectionPageCounts,
+        });
+        // The number of pages is known only when all of the document was laid out
+        const estimate = { bookmarks, sectionPageCounts, ...(stoppedAt === undefined ? { pageCount } : {}) };
+        return pass >= PASSES || sameNumbers(estimate, before) ? estimate : layOut(estimate, pass + 1);
+    };
+    return layOut({ bookmarks: new Map(), sectionPageCounts: [] }, 1);
+};
 
 /**
  * Works out the page each bookmark of a document starts on, and how many pages the document and each of its sections
@@ -43,20 +65,35 @@ const sameNumbers = (one: Pass, other: Pass): boolean =>
  *
  * @publicApi
  */
-export const estimatePageNumbers = (body: IXmlableObject, context: IContext): EstimatedPageNumbers => {
-    if (!context.file) {
-        return { bookmarks: new Map() };
-    }
-    const content = readDocument(body, context);
-    const layOut = (before: Pass, pass: number): Pass => {
-        const { bookmarks, pageCount, sectionPageCounts, stoppedAt } = paginate(content, {
-            pageNumbers: before.bookmarks,
-            pageCount: before.pageCount,
-            sectionPageCounts: before.sectionPageCounts,
-        });
-        // The number of pages is known only when all of the document was laid out
-        const estimate = { bookmarks, sectionPageCounts, ...(stoppedAt === undefined ? { pageCount } : {}) };
-        return pass >= PASSES || sameNumbers(estimate, before) ? estimate : layOut(estimate, pass + 1);
-    };
-    return layOut({ bookmarks: new Map(), sectionPageCounts: [] }, 1);
+export const estimatePageNumbers = (body: IXmlableObject, context: IContext): EstimatedPageNumbers =>
+    estimateWith(body, context, DEFAULT_MEASURER);
+
+/**
+ * How {@link estimatePageNumbersWith} lays out the pages.
+ *
+ * @publicApi
+ */
+export type EstimatePageNumbersOptions = {
+    /**
+     * Measures how wide text is, such as {@link measureWithPretext}, which measures it with the fonts a browser has.
+     * Default is the widths of the fonts Word documents use most, which {@link estimatePageNumbers} uses. Lines still
+     * break, and tabs move to their stops, as Word lays them out, and lines are as tall as Word makes them.
+     */
+    readonly measureWidth?: MeasureWidth;
+};
+
+/**
+ * Works out the page each bookmark of a document starts on, as {@link estimatePageNumbers} does, measuring text as the
+ * options say. Give what it returns to a document as its `pageNumbers`:
+ *
+ * ```ts
+ * new Document({ pageNumbers: estimatePageNumbersWith({ measureWidth: measureWithPretext(pretext) }), sections: [...] });
+ * ```
+ *
+ * @publicApi
+ */
+export const estimatePageNumbersWith = ({ measureWidth }: EstimatePageNumbersOptions): PageNumberEstimator => {
+    // One measurer for every document, so the lines laid out for one are kept for the passes after
+    const measurer = measureWidth ? measurerOf(measureWidth) : DEFAULT_MEASURER;
+    return (body, context) => estimateWith(body, context, measurer);
 };

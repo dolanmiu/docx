@@ -1,4 +1,4 @@
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 
 import { Formatter } from "@export/formatter";
 import { File } from "@file/file";
@@ -13,6 +13,7 @@ import {
     type IXmlableObject,
     PageBreak,
     PageNumber,
+    type PageNumberEstimator,
     PageReference,
     Paragraph,
     TabStopType,
@@ -20,17 +21,18 @@ import {
     TextRun,
 } from "docx";
 
-import { estimatePageNumbers } from "./estimate-page-numbers";
+import { estimatePageNumbers, estimatePageNumbersWith } from "./estimate-page-numbers";
+import type { FontToMeasure } from "./measure-width";
 
 const contextOf = (file: File): IContext => ({ file, viewWrapper: file.Document, stack: [] }) as unknown as IContext;
 
 /** The page numbers a document is written with */
-const estimateOf = (options: IPropertiesOptions): EstimatedPageNumbers => {
+const estimateOf = (options: IPropertiesOptions, estimator: PageNumberEstimator = estimatePageNumbers): EstimatedPageNumbers => {
     let estimate: EstimatedPageNumbers = { bookmarks: new Map() };
     const file = new File({
         ...options,
         pageNumbers: (body, context) => {
-            estimate = estimatePageNumbers(body, context);
+            estimate = estimator(body, context);
             return estimate;
         },
     });
@@ -38,7 +40,8 @@ const estimateOf = (options: IPropertiesOptions): EstimatedPageNumbers => {
     return estimate;
 };
 
-const pageNumbersOf = (options: IPropertiesOptions): Record<string, string> => Object.fromEntries(estimateOf(options).bookmarks);
+const pageNumbersOf = (options: IPropertiesOptions, estimator?: PageNumberEstimator): Record<string, string> =>
+    Object.fromEntries(estimateOf(options, estimator).bookmarks);
 
 // A text frame, which the layout doesn't follow yet
 const FRAME: IFrameOptions = {
@@ -122,5 +125,40 @@ describe("estimatePageNumbers", () => {
         expect(estimatePageNumbers({ "w:body": [] } as IXmlableObject, { stack: [] } as unknown as IContext)).to.deep.equal({
             bookmarks: new Map(),
         });
+    });
+});
+
+describe("estimatePageNumbersWith", () => {
+    // About 30 lines of italic text in Times New Roman at 10 points, docx's default, and a heading after them
+    const DOCUMENT: IPropertiesOptions = {
+        sections: [
+            {
+                children: [
+                    heading("First", "first"),
+                    new Paragraph({
+                        children: [new TextRun({ text: "The harbour was rebuilt after the storm. ".repeat(80), italics: true })],
+                    }),
+                    heading("Second", "second"),
+                ],
+            },
+        ],
+    };
+
+    it("should measure text as the options say, and break lines as Word breaks them", () => {
+        expect(pageNumbersOf(DOCUMENT)).to.deep.include({ first: "1", second: "1" });
+        // Text more than twice as wide as the width tables measure it takes more than twice as many lines, which go on to
+        // the next page
+        const measureWidth = vi.fn((text: string, font: FontToMeasure) => text.length * font.size);
+        expect(pageNumbersOf(DOCUMENT, estimatePageNumbersWith({ measureWidth }))).to.deep.include({ first: "1", second: "2" });
+        expect(measureWidth.mock.calls.map(([, font]) => font)).to.deep.include({
+            name: "Times New Roman",
+            size: 10,
+            bold: false,
+            italic: true,
+        });
+    });
+
+    it("should measure text with the width tables, as estimatePageNumbers does, without a way to measure it", () => {
+        expect(estimateOf(DOCUMENT, estimatePageNumbersWith({}))).to.deep.equal(estimateOf(DOCUMENT));
     });
 });
