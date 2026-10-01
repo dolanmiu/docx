@@ -2275,27 +2275,191 @@ describe("paginate", () => {
             expect(pagesOf(content)).to.deep.equal({ a: "1", b: "1", c: "2" });
         });
 
-        it("should leave room for the footnotes of table rows, and stop at a row with footnotes that would break", () => {
+        // Word's results in these are from word-probes.docx's U3 (scripts/layout-probes), on pages of 51 lines, made smaller
+
+        it("should leave room for the footnotes of table rows, and move a row to the next page with a footnote that doesn't fit below it, as Word does", () => {
             const note = { "footnote 1": [paragraph("note", 1)] };
             const fits = withNotes(
                 [paragraph("a", 3), table([row([[noted(paragraph("cell", 2), "footnote 1")]])]), paragraph("b", 1)],
                 note,
             );
             expect(pagesOf(fits)).to.deep.equal({ a: "1", cell: "1", b: "2" });
+            // A row of a line on the page's 5th line fits with its footnote below it. On the 6th or 7th it moves to the next
+            // page with it, where LibreOffice leaves the row and moves only the footnote (U3a)
+            const oneLine = (above: number): DocumentContent =>
+                withNotes(
+                    [paragraph("a", above), table([row([[noted(paragraph("cell", 1), "footnote 1")]]), row([[paragraph("next", 1)]])])],
+                    note,
+                );
+            expect(pagesOf(oneLine(4))).to.deep.equal({ a: "1", cell: "1", next: "2" });
+            expect(pagesOf(oneLine(5))).to.deep.equal({ a: "1", cell: "2", next: "2" });
+            expect(pagesOf(oneLine(6))).to.deep.equal({ a: "1", cell: "2", next: "2" });
+            // So does a row whose cell's 2 lines widow control keeps together, one kept whole, and one whose footnote of 2
+            // lines its widow control keeps together
+            const breaking = withNotes([paragraph("a", 4), table([row([[noted(paragraph("cell", 2), "footnote 1")]])])], note);
+            expect(pagesOf(breaking)).to.deep.equal({ a: "1", cell: "2" });
             const kept = withNotes(
                 [paragraph("a", 4), table([row([[noted(paragraph("cell", 2), "footnote 1")]], { cantSplit: true })])],
                 note,
             );
             expect(pagesOf(kept)).to.deep.equal({ a: "1", cell: "2" });
-            const breaking = withNotes([paragraph("a", 4), table([row([[noted(paragraph("cell", 2), "footnote 1")]])])], note);
-            expect(paginate(breaking, { measurer: MEASURER }).stoppedAt).to.equal("a footnote in a table row across pages");
-            const tall = withNotes([table([row([[noted(paragraph("cell", 6), "footnote 1")]], { cantSplit: true })])], note);
-            expect(paginate(tall, { measurer: MEASURER }).stoppedAt).to.equal("a footnote across pages");
-            // A row that fits, but whose footnote of more than a line doesn't
             const long = withNotes([paragraph("a", 3), table([row([[noted(paragraph("cell", 2), "footnote 1")]], { cantSplit: true })])], {
                 "footnote 1": [paragraph("note", 2)],
             });
-            expect(paginate(long, { measurer: MEASURER }).stoppedAt).to.equal("a footnote in a table row across pages");
+            expect(pagesOf(long)).to.deep.equal({ a: "1", cell: "2" });
+            // And a row whose text fits with its footnote, but not its height
+            const high = withNotes(
+                [
+                    paragraph("a", 3),
+                    table([row([[noted(paragraph("cell", 1), "footnote 1")]], { height: { value: 30, rule: "atLeast" } })]),
+                ],
+                note,
+            );
+            expect(pagesOf(high)).to.deep.equal({ a: "1", cell: "2" });
+            // And one beside an empty cell whose margins make it taller than the row's text
+            const [cell, empty] = row([[noted(paragraph("cell", 1), "footnote 1")], []]).cells;
+            const margined = withNotes(
+                [paragraph("a", 2), table([{ ...row([]), cells: [cell, { ...empty, marginTop: 20, marginBottom: 20 }] }])],
+                note,
+            );
+            expect(pagesOf(margined)).to.deep.equal({ a: "1", cell: "2" });
+        });
+
+        it("should keep a row on the page whose footnote can continue, and continue it below the row, as Word does", () => {
+            // A row of a line on the page's 3rd line, with a footnote of 5 lines: 3 fit below it, and the other 2 go on the next
+            // page, above which c's 4 lines go (U3b)
+            const note = { "footnote 1": [paragraph("note", 5)] };
+            const content = withNotes(
+                [paragraph("a", 2), table([row([[noted(paragraph("cell", 1), "footnote 1")]])]), paragraph("c", 4), paragraph("d", 1)],
+                note,
+            );
+            expect(pagesOf(content)).to.deep.equal({ a: "1", cell: "1", c: "2", d: "3" });
+            // A row kept whole, or of an exact height, stays too, and the footnote takes the rest of the page, so the next row
+            // goes on the next
+            for (const changes of [{ cantSplit: true }, { height: { value: 20, rule: "exact" as const } }]) {
+                const kept = withNotes(
+                    [
+                        paragraph("a", 1),
+                        table([row([[noted(paragraph("cell", 2), "footnote 1")]], changes), row([[paragraph("next", 1)]])]),
+                        paragraph("c", 1),
+                    ],
+                    note,
+                );
+                expect(pagesOf(kept)).to.deep.equal({ a: "1", cell: "1", next: "2", c: "2" });
+            }
+            // Where the table breaks after the row, its bottom border is below the row, so 2 of the footnote's lines fit below
+            // it, not 3, and c doesn't fit on the next page
+            for (const changes of [{}, { cantSplit: true }]) {
+                const bordered = withNotes(
+                    [
+                        paragraph("a", 2),
+                        table([
+                            row([[noted(paragraph("cell", 1), "footnote 1")]], changes),
+                            row([[paragraph("next", 1)]], { borderBottom: 10 }),
+                        ]),
+                        paragraph("c", 2),
+                    ],
+                    note,
+                );
+                expect(pagesOf(bordered)).to.deep.equal({ a: "1", cell: "1", next: "2", c: "3" });
+            }
+        });
+
+        it("should break a row across pages with the footnote of each of its lines on the page the line is on, as Word does", () => {
+            // A cell of 6 lines from the page's 4th line, with footnotes of a line from its 1st and 5th. 2 of its lines fit with
+            // the first footnote, where 4 would without it, and the second goes below the other 4 on the next page (U3c)
+            const cell = markedLines("cell", 6, { 1: ["footnote 1"], 3: ["third"], 5: ["fifth", "footnote 2"] });
+            const notes = { "footnote 1": [paragraph("one", 1)], "footnote 2": [paragraph("two", 1)] };
+            const content = withNotes([paragraph("a", 3), table([row([[cell]])]), paragraph("c", 1), paragraph("d", 1)], notes);
+            expect(pagesOf(content)).to.deep.equal({ a: "1", cell: "1", third: "2", fifth: "2", c: "2", d: "3" });
+            // In a row of 2 cells of 4 lines with room for 3, widow control leaves 2 of each, and the footnote of the right
+            // one's 3rd line goes on the next page with it (U3e)
+            const right = markedLines("right", 4, { 3: ["third", "footnote 1"] });
+            const beside = withNotes(
+                [paragraph("a", 4), table([row([[paragraph("left", 4)], [right]])]), paragraph("c", 3), paragraph("d", 1)],
+                notes,
+            );
+            expect(pagesOf(beside)).to.deep.equal({ a: "1", left: "1", right: "1", third: "2", c: "2", d: "3" });
+        });
+
+        it("should break a row after the line whose footnote continues, as Word does", () => {
+            // A cell of 6 lines below a, with a footnote of 5 lines from its 2nd. 3 of its lines would fit with 2 of the
+            // footnote's, but the row breaks after the 2nd, with 3 of the footnote's below it, as in Word and LibreOffice
+            // (U3d)
+            const note = { "footnote 1": [paragraph("note", 5)] };
+            const second = markedLines("cell", 6, { 2: ["footnote 1"], 3: ["third"] });
+            expect(pagesOf(withNotes([paragraph("a", 1), table([row([[second]])]), paragraph("c", 1)], note))).to.deep.equal({
+                a: "1",
+                cell: "1",
+                third: "2",
+                c: "3",
+            });
+            // The cells beside it break there too
+            const besides = withNotes([paragraph("a", 1), table([row([[paragraph("left", 2)], [second]])]), paragraph("c", 1)], note);
+            expect(pagesOf(besides)).to.deep.equal({ a: "1", left: "1", cell: "1", third: "2", c: "3" });
+            // With the reference on its first line, widow control keeps 2 lines on the page, with less of the footnote below
+            // them, as in the text (U2j)
+            const first = markedLines("cell", 5, { 1: ["footnote 1"], 3: ["third"] });
+            expect(pagesOf(withNotes([paragraph("a", 1), table([row([[first]])]), paragraph("c", 1)], note))).to.deep.equal({
+                a: "1",
+                cell: "1",
+                third: "2",
+                c: "2",
+            });
+            // With the reference at the end of a paragraph, the next paragraph of the cell goes on the next page
+            const paragraphs = withNotes(
+                [paragraph("a", 1), table([row([[noted(paragraph("one", 2), "footnote 1"), paragraph("two", 3)]])]), paragraph("c", 1)],
+                note,
+            );
+            expect(pagesOf(paragraphs)).to.deep.equal({ a: "1", one: "1", two: "2", c: "2" });
+        });
+
+        it("should stop at a footnote in a table row beside a cell whose lines it holds back, as what Word keeps there isn't known", () => {
+            const reason = "a footnote in a table row beside a cell whose lines it holds back";
+            const one = { "footnote 1": [paragraph("one", 1)] };
+            const stoppedAt = (
+                left: Block,
+                right: Block,
+                above: number,
+                notes: Record<string, readonly Block[]> = one,
+            ): string | undefined =>
+                paginate(withNotes([paragraph("a", above), table([row([[left], [right]])])], notes), { measurer: MEASURER }).stoppedAt;
+            // With room for 3 lines above the right cell's footnote, widow control leaves 2 of the left's 4 lines there
+            const referring = markedLines("right", 2, { 1: ["footnote 1"] });
+            expect(stoppedAt(paragraph("left", 4), referring, 2)).to.equal(reason);
+            // With room for 2, keepLines holds back all of the left's 3
+            expect(stoppedAt(paragraph("left", 3, { keepLines: true }), referring, 3)).to.equal(reason);
+            // The row breaks above the right cell's 5th line, which doesn't fit with its footnote, where all 5 of the left's
+            // fit, without widow control
+            const fifth = markedLines("right", 5, { 5: ["footnote 1"] }, { widowControl: false });
+            const loose = paragraph("left", 5, { widowControl: false });
+            expect(stoppedAt(loose, fifth, 1, { "footnote 1": [paragraph("note", 3)] })).to.equal(reason);
+            // It breaks after the right cell's 2nd line, whose footnote continues, where widow control leaves none of the
+            // left's 3
+            const continuing = markedLines("right", 6, { 2: ["footnote 1"] });
+            expect(stoppedAt(paragraph("left", 3), continuing, 1, { "footnote 1": [paragraph("note", 5)] })).to.equal(reason);
+            // A cell that its own footnote holds back is laid out, as in the text
+            const own = markedLines("right", 4, { 1: ["footnote 1"], 3: ["third"] });
+            expect(pagesOf(withNotes([paragraph("a", 2), table([row([[paragraph("left", 1)], [own]])])], one))).to.deep.equal({
+                a: "1",
+                left: "1",
+                right: "1",
+                third: "2",
+            });
+        });
+
+        it("should stop at a row that fits on an empty page, but not with its footnote", () => {
+            const exact = { lineSpacing: { rule: "exact" as const, height: 70 } };
+            const note = { "footnote 1": [paragraph("note", 1, exact)] };
+            const content = withNotes([table([row([[noted(paragraph("cell", 1), "footnote 1")]])])], note);
+            expect(paginate(content, { measurer: MEASURER }).stoppedAt).to.equal("a table row and its footnote taller than a page");
+            // And one kept whole, unless it is taller than a page itself
+            const kept = (lines: number): DocumentContent =>
+                withNotes([table([row([[noted(paragraph("cell", lines), "footnote 1")]], { cantSplit: true })])], {
+                    "footnote 1": [paragraph("note", 1)],
+                });
+            expect(paginate(kept(6), { measurer: MEASURER }).stoppedAt).to.equal("a table row and its footnote taller than a page");
+            expect(paginate(kept(8), { measurer: MEASURER }).stoppedAt).to.equal("a table row taller than a page");
         });
 
         it("should keep a paragraph with the next on the page only when their footnotes fit too", () => {
@@ -2409,6 +2573,29 @@ describe("paginate", () => {
                 );
                 // b and its footnote start the second column, so c's 4 lines fill it, above the footnote
                 expect(pagesOf(content)).to.deep.equal({ a: "1", b: "1", c: "1", d: "2" });
+            });
+
+            it("should move a table row to the next column with a footnote that doesn't fit below it, unless part of the footnote would fit", () => {
+                // As a line does: the row and its footnote start the second column, so c's 4 lines fill it, above the footnote
+                for (const changes of [{}, { cantSplit: true }]) {
+                    const content = inSections(
+                        [
+                            paragraph("a", 5),
+                            table([row([[noted(paragraph("cell", 1), "footnote 1")]], changes)]),
+                            paragraph("c", 4),
+                            paragraph("d", 1),
+                        ],
+                        ONE_LINE,
+                    );
+                    expect(pagesOf(content)).to.deep.equal({ a: "1", cell: "1", c: "1", d: "2" });
+                }
+                // Only the first of a footnote's 2 lines fits below the row, and Word hasn't been seen to continue one in columns
+                for (const changes of [{}, { cantSplit: true }]) {
+                    const short = inSections([paragraph("a", 4), table([row([[noted(paragraph("cell", 1), "footnote 1")]], changes)])], {
+                        "footnote 1": [paragraph("note", 2)],
+                    });
+                    expect(paginate(short, { measurer: MEASURER }).stoppedAt).to.equal("a footnote across pages in columns");
+                }
             });
 
             it("should move a paragraph kept with the next to the next column, with the footnote of the next", () => {

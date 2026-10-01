@@ -15,7 +15,10 @@
 //     footnote keeps its own widow and orphan control, and breaks between its paragraphs and table rows as the body does.
 //     Where too little of it can stay, its reference's line moves to the next page with it. The body's widow control,
 //     keepLines and keepNext apply first, and one longer than a page fills whole pages
-// U3: a footnote in a table row that doesn't fit below the row, or in a row that breaks across pages
+// U3: a footnote in a table row that doesn't fit below the row, or in a row that breaks across pages. Word
+//     (word-probes.pdf): a row refers to footnotes as a line does. One whose footnote doesn't fit below it moves to the
+//     next page with it, and one whose footnote can continue stays. In a row broken across pages, each line's footnote
+//     goes on the page its line is on, and the row breaks after the line whose footnote continues
 // U4: a row with cells merged down, a table in a cell, or a set height taller than its text, broken across pages
 // U5: a row that can't break, taller than a page
 // U6: footnotes in columns: under their reference's column, or flowing from the first

@@ -8,9 +8,9 @@
  * one is left, and on a new page otherwise.
  * Paragraphs break into lines, and pages break between lines, as their keep and widow control settings allow. Table
  * rows break across pages between the lines of their cells, unless they are kept whole, and the table's header rows are
- * repeated at the top of each page and column. The footnotes of each page's lines take room at its bottom, laid out in
- * the section's columns in a section in columns, and one that doesn't fit below its reference continues at the bottom of
- * the next page, or pages, broken as the body is. The endnotes follow the body.
+ * repeated at the top of each page and column. The footnotes of each page's lines, of the text and of table rows alike,
+ * take room at its bottom, laid out in the section's columns in a section in columns, and one that doesn't fit below its
+ * reference continues at the bottom of the next page, or pages, broken as the body is. The endnotes follow the body.
  * It stops at the first thing it can't lay out yet, and the bookmarks after it aren't placed.
  *
  * @module
@@ -103,6 +103,17 @@ const UNBROKEN: Omit<MeasuredParagraph, "lines"> = {
 
 /** A paragraph in a table cell, and the first of its lines not yet placed */
 type CellParagraph = { readonly paragraph: MeasuredParagraph; readonly from: number };
+
+/**
+ * A cell's part of a row that breaks across pages: how tall it is, its lines, the paragraphs left for the next page, and
+ * how many lines fit in the room it was filled in, with those widow control and keepLines hold back
+ */
+type CellPart = {
+    readonly height: number;
+    readonly lines: readonly LaidOutLine[];
+    readonly rest: readonly CellParagraph[];
+    readonly fits: number;
+};
 
 /** The height of a block stacked with others, and the space before and after it */
 type StackPart = { readonly height: number; readonly before: number; readonly after: number };
@@ -1125,9 +1136,12 @@ export const paginate = (
      * far as it fits below the others, as the body's blocks fill a page, with the rest of it continued at the bottom of the
      * next page, as Word continues it. The footnote takes the rest of the page then, so what follows goes on the next. How
      * Word continues one in columns hasn't been seen.
+     *
+     * @param below - The room below the lines that the footnotes don't take: that of the bottom border of a table that
+     * breaks across pages below them
      */
-    const placeNotes = (notes: readonly string[]): void => {
-        if (notes.length === 0 || position <= linesBottom(moreNoteRoom(notes)) + TOLERANCE) {
+    const placeNotes = (notes: readonly string[], below = 0): void => {
+        if (notes.length === 0 || position + below <= linesBottom(moreNoteRoom(notes)) + TOLERANCE) {
             addNotes(notes);
             return;
         }
@@ -1139,10 +1153,10 @@ export const paginate = (
         const to = fillNote(
             name,
             { block: 0, line: 0 },
-            (point) => areaOf(whole, { name, to: point }, continued) <= bottom - position + TOLERANCE,
+            (point) => areaOf(whole, { name, to: point }, continued) <= bottom - position - below + TOLERANCE,
         );
         pageNotes = [...whole, name];
-        noteArea = bottom - position;
+        noteArea = bottom - position - below;
         carried = { name, from: to };
     };
 
@@ -1162,12 +1176,6 @@ export const paginate = (
         if (noteCost(pageArea([...pageNotes, ...before, ...notes.slice(0, index)], firstLine) - noteArea) <= below + TOLERANCE) {
             stopOnPage("a footnote across pages in columns");
         }
-    };
-
-    /** Whether a footnote could continue on the next page: one of more than a line */
-    const canBreak = (name: string): boolean => {
-        const [first, ...rest] = footnotes.get(name)!;
-        return rest.length > 0 || first?.type === "table" || (first !== undefined && measureParagraph(first, noteWidth()).lines.length > 1);
     };
 
     /** The number of the page as the section writes it, after the chapter number when it has one */
@@ -1334,14 +1342,11 @@ export const paginate = (
 
     /**
      * Fills a cell's part of a row that breaks across pages: as many of the lines left of its paragraphs as fit in the
-     * room. The space before a paragraph at the top of the part on the next page is left out, as it is at the top of a
-     * page.
+     * room, or as many up to a line (`limit`, counted from the part's first) as widow control lets the part end at. The
+     * space before a paragraph at the top of the part on the next page is left out, as it is at the top of a page. It
+     * says how many lines fit in the room too (`fits`), with those widow control and keepLines hold back.
      */
-    const fillCell = (
-        paragraphs: readonly CellParagraph[],
-        room: number,
-        isFirstPart: boolean,
-    ): { readonly height: number; readonly lines: readonly LaidOutLine[]; readonly rest: readonly CellParagraph[] } => {
+    const fillCell = (paragraphs: readonly CellParagraph[], room: number, isFirstPart: boolean, limit = Infinity): CellPart => {
         let used = 0;
         let previousAfter: number | undefined;
         let placed: readonly LaidOutLine[] = [];
@@ -1358,25 +1363,34 @@ export const paginate = (
             // Widow control and keepLines hold lines back in a row that breaks across pages, as in Word, where LibreOffice
             // lets them go (`word-rules.docx` P8, `word-rules2.docx` Q3). A paragraph that ends in the cell's part on the
             // page needs room for its space after there too, as in Word (`word-line-heights.docx` T2)
-            const { count } = linesThatFit(remaining, room - used - space, paragraph, from === 0, (upTo) =>
+            const { fits, count: kept } = linesThatFit(remaining, room - used - space, paragraph, from === 0, (upTo) =>
                 upTo === remaining.length ? paragraph.spaceAfter : 0,
             );
+            const upToLimit = limit - placed.length;
+            const count = fits <= upToLimit ? kept : upToLimit > 0 ? linesKept(remaining.length, upToLimit, paragraph, from === 0) : 0;
+            const before = placed.length;
             if (count > 0) {
                 used += space + linesHeight(remaining.slice(0, count));
                 placed = [...placed, ...remaining.slice(0, count)];
             }
             if (count < remaining.length) {
-                return { height: used, lines: placed, rest: [{ paragraph, from: from + count }, ...paragraphs.slice(index + 1)] };
+                return {
+                    height: used,
+                    lines: placed,
+                    rest: [{ paragraph, from: from + count }, ...paragraphs.slice(index + 1)],
+                    fits: before + fits,
+                };
             }
             previousAfter = paragraph.spaceAfter;
         }
-        return { height: used + (previousAfter ?? 0), lines: placed, rest: [] };
+        return { height: used + (previousAfter ?? 0), lines: placed, rest: [], fits: placed.length };
     };
 
     /**
-     * Places a row that doesn't fit on the page by breaking it across pages between the lines of its cells, as Word
-     * breaks a row unless it is kept whole. A row none of whose lines fit moves to the next page. The table's header rows
-     * are repeated above the rest of it on each page and in each column.
+     * Places a row that doesn't fit on the page with its footnotes by breaking it across pages between the lines of its
+     * cells, as Word breaks a row unless it is kept whole, with the footnotes of the lines on each page at its bottom. A
+     * row none of whose lines fit with their footnotes moves to the next page. The table's header rows are repeated above
+     * the rest of it on each page and in each column.
      *
      * @param breakBorder - The border below the row on a page where the table breaks: the table's bottom border, which the
      * last row has counted already
@@ -1393,22 +1407,91 @@ export const paginate = (
             })),
         );
         let isFirstPart = true;
+        const borders = row.borderTop + row.borderBottom;
+        const margins = (cell: number): number => row.cells[cell].marginTop + row.cells[cell].marginBottom;
+        /** How tall the cells' parts make the row's, with their margins */
+        const tallestOf = (cells: readonly CellPart[]): number => Math.max(...cells.map((part, cell) => margins(cell) + part.height));
+        const notesOf = (cells: readonly CellPart[]): readonly string[] =>
+            notesIn(cells.flatMap(({ lines }) => lines.flatMap(({ markers }) => markers)));
+        const placesAny = (cells: readonly CellPart[]): boolean => cells.some(({ lines }) => lines.length > 0);
+        /** The room for the row's part on the page, above footnotes that take this much more room */
+        const roomAbove = (more: number): number => linesBottom(more) - position - borders - breakBorder;
+        const fitsWith = (cells: readonly CellPart[], more: number): boolean => tallestOf(cells) <= roomAbove(more) + TOLERANCE;
+        /**
+         * The cells' parts on the page, from the lines left of them (`left`), with the footnotes of their lines and the room
+         * those take, and the parts they would have without the footnotes (`whole`). The lines fit where their footnotes fit
+         * below them, the last continued on the next page when it can be, as a line's do, so each line's footnote goes on
+         * the page the line is on (`word-probes.docx` U3a to U3c, U3e). Where they don't, the part is cut higher, until they
+         * do or none of its lines are left.
+         */
+        const partOnPage = (
+            left: readonly (readonly CellParagraph[])[],
+            isFirst: boolean,
+        ): {
+            readonly whole: readonly CellPart[];
+            readonly filled: readonly CellPart[];
+            readonly notes: readonly string[];
+            readonly noteRoom: number;
+        } => {
+            /** Each cell's part in a room for the row's, or the part given for one of them (`cut`) */
+            const fill = (room: number, cut?: { readonly cell: number; readonly part: CellPart }): readonly CellPart[] =>
+                left.map((paragraphs, cell) => (cell === cut?.cell ? cut.part : fillCell(paragraphs, room - margins(cell), isFirst)));
+            const whole = fill(roomAbove(0));
+            let cutAt = roomAbove(0);
+            let filled = whole;
+            while (placesAny(filled) && !fitsWith(filled, leastNoteRoom(notesOf(filled)))) {
+                if (section().columns.length > 1) {
+                    // As for a line in columns, unless part of a footnote would fit
+                    stopAtPartOfFootnote([], notesOf(filled), roomAbove(0) - tallestOf(filled));
+                }
+                // Just above the bottom of the lowest of the cells' lines, so the part loses a line each time, even beside a
+                // cell without lines that its margins make taller
+                cutAt = Math.max(...filled.map((part, cell) => (part.lines.length > 0 ? margins(cell) + part.height : 0))) - 2 * TOLERANCE;
+                filled = fill(cutAt);
+            }
+            const continues = placesAny(filled) && !fitsWith(filled, moreNoteRoom(notesOf(filled)));
+            if (continues) {
+                // The last footnote continues on the next page, and the row breaks after the line that refers to it, or the
+                // first line after that widow control lets it break after, so the footnote takes the rest of the page. Word
+                // doesn't put more of the row's lines above less of the footnote (U3d)
+                const name = notesOf(filled)[notesOf(filled).length - 1];
+                const cell = filled.findLastIndex(({ lines }) => lines.some(({ markers }) => markers.includes(name)));
+                const reference = filled[cell].lines.findIndex(({ markers }) => markers.includes(name)) + 1;
+                let part = fillCell(left[cell], cutAt - margins(cell), isFirst, reference);
+                for (let limit = reference + 1; part.lines.length < reference; limit++) {
+                    part = fillCell(left[cell], cutAt - margins(cell), isFirst, limit);
+                }
+                filled = fill(margins(cell) + part.height, { cell, part });
+            }
+            const notes = notesOf(filled);
+            const noteRoom = fitsWith(filled, moreNoteRoom(notes)) ? moreNoteRoom(notes) : leastNoteRoom(notes);
+            if (!fitsWith(whole, moreNoteRoom(notesOf(whole)))) {
+                // Footnotes cut the row higher than its lines go without them. Where a cell has fewer lines on the page than
+                // fit above them, held back by widow control or by the cut, which of them Word keeps beside the cell that
+                // refers to them isn't known
+                const referring = whole.flatMap((part, cell) => (notesOf([part]).length > 0 ? [cell] : []));
+                const heldRoom = continues ? tallestOf(filled) : roomAbove(noteRoom);
+                const heldBack = (part: CellPart, cell: number): boolean =>
+                    referring.some((other) => other !== cell) &&
+                    fillCell(left[cell], heldRoom - margins(cell), isFirst).fits > part.lines.length;
+                if (filled.some(heldBack)) {
+                    throw new Unsupported("a footnote in a table row beside a cell whose lines it holds back");
+                }
+            }
+            return { whole, filled, notes, noteRoom };
+        };
         for (;;) {
-            const borders = row.borderTop + row.borderBottom;
-            const room = linesBottom() - position - borders - breakBorder;
-            const first = isFirstPart;
-            const filled = parts.map((paragraphs, cell) =>
-                fillCell(paragraphs, room - row.cells[cell].marginTop - row.cells[cell].marginBottom, first),
-            );
+            const { whole, filled, notes, noteRoom } = partOnPage(parts, isFirstPart);
+            const isLastPart = filled.every(({ rest }) => rest.length === 0);
             // The row only breaks where each of its cells with lines left keeps some of them on the page, as in Word. When
             // widow control or keepLines hold back all of a cell's lines, the row moves to the next page whole
-            // (`word-rules2.docx` Q3c). A row of an at-least height only breaks where the page has room for its height, and
-            // otherwise moves to the next page whole too (`word-line-heights.docx` T3)
+            // (`word-rules2.docx` Q3c). A row of an at-least height only breaks where the page has room for its height above
+            // the footnotes, and otherwise moves to the next page whole too (`word-line-heights.docx` T3), as a row that
+            // would go on it whole does when its height doesn't fit
             const placesLines =
-                (!isFirstPart || row.height === undefined || row.height.value <= room + TOLERANCE) &&
-                filled.some(({ lines }) => lines.length > 0) &&
+                (!isFirstPart || (isLastPart ? height - borders : (row.height?.value ?? 0)) <= roomAbove(noteRoom) + TOLERANCE) &&
+                placesAny(filled) &&
                 parts.every((paragraphs, cell) => paragraphs.length === 0 || filled[cell].lines.length > 0);
-            const isLastPart = filled.every(({ rest }) => rest.length === 0);
             if (placesLines && !isLastPart) {
                 if (row.cells.some(({ verticalMerge }) => verticalMerge !== undefined)) {
                     throw new Unsupported("a table row with merged cells across pages");
@@ -1418,25 +1501,31 @@ export const paginate = (
                 }
             }
             // A row at the top of a page that doesn't fit there whole is taller than a page, which the layout stops at, unless
-            // the end of a footnote continued from the page before takes room on it, which leaves the next page for it
+            // the end of a footnote continued from the page before takes room on it, which leaves the next page for it. So is
+            // one that fits, but not with its footnotes
             const fitsWhole = !isFirstPart || position + height + breakBorder <= linesBottom() + TOLERANCE;
             if ((!placesLines || !fitsWhole) && !placedInColumn && continued === undefined) {
                 stopIfBalancing();
-                throw new Unsupported("a table row taller than a page");
+                throw new Unsupported(
+                    fitsWhole && notesOf(whole).length > 0
+                        ? "a table row and its footnote taller than a page"
+                        : "a table row taller than a page",
+                );
             }
-            if (placesLines && (fitsWhole || !isLastPart)) {
+            if (placesLines) {
                 mark(filled.flatMap(({ lines }) => lines.flatMap(({ markers }) => markers)));
-            }
-            const tallest = Math.max(...filled.map((part, cell) => row.cells[cell].marginTop + part.height + row.cells[cell].marginBottom));
-            if (placesLines && isLastPart && fitsWhole) {
-                // A row that moved to the next page whole is as tall there as it is anywhere
-                position += (isFirstPart ? height - borders : tallest) + borders;
-                placedInColumn = true;
-                return;
-            }
-            if (placesLines && !isLastPart) {
-                // The part of the row on this page or in this column, which columns being balanced end below
-                position += tallest + borders + breakBorder;
+                // A row that moved to the next page whole is as tall there as it is anywhere. The part of a row on this page or
+                // in this column, which columns being balanced end below, has the table's bottom border below it
+                position += isLastPart
+                    ? (isFirstPart ? height - borders : tallestOf(filled)) + borders
+                    : tallestOf(filled) + borders + breakBorder;
+                // Its footnotes go below it, and one that continues takes the rest of the page, below the table's bottom
+                // border when the table breaks after it
+                placeNotes(notes, isLastPart ? breakBorder : 0);
+                if (isLastPart) {
+                    placedInColumn = true;
+                    return;
+                }
                 parts = filled.map(({ rest }) => rest);
                 isFirstPart = false;
             }
@@ -1476,6 +1565,13 @@ export const paginate = (
         /** Whether a row fits on the page, with its footnotes */
         const rowFits = (height: number, notes: readonly string[]): boolean =>
             position + height <= linesBottom(moreNoteRoom(notes)) + TOLERANCE;
+        /**
+         * Whether a row stays on the page whole, with its footnotes, the last continued on the next page when it can be, as
+         * a line's do: a row whose footnote doesn't fit below it moves to the next page with it, and one whose footnote can
+         * continue stays (`word-probes.docx` U3a, U3b)
+         */
+        const rowStays = (height: number, notes: readonly string[]): boolean =>
+            position + height <= linesBottom(leastNoteRoom(notes)) + TOLERANCE;
         const markersIn = (row: TableRow): readonly string[] => row.cells.flatMap((cell) => cell.blocks.flatMap(markersOf));
         // Where a table breaks across pages, Word draws its bottom border below the last of it on the page, which takes room
         // there too, whether the table breaks between rows or in one (`word-line-heights.docx` T1 and T4)
@@ -1486,13 +1582,14 @@ export const paginate = (
             const roomNeeded = height + breakBorder;
             const markers = markersIn(row);
             const notes = notesIn(markers);
-            if (!rowFits(roomNeeded, notes) && position + roomNeeded <= linesBottom() + TOLERANCE && notes.some(canBreak)) {
-                throw new Unsupported("a footnote in a table row across pages");
-            }
             const keptWhole = row.cantSplit || row.height?.rule === "exact";
             // On the next page, the end of a footnote continued from this one can leave too little room for it too, as for
             // a paragraph's lines, so it goes on the page after
-            while (!rowFits(roomNeeded, notes) && keptWhole && (placedInColumn || continued !== undefined)) {
+            while (keptWhole && !rowStays(roomNeeded, notes) && (placedInColumn || continued !== undefined)) {
+                if (section().columns.length > 1) {
+                    // As for a line in columns, unless part of a footnote would fit
+                    stopAtPartOfFootnote([], notes, linesBottom() - position - roomNeeded);
+                }
                 startTablePage(index);
             }
             for (const { last, height: needed } of merges.filter(({ first }) => first === index)) {
@@ -1509,19 +1606,22 @@ export const paginate = (
                 }
             }
             if (!rowFits(roomNeeded, notes) && !keptWhole) {
-                if (notes.length > 0) {
-                    throw new Unsupported("a footnote in a table row across pages");
-                }
                 splitRow(row, height, breakBorder, () => startTablePage(index));
                 continue;
             }
-            if (!rowFits(roomNeeded, notes)) {
+            if (!rowStays(roomNeeded, notes)) {
                 stopIfBalancing();
-                throw new Unsupported(notes.length > 0 ? "a footnote across pages" : "a table row taller than a page");
+                throw new Unsupported(
+                    notes.length > 0 && position + roomNeeded <= linesBottom() + TOLERANCE
+                        ? "a table row and its footnote taller than a page"
+                        : "a table row taller than a page",
+                );
             }
             mark(markers);
-            addNotes(notes);
             position += height;
+            // Its footnotes go below it, and one that continues takes the rest of the page, below the table's bottom border
+            // when the table breaks after it
+            placeNotes(notes, breakBorder);
             placedInColumn = true;
         }
     };
