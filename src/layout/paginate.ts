@@ -819,6 +819,9 @@ export const paginate = (
     };
 
     const placeParagraph = (paragraph: MeasuredParagraph): void => {
+        // At the start of a section on a new page, the page is already new, so the first paragraph keeps its space before
+        // there as it does without the break, less the empty paragraph's space after: 1440 before after 200 is 1240 in
+        // Word (word-rules2.docx Q2c)
         if (paragraph.pageBreakBefore && (placedInColumn || column > 0)) {
             startPage();
             // Its space before is left out below the page break, as it is below one in the text
