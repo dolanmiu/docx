@@ -5,3 +5,4 @@
  * @module
  */
 export * from "./estimate-page-numbers";
+export { type FontToMeasure, type MeasureWidth, type Pretext, type PretextOptions, measureWithPretext } from "./measure-width";

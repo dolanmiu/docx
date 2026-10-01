@@ -18,6 +18,8 @@ export type TextFont = {
     /** Size in points. Default is 10, which Word uses when a document doesn't give a size */
     readonly size?: number;
     readonly bold?: boolean;
+    /** The width tables measure italic text as upright, and Pretext measures it in the font's italics */
+    readonly italic?: boolean;
     /** Space added after each character, in points */
     readonly characterSpacing?: number;
     /** How wide the characters are drawn, as a percentage of their width */
