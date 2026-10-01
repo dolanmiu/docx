@@ -693,6 +693,9 @@ describe("readDocument", () => {
                 readBody([{ "w:tbl": [{ "w:tr": [cell([value("w:gridSpan", span)], p(r(t("a"))))] }] }]).blocks[0].block as TableBlock;
             expect(across(63).unsupported).to.equal(undefined);
             expect(across(2 ** 32).unsupported).to.equal("a table given no widths of more than 63 columns");
+            // Counted row by row, so a table of more rows than a function takes arguments is read
+            const tall = readBody([{ "w:tbl": Array.from({ length: 40000 }, () => ({ "w:tr": [cell([]), cell([]), cell([])] })) }]);
+            expect((tall.blocks[0].block as TableBlock).rows).to.have.length(40000);
         });
 
         it("should read the paragraphs in content controls and custom XML in a cell", () => {
