@@ -435,7 +435,10 @@ export const layoutLines = (
             // The mark adds nothing to the height of a line with text, as Word and LibreOffice lay it out
             finish(line);
         } else {
-            const breakHeight = Math.max(measurer.measureLineHeight(end.font), isLast && !line.started ? markHeight : 0);
+            // A page break that ends the paragraph has the mark on its line, which with no text on it is as tall as the mark,
+            // however big the break and the spaces before it are: 28-point spaces before a 28-point break, in an 11-point
+            // paragraph, are an 11-point line in Word and LibreOffice (word-probes.docx U8a7)
+            const breakHeight = isLast && !line.started ? markHeight : measurer.measureLineHeight(end.font);
             finish(
                 { ...line, natural: Math.max(line.started ? line.natural : 0, breakHeight), started: true },
                 end.kind === "line" ? undefined : end.kind,
