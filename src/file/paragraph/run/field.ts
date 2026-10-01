@@ -62,11 +62,11 @@ const createFieldChar = (type: (typeof FieldCharacterType)[keyof typeof FieldCha
  */
 export const createBegin = (dirty?: boolean): XmlComponent => createFieldChar(FieldCharacterType.BEGIN, dirty);
 
-/** The formatted begin characters of the fields that are dirty only until their results are written */
-const dirtyUntilWritten = new WeakSet<object>();
+/** The formatted begin characters of the fields that are dirty only when the document isn't given page numbers */
+const dirtyWithoutPageNumbers = new WeakSet<object>();
 
-/** The beginning of a field that is dirty, so Word updates it, until its result is written */
-class BeginDirtyUntilWritten extends BuilderElement<IFieldCharAttributes> {
+/** The beginning of a field that is dirty, so Word updates it, unless the document is given page numbers */
+class BeginDirtyWithoutPageNumbers extends BuilderElement<IFieldCharAttributes> {
     public constructor() {
         super({
             name: "w:fldChar",
@@ -79,21 +79,22 @@ class BeginDirtyUntilWritten extends BuilderElement<IFieldCharAttributes> {
 
     public prepForXml(context: IContext): IXmlableObject | undefined {
         const xml = super.prepForXml(context)!;
-        dirtyUntilWritten.add(xml);
+        dirtyWithoutPageNumbers.add(xml);
         return xml;
     }
 }
 
 /**
- * Creates the beginning of a field whose result `docx` can write when the document is given page numbers, such as a
- * page reference. It is written dirty, so Word updates the field when it opens the document, and asks to. Once its
- * result is written, the field is no longer dirty (see {@link isDirtyUntilWritten}), so Word shows the result as it is.
+ * Creates the beginning of a field whose result is a page number, such as a page reference. It is written dirty, so
+ * Word updates the field when it opens the document, and asks to. When the document is given page numbers, it is
+ * written clean (see {@link isDirtyWithoutPageNumbers}), so Word shows the number written, or nothing when none could
+ * be worked out, and doesn't ask.
  */
-export const createBeginDirtyUntilWritten = (): XmlComponent => new BeginDirtyUntilWritten();
+export const createBeginDirtyWithoutPageNumbers = (): XmlComponent => new BeginDirtyWithoutPageNumbers();
 
-/** Whether a formatted field character is the beginning of a field that is dirty only until its result is written */
-export const isDirtyUntilWritten = (element: unknown): boolean =>
-    typeof element === "object" && element !== null && dirtyUntilWritten.has(element);
+/** Whether a formatted field character is the beginning of a field that is dirty only without page numbers */
+export const isDirtyWithoutPageNumbers = (element: unknown): boolean =>
+    typeof element === "object" && element !== null && dirtyWithoutPageNumbers.has(element);
 
 /**
  * Creates the separator between field code and field result in a complex field.

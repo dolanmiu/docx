@@ -13,8 +13,8 @@
  */
 import { BookmarkEnd, BookmarkStart, InternalHyperlink, PageReference, Paragraph, type ParagraphChild } from "@file/paragraph";
 import { Run, Tab, TextRun } from "@file/paragraph/run";
-import { createBegin, createBeginDirtyUntilWritten, createEnd, createSeparate } from "@file/paragraph/run/field";
-import type { IContext, IXmlableObject } from "@file/xml-components";
+import { createBegin, createBeginDirtyWithoutPageNumbers, createEnd, createSeparate } from "@file/paragraph/run/field";
+import type { IContext, IXmlableObject, XmlComponent } from "@file/xml-components";
 import { bookmarkUniqueNumericId } from "@util/convenience-functions";
 
 import { FieldInstruction } from "./field-instruction";
@@ -25,13 +25,20 @@ import type { ITableOfContentsOptions } from "./table-of-contents-properties";
 export type HeadingEntriesOptions = {
     readonly properties: ITableOfContentsOptions;
     /**
-     * Whether the field is written dirty, as the caller set it. Undefined when the caller didn't: then it is dirty until
-     * the page numbers in it are all written
+     * Whether the field is written dirty, as the caller set it. Undefined when the caller didn't: then it is dirty unless
+     * the document is given page numbers
      */
     readonly beginDirty?: boolean;
     /** The width, in twips, of the text in its section, where the page numbers are aligned */
     readonly textWidth: number;
 };
+
+/**
+ * The beginning of a table of contents' field: dirty or clean, as the caller set it, or else dirty unless the document
+ * is given page numbers
+ */
+export const beginOf = (beginDirty: boolean | undefined): XmlComponent =>
+    beginDirty === undefined ? createBeginDirtyWithoutPageNumbers() : createBegin(beginDirty);
 
 /** A formatted element, such as `{ "w:p": [...] }` */
 type Element = Record<string, unknown>;
@@ -394,11 +401,7 @@ const contentOf = (
                     ...(index === 0
                         ? [
                               new Run({
-                                  children: [
-                                      beginDirty === undefined ? createBeginDirtyUntilWritten() : createBegin(beginDirty),
-                                      new FieldInstruction(properties),
-                                      createSeparate(),
-                                  ],
+                                  children: [beginOf(beginDirty), new FieldInstruction(properties), createSeparate()],
                               }),
                           ]
                         : []),

@@ -11,13 +11,13 @@
 import { FileChild } from "@file/file-child";
 import { InternalHyperlink, Paragraph, type TabStopDefinition } from "@file/paragraph";
 import { Run, Tab } from "@file/paragraph/run";
-import { createBegin, createEnd, createSeparate } from "@file/paragraph/run/field";
+import { createEnd, createSeparate } from "@file/paragraph/run/field";
 import { Text } from "@file/paragraph/run/run-components/text";
 import { DEFAULT_AVAILABLE_WIDTH } from "@file/table/column-widths";
 import type { IContext, IXmlableObject, XmlComponent } from "@file/xml-components";
 
 import { FieldInstruction } from "./field-instruction";
-import { type HeadingEntriesOptions, recordTableOfContents } from "./heading-entries";
+import { type HeadingEntriesOptions, beginOf, recordTableOfContents } from "./heading-entries";
 import { StructuredDocumentTagContent } from "./sdt-content";
 import { StructuredDocumentTagProperties } from "./sdt-properties";
 import type { ITableOfContentsOptions } from "./table-of-contents-properties";
@@ -85,8 +85,8 @@ export class TableOfContents extends FileChild {
             readonly cachedEntries?: readonly ToCEntry[];
             /**
              * Whether the field is written dirty, so Word updates the table when it opens the document, after asking to.
-             * Default is dirty, unless the table is filled in from the headings and the document's `pageNumbers` writes
-             * all of its page numbers: then Word shows it as it is, and doesn't ask.
+             * Default is dirty, unless the document is given `pageNumbers`: then it is written clean, so Word shows it as
+             * it is written, and doesn't ask.
              */
             readonly beginDirty?: boolean;
         } = {},
@@ -98,7 +98,7 @@ export class TableOfContents extends FileChild {
 
         const beginParagraphMandatoryChildren = [
             new Run({
-                children: [createBegin(beginDirty ?? true), new FieldInstruction(properties), createSeparate()],
+                children: [beginOf(beginDirty), new FieldInstruction(properties), createSeparate()],
             }),
         ];
 

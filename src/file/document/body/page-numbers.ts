@@ -8,15 +8,14 @@
  * {@link PageNumberEstimator}, such as `estimatePageNumbers` from `docx/layout`. Then, once the body is written, each of
  * those fields in the body, and then in the headers and footers, is given the number the estimator worked out.
  *
- * Page references, and tables of contents filled in from the headings, are written dirty, so Word updates them when it
- * opens the document, and asks "This document contains fields that may refer to other files. Do you want to update the
- * fields in this document?". Once a page reference's number is written, it is written clean, and so is a table of
- * contents once all of its page numbers are, so Word shows them as they are and doesn't ask. Those whose numbers the
- * estimator didn't work out are left dirty, for Word to fill in.
+ * Page references and tables of contents are written dirty, so Word updates them when it opens the document, and asks
+ * "This document contains fields that may refer to other files. Do you want to update the fields in this document?".
+ * When the document is given page numbers, they are written clean, so Word shows them as they are and doesn't ask. A
+ * page number the estimator didn't work out is left blank, until the fields are updated.
  *
  * @module
  */
-import { isDirtyUntilWritten } from "@file/paragraph/run/field";
+import { isDirtyWithoutPageNumbers } from "@file/paragraph/run/field";
 import type { IContext, IXmlableObject } from "@file/xml-components";
 
 /**
@@ -59,8 +58,6 @@ type Element = Record<string, unknown>;
 
 /** A complex field being read: its instruction, and whether its result has been reached */
 type OpenField = {
-    /** Its begin field character */
-    readonly begin: Element;
     // eslint-disable-next-line functional/prefer-readonly-type
     instruction: string;
     // eslint-disable-next-line functional/prefer-readonly-type
@@ -68,9 +65,6 @@ type OpenField = {
     /** The result it is written with */
     // eslint-disable-next-line functional/prefer-readonly-type
     result?: string;
-    /** Whether a field in its result is left dirty, for Word to update */
-    // eslint-disable-next-line functional/prefer-readonly-type
-    dirtyInside: boolean;
 };
 
 /** How the fields of a part of a document are filled in */
@@ -140,26 +134,14 @@ const attributeOf = (element: Element, name: string, attribute: string): unknown
 
 const textElement = (text: string): Element => ({ "w:t": [{ _attr: { "xml:space": "preserve" } }, text] });
 
-/** Whether a field's begin field character, as docx writes it, marks it dirty, for Word to update */
-const isDirty = (begin: Element): boolean => attributeOf(begin, "w:fldChar", "w:dirty") === true;
-
 /**
- * Once a field has been read to its end, writes it clean, so Word shows its result as it is and doesn't ask to update
- * the fields, when it is dirty only until its result is written and that is written: a page reference whose page number
- * was written, or a table of contents none of whose page numbers are left dirty. A field left dirty leaves the field it
- * is in dirty too.
+ * Writes clean the beginning of a field that is dirty only without page numbers, such as a page reference, so Word
+ * shows its result as it is written and doesn't ask to update the fields
  */
-const endField = (field: OpenField, outer: OpenField | undefined): void => {
-    const written = field.result !== undefined || (/^\s*TOC\b/i.test(field.instruction) && !field.dirtyInside);
-    if (isDirtyUntilWritten(field.begin) && written) {
-        const attributes = (field.begin["w:fldChar"] as { readonly _attr: Record<string, unknown> })._attr;
-        // eslint-disable-next-line functional/immutable-data
-        field.begin["w:fldChar"] = { _attr: Object.fromEntries(Object.entries(attributes).filter(([key]) => key !== "w:dirty")) };
-    }
-    if (outer && (field.dirtyInside || isDirty(field.begin))) {
-        // eslint-disable-next-line functional/immutable-data
-        outer.dirtyInside = true;
-    }
+const writeClean = (begin: Element): void => {
+    const attributes = (begin["w:fldChar"] as { readonly _attr: Record<string, unknown> })._attr;
+    // eslint-disable-next-line functional/immutable-data
+    begin["w:fldChar"] = { _attr: Object.fromEntries(Object.entries(attributes).filter(([key]) => key !== "w:dirty")) };
 };
 
 /**
@@ -179,7 +161,10 @@ const fillFields = (elements: unknown[], open: OpenField[], filling: FieldFillin
             const type = attributeOf(element as Element, name, "w:fldCharType");
             if (type === "begin") {
                 // eslint-disable-next-line functional/immutable-data
-                open.push({ begin: element as Element, instruction: "", inResult: false, dirtyInside: false });
+                open.push({ instruction: "", inResult: false });
+                if (isDirtyWithoutPageNumbers(element)) {
+                    writeClean(element as Element);
+                }
             } else if (type === "separate" && current) {
                 // eslint-disable-next-line functional/immutable-data
                 current.inResult = true;
@@ -190,10 +175,9 @@ const fillFields = (elements: unknown[], open: OpenField[], filling: FieldFillin
                     elements.splice(index + 1, 0, textElement(current.result));
                     index++;
                 }
-            } else if (type === "end" && current) {
+            } else if (type === "end") {
                 // eslint-disable-next-line functional/immutable-data
                 open.pop();
-                endField(current, open[open.length - 1]);
             }
         } else if (name === "w:instrText" && current && !current.inResult) {
             // An instruction is written as its attributes and its text
@@ -292,8 +276,8 @@ const estimates = new WeakMap<object, { readonly estimate: EstimatedPageNumbers;
 /**
  * Writes the page numbers the estimator works out into the fields of a formatted body that show them: the PAGEREF fields
  * in its tables of contents and elsewhere, and its NUMPAGES and SECTIONPAGES fields. A field whose number the estimator
- * didn't work out is left as it is, and dirty when it was written dirty. The estimate is kept for the document's headers
- * and footers.
+ * didn't work out is left as it is. Page references and tables of contents are written clean, whether or not their
+ * numbers were worked out. The estimate is kept for the document's headers and footers.
  */
 export const fillPageNumbers = (body: IXmlableObject, context: IContext, estimator: PageNumberEstimator): void => {
     const estimate = estimator(body, context);

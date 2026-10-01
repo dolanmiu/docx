@@ -8,7 +8,7 @@
  *
  * @module
  */
-import { createBeginDirtyUntilWritten, createEnd, createSeparate } from "@file/paragraph/run/field";
+import { createBeginDirtyWithoutPageNumbers, createEnd, createSeparate } from "@file/paragraph/run/field";
 
 import { Run } from "../run";
 import { PageReferenceFieldInstruction } from "./pageref-field-instruction";
@@ -40,7 +40,8 @@ export type IPageReferenceOptions = {
  * the specified bookmark, useful for cross-references like "see page 5".
  *
  * It is written dirty, so Word fills in the page number when it opens the document, after asking to. When the
- * document's `pageNumbers` writes the number, it is written as it is, and Word doesn't ask.
+ * document is given `pageNumbers`, it is written clean, with the number they work out, or blank when they couldn't,
+ * and Word doesn't ask.
  *
  * @publicApi
  *
@@ -63,7 +64,7 @@ export class PageReference extends Run {
     public constructor(bookmarkId: string, options: IPageReferenceOptions = {}) {
         super({
             children: [
-                createBeginDirtyUntilWritten(),
+                createBeginDirtyWithoutPageNumbers(),
                 new PageReferenceFieldInstruction(bookmarkId, options),
                 createSeparate(),
                 createEnd(),

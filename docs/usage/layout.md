@@ -64,14 +64,17 @@ The page numbers are written into:
 
 ## Opening the document in Word
 
-`docx` writes page references and tables of contents as fields for Word to update, so Word asks "This document contains fields that may refer to other files. Do you want to update the fields in this document?" when it opens the document. `updateFields` makes it ask too. When `docx/layout` writes the page number of a page reference, the field is written as it is, and so is a table of contents once all of its page numbers are written. Word then shows the numbers as they are written, and doesn't update them.
+Without `pageNumbers`, `docx` writes page references and tables of contents as fields for Word to update, so Word asks "This document contains fields that may refer to other files. Do you want to update the fields in this document?" when it opens the document. With `pageNumbers`, they are written as they are, so Word shows them as they are written, and doesn't update them or ask. Leave `updateFields` off, and Word opens the document without asking.
 
-So with every number written, leave `updateFields` off, and Word opens the document without asking. Word still asks when:
+A page number `docx/layout` couldn't work out, after it stopped (see [What it leaves blank](#what-it-leaves-blank)), is left blank, and stays blank in Word until the fields are updated: by the reader, such as by updating the table of contents, or by turning `updateFields` on. A wrong page number is worse than a blank one. The same goes for what `docx/layout` doesn't write at all:
+
+- a page reference that shows its position relative to the bookmark (`useRelativePosition`)
+- a table of contents that lists no heading, or of captions or TC fields, which is left empty, and the entries of one given `cachedEntries` or `contentChildren`, which are left as they were given
+
+Word still asks when:
 
 - the document has `updateFields` on, which asks Word to update all of its fields
-- `docx/layout` stopped before a heading or bookmark (see [What it leaves blank](#what-it-leaves-blank)): the page references to it, and the tables of contents that list it, are left for Word to fill in
-- a page reference shows its position relative to the bookmark (`useRelativePosition`), which isn't written
-- a table of contents isn't filled in from the headings, because it was given `cachedEntries` or `contentChildren` or lists no heading, or it was given `beginDirty: true`
+- a table of contents is given `beginDirty: true`
 - the document has a `SequentialIdentifier`, a SEQ field, which is written for Word to number
 
 ## What it follows
@@ -90,7 +93,7 @@ The pages are laid out with the widths and heights of the characters of the font
 
 ## What it leaves blank
 
-It stops at the first thing it can't lay out yet, and the page numbers of the headings and bookmarks after it are left blank, for Word to fill in:
+It stops at the first thing it can't lay out yet, and the page numbers of the headings and bookmarks after it are left blank, until the fields are updated in Word (see [Opening the document in Word](#opening-the-document-in-word)):
 
 - a picture or shape that text wraps around, a text box, or a text frame
 - an equation

@@ -4,7 +4,7 @@ import { Formatter } from "@export/formatter";
 import { File } from "@file/file";
 import { HeadingLevel, PageNumber, PageReference, Paragraph, SimpleField, TextRun } from "@file/paragraph";
 import { Run } from "@file/paragraph/run";
-import { createBegin, createBeginDirtyUntilWritten, createEnd, createSeparate } from "@file/paragraph/run/field";
+import { createBegin, createEnd, createSeparate } from "@file/paragraph/run/field";
 import { TableOfContents } from "@file/table-of-contents";
 import { type IContext, type IXmlableObject, XmlComponent } from "@file/xml-components";
 
@@ -389,7 +389,7 @@ describe("fillPageNumbers", () => {
                 return { bookmarks: new Map(names.map((name, index) => [name, String(index + 2)])) };
             };
 
-        it("should write a table of contents filled in from the headings clean once all of its page numbers are written", () => {
+        it("should write a table of contents filled in from the headings, and its page references, clean", () => {
             expect(dirtyFieldsOf(bodyOf(documentWith(placingHeadings())))).to.deep.equal([
                 ["TOC", false],
                 ["PAGEREF", false],
@@ -397,12 +397,16 @@ describe("fillPageNumbers", () => {
             ]);
         });
 
-        it("should leave a table of contents dirty, for Word to update, when one of its page numbers isn't written", () => {
-            expect(dirtyFieldsOf(bodyOf(documentWith(placingHeadings(1))))).to.deep.equal([
-                ["TOC", true],
+        it("should write clean and blank the page numbers the estimator didn't work out, so Word doesn't ask to update them", () => {
+            const body = bodyOf(documentWith(placingHeadings(1)));
+
+            expect(dirtyFieldsOf(body)).to.deep.equal([
+                ["TOC", false],
                 ["PAGEREF", false],
-                ["PAGEREF", true],
+                ["PAGEREF", false],
             ]);
+            const [table] = paragraphsOf(body);
+            expect(textOf(table)).to.equal("One\t2Two\t");
         });
 
         it("should keep a table of contents dirty or clean as its beginDirty says, when it is given", () => {
@@ -411,10 +415,10 @@ describe("fillPageNumbers", () => {
                 ["PAGEREF", false],
                 ["PAGEREF", false],
             ]);
-            expect(dirtyFieldsOf(bodyOf(documentWith(placingHeadings(1), { beginDirty: false })))).to.deep.equal([
+            expect(dirtyFieldsOf(bodyOf(documentWith(placingHeadings(), { beginDirty: false })))).to.deep.equal([
                 ["TOC", false],
                 ["PAGEREF", false],
-                ["PAGEREF", true],
+                ["PAGEREF", false],
             ]);
         });
 
@@ -426,7 +430,27 @@ describe("fillPageNumbers", () => {
             ]);
         });
 
-        it("should leave dirty a table of contents not filled in from the headings, and fields written dirty by hand", () => {
+        it("should write clean the tables of contents not filled in from the headings", () => {
+            const file = new File({
+                pageNumbers: placingHeadings(),
+                sections: [
+                    {
+                        children: [
+                            new TableOfContents("Empty"),
+                            new TableOfContents("Given", { cachedEntries: [{ title: "Given", level: 1, page: 3 }] }),
+                            new Paragraph("No headings"),
+                        ],
+                    },
+                ],
+            });
+
+            expect(dirtyFieldsOf(bodyOf(file))).to.deep.equal([
+                ["TOC", false],
+                ["TOC", false],
+            ]);
+        });
+
+        it("should leave dirty the fields written dirty by hand", () => {
             const body = bodyWith(
                 [
                     new Paragraph({
@@ -451,45 +475,18 @@ describe("fillPageNumbers", () => {
                 ["PAGEREF", false],
                 ["PAGEREF", true],
             ]);
-            const unfilled = new File({
-                pageNumbers: placingHeadings(),
-                sections: [{ children: [new TableOfContents("Contents"), new Paragraph("No headings")] }],
-            });
-            expect(dirtyFieldsOf(bodyOf(unfilled))).to.deep.equal([["TOC", true]]);
         });
 
-        it("should leave dirty a page reference whose result isn't the page's number", () => {
+        it("should write clean and blank a page reference that shows its position relative to the bookmark", () => {
             const body = bodyWith([new Paragraph({ children: [new PageReference("target", { useRelativePosition: true })] })], {
                 target: "3",
             });
 
-            expect(dirtyFieldsOf(body)).to.deep.equal([["PAGEREF", true]]);
+            expect(dirtyFieldsOf(body)).to.deep.equal([["PAGEREF", false]]);
+            expect(textOf(paragraphsOf(body)[0])).to.equal("");
         });
 
-        it("should leave a table of contents dirty when a field in a field in it is left dirty", () => {
-            const tableReferringTo = (bookmark: string): Paragraph =>
-                new Paragraph({
-                    children: [
-                        new Run({ children: [createBeginDirtyUntilWritten(), new Instruction("TOC \\o"), createSeparate()] }),
-                        new Run({ children: [createBegin(false), new Instruction("IF 1 = 1"), createSeparate()] }),
-                        new PageReference(bookmark),
-                        new Run({ children: [createEnd()] }),
-                        new Run({ children: [createEnd()] }),
-                    ],
-                });
-            const body = bodyWith([tableReferringTo("elsewhere"), tableReferringTo("target")], { target: "3" });
-
-            expect(dirtyFieldsOf(body)).to.deep.equal([
-                ["TOC", true],
-                ["IF", false],
-                ["PAGEREF", true],
-                ["TOC", false],
-                ["IF", false],
-                ["PAGEREF", false],
-            ]);
-        });
-
-        it("should write the page references in headers and footers clean once their numbers are written", () => {
+        it("should write the page references in headers and footers clean", () => {
             const file = new File({
                 pageNumbers: () => ({ bookmarks: new Map([["target", "4"]]) }),
                 sections: [
