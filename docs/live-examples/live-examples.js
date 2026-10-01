@@ -298,16 +298,21 @@ declare module "stream" {
             typescript.typescriptDefaults.addExtraLib(text, `file:///node_modules/docx/${file}.d.ts`);
         }
         typescript.typescriptDefaults.addExtraLib(NODE_TYPES, "file:///node-types.d.ts");
+        // A package's types only help with editing, so the editor works without those that can't be fetched
         const packageTypes = await Promise.all(
             Object.entries(PACKAGES).flatMap(([name, { root, types: files }]) =>
                 Object.entries(files).map(async ([file, path]) => [
                     `file:///node_modules/${name}/${file}`,
-                    await fetch(`${root}${path}`).then((response) => response.text()),
+                    await fetch(`${root}${path}`)
+                        .then((response) => (response.ok ? response.text() : undefined))
+                        .catch(() => undefined),
                 ]),
             ),
         );
         for (const [path, text] of packageTypes) {
-            typescript.typescriptDefaults.addExtraLib(text, path);
+            if (text !== undefined) {
+                typescript.typescriptDefaults.addExtraLib(text, path);
+            }
         }
 
         themeEditors();
