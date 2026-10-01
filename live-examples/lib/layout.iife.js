@@ -3464,8 +3464,12 @@ var docxLayout = (function(exports) {
 		* isn't left alone on a page with widow control, and its lines stay together with keepLines. The space before a
 		* paragraph at the top of a page is left out, unless it is the first of the document or of its section.
 		*/
-		const placeLines = (lines, paragraph, isStart) => {
-			if (isStart && paragraph.keepLines && section().columns.length > 1 && linesHeight(lines) > pageBottom - top + TOLERANCE) throw new Unsupported("a paragraph kept together taller than a column");
+		const placeLines = (lines, paragraph, isStart, keptWithPrevious) => {
+			const firstColumnsOnly = isStart && paragraph.keepLines && section().columns.length > 1 && linesHeight(lines) > pageBottom - top + TOLERANCE;
+			if (firstColumnsOnly && (column > 0 || position > top + TOLERANCE)) {
+				if (keptWithPrevious) throw new Unsupported("a paragraph kept with the next before a paragraph kept together taller than a column");
+				startPage();
+			}
 			/**
 			* The space above the paragraph's first line: at the top of a page, or of the column its section starts in, only
 			* the first of a section has any
@@ -3500,10 +3504,13 @@ var docxLayout = (function(exports) {
 					placedInColumn = true;
 					index += count;
 				}
-				if (index < lines.length) nextColumn();
+				if (index < lines.length) {
+					if (firstColumnsOnly) startPage();
+					else nextColumn();
+				}
 			}
 		};
-		const placeParagraph = (paragraph) => {
+		const placeParagraph = (paragraph, keptWithPrevious) => {
 			if (paragraph.pageBreakBefore && (placedInColumn || column > 0)) {
 				startPage();
 				sectionSpaceAfter = void 0;
@@ -3521,7 +3528,7 @@ var docxLayout = (function(exports) {
 					columnBroken = true;
 					nextColumn();
 				} else if (index > 0) startPage();
-				placeLines(group, paragraph, index === 0);
+				placeLines(group, paragraph, index === 0, keptWithPrevious);
 			}
 			({spaceAfter} = paragraph);
 		};
@@ -3706,7 +3713,9 @@ var docxLayout = (function(exports) {
 				if (!fitsHere && column + 1 < section().columns.length && fitsBelow(columnTop)) nextColumn();
 				else if (!fitsHere && fitsBelow(top)) startPage();
 			}
-			placeParagraph(paragraph);
+			const previous = blocks[index - 1];
+			const keptWithPrevious = (previous === null || previous === void 0 ? void 0 : previous.section) === blocks[index].section && previous.block.type === "paragraph" && previous.block.format.keepNext === true;
+			placeParagraph(paragraph, keptWithPrevious);
 			sectionSpaceAfter = void 0;
 		};
 		/** Lays out the blocks from one (`from`) to the one before another (`to`), starting their sections */
