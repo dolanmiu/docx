@@ -74,11 +74,19 @@ const openChrome = async (): Promise<{ readonly evaluate: (expression: string) =
     const targets = (await (await fetch(`http://127.0.0.1:${port}/json/list`)).json()) as { type: string; webSocketDebuggerUrl: string }[];
     const socket = new WebSocket(targets.find(({ type }) => type === "page")!.webSocketDebuggerUrl);
     await new Promise((done) => socket.addEventListener("open", done, { once: true }));
-    const waiting = new Map<number, (message: { result?: { result: { value: unknown }; exceptionDetails?: unknown } }) => void>();
+    type Answer = {
+        readonly id?: unknown;
+        readonly result?: { readonly result: { readonly value: unknown }; readonly exceptionDetails?: unknown };
+    };
+    const waiting = new Map<number, (message: Answer) => void>();
     socket.addEventListener("message", ({ data }) => {
-        const message = JSON.parse(String(data));
-        waiting.get(message.id)?.(message);
-        waiting.delete(message.id);
+        const message = JSON.parse(String(data)) as Answer;
+        // Chrome's events have no id, and only the answers to what this asked have one it's waiting for
+        const answer = typeof message.id === "number" ? waiting.get(message.id) : undefined;
+        if (typeof answer === "function") {
+            waiting.delete(message.id as number);
+            answer(message);
+        }
     });
     let id = 0;
     const evaluate = (expression: string): Promise<unknown> =>
