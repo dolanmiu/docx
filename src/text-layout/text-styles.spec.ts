@@ -5,6 +5,7 @@ import type { IContext, IStylesOptions } from "docx";
 
 import {
     WORD_DEFAULT_STYLES,
+    fontOf,
     getTextStyles,
     hasDefaultParagraphSpacing,
     readParagraphFormat,
@@ -189,6 +190,15 @@ describe("getTextStyles", () => {
         expect(styles.styles.get("Named")?.run.font).to.equal("Arial");
         expect(styles.styles.get("HighAnsi")?.run.font).to.equal("Calibri Light");
         expect(styles.styles.get("Unknown")?.run.font).to.equal("Tahoma");
+    });
+});
+
+describe("readRunFormat", () => {
+    it("should read italic text, which a measurer that measures with the fonts themselves measures in their italics", () => {
+        const themeFonts = { headings: "Calibri Light", body: "Calibri" };
+        expect(readRunFormat([{ "w:i": {} }], themeFonts)).to.deep.equal({ italic: true });
+        expect(readRunFormat([{ "w:i": { _attr: { "w:val": false } } }], themeFonts)).to.deep.equal({ italic: false });
+        expect(fontOf({ font: "Arial", size: 12, italic: true, allCaps: true })).to.deep.equal({ font: "Arial", size: 12, italic: true });
     });
 });
 

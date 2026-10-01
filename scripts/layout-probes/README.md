@@ -19,6 +19,7 @@ table style and each cell's width.
 | `word-balance2`      | S1 to S7 and C1 to C2: the space after columns and before the next section, which the empty paragraph that ends a section keeps, and column breaks in columns that are evened out                                                                                                                                                                                | `word-balance.py`     |
 | `word-keep-together` | K1 to K5: a paragraph kept together that is taller than a column, which Word lays out down only the first column of each page, from a new page unless it is at the top of one, and what follows it                                                                                                                                                               | `word-balance.py`     |
 | `word-next-column`   | N1 to N6: where a section that starts in the next column starts after columns of other numbers and widths, the space before its first paragraph there, three in a row, and in columns below text, followed by a continuous section break                                                                                                                         | `word-next-column.py` |
+| `word-contextual`    | X1 and Y1: contextual spacing next to the empty paragraph that ends a section, whose space after is never on the page itself, and with `doNotUseHTMLParagraphAutoSpacing`. `word-contextual-adding` is the second document it writes, with that setting                                                                                                          | `word-contextual.py`  |
 | `word-tables`        | T1 to T13: the widths Word gives table columns from `columnWidths`, cell widths and table widths, and a word longer than its column (T7)                                                                                                                                                                                                                         | `pagelines.py`        |
 | `word-autofit`       | A1 to D1: the widths Word gives the columns of tables whose cells have no widths, which it sizes to their text                                                                                                                                                                                                                                                   | `word-autofit.py`     |
 | `fsplit`             | How a footnote that doesn't fit below its reference goes on to the next page. Laid out in LibreOffice only, so it has no PDF from Word: Word's split of an 8-line footnote is `word-rules` P7b                                                                                                                                                                   | `pagelines.py`        |
@@ -60,8 +61,9 @@ pdftotext -bbox-layout scripts/layout-probes/word-rules2.pdf build/word-probes/w
 python3 scripts/layout-probes/word-rules2.py build/word-probes/word-rules2.html
 ```
 
-`word-balance.py` reads `word-balance`, `word-balance2` and `word-keep-together`. `word-autofit.py` reads the borders of the tables
-too, from each page as SVG:
+`word-balance.py` reads `word-balance`, `word-balance2` and `word-keep-together`, and `word-contextual.py` reads both
+documents `word-contextual.ts` writes, `word-contextual` and `word-contextual-adding`. `word-autofit.py` reads the borders
+of the tables too, from each page as SVG:
 
 ```bash
 pdftotext -bbox-layout scripts/layout-probes/word-autofit.pdf build/word-probes/word-autofit.html

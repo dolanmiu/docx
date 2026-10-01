@@ -1,6 +1,6 @@
 # Layout
 
-<!-- cspell:ignore Aptos -->
+<!-- cspell:ignore Aptos chenglou Carlito -->
 
 !> Layout requires an understanding of [Table of Contents](usage/table-of-contents.md) and [Bookmarks](usage/bookmarks.md).
 
@@ -68,7 +68,7 @@ The page numbers are written into:
 The pages are laid out with the widths and heights of the characters of the fonts Word documents use most: Calibri, Cambria, Arial, Times New Roman and Courier New. It follows:
 
 - the document's styles, and each paragraph's and run's own formatting: fonts, sizes, bold, capitals, and hidden text
-- spacing before and after paragraphs, line spacing, indents and tab stops
+- spacing before and after paragraphs, line spacing, indents and tab stops. Contextual spacing (`contextualSpacing`) leaves out only its paragraph's own share of the space between it and a paragraph of the same style, as Word does: all of its space after, or as much of its space before as is more than the space after the paragraph above it
 - keeping a paragraph with the next, keeping its lines together, widow and orphan control, and page breaks
 - numbered and bulleted lists
 - footnotes, which take room at the bottom of the page their reference is on, and continue at the bottom of the next page when they don't fit, and endnotes, which follow the text
@@ -93,8 +93,69 @@ A wrong page number is worse than a blank one, so it doesn't guess.
 
 ## How close it is
 
-Text in fonts other than those five is measured as the most similar of them, so its page numbers are rougher. Aptos, Office's default font since 2023, is measured as Arial.
+Text in fonts other than those five is measured as the most similar of them, so its page numbers are rougher. Aptos, Office's default font since 2023, is measured as Arial. In a browser, text can be measured in the fonts the page has instead (see [Measuring with a page's fonts](#measuring-with-a-pages-fonts)).
 
 Each change to `docx/layout` is checked against LibreOffice's layout of a set of documents. Word lays out some things differently from LibreOffice, so keep `updateFields` on if the page numbers must be exact once the document is opened in Word.
 
 Laying out a document takes about 0.3 seconds per 100 pages in Node.
+
+## Measuring with a page's fonts
+
+By default, text is measured with tables of the widths of the characters of those five fonts, which `docx/layout` has with it, so it lays out the same pages in Node and in every browser. In a browser, it can measure text in the fonts the page has instead, with [Pretext](https://github.com/chenglou/pretext), which measures text with a canvas. That helps when the document is in a font that isn't in the tables, such as Aptos, and the page has it.
+
+`docx` doesn't come with Pretext. Install it (`npm install @chenglou/pretext`), give its module to `measureWithPretext`, and give what that returns to `estimatePageNumbersWith`, as `measureWidth`:
+
+```ts live
+import * as pretext from "@chenglou/pretext";
+import { Document, HeadingLevel, Paragraph, TableOfContents, TextRun } from "docx";
+import { estimatePageNumbersWith, measureWithPretext } from "docx/layout";
+
+// Until a font has loaded, the browser measures text in another one
+await document.fonts.ready;
+
+const text = "The harbour was rebuilt after the storm, and this report sets out what it cost and what is left to do. ".repeat(14);
+
+const doc = new Document({
+    features: { updateFields: true },
+    pageNumbers: estimatePageNumbersWith({
+        // Carlito is as wide as Calibri, for a page that has it and not Calibri
+        measureWidth: measureWithPretext(pretext, { fontFamilies: { Calibri: "Calibri, Carlito, sans-serif" } }),
+    }),
+    styles: { default: { document: { run: { font: "Calibri", size: 22 } } } },
+    sections: [
+        {
+            children: [
+                new TableOfContents("Contents", { hyperlink: true, headingStyleRange: "1-3" }),
+                ...[1, 2, 3, 4].flatMap((chapter) => [
+                    new Paragraph({ heading: HeadingLevel.HEADING_1, children: [new TextRun(`Chapter ${chapter}`)] }),
+                    new Paragraph(text),
+                ]),
+            ],
+        },
+    ],
+});
+```
+
+Pretext only measures how wide words and spaces are. The rest is laid out as Word lays it out: lines break where Word breaks them, rather than where a browser would, tabs move to the paragraph's tab stops, and lines are as tall as Word makes them. Their heights still come from the tables, so the lines of a font that isn't in them are as tall as those of the most similar font that is.
+
+- Pretext needs a canvas to measure with: an `OffscreenCanvas`, or a page's. Node has neither, so use `estimatePageNumbers` there.
+- Load the fonts before the document is written, such as with `document.fonts.load('11pt "Aptos"')`. A font that hasn't loaded is measured as the browser's default font, and Pretext keeps the widths it measured.
+- A font the page has under another name, such as a web font, is measured in the CSS font family `fontFamilies` gives it. Fonts not in it are measured in the font of their own name, or the browser's default font when the page doesn't have one.
+- The page numbers are only as close to Word's as the page's fonts are to the fonts Word has. Laid out in Chrome with Word's own fonts, the headings of the documents `docx/layout` is checked against were all on Word's page.
+
+`measureWidth` can be any function that measures how wide text is, in points, in a font with a name, size in points, and whether it is bold or italic:
+
+```ts
+import { estimatePageNumbersWith } from "docx/layout";
+
+const canvas = new OffscreenCanvas(1, 1).getContext("2d")!;
+
+const estimatePageNumbers = estimatePageNumbersWith({
+    measureWidth: (text, { name, size, bold, italic }) => {
+        canvas.font = `${italic ? "italic " : ""}${bold ? "bold " : ""}${size}pt "${name}"`;
+        return canvas.measureText(text).width * 0.75;
+    },
+});
+```
+
+Space between characters, and text scaled wider or narrower, are added to what it measures, as the document's formatting gives them.
