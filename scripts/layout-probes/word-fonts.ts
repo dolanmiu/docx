@@ -19,11 +19,10 @@
  * Given Word's fonts (on a Mac, /Applications/Microsoft Word.app/Contents/Resources/DFonts), it also prints how wide
  * docx/layout measures each probe's word, to compare with what word-fonts.py reads from Word's PDF.
  *
- * What word-fonts.py read from Word's PDF is in word-fonts.word.txt, and from LibreOffice's in word-fonts.libreoffice.txt.
- * Word kerned only with `w:kern`, and only text of its size or larger, with the pairs of Aptos's GPOS table, which has
- * pairs its kern table doesn't, and across runs. Its lines of Aptos are 1.2207 ems apart, from Aptos's typographic
- * ascent and descent, which Aptos says to use, rather than 1.2847 from its ascent and descent for Windows. LibreOffice
- * kerned the same, but text smaller than `w:kern` too.
+ * Word's PDF of it is word-fonts.pdf, beside it. Word kerned only with `w:kern`, and only text of its size or larger,
+ * with the pairs of Aptos's GPOS table, which has pairs its kern table doesn't, and across runs. Its lines of Aptos are
+ * 1.2207 ems apart, from Aptos's typographic ascent and descent, which Aptos says to use, rather than 1.2847 from its
+ * ascent and descent for Windows. LibreOffice kerned the same, but text smaller than `w:kern` too.
  */
 // cspell:ignore Aptos DFonts GPOS bbox
 import { mkdirSync, readFileSync, writeFileSync } from "node:fs";
