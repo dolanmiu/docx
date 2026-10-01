@@ -278,6 +278,29 @@ describe("paginate", () => {
             expect(pagesOf(continuous({ pageBreakBefore: true }))).to.deep.equal({ a: "1", heading: "2", b: "2", c: "2" });
         });
 
+        it("should keep the space before a new-page section's first paragraph less the empty paragraph's space after, with a page break before it or not, as Word does", () => {
+            // As word-rules2.docx's Q2: below the empty paragraph that ends the section before, with 10 points after
+            const sectionBreak: ParagraphBlock = { ...paragraph("break", 0), items: [], sectionBreak: true, format: { spaceAfter: 10 } };
+            const newPage = (first: ParagraphFormat, lines: number): DocumentContent =>
+                document(
+                    [
+                        [paragraph("a", 1), 0],
+                        [sectionBreak, 0],
+                        [paragraph("b", lines, first), 1],
+                        [paragraph("c", 1), 1],
+                        [paragraph("d", 1), 1],
+                    ],
+                    { sections: [SECTION, SECTION] },
+                );
+            // Q2a: 30 points before are 20 below the top of the page, so b's 4 lines and c fill it
+            expect(pagesOf(newPage({ spaceBefore: 30 }, 4))).to.deep.equal({ a: "1", b: "2", c: "2", d: "3" });
+            // Q2b: 5 points before are none, so b's 5 lines, c and d fill it
+            expect(pagesOf(newPage({ spaceBefore: 5 }, 5))).to.deep.equal({ a: "1", b: "2", c: "2", d: "2" });
+            // Q2c: the same with a page break before b, which the section's new page already is
+            expect(pagesOf(newPage({ spaceBefore: 30, pageBreakBefore: true }, 4))).to.deep.equal({ a: "1", b: "2", c: "2", d: "3" });
+            expect(pagesOf(newPage({ spaceBefore: 5, pageBreakBefore: true }, 5))).to.deep.equal({ a: "1", b: "2", c: "2", d: "2" });
+        });
+
         it("should leave out the space between paragraphs of the same style with contextual spacing", () => {
             const spaced = { spaceBefore: 30, contextualSpacing: true };
             const content = document([
