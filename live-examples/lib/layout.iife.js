@@ -2618,7 +2618,6 @@ var docxLayout = (function(exports) {
 	*/
 	var layoutLines = (items, { width, format = {}, tabStops = [], defaultTabStop = DEFAULT_TAB_STOP, markFont = {}, measurer = DEFAULT_MEASURER }) => {
 		const { indentLeft = 0, indentRight = 0, firstLineIndent = 0, lineSpacing } = format;
-		const limit = width - indentRight;
 		const markHeight = measurer.measureLineHeight(markFont);
 		const { stops, firstLineStops } = stopsOf(tabStops, format);
 		const parts = segmentsOf(items);
@@ -2628,6 +2627,8 @@ var docxLayout = (function(exports) {
 			end: previous.end
 		}] : parts;
 		const lines = [];
+		/** Where a line ends, from its index: where the line being filled ends, unless another is given */
+		const limitOf = (line = lines.length) => (typeof width === "number" ? width : width(line)) - indentRight;
 		let first = true;
 		for (const [segmentIndex, { tokens, end }] of segments.entries()) {
 			const isLast = segmentIndex === segments.length - 1;
@@ -2678,7 +2679,7 @@ var docxLayout = (function(exports) {
 				if (token.type === "tab") {
 					var _nextStop;
 					const height = measurer.measureLineHeight(token.font);
-					const stop = (_nextStop = nextStop(line.position, line.first ? firstLineStops : stops, defaultTabStop, limit)) !== null && _nextStop !== void 0 ? _nextStop : line.started ? nextStop(indentLeft, stops, defaultTabStop, limit) : void 0;
+					const stop = (_nextStop = nextStop(line.position, line.first ? firstLineStops : stops, defaultTabStop, limitOf())) !== null && _nextStop !== void 0 ? _nextStop : line.started ? nextStop(indentLeft, stops, defaultTabStop, limitOf(lines.length + 1)) : void 0;
 					if (stop === void 0) {
 						line = _objectSpread2(_objectSpread2({}, line), {}, {
 							natural: Math.max(line.natural, height),
@@ -2699,18 +2700,18 @@ var docxLayout = (function(exports) {
 				}
 				const tokenWidth = token.type === "box" ? token.width : widthOf(token.pieces, measurer);
 				const tokenHeight = token.type === "box" ? token.height : Math.max(...token.pieces.map(({ font }) => measurer.measureLineHeight(font)));
-				if (line.started && line.position + tokenWidth > limit + TOLERANCE$1) line = wrap(line);
+				if (line.started && line.position + tokenWidth > limitOf() + TOLERANCE$1) line = wrap(line);
 				line = place(line);
-				if (token.type === "word" && line.position + tokenWidth > limit + TOLERANCE$1 && limit - indentLeft > 0) {
-					const room = limit - indentLeft;
-					const full = Math.floor((line.position - indentLeft + tokenWidth) / room - TOLERANCE$1);
-					for (let count = 0; count < full; count++) line = wrap(_objectSpread2(_objectSpread2({}, line), {}, {
+				let rest = tokenWidth;
+				while (token.type === "word" && line.position + rest > limitOf() + TOLERANCE$1 && limitOf() - indentLeft > 0) {
+					rest -= limitOf() - line.position;
+					line = wrap(_objectSpread2(_objectSpread2({}, line), {}, {
 						natural: Math.max(line.natural, tokenHeight),
 						started: true
 					}));
-					line = _objectSpread2(_objectSpread2({}, line), {}, { position: indentLeft + ((line.position - indentLeft + tokenWidth) % room || room) });
-				} else line = _objectSpread2(_objectSpread2({}, line), {}, { position: line.position + tokenWidth });
+				}
 				line = _objectSpread2(_objectSpread2({}, line), {}, {
+					position: line.position + rest,
 					natural: Math.max(line.natural, tokenHeight),
 					started: true
 				});
@@ -2926,9 +2927,10 @@ var docxLayout = (function(exports) {
 	* Lays out a document's pages as Word does, to find the page each bookmark starts on.
 	*
 	* Each page's body is filled from the top, between the page's margins, or its header and footer where they are taller,
-	* and in columns, the first column and then the next. The columns on the page before a continuous section break are
-	* balanced, as short as what is in them fits in. A section that starts in the next column starts in the next column of
-	* the page when the section before has as many columns and one is left, and on a new page otherwise.
+	* and in columns, the first column and then the next, with each line broken at the width of the column it is in. The
+	* columns on the page before a continuous section break are balanced, as short as what is in them fits in. A section
+	* that starts in the next column starts in the next column of the page when the section before has as many columns and
+	* one is left, and on a new page otherwise.
 	* Paragraphs break into lines, and pages break between lines, as their keep and widow control settings allow. Table
 	* rows break across pages between the lines of their cells, unless they are kept whole, and the table's header rows are
 	* repeated at the top of each page and column. The footnotes of each page's lines take room at its bottom, laid out in
@@ -2940,7 +2942,7 @@ var docxLayout = (function(exports) {
 	*/
 	var TOLERANCE = .01;
 	/**
-	* The lines of paragraphs without page references, by the measurer and width they were laid out with. They are the same
+	* The lines of paragraphs without page references, by the measurer and widths they were laid out with. They are the same
 	* each time the pages are laid out again with the page numbers worked out before.
 	*/
 	var laidOutLines = /* @__PURE__ */ new WeakMap();
@@ -3030,10 +3032,16 @@ var docxLayout = (function(exports) {
 		});
 		const byParagraph = (_laidOutLines$get = laidOutLines.get(measurer)) !== null && _laidOutLines$get !== void 0 ? _laidOutLines$get : /* @__PURE__ */ new WeakMap();
 		laidOutLines.set(measurer, byParagraph);
-		const linesOf = (paragraph, width) => {
-			var _byParagraph$get, _byWidth$get;
+		/** A paragraph's lines, broken at a width, or at the width of each line from those given on */
+		const linesOf = (paragraph, widths) => {
+			var _byParagraph$get, _byWidths$get;
+			const given = typeof widths === "number" ? [{
+				from: 0,
+				width: widths
+			}] : widths;
+			const key = given.map(({ from, width }) => `${from}:${width}`).join(" ");
 			const layOut = () => layoutLines(itemsOf(paragraph.items), {
-				width,
+				width: given.length === 1 ? given[0].width : (line) => given.findLast(({ from }) => from <= line).width,
 				format: paragraph.format,
 				tabStops: paragraph.tabStops,
 				defaultTabStop,
@@ -3041,10 +3049,10 @@ var docxLayout = (function(exports) {
 				measurer
 			});
 			if (paragraph.items.some(({ type }) => type === "pageReference" || type === "pageCount")) return layOut();
-			const byWidth = (_byParagraph$get = byParagraph.get(paragraph)) !== null && _byParagraph$get !== void 0 ? _byParagraph$get : /* @__PURE__ */ new Map();
-			byParagraph.set(paragraph, byWidth);
-			const lines = (_byWidth$get = byWidth.get(width)) !== null && _byWidth$get !== void 0 ? _byWidth$get : layOut();
-			byWidth.set(width, lines);
+			const byWidths = (_byParagraph$get = byParagraph.get(paragraph)) !== null && _byParagraph$get !== void 0 ? _byParagraph$get : /* @__PURE__ */ new Map();
+			byParagraph.set(paragraph, byWidths);
+			const lines = (_byWidths$get = byWidths.get(key)) !== null && _byWidths$get !== void 0 ? _byWidths$get : layOut();
+			byWidths.set(key, lines);
 			return lines;
 		};
 		const measureParagraph = (paragraph, width, before, after) => {
@@ -3087,11 +3095,11 @@ var docxLayout = (function(exports) {
 		* cells give them, when Word sizes them so. It says why when Word's sizing of it isn't known
 		*/
 		const fitted = (table, width) => {
-			var _fittedTables$get, _byWidth$get2;
+			var _fittedTables$get, _byWidth$get;
 			if (!table.fit && !table.widen) return table;
 			const byWidth = (_fittedTables$get = fittedTables.get(table)) !== null && _fittedTables$get !== void 0 ? _fittedTables$get : /* @__PURE__ */ new Map();
 			fittedTables.set(table, byWidth);
-			const sized = (_byWidth$get2 = byWidth.get(width)) !== null && _byWidth$get2 !== void 0 ? _byWidth$get2 : fitColumns(table, width, contentWidths);
+			const sized = (_byWidth$get = byWidth.get(width)) !== null && _byWidth$get !== void 0 ? _byWidth$get : fitColumns(table, width, contentWidths);
 			byWidth.set(width, sized);
 			return sized;
 		};
@@ -3639,29 +3647,56 @@ var docxLayout = (function(exports) {
 				markedOn.set(name, pageCount);
 			}
 		};
+		/** The lines from one (`from`) up to the next that ends with a page or column break, or to the paragraph's end */
+		const linesToBreak = (lines, from) => {
+			const end = lines.findIndex((line, index) => index >= from && line.breakAfter !== void 0);
+			return lines.slice(from, end === -1 ? lines.length : end + 1);
+		};
 		/**
-		* Places lines of a paragraph, breaking pages between them where they don't fit. A paragraph's first or last line
-		* isn't left alone on a page with widow control, and its lines stay together with keepLines. The space before a
-		* paragraph at the top of a page is left out, unless it is the first of the document or of its section.
+		* Places a paragraph's lines, breaking pages and columns between them where they don't fit, and at its page and
+		* column breaks. Its lines are broken at the width of the column each goes in, so the part of it that goes on into a
+		* column of another width is broken again there, as Word breaks it (`word-rules2.docx` Q7). A paragraph's first or
+		* last line isn't left alone on a page with widow control, and its lines stay together with keepLines. Widow control
+		* counts the lines left for the next column as they are broken in this one, as Word counts them, so the rest can still
+		* go on one line of a wider column, where LibreOffice moves more lines on (`word-column-widths.docx` R1 to R4). The
+		* space before a paragraph at the top of a page is left out, unless it is the first of the document or of its
+		* section.
 		*/
-		const placeLines = (lines, paragraph, isStart, keptWithPrevious) => {
-			const firstColumnsOnly = isStart && paragraph.keepLines && section().columns.length > 1 && linesHeight(lines) > pageBottom - top + TOLERANCE;
-			if (firstColumnsOnly && (column > 0 || position > top + TOLERANCE)) {
+		const placeParagraph = (block, paragraph, keptWithPrevious) => {
+			if (paragraph.pageBreakBefore && (placedInColumn || column > 0)) startPage();
+			const { columns } = section();
+			/** Whether its lines up to its first break are taller than a column, at a column's width */
+			const tallerThanColumn = (width) => linesHeight(linesToBreak(linesOf(block, width), 0)) > pageBottom - top + TOLERANCE;
+			const keptTall = paragraph.keepLines && columns.length > 1 && columns.some(tallerThanColumn);
+			if (keptTall && columns.some((width) => width !== columns[0])) throw new Unsupported("a paragraph kept together taller than a column, in columns of different widths");
+			if (keptTall && (column > 0 || position > top + TOLERANCE)) {
 				if (keptWithPrevious) throw new Unsupported("a paragraph kept with the next before a paragraph kept together taller than a column");
 				startPage();
 			}
+			const firstColumnsOnly = keptTall ? linesToBreak(linesOf(block, columns[0]), 0).length : 0;
 			/**
 			* The space above the paragraph's first line: at the top of a page, or of the column its section starts in, only
 			* the first of a section has any
 			*/
 			const spaceAbove = () => placedInColumn || atSectionStart() ? spaceAboveOf(paragraph.spaceBefore) : 0;
+			let widths = [];
+			/** The widths with the lines from one (`from`) on at the width of a column, broken again there when it is another */
+			const widthsFrom = (from, width) => {
+				var _widths$findLast;
+				return ((_widths$findLast = widths.findLast((given) => given.from <= from)) === null || _widths$findLast === void 0 ? void 0 : _widths$findLast.width) === width ? widths : [...widths.filter((given) => given.from < from), {
+					from,
+					width
+				}];
+			};
 			let index = 0;
-			while (index < lines.length) {
-				const space = isStart && index === 0 ? spaceAbove() : 0;
-				const remaining = lines.slice(index);
+			for (;;) {
+				widths = widthsFrom(index, section().columns[column]);
+				const lines = linesOf(block, widths);
+				const remaining = linesToBreak(lines, index);
+				const isFirstLine = index === 0;
+				const space = isFirstLine ? spaceAbove() : 0;
 				const notesOf = (upTo) => notesIn(remaining.slice(0, upTo).flatMap(({ markers }) => markers));
 				const room = linesBottom() - position - space;
-				const isFirstLine = isStart && index === 0;
 				const { fits, count: kept } = linesThatFit(remaining, room, paragraph, isFirstLine, (upTo) => noteCost(leastNoteRoom(notesOf(upTo - 1), notesIn(remaining[upTo - 1].markers))));
 				if (fits === 0 && !placedInColumn && (notesOf(1).length > 0 || continued !== void 0)) {
 					stopIfBalancing();
@@ -3687,28 +3722,13 @@ var docxLayout = (function(exports) {
 					placedInColumn = true;
 					index += count;
 				}
-				if (index < lines.length) {
-					if (firstColumnsOnly) startPage();
-					else nextColumn();
-				}
-			}
-		};
-		const placeParagraph = (paragraph, keptWithPrevious) => {
-			if (paragraph.pageBreakBefore && (placedInColumn || column > 0)) startPage();
-			const groups = paragraph.lines.reduce((all, line) => {
-				const current = [...all[all.length - 1], line];
-				return line.breakAfter ? [
-					...all.slice(0, -1),
-					current,
-					[]
-				] : [...all.slice(0, -1), current];
-			}, [[]]);
-			for (const [index, group] of groups.entries()) {
-				if (index > 0 && groups[index - 1][groups[index - 1].length - 1].breakAfter === "column") {
+				const breakAfter = count === remaining.length ? remaining[count - 1].breakAfter : void 0;
+				if (breakAfter === "column") {
 					columnBroken = true;
 					nextColumn();
-				} else if (index > 0) startPage();
-				placeLines(group, paragraph, index === 0, keptWithPrevious);
+				} else if (breakAfter === "page" || index < firstColumnsOnly) startPage();
+				else if (index < lines.length) nextColumn();
+				if (index === lines.length) break;
 			}
 			({spaceAfter} = paragraph);
 		};
@@ -3792,7 +3812,11 @@ var docxLayout = (function(exports) {
 				startTablePage();
 			}
 		};
-		const placeTable = (table) => {
+		/** Whether the cells of a table are as wide as those of the same table laid out in another width */
+		const sameWidths = (table, other) => table.rows.every(({ cells }, row) => cells.every(({ width }, cell) => other.rows[row].cells[cell].width === width));
+		const placeTable = (block) => {
+			const width = section().columns[column];
+			const table = sizedToPlace(block, width);
 			const merges = mergesOf(table);
 			const heights = rowHeights(table, merges);
 			const headerRows = table.rows.findIndex(({ header }) => !header);
@@ -3801,6 +3825,8 @@ var docxLayout = (function(exports) {
 			spaceAfter = 0;
 			const startTablePage = (index) => {
 				nextColumn();
+				const next = section().columns[column];
+				if (next < width && !sameWidths(table, fitted(block, next))) throw new Unsupported("a table sized to its text that goes on into a narrower column");
 				if (index >= headerRows) position += repeated;
 			};
 			/** Whether a row fits on the page, with its footnotes */
@@ -3896,7 +3922,7 @@ var docxLayout = (function(exports) {
 				return;
 			}
 			if (block.type === "table") {
-				placeTable(sizedToPlace(block, width));
+				placeTable(block);
 				sectionSpaceAfter = void 0;
 				return;
 			}
@@ -3905,14 +3931,14 @@ var docxLayout = (function(exports) {
 				const { height: needed, notes } = keptHeight(index, width);
 				const fitsHere = position + needed <= linesBottom(moreNoteRoom(notes)) + TOLERANCE;
 				if (!fitsHere && position + needed <= linesBottom(leastNoteRoom(notes.slice(0, -1), notes.slice(-1))) + TOLERANCE) throw new Unsupported("a footnote across pages");
-				const fitsBelow = (from, area) => from + needed <= Math.min(bottom, pageBottom - area) + TOLERANCE;
 				const { columns } = section();
-				if (!fitsHere && column + 1 < columns.length && fitsBelow(columnTop, noteArea + moreNoteRoom(notes))) nextColumn();
-				else if (!fitsHere && fitsBelow(top, areaOf(notes, void 0, carried, columns.length > 1 ? columns : void 0))) startPage();
+				const fitsBelow = (from, area, below) => from + keptHeight(index, below).height <= Math.min(bottom, pageBottom - area) + TOLERANCE;
+				if (!fitsHere && column + 1 < columns.length && fitsBelow(columnTop, noteArea + moreNoteRoom(notes), columns[column + 1])) nextColumn();
+				else if (!fitsHere && fitsBelow(top, areaOf(notes, void 0, carried, columns.length > 1 ? columns : void 0), columns[0])) startPage();
 			}
 			const previous = blocks[index - 1];
 			const keptWithPrevious = (previous === null || previous === void 0 ? void 0 : previous.section) === blocks[index].section && previous.block.type === "paragraph" && previous.block.format.keepNext === true;
-			placeParagraph(paragraph, keptWithPrevious);
+			placeParagraph(block, paragraph, keptWithPrevious);
 			sectionSpaceAfter = void 0;
 		};
 		/** Lays out the blocks from one (`from`) to the one before another (`to`), starting their sections */
@@ -4505,7 +4531,7 @@ var docxLayout = (function(exports) {
 		const marginRight = (_twips7 = twips((_margins$wRight = margins["w:right"]) !== null && _margins$wRight !== void 0 ? _margins$wRight : margins["w:end"])) !== null && _twips7 !== void 0 ? _twips7 : DEFAULT_SECTION.marginRight;
 		const gutter = (_twips8 = twips(margins["w:gutter"])) !== null && _twips8 !== void 0 ? _twips8 : DEFAULT_SECTION.gutter;
 		const columns = readColumns(find(properties, "w:cols"), pageWidth - marginLeft - marginRight - gutter);
-		const unsupported = grid === "lines" || grid === "linesAndChars" || grid === "snapToChars" ? "a document grid" : numbering["w:chapStyle"] !== void 0 || formatNumber(1, format) === void 0 ? "page numbers in a format not yet written" : find(properties, "w:textDirection") !== void 0 ? "text that runs down the page" : columns.some((width) => width !== columns[0]) ? "columns of different widths" : void 0;
+		const unsupported = grid === "lines" || grid === "linesAndChars" || grid === "snapToChars" ? "a document grid" : numbering["w:chapStyle"] !== void 0 || formatNumber(1, format) === void 0 ? "page numbers in a format not yet written" : find(properties, "w:textDirection") !== void 0 ? "text that runs down the page" : void 0;
 		const headers = readReferences(properties, "w:headerReference", readPart);
 		const footers = readReferences(properties, "w:footerReference", readPart);
 		return _objectSpread2(_objectSpread2({
