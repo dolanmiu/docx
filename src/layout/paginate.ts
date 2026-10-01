@@ -796,13 +796,17 @@ export const paginate = (
      * isn't left alone on a page with widow control, and its lines stay together with keepLines. The space before a
      * paragraph at the top of a page is left out, unless it is the first of the document or of its section.
      */
-    const placeLines = (lines: readonly LaidOutLine[], paragraph: MeasuredParagraph, isStart: boolean): void => {
+    const placeLines = (lines: readonly LaidOutLine[], paragraph: MeasuredParagraph, isStart: boolean, keptWithPrevious: boolean): void => {
         // A paragraph kept together that is taller than a column goes down only the first column of each page, in Word,
         // from the top of a new page unless it is at the top of this one. What follows it goes on below it in that column
         // and into the next, so the other columns of the pages before are left empty. LibreOffice breaks it across them all
         const firstColumnsOnly =
             isStart && paragraph.keepLines && section().columns.length > 1 && linesHeight(lines) > pageBottom - top + TOLERANCE;
         if (firstColumnsOnly && (column > 0 || position > top + TOLERANCE)) {
+            if (keptWithPrevious) {
+                // Moving it would leave the paragraph kept with it behind, and what Word does then isn't known
+                throw new Unsupported("a paragraph kept with the next before a paragraph kept together taller than a column");
+            }
             startPage();
         }
         /**
@@ -874,7 +878,7 @@ export const paginate = (
         }
     };
 
-    const placeParagraph = (paragraph: MeasuredParagraph): void => {
+    const placeParagraph = (paragraph: MeasuredParagraph, keptWithPrevious: boolean): void => {
         // At the start of a section on a new page, the page is already new, so the first paragraph keeps its space before
         // there as it does without the break, less the empty paragraph's space after: 1440 before after 200 is 1240 in
         // Word (word-rules2.docx Q2c)
@@ -899,7 +903,7 @@ export const paginate = (
             } else if (index > 0) {
                 startPage();
             }
-            placeLines(group, paragraph, index === 0);
+            placeLines(group, paragraph, index === 0, keptWithPrevious);
         }
         ({ spaceAfter } = paragraph);
     };
@@ -1139,7 +1143,10 @@ export const paginate = (
                 startPage();
             }
         }
-        placeParagraph(paragraph);
+        const previous = blocks[index - 1];
+        const keptWithPrevious =
+            previous?.section === blocks[index].section && previous.block.type === "paragraph" && previous.block.format.keepNext === true;
+        placeParagraph(paragraph, keptWithPrevious);
         sectionSpaceAfter = undefined;
     };
 

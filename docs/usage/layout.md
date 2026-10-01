@@ -83,7 +83,7 @@ It stops at the first thing it can't lay out yet, and the page numbers of the he
 - a picture or shape that text wraps around, a text box, or a text frame
 - an equation
 - a footnote that doesn't fit below its reference, when it has several paragraphs or a table, would leave only one of its lines on either page, is too long for the next page too, or is referred to from a line that widow control, keeping lines together or keeping with the next paragraph could hold back
-- columns of different widths, footnotes in columns, and a table's header rows repeated at the top of a column
+- columns of different widths, footnotes in columns, a table's header rows repeated at the top of a column, and a paragraph kept with the next before a paragraph kept together that is taller than a column, when that one would move to a new page without it
 - a section that starts in the next column when its columns are of other widths than those of the section before, or when it starts before the last of 3 or more columns and a continuous section break follows it on the same page
 - a table row kept whole that is taller than a page, a row whose footnote doesn't fit below it, and a row that breaks across pages with merged cells, a table or a footnote in it, or a height set taller than its text
 - a table whose rows give a column different widths, and a table given no widths with cells merged across its columns or a table in a cell

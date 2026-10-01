@@ -1162,6 +1162,24 @@ describe("paginate", () => {
                 expect(below([paragraph("a", 7)])).to.deep.equal({ a: "1", kept: "2", eighth: "3" });
             });
 
+            it("should stop where it would move away from a paragraph kept with it, which Word hasn't shown", () => {
+                const stopped = (blocks: readonly Block[]): string | undefined =>
+                    paginate(document(blocks, { sections: [COLUMNS] }), { measurer: MEASURER }).stoppedAt;
+                const reason = "a paragraph kept with the next before a paragraph kept together taller than a column";
+                // Below a line, and at the top of a page, a heading kept with it would be left on its own
+                expect(stopped([paragraph("a", 1), paragraph("heading", 1, { keepNext: true }), kept])).to.equal(reason);
+                expect(stopped([paragraph("heading", 1, { keepNext: true }), kept])).to.equal(reason);
+                // Kept with it at the top of a page of a section of its own, it doesn't move, and isn't kept with what is before
+                const nextPage = document(
+                    [
+                        [paragraph("heading", 1, { keepNext: true }), 0],
+                        [kept, 1],
+                    ],
+                    { sections: [SECTION, COLUMNS] },
+                );
+                expect(pagesOf(nextPage)).to.deep.equal({ heading: "1", kept: "2", eighth: "3" });
+            });
+
             it("should lay out what follows it below it in the first column, and on into the next, as Word's K1 did", () => {
                 // b's 11 lines go 4 below kept's last 3, and 7 in the second column of page 2, as the second column of page 1
                 // is left empty
