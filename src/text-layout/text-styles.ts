@@ -44,7 +44,14 @@ export type CellMargins = Partial<Record<"top" | "bottom" | "left" | "right", nu
 
 type StyleDefinition = {
     readonly type: string;
+    /** Its name, such as "heading 1", by which Word finds its built-in styles */
+    readonly name?: string;
     readonly basedOn?: string;
+    /**
+     * The list a paragraph style numbers its paragraphs in, and the level, when it gives either (`w:numPr`). A style
+     * based on another takes what it doesn't give from it
+     */
+    readonly numbering?: { readonly id?: string; readonly level?: number };
     readonly run: RunFormat;
     readonly paragraph: ParagraphFormat;
     /** The margins a table style gives its cells */
@@ -273,13 +280,21 @@ export const readTextStyles = (xml: XmlObject, themeFonts: ThemeFonts = OFFICE_T
         .map((child) => {
             const children = childrenOf(child["w:style"]);
             const attributes = attributesOf(child["w:style"]);
+            const numbering = childrenOf(find(childrenOf(find(children, "w:pPr")), "w:numPr"));
+            const list = attributesOf(find(numbering, "w:numId"))["w:val"];
+            const level = numberOf(attributesOf(find(numbering, "w:ilvl"))["w:val"]);
+            const name = valueOf(children, "w:name");
             return {
                 id: stringOf(attributes["w:styleId"]),
                 isDefault: attributes["w:default"] !== undefined && !isOff(attributes["w:default"]),
                 definition: {
                     // A style without a type is a paragraph style, as Styles takes it
                     type: stringOf(attributes["w:type"]) ?? "paragraph",
+                    ...(name === undefined ? {} : { name }),
                     basedOn: valueOf(children, "w:basedOn"),
+                    ...(list === undefined && level === undefined
+                        ? {}
+                        : { numbering: withoutUndefined({ id: list === undefined ? undefined : String(list), level }) }),
                     run: readRunFormat(find(children, "w:rPr"), themeFonts),
                     paragraph: readParagraphFormat(find(children, "w:pPr")),
                     ...(attributes["w:type"] === "table"

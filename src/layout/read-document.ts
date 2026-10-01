@@ -37,8 +37,9 @@ import {
     stringOf,
     styleChain,
     valueOf,
+    withoutUndefined,
 } from "../text-layout";
-import { formatNumber } from "./number-format";
+import { formatNumber, formatPageNumber } from "./number-format";
 
 /**
  * A paragraph's content: text, tabs, breaks, pictures and bookmarks, and the results of fields that depend on the pages
@@ -59,6 +60,11 @@ export type ParagraphBlock = {
     /** The font of its mark */
     readonly markFont: TextFont;
     readonly style?: string;
+    /**
+     * When its style is one of Word's headings ("heading 1" to "heading 9"), the heading's level, and its number as the
+     * chapter number of the pages after it, when its style numbers it
+     */
+    readonly heading?: { readonly level: number; readonly chapter?: string };
     /** Whether it is empty but for its section's properties, as docx writes the end of each section but the last */
     readonly sectionBreak?: boolean;
     /** Why it can't be laid out, when it can't */
@@ -147,6 +153,11 @@ export type Section = {
     /** The width of each of its columns, from the first: the width of the page's text for a section of one column */
     readonly columns: readonly number[];
     readonly numberFormat: string;
+    /**
+     * When its page numbers start with a chapter number: the level of the headings that number the chapters, and what
+     * goes between the chapter number and the page's
+     */
+    readonly chapters?: { readonly level: number; readonly separator: string };
     /** The number of its first page, when it doesn't carry on from the section before */
     readonly firstNumber?: number;
     readonly headers: HeadersOrFooters;
@@ -183,6 +194,8 @@ export type DocumentContent = {
 };
 
 type NumberingLevel = {
+    /** The paragraph style the level is for, which numbers its paragraphs at this level (`w:pStyle`) */
+    readonly style?: string;
     readonly format: string;
     readonly text: string;
     readonly suffix: string;
@@ -246,6 +259,8 @@ const DEFAULT_SECTION: Omit<Section, "headers" | "footers" | "columns"> = {
     titlePage: false,
     numberFormat: "decimal",
 };
+/** What goes between a chapter number and a page number, by `w:chapSep`. Word puts a hyphen when it isn't given */
+const CHAPTER_SEPARATORS: Readonly<Record<string, string>> = { hyphen: "-", period: ".", colon: ":", emDash: "\u2014", enDash: "\u2013" };
 const EMUS_PER_POINT = 12700;
 /** How far apart, in points, the widths two rows give a column can be before they differ: rounding, not a choice */
 const WIDTH_TOLERANCE = 1;
@@ -498,17 +513,34 @@ const readInline = (elements: readonly unknown[], paragraphRun: RunFormat, reade
 };
 
 /**
- * The number of a paragraph in a list, and what follows it, as its list's level writes it. The list's numbers move on.
+ * The number of a paragraph in a list, and what follows it, as its list's level writes it, and its number as a chapter
+ * number. A paragraph is in the list it gives, or else in its style's. The list's numbers move on.
  */
 const readListNumber = (
     properties: readonly XmlObject[],
+    style: string | undefined,
     paragraphRun: RunFormat,
     reader: Reader,
-): { readonly items: readonly LayoutItem[]; readonly level?: NumberingLevel } => {
+): {
+    readonly items: readonly LayoutItem[];
+    readonly level?: NumberingLevel;
+    /** Whether it is in its style's list, or in one it gives itself, and its number as a chapter number, when it has one */
+    readonly from?: "style" | "paragraph";
+    readonly chapter?: string;
+} => {
     const numbering = childrenOf(find(properties, "w:numPr"));
-    const id = valueOf(numbering, "w:numId") ?? String(numberOf(attributesOf(find(numbering, "w:numId"))["w:val"]) ?? "");
+    const ownId = valueOf(numbering, "w:numId") ?? numberOf(attributesOf(find(numbering, "w:numId"))["w:val"])?.toString();
+    const ownLevel = numberOf(attributesOf(find(numbering, "w:ilvl"))["w:val"]);
+    // The list and level each from the nearest style that gives it, as a style based on another takes what it doesn't give
+    const fromStyle = styleChain(reader.styles, style, "paragraph").reduce<{ readonly id?: string; readonly level?: number }>(
+        (inherited, { numbering: given }) => ({ ...inherited, ...given }),
+        {},
+    );
+    const id = ownId ?? fromStyle.id ?? "";
     const levels = reader.numbering.get(id);
-    const index = numberOf(attributesOf(find(numbering, "w:ilvl"))["w:val"]) ?? 0;
+    // A style's list numbers it at the level it gives, or else at the level that is for it
+    const linked = levels?.findIndex((other) => other?.style !== undefined && other.style === style) ?? -1;
+    const index = ownLevel ?? (ownId === undefined ? fromStyle.level : undefined) ?? Math.max(linked, 0);
     const level = levels?.[index];
     if (!levels || !level) {
         return { items: [] };
@@ -517,14 +549,23 @@ const readListNumber = (
     const current = [...counts.slice(0, index), (counts[index] ?? level.start - 1) + 1];
     // eslint-disable-next-line functional/immutable-data
     reader.counters.set(id, current);
-    const text = level.text.replace(/%([1-9])/g, (_, digit: string) => {
-        const other = levels[Number(digit) - 1];
-        return formatNumber(current[Number(digit) - 1] ?? other?.start ?? 1, other?.format) ?? "1";
-    });
+    const numberAt = (at: number): string => {
+        const other = levels[at];
+        return formatNumber(current[at] ?? other?.start ?? 1, other?.format) ?? "1";
+    };
+    const text = level.text.replace(/%([1-9])/g, (_, digit: string) => numberAt(Number(digit) - 1));
+    // As a chapter number, Word writes the level's text from its first number to its last, so "Chapter %1" is 1 and
+    // "%1.%2" is 1.2
+    const numbers = /%[1-9](?:.*%[1-9])?/.exec(level.text)?.[0];
     const font = fontOf(combine([paragraphRun, level.run]));
     const suffix: readonly LayoutItem[] =
         level.suffix === "nothing" ? [] : level.suffix === "space" ? [{ type: "text", text: " ", font }] : [{ type: "tab", font }];
-    return { items: [...(text.length > 0 ? [{ type: "text" as const, text, font }] : []), ...suffix], level };
+    return {
+        items: [...(text.length > 0 ? [{ type: "text" as const, text, font }] : []), ...suffix],
+        level,
+        from: ownId === undefined ? "style" : "paragraph",
+        ...withoutUndefined({ chapter: numbers?.replace(/%([1-9])/g, (_, digit: string) => numberAt(Number(digit) - 1)) }),
+    };
 };
 
 /**
@@ -537,7 +578,8 @@ const readParagraph = (element: XmlObject, reader: Reader, tableStyle?: string):
     const style = valueOf(properties, "w:pStyle") ?? styles.defaultParagraphStyle;
     const paragraphStyles = [...styleChain(styles, tableStyle, "table"), ...styleChain(styles, style, "paragraph")];
     const paragraphRun = combine([styles.run, ...paragraphStyles.map(({ run }) => run)]);
-    const list = readListNumber(properties, paragraphRun, reader);
+    const list = readListNumber(properties, style, paragraphRun, reader);
+    const headingLevel = /^heading ([1-9])$/i.exec(styleChain(styles, style, "paragraph").slice(-1)[0]?.name ?? "")?.[1];
     const formats = [
         styles.paragraph,
         ...paragraphStyles.map(({ paragraph }) => paragraph),
@@ -553,6 +595,16 @@ const readParagraph = (element: XmlObject, reader: Reader, tableStyle?: string):
         tabStops: tabStopsOf(formats),
         markFont: fontOf(combine([paragraphRun, readRunFormat(find(properties, "w:rPr"), styles.themeFonts)])),
         style,
+        // Word's chapter numbers are the numbers headings' styles give them, and it passes over headings numbered on their
+        // own, or not at all
+        ...(headingLevel === undefined
+            ? {}
+            : {
+                  heading: {
+                      level: Number(headingLevel),
+                      ...withoutUndefined({ chapter: list.from === "style" ? list.chapter : undefined }),
+                  },
+              }),
         ...(typeof items === "string" || unsupported ? { unsupported: typeof items === "string" ? items : unsupported } : {}),
     };
 };
@@ -816,6 +868,7 @@ const readSection = (element: unknown, readPart: (id: string) => readonly Block[
     const start = valueOf(properties, "w:type");
     const format = stringOf(numbering["w:fmt"]) ?? "decimal";
     const firstNumber = numberOf(numbering["w:start"]);
+    const chapterLevel = numberOf(numbering["w:chapStyle"]);
     const pageWidth = twips(size["w:w"]) ?? DEFAULT_SECTION.pageWidth;
     const marginLeft = twips(margins["w:left"] ?? margins["w:start"]) ?? DEFAULT_SECTION.marginLeft;
     const marginRight = twips(margins["w:right"] ?? margins["w:end"]) ?? DEFAULT_SECTION.marginRight;
@@ -824,7 +877,7 @@ const readSection = (element: unknown, readPart: (id: string) => readonly Block[
     const unsupported =
         grid === "lines" || grid === "linesAndChars" || grid === "snapToChars"
             ? "a document grid"
-            : numbering["w:chapStyle"] !== undefined || formatNumber(1, format) === undefined
+            : formatPageNumber(1, format) === undefined
               ? "page numbers in a format not yet written"
               : find(properties, "w:textDirection") !== undefined
                 ? "text that runs down the page"
@@ -845,6 +898,9 @@ const readSection = (element: unknown, readPart: (id: string) => readonly Block[
         titlePage: onOff(properties, "w:titlePg") === true,
         columns,
         numberFormat: format,
+        ...(chapterLevel === undefined || chapterLevel < 1 || chapterLevel > 9
+            ? {}
+            : { chapters: { level: chapterLevel, separator: CHAPTER_SEPARATORS[String(numbering["w:chapSep"])] ?? "-" } }),
         ...(firstNumber === undefined ? {} : { firstNumber }),
         headers: { ...previous?.headers, ...headers },
         footers: { ...previous?.footers, ...footers },
@@ -858,6 +914,14 @@ const readSection = (element: unknown, readPart: (id: string) => readonly Block[
  */
 const readNumbering = (context: IContext, styles: TextStyles): ReadonlyMap<string, readonly NumberingLevel[]> => {
     const numbering = context.file.Numbering;
+    // The lists that styles number their paragraphs in are added to the document as its styles are written, after its
+    // body, so they are added now to be read
+    for (const style of styles.styles.values()) {
+        const placeholder = /^\{(.+)-(\d+)\}$/.exec(style.numbering?.id ?? "");
+        if (placeholder) {
+            numbering.createConcreteNumberingInstance(placeholder[1], Number(placeholder[2]));
+        }
+    }
     const xml = numbering.prepForXml(READING_CONTEXT) as XmlObject;
     const root = childrenOf(xml["w:numbering"]);
     const abstract = new Map(
@@ -871,6 +935,7 @@ const readNumbering = (context: IContext, styles: TextStyles): ReadonlyMap<strin
                         return {
                             index: numberOf(attributesOf(level["w:lvl"])["w:ilvl"])!,
                             level: {
+                                ...withoutUndefined({ style: valueOf(levelChildren, "w:pStyle") }),
                                 format: valueOf(levelChildren, "w:numFmt") ?? "decimal",
                                 text: stringOf(attributesOf(find(levelChildren, "w:lvlText"))["w:val"]) ?? "",
                                 suffix: valueOf(levelChildren, "w:suff") ?? "tab",

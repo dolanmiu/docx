@@ -110,6 +110,7 @@ describe("getTextStyles", () => {
         expect(styles.paragraph).to.deep.equal({ spaceAfter: 8, lineSpacing: { rule: "multiple", multiple: 278 / 240 } });
         expect(styles.styles.get("Quote")).to.deep.equal({
             type: "paragraph",
+            name: "Quote",
             basedOn: undefined,
             run: { allCaps: false, characterSpacing: 0.5, scale: 90 },
             paragraph: {
@@ -123,6 +124,7 @@ describe("getTextStyles", () => {
         });
         expect(styles.styles.get("Tall")).to.deep.equal({
             type: "paragraph",
+            name: "Tall",
             basedOn: undefined,
             run: { font: "Arial", hidden: true, smallCaps: true },
             paragraph: { lineSpacing: { rule: "atLeast", height: 24 }, indentLeft: 5, indentRight: 10, firstLineIndent: 15 },

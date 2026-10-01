@@ -28,6 +28,8 @@ table style and each cell's width.
 | `word-header-columns`       | H1 to H8: a table's header rows repeated at the top of each column, in columns evened out before a continuous section break and on a second page, the columns of a table that goes on from the page before evened out, and the line of the empty paragraph that ends a section after a table                                                                                                                                                                  | `word-header-columns.py`       |
 | `word-footnotes-in-columns` | N1 to N12: footnotes in columns, which Word lays out in the columns too, one after the other from the first and evened out, whichever column they are referred to from, with every column ending above them. Below columns that start below text across the page, or are evened out above it, a footnote that wraps in a column, one too long for the room below its reference, and footnotes referred to from text across the page and from columns below it | `word-footnotes-in-columns.py` |
 | `word-line-heights`         | H and T1 to T4: the height of lines in each font, size and line spacing, measured over a page, and how a table row breaks across pages: with room for the table's bottom border below it and for the space after a cell's paragraph, rows of an at-least height with less room than their height, and a page that ends between rows                                                                                                                           | `word-line-heights.py`         |
+| `word-page-number-formats`  | P: page numbers and page references in each number format at 4, 1234 and 0, L: lists in each format from 1 to 60 and at larger numbers, and C1 to C11: chapter numbers, with each separator, from headings of each level and numbering, before and after a heading on the same page                                                                                                                                                                           | `word-page-number-formats.py`  |
+| `word-page-number-formats2` | P: page numbers in each format where its letters run out and at 0, and C12 to C15: chapter numbers after a heading that isn't numbered, from one numbered on its own too, from a level with no number in its text, and from a style based on heading 1                                                                                                                                                                                                        | `word-page-number-formats.py`  |
 | `fsplit`                    | How a footnote that doesn't fit below its reference goes on to the next page. Laid out in LibreOffice only, so it has no PDF from Word: Word's split of an 8-line footnote is `word-rules` P7b                                                                                                                                                                                                                                                                | `pagelines.py`                 |
 
 ## Make a probe's `.docx`
@@ -65,6 +67,14 @@ in Homebrew (`brew install poppler`). For Word's PDF of `word-rules2`:
 ```bash
 pdftotext -bbox-layout scripts/layout-probes/word-rules2.pdf build/word-probes/word-rules2.html
 python3 scripts/layout-probes/word-rules2.py build/word-probes/word-rules2.html
+```
+
+`word-page-number-formats.py` reads both page number probes, from the text of `pdftotext -layout` rather than where each
+line is:
+
+```bash
+pdftotext -layout -enc UTF-8 scripts/layout-probes/word-page-number-formats.pdf build/word-probes/word-page-number-formats.txt
+python3 scripts/layout-probes/word-page-number-formats.py build/word-probes/word-page-number-formats.txt
 ```
 
 `word-balance.py` reads `word-balance`, `word-balance2` and `word-keep-together`, and `word-contextual.py` reads both

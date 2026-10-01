@@ -974,6 +974,69 @@ describe("paginate", () => {
             expect(pagesOf(content)).to.deep.equal({ preface: "i", more: "ii", chapter: "1" });
         });
 
+        it("should write page numbers in each format as Word does, and stop at those it doesn't write", () => {
+            const numbered = (numberFormat: string, firstNumber: number): ReturnType<typeof paginate> =>
+                paginate(document([paragraph("a", 1)], { sections: [{ ...SECTION, numberFormat, firstNumber }] }), { measurer: MEASURER });
+            expect(Object.fromEntries(numbered("cardinalText", 21).bookmarks)).to.deep.equal({ a: "twenty-one" });
+            expect(Object.fromEntries(numbered("hebrew1", 15).bookmarks)).to.deep.equal({ a: "טו" });
+            // Word writes an error for page 0 in Hebrew numerals, and for 781 in letters
+            expect(numbered("hebrew1", 0).stoppedAt).to.equal("a page number its format isn't written for yet");
+            expect(numbered("lowerLetter", 781).stoppedAt).to.equal("a page number its format isn't written for yet");
+        });
+
+        describe("chapter numbers", () => {
+            const heading = (name: string, level: number, chapter?: string): ParagraphBlock => ({
+                ...paragraph(name, 1),
+                heading: { level, ...(chapter === undefined ? {} : { chapter }) },
+            });
+            const chapters = { level: 1, separator: "." };
+            const pagesWith = (blocks: readonly Block[], section: Partial<Section> = { chapters }): Record<string, string> =>
+                pagesOf(document(blocks, { sections: [{ ...SECTION, ...section }] }));
+
+            it("should put the number of the last numbered heading of the section's level before each page number", () => {
+                expect(
+                    pagesWith([
+                        paragraph("before", 1),
+                        heading("one", 1, "1"),
+                        paragraph("a", 1),
+                        heading("part", 2, "1.1"),
+                        // Word passes over headings that aren't numbered, and keeps the chapter number
+                        heading("unnumbered", 1),
+                        paragraph("b", 1),
+                        heading("two", 1, "2"),
+                        paragraph("c", 1),
+                    ]),
+                    // Before the first heading, the page number is written alone. As in Word, the chapter is the one where
+                    // the bookmark is, so bookmarks on the same page have different chapter numbers. c is on page 2
+                ).to.deep.equal({ before: "1", one: "1.1", a: "1.1", part: "1.1", unnumbered: "1.1", b: "1.1", two: "2.1", c: "2.2" });
+            });
+
+            it("should write chapter numbers from headings of other levels, and none in sections without them", () => {
+                expect(
+                    pagesWith([heading("one", 1, "1"), heading("part", 2, "1.1"), paragraph("a", 1)], {
+                        chapters: { level: 2, separator: "-" },
+                    }),
+                ).to.deep.equal({
+                    one: "1",
+                    part: "1.1-1",
+                    a: "1.1-1",
+                });
+                expect(pagesWith([heading("one", 1, "1"), paragraph("a", 1)], {})).to.deep.equal({ one: "1", a: "1" });
+            });
+
+            it("should stop at a chapter number when a heading of its level is in a table", () => {
+                const content = document([table([row([[heading("inTable", 1, "1")]])]), paragraph("a", 1)], {
+                    sections: [{ ...SECTION, chapters }],
+                });
+                expect(paginate(content, { measurer: MEASURER }).stoppedAt).to.equal("a chapter heading in a table");
+                // Not when the heading is of another level
+                expect(pagesWith([table([row([[heading("inTable", 2, "1")]])]), paragraph("a", 1)])).to.deep.equal({
+                    inTable: "1",
+                    a: "1",
+                });
+            });
+        });
+
         it("should lay out each section's text in its own width", () => {
             const content = document(
                 [

@@ -25,7 +25,7 @@ import {
     measureContentWidths,
 } from "../text-layout";
 import { fitColumns, tableWidths } from "./column-widths";
-import { formatNumber } from "./number-format";
+import { formatPageNumber } from "./number-format";
 import type {
     Block,
     DocumentContent,
@@ -139,6 +139,19 @@ type Snapshot = {
     readonly spaceAfter: number;
     readonly sectionSpaceAfter: number | undefined;
 };
+
+/** A heading of a level, with its number as a chapter number, or why its chapter number isn't known */
+type ChapterHeading = { readonly level: number; readonly chapter?: string; readonly unsupported?: string };
+
+/** The headings in a block: a paragraph's own, and those in a table's cells, whose chapter numbers aren't known yet */
+const headingsIn = (block: Block): readonly ChapterHeading[] =>
+    block.type === "paragraph"
+        ? block.heading
+            ? [block.heading]
+            : []
+        : block.rows
+              .flatMap(({ cells }) => cells.flatMap((cell) => cell.blocks.flatMap(headingsIn)))
+              .map(({ level }) => ({ level, unsupported: "a chapter heading in a table" }));
 
 /** Thrown to stop laying out at something that can't be laid out yet */
 class Unsupported extends Error {}
@@ -399,6 +412,18 @@ export const paginate = (
                 : current;
         }, heights);
     };
+
+    // The chapter of each block, by the level of the headings that number chapters: the last numbered heading of the
+    // level at or before the block, as Word numbers the pages of a page reference by where its bookmark is on the page
+    let lastHeadings: readonly (ChapterHeading | undefined)[] = [];
+    const chapterHeadings = blocks.map(({ block }) => {
+        for (const heading of headingsIn(block)) {
+            if (heading.chapter !== undefined || heading.unsupported !== undefined) {
+                lastHeadings = Object.assign([...lastHeadings], { [heading.level - 1]: heading });
+            }
+        }
+        return lastHeadings;
+    });
 
     const markersOf = (block: Block): readonly string[] =>
         block.type === "paragraph"
@@ -1145,8 +1170,22 @@ export const paginate = (
         return rest.length > 0 || first?.type === "table" || (first !== undefined && measureParagraph(first, noteWidth()).lines.length > 1);
     };
 
+    /** The number of the page as the section writes it, after the chapter number when it has one */
+    const pageText = (): string => {
+        const { numberFormat, chapters } = section();
+        const page = formatPageNumber(pageNumber, numberFormat);
+        if (page === undefined) {
+            throw new Unsupported("a page number its format isn't written for yet");
+        }
+        const heading = chapters && chapterHeadings[blockStart!.index][chapters.level - 1];
+        if (heading?.unsupported) {
+            throw new Unsupported(heading.unsupported);
+        }
+        return heading?.chapter === undefined ? page : `${heading.chapter}${chapters!.separator}${page}`;
+    };
+
     const mark = (names: readonly string[]): void => {
-        const text = formatNumber(pageNumber, section().numberFormat)!;
+        const text = pageText();
         for (const name of names) {
             if (!bookmarks.has(name) && !footnotes.has(name)) {
                 // eslint-disable-next-line functional/immutable-data

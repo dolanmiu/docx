@@ -38,7 +38,7 @@ export const PageNumberSeparator = {
     COLON: "colon",
     /** Em dash separator (—) */
     EM_DASH: "emDash",
-    /** En dash separator (–) */
+    /** En dash separator (–), written as `enDash` */
     EN_DASH: "endash",
 } as const;
 
@@ -48,6 +48,7 @@ export const PageNumberSeparator = {
  * @property start - Starting page number for the section
  * @property formatType - Number format (decimal, roman, letter, etc.)
  * @property separator - Separator between chapter and page number
+ * @property chapterHeadingLevel - The level of the headings whose numbers are the chapter numbers
  */
 export type IPageNumberTypeAttributes = {
     /** Starting page number for the section */
@@ -56,6 +57,12 @@ export type IPageNumberTypeAttributes = {
     readonly formatType?: (typeof NumberFormat)[keyof typeof NumberFormat];
     /** Separator between chapter and page number (default: hyphen) */
     readonly separator?: (typeof PageNumberSeparator)[keyof typeof PageNumberSeparator];
+    /**
+     * Puts the chapter number before each page number, such as "2-5" for page 5 of chapter 2. The chapter number is the
+     * number of the last heading of this level (1 to 9, for `HeadingLevel.HEADING_1` to `HEADING_9`), so those headings
+     * must be numbered through their style (`w:chapStyle`)
+     */
+    readonly chapterHeadingLevel?: number;
 };
 
 /**
@@ -85,12 +92,17 @@ export type IPageNumberTypeAttributes = {
  * });
  * ```
  */
-export const createPageNumberType = ({ start, formatType, separator }: IPageNumberTypeAttributes): XmlComponent =>
-    new BuilderElement<IPageNumberTypeAttributes>({
+export const createPageNumberType = ({ start, formatType, separator, chapterHeadingLevel }: IPageNumberTypeAttributes): XmlComponent =>
+    new BuilderElement<Omit<IPageNumberTypeAttributes, "separator"> & { readonly separator?: string }>({
         name: "w:pgNumType",
         attributes: {
             start: { key: "w:start", value: start === undefined ? undefined : decimalNumber(start) },
             formatType: { key: "w:fmt", value: formatType },
-            separator: { key: "w:chapSep", value: separator },
+            // The schema's name for an en dash is enDash, which EN_DASH has been spelled differently from
+            separator: { key: "w:chapSep", value: separator === PageNumberSeparator.EN_DASH ? "enDash" : separator },
+            chapterHeadingLevel: {
+                key: "w:chapStyle",
+                value: chapterHeadingLevel === undefined ? undefined : decimalNumber(chapterHeadingLevel),
+            },
         },
     });
