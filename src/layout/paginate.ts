@@ -797,9 +797,13 @@ export const paginate = (
      * paragraph at the top of a page is left out, unless it is the first of the document or of its section.
      */
     const placeLines = (lines: readonly LaidOutLine[], paragraph: MeasuredParagraph, isStart: boolean): void => {
-        if (isStart && paragraph.keepLines && section().columns.length > 1 && linesHeight(lines) > pageBottom - top + TOLERANCE) {
-            // Word moves it to a new page, where it breaks it across only the first column of each page
-            throw new Unsupported("a paragraph kept together taller than a column");
+        // A paragraph kept together that is taller than a column goes down only the first column of each page, in Word,
+        // from the top of a new page unless it is at the top of this one. What follows it goes on below it in that column
+        // and into the next, so the other columns of the pages before are left empty. LibreOffice breaks it across them all
+        const firstColumnsOnly =
+            isStart && paragraph.keepLines && section().columns.length > 1 && linesHeight(lines) > pageBottom - top + TOLERANCE;
+        if (firstColumnsOnly && (column > 0 || position > top + TOLERANCE)) {
+            startPage();
         }
         /**
          * The space above the paragraph's first line: at the top of a page, or of the column its section starts in, only
@@ -861,7 +865,11 @@ export const paginate = (
                 index += count;
             }
             if (index < lines.length) {
-                nextColumn();
+                if (firstColumnsOnly) {
+                    startPage();
+                } else {
+                    nextColumn();
+                }
             }
         }
     };

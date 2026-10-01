@@ -1,5 +1,6 @@
-# Reads word-balance.ts's probes from pdftotext -bbox-layout's HTML of a PDF of it, and prints, for each probe, how many
-# lines each column has, from which to which, and where the line after the columns is. W9 prints the page of each line.
+# Reads the probes of word-balance.ts, word-balance2.ts and word-keep-together.ts from pdftotext -bbox-layout's HTML
+# of a PDF of one, and prints, for each probe, how many lines each column has, from which to which, and where the line
+# after the columns is. W9 prints the page of each line.
 # Usage: python3 scripts/layout-probes/word-balance.py build/word-probes/word-balance.html
 import re, html, sys
 from collections import defaultdict

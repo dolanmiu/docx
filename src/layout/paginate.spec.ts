@@ -1119,11 +1119,83 @@ describe("paginate", () => {
             );
         });
 
-        it("should stop at a paragraph kept together that is taller than a column, which Word lays out in the first column only", () => {
-            const kept = (lines: number): DocumentContent =>
-                document([paragraph("kept", lines, { keepLines: true })], { sections: [COLUMNS] });
-            expect(paginate(kept(8), { measurer: MEASURER }).stoppedAt).to.equal("a paragraph kept together taller than a column");
-            expect(pagesOf(kept(7))).to.deep.equal({ kept: "1" });
+        describe("a paragraph kept together that is taller than a column", () => {
+            const sectionBreak: ParagraphBlock = { ...paragraph("break", 0), items: [], sectionBreak: true };
+            /** A paragraph of 10 lines kept together, with a bookmark on its 8th line */
+            const kept = withItems(paragraph("kept", 7, { keepLines: true }), [
+                { type: "marker", name: "eighth" },
+                { type: "text", text: " abcdefgh abcdefgh abcdefgh", font: {} },
+            ]);
+
+            it("should lay it out in only the first column of each page", () => {
+                // Its first 7 lines fill the first column, and the rest go on the next page, rather than in the second column
+                expect(pagesOf(document([kept], { sections: [COLUMNS] }))).to.deep.equal({ kept: "1", eighth: "2" });
+                // A paragraph kept together that fits in a column breaks across the columns as any other does
+                expect(pagesOf(document([paragraph("seven", 7, { keepLines: true })], { sections: [COLUMNS] }))).to.deep.equal({
+                    seven: "1",
+                });
+            });
+
+            it("should move it to a new page from columns that start below something on the page, as Word's W3 did", () => {
+                const content = document(
+                    [
+                        [paragraph("top", 1), 0],
+                        [sectionBreak, 0],
+                        [kept, 1],
+                        [sectionBreak, 1],
+                        [paragraph("b", 4), 2],
+                        [paragraph("c", 1), 2],
+                    ],
+                    { sections: [SECTION, { ...COLUMNS, start: "continuous" }, { ...SECTION, start: "continuous" }] },
+                );
+                // It goes 7 lines and 3 in the first columns of pages 2 and 3, rather than 6 and 4 in the columns of page 1
+                // and 2 more on page 2. The columns of page 3 are evened out with its 3 lines together, so b's 4 lines fill the
+                // page below them, and c goes on the next
+                expect(pagesOf(content)).to.deep.equal({ top: "1", kept: "2", eighth: "3", b: "3", c: "4" });
+            });
+
+            it("should move it to a new page from anywhere but the top of the page's first column", () => {
+                const below = (blocks: readonly Block[]): Record<string, string> =>
+                    pagesOf(document([...blocks, kept], { sections: [COLUMNS] }));
+                // Below a line in the first column, and at the top of the second, as in Word's K3 and K2b
+                expect(below([paragraph("a", 1)])).to.deep.equal({ a: "1", kept: "2", eighth: "3" });
+                expect(below([paragraph("a", 7)])).to.deep.equal({ a: "1", kept: "2", eighth: "3" });
+            });
+
+            it("should lay out what follows it below it in the first column, and on into the next, as Word's K1 did", () => {
+                // b's 11 lines go 4 below kept's last 3, and 7 in the second column of page 2, as the second column of page 1
+                // is left empty
+                expect(pagesOf(document([kept, paragraph("b", 11), paragraph("c", 1)], { sections: [COLUMNS] }))).to.deep.equal({
+                    kept: "1",
+                    eighth: "2",
+                    b: "2",
+                    c: "3",
+                });
+                // Evened out before a continuous section break, kept's last 3 lines and f1 go in the first column and f2 to f4
+                // in the second, so b's 3 lines fit below them
+                const content = document(
+                    [
+                        [paragraph("top", 1), 0],
+                        [sectionBreak, 0],
+                        [kept, 1],
+                        ...["f1", "f2", "f3", "f4"].map((name): readonly [Block, number] => [paragraph(name, 1), 1]),
+                        [sectionBreak, 1],
+                        [paragraph("b", 3), 2],
+                        [paragraph("c", 1), 2],
+                    ],
+                    { sections: [SECTION, { ...COLUMNS, start: "continuous" }, { ...SECTION, start: "continuous" }] },
+                );
+                expect(pagesOf(content)).to.include({ kept: "2", eighth: "3", f1: "3", f4: "3", b: "3", c: "4" });
+                // A section on a new page after it starts on the next page
+                const nextPage = document(
+                    [
+                        [kept, 0],
+                        [paragraph("b", 1), 1],
+                    ],
+                    { sections: [COLUMNS, SECTION] },
+                );
+                expect(pagesOf(nextPage)).to.deep.equal({ kept: "1", eighth: "2", b: "3" });
+            });
         });
 
         it("should stop at footnotes in columns, and at header rows repeated in a column", () => {
