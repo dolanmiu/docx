@@ -489,6 +489,18 @@ describe("paginate", () => {
                 measurer: MEASURER,
             });
             expect(acrossColumns.stoppedAt).to.equal("a word longer than its cell in a table with cells merged across columns");
+            // A paragraph kept with it is laid out before the layout stops there, as it is before any table it can't lay out
+            const kept = paginate(
+                document([paragraph("a", 2), paragraph("heading", 1, { keepNext: true }), { ...given, widen: { acrossColumns: true } }]),
+                { measurer: MEASURER },
+            );
+            expect(kept.bookmarks).to.deep.equal(
+                new Map([
+                    ["a", "1"],
+                    ["heading", "1"],
+                ]),
+            );
+            expect(kept.stoppedAt).to.equal("a word longer than its cell in a table with cells merged across columns");
         });
 
         it("should make rows as tall as their tallest cell, their margins and borders, or their own height", () => {

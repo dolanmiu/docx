@@ -278,7 +278,7 @@ export const paginate = (
     const fittedTables = new Map<TableBlock, Map<number, TableBlock>>();
     /**
      * A table as it is laid out in a width: with its columns sized to their text, or widened for words longer than its
-     * cells give them, when Word sizes them so
+     * cells give them, when Word sizes them so. It says why when Word's sizing of it isn't known
      */
     const fitted = (table: TableBlock, width: number): TableBlock => {
         if (!table.fit && !table.widen) {
@@ -290,6 +290,11 @@ export const paginate = (
         const sized = byWidth.get(width) ?? fitColumns(table, width, contentWidths);
         // eslint-disable-next-line functional/immutable-data
         byWidth.set(width, sized);
+        return sized;
+    };
+    /** A table sized to be laid out in a width, which stops the layout when Word's sizing of it isn't known */
+    const sizedToPlace = (table: TableBlock, width: number): TableBlock => {
+        const sized = fitted(table, width);
         if (sized.unsupported) {
             throw new Unsupported(sized.unsupported);
         }
@@ -300,7 +305,7 @@ export const paginate = (
     const stackParts = (stack: readonly Block[], width: number): readonly StackPart[] =>
         stack.map((block, index) => {
             if (block.type === "table") {
-                return { height: sum(rowHeights(fitted(block, width))), before: 0, after: 0 };
+                return { height: sum(rowHeights(sizedToPlace(block, width))), before: 0, after: 0 };
             }
             const { lines, spaceBefore: before, spaceAfter: after } = measureParagraph(block, width, stack[index - 1], stack[index + 1]);
             return { height: linesHeight(lines), before, after };
@@ -995,7 +1000,7 @@ export const paginate = (
                 paragraph:
                     block.type === "paragraph"
                         ? measureParagraph(block, cell.width, cell.blocks[index - 1], cell.blocks[index + 1])
-                        : { ...UNBROKEN, lines: [{ height: sum(rowHeights(fitted(block, cell.width))), markers: markersOf(block) }] },
+                        : { ...UNBROKEN, lines: [{ height: sum(rowHeights(sizedToPlace(block, cell.width))), markers: markersOf(block) }] },
                 from: 0,
             })),
         );
@@ -1142,8 +1147,10 @@ export const paginate = (
         }
         if (anchor.type === "table") {
             const [firstRow] = anchor.rows;
+            // A table that can't be laid out has nothing kept with it, so what is kept is placed before the layout stops
+            const sized = anchor.unsupported ? anchor : fitted(anchor, width);
             return {
-                height: keptLines + lastAfter + (anchor.unsupported ? 0 : (rowHeights(fitted(anchor, width))[0] ?? 0)),
+                height: keptLines + lastAfter + (sized.unsupported ? 0 : (rowHeights(sized)[0] ?? 0)),
                 notes: [...keptNotes, ...notesIn(firstRow ? firstRow.cells.flatMap((cell) => cell.blocks.flatMap(markersOf)) : [])],
             };
         }
@@ -1176,7 +1183,7 @@ export const paginate = (
             return;
         }
         if (block.type === "table") {
-            placeTable(fitted(block, width));
+            placeTable(sizedToPlace(block, width));
             sectionSpaceAfter = undefined;
             return;
         }
