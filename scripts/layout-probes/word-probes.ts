@@ -11,7 +11,10 @@
 //     starts and ends can be read from the PDF's drawing. Several tables share a page, as one can't move another's widths
 // U2: footnotes continued on the next page in ways Word hasn't shown: with a line on its own (U2a to U2e), of several
 //     paragraphs or a table (U2f to U2h), referred to from a line held back by widow control, keepLines or keepNext, or
-//     followed by another (U2j to U2n), and too long for the next page too (U2o to U2q)
+//     followed by another (U2j to U2n), and too long for the next page too (U2o to U2q). Word (word-probes.pdf): a
+//     footnote keeps its own widow and orphan control, and breaks between its paragraphs and table rows as the body does.
+//     Where too little of it can stay, its reference's line moves to the next page with it. The body's widow control,
+//     keepLines and keepNext apply first, and one longer than a page fills whole pages
 // U3: a footnote in a table row that doesn't fit below the row, or in a row that breaks across pages
 // U4: a row with cells merged down, a table in a cell, or a set height taller than its text, broken across pages
 // U5: a row that can't break, taller than a page
