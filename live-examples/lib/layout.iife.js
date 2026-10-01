@@ -2851,7 +2851,8 @@ var docxLayout = (function(exports) {
 	*
 	* Each page's body is filled from the top, between the page's margins, or its header and footer where they are taller,
 	* and in columns, the first column and then the next. The columns on the page before a continuous section break are
-	* balanced, as short as what is in them fits in.
+	* balanced, as short as what is in them fits in. A section that starts in the next column starts in the next column of
+	* the page when the section before has as many columns and one is left, and on a new page otherwise.
 	* Paragraphs break into lines, and pages break between lines, as their keep and widow control settings allow. Table
 	* rows break across pages between the lines of their cells, unless they are kept whole, and the table's header rows are
 	* repeated on each page. The footnotes of each page's lines take room at its bottom, and one that doesn't fit below its
@@ -3072,6 +3073,7 @@ var docxLayout = (function(exports) {
 		let carried;
 		let spaceAfter = 0;
 		let sectionSpaceAfter = 0;
+		let sectionColumn = 0;
 		/** Where the layout is at the start of a block, to lay out the blocks from it again */
 		const snapshot = (index) => ({
 			index,
@@ -3161,14 +3163,24 @@ var docxLayout = (function(exports) {
 		/** Whether a section starts on the page the section before it ends on: a continuous one, on pages of the same size */
 		const continuesOnPage = (previous, current) => current.start === "continuous" && previous.pageWidth === current.pageWidth && previous.pageHeight === current.pageHeight;
 		/**
+		* Whether a section starts in the next column of the page the section before it ends on, as Word starts one that
+		* starts in the next column when the section before has as many columns, on pages of the same size, and one is left
+		* after the column it ends in (`word-rules2.docx` Q5a, `word-next-column.docx` N4 and N5). Otherwise it starts on a
+		* new page: after 2 columns into 3, 3 into 2, 1 into 2, or the last column started (Q5b to Q5d, N3)
+		*/
+		const startsInNextColumn = (previous, current) => current.start === "nextColumn" && previous.pageWidth === current.pageWidth && previous.pageHeight === current.pageHeight && previous.columns.length === current.columns.length && column + 1 < current.columns.length;
+		/** Whether the columns on the page start with a section that started in the next column */
+		const startedInColumn = () => columnsStart.pageCount === pageCount && columnsStart.column > 0;
+		/**
 		* Ends the columns on the page before a continuous section break, as Word does. Unless a column break is in them, they
 		* are balanced: what is in them, up to the section's next block (`end`), is laid out again in the shortest columns it
-		* fits in, filled from the first, which halving the height tried finds. The next section starts below the lowest of
-		* the columns and the space after the paragraph each ends with, and its space before is only as much as is more than
-		* the space after the section's last paragraph: the empty one that ends it, when there is one.
+		* fits in, filled from the first, which halving the height tried finds. Nor are they when a section in them started
+		* in the next column, which Word leaves as they are (`word-next-column.docx` N6). The next section starts below the
+		* lowest of the columns and the space after the paragraph each ends with, and its space before is only as much as is
+		* more than the space after the section's last paragraph: the empty one that ends it, when there is one.
 		*/
 		const endColumns = (end) => {
-			if (!columnBroken) balanceColumns(end);
+			if (!columnBroken && !startedInColumn()) balanceColumns(end);
 			position = Math.max(deepest, position + spaceAfter) - spaceAfter;
 		};
 		const balanceColumns = (end) => {
@@ -3214,8 +3226,14 @@ var docxLayout = (function(exports) {
 			for (let skipped = sectionIndex + 1; skipped < index; skipped++) sharingPages.add(skipped);
 			if (current.unsupported) throw new Unsupported(current.unsupported);
 			const continuous = continuesOnPage(previous, current);
-			if (continuous && previous.columns.length > 1 && (placedInColumn || column > 0)) endColumns(firstBlock);
+			if (continuous && previous.columns.length > 1 && (placedInColumn || column > 0)) {
+				if (startedInColumn() && columnsStart.column < previous.columns.length - 1) throw new Unsupported("columns evened out after a section that starts in the next column");
+				endColumns(firstBlock);
+			}
+			const inNextColumn = startsInNextColumn(previous, current);
+			if (inNextColumn && previous.columns.some((width, at) => width !== current.columns[at])) throw new Unsupported("a section that starts in the next column of columns of other widths");
 			sectionSpaceAfter = spaceAfter;
+			sectionColumn = 0;
 			const before = sectionIndex;
 			sectionIndex = index;
 			if (continuous) {
@@ -3225,7 +3243,17 @@ var docxLayout = (function(exports) {
 				sharingPages.add(before).add(index);
 				return;
 			}
-			if (current.start === "nextColumn" && (previous.columns.length > 1 || current.columns.length > 1)) throw new Unsupported("a section that starts in the next column");
+			if (inNextColumn) {
+				deepest = Math.max(deepest, position);
+				column++;
+				sectionColumn = column;
+				position = columnTop;
+				placedInColumn = false;
+				spaceAfter = 0;
+				firstPages.set(index, pageCount);
+				sharingPages.add(before).add(index);
+				return;
+			}
 			const nextNumber = (_current$firstNumber = current.firstNumber) !== null && _current$firstNumber !== void 0 ? _current$firstNumber : pageNumber + 1;
 			if (current.start === "evenPage" && nextNumber % 2 !== 0 || current.start === "oddPage" && nextNumber % 2 === 0) {
 				pageCount++;
@@ -3362,10 +3390,13 @@ var docxLayout = (function(exports) {
 		*/
 		const placeLines = (lines, paragraph, isStart) => {
 			if (isStart && paragraph.keepLines && section().columns.length > 1 && linesHeight(lines) > pageBottom - top + TOLERANCE) throw new Unsupported("a paragraph kept together taller than a column");
-			/** The space above the paragraph's first line: at the top of a page, only the first of a section has any */
+			/**
+			* The space above the paragraph's first line: at the top of a page, or of the column its section starts in, only
+			* the first of a section has any
+			*/
 			const spaceAbove = () => {
 				if (placedInColumn) return between(spaceAfter, paragraph.spaceBefore);
-				return sectionSpaceAfter !== void 0 && column === 0 ? between(sectionSpaceAfter, paragraph.spaceBefore) - sectionSpaceAfter : 0;
+				return sectionSpaceAfter !== void 0 && (column === 0 || column === sectionColumn) ? between(sectionSpaceAfter, paragraph.spaceBefore) - sectionSpaceAfter : 0;
 			};
 			let index = 0;
 			while (index < lines.length) {
