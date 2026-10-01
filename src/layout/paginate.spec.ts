@@ -438,6 +438,14 @@ describe("paginate", () => {
             ]);
             // After the header row, rows take 2 lines. The header's line is repeated at the top of page 2
             expect(pagesOf(content)).to.deep.equal({ a: "1", header: "1", one: "1", side: "1", two: "2", three: "2", b: "2" });
+            // A header row that doesn't fit below a full page goes to the next page, where it isn't repeated above itself,
+            // so its line, the row's 5 and b's fill the page
+            const headerMoves = document([
+                paragraph("a", 7),
+                table([row([[paragraph("header", 1)]], { header: true }), row([[paragraph("one", 5)]], { cantSplit: true })]),
+                paragraph("b", 1),
+            ]);
+            expect(pagesOf(headerMoves)).to.deep.equal({ a: "1", header: "2", one: "2", b: "2" });
         });
 
         it("should size the columns of a table given no widths to their text, in the width it is in", () => {
@@ -1506,6 +1514,142 @@ describe("paginate", () => {
             // 2 of tall's lines below a and the header, and its other 6 below the header in the second column, which leaves
             // no room for b
             expect(pagesOf(content)).to.include({ tall: "1", end: "1", b: "2" });
+        });
+
+        describe("of different widths", () => {
+            // A word of "abc" on each line of a column 40 points wide, and 3 to a line of one 120 points wide
+            const NARROW_FIRST: Section = { ...SECTION, columns: [40, 120] };
+            const WIDE_FIRST: Section = { ...SECTION, columns: [120, 40] };
+            /** A paragraph of words of 3 characters, bookmarked with its name, and some of its words with theirs */
+            const words = (name: string, count: number, marked: Readonly<Record<number, string>> = {}, format: ParagraphFormat = {}) => ({
+                ...paragraph(name, 0, format),
+                items: [
+                    { type: "marker", name } as const,
+                    ...Array.from({ length: count }, (_, index): readonly LayoutItem[] => [
+                        ...(marked[index] === undefined ? [] : [{ type: "marker", name: marked[index] } as const]),
+                        { type: "text", text: index < count - 1 ? "abc " : "abc", font: {} },
+                    ]).flat(),
+                ],
+            });
+            const lines = (prefix: string, count: number): readonly ParagraphBlock[] =>
+                Array.from({ length: count }, (_, index) => words(`${prefix}${index + 1}`, 1));
+            const stoppedAt = (content: DocumentContent): string | undefined => paginate(content, { measurer: MEASURER }).stoppedAt;
+
+            it("should break the lines of a paragraph again at the width of each column it goes on into, as Word does", () => {
+                // 7 words on 7 lines in the first column of each page, and 21 on 7 lines in the second
+                const long = words("long", 60, { 27: "w28", 28: "w29", 55: "w56", 56: "w57" });
+                expect(pagesOf(document([long], { sections: [NARROW_FIRST] }))).to.deep.equal({
+                    long: "1",
+                    w28: "1",
+                    w29: "2",
+                    w56: "2",
+                    w57: "3",
+                });
+            });
+
+            it("should break the text after a column break at the width of the next column", () => {
+                const broken = {
+                    ...words("a", 1),
+                    items: [
+                        ...words("a", 1).items,
+                        { type: "break", kind: "column", font: {} } as const,
+                        ...words("rest", 22, { 14: "w15", 21: "w22" }).items,
+                    ],
+                };
+                // The 22 words after the break go on 7 lines of 3 in the second column, less one for widow control, and 4
+                // lines of 1 on the next page
+                expect(pagesOf(document([broken], { sections: [NARROW_FIRST] }))).to.deep.equal({ a: "1", rest: "1", w15: "1", w22: "2" });
+            });
+
+            it("should move paragraphs kept with the next to the next column when they fit there at its width", () => {
+                // The heading takes 6 lines in the first column, but 2 in the second, where b's line fits below it
+                const content = document([...lines("a", 4), words("heading", 6, {}, { keepNext: true }), words("b", 3)], {
+                    sections: [NARROW_FIRST],
+                });
+                expect(pagesOf(content)).to.include({ heading: "1", b: "1" });
+                // Lines kept together that don't fit move to the next column, where they take 2 lines and leave room for
+                // b's 5
+                const kept = document([...lines("a", 4), words("kept", 6, {}, { keepLines: true }), words("b", 15)], {
+                    sections: [NARROW_FIRST],
+                });
+                expect(pagesOf(kept)).to.include({ kept: "1", b: "1" });
+            });
+
+            it("should stop at a paragraph kept together that is taller than one of the columns, which Word lays out in a way not yet known", () => {
+                // 9 lines in the narrow column, and 3 in the wide one. Word lays one taller than a column down only the first
+                // column of each page, in columns of the same width
+                const kept = words("kept", 9, {}, { keepLines: true });
+                const reason = "a paragraph kept together taller than a column, in columns of different widths";
+                expect(stoppedAt(document([kept], { sections: [NARROW_FIRST] }))).to.equal(reason);
+                expect(stoppedAt(document([...lines("a", 7), kept], { sections: [NARROW_FIRST] }))).to.equal(reason);
+            });
+
+            it("should count the lines left for the next column as they are broken in this one, for widow control, as Word does", () => {
+                // 5 words on 5 lines of the narrow second column, with room for 3. The 2 left would go on 1 line of the wide
+                // column of the next page, alone at its top, as Word leaves them (word-column-widths.docx R1), where
+                // LibreOffice moves the paragraph on
+                const narrow = document([...lines("a", 7), ...lines("b", 4), words("p", 5, { 2: "w3", 3: "w4" })], {
+                    sections: [WIDE_FIRST],
+                });
+                expect(pagesOf(narrow)).to.include({ p: "1", w3: "1", w4: "2" });
+                // 12 words on 4 lines of the wide second column, with room for 3. The last line would be alone at the top of
+                // the next page, where its 3 words go on 3 lines of the narrow column, so a line goes with it, as Word moves
+                // it (R2 and R4), and its 6 words go on 6 lines there
+                const wide = document([...lines("a", 7), ...lines("b", 4), words("p", 12, { 5: "w6", 6: "w7" })], {
+                    sections: [NARROW_FIRST],
+                });
+                expect(pagesOf(wide)).to.include({ p: "1", w6: "1", w7: "2" });
+            });
+
+            it("should even out columns of different widths by their height, as Word does", () => {
+                /** Blocks in columns, then b and c in a continuous section of one column, whose pages show where it starts */
+                const balanced = (blocks: readonly Block[], after: number): DocumentContent =>
+                    document(
+                        [
+                            ...blocks.map((block): readonly [Block, number] => [block, 0]),
+                            [paragraph("b", after), 1],
+                            [paragraph("c", 1), 1],
+                        ],
+                        { sections: [NARROW_FIRST, { ...SECTION, start: "continuous" }] },
+                    );
+                // 12 lines go 6 and 6, and b's 2 lines don't fit below them
+                expect(pagesOf(balanced(lines("a", 12), 2))).to.include({ a6: "1", a7: "1", b: "2" });
+                // 12 words go on 3 lines in the narrow column and 3 lines of 3 in the wide one, so b's 4 lines fill the page
+                expect(pagesOf(balanced([words("p", 12)], 4))).to.include({ b: "1", c: "2" });
+                // 14 words go 4 and 10, on 4 lines in each column, so b's 3 lines fill the page
+                expect(pagesOf(balanced([words("p", 14)], 3))).to.include({ b: "1", c: "2" });
+            });
+
+            it("should break a table across columns of different widths, keeping the widths it is sized to in a wider column", () => {
+                const rows = (text: string): TableBlock =>
+                    table(
+                        Array.from({ length: 10 }, (_, index) =>
+                            row([
+                                [
+                                    {
+                                        ...paragraph(`row${index + 1}`, 0),
+                                        items: [
+                                            { type: "marker", name: `row${index + 1}` },
+                                            { type: "text", text, font: {} },
+                                        ],
+                                    },
+                                ],
+                            ]),
+                        ),
+                    );
+                const fixed = rows("abc");
+                // 7 rows in the first column, and 3 in the second
+                expect(pagesOf(document([fixed, words("b", 1)], { sections: [NARROW_FIRST] }))).to.include({ row10: "1", b: "1" });
+                // Sized to its text in the narrow column, each row takes 2 lines there and in the wide one, as in Word
+                // (word-column-widths.docx R5 and R6), so 3 rows go in each column of the first page, and the rest on the next
+                const fitted: TableBlock = { ...rows("abc abc"), fit: {} };
+                expect(pagesOf(document([fitted], { sections: [NARROW_FIRST] }))).to.include({ row6: "1", row7: "2" });
+                // Going on into a narrower column, which it might not fit in
+                expect(stoppedAt(document([fitted], { sections: [WIDE_FIRST] }))).to.equal(
+                    "a table sized to its text that goes on into a narrower column",
+                );
+                expect(pagesOf(document([{ ...fixed, fit: {} }], { sections: [WIDE_FIRST] }))).to.include({ row10: "1" });
+            });
         });
     });
 

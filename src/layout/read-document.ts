@@ -819,10 +819,7 @@ const readSection = (element: unknown, readPart: (id: string) => readonly Block[
               ? "page numbers in a format not yet written"
               : find(properties, "w:textDirection") !== undefined
                 ? "text that runs down the page"
-                : // A paragraph that goes on into a column of another width would need its lines broken again
-                  columns.some((width) => width !== columns[0])
-                  ? "columns of different widths"
-                  : undefined;
+                : undefined;
     const headers = readReferences(properties, "w:headerReference", readPart);
     const footers = readReferences(properties, "w:footerReference", readPart);
     return {
