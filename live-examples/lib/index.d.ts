@@ -2144,7 +2144,7 @@ export declare const createPageMargin: (top: number | UniversalMeasure, right: n
  * });
  * ```
  */
-export declare const createPageNumberType: ({ start, formatType, separator }: IPageNumberTypeAttributes) => XmlComponent;
+export declare const createPageNumberType: ({ start, formatType, separator, chapterHeadingLevel }: IPageNumberTypeAttributes) => XmlComponent;
 
 /**
  * This element specifies the properties (size and orientation) for all pages in the current section.
@@ -6377,6 +6377,7 @@ export declare type IPageMarginAttributes = {
  * @property start - Starting page number for the section
  * @property formatType - Number format (decimal, roman, letter, etc.)
  * @property separator - Separator between chapter and page number
+ * @property chapterHeadingLevel - The level of the headings whose numbers are the chapter numbers
  */
 export declare type IPageNumberTypeAttributes = {
     /** Starting page number for the section */
@@ -6385,6 +6386,12 @@ export declare type IPageNumberTypeAttributes = {
     readonly formatType?: (typeof NumberFormat)[keyof typeof NumberFormat];
     /** Separator between chapter and page number (default: hyphen) */
     readonly separator?: (typeof PageNumberSeparator)[keyof typeof PageNumberSeparator];
+    /**
+     * Puts the chapter number before each page number, such as "2-5" for page 5 of chapter 2. The chapter number is the
+     * number of the last heading of this level (1 to 9, for `HeadingLevel.HEADING_1` to `HEADING_9`), so those headings
+     * must be numbered through their style (`w:chapStyle`)
+     */
+    readonly chapterHeadingLevel?: number;
 };
 
 /**
@@ -10148,7 +10155,7 @@ export declare const PageNumberSeparator: {
     readonly COLON: "colon";
     /** Em dash separator (—) */
     readonly EM_DASH: "emDash";
-    /** En dash separator (–) */
+    /** En dash separator (–), written as `enDash` */
     readonly EN_DASH: "endash";
 };
 

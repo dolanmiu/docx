@@ -5710,12 +5710,17 @@ var docxShapes = (function(exports, docx) {
 			var _stringOf;
 			const children = childrenOf(child["w:style"]);
 			const attributes = attributesOf(child["w:style"]);
+			const numbering = childrenOf(find(childrenOf(find(children, "w:pPr")), "w:numPr"));
+			const list = attributesOf(find(numbering, "w:numId"))["w:val"];
+			const level = numberOf(attributesOf(find(numbering, "w:ilvl"))["w:val"]);
+			const name = valueOf(children, "w:name");
 			return {
 				id: stringOf(attributes["w:styleId"]),
 				isDefault: attributes["w:default"] !== void 0 && !isOff(attributes["w:default"]),
-				definition: _objectSpread2({
-					type: (_stringOf = stringOf(attributes["w:type"])) !== null && _stringOf !== void 0 ? _stringOf : "paragraph",
-					basedOn: valueOf(children, "w:basedOn"),
+				definition: _objectSpread2(_objectSpread2(_objectSpread2({ type: (_stringOf = stringOf(attributes["w:type"])) !== null && _stringOf !== void 0 ? _stringOf : "paragraph" }, name === void 0 ? {} : { name }), {}, { basedOn: valueOf(children, "w:basedOn") }, list === void 0 && level === void 0 ? {} : { numbering: withoutUndefined({
+					id: list === void 0 ? void 0 : String(list),
+					level
+				}) }), {}, {
 					run: readRunFormat(find(children, "w:rPr"), themeFonts),
 					paragraph: readParagraphFormat(find(children, "w:pPr"))
 				}, attributes["w:type"] === "table" ? { cellMargins: readCellMargins(find(childrenOf(find(children, "w:tblPr")), "w:tblCellMar")) } : {})

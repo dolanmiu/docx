@@ -2351,12 +2351,17 @@ var docxLayout = (function(exports) {
 			var _stringOf;
 			const children = childrenOf(child["w:style"]);
 			const attributes = attributesOf(child["w:style"]);
+			const numbering = childrenOf(find(childrenOf(find(children, "w:pPr")), "w:numPr"));
+			const list = attributesOf(find(numbering, "w:numId"))["w:val"];
+			const level = numberOf(attributesOf(find(numbering, "w:ilvl"))["w:val"]);
+			const name = valueOf(children, "w:name");
 			return {
 				id: stringOf(attributes["w:styleId"]),
 				isDefault: attributes["w:default"] !== void 0 && !isOff(attributes["w:default"]),
-				definition: _objectSpread2({
-					type: (_stringOf = stringOf(attributes["w:type"])) !== null && _stringOf !== void 0 ? _stringOf : "paragraph",
-					basedOn: valueOf(children, "w:basedOn"),
+				definition: _objectSpread2(_objectSpread2(_objectSpread2({ type: (_stringOf = stringOf(attributes["w:type"])) !== null && _stringOf !== void 0 ? _stringOf : "paragraph" }, name === void 0 ? {} : { name }), {}, { basedOn: valueOf(children, "w:basedOn") }, list === void 0 && level === void 0 ? {} : { numbering: withoutUndefined({
+					id: list === void 0 ? void 0 : String(list),
+					level
+				}) }), {}, {
 					run: readRunFormat(find(children, "w:rPr"), themeFonts),
 					paragraph: readParagraphFormat(find(children, "w:pPr"))
 				}, attributes["w:type"] === "table" ? { cellMargins: readCellMargins(find(childrenOf(find(children, "w:tblPr")), "w:tblCellMar")) } : {})
@@ -2933,10 +2938,16 @@ var docxLayout = (function(exports) {
 	//#endregion
 	//#region src/layout/number-format.ts
 	/**
-	* Writes numbers as Word writes page and list numbers in each of its formats (`ST_NumberFormat`).
+	* Writes numbers as Word writes list and page numbers in each of its formats (`ST_NumberFormat`). What Word writes was
+	* read from PDFs Word saved of the probes in `scripts/layout-probes/word-page-number-formats*.ts`.
 	*
 	* @module
 	*/
+	/**
+	* The largest number written in any format but decimal. Word's list numbers start over past it (32768 is "I" in roman
+	* numerals), and its page numbers past it haven't been seen
+	*/
+	var LARGEST = 32767;
 	var ROMAN = [
 		[1e3, "m"],
 		[900, "cm"],
@@ -2959,8 +2970,19 @@ var docxLayout = (function(exports) {
 		rest: value,
 		text: ""
 	}).text;
-	/** Letters as Word writes them: a to z, then aa to zz, then aaa and so on */
-	var letters = (value) => String.fromCharCode(97 + (value - 1) % 26).repeat(Math.ceil(value / 26));
+	/**
+	* Letters of an alphabet as Word writes them: each letter in turn, then each twice, then three times and so on, as a to
+	* z, aa to zz, aaa. Characters of more than one code point, such as the Devanagari vowels with a sign, are strings
+	*/
+	var repeated = (alphabet) => (value) => alphabet[(value - 1) % alphabet.length].repeat(Math.ceil(value / alphabet.length));
+	/** Letters of an alphabet in turn, starting from the first again after the last */
+	var cycled = (alphabet) => (value) => alphabet[(value - 1) % alphabet.length];
+	/** Each decimal digit of the number written with the digits given, from 0 to 9 */
+	var digits = (set) => (value) => [...String(value)].map((digit) => set[Number(digit)]).join("");
+	/** The first of a run of characters for 1 to the last number given, such as ① to ⑳, and decimal numbers past them */
+	var enclosed = (first, last) => (value) => value >= 1 && value <= last ? String.fromCodePoint(first + value - 1) : String(value);
+	/** One of the characters given for 1 to the last of them, and decimal numbers past them */
+	var listed = (set) => (value) => value >= 1 && value <= set.length ? set[value - 1] : String(value);
 	var ordinalSuffix = (value) => {
 		var _ref;
 		return value % 100 >= 11 && value % 100 <= 13 ? "th" : (_ref = [
@@ -2970,26 +2992,354 @@ var docxLayout = (function(exports) {
 			"rd"
 		][value % 10]) !== null && _ref !== void 0 ? _ref : "th";
 	};
-	/**
-	* A number in one of Word's number formats, such as `"iv"` for 4 in `lowerRoman`, or undefined for formats it doesn't
-	* write, such as those of other languages' scripts. Word writes numbers that are zero or less in the letter and roman
-	* formats as decimal numbers.
-	*/
-	var formatNumber = (value, format = "decimal") => {
-		const positive = value > 0;
-		switch (format) {
-			case "decimal": return String(value);
-			case "decimalZero": return value >= 0 && value < 10 ? `0${value}` : String(value);
-			case "numberInDash": return `- ${value} -`;
-			case "ordinal": return positive ? `${value}${ordinalSuffix(value)}` : String(value);
-			case "lowerRoman": return positive ? roman(value) : String(value);
-			case "upperRoman": return positive ? roman(value).toUpperCase() : String(value);
-			case "lowerLetter": return positive ? letters(value) : String(value);
-			case "upperLetter": return positive ? letters(value).toUpperCase() : String(value);
-			case "none": return "";
-			default: return;
-		}
+	var ONES = [
+		"zero",
+		"one",
+		"two",
+		"three",
+		"four",
+		"five",
+		"six",
+		"seven",
+		"eight",
+		"nine",
+		"ten",
+		"eleven",
+		"twelve",
+		"thirteen",
+		"fourteen",
+		"fifteen",
+		"sixteen",
+		"seventeen",
+		"eighteen",
+		"nineteen"
+	];
+	var TENS = [
+		"",
+		"",
+		"twenty",
+		"thirty",
+		"forty",
+		"fifty",
+		"sixty",
+		"seventy",
+		"eighty",
+		"ninety"
+	];
+	/** A number in English words, as "one hundred one" and "twenty-one", without "and" */
+	var words = (value) => {
+		if (value < 20) return ONES[value];
+		if (value < 100) return TENS[Math.floor(value / 10)] + (value % 10 > 0 ? `-${ONES[value % 10]}` : "");
+		const [amount, name] = value < 1e3 ? [100, "hundred"] : [1e3, "thousand"];
+		const rest = value % amount;
+		return `${words(Math.floor(value / amount))} ${name}${rest > 0 ? ` ${words(rest)}` : ""}`;
 	};
+	var ORDINAL_WORDS = {
+		one: "first",
+		two: "second",
+		three: "third",
+		five: "fifth",
+		eight: "eighth",
+		nine: "ninth",
+		twelve: "twelfth"
+	};
+	/** A number in English ordinal words, such as "twenty-first": the last word made ordinal */
+	var ordinalWords = (value) => words(value).replace(/[a-z]+$/, (last) => {
+		var _ORDINAL_WORDS$last;
+		return (_ORDINAL_WORDS$last = ORDINAL_WORDS[last]) !== null && _ORDINAL_WORDS$last !== void 0 ? _ORDINAL_WORDS$last : last.endsWith("y") ? `${last.slice(0, -1)}ieth` : `${last}th`;
+	});
+	/** A group of up to four digits in a counting system. A 1 before ten is left out of a number that starts with 10 to 19 */
+	var countGroup = (value, counting, startsNumber) => {
+		const { digits: set, units, omitOne, zero } = counting;
+		const places = [
+			3,
+			2,
+			1,
+			0
+		].map((place) => ({
+			place,
+			digit: Math.floor(value / Math.pow(10, place)) % 10
+		})).filter(({ digit }, index, all) => digit > 0 || all.slice(0, index).some((before) => before.digit > 0));
+		return places.map(({ place, digit }, index) => {
+			if (digit === 0) {
+				const next = places.slice(index + 1).find((other) => other.digit > 0);
+				return zero && next && places[index - 1].digit > 0 ? set[0] : "";
+			}
+			return (digit === 1 && place > 0 && (omitOne === "always" || omitOne === "teens" && place === 1 && startsNumber && index === 0) ? "" : set[digit]) + (place > 0 ? units[place - 1] : "");
+		}).join("");
+	};
+	var count = (counting) => (value) => {
+		if (value === 0) return counting.digits[0];
+		const high = Math.floor(value / 1e4);
+		const low = value % 1e4;
+		return (high === 0 ? "" : (high === 1 && counting.omitOneMyriad ? "" : countGroup(high, counting, true)) + counting.myriad) + (high > 0 && low > 0 && low < 1e3 && counting.zero ? counting.digits[0] : "") + (low > 0 ? countGroup(low, counting, high === 0) : "");
+	};
+	var CJK_DIGITS = [..."〇一二三四五六七八九"];
+	var TAIWANESE_DIGITS = [..."○一二三四五六七八九"];
+	var JAPANESE_COUNTING = {
+		digits: CJK_DIGITS,
+		units: [..."十百千"],
+		myriad: "万",
+		omitOne: "always"
+	};
+	var CHINESE_COUNTING = {
+		digits: CJK_DIGITS,
+		units: [..."十百千"],
+		myriad: "万",
+		omitOne: "teens",
+		zero: true
+	};
+	var KOREAN_COUNTING = {
+		digits: [..."영일이삼사오육칠팔구"],
+		units: [..."십백천"],
+		myriad: "만",
+		omitOne: "always",
+		omitOneMyriad: true
+	};
+	/** Chinese counting under 100, and digits from 100, as Word writes chineseCounting and taiwaneseCounting */
+	var countingUnderHundred = (set) => (value) => value < 100 ? count(_objectSpread2(_objectSpread2({}, CHINESE_COUNTING), {}, { digits: set }))(value) : digits(set)(value);
+	var KOREAN_ONES = [
+		"",
+		"하나",
+		"둘",
+		"셋",
+		"넷",
+		"다섯",
+		"여섯",
+		"일곱",
+		"여덟",
+		"아홉"
+	];
+	var KOREAN_TENS = [
+		"",
+		"열",
+		"스물",
+		"서른",
+		"마흔",
+		"쉰",
+		"예순",
+		"일흔",
+		"여든",
+		"아흔"
+	];
+	/** Korean's own words for 1 to 99, and Sino-Korean numbers from 100 */
+	var koreanLegal = (value) => value === 0 ? "0" : value < 100 ? KOREAN_TENS[Math.floor(value / 10)] + KOREAN_ONES[value % 10] : count(KOREAN_COUNTING)(value);
+	var VIETNAMESE = [
+		"không",
+		"một",
+		"hai",
+		"ba",
+		"bốn",
+		"năm",
+		"sáu",
+		"bảy",
+		"tám",
+		"chín"
+	];
+	/** A number up to 1000 in Vietnamese words */
+	var vietnamese = (value) => {
+		if (value === 1e3) return "một ngàn";
+		const ones = value % 10;
+		const tens = Math.floor(value / 10) % 10;
+		if (value >= 100) {
+			const rest = value % 100;
+			const restText = rest === 0 ? "" : rest < 10 ? ` lẻ ${VIETNAMESE[rest]}` : ` ${vietnamese(rest)}`;
+			return `${VIETNAMESE[Math.floor(value / 100)]} trăm${restText}`;
+		}
+		if (value < 10) return VIETNAMESE[value];
+		const onesText = ones === 0 ? "" : ` ${ones === 5 ? "lăm" : ones === 1 && tens > 1 ? "mốt" : VIETNAMESE[ones]}`;
+		return (tens === 1 ? "mười" : `${VIETNAMESE[tens]} mươi`) + onesText;
+	};
+	var HEBREW_HUNDREDS = [
+		"",
+		"ק",
+		"ר",
+		"ש",
+		"ת",
+		"תק",
+		"תר",
+		"תש",
+		"תת",
+		"תתק"
+	];
+	var HEBREW_TENS = [
+		"",
+		"י",
+		"כ",
+		"ל",
+		"מ",
+		"נ",
+		"ס",
+		"ע",
+		"פ",
+		"צ"
+	];
+	var HEBREW_ONES = [
+		"",
+		"א",
+		"ב",
+		"ג",
+		"ד",
+		"ה",
+		"ו",
+		"ז",
+		"ח",
+		"ט"
+	];
+	/** Hebrew numerals, in which 15 and 16 are written ט״ו and ט״ז, without the marks */
+	var hebrewNumerals = (value) => {
+		const rest = value % 100;
+		const tensAndOnes = rest === 15 ? "טו" : rest === 16 ? "טז" : HEBREW_TENS[Math.floor(rest / 10)] + HEBREW_ONES[rest % 10];
+		return HEBREW_HUNDREDS[Math.floor(value / 100)] + tensAndOnes;
+	};
+	var HEBREW_LETTERS = [..."אבגדהוזחטיכלמנסעפצקרשת"];
+	/** The Hebrew alphabet, and past its end, a tav for each time through it before the letter */
+	var hebrewLetters = (value) => "ת".repeat(Math.floor((value - 1) / HEBREW_LETTERS.length)) + HEBREW_LETTERS[(value - 1) % HEBREW_LETTERS.length];
+	/** Writes nothing for 0, as Word does in the formats of letters and symbols that repeat */
+	var orNothing = (write) => (value) => value === 0 ? "" : write(value);
+	/** Writes the decimal 0 for 0, as Word does in the formats of syllables that go round */
+	var orZero = (write) => (value) => value === 0 ? "0" : write(value);
+	var format = (write, smallest = 0, largest = LARGEST) => [
+		write,
+		smallest,
+		largest
+	];
+	var LOWER_LETTERS = [..."abcdefghijklmnopqrstuvwxyz"];
+	var UPPER_LETTERS = LOWER_LETTERS.map((letter) => letter.toUpperCase());
+	var RUSSIAN = [..."абвгдежзиклмнопрстуфхцчшщыэюя"];
+	var capitalized = (text) => text.charAt(0).toUpperCase() + text.slice(1);
+	/**
+	* Each format's numbers, as Word writes them in lists. 0 is written in each as Word writes it, which is nothing in
+	* roman numerals and letters, and the decimal 0 in the formats of letters that go round. Word's lists of letters start
+	* over past 30 times through the alphabet (780 is 30 z's, and 1234 is 18 l's), except the Arabic and Hebrew ones, which
+	* start over from 784, and the Hindi ones, from 912.
+	*/
+	var FORMATS = {
+		decimal: format(String, 0, Infinity),
+		decimalZero: format((value) => value < 10 ? `0${value}` : String(value)),
+		numberInDash: format((value) => `- ${value} -`),
+		ordinal: format((value) => `${value}${ordinalSuffix(value)}`),
+		cardinalText: format((value) => capitalized(words(value))),
+		ordinalText: format((value) => capitalized(ordinalWords(value))),
+		hex: format((value) => value.toString(16).toUpperCase(), 0, 65535),
+		upperRoman: format((value) => roman(value).toUpperCase()),
+		lowerRoman: format(roman),
+		upperLetter: format(orNothing(repeated(UPPER_LETTERS)), 0, 780),
+		lowerLetter: format(orNothing(repeated(LOWER_LETTERS)), 0, 780),
+		russianUpper: format(orNothing(repeated(RUSSIAN.map((letter) => letter.toUpperCase()))), 0, 870),
+		russianLower: format(orNothing(repeated(RUSSIAN)), 0, 870),
+		arabicAlpha: format(orNothing(repeated([..."أبتثجحخدذرزسشصضطظعغفقكلمنهوي"])), 0, 783),
+		arabicAbjad: format(orNothing(repeated([..."أبجدهوزحطيكلمنسعفصقرشتثخذضظغ"])), 0, 783),
+		hindiVowels: format(orNothing(repeated([..."कखगघङचछजझञटठडढणतथदधनऩपफबभमयरऱलळऴवशषसह"])), 0, 911),
+		hindiConsonants: format(orNothing(repeated([
+			..."अआइईउऊऋऌऍऎएऐऑऒओऔ",
+			"अं",
+			"अः"
+		])), 0, 911),
+		thaiLetters: format(orNothing(repeated([..."กขคงจฉชซฌญฎฏฐฑฒณดตถทธนบปผฝพฟภมยรลวศษสหฬอฮ"])), 0, 1230),
+		hebrew1: format(orNothing(hebrewNumerals), 0, 783),
+		hebrew2: format(orNothing(hebrewLetters), 0, 783),
+		chicago: format(orNothing(repeated([..."*†‡§"])), 0, 120),
+		aiueo: format(orZero(cycled([..."ｱｲｳｴｵｶｷｸｹｺｻｼｽｾｿﾀﾁﾂﾃﾄﾅﾆﾇﾈﾉﾊﾋﾌﾍﾎﾏﾐﾑﾒﾓﾔﾕﾖﾗﾘﾙﾚﾛﾜｦﾝ"]))),
+		aiueoFullWidth: format(orZero(cycled([..."アイウエオカキクケコサシスセソタチツテトナニヌネノハヒフヘホマミムメモヤユヨラリルレロワヲン"]))),
+		iroha: format(orZero(cycled([..."ｲﾛﾊﾆﾎﾍﾄﾁﾘﾇﾙｦﾜｶﾖﾀﾚｿﾂﾈﾅﾗﾑｳヰﾉｵｸﾔﾏｹﾌｺｴﾃｱｻｷﾕﾒﾐｼヱﾋﾓｾｽﾝ"]))),
+		irohaFullWidth: format(orZero(cycled([..."イロハニホヘトチリヌルヲワカヨタレソツネナラムウヰノオクヤマケフコエテアサキユメミシヱヒモセスン"]))),
+		ganada: format(orZero(cycled([..."가나다라마바사아자차카타파하"]))),
+		chosung: format(orZero(cycled([..."ㄱㄴㄷㄹㅁㅂㅅㅇㅈㅊㅋㅌㅍㅎ"]))),
+		decimalHalfWidth: format(String),
+		decimalFullWidth: format(digits([..."０１２３４５６７８９"])),
+		decimalFullWidth2: format(digits([..."０１２３４５６７８９"])),
+		hindiNumbers: format(digits([..."०१२३४५६७८९"])),
+		thaiNumbers: format(digits([..."๐๑๒๓๔๕๖๗๘๙"])),
+		ideographDigital: format(digits(CJK_DIGITS)),
+		japaneseDigitalTenThousand: format(digits(CJK_DIGITS), 0, 9999),
+		taiwaneseDigital: format(digits(TAIWANESE_DIGITS)),
+		koreanDigital: format(digits([..."영일이삼사오육칠팔구"])),
+		koreanDigital2: format((value) => value === 0 ? "零" : digits([..."零一二三四五六七八九"])(value)),
+		japaneseCounting: format(count(JAPANESE_COUNTING)),
+		japaneseLegal: format(count({
+			digits: [..."〇壱弐参四伍六七八九"],
+			units: [..."拾百阡"],
+			myriad: "萬",
+			omitOne: "never"
+		})),
+		chineseCountingThousand: format(count(CHINESE_COUNTING)),
+		taiwaneseCountingThousand: format(count(_objectSpread2(_objectSpread2({}, CHINESE_COUNTING), {}, {
+			digits: [..."零一二三四五六七八九"],
+			myriad: "萬"
+		}))),
+		ideographLegalTraditional: format(count({
+			digits: [..."零壹貳參肆伍陸柒捌玖"],
+			units: [..."拾佰仟"],
+			myriad: "萬",
+			omitOne: "never",
+			zero: true
+		})),
+		chineseLegalSimplified: format(count({
+			digits: [..."零壹贰叁肆伍陆柒捌玖"],
+			units: [..."拾佰仟"],
+			myriad: "萬",
+			omitOne: "never",
+			zero: true
+		})),
+		chineseCounting: format(countingUnderHundred(TAIWANESE_DIGITS)),
+		taiwaneseCounting: format(countingUnderHundred(TAIWANESE_DIGITS)),
+		koreanCounting: format(count(KOREAN_COUNTING)),
+		koreanLegal: format(koreanLegal),
+		vietnameseCounting: format(vietnamese, 0, 1e3),
+		decimalEnclosedCircle: format(enclosed(9312, 20)),
+		decimalEnclosedFullstop: format(enclosed(9352, 20)),
+		decimalEnclosedParen: format(enclosed(9332, 20)),
+		decimalEnclosedCircleChinese: format(enclosed(9312, 10)),
+		ideographEnclosedCircle: format(enclosed(12832, 10)),
+		ideographTraditional: format(listed([..."甲乙丙丁戊己庚辛壬癸"])),
+		ideographZodiac: format(listed([..."子丑寅卯辰巳午未申酉戍亥"])),
+		ideographZodiacTraditional: format((value) => value === 0 ? "0" : [..."甲乙丙丁戊己庚辛壬癸"][(value - 1) % 10] + [..."子丑寅卯辰巳午未申酉戍亥"][(value - 1) % 12]),
+		bahtText: format(String),
+		dollarText: format(String),
+		bullet: format(() => ""),
+		none: format(() => "")
+	};
+	/**
+	* Where Word writes a page number differently from a list number: words without a capital, digits in
+	* taiwaneseCountingThousand, decimal numbers for bullets, and fewer numbers in some formats, past which it writes an
+	* error ("Error! Number cannot be represented in specified format."), nothing, or other letters, none of which are
+	* written here. That is any page number in none, 0 in Chicago's symbols, Hebrew, Arabic, Hindi and Thai digits, and the
+	* page numbers in Hebrew and Hindi letters that are more than the most seen in Word: 100 of Hebrew's, 75 of hindiVowels
+	* and 37 of hindiConsonants. Its pages in the other formats were the same as its lists.
+	*/
+	var PAGE_FORMATS = _objectSpread2(_objectSpread2({}, Object.fromEntries(Object.entries(FORMATS).filter(([name]) => name !== "none"))), {}, {
+		cardinalText: format(words),
+		ordinalText: format(ordinalWords),
+		taiwaneseCountingThousand: format(digits(TAIWANESE_DIGITS)),
+		bullet: format(String),
+		chicago: format(FORMATS.chicago[0], 1, FORMATS.chicago[2]),
+		hebrew1: format(FORMATS.hebrew1[0], 1, 100),
+		hebrew2: format(FORMATS.hebrew2[0], 1, 100),
+		arabicAlpha: format(FORMATS.arabicAlpha[0], 1, FORMATS.arabicAlpha[2]),
+		arabicAbjad: format(FORMATS.arabicAbjad[0], 1, FORMATS.arabicAbjad[2]),
+		hindiVowels: format(FORMATS.hindiVowels[0], FORMATS.hindiVowels[1], 75),
+		hindiConsonants: format(FORMATS.hindiConsonants[0], FORMATS.hindiConsonants[1], 37),
+		hindiNumbers: format(FORMATS.hindiNumbers[0], 1, FORMATS.hindiNumbers[2]),
+		thaiNumbers: format(FORMATS.thaiNumbers[0], 1, FORMATS.thaiNumbers[2])
+	});
+	var writeIn = (formats, value, name) => {
+		const found = formats[name];
+		if (!found) return;
+		const [write, smallest, largest] = found;
+		return Number.isInteger(value) && value >= smallest && value <= largest ? write(value) : void 0;
+	};
+	/**
+	* A number in one of Word's number formats as it writes list numbers, such as `"iv"` for 4 in `lowerRoman`, or
+	* undefined for numbers and formats it doesn't write as Word does: those of formats whose text from Word isn't known,
+	* such as Thai and Hindi words, and those past where Word's lists start over.
+	*/
+	var formatNumber = (value, name = "decimal") => writeIn(FORMATS, value, name);
+	/**
+	* A page number in one of Word's number formats, as it writes it in page numbers and page references, or undefined for
+	* those it doesn't write as Word does.
+	*/
+	var formatPageNumber = (value, name = "decimal") => writeIn(PAGE_FORMATS, value, name);
 	//#endregion
 	//#region src/layout/paginate.ts
 	/**
@@ -3024,6 +3374,11 @@ var docxLayout = (function(exports) {
 		widowControl: false,
 		pageBreakBefore: false
 	};
+	/** The headings in a block: a paragraph's own, and those in a table's cells, whose chapter numbers aren't known yet */
+	var headingsIn = (block) => block.type === "paragraph" ? block.heading ? [block.heading] : [] : block.rows.flatMap(({ cells }) => cells.flatMap((cell) => cell.blocks.flatMap(headingsIn))).map(({ level }) => ({
+		level,
+		unsupported: "a chapter heading in a table"
+	}));
 	/** Thrown to stop laying out at something that can't be laid out yet */
 	var Unsupported = class extends Error {};
 	/** Thrown to stop laying out columns being balanced in a height they don't fit in */
@@ -3233,6 +3588,11 @@ var docxLayout = (function(exports) {
 				return missing > 0 && ((_rows$last$height = rows[last].height) === null || _rows$last$height === void 0 ? void 0 : _rows$last$height.rule) !== "exact" ? current.map((value, index) => index === last ? value + missing : value) : current;
 			}, heights);
 		};
+		let lastHeadings = [];
+		const chapterHeadings = blocks.map(({ block }) => {
+			for (const heading of headingsIn(block)) if (heading.chapter !== void 0 || heading.unsupported !== void 0) lastHeadings = Object.assign([...lastHeadings], { [heading.level - 1]: heading });
+			return lastHeadings;
+		});
 		const markersOf = (block) => block.type === "paragraph" ? block.items.flatMap((item) => item.type === "marker" ? [item.name] : []) : block.rows.flatMap(({ cells }) => cells.flatMap((cell) => cell.blocks.flatMap(markersOf)));
 		const bookmarks = /* @__PURE__ */ new Map();
 		const markedOn = /* @__PURE__ */ new Map();
@@ -3813,8 +4173,17 @@ var docxLayout = (function(exports) {
 			const [first, ...rest] = footnotes.get(name);
 			return rest.length > 0 || (first === null || first === void 0 ? void 0 : first.type) === "table" || first !== void 0 && measureParagraph(first, noteWidth()).lines.length > 1;
 		};
+		/** The number of the page as the section writes it, after the chapter number when it has one */
+		const pageText = () => {
+			const { numberFormat, chapters } = section();
+			const page = formatPageNumber(pageNumber, numberFormat);
+			if (page === void 0) throw new Unsupported("a page number its format isn't written for yet");
+			const heading = chapters && chapterHeadings[blockStart.index][chapters.level - 1];
+			if (heading === null || heading === void 0 ? void 0 : heading.unsupported) throw new Unsupported(heading.unsupported);
+			return (heading === null || heading === void 0 ? void 0 : heading.chapter) === void 0 ? page : `${heading.chapter}${chapters.separator}${page}`;
+		};
 		const mark = (names) => {
-			const text = formatNumber(pageNumber, section().numberFormat);
+			const text = pageText();
 			for (const name of names) if (!bookmarks.has(name) && !footnotes.has(name)) {
 				bookmarks.set(name, text);
 				markedOn.set(name, pageCount);
@@ -4238,6 +4607,14 @@ var docxLayout = (function(exports) {
 		titlePage: false,
 		numberFormat: "decimal"
 	};
+	/** What goes between a chapter number and a page number, by `w:chapSep`. Word puts a hyphen when it isn't given */
+	var CHAPTER_SEPARATORS = {
+		hyphen: "-",
+		period: ".",
+		colon: ":",
+		emDash: "—",
+		enDash: "–"
+	};
 	var EMUS_PER_POINT = 12700;
 	/** How far apart, in points, the widths two rows give a column can be before they differ: rounding, not a choice */
 	var WIDTH_TOLERANCE = 1;
@@ -4473,24 +4850,31 @@ var docxLayout = (function(exports) {
 		return unsupported !== null && unsupported !== void 0 ? unsupported : parts.flatMap((part) => part);
 	};
 	/**
-	* The number of a paragraph in a list, and what follows it, as its list's level writes it. The list's numbers move on.
+	* The number of a paragraph in a list, and what follows it, as its list's level writes it, and its number as a chapter
+	* number. A paragraph is in the list it gives, or else in its style's. The list's numbers move on.
 	*/
-	var readListNumber = (properties, paragraphRun, reader) => {
-		var _valueOf2, _numberOf2, _numberOf3, _reader$counters$get, _counts$index;
+	var readListNumber = (properties, style, paragraphRun, reader) => {
+		var _valueOf2, _numberOf2, _ref, _levels$findIndex, _ref2, _reader$counters$get, _counts$index, _exec;
 		const numbering = childrenOf(find(properties, "w:numPr"));
-		const id = (_valueOf2 = valueOf(numbering, "w:numId")) !== null && _valueOf2 !== void 0 ? _valueOf2 : String((_numberOf2 = numberOf(attributesOf(find(numbering, "w:numId"))["w:val"])) !== null && _numberOf2 !== void 0 ? _numberOf2 : "");
+		const ownId = (_valueOf2 = valueOf(numbering, "w:numId")) !== null && _valueOf2 !== void 0 ? _valueOf2 : (_numberOf2 = numberOf(attributesOf(find(numbering, "w:numId"))["w:val"])) === null || _numberOf2 === void 0 ? void 0 : _numberOf2.toString();
+		const ownLevel = numberOf(attributesOf(find(numbering, "w:ilvl"))["w:val"]);
+		const fromStyle = styleChain(reader.styles, style, "paragraph").reduce((inherited, { numbering: given }) => _objectSpread2(_objectSpread2({}, inherited), given), {});
+		const id = (_ref = ownId !== null && ownId !== void 0 ? ownId : fromStyle.id) !== null && _ref !== void 0 ? _ref : "";
 		const levels = reader.numbering.get(id);
-		const index = (_numberOf3 = numberOf(attributesOf(find(numbering, "w:ilvl"))["w:val"])) !== null && _numberOf3 !== void 0 ? _numberOf3 : 0;
+		const linked = (_levels$findIndex = levels === null || levels === void 0 ? void 0 : levels.findIndex((other) => (other === null || other === void 0 ? void 0 : other.style) !== void 0 && other.style === style)) !== null && _levels$findIndex !== void 0 ? _levels$findIndex : -1;
+		const index = (_ref2 = ownLevel !== null && ownLevel !== void 0 ? ownLevel : ownId === void 0 ? fromStyle.level : void 0) !== null && _ref2 !== void 0 ? _ref2 : Math.max(linked, 0);
 		const level = levels === null || levels === void 0 ? void 0 : levels[index];
 		if (!levels || !level) return { items: [] };
 		const counts = (_reader$counters$get = reader.counters.get(id)) !== null && _reader$counters$get !== void 0 ? _reader$counters$get : [];
 		const current = [...counts.slice(0, index), ((_counts$index = counts[index]) !== null && _counts$index !== void 0 ? _counts$index : level.start - 1) + 1];
 		reader.counters.set(id, current);
-		const text = level.text.replace(/%([1-9])/g, (_, digit) => {
-			var _formatNumber, _ref, _current;
-			const other = levels[Number(digit) - 1];
-			return (_formatNumber = formatNumber((_ref = (_current = current[Number(digit) - 1]) !== null && _current !== void 0 ? _current : other === null || other === void 0 ? void 0 : other.start) !== null && _ref !== void 0 ? _ref : 1, other === null || other === void 0 ? void 0 : other.format)) !== null && _formatNumber !== void 0 ? _formatNumber : "1";
-		});
+		const numberAt = (at) => {
+			var _formatNumber, _ref3, _current$at;
+			const other = levels[at];
+			return (_formatNumber = formatNumber((_ref3 = (_current$at = current[at]) !== null && _current$at !== void 0 ? _current$at : other === null || other === void 0 ? void 0 : other.start) !== null && _ref3 !== void 0 ? _ref3 : 1, other === null || other === void 0 ? void 0 : other.format)) !== null && _formatNumber !== void 0 ? _formatNumber : "1";
+		};
+		const text = level.text.replace(/%([1-9])/g, (_, digit) => numberAt(Number(digit) - 1));
+		const numbers = (_exec = /%[1-9](?:.*%[1-9])?/.exec(level.text)) === null || _exec === void 0 ? void 0 : _exec[0];
 		const font = fontOf(combine([paragraphRun, level.run]));
 		const suffix = level.suffix === "nothing" ? [] : level.suffix === "space" ? [{
 			type: "text",
@@ -4500,27 +4884,29 @@ var docxLayout = (function(exports) {
 			type: "tab",
 			font
 		}];
-		return {
+		return _objectSpread2({
 			items: [...text.length > 0 ? [{
 				type: "text",
 				text,
 				font
 			}] : [], ...suffix],
-			level
-		};
+			level,
+			from: ownId === void 0 ? "style" : "paragraph"
+		}, withoutUndefined({ chapter: numbers === null || numbers === void 0 ? void 0 : numbers.replace(/%([1-9])/g, (_, digit) => numberAt(Number(digit) - 1)) }));
 	};
 	/**
 	* Reads a paragraph (`w:p`), in the formatting of its styles, and of its table's style when it is in a table.
 	*/
 	var readParagraph = (element, reader, tableStyle) => {
-		var _valueOf3;
+		var _valueOf3, _exec2, _styleChain$slice$0$n, _styleChain$slice$;
 		const { styles } = reader;
 		const children = contentOf(element);
 		const properties = childrenOf(find(children.filter(isObject), "w:pPr"));
 		const style = (_valueOf3 = valueOf(properties, "w:pStyle")) !== null && _valueOf3 !== void 0 ? _valueOf3 : styles.defaultParagraphStyle;
 		const paragraphStyles = [...styleChain(styles, tableStyle, "table"), ...styleChain(styles, style, "paragraph")];
 		const paragraphRun = combine([styles.run, ...paragraphStyles.map(({ run }) => run)]);
-		const list = readListNumber(properties, paragraphRun, reader);
+		const list = readListNumber(properties, style, paragraphRun, reader);
+		const headingLevel = (_exec2 = /^heading ([1-9])$/i.exec((_styleChain$slice$0$n = (_styleChain$slice$ = styleChain(styles, style, "paragraph").slice(-1)[0]) === null || _styleChain$slice$ === void 0 ? void 0 : _styleChain$slice$.name) !== null && _styleChain$slice$0$n !== void 0 ? _styleChain$slice$0$n : "")) === null || _exec2 === void 0 ? void 0 : _exec2[1];
 		const formats = [
 			styles.paragraph,
 			...paragraphStyles.map(({ paragraph }) => paragraph),
@@ -4529,20 +4915,20 @@ var docxLayout = (function(exports) {
 		];
 		const items = readInline(children, paragraphRun, reader);
 		const unsupported = find(properties, "w:framePr") === void 0 ? void 0 : "a text frame";
-		return _objectSpread2({
+		return _objectSpread2(_objectSpread2({
 			type: "paragraph",
 			items: typeof items === "string" ? [] : [...list.items, ...items],
 			format: combine(formats),
 			tabStops: tabStopsOf(formats),
 			markFont: fontOf(combine([paragraphRun, readRunFormat(find(properties, "w:rPr"), styles.themeFonts)])),
 			style
-		}, typeof items === "string" || unsupported ? { unsupported: typeof items === "string" ? items : unsupported } : {});
+		}, headingLevel === void 0 ? {} : { heading: _objectSpread2({ level: Number(headingLevel) }, withoutUndefined({ chapter: list.from === "style" ? list.chapter : void 0 })) }), typeof items === "string" || unsupported ? { unsupported: typeof items === "string" ? items : unsupported } : {});
 	};
 	var borderWidth = (borders, name) => {
-		var _numberOf4;
+		var _numberOf3;
 		const attributes = attributesOf(find(borders, name));
 		const style = attributes["w:val"];
-		return style === void 0 || style === "nil" || style === "none" ? 0 : ((_numberOf4 = numberOf(attributes["w:sz"])) !== null && _numberOf4 !== void 0 ? _numberOf4 : 0) / EIGHTHS_PER_POINT;
+		return style === void 0 || style === "nil" || style === "none" ? 0 : ((_numberOf3 = numberOf(attributes["w:sz"])) !== null && _numberOf3 !== void 0 ? _numberOf3 : 0) / EIGHTHS_PER_POINT;
 	};
 	/** The rows of a table, or of a content control or custom XML in it */
 	var rowsOf = (elements) => elements.filter(isObject).flatMap((element) => {
@@ -4578,7 +4964,7 @@ var docxLayout = (function(exports) {
 	* out.
 	*/
 	var readTable = (element, reader) => {
-		var _ref2, _blocks$find;
+		var _ref4, _blocks$find;
 		const children = contentOf(element).filter(isObject);
 		const properties = childrenOf(find(children, "w:tblPr"));
 		const style = valueOf(properties, "w:tblStyle");
@@ -4598,18 +4984,18 @@ var docxLayout = (function(exports) {
 		const rows = rowsOf(children);
 		const gridWidth = (from, to) => grid.slice(from, to).reduce((total, value) => total + value, 0);
 		const read = rows.map((row, rowIndex) => {
-			var _numberOf5;
+			var _numberOf4;
 			const rowChildren = contentOf(row).filter(isObject);
 			const rowProperties = childrenOf(find(rowChildren, "w:trPr"));
 			const heightAttributes = attributesOf(find(rowProperties, "w:trHeight"));
 			const height = twips(heightAttributes["w:val"]);
 			const { "w:hRule": rule } = heightAttributes;
-			const skipped = (_numberOf5 = numberOf(attributesOf(find(rowProperties, "w:gridBefore"))["w:val"])) !== null && _numberOf5 !== void 0 ? _numberOf5 : 0;
+			const skipped = (_numberOf4 = numberOf(attributesOf(find(rowProperties, "w:gridBefore"))["w:val"])) !== null && _numberOf4 !== void 0 ? _numberOf4 : 0;
 			const { cells, edges, column: end } = cellsOf(rowChildren).reduce(({ column, cells: done, edges: before }, cell) => {
-				var _numberOf6, _twips2, _shareOf;
+				var _numberOf5, _twips2, _shareOf;
 				const cellChildren = contentOf(cell).filter(isObject);
 				const cellProperties = childrenOf(find(cellChildren, "w:tcPr"));
-				const span = (_numberOf6 = numberOf(attributesOf(find(cellProperties, "w:gridSpan"))["w:val"])) !== null && _numberOf6 !== void 0 ? _numberOf6 : 1;
+				const span = (_numberOf5 = numberOf(attributesOf(find(cellProperties, "w:gridSpan"))["w:val"])) !== null && _numberOf5 !== void 0 ? _numberOf5 : 1;
 				const mergeElement = find(cellProperties, "w:vMerge");
 				const merge = mergeElement === void 0 ? void 0 : attributesOf(mergeElement)["w:val"] === "restart" ? "restart" : "continue";
 				const margins = _objectSpread2(_objectSpread2({}, tableMargins), readCellMargins(find(cellProperties, "w:tcMar")));
@@ -4659,7 +5045,7 @@ var docxLayout = (function(exports) {
 		const fixed = attributesOf(find(properties, "w:tblLayout"))["w:type"] === "fixed";
 		const fits = !fixed && tableCells.some(({ ownWidth }) => ownWidth === void 0);
 		const unfitted = read.reduce((most, { end }) => Math.max(most, end), 0) > MOST_COLUMNS ? `a table given no widths of more than ${MOST_COLUMNS} columns` : void 0;
-		const unsupported = (_ref2 = fits ? unfitted : unequal ? "a table whose rows give a column different widths" : void 0) !== null && _ref2 !== void 0 ? _ref2 : (_blocks$find = blocks.find((block) => block.unsupported !== void 0)) === null || _blocks$find === void 0 ? void 0 : _blocks$find.unsupported;
+		const unsupported = (_ref4 = fits ? unfitted : unequal ? "a table whose rows give a column different widths" : void 0) !== null && _ref4 !== void 0 ? _ref4 : (_blocks$find = blocks.find((block) => block.unsupported !== void 0)) === null || _blocks$find === void 0 ? void 0 : _blocks$find.unsupported;
 		return _objectSpread2(_objectSpread2(_objectSpread2({
 			type: "table",
 			rows: read.map(({ row }) => row)
@@ -4712,14 +5098,14 @@ var docxLayout = (function(exports) {
 	* the same space between them, unless the section gives each column's width.
 	*/
 	var readColumns = (element, width) => {
-		var _numberOf7, _twips4;
+		var _numberOf6, _twips4;
 		const attributes = attributesOf(element);
 		const given = childrenOf(element).filter((child) => "w:col" in child);
 		if (isOff(attributes["w:equalWidth"]) && given.length > 0) return given.map((column) => {
 			var _twips3;
 			return (_twips3 = twips(attributesOf(column["w:col"])["w:w"])) !== null && _twips3 !== void 0 ? _twips3 : 0;
 		});
-		const count = Math.max(1, (_numberOf7 = numberOf(attributes["w:num"])) !== null && _numberOf7 !== void 0 ? _numberOf7 : 1);
+		const count = Math.max(1, (_numberOf6 = numberOf(attributes["w:num"])) !== null && _numberOf6 !== void 0 ? _numberOf6 : 1);
 		const space = (_twips4 = twips(attributes["w:space"])) !== null && _twips4 !== void 0 ? _twips4 : DEFAULT_COLUMN_SPACE;
 		return Array.from({ length: count }, () => (width - space * (count - 1)) / count);
 	};
@@ -4728,7 +5114,7 @@ var docxLayout = (function(exports) {
 	* doesn't give a header or footer for a kind of page has the one of the section before.
 	*/
 	var readSection = (element, readPart, previous) => {
-		var _stringOf, _twips5, _twips6, _margins$wLeft, _twips7, _margins$wRight, _twips8, _twips9, _twips10, _twips11, _twips12, _twips13;
+		var _stringOf, _twips5, _twips6, _margins$wLeft, _twips7, _margins$wRight, _twips8, _twips9, _twips10, _twips11, _twips12, _twips13, _CHAPTER_SEPARATORS$S;
 		const properties = childrenOf(element);
 		const size = attributesOf(find(properties, "w:pgSz"));
 		const margins = attributesOf(find(properties, "w:pgMar"));
@@ -4737,15 +5123,16 @@ var docxLayout = (function(exports) {
 		const start = valueOf(properties, "w:type");
 		const format = (_stringOf = stringOf(numbering["w:fmt"])) !== null && _stringOf !== void 0 ? _stringOf : "decimal";
 		const firstNumber = numberOf(numbering["w:start"]);
+		const chapterLevel = numberOf(numbering["w:chapStyle"]);
 		const pageWidth = (_twips5 = twips(size["w:w"])) !== null && _twips5 !== void 0 ? _twips5 : DEFAULT_SECTION.pageWidth;
 		const marginLeft = (_twips6 = twips((_margins$wLeft = margins["w:left"]) !== null && _margins$wLeft !== void 0 ? _margins$wLeft : margins["w:start"])) !== null && _twips6 !== void 0 ? _twips6 : DEFAULT_SECTION.marginLeft;
 		const marginRight = (_twips7 = twips((_margins$wRight = margins["w:right"]) !== null && _margins$wRight !== void 0 ? _margins$wRight : margins["w:end"])) !== null && _twips7 !== void 0 ? _twips7 : DEFAULT_SECTION.marginRight;
 		const gutter = (_twips8 = twips(margins["w:gutter"])) !== null && _twips8 !== void 0 ? _twips8 : DEFAULT_SECTION.gutter;
 		const columns = readColumns(find(properties, "w:cols"), pageWidth - marginLeft - marginRight - gutter);
-		const unsupported = grid === "lines" || grid === "linesAndChars" || grid === "snapToChars" ? "a document grid" : numbering["w:chapStyle"] !== void 0 || formatNumber(1, format) === void 0 ? "page numbers in a format not yet written" : find(properties, "w:textDirection") !== void 0 ? "text that runs down the page" : void 0;
+		const unsupported = grid === "lines" || grid === "linesAndChars" || grid === "snapToChars" ? "a document grid" : formatPageNumber(1, format) === void 0 ? "page numbers in a format not yet written" : find(properties, "w:textDirection") !== void 0 ? "text that runs down the page" : void 0;
 		const headers = readReferences(properties, "w:headerReference", readPart);
 		const footers = readReferences(properties, "w:footerReference", readPart);
-		return _objectSpread2(_objectSpread2({
+		return _objectSpread2(_objectSpread2(_objectSpread2({
 			pageWidth,
 			pageHeight: (_twips9 = twips(size["w:h"])) !== null && _twips9 !== void 0 ? _twips9 : DEFAULT_SECTION.pageHeight,
 			marginTop: (_twips10 = twips(margins["w:top"])) !== null && _twips10 !== void 0 ? _twips10 : DEFAULT_SECTION.marginTop,
@@ -4759,7 +5146,10 @@ var docxLayout = (function(exports) {
 			titlePage: onOff(properties, "w:titlePg") === true,
 			columns,
 			numberFormat: format
-		}, firstNumber === void 0 ? {} : { firstNumber }), {}, {
+		}, chapterLevel === void 0 || chapterLevel < 1 || chapterLevel > 9 ? {} : { chapters: {
+			level: chapterLevel,
+			separator: (_CHAPTER_SEPARATORS$S = CHAPTER_SEPARATORS[String(numbering["w:chapSep"])]) !== null && _CHAPTER_SEPARATORS$S !== void 0 ? _CHAPTER_SEPARATORS$S : "-"
+		} }), firstNumber === void 0 ? {} : { firstNumber }), {}, {
 			headers: _objectSpread2(_objectSpread2({}, previous === null || previous === void 0 ? void 0 : previous.headers), headers),
 			footers: _objectSpread2(_objectSpread2({}, previous === null || previous === void 0 ? void 0 : previous.footers), footers)
 		}, unsupported ? { unsupported } : {});
@@ -4770,6 +5160,11 @@ var docxLayout = (function(exports) {
 	*/
 	var readNumbering = (context, styles) => {
 		const numbering = context.file.Numbering;
+		for (const style of styles.styles.values()) {
+			var _style$numbering$id, _style$numbering;
+			const placeholder = /^\{(.+)-(\d+)\}$/.exec((_style$numbering$id = (_style$numbering = style.numbering) === null || _style$numbering === void 0 ? void 0 : _style$numbering.id) !== null && _style$numbering$id !== void 0 ? _style$numbering$id : "");
+			if (placeholder) numbering.createConcreteNumberingInstance(placeholder[1], Number(placeholder[2]));
+		}
 		const root = childrenOf(numbering.prepForXml(READING_CONTEXT)["w:numbering"]);
 		const abstract = new Map(root.filter((child) => "w:abstractNum" in child).map((child) => {
 			const byIndex = childrenOf(child["w:abstractNum"]).filter((level) => "w:lvl" in level).map((level) => {
@@ -4777,14 +5172,14 @@ var docxLayout = (function(exports) {
 				const levelChildren = childrenOf(level["w:lvl"]);
 				return {
 					index: numberOf(attributesOf(level["w:lvl"])["w:ilvl"]),
-					level: {
+					level: _objectSpread2(_objectSpread2({}, withoutUndefined({ style: valueOf(levelChildren, "w:pStyle") })), {}, {
 						format: (_valueOf4 = valueOf(levelChildren, "w:numFmt")) !== null && _valueOf4 !== void 0 ? _valueOf4 : "decimal",
 						text: (_stringOf2 = stringOf(attributesOf(find(levelChildren, "w:lvlText"))["w:val"])) !== null && _stringOf2 !== void 0 ? _stringOf2 : "",
 						suffix: (_valueOf5 = valueOf(levelChildren, "w:suff")) !== null && _valueOf5 !== void 0 ? _valueOf5 : "tab",
 						start: numberOf(attributesOf(find(levelChildren, "w:start"))["w:val"]),
 						paragraph: readParagraphFormat(find(levelChildren, "w:pPr")),
 						run: readRunFormat(find(levelChildren, "w:rPr"), styles.themeFonts)
-					}
+					})
 				};
 			}).reduce((all, { index, level }) => {
 				const copy = [...all];

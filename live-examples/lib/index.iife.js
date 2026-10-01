@@ -22067,7 +22067,7 @@ MAX: 9026 };
 		COLON: "colon",
 		/** Em dash separator (—) */
 		EM_DASH: "emDash",
-		/** En dash separator (–) */
+		/** En dash separator (–), written as `enDash` */
 		EN_DASH: "endash"
 	};
 	/**
@@ -22097,7 +22097,7 @@ MAX: 9026 };
 	* });
 	* ```
 	*/
-	var createPageNumberType = ({ start, formatType, separator }) => new BuilderElement({
+	var createPageNumberType = ({ start, formatType, separator, chapterHeadingLevel }) => new BuilderElement({
 		name: "w:pgNumType",
 		attributes: {
 			start: {
@@ -22110,7 +22110,11 @@ MAX: 9026 };
 			},
 			separator: {
 				key: "w:chapSep",
-				value: separator
+				value: separator === PageNumberSeparator.EN_DASH ? "enDash" : separator
+			},
+			chapterHeadingLevel: {
+				key: "w:chapStyle",
+				value: chapterHeadingLevel === void 0 ? void 0 : decimalNumber(chapterHeadingLevel)
 			}
 		}
 	});
