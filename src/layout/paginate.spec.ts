@@ -1028,8 +1028,9 @@ describe("paginate", () => {
                     ),
                 );
             const three: Section = { ...SECTION, columns: [80, 80, 80] };
-            // 2 columns into 3, and 1 into 2 (`word-rules2.docx` Q5b and Q5c)
+            // 2 columns into 3, 3 into 2, and 1 into 2 (`word-rules2.docx` Q5b and Q5c, `word-next-column.docx` N3)
             expect(after(COLUMNS, three)).to.deep.equal({ a: "1", b: "2" });
+            expect(after(three, COLUMNS)).to.deep.equal({ a: "1", b: "2" });
             expect(after(SECTION, COLUMNS)).to.deep.equal({ a: "1", b: "2" });
             // After the second of 2 columns started (Q5d), and in sections of one column
             expect(after(COLUMNS, COLUMNS, 9)).to.deep.equal({ a: "1", b: "2" });
@@ -1038,54 +1039,83 @@ describe("paginate", () => {
             expect(after(COLUMNS, { ...COLUMNS, pageHeight: 100 })).to.deep.equal({ a: "1", b: "2" });
         });
 
+        it("should keep the space before a section's first paragraph at the top of the next column, as Word does", () => {
+            const sectionBreak: ParagraphBlock = { ...paragraph("break", 0), items: [], sectionBreak: true, format: { spaceAfter: 20 } };
+            const content = (spaceBefore: number): DocumentContent =>
+                document(
+                    [
+                        [paragraph("a", 1), 0],
+                        [sectionBreak, 0],
+                        [paragraph("b", 5, { spaceBefore }), 1],
+                        [paragraph("c", 1), 1],
+                    ],
+                    { sections: [COLUMNS, { ...COLUMNS, start: "nextColumn" }] },
+                );
+            // Only as much of it as is more than the 20 after the empty paragraph that ends the section before: 10 of 30,
+            // so c fits below b in the second column, and 20 of 40, so it doesn't (`word-next-column.docx` N1 and N2)
+            expect(pagesOf(content(20))).to.deep.equal({ a: "1", b: "1", c: "1" });
+            expect(pagesOf(content(30))).to.deep.equal({ a: "1", b: "1", c: "1" });
+            expect(pagesOf(content(40))).to.deep.equal({ a: "1", b: "1", c: "2" });
+            // But not at the top of the column after, where a paragraph kept with the next moves
+            const moved = document(
+                [
+                    [paragraph("a", 1), 0],
+                    [paragraph("b", 1, { keepNext: true, spaceBefore: 60 }), 1],
+                    [paragraph("c", 7), 1],
+                ],
+                {
+                    sections: [
+                        { ...COLUMNS, columns: [80, 80, 80] },
+                        { ...COLUMNS, columns: [80, 80, 80], start: "nextColumn" },
+                    ],
+                },
+            );
+            expect(pagesOf(moved)).to.deep.equal({ a: "1", b: "1", c: "1" });
+        });
+
+        it("should start a section in the next column of columns below text, and the next section below the longest, as Word does", () => {
+            const sectionBreak: ParagraphBlock = { ...paragraph("break", 0), items: [], sectionBreak: true, format: { spaceAfter: 20 } };
+            const content = document(
+                [
+                    [paragraph("a", 1), 0],
+                    [paragraph("b", 4), 1],
+                    [sectionBreak, 1],
+                    [paragraph("c", 1), 2],
+                    [paragraph("d", 2), 3],
+                    [paragraph("e", 1), 3],
+                ],
+                {
+                    sections: [
+                        SECTION,
+                        { ...COLUMNS, start: "continuous" },
+                        { ...COLUMNS, start: "nextColumn" },
+                        { ...SECTION, start: "continuous" },
+                    ],
+                },
+            );
+            // c is beside b, and d goes right below b, without the 20 after the empty paragraph that ends b's section, and
+            // with the columns not evened out (`word-next-column.docx` N6), so e doesn't fit below it
+            expect(pagesOf(content)).to.deep.equal({ a: "1", b: "1", c: "1", d: "1", e: "2" });
+        });
+
         it("should stop where Word's way of starting a section in the next column isn't known", () => {
-            const stoppedAt = (blocks: readonly (readonly [Block, number])[], sections: readonly Section[]): string | undefined =>
+            const blocks: readonly (readonly [Block, number])[] = [
+                [paragraph("a", 1), 0],
+                [paragraph("b", 1), 1],
+                [paragraph("c", 1), 2],
+            ];
+            const stoppedAt = (sections: readonly Section[]): string | undefined =>
                 paginate(document(blocks, { sections }), { measurer: MEASURER }).stoppedAt;
-            const nextColumn: Section = { ...COLUMNS, start: "nextColumn" };
-            // The space before its first paragraph
-            expect(
-                stoppedAt(
-                    [
-                        [paragraph("a", 1), 0],
-                        [paragraph("b", 1, { spaceBefore: 10 }), 1],
-                    ],
-                    [COLUMNS, nextColumn],
-                ),
-            ).to.equal("the space before a section's first paragraph in the next column");
-            // But not that of a section with only the empty paragraph that ends it, nor of a table
-            const sectionBreak: ParagraphBlock = { ...paragraph("break", 0), items: [], sectionBreak: true, format: { spaceBefore: 10 } };
-            expect(
-                stoppedAt(
-                    [
-                        [paragraph("a", 1), 0],
-                        [sectionBreak, 1],
-                        [table([row([[paragraph("b", 1)]])]), 2],
-                    ],
-                    [COLUMNS, nextColumn, nextColumn],
-                ),
-            ).to.equal(undefined);
-            // Columns that start below text on the page, after a continuous section break
-            expect(
-                stoppedAt(
-                    [
-                        [paragraph("a", 1), 0],
-                        [paragraph("b", 1), 1],
-                        [paragraph("c", 1), 2],
-                    ],
-                    [SECTION, { ...COLUMNS, start: "continuous" }, nextColumn],
-                ),
-            ).to.equal("a section that starts in the next column of columns below text");
-            // Columns evened out before a continuous section break, when a section in them started in the next column
-            expect(
-                stoppedAt(
-                    [
-                        [paragraph("a", 1), 0],
-                        [paragraph("b", 1), 1],
-                        [paragraph("c", 1), 2],
-                    ],
-                    [COLUMNS, nextColumn, { ...SECTION, start: "continuous" }],
-                ),
-            ).to.equal("columns evened out after a section that starts in the next column");
+            const three: Section = { ...SECTION, columns: [80, 80, 80] };
+            // Columns of other widths, which Word starts it in the next column of (N4), but at which width isn't known
+            expect(stoppedAt([COLUMNS, { ...COLUMNS, columns: [70, 70], start: "nextColumn" }, SECTION])).to.equal(
+                "a section that starts in the next column of columns of other widths",
+            );
+            // Columns evened out before a continuous section break, when a section that started in the next column has
+            // columns after it
+            expect(stoppedAt([three, { ...three, start: "nextColumn" }, { ...SECTION, start: "continuous" }])).to.equal(
+                "columns evened out after a section that starts in the next column",
+            );
         });
 
         it("should stop at a paragraph kept together that is taller than a column, which Word lays out in the first column only", () => {

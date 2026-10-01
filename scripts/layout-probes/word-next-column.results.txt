@@ -1,0 +1,67 @@
+# What scripts/layout-probes/word-next-column.py read from the PDFs of word-next-column.docx: Word 16 for Mac's, saved
+# by the maintainer on 2026-10-01, and LibreOffice 26.8's, from the pinned image of scripts/shape-demos/Dockerfile.
+
+## Word
+
+== N1
+  page 1 x    72:   5 lines,   72.05 to  139.29: 'N1 first fill 1' .. 'N1 first fill 5'
+  page 1 x   316:   3 lines,  133.97 to  174.33: 'N1 second before 1440' .. 'N1 second fill 2'
+
+== N2
+  page 2 x    72:   5 lines,   72.05 to  139.29: 'N2 first fill 1' .. 'N2 first fill 5'
+  page 2 x   316:   3 lines,   72.05 to  112.41: 'N2 second before 100' .. 'N2 second fill 2'
+
+== N3
+  page 3 x    72:   5 lines,   72.05 to  139.29: 'N3 first fill 1' .. 'N3 first fill 5'
+  page 4 x    72:   3 lines,   72.05 to  112.41: 'N3 second fill 1' .. 'N3 second fill 3'
+
+== N4
+  page 5 x    72:   5 lines,   72.05 to  139.29: 'N4 first fill 1' .. 'N4 first fill 5'
+  page 5 x   316:   3 lines,   72.05 to  112.41: 'N4 second fill 1' .. 'N4 second fill 3'
+
+== N5
+  page 6 x    72:   5 lines,   72.05 to  139.29: 'N5 first fill 1' .. 'N5 first fill 5'
+  page 6 x   228:   3 lines,   72.05 to  112.41: 'N5 second fill 1' .. 'N5 second fill 3'
+  page 6 x   385:   3 lines,   72.05 to  112.41: 'N5 third fill 1' .. 'N5 third fill 3'
+
+== N6
+  page 7 x    72:   1 lines,   72.05 to   85.53: 'N6 top' .. 'N6 top'
+  page 7 x    72:   5 lines,   85.49 to  152.73: 'N6 first fill 1' .. 'N6 first fill 5'
+  page 7 x   316:   3 lines,   85.49 to  125.85: 'N6 second fill 1' .. 'N6 second fill 3'
+  page 7 x    72:   1 lines,  152.69 to  166.17: 'N6 after' .. 'N6 after'
+
+N1: 'N1 second before 1440' 1238.4 twips below the first column's first line, page 1
+N2: 'N2 second before 100' 0.0 twips below the first column's first line, page 2
+
+## LibreOffice
+
+== N1
+  page 1 x    72:   5 lines,   72.03 to  139.25: 'N1 first fill 1' .. 'N1 first fill 5'
+  page 2 x    72:   3 lines,  134.03 to  174.35: 'N1 second before 1440' .. 'N1 second fill 2'
+
+== N2
+  page 3 x    72:   5 lines,   72.03 to  139.25: 'N2 first fill 1' .. 'N2 first fill 5'
+  page 4 x    72:   3 lines,   72.03 to  112.35: 'N2 second before 100' .. 'N2 second fill 2'
+
+== N3
+  page 5 x    72:   5 lines,   72.03 to  139.25: 'N3 first fill 1' .. 'N3 first fill 5'
+  page 6 x    72:   3 lines,   72.03 to  112.35: 'N3 second fill 1' .. 'N3 second fill 3'
+
+== N4
+  page 7 x    72:   5 lines,   72.03 to  139.25: 'N4 first fill 1' .. 'N4 first fill 5'
+  page 8 x    72:   3 lines,   72.03 to  112.35: 'N4 second fill 1' .. 'N4 second fill 3'
+
+== N5
+  page 9 x    72:   5 lines,   72.03 to  139.25: 'N5 first fill 1' .. 'N5 first fill 5'
+  page 10 x    72:   3 lines,   72.03 to  112.35: 'N5 second fill 1' .. 'N5 second fill 3'
+  page 11 x    72:   3 lines,   72.03 to  112.35: 'N5 third fill 1' .. 'N5 third fill 3'
+
+== N6
+  page 12 x    72:   1 lines,   72.03 to   85.45: 'N6 top' .. 'N6 top'
+  page 12 x    72:   5 lines,   85.48 to  152.70: 'N6 first fill 1' .. 'N6 first fill 5'
+  page 13 x    72:   2 lines,   72.03 to   98.90: 'N6 second fill 1' .. 'N6 second fill 2'
+  page 13 x   316:   1 lines,   72.03 to   85.45: 'N6 second fill 3' .. 'N6 second fill 3'
+  page 13 x    72:   1 lines,   98.93 to  112.35: 'N6 after' .. 'N6 after'
+
+N1: 'N1 second before 1440' 1240.0 twips below the first column's first line, page 2
+N2: 'N2 second before 100' 0.0 twips below the first column's first line, page 4
