@@ -461,6 +461,48 @@ describe("paginate", () => {
             expect(pagesOf(document([paragraph("a", 4), halfWidth, paragraph("b", 1)]))).to.deep.equal({ a: "1", b: "2" });
         });
 
+        it("should widen a column for a word longer than its cells give it, in a table whose cells all have widths", () => {
+            const text = (value: string): ParagraphBlock => ({
+                type: "paragraph",
+                items: [{ type: "text", text: value, font: {} }],
+                format: {},
+                tabStops: [],
+                markFont: {},
+            });
+            const [first, second] = row([[text("abcd")], [text("aa bb cc dd ee")]]).cells;
+            const given = table([
+                {
+                    ...row([]),
+                    cells: [
+                        { ...first, width: 20, ownWidth: 20 },
+                        { ...second, width: 60, ownWidth: 60 },
+                    ],
+                },
+            ]);
+            // At the widths read, the word is broken across 2 lines and the second cell has 3, so b fits below the row. The
+            // first column widened to the word's 40 points leaves the second 40, and its 5 lines push b to the next page
+            expect(pagesOf(document([paragraph("a", 2), given, paragraph("b", 1)]))).to.deep.equal({ a: "1", b: "1" });
+            const widened = { ...given, widen: { acrossColumns: false } };
+            expect(pagesOf(document([paragraph("a", 2), widened, paragraph("b", 1)]))).to.deep.equal({ a: "1", b: "2" });
+            // Not yet with cells merged across columns, which stop the layout
+            const acrossColumns = paginate(document([paragraph("a", 2), { ...given, widen: { acrossColumns: true } }]), {
+                measurer: MEASURER,
+            });
+            expect(acrossColumns.stoppedAt).to.equal("a word longer than its cell in a table with cells merged across columns");
+            // A paragraph kept with it is laid out before the layout stops there, as it is before any table it can't lay out
+            const kept = paginate(
+                document([paragraph("a", 2), paragraph("heading", 1, { keepNext: true }), { ...given, widen: { acrossColumns: true } }]),
+                { measurer: MEASURER },
+            );
+            expect(kept.bookmarks).to.deep.equal(
+                new Map([
+                    ["a", "1"],
+                    ["heading", "1"],
+                ]),
+            );
+            expect(kept.stoppedAt).to.equal("a word longer than its cell in a table with cells merged across columns");
+        });
+
         it("should make rows as tall as their tallest cell, their margins and borders, or their own height", () => {
             const cell = (name: string): readonly Block[] => [paragraph(name, 1)];
             const content = document([

@@ -103,6 +103,12 @@ export type TableBlock = {
      * laid out, in place of those read
      */
     readonly fit?: { readonly width?: number; readonly share?: number };
+    /**
+     * Given when Word widens a column for a word longer than the width its cells give it, as it does in a table whose
+     * cells all have widths, unless its layout is fixed, with the table's own width, as for `fit`, and whether any of its
+     * cells are merged across columns
+     */
+    readonly widen?: { readonly width?: number; readonly share?: number; readonly acrossColumns: boolean };
     readonly unsupported?: string;
 };
 
@@ -598,8 +604,9 @@ const readTableWidth = (properties: readonly XmlObject[]): NonNullable<TableBloc
 
 /**
  * Reads a table (`w:tbl`): the width, margins and content of each cell, and the height and borders of each row. Word
- * sizes the columns of a table whose cells don't all have widths to their text, unless its layout is fixed, so those are
- * worked out as it is laid out.
+ * sizes the columns of a table whose cells don't all have widths to their text, and widens a column of one whose cells
+ * all have widths for a word longer than they give it, unless its layout is fixed, so those are worked out as it is laid
+ * out.
  */
 const readTable = (element: XmlObject, reader: Reader): TableBlock => {
     const children = contentOf(element).filter(isObject);
@@ -706,8 +713,8 @@ const readTable = (element: XmlObject, reader: Reader): TableBlock => {
     );
     const tableCells = read.flatMap(({ row }) => row.cells);
     const blocks = tableCells.flatMap((cell) => cell.blocks);
-    const fits =
-        attributesOf(find(properties, "w:tblLayout"))["w:type"] !== "fixed" && tableCells.some(({ ownWidth }) => ownWidth === undefined);
+    const fixed = attributesOf(find(properties, "w:tblLayout"))["w:type"] === "fixed";
+    const fits = !fixed && tableCells.some(({ ownWidth }) => ownWidth === undefined);
     // How Word sizes the columns of a table given no widths with cells across columns, or a table in a cell, isn't
     // followed yet
     const unfitted = read.some(({ acrossColumns }) => acrossColumns)
@@ -722,6 +729,9 @@ const readTable = (element: XmlObject, reader: Reader): TableBlock => {
         type: "table",
         rows: read.map(({ row }) => row),
         ...(fits ? { fit: readTableWidth(properties) } : {}),
+        ...(!fits && !fixed
+            ? { widen: { ...readTableWidth(properties), acrossColumns: read.some(({ acrossColumns }) => acrossColumns) } }
+            : {}),
         ...(unsupported ? { unsupported } : {}),
     };
 };
