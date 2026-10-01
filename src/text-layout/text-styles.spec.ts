@@ -10,6 +10,7 @@ import {
     hasDefaultParagraphSpacing,
     readParagraphFormat,
     readRunFormat,
+    spansOf,
     styleChain,
 } from "./text-styles";
 
@@ -27,7 +28,14 @@ describe("getTextStyles", () => {
         const styles = stylesOf({
             default: { document: { run: { font: "Calibri", size: 22 }, paragraph: { spacing: { after: 160, line: 259 } } } },
         });
-        expect(styles.run).to.deep.equal({ font: "Calibri", size: 11 });
+        // A font given by name is the font of East Asian text and of complex scripts too, and a size the size of both
+        expect(styles.run).to.deep.equal({
+            font: "Calibri",
+            size: 11,
+            eastAsiaFont: "Calibri",
+            complexScriptFont: "Calibri",
+            complexScriptSize: 11,
+        });
         expect(styles.paragraph).to.deep.equal({ spaceAfter: 8, lineSpacing: { rule: "multiple", multiple: 259 / 240 } });
     });
 
@@ -240,4 +248,104 @@ describe("readParagraphFormat", () => {
             ],
         });
     });
+});
+
+describe("readParagraphFormat with East Asian typography", () => {
+    it("should read whether characters are kept from starting or ending lines, and whether lines break between words", () => {
+        expect(
+            readParagraphFormat([{ "w:kinsoku": { _attr: { "w:val": "0" } } }, { "w:wordWrap": { _attr: { "w:val": 0 } } }]),
+        ).to.deep.equal({
+            kinsoku: false,
+            wordWrap: false,
+        });
+    });
+});
+
+describe("readRunFormat with East Asian text and complex scripts", () => {
+    const THEME = { headings: "Cambria", body: "Calibri" };
+
+    it("should read the fonts, size and boldness of East Asian text and complex scripts, and the run's direction and language", () => {
+        expect(
+            readRunFormat(
+                [
+                    { "w:rFonts": { _attr: { "w:ascii": "Arial", "w:eastAsia": "MS Mincho", "w:cs": "Times New Roman" } } },
+                    { "w:b": {} },
+                    { "w:bCs": { _attr: { "w:val": "0" } } },
+                    { "w:sz": { _attr: { "w:val": 22 } } },
+                    { "w:szCs": { _attr: { "w:val": "28" } } },
+                    { "w:rtl": {} },
+                    { "w:cs": {} },
+                    { "w:lang": { _attr: { "w:val": "en-US", "w:eastAsia": "ja-JP" } } },
+                ],
+                THEME,
+            ),
+        ).to.deep.equal({
+            font: "Arial",
+            size: 11,
+            bold: true,
+            eastAsiaFont: "MS Mincho",
+            complexScriptFont: "Times New Roman",
+            complexScriptSize: 14,
+            complexScriptBold: false,
+            rightToLeft: true,
+            complexScript: true,
+            eastAsianLanguage: "ja-JP",
+        });
+    });
+
+    it("should read the theme's fonts for East Asian text and complex scripts", () => {
+        expect(
+            readRunFormat([{ "w:rFonts": { _attr: { "w:eastAsiaTheme": "minorEastAsia", "w:cstheme": "majorBidi" } } }], THEME),
+        ).to.deep.equal({
+            eastAsiaFont: "Calibri",
+            complexScriptFont: "Cambria",
+        });
+    });
+});
+
+describe("spansOf", () => {
+    // cspell:disable
+    it("should put Chinese, Japanese and Korean in the run's East Asian font, or in MS Mincho where that has none, as Word does", () => {
+        expect(spansOf("ab永永", { font: "Calibri", size: 12, eastAsiaFont: "Yu Mincho" })).to.deep.equal([
+            // The run is East Asian, by its font, so its words break anywhere with word wrap off
+            { font: "Calibri", size: 12, text: "ab", eastAsian: true },
+            { font: "Yu Mincho", size: 12, text: "永永", eastAsian: true },
+        ]);
+        expect(spansOf("永a", { font: "Calibri", eastAsiaFont: "Calibri" })).to.deep.equal([
+            { font: "MS Mincho", text: "永" },
+            { font: "Calibri", text: "a" },
+        ]);
+    });
+
+    it("should put all of a right-to-left run in the font, size and boldness of complex scripts, and Hebrew in other runs in the run's", () => {
+        const format = { font: "Calibri", size: 11, bold: true, complexScriptFont: "Arial", complexScriptSize: 14 };
+        expect(spansOf("ab שלום", { ...format, rightToLeft: true })).to.deep.equal([{ font: "Arial", size: 14, text: "ab שלום" }]);
+        expect(spansOf("ab", { ...format, complexScript: true, complexScriptBold: true })).to.deep.equal([
+            { font: "Arial", size: 14, bold: true, text: "ab" },
+        ]);
+        expect(spansOf("שלום", format)).to.deep.equal([{ font: "Calibri", size: 11, bold: true, text: "שלום" }]);
+    });
+
+    it("should give each span the run's East Asian language, and mark the runs of an East Asian language as East Asian", () => {
+        expect(spansOf("a永", { font: "Calibri", eastAsianLanguage: "zh-CN" })).to.deep.equal([
+            { font: "Calibri", text: "a", language: "zh-CN", eastAsian: true },
+            { font: "MS Mincho", text: "永", language: "zh-CN", eastAsian: true },
+        ]);
+        expect(spansOf("a", { eastAsianLanguage: "en-US" })).to.deep.equal([{ text: "a", language: "en-US" }]);
+    });
+
+    it("should keep marks in the font of the character they are on, and write capitals and small capitals in each font", () => {
+        expect(spansOf("\u0301か\u3099a", {})).to.deep.equal([{ text: "\u0301" }, { font: "MS Mincho", text: "か\u3099" }, { text: "a" }]);
+        expect(spansOf("ab永", { allCaps: true, size: 10 })).to.deep.equal([
+            { size: 10, text: "AB" },
+            { font: "MS Mincho", size: 10, text: "永" },
+        ]);
+        expect(spansOf("aB永", { smallCaps: true })).to.deep.equal([
+            { size: 8, text: "A" },
+            { text: "B" },
+            { font: "MS Mincho", text: "永" },
+        ]);
+        expect(spansOf("a", { hidden: true })).to.deep.equal([]);
+    });
+    // cspell:enable
 });

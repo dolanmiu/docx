@@ -1,6 +1,13 @@
 import { describe, expect, it } from "vitest";
 
-import { DEFAULT_MEASURER, type InlineItem, type TextMeasurer, layoutLines, measureContentWidths } from "./line-breaking";
+import {
+    DEFAULT_MEASURER,
+    type InlineItem,
+    type LineLayoutOptions,
+    type TextMeasurer,
+    layoutLines,
+    measureContentWidths,
+} from "./line-breaking";
 import { measureLineHeight, measureTextWidth } from "./text-width";
 
 // Every character is 10 points wide, and a line is as tall as its font's size
@@ -161,14 +168,55 @@ describe("layoutLines", () => {
         expect(heightsOf([text("aaa "), text("bbb-", 20), text("ccc")])).to.deep.equal([20, 10]);
     });
 
-    it("should break between Chinese and Japanese characters, but not before closing punctuation", () => {
+    it("should break between Chinese and Japanese characters", () => {
         // cspell:disable
         expect(heightsOf([text("漢字漢字漢字漢字漢字漢字")])).to.deep.equal([10, 10]);
-        // The full stop stays with the character before it, which moves to the next line with it
-        expect(heightsOf([text("漢字漢字漢字漢字漢字。")])).to.deep.equal([10, 10]);
-        expect(layoutLines([text("漢字漢字漢字漢字漢字。")], { width: 100, measurer: MEASURER })).to.have.length(2);
         expect(heightsOf([text("漢字"), text("かな")])).to.deep.equal([10]);
         // cspell:enable
+    });
+
+    describe("in Japanese and Chinese", () => {
+        // cspell:disable
+        /** The lines of ten ideographs and a full stop, with a bookmark before the tenth, and the line the bookmark is on */
+        const markedLine = (language?: string, options: Partial<LineLayoutOptions> = {}): number => {
+            const lines = layoutLines(
+                [
+                    { type: "text", text: "永".repeat(9), font: {}, ...(language ? { language } : {}) },
+                    { type: "marker", name: "tenth" },
+                    { type: "text", text: "永。", font: {}, ...(language ? { language } : {}) },
+                ],
+                { width: 100, measurer: MEASURER, ...options },
+            );
+            return lines.findIndex(({ markers }) => markers.includes("tenth"));
+        };
+
+        it("should move the character before one that can't start a line to the next line with it, as Word does", () => {
+            expect(markedLine("ja-JP")).to.equal(1);
+            expect(markedLine("zh-TW")).to.equal(1);
+        });
+
+        it("should let any character start a line in text with no East Asian language, or with kinsoku off, as Word does", () => {
+            expect(markedLine()).to.equal(0);
+            expect(markedLine("ko-KR")).to.equal(0);
+            expect(markedLine("ja-JP", { format: { kinsoku: false } })).to.equal(0);
+            expect(markedLine("ja-JP", { format: { kinsoku: false }, breakRules: { kinsoku: true } })).to.equal(0);
+            expect(markedLine("ja-JP", { breakRules: { kinsoku: false } })).to.equal(0);
+        });
+
+        it("should take the document's list of the characters that can't start a line", () => {
+            expect(markedLine("ja-JP", { breakRules: { lists: { japanese: { noLineStart: "" } } } })).to.equal(0);
+        });
+        // cspell:enable
+    });
+
+    it("should break the words of East Asian runs anywhere with word wrap off", () => {
+        const latin: InlineItem = { type: "text", text: "aaaaaa bbbbbb cccccc", font: {}, eastAsian: true };
+        const linesOf = (item: InlineItem, format = {}): number => layoutLines([item], { width: 100, measurer: MEASURER, format }).length;
+        // Filled to the end of each line: "aaaaaa bbb" and "bbb cccccc"
+        expect(linesOf(latin, { wordWrap: false })).to.equal(2);
+        // Broken between its words with word wrap on, and in a run that isn't East Asian
+        expect(linesOf(latin)).to.equal(3);
+        expect(linesOf({ ...latin, eastAsian: false }, { wordWrap: false })).to.equal(3);
     });
 
     it("should break a word wider than a line across as many lines as it needs", () => {
@@ -195,6 +243,14 @@ describe("layoutLines", () => {
         const tabbed = [text("aaaaaaaaa"), { type: "tab", font: {} } as const, text("b")];
         expect(layoutLines(tabbed, { width: (line) => (line === 0 ? 100 : 30), measurer: MEASURER })).to.have.length(1);
         expect(layoutLines(tabbed, { width: 100, measurer: MEASURER })).to.have.length(2);
+    });
+
+    it("should break a word wider than a line after the last character that fits on each line, as Word does", () => {
+        // Each letter is 30 points, so 3 fit on a line of 100, and 10 take 4 lines
+        const wide: TextMeasurer = { measureWidth: (value) => [...value].length * 30, measureLineHeight: () => 10 };
+        expect(layoutLines([text("a".repeat(10))], { width: 100, measurer: wide })).to.have.length(4);
+        // An accent stays with its letter: "aa" and "a\u0301a"
+        expect(layoutLines([text("aaa\u0301a")], { width: 100, measurer: wide })).to.have.length(2);
     });
 
     it("should lay out pictures in the line, and wrap them as a word", () => {

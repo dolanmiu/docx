@@ -141,6 +141,26 @@ describe("paginate", () => {
         expect(pagesOf(document([twice, paragraph("b", 1)]))).to.deep.equal({ a: "1", b: "2" });
     });
 
+    it("should break lines by the document's own lists of the characters that can't start a line", () => {
+        // cspell:disable
+        const japanese = (text: string): LayoutItem => ({ type: "text", text, font: {}, language: "ja-JP" });
+        // Each document's own paragraphs, as their lines are kept with them
+        const blocks = (): readonly Block[] => [
+            paragraph("before", 6),
+            {
+                type: "paragraph",
+                items: [japanese("永".repeat(7)), { type: "marker", name: "eighth" }, japanese("永、")],
+                format: { widowControl: false },
+                tabStops: [],
+                markFont: {},
+            },
+        ];
+        // cspell:enable
+        // The full stop can't start a line, so the character before it starts the next line, on the next page
+        expect(pagesOf(document(blocks()))).to.deep.include({ eighth: "2" });
+        expect(pagesOf(document(blocks(), { breakRules: { lists: { japanese: { noLineStart: "" } } } }))).to.deep.include({ eighth: "1" });
+    });
+
     describe("widow and orphan control", () => {
         it("should move a paragraph's first line to the next page rather than leave it alone at the bottom", () => {
             expect(pagesOf(document([paragraph("a", 6), paragraph("b", 4)]))).to.deep.equal({ a: "1", b: "2" });

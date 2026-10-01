@@ -38,7 +38,10 @@ describe("measureTextWidth", () => {
         for (const character of ["\u1100", "\uac00", "\uf900", "\ufe30", "\uff01", "\uffe0", "\u{1f600}"]) {
             expect(measureTextWidth(character, { size: 10 })).to.equal(10);
         }
-        expect(measureTextWidth("́", { size: 10 })).to.equal(0);
+        expect(measureTextWidth("\u0301", { size: 10 })).to.equal(0);
+        // Half-width katakana, Thai vowels above the letters, and zero-width spaces
+        expect(measureTextWidth("\uff71", { size: 10 })).to.equal(5);
+        expect(measureTextWidth("\u0e31\u200b", { size: 10 })).to.equal(0);
         const average = measureTextWidth("abcdefghijklmnopqrstuvwxyz") / 26;
         expect(measureTextWidth("Ж")).to.be.closeTo(average, 0.001);
     });
@@ -61,6 +64,34 @@ describe("measureLineHeight", () => {
         expect(measureLineHeight({ font: "Calibri", size: 11 })).to.be.closeTo((2500 / 2048) * 11, 1e-9);
         expect(measureLineHeight({ font: "Times New Roman", size: 10 })).to.be.closeTo((2355 / 2048) * 10, 1e-9);
     });
+});
+
+describe("East Asian fonts", () => {
+    // cspell:disable
+    it("should make their lines as tall as Word does, about 1.3 times the font's height", () => {
+        expect(measureLineHeight({ font: "MS Mincho", size: 12 })).to.be.closeTo(15.564, 0.0001);
+        expect(measureLineHeight({ font: "ms gothic", size: 10 })).to.be.closeTo(12.97, 0.0001);
+        // By the name Office's theme gives it
+        expect(measureLineHeight({ font: "游明朝", size: 10 })).to.be.closeTo(14.33, 0.0001);
+        expect(measureLineHeight({ font: "Malgun Gothic", size: 10 })).to.be.closeTo(17.3, 0.0001);
+    });
+
+    it("should measure East Asian fonts that aren't in the table as MS Mincho or MS Gothic, and not Latin fonts that look like them", () => {
+        expect(measureLineHeight({ font: "Hiragino Mincho ProN", size: 10 })).to.be.closeTo(12.97, 0.0001);
+        expect(measureTextWidth("ab", { font: "ヒラギノ角ゴシック", size: 10 })).to.equal(10);
+        expect(measureLineHeight({ font: "Century Gothic", size: 10 })).to.equal(measureLineHeight({ font: "Arial", size: 10 }));
+    });
+
+    it("should make the Latin letters of monospaced ones half an em, and their ideographs and symbols an em", () => {
+        expect(measureTextWidth("ab", { font: "MS Mincho", size: 12 })).to.equal(12);
+        expect(measureTextWidth("‘永→", { font: "MS Mincho", size: 12 })).to.equal(36);
+        expect(measureTextWidth("e\u0301", { font: "SimSun", size: 12 })).to.equal(6);
+        // The Latin letters of the others are measured with the most similar font in the table
+        expect(measureTextWidth("ab永", { font: "Yu Gothic", size: 12 })).to.equal(
+            measureTextWidth("ab", { font: "Arial", size: 12 }) + 12,
+        );
+    });
+    // cspell:enable
 });
 
 describe("measureText", () => {

@@ -242,6 +242,7 @@ export const paginate = (
         footnoteSeparator,
         footnoteContinuationSeparator,
         endnotes,
+        breakRules,
     } = content;
     // The body, and then its endnotes, which Word lays out after it
     const blocks = [...content.blocks, ...endnotes.map((block) => ({ block, section: sections.length - 1 }))];
@@ -279,6 +280,7 @@ export const paginate = (
                 defaultTabStop,
                 markFont: paragraph.markFont,
                 measurer,
+                breakRules,
             });
         if (paragraph.items.some(({ type }) => type === "pageReference" || type === "pageCount")) {
             return layOut();
@@ -332,6 +334,7 @@ export const paginate = (
                               tabStops: block.tabStops,
                               defaultTabStop,
                               measurer,
+                              breakRules,
                           });
                 return { min: Math.max(widths.min, min), max: Math.max(widths.max, max) };
             },

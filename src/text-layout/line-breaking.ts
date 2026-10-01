@@ -2,12 +2,13 @@
  * Breaks a paragraph into lines as Word breaks it, for laying out pages: where each line wraps, how tall it is, and
  * which bookmarks start on it.
  *
- * Lines break at spaces, after hyphens, and between Chinese, Japanese and Korean characters. Tabs move to the
- * paragraph's tab stops, or to the document's default ones. Each line is as tall as the tallest text or picture on
- * it, with the paragraph's line spacing.
+ * Lines break at spaces, after hyphens, between Chinese, Japanese and Korean characters, and between the words of Thai and
+ * the other scripts without spaces, as {@link findLineBreaks} finds. Tabs move to the paragraph's tab stops, or to the
+ * document's default ones. Each line is as tall as the tallest text or picture on it, with the paragraph's line spacing.
  *
  * @module
  */
+import { type LineBreakRules, extendsCharacter, findLineBreaks } from "./line-break-rules";
 import { type LineSpacing, type ParagraphFormat, type TextFont, measureLineHeight, measureTextWidth } from "./text-width";
 
 /**
@@ -29,7 +30,11 @@ export const DEFAULT_MEASURER: TextMeasurer = {
  * A piece of a paragraph's content, in the order it is written.
  */
 export type InlineItem =
-    | { readonly type: "text"; readonly text: string; readonly font: TextFont }
+    /**
+     * Text, with the East Asian language of its run, which decides which characters can't start or end a line, and whether
+     * its run is East Asian, whose words break anywhere with word wrap off
+     */
+    | { readonly type: "text"; readonly text: string; readonly font: TextFont; readonly language?: string; readonly eastAsian?: boolean }
     | { readonly type: "tab"; readonly font: TextFont }
     /** A line break, or a page or column break, which ends the line and starts the rest on a new page or column */
     | { readonly type: "break"; readonly kind: "line" | "page" | "column"; readonly font: TextFont }
@@ -64,6 +69,8 @@ export type LineLayoutOptions = {
     /** The font of the paragraph's mark, which sets the height of a line with no text on it, such as an empty paragraph's */
     readonly markFont?: TextFont;
     readonly measurer?: TextMeasurer;
+    /** The document's rules for where lines break. The paragraph's `kinsoku` takes the place of the rules' */
+    readonly breakRules?: LineBreakRules;
 };
 
 /**
@@ -100,82 +107,69 @@ const DEFAULT_TAB_STOP = 36;
 // How far past its end a line may go before it wraps, for the rounding of the widths
 const TOLERANCE = 0.01;
 
-// Letters of Chinese, Japanese and Korean, between which a line can break
-const CJK_LETTER = /[\p{Script=Han}\p{Script=Hiragana}\p{Script=Katakana}\p{Script=Hangul}]/u;
-// Characters that don't start a line, such as closing punctuation and small kana, and those that don't end one
-// cspell:disable-next-line
-const NO_LINE_START = new Set([..."、。，．：；？！）」』】〕〉》ー々ぁぃぅぇぉっゃゅょゎァィゥェォッャュョヮヵヶ,.:;?!)]}"]);
-// cspell:disable-next-line
-const NO_LINE_END = new Set([..."（「『【〔〈《([{"]);
+type TextItem = Extract<InlineItem, { readonly type: "text" }>;
 
 /**
- * Whether a line can break between two characters with no space between them: after a hyphen that isn't before a
- * digit, and before or after a Chinese, Japanese or Korean letter.
+ * Turns text next to each other into words and the spaces between them. Pieces of words next to each other in different
+ * fonts are one word, unless the line can break between them.
  */
-const canBreakBetween = (before: string, after: string): boolean =>
-    !NO_LINE_START.has(after) &&
-    !NO_LINE_END.has(before) &&
-    ((before === "-" && !/[\d-]/.test(after)) || CJK_LETTER.test(before) || CJK_LETTER.test(after));
-
-/**
- * Splits text into words and the spaces between them, and words where a line can break inside them.
- */
-type TextPart = { readonly text: string; readonly isSpace: boolean };
-
-const splitText = (text: string): readonly TextPart[] =>
-    text
-        .split(/( +)/)
-        .filter((part) => part.length > 0)
-        .flatMap((part): readonly TextPart[] => {
-            if (part.startsWith(" ")) {
-                return [{ text: part, isSpace: true }];
+const tokenizeText = (items: readonly TextItem[], rules: LineBreakRules): readonly Token[] => {
+    const breaks = findLineBreaks(items, rules);
+    // eslint-disable-next-line functional/prefer-readonly-type
+    const tokens: { readonly type: "word" | "space"; readonly pieces: Piece[] }[] = [];
+    let index = 0;
+    for (const { text, font } of items) {
+        for (const character of text) {
+            const type = character === " " ? "space" : "word";
+            const last = tokens[tokens.length - 1];
+            if (last?.type !== type || (type === "word" && breaks.has(index))) {
+                // eslint-disable-next-line functional/immutable-data
+                tokens.push({ type, pieces: [{ text: character, font }] });
+            } else {
+                const piece = last.pieces[last.pieces.length - 1];
+                // eslint-disable-next-line functional/immutable-data
+                last.pieces[last.pieces.length - 1 + (piece.font === font ? 0 : 1)] = {
+                    text: piece.font === font ? piece.text + character : character,
+                    font,
+                };
             }
-            const characters = [...part];
-            return characters
-                .reduce<readonly string[]>(
-                    (words, character, index) =>
-                        index > 0 && canBreakBetween(characters[index - 1], character)
-                            ? [...words, character]
-                            : [...words.slice(0, -1), `${words[words.length - 1] ?? ""}${character}`],
-                    [],
-                )
-                .map((word) => ({ text: word, isSpace: false }));
-        });
-
-const lastCharacter = (text: string): string => [...text].pop()!;
+            index++;
+        }
+    }
+    return tokens;
+};
 
 /**
- * Turns a part of a paragraph into tokens. Pieces of words next to each other in different fonts are one word, unless
- * the line can break between them.
+ * Turns a part of a paragraph into tokens.
  */
-const tokenize = (items: readonly InlineItem[]): readonly Token[] =>
-    items.reduce<readonly Token[]>((tokens, item) => {
+const tokenize = (items: readonly InlineItem[], rules: LineBreakRules): readonly Token[] => {
+    // eslint-disable-next-line functional/prefer-readonly-type
+    const tokens: Token[] = [];
+    // eslint-disable-next-line functional/prefer-readonly-type
+    let text: TextItem[] = [];
+    for (const item of items) {
         if (item.type === "text") {
-            return splitText(item.text).reduce<readonly Token[]>((all, { text, isSpace }) => {
-                const last = all[all.length - 1];
-                const type = isSpace ? "space" : "word";
-                const joins =
-                    last?.type === type &&
-                    (isSpace || !canBreakBetween(lastCharacter(last.pieces[last.pieces.length - 1].text), [...text][0]));
-                return joins
-                    ? [...all.slice(0, -1), { type, pieces: [...last.pieces, { text, font: item.font }] }]
-                    : [...all, { type, pieces: [{ text, font: item.font }] }];
-            }, tokens);
+            // eslint-disable-next-line functional/immutable-data
+            text.push(item);
+        } else {
+            // eslint-disable-next-line functional/immutable-data
+            tokens.push(...tokenizeText(text, rules), item as Exclude<InlineItem, { readonly type: "text" | "break" }>);
+            text = [];
         }
-        // The breaks are taken out before the parts between them are tokenized
-        return [...tokens, item as Exclude<InlineItem, { readonly type: "text" | "break" }>];
-    }, []);
+    }
+    return [...tokens, ...tokenizeText(text, rules)];
+};
 
 /**
  * Splits a paragraph's content at its breaks.
  */
-const segmentsOf = (items: readonly InlineItem[]): readonly Segment[] => {
+const segmentsOf = (items: readonly InlineItem[], rules: LineBreakRules): readonly Segment[] => {
     const breaks = items.flatMap((item, index) => (item.type === "break" ? [index] : []));
     const starts = [0, ...breaks.map((index) => index + 1)];
     return starts.map((start, index) => {
         const end = breaks[index];
         return {
-            tokens: tokenize(items.slice(start, end)),
+            tokens: tokenize(items.slice(start, end), rules),
             end: end === undefined ? undefined : (items[end] as Segment["end"]),
         };
     });
@@ -262,6 +256,13 @@ const stopsOf = (
     return { stops, firstLineStops };
 };
 
+/** The rules for where a paragraph's lines break: the document's, with the paragraph's own */
+const rulesOf = ({ kinsoku, wordWrap }: ParagraphFormat, rules: LineBreakRules = {}): LineBreakRules => ({
+    ...rules,
+    ...(kinsoku === undefined ? {} : { kinsoku }),
+    ...(wordWrap === undefined ? {} : { wordWrap }),
+});
+
 /** How wide a paragraph is, in points, with its indents */
 export type ContentWidths = {
     /** The narrowest it can be: its widest word or picture, which a line can't break */
@@ -283,11 +284,12 @@ export const measureContentWidths = (
         tabStops = [],
         defaultTabStop = DEFAULT_TAB_STOP,
         measurer = DEFAULT_MEASURER,
+        breakRules,
     }: Omit<LineLayoutOptions, "width" | "markFont">,
 ): ContentWidths => {
     const { indentLeft = 0, indentRight = 0, firstLineIndent = 0 } = format;
     const { stops, firstLineStops } = stopsOf(tabStops, format);
-    return segmentsOf(items).reduce<ContentWidths>(
+    return segmentsOf(items, rulesOf(format, breakRules)).reduce<ContentWidths>(
         (widths, { tokens }, segmentIndex) => {
             const first = segmentIndex === 0;
             let position = indentLeft + (first ? firstLineIndent : 0);
@@ -329,12 +331,20 @@ export const measureContentWidths = (
  */
 export const layoutLines = (
     items: readonly InlineItem[],
-    { width, format = {}, tabStops = [], defaultTabStop = DEFAULT_TAB_STOP, markFont = {}, measurer = DEFAULT_MEASURER }: LineLayoutOptions,
+    {
+        width,
+        format = {},
+        tabStops = [],
+        defaultTabStop = DEFAULT_TAB_STOP,
+        markFont = {},
+        measurer = DEFAULT_MEASURER,
+        breakRules,
+    }: LineLayoutOptions,
 ): readonly LaidOutLine[] => {
     const { indentLeft = 0, indentRight = 0, firstLineIndent = 0, lineSpacing } = format;
     const markHeight = measurer.measureLineHeight(markFont);
     const { stops, firstLineStops } = stopsOf(tabStops, format);
-    const parts = segmentsOf(items);
+    const parts = segmentsOf(items, rulesOf(format, breakRules));
     // A page break at the end of a paragraph has the paragraph's mark on its line, as Word lays it out from Word 2013,
     // rather than on a line of its own on the next page. A column break's mark is on a line at the top of the next column,
     // in Word and LibreOffice
@@ -417,13 +427,32 @@ export const layoutLines = (
                 line = wrap(line);
             }
             line = place(line);
-            // A word wider than a line is broken across as many lines as it needs, each as long as it is
-            let rest = tokenWidth;
-            while (token.type === "word" && line.position + rest > limitOf() + TOLERANCE && limitOf() - indentLeft > 0) {
-                rest -= limitOf() - line.position;
-                line = wrap({ ...line, natural: Math.max(line.natural, tokenHeight), started: true });
+            if (token.type === "word" && line.position + tokenWidth > limitOf() + TOLERANCE && limitOf() - indentLeft > 0) {
+                // A word wider than a line is broken across as many lines as it needs, after the last character that fits
+                // on each, and never between a character and the marks on it
+                let placed = false;
+                for (const { text, font } of token.pieces) {
+                    const characters = [...text].reduce<readonly string[]>(
+                        (all, character) =>
+                            all.length > 0 && extendsCharacter(character)
+                                ? [...all.slice(0, -1), `${all[all.length - 1]}${character}`]
+                                : [...all, character],
+                        [],
+                    );
+                    for (const character of characters) {
+                        const characterWidth = measurer.measureWidth(character, font);
+                        // Each line is as long as it is, for lines of different widths, and one with no room takes the rest
+                        if (placed && line.position + characterWidth > limitOf() + TOLERANCE && limitOf(lines.length + 1) - indentLeft > 0) {
+                            line = wrap({ ...line, natural: Math.max(line.natural, tokenHeight), started: true });
+                        }
+                        line = { ...line, position: line.position + characterWidth };
+                        placed = true;
+                    }
+                }
+            } else {
+                line = { ...line, position: line.position + tokenWidth };
             }
-            line = { ...line, position: line.position + rest, natural: Math.max(line.natural, tokenHeight), started: true };
+            line = { ...line, natural: Math.max(line.natural, tokenHeight), started: true };
         }
 
         if (!end) {

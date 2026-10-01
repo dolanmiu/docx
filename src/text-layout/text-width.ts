@@ -32,6 +32,10 @@ export type TextFont = {
 export type TextSpan = TextFont & {
     /** The text. `"\n"` starts a new line and `"\t"` moves to the next tab stop */
     readonly text: string;
+    /** The East Asian language of its run, such as `"ja-JP"`, which decides which characters can't start or end a line */
+    readonly language?: string;
+    /** Whether its run is East Asian, by its East Asian font or language, so its words break anywhere with word wrap off */
+    readonly eastAsian?: boolean;
 };
 
 /**
@@ -81,6 +85,10 @@ export type ParagraphFormat = {
     readonly widowControl?: boolean;
     /** The tab stops the paragraph, or its style, sets or clears. Those of its styles are added to them */
     readonly tabs?: readonly TabStopSetting[];
+    /** Whether Word's East Asian rules keep characters from starting or ending its lines (`w:kinsoku`). Default is on */
+    readonly kinsoku?: boolean;
+    /** Whether its lines break between words (`w:wordWrap`), or, when off, anywhere in the words of East Asian runs */
+    readonly wordWrap?: boolean;
 };
 
 /**
@@ -116,6 +124,68 @@ const CHARACTER_INDEX: ReadonlyMap<number, number> = new Map(
 const AVERAGE_LETTER_INDEXES = [..."abcdefghijklmnopqrstuvwxyz"].map((letter) => CHARACTER_INDEX.get(letter.codePointAt(0)!)!);
 
 /**
+ * A font for Chinese, Japanese or Korean text, and how Word lays it out.
+ */
+type EastAsianFont = {
+    readonly name: string;
+    /** The names it is also known by, in its own language, as Office's theme names them */
+    readonly aliases?: readonly string[];
+    /** The height of its lines, in thousandths of an em: about 1.3 times the font's height, as Word lays them out */
+    readonly lineHeight: number;
+    /** Whether its Latin letters are all half an em wide */
+    readonly monospaced?: boolean;
+    /** The font in the table its Latin letters are measured with, when they aren't monospaced */
+    readonly latin: string;
+};
+
+/* cspell:disable */
+// The heights of their lines are Word's, from its PDF of scripts/layout-probes/word-unicode2.ts, over 20 lines of each.
+// Their Chinese, Japanese and Korean characters are an em wide
+const EAST_ASIAN_FONTS: readonly EastAsianFont[] = [
+    { name: "MS Mincho", aliases: ["ＭＳ 明朝", "MS 明朝"], lineHeight: 1297, monospaced: true, latin: "Times New Roman" },
+    { name: "MS Gothic", aliases: ["ＭＳ ゴシック", "MS ゴシック"], lineHeight: 1297, monospaced: true, latin: "Arial" },
+    { name: "MS PMincho", aliases: ["ＭＳ Ｐ明朝", "MS P明朝"], lineHeight: 1297, latin: "Times New Roman" },
+    { name: "MS PGothic", aliases: ["ＭＳ Ｐゴシック", "MS Pゴシック"], lineHeight: 1297, latin: "Arial" },
+    { name: "Yu Mincho", aliases: ["游明朝"], lineHeight: 1433, latin: "Times New Roman" },
+    { name: "Yu Gothic", aliases: ["游ゴシック", "游ゴシック Light", "Yu Gothic Light"], lineHeight: 1434, latin: "Arial" },
+    { name: "Meiryo", aliases: ["メイリオ"], lineHeight: 1950, latin: "Arial" },
+    { name: "SimSun", aliases: ["宋体"], lineHeight: 1297, monospaced: true, latin: "Times New Roman" },
+    { name: "NSimSun", aliases: ["新宋体"], lineHeight: 1296, monospaced: true, latin: "Times New Roman" },
+    { name: "SimHei", aliases: ["黑体"], lineHeight: 1297, monospaced: true, latin: "Arial" },
+    { name: "KaiTi", aliases: ["楷体"], lineHeight: 1297, monospaced: true, latin: "Times New Roman" },
+    { name: "FangSong", aliases: ["仿宋"], lineHeight: 1297, monospaced: true, latin: "Times New Roman" },
+    { name: "Microsoft YaHei", aliases: ["微软雅黑"], lineHeight: 1714, latin: "Arial" },
+    { name: "DengXian", aliases: ["等线", "等线 Light", "DengXian Light"], lineHeight: 1354, latin: "Arial" },
+    { name: "PMingLiU", aliases: ["新細明體"], lineHeight: 1300, latin: "Times New Roman" },
+    { name: "MingLiU", aliases: ["細明體"], lineHeight: 1301, monospaced: true, latin: "Times New Roman" },
+    { name: "Microsoft JhengHei", aliases: ["微軟正黑體"], lineHeight: 1730, latin: "Arial" },
+    { name: "Malgun Gothic", aliases: ["맑은 고딕"], lineHeight: 1730, latin: "Arial" },
+    { name: "Batang", aliases: ["바탕"], lineHeight: 1300, latin: "Times New Roman" },
+    { name: "Gulim", aliases: ["굴림"], lineHeight: 1301, latin: "Arial" },
+    { name: "Dotum", aliases: ["돋움"], lineHeight: 1301, latin: "Arial" },
+];
+// East Asian fonts that aren't in the table, which are measured as MS Gothic, or MS Mincho for those with serifs
+const EAST_ASIAN_NAME =
+    /[\u3040-\u30ff\u3400-\u9fff\uac00-\ud7af]|hiragino|cjk|source han|pingfang|songti|heiti|kaiti|fangsong|mincho|mingliu|simhei|gungsuh|nanum/i;
+const EAST_ASIAN_SANS = /gothic|ゴシック|hei|黑|黒|sans|고딕|pingfang/i;
+/* cspell:enable */
+
+/**
+ * The East Asian font a font is, or is measured as, by its name. Undefined for other fonts.
+ */
+const eastAsianFontOf = (font: string): EastAsianFont | undefined => {
+    const name = font.toLowerCase();
+    const known = EAST_ASIAN_FONTS.find((candidate) =>
+        [candidate.name, ...(candidate.aliases ?? [])].some((alias) => alias.toLowerCase() === name),
+    );
+    const similar = EAST_ASIAN_SANS.test(font) ? "MS Gothic" : "MS Mincho";
+    return known ?? (EAST_ASIAN_NAME.test(font) ? EAST_ASIAN_FONTS.find((candidate) => candidate.name === similar) : undefined);
+};
+
+/** Whether a font is one for Chinese, Japanese or Korean text */
+export const isEastAsianFont = (font: string | undefined): boolean => font !== undefined && eastAsianFontOf(font) !== undefined;
+
+/**
  * The widths to measure a font with: its own, or those of the most similar font in the table.
  * Sans-serif fonts that aren't in the table, such as Aptos and Helvetica, are measured as Arial.
  */
@@ -136,11 +206,18 @@ const isWide = (code: number): boolean =>
     (code >= 0xffe0 && code <= 0xffe6) ||
     code >= 0x1f300;
 
+// Half-width katakana, Hangul and symbols
+const isHalfWidth = (code: number): boolean => code >= 0xff61 && code <= 0xffdc;
+
+// Marks, which go on the character before them, and characters that only change how the text around them is laid out
+const takesNoRoom = (character: string): boolean => /[\p{Mn}\p{Me}\p{Cf}]/u.test(character);
+
 /**
  * The width of a character in thousandths of an em. Characters that aren't in the table are as wide as an average
- * lowercase letter, or a whole em for wide characters, and combining accents take no space.
+ * lowercase letter, a whole em for wide characters and half an em for half-width ones, and marks take no space.
  */
-const characterWidth = (widths: readonly number[], code: number): number => {
+const characterWidth = (widths: readonly number[], character: string): number => {
+    const code = character.codePointAt(0)!;
     const index = CHARACTER_INDEX.get(code);
     if (index !== undefined) {
         return widths[index];
@@ -148,9 +225,27 @@ const characterWidth = (widths: readonly number[], code: number): number => {
     if (isWide(code)) {
         return 1000;
     }
-    return code >= 0x300 && code <= 0x36f
+    if (isHalfWidth(code)) {
+        return 500;
+    }
+    return takesNoRoom(character)
         ? 0
         : AVERAGE_LETTER_INDEXES.reduce((total, letter) => total + widths[letter], 0) / AVERAGE_LETTER_INDEXES.length;
+};
+
+// Symbols that monospaced Japanese and Chinese fonts have as wide as their ideographs, as MS Mincho does
+const FULL_WIDTH_SYMBOLS = new Set([..."§¨°±´¶×÷‐―‖‘’“”†‡‥…‰′″※℃Å"]);
+
+/**
+ * The width of a character of a monospaced East Asian font, in thousandths of an em: an em for ideographs and the symbols
+ * of Japanese and Chinese, and half an em for the rest.
+ */
+const monospacedWidth = (character: string): number => {
+    const code = character.codePointAt(0)!;
+    if (takesNoRoom(character)) {
+        return 0;
+    }
+    return isWide(code) || FULL_WIDTH_SYMBOLS.has(character) || (code >= 0x2190 && code <= 0x26ff) ? 1000 : 500;
 };
 
 const sizeOf = ({ size = DEFAULT_FONT_SIZE }: TextFont): number => size;
@@ -161,8 +256,10 @@ const sizeOf = ({ size = DEFAULT_FONT_SIZE }: TextFont): number => size;
  * @param start - Where the text starts on its line, in points
  */
 export const measureTextWidth = (text: string, font: TextFont = {}, start = 0): number => {
-    const { regular, bold } = widthsOf(font.font);
+    const eastAsian = eastAsianFontOf(font.font ?? DEFAULT_FONT);
+    const { regular, bold } = widthsOf(eastAsian?.latin ?? font.font);
     const widths = font.bold ? bold : regular;
+    const widthOf = eastAsian?.monospaced ? monospacedWidth : (character: string): number => characterWidth(widths, character);
     const size = sizeOf(font);
     const { characterSpacing = 0, scale = 100 } = font;
     return (
@@ -170,7 +267,7 @@ export const measureTextWidth = (text: string, font: TextFont = {}, start = 0): 
             (position, character) =>
                 character === "\t"
                     ? (Math.floor(position / TAB_STOP) + 1) * TAB_STOP
-                    : position + (characterWidth(widths, character.codePointAt(0)!) * size * scale) / 100000 + characterSpacing,
+                    : position + (widthOf(character) * size * scale) / 100000 + characterSpacing,
             start,
         ) - start
     );
@@ -179,7 +276,8 @@ export const measureTextWidth = (text: string, font: TextFont = {}, start = 0): 
 /**
  * How tall a line of single-spaced text is, in points.
  */
-export const measureLineHeight = (font: TextFont = {}): number => (widthsOf(font.font).lineHeight * sizeOf(font)) / 1000;
+export const measureLineHeight = (font: TextFont = {}): number =>
+    ((eastAsianFontOf(font.font ?? DEFAULT_FONT) ?? widthsOf(font.font)).lineHeight * sizeOf(font)) / 1000;
 
 /**
  * The size of text laid out in lines, in points.

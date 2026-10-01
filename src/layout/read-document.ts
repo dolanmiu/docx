@@ -11,6 +11,8 @@ import type { IContext, IXmlableObject } from "docx";
 
 import {
     type InlineItem,
+    type KinsokuList,
+    type LineBreakRules,
     type ParagraphFormat,
     READING_CONTEXT,
     type RunFormat,
@@ -28,6 +30,7 @@ import {
     getTextStyles,
     isObject,
     isOff,
+    kinsokuLanguageOf,
     numberOf,
     onOff,
     readCellMargins,
@@ -189,6 +192,8 @@ export type DocumentContent = {
     readonly footnoteContinuationSeparator: readonly Block[];
     /** The endnotes the body refers to, in order, after their separator: they follow the body, as Word lays them out */
     readonly endnotes: readonly Block[];
+    /** Where its lines break: the characters that can't start or end a line, where it gives its own */
+    readonly breakRules?: LineBreakRules;
     /** Why none of it can be laid out, when a setting of the whole document changes its lines in ways not yet followed */
     readonly unsupported?: string;
 };
@@ -433,8 +438,14 @@ const readRun = (element: XmlObject, paragraphRun: RunFormat, reader: Reader): r
                         .join(""),
                     format,
                 ).map((span) => {
-                    const { text, ...spanFont } = span;
-                    return { type: "text" as const, text, font: spanFont };
+                    const { text, language, eastAsian, ...spanFont } = span;
+                    return {
+                        type: "text" as const,
+                        text,
+                        font: spanFont,
+                        ...(language === undefined ? {} : { language }),
+                        ...(eastAsian ? { eastAsian } : {}),
+                    };
                 });
             case "w:tab":
             case "w:ptab":
@@ -969,17 +980,45 @@ const readNumbering = (context: IContext, styles: TextStyles): ReadonlyMap<strin
 };
 
 /**
+ * The document's own lists of the characters that can't start a line (`w:noLineBreaksBefore`) and can't end one
+ * (`w:noLineBreaksAfter`), which take the place of Word's for their language.
+ */
+const readKinsokuLists = (settings: readonly XmlObject[]): LineBreakRules["lists"] =>
+    settings.reduce<NonNullable<LineBreakRules["lists"]>>((lists, child) => {
+        const name = nameOf(child);
+        const attributes = attributesOf(child[name]);
+        const language = kinsokuLanguageOf(stringOf(attributes["w:lang"]));
+        if ((name !== "w:noLineBreaksBefore" && name !== "w:noLineBreaksAfter") || language === undefined) {
+            return lists;
+        }
+        const list: KinsokuList = { [name === "w:noLineBreaksBefore" ? "noLineStart" : "noLineEnd"]: String(attributes["w:val"] ?? "") };
+        return { ...lists, [language]: { ...lists[language], ...list } };
+    }, {});
+
+/**
  * Reads the parts of the document's settings (`w:settings`) that change how it is laid out.
  */
 const readSettings = (
     context: IContext,
-): Pick<DocumentContent, "defaultTabStop" | "evenAndOddHeaders" | "addsParagraphSpacing" | "unsupported"> => {
+): Pick<DocumentContent, "defaultTabStop" | "evenAndOddHeaders" | "addsParagraphSpacing" | "breakRules" | "unsupported"> => {
     const settings = childrenOf((context.file.Settings.prepForXml(READING_CONTEXT) as XmlObject)["w:settings"]);
+    const lists = readKinsokuLists(settings);
+    const spacingControl = valueOf(settings, "w:characterSpacingControl");
+    // Word's strict rules, and its compression of punctuation, aren't known yet
+    const unsupported =
+        onOff(settings, "w:autoHyphenation") === true
+            ? "hyphenation"
+            : onOff(settings, "w:strictFirstAndLastChars") === true
+              ? "the strict rules for the characters that can't start a line"
+              : spacingControl !== undefined && spacingControl !== "doNotCompress"
+                ? "punctuation compressed"
+                : undefined;
     return {
         defaultTabStop: twips(attributesOf(find(settings, "w:defaultTabStop"))["w:val"]) ?? 36,
         evenAndOddHeaders: onOff(settings, "w:evenAndOddHeaders") === true,
         addsParagraphSpacing: onOff(childrenOf(find(settings, "w:compat")), "w:doNotUseHTMLParagraphAutoSpacing") === true,
-        ...(onOff(settings, "w:autoHyphenation") === true ? { unsupported: "hyphenation" } : {}),
+        ...(Object.keys(lists ?? {}).length > 0 ? { breakRules: { lists } } : {}),
+        ...(unsupported ? { unsupported } : {}),
     };
 };
 
