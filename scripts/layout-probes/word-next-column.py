@@ -1,6 +1,6 @@
 # Reads the probes of word-next-column.ts from pdftotext -bbox-layout's HTML of a PDF of it, and prints what each shows:
 # the lines of each part of a probe, by page and column, and where they start.
-# Usage: python3 word-next-column.py word-next-column.html
+# Usage: python3 scripts/layout-probes/word-next-column.py build/word-probes/word-next-column.html
 import html
 import re
 import sys

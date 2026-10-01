@@ -10,7 +10,7 @@
 // N5: 3 columns after 3, and then 3 more after those, in the second and third columns
 // N6: a section in the next column after columns that start below a line, and a continuous section after it
 //
-// Usage: npm run run-ts -- scripts/layout-probes/word-next-column.ts [output .docx]
+// Usage: npm run run-ts -- scripts/layout-probes/word-next-column.ts, which writes build/word-probes/word-next-column.docx
 import * as fs from "fs";
 import { Document, type ISectionOptions, Packer, Paragraph, SectionType, TextRun } from "docx";
 
@@ -57,4 +57,5 @@ const doc = new Document({
     sections,
 });
 
-Packer.toBuffer(doc).then((buffer) => fs.writeFileSync(process.argv[2] ?? "word-next-column.docx", buffer));
+fs.mkdirSync("build/word-probes", { recursive: true });
+Packer.toBuffer(doc).then((buffer) => fs.writeFileSync("build/word-probes/word-next-column.docx", buffer));
