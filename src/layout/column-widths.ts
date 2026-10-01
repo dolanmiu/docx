@@ -9,6 +9,9 @@ import type { Block, TableBlock, TableCell } from "./read-document";
 
 const sum = (values: readonly number[]): number => values.reduce((total, value) => total + value, 0);
 
+/** The largest of the values and the least given, without spreading them into `Math.max`, which takes too few for a long table */
+const largest = (values: readonly number[], least = 0): number => values.reduce((most, value) => Math.max(most, value), least);
+
 type Column = { readonly min: number; readonly width: number; readonly given: boolean };
 
 type Measure = (blocks: readonly Block[]) => ContentWidths;
@@ -42,13 +45,13 @@ const measureCells = (table: TableBlock, measure: Measure): ReadonlyMap<TableCel
 const sizeColumns = (table: TableBlock, content: ReadonlyMap<TableCell, ContentWidths>): Sizing => {
     const cells = table.rows.flatMap((row) => row.cells);
     const spanOf = (cell: TableCell): number => cell.span ?? 1;
-    const count = Math.max(0, ...cells.map((cell) => cell.column + spanOf(cell)));
+    const count = largest(cells.map((cell) => cell.column + spanOf(cell)));
     const columns = Array.from({ length: count }, (_, column): Column => {
         const inColumn = cells.filter((cell) => cell.column === column && spanOf(cell) === 1);
         const widths = inColumn.map((cell) => content.get(cell)!);
-        const min = Math.max(0, ...widths.map((cell) => cell.min));
+        const min = largest(widths.map((cell) => cell.min));
         const own = inColumn.flatMap(({ ownWidth }) => (ownWidth === undefined ? [] : [ownWidth]));
-        const width = own.length > 0 ? Math.max(min, ...own) : Math.max(min, ...widths.map((cell) => cell.max));
+        const width = largest(own.length > 0 ? own : widths.map((cell) => cell.max), min);
         return { min, width, given: own.length > 0 };
     });
     return cells
@@ -189,7 +192,6 @@ export const tableWidths = (table: TableBlock, measure: Measure): ContentWidths 
         const { columns } = sizeColumns(table, measureCells(table, measure));
         return { min: sum(columns.map(({ min }) => min)) + borders, max: sum(columns.map((column) => column.width)) + borders };
     }
-    const width =
-        fit?.width ?? Math.max(0, ...rows.map(({ cells }) => sum(cells.map((cell) => cell.width + cell.marginLeft + cell.marginRight))));
+    const width = fit?.width ?? largest(rows.map(({ cells }) => sum(cells.map((cell) => cell.width + cell.marginLeft + cell.marginRight))));
     return { min: width + borders, max: width + borders };
 };

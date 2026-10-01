@@ -184,6 +184,12 @@ describe("fitColumns", () => {
         });
     });
 
+    it("should size a table of more cells than a function takes arguments", () => {
+        // 40,000 rows of 3 cells, each column's widest the same in every row
+        const tall = table(Array.from({ length: 40000 }, () => [cell(0, "a", 30), cell(1, "bb"), cell(2, "ccc")]));
+        expect(widthsOf(fitColumns(tall, 200, measure), 39999)).to.deep.equal([20, 20, 30]);
+    });
+
     it("should leave a table whose columns aren't sized to their text as it is", () => {
         const fixed: TableBlock = { ...table([[cell(0, "a")]]), fit: undefined };
         expect(fitColumns(fixed, 200, measure)).to.equal(fixed);
