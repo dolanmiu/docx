@@ -833,6 +833,10 @@ export const paginate = (
         if (unsupported) {
             throw new Unsupported(unsupported);
         }
+        if (columns?.some((columnWidth) => columnWidth !== columns[0])) {
+            // Word has only been seen to lay out footnotes in columns of the same width
+            stopOnPage("footnotes in columns of different widths");
+        }
         const width = columns?.[0] ?? textWidth();
         const parts = stackParts(stack, width);
         if (columns !== undefined) {

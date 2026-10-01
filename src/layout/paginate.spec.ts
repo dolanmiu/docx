@@ -1944,6 +1944,11 @@ describe("paginate", () => {
                 expect(paginate(short, { measurer: MEASURER }).stoppedAt).to.equal(reason);
             });
 
+            it("should stop at footnotes in columns of different widths, which Word hasn't been seen to lay out", () => {
+                const content = inSections([noted(paragraph("a", 1), "footnote 1")], ONE_LINE, [{ ...SECTION, columns: [80, 40] }]);
+                expect(paginate(content, { measurer: MEASURER }).stoppedAt).to.equal("footnotes in columns of different widths");
+            });
+
             it("should stop at a footnote in a section that starts in the next column, below a longer column of the section before", () => {
                 const content = (before: number): DocumentContent =>
                     inSections(
