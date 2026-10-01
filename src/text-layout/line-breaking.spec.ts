@@ -160,6 +160,26 @@ describe("layoutLines", () => {
         expect(heightsOf([text("a".repeat(20))])).to.deep.equal([10, 10]);
     });
 
+    it("should break each line at its own width, when the lines are of different widths", () => {
+        const words = ["aaa", "bbb", "ccc", "ddd", "eee"].flatMap((word): readonly InlineItem[] => [
+            { type: "marker", name: word },
+            text(`${word} `),
+        ]);
+        const wordsOf = (width: number | ((line: number) => number)): readonly (readonly string[])[] =>
+            layoutLines(words, { width, measurer: MEASURER }).map(({ markers }) => markers);
+        // The first line is 40 points wide, and the rest 100, as in a paragraph that goes on into a wider column
+        expect(wordsOf((line) => (line === 0 ? 40 : 100))).to.deep.equal([["aaa"], ["bbb", "ccc"], ["ddd", "eee"]]);
+        expect(wordsOf(100)).to.deep.equal([["aaa", "bbb"], ["ccc", "ddd"], ["eee"]]);
+        // A word wider than a line is broken across lines as long as each is
+        const long = (width: (line: number) => number): number => layoutLines([text("a".repeat(25))], { width, measurer: MEASURER }).length;
+        expect(long((line) => (line === 0 ? 100 : 50))).to.equal(4);
+        expect(long(() => 100)).to.equal(3);
+        // A tab with no stop left on its line moves to one on the next line only when the next line is long enough for it
+        const tabbed = [text("aaaaaaaaa"), { type: "tab", font: {} } as const, text("b")];
+        expect(layoutLines(tabbed, { width: (line) => (line === 0 ? 100 : 30), measurer: MEASURER })).to.have.length(1);
+        expect(layoutLines(tabbed, { width: 100, measurer: MEASURER })).to.have.length(2);
+    });
+
     it("should lay out pictures in the line, and wrap them as a word", () => {
         expect(heightsOf([text("aaaa "), { type: "box", width: 30, height: 50 }, text(" bbbb")])).to.deep.equal([50, 10]);
         expect(heightsOf([text("aaaaaaaa "), { type: "box", width: 30, height: 50 }])).to.deep.equal([10, 50]);

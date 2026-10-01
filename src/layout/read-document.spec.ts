@@ -825,12 +825,11 @@ describe("readDocument", () => {
             expect(section().sections[0].columns).to.deep.equal([468]);
         });
 
-        it("should mark sections with columns of different widths, a line grid, chapter numbers or text down the page as unsupported", () => {
+        it("should mark sections with a line grid, chapter numbers or text down the page as unsupported, but not columns of different widths", () => {
             const given = (...widths: readonly number[]): object => ({
                 "w:cols": [{ _attr: { "w:equalWidth": 0 } }, ...widths.map((width) => ({ "w:col": { _attr: { "w:w": width } } }))],
             });
-            expect(section(given(4000, 3000)).sections[0].unsupported).to.equal("columns of different widths");
-            expect(section(given(4000, 4000)).sections[0].unsupported).to.equal(undefined);
+            expect(section(given(4000, 3000)).sections[0].unsupported).to.equal(undefined);
             expect(section({ "w:docGrid": { _attr: { "w:type": "lines" } } }).sections[0].unsupported).to.equal("a document grid");
             expect(section({ "w:pgNumType": { _attr: { "w:chapStyle": 1 } } }).sections[0].unsupported).to.equal(
                 "page numbers in a format not yet written",

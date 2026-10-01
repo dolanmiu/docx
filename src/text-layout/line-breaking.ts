@@ -52,8 +52,12 @@ export type TabStop = {
  * How a paragraph's lines are laid out.
  */
 export type LineLayoutOptions = {
-    /** The width of the text, in points: the page's, or a table cell's, less their margins */
-    readonly width: number;
+    /**
+     * The width of the text, in points: the page's, a column's, or a table cell's, less their margins. Or the width of
+     * each line, from its index in the paragraph, for lines of different widths, such as those of a paragraph that goes on
+     * into a column of another width
+     */
+    readonly width: number | ((line: number) => number);
     readonly format?: ParagraphFormat;
     readonly tabStops?: readonly TabStop[];
     /** The distance between the document's default tab stops, in points. Default is half an inch */
@@ -333,7 +337,6 @@ export const layoutLines = (
     { width, format = {}, tabStops = [], defaultTabStop = DEFAULT_TAB_STOP, markFont = {}, measurer = DEFAULT_MEASURER }: LineLayoutOptions,
 ): readonly LaidOutLine[] => {
     const { indentLeft = 0, indentRight = 0, firstLineIndent = 0, lineSpacing } = format;
-    const limit = width - indentRight;
     const markHeight = measurer.measureLineHeight(markFont);
     const { stops, firstLineStops } = stopsOf(tabStops, format);
     const parts = segmentsOf(items);
@@ -346,6 +349,8 @@ export const layoutLines = (
 
     // eslint-disable-next-line functional/prefer-readonly-type
     const lines: LaidOutLine[] = [];
+    /** Where a line ends, from its index: where the line being filled ends, unless another is given */
+    const limitOf = (line = lines.length): number => (typeof width === "number" ? width : width(line)) - indentRight;
     let first = true;
     for (const [segmentIndex, { tokens, end }] of segments.entries()) {
         const isLast = segmentIndex === segments.length - 1;
@@ -388,8 +393,8 @@ export const layoutLines = (
             if (token.type === "tab") {
                 const height = measurer.measureLineHeight(token.font);
                 const stop =
-                    nextStop(line.position, line.first ? firstLineStops : stops, defaultTabStop, limit) ??
-                    (line.started ? nextStop(indentLeft, stops, defaultTabStop, limit) : undefined);
+                    nextStop(line.position, line.first ? firstLineStops : stops, defaultTabStop, limitOf()) ??
+                    (line.started ? nextStop(indentLeft, stops, defaultTabStop, limitOf(lines.length + 1)) : undefined);
                 if (stop === undefined) {
                     // No stop before the end of the line: the text after the tab starts where it is
                     line = { ...line, natural: Math.max(line.natural, height), started: true };
@@ -413,22 +418,17 @@ export const layoutLines = (
             const tokenWidth = token.type === "box" ? token.width : widthOf(token.pieces, measurer);
             const tokenHeight =
                 token.type === "box" ? token.height : Math.max(...token.pieces.map(({ font }) => measurer.measureLineHeight(font)));
-            if (line.started && line.position + tokenWidth > limit + TOLERANCE) {
+            if (line.started && line.position + tokenWidth > limitOf() + TOLERANCE) {
                 line = wrap(line);
             }
             line = place(line);
-            if (token.type === "word" && line.position + tokenWidth > limit + TOLERANCE && limit - indentLeft > 0) {
-                // A word wider than a line is broken across as many lines as it needs
-                const room = limit - indentLeft;
-                const full = Math.floor((line.position - indentLeft + tokenWidth) / room - TOLERANCE);
-                for (let count = 0; count < full; count++) {
-                    line = wrap({ ...line, natural: Math.max(line.natural, tokenHeight), started: true });
-                }
-                line = { ...line, position: indentLeft + ((line.position - indentLeft + tokenWidth) % room || room) };
-            } else {
-                line = { ...line, position: line.position + tokenWidth };
+            // A word wider than a line is broken across as many lines as it needs, each as long as it is
+            let rest = tokenWidth;
+            while (token.type === "word" && line.position + rest > limitOf() + TOLERANCE && limitOf() - indentLeft > 0) {
+                rest -= limitOf() - line.position;
+                line = wrap({ ...line, natural: Math.max(line.natural, tokenHeight), started: true });
             }
-            line = { ...line, natural: Math.max(line.natural, tokenHeight), started: true };
+            line = { ...line, position: line.position + rest, natural: Math.max(line.natural, tokenHeight), started: true };
         }
 
         if (!end) {
