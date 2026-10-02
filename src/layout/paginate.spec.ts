@@ -1278,18 +1278,27 @@ describe("paginate", () => {
                 expect(pagesOf(document([paragraph("a", 4), beforeWhole]))).to.deep.include({ kept: "2", whole: "2" });
             });
 
-            it("should count an empty cell, and a table in a cell, whole among the first lines of a row kept with", () => {
+            it("should count an empty cell, and a table in a cell's first row, among the first lines of a row kept with", () => {
                 const kept = row([[paragraph("kept", 1, { keepNext: true })]]);
                 const emptyBeside = (lines: number): TableRow => {
                     const laid = row([[{ ...paragraph("empty", 0), items: [] }], [paragraph("tall", lines)]]);
                     return { ...laid, cells: [{ ...laid.cells[0], hideMark: true }, laid.cells[1]] };
                 };
                 expect(pagesOf(document([paragraph("a", 4), table([kept, emptyBeside(4)])]))).to.deep.include({ kept: "1", tall: "1" });
-                // A table in a cell, which goes on the page whole with the first lines of the cell beside it
+                // A table in a cell breaks as its rows do, so the least of it is its first row's first lines: a row of a line
+                // that can't break, or the first 2 of 4 lines
                 const nested = row([[table([row([[paragraph("inner", 1)]])])], [paragraph("tall", 4)]]);
-                expect(paginate(document([paragraph("a", 4), table([kept, nested])]), { measurer: MEASURER }).stoppedAt).to.equal(
-                    "a table in a table row across pages",
-                );
+                expect(pagesOf(document([paragraph("a", 4), table([kept, nested])]))).to.deep.include({ kept: "1", inner: "1", tall: "1" });
+                const breaking = row([[table([row([[endMarked("inner", 4)]]), row([[paragraph("next", 1)]])])]]);
+                expect(pagesOf(document([paragraph("a", 4), table([kept, breaking])]))).to.deep.include({
+                    kept: "1",
+                    inner: "1",
+                    innerEnd: "2",
+                    next: "2",
+                });
+                // A table without rows has none
+                const empty = row([[table([]), paragraph("tall", 4, { widowControl: false })]]);
+                expect(pagesOf(document([paragraph("a", 5), table([kept, empty])]))).to.deep.include({ kept: "1", tall: "1" });
             });
 
             it("should count the largest margins of the next row's cells among its first lines, as the row has them", () => {
@@ -1541,20 +1550,183 @@ describe("paginate", () => {
             });
         });
 
-        it("should stop at a row that breaks across pages with a table in it, or in a cell merged down to it", () => {
-            const stoppedAt = (rows: readonly TableRow[], before = 5): string | undefined =>
-                paginate(document([paragraph("a", before), table(rows)]), { measurer: MEASURER }).stoppedAt;
-            expect(stoppedAt([row([[paragraph("beside", 4)], [table([row([[paragraph("inner", 1)]])])]])])).to.equal(
-                "a table in a table row across pages",
-            );
-            // A table in a cell of a row that moves to the next page whole is laid out there
-            expect(stoppedAt([row([[table([row([[paragraph("inner", 3)]])])]])])).to.equal(undefined);
-            // The cell's text goes down to the second row, which breaks across pages
-            const inMerge = [
-                mergedRow(merged("restart", [paragraph("merged", 3), table([row([[paragraph("inner", 1)]])])]), [[paragraph("r1", 1)]]),
-                mergedRow(merged("continue"), [[paragraph("r2", 1)]]),
-            ];
-            expect(stoppedAt(inMerge, 4)).to.equal("a table in a table row across pages");
+        describe("a table in a cell", () => {
+            /** A table of one-line rows, each bookmarked with its name and number */
+            const oneLineRows = (name: string, count: number, changes: Partial<TableRow> = {}): TableBlock =>
+                table(Array.from({ length: count }, (_, index) => row([[paragraph(`${name}${index + 1}`, 1)]], changes)));
+            /** The table, in the cell of a row with a line above it and a line below, after lines of a paragraph */
+            const inCell = (before: number, inner: TableBlock, beside: readonly Block[] = []): DocumentContent =>
+                document([
+                    paragraph("a", before),
+                    table([row([[paragraph("before", 1), inner, paragraph("after", 1)], ...(beside.length > 0 ? [beside] : [])])]),
+                    paragraph("b", 1),
+                ]);
+            const stoppedAt = (content: DocumentContent): string | undefined => paginate(content, { measurer: MEASURER }).stoppedAt;
+
+            it("should break between its rows, as Word does", () => {
+                // As word-probes.docx's U4c: a line and a table of 6 one-line rows, from line 47 of 51, with 4 of them on the
+                // page, and the other 2 and the line after the table on the next. Here 3 from line 4 of 7
+                const content = inCell(3, oneLineRows("r", 6));
+                expect(stoppedAt(content)).to.equal(undefined);
+                expect(pagesOf(content)).to.deep.equal({
+                    a: "1",
+                    before: "1",
+                    r1: "1",
+                    r2: "1",
+                    r3: "1",
+                    r4: "2",
+                    r5: "2",
+                    r6: "2",
+                    after: "2",
+                    b: "2",
+                });
+                expect(
+                    paginate(content, { measurer: MEASURER }).pages.map(({ body }) => body.filter(({ type }) => type === "table")),
+                ).to.deep.equal([
+                    [{ type: "table", index: 1, rows: [{ index: 0, y: 40, height: 40 }] }],
+                    [{ type: "table", index: 1, rows: [{ index: 0, y: 10, height: 40 }] }],
+                ]);
+                // Beside a cell of 10 lines, which breaks after its 4th
+                const beside = inCell(3, oneLineRows("r", 6), [endMarked("beside", 10)]);
+                expect(pagesOf(beside)).to.deep.include({ r3: "1", r4: "2", beside: "1", besideEnd: "2", b: "2" });
+            });
+
+            it("should break in its rows between their lines, keeping to widow control, as Word does", () => {
+                // As word-probes.docx's U4d: a line and a table of a row of 4 lines, from line 49 of 51, with 2 of them on the
+                // page and 2 on the next. Here from line 5 of 7
+                const inner = (format: ParagraphFormat = {}): TableBlock =>
+                    table([row([[withItems(paragraph("inner", 4, format), [{ type: "marker", name: "innerEnd" }])]])]);
+                expect(pagesOf(inCell(4, inner()))).to.deep.equal({ a: "1", before: "1", inner: "1", innerEnd: "2", after: "2", b: "2" });
+                // From line 6, where widow control holds back the row's first line, the table goes to the next page whole
+                expect(pagesOf(inCell(5, inner()))).to.deep.include({ before: "1", inner: "2", innerEnd: "2" });
+                expect(pagesOf(inCell(5, inner({ widowControl: false })))).to.deep.include({ before: "1", inner: "1", innerEnd: "2" });
+                // A row whose cell of 3 lines can't keep 2 of them on the page, beside one of 4 that can, moves to the next
+                // page whole, as a row of the body does (word-rules2.docx Q3c)
+                const beside = table([row([[paragraph("left", 4)], [paragraph("right", 3)]])]);
+                expect(pagesOf(inCell(4, beside))).to.deep.include({ before: "1", left: "2", right: "2" });
+                expect(pagesOf(inCell(4, table([row([[paragraph("left", 4)], [paragraph("right", 4)]])])))).to.deep.include({
+                    before: "1",
+                    left: "1",
+                    right: "1",
+                });
+            });
+
+            it("should move a row of it kept whole, or whose set height doesn't fit, to the next page whole, as a row of the body", () => {
+                // 2 lines of room below its first row
+                const second = (changes: Partial<TableRow>, lines = 4): TableBlock =>
+                    table([row([[paragraph("first", 1)]]), row([[paragraph("second", lines)]], changes)]);
+                expect(pagesOf(inCell(3, second({})))).to.deep.include({ first: "1", second: "1" });
+                expect(pagesOf(inCell(3, second({ cantSplit: true })))).to.deep.include({ first: "1", second: "2" });
+                expect(pagesOf(inCell(3, second({ height: { value: 40, rule: "exact" } })))).to.deep.include({ first: "1", second: "2" });
+                expect(pagesOf(inCell(3, second({ height: { value: 40, rule: "atLeast" } }, 2)))).to.deep.include({
+                    first: "1",
+                    second: "2",
+                });
+                expect(pagesOf(inCell(3, second({ height: { value: 15, rule: "atLeast" } })))).to.deep.include({ first: "1", second: "1" });
+            });
+
+            it("should break a table in a cell of a table in a cell, and a table after the cell's first lines", () => {
+                const content = inCell(3, table([row([[oneLineRows("r", 6)]])]));
+                expect(stoppedAt(content)).to.equal(undefined);
+                expect(pagesOf(content)).to.deep.include({ before: "1", r3: "1", r4: "2", after: "2" });
+                // The space after the paragraph above the table is kept above it
+                const withSpace = document([
+                    paragraph("a", 2),
+                    table([row([[paragraph("before", 1, { spaceAfter: 10 }), oneLineRows("r", 6)]])]),
+                ]);
+                expect(pagesOf(withSpace)).to.deep.include({ before: "1", r3: "1", r4: "2" });
+                // A table with no rows takes no room
+                expect(pagesOf(inCell(3, table([]), [paragraph("beside", 6)]))).to.deep.include({ before: "1", after: "1", beside: "1" });
+            });
+
+            it("should break it with its borders and its cells' margins as Word does", () => {
+                /** The table after a line and a line with this much space after it, which leaves `50 - after` points for it */
+                const after = (space: number, inner: TableBlock): DocumentContent =>
+                    document([
+                        paragraph("a", 1),
+                        table([row([[paragraph("before", 1, { spaceAfter: space }), inner, paragraph("after", 1)]])]),
+                        paragraph("b", 1),
+                    ]);
+                /** Rows with a border of 1 point above the first, between them and below the last, and below the last on a page */
+                const bordered = (rows: readonly TableRow[], [top, between, bottom, breakBorder]: readonly number[]): TableBlock =>
+                    table(
+                        rows.map((laid, index) => ({
+                            ...laid,
+                            borderTop: index === 0 ? top : between,
+                            borderBottom: index === rows.length - 1 ? bottom : 0,
+                            breakBorder,
+                        })),
+                    );
+                const ones = oneLineRows("r", 6).rows;
+                // As word-nested-tables.docx N1a: the border below the last row on the page takes room there, so with room for 3
+                // rows and their borders above them, 2 go on it
+                expect(pagesOf(after(17, bordered(ones, [1, 1, 1, 1])))).to.deep.include({ r2: "1", r3: "2" });
+                // N1b: the border below them is the table's bottom border, here none
+                expect(pagesOf(after(17, bordered(ones, [1, 1, 0, 0])))).to.deep.include({ r3: "1", r4: "2" });
+                // N1c: without borders between the rows, 3 fit, and the rest go on below the table's top border
+                const noneBetween = after(17, bordered(ones, [1, 0, 1, 1]));
+                expect(pagesOf(noneBetween)).to.deep.include({ r3: "1", r4: "2" });
+                const [, second] = paginate(noneBetween, { measurer: MEASURER }).pages;
+                // The top border, 3 rows, the bottom border and the line after the table
+                expect(second.body[0]).to.deep.equal({ type: "table", index: 1, rows: [{ index: 0, y: 10, height: 42 }] });
+                // N2: a row of one-line paragraphs breaks with the border below it on the page, where 3 of them fit without
+                const lined = (count: number): readonly ParagraphBlock[] =>
+                    Array.from({ length: count }, (_, index) => paragraph(`m${index + 1}`, 1));
+                const middle = [row([[paragraph("r1", 1)]]), row([lined(6)]), row([[paragraph("r3", 1)]])];
+                expect(pagesOf(after(8, bordered(middle, [1, 1, 1, 1])))).to.deep.include({ r1: "1", m2: "1", m3: "2", r3: "2" });
+                expect(pagesOf(after(8, bordered(middle, [0, 0, 0, 0])))).to.deep.include({ m3: "1", m4: "2" });
+                // N3: a row breaks with its cells' margins above and below its lines on each page, where 3 fit without the one
+                // below
+                const margined = row([lined(6)]);
+                const withMargins = table([{ ...margined, cells: [{ ...margined.cells[0], marginTop: 1, marginBottom: 1 }] }]);
+                expect(pagesOf(after(19, withMargins))).to.deep.include({ m2: "1", m3: "2" });
+            });
+
+            it("should stop where it breaks with what Word's breaking of isn't known", () => {
+                const headed = table([row([[paragraph("h", 1)]], { header: true }), ...oneLineRows("r", 6).rows]);
+                expect(stoppedAt(inCell(3, headed))).to.equal("a header row of a table in a table cell across pages");
+                // It goes on the next page whole when none of it is on the page
+                expect(stoppedAt(inCell(6, headed))).to.equal(undefined);
+                expect(pagesOf(inCell(6, headed))).to.deep.include({ before: "1", h: "2", r6: "2" });
+                // In a table in a cell of it
+                expect(stoppedAt(inCell(3, table([row([[headed]])])))).to.equal("a header row of a table in a table cell across pages");
+                const mergedDown = table([
+                    mergedRow(merged("restart", [paragraph("m", 1)]), [[paragraph("r1", 1)]]),
+                    ...Array.from({ length: 5 }, (_, index) => mergedRow(merged("continue"), [[paragraph(`r${index + 2}`, 1)]])),
+                ]);
+                expect(stoppedAt(inCell(3, mergedDown))).to.equal("a cell merged down the rows of a table in a table cell across pages");
+                expect(stoppedAt(inCell(3, { ...oneLineRows("r", 6), cellSpacing: 1 }))).to.equal(
+                    "a table with space between its cells in a table cell across pages",
+                );
+                const vertical = row([[paragraph("up", 2)], [paragraph("inner", 4)]]);
+                expect(
+                    stoppedAt(inCell(4, table([{ ...vertical, cells: [{ ...vertical.cells[0], vertical: true }, vertical.cells[1]] }]))),
+                ).to.equal("text that runs up or down a table cell across pages");
+            });
+
+            it("should stop at a footnote in a row with a table in a cell that breaks across pages, and at a table in a cell merged down rows", () => {
+                const noted = withItems(paragraph("beside", 6), [{ type: "marker", name: "note" }]);
+                const content = { ...inCell(3, oneLineRows("r", 6), [noted]), footnotes: new Map([["note", [paragraph("n", 1)]]]) };
+                expect(stoppedAt(content)).to.equal("a footnote in a table row with a table in a cell, across pages");
+                // The cell's text goes down to the second row, which breaks across pages
+                const inMerge = [
+                    mergedRow(merged("restart", [paragraph("merged", 3), table([row([[paragraph("inner", 1)]])])]), [[paragraph("r1", 1)]]),
+                    mergedRow(merged("continue"), [[paragraph("r2", 1)]]),
+                ];
+                expect(stoppedAt(document([paragraph("a", 4), table(inMerge)]))).to.equal(
+                    "a table in a cell merged down table rows across pages",
+                );
+                // A table in a cell of a row that moves to the next page whole is laid out there
+                expect(stoppedAt(document([paragraph("a", 5), table([row([[table([row([[paragraph("inner", 3)]])])]])])]))).to.equal(
+                    undefined,
+                );
+                // And one in a cell merged down rows that end on the page, with its bookmarks
+                const ending = [
+                    mergedRow(merged("restart", [table([row([[paragraph("inner", 1)]])])]), [[paragraph("r1", 1)]]),
+                    mergedRow(merged("continue"), [[paragraph("r2", 1)]]),
+                ];
+                expect(pagesOf(document([paragraph("a", 4), table(ending)]))).to.deep.include({ inner: "1", r2: "1" });
+            });
         });
 
         it("should break the text of a cell merged down rows with the row of them that breaks across pages, as Word does", () => {
@@ -4986,18 +5158,23 @@ describe("paginate", () => {
         });
 
         it("should leave out what is in columns being evened out when it stops there", () => {
-            // A row of 4 lines beside a table, which goes in the first of the columns until they are evened out to 2 lines,
-            // when it breaks across them and stops at the table in its first cell
+            // A row of 4 lines beside a table with a header row, which goes in the first of the columns until they are evened
+            // out to 2 lines, when it breaks across them and stops at the table in its first cell
+            const headed = table([
+                row([[paragraph("inner", 1)]], { header: true }),
+                row([[paragraph("r2", 1)]]),
+                row([[paragraph("r3", 1)]]),
+            ]);
             const content = document(
                 [
                     [paragraph("a", 1), 0],
-                    [table([row([[table([row([[paragraph("inner", 1)]])])], [short("cell", 8)]])]), 1],
+                    [table([row([[headed], [short("cell", 8)]])]), 1],
                     [paragraph("b", 1), 2],
                 ],
                 { sections: [SECTION, { ...SECTION, start: "continuous", columns: [35, 35] }, { ...SECTION, start: "continuous" }] },
             );
             const { pages, stoppedAt } = paginate(content, { measurer: MEASURER });
-            expect(stoppedAt).to.equal("a table in a table row across pages");
+            expect(stoppedAt).to.equal("a header row of a table in a table cell across pages");
             expect(pages).to.have.length(1);
             expect(pages[0].body.map(({ type, index }) => [type, index])).to.deep.equal([["paragraph", 0]]);
         });
