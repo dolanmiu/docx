@@ -17,9 +17,10 @@
 <div class="tsd-signature tsd-anchor-link" id="fillpagenumbers"><span class="tsd-kind-call-signature">fillPageNumbers</span><span class="tsd-signature-symbol">(</span><br/>    <span class="tsd-kind-parameter">body</span><span class="tsd-signature-symbol">:</span> <a href="../interfaces/index.IXmlableObject.html" class="tsd-signature-type tsd-kind-interface">IXmlableObject</a><span class="tsd-signature-symbol">,</span><br/>    <span class="tsd-kind-parameter">context</span><span class="tsd-signature-symbol">:</span> <a href="../types/index.IContext.html" class="tsd-signature-type tsd-kind-type-alias">IContext</a><span class="tsd-signature-symbol">,</span><br/>    <span class="tsd-kind-parameter">estimator</span><span class="tsd-signature-symbol">:</span> <a href="../types/index.PageNumberEstimator.html" class="tsd-signature-type tsd-kind-type-alias">PageNumberEstimator</a><span class="tsd-signature-symbol">,</span><br/><span class="tsd-signature-symbol">)</span><span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">void</span><a href="#fillpagenumbers" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="../assets/icons.svg#icon-anchor"></use></svg></a></div>
 <div class="tsd-description">
 <div class="tsd-comment tsd-typography"><p>Writes the page numbers the estimator works out into the fields of a formatted body that show them: the PAGEREF fields
-in its tables of contents and elsewhere, and its NUMPAGES and SECTIONPAGES fields. A field whose number the estimator
-didn't work out is left as it is. Page references and tables of contents are written clean, whether or not their
-numbers were worked out. The estimate is kept for the document's headers and footers.</p>
+in its tables of contents and elsewhere, those with <code>\p</code> and in number formats of their own, and its NUMPAGES and
+SECTIONPAGES fields. A field whose number the estimator didn't work out is left as it is. Page references and tables
+of contents are written clean, whether or not their numbers were worked out. The estimate is kept for the document's
+headers and footers.</p>
 </div>
 <div class="tsd-parameters">
 <h4 class="tsd-parameters-title">Parameters</h4>
@@ -29,7 +30,7 @@ numbers were worked out. The estimate is kept for the document's headers and foo
 <li><span><span class="tsd-kind-parameter">estimator</span>: <a href="../types/index.PageNumberEstimator.html" class="tsd-signature-type tsd-kind-type-alias">PageNumberEstimator</a></span></li></ul></div>
 <h4 class="tsd-returns-title">Returns <span class="tsd-signature-type">void</span></h4><aside class="tsd-sources">
 <ul>
-<li>Defined in <a href="https://github.com/dolanmiu/docx/blob/f5e5d35d1f8a094df5db7012ac8a1dac3da1d0b9/src/file/document/body/page-numbers.ts#L134">file/document/body/page-numbers.ts:134</a></li></ul></aside></div></li></ul></section></div>
+<li>Defined in <a href="https://github.com/dolanmiu/docx/blob/96dad6048de0656d3b34d7b54c6e602af309afbe/src/file/document/body/page-numbers.ts#L148">file/document/body/page-numbers.ts:148</a></li></ul></aside></div></li></ul></section></div>
 <div class="col-sidebar">
 <div class="page-menu">
 <div class="tsd-navigation settings">

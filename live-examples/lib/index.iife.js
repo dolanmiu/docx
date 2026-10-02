@@ -16396,32 +16396,158 @@ EXTERNAL: "External" };
 		}
 	};
 	//#endregion
-	//#region src/file/document/body/page-number-fields.ts
-	var PLAIN_FORMATS$1 = /* @__PURE__ */ new Set([
+	//#region src/file/document/body/field-number-formats.ts
+	var LARGEST_ROMAN = 32767;
+	var LARGEST_LETTERS = 780;
+	var ROMAN = [
+		[1e3, "M"],
+		[900, "CM"],
+		[500, "D"],
+		[400, "CD"],
+		[100, "C"],
+		[90, "XC"],
+		[50, "L"],
+		[40, "XL"],
+		[10, "X"],
+		[9, "IX"],
+		[5, "V"],
+		[4, "IV"],
+		[1, "I"]
+	];
+	var roman = (value) => value <= LARGEST_ROMAN ? ROMAN.reduce(({ rest, text }, [amount, numeral]) => ({
+		rest: rest % amount,
+		text: text + numeral.repeat(Math.floor(rest / amount))
+	}), {
+		rest: value,
+		text: ""
+	}).text : void 0;
+	var letters = (value) => value === 0 ? "" : value <= LARGEST_LETTERS ? String.fromCharCode(65 + (value - 1) % 26).repeat(Math.ceil(value / 26)) : void 0;
+	var ordinal = (value) => {
+		var _ref;
+		return `${value}${value % 100 >= 11 && value % 100 <= 13 ? "th" : (_ref = [
+			"th",
+			"st",
+			"nd",
+			"rd"
+		][value % 10]) !== null && _ref !== void 0 ? _ref : "th"}`;
+	};
+	/**
+	* The number formats of a field's `\*` switch that are written as Word writes them, by their names in any capitals.
+	* Word writes roman numerals and letters in small letters when the name starts with a small letter, as `roman`, and in
+	* capitals otherwise, as `Roman` and `ROMAN`
+	*/
+	var numberWriterOf = (format) => {
+		const small = format.charAt(0) !== format.charAt(0).toUpperCase();
+		const inCase = (write) => (value) => {
+			var _write;
+			return small ? (_write = write(value)) === null || _write === void 0 ? void 0 : _write.toLowerCase() : write(value);
+		};
+		switch (format.toLowerCase()) {
+			case "arabic": return String;
+			case "roman": return inCase(roman);
+			case "alphabetic": return inCase(letters);
+			case "ordinal": return (value) => value > 0 ? ordinal(value) : void 0;
+			case "arabicdash": return (value) => `- ${value} -`;
+			default: return;
+		}
+	};
+	var PLAIN_FORMATS = /* @__PURE__ */ new Set([
 		"mergeformat",
 		"charformat",
 		"mergeformatinet"
 	]);
-	/** Whether a field's switches give its number a format of its own, such as `\* roman`, or a picture, such as `\# "00"` */
-	var hasOwnFormat = (switches) => {
-		const formats = [...switches.matchAll(/\\\*\s*"?([^\s"\\]+)/g)].map(([, format]) => format.toLowerCase());
-		return /\\#/.test(switches) || formats.some((format) => !PLAIN_FORMATS$1.has(format));
+	var CASE_FORMATS = /* @__PURE__ */ new Set([
+		"upper",
+		"lower",
+		"firstcap",
+		"caps"
+	]);
+	/**
+	* Whether Word's text for a picture of a field's `\#` switch is known: one of digits (`0`), digits only where the number
+	* has them (`#`) and commas between thousands, as Word wrote `00`, `000`, `0`, `#` and `#,##0` for page numbers
+	* (`scripts/layout-probes/word-page-fields.ts` PF5 to PF7)
+	*/
+	var isNumberPicture = (picture) => /^[#0,]*[#0][#0,]*$/.test(picture);
+	/**
+	* A number with a picture: with as many digits as it has `0`s at least, which Word fills with 0s (5 is 05 with `00`), and
+	* its thousands between commas when it has one (1234 is 1,234 with `#,##0`). Undefined where a `#` has no digit of the
+	* number, which Word writes as a space, not yet seen
+	*/
+	var inNumberPicture = (value, picture) => {
+		const zeros = [...picture].filter((character) => character === "0").length;
+		const places = zeros + [...picture].filter((character) => character === "#").length;
+		const digits = String(value).padStart(zeros, "0");
+		if (digits.length < places || zeros === 0 && value === 0) return;
+		return picture.includes(",") ? digits.replace(/\B(?=(\d{3})+$)/g, ",") : digits;
 	};
 	/**
-	* The bookmark a PAGEREF field refers to, unless the field shows something other than the page's number: its
-	* position relative to the bookmark (`\p`), or the number in a format of its own (`\* roman`).
+	* Text in the capitals of a field's switch, applied after its number's format, as Word wrote `\* roman \* Upper` as V,
+	* `\* Ordinal \* Upper` as 5TH, and "above" with `\* Upper` as ABOVE (`word-page-fields.ts` PF3 and PF5)
 	*/
-	var bookmarkOf = (instruction) => {
-		const match = /^\s*PAGEREF\s+("?)([^\s"\\]+)\1(.*)$/i.exec(instruction);
-		if (!match) return;
-		const [, , bookmark, switches] = match;
-		return /\\p\b/i.test(switches) || hasOwnFormat(switches) ? void 0 : bookmark;
+	var inCapitals = (text, capitals) => {
+		switch (capitals) {
+			case "upper": return text.toUpperCase();
+			case "lower": return text.toLowerCase();
+			case "firstcap": return text.charAt(0).toUpperCase() + text.slice(1);
+			default: return text;
+		}
 	};
-	/** The number of pages a NUMPAGES or SECTIONPAGES field shows, unless it writes it in a format of its own */
-	var pageCountOf = (instruction) => {
-		const match = /^\s*(NUMPAGES|SECTIONPAGES)\b(.*)$/i.exec(instruction);
-		if (!match || hasOwnFormat(match[2])) return;
-		return match[1].toUpperCase() === "NUMPAGES" ? "document" : "section";
+	//#endregion
+	//#region src/file/document/body/page-number-fields.ts
+	/**
+	* Writes estimated page numbers into the fields of a tree of elements that show them: those docx formats to write a
+	* document, and those `patchDocument` parses from a template. Not part of the public API.
+	*
+	* A page reference is a PAGEREF field, and the numbers of pages of the document and of a section are NUMPAGES and
+	* SECTIONPAGES fields. Each field's result is written just after its `separate` field character, and any result it had
+	* is taken out.
+	*
+	* @module
+	*/
+	/** Reads a field that shows a page's number or a number of pages, or undefined for another field */
+	var numberFieldOf = (instruction) => {
+		var _match;
+		const field = new RegExp("^\\s*(PAGEREF|NUMPAGES|SECTIONPAGES)\\b(.*)$", "is").exec(instruction);
+		const reference = (field === null || field === void 0 ? void 0 : field[1].toUpperCase()) === "PAGEREF" ? new RegExp("^\\s*(\"?)([^\\s\"\\\\]+)\\1(.*)$", "s").exec(field[2]) : void 0;
+		if (!field || field[1].toUpperCase() === "PAGEREF" && !reference) return;
+		const parts = (_match = (reference ? reference[3] : field[2]).match(/"[^"]*"|\S+/g)) !== null && _match !== void 0 ? _match : [];
+		let numberFormat;
+		let picture;
+		const capitals = [];
+		let relative = false;
+		let written = true;
+		for (let index = 0; index < parts.length; index++) {
+			const part = parts[index];
+			const argument = () => {
+				var _parts$index;
+				return (part.length > 2 ? part.slice(2) : (_parts$index = parts[++index]) !== null && _parts$index !== void 0 ? _parts$index : "").replace(/^"(.*)"$/, "$1");
+			};
+			if (/^\\p$/i.test(part)) relative = true;
+			else if (part.startsWith("\\#")) {
+				var _picture;
+				const value = argument();
+				written && (written = picture === void 0 && isNumberPicture(value));
+				(_picture = picture) !== null && _picture !== void 0 || (picture = value);
+			} else if (part.startsWith("\\*")) {
+				const name = argument();
+				const lower = name.toLowerCase();
+				if (CASE_FORMATS.has(lower)) capitals.push(lower);
+				else if (name !== "" && !PLAIN_FORMATS.has(lower)) {
+					var _numberFormat;
+					written && (written = numberFormat === void 0 && numberWriterOf(name) !== void 0);
+					(_numberFormat = numberFormat) !== null && _numberFormat !== void 0 || (numberFormat = name);
+				}
+			}
+		}
+		const own = _objectSpread2(_objectSpread2(_objectSpread2(_objectSpread2({}, numberFormat === void 0 ? {} : { numberFormat }), picture === void 0 ? {} : { picture }), capitals.length === 0 ? {} : { capitals: capitals[0] }), {}, { written: written && capitals.length <= 1 && capitals[0] !== "caps" && (numberFormat === void 0 || picture === void 0) });
+		return reference ? _objectSpread2({
+			type: "pageReference",
+			bookmark: reference[2],
+			relative
+		}, own) : _objectSpread2({
+			type: "pageCount",
+			scope: field[1].toUpperCase() === "NUMPAGES" ? "document" : "section"
+		}, own);
 	};
 	/**
 	* Whether a field is a table of contents that writes the number of a SEQ field before each page number (`\s`), such as
@@ -16433,19 +16559,29 @@ EXTERNAL: "External" };
 	* the estimate has no number for is left as it is, or made blank, and so is a page number in a table of contents that
 	* writes a SEQ field's number before it.
 	*/
-	var resultFrom = (instruction, { enclosing }, { bookmarks, pageCount }, { sectionPageCount, blank }) => {
-		const bookmark = bookmarkOf(instruction);
-		const count = bookmark === void 0 ? pageCountOf(instruction) : void 0;
-		if (bookmark === void 0 && count === void 0) return;
-		const value = bookmark !== void 0 ? enclosing.some(prefixesPageNumbers) ? void 0 : bookmarks.get(bookmark) : count === "document" ? pageCount : sectionPageCount;
-		return value === void 0 ? blank ? "" : void 0 : String(value);
+	var resultFrom = (instruction, { enclosing, within, inTextBox }, { estimate, sectionPageCount, blank, relativeTo }) => {
+		const field = numberFieldOf(instruction);
+		if (field === void 0) return;
+		const { bookmarks, pageCount, bookmarkPageNumbers } = estimate;
+		const { numberFormat, picture, capitals, written } = field;
+		const writesNumber = numberFormat !== void 0 || picture !== void 0;
+		/** A number in the field's format of its own, or as it is */
+		const inFormat = (value) => value === void 0 ? void 0 : picture === void 0 ? numberWriterOf(numberFormat !== null && numberFormat !== void 0 ? numberFormat : "arabic")(value) : inNumberPicture(value, picture);
+		const position = field.type === "pageReference" && field.relative && within === "counted" && !inTextBox ? relativeTo === null || relativeTo === void 0 ? void 0 : relativeTo(field.bookmark) : void 0;
+		let result;
+		if (!written) result = void 0;
+		else if (field.type === "pageCount") result = inFormat(field.scope === "document" ? pageCount : sectionPageCount);
+		else if (enclosing.some(prefixesPageNumbers)) result = void 0;
+		else if (writesNumber) result = inFormat(bookmarkPageNumbers === null || bookmarkPageNumbers === void 0 ? void 0 : bookmarkPageNumbers.get(field.bookmark));
+		else result = field.relative ? position : bookmarks.get(field.bookmark);
+		return result === void 0 ? blank ? "" : void 0 : inCapitals(result, capitals);
 	};
 	/** Where the content of an element is: in what an application that doesn't read Word's own shows, or in deleted text */
 	var placeIn = (name, within) => name === "mc:Fallback" || within === "fallback" ? "fallback" : name === "w:del" || name === "w:moveFrom" ? "deleted" : within;
 	/**
 	* Writes the results the filling works out into the fields in the elements, in order.
 	*/
-	var fillFields = (tree, elements, open, filling, within = "counted") => {
+	var fillFields = (tree, elements, open, filling, within = "counted", inTextBox = false) => {
 		for (let index = 0; index < elements.length; index++) {
 			const element = elements[index];
 			const name = tree.nameOf(element);
@@ -16463,7 +16599,8 @@ EXTERNAL: "External" };
 					current.inResult = true;
 					current.result = filling.resultOf(current.instruction, {
 						within,
-						enclosing: open.slice(0, -1).map((field) => field.instruction)
+						enclosing: open.slice(0, -1).map((field) => field.instruction),
+						inTextBox
 					});
 					if (current.result !== void 0) {
 						elements.splice(index + 1, 0, tree.textElement(current.result));
@@ -16477,11 +16614,12 @@ EXTERNAL: "External" };
 			} else if (name === "w:fldSimple") {
 				const result = filling.resultOf(String(tree.attributeOf(element, "w:instr")), {
 					within,
-					enclosing: open.map((field) => field.instruction)
+					enclosing: open.map((field) => field.instruction),
+					inTextBox
 				});
 				if (result === void 0) {
 					var _tree$contentOf;
-					fillFields(tree, (_tree$contentOf = tree.contentOf(element)) !== null && _tree$contentOf !== void 0 ? _tree$contentOf : [], [], filling, within);
+					fillFields(tree, (_tree$contentOf = tree.contentOf(element)) !== null && _tree$contentOf !== void 0 ? _tree$contentOf : [], [], filling, within, inTextBox);
 				} else tree.setSimpleFieldResult(element, result);
 			} else {
 				var _tree$contentOf2;
@@ -16489,7 +16627,7 @@ EXTERNAL: "External" };
 					var _filling$beforeParagr;
 					(_filling$beforeParagr = filling.beforeParagraph) === null || _filling$beforeParagr === void 0 || _filling$beforeParagr.call(filling, element);
 				}
-				fillFields(tree, (_tree$contentOf2 = tree.contentOf(element)) !== null && _tree$contentOf2 !== void 0 ? _tree$contentOf2 : [], open, filling, placeIn(name, within));
+				fillFields(tree, (_tree$contentOf2 = tree.contentOf(element)) !== null && _tree$contentOf2 !== void 0 ? _tree$contentOf2 : [], open, filling, placeIn(name, within), inTextBox || name === "w:txbxContent");
 				if (name === "w:p") filling.afterParagraph(element);
 			}
 		}
@@ -16538,12 +16676,21 @@ EXTERNAL: "External" };
 	* @returns The number of pages each header and footer shows in its SECTIONPAGES fields, by the id of the relationship to it
 	*/
 	var fillBodyFields = (tree, body, estimate, { blank }) => {
-		const { sectionPageCounts = [] } = estimate;
+		const { sectionPageCounts = [], relativePositions } = estimate;
 		let section = 0;
+		const relativeCounts = /* @__PURE__ */ new Map();
+		const relativeTo = (bookmark) => {
+			var _relativeCounts$get, _relativePositions$ge;
+			const count = (_relativeCounts$get = relativeCounts.get(bookmark)) !== null && _relativeCounts$get !== void 0 ? _relativeCounts$get : 0;
+			relativeCounts.set(bookmark, count + 1);
+			return relativePositions === null || relativePositions === void 0 || (_relativePositions$ge = relativePositions.get(bookmark)) === null || _relativePositions$ge === void 0 ? void 0 : _relativePositions$ge[count];
+		};
 		fillFields(tree, [body], [], {
-			resultOf: (instruction, place) => resultFrom(instruction, place, estimate, {
+			resultOf: (instruction, place) => resultFrom(instruction, place, {
+				estimate,
 				sectionPageCount: sectionPageCounts[section],
-				blank
+				blank,
+				relativeTo
 			}),
 			afterParagraph: (paragraph) => {
 				section += endsSection(tree, paragraph) ? 1 : 0;
@@ -16556,7 +16703,8 @@ EXTERNAL: "External" };
 	* SECTIONPAGES fields show, if it is known.
 	*/
 	var fillPartFields = (tree, part, estimate, { blank, sectionPageCount }) => fillFields(tree, [part], [], {
-		resultOf: (instruction, place) => resultFrom(instruction, place, estimate, {
+		resultOf: (instruction, place) => resultFrom(instruction, place, {
+			estimate,
 			sectionPageCount,
 			blank
 		}),
@@ -17034,71 +17182,6 @@ EXTERNAL: "External" };
 	*
 	* @module
 	*/
-	var LARGEST_ROMAN = 32767;
-	var LARGEST_LETTERS = 780;
-	var ROMAN = [
-		[1e3, "M"],
-		[900, "CM"],
-		[500, "D"],
-		[400, "CD"],
-		[100, "C"],
-		[90, "XC"],
-		[50, "L"],
-		[40, "XL"],
-		[10, "X"],
-		[9, "IX"],
-		[5, "V"],
-		[4, "IV"],
-		[1, "I"]
-	];
-	var roman = (value) => value <= LARGEST_ROMAN ? ROMAN.reduce(({ rest, text }, [amount, numeral]) => ({
-		rest: rest % amount,
-		text: text + numeral.repeat(Math.floor(rest / amount))
-	}), {
-		rest: value,
-		text: ""
-	}).text : void 0;
-	var letters = (value) => value === 0 ? "" : value <= LARGEST_LETTERS ? String.fromCharCode(65 + (value - 1) % 26).repeat(Math.ceil(value / 26)) : void 0;
-	var ordinal = (value) => {
-		var _ref;
-		return `${value}${value % 100 >= 11 && value % 100 <= 13 ? "th" : (_ref = [
-			"th",
-			"st",
-			"nd",
-			"rd"
-		][value % 10]) !== null && _ref !== void 0 ? _ref : "th"}`;
-	};
-	/**
-	* The number formats of a field's `\*` switch that are written as Word writes them, by their names in any capitals.
-	* Word writes roman numerals and letters in small letters when the name starts with a small letter, as `roman`, and in
-	* capitals otherwise, as `Roman` and `ROMAN`
-	*/
-	var writerOf = (format) => {
-		const small = format.charAt(0) !== format.charAt(0).toUpperCase();
-		const inCase = (write) => (value) => {
-			var _write;
-			return small ? (_write = write(value)) === null || _write === void 0 ? void 0 : _write.toLowerCase() : write(value);
-		};
-		switch (format.toLowerCase()) {
-			case "arabic": return String;
-			case "roman": return inCase(roman);
-			case "alphabetic": return inCase(letters);
-			case "ordinal": return (value) => value > 0 ? ordinal(value) : void 0;
-			case "arabicdash": return (value) => `- ${value} -`;
-			default: return;
-		}
-	};
-	var PLAIN_FORMATS = /* @__PURE__ */ new Set([
-		"mergeformat",
-		"charformat",
-		"mergeformatinet"
-	]);
-	var CASE_FORMATS = /* @__PURE__ */ new Set([
-		"upper",
-		"lower",
-		"firstcap",
-		"caps"
-	]);
 	var IDENTIFIER = new RegExp("^\\p{L}[\\p{L}\\p{N}_]*$", "u");
 	/** Reads the switches of a SEQ field, and a bookmark before them, or undefined when one of them isn't followed */
 	var sequenceOf = (switches) => {
@@ -17217,7 +17300,7 @@ EXTERNAL: "External" };
 				else if (level !== void 0) headingsAt[level] = paragraph;
 			},
 			numberOf: (instruction, place) => {
-				var _unknown, _counted$get2, _writerOf;
+				var _unknown, _counted$get2, _numberWriterOf;
 				const { identifier, sequence } = sequenceFieldOf(instruction);
 				if (identifier === void 0 || place === "fallback") return;
 				(_unknown = unknown) !== null && _unknown !== void 0 || (unknown = identifiersInCommentsOf(context));
@@ -17228,7 +17311,7 @@ EXTERNAL: "External" };
 				const value = (step === null || step === void 0 ? void 0 : step.type) === "reset" ? step.to : (step === null || step === void 0 ? void 0 : step.type) === "repeat" ? before : (step === null || step === void 0 ? void 0 : step.type) === "heading" ? afterHeading(key, step.level) : (step === null || step === void 0 ? void 0 : step.type) === "next" && before !== void 0 ? before + 1 : void 0;
 				numbers.set(key, value);
 				counted.set(key, [...(_counted$get2 = counted.get(key)) !== null && _counted$get2 !== void 0 ? _counted$get2 : [], _objectSpread2({ paragraph }, value === void 0 ? {} : { step })]);
-				return value === void 0 || sequence === void 0 ? void 0 : sequence.hidden ? "" : (_writerOf = writerOf(sequence.format)) === null || _writerOf === void 0 ? void 0 : _writerOf(value);
+				return value === void 0 || sequence === void 0 ? void 0 : sequence.hidden ? "" : (_numberWriterOf = numberWriterOf(sequence.format)) === null || _numberWriterOf === void 0 ? void 0 : _numberWriterOf(value);
 			}
 		};
 	};
@@ -17299,9 +17382,10 @@ EXTERNAL: "External" };
 	};
 	/**
 	* Writes the page numbers the estimator works out into the fields of a formatted body that show them: the PAGEREF fields
-	* in its tables of contents and elsewhere, and its NUMPAGES and SECTIONPAGES fields. A field whose number the estimator
-	* didn't work out is left as it is. Page references and tables of contents are written clean, whether or not their
-	* numbers were worked out. The estimate is kept for the document's headers and footers.
+	* in its tables of contents and elsewhere, those with `\p` and in number formats of their own, and its NUMPAGES and
+	* SECTIONPAGES fields. A field whose number the estimator didn't work out is left as it is. Page references and tables
+	* of contents are written clean, whether or not their numbers were worked out. The estimate is kept for the document's
+	* headers and footers.
 	*/
 	var fillPageNumbers = (body, context, estimator) => {
 		const estimate = estimator(body, context);
