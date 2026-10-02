@@ -285,6 +285,9 @@ const FIFTIETHS_OF_A_PERCENT = 5000;
 // Formatting switches that don't change how a page reference writes the page's number
 // cspell:ignore mergeformatinet
 const PLAIN_FORMATS = new Set(["mergeformat", "charformat", "mergeformatinet"]);
+// Word fills a content control bound to custom XML in from it when it opens the document, so what it shows there may not
+// be what is written
+const BOUND_CONTROL = "a content control filled from custom XML";
 
 const nameOf = (element: XmlObject): string => Object.keys(element)[0];
 
@@ -292,6 +295,52 @@ const nameOf = (element: XmlObject): string => Object.keys(element)[0];
 const contentOf = (element: XmlObject): readonly unknown[] => {
     const content = element[nameOf(element)];
     return Array.isArray(content) ? content : [content];
+};
+
+/** Whether an attribute that is on or off, such as `w:combine`, is on: it is off when it isn't given */
+const isOn = (value: unknown): boolean => value !== undefined && !isOff(value);
+
+/** Whether a content control (`w:sdt`) is bound to custom XML (`w:dataBinding`), which Word fills it in from */
+const isBound = (control: XmlObject): boolean =>
+    find(childrenOf(find(childrenOf(control["w:sdt"]), "w:sdtPr")), "w:dataBinding") !== undefined;
+
+/**
+ * The elements of a part of a document, such as a table's rows or a cell's paragraphs, with those in its content controls
+ * and custom XML in their place. A content control bound to custom XML is kept whole, as it can't be laid out.
+ */
+const unwrap = (elements: readonly unknown[]): readonly XmlObject[] =>
+    elements.filter(isObject).flatMap((element) => {
+        const name = nameOf(element);
+        if (name === "w:sdt" && !isBound(element)) {
+            return unwrap(childrenOf(find(childrenOf(element[name]), "w:sdtContent")));
+        }
+        return name === "w:customXml" ? unwrap(contentOf(element)) : [element];
+    });
+
+/** The name of the bookmark a bookmark's start (`w:bookmarkStart`) starts */
+const bookmarkOf = (element: XmlObject): string | undefined => stringOf(attributesOf(element["w:bookmarkStart"])["w:name"]);
+
+/** The names of the bookmarks that start among elements, in order */
+const bookmarksIn = (elements: readonly XmlObject[]): readonly string[] =>
+    elements.flatMap((element) => {
+        const bookmark = "w:bookmarkStart" in element ? bookmarkOf(element) : undefined;
+        return bookmark === undefined ? [] : [bookmark];
+    });
+
+/**
+ * The elements of a name in a part of a document, such as the rows of a table, each with the names of the bookmarks
+ * that start between it and the one before. A bookmark there starts with the element, as it starts where the element's
+ * text does. Those after the last are left out.
+ */
+const withBookmarks = (
+    elements: readonly XmlObject[],
+    name: string,
+): readonly { readonly element: XmlObject; readonly bookmarks: readonly string[] }[] => {
+    const indexes = elements.flatMap((element, index) => (name in element ? [index] : []));
+    return indexes.map((at, index) => ({
+        element: elements[at],
+        bookmarks: bookmarksIn(elements.slice(index === 0 ? 0 : indexes[index - 1] + 1, at)),
+    }));
 };
 
 // How wide the number of a footnote or endnote is, next to text of its size: Word writes it in superscript
@@ -404,6 +453,21 @@ const readFieldCharacter = (element: XmlObject, font: TextFont, reader: Reader):
 };
 
 /**
+ * Why a run's own formatting changes the room its text takes in a way not yet followed, when it does: text fitted to a
+ * width (`w:fitText`), and two lines in one or text across in vertical text (`w:eastAsianLayout`).
+ */
+const unsupportedFormatOf = (properties: readonly XmlObject[]): string | undefined => {
+    const { "w:combine": combined, "w:vert": across } = attributesOf(find(properties, "w:eastAsianLayout"));
+    if (find(properties, "w:fitText") !== undefined) {
+        return "text fitted to a width";
+    }
+    if (isOn(combined)) {
+        return "two lines in one";
+    }
+    return isOn(across) ? "text across in vertical text" : undefined;
+};
+
+/**
  * Reads a run (`w:r`) in the paragraph's formatting, as its character style and its own formatting change it.
  */
 const readRun = (element: XmlObject, paragraphRun: RunFormat, reader: Reader): readonly LayoutItem[] | string => {
@@ -417,6 +481,7 @@ const readRun = (element: XmlObject, paragraphRun: RunFormat, reader: Reader): r
         readRunFormat(properties, styles.themeFonts),
     ]);
     const font = fontOf(format);
+    const unsupportedFormat = unsupportedFormatOf(childrenOf(properties));
     const items: readonly (readonly LayoutItem[] | string)[] = children.map((child): readonly LayoutItem[] | string => {
         const name = nameOf(child);
         if (name === "w:fldChar") {
@@ -432,8 +497,11 @@ const readRun = (element: XmlObject, paragraphRun: RunFormat, reader: Reader): r
             }
             return [];
         }
-        if (!isShown(reader)) {
+        if (!isShown(reader) || name === "w:rPr") {
             return [];
+        }
+        if (unsupportedFormat !== undefined) {
+            return unsupportedFormat;
         }
         switch (name) {
             case "w:t":
@@ -504,6 +572,11 @@ const readRun = (element: XmlObject, paragraphRun: RunFormat, reader: Reader): r
             case "w:pict":
             case "w:object":
                 return reader.inHeader ? [] : "a VML drawing";
+            case "w:ruby":
+                // Its text is in its base and in the guide above it, which makes the line taller
+                return "text with a phonetic guide";
+            case "w:contentPart":
+                return "a content part, such as ink";
             default:
                 return [];
         }
@@ -528,15 +601,20 @@ const readInline = (elements: readonly unknown[], paragraphRun: RunFormat, reade
             return readInline(contentOf(element), paragraphRun, reader);
         }
         if (name === "w:sdt") {
-            return readInline(childrenOf(find(childrenOf(element[name]), "w:sdtContent")), paragraphRun, reader);
+            return isBound(element)
+                ? BOUND_CONTROL
+                : readInline(childrenOf(find(childrenOf(element[name]), "w:sdtContent")), paragraphRun, reader);
         }
         if (name === "w:fldSimple") {
             const result = workedOutResultOf(String(attributesOf(element[name])["w:instr"]), fontOf(paragraphRun));
             return result !== undefined && isShown(reader) ? [result] : readInline(contentOf(element), paragraphRun, reader);
         }
         if (name === "w:bookmarkStart") {
-            const bookmark = stringOf(attributesOf(element[name])["w:name"]);
+            const bookmark = bookmarkOf(element);
             return bookmark === undefined ? [] : [{ type: "marker", name: bookmark }];
+        }
+        if (name === "w:subDoc") {
+            return "a subdocument";
         }
         return name === "m:oMath" || name === "m:oMathPara" ? "an equation" : [];
     });
@@ -619,7 +697,13 @@ const readParagraph = (element: XmlObject, reader: Reader, tableStyle?: string):
         readParagraphFormat(properties),
     ];
     const items = readInline(children, paragraphRun, reader);
-    const unsupported = find(properties, "w:framePr") === undefined ? unknownLengthIn(element) : "a text frame";
+    // A division of a web page (`w:divId`) has margins and borders of its own, in the document's web settings
+    const unsupported =
+        find(properties, "w:framePr") !== undefined
+            ? "a text frame"
+            : find(properties, "w:divId") === undefined
+              ? unknownLengthIn(element)
+              : "a paragraph in an HTML division";
     return {
         type: "paragraph",
         items: typeof items === "string" ? [] : [...list.items, ...items],
@@ -647,31 +731,20 @@ const borderWidth = (borders: readonly XmlObject[], name: string): number => {
     return style === undefined || style === "nil" || style === "none" ? 0 : (numberOf(attributes["w:sz"]) ?? 0) / EIGHTHS_PER_POINT;
 };
 
-/** The rows of a table, or of a content control or custom XML in it */
-const rowsOf = (elements: readonly unknown[]): readonly XmlObject[] =>
-    elements.filter(isObject).flatMap((element) => {
-        const name = nameOf(element);
-        if (name === "w:tr") {
-            return [element];
-        }
-        if (name === "w:sdt") {
-            return rowsOf(childrenOf(find(childrenOf(element[name]), "w:sdtContent")));
-        }
-        return name === "w:customXml" ? rowsOf(contentOf(element)) : [];
-    });
-
-/** The cells of a row */
-const cellsOf = (elements: readonly unknown[]): readonly XmlObject[] =>
-    elements.filter(isObject).flatMap((element) => {
-        const name = nameOf(element);
-        if (name === "w:tc") {
-            return [element];
-        }
-        if (name === "w:sdt") {
-            return cellsOf(childrenOf(find(childrenOf(element[name]), "w:sdtContent")));
-        }
-        return name === "w:customXml" ? cellsOf(contentOf(element)) : [];
-    });
+/**
+ * Why a cell's properties (`w:tcPr`) change how its text is laid out in a way not yet followed, when they do: cells merged
+ * across columns as the oldest versions of Word wrote them (`w:hMerge`), text that doesn't wrap (`w:noWrap`), and text
+ * fitted to the cell (`w:tcFitText`).
+ */
+const unsupportedCellOf = (properties: readonly XmlObject[]): string | undefined => {
+    if (find(properties, "w:hMerge") !== undefined) {
+        return "cells merged across columns as old versions of Word wrote them";
+    }
+    if (onOff(properties, "w:noWrap") === true) {
+        return "a table cell whose text doesn't wrap";
+    }
+    return onOff(properties, "w:tcFitText") === true ? "text fitted to its table cell" : undefined;
+};
 
 /** A share of a width, as a fraction, from fiftieths of a percent or a percentage written with a % */
 const shareOf = (value: unknown): number | undefined => {
@@ -719,14 +792,29 @@ const readTable = (element: XmlObject, reader: Reader): TableBlock => {
     const grid = childrenOf(find(children, "w:tblGrid"))
         .filter((child) => "w:gridCol" in child)
         .map((column) => twips(attributesOf(column["w:gridCol"])["w:w"]) ?? 0);
-    const rows = rowsOf(children);
+    // The rows, and those in content controls and custom XML, with the bookmarks that start before each
+    const parts = unwrap(children);
+    const rows = withBookmarks(parts, "w:tr");
 
     const gridWidth = (from: number, to: number): number => grid.slice(from, to).reduce((total, value) => total + value, 0);
 
     const read = rows.map(
-        (row, rowIndex): { readonly row: TableRow; readonly edges: ReadonlyMap<number, number>; readonly end: number } => {
+        (
+            { element: row, bookmarks: rowBookmarks },
+            rowIndex,
+        ): {
+            readonly row: TableRow;
+            readonly edges: ReadonlyMap<number, number>;
+            readonly end: number;
+            readonly unsupported?: string;
+            /** The bookmarks that start before the row, and before each of its cells */
+            readonly bookmarks: readonly string[];
+            readonly cellBookmarks: readonly (readonly string[])[];
+        } => {
             const rowChildren = contentOf(row).filter(isObject);
             const rowProperties = childrenOf(find(rowChildren, "w:trPr"));
+            const rowParts = unwrap(rowChildren);
+            const rowCells = withBookmarks(rowParts, "w:tc");
             const heightAttributes = attributesOf(find(rowProperties, "w:trHeight"));
             const height = twips(heightAttributes["w:val"]);
             const { "w:hRule": rule } = heightAttributes;
@@ -736,12 +824,14 @@ const readTable = (element: XmlObject, reader: Reader): TableBlock => {
                 cells,
                 edges,
                 column: end,
-            } = cellsOf(rowChildren).reduce<{
+                unsupported: cellsUnsupported,
+            } = rowCells.reduce<{
                 readonly column: number;
                 readonly cells: readonly TableCell[];
                 readonly edges: ReadonlyMap<number, number>;
+                readonly unsupported?: string;
             }>(
-                ({ column, cells: done, edges: before }, cell) => {
+                ({ column, cells: done, edges: before, unsupported: unsupportedBefore }, { element: cell }) => {
                     const cellChildren = contentOf(cell).filter(isObject);
                     const cellProperties = childrenOf(find(cellChildren, "w:tcPr"));
                     const span = numberOf(attributesOf(find(cellProperties, "w:gridSpan"))["w:val"]) ?? 1;
@@ -758,6 +848,7 @@ const readTable = (element: XmlObject, reader: Reader): TableBlock => {
                     return {
                         column: column + span,
                         edges: new Map([...before, [column + span, before.get(column)! + width]]),
+                        ...withoutUndefined({ unsupported: unsupportedBefore ?? unsupportedCellOf(cellProperties) }),
                         cells: [
                             ...done,
                             {
@@ -777,9 +868,19 @@ const readTable = (element: XmlObject, reader: Reader): TableBlock => {
                 },
                 { column: skipped, cells: [], edges: new Map([[skipped, gridWidth(0, skipped)]]) },
             );
+            // A row of a division of a web page (`w:divId`) has the division's margins and borders
+            const rowUnsupported =
+                find(rowProperties, "w:divId") !== undefined
+                    ? "a table row in an HTML division"
+                    : rowParts.some((part) => "w:sdt" in part)
+                      ? BOUND_CONTROL
+                      : cellsUnsupported;
             return {
                 edges,
                 end,
+                ...withoutUndefined({ unsupported: rowUnsupported }),
+                bookmarks: rowBookmarks,
+                cellBookmarks: rowCells.map(({ bookmarks }) => bookmarks),
                 row: {
                     cells,
                     // A height without a rule is the least the row can be, as Word writes it
@@ -794,6 +895,21 @@ const readTable = (element: XmlObject, reader: Reader): TableBlock => {
             };
         },
     );
+    // The bookmarks before each row and cell start where the text after them does: in the cell after them, or in the next
+    // with any text when it has none
+    let carried: readonly string[] = [];
+    const tableRows = read.map(({ row, bookmarks, cellBookmarks }): TableRow => {
+        carried = [...carried, ...bookmarks];
+        return {
+            ...row,
+            cells: row.cells.map((cell, index) => {
+                const pending = [...carried, ...cellBookmarks[index]];
+                const marked = pending.length === 0 ? undefined : startingAtFirst(cell.blocks, pending);
+                carried = marked === undefined ? pending : [];
+                return marked === undefined ? cell : { ...cell, blocks: marked };
+            }),
+        };
+    });
     // Cells over the same columns whose widths put a column's edge in different places in different rows, which Word
     // settles in a way not yet followed
     const edgesAt = new Map<number, number>();
@@ -817,18 +933,27 @@ const readTable = (element: XmlObject, reader: Reader): TableBlock => {
     const lengths = unknownLengthIn([
         find(children, "w:tblPr"),
         find(children, "w:tblGrid"),
-        ...rows.flatMap((row) => {
+        ...rows.flatMap(({ element: row }) => {
             const rowChildren = contentOf(row).filter(isObject);
-            return [find(rowChildren, "w:trPr"), ...cellsOf(rowChildren).map((cell) => find(contentOf(cell).filter(isObject), "w:tcPr"))];
+            return [
+                find(rowChildren, "w:trPr"),
+                ...unwrap(rowChildren)
+                    .filter((part) => "w:tc" in part)
+                    .map((cell) => find(contentOf(cell).filter(isObject), "w:tcPr")),
+            ];
         }),
     ]);
+    // Word puts the text after a floating table (`w:tblpPr`) beside it (`word-watertight-tables.docx` TB11)
     const unsupported =
+        (find(properties, "w:tblpPr") === undefined ? undefined : "a table that text flows around") ??
+        (parts.some((part) => "w:sdt" in part) ? BOUND_CONTROL : undefined) ??
+        read.find((row) => row.unsupported !== undefined)?.unsupported ??
         (fits ? unfitted : unequal ? "a table whose rows give a column different widths" : undefined) ??
         lengths ??
         blocks.find((block) => block.unsupported !== undefined)?.unsupported;
     return {
         type: "table",
-        rows: read.map(({ row }) => row),
+        rows: tableRows,
         ...(fits ? { fit: readTableWidth(properties) } : {}),
         ...(!fits && !fixed
             ? { widen: { ...readTableWidth(properties), acrossColumns: tableCells.some(({ span }) => span !== undefined) } }
@@ -839,27 +964,95 @@ const readTable = (element: XmlObject, reader: Reader): TableBlock => {
     };
 };
 
+/** A block in place of what can't be laid out, with why */
+const unsupportedBlock = (unsupported: string): ParagraphBlock => ({
+    type: "paragraph",
+    items: [],
+    format: {},
+    tabStops: [],
+    markFont: {},
+    unsupported,
+});
+
+/**
+ * A block with bookmarks that start where its text does: before its first item, or, for a table, in the first of its
+ * cells with any text. Undefined when it has no text for them to start at, as a table without rows.
+ */
+const startingWith = (block: Block, bookmarks: readonly string[]): Block | undefined => {
+    if (bookmarks.length === 0) {
+        return block;
+    }
+    if (block.type === "paragraph") {
+        return { ...block, items: [...bookmarks.map((name) => ({ type: "marker" as const, name })), ...block.items] };
+    }
+    for (const [rowIndex, row] of block.rows.entries()) {
+        for (const [cellIndex, cell] of row.cells.entries()) {
+            const blocks = startingAtFirst(cell.blocks, bookmarks);
+            if (blocks !== undefined) {
+                const cells = row.cells.map((other, index) => (index === cellIndex ? { ...cell, blocks } : other));
+                return { ...block, rows: block.rows.map((other, index) => (index === rowIndex ? { ...row, cells } : other)) };
+            }
+        }
+    }
+    return undefined;
+};
+
+/**
+ * Blocks with bookmarks that start where the text of the first of them with any text does. Undefined when none has any.
+ */
+const startingAtFirst = (blocks: readonly Block[], bookmarks: readonly string[]): readonly Block[] | undefined => {
+    for (const [index, block] of blocks.entries()) {
+        const marked = startingWith(block, bookmarks);
+        if (marked !== undefined) {
+            return [...blocks.slice(0, index), marked, ...blocks.slice(index + 1)];
+        }
+    }
+    return undefined;
+};
+
+/**
+ * Reads a paragraph or table, or what is in its place and can't be laid out: an imported document, an equation outside
+ * a paragraph, or a content control bound to custom XML. Undefined for anything else.
+ */
+const readBlock = (element: XmlObject, reader: Reader, tableStyle?: string): Block | undefined => {
+    switch (nameOf(element)) {
+        case "w:p":
+            return readParagraph(element, reader, tableStyle);
+        case "w:tbl":
+            return readTable(element, reader);
+        case "w:sdt":
+            return unsupportedBlock(BOUND_CONTROL);
+        case "w:altChunk":
+            return unsupportedBlock("an imported document");
+        case "m:oMath":
+        case "m:oMathPara":
+            return unsupportedBlock("an equation");
+        default:
+            return undefined;
+    }
+};
+
 /**
  * Reads the paragraphs and tables in a part of a document, such as a table cell or a header, and in the content controls
- * and custom XML in it.
+ * and custom XML in it. A bookmark between them starts with the next.
  */
-const readBlocks = (elements: readonly unknown[], reader: Reader, tableStyle?: string): readonly Block[] =>
-    elements.filter(isObject).flatMap((element): readonly Block[] => {
-        switch (nameOf(element)) {
-            case "w:p":
-                return [readParagraph(element, reader, tableStyle)];
-            case "w:tbl":
-                return [readTable(element, reader)];
-            case "w:sdt":
-                return readBlocks(childrenOf(find(childrenOf(element["w:sdt"]), "w:sdtContent")), reader, tableStyle);
-            case "w:customXml":
-                return readBlocks(contentOf(element), reader, tableStyle);
-            case "w:altChunk":
-                return [{ type: "paragraph", items: [], format: {}, tabStops: [], markFont: {}, unsupported: "an imported document" }];
-            default:
-                return [];
+const readBlocks = (elements: readonly unknown[], reader: Reader, tableStyle?: string): readonly Block[] => {
+    // eslint-disable-next-line functional/prefer-readonly-type
+    const blocks: Block[] = [];
+    let bookmarks: readonly string[] = [];
+    for (const element of unwrap(elements)) {
+        const block = readBlock(element, reader, tableStyle);
+        if (block === undefined) {
+            bookmarks = [...bookmarks, ...bookmarksIn([element])];
+        } else {
+            const marked = startingWith(block, bookmarks);
+            // eslint-disable-next-line functional/immutable-data
+            blocks.push(marked ?? block);
+            bookmarks = marked ? [] : bookmarks;
         }
-    });
+    }
+    return blocks;
+};
 
 const START_TYPES = new Set<Section["start"]>(["nextPage", "continuous", "evenPage", "oddPage", "nextColumn"]);
 
@@ -923,7 +1116,9 @@ const readSection = (element: unknown, readPart: (id: string) => readonly Block[
               ? "page numbers in a format not yet written"
               : find(properties, "w:textDirection") !== undefined
                 ? "text that runs down the page"
-                : unknownLengthIn(element);
+                : find(properties, "w15:footnoteColumns") === undefined
+                  ? unknownLengthIn(element)
+                  : "footnotes in columns of their own";
     const headers = readReferences(properties, "w:headerReference", readPart);
     const footers = readReferences(properties, "w:footerReference", readPart);
     return {
@@ -1050,17 +1245,21 @@ const readSettings = (
             )?.["w:compatSetting"],
         )["w:val"],
     );
-    // Word's strict rules, and its compression of punctuation, aren't known yet
+    // Word's strict rules, and its compression of punctuation, aren't known yet. Pages printed folded as a booklet, or two
+    // to a sheet, are half the paper, and Word updates a document's styles from its template when it opens it, with
+    // `w:linkStyles`
     const unsupported =
-        onOff(settings, "w:autoHyphenation") === true
-            ? "hyphenation"
-            : onOff(settings, "w:strictFirstAndLastChars") === true
-              ? "the strict rules for the characters that can't start a line"
-              : spacingControl !== undefined && spacingControl !== "doNotCompress"
-                ? "punctuation compressed"
-                : mode === undefined || mode < CURRENT_COMPATIBILITY_MODE
-                  ? "a document in compatibility mode"
-                  : unknownLengthIn(settings);
+        (
+            [
+                [onOff(settings, "w:autoHyphenation"), "hyphenation"],
+                [onOff(settings, "w:strictFirstAndLastChars"), "the strict rules for the characters that can't start a line"],
+                [spacingControl !== undefined && spacingControl !== "doNotCompress", "punctuation compressed"],
+                [mode === undefined || mode < CURRENT_COMPATIBILITY_MODE, "a document in compatibility mode"],
+                [onOff(settings, "w:bookFoldPrinting") || onOff(settings, "w:bookFoldRevPrinting"), "pages printed as a folded booklet"],
+                [onOff(settings, "w:printTwoOnOne"), "two pages printed on each sheet"],
+                [onOff(settings, "w:linkStyles"), "styles updated from the document's template when Word opens it"],
+            ] as const
+        ).find(([applies]) => applies === true)?.[1] ?? unknownLengthIn(settings);
     return {
         defaultTabStop: twips(attributesOf(find(settings, "w:defaultTabStop"))["w:val"]) ?? 36,
         evenAndOddHeaders: onOff(settings, "w:evenAndOddHeaders") === true,
@@ -1214,45 +1413,32 @@ export const readContent = (body: XmlObject, parts: DocumentParts): DocumentCont
     const addSection = (element: unknown): void => {
         sections.push(readSection(element, readPart, sections[sections.length - 1]));
     };
-    const read = (elements: readonly unknown[]): void => {
-        for (const element of elements.filter(isObject)) {
-            const name = nameOf(element);
-            if (name === "w:sdt") {
-                read(childrenOf(find(childrenOf(element[name]), "w:sdtContent")));
-            } else if (name === "w:customXml") {
-                read(contentOf(element));
-            } else if (name === "w:sectPr") {
-                addSection(element[name]);
-            } else if (name === "w:bookmarkStart") {
-                // A bookmark between paragraphs starts with the next one
-                bookmarks = [...bookmarks, String(attributesOf(element[name])["w:name"])];
-            } else {
-                const sectionProperties =
-                    name === "w:p" ? find(childrenOf(find(contentOf(element).filter(isObject), "w:pPr")), "w:sectPr") : undefined;
-                for (const block of readBlocks([element], reader)) {
-                    const markers = bookmarks.map((marker) => ({ type: "marker" as const, name: marker }));
-                    const marked = block.type === "paragraph" && markers.length > 0;
-                    const sectionBreak =
-                        sectionProperties !== undefined && block.type === "paragraph" && block.items.length === 0 && !marked;
-                    // eslint-disable-next-line functional/immutable-data
-                    blocks.push({
-                        block: marked
-                            ? { ...block, items: [...markers, ...block.items] }
-                            : sectionBreak
-                              ? { ...block, sectionBreak }
-                              : block,
-                        section: sections.length,
-                    });
-                    bookmarks = marked ? [] : bookmarks;
-                }
-                if (sectionProperties !== undefined) {
-                    addSection(sectionProperties);
-                }
+    // The body is written with its section's properties at its end, if nothing else
+    for (const element of unwrap(contentOf(body))) {
+        const name = nameOf(element);
+        if (name === "w:sectPr") {
+            addSection(element[name]);
+        } else if (name === "w:bookmarkStart") {
+            // A bookmark between blocks starts with the next one
+            const bookmark = bookmarkOf(element);
+            bookmarks = bookmark === undefined ? bookmarks : [...bookmarks, bookmark];
+        } else {
+            const block = readBlock(element, reader);
+            const sectionProperties =
+                name === "w:p" ? find(childrenOf(find(contentOf(element).filter(isObject), "w:pPr")), "w:sectPr") : undefined;
+            if (block !== undefined) {
+                const marked = startingWith(block, bookmarks);
+                const sectionBreak =
+                    sectionProperties !== undefined && block.type === "paragraph" && block.items.length === 0 && bookmarks.length === 0;
+                // eslint-disable-next-line functional/immutable-data
+                blocks.push({ block: sectionBreak ? { ...block, sectionBreak } : (marked ?? block), section: sections.length });
+                bookmarks = marked ? [] : bookmarks;
+            }
+            if (sectionProperties !== undefined) {
+                addSection(sectionProperties);
             }
         }
-    };
-    // The body is written with its section's properties at its end, if nothing else
-    read(contentOf(body));
+    }
     if (sections.length === 0 || blocks.some(({ section }) => section >= sections.length)) {
         addSection(undefined);
     }

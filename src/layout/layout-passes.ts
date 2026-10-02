@@ -24,18 +24,28 @@ const sameNumbers = (one: Pagination, other: Pagination): boolean =>
     one.sectionPageCounts.every((count, index) => other.sectionPageCounts[index] === count);
 
 /**
- * Lays out a document's pages, again with the page numbers each pass works out, until they stop changing, or for at most
- * three passes, and gives the last.
+ * Lays out a document's pages, again with the page numbers each pass works out, until they stop changing, and gives the
+ * last. Each pass is laid out with the numbers of the pass before, so the last pass's numbers are those it was laid out
+ * with only when they stop changing. When they still change after three passes, as when a table of contents wraps one
+ * way with a number and the other way without it, none can be written, so it gives the first pass, laid out without them,
+ * as not settled.
  */
-export const layOutPasses = (content: DocumentContent, measurer?: TextMeasurer): Pagination => {
-    const layOut = (before: Pagination | undefined, pass: number): Pagination => {
+export const layOutPasses = (content: DocumentContent, measurer?: TextMeasurer): Pagination & { readonly settled: boolean } => {
+    const layOut = (
+        before: Pagination | undefined,
+        pass: number,
+        first: Pagination | undefined,
+    ): Pagination & { readonly settled: boolean } => {
         const pagination = paginate(content, {
             measurer,
             pageNumbers: before?.bookmarks,
             pageCount: before && knownPageCount(before),
             sectionPageCounts: before?.sectionPageCounts,
         });
-        return pass >= PASSES || (before !== undefined && sameNumbers(pagination, before)) ? pagination : layOut(pagination, pass + 1);
+        if (before !== undefined && sameNumbers(pagination, before)) {
+            return { ...pagination, settled: true };
+        }
+        return pass >= PASSES ? { ...first!, settled: false } : layOut(pagination, pass + 1, first ?? pagination);
     };
-    return layOut(undefined, 1);
+    return layOut(undefined, 1, undefined);
 };
