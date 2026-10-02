@@ -6,7 +6,7 @@
  */
 // cspell:ignore hhea hmtx cmap fsSelection ttcf OTTO GPOS DFLT Aptos
 import { DEFAULT_MEASURER, type TextMeasurer } from "./line-breaking";
-import { DEFAULT_FONT, DEFAULT_FONT_SIZE, type TextFont } from "./text-width";
+import { DEFAULT_FONT, DEFAULT_FONT_SIZE, type TextFont, takesNoRoom } from "./text-width";
 
 /**
  * A font file's bytes: a TrueType or OpenType font (`.ttf` or `.otf`), or a collection of them (`.ttc`).
@@ -23,8 +23,6 @@ export type FontFace = {
     readonly italic: boolean;
     /** How tall a line of single-spaced text is, in ems, as Word works it out */
     readonly lineHeight: number;
-    /** How wide the glyph the font draws for characters it has no glyph for is (`.notdef`), in ems */
-    readonly missingAdvance: number;
 } & {
     /** How wide a character is, in ems, or undefined when the font has no glyph for it */
     readonly advanceOf: (code: number) => number | undefined;
@@ -389,7 +387,6 @@ const readFace = (view: DataView, offset: number): FontFace => {
             advances.set(code, advance);
             return advance;
         },
-        missingAdvance: advanceOfGlyph(0),
         kerningOf: (left, right) => {
             kerning = kerning ?? readGlyphPositioning(view, tables) ?? readKernTable(view, tables);
             const key = cachedGlyph(left) * 0x10000 + cachedGlyph(right);
@@ -421,10 +418,14 @@ export const readFontFile = (data: FontData): readonly FontFace[] => {
     );
 };
 
+// Half an inch, in points
+const TAB_STOP = 36;
+
 /**
- * Measures text in the fonts of these faces with their own widths, kerning and line height, and text in other fonts, and
- * characters the faces have no glyphs for, with `fallback`. Text that is bold, or not, is measured with a face that is
- * too, and with one that is italic, or not, as the text is, when there is one.
+ * Measures text in the fonts of these faces with their own widths, kerning and line height, and text in other fonts with
+ * `fallback`. Text that is bold, or not, is measured with a face that is too, and with one that is italic, or not, as the
+ * text is, when there is one. A character a face has no glyph for is one whose width isn't known, as Word draws it in
+ * another font, unless it takes no room, such as a soft hyphen.
  */
 export const createFontFileMeasurer = (faces: readonly FontFace[], fallback: TextMeasurer = DEFAULT_MEASURER): TextMeasurer => {
     // The face of each font, bold or not, and italic or not, as text is measured many times in each
@@ -438,29 +439,54 @@ export const createFontFileMeasurer = (faces: readonly FontFace[], fallback: Tex
         }
         return chosen.get(key);
     };
+    /** How wide text with no tabs is in a face, in points */
+    const widthIn = (face: FontFace, text: string, font: TextFont): number => {
+        const { size = DEFAULT_FONT_SIZE, characterSpacing = 0, scale = 100, kerning } = font;
+        const kerns = kerning !== undefined && size >= kerning;
+        const em = (size * scale) / 100;
+        const characters = [...text];
+        return characters.reduce((width, character, index) => {
+            const advance = face.advanceOf(character.codePointAt(0)!);
+            if (advance === undefined) {
+                // The layout stops at a character the font has no glyph for, unless it takes no room
+                return takesNoRoom(character) ? width : width + fallback.measureWidth(character, font);
+            }
+            const before = characters[index - 1]?.codePointAt(0);
+            const kern =
+                kerns && before !== undefined && face.advanceOf(before) !== undefined
+                    ? face.kerningOf(before, character.codePointAt(0)!)
+                    : 0;
+            return width + (advance + kern) * em + characterSpacing;
+        }, 0);
+    };
     return {
         measureWidth: (text, font) => {
             const face = faceOf(font);
             if (!face) {
                 return fallback.measureWidth(text, font);
             }
-            const { size = DEFAULT_FONT_SIZE, characterSpacing = 0, scale = 100, kerning } = font;
-            const kerns = kerning !== undefined && size >= kerning;
-            const em = (size * scale) / 100;
-            const codes = [...text].map((character) => character.codePointAt(0)!);
-            return codes.reduce((width, code, index) => {
-                const advance = face.advanceOf(code);
-                if (advance === undefined) {
-                    return width + fallback.measureWidth(String.fromCodePoint(code), font);
-                }
-                const kern =
-                    kerns && index > 0 && face.advanceOf(codes[index - 1]) !== undefined ? face.kerningOf(codes[index - 1], code) : 0;
-                return width + (advance + kern) * em + characterSpacing;
-            }, 0);
+            // A tab typed in the text, rather than written as a tab, moves to the next half inch from the start of the text, as
+            // the width tables measure it
+            return text
+                .split("\t")
+                .reduce(
+                    (position, part, index) =>
+                        (index === 0 ? 0 : (Math.floor(position / TAB_STOP) + 1) * TAB_STOP) + widthIn(face, part, font),
+                    0,
+                );
         },
         measureLineHeight: (font) => {
             const face = faceOf(font);
             return face ? face.lineHeight * (font.size ?? DEFAULT_FONT_SIZE) : fallback.measureLineHeight(font);
+        },
+        unknownCharacter: (text, font) => {
+            const face = faceOf(font);
+            return face
+                ? [...text].find(
+                      (character) =>
+                          character !== "\t" && !takesNoRoom(character) && face.advanceOf(character.codePointAt(0)!) === undefined,
+                  )
+                : fallback.unknownCharacter?.(text, font);
         },
     };
 };

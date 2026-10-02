@@ -273,7 +273,7 @@ const isWide = (code: number): boolean =>
 const isHalfWidth = (code: number): boolean => code >= 0xff61 && code <= 0xffdc;
 
 // Marks, which go on the character before them, and characters that only change how the text around them is laid out
-const takesNoRoom = (character: string): boolean => /[\p{Mn}\p{Me}\p{Cf}]/u.test(character);
+export const takesNoRoom = (character: string): boolean => /[\p{Mn}\p{Me}\p{Cf}]/u.test(character);
 
 /**
  * The width of a character in thousandths of an em. Characters that aren't in the table are as wide as an average

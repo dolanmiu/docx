@@ -23,8 +23,8 @@ const faceOf = (options: TestFontOptions): ReturnType<typeof readFontFile>[numbe
 };
 
 describe("readFontFile", () => {
-    it("should read a font's name, widths in ems, and the width of the glyph for missing characters", () => {
-        const face = faceOf({ advances: LETTERS, unitsPerEm: 2000, missingAdvance: 700 });
+    it("should read a font's name and widths in ems, and no width for characters it has no glyph for", () => {
+        const face = faceOf({ advances: LETTERS, unitsPerEm: 2000 });
         expect(face.name).to.equal("Probe Sans");
         expect(face.bold).to.equal(false);
         expect(face.italic).to.equal(false);
@@ -34,7 +34,6 @@ describe("readFontFile", () => {
         expect(face.advanceOf("B".codePointAt(0)!)).to.equal(0.1);
         expect(face.advanceOf(" ".codePointAt(0)!)).to.equal(0.125);
         expect(face.advanceOf("Z".codePointAt(0)!)).to.equal(undefined);
-        expect(face.missingAdvance).to.equal(0.35);
     });
 
     it("should read the characters past U+FFFF of a font with a map of the whole of Unicode", () => {
@@ -310,6 +309,31 @@ describe("createFontFileMeasurer", () => {
         // Z isn't in the font, and A isn't kerned with it
         expect(measurer.measureWidth("ZA", font)).to.be.closeTo(DEFAULT_MEASURER.measureWidth("Z", font) + 1, 1e-9);
         expect(measurer.measureWidth("ZV", font)).to.be.closeTo(DEFAULT_MEASURER.measureWidth("Z", font) + 4, 1e-9);
+    });
+
+    it("should know the width of the characters a font has, and of those that take no room, as Word draws the rest in another font", () => {
+        const measurer = createFontFileMeasurer(fonts({ advances: LETTERS }));
+        const font = { font: "Probe Sans", size: 10 };
+        expect(measurer.unknownCharacter!("ABC A", font)).to.equal(undefined);
+        expect(measurer.unknownCharacter!("AZB", font)).to.equal("Z");
+        // A soft hyphen and a zero-width joiner take no room, and a typed tab moves to the next stop
+        expect(measurer.unknownCharacter!("A\u00adB\u200dC\tA", font)).to.equal(undefined);
+        expect(measurer.measureWidth("A\u00adB", font)).to.be.closeTo(3, 1e-9);
+    });
+
+    it("should leave whether a character's width is known in other fonts to the fallback", () => {
+        const measurer = createFontFileMeasurer(fonts({ advances: LETTERS }));
+        const calibri = { font: "Calibri", size: 11 };
+        expect(measurer.unknownCharacter!("a\u2211", calibri)).to.equal(DEFAULT_MEASURER.unknownCharacter!("a\u2211", calibri));
+        const withoutUnknown = createFontFileMeasurer(fonts({ advances: LETTERS }), { measureWidth: () => 0, measureLineHeight: () => 0 });
+        expect(withoutUnknown.unknownCharacter!("a\u2211", calibri)).to.equal(undefined);
+    });
+
+    it("should move a tab typed in the text to the next half inch from the start of the text", () => {
+        const measurer = createFontFileMeasurer(fonts({ advances: LETTERS }));
+        // A is a point wide at 10 points, so the tab moves to 36, and B is 2 more
+        expect(measurer.measureWidth("A\tB", { font: "Probe Sans", size: 10 })).to.be.closeTo(38, 1e-9);
+        expect(measurer.measureWidth("\t\tA", { font: "Probe Sans", size: 10 })).to.be.closeTo(73, 1e-9);
     });
 
     it("should measure text with no font as Times New Roman, from its file when it is given", () => {

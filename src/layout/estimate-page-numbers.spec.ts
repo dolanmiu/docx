@@ -366,7 +366,10 @@ describe("estimatePageNumbersWith", () => {
             expect(pageNumbersOf(document("Probe Wide"), estimator)).to.deep.include({ first: "1", last: "8" });
             // Measured as Arial, as without the file, they take 150 lines of about 10 points
             expect(pageNumbersOf(document("Probe Wide"))).to.deep.include({ first: "1", last: "3" });
-            expect(pageNumbersOf(document("Probe Wide"), estimatePageNumbersWith({ fonts: [] }))).to.deep.include({ first: "1", last: "3" });
+            expect(pageNumbersOf(document("Probe Wide"), estimatePageNumbersWith({ fonts: [] }))).to.deep.include({
+                first: "1",
+                last: "3",
+            });
         });
 
         it("should give the fonts in a file the name the caller gives them", () => {
