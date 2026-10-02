@@ -1,5 +1,31 @@
+import type { Document as Document_2 } from 'docx';
 import type { PageNumberEstimator } from 'docx';
 import type { TemplatePageNumberEstimator } from 'docx';
+
+/**
+ * A paragraph or table on a page.
+ *
+ * @publicApi
+ */
+export declare type BlockLayout = ParagraphLayout | TableLayout;
+
+/**
+ * A document's pages, as {@link layoutDocument} lays them out.
+ *
+ * @publicApi
+ */
+export declare type DocumentLayout = {
+    /**
+     * Its pages, in order. When the layout stopped, those up to where it stopped, the last of them with what was laid out
+     * on it
+     */
+    readonly pages: readonly PageLayout[];
+    /**
+     * What the layout stopped at, when it couldn't lay out all of the document, such as `"a text box"`. What comes after
+     * it isn't laid out
+     */
+    readonly stoppedAt?: string;
+};
 
 /**
  * Works out the page each bookmark of a document starts on, and how many pages the document and each of its sections
@@ -73,6 +99,51 @@ export declare type FontToMeasure = {
 };
 
 /**
+ * Lays out a document's pages as Word does, and gives what is on each page: the lines of its paragraphs, with their text
+ * and where they are, the rows of its tables, its footnotes and endnotes, and which of its section's headers and footers
+ * it shows.
+ *
+ * ```ts
+ * const { pages } = layoutDocument(new Document({ sections: [...] }));
+ * ```
+ *
+ * The pages are laid out as `estimatePageNumbers` lays them out, with the same fonts and rules, and the page numbers of
+ * tables of contents and page references are laid out as it writes them. Where it can't lay out something yet, such as a
+ * text box, it stops, and gives the pages up to there, with why in `stoppedAt`.
+ *
+ * @param document - The document to lay out. It is laid out as it would be written
+ *
+ * @publicApi
+ */
+export declare const layoutDocument: (document: Document_2) => DocumentLayout;
+
+/**
+ * A line of a paragraph on a page. Lengths are in pixels, 96 to the inch, from the top left corner of the page.
+ *
+ * @publicApi
+ */
+export declare type LineLayout = {
+    /**
+     * The text on the line, with the spaces where it wraps and a tab as `\t`. A picture or a break adds nothing to it,
+     * so the texts of a paragraph's lines, one after the other, are its text
+     */
+    readonly text: string;
+    /** Where the room for the line starts across the page */
+    readonly x: number;
+    /** Where the top of the line is down the page */
+    readonly y: number;
+    /**
+     * How wide the room for the line is: its column, or the page's text, less the paragraph's indents. Its text is lined
+     * up in it as the paragraph's alignment says
+     */
+    readonly width: number;
+    /** How tall the line is, with the paragraph's line spacing */
+    readonly height: number;
+    /** How far its text goes from where the line starts, without the spaces at its end */
+    readonly textWidth: number;
+};
+
+/**
  * Measures how wide text is in a font, in points. The text is a word, part of one, or the spaces between words, with no
  * tabs or line breaks: the layout places those itself, at the paragraph's tab stops, as Word does. It adds the space
  * between characters and the width of scaled text, which the document's formatting gives, to what this measures.
@@ -101,6 +172,66 @@ export declare type MeasureWidth = (text: string, font: FontToMeasure) => number
 export declare const measureWithPretext: <Prepared>({ prepareWithSegments, measureNaturalWidth }: Pretext<Prepared>, { fontFamilies }?: PretextOptions) => MeasureWidth;
 
 /**
+ * A footnote or endnote, or the part of one, on a page.
+ *
+ * @publicApi
+ */
+export declare type NoteLayout = {
+    /** The note's number, as its reference shows it, such as `"1"` or `"iv"` */
+    readonly noteNumber: string;
+    /** Its paragraphs and tables on the page */
+    readonly content: readonly BlockLayout[];
+};
+
+/**
+ * A page of a document, and what is on it. Lengths are in pixels.
+ *
+ * @publicApi
+ */
+export declare type PageLayout = {
+    /**
+     * The page's number, as the page shows it, such as `"3"` or `"iv"`. None when Word's isn't known: when its section's
+     * page numbers start with a chapter number, or are in a format the layout doesn't write
+     */
+    readonly pageNumber?: string;
+    /** The section the page starts in, counted from 0 */
+    readonly section: number;
+    /** The size of the page */
+    readonly width: number;
+    readonly height: number;
+    /**
+     * Which of its section's headers the page shows, as a section's `headers` names them: the first page's, the even
+     * pages', or the default. A section that gives none of a kind shows the one of the section before. None when the
+     * page has no header
+     */
+    readonly header?: "default" | "first" | "even";
+    /** Which of its section's footers the page shows, in the same way */
+    readonly footer?: "default" | "first" | "even";
+    /** The paragraphs and tables of the body on the page, or the parts of them on it, in order */
+    readonly body: readonly BlockLayout[];
+    /** The footnotes at the bottom of the page, in order: the rest of one that goes on from the page before comes first */
+    readonly footnotes: readonly NoteLayout[];
+    /** The endnotes on the page, which follow the body */
+    readonly endnotes: readonly NoteLayout[];
+};
+
+/**
+ * A paragraph, or the part of one, on a page.
+ *
+ * @publicApi
+ */
+export declare type ParagraphLayout = {
+    readonly type: "paragraph";
+    /**
+     * Where the paragraph is among the paragraphs and tables of the body, or of its footnote or endnote, counted from 0.
+     * A paragraph on more than one page has the same index on each
+     */
+    readonly index: number;
+    /** Its lines on the page, in order */
+    readonly lines: readonly LineLayout[];
+};
+
+/**
  * The functions of Pretext (`@chenglou/pretext`) that {@link measureWithPretext} uses. The module itself is one:
  * `import * as pretext from "@chenglou/pretext"`.
  *
@@ -124,6 +255,33 @@ export declare type PretextOptions = {
      * have it.
      */
     readonly fontFamilies?: Readonly<Record<string, string>>;
+};
+
+/**
+ * A row of a table, or the part of one, on a page. Lengths are in pixels, from the top of the page.
+ *
+ * @publicApi
+ */
+export declare type RowLayout = {
+    /** Which of the table's rows it is, counted from 0 */
+    readonly index: number;
+    /** Where the top of the row is, above its top border */
+    readonly y: number;
+    /** How tall the row is, or its part on the page, with its borders */
+    readonly height: number;
+};
+
+/**
+ * A table, or the part of one, on a page.
+ *
+ * @publicApi
+ */
+export declare type TableLayout = {
+    readonly type: "table";
+    /** Where the table is among the paragraphs and tables of the body, or of its note, counted from 0 */
+    readonly index: number;
+    /** Its rows on the page, or the parts of them on it, in order, with its header rows repeated at the top of each page */
+    readonly rows: readonly RowLayout[];
 };
 
 export { }

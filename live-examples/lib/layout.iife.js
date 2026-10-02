@@ -987,6 +987,7 @@ var docxLayout = (function(exports) {
 		return [...characters.slice(0, -1), joined];
 	}, all), []);
 	var widthOf = (pieces, measurer) => pieces.reduce((total, { text, font }) => total + measurer.measureWidth(text, font), 0);
+	var textOf = (pieces) => pieces.length === 1 ? pieces[0].text : pieces.map(({ text }) => text).join("");
 	/**
 	* The height of single-spaced lines, with this line spacing. Word doesn't round it: Calibri 11 is 268.55 twips, and
 	* 289.82 at 259 twips' multiple spacing, where LibreOffice rounds them to whole twips, 269 and 290.
@@ -1101,8 +1102,12 @@ var docxLayout = (function(exports) {
 		let first = true;
 		for (const [segmentIndex, { tokens, end }] of segments.entries()) {
 			const isLast = segmentIndex === segments.length - 1;
+			const start = indentLeft + (first ? firstLineIndent : 0);
 			let line = {
-				position: indentLeft + (first ? firstLineIndent : 0),
+				position: start,
+				start,
+				end: start,
+				text: "",
 				natural: 0,
 				markers: [],
 				pending: [],
@@ -1111,15 +1116,21 @@ var docxLayout = (function(exports) {
 			};
 			const finish = (state, breakAfter, extra = 0) => {
 				const natural = Math.max(state.started ? state.natural : markHeight, extra);
-				lines.push(_objectSpread2({
+				lines.push(_objectSpread2(_objectSpread2({
 					height: spaced(natural, lineSpacing),
 					markers: [...state.markers, ...state.pending]
-				}, breakAfter ? { breakAfter } : {}));
+				}, breakAfter ? { breakAfter } : {}), {}, {
+					text: state.text,
+					textWidth: Math.max(0, state.end - state.start)
+				}));
 			};
 			const wrap = (state) => {
 				finish(_objectSpread2(_objectSpread2({}, state), {}, { pending: [] }));
 				return {
 					position: indentLeft,
+					start: indentLeft,
+					end: indentLeft,
+					text: "",
 					natural: 0,
 					markers: [],
 					pending: state.pending,
@@ -1141,6 +1152,7 @@ var docxLayout = (function(exports) {
 					const height = Math.max(...token.pieces.map(({ font }) => measurer.measureLineHeight(font)));
 					line = _objectSpread2(_objectSpread2({}, line), {}, {
 						position: line.position + widthOf(token.pieces, measurer),
+						text: line.text + textOf(token.pieces),
 						natural: Math.max(line.natural, height)
 					});
 					continue;
@@ -1151,6 +1163,8 @@ var docxLayout = (function(exports) {
 					const stop = (_nextStop = nextStop(line.position, line.first ? firstLineStops : stops, defaultTabStop, limitOf())) !== null && _nextStop !== void 0 ? _nextStop : line.started ? nextStop(indentLeft, stops, defaultTabStop, limitOf(lines.length + 1)) : void 0;
 					if (stop === void 0) {
 						line = _objectSpread2(_objectSpread2({}, line), {}, {
+							end: line.position,
+							text: `${line.text}\t`,
 							natural: Math.max(line.natural, height),
 							started: true
 						});
@@ -1160,8 +1174,11 @@ var docxLayout = (function(exports) {
 					line = place(line);
 					const after = widthAfterTab(tokens.slice(index + 1), measurer);
 					const shift = stop.alignment === "left" ? 0 : stop.alignment === "center" ? after / 2 : after;
+					const position = Math.max(line.position, stop.position - shift);
 					line = _objectSpread2(_objectSpread2({}, line), {}, {
-						position: Math.max(line.position, stop.position - shift),
+						position,
+						end: position,
+						text: `${line.text}\t`,
 						natural: Math.max(line.natural, height),
 						started: true
 					});
@@ -1179,10 +1196,21 @@ var docxLayout = (function(exports) {
 							natural: Math.max(line.natural, tokenHeight),
 							started: true
 						}));
-						line = _objectSpread2(_objectSpread2({}, line), {}, { position: line.position + characterWidth });
+						line = _objectSpread2(_objectSpread2({}, line), {}, {
+							position: line.position + characterWidth,
+							end: line.position + characterWidth,
+							text: line.text + textOf(character)
+						});
 						placed = true;
 					}
-				} else line = _objectSpread2(_objectSpread2({}, line), {}, { position: line.position + tokenWidth });
+				} else {
+					const text = token.type === "word" ? textOf(token.pieces) : "";
+					line = _objectSpread2(_objectSpread2({}, line), {}, {
+						position: line.position + tokenWidth,
+						end: line.position + tokenWidth,
+						text: line.text + text
+					});
+				}
 				line = _objectSpread2(_objectSpread2({}, line), {}, {
 					natural: Math.max(line.natural, tokenHeight),
 					started: true
@@ -1200,66 +1228,6 @@ var docxLayout = (function(exports) {
 		}
 		return lines;
 	};
-	//#endregion
-	//#region src/layout/measure-width.ts
-	/**
-	* Measuring text with other widths than those of the width tables, such as with the fonts a browser has, through
-	* Pretext.
-	*
-	* @module
-	*/
-	var PIXELS_PER_POINT = 96 / 72;
-	var TAB_STOP = 36;
-	/** A font's name as a CSS font family, in quotes */
-	var quoted = (name) => `"${name.replace(/["\\]/g, "\\$&")}"`;
-	/**
-	* Measures text with Pretext, in the fonts the page has, for laying out a document's pages in a browser. Pretext needs
-	* a canvas to measure with, an `OffscreenCanvas` or a page's, so it doesn't work in Node.
-	*
-	* Load the fonts first, such as with `document.fonts.load("11pt Calibri")`: until a font has loaded, the browser
-	* measures text in another, and Pretext keeps the widths it measured.
-	*
-	* ```ts
-	* import * as pretext from "@chenglou/pretext";
-	* import { estimatePageNumbersWith, measureWithPretext } from "docx/layout";
-	*
-	* new Document({ pageNumbers: estimatePageNumbersWith({ measureWidth: measureWithPretext(pretext) }), sections: [...] });
-	* ```
-	*
-	* @param pretext - Pretext's module, or the two functions of it that are used
-	* @publicApi
-	*/
-	var measureWithPretext = ({ prepareWithSegments, measureNaturalWidth }, { fontFamilies = {} } = {}) => {
-		const families = new Map(Object.entries(fontFamilies));
-		const widths = /* @__PURE__ */ new Map();
-		return (text, { name, size, bold, italic }) => {
-			var _families$get;
-			const family = (_families$get = families.get(name)) !== null && _families$get !== void 0 ? _families$get : quoted(name);
-			const font = `${italic ? "italic " : ""}${bold ? "bold " : ""}${size * PIXELS_PER_POINT}px ${family}`;
-			const key = `${font}\n${text}`;
-			const known = widths.get(key);
-			if (known !== void 0) return known;
-			const width = measureNaturalWidth(prepareWithSegments(text, font, { whiteSpace: "pre-wrap" })) / PIXELS_PER_POINT;
-			widths.set(key, width);
-			return width;
-		};
-	};
-	/**
-	* A measurer that measures widths with a function, and lines' heights with the width tables, as Word works them out
-	* from the font's height and the paragraph's spacing.
-	*/
-	var measurerOf = (measureWidth) => ({
-		measureWidth: (text, { font = DEFAULT_FONT, size = 10, bold = false, italic = false, characterSpacing = 0, scale = 100 }) => {
-			const widthOf = (part) => part.length === 0 ? 0 : measureWidth(part, {
-				name: font,
-				size,
-				bold,
-				italic
-			}) * scale / 100 + characterSpacing * [...part].length;
-			return text.split("	").reduce((position, part, index) => (index === 0 ? 0 : (Math.floor(position / TAB_STOP) + 1) * TAB_STOP) + widthOf(part), 0);
-		},
-		measureLineHeight
-	});
 	//#endregion
 	//#region src/layout/column-widths.ts
 	var sum$1 = (values) => values.reduce((total, value) => total + value, 0);
@@ -1844,6 +1812,34 @@ var docxLayout = (function(exports) {
 		widowControl: false,
 		pageBreakBefore: false
 	};
+	/** The blocks lines and rows are of, in order, with those of the same block one after the other together */
+	var blocksOf = (pieces) => pieces.reduce((blocks, { index, piece }) => {
+		const last = blocks[blocks.length - 1];
+		if (piece.type === "line") return (last === null || last === void 0 ? void 0 : last.type) === "paragraph" && last.index === index ? [...blocks.slice(0, -1), _objectSpread2(_objectSpread2({}, last), {}, { lines: [...last.lines, piece.line] })] : [...blocks, {
+			type: "paragraph",
+			index,
+			lines: [piece.line]
+		}];
+		return (last === null || last === void 0 ? void 0 : last.type) === "table" && last.index === index ? [...blocks.slice(0, -1), _objectSpread2(_objectSpread2({}, last), {}, { rows: [...last.rows, piece.row] })] : [...blocks, {
+			type: "table",
+			index,
+			rows: [piece.row]
+		}];
+	}, []);
+	/** The blocks of footnotes, in order, by the footnotes they are in, with those of the same footnote together */
+	var groupedNotes = (blocks, numbers) => blocks.reduce((notes, { note, block }) => {
+		const last = notes[notes.length - 1];
+		return (last === null || last === void 0 ? void 0 : last.note) === note ? [...notes.slice(0, -1), {
+			note,
+			content: [...last.content, block]
+		}] : [...notes, {
+			note,
+			content: [block]
+		}];
+	}, []).map(({ note, content }) => ({
+		noteNumber: numbers.get(note),
+		content
+	}));
 	/** The headings in a block: a paragraph's own, and those in a table's cells, whose chapter numbers aren't known yet */
 	var headingsIn = (block) => block.type === "paragraph" ? block.heading ? [block.heading] : [] : block.rows.flatMap(({ cells }) => cells.flatMap((cell) => cell.blocks.flatMap(headingsIn))).map(({ level }) => ({
 		level,
@@ -1897,7 +1893,7 @@ var docxLayout = (function(exports) {
 	*/
 	var paginate = (content, { pageNumbers = /* @__PURE__ */ new Map(), pageCount: givenPageCount, sectionPageCounts: givenSectionPageCounts = [], measurer = DEFAULT_MEASURER } = {}) => {
 		var _laidOutLines$get;
-		const { sections, defaultTabStop, evenAndOddHeaders, addsParagraphSpacing, footnotes, footnoteSeparator, footnoteContinuationSeparator, endnotes, breakRules } = content;
+		const { sections, defaultTabStop, evenAndOddHeaders, addsParagraphSpacing, footnotes, footnoteSeparator, footnoteContinuationSeparator, endnotes, breakRules, footnoteNumbers, endnoteNumbers } = content;
 		const blocks = [...content.blocks, ...endnotes.map((block) => ({
 			block,
 			section: sections.length - 1
@@ -2098,6 +2094,7 @@ var docxLayout = (function(exports) {
 		let balancing;
 		let pageNotes = [];
 		let noteArea = 0;
+		let notesSection = 0;
 		let notesInColumns;
 		let filledEnd = 0;
 		const reserves = /* @__PURE__ */ new Map();
@@ -2107,6 +2104,10 @@ var docxLayout = (function(exports) {
 		let spaceAfter = 0;
 		let sectionSpaceAfter = 0;
 		let sectionColumn = 0;
+		const placements = [];
+		let finished = 0;
+		let blockIndex = 0;
+		let stoppedOnPage;
 		/** Whether nothing of the section is placed yet, in the column it starts in or the first of a page */
 		const atSectionStart = () => sectionSpaceAfter !== void 0 && (column === 0 || column === sectionColumn);
 		/**
@@ -2132,13 +2133,16 @@ var docxLayout = (function(exports) {
 			columnBroken,
 			pageNotes,
 			noteArea,
+			notesSection,
 			notesInColumns,
 			filledEnd,
 			continued,
 			carried,
 			held,
 			spaceAfter,
-			sectionSpaceAfter
+			sectionSpaceAfter,
+			placed: placements.length,
+			finished
 		});
 		let blockStart;
 		let columnsStart;
@@ -2149,7 +2153,8 @@ var docxLayout = (function(exports) {
 		* out again only moves them between the columns of the same page
 		*/
 		const restore = (state) => {
-			({pageCount, pageNumber, top, pageBottom, position, column, columnTop, placedInColumn, deepest, columnBroken, pageNotes, noteArea, notesInColumns, filledEnd, continued, carried, held, spaceAfter, sectionSpaceAfter} = state);
+			({pageCount, pageNumber, top, pageBottom, position, column, columnTop, placedInColumn, deepest, columnBroken, pageNotes, noteArea, notesSection, notesInColumns, filledEnd, continued, carried, held, spaceAfter, sectionSpaceAfter, finished} = state);
+			placements.length = Math.min(placements.length, state.placed);
 			bottom = columnsBottom();
 			noteArea = Math.max(noteArea, reserved());
 		};
@@ -2162,6 +2167,7 @@ var docxLayout = (function(exports) {
 		* of them on the next page
 		*/
 		const stopOnPage = (reason) => {
+			stoppedOnPage = pageCount;
 			for (const [name, page] of markedOn) if (page === pageCount) bookmarks.delete(name);
 			throw new Unsupported(reason);
 		};
@@ -2195,10 +2201,21 @@ var docxLayout = (function(exports) {
 		const linesBottom = (more = 0) => Math.min(bottom, pageBottom - noteArea - more);
 		/** How much higher the lines of the column being filled end for more footnotes that take this much more room */
 		const noteCost = (more) => linesBottom() - linesBottom(more);
+		/** Which of a section's headers or footers a page shows: the first page's, an even page's or the default, if it has it */
+		const kindOf = (parts, isFirst) => {
+			const kind = section().titlePage && isFirst ? "first" : evenAndOddHeaders && pageNumber % 2 === 0 ? "even" : "default";
+			return parts[kind] ? kind : void 0;
+		};
+		/** A page's number as its section writes it, unless it starts with a chapter number, which isn't known for the page */
+		const pageNumberOf = (current) => {
+			const text = current.chapters ? void 0 : formatPageNumber(pageNumber, current.numberFormat);
+			return text === void 0 ? {} : { pageNumber: text };
+		};
 		const partHeight = (parts, isFirst) => {
 			var _headerHeights$get, _bySection$get;
-			const part = section().titlePage && isFirst ? parts.first : evenAndOddHeaders && pageNumber % 2 === 0 ? parts.even : parts.default;
-			if (!part) return 0;
+			const kind = kindOf(parts, isFirst);
+			if (!kind) return 0;
+			const part = parts[kind];
 			if (part.some((block) => block.unsupported !== void 0)) throw new Unsupported(part.find((block) => block.unsupported !== void 0).unsupported);
 			const bySection = (_headerHeights$get = headerHeights.get(part)) !== null && _headerHeights$get !== void 0 ? _headerHeights$get : /* @__PURE__ */ new Map();
 			const height = (_bySection$get = bySection.get(sectionIndex)) !== null && _bySection$get !== void 0 ? _bySection$get : stackHeight(part, textWidth());
@@ -2208,11 +2225,22 @@ var docxLayout = (function(exports) {
 		const startPage = (isFirstOfSection = false) => {
 			if (balancing !== void 0 && pageCount >= balancing.page) throw new Overflow();
 			checkReserve();
+			finishPage();
 			const current = section();
 			pageNumber = isFirstOfSection && current.firstNumber !== void 0 ? current.firstNumber : pageNumber + 1;
 			const headerBottom = current.header + partHeight(current.headers, isFirstOfSection);
 			const footerTop = current.footer + partHeight(current.footers, isFirstOfSection);
 			pageCount++;
+			const header = kindOf(current.headers, isFirstOfSection);
+			const footer = kindOf(current.footers, isFirstOfSection);
+			placements.push({
+				type: "page",
+				page: _objectSpread2(_objectSpread2(_objectSpread2({}, pageNumberOf(current)), {}, {
+					section: sectionIndex,
+					width: current.pageWidth,
+					height: current.pageHeight
+				}, header ? { header } : {}), footer ? { footer } : {})
+			});
 			top = current.marginTop < 0 ? -current.marginTop : Math.max(current.marginTop, headerBottom);
 			pageBottom = current.pageHeight - (current.marginBottom < 0 ? -current.marginBottom : Math.max(current.marginBottom, footerTop));
 			position = top;
@@ -2230,6 +2258,7 @@ var docxLayout = (function(exports) {
 			continued = carried;
 			carried = void 0;
 			noteArea = Math.max(areaOf([], void 0, continued), reserved());
+			notesSection = sectionIndex;
 			if (continued !== void 0 && current.columns.length > 1) throw new Unsupported("a footnote across pages in columns");
 			if (continued !== void 0 && noteArea > bottom - top + TOLERANCE) {
 				if (isFirstOfSection) throw new Unsupported("a footnote continued across a section break onto a page of its own");
@@ -2308,12 +2337,17 @@ var docxLayout = (function(exports) {
 			};
 			let short = 0;
 			let tall = pageBottom - columnTop;
-			while (tall - short > TOLERANCE) {
-				const middle = (short + tall) / 2;
-				if (fitsIn(middle)) tall = middle;
-				else short = middle;
+			try {
+				while (tall - short > TOLERANCE) {
+					const middle = (short + tall) / 2;
+					if (fitsIn(middle)) tall = middle;
+					else short = middle;
+				}
+				layOut(tall);
+			} catch (error) {
+				restore(from);
+				throw error;
 			}
-			layOut(tall);
 			balancing = void 0;
 			bottom = pageBottom;
 			placeBlocks(balanced, end);
@@ -2323,7 +2357,7 @@ var docxLayout = (function(exports) {
 		* one, after the columns before it are ended
 		*/
 		const startSection = (index, firstBlock) => {
-			var _end$format$spaceAfte, _current$firstNumber;
+			var _end$format$spaceAfte;
 			const previous = section();
 			const current = sections[index];
 			lastPages.set(sectionIndex, pageCount);
@@ -2360,10 +2394,20 @@ var docxLayout = (function(exports) {
 				sharingPages.add(before).add(index);
 				return;
 			}
-			const nextNumber = (_current$firstNumber = current.firstNumber) !== null && _current$firstNumber !== void 0 ? _current$firstNumber : pageNumber + 1;
+			const nextNumber = pageNumber + 1;
 			if (current.start === "evenPage" && nextNumber % 2 !== 0 || current.start === "oddPage" && nextNumber % 2 === 0) {
+				finishPage();
 				pageCount++;
 				pageNumber++;
+				finished = pageCount;
+				placements.push({
+					type: "page",
+					page: _objectSpread2(_objectSpread2({}, pageNumberOf(previous)), {}, {
+						section: before,
+						width: previous.pageWidth,
+						height: previous.pageHeight
+					})
+				});
 				sharingPages.add(before).add(index);
 			}
 			startPage(true);
@@ -2373,19 +2417,20 @@ var docxLayout = (function(exports) {
 		* The height of the tallest of the columns footnotes are laid out in when they fit in columns of a height, or
 		* undefined when they don't: one paragraph after the other from the first column, breaking between lines as widow
 		* control and keepLines let them, below the separator at the top of each (`separator`, with the space after it,
-		* `separatorAfter`)
+		* `separatorAfter`). Each line placed is given to `place`, with the column it is in and how far down it its top is
 		*/
-		const fillNoteColumns = (paragraphs, count, separator, separatorAfter, height) => {
+		const fillNoteColumns = (paragraphs, count, separator, separatorAfter, height, place = () => void 0) => {
 			let noteColumn = 0;
 			let used = separator;
 			let above = separatorAfter;
 			let tallest = separator;
-			for (const paragraph of paragraphs) {
+			for (const [at, paragraph] of paragraphs.entries()) {
 				let from = 0;
 				while (from < paragraph.lines.length) {
 					const space = above === void 0 ? 0 : between(above, from === 0 ? paragraph.spaceBefore : 0);
 					const rest = paragraph.lines.slice(from);
 					const placed = linesThatFit(rest, height - used - space, paragraph, from === 0).count;
+					for (const [offset] of rest.slice(0, placed).entries()) place(at, from + offset, noteColumn, used + space + linesHeight(rest.slice(0, offset)));
 					used += placed > 0 ? space + linesHeight(rest.slice(0, placed)) : 0;
 					tallest = Math.max(tallest, used);
 					from += placed;
@@ -2406,24 +2451,27 @@ var docxLayout = (function(exports) {
 			line: 0
 		}, to }) => footnotes.get(name).flatMap((block, index) => index < from.block || to !== void 0 && (index > to.block || index === to.block && to.line === 0) ? [] : [{
 			block,
+			note: name,
+			index,
 			start: index === from.block ? from.line : 0,
 			end: to !== void 0 && index === to.block ? to.line : void 0
 		}]);
 		/**
-		* The room footnotes take at the bottom of the page: the separator's line above them, the rest of a footnote
-		* continued from the page before (`from`), their blocks, and the first part of one continued on the next page
-		* (`split`), without the space before the first or after the last, as LibreOffice lays them out. In columns
+		* The footnotes at the bottom of the page: the separator's line above them, the rest of a footnote continued from the
+		* page before (`from`), their blocks, and the first part of one continued on the next page (`split`), without the space
+		* before the first or after the last, as LibreOffice lays them out, with the room they take (`area`). In columns
 		* (`columns`), Word lays them out in the columns, one after the other from the first, with the separator at the top of
 		* each, and evens them out, as it evens out columns before a continuous section break: the room is the tallest, in the
-		* shortest height they fit in (`word-footnotes-in-columns.docx` N2, N4 and N9)
+		* shortest height they fit in (`word-footnotes-in-columns.docx` N2, N4 and N9), and `fillColumns` says where each of
+		* their lines goes then. Across the page, they are as wide as its text (`fullWidth`)
 		*/
-		const areaOf = (notes, split, from, columns = noteColumns()) => {
+		const noteStack = (notes, split, from, columns = noteColumns(), fullWidth = textWidth()) => {
 			var _pieces$find, _columns$;
-			if (notes.length === 0 && split === void 0 && from === void 0) return 0;
 			const separator = from === void 0 ? footnoteSeparator : footnoteContinuationSeparator;
 			const pieces = [
-				...separator.map((block) => ({
+				...separator.map((block, index) => ({
 					block,
+					index,
 					start: 0,
 					end: void 0
 				})),
@@ -2434,13 +2482,15 @@ var docxLayout = (function(exports) {
 			const unsupported = (_pieces$find = pieces.find(({ block }) => block.unsupported !== void 0)) === null || _pieces$find === void 0 ? void 0 : _pieces$find.block.unsupported;
 			if (unsupported) throw new Unsupported(unsupported);
 			if (columns === null || columns === void 0 ? void 0 : columns.some((columnWidth) => columnWidth !== columns[0])) stopOnPage("footnotes in columns of different widths");
-			const width = (_columns$ = columns === null || columns === void 0 ? void 0 : columns[0]) !== null && _columns$ !== void 0 ? _columns$ : textWidth();
+			const width = (_columns$ = columns === null || columns === void 0 ? void 0 : columns[0]) !== null && _columns$ !== void 0 ? _columns$ : fullWidth;
 			/** A piece's paragraph, with only its lines in the piece, or its table's rows as a line that doesn't break */
 			const measured = ({ block, start, end }, index) => {
 				var _pieces, _pieces2;
 				if (block.type === "table") return _objectSpread2(_objectSpread2({}, UNBROKEN), {}, { lines: [{
 					height: sum(rowHeights(sizedToPlace(block, width)).slice(start, end)),
-					markers: []
+					markers: [],
+					text: "",
+					textWidth: 0
 				}] });
 				const paragraph = measureParagraph(block, width, (_pieces = pieces[index - 1]) === null || _pieces === void 0 ? void 0 : _pieces.block, (_pieces2 = pieces[index + 1]) === null || _pieces2 === void 0 ? void 0 : _pieces2.block);
 				return _objectSpread2(_objectSpread2({}, paragraph), {}, { lines: paragraph.lines.slice(start, end) });
@@ -2453,13 +2503,20 @@ var docxLayout = (function(exports) {
 					after
 				};
 			});
+			const stack = {
+				pieces,
+				parts,
+				separatorCount: separator.length,
+				width,
+				measured
+			};
 			if (columns !== void 0) {
 				var _separatorParts;
 				const separatorParts = parts.slice(0, separator.length);
 				const paragraphs = pieces.slice(separator.length).map((piece, index) => measured(piece, separator.length + index));
 				const separatorHeight = heightOf(separatorParts, false);
 				const separatorAfter = (_separatorParts = separatorParts[separatorParts.length - 1]) === null || _separatorParts === void 0 ? void 0 : _separatorParts.after;
-				const fill = (height) => fillNoteColumns(paragraphs, columns.length, separatorHeight, separatorAfter, height);
+				const fill = (height, place) => fillNoteColumns(paragraphs, columns.length, separatorHeight, separatorAfter, height, place);
 				let short = separatorHeight;
 				let tall = fill(Infinity);
 				while (tall - short > TOLERANCE) {
@@ -2467,9 +2524,123 @@ var docxLayout = (function(exports) {
 					if (fill(middle) === void 0) short = middle;
 					else tall = middle;
 				}
-				return fill(tall);
+				return _objectSpread2(_objectSpread2({}, stack), {}, {
+					area: fill(tall),
+					fillColumns: (place) => void fill(tall, place)
+				});
 			}
-			return heightOf(parts, false);
+			return _objectSpread2(_objectSpread2({}, stack), {}, { area: heightOf(parts, false) });
+		};
+		/** The room footnotes take at the bottom of the page, as {@link noteStack} lays them out */
+		const areaOf = (notes, split, from, columns = noteColumns()) => notes.length === 0 && split === void 0 && from === void 0 ? 0 : noteStack(notes, split, from, columns).area;
+		/** Where a section's text, or one of its columns, starts across the page, in points from its left edge */
+		const columnLeft = (current, index) => {
+			const { columns } = current;
+			const space = columns.length > 1 ? (textWidth(current) - sum(columns)) / (columns.length - 1) : 0;
+			return current.marginLeft + current.gutter + sum(columns.slice(0, index)) + index * space;
+		};
+		/**
+		* A line placed with its top at a height (`y`), in the room between its paragraph's indents in a width that starts at
+		* `left`: a column, or the page's text. The first line of a paragraph starts at its first line indent
+		*/
+		const placedLine = (line, { indentLeft = 0, indentRight = 0, firstLineIndent = 0 }, isFirst, left, width, y) => {
+			const indent = indentLeft + (isFirst ? firstLineIndent : 0);
+			return {
+				text: line.text,
+				x: left + indent,
+				y,
+				width: width - indent - indentRight,
+				height: line.height,
+				textWidth: line.textWidth
+			};
+		};
+		/**
+		* The footnotes at the bottom of the page, with where their lines and rows are: across the page, in the width of the
+		* text of the section they were laid out in, or in the columns of the section whose columns they are laid out in. The last of them is cut
+		* where it continues on the next page, and the rest of one continued from the page before is only as much of it as
+		* fits, when the page is all footnote
+		*/
+		const footnotesOnPage = () => {
+			if (pageNotes.length === 0 && continued === void 0) return [];
+			const current = sections[notesSection];
+			const split = carried !== void 0 && pageNotes[pageNotes.length - 1] === carried.name ? {
+				name: carried.name,
+				to: carried.from
+			} : void 0;
+			const from = continued && _objectSpread2(_objectSpread2({}, continued), carried !== void 0 && split === void 0 ? { to: carried.from } : {});
+			const columns = noteColumns();
+			const stack = noteStack(split ? pageNotes.slice(0, -1) : pageNotes, split, from, columns, textWidth(current));
+			const notesTop = pageBottom - stack.area;
+			/** A piece's lines, from its first in it, each at a height, in a column, or its table's rows from a height */
+			const blockAt = (piece, index, at) => {
+				const { block, start, end } = piece;
+				if (block.type === "table") {
+					const heights = rowHeights(sizedToPlace(block, stack.width)).slice(start, end);
+					return {
+						type: "table",
+						index: piece.index,
+						rows: heights.map((height, row) => ({
+							index: start + row,
+							y: at[0].y + sum(heights.slice(0, row)),
+							height
+						}))
+					};
+				}
+				const { lines } = stack.measured(piece, index);
+				return {
+					type: "paragraph",
+					index: piece.index,
+					lines: at.map(({ line, left, y }) => placedLine(lines[line], block.format, start + line === 0, left, stack.width, y))
+				};
+			};
+			const placed = stack.pieces.map(() => []);
+			if (stack.fillColumns !== void 0) {
+				const noteSection = sections[notesInColumns];
+				stack.fillColumns((paragraph, line, noteColumn, offset) => {
+					placed[stack.separatorCount + paragraph].push({
+						line,
+						left: columnLeft(noteSection, noteColumn),
+						y: notesTop + offset
+					});
+				});
+			} else {
+				let y = notesTop;
+				for (const [index, piece] of stack.pieces.entries()) {
+					y += index === 0 ? 0 : stack.parts[index - 1].height + between(stack.parts[index - 1].after, stack.parts[index].before);
+					const { lines } = stack.measured(piece, index);
+					for (const [line] of lines.entries()) placed[index].push({
+						line,
+						left: columnLeft(current, 0),
+						y: y + linesHeight(lines.slice(0, line))
+					});
+				}
+			}
+			return groupedNotes(stack.pieces.flatMap((piece, index) => piece.note === void 0 || placed[index].length === 0 ? [] : [{
+				note: piece.note,
+				block: blockAt(piece, index, placed[index])
+			}]), footnoteNumbers);
+		};
+		/** Places the footnotes at the bottom of the page when it is full, once */
+		const finishPage = () => {
+			if (finished === pageCount) return;
+			finished = pageCount;
+			const notes = footnotesOnPage();
+			if (notes.length > 0) placements.push({
+				type: "footnotes",
+				notes
+			});
+		};
+		/** Places a row of the table being placed, or the part of it on the page */
+		const placeRow = (index, y, height) => {
+			placements.push({
+				type: "row",
+				block: blockIndex,
+				row: {
+					index,
+					y,
+					height
+				}
+			});
 		};
 		const notesIn = (markers) => markers.filter((name) => footnotes.has(name));
 		/** The room footnotes take at the bottom of the page, or the room kept for them there, when that is more */
@@ -2493,6 +2664,7 @@ var docxLayout = (function(exports) {
 				if (pageNotes.length === 0 && continued === void 0 && section().columns.length > 1) notesInColumns = sectionIndex;
 				pageNotes = [...pageNotes, ...notes];
 				noteArea = pageArea(pageNotes);
+				notesSection = sectionIndex;
 				if (noteArea > reserved() + TOLERANCE && filledEnd > pageBottom - noteArea + TOLERANCE) {
 					if (startedInColumn()) stopOnPage("a footnote in a section that starts in the next column, below a longer column");
 					throw new NotesGrew(noteArea);
@@ -2628,6 +2800,7 @@ var docxLayout = (function(exports) {
 			}, continued) <= bottom - position - below + TOLERANCE);
 			pageNotes = [...whole, name];
 			noteArea = bottom - position - below;
+			notesSection = sectionIndex;
 			carried = {
 				name,
 				from: to
@@ -2739,8 +2912,14 @@ var docxLayout = (function(exports) {
 				}
 				if (count > 0) {
 					position += space;
-					for (const line of remaining.slice(0, count)) {
+					const current = section();
+					for (const [offset, line] of remaining.slice(0, count).entries()) {
 						mark(line.markers);
+						placements.push({
+							type: "line",
+							block: blockIndex,
+							line: placedLine(line, block.format, index + offset === 0, columnLeft(current, column), current.columns[column], position)
+						});
 						position += line.height;
 					}
 					spaceAfter = 0;
@@ -2812,11 +2991,13 @@ var docxLayout = (function(exports) {
 		* @param breakBorder - The border below the row on a page where the table breaks: the table's bottom border, which the
 		* last row has counted already
 		*/
-		const splitRow = (row, height, breakBorder, startTablePage) => {
+		const splitRow = (row, rowIndex, height, breakBorder, startTablePage) => {
 			let parts = row.cells.map((cell) => cell.blocks.map((block, index) => ({
 				paragraph: block.type === "paragraph" ? measureParagraph(block, cell.width, cell.blocks[index - 1], cell.blocks[index + 1]) : _objectSpread2(_objectSpread2({}, UNBROKEN), {}, { lines: [{
 					height: sum(rowHeights(sizedToPlace(block, cell.width))),
-					markers: markersOf(block)
+					markers: markersOf(block),
+					text: "",
+					textWidth: 0
 				}] }),
 				from: 0
 			})));
@@ -2891,7 +3072,9 @@ var docxLayout = (function(exports) {
 				}
 				if (placesLines) {
 					mark(filled.flatMap(({ lines }) => lines.flatMap(({ markers }) => markers)));
-					position += isLastPart ? (isFirstPart ? height - borders : tallestOf(filled)) + borders : tallestOf(filled) + borders + breakBorder;
+					const rowPart = isLastPart ? (isFirstPart ? height - borders : tallestOf(filled)) + borders : tallestOf(filled) + borders + breakBorder;
+					placeRow(rowIndex, position, rowPart);
+					position += rowPart;
 					placeNotes(notes, isLastPart ? breakBorder : 0);
 					if (isLastPart) {
 						placedInColumn = true;
@@ -2919,7 +3102,13 @@ var docxLayout = (function(exports) {
 				nextColumn();
 				const next = section().columns[column];
 				if (next < width && !sameWidths(table, fitted(block, next))) throw new Unsupported("a table sized to its text that goes on into a narrower column");
-				if (index >= headerRows) position += repeated;
+				if (index >= headerRows) {
+					heights.slice(0, Math.max(0, headerRows)).reduce((y, rowHeight, row) => {
+						placeRow(row, y, rowHeight);
+						return y + rowHeight;
+					}, position);
+					position += repeated;
+				}
 			};
 			/** Whether a row fits on the page, with its footnotes */
 			const rowFits = (height, notes) => position + height <= linesBottom(moreNoteRoom(notes)) + TOLERANCE;
@@ -2949,7 +3138,7 @@ var docxLayout = (function(exports) {
 					if (rows.length > 1 && !rowFits(sum(heights.slice(index, index + rows.length)), notesIn(rows.flatMap(markersIn)))) throw new Unsupported("a table row with merged cells across pages");
 				}
 				if (!rowFits(roomNeeded, notes) && !keptWhole) {
-					splitRow(row, height, breakBorder, () => startTablePage(index));
+					splitRow(row, index, height, breakBorder, () => startTablePage(index));
 					continue;
 				}
 				if (!rowStays(roomNeeded, notes)) {
@@ -2957,6 +3146,7 @@ var docxLayout = (function(exports) {
 					throw new Unsupported(notes.length > 0 && position + roomNeeded <= linesBottom() + TOLERANCE ? "a table row and its footnote taller than a page" : "a table row taller than a page");
 				}
 				mark(markers);
+				placeRow(index, position, height);
 				position += height;
 				placeNotes(notes, breakBorder);
 				placedInColumn = true;
@@ -3022,6 +3212,7 @@ var docxLayout = (function(exports) {
 		};
 		const placeBlock = (block, index) => {
 			var _blocks5, _blocks6;
+			blockIndex = index;
 			if (block.unsupported) throw new Unsupported(block.unsupported);
 			const width = section().columns[column];
 			if (block.type === "paragraph" && block.sectionBreak && !endsAfterTable(index)) {
@@ -3086,6 +3277,55 @@ var docxLayout = (function(exports) {
 				}
 			}
 		};
+		/** The number and index of the endnote each of the endnotes' blocks is in, or nothing for those of their separator */
+		const endnoteParts = endnotes.map((block, index) => {
+			const noteNumber = endnoteNumbers.get(block);
+			return noteNumber === void 0 ? void 0 : {
+				noteNumber,
+				index: endnotes.slice(0, index).filter((other) => endnoteNumbers.get(other) === noteNumber).length
+			};
+		});
+		/**
+		* The pages, from what was placed on them. The blocks after the body's are its endnotes'. The page the layout stopped
+		* on because Word might lay it out differently has nothing on it
+		*/
+		const pagesOf = () => {
+			const starts = placements.flatMap((placement, index) => placement.type === "page" ? [index] : []);
+			return starts.map((start, page) => {
+				const placed = page + 1 === stoppedOnPage ? [] : placements.slice(start + 1, starts[page + 1]);
+				const pieces = placed.filter((placement) => placement.type === "line" || placement.type === "row");
+				const notes = pieces.flatMap((piece) => {
+					const note = endnoteParts[piece.block - content.blocks.length];
+					return note === void 0 ? [] : [_objectSpread2(_objectSpread2({}, note), {}, { piece })];
+				}).reduce((all, { noteNumber, index, piece }) => {
+					const last = all[all.length - 1];
+					return (last === null || last === void 0 ? void 0 : last.noteNumber) === noteNumber ? [...all.slice(0, -1), {
+						noteNumber,
+						pieces: [...last.pieces, {
+							index,
+							piece
+						}]
+					}] : [...all, {
+						noteNumber,
+						pieces: [{
+							index,
+							piece
+						}]
+					}];
+				}, []);
+				return _objectSpread2(_objectSpread2({}, placements[start].page), {}, {
+					body: blocksOf(pieces.filter(({ block }) => block < content.blocks.length).map((piece) => ({
+						index: piece.block,
+						piece
+					}))),
+					footnotes: placed.flatMap((placement) => placement.type === "footnotes" ? placement.notes : []),
+					endnotes: notes.map(({ noteNumber, pieces: notePieces }) => ({
+						noteNumber,
+						content: blocksOf(notePieces)
+					}))
+				});
+			});
+		};
 		/** The number of pages of each section whose pages are its alone, and that was laid out to its end */
 		const countsOf = () => sections.map((_, index) => {
 			const first = firstPages.get(index);
@@ -3101,20 +3341,106 @@ var docxLayout = (function(exports) {
 			if (carried !== void 0) startPage();
 		} catch (error) {
 			if (!(error instanceof Unsupported)) throw error;
+			finishPage();
 			return {
 				bookmarks,
 				pageCount,
 				sectionPageCounts: countsOf(),
-				stoppedAt: error.message
+				stoppedAt: error.message,
+				pages: pagesOf()
 			};
 		}
+		finishPage();
 		lastPages.set(sectionIndex, pageCount);
 		return {
 			bookmarks,
 			pageCount,
-			sectionPageCounts: countsOf()
+			sectionPageCounts: countsOf(),
+			pages: pagesOf()
 		};
 	};
+	//#endregion
+	//#region src/layout/layout-passes.ts
+	var PASSES = 3;
+	/** The number of pages, which is known only when all of the document was laid out */
+	var knownPageCount = ({ pageCount, stoppedAt }) => stoppedAt === void 0 ? pageCount : void 0;
+	var sameNumbers = (one, other) => one.bookmarks.size === other.bookmarks.size && [...one.bookmarks].every(([name, page]) => other.bookmarks.get(name) === page) && knownPageCount(one) === knownPageCount(other) && one.sectionPageCounts.length === other.sectionPageCounts.length && one.sectionPageCounts.every((count, index) => other.sectionPageCounts[index] === count);
+	/**
+	* Lays out a document's pages, again with the page numbers each pass works out, until they stop changing, or for at most
+	* three passes, and gives the last.
+	*/
+	var layOutPasses = (content, measurer) => {
+		const layOut = (before, pass) => {
+			const pagination = paginate(content, {
+				measurer,
+				pageNumbers: before === null || before === void 0 ? void 0 : before.bookmarks,
+				pageCount: before && knownPageCount(before),
+				sectionPageCounts: before === null || before === void 0 ? void 0 : before.sectionPageCounts
+			});
+			return pass >= PASSES || before !== void 0 && sameNumbers(pagination, before) ? pagination : layOut(pagination, pass + 1);
+		};
+		return layOut(void 0, 1);
+	};
+	//#endregion
+	//#region src/layout/measure-width.ts
+	/**
+	* Measuring text with other widths than those of the width tables, such as with the fonts a browser has, through
+	* Pretext.
+	*
+	* @module
+	*/
+	var PIXELS_PER_POINT$1 = 96 / 72;
+	var TAB_STOP = 36;
+	/** A font's name as a CSS font family, in quotes */
+	var quoted = (name) => `"${name.replace(/["\\]/g, "\\$&")}"`;
+	/**
+	* Measures text with Pretext, in the fonts the page has, for laying out a document's pages in a browser. Pretext needs
+	* a canvas to measure with, an `OffscreenCanvas` or a page's, so it doesn't work in Node.
+	*
+	* Load the fonts first, such as with `document.fonts.load("11pt Calibri")`: until a font has loaded, the browser
+	* measures text in another, and Pretext keeps the widths it measured.
+	*
+	* ```ts
+	* import * as pretext from "@chenglou/pretext";
+	* import { estimatePageNumbersWith, measureWithPretext } from "docx/layout";
+	*
+	* new Document({ pageNumbers: estimatePageNumbersWith({ measureWidth: measureWithPretext(pretext) }), sections: [...] });
+	* ```
+	*
+	* @param pretext - Pretext's module, or the two functions of it that are used
+	* @publicApi
+	*/
+	var measureWithPretext = ({ prepareWithSegments, measureNaturalWidth }, { fontFamilies = {} } = {}) => {
+		const families = new Map(Object.entries(fontFamilies));
+		const widths = /* @__PURE__ */ new Map();
+		return (text, { name, size, bold, italic }) => {
+			var _families$get;
+			const family = (_families$get = families.get(name)) !== null && _families$get !== void 0 ? _families$get : quoted(name);
+			const font = `${italic ? "italic " : ""}${bold ? "bold " : ""}${size * PIXELS_PER_POINT$1}px ${family}`;
+			const key = `${font}\n${text}`;
+			const known = widths.get(key);
+			if (known !== void 0) return known;
+			const width = measureNaturalWidth(prepareWithSegments(text, font, { whiteSpace: "pre-wrap" })) / PIXELS_PER_POINT$1;
+			widths.set(key, width);
+			return width;
+		};
+	};
+	/**
+	* A measurer that measures widths with a function, and lines' heights with the width tables, as Word works them out
+	* from the font's height and the paragraph's spacing.
+	*/
+	var measurerOf = (measureWidth) => ({
+		measureWidth: (text, { font = DEFAULT_FONT, size = 10, bold = false, italic = false, characterSpacing = 0, scale = 100 }) => {
+			const widthOf = (part) => part.length === 0 ? 0 : measureWidth(part, {
+				name: font,
+				size,
+				bold,
+				italic
+			}) * scale / 100 + characterSpacing * [...part].length;
+			return text.split("	").reduce((position, part, index) => (index === 0 ? 0 : (Math.floor(position / TAB_STOP) + 1) * TAB_STOP) + widthOf(part), 0);
+		},
+		measureLineHeight
+	});
 	//#endregion
 	//#region \0@oxc-project+runtime@0.150.0/helpers/esm/objectWithoutPropertiesLoose.js
 	function _objectWithoutPropertiesLoose(r, e) {
@@ -3299,14 +3625,17 @@ var docxLayout = (function(exports) {
 			}
 			if (!isShown(reader)) return [];
 			switch (name) {
-				case "w:t": return spansOf(contentOf$2(child).filter((part) => typeof part === "string").join(""), format).map((_ref) => {
+				case "w:t": return contentOf$2(child).filter((part) => typeof part === "string").join("").split("	").flatMap((part, index) => [...index > 0 && !format.hidden ? [{
+					type: "tab",
+					font
+				}] : [], ...(part.length === 0 ? [] : spansOf(part, format)).map((_ref) => {
 					let { text } = _ref;
 					return _objectSpread2(_objectSpread2({
 						type: "text",
 						text,
 						font: _objectWithoutProperties(_ref, _excluded)
 					}, format.eastAsianLanguage === void 0 ? {} : { language: format.eastAsianLanguage }), isEastAsianRun(format) ? { eastAsian: true } : {});
-				});
+				})]);
 				case "w:tab":
 				case "w:ptab": return format.hidden ? [] : [{
 					type: "tab",
@@ -3852,7 +4181,9 @@ var docxLayout = (function(exports) {
 			return note === void 0 ? [] : readBlocks(contentOf$2(note), _objectSpread2(_objectSpread2({}, readerOf(false)), label === void 0 ? {} : { noteNumber: label }));
 		};
 		const footnotes = /* @__PURE__ */ new Map();
+		const footnoteNumbers = /* @__PURE__ */ new Map();
 		const endnotes = [];
+		const endnoteNumbers = /* @__PURE__ */ new Map();
 		const noteCounts = {
 			footnote: 0,
 			endnote: 0
@@ -3863,10 +4194,12 @@ var docxLayout = (function(exports) {
 			const content = readNoteContent(kind, id, label);
 			if (kind === "endnote") {
 				endnotes.push(...content);
+				for (const block of content) endnoteNumbers.set(block, label);
 				return { label };
 			}
 			const marker = `footnote ${noteCounts[kind]}`;
 			footnotes.set(marker, content);
+			footnoteNumbers.set(marker, label);
 			return {
 				label,
 				marker
@@ -3913,7 +4246,9 @@ var docxLayout = (function(exports) {
 			footnotes,
 			footnoteSeparator: footnotes.size > 0 ? readNoteContent("footnote", "separator") : [],
 			footnoteContinuationSeparator: footnotes.size > 0 ? readNoteContent("footnote", "continuationSeparator") : [],
-			endnotes: endnotes.length > 0 ? [...readNoteContent("endnote", "separator"), ...endnotes] : []
+			endnotes: endnotes.length > 0 ? [...readNoteContent("endnote", "separator"), ...endnotes] : [],
+			footnoteNumbers,
+			endnoteNumbers
 		}, readSettings(parts.settings));
 		return _objectSpread2(_objectSpread2({}, documentContent), withoutUndefined({ unsupported: (_ref7 = (_documentContent$unsu = documentContent.unsupported) !== null && _documentContent$unsu !== void 0 ? _documentContent$unsu : styles.unsupported) !== null && _ref7 !== void 0 ? _ref7 : inNumbering }));
 	};
@@ -3990,30 +4325,17 @@ var docxLayout = (function(exports) {
 	};
 	//#endregion
 	//#region src/layout/estimate-page-numbers.ts
-	var PASSES = 3;
-	var sameNumbers = (one, other) => one.bookmarks.size === other.bookmarks.size && [...one.bookmarks].every(([name, page]) => other.bookmarks.get(name) === page) && one.pageCount === other.pageCount && one.sectionPageCounts.length === other.sectionPageCounts.length && one.sectionPageCounts.every((count, index) => other.sectionPageCounts[index] === count);
 	/** What a document is read into: a template patchDocument patched, or the body of a document being written */
 	var contentOf = (document, context) => "parts" in document ? readDocx(document.parts) : (context === null || context === void 0 ? void 0 : context.file) && readDocument(document, context);
 	/** Lays out the pages until their page numbers stop changing, with a measurer */
 	var estimateWith = (content, measurer) => {
 		if (!content) return { bookmarks: /* @__PURE__ */ new Map() };
-		const layOut = (before, pass) => {
-			const { bookmarks, pageCount, sectionPageCounts, stoppedAt } = paginate(content, {
-				measurer,
-				pageNumbers: before.bookmarks,
-				pageCount: before.pageCount,
-				sectionPageCounts: before.sectionPageCounts
-			});
-			const estimate = _objectSpread2({
-				bookmarks,
-				sectionPageCounts
-			}, stoppedAt === void 0 ? { pageCount } : {});
-			return pass >= PASSES || sameNumbers(estimate, before) ? estimate : layOut(estimate, pass + 1);
-		};
-		return layOut({
-			bookmarks: /* @__PURE__ */ new Map(),
-			sectionPageCounts: []
-		}, 1);
+		const pagination = layOutPasses(content, measurer);
+		const pageCount = knownPageCount(pagination);
+		return _objectSpread2({
+			bookmarks: pagination.bookmarks,
+			sectionPageCounts: pagination.sectionPageCounts
+		}, pageCount === void 0 ? {} : { pageCount });
 	};
 	/**
 	* Works out the page each bookmark of a document starts on, and how many pages the document and each of its sections
@@ -4060,8 +4382,56 @@ var docxLayout = (function(exports) {
 		return (document, context) => estimateWith(contentOf(document, context), measurer);
 	};
 	//#endregion
+	//#region src/layout/layout-document.ts
+	var PIXELS_PER_POINT = 96 / 72;
+	var pixels = (points) => points * PIXELS_PER_POINT;
+	var inPixels = (block) => block.type === "paragraph" ? _objectSpread2(_objectSpread2({}, block), {}, { lines: block.lines.map((line) => _objectSpread2(_objectSpread2({}, line), {}, {
+		x: pixels(line.x),
+		y: pixels(line.y),
+		width: pixels(line.width),
+		height: pixels(line.height),
+		textWidth: pixels(line.textWidth)
+	})) }) : _objectSpread2(_objectSpread2({}, block), {}, { rows: block.rows.map((row) => _objectSpread2(_objectSpread2({}, row), {}, {
+		y: pixels(row.y),
+		height: pixels(row.height)
+	})) });
+	var notesInPixels = (notes) => notes.map((note) => _objectSpread2(_objectSpread2({}, note), {}, { content: note.content.map(inPixels) }));
+	/**
+	* Lays out a document's pages as Word does, and gives what is on each page: the lines of its paragraphs, with their text
+	* and where they are, the rows of its tables, its footnotes and endnotes, and which of its section's headers and footers
+	* it shows.
+	*
+	* ```ts
+	* const { pages } = layoutDocument(new Document({ sections: [...] }));
+	* ```
+	*
+	* The pages are laid out as `estimatePageNumbers` lays them out, with the same fonts and rules, and the page numbers of
+	* tables of contents and page references are laid out as it writes them. Where it can't lay out something yet, such as a
+	* text box, it stops, and gives the pages up to there, with why in `stoppedAt`.
+	*
+	* @param document - The document to lay out. It is laid out as it would be written
+	*
+	* @publicApi
+	*/
+	var layoutDocument = (document) => {
+		const context = {
+			file: document,
+			viewWrapper: document.Document,
+			stack: []
+		};
+		const { pages, stoppedAt } = layOutPasses(readDocument(document.Document.View.Body.prepForXml(context), context));
+		return _objectSpread2({ pages: pages.map((page) => _objectSpread2(_objectSpread2({}, page), {}, {
+			width: pixels(page.width),
+			height: pixels(page.height),
+			body: page.body.map(inPixels),
+			footnotes: notesInPixels(page.footnotes),
+			endnotes: notesInPixels(page.endnotes)
+		})) }, stoppedAt === void 0 ? {} : { stoppedAt });
+	};
+	//#endregion
 	exports.estimatePageNumbers = estimatePageNumbers;
 	exports.estimatePageNumbersWith = estimatePageNumbersWith;
+	exports.layoutDocument = layoutDocument;
 	exports.measureWithPretext = measureWithPretext;
 	return exports;
 })({});
