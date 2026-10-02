@@ -8,7 +8,7 @@ import {
     layoutLines,
     measureContentWidths,
 } from "./line-breaking";
-import { measureLineHeight, measureTextWidth } from "./text-width";
+import { type ParagraphFormat, type TextFont, measureLineHeight, measureTextWidth } from "./text-width";
 
 // Every character is 10 points wide, and a line is as tall as its font's size
 const MEASURER: TextMeasurer = {
@@ -443,6 +443,233 @@ describe("layoutLines", () => {
         expect(line.height).to.equal(measureLineHeight({ size: 11 }));
         expect(DEFAULT_MEASURER.measureWidth("Some text", { size: 11 })).to.equal(measureTextWidth("Some text", { size: 11 }));
         expect(layoutLines([text("Some text", 11)], { width: measureTextWidth("Some", { size: 11 }) + 1 })).to.have.length(2);
+    });
+
+    describe("justified lines", () => {
+        // Each character is 10 points wide, so is each space
+        const justified = { alignment: "justified" } as const;
+        const countOf = (items: readonly InlineItem[], width: number, format: ParagraphFormat = justified): number =>
+            layoutLines(items, { width, measurer: MEASURER, format }).length;
+
+        it("should squeeze one more word onto a justified line when its spaces would stretch more than twice as much without it", () => {
+            // 10 words of 2 letters and their 9 spaces end at 290, and "bbbb" after a space at 340. On a line of 325 its 10
+            // spaces are squeezed by 15%, against the 9 between the words stretching by 35 / 90, 39%: more than twice. A
+            // line of 300 follows it, which "bbbb" doesn't fit on
+            const items = [text(`aa aa aa aa aa aa aa aa aa aa bbbb ${"c".repeat(30)}`)];
+            expect(countOf(items, 325)).to.equal(2);
+            // On a line of 320 they'd be squeezed by 20%, against 33%
+            expect(countOf(items, 320)).to.equal(3);
+            // A left-aligned, centred or right-aligned line isn't squeezed
+            expect(countOf(items, 325, {})).to.equal(3);
+            expect(countOf(items, 325, { alignment: "center" })).to.equal(3);
+            expect(countOf(items, 325, { alignment: "right" })).to.equal(3);
+            // A distributed line could stretch its 20 letters too, which Word weighs as 20 / 7.2 more spaces, so its spaces
+            // would stretch by 35 / 11.8 against 1.5 squeezed, less than twice as much. By 1, against 40 / 11.8, it is
+            expect(countOf(items, 325, { alignment: "distributed" })).to.equal(3);
+            expect(countOf(items, 330, { alignment: "distributed" })).to.equal(2);
+            expect(countOf(items, 330, {})).to.equal(3);
+            // A picture is squeezed in as a word is
+            expect(countOf([text("aa aa aa aa aa aa aa aa aa aa "), { type: "box", width: 40, height: 10 }], 325)).to.equal(1);
+        });
+
+        it("should squeeze the spaces by no more than a quarter of their width", () => {
+            // Words of 200 and 100 end at 310, with one space between them that could stretch a long way, and "zzzzzzzzzz"
+            // after another goes to 420
+            const items = [text(`${"x".repeat(20)} ${"y".repeat(10)} ${"z".repeat(10)}`)];
+            expect(countOf(items, 415)).to.equal(1);
+            expect(countOf(items, 414)).to.equal(2);
+        });
+
+        it("should squeeze the last line of a paragraph, and one that ends with a line break, as Word does", () => {
+            const items = [text("aa aa aa aa aa aa aa aa aa aa bbbb")];
+            expect(countOf(items, 325)).to.equal(1);
+            expect(countOf([...items, { type: "break", kind: "line", font: {} }, text("cc")], 325)).to.equal(2);
+        });
+
+        it("should squeeze only the spaces after a line's first word and its last tab, as Word does", () => {
+            // 4 spaces before the words aren't squeezed, so "zzzzzzzzzz" goes past the end by 15, which the 2 spaces after
+            // them would have to give 75% of their width for
+            const indented = [text(`    ${"x".repeat(20)} ${"y".repeat(10)} ${"z".repeat(10)}`)];
+            expect(countOf(indented, 455)).to.equal(1);
+            expect(countOf(indented, 445)).to.equal(2);
+            // The text after a tab starts at its stop, so the spaces before it can't make room
+            const tabbed = [text("aa aa aa"), { type: "tab", font: {} } as const, text(`${"y".repeat(10)} ${"z".repeat(5)}`)];
+            expect(layoutLines(tabbed, { width: 258, measurer: MEASURER, format: justified, defaultTabStop: 100 })).to.have.length(1);
+            expect(layoutLines(tabbed, { width: 255, measurer: MEASURER, format: justified, defaultTabStop: 100 })).to.have.length(2);
+        });
+
+        it("should not break a word squeezed onto a line across lines", () => {
+            // "bbbb" goes past the end of the line, but isn't longer than a line, so it is squeezed in whole
+            expect(heightsOf([text("aa aa aa aa aa aa aa aa aa aa bbbb")], 325, { format: justified })).to.deep.equal([10]);
+        });
+    });
+
+    describe("justified lines, in Word's paragraphs", () => {
+        // Calibri 11, on lines 9026 twips wide, as `word-watertight-text.docx`, `word-watertight-stops.docx` and
+        // `word-justify.docx` have them
+        const CALIBRI = { font: "Calibri", size: 11 };
+        const COURIER = { font: "Courier New", size: 11 };
+        const WIDTH = 9026 / 20;
+        const WORDS = "the survey of the coast was made in the summer by boat and on foot from the lighthouse to the river mouth".split(
+            " ",
+        );
+        const prose = (count: number): string => Array.from({ length: count }, (_, index) => WORDS[(index * 7) % WORDS.length]).join(" ");
+
+        /**
+         * The last word of each line of a paragraph of runs, each of text in a font, in which a tab is "\t" and a line break
+         * "\n"
+         */
+        const endingsOf = (runs: readonly (readonly [string, TextFont])[], format: ParagraphFormat = {}): readonly string[] => {
+            const parts = runs.flatMap(([value, font]) =>
+                value
+                    .split(/( +|\t|\n)/)
+                    .filter((part) => part.length > 0)
+                    .map((part) => ({ part, font })),
+            );
+            const isWord = ({ part }: { readonly part: string }): boolean => !/^( +|\t|\n)$/.test(part);
+            const words = parts.filter(isWord).map(({ part }) => part);
+            const items = parts.flatMap(({ part, font }, index): readonly InlineItem[] => {
+                if (part === "\t") {
+                    return [{ type: "tab", font }];
+                }
+                if (part === "\n") {
+                    return [{ type: "break", kind: "line", font }];
+                }
+                if (part.startsWith(" ")) {
+                    return [{ type: "text", text: part, font }];
+                }
+                // A bookmark before each word, numbered, to find the line it is on
+                return [
+                    { type: "marker", name: String(parts.slice(0, index).filter(isWord).length) },
+                    { type: "text", text: part, font },
+                ];
+            });
+            const starts = layoutLines(items, { width: WIDTH, format }).map(({ markers }) => Math.min(...markers.map(Number)));
+            return starts.map((_, index) => words[(starts[index + 1] ?? words.length) - 1]);
+        };
+
+        it("should squeeze one more word onto a justified or distributed line where Word does, and not where it doesn't (TX20)", () => {
+            // Word's lines of TX20a and TX20b: the 4th squeezes "to" in, and the 6th doesn't squeeze "the", which would take
+            // its spaces 13% narrower, against 11 points they'd stretch without it
+            const squeezed = ["the", "of", "by", "to", "coast", "and", "river", "made", "on"];
+            expect(endingsOf([[`TX20a ${prose(160)}`, CALIBRI]], { alignment: "justified" })).to.deep.equal(squeezed);
+            expect(endingsOf([[`TX20b ${prose(160)}`, CALIBRI]], { alignment: "distributed" })).to.deep.equal(squeezed);
+            // TX20c, left-aligned
+            const left = ["the", "of", "by", "boat", "the", "was", "on", "mouth", "on"];
+            expect(endingsOf([[`TX20c ${prose(160)}`, CALIBRI]])).to.deep.equal(left);
+            expect(endingsOf([[`TX20c ${prose(160)}`, CALIBRI]], { alignment: "center" })).to.deep.equal(left);
+        });
+
+        it("should squeeze in a word whose line's spaces it takes 20% narrower, and not 24%, as Word does (SP18)", () => {
+            // SP18's paragraphs: the character spacing of "survey" sets how far past the end of the line "coast" goes
+            const filler = "the the made summer and from to mouth of was the boat foot lighthouse river";
+            const paragraph = (share: number, spacing: number): readonly string[] =>
+                endingsOf(
+                    [
+                        [`SP18 ${share} ${filler} `, CALIBRI],
+                        ["survey", { ...CALIBRI, characterSpacing: spacing / 20 }],
+                        [` coast ${prose(30)}`, CALIBRI],
+                    ],
+                    { alignment: "justified" },
+                );
+            for (const [share, spacing] of [
+                [3, 30],
+                [6, 35],
+                [10, 22],
+                [15, 29],
+                [20, 36],
+            ]) {
+                expect(paragraph(share, spacing)).to.deep.equal(["coast", "survey", "was"]);
+            }
+            expect(paragraph(25, 43)).to.deep.equal(["survey", "the", "was"]);
+            expect(paragraph(33, 54)).to.deep.equal(["survey", "the", "was"]);
+        });
+
+        it("should squeeze in the last word of a line where Word does in word-justify.docx", () => {
+            const tail = " and on foot from the river";
+            const line = "the survey of the coast was made in the summer by boat and on foot from the to";
+            /** The first line's last word, of a justified paragraph with a right indent, in twips */
+            const firstLineOf = (runs: readonly (readonly [string, TextFont])[], right: number): string =>
+                endingsOf(runs, { alignment: "justified", indentRight: right / 20 })[0];
+            const plain = (label: string, words: string, right: number): string =>
+                firstLineOf([[`${label} ${words}${tail}`, CALIBRI]], right);
+            // J01: 19 spaces and "a", which Word squeezes in by 5.3% of the spaces, when they'd stretch 2.22 times as
+            // much without it, and not by 5.7%, against 1.99
+            expect(plain("J01_08", `${line} a`, 1010)).to.equal("a");
+            expect(plain("J01_09", `${line} a`, 1014)).to.equal("to");
+            // J04: "coast", by 18.0% against 2.20, and not 19.9% against 1.89
+            expect(plain("J04_05", `${line} coast`, 761)).to.equal("coast");
+            expect(plain("J04_07", `${line} coast`, 780)).to.equal("to");
+            // J03 and J07: by no more than a quarter, though the spaces would stretch far more without it
+            const long = `${"lighthousekeeper".repeat(4)}lighthouse`;
+            expect(plain("J03_04", `${long} a`, 1051)).to.equal("a");
+            expect(plain("J03_05", `${long} a`, 1056)).to.equal(long);
+            const short = "of the by in to and on of the by in to and on of the by in";
+            expect(plain("J07_07", `${short} lighthouse`, 2641)).to.equal("lighthouse");
+            expect(plain("J07_08", `${short} lighthouse`, 2669)).to.equal("in");
+            // J09: 4 of the spaces in Courier New, which are squeezed in proportion to their widths
+            const courier = (label: string, right: number): string =>
+                firstLineOf(
+                    [
+                        [`${label} the survey of the coast`, CALIBRI],
+                        [" was made in ", COURIER],
+                        [`the summer by boat and on foot from the to coast${tail}`, CALIBRI],
+                    ],
+                    right,
+                );
+            expect(courier("J09_05", 265)).to.equal("coast");
+            expect(courier("J09_07", 284)).to.equal("to");
+            // J10, J11: the last line of a paragraph, and one before a line break
+            expect(firstLineOf([[`J10_02 ${line} coast`, CALIBRI]], 709)).to.equal("coast");
+            expect(firstLineOf([[`J11_02 ${line} coast\nand on foot`, CALIBRI]], 709)).to.equal("coast");
+            // J15: only the 3 spaces after the tab are squeezed, so "coast" goes in by 5% of its width, and not 10%
+            const tabbed = "J15_01 the survey of the coast was made in the summer by boat and\tlighthouse river mouth coast";
+            expect(firstLineOf([[`${tabbed}${tail}`, CALIBRI]], 1)).to.equal("coast");
+            expect(firstLineOf([[`${tabbed.replace("J15_01", "J15_02")}${tail}`, CALIBRI]], 25)).to.equal("mouth");
+            // J18: the 8 spaces at the start aren't squeezed
+            expect(plain("        J18_01", "the survey of the coast was made in the summer coast", 3128)).to.equal("coast");
+        });
+
+        it("should squeeze in the last word of a line where Word does in word-justify2.docx", () => {
+            const tail = " the survey of the coast";
+            const line = "the survey of the coast was made in the summer by boat and on foot from the to";
+            const long = `${"lighthousekeeper".repeat(4)}lighthouse`;
+            /** The first line's last word, of a paragraph with a right indent, in twips */
+            const firstLineOf = (label: string, words: string, right: number, alignment: ParagraphFormat["alignment"]): string =>
+                endingsOf([[`${label} ${words}${tail}`, CALIBRI]], { alignment, indentRight: right / 20 })[0];
+            const distributed = (label: string, words: string, right: number): string => firstLineOf(label, words, right, "distributed");
+            // K01 to K04 and K07: distributed lines squeeze in less than justified ones, as their letters could stretch too
+            expect(distributed("K01_06", `${line} a`, 947)).to.equal("a");
+            expect(distributed("K01_09", `${line} a`, 959)).to.equal("to");
+            const longWords = "lighthousekeepers circumnavigation hydrographically cartographers surveyorship";
+            expect(distributed("K02_03", `${longWords} a`, 898)).to.equal("a");
+            expect(distributed("K02_06", `${longWords} a`, 910)).to.equal("surveyorship");
+            expect(distributed("K03_01", `${long} a`, 991)).to.equal("a");
+            expect(distributed("K03_04", `${long} a`, 1006)).to.equal(long);
+            expect(distributed("K04_05", `${line} coast`, 670)).to.equal("coast");
+            expect(distributed("K04_08", `${line} coast`, 698)).to.equal("to");
+            const short = "of the by in to and on of the by in to and on of the by in";
+            expect(distributed("K07_10", `${short} lighthouse`, 2578)).to.equal("lighthouse");
+            expect(distributed("K07_12", `${short} lighthouse`, 2615)).to.equal("in");
+            // K08, K09: Latin text justified for Thai or with a low kashida is squeezed as justified text is
+            expect(firstLineOf("K08_10", `${line} coast`, 717, "thaiDistributed")).to.equal("coast");
+            expect(firstLineOf("K08_13", `${line} coast`, 745, "thaiDistributed")).to.equal("to");
+            expect(firstLineOf("K09_10", `${line} coast`, 717, "lowKashida")).to.equal("coast");
+            expect(firstLineOf("K09_13", `${line} coast`, 745, "lowKashida")).to.equal("to");
+            // K10 to K12: a word and a space, then the next word. The justified line is squeezed by up to a quarter of the
+            // space, and the distributed one less, as its first word's letters could stretch
+            const one = (label: string): string => `${label}${"lighthousekeeper".repeat(5)}`;
+            expect(endingsOf([[`${one("K10_05")} a${tail}`, CALIBRI]], { alignment: "justified", indentRight: 425 / 20 })[0]).to.equal("a");
+            expect(endingsOf([[`${one("K10_08")} a${tail}`, CALIBRI]], { alignment: "justified", indentRight: 431 / 20 })[0]).to.equal(
+                one("K10_08"),
+            );
+            expect(endingsOf([[`${one("K12_02")} a${tail}`, CALIBRI]], { alignment: "distributed", indentRight: 419 / 20 })[0]).to.equal(
+                "a",
+            );
+            expect(endingsOf([[`${one("K12_05")} a${tail}`, CALIBRI]], { alignment: "distributed", indentRight: 425 / 20 })[0]).to.equal(
+                one("K12_05"),
+            );
+        });
     });
 });
 

@@ -5,6 +5,7 @@ import { Formatter } from "@export/formatter";
 import { File } from "@file/file";
 import { Table, TableCell, TableRow, WidthType } from "@file/table";
 import {
+    AlignmentType,
     Bookmark,
     Document,
     type EstimatedPageNumbers,
@@ -101,6 +102,31 @@ const resultsOf = (document: string): readonly string[] =>
     [...document.matchAll(/<w:fldChar w:fldCharType="separate"\/><w:t xml:space="preserve">([^<]*)<\/w:t>/g)].map(([, result]) => result);
 
 describe("estimatePageNumbers", () => {
+    it("should squeeze one more word onto the lines of a justified paragraph, as Word does, which can bring a heading back a page", () => {
+        // Word squeezed "coast" onto the line of word-justify.docx's J10_02, which is 9026 twips wide, less its indent of
+        // 709: a paragraph of one line justified, and two left-aligned. 30 of them, on pages of 51 lines
+        const paragraphs = (alignment?: (typeof AlignmentType)[keyof typeof AlignmentType]): readonly Paragraph[] =>
+            Array.from(
+                { length: 30 },
+                () =>
+                    new Paragraph({
+                        alignment,
+                        indent: { right: 709 },
+                        children: [
+                            new TextRun("J10_02 the survey of the coast was made in the summer by boat and on foot from the to coast"),
+                        ],
+                    }),
+            );
+        const document = (alignment?: (typeof AlignmentType)[keyof typeof AlignmentType]): IPropertiesOptions => ({
+            styles: {
+                default: { document: { run: { font: "Calibri", size: 22 }, paragraph: { spacing: { before: 0, after: 0, line: 240 } } } },
+            },
+            sections: [{ children: [...paragraphs(alignment), heading("End", "end")] }],
+        });
+        expect(pageNumbersOf(document(AlignmentType.JUSTIFIED))).to.deep.include({ end: "1" });
+        expect(pageNumbersOf(document())).to.deep.include({ end: "2" });
+    });
+
     it("should work out the page each bookmark starts on", () => {
         const pages = pageNumbersOf({
             sections: [

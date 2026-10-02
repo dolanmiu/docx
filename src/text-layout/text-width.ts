@@ -85,7 +85,20 @@ export type ParagraphFormat = {
     readonly kinsoku?: boolean;
     /** Whether its lines break between words (`w:wordWrap`), or, when off, anywhere in the words of East Asian runs */
     readonly wordWrap?: boolean;
+    /**
+     * How its lines line up. Word squeezes the spaces of a justified line to fit one more word on it, so its lines can
+     * break later than a left-aligned paragraph's
+     */
+    readonly alignment?: ParagraphAlignment;
 };
+
+/**
+ * How a paragraph's lines line up (`w:jc`): justified is `both`, and distributed, which spreads the letters too and
+ * lines up the last line as well, is `distribute`. Word's three justifications for Arabic draw out its letters by a low,
+ * medium or high kashida, and Thai distributed is `thaiDistribute`.
+ */
+export type ParagraphAlignment =
+    "left" | "center" | "right" | "justified" | "distributed" | "thaiDistributed" | "lowKashida" | "mediumKashida" | "highKashida";
 
 /**
  * A paragraph of text, with its formatting.

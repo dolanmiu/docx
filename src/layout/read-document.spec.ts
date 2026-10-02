@@ -250,6 +250,36 @@ describe("readDocument", () => {
             expect(unsupportedOf({ "w:subDoc": { _attr: { "r:id": "rId9" } } })).to.equal("a subdocument");
             expect(unsupportedOf(pPr(value("w:divId", 12)), r(t("web")))).to.equal("a paragraph in an HTML division");
         });
+
+        it("should read how a paragraph's lines line up, from its style or its own, and stop where Word's squeezing of them isn't known", () => {
+            const content = readWritten({
+                styles: { paragraphStyles: [{ id: "Justified", name: "Justified", paragraph: { alignment: AlignmentType.JUSTIFIED } }] },
+                sections: [
+                    {
+                        children: [
+                            new Paragraph({ style: "Justified", children: [new TextRun("a")] }),
+                            new Paragraph({ style: "Justified", alignment: AlignmentType.DISTRIBUTE, children: [new TextRun("b")] }),
+                            new Paragraph({ alignment: AlignmentType.THAI_DISTRIBUTE, children: [new TextRun("Latin")] }),
+                            new Paragraph({ alignment: AlignmentType.LOW_KASHIDA, children: [new TextRun("Latin")] }),
+                            new Paragraph({ alignment: AlignmentType.MEDIUM_KASHIDA, children: [new TextRun("c")] }),
+                            new Paragraph({ alignment: AlignmentType.HIGH_KASHIDA, children: [new TextRun("c")] }),
+                            new Paragraph({ alignment: AlignmentType.THAI_DISTRIBUTE, children: [new TextRun("\u0e44\u0e17\u0e22")] }),
+                            new Paragraph({ alignment: AlignmentType.LOW_KASHIDA, children: [new TextRun("\u0639\u0631\u0628\u064a")] }),
+                        ],
+                    },
+                ],
+            });
+            expect(paragraphOf(content, 0).format.alignment).to.equal("justified");
+            expect(paragraphOf(content, 1).format.alignment).to.equal("distributed");
+            // Word breaks Latin text justified for Thai or with a low kashida as it breaks justified text
+            for (const index of [0, 1, 2, 3]) {
+                expect(paragraphOf(content, index).unsupported).to.equal(undefined);
+            }
+            expect(paragraphOf(content, 4).unsupported).to.equal("a paragraph justified for Arabic with a medium or high kashida");
+            expect(paragraphOf(content, 5).unsupported).to.equal("a paragraph justified for Arabic with a medium or high kashida");
+            expect(paragraphOf(content, 6).unsupported).to.equal("Thai or Arabic text justified for it");
+            expect(paragraphOf(content, 7).unsupported).to.equal("Thai or Arabic text justified for it");
+        });
     });
 
     describe("footnotes and endnotes", () => {
