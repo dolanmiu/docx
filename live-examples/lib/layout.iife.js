@@ -3032,14 +3032,21 @@ var docxLayout = (function(exports) {
 	* turns on, and the sizes of its style's bands, in the order they apply, each over those before, as Word applies them
 	* (`word-table-formats.docx` CF1 to CF6). Word applies bands only of a style that gives their size, and counts them from
 	* the first row and column that aren't the first row or column it applies. It doesn't apply `wholeTable`.
+	*
+	* A table's header of several rows is its first row, all of it, and its bands of rows start below it. With its first row
+	* turned off, all of the header is in the band before the first, the second band (`word-compat-off.docx` CS2a to CS2f).
+	* A header of one row is a row like the others (CS2c).
 	*/
-	var conditionalTypesOf = ({ row, rows, cell, cells }, look, bands) => {
-		const firstRow = look.firstRow && row === 0;
+	var conditionalTypesOf = ({ row, rows, cell, cells, headerRows = 0 }, look, bands) => {
+		const header = headerRows > 1 ? headerRows : 0;
+		const inHeader = row < header;
+		const firstRow = look.firstRow && (header > 0 ? inHeader : row === 0);
 		const lastRow = look.lastRow && row === rows - 1;
 		const firstColumn = look.firstColumn && cell === 0;
 		const lastColumn = look.lastColumn && cell === cells - 1;
-		const bandOf = (on, size, index, edge) => on && size !== void 0 && size > 0 && !edge ? Math.floor(index / size) % 2 : void 0;
-		const rowBand = bandOf(look.rowBands, bands.rows, row - (look.firstRow ? 1 : 0), firstRow || lastRow);
+		const bandOf = (on, size, index, edge) => on && size !== void 0 && size > 0 && !edge ? Math.abs(Math.floor(index / size) % 2) : void 0;
+		const firstBanded = header > 0 ? header : look.firstRow ? 1 : 0;
+		const rowBand = bandOf(look.rowBands, bands.rows, inHeader ? -1 : row - firstBanded, firstRow || lastRow);
 		const columnBand = bandOf(look.columnBands, bands.columns, cell - (look.firstColumn ? 1 : 0), firstColumn || lastColumn);
 		return [
 			...rowBand === void 0 ? [] : [rowBand === 0 ? "band1Horz" : "band2Horz"],
@@ -3980,6 +3987,9 @@ var docxLayout = (function(exports) {
 		const keptCount = deletedFlags.filter((deleted) => !deleted).length;
 		let keptBefore = 0;
 		const keptIndexes = deletedFlags.map((deleted) => deleted ? keptBefore : keptBefore++);
+		const headerFlags = rows.map(({ element: row }) => onOff(childrenOf(find(contentOf$2(row).filter(isObject), "w:trPr")), "w:tblHeader") === true);
+		const headerRows = headerFlags.includes(false) ? headerFlags.indexOf(false) : headerFlags.length;
+		const keptHeaderRows = deletedFlags.slice(0, headerRows).filter((deleted) => !deleted).length;
 		const conditional = ownStyles.flatMap(({ conditional: given = /* @__PURE__ */ new Map() }) => [...given]);
 		const look = (_readTableLook = readTableLook(lastOf(allProperties, "w:tblLook"))) !== null && _readTableLook !== void 0 ? _readTableLook : UNSAID_LOOK;
 		const bandSize = (name) => numberOf(attributesOf(lastOf(allProperties, name))["w:val"]);
@@ -4000,12 +4010,23 @@ var docxLayout = (function(exports) {
 				formats: [...ownStyles, ...applying.map(([, format]) => format)],
 				borders: Object.assign({}, ...applying.map(([, { cellProperties }]) => readBorderSet(find(cellProperties, "w:tcBorders")))),
 				margins: Object.assign({}, ...applying.map(([, { cellProperties }]) => readCellMargins(find(cellProperties, "w:tcMar"))))
-			}, unfollowed ? { unsupported: "a table style's formatting for some of its cells" } : {});
+			}, withoutUndefined({ unsupported: unfollowed ? "a table style's formatting for some of its cells" : unseenInHeaderOf(position, applying) }));
 		};
 		const UNFORMATTED = {
 			formats: ownStyles,
 			borders: {},
 			margins: {}
+		};
+		/**
+		* Why the parts of the table's style for a cell in a header of several rows apply in a way Word hasn't been seen to
+		* apply them, when they do: its corners in the header's rows after the first, and its bands in a header of three rows
+		* or more with its first row turned off. Word made all of a header of two or three rows its first row, and put one of
+		* two in the second band (`word-compat-off.docx` CS2a, CS2b and CS2f)
+		*/
+		const unseenInHeaderOf = ({ row, headerRows: header = 0 }, applying) => {
+			const types = new Set(applying.map(([type]) => type));
+			if (row > 0 && row < header && (types.has("nwCell") || types.has("neCell"))) return "a table style's corner cells in a header of several rows";
+			return row < header && header > 2 && (types.has("band1Horz") || types.has("band2Horz")) ? "a table style's bands of rows in a header of three rows or more" : void 0;
 		};
 		const gridWidth = (from, to) => grid.slice(from, to).reduce((total, value) => total + value, 0);
 		const read = rows.map(({ element: row, bookmarks: rowBookmarks }, rowIndex) => {
@@ -4024,13 +4045,14 @@ var docxLayout = (function(exports) {
 			const rowReader = deleted ? sizingReaderOf(cellReader, sized, true) : cellReader;
 			const counts = deleted ? JSON.stringify([...rowReader.counters]) : "";
 			const shifted = !deleted && keptCount < rows.length && conditional.length > 0 && rowCells.some((_, cell) => {
-				const typesAt = (at, count) => JSON.stringify(conditionalTypesOf({
+				const typesAt = (at, count, header) => JSON.stringify(conditionalTypesOf({
 					row: at,
 					rows: count,
 					cell,
-					cells: rowCells.length
+					cells: rowCells.length,
+					headerRows: header
 				}, look, bands));
-				return typesAt(rowIndex, rows.length) !== typesAt(keptIndexes[rowIndex], keptCount);
+				return typesAt(rowIndex, rows.length, headerRows) !== typesAt(keptIndexes[rowIndex], keptCount, keptHeaderRows);
 			});
 			const { cells, edges, column: end, unsupported: cellsUnsupported } = rowCells.reduce(({ column, cells: done, edges: before, unsupported: unsupportedBefore }, { element: cell }, cellIndex) => {
 				var _numberOf4, _twips3, _shareOf, _ref6, _ref7;
@@ -4043,7 +4065,8 @@ var docxLayout = (function(exports) {
 					row: rowIndex,
 					rows: rows.length,
 					cell: cellIndex,
-					cells: rowCells.length
+					cells: rowCells.length,
+					headerRows
 				});
 				const margins = _objectSpread2(_objectSpread2(_objectSpread2({}, tableMargins), formatted.margins), readCellMargins(find(cellProperties, "w:tcMar")));
 				const { "w:w": ownWidth, "w:type": widthType = "dxa" } = attributesOf(find(cellProperties, "w:tcW"));
@@ -4464,6 +4487,32 @@ var docxLayout = (function(exports) {
 		})]) }, withoutUndefined({ unsupported: unknownLengthIn(xml) }));
 	};
 	var CURRENT_COMPATIBILITY_MODE = 15;
+	var WORD_SETTINGS = "http://schemas.microsoft.com/office/word";
+	var FOLLOWED_COMPATIBILITY = /* @__PURE__ */ new Set(["w:doNotUseHTMLParagraphAutoSpacing"]);
+	var WORD_SETTINGS_LINES_ALIKE = /* @__PURE__ */ new Set([
+		"compatibilityMode",
+		"overrideTableStyleFontSizeAndJustification",
+		"enableOpenTypeFeatures",
+		"doNotFlipMirrorIndents",
+		"differentiateMultirowTableHeaders",
+		"useWord2013TrackBottomHyphenation"
+	]);
+	var WORD_SETTINGS_OFF_UNLESS_GIVEN = /* @__PURE__ */ new Set(["allowHyphenationAtTrackBottom", "allowTextAfterFloatingTableBreak"]);
+	/**
+	* The attributes of Word's own compatibility settings (`w:compatSetting`) among a document's: those for Word's application,
+	* or for none, rather than another application's
+	*/
+	var wordSettingsOf = (compatibility) => compatibility.filter((child) => "w:compatSetting" in child).map((child) => attributesOf(child["w:compatSetting"])).filter(({ "w:uri": uri = WORD_SETTINGS }) => uri === WORD_SETTINGS);
+	/**
+	* Whether a document's compatibility settings (`w:compat`) ask Word to lay it out in a way not yet followed: a setting of
+	* the schema that is on, such as `w:noLeading`, but for `w:doNotUseHTMLParagraphAutoSpacing`, which is followed, or one
+	* of Word's own (`w:compatSetting`) other than those known to leave its lines as they are, unless it is off and Word's
+	* default is off. Each changes how Word lays out lines, or may, in ways not yet followed.
+	*/
+	var asksForUnfollowedCompatibility = (compatibility) => compatibility.some((child) => {
+		const name = nameOf(child);
+		return name !== "w:compatSetting" && !FOLLOWED_COMPATIBILITY.has(name) && onOff([child], name) === true;
+	}) || wordSettingsOf(compatibility).some(({ "w:name": setting, "w:val": value }) => !WORD_SETTINGS_LINES_ALIKE.has(String(setting)) && !(WORD_SETTINGS_OFF_UNLESS_GIVEN.has(String(setting)) && isOff(value)));
 	/**
 	* The document's own lists of the characters that can't start a line (`w:noLineBreaksBefore`) and can't end one
 	* (`w:noLineBreaksAfter`), which take the place of Word's for their language.
@@ -4481,17 +4530,18 @@ var docxLayout = (function(exports) {
 	* Reads the parts of the document's settings (`w:settings`) that change how it is laid out.
 	*/
 	var readSettings = (xml) => {
-		var _compatibility$find, _find$, _find2, _twips15;
+		var _wordSettingsOf$find, _find$, _find2, _twips15;
 		const settings = childrenOf(xml === null || xml === void 0 ? void 0 : xml["w:settings"]);
 		const compatibility = childrenOf(find(settings, "w:compat"));
 		const lists = readKinsokuLists(settings);
 		const spacingControl = valueOf(settings, "w:characterSpacingControl");
-		const mode = numberOf(attributesOf((_compatibility$find = compatibility.find((child) => "w:compatSetting" in child && attributesOf(child["w:compatSetting"])["w:name"] === "compatibilityMode")) === null || _compatibility$find === void 0 ? void 0 : _compatibility$find["w:compatSetting"])["w:val"]);
+		const mode = numberOf((_wordSettingsOf$find = wordSettingsOf(compatibility).find(({ "w:name": setting }) => setting === "compatibilityMode")) === null || _wordSettingsOf$find === void 0 ? void 0 : _wordSettingsOf$find["w:val"]);
 		const unsupported = (_find$ = (_find2 = [
 			[onOff(settings, "w:autoHyphenation"), "hyphenation"],
 			[onOff(settings, "w:strictFirstAndLastChars"), "the strict rules for the characters that can't start a line"],
 			[spacingControl !== void 0 && spacingControl !== "doNotCompress", "punctuation compressed"],
 			[mode === void 0 || mode < CURRENT_COMPATIBILITY_MODE, "a document in compatibility mode"],
+			[asksForUnfollowedCompatibility(compatibility), "a compatibility setting not yet followed"],
 			[onOff(settings, "w:bookFoldPrinting") || onOff(settings, "w:bookFoldRevPrinting"), "pages printed as a folded booklet"],
 			[onOff(settings, "w:printTwoOnOne"), "two pages printed on each sheet"],
 			[onOff(settings, "w:linkStyles"), "styles updated from the document's template when Word opens it"]
@@ -7187,9 +7237,12 @@ var docxLayout = (function(exports) {
 	* Aptos, a character whose width in its font isn't known, such as a mathematical symbol in Calibri, which Word draws in
 	* Cambria Math, or a date in the text, which Word writes when it opens the document. The page references to bookmarks
 	* after it are left blank, for Word to fill in when it updates the fields. A document in compatibility mode, which Word
-	* lays out as an older version of Word did, isn't laid out at all. When laying the pages out again with the page numbers
-	* it worked out still changes them after three passes, as when a table of contents wraps one way with a number and the
-	* other way without it, all of them are left blank.
+	* lays out as an older version of Word did, isn't laid out at all, nor is one with a compatibility setting that may
+	* change Word's lines in a way not yet followed: one of the schema's turned on, or one of Word's own other than those
+	* Word writes in the documents it makes, turned on, or, for one the layout doesn't know, on or off. Settings for other
+	* applications are left to them. When laying the pages out again with the page numbers it worked out still changes them
+	* after three passes, as when a table of contents wraps one way with a number and the other way without it, all of them
+	* are left blank.
 	*
 	* Page references are written as Word writes them, with `\p` ("above", "below" or "on page 4") and in formats of their
 	* own, such as `\* roman`, and so are numbers of pages. Page references, tables of contents and SEQ fields (caption
