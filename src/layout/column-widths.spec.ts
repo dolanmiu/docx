@@ -4,6 +4,7 @@ import { Formatter } from "@export/formatter";
 import { File } from "@file/file";
 import { Paragraph } from "@file/paragraph";
 import { Table, TableCell, TableRow, WidthType } from "@file/table";
+import { TableLayoutType } from "@file/table/table-properties/table-layout";
 import type { IContext } from "docx";
 
 import { type ContentWidths, DEFAULT_MEASURER, type InlineItem, type TextMeasurer, measureContentWidths } from "../text-layout";
@@ -97,8 +98,12 @@ describe("fitColumns", () => {
         // widest words take each column a tenth of the way to its widest line
         const sized = fitColumns(table([[cell(0, "a"), cell(1, LONG), cell(2, `${LONG} ${LONG}`)]]), 200, measure);
         expect(widthsOf(sized)).to.deep.equal([10, 65, 95]);
-        // Columns can't be narrower than their widest words, and the table then goes past the room
-        expect(widthsOf(fitColumns(table([[cell(0, "aaaa"), cell(1, LONG)]]), 50, measure))).to.deep.equal([40, 40]);
+        // Columns can't be narrower than their widest words. With a width of its own in twips, the table then goes past it
+        // and the room (word-table-widths.docx TW14). Without, Word breaks a word in a way not yet followed (TW13)
+        expect(widthsOf(fitColumns(table([[cell(0, "aaaa"), cell(1, LONG)]], { width: 50 }), 50, measure))).to.deep.equal([40, 40]);
+        expect(fitColumns(table([[cell(0, "aaaa"), cell(1, LONG)]]), 50, measure).unsupported).to.equal(
+            "a word longer than its table can make room for",
+        );
     });
 
     it("should keep the widths cells give their columns when the room is short, and narrow the other columns", () => {
@@ -108,7 +113,9 @@ describe("fitColumns", () => {
         expect(widthsOf(sized)).to.deep.equal([140, 65, 90]);
         // Narrowed when the others are as narrow as their widest words and still don't leave room, as far as they need
         expect(widthsOf(fitColumns(table([[cell(0, "aaaaaa bb", 150), cell(1, "aaaa bbbb")]]), 150, measure))).to.deep.equal([90, 40]);
-        expect(widthsOf(fitColumns(table([[cell(0, "aaaaaa bb", 150), cell(1, "aaaa bbbb")]]), 100, measure))).to.deep.equal([60, 40]);
+        expect(
+            widthsOf(fitColumns(table([[cell(0, "aaaaaa bb", 150), cell(1, "aaaa bbbb")]], { width: 100 }), 100, measure)),
+        ).to.deep.equal([60, 40]);
     });
 
     it("should keep the widths the cells give their columns, but no narrower than their widest words", () => {
@@ -165,7 +172,7 @@ describe("fitColumns", () => {
         const long = (indent: number): TableBlock => ({
             ...table([[cell(0, "aaaaaa", 30), cell(1, LONG, 150)]]),
             fit: undefined,
-            widen: { acrossColumns: false },
+            widen: {},
             indent,
         });
         expect(widthsOf(fitColumns(long(100), 300, measure))).to.deep.equal([60, 120]);
@@ -183,12 +190,12 @@ describe("fitColumns", () => {
                 ],
             ]),
             fit: undefined,
-            widen: { width: 280, acrossColumns: false },
+            widen: { width: 280 },
             cellSpacing: 5,
         });
         expect(widthsOf(fitColumns(spaced("aaaa bb"), 300, measure))).to.deep.equal([84.6, 160.4]);
         expect(fitColumns(spaced("aaaaaaaaaa"), 300, measure).unsupported).to.equal("a long word in a table with space between its cells");
-        const wider: TableBlock = { ...spaced("aaaa"), widen: { width: 400, acrossColumns: false } };
+        const wider: TableBlock = { ...spaced("aaaa"), widen: { width: 400 } };
         expect(fitColumns(wider, 500, measure).unsupported).to.equal("space between the cells of a table wider than its cells");
     });
 
@@ -196,20 +203,16 @@ describe("fitColumns", () => {
         expect(fitColumns(table([[{ ...cell(0, "a"), vertical: true }]]), 300, measure).unsupported).to.equal(
             "text that runs up or down a cell of a table sized to its text",
         );
-        const given = { ...table([[{ ...cell(0, "aaaaaa", 30), vertical: true }]]), fit: undefined, widen: { acrossColumns: false } };
+        const given = { ...table([[{ ...cell(0, "aaaaaa", 30), vertical: true }]]), fit: undefined, widen: {} };
         expect(fitColumns(given, 300, measure).unsupported).to.equal("a long word in text that runs up or down a table cell");
     });
 
     describe("in a table whose cells all have widths", () => {
         /** A table of rows of cells that all have widths */
-        const given = (
-            rows: readonly (readonly Cell[])[],
-            acrossColumns = false,
-            width: { readonly width?: number; readonly share?: number } = {},
-        ): TableBlock => ({
+        const given = (rows: readonly (readonly Cell[])[], widen: TableBlock["widen"] = {}): TableBlock => ({
             ...table(rows),
             fit: undefined,
-            widen: { ...width, acrossColumns },
+            widen,
         });
 
         it("should keep the widths the cells give their columns when their words fit, however long their lines", () => {
@@ -258,28 +261,103 @@ describe("fitColumns", () => {
             // Word's L3: columns of 900 and 3000 twips came out 1534 and 2996, the table 634 twips wider
             expect(widthsOf(fitColumns(given(cells), 300, measure))).to.deep.equal([60, 90]);
             // Word's L4: the same with a width of 3900 twips came out 1534 and 2363, keeping the table's width
-            expect(widthsOf(fitColumns(given(cells, false, { width: 130 }), 300, measure))).to.deep.equal([60, 50]);
-            expect(widthsOf(fitColumns(given(cells, false, { share: 0.5 }), 260, measure))).to.deep.equal([60, 50]);
+            expect(widthsOf(fitColumns(given(cells, { width: 130 }), 300, measure))).to.deep.equal([60, 50]);
+            expect(widthsOf(fitColumns(given(cells, { share: 0.5 }), 260, measure))).to.deep.equal([60, 50]);
         });
 
-        it("should stop at a word longer than its table can make room for, or a long word in a table wider than its cells", () => {
-            const cells = [[cell(0, "aaaaaa", 30), cell(1, LONG, 100)]];
-            // Word's L7: a word longer than the page's text was broken across lines, and the other column narrowed past its
-            // widest word, to a width its words don't explain
-            expect(fitColumns(given(cells), 100, measure).unsupported).to.equal("a word longer than its table can make room for");
-            expect(fitColumns(given(cells, false, { width: 400 }), 500, measure).unsupported).to.equal(
-                "a long word in a table wider than its cells",
+        it("should keep columns as wide as their widest words past a table's own width and the room, and stop without one", () => {
+            // Word's SP15a in word-watertight-stops.docx: in a table 9026 twips wide of cells of 3000 and 6026, a word of
+            // 11950 kept the first column as wide as it, and the table went past the page. Here, a word of 70 points with its
+            // margins, beside a column whose widest word is 30, in a table and a room of 90
+            const cells = [[cell(0, "aaaaaa", 30), cell(1, "bb cc", 100)]];
+            expect(widthsOf(fitColumns(given(cells, { width: 90 }), 90, measure))).to.deep.equal([60, 20]);
+            // Word's L7 in word-long-words.docx: without a width of its own, a word longer than the page's text was broken
+            // across lines, and the other column narrowed past its widest word, to a width its words don't explain
+            expect(fitColumns(given(cells), 90, measure).unsupported).to.equal("a word longer than its table can make room for");
+            // Nor is it known for a table of a share of the width
+            expect(fitColumns(given(cells, { share: 1 }), 90, measure).unsupported).to.equal(
+                "a word longer than its table can make room for",
             );
         });
 
-        it("should stop at a word longer than its cell in a table with cells merged across columns", () => {
-            const merged = given([[cell(0, "aaaaaa", 30), cell(1, LONG, 270)]], true);
-            expect(fitColumns(merged, 300, measure).unsupported).to.equal(
-                "a word longer than its cell in a table with cells merged across columns",
-            );
-            // Unless the words fit
-            const fitting = given([[cell(0, "aa", 30), cell(1, LONG, 270)]], true);
-            expect(fitColumns(fitting, 300, measure)).to.equal(fitting);
+        it("should widen the columns in proportion to fill a table wider than its cells, after widening one for a long word", () => {
+            // Word's SP15b: in a table 9000 twips wide of cells of 2000 and 4000, a word of 3204 with its margins came out
+            // 4003 and 4997: 3204 and 4000 widened in proportion to 9000. Here, 70 and 60 widened to 260
+            const sized = fitColumns(given([[cell(0, "aaaaaa", 30), cell(1, LONG, 60)]], { width: 260 }), 400, measure);
+            expect(widthsOf(sized)).to.deep.equal([130, 110]);
+        });
+
+        it("should make each column as wide as the widest a row gives it, then fit them to the table's width, as Word does", () => {
+            // Word's SP14a: rows of 3000 and 6026, and 4000 and 5026, in a table 9026 wide, came out 3604 and 5422 in both
+            // rows: 4000 and 6026 narrowed toward their widest words, 812 and 1152. TW5 and TW7, with a word of 4400 in the
+            // second column, came out 3297, where in proportion it would have been 3601. Here, rows of 100 and 200, and 150 and
+            // 150, in 300, whose widest words with their margins are 20 and 30: 150 and 200 taken five sixths of the way to
+            // them
+            const rows = [
+                [cell(0, "a", 100), cell(1, "bb", 200)],
+                [cell(0, "a", 150), cell(1, "bb", 150)],
+            ];
+            const sized = fitColumns(given(rows, { width: 300, uneven: true }), 400, measure);
+            expect(widthsOf(sized)).to.deep.equal([118.3, 161.7]);
+            expect(widthsOf(sized, 1)).to.deep.equal([118.3, 161.7]);
+            // With no width of its own, narrowed to the room (TW1), and kept when it fits
+            expect(widthsOf(fitColumns(given(rows, { uneven: true }), 300, measure))).to.deep.equal([118.3, 161.7]);
+            expect(widthsOf(fitColumns(given(rows, { uneven: true }), 400, measure))).to.deep.equal([140, 190]);
+            // Narrower than the table's width, widened in proportion to it (TW3), as for a long word (SP15b)
+            const narrower = [
+                [cell(0, "a", 100), cell(1, "bb", 100)],
+                [cell(0, "a", 150), cell(1, "bb", 50)],
+            ];
+            expect(widthsOf(fitColumns(given(narrower, { width: 300, uneven: true }), 400, measure))).to.deep.equal([170, 110]);
+            // A table whose rows agree is fitted to its own width in twips the same way (TW7, TW9)
+            expect(widthsOf(fitColumns(given([[cell(0, "a", 150), cell(1, "bb", 200)]], { width: 300 }), 400, measure))).to.deep.equal([
+                118.3, 161.7,
+            ]);
+            expect(widthsOf(fitColumns(given([[cell(0, "a", 150), cell(1, "bb", 100)]], { width: 300 }), 400, measure))).to.deep.equal([
+                170, 110,
+            ]);
+        });
+
+        it("should size a table laid out fixed by the widths its cells give alone, as Word does", () => {
+            // Word's TW6 and TW8: rows of 4000 and 6026 in a table 9026 wide, laid out fixed, came out 3604 and 5422 whatever
+            // their text, as SP14b: the text of each column narrowed in proportion, toward its margins. TW4 and TW10: narrower
+            // than the table, widened in proportion to it. TW2: with no width of its own, as wide as the rows give them, past
+            // the room
+            const rows = [
+                [cell(0, "aaaaaaaaaaaaaaaaaaaaaaaaaaaaa", 100), cell(1, "bb", 200)],
+                [cell(0, "a", 150), cell(1, "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb", 150)],
+            ];
+            // 150 and 200 less their margins, 140 and 190, narrowed to 280
+            expect(widthsOf(fitColumns(given(rows, { width: 300, uneven: true, fixed: true }), 400, measure))).to.deep.equal([
+                118.8, 161.2,
+            ]);
+            const narrower = [
+                [cell(0, "a", 100), cell(1, "bb", 100)],
+                [cell(0, "a", 150), cell(1, "bb", 50)],
+            ];
+            expect(widthsOf(fitColumns(given(narrower, { width: 300, uneven: true, fixed: true }), 400, measure))).to.deep.equal([
+                170, 110,
+            ]);
+            expect(widthsOf(fitColumns(given(rows, { uneven: true, fixed: true }), 300, measure))).to.deep.equal([140, 190]);
+            // A cell without a width of its own has the grid's, as read
+            const grid = given([[cell(0, "a", 150), { ...cell(1, "bb"), width: 190 }]], { width: 300, fixed: true });
+            expect(widthsOf(fitColumns(grid, 400, measure))).to.deep.equal([118.8, 161.2]);
+        });
+
+        it("should share a long word across columns among them, and narrow the others to keep the table's width, as Word does", () => {
+            // Word's SP15c: a word of 6191 twips with its margins, in a cell of 4000 across columns of 2000 and 2000, beside
+            // one of 5026 in a table 9026 wide, came out 3096, 3096 and 2832: the word shared equally, and the third column
+            // narrowed toward its widest word to keep the table's width. Here, a word of 130 points across columns of 50,
+            // beside 200, in 300
+            const rows = (second: number): readonly (readonly Cell[])[] => [
+                [across(0, 2, "aaaaaaaaaaaa", 50 + second), cell(2, "b", 200)],
+                [cell(0, "a", 50), cell(1, "a", second), cell(2, "b", 200)],
+            ];
+            const sized = fitColumns(given(rows(50), { width: 300 }), 300, measure);
+            expect(widthsOf(sized)).to.deep.equal([120, 160]);
+            expect(widthsOf(sized, 1)).to.deep.equal([55, 55, 160]);
+            // Across columns of different widths, by their widest words and widths added up (TW16 to TW18): 70 to 90 here
+            expect(widthsOf(fitColumns(given(rows(70), { width: 300 }), 300, measure), 1)).to.deep.equal([46.9, 63.1, 160]);
         });
     });
 
@@ -347,16 +425,44 @@ describe("fitColumns", () => {
             expect(widthsOf(sized, 2)).to.deep.equal([70, 150, 150]);
         });
 
+        it("should share a word across columns wider than their widest lines by their widest words and lines added up", () => {
+            // Word's SP17 in word-watertight-stops.docx and U1e in word-probes.docx. Here, a word of 110 points with its
+            // margins across columns whose widest words and lines are 20 and 20, and 30 and 60: shared 40 to 90
+            const sized = fitColumns(table([[across(0, 2, "aaaaaaaaaa")], [cell(0, "a"), cell(1, "aa bb")]]), 300, measure);
+            expect(widthsOf(sized)).to.deep.equal([100]);
+            expect(widthsOf(sized, 1)).to.deep.equal([23.8, 66.2]);
+            // Those columns keep it when the table is narrowed around it, and the others are narrowed (TW23)
+            const beside = fitColumns(
+                table([
+                    [across(0, 2, "aaaaaaaaaa"), cell(2, LONG)],
+                    [cell(0, "a"), cell(1, "aa bb"), cell(2, "x")],
+                ]),
+                200,
+                measure,
+            );
+            expect(widthsOf(beside, 1)).to.deep.equal([23.8, 66.2, 80]);
+            // A table in the cell of a table sized to its text counts as wide as the word
+            expect(tableWidths(table([[across(0, 2, "aaaaaaaaaa")], [cell(0, "a"), cell(1, "aa bb")]]), measure)).to.deep.equal({
+                min: 110,
+                max: 110,
+            });
+        });
+
         it("should stop at a word across columns wider than their widest words, where Word's sharing isn't known", () => {
             const unsupported = "a long word in cells merged across columns";
-            // A word of 110 points with its margins, wider than the widest lines of the columns it is across, 20 and 60
-            expect(fitColumns(table([[across(0, 2, "aaaaaaaaaa")], [cell(0, "a"), cell(1, "aa bb")]]), 300, measure).unsupported).to.equal(
-                unsupported,
-            );
-            // A word of 70 wider than their widest words, 30 and 30, but not their lines: only when they are narrowed
+            // A word of 70 wider than their widest words, 30 and 30, but not their lines: only when they are narrowed (U1m)
             const longWord = table([[across(0, 2, "aaaaaa")], [cell(0, "a bb cc"), cell(1, "a bb cc dd")]]);
             expect(widthsOf(fitColumns(longWord, 300, measure), 1)).to.deep.equal([70, 100]);
             expect(fitColumns(longWord, 150, measure).unsupported).to.equal(unsupported);
+            // A share narrower than a column's widest line, which Word hasn't been seen to give
+            expect(
+                fitColumns(table([[across(0, 2, "a".repeat(22))], [cell(0, "aaaa"), cell(1, "a a a a a a a a")]]), 400, measure)
+                    .unsupported,
+            ).to.equal(unsupported);
+            // A word with more text beside it
+            expect(
+                fitColumns(table([[across(0, 2, "aaaaaaaaaa b")], [cell(0, "a"), cell(1, "aa bb")]]), 300, measure).unsupported,
+            ).to.equal(unsupported);
         });
     });
 });
@@ -382,6 +488,30 @@ describe("tableWidths", () => {
             min: 90,
             max: 90,
         });
+    });
+
+    it("should count a table whose cells all have widths as it is laid out in its own width", () => {
+        // Widened for a long word, then in proportion to its width, as Word's SP15b; and with rows evened out, as SP14
+        const widened: TableBlock = { ...table([[cell(0, "aaaaaa", 30), cell(1, LONG, 60)]]), fit: undefined, widen: { width: 260 } };
+        expect(tableWidths({ ...widened, ...borders }, measure)).to.deep.equal({ min: 261.5, max: 261.5 });
+        const uneven: TableBlock = {
+            ...table([
+                [cell(0, "a", 100), cell(1, "b", 250)],
+                [cell(0, "a", 150), cell(1, "b", 150)],
+            ]),
+            fit: undefined,
+            widen: { width: 300, uneven: true },
+        };
+        expect(tableWidths(uneven, measure)).to.deep.equal({ min: 300, max: 300 });
+        // As its cells give it when its widths can't be worked out, as the layout stops at it: a word across columns whose
+        // share would leave the first narrower than its width
+        const read = (column: number, text: string, own: number): Cell => ({ ...cell(column, text, own), width: own - 10 });
+        const unknown: TableBlock = {
+            ...table([[{ ...read(0, "a".repeat(13), 110), span: 2 }], [read(0, "a", 100), read(1, "aa", 10)]]),
+            fit: undefined,
+            widen: { width: 300 },
+        };
+        expect(tableWidths(unknown, measure)).to.deep.equal({ min: 110, max: 110 });
     });
 
     it("should count a table with a width of its own as that wide, and one not sized to its text as its cells", () => {
@@ -498,6 +628,8 @@ describe("the widths Word gave the columns of its probes' tables", () => {
             [autoTable([[{ text: TEXT.medium, span: 2 }], ["one", "two words"]]), [1285, 2684]],
             [autoTable([[{ text: TEXT.medium, span: 3 }], SHORT]), [623, 1304, 2042]],
             [autoTable([[{ text: "one", span: 2 }], ["two words", "three short words"]]), [1165, 1816]],
+            // U1e: a long word across them, shared by their widest words and lines added up, as SP17
+            [autoTable([[{ text: TEXT.word, span: 2 }], ["one", "two words"]]), [1658, 2872]],
             // U1f: staggered, so the middle column has no cell of its own and is 0 wide
             [
                 autoTable([
@@ -582,11 +714,339 @@ describe("the widths Word gave the columns of its probes' tables", () => {
         });
     });
 
-    it("should stop at the long words across columns Word's probes didn't settle", () => {
-        // U1e: a word wider than the widest lines of the columns it is across. U1m: wider than their widest words, narrowed
-        expect(fitColumns(read(autoTable([[{ text: TEXT.word, span: 2 }], ["one", "two words"]])), ROOM, calibri).unsupported).to.equal(
-            "a long word in cells merged across columns",
+    // Word's widths in word-watertight-stops.docx and word-table-widths.docx are read from where it drew the tables'
+    // borders, which it draws a little in from the columns' edges: a border is 2.9 + 0.99877 times its edge, as SP15b's and
+    // SP15c's show, whose edges are known. They are good to 2 twips, against the 25 of the probes above, but for tables
+    // with no width of their own, which Word makes up to 24 twips narrower than the room, as #3595 found
+    /** A table of rows of cells given widths, or not, as word-watertight-stops.ts and word-table-widths.ts write them */
+    const given = (rows: readonly (readonly Spec[])[], options: Partial<ConstructorParameters<typeof Table>[0]>): Table =>
+        new Table({
+            ...options,
+            rows: rows.map(
+                (row) =>
+                    new TableRow({
+                        children: row.map((spec) => {
+                            const { text = "", span, width } = typeof spec === "string" ? { text: spec } : spec;
+                            return new TableCell({
+                                ...(span === undefined ? {} : { columnSpan: span }),
+                                ...(width === undefined ? {} : { width: { size: width, type: WidthType.DXA } }),
+                                children: [new Paragraph(text)],
+                            });
+                        }),
+                    }),
+            ),
+        });
+    const dxa = (size: number): ConstructorParameters<typeof Table>[0]["width"] => ({ size, type: WidthType.DXA });
+    // A word of m's about this many twips wide in Calibri 11, as the probes write it
+    const wordOf = (twips: number): string => "m".repeat(Math.round(twips / 175.78));
+
+    it("should size the tables of word-watertight-stops.docx as Word did", () => {
+        const WORDS = "the survey of the coast was made in the summer by boat and on foot from the lighthouse to the river mouth".split(
+            " ",
         );
+        const prose = (count: number): string => Array.from({ length: count }, (_, i) => WORDS[(i * 7) % WORDS.length]).join(" ");
+        const sp14 = (fixed: boolean): Table =>
+            given(
+                [
+                    [
+                        { text: `SP14 row 1 left ${prose(12)}`, width: 3000 },
+                        { text: `SP14 row 1 right ${prose(20)}`, width: 6026 },
+                    ],
+                    [
+                        { text: `SP14 row 2 left ${prose(12)}`, width: 4000 },
+                        { text: `SP14 row 2 right ${prose(20)}`, width: 5026 },
+                    ],
+                ],
+                { width: dxa(9026), columnWidths: [3000, 6026], ...(fixed ? { layout: TableLayoutType.FIXED } : {}) },
+            );
+        const probes: readonly (readonly [Table, readonly number[]])[] = [
+            // SP14a and SP14b: rows of 3000 and 6026, and 4000 and 5026, laid out fixed or not
+            [sp14(false), [3604, 5419]],
+            [sp14(true), [3604, 5419]],
+            // SP15b: a word of 2988 in a cell of 2000, beside 4000, in a table 9000 wide
+            [
+                given(
+                    [
+                        [
+                            { text: `SP15b ${wordOf(3000)}`, width: 2000 },
+                            { text: "SP15b right two words", width: 4000 },
+                        ],
+                    ],
+                    { width: dxa(9000), columnWidths: [2000, 4000] },
+                ),
+                [4003, 4996],
+            ],
+            // SP15c: a word of 5976 across columns of 2000, beside 5026, in 9026
+            [
+                given(
+                    [
+                        [
+                            { text: `SP15c ${wordOf(6000)}`, width: 4000, span: 2 },
+                            { text: "SP15c right", width: 5026 },
+                        ],
+                        [
+                            { text: "SP15c one", width: 2000 },
+                            { text: "SP15c two", width: 2000 },
+                            { text: "SP15c three", width: 5026 },
+                        ],
+                    ],
+                    { width: dxa(9026), columnWidths: [2000, 2000, 5026] },
+                ),
+                [3096, 3096, 2832],
+            ],
+            // SP17: words of 2988 to 5976 across "one" and "two words", and across those and "three short words", in tables
+            // given no widths
+            ...(
+                [
+                    [3000, [1171, 2035]],
+                    [4000, [1560, 2697]],
+                    [5000, [1881, 3254]],
+                    [6000, [2265, 3926]],
+                ] as const
+            ).map(([twips, widths]): readonly [Table, readonly number[]] => [
+                autoTable([[{ text: wordOf(twips), span: 2 }], ["one", "two words"]]),
+                widths,
+            ]),
+            ...(
+                [
+                    [4000, [845, 1459, 1953]],
+                    [6000, [1224, 2126, 2841]],
+                ] as const
+            ).map(([twips, widths]): readonly [Table, readonly number[]] => [
+                autoTable([[{ text: wordOf(twips), span: 3 }], SHORT]),
+                widths,
+            ]),
+        ];
+        probes.forEach(([written, widths]) => {
+            const sized = fitColumns(read(written), ROOM, calibri);
+            expect(sized.unsupported).to.equal(undefined);
+            const actual = columnsOf(sized);
+            expect(actual).to.have.length(widths.length);
+            actual.forEach((width, index) => expect(width).to.be.closeTo(widths[index], 5));
+        });
+        // SP15a: a word of 11950 in a cell of 3000, beside 6026, in a table 9026 wide, kept the first column as wide as it
+        // and its margins, 12167, and the table went past the page, so the second was off it. The second cell's 4 words
+        // took a line each, so it was narrower than 1033 twips, at which "right two" would have fitted on a line
+        const sp15a = fitColumns(
+            read(
+                given(
+                    [
+                        [
+                            { text: `SP15a ${wordOf(12000)}`, width: 3000 },
+                            { text: "SP15a right two words", width: 6026 },
+                        ],
+                    ],
+                    { width: dxa(9026), columnWidths: [3000, 6026] },
+                ),
+            ),
+            ROOM,
+            calibri,
+        );
+        const [first, second] = columnsOf(sp15a);
+        expect(first).to.be.closeTo(12167, 5);
+        expect(second).to.be.below(1033);
+    });
+
+    it("should size the tables of word-table-widths.docx as Word did", () => {
+        const FIXED = { layout: TableLayoutType.FIXED } as const;
+        /** Two rows of 3000 and 6026, then 4000 and 5026, or 2000 and 5026, then 3000 and 4026, as the probe writes them */
+        const disagreeing = (name: string, second = "two words", wider = false): readonly (readonly Spec[])[] => [
+            [
+                { text: `${name} one`, width: wider ? 2000 : 3000 },
+                { text: `${name} ${second}`, width: wider ? 5026 : 6026 },
+            ],
+            [
+                { text: `${name} one`, width: wider ? 3000 : 4000 },
+                { text: `${name} ${second}`, width: wider ? 4026 : 5026 },
+            ],
+        ];
+        const agreeing = (name: string, widths: readonly number[], texts: readonly string[]): readonly (readonly Spec[])[] =>
+            [1, 2].map(() => widths.map((width, index) => ({ text: `${name} ${texts[index]}`, width })));
+        /** A cell across two columns beside a third, above a row of a cell in each */
+        const merged = (rows: readonly (readonly (readonly [string, number])[])[], width?: number): Table =>
+            given(
+                rows.map((row, index) =>
+                    row.map(([text, cellWidth], column) => ({
+                        text,
+                        width: cellWidth,
+                        ...(index === 0 && column === 0 ? { span: 2 } : {}),
+                    })),
+                ),
+                { columnWidths: rows[1].map(([, cellWidth]) => cellWidth), ...(width === undefined ? {} : { width: dxa(width) }) },
+            );
+        const twips9026 = { width: dxa(9026), columnWidths: [3000, 6026] };
+        // With how near Word's they are: 5 twips, or 25 for the tables given no width of their own and not laid out fixed, as
+        // above
+        const probes: readonly (readonly [string, Table, readonly number[], number?])[] = [
+            ["TW1", given(disagreeing("TW1"), { columnWidths: [3000, 6026] }), [3604, 5409], 25],
+            ["TW2", given(disagreeing("TW2"), { columnWidths: [3000, 6026], ...FIXED }), [3998, 6028]],
+            ["TW3", given(disagreeing("TW3", "two words", true), { width: dxa(9026), columnWidths: [2000, 5026] }), [3374, 5649]],
+            ["TW4", given(disagreeing("TW4", "two words", true), { width: dxa(9026), columnWidths: [2000, 5026], ...FIXED }), [3374, 5649]],
+            ["TW5", given(disagreeing("TW5", wordOf(4400)), twips9026), [3297, 5726]],
+            ["TW6", given(disagreeing("TW6", wordOf(4400)), { ...twips9026, ...FIXED }), [3604, 5419]],
+            [
+                "TW7",
+                given(agreeing("TW7", [4000, 6026], ["one", wordOf(4400)]), { width: dxa(9026), columnWidths: [4000, 6026] }),
+                [3297, 5726],
+            ],
+            [
+                "TW8",
+                given(agreeing("TW8", [4000, 6026], ["one", wordOf(4400)]), { width: dxa(9026), columnWidths: [4000, 6026], ...FIXED }),
+                [3604, 5419],
+            ],
+            [
+                "TW9",
+                given(agreeing("TW9", [2000, 4000], [wordOf(1700), "two words"]), { width: dxa(9000), columnWidths: [2000, 4000] }),
+                [3000, 5999],
+            ],
+            [
+                "TW10",
+                given(agreeing("TW10", [2000, 4000], [wordOf(1700), "two words"]), {
+                    width: dxa(9000),
+                    columnWidths: [2000, 4000],
+                    ...FIXED,
+                }),
+                [3000, 5999],
+            ],
+            [
+                "TW15",
+                given(
+                    [
+                        [
+                            { text: `TW15 ${wordOf(2500)}`, width: 1000 },
+                            { text: "TW15 right two words", width: 2000 },
+                        ],
+                    ],
+                    {
+                        width: dxa(3000),
+                        columnWidths: [1000, 2000],
+                    },
+                ),
+                [2678, 768],
+            ],
+            [
+                "TW16",
+                merged([
+                    [
+                        [wordOf(5000), 3000],
+                        ["TW16", 1000],
+                    ],
+                    [
+                        ["TW16 a", 1000],
+                        ["TW16 b", 2000],
+                        ["TW16", 1000],
+                    ],
+                ]),
+                [1997, 3138, 1003],
+            ],
+            [
+                "TW17",
+                merged([
+                    [
+                        [wordOf(5000), 4000],
+                        ["TW17", 1000],
+                    ],
+                    [
+                        [`TW17 ${wordOf(1700)}`, 2000],
+                        ["TW17 b", 2000],
+                        ["TW17", 1000],
+                    ],
+                ]),
+                [3038, 2097, 1003],
+            ],
+            [
+                "TW18",
+                merged(
+                    [
+                        [
+                            [wordOf(6000), 4000],
+                            ["TW18 right", 5026],
+                        ],
+                        [
+                            ["TW18 a", 1000],
+                            ["TW18 b", 3000],
+                            ["TW18 c", 5026],
+                        ],
+                    ],
+                    9026,
+                ),
+                [1968, 4223, 2832],
+            ],
+            [
+                "TW19",
+                merged(
+                    [
+                        [
+                            ["TW19 across", 5000],
+                            ["TW19 right", 4026],
+                        ],
+                        [
+                            ["TW19 a", 2000],
+                            ["TW19 b", 2000],
+                            ["TW19 c", 5026],
+                        ],
+                    ],
+                    9026,
+                ),
+                [1838, 2712, 4473],
+            ],
+            [
+                "TW23",
+                autoTable([
+                    [{ text: wordOf(4000), span: 2 }, TEXT.long],
+                    ["one", "two words", "x"],
+                ]),
+                [1560, 2697, 4756],
+                25,
+            ],
+        ];
+        probes.forEach(([name, written, widths, tolerance = 5]) => {
+            const sized = fitColumns(read(written), ROOM, calibri);
+            expect(sized.unsupported, name).to.equal(undefined);
+            const actual = columnsOf(sized);
+            expect(actual, name).to.have.length(widths.length);
+            actual.forEach((width, index) => expect(width, name).to.be.closeTo(widths[index], tolerance));
+        });
+        // TW11 and TW14: a word of 11950 twips in the second column, in a table 9026 wide, kept it as wide as the word and its
+        // margins, and the first as wide as its widest word, 768, the table past the page; with cells given widths or not
+        const long = [
+            { text: "TW11 left two words", width: 3000 },
+            { text: `TW11 ${wordOf(12000)}`, width: 6026 },
+        ];
+        const pastThePage = [
+            given([long], twips9026),
+            given([long.map(({ text }) => ({ text }))], { width: dxa(9026) }),
+            given([long.map(({ text }) => ({ text }))], { width: dxa(9026), columnWidths: [3000, 6026] }),
+        ];
+        pastThePage.forEach((written) => {
+            const [first, second] = columnsOf(fitColumns(read(written), ROOM, calibri));
+            expect(first).to.be.closeTo(768, 5);
+            expect(second).to.be.closeTo(12167, 5);
+        });
+        // TW12 and TW13: in a table of 100%, or with no width of its own, Word broke the word, and narrowed the first column
+        // past its widest word, to 595, which its words don't explain
+        const broken = [
+            given([long], { width: { size: 100, type: WidthType.PERCENTAGE }, columnWidths: [3000, 6026] }),
+            given([long.map(({ text }) => ({ text }))], {}),
+        ];
+        broken.forEach((written) =>
+            expect(fitColumns(read(written), ROOM, calibri).unsupported).to.equal("a word longer than its table can make room for"),
+        );
+        // TW20 to TW22: a word across a column and a long line, narrowed to the page, which Word shared in a way not yet
+        // followed, as U1m below
+        [
+            ["one", wordOf(4000)],
+            [TEXT.half, wordOf(6000)],
+            [TEXT.half, wordOf(3000)],
+        ].forEach(([first, text]) =>
+            expect(fitColumns(read(autoTable([[{ text, span: 2 }], [first, TEXT.long]])), ROOM, calibri).unsupported).to.equal(
+                "a long word in cells merged across columns",
+            ),
+        );
+    });
+
+    it("should stop at the long words across columns Word's probes didn't settle", () => {
+        // U1m: a word wider than the widest words of the columns it is across, narrowed
         expect(fitColumns(read(autoTable([[{ text: TEXT.word, span: 2 }], [TEXT.half, TEXT.long]])), ROOM, calibri).unsupported).to.equal(
             "a long word in cells merged across columns",
         );
