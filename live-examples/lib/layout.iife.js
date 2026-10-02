@@ -6283,6 +6283,21 @@ var docxLayout = (function(exports) {
 			openMerges = openMerges.filter(({ start }) => start === void 0);
 		};
 		/**
+		* Places a row of a set height taller than the page, at the top of one: it takes the rest of the page, cut off at its
+		* bottom, so what follows goes on the next page, as Word lays out one set to exactly or at least 15000 twips, with
+		* 13958 of room (`word-probes.docx` U5c, U5d), as LibreOffice does. What Word does with one in columns, one with
+		* footnotes or cells merged down, or a header row, isn't known
+		*/
+		const placeCutRow = (row, index) => {
+			if (section().columns.length > 1) throw new Unsupported("a table row kept together taller than a column");
+			const markers = row.cells.flatMap((cell) => cell.blocks.flatMap(markersOf));
+			if (notesIn(markers).length > 0 || openMerges.length > 0 || row.header) throw new Unsupported("a footnote, merged cells or a header row in a table row of a set height taller than a page");
+			mark(markers);
+			placeRow(index, position, linesBottom() - position);
+			position = linesBottom();
+			placedInColumn = true;
+		};
+		/**
 		* Places a row that doesn't fit on the page with its footnotes by breaking it across pages between the lines of its
 		* cells, as Word breaks a row unless it is kept whole, with the footnotes of the lines on each page at its bottom. A
 		* row none of whose lines fit with their footnotes moves to the next page. The table's header rows are repeated above
@@ -6393,9 +6408,20 @@ var docxLayout = (function(exports) {
 					if (table.spaced) throw new Unsupported("a table row with space between its cells across pages");
 				}
 				const fitsWhole = !isFirstPart || position + height + breakBorder <= linesBottom() + TOLERANCE;
-				if ((!placesLines || !fitsWhole) && !placedInColumn && continued === void 0) {
+				const atTop = !placedInColumn && continued === void 0;
+				if ((!placesLines || !fitsWhole) && atTop) {
 					stopIfBalancing();
-					throw new Unsupported(fitsWhole && notesOf(whole).length > 0 ? "a table row and its footnote taller than a page" : "a table row taller than a page");
+					if (fitsWhole && notesOf(whole).length > 0) throw new Unsupported("a table row and its footnote taller than a page");
+				}
+				if (!placesLines && atTop) {
+					if (isFirstPart && isLastPart) {
+						placeCutRow(row, rowIndex);
+						return;
+					}
+					if (!parts.some(([first]) => (first === null || first === void 0 ? void 0 : first.paragraph.keepLines) === true && first.from === 0)) throw new Unsupported(isFirstPart && row.height !== void 0 && row.height.value > roomAbove(0) + TOLERANCE ? "a table row whose text and set height are both taller than a page" : "a line in a table cell taller than a page");
+					if (section().columns.length > 1) throw new Unsupported("a table row kept together taller than a column");
+					parts = parts.map((paragraphs) => paragraphs.map((part, index) => index === 0 ? _objectSpread2(_objectSpread2({}, part), {}, { paragraph: _objectSpread2(_objectSpread2({}, part.paragraph), {}, { keepLines: false }) }) : part));
+					continue;
 				}
 				if (!placesLines && isFirstPart && table.kept) throw new Unsupported("a table row kept with the next before a row that moves to the next page");
 				if (!placesLines) {
@@ -6543,16 +6569,23 @@ var docxLayout = (function(exports) {
 					closeMerges(position);
 					startTablePage(index);
 				}
-				if (!rowFits(roomNeeded, notes) && !keptWhole) {
+				const tooTall = keptWhole && !rowStays(roomNeeded, notes);
+				if (tooTall) {
+					var _row$height4;
+					stopIfBalancing();
+					if (notes.length > 0 && position + roomNeeded <= linesBottom() + TOLERANCE) throw new Unsupported("a table row and its footnote taller than a page");
+					if (((_row$height4 = row.height) === null || _row$height4 === void 0 ? void 0 : _row$height4.rule) === "exact") {
+						placeCutRow(row, index);
+						continue;
+					}
+					if (section().columns.length > 1) throw new Unsupported("a table row kept together taller than a column");
+				}
+				if (tooTall || !rowFits(roomNeeded, notes) && !keptWhole) {
 					splitRow(row, index, height, breakBorder, () => startTablePage(index), {
 						spaced: table.cellSpacing !== void 0,
 						kept: index > brokenUntil && index > 0 && keptWithNext(table.rows[index - 1])
 					});
 					continue;
-				}
-				if (!rowStays(roomNeeded, notes)) {
-					stopIfBalancing();
-					throw new Unsupported(notes.length > 0 && position + roomNeeded <= linesBottom() + TOLERANCE ? "a table row and its footnote taller than a page" : "a table row taller than a page");
 				}
 				mark(row.cells.flatMap((cell) => startsMerge(cell) ? roomlessOf(cell) : cell.blocks.flatMap(markersOf)));
 				const at = position;
@@ -7053,8 +7086,8 @@ var docxLayout = (function(exports) {
 	* column and section breaks, and each section's page size, margins, columns, headers, footers and page numbering.
 	*
 	* It stops at the first thing it can't lay out yet: a drawing or table that text flows around, a text box or frame, an
-	* equation, a footnote that continues on the next page, columns evened out before a continuous section break, a table
-	* row kept whole that is taller than a page, text in a font that isn't in the width tables and isn't embedded, such as
+	* equation, a footnote that continues on the next page, columns evened out before a continuous section break, a line in
+	* a table cell that is taller than a page, text in a font that isn't in the width tables and isn't embedded, such as
 	* Aptos, a character whose width in its font isn't known, such as a mathematical symbol in Calibri, which Word draws in
 	* Cambria Math, or a date in the text, which Word writes when it opens the document. The page references to bookmarks
 	* after it are left blank, for Word to fill in when it updates the fields. A document in compatibility mode, which Word
