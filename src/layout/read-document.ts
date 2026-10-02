@@ -807,10 +807,14 @@ const readTable = (element: XmlObject, reader: Reader): TableBlock => {
             readonly edges: ReadonlyMap<number, number>;
             readonly end: number;
             readonly unsupported?: string;
+            /** The bookmarks that start before the row, and before each of its cells */
+            readonly bookmarks: readonly string[];
+            readonly cellBookmarks: readonly (readonly string[])[];
         } => {
             const rowChildren = contentOf(row).filter(isObject);
             const rowProperties = childrenOf(find(rowChildren, "w:trPr"));
             const rowParts = unwrap(rowChildren);
+            const rowCells = withBookmarks(rowParts, "w:tc");
             const heightAttributes = attributesOf(find(rowProperties, "w:trHeight"));
             const height = twips(heightAttributes["w:val"]);
             const { "w:hRule": rule } = heightAttributes;
@@ -821,13 +825,13 @@ const readTable = (element: XmlObject, reader: Reader): TableBlock => {
                 edges,
                 column: end,
                 unsupported: cellsUnsupported,
-            } = withBookmarks(rowParts, "w:tc").reduce<{
+            } = rowCells.reduce<{
                 readonly column: number;
                 readonly cells: readonly TableCell[];
                 readonly edges: ReadonlyMap<number, number>;
                 readonly unsupported?: string;
             }>(
-                ({ column, cells: done, edges: before, unsupported: unsupportedBefore }, { element: cell, bookmarks }, cellIndex) => {
+                ({ column, cells: done, edges: before, unsupported: unsupportedBefore }, { element: cell }) => {
                     const cellChildren = contentOf(cell).filter(isObject);
                     const cellProperties = childrenOf(find(cellChildren, "w:tcPr"));
                     const span = numberOf(attributesOf(find(cellProperties, "w:gridSpan"))["w:val"]) ?? 1;
@@ -852,13 +856,7 @@ const readTable = (element: XmlObject, reader: Reader): TableBlock => {
                                 ...(span > 1 ? { span } : {}),
                                 width: width - margins.left - margins.right,
                                 ...(hasWidth ? { ownWidth: width } : {}),
-                                // The bookmarks before the row start in its first cell
-                                blocks: readBlocks(
-                                    cellChildren,
-                                    reader,
-                                    style,
-                                    cellIndex === 0 ? [...rowBookmarks, ...bookmarks] : bookmarks,
-                                ),
+                                blocks: readBlocks(cellChildren, reader, style),
                                 marginTop: margins.top,
                                 marginBottom: margins.bottom,
                                 marginLeft: margins.left,
@@ -881,6 +879,8 @@ const readTable = (element: XmlObject, reader: Reader): TableBlock => {
                 edges,
                 end,
                 ...withoutUndefined({ unsupported: rowUnsupported }),
+                bookmarks: rowBookmarks,
+                cellBookmarks: rowCells.map(({ bookmarks }) => bookmarks),
                 row: {
                     cells,
                     // A height without a rule is the least the row can be, as Word writes it
@@ -895,6 +895,21 @@ const readTable = (element: XmlObject, reader: Reader): TableBlock => {
             };
         },
     );
+    // The bookmarks before each row and cell start where the text after them does: in the cell after them, or in the next
+    // with any text when it has none
+    let carried: readonly string[] = [];
+    const tableRows = read.map(({ row, bookmarks, cellBookmarks }): TableRow => {
+        carried = [...carried, ...bookmarks];
+        return {
+            ...row,
+            cells: row.cells.map((cell, index) => {
+                const pending = [...carried, ...cellBookmarks[index]];
+                const marked = pending.length === 0 ? undefined : startingAtFirst(cell.blocks, pending);
+                carried = marked === undefined ? pending : [];
+                return marked === undefined ? cell : { ...cell, blocks: marked };
+            }),
+        };
+    });
     // Cells over the same columns whose widths put a column's edge in different places in different rows, which Word
     // settles in a way not yet followed
     const edgesAt = new Map<number, number>();
@@ -938,7 +953,7 @@ const readTable = (element: XmlObject, reader: Reader): TableBlock => {
         blocks.find((block) => block.unsupported !== undefined)?.unsupported;
     return {
         type: "table",
-        rows: read.map(({ row }) => row),
+        rows: tableRows,
         ...(fits ? { fit: readTableWidth(properties) } : {}),
         ...(!fits && !fixed
             ? { widen: { ...readTableWidth(properties), acrossColumns: tableCells.some(({ span }) => span !== undefined) } }
@@ -960,8 +975,8 @@ const unsupportedBlock = (unsupported: string): ParagraphBlock => ({
 });
 
 /**
- * A block with bookmarks that start where its text does: before its first item, or, for a table, at the start of its
- * first cell. Undefined when it has no text for them to start at, as a table without rows.
+ * A block with bookmarks that start where its text does: before its first item, or, for a table, in the first of its
+ * cells with any text. Undefined when it has no text for them to start at, as a table without rows.
  */
 const startingWith = (block: Block, bookmarks: readonly string[]): Block | undefined => {
     if (bookmarks.length === 0) {
@@ -970,11 +985,29 @@ const startingWith = (block: Block, bookmarks: readonly string[]): Block | undef
     if (block.type === "paragraph") {
         return { ...block, items: [...bookmarks.map((name) => ({ type: "marker" as const, name })), ...block.items] };
     }
-    const [row, ...rows] = block.rows;
-    const [cell, ...cells] = row?.cells ?? [];
-    const [first, ...rest] = cell?.blocks ?? [];
-    const marked = first && startingWith(first, bookmarks);
-    return marked && { ...block, rows: [{ ...row, cells: [{ ...cell, blocks: [marked, ...rest] }, ...cells] }, ...rows] };
+    for (const [rowIndex, row] of block.rows.entries()) {
+        for (const [cellIndex, cell] of row.cells.entries()) {
+            const blocks = startingAtFirst(cell.blocks, bookmarks);
+            if (blocks !== undefined) {
+                const cells = row.cells.map((other, index) => (index === cellIndex ? { ...cell, blocks } : other));
+                return { ...block, rows: block.rows.map((other, index) => (index === rowIndex ? { ...row, cells } : other)) };
+            }
+        }
+    }
+    return undefined;
+};
+
+/**
+ * Blocks with bookmarks that start where the text of the first of them with any text does. Undefined when none has any.
+ */
+const startingAtFirst = (blocks: readonly Block[], bookmarks: readonly string[]): readonly Block[] | undefined => {
+    for (const [index, block] of blocks.entries()) {
+        const marked = startingWith(block, bookmarks);
+        if (marked !== undefined) {
+            return [...blocks.slice(0, index), marked, ...blocks.slice(index + 1)];
+        }
+    }
+    return undefined;
 };
 
 /**
@@ -1001,18 +1034,12 @@ const readBlock = (element: XmlObject, reader: Reader, tableStyle?: string): Blo
 
 /**
  * Reads the paragraphs and tables in a part of a document, such as a table cell or a header, and in the content controls
- * and custom XML in it. A bookmark between them starts with the next, as do those that start before the part (`before`),
- * such as before a table cell.
+ * and custom XML in it. A bookmark between them starts with the next.
  */
-const readBlocks = (
-    elements: readonly unknown[],
-    reader: Reader,
-    tableStyle?: string,
-    before: readonly string[] = [],
-): readonly Block[] => {
+const readBlocks = (elements: readonly unknown[], reader: Reader, tableStyle?: string): readonly Block[] => {
     // eslint-disable-next-line functional/prefer-readonly-type
     const blocks: Block[] = [];
-    let bookmarks = before;
+    let bookmarks: readonly string[] = [];
     for (const element of unwrap(elements)) {
         const block = readBlock(element, reader, tableStyle);
         if (block === undefined) {

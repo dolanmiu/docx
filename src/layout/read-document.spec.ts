@@ -957,8 +957,18 @@ describe("readDocument", () => {
             expect(unsupportedOf([], [], [], [{ "w:tcFitText": {} }], [{ "w:noWrap": {} }])).to.equal("text fitted to its table cell");
         });
 
+        const bookmark = (name: string): object => ({ "w:bookmarkStart": { _attr: { "w:name": name, "w:id": 1 } } });
+        /** The names of the bookmarks at the start of each block of each cell of a table, or "table" for a table */
+        const markersIn = (table: TableBlock): readonly (readonly (readonly unknown[])[])[] =>
+            table.rows.map(({ cells }) =>
+                cells.map(({ blocks }) =>
+                    blocks.map((block) =>
+                        block.type === "table" ? "table" : block.items.flatMap((item) => (item.type === "marker" ? [item.name] : [])),
+                    ),
+                ),
+            );
+
         it("should start a bookmark before a row in the row's first cell, and one before a cell in the cell, and leave out those after the last", () => {
-            const bookmark = (name: string): object => ({ "w:bookmarkStart": { _attr: { "w:name": name, "w:id": 1 } } });
             const content = readBody([
                 {
                     "w:tbl": [
@@ -987,16 +997,33 @@ describe("readDocument", () => {
                     ],
                 },
             ]);
-            const table = content.blocks[0].block as TableBlock;
-            expect(
-                table.rows.map(({ cells }) =>
-                    cells.map(({ blocks }) =>
-                        blocks.map((block) =>
-                            block.type === "table" ? "table" : block.items.flatMap((item) => (item.type === "marker" ? [item.name] : [])),
-                        ),
-                    ),
-                ),
-            ).to.deep.equal([[[["first"]], [["second"]]], [["table", ["row", "cell", "text"], ["between"]]]]);
+            expect(markersIn(content.blocks[0].block as TableBlock)).to.deep.equal([
+                [[["first"]], [["second"]]],
+                [["table", ["row", "cell", "text"], ["between"]]],
+            ]);
+        });
+
+        it("should start a bookmark before a row or cell with no text in the next cell with any, and one before a table in its first cell with any", () => {
+            // A cell of only a table without rows has no text, and nor does one with nothing in it
+            const empty = { "w:tc": [{ "w:tbl": [] }] };
+            const rows = readBody([
+                {
+                    "w:tbl": [
+                        bookmark("row"),
+                        { "w:tr": [empty, cell([], p(r(t("a2"))))] },
+                        { "w:tr": [cell([], p(r(t("b1")))), bookmark("cell"), { "w:tc": [] }] },
+                        { "w:tr": [cell([], p(r(t("c1"))))] },
+                    ],
+                },
+            ]);
+            expect(markersIn(rows.blocks[0].block as TableBlock)).to.deep.equal([[["table"], [["row"]]], [[[]], []], [[["cell"]]]]);
+            const table = readBody([
+                bookmark("table"),
+                { "w:tbl": [{ "w:tr": [empty] }, { "w:tr": [empty, { "w:tc": [{ "w:tbl": [] }, p(r(t("text")))] }] }] },
+                p(r(t("after"))),
+            ]);
+            expect(markersIn(table.blocks[0].block as TableBlock)).to.deep.equal([[["table"]], [["table"], ["table", ["table"]]]]);
+            expect(itemsOf(table, 1)).to.have.length(1);
         });
     });
 
