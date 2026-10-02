@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 
 import type { ParagraphFormat, TextMeasurer } from "../text-layout";
 import type { BlockLayout, PageLayout } from "./layout-document";
+import type { FieldFormat } from "./number-format";
 import { type Pagination, paginate } from "./paginate";
 import type { Block, DocumentContent, LayoutItem, ParagraphBlock, Section, TableBlock, TableCell, TableRow } from "./read-document";
 
@@ -65,18 +66,38 @@ const document = (blocks: readonly (Block | readonly [Block, number])[], changes
     // Each footnote is numbered with the name of its marker, and each endnote's blocks with their index
     footnoteNumbers: new Map([...(changes.footnotes?.keys() ?? [])].map((name) => [name, name])),
     endnoteNumbers: new Map((changes.endnotes ?? []).map((block, index) => [block, String(index)])),
+    relativeReferences: new Map(),
+    endnoteReferences: new Map(),
     ...changes,
 });
 
-/** The numbers the pages were laid out with: where they broke, without what is on each */
-const numbersOf = (content: DocumentContent, measurer: TextMeasurer = MEASURER): Omit<Pagination, "pages"> => {
-    const { bookmarks, pageCount, sectionPageCounts, stoppedAt } = paginate(content, { measurer });
-    return { bookmarks, pageCount, sectionPageCounts, ...(stoppedAt === undefined ? {} : { stoppedAt }) };
+/** The names of the markers in a block, and in its table's cells */
+const markersIn = (block: Block): readonly string[] =>
+    block.type === "paragraph"
+        ? block.items.flatMap((item) => (item.type === "marker" ? [item.name] : []))
+        : block.rows.flatMap(({ cells }) => cells.flatMap((cell) => cell.blocks.flatMap(markersIn)));
+
+/**
+ * The bookmarks of the body, without those of the footnotes, whose pages the tests of where footnotes' lines go don't look
+ * at: "bookmarks in footnotes" does
+ */
+const inBody = (content: DocumentContent, bookmarks: ReadonlyMap<string, string>): ReadonlyMap<string, string> => {
+    const inNotes = new Set([...content.footnotes.values()].flat().flatMap(markersIn));
+    return new Map([...bookmarks].filter(([name]) => !inNotes.has(name)));
 };
 
-/** The page each bookmark is on */
+/** The numbers the pages were laid out with: where they broke, without what is on each */
+const numbersOf = (
+    content: DocumentContent,
+    measurer: TextMeasurer = MEASURER,
+): Pick<Pagination, "bookmarks" | "pageCount" | "sectionPageCounts" | "stoppedAt"> => {
+    const { bookmarks, pageCount, sectionPageCounts, stoppedAt } = paginate(content, { measurer });
+    return { bookmarks: inBody(content, bookmarks), pageCount, sectionPageCounts, ...(stoppedAt === undefined ? {} : { stoppedAt }) };
+};
+
+/** The page each bookmark of the body is on */
 const pagesOf = (content: DocumentContent, pageNumbers?: ReadonlyMap<string, string>): Record<string, string> =>
-    Object.fromEntries(paginate(content, { measurer: MEASURER, pageNumbers }).bookmarks);
+    Object.fromEntries(inBody(content, paginate(content, { measurer: MEASURER, pageNumbers }).bookmarks));
 
 const row = (cells: readonly (readonly Block[])[], changes: Partial<TableRow> = {}): TableRow => ({
     cells: cells.map((blocks, column) => ({ column, width: 80, blocks, marginTop: 0, marginBottom: 0, marginLeft: 0, marginRight: 0 })),
@@ -2709,7 +2730,7 @@ describe("paginate", () => {
             const content = withNotes([paragraph("a", 4), noted(paragraph("b", 1), "footnote 1"), paragraph("c", 1)], {
                 "footnote 1": [paragraph("note", 1)],
             });
-            // The separator and the footnote take 2 lines, so c goes on the next page. Bookmarks in footnotes aren't placed
+            // The separator and the footnote take 2 lines, so c goes on the next page
             expect(pagesOf(content)).to.deep.equal({ a: "1", b: "1", c: "2" });
         });
 
@@ -3720,6 +3741,200 @@ describe("paginate", () => {
                     [SECTION, SECTION, SECTION],
                 ),
             ).to.deep.equal([1, undefined, 1]);
+        });
+    });
+
+    describe("fields whose results depend on the pages", () => {
+        /** The text of each line of the body of a page */
+        const linesOn = (pagination: Pagination, page: number): readonly string[] =>
+            pagination.pages[page - 1].body.flatMap((block) => (block.type === "paragraph" ? block.lines.map(({ text }) => text) : []));
+        /** A paragraph of a field's result, at the marker before it when it has one */
+        const fielded = (name: string, item: LayoutItem, marker?: string): ParagraphBlock =>
+            withItems(paragraph(name, 0), [...(marker === undefined ? [] : [{ type: "marker" as const, name: marker }]), item]);
+        /** Lays out the pages, and again with where the bookmarks and fields were placed, as the passes do */
+        const twice = (content: DocumentContent, options: Parameters<typeof paginate>[1] = {}): Pagination => {
+            const first = paginate(content, { measurer: MEASURER, ...options });
+            return paginate(content, { measurer: MEASURER, ...options, pageNumbers: first.bookmarks, places: first.places });
+        };
+        const SEPARATOR: ParagraphBlock = { type: "paragraph", items: [], format: {}, tabStops: [], markFont: {} };
+        /** A document whose blocks refer to footnotes and endnotes, by the markers at their references */
+        const withNotes = (
+            blocks: Parameters<typeof document>[0],
+            footnotes: Record<string, readonly Block[]>,
+            endnotes: Record<string, readonly Block[]> = {},
+            sections = [SECTION],
+        ): DocumentContent =>
+            document(blocks, {
+                sections,
+                footnotes: new Map(Object.entries(footnotes)),
+                footnoteSeparator: [SEPARATOR],
+                footnoteContinuationSeparator: [SEPARATOR],
+                endnotes: Object.values(endnotes).flat(),
+                endnoteReferences: new Map(Object.entries(endnotes)),
+            });
+        const referring = (name: string, lines: number, ...notes: readonly string[]): ParagraphBlock =>
+            withItems(
+                paragraph(name, lines),
+                notes.map((note) => ({ type: "marker", name: note })),
+            );
+
+        it("should write the number of the page a PAGE field is on, from where it was placed before, as the page shows it", () => {
+            const page: LayoutItem = { type: "pageNumber", field: "field 1", font: {} };
+            const content = document([paragraph("a", 7), fielded("b", page, "field 1")], {
+                sections: [{ ...SECTION, firstNumber: 4, numberFormat: "lowerRoman" }],
+            });
+            const first = paginate(content, { measurer: MEASURER });
+            // Where it is isn't known the first time, so it is blank. It is placed as a bookmark is, but isn't one
+            expect(linesOn(first, 2)).to.deep.equal([""]);
+            expect(first.places.get("field 1")).to.deep.equal({ page: 2, pageNumber: 5, text: "v", section: 0, order: 2 });
+            expect(first.bookmarks.has("field 1")).to.equal(false);
+            expect(linesOn(paginate(content, { measurer: MEASURER, places: first.places }), 2)).to.deep.equal(["v"]);
+            // In a format of its own, of the page's number, on a page numbered in figures or not (word-page-fields.docx PF7)
+            const formatted = (format: FieldFormat, section: Partial<Section> = {}): readonly string[] =>
+                linesOn(
+                    twice(
+                        document([paragraph("a", 7), fielded("b", { ...page, format }, "field 1")], {
+                            sections: [{ ...SECTION, ...section }],
+                        }),
+                    ),
+                    2,
+                );
+            expect(formatted({ numberFormat: "roman" })).to.deep.equal(["ii"]);
+            expect(formatted({ numberFormat: "Arabic" }, { firstNumber: 4, numberFormat: "lowerRoman" })).to.deep.equal(["5"]);
+            expect(formatted({ picture: "00" })).to.deep.equal(["02"]);
+            expect(formatted({ numberFormat: "roman", capitals: "upper" })).to.deep.equal(["II"]);
+            expect(formatted({ capitals: "upper" }, { numberFormat: "lowerRoman" })).to.deep.equal(["II"]);
+            // Word's ordinal of 0 is an error
+            const zero = document([fielded("b", { ...page, format: { numberFormat: "Ordinal" } }, "field 1")], {
+                sections: [{ ...SECTION, firstNumber: 0 }],
+            });
+            expect(twice(zero).stoppedAt).to.equal("a page number its format isn't written for yet");
+        });
+
+        it("should write the number of the section a SECTION field is in, counted from 1, in a format of its own too", () => {
+            const content = document(
+                [
+                    [paragraph("a", 1), 0],
+                    [fielded("b", { type: "sectionNumber", font: {} }), 1],
+                    [fielded("c", { type: "sectionNumber", font: {}, format: { numberFormat: "ALPHABETIC" } }), 1],
+                ],
+                { sections: [SECTION, SECTION] },
+            );
+            expect(linesOn(paginate(content, { measurer: MEASURER }), 2)).to.deep.equal(["2", "B"]);
+        });
+
+        it("should write the number of pages in a format of its own, and nothing until it is known", () => {
+            const content = document([fielded("a", { type: "pageCount", scope: "document", font: {}, format: { numberFormat: "roman" } })]);
+            expect(linesOn(paginate(content, { measurer: MEASURER, pageCount: 12 }), 1)).to.deep.equal(["xii"]);
+            expect(linesOn(paginate(content, { measurer: MEASURER }), 1)).to.deep.equal([""]);
+        });
+
+        it("should write a page reference in a format of its own from the number of its bookmark's page, without its chapter number, and give each bookmark's", () => {
+            const reference = (format: FieldFormat): ParagraphBlock =>
+                fielded("reference", { type: "pageReference", bookmark: "target", font: {}, format });
+            const content = (format: FieldFormat, section: Partial<Section> = {}): DocumentContent =>
+                document([reference(format), paragraph("fill", 6), paragraph("target", 1)], {
+                    sections: [{ ...SECTION, ...section }],
+                });
+            expect(linesOn(paginate(content({ numberFormat: "roman" }), { measurer: MEASURER }), 1)[0]).to.equal("");
+            expect(linesOn(twice(content({ numberFormat: "roman" })), 1)[0]).to.equal("ii");
+            // word-page-fields.docx PF4: page iv in Arabic is 4, and page 1-2 in roman numerals is ii
+            expect(linesOn(twice(content({ numberFormat: "Arabic" }, { firstNumber: 3, numberFormat: "lowerRoman" })), 1)[0]).to.equal("4");
+            const chapter = (name: string): ParagraphBlock => ({ ...paragraph(name, 1), heading: { level: 1, chapter: "1" } });
+            const chapters = document(
+                [chapter("heading"), reference({ numberFormat: "roman" }), paragraph("fill", 5), paragraph("target", 1)],
+                {
+                    sections: [{ ...SECTION, chapters: { level: 1, separator: "-" } }],
+                },
+            );
+            expect(linesOn(twice(chapters), 1)[1]).to.equal("ii");
+            expect(Object.fromEntries(paginate(chapters, { measurer: MEASURER }).bookmarkNumbers)).to.deep.equal({
+                heading: 1,
+                reference: 1,
+                fill: 1,
+                target: 2,
+            });
+            // In capitals alone, the page's number as the page shows it
+            expect(linesOn(twice(content({ capitals: "upper" }, { numberFormat: "lowerRoman" })), 1)[0]).to.equal("II");
+        });
+
+        it("should write where a bookmark is from a page reference with \\p: above or below it on its page, by the order of the text, and the bookmark's page otherwise", () => {
+            const relative = (field: string, format?: FieldFormat): ParagraphBlock =>
+                fielded(
+                    field,
+                    { type: "pageReference", bookmark: "target", font: {}, relative: field, ...(format ? { format } : {}) },
+                    field,
+                );
+            const content = document(
+                [
+                    relative("field 1"),
+                    paragraph("target", 1),
+                    relative("field 2", { capitals: "upper" }),
+                    paragraph("fill", 5),
+                    relative("field 3"),
+                ],
+                { relativeReferences: new Map([["target", ["field 1", "field 2", "field 3", "field 9"]]]) },
+            );
+            const first = paginate(content, { measurer: MEASURER });
+            // A reference that wasn't placed has nothing
+            expect(first.relativePositions.get("target")).to.deep.equal(["below", "above", "on page 1", undefined]);
+            const second = paginate(content, { measurer: MEASURER, places: first.places });
+            expect([...linesOn(second, 1), ...linesOn(second, 2)].filter((text) => !text.startsWith("abc"))).to.deep.equal([
+                "below",
+                "ABOVE",
+                "on page ",
+                "1",
+            ]);
+            // Across columns, by the order of the text too: the bookmark is beside the reference, in the second column
+            // (word-page-fields.docx PF1)
+            const columns = document([relative("field 1"), paragraph("fill", 7), paragraph("target", 1)], {
+                sections: [{ ...SECTION, pageWidth: 190, columns: [80, 80] }],
+            });
+            expect(linesOn(twice(columns), 1)[0]).to.equal("below");
+            // To a bookmark that isn't anywhere, nothing
+            const nowhere = document([relative("field 1")], { relativeReferences: new Map([["elsewhere", ["field 1"]]]) });
+            expect(paginate(nowhere, { measurer: MEASURER }).relativePositions.get("elsewhere")).to.deep.equal([undefined]);
+            expect(linesOn(paginate(nowhere, { measurer: MEASURER, places: first.places }), 1)).to.deep.equal(["below"]);
+        });
+
+        it("should place the bookmarks and fields of footnotes and endnotes where their references are, as Word does (word-page-fields.docx PF7g to PF8c)", () => {
+            const content = withNotes(
+                [paragraph("a", 3), referring("b", 1, "footnote 1", "endnote 1"), paragraph("c", 1), paragraph("d", 2)],
+                {
+                    "footnote 1": [
+                        paragraph("note", 2),
+                        table([row([[paragraph("cell", 1)]])]),
+                        fielded("rest", { type: "pageNumber", field: "field 1", font: {} }, "field 1"),
+                        fielded("section", { type: "sectionNumber", field: "field 2", font: {} }, "field 2"),
+                    ],
+                },
+                { "endnote 1": [paragraph("end", 1)] },
+                [{ ...SECTION, numberFormat: "lowerRoman" }],
+            );
+            const first = paginate(content, { measurer: MEASURER });
+            // The footnote's rest goes on to page ii, and the endnote is on the last page, but they are where b is
+            expect(Object.fromEntries(first.bookmarks)).to.deep.include({ b: "i", note: "i", cell: "i", rest: "i", end: "i" });
+            expect(first.pageCount).to.equal(3);
+            const second = paginate(content, { measurer: MEASURER, places: first.places });
+            expect(
+                second.pages.flatMap((page) =>
+                    page.footnotes.flatMap(({ content: blocks }) =>
+                        blocks.flatMap((block) => (block.type === "paragraph" ? block.lines.map(({ text }) => text) : [])),
+                    ),
+                ),
+            ).to.include.members(["i", "1"]);
+            // Not yet placed, a SECTION field in a note is blank
+            expect(
+                paginate(content, { measurer: MEASURER }).pages.flatMap((page) =>
+                    page.footnotes.flatMap(({ content: blocks }) =>
+                        blocks.flatMap((block) => (block.type === "paragraph" ? block.lines.map(({ text }) => text) : [])),
+                    ),
+                ),
+            ).not.to.include("1");
+            // A page reference with \p to one is "on page" its reference's page, even on that page (PF8d and PF8e)
+            const reference = fielded("field 3", { type: "pageReference", bookmark: "note", font: {}, relative: "field 3" }, "field 3");
+            const relative = withNotes([reference, referring("b", 1, "footnote 1")], { "footnote 1": [paragraph("note", 1)] });
+            expect(linesOn(twice(relative), 1).slice(0, 2)).to.deep.equal(["on page ", "1"]);
         });
     });
 

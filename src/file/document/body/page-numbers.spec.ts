@@ -113,7 +113,7 @@ describe("fillPageNumbers", () => {
         expect(textOf(paragraphsOf(body)[0])).to.equal("7 after");
     });
 
-    it("should leave the fields that don't show a page's number as they are", () => {
+    it("should leave the fields it has no number for, and those that don't show a page's number, as they are", () => {
         const body = bodyWith(
             [
                 new Paragraph({ children: fieldWithResult("PAGEREF target \\p", "above") }),
@@ -128,6 +128,95 @@ describe("fillPageNumbers", () => {
         );
 
         expect(paragraphsOf(body).map(textOf)).to.deep.equal(["above", "ii", "3", "03", "3", "1", "1"]);
+    });
+
+    it("should write page references in a format of their own from the numbers of their bookmarks' pages, as Word writes them", () => {
+        // word-watertight-fields.docx FD3 and word-page-fields.docx PF5, to page 5
+        const body = new Body({
+            pageNumbers: () => ({ bookmarks: new Map([["target", "5"]]), bookmarkPageNumbers: new Map([["target", 5]]) }),
+        });
+        const results: readonly (readonly [string, string])[] = [
+            ["PAGEREF target \\* roman", "v"],
+            ["PAGEREF target \\* ALPHABETIC \\h", "E"],
+            ["PAGEREF target \\* Ordinal", "5th"],
+            ["PAGEREF target \\*Arabic \\* MERGEFORMAT", "5"],
+            ["PAGEREF target \\*", "5"],
+            ["PAGEREF target \\* roman \\* Upper", "V"],
+            ["PAGEREF target \\* ALPHABETIC \\* Lower", "e"],
+            ["PAGEREF target \\* Ordinal \\* Upper", "5TH"],
+            ["PAGEREF target \\* Ordinal \\* FirstCap", "5th"],
+            ['PAGEREF target \\# "00"', "05"],
+            ["PAGEREF target \\#000", "005"],
+            // Those whose text in Word isn't known, and a bookmark without a number
+            ['PAGEREF target \\# "#,##0"', "?"],
+            ['PAGEREF target \\# "x0"', "?"],
+            ["PAGEREF target \\# 0 \\# 00", "?"],
+            ['PAGEREF target \\* roman \\# "00"', "?"],
+            ["PAGEREF target \\* CardText", "?"],
+            ["PAGEREF target \\* roman \\* Ordinal", "?"],
+            ["PAGEREF target \\* Caps", "?"],
+            ["PAGEREF target \\* Upper \\* Lower", "?"],
+            ["PAGEREF elsewhere \\* roman", "?"],
+        ];
+        for (const [instruction] of results) {
+            body.push(new Paragraph({ children: fieldWithResult(instruction, "?") }));
+        }
+
+        expect(paragraphsOf(new Formatter().format(body)).map(textOf)).to.deep.equal(results.map(([, result]) => result));
+    });
+
+    it("should write where the bookmark is into each page reference with \\p in the body, in order, as docx/layout reads them", () => {
+        /** An element around others, such as a text box's content or deleted text */
+        class Around extends XmlComponent {
+            public constructor(name: string, children: readonly XmlComponent[]) {
+                super(name);
+                for (const child of children) {
+                    this.root.push(child);
+                }
+            }
+        }
+        const relative = (): Paragraph => new Paragraph({ children: [new PageReference("target", { useRelativePosition: true })] });
+        const body = new Body({
+            pageNumbers: () => ({
+                bookmarks: new Map([["target", "4"]]),
+                bookmarkPageNumbers: new Map([["target", 4]]),
+                relativePositions: new Map([["target", ["below", "above", "on page 1", "on page 4"]]]),
+            }),
+        });
+        body.push(relative());
+        // A text box's and deleted text, which docx/layout doesn't lay out, aren't counted
+        body.push(new Paragraph({ children: [new Run({ children: [new Around("w:txbxContent", [relative()])] })] }));
+        body.push(new Paragraph({ children: [new Around("w:del", [...fieldWithResult("PAGEREF target \\p", "?")]) as unknown as Run] }));
+        // In capitals, as Word writes them (word-page-fields.docx PF3d)
+        body.push(new Paragraph({ children: fieldWithResult("PAGEREF target \\p \\* Upper", "?") }));
+        // With a number format, it writes the bookmark's page's number, but is counted (word-page-fields.docx PF3c)
+        body.push(new Paragraph({ children: fieldWithResult("PAGEREF target \\p \\* Arabic", "?") }));
+        body.push(relative());
+        body.push(relative());
+
+        expect(paragraphsOf(new Formatter().format(body)).map(textOf)).to.deep.equal(["below", "", "?", "ABOVE", "4", "on page 4", ""]);
+    });
+
+    it("should leave the page references with \\p in headers and footers as they are", () => {
+        const file = new File({
+            pageNumbers: () => ({ bookmarks: new Map([["target", "4"]]), relativePositions: new Map([["target", ["below"]]]) }),
+            sections: [
+                {
+                    headers: {
+                        default: new Header({ children: [new Paragraph({ children: fieldWithResult("PAGEREF target \\p", "?") })] }),
+                    },
+                    children: [],
+                },
+            ],
+        });
+        new Formatter().format(file.Document.View, { file, viewWrapper: file.Document, stack: [] } as unknown as IContext);
+        const [wrapper] = file.Headers;
+
+        expect(
+            partParagraphsOf(new Formatter().format(wrapper.View, { file, viewWrapper: wrapper, stack: [] } as unknown as IContext)).map(
+                textOf,
+            ),
+        ).to.deep.equal(["?"]);
     });
 
     it("should write the page numbers of page references in the results of other fields, such as a table of contents", () => {
@@ -268,7 +357,7 @@ describe("fillPageNumbers", () => {
             expect(formatted(file).map(textOf)).to.deep.equal(["3 of 5", "5", "", "2 of 5"]);
         });
 
-        it("should leave the fields of numbers of pages it doesn't know, or that are in a format of their own, as they are", () => {
+        it("should leave the fields of numbers of pages it doesn't know, or written with a picture, as they are, and write those in a format of their own", () => {
             const file = new File({
                 pageNumbers: counting(undefined, undefined),
                 sections: [
@@ -285,7 +374,7 @@ describe("fillPageNumbers", () => {
 
             expect(formatted(file).map(textOf)).to.deep.equal(["4", "2", "iv", "02"]);
             const formats = new File({
-                pageNumbers: counting(4, 2),
+                pageNumbers: counting(9, 2),
                 sections: [
                     {
                         children: [
@@ -296,7 +385,7 @@ describe("fillPageNumbers", () => {
                     },
                 ],
             });
-            expect(formatted(formats).map(textOf)).to.deep.equal(["iv", "02", "4"]);
+            expect(formatted(formats).map(textOf)).to.deep.equal(["ix", "02", "9"]);
         });
 
         it("should write the numbers into the headers and footers once the body is written, for the sections whose pages they are on", () => {

@@ -34,6 +34,8 @@ const estimateWith = (content: DocumentContent | undefined, measurer: TextMeasur
     return {
         bookmarks: pagination.bookmarks,
         sectionPageCounts: pagination.sectionPageCounts,
+        bookmarkPageNumbers: pagination.bookmarkNumbers,
+        relativePositions: pagination.relativePositions,
         ...(pageCount === undefined ? {} : { pageCount }),
     };
 };
@@ -57,16 +59,18 @@ const estimateWith = (content: DocumentContent | undefined, measurer: TextMeasur
  *
  * It stops at the first thing it can't lay out yet: a drawing or table that text flows around, a text box or frame, an
  * equation, a footnote that continues on the next page, columns evened out before a continuous section break, a table
- * row kept whole that is taller than a page, or a character whose width in its font isn't known, such as a mathematical
- * symbol in Calibri, which Word draws in Cambria Math. The page references to bookmarks after it are left blank, for Word
- * to fill in when it updates the fields. A document in compatibility mode, which Word lays out as an older version of
- * Word did, isn't laid out at all. When laying the pages out again with the page numbers it worked out still changes
- * them after three passes, as when a table of contents wraps one way with a number and the other way without it, all of
- * them are left blank.
+ * row kept whole that is taller than a page, a character whose width in its font isn't known, such as a mathematical
+ * symbol in Calibri, which Word draws in Cambria Math, or a date in the text, which Word writes when it opens the document.
+ * The page references to bookmarks after it are left blank, for Word to fill in when it updates the fields. A document in
+ * compatibility mode, which Word lays out as an older version of Word did, isn't laid out at all. When laying the pages
+ * out again with the page numbers it worked out still changes them after three passes, as when a table of contents wraps
+ * one way with a number and the other way without it, all of them are left blank.
  *
- * Page references, tables of contents and SEQ fields (caption numbers, which are counted without laying out the pages)
- * are written clean, so Word shows the numbers as they are written, and the numbers left blank stay blank, without
- * asking to update the fields, unless the document has `updateFields` on.
+ * Page references are written as Word writes them, with `\p` ("above", "below" or "on page 4") and in formats of their
+ * own, such as `\* roman`, and so are numbers of pages. Page references, tables of contents and SEQ fields (caption
+ * numbers, which are counted without laying out the pages) are written clean, so Word shows the numbers as they are
+ * written, and the numbers left blank stay blank, without asking to update the fields, unless the document has
+ * `updateFields` on.
  *
  * @publicApi
  */

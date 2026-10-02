@@ -1,7 +1,7 @@
 // cspell:disable
 import { describe, expect, it } from "vitest";
 
-import { formatNumber, formatPageNumber } from "./number-format";
+import { formatFieldNumber, formatNumber, formatPageNumber, isFieldNumberFormat } from "./number-format";
 
 // What Word wrote, in PDFs it saved of scripts/layout-probes/word-page-number-formats.ts and word-page-number-formats2.ts
 describe("formatNumber", () => {
@@ -266,5 +266,52 @@ describe("formatPageNumber", () => {
         expect([formatPageNumber(75, "hindiVowels"), formatPageNumber(76, "hindiVowels")]).to.deep.equal(["ककक", undefined]);
         expect([formatPageNumber(37, "hindiConsonants"), formatPageNumber(38, "hindiConsonants")]).to.deep.equal(["अअअ", undefined]);
         expect([formatPageNumber(120, "chicago"), formatPageNumber(121, "chicago")]).to.deep.equal(["§".repeat(30), undefined]);
+    });
+});
+
+// What Word wrote for SEQ fields in its PDF of scripts/layout-probes/word-seq.ts, and for page references and numbers of
+// pages in word-watertight-fields.ts FD3
+describe("formatFieldNumber", () => {
+    it("should write a number in the formats of a field's \\* switch, in the capitals of their names", () => {
+        expect(
+            ["roman", "Roman", "ROMAN", "alphabetic", "ALPHABETIC", "Ordinal", "ordinal", "Arabic", "ArabicDash"].map((format) =>
+                formatFieldNumber(10, format),
+            ),
+        ).to.deep.equal(["x", "X", "X", "j", "J", "10th", "10th", "10", "- 10 -"]);
+        expect([1, 2, 3, 4, 11, 12, 13, 21, 22, 23, 101, 111].map((value) => formatFieldNumber(value, "Ordinal"))).to.deep.equal([
+            "1st",
+            "2nd",
+            "3rd",
+            "4th",
+            "11th",
+            "12th",
+            "13th",
+            "21st",
+            "22nd",
+            "23rd",
+            "101st",
+            "111th",
+        ]);
+        expect([27, 52, 780].map((value) => formatFieldNumber(value, "ALPHABETIC"))).to.deep.equal(["AA", "ZZ", "Z".repeat(30)]);
+        expect(formatFieldNumber(4000, "ROMAN")).to.equal("MMMM");
+    });
+
+    it("should write nothing for 0 in roman numerals and letters, and leave out the numbers and formats whose text from Word isn't known", () => {
+        expect([formatFieldNumber(0, "roman"), formatFieldNumber(0, "alphabetic"), formatFieldNumber(0, "Arabic")]).to.deep.equal([
+            "",
+            "",
+            "0",
+        ]);
+        expect([formatFieldNumber(0, "Ordinal"), formatFieldNumber(781, "alphabetic"), formatFieldNumber(32768, "roman")]).to.deep.equal([
+            undefined,
+            undefined,
+            undefined,
+        ]);
+        expect([formatFieldNumber(4, "CardText"), formatFieldNumber(4, "constructor")]).to.deep.equal([undefined, undefined]);
+        expect([isFieldNumberFormat("ROMAN"), isFieldNumberFormat("arabicdash"), isFieldNumberFormat("Hex")]).to.deep.equal([
+            true,
+            true,
+            false,
+        ]);
     });
 });

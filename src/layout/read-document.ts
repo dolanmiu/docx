@@ -52,7 +52,15 @@ import {
     valueOf,
     withoutUndefined,
 } from "../text-layout";
-import { formatNumber, formatPageNumber } from "./number-format";
+import {
+    type FieldCapitals,
+    type FieldFormat,
+    formatNumber,
+    formatPageNumber,
+    isFieldNumberFormat,
+    isFieldPicture,
+    writesNumber,
+} from "./number-format";
 import {
     type BorderSet,
     type CellPosition,
@@ -69,13 +77,24 @@ import {
 
 /**
  * A paragraph's content: text, tabs, breaks, pictures and bookmarks, and the results of fields that depend on the pages
- * being worked out: the page of a bookmark a page reference refers to, and the number of pages of the document or of the
- * section it is in.
+ * being worked out: the page of a bookmark a page reference refers to, the number of pages of the document or of the
+ * section it is in, and the number of the page or section it is on, each in its field's own format, if it has one. A page
+ * reference with `\p` writes where its bookmark is from it (`relative`, the name of the marker at the field). A page
+ * number's field is at a marker (`field`), as is a section number's in a footnote or endnote, as its page and section are
+ * where the marker is placed.
  */
 export type LayoutItem =
     | InlineItem
-    | { readonly type: "pageReference"; readonly bookmark: string; readonly font: TextFont }
-    | { readonly type: "pageCount"; readonly scope: "document" | "section"; readonly font: TextFont };
+    | {
+          readonly type: "pageReference";
+          readonly bookmark: string;
+          readonly font: TextFont;
+          readonly format?: FieldFormat;
+          readonly relative?: string;
+      }
+    | { readonly type: "pageCount"; readonly scope: "document" | "section"; readonly font: TextFont; readonly format?: FieldFormat }
+    | { readonly type: "pageNumber"; readonly field: string; readonly font: TextFont; readonly format?: FieldFormat }
+    | { readonly type: "sectionNumber"; readonly font: TextFont; readonly format?: FieldFormat; readonly field?: string };
 
 export type ParagraphBlock = {
     readonly type: "paragraph";
@@ -279,6 +298,13 @@ export type DocumentContent = {
     readonly footnoteNumbers: ReadonlyMap<string, string>;
     /** The number of the endnote each of the endnotes' blocks is in: all but their separator's */
     readonly endnoteNumbers: ReadonlyMap<Block, string>;
+    /**
+     * The page references with `\p` in the body to each bookmark, in the order they are in it, by the names of the markers
+     * at them
+     */
+    readonly relativeReferences: ReadonlyMap<string, readonly string[]>;
+    /** The endnotes the body refers to, by the names of the markers at their references */
+    readonly endnoteReferences: ReadonlyMap<string, readonly Block[]>;
     /** Why none of it can be laid out, when a setting of the whole document changes its lines in ways not yet followed */
     readonly unsupported?: string;
 };
@@ -296,7 +322,10 @@ type NumberingLevel = {
 
 type NoteKind = "footnote" | "endnote";
 
-/** What a reference to a footnote or endnote shows: its number, and, for a footnote, the marker its note is placed by */
+/**
+ * What a reference to a footnote or endnote shows: its number, and the marker its note's bookmarks and fields are placed
+ * by, unless it is only numbered to size a table's columns
+ */
 type NoteReference = { readonly label: string; readonly marker?: string };
 
 /** Reads the footnotes and endnotes references in the body refer to, and numbers them */
@@ -323,6 +352,17 @@ type OpenField = {
 };
 
 /**
+ * The markers at the body's fields whose results depend on the page they are on: how many there are, and those of the
+ * page references with `\p`, by the bookmarks they refer to
+ */
+type FieldMarkers = {
+    // eslint-disable-next-line functional/prefer-readonly-type
+    count: number;
+    // eslint-disable-next-line functional/prefer-readonly-type
+    readonly relative: Map<string, readonly string[]>;
+};
+
+/**
  * What a part of a document, such as its body or a header, is read with. The fields and list numbers carry on from one
  * paragraph to the next.
  */
@@ -338,6 +378,10 @@ type Reader = {
     readonly listIds: ReadonlyMap<string, string>;
     /** Whether it is a header or footer, where drawings that text doesn't flow around don't matter */
     readonly inHeader: boolean;
+    /** Whether it is a footnote or endnote, whose fields are where its reference is */
+    readonly inNote?: boolean;
+    /** The markers at the fields whose pages are worked out, in the body and its notes */
+    readonly markers: FieldMarkers;
     // eslint-disable-next-line functional/prefer-readonly-type
     readonly fields: OpenField[];
     /** The numbers each list is at, by its id and then level */
@@ -376,9 +420,11 @@ const MOST_COLUMNS = 63;
 const EIGHTHS_PER_POINT = 8;
 // Shares of a width, such as a table's of the page's, are in fiftieths of a percent, unless they are written with a %
 const FIFTIETHS_OF_A_PERCENT = 5000;
-// Formatting switches that don't change how a page reference writes the page's number
-// cspell:ignore mergeformatinet
+// Formatting switches that don't change how a field writes a number, and those of the capitals of text, which don't change
+// a number in figures
+// cspell:ignore mergeformatinet firstcap
 const PLAIN_FORMATS = new Set(["mergeformat", "charformat", "mergeformatinet"]);
+const CASE_FORMATS = new Set(["upper", "lower", "firstcap", "caps"]);
 // Word fills a content control bound to custom XML in from it when it opens the document, so what it shows there may not
 // be what is written
 const BOUND_CONTROL = "a content control filled from custom XML";
@@ -463,28 +509,148 @@ const noteNumber = (text: string, font: TextFont): LayoutItem => ({ type: "text"
 /** A length in points, from twips or from a universal measure, such as "1in" */
 const twips = (value: unknown): number | undefined => pointsOf(value, TWIPS_PER_POINT);
 
-/** Whether a field's switches give its number a format of its own, such as `\* roman`, or a picture, such as `\# "00"` */
-const hasOwnFormat = (switches: string): boolean => {
-    const formats = [...switches.matchAll(/\\\*\s*"?([^\s"\\]+)/g)].map(([, format]) => format.toLowerCase());
-    return /\\#/.test(switches) || formats.some((format) => !PLAIN_FORMATS.has(format));
+/** How a field writes its number, and whether it writes where its bookmark is (`\p`), or why Word's text isn't known */
+type NumberSwitches = { readonly format?: FieldFormat; readonly relative: boolean; readonly unsupported?: string };
+
+const FORMAT_UNSUPPORTED = "a number in a field format not yet written";
+
+/**
+ * Reads the switches of a field that writes a number, after its name and bookmark: `\p`, a number format (`\* roman`) or
+ * picture (`\# "00"`), and capitals (`\* Upper`). Word's text isn't known for a format other than those
+ * {@link isFieldNumberFormat} and {@link isFieldPicture} say, such as `\* CardText`, for `\* Caps`, or for two of a kind
+ * or a format with a picture.
+ */
+const numberSwitchesOf = (switches: string): NumberSwitches => {
+    const parts = switches.match(/"[^"]*"|\S+/g) ?? [];
+    let numberFormat: string | undefined;
+    let picture: string | undefined;
+    // eslint-disable-next-line functional/prefer-readonly-type
+    const capitals: string[] = [];
+    let relative = false;
+    let unsupported: string | undefined;
+    for (let index = 0; index < parts.length; index++) {
+        const part = parts[index];
+        // A switch's argument is after it, or, without a space, in it, as `\*roman`
+        const argument = (): string => (part.length > 2 ? part.slice(2) : (parts[++index] ?? "")).replace(/^"(.*)"$/, "$1");
+        if (/^\\p$/i.test(part)) {
+            relative = true;
+        } else if (part.startsWith("\\#")) {
+            const value = argument();
+            unsupported ??= picture === undefined && isFieldPicture(value) ? undefined : "a number written with a picture not yet written";
+            picture ??= value;
+        } else if (part.startsWith("\\*")) {
+            const name = argument();
+            const lower = name.toLowerCase();
+            if (CASE_FORMATS.has(lower)) {
+                // eslint-disable-next-line functional/immutable-data
+                capitals.push(lower);
+            } else if (name !== "" && !PLAIN_FORMATS.has(lower)) {
+                unsupported ??= numberFormat === undefined && isFieldNumberFormat(name) ? undefined : FORMAT_UNSUPPORTED;
+                numberFormat ??= name;
+            }
+        }
+    }
+    const unseen = capitals.length > 1 || capitals[0] === "caps" || (numberFormat !== undefined && picture !== undefined);
+    const format = withoutUndefined({ numberFormat, picture, capitals: capitals[0] as FieldCapitals | undefined });
+    return {
+        relative,
+        ...(Object.keys(format).length > 0 ? { format } : {}),
+        ...withoutUndefined({ unsupported: unsupported ?? (unseen ? FORMAT_UNSUPPORTED : undefined) }),
+    };
+};
+
+// The fields Word writes itself when it opens the document, from the computer's clock
+const DATE_FIELDS = new Set(["DATE", "TIME"]);
+const DATE_UNSUPPORTED = "a date or time, which Word writes when it opens the document";
+
+/** A marker at a field whose result depends on where it is placed */
+const fieldMarker = (markers: FieldMarkers): Extract<LayoutItem, { readonly type: "marker" }> => {
+    // eslint-disable-next-line functional/immutable-data
+    markers.count++;
+    return { type: "marker", name: `field ${markers.count}` };
 };
 
 /**
- * The result of a field that depends on the pages being worked out, as docx writes it: the page of the bookmark a PAGEREF
- * field refers to, or the number of pages of the document (NUMPAGES) or of its section (SECTIONPAGES). Undefined for other
- * fields, and for those that show something else: a page's position relative to the bookmark (`\p`), or a number in a
- * format of its own.
+ * A reader whose fields' markers are named on from the reader's, but whose page references with `\p` aren't counted:
+ * for what is read again to size a table's columns, and deleted text, which docx doesn't count them in either
  */
-const workedOutResultOf = (instruction: string, font: TextFont): LayoutItem | undefined => {
-    const reference = /^\s*PAGEREF\s+("?)([^\s"\\]+)\1(.*)$/i.exec(instruction);
-    if (reference) {
-        const [, , bookmark, switches] = reference;
-        return /\\p\b/i.test(switches) || hasOwnFormat(switches) ? undefined : { type: "pageReference", bookmark, font };
+const uncounted = (reader: Reader): Reader => ({ ...reader, markers: { count: reader.markers.count, relative: new Map() } });
+
+/** Whether a marker is at a field (see {@link fieldMarker}), rather than a bookmark or a note's reference */
+export const isFieldMarker = (name: string): boolean => name.startsWith("field ");
+
+/**
+ * The result of a field that depends on the pages being worked out, rather than read: the page of the bookmark a PAGEREF
+ * field refers to, or where it is from it, with `\p`; the number of pages of the document (NUMPAGES) or of its section
+ * (SECTIONPAGES); and outside headers and footers, the number of the page (PAGE) or section (SECTION) it is on, which in
+ * a footnote or endnote are those of its reference, as Word writes them (`word-page-fields.docx` PF7g to PF7i). Why it
+ * can't be laid out when Word's text for it isn't known, and at a date or time anywhere but a header or footer, as Word
+ * writes the date it opens the document on (`word-watertight-pages.docx` PG7a). Undefined for other fields, which are read
+ * as they are written, as PAGE and SECTION are in headers and footers.
+ */
+const workedOutResultOf = (instruction: string, font: TextFont, reader: Reader): readonly LayoutItem[] | string | undefined => {
+    const field = /^\s*(PAGEREF|NUMPAGES|SECTIONPAGES|PAGE|SECTION|DATE|TIME)\b(.*)$/is.exec(instruction);
+    if (!field) {
+        return undefined;
     }
-    const count = /^\s*(NUMPAGES|SECTIONPAGES)\b(.*)$/i.exec(instruction);
-    return count && !hasOwnFormat(count[2])
-        ? { type: "pageCount", scope: count[1].toUpperCase() === "NUMPAGES" ? "document" : "section", font }
-        : undefined;
+    const name = field[1].toUpperCase();
+    const { inHeader, inNote, markers } = reader;
+    if (DATE_FIELDS.has(name)) {
+        return inHeader ? undefined : DATE_UNSUPPORTED;
+    }
+    if (name === "PAGEREF") {
+        const reference = /^\s*("?)([^\s"\\]+)\1(.*)$/s.exec(field[2]);
+        if (!reference) {
+            return undefined;
+        }
+        const [, , bookmark, switches] = reference;
+        const switched = numberSwitchesOf(switches);
+        // Each page reference with \p in the body is counted, whatever it writes, as docx counts them to write them
+        const at = switched.relative && !inHeader && !inNote ? fieldMarker(markers) : undefined;
+        if (at) {
+            // eslint-disable-next-line functional/immutable-data
+            markers.relative.set(bookmark, [...(markers.relative.get(bookmark) ?? []), at.name]);
+        }
+        if (switched.unsupported) {
+            return switched.unsupported;
+        }
+        const own = withoutUndefined({ format: switched.format });
+        if (!switched.relative || writesNumber(switched.format)) {
+            // With a number format or picture, one with \p writes its bookmark's page's number (PF3c)
+            return [{ type: "pageReference", bookmark, font, ...own }];
+        }
+        if (inHeader) {
+            // Where a header's bookmark is from it isn't worked out, so it is read as it is written
+            return undefined;
+        }
+        return at
+            ? [at, { type: "pageReference", bookmark, font, relative: at.name, ...own }]
+            : "a page reference that says where its bookmark is, in a footnote or endnote";
+    }
+    const { format, unsupported } = numberSwitchesOf(field[2]);
+    if (name === "NUMPAGES" || name === "SECTIONPAGES") {
+        return (
+            unsupported ?? [
+                { type: "pageCount", scope: name === "NUMPAGES" ? "document" : "section", font, ...withoutUndefined({ format }) },
+            ]
+        );
+    }
+    if (inHeader) {
+        return undefined;
+    }
+    if (unsupported) {
+        return unsupported;
+    }
+    if (name === "SECTION" && !inNote) {
+        return [{ type: "sectionNumber", font, ...withoutUndefined({ format }) }];
+    }
+    const marker = fieldMarker(markers);
+    return [
+        marker,
+        name === "SECTION"
+            ? { type: "sectionNumber", field: marker.name, font, ...withoutUndefined({ format }) }
+            : { type: "pageNumber", field: marker.name, font, ...withoutUndefined({ format }) },
+    ];
 };
 
 /** Whether what is read now is shown: not in a field's instruction, nor in a result that is worked out */
@@ -532,9 +698,10 @@ const readDrawing = (element: XmlObject, font: TextFont, reader: Reader): readon
 };
 
 /**
- * Reads a field character (`w:fldChar`). The result of a field that depends on the pages is worked out, rather than read.
+ * Reads a field character (`w:fldChar`). The result of a field that depends on the pages is worked out, rather than read,
+ * and is nothing in hidden text. Why it can't be laid out, when it can't.
  */
-const readFieldCharacter = (element: XmlObject, font: TextFont, reader: Reader, deleted = false): readonly LayoutItem[] | string => {
+const readFieldCharacter = (element: XmlObject, format: RunFormat, reader: Reader, deleted = false): readonly LayoutItem[] | string => {
     const type = attributesOf(element["w:fldChar"])["w:fldCharType"];
     const { fields } = reader;
     const field = fields[fields.length - 1];
@@ -549,13 +716,13 @@ const readFieldCharacter = (element: XmlObject, font: TextFont, reader: Reader, 
         // eslint-disable-next-line functional/immutable-data
         fields.pop();
     } else if (type === "separate" && field) {
-        const result = deleted ? undefined : workedOutResultOf(field.instruction, font);
+        const result = deleted ? undefined : workedOutResultOf(field.instruction, fontOf(format), reader);
         // eslint-disable-next-line functional/immutable-data
         field.inResult = true;
         if (result !== undefined && isShown(reader)) {
             // eslint-disable-next-line functional/immutable-data
             field.replaced = true;
-            return [result];
+            return typeof result === "string" || !format.hidden ? result : [];
         }
     }
     return [];
@@ -595,7 +762,7 @@ const readRun = (element: XmlObject, paragraphRun: RunFormat, reader: Reader, re
     const items: readonly (readonly LayoutItem[] | string)[] = children.map((child): readonly LayoutItem[] | string => {
         const name = nameOf(child);
         if (name === "w:fldChar") {
-            return readFieldCharacter(child, font, reader);
+            return readFieldCharacter(child, format, removed ? uncounted(reader) : reader);
         }
         const field = reader.fields[reader.fields.length - 1];
         if (name === "w:instrText" || name === "w:delInstrText") {
@@ -697,6 +864,23 @@ const readRun = (element: XmlObject, paragraphRun: RunFormat, reader: Reader, re
             case "w:pict":
             case "w:object":
                 return reader.inHeader ? [] : "a VML drawing";
+            case "w:dayShort":
+            case "w:dayLong":
+            case "w:monthShort":
+            case "w:monthLong":
+            case "w:yearShort":
+            case "w:yearLong":
+                // Word writes the date it opens the document on (`word-watertight-pages.docx` PG7b). A header's is read as it
+                // is written, as nothing
+                return reader.inHeader ? [] : DATE_UNSUPPORTED;
+            case "w:pgNum": {
+                // The number of the page it is on, as a PAGE field writes it (PG7c). A header's is read as it is written
+                if (reader.inHeader || format.hidden) {
+                    return [];
+                }
+                const marker = fieldMarker(reader.markers);
+                return [marker, { type: "pageNumber", field: marker.name, font }];
+            }
             case "w:ruby":
                 // Its text is in its base and in the guide above it, which makes the line taller
                 return "text with a phonetic guide";
@@ -792,8 +976,15 @@ const readInline = (
                     : readInline(childrenOf(find(childrenOf(element[name]), "w:sdtContent")), paragraphRun, reader, removed);
             }
             if (name === "w:fldSimple") {
-                const result = workedOutResultOf(String(attributesOf(element[name])["w:instr"]), fontOf(paragraphRun));
-                return result !== undefined && isShown(reader) ? [result] : readInline(contentOf(element), paragraphRun, reader, removed);
+                const result = workedOutResultOf(
+                    String(attributesOf(element[name])["w:instr"]),
+                    fontOf(paragraphRun),
+                    removed ? uncounted(reader) : reader,
+                );
+                if (result === undefined || !isShown(reader)) {
+                    return readInline(contentOf(element), paragraphRun, reader, removed);
+                }
+                return typeof result === "string" || !paragraphRun.hidden ? result : [];
             }
             if (name === "w:bookmarkStart") {
                 return markerOf(element);
@@ -1185,8 +1376,8 @@ const hasAnyOf = (element: unknown, names: ReadonlySet<string>): boolean =>
  * A reader of what Word sizes a table's columns by: deleted text as text, unless `showDeleted` is false, with the notes and
  * lists numbered as they would be, but left for the reader it is made from to read and count.
  */
-const sizingReaderOf = (reader: Reader, showDeleted = true): Reader => ({
-    ...reader,
+const sizingReaderOf = (reader: Reader, showDeleted = true, counted = false): Reader => ({
+    ...(counted ? reader : uncounted(reader)),
     ...(reader.notes ? { notes: reader.notes.preview() } : {}),
     fields: [],
     counters: new Map([...reader.counters].map(([id, counts]) => [id, [...counts]])),
@@ -1338,7 +1529,8 @@ const readTable = (element: XmlObject, reader: Reader): TableBlock | undefined =
             // A deleted row is read only as Word sizes the columns by it, with its notes and lists left uncounted, or, where
             // nothing sizes them, for its bookmarks, with its deleted runs read as nothing
             const deleted = deletedFlags[rowIndex];
-            const rowReader = deleted ? sizingReaderOf(cellReader, sized) : cellReader;
+            // A deleted row's page references with \p are counted, as docx counts them, but for those in its deleted text
+            const rowReader = deleted ? sizingReaderOf(cellReader, sized, true) : cellReader;
             const counts = deleted ? JSON.stringify([...rowReader.counters]) : "";
             // Whether the parts of the table's style for some of its cells apply to the row otherwise than they would with
             // its deleted rows laid out
@@ -2165,7 +2357,9 @@ export const readContent = (body: XmlObject, parts: DocumentParts): DocumentCont
     const { styles } = parts;
     const { lists: numbering, unsupported: inNumbering } = readNumbering(parts.numbering, styles, parts.otherListIds ?? new Map());
     const listIds = parts.otherListIds ?? new Map<string, string>();
-    const readerOf = (inHeader: boolean): Reader => ({ styles, numbering, listIds, inHeader, fields: [], counters: new Map() });
+    // The markers at fields, numbered across the body and its notes
+    const markers: FieldMarkers = { count: 0, relative: new Map() };
+    const readerOf = (inHeader: boolean): Reader => ({ styles, numbering, listIds, inHeader, markers, fields: [], counters: new Map() });
     const settings = childrenOf(parts.settings?.["w:settings"]);
     const elements = unwrap(joinRemovedMarks(contentOf(body), false, false));
 
@@ -2197,7 +2391,7 @@ export const readContent = (body: XmlObject, parts: DocumentParts): DocumentCont
         const note = notesByKind[kind].get(id);
         return note === undefined
             ? []
-            : readBlocks(contentOf(note), { ...readerOf(false), ...(label === undefined ? {} : { noteNumber: label }) });
+            : readBlocks(contentOf(note), { ...readerOf(false), inNote: true, ...(label === undefined ? {} : { noteNumber: label }) });
     };
     const footnotes = new Map<string, readonly Block[]>();
     const footnoteNumbers = new Map<string, string>();
@@ -2215,6 +2409,7 @@ export const readContent = (body: XmlObject, parts: DocumentParts): DocumentCont
         ...readNoteProperties(find(settings, `w:${kind}Pr`)),
         ...readNoteProperties(find(childrenOf(sectionElements[section]), `w:${kind}Pr`)),
     });
+    const endnoteReferences = new Map<string, readonly Block[]>();
     // How many notes of each kind have been read, and the number and section of the last, as a section can number its
     // own afresh
     const noteCounts = { footnote: 0, endnote: 0 };
@@ -2252,6 +2447,8 @@ export const readContent = (body: XmlObject, parts: DocumentParts): DocumentCont
         const label = written ?? "";
         unwrittenNumber ||= written === undefined;
         const content = readNoteContent(kind, id, label);
+        // A name no bookmark can have, as bookmarks' names have no spaces
+        const marker = `${kind} ${noteCounts[kind]}`;
         if (kind === "endnote") {
             // eslint-disable-next-line functional/immutable-data
             endnotes.push(...content);
@@ -2259,10 +2456,10 @@ export const readContent = (body: XmlObject, parts: DocumentParts): DocumentCont
                 // eslint-disable-next-line functional/immutable-data
                 endnoteNumbers.set(block, label);
             }
-            return { label };
+            // eslint-disable-next-line functional/immutable-data
+            endnoteReferences.set(marker, content);
+            return { label, marker };
         }
-        // A name no bookmark can have, as bookmarks' names have no spaces
-        const marker = `footnote ${noteCounts[kind]}`;
         // eslint-disable-next-line functional/immutable-data
         footnotes.set(marker, content);
         // eslint-disable-next-line functional/immutable-data
@@ -2351,6 +2548,8 @@ export const readContent = (body: XmlObject, parts: DocumentParts): DocumentCont
         endnoteContinuationSeparator: endnotes.length > 0 ? readNoteContent("endnote", "continuationSeparator") : [],
         footnoteNumbers,
         endnoteNumbers,
+        relativeReferences: markers.relative,
+        endnoteReferences,
         ...readSettings(parts.settings),
     };
     // A length in the styles or lists stops the layout before anything, as any paragraph may be in them, and so do notes

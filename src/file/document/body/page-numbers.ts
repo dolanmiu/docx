@@ -41,6 +41,19 @@ export type EstimatedPageNumbers = {
      * in headers and footers only on its pages, show. Those of a section whose number is undefined are left blank.
      */
     readonly sectionPageCounts?: readonly (number | undefined)[];
+    /**
+     * The number of the page each bookmark starts on, as a number, such as 4, by the bookmark's name, which the page
+     * references to it with a number format of their own write in that format: `PAGEREF Results \* roman` writes "iv".
+     * Those to a bookmark that isn't in it are left blank.
+     */
+    readonly bookmarkPageNumbers?: ReadonlyMap<string, number>;
+    /**
+     * What each page reference with `\p` (`useRelativePosition`) in the body writes, by the name of the bookmark it
+     * refers to, in the order they are in the body: "above" or "below" when it is on the same page as the bookmark, and
+     * "on page" and the bookmark's page otherwise, such as "on page 4". Those it has nothing for are left blank, as are
+     * those in headers, footers and notes.
+     */
+    readonly relativePositions?: ReadonlyMap<string, readonly (string | undefined)[]>;
 };
 
 /**
@@ -127,9 +140,10 @@ export const fillSequenceNumbers = (body: IXmlableObject, context: IContext): vo
 
 /**
  * Writes the page numbers the estimator works out into the fields of a formatted body that show them: the PAGEREF fields
- * in its tables of contents and elsewhere, and its NUMPAGES and SECTIONPAGES fields. A field whose number the estimator
- * didn't work out is left as it is. Page references and tables of contents are written clean, whether or not their
- * numbers were worked out. The estimate is kept for the document's headers and footers.
+ * in its tables of contents and elsewhere, those with `\p` and in number formats of their own, and its NUMPAGES and
+ * SECTIONPAGES fields. A field whose number the estimator didn't work out is left as it is. Page references and tables
+ * of contents are written clean, whether or not their numbers were worked out. The estimate is kept for the document's
+ * headers and footers.
  */
 export const fillPageNumbers = (body: IXmlableObject, context: IContext, estimator: PageNumberEstimator): void => {
     const estimate = estimator(body, context);

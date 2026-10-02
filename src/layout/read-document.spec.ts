@@ -143,9 +143,13 @@ describe("readDocument", () => {
             ]);
             expect(
                 itemsOf(content).map((item) => (item.type === "break" ? item.kind : item.type === "text" ? item.text : item.type)),
-            ).to.deep.equal(["a", "tab", "tab", "page", "column", "line", "line", "\u2011", "\uf0a7", "i", "CAPS"]);
-            // An endnote's number, in its run's font, and numbered as Word numbers endnotes
-            expect(itemsOf(content)[9]).to.deep.equal({ type: "text", text: "i", font: {} });
+            ).to.deep.equal(["a", "tab", "tab", "page", "column", "line", "line", "\u2011", "\uf0a7", "marker", "i", "CAPS"]);
+            // An endnote's reference: the marker its bookmarks and fields are placed by, and its number, in its run's font,
+            // numbered as Word numbers endnotes
+            expect(itemsOf(content).slice(9, 11)).to.deep.equal([
+                { type: "marker", name: "endnote 1" },
+                { type: "text", text: "i", font: {} },
+            ]);
         });
 
         it("should read superscript, raised text, emphasis marks and borders into the font text is laid out in", () => {
@@ -577,10 +581,14 @@ describe("readDocument", () => {
                 [p(r({ "w:endnoteReference": { _attr: { "w:id": 1 } } }), r({ "w:endnoteReference": { _attr: { "w:id": 2 } } }))],
                 { endnotes: { 1: { children: [new Paragraph("First")] }, 2: { children: [new Paragraph("Second")] } } },
             );
-            expect(itemsOf(content).map((item) => (item.type === "text" ? item.text : item.type))).to.deep.equal(["i", "ii"]);
+            // Each reference is a marker, which the endnote's bookmarks and fields are placed by, and its number
+            expect(
+                itemsOf(content).map((item) => (item.type === "text" ? item.text : item.type === "marker" ? item.name : "")),
+            ).to.deep.equal(["endnote 1", "i", "endnote 2", "ii"]);
             expect(
                 content.endnotes.map((block) => (block as ParagraphBlock).items.map((item) => (item.type === "text" ? item.text : ""))),
             ).to.deep.equal([[], ["i", "First"], ["ii", "Second"]]);
+            expect([...content.endnoteReferences.values()]).to.deep.equal([[content.endnotes[1]], [content.endnotes[2]]]);
             // The number of the endnote each block is in, but the separator's
             expect(content.endnotes.map((block) => content.endnoteNumbers.get(block))).to.deep.equal([undefined, "i", "ii"]);
             expect(content.footnotes.size).to.equal(0);
@@ -759,9 +767,9 @@ describe("readDocument", () => {
     describe("fields", () => {
         it("should read the results of fields, not their instructions", () => {
             const content = readBody([
-                p(field("begin"), instruction("DATE"), field("separate"), r(t("today")), field("end"), r(t(" after"))),
+                p(field("begin"), instruction("AUTHOR"), field("separate"), r(t("Ann")), field("end"), r(t(" after"))),
             ]);
-            expect(textOf(content)).to.equal("today after");
+            expect(textOf(content)).to.equal("Ann after");
         });
 
         it("should read a page reference's result as the page of its bookmark, across paragraphs and inside other fields", () => {
@@ -780,27 +788,198 @@ describe("readDocument", () => {
             expect(itemsOf(content, 1)).to.deep.equal([{ type: "pageReference", bookmark: "_Toc1", font: {} }]);
         });
 
-        it("should read the results of page references that show something other than the page's number", () => {
+        it("should read page references with \\p and in formats of their own, and stop at those whose text in Word isn't known", () => {
+            const reference = (text: string): object => p(field("begin"), instruction(text), field("separate"), r(t("?")), field("end"));
             const content = readBody([
-                p(field("begin"), instruction("PAGEREF a \\p"), field("separate"), r(t("above")), field("end")),
-                p(field("begin"), instruction("PAGEREF a \\* roman"), field("separate"), r(t("iv")), field("end")),
-                p(field("begin"), instruction('PAGEREF "a" \\* MERGEFORMAT'), field("separate"), r(t("4")), field("end")),
-                p(field("begin"), instruction("PAGEREF"), field("separate"), r(t("?")), field("end")),
-                p(field("begin"), instruction('PAGEREF a \\# "00"'), field("separate"), r(t("04")), field("end")),
+                reference("PAGEREF a \\p \\h"),
+                reference("PAGEREF a \\* roman"),
+                reference('PAGEREF "a" \\* MERGEFORMAT \\*Arabic \\* Upper'),
+                reference("PAGEREF"),
+                reference('PAGEREF a \\# "#,##0" \\* Lower'),
+                reference("PAGEREF a \\p \\* Arabic"),
+                reference("PAGEREF b \\p \\* FirstCap \\*"),
+                // Word's text for these isn't known
+                reference("PAGEREF a \\* CardText"),
+                reference("PAGEREF a \\* roman \\* Ordinal"),
+                reference('PAGEREF a \\# "x0"'),
+                reference("PAGEREF a \\# 0 \\#0"),
+                reference('PAGEREF a \\* roman \\# "00"'),
+                reference("PAGEREF a \\* Caps"),
+                reference("PAGEREF a \\* Upper \\* Lower"),
+                reference("PAGEREF a \\p \\* CardText"),
             ]);
-            expect([0, 1, 2, 3, 4].map((index) => textOf(content, index))).to.deep.equal(["above", "iv", "[a]", "?", "04"]);
+            // Where its bookmark is from it, from the page of the marker at it, and the order of the markers
+            expect(itemsOf(content, 0)).to.deep.equal([
+                { type: "marker", name: "field 1" },
+                { type: "pageReference", bookmark: "a", font: {}, relative: "field 1" },
+            ]);
+            expect(itemsOf(content, 1)).to.deep.equal([
+                { type: "pageReference", bookmark: "a", font: {}, format: { numberFormat: "roman" } },
+            ]);
+            expect(itemsOf(content, 2)).to.deep.equal([
+                { type: "pageReference", bookmark: "a", font: {}, format: { numberFormat: "Arabic", capitals: "upper" } },
+            ]);
+            // A page reference without a bookmark is read as it is written
+            expect(textOf(content, 3)).to.equal("?");
+            expect(itemsOf(content, 4)).to.deep.equal([
+                { type: "pageReference", bookmark: "a", font: {}, format: { picture: "#,##0", capitals: "lower" } },
+            ]);
+            // With a number format, one with \p writes the bookmark's page's number (word-page-fields.docx PF3c)
+            expect(itemsOf(content, 5)).to.deep.equal([
+                { type: "pageReference", bookmark: "a", font: {}, format: { numberFormat: "Arabic" } },
+            ]);
+            expect(itemsOf(content, 6)).to.deep.equal([
+                { type: "marker", name: "field 3" },
+                { type: "pageReference", bookmark: "b", font: {}, relative: "field 3", format: { capitals: "firstcap" } },
+            ]);
+            expect([7, 8, 9, 10, 11, 12, 13, 14].map((index) => paragraphOf(content, index).unsupported)).to.deep.equal([
+                "a number in a field format not yet written",
+                "a number in a field format not yet written",
+                "a number written with a picture not yet written",
+                "a number written with a picture not yet written",
+                "a number in a field format not yet written",
+                "a number in a field format not yet written",
+                "a number in a field format not yet written",
+                "a number in a field format not yet written",
+            ]);
+            // Each page reference with \p is counted, by its bookmark, whatever it writes
+            expect(Object.fromEntries(content.relativeReferences)).to.deep.equal({ a: ["field 1", "field 2", "field 4"], b: ["field 3"] });
         });
 
         it("should read the results of NUMPAGES and SECTIONPAGES fields as the numbers of pages they show", () => {
             const content = readBody([
                 p(field("begin"), instruction("NUMPAGES \\* MERGEFORMAT"), field("separate"), r(t("9")), field("end")),
                 p({ "w:fldSimple": [{ _attr: { "w:instr": "SECTIONPAGES" } }, r(t("3"))] }),
-                p(field("begin"), instruction("NUMPAGES \\* roman"), field("separate"), r(t("ix")), field("end")),
+                p(field("begin"), instruction("NUMPAGES \\* roman \\p"), field("separate"), r(t("ix")), field("end")),
+                p(field("begin"), instruction("SECTIONPAGES \\* Hex"), field("separate"), r(t("3")), field("end")),
             ]);
             expect(itemsOf(content, 0)).to.deep.equal([{ type: "pageCount", scope: "document", font: {} }]);
             expect(itemsOf(content, 1)).to.deep.equal([{ type: "pageCount", scope: "section", font: {} }]);
-            // In a format of its own, its result is read as it is
-            expect(textOf(content, 2)).to.equal("ix");
+            expect(itemsOf(content, 2)).to.deep.equal([
+                { type: "pageCount", scope: "document", font: {}, format: { numberFormat: "roman" } },
+            ]);
+            expect(paragraphOf(content, 3).unsupported).to.equal("a number in a field format not yet written");
+        });
+
+        it("should read PAGE and SECTION fields and page number blocks in the body as the numbers of the page and section they are on", () => {
+            const content = readBody(
+                [
+                    p(field("begin"), instruction("PAGE"), field("separate"), field("end")),
+                    p({ "w:fldSimple": [{ _attr: { "w:instr": 'PAGE \\# "00"' } }, r(t("?"))] }),
+                    p(r({ "w:pgNum": {} })),
+                    p(field("begin"), instruction("SECTION \\* ALPHABETIC"), field("separate"), r(t("?")), field("end")),
+                    p(field("begin"), instruction("PAGE \\* OrdText"), field("separate"), r(t("?")), field("end")),
+                    // In hidden text, the field shows nothing
+                    p(
+                        field("begin"),
+                        instruction("PAGE"),
+                        r(rPr({ "w:vanish": {} }), { "w:fldChar": { _attr: { "w:fldCharType": "separate" } } }),
+                        field("end"),
+                    ),
+                    p(r(rPr({ "w:vanish": {} }), { "w:pgNum": {} })),
+                    p(pPr(value("w:pStyle", "Hidden")), { "w:fldSimple": [{ _attr: { "w:instr": "SECTION" } }] }),
+                ],
+                { styles: { paragraphStyles: [{ id: "Hidden", name: "Hidden", run: { vanish: true } }] } },
+            );
+            expect(itemsOf(content, 0)).to.deep.equal([
+                { type: "marker", name: "field 1" },
+                { type: "pageNumber", field: "field 1", font: {} },
+            ]);
+            expect(itemsOf(content, 1)).to.deep.equal([
+                { type: "marker", name: "field 2" },
+                { type: "pageNumber", field: "field 2", font: {}, format: { picture: "00" } },
+            ]);
+            expect(itemsOf(content, 2)).to.deep.equal([
+                { type: "marker", name: "field 3" },
+                { type: "pageNumber", field: "field 3", font: {} },
+            ]);
+            // In the body, a section's number is that of the section it is in
+            expect(itemsOf(content, 3)).to.deep.equal([{ type: "sectionNumber", font: {}, format: { numberFormat: "ALPHABETIC" } }]);
+            expect(paragraphOf(content, 4).unsupported).to.equal("a number in a field format not yet written");
+            expect([5, 6, 7].map((index) => itemsOf(content, index))).to.deep.equal([[], [], []]);
+        });
+
+        it("should stop at a date or time in the body, which Word writes when it opens the document, and read one in a header as it is written", () => {
+            const date = (text: string): object =>
+                p(field("begin"), instruction(text), field("separate"), r(t("1 January 2000")), field("end"));
+            const content = readBody([
+                date('DATE \\@ "d MMMM yyyy"'),
+                p({ "w:fldSimple": [{ _attr: { "w:instr": "TIME" } }, r(t("12:00"))] }),
+                p(r({ "w:dayLong": {} }, { "w:monthLong": {} }, { "w:yearLong": {} })),
+                p(r({ "w:dayShort": {} }, { "w:monthShort": {} }, { "w:yearShort": {} })),
+                // A field in another's instruction isn't shown, nor is a date in it
+                p(
+                    field("begin"),
+                    instruction("IF "),
+                    field("begin"),
+                    instruction("DATE"),
+                    field("separate"),
+                    field("end"),
+                    field("separate"),
+                    r(t("shown")),
+                    field("end"),
+                ),
+            ]);
+            expect([0, 1, 2, 3].map((index) => paragraphOf(content, index).unsupported)).to.deep.equal(
+                Array.from({ length: 4 }, () => "a date or time, which Word writes when it opens the document"),
+            );
+            expect(textOf(content, 4)).to.equal("shown");
+            const [header] = Object.values(
+                readContent(
+                    { "w:body": [{ "w:sectPr": [{ "w:headerReference": { _attr: { "r:id": "rId1" } } }] }] },
+                    {
+                        styles: WORD_DEFAULT_STYLES,
+                        headersAndFooters: new Map([["rId1", [date("DATE"), p(r(t("on "), { "w:dayLong": {} }))]]]),
+                    },
+                ).sections[0].headers,
+            );
+            expect(header.map((block) => textOf({ ...content, blocks: [{ block, section: 0 }] }))).to.deep.equal(["1 January 2000", "on "]);
+        });
+
+        it("should read PAGE, SECTION and page references with \\p in headers as they are written, and those in notes where their references are", () => {
+            const fieldOf = (text: string): object =>
+                p(field("begin"), instruction(text), field("separate"), r(t("written")), field("end"));
+            const fields = [fieldOf("PAGE"), fieldOf("SECTION \\* roman"), fieldOf("PAGEREF a \\p"), p(r({ "w:pgNum": {} }))];
+            const content = readContent(
+                {
+                    "w:body": [
+                        p(r({ "w:footnoteReference": { _attr: { "w:id": 1 } } })),
+                        { "w:sectPr": [{ "w:headerReference": { _attr: { "r:id": "rId1" } } }] },
+                    ],
+                },
+                {
+                    styles: WORD_DEFAULT_STYLES,
+                    headersAndFooters: new Map([["rId1", fields]]),
+                    footnotes: { "w:footnotes": [{ "w:footnote": [{ _attr: { "w:id": 1 } }, ...fields] }] },
+                },
+            );
+            const header = content.sections[0].headers.default!;
+            expect(header.map((block) => textOf({ ...content, blocks: [{ block, section: 0 }] }))).to.deep.equal([
+                "written",
+                "written",
+                "written",
+                "",
+            ]);
+            // In a footnote, the page and section are its reference's, which the markers at them are placed with. Where a
+            // bookmark is from a page reference with \p in one is written by Word, but not yet by docx
+            const note = content.footnotes.get("footnote 1")!;
+            expect(note.map((block) => (block as ParagraphBlock).items.filter((item) => item.type !== "text"))).to.deep.equal([
+                [
+                    { type: "marker", name: "field 1" },
+                    { type: "pageNumber", field: "field 1", font: {} },
+                ],
+                [
+                    { type: "marker", name: "field 2" },
+                    { type: "sectionNumber", field: "field 2", font: {}, format: { numberFormat: "roman" } },
+                ],
+                [],
+                [
+                    { type: "marker", name: "field 3" },
+                    { type: "pageNumber", field: "field 3", font: {} },
+                ],
+            ]);
+            expect(note[2].unsupported).to.equal("a page reference that says where its bookmark is, in a footnote or endnote");
+            expect(content.relativeReferences.size).to.equal(0);
         });
 
         it("should ignore field characters and instructions outside a field", () => {
@@ -811,10 +990,10 @@ describe("readDocument", () => {
         it("should read a simple field that is a page reference as the page of its bookmark, and others as their result", () => {
             const content = readBody([
                 p({ "w:fldSimple": [{ _attr: { "w:instr": "PAGEREF target" } }, r(t("9"))] }),
-                p({ "w:fldSimple": [{ _attr: { "w:instr": "DATE" } }, r(t("today"))] }),
+                p({ "w:fldSimple": [{ _attr: { "w:instr": "AUTHOR" } }, r(t("Ann"))] }),
             ]);
             expect(itemsOf(content, 0)).to.deep.equal([{ type: "pageReference", bookmark: "target", font: {} }]);
-            expect(textOf(content, 1)).to.equal("today");
+            expect(textOf(content, 1)).to.equal("Ann");
         });
     });
 
