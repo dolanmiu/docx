@@ -1592,6 +1592,7 @@ var docxLayout = (function(exports) {
 			var _markHeight;
 			return (_markHeight = markHeight) !== null && _markHeight !== void 0 ? _markHeight : markHeight = measurer.measureLineHeight(markFont);
 		};
+		const emptyLineFont = _objectSpread2(_objectSpread2({}, markFont), {}, { border: void 0 });
 		/**
 		* Whether a line of only pictures is in a paragraph whose mark has a taller line than the pictures' runs, so that how
 		* tall the line is depends on whether the mark counts. Word hasn't shown that: in its probes the pictures' runs were as
@@ -1680,7 +1681,7 @@ var docxLayout = (function(exports) {
 			};
 			const finish = (state, breakAfter) => {
 				var _state$unsupported;
-				const heights = state.started ? state.heights : withFont(NOTHING, _objectSpread2(_objectSpread2({}, markFont), {}, { border: void 0 }), measurer);
+				const heights = state.started ? state.heights : withFont(NOTHING, emptyLineFont, measurer);
 				const _heightOf = heightOf(heights, lineSpacing), { unsupported: unknownHeight } = _heightOf, height = _objectWithoutProperties(_heightOf, _excluded$1);
 				const unsupported = state.unknown ? "a justified line that only fits squeezed at an en, em or ideographic space" : (_state$unsupported = state.unsupported) !== null && _state$unsupported !== void 0 ? _state$unsupported : markMatters(withNumber(heights)) ? "a picture alone in a line of a paragraph whose mark is larger" : unlikeMark(heights) ? "a line of only a list number of another size or font than its paragraph's mark" : unknownHeight;
 				lines.push(_objectSpread2(_objectSpread2(_objectSpread2({}, height), {}, { markers: [...state.markers, ...state.pending] }, breakAfter ? { breakAfter } : {}), {}, {
@@ -1818,7 +1819,7 @@ var docxLayout = (function(exports) {
 			}
 			if (!end) finish(line);
 			else {
-				const breakFont = isLast && !line.started ? markFont : end.font;
+				const breakFont = isLast && !line.started ? emptyLineFont : end.font;
 				finish(_objectSpread2(_objectSpread2({}, line), {}, {
 					heights: withFont(line.started ? line.heights : NOTHING, breakFont, measurer),
 					started: true
