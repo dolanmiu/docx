@@ -278,7 +278,7 @@ var docxLayout = (function(exports) {
 		{
 			name: "Microsoft YaHei",
 			aliases: ["微软雅黑"],
-			lineHeight: 1714,
+			lineHeight: 1714.3,
 			descent: 460,
 			latin: "Arial"
 		},
@@ -351,13 +351,18 @@ var docxLayout = (function(exports) {
 		const name = font.toLowerCase();
 		return EAST_ASIAN_FONTS.find((candidate) => [candidate.name, ...candidate.aliases].some((alias) => alias.toLowerCase() === name));
 	};
+	/** Whether a font is one of the East Asian fonts in the table whose characters are all an em, or half an em, wide */
+	var isMonospacedEastAsianFont = (font) => {
+		var _knownEastAsianFontOf;
+		return ((_knownEastAsianFontOf = knownEastAsianFontOf(font !== null && font !== void 0 ? font : "Times New Roman")) === null || _knownEastAsianFontOf === void 0 ? void 0 : _knownEastAsianFontOf.monospaced) === true;
+	};
 	/**
 	* The East Asian font a font is, or is measured as, by its name. Undefined for other fonts.
 	*/
 	var eastAsianFontOf = (font) => {
-		var _knownEastAsianFontOf;
+		var _knownEastAsianFontOf2;
 		const similar = EAST_ASIAN_SANS.test(font) ? "MS Gothic" : "MS Mincho";
-		return (_knownEastAsianFontOf = knownEastAsianFontOf(font)) !== null && _knownEastAsianFontOf !== void 0 ? _knownEastAsianFontOf : EAST_ASIAN_NAME.test(font) ? EAST_ASIAN_FONTS.find((candidate) => candidate.name === similar) : void 0;
+		return (_knownEastAsianFontOf2 = knownEastAsianFontOf(font)) !== null && _knownEastAsianFontOf2 !== void 0 ? _knownEastAsianFontOf2 : EAST_ASIAN_NAME.test(font) ? EAST_ASIAN_FONTS.find((candidate) => candidate.name === similar) : void 0;
 	};
 	/** Whether a font is one for Chinese, Japanese or Korean text */
 	var isEastAsianFont = (font) => font !== void 0 && eastAsianFontOf(font) !== void 0;
@@ -383,6 +388,14 @@ var docxLayout = (function(exports) {
 	};
 	var isWide = (code) => code >= 4352 && code <= 4447 || code >= 11904 && code <= 42191 || code >= 44032 && code <= 55203 || code >= 63744 && code <= 64255 || code >= 65072 && code <= 65103 || code >= 65280 && code <= 65376 || code >= 65504 && code <= 65510 || code >= 127744;
 	var isHalfWidth = (code) => code >= 65377 && code <= 65500;
+	/**
+	* Whether a character is Chinese, Japanese or Korean, or one of their full-width or half-width forms, which a document
+	* grid that snaps to characters puts in cells of their own, where it puts other text in as many cells as it needs
+	*/
+	var isGridCharacter = (character) => {
+		const code = character.codePointAt(0);
+		return isWide(code) || isHalfWidth(code);
+	};
 	var takesNoRoom = (character) => new RegExp("[\\p{Mn}\\p{Me}\\p{Cf}]", "u").test(character);
 	/**
 	* The width of a character in thousandths of an em. Characters that aren't in the table are as wide as an average
@@ -758,7 +771,8 @@ var docxLayout = (function(exports) {
 			verticalAlign: readVerticalAlign(valueOf(children, "w:vertAlign")),
 			position: pointsOf(attributesOf(find(children, "w:position"))["w:val"], 2),
 			emphasisMark: valueOf(children, "w:em"),
-			border: readBorder$1(find(children, "w:bdr"))
+			border: readBorder$1(find(children, "w:bdr")),
+			snapToGrid: onOff(children, "w:snapToGrid")
 		});
 	};
 	var readLineSpacing = (spacing) => {
@@ -873,6 +887,7 @@ var docxLayout = (function(exports) {
 			kinsoku: onOff(children, "w:kinsoku"),
 			wordWrap: onOff(children, "w:wordWrap"),
 			suppressAutoHyphens: onOff(children, "w:suppressAutoHyphens"),
+			snapToGrid: onOff(children, "w:snapToGrid"),
 			alignment: ALIGNMENTS[(_valueOf = valueOf(children, "w:jc")) !== null && _valueOf !== void 0 ? _valueOf : ""]
 		});
 	};
@@ -1061,7 +1076,7 @@ var docxLayout = (function(exports) {
 		circle: "above",
 		underDot: "below"
 	};
-	var plainFontOf = ({ font, size, bold, italic, kerning, characterSpacing, scale, position, border, emphasisMark }) => withoutUndefined({
+	var plainFontOf = ({ font, size, bold, italic, kerning, characterSpacing, scale, position, border, emphasisMark, snapToGrid }) => withoutUndefined({
 		font,
 		size,
 		bold,
@@ -1071,7 +1086,8 @@ var docxLayout = (function(exports) {
 		scale,
 		raise: position === 0 ? void 0 : position,
 		border: textBorderOf(border),
-		emphasis: emphasisMark === void 0 ? void 0 : EMPHASIS[emphasisMark]
+		emphasis: emphasisMark === void 0 ? void 0 : EMPHASIS[emphasisMark],
+		snapToGrid: snapToGrid === false ? false : void 0
 	});
 	/**
 	* Why a run's formatting can't be laid out as Word lays it out, when it can't: a border of a style, width or space Word
@@ -1469,6 +1485,29 @@ var docxLayout = (function(exports) {
 		const spacingBelow = (spacing.multiple - 1) * tallest;
 		return _objectSpread2({ height: natural + spacingBelow }, spacingBelow > 0 ? { spacingBelow } : {});
 	};
+	/**
+	* How tall a line on a document grid's lines is: as many of them as its own height needs, from the first fraction of a
+	* twip more, and with multiple line spacing as many times one of them as the spacing says, when that is taller. So 18
+	* lines of 360 twips, and at least 18 points, hold a line of Times New Roman of up to 15.5 points, and from 16 points it
+	* takes 2, and 1.08 lines are 388.8 twips (scripts/layout-probes/word-grid.ts G1, G3, G4). At least a height is that
+	* height, when it is taller, and exact spacing is as it is without the grid. Its text is in the middle of the room,
+	* and at least a height's in the middle of the grid's lines it takes, so the room below the text can go below the bottom
+	* of the page, as multiple spacing's can: a line of Times New Roman 8 that ends 82 twips below it is on the page, and one
+	* of Times New Roman 12 that would end there isn't (G1, G14a). Emphasis marks take their room in the line before it is
+	* put on the grid (G11d), with line spacing in a way Word hasn't shown
+	*/
+	var gridHeightOf = (given, spacing, pitch) => {
+		var _own$unsupported;
+		if ((spacing === null || spacing === void 0 ? void 0 : spacing.rule) === "exact") return heightOf(given, spacing);
+		const own = heightOf(given, void 0);
+		const single = spacing === void 0 || spacing.rule === "multiple" && spacing.multiple === 1;
+		const unsupported = given.marks !== void 0 && !single ? "emphasis marks on a line with line spacing on a document grid" : (_own$unsupported = own.unsupported) !== null && _own$unsupported !== void 0 ? _own$unsupported : heightOf(given, spacing).unsupported;
+		const gridded = Math.max(1, Math.ceil(own.height / pitch - GRID_ROUNDING)) * pitch;
+		const height = spacing === void 0 ? gridded : Math.max(spacing.rule === "multiple" ? spacing.multiple * pitch : spacing.height, gridded);
+		const below = (((spacing === null || spacing === void 0 ? void 0 : spacing.rule) === "atLeast" ? gridded : height) - own.height) / 2;
+		return _objectSpread2(_objectSpread2({ height }, below > 0 ? { spacingBelow: below } : {}), unsupported === void 0 ? {} : { unsupported });
+	};
+	var GRID_ROUNDING = 1e-9;
 	/** Whether a line has nothing on it but a list number and what follows it */
 	var onlyNumber = ({ ascent, descent, tallest, picture, listNumber }) => listNumber !== void 0 && ascent === 0 && descent === 0 && tallest === 0 && picture === 0;
 	/**
@@ -1702,14 +1741,108 @@ var docxLayout = (function(exports) {
 			max
 		}, min > whole + TOLERANCE$1 ? { hyphenated: true } : {});
 	};
+	/** What a character is next to another for the space a grid of lines and characters puts between them */
+	var kindOnGrid = (character) => isGridCharacter(character) ? "grid" : takesNoRoom(character) ? void 0 : new RegExp("\\p{L}", "u").test(character) ? "letter" : /\s/u.test(character) ? "space" : "other";
+	/**
+	* A paragraph's content on a grid of lines and characters, which adds its space after each character of the text on it,
+	* Chinese, Japanese and Korean or not, and half-width ones too: 39 ideographs of MS Mincho 10.5 on a line of 9026 twips,
+	* 230 apart, rather than 42, and 10 i's of Times New Roman 10.5 763 twips from the first to the end of the last, rather
+	* than 583. Between a Chinese, Japanese or Korean character and a Latin letter, either way, it adds a quarter of the first's
+	* size and that space more: 57 twips at 10.5 points and a point more, and 50 at a third of a point less, but nothing next
+	* to a space or a note's number (scripts/layout-probes/word-grid.ts CA1 to CA4, CA9, CB1 to CB4, word-grid3.ts H4, H5). A
+	* run's own space after each character adds to it (H9), and text in a run that doesn't snap to the grid is as it is
+	* without it (CA5, CB5). Where Word puts a space between those characters and numbers or punctuation, or text of another
+	* size, isn't known
+	*/
+	var spacedOnGrid = (items, space) => {
+		const spaced = [];
+		let unsupported;
+		let last;
+		for (const item of items) {
+			var _item$font$size, _item$font$characterS;
+			if (item.type !== "text" || item.font.snapToGrid === false) {
+				spaced.push(item);
+				last = item.type === "marker" ? last : void 0;
+				continue;
+			}
+			const size = (_item$font$size = item.font.size) !== null && _item$font$size !== void 0 ? _item$font$size : 10;
+			const font = _objectSpread2(_objectSpread2({}, item.font), {}, { characterSpacing: ((_item$font$characterS = item.font.characterSpacing) !== null && _item$font$characterS !== void 0 ? _item$font$characterS : 0) + space });
+			for (const character of item.text) {
+				const kind = item.font.lineSize === void 0 ? kindOnGrid(character) : "space";
+				const boundary = kind !== void 0 && kind !== "space" && last !== void 0 && last.kind !== "space" && last.kind === "grid" !== (kind === "grid");
+				if (boundary && (last.kind === "other" || kind === "other" || last.size !== size)) {
+					var _unsupported;
+					(_unsupported = unsupported) !== null && _unsupported !== void 0 || (unsupported = "a number, punctuation or text of another size next to an East Asian character on a grid of characters");
+				}
+				if (boundary) {
+					const before = spaced[last.index];
+					const characters = [...before.text];
+					const eastAsianSize = last.kind === "grid" ? last.size : size;
+					spaced.splice(last.index, 1, _objectSpread2(_objectSpread2({}, before), {}, { text: characters.slice(0, -1).join("") }), _objectSpread2(_objectSpread2({}, before), {}, {
+						text: characters[characters.length - 1],
+						font: _objectSpread2(_objectSpread2({}, before.font), {}, { characterSpacing: before.font.characterSpacing + (eastAsianSize + space) / 4 })
+					}));
+				}
+				const current = spaced[spaced.length - 1];
+				if (!boundary && (current === null || current === void 0 ? void 0 : current.type) === "text" && current.font === font) spaced[spaced.length - 1] = _objectSpread2(_objectSpread2({}, current), {}, { text: current.text + character });
+				else spaced.push(_objectSpread2(_objectSpread2({}, item), {}, {
+					text: character,
+					font
+				}));
+				last = kind === void 0 ? last && _objectSpread2(_objectSpread2({}, last), {}, { index: spaced.length - 1 }) : {
+					index: spaced.length - 1,
+					kind,
+					size
+				};
+			}
+		}
+		return _objectSpread2({ items: spaced.filter((item) => item.type !== "text" || item.text.length > 0) }, unsupported === void 0 ? {} : { unsupported });
+	};
 	/**
 	* Breaks a paragraph into lines, as Word breaks it.
 	*
 	* @param items - The paragraph's content, in order
 	*/
-	var layoutLines = (items, { width, format = {}, tabStops = [], defaultTabStop = DEFAULT_TAB_STOP, markFont = {}, measurer = DEFAULT_MEASURER, breakRules, numberAlignment, hyphenation }) => {
-		var _items$2;
+	var layoutLines = (items, { width, format = {}, tabStops = [], defaultTabStop = DEFAULT_TAB_STOP, markFont = {}, measurer = DEFAULT_MEASURER, breakRules, numberAlignment, hyphenation, grid = {} }) => {
+		var _spaced$items, _content$;
 		const { indentLeft = 0, indentRight = 0, firstLineIndent = 0, lineSpacing, alignment } = format;
+		const { linePitch, characterSpace, characterPitch: cell } = grid;
+		const spaced = characterSpace === void 0 ? void 0 : spacedOnGrid(items, characterSpace);
+		const content = (_spaced$items = spaced === null || spaced === void 0 ? void 0 : spaced.items) !== null && _spaced$items !== void 0 ? _spaced$items : items;
+		/** The width of the cells a width of text takes on a grid that snaps to characters */
+		const cellsOf = (textWidth) => textWidth <= 0 ? 0 : Math.max(1, Math.ceil(textWidth / cell - GRID_ROUNDING)) * cell;
+		/**
+		* Where a line goes on to after pieces of text, on a grid that snaps to characters, with what of it isn't Chinese,
+		* Japanese or Korean. Each of those characters takes as many of the grid's cells as it is wide, and the other text
+		* between them on a line as many as it needs, together: 19 ideographs of MS Mincho 12 to a line of 39 cells of 231.44
+		* twips, and "abc de" between ideographs 3 cells (scripts/layout-probes/word-grid.ts CC1 to CC4, CD1 to CD4). Text in a
+		* run that doesn't snap to the grid is as wide as it is (CC5)
+		*/
+		const snapped = (state, pieces) => {
+			let { position, latin } = state;
+			for (const { text, font } of pieces) for (const character of text) {
+				const characterWidth = measurer.measureWidth(character, font);
+				if (font.snapToGrid === false) {
+					position += characterWidth;
+					latin = void 0;
+				} else if (isGridCharacter(character)) {
+					position = (latin ? latin.start + cellsOf(latin.width) : position) + cellsOf(characterWidth);
+					latin = void 0;
+				} else {
+					var _latin$start, _latin$width;
+					latin = {
+						start: (_latin$start = latin === null || latin === void 0 ? void 0 : latin.start) !== null && _latin$start !== void 0 ? _latin$start : position,
+						width: ((_latin$width = latin === null || latin === void 0 ? void 0 : latin.width) !== null && _latin$width !== void 0 ? _latin$width : 0) + characterWidth
+					};
+					position = latin.start + cellsOf(latin.width);
+				}
+			}
+			return {
+				position,
+				latin
+			};
+		};
+		const unknownOnGrid = cell !== void 0 && [indentLeft, indentLeft + firstLineIndent].some((start) => Math.abs(start / cell - Math.round(start / cell)) > TOLERANCE$1 / cell) ? "an indent of part of a character on a grid that snaps to characters" : spaced === null || spaced === void 0 ? void 0 : spaced.unsupported;
 		let markHeight;
 		const markLineHeight = () => {
 			var _markHeight;
@@ -1749,7 +1882,7 @@ var docxLayout = (function(exports) {
 		};
 		const squeezes = alignment === "justified" || alignment === "distributed" || alignment === "thaiDistributed" || alignment === "lowKashida";
 		const { stops, firstLineStops } = stopsOf(tabStops, format);
-		const parts = segmentsOf(items, rulesOf(format, breakRules));
+		const parts = segmentsOf(content, rulesOf(format, breakRules));
 		const [previous, last] = parts.slice(-2);
 		const segments = parts.length > 1 && previous.end.kind === "page" && last.tokens.every((token) => token.type === "marker") ? [...parts.slice(0, -2), {
 			tokens: [...previous.tokens, ...last.tokens],
@@ -1834,13 +1967,13 @@ var docxLayout = (function(exports) {
 			if (kind === "left") return (started ? indentRight !== 0 : indentLeft !== 0 || indentRight !== 0) ? "a left tab stop past the end of the line in a paragraph indented on the right" : void 0;
 			return !started || indentLeft !== 0 || kind !== "right" && indentRight !== 0 ? "a tab stop past the end of the line at the start of a line, or in an indented paragraph" : void 0;
 		};
-		const beforeStart = numberShift(items, numberAlignment, measurer);
-		let numberTab = numberAlignment === "right" && ((_items$2 = items[1]) === null || _items$2 === void 0 ? void 0 : _items$2.type) === "tab";
+		const beforeStart = numberShift(content, numberAlignment, measurer);
+		let numberTab = numberAlignment === "right" && ((_content$ = content[1]) === null || _content$ === void 0 ? void 0 : _content$.type) === "tab";
 		let first = true;
 		for (const [segmentIndex, { tokens, end }] of segments.entries()) {
 			const isLast = segmentIndex === segments.length - 1;
 			const start = startOf(lines.length, first);
-			let line = {
+			let line = _objectSpread2({
 				position: first ? start - beforeStart : start,
 				start,
 				end: start,
@@ -1855,11 +1988,11 @@ var docxLayout = (function(exports) {
 				pending: [],
 				started: false,
 				first
-			};
+			}, unknownOnGrid === void 0 ? {} : { unsupported: unknownOnGrid });
 			const finish = (state, breakAfter) => {
 				var _state$unsupported;
 				const heights = state.started ? state.heights : withFont(NOTHING, emptyLineFont, measurer);
-				const _heightOf = heightOf(heights, lineSpacing), { unsupported: unknownHeight } = _heightOf, height = _objectWithoutProperties(_heightOf, _excluded$1);
+				const _ref2 = linePitch === void 0 ? heightOf(heights, lineSpacing) : gridHeightOf(heights, lineSpacing, linePitch), { unsupported: unknownHeight } = _ref2, height = _objectWithoutProperties(_ref2, _excluded$1);
 				const unsupported = state.unknown ? "a justified line that only fits squeezed at an en, em or ideographic space" : (_state$unsupported = state.unsupported) !== null && _state$unsupported !== void 0 ? _state$unsupported : markMatters(withNumber(heights)) ? "a picture alone in a line of a paragraph whose mark is larger" : unlikeMark(heights) ? "a line of only a list number of another size or font than its paragraph's mark" : unknownHeight;
 				lines.push(_objectSpread2(_objectSpread2(_objectSpread2({}, height), {}, { markers: [...state.markers, ...state.pending] }, breakAfter ? { breakAfter } : {}), {}, {
 					text: state.text,
@@ -1910,23 +2043,29 @@ var docxLayout = (function(exports) {
 			/** Puts a word or picture on the line, or on the next, or breaks it across lines */
 			const placeWord = (token) => {
 				var _lastBorder$room, _lastBorder, _token$hyphens;
-				const tokenWidth = token.type === "box" ? token.width : widthOf(token.pieces, measurer);
+				/** How wide the token is on the line, which on a grid that snaps to characters depends on the text before it */
+				const widthOn = (state) => token.type === "box" ? token.width : cell === void 0 ? widthOf(token.pieces, measurer) : snapped(state, token.pieces).position - state.position;
+				let tokenWidth = widthOn(line);
 				const leadOf = (state) => token.type === "word" ? roomBetween(state.border, firstBorder(token.pieces)) : 0;
 				const boxEnd = token.type === "word" ? (_lastBorder$room = (_lastBorder = lastBorder(token.pieces)) === null || _lastBorder === void 0 ? void 0 : _lastBorder.room) !== null && _lastBorder$room !== void 0 ? _lastBorder$room : 0 : 0;
 				const needs = leadOf(line) + tokenWidth + boxEnd;
 				const hyphens = token.type === "word" ? ((_token$hyphens = token.hyphens) !== null && _token$hyphens !== void 0 ? _token$hyphens : []).filter(({ at }) => at > 0 && at < lengthOf(token.pieces)) : [];
+				if (cell !== void 0 && (hyphens.length > 0 || roomOf(lines.length) !== void 0)) {
+					var _line$unsupported2;
+					line = _objectSpread2(_objectSpread2({}, line), {}, { unsupported: (_line$unsupported2 = line.unsupported) !== null && _line$unsupported2 !== void 0 ? _line$unsupported2 : "a soft hyphen, or a line beside a drawing, on a grid that snaps to characters" });
+				}
 				skipRooms(needs, hyphens.length > 0);
 				const squeezedIn = squeezes && line.started && squeezesIn(line, needs);
 				if (token.type === "word" && hyphens.length > 0 && !squeezedIn && line.position + needs > endOf(line) + TOLERANCE$1) {
-					var _line$unsupported4;
+					var _line$unsupported5;
 					const unknown = squeezes ? "a soft hyphen in a justified line that doesn't fit squeezed" : token.pieces.some(({ font }) => font.border !== void 0) ? "a soft hyphen in a word with a border" : void 0;
 					if (unknown !== void 0) {
-						var _line$unsupported2;
-						line = _objectSpread2(_objectSpread2({}, line), {}, { unsupported: (_line$unsupported2 = line.unsupported) !== null && _line$unsupported2 !== void 0 ? _line$unsupported2 : unknown });
+						var _line$unsupported3;
+						line = _objectSpread2(_objectSpread2({}, line), {}, { unsupported: (_line$unsupported3 = line.unsupported) !== null && _line$unsupported3 !== void 0 ? _line$unsupported3 : unknown });
 					}
 					if (line.started && mayHyphenate(line, token, leadOf(line))) {
-						var _line$unsupported3;
-						line = _objectSpread2(_objectSpread2({}, line), {}, { unsupported: (_line$unsupported3 = line.unsupported) !== null && _line$unsupported3 !== void 0 ? _line$unsupported3 : MAY_HYPHENATE });
+						var _line$unsupported4;
+						line = _objectSpread2(_objectSpread2({}, line), {}, { unsupported: (_line$unsupported4 = line.unsupported) !== null && _line$unsupported4 !== void 0 ? _line$unsupported4 : MAY_HYPHENATE });
 					}
 					const rest = breakAtHyphen(token, hyphens);
 					if (rest !== void 0) {
@@ -1938,29 +2077,32 @@ var docxLayout = (function(exports) {
 						placeWord(token);
 						return;
 					}
-					line = _objectSpread2(_objectSpread2({}, line), {}, { unsupported: (_line$unsupported4 = line.unsupported) !== null && _line$unsupported4 !== void 0 ? _line$unsupported4 : "a word whose part before a soft hyphen is longer than its line" });
+					line = _objectSpread2(_objectSpread2({}, line), {}, { unsupported: (_line$unsupported5 = line.unsupported) !== null && _line$unsupported5 !== void 0 ? _line$unsupported5 : "a word whose part before a soft hyphen is longer than its line" });
 				}
 				const overflows = line.started && line.position + needs > endOf(line) + TOLERANCE$1;
 				if (overflows && unsure(line, needs)) line = _objectSpread2(_objectSpread2({}, line), {}, { unknown: true });
 				const squeezable = overflows && !line.unknown && squeezesIn(line, needs);
+				if (squeezable && cell !== void 0) line = _objectSpread2(_objectSpread2({}, line), {}, { unsupported: "a justified line on a grid that snaps to characters that only fits squeezed" });
 				const boxed = line.boxed === true || token.type === "word" && token.pieces.some(({ font }) => font.border !== void 0);
 				if (squeezable && boxed) line = _objectSpread2(_objectSpread2({}, line), {}, { unsupported: "a justified line with text in a border that only fits squeezed" });
-				const squeezed = squeezable && !boxed;
+				const squeezed = squeezable && !boxed && cell === void 0;
 				if (overflows && (!squeezed || alignment !== "justified") && token.type === "word" && mayHyphenate(line, token, leadOf(line))) {
-					var _line$unsupported5;
-					line = _objectSpread2(_objectSpread2({}, line), {}, { unsupported: (_line$unsupported5 = line.unsupported) !== null && _line$unsupported5 !== void 0 ? _line$unsupported5 : MAY_HYPHENATE });
+					var _line$unsupported6;
+					line = _objectSpread2(_objectSpread2({}, line), {}, { unsupported: (_line$unsupported6 = line.unsupported) !== null && _line$unsupported6 !== void 0 ? _line$unsupported6 : MAY_HYPHENATE });
 				}
 				if (overflows && !squeezed) {
 					line = wrap(line);
 					skipRooms(needs, hyphens.length > 0);
+					tokenWidth = widthOn(line);
 				}
 				line = _objectSpread2(_objectSpread2({}, place(line)), {}, { position: line.position + leadOf(line) });
+				if (cell !== void 0 && token.type === "word" && line.position + tokenWidth > endOf(line) + TOLERANCE$1) line = _objectSpread2(_objectSpread2({}, line), {}, { unsupported: "a word longer than its line on a grid that snaps to characters" });
 				if (token.type === "word" && !squeezed && line.position + tokenWidth > endOf(line) + TOLERANCE$1 && limitOf() - startOf(lines.length, false) > 0) {
 					let placed = false;
 					if (token.pieces.some(({ font }) => font.border !== void 0)) line = _objectSpread2(_objectSpread2({}, line), {}, { unsupported: "a word longer than its line with a border" });
 					if (mayHyphenate(line, token, 0)) {
-						var _line$unsupported6;
-						line = _objectSpread2(_objectSpread2({}, line), {}, { unsupported: (_line$unsupported6 = line.unsupported) !== null && _line$unsupported6 !== void 0 ? _line$unsupported6 : MAY_HYPHENATE });
+						var _line$unsupported7;
+						line = _objectSpread2(_objectSpread2({}, line), {}, { unsupported: (_line$unsupported7 = line.unsupported) !== null && _line$unsupported7 !== void 0 ? _line$unsupported7 : MAY_HYPHENATE });
 					}
 					for (const character of charactersOf(token.pieces)) {
 						const characterWidth = widthOf(character, measurer);
@@ -1978,7 +2120,7 @@ var docxLayout = (function(exports) {
 					}
 				} else {
 					const text = token.type === "word" ? textOf(token.pieces) : "";
-					line = _objectSpread2(_objectSpread2({}, line), {}, {
+					line = _objectSpread2(_objectSpread2(_objectSpread2({}, line), cell !== void 0 && token.type === "word" ? { latin: snapped(line, token.pieces).latin } : {}), {}, {
 						position: line.position + tokenWidth,
 						end: line.position + tokenWidth,
 						text: line.text + text,
@@ -2028,8 +2170,8 @@ var docxLayout = (function(exports) {
 						};
 					}
 					if (room > NO_HYPHEN_ROOM) {
-						var _line$unsupported7;
-						line = _objectSpread2(_objectSpread2({}, line), {}, { unsupported: (_line$unsupported7 = line.unsupported) !== null && _line$unsupported7 !== void 0 ? _line$unsupported7 : "a soft hyphen whose hyphen ends this close to the end of the line" });
+						var _line$unsupported8;
+						line = _objectSpread2(_objectSpread2({}, line), {}, { unsupported: (_line$unsupported8 = line.unsupported) !== null && _line$unsupported8 !== void 0 ? _line$unsupported8 : "a soft hyphen whose hyphen ends this close to the end of the line" });
 					}
 				}
 			};
@@ -2042,8 +2184,7 @@ var docxLayout = (function(exports) {
 				}
 				if (token.type === "space") {
 					const spaces = widthOf(token.pieces, measurer);
-					line = _objectSpread2(_objectSpread2({}, line), {}, {
-						position: line.position + roomBetween(line.border, firstBorder(token.pieces)) + spaces,
+					line = _objectSpread2(_objectSpread2(_objectSpread2({}, line), cell === void 0 ? { position: line.position + roomBetween(line.border, firstBorder(token.pieces)) + spaces } : snapped(line, token.pieces)), {}, {
 						text: line.text + textOf(token.pieces),
 						spaces: line.started ? line.spaces + spaces : 0,
 						spaceCount: line.started ? line.spaceCount + lengthOf(token.pieces) : 0,
@@ -2057,8 +2198,12 @@ var docxLayout = (function(exports) {
 					position: line.position + roomBetween(line.border, void 0),
 					border: void 0
 				});
+				if (cell !== void 0 && token.type !== "word") line = _objectSpread2(_objectSpread2({}, line), {}, {
+					latin: void 0,
+					unsupported: "a tab or picture on a grid that snaps to characters"
+				});
 				if (token.type === "tab") {
-					var _nextStop, _line$unsupported9;
+					var _nextStop, _line$unsupported10;
 					const numbered = numberTab ? numberTabStop(line.position, firstLineStops, format, defaultTabStop, limitOf()) : void 0;
 					numberTab = false;
 					if ((numbered === null || numbered === void 0 ? void 0 : numbered.unsupported) !== void 0) line = _objectSpread2(_objectSpread2({}, line), {}, { unsupported: numbered.unsupported });
@@ -2070,8 +2215,8 @@ var docxLayout = (function(exports) {
 					const pastEnd = own && next.position > Math.max(limitOf(), marginOf()) + TOLERANCE$1 ? next : void 0;
 					const unknown = pastIndent && (next.alignment === "center" || next.alignment === "decimal" || squeezes) ? "a centred or decimal tab stop past the paragraph's right indent, or one in a justified line" : pastIndent && next.alignment === "left" && next.position + widthAfterTab(rest, measurer) > marginOf() + TOLERANCE$1 ? "text after a tab stop past the paragraph's right indent that goes past the margin" : pastEnd === void 0 ? void 0 : pastEndUnknown(pastEnd, line.started);
 					if (unknown !== void 0) {
-						var _line$unsupported8;
-						line = _objectSpread2(_objectSpread2({}, line), {}, { unsupported: (_line$unsupported8 = line.unsupported) !== null && _line$unsupported8 !== void 0 ? _line$unsupported8 : unknown });
+						var _line$unsupported9;
+						line = _objectSpread2(_objectSpread2({}, line), {}, { unsupported: (_line$unsupported9 = line.unsupported) !== null && _line$unsupported9 !== void 0 ? _line$unsupported9 : unknown });
 					}
 					if ((pastEnd === null || pastEnd === void 0 ? void 0 : pastEnd.alignment) === "left" && unknown === void 0) {
 						const tab = _objectSpread2(_objectSpread2({}, line), {}, {
@@ -2113,7 +2258,7 @@ var docxLayout = (function(exports) {
 						letters: 0,
 						otherSpaces: 0,
 						started: true
-					}, misaligned === void 0 ? {} : { unsupported: (_line$unsupported9 = line.unsupported) !== null && _line$unsupported9 !== void 0 ? _line$unsupported9 : misaligned });
+					}, misaligned === void 0 ? {} : { unsupported: (_line$unsupported10 = line.unsupported) !== null && _line$unsupported10 !== void 0 ? _line$unsupported10 : misaligned });
 					continue;
 				}
 				placeWord(token);
@@ -4589,6 +4734,17 @@ var docxLayout = (function(exports) {
 	var POINTS_PER_LINE = 12;
 	var HUNDREDTHS = 100;
 	/**
+	* The units of a paragraph's space in lines and indents in characters: 12 points and the text's size, or on a document
+	* grid, its lines and characters. A line of space is a line of the grid, 360 twips on one of 360 and 312 on one of 312,
+	* in a paragraph that isn't on the grid's lines too, and in a table cell, whose lines aren't on them (scripts/layout-probes/
+	* word-grid.ts G6, word-grid3.ts H10, H11), and a character is the text's size and the space a grid of lines and
+	* characters adds after each, or a cell of one that snaps to characters (word-grid.ts CA6, CB6, CC6, CD6)
+	*/
+	var unitsOf = ({ linePitch, characterSpace = 0, characterPitch } = {}) => _objectSpread2({
+		line: linePitch !== null && linePitch !== void 0 ? linePitch : POINTS_PER_LINE,
+		characterSpace
+	}, characterPitch === void 0 ? {} : { characterPitch });
+	/**
 	* A paragraph's formatting with its space in lines and its indents in characters in points, as Word takes them in place
 	* of those in points when they aren't 0 (`word-paragraph-formats.docx` C7, C10, L2). A character is as wide as text is
 	* tall: a first line or hanging indent's as the paragraph's first character, 2 of them 440 twips at 11 points and 800 at
@@ -4598,10 +4754,10 @@ var docxLayout = (function(exports) {
 	* given: 2 characters hanging put the first line at 0 and the others at 440, with a left indent of 1440 twips or none
 	* (TX7c, C3, C9). It says why when Word's way with them isn't known.
 	*/
-	var inPoints = (format, { listNumber, items }, markFont, styleFont) => {
+	var inPoints = (format, { listNumber, items }, markFont, styleFont, { line, characterSpace, characterPitch } = unitsOf()) => {
 		var _textOf$, _format$firstLineInde;
 		const { spaceBeforeLines, spaceAfterLines, indentLeftChars, indentRightChars = 0, firstLineChars = 0 } = format;
-		const lines = (count, points) => count ? count / HUNDREDTHS * POINTS_PER_LINE : points;
+		const lines = (count, points) => count ? count / HUNDREDTHS * line : points;
 		const spaced = withoutUndefined(_objectSpread2(_objectSpread2({}, format), {}, {
 			spaceBefore: lines(spaceBeforeLines, format.spaceBefore),
 			spaceAfter: lines(spaceAfterLines, format.spaceAfter)
@@ -4618,7 +4774,7 @@ var docxLayout = (function(exports) {
 		if (firstLineChars !== 0 && textOf(listNumber).some((font) => sizeOf(font) !== first)) return "an indent in characters in a list whose number is another size than its text";
 		if ((leftChars !== 0 || indentRightChars !== 0) && mark !== sizeOf(styleFont)) return "an indent in characters left or right of a paragraph whose mark is another size than its style";
 		if (indentRightChars !== 0 && first !== mark) return "an indent in characters right of text of another size than its mark";
-		const characters = (count, size) => count / HUNDREDTHS * size;
+		const characters = (count, size) => count / HUNDREDTHS * (characterPitch !== null && characterPitch !== void 0 ? characterPitch : size + characterSpace);
 		const right = indentRightChars === 0 ? {} : { indentRight: characters(indentRightChars, mark) };
 		if (firstLineChars < 0) {
 			var _format$indentLeft;
@@ -4684,11 +4840,25 @@ var docxLayout = (function(exports) {
 			outline: JSON.stringify([...outline, ...indents])
 		};
 	};
+	var HALF_WIDTH = /[\uff61-\uffdc]/u;
+	/**
+	* Why a paragraph of text that runs down the page can't be laid out yet, when it can't: Word's PDFs showed lines of
+	* ideographs, kana and punctuation in fonts whose characters are all an em, each an em down the line, and Latin text on
+	* its side, as wide as it is across a page (scripts/layout-probes/word-vertical.ts V1, V4), but not the rest
+	*/
+	var unknownDownOf = (items, format, borders) => {
+		const texts = items.flatMap((item) => item.type === "text" ? [item] : []);
+		if (items.some((item) => item.type === "tab" || item.type === "box" || item.type === "softHyphen" || item.type === "drawing")) return "a tab, soft hyphen, picture or drawing in text that runs down the page";
+		if (texts.some(({ text, font }) => HALF_WIDTH.test(text) || new RegExp("[\\p{Script=Han}\\p{Script=Hiragana}\\p{Script=Katakana}\\p{Script=Hangul}]", "u").test(text) && !isMonospacedEastAsianFont(font.font))) return "East Asian text down the page in a font whose characters aren't all an em, or half-width";
+		if (texts.some(({ font }) => font.border !== void 0 || font.emphasis !== void 0 || font.raise !== void 0 || font.lineSize !== void 0)) return "run formatting in text that runs down the page that Word hasn't been seen laying out";
+		if (borders !== void 0) return "a paragraph border on text that runs down the page";
+		return (format.alignment === "justified" || format.alignment === "distributed") && texts.some(({ text }) => / /.test(text)) ? "a justified line with spaces down the page" : void 0;
+	};
 	/**
 	* Reads a paragraph (`w:p`), in the formatting of its styles, and of its table's style when it is in a table.
 	*/
 	var readParagraph = (element, reader, tableFormats = []) => {
-		var _valueOf3, _exec2, _styleChain$slice$0$n, _styleChain$slice$, _list$unsupported, _ref4, _unknownLengthIn;
+		var _valueOf3, _exec2, _styleChain$slice$0$n, _styleChain$slice$, _ref4, _ref5, _ref6, _list$unsupported, _ref7, _unknownLengthIn;
 		const { styles } = reader;
 		const children = contentOf$2(element);
 		const properties = childrenOf(find(children.filter(isObject), "w:pPr"));
@@ -4712,22 +4882,34 @@ var docxLayout = (function(exports) {
 		const own = typeof items === "string" ? [] : items;
 		const content = typeof items === "string" ? [] : [...list.items, ...items];
 		const markFont = fontOf(markRun);
+		const { grid, cellGrid } = reader;
+		const sectionGrid = grid !== null && grid !== void 0 ? grid : cellGrid;
+		const paragraphGrid = sectionGrid && withoutUndefined({
+			linePitch: grid !== void 0 && combined.snapToGrid !== false ? grid.linePitch : void 0,
+			characterSpace: sectionGrid.characterSpace,
+			characterPitch: sectionGrid.characterPitch
+		});
 		const format = inPoints(combined, {
 			listNumber: list.items,
 			items: own
-		}, markFont, fontOf(paragraphRun));
+		}, markFont, fontOf(paragraphRun), unitsOf(sectionGrid));
 		const borders = readBorders(typeof format === "string" ? combined : format);
 		const forThaiOrArabic = combined.alignment === "thaiDistributed" || combined.alignment === "lowKashida";
 		const tabStops = tabStopsOf(formats);
 		const otherDecimalSymbol = reader.decimalSymbol !== void 0 && reader.decimalSymbol !== "." && tabStops.some(({ alignment }) => alignment === "decimal");
-		const unsupported = (_list$unsupported = list.unsupported) !== null && _list$unsupported !== void 0 ? _list$unsupported : find(properties, "w:framePr") !== void 0 ? "a text frame" : otherDecimalSymbol ? "a decimal tab stop in a document whose decimal symbol isn't a full stop" : find(properties, "w:divId") !== void 0 ? "a paragraph in an HTML division" : combined.alignment === "mediumKashida" || combined.alignment === "highKashida" ? "a paragraph justified for Arabic with a medium or high kashida" : forThaiOrArabic && typeof items !== "string" && items.some((item) => item.type === "text" && THAI_OR_ARABIC.test(item.text)) ? "Thai or Arabic text justified for it" : (_ref4 = (_unknownLengthIn = unknownLengthIn(element)) !== null && _unknownLengthIn !== void 0 ? _unknownLengthIn : typeof format === "string" ? format : void 0) !== null && _ref4 !== void 0 ? _ref4 : typeof borders === "string" ? borders : void 0;
-		return _objectSpread2(_objectSpread2(_objectSpread2(_objectSpread2(_objectSpread2(_objectSpread2({
+		const snapping = (sectionGrid === null || sectionGrid === void 0 ? void 0 : sectionGrid.characterPitch) !== void 0;
+		const unknownOnGrid = snapping && reader.inNote === true ? "a footnote on a grid that snaps to characters" : snapping && own.some((item) => {
+			var _item$font$characterS;
+			return item.type === "text" && ((_item$font$characterS = item.font.characterSpacing) !== null && _item$font$characterS !== void 0 ? _item$font$characterS : 0) !== 0 && item.font.snapToGrid !== false;
+		}) ? "text spaced out by its run on a grid that snaps to characters" : void 0;
+		const unsupported = (_ref4 = (_ref5 = (_ref6 = (_list$unsupported = list.unsupported) !== null && _list$unsupported !== void 0 ? _list$unsupported : unknownOnGrid) !== null && _ref6 !== void 0 ? _ref6 : reader.down === true && reader.inNote === true ? "a footnote or endnote on text that runs down the page" : void 0) !== null && _ref5 !== void 0 ? _ref5 : reader.down === true ? unknownDownOf(own, combined, borders) : void 0) !== null && _ref4 !== void 0 ? _ref4 : find(properties, "w:framePr") !== void 0 ? "a text frame" : otherDecimalSymbol ? "a decimal tab stop in a document whose decimal symbol isn't a full stop" : find(properties, "w:divId") !== void 0 ? "a paragraph in an HTML division" : combined.alignment === "mediumKashida" || combined.alignment === "highKashida" ? "a paragraph justified for Arabic with a medium or high kashida" : forThaiOrArabic && typeof items !== "string" && items.some((item) => item.type === "text" && THAI_OR_ARABIC.test(item.text)) ? "Thai or Arabic text justified for it" : (_ref7 = (_unknownLengthIn = unknownLengthIn(element)) !== null && _unknownLengthIn !== void 0 ? _unknownLengthIn : typeof format === "string" ? format : void 0) !== null && _ref7 !== void 0 ? _ref7 : typeof borders === "string" ? borders : void 0;
+		return _objectSpread2(_objectSpread2(_objectSpread2(_objectSpread2(_objectSpread2(_objectSpread2(_objectSpread2({
 			type: "paragraph",
 			items: content,
 			format: typeof format === "string" ? combined : format,
 			tabStops,
 			markFont
-		}, unsupported === void 0 && typeof items !== "string" && children.some((child) => isObject(child) && LEFT_OUT in child) ? { hidden: true } : {}), list.list ? { list: list.list } : {}), list.alignment ? { numberAlignment: list.alignment } : {}), typeof borders === "object" ? { borders } : {}), {}, { style }, headingLevel === void 0 ? {} : { heading: _objectSpread2({ level: Number(headingLevel) }, withoutUndefined({ chapter: list.from === "style" ? list.chapter : void 0 })) }), typeof items === "string" || guessed || unsupported ? { unsupported: typeof items === "string" ? items : guessed !== null && guessed !== void 0 ? guessed : unsupported } : {});
+		}, unsupported === void 0 && typeof items !== "string" && children.some((child) => isObject(child) && LEFT_OUT in child) ? { hidden: true } : {}), list.list ? { list: list.list } : {}), list.alignment ? { numberAlignment: list.alignment } : {}), typeof borders === "object" ? { borders } : {}), paragraphGrid !== void 0 && Object.keys(paragraphGrid).length > 0 ? { grid: paragraphGrid } : {}), {}, { style }, headingLevel === void 0 ? {} : { heading: _objectSpread2({ level: Number(headingLevel) }, withoutUndefined({ chapter: list.from === "style" ? list.chapter : void 0 })) }), typeof items === "string" || guessed || unsupported ? { unsupported: typeof items === "string" ? items : guessed !== null && guessed !== void 0 ? guessed : unsupported } : {});
 	};
 	/**
 	* Why a cell's properties (`w:tcPr`) change how its text is laid out in a way not yet followed, when they do: cells merged
@@ -4755,6 +4937,30 @@ var docxLayout = (function(exports) {
 		return marks.size > 1 || other ? "text running up or down a table cell with marks of different sizes, a picture or a table" : void 0;
 	};
 	var HORIZONTAL = /* @__PURE__ */ new Set(["lrTb", "tb"]);
+	var HORIZONTAL_PAGES = /* @__PURE__ */ new Set([
+		"lrTb",
+		"tb",
+		"lrTbV",
+		"tbV"
+	]);
+	var DOWN_FROM_RIGHT = /* @__PURE__ */ new Set([
+		"tbRl",
+		"btLr",
+		"rl",
+		"lr"
+	]);
+	var DOWN_FROM_LEFT = /* @__PURE__ */ new Set([
+		"tbRlV",
+		"tbLrV",
+		"rlV",
+		"lrV"
+	]);
+	/** Whether a section's text runs down the page (`w:textDirection`), from the right or the left. Undefined across it */
+	var downOf = (properties) => {
+		var _valueOf4;
+		const direction = (_valueOf4 = valueOf(properties, "w:textDirection")) !== null && _valueOf4 !== void 0 ? _valueOf4 : "";
+		return DOWN_FROM_RIGHT.has(direction) ? "fromRight" : DOWN_FROM_LEFT.has(direction) ? "fromLeft" : void 0;
+	};
 	var VERTICAL = /* @__PURE__ */ new Set([
 		"btLr",
 		"tbRl",
@@ -4865,7 +5071,7 @@ var docxLayout = (function(exports) {
 	* bands by each row's place among all the rows, the deleted ones too (MK14j to MK14l).
 	*/
 	var readTable = (element, reader) => {
-		var _twips, _readTableLook, _ref9, _ref10, _ref11, _ref12, _ref13, _ref14, _ref15, _ref16, _ref17, _ref18, _withoutGuess$unsuppo, _read$find2, _blocks$find, _read$0$cells, _read$, _roomOf, _roomOf2;
+		var _twips, _reader$grid, _readTableLook, _ref12, _ref13, _ref14, _ref15, _ref16, _ref17, _ref18, _ref19, _ref20, _ref21, _ref22, _withoutGuess$unsuppo, _read$find2, _blocks$find, _read$0$cells, _read$, _roomOf, _roomOf2;
 		const children = contentOf$2(element).filter(isObject);
 		const properties = childrenOf(find(children, "w:tblPr"));
 		const style = valueOf(properties, "w:tblStyle");
@@ -4890,10 +5096,12 @@ var docxLayout = (function(exports) {
 		const rows = withBookmarks(parts, "w:tr");
 		const fixed = attributesOf(find(properties, "w:tblLayout"))["w:type"] === "fixed";
 		const sized = !fixed || tableSpacing !== 0;
+		const cellGrid = (_reader$grid = reader.grid) !== null && _reader$grid !== void 0 ? _reader$grid : reader.cellGrid;
 		const cellReader = _objectSpread2(_objectSpread2({}, reader), {}, {
 			inSizedTable: sized,
-			inCell: true
-		});
+			inCell: true,
+			grid: void 0
+		}, cellGrid === void 0 ? {} : { cellGrid });
 		const deletedFlags = rows.map(({ element: row }) => find(childrenOf(find(contentOf$2(row).filter(isObject), "w:trPr")), "w:del") !== void 0);
 		const headerFlags = rows.map(({ element: row }) => onOff(childrenOf(find(contentOf$2(row).filter(isObject), "w:trPr")), "w:tblHeader") === true);
 		const headerRows = headerFlags.includes(false) ? headerFlags.indexOf(false) : headerFlags.length;
@@ -4964,7 +5172,7 @@ var docxLayout = (function(exports) {
 				return typesAt(rowIndex, rows.length, headerRows) !== typesAt(rowIndex - deletedBefore, rows.length - deletedHeaderRows, headerRows - deletedHeaderRows);
 			});
 			const { cells, edges, column: end, unsupported: cellsUnsupported } = rowCells.reduce(({ column, cells: done, edges: before, unsupported: unsupportedBefore }, { element: cell }, cellIndex) => {
-				var _numberOf5, _twips3, _shareOf, _ref5, _ref6;
+				var _numberOf5, _twips3, _shareOf, _ref8, _ref9;
 				const cellChildren = contentOf$2(cell).filter(isObject);
 				const cellProperties = childrenOf(find(cellChildren, "w:tcPr"));
 				const span = (_numberOf5 = numberOf(attributesOf(find(cellProperties, "w:gridSpan"))["w:val"])) !== null && _numberOf5 !== void 0 ? _numberOf5 : 1;
@@ -4989,7 +5197,7 @@ var docxLayout = (function(exports) {
 				return _objectSpread2(_objectSpread2({
 					column: column + span,
 					edges: new Map([...before, [column + span, before.get(column) + width]])
-				}, withoutUndefined({ unsupported: (_ref5 = (_ref6 = unsupportedBefore !== null && unsupportedBefore !== void 0 ? unsupportedBefore : unsupportedCellOf(cellProperties)) !== null && _ref6 !== void 0 ? _ref6 : formatted.unsupported) !== null && _ref5 !== void 0 ? _ref5 : vertical ? unsupportedVerticalOf(cellBlocks) : void 0 })), {}, { cells: [...done, _objectSpread2(_objectSpread2(_objectSpread2(_objectSpread2(_objectSpread2(_objectSpread2(_objectSpread2({ column }, span > 1 ? { span } : {}), {}, { width: width - margins.left - margins.right }, hasWidth ? { ownWidth: width } : {}), {}, {
+				}, withoutUndefined({ unsupported: (_ref8 = (_ref9 = unsupportedBefore !== null && unsupportedBefore !== void 0 ? unsupportedBefore : unsupportedCellOf(cellProperties)) !== null && _ref9 !== void 0 ? _ref9 : formatted.unsupported) !== null && _ref8 !== void 0 ? _ref8 : vertical ? unsupportedVerticalOf(cellBlocks) : void 0 })), {}, { cells: [...done, _objectSpread2(_objectSpread2(_objectSpread2(_objectSpread2(_objectSpread2(_objectSpread2(_objectSpread2({ column }, span > 1 ? { span } : {}), {}, { width: width - margins.left - margins.right }, hasWidth ? { ownWidth: width } : {}), {}, {
 					blocks: cellBlocks,
 					marginTop: margins.top,
 					marginBottom: margins.bottom,
@@ -5069,9 +5277,9 @@ var docxLayout = (function(exports) {
 			tableRows.push(_objectSpread2(_objectSpread2(_objectSpread2({}, row), {}, {
 				borderTop: (_placed$borderTop = placed === null || placed === void 0 ? void 0 : placed.borderTop) !== null && _placed$borderTop !== void 0 ? _placed$borderTop : 0,
 				borderBottom: (_placed$borderBottom = placed === null || placed === void 0 ? void 0 : placed.borderBottom) !== null && _placed$borderBottom !== void 0 ? _placed$borderBottom : 0
-			}, withoutUndefined({ breakBorder: placed === null || placed === void 0 ? void 0 : placed.breakBorder })), {}, { cells: cells.map((_ref7, cellIndex) => {
+			}, withoutUndefined({ breakBorder: placed === null || placed === void 0 ? void 0 : placed.breakBorder })), {}, { cells: cells.map((_ref10, cellIndex) => {
 				var _read, _above$cells$find, _unmerged;
-				let { borders: _, margins, gridWidth: __ } = _ref7, cell = _objectWithoutProperties(_ref7, _excluded2);
+				let { borders: _, margins, gridWidth: __ } = _ref10, cell = _objectWithoutProperties(_ref10, _excluded2);
 				const pending = [...carried, ...cellBookmarks[cellIndex]];
 				const marked = pending.length === 0 ? void 0 : startingAtFirst(cell.blocks, pending);
 				carried = marked === void 0 ? pending : [];
@@ -5096,9 +5304,9 @@ var docxLayout = (function(exports) {
 		const deletedRows = sized ? read.filter(({ deleted }) => deleted).map(({ row, cells }) => _objectSpread2(_objectSpread2({}, row), {}, {
 			borderTop: 0,
 			borderBottom: 0,
-			cells: cells.map((_ref8) => {
-				let { borders: _, margins: __, gridWidth: ___ } = _ref8;
-				return _objectWithoutProperties(_ref8, _excluded3);
+			cells: cells.map((_ref11) => {
+				let { borders: _, margins: __, gridWidth: ___ } = _ref11;
+				return _objectWithoutProperties(_ref11, _excluded3);
 			})
 		})) : [];
 		const blocks = [...tableRows.flatMap(({ cells }) => cells.flatMap((cell) => {
@@ -5121,7 +5329,7 @@ var docxLayout = (function(exports) {
 		const tableTwips = givenWidth.width;
 		const fixedFit = fixed && evenable && (unequal || tableTwips !== void 0 && read.some(({ edges, end }) => Math.abs(edges.get(end) - tableTwips) > WIDTH_TOLERANCE));
 		const withoutGuess = blocks.find((block) => block.noGuess === true);
-		const unsupported = (_ref9 = (_ref10 = (_ref11 = (_ref12 = (_ref13 = (_ref14 = (_ref15 = (_ref16 = (_ref17 = (_ref18 = (_withoutGuess$unsuppo = withoutGuess === null || withoutGuess === void 0 ? void 0 : withoutGuess.unsupported) !== null && _withoutGuess$unsuppo !== void 0 ? _withoutGuess$unsuppo : find(properties, "w:tblpPr") === void 0 ? void 0 : "a table that text flows around") !== null && _ref18 !== void 0 ? _ref18 : parts.some((part) => "w:sdt" in part) ? BOUND_CONTROL : void 0) !== null && _ref17 !== void 0 ? _ref17 : (_read$find2 = read.find((row) => row.unsupported !== void 0)) === null || _read$find2 === void 0 ? void 0 : _read$find2.unsupported) !== null && _ref16 !== void 0 ? _ref16 : unmerged) !== null && _ref15 !== void 0 ? _ref15 : fits ? unfitted : unequal && !evened ? "a table whose rows give a column different widths" : void 0) !== null && _ref14 !== void 0 ? _ref14 : spacingUnsupported) !== null && _ref13 !== void 0 ? _ref13 : typeof geometry === "string" ? geometry : void 0) !== null && _ref12 !== void 0 ? _ref12 : indent === void 0 ? "a table indented by a share of the width" : void 0) !== null && _ref11 !== void 0 ? _ref11 : styleUnsupported) !== null && _ref10 !== void 0 ? _ref10 : lengths) !== null && _ref9 !== void 0 ? _ref9 : (_blocks$find = blocks.find((block) => block.unsupported !== void 0)) === null || _blocks$find === void 0 ? void 0 : _blocks$find.unsupported;
+		const unsupported = (_ref12 = (_ref13 = (_ref14 = (_ref15 = (_ref16 = (_ref17 = (_ref18 = (_ref19 = (_ref20 = (_ref21 = (_ref22 = (_withoutGuess$unsuppo = withoutGuess === null || withoutGuess === void 0 ? void 0 : withoutGuess.unsupported) !== null && _withoutGuess$unsuppo !== void 0 ? _withoutGuess$unsuppo : reader.down === true ? "a table on text that runs down the page" : void 0) !== null && _ref22 !== void 0 ? _ref22 : find(properties, "w:tblpPr") === void 0 ? void 0 : "a table that text flows around") !== null && _ref21 !== void 0 ? _ref21 : parts.some((part) => "w:sdt" in part) ? BOUND_CONTROL : void 0) !== null && _ref20 !== void 0 ? _ref20 : (_read$find2 = read.find((row) => row.unsupported !== void 0)) === null || _read$find2 === void 0 ? void 0 : _read$find2.unsupported) !== null && _ref19 !== void 0 ? _ref19 : unmerged) !== null && _ref18 !== void 0 ? _ref18 : fits ? unfitted : unequal && !evened ? "a table whose rows give a column different widths" : void 0) !== null && _ref17 !== void 0 ? _ref17 : spacingUnsupported) !== null && _ref16 !== void 0 ? _ref16 : typeof geometry === "string" ? geometry : void 0) !== null && _ref15 !== void 0 ? _ref15 : indent === void 0 ? "a table indented by a share of the width" : void 0) !== null && _ref14 !== void 0 ? _ref14 : styleUnsupported) !== null && _ref13 !== void 0 ? _ref13 : lengths) !== null && _ref12 !== void 0 ? _ref12 : (_blocks$find = blocks.find((block) => block.unsupported !== void 0)) === null || _blocks$find === void 0 ? void 0 : _blocks$find.unsupported;
 		const rowWidth = ((_read$0$cells = (_read$ = read[0]) === null || _read$ === void 0 ? void 0 : _read$.cells) !== null && _read$0$cells !== void 0 ? _read$0$cells : []).reduce((total, cell) => {
 			var _cell$ownWidth;
 			return total + ((_cell$ownWidth = cell.ownWidth) !== null && _cell$ownWidth !== void 0 ? _cell$ownWidth : 0);
@@ -5233,8 +5441,8 @@ var docxLayout = (function(exports) {
 	var elementsIn = (elements, named) => elements.filter(isObject).flatMap((element) => named(nameOf(element)) ? [element] : nameOf(element) === "_attr" ? [] : elementsIn(contentOf$2(element), named));
 	/** The run formatting a paragraph's styles give its text */
 	var paragraphRunOf = (paragraph, styles) => {
-		var _valueOf4;
-		return combine([styles.run, ...styleChain(styles, (_valueOf4 = valueOf(paragraphPropertiesOf(paragraph), "w:pStyle")) !== null && _valueOf4 !== void 0 ? _valueOf4 : styles.defaultParagraphStyle, "paragraph").map(({ run }) => run)]);
+		var _valueOf5;
+		return combine([styles.run, ...styleChain(styles, (_valueOf5 = valueOf(paragraphPropertiesOf(paragraph), "w:pStyle")) !== null && _valueOf5 !== void 0 ? _valueOf5 : styles.defaultParagraphStyle, "paragraph").map(({ run }) => run)]);
 	};
 	/**
 	* Whether a paragraph's mark is hidden (`w:vanish`), by its own formatting or its style's. `w:specVanish` alone doesn't
@@ -5249,12 +5457,12 @@ var docxLayout = (function(exports) {
 	var showsSomething = (elements, paragraphRun, styles) => elements.filter(isObject).some((element) => {
 		const name = nameOf(element);
 		if (name === "w:r") {
-			var _valueOf5;
+			var _valueOf6;
 			const children = contentOf$2(element).filter(isObject);
 			const properties = find(children, "w:rPr");
 			const format = combine([
 				paragraphRun,
-				...styleChain(styles, (_valueOf5 = valueOf(childrenOf(properties), "w:rStyle")) !== null && _valueOf5 !== void 0 ? _valueOf5 : styles.defaultCharacterStyle, "character").map(({ run }) => run),
+				...styleChain(styles, (_valueOf6 = valueOf(childrenOf(properties), "w:rStyle")) !== null && _valueOf6 !== void 0 ? _valueOf6 : styles.defaultCharacterStyle, "character").map(({ run }) => run),
 				readRunFormat(properties, styles.themeFonts)
 			]);
 			return children.some((child) => nameOf(child) !== "w:rPr") && format.hidden !== true;
@@ -5263,9 +5471,9 @@ var docxLayout = (function(exports) {
 	});
 	/** Whether a paragraph is in a list, its own or its style's */
 	var isNumbered = (paragraph, styles) => {
-		var _valueOf6;
+		var _valueOf7;
 		const properties = paragraphPropertiesOf(paragraph);
-		const style = (_valueOf6 = valueOf(properties, "w:pStyle")) !== null && _valueOf6 !== void 0 ? _valueOf6 : styles.defaultParagraphStyle;
+		const style = (_valueOf7 = valueOf(properties, "w:pStyle")) !== null && _valueOf7 !== void 0 ? _valueOf7 : styles.defaultParagraphStyle;
 		return find(properties, "w:numPr") !== void 0 || styleChain(styles, style, "paragraph").some(({ numbering }) => (numbering === null || numbering === void 0 ? void 0 : numbering.id) !== void 0);
 	};
 	var JOINED_FORMATTING = {
@@ -5511,44 +5719,91 @@ var docxLayout = (function(exports) {
 		const space = (_twips5 = twips(attributes["w:space"])) !== null && _twips5 !== void 0 ? _twips5 : DEFAULT_COLUMN_SPACE;
 		return Array.from({ length: count }, () => (width - space * (count - 1)) / count);
 	};
+	var CHARACTER_SPACE_UNITS = 4096;
+	/** How wide a section's pages are, and their margins and gutter across them, in points */
+	var pageAcross = (properties) => {
+		var _twips6, _twips7, _margins$wLeft, _twips8, _margins$wRight, _twips9;
+		const margins = attributesOf(find(properties, "w:pgMar"));
+		return {
+			pageWidth: (_twips6 = twips(attributesOf(find(properties, "w:pgSz"))["w:w"])) !== null && _twips6 !== void 0 ? _twips6 : DEFAULT_SECTION.pageWidth,
+			left: (_twips7 = twips((_margins$wLeft = margins["w:left"]) !== null && _margins$wLeft !== void 0 ? _margins$wLeft : margins["w:start"])) !== null && _twips7 !== void 0 ? _twips7 : DEFAULT_SECTION.marginLeft,
+			right: (_twips8 = twips((_margins$wRight = margins["w:right"]) !== null && _margins$wRight !== void 0 ? _margins$wRight : margins["w:end"])) !== null && _twips8 !== void 0 ? _twips8 : DEFAULT_SECTION.marginRight,
+			gutter: (_twips9 = twips(margins["w:gutter"])) !== null && _twips9 !== void 0 ? _twips9 : DEFAULT_SECTION.gutter
+		};
+	};
+	/** How wide a section's text is: its page's, less its margins and a gutter beside it */
+	var textWidthOf = (properties, gutterAtTop) => {
+		const { pageWidth, left, right, gutter } = pageAcross(properties);
+		return pageWidth - left - right - (gutterAtTop ? 0 : gutter);
+	};
+	/**
+	* Reads a section's document grid (`w:docGrid`), or why it isn't followed yet. A grid of lines (`lines`) puts the lines
+	* of its paragraphs on lines of its pitch (`w:linePitch`), whatever its `w:charSpace`, and one without a pitch does nothing
+	* (scripts/layout-probes/word-grid.ts G13, word-grid3.ts H1). A grid of lines and characters (`linesAndChars`) adds
+	* `w:charSpace` after each character too, and one that snaps to characters (`snapToChars`) puts them in cells: as many
+	* as fit across a column at the size of the Normal style's text and `w:charSpace` more, spread evenly across it. On 9026
+	* twips at 10.5 points and a point more, 39 cells of 231.44 twips, at 12 points (the Normal style's, over the document's
+	* default of 10.5) 37 of 243.95, and in columns of 4153 at 10.5, 19 of 218.58 (CC1, CD1, `word-grid2.docx` E1, H7b). The
+	* document's grid of no type (`default`) is no grid, whatever its pitch.
+	*/
+	var readGrid = (element, normalSize, { gutterAtTop }) => {
+		var _numberOf7;
+		const properties = childrenOf(element);
+		const attributes = attributesOf(find(properties, "w:docGrid"));
+		const type = attributes["w:type"];
+		if (type !== "lines" && type !== "linesAndChars" && type !== "snapToChars") return;
+		const pitch = twips(attributes["w:linePitch"]);
+		const linePitch = pitch !== void 0 && pitch > 0 ? pitch : void 0;
+		if (type === "lines") return linePitch === void 0 ? void 0 : { linePitch };
+		if (linePitch === void 0) return "a document grid of characters without the pitch of its lines";
+		const space = ((_numberOf7 = numberOf(attributes["w:charSpace"])) !== null && _numberOf7 !== void 0 ? _numberOf7 : 0) / CHARACTER_SPACE_UNITS;
+		if (type === "linesAndChars") return _objectSpread2({ linePitch }, space === 0 ? {} : { characterSpace: space });
+		const columns = readColumns(find(properties, "w:cols"), textWidthOf(properties, gutterAtTop));
+		if (columns.some((width) => width !== columns[0])) return "a document grid that snaps to characters in columns of different widths";
+		const cells = normalSize + space > 0 ? Math.floor(columns[0] / (normalSize + space)) : 0;
+		return cells < 1 ? "a document grid of characters with no room for one" : {
+			linePitch,
+			characterPitch: columns[0] / cells
+		};
+	};
 	/**
 	* Reads a section's properties (`w:sectPr`): its pages, how it starts, and its headers and footers. A section that
 	* doesn't give a header or footer for a kind of page has the one of the section before. Its gutter is beside the text,
 	* or above it when the document puts it at the top, which takes the room from the page's height, as Word does
 	* (`word-watertight-settings.docx` ST3).
 	*/
-	var readSection = (element, readPart, previous, { gutterAtTop, mirrorMargins }) => {
-		var _stringOf, _twips6, _twips7, _margins$wLeft, _twips8, _margins$wRight, _twips9, _twips10, _twips11, _twips12, _twips13, _twips14, _CHAPTER_SEPARATORS$S;
+	var readSection = (element, readPart, previous, { gutterAtTop, mirrorMargins }, grid) => {
+		var _stringOf, _twips10, _twips11, _twips12, _twips13, _twips14, _CHAPTER_SEPARATORS$S;
 		const properties = childrenOf(element);
 		const size = attributesOf(find(properties, "w:pgSz"));
 		const margins = attributesOf(find(properties, "w:pgMar"));
 		const numbering = attributesOf(find(properties, "w:pgNumType"));
-		const grid = attributesOf(find(properties, "w:docGrid"))["w:type"];
 		const start = valueOf(properties, "w:type");
 		const format = (_stringOf = stringOf(numbering["w:fmt"])) !== null && _stringOf !== void 0 ? _stringOf : "decimal";
 		const firstNumber = numberOf(numbering["w:start"]);
 		const chapterLevel = numberOf(numbering["w:chapStyle"]);
-		const pageWidth = (_twips6 = twips(size["w:w"])) !== null && _twips6 !== void 0 ? _twips6 : DEFAULT_SECTION.pageWidth;
-		const marginLeft = (_twips7 = twips((_margins$wLeft = margins["w:left"]) !== null && _margins$wLeft !== void 0 ? _margins$wLeft : margins["w:start"])) !== null && _twips7 !== void 0 ? _twips7 : DEFAULT_SECTION.marginLeft;
-		const marginRight = (_twips8 = twips((_margins$wRight = margins["w:right"]) !== null && _margins$wRight !== void 0 ? _margins$wRight : margins["w:end"])) !== null && _twips8 !== void 0 ? _twips8 : DEFAULT_SECTION.marginRight;
-		const gutter = (_twips9 = twips(margins["w:gutter"])) !== null && _twips9 !== void 0 ? _twips9 : DEFAULT_SECTION.gutter;
+		const { pageWidth, left: marginLeft, right: marginRight, gutter } = pageAcross(properties);
 		const marginTop = (_twips10 = twips(margins["w:top"])) !== null && _twips10 !== void 0 ? _twips10 : DEFAULT_SECTION.marginTop;
-		const columns = readColumns(find(properties, "w:cols"), pageWidth - marginLeft - marginRight - (gutterAtTop ? 0 : gutter));
-		const unsupported = grid === "lines" || grid === "linesAndChars" || grid === "snapToChars" ? "a document grid" : formatPageNumber(1, format) === void 0 ? "page numbers in a format not yet written" : find(properties, "w:textDirection") !== void 0 ? "text that runs down the page" : find(properties, "w15:footnoteColumns") !== void 0 ? "footnotes in columns of their own" : gutterAtTop && gutter !== 0 && (mirrorMargins || marginTop < 0) ? "a gutter at the top with mirrored margins or a negative top margin" : unknownLengthIn(element);
+		const columns = readColumns(find(properties, "w:cols"), textWidthOf(properties, gutterAtTop));
+		const direction = valueOf(properties, "w:textDirection");
+		const down = downOf(properties);
+		const sectionStart = start !== void 0 && START_TYPES.has(start) ? start : "nextPage";
+		const marginBottom = (_twips11 = twips(margins["w:bottom"])) !== null && _twips11 !== void 0 ? _twips11 : DEFAULT_SECTION.marginBottom;
+		const unsupported = typeof grid === "string" ? grid : formatPageNumber(1, format) === void 0 ? "page numbers in a format not yet written" : direction !== void 0 && !HORIZONTAL_PAGES.has(direction) && down === void 0 ? "text in a direction not yet followed" : down !== void 0 && (gutter !== 0 || mirrorMargins || columns.length > 1 || Math.min(marginTop, marginBottom) < 0) ? "text that runs down the page with a gutter, mirrored margins, columns or a negative margin" : (previous === null || previous === void 0 ? void 0 : previous.textRunsDown) !== void 0 && (sectionStart === "continuous" || sectionStart === "nextColumn") ? "a continuous section break after text that runs down the page" : down !== void 0 && typeof grid === "object" && grid.characterPitch !== void 0 ? "a document grid that snaps to characters on text that runs down the page" : find(properties, "w15:footnoteColumns") !== void 0 ? "footnotes in columns of their own" : gutterAtTop && gutter !== 0 && (mirrorMargins || marginTop < 0) ? "a gutter at the top with mirrored margins or a negative top margin" : unknownLengthIn(element);
 		const headers = readReferences(properties, "w:headerReference", readPart);
 		const footers = readReferences(properties, "w:footerReference", readPart);
-		return _objectSpread2(_objectSpread2(_objectSpread2({
+		const section = _objectSpread2(_objectSpread2(_objectSpread2({
 			pageWidth,
-			pageHeight: (_twips11 = twips(size["w:h"])) !== null && _twips11 !== void 0 ? _twips11 : DEFAULT_SECTION.pageHeight,
+			pageHeight: (_twips12 = twips(size["w:h"])) !== null && _twips12 !== void 0 ? _twips12 : DEFAULT_SECTION.pageHeight,
 			marginTop,
-			marginBottom: (_twips12 = twips(margins["w:bottom"])) !== null && _twips12 !== void 0 ? _twips12 : DEFAULT_SECTION.marginBottom,
+			marginBottom,
 			marginLeft,
 			marginRight,
 			header: (_twips13 = twips(margins["w:header"])) !== null && _twips13 !== void 0 ? _twips13 : DEFAULT_SECTION.header,
 			footer: (_twips14 = twips(margins["w:footer"])) !== null && _twips14 !== void 0 ? _twips14 : DEFAULT_SECTION.footer,
 			gutter: gutterAtTop ? 0 : gutter,
 			topGutter: gutterAtTop ? gutter : 0,
-			start: start !== void 0 && START_TYPES.has(start) ? start : "nextPage",
+			start: down !== void 0 && sectionStart === "continuous" ? "nextPage" : sectionStart,
 			titlePage: onOff(properties, "w:titlePg") === true,
 			columns,
 			numberFormat: format
@@ -5559,7 +5814,24 @@ var docxLayout = (function(exports) {
 			headers: _objectSpread2(_objectSpread2({}, previous === null || previous === void 0 ? void 0 : previous.headers), headers),
 			footers: _objectSpread2(_objectSpread2({}, previous === null || previous === void 0 ? void 0 : previous.footers), footers)
 		}, unsupported ? { unsupported } : {});
+		return down === void 0 ? section : turned(section, down);
 	};
+	/**
+	* A section whose text runs down the page, with its page turned on its side, so that its lines run along it: from its top
+	* margin to its bottom one, as long as the page's text is tall, and across it from the right margin, or the left, each as
+	* far from the one before as it is tall, as Word lays them out (scripts/layout-probes/word-vertical.ts V1, V2, V6, V7).
+	* Its header and footer stay across the top and bottom of the page, and a header doesn't push its lines down (VH1)
+	*/
+	var turned = (section, textRunsDown) => _objectSpread2(_objectSpread2({}, section), {}, {
+		pageWidth: section.pageHeight,
+		pageHeight: section.pageWidth,
+		marginLeft: section.marginTop,
+		marginRight: section.marginBottom,
+		marginTop: textRunsDown === "fromLeft" ? section.marginLeft : section.marginRight,
+		marginBottom: textRunsDown === "fromLeft" ? section.marginRight : section.marginLeft,
+		columns: [section.pageHeight - section.marginTop - section.marginBottom],
+		textRunsDown
+	});
 	var NUMBER_ALIGNMENTS = {
 		left: void 0,
 		start: void 0,
@@ -5573,18 +5845,18 @@ var docxLayout = (function(exports) {
 	* pictures (`w:lvlPicBulletId`), and numbers laid out as Word 6 laid them out (`w:legacy`).
 	*/
 	var readLevel = (element, styles) => {
-		var _valueOf7, _numberOf7, _valueOf8, _stringOf2, _valueOf9, _numberOf8;
+		var _valueOf8, _numberOf8, _valueOf9, _stringOf2, _valueOf10, _numberOf9;
 		const children = childrenOf(element);
-		const jc = (_valueOf7 = valueOf(children, "w:lvlJc")) !== null && _valueOf7 !== void 0 ? _valueOf7 : "left";
+		const jc = (_valueOf8 = valueOf(children, "w:lvlJc")) !== null && _valueOf8 !== void 0 ? _valueOf8 : "left";
 		const restart = numberOf(attributesOf(find(children, "w:lvlRestart"))["w:val"]);
 		const unsupported = !(jc in NUMBER_ALIGNMENTS) ? "a list number aligned in a way not yet followed" : find(children, "w:lvlPicBulletId") !== void 0 ? "a list whose bullets are pictures" : isOn(attributesOf(find(children, "w:legacy"))["w:legacy"]) ? "a list numbered as Word 6 numbered lists" : void 0;
 		return {
-			index: (_numberOf7 = numberOf(attributesOf(element)["w:ilvl"])) !== null && _numberOf7 !== void 0 ? _numberOf7 : 0,
+			index: (_numberOf8 = numberOf(attributesOf(element)["w:ilvl"])) !== null && _numberOf8 !== void 0 ? _numberOf8 : 0,
 			level: _objectSpread2(_objectSpread2(_objectSpread2({}, withoutUndefined({ style: valueOf(children, "w:pStyle") })), {}, {
-				format: (_valueOf8 = valueOf(children, "w:numFmt")) !== null && _valueOf8 !== void 0 ? _valueOf8 : "decimal",
+				format: (_valueOf9 = valueOf(children, "w:numFmt")) !== null && _valueOf9 !== void 0 ? _valueOf9 : "decimal",
 				text: (_stringOf2 = stringOf(attributesOf(find(children, "w:lvlText"))["w:val"])) !== null && _stringOf2 !== void 0 ? _stringOf2 : "",
-				suffix: (_valueOf9 = valueOf(children, "w:suff")) !== null && _valueOf9 !== void 0 ? _valueOf9 : "tab",
-				start: (_numberOf8 = numberOf(attributesOf(find(children, "w:start"))["w:val"])) !== null && _numberOf8 !== void 0 ? _numberOf8 : 0
+				suffix: (_valueOf10 = valueOf(children, "w:suff")) !== null && _valueOf10 !== void 0 ? _valueOf10 : "tab",
+				start: (_numberOf9 = numberOf(attributesOf(find(children, "w:start"))["w:val"])) !== null && _numberOf9 !== void 0 ? _numberOf9 : 0
 			}, withoutUndefined({
 				alignment: NUMBER_ALIGNMENTS[jc],
 				restart,
@@ -5640,9 +5912,9 @@ var docxLayout = (function(exports) {
 				level
 			})), ...own]);
 			const starts = new Map(overrides.flatMap(({ index, children: given }) => {
-				var _numberOf9;
+				var _numberOf10;
 				const level = childrenOf(find(given, "w:lvl"));
-				const start = (_numberOf9 = numberOf(attributesOf(find(given, "w:startOverride"))["w:val"])) !== null && _numberOf9 !== void 0 ? _numberOf9 : numberOf(attributesOf(find(level, "w:start"))["w:val"]);
+				const start = (_numberOf10 = numberOf(attributesOf(find(given, "w:startOverride"))["w:val"])) !== null && _numberOf10 !== void 0 ? _numberOf10 : numberOf(attributesOf(find(level, "w:start"))["w:val"]);
 				return start === void 0 ? [] : [[index, start]];
 			}));
 			const list = _objectSpread2({
@@ -5894,7 +6166,7 @@ var docxLayout = (function(exports) {
 	* Reads a document's body (`w:body`), with the other parts of the document.
 	*/
 	var readContent = (body, parts, { guess = false } = {}) => {
-		var _parts$otherListIds, _parts$otherListIds2, _parts$settings, _ref19, _ref20, _ref21, _ref22, _documentContent$unsu;
+		var _parts$otherListIds, _parts$otherListIds2, _parts$settings, _fontOf$size, _ref23, _ref24, _ref25, _ref26, _ref27, _ref28, _documentContent$unsu;
 		const { styles } = parts;
 		const { lists: numbering, unsupported: inNumbering } = readNumbering(parts.numbering, styles, (_parts$otherListIds = parts.otherListIds) !== null && _parts$otherListIds !== void 0 ? _parts$otherListIds : /* @__PURE__ */ new Map());
 		const listIds = (_parts$otherListIds2 = parts.otherListIds) !== null && _parts$otherListIds2 !== void 0 ? _parts$otherListIds2 : /* @__PURE__ */ new Map();
@@ -5939,9 +6211,26 @@ var docxLayout = (function(exports) {
 			footnote: noteElements("footnote"),
 			endnote: noteElements("endnote")
 		};
+		const normalSize = (_fontOf$size = fontOf(combine([styles.run, ...styleChain(styles, styles.defaultParagraphStyle, "paragraph").map(({ run }) => run)])).size) !== null && _fontOf$size !== void 0 ? _fontOf$size : 10;
+		const pageSettings = {
+			gutterAtTop: onOff(settings, "w:gutterAtTop") === true,
+			mirrorMargins: onOff(settings, "w:mirrorMargins") === true
+		};
+		const grids = /* @__PURE__ */ new Map();
+		const sameGrid = (one, other) => JSON.stringify(one) === JSON.stringify(other);
+		/** The document grid of a section, by its index, when it has one that is followed */
+		const gridOf = (section) => {
+			if (!grids.has(section)) {
+				const grid = readGrid(sectionElements[section], normalSize, pageSettings);
+				grids.set(section, typeof grid === "object" ? grid : void 0);
+			}
+			return grids.get(section);
+		};
 		const readNoteContent = (kind, id, label) => {
 			const note = notesByKind[kind].get(id);
-			return note === void 0 ? [] : readBlocks(contentOf$2(note), _objectSpread2(_objectSpread2({}, readerOf(false)), {}, { inNote: true }, label === void 0 ? {} : { noteNumber: label }));
+			const grid = label === void 0 ? void 0 : gridOf(sections.length);
+			const down = label !== void 0 && downOf(childrenOf(sectionElements[sections.length])) !== void 0;
+			return note === void 0 ? [] : readBlocks(contentOf$2(note), _objectSpread2(_objectSpread2(_objectSpread2(_objectSpread2({}, readerOf(false)), {}, { inNote: true }, label === void 0 ? {} : { noteNumber: label }), grid === void 0 ? {} : { grid }), down ? { down } : {}));
 		};
 		/**
 		* A separator above the endnotes as Word lays it out: a line of its paragraph style's text, at single spacing and with
@@ -5969,6 +6258,7 @@ var docxLayout = (function(exports) {
 		const footnotes = /* @__PURE__ */ new Map();
 		const footnoteNumbers = /* @__PURE__ */ new Map();
 		const endnotes = [];
+		const endnoteSections = [];
 		const endnoteNumbers = /* @__PURE__ */ new Map();
 		const sectionElements = elements.flatMap((element) => {
 			const properties = sectionPropertiesOf(element);
@@ -6017,6 +6307,7 @@ var docxLayout = (function(exports) {
 			const content = readNoteContent(kind, id, label);
 			const marker = `${kind} ${noteCounts[kind]}`;
 			if (kind === "endnote") {
+				endnoteSections.push(sections.length);
 				endnotes.push(...content);
 				for (const block of content) endnoteNumbers.set(block, label);
 				endnoteReferences.set(marker, content);
@@ -6045,12 +6336,8 @@ var docxLayout = (function(exports) {
 		const blocks = [];
 		let bookmarks = [];
 		let hidden = [];
-		const pageSettings = {
-			gutterAtTop: onOff(settings, "w:gutterAtTop") === true,
-			mirrorMargins: onOff(settings, "w:mirrorMargins") === true
-		};
 		const addSection = (element) => {
-			sections.push(readSection(element, readPart, sections[sections.length - 1], pageSettings));
+			sections.push(readSection(element, readPart, sections[sections.length - 1], pageSettings, readGrid(element, normalSize, pageSettings)));
 		};
 		for (const element of elements) {
 			const name = nameOf(element);
@@ -6059,7 +6346,9 @@ var docxLayout = (function(exports) {
 				const bookmark = bookmarkOf(element);
 				bookmarks = bookmark === void 0 ? bookmarks : [...bookmarks, bookmark];
 			} else {
-				const block = readBlock(element, reader);
+				const grid = gridOf(sections.length);
+				const down = downOf(childrenOf(sectionElements[sections.length])) !== void 0;
+				const block = readBlock(element, _objectSpread2(_objectSpread2(_objectSpread2({}, reader), grid === void 0 ? {} : { grid }), down ? { down } : {}));
 				const sectionProperties = sectionPropertiesOf(element);
 				if ((block === null || block === void 0 ? void 0 : block.type) === "paragraph" && block.hidden) {
 					bookmarks = [...bookmarks, ...markersIn([block])];
@@ -6107,7 +6396,7 @@ var docxLayout = (function(exports) {
 			relativeReferences: markers.relative,
 			endnoteReferences
 		}, parts.fonts !== void 0 && parts.fonts.length > 0 ? { fonts: parts.fonts } : {}), readSettings(parts.settings));
-		return _objectSpread2(_objectSpread2({}, documentContent), withoutUndefined({ unsupported: (_ref19 = (_ref20 = (_ref21 = (_ref22 = (_documentContent$unsu = documentContent.unsupported) !== null && _documentContent$unsu !== void 0 ? _documentContent$unsu : styles.unsupported) !== null && _ref22 !== void 0 ? _ref22 : inNumbering) !== null && _ref21 !== void 0 ? _ref21 : footnotes.size > 0 ? notesUnsupported("footnote") : void 0) !== null && _ref20 !== void 0 ? _ref20 : endnotes.length > 0 ? notesUnsupported("endnote") : void 0) !== null && _ref19 !== void 0 ? _ref19 : unwrittenNumber ? "notes numbered in a format not yet written" : void 0 }));
+		return _objectSpread2(_objectSpread2({}, documentContent), withoutUndefined({ unsupported: (_ref23 = (_ref24 = (_ref25 = (_ref26 = (_ref27 = (_ref28 = (_documentContent$unsu = documentContent.unsupported) !== null && _documentContent$unsu !== void 0 ? _documentContent$unsu : styles.unsupported) !== null && _ref28 !== void 0 ? _ref28 : inNumbering) !== null && _ref27 !== void 0 ? _ref27 : footnotes.size > 0 ? notesUnsupported("footnote") : void 0) !== null && _ref26 !== void 0 ? _ref26 : endnotes.length > 0 ? notesUnsupported("endnote") : void 0) !== null && _ref25 !== void 0 ? _ref25 : [...endnoteSections, sections.length - 1].some((section) => sections[section].textRunsDown !== void 0) && endnotes.length > 0 ? "endnotes on text that runs down the page" : void 0) !== null && _ref24 !== void 0 ? _ref24 : endnoteSections.some((section) => !sameGrid(gridOf(section), gridOf(sections.length - 1))) ? "endnotes from a section on another document grid than the last" : void 0) !== null && _ref23 !== void 0 ? _ref23 : unwrittenNumber ? "notes numbered in a format not yet written" : void 0 }));
 	};
 	//#endregion
 	//#region src/layout/paginate.ts
@@ -6477,7 +6766,8 @@ var docxLayout = (function(exports) {
 					}) : measuring,
 					breakRules,
 					numberAlignment: paragraph.numberAlignment,
-					hyphenation
+					hyphenation,
+					grid: paragraph.grid
 				});
 				return guessed === void 0 ? laidOut : laidOut.map((line) => line.unsupported === void 0 ? _objectSpread2(_objectSpread2({}, line), {}, { unsupported: guessed }) : line);
 			};
@@ -6889,25 +7179,25 @@ var docxLayout = (function(exports) {
 			return text === void 0 ? {} : { pageNumber: text };
 		};
 		/**
-		* Whether the space a line's multiple spacing adds below its text can go below the bottom of the page, as Word lets it
-		* (`word-mixed-heights.docx` MH1c), for a line that fits only without it. Stops where Word hasn't shown it: in columns
-		* being evened out, above footnotes, which it would go into, and above a paragraph's border below. Guessing, it goes
-		* there too
+		* Whether the space a line's multiple spacing adds below its text, or a document grid leaves below it, can go below the
+		* bottom of the page, as Word lets it (`word-mixed-heights.docx` MH1c, `word-grid.docx` G1), for a line that fits only
+		* without it. Stops where Word hasn't shown it: in columns being evened out, above footnotes, which it would go into,
+		* and above a paragraph's border below. Guessing, it goes there too
 		*/
 		const hangsBelow = (aboveNotes, aboveBorder = false) => {
-			if ((balancing === null || balancing === void 0 ? void 0 : balancing.page) === pageCount) stopAt("columns evened out above a line whose multiple spacing goes below them");
-			if (aboveNotes) stopAt("a line whose multiple spacing goes below it into the footnotes");
-			if (aboveBorder) stopAt("a line whose multiple spacing goes below the page, above its paragraph's border");
+			if ((balancing === null || balancing === void 0 ? void 0 : balancing.page) === pageCount) stopAt("columns evened out above a line whose room below its text goes below them");
+			if (aboveNotes) stopAt("a line whose room below its text goes below it into the footnotes");
+			if (aboveBorder) stopAt("a line whose room below its text goes below the page, above its paragraph's border");
 			return true;
 		};
-		const partHeight = (parts, isFirst) => {
+		const partHeight = (parts, isFirst, width = textWidth()) => {
 			var _headerHeights$get, _bySection$get;
 			const kind = kindOf(parts, isFirst);
 			if (!kind) return 0;
 			const part = parts[kind];
 			part.forEach((block) => stopAtRead(block));
 			const bySection = (_headerHeights$get = headerHeights.get(part)) !== null && _headerHeights$get !== void 0 ? _headerHeights$get : /* @__PURE__ */ new Map();
-			const height = (_bySection$get = bySection.get(sectionIndex)) !== null && _bySection$get !== void 0 ? _bySection$get : stackHeight(part, textWidth(), false);
+			const height = (_bySection$get = bySection.get(sectionIndex)) !== null && _bySection$get !== void 0 ? _bySection$get : stackHeight(part, width, false);
 			headerHeights.set(part, bySection.set(sectionIndex, height));
 			return height;
 		};
@@ -6940,27 +7230,30 @@ var docxLayout = (function(exports) {
 			const first = isFirstOfSection || current.start === "continuous" && firstPages.get(sectionIndex) === pageCount && !sectionOnPage();
 			pageNumber = first && current.firstNumber !== void 0 ? current.firstNumber : ((_restart = restart) !== null && _restart !== void 0 ? _restart : pageNumber) + 1;
 			restart = void 0;
+			const down = current.textRunsDown;
+			const across = down === void 0 ? textWidth() : current.pageHeight - current.marginTop - current.marginBottom;
 			guessPage = pageCount + 1;
-			const headerBottom = current.header + partHeight(current.headers, first);
-			const footerTop = current.footer + partHeight(current.footers, first);
+			const headerBottom = current.header + partHeight(current.headers, first, across);
+			const footerTop = current.footer + partHeight(current.footers, first, across);
+			if (down !== void 0 && footerTop > current.marginRight + TOLERANCE) stopAt("a footer that goes above the bottom margin of text that runs down the page");
 			guessPage = void 0;
 			pageCount++;
 			const header = kindOf(current.headers, first);
 			const footer = kindOf(current.footers, first);
 			placements.push({
 				type: "page",
-				page: _objectSpread2(_objectSpread2(_objectSpread2({}, pageNumberOf(current)), {}, {
+				page: _objectSpread2(_objectSpread2(_objectSpread2(_objectSpread2({}, pageNumberOf(current)), {}, {
 					section: sectionIndex,
-					width: current.pageWidth,
-					height: current.pageHeight
-				}, header ? { header } : {}), footer ? { footer } : {})
+					width: down === void 0 ? current.pageWidth : current.pageHeight,
+					height: down === void 0 ? current.pageHeight : current.pageWidth
+				}, down === void 0 ? {} : { textRunsDown: down }), header ? { header } : {}), footer ? { footer } : {})
 			});
-			top = current.marginTop < 0 ? -current.marginTop : Math.max(current.marginTop + current.topGutter, headerBottom);
+			top = down !== void 0 ? current.marginTop : current.marginTop < 0 ? -current.marginTop : Math.max(current.marginTop + current.topGutter, headerBottom);
 			const endnotesOn = endnotesGoOn();
 			if (endnotesOn && current.columns.length > 1) stopAt(ENDNOTES_IN_COLUMNS);
 			const continuation = endnotesOn ? continuationHeight() : 0;
 			top += continuation;
-			pageBottom = current.pageHeight - (current.marginBottom < 0 ? -current.marginBottom : Math.max(current.marginBottom, footerTop)) + continuation;
+			pageBottom = current.pageHeight - (down !== void 0 ? current.marginBottom : current.marginBottom < 0 ? -current.marginBottom : Math.max(current.marginBottom, footerTop)) + continuation;
 			position = top;
 			column = 0;
 			columnTop = top;
@@ -9141,7 +9434,17 @@ var docxLayout = (function(exports) {
 		y: pixels(row.y),
 		height: pixels(row.height)
 	})) });
-	var notesInPixels = (notes) => notes.map((note) => _objectSpread2(_objectSpread2({}, note), {}, { content: note.content.map(inPixels) }));
+	/**
+	* A paragraph of a page of text that runs down it, with its lines where they are on the page, from where they were laid
+	* out along the page turned on its side: down the page from its top margin, across it from the right, or the left
+	*/
+	var upright = ({ textRunsDown, width }) => (block) => textRunsDown === void 0 || block.type !== "paragraph" ? block : _objectSpread2(_objectSpread2({}, block), {}, { lines: block.lines.map((line) => _objectSpread2(_objectSpread2({}, line), {}, {
+		x: textRunsDown === "fromLeft" ? line.y : width - line.y - line.height,
+		y: line.x,
+		width: line.height,
+		height: line.width
+	})) });
+	var notesInPixels = (notes, page) => notes.map((note) => _objectSpread2(_objectSpread2({}, note), {}, { content: note.content.map(upright(page)).map(inPixels) }));
 	/**
 	* Lays out a document's pages as Word does, and gives what is on each page: the lines of its paragraphs, with their text
 	* and where they are, the rows of its tables, its footnotes and endnotes, and which of its section's headers and footers
@@ -9170,9 +9473,9 @@ var docxLayout = (function(exports) {
 		return _objectSpread2({ pages: pages.map((page) => _objectSpread2(_objectSpread2({}, page), {}, {
 			width: pixels(page.width),
 			height: pixels(page.height),
-			body: page.body.map(inPixels),
-			footnotes: notesInPixels(page.footnotes),
-			endnotes: notesInPixels(page.endnotes)
+			body: page.body.map(upright(page)).map(inPixels),
+			footnotes: notesInPixels(page.footnotes, page),
+			endnotes: notesInPixels(page.endnotes, page)
 		})) }, stoppedAt === void 0 ? {} : { stoppedAt });
 	};
 	//#endregion

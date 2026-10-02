@@ -3526,7 +3526,7 @@ var docxShapes = (function(exports, docx) {
 		{
 			name: "Microsoft YaHei",
 			aliases: ["微软雅黑"],
-			lineHeight: 1714,
+			lineHeight: 1714.3,
 			descent: 460,
 			latin: "Arial"
 		},
@@ -3603,9 +3603,9 @@ var docxShapes = (function(exports, docx) {
 	* The East Asian font a font is, or is measured as, by its name. Undefined for other fonts.
 	*/
 	var eastAsianFontOf = (font) => {
-		var _knownEastAsianFontOf;
+		var _knownEastAsianFontOf2;
 		const similar = EAST_ASIAN_SANS.test(font) ? "MS Gothic" : "MS Mincho";
-		return (_knownEastAsianFontOf = knownEastAsianFontOf(font)) !== null && _knownEastAsianFontOf !== void 0 ? _knownEastAsianFontOf : EAST_ASIAN_NAME.test(font) ? EAST_ASIAN_FONTS.find((candidate) => candidate.name === similar) : void 0;
+		return (_knownEastAsianFontOf2 = knownEastAsianFontOf(font)) !== null && _knownEastAsianFontOf2 !== void 0 ? _knownEastAsianFontOf2 : EAST_ASIAN_NAME.test(font) ? EAST_ASIAN_FONTS.find((candidate) => candidate.name === similar) : void 0;
 	};
 	/** Whether a font is one for Chinese, Japanese or Korean text */
 	var isEastAsianFont = (font) => font !== void 0 && eastAsianFontOf(font) !== void 0;
@@ -4019,7 +4019,8 @@ var docxShapes = (function(exports, docx) {
 			verticalAlign: readVerticalAlign(valueOf(children, "w:vertAlign")),
 			position: pointsOf(attributesOf(find(children, "w:position"))["w:val"], 2),
 			emphasisMark: valueOf(children, "w:em"),
-			border: readBorder(find(children, "w:bdr"))
+			border: readBorder(find(children, "w:bdr")),
+			snapToGrid: onOff(children, "w:snapToGrid")
 		});
 	};
 	var readLineSpacing = (spacing) => {
@@ -4134,6 +4135,7 @@ var docxShapes = (function(exports, docx) {
 			kinsoku: onOff(children, "w:kinsoku"),
 			wordWrap: onOff(children, "w:wordWrap"),
 			suppressAutoHyphens: onOff(children, "w:suppressAutoHyphens"),
+			snapToGrid: onOff(children, "w:snapToGrid"),
 			alignment: ALIGNMENTS[(_valueOf = valueOf(children, "w:jc")) !== null && _valueOf !== void 0 ? _valueOf : ""]
 		});
 	};
@@ -4322,7 +4324,7 @@ var docxShapes = (function(exports, docx) {
 		circle: "above",
 		underDot: "below"
 	};
-	var plainFontOf = ({ font, size, bold, italic, kerning, characterSpacing, scale, position, border, emphasisMark }) => withoutUndefined({
+	var plainFontOf = ({ font, size, bold, italic, kerning, characterSpacing, scale, position, border, emphasisMark, snapToGrid }) => withoutUndefined({
 		font,
 		size,
 		bold,
@@ -4332,7 +4334,8 @@ var docxShapes = (function(exports, docx) {
 		scale,
 		raise: position === 0 ? void 0 : position,
 		border: textBorderOf(border),
-		emphasis: emphasisMark === void 0 ? void 0 : EMPHASIS[emphasisMark]
+		emphasis: emphasisMark === void 0 ? void 0 : EMPHASIS[emphasisMark],
+		snapToGrid: snapToGrid === false ? false : void 0
 	});
 	/**
 	* The parts of run formatting that change the font text is measured in: its font, size, boldness, character spacing and
