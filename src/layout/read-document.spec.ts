@@ -3079,6 +3079,11 @@ describe("readDocument", () => {
             ]);
             expect(negative.sections[0].unsupported).to.equal(STOP);
             expect(readWithSettings([p(r(t("a"))), direction("tbRl")], [{ "w:mirrorMargins": {} }]).sections[0].unsupported).to.equal(STOP);
+            // A grid that snaps to characters, whose cells are across the page, but not one of lines and characters (V3)
+            const gridded = (type: string): string | undefined =>
+                sectionOf("tbRl", { "w:docGrid": { _attr: { "w:type": type, "w:linePitch": 360, "w:charSpace": 4096 } } }).unsupported;
+            expect(gridded("snapToChars")).to.equal("a document grid that snaps to characters on text that runs down the page");
+            expect(gridded("linesAndChars")).to.equal(undefined);
 
             const down = (...paragraphs: readonly object[]): DocumentContent => readBody([...paragraphs, direction("tbRl")]);
             const mincho = (...more: readonly object[]): object =>

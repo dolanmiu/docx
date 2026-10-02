@@ -3131,11 +3131,15 @@ const readSection = (
                   ? "text that runs down the page with a gutter, mirrored margins, columns or a negative margin"
                   : previous?.textRunsDown !== undefined && (sectionStart === "continuous" || sectionStart === "nextColumn")
                     ? "a continuous section break after text that runs down the page"
-                    : find(properties, "w15:footnoteColumns") !== undefined
-                      ? "footnotes in columns of their own"
-                      : gutterAtTop && gutter !== 0 && (mirrorMargins || marginTop < 0)
-                        ? "a gutter at the top with mirrored margins or a negative top margin"
-                        : unknownLengthIn(element);
+                    : // A grid that snaps to characters measures its cells across the page, where these lines run down it, in a
+                      // way Word's PDFs haven't shown
+                      down !== undefined && typeof grid === "object" && grid.characterPitch !== undefined
+                      ? "a document grid that snaps to characters on text that runs down the page"
+                      : find(properties, "w15:footnoteColumns") !== undefined
+                        ? "footnotes in columns of their own"
+                        : gutterAtTop && gutter !== 0 && (mirrorMargins || marginTop < 0)
+                          ? "a gutter at the top with mirrored margins or a negative top margin"
+                          : unknownLengthIn(element);
     const headers = readReferences(properties, "w:headerReference", readPart);
     const footers = readReferences(properties, "w:footerReference", readPart);
     const section: Section = {
