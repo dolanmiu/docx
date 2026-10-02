@@ -3905,6 +3905,29 @@ describe("readDocument", () => {
             expect(content.blocks.map(({ block }) => block.unsupported)).to.deep.equal([undefined, undefined, undefined]);
         });
 
+        it("should start the bookmarks in paragraphs whose text and marks are all hidden at the end of the document where its text ends", () => {
+            const hiddenParagraph = (name: string): object => p(pPr(hiddenMark), bookmark(name), r(hiddenMark, t("x")));
+            const lastItems = (...elements: readonly object[]): readonly LayoutItem[] => {
+                const { block } = readBody(elements).blocks.at(-1)!;
+                const paragraph = block.type === "paragraph" ? block : (block.rows.at(-1)!.cells.at(-1)!.blocks.at(-1) as ParagraphBlock);
+                return paragraph.items;
+            };
+            // After the last line of a paragraph, or of a table's last cell
+            expect(lastItems(p(r(t("a"))), hiddenParagraph("one"), hiddenParagraph("two")).slice(-2)).to.deep.equal([
+                { type: "marker", name: "one" },
+                { type: "marker", name: "two" },
+            ]);
+            expect(lastItems(fixedTableOf(cellOf(p(r(t("a"))))), hiddenParagraph("cell")).at(-1)).to.deep.equal({
+                type: "marker",
+                name: "cell",
+            });
+            // A table with no paragraph in its last cell has nowhere for them to start, and a bookmark after the last block
+            // isn't in a paragraph left out
+            const empty = readBody([fixedTableOf(cellOf()), hiddenParagraph("none")]).blocks.at(-1)!.block as TableBlock;
+            expect(empty.rows[0].cells[0].blocks).to.deep.equal([]);
+            expect(lastItems(p(r(t("a"))), bookmark("after")).map(({ type }) => type)).to.deep.equal(["text"]);
+        });
+
         it("should give a paragraph whose text and mark are all hidden no room before a table and at the end of the document, and a line at the end of a table cell", () => {
             const hiddenParagraph = (...children: readonly object[]): object => p(pPr(hiddenMark), r(hiddenMark, ...children));
             const content = readBody([

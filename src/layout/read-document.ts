@@ -2136,6 +2136,25 @@ const startingAtFirst = (blocks: readonly Block[], bookmarks: readonly string[])
 };
 
 /**
+ * A block with bookmarks that start where its text ends: after its last item, or, for a table, in the last paragraph of
+ * its last cell. Undefined when it has no paragraph for them to start in, as a table without rows.
+ */
+const endingWith = (block: Block, bookmarks: readonly string[]): Block | undefined => {
+    if (block.type === "paragraph") {
+        return { ...block, items: [...block.items, ...bookmarks.map((name) => ({ type: "marker" as const, name }))] };
+    }
+    const row = block.rows[block.rows.length - 1];
+    const cell = row?.cells[row.cells.length - 1];
+    const last = cell?.blocks[cell.blocks.length - 1];
+    const marked = last && endingWith(last, bookmarks);
+    if (marked === undefined) {
+        return undefined;
+    }
+    const cells = [...row.cells.slice(0, -1), { ...cell, blocks: [...cell.blocks.slice(0, -1), marked] }];
+    return { ...block, rows: [...block.rows.slice(0, -1), { ...row, cells }] };
+};
+
+/**
  * Reads a paragraph or table, or what is in its place and can't be laid out: an imported document, an equation outside
  * a paragraph, or a content control bound to custom XML. Undefined for anything else, and for a table all of whose rows
  * are deleted in a tracked change.
@@ -3275,6 +3294,14 @@ export const readContent = (body: XmlObject, parts: DocumentParts): DocumentCont
                 addSection(sectionProperties);
             }
         }
+    }
+    // The bookmarks of paragraphs left out at the end of the document, which take no room after its last line
+    // (`word-hidden-paragraphs.docx` HP8), start where its text ends
+    const final = blocks[blocks.length - 1];
+    const ending = hidden.length > 0 && final !== undefined ? endingWith(final.block, bookmarks) : undefined;
+    if (ending !== undefined) {
+        // eslint-disable-next-line functional/immutable-data
+        blocks[blocks.length - 1] = { ...final, block: ending };
     }
     if (sections.length === 0 || blocks.some(({ section }) => section >= sections.length)) {
         addSection(undefined);
