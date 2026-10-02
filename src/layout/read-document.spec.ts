@@ -2891,6 +2891,37 @@ describe("readDocument", () => {
             expect(textOf(content, 1)).to.equal("2");
         });
 
+        it("should count each page reference with \\p once, as docx counts them: not again in a cell read to size its table, nor in deleted text, but in a deleted row", () => {
+            const relative = (fieldOf: (type: string) => object, instructionOf: object): readonly object[] => [
+                fieldOf("begin"),
+                instructionOf,
+                fieldOf("separate"),
+                fieldOf("end"),
+            ];
+            const deletedField = (type: string): object => r({ "w:fldChar": { _attr: { "w:fldCharType": type } } });
+            const content = readBody([
+                tableOf(
+                    [],
+                    row(
+                        [],
+                        cell(
+                            p(
+                                ...relative(field, instruction("PAGEREF a \\p")),
+                                { "w:del": relative(deletedField, r({ "w:delInstrText": ["PAGEREF a \\p"] })) },
+                                { "w:del": [{ "w:fldSimple": [{ _attr: { "w:instr": "PAGEREF a \\p" } }] }] },
+                            ),
+                        ),
+                    ),
+                    row([], cell(p(r(t("plain"))))),
+                    row([deletedRow], cell(p(...relative(field, instruction("PAGEREF a \\p"))))),
+                ),
+                p(...relative(field, instruction("PAGEREF a \\p"))),
+            ]);
+            // The cell is read to size the columns with its deleted text, and again to be laid out, with the same markers
+            expect((content.blocks[0].block as TableBlock).rows[0].cells[0].sizing).not.to.equal(undefined);
+            expect(Object.fromEntries(content.relativeReferences)).to.deep.equal({ a: ["field 1", "field 2", "field 3"] });
+        });
+
         it("should mark what isn't known of how Word sizes a table's columns by tracked changes as unsupported", () => {
             const sized = (...paragraphs: readonly object[]): string | undefined =>
                 readBody([tableOf([], row([], cell(...paragraphs)))]).blocks[0].block.unsupported;
