@@ -5522,6 +5522,12 @@ describe("paginate", () => {
                 [70, 10, 120],
                 [50, 20, 140],
             ]);
+            // A line whose only room beside a drawing its indents leave none of goes below the drawing
+            const wide = floating({ width: 140, horizontal: { from: "margin", align: "left" } });
+            expect(roomsOf([prose("a", 3, [wide], { indentRight: 50 })])[0]).to.deep.equal([
+                [10, 40, 130],
+                [10, 50, 130],
+            ]);
             // Lines the indents leave no room are as they are without the drawing
             expect(roomsOf([prose("a", 1, [floating()], { indentLeft: 100, indentRight: 100 })])[0]).to.deep.equal([[110, 10, -20]]);
         });

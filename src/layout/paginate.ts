@@ -2506,7 +2506,7 @@ export const paginate = (
          * The room of each line of a row from `y`, `height` tall, its first line `line`, beside some drawings: the room beside
          * them, in the paragraph's indents, which start at a drawing's edge when it is further in, with the first line
          * indented from there (`word-floats.docx` F30). None when its indents leave it no room, as they would without the
-         * drawings, or how far down it goes below the drawings when they leave it none (`below`)
+         * drawings, or how far down it goes below the drawings when they leave it none in its indents (`below`)
          */
         const roomOfRow = (
             around: readonly PlacedDrawing[],
@@ -2524,6 +2524,16 @@ export const paginate = (
                     end: Math.min(span.end - left, within.end - left - indentRight),
                 }))
                 .filter((span) => span.end > span.start + TOLERANCE);
+            const ownRoom = within.end - left - indentRight - (indentLeft + (line === 0 ? firstLineIndent : 0)) > TOLERANCE;
+            if (spans.length === 0 && ownRoom) {
+                // The room beside the drawings is outside the paragraph's indents, so the line goes below them, as it does
+                // when they leave it no room at all
+                const besideLine = around.filter(
+                    ({ keepOut }) =>
+                        keepOut.top < y + height && y < keepOut.bottom && keepOut.left < within.end && within.start < keepOut.right,
+                );
+                return { below: Math.min(...besideLine.map(({ keepOut }) => keepOut.bottom)) };
+            }
             return { spans };
         };
         /** Whether a row's only room is all of the paragraph's, as a line not beside a drawing has */
