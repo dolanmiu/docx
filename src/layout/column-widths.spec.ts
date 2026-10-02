@@ -474,6 +474,33 @@ describe("tableWidths", () => {
         });
     });
 
+    it("should count a table whose cells all have widths as it is laid out in its own width", () => {
+        // Widened for a long word, then in proportion to its width, as Word's SP15b; and with rows evened out, as SP14
+        const widened: TableBlock = { ...table([[cell(0, "aaaaaa", 30), cell(1, LONG, 60)]]), fit: undefined, widen: { width: 260 } };
+        expect(tableWidths({ ...widened, ...borders }, measure)).to.deep.equal({ min: 261.5, max: 261.5 });
+        const uneven: TableBlock = {
+            ...table([
+                [cell(0, "a", 100), cell(1, "b", 250)],
+                [cell(0, "a", 150), cell(1, "b", 150)],
+            ]),
+            fit: undefined,
+            widen: { width: 300, uneven: true },
+        };
+        expect(tableWidths(uneven, measure)).to.deep.equal({ min: 300, max: 300 });
+        // As its cells give it when its widths can't be worked out, as the layout stops at it: a long word in a table laid
+        // out fixed whose rows disagree
+        const read = (column: number, text: string, own: number): Cell => ({ ...cell(column, text, own), width: own - 10 });
+        const unknown: TableBlock = {
+            ...table([
+                [read(0, "aaaaaaaaaaaaaaaaa", 100), read(1, "b", 300)],
+                [read(0, "a", 150), read(1, "b", 150)],
+            ]),
+            fit: undefined,
+            widen: { width: 300, uneven: true, fixed: true },
+        };
+        expect(tableWidths(unknown, measure)).to.deep.equal({ min: 400, max: 400 });
+    });
+
     it("should count a table with a width of its own as that wide, and one not sized to its text as its cells", () => {
         expect(tableWidths({ ...table([[cell(0, "a")]], { width: 100 }), ...borders }, measure)).to.deep.equal({ min: 101.5, max: 101.5 });
         const fixed: TableBlock = {

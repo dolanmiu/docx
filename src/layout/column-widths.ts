@@ -259,13 +259,15 @@ export const fitColumns = (table: TableBlock, available: number, measure: Measur
 /**
  * How narrow and how wide a table in a table cell is, as Word counts it to size the cell's column (`word-probes.docx` U1n
  * to U1t): its own width in points, or, sized to its text, its columns' widest words and widest lines added up, or the
- * widths of its cells added up. Half of each of its left and right borders is outside its columns.
+ * widths of its cells added up, as they are laid out in its own width when it has one (`word-watertight-stops.docx` SP14,
+ * SP15). Half of each of its left and right borders is outside its columns.
  *
  * @param measure - How narrow and how wide the content of a cell can be, in points
  */
 export const tableWidths = (table: TableBlock, measure: Measure): ContentWidths => {
-    const { fit, borderLeft = 0, borderRight = 0 } = table;
-    const rows = sizingRows(table);
+    const { fit, widen, borderLeft = 0, borderRight = 0 } = table;
+    const laidOut = widen?.width === undefined ? table : fitColumns(table, widen.width, measure);
+    const rows = laidOut === table || laidOut.unsupported !== undefined ? sizingRows(table) : laidOut.rows;
     const borders = (borderLeft + borderRight) / 2;
     if (fit !== undefined && fit.width === undefined) {
         const { columns } = sizeColumns(table, measureCells(table, measure));
