@@ -3,6 +3,7 @@ import { describe, expect, it, vi } from "vitest";
 
 import { Formatter } from "@export/formatter";
 import { File } from "@file/file";
+import { Table, TableCell, TableRow, WidthType } from "@file/table";
 import {
     Bookmark,
     Document,
@@ -13,6 +14,7 @@ import {
     type IFrameOptions,
     type IPropertiesOptions,
     type IXmlableObject,
+    LineRuleType,
     Packer,
     PageBreak,
     PageNumber,
@@ -129,6 +131,53 @@ describe("estimatePageNumbers", () => {
             ],
         });
         expect(pages).to.deep.include({ h0: "1", h1: "1", h2: "1" });
+    });
+
+    it("should give no page numbers when they still change after three passes, rather than numbers that may be wrong", () => {
+        // Lines of 300 points, two to a page, and a page reference as wide as a line when it says 1, and as narrow as nothing
+        // when it says 2 or nothing, so the bookmark after it is on page 2 when it says 1, and on page 1 when it says 2
+        const line = { line: 6000, lineRule: LineRuleType.EXACT };
+        const options: IPropertiesOptions = {
+            sections: [
+                {
+                    children: [
+                        new Paragraph({ spacing: line, children: [new TextRun("On page"), new PageReference("target")] }),
+                        new Paragraph({ spacing: line, children: [new Bookmark({ id: "target", children: [new TextRun("Target")] })] }),
+                    ],
+                },
+            ],
+        };
+        const changing = estimatePageNumbersWith({ measureWidth: (text) => (text === "1" ? 1000 : text.length) });
+        expect(estimateOf(options, changing)).to.deep.equal({ bookmarks: new Map() });
+        expect(pageNumbersOf(options, estimatePageNumbersWith({ measureWidth: (text) => text.length }))).to.deep.equal({ target: "1" });
+    });
+
+    it("should lay out a document without sections on a page of Word's defaults, and write it", async () => {
+        expect(estimateOf({ sections: [] })).to.deep.equal({ bookmarks: new Map(), pageCount: 1, sectionPageCounts: [1] });
+        const written = await Packer.toBuffer(new Document({ pageNumbers: estimatePageNumbers, sections: [] }));
+        expect((await JSZip.loadAsync(written)).file("word/document.xml")).not.to.equal(null);
+    });
+
+    it("should leave the bookmarks after a table that text flows around without page numbers, as Word puts the text after it beside it", () => {
+        // word-watertight-tables.docx TB11: the lines after the table start beside it, 3220 twips in, where docx/layout would
+        // lay them out below it
+        const pages = pageNumbersOf({
+            sections: [
+                {
+                    children: [
+                        heading("Before", "before"),
+                        new Table({
+                            width: { size: 3000, type: WidthType.DXA },
+                            columnWidths: [3000],
+                            float: { horizontalAnchor: "margin", verticalAnchor: "text", rightFromText: 200 },
+                            rows: [new TableRow({ children: [new TableCell({ children: [new Paragraph("Floating")] })] })],
+                        }),
+                        heading("After", "after"),
+                    ],
+                },
+            ],
+        });
+        expect(pages).to.deep.equal({ before: "1" });
     });
 
     it("should leave the bookmarks after something it can't lay out without page numbers", () => {

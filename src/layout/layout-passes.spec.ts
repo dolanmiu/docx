@@ -1,0 +1,53 @@
+import { describe, expect, it } from "vitest";
+
+import { Formatter } from "@export/formatter";
+import { File } from "@file/file";
+import { Bookmark, type IContext, LineRuleType, PageReference, Paragraph, TextRun } from "docx";
+
+import { layOutPasses } from "./layout-passes";
+import { measurerOf } from "./measure-width";
+import { type DocumentContent, readDocument } from "./read-document";
+
+/** A document's content, read as it is written */
+const contentOf = (children: readonly Paragraph[]): DocumentContent => {
+    let content: DocumentContent | undefined;
+    const file = new File({
+        sections: [{ children }],
+        pageNumbers: (body, context) => {
+            content = readDocument(body, context);
+            return { bookmarks: new Map() };
+        },
+    });
+    new Formatter().format(file.Document.View, { file, viewWrapper: file.Document, stack: [] } as unknown as IContext);
+    return content!;
+};
+
+describe("layOutPasses", () => {
+    // Lines of 300 points, two to a page, and a page reference as wide as a line when it says 1, and as narrow as nothing
+    // when it says 2 or nothing, so the bookmark after it is on page 2 when it says 1, and on page 1 when it says 2
+    const line = { line: 6000, lineRule: LineRuleType.EXACT };
+    const content = contentOf([
+        new Paragraph({ spacing: line, children: [new TextRun("On page"), new PageReference("target")] }),
+        new Paragraph({ spacing: line, children: [new Bookmark({ id: "target", children: [new TextRun("Target")] })] }),
+    ]);
+    const textOf = ({ pages }: ReturnType<typeof layOutPasses>): readonly string[] =>
+        pages.flatMap(({ body }) => body.flatMap((block) => (block.type === "paragraph" ? block.lines.map(({ text }) => text) : [])));
+
+    it("should give the last pass, as settled, when its page numbers are those of the pass before", () => {
+        const passes = layOutPasses(
+            content,
+            measurerOf((text) => text.length),
+        );
+        expect(passes.settled).to.equal(true);
+        expect(textOf(passes)).to.deep.equal(["On page1", "Target"]);
+    });
+
+    it("should give the first pass, laid out without page numbers, as not settled, when they still change after three passes", () => {
+        const passes = layOutPasses(
+            content,
+            measurerOf((text) => (text === "1" ? 1000 : text.length)),
+        );
+        expect(passes.settled).to.equal(false);
+        expect(textOf(passes)).to.deep.equal(["On page", "Target"]);
+    });
+});

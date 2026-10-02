@@ -231,6 +231,25 @@ describe("readDocument", () => {
             expect(equation.items).to.deep.equal([]);
             expect(paragraphOf(readBody([p({ "m:oMathPara": [] })])).unsupported).to.equal("an equation");
         });
+
+        it("should stop at text with a phonetic guide, a content part, text fitted to a width, two lines in one, text across in vertical text, a subdocument and a paragraph in an HTML division", () => {
+            const unsupportedOf = (...children: readonly unknown[]): string | undefined =>
+                paragraphOf(readBody([p(...children)])).unsupported;
+            // Its text would be lost, as it is in the guide and its base
+            const ruby = { "w:ruby": [{ "w:rubyPr": [] }, { "w:rt": [r(t("guide"))] }, { "w:rubyBase": [r(t("base"))] }] };
+            expect(unsupportedOf(r(ruby))).to.equal("text with a phonetic guide");
+            expect(unsupportedOf(r({ "w:contentPart": { _attr: { "r:id": "rId9" } } }))).to.equal("a content part, such as ink");
+            expect(unsupportedOf(r(rPr({ "w:fitText": { _attr: { "w:val": 2000 } } }), t("fitted")))).to.equal("text fitted to a width");
+            const layout = (attributes: object): object => r(rPr({ "w:eastAsianLayout": { _attr: attributes } }), t("ab"));
+            expect(unsupportedOf(layout({ "w:combine": 1 }))).to.equal("two lines in one");
+            expect(unsupportedOf(layout({ "w:vert": "true" }))).to.equal("text across in vertical text");
+            // With neither on, the run is laid out as it is
+            expect(unsupportedOf(layout({ "w:id": 1, "w:combine": "off" }))).to.equal(undefined);
+            // A run with nothing in it but its formatting has nothing to lay out
+            expect(unsupportedOf(r(rPr({ "w:fitText": { _attr: { "w:val": 2000 } } })))).to.equal(undefined);
+            expect(unsupportedOf({ "w:subDoc": { _attr: { "r:id": "rId9" } } })).to.equal("a subdocument");
+            expect(unsupportedOf(pPr(value("w:divId", 12)), r(t("web")))).to.equal("a paragraph in an HTML division");
+        });
     });
 
     describe("footnotes and endnotes", () => {
@@ -901,10 +920,107 @@ describe("readDocument", () => {
         it("should mark a table with something unsupported in a cell as unsupported", () => {
             const content = readBody([{ "w:tbl": [{ "w:tr": [{ "w:tc": [p({ "m:oMath": [] })] }] }] }]);
             expect((content.blocks[0].block as TableBlock).unsupported).to.equal("an equation");
+            // An equation outside a paragraph too
+            const outside = readBody([{ "w:tbl": [{ "w:tr": [{ "w:tc": [{ "m:oMath": [] }] }] }] }]);
+            expect((outside.blocks[0].block as TableBlock).unsupported).to.equal("an equation");
+        });
+
+        it("should stop at a table that text flows around, a row in an HTML division, and cells merged the old way, whose text doesn't wrap or that fit their text to them", () => {
+            const unsupportedOf = (
+                table: readonly unknown[],
+                row: readonly unknown[],
+                ...cells: readonly (readonly unknown[])[]
+            ): unknown =>
+                (
+                    readBody([
+                        {
+                            "w:tbl": [
+                                { "w:tblPr": table },
+                                { "w:tr": [{ "w:trPr": row }, ...cells.map((properties) => cell(properties, p()))] },
+                            ],
+                        },
+                    ]).blocks[0].block as TableBlock
+                ).unsupported;
+            expect(unsupportedOf([], [], [])).to.equal(undefined);
+            // Word puts the text after a floating table beside it (word-watertight-tables.docx TB11)
+            expect(unsupportedOf([{ "w:tblpPr": { _attr: { "w:tblpY": 0, "w:vertAnchor": "text" } } }], [], [])).to.equal(
+                "a table that text flows around",
+            );
+            expect(unsupportedOf([], [value("w:divId", 3)], [])).to.equal("a table row in an HTML division");
+            expect(unsupportedOf([], [], [value("w:hMerge", "restart")])).to.equal(
+                "cells merged across columns as old versions of Word wrote them",
+            );
+            expect(unsupportedOf([], [], [{ "w:noWrap": {} }])).to.equal("a table cell whose text doesn't wrap");
+            expect(unsupportedOf([], [], [value("w:noWrap", "false")])).to.equal(undefined);
+            expect(unsupportedOf([], [], [{ "w:tcFitText": {} }])).to.equal("text fitted to its table cell");
+            // The first of them in the row
+            expect(unsupportedOf([], [], [], [{ "w:tcFitText": {} }], [{ "w:noWrap": {} }])).to.equal("text fitted to its table cell");
+        });
+
+        it("should start a bookmark before a row in the row's first cell, and one before a cell in the cell, and leave out those after the last", () => {
+            const bookmark = (name: string): object => ({ "w:bookmarkStart": { _attr: { "w:name": name, "w:id": 1 } } });
+            const content = readBody([
+                {
+                    "w:tbl": [
+                        { "w:tblPr": [] },
+                        bookmark("first"),
+                        { "w:tr": [cell([], p(r(t("a1")))), bookmark("second"), cell([], p(r(t("a2"))))] },
+                        { "w:customXml": [bookmark("row")] },
+                        {
+                            "w:tr": [
+                                { "w:trPr": [] },
+                                bookmark("cell"),
+                                cell(
+                                    [],
+                                    bookmark("text"),
+                                    // A table without rows has no text to start them, so they start with the paragraph after
+                                    { "w:tbl": [] },
+                                    p(r(t("b1"))),
+                                    bookmark("between"),
+                                    p(r(t("b2"))),
+                                    bookmark("cellEnd"),
+                                ),
+                                bookmark("rowEnd"),
+                            ],
+                        },
+                        bookmark("tableEnd"),
+                    ],
+                },
+            ]);
+            const table = content.blocks[0].block as TableBlock;
+            expect(
+                table.rows.map(({ cells }) =>
+                    cells.map(({ blocks }) =>
+                        blocks.map((block) =>
+                            block.type === "table" ? "table" : block.items.flatMap((item) => (item.type === "marker" ? [item.name] : [])),
+                        ),
+                    ),
+                ),
+            ).to.deep.equal([[[["first"]], [["second"]]], [["table", ["row", "cell", "text"], ["between"]]]]);
         });
     });
 
     describe("the body", () => {
+        it("should stop at an equation outside a paragraph, and at a content control bound to custom XML, which Word fills in from it, wherever it is", () => {
+            const bound = (...content: readonly unknown[]): object => ({
+                "w:sdt": [
+                    { "w:sdtPr": [{ "w:dataBinding": { _attr: { "w:xpath": "/properties/title", "w:storeItemID": "{1}" } } }] },
+                    { "w:sdtContent": content },
+                ],
+            });
+            const unsupportedOf = (element: unknown): string | undefined => readBody([element]).blocks[0].block.unsupported;
+            expect(unsupportedOf({ "m:oMathPara": [] })).to.equal("an equation");
+            expect(unsupportedOf(bound(p(r(t("Title")))))).to.equal("a content control filled from custom XML");
+            expect(unsupportedOf(p(bound(r(t("Title")))))).to.equal("a content control filled from custom XML");
+            const cell = { "w:tc": [p()] };
+            expect(unsupportedOf({ "w:tbl": [{ "w:tr": [{ "w:tc": [bound(p())] }] }] })).to.equal(
+                "a content control filled from custom XML",
+            );
+            expect(unsupportedOf({ "w:tbl": [bound({ "w:tr": [cell] })] })).to.equal("a content control filled from custom XML");
+            expect(unsupportedOf({ "w:tbl": [{ "w:tr": [cell, bound(cell)] }] })).to.equal("a content control filled from custom XML");
+            expect(unsupportedOf({ "w:sdt": [{ "w:sdtPr": [] }, { "w:sdtContent": [p(r(t("Title")))] }] })).to.equal(undefined);
+        });
+
         it("should read the blocks in content controls and custom XML, and mark imported documents as unsupported", () => {
             const content = readBody([
                 { "w:sdt": [{ "w:sdtPr": [] }, { "w:sdtContent": [p(r(t("controlled")))] }] },
@@ -919,13 +1035,21 @@ describe("readDocument", () => {
             ).to.deep.equal(["controlled", "custom", "an imported document"]);
         });
 
-        it("should start a bookmark between blocks with the next paragraph", () => {
+        it("should start a bookmark between blocks with the next: a paragraph, or the first cell of a table, where its text starts", () => {
             const content = readBody([
-                { "w:bookmarkStart": { _attr: { "w:name": "before", "w:id": 1 } } },
-                { "w:tbl": [{ "w:tr": [{ "w:tc": [p()] }] }] },
+                { "w:bookmarkStart": { _attr: { "w:name": "table", "w:id": 1 } } },
+                { "w:tbl": [{ "w:tr": [{ "w:tc": [{ "w:tbl": [{ "w:tr": [{ "w:tc": [p(r(t("in")))] }] }] }, p()] }] }] },
+                // A table without rows has no text to start a bookmark, so it starts with the paragraph after
+                { "w:bookmarkStart": { _attr: { "w:name": "paragraph", "w:id": 2 } } },
+                { "w:tbl": [] },
+                { "w:bookmarkStart": { _attr: { "w:id": 3 } } },
                 p(r(t("a"))),
             ]);
-            expect(itemsOf(content, 1)[0]).to.deep.equal({ type: "marker", name: "before" });
+            const table = content.blocks[0].block as TableBlock;
+            const inner = table.rows[0].cells[0].blocks[0] as TableBlock;
+            expect((inner.rows[0].cells[0].blocks[0] as ParagraphBlock).items[0]).to.deep.equal({ type: "marker", name: "table" });
+            expect(itemsOf(content, 2)[0]).to.deep.equal({ type: "marker", name: "paragraph" });
+            expect(itemsOf(content, 2)).to.have.length(2);
         });
 
         it("should mark an empty paragraph that holds its section's properties as a section break", () => {
@@ -1048,6 +1172,9 @@ describe("readDocument", () => {
             );
             expect(section({ "w:textDirection": { _attr: { "w:val": "tbRl" } } }).sections[0].unsupported).to.equal(
                 "text that runs down the page",
+            );
+            expect(section({ "w15:footnoteColumns": { _attr: { "w:val": 2 } } }).sections[0].unsupported).to.equal(
+                "footnotes in columns of their own",
             );
         });
 
@@ -1182,6 +1309,16 @@ describe("readDocument", () => {
             );
             expect(readSettings(value("w:characterSpacingControl", "compressPunctuation")).unsupported).to.equal("punctuation compressed");
             expect(readSettings(value("w:characterSpacingControl", "doNotCompress")).unsupported).to.equal(undefined);
+        });
+
+        it("should mark a document printed as a folded booklet or two pages to a sheet, or whose styles Word updates from its template, as unsupported", () => {
+            expect(readSettings({ "w:bookFoldPrinting": {} }).unsupported).to.equal("pages printed as a folded booklet");
+            expect(readSettings({ "w:bookFoldRevPrinting": {} }).unsupported).to.equal("pages printed as a folded booklet");
+            expect(readSettings({ "w:printTwoOnOne": {} }).unsupported).to.equal("two pages printed on each sheet");
+            expect(readSettings({ "w:linkStyles": {} }).unsupported).to.equal(
+                "styles updated from the document's template when Word opens it",
+            );
+            expect(readSettings(value("w:bookFoldPrinting", "false"), value("w:linkStyles", 0)).unsupported).to.equal(undefined);
         });
 
         it("should mark a document in the compatibility mode of a version of Word before 2013 as unsupported", () => {

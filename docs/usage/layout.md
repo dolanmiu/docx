@@ -192,7 +192,7 @@ The pages are laid out with the widths and heights of the characters of the font
 
 It stops at the first thing it can't lay out yet, and the page numbers of the headings and bookmarks after it are left blank, until the fields are updated in Word (see [Opening the document in Word](#opening-the-document-in-word)):
 
-- a picture or shape that text wraps around, a text box, or a text frame
+- a picture, shape or table that text wraps around (a table's `float`), a text box, or a text frame
 - an equation
 - a footnote that continues on the next page where it would break in a paragraph kept together or with the next, or in a table with header rows or a row of more than one line; one that continues from a paragraph kept with a longer one or a table, or onto a page of its own after a section break; and a footnote line, or a line and the start of its footnote, taller than a page
 - a paragraph kept together that is taller than a column, in columns of different widths, and a paragraph kept with the next before a paragraph kept together that is taller than a column, when that one would move to a new page without it
@@ -209,6 +209,9 @@ It stops at the first thing it can't lay out yet, and the page numbers of the he
 - page numbers in Thai and Hindi words (`thaiCounting` and `hindiCounting`), and page numbers Word writes as an error: any in `none`, 0 in Hebrew, Arabic, Thai and Hindi digits and Chicago's symbols, and those past where a format's letters run out, such as 781 in letters. Page numbers in Hebrew past 100, and in Hindi letters past 75 (`hindiVowels`) and 37 (`hindiConsonants`), haven't been checked in Word yet
 - a chapter number from a heading in a table
 - a document in compatibility mode, which Word lays out as an older version of Word did: one saved by Word 2010 or earlier, or by an application that writes an older mode, such as LibreOffice, or given an older `compatibility` `version`
+- in [templates](#templates), what `docx` doesn't write and Word lays out in ways not yet followed: text with a phonetic guide, text fitted to a width or to its cell, two lines in one and horizontal in vertical text, ink and other content parts, a subdocument, a paragraph or table row in an HTML division, a table cell whose text doesn't wrap, cells merged across columns as old versions of Word wrote them, footnotes in columns of their own, a content control Word fills in from custom XML when it opens the document, pages printed as a folded booklet or two to a sheet, and styles Word updates from the document's template when it opens it
+
+When laying out the pages again with the page numbers it worked out still changes them after three passes, as when a table of contents wraps one way with a number and the other way without it, all of them are left blank, and `layoutDocument` lays out the pages without them.
 
 A wrong page number is worse than a blank one, so it doesn't guess.
 
