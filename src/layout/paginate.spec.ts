@@ -455,6 +455,171 @@ describe("paginate", () => {
         });
     });
 
+    describe("paragraph borders", () => {
+        const BORDERS = { top: 5, bottom: 3, between: 0, betweenSpace: 0, box: "box", outline: "box" };
+        const bordered = (name: string, lines: number, format: ParagraphFormat = {}, borders = BORDERS): ParagraphBlock => ({
+            ...paragraph(name, lines, format),
+            borders,
+        });
+        /** Each page's lines, as where each starts down the page */
+        const topsOf = (content: DocumentContent): readonly (readonly number[])[] =>
+            paginate(content, { measurer: MEASURER }).pages.map(({ body }) =>
+                body.flatMap((block) => (block.type === "paragraph" ? block.lines.map(({ y }) => y) : [])),
+            );
+
+        it("should put a paragraph's lines below its top border and the next paragraph below its bottom border", () => {
+            expect(topsOf(document([paragraph("a", 1), bordered("b", 2), paragraph("c", 1)]))).to.deep.equal([[10, 25, 35, 48]]);
+            // A paragraph in one box with the next has no border below it, and the next none above it, without a between
+            // border, and the room a between border takes and its space with one
+            const between = { ...BORDERS, between: 4, betweenSpace: 1 };
+            expect(topsOf(document([bordered("a", 1), bordered("b", 1), paragraph("c", 1)]))).to.deep.equal([[15, 25, 38]]);
+            expect(topsOf(document([bordered("a", 1, {}, between), bordered("b", 1, {}, between)]))).to.deep.equal([[15, 30]]);
+        });
+
+        it("should keep the border above a paragraph at the top of a page, but not above the rest of one that goes on to it", () => {
+            // 6 lines fill the first page, so b's border goes at the top of the next
+            expect(topsOf(document([paragraph("a", 6), bordered("b", 1)]))).to.deep.equal([[10, 20, 30, 40, 50, 60], [15]]);
+            expect(topsOf(document([paragraph("a", 3), bordered("b", 5)]))).to.deep.equal([
+                [10, 20, 30, 45, 55, 65],
+                [10, 20],
+            ]);
+        });
+
+        it("should move a paragraph's last line to the next page when it fits at the foot of a page but not with its border below it", () => {
+            // b's line would end at 80, the foot of the page, and its border 3 below that, as the space a between border
+            // leaves below it would (`word-paragraph-formats.docx` B4a, B4b)
+            expect(pagesOf(document([paragraph("a", 6), bordered("b", 1, {}, { ...BORDERS, top: 0 })]))).to.deep.equal({ a: "1", b: "2" });
+            const between = { ...BORDERS, top: 0, bottom: 0, between: 4, betweenSpace: 3 };
+            expect(pagesOf(document([paragraph("a", 6), bordered("b", 1, {}, between), bordered("c", 1, {}, between)]))).to.deep.equal({
+                a: "1",
+                b: "2",
+                c: "2",
+            });
+            expect(pagesOf(document([paragraph("a", 5), bordered("b", 1, {}, { ...BORDERS, top: 0 })]))).to.deep.equal({ a: "1", b: "1" });
+        });
+
+        it("should stop at paragraphs with the same borders but for a between border, which Word joins in a way not yet followed", () => {
+            const between = { ...BORDERS, between: 4, betweenSpace: 1, box: "between" };
+            expect(numbersOf(document([bordered("a", 1), bordered("b", 1, {}, between)])).stoppedAt).to.equal(
+                "paragraphs with the same borders but for a between border",
+            );
+        });
+
+        it("should give the borders of the paragraphs in a table cell room in its row, and in a row that breaks across pages", () => {
+            const rowsOf = (content: DocumentContent): readonly (readonly number[])[] =>
+                paginate(content, { measurer: MEASURER }).pages.map(({ body }) =>
+                    body.flatMap((block) => (block.type === "table" ? block.rows.map(({ height }) => height) : [])),
+                );
+            expect(rowsOf(document([table([row([[bordered("a", 2)]])])]))).to.deep.equal([[28]]);
+            // The part of the row on the first page has the border above, and the part on the next the border below
+            expect(rowsOf(document([paragraph("x", 1), table([row([[bordered("a", 9)]])])]))).to.deep.equal([[55], [43]]);
+        });
+
+        it("should keep a paragraph with the next one's borders", () => {
+            // a and the top border and lines of b don't fit below c, though their lines would, nor a and b's lines with its
+            // border below them
+            const above = document([
+                paragraph("c", 3),
+                paragraph("a", 2, { keepNext: true }),
+                bordered("b", 2, {}, { ...BORDERS, bottom: 0 }),
+            ]);
+            expect(pagesOf(above)).to.deep.equal({ c: "1", a: "2", b: "2" });
+            const below = document([
+                paragraph("c", 3),
+                paragraph("a", 2, { keepNext: true }),
+                bordered("b", 2, {}, { ...BORDERS, top: 0 }),
+            ]);
+            expect(pagesOf(below)).to.deep.equal({ c: "1", a: "2", b: "2" });
+        });
+
+        it("should stop at borders where Word's box of them isn't known: across a section or page break, and on the paragraph that ends a section", () => {
+            const SECOND = { sections: [SECTION, SECTION] };
+            expect(numbersOf(document([bordered("a", 1), [bordered("b", 1), 1]], SECOND)).stoppedAt).to.equal(
+                "paragraphs with the same borders either side of a section or page break",
+            );
+            expect(numbersOf(document([bordered("a", 1), bordered("b", 1, { pageBreakBefore: true })])).stoppedAt).to.equal(
+                "paragraphs with the same borders either side of a section or page break",
+            );
+            // Paragraphs with other borders are boxes of their own
+            expect(
+                numbersOf(document([bordered("a", 1), [bordered("b", 1, {}, { ...BORDERS, box: "other", outline: "other" }), 1]], SECOND))
+                    .stoppedAt,
+            ).to.equal(undefined);
+            const ending: ParagraphBlock = { ...bordered("end", 0), items: [], sectionBreak: true };
+            expect(numbersOf(document([paragraph("a", 1), ending, [paragraph("b", 1), 1]], SECOND)).stoppedAt).to.equal(
+                "borders or automatic spacing on the empty paragraph that ends a section",
+            );
+            const automatic: ParagraphBlock = { ...paragraph("end", 0, { autoSpaceAfter: true }), items: [], sectionBreak: true };
+            expect(numbersOf(document([paragraph("a", 1), automatic, [paragraph("b", 1), 1]], SECOND)).stoppedAt).to.equal(
+                "borders or automatic spacing on the empty paragraph that ends a section",
+            );
+        });
+
+        it("should stop at borders and automatic spacing in a footnote", () => {
+            const noted = withItems(paragraph("a", 1), [{ type: "marker", name: "n" }]);
+            const notes = (block: ParagraphBlock): Partial<DocumentContent> => ({ footnotes: new Map([["n", [block]]]) });
+            expect(numbersOf(document([noted], notes(bordered("note", 1)))).stoppedAt).to.equal("a paragraph border in a footnote");
+            expect(numbersOf(document([noted], notes(paragraph("note", 1, { autoSpaceBefore: true })))).stoppedAt).to.equal(
+                "automatic spacing in a footnote",
+            );
+        });
+    });
+
+    describe("automatic spacing", () => {
+        it("should put Word's 14 points before and after a paragraph, but none at the top or bottom of a table cell", () => {
+            const automatic = { autoSpaceBefore: true, autoSpaceAfter: true, spaceBefore: 30, spaceAfter: 0 };
+            /** Where the lines of paragraphs start down the first page */
+            const topsOf = (blocks: readonly Block[]): readonly number[] =>
+                paginate(document(blocks), { measurer: MEASURER }).pages[0].body.flatMap((block) =>
+                    block.type === "paragraph" ? block.lines.map(({ y }) => y) : [],
+                );
+            // In place of the space given, and the larger of it and the space of the paragraph next to it
+            expect(topsOf([paragraph("x", 1), paragraph("a", 1, automatic), paragraph("b", 1, automatic)])).to.deep.equal([10, 34, 58]);
+            expect(topsOf([paragraph("x", 1), paragraph("a", 1, automatic), paragraph("b", 1, { spaceBefore: 20 })])).to.deep.equal([
+                10, 34, 64,
+            ]);
+            const heightOf = (blocks: readonly Block[]): number =>
+                paginate(document([table([row([blocks])])]), { measurer: MEASURER }).pages[0].body.flatMap((block) =>
+                    block.type === "table" ? block.rows.map(({ height }) => height) : [],
+                )[0];
+            expect(heightOf([paragraph("a", 1, automatic), paragraph("b", 1, automatic)])).to.equal(34);
+            // And between a paragraph and a table (`word-paragraph-formats.docx` A4)
+            const [, , rows] = paginate(document([paragraph("x", 1), paragraph("a", 1, automatic), table([row([[paragraph("b", 1)]])])]), {
+                measurer: MEASURER,
+            }).pages[0].body;
+            expect(rows.type === "table" && rows.rows[0].y).to.equal(58);
+        });
+
+        it("should put none above the first paragraph of the document or of a header, and keep it below a header's last", () => {
+            const automatic = { autoSpaceBefore: true, autoSpaceAfter: true };
+            // `word-paragraph-formats.docx` A0 and A3: the header is 5 down, with no space above its line and 14 below it,
+            // so the text starts 29 down, with no space above it either
+            const header = { ...SECTION, marginTop: 5, headers: { default: [paragraph("h", 1, automatic)] } };
+            const [first] = paginate(document([paragraph("a", 1, automatic)], { sections: [header] }), { measurer: MEASURER }).pages;
+            expect(first.body.flatMap((block) => (block.type === "paragraph" ? block.lines.map(({ y }) => y) : []))).to.deep.equal([29]);
+        });
+
+        it("should put none between paragraphs of the same list, and stop between those of other levels or lists made alike", () => {
+            const automatic = { autoSpaceBefore: true, autoSpaceAfter: true };
+            const definition = {};
+            const listed = (name: string, id: string, level = 0, made = definition): ParagraphBlock => ({
+                ...paragraph(name, 1, automatic),
+                list: { id, level, definition: made },
+            });
+            const topsOf = (blocks: readonly Block[]): readonly number[] =>
+                paginate(document(blocks), { measurer: MEASURER }).pages[0].body.flatMap((block) =>
+                    block.type === "paragraph" ? block.lines.map(({ y }) => y) : [],
+                );
+            // `word-paragraph-formats.docx` A1 and A1b: 14 above and below the list, none between its items, and 14
+            // between a bulleted list and a numbered one
+            expect(topsOf([paragraph("x", 1), listed("a", "1"), listed("b", "1"), paragraph("y", 1)])).to.deep.equal([10, 34, 44, 68]);
+            expect(topsOf([listed("a", "1"), listed("b", "2", 0, {})])).to.deep.equal([10, 34]);
+            const STOP = "automatic spacing between paragraphs of other levels of a list, or of lists made alike";
+            expect(numbersOf(document([listed("a", "1"), listed("b", "1", 1)])).stoppedAt).to.equal(STOP);
+            expect(numbersOf(document([listed("a", "1"), listed("b", "2")])).stoppedAt).to.equal(STOP);
+        });
+    });
+
     describe("characters", () => {
         const STOP = "a character whose width in its font isn't known";
         // Knows every character's width but Ж's

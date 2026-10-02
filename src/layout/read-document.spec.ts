@@ -222,6 +222,210 @@ describe("readDocument", () => {
             ]);
         });
 
+        it("should give the space in lines as 12 points a line, in place of the space in twips, as Word does (TX7d)", () => {
+            const spacing = (attributes: Record<string, unknown>): ParagraphBlock =>
+                paragraphOf(readBody([p(pPr({ "w:spacing": { _attr: attributes } }), r(t("a")))]));
+            expect(spacing({ "w:beforeLines": 100, "w:afterLines": "50" }).format).to.deep.include({ spaceBefore: 12, spaceAfter: 6 });
+            expect(spacing({ "w:before": 600, "w:beforeLines": 100, "w:after": 200, "w:afterLines": 0 }).format).to.deep.include({
+                spaceBefore: 12,
+                spaceAfter: 10,
+            });
+        });
+
+        it("should make a character of an indent as wide as the first character is tall, or the mark for a left indent, as Word does (TX7, C1 to C16)", () => {
+            /** A paragraph with an indent, a mark of a size, 11 points as its style's or another, and runs of text */
+            const indented = (attributes: Record<string, unknown>, mark: number, ...runs: readonly object[]): ParagraphBlock =>
+                paragraphOf(
+                    readBody([p(pPr({ "w:ind": { _attr: attributes } }, ...(mark === 22 ? [] : [rPr(value("w:sz", mark))])), ...runs)], {
+                        styles: { default: { document: { run: { size: 22 } } } },
+                    }),
+                );
+            const sized = (size: number, text = "text"): object => r(rPr(value("w:sz", size)), t(text));
+            const big = sized(40);
+            // The first character's size, not the mark's or the rest of the text's (TX7a, TX7b, C5, C6, C12)
+            expect(indented({ "w:firstLineChars": 200 }, 22, big, sized(22)).format).to.deep.include({ firstLineIndent: 40 });
+            expect(indented({ "w:firstLineChars": 200 }, 40, sized(22), big).format).to.deep.include({ firstLineIndent: 22 });
+            // An empty paragraph's characters are as tall as its mark
+            expect(indented({ "w:firstLineChars": 200 }, 22).format).to.deep.include({ firstLineIndent: 22 });
+            // A left indent in the mark's size, and a first line's from it, or from a left indent in twips (C1, C4, C8, C11)
+            expect(indented({ "w:leftChars": 400, "w:firstLineChars": 200 }, 22, big).format).to.deep.include({
+                indentLeft: 44,
+                firstLineIndent: 40,
+            });
+            expect(indented({ "w:left": 720, "w:firstLineChars": 200 }, 22, big).format).to.deep.include({
+                indentLeft: 36,
+                firstLineIndent: 40,
+            });
+            // A hanging indent puts the first line at the left indent in characters, or 0, and the others that much further
+            // in, whatever the left indent in twips and hanging indent in twips (TX7c, C3, C9, C11, C14)
+            expect(indented({ "w:leftChars": 400, "w:hangingChars": 200 }, 22, big).format).to.deep.include({
+                indentLeft: 84,
+                firstLineIndent: -40,
+            });
+            expect(indented({ "w:left": 1440, "w:hangingChars": 200 }, 22, sized(22)).format).to.deep.include({
+                indentLeft: 22,
+                firstLineIndent: -22,
+            });
+            expect(
+                indented({ "w:left": 720, "w:hanging": 360, "w:leftChars": 400, "w:hangingChars": 200 }, 22, sized(22)).format,
+            ).to.deep.include({
+                indentLeft: 66,
+                firstLineIndent: -22,
+            });
+            // In place of those in twips, but for 0 (C2, C7, C10, C15)
+            expect(indented({ "w:right": 720, "w:rightChars": 400 }, 22, sized(22)).format).to.deep.include({ indentRight: 44 });
+            expect(indented({ "w:left": 720, "w:leftChars": 0 }, 22, big).format).to.deep.include({ indentLeft: 36 });
+            expect(indented({ "w:firstLine": 720, "w:firstLineChars": 0 }, 22, big).format).to.deep.include({ firstLineIndent: 36 });
+            expect(indented({ "w:startChars": 400 }, 22, big).format).to.deep.include({ indentLeft: 44 });
+            // Where Word's sizes aren't known
+            expect(indented({ "w:leftChars": 400 }, 22, big).unsupported).to.equal(undefined);
+            expect(indented({ "w:leftChars": 400 }, 40, big).unsupported).to.equal(
+                "an indent in characters left or right of a paragraph whose mark is another size than its style",
+            );
+            expect(indented({ "w:rightChars": 400 }, 22, big).unsupported).to.equal(
+                "an indent in characters right of text of another size than its mark",
+            );
+            expect(indented({ "w:leftChars": 0, "w:hangingChars": 200 }, 22, sized(22)).format).to.deep.include({ indentLeft: 22 });
+            expect(indented({ "w:leftChars": 0, "w:left": 720, "w:hangingChars": 200 }, 22, big).unsupported).to.equal(
+                "an indent in characters hanging from a left indent in twips",
+            );
+            expect(indented({ "w:leftChars": 400, "w:firstLine": 360 }, 22, big).unsupported).to.equal(
+                "an indent in characters left of a first line indent in twips",
+            );
+            // Page numbers are the paragraph's text too, and text without a size is Word's default 10 points
+            const fields = [
+                ...[field("begin"), instruction(" PAGEREF here "), field("separate"), r(t("9")), field("end")],
+                ...[field("begin"), instruction(" NUMPAGES "), field("separate"), r(t("9")), field("end")],
+            ];
+            const plain = (...runs: readonly object[]): ParagraphBlock =>
+                paragraphOf(readBody([p(pPr({ "w:ind": { _attr: { "w:firstLineChars": 200 } } }), ...runs)]));
+            expect(plain(...fields, r(t("text"))).format).to.deep.include({ firstLineIndent: 20 });
+            expect(plain().format).to.deep.include({ firstLineIndent: 20 });
+        });
+
+        it("should stop at an indent in characters in a list whose number is another size than its text", () => {
+            const content = readWritten({
+                numbering: {
+                    config: [
+                        {
+                            reference: "list",
+                            levels: [{ level: 0, format: LevelFormat.DECIMAL, text: "%1.", style: { run: { size: 40 } } }],
+                        },
+                    ],
+                },
+                sections: [
+                    {
+                        children: [
+                            new Paragraph({
+                                numbering: { reference: "list", level: 0 },
+                                indent: { firstLineChars: 200 },
+                                children: [new TextRun("a")],
+                            }),
+                            new Paragraph({ numbering: { reference: "list", level: 0 }, children: [new TextRun("b")] }),
+                        ],
+                    },
+                ],
+            });
+            expect(paragraphOf(content, 0).unsupported).to.equal(
+                "an indent in characters in a list whose number is another size than its text",
+            );
+            expect(paragraphOf(content, 1).list).to.deep.include({ level: 0 });
+            expect(paragraphOf(content, 1).list!.id).to.equal(paragraphOf(content, 0).list!.id);
+            expect(paragraphOf(content, 1).unsupported).to.equal(undefined);
+        });
+
+        it("should read the room a paragraph's top, bottom and between borders take, and what paragraphs in one box share (TX5, B5, B6)", () => {
+            const border = (style: string, size?: number, space = 1, more: Record<string, unknown> = {}): object => ({
+                _attr: { "w:val": style, ...(size === undefined ? {} : { "w:sz": size }), "w:space": space, ...more },
+            });
+            const bordered = (...sides: readonly object[]): ParagraphBlock =>
+                paragraphOf(readBody([p(pPr({ "w:pBdr": sides }), r(t("a")))]));
+            const box = bordered(
+                { "w:top": border("single", 6) },
+                { "w:bottom": border("single", 24, 4) },
+                { "w:between": border("single", 6) },
+            );
+            expect(box.borders).to.deep.include({ top: 1.75, bottom: 7, between: 1.75, betweenSpace: 1 });
+            expect(box.unsupported).to.equal(undefined);
+            // Borders at the sides take no room, but tell boxes apart, as indents do and between borders
+            const withLeft = bordered(
+                { "w:top": border("single", 6) },
+                { "w:bottom": border("single", 24, 4) },
+                { "w:between": border("single", 6) },
+                { "w:left": border("single", 6) },
+            );
+            expect(withLeft.borders).to.deep.include({ top: 1.75, bottom: 7, between: 1.75 });
+            expect(withLeft.borders!.box).to.not.equal(box.borders!.box);
+            const indented = paragraphOf(
+                readBody([
+                    p(
+                        pPr(
+                            {
+                                "w:pBdr": [
+                                    { "w:top": border("single", 6) },
+                                    { "w:bottom": border("single", 24, 4) },
+                                    { "w:between": border("single", 6) },
+                                ],
+                            },
+                            { "w:ind": { _attr: { "w:left": 720 } } },
+                        ),
+                        r(t("a")),
+                    ),
+                ]),
+            );
+            expect(indented.borders!.box).to.not.equal(box.borders!.box);
+            const without = bordered({ "w:top": border("single", 6) }, { "w:bottom": border("single", 24, 4) });
+            expect(without.borders!.box).to.not.equal(box.borders!.box);
+            expect(without.borders!.outline).to.equal(box.borders!.outline);
+            expect(bordered({ "w:left": border("single", 6) }, { "w:top": border("none", 6) }).borders).to.equal(undefined);
+            expect(bordered({ "w:top": border("single", 6) }).borders).to.deep.include({
+                top: 1.75,
+                bottom: 0,
+                between: 0,
+                betweenSpace: 0,
+            });
+            // The room each style takes as Word draws it, in points, with no space (B6)
+            const roomOf = (style: string, size: number, more: Record<string, unknown> = {}): number | undefined =>
+                bordered({ "w:top": border(style, size, 0, more) }).borders?.top;
+            expect(
+                ["single", "thick", "dotted", "dashed", "dotDash", "dotDotDash", "dashSmallGap", "inset", "outset"].map((style) =>
+                    roomOf(style, 6),
+                ),
+            ).to.deep.equal(Array.from({ length: 9 }, () => 0.75));
+            expect([
+                roomOf("double", 6),
+                roomOf("triple", 18),
+                roomOf("wave", 6),
+                roomOf("dashDotStroked", 18),
+                roomOf("doubleWave", 6),
+            ]).to.deep.equal([2.25, 11.25, 3, 3, 5.25]);
+            expect(
+                ["thinThickSmallGap", "thickThinSmallGap", "threeDEmboss", "threeDEngrave", "thinThickThinSmallGap"].map((style) =>
+                    roomOf(style, 18),
+                ),
+            ).to.deep.equal([3.75, 3.75, 3.75, 3.75, 5.25]);
+            expect(roomOf("single", 6, { "w:shadow": "1" })).to.equal(1.5);
+            // Those Word hasn't been seen to draw
+            for (const side of [
+                border("thinThickMediumGap", 6),
+                border("double", 6, 1, { "w:shadow": "1" }),
+                border("single", 6, 1, { "w:frame": "on" }),
+                border("apples", 6),
+            ]) {
+                expect(bordered({ "w:bottom": side }).unsupported).to.equal("a paragraph border of a style not yet followed");
+            }
+            for (const side of [
+                border("single"),
+                border("single", 1),
+                border("single", 97),
+                border("single", 6, 32),
+                border("thinThickSmallGap", 4),
+                border("threeDEmboss", 19),
+            ]) {
+                expect(bordered({ "w:top": side }).unsupported).to.equal("a paragraph border of a width or space not yet followed");
+            }
+        });
+
         it("should mark a paragraph in a text frame, or with an equation, as unsupported", () => {
             expect(paragraphOf(readBody([p(pPr({ "w:framePr": { _attr: { "w:w": 2000 } } }), r(t("a")))])).unsupported).to.equal(
                 "a text frame",

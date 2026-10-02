@@ -300,6 +300,66 @@ describe("readParagraphFormat", () => {
         });
         expect(readCellMargins([{ "w:top": { _attr: { "w:w": "0.1in", "w:type": "dxa" } } }])).to.deep.equal({ top: 7.2 });
     });
+
+    it("should read automatic spacing, spacing in lines and indents in characters beside those in twips", () => {
+        expect(
+            readParagraphFormat([
+                {
+                    "w:spacing": {
+                        _attr: {
+                            "w:before": 100,
+                            "w:beforeLines": "50",
+                            "w:afterLines": 100,
+                            "w:beforeAutospacing": "1",
+                            "w:afterAutospacing": "off",
+                        },
+                    },
+                },
+                { "w:ind": { _attr: { "w:left": 720, "w:leftChars": "400", "w:endChars": 100, "w:hanging": 360, "w:hangingChars": 200 } } },
+            ]),
+        ).to.deep.equal({
+            spaceBefore: 5,
+            spaceBeforeLines: 50,
+            spaceAfterLines: 100,
+            autoSpaceBefore: true,
+            autoSpaceAfter: false,
+            indentLeft: 36,
+            firstLineIndent: -18,
+            indentLeftChars: 400,
+            indentRightChars: 100,
+            // A hanging indent in characters is a negative first line indent in characters
+            firstLineChars: -200,
+        });
+        expect(readParagraphFormat([{ "w:ind": { _attr: { "w:firstLineChars": 200 } } }])).to.deep.equal({ firstLineChars: 200 });
+    });
+
+    it("should read each border of a paragraph with all it says, which tells paragraphs with the same borders", () => {
+        const border = (attributes: Record<string, unknown>): object => ({ _attr: attributes });
+        const format = readParagraphFormat([
+            {
+                "w:pBdr": [
+                    { "w:top": border({ "w:val": "single", "w:sz": 6, "w:space": 1, "w:color": "auto" }) },
+                    { "w:start": border({ "w:val": "double", "w:sz": "4", "w:shadow": "1", "w:frame": "false" }) },
+                    { "w:bottom": border({ "w:val": "nil" }) },
+                    { "w:between": border({ "w:val": "single", "w:sz": 6, "w:space": 1, "w:color": "auto" }) },
+                    { "w:bar": border({}) },
+                ],
+            },
+        ]);
+        expect(format.borderTop).to.deep.equal({
+            style: "single",
+            size: 6,
+            space: 1,
+            shadow: false,
+            frame: false,
+            key: '[["w:color","auto"],["w:space","1"],["w:sz","6"],["w:val","single"]]',
+        });
+        expect(format.borderLeft).to.deep.include({ style: "double", size: 4, space: 0, shadow: true, frame: false });
+        expect(format.borderBottom).to.deep.include({ style: "nil", space: 0 });
+        expect(format.borderBetween!.key).to.equal(format.borderTop!.key);
+        expect(format.borderBar).to.deep.include({ style: "none" });
+        expect(format).to.not.have.any.keys("borderRight");
+    });
 });
 
 describe("pointsOf", () => {
