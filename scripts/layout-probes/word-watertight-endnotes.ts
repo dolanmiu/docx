@@ -17,6 +17,14 @@
  *      endnote's lines start 268.55 down, its height isn't taken from its paragraph
  * EN3: as EN1, with the second endnote's first line 183 tall, so with the separator counted its 48th line goes 29.55 below
  *      the margin
+ *
+ * Word (word-watertight-endnotes1.pdf to 3.pdf, Word 16 for Mac):
+ * EN1: 48 lines on each page after the first, the first starting 268.55 below the margin, below the continuation
+ *      separator, and the last 134.55 past the margin
+ * EN2: the same: the continuation separator is a line tall, and drawn where EN1's is, though written 1100 tall
+ * EN3: the line of 183 and 47 of 288, the last 29.55 past the margin, then 48 on each page after
+ * So the separator's room is left out of what fits below it. These don't say whether that is so, or a line goes on while
+ * its top is above the margin: word-continued-endnotes.ts showed it is so
  */
 // cspell:ignore bbox
 import { mkdirSync, writeFileSync } from "node:fs";

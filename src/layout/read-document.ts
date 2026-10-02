@@ -2982,6 +2982,30 @@ export const readContent = (body: XmlObject, parts: DocumentParts): DocumentCont
             ? []
             : readBlocks(contentOf(note), { ...readerOf(false), inNote: true, ...(label === undefined ? {} : { noteNumber: label }) });
     };
+    /**
+     * A separator above the endnotes as Word lays it out: a line of its paragraph style's text, at single spacing and with
+     * no space before or after, whatever its own formatting. Word left out the space before and after, the line spacing
+     * and the size of the text of the separator and the continuation separator alike (`word-continued-endnotes.docx` CE3
+     * to CE5, `word-watertight-endnotes2.docx` EN2, `word-watertight-sections.docx` SC4). Its bookmarks are kept. One with
+     * text in it, or more than a paragraph, stops, as Word hasn't been seen laying one out, and so does one with something
+     * in it that stops the layout anywhere, such as an equation
+     */
+    const readEndnoteSeparator = (type: "separator" | "continuationSeparator"): readonly Block[] => {
+        const content = readNoteContent("endnote", type);
+        const [first] = content;
+        if (content.length === 0) {
+            return [];
+        }
+        if (content.length > 1 || first.type !== "paragraph" || first.items.some((item) => item.type !== "marker")) {
+            return [{ ...first, unsupported: "an endnote separator with text in it, or of more than a paragraph" }];
+        }
+        if (first.unsupported !== undefined) {
+            return [first];
+        }
+        const { items, style } = first;
+        const markFont = fontOf(combine([styles.run, ...styleChain(styles, style, "paragraph").map(({ run }) => run)]));
+        return [{ type: "paragraph", items, format: {}, tabStops: [], markFont, ...withoutUndefined({ style }) }];
+    };
     const footnotes = new Map<string, readonly Block[]>();
     const footnoteNumbers = new Map<string, string>();
     // eslint-disable-next-line functional/prefer-readonly-type
@@ -3133,8 +3157,8 @@ export const readContent = (body: XmlObject, parts: DocumentParts): DocumentCont
         footnotes,
         footnoteSeparator: footnotes.size > 0 ? readNoteContent("footnote", "separator") : [],
         footnoteContinuationSeparator: footnotes.size > 0 ? readNoteContent("footnote", "continuationSeparator") : [],
-        endnotes: endnotes.length > 0 ? [...readNoteContent("endnote", "separator"), ...endnotes] : [],
-        endnoteContinuationSeparator: endnotes.length > 0 ? readNoteContent("endnote", "continuationSeparator") : [],
+        endnotes: endnotes.length > 0 ? [...readEndnoteSeparator("separator"), ...endnotes] : [],
+        endnoteContinuationSeparator: endnotes.length > 0 ? readEndnoteSeparator("continuationSeparator") : [],
         footnoteNumbers,
         endnoteNumbers,
         relativeReferences: markers.relative,
