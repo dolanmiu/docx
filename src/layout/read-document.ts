@@ -3012,6 +3012,91 @@ const WORD_SETTINGS = "http://schemas.microsoft.com/office/word";
 // The compatibility settings of the schema (`w:compat`) that are followed: automatic spacing as HTML has it
 const FOLLOWED_COMPATIBILITY = new Set(["w:doNotUseHTMLParagraphAutoSpacing"]);
 
+// The schema's compatibility settings Word lays out lines with in compatibility mode 15 as it does without them, though
+// they ask for an older Word's or another application's layout: Word laid out the same probes alike with each group of them
+// on and without them (`word-compat-settings.docx` CP1 to CP19). Those of line heights moved at most the text inside a line
+// of exact height, not the line (`-heights`, CP2, CP14, CP15), those of letters, spaces and justification left at most a
+// justified line that ends with a line break not stretched, broken where it was (`-latin`, CP8b), and those of tabs, lists,
+// indents and borders (`-paragraphs`), of tables (`-tables`), of columns and footnotes (`-columns`), and of printing,
+// fields, shapes and text boxes (`-other`) changed nothing. Of the groups that changed lines, the top and foot of pages
+// and East Asian text, each setting but `suppressTopSpacing` and `useFELayout` changed nothing on its own
+// (`word-compat-settings2.docx` and one document for each setting, CP1 to CP20)
+// cspell:ignore Punct conv Txbx
+const COMPATIBILITY_LINES_ALIKE = new Set(
+    [
+        // -heights
+        "noLeading",
+        "noExtraLineSpacing",
+        "truncateFontHeightsLikeWP6",
+        "usePrinterMetrics",
+        "subFontBySize",
+        "adjustLineHeightInTable",
+        "noSpaceRaiseLower",
+        "spaceForUL",
+        "ulTrailSpace",
+        // -latin
+        "spacingInWholePoints",
+        "wpSpaceWidth",
+        "mwSmallCaps",
+        "useAnsiKerningPairs",
+        "wrapTrailSpaces",
+        "doNotExpandShiftReturn",
+        "wpJustification",
+        // -paragraphs
+        "noTabHangInd",
+        "forgetLastTabAlignment",
+        "doNotUseIndentAsNumberingTabStop",
+        "underlineTabInNumList",
+        "useNormalStyleForList",
+        "allowSpaceOfSameStyleInTable",
+        "doNotSuppressIndentation",
+        "doNotSuppressParagraphBorders",
+        "swapBordersFacingPages",
+        // -tables
+        "useSingleBorderforContiguousCells",
+        "alignTablesRowByRow",
+        "layoutRawTableWidth",
+        "layoutTableRowsApart",
+        "useWord2002TableStyleRules",
+        "growAutofit",
+        "doNotAutofitConstrainedTables",
+        "autofitToFirstFixedWidthCell",
+        "doNotBreakConstrainedForcedTable",
+        "doNotVertAlignCellWithSp",
+        "doNotSnapToGridInCell",
+        "doNotBreakWrappedTables",
+        // -columns
+        "noColumnBalance",
+        "cachedColBalance",
+        "footnoteLayoutLikeWW8",
+        // -pages, each alone
+        "suppressBottomSpacing",
+        "suppressTopSpacingWP",
+        "suppressSpacingAtTopOfPage",
+        "suppressSpBfAfterPgBrk",
+        "splitPgBreakAndParaMark",
+        // -east-asian, each alone
+        "balanceSingleByteDoubleByteWidth",
+        "doNotLeaveBackslashAlone",
+        "displayHangulFixedWidth",
+        "autoSpaceLikeWord95",
+        "lineWrapLikeWord6",
+        "useWord97LineBreakRules",
+        "applyBreakingRules",
+        "doNotWrapTextWithPunct",
+        "doNotUseEastAsianBreakRules",
+        "useAltKinsokuLineBreakRules",
+        // -other
+        "printBodyTextBeforeHeader",
+        "printColBlack",
+        "showBreaksInFrames",
+        "convMailMergeEsc",
+        "shapeLayoutLikeWW8",
+        "selectFldWithFirstOrLastChar",
+        "doNotVertAlignInTxbx",
+    ].map((name) => `w:${name}`),
+);
+
 // Word's own compatibility settings known to leave its lines in compatibility mode 15 as they are, on or off: those Word
 // 16 writes in every document it makes, so in every template and document Word saved. Word laid out the same document
 // alike with them all on and without them (`word-compat-on.docx` and `word-compat-off.docx`): a paragraph's size and
@@ -3020,8 +3105,11 @@ const FOLLOWED_COMPATIBILITY = new Set(["w:doNotUseHTMLParagraphAutoSpacing"]);
 // style's parts in a header of several rows, which `differentiateMultirowTableHeaders` is about (CS2), kerning, ligatures
 // and figures spaced proportionally, which `enableOpenTypeFeatures` turns on (CS3), and a line that ends at a hyphen at the
 // foot of a page (CS4), which `useWord2013TrackBottomHyphenation` moves only when hyphenation made the hyphen, and the
-// layout stops at any line Word may hyphenate. `doNotFlipMirrorIndents` swaps a mirrored paragraph's indents, which leaves its lines as
-// long
+// layout stops at any line Word may hyphenate. `doNotFlipMirrorIndents` swaps a mirrored paragraph's indents, which
+// leaves its lines as long. Its other two, which are off unless they are given, Word laid out alike on and off
+// (`word-compat-settings-other.docx`): `allowHyphenationAtTrackBottom` lets Word hyphenate the last line of a page,
+// where the layout stops at a word Word may hyphenate all the same, and `allowTextAfterFloatingTableBreak` is about
+// tables text flows around, which it stops at
 const WORD_SETTINGS_LINES_ALIKE = new Set([
     "compatibilityMode",
     "overrideTableStyleFontSizeAndJustification",
@@ -3029,11 +3117,9 @@ const WORD_SETTINGS_LINES_ALIKE = new Set([
     "doNotFlipMirrorIndents",
     "differentiateMultirowTableHeaders",
     "useWord2013TrackBottomHyphenation",
+    "allowHyphenationAtTrackBottom",
+    "allowTextAfterFloatingTableBreak",
 ]);
-
-// Word's other compatibility settings, which are off unless they are given: Word lays out a document with them off as it
-// lays one out without them
-const WORD_SETTINGS_OFF_UNLESS_GIVEN = new Set(["allowHyphenationAtTrackBottom", "allowTextAfterFloatingTableBreak"]);
 
 /**
  * The attributes of Word's own compatibility settings (`w:compatSetting`) among a document's: those for Word's application,
@@ -3047,19 +3133,20 @@ const wordSettingsOf = (compatibility: readonly XmlObject[]): readonly XmlObject
 
 /**
  * Whether a document's compatibility settings (`w:compat`) ask Word to lay it out in a way not yet followed: a setting of
- * the schema that is on, such as `w:noLeading`, but for `w:doNotUseHTMLParagraphAutoSpacing`, which is followed, or one
- * of Word's own (`w:compatSetting`) other than those known to leave its lines as they are, unless it is off and Word's
- * default is off. Each changes how Word lays out lines, or may, in ways not yet followed.
+ * the schema that is on, other than `w:doNotUseHTMLParagraphAutoSpacing`, which is followed, and those known to leave its
+ * lines as they are, or one of Word's own (`w:compatSetting`) other than those known to leave its lines as they are, on
+ * or off. Each changes how Word lays out lines, or may, in ways not yet followed.
  */
 const asksForUnfollowedCompatibility = (compatibility: readonly XmlObject[]): boolean =>
     compatibility.some((child) => {
         const name = nameOf(child);
-        return name !== "w:compatSetting" && !FOLLOWED_COMPATIBILITY.has(name) && onOff([child], name) === true;
-    }) ||
-    wordSettingsOf(compatibility).some(
-        ({ "w:name": setting, "w:val": value }) =>
-            !WORD_SETTINGS_LINES_ALIKE.has(String(setting)) && !(WORD_SETTINGS_OFF_UNLESS_GIVEN.has(String(setting)) && isOff(value)),
-    );
+        return (
+            name !== "w:compatSetting" &&
+            !FOLLOWED_COMPATIBILITY.has(name) &&
+            !COMPATIBILITY_LINES_ALIKE.has(name) &&
+            onOff([child], name) === true
+        );
+    }) || wordSettingsOf(compatibility).some(({ "w:name": setting }) => !WORD_SETTINGS_LINES_ALIKE.has(String(setting)));
 
 /**
  * The document's own lists of the characters that can't start a line (`w:noLineBreaksBefore`) and can't end one

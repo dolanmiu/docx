@@ -211,7 +211,7 @@ describe("readDocx", () => {
         expect(content.unsupported).to.equal("a document in compatibility mode");
     });
 
-    it("should read the compatibility settings Word writes, and stop at others that are on", () => {
+    it("should read the compatibility settings Word lays out lines alike with, and stop at others that are on", () => {
         const withCompatibility = (compatibility: string): DocumentContent =>
             readDocx(
                 new Map([
@@ -235,11 +235,12 @@ describe("readDocx", () => {
         expect(withCompatibility(`\n${written.join("\n")}${word("useWord2013TrackBottomHyphenation", "0")}`).unsupported).to.equal(
             undefined,
         );
-        expect(withCompatibility('<w:noLeading w:val="0"/>').unsupported).to.equal(undefined);
-        expect(withCompatibility("<w:noLeading/>").unsupported).to.equal("a compatibility setting not yet followed");
-        expect(withCompatibility(word("allowTextAfterFloatingTableBreak", "1")).unsupported).to.equal(
-            "a compatibility setting not yet followed",
-        );
+        // Settings Word lays out lines alike with in compatibility mode 15 (word-compat-settings.docx), and one that changes
+        // them (word-compat-settings2-suppressTopSpacing.docx)
+        expect(withCompatibility("<w:noLeading/>").unsupported).to.equal(undefined);
+        expect(withCompatibility(word("allowTextAfterFloatingTableBreak", "1")).unsupported).to.equal(undefined);
+        expect(withCompatibility('<w:suppressTopSpacing w:val="0"/>').unsupported).to.equal(undefined);
+        expect(withCompatibility("<w:suppressTopSpacing/>").unsupported).to.equal("a compatibility setting not yet followed");
     });
 
     it("should read the fonts it embeds, undoing the mixing of their keys, as the faces its font table says they are", () => {
