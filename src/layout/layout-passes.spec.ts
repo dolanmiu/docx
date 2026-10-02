@@ -2,7 +2,7 @@ import { describe, expect, it } from "vitest";
 
 import { Formatter } from "@export/formatter";
 import { File } from "@file/file";
-import { Bookmark, type IContext, LineRuleType, PageReference, Paragraph, TextRun } from "docx";
+import { Bookmark, type IContext, LineRuleType, PageReference, Paragraph, SimpleField, TextRun } from "docx";
 
 import { layOutPasses } from "./layout-passes";
 import { measurerOf } from "./measure-width";
@@ -49,5 +49,21 @@ describe("layOutPasses", () => {
         );
         expect(passes.settled).to.equal(false);
         expect(textOf(passes)).to.deep.equal(["On page", "Target"]);
+    });
+
+    it("should stop each pass at a field whose number its format doesn't write, once a pass has placed it, so the passes settle", () => {
+        // Page 1 with a picture of 3 digits only where the number has them, which Word writes with spaces, not yet seen.
+        // The first pass doesn't know the page, the second stops at the reference, and so does the third, which hasn't
+        // placed the bookmark
+        const pictured = contentOf([
+            new Paragraph({ children: [new SimpleField('PAGEREF target \\# "###"', "?")] }),
+            new Paragraph({ children: [new Bookmark({ id: "target", children: [new TextRun("Target")] })] }),
+        ]);
+        const passes = layOutPasses(
+            pictured,
+            measurerOf((text) => text.length),
+        );
+        expect(passes.settled).to.equal(true);
+        expect(passes.stoppedAt).to.equal("a page number its format isn't written for yet");
     });
 });

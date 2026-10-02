@@ -38,7 +38,8 @@ describe("fillTemplatePageNumbers", () => {
                         field(" PAGEREF _Toc2 \\h ", "5"),
                     )}${
                         paragraph(field("NUMPAGES", "9"), "<w:r><w:t>|</w:t></w:r>", field("SECTIONPAGES", "8"))
-                        // A field that doesn't show a page's number, and one whose instruction has no text, are left as they are
+                        // A field that doesn't show a page's number, and one whose instruction has no text, are left as they
+                        // are, and a page reference with \p the estimate has nothing for is left blank
                     }${
                         paragraph(field("PAGE", "7"), field(" PAGEREF _Toc1 \\p ", "above"), field("", "empty"))
                         // A simple field's runs are its result
@@ -69,7 +70,7 @@ describe("fillTemplatePageNumbers", () => {
         fillTemplatePageNumbers(parts, estimator);
 
         expect(estimator).toHaveBeenCalledWith({ parts });
-        expect(textOf(parts.get("word/document.xml")!)).to.equal("3|" + "4|3" + "7aboveempty" + "4" + "7" + "5");
+        expect(textOf(parts.get("word/document.xml")!)).to.equal("3|" + "4|3" + "7empty" + "4" + "7" + "5");
         // The header is on the pages of both sections, which have different numbers of pages, and the footer on the second's
         expect(textOf(parts.get("word/header1.xml")!)).to.equal("4");
         expect(textOf(parts.get("word/footer1.xml")!)).to.equal("5");

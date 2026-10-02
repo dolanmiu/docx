@@ -27,18 +27,34 @@ import {
 } from "../text-layout";
 import { fitColumns, tableWidths } from "./column-widths";
 import type { BlockLayout, LineLayout, NoteLayout, PageLayout, RowLayout } from "./layout-document";
-import { formatPageNumber } from "./number-format";
-import type {
-    Block,
-    DocumentContent,
-    HeadersOrFooters,
-    LayoutItem,
-    ParagraphBlock,
-    Section,
-    TableBlock,
-    TableCell,
-    TableRow,
+import { type FieldFormat, formatPageNumber, inFieldCapitals, writeFieldNumber, writesNumber } from "./number-format";
+import {
+    type Block,
+    type DocumentContent,
+    type HeadersOrFooters,
+    type LayoutItem,
+    type ParagraphBlock,
+    type Section,
+    type TableBlock,
+    type TableCell,
+    type TableRow,
+    isFieldMarker,
 } from "./read-document";
+
+/**
+ * Where a bookmark, or a field whose result depends on the page it is on, was placed.
+ */
+export type PagePlace = {
+    /** The page it is on, counted from the first */
+    readonly page: number;
+    /** The page's number, and how the page shows it, as a page reference to a bookmark there writes it */
+    readonly pageNumber: number;
+    readonly text: string;
+    /** The section it is in, counted from 0 */
+    readonly section: number;
+    /** Where it is among the bookmarks and fields, counted in the order they were placed, which is the document's */
+    readonly order: number;
+};
 
 /**
  * Where the pages of a document broke.
@@ -46,6 +62,19 @@ import type {
 export type Pagination = {
     /** The number of the page each bookmark starts on, as the page shows it */
     readonly bookmarks: ReadonlyMap<string, string>;
+    /** Where each bookmark and each field whose result depends on the page it is on was placed, by its marker's name */
+    readonly places: ReadonlyMap<string, PagePlace>;
+    /**
+     * The number of the page each bookmark starts on, without its chapter number, which a page reference to it in a format
+     * of its own writes in that format
+     */
+    readonly bookmarkNumbers: ReadonlyMap<string, number>;
+    /**
+     * What each page reference with `\p` in the body writes, by the bookmark it refers to, in the order they are in the
+     * body: "above" or "below" when it is on the bookmark's page, and "on page" and the bookmark's page otherwise, or
+     * undefined for those whose page or bookmark wasn't placed
+     */
+    readonly relativePositions: ReadonlyMap<string, readonly (string | undefined)[]>;
     /** How many pages were laid out */
     readonly pageCount: number;
     /**
@@ -62,6 +91,16 @@ export type Pagination = {
 export type PaginateOptions = {
     /** The page numbers of bookmarks, which the results of the page references to them are. Those not in it are blank */
     readonly pageNumbers?: ReadonlyMap<string, string>;
+    /**
+     * Where the bookmarks and fields were placed when the pages were laid out before, which the results of the page
+     * references in formats of their own, those with `\p` and page numbers are worked out from. Those not in it are blank
+     */
+    readonly places?: ReadonlyMap<string, PagePlace>;
+    /**
+     * Where the bookmarks and fields were placed in any pass before, which says where a pass whose pass before stopped
+     * earlier stops too: at a field whose number its format doesn't write there
+     */
+    readonly earlierPlaces?: ReadonlyMap<string, PagePlace>;
     /** The number of pages of the document, and of each section, which page count fields show. They are blank without */
     readonly pageCount?: number;
     readonly sectionPageCounts?: readonly (number | undefined)[];
@@ -330,6 +369,32 @@ const linesKept = (
     return isFirstLine && withoutWidow === 1 ? 0 : withoutWidow;
 };
 
+/** The result of a field that depends on the pages */
+type PageField = Exclude<LayoutItem, InlineItem>;
+
+const PAGE_FIELDS: ReadonlySet<string> = new Set(["pageReference", "pageCount", "pageNumber", "sectionNumber"]);
+
+/** Whether an item is the result of a field that depends on the pages */
+const isPageField = (item: LayoutItem): item is PageField => PAGE_FIELDS.has(item.type);
+
+/**
+ * What a page reference with `\p` writes, from where its bookmark (`target`) and the reference (`at`) were placed: "above"
+ * or "below" on the same page, by the order of the text, even across columns and table cells, and "on page" and the
+ * bookmark's page as the page shows it otherwise, as Word writes them (`word-watertight-fields.docx` FD2,
+ * `word-page-fields.docx` PF1 to PF3). A bookmark in a footnote or endnote, which isn't in the text of the body
+ * (`sameStory`), is "on page" its reference's page, even on the reference's page (PF8d and PF8e). Undefined when either
+ * wasn't placed.
+ */
+const relativeText = (target: PagePlace | undefined, at: PagePlace | undefined, sameStory: boolean): string | undefined => {
+    if (target === undefined || at === undefined) {
+        return undefined;
+    }
+    if (target.page !== at.page || !sameStory) {
+        return `on page ${target.text}`;
+    }
+    return target.order < at.order ? "above" : "below";
+};
+
 /**
  * Lays out a document's pages, and finds the page each bookmark starts on.
  */
@@ -337,6 +402,8 @@ export const paginate = (
     content: DocumentContent,
     {
         pageNumbers = new Map(),
+        places: givenPlaces = new Map(),
+        earlierPlaces = new Map(),
         pageCount: givenPageCount,
         sectionPageCounts: givenSectionPageCounts = [],
         measurer = DEFAULT_MEASURER,
@@ -377,18 +444,72 @@ export const paginate = (
     // The section being laid out
     let sectionIndex = 0;
 
-    /** The text of the results of fields that depend on the pages, from the numbers given */
-    const itemsOf = (items: readonly LayoutItem[]): readonly InlineItem[] =>
-        items.map((item) => {
-            if (item.type === "pageReference") {
-                return { type: "text", text: pageNumbers.get(item.bookmark) ?? "", font: item.font };
-            }
-            if (item.type === "pageCount") {
+    /**
+     * A field's text in its format: its number in its number format or picture, or as it is, in its capitals. It stops the
+     * layout where Word's text for the number isn't known, such as 781 in letters
+     */
+    const written = (value: number, text: string, format: FieldFormat = {}): string => {
+        const inFormat = writesNumber(format) ? writeFieldNumber(value, format) : text;
+        if (inFormat === undefined) {
+            throw new Unsupported("a page number its format isn't written for yet");
+        }
+        return inFieldCapitals(inFormat, format.capitals);
+    };
+
+    /**
+     * What a page reference writes, from where it and its bookmark were placed before: the page's number as the page shows
+     * it, such as iv or 1-2, or, in a number format of its own, the page's number without its chapter number in that
+     * format (`word-page-fields.docx` PF4), or, with `\p`, where the bookmark is from it
+     */
+    /**
+     * Where a bookmark or field was placed in the pass before. When it wasn't, as that pass stopped before it, but one
+     * before that placed it where its number in a field's format isn't written, this pass stops at the field too, so the
+     * passes agree
+     */
+    const placeOf = (name: string, format?: FieldFormat): PagePlace | undefined => {
+        const earlier = earlierPlaces.get(name);
+        if (!givenPlaces.has(name) && earlier !== undefined && writesNumber(format)) {
+            written(earlier.pageNumber, "", format);
+        }
+        return givenPlaces.get(name);
+    };
+
+    const referenceText = ({ bookmark, format, relative }: Extract<LayoutItem, { readonly type: "pageReference" }>): string => {
+        if (relative === undefined && !writesNumber(format)) {
+            return inFieldCapitals(pageNumbers.get(bookmark) ?? "", format?.capitals);
+        }
+        const target = placeOf(bookmark, format);
+        const text = relative === undefined ? target?.text : relativeText(target, givenPlaces.get(relative), !homes.get(bookmark)?.inNote);
+        return text === undefined ? "" : written(target!.pageNumber, text, format);
+    };
+
+    /** The text of the result of a field that depends on the pages, from the numbers given and the places of the pass before */
+    const resultText = (item: PageField): string => {
+        switch (item.type) {
+            case "pageReference":
+                return referenceText(item);
+            case "pageCount": {
                 const count = item.scope === "document" ? givenPageCount : givenSectionPageCounts[sectionIndex];
-                return { type: "text", text: count === undefined ? "" : String(count), font: item.font };
+                return count === undefined ? "" : written(count, String(count), item.format);
             }
-            return item;
-        });
+            case "pageNumber": {
+                // The page's number as the page shows it, as a page reference to a bookmark at the field would write it
+                // (`word-page-number-formats.docx` C8), and in a footnote or endnote its reference's (PF7g to PF7i)
+                const place = placeOf(item.field, item.format);
+                return place === undefined ? "" : written(place.pageNumber, place.text, item.format);
+            }
+            default: {
+                // The section's number, counted from 1 (`word-watertight-pages.docx` PG7e): in a footnote or endnote, the
+                // section of its reference (PF7g to PF7i)
+                const index = item.field === undefined ? sectionIndex : givenPlaces.get(item.field)?.section;
+                return index === undefined ? "" : written(index + 1, String(index + 1), item.format);
+            }
+        }
+    };
+
+    /** The text of the results of fields that depend on the pages */
+    const itemsOf = (items: readonly LayoutItem[]): readonly InlineItem[] =>
+        items.map((item) => (isPageField(item) ? { type: "text", text: resultText(item), font: item.font } : item));
 
     /**
      * A paragraph's content, as it is measured, which stops the layout at a character whose width the measurer doesn't
@@ -426,7 +547,7 @@ export const paginate = (
             }
             return laidOut;
         };
-        if (paragraph.items.some(({ type }) => type === "pageReference" || type === "pageCount")) {
+        if (paragraph.items.some(isPageField)) {
             return layOut();
         }
         const byWidths = byParagraph.get(paragraph) ?? new Map<string, readonly LaidOutLine[]>();
@@ -694,10 +815,27 @@ export const paginate = (
             ? block.items.flatMap((item) => (item.type === "marker" ? [item.name] : []))
             : block.rows.flatMap(({ cells }) => cells.flatMap((cell) => cell.blocks.flatMap(markersOf)));
 
+    // The bookmarks and fields in each footnote and endnote, by the marker at its reference: Word gives them its reference's
+    // page and section, even those in the part of a footnote continued on the next page, and an endnote's at the end of the
+    // document (`word-watertight-fields.docx` FD4, `word-page-fields.docx` PF7g to PF8c)
+    const inNotes = new Map(
+        [...footnotes, ...content.endnoteReferences].map(([name, noteBlocks]) => [name, noteBlocks.flatMap(markersOf)] as const),
+    );
+    // Whether each bookmark of the body and its notes is in a footnote or endnote
+    const homes = new Map<string, { readonly inNote: boolean }>();
+    for (const { block } of content.blocks) {
+        for (const name of markersOf(block)) {
+            for (const bookmark of inNotes.get(name) ?? [name]) {
+                // eslint-disable-next-line functional/immutable-data
+                homes.set(bookmark, { inNote: inNotes.has(name) });
+            }
+        }
+    }
+
     // The state of the page being filled
     const bookmarks = new Map<string, string>();
-    // The page each bookmark was placed on, counted from the first
-    const markedOn = new Map<string, number>();
+    // Where each bookmark and field was placed
+    const places = new Map<string, PagePlace>();
     // The height of each header and footer, by the section it is in, whose number of pages it can show
     // eslint-disable-next-line functional/prefer-readonly-type
     const headerHeights = new Map<readonly Block[], Map<number, number>>();
@@ -866,10 +1004,12 @@ export const paginate = (
      */
     const stopOnPage = (reason: string): never => {
         stoppedOnPage = pageCount;
-        for (const [name, page] of markedOn) {
+        for (const [name, { page }] of places) {
             if (page === pageCount) {
                 // eslint-disable-next-line functional/immutable-data
                 bookmarks.delete(name);
+                // eslint-disable-next-line functional/immutable-data
+                places.delete(name);
             }
         }
         throw new Unsupported(reason);
@@ -1810,14 +1950,20 @@ export const paginate = (
         return heading?.chapter === undefined ? page : `${heading.chapter}${chapters!.separator}${page}`;
     };
 
+    /**
+     * Places the bookmarks and fields of a line or row placed on the page, as it shows its number there, and those of the
+     * footnotes and endnotes it refers to with them
+     */
     const mark = (names: readonly string[]): void => {
         const text = pageText();
-        for (const name of names) {
-            if (!bookmarks.has(name) && !footnotes.has(name)) {
+        for (const name of names.flatMap((marker) => inNotes.get(marker) ?? [marker])) {
+            if (!places.has(name)) {
                 // eslint-disable-next-line functional/immutable-data
-                bookmarks.set(name, text);
-                // eslint-disable-next-line functional/immutable-data
-                markedOn.set(name, pageCount);
+                places.set(name, { page: pageCount, pageNumber, text, section: sectionIndex, order: places.size });
+                if (!isFieldMarker(name)) {
+                    // eslint-disable-next-line functional/immutable-data
+                    bookmarks.set(name, text);
+                }
             }
         }
     };
@@ -2788,6 +2934,23 @@ export const paginate = (
             return first === undefined || last === undefined || sharingPages.has(index) ? undefined : last - first + 1;
         });
 
+    /** Where the pages broke, and what was placed on them, with what was worked out from where */
+    const paginationOf = (stoppedAt?: string): Pagination => ({
+        bookmarks,
+        places,
+        bookmarkNumbers: new Map([...bookmarks.keys()].map((name) => [name, places.get(name)!.pageNumber])),
+        relativePositions: new Map(
+            [...content.relativeReferences].map(([bookmark, fields]) => [
+                bookmark,
+                fields.map((field) => relativeText(places.get(bookmark), places.get(field), !homes.get(bookmark)?.inNote)),
+            ]),
+        ),
+        pageCount,
+        sectionPageCounts: countsOf(),
+        ...(stoppedAt === undefined ? {} : { stoppedAt }),
+        pages: pagesOf(),
+    });
+
     try {
         if (content.unsupported) {
             throw new Unsupported(content.unsupported);
@@ -2807,10 +2970,10 @@ export const paginate = (
             throw error;
         }
         finishPage();
-        return { bookmarks, pageCount, sectionPageCounts: countsOf(), stoppedAt: error.message, pages: pagesOf() };
+        return paginationOf(error.message);
     }
     finishPage();
     // eslint-disable-next-line functional/immutable-data
     lastPages.set(sectionIndex, pageCount);
-    return { bookmarks, pageCount, sectionPageCounts: countsOf(), pages: pagesOf() };
+    return paginationOf();
 };
