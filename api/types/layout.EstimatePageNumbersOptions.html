@@ -17,9 +17,9 @@
 <div class="tsd-comment tsd-typography">
 <div class="tsd-tag-publicApi">
 <h4 class="tsd-anchor-link" id="public-api">Public Api<a href="#public-api" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="../assets/icons.svg#icon-anchor"></use></svg></a></h4></div></div></section>
-<div class="tsd-signature"><span class="tsd-signature-keyword">type</span> <span class="tsd-kind-type-alias">EstimatePageNumbersOptions</span> <span class="tsd-signature-symbol">=</span> <span class="tsd-signature-symbol">{</span><br/>    <a class="tsd-kind-property" href="#fonts">fonts</a><span class="tsd-signature-symbol">?:</span> <span class="tsd-signature-keyword">readonly</span> <a href="layout.FontFile.html" class="tsd-signature-type tsd-kind-type-alias">FontFile</a><span class="tsd-signature-symbol">[]</span><span class="tsd-signature-symbol">;</span><br/>    <a class="tsd-kind-property" href="#measurewidth">measureWidth</a><span class="tsd-signature-symbol">?:</span> <a href="layout.MeasureWidth.html" class="tsd-signature-type tsd-kind-type-alias">MeasureWidth</a><span class="tsd-signature-symbol">;</span><br/><span class="tsd-signature-symbol">}</span></div><aside class="tsd-sources">
+<div class="tsd-signature"><span class="tsd-signature-keyword">type</span> <span class="tsd-kind-type-alias">EstimatePageNumbersOptions</span> <span class="tsd-signature-symbol">=</span> <span class="tsd-signature-symbol">{</span><br/>    <a class="tsd-kind-property" href="#fonts">fonts</a><span class="tsd-signature-symbol">?:</span> <span class="tsd-signature-keyword">readonly</span> <a href="layout.FontFile.html" class="tsd-signature-type tsd-kind-type-alias">FontFile</a><span class="tsd-signature-symbol">[]</span><span class="tsd-signature-symbol">;</span><br/>    <a class="tsd-kind-property" href="#guess">guess</a><span class="tsd-signature-symbol">?:</span> <span class="tsd-signature-type">boolean</span><span class="tsd-signature-symbol">;</span><br/>    <a class="tsd-kind-property" href="#measurewidth">measureWidth</a><span class="tsd-signature-symbol">?:</span> <a href="layout.MeasureWidth.html" class="tsd-signature-type tsd-kind-type-alias">MeasureWidth</a><span class="tsd-signature-symbol">;</span><br/><span class="tsd-signature-symbol">}</span></div><aside class="tsd-sources">
 <ul>
-<li>Defined in <a href="https://github.com/dolanmiu/docx/blob/85773e0f014d0f7373b85069ab4940c7c808db9a/src/layout/estimate-page-numbers.ts#L111">layout/estimate-page-numbers.ts:111</a></li></ul></aside>
+<li>Defined in <a href="https://github.com/dolanmiu/docx/blob/edbb770e3f2676cbe82fccfe483290ab584a398c/src/layout/estimate-page-numbers.ts#L124">layout/estimate-page-numbers.ts:124</a></li></ul></aside>
 <section class="tsd-panel-group tsd-index-group">
 <section class="tsd-panel tsd-index-panel">
 <details class="tsd-index-content tsd-accordion" open><summary class="tsd-accordion-summary tsd-index-summary"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" aria-hidden="true"><use href="../assets/icons.svg#icon-chevronDown"></use></svg>
@@ -28,6 +28,7 @@
 <section class="tsd-index-section">
 <h3 class="tsd-index-heading tsd-anchor-link" id="properties">Properties<a href="#properties" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="../assets/icons.svg#icon-anchor"></use></svg></a></h3>
 <div class="tsd-index-list"><a href="#fonts" class="tsd-index-link"><svg class="tsd-kind-icon" viewBox="0 0 24 24" aria-label="Property"><use href="../assets/icons.svg#icon-1024"></use></svg><span>fonts?</span></a>
+<a href="#guess" class="tsd-index-link"><svg class="tsd-kind-icon" viewBox="0 0 24 24" aria-label="Property"><use href="../assets/icons.svg#icon-1024"></use></svg><span>guess?</span></a>
 <a href="#measurewidth" class="tsd-index-link"><svg class="tsd-kind-icon" viewBox="0 0 24 24" aria-label="Property"><use href="../assets/icons.svg#icon-1024"></use></svg><span>measure<wbr/>Width?</span></a>
 </div></section></div></details></section></section>
 <details class="tsd-panel-group tsd-member-group tsd-accordion" open><summary class="tsd-accordion-summary" data-key="section-Properties"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" aria-hidden="true"><use href="../assets/icons.svg#icon-chevronDown"></use></svg>
@@ -44,7 +45,22 @@ measured with the upright one. The layout stops at a character a font's file has
 another font. A font the document embeds is measured from the document's own file</p>
 </div><aside class="tsd-sources">
 <ul>
-<li>Defined in <a href="https://github.com/dolanmiu/docx/blob/85773e0f014d0f7373b85069ab4940c7c808db9a/src/layout/estimate-page-numbers.ts#L120">layout/estimate-page-numbers.ts:120</a></li></ul></aside></section>
+<li>Defined in <a href="https://github.com/dolanmiu/docx/blob/edbb770e3f2676cbe82fccfe483290ab584a398c/src/layout/estimate-page-numbers.ts#L133">layout/estimate-page-numbers.ts:133</a></li></ul></aside></section>
+<section class="tsd-panel tsd-member">
+<h3 class="tsd-anchor-link" id="guess"><code class="tsd-tag">Optional</code> <code class="tsd-tag">Readonly</code><span>guess</span><a href="#guess" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="../assets/icons.svg#icon-anchor"></use></svg></a></h3>
+<div class="tsd-signature"><span class="tsd-kind-property">guess</span><span class="tsd-signature-symbol">?:</span> <span class="tsd-signature-type">boolean</span></div>
+<div class="tsd-comment tsd-typography"><p>Whether to lay out past what the layout can't lay out as Word does yet with the best guess it has, rather than
+leave the page numbers after it blank. Text in a font that isn't in the width tables, and isn't given as a file or
+embedded, is measured as the most similar font that is, such as Aptos as Arial, and a character whose width isn't
+known as an average letter of its font. A date is measured as it is written, and a setting or formatting the layout
+doesn't follow, such as hyphenation or a compatibility setting, is left as if it weren't there. What it can't read,
+such as a drawing that text flows around or an equation, is left out, and a page laid out as the rule it follows
+nearest to Word's lays it out. It still stops where it has no guess, such as at an imported document.</p>
+<p>The page numbers may then not be Word's, so <code>guesses</code>, in what the estimator gives, says where it guessed. Default
+is off, so the numbers written are Word's, as near as the layout knows, or blank.</p>
+</div><aside class="tsd-sources">
+<ul>
+<li>Defined in <a href="https://github.com/dolanmiu/docx/blob/edbb770e3f2676cbe82fccfe483290ab584a398c/src/layout/estimate-page-numbers.ts#L153">layout/estimate-page-numbers.ts:153</a></li></ul></aside></section>
 <section class="tsd-panel tsd-member">
 <h3 class="tsd-anchor-link" id="measurewidth"><code class="tsd-tag">Optional</code> <code class="tsd-tag">Readonly</code><span>measure<wbr/>Width</span><a href="#measurewidth" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="../assets/icons.svg#icon-anchor"></use></svg></a></h3>
 <div class="tsd-signature"><span class="tsd-kind-property">measureWidth</span><span class="tsd-signature-symbol">?:</span> <a href="layout.MeasureWidth.html" class="tsd-signature-type tsd-kind-type-alias">MeasureWidth</a></div>
@@ -54,7 +70,7 @@ break, and tabs move to their stops, as Word lays them out, and lines are as tal
 width tables, so the layout stops at text in a font that isn't in them and isn't given as a file or embedded.</p>
 </div><aside class="tsd-sources">
 <ul>
-<li>Defined in <a href="https://github.com/dolanmiu/docx/blob/85773e0f014d0f7373b85069ab4940c7c808db9a/src/layout/estimate-page-numbers.ts#L127">layout/estimate-page-numbers.ts:127</a></li></ul></aside></section></section></details></div>
+<li>Defined in <a href="https://github.com/dolanmiu/docx/blob/edbb770e3f2676cbe82fccfe483290ab584a398c/src/layout/estimate-page-numbers.ts#L140">layout/estimate-page-numbers.ts:140</a></li></ul></aside></section></section></details></div>
 <div class="col-sidebar">
 <div class="page-menu">
 <div class="tsd-navigation settings">
@@ -70,7 +86,7 @@ width tables, so the layout stops at text in a font that isn't in them and isn't
 <h3>On This Page</h3></summary>
 <div class="tsd-accordion-details">
 <details open class="tsd-accordion tsd-page-navigation-section"><summary class="tsd-accordion-summary" data-key="section-Properties"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" aria-hidden="true"><use href="../assets/icons.svg#icon-chevronDown"></use></svg>Properties</summary>
-<div><a href="#fonts"><svg class="tsd-kind-icon" viewBox="0 0 24 24" aria-label="Property"><use href="../assets/icons.svg#icon-1024"></use></svg><span>fonts</span></a><a href="#measurewidth"><svg class="tsd-kind-icon" viewBox="0 0 24 24" aria-label="Property"><use href="../assets/icons.svg#icon-1024"></use></svg><span>measure<wbr/>Width</span></a></div></details></div></details></div>
+<div><a href="#fonts"><svg class="tsd-kind-icon" viewBox="0 0 24 24" aria-label="Property"><use href="../assets/icons.svg#icon-1024"></use></svg><span>fonts</span></a><a href="#guess"><svg class="tsd-kind-icon" viewBox="0 0 24 24" aria-label="Property"><use href="../assets/icons.svg#icon-1024"></use></svg><span>guess</span></a><a href="#measurewidth"><svg class="tsd-kind-icon" viewBox="0 0 24 24" aria-label="Property"><use href="../assets/icons.svg#icon-1024"></use></svg><span>measure<wbr/>Width</span></a></div></details></div></details></div>
 <div class="site-menu">
 <nav class="tsd-navigation"><a href="../modules.html">docx</a>
 <ul class="tsd-small-nested-navigation" id="tsd-nav-container">

@@ -37,7 +37,9 @@ setting that changes Word's lines in a way not yet followed: <code>suppressTopSp
 of Word's own the layout doesn't know, on or off. The schema's other settings, which ask for an older Word's or
 another application's layout, Word lays out lines with as without them, and settings for other applications are left
 to them. When laying the pages out again with the page numbers it worked out still changes them after three passes,
-as when a table of contents wraps one way with a number and the other way without it, all of them are left blank.</p>
+as when a table of contents wraps one way with a number and the other way without it, all of them are left blank. To
+lay out past what it stops at with the best guess it has instead, give the document
+<code>estimatePageNumbersWith({ guess: true })</code>.</p>
 <p>Page references are written as Word writes them, with <code>\p</code> (&quot;above&quot;, &quot;below&quot; or &quot;on page 4&quot;) and in formats of their
 own, such as <code>\* roman</code>, and so are numbers of pages. Page references, tables of contents and SEQ fields (caption
 numbers, which are counted without laying out the pages) are written clean, so Word shows the numbers as they are
@@ -48,7 +50,7 @@ written, and the numbers left blank stay blank, without asking to update the fie
 <div class="tsd-tag-publicApi">
 <h4 class="tsd-anchor-link" id="public-api">Public Api<a href="#public-api" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="../assets/icons.svg#icon-anchor"></use></svg></a></h4></div></div><aside class="tsd-sources">
 <ul>
-<li>Defined in <a href="https://github.com/dolanmiu/docx/blob/85773e0f014d0f7373b85069ab4940c7c808db9a/src/layout/estimate-page-numbers.ts#L83">layout/estimate-page-numbers.ts:83</a></li></ul></aside></div>
+<li>Defined in <a href="https://github.com/dolanmiu/docx/blob/edbb770e3f2676cbe82fccfe483290ab584a398c/src/layout/estimate-page-numbers.ts#L96">layout/estimate-page-numbers.ts:96</a></li></ul></aside></div>
 <div class="col-sidebar">
 <div class="page-menu">
 <div class="tsd-navigation settings">

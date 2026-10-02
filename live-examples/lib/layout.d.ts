@@ -57,7 +57,9 @@ export declare type DocumentLayout = {
  * of Word's own the layout doesn't know, on or off. The schema's other settings, which ask for an older Word's or
  * another application's layout, Word lays out lines with as without them, and settings for other applications are left
  * to them. When laying the pages out again with the page numbers it worked out still changes them after three passes,
- * as when a table of contents wraps one way with a number and the other way without it, all of them are left blank.
+ * as when a table of contents wraps one way with a number and the other way without it, all of them are left blank. To
+ * lay out past what it stops at with the best guess it has instead, give the document
+ * `estimatePageNumbersWith({ guess: true })`.
  *
  * Page references are written as Word writes them, with `\p` ("above", "below" or "on page 4") and in formats of their
  * own, such as `\* roman`, and so are numbers of pages. Page references, tables of contents and SEQ fields (caption
@@ -91,6 +93,19 @@ export declare type EstimatePageNumbersOptions = {
      * width tables, so the layout stops at text in a font that isn't in them and isn't given as a file or embedded.
      */
     readonly measureWidth?: MeasureWidth;
+    /**
+     * Whether to lay out past what the layout can't lay out as Word does yet with the best guess it has, rather than
+     * leave the page numbers after it blank. Text in a font that isn't in the width tables, and isn't given as a file or
+     * embedded, is measured as the most similar font that is, such as Aptos as Arial, and a character whose width isn't
+     * known as an average letter of its font. A date is measured as it is written, and a setting or formatting the layout
+     * doesn't follow, such as hyphenation or a compatibility setting, is left as if it weren't there. What it can't read,
+     * such as a drawing that text flows around or an equation, is left out, and a page laid out as the rule it follows
+     * nearest to Word's lays it out. It still stops where it has no guess, such as at an imported document.
+     *
+     * The page numbers may then not be Word's, so `guesses`, in what the estimator gives, says where it guessed. Default
+     * is off, so the numbers written are Word's, as near as the layout knows, or blank.
+     */
+    readonly guess?: boolean;
 };
 
 /**
@@ -101,13 +116,14 @@ export declare type EstimatePageNumbersOptions = {
  * new Document({ pageNumbers: estimatePageNumbersWith({ measureWidth: measureWithPretext(pretext) }), sections: [...] });
  * const fonts = [{ data: await readFile("Aptos.ttf") }, { data: await readFile("Aptos-Bold.ttf") }];
  * new Document({ pageNumbers: estimatePageNumbersWith({ fonts }), sections: [...] });
+ * new Document({ pageNumbers: estimatePageNumbersWith({ guess: true }), sections: [...] });
  * ```
  *
  * It throws when a font file isn't a TrueType or OpenType font.
  *
  * @publicApi
  */
-export declare const estimatePageNumbersWith: ({ measureWidth, fonts, }: EstimatePageNumbersOptions) => PageNumberEstimator & TemplatePageNumberEstimator;
+export declare const estimatePageNumbersWith: ({ measureWidth, fonts, guess, }: EstimatePageNumbersOptions) => PageNumberEstimator & TemplatePageNumberEstimator;
 
 /**
  * A font file's bytes: a TrueType or OpenType font (`.ttf` or `.otf`), or a collection of them (`.ttc`).
@@ -157,13 +173,28 @@ export declare type FontToMeasure = {
  *
  * The pages are laid out as `estimatePageNumbers` lays them out, with the same fonts and rules, and the page numbers of
  * tables of contents and page references are laid out as it writes them. Where it can't lay out something yet, such as a
- * text box, it stops, and gives the pages up to there, with why in `stoppedAt`.
+ * text box, it stops, and gives the pages up to there, with why in `stoppedAt`, unless it is asked to guess.
  *
  * @param document - The document to lay out. It is laid out as it would be written
+ * @param options - Whether to guess past what it can't lay out as Word does yet
  *
  * @publicApi
  */
-export declare const layoutDocument: (document: Document_2) => DocumentLayout;
+export declare const layoutDocument: (document: Document_2, { guess }?: LayoutDocumentOptions) => DocumentLayout;
+
+/**
+ * How {@link layoutDocument} lays out the pages.
+ *
+ * @publicApi
+ */
+export declare type LayoutDocumentOptions = {
+    /**
+     * Whether to lay out past what the layout can't lay out as Word does yet with the best guess it has, as
+     * `estimatePageNumbersWith({ guess: true })` does, rather than stop there. Each page says what was guessed at on it,
+     * in `guesses`, and `stoppedAt` says where it stopped all the same, where it has no guess. Default is off
+     */
+    readonly guess?: boolean;
+};
 
 /**
  * A line of a paragraph on a page. Lengths are in pixels, 96 to the inch, from the top left corner of the page.
@@ -262,6 +293,11 @@ export declare type PageLayout = {
     readonly footnotes: readonly NoteLayout[];
     /** The endnotes on the page, which follow the body */
     readonly endnotes: readonly NoteLayout[];
+    /**
+     * What the layout guessed at on the page, when it was asked to guess: why it would have stopped there, such as
+     * `"a font not in the width tables"`, once each. From there on, the lines may not be where Word puts them
+     */
+    readonly guesses?: readonly string[];
 };
 
 /**

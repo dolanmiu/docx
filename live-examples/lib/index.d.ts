@@ -3555,6 +3555,12 @@ export declare type EstimatedPageNumbers = {
      * those in headers, footers and notes.
      */
     readonly relativePositions?: ReadonlyMap<string, readonly (string | undefined)[]>;
+    /**
+     * Where the estimator guessed, when it was asked to lay out past what it can't lay out as Word does, as
+     * `estimatePageNumbersWith({ guess: true })` from `docx/layout` is, in the order of the pages. The page numbers from
+     * the first of them on may not be Word's. Nothing of them is written into the document.
+     */
+    readonly guesses?: readonly PageNumberGuess[];
 };
 
 /**
@@ -10168,6 +10174,18 @@ export declare class PageNumberElement extends EmptyElement {
  * @publicApi
  */
 export declare type PageNumberEstimator = (body: IXmlableObject, context: IContext) => EstimatedPageNumbers;
+
+/**
+ * Where a {@link PageNumberEstimator} guessed at something it can't lay out as Word does.
+ *
+ * @publicApi
+ */
+export declare type PageNumberGuess = {
+    /** What it guessed at, as why it would have stopped there, such as `"a font not in the width tables"` */
+    readonly reason: string;
+    /** The page it guessed on, counted from 1 for the first page of the document, whatever number the page shows */
+    readonly page: number;
+};
 
 /**
  * Specifies the separator character between chapter number and page number.

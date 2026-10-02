@@ -2697,7 +2697,7 @@ var docxLayout = (function(exports) {
 	* shared among them in proportion to their widest words and widest lines added together, as Word shares it. Word
 	* shares one wider than their widest words in a way not yet followed when the columns are narrowed to the room, and
 	* one with more text beside it, or in a way not yet seen, when it is wider than their widest lines too. The table is
-	* then returned as unsupported.
+	* then returned as unsupported, sized as the layout would size it otherwise.
 	*
 	* A table whose cells all have widths keeps them, unless a word is longer than its cell gives it, or its rows give a
 	* column different widths. Word then widens that column to the word, and makes each column as wide as the widest any
@@ -2735,9 +2735,7 @@ var docxLayout = (function(exports) {
 		const room = target !== null && target !== void 0 ? target : (widen === null || widen === void 0 ? void 0 : widen.fixed) ? Number.POSITIVE_INFINITY : available - indent;
 		const sizingCells = sizingRows(table).flatMap((row) => row.cells);
 		if (fit && sizingCells.some((cell) => content.get(cell).hyphenated) && (total > room || sizingCells.some((cell) => cell.ownWidth !== void 0 && content.get(cell).min > cell.ownWidth))) return _objectSpread2(_objectSpread2({}, table), {}, { unsupported: "a table sized to its text whose columns' widths depend on words Word may hyphenate" });
-		if (sum$1(columns.map(({ min }) => min)) > room && tableWidth.width === void 0) return _objectSpread2(_objectSpread2({}, table), {}, { unsupported: "a word longer than its table can make room for" });
-		if (widen && spaced && target !== void 0 && total < target) return _objectSpread2(_objectSpread2({}, table), {}, { unsupported: "space between the cells of a table wider than its cells" });
-		if (unsettled.includes("always") || unsettled.length > 0 && total > room) return _objectSpread2(_objectSpread2({}, table), {}, { unsupported: "a long word in cells merged across columns" });
+		const unsupported = sum$1(columns.map(({ min }) => min)) > room && tableWidth.width === void 0 ? "a word longer than its table can make room for" : widen && spaced && target !== void 0 && total < target ? "space between the cells of a table wider than its cells" : unsettled.includes("always") || unsettled.length > 0 && total > room ? "a long word in cells merged across columns" : void 0;
 		const given = columns.filter((column) => column.given);
 		const sized = columns.filter((column) => !column.given);
 		const givenWidths = narrowed(given, room - sum$1(sized.map(({ min }) => min)));
@@ -2749,7 +2747,7 @@ var docxLayout = (function(exports) {
 		return _objectSpread2(_objectSpread2({}, table), {}, { rows: rows.map((row) => _objectSpread2(_objectSpread2({}, row), {}, { cells: row.cells.map((cell) => {
 			var _cell$span2;
 			return _objectSpread2(_objectSpread2({}, cell), {}, { width: sum$1(widths.slice(cell.column, cell.column + ((_cell$span2 = cell.span) !== null && _cell$span2 !== void 0 ? _cell$span2 : 1))) - cell.marginLeft - cell.marginRight });
-		}) })) });
+		}) })) }, unsupported === void 0 ? {} : { unsupported });
 	};
 	/**
 	* How narrow and how wide a table in a table cell is, as Word counts it to size the cell's column (`word-probes.docx` U1n
@@ -3880,6 +3878,22 @@ var docxLayout = (function(exports) {
 	var SIZED_REMOVAL = "a deleted picture, tab, break or note reference in a table whose columns Word sizes to their text";
 	var PARTLY_DELETED_FIELD = "a field partly deleted in a tracked change";
 	var OWN_NOTE_MARK = "a footnote or endnote with a mark of its own";
+	var TAB_IN_BORDER = "a tab in text with a border";
+	var GUESS = "docx-layout:guess ";
+	/** A marker that stands in a paragraph's items for what the reader guessed at, for why */
+	var guessMarker = (reason) => ({
+		type: "marker",
+		name: `${GUESS}${reason}`
+	});
+	/** Why the reader guessed at what an item stands for, when it is the marker of a guess */
+	var guessOf = (item) => item.type === "marker" && item.name.startsWith(GUESS) ? item.name.slice(18) : void 0;
+	/**
+	* Why the layout stops at what is being read, in its place, or, read to be laid out with a guess, the reader's guess at
+	* it (`guess`), after the marker of why, so the paragraph it is in is laid out with the guess, and says why. Where the
+	* reader has no better guess, it returns why alone, and the paragraph is laid out without what it stands for (see
+	* {@link itemsOf}).
+	*/
+	var guessedOr = (reader, reason, guess) => reader.guess ? [guessMarker(reason), ...itemsOf([guess()], reader)] : reason;
 	var nameOf = (element) => Object.keys(element)[0];
 	/** The content of an element, including its text. An element without content has its attributes, or nothing */
 	var contentOf$2 = (element) => {
@@ -3894,12 +3908,19 @@ var docxLayout = (function(exports) {
 	var isBound = (control) => find(childrenOf(find(childrenOf(control["w:sdt"]), "w:sdtPr")), "w:dataBinding") !== void 0;
 	/**
 	* The elements of a part of a document, such as a table's rows or a cell's paragraphs, with those in its content controls
-	* and custom XML in their place. A content control bound to custom XML is kept whole, as it can't be laid out.
+	* and custom XML in their place. A content control bound to custom XML is kept whole, as it can't be laid out, unless it
+	* is read to be laid out with a guess (`guess`) and starts with a paragraph: then what is written in it is read as it is,
+	* and its first paragraph says why it is a guess.
 	*/
-	var unwrap = (elements) => elements.filter(isObject).flatMap((element) => {
+	var unwrap = (elements, guess = false) => elements.filter(isObject).flatMap((element) => {
 		const name = nameOf(element);
-		if (name === "w:sdt" && !isBound(element)) return unwrap(childrenOf(find(childrenOf(element[name]), "w:sdtContent")));
-		return name === "w:customXml" ? unwrap(contentOf$2(element)) : [element];
+		if (name === "w:sdt") {
+			const content = unwrap(childrenOf(find(childrenOf(element[name]), "w:sdtContent")), guess);
+			if (!isBound(element)) return content;
+			const first = content.find((child) => BLOCK_ELEMENTS.has(nameOf(child)));
+			return guess && first !== void 0 && "w:p" in first ? content.map((child) => child === first ? stopIn(child, BOUND_CONTROL) : child) : [element];
+		}
+		return name === "w:customXml" ? unwrap(contentOf$2(element), guess) : [element];
 	});
 	/** The name of the bookmark a bookmark's start (`w:bookmarkStart`) starts */
 	var bookmarkOf = (element) => stringOf(attributesOf(element["w:bookmarkStart"])["w:name"]);
@@ -3987,6 +4008,8 @@ var docxLayout = (function(exports) {
 	};
 	var DATE_FIELDS = /* @__PURE__ */ new Set(["DATE", "TIME"]);
 	var DATE_UNSUPPORTED = "a date or time, which Word writes when it opens the document";
+	var RELATIVE_IN_NOTE = "a page reference that says where its bookmark is, in a footnote or endnote";
+	var WRITTEN_GUESSES = /* @__PURE__ */ new Set([DATE_UNSUPPORTED, RELATIVE_IN_NOTE]);
 	/** A marker at a field whose result depends on where it is placed */
 	var fieldMarker = (markers) => {
 		markers.count++;
@@ -4032,7 +4055,7 @@ var docxLayout = (function(exports) {
 				markers.relative.set(bookmark, references);
 				references.push(at.name);
 			}
-			if (switched.unsupported) return switched.unsupported;
+			if (switched.unsupported) return guessedOr(reader, switched.unsupported, () => workedOutResultOf(`PAGEREF ${bookmark}`, font, reader));
 			const own = withoutUndefined({ format: switched.format });
 			if (!switched.relative || writesNumber(switched.format)) return [_objectSpread2({
 				type: "pageReference",
@@ -4045,16 +4068,17 @@ var docxLayout = (function(exports) {
 				bookmark,
 				font,
 				relative: at.name
-			}, own)] : "a page reference that says where its bookmark is, in a footnote or endnote";
+			}, own)] : RELATIVE_IN_NOTE;
 		}
 		const { format, unsupported } = numberSwitchesOf(field[2]);
-		if (name === "NUMPAGES" || name === "SECTIONPAGES") return unsupported !== null && unsupported !== void 0 ? unsupported : [_objectSpread2({
+		const unformatted = () => workedOutResultOf(name, font, reader);
+		if (name === "NUMPAGES" || name === "SECTIONPAGES") return unsupported === void 0 ? [_objectSpread2({
 			type: "pageCount",
 			scope: name === "NUMPAGES" ? "document" : "section",
 			font
-		}, withoutUndefined({ format }))];
+		}, withoutUndefined({ format }))] : guessedOr(reader, unsupported, unformatted);
 		if (inHeader) return;
-		if (unsupported) return unsupported;
+		if (unsupported) return guessedOr(reader, unsupported, unformatted);
 		if (name === "SECTION" && !inNote) return [_objectSpread2({
 			type: "sectionNumber",
 			font
@@ -4227,6 +4251,7 @@ var docxLayout = (function(exports) {
 		else if (type === "separate" && field) {
 			const result = deleted ? void 0 : workedOutResultOf(field.instruction, fontOf(format), reader);
 			field.inResult = true;
+			if (typeof result === "string" && reader.guess === true && WRITTEN_GUESSES.has(result) && isShown(reader)) return format.hidden ? [] : guessedOr(reader, result, () => []);
 			if (result !== void 0 && isShown(reader)) {
 				field.replaced = true;
 				return format.hidden ? [] : result;
@@ -4260,6 +4285,7 @@ var docxLayout = (function(exports) {
 		]);
 		const font = fontOf(format);
 		const unsupportedFormat = (_unsupportedFormatOf = unsupportedFormatOf(childrenOf(properties))) !== null && _unsupportedFormatOf !== void 0 ? _unsupportedFormatOf : format.hidden ? void 0 : unknownRunFormatting(format);
+		let formatGuessed = false;
 		const items = children.map((child) => {
 			const name = nameOf(child);
 			if (name === "w:fldChar") return readFieldCharacter(child, format, removed ? uncounted(reader) : reader);
@@ -4271,13 +4297,15 @@ var docxLayout = (function(exports) {
 			if (!isShown(reader) || name === "w:rPr") return [];
 			if (reader.fields.some((open) => open.deleted === true)) return PARTLY_DELETED_FIELD;
 			if (removed && (REMOVED_ROOM.has(name) || REMOVED_NOTES.has(name))) return SIZED_REMOVAL;
-			if (unsupportedFormat !== void 0) return unsupportedFormat;
+			if (unsupportedFormat !== void 0) {
+				if (!reader.guess) return unsupportedFormat;
+				formatGuessed = true;
+			}
 			switch (name) {
 				case "w:t":
 				case "w:delText": {
 					const content = contentOf$2(child).filter((part) => typeof part === "string").join("");
-					if (font.border && !format.hidden && content.includes("	")) return "a tab in text with a border";
-					return content.split("	").flatMap((part, index) => [...index > 0 && !format.hidden ? [{
+					const read = () => content.split("	").flatMap((part, index) => [...index > 0 && !format.hidden ? [{
 						type: "tab",
 						font
 					}] : [], ...(part.length === 0 ? [] : spansOf(part, format)).map((_ref) => {
@@ -4288,9 +4316,13 @@ var docxLayout = (function(exports) {
 							font: _objectWithoutProperties(_ref, _excluded)
 						}, format.eastAsianLanguage === void 0 ? {} : { language: format.eastAsianLanguage }), isEastAsianRun(format) ? { eastAsian: true } : {}), hyphenationOf(format));
 					})]);
+					return font.border && !format.hidden && content.includes("	") ? guessedOr(reader, TAB_IN_BORDER, read) : read();
 				}
 				case "w:tab":
-				case "w:ptab": return format.hidden ? [] : font.border ? "a tab in text with a border" : [{
+				case "w:ptab": return format.hidden ? [] : font.border ? guessedOr(reader, TAB_IN_BORDER, () => [{
+					type: "tab",
+					font
+				}]) : [{
 					type: "tab",
 					font
 				}];
@@ -4312,7 +4344,13 @@ var docxLayout = (function(exports) {
 					text: "‑",
 					font
 				}];
-				case "w:softHyphen": return format.hidden ? [] : font.border ? "a soft hyphen in text with a border" : reader.inSizedTable ? "a soft hyphen in a table whose columns Word sizes to their text" : [{
+				case "w:softHyphen": return format.hidden ? [] : font.border ? guessedOr(reader, "a soft hyphen in text with a border", () => [{
+					type: "softHyphen",
+					font
+				}]) : reader.inSizedTable ? guessedOr(reader, "a soft hyphen in a table whose columns Word sizes to their text", () => [{
+					type: "softHyphen",
+					font
+				}]) : [{
 					type: "softHyphen",
 					font
 				}];
@@ -4328,18 +4366,21 @@ var docxLayout = (function(exports) {
 				}
 				case "w:footnoteReference":
 				case "w:endnoteReference": {
-					var _reader$notes;
-					if (hasOwnMark(child)) return OWN_NOTE_MARK;
-					if (format.hidden) return "a footnote or endnote reference in hidden text";
-					const note = (_reader$notes = reader.notes) === null || _reader$notes === void 0 ? void 0 : _reader$notes.read(name === "w:footnoteReference" ? "footnote" : "endnote", String(attributesOf(child[name])["w:id"]));
-					return note === void 0 ? [] : [...note.marker ? [{
-						type: "marker",
-						name: note.marker
-					}] : [], noteNumber(note.label, font)];
+					/** The reference, with its note's number, unless a mark of its own follows it in its place */
+					const reference = (numbered) => {
+						var _reader$notes;
+						const note = (_reader$notes = reader.notes) === null || _reader$notes === void 0 ? void 0 : _reader$notes.read(name === "w:footnoteReference" ? "footnote" : "endnote", String(attributesOf(child[name])["w:id"]));
+						return note === void 0 ? [] : [...note.marker ? [{
+							type: "marker",
+							name: note.marker
+						}] : [], ...numbered ? [noteNumber(note.label, font)] : []];
+					};
+					if (hasOwnMark(child)) return guessedOr(reader, OWN_NOTE_MARK, () => format.hidden ? [] : reference(false));
+					return format.hidden ? "a footnote or endnote reference in hidden text" : reference(true);
 				}
 				case "w:footnoteRef":
 				case "w:endnoteRef": return reader.noteNumber === void 0 ? [] : [noteNumber(reader.noteNumber, font)];
-				case "w:drawing": return format.hidden ? [] : font.border ? "a picture in text with a border" : readDrawing(child, font, reader);
+				case "w:drawing": return format.hidden ? [] : font.border ? guessedOr(reader, "a picture in text with a border", () => readDrawing(child, font, reader)) : readDrawing(child, font, reader);
 				case "mc:AlternateContent": {
 					const choice = childrenOf(child["mc:AlternateContent"]).find((option) => "mc:Choice" in option);
 					return choice && !format.hidden ? readRun({ "w:r": [...childrenOf(choice["mc:Choice"])] }, paragraphRun, reader, removed) : [];
@@ -4351,7 +4392,7 @@ var docxLayout = (function(exports) {
 				case "w:monthShort":
 				case "w:monthLong":
 				case "w:yearShort":
-				case "w:yearLong": return reader.inHeader || format.hidden ? [] : DATE_UNSUPPORTED;
+				case "w:yearLong": return reader.inHeader || format.hidden ? [] : guessedOr(reader, DATE_UNSUPPORTED, () => []);
 				case "w:pgNum": {
 					if (reader.inHeader || format.hidden) return [];
 					const marker = fieldMarker(reader.markers);
@@ -4361,13 +4402,12 @@ var docxLayout = (function(exports) {
 						font
 					}];
 				}
-				case "w:ruby": return "text with a phonetic guide";
+				case "w:ruby": return guessedOr(reader, "text with a phonetic guide", () => readInline(childrenOf(find(childrenOf(child["w:ruby"]), "w:rubyBase")), paragraphRun, reader, removed));
 				case "w:contentPart": return "a content part, such as ink";
 				default: return [];
 			}
 		});
-		const unsupported = items.find((item) => typeof item === "string");
-		return unsupported !== null && unsupported !== void 0 ? unsupported : items.flatMap((item) => item);
+		return itemsOf(formatGuessed ? [[guessMarker(unsupportedFormat)], ...items] : items, reader);
 	};
 	var RUN_CONTAINERS = /* @__PURE__ */ new Set([
 		"w:hyperlink",
@@ -4383,8 +4423,12 @@ var docxLayout = (function(exports) {
 	var STOP = "docx-layout:unsupported";
 	var COUNTED = "docx-layout:counted";
 	var LEFT_OUT = "docx-layout:left-out";
-	/** The items of the parts of a paragraph, or why it can't be laid out */
-	var itemsOf = (parts) => {
+	/**
+	* The items of the parts of a paragraph, or why it can't be laid out. Read to be laid out with a guess, a part that can't
+	* be is left out, with the marker of why in its place
+	*/
+	var itemsOf = (parts, reader) => {
+		if (reader.guess) return parts.flatMap((part) => typeof part === "string" ? [guessMarker(part)] : part);
 		const unsupported = parts.find((part) => typeof part === "string");
 		return unsupported !== null && unsupported !== void 0 ? unsupported : parts.flatMap((part) => part);
 	};
@@ -4406,12 +4450,12 @@ var docxLayout = (function(exports) {
 				var _reader$notes2;
 				return (_reader$notes2 = reader.notes) === null || _reader$notes2 === void 0 ? void 0 : _reader$notes2.skip("footnote");
 			});
-			return itemsOf(children.map((child) => nameOf(child) === "w:fldChar" ? readFieldCharacter(child, {}, reader, true) : []));
+			return itemsOf(children.map((child) => nameOf(child) === "w:fldChar" ? readFieldCharacter(child, {}, reader, true) : []), reader);
 		}
 		if (name === "w:bookmarkStart") return markerOf(element);
 		if (name === "w:sdt") return readRemoved(childrenOf(find(childrenOf(element[name]), "w:sdtContent")), kind, reader);
 		return RUN_CONTAINERS.has(name) || REMOVALS.has(name) || name === "w:fldSimple" ? readRemoved(contentOf$2(element), kind, reader) : [];
-	}));
+	}), reader);
 	/**
 	* Reads the content of a paragraph, or of an element in it, such as a hyperlink, and when it is deleted (`removed`), as
 	* Word sizes a table's columns by it.
@@ -4421,17 +4465,21 @@ var docxLayout = (function(exports) {
 		if (name === "w:r") return readRun(element, paragraphRun, reader, removed);
 		if (REMOVALS.has(name)) return reader.showDeleted ? readInline(contentOf$2(element), paragraphRun, reader, true) : readRemoved(contentOf$2(element), name, reader);
 		if (RUN_CONTAINERS.has(name)) return readInline(contentOf$2(element), paragraphRun, reader, removed);
-		if (name === "w:sdt") return isBound(element) ? BOUND_CONTROL : readInline(childrenOf(find(childrenOf(element[name]), "w:sdtContent")), paragraphRun, reader, removed);
+		if (name === "w:sdt") {
+			const written = () => readInline(childrenOf(find(childrenOf(element[name]), "w:sdtContent")), paragraphRun, reader, removed);
+			return isBound(element) ? guessedOr(reader, BOUND_CONTROL, written) : written();
+		}
 		if (name === "w:fldSimple") {
 			const result = workedOutResultOf(String(attributesOf(element[name])["w:instr"]), fontOf(paragraphRun), removed ? uncounted(reader) : reader);
 			if (result === void 0 || !isShown(reader)) return readInline(contentOf$2(element), paragraphRun, reader, removed);
+			if (typeof result === "string" && reader.guess === true && WRITTEN_GUESSES.has(result)) return paragraphRun.hidden ? [] : guessedOr(reader, result, () => readInline(contentOf$2(element), paragraphRun, reader, removed));
 			return paragraphRun.hidden ? [] : result;
 		}
 		if (name === "w:bookmarkStart") return markerOf(element);
 		if (name === "w:subDoc") return "a subdocument";
 		if (name === STOP) return String(element[name]);
 		return name === "m:oMath" || name === "m:oMathPara" ? "an equation" : [];
-	}));
+	}), reader);
 	/**
 	* The number of a paragraph in a list, and what follows it, as its list's level writes it, and its number as a chapter
 	* number. A paragraph is in the list it gives, or else in its style's. The list's numbers move on.
@@ -4657,7 +4705,9 @@ var docxLayout = (function(exports) {
 			...list.level ? [list.level.paragraph] : [],
 			readParagraphFormat(properties)
 		];
-		const items = readInline(children, paragraphRun, reader);
+		const read = readInline(children, paragraphRun, reader);
+		const guessed = typeof read === "string" ? void 0 : read.map(guessOf).find((reason) => reason !== void 0);
+		const items = typeof read === "string" ? read : read.filter((item) => guessOf(item) === void 0);
 		const combined = combine(formats);
 		const own = typeof items === "string" ? [] : items;
 		const content = typeof items === "string" ? [] : [...list.items, ...items];
@@ -4677,7 +4727,7 @@ var docxLayout = (function(exports) {
 			format: typeof format === "string" ? combined : format,
 			tabStops,
 			markFont
-		}, unsupported === void 0 && typeof items !== "string" && children.some((child) => isObject(child) && LEFT_OUT in child) ? { hidden: true } : {}), list.list ? { list: list.list } : {}), list.alignment ? { numberAlignment: list.alignment } : {}), typeof borders === "object" ? { borders } : {}), {}, { style }, headingLevel === void 0 ? {} : { heading: _objectSpread2({ level: Number(headingLevel) }, withoutUndefined({ chapter: list.from === "style" ? list.chapter : void 0 })) }), typeof items === "string" || unsupported ? { unsupported: typeof items === "string" ? items : unsupported } : {});
+		}, unsupported === void 0 && typeof items !== "string" && children.some((child) => isObject(child) && LEFT_OUT in child) ? { hidden: true } : {}), list.list ? { list: list.list } : {}), list.alignment ? { numberAlignment: list.alignment } : {}), typeof borders === "object" ? { borders } : {}), {}, { style }, headingLevel === void 0 ? {} : { heading: _objectSpread2({ level: Number(headingLevel) }, withoutUndefined({ chapter: list.from === "style" ? list.chapter : void 0 })) }), typeof items === "string" || guessed || unsupported ? { unsupported: typeof items === "string" ? items : guessed !== null && guessed !== void 0 ? guessed : unsupported } : {});
 	};
 	/**
 	* Why a cell's properties (`w:tcPr`) change how its text is laid out in a way not yet followed, when they do: cells merged
@@ -4815,7 +4865,7 @@ var docxLayout = (function(exports) {
 	* bands by each row's place among all the rows, the deleted ones too (MK14j to MK14l).
 	*/
 	var readTable = (element, reader) => {
-		var _twips, _readTableLook, _ref9, _ref10, _ref11, _ref12, _ref13, _ref14, _ref15, _ref16, _ref17, _ref18, _read$find2, _blocks$find, _read$0$cells, _read$, _roomOf, _roomOf2;
+		var _twips, _readTableLook, _ref9, _ref10, _ref11, _ref12, _ref13, _ref14, _ref15, _ref16, _ref17, _ref18, _withoutGuess$unsuppo, _read$find2, _blocks$find, _read$0$cells, _read$, _roomOf, _roomOf2;
 		const children = contentOf$2(element).filter(isObject);
 		const properties = childrenOf(find(children, "w:tblPr"));
 		const style = valueOf(properties, "w:tblStyle");
@@ -4978,11 +5028,11 @@ var docxLayout = (function(exports) {
 		if (kept.length === 0 && read.length > 0) {
 			var _read$find;
 			const reason = (_read$find = read.find((row) => row.unsupported !== void 0)) === null || _read$find === void 0 ? void 0 : _read$find.unsupported;
-			return reason === void 0 ? void 0 : {
+			return reason === void 0 ? void 0 : _objectSpread2({
 				type: "table",
 				rows: [],
 				unsupported: reason
-			};
+			}, reader.guess ? { noGuess: true } : {});
 		}
 		const tableCells = read.flatMap(({ cells }) => cells);
 		const fits = !fixed && tableCells.some(({ ownWidth }) => ownWidth === void 0);
@@ -5070,19 +5120,20 @@ var docxLayout = (function(exports) {
 		const evened = unequal && evenable;
 		const tableTwips = givenWidth.width;
 		const fixedFit = fixed && evenable && (unequal || tableTwips !== void 0 && read.some(({ edges, end }) => Math.abs(edges.get(end) - tableTwips) > WIDTH_TOLERANCE));
-		const unsupported = (_ref9 = (_ref10 = (_ref11 = (_ref12 = (_ref13 = (_ref14 = (_ref15 = (_ref16 = (_ref17 = (_ref18 = find(properties, "w:tblpPr") === void 0 ? void 0 : "a table that text flows around") !== null && _ref18 !== void 0 ? _ref18 : parts.some((part) => "w:sdt" in part) ? BOUND_CONTROL : void 0) !== null && _ref17 !== void 0 ? _ref17 : (_read$find2 = read.find((row) => row.unsupported !== void 0)) === null || _read$find2 === void 0 ? void 0 : _read$find2.unsupported) !== null && _ref16 !== void 0 ? _ref16 : unmerged) !== null && _ref15 !== void 0 ? _ref15 : fits ? unfitted : unequal && !evened ? "a table whose rows give a column different widths" : void 0) !== null && _ref14 !== void 0 ? _ref14 : spacingUnsupported) !== null && _ref13 !== void 0 ? _ref13 : typeof geometry === "string" ? geometry : void 0) !== null && _ref12 !== void 0 ? _ref12 : indent === void 0 ? "a table indented by a share of the width" : void 0) !== null && _ref11 !== void 0 ? _ref11 : styleUnsupported) !== null && _ref10 !== void 0 ? _ref10 : lengths) !== null && _ref9 !== void 0 ? _ref9 : (_blocks$find = blocks.find((block) => block.unsupported !== void 0)) === null || _blocks$find === void 0 ? void 0 : _blocks$find.unsupported;
+		const withoutGuess = blocks.find((block) => block.noGuess === true);
+		const unsupported = (_ref9 = (_ref10 = (_ref11 = (_ref12 = (_ref13 = (_ref14 = (_ref15 = (_ref16 = (_ref17 = (_ref18 = (_withoutGuess$unsuppo = withoutGuess === null || withoutGuess === void 0 ? void 0 : withoutGuess.unsupported) !== null && _withoutGuess$unsuppo !== void 0 ? _withoutGuess$unsuppo : find(properties, "w:tblpPr") === void 0 ? void 0 : "a table that text flows around") !== null && _ref18 !== void 0 ? _ref18 : parts.some((part) => "w:sdt" in part) ? BOUND_CONTROL : void 0) !== null && _ref17 !== void 0 ? _ref17 : (_read$find2 = read.find((row) => row.unsupported !== void 0)) === null || _read$find2 === void 0 ? void 0 : _read$find2.unsupported) !== null && _ref16 !== void 0 ? _ref16 : unmerged) !== null && _ref15 !== void 0 ? _ref15 : fits ? unfitted : unequal && !evened ? "a table whose rows give a column different widths" : void 0) !== null && _ref14 !== void 0 ? _ref14 : spacingUnsupported) !== null && _ref13 !== void 0 ? _ref13 : typeof geometry === "string" ? geometry : void 0) !== null && _ref12 !== void 0 ? _ref12 : indent === void 0 ? "a table indented by a share of the width" : void 0) !== null && _ref11 !== void 0 ? _ref11 : styleUnsupported) !== null && _ref10 !== void 0 ? _ref10 : lengths) !== null && _ref9 !== void 0 ? _ref9 : (_blocks$find = blocks.find((block) => block.unsupported !== void 0)) === null || _blocks$find === void 0 ? void 0 : _blocks$find.unsupported;
 		const rowWidth = ((_read$0$cells = (_read$ = read[0]) === null || _read$ === void 0 ? void 0 : _read$.cells) !== null && _read$0$cells !== void 0 ? _read$0$cells : []).reduce((total, cell) => {
 			var _cell$ownWidth;
 			return total + ((_cell$ownWidth = cell.ownWidth) !== null && _cell$ownWidth !== void 0 ? _cell$ownWidth : 0);
 		}, 0);
 		const tableWidth = spaced && givenWidth.width === void 0 && givenWidth.share === void 0 ? { width: rowWidth } : givenWidth;
-		return _objectSpread2(_objectSpread2(_objectSpread2(_objectSpread2(_objectSpread2(_objectSpread2({
+		return _objectSpread2(_objectSpread2(_objectSpread2(_objectSpread2(_objectSpread2(_objectSpread2(_objectSpread2({
 			type: "table",
 			rows: tableRows
 		}, fits ? { fit: givenWidth } : {}), !fits && (!fixed || spaced || fixedFit) ? { widen: _objectSpread2(_objectSpread2(_objectSpread2({}, tableWidth), evened ? { uneven: true } : {}), fixed && !spaced ? { fixed: true } : {}) } : {}), {}, {
 			borderLeft: (_roomOf = roomOf(tableBorders.left)) !== null && _roomOf !== void 0 ? _roomOf : 0,
 			borderRight: (_roomOf2 = roomOf(tableBorders.right)) !== null && _roomOf2 !== void 0 ? _roomOf2 : 0
-		}, indent ? { indent } : {}), spaced ? { cellSpacing: followedSpacing } : {}), deletedRows.length > 0 ? { deletedRows } : {}), unsupported ? { unsupported } : {});
+		}, indent ? { indent } : {}), spaced ? { cellSpacing: followedSpacing } : {}), deletedRows.length > 0 ? { deletedRows } : {}), unsupported ? { unsupported } : {}), withoutGuess ? { noGuess: true } : {});
 	};
 	/** A block in place of what can't be laid out, with why */
 	var unsupportedBlock = (unsupported) => ({
@@ -5147,11 +5198,12 @@ var docxLayout = (function(exports) {
 	* are deleted in a tracked change.
 	*/
 	var readBlock = (element, reader, tableFormats) => {
+		const noGuess = reader.guess ? { noGuess: true } : {};
 		switch (nameOf(element)) {
 			case "w:p": return readParagraph(element, reader, tableFormats);
 			case "w:tbl": return readTable(element, reader);
-			case "w:sdt": return unsupportedBlock(BOUND_CONTROL);
-			case "w:altChunk": return unsupportedBlock("an imported document");
+			case "w:sdt": return _objectSpread2(_objectSpread2({}, unsupportedBlock(BOUND_CONTROL)), noGuess);
+			case "w:altChunk": return _objectSpread2(_objectSpread2({}, unsupportedBlock("an imported document")), noGuess);
 			case "m:oMath":
 			case "m:oMathPara": return unsupportedBlock("an equation");
 			default: return;
@@ -5392,7 +5444,7 @@ var docxLayout = (function(exports) {
 			nested: false,
 			sized: reader.inSizedTable === true,
 			part
-		}))) {
+		}), reader.guess)) {
 			const block = readBlock(element, reader, tableFormats);
 			if (block === void 0) bookmarks = [...bookmarks, ...bookmarksIn([element])];
 			else if (block.type === "paragraph" && block.hidden) {
@@ -5808,7 +5860,7 @@ var docxLayout = (function(exports) {
 	* @param body - The formatted body (`w:body`)
 	* @param context - The context it was formatted in, with the document it is in
 	*/
-	var readDocument = (body, context) => readContent(body, partsOfFile(context));
+	var readDocument = (body, context, options = {}) => readContent(body, partsOfFile(context), options);
 	var readNoteProperties = (element) => {
 		const children = childrenOf(element);
 		return withoutUndefined({
@@ -5841,7 +5893,7 @@ var docxLayout = (function(exports) {
 	/**
 	* Reads a document's body (`w:body`), with the other parts of the document.
 	*/
-	var readContent = (body, parts) => {
+	var readContent = (body, parts, { guess = false } = {}) => {
 		var _parts$otherListIds, _parts$otherListIds2, _parts$settings, _ref19, _ref20, _ref21, _ref22, _documentContent$unsu;
 		const { styles } = parts;
 		const { lists: numbering, unsupported: inNumbering } = readNumbering(parts.numbering, styles, (_parts$otherListIds = parts.otherListIds) !== null && _parts$otherListIds !== void 0 ? _parts$otherListIds : /* @__PURE__ */ new Map());
@@ -5852,7 +5904,7 @@ var docxLayout = (function(exports) {
 		};
 		const settings = childrenOf((_parts$settings = parts.settings) === null || _parts$settings === void 0 ? void 0 : _parts$settings["w:settings"]);
 		const decimalSymbol = valueOf(settings, "w:decimalSymbol");
-		const readerOf = (inHeader) => _objectSpread2({
+		const readerOf = (inHeader) => _objectSpread2(_objectSpread2({
 			styles,
 			numbering,
 			listIds,
@@ -5860,12 +5912,12 @@ var docxLayout = (function(exports) {
 			markers,
 			fields: [],
 			counters: /* @__PURE__ */ new Map()
-		}, decimalSymbol === void 0 ? {} : { decimalSymbol });
+		}, decimalSymbol === void 0 ? {} : { decimalSymbol }), guess ? { guess } : {});
 		const elements = unwrap(joinRemovedMarks(contentOf$2(body), styles, {
 			nested: false,
 			sized: false,
 			part: "body"
-		}));
+		}), guess);
 		const headersAndFooters = /* @__PURE__ */ new Map();
 		const readPart = (id) => {
 			if (!headersAndFooters.has(id)) {
@@ -6073,7 +6125,8 @@ var docxLayout = (function(exports) {
 	* lines, of the text and of table rows alike, take room at its bottom, laid out in the section's columns in a section in
 	* columns, and one that doesn't fit below its reference continues at the bottom of the next page, or pages, broken as the
 	* body is. The endnotes follow the body.
-	* It stops at the first thing it can't lay out yet, and the bookmarks after it aren't placed.
+	* It stops at the first thing it can't lay out yet, and the bookmarks after it aren't placed, unless it is asked to
+	* guess, when it lays out past each that it has a guess for, and notes on each page what it guessed at.
 	*
 	* @module
 	*/
@@ -6144,26 +6197,39 @@ var docxLayout = (function(exports) {
 	var Unsupported = class extends Error {};
 	/** Thrown to stop laying out columns being balanced in a height they don't fit in */
 	var Overflow = class extends Error {};
+	var UNKNOWN_FONT = "a font not in the width tables";
+	var UNKNOWN_CHARACTER = "a character whose width in its font isn't known";
+	var UNWRITTEN_NUMBER = "a page number its format isn't written for yet";
+	var ENDNOTES_IN_COLUMNS = "endnotes continued in columns";
+	var KEPT_IN_NOTE = "a paragraph kept together or with the next in a footnote across pages";
+	var KEPT_ROW_IN_COLUMNS = "a table row kept together taller than a column";
 	/** The measurers the layout measures with, by those it is given, so the lines laid out with each are kept */
 	var stoppingMeasurers = /* @__PURE__ */ new WeakMap();
 	/**
-	* A measurer that stops the layout where it would measure text in a font it doesn't know, or the height of a line in
+	* A measurer that calls `atUnknown` where it would measure text in a font it doesn't know, or the height of a line in
 	* one, as it measures them as another font, where Word draws them in their own, or in another again when it doesn't have
-	* them (`word-watertight-text.docx` TX18)
+	* them (`word-watertight-text.docx` TX18). Otherwise, and after `atUnknown` when it returns, it measures as the measurer
+	* does: such a font as the most similar font it knows
 	*/
-	var stoppingAtUnknownFonts = (measurer) => {
-		var _stoppingMeasurers$ge;
+	var atUnknownFonts = (measurer, atUnknown) => {
 		const { unknownFont } = measurer;
 		if (unknownFont === void 0) return measurer;
-		/** The font, unless the measurer doesn't know it, or this text in it */
+		/** The font, once `atUnknown` is called when the measurer doesn't know it, or this text in it */
 		const known = (font, text) => {
-			if (unknownFont(font, text)) throw new Unsupported("a font not in the width tables");
+			if (unknownFont(font, text)) atUnknown();
 			return font;
 		};
-		const stopping = (_stoppingMeasurers$ge = stoppingMeasurers.get(measurer)) !== null && _stoppingMeasurers$ge !== void 0 ? _stoppingMeasurers$ge : _objectSpread2(_objectSpread2({}, measurer), {}, {
+		return _objectSpread2(_objectSpread2({}, measurer), {}, {
 			measureWidth: (text, font) => measurer.measureWidth(text, known(font, text)),
 			measureLineHeight: (font) => measurer.measureLineHeight(known(font)),
 			measureDescent: (font) => measurer.measureDescent(known(font))
+		});
+	};
+	/** A measurer that stops the layout where it would measure text in a font it doesn't know (see {@link atUnknownFonts}) */
+	var stoppingAtUnknownFonts = (measurer) => {
+		var _stoppingMeasurers$ge;
+		const stopping = (_stoppingMeasurers$ge = stoppingMeasurers.get(measurer)) !== null && _stoppingMeasurers$ge !== void 0 ? _stoppingMeasurers$ge : atUnknownFonts(measurer, () => {
+			throw new Unsupported(UNKNOWN_FONT);
 		});
 		stoppingMeasurers.set(measurer, stopping);
 		return stopping;
@@ -6281,7 +6347,7 @@ var docxLayout = (function(exports) {
 	/**
 	* Lays out a document's pages, and finds the page each bookmark starts on.
 	*/
-	var paginate = (content, { pageNumbers = /* @__PURE__ */ new Map(), places: givenPlaces = /* @__PURE__ */ new Map(), earlierPlaces = /* @__PURE__ */ new Map(), pageCount: givenPageCount, sectionPageCounts: givenSectionPageCounts = [], measurer = DEFAULT_MEASURER } = {}) => {
+	var paginate = (content, { pageNumbers = /* @__PURE__ */ new Map(), places: givenPlaces = /* @__PURE__ */ new Map(), earlierPlaces = /* @__PURE__ */ new Map(), pageCount: givenPageCount, sectionPageCounts: givenSectionPageCounts = [], measurer = DEFAULT_MEASURER, guess = false } = {}) => {
 		var _laidOutLines$get;
 		const { sections, defaultTabStop, evenAndOddHeaders, addsParagraphSpacing, footnotes, footnoteSeparator, footnoteContinuationSeparator, endnotes, endnoteContinuationSeparator, breakRules, hyphenation, footnoteNumbers, endnoteNumbers } = content;
 		const blocks = [...content.blocks, ...endnotes.map((block) => ({
@@ -6294,12 +6360,12 @@ var docxLayout = (function(exports) {
 		let sectionIndex = 0;
 		/**
 		* A field's text in its format: its number in its number format or picture, or as it is, in its capitals. It stops the
-		* layout where Word's text for the number isn't known, such as 781 in letters
+		* layout where Word's text for the number isn't known, such as 781 in letters, or guessing, writes it in figures
 		*/
 		const written = (value, text, format = {}) => {
 			const inFormat = writesNumber(format) ? writeFieldNumber(value, format) : text;
-			if (inFormat === void 0) throw new Unsupported("a page number its format isn't written for yet");
-			return inFieldCapitals(inFormat, format.capitals);
+			if (inFormat === void 0) stopAt(UNWRITTEN_NUMBER);
+			return inFieldCapitals(inFormat !== null && inFormat !== void 0 ? inFormat : String(value), format.capitals);
 		};
 		/**
 		* What a page reference writes, from where it and its bookmark were placed before: the page's number as the page shows
@@ -6359,26 +6425,34 @@ var docxLayout = (function(exports) {
 			font: item.font
 		} : item);
 		/**
+		* Why the width of a character of a paragraph's content in its font isn't known to the measurer, when it isn't, such as
+		* a mathematical symbol in Calibri, which Word draws in Cambria Math
+		*/
+		const unknownCharacterIn = (inline) => inline.some((item) => {
+			var _measurer$unknownChar;
+			return item.type === "text" && ((_measurer$unknownChar = measurer.unknownCharacter) === null || _measurer$unknownChar === void 0 ? void 0 : _measurer$unknownChar.call(measurer, item.text, item.font)) !== void 0;
+		}) ? UNKNOWN_CHARACTER : void 0;
+		/**
 		* A paragraph's content, as it is measured, which stops the layout at a character whose width the measurer doesn't
-		* know, such as a mathematical symbol in Calibri, which Word draws in Cambria Math
+		* know. Guessing, it is measured as the measurer measures it, as an average letter of the font, and the lines it is in
+		* say so (see `linesOf`)
 		*/
 		const measurable = (items) => {
 			const inline = itemsOf(items);
-			if (inline.some((item) => {
-				var _measurer$unknownChar;
-				return item.type === "text" && ((_measurer$unknownChar = measurer.unknownCharacter) === null || _measurer$unknownChar === void 0 ? void 0 : _measurer$unknownChar.call(measurer, item.text, item.font)) !== void 0;
-			})) throw new Unsupported("a character whose width in its font isn't known");
+			const unknown = unknownCharacterIn(inline);
+			if (unknown !== void 0 && !guess) throw new Unsupported(unknown);
 			return inline;
 		};
-		const measuring = stoppingAtUnknownFonts(measurer);
+		const measuring = guess ? measurer : stoppingAtUnknownFonts(measurer);
 		const byParagraph = (_laidOutLines$get = laidOutLines.get(measurer)) !== null && _laidOutLines$get !== void 0 ? _laidOutLines$get : /* @__PURE__ */ new WeakMap();
 		laidOutLines.set(measurer, byParagraph);
 		/**
 		* A paragraph's lines, broken at a width, or at the width of each line from those given on, and in the room given for
-		* each of those that have room of their own, beside drawings that text flows around
+		* each of those that have room of their own, beside drawings that text flows around. A line whose breaking, or height,
+		* Word hasn't shown stops the layout, or guessing, is laid out as it was broken, and so are lines of text in a font or
+		* with a character the measurer doesn't know, measured as it measures them
 		*/
 		const linesOf = (paragraph, widths, rooms = /* @__PURE__ */ new Map()) => {
-			var _byParagraph$get, _byWidths$get;
 			const given = typeof widths === "number" ? [{
 				from: 0,
 				width: widths
@@ -6386,7 +6460,9 @@ var docxLayout = (function(exports) {
 			const key = [...given.map(({ from, width }) => `${from}:${width}`), ...[...rooms].map(([line, { start, end }]) => `${line}:${start}-${end}`)].join(" ");
 			const widthOf = (line) => given.findLast(({ from }) => from <= line).width;
 			const layOut = () => {
-				const laidOut = layoutLines(measurable(paragraph.items), {
+				const inline = measurable(paragraph.items);
+				let guessed = guess ? unknownCharacterIn(inline) : void 0;
+				const laidOut = layoutLines(inline, {
 					width: given.length === 1 && rooms.size === 0 ? given[0].width : (line) => {
 						var _rooms$get;
 						return (_rooms$get = rooms.get(line)) !== null && _rooms$get !== void 0 ? _rooms$get : widthOf(line);
@@ -6395,20 +6471,27 @@ var docxLayout = (function(exports) {
 					tabStops: paragraph.tabStops,
 					defaultTabStop,
 					markFont: paragraph.markFont,
-					measurer: measuring,
+					measurer: guess ? atUnknownFonts(measurer, () => {
+						var _guessed;
+						(_guessed = guessed) !== null && _guessed !== void 0 || (guessed = UNKNOWN_FONT);
+					}) : measuring,
 					breakRules,
 					numberAlignment: paragraph.numberAlignment,
 					hyphenation
 				});
-				const unknown = laidOut.find((line) => line.unsupported !== void 0);
-				if (unknown) throw new Unsupported(unknown.unsupported);
+				return guessed === void 0 ? laidOut : laidOut.map((line) => line.unsupported === void 0 ? _objectSpread2(_objectSpread2({}, line), {}, { unsupported: guessed }) : line);
+			};
+			/** Its lines as they were laid out at these widths before, or are now */
+			const kept = () => {
+				var _byParagraph$get, _byWidths$get;
+				const byWidths = (_byParagraph$get = byParagraph.get(paragraph)) !== null && _byParagraph$get !== void 0 ? _byParagraph$get : /* @__PURE__ */ new Map();
+				byParagraph.set(paragraph, byWidths);
+				const laidOut = (_byWidths$get = byWidths.get(key)) !== null && _byWidths$get !== void 0 ? _byWidths$get : layOut();
+				byWidths.set(key, laidOut);
 				return laidOut;
 			};
-			if (paragraph.items.some(isPageField)) return layOut();
-			const byWidths = (_byParagraph$get = byParagraph.get(paragraph)) !== null && _byParagraph$get !== void 0 ? _byParagraph$get : /* @__PURE__ */ new Map();
-			byParagraph.set(paragraph, byWidths);
-			const lines = (_byWidths$get = byWidths.get(key)) !== null && _byWidths$get !== void 0 ? _byWidths$get : layOut();
-			byWidths.set(key, lines);
+			const lines = paragraph.items.some(isPageField) ? layOut() : kept();
+			for (const reason of new Set(lines.flatMap(({ unsupported }) => unsupported === void 0 ? [] : [unsupported]))) stopAt(reason);
 			return lines;
 		};
 		/**
@@ -6416,7 +6499,8 @@ var docxLayout = (function(exports) {
 		* is 14 points (`word-watertight-text.docx` TX6a, TX6b), but none above the first paragraph of the document, a table
 		* cell or a header, nor below the last of a cell (TX6c, `word-paragraph-formats.docx` A0, A3), and none between two
 		* paragraphs of the same list, where there is between a bulleted and a numbered one (A1). What Word does between
-		* those of other levels of a list, or of lists made from the same definition, isn't known
+		* those of other levels of a list, or of lists made from the same definition, isn't known: guessing, none, as between
+		* those of the same level
 		*/
 		const ownSpace = (paragraph, side, next, inCell) => {
 			const { format, list } = paragraph;
@@ -6427,17 +6511,17 @@ var docxLayout = (function(exports) {
 			if (next === void 0) return side === "before" || inCell ? 0 : AUTOMATIC_SPACE;
 			const other = next.type === "paragraph" ? next.list : void 0;
 			if (list === void 0 || other === void 0 || list.id !== other.id && list.definition !== other.definition) return AUTOMATIC_SPACE;
-			if (list.id !== other.id || list.level !== other.level) throw new Unsupported("automatic spacing between paragraphs of other levels of a list, or of lists made alike");
+			if (list.id !== other.id || list.level !== other.level) stopAt("automatic spacing between paragraphs of other levels of a list, or of lists made alike");
 			return 0;
 		};
 		/**
 		* Whether a paragraph is in one box of borders with a block next to it: a paragraph with the same borders and indents.
 		* Whether Word joins two whose borders differ only by a between border isn't known: it leaves something between them,
-		* but not the room of two boxes (`word-paragraph-formats.docx` B5f)
+		* but not the room of two boxes (`word-paragraph-formats.docx` B5f). Guessing, they are two boxes
 		*/
 		const sharesBorders = (one, other) => {
 			if (one.borders === void 0 || (other === null || other === void 0 ? void 0 : other.type) !== "paragraph" || other.sectionBreak || other.borders === void 0) return false;
-			if (other.borders.box !== one.borders.box && other.borders.outline === one.borders.outline) throw new Unsupported("paragraphs with the same borders but for a between border");
+			if (other.borders.box !== one.borders.box && other.borders.outline === one.borders.outline) stopAt("paragraphs with the same borders but for a between border");
 			return other.borders.box === one.borders.box;
 		};
 		const measureParagraph = (paragraph, width, before, after, inCell = false) => {
@@ -6507,10 +6591,13 @@ var docxLayout = (function(exports) {
 			byWidth.set(width, sized);
 			return sized;
 		};
-		/** A table sized to be laid out in a width, which stops the layout when Word's sizing of it isn't known */
+		/**
+		* A table sized to be laid out in a width, which stops the layout when Word's sizing of it isn't known, or guessing, is
+		* laid out as it is sized: as near Word's sizing as the layout gets, or as it was read
+		*/
 		const sizedToPlace = (table, width) => {
 			const sized = fitted(table, width);
-			if (sized.unsupported) throw new Unsupported(sized.unsupported);
+			stopAtRead(sized);
 			return sized;
 		};
 		/** The heights of blocks stacked in a width, with the space before and after each */
@@ -6721,6 +6808,34 @@ var docxLayout = (function(exports) {
 			}
 			throw new Unsupported(reason);
 		};
+		let guessPage;
+		/**
+		* Stops at what the layout can't lay out as Word does yet, for why (`reason`). Guessing, it goes on instead, with the
+		* best guess it has: what is laid out from there is laid out as the layout lays it out without it, so that what was read
+		* is laid out as it was read, a line as it was broken, text in a font or with a character the measurer doesn't know as
+		* it measures it, and a page as the rule the layout follows nearest to Word's lays it out, as each place that calls
+		* this says. The guess is noted on the page it is made on (`page`), once. Where the layout has no guess, it doesn't
+		* call this, and stops even when guessing.
+		*/
+		const stopAt = (reason, page = ((_guessPage) => (_guessPage = guessPage) !== null && _guessPage !== void 0 ? _guessPage : Math.max(pageCount, 1))()) => {
+			if (!guess) throw new Unsupported(reason);
+			const pageStart = placements.findLastIndex(({ type }) => type === "page");
+			if (!placements.slice(pageStart + 1).some((placement) => placement.type === "guess" && placement.reason === reason && placement.page === page)) placements.push({
+				type: "guess",
+				reason,
+				page
+			});
+		};
+		/**
+		* Stops at what was read that can't be laid out as Word does yet (see {@link stopAt}): a block, a section, the document,
+		* or a table as it is sized. Guessing, it is laid out as it was read, with the guess the reader made, unless the reader
+		* had nothing to lay out in its place (`noGuess`), where it stops
+		*/
+		const stopAtRead = ({ unsupported, noGuess }, page) => {
+			if (unsupported === void 0) return;
+			if (noGuess === true) throw new Unsupported(unsupported);
+			stopAt(unsupported, page);
+		};
 		const section = () => sections[sectionIndex];
 		/**
 		* The section whose columns the text is laid out in: the one being laid out, or the one whose columns the page's are,
@@ -6776,12 +6891,13 @@ var docxLayout = (function(exports) {
 		/**
 		* Whether the space a line's multiple spacing adds below its text can go below the bottom of the page, as Word lets it
 		* (`word-mixed-heights.docx` MH1c), for a line that fits only without it. Stops where Word hasn't shown it: in columns
-		* being evened out, above footnotes, which it would go into, and above a paragraph's border below
+		* being evened out, above footnotes, which it would go into, and above a paragraph's border below. Guessing, it goes
+		* there too
 		*/
 		const hangsBelow = (aboveNotes, aboveBorder = false) => {
-			if ((balancing === null || balancing === void 0 ? void 0 : balancing.page) === pageCount) throw new Unsupported("columns evened out above a line whose multiple spacing goes below them");
-			if (aboveNotes) throw new Unsupported("a line whose multiple spacing goes below it into the footnotes");
-			if (aboveBorder) throw new Unsupported("a line whose multiple spacing goes below the page, above its paragraph's border");
+			if ((balancing === null || balancing === void 0 ? void 0 : balancing.page) === pageCount) stopAt("columns evened out above a line whose multiple spacing goes below them");
+			if (aboveNotes) stopAt("a line whose multiple spacing goes below it into the footnotes");
+			if (aboveBorder) stopAt("a line whose multiple spacing goes below the page, above its paragraph's border");
 			return true;
 		};
 		const partHeight = (parts, isFirst) => {
@@ -6789,7 +6905,7 @@ var docxLayout = (function(exports) {
 			const kind = kindOf(parts, isFirst);
 			if (!kind) return 0;
 			const part = parts[kind];
-			if (part.some((block) => block.unsupported !== void 0)) throw new Unsupported(part.find((block) => block.unsupported !== void 0).unsupported);
+			part.forEach((block) => stopAtRead(block));
 			const bySection = (_headerHeights$get = headerHeights.get(part)) !== null && _headerHeights$get !== void 0 ? _headerHeights$get : /* @__PURE__ */ new Map();
 			const height = (_bySection$get = bySection.get(sectionIndex)) !== null && _bySection$get !== void 0 ? _bySection$get : stackHeight(part, textWidth(), false);
 			headerHeights.set(part, bySection.set(sectionIndex, height));
@@ -6802,9 +6918,7 @@ var docxLayout = (function(exports) {
 		* whatever its own formatting (see `readEndnoteSeparator`)
 		*/
 		const continuationHeight = () => {
-			var _endnoteContinuationS;
-			const unsupported = (_endnoteContinuationS = endnoteContinuationSeparator.find((block) => block.unsupported !== void 0)) === null || _endnoteContinuationS === void 0 ? void 0 : _endnoteContinuationS.unsupported;
-			if (unsupported !== void 0) throw new Unsupported(unsupported);
+			endnoteContinuationSeparator.forEach((block) => stopAtRead(block));
 			return stackHeight(endnoteContinuationSeparator, textWidth(), false);
 		};
 		/** Whether a line or row of the section being laid out is on the page */
@@ -6818,7 +6932,7 @@ var docxLayout = (function(exports) {
 			if (balancing !== void 0 && pageCount >= balancing.page) throw new Overflow();
 			pageColumns = void 0;
 			checkReserve();
-			if (deferred !== void 0 && !notesOnly) throw new Unsupported("text after a line whose footnote starts on the next page");
+			if (deferred !== void 0 && !notesOnly) stopAt("text after a line whose footnote starts on the next page", pageCount + 1);
 			deferred = void 0;
 			checkAnchors();
 			finishPage();
@@ -6826,8 +6940,10 @@ var docxLayout = (function(exports) {
 			const first = isFirstOfSection || current.start === "continuous" && firstPages.get(sectionIndex) === pageCount && !sectionOnPage();
 			pageNumber = first && current.firstNumber !== void 0 ? current.firstNumber : ((_restart = restart) !== null && _restart !== void 0 ? _restart : pageNumber) + 1;
 			restart = void 0;
+			guessPage = pageCount + 1;
 			const headerBottom = current.header + partHeight(current.headers, first);
 			const footerTop = current.footer + partHeight(current.footers, first);
+			guessPage = void 0;
 			pageCount++;
 			const header = kindOf(current.headers, first);
 			const footer = kindOf(current.footers, first);
@@ -6841,7 +6957,7 @@ var docxLayout = (function(exports) {
 			});
 			top = current.marginTop < 0 ? -current.marginTop : Math.max(current.marginTop + current.topGutter, headerBottom);
 			const endnotesOn = endnotesGoOn();
-			if (endnotesOn && current.columns.length > 1) throw new Unsupported("endnotes continued in columns");
+			if (endnotesOn && current.columns.length > 1) stopAt(ENDNOTES_IN_COLUMNS);
 			const continuation = endnotesOn ? continuationHeight() : 0;
 			top += continuation;
 			pageBottom = current.pageHeight - (current.marginBottom < 0 ? -current.marginBottom : Math.max(current.marginBottom, footerTop)) + continuation;
@@ -6865,7 +6981,7 @@ var docxLayout = (function(exports) {
 			notesSection = sectionIndex;
 			if (continued !== void 0 && current.columns.length > 1) throw new Unsupported("a footnote across pages in columns");
 			if (continued !== void 0 && noteArea > bottom - top + TOLERANCE) {
-				if (first) throw new Unsupported("a footnote continued across a continuous section break onto a page of its own");
+				if (first) stopAt("a footnote continued across a continuous section break onto a page of its own");
 				const { name, from } = continued;
 				const to = fillNote(name, from, (point) => areaOf([], void 0, {
 					name,
@@ -6886,7 +7002,7 @@ var docxLayout = (function(exports) {
 				startPage();
 				return;
 			}
-			if (endnotesGoOn()) throw new Unsupported("endnotes continued in columns");
+			if (endnotesGoOn()) stopAt(ENDNOTES_IN_COLUMNS);
 			deepest = Math.max(deepest, position + spaceAfter);
 			filledEnd = Math.max(filledEnd, position);
 			column++;
@@ -6970,7 +7086,7 @@ var docxLayout = (function(exports) {
 			if (carried !== void 0 && !continuesOnPage(previous, current) && !startsInNextColumn(previous, current)) startPage(false, true);
 			lastPages.set(sectionIndex, pageCount);
 			for (let skipped = sectionIndex + 1; skipped < index; skipped++) sharingPages.add(skipped);
-			if (current.unsupported) throw new Unsupported(current.unsupported);
+			stopAtRead(current, continuesOnPage(previous, current) || startsInNextColumn(previous, current) ? pageCount : pageCount + 1);
 			const continuous = continuesOnPage(previous, current);
 			if (continuous && previous.columns.length > 1 && (placedInColumn || column > 0)) endColumns(firstBlock);
 			const inNextColumn = startsInNextColumn(previous, current);
@@ -7084,7 +7200,7 @@ var docxLayout = (function(exports) {
 		* their lines goes then. Across the page, they are as wide as its text (`fullWidth`)
 		*/
 		const noteStack = (notes, split, from, columns = noteColumns(), fullWidth = textWidth()) => {
-			var _pieces$find, _columns$;
+			var _columns$;
 			const continuedFrom = from !== void 0 && !atStart(from.from);
 			const separator = continuedFrom ? footnoteContinuationSeparator : footnoteSeparator;
 			const pieces = [
@@ -7098,10 +7214,9 @@ var docxLayout = (function(exports) {
 				...notes.flatMap((name) => piecesOf({ name })),
 				...split === void 0 ? [] : piecesOf(split)
 			];
-			const unsupported = (_pieces$find = pieces.find(({ block }) => block.unsupported !== void 0)) === null || _pieces$find === void 0 ? void 0 : _pieces$find.block.unsupported;
-			if (unsupported) throw new Unsupported(unsupported);
-			if (pieces.some(({ block }) => block.type === "paragraph" && block.borders !== void 0)) throw new Unsupported("a paragraph border in a footnote");
-			if (pieces.some(({ block }) => hasAutomaticSpace(block))) throw new Unsupported("automatic spacing in a footnote");
+			pieces.forEach(({ block }) => stopAtRead(block));
+			if (pieces.some(({ block }) => block.type === "paragraph" && block.borders !== void 0)) stopAt("a paragraph border in a footnote");
+			if (pieces.some(({ block }) => hasAutomaticSpace(block))) stopAt("automatic spacing in a footnote");
 			const width = (_columns$ = columns === null || columns === void 0 ? void 0 : columns[0]) !== null && _columns$ !== void 0 ? _columns$ : fullWidth;
 			/**
 			* A piece's paragraph, with only its lines in the piece, broken at a width or at the widths of the columns its
@@ -7427,10 +7542,10 @@ var docxLayout = (function(exports) {
 		/**
 		* Stops at a line or paragraph kept with the next below the top of a page that would move to the next page for a
 		* footnote that can't go on a page with it: whether Word moves it, or leaves it where it is, as it leaves one at the top
-		* of a page (SP5), isn't known
+		* of a page (SP5), isn't known. Guessing, it moves
 		*/
 		const stopAtNoteTallerThanPage = (notes) => {
-			if (notes.some(startsOnNextPage)) throw new Unsupported("a footnote taller than a page from below the top of a page");
+			if (notes.some(startsOnNextPage)) stopAt("a footnote taller than a page from below the top of a page");
 		};
 		/**
 		* The least room footnotes take below those on the page: all of them, but the last only as far as it has to go on the
@@ -7449,7 +7564,7 @@ var docxLayout = (function(exports) {
 		* of footnotes alone (`ownPage`), a paragraph kept together that starts it and is taller than the page breaks where
 		* the page ends, as the body's does (SP5). Whether Word keeps a footnote's other paragraphs together or with the next
 		* across pages, breaks a row whose lines could go on both pages, or leaves a table's header rows alone at the bottom of
-		* a page in one, isn't known, so it stops there.
+		* a page in one, isn't known, so it stops there, or guessing, breaks it there as the body's would break without them.
 		*/
 		const fillNote = (name, from, fits, ownPage = false) => {
 			const note = footnotes.get(name);
@@ -7465,15 +7580,15 @@ var docxLayout = (function(exports) {
 			const previous = note[index - 1];
 			/** The point the part ends at, before a line or row of the block */
 			const breakBefore = (at) => {
-				if (at === 0 && index > from.block && previous.type === "paragraph" && previous.format.keepNext === true) throw new Unsupported("a paragraph kept together or with the next in a footnote across pages");
+				if (at === 0 && index > from.block && previous.type === "paragraph" && previous.format.keepNext === true) stopAt(KEPT_IN_NOTE);
 				return {
 					block: index,
 					line: at
 				};
 			};
 			if (block.type === "table") {
-				if (!breaksBeforeRow(fitted(block, width).rows[line])) throw new Unsupported("a table row in a footnote that would break across pages");
-				if (line > 0 && block.rows.slice(0, line).every(({ header }) => header)) throw new Unsupported("a table's header rows at the bottom of a page in a footnote");
+				if (!breaksBeforeRow(fitted(block, width).rows[line])) stopAt("a table row in a footnote that would break across pages");
+				if (line > 0 && block.rows.slice(0, line).every(({ header }) => header)) stopAt("a table's header rows at the bottom of a page in a footnote");
 				return breakBefore(line);
 			}
 			const begin = index === from.block ? from.line : 0;
@@ -7482,7 +7597,7 @@ var docxLayout = (function(exports) {
 				keepLines: false,
 				widowControl
 			}, begin === 0);
-			if (keepLines && count > 0 && !(ownPage && index === from.block)) throw new Unsupported("a paragraph kept together or with the next in a footnote across pages");
+			if (keepLines && count > 0 && !(ownPage && index === from.block)) stopAt(KEPT_IN_NOTE);
 			return breakBefore(begin + count);
 		};
 		/**
@@ -7520,14 +7635,18 @@ var docxLayout = (function(exports) {
 				from: to
 			};
 		};
-		/** The number of the page as the section writes it, after the chapter number when it has one */
+		/**
+		* The number of the page as the section writes it, after the chapter number when it has one. Guessing, a number in a
+		* format the layout can't write is in figures, and one whose chapter number isn't known has none
+		*/
 		const pageText = () => {
 			const { numberFormat, chapters } = section();
 			const page = formatPageNumber(pageNumber, numberFormat);
-			if (page === void 0) throw new Unsupported("a page number its format isn't written for yet");
+			if (page === void 0) stopAt(UNWRITTEN_NUMBER);
 			const heading = chapters && chapterHeadings[blockStart.index][chapters.level - 1];
-			if (heading === null || heading === void 0 ? void 0 : heading.unsupported) throw new Unsupported(heading.unsupported);
-			return (heading === null || heading === void 0 ? void 0 : heading.chapter) === void 0 ? page : `${heading.chapter}${chapters.separator}${page}`;
+			if (heading === null || heading === void 0 ? void 0 : heading.unsupported) stopAt(heading.unsupported);
+			const text = page !== null && page !== void 0 ? page : String(pageNumber);
+			return (heading === null || heading === void 0 ? void 0 : heading.chapter) === void 0 ? text : `${heading.chapter}${chapters.separator}${text}`;
 		};
 		/**
 		* Places the bookmarks and fields of a line or row placed on the page, as it shows its number there, and those of the
@@ -7806,7 +7925,7 @@ var docxLayout = (function(exports) {
 			const keptTall = taller.length > 0 && taller.every((tall) => tall);
 			if (keptTall && !atTopOfPage()) startPage();
 			const movesOn = !keptTall && taller.some((tall) => tall);
-			if (movesOn && columns.length > 2) throw new Unsupported("a paragraph kept together taller than some of 3 or more columns of different widths");
+			if (movesOn && columns.length > 2) stopAt("a paragraph kept together taller than some of 3 or more columns of different widths");
 			const firstColumnsOnly = keptTall ? linesToBreak(linesOf(block, columns[0]), 0).length : 0;
 			/**
 			* The space above the paragraph's first line: at the top of a page, or of the column its section starts in, only
@@ -8102,7 +8221,7 @@ var docxLayout = (function(exports) {
 		* footnotes or cells merged down, or a header row, isn't known
 		*/
 		const placeCutRow = (row, index) => {
-			if (section().columns.length > 1) throw new Unsupported("a table row kept together taller than a column");
+			if (section().columns.length > 1) stopAt(KEPT_ROW_IN_COLUMNS);
 			const markers = row.cells.flatMap((cell) => cell.blocks.flatMap(markersOf));
 			if (notesIn(markers).length > 0 || openMerges.length > 0 || row.header) throw new Unsupported("a footnote, merged cells or a header row in a table row of a set height taller than a page");
 			mark(markers);
@@ -8182,7 +8301,7 @@ var docxLayout = (function(exports) {
 					const referring = whole.flatMap((part, cell) => notesOfPart(part, cell).length > 0 ? [cell] : []);
 					const heldRoom = continues ? tallestOf(filled) : roomAbove(noteRoom);
 					const heldBack = (part, cell) => referring.some((other) => other !== cell) && fillCell(cells[cell].paragraphs, roomOf(cell, heldRoom), cells[cell].isFirst).fits > part.lines.length;
-					if (filled.some(heldBack)) throw new Unsupported("a footnote in a table row beside a cell whose lines it holds back");
+					if (filled.some(heldBack)) stopAt("a footnote in a table row beside a cell whose lines it holds back");
 				}
 				return {
 					whole,
@@ -8216,12 +8335,11 @@ var docxLayout = (function(exports) {
 				const placesLines = (!isFirstPart || (isLastPart ? height - borders : (_row$height$value2 = (_row$height4 = row.height) === null || _row$height4 === void 0 ? void 0 : _row$height4.value) !== null && _row$height$value2 !== void 0 ? _row$height$value2 : 0) <= roomAbove(noteRoom) + TOLERANCE) && filled.some(({ lines }, cell) => decides(cell) && lines.length > 0) && cells.every(({ paragraphs }, cell) => !decides(cell) || paragraphs.length === 0 || filled[cell].lines.length > 0);
 				if (placesLines && !isLastPart) {
 					const hasTable = (cell) => cell.blocks.some(({ type }) => type === "table");
-					if (flowing.some(({ cell }) => hasTable(cell))) throw new Unsupported("a table in a cell merged down table rows across pages");
-					if (own.some(hasTable) && notesIn(row.cells.flatMap((cell) => cell.blocks.flatMap(markersOf))).length > 0) throw new Unsupported("a footnote in a table row with a table in a cell, across pages");
-					const unknown = filled.find(({ unsupported }) => unsupported !== void 0);
-					if (unknown !== void 0) throw new Unsupported(unknown.unsupported);
-					if (row.cells.some(({ vertical }) => vertical)) throw new Unsupported("text that runs up or down a table cell across pages");
-					if (table.spaced) throw new Unsupported("a table row with space between its cells across pages");
+					if (flowing.some(({ cell }) => hasTable(cell))) stopAt("a table in a cell merged down table rows across pages");
+					if (own.some(hasTable) && notesIn(row.cells.flatMap((cell) => cell.blocks.flatMap(markersOf))).length > 0) stopAt("a footnote in a table row with a table in a cell, across pages");
+					filled.forEach((part) => stopAtRead(part));
+					if (row.cells.some(({ vertical }) => vertical)) stopAt("text that runs up or down a table cell across pages");
+					if (table.spaced) stopAt("a table row with space between its cells across pages");
 				}
 				const fitsWhole = !isFirstPart || position + height + breakBorder <= linesBottom() + TOLERANCE;
 				const atTop = !placedInColumn && continued === void 0;
@@ -8235,11 +8353,11 @@ var docxLayout = (function(exports) {
 						return;
 					}
 					if (!parts.some(([first]) => first !== void 0 && "paragraph" in first && first.paragraph.keepLines && first.from === 0)) throw new Unsupported(isFirstPart && row.height !== void 0 && row.height.value > roomAbove(0) + TOLERANCE ? "a table row whose text and set height are both taller than a page" : "a line in a table cell taller than a page");
-					if (section().columns.length > 1) throw new Unsupported("a table row kept together taller than a column");
+					if (section().columns.length > 1) stopAt(KEPT_ROW_IN_COLUMNS);
 					parts = parts.map((paragraphs) => paragraphs.map((part, index) => index === 0 && "paragraph" in part ? _objectSpread2(_objectSpread2({}, part), {}, { paragraph: _objectSpread2(_objectSpread2({}, part.paragraph), {}, { keepLines: false }) }) : part));
 					continue;
 				}
-				if (!placesLines && isFirstPart && table.kept) throw new Unsupported("a table row kept with the next before a row that moves to the next page");
+				if (!placesLines && isFirstPart && table.kept) stopAt("a table row kept with the next before a row that moves to the next page");
 				if (!placesLines) {
 					closeMerges(position);
 					startTablePage();
@@ -8257,9 +8375,9 @@ var docxLayout = (function(exports) {
 					if (index === -1 || !decides(own.length + index)) return [placed];
 					const { rest } = filled[own.length + index];
 					if (rest.length === 0) return [];
-					if (merge.broken) throw new Unsupported("a cell merged down table rows whose text goes on across more than two pages");
-					if (notesIn(merge.cell.blocks.flatMap(markersOf)).length > 0) throw new Unsupported("a footnote in a cell merged down table rows whose text goes on across pages");
-					if (merge.header) throw new Unsupported("a cell merged down from a table's header rows whose text goes on across pages");
+					if (merge.broken) stopAt("a cell merged down table rows whose text goes on across more than two pages");
+					if (notesIn(merge.cell.blocks.flatMap(markersOf)).length > 0) stopAt("a footnote in a cell merged down table rows whose text goes on across pages");
+					if (merge.header) stopAt("a cell merged down from a table's header rows whose text goes on across pages");
 					return [_objectSpread2(_objectSpread2({}, merge), {}, {
 						rest,
 						start: void 0,
@@ -8375,7 +8493,7 @@ var docxLayout = (function(exports) {
 				const markers = markersIn(row);
 				const notes = notesIn(markers);
 				const keptWhole = row.cantSplit || ((_row$height5 = row.height) === null || _row$height5 === void 0 ? void 0 : _row$height5.rule) === "exact";
-				if (table.cellSpacing !== void 0 && row.breakBorder === void 0 && !rowFits(roomNeeded, notes)) throw new Unsupported("a table with space between its cells and borders across pages");
+				if (table.cellSpacing !== void 0 && row.breakBorder === void 0 && !rowFits(roomNeeded, notes)) stopAt("a table with space between its cells and borders across pages");
 				placeKeptRows(index);
 				while (keptWhole && !rowStays(roomNeeded, notes) && (placedInColumn || continued !== void 0)) {
 					closeMerges(position);
@@ -8390,7 +8508,7 @@ var docxLayout = (function(exports) {
 						placeCutRow(row, index);
 						continue;
 					}
-					if (section().columns.length > 1) throw new Unsupported("a table row kept together taller than a column");
+					if (section().columns.length > 1) stopAt(KEPT_ROW_IN_COLUMNS);
 				}
 				if (tooTall || !rowFits(roomNeeded, notes) && !keptWhole) {
 					splitRow(row, index, height, breakBorder, () => startTablePage(index), {
@@ -8444,10 +8562,11 @@ var docxLayout = (function(exports) {
 				};
 			}
 			if (anchor.type === "table") {
-				const sized = anchor.unsupported ? anchor : fitted(anchor, width);
-				const rows = sized.unsupported ? [] : sized.rows.slice(0, keptRowsEnd(sized, 0) + 1);
+				const stops = ({ unsupported, noGuess }) => unsupported !== void 0 && (!guess || noGuess === true);
+				const sized = stops(anchor) ? anchor : fitted(anchor, width);
+				const rows = stops(sized) ? [] : sized.rows.slice(0, keptRowsEnd(sized, 0) + 1);
 				return {
-					height: keptLines + lastAfter + sum(sized.unsupported ? [] : rowHeights(sized).slice(0, rows.length)),
+					height: keptLines + lastAfter + sum(stops(sized) ? [] : rowHeights(sized).slice(0, rows.length)),
 					spacingBelow: 0,
 					notes: [...keptNotes, ...notesIn(rows.flatMap(({ cells }) => cells.flatMap((cell) => cell.blocks.flatMap(markersOf))))],
 					kept: keptNotes,
@@ -8478,12 +8597,12 @@ var docxLayout = (function(exports) {
 		const placeBlock = (block, index) => {
 			var _blocks5, _blocks6;
 			blockIndex = index;
-			if (block.unsupported) throw new Unsupported(block.unsupported);
+			stopAtRead(block);
 			const width = columnsSection().columns[column];
 			const previous = blocks[index - 1];
 			if (block.type === "paragraph") {
-				if (block.sectionBreak && (block.borders !== void 0 || hasAutomaticSpace(block))) throw new Unsupported("borders or automatic spacing on the empty paragraph that ends a section");
-				if (previous !== void 0 && sharesBorders(block, previous.block) && (previous.section !== blocks[index].section || block.format.pageBreakBefore === true)) throw new Unsupported("paragraphs with the same borders either side of a section or page break");
+				if (block.sectionBreak && (block.borders !== void 0 || hasAutomaticSpace(block))) stopAt("borders or automatic spacing on the empty paragraph that ends a section");
+				if (previous !== void 0 && sharesBorders(block, previous.block) && (previous.section !== blocks[index].section || block.format.pageBreakBefore === true)) stopAt("paragraphs with the same borders either side of a section or page break");
 			}
 			if (block.type === "paragraph" && block.sectionBreak && !endsAfterTable(index)) {
 				var _blocks4;
@@ -8519,7 +8638,7 @@ var docxLayout = (function(exports) {
 				const anchor = blocks[index + keptChain(index)].block;
 				const anchorTaller = anchor.type === "paragraph" ? columnsTallerThan(anchor) : [];
 				const tallAnchor = anchorTaller.length > 0 && anchorTaller.every((tall) => tall);
-				if (!tallAnchor && anchorTaller.some((tall) => tall)) throw new Unsupported("a paragraph kept with the next before one kept together taller than some of the columns but not others");
+				if (!tallAnchor && anchorTaller.some((tall) => tall)) stopAt("a paragraph kept with the next before one kept together taller than some of the columns but not others");
 				if (tallAnchor) {
 					if (!keptWithPrevious && !atTopOfPage()) startPage();
 				} else if (placedInColumn) {
@@ -8532,7 +8651,7 @@ var docxLayout = (function(exports) {
 				}
 				const { notes, kept, keptWith, keptLines, all, fitsWith } = keptHere();
 				holdNotes = keptWith !== "nothing" && [...held, ...kept].length > 0 && notes.length === kept.length && fitsWith(leastNoteRoom(all)) && !fitsWith(moreNoteRoom(all));
-				if (holdNotes && keptWith === "part" && keptLines === void 0) throw new Unsupported("a footnote continued below a paragraph kept with the next");
+				if (holdNotes && keptWith === "part" && keptLines === void 0) stopAt("a footnote continued below a paragraph kept with the next");
 				heldLines = holdNotes && keptWith === "part" ? keptLines : void 0;
 			}
 			placeParagraph(block, paragraph, holdNotes);
@@ -8580,12 +8699,14 @@ var docxLayout = (function(exports) {
 			};
 		});
 		/**
-		* The pages, from what was placed on them. The blocks after the body's are its endnotes'. The page the layout stopped
-		* on because Word might lay it out differently has nothing on it
+		* The pages, from what was placed on them, with what was guessed at on each, once each. The blocks after the body's are
+		* its endnotes'. The page the layout stopped on because Word might lay it out differently has nothing on it
 		*/
 		const pagesOf = () => {
 			const starts = placements.flatMap((placement, index) => placement.type === "page" ? [index] : []);
+			const guessesOn = (page) => [...new Set(placements.flatMap((placement) => placement.type === "guess" && placement.page === page ? [placement.reason] : []))];
 			return starts.map((start, page) => {
+				const guesses = guessesOn(page + 1);
 				const placed = page + 1 === stoppedOnPage ? [] : placements.slice(start + 1, starts[page + 1]);
 				const pieces = placed.filter((placement) => placement.type === "line" || placement.type === "row");
 				const notes = pieces.flatMap((piece) => {
@@ -8617,7 +8738,7 @@ var docxLayout = (function(exports) {
 						noteNumber,
 						content: blocksOf(notePieces)
 					}))
-				});
+				}, guesses.length > 0 ? { guesses } : {});
 			});
 		};
 		/** The number of pages of each section whose pages are its alone, and that was laid out to its end */
@@ -8639,8 +8760,8 @@ var docxLayout = (function(exports) {
 			sectionPageCounts: countsOf()
 		}, stoppedAt === void 0 ? {} : { stoppedAt }), {}, { pages: pagesOf() });
 		try {
-			if (content.unsupported) throw new Unsupported(content.unsupported);
-			if (section().unsupported) throw new Unsupported(section().unsupported);
+			stopAtRead(content);
+			stopAtRead(section());
 			startPage(true);
 			placeBlocks(0, blocks.length);
 			checkAnchors();
@@ -8673,14 +8794,28 @@ var docxLayout = (function(exports) {
 		text
 	])).sort().join("\n");
 	var sameNumbers = (one, other) => placesOf(one) === placesOf(other) && knownPageCount(one) === knownPageCount(other) && one.sectionPageCounts.length === other.sectionPageCounts.length && one.sectionPageCounts.every((count, index) => other.sectionPageCounts[index] === count);
+	var UNSETTLED = "page numbers that move when the pages are laid out with them";
+	/**
+	* The first page a pass placed a bookmark or field on elsewhere than the pass before did, or showing another number, or
+	* its last page, when they differ only in their numbers of pages
+	*/
+	var firstMoved = (pagination, before) => {
+		const moved = [...pagination.places].flatMap(([name, { page, text }]) => {
+			const earlier = before.places.get(name);
+			return (earlier === null || earlier === void 0 ? void 0 : earlier.page) === page && earlier.text === text ? [] : [page];
+		});
+		return Math.min(pagination.pageCount, ...moved);
+	};
 	/**
 	* Lays out a document's pages, again with the page numbers each pass works out, until they stop changing, and gives the
 	* last. Each pass is laid out with the numbers of the pass before, so the last pass's numbers are those it was laid out
 	* with only when they stop changing. When they still change after three passes, as when a table of contents wraps one
 	* way with a number and the other way without it, none can be written, so it gives the first pass, laid out without them,
-	* as not settled. Text in the fonts the document embeds is measured from their files, and the rest with `measurer`.
+	* as not settled. Guessing (`guess`), it lays the pages out past what it can't lay out as Word does yet, and when the
+	* numbers still change, it gives the last pass, with the guess noted on the first page they moved on. Text in the fonts
+	* the document embeds is measured from their files, and the rest with `measurer`.
 	*/
-	var layOutPasses = (content, measurer = DEFAULT_MEASURER) => {
+	var layOutPasses = (content, measurer = DEFAULT_MEASURER, guess = false) => {
 		const measuring = content.fonts === void 0 ? measurer : createFontFileMeasurer(content.fonts, measurer);
 		const layOut = (before, pass, first, earlierPlaces) => {
 			const pagination = paginate(content, {
@@ -8689,9 +8824,21 @@ var docxLayout = (function(exports) {
 				places: before === null || before === void 0 ? void 0 : before.places,
 				earlierPlaces,
 				pageCount: before && knownPageCount(before),
-				sectionPageCounts: before === null || before === void 0 ? void 0 : before.sectionPageCounts
+				sectionPageCounts: before === null || before === void 0 ? void 0 : before.sectionPageCounts,
+				guess
 			});
 			if (before !== void 0 && sameNumbers(pagination, before)) return _objectSpread2(_objectSpread2({}, pagination), {}, { settled: true });
+			if (pass >= PASSES && guess) {
+				const moved = firstMoved(pagination, before);
+				const pages = pagination.pages.map((page, index) => {
+					var _page$guesses;
+					return index + 1 === moved ? _objectSpread2(_objectSpread2({}, page), {}, { guesses: [...(_page$guesses = page.guesses) !== null && _page$guesses !== void 0 ? _page$guesses : [], UNSETTLED] }) : page;
+				});
+				return _objectSpread2(_objectSpread2({}, pagination), {}, {
+					pages,
+					settled: true
+				});
+			}
 			return pass >= PASSES ? _objectSpread2(_objectSpread2({}, first), {}, { settled: false }) : layOut(pagination, pass + 1, first !== null && first !== void 0 ? first : pagination, new Map([...earlierPlaces, ...pagination.places]));
 		};
 		return layOut(void 0, 1, void 0, /* @__PURE__ */ new Map());
@@ -8864,8 +9011,9 @@ var docxLayout = (function(exports) {
 	* @param parts - The XML parts of its package, parsed by xml-js's `xml2js`, not compact and keeping the spaces between
 	* elements, by their paths, such as "word/document.xml"
 	* @param binaryParts - Its other parts, such as the fonts it embeds, by their paths
+	* @param options - How it is read: to be laid out with a guess, or not
 	*/
-	var readDocx = (parts, binaryParts = /* @__PURE__ */ new Map()) => {
+	var readDocx = (parts, binaryParts = /* @__PURE__ */ new Map(), options = {}) => {
 		var _relationshipsOf$find, _relationshipsOf$find2, _partOf, _find;
 		const documentPath = (_relationshipsOf$find = (_relationshipsOf$find2 = relationshipsOf(parts, "").find(({ type }) => type === "officeDocument")) === null || _relationshipsOf$find2 === void 0 ? void 0 : _relationshipsOf$find2.path) !== null && _relationshipsOf$find !== void 0 ? _relationshipsOf$find : DEFAULT_DOCUMENT;
 		const relationships = relationshipsOf(parts, documentPath);
@@ -8888,23 +9036,32 @@ var docxLayout = (function(exports) {
 			fonts: fontTable === void 0 ? [] : facesOf(embeddedFontsOf(parts, binaryParts, fontTable.path))
 		};
 		const document = rootOf(parts.get(documentPath));
-		return readContent({ "w:body": (_find = find(childrenOf(document && contentOf$1(document)), "w:body")) !== null && _find !== void 0 ? _find : [] }, documentParts);
+		return readContent({ "w:body": (_find = find(childrenOf(document && contentOf$1(document)), "w:body")) !== null && _find !== void 0 ? _find : [] }, documentParts, options);
 	};
 	//#endregion
 	//#region src/layout/estimate-page-numbers.ts
-	/** What a document is read into: a template patchDocument patched, or the body of a document being written */
-	var contentOf = (document, context) => "parts" in document ? readDocx(document.parts, document.binaryParts) : (context === null || context === void 0 ? void 0 : context.file) && readDocument(document, context);
-	/** Lays out the pages until their page numbers stop changing, with a measurer. Gives none when they don't */
-	var estimateWith = (content, measurer) => {
-		const pagination = content && layOutPasses(content, measurer);
+	/**
+	* What a document is read into: a template patchDocument patched, or the body of a document being written. Read to be
+	* laid out with a guess (`guess`), past what can't be laid out as Word does
+	*/
+	var contentOf = (document, context, guess = false) => "parts" in document ? readDocx(document.parts, document.binaryParts, { guess }) : (context === null || context === void 0 ? void 0 : context.file) && readDocument(document, context, { guess });
+	/**
+	* Lays out the pages until their page numbers stop changing, with a measurer. Gives none when they don't, unless it
+	* guesses, when it gives where it guessed too
+	*/
+	var estimateWith = (content, measurer, guess = false) => {
+		const pagination = content && layOutPasses(content, measurer, guess);
 		if (!(pagination === null || pagination === void 0 ? void 0 : pagination.settled)) return { bookmarks: /* @__PURE__ */ new Map() };
 		const pageCount = knownPageCount(pagination);
-		return _objectSpread2({
+		return _objectSpread2(_objectSpread2({
 			bookmarks: pagination.bookmarks,
 			sectionPageCounts: pagination.sectionPageCounts,
 			bookmarkPageNumbers: pagination.bookmarkNumbers,
 			relativePositions: pagination.relativePositions
-		}, pageCount === void 0 ? {} : { pageCount });
+		}, pageCount === void 0 ? {} : { pageCount }), guess ? { guesses: pagination.pages.flatMap(({ guesses = [] }, index) => guesses.map((reason) => ({
+			reason,
+			page: index + 1
+		}))) } : {});
 	};
 	/**
 	* Works out the page each bookmark of a document starts on, and how many pages the document and each of its sections
@@ -8936,7 +9093,9 @@ var docxLayout = (function(exports) {
 	* of Word's own the layout doesn't know, on or off. The schema's other settings, which ask for an older Word's or
 	* another application's layout, Word lays out lines with as without them, and settings for other applications are left
 	* to them. When laying the pages out again with the page numbers it worked out still changes them after three passes,
-	* as when a table of contents wraps one way with a number and the other way without it, all of them are left blank.
+	* as when a table of contents wraps one way with a number and the other way without it, all of them are left blank. To
+	* lay out past what it stops at with the best guess it has instead, give the document
+	* `estimatePageNumbersWith({ guess: true })`.
 	*
 	* Page references are written as Word writes them, with `\p` ("above", "below" or "on page 4") and in formats of their
 	* own, such as `\* roman`, and so are numbers of pages. Page references, tables of contents and SEQ fields (caption
@@ -8955,17 +9114,18 @@ var docxLayout = (function(exports) {
 	* new Document({ pageNumbers: estimatePageNumbersWith({ measureWidth: measureWithPretext(pretext) }), sections: [...] });
 	* const fonts = [{ data: await readFile("Aptos.ttf") }, { data: await readFile("Aptos-Bold.ttf") }];
 	* new Document({ pageNumbers: estimatePageNumbersWith({ fonts }), sections: [...] });
+	* new Document({ pageNumbers: estimatePageNumbersWith({ guess: true }), sections: [...] });
 	* ```
 	*
 	* It throws when a font file isn't a TrueType or OpenType font.
 	*
 	* @publicApi
 	*/
-	var estimatePageNumbersWith = ({ measureWidth, fonts = [] }) => {
+	var estimatePageNumbersWith = ({ measureWidth, fonts = [], guess = false }) => {
 		const faces = fonts.flatMap(({ data, name }) => readFontFile(data).map((face) => name === void 0 ? face : _objectSpread2(_objectSpread2({}, face), {}, { name })));
 		const others = measureWidth ? measurerOf(measureWidth) : DEFAULT_MEASURER;
 		const measurer = faces.length === 0 ? others : createFontFileMeasurer(faces, others);
-		return (document, context) => estimateWith(contentOf(document, context), measurer);
+		return (document, context) => estimateWith(contentOf(document, context, guess), measurer, guess);
 	};
 	//#endregion
 	//#region src/layout/layout-document.ts
@@ -8993,19 +9153,20 @@ var docxLayout = (function(exports) {
 	*
 	* The pages are laid out as `estimatePageNumbers` lays them out, with the same fonts and rules, and the page numbers of
 	* tables of contents and page references are laid out as it writes them. Where it can't lay out something yet, such as a
-	* text box, it stops, and gives the pages up to there, with why in `stoppedAt`.
+	* text box, it stops, and gives the pages up to there, with why in `stoppedAt`, unless it is asked to guess.
 	*
 	* @param document - The document to lay out. It is laid out as it would be written
+	* @param options - Whether to guess past what it can't lay out as Word does yet
 	*
 	* @publicApi
 	*/
-	var layoutDocument = (document) => {
+	var layoutDocument = (document, { guess = false } = {}) => {
 		const context = {
 			file: document,
 			viewWrapper: document.Document,
 			stack: []
 		};
-		const { pages, stoppedAt } = layOutPasses(readDocument(document.Document.View.Body.prepForXml(context), context));
+		const { pages, stoppedAt } = layOutPasses(readDocument(document.Document.View.Body.prepForXml(context), context, { guess }), void 0, guess);
 		return _objectSpread2({ pages: pages.map((page) => _objectSpread2(_objectSpread2({}, page), {}, {
 			width: pixels(page.width),
 			height: pixels(page.height),
