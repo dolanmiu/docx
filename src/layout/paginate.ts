@@ -196,6 +196,7 @@ type Snapshot = {
     readonly columnBroken: boolean;
     readonly pageNotes: readonly string[];
     readonly noteArea: number;
+    readonly notesSection: number;
     readonly notesInColumns: number | undefined;
     readonly filledEnd: number;
     readonly continued: NoteRest | undefined;
@@ -548,6 +549,8 @@ export const paginate = (
     // column of the page ends above
     let pageNotes: readonly string[] = [];
     let noteArea = 0;
+    // The section whose text's width the page's footnotes were last laid out in, which they are given in
+    let notesSection = 0;
     // The section in columns whose columns the page's footnotes are laid out in, when its footnote is the page's first,
     // and where the lines of the columns of the page before the one being filled end, the lowest of them
     let notesInColumns: number | undefined;
@@ -604,6 +607,7 @@ export const paginate = (
         columnBroken,
         pageNotes,
         noteArea,
+        notesSection,
         notesInColumns,
         filledEnd,
         continued,
@@ -639,6 +643,7 @@ export const paginate = (
             columnBroken,
             pageNotes,
             noteArea,
+            notesSection,
             notesInColumns,
             filledEnd,
             continued,
@@ -775,6 +780,7 @@ export const paginate = (
         continued = carried;
         carried = undefined;
         noteArea = Math.max(areaOf([], undefined, continued), reserved());
+        notesSection = sectionIndex;
         if (continued !== undefined && current.columns.length > 1) {
             throw new Unsupported("a footnote across pages in columns");
         }
@@ -1159,7 +1165,7 @@ export const paginate = (
 
     /**
      * The footnotes at the bottom of the page, with where their lines and rows are: across the page, in the width of the
-     * section it starts in, or in the columns of the section whose columns they are laid out in. The last of them is cut
+     * text of the section they were laid out in, or in the columns of the section whose columns they are laid out in. The last of them is cut
      * where it continues on the next page, and the rest of one continued from the page before is only as much of it as
      * fits, when the page is all footnote
      */
@@ -1167,10 +1173,8 @@ export const paginate = (
         if (pageNotes.length === 0 && continued === undefined) {
             return [];
         }
-        const page = placements.findLast(
-            (placement): placement is Extract<Placement, { readonly type: "page" }> => placement.type === "page",
-        )!;
-        const current = sections[page.page.section];
+        // The width the page's footnotes were laid out in when the room for them was worked out
+        const current = sections[notesSection];
         const split =
             carried !== undefined && pageNotes[pageNotes.length - 1] === carried.name
                 ? { name: carried.name, to: carried.from }
@@ -1280,6 +1284,7 @@ export const paginate = (
             }
             pageNotes = [...pageNotes, ...notes];
             noteArea = pageArea(pageNotes);
+            notesSection = sectionIndex;
             // Only when they take more room than was kept for them, as a line that doesn't fit in a column at all can still
             // go down further
             if (noteArea > reserved() + TOLERANCE && filledEnd > pageBottom - noteArea + TOLERANCE) {
@@ -1433,6 +1438,7 @@ export const paginate = (
         );
         pageNotes = [...whole, name];
         noteArea = bottom - position - below;
+        notesSection = sectionIndex;
         carried = { name, from: to };
     };
 

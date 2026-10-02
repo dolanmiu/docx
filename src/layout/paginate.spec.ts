@@ -3307,6 +3307,31 @@ describe("paginate", () => {
             ]);
         });
 
+        it("should give the footnotes of a page in the width they were laid out in, that of the section referring to them", () => {
+            const SEPARATOR: ParagraphBlock = { type: "paragraph", items: [], format: {}, tabStops: [], markFont: {} };
+            // A continuous section with a wider left margin below the first, on the same page, whose text is 70 points wide
+            const [page] = pagesLaidOut(
+                document(
+                    [
+                        [paragraph("a", 1), 0],
+                        [withItems(short("b", 1), [{ type: "marker", name: "footnote 1" }]), 1],
+                    ],
+                    {
+                        sections: [SECTION, { ...SECTION, start: "continuous", marginLeft: 20 }],
+                        footnotes: new Map([["footnote 1", [short("note", 3)]]]),
+                        footnoteSeparator: [SEPARATOR],
+                        footnoteContinuationSeparator: [SEPARATOR],
+                        footnoteNumbers: new Map([["footnote 1", "1"]]),
+                    },
+                ),
+            );
+            // "aaa aaa aaa" is 110 points, so it wraps once in 70 points as in 80: the lines are the second section's
+            expect(linesOf(page.footnotes[0].content)).to.deep.equal([
+                ["aaa aaa ", 20, 60, 70],
+                ["aaa", 20, 70, 70],
+            ]);
+        });
+
         it("should give no number for a page whose number starts with a chapter number, which isn't known for the page", () => {
             const [page] = pagesLaidOut(
                 document([paragraph("a", 1)], { sections: [{ ...SECTION, chapters: { level: 1, separator: "-" } }] }),
