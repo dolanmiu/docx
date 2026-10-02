@@ -4,6 +4,7 @@ import { Formatter } from "@export/formatter";
 import type { IPropertiesOptions } from "@file/core-properties";
 import { File } from "@file/file";
 import { FootnoteReferenceRun } from "@file/footnotes";
+import type { ICompatibilityOptions } from "@file/settings/compatibility";
 import { HeightRule, Table, TableCell, TableRow, WidthType } from "@file/table";
 import { DeletedTextRun } from "@file/track-revision";
 import {
@@ -2311,6 +2312,123 @@ describe("readDocument", () => {
         it("should mark a document in the compatibility mode of a version of Word before 2013 as unsupported", () => {
             expect(readBody([], { compatibility: { version: 14 } }).unsupported).to.equal("a document in compatibility mode");
             expect(readBody([], { compatibility: { version: 15 } }).unsupported).to.equal(undefined);
+        });
+
+        const UNFOLLOWED_COMPATIBILITY = "a compatibility setting not yet followed";
+
+        /** Reads a document in Word 2013's compatibility mode whose compatibility settings (`w:compat`) are these too */
+        const readCompatibility = (...settings: readonly object[]): DocumentContent =>
+            readSettings({ "w:compat": [{ "w:compatSetting": { _attr: { "w:name": "compatibilityMode", "w:val": 15 } } }, ...settings] });
+
+        it("should mark a document with any of docx's compatibility settings on as unsupported, but the one followed", () => {
+            const settings: readonly (keyof ICompatibilityOptions)[] = [
+                "useSingleBorderforContiguousCells",
+                "wordPerfectJustification",
+                "noTabStopForHangingIndent",
+                "noLeading",
+                "spaceForUnderline",
+                "noColumnBalance",
+                "balanceSingleByteDoubleByteWidth",
+                "noExtraLineSpacing",
+                "doNotLeaveBackslashAlone",
+                "underlineTrailingSpaces",
+                "doNotExpandShiftReturn",
+                "spacingInWholePoints",
+                "lineWrapLikeWord6",
+                "printBodyTextBeforeHeader",
+                "printColorsBlack",
+                "spaceWidth",
+                "showBreaksInFrames",
+                "subFontBySize",
+                "suppressBottomSpacing",
+                "suppressTopSpacing",
+                "suppressSpacingAtTopOfPage",
+                "suppressTopSpacingWP",
+                "suppressSpBfAfterPgBrk",
+                "swapBordersFacingPages",
+                "convertMailMergeEsc",
+                "truncateFontHeightsLikeWP6",
+                "macWordSmallCaps",
+                "usePrinterMetrics",
+                "doNotSuppressParagraphBorders",
+                "wrapTrailSpaces",
+                "footnoteLayoutLikeWW8",
+                "shapeLayoutLikeWW8",
+                "alignTablesRowByRow",
+                "forgetLastTabAlignment",
+                "adjustLineHeightInTable",
+                "autoSpaceLikeWord95",
+                "noSpaceRaiseLower",
+                "layoutRawTableWidth",
+                "layoutTableRowsApart",
+                "useWord97LineBreakRules",
+                "doNotBreakWrappedTables",
+                "doNotSnapToGridInCell",
+                "selectFieldWithFirstOrLastCharacter",
+                "applyBreakingRules",
+                "doNotWrapTextWithPunctuation",
+                "doNotUseEastAsianBreakRules",
+                "useWord2002TableStyleRules",
+                "growAutofit",
+                "useFELayout",
+                "useNormalStyleForList",
+                "doNotUseIndentAsNumberingTabStop",
+                "useAlternateEastAsianLineBreakRules",
+                "allowSpaceOfSameStyleInTable",
+                "doNotSuppressIndentation",
+                "doNotAutofitConstrainedTables",
+                "autofitToFirstFixedWidthCell",
+                "underlineTabInNumberingList",
+                "displayHangulFixedWidth",
+                "splitPgBreakAndParaMark",
+                "doNotVerticallyAlignCellWithSp",
+                "doNotBreakConstrainedForcedTable",
+                "ignoreVerticalAlignmentInTextboxes",
+                "useAnsiKerningPairs",
+                "cachedColumnBalance",
+            ];
+            for (const setting of settings) {
+                expect(readBody([], { compatibility: { [setting]: true } }).unsupported, setting).to.equal(UNFOLLOWED_COMPATIBILITY);
+                // Off, as docx writes false, Word lays it out as without it
+                expect(readBody([], { compatibility: { [setting]: false } }).unsupported, setting).to.equal(undefined);
+            }
+            // Automatic spacing as HTML has it is followed (see "automatic spacing")
+            expect(readBody([], { compatibility: { doNotUseHTMLParagraphAutoSpacing: true } }).unsupported).to.equal(undefined);
+            // Written as Word writes it, with no value, too
+            expect(readCompatibility({ "w:noLeading": {} }).unsupported).to.equal(UNFOLLOWED_COMPATIBILITY);
+        });
+
+        /** A compatibility setting of Word's own, as Word writes it, or without its application when `uri` is null */
+        const wordSetting = (name: string, val: string, uri: string | null = "http://schemas.microsoft.com/office/word"): object => ({
+            "w:compatSetting": { _attr: { "w:name": name, ...(uri === null ? {} : { "w:uri": uri }), "w:val": val } },
+        });
+
+        it("should lay out a document with the compatibility settings Word writes in the documents it makes, on or off", () => {
+            const written = (val: string): readonly object[] =>
+                [
+                    "overrideTableStyleFontSizeAndJustification",
+                    "enableOpenTypeFeatures",
+                    "doNotFlipMirrorIndents",
+                    "differentiateMultirowTableHeaders",
+                    "useWord2013TrackBottomHyphenation",
+                ].map((name) => wordSetting(name, val));
+            expect(readCompatibility(...written("1")).unsupported).to.equal(undefined);
+            expect(readCompatibility(...written("0")).unsupported).to.equal(undefined);
+        });
+
+        it("should mark a document with Word's other compatibility settings on, or settings Word may have that aren't known, as unsupported", () => {
+            for (const name of ["allowHyphenationAtTrackBottom", "allowTextAfterFloatingTableBreak"]) {
+                expect(readCompatibility(wordSetting(name, "1")).unsupported, name).to.equal(UNFOLLOWED_COMPATIBILITY);
+                expect(readCompatibility(wordSetting(name, "true", null)).unsupported, name).to.equal(UNFOLLOWED_COMPATIBILITY);
+                // Off, as Word has them unless they are given
+                expect(readCompatibility(wordSetting(name, "0")).unsupported, name).to.equal(undefined);
+            }
+            // One whose default isn't known, even off
+            expect(readCompatibility(wordSetting("someLaterSetting", "0")).unsupported).to.equal(UNFOLLOWED_COMPATIBILITY);
+        });
+
+        it("should lay out a document with compatibility settings for other applications, as Word leaves them to them", () => {
+            expect(readCompatibility(wordSetting("noLeading", "1", "http://example.com/other")).unsupported).to.equal(undefined);
         });
     });
 

@@ -64,9 +64,10 @@ const estimateWith = (content: DocumentContent | undefined, measurer: TextMeasur
  * Aptos, a character whose width in its font isn't known, such as a mathematical symbol in Calibri, which Word draws in
  * Cambria Math, or a date in the text, which Word writes when it opens the document. The page references to bookmarks
  * after it are left blank, for Word to fill in when it updates the fields. A document in compatibility mode, which Word
- * lays out as an older version of Word did, isn't laid out at all. When laying the pages out again with the page numbers
- * it worked out still changes them after three passes, as when a table of contents wraps one way with a number and the
- * other way without it, all of them are left blank.
+ * lays out as an older version of Word did, or with a compatibility setting turned on other than those Word writes in
+ * the documents it makes, isn't laid out at all. When laying the pages out again with the page numbers it worked out
+ * still changes them after three passes, as when a table of contents wraps one way with a number and the other way
+ * without it, all of them are left blank.
  *
  * Page references are written as Word writes them, with `\p` ("above", "below" or "on page 4") and in formats of their
  * own, such as `\* roman`, and so are numbers of pages. Page references, tables of contents and SEQ fields (caption

@@ -2208,6 +2208,55 @@ const readNumbering = (
 // without one, is laid out as that version of Word laid it out
 const CURRENT_COMPATIBILITY_MODE = 15;
 
+// The application Word's own compatibility settings (`w:compatSetting`) are for. Those for other applications are theirs
+const WORD_SETTINGS = "http://schemas.microsoft.com/office/word";
+
+// The compatibility settings of the schema (`w:compat`) that are followed: automatic spacing as HTML has it
+const FOLLOWED_COMPATIBILITY = new Set(["w:doNotUseHTMLParagraphAutoSpacing"]);
+
+// Word's own compatibility settings known to leave its lines in compatibility mode 15 as they are, on or off, which Word
+// 16 writes in every document it makes, so in every template and document Word saved. With
+// `overrideTableStyleFontSizeAndJustification` on, Word takes a paragraph's size and alignment from its styles over its
+// table style's, as the standard has them and the layout takes them, and Word's lines were the same with it as without
+// it (`word-watertight-settings.docx` ST2, against `word-watertight-tables.docx` TB1). `enableOpenTypeFeatures` turns on
+// the font features, such as kerning and ligatures, that Word applied without it (`word-fonts.docx`,
+// `word-watertight-text.docx` TX14). `doNotFlipMirrorIndents` swaps a mirrored paragraph's indents, which leaves its lines
+// as long. `differentiateMultirowTableHeaders` changes how a table style's parts for its rows apply to several header
+// rows, and `useWord2013TrackBottomHyphenation` moves a hyphenated word that ends a page, with hyphenation, at which
+// the layout stops
+const WORD_SETTINGS_LINES_ALIKE = new Set([
+    "compatibilityMode",
+    "overrideTableStyleFontSizeAndJustification",
+    "enableOpenTypeFeatures",
+    "doNotFlipMirrorIndents",
+    "differentiateMultirowTableHeaders",
+    "useWord2013TrackBottomHyphenation",
+]);
+
+// Word's other compatibility settings, which are off unless they are given: Word lays out a document with them off as it
+// lays one out without them
+const WORD_SETTINGS_OFF_UNLESS_GIVEN = new Set(["allowHyphenationAtTrackBottom", "allowTextAfterFloatingTableBreak"]);
+
+/**
+ * Whether a document's compatibility settings (`w:compat`) ask Word to lay it out in a way not yet followed: a setting of
+ * the schema that is on, such as `w:noLeading`, but for `w:doNotUseHTMLParagraphAutoSpacing`, which is followed, or one
+ * of Word's own (`w:compatSetting`) other than those known to leave its lines as they are, unless it is off and Word's
+ * default is off. Each changes how Word lays out lines, or may, in ways not yet followed.
+ */
+const asksForUnfollowedCompatibility = (compatibility: readonly XmlObject[]): boolean =>
+    compatibility.some((child) => {
+        const name = nameOf(child);
+        if (name !== "w:compatSetting") {
+            return !FOLLOWED_COMPATIBILITY.has(name) && onOff([child], name) === true;
+        }
+        const { "w:name": setting, "w:uri": uri = WORD_SETTINGS, "w:val": value } = attributesOf(child[name]);
+        return (
+            uri === WORD_SETTINGS &&
+            !WORD_SETTINGS_LINES_ALIKE.has(String(setting)) &&
+            !(WORD_SETTINGS_OFF_UNLESS_GIVEN.has(String(setting)) && isOff(value))
+        );
+    });
+
 /**
  * The document's own lists of the characters that can't start a line (`w:noLineBreaksBefore`) and can't end one
  * (`w:noLineBreaksAfter`), which take the place of Word's for their language.
@@ -2251,6 +2300,7 @@ const readSettings = (
                 [onOff(settings, "w:strictFirstAndLastChars"), "the strict rules for the characters that can't start a line"],
                 [spacingControl !== undefined && spacingControl !== "doNotCompress", "punctuation compressed"],
                 [mode === undefined || mode < CURRENT_COMPATIBILITY_MODE, "a document in compatibility mode"],
+                [asksForUnfollowedCompatibility(compatibility), "a compatibility setting not yet followed"],
                 [onOff(settings, "w:bookFoldPrinting") || onOff(settings, "w:bookFoldRevPrinting"), "pages printed as a folded booklet"],
                 [onOff(settings, "w:printTwoOnOne"), "two pages printed on each sheet"],
                 [onOff(settings, "w:linkStyles"), "styles updated from the document's template when Word opens it"],
