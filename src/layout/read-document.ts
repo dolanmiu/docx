@@ -2267,6 +2267,16 @@ const WORD_SETTINGS_LINES_ALIKE = new Set([
 const WORD_SETTINGS_OFF_UNLESS_GIVEN = new Set(["allowHyphenationAtTrackBottom", "allowTextAfterFloatingTableBreak"]);
 
 /**
+ * The attributes of Word's own compatibility settings (`w:compatSetting`) among a document's: those for Word's application,
+ * or for none, rather than another application's
+ */
+const wordSettingsOf = (compatibility: readonly XmlObject[]): readonly XmlObject[] =>
+    compatibility
+        .filter((child) => "w:compatSetting" in child)
+        .map((child) => attributesOf(child["w:compatSetting"]))
+        .filter(({ "w:uri": uri = WORD_SETTINGS }) => uri === WORD_SETTINGS);
+
+/**
  * Whether a document's compatibility settings (`w:compat`) ask Word to lay it out in a way not yet followed: a setting of
  * the schema that is on, such as `w:noLeading`, but for `w:doNotUseHTMLParagraphAutoSpacing`, which is followed, or one
  * of Word's own (`w:compatSetting`) other than those known to leave its lines as they are, unless it is off and Word's
@@ -2275,16 +2285,12 @@ const WORD_SETTINGS_OFF_UNLESS_GIVEN = new Set(["allowHyphenationAtTrackBottom",
 const asksForUnfollowedCompatibility = (compatibility: readonly XmlObject[]): boolean =>
     compatibility.some((child) => {
         const name = nameOf(child);
-        if (name !== "w:compatSetting") {
-            return !FOLLOWED_COMPATIBILITY.has(name) && onOff([child], name) === true;
-        }
-        const { "w:name": setting, "w:uri": uri = WORD_SETTINGS, "w:val": value } = attributesOf(child[name]);
-        return (
-            uri === WORD_SETTINGS &&
-            !WORD_SETTINGS_LINES_ALIKE.has(String(setting)) &&
-            !(WORD_SETTINGS_OFF_UNLESS_GIVEN.has(String(setting)) && isOff(value))
-        );
-    });
+        return name !== "w:compatSetting" && !FOLLOWED_COMPATIBILITY.has(name) && onOff([child], name) === true;
+    }) ||
+    wordSettingsOf(compatibility).some(
+        ({ "w:name": setting, "w:val": value }) =>
+            !WORD_SETTINGS_LINES_ALIKE.has(String(setting)) && !(WORD_SETTINGS_OFF_UNLESS_GIVEN.has(String(setting)) && isOff(value)),
+    );
 
 /**
  * The document's own lists of the characters that can't start a line (`w:noLineBreaksBefore`) and can't end one
@@ -2312,13 +2318,8 @@ const readSettings = (
     const compatibility = childrenOf(find(settings, "w:compat"));
     const lists = readKinsokuLists(settings);
     const spacingControl = valueOf(settings, "w:characterSpacingControl");
-    const mode = numberOf(
-        attributesOf(
-            compatibility.find(
-                (child) => "w:compatSetting" in child && attributesOf(child["w:compatSetting"])["w:name"] === "compatibilityMode",
-            )?.["w:compatSetting"],
-        )["w:val"],
-    );
+    // Word's own, as another application's may have the same name
+    const mode = numberOf(wordSettingsOf(compatibility).find(({ "w:name": setting }) => setting === "compatibilityMode")?.["w:val"]);
     // Word's strict rules, and its compression of punctuation, aren't known yet. Pages printed folded as a booklet, or two
     // to a sheet, are half the paper, and Word updates a document's styles from its template when it opens it, with
     // `w:linkStyles`

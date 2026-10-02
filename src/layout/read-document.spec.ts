@@ -2430,6 +2430,14 @@ describe("readDocument", () => {
         it("should lay out a document with compatibility settings for other applications, as Word leaves them to them", () => {
             expect(readCompatibility(wordSetting("noLeading", "1", "http://example.com/other")).unsupported).to.equal(undefined);
         });
+
+        it("should read the compatibility mode of Word's own setting, not another application's of the same name", () => {
+            const modes = (...settings: readonly object[]): DocumentContent => readSettings({ "w:compat": settings });
+            const other = wordSetting("compatibilityMode", "15", "http://example.com/other");
+            expect(modes(other, wordSetting("compatibilityMode", "14")).unsupported).to.equal("a document in compatibility mode");
+            expect(modes(other).unsupported).to.equal("a document in compatibility mode");
+            expect(modes(other, wordSetting("compatibilityMode", "15", null)).unsupported).to.equal(undefined);
+        });
     });
 
     describe("lengths", () => {
