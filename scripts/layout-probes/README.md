@@ -161,14 +161,6 @@ pdftohtml -xml -i -q -zoom 1 scripts/layout-probes/word-character-widths.pdf bui
 python3 scripts/layout-probes/word-character-widths.py build/word-probes/word-character-widths
 ```
 
-`word-page-fields.py` prints what each field of `word-page-fields` shows, and the page of the PDF it is on, from the HTML of
-`pdftotext -bbox-layout`:
-
-```bash
-pdftotext -bbox-layout scripts/layout-probes/word-page-fields.pdf build/word-probes/word-page-fields.html
-python3 scripts/layout-probes/word-page-fields.py build/word-probes/word-page-fields.html
-```
-
 It reads `word-italic-widths` the same way. With `--json`, `word-character-widths.py` prints the widths it read, which
 `scripts/generate-font-widths.ts` takes, and where the lines of W break, which `word-character-widths-layout.ts` compares
 with where docx/layout breaks them:
@@ -191,6 +183,14 @@ python3 scripts/layout-probes/word-mixed-heights.py build/word-probes/word-mixed
 ```bash
 pdftotext -bbox-layout scripts/layout-probes/word-run-formatting.pdf build/word-probes/word-run-formatting.html
 python3 scripts/layout-probes/word-run-formatting.py build/word-probes/word-run-formatting
+```
+
+`word-page-fields.py` prints what each field of `word-page-fields` shows, and the page of the PDF it is on, from the HTML of
+`pdftotext -bbox-layout`:
+
+```bash
+pdftotext -bbox-layout scripts/layout-probes/word-page-fields.pdf build/word-probes/word-page-fields.html
+python3 scripts/layout-probes/word-page-fields.py build/word-probes/word-page-fields.html
 ```
 
 `word-probes.py` takes the name of the PDF without its extension, and reads its HTML and, for U1's tables, its first
