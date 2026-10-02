@@ -1610,7 +1610,7 @@ describe("readDocument", () => {
             expect(marginsOf({ externalStyles: bare })).to.deep.equal([0, 0]);
         });
 
-        it("should even out the rows of a table with a width of its own that give a column different widths, as Word does", () => {
+        it("should even out the rows of a table that give a column different widths, as Word does", () => {
             const tableOf = (
                 properties: readonly object[],
                 ...rows: readonly (readonly (readonly [number | undefined, number?])[])[]
@@ -1638,7 +1638,8 @@ describe("readDocument", () => {
             const ownWidth = { "w:tblW": { _attr: { "w:w": 4000, "w:type": "dxa" } } };
             const fixed = { "w:tblLayout": { _attr: { "w:type": "fixed" } } };
             // The first column 1000 twips wide in one row, and 3000 in the next. Word makes it as wide as the widest, then
-            // fits the columns to the table's width, laid out fixed or not (word-watertight-stops.docx SP14)
+            // fits the columns to the table's width, laid out fixed or not, or to the room without one (word-watertight-stops.docx
+            // SP14, word-table-widths.docx TW1 to TW6)
             const uneven: readonly (readonly (readonly [number | undefined, number?])[])[] = [
                 [[1000], [2000]],
                 [[3000], [2000]],
@@ -1646,14 +1647,24 @@ describe("readDocument", () => {
             expect(tableOf([ownWidth], ...uneven).widen).to.deep.equal({ width: 200, uneven: true });
             expect(tableOf([ownWidth], ...uneven).unsupported).to.equal(undefined);
             expect(tableOf([ownWidth, fixed], ...uneven).widen).to.deep.equal({ width: 200, uneven: true, fixed: true });
-            // Without a width of its own in twips, with space between its cells, or with a cell without a width, laid out
-            // fixed, how isn't known
-            expect(tableOf([], ...uneven).unsupported).to.equal(unsupported);
+            expect(tableOf([], ...uneven).widen).to.deep.equal({ uneven: true });
+            expect(tableOf([fixed], ...uneven).widen).to.deep.equal({ uneven: true, fixed: true });
+            // A cell of a table laid out fixed without a width of its own has the grid's
+            expect(tableOf([ownWidth, fixed], [[1000], [2000]], [[3000], [undefined]]).widen).to.deep.equal({
+                width: 200,
+                uneven: true,
+                fixed: true,
+            });
+            // A table laid out fixed is fitted to its own width in twips when its rows aren't as wide (TW8, TW10), and kept
+            // when they are
+            expect(tableOf([ownWidth, fixed], [[1000], [2000]]).widen).to.deep.equal({ width: 200, fixed: true });
+            expect(tableOf([ownWidth, fixed], [[1000], [3000]]).widen).to.equal(undefined);
+            expect(tableOf([fixed], [[1000], [2000]]).widen).to.equal(undefined);
+            // With a share of the width, or space between its cells, how isn't known
             expect(tableOf([{ "w:tblW": { _attr: { "w:w": 5000, "w:type": "pct" } } }], ...uneven).unsupported).to.equal(unsupported);
             expect(tableOf([ownWidth, { "w:tblCellSpacing": { _attr: { "w:w": 20, "w:type": "dxa" } } }], ...uneven).unsupported).to.equal(
                 unsupported,
             );
-            expect(tableOf([ownWidth, fixed], [[1000], [2000]], [[3000], [undefined]]).unsupported).to.equal(unsupported);
             // Nor with a row that starts past the first column
             const skipping = readBody([
                 {

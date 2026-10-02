@@ -1981,14 +1981,18 @@ const readTable = (element: XmlObject, reader: Reader): TableBlock | undefined =
         ? "a table style with formatting of its rows or cells"
         : undefined;
     const givenWidth = readTableWidth(properties);
-    // Rows that disagree are evened out when every cell has a width and no row starts past the first column (`w:gridBefore`),
-    // whose width Word's probes haven't shown it evening out
-    const evened =
-        unequal &&
-        !spaced &&
-        givenWidth.width !== undefined &&
-        tableCells.every(({ ownWidth }) => ownWidth !== undefined) &&
-        read.every(({ edges }) => edges.has(0));
+    // Word evens out the rows of a table whose cells all have widths, or of one laid out fixed, that give a column different
+    // widths, with a width of its own in twips or none (`word-watertight-stops.docx` SP14, `word-table-widths.docx` TW1 to
+    // TW6). With a share of the width, space between its cells, or a row that starts past the first column (`w:gridBefore`),
+    // how isn't known
+    const evenable = !spaced && givenWidth.share === undefined && read.every(({ edges }) => edges.has(0));
+    const evened = unequal && evenable;
+    // And fits a table laid out fixed to its own width in twips, when its rows aren't as wide (TW8, TW10)
+    const tableTwips = givenWidth.width;
+    const fixedFit =
+        fixed &&
+        evenable &&
+        (unequal || (tableTwips !== undefined && read.some(({ edges, end }) => Math.abs(edges.get(end)! - tableTwips) > WIDTH_TOLERANCE)));
     // Word puts the text after a floating table (`w:tblpPr`) beside it (`word-watertight-tables.docx` TB11)
     const unsupported =
         (find(properties, "w:tblpPr") === undefined ? undefined : "a table that text flows around") ??
@@ -2010,12 +2014,12 @@ const readTable = (element: XmlObject, reader: Reader): TableBlock | undefined =
         type: "table",
         rows: tableRows,
         ...(fits ? { fit: givenWidth } : {}),
-        ...(!fits && (!fixed || spaced || evened)
+        ...(!fits && (!fixed || spaced || fixedFit)
             ? {
                   widen: {
                       ...tableWidth,
                       ...(evened ? { uneven: true as const } : {}),
-                      ...(evened && fixed ? { fixed: true as const } : {}),
+                      ...(fixed && !spaced ? { fixed: true as const } : {}),
                   },
               }
             : {}),

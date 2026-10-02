@@ -209,12 +209,12 @@ for n in 1 2 3 4 5; do pdftocairo -svg -f $n -l $n scripts/layout-probes/word-pr
 python3 scripts/layout-probes/word-probes.py build/word-probes/word-probes
 ```
 
-`word-table-widths.py` reads the same, for every page, and prints the edges of each row of each table as where Word's
+`word-table-widths.py` reads the same, for both pages, and prints the edges of each row of each table as where Word's
 columns are, from where it drew their borders:
 
 ```bash
 pdftotext -bbox-layout scripts/layout-probes/word-table-widths.pdf build/word-probes/word-table-widths.html
-for n in 1 2 3 4 5 6; do pdftocairo -svg -f $n -l $n scripts/layout-probes/word-table-widths.pdf build/word-probes/word-table-widths-$n.svg; done
+for n in 1 2; do pdftocairo -svg -f $n -l $n scripts/layout-probes/word-table-widths.pdf build/word-probes/word-table-widths-$n.svg; done
 python3 scripts/layout-probes/word-table-widths.py build/word-probes/word-table-widths
 ```
 
