@@ -10563,7 +10563,7 @@ declare type PatchDetectorOptions = {
  *
  * @publicApi
  */
-export declare const patchDocument: <T extends PatchDocumentOutputType = PatchDocumentOutputType>({ outputType, data, patches, keepOriginalStyles, placeholderDelimiters, recursive, footnotes, endnotes, }: PatchDocumentOptions<T>) => Promise<OutputByType[T]>;
+export declare const patchDocument: <T extends PatchDocumentOutputType = PatchDocumentOutputType>({ outputType, data, patches, keepOriginalStyles, placeholderDelimiters, recursive, footnotes, endnotes, pageNumbers, }: PatchDocumentOptions<T>) => Promise<OutputByType[T]>;
 
 /**
  * Options for patching a document.
@@ -10576,6 +10576,7 @@ export declare const patchDocument: <T extends PatchDocumentOutputType = PatchDo
  * @property recursive - Whether to replace every occurrence of a placeholder in a paragraph, rather than only the first
  * @property footnotes - The footnotes that patches refer to with a `FootnoteReferenceRun`
  * @property endnotes - The endnotes that patches refer to with an `EndnoteReferenceRun`
+ * @property pageNumbers - Works out the page each bookmark is on, to write the page numbers of page references
  */
 export declare type PatchDocumentOptions<T extends PatchDocumentOutputType = PatchDocumentOutputType> = {
     /** Output format type */
@@ -10607,12 +10608,32 @@ export declare type PatchDocumentOptions<T extends PatchDocumentOutputType = Pat
     readonly endnotes?: Readonly<Record<string, {
         readonly children: readonly Paragraph[];
     }>>;
+    /**
+     * Works out the page each bookmark of the patched document is on, and how many pages it has, so the page numbers of
+     * its tables of contents and page references, and its numbers of pages, are written with it, rather than left as they
+     * were in the template. Give it `estimatePageNumbers` from `docx/layout`. See {@link TemplatePageNumberEstimator}
+     */
+    readonly pageNumbers?: TemplatePageNumberEstimator;
 };
 
 /**
  * Output format types for patched documents.
  */
 export declare type PatchDocumentOutputType = OutputType;
+
+/**
+ * A template once `patchDocument` has patched it, as a {@link TemplatePageNumberEstimator} reads it.
+ *
+ * @publicApi
+ */
+export declare type PatchedTemplate = {
+    /**
+     * Each XML part of the template's package, by its path in the package, such as "word/document.xml". Each is parsed as
+     * `patchDocument` parses it, with xml-js's `xml2js`, not compact, and keeping the spaces between elements
+     * (`captureSpacesBetweenElements`), as the spaces in a text element are its text
+     */
+    readonly parts: ReadonlyMap<string, Element_2>;
+};
 
 /**
  * Patch type enumeration.
@@ -12559,6 +12580,17 @@ export declare type TemplatePackage = {
     /** Formats XML as the template's parts are parsed, to put in one of them */
     readonly format: (content: XmlComponent) => Element_2;
 };
+
+/**
+ * Works out which page each bookmark of a template starts on, and how many pages it and each of its sections have, once
+ * `patchDocument` has patched it, so the page numbers of its tables of contents and page references, and its numbers of
+ * pages, are written with it.
+ *
+ * `estimatePageNumbers`, from `docx/layout`, is one. Give it to `patchDocument` as its `pageNumbers`.
+ *
+ * @publicApi
+ */
+export declare type TemplatePageNumberEstimator = (template: PatchedTemplate) => EstimatedPageNumbers;
 
 /**
  * A part of a template's package, as a {@link DrawingPatch} sees it.

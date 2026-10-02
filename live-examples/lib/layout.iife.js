@@ -5048,7 +5048,7 @@ var docxLayout = (function(exports) {
 	]);
 	var nameOf = (element) => Object.keys(element)[0];
 	/** The content of an element, including its text. An element without content has its attributes, or nothing */
-	var contentOf = (element) => {
+	var contentOf$2 = (element) => {
 		const content = element[nameOf(element)];
 		return Array.isArray(content) ? content : [content];
 	};
@@ -5155,7 +5155,7 @@ var docxLayout = (function(exports) {
 	var readRun = (element, paragraphRun, reader) => {
 		var _valueOf;
 		const { styles } = reader;
-		const children = contentOf(element).filter(isObject);
+		const children = contentOf$2(element).filter(isObject);
 		const properties = find(children, "w:rPr");
 		const format = combine([
 			paragraphRun,
@@ -5168,12 +5168,12 @@ var docxLayout = (function(exports) {
 			if (name === "w:fldChar") return readFieldCharacter(child, font, reader);
 			const field = reader.fields[reader.fields.length - 1];
 			if (name === "w:instrText") {
-				if (field && !field.inResult) field.instruction += contentOf(child).filter((part) => typeof part === "string").join("");
+				if (field && !field.inResult) field.instruction += contentOf$2(child).filter((part) => typeof part === "string").join("");
 				return [];
 			}
 			if (!isShown(reader)) return [];
 			switch (name) {
-				case "w:t": return spansOf(contentOf(child).filter((part) => typeof part === "string").join(""), format).map((_ref) => {
+				case "w:t": return spansOf(contentOf$2(child).filter((part) => typeof part === "string").join(""), format).map((_ref) => {
 					let { text } = _ref;
 					return _objectSpread2(_objectSpread2({
 						type: "text",
@@ -5250,11 +5250,11 @@ var docxLayout = (function(exports) {
 		const parts = elements.filter(isObject).map((element) => {
 			const name = nameOf(element);
 			if (name === "w:r") return readRun(element, paragraphRun, reader);
-			if (RUN_CONTAINERS.has(name)) return readInline(contentOf(element), paragraphRun, reader);
+			if (RUN_CONTAINERS.has(name)) return readInline(contentOf$2(element), paragraphRun, reader);
 			if (name === "w:sdt") return readInline(childrenOf(find(childrenOf(element[name]), "w:sdtContent")), paragraphRun, reader);
 			if (name === "w:fldSimple") {
 				const result = workedOutResultOf(String(attributesOf(element[name])["w:instr"]), fontOf(paragraphRun));
-				return result !== void 0 && isShown(reader) ? [result] : readInline(contentOf(element), paragraphRun, reader);
+				return result !== void 0 && isShown(reader) ? [result] : readInline(contentOf$2(element), paragraphRun, reader);
 			}
 			if (name === "w:bookmarkStart") {
 				const bookmark = stringOf(attributesOf(element[name])["w:name"]);
@@ -5319,7 +5319,7 @@ var docxLayout = (function(exports) {
 	var readParagraph = (element, reader, tableStyle) => {
 		var _valueOf3, _exec2, _styleChain$slice$0$n, _styleChain$slice$;
 		const { styles } = reader;
-		const children = contentOf(element);
+		const children = contentOf$2(element);
 		const properties = childrenOf(find(children.filter(isObject), "w:pPr"));
 		const style = (_valueOf3 = valueOf(properties, "w:pStyle")) !== null && _valueOf3 !== void 0 ? _valueOf3 : styles.defaultParagraphStyle;
 		const paragraphStyles = [...styleChain(styles, tableStyle, "table"), ...styleChain(styles, style, "paragraph")];
@@ -5354,14 +5354,14 @@ var docxLayout = (function(exports) {
 		const name = nameOf(element);
 		if (name === "w:tr") return [element];
 		if (name === "w:sdt") return rowsOf(childrenOf(find(childrenOf(element[name]), "w:sdtContent")));
-		return name === "w:customXml" ? rowsOf(contentOf(element)) : [];
+		return name === "w:customXml" ? rowsOf(contentOf$2(element)) : [];
 	});
 	/** The cells of a row */
 	var cellsOf = (elements) => elements.filter(isObject).flatMap((element) => {
 		const name = nameOf(element);
 		if (name === "w:tc") return [element];
 		if (name === "w:sdt") return cellsOf(childrenOf(find(childrenOf(element[name]), "w:sdtContent")));
-		return name === "w:customXml" ? cellsOf(contentOf(element)) : [];
+		return name === "w:customXml" ? cellsOf(contentOf$2(element)) : [];
 	});
 	/** A share of a width, as a fraction, from fiftieths of a percent or a percentage written with a % */
 	var shareOf = (value) => {
@@ -5384,7 +5384,7 @@ var docxLayout = (function(exports) {
 	*/
 	var readTable = (element, reader) => {
 		var _ref5, _blocks$find;
-		const children = contentOf(element).filter(isObject);
+		const children = contentOf$2(element).filter(isObject);
 		const properties = childrenOf(find(children, "w:tblPr"));
 		const style = valueOf(properties, "w:tblStyle");
 		const ownStyles = styleChain(reader.styles, style, "table");
@@ -5404,7 +5404,7 @@ var docxLayout = (function(exports) {
 		const gridWidth = (from, to) => grid.slice(from, to).reduce((total, value) => total + value, 0);
 		const read = rows.map((row, rowIndex) => {
 			var _numberOf4;
-			const rowChildren = contentOf(row).filter(isObject);
+			const rowChildren = contentOf$2(row).filter(isObject);
 			const rowProperties = childrenOf(find(rowChildren, "w:trPr"));
 			const heightAttributes = attributesOf(find(rowProperties, "w:trHeight"));
 			const height = twips(heightAttributes["w:val"]);
@@ -5412,7 +5412,7 @@ var docxLayout = (function(exports) {
 			const skipped = (_numberOf4 = numberOf(attributesOf(find(rowProperties, "w:gridBefore"))["w:val"])) !== null && _numberOf4 !== void 0 ? _numberOf4 : 0;
 			const { cells, edges, column: end } = cellsOf(rowChildren).reduce(({ column, cells: done, edges: before }, cell) => {
 				var _numberOf5, _twips2, _shareOf;
-				const cellChildren = contentOf(cell).filter(isObject);
+				const cellChildren = contentOf$2(cell).filter(isObject);
 				const cellProperties = childrenOf(find(cellChildren, "w:tcPr"));
 				const span = (_numberOf5 = numberOf(attributesOf(find(cellProperties, "w:gridSpan"))["w:val"])) !== null && _numberOf5 !== void 0 ? _numberOf5 : 1;
 				const mergeElement = find(cellProperties, "w:vMerge");
@@ -5482,7 +5482,7 @@ var docxLayout = (function(exports) {
 			case "w:p": return [readParagraph(element, reader, tableStyle)];
 			case "w:tbl": return [readTable(element, reader)];
 			case "w:sdt": return readBlocks(childrenOf(find(childrenOf(element["w:sdt"]), "w:sdtContent")), reader, tableStyle);
-			case "w:customXml": return readBlocks(contentOf(element), reader, tableStyle);
+			case "w:customXml": return readBlocks(contentOf$2(element), reader, tableStyle);
 			case "w:altChunk": return [{
 				type: "paragraph",
 				items: [],
@@ -5575,27 +5575,21 @@ var docxLayout = (function(exports) {
 	};
 	/**
 	* Reads the levels of each list in the document's numbering (`w:numbering`), by the ids its paragraphs refer to it by:
-	* its number, and the placeholder docx writes before it is given one.
+	* its number, and any other name it has, such as the placeholder docx writes before it is given one.
 	*/
-	var readNumbering = (context, styles) => {
-		const numbering = context.file.Numbering;
-		for (const style of styles.styles.values()) {
-			var _style$numbering$id, _style$numbering;
-			const placeholder = /^\{(.+)-(\d+)\}$/.exec((_style$numbering$id = (_style$numbering = style.numbering) === null || _style$numbering === void 0 ? void 0 : _style$numbering.id) !== null && _style$numbering$id !== void 0 ? _style$numbering$id : "");
-			if (placeholder) numbering.createConcreteNumberingInstance(placeholder[1], Number(placeholder[2]));
-		}
-		const root = childrenOf(numbering.prepForXml(READING_CONTEXT)["w:numbering"]);
+	var readNumbering = (xml, styles, otherIds) => {
+		const root = childrenOf(xml === null || xml === void 0 ? void 0 : xml["w:numbering"]);
 		const abstract = new Map(root.filter((child) => "w:abstractNum" in child).map((child) => {
 			const byIndex = childrenOf(child["w:abstractNum"]).filter((level) => "w:lvl" in level).map((level) => {
-				var _valueOf4, _stringOf2, _valueOf5;
+				var _numberOf7, _valueOf4, _stringOf2, _valueOf5, _numberOf8;
 				const levelChildren = childrenOf(level["w:lvl"]);
 				return {
-					index: numberOf(attributesOf(level["w:lvl"])["w:ilvl"]),
+					index: (_numberOf7 = numberOf(attributesOf(level["w:lvl"])["w:ilvl"])) !== null && _numberOf7 !== void 0 ? _numberOf7 : 0,
 					level: _objectSpread2(_objectSpread2({}, withoutUndefined({ style: valueOf(levelChildren, "w:pStyle") })), {}, {
 						format: (_valueOf4 = valueOf(levelChildren, "w:numFmt")) !== null && _valueOf4 !== void 0 ? _valueOf4 : "decimal",
 						text: (_stringOf2 = stringOf(attributesOf(find(levelChildren, "w:lvlText"))["w:val"])) !== null && _stringOf2 !== void 0 ? _stringOf2 : "",
 						suffix: (_valueOf5 = valueOf(levelChildren, "w:suff")) !== null && _valueOf5 !== void 0 ? _valueOf5 : "tab",
-						start: numberOf(attributesOf(find(levelChildren, "w:start"))["w:val"]),
+						start: (_numberOf8 = numberOf(attributesOf(find(levelChildren, "w:start"))["w:val"])) !== null && _numberOf8 !== void 0 ? _numberOf8 : 0,
 						paragraph: readParagraphFormat(find(levelChildren, "w:pPr")),
 						run: readRunFormat(find(levelChildren, "w:rPr"), styles.themeFonts)
 					})
@@ -5607,14 +5601,17 @@ var docxLayout = (function(exports) {
 			}, []);
 			return [String(attributesOf(child["w:abstractNum"])["w:abstractNumId"]), byIndex];
 		}));
-		const byNumber = root.filter((child) => "w:num" in child).map((child) => {
+		const numbers = new Map(root.filter((child) => "w:num" in child).flatMap((child) => {
 			const abstractId = String(numberOf(attributesOf(find(childrenOf(child["w:num"]), "w:abstractNumId"))["w:val"]));
-			return [String(attributesOf(child["w:num"])["w:numId"]), abstract.get(abstractId)];
-		});
-		const numbers = new Map(byNumber);
-		const placeholders = numbering.ConcreteNumbering.map((concrete) => [`{${concrete.reference}-${concrete.instance}}`, numbers.get(String(concrete.numId))]);
-		return new Map([...byNumber, ...placeholders]);
+			const levels = abstract.get(abstractId);
+			return levels ? [[String(attributesOf(child["w:num"])["w:numId"]), levels]] : [];
+		}));
+		return new Map([...numbers, ...[...otherIds].flatMap(([other, id]) => {
+			const levels = numbers.get(id);
+			return levels ? [[other, levels]] : [];
+		})]);
 	};
+	var CURRENT_COMPATIBILITY_MODE = 15;
 	/**
 	* The document's own lists of the characters that can't start a line (`w:noLineBreaksBefore`) and can't end one
 	* (`w:noLineBreaksAfter`), which take the place of Word's for their language.
@@ -5631,17 +5628,44 @@ var docxLayout = (function(exports) {
 	/**
 	* Reads the parts of the document's settings (`w:settings`) that change how it is laid out.
 	*/
-	var readSettings = (context) => {
-		var _twips14;
-		const settings = childrenOf(context.file.Settings.prepForXml(READING_CONTEXT)["w:settings"]);
+	var readSettings = (xml) => {
+		var _compatibility$find, _twips14;
+		const settings = childrenOf(xml === null || xml === void 0 ? void 0 : xml["w:settings"]);
+		const compatibility = childrenOf(find(settings, "w:compat"));
 		const lists = readKinsokuLists(settings);
 		const spacingControl = valueOf(settings, "w:characterSpacingControl");
-		const unsupported = onOff(settings, "w:autoHyphenation") === true ? "hyphenation" : onOff(settings, "w:strictFirstAndLastChars") === true ? "the strict rules for the characters that can't start a line" : spacingControl !== void 0 && spacingControl !== "doNotCompress" ? "punctuation compressed" : void 0;
+		const mode = numberOf(attributesOf((_compatibility$find = compatibility.find((child) => "w:compatSetting" in child && attributesOf(child["w:compatSetting"])["w:name"] === "compatibilityMode")) === null || _compatibility$find === void 0 ? void 0 : _compatibility$find["w:compatSetting"])["w:val"]);
+		const unsupported = onOff(settings, "w:autoHyphenation") === true ? "hyphenation" : onOff(settings, "w:strictFirstAndLastChars") === true ? "the strict rules for the characters that can't start a line" : spacingControl !== void 0 && spacingControl !== "doNotCompress" ? "punctuation compressed" : mode === void 0 || mode < CURRENT_COMPATIBILITY_MODE ? "a document in compatibility mode" : void 0;
 		return _objectSpread2(_objectSpread2({
 			defaultTabStop: (_twips14 = twips(attributesOf(find(settings, "w:defaultTabStop"))["w:val"])) !== null && _twips14 !== void 0 ? _twips14 : 36,
 			evenAndOddHeaders: onOff(settings, "w:evenAndOddHeaders") === true,
-			addsParagraphSpacing: onOff(childrenOf(find(settings, "w:compat")), "w:doNotUseHTMLParagraphAutoSpacing") === true
+			addsParagraphSpacing: onOff(compatibility, "w:doNotUseHTMLParagraphAutoSpacing") === true
 		}, Object.keys(lists).length > 0 ? { breakRules: { lists } } : {}), unsupported ? { unsupported } : {});
+	};
+	/**
+	* The parts of the document being written, formatted to be read.
+	*/
+	var partsOfFile = (context) => {
+		const { file } = context;
+		const styles = getTextStyles(context);
+		for (const style of styles.styles.values()) {
+			var _style$numbering$id, _style$numbering;
+			const placeholder = /^\{(.+)-(\d+)\}$/.exec((_style$numbering$id = (_style$numbering = style.numbering) === null || _style$numbering === void 0 ? void 0 : _style$numbering.id) !== null && _style$numbering$id !== void 0 ? _style$numbering$id : "");
+			if (placeholder) file.Numbering.createConcreteNumberingInstance(placeholder[1], Number(placeholder[2]));
+		}
+		const format = (wrapper) => wrapper.View.prepForXml(_objectSpread2(_objectSpread2({}, context), {}, {
+			viewWrapper: wrapper,
+			stack: []
+		}));
+		return {
+			styles,
+			numbering: file.Numbering.prepForXml(READING_CONTEXT),
+			otherListIds: new Map(file.Numbering.ConcreteNumbering.map((concrete) => [`{${concrete.reference}-${concrete.instance}}`, String(concrete.numId)])),
+			settings: file.Settings.prepForXml(READING_CONTEXT),
+			headersAndFooters: new Map([...file.Headers, ...file.Footers].map((wrapper) => [`rId${wrapper.View.ReferenceId}`, Object.values(format(wrapper))[0]])),
+			footnotes: format(file.FootNotes),
+			endnotes: format(file.Endnotes)
+		};
 	};
 	/**
 	* Reads a document's body, as it is written, with its styles, lists, settings, headers and footers.
@@ -5649,9 +5673,14 @@ var docxLayout = (function(exports) {
 	* @param body - The formatted body (`w:body`)
 	* @param context - The context it was formatted in, with the document it is in
 	*/
-	var readDocument = (body, context) => {
-		const styles = getTextStyles(context);
-		const numbering = readNumbering(context, styles);
+	var readDocument = (body, context) => readContent(body, partsOfFile(context));
+	/**
+	* Reads a document's body (`w:body`), with the other parts of the document.
+	*/
+	var readContent = (body, parts) => {
+		var _parts$otherListIds;
+		const { styles } = parts;
+		const numbering = readNumbering(parts.numbering, styles, (_parts$otherListIds = parts.otherListIds) !== null && _parts$otherListIds !== void 0 ? _parts$otherListIds : /* @__PURE__ */ new Map());
 		const readerOf = (inHeader) => ({
 			styles,
 			numbering,
@@ -5659,25 +5688,17 @@ var docxLayout = (function(exports) {
 			fields: [],
 			counters: /* @__PURE__ */ new Map()
 		});
-		const parts = /* @__PURE__ */ new Map();
+		const headersAndFooters = /* @__PURE__ */ new Map();
 		const readPart = (id) => {
-			if (!parts.has(id)) {
-				const wrapper = [...context.file.Headers, ...context.file.Footers].find(({ View }) => `rId${View.ReferenceId}` === id);
-				const xml = wrapper === null || wrapper === void 0 ? void 0 : wrapper.View.prepForXml(_objectSpread2(_objectSpread2({}, context), {}, {
-					viewWrapper: wrapper,
-					stack: []
-				}));
-				parts.set(id, xml && readBlocks(Object.values(xml)[0], readerOf(true)));
+			if (!headersAndFooters.has(id)) {
+				const content = parts.headersAndFooters.get(id);
+				headersAndFooters.set(id, content && readBlocks(content, readerOf(true)));
 			}
-			return parts.get(id);
+			return headersAndFooters.get(id);
 		};
 		const noteElements = (kind) => {
-			const wrapper = kind === "footnote" ? context.file.FootNotes : context.file.Endnotes;
-			const xml = wrapper.View.prepForXml(_objectSpread2(_objectSpread2({}, context), {}, {
-				viewWrapper: wrapper,
-				stack: []
-			}));
-			const notes = childrenOf(Object.values(xml)[0]).filter((child) => `w:${kind}` in child);
+			const xml = kind === "footnote" ? parts.footnotes : parts.endnotes;
+			const notes = childrenOf(xml && Object.values(xml)[0]).filter((child) => `w:${kind}` in child);
 			return new Map(notes.map((note) => {
 				const attributes = attributesOf(note[`w:${kind}`]);
 				const type = attributes["w:type"];
@@ -5690,7 +5711,7 @@ var docxLayout = (function(exports) {
 		};
 		const readNoteContent = (kind, id, label) => {
 			const note = notesByKind[kind].get(id);
-			return note === void 0 ? [] : readBlocks(contentOf(note), _objectSpread2(_objectSpread2({}, readerOf(false)), label === void 0 ? {} : { noteNumber: label }));
+			return note === void 0 ? [] : readBlocks(contentOf$2(note), _objectSpread2(_objectSpread2({}, readerOf(false)), label === void 0 ? {} : { noteNumber: label }));
 		};
 		const footnotes = /* @__PURE__ */ new Map();
 		const endnotes = [];
@@ -5724,11 +5745,11 @@ var docxLayout = (function(exports) {
 			for (const element of elements.filter(isObject)) {
 				const name = nameOf(element);
 				if (name === "w:sdt") read(childrenOf(find(childrenOf(element[name]), "w:sdtContent")));
-				else if (name === "w:customXml") read(contentOf(element));
+				else if (name === "w:customXml") read(contentOf$2(element));
 				else if (name === "w:sectPr") addSection(element[name]);
 				else if (name === "w:bookmarkStart") bookmarks = [...bookmarks, String(attributesOf(element[name])["w:name"])];
 				else {
-					const sectionProperties = name === "w:p" ? find(childrenOf(find(contentOf(element).filter(isObject), "w:pPr")), "w:sectPr") : void 0;
+					const sectionProperties = name === "w:p" ? find(childrenOf(find(contentOf$2(element).filter(isObject), "w:pPr")), "w:sectPr") : void 0;
 					for (const block of readBlocks([element], reader)) {
 						const markers = bookmarks.map((marker) => ({
 							type: "marker",
@@ -5746,7 +5767,7 @@ var docxLayout = (function(exports) {
 				}
 			}
 		};
-		read(Object.values(body)[0]);
+		read(contentOf$2(body));
 		if (sections.length === 0 || blocks.some(({ section }) => section >= sections.length)) addSection(void 0);
 		return _objectSpread2({
 			blocks,
@@ -5755,16 +5776,88 @@ var docxLayout = (function(exports) {
 			footnoteSeparator: footnotes.size > 0 ? readNoteContent("footnote", "separator") : [],
 			footnoteContinuationSeparator: footnotes.size > 0 ? readNoteContent("footnote", "continuationSeparator") : [],
 			endnotes: endnotes.length > 0 ? [...readNoteContent("endnote", "separator"), ...endnotes] : []
-		}, readSettings(context));
+		}, readSettings(parts.settings));
+	};
+	//#endregion
+	//#region src/layout/read-docx.ts
+	var DEFAULT_DOCUMENT = "word/document.xml";
+	/**
+	* An element as xml-js parses it, formatted as docx formats elements: `{ "w:p": [{ _attr: {...} }, ...content] }`, with
+	* text as strings.
+	*/
+	var formatted = (element) => {
+		var _element$elements;
+		if (element.type === "text" || element.type === "cdata") return String(element.type === "text" ? element.text : element.cdata);
+		return { [String(element.name)]: [...element.attributes === void 0 ? [] : [{ _attr: element.attributes }], ...((_element$elements = element.elements) !== null && _element$elements !== void 0 ? _element$elements : []).filter(({ type }) => type === "element" || type === "text" || type === "cdata").map(formatted)] };
+	};
+	/** The content of a formatted element: its attributes, the elements in it and its text */
+	var contentOf$1 = (element) => Object.values(element)[0];
+	/** The root element of a part, such as `w:document`, formatted */
+	var rootOf = (part) => {
+		var _part$elements;
+		const root = part === null || part === void 0 || (_part$elements = part.elements) === null || _part$elements === void 0 ? void 0 : _part$elements.find(({ type }) => type === "element");
+		return root && formatted(root);
+	};
+	var folderOf = (path) => path.slice(0, path.lastIndexOf("/") + 1);
+	/**
+	* The path of the part a relationship's target refers to: relative to the folder of the part the relationship belongs to,
+	* or from the package's root if it starts with "/".
+	*/
+	var resolveTarget = (from, target) => (target.startsWith("/") ? target : `${folderOf(from)}${target}`).split("/").reduce((segments, segment) => {
+		if (segment === "" || segment === ".") return segments;
+		return segment === ".." ? segments.slice(0, -1) : [...segments, segment];
+	}, []).join("/");
+	/** The relationships of the part at the path to the other parts of the package, from its relationships part */
+	var relationshipsOf = (parts, from) => {
+		const relationshipsPath = `${folderOf(from)}_rels/${from.slice(folderOf(from).length)}.rels`;
+		const root = rootOf(parts.get(relationshipsPath));
+		return childrenOf(root && contentOf$1(root)).filter((child) => "Relationship" in child).flatMap((child) => {
+			const { Id: id, Type: type, Target: target, TargetMode: mode } = attributesOf(child.Relationship);
+			return typeof id !== "string" || typeof target !== "string" || mode === "External" ? [] : [{
+				id,
+				type: String(type).slice(String(type).lastIndexOf("/") + 1),
+				path: resolveTarget(from, target)
+			}];
+		});
+	};
+	/**
+	* Reads a .docx's main document, with the parts it refers to.
+	*
+	* @param parts - The XML parts of its package, parsed by xml-js's `xml2js`, not compact and keeping the spaces between
+	* elements, by their paths, such as "word/document.xml"
+	*/
+	var readDocx = (parts) => {
+		var _relationshipsOf$find, _relationshipsOf$find2, _partOf, _find;
+		const documentPath = (_relationshipsOf$find = (_relationshipsOf$find2 = relationshipsOf(parts, "").find(({ type }) => type === "officeDocument")) === null || _relationshipsOf$find2 === void 0 ? void 0 : _relationshipsOf$find2.path) !== null && _relationshipsOf$find !== void 0 ? _relationshipsOf$find : DEFAULT_DOCUMENT;
+		const relationships = relationshipsOf(parts, documentPath);
+		const partOf = (type) => {
+			const relationship = relationships.find((candidate) => candidate.type === type);
+			return relationship && rootOf(parts.get(relationship.path));
+		};
+		const theme = partOf("theme");
+		const documentParts = {
+			styles: readTextStyles((_partOf = partOf("styles")) !== null && _partOf !== void 0 ? _partOf : { "w:styles": [] }, theme && readThemeFonts(theme)),
+			numbering: partOf("numbering"),
+			settings: partOf("settings"),
+			headersAndFooters: new Map(relationships.flatMap(({ id, type, path }) => {
+				const part = type === "header" || type === "footer" ? rootOf(parts.get(path)) : void 0;
+				return part ? [[id, contentOf$1(part)]] : [];
+			})),
+			footnotes: partOf("footnotes"),
+			endnotes: partOf("endnotes")
+		};
+		const document = rootOf(parts.get(documentPath));
+		return readContent({ "w:body": (_find = find(childrenOf(document && contentOf$1(document)), "w:body")) !== null && _find !== void 0 ? _find : [] }, documentParts);
 	};
 	//#endregion
 	//#region src/layout/estimate-page-numbers.ts
 	var PASSES = 3;
 	var sameNumbers = (one, other) => one.bookmarks.size === other.bookmarks.size && [...one.bookmarks].every(([name, page]) => other.bookmarks.get(name) === page) && one.pageCount === other.pageCount && one.sectionPageCounts.length === other.sectionPageCounts.length && one.sectionPageCounts.every((count, index) => other.sectionPageCounts[index] === count);
+	/** What a document is read into: a template patchDocument patched, or the body of a document being written */
+	var contentOf = (document, context) => "parts" in document ? readDocx(document.parts) : (context === null || context === void 0 ? void 0 : context.file) && readDocument(document, context);
 	/** Lays out the pages until their page numbers stop changing, with a measurer */
-	var estimateWith = (body, context, measurer) => {
-		if (!context.file) return { bookmarks: /* @__PURE__ */ new Map() };
-		const content = readDocument(body, context);
+	var estimateWith = (content, measurer) => {
+		if (!content) return { bookmarks: /* @__PURE__ */ new Map() };
 		const layOut = (before, pass) => {
 			const { bookmarks, pageCount, sectionPageCounts, stoppedAt } = paginate(content, {
 				measurer,
@@ -5786,10 +5879,12 @@ var docxLayout = (function(exports) {
 	/**
 	* Works out the page each bookmark of a document starts on, and how many pages the document and each of its sections
 	* have, by laying out its pages as Word does, so the page numbers of its tables of contents and page references, and its
-	* numbers of pages, are written with it. Give it to a document as its `pageNumbers`:
+	* numbers of pages, are written with it. Give it to a document as its `pageNumbers`, or to `patchDocument` as its
+	* `pageNumbers` to write a template's once it is patched:
 	*
 	* ```ts
 	* new Document({ pageNumbers: estimatePageNumbers, sections: [...] });
+	* await patchDocument({ outputType: "nodebuffer", data, patches, pageNumbers: estimatePageNumbers });
 	* ```
 	*
 	* The pages are laid out with the widths and heights of the fonts Word documents use most, such as Calibri, Cambria,
@@ -5800,7 +5895,8 @@ var docxLayout = (function(exports) {
 	* It stops at the first thing it can't lay out yet: a drawing that text flows around, a text box or frame, an equation,
 	* a footnote that continues on the next page, columns evened out before a continuous section break, or a table row kept
 	* whole that is taller than a page. The page references to bookmarks after it are left blank, for
-	* Word to fill in when it updates the fields.
+	* Word to fill in when it updates the fields. A document in compatibility mode, which Word lays out as an older version
+	* of Word did, isn't laid out at all.
 	*
 	* Page references and tables of contents are written clean, so Word shows the numbers as they are written, and the
 	* page numbers it left blank stay blank, without asking to update the fields, unless the document has `updateFields`
@@ -5808,10 +5904,10 @@ var docxLayout = (function(exports) {
 	*
 	* @publicApi
 	*/
-	var estimatePageNumbers = (body, context) => estimateWith(body, context, DEFAULT_MEASURER);
+	var estimatePageNumbers = (document, context) => estimateWith(contentOf(document, context), DEFAULT_MEASURER);
 	/**
 	* Works out the page each bookmark of a document starts on, as {@link estimatePageNumbers} does, measuring text as the
-	* options say. Give what it returns to a document as its `pageNumbers`:
+	* options say. Give what it returns to a document as its `pageNumbers`, or to `patchDocument` as its `pageNumbers`:
 	*
 	* ```ts
 	* new Document({ pageNumbers: estimatePageNumbersWith({ measureWidth: measureWithPretext(pretext) }), sections: [...] });
@@ -5821,7 +5917,7 @@ var docxLayout = (function(exports) {
 	*/
 	var estimatePageNumbersWith = ({ measureWidth }) => {
 		const measurer = measureWidth ? measurerOf(measureWidth) : DEFAULT_MEASURER;
-		return (body, context) => estimateWith(body, context, measurer);
+		return (document, context) => estimateWith(contentOf(document, context), measurer);
 	};
 	//#endregion
 	exports.estimatePageNumbers = estimatePageNumbers;

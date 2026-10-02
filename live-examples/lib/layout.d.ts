@@ -1,15 +1,15 @@
-import type { EstimatedPageNumbers } from 'docx';
-import type { IContext } from 'docx';
-import type { IXmlableObject } from 'docx';
 import type { PageNumberEstimator } from 'docx';
+import type { TemplatePageNumberEstimator } from 'docx';
 
 /**
  * Works out the page each bookmark of a document starts on, and how many pages the document and each of its sections
  * have, by laying out its pages as Word does, so the page numbers of its tables of contents and page references, and its
- * numbers of pages, are written with it. Give it to a document as its `pageNumbers`:
+ * numbers of pages, are written with it. Give it to a document as its `pageNumbers`, or to `patchDocument` as its
+ * `pageNumbers` to write a template's once it is patched:
  *
  * ```ts
  * new Document({ pageNumbers: estimatePageNumbers, sections: [...] });
+ * await patchDocument({ outputType: "nodebuffer", data, patches, pageNumbers: estimatePageNumbers });
  * ```
  *
  * The pages are laid out with the widths and heights of the fonts Word documents use most, such as Calibri, Cambria,
@@ -20,7 +20,8 @@ import type { PageNumberEstimator } from 'docx';
  * It stops at the first thing it can't lay out yet: a drawing that text flows around, a text box or frame, an equation,
  * a footnote that continues on the next page, columns evened out before a continuous section break, or a table row kept
  * whole that is taller than a page. The page references to bookmarks after it are left blank, for
- * Word to fill in when it updates the fields.
+ * Word to fill in when it updates the fields. A document in compatibility mode, which Word lays out as an older version
+ * of Word did, isn't laid out at all.
  *
  * Page references and tables of contents are written clean, so Word shows the numbers as they are written, and the
  * page numbers it left blank stay blank, without asking to update the fields, unless the document has `updateFields`
@@ -28,7 +29,7 @@ import type { PageNumberEstimator } from 'docx';
  *
  * @publicApi
  */
-export declare const estimatePageNumbers: (body: IXmlableObject, context: IContext) => EstimatedPageNumbers;
+export declare const estimatePageNumbers: PageNumberEstimator & TemplatePageNumberEstimator;
 
 /**
  * How {@link estimatePageNumbersWith} lays out the pages.
@@ -46,7 +47,7 @@ export declare type EstimatePageNumbersOptions = {
 
 /**
  * Works out the page each bookmark of a document starts on, as {@link estimatePageNumbers} does, measuring text as the
- * options say. Give what it returns to a document as its `pageNumbers`:
+ * options say. Give what it returns to a document as its `pageNumbers`, or to `patchDocument` as its `pageNumbers`:
  *
  * ```ts
  * new Document({ pageNumbers: estimatePageNumbersWith({ measureWidth: measureWithPretext(pretext) }), sections: [...] });
@@ -54,7 +55,7 @@ export declare type EstimatePageNumbersOptions = {
  *
  * @publicApi
  */
-export declare const estimatePageNumbersWith: ({ measureWidth }: EstimatePageNumbersOptions) => PageNumberEstimator;
+export declare const estimatePageNumbersWith: ({ measureWidth, }: EstimatePageNumbersOptions) => PageNumberEstimator & TemplatePageNumberEstimator;
 
 /**
  * The font to measure text in.

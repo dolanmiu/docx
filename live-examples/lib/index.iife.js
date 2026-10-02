@@ -21106,13 +21106,13 @@ MAX: 9026 };
 		return Array.isArray(content) ? content : content === void 0 ? [] : [content];
 	};
 	var childOf = (element, name) => childrenOf(element).find((child) => nameOf$2(child) === name);
-	var attributeOf$1 = (element, attribute) => {
+	var attributeOf = (element, attribute) => {
 		var _childOf;
 		return (_childOf = childOf(element, "_attr")) === null || _childOf === void 0 || (_childOf = _childOf._attr) === null || _childOf === void 0 ? void 0 : _childOf[attribute];
 	};
 	/** An attribute such as `w:val="2"` as a number. Imported XML gives it as a string */
 	var numberAttributeOf = (element, attribute) => {
-		const value = attributeOf$1(element, attribute);
+		const value = attributeOf(element, attribute);
 		return value === void 0 ? void 0 : Number(value);
 	};
 	/** The block-level containers of paragraphs: tables, their rows and cells, and content controls */
@@ -21152,7 +21152,7 @@ MAX: 9026 };
 		switch (nameOf$2(element)) {
 			case "w:t": return childrenOf(element).filter((child) => typeof child === "string").join("");
 			case "w:tab": return "	";
-			case "w:br": return [void 0, "textWrapping"].includes(attributeOf$1(element, "w:type")) ? "\n" : "";
+			case "w:br": return [void 0, "textWrapping"].includes(attributeOf(element, "w:type")) ? "\n" : "";
 			case "w:cr": return "\n";
 			case "w:noBreakHyphen": return "-";
 			default: return "";
@@ -21165,7 +21165,7 @@ MAX: 9026 };
 			const name = nameOf$2(element);
 			if (name !== void 0 && TEXT_CONTAINERS.has(name)) return childrenOf(element).map(read).join("");
 			if (name === "w:fldChar") {
-				const type = attributeOf$1(element, "w:fldCharType");
+				const type = attributeOf(element, "w:fldCharType");
 				if (type === "begin") fields.push(false);
 				else if (type === "separate") fields[fields.length - 1] = true;
 				else fields.pop();
@@ -21180,12 +21180,12 @@ MAX: 9026 };
 		const name = nameOf$2(element);
 		if (name === "w:bookmarkStart") return [{
 			start: true,
-			id: attributeOf$1(element, "w:id"),
-			name: attributeOf$1(element, "w:name")
+			id: attributeOf(element, "w:id"),
+			name: attributeOf(element, "w:name")
 		}];
 		if (name === "w:bookmarkEnd") return [{
 			start: false,
-			id: attributeOf$1(element, "w:id")
+			id: attributeOf(element, "w:id")
 		}];
 		return name === void 0 || name === "_attr" ? [] : childrenOf(element).flatMap(bookmarkMarksOf);
 	};
@@ -21211,7 +21211,7 @@ MAX: 9026 };
 			const properties = childOf(element, "w:pPr");
 			return {
 				element,
-				styleId: attributeOf$1(childOf(properties, "w:pStyle"), "w:val"),
+				styleId: attributeOf(childOf(properties, "w:pStyle"), "w:val"),
 				outlineLevel: numberAttributeOf(childOf(properties, "w:outlineLvl"), "w:val"),
 				text: textOf(element),
 				bookmarks: (_bookmarks$index = bookmarks[index]) !== null && _bookmarks$index !== void 0 ? _bookmarks$index : /* @__PURE__ */ new Set()
@@ -21222,9 +21222,9 @@ MAX: 9026 };
 	var stylesOf = (context) => {
 		var _context$file;
 		const styles = (_context$file = context.file) === null || _context$file === void 0 || (_context$file = _context$file.Styles) === null || _context$file === void 0 ? void 0 : _context$file.prepForXml(context);
-		return new Map(childrenOf(styles).filter((style) => nameOf$2(style) === "w:style" && ["paragraph", void 0].includes(attributeOf$1(style, "w:type"))).map((style) => [attributeOf$1(style, "w:styleId"), {
-			name: attributeOf$1(childOf(style, "w:name"), "w:val"),
-			basedOn: attributeOf$1(childOf(style, "w:basedOn"), "w:val"),
+		return new Map(childrenOf(styles).filter((style) => nameOf$2(style) === "w:style" && ["paragraph", void 0].includes(attributeOf(style, "w:type"))).map((style) => [attributeOf(style, "w:styleId"), {
+			name: attributeOf(childOf(style, "w:name"), "w:val"),
+			basedOn: attributeOf(childOf(style, "w:basedOn"), "w:val"),
 			outlineLevel: numberAttributeOf(childOf(childOf(style, "w:pPr"), "w:outlineLvl"), "w:val")
 		}]));
 	};
@@ -21297,7 +21297,7 @@ MAX: 9026 };
 		};
 	};
 	/** The formatted content of a table of contents with its entries */
-	var contentOf$1 = ({ properties, beginDirty, textWidth }, entries, styles, context) => {
+	var contentOf = ({ properties, beginDirty, textWidth }, entries, styles, context) => {
 		var _parseRange;
 		const withoutPageNumbers = properties.pageNumbersEntryLevelsRange ? (_parseRange = parseRange(properties.pageNumbersEntryLevelsRange)) !== null && _parseRange !== void 0 ? _parseRange : [1, 9] : void 0;
 		const content = new StructuredDocumentTagContent();
@@ -21365,28 +21365,11 @@ MAX: 9026 };
 				}];
 			});
 			if (entries.length === 0) return;
-			table["w:sdt"] = childrenOf(table).map((child) => nameOf$2(child) === "w:sdtContent" ? contentOf$1(options, entries, styles, context) : child);
+			table["w:sdt"] = childrenOf(table).map((child) => nameOf$2(child) === "w:sdtContent" ? contentOf(options, entries, styles, context) : child);
 		});
 	};
 	//#endregion
-	//#region src/file/document/body/page-numbers.ts
-	/**
-	* Page numbers written into the fields of a document that show them, when it is written, from an estimate of its pages.
-	*
-	* A page reference is a PAGEREF field, such as the page number of an entry in a table of contents, and the numbers of
-	* pages of the document and of a section are NUMPAGES and SECTIONPAGES fields. Word works their results out when it
-	* updates the fields, or lays the pages out, and until then, and in applications that don't, the fields show the results
-	* they were written with. `docx` doesn't lay out pages, so it writes the results empty, unless the document is given a
-	* {@link PageNumberEstimator}, such as `estimatePageNumbers` from `docx/layout`. Then, once the body is written, each of
-	* those fields in the body, and then in the headers and footers, is given the number the estimator worked out.
-	*
-	* Page references and tables of contents are written dirty, so Word updates them when it opens the document, and asks
-	* "This document contains fields that may refer to other files. Do you want to update the fields in this document?".
-	* When the document is given page numbers, they are written clean, so Word shows them as they are and doesn't ask. A
-	* page number the estimator didn't work out is left blank, until the fields are updated.
-	*
-	* @module
-	*/
+	//#region src/file/document/body/page-number-fields.ts
 	var PLAIN_FORMATS = /* @__PURE__ */ new Set([
 		"mergeformat",
 		"charformat",
@@ -21413,103 +21396,85 @@ MAX: 9026 };
 		if (!match || hasOwnFormat(match[2])) return;
 		return match[1].toUpperCase() === "NUMPAGES" ? "document" : "section";
 	};
-	/** The result of a field that shows a page's number or a number of pages, or undefined to leave it as it is */
-	var resultFrom = (instruction, { bookmarks, pageCount }, sectionPageCount) => {
+	/**
+	* The result of a field that shows a page's number or a number of pages, or undefined to leave it as it is. A field
+	* the estimate has no number for is left as it is, or made blank.
+	*/
+	var resultFrom = (instruction, { bookmarks, pageCount }, { sectionPageCount, blank }) => {
 		const bookmark = bookmarkOf(instruction);
-		if (bookmark !== void 0) return bookmarks.get(bookmark);
-		const count = pageCountOf(instruction);
-		const value = count === "document" ? pageCount : count === "section" ? sectionPageCount : void 0;
-		return value === void 0 ? void 0 : String(value);
-	};
-	var nameOf$1 = (element) => typeof element === "object" && element !== null && !Array.isArray(element) ? Object.keys(element)[0] : void 0;
-	var contentOf = (element) => {
-		const content = element[nameOf$1(element)];
-		return Array.isArray(content) ? content : [];
-	};
-	var attributeOf = (element, name, attribute) => {
-		var _holder$_attr;
-		const content = element[name];
-		const holder = Array.isArray(content) ? content.find((child) => nameOf$1(child) === "_attr") : content;
-		return holder === null || holder === void 0 || (_holder$_attr = holder._attr) === null || _holder$_attr === void 0 ? void 0 : _holder$_attr[attribute];
-	};
-	var textElement = (text) => ({ "w:t": [{ _attr: { "xml:space": "preserve" } }, text] });
-	/**
-	* Writes clean the beginning of a field that is dirty only without page numbers, such as a page reference, so Word
-	* shows its result as it is written and doesn't ask to update the fields
-	*/
-	var writeClean = (begin) => {
-		const attributes = begin["w:fldChar"]._attr;
-		begin["w:fldChar"] = { _attr: Object.fromEntries(Object.entries(attributes).filter(([key]) => key !== "w:dirty")) };
+		const count = bookmark === void 0 ? pageCountOf(instruction) : void 0;
+		if (bookmark === void 0 && count === void 0) return;
+		const value = bookmark !== void 0 ? bookmarks.get(bookmark) : count === "document" ? pageCount : sectionPageCount;
+		return value === void 0 ? blank ? "" : void 0 : String(value);
 	};
 	/**
-	* Writes the results the filling works out into the fields in the elements, in order. A field's result is written just
-	* after its `separate` field character, and any result it had is taken out.
+	* Writes the results the filling works out into the fields in the elements, in order.
 	*/
-	var fillFields = (elements, open, filling) => {
+	var fillFields = (tree, elements, open, filling) => {
 		for (let index = 0; index < elements.length; index++) {
 			const element = elements[index];
-			const name = nameOf$1(element);
-			if (name === void 0 || name === "_attr") continue;
+			const name = tree.nameOf(element);
+			if (name === void 0) continue;
 			const current = open[open.length - 1];
 			if (name === "w:fldChar") {
-				const type = attributeOf(element, name, "w:fldCharType");
-				if (type === "begin") {
-					open.push({
-						instruction: "",
-						inResult: false
-					});
-					if (isDirtyWithoutPageNumbers(element)) writeClean(element);
-				} else if (type === "separate" && current) {
+				const type = tree.attributeOf(element, "w:fldCharType");
+				if (type === "begin") open.push({
+					begin: element,
+					instruction: "",
+					inResult: false
+				});
+				else if (type === "separate" && current) {
+					tree.writeClean(current.begin, current.instruction);
 					current.inResult = true;
 					current.result = filling.resultOf(current.instruction);
 					if (current.result !== void 0) {
-						elements.splice(index + 1, 0, textElement(current.result));
+						elements.splice(index + 1, 0, tree.textElement(current.result));
 						index++;
 					}
 				} else if (type === "end") open.pop();
-			} else if (name === "w:instrText" && current && !current.inResult) current.instruction += contentOf(element).filter((part) => typeof part === "string").join("");
+			} else if (name === "w:instrText" && current && !current.inResult) current.instruction += tree.textOf(element);
 			else if ((name === "w:t" || name === "w:tab" || name === "w:br" || name === "w:cr") && (current === null || current === void 0 ? void 0 : current.result) !== void 0) {
 				elements.splice(index, 1);
 				index--;
-			} else if (name === "w:fldSimple") fillSimpleField(element, filling);
-			else {
-				const content = element[name];
-				if (Array.isArray(content)) fillFields(content, open, filling);
+			} else if (name === "w:fldSimple") {
+				const result = filling.resultOf(String(tree.attributeOf(element, "w:instr")));
+				if (result === void 0) {
+					var _tree$contentOf;
+					fillFields(tree, (_tree$contentOf = tree.contentOf(element)) !== null && _tree$contentOf !== void 0 ? _tree$contentOf : [], [], filling);
+				} else tree.setSimpleFieldResult(element, result);
+			} else {
+				var _tree$contentOf2;
+				fillFields(tree, (_tree$contentOf2 = tree.contentOf(element)) !== null && _tree$contentOf2 !== void 0 ? _tree$contentOf2 : [], open, filling);
 				if (name === "w:p") filling.afterParagraph(element);
 			}
 		}
 	};
-	/**
-	* Writes the result into a simple field (`w:fldSimple`) whose result the filling works out: its runs are its result.
-	*/
-	var fillSimpleField = (element, filling) => {
-		const result = filling.resultOf(String(attributeOf(element, "w:fldSimple", "w:instr")));
-		const content = element["w:fldSimple"];
-		if (result === void 0) {
-			fillFields(content, [], filling);
-			return;
-		}
-		element["w:fldSimple"] = [...content.filter((child) => nameOf$1(child) === "_attr"), { "w:r": [textElement(result)] }];
-	};
 	/** The section properties (`w:sectPr`) in the elements, in order: those of the paragraphs that end sections, and the last */
-	var sectionPropertiesIn = (elements) => elements.flatMap((element) => {
-		const name = nameOf$1(element);
-		if (name === void 0 || name === "_attr") return [];
-		return name === "w:sectPr" ? [element] : sectionPropertiesIn(contentOf(element));
+	var sectionPropertiesIn = (tree, elements) => elements.flatMap((element) => {
+		var _tree$contentOf3;
+		const name = tree.nameOf(element);
+		if (name === void 0) return [];
+		return name === "w:sectPr" ? [element] : sectionPropertiesIn(tree, (_tree$contentOf3 = tree.contentOf(element)) !== null && _tree$contentOf3 !== void 0 ? _tree$contentOf3 : []);
 	});
 	/** Whether a paragraph ends a section: whether its properties have the section's */
-	var endsSection = (paragraph) => contentOf(paragraph).some((child) => nameOf$1(child) === "w:pPr" && contentOf(child).some((part) => nameOf$1(part) === "w:sectPr"));
+	var endsSection = (tree, paragraph) => {
+		var _tree$contentOf4;
+		return ((_tree$contentOf4 = tree.contentOf(paragraph)) !== null && _tree$contentOf4 !== void 0 ? _tree$contentOf4 : []).some((child) => {
+			var _tree$contentOf5;
+			return tree.nameOf(child) === "w:pPr" && ((_tree$contentOf5 = tree.contentOf(child)) !== null && _tree$contentOf5 !== void 0 ? _tree$contentOf5 : []).some((part) => tree.nameOf(part) === "w:sectPr");
+		});
+	};
 	/**
 	* The number of pages each header and footer shows in its SECTIONPAGES fields, by the id of the relationship to it:
 	* that of the sections whose pages it is on, when they all have the same. A section without a header or footer of a kind
 	* has the one of the section before, as Word lays them out.
 	*/
-	var partPageCountsOf = (body, sectionPageCounts) => {
-		const countsOfParts = sectionPropertiesIn([body]).reduce((all, properties) => {
-			var _all;
-			const references = contentOf(properties).flatMap((child) => {
-				const name = nameOf$1(child);
-				return name === "w:headerReference" || name === "w:footerReference" ? [[`${name} ${String(attributeOf(child, name, "w:type"))}`, String(attributeOf(child, name, "r:id"))]] : [];
+	var partPageCountsOf = (tree, body, sectionPageCounts) => {
+		const countsOfParts = sectionPropertiesIn(tree, [body]).reduce((all, properties) => {
+			var _tree$contentOf6, _all;
+			const references = ((_tree$contentOf6 = tree.contentOf(properties)) !== null && _tree$contentOf6 !== void 0 ? _tree$contentOf6 : []).flatMap((child) => {
+				const name = tree.nameOf(child);
+				return name === "w:headerReference" || name === "w:footerReference" ? [[`${name} ${String(tree.attributeOf(child, "w:type"))}`, String(tree.attributeOf(child, "r:id"))]] : [];
 			});
 			return [...all, new Map([...(_all = all[all.length - 1]) !== null && _all !== void 0 ? _all : [], ...references])];
 		}, []).reduce((counts, parts, section) => {
@@ -21521,6 +21486,86 @@ MAX: 9026 };
 		}, /* @__PURE__ */ new Map());
 		return new Map([...countsOfParts].flatMap(([id, [first, ...rest]]) => first !== void 0 && rest.every((count) => count === first) ? [[id, first]] : []));
 	};
+	/**
+	* Writes the estimated page numbers into the fields of a document's body that show them: its PAGEREF fields, in its
+	* tables of contents and elsewhere, and its NUMPAGES and SECTIONPAGES fields.
+	*
+	* @returns The number of pages each header and footer shows in its SECTIONPAGES fields, by the id of the relationship to it
+	*/
+	var fillBodyFields = (tree, body, estimate, { blank }) => {
+		const { sectionPageCounts = [] } = estimate;
+		let section = 0;
+		fillFields(tree, [body], [], {
+			resultOf: (instruction) => resultFrom(instruction, estimate, {
+				sectionPageCount: sectionPageCounts[section],
+				blank
+			}),
+			afterParagraph: (paragraph) => {
+				section += endsSection(tree, paragraph) ? 1 : 0;
+			}
+		});
+		return partPageCountsOf(tree, body, sectionPageCounts);
+	};
+	/**
+	* Writes the estimated page numbers into the fields of a header or footer that show them, with the number of pages its
+	* SECTIONPAGES fields show, if it is known.
+	*/
+	var fillPartFields = (tree, part, estimate, { blank, sectionPageCount }) => fillFields(tree, [part], [], {
+		resultOf: (instruction) => resultFrom(instruction, estimate, {
+			sectionPageCount,
+			blank
+		}),
+		afterParagraph: () => void 0
+	});
+	//#endregion
+	//#region src/file/document/body/page-numbers.ts
+	/**
+	* Page numbers written into the fields of a document that show them, when it is written, from an estimate of its pages.
+	*
+	* A page reference is a PAGEREF field, such as the page number of an entry in a table of contents, and the numbers of
+	* pages of the document and of a section are NUMPAGES and SECTIONPAGES fields. Word works their results out when it
+	* updates the fields, or lays the pages out, and until then, and in applications that don't, the fields show the results
+	* they were written with. `docx` doesn't lay out pages, so it writes the results empty, unless the document is given a
+	* {@link PageNumberEstimator}, such as `estimatePageNumbers` from `docx/layout`. Then, once the body is written, each of
+	* those fields in the body, and then in the headers and footers, is given the number the estimator worked out.
+	*
+	* Page references and tables of contents are written dirty, so Word updates them when it opens the document, and asks
+	* "This document contains fields that may refer to other files. Do you want to update the fields in this document?".
+	* When the document is given page numbers, they are written clean, so Word shows them as they are and doesn't ask. A
+	* page number the estimator didn't work out is left blank, until the fields are updated.
+	*
+	* @module
+	*/
+	var nameOf$1 = (element) => {
+		const name = typeof element === "object" && element !== null && !Array.isArray(element) ? Object.keys(element)[0] : void 0;
+		return name === "_attr" ? void 0 : name;
+	};
+	var textElement = (text) => ({ "w:t": [{ _attr: { "xml:space": "preserve" } }, text] });
+	/** The elements docx formats to write a document */
+	var FORMATTED = {
+		nameOf: nameOf$1,
+		contentOf: (element) => {
+			const content = element[nameOf$1(element)];
+			return Array.isArray(content) ? content : void 0;
+		},
+		attributeOf: (element, attribute) => {
+			var _holder$_attr;
+			const content = element[nameOf$1(element)];
+			const holder = Array.isArray(content) ? content.find((child) => typeof child === "object" && child !== null && "_attr" in child) : content;
+			return holder === null || holder === void 0 || (_holder$_attr = holder._attr) === null || _holder$_attr === void 0 ? void 0 : _holder$_attr[attribute];
+		},
+		textOf: (element) => FORMATTED.contentOf(element).filter((part) => typeof part === "string").join(""),
+		textElement,
+		writeClean: (begin) => {
+			if (isDirtyWithoutPageNumbers(begin)) {
+				const attributes = begin["w:fldChar"]._attr;
+				begin["w:fldChar"] = { _attr: Object.fromEntries(Object.entries(attributes).filter(([key]) => key !== "w:dirty")) };
+			}
+		},
+		setSimpleFieldResult: (element, text) => {
+			element["w:fldSimple"] = [...FORMATTED.contentOf(element).filter((child) => typeof child === "object" && child !== null && "_attr" in child), { "w:r": [textElement(text)] }];
+		}
+	};
 	/** The estimate of each document's pages, and the numbers of pages its headers and footers show, once its body is written */
 	var estimates = /* @__PURE__ */ new WeakMap();
 	/**
@@ -21531,17 +21576,10 @@ MAX: 9026 };
 	*/
 	var fillPageNumbers = (body, context, estimator) => {
 		const estimate = estimator(body, context);
-		const { sectionPageCounts = [] } = estimate;
-		let section = 0;
-		fillFields([body], [], {
-			resultOf: (instruction) => resultFrom(instruction, estimate, sectionPageCounts[section]),
-			afterParagraph: (paragraph) => {
-				section += endsSection(paragraph) ? 1 : 0;
-			}
-		});
+		const partPageCounts = fillBodyFields(FORMATTED, body, estimate, { blank: false });
 		if (context.file) estimates.set(context.file, {
 			estimate,
-			partPageCounts: partPageCountsOf(body, sectionPageCounts)
+			partPageCounts
 		});
 	};
 	/**
@@ -21555,10 +21593,9 @@ MAX: 9026 };
 	var fillPartPageNumbers = (part, context, referenceId) => {
 		const written = context.file && estimates.get(context.file);
 		if (!part || !written) return;
-		const sectionPageCount = written.partPageCounts.get(`rId${referenceId}`);
-		fillFields([part], [], {
-			resultOf: (instruction) => resultFrom(instruction, written.estimate, sectionPageCount),
-			afterParagraph: () => void 0
+		fillPartFields(FORMATTED, part, written.estimate, {
+			blank: false,
+			sectionPageCount: written.partPageCounts.get(`rId${referenceId}`)
 		});
 	};
 	//#endregion
@@ -36063,6 +36100,72 @@ while (n === a[++i] && n === a[++i] && n === a[++i] && n === a[++i] && n === a[+
 		};
 	};
 	//#endregion
+	//#region src/patcher/page-numbers.ts
+	/** The elements of a template, as xml-js parses them */
+	var PARSED = {
+		nameOf: (element) => element.type === "element" ? element.name : void 0,
+		contentOf: (element) => element.elements,
+		attributeOf: (element, attribute) => {
+			var _element$attributes;
+			return (_element$attributes = element.attributes) === null || _element$attributes === void 0 ? void 0 : _element$attributes[attribute];
+		},
+		textOf: (element) => {
+			var _element$elements;
+			return ((_element$elements = element.elements) !== null && _element$elements !== void 0 ? _element$elements : []).filter(({ type }) => type === "text").map(({ text }) => String(text)).join("");
+		},
+		textElement: (text) => ({
+			type: "element",
+			name: "w:t",
+			attributes: { "xml:space": "preserve" },
+			elements: [{
+				type: "text",
+				text
+			}]
+		}),
+		writeClean: (begin, instruction) => {
+			var _begin$attributes;
+			if (/^\s*(PAGEREF|TOC)\b/i.test(instruction) && ((_begin$attributes = begin.attributes) === null || _begin$attributes === void 0 ? void 0 : _begin$attributes["w:dirty"]) !== void 0) begin.attributes = Object.fromEntries(Object.entries(begin.attributes).filter(([key]) => key !== "w:dirty"));
+		},
+		setSimpleFieldResult: (element, text) => {
+			element.elements = [{
+				type: "element",
+				name: "w:r",
+				elements: [PARSED.textElement(text)]
+			}];
+		}
+	};
+	var DOCUMENT = "word/document.xml";
+	/** The root element of a part, such as `w:document` */
+	var rootOf = (part) => {
+		var _part$elements;
+		return part === null || part === void 0 || (_part$elements = part.elements) === null || _part$elements === void 0 ? void 0 : _part$elements.find(({ type }) => type === "element");
+	};
+	/**
+	* Writes the page numbers the estimator works out for a patched template into the fields of its body, headers and
+	* footers that show them: its PAGEREF fields, in its tables of contents and elsewhere, and its NUMPAGES and SECTIONPAGES
+	* fields. The results a field was written with are those of the template before it was patched, so a field whose number
+	* the estimator doesn't work out is left blank, as it is in a document written with `pageNumbers`. Page references and
+	* tables of contents are written clean, as they are in a document written with `pageNumbers`, so Word shows their numbers
+	* as they are and doesn't ask to update the fields.
+	*
+	* @param parts - The template's XML parts, parsed, by their paths, which are changed in place
+	*/
+	var fillTemplatePageNumbers = (parts, estimator) => {
+		var _rootOf$elements, _rootOf;
+		const document = rootOf(parts.get(DOCUMENT));
+		if (!document) return;
+		const estimate = estimator({ parts });
+		const partPageCounts = fillBodyFields(PARSED, document, estimate, { blank: true });
+		const relationships = (_rootOf$elements = (_rootOf = rootOf(parts.get(relationshipsPathOf(DOCUMENT)))) === null || _rootOf === void 0 ? void 0 : _rootOf.elements) !== null && _rootOf$elements !== void 0 ? _rootOf$elements : [];
+		for (const { attributes = {} } of relationships) {
+			const part = /\/(header|footer)$/.test(String(attributes.Type)) ? rootOf(parts.get(resolveTarget(DOCUMENT, String(attributes.Target)))) : void 0;
+			if (part) fillPartFields(PARSED, part, estimate, {
+				blank: true,
+				sectionPageCount: partPageCounts.get(String(attributes.Id))
+			});
+		}
+	};
+	//#endregion
 	//#region src/patcher/paragraph-split-inject.ts
 	var TokenNotFoundError = class extends Error {
 		constructor(token) {
@@ -36818,7 +36921,7 @@ while (n === a[++i] && n === a[++i] && n === a[++i] && n === a[++i] && n === a[+
 		var _ref = _asyncToGenerator(function* ({ outputType, data, patches, keepOriginalStyles, placeholderDelimiters = {
 			start: "{{",
 			end: "}}"
-		}, recursive = true, footnotes, endnotes }) {
+		}, recursive = true, footnotes, endnotes, pageNumbers }) {
 			const zipContent = data instanceof import_jszip_min.default ? data : yield import_jszip_min.default.loadAsync(data);
 			const contexts = /* @__PURE__ */ new Map();
 			const themeColors = yield readThemeColors(zipContent);
@@ -36980,6 +37083,7 @@ while (n === a[++i] && n === a[++i] && n === a[++i] && n === a[++i] && n === a[+
 				map.set(relationshipKey, relationshipsJson);
 				appendRelationship(relationshipsJson, id, type, target, targetMode);
 			}
+			if (pageNumbers) fillTemplatePageNumbers(map, pageNumbers);
 			const packageParts = xmlifyPackageParts(file, void 0);
 			if (hasMedia || contentTypeOverrides.length > 0) {
 				const contentTypesJson = map.get("[Content_Types].xml");

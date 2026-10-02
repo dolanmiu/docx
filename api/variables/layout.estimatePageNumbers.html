@@ -10,16 +10,13 @@
 <ul class="tsd-breadcrumb" aria-label="Breadcrumb">
 <li><a href="../modules/layout.html">layout</a></li>
 <li><a href="" aria-current="page">estimatePageNumbers</a></li></ul>
-<h1>Function estimatePageNumbers</h1></div>
-<section class="tsd-panel">
-<ul class="tsd-signatures">
-<li class="">
-<div class="tsd-signature tsd-anchor-link" id="estimatepagenumbers"><span class="tsd-kind-call-signature">estimatePageNumbers</span><span class="tsd-signature-symbol">(</span><br/>    <span class="tsd-kind-parameter">body</span><span class="tsd-signature-symbol">:</span> <a href="../interfaces/index.IXmlableObject.html" class="tsd-signature-type tsd-kind-interface">IXmlableObject</a><span class="tsd-signature-symbol">,</span><br/>    <span class="tsd-kind-parameter">context</span><span class="tsd-signature-symbol">:</span> <a href="../types/index.IContext.html" class="tsd-signature-type tsd-kind-type-alias">IContext</a><span class="tsd-signature-symbol">,</span><br/><span class="tsd-signature-symbol">)</span><span class="tsd-signature-symbol">:</span> <a href="../types/index.EstimatedPageNumbers.html" class="tsd-signature-type tsd-kind-type-alias">EstimatedPageNumbers</a><a href="#estimatepagenumbers" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="../assets/icons.svg#icon-anchor"></use></svg></a></div>
-<div class="tsd-description">
+<h1>Variable estimatePageNumbers<code class="tsd-tag">Const</code></h1></div>
+<div class="tsd-signature"><span class="tsd-kind-variable">estimatePageNumbers</span><span class="tsd-signature-symbol">:</span> <a href="../types/index.PageNumberEstimator.html" class="tsd-signature-type tsd-kind-type-alias">PageNumberEstimator</a> <span class="tsd-signature-symbol">&amp;</span> <a href="../types/index.TemplatePageNumberEstimator.html" class="tsd-signature-type tsd-kind-type-alias">TemplatePageNumberEstimator</a><span class="tsd-signature-symbol"> = ...</span></div>
 <div class="tsd-comment tsd-typography"><p>Works out the page each bookmark of a document starts on, and how many pages the document and each of its sections
 have, by laying out its pages as Word does, so the page numbers of its tables of contents and page references, and its
-numbers of pages, are written with it. Give it to a document as its <code>pageNumbers</code>:</p>
-<pre><code class="ts"><span class="hl-4">new</span><span class="hl-1"> </span><span class="hl-6">Document</span><span class="hl-1">({ </span><span class="hl-2">pageNumbers:</span><span class="hl-1"> </span><span class="hl-2">estimatePageNumbers</span><span class="hl-1">, </span><span class="hl-2">sections:</span><span class="hl-1"> [...] });</span>
+numbers of pages, are written with it. Give it to a document as its <code>pageNumbers</code>, or to <code>patchDocument</code> as its
+<code>pageNumbers</code> to write a template's once it is patched:</p>
+<pre><code class="ts"><span class="hl-4">new</span><span class="hl-1"> </span><span class="hl-6">Document</span><span class="hl-1">({ </span><span class="hl-2">pageNumbers:</span><span class="hl-1"> </span><span class="hl-2">estimatePageNumbers</span><span class="hl-1">, </span><span class="hl-2">sections:</span><span class="hl-1"> [...] });</span><br/><span class="hl-0">await</span><span class="hl-1"> </span><span class="hl-6">patchDocument</span><span class="hl-1">({ </span><span class="hl-2">outputType:</span><span class="hl-1"> </span><span class="hl-3">&quot;nodebuffer&quot;</span><span class="hl-1">, </span><span class="hl-2">data</span><span class="hl-1">, </span><span class="hl-2">patches</span><span class="hl-1">, </span><span class="hl-2">pageNumbers:</span><span class="hl-1"> </span><span class="hl-2">estimatePageNumbers</span><span class="hl-1"> });</span>
 </code><button type="button">Copy</button></pre>
 
 <p>The pages are laid out with the widths and heights of the fonts Word documents use most, such as Calibri, Cambria,
@@ -29,22 +26,17 @@ column and section breaks, and each section's page size, margins, columns, heade
 <p>It stops at the first thing it can't lay out yet: a drawing that text flows around, a text box or frame, an equation,
 a footnote that continues on the next page, columns evened out before a continuous section break, or a table row kept
 whole that is taller than a page. The page references to bookmarks after it are left blank, for
-Word to fill in when it updates the fields.</p>
+Word to fill in when it updates the fields. A document in compatibility mode, which Word lays out as an older version
+of Word did, isn't laid out at all.</p>
 <p>Page references and tables of contents are written clean, so Word shows the numbers as they are written, and the
 page numbers it left blank stay blank, without asking to update the fields, unless the document has <code>updateFields</code>
 on.</p>
 </div>
-<div class="tsd-parameters">
-<h4 class="tsd-parameters-title">Parameters</h4>
-<ul class="tsd-parameter-list">
-<li><span><span class="tsd-kind-parameter">body</span>: <a href="../interfaces/index.IXmlableObject.html" class="tsd-signature-type tsd-kind-interface">IXmlableObject</a></span></li>
-<li><span><span class="tsd-kind-parameter">context</span>: <a href="../types/index.IContext.html" class="tsd-signature-type tsd-kind-type-alias">IContext</a></span></li></ul></div>
-<h4 class="tsd-returns-title">Returns <a href="../types/index.EstimatedPageNumbers.html" class="tsd-signature-type tsd-kind-type-alias">EstimatedPageNumbers</a></h4>
 <div class="tsd-comment tsd-typography">
 <div class="tsd-tag-publicApi">
 <h4 class="tsd-anchor-link" id="public-api">Public Api<a href="#public-api" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="../assets/icons.svg#icon-anchor"></use></svg></a></h4></div></div><aside class="tsd-sources">
 <ul>
-<li>Defined in <a href="https://github.com/dolanmiu/docx/blob/eee355bff26b2fc2a3970bc0bbf78d8560a5537d/src/layout/estimate-page-numbers.ts#L72">layout/estimate-page-numbers.ts:72</a></li></ul></aside></div></li></ul></section></div>
+<li>Defined in <a href="https://github.com/dolanmiu/docx/blob/e008c45c0cf0f516f40546c6c50ab41233d20acb/src/layout/estimate-page-numbers.ts#L87">layout/estimate-page-numbers.ts:87</a></li></ul></aside></div>
 <div class="col-sidebar">
 <div class="page-menu">
 <div class="tsd-navigation settings">
