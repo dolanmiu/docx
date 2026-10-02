@@ -5,7 +5,7 @@
  * and in columns, the first column and then the next, with each line broken at the width of the column it is in. The
  * columns on the page before a continuous section break are balanced, as short as what is in them fits in. A section
  * that starts in the next column starts in the next column of the page when the section before has as many columns and
- * one is left, and on a new page otherwise.
+ * one is left, laid out in the page's columns, and on a new page otherwise.
  * Paragraphs break into lines, and pages break between lines, as their keep and widow control settings allow. Table
  * rows break across pages between the lines of their cells, unless they are kept whole, and the table's header rows are
  * repeated at the top of each page and column. The footnotes of each page's lines, of the text and of table rows alike,
@@ -930,6 +930,9 @@ export const paginate = (
     let sectionSpaceAfter: number | undefined = 0;
     // The column the section starts in: the first, unless it starts in the next column
     let sectionColumn = 0;
+    // The section whose columns the page's are, when the section being laid out started in the next column of columns of
+    // other widths, which Word lays it out in
+    let pageColumns: number | undefined;
     // What has been placed on the pages, which laying out blocks again takes back, the last page whose footnotes are
     // placed, the index of the block being placed, and the page the layout stopped on, whose lines might not be Word's
     // eslint-disable-next-line functional/prefer-readonly-type
@@ -1049,6 +1052,13 @@ export const paginate = (
     };
 
     const section = (): Section => sections[sectionIndex];
+    /**
+     * The section whose columns the text is laid out in: the one being laid out, or the one whose columns the page's are,
+     * for a section that started in the next column of columns of other widths. Word lays that out in the next column of
+     * the page, where it is and as wide as it is: after 2 columns of 4153 twips, one of 2000 and 6306 goes on at 4873, its
+     * lines broken at 4153 (`word-watertight-stops.docx` SP10, `word-next-column.docx` N4)
+     */
+    const columnsSection = (): Section => sections[pageColumns ?? sectionIndex];
     /** The width of the text across the page, as its headers, footers and footnotes are, unless those are in columns */
     const textWidth = (current = section()): number => current.pageWidth - current.marginLeft - current.marginRight - current.gutter;
 
@@ -1154,6 +1164,10 @@ export const paginate = (
             // The columns being balanced don't fit on their page in the height they are laid out in
             throw new Overflow();
         }
+        if (pageColumns !== undefined) {
+            // Whether Word lays it out in its own columns on the next page isn't known
+            throw new Unsupported("a section that starts in the next column of columns of other widths and goes on to the next page");
+        }
         checkReserve();
         if (continuedEndnotes) {
             // Word put a line more below the continuation separator than the page has room for by the heights of the lines,
@@ -1244,7 +1258,7 @@ export const paginate = (
 
     /** Moves to the top of the next column, or of the next page after the last column */
     const nextColumn = (): void => {
-        if (column + 1 >= section().columns.length) {
+        if (column + 1 >= columnsSection().columns.length) {
             startPage();
             return;
         }
@@ -1283,10 +1297,11 @@ export const paginate = (
      * Ends the columns on the page before a continuous section break, as Word does. Unless a column break is in them, they
      * are balanced: what is in them, up to the section's next block (`end`), is laid out again in the shortest columns it
      * fits in, filled from the first, which halving the height tried finds. Nor are they when a section in them started
-     * in the next column, which Word leaves as they are (`word-next-column.docx` N6). The next section starts below the
-     * lowest of the columns and the space after the paragraph each ends with, and its space before is only as much as is
-     * more than the space after the section's last paragraph: the empty one that ends it, when there is one, whose space
-     * after is not below the columns itself (`word-rules2.docx` Q7b). Their footnotes stay at the bottom of the page, in
+     * in the next column, which Word leaves as they are, in the last column (`word-next-column.docx` N6) and with columns
+     * after it: 10 lines in the second of 3 stay there (`word-watertight-stops.docx` SP11). The next section starts below
+     * the lowest of the columns and the space after the paragraph each ends with, and its space before is only as much as
+     * is more than the space after the section's last paragraph: the empty one that ends it, when there is one, whose
+     * space after is not below the columns itself (`word-rules2.docx` Q7b). Their footnotes stay at the bottom of the page, in
      * their columns, below what follows (`word-rules2.docx` Q6b, `word-footnotes-in-columns.docx` N6).
      */
     const endColumns = (end: number): void => {
@@ -1359,18 +1374,17 @@ export const paginate = (
         }
         const continuous = continuesOnPage(previous, current);
         if (continuous && previous.columns.length > 1 && (placedInColumn || column > 0)) {
-            if (startedInColumn() && columnsStart!.column < previous.columns.length - 1) {
-                // Word leaves a section that started in the next column as it is in the last column, but whether it
-                // evens it out across the columns after it isn't known
-                throw new Unsupported("columns evened out after a section that starts in the next column");
-            }
             endColumns(firstBlock);
         }
         const inNextColumn = startsInNextColumn(previous, current);
-        if (inNextColumn && previous.columns.some((width, at) => width !== current.columns[at])) {
-            // Word starts it in the next column of the page's columns, but which width its lines are broken at isn't known
-            throw new Unsupported("a section that starts in the next column of columns of other widths");
-        }
+        // One that starts in the next column of columns of other widths, or of columns that start elsewhere across the
+        // page, is laid out in the page's columns, as Word lays it out
+        const onPage = columnsSection();
+        pageColumns =
+            inNextColumn &&
+            onPage.columns.some((width, at) => width !== current.columns[at] || columnLeft(onPage, at) !== columnLeft(current, at))
+                ? (pageColumns ?? sectionIndex)
+                : undefined;
         // The columns of the page before one that starts in the next column end above its footnotes too
         filledEnd = inNextColumn ? Math.max(filledEnd, position) : 0;
         // The space after the empty paragraph that ends the section, when there is one, which isn't on the page itself
@@ -1731,6 +1745,10 @@ export const paginate = (
      */
     const addNotes = (notes: readonly string[]): void => {
         if (notes.length > 0) {
+            if (pageColumns !== undefined) {
+                // Whether Word lays them out in the page's columns or the section's own isn't known
+                stopOnPage("a footnote in a section that starts in the next column of columns of other widths");
+            }
             if (pageNotes.length === 0 && continued === undefined && section().columns.length > 1) {
                 notesInColumns = sectionIndex;
             }
@@ -2007,6 +2025,27 @@ export const paginate = (
         return lines.slice(from, end === -1 ? lines.length : end + 1);
     };
 
+    /** Whether the next line goes at the top of the page, in its first column */
+    const atTopOfPage = (): boolean => column === 0 && position <= top + TOLERANCE;
+
+    /**
+     * Whether a paragraph is kept together and taller than a column, up to its first break: than each of the columns at
+     * its width, in columns of different widths, where Word lays it out down the first column of each page at that
+     * column's width as it does in columns of the same width (`word-watertight-stops.docx` SP12). It stops at one taller
+     * than some of the columns but not others, which might go in one it fits in
+     */
+    const keptTallerThanColumns = (block: ParagraphBlock): boolean => {
+        const { columns } = columnsSection();
+        if (block.format.keepLines !== true || columns.length < 2) {
+            return false;
+        }
+        const taller = columns.map((width) => heightToFit(linesToBreak(linesOf(block, width), 0)) > pageBottom - top + TOLERANCE);
+        if (taller.some((tall) => tall !== taller[0])) {
+            throw new Unsupported("a paragraph kept together taller than some of its columns of different widths but not others");
+        }
+        return taller[0];
+    };
+
     /**
      * Places a paragraph's lines, breaking pages and columns between them where they don't fit, and at its page and
      * column breaks. Its lines are broken at the width of the column each goes in, so the part of it that goes on into a
@@ -2018,7 +2057,7 @@ export const paginate = (
      * section. Its footnotes go at the bottom of the page below its lines, unless they are held back to go below the
      * lines of the next paragraph (`holdNotes`).
      */
-    const placeParagraph = (block: ParagraphBlock, paragraph: MeasuredParagraph, keptWithPrevious: boolean, holdNotes: boolean): void => {
+    const placeParagraph = (block: ParagraphBlock, paragraph: MeasuredParagraph, holdNotes: boolean): void => {
         // The first paragraph of a section keeps its space before at the top of the new page, less the empty paragraph's
         // space after, as it does without the break: 1440 before after 200 is 1240 in Word, at the start of a section on a
         // new page, which is already new (word-rules2.docx Q2c), or of a continuous one (word-probes.docx U7a). Any other
@@ -2026,24 +2065,14 @@ export const paginate = (
         if (paragraph.pageBreakBefore && (placedInColumn || column > 0)) {
             startPage();
         }
-        const { columns } = section();
-        /** Whether its lines up to its first break are taller than a column, at a column's width */
-        const tallerThanColumn = (width: number): boolean =>
-            heightToFit(linesToBreak(linesOf(block, width), 0)) > pageBottom - top + TOLERANCE;
-        const keptTall = paragraph.keepLines && columns.length > 1 && columns.some(tallerThanColumn);
-        if (keptTall && columns.some((width) => width !== columns[0])) {
-            // Word lays one out down the first column of each page, in columns of the same width, but whether it does in
-            // columns of different widths, and which width it is too tall at, isn't known
-            throw new Unsupported("a paragraph kept together taller than a column, in columns of different widths");
-        }
+        const { columns } = columnsSection();
         // A paragraph kept together that is taller than a column goes down only the first column of each page, in Word,
         // from the top of a new page unless it is at the top of this one. What follows it goes on below it in that column
-        // and into the next, so the other columns of the pages before are left empty. LibreOffice breaks it across them all
-        if (keptTall && (column > 0 || position > top + TOLERANCE)) {
-            if (keptWithPrevious) {
-                // Moving it would leave the paragraph kept with it behind, and what Word does then isn't known
-                throw new Unsupported("a paragraph kept with the next before a paragraph kept together taller than a column");
-            }
+        // and into the next, so the other columns of the pages before are left empty. LibreOffice breaks it across them all.
+        // Those kept with it stay where they are, at the top of a page, where they were or moved to with it
+        // (`word-watertight-stops.docx` SP13)
+        const keptTall = keptTallerThanColumns(block);
+        if (keptTall && !atTopOfPage()) {
             startPage();
         }
         // The lines that go down only the first column of each page: those up to its first break, when it is kept together
@@ -2063,7 +2092,7 @@ export const paginate = (
         // The first of its lines not yet placed
         let index = 0;
         for (;;) {
-            widths = widthsFrom(index, section().columns[column]);
+            widths = widthsFrom(index, columnsSection().columns[column]);
             const lines = linesOf(block, widths);
             const remaining = linesToBreak(lines, index);
             const isFirstLine = index === 0;
@@ -2115,7 +2144,7 @@ export const paginate = (
             }
             if (count > 0) {
                 position += space;
-                const current = section();
+                const current = columnsSection();
                 for (const [offset, line] of remaining.slice(0, count).entries()) {
                     mark(line.markers);
                     // eslint-disable-next-line functional/immutable-data
@@ -2511,12 +2540,8 @@ export const paginate = (
         }
     };
 
-    /** Whether the cells of a table are as wide as those of the same table laid out in another width */
-    const sameWidths = (table: TableBlock, other: TableBlock): boolean =>
-        table.rows.every(({ cells }, row) => cells.every(({ width }, cell) => other.rows[row].cells[cell].width === width));
-
     const placeTable = (block: TableBlock): void => {
-        const width = section().columns[column];
+        const width = columnsSection().columns[column];
         const table = sizedToPlace(block, width);
         const merges = mergesOf(table);
         const heights = rowHeights(table, merges);
@@ -2526,16 +2551,13 @@ export const paginate = (
         position += spaceAfter;
         spaceAfter = 0;
         // A new column or page for the table, with its header rows repeated at the top, unless the row going on it is one
-        // of them. Word and LibreOffice repeat them at the top of each column, as of each page (`word-rules2.docx` Q4)
+        // of them. Word and LibreOffice repeat them at the top of each column, as of each page (`word-rules2.docx` Q4). A
+        // table sized to its text keeps the widths it was sized to in the column it starts in, in each column it goes on
+        // into, as in Word: in a wider one, where LibreOffice sizes one of a share of the width again
+        // (`word-column-widths.docx` R5 and R6), and in a narrower one, past whose edge it goes, with its rows as tall as
+        // they were (`word-watertight-stops.docx` SP16)
         const startTablePage = (index: number): void => {
             nextColumn();
-            // A table sized to its text keeps its columns' widths in a wider column, as in Word, where LibreOffice sizes one
-            // of a share of the width again (`word-column-widths.docx` R5 and R6). What Word does in a narrower one, where
-            // they might not fit, isn't known
-            const next = section().columns[column];
-            if (next < width && !sameWidths(table, fitted(block, next))) {
-                throw new Unsupported("a table sized to its text that goes on into a narrower column");
-            }
             if (index >= headerRows) {
                 heights.slice(0, Math.max(0, headerRows)).reduce((y, rowHeight, row) => {
                     placeRow(row, y, rowHeight);
@@ -2583,7 +2605,7 @@ export const paginate = (
             const next = blocks[blockIndex + 1];
             return next === undefined || next.section !== blocks[blockIndex].section
                 ? { height: 0, notes: [] }
-                : keptHeight(blockIndex + 1, section().columns[column]);
+                : keptHeight(blockIndex + 1, columnsSection().columns[column]);
         };
         // The last row of rows kept with the next that were laid out from the top of a page, which they don't fit on, and
         // so break across pages
@@ -2698,6 +2720,13 @@ export const paginate = (
         }
     };
 
+    /** How many paragraphs from one (`index`) on are kept with the next block of their section, one after the other */
+    const keptChain = (index: number): number =>
+        blocks.slice(index).findIndex(({ block, section: blockSection }, offset) => {
+            const following = blocks[index + offset + 1];
+            return !(block.type === "paragraph" && block.format.keepNext === true && following && following.section === blockSection);
+        });
+
     /**
      * The room the paragraphs kept with the next one, from this one, need on the page: all of them, and the start of
      * the block they are kept with, from where the next line would go. With the footnotes of all their lines (`notes`)
@@ -2715,10 +2744,7 @@ export const paginate = (
         readonly kept: readonly string[];
         readonly keptWith: "nothing" | "whole" | "part";
     } => {
-        const chain = blocks.slice(index).findIndex(({ block, section: blockSection }, offset) => {
-            const following = blocks[index + offset + 1];
-            return !(block.type === "paragraph" && block.format.keepNext === true && following && following.section === blockSection);
-        });
+        const chain = keptChain(index);
         const measured = (offset: number): MeasuredParagraph =>
             measureParagraph(blocks[offset].block as ParagraphBlock, width, blocks[offset - 1]?.block, blocks[offset + 1]?.block);
         const kept = Array.from({ length: chain }, (_, offset) => measured(index + offset));
@@ -2792,7 +2818,7 @@ export const paginate = (
         if (block.unsupported) {
             throw new Unsupported(block.unsupported);
         }
-        const width = section().columns[column];
+        const width = columnsSection().columns[column];
         const previous = blocks[index - 1];
         if (block.type === "paragraph") {
             if (block.sectionBreak && (block.borders !== undefined || hasAutomaticSpace(block))) {
@@ -2839,7 +2865,7 @@ export const paginate = (
                 readonly all: readonly string[];
                 readonly fitsWith: (noteRoom: number) => boolean;
             } => {
-                const measured = keptHeight(index, section().columns[column]);
+                const measured = keptHeight(index, columnsSection().columns[column]);
                 const withHeld = [...held, ...measured.notes];
                 return {
                     ...measured,
@@ -2847,7 +2873,20 @@ export const paginate = (
                     fitsWith: (noteRoom) => fitsAbove(position, measured, linesBottom(noteRoom), noteArea > 0 || withHeld.length > 0),
                 };
             };
-            if (placedInColumn) {
+            const keptWithPrevious =
+                previous?.section === blocks[index].section &&
+                previous.block.type === "paragraph" &&
+                previous.block.format.keepNext === true;
+            const anchor = blocks[index + keptChain(index)].block;
+            if (anchor.type === "paragraph" && keptTallerThanColumns(anchor)) {
+                // Kept with a paragraph kept together that is taller than a column, they move to a new page with it, unless
+                // they start at the top of this one, and it moves on again to the next, as it isn't at the top of that one:
+                // a line kept with one of 60 lines in 2 columns is alone on a page in Word (`word-watertight-stops.docx`
+                // SP13), where LibreOffice puts it in the next column
+                if (!keptWithPrevious && !atTopOfPage()) {
+                    startPage();
+                }
+            } else if (placedInColumn) {
                 const here = keptHere();
                 // They fit with their footnotes, the last continued on the next page when it can be, as in Word
                 // (`word-probes.docx` U2l)
@@ -2856,7 +2895,7 @@ export const paginate = (
                 // low for it, unless it is too tall for those too. The next column ends above the page's footnotes with
                 // theirs, and a new page has the rest of a footnote continued from this one. What is kept is broken into
                 // lines at the width of the column it goes in
-                const { columns } = section();
+                const { columns } = columnsSection();
                 const fitsBelow = (from: number, area: number, below: number): boolean =>
                     fitsAbove(from, keptHeight(index, below), Math.min(bottom, pageBottom - area), area > 0 || here.notes.length > 0);
                 if (
@@ -2886,9 +2925,7 @@ export const paginate = (
                 throw new Unsupported("a footnote continued below a paragraph kept with the next");
             }
         }
-        const keptWithPrevious =
-            previous?.section === blocks[index].section && previous.block.type === "paragraph" && previous.block.format.keepNext === true;
-        placeParagraph(block, paragraph, keptWithPrevious, holdNotes);
+        placeParagraph(block, paragraph, holdNotes);
         sectionSpaceAfter = undefined;
     };
 
