@@ -3602,6 +3602,9 @@ describe("readDocument", () => {
             // With specVanish too, as Word's style separator writes it
             const separator = readBody([p(pPr(rPr({ "w:vanish": {} }, { "w:specVanish": {} })), r(t("one"))), p(r(t("two")))]);
             expect(texts(separator)).to.deep.equal(["onetwo"]);
+            // One naming the default style, and one naming none, are formatted the same
+            const named = readBody([p(pPr(value("w:pStyle", "Normal"), hiddenMark), r(t("one"))), p(r(t("two")))]);
+            expect([named.blocks[0].block.unsupported, ...texts(named)]).to.deep.equal([undefined, "onetwo"]);
         });
 
         it("should leave a paragraph whose mark is hidden as it is, with no paragraph after it to join, as Word lays it out", () => {

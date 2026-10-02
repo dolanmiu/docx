@@ -2162,9 +2162,15 @@ const isNumbered = (paragraph: XmlObject, styles: TextStyles): boolean => {
     );
 };
 
-/** A paragraph's own formatting, but for its mark's */
-const paragraphFormatOf = (paragraph: XmlObject): string =>
-    JSON.stringify(paragraphPropertiesOf(paragraph).filter((child) => nameOf(child) !== "w:rPr"));
+/** A paragraph's own formatting, but for its mark's, and its style when it names the default one, as none does */
+const paragraphFormatOf = (paragraph: XmlObject, styles: TextStyles): string =>
+    JSON.stringify(
+        paragraphPropertiesOf(paragraph).filter(
+            (child) =>
+                nameOf(child) !== "w:rPr" &&
+                !(nameOf(child) === "w:pStyle" && valueOf([child], "w:pStyle") === styles.defaultParagraphStyle),
+        ),
+    );
 
 /** Whether an element has anything in its runs, deleted or not, but their formatting */
 const hasRunContent = (element: unknown): boolean =>
@@ -2231,7 +2237,7 @@ const unjoinedHiddenMark = (
     if (isNumbered(paragraph, styles) || isNumbered(next, styles)) {
         return "a hidden paragraph mark in a list";
     }
-    if (paragraphFormatOf(paragraph) !== paragraphFormatOf(next)) {
+    if (paragraphFormatOf(paragraph, styles) !== paragraphFormatOf(next, styles)) {
         return "a hidden paragraph mark between paragraphs of different formatting";
     }
     return sized && hasRunContent(paragraph) && hasRunContent(next)
