@@ -115,6 +115,13 @@ export type PageLayout = {
     readonly width: number;
     readonly height: number;
     /**
+     * When its text runs down the page, as in Chinese and Japanese, whether its lines go across it from the right or from
+     * the left. Each line is then a line down the page: its `x` and `y` are the top left of its room, its `width` how far
+     * across the page the line is, and its `height` how far down it the room is, its text going `textWidth` down from its
+     * top
+     */
+    readonly textRunsDown?: "fromRight" | "fromLeft";
+    /**
      * Which of its section's headers the page shows, as a section's `headers` names them: the first page's, the even
      * pages', or the default. A section that gives none of a kind shows the one of the section before. None when the
      * page has no header
@@ -173,8 +180,28 @@ const inPixels = (block: BlockLayout): BlockLayout =>
           }
         : { ...block, rows: block.rows.map((row) => ({ ...row, y: pixels(row.y), height: pixels(row.height) })) };
 
-const notesInPixels = (notes: readonly NoteLayout[]): readonly NoteLayout[] =>
-    notes.map((note) => ({ ...note, content: note.content.map(inPixels) }));
+/**
+ * A paragraph of a page of text that runs down it, with its lines where they are on the page, from where they were laid
+ * out along the page turned on its side: down the page from its top margin, across it from the right, or the left
+ */
+const upright =
+    ({ textRunsDown, width }: PageLayout): ((block: BlockLayout) => BlockLayout) =>
+    (block: BlockLayout): BlockLayout =>
+        textRunsDown === undefined || block.type !== "paragraph"
+            ? block
+            : {
+                  ...block,
+                  lines: block.lines.map((line) => ({
+                      ...line,
+                      x: textRunsDown === "fromLeft" ? line.y : width - line.y - line.height,
+                      y: line.x,
+                      width: line.height,
+                      height: line.width,
+                  })),
+              };
+
+const notesInPixels = (notes: readonly NoteLayout[], page: PageLayout): readonly NoteLayout[] =>
+    notes.map((note) => ({ ...note, content: note.content.map(upright(page)).map(inPixels) }));
 
 /**
  * How {@link layoutDocument} lays out the pages.
@@ -217,9 +244,9 @@ export const layoutDocument = (document: Document, { guess = false }: LayoutDocu
             ...page,
             width: pixels(page.width),
             height: pixels(page.height),
-            body: page.body.map(inPixels),
-            footnotes: notesInPixels(page.footnotes),
-            endnotes: notesInPixels(page.endnotes),
+            body: page.body.map(upright(page)).map(inPixels),
+            footnotes: notesInPixels(page.footnotes, page),
+            endnotes: notesInPixels(page.endnotes, page),
         })),
         ...(stoppedAt === undefined ? {} : { stoppedAt }),
     };

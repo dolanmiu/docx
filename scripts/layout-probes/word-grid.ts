@@ -1,6 +1,6 @@
 /**
  * Probes of how Word lays out a document grid (`w:docGrid` of type `lines`, `linesAndChars` and `snapToChars`), which
- * docx/layout stops at. Each probe starts a page, and each line's text names its probe, so the lines can be found in a
+ * docx/layout stopped at. Each probe starts a page, and each line's text names its probe, so the lines can be found in a
  * PDF saved from Word with pdftotext -bbox-layout, which word-grid.py reads. A4 with 1440 margins, so the text is 1440
  * to 15398 twips down the page and 9026 twips wide, no space before or after, single spaced. The grid is 360 twips (18
  * points) a line unless a probe says otherwise. The document's Normal is MS Mincho 10.5 for East Asian text and Times New

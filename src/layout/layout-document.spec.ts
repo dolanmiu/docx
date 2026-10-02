@@ -18,6 +18,7 @@ import {
     LevelFormat,
     LevelSuffix,
     LineRuleType,
+    PageTextDirectionType,
     Paragraph,
     Table,
     TableBorders,
@@ -705,6 +706,86 @@ describe("layoutDocument", () => {
             // As in Word: 30 lines and 8 of the footnote's on the first page, and the other 14 and 6 on the next
             expect(pages.map(({ body }) => linesOf(body).length)).to.deep.equal([30, 14]);
             expect(pages.map(({ footnotes }) => footnotes.flatMap(({ content }) => linesOf(content)).length)).to.deep.equal([8, 6]);
+        });
+    });
+
+    describe("text that runs down the page, as Word lays it out (scripts/layout-probes/word-vertical.ts)", () => {
+        const TWIPS = 15;
+        const styles: IPropertiesOptions["styles"] = {
+            default: {
+                document: {
+                    run: { font: { ascii: "Times New Roman", hAnsi: "Times New Roman", eastAsia: "MS Mincho" }, size: 21 },
+                    paragraph: { spacing: { before: 0, after: 0, line: 240 } },
+                },
+            },
+        };
+        const mincho = (text: string): TextRun =>
+            new TextRun({ text, font: { ascii: "MS Mincho", hAnsi: "MS Mincho", eastAsia: "MS Mincho" }, size: 21 });
+        const paragraphs = (name: string): readonly Paragraph[] => [
+            ...[1, 2, 3].map((i) => new Paragraph({ children: [mincho(`${name} long ${i} ${"永".repeat(100)}`)] })),
+            ...Array.from({ length: 60 }, (_, i) => new Paragraph({ children: [mincho(`${name} short ${i + 1} 永永永`)] })),
+        ];
+        const laidOut = (
+            textDirection: (typeof PageTextDirectionType)[keyof typeof PageTextDirectionType],
+            more: Partial<ISectionOptions> = {},
+            name = "V1",
+        ) =>
+            layoutDocument(
+                new Document({
+                    styles,
+                    sections: [{ ...more, properties: { ...more.properties, page: { textDirection } }, children: [...paragraphs(name)] }],
+                }),
+            );
+        const ideographs = (line: LineLayout): number => [...line.text].filter((character) => character === "永").length;
+
+        it("should lay out lines down the page from its top margin, across it from the right, as many as fit (V1, V2)", () => {
+            const { pages, stoppedAt } = laidOut(PageTextDirectionType.TOP_TO_BOTTOM_RIGHT_TO_LEFT);
+            expect(stoppedAt).to.equal(undefined);
+            const [first] = pages;
+            expect(first.textRunsDown).to.equal("fromRight");
+            // The page as it is, A4 upright
+            expect(first.width).to.be.closeTo(PAGE_WIDTH, 0.001);
+            expect(first.height).to.be.closeTo(PAGE_HEIGHT, 0.001);
+            // 33 lines of MS Mincho 10.5, 272.4 twips each, across the 9026 of the page's text, as in Word, the first beside
+            // the right margin, each from the top margin down the 13958 of it
+            const lines = linesOf(first.body);
+            expect(lines).to.have.length(33);
+            expect(lines.slice(0, 6).map(ideographs)).to.deep.equal([61, 39, 61, 39, 61, 39]);
+            expect((lines[0].x + lines[0].width) * TWIPS).to.be.closeTo(11906 - 1440, 0.01);
+            expect(lines[0].width * TWIPS).to.be.closeTo(272.37, 0.01);
+            expect((lines[0].x - lines[1].x) * TWIPS).to.be.closeTo(272.37, 0.01);
+            expect(lines[0].y * TWIPS).to.be.closeTo(1440, 0.01);
+            expect(lines[0].height * TWIPS).to.be.closeTo(16838 - 2880, 0.01);
+            expect(pages.map(({ body }) => linesOf(body).length)).to.deep.equal([33, 33]);
+            // On a grid of 360, 25 lines (V2)
+            const { pages: gridded } = laidOut(PageTextDirectionType.TOP_TO_BOTTOM_RIGHT_TO_LEFT, {
+                properties: { grid: { type: DocumentGridType.LINES, linePitch: 360 } },
+            });
+            expect(gridded.map(({ body }) => linesOf(body).length)).to.deep.equal([25, 25, 16]);
+        });
+
+        it("should lay out lines across from the left for tbRlV and tbLrV (V10, V11)", () => {
+            const { pages, stoppedAt } = laidOut("tbRlV" as (typeof PageTextDirectionType)[keyof typeof PageTextDirectionType], {}, "V10");
+            expect(stoppedAt).to.equal(undefined);
+            expect(pages[0].textRunsDown).to.equal("fromLeft");
+            const lines = linesOf(pages[0].body);
+            expect(lines.slice(0, 2).map(ideographs)).to.deep.equal([60, 40]);
+            expect(lines[0].x * TWIPS).to.be.closeTo(1440, 0.01);
+            expect((lines[1].x - lines[0].x) * TWIPS).to.be.closeTo(272.37, 0.01);
+        });
+
+        it("should keep a header from pushing the lines down, and stop at a footer that goes above the bottom margin (VH1)", () => {
+            const lines = (count: number): readonly Paragraph[] => Array.from({ length: count }, (_, i) => new Paragraph(`Line ${i + 1}`));
+            const { pages, stoppedAt } = laidOut(PageTextDirectionType.TOP_TO_BOTTOM_RIGHT_TO_LEFT, {
+                headers: { default: new Header({ children: [...lines(6)] }) },
+            });
+            expect(stoppedAt).to.equal(undefined);
+            expect(linesOf(pages[0].body)[0].y * TWIPS).to.be.closeTo(1440, 0.01);
+            expect(
+                laidOut(PageTextDirectionType.TOP_TO_BOTTOM_RIGHT_TO_LEFT, {
+                    footers: { default: new Footer({ children: [...lines(6)] }) },
+                }).stoppedAt,
+            ).to.equal("a footer that goes above the bottom margin of text that runs down the page");
         });
     });
 });

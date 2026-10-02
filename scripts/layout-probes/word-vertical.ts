@@ -1,5 +1,5 @@
 /**
- * Probes of how Word lays out text that runs down the page (`w:textDirection` on a section), which docx/layout stops at.
+ * Probes of how Word lays out text that runs down the page (`w:textDirection` on a section), which docx/layout stopped at.
  * Each probe starts a page, and each paragraph's text names its probe, so the lines can be found in a PDF saved from Word,
  * which word-vertical.py reads. A4 with 1440 margins, no space before or after, single spaced, in MS Mincho 10.5 for East
  * Asian text and Times New Roman 10.5 for Latin, in Japanese, as Japanese documents have it.

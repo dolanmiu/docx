@@ -41,6 +41,7 @@ import {
     fontOf,
     getTextStyles,
     isEastAsianRun,
+    isMonospacedEastAsianFont,
     isObject,
     isOff,
     kinsokuLanguageOf,
@@ -347,6 +348,12 @@ export type Section = {
     readonly firstNumber?: number;
     readonly headers: HeadersOrFooters;
     readonly footers: HeadersOrFooters;
+    /**
+     * When its text runs down the page, whether its lines go across it from the right or from the left. Its page, margins
+     * and columns are then those of the page turned on its side, so that its lines run along it: its width is the page's
+     * height, its left margin the page's top margin and its top margin the right one, or the left
+     */
+    readonly textRunsDown?: "fromRight" | "fromLeft";
     readonly unsupported?: string;
 };
 
@@ -523,6 +530,8 @@ type Reader = {
     readonly grid?: TextGrid;
     /** The document grid of the section a table being read is in, which the lines of its cells aren't on */
     readonly cellGrid?: TextGrid;
+    /** Whether the text of the section being read runs down the page */
+    readonly down?: boolean;
 };
 
 // Word's defaults for a section that doesn't give its page: Letter, with inch margins
@@ -1642,6 +1651,48 @@ const readBorders = (format: ParagraphFormat): ParagraphBorders | string | undef
  */
 type TableFormats = readonly { readonly run: RunFormat; readonly paragraph: ParagraphFormat }[];
 
+// Half-width katakana, Hangul and symbols, which Word may turn or stand up down the page
+const HALF_WIDTH = /[\uff61-\uffdc]/u;
+
+/**
+ * Why a paragraph of text that runs down the page can't be laid out yet, when it can't: Word's PDFs showed lines of
+ * ideographs, kana and punctuation in fonts whose characters are all an em, each an em down the line, and Latin text on
+ * its side, as wide as it is across a page (scripts/layout-probes/word-vertical.ts V1, V4), but not the rest
+ */
+const unknownDownOf = (
+    items: readonly LayoutItem[],
+    format: ParagraphFormat,
+    borders: ParagraphBorders | string | undefined,
+): string | undefined => {
+    const texts = items.flatMap((item) => (item.type === "text" ? [item] : []));
+    if (items.some((item) => item.type === "tab" || item.type === "box" || item.type === "softHyphen" || item.type === "drawing")) {
+        return "a tab, soft hyphen, picture or drawing in text that runs down the page";
+    }
+    if (
+        texts.some(
+            ({ text, font }) =>
+                HALF_WIDTH.test(text) ||
+                (/[\p{Script=Han}\p{Script=Hiragana}\p{Script=Katakana}\p{Script=Hangul}]/u.test(text) &&
+                    !isMonospacedEastAsianFont(font.font)),
+        )
+    ) {
+        return "East Asian text down the page in a font whose characters aren't all an em, or half-width";
+    }
+    if (
+        texts.some(
+            ({ font }) =>
+                font.border !== undefined || font.emphasis !== undefined || font.raise !== undefined || font.lineSize !== undefined,
+        )
+    ) {
+        return "run formatting in text that runs down the page that Word hasn't been seen laying out";
+    }
+    if (borders !== undefined) {
+        return "a paragraph border on text that runs down the page";
+    }
+    const spread = format.alignment === "justified" || format.alignment === "distributed";
+    return spread && texts.some(({ text }) => / /.test(text)) ? "a justified line with spaces down the page" : undefined;
+};
+
 /**
  * Reads a paragraph (`w:p`), in the formatting of its styles, and of its table's style when it is in a table.
  */
@@ -1709,6 +1760,8 @@ const readParagraph = (element: XmlObject, reader: Reader, tableFormats: TableFo
     const unsupported =
         list.unsupported ??
         unknownOnGrid ??
+        (reader.down === true && reader.inNote === true ? "a footnote or endnote on text that runs down the page" : undefined) ??
+        (reader.down === true ? unknownDownOf(own, combined, borders) : undefined) ??
         (find(properties, "w:framePr") !== undefined
             ? "a text frame"
             : otherDecimalSymbol
@@ -1796,6 +1849,16 @@ const HORIZONTAL = new Set(["lrTb", "tb"]);
 // The directions of a section's text that run across the page, as the section's text does without one: from the left,
 // and from the left with East Asian characters on their side (scripts/layout-probes/word-vertical.ts V9, V12)
 const HORIZONTAL_PAGES = new Set(["lrTb", "tb", "lrTbV", "tbV"]);
+// Those that run down it, with its lines across it from the right, as Word lays out `tbRl` and `btLr`, and from the left,
+// as it lays out `tbRlV` and `tbLrV` (V1, V8, V10, V11), as transitional and strict documents write them
+const DOWN_FROM_RIGHT = new Set(["tbRl", "btLr", "rl", "lr"]);
+const DOWN_FROM_LEFT = new Set(["tbRlV", "tbLrV", "rlV", "lrV"]);
+
+/** Whether a section's text runs down the page (`w:textDirection`), from the right or the left. Undefined across it */
+const downOf = (properties: readonly XmlObject[]): "fromRight" | "fromLeft" | undefined => {
+    const direction = valueOf(properties, "w:textDirection") ?? "";
+    return DOWN_FROM_RIGHT.has(direction) ? "fromRight" : DOWN_FROM_LEFT.has(direction) ? "fromLeft" : undefined;
+};
 const VERTICAL = new Set(["btLr", "tbRl", "lr", "rl"]);
 
 /** A share of a width, as a fraction, from fiftieths of a percent or a percentage written with a % */
@@ -2372,6 +2435,7 @@ const readTable = (element: XmlObject, reader: Reader): TableBlock | undefined =
     // Word puts the text after a floating table (`w:tblpPr`) beside it (`word-watertight-tables.docx` TB11)
     const unsupported =
         withoutGuess?.unsupported ??
+        (reader.down === true ? "a table on text that runs down the page" : undefined) ??
         (find(properties, "w:tblpPr") === undefined ? undefined : "a table that text flows around") ??
         (parts.some((part) => "w:sdt" in part) ? BOUND_CONTROL : undefined) ??
         read.find((row) => row.unsupported !== undefined)?.unsupported ??
@@ -3053,32 +3117,41 @@ const readSection = (
     // Where Word puts a gutter at the top with mirrored margins, which put it on the inside of each page, or below a
     // negative top margin, which the header doesn't push the text below, isn't known
     const direction = valueOf(properties, "w:textDirection");
+    const down = downOf(properties);
+    const sectionStart = start !== undefined && START_TYPES.has(start as Section["start"]) ? (start as Section["start"]) : "nextPage";
+    const marginBottom = twips(margins["w:bottom"]) ?? DEFAULT_SECTION.marginBottom;
     const unsupported =
         typeof grid === "string"
             ? grid
             : formatPageNumber(1, format) === undefined
               ? "page numbers in a format not yet written"
-              : direction !== undefined && !HORIZONTAL_PAGES.has(direction)
-                ? "text that runs down the page"
-                : find(properties, "w15:footnoteColumns") !== undefined
-                  ? "footnotes in columns of their own"
-                  : gutterAtTop && gutter !== 0 && (mirrorMargins || marginTop < 0)
-                    ? "a gutter at the top with mirrored margins or a negative top margin"
-                    : unknownLengthIn(element);
+              : direction !== undefined && !HORIZONTAL_PAGES.has(direction) && down === undefined
+                ? "text in a direction not yet followed"
+                : down !== undefined && (gutter !== 0 || mirrorMargins || columns.length > 1 || Math.min(marginTop, marginBottom) < 0)
+                  ? "text that runs down the page with a gutter, mirrored margins, columns or a negative margin"
+                  : previous?.textRunsDown !== undefined && (sectionStart === "continuous" || sectionStart === "nextColumn")
+                    ? "a continuous section break after text that runs down the page"
+                    : find(properties, "w15:footnoteColumns") !== undefined
+                      ? "footnotes in columns of their own"
+                      : gutterAtTop && gutter !== 0 && (mirrorMargins || marginTop < 0)
+                        ? "a gutter at the top with mirrored margins or a negative top margin"
+                        : unknownLengthIn(element);
     const headers = readReferences(properties, "w:headerReference", readPart);
     const footers = readReferences(properties, "w:footerReference", readPart);
-    return {
+    const section: Section = {
         pageWidth,
         pageHeight: twips(size["w:h"]) ?? DEFAULT_SECTION.pageHeight,
         marginTop,
-        marginBottom: twips(margins["w:bottom"]) ?? DEFAULT_SECTION.marginBottom,
+        marginBottom,
         marginLeft,
         marginRight,
         header: twips(margins["w:header"]) ?? DEFAULT_SECTION.header,
         footer: twips(margins["w:footer"]) ?? DEFAULT_SECTION.footer,
         gutter: gutterAtTop ? 0 : gutter,
         topGutter: gutterAtTop ? gutter : 0,
-        start: start !== undefined && START_TYPES.has(start as Section["start"]) ? (start as Section["start"]) : "nextPage",
+        // Text that runs down the page starts a new page after text across one, as a continuous section too
+        // (scripts/layout-probes/word-vertical.ts V13)
+        start: down !== undefined && sectionStart === "continuous" ? "nextPage" : sectionStart,
         titlePage: onOff(properties, "w:titlePg") === true,
         columns,
         numberFormat: format,
@@ -3090,7 +3163,26 @@ const readSection = (
         footers: { ...previous?.footers, ...footers },
         ...(unsupported ? { unsupported } : {}),
     };
+    return down === undefined ? section : turned(section, down);
 };
+
+/**
+ * A section whose text runs down the page, with its page turned on its side, so that its lines run along it: from its top
+ * margin to its bottom one, as long as the page's text is tall, and across it from the right margin, or the left, each as
+ * far from the one before as it is tall, as Word lays them out (scripts/layout-probes/word-vertical.ts V1, V2, V6, V7).
+ * Its header and footer stay across the top and bottom of the page, and a header doesn't push its lines down (VH1)
+ */
+const turned = (section: Section, textRunsDown: "fromRight" | "fromLeft"): Section => ({
+    ...section,
+    pageWidth: section.pageHeight,
+    pageHeight: section.pageWidth,
+    marginLeft: section.marginTop,
+    marginRight: section.marginBottom,
+    marginTop: textRunsDown === "fromLeft" ? section.marginLeft : section.marginRight,
+    marginBottom: textRunsDown === "fromLeft" ? section.marginRight : section.marginLeft,
+    columns: [section.pageHeight - section.marginTop - section.marginBottom],
+    textRunsDown,
+});
 
 // How a list's number lines up at the start of its paragraph's first line (`w:lvlJc`), when not to the left, which is
 // how Word lines it up when the level doesn't say. Word's own lists are aligned to the left, the centre or the right, as
@@ -3659,6 +3751,7 @@ export const readContent = (body: XmlObject, parts: DocumentParts, { guess = fal
         // A note's lines are on the grid of the section of its reference, which is being read, but not its separators
         // (word-grid.ts G9, word-grid3.ts H2, H3)
         const grid = label === undefined ? undefined : gridOf(sections.length);
+        const down = label !== undefined && downOf(childrenOf(sectionElements[sections.length])) !== undefined;
         return note === undefined
             ? []
             : readBlocks(contentOf(note), {
@@ -3666,6 +3759,7 @@ export const readContent = (body: XmlObject, parts: DocumentParts, { guess = fal
                   inNote: true,
                   ...(label === undefined ? {} : { noteNumber: label }),
                   ...(grid === undefined ? {} : { grid }),
+                  ...(down ? { down } : {}),
               });
     };
     /**
@@ -3806,7 +3900,8 @@ export const readContent = (body: XmlObject, parts: DocumentParts, { guess = fal
             bookmarks = bookmark === undefined ? bookmarks : [...bookmarks, bookmark];
         } else {
             const grid = gridOf(sections.length);
-            const block = readBlock(element, grid === undefined ? reader : { ...reader, grid });
+            const down = downOf(childrenOf(sectionElements[sections.length])) !== undefined;
+            const block = readBlock(element, { ...reader, ...(grid === undefined ? {} : { grid }), ...(down ? { down } : {}) });
             const sectionProperties = sectionPropertiesOf(element);
             if (block?.type === "paragraph" && block.hidden) {
                 bookmarks = [...bookmarks, ...markersIn([block])];
@@ -3889,6 +3984,10 @@ export const readContent = (body: XmlObject, parts: DocumentParts, { guess = fal
                 (endnotes.length > 0 ? notesUnsupported("endnote") : undefined) ??
                 // Endnotes follow the last section's text, on its grid, and on the grid of another section in a way Word hasn't
                 // shown
+                ([...endnoteSections, sections.length - 1].some((section) => sections[section].textRunsDown !== undefined) &&
+                endnotes.length > 0
+                    ? "endnotes on text that runs down the page"
+                    : undefined) ??
                 (endnoteSections.some((section) => !sameGrid(gridOf(section), gridOf(sections.length - 1)))
                     ? "endnotes from a section on another document grid than the last"
                     : undefined) ??

@@ -1,7 +1,16 @@
 // cspell:ignore Caladea Aptos
 import { describe, expect, it } from "vitest";
 
-import { measureDescent, measureLineHeight, measureText, measureTextWidth, unknownCharacter, unknownFont } from "./text-width";
+import {
+    isGridCharacter,
+    isMonospacedEastAsianFont,
+    measureDescent,
+    measureLineHeight,
+    measureText,
+    measureTextWidth,
+    unknownCharacter,
+    unknownFont,
+} from "./text-width";
 
 /** How wide text is in twips, a twentieth of a point, which Word's PDFs are read in */
 const twips = (text: string, font: string, size: number): number => measureTextWidth(text, { font, size }) * 20;
@@ -414,5 +423,21 @@ describe("measureTextWidth with character spacing and scale", () => {
     it("should add the spacing after each character, and scale the characters", () => {
         expect(measureTextWidth("ab", { characterSpacing: 2 })).to.be.closeTo(measureTextWidth("ab") + 4, 0.001);
         expect(measureTextWidth("ab", { scale: 50 })).to.be.closeTo(measureTextWidth("ab") / 2, 0.001);
+    });
+});
+
+describe("isMonospacedEastAsianFont", () => {
+    it("should say which East Asian fonts have all their characters an em or half an em wide, by any of their names", () => {
+        expect(["MS Mincho", "ＭＳ 明朝", "SimSun", "ms gothic"].map(isMonospacedEastAsianFont)).to.deep.equal([true, true, true, true]);
+        expect(["Yu Mincho", "MS PMincho", "Calibri"].map(isMonospacedEastAsianFont)).to.deep.equal([false, false, false]);
+        // Times New Roman, Word's font when none is given, isn't one
+        expect(isMonospacedEastAsianFont(undefined)).to.equal(false);
+    });
+});
+
+describe("isGridCharacter", () => {
+    it("should say which characters a grid that snaps to characters puts in cells of their own", () => {
+        expect([..."永あア한，ｱ"].map(isGridCharacter)).to.deep.equal([true, true, true, true, true, true]);
+        expect([..."a1 .é"].map(isGridCharacter)).to.deep.equal([false, false, false, false, false]);
     });
 });

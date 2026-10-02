@@ -1690,6 +1690,10 @@ describe("layoutLines on a document grid, as Word lays it out (scripts/layout-pr
                 run("cd", "Times New Roman"),
             ];
             expect(unsupportedOf(softened, CC)).to.equal("a soft hyphen, or a line beside a drawing, on a grid that snaps to characters");
+            // A line in a room of its own beside a drawing
+            expect(unsupportedOf([mincho(IDEOGRAPH)], { ...CC, width: () => ({ start: 30, end: WIDTH }) })).to.equal(
+                "a soft hyphen, or a line beside a drawing, on a grid that snaps to characters",
+            );
             // After another reason, which it is the first of
             expect(unsupportedOf(softened, { ...CC, format: { indentLeft: 1 } })).to.equal(
                 "an indent of part of a character on a grid that snaps to characters",

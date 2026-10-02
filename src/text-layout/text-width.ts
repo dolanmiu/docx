@@ -330,6 +330,10 @@ const knownEastAsianFontOf = (font: string): EastAsianFont | undefined => {
     return EAST_ASIAN_FONTS.find((candidate) => [candidate.name, ...candidate.aliases].some((alias) => alias.toLowerCase() === name));
 };
 
+/** Whether a font is one of the East Asian fonts in the table whose characters are all an em, or half an em, wide */
+export const isMonospacedEastAsianFont = (font: string | undefined): boolean =>
+    knownEastAsianFontOf(font ?? DEFAULT_FONT)?.monospaced === true;
+
 /**
  * The East Asian font a font is, or is measured as, by its name. Undefined for other fonts.
  */

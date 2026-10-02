@@ -1381,7 +1381,7 @@ export const paginate = (
         return true;
     };
 
-    const partHeight = (parts: HeadersOrFooters, isFirst: boolean): number => {
+    const partHeight = (parts: HeadersOrFooters, isFirst: boolean, width = textWidth()): number => {
         const kind = kindOf(parts, isFirst);
         if (!kind) {
             return 0;
@@ -1389,7 +1389,7 @@ export const paginate = (
         const part = parts[kind]!;
         part.forEach((block) => stopAtRead(block));
         const bySection = headerHeights.get(part) ?? new Map<number, number>();
-        const height = bySection.get(sectionIndex) ?? stackHeight(part, textWidth(), false);
+        const height = bySection.get(sectionIndex) ?? stackHeight(part, width, false);
         // eslint-disable-next-line functional/immutable-data
         headerHeights.set(part, bySection.set(sectionIndex, height));
         return height;
@@ -1450,10 +1450,18 @@ export const paginate = (
         pageNumber = first && current.firstNumber !== undefined ? current.firstNumber : (restart ?? pageNumber) + 1;
         restart = undefined;
         // A header or footer taller than the margin pushes the body away from it, unless the margin is negative. What is
-        // guessed at in them is on the page they are measured for
+        // guessed at in them is on the page they are measured for. On a page of text that runs down it, they are across the
+        // page as it is, and a header doesn't push the lines down (scripts/layout-probes/word-grid3.ts VH1), but how a
+        // footer would push them up isn't known. The section's page is then turned on its side: the page's width is its
+        // height, and the page's bottom margin its right one
+        const down = current.textRunsDown;
+        const across = down === undefined ? textWidth() : current.pageHeight - current.marginTop - current.marginBottom;
         guessPage = pageCount + 1;
-        const headerBottom = current.header + partHeight(current.headers, first);
-        const footerTop = current.footer + partHeight(current.footers, first);
+        const headerBottom = current.header + partHeight(current.headers, first, across);
+        const footerTop = current.footer + partHeight(current.footers, first, across);
+        if (down !== undefined && footerTop > current.marginRight + TOLERANCE) {
+            stopAt("a footer that goes above the bottom margin of text that runs down the page");
+        }
         guessPage = undefined;
         pageCount++;
         const header = kindOf(current.headers, first);
@@ -1464,15 +1472,21 @@ export const paginate = (
             page: {
                 ...pageNumberOf(current),
                 section: sectionIndex,
-                width: current.pageWidth,
-                height: current.pageHeight,
+                width: down === undefined ? current.pageWidth : current.pageHeight,
+                height: down === undefined ? current.pageHeight : current.pageWidth,
+                ...(down === undefined ? {} : { textRunsDown: down }),
                 ...(header ? { header } : {}),
                 ...(footer ? { footer } : {}),
             },
         });
         // A gutter at the top is below the top margin, and a header taller than both pushes the body below it, as in Word,
         // where the header stays where it is (`word-watertight-sections.docx` SC3)
-        top = current.marginTop < 0 ? -current.marginTop : Math.max(current.marginTop + current.topGutter, headerBottom);
+        top =
+            down !== undefined
+                ? current.marginTop
+                : current.marginTop < 0
+                  ? -current.marginTop
+                  : Math.max(current.marginTop + current.topGutter, headerBottom);
         // On each page after the first the endnotes are on, the continuation separator is above them, whether one of them
         // goes on to it or the next starts there (`word-watertight-pages.docx` PG8, `word-watertight-sections.docx` SC4).
         // Whether Word puts it at the top of each column too isn't known: guessing, it is only across the top of the page
@@ -1489,7 +1503,11 @@ export const paginate = (
         // on from a line of the body, which ends its page
         pageBottom =
             current.pageHeight -
-            (current.marginBottom < 0 ? -current.marginBottom : Math.max(current.marginBottom, footerTop)) +
+            (down !== undefined
+                ? current.marginBottom
+                : current.marginBottom < 0
+                  ? -current.marginBottom
+                  : Math.max(current.marginBottom, footerTop)) +
             continuation;
         position = top;
         column = 0;
