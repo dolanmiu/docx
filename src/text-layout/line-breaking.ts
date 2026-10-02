@@ -5,8 +5,8 @@
  * Lines break at spaces, and at en, em, four-per-em and ideographic spaces, after hyphens, between Chinese, Japanese and
  * Korean characters, and between the words of Thai and the other scripts without spaces, as {@link findLineBreaks} finds,
  * and at soft hyphens, with a hyphen drawn at the end of the line. Tabs move to the paragraph's tab stops, or to the
- * document's default ones. Each line is as tall as its text's tallest
- * ascent and deepest descent, with its pictures standing on the baseline, and the paragraph's line spacing.
+ * document's default ones. Each line is as tall as its text's tallest ascent and deepest descent, with its pictures
+ * standing on the baseline, and the paragraph's line spacing.
  *
  * @module
  */
