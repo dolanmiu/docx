@@ -5609,15 +5609,80 @@ var docxLayout = (function(exports) {
 	var CURRENT_COMPATIBILITY_MODE = 15;
 	var WORD_SETTINGS = "http://schemas.microsoft.com/office/word";
 	var FOLLOWED_COMPATIBILITY = /* @__PURE__ */ new Set(["w:doNotUseHTMLParagraphAutoSpacing"]);
+	var COMPATIBILITY_LINES_ALIKE = new Set([
+		"noLeading",
+		"noExtraLineSpacing",
+		"truncateFontHeightsLikeWP6",
+		"usePrinterMetrics",
+		"subFontBySize",
+		"adjustLineHeightInTable",
+		"noSpaceRaiseLower",
+		"spaceForUL",
+		"ulTrailSpace",
+		"spacingInWholePoints",
+		"wpSpaceWidth",
+		"mwSmallCaps",
+		"useAnsiKerningPairs",
+		"wrapTrailSpaces",
+		"doNotExpandShiftReturn",
+		"wpJustification",
+		"noTabHangInd",
+		"forgetLastTabAlignment",
+		"doNotUseIndentAsNumberingTabStop",
+		"underlineTabInNumList",
+		"useNormalStyleForList",
+		"allowSpaceOfSameStyleInTable",
+		"doNotSuppressIndentation",
+		"doNotSuppressParagraphBorders",
+		"swapBordersFacingPages",
+		"useSingleBorderforContiguousCells",
+		"alignTablesRowByRow",
+		"layoutRawTableWidth",
+		"layoutTableRowsApart",
+		"useWord2002TableStyleRules",
+		"growAutofit",
+		"doNotAutofitConstrainedTables",
+		"autofitToFirstFixedWidthCell",
+		"doNotBreakConstrainedForcedTable",
+		"doNotVertAlignCellWithSp",
+		"doNotSnapToGridInCell",
+		"doNotBreakWrappedTables",
+		"noColumnBalance",
+		"cachedColBalance",
+		"footnoteLayoutLikeWW8",
+		"suppressBottomSpacing",
+		"suppressTopSpacingWP",
+		"suppressSpacingAtTopOfPage",
+		"suppressSpBfAfterPgBrk",
+		"splitPgBreakAndParaMark",
+		"balanceSingleByteDoubleByteWidth",
+		"doNotLeaveBackslashAlone",
+		"displayHangulFixedWidth",
+		"autoSpaceLikeWord95",
+		"lineWrapLikeWord6",
+		"useWord97LineBreakRules",
+		"applyBreakingRules",
+		"doNotWrapTextWithPunct",
+		"doNotUseEastAsianBreakRules",
+		"useAltKinsokuLineBreakRules",
+		"printBodyTextBeforeHeader",
+		"printColBlack",
+		"showBreaksInFrames",
+		"convMailMergeEsc",
+		"shapeLayoutLikeWW8",
+		"selectFldWithFirstOrLastChar",
+		"doNotVertAlignInTxbx"
+	].map((name) => `w:${name}`));
 	var WORD_SETTINGS_LINES_ALIKE = /* @__PURE__ */ new Set([
 		"compatibilityMode",
 		"overrideTableStyleFontSizeAndJustification",
 		"enableOpenTypeFeatures",
 		"doNotFlipMirrorIndents",
 		"differentiateMultirowTableHeaders",
-		"useWord2013TrackBottomHyphenation"
+		"useWord2013TrackBottomHyphenation",
+		"allowHyphenationAtTrackBottom",
+		"allowTextAfterFloatingTableBreak"
 	]);
-	var WORD_SETTINGS_OFF_UNLESS_GIVEN = /* @__PURE__ */ new Set(["allowHyphenationAtTrackBottom", "allowTextAfterFloatingTableBreak"]);
 	/**
 	* The attributes of Word's own compatibility settings (`w:compatSetting`) among a document's: those for Word's application,
 	* or for none, rather than another application's
@@ -5625,14 +5690,14 @@ var docxLayout = (function(exports) {
 	var wordSettingsOf = (compatibility) => compatibility.filter((child) => "w:compatSetting" in child).map((child) => attributesOf(child["w:compatSetting"])).filter(({ "w:uri": uri = WORD_SETTINGS }) => uri === WORD_SETTINGS);
 	/**
 	* Whether a document's compatibility settings (`w:compat`) ask Word to lay it out in a way not yet followed: a setting of
-	* the schema that is on, such as `w:noLeading`, but for `w:doNotUseHTMLParagraphAutoSpacing`, which is followed, or one
-	* of Word's own (`w:compatSetting`) other than those known to leave its lines as they are, unless it is off and Word's
-	* default is off. Each changes how Word lays out lines, or may, in ways not yet followed.
+	* the schema that is on, other than `w:doNotUseHTMLParagraphAutoSpacing`, which is followed, and those known to leave its
+	* lines as they are, or one of Word's own (`w:compatSetting`) other than those known to leave its lines as they are, on
+	* or off. Each changes how Word lays out lines, or may, in ways not yet followed.
 	*/
 	var asksForUnfollowedCompatibility = (compatibility) => compatibility.some((child) => {
 		const name = nameOf(child);
-		return name !== "w:compatSetting" && !FOLLOWED_COMPATIBILITY.has(name) && onOff([child], name) === true;
-	}) || wordSettingsOf(compatibility).some(({ "w:name": setting, "w:val": value }) => !WORD_SETTINGS_LINES_ALIKE.has(String(setting)) && !(WORD_SETTINGS_OFF_UNLESS_GIVEN.has(String(setting)) && isOff(value)));
+		return name !== "w:compatSetting" && !FOLLOWED_COMPATIBILITY.has(name) && !COMPATIBILITY_LINES_ALIKE.has(name) && onOff([child], name) === true;
+	}) || wordSettingsOf(compatibility).some(({ "w:name": setting }) => !WORD_SETTINGS_LINES_ALIKE.has(String(setting)));
 	/**
 	* The document's own lists of the characters that can't start a line (`w:noLineBreaksBefore`) and can't end one
 	* (`w:noLineBreaksAfter`), which take the place of Word's for their language.
@@ -8867,11 +8932,11 @@ var docxLayout = (function(exports) {
 	* is in its own dictionaries, or a date in the text, which Word writes when it opens the document. The page references
 	* to bookmarks after it are left blank, for Word to fill in when it updates the fields. A document in compatibility
 	* mode, which Word lays out as an older version of Word did, isn't laid out at all, nor is one with a compatibility
-	* setting that may change Word's lines in a way not yet followed: one of the schema's turned on, or one of Word's own
-	* other than those Word writes in the documents it makes, turned on, or, for one the layout doesn't know, on or off.
-	* Settings for other applications are left to them. When laying the pages out again with the page numbers it worked out
-	* still changes them after three passes, as when a table of contents wraps one way with a number and the other way
-	* without it, all of them are left blank.
+	* setting that changes Word's lines in a way not yet followed: `suppressTopSpacing` or `useFELayout` turned on, or one
+	* of Word's own the layout doesn't know, on or off. The schema's other settings, which ask for an older Word's or
+	* another application's layout, Word lays out lines with as without them, and settings for other applications are left
+	* to them. When laying the pages out again with the page numbers it worked out still changes them after three passes,
+	* as when a table of contents wraps one way with a number and the other way without it, all of them are left blank.
 	*
 	* Page references are written as Word writes them, with `\p` ("above", "below" or "on page 4") and in formats of their
 	* own, such as `\* roman`, and so are numbers of pages. Page references, tables of contents and SEQ fields (caption
