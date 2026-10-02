@@ -31,6 +31,41 @@ describe("layoutLines", () => {
         expect(heightsOf([text("aaaa bbbbbb")])).to.deep.equal([10, 10]);
     });
 
+    it("should break lines after en, em, four-per-em and ideographic spaces, and let them go past the end of a line, as Word does", () => {
+        // word-character-widths B and H: "aaaa" and the space after it are 100 points, and the space after bbbb doesn't count
+        for (const space of ["\u2002", "\u2003", "\u2005", "\u3000"]) {
+            expect(heightsOf([text(`aaaa${space}bbbb${space}cccc`)])).to.deep.equal([10, 10]);
+            expect(heightsOf([text(`aaaa${space}bbbbb`)])).to.deep.equal([10]);
+        }
+        // Word joins the words around the other spaces, such as the thin and figure spaces: the narrowest a line can be is
+        // both words
+        const options = { measurer: MEASURER };
+        expect(measureContentWidths([text("aaaa\u2002bbbb")], options).min).to.equal(40);
+        for (const space of ["\u2000", "\u2001", "\u2004", "\u2006", "\u2007", "\u2008", "\u2009", "\u200a", "\u202f", "\u205f"]) {
+            expect(measureContentWidths([text(`aaaa${space}bbbb`)], options).min).to.equal(90);
+        }
+    });
+
+    it("should break 60 words joined by en spaces where Word breaks them", () => {
+        // word-watertight-text TX19g, in Calibri 11 in a line of 9026 twips: Word's lines end with "of", "to", "was" and
+        // "lighthouse". A bookmark before each word shows the line it starts
+        const words = "the survey of the coast was made in the summer by boat and on foot from the lighthouse to the river mouth".split(
+            " ",
+        );
+        const prose = Array.from({ length: 60 }, (_, index) => words[(index * 7) % words.length]);
+        const font = { font: "Calibri", size: 11 };
+        const items: readonly InlineItem[] = [
+            { type: "text", text: "TX19g ", font },
+            ...prose.flatMap((word, index): readonly InlineItem[] => [
+                { type: "marker", name: String(index) },
+                { type: "text", text: index < prose.length - 1 ? `${word}\u2002` : word, font },
+            ]),
+        ];
+        const lines = layoutLines(items, { width: 9026 / 20 });
+        const ends = lines.map(({ markers }) => prose[Number(markers[markers.length - 1])]);
+        expect(ends).to.deep.equal(["of", "to", "was", "lighthouse"]);
+    });
+
     it("should make each line as tall as the tallest text on it, whatever the size of the paragraph's mark", () => {
         expect(heightsOf([text("aaaa "), text("bbbb", 20), text(" cccc")])).to.deep.equal([20, 10]);
         expect(heightsOf([text("aaaa bbbb cccc")], 100, { markFont: { size: 14 } })).to.deep.equal([10, 10]);

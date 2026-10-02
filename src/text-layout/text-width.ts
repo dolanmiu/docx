@@ -7,7 +7,7 @@
  * @module
  */
 // cspell:ignore caladea Aptos
-import { FONT_WIDTHS, FONT_WIDTH_CHARACTERS, type FontWidths } from "./font-widths";
+import { FONT_WIDTHS, FONT_WIDTH_RANGES, type FontWidths } from "./font-widths";
 
 /**
  * The font text is measured in.
@@ -113,11 +113,57 @@ const SIMILAR_FONTS: readonly (readonly [RegExp, string])[] = [
     [/times|tinos|liberation serif|georgia|garamond|palatino|book antiqua|(?<!sans[ -]?)serif|roman/i, "Times New Roman"],
 ];
 
-const CHARACTER_INDEX: ReadonlyMap<number, number> = new Map(
-    [...FONT_WIDTH_CHARACTERS].map((character, index) => [character.codePointAt(0)!, index]),
-);
+// The characters of the tables, in their order, and the index of each
+const CHARACTERS = FONT_WIDTH_RANGES.flatMap(([first, last]) => Array.from({ length: last - first + 1 }, (_, offset) => first + offset));
+const CHARACTER_INDEX: ReadonlyMap<number, number> = new Map(CHARACTERS.map((code, index) => [code, index]));
 
-const AVERAGE_LETTER_INDEXES = [..."abcdefghijklmnopqrstuvwxyz"].map((letter) => CHARACTER_INDEX.get(letter.codePointAt(0)!)!);
+const AVERAGE_LETTERS = [..."abcdefghijklmnopqrstuvwxyz"].map((letter) => CHARACTER_INDEX.get(letter.codePointAt(0)!)!);
+
+// The digits the tables write widths in, two to a width
+const DIGITS = "0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ+/";
+
+const decoded = new Map<string, readonly (number | undefined)[]>();
+
+/**
+ * Reads the widths of a font's face, as {@link FontWidths} writes them: the width of each character of the tables, in
+ * thousandths of an em, or undefined where its width in Word isn't known.
+ */
+const decodeWidths = (encoded: string): readonly (number | undefined)[] => {
+    const known = decoded.get(encoded);
+    if (known) {
+        return known;
+    }
+    const twoDigitsAt = (at: number): number => DIGITS.indexOf(encoded[at]) * 64 + DIGITS.indexOf(encoded[at + 1]);
+    // eslint-disable-next-line functional/prefer-readonly-type
+    const widths: (number | undefined)[] = [];
+    let token = 0;
+    for (let at = 0; at < encoded.length;) {
+        let count = 1;
+        if (encoded[at] === "*") {
+            // What is before it, again
+            count = twoDigitsAt(at + 1);
+            at += 3;
+        } else {
+            token = at;
+            at += encoded[at] === "=" || encoded[at] === "!" ? 1 : 2;
+        }
+        for (let repeat = 0; repeat < count; repeat++) {
+            const code = CHARACTERS[widths.length];
+            const width =
+                encoded[token] === "!"
+                    ? undefined
+                    : encoded[token] === "="
+                      ? // As wide as the letter it is made from, which comes before it
+                        widths[CHARACTER_INDEX.get(String.fromCodePoint(code).normalize("NFD").codePointAt(0)!)!]
+                      : twoDigitsAt(token);
+            // eslint-disable-next-line functional/immutable-data
+            widths.push(width);
+        }
+    }
+    // eslint-disable-next-line functional/immutable-data
+    decoded.set(encoded, widths);
+    return widths;
+};
 
 /**
  * A font for Chinese, Japanese or Korean text, and how Word lays it out.
@@ -191,6 +237,12 @@ const widthsOf = (font = DEFAULT_FONT): FontWidths => {
     return named(font) ?? named(similar ? similar[1] : "Arial")!;
 };
 
+/** The widths of the face text is in: its font's, bold or not */
+const faceOf = ({ font, bold }: TextFont): readonly (number | undefined)[] => {
+    const { regular, bold: heavy } = widthsOf(font);
+    return decodeWidths(bold ? heavy : regular);
+};
+
 // Characters as wide as they are tall: Chinese, Japanese and Korean, full-width forms and emoji
 const isWide = (code: number): boolean =>
     (code >= 0x1100 && code <= 0x115f) ||
@@ -210,13 +262,15 @@ const takesNoRoom = (character: string): boolean => /[\p{Mn}\p{Me}\p{Cf}]/u.test
 
 /**
  * The width of a character in thousandths of an em. Characters that aren't in the table are as wide as an average
- * lowercase letter, a whole em for wide characters and half an em for half-width ones, and marks take no space.
+ * lowercase letter, a whole em for wide characters and half an em for half-width ones, and marks take no space. So are
+ * those the table has, but whose width in the font isn't known.
  */
-const characterWidth = (widths: readonly number[], character: string): number => {
+const characterWidth = (widths: readonly (number | undefined)[], character: string): number => {
     const code = character.codePointAt(0)!;
     const index = CHARACTER_INDEX.get(code);
-    if (index !== undefined) {
-        return widths[index];
+    const width = index === undefined ? undefined : widths[index];
+    if (width !== undefined) {
+        return width;
     }
     if (isWide(code)) {
         return 1000;
@@ -224,10 +278,11 @@ const characterWidth = (widths: readonly number[], character: string): number =>
     if (isHalfWidth(code)) {
         return 500;
     }
-    return takesNoRoom(character)
-        ? 0
-        : AVERAGE_LETTER_INDEXES.reduce((total, letter) => total + widths[letter], 0) / AVERAGE_LETTER_INDEXES.length;
+    return takesNoRoom(character) ? 0 : AVERAGE_LETTERS.reduce((total, letter) => total + widths[letter]!, 0) / AVERAGE_LETTERS.length;
 };
+
+// The characters of the private use area, which are a symbol font's own, such as Wingdings' tick, U+F0FC
+const isPrivate = (code: number): boolean => code >= 0xe000 && code <= 0xf8ff;
 
 // Symbols that monospaced Japanese and Chinese fonts have as wide as their ideographs, as MS Mincho does
 const FULL_WIDTH_SYMBOLS = new Set([..."§¨°±´¶×÷‐―‖‘’“”†‡‥…‰′″※℃Å"]);
@@ -247,15 +302,38 @@ const monospacedWidth = (character: string): number => {
 const sizeOf = ({ size = DEFAULT_FONT_SIZE }: TextFont): number => size;
 
 /**
+ * How a font's characters are measured: an East Asian font's Latin letters with the widths of the font in the table they
+ * are measured as, or all of a monospaced one's as half an em or an em, and other fonts with their own widths, or those of
+ * the most similar font in the table
+ */
+const measuresOf = (font: TextFont): { readonly widths: readonly (number | undefined)[]; readonly monospaced: boolean } => {
+    const eastAsian = eastAsianFontOf(font.font ?? DEFAULT_FONT);
+    return { widths: faceOf({ ...font, font: eastAsian?.latin ?? font.font }), monospaced: eastAsian?.monospaced === true };
+};
+
+/**
+ * The first character of text whose width in its font isn't known, so isn't what Word lays out: one of the tables'
+ * characters that Word draws in another font when the font doesn't have it, or whose width Word's PDF doesn't show, or a
+ * symbol font's own character. Undefined when the widths of all of them are known, or are measured as before: those of
+ * characters the tables don't have, as an average letter.
+ */
+export const unknownCharacter = (text: string, font: TextFont = {}): string | undefined => {
+    const { widths, monospaced } = measuresOf(font);
+    return [...text].find((character) => {
+        const code = character.codePointAt(0)!;
+        const index = CHARACTER_INDEX.get(code);
+        return index === undefined || monospaced ? isPrivate(code) : widths[index] === undefined;
+    });
+};
+
+/**
  * How wide a line of text is, in points. Tabs move to the next half inch, counted from the start of the line.
  *
  * @param start - Where the text starts on its line, in points
  */
 export const measureTextWidth = (text: string, font: TextFont = {}, start = 0): number => {
-    const eastAsian = eastAsianFontOf(font.font ?? DEFAULT_FONT);
-    const { regular, bold } = widthsOf(eastAsian?.latin ?? font.font);
-    const widths = font.bold ? bold : regular;
-    const widthOf = eastAsian?.monospaced ? monospacedWidth : (character: string): number => characterWidth(widths, character);
+    const { widths, monospaced } = measuresOf(font);
+    const widthOf = monospaced ? monospacedWidth : (character: string): number => characterWidth(widths, character);
     const size = sizeOf(font);
     const { characterSpacing = 0, scale = 100 } = font;
     return (

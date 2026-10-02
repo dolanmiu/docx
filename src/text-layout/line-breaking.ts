@@ -2,14 +2,15 @@
  * Breaks a paragraph into lines as Word breaks it, for laying out pages: where each line wraps, how tall it is, and
  * which bookmarks start on it.
  *
- * Lines break at spaces, after hyphens, between Chinese, Japanese and Korean characters, and between the words of Thai and
- * the other scripts without spaces, as {@link findLineBreaks} finds. Tabs move to the paragraph's tab stops, or to the
- * document's default ones. Each line is as tall as the tallest text or picture on it, with the paragraph's line spacing.
+ * Lines break at spaces, and at en, em, four-per-em and ideographic spaces, after hyphens, between Chinese, Japanese and
+ * Korean characters, and between the words of Thai and the other scripts without spaces, as {@link findLineBreaks} finds.
+ * Tabs move to the paragraph's tab stops, or to the document's default ones. Each line is as tall as the tallest text or
+ * picture on it, with the paragraph's line spacing.
  *
  * @module
  */
 import { type LineBreakRules, extendsCharacter, findLineBreaks, joinsNext } from "./line-break-rules";
-import { type LineSpacing, type ParagraphFormat, type TextFont, measureLineHeight, measureTextWidth } from "./text-width";
+import { type LineSpacing, type ParagraphFormat, type TextFont, measureLineHeight, measureTextWidth, unknownCharacter } from "./text-width";
 
 /**
  * Measures text. The default measures it with the widths of the fonts in {@link FONT_WIDTHS}.
@@ -19,11 +20,17 @@ export type TextMeasurer = {
     readonly measureWidth: (text: string, font: TextFont) => number;
     /** How tall a line of single-spaced text is, in points */
     readonly measureLineHeight: (font: TextFont) => number;
+    /**
+     * The first character of text whose width this measurer doesn't know as Word lays it out, so a layout stops there
+     * rather than guessing. A measurer that measures with the fonts themselves leaves it out
+     */
+    readonly unknownCharacter?: (text: string, font: TextFont) => string | undefined;
 };
 
 export const DEFAULT_MEASURER: TextMeasurer = {
     measureWidth: (text, font) => measureTextWidth(text, font),
     measureLineHeight,
+    unknownCharacter,
 };
 
 /**
@@ -109,6 +116,11 @@ const TOLERANCE = 0.01;
 
 type TextItem = Extract<InlineItem, { readonly type: "text" }>;
 
+// The spaces lines break after, which go past the end of a line as U+0020 does: the en, em and four-per-em spaces, which
+// Word has as spaces of its own, and the ideographic space. Word joins the words around the other spaces, such as the thin
+// space (word-character-widths B and H, and word-watertight-text TX19g)
+const SPACES: ReadonlySet<string> = new Set([" ", "\u2002", "\u2003", "\u2005", "\u3000"]);
+
 /**
  * Turns text next to each other into words and the spaces between them. Pieces of words next to each other in different
  * fonts are one word, unless the line can break between them.
@@ -120,7 +132,7 @@ const tokenizeText = (items: readonly TextItem[], rules: LineBreakRules): readon
     let index = 0;
     for (const { text, font } of items) {
         for (const character of text) {
-            const type = character === " " ? "space" : "word";
+            const type = SPACES.has(character) ? "space" : "word";
             const last = tokens[tokens.length - 1];
             if (last?.type !== type || (type === "word" && breaks.has(index))) {
                 // eslint-disable-next-line functional/immutable-data

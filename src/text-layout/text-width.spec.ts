@@ -1,6 +1,10 @@
+// cspell:ignore Caladea
 import { describe, expect, it } from "vitest";
 
-import { measureLineHeight, measureText, measureTextWidth } from "./text-width";
+import { measureLineHeight, measureText, measureTextWidth, unknownCharacter } from "./text-width";
+
+/** How wide text is in twips, a twentieth of a point, which Word's PDFs are read in */
+const twips = (text: string, font: string, size: number): number => measureTextWidth(text, { font, size }) * 20;
 
 describe("measureTextWidth", () => {
     it("should measure text in Times New Roman at 10pt when no font or size is given", () => {
@@ -43,13 +47,92 @@ describe("measureTextWidth", () => {
         expect(measureTextWidth("\uff71", { size: 10 })).to.equal(5);
         expect(measureTextWidth("\u0e31\u200b", { size: 10 })).to.equal(0);
         const average = measureTextWidth("abcdefghijklmnopqrstuvwxyz") / 26;
-        expect(measureTextWidth("Ж")).to.be.closeTo(average, 0.001);
+        expect(measureTextWidth("א")).to.be.closeTo(average, 0.001);
+        // As are characters the tables have, but whose widths in the font aren't known: Word draws ∀ in Calibri in Cambria Math
+        expect(measureTextWidth("\u2200", { font: "Calibri" })).to.be.closeTo(
+            measureTextWidth("abcdefghijklmnopqrstuvwxyz", { font: "Calibri" }) / 26,
+            0.001,
+        );
+    });
+
+    // cspell:disable
+    it("should measure Latin Extended, Greek, Cyrillic, Vietnamese and symbols with the fonts' own widths, as Word draws them", () => {
+        // Word's widths in twips, from its PDF of word-watertight-text.ts (TX17), in Calibri 11 and Times New Roman 10. Word's
+        // PDFs put text on a grid, so each is good to about 2 twips
+        const lines: readonly (readonly [string, number, number])[] = [
+            ["ŁĄĆĘŃÓŚŹŻłąćęńóśźżČŠŽčšžŐŰőűĞŞİğşı", 3537.1, 3610.3],
+            ["ΑΒΓΔΕΖΗΘΙΚΛΜΝΞΟΠΡΣΤΥΦΧΨΩαβγδεζηθικλμνξοπρστυφχψω", 5641.3, 5577.2],
+            ["АБВГДЕЖЗИЙКЛМНОПРСТУФХЦЧШЩЭЮЯабвгдежзийклмнопрстуфхцчшщэюя", 7303.7, 7250.5],
+            ["ẠẢẤẦẨẪẬẮẰẲẴẶạảấầẩẫậắằẳẵặ", 2793.0, 2799.3],
+            ["≤≥≠±−∞√∑∏∫≈‰†‡‚„‹›→←↑↓", 2871.0, 2566.1],
+        ];
+        for (const [text, calibri, timesNewRoman] of lines) {
+            expect(twips(text, "Calibri", 11)).to.be.closeTo(calibri, 2);
+            expect(twips(text, "Times New Roman", 10)).to.be.closeTo(timesNewRoman, 2);
+        }
+    });
+    // cspell:enable
+
+    it("should measure soft and no-break hyphens as hyphens, as Word draws them", () => {
+        // TX10b: each U+00AD is 67.4 twips in Calibri 11, as a hyphen is. TX17: "state-of-the-art" is 1388.3 twips with
+        // no-break hyphens and 1388.5 with hyphens
+        expect(twips("\u00ad", "Calibri", 11)).to.be.closeTo(67.4, 0.1);
+        expect(twips("state\u2011of\u2011the\u2011art", "Calibri", 11)).to.be.closeTo(1388.3, 2);
+        expect(measureTextWidth("\u2011", { font: "Arial" })).to.equal(measureTextWidth("-", { font: "Arial" }));
+    });
+
+    it("should measure characters with Word's widths where they aren't the open fonts', or the open fonts don't have them", () => {
+        // From Word's PDF of word-character-widths.ts, in thousandths of an em: Calibri's ƒ is 305, where Carlito's is 498;
+        // Cambria's Ж is 923 and its left arrow 838, where Caladea has no Ж and an arrow of 800; Arial's superscript 4 is 333,
+        // where Liberation Sans' is 430
+        const width = (character: string, font: string, bold = false): number => measureTextWidth(character, { font, bold, size: 1000 });
+        expect(width("\u0192", "Calibri")).to.equal(305);
+        expect(width("\u0416", "Cambria")).to.equal(923);
+        expect(width("\u2190", "Cambria")).to.equal(838);
+        expect(width("\u2074", "Arial")).to.equal(333);
+        expect(width("\u0403", "Arial", true)).to.equal(601);
+    });
+
+    it("should measure spaces as Word does, and marks and formatting characters as nothing", () => {
+        // TX19: the en, em and thin spaces between words, in Calibri 11, are 109.6, 199.2 and 44.1 twips, where Carlito's en
+        // and em spaces are 110 and 220
+        expect(twips("\u2002", "Calibri", 11)).to.be.closeTo(109.6, 0.1);
+        expect(twips("\u2003", "Calibri", 11)).to.be.closeTo(199.2, 0.1);
+        expect(twips("\u2009", "Calibri", 11)).to.be.closeTo(44.1, 0.1);
+        // word-character-widths S: Calibri's three-per-em space is 301 thousandths, where Carlito's is 335, and Arial's en
+        // space 556, where Liberation Sans' is 500
+        expect(measureTextWidth("\u2004", { font: "Calibri", size: 1000 })).to.equal(301);
+        expect(measureTextWidth("\u2002", { font: "Arial", size: 1000 })).to.equal(556);
+        for (const character of ["\u200b", "\u200d", "\u2060", "\u0483"]) {
+            expect(measureTextWidth(character, { font: "Calibri" })).to.equal(0);
+        }
     });
 
     it("should move tabs to the next half inch from where the text starts", () => {
         expect(measureTextWidth("\t")).to.equal(36);
         expect(measureTextWidth("\t", {}, 10)).to.equal(26);
         expect(measureTextWidth("a\tb", { font: "Courier New" })).to.be.closeTo(36 + 6.001, 0.01);
+    });
+});
+
+describe("unknownCharacter", () => {
+    it("should find a character the tables have, but which Word draws in another font, or whose width Word's PDF doesn't show", () => {
+        // Word draws ∀ in Calibri and Arial in Cambria Math, and in Cambria in Cambria
+        expect(unknownCharacter("\u2200x", { font: "Calibri" })).to.equal("\u2200");
+        expect(unknownCharacter("\u2200x", { font: "Arial" })).to.equal("\u2200");
+        expect(unknownCharacter("\u2200x", { font: "Cambria" })).to.equal(undefined);
+        // Word drew Ž and Ё in Courier New on lines it squeezed, so their widths aren't known
+        expect(unknownCharacter("\u017d", { font: "Courier New" })).to.equal("\u017d");
+        expect(unknownCharacter("\u017d", { font: "Arial" })).to.equal(undefined);
+        // Every space's width is known
+        expect(unknownCharacter("a\u2000b\u2003c\u2009d\u200ae\u202ff\u205fg", { font: "Cambria", bold: true })).to.equal(undefined);
+    });
+
+    it("should find a symbol font's own character, and leave the characters the tables don't have as they are measured", () => {
+        expect(unknownCharacter("\uf0fc", { font: "Wingdings" })).to.equal("\uf0fc");
+        // cspell:disable-next-line
+        expect(unknownCharacter("\u05e9\u05dc\u05d5\u05dd \t\u4e2d\u6587", { font: "Arial" })).to.equal(undefined);
+        expect(unknownCharacter("plain text")).to.equal(undefined);
     });
 });
 

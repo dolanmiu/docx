@@ -457,8 +457,23 @@ const readRun = (element: XmlObject, paragraphRun: RunFormat, reader: Reader): r
                 return format.hidden ? [] : [{ type: "break", kind: "line", font }];
             case "w:noBreakHyphen":
                 return [{ type: "text", text: "\u2011", font }];
-            case "w:sym":
-                return [{ type: "text", text: "\u25a0", font }];
+            case "w:sym": {
+                // A symbol is a character of its own font: most often a symbol font's own, such as Wingdings' tick, F0FC,
+                // whose width isn't known, so the layout stops there, as it does at other characters it can't measure. Its
+                // character is four hexadecimal digits (ST_ShortHexNumber); docx writes what it is given, so a symbol written
+                // otherwise, which Word may not read, stops the layout too
+                const { "w:font": symbolFont, "w:char": character } = attributesOf(child["w:sym"]);
+                const code = String(character);
+                return /^[0-9a-f]{4}$/i.test(code)
+                    ? [
+                          {
+                              type: "text",
+                              text: String.fromCodePoint(parseInt(code, 16)),
+                              font: symbolFont === undefined ? font : { ...font, font: String(symbolFont) },
+                          },
+                      ]
+                    : "a symbol whose character isn't four hexadecimal digits";
+            }
             case "w:footnoteReference":
             case "w:endnoteReference": {
                 const note = reader.notes?.read(

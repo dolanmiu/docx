@@ -123,9 +123,34 @@ describe("readDocument", () => {
             ]);
             expect(
                 itemsOf(content).map((item) => (item.type === "break" ? item.kind : item.type === "text" ? item.text : item.type)),
-            ).to.deep.equal(["a", "tab", "tab", "page", "column", "line", "line", "‑", "■", "i", "CAPS"]);
+            ).to.deep.equal(["a", "tab", "tab", "page", "column", "line", "line", "\u2011", "\uf0a7", "i", "CAPS"]);
             // An endnote's number, in superscript, and numbered as Word numbers endnotes
             expect(itemsOf(content)[9]).to.deep.equal({ type: "text", text: "i", font: { scale: 65 } });
+        });
+
+        it("should read a symbol as its character in its own font, which the width tables don't have when it's a symbol font's", () => {
+            const content = readBody([
+                p(
+                    r(
+                        { "w:sym": { _attr: { "w:font": "Wingdings", "w:char": "F0FC" } } },
+                        { "w:sym": { _attr: { "w:font": "Calibri", "w:char": "2022" } } },
+                    ),
+                ),
+            ]);
+            expect(itemsOf(content)).to.deep.equal([
+                { type: "text", text: "\uf0fc", font: { font: "Wingdings" } },
+                { type: "text", text: "\u2022", font: { font: "Calibri" } },
+            ]);
+        });
+
+        it("should stop at a symbol whose character isn't four hexadecimal digits, as the schema has it, rather than read part of it", () => {
+            // "110000" is past the last code point, and "F0FCzz" and "41" aren't four digits
+            for (const character of ["110000", "F0FCzz", "41", undefined]) {
+                const attributes = character === undefined ? { "w:font": "Wingdings" } : { "w:font": "Wingdings", "w:char": character };
+                expect(paragraphOf(readBody([p(r({ "w:sym": { _attr: attributes } }))])).unsupported).to.equal(
+                    "a symbol whose character isn't four hexadecimal digits",
+                );
+            }
         });
 
         it("should read the text in hyperlinks, insertions, content controls and other elements that hold runs, but not deletions", () => {
