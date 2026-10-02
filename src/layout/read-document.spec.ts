@@ -1610,32 +1610,54 @@ describe("readDocument", () => {
             expect(marginsOf({ externalStyles: bare })).to.deep.equal([0, 0]);
         });
 
-        it("should stop at a table whose rows give a column different widths, which Word settles in a way not yet followed", () => {
-            const unsupportedOf = (...rows: readonly (readonly (readonly [number | undefined, number?])[])[]): string | undefined =>
-                (
-                    readBody([
-                        {
-                            "w:tbl": [
-                                { "w:tblGrid": [{ "w:gridCol": { _attr: { "w:w": 1000 } } }, { "w:gridCol": { _attr: { "w:w": 2000 } } }] },
-                                ...rows.map((cells) => ({
-                                    "w:tr": cells.map(([width, span]) =>
-                                        cell(
-                                            [
-                                                ...(width === undefined ? [] : [{ "w:tcW": { _attr: { "w:w": width, "w:type": "dxa" } } }]),
-                                                ...(span === undefined ? [] : [value("w:gridSpan", span)]),
-                                            ],
-                                            p(r(t("a"))),
-                                        ),
+        it("should even out the rows of a table with a width of its own that give a column different widths, as Word does", () => {
+            const tableOf = (
+                properties: readonly object[],
+                ...rows: readonly (readonly (readonly [number | undefined, number?])[])[]
+            ): TableBlock =>
+                readBody([
+                    {
+                        "w:tbl": [
+                            { "w:tblPr": properties },
+                            { "w:tblGrid": [{ "w:gridCol": { _attr: { "w:w": 1000 } } }, { "w:gridCol": { _attr: { "w:w": 2000 } } }] },
+                            ...rows.map((cells) => ({
+                                "w:tr": cells.map(([width, span]) =>
+                                    cell(
+                                        [
+                                            ...(width === undefined ? [] : [{ "w:tcW": { _attr: { "w:w": width, "w:type": "dxa" } } }]),
+                                            ...(span === undefined ? [] : [value("w:gridSpan", span)]),
+                                        ],
+                                        p(r(t("a"))),
                                     ),
-                                })),
-                            ],
-                        },
-                    ]).blocks[0].block as TableBlock
-                ).unsupported;
-            // The first column 1000 twips wide in one row, and 3000 in the next
-            expect(unsupportedOf([[1000], [2000]], [[3000], [2000]])).to.equal("a table whose rows give a column different widths");
-            // A cell over both columns as wide as the two, and widths a twip apart from rounding
-            expect(unsupportedOf([[1000], [2000]], [[3000, 2]], [[1001], [2000]])).to.equal(undefined);
+                                ),
+                            })),
+                        ],
+                    },
+                ]).blocks[0].block as TableBlock;
+            const unsupported = "a table whose rows give a column different widths";
+            const ownWidth = { "w:tblW": { _attr: { "w:w": 4000, "w:type": "dxa" } } };
+            const fixed = { "w:tblLayout": { _attr: { "w:type": "fixed" } } };
+            // The first column 1000 twips wide in one row, and 3000 in the next. Word makes it as wide as the widest, then
+            // fits the columns to the table's width, laid out fixed or not (word-watertight-stops.docx SP14)
+            const uneven: readonly (readonly (readonly [number | undefined, number?])[])[] = [
+                [[1000], [2000]],
+                [[3000], [2000]],
+            ];
+            expect(tableOf([ownWidth], ...uneven).widen).to.deep.equal({ width: 200, uneven: true });
+            expect(tableOf([ownWidth], ...uneven).unsupported).to.equal(undefined);
+            expect(tableOf([ownWidth, fixed], ...uneven).widen).to.deep.equal({ width: 200, uneven: true, fixed: true });
+            // Without a width of its own in twips, with space between its cells, or with a cell without a width, laid out
+            // fixed, how isn't known
+            expect(tableOf([], ...uneven).unsupported).to.equal(unsupported);
+            expect(tableOf([{ "w:tblW": { _attr: { "w:w": 5000, "w:type": "pct" } } }], ...uneven).unsupported).to.equal(unsupported);
+            expect(tableOf([ownWidth, { "w:tblCellSpacing": { _attr: { "w:w": 20, "w:type": "dxa" } } }], ...uneven).unsupported).to.equal(
+                unsupported,
+            );
+            expect(tableOf([ownWidth, fixed], [[1000], [2000]], [[3000], [undefined]]).unsupported).to.equal(unsupported);
+            // A cell over both columns as wide as the two, and widths a twip apart from rounding, agree
+            const even = tableOf([], [[1000], [2000]], [[3000, 2]], [[1001], [2000]]);
+            expect(even.unsupported).to.equal(undefined);
+            expect(even.widen).to.deep.equal({});
         });
 
         it("should lay a cell out at its own width in twips rather than the grid's, as Word does", () => {
@@ -1685,11 +1707,8 @@ describe("readDocument", () => {
             expect(tableOf([{ "w:tblLayout": { _attr: { "w:type": "fixed" } } }], undefined).fit).to.equal(undefined);
             // Every cell with a width, which Word widens a column of for a word longer than its cells give it, unless the
             // table is laid out fixed
-            expect(tableOf([], { "w:w": 3000 }, { "w:w": 2500, "w:type": "pct" }).widen).to.deep.equal({ acrossColumns: false });
-            expect(tableOf(tableWidth({ "w:w": 9000, "w:type": "dxa" }), { "w:w": 3000 }).widen).to.deep.equal({
-                width: 450,
-                acrossColumns: false,
-            });
+            expect(tableOf([], { "w:w": 3000 }, { "w:w": 2500, "w:type": "pct" }).widen).to.deep.equal({});
+            expect(tableOf(tableWidth({ "w:w": 9000, "w:type": "dxa" }), { "w:w": 3000 }).widen).to.deep.equal({ width: 450 });
             expect(tableOf([], { "w:w": 3000 }, undefined).widen).to.equal(undefined);
             expect(tableOf([{ "w:tblLayout": { _attr: { "w:type": "fixed" } } }], { "w:w": 3000 }).widen).to.equal(undefined);
             // The cells keep the widths they give themselves, and their margins either side, to be sized by
@@ -1736,11 +1755,11 @@ describe("readDocument", () => {
                 ],
             ]);
             expect(tableOf([]).borderLeft).to.equal(0);
-            // A table whose cells all have widths has its columns widened for long words as it is laid out, unless they are
-            // merged across them
+            // A table whose cells all have widths has its columns widened for long words as it is laid out, merged across
+            // them or not
             const width = { "w:tcW": { _attr: { "w:w": 3000 } } };
-            expect(tableOf([], [cell([width, value("w:gridSpan", 2)], p(r(t("a"))))]).widen).to.deep.equal({ acrossColumns: true });
-            expect(tableOf([], [cell([width], p(r(t("a")))), cell([width], p(r(t("b"))))]).widen).to.deep.equal({ acrossColumns: false });
+            expect(tableOf([], [cell([width, value("w:gridSpan", 2)], p(r(t("a"))))]).widen).to.deep.equal({});
+            expect(tableOf([], [cell([width], p(r(t("a")))), cell([width], p(r(t("b"))))]).widen).to.deep.equal({});
         });
 
         it("should stop at a table given no widths of more columns than Word's 63, rather than count each of them", () => {
@@ -1972,7 +1991,7 @@ describe("readDocument", () => {
                         ],
                     },
                 ]).blocks[0].block as TableBlock;
-                expect(given.widen).to.deep.equal({ width: 300, acrossColumns: false });
+                expect(given.widen).to.deep.equal({ width: 300 });
                 // Each cell as wide as it is with its room for the space: the space on each side, and inside the table's edges
                 expect(given.rows[0].cells.map(({ ownWidth }) => ownWidth)).to.deep.equal([115, 215]);
             });
@@ -3368,7 +3387,7 @@ describe("readDocument", () => {
                 { footnotes: { 1: { children: [new Paragraph("One")] }, 2: { children: [new Paragraph("Two")] } } },
             );
             const table = content.blocks[0].block as TableBlock;
-            expect(table.widen).to.deep.equal({ acrossColumns: false });
+            expect(table.widen).to.deep.equal({});
             const [first, second] = table.rows.map(({ cells }) => cells[0]);
             expect(texts(first.blocks)).to.deep.equal(["a1"]);
             // The footnote is numbered as it is where it is laid out, and counted once

@@ -211,10 +211,11 @@ export type TableBlock = {
     readonly fit?: { readonly width?: number; readonly share?: number };
     /**
      * Given when Word widens a column for a word longer than the width its cells give it, as it does in a table whose
-     * cells all have widths, unless its layout is fixed, with the table's own width, as for `fit`, and whether any of its
-     * cells are merged across columns
+     * cells all have widths, unless its layout is fixed, with the table's own width, as for `fit`. `uneven` when its rows
+     * give a column different widths, which Word evens out to the widest each gives it, and `fixed` when it is laid out
+     * fixed, which Word evens out so too, but widens no column of for a long word (`word-watertight-stops.docx` SP14)
      */
-    readonly widen?: { readonly width?: number; readonly share?: number; readonly acrossColumns: boolean };
+    readonly widen?: { readonly width?: number; readonly share?: number; readonly uneven?: true; readonly fixed?: true };
     /** The width of the borders left and right of the table, in points */
     readonly borderLeft?: number;
     readonly borderRight?: number;
@@ -1928,8 +1929,9 @@ const readTable = (element: XmlObject, reader: Reader): TableBlock | undefined =
             }),
         });
     });
-    // Cells over the same columns whose widths put a column's edge in different places in different rows, which Word
-    // settles in a way not yet followed
+    // Cells over the same columns whose widths put a column's edge in different places in different rows. Word makes each
+    // column as wide as the widest a row gives it, then fits them to the table's own width in twips, laid out fixed or
+    // not (`word-watertight-stops.docx` SP14). Without one, and with space between the cells, how isn't known
     const edgesAt = new Map<number, number>();
     const unequal = read.some(({ edges }) =>
         [...edges].some(([column, edge]) => {
@@ -1978,13 +1980,15 @@ const readTable = (element: XmlObject, reader: Reader): TableBlock | undefined =
     )
         ? "a table style with formatting of its rows or cells"
         : undefined;
+    const givenWidth = readTableWidth(properties);
+    const evened = unequal && !spaced && givenWidth.width !== undefined && tableCells.every(({ ownWidth }) => ownWidth !== undefined);
     // Word puts the text after a floating table (`w:tblpPr`) beside it (`word-watertight-tables.docx` TB11)
     const unsupported =
         (find(properties, "w:tblpPr") === undefined ? undefined : "a table that text flows around") ??
         (parts.some((part) => "w:sdt" in part) ? BOUND_CONTROL : undefined) ??
         read.find((row) => row.unsupported !== undefined)?.unsupported ??
         unmerged ??
-        (fits ? unfitted : unequal ? "a table whose rows give a column different widths" : undefined) ??
+        (fits ? unfitted : unequal && !evened ? "a table whose rows give a column different widths" : undefined) ??
         spacingUnsupported ??
         (typeof geometry === "string" ? geometry : undefined) ??
         (indent === undefined ? "a table indented by a share of the width" : undefined) ??
@@ -1993,15 +1997,20 @@ const readTable = (element: XmlObject, reader: Reader): TableBlock | undefined =
         blocks.find((block) => block.unsupported !== undefined)?.unsupported;
     // With space between cells, Word keeps a table's width, its own or its first row's cells', laid out fixed or not, and
     // narrows its columns for the space (word-table-formats2.docx CS9, CS10, CS14)
-    const givenWidth = readTableWidth(properties);
     const rowWidth = (read[0]?.cells ?? []).reduce((total, cell) => total + (cell.ownWidth ?? 0), 0);
     const tableWidth = spaced && givenWidth.width === undefined && givenWidth.share === undefined ? { width: rowWidth } : givenWidth;
     return {
         type: "table",
         rows: tableRows,
         ...(fits ? { fit: givenWidth } : {}),
-        ...(!fits && (!fixed || spaced)
-            ? { widen: { ...tableWidth, acrossColumns: tableCells.some(({ span }) => span !== undefined) } }
+        ...(!fits && (!fixed || spaced || evened)
+            ? {
+                  widen: {
+                      ...tableWidth,
+                      ...(evened ? { uneven: true as const } : {}),
+                      ...(evened && fixed ? { fixed: true as const } : {}),
+                  },
+              }
             : {}),
         borderLeft: roomOf(tableBorders.left) ?? 0,
         borderRight: roomOf(tableBorders.right) ?? 0,

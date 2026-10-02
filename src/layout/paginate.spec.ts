@@ -872,25 +872,23 @@ describe("paginate", () => {
             // At the widths read, the word is broken across 2 lines and the second cell has 3, so b fits below the row. The
             // first column widened to the word's 40 points leaves the second 40, and its 5 lines push b to the next page
             expect(pagesOf(document([paragraph("a", 2), given, paragraph("b", 1)]))).to.deep.equal({ a: "1", b: "1" });
-            const widened = { ...given, widen: { acrossColumns: false } };
+            const widened = { ...given, widen: {} };
             expect(pagesOf(document([paragraph("a", 2), widened, paragraph("b", 1)]))).to.deep.equal({ a: "1", b: "2" });
-            // Not yet with cells merged across columns, which stop the layout
-            const acrossColumns = paginate(document([paragraph("a", 2), { ...given, widen: { acrossColumns: true } }]), {
+            // Not yet in a table laid out fixed whose rows give a column different widths, which stops the layout
+            const fixed = { ...given, widen: { uneven: true as const, fixed: true as const } };
+            const unknown = paginate(document([paragraph("a", 2), fixed]), { measurer: MEASURER });
+            expect(unknown.stoppedAt).to.equal("a long word in a table laid out fixed whose rows give a column different widths");
+            // A paragraph kept with it is laid out before the layout stops there, as it is before any table it can't lay out
+            const kept = paginate(document([paragraph("a", 2), paragraph("heading", 1, { keepNext: true }), fixed]), {
                 measurer: MEASURER,
             });
-            expect(acrossColumns.stoppedAt).to.equal("a word longer than its cell in a table with cells merged across columns");
-            // A paragraph kept with it is laid out before the layout stops there, as it is before any table it can't lay out
-            const kept = paginate(
-                document([paragraph("a", 2), paragraph("heading", 1, { keepNext: true }), { ...given, widen: { acrossColumns: true } }]),
-                { measurer: MEASURER },
-            );
             expect(kept.bookmarks).to.deep.equal(
                 new Map([
                     ["a", "1"],
                     ["heading", "1"],
                 ]),
             );
-            expect(kept.stoppedAt).to.equal("a word longer than its cell in a table with cells merged across columns");
+            expect(kept.stoppedAt).to.equal("a long word in a table laid out fixed whose rows give a column different widths");
         });
 
         it("should size the columns of a table given no widths around a cell across them, and to a table in a cell", () => {
@@ -926,7 +924,7 @@ describe("paginate", () => {
             expect(pagesOf(document([paragraph("a", 3), outer, paragraph("b", 1)]))).to.deep.equal({ a: "1", b: "2" });
         });
 
-        it("should stop at a long word in a cell across columns, which Word shares in a way not yet followed", () => {
+        it("should share a long word in a cell across columns as Word does, and stop where they are narrowed around it", () => {
             const words = (text: string): ParagraphBlock => ({
                 type: "paragraph",
                 items: [{ type: "text", text, font: {} }],
@@ -934,7 +932,9 @@ describe("paginate", () => {
                 tabStops: [],
                 markFont: {},
             });
-            const [first, second] = row([[words("a")], [words("b c")]]).cells;
+            const [first, second, third] = row([[words("a")], [words("b c")], [words("d")]]).cells;
+            // A word of 70 points across columns of 10 and 30 at their widest lines, which share it 20 to 40 (SP17): "b c"
+            // stays on a line, and b fits below the table
             const longWord: TableBlock = {
                 ...table([
                     { ...row([]), cells: [{ ...first, span: 2, blocks: [words("abcdefg")] }] },
@@ -942,7 +942,24 @@ describe("paginate", () => {
                 ]),
                 fit: {},
             };
-            const { bookmarks, stoppedAt } = paginate(document([paragraph("a", 1), longWord, paragraph("b", 1)]), { measurer: MEASURER });
+            const shared = paginate(document([paragraph("a", 4), longWord, paragraph("b", 1)]), { measurer: MEASURER });
+            expect(shared.stoppedAt).to.equal(undefined);
+            expect(Object.fromEntries(shared.bookmarks)).to.deep.equal({ a: "1", b: "1" });
+            // Beside a column of long text that narrows them, how Word shares it isn't known
+            const narrowed: TableBlock = {
+                ...table([
+                    {
+                        ...row([]),
+                        cells: [
+                            { ...first, span: 2, blocks: [words("abcdefg")] },
+                            { ...third, column: 2, blocks: [words("dd ee ff gg")] },
+                        ],
+                    },
+                    { ...row([]), cells: [first, second, { ...third, column: 2 }] },
+                ]),
+                fit: {},
+            };
+            const { bookmarks, stoppedAt } = paginate(document([paragraph("a", 1), narrowed, paragraph("b", 1)]), { measurer: MEASURER });
             expect(stoppedAt).to.equal("a long word in cells merged across columns");
             expect(Object.fromEntries(bookmarks)).to.deep.equal({ a: "1" });
         });
@@ -3792,10 +3809,13 @@ describe("paginate", () => {
             expect(paginate(content, { measurer: MEASURER }).stoppedAt).to.equal("an equation");
             // Nor a table in it whose columns can't be sized, as in the text
             const [cell] = row([[paragraph("cell", 1)]]).cells;
-            const unsized = { ...table([{ ...row([]), cells: [{ ...cell, width: 20, ownWidth: 20 }] }]), widen: { acrossColumns: true } };
+            const unsized = {
+                ...table([{ ...row([]), cells: [{ ...cell, width: 20, ownWidth: 20 }] }]),
+                widen: { uneven: true as const, fixed: true as const },
+            };
             const tabled = withNotes([noted(paragraph("b", 1), "footnote 1")], { "footnote 1": [unsized] });
             expect(paginate(tabled, { measurer: MEASURER }).stoppedAt).to.equal(
-                "a word longer than its cell in a table with cells merged across columns",
+                "a long word in a table laid out fixed whose rows give a column different widths",
             );
         });
 

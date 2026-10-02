@@ -1,6 +1,7 @@
 /**
  * Sizes the columns of a table whose cells don't all have widths, as Word sizes them to their text, and widens a column
- * of a table whose cells all have widths for a word longer than they give it.
+ * of a table whose cells all have widths for a word longer than they give it, or evens out its rows where they give a
+ * column different widths.
  *
  * @module
  */
@@ -43,13 +44,39 @@ const measureCells = (table: TableBlock, measure: Measure): ReadonlyMap<TableCel
         ),
     );
 
+/** How far apart two widths, in points, can be and still be the same: a twentieth of a point, a twip */
+const SAME = 0.05;
+
+/**
+ * How a cell across columns whose one word is wider than their widest lines shares it among them, as Word does: each
+ * in proportion to its widest word and its widest line added together (`word-watertight-stops.docx` SP17, `word-probes.docx`
+ * U1e). Words of 3000 to 6000 twips across "one" and "two words" gave the first 0.366 of them every time, and across
+ * those and "three short words", 0.198, 0.343 and 0.459. In proportion to their widest lines, the first would have had
+ * 0.324. Undefined where that isn't known: where a column would come out narrower than its widest line, which none did,
+ * and, for columns given widths, where it gives other shares than their widths alone would, as only columns of the same
+ * width and widest words have been seen (SP15c)
+ */
+const wordShares = (covered: readonly Column[], word: number): readonly number[] | undefined => {
+    const weights = covered.map(({ min, width }) => min + width);
+    const weight = sum(weights);
+    const widest = sum(covered.map(({ width }) => width));
+    const shares = weights.map((share) => (word * share) / weight);
+    const known =
+        shares.every((share, index) => share >= covered[index].width - SAME) &&
+        (covered.every(({ given }) => !given) ||
+            shares.every((share, index) => Math.abs(share - (word * covered[index].width) / widest) <= SAME));
+    return known ? shares : undefined;
+};
+
 /**
  * Sizes the columns of a table to their text, as Word does (`word-probes.docx` U1), before they are fitted to the room. A
  * column is as wide as its cells across it alone give it, or, without, as their widest line, and never narrower than
  * their widest word. A column without a cell of its own is 0 wide (U1f). Then each cell across several columns, in the
  * rows' order (U1u), shares what its widest line, or the width it gives itself (U1h), needs beyond their widths among
  * them, in proportion to those. A column given a width shares by it, and is widened with the rest (U1g). Columns that
- * are all 0 wide share it equally, which Word's probes didn't show.
+ * are all 0 wide share it equally, which Word's probes didn't show. A cell whose one word is wider than their widest
+ * lines shares the word among them as `wordShares` does, and the columns keep its width when the table is narrowed, as
+ * Word keeps them (`word-watertight-stops.docx` SP15c).
  */
 const sizeColumns = (table: TableBlock, content: ReadonlyMap<TableCell, ContentWidths>): Sizing => {
     const cells = sizingRows(table).flatMap((row) => row.cells);
@@ -73,10 +100,21 @@ const sizeColumns = (table: TableBlock, content: ReadonlyMap<TableCell, ContentW
                 const covered = before.slice(from, to);
                 const widest = sum(covered.map(({ width }) => width));
                 const needed = cell.ownWidth === undefined ? max : Math.max(min, cell.ownWidth);
-                // A word wider than the columns' widest words changes their widths in a way Word's probes didn't settle (U1e,
-                // U1m) when they are narrowed, and always when it is wider than their widest lines, unless only one of them
-                // has any width to take it (U1f)
                 const sharing = covered.filter(({ width }) => width > 0).length > 1;
+                // A word wider than the columns' widest lines, and all the cell needs room for, is shared among them (SP17,
+                // SP15c). How Word narrows them around it in a table sized to its text isn't known
+                const shares = min > widest && sharing && min >= needed - SAME ? wordShares(covered, min) : undefined;
+                if (shares !== undefined) {
+                    return {
+                        columns: before.map((column, index) =>
+                            index >= from && index < to ? { ...column, width: shares[index - from], min: shares[index - from] } : column,
+                        ),
+                        unsettled: table.fit ? [...unsettled, "narrowed" as const] : unsettled,
+                    };
+                }
+                // A word wider than the columns' widest words changes their widths in a way Word's probes didn't settle (U1m)
+                // when they are narrowed, and always when it is wider than their widest lines and shared in a way not yet
+                // seen, unless only one of them has any width to take it (U1f)
                 const longWord =
                     min > sum(covered.map((column) => column.min))
                         ? [min > widest && sharing ? ("always" as const) : ("narrowed" as const)]
@@ -119,14 +157,20 @@ const narrowed = (columns: readonly Column[], room: number): readonly number[] =
  * toward their widest words, each by its share of the width they would give up, and those given widths keep them unless
  * that isn't enough.
  *
- * Word shares a word in a cell across several columns that is wider than their widest words together in a way not yet
- * followed, when it is wider than their widest lines too, or when the columns are narrowed to the room. The table is
+ * A word in a cell across several columns that is wider than their widest lines, and all the cell needs room for, is
+ * shared among them in proportion to their widest words and widest lines added together, as Word shares it. Word
+ * shares one wider than their widest words in a way not yet followed when the columns are narrowed to the room, and
+ * one with more text beside it, or in a way not yet seen, when it is wider than their widest lines too. The table is
  * then returned as unsupported.
  *
- * A table whose cells all have widths keeps them, unless a word is longer than its cell gives it. Word then widens that
- * column to the word. A table with no width of its own grows, up to the room, and one with a width keeps it, and the
- * other columns are narrowed toward their widest words, each by its share of the width they would give up, as columns
- * given widths are in a table sized to its text.
+ * A table whose cells all have widths keeps them, unless a word is longer than its cell gives it, or its rows give a
+ * column different widths. Word then widens that column to the word, and makes each column as wide as the widest any
+ * row gives it (`word-watertight-stops.docx` SP14). A table with no width of its own grows, up to the room, and one
+ * with a width keeps it, its columns widened in proportion when they are narrower (SP15b), and narrowed toward their
+ * widest words, each by its share of the width they would give up, as columns given widths are in a table sized to its
+ * text, when they are wider. Columns whose widest words are wider than a table's own width are as wide as those, and
+ * the table wider than its width and the page (SP15a). Word evens out the rows of a table laid out fixed in the same
+ * way (SP14b), but widens no column of it for a long word.
  *
  * @param available - The width the table is in, in points: the page's text, a column's, or a table cell's
  * @param measure - How narrow and how wide the content of a cell can be, in points
@@ -145,14 +189,16 @@ export const fitColumns = (table: TableBlock, available: number, measure: Measur
     const spaced = table.cellSpacing !== undefined;
     if (widen) {
         const tooLong = sizingRows(table).flatMap(({ cells }) => cells.filter((cell) => content.get(cell)!.min > cell.ownWidth!));
-        if (tooLong.length === 0 && !spaced) {
+        if (tooLong.length === 0 && !spaced && !widen.uneven) {
             return table;
-        }
-        if (tooLong.length > 0 && widen.acrossColumns) {
-            return { ...table, unsupported: "a word longer than its cell in a table with cells merged across columns" };
         }
         if (tooLong.length > 0 && spaced) {
             return { ...table, unsupported: "a long word in a table with space between its cells" };
+        }
+        // Word widens no column of a table laid out fixed for a long word (`word-long-words.docx` L8), and how it evens out
+        // the rows of one with a long word isn't known
+        if (tooLong.length > 0 && widen.fixed) {
+            return { ...table, unsupported: "a long word in a table laid out fixed whose rows give a column different widths" };
         }
         if (tooLong.some(({ vertical }) => vertical)) {
             return { ...table, unsupported: "a long word in text that runs up or down a table cell" };
@@ -167,17 +213,20 @@ export const fitColumns = (table: TableBlock, available: number, measure: Measur
     // and TI4). One with a width of its own, or a share of the width, keeps it (TI2)
     const room = target ?? available - indent;
     if (widen) {
-        // Word breaks a word longer than the room in a way not yet followed, narrowing the other columns past their widest
-        // words, and how it widens a table wider than its cells around a long word isn't known
-        if (sum(columns.map(({ min }) => min)) > room) {
+        // A table with a width of its own in twips keeps its columns as wide as their widest words when those don't fit in
+        // it, past it and the page (`word-watertight-stops.docx` SP15a). Without, Word breaks a word longer than the room in
+        // a way not yet followed, narrowing the other columns past their widest words (`word-long-words.docx` L7)
+        if (sum(columns.map(({ min }) => min)) > room && (widen.width === undefined || widen.fixed)) {
             return { ...table, unsupported: "a word longer than its table can make room for" };
         }
-        if (target !== undefined && total < target) {
+        // A table wider than its cells has its columns widened in proportion to fill it, after a column is widened for a
+        // long word (SP15b). With space between its cells, or laid out fixed, how isn't known
+        if (target !== undefined && total < target && (spaced || widen.fixed)) {
             return {
                 ...table,
                 unsupported: spaced
                     ? "space between the cells of a table wider than its cells"
-                    : "a long word in a table wider than its cells",
+                    : "a table laid out fixed whose rows give a column different widths, narrower than the table",
             };
         }
     }
