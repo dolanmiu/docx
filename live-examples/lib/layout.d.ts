@@ -39,7 +39,8 @@ export declare type DocumentLayout = {
  * ```
  *
  * The pages are laid out with the widths and heights of the fonts Word documents use most, such as Calibri, Cambria,
- * Arial and Times New Roman. It follows paragraphs' spacing, indents, line spacing, tab stops and keep settings, widow
+ * Arial and Times New Roman. To measure text in other fonts, such as Aptos, from their files, use
+ * {@link estimatePageNumbersWith}. It follows paragraphs' spacing, indents, line spacing, tab stops and keep settings, widow
  * and orphan control, lists, pictures in the line, tables, whose rows break across pages, footnotes and endnotes, page,
  * column and section breaks, and each section's page size, margins, columns, headers, footers and page numbering.
  *
@@ -67,6 +68,14 @@ export declare const estimatePageNumbers: PageNumberEstimator & TemplatePageNumb
  */
 export declare type EstimatePageNumbersOptions = {
     /**
+     * Font files to measure text in, with their own widths, kerning and line heights, as Word measures it. Give a file
+     * for each of a font's faces the document uses, such as Aptos, Aptos Bold and Aptos Italic: text in fonts without
+     * files is measured as it is without them, and so is bold text, or text that isn't bold, in a font without a file for
+     * it. Italic text in a font without an italic file is measured with the upright one. The layout stops at a character
+     * a font's file has no glyph for, as Word draws it in another font
+     */
+    readonly fonts?: readonly FontFile[];
+    /**
      * Measures how wide text is, such as {@link measureWithPretext}, which measures it with the fonts a browser has.
      * Default is the widths of the fonts Word documents use most, which {@link estimatePageNumbers} uses. Lines still
      * break, and tabs move to their stops, as Word lays them out, and lines are as tall as Word makes them.
@@ -80,11 +89,38 @@ export declare type EstimatePageNumbersOptions = {
  *
  * ```ts
  * new Document({ pageNumbers: estimatePageNumbersWith({ measureWidth: measureWithPretext(pretext) }), sections: [...] });
+ * const fonts = [{ data: await readFile("Aptos.ttf") }, { data: await readFile("Aptos-Bold.ttf") }];
+ * new Document({ pageNumbers: estimatePageNumbersWith({ fonts }), sections: [...] });
  * ```
+ *
+ * It throws when a font file isn't a TrueType or OpenType font.
  *
  * @publicApi
  */
-export declare const estimatePageNumbersWith: ({ measureWidth, }: EstimatePageNumbersOptions) => PageNumberEstimator & TemplatePageNumberEstimator;
+export declare const estimatePageNumbersWith: ({ measureWidth, fonts, }: EstimatePageNumbersOptions) => PageNumberEstimator & TemplatePageNumberEstimator;
+
+/**
+ * A font file's bytes: a TrueType or OpenType font (`.ttf` or `.otf`), or a collection of them (`.ttc`).
+ */
+declare type FontData = Uint8Array | ArrayBuffer;
+
+/**
+ * A font file to measure text in.
+ *
+ * @publicApi
+ */
+export declare type FontFile = {
+    /**
+     * The file's bytes: a TrueType or OpenType font (`.ttf` or `.otf`), or a collection of them (`.ttc`). Web fonts
+     * (`.woff` and `.woff2`) are compressed, and can't be read
+     */
+    readonly data: FontData;
+    /**
+     * The name documents give the font, when it isn't the name in the file, such as `"Calibri"` for a file of Carlito,
+     * which is as wide. Each font in the file has the name it gives itself by default, such as `"Aptos"`
+     */
+    readonly name?: string;
+};
 
 /**
  * The font to measure text in.

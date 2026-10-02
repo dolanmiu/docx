@@ -3905,6 +3905,7 @@ var docxShapes = (function(exports, docx) {
 			size: sizeOf(attributesOf(find(children, "w:sz"))["w:val"]),
 			bold: onOff(children, "w:b"),
 			italic: onOff(children, "w:i"),
+			kerning: sizeOf(attributesOf(find(children, "w:kern"))["w:val"]),
 			allCaps: onOff(children, "w:caps"),
 			smallCaps: onOff(children, "w:smallCaps"),
 			hidden: onOff(children, "w:vanish"),
@@ -4128,11 +4129,12 @@ var docxShapes = (function(exports, docx) {
 	/**
 	* The parts of run formatting that change the font text is measured in.
 	*/
-	var fontOf = ({ font, size, bold, italic, characterSpacing, scale }) => withoutUndefined({
+	var fontOf = ({ font, size, bold, italic, kerning, characterSpacing, scale }) => withoutUndefined({
 		font,
 		size,
 		bold,
 		italic,
+		kerning,
 		characterSpacing,
 		scale
 	});

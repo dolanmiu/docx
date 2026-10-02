@@ -18,9 +18,10 @@
 <div class="tsd-description">
 <div class="tsd-comment tsd-typography"><p>Works out the page each bookmark of a document starts on, as <a href="../variables/layout.estimatePageNumbers.html" class="tsd-kind-variable">estimatePageNumbers</a> does, measuring text as the
 options say. Give what it returns to a document as its <code>pageNumbers</code>, or to <code>patchDocument</code> as its <code>pageNumbers</code>:</p>
-<pre><code class="ts"><span class="hl-4">new</span><span class="hl-1"> </span><span class="hl-6">Document</span><span class="hl-1">({ </span><span class="hl-2">pageNumbers:</span><span class="hl-1"> </span><span class="hl-6">estimatePageNumbersWith</span><span class="hl-1">({ </span><span class="hl-2">measureWidth:</span><span class="hl-1"> </span><span class="hl-6">measureWithPretext</span><span class="hl-1">(</span><span class="hl-2">pretext</span><span class="hl-1">) }), </span><span class="hl-2">sections:</span><span class="hl-1"> [...] });</span>
+<pre><code class="ts"><span class="hl-4">new</span><span class="hl-1"> </span><span class="hl-6">Document</span><span class="hl-1">({ </span><span class="hl-2">pageNumbers:</span><span class="hl-1"> </span><span class="hl-6">estimatePageNumbersWith</span><span class="hl-1">({ </span><span class="hl-2">measureWidth:</span><span class="hl-1"> </span><span class="hl-6">measureWithPretext</span><span class="hl-1">(</span><span class="hl-2">pretext</span><span class="hl-1">) }), </span><span class="hl-2">sections:</span><span class="hl-1"> [...] });</span><br/><span class="hl-4">const</span><span class="hl-1"> </span><span class="hl-5">fonts</span><span class="hl-1"> = [{ </span><span class="hl-2">data:</span><span class="hl-1"> </span><span class="hl-0">await</span><span class="hl-1"> </span><span class="hl-6">readFile</span><span class="hl-1">(</span><span class="hl-3">&quot;Aptos.ttf&quot;</span><span class="hl-1">) }, { </span><span class="hl-2">data:</span><span class="hl-1"> </span><span class="hl-0">await</span><span class="hl-1"> </span><span class="hl-6">readFile</span><span class="hl-1">(</span><span class="hl-3">&quot;Aptos-Bold.ttf&quot;</span><span class="hl-1">) }];</span><br/><span class="hl-4">new</span><span class="hl-1"> </span><span class="hl-6">Document</span><span class="hl-1">({ </span><span class="hl-2">pageNumbers:</span><span class="hl-1"> </span><span class="hl-6">estimatePageNumbersWith</span><span class="hl-1">({ </span><span class="hl-2">fonts</span><span class="hl-1"> }), </span><span class="hl-2">sections:</span><span class="hl-1"> [...] });</span>
 </code><button type="button">Copy</button></pre>
 
+<p>It throws when a font file isn't a TrueType or OpenType font.</p>
 </div>
 <div class="tsd-parameters">
 <h4 class="tsd-parameters-title">Parameters</h4>
@@ -31,7 +32,7 @@ options say. Give what it returns to a document as its <code>pageNumbers</code>,
 <div class="tsd-tag-publicApi">
 <h4 class="tsd-anchor-link" id="public-api">Public Api<a href="#public-api" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="../assets/icons.svg#icon-anchor"></use></svg></a></h4></div></div><aside class="tsd-sources">
 <ul>
-<li>Defined in <a href="https://github.com/dolanmiu/docx/blob/170070d279cf43b5c28a29269758b1d6a785fc96/src/layout/estimate-page-numbers.ts#L100">layout/estimate-page-numbers.ts:100</a></li></ul></aside></div></li></ul></section></div>
+<li>Defined in <a href="https://github.com/dolanmiu/docx/blob/86f56ff5b1c992d9642e48499adc6b9295adc99d/src/layout/estimate-page-numbers.ts#L132">layout/estimate-page-numbers.ts:132</a></li></ul></aside></div></li></ul></section></div>
 <div class="col-sidebar">
 <div class="page-menu">
 <div class="tsd-navigation settings">

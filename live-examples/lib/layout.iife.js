@@ -127,7 +127,7 @@ var docxLayout = (function(exports) {
 	* @module
 	*/
 	var DEFAULT_FONT = "Times New Roman";
-	var TAB_STOP$1 = 36;
+	var TAB_STOP$2 = 36;
 	var SIMILAR_FONTS = [
 		[/^(carlito|calibri light|segoe ui|candara|corbel)$/i, "Calibri"],
 		[/^caladea$/i, "Cambria"],
@@ -368,6 +368,8 @@ var docxLayout = (function(exports) {
 		return isWide(code) || FULL_WIDTH_SYMBOLS.has(character) || code >= 8592 && code <= 9983 ? 1e3 : 500;
 	};
 	var sizeOf$1 = ({ size = 10 }) => size;
+	/** Whether text is kerned: with kerning on (`w:kern`), and at its size or larger, as Word kerns it (word-fonts.docx F3) */
+	var isKerned = ({ kerning, size = 10 }) => kerning !== void 0 && size >= kerning;
 	/**
 	* How a font's characters are measured: an East Asian font's Latin letters with the widths of the font in the table they
 	* are measured as, or all of a monospaced one's as half an em or an em, and other fonts with their own widths, or those of
@@ -405,7 +407,7 @@ var docxLayout = (function(exports) {
 		const widthOf = monospaced ? monospacedWidth : (character) => characterWidth(widths, character);
 		const size = sizeOf$1(font);
 		const { characterSpacing = 0, scale = 100 } = font;
-		return [...text].reduce((position, character) => character === "	" ? (Math.floor(position / TAB_STOP$1) + 1) * TAB_STOP$1 : position + widthOf(character) * size * scale / 1e5 + characterSpacing, start) - start;
+		return [...text].reduce((position, character) => character === "	" ? (Math.floor(position / TAB_STOP$2) + 1) * TAB_STOP$2 : position + widthOf(character) * size * scale / 1e5 + characterSpacing, start) - start;
 	};
 	/**
 	* How tall a line of single-spaced text is, in points.
@@ -657,6 +659,7 @@ var docxLayout = (function(exports) {
 			size: sizeOf(attributesOf(find(children, "w:sz"))["w:val"]),
 			bold: onOff(children, "w:b"),
 			italic: onOff(children, "w:i"),
+			kerning: sizeOf(attributesOf(find(children, "w:kern"))["w:val"]),
 			allCaps: onOff(children, "w:caps"),
 			smallCaps: onOff(children, "w:smallCaps"),
 			hidden: onOff(children, "w:vanish"),
@@ -880,11 +883,12 @@ var docxLayout = (function(exports) {
 	/**
 	* The parts of run formatting that change the font text is measured in.
 	*/
-	var fontOf = ({ font, size, bold, italic, characterSpacing, scale }) => withoutUndefined({
+	var fontOf = ({ font, size, bold, italic, kerning, characterSpacing, scale }) => withoutUndefined({
 		font,
 		size,
 		bold,
 		italic,
+		kerning,
 		characterSpacing,
 		scale
 	});
@@ -1059,7 +1063,48 @@ var docxLayout = (function(exports) {
 	})).filter(({ text }) => text.length > 0);
 	/** How many characters pieces have */
 	var lengthOf = (pieces) => pieces.reduce((total, { text }) => total + [...text].length, 0);
-	var widthOf = (pieces, measurer) => pieces.reduce((total, { text, font }) => total + measurer.measureWidth(text, font), 0);
+	/**
+	* A font's formatting with Word's defaults where it gives none, so formatting written as the default is the same as none,
+	* its name in small letters, as the measurers find a font by its name in any case, and whether it is kerned, rather than
+	* from what size
+	*/
+	var withDefaults = (font) => {
+		var _font$font;
+		return _objectSpread2(_objectSpread2({
+			size: 10,
+			bold: false,
+			italic: false,
+			characterSpacing: 0,
+			scale: 100
+		}, Object.fromEntries(Object.entries(font).filter(([, value]) => value !== void 0))), {}, {
+			font: ((_font$font = font.font) !== null && _font$font !== void 0 ? _font$font : DEFAULT_FONT).toLowerCase(),
+			kerning: isKerned(font)
+		});
+	};
+	/** Whether two pieces of text are in the same font, with the same formatting */
+	var sameFont = (one, other) => {
+		const [first, second] = [withDefaults(one), withDefaults(other)];
+		return Object.keys(first).length === Object.keys(second).length && Object.entries(first).every(([key, value]) => second[key] === value);
+	};
+	/**
+	* How wide pieces of text are. Pieces next to each other in the same font, and kerned, are measured together, so the pairs
+	* of characters across them are kerned, as Word kerns them across runs (word-fonts.docx F4). Others are measured
+	* apart, as a measurer may measure a piece, such as a page number, differently on its own.
+	*/
+	var widthOf = (pieces, measurer) => {
+		if (pieces.length === 0) return 0;
+		let total = 0;
+		let [{ text, font }] = pieces;
+		for (const piece of pieces.slice(1)) {
+			if (isKerned(font) && sameFont(font, piece.font)) {
+				text += piece.text;
+				continue;
+			}
+			total += measurer.measureWidth(text, font);
+			({text, font} = piece);
+		}
+		return total + measurer.measureWidth(text, font);
+	};
 	var textOf = (pieces) => pieces.length === 1 ? pieces[0].text : pieces.map(({ text }) => text).join("");
 	/**
 	* The height of single-spaced lines, with this line spacing. Word doesn't round it: Calibri 11 is 268.55 twips, and
@@ -1349,6 +1394,368 @@ var docxLayout = (function(exports) {
 			first = false;
 		}
 		return lines;
+	};
+	//#endregion
+	//#region src/text-layout/font-file.ts
+	/**
+	* Reads the widths, kerning and line height of a font's characters from a TrueType or OpenType font file, so text can
+	* be measured in fonts that aren't in the width tables. Works on the file's bytes, in Node and in browsers.
+	*
+	* @module
+	*/
+	var FONT_TAGS = /* @__PURE__ */ new Set([
+		65536,
+		1953658213,
+		1330926671
+	]);
+	var COLLECTION_TAG = 1953784678;
+	var WEB_FONT_TAGS = /* @__PURE__ */ new Set([2001684038, 2001684018]);
+	/** Whether a bit is set in a number of flags, such as 0x20 in an OS/2 table's fsSelection */
+	var hasFlag = (flags, flag) => Math.floor(flags / flag) % 2 === 1;
+	var tagOf = (view, offset) => String.fromCharCode(view.getUint8(offset), view.getUint8(offset + 1), view.getUint8(offset + 2), view.getUint8(offset + 3));
+	/** Where each table of the font at an offset starts */
+	var readTables = (view, offset) => new Map(Array.from({ length: view.getUint16(offset + 4) }, (_, index) => {
+		const record = offset + 12 + index * 16;
+		const tag = tagOf(view, record);
+		const start = view.getUint32(record + 8);
+		if (start + view.getUint32(record + 12) > view.byteLength) throw new Error(`The font file is cut short: its ${tag} table goes past its end`);
+		return [tag, start];
+	}));
+	/**
+	* Reads the name the font is known by in documents: its family name (name 1), in English when it has one. Bold and
+	* italic faces share their regular face's family name.
+	*/
+	var readName = (view, tables) => {
+		var _ref, _records$find;
+		const table = tables.get("name");
+		if (table === void 0) return;
+		const strings = table + view.getUint16(table + 4);
+		const records = Array.from({ length: view.getUint16(table + 2) }, (_, index) => {
+			const record = table + 6 + index * 12;
+			return {
+				platform: view.getUint16(record),
+				encoding: view.getUint16(record + 2),
+				language: view.getUint16(record + 4),
+				name: view.getUint16(record + 6),
+				length: view.getUint16(record + 8),
+				offset: strings + view.getUint16(record + 10)
+			};
+		}).filter(({ name }) => name === 1);
+		const chosen = (_ref = (_records$find = records.find(({ platform, language }) => platform === 3 && language === 1033)) !== null && _records$find !== void 0 ? _records$find : records.find(({ platform }) => platform === 3 || platform === 0)) !== null && _ref !== void 0 ? _ref : records.find(({ platform, encoding }) => platform === 1 && encoding === 0);
+		if (chosen === void 0) return;
+		return chosen.platform === 1 ? String.fromCharCode(...Array.from({ length: chosen.length }, (_, index) => view.getUint8(chosen.offset + index))) : String.fromCharCode(...Array.from({ length: chosen.length / 2 }, (_, index) => view.getUint16(chosen.offset + index * 2)));
+	};
+	/**
+	* The glyph of each character, from the font's character map (`cmap`): its Unicode map of the whole of Unicode (format
+	* 12), or of the characters up to U+FFFF (format 4).
+	*/
+	var readCharacterMap = (view, tables) => {
+		var _subtables$find;
+		const table = tables.get("cmap");
+		const subtables = Array.from({ length: view.getUint16(table + 2) }, (_, index) => {
+			const record = table + 4 + index * 8;
+			const start = table + view.getUint32(record + 4);
+			return {
+				platform: view.getUint16(record),
+				encoding: view.getUint16(record + 2),
+				offset: start,
+				format: view.getUint16(start)
+			};
+		});
+		const unicode = ({ platform, encoding }) => platform === 0 || platform === 3 && (encoding === 1 || encoding === 10);
+		const subtable = (_subtables$find = subtables.find((found) => unicode(found) && found.format === 12)) !== null && _subtables$find !== void 0 ? _subtables$find : subtables.find((found) => unicode(found) && found.format === 4);
+		if (subtable === void 0) throw new Error("The font has no Unicode character map");
+		const { offset, format } = subtable;
+		if (format === 12) {
+			const groups = Array.from({ length: view.getUint32(offset + 12) }, (_, index) => {
+				const group = offset + 16 + index * 12;
+				return {
+					start: view.getUint32(group),
+					end: view.getUint32(group + 4),
+					glyph: view.getUint32(group + 8)
+				};
+			});
+			return (code) => {
+				const group = groups.find(({ end }) => end >= code);
+				return group === void 0 || group.start > code ? 0 : group.glyph + code - group.start;
+			};
+		}
+		const segments = view.getUint16(offset + 6) / 2;
+		const ends = offset + 14;
+		const starts = ends + segments * 2 + 2;
+		const deltas = starts + segments * 2;
+		const rangeOffsets = deltas + segments * 2;
+		return (code) => {
+			const segment = Array.from({ length: segments }, (_, index) => index).find((index) => view.getUint16(ends + index * 2) >= code);
+			if (segment === void 0 || view.getUint16(starts + segment * 2) > code) return 0;
+			const delta = view.getUint16(deltas + segment * 2);
+			const rangeOffset = view.getUint16(rangeOffsets + segment * 2);
+			if (rangeOffset === 0) return (code + delta) % 65536;
+			const glyph = view.getUint16(rangeOffsets + segment * 2 + rangeOffset + (code - view.getUint16(starts + segment * 2)) * 2);
+			return glyph === 0 ? 0 : (glyph + delta) % 65536;
+		};
+	};
+	/**
+	* The kerning of pairs of glyphs in the font's `kern` table, as Windows' fonts have it: its horizontal subtables of
+	* pairs (format 0), in font units.
+	*/
+	var readKernTable = (view, tables) => {
+		const table = tables.get("kern");
+		if (table === void 0 || view.getUint16(table) !== 0) return () => 0;
+		const pairs = /* @__PURE__ */ new Map();
+		let subtable = table + 4;
+		for (let index = 0; index < view.getUint16(table + 2); index++) {
+			const coverage = view.getUint16(subtable + 4);
+			const format = Math.floor(coverage / 256);
+			if (format === 0 && coverage % 8 === 1) for (let pair = 0; pair < view.getUint16(subtable + 6); pair++) {
+				var _pairs$get;
+				const record = subtable + 14 + pair * 6;
+				const key = view.getUint16(record) * 65536 + view.getUint16(record + 2);
+				pairs.set(key, ((_pairs$get = pairs.get(key)) !== null && _pairs$get !== void 0 ? _pairs$get : 0) + view.getInt16(record + 4));
+			}
+			subtable += format === 0 ? 14 + view.getUint16(subtable + 6) * 6 : view.getUint16(subtable + 2);
+		}
+		return (left, right) => {
+			var _pairs$get2;
+			return (_pairs$get2 = pairs.get(left * 65536 + right)) !== null && _pairs$get2 !== void 0 ? _pairs$get2 : 0;
+		};
+	};
+	/** The index of each glyph a coverage table covers */
+	var readCoverage = (view, offset) => {
+		const indexes = /* @__PURE__ */ new Map();
+		const count = view.getUint16(offset + 2);
+		for (let index = 0; index < count; index++) {
+			if (view.getUint16(offset) === 1) {
+				indexes.set(view.getUint16(offset + 4 + index * 2), index);
+				continue;
+			}
+			const range = offset + 4 + index * 6;
+			for (let glyph = view.getUint16(range); glyph <= view.getUint16(range + 2); glyph++) indexes.set(glyph, view.getUint16(range + 4) + glyph - view.getUint16(range));
+		}
+		return indexes;
+	};
+	/** The class of each glyph a class definition table gives one. Other glyphs are in class 0 */
+	var readClasses = (view, offset) => {
+		const classes = /* @__PURE__ */ new Map();
+		if (view.getUint16(offset) === 1) {
+			const first = view.getUint16(offset + 2);
+			for (let index = 0; index < view.getUint16(offset + 4); index++) classes.set(first + index, view.getUint16(offset + 6 + index * 2));
+			return classes;
+		}
+		for (let index = 0; index < view.getUint16(offset + 2); index++) {
+			const range = offset + 4 + index * 6;
+			for (let glyph = view.getUint16(range); glyph <= view.getUint16(range + 2); glyph++) classes.set(glyph, view.getUint16(range + 4));
+		}
+		return classes;
+	};
+	/** How long a value record of this format is, in bytes: 2 for each of the 8 values it can have that it has */
+	var valueSize = (format) => [
+		1,
+		2,
+		4,
+		8,
+		16,
+		32,
+		64,
+		128
+	].filter((flag) => hasFlag(format, flag)).length * 2;
+	/** The change to the advance of a glyph in a value record (its XAdvance, 4), after its X and Y placements, if it has them */
+	var advanceIn = (view, record, format) => hasFlag(format, 4) ? view.getInt16(record + valueSize(format % 4)) : 0;
+	/**
+	* A subtable of pairs of glyphs to kern (a pair adjustment, format 1 or 2): the kerning of a pair, or undefined when the
+	* subtable doesn't cover it, and the next subtable is tried.
+	*/
+	var readPairSubtable = (view, offset) => {
+		const coverage = readCoverage(view, offset + view.getUint16(offset + 2));
+		const firstFormat = view.getUint16(offset + 4);
+		const secondFormat = view.getUint16(offset + 6);
+		const firstSize = valueSize(firstFormat);
+		const kerning = (record) => advanceIn(view, record, firstFormat) + advanceIn(view, record + firstSize, secondFormat);
+		if (view.getUint16(offset) === 1) return (left, right) => {
+			const index = coverage.get(left);
+			if (index === void 0) return;
+			const set = offset + view.getUint16(offset + 10 + index * 2);
+			const size = 2 + firstSize + valueSize(secondFormat);
+			for (let pair = 0; pair < view.getUint16(set); pair++) {
+				const record = set + 2 + pair * size;
+				if (view.getUint16(record) === right) return kerning(record + 2);
+			}
+		};
+		const firstClasses = readClasses(view, offset + view.getUint16(offset + 8));
+		const secondClasses = readClasses(view, offset + view.getUint16(offset + 10));
+		const secondCount = view.getUint16(offset + 14);
+		return (left, right) => {
+			var _firstClasses$get, _secondClasses$get;
+			return coverage.has(left) ? kerning(offset + 16 + (((_firstClasses$get = firstClasses.get(left)) !== null && _firstClasses$get !== void 0 ? _firstClasses$get : 0) * secondCount + ((_secondClasses$get = secondClasses.get(right)) !== null && _secondClasses$get !== void 0 ? _secondClasses$get : 0)) * (firstSize + valueSize(secondFormat))) : void 0;
+		};
+	};
+	/**
+	* The kerning of pairs of glyphs in the font's GPOS table, in font units: the pair adjustments of its `kern` feature for
+	* Latin text, as Word kerns with them (word-fonts.docx F2). Undefined when the font has none.
+	*/
+	var readGlyphPositioning = (view, tables) => {
+		var _map$find;
+		const table = tables.get("GPOS");
+		if (table === void 0) return;
+		const tagAt = (offset) => tagOf(view, offset);
+		const scriptList = table + view.getUint16(table + 4);
+		const scripts = Array.from({ length: view.getUint16(scriptList) }, (_, index) => scriptList + 2 + index * 6);
+		const script = (_map$find = ["latn", "DFLT"].map((tag) => scripts.find((record) => tagAt(record) === tag)).find(Boolean)) !== null && _map$find !== void 0 ? _map$find : scripts[0];
+		if (script === void 0) return;
+		const scriptTable = scriptList + view.getUint16(script + 4);
+		const languages = scriptTable + (view.getUint16(scriptTable) || view.getUint16(scriptTable + 8));
+		const featureList = table + view.getUint16(table + 6);
+		const lookups = [...new Set(Array.from({ length: view.getUint16(languages + 4) }, (_, index) => view.getUint16(languages + 6 + index * 2)).map((feature) => featureList + 2 + feature * 6).filter((record) => tagAt(record) === "kern").flatMap((record) => {
+			const feature = featureList + view.getUint16(record + 4);
+			return Array.from({ length: view.getUint16(feature + 2) }, (_, index) => view.getUint16(feature + 4 + index * 2));
+		}))].sort((one, other) => one - other);
+		if (lookups.length === 0) return;
+		const lookupList = table + view.getUint16(table + 8);
+		const subtablesOf = lookups.map((index) => {
+			const lookup = lookupList + view.getUint16(lookupList + 2 + index * 2);
+			return Array.from({ length: view.getUint16(lookup + 4) }, (_, subtable) => lookup + view.getUint16(lookup + 6 + subtable * 2)).map((subtable) => view.getUint16(lookup) === 9 ? {
+				type: view.getUint16(subtable + 2),
+				offset: subtable + view.getUint32(subtable + 4)
+			} : {
+				type: view.getUint16(lookup),
+				offset: subtable
+			}).filter(({ type }) => type === 2).map(({ offset }) => readPairSubtable(view, offset));
+		});
+		return (left, right) => subtablesOf.reduce((total, subtables) => {
+			for (const subtable of subtables) {
+				const kerning = subtable(left, right);
+				if (kerning !== void 0) return total + kerning;
+			}
+			return total;
+		}, 0);
+	};
+	/**
+	* Reads a face of a font file, whose table directory is at `offset`.
+	*/
+	var readFace = (view, offset) => {
+		var _readGlyphPositioning, _readName;
+		const tables = readTables(view, offset);
+		for (const tag of [
+			"head",
+			"hhea",
+			"hmtx",
+			"cmap"
+		]) if (!tables.has(tag)) throw new Error(`The font has no ${tag} table`);
+		const unitsPerEm = view.getUint16(tables.get("head") + 18);
+		const macStyle = view.getUint16(tables.get("head") + 44);
+		const hhea = tables.get("hhea");
+		const ascender = view.getInt16(hhea + 4);
+		const descender = view.getInt16(hhea + 6);
+		const lineGap = view.getInt16(hhea + 8);
+		const metricCount = view.getUint16(hhea + 34);
+		const hmtx = tables.get("hmtx");
+		const os2 = tables.get("OS/2");
+		const fsSelection = os2 === void 0 ? 0 : view.getUint16(os2 + 62);
+		const windowsHeight = os2 === void 0 ? ascender - descender : view.getUint16(os2 + 74) + view.getUint16(os2 + 76);
+		const externalLeading = Math.max(0, lineGap - (windowsHeight - (ascender - descender)));
+		const lineHeight = hasFlag(fsSelection, 128) ? view.getInt16(os2 + 68) - view.getInt16(os2 + 70) + view.getInt16(os2 + 72) : windowsHeight + externalLeading;
+		const glyphOf = readCharacterMap(view, tables);
+		const kerning = (_readGlyphPositioning = readGlyphPositioning(view, tables)) !== null && _readGlyphPositioning !== void 0 ? _readGlyphPositioning : readKernTable(view, tables);
+		const pairs = /* @__PURE__ */ new Map();
+		const advances = /* @__PURE__ */ new Map();
+		const glyphs = /* @__PURE__ */ new Map();
+		const advanceOfGlyph = (glyph) => view.getUint16(hmtx + Math.min(glyph, metricCount - 1) * 4) / unitsPerEm;
+		const cachedGlyph = (code) => {
+			var _glyphs$get;
+			const glyph = (_glyphs$get = glyphs.get(code)) !== null && _glyphs$get !== void 0 ? _glyphs$get : glyphOf(code);
+			glyphs.set(code, glyph);
+			return glyph;
+		};
+		return {
+			name: (_readName = readName(view, tables)) !== null && _readName !== void 0 ? _readName : "",
+			bold: os2 === void 0 ? hasFlag(macStyle, 1) : hasFlag(fsSelection, 32),
+			italic: os2 === void 0 ? hasFlag(macStyle, 2) : hasFlag(fsSelection, 1),
+			lineHeight: lineHeight / unitsPerEm,
+			advanceOf: (code) => {
+				if (advances.has(code)) return advances.get(code);
+				const glyph = cachedGlyph(code);
+				const advance = glyph === 0 ? void 0 : advanceOfGlyph(glyph);
+				advances.set(code, advance);
+				return advance;
+			},
+			kerningOf: (left, right) => {
+				var _pairs$get3;
+				const key = cachedGlyph(left) * 65536 + cachedGlyph(right);
+				const value = (_pairs$get3 = pairs.get(key)) !== null && _pairs$get3 !== void 0 ? _pairs$get3 : kerning(cachedGlyph(left), cachedGlyph(right)) / unitsPerEm;
+				pairs.set(key, value);
+				return value;
+			}
+		};
+	};
+	/**
+	* Reads the faces of a font file: one for a TrueType or OpenType font, and each of a collection's.
+	*/
+	var readFontFile = (data) => {
+		const bytes = data instanceof Uint8Array ? data : new Uint8Array(data);
+		const view = new DataView(bytes.buffer, bytes.byteOffset, bytes.byteLength);
+		const tag = bytes.byteLength < 12 ? 0 : view.getUint32(0);
+		/** Reads faces, turning a read past the end of the file, from an offset in it that is wrong, into an error that says so */
+		const read = (faces) => {
+			try {
+				return faces();
+			} catch (error) {
+				if (error instanceof RangeError) throw new Error("The font file is damaged: it points past its end", { cause: error });
+				throw error;
+			}
+		};
+		if (tag === COLLECTION_TAG) return read(() => Array.from({ length: view.getUint32(8) }, (_, index) => readFace(view, view.getUint32(12 + index * 4))));
+		if (FONT_TAGS.has(tag)) return read(() => [readFace(view, 0)]);
+		throw new Error(WEB_FONT_TAGS.has(tag) ? "The font is a web font (WOFF), which is compressed. Give it as a TrueType or OpenType font (.ttf or .otf)" : "The data isn't a TrueType or OpenType font");
+	};
+	var TAB_STOP$1 = 36;
+	/**
+	* Measures text in the fonts of these faces with their own widths, kerning and line height, and text in other fonts with
+	* `fallback`. Text that is bold, or not, is measured with a face that is too, and with one that is italic, or not, as the
+	* text is, when there is one. A character a face has no glyph for is one whose width isn't known, as Word draws it in
+	* another font, unless it takes no room, such as a soft hyphen.
+	*/
+	var createFontFileMeasurer = (faces, fallback = DEFAULT_MEASURER) => {
+		const chosen = /* @__PURE__ */ new Map();
+		const faceOf = ({ font = DEFAULT_FONT, bold = false, italic = false }) => {
+			const key = `${font.toLowerCase()}|${bold}|${italic}`;
+			if (!chosen.has(key)) {
+				var _named$find;
+				const named = faces.filter((face) => face.name.toLowerCase() === font.toLowerCase() && face.bold === bold);
+				chosen.set(key, (_named$find = named.find((face) => face.italic === italic)) !== null && _named$find !== void 0 ? _named$find : named[0]);
+			}
+			return chosen.get(key);
+		};
+		/** How wide text with no tabs is in a face, in points */
+		const widthIn = (face, text, font) => {
+			const { size = 10, characterSpacing = 0, scale = 100 } = font;
+			const kerns = isKerned(font);
+			const em = size * scale / 100;
+			const characters = [...text];
+			return characters.reduce((width, character, index) => {
+				var _characters;
+				const advance = face.advanceOf(character.codePointAt(0));
+				if (advance === void 0) return takesNoRoom(character) ? width : width + fallback.measureWidth(character, font);
+				const before = (_characters = characters[index - 1]) === null || _characters === void 0 ? void 0 : _characters.codePointAt(0);
+				return width + (advance + (kerns && before !== void 0 && face.advanceOf(before) !== void 0 ? face.kerningOf(before, character.codePointAt(0)) : 0)) * em + characterSpacing;
+			}, 0);
+		};
+		return {
+			measureWidth: (text, font) => {
+				const face = faceOf(font);
+				if (!face) return fallback.measureWidth(text, font);
+				return text.split("	").reduce((position, part, index) => (index === 0 ? 0 : (Math.floor(position / TAB_STOP$1) + 1) * TAB_STOP$1) + widthIn(face, part, font), 0);
+			},
+			measureLineHeight: (font) => {
+				var _font$size;
+				const face = faceOf(font);
+				return face ? face.lineHeight * ((_font$size = font.size) !== null && _font$size !== void 0 ? _font$size : 10) : fallback.measureLineHeight(font);
+			},
+			unknownCharacter: (text, font) => {
+				var _fallback$unknownChar;
+				const face = faceOf(font);
+				return face ? [...text].find((character) => character !== "	" && !takesNoRoom(character) && face.advanceOf(character.codePointAt(0)) === void 0) : (_fallback$unknownChar = fallback.unknownCharacter) === null || _fallback$unknownChar === void 0 ? void 0 : _fallback$unknownChar.call(fallback, text, font);
+			}
+		};
 	};
 	//#endregion
 	//#region src/layout/column-widths.ts
@@ -4778,7 +5185,8 @@ var docxLayout = (function(exports) {
 	* ```
 	*
 	* The pages are laid out with the widths and heights of the fonts Word documents use most, such as Calibri, Cambria,
-	* Arial and Times New Roman. It follows paragraphs' spacing, indents, line spacing, tab stops and keep settings, widow
+	* Arial and Times New Roman. To measure text in other fonts, such as Aptos, from their files, use
+	* {@link estimatePageNumbersWith}. It follows paragraphs' spacing, indents, line spacing, tab stops and keep settings, widow
 	* and orphan control, lists, pictures in the line, tables, whose rows break across pages, footnotes and endnotes, page,
 	* column and section breaks, and each section's page size, margins, columns, headers, footers and page numbering.
 	*
@@ -4804,12 +5212,18 @@ var docxLayout = (function(exports) {
 	*
 	* ```ts
 	* new Document({ pageNumbers: estimatePageNumbersWith({ measureWidth: measureWithPretext(pretext) }), sections: [...] });
+	* const fonts = [{ data: await readFile("Aptos.ttf") }, { data: await readFile("Aptos-Bold.ttf") }];
+	* new Document({ pageNumbers: estimatePageNumbersWith({ fonts }), sections: [...] });
 	* ```
+	*
+	* It throws when a font file isn't a TrueType or OpenType font.
 	*
 	* @publicApi
 	*/
-	var estimatePageNumbersWith = ({ measureWidth }) => {
-		const measurer = measureWidth ? measurerOf(measureWidth) : DEFAULT_MEASURER;
+	var estimatePageNumbersWith = ({ measureWidth, fonts = [] }) => {
+		const faces = fonts.flatMap(({ data, name }) => readFontFile(data).map((face) => name === void 0 ? face : _objectSpread2(_objectSpread2({}, face), {}, { name })));
+		const others = measureWidth ? measurerOf(measureWidth) : DEFAULT_MEASURER;
+		const measurer = faces.length === 0 ? others : createFontFileMeasurer(faces, others);
 		return (document, context) => estimateWith(contentOf(document, context), measurer);
 	};
 	//#endregion
