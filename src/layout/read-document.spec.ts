@@ -42,6 +42,23 @@ const readWritten = (options: IPropertiesOptions): DocumentContent => {
     return content!;
 };
 
+/**
+ * Reads a body of formatted elements, with the styles, lists and notes of a document with the options, and settings of
+ * these elements, which docx doesn't write, in Word 2013's compatibility mode
+ */
+const readWithSettings = (
+    elements: readonly unknown[],
+    settings: readonly object[],
+    options: Partial<IPropertiesOptions> = {},
+): DocumentContent => {
+    const file = new File({ sections: [], ...options });
+    const compatibility = { "w:compat": [{ "w:compatSetting": { _attr: { "w:name": "compatibilityMode", "w:val": 15 } } }] };
+    const withSettings = Object.create(file, {
+        Settings: { value: { prepForXml: () => ({ "w:settings": [...settings, compatibility] }) } },
+    }) as File;
+    return readDocument({ "w:body": elements } as IXmlableObject, contextOf(withSettings));
+};
+
 const p = (...children: readonly unknown[]): object => ({ "w:p": children });
 const r = (...children: readonly unknown[]): object => ({ "w:r": children });
 const t = (text: string): object => ({ "w:t": [{ _attr: { "xml:space": "preserve" } }, text] });
@@ -567,6 +584,105 @@ describe("readDocument", () => {
             expect(content.footnotes.size).to.equal(0);
             expect(content.footnoteSeparator).to.deep.equal([]);
             expect(content.footnoteContinuationSeparator).to.deep.equal([]);
+            // The continuation separator above them on the pages after the first, which isn't read without them
+            expect(content.endnoteContinuationSeparator).to.have.length(1);
+            expect(readBody([]).endnoteContinuationSeparator).to.deep.equal([]);
+        });
+    });
+
+    describe("numbering footnotes and endnotes", () => {
+        const reference = (kind: string, id: number, attributes: object = {}): object =>
+            r({ [`w:${kind}Reference`]: { _attr: { "w:id": id, ...attributes } } });
+        const properties = (kind: string, ...children: readonly object[]): object => ({ [`w:${kind}Pr`]: children });
+        const NOTES = {
+            footnotes: { 1: { children: [new Paragraph("One")] }, 2: { children: [new Paragraph("Two")] } },
+            endnotes: { 1: { children: [new Paragraph("One")] }, 2: { children: [new Paragraph("Two")] } },
+        };
+        /** Two sections, each referring to a footnote and an endnote, with the notes' properties of each and the document's */
+        const twoSections = (
+            first: readonly object[],
+            second: readonly object[],
+            settings: readonly object[] = [],
+            attributes: object = {},
+        ): DocumentContent =>
+            readWithSettings(
+                [
+                    p(reference("footnote", 1, attributes), reference("endnote", 1)),
+                    p(pPr({ "w:sectPr": first })),
+                    p(reference("footnote", 2), reference("endnote", 2)),
+                    { "w:sectPr": second },
+                ],
+                settings,
+                NOTES,
+            );
+        const numbersOf = (content: DocumentContent): readonly (readonly string[])[] => [
+            [...content.footnoteNumbers.values()],
+            [...new Set(content.endnotes.flatMap((block) => content.endnoteNumbers.get(block) ?? []))],
+        ];
+
+        it("should number footnotes and endnotes in the format and from the number the document gives, as Word does", () => {
+            const content = twoSections(
+                [],
+                [],
+                [
+                    properties("footnote", value("w:numFmt", "lowerLetter"), value("w:numStart", 3)),
+                    properties("endnote", value("w:numFmt", "decimal")),
+                ],
+            );
+            expect(numbersOf(content)).to.deep.equal([
+                ["c", "d"],
+                ["1", "2"],
+            ]);
+            expect(content.unsupported).to.equal(undefined);
+        });
+
+        it("should number each section's notes in its own format, afresh in each section when it says so, as Word does", () => {
+            const content = twoSections(
+                [properties("footnote", value("w:numFmt", "upperRoman"), value("w:numRestart", "eachSect"))],
+                [
+                    properties("footnote", value("w:numRestart", "eachSect"), value("w:numStart", 5)),
+                    properties("endnote", value("w:numFmt", "chicago")),
+                ],
+            );
+            // The endnotes number on through the document, in the format of the section each is in
+            expect(numbersOf(content)).to.deep.equal([
+                ["I", "5"],
+                ["i", "\u2020"],
+            ]);
+            expect(content.unsupported).to.equal(undefined);
+        });
+
+        it("should stop at notes numbered or placed in a way not yet followed", () => {
+            const reasonOf = (...args: Parameters<typeof twoSections>): string | undefined => twoSections(...args).unsupported;
+            expect(reasonOf([], [], [properties("endnote", value("w:numRestart", "eachPage"))])).to.equal(
+                "notes numbered afresh on each page",
+            );
+            // A number of its own in a later section, where they are numbered on through the document
+            expect(reasonOf([], [properties("footnote", value("w:numStart", 4))])).to.equal(
+                "notes numbered on from a number of their own in a later section",
+            );
+            expect(reasonOf([], [], [properties("footnote", value("w:pos", "beneathText"))])).to.equal(
+                "footnotes put elsewhere than at the bottom of the page",
+            );
+            expect(reasonOf([], [properties("endnote", value("w:pos", "sectEnd"))])).to.equal("endnotes at the end of each section");
+            expect(reasonOf([], [], [properties("endnote", value("w:numFmt", "bogus"))])).to.equal(
+                "notes numbered in a format not yet written",
+            );
+            // At the end of the only section is at the end of the document
+            const oneSection = readWithSettings(
+                [p(reference("endnote", 1)), { "w:sectPr": [properties("endnote", value("w:pos", "sectEnd"))] }],
+                [],
+                NOTES,
+            );
+            expect(oneSection.unsupported).to.equal(undefined);
+            // Only notes the document has stop it
+            expect(readWithSettings([p(t("a"))], [properties("footnote", value("w:numRestart", "eachPage"))], NOTES).unsupported).to.equal(
+                undefined,
+            );
+            // A mark of its own in place of a note's number stops at its paragraph
+            const marked = twoSections([], [], [], { "w:customMarkFollows": 1 });
+            expect(marked.unsupported).to.equal(undefined);
+            expect(paragraphOf(marked).unsupported).to.equal("a footnote or endnote with a mark of its own");
         });
     });
 
@@ -1743,6 +1859,7 @@ describe("readDocument", () => {
                 header: 18,
                 footer: 27,
                 gutter: 10,
+                topGutter: 0,
                 start: "oddPage",
                 titlePage: true,
                 // The width of the page's text: 612 less the margins and the gutter
@@ -1753,6 +1870,26 @@ describe("readDocument", () => {
                 footers: {},
             });
             expect(section(value("w:type", "sideways")).sections[0].start).to.equal("nextPage");
+        });
+
+        it("should take a gutter at the top from the page's height rather than the width of its text, when the document puts it there", () => {
+            const gutter = (top: number, ...settings: readonly object[]): DocumentContent =>
+                readWithSettings([{ "w:sectPr": [{ "w:pgMar": { _attr: { "w:top": top, "w:gutter": 400 } } }] }], settings);
+            // Letter's 612 less the margins of 72 (`word-watertight-settings.docx` ST3)
+            expect(gutter(1440, { "w:gutterAtTop": {} }).sections[0]).to.deep.include({ gutter: 0, topGutter: 20, columns: [468] });
+            // And less the gutter too where it is beside the text
+            expect(gutter(1440).sections[0]).to.deep.include({ gutter: 20, topGutter: 0, columns: [448] });
+            // Where Word puts it with mirrored margins, or below a negative top margin, isn't known
+            const reason = "a gutter at the top with mirrored margins or a negative top margin";
+            expect(gutter(1440, { "w:gutterAtTop": {} }, { "w:mirrorMargins": {} }).sections[0].unsupported).to.equal(reason);
+            expect(gutter(-1440, { "w:gutterAtTop": {} }).sections[0].unsupported).to.equal(reason);
+            expect(gutter(1440, { "w:mirrorMargins": {} }).sections[0].unsupported).to.equal(undefined);
+            expect(
+                readWithSettings(
+                    [{ "w:sectPr": [{ "w:pgMar": { _attr: { "w:top": -1440 } } }] }],
+                    [{ "w:gutterAtTop": {} }, { "w:mirrorMargins": {} }],
+                ).sections[0].unsupported,
+            ).to.equal(undefined);
         });
 
         it("should read the level of the headings that number chapters, and what goes between their numbers and the page's", () => {
@@ -1903,14 +2040,7 @@ describe("readDocument", () => {
         });
 
         /** Reads a document whose settings are these elements, which docx doesn't write, in Word 2013's compatibility mode */
-        const readSettings = (...settings: readonly object[]): DocumentContent => {
-            const file = new File({ sections: [] });
-            const compatibility = { "w:compat": [{ "w:compatSetting": { _attr: { "w:name": "compatibilityMode", "w:val": 15 } } }] };
-            const withSettings = Object.create(file, {
-                Settings: { value: { prepForXml: () => ({ "w:settings": [...settings, compatibility] }) } },
-            }) as File;
-            return readDocument({ "w:body": [] } as IXmlableObject, contextOf(withSettings));
-        };
+        const readSettings = (...settings: readonly object[]): DocumentContent => readWithSettings([], settings);
 
         it("should read the document's own lists of the characters that can't start or end a line, for their languages", () => {
             const kinsoku = (name: string, lang: string, val?: string): object => ({

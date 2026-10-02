@@ -212,7 +212,10 @@ export type Section = {
     /** The distance from the top of the page to the header, and from the bottom to the footer */
     readonly header: number;
     readonly footer: number;
+    /** The room kept for binding beside the page's text, on its left */
     readonly gutter: number;
+    /** The room kept for binding above the page's text instead, when the document puts it at the top (`w:gutterAtTop`) */
+    readonly topGutter: number;
     /** How the section starts: on a new page, an even or odd one, or on the same page as the one before */
     readonly start: "nextPage" | "continuous" | "evenPage" | "oddPage" | "nextColumn";
     /** Whether its first page has a header and footer of its own */
@@ -256,6 +259,8 @@ export type DocumentContent = {
     readonly footnoteContinuationSeparator: readonly Block[];
     /** The endnotes the body refers to, in order, after their separator: they follow the body, as Word lays them out */
     readonly endnotes: readonly Block[];
+    /** What is above the endnotes on each page after the first they are on: the paragraph of a longer line */
+    readonly endnoteContinuationSeparator: readonly Block[];
     /** Where its lines break: the characters that can't start or end a line, where it gives its own */
     readonly breakRules?: LineBreakRules;
     /** The number each footnote shows, by the name of its marker */
@@ -330,6 +335,7 @@ const DEFAULT_SECTION: Omit<Section, "headers" | "footers" | "columns"> = {
     header: 36,
     footer: 36,
     gutter: 0,
+    topGutter: 0,
     start: "nextPage",
     titlePage: false,
     numberFormat: "decimal",
@@ -612,6 +618,10 @@ const readRun = (element: XmlObject, paragraphRun: RunFormat, reader: Reader): r
             }
             case "w:footnoteReference":
             case "w:endnoteReference": {
+                if (isOn(attributesOf(child[name])["w:customMarkFollows"])) {
+                    // A mark of its own in place of the note's number, which Word may not count in the numbers of the others
+                    return "a footnote or endnote with a mark of its own";
+                }
                 const note = reader.notes?.read(
                     name === "w:footnoteReference" ? "footnote" : "endnote",
                     String(attributesOf(child[name])["w:id"]),
@@ -1491,11 +1501,21 @@ const readColumns = (element: unknown, width: number): readonly number[] => {
     return Array.from({ length: count }, () => (width - space * (count - 1)) / count);
 };
 
+/** The document's settings that change where its pages' text is: the gutter at the top, and margins mirrored */
+type PageSettings = { readonly gutterAtTop: boolean; readonly mirrorMargins: boolean };
+
 /**
  * Reads a section's properties (`w:sectPr`): its pages, how it starts, and its headers and footers. A section that
- * doesn't give a header or footer for a kind of page has the one of the section before.
+ * doesn't give a header or footer for a kind of page has the one of the section before. Its gutter is beside the text,
+ * or above it when the document puts it at the top, which takes the room from the page's height, as Word does
+ * (`word-watertight-settings.docx` ST3).
  */
-const readSection = (element: unknown, readPart: (id: string) => readonly Block[] | undefined, previous?: Section): Section => {
+const readSection = (
+    element: unknown,
+    readPart: (id: string) => readonly Block[] | undefined,
+    previous: Section | undefined,
+    { gutterAtTop, mirrorMargins }: PageSettings,
+): Section => {
     const properties = childrenOf(element);
     const size = attributesOf(find(properties, "w:pgSz"));
     const margins = attributesOf(find(properties, "w:pgMar"));
@@ -1509,7 +1529,10 @@ const readSection = (element: unknown, readPart: (id: string) => readonly Block[
     const marginLeft = twips(margins["w:left"] ?? margins["w:start"]) ?? DEFAULT_SECTION.marginLeft;
     const marginRight = twips(margins["w:right"] ?? margins["w:end"]) ?? DEFAULT_SECTION.marginRight;
     const gutter = twips(margins["w:gutter"]) ?? DEFAULT_SECTION.gutter;
-    const columns = readColumns(find(properties, "w:cols"), pageWidth - marginLeft - marginRight - gutter);
+    const marginTop = twips(margins["w:top"]) ?? DEFAULT_SECTION.marginTop;
+    const columns = readColumns(find(properties, "w:cols"), pageWidth - marginLeft - marginRight - (gutterAtTop ? 0 : gutter));
+    // Where Word puts a gutter at the top with mirrored margins, which put it on the inside of each page, or below a
+    // negative top margin, which the header doesn't push the text below, isn't known
     const unsupported =
         grid === "lines" || grid === "linesAndChars" || grid === "snapToChars"
             ? "a document grid"
@@ -1517,21 +1540,24 @@ const readSection = (element: unknown, readPart: (id: string) => readonly Block[
               ? "page numbers in a format not yet written"
               : find(properties, "w:textDirection") !== undefined
                 ? "text that runs down the page"
-                : find(properties, "w15:footnoteColumns") === undefined
-                  ? unknownLengthIn(element)
-                  : "footnotes in columns of their own";
+                : find(properties, "w15:footnoteColumns") !== undefined
+                  ? "footnotes in columns of their own"
+                  : gutterAtTop && gutter !== 0 && (mirrorMargins || marginTop < 0)
+                    ? "a gutter at the top with mirrored margins or a negative top margin"
+                    : unknownLengthIn(element);
     const headers = readReferences(properties, "w:headerReference", readPart);
     const footers = readReferences(properties, "w:footerReference", readPart);
     return {
         pageWidth,
         pageHeight: twips(size["w:h"]) ?? DEFAULT_SECTION.pageHeight,
-        marginTop: twips(margins["w:top"]) ?? DEFAULT_SECTION.marginTop,
+        marginTop,
         marginBottom: twips(margins["w:bottom"]) ?? DEFAULT_SECTION.marginBottom,
         marginLeft,
         marginRight,
         header: twips(margins["w:header"]) ?? DEFAULT_SECTION.header,
         footer: twips(margins["w:footer"]) ?? DEFAULT_SECTION.footer,
-        gutter,
+        gutter: gutterAtTop ? 0 : gutter,
+        topGutter: gutterAtTop ? gutter : 0,
         start: start !== undefined && START_TYPES.has(start as Section["start"]) ? (start as Section["start"]) : "nextPage",
         titlePage: onOff(properties, "w:titlePg") === true,
         columns,
@@ -1736,6 +1762,35 @@ const partsOfFile = (context: IContext): DocumentParts => {
 export const readDocument = (body: IXmlableObject, context: IContext): DocumentContent =>
     readContent(body as XmlObject, partsOfFile(context));
 
+/** How a document or a section numbers and places its footnotes or endnotes (`w:footnotePr`, `w:endnotePr`) */
+type NoteProperties = { readonly format?: string; readonly start?: number; readonly restart?: string; readonly position?: string };
+
+const readNoteProperties = (element: unknown): NoteProperties => {
+    const children = childrenOf(element);
+    return withoutUndefined({
+        format: valueOf(children, "w:numFmt"),
+        start: numberOf(attributesOf(find(children, "w:numStart"))["w:val"]),
+        restart: valueOf(children, "w:numRestart"),
+        position: valueOf(children, "w:pos"),
+    });
+};
+
+// How Word numbers and places each kind of note where the document doesn't say: footnotes 1, 2, 3 at the bottom of the
+// page, and endnotes i, ii, iii at the end of the document, each numbered on through it
+const NOTE_DEFAULTS: Readonly<Record<NoteKind, Required<NoteProperties>>> = {
+    footnote: { format: "decimal", start: 1, restart: "continuous", position: "pageBottom" },
+    endnote: { format: "lowerRoman", start: 1, restart: "continuous", position: "docEnd" },
+};
+
+/** The section properties an element of the body ends a section with: the body's own, or a paragraph's */
+const sectionPropertiesOf = (element: XmlObject): unknown => {
+    const name = nameOf(element);
+    if (name === "w:sectPr") {
+        return element[name];
+    }
+    return name === "w:p" ? find(childrenOf(find(contentOf(element).filter(isObject), "w:pPr")), "w:sectPr") : undefined;
+};
+
 /**
  * Reads a document's body (`w:body`), with the other parts of the document.
  */
@@ -1744,6 +1799,8 @@ export const readContent = (body: XmlObject, parts: DocumentParts): DocumentCont
     const { lists: numbering, unsupported: inNumbering } = readNumbering(parts.numbering, styles, parts.otherListIds ?? new Map());
     const listIds = parts.otherListIds ?? new Map<string, string>();
     const readerOf = (inHeader: boolean): Reader => ({ styles, numbering, listIds, inHeader, fields: [], counters: new Map() });
+    const settings = childrenOf(parts.settings?.["w:settings"]);
+    const elements = unwrap(contentOf(body));
 
     // Each header and footer, the first time a section refers to it
     const headersAndFooters = new Map<string, readonly Block[] | undefined>();
@@ -1780,12 +1837,35 @@ export const readContent = (body: XmlObject, parts: DocumentParts): DocumentCont
     // eslint-disable-next-line functional/prefer-readonly-type
     const endnotes: Block[] = [];
     const endnoteNumbers = new Map<Block, string>();
+    // Each section's properties, which come after its paragraphs, so its notes are numbered as it says as they are read
+    const sectionElements = elements.flatMap((element) => {
+        const properties = sectionPropertiesOf(element);
+        return properties === undefined ? [] : [properties];
+    });
+    /** How a section numbers and places its notes of a kind: as it says, or the document does, or as Word does */
+    const notePropertiesOf = (kind: NoteKind, section: number): Required<NoteProperties> => ({
+        ...NOTE_DEFAULTS[kind],
+        ...readNoteProperties(find(settings, `w:${kind}Pr`)),
+        ...readNoteProperties(find(childrenOf(sectionElements[section]), `w:${kind}Pr`)),
+    });
+    // How many notes of each kind have been read, and the number and section of the last, as a section can number its
+    // own afresh
     const noteCounts = { footnote: 0, endnote: 0 };
-    // Footnotes are numbered 1, 2, 3 and endnotes i, ii, iii, as Word numbers them unless the document says otherwise
+    const lastNotes = new Map<NoteKind, { readonly value: number; readonly section: number }>();
+    let unwrittenNumber = false;
+    // Footnotes are numbered 1, 2, 3 and endnotes i, ii, iii, as Word numbers them unless the document or the section
+    // they are in says otherwise (`w:footnotePr`, `w:endnotePr`)
     const readNote = (kind: NoteKind, id: string): NoteReference => {
         // eslint-disable-next-line functional/immutable-data
         noteCounts[kind]++;
-        const label = formatNumber(noteCounts[kind], kind === "footnote" ? "decimal" : "lowerRoman")!;
+        const section = sections.length;
+        const { format, start, restart } = notePropertiesOf(kind, section);
+        const last = lastNotes.get(kind);
+        const value = last === undefined || (restart === "eachSect" && last.section !== section) ? start : last.value + 1;
+        // eslint-disable-next-line functional/immutable-data
+        lastNotes.set(kind, { value, section });
+        const label = formatNumber(value, format) ?? "";
+        unwrittenNumber ||= formatNumber(value, format) === undefined;
         const content = readNoteContent(kind, id, label);
         if (kind === "endnote") {
             // eslint-disable-next-line functional/immutable-data
@@ -1812,11 +1892,15 @@ export const readContent = (body: XmlObject, parts: DocumentParts): DocumentCont
     const blocks: { readonly block: Block; readonly section: number }[] = [];
     // eslint-disable-next-line functional/prefer-readonly-type
     let bookmarks: string[] = [];
+    const pageSettings: PageSettings = {
+        gutterAtTop: onOff(settings, "w:gutterAtTop") === true,
+        mirrorMargins: onOff(settings, "w:mirrorMargins") === true,
+    };
     const addSection = (element: unknown): void => {
-        sections.push(readSection(element, readPart, sections[sections.length - 1]));
+        sections.push(readSection(element, readPart, sections[sections.length - 1], pageSettings));
     };
     // The body is written with its section's properties at its end, if nothing else
-    for (const element of unwrap(contentOf(body))) {
+    for (const element of elements) {
         const name = nameOf(element);
         if (name === "w:sectPr") {
             addSection(element[name]);
@@ -1826,8 +1910,7 @@ export const readContent = (body: XmlObject, parts: DocumentParts): DocumentCont
             bookmarks = bookmark === undefined ? bookmarks : [...bookmarks, bookmark];
         } else {
             const block = readBlock(element, reader);
-            const sectionProperties =
-                name === "w:p" ? find(childrenOf(find(contentOf(element).filter(isObject), "w:pPr")), "w:sectPr") : undefined;
+            const sectionProperties = sectionPropertiesOf(element);
             if (block !== undefined) {
                 const marked = startingWith(block, bookmarks);
                 const sectionBreak =
@@ -1845,6 +1928,24 @@ export const readContent = (body: XmlObject, parts: DocumentParts): DocumentCont
         addSection(undefined);
     }
 
+    /**
+     * Why the notes of a kind can't be laid out yet, when Word numbers or places them in a way not yet followed: afresh on
+     * each page, from a number of its own in a section after the first though they are numbered on through the document,
+     * footnotes anywhere but at the bottom of the page, and endnotes at the end of each section
+     */
+    const notesUnsupported = (kind: NoteKind): string | undefined => {
+        const all = sections.map((_, section) => notePropertiesOf(kind, section));
+        return all.some(({ restart }) => restart === "eachPage")
+            ? "notes numbered afresh on each page"
+            : all.some(({ restart, start }) => restart !== "eachSect" && start !== all[0].start)
+              ? "notes numbered on from a number of their own in a later section"
+              : kind === "footnote" && all.some(({ position }) => position !== "pageBottom")
+                ? "footnotes put elsewhere than at the bottom of the page"
+                : kind === "endnote" && all.length > 1 && all.some(({ position }) => position !== "docEnd")
+                  ? "endnotes at the end of each section"
+                  : undefined;
+    };
+
     const documentContent: DocumentContent = {
         blocks,
         sections,
@@ -1852,13 +1953,23 @@ export const readContent = (body: XmlObject, parts: DocumentParts): DocumentCont
         footnoteSeparator: footnotes.size > 0 ? readNoteContent("footnote", "separator") : [],
         footnoteContinuationSeparator: footnotes.size > 0 ? readNoteContent("footnote", "continuationSeparator") : [],
         endnotes: endnotes.length > 0 ? [...readNoteContent("endnote", "separator"), ...endnotes] : [],
+        endnoteContinuationSeparator: endnotes.length > 0 ? readNoteContent("endnote", "continuationSeparator") : [],
         footnoteNumbers,
         endnoteNumbers,
         ...readSettings(parts.settings),
     };
-    // A length in the styles or lists stops the layout before anything, as any paragraph may be in them
+    // A length in the styles or lists stops the layout before anything, as any paragraph may be in them, and so do notes
+    // numbered or placed in a way not yet followed, as any paragraph may refer to them
     return {
         ...documentContent,
-        ...withoutUndefined({ unsupported: documentContent.unsupported ?? styles.unsupported ?? inNumbering }),
+        ...withoutUndefined({
+            unsupported:
+                documentContent.unsupported ??
+                styles.unsupported ??
+                inNumbering ??
+                (footnotes.size > 0 ? notesUnsupported("footnote") : undefined) ??
+                (endnotes.length > 0 ? notesUnsupported("endnote") : undefined) ??
+                (unwrittenNumber ? "notes numbered in a format not yet written" : undefined),
+        }),
     };
 };

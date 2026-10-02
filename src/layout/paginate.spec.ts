@@ -24,6 +24,7 @@ const SECTION: Section = {
     header: 5,
     footer: 5,
     gutter: 0,
+    topGutter: 0,
     start: "nextPage",
     titlePage: false,
     columns: [80],
@@ -60,6 +61,7 @@ const document = (blocks: readonly (Block | readonly [Block, number])[], changes
     footnoteSeparator: [],
     footnoteContinuationSeparator: [],
     endnotes: [],
+    endnoteContinuationSeparator: [],
     // Each footnote is numbered with the name of its marker, and each endnote's blocks with their index
     footnoteNumbers: new Map([...(changes.footnotes?.keys() ?? [])].map((name) => [name, name])),
     endnoteNumbers: new Map((changes.endnotes ?? []).map((block, index) => [block, String(index)])),
@@ -1650,6 +1652,126 @@ describe("paginate", () => {
                 },
             );
             expect(pagesOf(content)).to.deep.equal({ preface: "i", more: "ii", chapter: "1" });
+        });
+
+        it("should number the page after a continuous section numbered afresh on from its first number, the page it starts on keeping its own, as Word does", () => {
+            /** a, then b and c in a continuous section numbered from 7 in a format: b ends the first page, and c starts the next */
+            const restarted = (numberFormat: string): DocumentContent =>
+                document(
+                    [
+                        [paragraph("a", 3), 0],
+                        [paragraph("b", 4), 1],
+                        [paragraph("c", 1), 1],
+                    ],
+                    { sections: [SECTION, { ...SECTION, start: "continuous", firstNumber: 7, numberFormat }] },
+                );
+            // The first page is still the first, which a bookmark in the new section gives in its format, and the next is 8
+            // (`word-watertight-pages.docx` PG2a and PG2b)
+            expect(pagesOf(restarted("decimal"))).to.deep.equal({ a: "1", b: "1", c: "8" });
+            expect(pagesOf(restarted("upperRoman"))).to.deep.equal({ a: "1", b: "I", c: "VIII" });
+            const { pages } = paginate(restarted("upperRoman"), { measurer: MEASURER });
+            expect(pages.map(({ pageNumber }) => pageNumber)).to.deep.equal(["1", "VIII"]);
+        });
+
+        it("should number the page a continuous section starts at the top of from its first number, when none of it fits on the page before, as Word does", () => {
+            // a fills the first page, so b starts the next, which is 7 and the next 8 (`word-watertight-sections.docx` SC2a, SC2c)
+            const content = document(
+                [
+                    [paragraph("a", 7), 0],
+                    [paragraph("b", 7), 1],
+                    [paragraph("c", 1), 1],
+                ],
+                {
+                    sections: [
+                        SECTION,
+                        { ...SECTION, start: "continuous", firstNumber: 7, titlePage: true, headers: { first: [paragraph("first", 1)] } },
+                    ],
+                },
+            );
+            expect(pagesOf(content)).to.deep.equal({ a: "1", b: "7", c: "8" });
+            // It is the section's first page, which has its first page's header
+            const { pages } = paginate(content, { measurer: MEASURER });
+            expect(pages.map(({ pageNumber, header }) => ({ pageNumber, header }))).to.deep.equal([
+                { pageNumber: "1", header: undefined },
+                { pageNumber: "7", header: "first" },
+                { pageNumber: "8", header: undefined },
+            ]);
+        });
+
+        it("should number the page after two continuous sections numbered afresh on one page on from the last, as Word does", () => {
+            // b numbered from 7 and c from 20 start on the first page, so the second is 21 (`word-watertight-sections.docx` SC2d)
+            const content = document(
+                [
+                    [paragraph("a", 2), 0],
+                    [paragraph("b", 2), 1],
+                    [paragraph("c", 3), 2],
+                    [paragraph("d", 1), 2],
+                    [paragraph("e", 1), 3],
+                ],
+                {
+                    sections: [
+                        SECTION,
+                        { ...SECTION, start: "continuous", firstNumber: 7 },
+                        { ...SECTION, start: "continuous", firstNumber: 20 },
+                        { ...SECTION, start: "continuous" },
+                    ],
+                },
+            );
+            expect(pagesOf(content)).to.deep.equal({ a: "1", b: "1", c: "1", d: "21", e: "21" });
+        });
+
+        it("should number on through a section numbered afresh that starts in the next column of the page, as Word does", () => {
+            // b starts in the second column of the first page, and the next page is the second (`word-watertight-sections.docx` SC1)
+            const content = document(
+                [
+                    [paragraph("a", 2), 0],
+                    [paragraph("b", 7), 1],
+                    [paragraph("c", 1), 1],
+                ],
+                {
+                    sections: [
+                        { ...SECTION, columns: [80, 80] },
+                        { ...SECTION, columns: [80, 80], start: "nextColumn", firstNumber: 7 },
+                    ],
+                },
+            );
+            expect(pagesOf(content)).to.deep.equal({ a: "1", b: "1", c: "2" });
+        });
+
+        it("should leave a blank page before a section on an odd page by the number after a continuous section numbered afresh", () => {
+            // The page after the first is 8, which is even, so a section on an odd page starts on the page after it, 9
+            const content = document(
+                [
+                    [paragraph("a", 1), 0],
+                    [paragraph("b", 1), 1],
+                    [paragraph("c", 1), 2],
+                ],
+                { sections: [SECTION, { ...SECTION, start: "continuous", firstNumber: 7 }, { ...SECTION, start: "oddPage" }] },
+            );
+            expect(pagesOf(content)).to.deep.equal({ a: "1", b: "1", c: "9" });
+            expect(paginate(content, { measurer: MEASURER }).pages.map(({ pageNumber }) => pageNumber)).to.deep.equal(["1", "8", "9"]);
+        });
+
+        it("should take a gutter at the top from the page's height, below the top margin or a header taller than both, as Word does", () => {
+            /** The top of each page's first line, and how many lines each page has */
+            const linesOnPages = (section: Section): readonly (readonly [number, number])[] =>
+                paginate(document([paragraph("a", 12)], { sections: [section] }), { measurer: MEASURER }).pages.map(({ body }) => {
+                    const lines = body.flatMap((block) => (block.type === "paragraph" ? block.lines : []));
+                    return [lines[0].y, lines.length] as const;
+                });
+            // Below the margin of 10, 6 lines to a page in the full width (`word-watertight-settings.docx` ST3), with a header
+            // that ends above the gutter too (`word-watertight-sections.docx` SC3a)
+            const gutter = { ...SECTION, topGutter: 10 };
+            expect(linesOnPages(gutter)).to.deep.equal([
+                [20, 6],
+                [20, 6],
+            ]);
+            expect(linesOnPages({ ...gutter, headers: { default: [paragraph("h", 1)] } })).to.deep.equal([
+                [20, 6],
+                [20, 6],
+            ]);
+            // A header that ends below the gutter pushes the body below it, where it would without the gutter (SC3b)
+            expect(linesOnPages({ ...gutter, headers: { default: [paragraph("h", 2)] } })[0]).to.deep.equal([25, 5]);
         });
 
         it("should write page numbers in each format as Word does, and stop at those it doesn't write", () => {
@@ -3887,7 +4009,8 @@ describe("paginate", () => {
                     ]),
                 }),
             );
-            // The separator is the last line of the first page
+            // The separator would be the last line of the first page, with no line of an endnote below it, so it goes to the
+            // next with them, where it is their first line
             expect(pages[0].endnotes).to.deep.equal([]);
             expect(pages[1].body).to.deep.equal([]);
             expect(pages[1].endnotes).to.deep.equal([
@@ -3898,15 +4021,94 @@ describe("paginate", () => {
                             type: "paragraph",
                             index: 0,
                             lines: [
-                                { text: "abcdefgh ", x: 10, y: 10, width: 80, height: 10, textWidth: 80 },
-                                { text: "abcdefgh", x: 10, y: 20, width: 80, height: 10, textWidth: 80 },
+                                { text: "abcdefgh ", x: 10, y: 20, width: 80, height: 10, textWidth: 80 },
+                                { text: "abcdefgh", x: 10, y: 30, width: 80, height: 10, textWidth: 80 },
                             ],
                         },
-                        { type: "paragraph", index: 1, lines: [{ text: "abcdefgh", x: 10, y: 30, width: 80, height: 10, textWidth: 80 }] },
+                        { type: "paragraph", index: 1, lines: [{ text: "abcdefgh", x: 10, y: 40, width: 80, height: 10, textWidth: 80 }] },
                     ],
                 },
-                { noteNumber: "ii", content: [{ type: "table", index: 0, rows: [{ index: 0, y: 40, height: 10 }] }] },
+                { noteNumber: "ii", content: [{ type: "table", index: 0, rows: [{ index: 0, y: 50, height: 10 }] }] },
             ]);
+        });
+
+        it("should put the continuation separator above the endnotes on each page after the first, without its space after, as Word does", () => {
+            const SEPARATOR: ParagraphBlock = { type: "paragraph", items: [], format: {}, tabStops: [], markFont: {} };
+            // A line tall, and its space after left out (`word-watertight-sections.docx` SC4)
+            const CONTINUATION: ParagraphBlock = { ...SEPARATOR, format: { spaceAfter: 20 } };
+            /** The endnotes' lines' tops on each page, after a line of text, with endnotes of these numbers of lines */
+            const endnoteTops = (
+                lengths: readonly number[],
+                continuation: readonly Block[] = [CONTINUATION],
+            ): ReturnType<typeof paginate> & {
+                readonly tops: readonly (readonly number[])[];
+            } => {
+                const notes = lengths.map((length, index) => paragraph(`note${index}`, length));
+                const laidOut = paginate(
+                    document([paragraph("a", 1)], {
+                        endnotes: [SEPARATOR, ...notes],
+                        endnoteContinuationSeparator: continuation,
+                        endnoteNumbers: new Map<Block, string>(notes.map((note, index) => [note, String(index)])),
+                    }),
+                    { measurer: MEASURER },
+                );
+                const tops = laidOut.pages.map((page) => page.endnotes.flatMap(({ content }) => linesOf(content).map(([, , y]) => y)));
+                return { ...laidOut, tops };
+            };
+            // An endnote that goes on to the next page goes on below the continuation separator, and so does the one after
+            // it (`word-watertight-pages.docx` PG8)
+            expect(endnoteTops([7, 4]).tops).to.deep.equal([
+                [30, 40, 50, 60, 70],
+                [20, 30, 40, 50, 60, 70],
+            ]);
+            // And one that starts the next page, after one that ends this one (SC4)
+            expect(endnoteTops([5, 4]).tops).to.deep.equal([
+                [30, 40, 50, 60, 70],
+                [20, 30, 40, 50],
+            ]);
+            // A continuation separator of two paragraphs keeps the space after the first
+            const twoParagraphs = [{ ...SEPARATOR, format: { spaceAfter: 10 } }, CONTINUATION];
+            expect(endnoteTops([5, 3], twoParagraphs).tops[1]).to.deep.equal([40, 50, 60]);
+            // Word put a line more below it than the page had room for, and how far past the margin it puts one isn't known
+            const filled = endnoteTops([5, 8]);
+            expect(filled.stoppedAt).to.equal("endnotes that fill a page after the first they are on");
+            expect(filled.tops[1]).to.deep.equal([20, 30, 40, 50, 60, 70]);
+        });
+
+        it("should keep endnote paragraphs with the next on a page below the continuation separator", () => {
+            const SEPARATOR: ParagraphBlock = { type: "paragraph", items: [], format: {}, tabStops: [], markFont: {} };
+            const blocks = [paragraph("p", 3), paragraph("kept", 1, { keepNext: true }), paragraph("m", 3)];
+            const pages = pagesLaidOut(
+                document([paragraph("a", 1)], {
+                    endnotes: [SEPARATOR, ...blocks],
+                    endnoteContinuationSeparator: [SEPARATOR],
+                    endnoteNumbers: new Map<Block, string>(blocks.map((block) => [block, "i"])),
+                }),
+            );
+            // kept and m don't fit below p, so they go on the next page, below the continuation separator
+            expect(pages[1].endnotes[0].content.map((block) => [block.index, linesOf([block])[0][2]])).to.deep.equal([
+                [1, 20],
+                [2, 30],
+            ]);
+        });
+
+        it("should stop at endnotes that go on into the next column or page in a section of columns", () => {
+            const SEPARATOR: ParagraphBlock = { type: "paragraph", items: [], format: {}, tabStops: [], markFont: {} };
+            const note = paragraph("note", 10);
+            const columns = (body: number): ReturnType<typeof paginate> =>
+                paginate(
+                    document([paragraph("a", body)], {
+                        sections: [{ ...SECTION, columns: [80, 80] }],
+                        endnotes: [SEPARATOR, note],
+                        endnoteContinuationSeparator: [SEPARATOR],
+                        endnoteNumbers: new Map<Block, string>([[note, "i"]]),
+                    }),
+                    { measurer: MEASURER },
+                );
+            // Whether Word puts the continuation separator at the top of a column isn't known
+            expect(columns(1).stoppedAt).to.equal("endnotes continued in columns");
+            // Nor of a page, after the last column
+            expect(columns(7).stoppedAt).to.equal("endnotes continued in columns");
         });
 
         it("should say which header and footer each page shows, and give the blank page before an odd page section neither, as Word does", () => {
