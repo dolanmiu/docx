@@ -242,8 +242,9 @@ const sameFont = (one: TextFont, other: TextFont): boolean =>
     Object.entries(one).every(([key, value]) => other[key as keyof TextFont] === value);
 
 /**
- * How wide pieces of text are. Pieces next to each other in the same font are measured together, so the pairs of
- * characters across them are kerned, as Word kerns them across runs (word-fonts.docx F4).
+ * How wide pieces of text are. Pieces next to each other in the same font, with kerning on, are measured together, so the
+ * pairs of characters across them are kerned, as Word kerns them across runs (word-fonts.docx F4). Others are measured
+ * apart, as a measurer may measure a piece, such as a page number, differently on its own.
  */
 const widthOf = (pieces: readonly Piece[], measurer: TextMeasurer): number => {
     if (pieces.length === 0) {
@@ -252,7 +253,7 @@ const widthOf = (pieces: readonly Piece[], measurer: TextMeasurer): number => {
     let total = 0;
     let [{ text, font }] = pieces;
     for (const piece of pieces.slice(1)) {
-        if (sameFont(font, piece.font)) {
+        if (font.kerning !== undefined && sameFont(font, piece.font)) {
             text += piece.text;
             continue;
         }
