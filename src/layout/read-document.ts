@@ -965,6 +965,9 @@ const REMOVALS = new Set(["w:del", "w:moveFrom"]);
 // An element no document has, which stands in a paragraph's content for why the layout stops there, when the reason is
 // found before the paragraph is read
 const STOP = "docx-layout:unsupported";
+// An element no document has, which stands in a paragraph joined to the one before by its hidden mark for the paragraph of
+// the same list it was, whose number Word counts though it doesn't show it
+const COUNTED = "docx-layout:counted";
 
 /** The items of the parts of a paragraph, or why it can't be laid out */
 const itemsOf = (parts: readonly (readonly LayoutItem[] | string)[]): readonly LayoutItem[] | string => {
@@ -1350,6 +1353,9 @@ const readParagraph = (element: XmlObject, reader: Reader, tableFormats: TableFo
     const paragraphRun = combine([styles.run, ...paragraphStyles.map(({ run }) => run)]);
     const markRun = combine([paragraphRun, readRunFormat(find(properties, "w:rPr"), styles.themeFonts)]);
     const list = readListNumber(properties, style, markRun, reader);
+    // The number of each paragraph of the list joined to this one by its hidden mark is counted, but not shown: of three
+    // numbered paragraphs, the first's mark hidden, Word numbers them 1 and 3 (`word-breaks-and-tabs.docx` HM4)
+    children.filter((child) => isObject(child) && COUNTED in child).forEach(() => readListNumber(properties, style, markRun, reader));
     const headingLevel = /^heading ([1-9])$/i.exec(styleChain(styles, style, "paragraph").slice(-1)[0]?.name ?? "")?.[1];
     const formats = [
         styles.paragraph,
@@ -2136,21 +2142,56 @@ const removedMarkOf = (paragraph: XmlObject): string | undefined =>
         .map(nameOf)
         .find((name) => REMOVALS.has(name));
 
-/**
- * Whether a paragraph's mark is hidden (`w:vanish`), by its own formatting or its style's, or has `w:specVanish` without
- * being hidden.
- */
-const hiddenMarkOf = (paragraph: XmlObject, styles: TextStyles): "hidden" | "specVanish" | undefined => {
-    const properties = paragraphPropertiesOf(paragraph);
-    const style = valueOf(properties, "w:pStyle") ?? styles.defaultParagraphStyle;
-    const mark = find(properties, "w:rPr");
-    const { hidden } = combine([
+/** The elements of the names given among elements and in them, in order */
+const elementsIn = (elements: readonly unknown[], named: (name: string) => boolean): readonly XmlObject[] =>
+    elements
+        .filter(isObject)
+        .flatMap((element) =>
+            named(nameOf(element)) ? [element] : nameOf(element) === "_attr" ? [] : elementsIn(contentOf(element), named),
+        );
+
+/** The run formatting a paragraph's styles give its text */
+const paragraphRunOf = (paragraph: XmlObject, styles: TextStyles): RunFormat =>
+    combine([
         styles.run,
-        ...styleChain(styles, style, "paragraph").map(({ run }) => run),
-        readRunFormat(mark, styles.themeFonts),
+        ...styleChain(styles, valueOf(paragraphPropertiesOf(paragraph), "w:pStyle") ?? styles.defaultParagraphStyle, "paragraph").map(
+            ({ run }) => run,
+        ),
     ]);
-    return hidden ? "hidden" : onOff(childrenOf(mark), "w:specVanish") ? "specVanish" : undefined;
-};
+
+/**
+ * Whether a paragraph's mark is hidden (`w:vanish`), by its own formatting or its style's. `w:specVanish` alone doesn't
+ * hide it: Word lays out a paragraph whose mark has it on a line of its own (`word-breaks-and-tabs.docx` HM5a)
+ */
+const isMarkHidden = (paragraph: XmlObject, styles: TextStyles): boolean =>
+    combine([paragraphRunOf(paragraph, styles), readRunFormat(find(paragraphPropertiesOf(paragraph), "w:rPr"), styles.themeFonts)])
+        .hidden === true;
+
+// What in a paragraph Word never shows: bookmarks, the marks of comments' and other ranges, and proofing errors
+const NEVER_SHOWN = /^w:(bookmark(Start|End)|\w+Range(Start|End)|perm(Start|End)|proofErr|pPr)$|^_attr$/;
+
+/**
+ * Whether anything of a paragraph's content is shown: a run with something in it that isn't hidden, by its own formatting,
+ * its character style's or its paragraph's, or anything but runs, which may be
+ */
+const showsSomething = (elements: readonly unknown[], paragraphRun: RunFormat, styles: TextStyles): boolean =>
+    elements.filter(isObject).some((element) => {
+        const name = nameOf(element);
+        if (name === "w:r") {
+            const children = contentOf(element).filter(isObject);
+            const properties = find(children, "w:rPr");
+            const characterStyle = valueOf(childrenOf(properties), "w:rStyle") ?? styles.defaultCharacterStyle;
+            const format = combine([
+                paragraphRun,
+                ...styleChain(styles, characterStyle, "character").map(({ run }) => run),
+                readRunFormat(properties, styles.themeFonts),
+            ]);
+            return children.some((child) => nameOf(child) !== "w:rPr") && format.hidden !== true;
+        }
+        return RUN_CONTAINERS.has(name)
+            ? showsSomething(contentOf(element), paragraphRun, styles)
+            : !REMOVALS.has(name) && !NEVER_SHOWN.test(name);
+    });
 
 /** Whether a paragraph is in a list, its own or its style's */
 const isNumbered = (paragraph: XmlObject, styles: TextStyles): boolean => {
@@ -2162,14 +2203,33 @@ const isNumbered = (paragraph: XmlObject, styles: TextStyles): boolean => {
     );
 };
 
-/** A paragraph's own formatting, but for its mark's, and its style when it names the default one, as none does */
+// The parts of a paragraph's formatting a paragraph joined to the next by its hidden mark gives the joined one, where they
+// differ: its alignment, left indent and space before, with the next one's space after (`word-breaks-and-tabs.docx` HM1a to
+// HM1f), by the attributes of the elements they are in
+const JOINED_FORMATTING: Readonly<Record<string, readonly string[] | undefined>> = {
+    "w:jc": ["w:val"],
+    "w:ind": ["w:left", "w:start"],
+    "w:spacing": ["w:before", "w:after"],
+};
+
+/**
+ * A paragraph's own formatting, but for its mark's, its style when it names the default one, as none does, and the parts
+ * that may differ between paragraphs joined by a hidden mark
+ */
 const paragraphFormatOf = (paragraph: XmlObject, styles: TextStyles): string =>
     JSON.stringify(
-        paragraphPropertiesOf(paragraph).filter(
-            (child) =>
-                nameOf(child) !== "w:rPr" &&
-                !(nameOf(child) === "w:pStyle" && valueOf([child], "w:pStyle") === styles.defaultParagraphStyle),
-        ),
+        paragraphPropertiesOf(paragraph).flatMap((child) => {
+            const name = nameOf(child);
+            if (name === "w:rPr" || (name === "w:pStyle" && valueOf([child], "w:pStyle") === styles.defaultParagraphStyle)) {
+                return [];
+            }
+            const joined = JOINED_FORMATTING[name];
+            if (joined === undefined) {
+                return [child];
+            }
+            const kept = Object.entries(attributesOf(child[name])).filter(([key]) => !joined.includes(key));
+            return kept.length === 0 ? [] : [{ [name]: Object.fromEntries(kept) }];
+        }),
     );
 
 /** Whether an element has anything in its runs, deleted or not, but their formatting */
@@ -2208,50 +2268,87 @@ const joinedParagraph = (first: XmlObject, between: readonly unknown[], next: Xm
 };
 
 /**
- * Why a paragraph whose mark is hidden, or has `w:specVanish`, can't be laid out, when it can't. Word joins two paragraphs
- * of the same formatting so, on one line (`word-watertight-text.docx` TX11a), and leaves one with no paragraph after it,
- * before a table or at the end of a table cell, as it is (`word-breaks-and-tabs.docx` HM2a, HM2b). Which formatting the
- * joined paragraph takes where theirs differ, what Word does with a hidden mark at the edge of a content control, with a
- * hidden section break, in a list, between paragraphs of text in a table whose columns it sizes to their text, and with a
- * mark that has `w:specVanish` and isn't hidden, which doesn't hide text (TX11b), isn't followed yet.
+ * A paragraph whose mark is hidden, joined to the next, after what is between them: the two paragraphs' text on its lines,
+ * in the first one's formatting but for its space after, which is the next one's, with the next one's mark
+ * (`word-breaks-and-tabs.docx` HM1a to HM1f). The next one's number, when they are in a list, is counted (HM4).
  */
-const unjoinedHiddenMark = (
+const joinedToNext = (first: XmlObject, between: readonly unknown[], next: XmlObject, styles: TextStyles): XmlObject => {
+    const isHead = (child: unknown): boolean => isObject(child) && (nameOf(child) === "_attr" || nameOf(child) === "w:pPr");
+    const own = paragraphPropertiesOf(first);
+    const nextProperties = paragraphPropertiesOf(next);
+    const { "w:after": after } = attributesOf(find(nextProperties, "w:spacing"));
+    const spacing = {
+        ...Object.fromEntries(Object.entries(attributesOf(find(own, "w:spacing"))).filter(([key]) => key !== "w:after")),
+        ...(after === undefined ? {} : { "w:after": after }),
+    };
+    const mark = nextProperties.filter((child) => nameOf(child) === "w:rPr");
+    const properties = [
+        ...own.filter((child) => nameOf(child) !== "w:spacing" && nameOf(child) !== "w:rPr"),
+        ...(Object.keys(spacing).length === 0 ? [] : [{ "w:spacing": { _attr: spacing } }]),
+        ...mark,
+    ];
+    const content = contentOf(first);
+    return {
+        "w:p": [
+            ...content.filter((child) => isObject(child) && nameOf(child) === "_attr"),
+            { "w:pPr": properties },
+            ...content.filter((child) => !isHead(child)),
+            ...between,
+            ...contentOf(next).filter((child) => !isHead(child)),
+            ...(isNumbered(next, styles) ? [{ [COUNTED]: {} }] : []),
+        ],
+    };
+};
+
+/**
+ * How a paragraph whose mark is hidden is laid out, or why it can't be. Word joins it to the next: one whose text is
+ * shown in the formatting of the first, but for the next one's space after, where the two differ only in their alignment,
+ * left indent and space before and after (`word-watertight-text.docx` TX11a, `word-breaks-and-tabs.docx` HM1a to HM1f), and
+ * one with nothing shown, which takes no room, in the next one's formatting (HM3). One with no paragraph after it, before a
+ * table or at the end of a table cell, stays as it is (HM2a, HM2b). Where the paragraphs differ otherwise, such as in their
+ * style or line spacing (HM1g to HM1i), which Word lays out line by line, and what Word does with a hidden mark at the
+ * edge of a content control, with a hidden section break, with one of a paragraph showing nothing and no paragraph after
+ * it, or in a list, and between paragraphs of text in a table whose columns it sizes to their text, isn't followed yet.
+ */
+const hiddenMarkJoin = (
     paragraph: XmlObject,
-    hidden: "hidden" | "specVanish",
     next: XmlObject | undefined,
     { styles, nested, sized }: { readonly styles: TextStyles; readonly nested: boolean; readonly sized: boolean },
-): string | undefined => {
+): { readonly reason: string } | { readonly joins: "under the next" | "as the first" } | undefined => {
     const nextName = next === undefined ? undefined : nameOf(next);
-    if (hidden === "specVanish") {
-        return "a paragraph mark with specVanish that isn't hidden";
-    }
+    const shown = showsSomething(contentOf(paragraph), paragraphRunOf(paragraph, styles), styles);
     if (sectionPropertiesOf(paragraph) !== undefined) {
-        return "a hidden section break";
+        return { reason: "a hidden section break" };
     }
     if (nextName === "w:sdt" || nextName === "w:customXml" || (next === undefined && nested)) {
-        return "a hidden paragraph mark at the edge of a content control";
+        return { reason: "a hidden paragraph mark at the edge of a content control" };
     }
     if (next === undefined || nextName !== "w:p") {
-        return undefined;
+        return shown ? undefined : { reason: "a paragraph with nothing shown and its mark hidden, with no paragraph after it" };
     }
-    if (isNumbered(paragraph, styles) || isNumbered(next, styles)) {
-        return "a hidden paragraph mark in a list";
+    if (sized && hasRunContent(paragraph) && hasRunContent(next)) {
+        return { reason: "a hidden paragraph mark between paragraphs of text in a table whose columns Word sizes to their text" };
     }
-    if (paragraphFormatOf(paragraph, styles) !== paragraphFormatOf(next, styles)) {
-        return "a hidden paragraph mark between paragraphs of different formatting";
+    if (!shown) {
+        // Its runs would take the next one's style, so only its bookmarks go into it, which would leave its fields half read
+        return isNumbered(paragraph, styles)
+            ? { reason: "a list's paragraph with nothing shown and its mark hidden" }
+            : elementsIn(contentOf(paragraph), (name) => name === "w:fldChar" || name === "w:fldSimple").length > 0
+              ? { reason: "a field in a paragraph with nothing shown and its mark hidden" }
+              : { joins: "under the next" };
     }
-    return sized && hasRunContent(paragraph) && hasRunContent(next)
-        ? "a hidden paragraph mark between paragraphs of text in a table whose columns Word sizes to their text"
-        : undefined;
+    return paragraphFormatOf(paragraph, styles) === paragraphFormatOf(next, styles)
+        ? { joins: "as the first" }
+        : { reason: "a hidden paragraph mark between paragraphs formatted differently but for their alignment, left indent and space" };
 };
 
 /**
  * Joins each paragraph whose mark is deleted in a tracked change to the paragraph after it, as Word lays it out: the next
  * paragraph, with the deleted one's text at its start, all in the next one's formatting, style and list
  * (`word-watertight-markup.docx` MK3, `word-tracked-changes.docx` MK7, MK9). A paragraph whose mark is hidden is joined to
- * the next too, where they are formatted the same (`word-watertight-text.docx` TX11a), or else is left as it is or stops
- * the layout (see {@link unjoinedHiddenMark}). A section break deleted so leaves its section to the next (MK8c). A paragraph with no paragraph after it, before a table or at the end of a table cell or of the
- * document, stays as it is (MK8a, MK8b, MK8d). What Word does with a paragraph mark moved elsewhere, a deleted mark at the
+ * the next too, or else is left as it is or stops the layout (see {@link hiddenMarkJoin}). A section break deleted so
+ * leaves its section to the next (MK8c). A paragraph with no paragraph after it, before a table or at the end of a table
+ * cell or of the document, stays as it is (MK8a, MK8b, MK8d). What Word does with a paragraph mark moved elsewhere, a deleted mark at the
  * edge of a content control, a deleted section break before a table or between sections that start, number their pages or
  * have headers and footers differently, and a deleted mark between paragraphs of text in a table whose columns it sizes,
  * by the paragraphs either as they are written or as they are laid out, hasn't been seen, so the layout stops there.
@@ -2271,9 +2368,12 @@ const joinRemovedMarks = (elements: readonly unknown[], styles: TextStyles, nest
         const at = after.findLastIndex((other) => BLOCK_ELEMENTS.has(nameOf(other)));
         const next = after[at] as XmlObject | undefined;
         const nextName = next === undefined ? undefined : nameOf(next);
-        const hidden = mark === undefined && name === "w:p" ? hiddenMarkOf(element, styles) : undefined;
-        const unjoined = hidden === undefined ? undefined : unjoinedHiddenMark(element, hidden, next, { styles, nested, sized });
-        const joins = (mark !== undefined || (hidden !== undefined && unjoined === undefined)) && nextName === "w:p";
+        const hidden =
+            mark === undefined && name === "w:p" && isMarkHidden(element, styles)
+                ? hiddenMarkJoin(element, next, { styles, nested, sized })
+                : undefined;
+        const unjoined = hidden !== undefined && "reason" in hidden ? hidden.reason : undefined;
+        const joins = (mark !== undefined || (hidden !== undefined && "joins" in hidden)) && nextName === "w:p";
         const section = mark === undefined ? undefined : sectionPropertiesOf(element);
         const reason =
             mark === undefined
@@ -2296,7 +2396,15 @@ const joinRemovedMarks = (elements: readonly unknown[], styles: TextStyles, nest
             // eslint-disable-next-line functional/immutable-data
             const [, ...between] = after.splice(at);
             // eslint-disable-next-line functional/immutable-data
-            after.push(joinedParagraph(element, between.reverse(), next!));
+            const inOrder = between.reverse();
+            // eslint-disable-next-line functional/immutable-data
+            after.push(
+                hidden !== undefined && "joins" in hidden
+                    ? hidden.joins === "as the first"
+                        ? joinedToNext(element, inOrder, next!, styles)
+                        : joinedParagraph({ "w:p": elementsIn(contentOf(element), (inner) => inner === "w:bookmarkStart") }, inOrder, next!)
+                    : joinedParagraph(element, inOrder, next!),
+            );
         } else if (name === "w:customXml") {
             // eslint-disable-next-line functional/immutable-data
             after.push({ [name]: joinRemovedMarks(contentOf(element), styles, true, sized) });

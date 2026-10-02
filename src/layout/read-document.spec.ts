@@ -3541,6 +3541,7 @@ describe("readDocument", () => {
     });
 
     describe("soft hyphens, hidden paragraph marks and decimal tab stops", () => {
+        const bookmark = (name: string): object => ({ "w:bookmarkStart": { _attr: { "w:name": name, "w:id": 9 } } });
         const hiddenMark = rPr({ "w:vanish": {} });
         const cellOf = (...paragraphs: readonly object[]): object => ({
             "w:tc": [{ "w:tcPr": [{ "w:tcW": { _attr: { "w:w": 2000 } } }] }, ...paragraphs],
@@ -3626,18 +3627,94 @@ describe("readDocument", () => {
             ]);
         });
 
+        it("should join paragraphs that differ in their alignment, left indent and space in the first one's formatting but for the next one's space after, as Word does", () => {
+            // word-breaks-and-tabs.docx HM1a to HM1f: the first one's indent, alignment and space before, and the next one's
+            // space after
+            const spacing = (before: number, after: number): object => ({
+                "w:spacing": { _attr: { "w:before": before, "w:after": after } },
+            });
+            const content = readBody([
+                p(pPr(value("w:jc", "center"), spacing(480, 480), { "w:ind": { _attr: { "w:left": 1440 } } }, hiddenMark), r(t("first"))),
+                p(pPr(value("w:jc", "right"), spacing(100, 200), rPr(value("w:sz", 40))), r(t("second"))),
+            ]);
+            expect(texts(content)).to.deep.equal(["firstsecond"]);
+            expect(paragraphOf(content).format).to.deep.include({ alignment: "center", indentLeft: 72, spaceBefore: 24, spaceAfter: 10 });
+            // with the next one's mark
+            expect(paragraphOf(content).markFont).to.deep.include({ size: 20 });
+            // and the first one's space after left out where the next has none of its own
+            const noneAfter = readBody([p(pPr(spacing(480, 480), hiddenMark), r(t("first"))), p(r(t("second")))]);
+            expect(paragraphOf(noneAfter).format).to.deep.include({ spaceBefore: 24 });
+            expect(paragraphOf(noneAfter).format.spaceAfter ?? 0).to.equal(0);
+        });
+
+        it("should count the number of a paragraph of a list joined to the one before by its hidden mark, as Word does", () => {
+            // word-breaks-and-tabs.docx HM4: three numbered paragraphs, the first's mark hidden, numbered 1 and 3
+            const numbering = { config: [{ reference: "list", levels: [{ level: 0, format: LevelFormat.DECIMAL, text: "%1." }] }] };
+            const item = (text: string, run = {}): Paragraph =>
+                new Paragraph({ numbering: { reference: "list", level: 0 }, run, children: [new TextRun(text)] });
+            const content = readWritten({
+                numbering,
+                sections: [{ children: [item("one", { vanish: true }), item("two"), item("three")] }],
+            });
+            expect(
+                [0, 1].map((index) => itemsOf(content, index).map((part) => (part.type === "text" ? part.text : part.type))),
+            ).to.deep.equal([
+                ["1.", "tab", "one", "two"],
+                ["3.", "tab", "three"],
+            ]);
+        });
+
+        it("should lay out a paragraph with nothing shown and its mark hidden as nothing, in the next one's formatting, as Word does", () => {
+            // word-breaks-and-tabs.docx HM3a, HM3b, HM3c, HM3e: its text, its mark and its space take no room. Its bookmarks
+            // start with the next one
+            const styles = {
+                paragraphStyles: [{ id: "Hidden", name: "Hidden", run: { vanish: true } }],
+                characterStyles: [{ id: "Secret", name: "Secret", run: { vanish: true } }],
+            };
+            const content = readBody(
+                [
+                    p(pPr(value("w:pStyle", "Hidden"), { "w:spacing": { _attr: { "w:before": 480 } } }), bookmark("a"), r(t("hidden")), {
+                        "w:hyperlink": [r(rPr(value("w:rStyle", "Secret")), t("secret"))],
+                    }),
+                    p(pPr(value("w:jc", "center")), r(t("shown"))),
+                    p(pPr(hiddenMark, value("w:jc", "right"))),
+                    p(r(t("after"))),
+                ],
+                { styles },
+            );
+            expect(texts(content)).to.deep.equal(["shown", "after"]);
+            expect(itemsOf(content)[0]).to.deep.equal({ type: "marker", name: "a" });
+            expect(paragraphOf(content).format).to.deep.include({ alignment: "center" });
+            expect(paragraphOf(content).format.spaceBefore ?? 0).to.equal(0);
+            expect(paragraphOf(content, 1).format.alignment ?? "left").to.equal("left");
+        });
+
+        it("should leave a paragraph whose mark has specVanish but isn't hidden as it is, as Word does", () => {
+            // word-breaks-and-tabs.docx HM5a
+            const content = readBody([p(pPr(rPr({ "w:specVanish": {} })), r(t("one"))), p(r(t("two")))]);
+            expect(texts(content)).to.deep.equal(["one", "two"]);
+        });
+
         it("should mark a hidden paragraph mark Word hasn't been seen with as unsupported", () => {
             const unsupportedOf = (...elements: readonly object[]): string | undefined => {
                 const content = readBody(elements, {
                     numbering: {
                         config: [{ reference: "list", levels: [{ level: 0, format: LevelFormat.DECIMAL, text: "%1." }] }],
                     },
+                    styles: { paragraphStyles: [{ id: "Big", name: "Big", run: { size: 32 } }] },
                 });
                 return content.unsupported ?? content.blocks.find(({ block }) => block.unsupported)?.block.unsupported;
             };
-            expect(unsupportedOf(p(pPr(hiddenMark), r(t("a"))), p(pPr(value("w:jc", "center")), r(t("b"))))).to.equal(
-                "a hidden paragraph mark between paragraphs of different formatting",
-            );
+            // Paragraphs of different styles, line spacing or right indents, which Word lays out line by line, or hasn't shown
+            const different =
+                "a hidden paragraph mark between paragraphs formatted differently but for their alignment, left indent and space";
+            for (const properties of [
+                [value("w:pStyle", "Big")],
+                [{ "w:spacing": { _attr: { "w:line": 480 } } }],
+                [{ "w:ind": { _attr: { "w:right": 1440 } } }],
+            ]) {
+                expect(unsupportedOf(p(pPr(...properties, hiddenMark), r(t("a"))), p(r(t("b"))))).to.equal(different);
+            }
             expect(unsupportedOf(p(pPr(hiddenMark), r(t("a"))), { "w:sdt": [{ "w:sdtContent": [p(r(t("b")))] }] })).to.equal(
                 "a hidden paragraph mark at the edge of a content control",
             );
@@ -3645,10 +3722,20 @@ describe("readDocument", () => {
                 "a hidden paragraph mark at the edge of a content control",
             );
             expect(unsupportedOf(p(pPr({ "w:sectPr": [] }, hiddenMark), r(t("a"))), p(r(t("b"))))).to.equal("a hidden section break");
-            const numbered = pPr({ "w:numPr": [value("w:ilvl", 0), value("w:numId", 1)] });
-            expect(unsupportedOf(p(pPr(hiddenMark), r(t("a"))), p(numbered, r(t("b"))))).to.equal("a hidden paragraph mark in a list");
-            expect(unsupportedOf(p(pPr(rPr({ "w:specVanish": {} })), r(t("a"))), p(r(t("b"))))).to.equal(
-                "a paragraph mark with specVanish that isn't hidden",
+            // A paragraph with nothing shown: with no paragraph after it, in a list, or with a field in it
+            expect(unsupportedOf(p(r(t("a"))), p(pPr(hiddenMark)))).to.equal(
+                "a paragraph with nothing shown and its mark hidden, with no paragraph after it",
+            );
+            const numbered = pPr(hiddenMark, { "w:numPr": [value("w:ilvl", 0), value("w:numId", 1)] });
+            expect(unsupportedOf(p(numbered), p(r(t("b"))))).to.equal("a list's paragraph with nothing shown and its mark hidden");
+            const hiddenRun = (child: object): object => r(rPr({ "w:vanish": {} }), child);
+            const pageField = [
+                hiddenRun({ "w:fldChar": { _attr: { "w:fldCharType": "begin" } } }),
+                hiddenRun({ "w:instrText": ["PAGE"] }),
+                hiddenRun({ "w:fldChar": { _attr: { "w:fldCharType": "end" } } }),
+            ];
+            expect(unsupportedOf(p(pPr(hiddenMark), ...pageField), p(r(t("b"))))).to.equal(
+                "a field in a paragraph with nothing shown and its mark hidden",
             );
             // In a table whose columns Word sizes to their text, between paragraphs of text
             expect(unsupportedOf(tableOf(cellOf(p(pPr(hiddenMark), r(t("a"))), p(r(t("b"))))))).to.equal(
