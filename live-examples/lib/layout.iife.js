@@ -3366,20 +3366,24 @@ var docxLayout = (function(exports) {
 	var knownPageCount = ({ pageCount, stoppedAt }) => stoppedAt === void 0 ? pageCount : void 0;
 	var sameNumbers = (one, other) => one.bookmarks.size === other.bookmarks.size && [...one.bookmarks].every(([name, page]) => other.bookmarks.get(name) === page) && knownPageCount(one) === knownPageCount(other) && one.sectionPageCounts.length === other.sectionPageCounts.length && one.sectionPageCounts.every((count, index) => other.sectionPageCounts[index] === count);
 	/**
-	* Lays out a document's pages, again with the page numbers each pass works out, until they stop changing, or for at most
-	* three passes, and gives the last.
+	* Lays out a document's pages, again with the page numbers each pass works out, until they stop changing, and gives the
+	* last. Each pass is laid out with the numbers of the pass before, so the last pass's numbers are those it was laid out
+	* with only when they stop changing. When they still change after three passes, as when a table of contents wraps one
+	* way with a number and the other way without it, none can be written, so it gives the first pass, laid out without them,
+	* as not settled.
 	*/
 	var layOutPasses = (content, measurer) => {
-		const layOut = (before, pass) => {
+		const layOut = (before, pass, first) => {
 			const pagination = paginate(content, {
 				measurer,
 				pageNumbers: before === null || before === void 0 ? void 0 : before.bookmarks,
 				pageCount: before && knownPageCount(before),
 				sectionPageCounts: before === null || before === void 0 ? void 0 : before.sectionPageCounts
 			});
-			return pass >= PASSES || before !== void 0 && sameNumbers(pagination, before) ? pagination : layOut(pagination, pass + 1);
+			if (before !== void 0 && sameNumbers(pagination, before)) return _objectSpread2(_objectSpread2({}, pagination), {}, { settled: true });
+			return pass >= PASSES ? _objectSpread2(_objectSpread2({}, first), {}, { settled: false }) : layOut(pagination, pass + 1, first !== null && first !== void 0 ? first : pagination);
 		};
-		return layOut(void 0, 1);
+		return layOut(void 0, 1, void 0);
 	};
 	//#endregion
 	//#region src/layout/measure-width.ts
@@ -3500,11 +3504,44 @@ var docxLayout = (function(exports) {
 		"charformat",
 		"mergeformatinet"
 	]);
+	var BOUND_CONTROL = "a content control filled from custom XML";
 	var nameOf = (element) => Object.keys(element)[0];
 	/** The content of an element, including its text. An element without content has its attributes, or nothing */
 	var contentOf$2 = (element) => {
 		const content = element[nameOf(element)];
 		return Array.isArray(content) ? content : [content];
+	};
+	/** Whether an attribute that is on or off, such as `w:combine`, is on: it is off when it isn't given */
+	var isOn = (value) => value !== void 0 && !isOff(value);
+	/** Whether a content control (`w:sdt`) is bound to custom XML (`w:dataBinding`), which Word fills it in from */
+	var isBound = (control) => find(childrenOf(find(childrenOf(control["w:sdt"]), "w:sdtPr")), "w:dataBinding") !== void 0;
+	/**
+	* The elements of a part of a document, such as a table's rows or a cell's paragraphs, with those in its content controls
+	* and custom XML in their place. A content control bound to custom XML is kept whole, as it can't be laid out.
+	*/
+	var unwrap = (elements) => elements.filter(isObject).flatMap((element) => {
+		const name = nameOf(element);
+		if (name === "w:sdt" && !isBound(element)) return unwrap(childrenOf(find(childrenOf(element[name]), "w:sdtContent")));
+		return name === "w:customXml" ? unwrap(contentOf$2(element)) : [element];
+	});
+	/** The name of the bookmark a bookmark's start (`w:bookmarkStart`) starts */
+	var bookmarkOf = (element) => stringOf(attributesOf(element["w:bookmarkStart"])["w:name"]);
+	/** The names of the bookmarks that start among elements, in order */
+	var bookmarksIn = (elements) => elements.flatMap((element) => {
+		const bookmark = "w:bookmarkStart" in element ? bookmarkOf(element) : void 0;
+		return bookmark === void 0 ? [] : [bookmark];
+	});
+	/**
+	* The elements of a name in a part of a document, such as the rows of a table, each with the names of the bookmarks
+	* that start between it and the one before. A bookmark there starts with the element, as it starts where the element's
+	* text does. Those after the last are left out.
+	*/
+	var withBookmarks = (elements, name) => {
+		const indexes = elements.flatMap((element, index) => name in element ? [index] : []);
+		return indexes.map((at, index) => ({
+			element: elements[at],
+			bookmarks: bookmarksIn(elements.slice(index === 0 ? 0 : indexes[index - 1] + 1, at))
+		}));
 	};
 	var SUPERSCRIPT_WIDTH = .65;
 	/**
@@ -3602,6 +3639,16 @@ var docxLayout = (function(exports) {
 		return [];
 	};
 	/**
+	* Why a run's own formatting changes the room its text takes in a way not yet followed, when it does: text fitted to a
+	* width (`w:fitText`), and two lines in one or text across in vertical text (`w:eastAsianLayout`).
+	*/
+	var unsupportedFormatOf = (properties) => {
+		const { "w:combine": combined, "w:vert": across } = attributesOf(find(properties, "w:eastAsianLayout"));
+		if (find(properties, "w:fitText") !== void 0) return "text fitted to a width";
+		if (isOn(combined)) return "two lines in one";
+		return isOn(across) ? "text across in vertical text" : void 0;
+	};
+	/**
 	* Reads a run (`w:r`) in the paragraph's formatting, as its character style and its own formatting change it.
 	*/
 	var readRun = (element, paragraphRun, reader) => {
@@ -3615,6 +3662,7 @@ var docxLayout = (function(exports) {
 			readRunFormat(properties, styles.themeFonts)
 		]);
 		const font = fontOf(format);
+		const unsupportedFormat = unsupportedFormatOf(childrenOf(properties));
 		const items = children.map((child) => {
 			const name = nameOf(child);
 			if (name === "w:fldChar") return readFieldCharacter(child, font, reader);
@@ -3623,7 +3671,8 @@ var docxLayout = (function(exports) {
 				if (field && !field.inResult) field.instruction += contentOf$2(child).filter((part) => typeof part === "string").join("");
 				return [];
 			}
-			if (!isShown(reader)) return [];
+			if (!isShown(reader) || name === "w:rPr") return [];
+			if (unsupportedFormat !== void 0) return unsupportedFormat;
 			switch (name) {
 				case "w:t": return contentOf$2(child).filter((part) => typeof part === "string").join("").split("	").flatMap((part, index) => [...index > 0 && !format.hidden ? [{
 					type: "tab",
@@ -3686,6 +3735,8 @@ var docxLayout = (function(exports) {
 				}
 				case "w:pict":
 				case "w:object": return reader.inHeader ? [] : "a VML drawing";
+				case "w:ruby": return "text with a phonetic guide";
+				case "w:contentPart": return "a content part, such as ink";
 				default: return [];
 			}
 		});
@@ -3710,18 +3761,19 @@ var docxLayout = (function(exports) {
 			const name = nameOf(element);
 			if (name === "w:r") return readRun(element, paragraphRun, reader);
 			if (RUN_CONTAINERS.has(name)) return readInline(contentOf$2(element), paragraphRun, reader);
-			if (name === "w:sdt") return readInline(childrenOf(find(childrenOf(element[name]), "w:sdtContent")), paragraphRun, reader);
+			if (name === "w:sdt") return isBound(element) ? BOUND_CONTROL : readInline(childrenOf(find(childrenOf(element[name]), "w:sdtContent")), paragraphRun, reader);
 			if (name === "w:fldSimple") {
 				const result = workedOutResultOf(String(attributesOf(element[name])["w:instr"]), fontOf(paragraphRun));
 				return result !== void 0 && isShown(reader) ? [result] : readInline(contentOf$2(element), paragraphRun, reader);
 			}
 			if (name === "w:bookmarkStart") {
-				const bookmark = stringOf(attributesOf(element[name])["w:name"]);
+				const bookmark = bookmarkOf(element);
 				return bookmark === void 0 ? [] : [{
 					type: "marker",
 					name: bookmark
 				}];
 			}
+			if (name === "w:subDoc") return "a subdocument";
 			return name === "m:oMath" || name === "m:oMathPara" ? "an equation" : [];
 		});
 		const unsupported = parts.find((part) => typeof part === "string");
@@ -3792,7 +3844,7 @@ var docxLayout = (function(exports) {
 			readParagraphFormat(properties)
 		];
 		const items = readInline(children, paragraphRun, reader);
-		const unsupported = find(properties, "w:framePr") === void 0 ? unknownLengthIn(element) : "a text frame";
+		const unsupported = find(properties, "w:framePr") !== void 0 ? "a text frame" : find(properties, "w:divId") === void 0 ? unknownLengthIn(element) : "a paragraph in an HTML division";
 		return _objectSpread2(_objectSpread2({
 			type: "paragraph",
 			items: typeof items === "string" ? [] : [...list.items, ...items],
@@ -3808,20 +3860,16 @@ var docxLayout = (function(exports) {
 		const style = attributes["w:val"];
 		return style === void 0 || style === "nil" || style === "none" ? 0 : ((_numberOf3 = numberOf(attributes["w:sz"])) !== null && _numberOf3 !== void 0 ? _numberOf3 : 0) / EIGHTHS_PER_POINT;
 	};
-	/** The rows of a table, or of a content control or custom XML in it */
-	var rowsOf = (elements) => elements.filter(isObject).flatMap((element) => {
-		const name = nameOf(element);
-		if (name === "w:tr") return [element];
-		if (name === "w:sdt") return rowsOf(childrenOf(find(childrenOf(element[name]), "w:sdtContent")));
-		return name === "w:customXml" ? rowsOf(contentOf$2(element)) : [];
-	});
-	/** The cells of a row */
-	var cellsOf = (elements) => elements.filter(isObject).flatMap((element) => {
-		const name = nameOf(element);
-		if (name === "w:tc") return [element];
-		if (name === "w:sdt") return cellsOf(childrenOf(find(childrenOf(element[name]), "w:sdtContent")));
-		return name === "w:customXml" ? cellsOf(contentOf$2(element)) : [];
-	});
+	/**
+	* Why a cell's properties (`w:tcPr`) change how its text is laid out in a way not yet followed, when they do: cells merged
+	* across columns as the oldest versions of Word wrote them (`w:hMerge`), text that doesn't wrap (`w:noWrap`), and text
+	* fitted to the cell (`w:tcFitText`).
+	*/
+	var unsupportedCellOf = (properties) => {
+		if (find(properties, "w:hMerge") !== void 0) return "cells merged across columns as old versions of Word wrote them";
+		if (onOff(properties, "w:noWrap") === true) return "a table cell whose text doesn't wrap";
+		return onOff(properties, "w:tcFitText") === true ? "text fitted to its table cell" : void 0;
+	};
 	/** A share of a width, as a fraction, from fiftieths of a percent or a percentage written with a % */
 	var shareOf = (value) => {
 		const amount = numberOf(value);
@@ -3842,7 +3890,7 @@ var docxLayout = (function(exports) {
 	* out.
 	*/
 	var readTable = (element, reader) => {
-		var _ref5, _ref6, _blocks$find;
+		var _ref5, _ref6, _ref7, _ref8, _ref9, _read$find, _blocks$find;
 		const children = contentOf$2(element).filter(isObject);
 		const properties = childrenOf(find(children, "w:tblPr"));
 		const style = valueOf(properties, "w:tblStyle");
@@ -3859,17 +3907,20 @@ var docxLayout = (function(exports) {
 			var _twips;
 			return (_twips = twips(attributesOf(column["w:gridCol"])["w:w"])) !== null && _twips !== void 0 ? _twips : 0;
 		});
-		const rows = rowsOf(children);
+		const parts = unwrap(children);
+		const rows = withBookmarks(parts, "w:tr");
 		const gridWidth = (from, to) => grid.slice(from, to).reduce((total, value) => total + value, 0);
-		const read = rows.map((row, rowIndex) => {
+		const read = rows.map(({ element: row, bookmarks: rowBookmarks }, rowIndex) => {
 			var _numberOf4;
 			const rowChildren = contentOf$2(row).filter(isObject);
 			const rowProperties = childrenOf(find(rowChildren, "w:trPr"));
+			const rowParts = unwrap(rowChildren);
+			const rowCells = withBookmarks(rowParts, "w:tc");
 			const heightAttributes = attributesOf(find(rowProperties, "w:trHeight"));
 			const height = twips(heightAttributes["w:val"]);
 			const { "w:hRule": rule } = heightAttributes;
 			const skipped = (_numberOf4 = numberOf(attributesOf(find(rowProperties, "w:gridBefore"))["w:val"])) !== null && _numberOf4 !== void 0 ? _numberOf4 : 0;
-			const { cells, edges, column: end } = cellsOf(rowChildren).reduce(({ column, cells: done, edges: before }, cell) => {
+			const { cells, edges, column: end, unsupported: cellsUnsupported } = rowCells.reduce(({ column, cells: done, edges: before, unsupported: unsupportedBefore }, { element: cell }) => {
 				var _numberOf5, _twips2, _shareOf;
 				const cellChildren = contentOf$2(cell).filter(isObject);
 				const cellProperties = childrenOf(find(cellChildren, "w:tcPr"));
@@ -3881,25 +3932,28 @@ var docxLayout = (function(exports) {
 				const inTwips = widthType === "dxa" ? (_twips2 = twips(ownWidth)) !== null && _twips2 !== void 0 ? _twips2 : 0 : 0;
 				const hasWidth = inTwips > 0 || widthType === "pct" && ((_shareOf = shareOf(ownWidth)) !== null && _shareOf !== void 0 ? _shareOf : 0) > 0;
 				const width = inTwips > 0 ? inTwips : gridWidth(column, column + span);
-				return {
+				return _objectSpread2(_objectSpread2({
 					column: column + span,
-					edges: new Map([...before, [column + span, before.get(column) + width]]),
-					cells: [...done, _objectSpread2(_objectSpread2(_objectSpread2({ column }, span > 1 ? { span } : {}), {}, { width: width - margins.left - margins.right }, hasWidth ? { ownWidth: width } : {}), {}, {
-						blocks: readBlocks(cellChildren, reader, style),
-						marginTop: margins.top,
-						marginBottom: margins.bottom,
-						marginLeft: margins.left,
-						marginRight: margins.right
-					}, merge ? { verticalMerge: merge } : {})]
-				};
+					edges: new Map([...before, [column + span, before.get(column) + width]])
+				}, withoutUndefined({ unsupported: unsupportedBefore !== null && unsupportedBefore !== void 0 ? unsupportedBefore : unsupportedCellOf(cellProperties) })), {}, { cells: [...done, _objectSpread2(_objectSpread2(_objectSpread2({ column }, span > 1 ? { span } : {}), {}, { width: width - margins.left - margins.right }, hasWidth ? { ownWidth: width } : {}), {}, {
+					blocks: readBlocks(cellChildren, reader, style),
+					marginTop: margins.top,
+					marginBottom: margins.bottom,
+					marginLeft: margins.left,
+					marginRight: margins.right
+				}, merge ? { verticalMerge: merge } : {})] });
 			}, {
 				column: skipped,
 				cells: [],
 				edges: /* @__PURE__ */ new Map([[skipped, gridWidth(0, skipped)]])
 			});
-			return {
+			const rowUnsupported = find(rowProperties, "w:divId") !== void 0 ? "a table row in an HTML division" : rowParts.some((part) => "w:sdt" in part) ? BOUND_CONTROL : cellsUnsupported;
+			return _objectSpread2(_objectSpread2({
 				edges,
-				end,
+				end
+			}, withoutUndefined({ unsupported: rowUnsupported })), {}, {
+				bookmarks: rowBookmarks,
+				cellBookmarks: rowCells.map(({ bookmarks }) => bookmarks),
 				row: _objectSpread2(_objectSpread2({ cells }, height !== void 0 && rule !== "auto" ? { height: {
 					value: height,
 					rule: rule === "exact" ? "exact" : "atLeast"
@@ -3909,7 +3963,17 @@ var docxLayout = (function(exports) {
 					borderTop: borderWidth(borders, rowIndex === 0 ? "w:top" : "w:insideH"),
 					borderBottom: rowIndex === rows.length - 1 ? borderWidth(borders, "w:bottom") : 0
 				})
-			};
+			});
+		});
+		let carried = [];
+		const tableRows = read.map(({ row, bookmarks, cellBookmarks }) => {
+			carried = [...carried, ...bookmarks];
+			return _objectSpread2(_objectSpread2({}, row), {}, { cells: row.cells.map((cell, index) => {
+				const pending = [...carried, ...cellBookmarks[index]];
+				const marked = pending.length === 0 ? void 0 : startingAtFirst(cell.blocks, pending);
+				carried = marked === void 0 ? pending : [];
+				return marked === void 0 ? cell : _objectSpread2(_objectSpread2({}, cell), {}, { blocks: marked });
+			}) });
 		});
 		const edgesAt = /* @__PURE__ */ new Map();
 		const unequal = read.some(({ edges }) => [...edges].some(([column, edge]) => {
@@ -3926,41 +3990,93 @@ var docxLayout = (function(exports) {
 		const lengths = unknownLengthIn([
 			find(children, "w:tblPr"),
 			find(children, "w:tblGrid"),
-			...rows.flatMap((row) => {
+			...rows.flatMap(({ element: row }) => {
 				const rowChildren = contentOf$2(row).filter(isObject);
-				return [find(rowChildren, "w:trPr"), ...cellsOf(rowChildren).map((cell) => find(contentOf$2(cell).filter(isObject), "w:tcPr"))];
+				return [find(rowChildren, "w:trPr"), ...unwrap(rowChildren).filter((part) => "w:tc" in part).map((cell) => find(contentOf$2(cell).filter(isObject), "w:tcPr"))];
 			})
 		]);
-		const unsupported = (_ref5 = (_ref6 = fits ? unfitted : unequal ? "a table whose rows give a column different widths" : void 0) !== null && _ref6 !== void 0 ? _ref6 : lengths) !== null && _ref5 !== void 0 ? _ref5 : (_blocks$find = blocks.find((block) => block.unsupported !== void 0)) === null || _blocks$find === void 0 ? void 0 : _blocks$find.unsupported;
+		const unsupported = (_ref5 = (_ref6 = (_ref7 = (_ref8 = (_ref9 = find(properties, "w:tblpPr") === void 0 ? void 0 : "a table that text flows around") !== null && _ref9 !== void 0 ? _ref9 : parts.some((part) => "w:sdt" in part) ? BOUND_CONTROL : void 0) !== null && _ref8 !== void 0 ? _ref8 : (_read$find = read.find((row) => row.unsupported !== void 0)) === null || _read$find === void 0 ? void 0 : _read$find.unsupported) !== null && _ref7 !== void 0 ? _ref7 : fits ? unfitted : unequal ? "a table whose rows give a column different widths" : void 0) !== null && _ref6 !== void 0 ? _ref6 : lengths) !== null && _ref5 !== void 0 ? _ref5 : (_blocks$find = blocks.find((block) => block.unsupported !== void 0)) === null || _blocks$find === void 0 ? void 0 : _blocks$find.unsupported;
 		return _objectSpread2(_objectSpread2(_objectSpread2({
 			type: "table",
-			rows: read.map(({ row }) => row)
+			rows: tableRows
 		}, fits ? { fit: readTableWidth(properties) } : {}), !fits && !fixed ? { widen: _objectSpread2(_objectSpread2({}, readTableWidth(properties)), {}, { acrossColumns: tableCells.some(({ span }) => span !== void 0) }) } : {}), {}, {
 			borderLeft: borderWidth(borders, "w:left"),
 			borderRight: borderWidth(borders, "w:right")
 		}, unsupported ? { unsupported } : {});
 	};
+	/** A block in place of what can't be laid out, with why */
+	var unsupportedBlock = (unsupported) => ({
+		type: "paragraph",
+		items: [],
+		format: {},
+		tabStops: [],
+		markFont: {},
+		unsupported
+	});
+	/**
+	* A block with bookmarks that start where its text does: before its first item, or, for a table, in the first of its
+	* cells with any text. Undefined when it has no text for them to start at, as a table without rows.
+	*/
+	var startingWith = (block, bookmarks) => {
+		if (bookmarks.length === 0) return block;
+		if (block.type === "paragraph") return _objectSpread2(_objectSpread2({}, block), {}, { items: [...bookmarks.map((name) => ({
+			type: "marker",
+			name
+		})), ...block.items] });
+		for (const [rowIndex, row] of block.rows.entries()) for (const [cellIndex, cell] of row.cells.entries()) {
+			const blocks = startingAtFirst(cell.blocks, bookmarks);
+			if (blocks !== void 0) {
+				const cells = row.cells.map((other, index) => index === cellIndex ? _objectSpread2(_objectSpread2({}, cell), {}, { blocks }) : other);
+				return _objectSpread2(_objectSpread2({}, block), {}, { rows: block.rows.map((other, index) => index === rowIndex ? _objectSpread2(_objectSpread2({}, row), {}, { cells }) : other) });
+			}
+		}
+	};
+	/**
+	* Blocks with bookmarks that start where the text of the first of them with any text does. Undefined when none has any.
+	*/
+	var startingAtFirst = (blocks, bookmarks) => {
+		for (const [index, block] of blocks.entries()) {
+			const marked = startingWith(block, bookmarks);
+			if (marked !== void 0) return [
+				...blocks.slice(0, index),
+				marked,
+				...blocks.slice(index + 1)
+			];
+		}
+	};
+	/**
+	* Reads a paragraph or table, or what is in its place and can't be laid out: an imported document, an equation outside
+	* a paragraph, or a content control bound to custom XML. Undefined for anything else.
+	*/
+	var readBlock = (element, reader, tableStyle) => {
+		switch (nameOf(element)) {
+			case "w:p": return readParagraph(element, reader, tableStyle);
+			case "w:tbl": return readTable(element, reader);
+			case "w:sdt": return unsupportedBlock(BOUND_CONTROL);
+			case "w:altChunk": return unsupportedBlock("an imported document");
+			case "m:oMath":
+			case "m:oMathPara": return unsupportedBlock("an equation");
+			default: return;
+		}
+	};
 	/**
 	* Reads the paragraphs and tables in a part of a document, such as a table cell or a header, and in the content controls
-	* and custom XML in it.
+	* and custom XML in it. A bookmark between them starts with the next.
 	*/
-	var readBlocks = (elements, reader, tableStyle) => elements.filter(isObject).flatMap((element) => {
-		switch (nameOf(element)) {
-			case "w:p": return [readParagraph(element, reader, tableStyle)];
-			case "w:tbl": return [readTable(element, reader)];
-			case "w:sdt": return readBlocks(childrenOf(find(childrenOf(element["w:sdt"]), "w:sdtContent")), reader, tableStyle);
-			case "w:customXml": return readBlocks(contentOf$2(element), reader, tableStyle);
-			case "w:altChunk": return [{
-				type: "paragraph",
-				items: [],
-				format: {},
-				tabStops: [],
-				markFont: {},
-				unsupported: "an imported document"
-			}];
-			default: return [];
+	var readBlocks = (elements, reader, tableStyle) => {
+		const blocks = [];
+		let bookmarks = [];
+		for (const element of unwrap(elements)) {
+			const block = readBlock(element, reader, tableStyle);
+			if (block === void 0) bookmarks = [...bookmarks, ...bookmarksIn([element])];
+			else {
+				const marked = startingWith(block, bookmarks);
+				blocks.push(marked !== null && marked !== void 0 ? marked : block);
+				bookmarks = marked ? [] : bookmarks;
+			}
 		}
-	});
+		return blocks;
+	};
 	var START_TYPES = /* @__PURE__ */ new Set([
 		"nextPage",
 		"continuous",
@@ -4015,7 +4131,7 @@ var docxLayout = (function(exports) {
 		const marginRight = (_twips7 = twips((_margins$wRight = margins["w:right"]) !== null && _margins$wRight !== void 0 ? _margins$wRight : margins["w:end"])) !== null && _twips7 !== void 0 ? _twips7 : DEFAULT_SECTION.marginRight;
 		const gutter = (_twips8 = twips(margins["w:gutter"])) !== null && _twips8 !== void 0 ? _twips8 : DEFAULT_SECTION.gutter;
 		const columns = readColumns(find(properties, "w:cols"), pageWidth - marginLeft - marginRight - gutter);
-		const unsupported = grid === "lines" || grid === "linesAndChars" || grid === "snapToChars" ? "a document grid" : formatPageNumber(1, format) === void 0 ? "page numbers in a format not yet written" : find(properties, "w:textDirection") !== void 0 ? "text that runs down the page" : unknownLengthIn(element);
+		const unsupported = grid === "lines" || grid === "linesAndChars" || grid === "snapToChars" ? "a document grid" : formatPageNumber(1, format) === void 0 ? "page numbers in a format not yet written" : find(properties, "w:textDirection") !== void 0 ? "text that runs down the page" : find(properties, "w15:footnoteColumns") === void 0 ? unknownLengthIn(element) : "footnotes in columns of their own";
 		const headers = readReferences(properties, "w:headerReference", readPart);
 		const footers = readReferences(properties, "w:footerReference", readPart);
 		return _objectSpread2(_objectSpread2(_objectSpread2({
@@ -4096,13 +4212,21 @@ var docxLayout = (function(exports) {
 	* Reads the parts of the document's settings (`w:settings`) that change how it is laid out.
 	*/
 	var readSettings = (xml) => {
-		var _compatibility$find, _twips14;
+		var _compatibility$find, _find$, _find, _twips14;
 		const settings = childrenOf(xml === null || xml === void 0 ? void 0 : xml["w:settings"]);
 		const compatibility = childrenOf(find(settings, "w:compat"));
 		const lists = readKinsokuLists(settings);
 		const spacingControl = valueOf(settings, "w:characterSpacingControl");
 		const mode = numberOf(attributesOf((_compatibility$find = compatibility.find((child) => "w:compatSetting" in child && attributesOf(child["w:compatSetting"])["w:name"] === "compatibilityMode")) === null || _compatibility$find === void 0 ? void 0 : _compatibility$find["w:compatSetting"])["w:val"]);
-		const unsupported = onOff(settings, "w:autoHyphenation") === true ? "hyphenation" : onOff(settings, "w:strictFirstAndLastChars") === true ? "the strict rules for the characters that can't start a line" : spacingControl !== void 0 && spacingControl !== "doNotCompress" ? "punctuation compressed" : mode === void 0 || mode < CURRENT_COMPATIBILITY_MODE ? "a document in compatibility mode" : unknownLengthIn(settings);
+		const unsupported = (_find$ = (_find = [
+			[onOff(settings, "w:autoHyphenation"), "hyphenation"],
+			[onOff(settings, "w:strictFirstAndLastChars"), "the strict rules for the characters that can't start a line"],
+			[spacingControl !== void 0 && spacingControl !== "doNotCompress", "punctuation compressed"],
+			[mode === void 0 || mode < CURRENT_COMPATIBILITY_MODE, "a document in compatibility mode"],
+			[onOff(settings, "w:bookFoldPrinting") || onOff(settings, "w:bookFoldRevPrinting"), "pages printed as a folded booklet"],
+			[onOff(settings, "w:printTwoOnOne"), "two pages printed on each sheet"],
+			[onOff(settings, "w:linkStyles"), "styles updated from the document's template when Word opens it"]
+		].find(([applies]) => applies === true)) === null || _find === void 0 ? void 0 : _find[1]) !== null && _find$ !== void 0 ? _find$ : unknownLengthIn(settings);
 		return _objectSpread2(_objectSpread2({
 			defaultTabStop: (_twips14 = twips(attributesOf(find(settings, "w:defaultTabStop"))["w:val"])) !== null && _twips14 !== void 0 ? _twips14 : 36,
 			evenAndOddHeaders: onOff(settings, "w:evenAndOddHeaders") === true,
@@ -4145,7 +4269,7 @@ var docxLayout = (function(exports) {
 	* Reads a document's body (`w:body`), with the other parts of the document.
 	*/
 	var readContent = (body, parts) => {
-		var _parts$otherListIds, _ref7, _documentContent$unsu;
+		var _parts$otherListIds, _ref10, _documentContent$unsu;
 		const { styles } = parts;
 		const { lists: numbering, unsupported: inNumbering } = readNumbering(parts.numbering, styles, (_parts$otherListIds = parts.otherListIds) !== null && _parts$otherListIds !== void 0 ? _parts$otherListIds : /* @__PURE__ */ new Map());
 		const readerOf = (inHeader) => ({
@@ -4212,33 +4336,27 @@ var docxLayout = (function(exports) {
 		const addSection = (element) => {
 			sections.push(readSection(element, readPart, sections[sections.length - 1]));
 		};
-		const read = (elements) => {
-			for (const element of elements.filter(isObject)) {
-				const name = nameOf(element);
-				if (name === "w:sdt") read(childrenOf(find(childrenOf(element[name]), "w:sdtContent")));
-				else if (name === "w:customXml") read(contentOf$2(element));
-				else if (name === "w:sectPr") addSection(element[name]);
-				else if (name === "w:bookmarkStart") bookmarks = [...bookmarks, String(attributesOf(element[name])["w:name"])];
-				else {
-					const sectionProperties = name === "w:p" ? find(childrenOf(find(contentOf$2(element).filter(isObject), "w:pPr")), "w:sectPr") : void 0;
-					for (const block of readBlocks([element], reader)) {
-						const markers = bookmarks.map((marker) => ({
-							type: "marker",
-							name: marker
-						}));
-						const marked = block.type === "paragraph" && markers.length > 0;
-						const sectionBreak = sectionProperties !== void 0 && block.type === "paragraph" && block.items.length === 0 && !marked;
-						blocks.push({
-							block: marked ? _objectSpread2(_objectSpread2({}, block), {}, { items: [...markers, ...block.items] }) : sectionBreak ? _objectSpread2(_objectSpread2({}, block), {}, { sectionBreak }) : block,
-							section: sections.length
-						});
-						bookmarks = marked ? [] : bookmarks;
-					}
-					if (sectionProperties !== void 0) addSection(sectionProperties);
+		for (const element of unwrap(contentOf$2(body))) {
+			const name = nameOf(element);
+			if (name === "w:sectPr") addSection(element[name]);
+			else if (name === "w:bookmarkStart") {
+				const bookmark = bookmarkOf(element);
+				bookmarks = bookmark === void 0 ? bookmarks : [...bookmarks, bookmark];
+			} else {
+				const block = readBlock(element, reader);
+				const sectionProperties = name === "w:p" ? find(childrenOf(find(contentOf$2(element).filter(isObject), "w:pPr")), "w:sectPr") : void 0;
+				if (block !== void 0) {
+					const marked = startingWith(block, bookmarks);
+					const sectionBreak = sectionProperties !== void 0 && block.type === "paragraph" && block.items.length === 0 && bookmarks.length === 0;
+					blocks.push({
+						block: sectionBreak ? _objectSpread2(_objectSpread2({}, block), {}, { sectionBreak }) : marked !== null && marked !== void 0 ? marked : block,
+						section: sections.length
+					});
+					bookmarks = marked ? [] : bookmarks;
 				}
+				if (sectionProperties !== void 0) addSection(sectionProperties);
 			}
-		};
-		read(contentOf$2(body));
+		}
 		if (sections.length === 0 || blocks.some(({ section }) => section >= sections.length)) addSection(void 0);
 		const documentContent = _objectSpread2({
 			blocks,
@@ -4250,7 +4368,7 @@ var docxLayout = (function(exports) {
 			footnoteNumbers,
 			endnoteNumbers
 		}, readSettings(parts.settings));
-		return _objectSpread2(_objectSpread2({}, documentContent), withoutUndefined({ unsupported: (_ref7 = (_documentContent$unsu = documentContent.unsupported) !== null && _documentContent$unsu !== void 0 ? _documentContent$unsu : styles.unsupported) !== null && _ref7 !== void 0 ? _ref7 : inNumbering }));
+		return _objectSpread2(_objectSpread2({}, documentContent), withoutUndefined({ unsupported: (_ref10 = (_documentContent$unsu = documentContent.unsupported) !== null && _documentContent$unsu !== void 0 ? _documentContent$unsu : styles.unsupported) !== null && _ref10 !== void 0 ? _ref10 : inNumbering }));
 	};
 	//#endregion
 	//#region src/layout/read-docx.ts
@@ -4327,10 +4445,10 @@ var docxLayout = (function(exports) {
 	//#region src/layout/estimate-page-numbers.ts
 	/** What a document is read into: a template patchDocument patched, or the body of a document being written */
 	var contentOf = (document, context) => "parts" in document ? readDocx(document.parts) : (context === null || context === void 0 ? void 0 : context.file) && readDocument(document, context);
-	/** Lays out the pages until their page numbers stop changing, with a measurer */
+	/** Lays out the pages until their page numbers stop changing, with a measurer. Gives none when they don't */
 	var estimateWith = (content, measurer) => {
-		if (!content) return { bookmarks: /* @__PURE__ */ new Map() };
-		const pagination = layOutPasses(content, measurer);
+		const pagination = content && layOutPasses(content, measurer);
+		if (!(pagination === null || pagination === void 0 ? void 0 : pagination.settled)) return { bookmarks: /* @__PURE__ */ new Map() };
 		const pageCount = knownPageCount(pagination);
 		return _objectSpread2({
 			bookmarks: pagination.bookmarks,
@@ -4353,12 +4471,14 @@ var docxLayout = (function(exports) {
 	* and orphan control, lists, pictures in the line, tables, whose rows break across pages, footnotes and endnotes, page,
 	* column and section breaks, and each section's page size, margins, columns, headers, footers and page numbering.
 	*
-	* It stops at the first thing it can't lay out yet: a drawing that text flows around, a text box or frame, an equation,
-	* a footnote that continues on the next page, columns evened out before a continuous section break, a table row kept
-	* whole that is taller than a page, or a character whose width in its font isn't known, such as a mathematical symbol in
-	* Calibri, which Word draws in Cambria Math. The page references to bookmarks after it are left blank, for Word to fill
-	* in when it updates the fields. A document in compatibility mode, which Word lays out as an older version of Word did,
-	* isn't laid out at all.
+	* It stops at the first thing it can't lay out yet: a drawing or table that text flows around, a text box or frame, an
+	* equation, a footnote that continues on the next page, columns evened out before a continuous section break, a table
+	* row kept whole that is taller than a page, or a character whose width in its font isn't known, such as a mathematical
+	* symbol in Calibri, which Word draws in Cambria Math. The page references to bookmarks after it are left blank, for Word
+	* to fill in when it updates the fields. A document in compatibility mode, which Word lays out as an older version of
+	* Word did, isn't laid out at all. When laying the pages out again with the page numbers it worked out still changes
+	* them after three passes, as when a table of contents wraps one way with a number and the other way without it, all of
+	* them are left blank.
 	*
 	* Page references and tables of contents are written clean, so Word shows the numbers as they are written, and the
 	* page numbers it left blank stay blank, without asking to update the fields, unless the document has `updateFields`
