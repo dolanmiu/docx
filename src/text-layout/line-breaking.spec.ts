@@ -1255,6 +1255,8 @@ describe("measureContentWidths", () => {
 });
 
 describe("soft hyphens", () => {
+    // cspell:ignore abbcc abbccddd bbbccc bbccddd dampf Donaudampf Donaudampfschiff Donaudampfschifffahrts fahrts narily ordi schiff
+    // cspell:ignore Donaudampfschifffahrtsgesellschaft
     const softHyphen = (font: TextFont = {}): InlineItem => ({ type: "softHyphen", font });
     const linesOf = (items: readonly InlineItem[], options: Partial<LineLayoutOptions> = {}): readonly LaidOutLine[] =>
         layoutLines(items, { width: 100, measurer: MEASURER, ...options });
@@ -1333,7 +1335,7 @@ describe("soft hyphens", () => {
         ];
         const lines = layoutLines(items, { width: 9026 / 20 });
         const whole = "Donaudampfschifffahrtsgesellschaft";
-        expect(lines.map(({ text: value }) => value.trimEnd().split(" ").pop())).to.deep.equal([
+        expect(lines.map(({ text: value }) => value.trimEnd().split(" ").at(-1))).to.deep.equal([
             "Donaudampfschiff",
             "Donau",
             "Donaudampfschifffahrts",
@@ -1390,7 +1392,7 @@ describe("decimal tab stops", () => {
         // word-watertight-text TX12a: in Calibri 11, at a decimal stop at 4000 twips, Word's numbers end at these
         const font = { font: "Calibri", size: 11 };
         const tabStops = [{ position: 200, alignment: "decimal" as const }];
-        for (const [number, edge] of [
+        for (const [written, edge] of [
             ["12.5", 4167.6],
             ["1234.56", 4279.1],
             ["7", 4000.4],
@@ -1400,7 +1402,7 @@ describe("decimal tab stops", () => {
                 [
                     { type: "text", text: "TX12a", font },
                     { type: "tab", font },
-                    { type: "text", text: number, font },
+                    { type: "text", text: written, font },
                 ],
                 {
                     width: 9026 / 20,

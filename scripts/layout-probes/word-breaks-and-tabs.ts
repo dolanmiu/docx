@@ -127,11 +127,19 @@ const fixed = (...rows: readonly (readonly Paragraph[])[]): Table =>
     new Table({
         width: { size: 9026, type: WidthType.DXA },
         columnWidths: [9026],
-        rows: rows.map((children) => new TableRow({ children: [new TableCell({ width: { size: 9026, type: WidthType.DXA }, children: [...children] })] })),
+        rows: rows.map(
+            (children) =>
+                new TableRow({ children: [new TableCell({ width: { size: 9026, type: WidthType.DXA }, children: [...children] })] }),
+        ),
     });
 
-const tab = (label: string, type: (typeof TabStopType)[keyof typeof TabStopType], position: number, text: string, options: Options = {}): Paragraph =>
-    new Paragraph({ ...options, tabStops: [{ type, position }], children: [new TextRun(text.replace("@", label))] });
+const tab = (
+    label: string,
+    type: (typeof TabStopType)[keyof typeof TabStopType],
+    position: number,
+    text: string,
+    options: Options = {},
+): Paragraph => new Paragraph({ ...options, tabStops: [{ type, position }], children: [new TextRun(text.replace("@", label))] });
 
 const sections: ISectionOptions[] = [
     // HM1: two paragraphs joined by a hidden mark, of different formatting, long enough for three lines between them, or
@@ -153,7 +161,15 @@ const sections: ISectionOptions[] = [
     // HM2: a hidden mark before a table, and at the end of a table cell, alone and after another paragraph
     section(
         probe("HM2a", hiddenMark("HM2a first"), fixed([line("HM2a cell")])),
-        probe("HM2b", fixed([hiddenMark("HM2b alone")], [line("HM2b next row")], [line("HM2b first"), hiddenMark(" HM2b last")], [line("HM2b last row")])),
+        probe(
+            "HM2b",
+            fixed(
+                [hiddenMark("HM2b alone")],
+                [line("HM2b next row")],
+                [line("HM2b first"), hiddenMark(" HM2b last")],
+                [line("HM2b last row")],
+            ),
+        ),
     ),
 
     // HM3: hidden paragraphs between a line above and below
@@ -175,7 +191,11 @@ const sections: ISectionOptions[] = [
             line("HM4 three", { numbering: { reference: "hm4", level: 0 } }),
         ),
         probe("HM5a", new Paragraph({ run: { specVanish: true }, children: [new TextRun("HM5a first")] }), line(" HM5a second")),
-        probe("HM5b", new Paragraph({ run: { vanish: true, specVanish: true }, children: [new TextRun("HM5b first")] }), line(" HM5b second")),
+        probe(
+            "HM5b",
+            new Paragraph({ run: { vanish: true, specVanish: true }, children: [new TextRun("HM5b first")] }),
+            line(" HM5b second"),
+        ),
         probe("HM6", hiddenMark("HM6 one"), hiddenMark(" HM6 two"), line(" HM6 three")),
         probe("HM7", autofit([hiddenMark("HM7 aaaaaaaa"), line("HM7 bbbbbbbbbbbb")], `HM7 other ${prose(60)}`)),
     ),
@@ -183,12 +203,9 @@ const sections: ISectionOptions[] = [
     // SH1: justified lines whose last word fits only squeezed, or broken at a soft hyphen; SH1f left-aligned
     section(
         ...[0.03, 0.06, 0.1, 0.15, 0.2].map((share, index) =>
-            tuned(
-                `SH1${"abcde"[index]} ${Math.round(share * 100)}`,
-                ["Donau", "dampf", "schiff"],
-                (spaces) => share * spaces * SPACE,
-                { alignment: AlignmentType.JUSTIFIED },
-            ),
+            tuned(`SH1${"abcde"[index]} ${Math.round(share * 100)}`, ["Donau", "dampf", "schiff"], (spaces) => share * spaces * SPACE, {
+                alignment: AlignmentType.JUSTIFIED,
+            }),
         ),
         tuned("SH1f 10", ["Donau", "dampf", "schiff"], (spaces) => 0.1 * spaces * SPACE),
     ),
@@ -210,7 +227,10 @@ const sections: ISectionOptions[] = [
     // hyphens longer than a line
     section(
         line("SH3a above"),
-        autofit([new Paragraph({ children: [new TextRun("SH3a "), softly("Donau", "dampf", "schiff", "fahrts", "gesell", "schaft")] })], `SH3a other ${prose(60)}`),
+        autofit(
+            [new Paragraph({ children: [new TextRun("SH3a "), softly("Donau", "dampf", "schiff", "fahrts", "gesell", "schaft")] })],
+            `SH3a other ${prose(60)}`,
+        ),
         line("SH3b above"),
         autofit("SH3b Donaudampfschifffahrtsgesellschaft", `SH3b other ${prose(60)}`),
         line("SH3b below"),
@@ -225,9 +245,23 @@ const sections: ISectionOptions[] = [
 
     // DT: text at a decimal tab at 4000 that isn't a plain number
     section(
-        ...["$1,234.50", "12.5%", "abc", "a.b", "1.2.3", "x 1.5", "1.5 x", "(3.25)", "1,5", ".75", "12.", "Total 12.50", "1 234.5", "-", "e.g. 7"].map(
-            (text, index) => tab(`DT${index + 1}`, TabStopType.DECIMAL, 4000, `@\t${text}`),
-        ),
+        ...[
+            "$1,234.50",
+            "12.5%",
+            "abc",
+            "a.b",
+            "1.2.3",
+            "x 1.5",
+            "1.5 x",
+            "(3.25)",
+            "1,5",
+            ".75",
+            "12.",
+            "Total 12.50",
+            "1 234.5",
+            "-",
+            "e.g. 7",
+        ].map((text, index) => tab(`DT${index + 1}`, TabStopType.DECIMAL, 4000, `@\t${text}`)),
     ),
 
     // TP: tabs past the margin
@@ -256,7 +290,9 @@ const doc = new Document({
         config: [
             {
                 reference: "hm4",
-                levels: [{ level: 0, format: LevelFormat.DECIMAL, text: "%1.", style: { paragraph: { indent: { left: 720, hanging: 360 } } } }],
+                levels: [
+                    { level: 0, format: LevelFormat.DECIMAL, text: "%1.", style: { paragraph: { indent: { left: 720, hanging: 360 } } } },
+                ],
             },
         ],
     },
