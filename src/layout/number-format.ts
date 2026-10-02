@@ -396,3 +396,95 @@ export const formatNumber = (value: number, name = "decimal"): string | undefine
  * those it doesn't write as Word does.
  */
 export const formatPageNumber = (value: number, name = "decimal"): string | undefined => writeIn(PAGE_FORMATS, value, name);
+
+// The largest number a field writes in letters, 30 times through the alphabet. Word writes an error for 781
+const LARGEST_FIELD_LETTERS = 780;
+
+/**
+ * The number formats of a field's `\*` switch, by their names in small letters, as Word writes a SEQ field's number in
+ * them (`scripts/layout-probes/word-seq.ts`) and a page reference's and a number of pages' (`word-watertight-fields.ts`
+ * FD3), as `field-number-formats.ts` in docx writes them, and whether the capitals of their names say those of the number
+ */
+const FIELD_FORMATS: ReadonlyMap<string, { readonly written: Format; readonly inCase: boolean }> = new Map([
+    ["arabic", { written: format(String, 0, Infinity), inCase: false }],
+    ["roman", { written: format(roman), inCase: true }],
+    ["alphabetic", { written: format(orNothing(repeated(LOWER_LETTERS)), 0, LARGEST_FIELD_LETTERS), inCase: true }],
+    ["ordinal", { written: format((value) => `${value}${ordinalSuffix(value)}`, 1, Infinity), inCase: false }],
+    ["arabicdash", { written: format((value) => `- ${value} -`, 0, Infinity), inCase: false }],
+]);
+
+/** Whether a field's `\*` switch is one of the number formats {@link formatFieldNumber} writes, in any capitals */
+export const isFieldNumberFormat = (name: string): boolean => FIELD_FORMATS.has(name.toLowerCase());
+
+/**
+ * A number as a field writes it with a format of its `\*` switch, such as `"x"` for 10 in `roman`, or undefined for
+ * those Word's text isn't known for. Word writes roman numerals and letters in small letters when the format's name
+ * starts with a small letter, as `roman`, and in capitals otherwise, as `Roman` and `ROMAN`.
+ */
+export const formatFieldNumber = (value: number, name: string): string | undefined => {
+    const found = FIELD_FORMATS.get(name.toLowerCase());
+    if (!found) {
+        return undefined;
+    }
+    const [write, smallest, largest] = found.written;
+    const written = Number.isInteger(value) && value >= smallest && value <= largest ? write(value) : undefined;
+    return found.inCase && name.charAt(0) === name.charAt(0).toUpperCase() ? written?.toUpperCase() : written;
+};
+
+/** The capitals a field's `\*` switch writes its text in: all capitals, all small letters, or a capital first */
+export type FieldCapitals = "upper" | "lower" | "firstcap";
+
+/**
+ * How a field writes its result: its number in a format of its `\*` switch (`numberFormat`), such as `roman`, or with a
+ * picture of its `\#` switch, such as `00`, and its text in the capitals of a `\*` switch, such as `Upper`
+ */
+export type FieldFormat = { readonly numberFormat?: string; readonly picture?: string; readonly capitals?: FieldCapitals };
+
+/**
+ * Whether Word's text for a picture of a field's `\#` switch is known: one of digits (`0`), digits only where the number
+ * has them (`#`) and commas between thousands, as Word wrote `00`, `000`, `0`, `#` and `#,##0`
+ * (`scripts/layout-probes/word-page-fields.ts` PF5 to PF7)
+ */
+export const isFieldPicture = (picture: string): boolean => /^[#0,]*[#0][#0,]*$/.test(picture);
+
+/**
+ * A number with a picture: with as many digits as it has `0`s at least, which Word fills with 0s (5 is 05 with `00`), and
+ * its thousands between commas when it has one (1234 is 1,234 with `#,##0`). Undefined where a `#` has no digit of the
+ * number, which Word writes as a space, not yet seen
+ */
+const inPicture = (value: number, picture: string): string | undefined => {
+    const zeros = [...picture].filter((character) => character === "0").length;
+    const places = zeros + [...picture].filter((character) => character === "#").length;
+    const figures = String(value).padStart(zeros, "0");
+    if (figures.length < places || (zeros === 0 && value === 0)) {
+        return undefined;
+    }
+    return picture.includes(",") ? figures.replace(/\B(?=(\d{3})+$)/g, ",") : figures;
+};
+
+/** Whether a field's format writes its number, rather than only giving its text capitals */
+export const writesNumber = ({ numberFormat, picture }: FieldFormat = {}): boolean => numberFormat !== undefined || picture !== undefined;
+
+/**
+ * A field's number in its format, which {@link writesNumber} says writes it, with a number format or a picture, or
+ * undefined where Word's text for it isn't known
+ */
+export const writeFieldNumber = (value: number, { numberFormat, picture }: FieldFormat): string | undefined =>
+    picture === undefined ? formatFieldNumber(value, numberFormat!) : inPicture(value, picture);
+
+/**
+ * A field's text in the capitals of its format, applied after its number's format, as Word wrote `\* roman \* Upper` as V,
+ * `\* Ordinal \* Upper` as 5TH, and "above" with `\* Upper` as ABOVE (`word-page-fields.ts` PF3 and PF5)
+ */
+export const inFieldCapitals = (text: string, capitals?: FieldCapitals): string => {
+    switch (capitals) {
+        case "upper":
+            return text.toUpperCase();
+        case "lower":
+            return text.toLowerCase();
+        case "firstcap":
+            return text.charAt(0).toUpperCase() + text.slice(1);
+        default:
+            return text;
+    }
+};

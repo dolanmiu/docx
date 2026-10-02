@@ -28,18 +28,34 @@ import {
 } from "../text-layout";
 import { fitColumns, tableWidths } from "./column-widths";
 import type { BlockLayout, LineLayout, NoteLayout, PageLayout, RowLayout } from "./layout-document";
-import { formatPageNumber } from "./number-format";
-import type {
-    Block,
-    DocumentContent,
-    HeadersOrFooters,
-    LayoutItem,
-    ParagraphBlock,
-    Section,
-    TableBlock,
-    TableCell,
-    TableRow,
+import { type FieldFormat, formatPageNumber, inFieldCapitals, writeFieldNumber, writesNumber } from "./number-format";
+import {
+    type Block,
+    type DocumentContent,
+    type HeadersOrFooters,
+    type LayoutItem,
+    type ParagraphBlock,
+    type Section,
+    type TableBlock,
+    type TableCell,
+    type TableRow,
+    isFieldMarker,
 } from "./read-document";
+
+/**
+ * Where a bookmark, or a field whose result depends on the page it is on, was placed.
+ */
+export type PagePlace = {
+    /** The page it is on, counted from the first */
+    readonly page: number;
+    /** The page's number, and how the page shows it, as a page reference to a bookmark there writes it */
+    readonly pageNumber: number;
+    readonly text: string;
+    /** The section it is in, counted from 0 */
+    readonly section: number;
+    /** Where it is among the bookmarks and fields, counted in the order they were placed, which is the document's */
+    readonly order: number;
+};
 
 /**
  * Where the pages of a document broke.
@@ -47,6 +63,19 @@ import type {
 export type Pagination = {
     /** The number of the page each bookmark starts on, as the page shows it */
     readonly bookmarks: ReadonlyMap<string, string>;
+    /** Where each bookmark and each field whose result depends on the page it is on was placed, by its marker's name */
+    readonly places: ReadonlyMap<string, PagePlace>;
+    /**
+     * The number of the page each bookmark starts on, without its chapter number, which a page reference to it in a format
+     * of its own writes in that format
+     */
+    readonly bookmarkNumbers: ReadonlyMap<string, number>;
+    /**
+     * What each page reference with `\p` in the body writes, by the bookmark it refers to, in the order they are in the
+     * body: "above" or "below" when it is on the bookmark's page, and "on page" and the bookmark's page otherwise, or
+     * undefined for those whose page or bookmark wasn't placed
+     */
+    readonly relativePositions: ReadonlyMap<string, readonly (string | undefined)[]>;
     /** How many pages were laid out */
     readonly pageCount: number;
     /**
@@ -63,6 +92,16 @@ export type Pagination = {
 export type PaginateOptions = {
     /** The page numbers of bookmarks, which the results of the page references to them are. Those not in it are blank */
     readonly pageNumbers?: ReadonlyMap<string, string>;
+    /**
+     * Where the bookmarks and fields were placed when the pages were laid out before, which the results of the page
+     * references in formats of their own, those with `\p` and page numbers are worked out from. Those not in it are blank
+     */
+    readonly places?: ReadonlyMap<string, PagePlace>;
+    /**
+     * Where the bookmarks and fields were placed in any pass before, which says where a pass whose pass before stopped
+     * earlier stops too: at a field whose number its format doesn't write there
+     */
+    readonly earlierPlaces?: ReadonlyMap<string, PagePlace>;
     /** The number of pages of the document, and of each section, which page count fields show. They are blank without */
     readonly pageCount?: number;
     readonly sectionPageCounts?: readonly (number | undefined)[];
@@ -125,6 +164,35 @@ type CellPart = {
     readonly lines: readonly LaidOutLine[];
     readonly rest: readonly CellParagraph[];
     readonly fits: number;
+};
+
+/**
+ * A cell of the part of a row that breaks across pages, as it is filled: its paragraphs left, the room its margins take,
+ * the room above the row its text has (`above`), which a cell merged down from a row above has, as its text starts at
+ * the top of its rows on the page, whether the space before its first paragraph is kept, and whether the footnotes of its
+ * lines go with the row's part, as they do unless they went with a row above
+ */
+type RowCell = {
+    readonly paragraphs: readonly CellParagraph[];
+    readonly margins: number;
+    readonly above: number;
+    readonly isFirst: boolean;
+    readonly counted: boolean;
+};
+
+/**
+ * A cell merged down rows of the table being placed whose text isn't all on a page yet: its first and last row, its
+ * paragraphs left, where its rows start on the page once one of them is on it, whether its text went on from a page
+ * before (`broken`), and whether it starts in the table's header rows
+ */
+type OpenMerge = {
+    readonly first: number;
+    readonly last: number;
+    readonly cell: TableCell;
+    readonly rest: readonly CellParagraph[];
+    readonly start?: number;
+    readonly broken: boolean;
+    readonly header: boolean;
 };
 
 /** The height of a block stacked with others, and the space before and after it */
@@ -194,7 +262,10 @@ type Snapshot = {
     readonly index: number;
     readonly pageCount: number;
     readonly pageNumber: number;
+    readonly restart: number | undefined;
     readonly top: number;
+    readonly pageContinuation: number;
+    readonly continuedEndnotes: boolean;
     readonly pageBottom: number;
     readonly position: number;
     readonly column: number;
@@ -329,6 +400,32 @@ const linesKept = (
     return isFirstLine && withoutWidow === 1 ? 0 : withoutWidow;
 };
 
+/** The result of a field that depends on the pages */
+type PageField = Exclude<LayoutItem, InlineItem>;
+
+const PAGE_FIELDS: ReadonlySet<string> = new Set(["pageReference", "pageCount", "pageNumber", "sectionNumber"]);
+
+/** Whether an item is the result of a field that depends on the pages */
+const isPageField = (item: LayoutItem): item is PageField => PAGE_FIELDS.has(item.type);
+
+/**
+ * What a page reference with `\p` writes, from where its bookmark (`target`) and the reference (`at`) were placed: "above"
+ * or "below" on the same page, by the order of the text, even across columns and table cells, and "on page" and the
+ * bookmark's page as the page shows it otherwise, as Word writes them (`word-watertight-fields.docx` FD2,
+ * `word-page-fields.docx` PF1 to PF3). A bookmark in a footnote or endnote, which isn't in the text of the body
+ * (`sameStory`), is "on page" its reference's page, even on the reference's page (PF8d and PF8e). Undefined when either
+ * wasn't placed.
+ */
+const relativeText = (target: PagePlace | undefined, at: PagePlace | undefined, sameStory: boolean): string | undefined => {
+    if (target === undefined || at === undefined) {
+        return undefined;
+    }
+    if (target.page !== at.page || !sameStory) {
+        return `on page ${target.text}`;
+    }
+    return target.order < at.order ? "above" : "below";
+};
+
 /**
  * Lays out a document's pages, and finds the page each bookmark starts on.
  */
@@ -336,6 +433,8 @@ export const paginate = (
     content: DocumentContent,
     {
         pageNumbers = new Map(),
+        places: givenPlaces = new Map(),
+        earlierPlaces = new Map(),
         pageCount: givenPageCount,
         sectionPageCounts: givenSectionPageCounts = [],
         measurer = DEFAULT_MEASURER,
@@ -350,30 +449,98 @@ export const paginate = (
         footnoteSeparator,
         footnoteContinuationSeparator,
         endnotes,
+        endnoteContinuationSeparator,
         breakRules,
         footnoteNumbers,
         endnoteNumbers,
     } = content;
-    // The body, and then its endnotes, which Word lays out after it
-    const blocks = [...content.blocks, ...endnotes.map((block) => ({ block, section: sections.length - 1 }))];
+    // The body, and then its endnotes, which Word lays out after it. The separator above them goes on the page of their
+    // first line, as Word puts it there when it would be alone at the bottom of a page (`word-watertight-sections2.docx`
+    // SC5), so it is kept with the next
+    const blocks = [
+        ...content.blocks,
+        ...endnotes.map((block) => ({
+            block:
+                block.type === "paragraph" && !endnoteNumbers.has(block)
+                    ? { ...block, format: { ...block.format, keepNext: true } }
+                    : block,
+            section: sections.length - 1,
+        })),
+    ];
+    // The first of the endnotes' blocks, the first of their separator's
+    const firstEndnote = content.blocks.length;
     /** The space between two paragraphs: the larger of the space after the first and before the second, or both */
     const between = (after: number, before: number): number => (addsParagraphSpacing ? after + before : Math.max(after, before));
 
     // The section being laid out
     let sectionIndex = 0;
 
-    /** The text of the results of fields that depend on the pages, from the numbers given */
-    const itemsOf = (items: readonly LayoutItem[]): readonly InlineItem[] =>
-        items.map((item) => {
-            if (item.type === "pageReference") {
-                return { type: "text", text: pageNumbers.get(item.bookmark) ?? "", font: item.font };
-            }
-            if (item.type === "pageCount") {
+    /**
+     * A field's text in its format: its number in its number format or picture, or as it is, in its capitals. It stops the
+     * layout where Word's text for the number isn't known, such as 781 in letters
+     */
+    const written = (value: number, text: string, format: FieldFormat = {}): string => {
+        const inFormat = writesNumber(format) ? writeFieldNumber(value, format) : text;
+        if (inFormat === undefined) {
+            throw new Unsupported("a page number its format isn't written for yet");
+        }
+        return inFieldCapitals(inFormat, format.capitals);
+    };
+
+    /**
+     * What a page reference writes, from where it and its bookmark were placed before: the page's number as the page shows
+     * it, such as iv or 1-2, or, in a number format of its own, the page's number without its chapter number in that
+     * format (`word-page-fields.docx` PF4), or, with `\p`, where the bookmark is from it
+     */
+    /**
+     * Where a bookmark or field was placed in the pass before. When it wasn't, as that pass stopped before it, but one
+     * before that placed it where its number in a field's format isn't written, this pass stops at the field too, so the
+     * passes agree
+     */
+    const placeOf = (name: string, format?: FieldFormat): PagePlace | undefined => {
+        const earlier = earlierPlaces.get(name);
+        if (!givenPlaces.has(name) && earlier !== undefined && writesNumber(format)) {
+            written(earlier.pageNumber, "", format);
+        }
+        return givenPlaces.get(name);
+    };
+
+    const referenceText = ({ bookmark, format, relative }: Extract<LayoutItem, { readonly type: "pageReference" }>): string => {
+        if (relative === undefined && !writesNumber(format)) {
+            return inFieldCapitals(pageNumbers.get(bookmark) ?? "", format?.capitals);
+        }
+        const target = placeOf(bookmark, format);
+        const text = relative === undefined ? target?.text : relativeText(target, givenPlaces.get(relative), !homes.get(bookmark)?.inNote);
+        return text === undefined ? "" : written(target!.pageNumber, text, format);
+    };
+
+    /** The text of the result of a field that depends on the pages, from the numbers given and the places of the pass before */
+    const resultText = (item: PageField): string => {
+        switch (item.type) {
+            case "pageReference":
+                return referenceText(item);
+            case "pageCount": {
                 const count = item.scope === "document" ? givenPageCount : givenSectionPageCounts[sectionIndex];
-                return { type: "text", text: count === undefined ? "" : String(count), font: item.font };
+                return count === undefined ? "" : written(count, String(count), item.format);
             }
-            return item;
-        });
+            case "pageNumber": {
+                // The page's number as the page shows it, as a page reference to a bookmark at the field would write it
+                // (`word-page-number-formats.docx` C8), and in a footnote or endnote its reference's (PF7g to PF7i)
+                const place = placeOf(item.field, item.format);
+                return place === undefined ? "" : written(place.pageNumber, place.text, item.format);
+            }
+            default: {
+                // The section's number, counted from 1 (`word-watertight-pages.docx` PG7e): in a footnote or endnote, the
+                // section of its reference (PF7g to PF7i)
+                const index = item.field === undefined ? sectionIndex : givenPlaces.get(item.field)?.section;
+                return index === undefined ? "" : written(index + 1, String(index + 1), item.format);
+            }
+        }
+    };
+
+    /** The text of the results of fields that depend on the pages */
+    const itemsOf = (items: readonly LayoutItem[]): readonly InlineItem[] =>
+        items.map((item) => (isPageField(item) ? { type: "text", text: resultText(item), font: item.font } : item));
 
     /**
      * A paragraph's content, as it is measured, which stops the layout at a character whose width the measurer doesn't
@@ -413,7 +580,7 @@ export const paginate = (
             }
             return laidOut;
         };
-        if (paragraph.items.some(({ type }) => type === "pageReference" || type === "pageCount")) {
+        if (paragraph.items.some(isPageField)) {
             return layOut();
         }
         const byWidths = byParagraph.get(paragraph) ?? new Map<string, readonly LaidOutLine[]>();
@@ -617,8 +784,13 @@ export const paginate = (
     /** How tall a cell makes its row with its own margins, as a cell merged down rows does */
     const cellHeight = (cell: TableCell): number => cell.marginTop + contentHeight(cell) + cell.marginBottom;
 
-    /** The cells merged down several rows of a table: the row each starts in, its last row, and the height its text needs */
-    const mergesOf = ({ rows }: TableBlock): readonly { readonly first: number; readonly last: number; readonly height: number }[] =>
+    /**
+     * The cells merged down several rows of a table: the row each starts in, its last row, the cell, and the height its
+     * text needs
+     */
+    const mergesOf = ({
+        rows,
+    }: TableBlock): readonly { readonly first: number; readonly last: number; readonly cell: TableCell; readonly height: number }[] =>
         rows.flatMap(({ cells }, first) =>
             cells
                 .filter(({ verticalMerge, vertical }) => verticalMerge === "restart" && !vertical)
@@ -627,7 +799,7 @@ export const paginate = (
                     const span = rows
                         .slice(first + 1)
                         .findIndex((row) => row.cells.find((other) => other.column === cell.column)?.verticalMerge !== "continue");
-                    return { first, last: span === -1 ? rows.length - 1 : first + span, height: cellHeight(cell) };
+                    return { first, last: span === -1 ? rows.length - 1 : first + span, cell, height: cellHeight(cell) };
                 }),
         );
 
@@ -676,15 +848,35 @@ export const paginate = (
             ? block.items.flatMap((item) => (item.type === "marker" ? [item.name] : []))
             : block.rows.flatMap(({ cells }) => cells.flatMap((cell) => cell.blocks.flatMap(markersOf)));
 
+    // The bookmarks and fields in each footnote and endnote, by the marker at its reference: Word gives them its reference's
+    // page and section, even those in the part of a footnote continued on the next page, and an endnote's at the end of the
+    // document (`word-watertight-fields.docx` FD4, `word-page-fields.docx` PF7g to PF8c)
+    const inNotes = new Map(
+        [...footnotes, ...content.endnoteReferences].map(([name, noteBlocks]) => [name, noteBlocks.flatMap(markersOf)] as const),
+    );
+    // Whether each bookmark of the body and its notes is in a footnote or endnote
+    const homes = new Map<string, { readonly inNote: boolean }>();
+    for (const { block } of content.blocks) {
+        for (const name of markersOf(block)) {
+            for (const bookmark of inNotes.get(name) ?? [name]) {
+                // eslint-disable-next-line functional/immutable-data
+                homes.set(bookmark, { inNote: inNotes.has(name) });
+            }
+        }
+    }
+
     // The state of the page being filled
     const bookmarks = new Map<string, string>();
-    // The page each bookmark was placed on, counted from the first
-    const markedOn = new Map<string, number>();
+    // Where each bookmark and field was placed
+    const places = new Map<string, PagePlace>();
     // The height of each header and footer, by the section it is in, whose number of pages it can show
     // eslint-disable-next-line functional/prefer-readonly-type
     const headerHeights = new Map<readonly Block[], Map<number, number>>();
     let pageCount = 0;
     let pageNumber = 0;
+    // The first number of a continuous section numbered afresh that started on the page, which the next page is numbered
+    // on from
+    let restart: number | undefined;
     // The first and last page of each section, and the sections whose pages aren't theirs alone
     const firstPages = new Map<number, number>([[0, 1]]);
     const lastPages = new Map<number, number>();
@@ -692,6 +884,10 @@ export const paginate = (
     // Where the page's body starts and ends, where its columns end, and where the next line goes, in points from the top
     // of the page
     let top = 0;
+    // The room the endnotes' continuation separator takes at the top of the page, which is in `top`, and whether the page
+    // is one after the first the endnotes are on
+    let pageContinuation = 0;
+    let continuedEndnotes = false;
     let pageBottom = 0;
     let bottom = 0;
     let position = 0;
@@ -726,6 +922,8 @@ export const paginate = (
     let held: readonly string[] = [];
     // The space after the last paragraph, which goes before what is next on the page
     let spaceAfter = 0;
+    // The cells merged down rows of the table being placed whose text isn't all on a page yet
+    let openMerges: readonly OpenMerge[] = [];
     // Until something of the section is placed, the space after the paragraph before it, or 0 at the start of the
     // document. The space before the section's first paragraph isn't left out at the top of a page, or of the column the
     // section starts in, but only as much of it as is more than this goes there
@@ -758,7 +956,10 @@ export const paginate = (
         index,
         pageCount,
         pageNumber,
+        restart,
         top,
+        pageContinuation,
+        continuedEndnotes,
         pageBottom,
         position,
         column,
@@ -794,7 +995,10 @@ export const paginate = (
         ({
             pageCount,
             pageNumber,
+            restart,
             top,
+            pageContinuation,
+            continuedEndnotes,
             pageBottom,
             position,
             column,
@@ -833,10 +1037,12 @@ export const paginate = (
      */
     const stopOnPage = (reason: string): never => {
         stoppedOnPage = pageCount;
-        for (const [name, page] of markedOn) {
+        for (const [name, { page }] of places) {
             if (page === pageCount) {
                 // eslint-disable-next-line functional/immutable-data
                 bookmarks.delete(name);
+                // eslint-disable-next-line functional/immutable-data
+                places.delete(name);
             }
         }
         throw new Unsupported(reason);
@@ -915,21 +1121,64 @@ export const paginate = (
         return height;
     };
 
+    /** Whether the endnotes are on the pages before, so they go on below the continuation separator on the next */
+    const endnotesGoOn = (): boolean =>
+        blockIndex >= firstEndnote &&
+        placements.some((placement) => (placement.type === "line" || placement.type === "row") && placement.block >= firstEndnote);
+
+    /**
+     * The room the endnotes' continuation separator takes above them: its paragraphs, without the space after the last,
+     * which Word leaves out (`word-watertight-sections.docx` SC4)
+     */
+    const continuationHeight = (): number => {
+        const parts = stackParts(endnoteContinuationSeparator, textWidth(), false);
+        return heightOf(
+            parts.map((part, index) => (index === parts.length - 1 ? { ...part, after: 0 } : part)),
+            true,
+        );
+    };
+
+    /** Where the body starts on the next page: where it does on this one, below the continuation separator for endnotes */
+    const nextTop = (): number => top - pageContinuation + (endnotesGoOn() ? continuationHeight() : 0);
+
+    /** Whether a line or row of the section being laid out is on the page */
+    const sectionOnPage = (): boolean =>
+        placements
+            .slice(placements.findLastIndex(({ type }) => type === "page"))
+            .some(
+                (placement) => (placement.type === "line" || placement.type === "row") && blocks[placement.block].section === sectionIndex,
+            );
+
     const startPage = (isFirstOfSection = false): void => {
         if (balancing !== undefined && pageCount >= balancing.page) {
             // The columns being balanced don't fit on their page in the height they are laid out in
             throw new Overflow();
         }
         checkReserve();
+        if (continuedEndnotes) {
+            // Word put a line more below the continuation separator than the page has room for by the heights of the lines,
+            // 6.6 twips past the margin (`word-watertight-sections.docx` SC4), where it puts none past it on the first page
+            // of endnotes or of text, and how far past the margin it puts one isn't known
+            throw new Unsupported("endnotes that fill a page after the first they are on");
+        }
         finishPage();
         const current = section();
-        pageNumber = isFirstOfSection && current.firstNumber !== undefined ? current.firstNumber : pageNumber + 1;
+        // A continuous section none of which is on the page it started on, as its first line didn't fit there, starts on
+        // the next, as a section on a new page does: Word numbers that page with the section's first number
+        // (`word-watertight-sections.docx` SC2a, SC2c)
+        const first =
+            isFirstOfSection || (current.start === "continuous" && firstPages.get(sectionIndex) === pageCount && !sectionOnPage());
+        // After a continuous section numbered afresh, the page it starts on keeps its number, and the next is numbered on
+        // from the section's first number, as Word numbers them (`word-watertight-pages.docx` PG2,
+        // `word-watertight-sections.docx` SC2b, SC2d)
+        pageNumber = first && current.firstNumber !== undefined ? current.firstNumber : (restart ?? pageNumber) + 1;
+        restart = undefined;
         // A header or footer taller than the margin pushes the body away from it, unless the margin is negative
-        const headerBottom = current.header + partHeight(current.headers, isFirstOfSection);
-        const footerTop = current.footer + partHeight(current.footers, isFirstOfSection);
+        const headerBottom = current.header + partHeight(current.headers, first);
+        const footerTop = current.footer + partHeight(current.footers, first);
         pageCount++;
-        const header = kindOf(current.headers, isFirstOfSection);
-        const footer = kindOf(current.footers, isFirstOfSection);
+        const header = kindOf(current.headers, first);
+        const footer = kindOf(current.footers, first);
         // eslint-disable-next-line functional/immutable-data
         placements.push({
             type: "page",
@@ -942,7 +1191,19 @@ export const paginate = (
                 ...(footer ? { footer } : {}),
             },
         });
-        top = current.marginTop < 0 ? -current.marginTop : Math.max(current.marginTop, headerBottom);
+        // A gutter at the top is below the top margin, and a header taller than both pushes the body below it, as in Word,
+        // where the header stays where it is (`word-watertight-sections.docx` SC3)
+        top = current.marginTop < 0 ? -current.marginTop : Math.max(current.marginTop + current.topGutter, headerBottom);
+        // On each page after the first the endnotes are on, the continuation separator is above them, whether one of them
+        // goes on to it or the next starts there (`word-watertight-pages.docx` PG8, `word-watertight-sections.docx` SC4).
+        // Whether Word puts it at the top of each column too isn't known
+        const endnotesOn = endnotesGoOn();
+        if (endnotesOn && current.columns.length > 1) {
+            throw new Unsupported("endnotes continued in columns");
+        }
+        continuedEndnotes = endnotesOn;
+        pageContinuation = endnotesOn ? continuationHeight() : 0;
+        top += pageContinuation;
         pageBottom = current.pageHeight - (current.marginBottom < 0 ? -current.marginBottom : Math.max(current.marginBottom, footerTop));
         position = top;
         column = 0;
@@ -967,7 +1228,7 @@ export const paginate = (
             // The rest of the footnote is longer than the page, so the page is all footnote, as much of it as fits, and the
             // rest continues on the next page. The text goes on above its last part, on the page it ends on
             // (`word-probes.docx` U2o, U2q)
-            if (isFirstOfSection) {
+            if (first) {
                 // Which section Word puts its pages in, which can change the page numbers, isn't known
                 throw new Unsupported("a footnote continued across a section break onto a page of its own");
             }
@@ -986,6 +1247,9 @@ export const paginate = (
         if (column + 1 >= section().columns.length) {
             startPage();
             return;
+        }
+        if (endnotesGoOn()) {
+            throw new Unsupported("endnotes continued in columns");
         }
         deepest = Math.max(deepest, position + spaceAfter);
         filledEnd = Math.max(filledEnd, position);
@@ -1116,9 +1380,10 @@ export const paginate = (
         const before = sectionIndex;
         sectionIndex = index;
         if (continuous) {
-            // The section's columns start below what is on the page
+            // The section's columns start below what is on the page. One numbered afresh numbers the pages after this one
             column = 0;
             columnTop = position;
+            restart = current.firstNumber ?? restart;
             // eslint-disable-next-line functional/immutable-data
             firstPages.set(index, pageCount);
             // eslint-disable-next-line functional/immutable-data
@@ -1145,13 +1410,14 @@ export const paginate = (
         // Word goes by the page's number before the section numbers its pages from its own first number: after page 6, it
         // leaves a blank page before a section that starts on an even page numbered from 2 (word-positions.docx H3). Whether
         // it goes by the number or by where the page is in the document, which are the same there, isn't known
-        const nextNumber = pageNumber + 1;
+        const nextNumber = (restart ?? pageNumber) + 1;
         if ((current.start === "evenPage" && nextNumber % 2 !== 0) || (current.start === "oddPage" && nextNumber % 2 === 0)) {
             // A blank page, so the section starts on an even or odd page, which isn't either section's. It has no header
             // or footer in Word (word-positions.docx H1 and H2)
             finishPage();
             pageCount++;
-            pageNumber++;
+            pageNumber = nextNumber;
+            restart = undefined;
             finished = pageCount;
             // eslint-disable-next-line functional/immutable-data
             placements.push({
@@ -1717,14 +1983,20 @@ export const paginate = (
         return heading?.chapter === undefined ? page : `${heading.chapter}${chapters!.separator}${page}`;
     };
 
+    /**
+     * Places the bookmarks and fields of a line or row placed on the page, as it shows its number there, and those of the
+     * footnotes and endnotes it refers to with them
+     */
     const mark = (names: readonly string[]): void => {
         const text = pageText();
-        for (const name of names) {
-            if (!bookmarks.has(name) && !footnotes.has(name)) {
+        for (const name of names.flatMap((marker) => inNotes.get(marker) ?? [marker])) {
+            if (!places.has(name)) {
                 // eslint-disable-next-line functional/immutable-data
-                bookmarks.set(name, text);
-                // eslint-disable-next-line functional/immutable-data
-                markedOn.set(name, pageCount);
+                places.set(name, { page: pageCount, pageNumber, text, section: sectionIndex, order: places.size });
+                if (!isFieldMarker(name)) {
+                    // eslint-disable-next-line functional/immutable-data
+                    bookmarks.set(name, text);
+                }
             }
         }
     };
@@ -1949,10 +2221,72 @@ export const paginate = (
     };
 
     /**
+     * A cell's paragraphs, as a row that breaks across pages fills them. Text that runs up or down a cell, and an empty
+     * paragraph whose mark takes no room, take none here
+     */
+    const cellParagraphs = (cell: TableCell): readonly CellParagraph[] =>
+        // A table in a cell is measured as a line that doesn't break, which is enough to tell whether the row breaks
+        (cell.vertical ? [] : blocksWithRoom(cell)).map((block, index, stack) => ({
+            paragraph:
+                block.type === "paragraph"
+                    ? measureParagraph(block, cell.width, stack[index - 1], stack[index + 1], true)
+                    : {
+                          ...UNBROKEN,
+                          lines: [
+                              {
+                                  height: sum(rowHeights(sizedToPlace(block, cell.width))),
+                                  markers: markersOf(block),
+                                  text: "",
+                                  textWidth: 0,
+                              },
+                          ],
+                      },
+            from: 0,
+        }));
+
+    /** The markers of what in a cell takes no room: text that runs up or down it, and an empty paragraph whose mark takes none */
+    const roomlessOf = (cell: TableCell): readonly string[] =>
+        (cell.vertical ? cell.blocks : cell.blocks.slice(blocksWithRoom(cell).length)).flatMap(markersOf);
+
+    /** Whether a cell starts a merge down rows, whose text is laid out with the rows it is merged down */
+    const startsMerge = ({ verticalMerge, vertical }: TableCell): boolean => verticalMerge === "restart" && !vertical;
+
+    /** The markers of the lines of paragraphs left, from the first not yet placed */
+    const markersLeft = (paragraphs: readonly CellParagraph[]): readonly string[] =>
+        paragraphs.flatMap(({ paragraph, from }) => paragraph.lines.slice(from).flatMap(({ markers }) => markers));
+
+    /**
+     * Ends the text of the cells merged down rows that have rows on the page, where the page breaks below them (`end`):
+     * all of it goes in their rows on the page. Which rows Word puts the rest in when it doesn't fit there isn't known
+     */
+    const closeMerges = (end: number): void => {
+        for (const { cell, rest, start, broken } of openMerges) {
+            if (start !== undefined) {
+                const { lines, rest: left } = fillCell(rest, end - start - cell.marginTop - cell.marginBottom, !broken);
+                if (left.length > 0) {
+                    throw new Unsupported(
+                        broken
+                            ? "a cell merged down table rows whose text goes on across more than two pages"
+                            : "a cell merged down table rows whose text goes on across a page break between them",
+                    );
+                }
+                mark(lines.flatMap(({ markers }) => markers));
+            }
+        }
+        openMerges = openMerges.filter(({ start }) => start === undefined);
+    };
+
+    /**
      * Places a row that doesn't fit on the page with its footnotes by breaking it across pages between the lines of its
      * cells, as Word breaks a row unless it is kept whole, with the footnotes of the lines on each page at its bottom. A
      * row none of whose lines fit with their footnotes moves to the next page. The table's header rows are repeated above
      * the rest of it on each page and in each column.
+     *
+     * The text of a cell merged down rows starts at the top of its first row, and goes down across its rows, so the row of
+     * them that breaks across pages breaks it with its own cells, as far down the page as its lines go, keeping to its
+     * widow control (`word-probes.docx` U4a). The rest of it goes on from the top of its rows on the next page: in the
+     * row's part there when it is the last row of the merge (U4a), and otherwise across the rows after it, which go below
+     * the rest of the row, as the next row of a merge whose text is all on the page does (U4b)
      *
      * @param breakBorder - The border below the row on a page where the table breaks: the table's bottom border, which the
      * last row has counted already
@@ -1966,57 +2300,39 @@ export const paginate = (
         startTablePage: () => void,
         table: { readonly spaced: boolean; readonly kept: boolean },
     ): void => {
-        // A table in a cell is measured as a line that doesn't break, which is enough to tell whether the row breaks. Text
-        // that runs up or down a cell, and an empty paragraph whose mark takes no room, take none here either
-        let parts = row.cells.map((cell): readonly CellParagraph[] =>
-            (cell.vertical ? [] : blocksWithRoom(cell)).map((block, index, stack) => ({
-                paragraph:
-                    block.type === "paragraph"
-                        ? measureParagraph(block, cell.width, stack[index - 1], stack[index + 1], true)
-                        : {
-                              ...UNBROKEN,
-                              lines: [
-                                  {
-                                      height: sum(rowHeights(sizedToPlace(block, cell.width))),
-                                      markers: markersOf(block),
-                                      text: "",
-                                      textWidth: 0,
-                                  },
-                              ],
-                          },
-                from: 0,
-            })),
-        );
+        // The cells that start a merge are laid out with the rows they are merged down
+        const own = row.cells.filter((cell) => !startsMerge(cell));
+        let parts = own.map(cellParagraphs);
         let isFirstPart = true;
         // The bookmarks of what takes no room start with the row's first part
-        const roomless = row.cells.flatMap((cell) =>
-            (cell.vertical ? cell.blocks : cell.blocks.slice(blocksWithRoom(cell).length)).flatMap(markersOf),
-        );
+        const roomless = row.cells.flatMap(roomlessOf);
         if (notesIn(roomless).length > 0) {
             throw new Unsupported("a footnote in text that runs up or down a table cell");
         }
         const borders = row.borderTop + row.borderBottom;
-        // The largest margins above and below of the row's cells, around each cell's text
+        // The largest margins above and below of the row's cells, around each of its own cells' text
         const rowMargins = rowMarginsOf(row);
-        /** How tall the cells' parts make the row's, with their margins */
-        const tallestOf = (cells: readonly CellPart[]): number => Math.max(...cells.map((part) => rowMargins + part.height));
-        const notesOf = (cells: readonly CellPart[]): readonly string[] =>
-            notesIn(cells.flatMap(({ lines }) => lines.flatMap(({ markers }) => markers)));
-        const placesAny = (cells: readonly CellPart[]): boolean => cells.some(({ lines }) => lines.length > 0);
+        // The cells of the row's part being filled: its own, then those merged down to it whose text goes on in it
+        let cells: readonly RowCell[] = [];
+        /** The room for a cell's text in a room for the row's part */
+        const roomOf = (cell: number, room: number): number => room - cells[cell].margins + cells[cell].above;
+        /** How tall a cell's part makes the row's, with its margins */
+        const heightInRow = (part: CellPart, cell: number): number => cells[cell].margins + part.height - cells[cell].above;
+        const tallestOf = (cellParts: readonly CellPart[]): number => Math.max(0, ...cellParts.map(heightInRow));
+        const notesOfPart = (part: CellPart, cell: number): readonly string[] =>
+            cells[cell].counted ? notesIn(part.lines.flatMap(({ markers }) => markers)) : [];
+        const notesOf = (cellParts: readonly CellPart[]): readonly string[] => cellParts.flatMap(notesOfPart);
         /** The room for the row's part on the page, above footnotes that take this much more room */
         const roomAbove = (more: number): number => linesBottom(more) - position - borders - breakBorder;
-        const fitsWith = (cells: readonly CellPart[], more: number): boolean => tallestOf(cells) <= roomAbove(more) + TOLERANCE;
+        const fitsWith = (cellParts: readonly CellPart[], more: number): boolean => tallestOf(cellParts) <= roomAbove(more) + TOLERANCE;
         /**
-         * The cells' parts on the page, from the lines left of them (`left`), with the footnotes of their lines and the room
-         * those take, and the parts they would have without the footnotes (`whole`). The lines fit where their footnotes fit
-         * below them, the last continued on the next page when it can be, as a line's do, so each line's footnote goes on
-         * the page the line is on (`word-probes.docx` U3a to U3c, U3e). Where they don't, the part is cut higher, until they
-         * do or none of its lines are left.
+         * The cells' parts on the page, with the footnotes of their lines and the room those take, and the parts they would
+         * have without the footnotes (`whole`). The lines fit where their footnotes fit below them, the last continued on
+         * the next page when it can be, as a line's do, so each line's footnote goes on the page the line is on
+         * (`word-probes.docx` U3a to U3c, U3e). Where they don't, the part is cut higher, until they do or none of its lines
+         * are left.
          */
-        const partOnPage = (
-            left: readonly (readonly CellParagraph[])[],
-            isFirst: boolean,
-        ): {
+        const partOnPage = (): {
             readonly whole: readonly CellPart[];
             readonly filled: readonly CellPart[];
             readonly notes: readonly string[];
@@ -2024,7 +2340,10 @@ export const paginate = (
         } => {
             /** Each cell's part in a room for the row's, or the part given for one of them (`cut`) */
             const fill = (room: number, cut?: { readonly cell: number; readonly part: CellPart }): readonly CellPart[] =>
-                left.map((paragraphs, cell) => (cell === cut?.cell ? cut.part : fillCell(paragraphs, room - rowMargins, isFirst)));
+                cells.map(({ paragraphs, isFirst }, cell) =>
+                    cell === cut?.cell ? cut.part : fillCell(paragraphs, roomOf(cell, room), isFirst),
+                );
+            const placesAny = (cellParts: readonly CellPart[]): boolean => cellParts.some(({ lines }) => lines.length > 0);
             const whole = fill(roomAbove(0));
             let cutAt = roomAbove(0);
             let filled = whole;
@@ -2035,7 +2354,7 @@ export const paginate = (
                 }
                 // Just above the bottom of the lowest of the cells' lines, so the part loses a line each time, even beside a
                 // cell without lines that its margins make taller
-                cutAt = Math.max(...filled.map((part) => (part.lines.length > 0 ? rowMargins + part.height : 0))) - 2 * TOLERANCE;
+                cutAt = Math.max(...filled.map((part, cell) => (part.lines.length > 0 ? heightInRow(part, cell) : 0))) - 2 * TOLERANCE;
                 filled = fill(cutAt);
             }
             const continues = placesAny(filled) && !fitsWith(filled, moreNoteRoom(notesOf(filled)));
@@ -2045,12 +2364,13 @@ export const paginate = (
                 // doesn't put more of the row's lines above less of the footnote (U3d)
                 const name = notesOf(filled)[notesOf(filled).length - 1];
                 const cell = filled.findLastIndex(({ lines }) => lines.some(({ markers }) => markers.includes(name)));
+                const { paragraphs, isFirst } = cells[cell];
                 const reference = filled[cell].lines.findIndex(({ markers }) => markers.includes(name)) + 1;
-                let part = fillCell(left[cell], cutAt - rowMargins, isFirst, reference);
+                let part = fillCell(paragraphs, roomOf(cell, cutAt), isFirst, reference);
                 for (let limit = reference + 1; part.lines.length < reference; limit++) {
-                    part = fillCell(left[cell], cutAt - rowMargins, isFirst, limit);
+                    part = fillCell(paragraphs, roomOf(cell, cutAt), isFirst, limit);
                 }
-                filled = fill(rowMargins + part.height, { cell, part });
+                filled = fill(heightInRow(part, cell), { cell, part });
             }
             const notes = notesOf(filled);
             const noteRoom = fitsWith(filled, moreNoteRoom(notes)) ? moreNoteRoom(notes) : leastNoteRoom(notes);
@@ -2058,11 +2378,11 @@ export const paginate = (
                 // Footnotes cut the row higher than its lines go without them. Where a cell has fewer lines on the page than
                 // fit above them, held back by widow control or by the cut, which of them Word keeps beside the cell that
                 // refers to them isn't known
-                const referring = whole.flatMap((part, cell) => (notesOf([part]).length > 0 ? [cell] : []));
+                const referring = whole.flatMap((part, cell) => (notesOfPart(part, cell).length > 0 ? [cell] : []));
                 const heldRoom = continues ? tallestOf(filled) : roomAbove(noteRoom);
                 const heldBack = (part: CellPart, cell: number): boolean =>
                     referring.some((other) => other !== cell) &&
-                    fillCell(left[cell], heldRoom - rowMargins, isFirst).fits > part.lines.length;
+                    fillCell(cells[cell].paragraphs, roomOf(cell, heldRoom), cells[cell].isFirst).fits > part.lines.length;
                 if (filled.some(heldBack)) {
                     throw new Unsupported("a footnote in a table row beside a cell whose lines it holds back");
                 }
@@ -2070,8 +2390,33 @@ export const paginate = (
             return { whole, filled, notes, noteRoom };
         };
         for (;;) {
-            const { whole, filled, notes, noteRoom } = partOnPage(parts, isFirstPart);
-            const isLastPart = filled.every(({ rest }) => rest.length === 0);
+            // Where the row's part goes, and whether it is its first
+            const at = position;
+            const isFirst = isFirstPart;
+            // The cells merged down to the row whose text goes on in its part: all of them in its first part, and after that
+            // those it is the last row of, as the text of the others goes on in the rows after it on the next page
+            const flowing = openMerges.filter(({ last }) => isFirst || last === rowIndex);
+            cells = [
+                ...parts.map((paragraphs) => ({ paragraphs, margins: rowMargins, above: 0, isFirst, counted: true })),
+                ...flowing.map(({ first, cell, rest, start = at, broken }) => ({
+                    paragraphs: rest,
+                    margins: cell.marginTop + cell.marginBottom,
+                    // Its text starts at the top of its rows on the page, and goes down across their borders, as its height
+                    // does where it makes the last of them taller
+                    above: at - start + borders,
+                    isFirst: !broken,
+                    // Its footnotes went with the first of its rows, when that is above
+                    counted: first === rowIndex,
+                })),
+            ];
+            const { whole, filled, notes, noteRoom } = partOnPage();
+            // Whether a cell ends with the row, rather than going on in the rows after it: its own cells, and the cells merged
+            // down to it that it is the last row of
+            const ends = (cell: number): boolean => cell < own.length || flowing[cell - own.length].last === rowIndex;
+            const isLastPart = filled.every(({ rest }, cell) => rest.length === 0 || !ends(cell));
+            // The cells that decide where the row breaks: all of them where it breaks, and otherwise those that end with it,
+            // as the text of the others goes on in the rows after it on the page
+            const decides = (cell: number): boolean => !isLastPart || ends(cell);
             // The row only breaks where each of its cells with lines left keeps some of them on the page, as in Word. When
             // widow control or keepLines hold back all of a cell's lines, the row moves to the next page whole
             // (`word-rules2.docx` Q3c). A row of an at-least height only breaks where the page has room for its height above
@@ -2079,13 +2424,10 @@ export const paginate = (
             // would go on it whole does when its height doesn't fit
             const placesLines =
                 (!isFirstPart || (isLastPart ? height - borders : (row.height?.value ?? 0)) <= roomAbove(noteRoom) + TOLERANCE) &&
-                placesAny(filled) &&
-                parts.every((paragraphs, cell) => paragraphs.length === 0 || filled[cell].lines.length > 0);
+                filled.some(({ lines }, cell) => decides(cell) && lines.length > 0) &&
+                cells.every(({ paragraphs }, cell) => !decides(cell) || paragraphs.length === 0 || filled[cell].lines.length > 0);
             if (placesLines && !isLastPart) {
-                if (row.cells.some(({ verticalMerge }) => verticalMerge !== undefined)) {
-                    throw new Unsupported("a table row with merged cells across pages");
-                }
-                if (row.cells.some((cell) => cell.blocks.some(({ type }) => type === "table"))) {
+                if ([...row.cells, ...flowing.map(({ cell }) => cell)].some((cell) => cell.blocks.some(({ type }) => type === "table"))) {
                     throw new Unsupported("a table in a table row across pages");
                 }
                 if (row.cells.some(({ vertical }) => vertical)) {
@@ -2112,25 +2454,59 @@ export const paginate = (
                 // The rows kept with this one stayed on the page for its first lines, which would then move to the next
                 throw new Unsupported("a table row kept with the next before a row that moves to the next page");
             }
-            if (placesLines) {
-                mark([...filled.flatMap(({ lines }) => lines.flatMap(({ markers }) => markers)), ...roomless]);
-                // A row that moved to the next page whole is as tall there as it is anywhere. The part of a row on this page or
-                // in this column, which columns being balanced end below, has the table's bottom border below it
-                const rowPart = isLastPart
-                    ? (isFirstPart ? height - borders : tallestOf(filled)) + borders
-                    : tallestOf(filled) + borders + breakBorder;
-                placeRow(rowIndex, position, rowPart);
-                position += rowPart;
-                // Its footnotes go below it, and one that continues takes the rest of the page, below the table's bottom
-                // border when the table breaks after it
-                placeNotes(notes, isLastPart ? breakBorder : 0);
-                if (isLastPart) {
-                    placedInColumn = true;
-                    return;
-                }
-                parts = filled.map(({ rest }) => rest);
-                isFirstPart = false;
+            if (!placesLines) {
+                // The row goes to the next page whole, so the text of the cells merged down to it from rows above ends in those
+                closeMerges(position);
+                startTablePage();
+                continue;
             }
+            mark([
+                ...filled.flatMap(({ lines }, cell) => (decides(cell) ? lines.flatMap(({ markers }) => markers) : [])),
+                ...(isFirstPart ? roomless : []),
+            ]);
+            // A row that moved to the next page whole is as tall there as it is anywhere. The part of a row on this page or in
+            // this column, which columns being balanced end below, has the table's bottom border below it
+            const rowPart = isLastPart
+                ? (isFirstPart ? height - borders : tallestOf(filled)) + borders
+                : tallestOf(filled) + borders + breakBorder;
+            placeRow(rowIndex, position, rowPart);
+            position += rowPart;
+            // Its footnotes go below it, and one that continues takes the rest of the page, below the table's bottom border
+            // when the table breaks after it
+            placeNotes(notes, isLastPart ? breakBorder : 0);
+            // The text of the cells merged down to the row that is in its part ends there, and the rest goes on from the top
+            // of their rows on the next page. The rows of a merge start where the first of them on the page does
+            openMerges = openMerges.flatMap((merge): readonly OpenMerge[] => {
+                const index = flowing.indexOf(merge);
+                const placed = { ...merge, start: merge.start ?? at };
+                if (index === -1 || !decides(own.length + index)) {
+                    return [placed];
+                }
+                const { rest } = filled[own.length + index];
+                if (rest.length === 0) {
+                    return [];
+                }
+                if (merge.broken) {
+                    throw new Unsupported("a cell merged down table rows whose text goes on across more than two pages");
+                }
+                if (notesIn(merge.cell.blocks.flatMap(markersOf)).length > 0) {
+                    // Its footnotes went with the first of its rows
+                    throw new Unsupported("a footnote in a cell merged down table rows whose text goes on across pages");
+                }
+                if (merge.header) {
+                    // Whether Word repeats the part of it in the header rows above the rest of it isn't known
+                    throw new Unsupported("a cell merged down from a table's header rows whose text goes on across pages");
+                }
+                return [{ ...merge, rest, start: undefined, broken: true }];
+            });
+            if (isLastPart) {
+                placedInColumn = true;
+                return;
+            }
+            // The text of the cells merged down to the row that doesn't go on in its part ends above the break
+            closeMerges(position - breakBorder);
+            parts = filled.slice(0, own.length).map(({ rest }) => rest);
+            isFirstPart = false;
             startTablePage();
         }
     };
@@ -2179,6 +2555,26 @@ export const paginate = (
         const rowStays = (height: number, notes: readonly string[]): boolean =>
             position + height <= linesBottom(leastNoteRoom(notes)) + TOLERANCE;
         const markersIn = (row: TableRow): readonly string[] => row.cells.flatMap((cell) => cell.blocks.flatMap(markersOf));
+        // The heights of the rows without the cells merged down them, whose text makes the last of them taller
+        const ownHeights = rowHeights(table, []);
+        /**
+         * The height of a row: as tall as the text of the cells merged down to it that end in it needs, from the top of their
+         * rows on the page, when it went on from the page before. It is the height the table's rows give it otherwise
+         */
+        const heightAt = (index: number): number => {
+            const ending = openMerges.filter(({ last }) => last === index);
+            if (!ending.some(({ broken }) => broken) || table.rows[index].height?.rule === "exact") {
+                return heights[index];
+            }
+            return Math.max(
+                ownHeights[index],
+                // Their rows on the page start with the rest of the row that broke on the page before
+                ...ending.map(
+                    ({ cell, rest, start, broken }) =>
+                        start! + cell.marginTop + fillCell(rest, Infinity, !broken).height + cell.marginBottom - position,
+                ),
+            );
+        };
         /**
          * What the table's last row is kept with when it is kept with the next: the first lines of the paragraph after the
          * table, or what keeps with them, as for a paragraph kept with the next, when it is in the same section
@@ -2222,6 +2618,8 @@ export const paginate = (
                 return;
             }
             if (placedInColumn || continued !== undefined) {
+                // The text of the cells merged down to them from rows above ends in those
+                closeMerges(position);
                 startTablePage(index);
             }
             if (!fitsHere()) {
@@ -2231,9 +2629,23 @@ export const paginate = (
         // Where a table breaks across pages, Word draws its bottom border below the last of it on the page, which takes room
         // there too, whether the table breaks between rows or in one (`word-line-heights.docx` T1 and T4)
         const bottomBorder = table.rows[table.rows.length - 1]?.borderBottom ?? 0;
+        openMerges = [];
         for (const [index, row] of table.rows.entries()) {
+            openMerges = [
+                ...openMerges,
+                ...merges
+                    .filter(({ first }) => first === index)
+                    .map(({ first, last, cell }) => ({
+                        first,
+                        last,
+                        cell,
+                        rest: cellParagraphs(cell),
+                        broken: false,
+                        header: first < headerRows,
+                    })),
+            ];
             const breakBorder = index < table.rows.length - 1 ? (row.breakBorder ?? bottomBorder) : 0;
-            const height = heights[index];
+            const height = heightAt(index);
             const roomNeeded = height + breakBorder;
             const markers = markersIn(row);
             const notes = notesIn(markers);
@@ -2250,20 +2662,9 @@ export const paginate = (
                     // As for a line in columns, unless part of a footnote would fit
                     stopAtPartOfFootnote([], notes, linesBottom() - position - roomNeeded);
                 }
+                // The text of the cells merged down to it from rows above ends in those
+                closeMerges(position);
                 startTablePage(index);
-            }
-            for (const { last, height: needed } of merges.filter(({ first }) => first === index)) {
-                // The rows of the merge its cell's text reaches into, which go on the page together unless the page breaks
-                // across the cell's lines
-                const reached = heights
-                    .slice(index, last + 1)
-                    .findIndex((_, offset) => sum(heights.slice(index, index + offset + 1)) >= needed - TOLERANCE);
-                const rows = table.rows.slice(index, reached === -1 ? last + 1 : index + reached + 1);
-                if (rows.length > 1 && !rowFits(sum(heights.slice(index, index + rows.length)), notesIn(rows.flatMap(markersIn)))) {
-                    // Word breaks the cell's lines with the row of the merge that crosses the page, where all of them would be
-                    // put on this page with its first row (word-probes.docx U4a)
-                    throw new Unsupported("a table row with merged cells across pages");
-                }
             }
             if (!rowFits(roomNeeded, notes) && !keptWhole) {
                 splitRow(row, index, height, breakBorder, () => startTablePage(index), {
@@ -2281,12 +2682,18 @@ export const paginate = (
                         : "a table row taller than a page",
                 );
             }
-            mark(markers);
+            // The text of a cell merged down from the row is placed with the rows it goes down, and its footnotes with it
+            mark(row.cells.flatMap((cell) => (startsMerge(cell) ? roomlessOf(cell) : cell.blocks.flatMap(markersOf))));
+            const at = position;
+            openMerges = openMerges.map((merge) => (merge.start === undefined ? { ...merge, start: at } : merge));
             placeRow(index, position, height);
             position += height;
             // Its footnotes go below it, and one that continues takes the rest of the page, below the table's bottom border
             // when the table breaks after it
             placeNotes(notes, breakBorder);
+            // The cells merged down to the row end in it, with the rest of their text
+            mark(openMerges.filter(({ last }) => last === index).flatMap(({ rest }) => markersLeft(rest)));
+            openMerges = openMerges.filter(({ last }) => last !== index);
             placedInColumn = true;
         }
     };
@@ -2460,7 +2867,7 @@ export const paginate = (
                     nextColumn();
                 } else if (
                     !fitsHere &&
-                    fitsBelow(top, leastAreaOf(here.notes, carried, columns.length > 1 ? columns : undefined), columns[0])
+                    fitsBelow(nextTop(), leastAreaOf(here.notes, carried, columns.length > 1 ? columns : undefined), columns[0])
                 ) {
                     startPage();
                 }
@@ -2560,6 +2967,23 @@ export const paginate = (
             return first === undefined || last === undefined || sharingPages.has(index) ? undefined : last - first + 1;
         });
 
+    /** Where the pages broke, and what was placed on them, with what was worked out from where */
+    const paginationOf = (stoppedAt?: string): Pagination => ({
+        bookmarks,
+        places,
+        bookmarkNumbers: new Map([...bookmarks.keys()].map((name) => [name, places.get(name)!.pageNumber])),
+        relativePositions: new Map(
+            [...content.relativeReferences].map(([bookmark, fields]) => [
+                bookmark,
+                fields.map((field) => relativeText(places.get(bookmark), places.get(field), !homes.get(bookmark)?.inNote)),
+            ]),
+        ),
+        pageCount,
+        sectionPageCounts: countsOf(),
+        ...(stoppedAt === undefined ? {} : { stoppedAt }),
+        pages: pagesOf(),
+    });
+
     try {
         if (content.unsupported) {
             throw new Unsupported(content.unsupported);
@@ -2579,10 +3003,10 @@ export const paginate = (
             throw error;
         }
         finishPage();
-        return { bookmarks, pageCount, sectionPageCounts: countsOf(), stoppedAt: error.message, pages: pagesOf() };
+        return paginationOf(error.message);
     }
     finishPage();
     // eslint-disable-next-line functional/immutable-data
     lastPages.set(sectionIndex, pageCount);
-    return { bookmarks, pageCount, sectionPageCounts: countsOf(), pages: pagesOf() };
+    return paginationOf();
 };

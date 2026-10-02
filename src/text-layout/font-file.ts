@@ -502,13 +502,14 @@ export const createFontFileMeasurer = (faces: readonly FontFace[], fallback: Tex
                     0,
                 );
         },
+        // Superscript, subscript and small capitals take up the line of their run's size
         measureLineHeight: (font) => {
             const face = faceOf(font);
-            return face ? face.lineHeight * (font.size ?? DEFAULT_FONT_SIZE) : fallback.measureLineHeight(font);
+            return face ? face.lineHeight * (font.lineSize ?? font.size ?? DEFAULT_FONT_SIZE) : fallback.measureLineHeight(font);
         },
         measureDescent: (font) => {
             const face = faceOf(font);
-            return face ? face.descent * (font.size ?? DEFAULT_FONT_SIZE) : fallback.measureDescent(font);
+            return face ? face.descent * (font.lineSize ?? font.size ?? DEFAULT_FONT_SIZE) : fallback.measureDescent(font);
         },
         unknownCharacter: (text, font) => {
             const face = faceOf(font);

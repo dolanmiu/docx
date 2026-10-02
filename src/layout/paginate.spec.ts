@@ -3,6 +3,7 @@ import { describe, expect, it } from "vitest";
 
 import { type ParagraphFormat, SIMILAR_FONT_MEASURER, type TextMeasurer } from "../text-layout";
 import type { BlockLayout, PageLayout } from "./layout-document";
+import type { FieldFormat } from "./number-format";
 import { type Pagination, paginate } from "./paginate";
 import type { Block, DocumentContent, LayoutItem, ParagraphBlock, Section, TableBlock, TableCell, TableRow } from "./read-document";
 
@@ -25,6 +26,7 @@ const SECTION: Section = {
     header: 5,
     footer: 5,
     gutter: 0,
+    topGutter: 0,
     start: "nextPage",
     titlePage: false,
     columns: [80],
@@ -61,21 +63,42 @@ const document = (blocks: readonly (Block | readonly [Block, number])[], changes
     footnoteSeparator: [],
     footnoteContinuationSeparator: [],
     endnotes: [],
+    endnoteContinuationSeparator: [],
     // Each footnote is numbered with the name of its marker, and each endnote's blocks with their index
     footnoteNumbers: new Map([...(changes.footnotes?.keys() ?? [])].map((name) => [name, name])),
     endnoteNumbers: new Map((changes.endnotes ?? []).map((block, index) => [block, String(index)])),
+    relativeReferences: new Map(),
+    endnoteReferences: new Map(),
     ...changes,
 });
 
-/** The numbers the pages were laid out with: where they broke, without what is on each */
-const numbersOf = (content: DocumentContent, measurer: TextMeasurer = MEASURER): Omit<Pagination, "pages"> => {
-    const { bookmarks, pageCount, sectionPageCounts, stoppedAt } = paginate(content, { measurer });
-    return { bookmarks, pageCount, sectionPageCounts, ...(stoppedAt === undefined ? {} : { stoppedAt }) };
+/** The names of the markers in a block, and in its table's cells */
+const markersIn = (block: Block): readonly string[] =>
+    block.type === "paragraph"
+        ? block.items.flatMap((item) => (item.type === "marker" ? [item.name] : []))
+        : block.rows.flatMap(({ cells }) => cells.flatMap((cell) => cell.blocks.flatMap(markersIn)));
+
+/**
+ * The bookmarks of the body, without those of the footnotes, whose pages the tests of where footnotes' lines go don't look
+ * at: "bookmarks in footnotes" does
+ */
+const inBody = (content: DocumentContent, bookmarks: ReadonlyMap<string, string>): ReadonlyMap<string, string> => {
+    const inNotes = new Set([...content.footnotes.values()].flat().flatMap(markersIn));
+    return new Map([...bookmarks].filter(([name]) => !inNotes.has(name)));
 };
 
-/** The page each bookmark is on */
+/** The numbers the pages were laid out with: where they broke, without what is on each */
+const numbersOf = (
+    content: DocumentContent,
+    measurer: TextMeasurer = MEASURER,
+): Pick<Pagination, "bookmarks" | "pageCount" | "sectionPageCounts" | "stoppedAt"> => {
+    const { bookmarks, pageCount, sectionPageCounts, stoppedAt } = paginate(content, { measurer });
+    return { bookmarks: inBody(content, bookmarks), pageCount, sectionPageCounts, ...(stoppedAt === undefined ? {} : { stoppedAt }) };
+};
+
+/** The page each bookmark of the body is on */
 const pagesOf = (content: DocumentContent, pageNumbers?: ReadonlyMap<string, string>): Record<string, string> =>
-    Object.fromEntries(paginate(content, { measurer: MEASURER, pageNumbers }).bookmarks);
+    Object.fromEntries(inBody(content, paginate(content, { measurer: MEASURER, pageNumbers }).bookmarks));
 
 const row = (cells: readonly (readonly Block[])[], changes: Partial<TableRow> = {}): TableRow => ({
     cells: cells.map((blocks, column) => ({ column, width: 80, blocks, marginTop: 0, marginBottom: 0, marginLeft: 0, marginRight: 0 })),
@@ -105,6 +128,10 @@ const mergedRow = (first: TableCell, cells: readonly (readonly Block[])[] = [], 
 };
 
 const table = (rows: readonly TableRow[]): TableBlock => ({ type: "table", rows });
+
+/** A paragraph as `paragraph` makes it, with a bookmark at the end of its last line too, named with its name and "End" */
+const endMarked = (name: string, lines: number): ParagraphBlock =>
+    withItems(paragraph(name, lines), [{ type: "marker", name: `${name}End` }]);
 
 describe("paginate", () => {
     it("should fill each page with lines, and start the next where they don't fit", () => {
@@ -1110,19 +1137,21 @@ describe("paginate", () => {
         });
 
         it("should move a row of an at-least height to the next page whole, unless the page has room for its height, as Word does", () => {
-            const atLeast = (lines: number, room: number): Record<string, string> =>
+            const atLeast = (lines: number, room: number, height = 45): Record<string, string> =>
                 pagesOf(
                     document([
                         paragraph("a", 7 - room),
-                        table([row([[paragraph("set", lines)], [paragraph("beside", 1)]], { height: { value: 45, rule: "atLeast" } })]),
+                        table([row([[paragraph("set", lines)], [paragraph("beside", 1)]], { height: { value: height, rule: "atLeast" } })]),
                     ]),
                 );
             // With room for 4 of its 6 lines, but not its 45 points, it moves (`word-line-heights.docx` T3a). With room for
             // 5 lines, it breaks, 4 and 2 with widow control (T3c)
             expect(atLeast(6, 4)).to.deep.equal({ a: "1", set: "2", beside: "2" });
             expect(atLeast(6, 5)).to.deep.equal({ a: "1", set: "1", beside: "1" });
-            // Shorter than its height, it moves too (T3d)
+            // Shorter than its height, it moves too (T3d), and so it does when its text doesn't fit either: 8 lines at least
+            // 2700 twips high, with room for 6, move whole (`word-probes.docx` U4f), where LibreOffice breaks them 6 and 2
             expect(atLeast(2, 4)).to.deep.equal({ a: "1", set: "2", beside: "2" });
+            expect(atLeast(5, 4, 60)).to.deep.equal({ a: "1", set: "2", beside: "2" });
         });
 
         it("should move a row to the next page whole when widow control holds back all of a cell's lines, as Word does", () => {
@@ -1398,38 +1427,162 @@ describe("paginate", () => {
             });
         });
 
-        it("should stop at a row that breaks across pages with merged cells or a table in it", () => {
-            const stoppedAt = (breaking: TableRow): string | undefined =>
-                paginate(document([paragraph("a", 5), table([breaking])]), { measurer: MEASURER }).stoppedAt;
-            expect(stoppedAt(mergedRow(merged("restart", [paragraph("merged", 4)])))).to.equal(
-                "a table row with merged cells across pages",
-            );
-            expect(stoppedAt(row([[paragraph("beside", 4)], [table([row([[paragraph("inner", 1)]])])]]))).to.equal(
+        it("should stop at a row that breaks across pages with a table in it, or in a cell merged down to it", () => {
+            const stoppedAt = (rows: readonly TableRow[], before = 5): string | undefined =>
+                paginate(document([paragraph("a", before), table(rows)]), { measurer: MEASURER }).stoppedAt;
+            expect(stoppedAt([row([[paragraph("beside", 4)], [table([row([[paragraph("inner", 1)]])])]])])).to.equal(
                 "a table in a table row across pages",
             );
             // A table in a cell of a row that moves to the next page whole is laid out there
-            expect(stoppedAt(row([[table([row([[paragraph("inner", 3)]])])]]))).to.equal(undefined);
+            expect(stoppedAt([row([[table([row([[paragraph("inner", 3)]])])]])])).to.equal(undefined);
+            // The cell's text goes down to the second row, which breaks across pages
+            const inMerge = [
+                mergedRow(merged("restart", [paragraph("merged", 3), table([row([[paragraph("inner", 1)]])])]), [[paragraph("r1", 1)]]),
+                mergedRow(merged("continue"), [[paragraph("r2", 1)]]),
+            ];
+            expect(stoppedAt(inMerge, 4)).to.equal("a table in a table row across pages");
         });
 
-        it("should stop at a merge that doesn't fit on the page with its cell's text, which Word breaks across pages", () => {
-            // As word-probes.docx's U4a: an 8-line cell merged down 2 rows, beside one-line cells, from line 47 of 51. Here
-            // a 4-line cell from line 5 of 7
-            const merge = (lines: number): TableBlock =>
-                table([
-                    mergedRow(merged("restart", [paragraph("merged", lines)]), [[paragraph("r1", 1)]]),
-                    mergedRow(merged("continue"), [[paragraph("r2", 1)]]),
+        it("should break the text of a cell merged down rows with the row of them that breaks across pages, as Word does", () => {
+            // As word-probes.docx's U4a: an 8-line cell merged down 2 rows, beside one-line cells, from line 47 of 51. Its
+            // text goes down from the top of the first row, so the second row breaks across pages with it, after its 5th line
+            // at the bottom of the page, and the text after the table follows its last 3 at the top of the next. Here a 5-line
+            // cell from line 5 of 7
+            const merge = (lines: number): DocumentContent =>
+                document([
+                    paragraph("a", 4),
+                    table([
+                        mergedRow(merged("restart", [endMarked("merged", lines)]), [[paragraph("r1", 1)]]),
+                        mergedRow(merged("continue"), [[paragraph("r2", 1)]]),
+                    ]),
+                    paragraph("b", 1),
                 ]);
-            const laidOut = (lines: number): ReturnType<typeof paginate> =>
-                paginate(document([paragraph("a", 4), merge(lines), paragraph("b", 1)]), { measurer: MEASURER });
-            // It stops before the merge's first row, so none of the cell's lines are given the page before Word's
-            expect(laidOut(4)).to.deep.include({
-                bookmarks: new Map([["a", "1"]]),
-                stoppedAt: "a table row with merged cells across pages",
+            expect(pagesOf(merge(5))).to.deep.equal({ a: "1", merged: "1", mergedEnd: "2", r1: "1", r2: "1", b: "2" });
+            /** The rows on each page, and the line of the paragraph after the table */
+            const laidOut = (lines: number): readonly (readonly BlockLayout[])[] =>
+                paginate(merge(lines), { measurer: MEASURER }).pages.map(({ body }) => body.filter(({ index }) => index > 0));
+            expect(laidOut(5)).to.deep.equal([
+                [
+                    {
+                        type: "table",
+                        index: 1,
+                        rows: [
+                            { index: 0, y: 50, height: 10 },
+                            { index: 1, y: 60, height: 20 },
+                        ],
+                    },
+                ],
+                [
+                    { type: "table", index: 1, rows: [{ index: 1, y: 10, height: 20 }] },
+                    { type: "paragraph", index: 2, lines: [{ text: "abcdefgh", x: 10, y: 30, width: 80, height: 10, textWidth: 80 }] },
+                ],
+            ]);
+            // With widow control, 2 of 4 lines are on the page, so the row's part on it is only a line tall
+            expect(pagesOf(merge(4))).to.deep.include({ merged: "1", mergedEnd: "2", b: "2" });
+            expect(laidOut(4)[0][0]).to.deep.equal({
+                type: "table",
+                index: 1,
+                rows: [
+                    { index: 0, y: 50, height: 10 },
+                    { index: 1, y: 60, height: 10 },
+                ],
             });
-            // A merge that fits on the page is laid out
-            expect(Object.fromEntries(laidOut(3).bookmarks)).to.deep.equal({ a: "1", merged: "1", r1: "1", r2: "1", b: "2" });
-            // With the cell's text all in the rows on the page, the next row of the merge moves to the next page, as in Word
-            // (U4b)
+            // A merge that fits on the page is laid out on it
+            expect(pagesOf(merge(3))).to.deep.equal({ a: "1", merged: "1", mergedEnd: "1", r1: "1", r2: "1", b: "2" });
+        });
+
+        it("should put the text of a cell merged down from a row that breaks across pages beside it, and its next rows below the rest of it", () => {
+            // As word-probes.docx's U4b: a 3-line cell merged down the first 2 of 3 rows, beside 6 lines in the first, from
+            // line 48 of 51. All 3 are on the page beside the first 4, and the second row goes below the other 2 on the next
+            // page. Here 2 lines beside 4 from line 6 of 7
+            const content = document([
+                paragraph("a", 5),
+                table([
+                    mergedRow(merged("restart", [endMarked("merged", 2)]), [[endMarked("r1", 4)]]),
+                    mergedRow(merged("continue"), [[paragraph("r2", 1)]]),
+                    row([[paragraph("left3", 1)], [paragraph("r3", 1)]]),
+                ]),
+            ]);
+            expect(pagesOf(content)).to.deep.equal({
+                a: "1",
+                merged: "1",
+                mergedEnd: "1",
+                r1: "1",
+                r1End: "2",
+                r2: "2",
+                left3: "2",
+                r3: "2",
+            });
+            expect(paginate(content, { measurer: MEASURER }).pages[1].body).to.deep.equal([
+                {
+                    type: "table",
+                    index: 1,
+                    rows: [
+                        { index: 0, y: 10, height: 20 },
+                        { index: 1, y: 30, height: 10 },
+                        { index: 2, y: 40, height: 10 },
+                    ],
+                },
+            ]);
+        });
+
+        it("should go on with the text of a cell merged down rows across the rows after the one that breaks across pages", () => {
+            // 3 of the cell's 6 lines go on the page, beside 2 of the first row's 4, which widow control keeps from leaving
+            // one alone. The other 3 go on from the top of its rows on the next page, so the second row is a line tall there,
+            // below the first row's last 2, rather than the 2 lines it would be on one page
+            const content = (last: Partial<TableRow> = {}): DocumentContent =>
+                document([
+                    paragraph("a", 4),
+                    table([
+                        mergedRow(merged("restart", [endMarked("merged", 6)]), [[endMarked("r1", 4)]]),
+                        mergedRow(merged("continue"), [[paragraph("r2", 1)]], last),
+                    ]),
+                    paragraph("b", 1),
+                ]);
+            expect(pagesOf(content())).to.deep.equal({ a: "1", merged: "1", mergedEnd: "2", r1: "1", r1End: "2", r2: "2", b: "2" });
+            const pages = paginate(content(), { measurer: MEASURER }).pages;
+            expect(pages[0].body[1]).to.deep.equal({ type: "table", index: 1, rows: [{ index: 0, y: 50, height: 30 }] });
+            expect(pages[1].body[0]).to.deep.equal({
+                type: "table",
+                index: 1,
+                rows: [
+                    { index: 0, y: 10, height: 20 },
+                    { index: 1, y: 30, height: 10 },
+                ],
+            });
+            // A row of an exact height is as tall as it is set to
+            const exact = paginate(content({ height: { value: 5, rule: "exact" } }), { measurer: MEASURER }).pages[1].body;
+            expect(exact[0]).to.deep.equal({
+                type: "table",
+                index: 1,
+                rows: [
+                    { index: 0, y: 10, height: 20 },
+                    { index: 1, y: 30, height: 5 },
+                ],
+            });
+        });
+
+        it("should stop where a page breaks between rows of a cell merged down them, with its text going on across the break", () => {
+            // The page breaks below the first row, as the second is kept whole, or as widow control keeps the cell's lines
+            // beside it together. Which rows Word puts the rest of the cell's text in then isn't known
+            const content = (changes: Partial<TableRow>): DocumentContent =>
+                document([
+                    paragraph("a", 5),
+                    table([
+                        mergedRow(merged("restart", [paragraph("merged", 3)]), [[paragraph("r1", 1)]]),
+                        mergedRow(merged("continue"), [[paragraph("r2", 1)]], changes),
+                    ]),
+                ]);
+            for (const changes of [{ cantSplit: true }, {}]) {
+                expect(numbersOf(content(changes))).to.deep.include({
+                    bookmarks: new Map([
+                        ["a", "1"],
+                        ["r1", "1"],
+                    ]),
+                    stoppedAt: "a cell merged down table rows whose text goes on across a page break between them",
+                });
+            }
+            // With all of its text in the rows on the page, the rest of its rows go on the next page (U4b)
             const fitting = (first: number): DocumentContent =>
                 document([
                     paragraph("a", 4),
@@ -1452,6 +1605,41 @@ describe("paginate", () => {
                 ]);
             expect(pagesOf(kept({ cantSplit: true }))).to.deep.equal({ a: "1", merged: "2", r1: "2", r2: "2" });
             expect(pagesOf(kept({ height: { value: 20, rule: "exact" } }))).to.deep.equal({ a: "1", merged: "2", r1: "2", r2: "2" });
+        });
+
+        it("should stop at the text of a cell merged down rows that goes on across more than two pages, or from a table's header rows", () => {
+            // Word has been seen to break it across one page break only
+            const stoppedAt = (rows: readonly TableRow[]): string | undefined =>
+                paginate(document([paragraph("a", 5), table(rows)]), { measurer: MEASURER }).stoppedAt;
+            const MORE = "a cell merged down table rows whose text goes on across more than two pages";
+            // In the last of its rows, which breaks across 3 pages
+            expect(
+                stoppedAt([
+                    mergedRow(merged("restart", [paragraph("merged", 12)]), [[paragraph("r1", 1)]]),
+                    mergedRow(merged("continue"), [[paragraph("r2", 1)]]),
+                ]),
+            ).to.equal(MORE);
+            // Or beside a row before the last that breaks across 3 pages, where 6 lines of it would fit on the second
+            const beside = (lines: number): readonly TableRow[] => [
+                mergedRow(merged("restart", [endMarked("merged", lines)]), [[endMarked("r1", 12)]]),
+                mergedRow(merged("continue"), [[paragraph("r2", 1)]]),
+            ];
+            expect(stoppedAt(beside(12))).to.equal(MORE);
+            expect(pagesOf(document([paragraph("a", 5), table(beside(8))]))).to.deep.equal({
+                a: "1",
+                merged: "1",
+                mergedEnd: "2",
+                r1: "1",
+                r1End: "3",
+                r2: "3",
+            });
+            // Whether Word repeats the part of it in the header rows above the rest of it isn't known
+            expect(
+                stoppedAt([
+                    mergedRow(merged("restart", [paragraph("merged", 5)]), [[paragraph("head", 1)]], { header: true }),
+                    mergedRow(merged("continue"), [[paragraph("r2", 1)]]),
+                ]),
+            ).to.equal("a cell merged down from a table's header rows whose text goes on across pages");
         });
 
         it("should stop at a line in a table cell taller than a page", () => {
@@ -1533,6 +1721,126 @@ describe("paginate", () => {
                 },
             );
             expect(pagesOf(content)).to.deep.equal({ preface: "i", more: "ii", chapter: "1" });
+        });
+
+        it("should number the page after a continuous section numbered afresh on from its first number, the page it starts on keeping its own, as Word does", () => {
+            /** a, then b and c in a continuous section numbered from 7 in a format: b ends the first page, and c starts the next */
+            const restarted = (numberFormat: string): DocumentContent =>
+                document(
+                    [
+                        [paragraph("a", 3), 0],
+                        [paragraph("b", 4), 1],
+                        [paragraph("c", 1), 1],
+                    ],
+                    { sections: [SECTION, { ...SECTION, start: "continuous", firstNumber: 7, numberFormat }] },
+                );
+            // The first page is still the first, which a bookmark in the new section gives in its format, and the next is 8
+            // (`word-watertight-pages.docx` PG2a and PG2b)
+            expect(pagesOf(restarted("decimal"))).to.deep.equal({ a: "1", b: "1", c: "8" });
+            expect(pagesOf(restarted("upperRoman"))).to.deep.equal({ a: "1", b: "I", c: "VIII" });
+            const { pages } = paginate(restarted("upperRoman"), { measurer: MEASURER });
+            expect(pages.map(({ pageNumber }) => pageNumber)).to.deep.equal(["1", "VIII"]);
+        });
+
+        it("should number the page a continuous section starts at the top of from its first number, when none of it fits on the page before, as Word does", () => {
+            // a fills the first page, so b starts the next, which is 7 and the next 8 (`word-watertight-sections.docx` SC2a, SC2c)
+            const content = document(
+                [
+                    [paragraph("a", 7), 0],
+                    [paragraph("b", 7), 1],
+                    [paragraph("c", 1), 1],
+                ],
+                {
+                    sections: [
+                        SECTION,
+                        { ...SECTION, start: "continuous", firstNumber: 7, titlePage: true, headers: { first: [paragraph("first", 1)] } },
+                    ],
+                },
+            );
+            expect(pagesOf(content)).to.deep.equal({ a: "1", b: "7", c: "8" });
+            // It is the section's first page, which has its first page's header
+            const { pages } = paginate(content, { measurer: MEASURER });
+            expect(pages.map(({ pageNumber, header }) => ({ pageNumber, header }))).to.deep.equal([
+                { pageNumber: "1", header: undefined },
+                { pageNumber: "7", header: "first" },
+                { pageNumber: "8", header: undefined },
+            ]);
+        });
+
+        it("should number the page after two continuous sections numbered afresh on one page on from the last, as Word does", () => {
+            // b numbered from 7 and c from 20 start on the first page, so the second is 21 (`word-watertight-sections.docx` SC2d)
+            const content = document(
+                [
+                    [paragraph("a", 2), 0],
+                    [paragraph("b", 2), 1],
+                    [paragraph("c", 3), 2],
+                    [paragraph("d", 1), 2],
+                    [paragraph("e", 1), 3],
+                ],
+                {
+                    sections: [
+                        SECTION,
+                        { ...SECTION, start: "continuous", firstNumber: 7 },
+                        { ...SECTION, start: "continuous", firstNumber: 20 },
+                        { ...SECTION, start: "continuous" },
+                    ],
+                },
+            );
+            expect(pagesOf(content)).to.deep.equal({ a: "1", b: "1", c: "1", d: "21", e: "21" });
+        });
+
+        it("should number on through a section numbered afresh that starts in the next column of the page, as Word does", () => {
+            // b starts in the second column of the first page, and the next page is the second (`word-watertight-sections.docx` SC1)
+            const content = document(
+                [
+                    [paragraph("a", 2), 0],
+                    [paragraph("b", 7), 1],
+                    [paragraph("c", 1), 1],
+                ],
+                {
+                    sections: [
+                        { ...SECTION, columns: [80, 80] },
+                        { ...SECTION, columns: [80, 80], start: "nextColumn", firstNumber: 7 },
+                    ],
+                },
+            );
+            expect(pagesOf(content)).to.deep.equal({ a: "1", b: "1", c: "2" });
+        });
+
+        it("should leave a blank page before a section on an odd page by the number after a continuous section numbered afresh", () => {
+            // The page after the first is 8, which is even, so a section on an odd page starts on the page after it, 9
+            const content = document(
+                [
+                    [paragraph("a", 1), 0],
+                    [paragraph("b", 1), 1],
+                    [paragraph("c", 1), 2],
+                ],
+                { sections: [SECTION, { ...SECTION, start: "continuous", firstNumber: 7 }, { ...SECTION, start: "oddPage" }] },
+            );
+            expect(pagesOf(content)).to.deep.equal({ a: "1", b: "1", c: "9" });
+            expect(paginate(content, { measurer: MEASURER }).pages.map(({ pageNumber }) => pageNumber)).to.deep.equal(["1", "8", "9"]);
+        });
+
+        it("should take a gutter at the top from the page's height, below the top margin or a header taller than both, as Word does", () => {
+            /** The top of each page's first line, and how many lines each page has */
+            const linesOnPages = (section: Section): readonly (readonly [number, number])[] =>
+                paginate(document([paragraph("a", 12)], { sections: [section] }), { measurer: MEASURER }).pages.map(({ body }) => {
+                    const lines = body.flatMap((block) => (block.type === "paragraph" ? block.lines : []));
+                    return [lines[0].y, lines.length] as const;
+                });
+            // Below the margin of 10, 6 lines to a page in the full width (`word-watertight-settings.docx` ST3), with a header
+            // that ends above the gutter too (`word-watertight-sections.docx` SC3a)
+            const gutter = { ...SECTION, topGutter: 10 };
+            expect(linesOnPages(gutter)).to.deep.equal([
+                [20, 6],
+                [20, 6],
+            ]);
+            expect(linesOnPages({ ...gutter, headers: { default: [paragraph("h", 1)] } })).to.deep.equal([
+                [20, 6],
+                [20, 6],
+            ]);
+            // A header that ends below the gutter pushes the body below it, where it would without the gutter (SC3b)
+            expect(linesOnPages({ ...gutter, headers: { default: [paragraph("h", 2)] } })[0]).to.deep.equal([25, 5]);
         });
 
         it("should write page numbers in each format as Word does, and stop at those it doesn't write", () => {
@@ -1855,9 +2163,17 @@ describe("paginate", () => {
             });
 
             it("should stop at what it can't lay out in the columns it balances, though it can in a column as tall as the page", () => {
-                // The row of a merged cell fits in the first column, but breaks across the columns as short as they fit in
-                const headed = balanced([table([mergedRow(merged("restart", [paragraph("merged", 4)]))])]);
-                expect(paginate(headed, { measurer: MEASURER }).stoppedAt).to.equal("a table row with merged cells across pages");
+                // The rows of a merged cell fit in the first column, but in the columns as short as they fit in, the second
+                // goes in the second column, and the cell's text would go on across the break between them
+                const merge = balanced([
+                    table([
+                        mergedRow(merged("restart", [paragraph("merged", 4)]), [[paragraph("r1", 1)]]),
+                        mergedRow(merged("continue"), [[paragraph("r2", 1)]], { cantSplit: true }),
+                    ]),
+                ]);
+                expect(paginate(merge, { measurer: MEASURER }).stoppedAt).to.equal(
+                    "a cell merged down table rows whose text goes on across a page break between them",
+                );
             });
 
             it("should put the line of the empty paragraph that ends the section after a table below the last column, as Word does", () => {
@@ -2462,7 +2778,7 @@ describe("paginate", () => {
             const content = withNotes([paragraph("a", 4), noted(paragraph("b", 1), "footnote 1"), paragraph("c", 1)], {
                 "footnote 1": [paragraph("note", 1)],
             });
-            // The separator and the footnote take 2 lines, so c goes on the next page. Bookmarks in footnotes aren't placed
+            // The separator and the footnote take 2 lines, so c goes on the next page
             expect(pagesOf(content)).to.deep.equal({ a: "1", b: "1", c: "2" });
         });
 
@@ -2960,6 +3276,54 @@ describe("paginate", () => {
             }
         });
 
+        it("should end a row whose footnote continues beside a cell merged down to the next row, whose text goes on in that one", () => {
+            // The row stays on the page with the first 3 lines of its footnote, as one alone does (U3b), and the merged cell's
+            // line goes in it, so the next row goes on the next page, below the rest of the footnote
+            const content = withNotes(
+                [
+                    paragraph("a", 2),
+                    table([
+                        mergedRow(merged("restart", [paragraph("merged", 1)]), [[noted(paragraph("cell", 1), "footnote 1")]]),
+                        mergedRow(merged("continue"), [[paragraph("r2", 1)]]),
+                    ]),
+                ],
+                { "footnote 1": [paragraph("note", 5)] },
+            );
+            expect(pagesOf(content)).to.deep.equal({ a: "1", merged: "1", cell: "1", r2: "2" });
+        });
+
+        it("should put the footnote of a cell merged down rows on the page of its first row, and stop where its text goes on across pages", () => {
+            const note = { "footnote 1": [paragraph("note", 1)] };
+            // The cell's 2 lines are on the page beside the first row's first 2, as in U4b, with its footnote below them
+            const fitting = withNotes(
+                [
+                    paragraph("a", 3),
+                    table([
+                        mergedRow(merged("restart", [noted(paragraph("merged", 2), "footnote 1")]), [[paragraph("r1", 4)]]),
+                        mergedRow(merged("continue"), [[paragraph("r2", 1)]]),
+                    ]),
+                ],
+                note,
+            );
+            expect(pagesOf(fitting)).to.deep.equal({ a: "1", merged: "1", r1: "1", r2: "2" });
+            expect(paginate(fitting, { measurer: MEASURER }).pages[0].footnotes).to.have.length(1);
+            // Its footnote went with its first row, and the page Word puts it on when the line that refers to it goes on the
+            // next page isn't known
+            const merge = (lines: number): DocumentContent =>
+                withNotes(
+                    [
+                        paragraph("a", 2),
+                        table([
+                            mergedRow(merged("restart", [noted(paragraph("merged", lines), "footnote 1")]), [[paragraph("r1", 1)]]),
+                            mergedRow(merged("continue"), [[paragraph("r2", 1)]]),
+                        ]),
+                    ],
+                    note,
+                );
+            expect(numbersOf(merge(4)).stoppedAt).to.equal("a footnote in a cell merged down table rows whose text goes on across pages");
+            expect(pagesOf(merge(3))).to.deep.equal({ a: "1", merged: "1", r1: "1", r2: "1" });
+        });
+
         it("should break a row across pages with the footnote of each of its lines on the page the line is on, as Word does", () => {
             // A cell of 6 lines from the page's 4th line, with footnotes of a line from its 1st and 5th. 2 of its lines fit with
             // the first footnote, where 4 would without it, and the second goes below the other 4 on the next page (U3c)
@@ -3428,6 +3792,200 @@ describe("paginate", () => {
         });
     });
 
+    describe("fields whose results depend on the pages", () => {
+        /** The text of each line of the body of a page */
+        const linesOn = (pagination: Pagination, page: number): readonly string[] =>
+            pagination.pages[page - 1].body.flatMap((block) => (block.type === "paragraph" ? block.lines.map(({ text }) => text) : []));
+        /** A paragraph of a field's result, at the marker before it when it has one */
+        const fielded = (name: string, item: LayoutItem, marker?: string): ParagraphBlock =>
+            withItems(paragraph(name, 0), [...(marker === undefined ? [] : [{ type: "marker" as const, name: marker }]), item]);
+        /** Lays out the pages, and again with where the bookmarks and fields were placed, as the passes do */
+        const twice = (content: DocumentContent, options: Parameters<typeof paginate>[1] = {}): Pagination => {
+            const first = paginate(content, { measurer: MEASURER, ...options });
+            return paginate(content, { measurer: MEASURER, ...options, pageNumbers: first.bookmarks, places: first.places });
+        };
+        const SEPARATOR: ParagraphBlock = { type: "paragraph", items: [], format: {}, tabStops: [], markFont: {} };
+        /** A document whose blocks refer to footnotes and endnotes, by the markers at their references */
+        const withNotes = (
+            blocks: Parameters<typeof document>[0],
+            footnotes: Record<string, readonly Block[]>,
+            endnotes: Record<string, readonly Block[]> = {},
+            sections = [SECTION],
+        ): DocumentContent =>
+            document(blocks, {
+                sections,
+                footnotes: new Map(Object.entries(footnotes)),
+                footnoteSeparator: [SEPARATOR],
+                footnoteContinuationSeparator: [SEPARATOR],
+                endnotes: Object.values(endnotes).flat(),
+                endnoteReferences: new Map(Object.entries(endnotes)),
+            });
+        const referring = (name: string, lines: number, ...notes: readonly string[]): ParagraphBlock =>
+            withItems(
+                paragraph(name, lines),
+                notes.map((note) => ({ type: "marker", name: note })),
+            );
+
+        it("should write the number of the page a PAGE field is on, from where it was placed before, as the page shows it", () => {
+            const page: LayoutItem = { type: "pageNumber", field: "field 1", font: {} };
+            const content = document([paragraph("a", 7), fielded("b", page, "field 1")], {
+                sections: [{ ...SECTION, firstNumber: 4, numberFormat: "lowerRoman" }],
+            });
+            const first = paginate(content, { measurer: MEASURER });
+            // Where it is isn't known the first time, so it is blank. It is placed as a bookmark is, but isn't one
+            expect(linesOn(first, 2)).to.deep.equal([""]);
+            expect(first.places.get("field 1")).to.deep.equal({ page: 2, pageNumber: 5, text: "v", section: 0, order: 2 });
+            expect(first.bookmarks.has("field 1")).to.equal(false);
+            expect(linesOn(paginate(content, { measurer: MEASURER, places: first.places }), 2)).to.deep.equal(["v"]);
+            // In a format of its own, of the page's number, on a page numbered in figures or not (word-page-fields.docx PF7)
+            const formatted = (format: FieldFormat, section: Partial<Section> = {}): readonly string[] =>
+                linesOn(
+                    twice(
+                        document([paragraph("a", 7), fielded("b", { ...page, format }, "field 1")], {
+                            sections: [{ ...SECTION, ...section }],
+                        }),
+                    ),
+                    2,
+                );
+            expect(formatted({ numberFormat: "roman" })).to.deep.equal(["ii"]);
+            expect(formatted({ numberFormat: "Arabic" }, { firstNumber: 4, numberFormat: "lowerRoman" })).to.deep.equal(["5"]);
+            expect(formatted({ picture: "00" })).to.deep.equal(["02"]);
+            expect(formatted({ numberFormat: "roman", capitals: "upper" })).to.deep.equal(["II"]);
+            expect(formatted({ capitals: "upper" }, { numberFormat: "lowerRoman" })).to.deep.equal(["II"]);
+            // Word's ordinal of 0 is an error
+            const zero = document([fielded("b", { ...page, format: { numberFormat: "Ordinal" } }, "field 1")], {
+                sections: [{ ...SECTION, firstNumber: 0 }],
+            });
+            expect(twice(zero).stoppedAt).to.equal("a page number its format isn't written for yet");
+        });
+
+        it("should write the number of the section a SECTION field is in, counted from 1, in a format of its own too", () => {
+            const content = document(
+                [
+                    [paragraph("a", 1), 0],
+                    [fielded("b", { type: "sectionNumber", font: {} }), 1],
+                    [fielded("c", { type: "sectionNumber", font: {}, format: { numberFormat: "ALPHABETIC" } }), 1],
+                ],
+                { sections: [SECTION, SECTION] },
+            );
+            expect(linesOn(paginate(content, { measurer: MEASURER }), 2)).to.deep.equal(["2", "B"]);
+        });
+
+        it("should write the number of pages in a format of its own, and nothing until it is known", () => {
+            const content = document([fielded("a", { type: "pageCount", scope: "document", font: {}, format: { numberFormat: "roman" } })]);
+            expect(linesOn(paginate(content, { measurer: MEASURER, pageCount: 12 }), 1)).to.deep.equal(["xii"]);
+            expect(linesOn(paginate(content, { measurer: MEASURER }), 1)).to.deep.equal([""]);
+        });
+
+        it("should write a page reference in a format of its own from the number of its bookmark's page, without its chapter number, and give each bookmark's", () => {
+            const reference = (format: FieldFormat): ParagraphBlock =>
+                fielded("reference", { type: "pageReference", bookmark: "target", font: {}, format });
+            const content = (format: FieldFormat, section: Partial<Section> = {}): DocumentContent =>
+                document([reference(format), paragraph("fill", 6), paragraph("target", 1)], {
+                    sections: [{ ...SECTION, ...section }],
+                });
+            expect(linesOn(paginate(content({ numberFormat: "roman" }), { measurer: MEASURER }), 1)[0]).to.equal("");
+            expect(linesOn(twice(content({ numberFormat: "roman" })), 1)[0]).to.equal("ii");
+            // word-page-fields.docx PF4: page iv in Arabic is 4, and page 1-2 in roman numerals is ii
+            expect(linesOn(twice(content({ numberFormat: "Arabic" }, { firstNumber: 3, numberFormat: "lowerRoman" })), 1)[0]).to.equal("4");
+            const chapter = (name: string): ParagraphBlock => ({ ...paragraph(name, 1), heading: { level: 1, chapter: "1" } });
+            const chapters = document(
+                [chapter("heading"), reference({ numberFormat: "roman" }), paragraph("fill", 5), paragraph("target", 1)],
+                {
+                    sections: [{ ...SECTION, chapters: { level: 1, separator: "-" } }],
+                },
+            );
+            expect(linesOn(twice(chapters), 1)[1]).to.equal("ii");
+            expect(Object.fromEntries(paginate(chapters, { measurer: MEASURER }).bookmarkNumbers)).to.deep.equal({
+                heading: 1,
+                reference: 1,
+                fill: 1,
+                target: 2,
+            });
+            // In capitals alone, the page's number as the page shows it
+            expect(linesOn(twice(content({ capitals: "upper" }, { numberFormat: "lowerRoman" })), 1)[0]).to.equal("II");
+        });
+
+        it("should write where a bookmark is from a page reference with \\p: above or below it on its page, by the order of the text, and the bookmark's page otherwise", () => {
+            const relative = (field: string, format?: FieldFormat): ParagraphBlock =>
+                fielded(
+                    field,
+                    { type: "pageReference", bookmark: "target", font: {}, relative: field, ...(format ? { format } : {}) },
+                    field,
+                );
+            const content = document(
+                [
+                    relative("field 1"),
+                    paragraph("target", 1),
+                    relative("field 2", { capitals: "upper" }),
+                    paragraph("fill", 5),
+                    relative("field 3"),
+                ],
+                { relativeReferences: new Map([["target", ["field 1", "field 2", "field 3", "field 9"]]]) },
+            );
+            const first = paginate(content, { measurer: MEASURER });
+            // A reference that wasn't placed has nothing
+            expect(first.relativePositions.get("target")).to.deep.equal(["below", "above", "on page 1", undefined]);
+            const second = paginate(content, { measurer: MEASURER, places: first.places });
+            expect([...linesOn(second, 1), ...linesOn(second, 2)].filter((text) => !text.startsWith("abc"))).to.deep.equal([
+                "below",
+                "ABOVE",
+                "on page ",
+                "1",
+            ]);
+            // Across columns, by the order of the text too: the bookmark is beside the reference, in the second column
+            // (word-page-fields.docx PF1)
+            const columns = document([relative("field 1"), paragraph("fill", 7), paragraph("target", 1)], {
+                sections: [{ ...SECTION, pageWidth: 190, columns: [80, 80] }],
+            });
+            expect(linesOn(twice(columns), 1)[0]).to.equal("below");
+            // To a bookmark that isn't anywhere, nothing
+            const nowhere = document([relative("field 1")], { relativeReferences: new Map([["elsewhere", ["field 1"]]]) });
+            expect(paginate(nowhere, { measurer: MEASURER }).relativePositions.get("elsewhere")).to.deep.equal([undefined]);
+            expect(linesOn(paginate(nowhere, { measurer: MEASURER, places: first.places }), 1)).to.deep.equal(["below"]);
+        });
+
+        it("should place the bookmarks and fields of footnotes and endnotes where their references are, as Word does (word-page-fields.docx PF7g to PF8c)", () => {
+            const content = withNotes(
+                [paragraph("a", 3), referring("b", 1, "footnote 1", "endnote 1"), paragraph("c", 1), paragraph("d", 2)],
+                {
+                    "footnote 1": [
+                        paragraph("note", 2),
+                        table([row([[paragraph("cell", 1)]])]),
+                        fielded("rest", { type: "pageNumber", field: "field 1", font: {} }, "field 1"),
+                        fielded("section", { type: "sectionNumber", field: "field 2", font: {} }, "field 2"),
+                    ],
+                },
+                { "endnote 1": [paragraph("end", 1)] },
+                [{ ...SECTION, numberFormat: "lowerRoman" }],
+            );
+            const first = paginate(content, { measurer: MEASURER });
+            // The footnote's rest goes on to page ii, and the endnote is on the last page, but they are where b is
+            expect(Object.fromEntries(first.bookmarks)).to.deep.include({ b: "i", note: "i", cell: "i", rest: "i", end: "i" });
+            expect(first.pageCount).to.equal(3);
+            const second = paginate(content, { measurer: MEASURER, places: first.places });
+            expect(
+                second.pages.flatMap((page) =>
+                    page.footnotes.flatMap(({ content: blocks }) =>
+                        blocks.flatMap((block) => (block.type === "paragraph" ? block.lines.map(({ text }) => text) : [])),
+                    ),
+                ),
+            ).to.include.members(["i", "1"]);
+            // Not yet placed, a SECTION field in a note is blank
+            expect(
+                paginate(content, { measurer: MEASURER }).pages.flatMap((page) =>
+                    page.footnotes.flatMap(({ content: blocks }) =>
+                        blocks.flatMap((block) => (block.type === "paragraph" ? block.lines.map(({ text }) => text) : [])),
+                    ),
+                ),
+            ).not.to.include("1");
+            // A page reference with \p to one is "on page" its reference's page, even on that page (PF8d and PF8e)
+            const reference = fielded("field 3", { type: "pageReference", bookmark: "note", font: {}, relative: "field 3" }, "field 3");
+            const relative = withNotes([reference, referring("b", 1, "footnote 1")], { "footnote 1": [paragraph("note", 1)] });
+            expect(linesOn(twice(relative), 1).slice(0, 2)).to.deep.equal(["on page ", "1"]);
+        });
+    });
+
     describe("headers and footers", () => {
         const lines = (count: number): readonly Block[] => [paragraph(`header${count}`, count)];
 
@@ -3714,7 +4272,8 @@ describe("paginate", () => {
                     ]),
                 }),
             );
-            // The separator is the last line of the first page
+            // The separator would be the last line of the first page, with no line of an endnote below it, so it goes to the
+            // next with them, where it is their first line
             expect(pages[0].endnotes).to.deep.equal([]);
             expect(pages[1].body).to.deep.equal([]);
             expect(pages[1].endnotes).to.deep.equal([
@@ -3725,15 +4284,94 @@ describe("paginate", () => {
                             type: "paragraph",
                             index: 0,
                             lines: [
-                                { text: "abcdefgh ", x: 10, y: 10, width: 80, height: 10, textWidth: 80 },
-                                { text: "abcdefgh", x: 10, y: 20, width: 80, height: 10, textWidth: 80 },
+                                { text: "abcdefgh ", x: 10, y: 20, width: 80, height: 10, textWidth: 80 },
+                                { text: "abcdefgh", x: 10, y: 30, width: 80, height: 10, textWidth: 80 },
                             ],
                         },
-                        { type: "paragraph", index: 1, lines: [{ text: "abcdefgh", x: 10, y: 30, width: 80, height: 10, textWidth: 80 }] },
+                        { type: "paragraph", index: 1, lines: [{ text: "abcdefgh", x: 10, y: 40, width: 80, height: 10, textWidth: 80 }] },
                     ],
                 },
-                { noteNumber: "ii", content: [{ type: "table", index: 0, rows: [{ index: 0, y: 40, height: 10 }] }] },
+                { noteNumber: "ii", content: [{ type: "table", index: 0, rows: [{ index: 0, y: 50, height: 10 }] }] },
             ]);
+        });
+
+        it("should put the continuation separator above the endnotes on each page after the first, without its space after, as Word does", () => {
+            const SEPARATOR: ParagraphBlock = { type: "paragraph", items: [], format: {}, tabStops: [], markFont: {} };
+            // A line tall, and its space after left out (`word-watertight-sections.docx` SC4)
+            const CONTINUATION: ParagraphBlock = { ...SEPARATOR, format: { spaceAfter: 20 } };
+            /** The endnotes' lines' tops on each page, after a line of text, with endnotes of these numbers of lines */
+            const endnoteTops = (
+                lengths: readonly number[],
+                continuation: readonly Block[] = [CONTINUATION],
+            ): ReturnType<typeof paginate> & {
+                readonly tops: readonly (readonly number[])[];
+            } => {
+                const notes = lengths.map((length, index) => paragraph(`note${index}`, length));
+                const laidOut = paginate(
+                    document([paragraph("a", 1)], {
+                        endnotes: [SEPARATOR, ...notes],
+                        endnoteContinuationSeparator: continuation,
+                        endnoteNumbers: new Map<Block, string>(notes.map((note, index) => [note, String(index)])),
+                    }),
+                    { measurer: MEASURER },
+                );
+                const tops = laidOut.pages.map((page) => page.endnotes.flatMap(({ content }) => linesOf(content).map(([, , y]) => y)));
+                return { ...laidOut, tops };
+            };
+            // An endnote that goes on to the next page goes on below the continuation separator, and so does the one after
+            // it (`word-watertight-pages.docx` PG8)
+            expect(endnoteTops([7, 4]).tops).to.deep.equal([
+                [30, 40, 50, 60, 70],
+                [20, 30, 40, 50, 60, 70],
+            ]);
+            // And one that starts the next page, after one that ends this one (SC4)
+            expect(endnoteTops([5, 4]).tops).to.deep.equal([
+                [30, 40, 50, 60, 70],
+                [20, 30, 40, 50],
+            ]);
+            // A continuation separator of two paragraphs keeps the space after the first
+            const twoParagraphs = [{ ...SEPARATOR, format: { spaceAfter: 10 } }, CONTINUATION];
+            expect(endnoteTops([5, 3], twoParagraphs).tops[1]).to.deep.equal([40, 50, 60]);
+            // Word put a line more below it than the page had room for, and how far past the margin it puts one isn't known
+            const filled = endnoteTops([5, 8]);
+            expect(filled.stoppedAt).to.equal("endnotes that fill a page after the first they are on");
+            expect(filled.tops[1]).to.deep.equal([20, 30, 40, 50, 60, 70]);
+        });
+
+        it("should keep endnote paragraphs with the next on a page below the continuation separator", () => {
+            const SEPARATOR: ParagraphBlock = { type: "paragraph", items: [], format: {}, tabStops: [], markFont: {} };
+            const blocks = [paragraph("p", 3), paragraph("kept", 1, { keepNext: true }), paragraph("m", 3)];
+            const pages = pagesLaidOut(
+                document([paragraph("a", 1)], {
+                    endnotes: [SEPARATOR, ...blocks],
+                    endnoteContinuationSeparator: [SEPARATOR],
+                    endnoteNumbers: new Map<Block, string>(blocks.map((block) => [block, "i"])),
+                }),
+            );
+            // kept and m don't fit below p, so they go on the next page, below the continuation separator
+            expect(pages[1].endnotes[0].content.map((block) => [block.index, linesOf([block])[0][2]])).to.deep.equal([
+                [1, 20],
+                [2, 30],
+            ]);
+        });
+
+        it("should stop at endnotes that go on into the next column or page in a section of columns", () => {
+            const SEPARATOR: ParagraphBlock = { type: "paragraph", items: [], format: {}, tabStops: [], markFont: {} };
+            const note = paragraph("note", 10);
+            const columns = (body: number): ReturnType<typeof paginate> =>
+                paginate(
+                    document([paragraph("a", body)], {
+                        sections: [{ ...SECTION, columns: [80, 80] }],
+                        endnotes: [SEPARATOR, note],
+                        endnoteContinuationSeparator: [SEPARATOR],
+                        endnoteNumbers: new Map<Block, string>([[note, "i"]]),
+                    }),
+                    { measurer: MEASURER },
+                );
+            // Whether Word puts the continuation separator at the top of a column isn't known
+            expect(columns(1).stoppedAt).to.equal("endnotes continued in columns");
+            // Nor of a page, after the last column
+            expect(columns(7).stoppedAt).to.equal("endnotes continued in columns");
         });
 
         it("should say which header and footer each page shows, and give the blank page before an odd page section neither, as Word does", () => {

@@ -16,6 +16,7 @@ import {
     DEFAULT_FONT_SIZE,
     type LineSpacing,
     type ParagraphFormat,
+    type TextBorder,
     type TextFont,
     isKerned,
     measureDescent,
@@ -301,9 +302,23 @@ const sameFont = (one: TextFont, other: TextFont): boolean => {
 };
 
 /**
- * How wide pieces of text are. Pieces next to each other in the same font, and kerned, are measured together, so the pairs
- * of characters across them are kerned, as Word kerns them across runs (word-fonts.docx F4). Others are measured
- * apart, as a measurer may measure a piece, such as a page number, differently on its own.
+ * The room borders take between text in one and text in another: the end of the one's box and the start of the other's.
+ * Text next to text with the same border is in one box with it, with no room between: two runs with the same border are
+ * as wide as one, and two with borders of other widths or colours are each in a box of their own
+ * (scripts/layout-probes/word-run-formatting.ts RF7i, RF7k, word-run-formatting2.ts RF12)
+ */
+const roomBetween = (before: TextBorder | undefined, after: TextBorder | undefined): number =>
+    before?.key === after?.key ? 0 : (before?.room ?? 0) + (after?.room ?? 0);
+
+/** The border of the start or end of pieces of text */
+const firstBorder = (pieces: readonly Piece[]): TextBorder | undefined => pieces[0].font.border;
+const lastBorder = (pieces: readonly Piece[]): TextBorder | undefined => pieces[pieces.length - 1].font.border;
+
+/**
+ * How wide pieces of text are, with the room of the borders between them. Pieces next to each other in the same font, and
+ * kerned, are measured together, so the pairs of characters across them are kerned, as Word kerns them across runs
+ * (word-fonts.docx F4). Others are measured apart, as a measurer may measure a piece, such as a page number, differently on
+ * its own.
  */
 const widthOf = (pieces: readonly Piece[], measurer: TextMeasurer): number => {
     if (pieces.length === 0) {
@@ -312,6 +327,7 @@ const widthOf = (pieces: readonly Piece[], measurer: TextMeasurer): number => {
     let total = 0;
     let [{ text, font }] = pieces;
     for (const piece of pieces.slice(1)) {
+        total += roomBetween(font.border, piece.font.border);
         if (isKerned(font) && sameFont(font, piece.font)) {
             text += piece.text;
             continue;
@@ -335,6 +351,8 @@ type Heights = {
     readonly tallest: number;
     /** The tallest picture, which stands on the baseline */
     readonly picture: number;
+    /** Whether it has text with emphasis marks over it, or under it */
+    readonly marks?: { readonly above?: boolean; readonly below?: boolean };
 };
 
 const NOTHING: Heights = { ascent: 0, descent: 0, tallest: 0, picture: 0 };
@@ -343,11 +361,74 @@ const NOTHING: Heights = { ascent: 0, descent: 0, tallest: 0, picture: 0 };
 const withFont = (heights: Heights, font: TextFont, measurer: TextMeasurer): Heights => {
     const line = measurer.measureLineHeight(font);
     const descent = measurer.measureDescent(font);
+    // Raised text raises its ascent and descent with it, its line gap too: Courier New 11 raised 2 points beside Calibri 11
+    // is 282.2 twips, Courier New's ascent and 40 above Calibri's descent, and Times New Roman 10 raised 6 points is 365.8
+    // (scripts/layout-probes/word-run-formatting.ts RF5b, RF5e). Text smaller than its line can be raised as far as its
+    // line's ascent without making it taller: 7 points raised 3 in a line of Calibri 11 is 268.55 (RF5a). A border adds its
+    // room above and below the text, and to its own line, which multiple spacing adds its share of: a single border of half
+    // a point 4 points away makes a line of Calibri 11 448.55, and 672.8 at 1.5 lines (RF7a, RF7g)
+    // Its box goes round the text as it is raised, down to the baseline at least: Calibri 11 raised 6 points with the same
+    // border is its ascent, the raise and the room above, and the room below the baseline, 509.5 (word-run-formatting2.ts
+    // RF13a)
+    const { raise = 0, border, emphasis } = font;
+    const room = border?.room ?? 0;
     return {
         ...heights,
-        ascent: Math.max(heights.ascent, line - descent),
-        descent: Math.max(heights.descent, descent),
-        tallest: Math.max(heights.tallest, line),
+        ascent: Math.max(heights.ascent, Math.max(0, line - descent + raise) + room),
+        descent: Math.max(heights.descent, Math.max(0, descent - raise) + room),
+        tallest: Math.max(heights.tallest, line + 2 * room),
+        ...(emphasis === undefined ? {} : { marks: { ...heights.marks, [emphasis]: true } }),
+    };
+};
+
+// Line spacing that adds up to 0.19 of a line with emphasis marks leaves the marks' room over it, and from 0.34 of it
+// holds the marks: at 1.08 and 1.15 lines and at least 16 points over Calibri 11 (0.08, 0.15 and 0.19 of its 268.55 twips),
+// the marks add their 67.14 twips, and at 1.5 and 2 lines and at least 18 points (0.34) they don't
+// (scripts/layout-probes/word-run-formatting.ts RF6k, word-run-formatting2.ts RF9). Where between Word turns from one to
+// the other isn't known
+const MARKS_OVER_SPACING = 0.1916;
+const MARKS_IN_SPACING = 0.3405;
+
+/**
+ * How tall a line with emphasis marks is: a quarter of the line more, over its text or under it, whatever the font and
+ * the size of the text they are on: 67.14 twips in a line of Calibri 11 and 122 of Calibri 20, 57.5 of Times New Roman 10
+ * and 63.25 of Arial 11, and 67.14 still for marks on a word of 7 points, or on a space, in a line of Calibri 11
+ * (scripts/layout-probes/word-run-formatting.ts RF6, word-watertight-text.ts TX15). A line taller than its fonts' own
+ * lines takes a quarter of itself: 616.95 for marks on Courier New 20 in a line of Times New Roman 20, and 485.69 for a
+ * line with a word raised 6 points (word-run-formatting2.ts RF10). Line spacing that adds a little room adds it below the
+ * marks' room, and spacing that adds enough holds the marks
+ */
+const markedHeightOf = (
+    { tallest, picture, marks }: Heights,
+    natural: number,
+    spacing: LineSpacing | undefined,
+): Pick<LaidOutLine, "height" | "spacingBelow" | "unsupported"> => {
+    const room = natural / 4;
+    if (marks!.above && marks!.below) {
+        return { height: natural + room, unsupported: "emphasis marks over and under text on one line" };
+    }
+    if (picture > 0) {
+        return { height: natural + room, unsupported: "emphasis marks on a line with a picture" };
+    }
+    if (spacing === undefined || spacing.rule === "exact") {
+        return { height: spacing === undefined ? natural + room : spacing.height };
+    }
+    const extra = spacing.rule === "multiple" ? (spacing.multiple - 1) * tallest : Math.max(0, spacing.height - natural);
+    const share = extra / natural;
+    // Word's probes had multiple spacing of 1.08 to 2 lines over a line as tall as its fonts' own, and at-least spacing over
+    // one less or a little more than that
+    const known =
+        extra >= 0 &&
+        (extra === 0 || Math.abs(natural - tallest) <= TOLERANCE) &&
+        (share <= MARKS_OVER_SPACING || share >= MARKS_IN_SPACING);
+    if (!known) {
+        return { height: natural + room, unsupported: "emphasis marks on a line whose line spacing Word hasn't shown with them" };
+    }
+    // Multiple spacing's room is below the text, and at-least spacing's above it, where the marks over it go
+    const below = spacing.rule === "multiple" ? (share <= MARKS_OVER_SPACING ? extra : extra - room) : 0;
+    return {
+        height: natural + extra + (share <= MARKS_OVER_SPACING ? room : 0),
+        ...(below > 0 ? { spacingBelow: below } : {}),
     };
 };
 
@@ -356,10 +437,8 @@ const withFont = (heights: Heights, font: TextFont, measurer: TextMeasurer): Hei
  * doesn't round it: Calibri 11 is 268.55 twips, and 289.82 at 259 twips' multiple spacing, where LibreOffice rounds them
  * to whole twips, 269 and 290.
  */
-const heightOf = (
-    { ascent, descent, tallest, picture }: Heights,
-    spacing: LineSpacing | undefined,
-): Pick<LaidOutLine, "height" | "spacingBelow"> => {
+const heightOf = (heights: Heights, spacing: LineSpacing | undefined): Pick<LaidOutLine, "height" | "spacingBelow" | "unsupported"> => {
+    const { ascent, descent, tallest, picture, marks } = heights;
     // The line is its text's tallest ascent and deepest descent, as Word makes a line of two fonts: Calibri 11 with Courier
     // New 11 is 275.53 twips, Calibri's ascent and Courier New's descent, where each alone is 268.55 and 249.2
     // (scripts/layout-probes/word-watertight-text.ts TX9a). A picture stands on the baseline, so with text it is the
@@ -367,6 +446,9 @@ const heightOf = (
     // line is at least as tall as each font's own, and a picture's run counts its font's: a 6-point picture alone in its
     // line, in a run of Calibri 11, is 268.55, and a 30-point one 600 (word-mixed-heights.ts MH7, MH3e)
     const natural = Math.max(Math.max(picture, ascent) + descent, tallest);
+    if (marks !== undefined) {
+        return markedHeightOf(heights, natural, spacing);
+    }
     if (spacing === undefined) {
         return { height: natural };
     }
@@ -408,6 +490,9 @@ type LineState = {
      */
     readonly otherSpaces: number;
     readonly unknown?: boolean;
+    /** The border of the text placed last, whose box is open there, and whether it has text in a border */
+    readonly border?: TextBorder;
+    readonly boxed?: boolean;
     readonly markers: readonly string[];
     /** The bookmarks that start with the next word, picture or tab, which may wrap onto the next line */
     readonly pending: readonly string[];
@@ -415,6 +500,8 @@ type LineState = {
     readonly started: boolean;
     /** Whether it is the first line of the paragraph, which starts at its first line indent */
     readonly first: boolean;
+    /** Why where its text goes isn't known, when it isn't */
+    readonly unsupported?: string;
 };
 
 /**
@@ -440,16 +527,33 @@ const nextStop = (
  * stop. Spaces at its end aren't counted.
  */
 const widthAfterTab = (tokens: readonly Token[], measurer: TextMeasurer): number => {
-    const next = tokens.findIndex((token) => token.type === "tab");
-    const text = next === -1 ? tokens : tokens.slice(0, next);
+    const text = textAfterTab(tokens);
     const lastWord = text.findLastIndex((token) => token.type !== "space" && token.type !== "marker");
-    return text.slice(0, lastWord + 1).reduce((total, token) => {
-        if (token.type === "box") {
-            return total + token.width;
-        }
-        return token.type === "word" || token.type === "space" ? total + widthOf(token.pieces, measurer) : total;
-    }, 0);
+    return text.slice(0, lastWord + 1).reduce(
+        ({ total, border }, token) => {
+            if (token.type === "box") {
+                return { total: total + roomBetween(border, undefined) + token.width, border: undefined };
+            }
+            return token.type === "word" || token.type === "space"
+                ? {
+                      total: total + roomBetween(border, firstBorder(token.pieces)) + widthOf(token.pieces, measurer),
+                      border: lastBorder(token.pieces),
+                  }
+                : { total, border };
+        },
+        { total: 0, border: undefined as TextBorder | undefined },
+    ).total;
 };
+
+/** The tokens after a tab, up to the next tab or the end of the part */
+const textAfterTab = (tokens: readonly Token[]): readonly Token[] => {
+    const next = tokens.findIndex((token) => token.type === "tab");
+    return next === -1 ? tokens : tokens.slice(0, next);
+};
+
+/** Whether the text after a tab has a border */
+const hasBorder = (tokens: readonly Token[]): boolean =>
+    textAfterTab(tokens).some((token) => (token.type === "word" || token.type === "space") && token.pieces.some(({ font }) => font.border));
 
 /**
  * A paragraph's tab stops in order, and those of its first line, where a hanging indent is a stop too.
@@ -505,30 +609,42 @@ export const measureContentWidths = (
             let position = indentLeft + (first ? firstLineIndent : 0);
             let end = position;
             let { min } = widths;
+            // The border of the text before, whose box is open, and of the last word, picture or tab
+            let border: TextBorder | undefined;
+            let endBorder: TextBorder | undefined;
             for (const [index, token] of tokens.entries()) {
                 if (token.type === "marker") {
                     continue;
                 }
                 if (token.type === "space") {
-                    position += widthOf(token.pieces, measurer);
+                    position += roomBetween(border, firstBorder(token.pieces)) + widthOf(token.pieces, measurer);
+                    border = lastBorder(token.pieces);
                     continue;
                 }
+                const lead = token.type === "word" ? roomBetween(border, firstBorder(token.pieces)) : roomBetween(border, undefined);
+                border = token.type === "word" ? lastBorder(token.pieces) : undefined;
+                endBorder = border;
                 if (token.type === "tab") {
-                    const stop = nextStop(position, first ? firstLineStops : stops, defaultTabStop, Infinity)!;
+                    const stop = nextStop(position + lead, first ? firstLineStops : stops, defaultTabStop, Infinity)!;
                     const after = widthAfterTab(tokens.slice(index + 1), measurer);
                     const shift = stop.alignment === "left" ? 0 : stop.alignment === "center" ? after / 2 : after;
-                    position = Math.max(position, stop.position - shift);
+                    position = Math.max(position + lead, stop.position - shift);
                     end = position;
                     continue;
                 }
                 const tokenWidth = token.type === "box" ? token.width : widthOf(token.pieces, measurer);
-                // The first word of a line starts where it is, and any other can wrap to the start of a line
-                const start = end === indentLeft + (first ? firstLineIndent : 0) ? position : indentLeft;
-                min = Math.max(min, start + tokenWidth + indentRight);
-                position += tokenWidth;
+                // The first word of a line starts where it is, and any other can wrap to the start of a line, where a word in
+                // a border starts its box again. A box ends on its line with the border's room after it
+                const close = border?.room ?? 0;
+                const start =
+                    end === indentLeft + (first ? firstLineIndent : 0)
+                        ? position + lead
+                        : indentLeft + (token.type === "word" ? (firstBorder(token.pieces)?.room ?? 0) : 0);
+                min = Math.max(min, start + tokenWidth + close + indentRight);
+                position += lead + tokenWidth;
                 end = position;
             }
-            return { min, max: Math.max(widths.max, min, end + indentRight) };
+            return { min, max: Math.max(widths.max, min, end + (endBorder?.room ?? 0) + indentRight) };
         },
         { min: 0, max: 0 },
     );
@@ -647,21 +763,21 @@ export const layoutLines = (
         };
         const finish = (state: LineState, breakAfter?: LaidOutLine["breakAfter"]): void => {
             // Spaces add nothing to the height of a line with no text on it, which is as tall as its mark, as Word and
-            // LibreOffice lay it out
-            const heights = state.started ? state.heights : withFont(NOTHING, markFont, measurer);
+            // LibreOffice lay it out. A border on the mark takes no room (scripts/layout-probes/word-run-formatting.ts RF8d)
+            const heights = state.started ? state.heights : withFont(NOTHING, { ...markFont, border: undefined }, measurer);
+            const { unsupported: unknownHeight, ...height } = heightOf(heights, lineSpacing);
             const unsupported = state.unknown
                 ? "a justified line that only fits squeezed at an en, em or ideographic space"
-                : markMatters(heights)
-                  ? "a picture alone in a line of a paragraph whose mark is larger"
-                  : undefined;
+                : (state.unsupported ??
+                  (markMatters(heights) ? "a picture alone in a line of a paragraph whose mark is larger" : unknownHeight));
             // eslint-disable-next-line functional/immutable-data
             lines.push({
-                ...heightOf(heights, lineSpacing),
+                ...height,
                 markers: [...state.markers, ...state.pending],
                 ...(breakAfter ? { breakAfter } : {}),
                 text: state.text,
                 textWidth: Math.max(0, state.end - state.start),
-                ...(unsupported ? { unsupported } : {}),
+                ...(unsupported === undefined ? {} : { unsupported }),
             });
         };
         const wrap = (state: LineState): LineState => {
@@ -695,15 +811,21 @@ export const layoutLines = (
                 const spaces = widthOf(token.pieces, measurer);
                 line = {
                     ...line,
-                    position: line.position + spaces,
+                    position: line.position + roomBetween(line.border, firstBorder(token.pieces)) + spaces,
                     text: line.text + textOf(token.pieces),
                     spaces: line.started ? line.spaces + spaces : 0,
                     spaceCount: line.started ? line.spaceCount + lengthOf(token.pieces) : 0,
                     otherSpaces: line.started ? line.otherSpaces + widthOf(othersOf(token.pieces), measurer) : 0,
                     heights: withToken(line.heights, token),
+                    border: lastBorder(token.pieces),
                 };
                 continue;
             }
+            // A tab or picture after text with a border closes its box
+            line =
+                token.type === "word"
+                    ? line
+                    : { ...line, position: line.position + roomBetween(line.border, undefined), border: undefined };
             if (token.type === "tab") {
                 const stop =
                     nextStop(line.position, line.first ? firstLineStops : stops, defaultTabStop, limitOf()) ??
@@ -734,23 +856,44 @@ export const layoutLines = (
                     letters: 0,
                     otherSpaces: 0,
                     started: true,
+                    ...(shift > 0 && hasBorder(tokens.slice(index + 1))
+                        ? { unsupported: "text with a border lined up with a tab stop" }
+                        : {}),
                 };
                 continue;
             }
             const tokenWidth = token.type === "box" ? token.width : widthOf(token.pieces, measurer);
-            const overflows = line.started && line.position + tokenWidth > limitOf() + TOLERANCE;
-            if (overflows && unsure(line, tokenWidth)) {
+            // A word in a border starts its box, unless it goes on from the text before it, and on the next line it starts
+            // it again: a bordered run that goes on to the next line starts it 90 twips in, for a border of half a point 4
+            // points away (scripts/layout-probes/word-run-formatting.ts RF7n). A line has room for its box to end after its
+            // last word, whether the box goes on to the next line or not: such a word 70 twips short of the end of the line
+            // goes on to the next, and one 110 short stays (word-run-formatting2.ts RF11)
+            const leadOf = (state: LineState): number => (token.type === "word" ? roomBetween(state.border, firstBorder(token.pieces)) : 0);
+            const boxEnd = token.type === "word" ? (lastBorder(token.pieces)?.room ?? 0) : 0;
+            const needs = leadOf(line) + tokenWidth + boxEnd;
+            const overflows = line.started && line.position + needs > limitOf() + TOLERANCE;
+            if (overflows && unsure(line, needs)) {
                 line = { ...line, unknown: true };
             }
-            const squeezed = overflows && !line.unknown && squeezesIn(line, tokenWidth);
+            // Whether Word squeezes the spaces of a justified line with a box on it to fit one more word, and by how much,
+            // isn't known
+            const squeezable = overflows && !line.unknown && squeezesIn(line, needs);
+            const boxed = line.boxed === true || (token.type === "word" && token.pieces.some(({ font }) => font.border !== undefined));
+            if (squeezable && boxed) {
+                line = { ...line, unsupported: "a justified line with text in a border that only fits squeezed" };
+            }
+            const squeezed = squeezable && !boxed;
             if (overflows && !squeezed) {
                 line = wrap(line);
             }
-            line = place(line);
+            line = { ...place(line), position: line.position + leadOf(line) };
             if (token.type === "word" && !squeezed && line.position + tokenWidth > limitOf() + TOLERANCE && limitOf() - indentLeft > 0) {
                 // A word wider than a line is broken across as many lines as it needs, after the last character that fits
                 // on each, and never between a character and the marks on it or what a zero-width joiner joins to it
                 let placed = false;
+                if (token.pieces.some(({ font }) => font.border !== undefined)) {
+                    line = { ...line, unsupported: "a word longer than its line with a border" };
+                }
                 for (const character of charactersOf(token.pieces)) {
                     const characterWidth = widthOf(character, measurer);
                     // Each line is as long as it is, for lines of different widths, and one with no room takes the rest
@@ -776,7 +919,15 @@ export const layoutLines = (
                     letters: line.letters + (token.type === "box" ? 1 : lengthOf(token.pieces)),
                 };
             }
-            line = { ...line, end: line.position, between: line.spaceCount, heights: withToken(line.heights, token), started: true };
+            line = {
+                ...line,
+                end: line.position,
+                between: line.spaceCount,
+                heights: withToken(line.heights, token),
+                started: true,
+                border: token.type === "word" ? lastBorder(token.pieces) : undefined,
+                boxed: line.boxed === true || (token.type === "word" && token.pieces.some(({ font }) => font.border !== undefined)),
+            };
         }
 
         if (!end) {

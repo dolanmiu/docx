@@ -5,20 +5,26 @@
  * @module
  */
 import { DEFAULT_MEASURER, type TextMeasurer, createFontFileMeasurer } from "../text-layout";
-import { type Pagination, paginate } from "./paginate";
+import { type PagePlace, type Pagination, paginate } from "./paginate";
 import type { DocumentContent } from "./read-document";
 
 // How many times the pages are laid out again with the page numbers of the pass before, which can change how the
-// lines of a table of contents wrap
+// lines of a table of contents wrap, or of a line with a page number in it
 const PASSES = 3;
 
 /** The number of pages, which is known only when all of the document was laid out */
 export const knownPageCount = ({ pageCount, stoppedAt }: Pagination): number | undefined =>
     stoppedAt === undefined ? pageCount : undefined;
 
+/** The bookmarks and fields a pass placed, with the page each is on and how the page shows its number */
+const placesOf = ({ places }: Pagination): string =>
+    [...places]
+        .map(([name, { page, text }]) => JSON.stringify([name, page, text]))
+        .sort()
+        .join("\n");
+
 const sameNumbers = (one: Pagination, other: Pagination): boolean =>
-    one.bookmarks.size === other.bookmarks.size &&
-    [...one.bookmarks].every(([name, page]) => other.bookmarks.get(name) === page) &&
+    placesOf(one) === placesOf(other) &&
     knownPageCount(one) === knownPageCount(other) &&
     one.sectionPageCounts.length === other.sectionPageCounts.length &&
     one.sectionPageCounts.every((count, index) => other.sectionPageCounts[index] === count);
@@ -40,17 +46,22 @@ export const layOutPasses = (
         before: Pagination | undefined,
         pass: number,
         first: Pagination | undefined,
+        earlierPlaces: ReadonlyMap<string, PagePlace>,
     ): Pagination & { readonly settled: boolean } => {
         const pagination = paginate(content, {
             measurer: measuring,
             pageNumbers: before?.bookmarks,
+            places: before?.places,
+            earlierPlaces,
             pageCount: before && knownPageCount(before),
             sectionPageCounts: before?.sectionPageCounts,
         });
         if (before !== undefined && sameNumbers(pagination, before)) {
             return { ...pagination, settled: true };
         }
-        return pass >= PASSES ? { ...first!, settled: false } : layOut(pagination, pass + 1, first ?? pagination);
+        return pass >= PASSES
+            ? { ...first!, settled: false }
+            : layOut(pagination, pass + 1, first ?? pagination, new Map([...earlierPlaces, ...pagination.places]));
     };
-    return layOut(undefined, 1, undefined);
+    return layOut(undefined, 1, undefined, new Map());
 };

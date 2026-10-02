@@ -3,7 +3,9 @@ import { describe, expect, it } from "vitest";
 import { Formatter } from "@export/formatter";
 import type { IPropertiesOptions } from "@file/core-properties";
 import { File } from "@file/file";
+import { FootnoteReferenceRun } from "@file/footnotes";
 import { HeightRule, Table, TableCell, TableRow, WidthType } from "@file/table";
+import { DeletedTextRun } from "@file/track-revision";
 import {
     AlignmentType,
     Footer,
@@ -40,6 +42,23 @@ const readWritten = (options: IPropertiesOptions): DocumentContent => {
     });
     new Formatter().format(file.Document.View, contextOf(file));
     return content!;
+};
+
+/**
+ * Reads a body of formatted elements, with the styles, lists and notes of a document with the options, and settings of
+ * these elements, which docx doesn't write, in Word 2013's compatibility mode
+ */
+const readWithSettings = (
+    elements: readonly unknown[],
+    settings: readonly object[],
+    options: Partial<IPropertiesOptions> = {},
+): DocumentContent => {
+    const file = new File({ sections: [], ...options });
+    const compatibility = { "w:compat": [{ "w:compatSetting": { _attr: { "w:name": "compatibilityMode", "w:val": 15 } } }] };
+    const withSettings = Object.create(file, {
+        Settings: { value: { prepForXml: () => ({ "w:settings": [...settings, compatibility] }) } },
+    }) as File;
+    return readDocument({ "w:body": elements } as IXmlableObject, contextOf(withSettings));
 };
 
 const p = (...children: readonly unknown[]): object => ({ "w:p": children });
@@ -124,9 +143,46 @@ describe("readDocument", () => {
             ]);
             expect(
                 itemsOf(content).map((item) => (item.type === "break" ? item.kind : item.type === "text" ? item.text : item.type)),
-            ).to.deep.equal(["a", "tab", "tab", "page", "column", "line", "line", "\u2011", "\uf0a7", "i", "CAPS"]);
-            // An endnote's number, in superscript, and numbered as Word numbers endnotes
-            expect(itemsOf(content)[9]).to.deep.equal({ type: "text", text: "i", font: { scale: 65 } });
+            ).to.deep.equal(["a", "tab", "tab", "page", "column", "line", "line", "\u2011", "\uf0a7", "marker", "i", "CAPS"]);
+            // An endnote's reference: the marker its bookmarks and fields are placed by, and its number, in its run's font,
+            // numbered as Word numbers endnotes
+            expect(itemsOf(content).slice(9, 11)).to.deep.equal([
+                { type: "marker", name: "endnote 1" },
+                { type: "text", text: "i", font: {} },
+            ]);
+        });
+
+        it("should read superscript, raised text, emphasis marks and borders into the font text is laid out in", () => {
+            const bdr = (style: string): object => ({ "w:bdr": { _attr: { "w:val": style, "w:sz": 4, "w:space": 4 } } });
+            const content = readBody([
+                p(
+                    r(rPr(value("w:vertAlign", "superscript"), value("w:sz", 22)), t("2")),
+                    r(rPr(value("w:position", 12), value("w:em", "underDot"), bdr("single")), t("up")),
+                ),
+            ]);
+            expect(itemsOf(content)).to.deep.equal([
+                { type: "text", text: "2", font: { size: 7, lineSize: 11 } },
+                {
+                    type: "text",
+                    text: "up",
+                    font: { raise: 6, emphasis: "below", border: { room: 4.5, key: '[["w:space","4"],["w:sz","4"],["w:val","single"]]' } },
+                },
+            ]);
+            // A border on the paragraph's mark is in its font, and takes no room in its line (word-run-formatting.ts RF8d)
+            expect(paragraphOf(readBody([p(pPr(rPr(bdr("single"))))])).markFont.border?.room).to.equal(4.5);
+        });
+
+        it("should stop at a run's formatting whose room Word hasn't shown, and at tabs and pictures in a box", () => {
+            const bdr = (style: string): object => ({ "w:bdr": { _attr: { "w:val": style, "w:sz": 4, "w:space": 0 } } });
+            const stopsAt = (...children: readonly unknown[]): string | undefined => paragraphOf(readBody([p(...children)])).unsupported;
+            expect(stopsAt(r(rPr(bdr("thinThickMediumGap")), t("a")))).to.equal("a run border of a style, width or space not yet followed");
+            expect(stopsAt(r(rPr(bdr("single")), { "w:tab": {} }))).to.equal("a tab in text with a border");
+            expect(stopsAt(r(rPr(bdr("single")), t("a\tb")))).to.equal("a tab in text with a border");
+            expect(stopsAt(r(rPr({ "w:vanish": {} }, bdr("single")), t("a\tb")))).to.equal(undefined);
+            expect(stopsAt(r(rPr(bdr("single")), { "w:drawing": [{ "wp:inline": [] }] }))).to.equal("a picture in text with a border");
+            expect(stopsAt(r(rPr(value("w:position", "-2.5pt")), t("a")))).to.equal("a lowered position of a fraction of its unit");
+            // Hidden text takes no room, whatever its formatting
+            expect(stopsAt(r(rPr({ "w:vanish": {} }, bdr("wave")), t("a")))).to.equal(undefined);
         });
 
         it("should read a symbol as its character in its own font, which the width tables don't have when it's a symbol font's", () => {
@@ -419,7 +475,7 @@ describe("readDocument", () => {
                 border("single", 1),
                 border("single", 97),
                 border("single", 6, 32),
-                border("thinThickSmallGap", 4),
+                border("thinThickSmallGap", 2),
                 border("threeDEmboss", 19),
             ]) {
                 expect(bordered({ "w:top": side }).unsupported).to.equal("a paragraph border of a width or space not yet followed");
@@ -491,23 +547,24 @@ describe("readDocument", () => {
             const content = readBody(
                 [
                     p(r(t("a"), { "w:footnoteReference": { _attr: { "w:id": 1 } } })),
-                    p(r({ "w:footnoteReference": { _attr: { "w:id": 7 } } })),
+                    p(r(rPr(value("w:rStyle", "FootnoteReference")), { "w:footnoteReference": { _attr: { "w:id": 7 } } })),
                 ],
                 { footnotes: { 1: { children: [new Paragraph("Note")] } } },
             );
-            // A reference is the marker its footnote is placed by, and the footnote's number, in superscript
+            // A reference is the marker its footnote is placed by, and the footnote's number, in its run's font
             expect(itemsOf(content)).to.deep.equal([
                 { type: "text", text: "a", font: {} },
                 { type: "marker", name: "footnote 1" },
-                { type: "text", text: "1", font: { scale: 65 } },
+                { type: "text", text: "1", font: {} },
             ]);
-            // The footnote starts with its number
+            // The footnote starts with its number, in docx's FootnoteReference style, in superscript: 6.5 points of 10, in a
+            // line of 10
             expect((content.footnotes.get("footnote 1")![0] as ParagraphBlock).items).to.deep.equal([
-                { type: "text", text: "1", font: { scale: 65 } },
+                { type: "text", text: "1", font: { size: 6.5, lineSize: 10 } },
                 { type: "text", text: "Note", font: {} },
             ]);
             // A reference to a footnote the document doesn't have is numbered, and has nothing to place
-            expect(itemsOf(content, 1)).to.deep.include({ type: "text", text: "2", font: { scale: 65 } });
+            expect(itemsOf(content, 1)).to.deep.include({ type: "text", text: "2", font: { size: 6.5, lineSize: 10 } });
             expect(content.footnotes.get("footnote 2")).to.deep.equal([]);
             // The separators' paragraphs, whose lines are as tall as their marks
             expect(content.footnoteSeparator).to.have.length(1);
@@ -524,15 +581,140 @@ describe("readDocument", () => {
                 [p(r({ "w:endnoteReference": { _attr: { "w:id": 1 } } }), r({ "w:endnoteReference": { _attr: { "w:id": 2 } } }))],
                 { endnotes: { 1: { children: [new Paragraph("First")] }, 2: { children: [new Paragraph("Second")] } } },
             );
-            expect(itemsOf(content).map((item) => (item.type === "text" ? item.text : item.type))).to.deep.equal(["i", "ii"]);
+            // Each reference is a marker, which the endnote's bookmarks and fields are placed by, and its number
+            expect(
+                itemsOf(content).map((item) => (item.type === "text" ? item.text : item.type === "marker" ? item.name : "")),
+            ).to.deep.equal(["endnote 1", "i", "endnote 2", "ii"]);
             expect(
                 content.endnotes.map((block) => (block as ParagraphBlock).items.map((item) => (item.type === "text" ? item.text : ""))),
             ).to.deep.equal([[], ["i", "First"], ["ii", "Second"]]);
+            expect([...content.endnoteReferences.values()]).to.deep.equal([[content.endnotes[1]], [content.endnotes[2]]]);
             // The number of the endnote each block is in, but the separator's
             expect(content.endnotes.map((block) => content.endnoteNumbers.get(block))).to.deep.equal([undefined, "i", "ii"]);
             expect(content.footnotes.size).to.equal(0);
             expect(content.footnoteSeparator).to.deep.equal([]);
             expect(content.footnoteContinuationSeparator).to.deep.equal([]);
+            // The continuation separator above them on the pages after the first, which isn't read without them
+            expect(content.endnoteContinuationSeparator).to.have.length(1);
+            expect(readBody([]).endnoteContinuationSeparator).to.deep.equal([]);
+        });
+    });
+
+    describe("numbering footnotes and endnotes", () => {
+        const reference = (kind: string, id: number, attributes: object = {}): object =>
+            r({ [`w:${kind}Reference`]: { _attr: { "w:id": id, ...attributes } } });
+        const properties = (kind: string, ...children: readonly object[]): object => ({ [`w:${kind}Pr`]: children });
+        const NOTES = {
+            footnotes: { 1: { children: [new Paragraph("One")] }, 2: { children: [new Paragraph("Two")] } },
+            endnotes: { 1: { children: [new Paragraph("One")] }, 2: { children: [new Paragraph("Two")] } },
+        };
+        /** Two sections, each referring to a footnote and an endnote, with the notes' properties of each and the document's */
+        const twoSections = (
+            first: readonly object[],
+            second: readonly object[],
+            settings: readonly object[] = [],
+            attributes: object = {},
+        ): DocumentContent =>
+            readWithSettings(
+                [
+                    p(reference("footnote", 1, attributes), reference("endnote", 1)),
+                    p(pPr({ "w:sectPr": first })),
+                    p(reference("footnote", 2), reference("endnote", 2)),
+                    { "w:sectPr": second },
+                ],
+                settings,
+                NOTES,
+            );
+        const numbersOf = (content: DocumentContent): readonly (readonly string[])[] => [
+            [...content.footnoteNumbers.values()],
+            [...new Set(content.endnotes.flatMap((block) => content.endnoteNumbers.get(block) ?? []))],
+        ];
+
+        it("should number footnotes and endnotes in the format and from the number the document gives, as Word does", () => {
+            const content = twoSections(
+                [],
+                [],
+                [
+                    properties("footnote", value("w:numFmt", "lowerLetter"), value("w:numStart", 3)),
+                    properties("endnote", value("w:numFmt", "decimal")),
+                ],
+            );
+            expect(numbersOf(content)).to.deep.equal([
+                ["c", "d"],
+                ["1", "2"],
+            ]);
+            expect(content.unsupported).to.equal(undefined);
+        });
+
+        it("should number each section's notes in its own format, afresh in each section when it says so, as Word does", () => {
+            const content = twoSections(
+                [properties("footnote", value("w:numFmt", "upperRoman"), value("w:numRestart", "eachSect"))],
+                [
+                    properties("footnote", value("w:numRestart", "eachSect"), value("w:numStart", 5)),
+                    properties("endnote", value("w:numFmt", "chicago")),
+                ],
+            );
+            // The endnotes number on through the document, in the format of the section each is in
+            expect(numbersOf(content)).to.deep.equal([
+                ["I", "5"],
+                ["i", "\u2020"],
+            ]);
+            expect(content.unsupported).to.equal(undefined);
+        });
+
+        it("should number a note in a table cell with deleted text as it is numbered where it is, to size the columns by", () => {
+            // A cell with deleted text is read again as Word sizes the table's columns by it, which numbers its footnote as
+            // the cell does, in a format not yet written too
+            const cell = {
+                "w:tc": [
+                    { "w:tcPr": [{ "w:tcW": { _attr: { "w:w": 2000 } } }] },
+                    p(r(t("a")), { "w:del": [r({ "w:delText": ["b"] })] }, reference("footnote", 1)),
+                ],
+            };
+            const table = {
+                "w:tbl": [{ "w:tblPr": [] }, { "w:tblGrid": [{ "w:gridCol": { _attr: { "w:w": 2000 } } }] }, { "w:tr": [cell] }],
+            };
+            const content = readWithSettings([table], [properties("footnote", value("w:numFmt", "bogus"))], NOTES);
+            const sized = (content.blocks[0].block as TableBlock).rows[0].cells[0];
+            expect((sized.sizing![0] as ParagraphBlock).items.map((item) => (item.type === "text" ? item.text : item.type))).to.deep.equal([
+                "a",
+                "b",
+                "",
+            ]);
+            expect(content.unsupported).to.equal("notes numbered in a format not yet written");
+        });
+
+        it("should stop at notes numbered or placed in a way not yet followed", () => {
+            const reasonOf = (...args: Parameters<typeof twoSections>): string | undefined => twoSections(...args).unsupported;
+            expect(reasonOf([], [], [properties("endnote", value("w:numRestart", "eachPage"))])).to.equal(
+                "notes numbered afresh on each page",
+            );
+            // A number of its own in a later section, where they are numbered on through the document
+            expect(reasonOf([], [properties("footnote", value("w:numStart", 4))])).to.equal(
+                "notes numbered on from a number of their own in a later section",
+            );
+            expect(reasonOf([], [], [properties("footnote", value("w:pos", "beneathText"))])).to.equal(
+                "footnotes put elsewhere than at the bottom of the page",
+            );
+            expect(reasonOf([], [properties("endnote", value("w:pos", "sectEnd"))])).to.equal("endnotes at the end of each section");
+            expect(reasonOf([], [], [properties("endnote", value("w:numFmt", "bogus"))])).to.equal(
+                "notes numbered in a format not yet written",
+            );
+            // At the end of the only section is at the end of the document
+            const oneSection = readWithSettings(
+                [p(reference("endnote", 1)), { "w:sectPr": [properties("endnote", value("w:pos", "sectEnd"))] }],
+                [],
+                NOTES,
+            );
+            expect(oneSection.unsupported).to.equal(undefined);
+            // Only notes the document has stop it
+            expect(readWithSettings([p(t("a"))], [properties("footnote", value("w:numRestart", "eachPage"))], NOTES).unsupported).to.equal(
+                undefined,
+            );
+            // A mark of its own in place of a note's number stops at its paragraph
+            const marked = twoSections([], [], [], { "w:customMarkFollows": 1 });
+            expect(marked.unsupported).to.equal(undefined);
+            expect(paragraphOf(marked).unsupported).to.equal("a footnote or endnote with a mark of its own");
         });
     });
 
@@ -585,9 +767,9 @@ describe("readDocument", () => {
     describe("fields", () => {
         it("should read the results of fields, not their instructions", () => {
             const content = readBody([
-                p(field("begin"), instruction("DATE"), field("separate"), r(t("today")), field("end"), r(t(" after"))),
+                p(field("begin"), instruction("AUTHOR"), field("separate"), r(t("Ann")), field("end"), r(t(" after"))),
             ]);
-            expect(textOf(content)).to.equal("today after");
+            expect(textOf(content)).to.equal("Ann after");
         });
 
         it("should read a page reference's result as the page of its bookmark, across paragraphs and inside other fields", () => {
@@ -606,27 +788,224 @@ describe("readDocument", () => {
             expect(itemsOf(content, 1)).to.deep.equal([{ type: "pageReference", bookmark: "_Toc1", font: {} }]);
         });
 
-        it("should read the results of page references that show something other than the page's number", () => {
+        it("should read page references with \\p and in formats of their own, and stop at those whose text in Word isn't known", () => {
+            const reference = (text: string): object => p(field("begin"), instruction(text), field("separate"), r(t("?")), field("end"));
             const content = readBody([
-                p(field("begin"), instruction("PAGEREF a \\p"), field("separate"), r(t("above")), field("end")),
-                p(field("begin"), instruction("PAGEREF a \\* roman"), field("separate"), r(t("iv")), field("end")),
-                p(field("begin"), instruction('PAGEREF "a" \\* MERGEFORMAT'), field("separate"), r(t("4")), field("end")),
-                p(field("begin"), instruction("PAGEREF"), field("separate"), r(t("?")), field("end")),
-                p(field("begin"), instruction('PAGEREF a \\# "00"'), field("separate"), r(t("04")), field("end")),
+                reference("PAGEREF a \\p \\h"),
+                reference("PAGEREF a \\* roman"),
+                reference('PAGEREF "a" \\* MERGEFORMAT \\*Arabic \\* Upper'),
+                reference("PAGEREF"),
+                reference('PAGEREF a \\# "#,##0" \\* Lower'),
+                reference("PAGEREF a \\p \\* Arabic"),
+                reference("PAGEREF b \\p \\* FirstCap \\*"),
+                // Word's text for these isn't known
+                reference("PAGEREF a \\* CardText"),
+                reference("PAGEREF a \\* roman \\* Ordinal"),
+                reference('PAGEREF a \\# "x0"'),
+                reference("PAGEREF a \\# 0 \\#0"),
+                reference('PAGEREF a \\* roman \\# "00"'),
+                reference("PAGEREF a \\* Caps"),
+                reference("PAGEREF a \\* Upper \\* Lower"),
+                reference("PAGEREF a \\p \\* CardText"),
             ]);
-            expect([0, 1, 2, 3, 4].map((index) => textOf(content, index))).to.deep.equal(["above", "iv", "[a]", "?", "04"]);
+            // Where its bookmark is from it, from the page of the marker at it, and the order of the markers
+            expect(itemsOf(content, 0)).to.deep.equal([
+                { type: "marker", name: "field 1" },
+                { type: "pageReference", bookmark: "a", font: {}, relative: "field 1" },
+            ]);
+            expect(itemsOf(content, 1)).to.deep.equal([
+                { type: "pageReference", bookmark: "a", font: {}, format: { numberFormat: "roman" } },
+            ]);
+            expect(itemsOf(content, 2)).to.deep.equal([
+                { type: "pageReference", bookmark: "a", font: {}, format: { numberFormat: "Arabic", capitals: "upper" } },
+            ]);
+            // A page reference without a bookmark is read as it is written
+            expect(textOf(content, 3)).to.equal("?");
+            expect(itemsOf(content, 4)).to.deep.equal([
+                { type: "pageReference", bookmark: "a", font: {}, format: { picture: "#,##0", capitals: "lower" } },
+            ]);
+            // With a number format, one with \p writes the bookmark's page's number (word-page-fields.docx PF3c)
+            expect(itemsOf(content, 5)).to.deep.equal([
+                { type: "pageReference", bookmark: "a", font: {}, format: { numberFormat: "Arabic" } },
+            ]);
+            expect(itemsOf(content, 6)).to.deep.equal([
+                { type: "marker", name: "field 3" },
+                { type: "pageReference", bookmark: "b", font: {}, relative: "field 3", format: { capitals: "firstcap" } },
+            ]);
+            expect([7, 8, 9, 10, 11, 12, 13, 14].map((index) => paragraphOf(content, index).unsupported)).to.deep.equal([
+                "a number in a field format not yet written",
+                "a number in a field format not yet written",
+                "a number written with a picture not yet written",
+                "a number written with a picture not yet written",
+                "a number in a field format not yet written",
+                "a number in a field format not yet written",
+                "a number in a field format not yet written",
+                "a number in a field format not yet written",
+            ]);
+            // Each page reference with \p is counted, by its bookmark, whatever it writes
+            expect(Object.fromEntries(content.relativeReferences)).to.deep.equal({ a: ["field 1", "field 2", "field 4"], b: ["field 3"] });
         });
 
         it("should read the results of NUMPAGES and SECTIONPAGES fields as the numbers of pages they show", () => {
             const content = readBody([
                 p(field("begin"), instruction("NUMPAGES \\* MERGEFORMAT"), field("separate"), r(t("9")), field("end")),
                 p({ "w:fldSimple": [{ _attr: { "w:instr": "SECTIONPAGES" } }, r(t("3"))] }),
-                p(field("begin"), instruction("NUMPAGES \\* roman"), field("separate"), r(t("ix")), field("end")),
+                p(field("begin"), instruction("NUMPAGES \\* roman \\p"), field("separate"), r(t("ix")), field("end")),
+                p(field("begin"), instruction("SECTIONPAGES \\* Hex"), field("separate"), r(t("3")), field("end")),
             ]);
             expect(itemsOf(content, 0)).to.deep.equal([{ type: "pageCount", scope: "document", font: {} }]);
             expect(itemsOf(content, 1)).to.deep.equal([{ type: "pageCount", scope: "section", font: {} }]);
-            // In a format of its own, its result is read as it is
-            expect(textOf(content, 2)).to.equal("ix");
+            expect(itemsOf(content, 2)).to.deep.equal([
+                { type: "pageCount", scope: "document", font: {}, format: { numberFormat: "roman" } },
+            ]);
+            expect(paragraphOf(content, 3).unsupported).to.equal("a number in a field format not yet written");
+        });
+
+        it("should read PAGE and SECTION fields and page number blocks in the body as the numbers of the page and section they are on", () => {
+            const content = readBody(
+                [
+                    p(field("begin"), instruction("PAGE"), field("separate"), field("end")),
+                    p({ "w:fldSimple": [{ _attr: { "w:instr": 'PAGE \\# "00"' } }, r(t("?"))] }),
+                    p(r({ "w:pgNum": {} })),
+                    p(field("begin"), instruction("SECTION \\* ALPHABETIC"), field("separate"), r(t("?")), field("end")),
+                    p(field("begin"), instruction("PAGE \\* OrdText"), field("separate"), r(t("?")), field("end")),
+                    // In hidden text, the field shows nothing
+                    p(
+                        field("begin"),
+                        instruction("PAGE"),
+                        r(rPr({ "w:vanish": {} }), { "w:fldChar": { _attr: { "w:fldCharType": "separate" } } }),
+                        field("end"),
+                    ),
+                    p(r(rPr({ "w:vanish": {} }), { "w:pgNum": {} })),
+                    p(pPr(value("w:pStyle", "Hidden")), { "w:fldSimple": [{ _attr: { "w:instr": "SECTION" } }] }),
+                ],
+                { styles: { paragraphStyles: [{ id: "Hidden", name: "Hidden", run: { vanish: true } }] } },
+            );
+            expect(itemsOf(content, 0)).to.deep.equal([
+                { type: "marker", name: "field 1" },
+                { type: "pageNumber", field: "field 1", font: {} },
+            ]);
+            expect(itemsOf(content, 1)).to.deep.equal([
+                { type: "marker", name: "field 2" },
+                { type: "pageNumber", field: "field 2", font: {}, format: { picture: "00" } },
+            ]);
+            expect(itemsOf(content, 2)).to.deep.equal([
+                { type: "marker", name: "field 3" },
+                { type: "pageNumber", field: "field 3", font: {} },
+            ]);
+            // In the body, a section's number is that of the section it is in
+            expect(itemsOf(content, 3)).to.deep.equal([{ type: "sectionNumber", font: {}, format: { numberFormat: "ALPHABETIC" } }]);
+            expect(paragraphOf(content, 4).unsupported).to.equal("a number in a field format not yet written");
+            expect([5, 6, 7].map((index) => itemsOf(content, index))).to.deep.equal([[], [], []]);
+        });
+
+        it("should stop at a date or time in the body, which Word writes when it opens the document, and read one in a header as it is written", () => {
+            const date = (text: string): object =>
+                p(field("begin"), instruction(text), field("separate"), r(t("1 January 2000")), field("end"));
+            const content = readBody([
+                date('DATE \\@ "d MMMM yyyy"'),
+                p({ "w:fldSimple": [{ _attr: { "w:instr": "TIME" } }, r(t("12:00"))] }),
+                p(r({ "w:dayLong": {} }, { "w:monthLong": {} }, { "w:yearLong": {} })),
+                p(r({ "w:dayShort": {} }, { "w:monthShort": {} }, { "w:yearShort": {} })),
+                // A field in another's instruction isn't shown, nor is a date in it
+                p(
+                    field("begin"),
+                    instruction("IF "),
+                    field("begin"),
+                    instruction("DATE"),
+                    field("separate"),
+                    field("end"),
+                    field("separate"),
+                    r(t("shown")),
+                    field("end"),
+                ),
+            ]);
+            expect([0, 1, 2, 3].map((index) => paragraphOf(content, index).unsupported)).to.deep.equal(
+                Array.from({ length: 4 }, () => "a date or time, which Word writes when it opens the document"),
+            );
+            expect(textOf(content, 4)).to.equal("shown");
+            const [header] = Object.values(
+                readContent(
+                    { "w:body": [{ "w:sectPr": [{ "w:headerReference": { _attr: { "r:id": "rId1" } } }] }] },
+                    {
+                        styles: WORD_DEFAULT_STYLES,
+                        headersAndFooters: new Map([["rId1", [date("DATE"), p(r(t("on "), { "w:dayLong": {} }))]]]),
+                    },
+                ).sections[0].headers,
+            );
+            expect(header.map((block) => textOf({ ...content, blocks: [{ block, section: 0 }] }))).to.deep.equal(["1 January 2000", "on "]);
+        });
+
+        it("should read a date, or a field in a format not yet written, in hidden text as nothing, as hidden text takes no room", () => {
+            const hidden = rPr({ "w:vanish": {} });
+            const content = readBody(
+                [
+                    p(
+                        field("begin"),
+                        instruction("DATE"),
+                        r(hidden, { "w:fldChar": { _attr: { "w:fldCharType": "separate" } } }),
+                        field("end"),
+                    ),
+                    p(
+                        field("begin"),
+                        instruction("PAGE \\* CardText"),
+                        r(hidden, { "w:fldChar": { _attr: { "w:fldCharType": "separate" } } }),
+                        field("end"),
+                    ),
+                    p(r(hidden, { "w:dayLong": {} })),
+                    p(pPr(value("w:pStyle", "Hidden")), { "w:fldSimple": [{ _attr: { "w:instr": "TIME" } }] }),
+                ],
+                { styles: { paragraphStyles: [{ id: "Hidden", name: "Hidden", run: { vanish: true } }] } },
+            );
+            expect([0, 1, 2, 3].map((index) => paragraphOf(content, index))).to.satisfy((paragraphs: readonly ParagraphBlock[]) =>
+                paragraphs.every(({ items, unsupported }) => items.length === 0 && unsupported === undefined),
+            );
+        });
+
+        it("should read PAGE, SECTION and page references with \\p in headers as they are written, and those in notes where their references are", () => {
+            const fieldOf = (text: string): object =>
+                p(field("begin"), instruction(text), field("separate"), r(t("written")), field("end"));
+            const fields = [fieldOf("PAGE"), fieldOf("SECTION \\* roman"), fieldOf("PAGEREF a \\p"), p(r({ "w:pgNum": {} }))];
+            const content = readContent(
+                {
+                    "w:body": [
+                        p(r({ "w:footnoteReference": { _attr: { "w:id": 1 } } })),
+                        { "w:sectPr": [{ "w:headerReference": { _attr: { "r:id": "rId1" } } }] },
+                    ],
+                },
+                {
+                    styles: WORD_DEFAULT_STYLES,
+                    headersAndFooters: new Map([["rId1", fields]]),
+                    footnotes: { "w:footnotes": [{ "w:footnote": [{ _attr: { "w:id": 1 } }, ...fields] }] },
+                },
+            );
+            const header = content.sections[0].headers.default!;
+            expect(header.map((block) => textOf({ ...content, blocks: [{ block, section: 0 }] }))).to.deep.equal([
+                "written",
+                "written",
+                "written",
+                "",
+            ]);
+            // In a footnote, the page and section are its reference's, which the markers at them are placed with. Where a
+            // bookmark is from a page reference with \p in one is written by Word, but not yet by docx
+            const note = content.footnotes.get("footnote 1")!;
+            expect(note.map((block) => (block as ParagraphBlock).items.filter((item) => item.type !== "text"))).to.deep.equal([
+                [
+                    { type: "marker", name: "field 1" },
+                    { type: "pageNumber", field: "field 1", font: {} },
+                ],
+                [
+                    { type: "marker", name: "field 2" },
+                    { type: "sectionNumber", field: "field 2", font: {}, format: { numberFormat: "roman" } },
+                ],
+                [],
+                [
+                    { type: "marker", name: "field 3" },
+                    { type: "pageNumber", field: "field 3", font: {} },
+                ],
+            ]);
+            expect(note[2].unsupported).to.equal("a page reference that says where its bookmark is, in a footnote or endnote");
+            expect(content.relativeReferences.size).to.equal(0);
         });
 
         it("should ignore field characters and instructions outside a field", () => {
@@ -637,10 +1016,10 @@ describe("readDocument", () => {
         it("should read a simple field that is a page reference as the page of its bookmark, and others as their result", () => {
             const content = readBody([
                 p({ "w:fldSimple": [{ _attr: { "w:instr": "PAGEREF target" } }, r(t("9"))] }),
-                p({ "w:fldSimple": [{ _attr: { "w:instr": "DATE" } }, r(t("today"))] }),
+                p({ "w:fldSimple": [{ _attr: { "w:instr": "AUTHOR" } }, r(t("Ann"))] }),
             ]);
             expect(itemsOf(content, 0)).to.deep.equal([{ type: "pageReference", bookmark: "target", font: {} }]);
-            expect(textOf(content, 1)).to.equal("today");
+            expect(textOf(content, 1)).to.equal("Ann");
         });
     });
 
@@ -1709,6 +2088,7 @@ describe("readDocument", () => {
                 header: 18,
                 footer: 27,
                 gutter: 10,
+                topGutter: 0,
                 start: "oddPage",
                 titlePage: true,
                 // The width of the page's text: 612 less the margins and the gutter
@@ -1719,6 +2099,26 @@ describe("readDocument", () => {
                 footers: {},
             });
             expect(section(value("w:type", "sideways")).sections[0].start).to.equal("nextPage");
+        });
+
+        it("should take a gutter at the top from the page's height rather than the width of its text, when the document puts it there", () => {
+            const gutter = (top: number, ...settings: readonly object[]): DocumentContent =>
+                readWithSettings([{ "w:sectPr": [{ "w:pgMar": { _attr: { "w:top": top, "w:gutter": 400 } } }] }], settings);
+            // Letter's 612 less the margins of 72 (`word-watertight-settings.docx` ST3)
+            expect(gutter(1440, { "w:gutterAtTop": {} }).sections[0]).to.deep.include({ gutter: 0, topGutter: 20, columns: [468] });
+            // And less the gutter too where it is beside the text
+            expect(gutter(1440).sections[0]).to.deep.include({ gutter: 20, topGutter: 0, columns: [448] });
+            // Where Word puts it with mirrored margins, or below a negative top margin, isn't known
+            const reason = "a gutter at the top with mirrored margins or a negative top margin";
+            expect(gutter(1440, { "w:gutterAtTop": {} }, { "w:mirrorMargins": {} }).sections[0].unsupported).to.equal(reason);
+            expect(gutter(-1440, { "w:gutterAtTop": {} }).sections[0].unsupported).to.equal(reason);
+            expect(gutter(1440, { "w:mirrorMargins": {} }).sections[0].unsupported).to.equal(undefined);
+            expect(
+                readWithSettings(
+                    [{ "w:sectPr": [{ "w:pgMar": { _attr: { "w:top": -1440 } } }] }],
+                    [{ "w:gutterAtTop": {} }, { "w:mirrorMargins": {} }],
+                ).sections[0].unsupported,
+            ).to.equal(undefined);
         });
 
         it("should read the level of the headings that number chapters, and what goes between their numbers and the page's", () => {
@@ -1869,14 +2269,7 @@ describe("readDocument", () => {
         });
 
         /** Reads a document whose settings are these elements, which docx doesn't write, in Word 2013's compatibility mode */
-        const readSettings = (...settings: readonly object[]): DocumentContent => {
-            const file = new File({ sections: [] });
-            const compatibility = { "w:compat": [{ "w:compatSetting": { _attr: { "w:name": "compatibilityMode", "w:val": 15 } } }] };
-            const withSettings = Object.create(file, {
-                Settings: { value: { prepForXml: () => ({ "w:settings": [...settings, compatibility] }) } },
-            }) as File;
-            return readDocument({ "w:body": [] } as IXmlableObject, contextOf(withSettings));
-        };
+        const readSettings = (...settings: readonly object[]): DocumentContent => readWithSettings([], settings);
 
         it("should read the document's own lists of the characters that can't start or end a line, for their languages", () => {
             const kinsoku = (name: string, lang: string, val?: string): object => ({
@@ -2039,5 +2432,573 @@ describe("readDocument", () => {
             { type: "text", text: "a", font: { italic: true } },
             { type: "text", text: "b", font: {} },
         ]);
+    });
+
+    describe("tracked changes", () => {
+        const REVISION = { id: 1, author: "Reviewer", date: "2026-10-02T09:00:00Z" };
+        const deletedMark = rPr({ "w:del": { _attr: { "w:id": 1 } } });
+        const bookmark = (name: string): object => ({ "w:bookmarkStart": { _attr: { "w:name": name, "w:id": 9 } } });
+        const sectPr = (...children: readonly object[]): object => ({ "w:sectPr": children });
+        const pageSize = (width: number, height: number): object => ({ "w:pgSz": { _attr: { "w:w": width, "w:h": height } } });
+        const cell = (...paragraphs: readonly object[]): object => ({
+            "w:tc": [{ "w:tcPr": [{ "w:tcW": { _attr: { "w:w": 2000 } } }] }, ...paragraphs],
+        });
+        const fixed = { "w:tblLayout": { _attr: { "w:type": "fixed" } } };
+        const row = (properties: readonly object[], ...cells: readonly object[]): object => ({
+            "w:tr": [{ "w:trPr": properties }, ...cells],
+        });
+        const deletedRow = { "w:del": { _attr: { "w:id": 2 } } };
+        const tableOf = (properties: readonly object[], ...rows: readonly object[]): object => ({
+            "w:tbl": [{ "w:tblPr": properties }, { "w:tblGrid": [{ "w:gridCol": { _attr: { "w:w": 2000 } } }] }, ...rows],
+        });
+        const texts = (blocks: readonly unknown[]): readonly string[] =>
+            (blocks as readonly ParagraphBlock[]).map((block) =>
+                block.items.map((item) => (item.type === "text" ? item.text : "")).join(""),
+            );
+
+        it("should join a paragraph whose mark is deleted to the next, in the next one's formatting, as Word lays it out", () => {
+            // word-watertight-markup.docx MK3, word-tracked-changes.docx MK7a and MK7c: the next paragraph's alignment and
+            // spacing, the bookmarks between them in their place, and a run of deleted marks joined to the first that isn't
+            const content = readBody([
+                p(pPr(value("w:jc", "right"), { "w:spacing": { _attr: { "w:after": 600 } } }, deletedMark), r(t("first"))),
+                bookmark("between"),
+                p(pPr(value("w:jc", "center"), deletedMark), r(t("second"))),
+                p(r(t("third"))),
+                p(r(t("after"))),
+            ]);
+            expect(content.blocks).to.have.length(2);
+            expect(itemsOf(content).map((item) => (item.type === "text" ? item.text : item.type))).to.deep.equal([
+                "first",
+                "marker",
+                "second",
+                "third",
+            ]);
+            expect(paragraphOf(content).format).to.deep.equal({});
+            expect(paragraphOf(content).unsupported).to.equal(undefined);
+            expect(textOf(content, 1)).to.equal("after");
+        });
+
+        it("should lay out the text of a paragraph whose mark is deleted in the next one's style and list, as Word does", () => {
+            // word-tracked-changes.docx MK7e, MK7f and MK9: the first paragraph's text in the next one's style, and one number
+            // for the paragraphs joined, which the list counts once
+            const content = readWritten({
+                styles: { paragraphStyles: [{ id: "Big", name: "Big", run: { size: 32 } }] },
+                numbering: {
+                    config: [
+                        {
+                            reference: "list",
+                            levels: [{ level: 0, format: LevelFormat.DECIMAL, text: "%1.", alignment: AlignmentType.START }],
+                        },
+                    ],
+                },
+                sections: [
+                    {
+                        children: [
+                            new Paragraph({ style: "Big", run: { deletion: REVISION }, children: [new TextRun("first")] }),
+                            new Paragraph({ children: [new TextRun("second")] }),
+                            new Paragraph({ numbering: { reference: "list", level: 0 }, children: [new TextRun("one")] }),
+                            new Paragraph({
+                                numbering: { reference: "list", level: 0 },
+                                run: { deletion: REVISION },
+                                children: [new TextRun("two")],
+                            }),
+                            new Paragraph({ numbering: { reference: "list", level: 0 }, children: [new TextRun("three")] }),
+                            new Paragraph({ numbering: { reference: "list", level: 0 }, children: [new TextRun("four")] }),
+                        ],
+                    },
+                ],
+            });
+            const [first, second] = itemsOf(content);
+            expect(first).to.deep.include({ type: "text", text: "first" });
+            expect((first as { readonly font: object }).font).to.deep.equal((second as { readonly font: object }).font);
+            expect(paragraphOf(content).style).to.not.equal("Big");
+            expect([1, 2, 3].map((index) => textOf(content, index))).to.deep.equal(["1.one", "2.twothree", "3.four"]);
+        });
+
+        it("should keep a paragraph whose mark is deleted as it is when no paragraph follows it, as Word does", () => {
+            // word-tracked-changes.docx MK8a, MK8b and MK8d: before a table, at the end of a cell, and at the end of the document
+            const content = readBody([
+                p(pPr(deletedMark), r(t("before"))),
+                tableOf([fixed], row([], cell(p(pPr(deletedMark), r(t("one"))), p(pPr(deletedMark), r(t("two")))))),
+                p(pPr(deletedMark), r(t("last"))),
+            ]);
+            expect(content.blocks.map(({ block }) => block.unsupported)).to.deep.equal([undefined, undefined, undefined]);
+            expect(textOf(content)).to.equal("before");
+            expect(texts((content.blocks[1].block as TableBlock).rows[0].cells[0].blocks)).to.deep.equal(["onetwo"]);
+            expect(textOf(content, 2)).to.equal("last");
+        });
+
+        it("should leave a section whose break is deleted to the next section, laid out on its pages, as Word does", () => {
+            // word-tracked-changes.docx MK8c: a section on A4 whose break is deleted, before one on landscape pages
+            const content = readBody([
+                p(r(t("first"))),
+                p(pPr(deletedMark, sectPr(pageSize(11906, 16838)))),
+                p(r(t("second"))),
+                sectPr(pageSize(16838, 11906)),
+            ]);
+            expect(content.sections).to.have.length(1);
+            expect(content.sections[0]).to.deep.include({ pageWidth: 841.9, pageHeight: 595.3 });
+            expect(content.blocks.map(({ block, section }) => [texts([block])[0], section])).to.deep.equal([
+                ["first", 0],
+                ["second", 0],
+            ]);
+        });
+
+        it("should mark a deleted section break as unsupported where Word's layout of it hasn't been seen", () => {
+            // Between sections that start differently, and with no paragraph after it
+            expect(
+                readBody([p(pPr(deletedMark, sectPr(value("w:type", "continuous")))), p(r(t("next"))), sectPr()]).blocks[0].block
+                    .unsupported,
+            ).to.equal("a deleted section break between sections that start, number their pages or have headers and footers differently");
+            expect(readBody([p(pPr(deletedMark, sectPr())), tableOf([fixed], row([], cell(p())))]).blocks[0].block.unsupported).to.equal(
+                "a deleted section break with no paragraph after it",
+            );
+            // The next section's properties are found past paragraphs that don't end one, as the body's own
+            expect(readBody([p(pPr(deletedMark, sectPr())), p(r(t("a"))), p(r(t("b")))]).blocks[0].block.unsupported).to.equal(undefined);
+        });
+
+        it("should mark a paragraph mark moved, and a deleted mark at the edge of a content control, as unsupported", () => {
+            expect(
+                readBody([p(pPr(rPr({ "w:moveFrom": { _attr: { "w:id": 3 } } })), r(t("moved"))), p(r(t("next")))]).blocks[0].block
+                    .unsupported,
+            ).to.equal("a paragraph mark moved in a tracked change");
+            const control = (...content: readonly object[]): object => ({ "w:sdt": [{ "w:sdtPr": [] }, { "w:sdtContent": content }] });
+            const edge = "a deleted paragraph mark at the edge of a content control";
+            // Before a content control, and at the end of one
+            expect(readBody([p(pPr(deletedMark), r(t("a"))), control(p(r(t("b"))))]).blocks[0].block.unsupported).to.equal(edge);
+            expect(readBody([control(p(pPr(deletedMark), r(t("a")))), p(r(t("b")))]).blocks[0].block.unsupported).to.equal(edge);
+            // In custom XML, and in a content control, paragraphs are joined as anywhere else
+            const nested = readBody([
+                { "w:customXml": [p(pPr(deletedMark), r(t("a"))), p(r(t("b")))] },
+                control(p(pPr(deletedMark), r(t("c"))), p(r(t("d")))),
+            ]);
+            expect(nested.blocks.map(({ block }) => texts([block])[0])).to.deep.equal(["ab", "cd"]);
+        });
+
+        it("should leave out deleted pictures, tabs, breaks and text moved elsewhere, but keep their bookmarks, as Word does", () => {
+            // word-tracked-changes.docx MK10a to MK10d and MK10f
+            const content = readBody([
+                p(
+                    r(t("a")),
+                    {
+                        "w:del": [
+                            r({ "w:tab": {} }, { "w:br": { _attr: { "w:type": "page" } } }, { "w:delText": ["text"] }),
+                            bookmark("deleted"),
+                            { "w:hyperlink": [r({ "w:delText": ["link"] })] },
+                            { "w:sdt": [{ "w:sdtPr": [] }, { "w:sdtContent": [r({ "w:delText": ["control"] })] }] },
+                            { "w:proofErr": {} },
+                        ],
+                    },
+                    { "w:moveFrom": [r(t("moved"))] },
+                    { "w:moveTo": [r(t("b"))] },
+                ),
+            ]);
+            expect(itemsOf(content)).to.deep.equal([
+                { type: "text", text: "a", font: {} },
+                { type: "marker", name: "deleted" },
+                { type: "text", text: "b", font: {} },
+            ]);
+        });
+
+        it("should number a footnote whose reference is deleted without laying it out, as Word does", () => {
+            // word-tracked-changes.docx MK10e: the footnote after it is numbered 2
+            const content = readBody(
+                [
+                    p(
+                        r(t("a")),
+                        { "w:del": [r({ "w:footnoteReference": { _attr: { "w:id": 1 } } })] },
+                        r({ "w:footnoteReference": { _attr: { "w:id": 2 } } }),
+                    ),
+                ],
+                { footnotes: { 1: { children: [new Paragraph("Deleted")] }, 2: { children: [new Paragraph("Kept")] } } },
+            );
+            expect(itemsOf(content)).to.deep.equal([
+                { type: "text", text: "a", font: {} },
+                { type: "marker", name: "footnote 2" },
+                { type: "text", text: "2", font: {} },
+            ]);
+            expect([...content.footnotes.keys()]).to.deep.equal(["footnote 2"]);
+            // A deleted reference in a header, which has no notes, is nothing
+            const header = readWritten({
+                footnotes: { 1: { children: [new Paragraph("Note")] } },
+                sections: [
+                    {
+                        headers: {
+                            default: new Header({
+                                children: [
+                                    new Paragraph({
+                                        children: [new DeletedTextRun({ ...REVISION, children: [new FootnoteReferenceRun(1)] })],
+                                    }),
+                                ],
+                            }),
+                        },
+                        children: [new Paragraph("Body")],
+                    },
+                ],
+            });
+            expect(header.sections[0].headers.default![0].unsupported).to.equal(undefined);
+            expect((header.sections[0].headers.default![0] as ParagraphBlock).items).to.deep.equal([]);
+        });
+
+        it("should leave out a field deleted whole, as Word does, and mark one only partly deleted as unsupported", () => {
+            const del = (...runs: readonly object[]): object => ({ "w:del": runs });
+            const deletedInstruction = (text: string): object => r({ "w:delInstrText": [text] });
+            // Deleted whole, its runs each in a deletion of its own, as Word writes them, then a field after it, which
+            // is read as before
+            const whole = readBody([
+                p(
+                    r(t("a")),
+                    del(field("begin")),
+                    del(deletedInstruction("PAGEREF here")),
+                    del(field("separate")),
+                    del(r({ "w:delText": ["3"] })),
+                    del(field("end")),
+                    r(t("b")),
+                ),
+                p(field("begin"), instruction("PAGEREF there"), field("separate"), r(t("9")), field("end")),
+            ]);
+            expect(textOf(whole)).to.equal("ab");
+            expect(textOf(whole, 1)).to.equal("[there]");
+            expect(whole.blocks.map(({ block }) => block.unsupported)).to.deep.equal([undefined, undefined]);
+            const partly = (...content: readonly object[]): string | undefined => readBody([p(...content)]).blocks[0].block.unsupported;
+            const reason = "a field partly deleted in a tracked change";
+            // Its end deleted, or its separator, and not its start; its start deleted and not its separator or end; and
+            // its result not deleted, where its start is
+            expect(
+                partly(field("begin"), instruction("PAGEREF here"), field("separate"), r(t("3")), del(field("end")), r(t("after"))),
+            ).to.equal(reason);
+            expect(partly(field("begin"), instruction("PAGE"), del(field("separate")), r(t("3")), field("end"))).to.equal(reason);
+            expect(partly(del(field("begin")), instruction("PAGE"), field("separate"), r(t("3")), field("end"))).to.equal(reason);
+            expect(
+                partly(del(field("begin")), del(deletedInstruction("PAGE")), del(field("separate")), r(t("3")), del(field("end"))),
+            ).to.equal(reason);
+        });
+
+        it("should mark a deleted endnote reference, and a note reference moved, as unsupported", () => {
+            const note = (name: string): object => r({ [name]: { _attr: { "w:id": 1 } } });
+            expect(readBody([p({ "w:del": [note("w:endnoteReference")] })]).blocks[0].block.unsupported).to.equal(
+                "a deleted endnote reference",
+            );
+            expect(readBody([p({ "w:moveFrom": [note("w:footnoteReference")] })]).blocks[0].block.unsupported).to.equal(
+                "a note reference moved in a tracked change",
+            );
+            // A deleted footnote reference with a mark of its own, which Word may not count, as one that isn't deleted
+            const ownMark = r({ "w:footnoteReference": { _attr: { "w:id": 1, "w:customMarkFollows": 1 } } });
+            expect(readBody([p({ "w:del": [ownMark] })]).blocks[0].block.unsupported).to.equal(
+                "a footnote or endnote with a mark of its own",
+            );
+        });
+
+        it("should leave out a deleted row, and a table all of whose rows are deleted, with their bookmarks after them, as Word does", () => {
+            // word-watertight-markup.docx MK6, word-tracked-changes.docx MK11a and MK11g: tables without borders
+            const content = readBody([
+                {
+                    "w:tbl": [
+                        { "w:tblPr": [fixed] },
+                        { "w:tblGrid": [{ "w:gridCol": { _attr: { "w:w": 2000 } } }] },
+                        bookmark("row"),
+                        row([deletedRow, { "w:tblHeader": {} }], bookmark("cell"), cell(p(bookmark("inside"), r(t("deleted"))))),
+                        row([], cell(p(r(t("kept"))))),
+                        row([deletedRow], cell(p(r(t("deleted too"))))),
+                    ],
+                },
+                tableOf([fixed], row([deletedRow], cell(p(r(t("gone")))))),
+                p(r(t("after"))),
+            ]);
+            expect(content.blocks).to.have.length(2);
+            const table = content.blocks[0].block as TableBlock;
+            expect(table.rows).to.have.length(1);
+            expect(table.rows[0]).to.deep.include({ header: false, borderTop: 0, borderBottom: 0 });
+            expect(table.rows[0].cells[0].blocks[0]).to.deep.include({
+                items: [
+                    { type: "marker", name: "row" },
+                    { type: "marker", name: "cell" },
+                    { type: "marker", name: "inside" },
+                    { type: "text", text: "kept", font: {} },
+                ],
+            });
+            // A table laid out fixed isn't sized by its deleted rows
+            expect(table.deletedRows).to.equal(undefined);
+            expect(table.unsupported).to.equal(undefined);
+            expect(textOf(content, 1)).to.equal("after");
+        });
+
+        it("should start the bookmarks in a deleted row of a table laid out fixed in the next row, with its deleted tabs and breaks", () => {
+            // Nothing sizes the columns of a table laid out fixed by its deleted row, so its deleted runs are read as the
+            // layout reads them: nothing, but for their bookmarks
+            const content = readBody([
+                tableOf(
+                    [fixed],
+                    row([deletedRow], cell(p(bookmark("deleted"), { "w:del": [r({ "w:tab": {} }, { "w:br": {} })] }))),
+                    row([], cell(p(r(t("kept"))))),
+                ),
+            ]);
+            const table = content.blocks[0].block as TableBlock;
+            expect(table.unsupported).to.equal(undefined);
+            expect((table.rows[0].cells[0].blocks[0] as ParagraphBlock).items[0]).to.deep.equal({ type: "marker", name: "deleted" });
+        });
+
+        it("should mark a deleted row in a table with borders or space between its rows as unsupported, as Word may keep them", () => {
+            const bordered = "a deleted row in a table with borders or space between its rows";
+            const unsupportedOf = (properties: readonly object[], deletedCell: readonly object[] = []): string | undefined =>
+                (
+                    readBody([
+                        tableOf(
+                            [fixed, ...properties],
+                            row([], cell(p())),
+                            row([deletedRow], { "w:tc": [{ "w:tcPr": deletedCell }, p()] }),
+                            row([], cell(p())),
+                        ),
+                    ]).blocks[0].block as TableBlock
+                ).unsupported;
+            const border = (name: string, style = "single"): object => ({ [name]: { _attr: { "w:val": style, "w:sz": 8 } } });
+            // The table's borders between its rows, the deleted row's own, one in a style not yet followed, and space
+            // between cells
+            expect(unsupportedOf([{ "w:tblBorders": [border("w:insideH")] }])).to.equal(bordered);
+            expect(unsupportedOf([], [{ "w:tcBorders": [border("w:top")] }])).to.equal(bordered);
+            expect(unsupportedOf([], [{ "w:tcBorders": [border("w:top", "apples")] }])).to.equal(bordered);
+            expect(unsupportedOf([{ "w:tblCellSpacing": { _attr: { "w:w": 100, "w:type": "dxa" } } }])).to.equal(bordered);
+            // Borders left and right of the cells, which a deleted row leaves as they are
+            expect(unsupportedOf([{ "w:tblBorders": [border("w:left"), border("w:insideV")] }])).to.equal(undefined);
+        });
+
+        it("should mark a deleted row in a table whose style formats some rows by where they are as unsupported", () => {
+            const options = {
+                externalStyles: `<w:styles xmlns:w="main"><w:style w:type="table" w:styleId="FirstRow"><w:name w:val="FirstRow"/><w:tblStylePr w:type="firstRow"><w:rPr><w:b/></w:rPr></w:tblStylePr></w:style></w:styles>`,
+            };
+            const look = { "w:tblLook": { _attr: { "w:firstRow": 1, "w:noHBand": 1, "w:noVBand": 1 } } };
+            const unsupportedOf = (...rows: readonly object[]): string | undefined =>
+                (readBody([tableOf([fixed, value("w:tblStyle", "FirstRow"), look], ...rows)], options).blocks[0].block as TableBlock)
+                    .unsupported;
+            // The first row deleted, so the second would be the first, or not
+            expect(unsupportedOf(row([deletedRow], cell(p())), row([], cell(p())), row([], cell(p())))).to.equal(
+                "a deleted row in a table whose style formats some of its rows",
+            );
+            // The last row deleted, which the style doesn't format apart
+            expect(unsupportedOf(row([], cell(p())), row([], cell(p())), row([deletedRow], cell(p())))).to.equal(undefined);
+        });
+
+        it("should start a merge in a cell merged down from a deleted row, as Word lays it out when it is empty", () => {
+            // word-tracked-changes.docx MK11b and MK11c
+            const merged = (merge: string, ...paragraphs: readonly object[]): object => ({
+                "w:tc": [{ "w:tcPr": [{ "w:tcW": { _attr: { "w:w": 2000 } } }, value("w:vMerge", merge)] }, ...paragraphs],
+            });
+            const mergesOf = (...rows: readonly object[]): readonly (string | undefined)[] => {
+                const table = readBody([tableOf([fixed], ...rows)]).blocks[0].block as TableBlock;
+                return [...table.rows.map(({ cells }) => cells[0].verticalMerge), table.unsupported];
+            };
+            // The row a merge starts in deleted: the next starts it
+            expect(
+                mergesOf(
+                    row([deletedRow], merged("restart", p(r(t("a"))))),
+                    row([], merged("continue", p())),
+                    row([], merged("continue", p())),
+                ),
+            ).to.deep.equal(["restart", "continue", undefined]);
+            // A row it goes on through deleted: it goes on
+            expect(
+                mergesOf(
+                    row([], merged("restart", p(r(t("a"))))),
+                    row([deletedRow], merged("continue", p())),
+                    row([], merged("continue", p())),
+                ),
+            ).to.deep.equal(["restart", "continue", undefined]);
+            // A cell that would start it with text in it, which Word hasn't been seen laying out
+            expect(mergesOf(row([deletedRow], merged("restart", p(r(t("a"))))), row([], merged("continue", p(r(t("b"))))))).to.deep.equal([
+                "restart",
+                "a cell merged down from a deleted table row",
+            ]);
+        });
+
+        it("should mark a deleted row with a list or a note in it as unsupported, as Word may count them", () => {
+            const noted = readBody([
+                tableOf([fixed], row([deletedRow], cell(p(r({ "w:footnoteReference": { _attr: { "w:id": 1 } } })))), row([], cell(p()))),
+            ]);
+            expect(noted.blocks[0].block.unsupported).to.equal("a list or a note in a deleted table row");
+            // A deleted reference in it too, which is numbered on from the notes before it, and not counted
+            const deletedNote = readBody([
+                tableOf(
+                    [fixed],
+                    row([deletedRow], cell(p({ "w:del": [r({ "w:footnoteReference": { _attr: { "w:id": 1 } } })] }))),
+                    row([], cell(p())),
+                ),
+            ]);
+            expect(deletedNote.blocks[0].block.unsupported).to.equal("a list or a note in a deleted table row");
+            // Every row deleted, so the table is only why it stops
+            const listed = readWritten({
+                numbering: { config: [{ reference: "list", levels: [{ level: 0, format: LevelFormat.DECIMAL, text: "%1." }] }] },
+                sections: [
+                    {
+                        children: [
+                            new Paragraph({ numbering: { reference: "list", level: 0 }, text: "before" }),
+                            new Table({
+                                layout: "fixed",
+                                rows: [
+                                    new TableRow({
+                                        deletion: REVISION,
+                                        children: [
+                                            new TableCell({
+                                                children: [new Paragraph({ numbering: { reference: "list", level: 0 }, text: "item" })],
+                                            }),
+                                        ],
+                                    }),
+                                ],
+                            }),
+                        ],
+                    },
+                ],
+            });
+            expect(textOf(listed)).to.equal("1.before");
+            expect(listed.blocks[1].block).to.deep.equal({
+                type: "table",
+                rows: [],
+                unsupported: "a list or a note in a deleted table row",
+            });
+        });
+
+        it("should keep deleted rows and deleted text to size the columns of a table by, as Word sizes them", () => {
+            // word-tracked-changes.docx MK11h to MK11j: a table whose cells have widths, which Word widens for long words
+            const content = readBody(
+                [
+                    tableOf(
+                        [],
+                        row(
+                            [],
+                            cell(
+                                p(
+                                    r(t("a")),
+                                    { "w:del": [r({ "w:delText": [" deleted"] }), r({ "w:delInstrText": ["PAGE"] })] },
+                                    r({ "w:footnoteReference": { _attr: { "w:id": 1 } } }),
+                                ),
+                            ),
+                        ),
+                        row([], cell(p(r(t("plain"))))),
+                        row([deletedRow], cell(p(r(t("deleted row"))))),
+                    ),
+                    p(r({ "w:footnoteReference": { _attr: { "w:id": 2 } } })),
+                ],
+                { footnotes: { 1: { children: [new Paragraph("One")] }, 2: { children: [new Paragraph("Two")] } } },
+            );
+            const table = content.blocks[0].block as TableBlock;
+            expect(table.widen).to.deep.equal({ acrossColumns: false });
+            const [first, second] = table.rows.map(({ cells }) => cells[0]);
+            expect(texts(first.blocks)).to.deep.equal(["a1"]);
+            // The footnote is numbered as it is where it is laid out, and counted once
+            expect(texts(first.sizing!)).to.deep.equal(["a deleted1"]);
+            expect(second.sizing).to.equal(undefined);
+            expect(table.deletedRows!.map(({ cells }) => texts(cells[0].blocks))).to.deep.equal([["deleted row"]]);
+            expect(table.unsupported).to.equal(undefined);
+            expect(textOf(content, 1)).to.equal("2");
+        });
+
+        it("should count each page reference with \\p once, as docx counts them: not again in a cell read to size its table, nor in deleted text, but in a deleted row", () => {
+            const relative = (fieldOf: (type: string) => object, instructionOf: object): readonly object[] => [
+                fieldOf("begin"),
+                instructionOf,
+                fieldOf("separate"),
+                fieldOf("end"),
+            ];
+            const deletedField = (type: string): object => r({ "w:fldChar": { _attr: { "w:fldCharType": type } } });
+            const content = readBody([
+                tableOf(
+                    [],
+                    row(
+                        [],
+                        cell(
+                            p(
+                                ...relative(field, instruction("PAGEREF a \\p")),
+                                { "w:del": relative(deletedField, r({ "w:delInstrText": ["PAGEREF a \\p"] })) },
+                                { "w:del": [{ "w:fldSimple": [{ _attr: { "w:instr": "PAGEREF a \\p" } }] }] },
+                            ),
+                        ),
+                    ),
+                    row([], cell(p(r(t("plain"))))),
+                    row([deletedRow], cell(p(...relative(field, instruction("PAGEREF a \\p"))))),
+                ),
+                p(...relative(field, instruction("PAGEREF a \\p"))),
+            ]);
+            // The cell is read to size the columns with its deleted text, and again to be laid out, with the same markers
+            expect((content.blocks[0].block as TableBlock).rows[0].cells[0].sizing).not.to.equal(undefined);
+            expect(Object.fromEntries(content.relativeReferences)).to.deep.equal({ a: ["field 1", "field 2", "field 3"] });
+        });
+
+        it("should mark what isn't known of how Word sizes a table's columns by tracked changes as unsupported", () => {
+            const sized = (...paragraphs: readonly object[]): string | undefined =>
+                readBody([tableOf([], row([], cell(...paragraphs)))]).blocks[0].block.unsupported;
+            // A deleted picture, tab, break or note reference, whose room Word may count
+            expect(sized(p(r(t("a")), { "w:del": [r({ "w:tab": {} })] }))).to.equal(
+                "a deleted picture, tab, break or note reference in a table whose columns Word sizes to their text",
+            );
+            expect(sized(p({ "w:del": [r({ "mc:AlternateContent": [{ "mc:Choice": [{ "w:t": ["x"] }] }] })] }))).to.equal(
+                "a deleted picture, tab, break or note reference in a table whose columns Word sizes to their text",
+            );
+            // Paragraphs of text joined by a deleted mark, which Word may size the columns by as they are written
+            expect(sized(p(pPr(deletedMark), r(t("one"))), p(r(t("two"))))).to.equal(
+                "a deleted paragraph mark between paragraphs of text in a table whose columns Word sizes to their text",
+            );
+            // An empty paragraph joined to the next is the next, either way
+            expect(sized(p(pPr(deletedMark), r(rPr())), p(r(t("two"))))).to.equal(undefined);
+        });
+
+        it("should read the deleted rows of tables in tables, and of tables in headers, to size their columns by", () => {
+            // A table in a deleted row, whose cell has deleted text: read as Word sizes the columns by it, twice over
+            const inner = tableOf([], row([], cell(p(bookmark("nested"), r(t("a")), { "w:del": [r({ "w:delText": ["b"] })] }))));
+            const content = readBody([tableOf([], row([deletedRow], cell(inner, p())), row([], cell(p(r(t("c"))))))]);
+            const outer = content.blocks[0].block as TableBlock;
+            const nested = outer.deletedRows![0].cells[0].blocks[0] as TableBlock;
+            expect(texts(nested.rows[0].cells[0].blocks)).to.deep.equal(["ab"]);
+            // The bookmark in the deleted row's table starts in the next row laid out
+            expect((outer.rows[0].cells[0].blocks[0] as ParagraphBlock).items[0]).to.deep.equal({ type: "marker", name: "nested" });
+            // A header has no notes to number
+            const header = readWritten({
+                sections: [
+                    {
+                        headers: {
+                            default: new Header({
+                                children: [
+                                    new Table({
+                                        rows: [
+                                            new TableRow({
+                                                deletion: REVISION,
+                                                children: [new TableCell({ children: [new Paragraph("deleted")] })],
+                                            }),
+                                            new TableRow({ children: [new TableCell({ children: [new Paragraph("kept")] })] }),
+                                        ],
+                                    }),
+                                ],
+                            }),
+                        },
+                        children: [new Paragraph("Body")],
+                    },
+                ],
+            });
+            const headerTable = header.sections[0].headers.default![0] as TableBlock;
+            expect(headerTable.rows).to.have.length(1);
+            expect(headerTable.deletedRows).to.have.length(1);
+        });
+
+        it("should lay out a document that asks for a view of tracked changes as Word for Mac opened it, in its own view", () => {
+            // word-tracked-changes.docx MK12 and MK13: with insertions and deletions, or markup, turned off, Word for Mac
+            // opened the document in its own view, with deleted text in balloons and its lines without it
+            const file = new File({ sections: [] });
+            const settings = Object.create(file, {
+                Settings: {
+                    value: {
+                        prepForXml: () => ({
+                            "w:settings": [
+                                { "w:revisionView": { _attr: { "w:insDel": "0", "w:markup": "0" } } },
+                                { "w:compat": [{ "w:compatSetting": { _attr: { "w:name": "compatibilityMode", "w:val": 15 } } }] },
+                            ],
+                        }),
+                    },
+                },
+            }) as File;
+            const content = readDocument(
+                { "w:body": [p(r(t("a")), { "w:del": [r({ "w:delText": ["b"] })] })] } as IXmlableObject,
+                contextOf(settings),
+            );
+            expect(content.unsupported).to.equal(undefined);
+            expect(textOf(content)).to.equal("a");
+        });
     });
 });

@@ -10,12 +10,15 @@
 import type { IContext, IXmlableObject } from "docx";
 
 import {
+    BORDER_WIDTHS,
     DEFAULT_FONT_SIZE,
+    FURTHEST_BORDER,
     type FontData,
     type FontFace,
     type InlineItem,
     type KinsokuList,
     type LineBreakRules,
+    NARROWEST_BORDER,
     type ParagraphBorder,
     type ParagraphFormat,
     READING_CONTEXT,
@@ -25,6 +28,7 @@ import {
     type TabStopSetting,
     type TextFont,
     type TextStyles,
+    WIDEST_BORDER,
     type XmlObject,
     attributesOf,
     childrenOf,
@@ -47,14 +51,24 @@ import {
     stringOf,
     styleChain,
     unknownLengthIn,
+    unknownRunFormatting,
     valueOf,
     withoutUndefined,
 } from "../text-layout";
-import { formatNumber, formatPageNumber } from "./number-format";
+import {
+    type FieldCapitals,
+    type FieldFormat,
+    formatNumber,
+    formatPageNumber,
+    isFieldNumberFormat,
+    isFieldPicture,
+    writesNumber,
+} from "./number-format";
 import {
     type BorderSet,
     type CellPosition,
     type Margins,
+    type TableGeometry,
     type TableLook,
     conditionalTypesOf,
     readBorderSet,
@@ -66,13 +80,24 @@ import {
 
 /**
  * A paragraph's content: text, tabs, breaks, pictures and bookmarks, and the results of fields that depend on the pages
- * being worked out: the page of a bookmark a page reference refers to, and the number of pages of the document or of the
- * section it is in.
+ * being worked out: the page of a bookmark a page reference refers to, the number of pages of the document or of the
+ * section it is in, and the number of the page or section it is on, each in its field's own format, if it has one. A page
+ * reference with `\p` writes where its bookmark is from it (`relative`, the name of the marker at the field). A page
+ * number's field is at a marker (`field`), as is a section number's in a footnote or endnote, as its page and section are
+ * where the marker is placed.
  */
 export type LayoutItem =
     | InlineItem
-    | { readonly type: "pageReference"; readonly bookmark: string; readonly font: TextFont }
-    | { readonly type: "pageCount"; readonly scope: "document" | "section"; readonly font: TextFont };
+    | {
+          readonly type: "pageReference";
+          readonly bookmark: string;
+          readonly font: TextFont;
+          readonly format?: FieldFormat;
+          readonly relative?: string;
+      }
+    | { readonly type: "pageCount"; readonly scope: "document" | "section"; readonly font: TextFont; readonly format?: FieldFormat }
+    | { readonly type: "pageNumber"; readonly field: string; readonly font: TextFont; readonly format?: FieldFormat }
+    | { readonly type: "sectionNumber"; readonly font: TextFont; readonly format?: FieldFormat; readonly field?: string };
 
 export type ParagraphBlock = {
     readonly type: "paragraph";
@@ -144,6 +169,12 @@ export type TableCell = {
     readonly vertical?: boolean;
     /** Whether the mark that ends it takes no room when its last paragraph is empty (`w:hideMark`), as in Word (TB7) */
     readonly hideMark?: boolean;
+    /**
+     * What is in it as Word sizes its table's columns by it, when that isn't `blocks`: with its deleted text in, which
+     * Word counts in the widths of columns it sizes to their text or widens for long words, though it lays out the lines
+     * without it (`word-tracked-changes.docx` MK11j)
+     */
+    readonly sizing?: readonly Block[];
 };
 
 export type TableRow = {
@@ -185,6 +216,11 @@ export type TableBlock = {
     readonly indent?: number;
     /** The space between its cells, in points, when it has any (`w:tblCellSpacing`) */
     readonly cellSpacing?: number;
+    /**
+     * Its rows deleted in a tracked change, which take no room, but which Word counts in the widths of the columns it sizes
+     * to their text or widens for long words (`word-tracked-changes.docx` MK11h, MK11i). Given when it sizes or widens them
+     */
+    readonly deletedRows?: readonly TableRow[];
     readonly unsupported?: string;
 };
 
@@ -210,7 +246,10 @@ export type Section = {
     /** The distance from the top of the page to the header, and from the bottom to the footer */
     readonly header: number;
     readonly footer: number;
+    /** The room kept for binding beside the page's text, on its left */
     readonly gutter: number;
+    /** The room kept for binding above the page's text instead, when the document puts it at the top (`w:gutterAtTop`) */
+    readonly topGutter: number;
     /** How the section starts: on a new page, an even or odd one, or on the same page as the one before */
     readonly start: "nextPage" | "continuous" | "evenPage" | "oddPage" | "nextColumn";
     /** Whether its first page has a header and footer of its own */
@@ -254,12 +293,21 @@ export type DocumentContent = {
     readonly footnoteContinuationSeparator: readonly Block[];
     /** The endnotes the body refers to, in order, after their separator: they follow the body, as Word lays them out */
     readonly endnotes: readonly Block[];
+    /** What is above the endnotes on each page after the first they are on: the paragraph of a longer line */
+    readonly endnoteContinuationSeparator: readonly Block[];
     /** Where its lines break: the characters that can't start or end a line, where it gives its own */
     readonly breakRules?: LineBreakRules;
     /** The number each footnote shows, by the name of its marker */
     readonly footnoteNumbers: ReadonlyMap<string, string>;
     /** The number of the endnote each of the endnotes' blocks is in: all but their separator's */
     readonly endnoteNumbers: ReadonlyMap<Block, string>;
+    /**
+     * The page references with `\p` in the body to each bookmark, in the order they are in it, by the names of the markers
+     * at them
+     */
+    readonly relativeReferences: ReadonlyMap<string, readonly string[]>;
+    /** The endnotes the body refers to, by the names of the markers at their references */
+    readonly endnoteReferences: ReadonlyMap<string, readonly Block[]>;
     /** The faces of the fonts it embeds, which Word draws text in those fonts in */
     readonly fonts?: readonly FontFace[];
     /** Why none of it can be laid out, when a setting of the whole document changes its lines in ways not yet followed */
@@ -279,11 +327,21 @@ type NumberingLevel = {
 
 type NoteKind = "footnote" | "endnote";
 
-/** What a reference to a footnote or endnote shows: its number, and, for a footnote, the marker its note is placed by */
+/**
+ * What a reference to a footnote or endnote shows: its number, and the marker its note's bookmarks and fields are placed
+ * by, unless it is only numbered to size a table's columns
+ */
 type NoteReference = { readonly label: string; readonly marker?: string };
 
-/** Reads the footnote or endnote a reference in the body refers to, and numbers it */
-type NoteReader = { readonly read: (kind: NoteKind, id: string) => NoteReference };
+/** Reads the footnotes and endnotes references in the body refer to, and numbers them */
+type NoteReader = {
+    /** Reads the note a reference refers to, and numbers it */
+    readonly read: (kind: NoteKind, id: string) => NoteReference;
+    /** Counts a note whose reference is deleted, which Word numbers but doesn't show (`word-tracked-changes.docx` MK10e) */
+    readonly skip: (kind: NoteKind) => void;
+    /** A reader that numbers notes as this one would from here, without reading them or counting them in this one */
+    readonly preview: () => NoteReader;
+};
 
 /** A complex field being read */
 type OpenField = {
@@ -294,6 +352,19 @@ type OpenField = {
     /** Whether its result depends on the pages, so it is worked out rather than read */
     // eslint-disable-next-line functional/prefer-readonly-type
     replaced: boolean;
+    /** Whether its start is deleted in a tracked change, or moved elsewhere, as all of it then is */
+    readonly deleted?: boolean;
+};
+
+/**
+ * The markers at the body's fields whose results depend on the page they are on: how many there are, and those of the
+ * page references with `\p`, by the bookmarks they refer to
+ */
+type FieldMarkers = {
+    // eslint-disable-next-line functional/prefer-readonly-type
+    count: number;
+    // eslint-disable-next-line functional/prefer-readonly-type
+    readonly relative: Map<string, string[]>;
 };
 
 /**
@@ -312,11 +383,19 @@ type Reader = {
     readonly listIds: ReadonlyMap<string, string>;
     /** Whether it is a header or footer, where drawings that text doesn't flow around don't matter */
     readonly inHeader: boolean;
+    /** Whether it is a footnote or endnote, whose fields are where its reference is */
+    readonly inNote?: boolean;
+    /** The markers at the fields whose pages are worked out, in the body and its notes */
+    readonly markers: FieldMarkers;
     // eslint-disable-next-line functional/prefer-readonly-type
     readonly fields: OpenField[];
     /** The numbers each list is at, by its id and then level */
     // eslint-disable-next-line functional/prefer-readonly-type
     readonly counters: Map<string, number[]>;
+    /** Whether deleted text is read as text, as Word sizes a table's columns by it */
+    readonly showDeleted?: boolean;
+    /** Whether it reads the cells of a table whose columns Word sizes to their text or widens for long words */
+    readonly inSizedTable?: boolean;
 };
 
 // Word's defaults for a section that doesn't give its page: Letter, with inch margins
@@ -330,6 +409,7 @@ const DEFAULT_SECTION: Omit<Section, "headers" | "footers" | "columns"> = {
     header: 36,
     footer: 36,
     gutter: 0,
+    topGutter: 0,
     start: "nextPage",
     titlePage: false,
     numberFormat: "decimal",
@@ -345,12 +425,22 @@ const MOST_COLUMNS = 63;
 const EIGHTHS_PER_POINT = 8;
 // Shares of a width, such as a table's of the page's, are in fiftieths of a percent, unless they are written with a %
 const FIFTIETHS_OF_A_PERCENT = 5000;
-// Formatting switches that don't change how a page reference writes the page's number
-// cspell:ignore mergeformatinet
+// Formatting switches that don't change how a field writes a number, and those of the capitals of text, which don't change
+// a number in figures
+// cspell:ignore mergeformatinet firstcap
 const PLAIN_FORMATS = new Set(["mergeformat", "charformat", "mergeformatinet"]);
+const CASE_FORMATS = new Set(["upper", "lower", "firstcap", "caps"]);
 // Word fills a content control bound to custom XML in from it when it opens the document, so what it shows there may not
 // be what is written
 const BOUND_CONTROL = "a content control filled from custom XML";
+// What a deleted run has that takes room, other than its text. Word lays its lines out without it (`word-tracked-changes.docx`
+// MK10), but how it sizes a table's columns by it hasn't been seen, as it has for deleted text (MK11j)
+const REMOVED_ROOM = new Set(["w:tab", "w:ptab", "w:br", "w:cr", "w:drawing", "mc:AlternateContent", "w:pict", "w:object"]);
+const REMOVED_NOTES = new Set(["w:footnoteReference", "w:endnoteReference"]);
+const SIZED_REMOVAL = "a deleted picture, tab, break or note reference in a table whose columns Word sizes to their text";
+const PARTLY_DELETED_FIELD = "a field partly deleted in a tracked change";
+// A mark of its own in place of a note's number, which Word may not count in the numbers of the others
+const OWN_NOTE_MARK = "a footnote or endnote with a mark of its own";
 
 const nameOf = (element: XmlObject): string => Object.keys(element)[0];
 
@@ -362,6 +452,9 @@ const contentOf = (element: XmlObject): readonly unknown[] => {
 
 /** Whether an attribute that is on or off, such as `w:combine`, is on: it is off when it isn't given */
 const isOn = (value: unknown): boolean => value !== undefined && !isOff(value);
+
+/** Whether a note's reference has a mark of its own in place of its number (`w:customMarkFollows`) */
+const hasOwnMark = (reference: XmlObject): boolean => isOn(attributesOf(reference[nameOf(reference)])["w:customMarkFollows"]);
 
 /** Whether a content control (`w:sdt`) is bound to custom XML (`w:dataBinding`), which Word fills it in from */
 const isBound = (control: XmlObject): boolean =>
@@ -382,6 +475,12 @@ const unwrap = (elements: readonly unknown[]): readonly XmlObject[] =>
 
 /** The name of the bookmark a bookmark's start (`w:bookmarkStart`) starts */
 const bookmarkOf = (element: XmlObject): string | undefined => stringOf(attributesOf(element["w:bookmarkStart"])["w:name"]);
+
+/** A bookmark's start (`w:bookmarkStart`), as a marker where it starts */
+const markerOf = (element: XmlObject): readonly LayoutItem[] => {
+    const bookmark = bookmarkOf(element);
+    return bookmark === undefined ? [] : [{ type: "marker", name: bookmark }];
+};
 
 /** The names of the bookmarks that start among elements, in order */
 const bookmarksIn = (elements: readonly XmlObject[]): readonly string[] =>
@@ -406,44 +505,161 @@ const withBookmarks = (
     }));
 };
 
-// How wide the number of a footnote or endnote is, next to text of its size: Word writes it in superscript
-const SUPERSCRIPT_WIDTH = 0.65;
-
 /**
- * The number of a footnote or endnote, at its reference or at the start of the note: as narrow as superscript, and as tall
- * as its font, as LibreOffice lays it out.
+ * The number of a footnote or endnote, at its reference or at the start of the note, in its run's font: in superscript
+ * where its style has it, as docx's FootnoteReference and EndnoteReference do.
  */
-const noteNumber = (text: string, font: TextFont): LayoutItem => ({
-    type: "text",
-    text,
-    font: { ...font, scale: (font.scale ?? 100) * SUPERSCRIPT_WIDTH },
-});
+const noteNumber = (text: string, font: TextFont): LayoutItem => ({ type: "text", text, font });
 
 /** A length in points, from twips or from a universal measure, such as "1in" */
 const twips = (value: unknown): number | undefined => pointsOf(value, TWIPS_PER_POINT);
 
-/** Whether a field's switches give its number a format of its own, such as `\* roman`, or a picture, such as `\# "00"` */
-const hasOwnFormat = (switches: string): boolean => {
-    const formats = [...switches.matchAll(/\\\*\s*"?([^\s"\\]+)/g)].map(([, format]) => format.toLowerCase());
-    return /\\#/.test(switches) || formats.some((format) => !PLAIN_FORMATS.has(format));
+/** How a field writes its number, and whether it writes where its bookmark is (`\p`), or why Word's text isn't known */
+type NumberSwitches = { readonly format?: FieldFormat; readonly relative: boolean; readonly unsupported?: string };
+
+const FORMAT_UNSUPPORTED = "a number in a field format not yet written";
+
+/**
+ * Reads the switches of a field that writes a number, after its name and bookmark: `\p`, a number format (`\* roman`) or
+ * picture (`\# "00"`), and capitals (`\* Upper`). Word's text isn't known for a format other than those
+ * {@link isFieldNumberFormat} and {@link isFieldPicture} say, such as `\* CardText`, for `\* Caps`, or for two of a kind
+ * or a format with a picture.
+ */
+const numberSwitchesOf = (switches: string): NumberSwitches => {
+    const parts = switches.match(/"[^"]*"|\S+/g) ?? [];
+    let numberFormat: string | undefined;
+    let picture: string | undefined;
+    // eslint-disable-next-line functional/prefer-readonly-type
+    const capitals: string[] = [];
+    let relative = false;
+    let unsupported: string | undefined;
+    for (let index = 0; index < parts.length; index++) {
+        const part = parts[index];
+        // A switch's argument is after it, or, without a space, in it, as `\*roman`
+        const argument = (): string => (part.length > 2 ? part.slice(2) : (parts[++index] ?? "")).replace(/^"(.*)"$/, "$1");
+        if (/^\\p$/i.test(part)) {
+            relative = true;
+        } else if (part.startsWith("\\#")) {
+            const value = argument();
+            unsupported ??= picture === undefined && isFieldPicture(value) ? undefined : "a number written with a picture not yet written";
+            picture ??= value;
+        } else if (part.startsWith("\\*")) {
+            const name = argument();
+            const lower = name.toLowerCase();
+            if (CASE_FORMATS.has(lower)) {
+                // eslint-disable-next-line functional/immutable-data
+                capitals.push(lower);
+            } else if (name !== "" && !PLAIN_FORMATS.has(lower)) {
+                unsupported ??= numberFormat === undefined && isFieldNumberFormat(name) ? undefined : FORMAT_UNSUPPORTED;
+                numberFormat ??= name;
+            }
+        }
+    }
+    const unseen = capitals.length > 1 || capitals[0] === "caps" || (numberFormat !== undefined && picture !== undefined);
+    const format = withoutUndefined({ numberFormat, picture, capitals: capitals[0] as FieldCapitals | undefined });
+    return {
+        relative,
+        ...(Object.keys(format).length > 0 ? { format } : {}),
+        ...withoutUndefined({ unsupported: unsupported ?? (unseen ? FORMAT_UNSUPPORTED : undefined) }),
+    };
+};
+
+// The fields Word writes itself when it opens the document, from the computer's clock
+const DATE_FIELDS = new Set(["DATE", "TIME"]);
+const DATE_UNSUPPORTED = "a date or time, which Word writes when it opens the document";
+
+/** A marker at a field whose result depends on where it is placed */
+const fieldMarker = (markers: FieldMarkers): Extract<LayoutItem, { readonly type: "marker" }> => {
+    // eslint-disable-next-line functional/immutable-data
+    markers.count++;
+    return { type: "marker", name: `field ${markers.count}` };
 };
 
 /**
- * The result of a field that depends on the pages being worked out, as docx writes it: the page of the bookmark a PAGEREF
- * field refers to, or the number of pages of the document (NUMPAGES) or of its section (SECTIONPAGES). Undefined for other
- * fields, and for those that show something else: a page's position relative to the bookmark (`\p`), or a number in a
- * format of its own.
+ * A reader whose fields' markers are named on from the reader's, but whose page references with `\p` aren't counted:
+ * for what is read again to size a table's columns, and deleted text, which docx doesn't count them in either
  */
-const workedOutResultOf = (instruction: string, font: TextFont): LayoutItem | undefined => {
-    const reference = /^\s*PAGEREF\s+("?)([^\s"\\]+)\1(.*)$/i.exec(instruction);
-    if (reference) {
-        const [, , bookmark, switches] = reference;
-        return /\\p\b/i.test(switches) || hasOwnFormat(switches) ? undefined : { type: "pageReference", bookmark, font };
+const uncounted = (reader: Reader): Reader => ({ ...reader, markers: { count: reader.markers.count, relative: new Map() } });
+
+/** Whether a marker is at a field (see {@link fieldMarker}), rather than a bookmark or a note's reference */
+export const isFieldMarker = (name: string): boolean => name.startsWith("field ");
+
+/**
+ * The result of a field that depends on the pages being worked out, rather than read: the page of the bookmark a PAGEREF
+ * field refers to, or where it is from it, with `\p`; the number of pages of the document (NUMPAGES) or of its section
+ * (SECTIONPAGES); and outside headers and footers, the number of the page (PAGE) or section (SECTION) it is on, which in
+ * a footnote or endnote are those of its reference, as Word writes them (`word-page-fields.docx` PF7g to PF7i). Why it
+ * can't be laid out when Word's text for it isn't known, and at a date or time anywhere but a header or footer, as Word
+ * writes the date it opens the document on (`word-watertight-pages.docx` PG7a). Undefined for other fields, which are read
+ * as they are written, as PAGE and SECTION are in headers and footers.
+ */
+const workedOutResultOf = (instruction: string, font: TextFont, reader: Reader): readonly LayoutItem[] | string | undefined => {
+    const field = /^\s*(PAGEREF|NUMPAGES|SECTIONPAGES|PAGE|SECTION|DATE|TIME)\b(.*)$/is.exec(instruction);
+    if (!field) {
+        return undefined;
     }
-    const count = /^\s*(NUMPAGES|SECTIONPAGES)\b(.*)$/i.exec(instruction);
-    return count && !hasOwnFormat(count[2])
-        ? { type: "pageCount", scope: count[1].toUpperCase() === "NUMPAGES" ? "document" : "section", font }
-        : undefined;
+    const name = field[1].toUpperCase();
+    const { inHeader, inNote, markers } = reader;
+    if (DATE_FIELDS.has(name)) {
+        return inHeader ? undefined : DATE_UNSUPPORTED;
+    }
+    if (name === "PAGEREF") {
+        const reference = /^\s*("?)([^\s"\\]+)\1(.*)$/s.exec(field[2]);
+        if (!reference) {
+            return undefined;
+        }
+        const [, , bookmark, switches] = reference;
+        const switched = numberSwitchesOf(switches);
+        // Each page reference with \p in the body is counted, whatever it writes, as docx counts them to write them
+        const at = switched.relative && !inHeader && !inNote ? fieldMarker(markers) : undefined;
+        if (at) {
+            // Added to in place, as a document can have any number of them to one bookmark
+            const references = markers.relative.get(bookmark) ?? [];
+            // eslint-disable-next-line functional/immutable-data
+            markers.relative.set(bookmark, references);
+            // eslint-disable-next-line functional/immutable-data
+            references.push(at.name);
+        }
+        if (switched.unsupported) {
+            return switched.unsupported;
+        }
+        const own = withoutUndefined({ format: switched.format });
+        if (!switched.relative || writesNumber(switched.format)) {
+            // With a number format or picture, one with \p writes its bookmark's page's number (PF3c)
+            return [{ type: "pageReference", bookmark, font, ...own }];
+        }
+        if (inHeader) {
+            // Where a header's bookmark is from it isn't worked out, so it is read as it is written
+            return undefined;
+        }
+        return at
+            ? [at, { type: "pageReference", bookmark, font, relative: at.name, ...own }]
+            : "a page reference that says where its bookmark is, in a footnote or endnote";
+    }
+    const { format, unsupported } = numberSwitchesOf(field[2]);
+    if (name === "NUMPAGES" || name === "SECTIONPAGES") {
+        return (
+            unsupported ?? [
+                { type: "pageCount", scope: name === "NUMPAGES" ? "document" : "section", font, ...withoutUndefined({ format }) },
+            ]
+        );
+    }
+    if (inHeader) {
+        return undefined;
+    }
+    if (unsupported) {
+        return unsupported;
+    }
+    if (name === "SECTION" && !inNote) {
+        return [{ type: "sectionNumber", font, ...withoutUndefined({ format }) }];
+    }
+    const marker = fieldMarker(markers);
+    return [
+        marker,
+        name === "SECTION"
+            ? { type: "sectionNumber", field: marker.name, font, ...withoutUndefined({ format }) }
+            : { type: "pageNumber", field: marker.name, font, ...withoutUndefined({ format }) },
+    ];
 };
 
 /** Whether what is read now is shown: not in a field's instruction, nor in a result that is worked out */
@@ -491,26 +707,32 @@ const readDrawing = (element: XmlObject, font: TextFont, reader: Reader): readon
 };
 
 /**
- * Reads a field character (`w:fldChar`). The result of a field that depends on the pages is worked out, rather than read.
+ * Reads a field character (`w:fldChar`). The result of a field that depends on the pages is worked out, rather than read,
+ * and is nothing in hidden text, which takes no room, even where it couldn't be laid out. Why it can't be laid out, when
+ * it can't.
  */
-const readFieldCharacter = (element: XmlObject, font: TextFont, reader: Reader): readonly LayoutItem[] => {
+const readFieldCharacter = (element: XmlObject, format: RunFormat, reader: Reader, deleted = false): readonly LayoutItem[] | string => {
     const type = attributesOf(element["w:fldChar"])["w:fldCharType"];
     const { fields } = reader;
     const field = fields[fields.length - 1];
     if (type === "begin") {
         // eslint-disable-next-line functional/immutable-data
-        fields.push({ instruction: "", inResult: false, replaced: false });
+        fields.push({ instruction: "", inResult: false, replaced: false, ...(deleted ? { deleted } : {}) });
+    } else if ((type === "separate" || type === "end") && field !== undefined && (field.deleted === true) !== deleted) {
+        // Word shows nothing of a field deleted in a tracked change, start to end, but how it shows one only part of which
+        // is deleted hasn't been seen
+        return PARTLY_DELETED_FIELD;
     } else if (type === "end") {
         // eslint-disable-next-line functional/immutable-data
         fields.pop();
     } else if (type === "separate" && field) {
-        const result = workedOutResultOf(field.instruction, font);
+        const result = deleted ? undefined : workedOutResultOf(field.instruction, fontOf(format), reader);
         // eslint-disable-next-line functional/immutable-data
         field.inResult = true;
         if (result !== undefined && isShown(reader)) {
             // eslint-disable-next-line functional/immutable-data
             field.replaced = true;
-            return [result];
+            return format.hidden ? [] : result;
         }
     }
     return [];
@@ -532,9 +754,10 @@ const unsupportedFormatOf = (properties: readonly XmlObject[]): string | undefin
 };
 
 /**
- * Reads a run (`w:r`) in the paragraph's formatting, as its character style and its own formatting change it.
+ * Reads a run (`w:r`) in the paragraph's formatting, as its character style and its own formatting change it, and when it
+ * is deleted (`removed`), as Word sizes a table's columns by it.
  */
-const readRun = (element: XmlObject, paragraphRun: RunFormat, reader: Reader): readonly LayoutItem[] | string => {
+const readRun = (element: XmlObject, paragraphRun: RunFormat, reader: Reader, removed = false): readonly LayoutItem[] | string => {
     const { styles } = reader;
     const children = contentOf(element).filter(isObject);
     const properties = find(children, "w:rPr");
@@ -545,14 +768,14 @@ const readRun = (element: XmlObject, paragraphRun: RunFormat, reader: Reader): r
         readRunFormat(properties, styles.themeFonts),
     ]);
     const font = fontOf(format);
-    const unsupportedFormat = unsupportedFormatOf(childrenOf(properties));
+    const unsupportedFormat = unsupportedFormatOf(childrenOf(properties)) ?? (format.hidden ? undefined : unknownRunFormatting(format));
     const items: readonly (readonly LayoutItem[] | string)[] = children.map((child): readonly LayoutItem[] | string => {
         const name = nameOf(child);
         if (name === "w:fldChar") {
-            return readFieldCharacter(child, font, reader);
+            return readFieldCharacter(child, format, removed ? uncounted(reader) : reader);
         }
         const field = reader.fields[reader.fields.length - 1];
-        if (name === "w:instrText") {
+        if (name === "w:instrText" || name === "w:delInstrText") {
             if (field && !field.inResult) {
                 // eslint-disable-next-line functional/immutable-data
                 field.instruction += contentOf(child)
@@ -564,30 +787,42 @@ const readRun = (element: XmlObject, paragraphRun: RunFormat, reader: Reader): r
         if (!isShown(reader) || name === "w:rPr") {
             return [];
         }
+        // What isn't deleted of the result of a field whose start is
+        if (reader.fields.some((open) => open.deleted === true)) {
+            return PARTLY_DELETED_FIELD;
+        }
+        if (removed && (REMOVED_ROOM.has(name) || REMOVED_NOTES.has(name))) {
+            return SIZED_REMOVAL;
+        }
         if (unsupportedFormat !== undefined) {
             return unsupportedFormat;
         }
         switch (name) {
             case "w:t":
+            case "w:delText": {
                 // A tab in the text is a tab, as Word lays it out, which is how docx writes those in a TextRun's text
-                return contentOf(child)
+                const content = contentOf(child)
                     .filter((part) => typeof part === "string")
-                    .join("")
-                    .split("\t")
-                    .flatMap((part, index): readonly LayoutItem[] => [
-                        ...(index > 0 && !format.hidden ? [{ type: "tab" as const, font }] : []),
-                        ...(part.length === 0 ? [] : spansOf(part, format)).map(({ text, ...spanFont }) => ({
-                            type: "text" as const,
-                            text,
-                            font: spanFont,
-                            // Where its lines break depends on its language, and whether its run is East Asian
-                            ...(format.eastAsianLanguage === undefined ? {} : { language: format.eastAsianLanguage }),
-                            ...(isEastAsianRun(format) ? { eastAsian: true } : {}),
-                        })),
-                    ]);
+                    .join("");
+                // Whether a box goes on round a tab, or ends before it, isn't known
+                if (font.border && !format.hidden && content.includes("\t")) {
+                    return "a tab in text with a border";
+                }
+                return content.split("\t").flatMap((part, index): readonly LayoutItem[] => [
+                    ...(index > 0 && !format.hidden ? [{ type: "tab" as const, font }] : []),
+                    ...(part.length === 0 ? [] : spansOf(part, format)).map(({ text, ...spanFont }) => ({
+                        type: "text" as const,
+                        text,
+                        font: spanFont,
+                        // Where its lines break depends on its language, and whether its run is East Asian
+                        ...(format.eastAsianLanguage === undefined ? {} : { language: format.eastAsianLanguage }),
+                        ...(isEastAsianRun(format) ? { eastAsian: true } : {}),
+                    })),
+                ]);
+            }
             case "w:tab":
             case "w:ptab":
-                return format.hidden ? [] : [{ type: "tab", font }];
+                return format.hidden ? [] : font.border ? "a tab in text with a border" : [{ type: "tab", font }];
             case "w:br": {
                 const kind = attributesOf(child["w:br"])["w:type"];
                 return format.hidden ? [] : [{ type: "break", kind: kind === "page" || kind === "column" ? kind : "line", font }];
@@ -615,6 +850,9 @@ const readRun = (element: XmlObject, paragraphRun: RunFormat, reader: Reader): r
             }
             case "w:footnoteReference":
             case "w:endnoteReference": {
+                if (hasOwnMark(child)) {
+                    return OWN_NOTE_MARK;
+                }
                 const note = reader.notes?.read(
                     name === "w:footnoteReference" ? "footnote" : "endnote",
                     String(attributesOf(child[name])["w:id"]),
@@ -627,15 +865,32 @@ const readRun = (element: XmlObject, paragraphRun: RunFormat, reader: Reader): r
             case "w:endnoteRef":
                 return reader.noteNumber === undefined ? [] : [noteNumber(reader.noteNumber, font)];
             case "w:drawing":
-                return readDrawing(child, font, reader);
+                return font.border ? "a picture in text with a border" : readDrawing(child, font, reader);
             case "mc:AlternateContent": {
                 // The drawing Word reads, rather than the one for older versions
                 const choice = childrenOf(child["mc:AlternateContent"]).find((option) => "mc:Choice" in option);
-                return choice ? readRun({ "w:r": [...childrenOf(choice["mc:Choice"])] }, paragraphRun, reader) : [];
+                return choice ? readRun({ "w:r": [...childrenOf(choice["mc:Choice"])] }, paragraphRun, reader, removed) : [];
             }
             case "w:pict":
             case "w:object":
                 return reader.inHeader ? [] : "a VML drawing";
+            case "w:dayShort":
+            case "w:dayLong":
+            case "w:monthShort":
+            case "w:monthLong":
+            case "w:yearShort":
+            case "w:yearLong":
+                // Word writes the date it opens the document on (`word-watertight-pages.docx` PG7b). A header's is read as it
+                // is written, as nothing, as is one in hidden text, which takes no room
+                return reader.inHeader || format.hidden ? [] : DATE_UNSUPPORTED;
+            case "w:pgNum": {
+                // The number of the page it is on, as a PAGE field writes it (PG7c). A header's is read as it is written
+                if (reader.inHeader || format.hidden) {
+                    return [];
+                }
+                const marker = fieldMarker(reader.markers);
+                return [marker, { type: "pageNumber", field: marker.name, font }];
+            }
             case "w:ruby":
                 // Its text is in its base and in the guide above it, which makes the line taller
                 return "text with a phonetic guide";
@@ -651,40 +906,108 @@ const readRun = (element: XmlObject, paragraphRun: RunFormat, reader: Reader): r
 
 // Elements in a paragraph that hold runs and are read through
 const RUN_CONTAINERS = new Set(["w:hyperlink", "w:ins", "w:moveTo", "w:smartTag", "w:customXml", "w:dir", "w:bdo", "w:sdtContent"]);
+// Elements in a paragraph that hold runs deleted (`w:del`) or moved to elsewhere (`w:moveFrom`) in a tracked change
+const REMOVALS = new Set(["w:del", "w:moveFrom"]);
+// An element no document has, which stands in a paragraph's content for why the layout stops there, when the reason is
+// found before the paragraph is read
+const STOP = "docx-layout:unsupported";
 
-/**
- * Reads the content of a paragraph, or of an element in it, such as a hyperlink.
- */
-const readInline = (elements: readonly unknown[], paragraphRun: RunFormat, reader: Reader): readonly LayoutItem[] | string => {
-    const parts = elements.filter(isObject).map((element): readonly LayoutItem[] | string => {
-        const name = nameOf(element);
-        if (name === "w:r") {
-            return readRun(element, paragraphRun, reader);
-        }
-        if (RUN_CONTAINERS.has(name)) {
-            return readInline(contentOf(element), paragraphRun, reader);
-        }
-        if (name === "w:sdt") {
-            return isBound(element)
-                ? BOUND_CONTROL
-                : readInline(childrenOf(find(childrenOf(element[name]), "w:sdtContent")), paragraphRun, reader);
-        }
-        if (name === "w:fldSimple") {
-            const result = workedOutResultOf(String(attributesOf(element[name])["w:instr"]), fontOf(paragraphRun));
-            return result !== undefined && isShown(reader) ? [result] : readInline(contentOf(element), paragraphRun, reader);
-        }
-        if (name === "w:bookmarkStart") {
-            const bookmark = bookmarkOf(element);
-            return bookmark === undefined ? [] : [{ type: "marker", name: bookmark }];
-        }
-        if (name === "w:subDoc") {
-            return "a subdocument";
-        }
-        return name === "m:oMath" || name === "m:oMathPara" ? "an equation" : [];
-    });
+/** The items of the parts of a paragraph, or why it can't be laid out */
+const itemsOf = (parts: readonly (readonly LayoutItem[] | string)[]): readonly LayoutItem[] | string => {
     const unsupported = parts.find((part): part is string => typeof part === "string");
     return unsupported ?? parts.flatMap((part) => part as readonly LayoutItem[]);
 };
+
+/**
+ * Reads what is deleted (`w:del`), or moved to elsewhere (`w:moveFrom`), in a tracked change: nothing, as Word shows it in
+ * the markup area beside the page, and breaks the lines without it, pictures, tabs and breaks too (`word-watertight-markup.docx`
+ * MK1, `word-tracked-changes.docx` MK10), but for its bookmarks. Word numbers a footnote whose reference is deleted, though
+ * it doesn't show it (MK10e). A deleted endnote reference, and a note reference moved, haven't been seen.
+ */
+const readRemoved = (elements: readonly unknown[], kind: string, reader: Reader): readonly LayoutItem[] | string =>
+    itemsOf(
+        elements.filter(isObject).map((element): readonly LayoutItem[] | string => {
+            const name = nameOf(element);
+            if (name === "w:r") {
+                const children = contentOf(element).filter(isObject);
+                const references = children.filter((child) => REMOVED_NOTES.has(nameOf(child)));
+                if (references.length > 0 && kind === "w:moveFrom") {
+                    return "a note reference moved in a tracked change";
+                }
+                if (references.some((reference) => "w:endnoteReference" in reference)) {
+                    return "a deleted endnote reference";
+                }
+                if (references.some(hasOwnMark)) {
+                    return OWN_NOTE_MARK;
+                }
+                references.forEach(() => reader.notes?.skip("footnote"));
+                // Its field characters, which keep the fields' places, so a field partly deleted is found
+                return itemsOf(children.map((child) => (nameOf(child) === "w:fldChar" ? readFieldCharacter(child, {}, reader, true) : [])));
+            }
+            if (name === "w:bookmarkStart") {
+                return markerOf(element);
+            }
+            if (name === "w:sdt") {
+                return readRemoved(childrenOf(find(childrenOf(element[name]), "w:sdtContent")), kind, reader);
+            }
+            return RUN_CONTAINERS.has(name) || REMOVALS.has(name) || name === "w:fldSimple"
+                ? readRemoved(contentOf(element), kind, reader)
+                : [];
+        }),
+    );
+
+/**
+ * Reads the content of a paragraph, or of an element in it, such as a hyperlink, and when it is deleted (`removed`), as
+ * Word sizes a table's columns by it.
+ */
+const readInline = (
+    elements: readonly unknown[],
+    paragraphRun: RunFormat,
+    reader: Reader,
+    removed = false,
+): readonly LayoutItem[] | string =>
+    itemsOf(
+        elements.filter(isObject).map((element): readonly LayoutItem[] | string => {
+            const name = nameOf(element);
+            if (name === "w:r") {
+                return readRun(element, paragraphRun, reader, removed);
+            }
+            if (REMOVALS.has(name)) {
+                return reader.showDeleted
+                    ? readInline(contentOf(element), paragraphRun, reader, true)
+                    : readRemoved(contentOf(element), name, reader);
+            }
+            if (RUN_CONTAINERS.has(name)) {
+                return readInline(contentOf(element), paragraphRun, reader, removed);
+            }
+            if (name === "w:sdt") {
+                return isBound(element)
+                    ? BOUND_CONTROL
+                    : readInline(childrenOf(find(childrenOf(element[name]), "w:sdtContent")), paragraphRun, reader, removed);
+            }
+            if (name === "w:fldSimple") {
+                const result = workedOutResultOf(
+                    String(attributesOf(element[name])["w:instr"]),
+                    fontOf(paragraphRun),
+                    removed ? uncounted(reader) : reader,
+                );
+                if (result === undefined || !isShown(reader)) {
+                    return readInline(contentOf(element), paragraphRun, reader, removed);
+                }
+                return paragraphRun.hidden ? [] : result;
+            }
+            if (name === "w:bookmarkStart") {
+                return markerOf(element);
+            }
+            if (name === "w:subDoc") {
+                return "a subdocument";
+            }
+            if (name === STOP) {
+                return String(element[name]);
+            }
+            return name === "m:oMath" || name === "m:oMathPara" ? "an equation" : [];
+        }),
+    );
 
 /**
  * The number of a paragraph in a list, and what follows it, as its list's level writes it, and its number as a chapter
@@ -826,38 +1149,6 @@ const inPoints = (
 
 // The styles of a border that draw none
 const NO_BORDER = new Set(["none", "nil"]);
-// The room each style of border takes as Word draws it, in eighths of a point, from the width it is given, at 6 and 18
-// eighths (`word-paragraph-formats.docx` B6). Lines of one stroke are as wide as they are given, a double line 3 times
-// and a triple 5, waves and dash-dot strokes are as wide whatever they are given, and lines thin and thick 12 or 24
-// eighths more, which Word was seen to draw only from 6 eighths to 18
-const BORDER_WIDTHS: Readonly<Record<string, (size: number) => number | undefined>> = {
-    ...Object.fromEntries(
-        ["single", "thick", "dotted", "dashed", "dotDash", "dotDotDash", "dashSmallGap", "inset", "outset"].map((style) => [
-            style,
-            (size: number) => size,
-        ]),
-    ),
-    double: (size) => 3 * size,
-    triple: (size) => 5 * size,
-    wave: () => 24,
-    dashDotStroked: () => 24,
-    doubleWave: () => 42,
-    ...Object.fromEntries(
-        (
-            [
-                ["thinThickSmallGap", 12],
-                ["thickThinSmallGap", 12],
-                ["threeDEmboss", 12],
-                ["threeDEngrave", 12],
-                ["thinThickThinSmallGap", 24],
-            ] as const
-        ).map(([style, more]) => [style, (size: number) => (size >= 6 && size <= 18 ? size + more : undefined)]),
-    ),
-};
-// The narrowest and widest borders Word draws, in eighths of a point, and the furthest from the text, in points
-const NARROWEST_BORDER = 2;
-const WIDEST_BORDER = 96;
-const FURTHEST_BORDER = 31;
 
 /**
  * The room a border of a paragraph takes, in points: its width and the space between it and the text, or why it isn't
@@ -1084,6 +1375,42 @@ const UNSAID_LOOK: TableLook = { firstRow: true, lastRow: false, firstColumn: tr
 /** A cell as it is read, before the room around its text, from its borders and the space between cells, is worked out */
 type ReadCell = TableCell & { readonly borders: BorderSet; readonly margins: Margins; readonly gridWidth: number };
 
+/** Whether an element has any of these elements in it, at any depth */
+const hasAnyOf = (element: unknown, names: ReadonlySet<string>): boolean =>
+    Array.isArray(element)
+        ? element.some((child) => hasAnyOf(child, names))
+        : isObject(element) &&
+          Object.entries(element).some(([name, value]) => names.has(name) || (name !== "_attr" && hasAnyOf(value, names)));
+
+/**
+ * A reader of what Word sizes a table's columns by: deleted text as text, unless `showDeleted` is false, with the notes and
+ * lists numbered as they would be, but left for the reader it is made from to read and count.
+ */
+const sizingReaderOf = (reader: Reader, showDeleted = true, counted = false): Reader => ({
+    ...(counted ? reader : uncounted(reader)),
+    ...(reader.notes ? { notes: reader.notes.preview() } : {}),
+    fields: [],
+    counters: new Map([...reader.counters].map(([id, counts]) => [id, [...counts]])),
+    showDeleted,
+});
+
+/** The names of the bookmarks that start in blocks, in order: in their paragraphs, and their tables' cells */
+const markersIn = (blocks: readonly Block[]): readonly string[] =>
+    blocks.flatMap((block) =>
+        block.type === "paragraph"
+            ? block.items.flatMap((item) => (item.type === "marker" ? [item.name] : []))
+            : block.rows.flatMap(({ cells }) => cells.flatMap((cell) => markersIn(cell.blocks))),
+    );
+
+/** Whether blocks have anything in them that takes room */
+const hasContent = (blocks: readonly Block[]): boolean =>
+    blocks.some((block) => block.type === "table" || block.items.some((item) => item.type !== "marker"));
+
+/** Whether rows have no borders or space between cells that take room above or below them */
+const hasNoRowBorders = (geometry: TableGeometry | string): boolean =>
+    typeof geometry !== "string" &&
+    geometry.every(({ borderTop, borderBottom, breakBorder = 0 }) => borderTop === 0 && borderBottom === 0 && breakBorder === 0);
+
 /**
  * Reads a table (`w:tbl`): the width, margins and content of each cell, and the height and borders of each row. Word
  * sizes the columns of a table whose cells don't all have widths to their text, and widens a column of one whose cells
@@ -1095,8 +1422,15 @@ type ReadCell = TableCell & { readonly borders: BorderSet; readonly margins: Mar
  * style's paragraph and run formatting applies to its cells' paragraphs, then the formatting of the parts of its style
  * for the cell, such as its first row's (`w:tblStylePr`), where the table turns them on (`w:tblLook`), with the cell
  * borders and margins they give. A cell's own borders and margins are over those.
+ *
+ * A row deleted in a tracked change takes no room, as Word lays it out, nor does a table all of whose rows are deleted,
+ * which is read as nothing (`word-watertight-markup.docx` MK6, `word-tracked-changes.docx` MK11a, MK11g). Word sizes the
+ * columns by its text, and by deleted text in the other rows, all the same (MK11h to MK11j), so those are kept to size
+ * them by. A cell merged down from a deleted row starts the merge, empty, as Word lays it out (MK11c). Whether Word keeps
+ * a deleted row's borders, or the space between cells around it, and which rows the parts of a table style for its first
+ * and last rows and its bands count, haven't been seen.
  */
-const readTable = (element: XmlObject, reader: Reader): TableBlock => {
+const readTable = (element: XmlObject, reader: Reader): TableBlock | undefined => {
     const children = contentOf(element).filter(isObject);
     const properties = childrenOf(find(children, "w:tblPr"));
     const style = valueOf(properties, "w:tblStyle");
@@ -1124,6 +1458,17 @@ const readTable = (element: XmlObject, reader: Reader): TableBlock => {
     // The rows, and those in content controls and custom XML, with the bookmarks that start before each
     const parts = unwrap(children);
     const rows = withBookmarks(parts, "w:tr");
+    const fixed = attributesOf(find(properties, "w:tblLayout"))["w:type"] === "fixed";
+    // Whether Word sizes the columns to their text, or widens them for long words, by the cells' deleted text too
+    const sized = !fixed || tableSpacing !== 0;
+    const cellReader: Reader = { ...reader, inSizedTable: sized };
+    // Which rows are deleted in a tracked change, and where each of the others is among those laid out
+    const deletedFlags = rows.map(
+        ({ element: row }) => find(childrenOf(find(contentOf(row).filter(isObject), "w:trPr")), "w:del") !== undefined,
+    );
+    const keptCount = deletedFlags.filter((deleted) => !deleted).length;
+    let keptBefore = 0;
+    const keptIndexes = deletedFlags.map((deleted) => (deleted ? keptBefore : keptBefore++));
 
     // The parts of the table's style for some of its cells, by their type, from each of its styles in turn
     const conditional = ownStyles.flatMap(({ conditional: given = new Map() }) => [...given]);
@@ -1171,6 +1516,7 @@ const readTable = (element: XmlObject, reader: Reader): TableBlock => {
             rowIndex,
         ): {
             readonly cells: readonly ReadCell[];
+            readonly deleted: boolean;
             readonly row: Omit<TableRow, "cells" | "borderTop" | "borderBottom">;
             readonly spacing: number | undefined;
             readonly edges: ReadonlyMap<number, number>;
@@ -1190,6 +1536,23 @@ const readTable = (element: XmlObject, reader: Reader): TableBlock => {
             const skipped = numberOf(attributesOf(find(rowProperties, "w:gridBefore"))["w:val"]) ?? 0;
             const ownSpacing = find(rowProperties, "w:tblCellSpacing");
             const spacing = ownSpacing === undefined ? tableSpacing : readCellSpacing(ownSpacing);
+            // A deleted row is read only as Word sizes the columns by it, with its notes and lists left uncounted, or, where
+            // nothing sizes them, for its bookmarks, with its deleted runs read as nothing
+            const deleted = deletedFlags[rowIndex];
+            // A deleted row's page references with \p are counted, as docx counts them, but for those in its deleted text
+            const rowReader = deleted ? sizingReaderOf(cellReader, sized, true) : cellReader;
+            const counts = deleted ? JSON.stringify([...rowReader.counters]) : "";
+            // Whether the parts of the table's style for some of its cells apply to the row otherwise than they would with
+            // its deleted rows laid out
+            const shifted =
+                !deleted &&
+                keptCount < rows.length &&
+                conditional.length > 0 &&
+                rowCells.some((_, cell) => {
+                    const typesAt = (at: number, count: number): string =>
+                        JSON.stringify(conditionalTypesOf({ row: at, rows: count, cell, cells: rowCells.length }, look, bands));
+                    return typesAt(rowIndex, rows.length) !== typesAt(keptIndexes[rowIndex], keptCount);
+                });
             // Where each cell's edges are, by the grid column they are at, to check the rows agree on them
             const {
                 cells,
@@ -1218,7 +1581,13 @@ const readTable = (element: XmlObject, reader: Reader): TableBlock => {
                     const hasWidth = inTwips > 0 || (widthType === "pct" && (shareOf(ownWidth) ?? 0) > 0);
                     const width = inTwips > 0 ? inTwips : gridWidth(column, column + span);
                     const direction = valueOf(cellProperties, "w:textDirection");
-                    const cellBlocks = readBlocks(cellChildren, reader, formatted.formats);
+                    // What Word sizes the columns by, with the cell's deleted text in, read before the cell is, so its lists
+                    // are at the same numbers
+                    const sizing =
+                        sized && !deleted && hasAnyOf(cellChildren, REMOVALS)
+                            ? readBlocks(cellChildren, sizingReaderOf(rowReader), formatted.formats)
+                            : undefined;
+                    const cellBlocks = readBlocks(cellChildren, rowReader, formatted.formats);
                     const vertical = direction !== undefined && VERTICAL.has(direction);
                     return {
                         column: column + span,
@@ -1245,6 +1614,7 @@ const readTable = (element: XmlObject, reader: Reader): TableBlock => {
                                 ...(merge ? { verticalMerge: merge } : {}),
                                 ...(vertical ? { vertical: true } : {}),
                                 ...(onOff(cellProperties, "w:hideMark") === true ? { hideMark: true } : {}),
+                                ...(sizing ? { sizing } : {}),
                                 borders:
                                     formatted === UNFORMATTED
                                         ? readBorderSet(find(cellProperties, "w:tcBorders"))
@@ -1266,9 +1636,14 @@ const readTable = (element: XmlObject, reader: Reader): TableBlock => {
                       ? BOUND_CONTROL
                       : changesLines(childrenOf(find(rowChildren, "w:tblPrEx")))
                         ? "a table row with table properties of its own"
-                        : cellsUnsupported;
+                        : deleted && (hasAnyOf(rowChildren, REMOVED_NOTES) || JSON.stringify([...rowReader.counters]) !== counts)
+                          ? "a list or a note in a deleted table row"
+                          : shifted
+                            ? "a deleted row in a table whose style formats some of its rows"
+                            : cellsUnsupported;
             return {
                 cells,
+                deleted,
                 edges,
                 end,
                 spacing,
@@ -1286,8 +1661,13 @@ const readTable = (element: XmlObject, reader: Reader): TableBlock => {
             };
         },
     );
+    const kept = read.filter(({ deleted }) => !deleted);
+    if (kept.length === 0 && read.length > 0) {
+        // Every row is deleted, so the table takes no room, unless what Word does with a row hasn't been seen
+        const reason = read.find((row) => row.unsupported !== undefined)?.unsupported;
+        return reason === undefined ? undefined : { type: "table", rows: [], unsupported: reason };
+    }
     const tableCells = read.flatMap(({ cells }) => cells);
-    const fixed = attributesOf(find(properties, "w:tblLayout"))["w:type"] === "fixed";
     const fits = !fixed && tableCells.some(({ ownWidth }) => ownWidth === undefined);
     // Space between cells that is a share of the table's width, or that a row has of its own, isn't known yet
     const spacingUnsupported =
@@ -1299,38 +1679,68 @@ const readTable = (element: XmlObject, reader: Reader): TableBlock => {
     // The room around each row's and cell's text, from the borders and the space between cells, which every row has the
     // same of when it is followed
     const followedSpacing = spacingUnsupported === undefined ? tableSpacing! : 0;
-    const geometry = tableGeometry(
-        read.map(({ cells }) => ({ cells, spacing: followedSpacing })),
-        { borders: tableBorders, spacing: followedSpacing },
-    );
+    const geometryOf = (laidOut: typeof read): TableGeometry | string =>
+        tableGeometry(
+            laidOut.map(({ cells }) => ({ cells, spacing: followedSpacing })),
+            { borders: tableBorders, spacing: followedSpacing },
+        );
+    const geometry = geometryOf(kept);
     const spaced = followedSpacing > 0;
-    // The bookmarks before each row and cell start where the text after them does: in the cell after them, or in the next
-    // with any text when it has none
+    // Whether Word keeps a deleted row's borders, or the space between cells around it, hasn't been seen, so a table with
+    // deleted rows is laid out only when it would have none with them laid out
+    const bordered =
+        kept.length < read.length && (spaced || !hasNoRowBorders(geometryOf(read)))
+            ? "a deleted row in a table with borders or space between its rows"
+            : undefined;
+    // The rows laid out. The bookmarks before each row and cell start where the text after them does: in the cell after
+    // them, or in the next with any text when it has none. Those before a deleted row and its cells, and in its cells,
+    // start in the next row laid out. Those after the last, as after a table's last row, aren't placed, so a page
+    // reference to them is left blank
+    // eslint-disable-next-line functional/prefer-readonly-type
+    const tableRows: TableRow[] = [];
     let carried: readonly string[] = [];
-    const tableRows = read.map(({ row, cells, bookmarks, cellBookmarks }, rowIndex): TableRow => {
-        carried = [...carried, ...bookmarks];
-        const placed = typeof geometry === "string" ? undefined : geometry[rowIndex];
-        return {
+    let unmerged: string | undefined;
+    read.forEach(({ row, cells, deleted, bookmarks, cellBookmarks }, index) => {
+        carried = [
+            ...carried,
+            ...bookmarks,
+            ...(deleted ? cells.flatMap((cell, cellIndex) => [...cellBookmarks[cellIndex], ...markersIn(cell.blocks)]) : []),
+        ];
+        if (deleted) {
+            return;
+        }
+        const placed = typeof geometry === "string" ? undefined : geometry[tableRows.length];
+        const above = tableRows[tableRows.length - 1];
+        // eslint-disable-next-line functional/immutable-data
+        tableRows.push({
             ...row,
             borderTop: placed?.borderTop ?? 0,
             borderBottom: placed?.borderBottom ?? 0,
             ...withoutUndefined({ breakBorder: placed?.breakBorder }),
-            cells: cells.map(({ borders: _, margins, gridWidth: __, ...cell }, index) => {
-                const pending = [...carried, ...cellBookmarks[index]];
+            cells: cells.map(({ borders: _, margins, gridWidth: __, ...cell }, cellIndex) => {
+                const pending = [...carried, ...cellBookmarks[cellIndex]];
                 const marked = pending.length === 0 ? undefined : startingAtFirst(cell.blocks, pending);
                 carried = marked === undefined ? pending : [];
-                const around = placed?.cells[index];
+                const around = placed?.cells[cellIndex];
                 // A cell's width with the space between cells is as wide as Word sizes its column from, as the table's columns
                 // are narrowed to keep its width (word-table-formats2.docx CS9)
                 const spacingRoom = around === undefined ? 0 : around.left - margins.left + around.right - margins.right;
+                // A cell merged down from a deleted row starts the merge, as Word lays it out when it is empty (MK11c). What
+                // it does with one with something in it hasn't been seen
+                const orphan =
+                    read[index - 1]?.deleted === true &&
+                    cell.verticalMerge === "continue" &&
+                    above?.cells.find((other) => other.column === cell.column)?.verticalMerge === undefined;
+                unmerged ??= orphan && hasContent(cell.blocks) ? "a cell merged down from a deleted table row" : undefined;
                 return {
                     ...cell,
                     ...(around === undefined ? {} : { width: around.width, marginLeft: around.left, marginRight: around.right }),
                     ...(spaced && cell.ownWidth !== undefined ? { ownWidth: cell.ownWidth + spacingRoom } : {}),
                     ...(marked === undefined ? {} : { blocks: marked }),
+                    ...(orphan ? { verticalMerge: "restart" as const } : {}),
                 };
             }),
-        };
+        });
     });
     // Cells over the same columns whose widths put a column's edge in different places in different rows, which Word
     // settles in a way not yet followed
@@ -1343,7 +1753,21 @@ const readTable = (element: XmlObject, reader: Reader): TableBlock => {
             return Math.abs(other - edge) > WIDTH_TOLERANCE;
         }),
     );
-    const blocks = tableCells.flatMap((cell) => cell.blocks);
+    // The rows Word sizes the columns by, deleted ones too, and the blocks it lays out, or sizes the columns by
+    const deletedRows: readonly TableRow[] = sized
+        ? read
+              .filter(({ deleted }) => deleted)
+              .map(({ row, cells }) => ({
+                  ...row,
+                  borderTop: 0,
+                  borderBottom: 0,
+                  cells: cells.map(({ borders: _, margins: __, gridWidth: ___, ...cell }) => cell),
+              }))
+        : [];
+    const blocks = [
+        ...tableRows.flatMap(({ cells }) => cells.flatMap((cell) => [...cell.blocks, ...(cell.sizing ?? [])])),
+        ...deletedRows.flatMap(({ cells }) => cells.flatMap((cell) => cell.blocks)),
+    ];
     // How Word lays out a table of more columns than it can have isn't known, and sizing one to its text would count a
     // column for each it says it has, however many
     const columns = read.reduce((most, { end }) => Math.max(most, end), 0);
@@ -1373,6 +1797,8 @@ const readTable = (element: XmlObject, reader: Reader): TableBlock => {
         (find(properties, "w:tblpPr") === undefined ? undefined : "a table that text flows around") ??
         (parts.some((part) => "w:sdt" in part) ? BOUND_CONTROL : undefined) ??
         read.find((row) => row.unsupported !== undefined)?.unsupported ??
+        unmerged ??
+        bordered ??
         (fits ? unfitted : unequal ? "a table whose rows give a column different widths" : undefined) ??
         spacingUnsupported ??
         (typeof geometry === "string" ? geometry : undefined) ??
@@ -1396,6 +1822,7 @@ const readTable = (element: XmlObject, reader: Reader): TableBlock => {
         borderRight: roomOf(tableBorders.right) ?? 0,
         ...(indent ? { indent } : {}),
         ...(spaced ? { cellSpacing: followedSpacing } : {}),
+        ...(deletedRows.length > 0 ? { deletedRows } : {}),
         ...(unsupported ? { unsupported } : {}),
     };
 };
@@ -1448,7 +1875,8 @@ const startingAtFirst = (blocks: readonly Block[], bookmarks: readonly string[])
 
 /**
  * Reads a paragraph or table, or what is in its place and can't be laid out: an imported document, an equation outside
- * a paragraph, or a content control bound to custom XML. Undefined for anything else.
+ * a paragraph, or a content control bound to custom XML. Undefined for anything else, and for a table all of whose rows
+ * are deleted in a tracked change.
  */
 const readBlock = (element: XmlObject, reader: Reader, tableFormats?: TableFormats): Block | undefined => {
     switch (nameOf(element)) {
@@ -1468,6 +1896,122 @@ const readBlock = (element: XmlObject, reader: Reader, tableFormats?: TableForma
     }
 };
 
+// The elements of a part of a document that are blocks, or end a section, rather than marks between them, such as a
+// bookmark's start
+const BLOCK_ELEMENTS = new Set(["w:p", "w:tbl", "w:sdt", "w:customXml", "w:altChunk", "m:oMath", "m:oMathPara", "w:sectPr"]);
+// What of a section's properties says how it starts, how its pages are numbered, and what headers and footers it has
+const SECTION_START = new Set(["w:type", "w:titlePg", "w:pgNumType", "w:headerReference", "w:footerReference"]);
+
+const paragraphPropertiesOf = (paragraph: XmlObject): readonly XmlObject[] =>
+    childrenOf(find(contentOf(paragraph).filter(isObject), "w:pPr"));
+
+/** How a paragraph's mark is removed in a tracked change, when it is: deleted (`w:del`), or moved elsewhere (`w:moveFrom`) */
+const removedMarkOf = (paragraph: XmlObject): string | undefined =>
+    childrenOf(find(paragraphPropertiesOf(paragraph), "w:rPr"))
+        .map(nameOf)
+        .find((name) => REMOVALS.has(name));
+
+/** Whether an element has anything in its runs, deleted or not, but their formatting */
+const hasRunContent = (element: unknown): boolean =>
+    Array.isArray(element)
+        ? element.some(hasRunContent)
+        : isObject(element) &&
+          Object.entries(element).some(([name, value]) =>
+              name === "w:r"
+                  ? childrenOf(value).some((child) => nameOf(child) !== "w:rPr" && nameOf(child) !== "_attr")
+                  : name !== "_attr" && name !== "w:pPr" && hasRunContent(value),
+          );
+
+/** What of a section's properties says how it starts, numbers its pages, and what headers and footers it has */
+const startOf = (section: unknown): string => JSON.stringify(childrenOf(section).filter((child) => SECTION_START.has(nameOf(child))));
+
+/** The properties of the first section that ends among elements: in a paragraph, or the body's own */
+const nextSectionIn = (elements: readonly XmlObject[]): unknown =>
+    elements.map(sectionPropertiesOf).find((section) => section !== undefined);
+
+/** A paragraph the layout stops at, for why */
+const stopIn = (paragraph: XmlObject, reason: string): XmlObject => ({ "w:p": [...contentOf(paragraph), { [STOP]: reason }] });
+
+/** A paragraph whose mark is deleted, joined to the next: the next, with the deleted one's content, then what is between them, first */
+const joinedParagraph = (first: XmlObject, between: readonly unknown[], next: XmlObject): XmlObject => {
+    const isHead = (child: unknown): boolean => isObject(child) && (nameOf(child) === "_attr" || nameOf(child) === "w:pPr");
+    const content = contentOf(next);
+    return {
+        "w:p": [
+            ...content.filter(isHead),
+            ...contentOf(first).filter((child) => !isHead(child)),
+            ...between,
+            ...content.filter((child) => !isHead(child)),
+        ],
+    };
+};
+
+/**
+ * Joins each paragraph whose mark is deleted in a tracked change to the paragraph after it, as Word lays it out: the next
+ * paragraph, with the deleted one's text at its start, all in the next one's formatting, style and list
+ * (`word-watertight-markup.docx` MK3, `word-tracked-changes.docx` MK7, MK9). A section break deleted so leaves its section
+ * to the next (MK8c). A paragraph with no paragraph after it, before a table or at the end of a table cell or of the
+ * document, stays as it is (MK8a, MK8b, MK8d). What Word does with a paragraph mark moved elsewhere, a deleted mark at the
+ * edge of a content control, a deleted section break before a table or between sections that start, number their pages or
+ * have headers and footers differently, and a deleted mark between paragraphs of text in a table whose columns it sizes,
+ * by the paragraphs either as they are written or as they are laid out, hasn't been seen, so the layout stops there.
+ *
+ * @param nested - Whether the elements are in a content control or custom XML
+ * @param sized - Whether they are in a cell of a table whose columns Word sizes to their text, or widens for long words
+ */
+const joinRemovedMarks = (elements: readonly unknown[], nested: boolean, sized: boolean): readonly XmlObject[] => {
+    // The elements after the one being read, as they are joined, from the last: the next is at the end
+    // eslint-disable-next-line functional/prefer-readonly-type
+    const after: XmlObject[] = [];
+    for (const element of [...elements.filter(isObject)].reverse()) {
+        const name = nameOf(element);
+        const mark = name === "w:p" ? removedMarkOf(element) : undefined;
+        // The next block, past the marks between them, such as bookmarks' starts
+        const at = after.findLastIndex((other) => BLOCK_ELEMENTS.has(nameOf(other)));
+        const next = after[at] as XmlObject | undefined;
+        const nextName = next === undefined ? undefined : nameOf(next);
+        const joins = mark !== undefined && nextName === "w:p";
+        const section = mark === undefined ? undefined : sectionPropertiesOf(element);
+        const reason =
+            mark === undefined
+                ? undefined
+                : mark === "w:moveFrom"
+                  ? "a paragraph mark moved in a tracked change"
+                  : nextName === "w:sdt" || nextName === "w:customXml" || (next === undefined && nested)
+                    ? "a deleted paragraph mark at the edge of a content control"
+                    : section !== undefined && !joins
+                      ? "a deleted section break with no paragraph after it"
+                      : section !== undefined && startOf(section) !== startOf(nextSectionIn([...after].reverse()))
+                        ? "a deleted section break between sections that start, number their pages or have headers and footers differently"
+                        : joins && sized && hasRunContent(element) && hasRunContent(next)
+                          ? "a deleted paragraph mark between paragraphs of text in a table whose columns Word sizes to their text"
+                          : undefined;
+        if (reason !== undefined) {
+            // eslint-disable-next-line functional/immutable-data
+            after.push(stopIn(element, reason));
+        } else if (joins) {
+            // eslint-disable-next-line functional/immutable-data
+            const [, ...between] = after.splice(at);
+            // eslint-disable-next-line functional/immutable-data
+            after.push(joinedParagraph(element, between.reverse(), next!));
+        } else if (name === "w:customXml") {
+            // eslint-disable-next-line functional/immutable-data
+            after.push({ [name]: joinRemovedMarks(contentOf(element), true, sized) });
+        } else if (name === "w:sdt" && !isBound(element)) {
+            const content = contentOf(element).map((child) =>
+                isObject(child) && "w:sdtContent" in child ? { "w:sdtContent": joinRemovedMarks(contentOf(child), true, sized) } : child,
+            );
+            // eslint-disable-next-line functional/immutable-data
+            after.push({ [name]: content });
+        } else {
+            // eslint-disable-next-line functional/immutable-data
+            after.push(element);
+        }
+    }
+    // eslint-disable-next-line functional/immutable-data
+    return after.reverse();
+};
+
 /**
  * Reads the paragraphs and tables in a part of a document, such as a table cell or a header, and in the content controls
  * and custom XML in it. A bookmark between them starts with the next.
@@ -1476,7 +2020,7 @@ const readBlocks = (elements: readonly unknown[], reader: Reader, tableFormats?:
     // eslint-disable-next-line functional/prefer-readonly-type
     const blocks: Block[] = [];
     let bookmarks: readonly string[] = [];
-    for (const element of unwrap(elements)) {
+    for (const element of unwrap(joinRemovedMarks(elements, false, reader.inSizedTable === true))) {
         const block = readBlock(element, reader, tableFormats);
         if (block === undefined) {
             bookmarks = [...bookmarks, ...bookmarksIn([element])];
@@ -1526,11 +2070,21 @@ const readColumns = (element: unknown, width: number): readonly number[] => {
     return Array.from({ length: count }, () => (width - space * (count - 1)) / count);
 };
 
+/** The document's settings that change where its pages' text is: the gutter at the top, and margins mirrored */
+type PageSettings = { readonly gutterAtTop: boolean; readonly mirrorMargins: boolean };
+
 /**
  * Reads a section's properties (`w:sectPr`): its pages, how it starts, and its headers and footers. A section that
- * doesn't give a header or footer for a kind of page has the one of the section before.
+ * doesn't give a header or footer for a kind of page has the one of the section before. Its gutter is beside the text,
+ * or above it when the document puts it at the top, which takes the room from the page's height, as Word does
+ * (`word-watertight-settings.docx` ST3).
  */
-const readSection = (element: unknown, readPart: (id: string) => readonly Block[] | undefined, previous?: Section): Section => {
+const readSection = (
+    element: unknown,
+    readPart: (id: string) => readonly Block[] | undefined,
+    previous: Section | undefined,
+    { gutterAtTop, mirrorMargins }: PageSettings,
+): Section => {
     const properties = childrenOf(element);
     const size = attributesOf(find(properties, "w:pgSz"));
     const margins = attributesOf(find(properties, "w:pgMar"));
@@ -1544,7 +2098,10 @@ const readSection = (element: unknown, readPart: (id: string) => readonly Block[
     const marginLeft = twips(margins["w:left"] ?? margins["w:start"]) ?? DEFAULT_SECTION.marginLeft;
     const marginRight = twips(margins["w:right"] ?? margins["w:end"]) ?? DEFAULT_SECTION.marginRight;
     const gutter = twips(margins["w:gutter"]) ?? DEFAULT_SECTION.gutter;
-    const columns = readColumns(find(properties, "w:cols"), pageWidth - marginLeft - marginRight - gutter);
+    const marginTop = twips(margins["w:top"]) ?? DEFAULT_SECTION.marginTop;
+    const columns = readColumns(find(properties, "w:cols"), pageWidth - marginLeft - marginRight - (gutterAtTop ? 0 : gutter));
+    // Where Word puts a gutter at the top with mirrored margins, which put it on the inside of each page, or below a
+    // negative top margin, which the header doesn't push the text below, isn't known
     const unsupported =
         grid === "lines" || grid === "linesAndChars" || grid === "snapToChars"
             ? "a document grid"
@@ -1552,21 +2109,24 @@ const readSection = (element: unknown, readPart: (id: string) => readonly Block[
               ? "page numbers in a format not yet written"
               : find(properties, "w:textDirection") !== undefined
                 ? "text that runs down the page"
-                : find(properties, "w15:footnoteColumns") === undefined
-                  ? unknownLengthIn(element)
-                  : "footnotes in columns of their own";
+                : find(properties, "w15:footnoteColumns") !== undefined
+                  ? "footnotes in columns of their own"
+                  : gutterAtTop && gutter !== 0 && (mirrorMargins || marginTop < 0)
+                    ? "a gutter at the top with mirrored margins or a negative top margin"
+                    : unknownLengthIn(element);
     const headers = readReferences(properties, "w:headerReference", readPart);
     const footers = readReferences(properties, "w:footerReference", readPart);
     return {
         pageWidth,
         pageHeight: twips(size["w:h"]) ?? DEFAULT_SECTION.pageHeight,
-        marginTop: twips(margins["w:top"]) ?? DEFAULT_SECTION.marginTop,
+        marginTop,
         marginBottom: twips(margins["w:bottom"]) ?? DEFAULT_SECTION.marginBottom,
         marginLeft,
         marginRight,
         header: twips(margins["w:header"]) ?? DEFAULT_SECTION.header,
         footer: twips(margins["w:footer"]) ?? DEFAULT_SECTION.footer,
-        gutter,
+        gutter: gutterAtTop ? 0 : gutter,
+        topGutter: gutterAtTop ? gutter : 0,
         start: start !== undefined && START_TYPES.has(start as Section["start"]) ? (start as Section["start"]) : "nextPage",
         titlePage: onOff(properties, "w:titlePg") === true,
         columns,
@@ -1802,6 +2362,35 @@ const partsOfFile = (context: IContext): DocumentParts => {
 export const readDocument = (body: IXmlableObject, context: IContext): DocumentContent =>
     readContent(body as XmlObject, partsOfFile(context));
 
+/** How a document or a section numbers and places its footnotes or endnotes (`w:footnotePr`, `w:endnotePr`) */
+type NoteProperties = { readonly format?: string; readonly start?: number; readonly restart?: string; readonly position?: string };
+
+const readNoteProperties = (element: unknown): NoteProperties => {
+    const children = childrenOf(element);
+    return withoutUndefined({
+        format: valueOf(children, "w:numFmt"),
+        start: numberOf(attributesOf(find(children, "w:numStart"))["w:val"]),
+        restart: valueOf(children, "w:numRestart"),
+        position: valueOf(children, "w:pos"),
+    });
+};
+
+// How Word numbers and places each kind of note where the document doesn't say: footnotes 1, 2, 3 at the bottom of the
+// page, and endnotes i, ii, iii at the end of the document, each numbered on through it
+const NOTE_DEFAULTS: Readonly<Record<NoteKind, Required<NoteProperties>>> = {
+    footnote: { format: "decimal", start: 1, restart: "continuous", position: "pageBottom" },
+    endnote: { format: "lowerRoman", start: 1, restart: "continuous", position: "docEnd" },
+};
+
+/** The section properties an element of the body ends a section with: the body's own, or a paragraph's */
+const sectionPropertiesOf = (element: XmlObject): unknown => {
+    const name = nameOf(element);
+    if (name === "w:sectPr") {
+        return element[name];
+    }
+    return name === "w:p" ? find(childrenOf(find(contentOf(element).filter(isObject), "w:pPr")), "w:sectPr") : undefined;
+};
+
 /**
  * Reads a document's body (`w:body`), with the other parts of the document.
  */
@@ -1809,7 +2398,11 @@ export const readContent = (body: XmlObject, parts: DocumentParts): DocumentCont
     const { styles } = parts;
     const { lists: numbering, unsupported: inNumbering } = readNumbering(parts.numbering, styles, parts.otherListIds ?? new Map());
     const listIds = parts.otherListIds ?? new Map<string, string>();
-    const readerOf = (inHeader: boolean): Reader => ({ styles, numbering, listIds, inHeader, fields: [], counters: new Map() });
+    // The markers at fields, numbered across the body and its notes
+    const markers: FieldMarkers = { count: 0, relative: new Map() };
+    const readerOf = (inHeader: boolean): Reader => ({ styles, numbering, listIds, inHeader, markers, fields: [], counters: new Map() });
+    const settings = childrenOf(parts.settings?.["w:settings"]);
+    const elements = unwrap(joinRemovedMarks(contentOf(body), false, false));
 
     // Each header and footer, the first time a section refers to it
     const headersAndFooters = new Map<string, readonly Block[] | undefined>();
@@ -1839,20 +2432,64 @@ export const readContent = (body: XmlObject, parts: DocumentParts): DocumentCont
         const note = notesByKind[kind].get(id);
         return note === undefined
             ? []
-            : readBlocks(contentOf(note), { ...readerOf(false), ...(label === undefined ? {} : { noteNumber: label }) });
+            : readBlocks(contentOf(note), { ...readerOf(false), inNote: true, ...(label === undefined ? {} : { noteNumber: label }) });
     };
     const footnotes = new Map<string, readonly Block[]>();
     const footnoteNumbers = new Map<string, string>();
     // eslint-disable-next-line functional/prefer-readonly-type
     const endnotes: Block[] = [];
     const endnoteNumbers = new Map<Block, string>();
+    // Each section's properties, which come after its paragraphs, so its notes are numbered as it says as they are read
+    const sectionElements = elements.flatMap((element) => {
+        const properties = sectionPropertiesOf(element);
+        return properties === undefined ? [] : [properties];
+    });
+    /** How a section numbers and places its notes of a kind: as it says, or the document does, or as Word does */
+    const notePropertiesOf = (kind: NoteKind, section: number): Required<NoteProperties> => ({
+        ...NOTE_DEFAULTS[kind],
+        ...readNoteProperties(find(settings, `w:${kind}Pr`)),
+        ...readNoteProperties(find(childrenOf(sectionElements[section]), `w:${kind}Pr`)),
+    });
+    const endnoteReferences = new Map<string, readonly Block[]>();
+    // How many notes of each kind have been read, and the number and section of the last, as a section can number its
+    // own afresh
     const noteCounts = { footnote: 0, endnote: 0 };
-    // Footnotes are numbered 1, 2, 3 and endnotes i, ii, iii, as Word numbers them unless the document says otherwise
+    const lastNotes = new Map<NoteKind, { readonly value: number; readonly section: number }>();
+    let unwrittenNumber = false;
+    // Footnotes are numbered 1, 2, 3 and endnotes i, ii, iii, as Word numbers them unless the document or the section
+    // they are in says otherwise (`w:footnotePr`, `w:endnotePr`)
+    // eslint-disable-next-line functional/prefer-readonly-type
+    type LastNotes = Map<NoteKind, { readonly value: number; readonly section: number }>;
+    /** Numbers the next note of a kind after the last, in the section being read, and gives its number as it is written */
+    const numberNext = (kind: NoteKind, last: LastNotes): string | undefined => {
+        const section = sections.length;
+        const { format, start, restart } = notePropertiesOf(kind, section);
+        const previous = last.get(kind);
+        const value = previous === undefined || (restart === "eachSect" && previous.section !== section) ? start : previous.value + 1;
+        // eslint-disable-next-line functional/immutable-data
+        last.set(kind, { value, section });
+        return formatNumber(value, format);
+    };
+    /** Numbers notes on from the last ones, without reading them or numbering them in `lastNotes` */
+    const previewFrom = (last: LastNotes): NoteReader => {
+        const next: LastNotes = new Map(last);
+        return {
+            read: (kind) => ({ label: numberNext(kind, next) ?? "" }),
+            skip: (kind) => {
+                numberNext(kind, next);
+            },
+            preview: () => previewFrom(next),
+        };
+    };
     const readNote = (kind: NoteKind, id: string): NoteReference => {
         // eslint-disable-next-line functional/immutable-data
         noteCounts[kind]++;
-        const label = formatNumber(noteCounts[kind], kind === "footnote" ? "decimal" : "lowerRoman")!;
+        const written = numberNext(kind, lastNotes);
+        const label = written ?? "";
+        unwrittenNumber ||= written === undefined;
         const content = readNoteContent(kind, id, label);
+        // A name no bookmark can have, as bookmarks' names have no spaces
+        const marker = `${kind} ${noteCounts[kind]}`;
         if (kind === "endnote") {
             // eslint-disable-next-line functional/immutable-data
             endnotes.push(...content);
@@ -1860,10 +2497,10 @@ export const readContent = (body: XmlObject, parts: DocumentParts): DocumentCont
                 // eslint-disable-next-line functional/immutable-data
                 endnoteNumbers.set(block, label);
             }
-            return { label };
+            // eslint-disable-next-line functional/immutable-data
+            endnoteReferences.set(marker, content);
+            return { label, marker };
         }
-        // A name no bookmark can have, as bookmarks' names have no spaces
-        const marker = `footnote ${noteCounts[kind]}`;
         // eslint-disable-next-line functional/immutable-data
         footnotes.set(marker, content);
         // eslint-disable-next-line functional/immutable-data
@@ -1871,18 +2508,32 @@ export const readContent = (body: XmlObject, parts: DocumentParts): DocumentCont
         return { label, marker };
     };
 
-    const reader: Reader = { ...readerOf(false), notes: { read: readNote } };
+    const noteReader: NoteReader = {
+        read: readNote,
+        // A note whose reference is deleted is numbered, though it isn't laid out (MK10e)
+        skip: (kind) => {
+            // eslint-disable-next-line functional/immutable-data
+            noteCounts[kind]++;
+            numberNext(kind, lastNotes);
+        },
+        preview: () => previewFrom(lastNotes),
+    };
+    const reader: Reader = { ...readerOf(false), notes: noteReader };
     // eslint-disable-next-line functional/prefer-readonly-type
     const sections: Section[] = [];
     // eslint-disable-next-line functional/prefer-readonly-type
     const blocks: { readonly block: Block; readonly section: number }[] = [];
     // eslint-disable-next-line functional/prefer-readonly-type
     let bookmarks: string[] = [];
+    const pageSettings: PageSettings = {
+        gutterAtTop: onOff(settings, "w:gutterAtTop") === true,
+        mirrorMargins: onOff(settings, "w:mirrorMargins") === true,
+    };
     const addSection = (element: unknown): void => {
-        sections.push(readSection(element, readPart, sections[sections.length - 1]));
+        sections.push(readSection(element, readPart, sections[sections.length - 1], pageSettings));
     };
     // The body is written with its section's properties at its end, if nothing else
-    for (const element of unwrap(contentOf(body))) {
+    for (const element of elements) {
         const name = nameOf(element);
         if (name === "w:sectPr") {
             addSection(element[name]);
@@ -1892,8 +2543,7 @@ export const readContent = (body: XmlObject, parts: DocumentParts): DocumentCont
             bookmarks = bookmark === undefined ? bookmarks : [...bookmarks, bookmark];
         } else {
             const block = readBlock(element, reader);
-            const sectionProperties =
-                name === "w:p" ? find(childrenOf(find(contentOf(element).filter(isObject), "w:pPr")), "w:sectPr") : undefined;
+            const sectionProperties = sectionPropertiesOf(element);
             if (block !== undefined) {
                 const marked = startingWith(block, bookmarks);
                 const sectionBreak =
@@ -1911,6 +2561,24 @@ export const readContent = (body: XmlObject, parts: DocumentParts): DocumentCont
         addSection(undefined);
     }
 
+    /**
+     * Why the notes of a kind can't be laid out yet, when Word numbers or places them in a way not yet followed: afresh on
+     * each page, from a number of its own in a section after the first though they are numbered on through the document,
+     * footnotes anywhere but at the bottom of the page, and endnotes at the end of each section
+     */
+    const notesUnsupported = (kind: NoteKind): string | undefined => {
+        const all = sections.map((_, section) => notePropertiesOf(kind, section));
+        return all.some(({ restart }) => restart === "eachPage")
+            ? "notes numbered afresh on each page"
+            : all.some(({ restart, start }) => restart !== "eachSect" && start !== all[0].start)
+              ? "notes numbered on from a number of their own in a later section"
+              : kind === "footnote" && all.some(({ position }) => position !== "pageBottom")
+                ? "footnotes put elsewhere than at the bottom of the page"
+                : kind === "endnote" && all.length > 1 && all.some(({ position }) => position !== "docEnd")
+                  ? "endnotes at the end of each section"
+                  : undefined;
+    };
+
     const documentContent: DocumentContent = {
         blocks,
         sections,
@@ -1918,14 +2586,26 @@ export const readContent = (body: XmlObject, parts: DocumentParts): DocumentCont
         footnoteSeparator: footnotes.size > 0 ? readNoteContent("footnote", "separator") : [],
         footnoteContinuationSeparator: footnotes.size > 0 ? readNoteContent("footnote", "continuationSeparator") : [],
         endnotes: endnotes.length > 0 ? [...readNoteContent("endnote", "separator"), ...endnotes] : [],
+        endnoteContinuationSeparator: endnotes.length > 0 ? readNoteContent("endnote", "continuationSeparator") : [],
         footnoteNumbers,
         endnoteNumbers,
+        relativeReferences: markers.relative,
+        endnoteReferences,
         ...(parts.fonts !== undefined && parts.fonts.length > 0 ? { fonts: parts.fonts } : {}),
         ...readSettings(parts.settings),
     };
-    // A length in the styles or lists stops the layout before anything, as any paragraph may be in them
+    // A length in the styles or lists stops the layout before anything, as any paragraph may be in them, and so do notes
+    // numbered or placed in a way not yet followed, as any paragraph may refer to them
     return {
         ...documentContent,
-        ...withoutUndefined({ unsupported: documentContent.unsupported ?? styles.unsupported ?? inNumbering }),
+        ...withoutUndefined({
+            unsupported:
+                documentContent.unsupported ??
+                styles.unsupported ??
+                inNumbering ??
+                (footnotes.size > 0 ? notesUnsupported("footnote") : undefined) ??
+                (endnotes.length > 0 ? notesUnsupported("endnote") : undefined) ??
+                (unwrittenNumber ? "notes numbered in a format not yet written" : undefined),
+        }),
     };
 };

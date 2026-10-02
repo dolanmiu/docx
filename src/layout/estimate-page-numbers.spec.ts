@@ -7,9 +7,16 @@ import { Table, TableCell, TableRow, WidthType } from "@file/table";
 import {
     AlignmentType,
     Bookmark,
+    BorderStyle,
+    ColumnBreak,
+    DayLong,
     Document,
+    EmphasisMarkType,
+    EndnoteReferenceRun,
     type EstimatedPageNumbers,
+    FootnoteReferenceRun,
     FrameAnchorType,
+    Header,
     HeadingLevel,
     type IContext,
     type IFrameOptions,
@@ -17,13 +24,18 @@ import {
     type IXmlableObject,
     ImageRun,
     LineRuleType,
+    NumberFormat,
     Packer,
     PageBreak,
     PageNumber,
+    PageNumberElement,
     type PageNumberEstimator,
+    PageNumberSeparator,
     PageReference,
     Paragraph,
     PatchType,
+    SectionType,
+    SimpleField,
     TabStopType,
     TableOfContents,
     type TemplatePageNumberEstimator,
@@ -33,6 +45,7 @@ import {
 import { buildTestFont, buildTestFontCollection } from "tests/font-file";
 
 import { estimatePageNumbers, estimatePageNumbersWith } from "./estimate-page-numbers";
+import { layoutDocument } from "./layout-document";
 import type { FontToMeasure } from "./measure-width";
 
 const contextOf = (file: File): IContext => ({ file, viewWrapper: file.Document, stack: [] }) as unknown as IContext;
@@ -102,6 +115,280 @@ const patchedTemplateOf = async (pageNumbers: TemplatePageNumberEstimator): Prom
 /** The results written into the fields of a document */
 const resultsOf = (document: string): readonly string[] =>
     [...document.matchAll(/<w:fldChar w:fldCharType="separate"\/><w:t xml:space="preserve">([^<]*)<\/w:t>/g)].map(([, result]) => result);
+
+/** The text of each paragraph of a document, with what is written in its fields, from its XML */
+const paragraphTexts = (document: string): readonly string[] =>
+    document
+        .split("</w:p>")
+        .map((paragraph) => [...paragraph.matchAll(/<w:t(?: [^>]*)?>([^<]*)<\/w:t>/g)].map(([, text]) => text).join(""));
+
+// Calibri 11, single spaced, on A4 with 1440 margins: 51 lines to a page, as the probes of word-watertight-*.ts are laid out
+const PROBE_STYLES: IPropertiesOptions["styles"] = {
+    default: { document: { run: { font: "Calibri", size: 22 }, paragraph: { spacing: { before: 0, after: 0, line: 240 } } } },
+    paragraphStyles: [
+        { id: "FootnoteText", name: "footnote text", run: { size: 22 }, paragraph: { spacing: { before: 0, after: 0, line: 240 } } },
+    ],
+};
+
+/**
+ * The probes of scripts/layout-probes/word-watertight-fields.ts, FD1 to FD4: page references to a bookmark across two pages,
+ * with \\p, in formats of their own and to a bookmark in a footnote, and numbers of pages in a format of their own, each
+ * with the page it is on
+ */
+const fieldsProbe = (): IPropertiesOptions => {
+    const line = (text: string): Paragraph => new Paragraph({ children: [new TextRun(text)] });
+    const fill = (probe: string, count: number): readonly Paragraph[] =>
+        Array.from({ length: count }, (_, index) => line(`${probe} fill ${index + 1}`));
+    const reference = (label: string, bookmark: string, switches = ""): Paragraph =>
+        new Paragraph({
+            children: [
+                new TextRun(`${label} `),
+                ...(switches === "" ? [new PageReference(bookmark)] : [new SimpleField(`PAGEREF ${bookmark} ${switches}`, "?")]),
+                new TextRun({ children: [" on page ", PageNumber.CURRENT] }),
+            ],
+        });
+    const target = (id: string, text: string): Paragraph =>
+        new Paragraph({ children: [new Bookmark({ id, children: [new TextRun(text)] })] });
+    return {
+        styles: PROBE_STYLES,
+        footnotes: { 1: { children: [target("fd4note", "FD4 bookmark in the footnote")] } },
+        sections: [
+            {
+                children: [
+                    ...fill("FD1", 50),
+                    new Paragraph({
+                        widowControl: false,
+                        children: [
+                            new Bookmark({
+                                id: "fd1span",
+                                children: [new TextRun("FD1 bookmark starts"), new TextRun({ text: "FD1 bookmark ends", break: 1 })],
+                            }),
+                        ],
+                    }),
+                    ...fill("FD1 after", 60),
+                    reference("FD1 reference", "fd1span"),
+                ],
+            },
+            {
+                children: [
+                    reference("FD2 above", "fd2target", "\\p"),
+                    ...fill("FD2", 10),
+                    target("fd2target", "FD2 target"),
+                    reference("FD2 below", "fd2target", "\\p"),
+                    ...fill("FD2 after", 50),
+                    reference("FD2 other page", "fd2target", "\\p"),
+                ],
+            },
+            {
+                children: [
+                    ...fill("FD3", 51 * 4),
+                    target("fd3target", "FD3 target"),
+                    reference("FD3 roman", "fd3target", "\\* roman"),
+                    reference("FD3 ALPHABETIC", "fd3target", "\\* ALPHABETIC"),
+                    reference("FD3 Ordinal", "fd3target", "\\* Ordinal"),
+                    reference("FD3 picture", "fd3target", '\\# "00"'),
+                    new Paragraph({ children: [new TextRun("FD3 numpages roman "), new SimpleField("NUMPAGES \\* roman", "?")] }),
+                    new Paragraph({ children: [new TextRun("FD3 sectionpages roman "), new SimpleField("SECTIONPAGES \\* roman", "?")] }),
+                ],
+            },
+            {
+                children: [
+                    new Paragraph({ children: [new TextRun("FD4 note here"), new FootnoteReferenceRun(1)] }),
+                    ...fill("FD4", 60),
+                    reference("FD4 reference", "fd4note"),
+                ],
+            },
+        ],
+    };
+};
+
+/**
+ * The probes of scripts/layout-probes/word-page-fields.ts, PF1 to PF8: page references with \\p across columns and table
+ * cells, to pages in roman numerals or with chapter numbers, with capitals and number formats; formats, capitals and
+ * pictures of page references, numbers of pages and page numbers; PAGE and SECTION fields and page number blocks in the
+ * body, a footnote, a footnote continued on the next page, and an endnote; and bookmarks in them. Without PF8f and PF8g,
+ * page references with \\p in a footnote, which the layout stops at
+ */
+const pageFieldsProbe = (): IPropertiesOptions => {
+    type Child = string | TextRun | Bookmark | SimpleField | FootnoteReferenceRun | EndnoteReferenceRun | ColumnBreak;
+    const line = (...children: readonly Child[]): Paragraph =>
+        new Paragraph({ children: children.map((child) => (typeof child === "string" ? new TextRun(child) : child)) });
+    const fill = (name: string, count: number): readonly Paragraph[] =>
+        Array.from({ length: count }, (_, i) => line(`${name} fill ${i + 1}`));
+    const field = (instruction: string): SimpleField => new SimpleField(instruction, "?");
+    const probe = (name: string, instruction: string): Paragraph => line(`${name} `, field(instruction), " end");
+    const target = (id: string, text: string): Bookmark => new Bookmark({ id, children: [new TextRun(text)] });
+    const page = (): TextRun => new TextRun({ children: [PageNumber.CURRENT] });
+    const pageBlock = (): TextRun => new TextRun({ children: [new PageNumberElement()] });
+    const cell = (...children: readonly Paragraph[]): TableCell =>
+        new TableCell({ width: { size: 4513, type: WidthType.DXA }, children: [...children] });
+    return {
+        styles: {
+            default: PROBE_STYLES.default,
+            paragraphStyles: [
+                { id: "Heading1", name: "heading 1", run: { size: 22 }, paragraph: { numbering: { reference: "chapter", level: 0 } } },
+                ...PROBE_STYLES.paragraphStyles!,
+                { id: "EndnoteText", name: "endnote text", run: { size: 22 }, paragraph: { spacing: { before: 0, after: 0, line: 240 } } },
+            ],
+        },
+        numbering: {
+            config: [
+                {
+                    reference: "chapter",
+                    levels: [{ level: 0, format: "decimal", text: "Chapter %1", start: 1, alignment: AlignmentType.LEFT }],
+                },
+            ],
+        },
+        footnotes: {
+            1: { children: [line(target("pf8c", "PF8 bookmark c"))] },
+            2: {
+                children: [line(target("pf8d", "PF8 bookmark d")), line("PF7g note page ", page(), " section ", field("SECTION"), " end")],
+            },
+            3: {
+                children: [
+                    line("PF7h first part page ", page(), " section ", field("SECTION"), " end"),
+                    ...fill("PF8 long note", 36),
+                    line(target("pf8a", "PF8 bookmark a")),
+                    line("PF7h rest page ", page(), " section ", field("SECTION"), " end"),
+                ],
+            },
+        },
+        endnotes: {
+            1: {
+                children: [
+                    line(target("pf8b", "PF8 bookmark b")),
+                    line("PF7i endnote page ", page(), " section ", field("SECTION"), " end"),
+                ],
+            },
+        },
+        sections: [
+            {
+                properties: { page: { pageNumbers: { start: 1, formatType: NumberFormat.DECIMAL } } },
+                children: [
+                    probe("PF3a", "PAGEREF pf3 \\p"),
+                    probe("PF3b", "PAGEREF pf3 \\p \\* Upper"),
+                    probe("PF3c", "PAGEREF pf3 \\p \\* Arabic"),
+                    probe("PF3e", "PAGEREF pf3chapter \\p"),
+                    probe("PF4a", "PAGEREF pf3 \\* Arabic"),
+                    probe("PF4b", "PAGEREF pf3 \\* ALPHABETIC"),
+                    probe("PF4c", "PAGEREF pf3 \\* roman"),
+                    probe("PF4d", "PAGEREF pf3chapter \\* roman"),
+                    probe("PF4e", "PAGEREF pf3chapter \\* Arabic"),
+                    probe("PF5a", "PAGEREF pf5 \\* roman \\* Upper"),
+                    probe("PF5b", "PAGEREF pf5 \\* ALPHABETIC \\* Lower"),
+                    probe("PF5c", "PAGEREF pf5 \\* Ordinal \\* Upper"),
+                    probe("PF5d", "PAGEREF pf5 \\* Ordinal \\* FirstCap"),
+                    probe("PF5e", 'PAGEREF pf5 \\# "00"'),
+                    probe("PF5f", 'PAGEREF pf5 \\# "000"'),
+                    probe("PF5g", 'PAGEREF pf5 \\# "0"'),
+                    probe("PF5h", 'PAGEREF pf5 \\# "#"'),
+                    probe("PF5i", 'PAGEREF pf1234 \\# "#,##0"'),
+                    probe("PF5j", 'PAGEREF pf1234 \\# "00"'),
+                    probe("PF5k", "PAGEREF pf5 \\* Arabic \\* MERGEFORMAT"),
+                    probe("PF6a", "NUMPAGES \\* Arabic \\* MERGEFORMAT"),
+                    probe("PF6b", "NUMPAGES \\* ALPHABETIC"),
+                    probe("PF6c", 'NUMPAGES \\# "000"'),
+                    probe("PF6d", "SECTIONPAGES \\* Ordinal"),
+                    probe("PF7a", "PAGE \\* roman"),
+                    probe("PF7b", 'PAGE \\# "00"'),
+                    probe("PF8a", "PAGEREF pf8a"),
+                    probe("PF8b", "PAGEREF pf8b"),
+                    probe("PF8c", "PAGEREF pf8c"),
+                ],
+            },
+            {
+                properties: { column: { count: 2, space: 720 } },
+                children: [
+                    ...fill("PF1 first", 4),
+                    probe("PF1b", "PAGEREF pf1two \\p"),
+                    ...fill("PF1 first more", 4),
+                    line(target("pf1one", "PF1 target one")),
+                    ...fill("PF1 first after", 5),
+                    line(new ColumnBreak()),
+                    ...fill("PF1 second", 4),
+                    probe("PF1a", "PAGEREF pf1one \\p"),
+                    ...fill("PF1 second more", 14),
+                    line(target("pf1two", "PF1 target two")),
+                ],
+            },
+            {
+                children: [
+                    new Table({
+                        width: { size: 9026, type: WidthType.DXA },
+                        columnWidths: [4513, 4513],
+                        rows: [
+                            new TableRow({
+                                children: [
+                                    cell(line(target("pf2a", "PF2 target a"))),
+                                    cell(probe("PF2a", "PAGEREF pf2a \\p"), line(target("pf2b", "PF2 target b"))),
+                                ],
+                            }),
+                            new TableRow({ children: [cell(probe("PF2b", "PAGEREF pf2b \\p")), cell(line("PF2 cell"))] }),
+                        ],
+                    }),
+                ],
+            },
+            {
+                properties: { page: { pageNumbers: { start: 4, formatType: NumberFormat.LOWER_ROMAN } } },
+                children: [
+                    line(target("pf3", "PF3 target")),
+                    probe("PF3d", "PAGEREF pf3 \\p \\* Upper"),
+                    probe("PF7c", "PAGE \\* Arabic"),
+                    line("PF7d ", pageBlock(), " end"),
+                    probe("PF7f", "SECTION \\* roman"),
+                ],
+            },
+            {
+                properties: {
+                    page: {
+                        pageNumbers: {
+                            start: 1,
+                            formatType: NumberFormat.DECIMAL,
+                            chapterHeadingLevel: 1,
+                            separator: PageNumberSeparator.HYPHEN,
+                        },
+                    },
+                },
+                children: [
+                    new Paragraph({ heading: HeadingLevel.HEADING_1, children: [new TextRun("PF chapter heading")] }),
+                    ...fill("PF chapter", 55),
+                    line(target("pf3chapter", "PF3 chapter target")),
+                    line("PF7e ", pageBlock(), " end"),
+                    line("PF8 chapter note", new FootnoteReferenceRun(1)),
+                ],
+            },
+            {
+                properties: { page: { pageNumbers: { start: 5, formatType: NumberFormat.DECIMAL } } },
+                children: [line(target("pf5", "PF5 target")), line("PF8 endnote", new EndnoteReferenceRun(1))],
+            },
+            {
+                properties: { page: { pageNumbers: { start: 1234, formatType: NumberFormat.DECIMAL } } },
+                children: [line(target("pf1234", "PF5 target 1234"))],
+            },
+            {
+                properties: { page: { pageNumbers: { start: 1, formatType: NumberFormat.DECIMAL } } },
+                children: [
+                    probe("PF8d", "PAGEREF pf8d \\p"),
+                    ...fill("PF8", 3),
+                    line("PF8 short note", new FootnoteReferenceRun(2)),
+                    line(target("pf8body", "PF8 body target")),
+                    probe("PF8e", "PAGEREF pf8d \\p"),
+                    ...fill("PF8 more", 20),
+                    line("PF8 long note", new FootnoteReferenceRun(3)),
+                    ...fill("PF8 after", 40),
+                ],
+            },
+        ],
+    };
+};
+
+/** The lines of a document written with the page numbers estimatePageNumbers works out whose text starts with a probe's name */
+const probeLines = async (options: IPropertiesOptions, probe: RegExp): Promise<readonly string[]> => {
+    const written = await Packer.toBuffer(new Document({ ...options, pageNumbers: estimatePageNumbers }));
+    const document = await (await JSZip.loadAsync(written)).file("word/document.xml")!.async("text");
+    expect(document).not.to.include("w:dirty");
+    return paragraphTexts(document).filter((text) => probe.test(text));
+};
 
 describe("estimatePageNumbers", () => {
     it("should squeeze one more word onto the lines of a justified paragraph, as Word does, which can bring a heading back a page", () => {
@@ -201,7 +488,13 @@ describe("estimatePageNumbers", () => {
     });
 
     it("should lay out a document without sections on a page of Word's defaults, and write it", async () => {
-        expect(estimateOf({ sections: [] })).to.deep.equal({ bookmarks: new Map(), pageCount: 1, sectionPageCounts: [1] });
+        expect(estimateOf({ sections: [] })).to.deep.equal({
+            bookmarks: new Map(),
+            pageCount: 1,
+            sectionPageCounts: [1],
+            bookmarkPageNumbers: new Map(),
+            relativePositions: new Map(),
+        });
         const written = await Packer.toBuffer(new Document({ pageNumbers: estimatePageNumbers, sections: [] }));
         expect((await JSZip.loadAsync(written)).file("word/document.xml")).not.to.equal(null);
     });
@@ -328,12 +621,193 @@ describe("estimatePageNumbers", () => {
         });
     });
 
+    it("should lay out superscript, raised text, emphasis marks and borders around text as Word does", () => {
+        const styles: IPropertiesOptions["styles"] = {
+            default: { document: { run: { font: "Calibri", size: 22 }, paragraph: { spacing: { before: 0, after: 0, line: 240 } } } },
+        };
+        /** The page of each of these paragraphs, whose first words are bookmarked as line1, line2 and on */
+        const pagesOf = (count: number, word: ConstructorParameters<typeof TextRun>[0]): Record<string, string> =>
+            pageNumbersOf({
+                styles,
+                sections: [
+                    {
+                        children: Array.from(
+                            { length: count },
+                            (_, index) =>
+                                new Paragraph({
+                                    children: [
+                                        new Bookmark({ id: `line${index + 1}`, children: [new TextRun(`line ${index + 1} `)] }),
+                                        new TextRun(word),
+                                    ],
+                                }),
+                        ),
+                    },
+                ],
+            });
+        // 100 digits in superscript, at 7 points, fit on a line, as they don't at 11, so 51 such lines are on a page
+        // (scripts/layout-probes/word-watertight-text.ts TX1)
+        expect(pagesOf(52, { text: "0123456789".repeat(10), superScript: true })).to.include({ line51: "1", line52: "2" });
+        // Raised 6 points, as docx writes it: 35 lines on a page, where docx/layout had 51 (TX2a, and word-run-formatting.ts
+        // RF5f)
+        expect(pagesOf(36, { text: "raised", position: "6pt" })).to.include({ line35: "1", line36: "2" });
+        // Emphasis marks: 41 lines on a page (TX15)
+        expect(pagesOf(42, { text: "dotted", emphasisMark: { type: EmphasisMarkType.DOT } })).to.include({ line41: "1", line42: "2" });
+        // A border of half a point 4 points away: 31 lines on a page (word-run-formatting.ts RF7a)
+        expect(pagesOf(32, { text: "boxed", border: { style: BorderStyle.SINGLE, size: 4, space: 4, color: "auto" } })).to.include({
+            line31: "1",
+            line32: "2",
+        });
+    });
+
     it("should place nothing without a document to lay out", () => {
         expect(estimatePageNumbers({ "w:body": [] } as IXmlableObject, { stack: [] } as unknown as IContext)).to.deep.equal({
             bookmarks: new Map(),
         });
         expect((estimatePageNumbers as (body: IXmlableObject) => EstimatedPageNumbers)({ "w:body": [] })).to.deep.equal({
             bookmarks: new Map(),
+        });
+    });
+
+    describe("page references and page numbers, as Word writes them", () => {
+        it("should write page references with \\p, in formats of their own and to bookmarks in footnotes, and numbers of pages in formats, as Word wrote them (word-watertight-fields.docx FD1 to FD4)", async () => {
+            // Word, once its fields were updated: FD1 1, FD2 below, above and on page 4, FD3 x, J, 10th, 10, xii and v, FD4 11. The
+            // PAGE fields Word writes itself, so docx leaves them empty
+            expect(
+                await probeLines(
+                    fieldsProbe(),
+                    /^FD\d (reference|above|below|other|roman|ALPHABETIC|Ordinal|picture|numpages|sectionpages)/,
+                ),
+            ).to.deep.equal([
+                "FD1 reference 1 on page ",
+                "FD2 above below on page ",
+                "FD2 below above on page ",
+                "FD2 other page on page 4 on page ",
+                "FD3 roman x on page ",
+                "FD3 ALPHABETIC J on page ",
+                "FD3 Ordinal 10th on page ",
+                "FD3 picture 10 on page ",
+                "FD3 numpages roman xii",
+                "FD3 sectionpages roman v",
+                "FD4 reference 11 on page ",
+            ]);
+        });
+
+        it("should write page references with \\p, formats, capitals and pictures, and to bookmarks in notes, as Word wrote them (word-page-fields.docx PF1 to PF8)", async () => {
+            // Word, once its fields were updated: by the order of the text across columns and cells (PF1, PF2); "on page" and
+            // the page as it shows it, in capitals too, and with a number format the page's number (PF3); formats of the
+            // page's number without its chapter number (PF4); capitals after the format, and pictures (PF5, PF6); the page of
+            // a note's reference for a bookmark in it, even in the part of a footnote on the next page and in an endnote, and
+            // "on page" its reference's page from the text on the same page (PF8)
+            expect(await probeLines(pageFieldsProbe(), /^PF[1-68][a-k] /)).to.deep.equal([
+                "PF3a on page iv end",
+                "PF3b ON PAGE IV end",
+                "PF3c 4 end",
+                "PF3e on page 1-2 end",
+                "PF4a 4 end",
+                "PF4b D end",
+                "PF4c iv end",
+                "PF4d ii end",
+                "PF4e 2 end",
+                "PF5a V end",
+                "PF5b e end",
+                "PF5c 5TH end",
+                "PF5d 5th end",
+                "PF5e 05 end",
+                "PF5f 005 end",
+                "PF5g 5 end",
+                "PF5h 5 end",
+                "PF5i 1,234 end",
+                "PF5j 1234 end",
+                "PF5k 5 end",
+                "PF6a 11 end",
+                "PF6b K end",
+                "PF6c 011 end",
+                "PF6d 1st end",
+                "PF8a 1 end",
+                "PF8b 5 end",
+                "PF8c 1-2 end",
+                "PF1b below end",
+                "PF1a above end",
+                "PF2a above end",
+                "PF2b above end",
+                "PF3d ABOVE end",
+                "PF8d on page 1 end",
+                "PF8e on page 1 end",
+            ]);
+        });
+
+        it("should lay out PAGE and SECTION fields in formats, and in notes with the page and section of their reference, as Word writes them (word-page-fields.docx PF7)", () => {
+            const { pages, stoppedAt } = layoutDocument(new Document(pageFieldsProbe()));
+            expect(stoppedAt).to.equal(undefined);
+            // As in Word's PDF, the rest of the long footnote is on page 10, and the endnote on page 11
+            const lines = pages.flatMap((page, index) =>
+                [...page.body, ...page.footnotes.flatMap(({ content }) => content), ...page.endnotes.flatMap(({ content }) => content)]
+                    .flatMap((block) => (block.type === "paragraph" ? block.lines.map(({ text }) => text) : []))
+                    .filter((text) => /PF7[a-i] /.test(text))
+                    .map((text) => `${index + 1}: ${text}`),
+            );
+            expect(lines).to.deep.equal([
+                "1: PF7a i end",
+                "1: PF7b 01 end",
+                "4: PF7c 4 end",
+                "4: PF7d iv end",
+                "4: PF7f iv end",
+                "6: PF7e 1-2 end",
+                "9: PF7g note page 1 section 8 end",
+                "9: 3PF7h first part page 1 section 8 end",
+                "10: PF7h rest page 1 section 8 end",
+                "11: PF7i endnote page 5 section 6 end",
+            ]);
+        });
+
+        it("should lay out PAGE and SECTION fields and page number blocks in the body with the numbers of the page and section they are on (word-watertight-pages.docx PG7)", () => {
+            // As in the probe, page 10 is in the 17th section: 9 sections on pages of their own, 7 on the 9th page with them
+            const sections = Array.from({ length: 16 }, (_, index) => ({
+                ...(index >= 9 ? { properties: { type: SectionType.CONTINUOUS } } : {}),
+                children: [new Paragraph(`section ${index + 1}`)],
+            }));
+            const { pages, stoppedAt } = layoutDocument(
+                new Document({
+                    styles: PROBE_STYLES,
+                    sections: [
+                        ...sections,
+                        {
+                            children: [
+                                new Paragraph({ children: [new TextRun({ children: ["PG7c pgnum ", new PageNumberElement(), " end"] })] }),
+                                new Paragraph({ children: [new TextRun({ children: ["PG7d page ", PageNumber.CURRENT, " end"] })] }),
+                                new Paragraph({
+                                    children: [new TextRun({ children: ["PG7e section ", PageNumber.CURRENT_SECTION, " end"] })],
+                                }),
+                            ],
+                        },
+                    ],
+                }),
+            );
+            expect(stoppedAt).to.equal(undefined);
+            expect(pages).to.have.length(10);
+            expect(pages[9].body.flatMap((block) => (block.type === "paragraph" ? block.lines.map(({ text }) => text) : []))).to.deep.equal(
+                ["PG7c pgnum 10 end", "PG7d page 10 end", "PG7e section 17 end"],
+            );
+        });
+
+        it("should stop at a date in the body, which Word writes when it opens the document, and lay out one in a header as it is written (word-watertight-pages.docx PG7a and PG7b)", () => {
+            const date = new Paragraph({
+                children: [new TextRun("PG7a date "), new SimpleField('DATE \\@ "d MMMM yyyy"', "1 January 2000"), new TextRun(" end")],
+            });
+            const blocks = new Paragraph({ children: [new TextRun({ children: ["PG7b blocks ", new DayLong(), " end"] })] });
+            expect(layoutDocument(new Document({ sections: [{ children: [date] }] })).stoppedAt).to.equal(
+                "a date or time, which Word writes when it opens the document",
+            );
+            expect(layoutDocument(new Document({ sections: [{ children: [blocks] }] })).stoppedAt).to.equal(
+                "a date or time, which Word writes when it opens the document",
+            );
+            expect(
+                layoutDocument(
+                    new Document({
+                        sections: [{ headers: { default: new Header({ children: [date, blocks] }) }, children: [new Paragraph("a")] }],
+                    }),
+                ).stoppedAt,
+            ).to.equal(undefined);
         });
     });
 });
