@@ -44,6 +44,7 @@ const drawingOf = (placed: Partial<FloatingDrawing> = {}): FloatingDrawing => ({
     distances: NONE,
     horizontal: { from: "margin", offset: 0 },
     vertical: { from: "paragraph", offset: 0 },
+    mayOverlap: true,
     ...placed,
 });
 

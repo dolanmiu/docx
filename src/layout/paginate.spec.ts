@@ -5456,6 +5456,7 @@ describe("paginate", () => {
                 distances: NONE,
                 horizontal: { from: "margin", align: "right" },
                 vertical: { from: "paragraph", offset: 0 },
+                mayOverlap: true,
                 ...drawing,
             },
         });
@@ -5671,17 +5672,23 @@ describe("paginate", () => {
                     ["b", "1"],
                 ]),
             );
-            // Placed against its paragraph, it moves down as the lines before it do, until it is where it was: from 20 to 50
-            // with the paragraph 40 down, then 30 to 60 with it 50 down, beside the lines it pushed there
+            // Placed against its paragraph, it stays where it was first placed, from 20 to 50, though its paragraph moves down to
+            // 50 as the lines before it go round it (G4)
             const aboveIt = floating({ vertical: { from: "paragraph", offset: -20 } });
             expect(roomsOf([prose("a", 9), prose("b", 3, [aboveIt])])[0].map(([, y, width]) => [y, width])).to.deep.equal([
                 [10, 180],
-                [20, 180],
+                [20, 130],
                 [30, 130],
                 [40, 130],
-                [50, 130],
-                [60, 180],
+                [50, 180],
             ]);
+            // And with text above and below it, the lines before it that its distance above it reaches go below it (G4)
+            const distant = floating({
+                wrap: "topAndBottom",
+                distances: { ...NONE, top: 5 },
+                horizontal: { from: "margin", align: "left" },
+            });
+            expect(roomsOf([prose("a", 6), prose("b", 3, [distant])])[0].map(([, y]) => y)).to.deep.equal([10, 60, 70]);
         });
 
         it("should move a paragraph to the next page with a drawing that would go past the bottom of the page's text (F20, F36)", () => {
@@ -5696,13 +5703,16 @@ describe("paginate", () => {
             // Text above and below it, its first line below it doesn't fit on the page
             const below = floating({ wrap: "topAndBottom", height: 25 });
             expect(roomsOf([...fill, prose("a", 3, [below])])[1]).to.deep.equal([[10, 35, 180]]);
-            // Where it goes at the top of a page, in columns, above footnotes, or past only by its distance, isn't known
+            // Where it goes at the top of a page, above footnotes, or past only by its distance, isn't known
             const past = "a drawing that moves with its paragraph past the bottom of the page's text";
             expect(stopOf([prose("a", 3, [floating({ height: 200 })])])).to.equal(past);
             expect(stopOf([...fill, prose("a", 3, [floating({ height: 25, distances: { ...NONE, bottom: 10 } })])])).to.equal(past);
+            // In columns, to the top of the next column (G17)
             const lines = Array.from({ length: 15 }, (_, index) => prose(`l${index}`, 1));
             const sections = [{ ...PAGE, columns: [85, 85] }];
-            expect(stopOf([...lines, prose("a", 1, [floating({ width: 20, height: 50 })])], { sections })).to.equal(past);
+            expect(roomsOf([...lines, prose("a", 1, [floating({ width: 20, height: 50 })])], { sections })[0].at(-1)).to.deep.equal([
+                105, 10, 65,
+            ]);
             const noted = withItems(prose("n", 3), [{ type: "marker", name: "note" }]);
             expect(
                 stopOf([noted, ...fill.slice(0, 12), prose("a", 3, [floating({ height: 50 })])], {
@@ -5726,29 +5736,160 @@ describe("paginate", () => {
             const narrow = table(
                 [row([[prose("cell", 1)]])].map((one) => ({ ...one, cells: one.cells.map((cell) => ({ ...cell, width: 100 })) })),
             );
-            // On the left, where it is in the table's way, with room for it beside it
+            const rowsBelow = (blocks: readonly Block[]): readonly number[] =>
+                laidOut(blocks).pages[0].body.flatMap((block) => (block.type === "table" ? block.rows.map(({ y }) => y) : []));
+            // One that fits beside a drawing goes beside it, on the left or past one on the left (G14, G15)
             const left = floating({ height: 60, horizontal: { from: "margin", align: "left" } });
-            expect(stopOf([prose("a", 2, [left]), narrow])).to.equal("a table that fits beside a drawing that text flows around");
-            // Not in its way, it is beside it
-            expect(stopOf([prose("a", 2, [tall]), narrow])).to.equal(undefined);
-            // One further down beside the table
-            const lower = floating({ vertical: { from: "page", offset: 150 } });
-            expect(stopOf([prose("a", 2, [lower]), wide])).to.equal("a table beside a drawing that text flows around");
-            // A table before a drawing that would be beside it
-            expect(stopOf([wide, prose("a", 2, [floating({ vertical: { from: "page", offset: 10 } })])])).to.equal(
-                "a table beside a drawing that text flows around",
+            expect(rowsBelow([prose("a", 2, [left]), narrow])).to.deep.equal([20]);
+            expect(rowsBelow([prose("a", 2, [tall]), narrow])).to.deep.equal([20]);
+            // At its indent, it must be beside the drawing: 40 in, it would go under the drawing on the right, so it goes
+            // below it, and 5 out, it fits beside it
+            expect(rowsBelow([prose("a", 2, [tall]), { ...narrow, indent: 40 }])).to.deep.equal([70]);
+            expect(rowsBelow([prose("a", 2, [tall]), { ...narrow, indent: -5 }])).to.deep.equal([20]);
+            // Indented past one on its left, it is beside it where it is, and where an indent puts one moved past it isn't known
+            expect(rowsBelow([prose("a", 2, [left]), { ...narrow, indent: 60 }])).to.deep.equal([20]);
+            expect(stopOf([prose("a", 2, [left]), { ...narrow, indent: 20 }])).to.equal(
+                "an indented table moved past a drawing on its left",
+            );
+            // Whether Word sizes one sized to its text in the room beside it isn't known
+            expect(stopOf([prose("a", 2, [left]), { ...narrow, fit: {} }])).to.equal(
+                "a table sized to its text beside a drawing that text flows around",
+            );
+            // One that a drawing further down is beside goes below it
+            const lower = floating({ vertical: { from: "page", offset: 30 } });
+            expect(rowsBelow([prose("a", 1, [lower]), wide])).to.deep.equal([60, 70]);
+            // With text above and below a drawing, one beside it goes below it, however narrow
+            const across = floating({ wrap: "topAndBottom", vertical: { from: "page", offset: 25 } });
+            expect(rowsBelow([prose("a", 1, [across]), narrow])).to.deep.equal([55]);
+            // One before a drawing that is beside it is laid out again below it, with the drawing on the page from its top
+            expect(rowsBelow([wide, prose("a", 2, [floating({ vertical: { from: "page", offset: 10 } })])])).to.deep.equal([40, 50]);
+        });
+
+        it("should keep the text out of the room of drawings that overlap, and stop at those that may not overlap (G1 to G3)", () => {
+            // The second from 20 to 50 down and 100 to 150 across: lines beside both go left of both, and those beside the
+            // second only on both sides of it, after one beside the first only
+            const second = floating({ vertical: { from: "paragraph", offset: 10 }, horizontal: { from: "margin", offset: 90 } });
+            expect(roomsOf([prose("a", 15, [floating(), second])])[0].slice(0, 5)).to.deep.equal([
+                [10, 10, 130],
+                [10, 20, 90],
+                [10, 30, 90],
+                [10, 40, 90],
+                [150, 40, 40],
+            ]);
+            const mayNot = floating({ vertical: { from: "paragraph", offset: 10 }, mayOverlap: false });
+            expect(stopOf([prose("a", 3, [floating(), mayNot])])).to.equal(
+                "drawings that text flows around that may not overlap, overlapping",
             );
         });
 
+        it("should keep a paragraph kept with the next with the lines of the next beside drawings, and move it with a drawing that moves (G11 to G13)", () => {
+            const fill = Array.from({ length: 15 }, (_, index) => prose(`f${index}`, 3));
+            const heading = prose("h", 1, [], { keepNext: true });
+            // The next paragraph's drawing would go past the bottom of the page, so it moves to the next page, and the
+            // heading with it
+            expect(roomsOf([...fill, heading, prose("a", 3, [floating({ height: 50 })])])[1].slice(0, 2)).to.deep.equal([
+                [10, 10, 180],
+                [10, 20, 130],
+            ]);
+            // Beside a drawing, the heading goes with the first 2 of the next paragraph's 4 lines beside it, where 3 lines
+            // across the page wouldn't fit
+            const besideIt = floating({ vertical: { from: "page", offset: 150 }, width: 90, height: 40 });
+            const pages = roomsOf([...fill.slice(0, 14), prose("p", 1, [besideIt]), heading, prose("a", 8)]);
+            expect(pages[0].slice(-3).map(([, y, width]) => [y, width])).to.deep.equal([
+                [160, 90],
+                [170, 90],
+                [180, 90],
+            ]);
+            // A drawing anchored in a line after those it is kept with, which goes on to the next page with its anchor, doesn't
+            // move it: the heading stays with the next paragraph's first 2 lines
+            const later: ParagraphBlock = {
+                ...paragraph("a", 0),
+                items: [
+                    { type: "text", text: Array.from({ length: 18 }, () => "abcd").join(" "), font: {} },
+                    floating(),
+                    { type: "text", text: " abcd abcd abcd", font: {} },
+                ],
+            };
+            expect(roomsOf([...fill, heading, later])[0].slice(-3)).to.deep.equal([
+                [10, 160, 180],
+                [10, 170, 180],
+                [10, 180, 180],
+            ]);
+            // Kept at the end of its section, it is kept with nothing
+            const sectionBreak: ParagraphBlock = { ...paragraph("break", 0), items: [], sectionBreak: true };
+            expect(
+                stopOf(
+                    [
+                        [prose("a", 1, [floating({ height: 60 })]), 0],
+                        [heading, 0],
+                        [sectionBreak, 0],
+                        [prose("b", 1), 1],
+                    ],
+                    { sections: [PAGE, { ...PAGE, start: "continuous" }] },
+                ),
+            ).to.equal(undefined);
+            // Where those kept with the next have drawings of their own, or are kept with a table, how Word lays them out
+            // hasn't been seen
+            const kept = "a paragraph kept with the next beside a drawing, with a drawing of its own or before a table";
+            expect(stopOf([prose("x", 1, [floating()], { keepNext: true }), prose("a", 3)])).to.equal(kept);
+            expect(stopOf([prose("a", 1, [floating({ height: 60 })]), heading, table([row([[prose("cell", 1)]])])])).to.equal(kept);
+        });
+
+        it("should measure what is kept with the next beside drawings as it is laid out there", () => {
+            // A heading 160 down, beside a drawing from 150 to 190, before paragraphs of 8 words, 2 to a line beside it: those
+            // that need more than its 3 lines' room take it to the next page
+            const fill = Array.from({ length: 14 }, (_, index) => prose(`f${index}`, 3));
+            const besideIt = floating({ vertical: { from: "page", offset: 150 }, width: 90, height: 40 });
+            const pageOf = (next: ParagraphBlock): string | undefined =>
+                laidOut([...fill, prose("p", 1, [besideIt]), prose("h", 1, [], { keepNext: true }), next]).bookmarks.get("h");
+            // Kept together, all 4 of its lines go with it, and without widow control only its first
+            expect(pageOf(prose("a", 8, [], { keepLines: true }))).to.equal("2");
+            expect(pageOf(prose("a", 8, [], { widowControl: false }))).to.equal("1");
+            // A paragraph of one line with a border below it, all of it with the heading
+            const bordered: ParagraphBlock = {
+                ...prose("a", 1),
+                borders: { top: 0, bottom: 5, between: 0, betweenSpace: 0, box: "box", outline: "box" },
+            };
+            expect(pageOf(bordered)).to.equal("1");
+            // With a page break before it, which starts it on the next page whatever is kept with it
+            expect(pageOf(prose("a", 8, [], { pageBreakBefore: true }))).to.equal("1");
+            // A drawing of its own placed against the page, which doesn't move with it
+            expect(
+                laidOut([prose("h", 1, [], { keepNext: true }), prose("a", 3, [floating({ vertical: { from: "page", offset: 100 } })])])
+                    .stoppedAt,
+            ).to.equal(undefined);
+            // Kept at the end of its section, with no paragraph after it, it is kept with nothing
+            expect(
+                stopOf(
+                    [
+                        [prose("a", 1, [floating({ height: 60 })]), 0],
+                        [prose("h", 1, [], { keepNext: true }), 0],
+                        [prose("b", 1), 1],
+                    ],
+                    { sections: [PAGE, { ...PAGE, start: "continuous" }] },
+                ),
+            ).to.equal(undefined);
+        });
+
+        it("should place a drawing at the top of its paragraph below the space after the paragraph before (G7 to G10)", () => {
+            // 5 after the paragraph before and 10 before this one: its top is 25 down, and its first line 30 down, beside the
+            // drawing from 25 to 55
+            const after = prose("x", 1, [], { spaceAfter: 5 });
+            expect(roomsOf([after, prose("a", 12, [floating()], { spaceBefore: 10 })])[0].map(([, y, width]) => [y, width])).to.deep.equal([
+                [10, 180],
+                [30, 130],
+                [40, 130],
+                [50, 130],
+                [60, 180],
+                [70, 180],
+            ]);
+            // With text above and below it, the paragraph's first line goes 5 below it, the part of the space before that is
+            // its own
+            const above = floating({ wrap: "topAndBottom", horizontal: { from: "margin", align: "left" } });
+            expect(roomsOf([after, prose("a", 3, [above], { spaceBefore: 10 })])[0].map(([, y]) => y)).to.deep.equal([10, 60]);
+        });
+
         it("should stop where Word's way with drawings hasn't been seen", () => {
-            // Drawings that overlap
-            expect(stopOf([prose("a", 3, [floating(), floating({ vertical: { from: "paragraph", offset: 10 } })])])).to.equal(
-                "drawings that text flows around that overlap",
-            );
-            // A paragraph kept with one with a drawing, or kept with the next beside a drawing
-            const kept = "a paragraph kept with the next beside a drawing that text flows around";
-            expect(stopOf([prose("x", 1, [], { keepNext: true }), prose("a", 3, [floating()])])).to.equal(kept);
-            expect(stopOf([prose("a", 1, [floating()]), prose("x", 1, [], { keepNext: true }), prose("b", 1)])).to.equal(kept);
             // A drawing placed against where it is along its line
             expect(stopOf([prose("a", 3, [floating({ horizontal: { from: "character", offset: 0 } })])])).to.equal(
                 "a drawing placed against where it is anchored along its line",
@@ -5757,57 +5898,89 @@ describe("paginate", () => {
             expect(stopOf([prose("a", 3, [floating({ horizontal: { from: "bogus", offset: 0 } })])])).to.equal(
                 "a drawing placed against what isn't followed yet",
             );
-            // A paragraph whose space before meets the space after the one before it
-            const met = [prose("x", 1, [], { spaceAfter: 5 }), prose("a", 3, [floating()], { spaceBefore: 10 })];
-            expect(stopOf(met)).to.equal("a drawing placed against a paragraph whose space before meets the space after the one before it");
-            const byPage = floating({ wrap: "topAndBottom", vertical: { from: "page", offset: 25 } });
-            expect(stopOf([prose("x", 1, [], { spaceAfter: 5 }), prose("a", 3, [byPage], { spaceBefore: 10 })])).to.equal(
-                "a paragraph below a drawing whose space before meets the space after the one before it",
-            );
         });
 
-        it("should stop at a drawing anchored in a line that goes on to the next page", () => {
+        it("should place a drawing anchored in a line that goes on to the next page at the top of its paragraph there (G20)", () => {
             const fill = Array.from({ length: 16 }, (_, index) => prose(`f${index}`, 3));
-            // In the right margin, where it is beside no text, anchored in the third of 4 lines, 2 of which fit on the page
-            const margin = floating({ width: 5, horizontal: { from: "page", offset: 192 }, vertical: { from: "page", offset: 0 } });
-            const block: ParagraphBlock = {
+            // Anchored in the third of 4 lines, 2 of which fit on the page, it goes on the next with them, beside them
+            const block = (drawing: LayoutItem): ParagraphBlock => ({
                 ...paragraph("a", 0),
                 items: [
                     { type: "text", text: "abcd abcd abcd abcd abcd abcd abcd", font: {} },
-                    margin,
+                    drawing,
                     { type: "text", text: " abcd abcd abcd abcd", font: {} },
                 ],
+            });
+            const pages = roomsOf([...fill, block(floating())]);
+            expect(pages[0].slice(-2)).to.deep.equal([
+                [10, 170, 180],
+                [10, 180, 180],
+            ]);
+            expect(pages[1]).to.deep.equal([
+                [10, 10, 130],
+                [10, 20, 130],
+                [10, 30, 130],
+            ]);
+            // Placed against its line, it goes with it to the next page, at the top of the line
+            expect(roomsOf([...fill, block(floating({ vertical: { from: "line", offset: 0 } }))])[1][0]).to.deep.equal([10, 10, 130]);
+            // Where the lines laid out again without it bring its anchor back to the page, Word's way isn't known: beside a
+            // drawing 90 wide, the 6th word ends the third line, and without it the second
+            const narrowing = floating({ width: 90, height: 20, vertical: { from: "page", offset: 170 } });
+            const back: ParagraphBlock = {
+                ...paragraph("a", 0),
+                items: [
+                    { type: "text", text: "abcd abcd abcd abcd abcd abcd", font: {} },
+                    narrowing,
+                    { type: "text", text: " abcd abcd abcd abcd abcd abcd", font: {} },
+                ],
             };
-            expect(stopOf([...fill, block])).to.equal("a drawing anchored in a line that goes on to the next column or page");
-            // Placed against its line, it goes with it to the next page, where the paragraph goes on
-            const byLine = {
-                ...block,
-                items: block.items.map((item) => (item.type === "drawing" ? floating({ vertical: { from: "line", offset: 0 } }) : item)),
-            };
-            expect(stopOf([...fill, byLine])).to.equal("a drawing anchored in a paragraph after it goes on from another column or page");
+            expect(stopOf([...fill, back])).to.equal("a drawing whose anchor's page changes as the text goes round it");
         });
 
-        it("should stop at a drawing beside a page's footnotes, or in columns evened out", () => {
+        it("should even columns out with drawings in them, and stop at a drawing beside a page's footnotes (G18, G21)", () => {
             const beside = "a drawing that text flows around beside the footnotes at the bottom of its page";
             const noted = withItems(prose("n", 3), [{ type: "marker", name: "note" }]);
             const low = floating({ vertical: { from: "page", offset: 170 } });
             const footnotes = new Map([["note", [prose("note", 1)]]]);
             expect(stopOf([noted, prose("a", 3, [low])], { footnotes })).to.equal(beside);
             expect(stopOf([prose("a", 3, [low]), noted], { footnotes })).to.equal(beside);
+            // 6 lines evened out 3 and 3, the first column's beside the drawing at the right of it
+            const columns = {
+                sections: [
+                    { ...PAGE, columns: [85, 85] },
+                    { ...PAGE, start: "continuous" as const },
+                ],
+            };
+            const atColumnRight = floating({ width: 20, horizontal: { from: "column", align: "right" } });
+            expect(
+                roomsOf(
+                    [
+                        [prose("a", 6, [atColumnRight]), 0],
+                        [prose("b", 1), 1],
+                    ],
+                    columns,
+                )[0],
+            ).to.deep.equal([
+                [10, 10, 65],
+                [10, 20, 65],
+                [10, 30, 65],
+                [105, 10, 85],
+                [105, 20, 85],
+                [105, 30, 85],
+                [10, 40, 180],
+            ]);
+            // With a drawing laid out from the top of the page, beside text before it, how Word evens them out isn't known
+            const byPage = floating({ width: 20, horizontal: { from: "column", align: "right" }, vertical: { from: "page", offset: 10 } });
             expect(
                 stopOf(
                     [
-                        [prose("a", 6, [floating({ width: 20 })]), 0],
+                        [prose("x", 3), 0],
+                        [prose("a", 6, [byPage]), 0],
                         [prose("b", 1), 1],
                     ],
-                    {
-                        sections: [
-                            { ...PAGE, columns: [85, 85] },
-                            { ...PAGE, start: "continuous" },
-                        ],
-                    },
+                    columns,
                 ),
-            ).to.equal("columns evened out beside a drawing that text flows around");
+            ).to.equal("columns evened out beside a drawing placed beside text before it");
         });
 
         it("should stop where the page laid out again doesn't settle", () => {

@@ -901,6 +901,7 @@ describe("readDocument", () => {
                     distances: { top: 1, bottom: 2, left: 3, right: 4 },
                     horizontal: { from: "margin", align: "right" },
                     vertical: { from: "paragraph", offset: 10 },
+                    mayOverlap: true,
                 },
             });
             expect(paragraphOf(content).unsupported).to.equal(undefined);
@@ -934,6 +935,23 @@ describe("readDocument", () => {
             expect(drawingOf({ "wp:wrapTopAndBottom": {} })).to.deep.include({ wrap: "topAndBottom", side: "bothSides" });
             // A side Word doesn't have is both
             expect(drawingOf({ "wp:wrapSquare": { _attr: { wrapText: "bogus" } } })).to.deep.include({ side: "bothSides" });
+            // It may overlap other drawings unless it says it may not
+            expect(drawingOf({ "wp:wrapSquare": {} })).to.deep.include({ mayOverlap: true });
+            const mayNot = itemsOf(
+                readBody([
+                    p(
+                        drawing({
+                            "wp:anchor": [
+                                { _attr: { allowOverlap: "0" } },
+                                { "wp:wrapSquare": {} },
+                                { "wp:positionH": [{ _attr: { relativeFrom: "page" } }, { "wp:posOffset": ["0"] }] },
+                                { "wp:positionV": [{ _attr: { relativeFrom: "page" } }, { "wp:posOffset": ["0"] }] },
+                            ],
+                        }),
+                    ),
+                ]),
+            )[0] as { readonly drawing: object };
+            expect(mayNot.drawing).to.deep.include({ mayOverlap: false });
             // A place as a share of the width of what it is placed against, in Word's choice for its versions, or as Word
             // writes it, and sizes as shares
             const shared = drawingOf(

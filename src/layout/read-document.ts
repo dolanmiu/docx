@@ -152,6 +152,11 @@ export type FloatingDrawing = {
     readonly distances: Sides;
     readonly horizontal: DrawingPosition;
     readonly vertical: DrawingPosition;
+    /**
+     * Whether it may overlap other drawings (`allowOverlap`), as docx writes it unless told otherwise. Word moves one that
+     * may not out of the way (`word-floats2.docx` G3)
+     */
+    readonly mayOverlap: boolean;
 };
 
 export type ParagraphBlock = {
@@ -976,6 +981,7 @@ const readFloating = (element: unknown): FloatingDrawing | string => {
         distances: { top: distance("distT"), bottom: distance("distB"), left: distance("distL"), right: distance("distR") },
         horizontal,
         vertical,
+        mayOverlap: attributes.allowOverlap === undefined || isOn(attributes.allowOverlap),
     };
 };
 
