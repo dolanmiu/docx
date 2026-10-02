@@ -51,6 +51,7 @@ table style and each cell's width.
 | `word-character-widths`     | W, S, B and H: how wide Word draws each of the 1,995 characters of the width tables' ranges in Calibri, Cambria, Arial, Times New Roman and Courier New, plain and bold, and which font it draws those its fonts lack in; how wide each space is; whether lines break after each space; and whether a word before one at the end of a line stays on the line. Its `.json` has each paragraph's characters, for the reader. `scripts/generate-font-widths.ts` checks the width tables against what the reader reads                                                                                                                                                                                                     | `word-character-widths.py`     |
 | `word-italic-widths`        | W and S in italic and bold italic: how wide Word draws each character of the width tables' ranges in the italics of the five fonts, and which font it draws those their italics lack in, and how wide each space is. `word-character-widths.ts` writes it with `italic`, and `word-character-widths.json`'s italic twin, `word-italic-widths.json`, is beside it. `scripts/generate-font-widths.ts` checks the italic width tables against what the reader reads                                                                                                                                                                                                                                                       | `word-character-widths.py`     |
 | `word-fonts`                | F1 to F7: when Word kerns text in Aptos, from what size and across runs, whether with the pairs only its GPOS table has, and how far apart its lines are, for measuring fonts from their files                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                         | `word-fonts.py`                |
+| `word-kerning`              | I, K, L, LK, A, P, R and SP: how Word kerns every pair of the characters of Windows-1252 in Calibri, Cambria, Arial and Times New Roman, plain, bold, italic and bold italic, and of printable ASCII in Courier New; which letters it joins with each ligature setting of its Font dialog, how wide they are, and the kerning beside them; Aptos's ligatures and prose with Word's Normal settings; and kerning and ligatures across runs, with character spacing, scaling and small capitals. Each paragraph is a line of a page 22 inches square, and its `.json` has their text. `scripts/generate-font-kerning.ts` makes the width tables' kerning from what the reader reads                                      | `word-kerning.py`              |
 | `word-units`                | U1 to U8: lengths written with units, as docx writes a length given as a string, such as `"1in"` or `"12pt"`: whether Word reads them in a page's size and margins, a run's size, indents, character spacing, a table's widths and row height and the space between columns, and how it rounds a margin of a fraction of a twip and a size of a fraction of a half-point                                                                                                                                                                                                                                                                                                                                               | `word-units.py`                |
 | `word-units2`               | V1 to V6: how Word reads a length with a unit that isn't a whole number of twips or half-points, measured across the page: indents and a margin in each unit, negative ones, sizes, character spacing, a table's column and a row's height                                                                                                                                                                                                                                                                                                                                                                                                                                                                             | `word-units.py`                |
 | `word-paragraph-formats`    | B1 to B10, A0 to A8, C1 to C16 and L1 to L3: what TX5 to TX7 of `word-watertight-text` left open: where the space before and after goes against a border, whether a border below a paragraph's last line needs room at the foot of a page, which paragraphs with the same borders are one box, the room each style of border takes, borders in a cell and with contextual spacing; automatic spacing at the start of a document, in lists, beside tables, in footnotes and headers; indents in characters beside those in twips, and space in lines                                                                                                                                                                    | `word-paragraph-formats.py`    |
@@ -145,6 +146,15 @@ python3 scripts/layout-probes/word-positions.py build/word-probes/word-positions
 ```bash
 pdftotext -bbox-layout scripts/layout-probes/word-unicode2.pdf build/word-probes/word-unicode2.html
 npm run run-ts -- scripts/layout-probes/word-unicode2.read.ts build/word-probes/word-unicode2.html
+```
+
+`word-kerning.py` reads where Word draws each glyph, from `pdftocairo`'s SVG of the PDF, as `pdftotext` boxes only
+words, and the small probes from `pdftotext -bbox-layout`:
+
+```bash
+pdftocairo -svg scripts/layout-probes/word-kerning.pdf build/word-probes/word-kerning.svg
+pdftotext -bbox-layout scripts/layout-probes/word-kerning.pdf build/word-probes/word-kerning.html
+python3 scripts/layout-probes/word-kerning.py build/word-probes/word-kerning
 ```
 
 `word-seq.py` reads Word's PDF of `word-seq`, and the `.docx` of `word-seq-clean` docx writes, to check the numbers
@@ -385,6 +395,18 @@ On 2026-10-02 it put every line on Word's page in `keeping-text-together`, `sect
 Word's PDFs of them. In `tables-across-pages`, docx/layout leaves the header row of survey 9's table alone at the bottom
 of page 14, as the table's first row, set to a height taller than the room left, goes on to page 15, and Word moves the
 header row to page 15 with it.
+
+`kerning.word.pdf` is Word's PDF of `kerning`, saved from Word 16 for Mac on 2026-10-02 from the `.docx` the demo
+writes, with No to updating the fields. Word saved no `.docx` of it, so the demo's own is laid out:
+
+```bash
+scripts/compare-layout.sh
+pdftotext -bbox-layout scripts/layout-probes/kerning.word.pdf build/word-probes/kerning.word.html
+npm run run-ts -- scripts/layout-probes/demo-lines.ts build/layout/kerning.docx build/word-probes/kerning.word.html
+```
+
+All 202 of its lines are on Word's page, broken where Word breaks them, and within 0.9 points of Word's. Measured
+without kerning, as the layout did before, 103 of the 204 lines it broke the text into were.
 
 `guess-lines.ts` checks how near docx/layout's best guess comes to Word past where it would stop: it lays out a document
 saved from Word without a guess and with one (`estimatePageNumbersWith({ guess: true })`), prints what it guessed at on

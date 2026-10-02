@@ -3,12 +3,15 @@
  *
  * The estimate is close for the fonts in {@link FONT_WIDTHS}, and those made with the same widths, such as Carlito.
  * Other fonts are measured with the one most like them, so their estimates are rougher, and {@link unknownFont} says
- * which they are. Kerning and ligatures are left out, which makes text a little wider than Word draws it.
+ * which they are. {@link measureTextWidthAsDrawn} kerns text that asks for kerning, and joins its letters into
+ * ligatures, as Word draws the fonts of the tables, from `font-kerning.ts`, and {@link unknownShaping} says where that
+ * isn't known.
  *
  * @module
  */
 // cspell:ignore caladea Aptos
 import { FONT_WIDTHS, FONT_WIDTH_RANGES, type FontWidths } from "./font-widths";
+import { type FaceShaping, type Glyph, hasLigatures, joinLetters, kerningBetween, rulesOf, shapingOf } from "./kerning";
 
 /**
  * The font text is measured in.
@@ -23,6 +26,17 @@ export type TextFont = {
     readonly italic?: boolean;
     /** Kerns pairs of characters in text of this size or larger, in points (`w:kern`). Not kerned when it isn't given */
     readonly kerning?: number;
+    /**
+     * Which of the font's ligatures join its letters (`w14:ligatures`), as Word writes them, such as `"standardContextual"`,
+     * which Word's own Normal template has. None when it isn't given
+     */
+    readonly ligatures?: Ligatures;
+    /**
+     * The language of kerned text, or text with ligatures (`w:lang`), as Word kerns and joins letters across runs of the
+     * same language, but not of others (scripts/layout-probes/word-kerning.ts R1d), though it does across runs of other
+     * colours (R1c, R2d)
+     */
+    readonly language?: string;
     /** Space added after each character, in points */
     readonly characterSpacing?: number;
     /** How wide the characters are drawn, as a percentage of their width */
@@ -49,6 +63,29 @@ export type TextFont = {
      */
     readonly listNumber?: "number" | "separator";
 };
+
+/**
+ * The ligatures text has (`w14:ligatures`): the font's standard ligatures, contextual, historical and discretional ones,
+ * or a mix of them. Word's Font dialog writes "none", "standard", "standardContextual", "historicalDiscretional" and
+ * "all".
+ */
+export type Ligatures =
+    | "none"
+    | "standard"
+    | "contextual"
+    | "historical"
+    | "discretional"
+    | "standardContextual"
+    | "standardHistorical"
+    | "contextualHistorical"
+    | "standardDiscretional"
+    | "contextualDiscretional"
+    | "historicalDiscretional"
+    | "standardContextualHistorical"
+    | "standardContextualDiscretional"
+    | "standardHistoricalDiscretional"
+    | "contextualHistoricalDiscretional"
+    | "all";
 
 /**
  * A border around text, as its run gives it (`w:bdr`).
@@ -512,6 +549,117 @@ export const measureTextWidth = (text: string, font: TextFont = {}, start = 0): 
             start,
         ) - start
     );
+};
+
+/**
+ * How wide a line of text is, in points, as Word draws it: kerned, and with its letters joined into ligatures, when it
+ * asks for them, as {@link measureTextWidth} measures it otherwise. The layout measures with it; shapes, whose text isn't
+ * kerned, with {@link measureTextWidth}, which leaves the tables of kerning out of their bundle.
+ *
+ * @param start - Where the text starts on its line, in points
+ */
+export const measureTextWidthAsDrawn = (text: string, font: TextFont = {}, start = 0): number => {
+    const shaping = shapingFor(font);
+    if (shaping === undefined) {
+        return measureTextWidth(text, font, start);
+    }
+    // The fonts of the tables, whose kerning and ligatures they have, aren't monospaced East Asian fonts
+    const { widths } = measuresOf(font);
+    const widthOf = (character: string): number => characterWidth(widths, character);
+    const size = sizeOf(font);
+    const { characterSpacing = 0, scale = 100 } = font;
+    const kerned = isKerned(font);
+    return (
+        text.split("\t").reduce((position, part, index) => {
+            const at = index === 0 ? position : (Math.floor(position / TAB_STOP) + 1) * TAB_STOP;
+            const glyphs = glyphsOf(part, font, shaping);
+            return glyphs.reduce((total, glyph, glyphIndex) => {
+                const next = glyphs[glyphIndex + 1];
+                // Kerning a pair it doesn't know is left out, where a layout has stopped at it (`unknownShaping`)
+                const kerning = kerned && next !== undefined ? kerningBetween(shaping, glyph, next) || 0 : 0;
+                return (
+                    total +
+                    (((glyph.width ?? widthOf(glyph.text)) + kerning) * size * scale) / 100000 +
+                    characterSpacing * [...glyph.text].length
+                );
+            }, at);
+        }, start) - start
+    );
+};
+
+/**
+ * The tables' kerning and ligatures of the face text is in, when it is kerned or has ligatures: those of the fonts of the
+ * tables by their own names, as fonts made with the same widths, such as Carlito, kern and join letters as they do
+ * themselves
+ */
+const shapingFor = (font: TextFont): FaceShaping | undefined =>
+    isKerned(font) || hasLigatures(font)
+        ? shapingOf(named(font.font ?? DEFAULT_FONT)?.name ?? "", font.bold === true, font.italic === true)
+        : undefined;
+
+/** The glyphs text is drawn in: its characters, joined into ligatures as its font's rules join them */
+const glyphsOf = (text: string, font: TextFont, shaping: FaceShaping | undefined): readonly Glyph[] => {
+    const rules = shaping !== undefined && hasLigatures(font) ? rulesOf(shaping, font.ligatures!) : undefined;
+    return rules === undefined ? [...text].map((character) => ({ text: character })) : joinLetters([...text], rules, shaping!.glyphs);
+};
+
+// Two letters next to each other, which a font's ligatures could join
+const LETTERS = /\p{L}\p{L}/u;
+
+/**
+ * Why the tables don't know how Word kerns text, or joins its letters, when they don't: kerned text in a font whose
+ * kerning they don't have, or with a character whose kerning they don't have, and ligatures in a font or of a setting
+ * whose ligatures they don't have, or beside a character they haven't seen them beside. The tables have Word's kerning of
+ * the characters of Windows-1252, and its ligatures of Word's settings, in the fonts of the tables, but for those of East
+ * Asian fonts (scripts/layout-probes/word-kerning.ts). Courier New, of which Word kerned no pair of printable ASCII, and
+ * monospaced East Asian fonts, aren't kerned.
+ */
+export const unknownShaping = (text: string, font: TextFont = {}): string | undefined => {
+    const kerned = isKerned(font);
+    const ligatures = hasLigatures(font);
+    if ((!kerned && !ligatures) || eastAsianFontOf(font.font ?? DEFAULT_FONT)?.monospaced === true) {
+        return undefined;
+    }
+    const shaping = shapingFor(font);
+    // Characters that take no room, such as a zero-width space or a combining mark, are measured as characters of their own,
+    // whose kerning, and whether Word kerns and joins the letters beside them across them, isn't known
+    const characters = [...text].filter((character) => character !== "\t");
+    if (shaping === undefined) {
+        return kerned
+            ? "kerned text in a font whose kerning isn't known"
+            : LETTERS.test(text)
+              ? "ligatures in a font whose ligatures aren't known"
+              : undefined;
+    }
+    // A font Word kerns no pair of, as Courier New, which is monospaced, kerns no character
+    if (kerned && shaping.pairs.size > 0 && characters.some((character) => !shaping.characters.has(character))) {
+        return "kerned text with a character whose kerning isn't known";
+    }
+    const rules = ligatures ? rulesOf(shaping, font.ligatures!) : undefined;
+    if (ligatures && rules === undefined) {
+        return LETTERS.test(text) ? "ligatures of a setting not yet followed" : undefined;
+    }
+    // A character a rule starts with, followed by one the ligatures haven't been seen beside
+    if (
+        rules !== undefined &&
+        characters.some(
+            (character, index) =>
+                rules.has(character) && characters.slice(index + 1, index + 3).some((next) => !shaping.characters.has(next)),
+        )
+    ) {
+        return "ligatures beside a character not yet followed";
+    }
+    const glyphs = glyphsOf(characters.join(""), font, shaping);
+    const unknownPair = kerned
+        ? glyphs.findIndex((glyph, index) => index > 0 && Number.isNaN(kerningBetween(shaping, glyphs[index - 1], glyph)))
+        : -1;
+    if (unknownPair < 0) {
+        return undefined;
+    }
+    // Word's drawing moves some characters, such as a hyphen in Cambria, so the pairs before them aren't known
+    return glyphs[unknownPair - 1].width === undefined && glyphs[unknownPair].width === undefined
+        ? "kerning of a pair of characters not yet followed"
+        : "kerning beside a ligature not yet followed";
 };
 
 /**

@@ -87,7 +87,7 @@ describe("layoutLines", () => {
     });
 
     it("should measure the pieces of a word in the same font together when it is kerned, so they are kerned across runs as Word kerns them", () => {
-        // cspell:ignore AVAVAVAV
+        // cspell:ignore AVAVAVAV ofice
         // "AV" kerned is 15 points, rather than 20
         const kerning: TextMeasurer = {
             measureWidth: (value) => [...value].length * 10 - value.split("AV").length * 5 + 5,
@@ -128,6 +128,66 @@ describe("layoutLines", () => {
         expect(
             linesOf([piece("AVA", { ...small, size: 12 }), piece("VAV", { ...small, size: 12 }), piece("AV aa", { ...small, size: 12 })]),
         ).to.equal(1);
+    });
+
+    it("should measure the pieces of a word in the same font together when it has ligatures, so letters are joined across runs", () => {
+        // "fi" joined is 15 points, rather than 20
+        const joining: TextMeasurer = {
+            measureWidth: (value, font) => [...value].length * 10 - (font.ligatures === undefined ? 0 : (value.split("fi").length - 1) * 5),
+            measureLineHeight: () => 10,
+            measureDescent: () => 0,
+        };
+        const textWidth = (items: readonly InlineItem[]): number => layoutLines(items, { width: 200, measurer: joining })[0].textWidth;
+        const piece = (value: string, font: TextFont = { ligatures: "standard" }): InlineItem => ({ type: "text", text: value, font });
+        // "ofice" has a "fi" across its runs
+        expect(textWidth([piece("of"), piece("ice")])).to.equal(45);
+        expect(textWidth([piece("of", {}), piece("ice", {})])).to.equal(50);
+        expect(textWidth([piece("of"), piece("ice", { ligatures: "all" })])).to.equal(50);
+    });
+
+    it("should kern a word with the space after it, and the space with the next word, when they are in the same font and kerned", () => {
+        // An A and a space next to each other are kerned 5 points nearer, as Arial and Times New Roman kern them
+        const kerning: TextMeasurer = {
+            measureWidth: (value, font) =>
+                [...value].length * 10 - (font.kerning === undefined ? 0 : (value.match(/A | A/g) ?? []).length * 5),
+            measureLineHeight: () => 10,
+            measureDescent: () => 0,
+        };
+        const kerned = { kerning: 1 };
+        const piece = (value: string, font: TextFont = kerned): InlineItem => ({ type: "text", text: value, font });
+        const widths = (items: readonly InlineItem[], width = 200, options: Partial<LineLayoutOptions> = {}): readonly number[] =>
+            layoutLines(items, { width, measurer: kerning, ...options }).map(({ textWidth }) => textWidth);
+        // "AAA AAA" is 70 points, less 5 for the A before the space and 5 for the A after it
+        expect(widths([piece("AAA AAA")])).to.deep.equal([60]);
+        expect(widths([piece("AAA AAA", {})])).to.deep.equal([70]);
+        // Across runs of the same font, and a bookmark between them, but not runs of other fonts
+        expect(widths([piece("AAA"), piece(" "), { type: "marker", name: "here" }, piece("AAA")])).to.deep.equal([60]);
+        expect(widths([piece("AAA"), piece(" ", { ...kerned, bold: true }), piece("AAA")])).to.deep.equal([70]);
+        // A word longer than its line, kerned, which its characters' own widths don't add up to, stops the layout
+        const longWord = (font: TextFont): string | undefined =>
+            layoutLines([piece("AAAAAAAAAAAA", font)], { width: 50, measurer: kerning })[0].unsupported;
+        expect(longWord(kerned)).to.equal("a word longer than its line, kerned or with ligatures");
+        expect(longWord({ ligatures: "standard" })).to.equal("a word longer than its line, kerned or with ligatures");
+        expect(longWord({})).to.equal(undefined);
+        // A word broken at a soft hyphen is kerned with the space before it: "AAA A" and the hyphen end at 50 kerned, with
+        // room for Word to break there on a line of 52, and at 55 not
+        expect(widths([piece("AAA A"), { type: "softHyphen", font: {} }, piece("BB", {})], 52)).to.deep.equal([50, 20]);
+        // A word that goes to the next line isn't kerned with the space before it, which is on the line before
+        expect(widths([piece("AAA AAA AAA")], 85)).to.deep.equal([60, 30]);
+        // Nor one that goes on past a room beside a drawing it doesn't fit in, leaving the space before it there
+        expect(
+            layoutLines([piece(" AAAAA")], { width: (line) => (line === 0 ? { start: 0, end: 40 } : 100), measurer: kerning }).map(
+                ({ textWidth }) => textWidth,
+            ),
+        ).to.deep.equal([0, 50]);
+        // Nor is a word after a tab
+        expect(widths([piece("AAA"), { type: "tab", font: kerned }, piece("AAA")])).to.deep.equal([66]);
+        // The text after a tab lines up with a right tab stop as wide as it is kerned
+        expect(
+            widths([{ type: "tab", font: kerned }, piece("AAA AAA")], 200, { tabStops: [{ position: 100, alignment: "right" }] }),
+        ).to.deep.equal([100]);
+        // And a paragraph is as wide as its widest line kerned, and its narrowest its widest word
+        expect(measureContentWidths([piece("AAA AAA")], { measurer: kerning })).to.deep.equal({ min: 30, max: 60 });
     });
 
     it("should space the lines as the paragraph says", () => {
@@ -1709,6 +1769,20 @@ describe("layoutLines on a document grid, as Word lays it out (scripts/layout-pr
                 }),
             ).to.equal("a justified line on a grid that snaps to characters that only fits squeezed");
         });
+    });
+
+    it("should stop at text kerned or with ligatures on a grid of characters, as how Word kerns and joins it there hasn't been seen", () => {
+        const STOP = "kerning or ligatures on a document grid of characters";
+        const kerned = run("To", "Calibri", 10.5, { kerning: 1 });
+        expect(unsupportedOf([kerned], { grid: { characterPitch: 10 } })).to.equal(STOP);
+        expect(
+            unsupportedOf([run("office", "Calibri", 10.5, { ligatures: "standard" })], { grid: { linePitch: 18, characterSpace: 2 } }),
+        ).to.equal(STOP);
+        // But not text in a run that doesn't snap to the grid, which is as it is without one, nor on a grid of lines only
+        expect(unsupportedOf([run("To", "Calibri", 10.5, { kerning: 1, snapToGrid: false })], { grid: { characterPitch: 10 } })).to.equal(
+            undefined,
+        );
+        expect(unsupportedOf([kerned], { grid: { linePitch: 18 } })).to.equal(undefined);
     });
 });
 

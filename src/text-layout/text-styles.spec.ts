@@ -365,6 +365,56 @@ describe("run formatting", () => {
     });
 });
 
+describe("OpenType features", () => {
+    const themeFonts = { headings: "Calibri Light", body: "Calibri" };
+    const w14 = (name: string, value?: string): object => ({ [`w14:${name}`]: value === undefined ? {} : { _attr: { "w14:val": value } } });
+
+    it("should keep the language of kerned text, and text with ligatures, in its font, as Word kerns only within one", () => {
+        const format = readRunFormat([{ "w:lang": { _attr: { "w:val": "fr-FR" } } }], themeFonts);
+        expect(format).to.deep.equal({ language: "fr-FR" });
+        expect(fontOf(format)).to.deep.equal({});
+        expect(fontOf({ ...format, kerning: 1 })).to.deep.equal({ kerning: 1, language: "fr-FR" });
+        expect(fontOf({ ...format, ligatures: "standard" })).to.deep.equal({ ligatures: "standard", language: "fr-FR" });
+    });
+
+    it("should read the ligatures text has, as Word's Normal template has them, into the font it is measured in", () => {
+        const format = readRunFormat([w14("ligatures", "standardContextual")], themeFonts);
+        expect(format).to.deep.equal({ ligatures: "standardContextual" });
+        expect(fontOf({ ...format, size: 11 })).to.deep.equal({ size: 11, ligatures: "standardContextual" });
+        // None, as without them
+        expect(fontOf(readRunFormat([w14("ligatures", "none")], themeFonts))).to.deep.equal({});
+    });
+
+    it("should read the other OpenType features Word draws text with, and stop at them, as their widths aren't known", () => {
+        const format = readRunFormat(
+            [
+                w14("numForm", "oldStyle"),
+                w14("numSpacing", "proportional"),
+                { "w14:stylisticSets": [{ "w14:styleSet": {} }] },
+                w14("cntxtAlts"),
+            ],
+            themeFonts,
+        );
+        expect(format).to.deep.equal({
+            numberForm: "oldStyle",
+            numberSpacing: "proportional",
+            stylisticSets: true,
+            contextualAlternates: true,
+        });
+        expect(unknownRunFormatting(format)).to.equal("OpenType number forms or spacing");
+        expect(unknownRunFormatting({ numberSpacing: "tabular" })).to.equal("OpenType number forms or spacing");
+        expect(unknownRunFormatting({ stylisticSets: true })).to.equal("OpenType stylistic sets or contextual alternates");
+        expect(unknownRunFormatting({ contextualAlternates: true })).to.equal("OpenType stylistic sets or contextual alternates");
+        // The font's own forms, no sets and contextual alternates turned off are as without them
+        const off = readRunFormat(
+            [w14("numForm", "default"), w14("numSpacing", "default"), { "w14:stylisticSets": {} }, w14("cntxtAlts", "0")],
+            themeFonts,
+        );
+        expect(off).to.deep.equal({ numberForm: "default", numberSpacing: "default", stylisticSets: false, contextualAlternates: false });
+        expect(unknownRunFormatting(off)).to.equal(undefined);
+    });
+});
+
 describe("hasDefaultParagraphSpacing", () => {
     it("should be whether a paragraph without formatting has space before or after it", () => {
         expect(hasDefaultParagraphSpacing(WORD_DEFAULT_STYLES)).to.equal(false);

@@ -1,4 +1,4 @@
-// cspell:ignore Caladea Aptos
+// cspell:ignore Caladea Aptos Carlito Yvonne Ωmega
 import { describe, expect, it } from "vitest";
 
 import {
@@ -8,8 +8,10 @@ import {
     measureLineHeight,
     measureText,
     measureTextWidth,
+    measureTextWidthAsDrawn,
     unknownCharacter,
     unknownFont,
+    unknownShaping,
 } from "./text-width";
 
 /** How wide text is in twips, a twentieth of a point, which Word's PDFs are read in */
@@ -439,5 +441,111 @@ describe("isGridCharacter", () => {
     it("should say which characters a grid that snaps to characters puts in cells of their own", () => {
         expect([..."永あア한，ｱ"].map(isGridCharacter)).to.deep.equal([true, true, true, true, true, true]);
         expect([..."a1 .é"].map(isGridCharacter)).to.deep.equal([false, false, false, false, false]);
+    });
+});
+
+describe("kerning and ligatures", () => {
+    const calibri = (font: object = {}): object => ({ font: "Calibri", size: 11, ...font });
+
+    it("should measure text kerned and joined only as drawn, as shapes' text isn't kerned", () => {
+        expect(measureTextWidth("To", { font: "Calibri", size: 12, kerning: 1 })).to.equal(
+            measureTextWidth("To", { font: "Calibri", size: 12 }),
+        );
+        expect(measureTextWidthAsDrawn("To", { font: "Calibri", size: 12 })).to.equal(
+            measureTextWidth("To", { font: "Calibri", size: 12 }),
+        );
+    });
+
+    it("should kern text as Word kerns the fonts of the tables, from the size kerning starts at", () => {
+        // word-fonts.docx F5b: ten "To"s in Calibri 12 kerned are 111.09 points in Word's PDF, and 121.68 not kerned
+        const pairs = "ToToToToToToToToToTo";
+        expect(measureTextWidthAsDrawn(pairs, { font: "Calibri", size: 12, kerning: 1 })).to.be.closeTo(111, 0.01);
+        expect(measureTextWidthAsDrawn(pairs, { font: "Calibri", size: 12 })).to.be.closeTo(121.68, 0.01);
+        expect(measureTextWidthAsDrawn(pairs, { font: "Calibri", size: 12, kerning: 14 })).to.be.closeTo(121.68, 0.01);
+        // word-kerning.docx K: Arial kerns an A with the space after it, 55 thousandths of an em nearer
+        expect(measureTextWidthAsDrawn("A ", { font: "Arial", size: 10, kerning: 1 })).to.be.closeTo(
+            measureTextWidthAsDrawn("A ", { font: "Arial", size: 10 }) - 0.55,
+            0.001,
+        );
+        // And a tab still moves to the next half inch
+        expect(measureTextWidthAsDrawn("To\tTo", { font: "Calibri", size: 12, kerning: 1 })).to.be.closeTo(36 + 11.1, 0.01);
+    });
+
+    it("should join letters with ligatures as Word joins Calibri's, with standard and contextual ligatures as with all", () => {
+        // word-watertight-text.docx TX14, in twips: six of each word, joined by Word into 3557.8, 4182.5, 2109.7, 4247.6 and
+        // 2548.7, from 3602.2, 4227.8, 2148.7, 4304.8 and 2569.8
+        const joined = ["official", "affluent", "fifty", "attitude", "fjord"].map((word) =>
+            Math.round(measureTextWidthAsDrawn(word.repeat(6), calibri({ ligatures: "standardContextual" })) * 20),
+        );
+        expect(joined).to.deep.equal([3557, 4184, 2109, 4248, 2548]);
+        expect(measureTextWidthAsDrawn("official", calibri({ ligatures: "all" }))).to.equal(
+            measureTextWidthAsDrawn("official", calibri({ ligatures: "standard" })),
+        );
+        expect(measureTextWidthAsDrawn("official", calibri({ ligatures: "none" }))).to.equal(
+            measureTextWidthAsDrawn("official", calibri()),
+        );
+        // Times New Roman joins its letters only with discretional ligatures (word-kerning.docx L)
+        const times = { font: "Times New Roman", size: 10 };
+        expect(measureTextWidthAsDrawn("fi", { ...times, ligatures: "standardContextual" })).to.equal(measureTextWidthAsDrawn("fi", times));
+        expect(measureTextWidthAsDrawn("fi", { ...times, ligatures: "all" })).to.be.closeTo(
+            measureTextWidthAsDrawn("fi", times) - 0.55,
+            0.01,
+        );
+        // Nor with space between the characters (word-kerning.docx SP1 and SP2)
+        expect(measureTextWidthAsDrawn("official", calibri({ ligatures: "all", characterSpacing: 1 }))).to.equal(
+            measureTextWidthAsDrawn("official", calibri({ characterSpacing: 1 })),
+        );
+    });
+
+    it("should kern the glyphs ligatures put in place of letters as Word does", () => {
+        // ff before a comma is kerned 62 thousandths of an em nearer in Calibri (word-kerning.docx LK)
+        const comma =
+            measureTextWidthAsDrawn("ff,", calibri({ ligatures: "standard", kerning: 1 })) -
+            measureTextWidthAsDrawn("ff,", calibri({ ligatures: "standard" }));
+        expect(comma).to.be.closeTo(-0.68, 0.02);
+    });
+
+    it("should say where Word's kerning or ligatures aren't known, so a layout stops there", () => {
+        expect(unknownShaping("To", calibri({ kerning: 1 }))).to.equal(undefined);
+        expect(unknownShaping("office", calibri({ ligatures: "standard" }))).to.equal(undefined);
+        // Text with no font is in Times New Roman, which Word kerns
+        expect(unknownShaping("To", { kerning: 1 })).to.equal(undefined);
+        expect(measureTextWidthAsDrawn("AV", { kerning: 1 })).to.be.lessThan(measureTextWidthAsDrawn("AV"));
+        expect(unknownShaping("To", calibri())).to.equal(undefined);
+        expect(unknownShaping("office", calibri({ ligatures: "standardContextual", kerning: 1 }))).to.equal(undefined);
+        // A font made as wide as Calibri kerns and joins its own letters, and an East Asian font that isn't monospaced
+        expect(unknownShaping("To", { font: "Carlito", kerning: 1 })).to.equal("kerned text in a font whose kerning isn't known");
+        expect(unknownShaping("To", { font: "Yu Gothic", kerning: 1 })).to.equal("kerned text in a font whose kerning isn't known");
+        expect(unknownShaping("office", { font: "Carlito", ligatures: "standard" })).to.equal(
+            "ligatures in a font whose ligatures aren't known",
+        );
+        expect(unknownShaping("a", { font: "Carlito", ligatures: "standard" })).to.equal(undefined);
+        // A monospaced East Asian font, and Courier New, kern nothing
+        expect(unknownShaping("To", { font: "MS Mincho", kerning: 1 })).to.equal(undefined);
+        expect(unknownShaping("Ωmega", { font: "Courier New", kerning: 1 })).to.equal(undefined);
+        // Characters outside Windows-1252, and settings Word's Font dialog doesn't write, or Word didn't show for the face
+        expect(unknownShaping("Ωmega", calibri({ kerning: 1 }))).to.equal("kerned text with a character whose kerning isn't known");
+        expect(unknownShaping("office", calibri({ ligatures: "contextual" }))).to.equal("ligatures of a setting not yet followed");
+        expect(unknownShaping("office", { font: "Cambria", ligatures: "standard" })).to.equal("ligatures of a setting not yet followed");
+        expect(unknownShaping("1", { font: "Cambria", ligatures: "standard" })).to.equal(undefined);
+        expect(unknownShaping("fΩ", calibri({ ligatures: "standard" }))).to.equal("ligatures beside a character not yet followed");
+        // Characters that take no room, such as a zero-width space or a combining acute accent, which aren't kerned or
+        // joined across
+        const ZERO_WIDTH = String.fromCharCode(0x200b);
+        const ACUTE = String.fromCharCode(0x301);
+        expect(unknownShaping(`T${ZERO_WIDTH}o`, calibri({ kerning: 1 }))).to.equal(
+            "kerned text with a character whose kerning isn't known",
+        );
+        expect(unknownShaping(`e${ACUTE}`, calibri({ kerning: 1 }))).to.equal("kerned text with a character whose kerning isn't known");
+        expect(unknownShaping(`f${ZERO_WIDTH}i`, calibri({ ligatures: "standard" }))).to.equal(
+            "ligatures beside a character not yet followed",
+        );
+        // Pairs Word's drawing doesn't settle: before a hyphen in Cambria, and beside Times New Roman's discretional ligatures
+        expect(unknownShaping("T-", { font: "Cambria", bold: true, kerning: 1 })).to.equal(
+            "kerning of a pair of characters not yet followed",
+        );
+        expect(unknownShaping("fi-", { font: "Times New Roman", ligatures: "all", kerning: 1 })).to.equal(
+            "kerning beside a ligature not yet followed",
+        );
     });
 });

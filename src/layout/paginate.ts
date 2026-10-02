@@ -28,6 +28,7 @@ import {
     type TextMeasurer,
     layoutLines,
     measureContentWidths,
+    textMeasuredTogether,
 } from "../text-layout";
 import { fitColumns, tableWidths } from "./column-widths";
 import { type Box, type PlacedDrawing, type Span, keepOutOf, overlap, placeDrawing, roomBeside } from "./floating-drawings";
@@ -712,13 +713,27 @@ export const paginate = (
             : undefined;
 
     /**
+     * Why how Word kerns a paragraph's text, or joins its letters into ligatures, isn't known to the measurer, when it
+     * isn't. Text in the same font, kerned or with ligatures, is measured across runs, and so is checked across them.
+     * Whether Word kerns it and joins its letters across a soft hyphen, and kerns the hyphen it draws at the end of a line
+     * with the letter before it, hasn't been seen
+     */
+    const unknownShapingIn = (inline: readonly InlineItem[]): string | undefined => {
+        const together = textMeasuredTogether(inline);
+        return together.some(({ besideSoftHyphen }) => besideSoftHyphen)
+            ? "kerning or ligatures beside a soft hyphen"
+            : together.map(({ text, font }) => measurer.unknownShaping?.(text, font)).find(Boolean);
+    };
+
+    /**
      * A paragraph's content, as it is measured, which stops the layout at a character whose width the measurer doesn't
-     * know. Guessing, it is measured as the measurer measures it, as an average letter of the font, and the lines it is in
-     * say so (see `linesOf`)
+     * know, such as a mathematical symbol in Calibri, which Word draws in Cambria Math, and at kerning and ligatures it
+     * doesn't know. Guessing, they are measured as the measurer measures them, a character as an average letter of the
+     * font, and the lines they are in say so (see `linesOf`)
      */
     const measurable = (items: readonly LayoutItem[]): readonly InlineItem[] => {
         const inline = itemsOf(items);
-        const unknown = unknownCharacterIn(inline);
+        const unknown = unknownCharacterIn(inline) ?? unknownShapingIn(inline);
         if (unknown !== undefined && !guess) {
             throw new Unsupported(unknown);
         }
@@ -746,7 +761,7 @@ export const paginate = (
         const widthOf = (line: number): number => given.findLast(({ from }) => from <= line)!.width;
         const layOut = (): readonly LaidOutLine[] => {
             const inline = measurable(paragraph.items);
-            let guessed = guess ? unknownCharacterIn(inline) : undefined;
+            let guessed = guess ? (unknownCharacterIn(inline) ?? unknownShapingIn(inline)) : undefined;
             const laidOut = layoutLines(inline, {
                 width: given.length === 1 && rooms.size === 0 ? given[0].width : (line) => rooms.get(line) ?? widthOf(line),
                 format: paragraph.format,

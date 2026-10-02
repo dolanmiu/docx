@@ -4,8 +4,9 @@ import { type TestFontOptions, buildTestFont, buildTestFontCollection, tableOffs
 
 import { createFontFileMeasurer, readFontFile } from "./font-file";
 import { DEFAULT_MEASURER } from "./line-breaking";
+import type { TextFont } from "./text-width";
 
-// cspell:ignore hhea hmtx cmap Aptos aptos GPOS DFLT
+// cspell:ignore hhea hmtx cmap Aptos aptos GPOS DFLT clig dlig ffjo ffofi GSUB liga offio offjo Toffio
 
 // A font of 1000 units to the em, whose letters are as wide as their place in the alphabet, in hundreds of units
 const LETTERS: TestFontOptions["advances"] = Object.fromEntries([
@@ -447,6 +448,124 @@ describe("createFontFileMeasurer", () => {
         const width = (bold?: boolean, italic?: boolean): number =>
             measurer.measureWidth("A", { font: "Probe Sans", size: 10, bold, italic });
         expect([width(), width(true), width(false, true), width(true, true)].map((value) => Math.round(value))).to.deep.equal([1, 2, 3, 4]);
+    });
+
+    describe("ligatures", () => {
+        // f, i, j, o and T, with standard ligatures of ff, fi and ffi narrower than their letters, and a discretional fj
+        const JOINING: TestFontOptions = {
+            advances: { f: 300, i: 200, j: 200, o: 500, T: 600 },
+            ligatureAdvances: { ffi: 700, ff: 550, fi: 450, fj: 400 },
+            kerning: { To: -100 },
+            glyphSubstitution: {
+                features: { liga: [0], clig: [0], dlig: [1] },
+                lookups: [{ ligatures: { ffi: "ffi", ff: "ff", fi: "fi" } }, { ligatures: { fj: "fj" }, extension: true }],
+            },
+        };
+        const measurer = createFontFileMeasurer(fonts(JOINING));
+        const width = (text: string, font: TextFont = {}): number => measurer.measureWidth(text, { font: "Probe Sans", size: 10, ...font });
+
+        it("should join letters with the font's ligatures of the setting text has, the longest first, as Word joins them", () => {
+            // o, ffi and o, where the letters are 1800 thousandths of an em
+            expect(width("offio", { ligatures: "standard" })).to.be.closeTo(17, 1e-9);
+            expect(width("offio", { ligatures: "standardContextual" })).to.be.closeTo(17, 1e-9);
+            expect(width("offio")).to.be.closeTo(18, 1e-9);
+            expect(width("offio", { ligatures: "none" })).to.be.closeTo(18, 1e-9);
+            // ff, then o, and fi
+            expect(width("ffofi", { ligatures: "standard" })).to.be.closeTo(15, 1e-9);
+            // Discretional ligatures, in a lookup of their own, after the standard ones, which leave no f before the j
+            expect(width("fjo", { ligatures: "discretional" })).to.be.closeTo(9, 1e-9);
+            expect(width("fjo", { ligatures: "historicalDiscretional" })).to.be.closeTo(9, 1e-9);
+            expect(width("offjo", { ligatures: "all" })).to.be.closeTo(17.5, 1e-9);
+            expect(width("offio", { ligatures: "discretional" })).to.be.closeTo(18, 1e-9);
+        });
+
+        it("should kern the glyphs ligatures leave, and join no letters with space between the characters, as Word joins none", () => {
+            expect(width("Toffio", { ligatures: "standard", kerning: 1 })).to.be.closeTo(22, 1e-9);
+            expect(width("Toffio", { ligatures: "standard" })).to.be.closeTo(23, 1e-9);
+            // word-kerning.docx SP1 and SP2: the letters' widths and a point after each of the 5
+            expect(width("offio", { ligatures: "standard", characterSpacing: 1 })).to.be.closeTo(23, 1e-9);
+        });
+
+        it("should join only the letters on either side of one the font has no glyph for, which the fallback measures", () => {
+            const font = { font: "Probe Sans", size: 10, ligatures: "standard" } as const;
+            expect(measurer.measureWidth("fZfi", font)).to.be.closeTo(3 + DEFAULT_MEASURER.measureWidth("Z", font) + 4.5, 1e-9);
+        });
+
+        it("should know the ligatures of fonts with only ligature lookups, and leave other fonts to the fallback", () => {
+            expect(measurer.unknownShaping!("offio", { font: "Probe Sans", ligatures: "all" })).to.equal(undefined);
+            const calibri = { font: "Calibri", kerning: 1 };
+            expect(measurer.unknownShaping!("To", calibri)).to.equal(DEFAULT_MEASURER.unknownShaping!("To", calibri));
+            const withoutUnknown = createFontFileMeasurer(fonts(JOINING), {
+                measureWidth: () => 0,
+                measureLineHeight: () => 0,
+                measureDescent: () => 0,
+            });
+            expect(withoutUnknown.unknownShaping!("To", calibri)).to.equal(undefined);
+            // A font without a GSUB table joins nothing
+            const plain = createFontFileMeasurer(fonts({ advances: LETTERS }));
+            expect(plain.measureWidth("AB", { font: "Probe Sans", size: 10, ligatures: "all" })).to.be.closeTo(3, 1e-9);
+            expect(plain.unknownShaping!("AB", { font: "Probe Sans", ligatures: "all" })).to.equal(undefined);
+        });
+
+        it("should try each subtable of a lookup in turn for the ligatures of a glyph", () => {
+            const subtables = createFontFileMeasurer(
+                fonts({
+                    advances: { f: 300, i: 200, j: 200, o: 500 },
+                    ligatureAdvances: { fi: 450, ff: 550, jo: 600 },
+                    glyphSubstitution: { features: { liga: [0] }, lookups: [{ ligatures: [{ fi: "fi" }, { ff: "ff", jo: "jo" }] }] },
+                }),
+            );
+            const font = { font: "Probe Sans", size: 10, ligatures: "standard" } as const;
+            // ff and jo, from the second subtable, and fi from the first
+            expect(subtables.measureWidth("ffjo", font)).to.be.closeTo(11.5, 1e-9);
+            expect(subtables.measureWidth("fio", font)).to.be.closeTo(9.5, 1e-9);
+        });
+
+        it("should throw when a font file is read whose ligatures point past its end, rather than when text is laid out in it", () => {
+            const font = buildTestFont(JOINING);
+            new DataView(font.buffer).setUint16(tableOffset(font, "GSUB") + 8, 0xfffe);
+            expect(() => readFontFile(font)).to.throw("The font file is damaged: it points past its end");
+        });
+
+        it("should look for substitutions not yet followed in the glyphs as they are measured, apart at a tab or a character the font has no glyph for", () => {
+            const single = createFontFileMeasurer(
+                fonts({
+                    ...JOINING,
+                    glyphSubstitution: {
+                        features: { liga: [0, 1] },
+                        lookups: [{ ligatures: { fi: "fi" } }, { type: 1, format: 1, covered: "f" }],
+                    },
+                }),
+            );
+            const font = { font: "Probe Sans", ligatures: "standard" } as const;
+            // f and i are joined, and the substitution doesn't start at the glyph they are joined into
+            expect(single.unknownShaping!("fi", font)).to.equal(undefined);
+            // But an f before a soft hyphen, which the font has no glyph for, or a tab, is measured on its own, and could be changed
+            expect(single.unknownShaping!("f\u00adi", font)).to.equal("ligatures of a font file of a kind not yet followed");
+            expect(single.unknownShaping!("f\ti", font)).to.equal("ligatures of a font file of a kind not yet followed");
+        });
+
+        it("should stop at text a substitution other than a ligature could change, such as a contextual one, as it isn't followed", () => {
+            for (const lookup of [
+                { type: 6, format: 3, covered: "f" },
+                { type: 5, format: 3, covered: "f" },
+                { type: 6, format: 1, covered: "f", extension: true },
+                { type: 1, format: 1, covered: "f" },
+            ] as const) {
+                const contextual = createFontFileMeasurer(
+                    fonts({
+                        ...JOINING,
+                        glyphSubstitution: { features: { liga: [0, 1] }, lookups: [{ ligatures: { fi: "fi" } }, lookup] },
+                    }),
+                );
+                expect(contextual.unknownShaping!("off", { font: "Probe Sans", ligatures: "standard" })).to.equal(
+                    "ligatures of a font file of a kind not yet followed",
+                );
+                // Text without the glyphs it starts at, or without ligatures, is measured
+                expect(contextual.unknownShaping!("oo", { font: "Probe Sans", ligatures: "standard" })).to.equal(undefined);
+                expect(contextual.unknownShaping!("off", { font: "Probe Sans" })).to.equal(undefined);
+            }
+        });
     });
 
     it("should measure italic text with the upright face without an italic one, and bold text as without the files", () => {

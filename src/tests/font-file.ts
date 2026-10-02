@@ -5,7 +5,7 @@
  * @module
  * @internal
  */
-// cspell:ignore hhea hmtx cmap fsSelection ttcf GPOS DFLT cyrl
+// cspell:ignore hhea hmtx cmap fsSelection ttcf GPOS DFLT cyrl GSUB liga
 
 export type TestNameRecord = {
     readonly platform: number;
@@ -58,6 +58,24 @@ export type TestGlyphPositioning = {
     readonly lookups: readonly TestLookup[];
 };
 
+/**
+ * A lookup of a GSUB table: of ligatures, each of the characters it joins and the name of its glyph, through an extension
+ * or not, or a substitution of another kind, which isn't followed, of the characters it covers
+ */
+export type TestSubstitutionLookup =
+    | {
+          /** The ligatures of each of its subtables, or of its one subtable */
+          readonly ligatures: Readonly<Record<string, string>> | readonly Readonly<Record<string, string>>[];
+          readonly extension?: boolean;
+      }
+    | { readonly type: 1 | 5 | 6; readonly format: 1 | 3; readonly covered: string; readonly extension?: boolean };
+
+export type TestGlyphSubstitution = {
+    /** The lookups of each feature, such as `liga`, by their index */
+    readonly features: Readonly<Record<string, readonly number[]>>;
+    readonly lookups: readonly TestSubstitutionLookup[];
+};
+
 export type TestFontOptions = {
     /** The font's family name, in English for Windows, or the name records to write */
     readonly name?: string | readonly TestNameRecord[];
@@ -86,6 +104,10 @@ export type TestFontOptions = {
     readonly kernTable?: "windows" | "twice" | "apple";
     /** A GPOS table, with a kern feature of these lookups */
     readonly glyphPositioning?: TestGlyphPositioning;
+    /** The widths of glyphs ligatures put in place of characters, by their names, in font units */
+    readonly ligatureAdvances?: Readonly<Record<string, number>>;
+    /** A GSUB table, with these features and lookups */
+    readonly glyphSubstitution?: TestGlyphSubstitution;
     /** Tables to leave out */
     readonly without?: readonly string[];
 };
@@ -378,10 +400,7 @@ const glyphPositioningTable = (
     { script = "latn", defaultLanguage = true, lookups }: TestGlyphPositioning,
     glyphOf: (character: string) => number,
 ): Uint8Array => {
-    const tag = (value: string): readonly number[] => [
-        value.charCodeAt(0) * 256 + value.charCodeAt(1),
-        value.charCodeAt(2) * 256 + value.charCodeAt(3),
-    ];
+    const tag = tagOf;
     const language = uint16s([0, 0xffff, 2, 1, 0]);
     const scriptTable = defaultLanguage
         ? withParts(uint16s([0, 0]), [language], () => 0)
@@ -390,6 +409,77 @@ const glyphPositioningTable = (
     const features = [uint16s([0, 1, 0]), uint16s([0, lookups.length, ...lookups.map((_, index) => index)])];
     const featureList = withParts(uint16s([2, ...tag("mark"), 0, ...tag("kern"), 0]), features, (index) => 6 + index * 6);
     const lookupTables = lookups.map((lookup) => lookupTable(lookup, glyphOf));
+    const lookupList = withParts(uint16s([lookupTables.length, ...lookupTables.map(() => 0)]), lookupTables, (index) => 2 + index * 2);
+    return withParts(uint16s([1, 0, 0, 0, 0]), [scriptList, featureList, lookupList], (index) => 4 + index * 2);
+};
+
+const tagOf = (value: string): readonly number[] => [
+    value.charCodeAt(0) * 256 + value.charCodeAt(1),
+    value.charCodeAt(2) * 256 + value.charCodeAt(3),
+];
+
+/** A ligature substitution subtable (kind 4) of the ligatures given */
+const ligatureSubtable = (ligatures: Readonly<Record<string, string>>, glyphOf: (name: string) => number): Uint8Array => {
+    const entries = Object.entries(ligatures).map(([letters, name]) => [[...letters].map(glyphOf), glyphOf(name)] as const);
+    const firsts = [...new Set(entries.map(([[first]]) => first))].sort((one, other) => one - other);
+    const sets = firsts.map((first) => {
+        const found = entries
+            .filter(([[glyph]]) => glyph === first)
+            .map(([[, ...components], glyph]) => uint16s([glyph, components.length + 1, ...components]));
+        return withParts(uint16s([found.length, ...found.map(() => 0)]), found, (index) => 2 + index * 2);
+    });
+    return withParts(uint16s([1, 0, sets.length, ...sets.map(() => 0)]), [coverageTable(firsts, 1), ...sets], (index) =>
+        index === 0 ? 2 : 6 + (index - 1) * 2,
+    );
+};
+
+/** The subtables of a GSUB lookup: of ligatures (kind 4), or one of another kind, covering the characters given */
+const substitutionSubtables = (lookup: TestSubstitutionLookup, glyphOf: (name: string) => number): readonly Uint8Array[] => {
+    if ("ligatures" in lookup) {
+        return (Array.isArray(lookup.ligatures) ? lookup.ligatures : [lookup.ligatures]).map((ligatures) =>
+            ligatureSubtable(ligatures, glyphOf),
+        );
+    }
+    const coverage = coverageTable([...lookup.covered].map(glyphOf), 1);
+    if (lookup.format === 1) {
+        return [withParts(uint16s([1, 0, 0]), [coverage], () => 2)];
+    }
+    // In format 3, a contextual substitution's coverage is its first glyph's, after those before it in a chained one
+    return [
+        lookup.type === 5
+            ? withParts(uint16s([3, 1, 0, 0]), [coverage], () => 6)
+            : withParts(uint16s([3, 1, 0, 1, 0, 0, 0]), [coverage, coverage], (index) => [4, 8][index]),
+    ];
+};
+
+/** A GSUB table whose Latin script has the features and lookups given */
+const glyphSubstitutionTable = ({ features, lookups }: TestGlyphSubstitution, glyphOf: (name: string) => number): Uint8Array => {
+    const tags = Object.keys(features);
+    const language = uint16s([0, 0xffff, tags.length, ...tags.map((_, index) => index)]);
+    const scriptTable = withParts(uint16s([0, 0]), [language], () => 0);
+    const scriptList = withParts(uint16s([1, ...tagOf("latn"), 0]), [scriptTable], () => 6);
+    const featureTables = tags.map((tag) => uint16s([0, features[tag].length, ...features[tag]]));
+    const featureList = withParts(
+        uint16s([tags.length, ...tags.flatMap((tag) => [...tagOf(tag), 0])]),
+        featureTables,
+        (index) => 6 + index * 6,
+    );
+    const lookupTables = lookups.map((lookup) => {
+        const type = "ligatures" in lookup ? 4 : lookup.type;
+        const parts = substitutionSubtables(lookup, glyphOf).map((subtable) =>
+            lookup.extension
+                ? concat([
+                      bytesOf(8, (view) => {
+                          view.setUint16(0, 1);
+                          view.setUint16(2, type);
+                          view.setUint32(4, 8);
+                      }),
+                      subtable,
+                  ])
+                : subtable,
+        );
+        return withParts(uint16s([lookup.extension ? 7 : type, 0, parts.length, ...parts.map(() => 0)]), parts, (index) => 6 + index * 2);
+    });
     const lookupList = withParts(uint16s([lookupTables.length, ...lookupTables.map(() => 0)]), lookupTables, (index) => 2 + index * 2);
     return withParts(uint16s([1, 0, 0, 0, 0]), [scriptList, featureList, lookupList], (index) => 4 + index * 2);
 };
@@ -415,7 +505,10 @@ const tablesOf = (options: TestFontOptions): readonly Table[] => {
         .map((character, index) => [character.codePointAt(0)!, index + 1] as const)
         .sort(([one], [other]) => one - other);
     const glyphOf = new Map(glyphs);
-    const widths = [missingAdvance, ...Object.values(advances)];
+    // The glyphs of ligatures come after the characters'
+    const ligatureAdvances = options.ligatureAdvances ?? {};
+    const ligatureGlyph = (ligature: string): number => characters.length + 1 + Object.keys(ligatureAdvances).indexOf(ligature);
+    const widths = [missingAdvance, ...Object.values(advances), ...Object.values(ligatureAdvances)];
     const metricCount = options.metricCount ?? widths.length;
     const names: readonly TestNameRecord[] = typeof name === "string" ? [{ platform: 3, encoding: 1, language: 0x409, text: name }] : name;
     const pairs = Object.entries(kerning).map(([pair, value]) => {
@@ -466,6 +559,16 @@ const tablesOf = (options: TestFontOptions): readonly Table[] => {
                       }),
                   },
               ]),
+        ...(options.glyphSubstitution
+            ? [
+                  {
+                      tag: "GSUB",
+                      bytes: glyphSubstitutionTable(options.glyphSubstitution, (glyph) =>
+                          glyph in ligatureAdvances ? ligatureGlyph(glyph) : glyphOf.get(glyph.codePointAt(0)!)!,
+                      ),
+                  },
+              ]
+            : []),
         ...(options.glyphPositioning
             ? [
                   {
