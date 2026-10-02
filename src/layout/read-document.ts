@@ -2202,27 +2202,31 @@ const joinedParagraph = (first: XmlObject, between: readonly unknown[], next: Xm
 };
 
 /**
- * Why a paragraph whose mark is hidden, or has `w:specVanish`, can't be joined to the next, when it can't. Word joins two paragraphs of the same
- * formatting so, on one line (`word-watertight-text.docx` TX11a). Which formatting the joined paragraph takes where theirs
- * differ, what Word does with a hidden mark before a table, at the end of a table cell, a content control or the document,
- * with a hidden section break, in a list, between paragraphs of text in a table whose columns it sizes to their text, and
- * with a mark that has `w:specVanish` and isn't hidden, which doesn't hide text (TX11b), hasn't been seen.
+ * Why a paragraph whose mark is hidden, or has `w:specVanish`, can't be laid out, when it can't. Word joins two paragraphs
+ * of the same formatting so, on one line (`word-watertight-text.docx` TX11a), and leaves one with no paragraph after it,
+ * before a table or at the end of a table cell, as it is (`word-breaks-and-tabs.docx` HM2a, HM2b). Which formatting the
+ * joined paragraph takes where theirs differ, what Word does with a hidden mark at the edge of a content control, with a
+ * hidden section break, in a list, between paragraphs of text in a table whose columns it sizes to their text, and with a
+ * mark that has `w:specVanish` and isn't hidden, which doesn't hide text (TX11b), isn't followed yet.
  */
 const unjoinedHiddenMark = (
     paragraph: XmlObject,
     hidden: "hidden" | "specVanish",
     next: XmlObject | undefined,
-    styles: TextStyles,
-    sized: boolean,
+    { styles, nested, sized }: { readonly styles: TextStyles; readonly nested: boolean; readonly sized: boolean },
 ): string | undefined => {
+    const nextName = next === undefined ? undefined : nameOf(next);
     if (hidden === "specVanish") {
         return "a paragraph mark with specVanish that isn't hidden";
     }
-    if (next === undefined || nameOf(next) !== "w:p") {
-        return "a hidden paragraph mark with no paragraph after it";
-    }
     if (sectionPropertiesOf(paragraph) !== undefined) {
         return "a hidden section break";
+    }
+    if (nextName === "w:sdt" || nextName === "w:customXml" || (next === undefined && nested)) {
+        return "a hidden paragraph mark at the edge of a content control";
+    }
+    if (next === undefined || nextName !== "w:p") {
+        return undefined;
     }
     if (isNumbered(paragraph, styles) || isNumbered(next, styles)) {
         return "a hidden paragraph mark in a list";
@@ -2239,9 +2243,8 @@ const unjoinedHiddenMark = (
  * Joins each paragraph whose mark is deleted in a tracked change to the paragraph after it, as Word lays it out: the next
  * paragraph, with the deleted one's text at its start, all in the next one's formatting, style and list
  * (`word-watertight-markup.docx` MK3, `word-tracked-changes.docx` MK7, MK9). A paragraph whose mark is hidden is joined to
- * the next too, where they are formatted the same (`word-watertight-text.docx` TX11a), or else stops the layout (see
- * {@link unjoinedHiddenMark}). A section break deleted so leaves its section
- * to the next (MK8c). A paragraph with no paragraph after it, before a table or at the end of a table cell or of the
+ * the next too, where they are formatted the same (`word-watertight-text.docx` TX11a), or else is left as it is or stops
+ * the layout (see {@link unjoinedHiddenMark}). A section break deleted so leaves its section to the next (MK8c). A paragraph with no paragraph after it, before a table or at the end of a table cell or of the
  * document, stays as it is (MK8a, MK8b, MK8d). What Word does with a paragraph mark moved elsewhere, a deleted mark at the
  * edge of a content control, a deleted section break before a table or between sections that start, number their pages or
  * have headers and footers differently, and a deleted mark between paragraphs of text in a table whose columns it sizes,
@@ -2263,8 +2266,8 @@ const joinRemovedMarks = (elements: readonly unknown[], styles: TextStyles, nest
         const next = after[at] as XmlObject | undefined;
         const nextName = next === undefined ? undefined : nameOf(next);
         const hidden = mark === undefined && name === "w:p" ? hiddenMarkOf(element, styles) : undefined;
-        const unjoined = hidden === undefined ? undefined : unjoinedHiddenMark(element, hidden, next, styles, sized);
-        const joins = (mark !== undefined && nextName === "w:p") || (hidden !== undefined && unjoined === undefined);
+        const unjoined = hidden === undefined ? undefined : unjoinedHiddenMark(element, hidden, next, { styles, nested, sized });
+        const joins = (mark !== undefined || (hidden !== undefined && unjoined === undefined)) && nextName === "w:p";
         const section = mark === undefined ? undefined : sectionPropertiesOf(element);
         const reason =
             mark === undefined

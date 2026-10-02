@@ -3604,6 +3604,25 @@ describe("readDocument", () => {
             expect(texts(separator)).to.deep.equal(["onetwo"]);
         });
 
+        it("should leave a paragraph whose mark is hidden as it is, with no paragraph after it to join, as Word lays it out", () => {
+            // word-breaks-and-tabs.docx HM2a, HM2b: before a table, at the end of a table cell, alone or after another
+            // paragraph, each on its own line. The end of the document is the end of a part too
+            const content = readBody([
+                p(pPr(hiddenMark), r(t("before"))),
+                tableOf(cellOf(p(pPr(hiddenMark), r(t("alone")))), cellOf(p(r(t("first"))), p(pPr(hiddenMark), r(t("last"))))),
+                p(pPr(hiddenMark), r(t("end"))),
+            ]);
+            expect(texts(content)).to.deep.equal(["before", "table", "end"]);
+            const cells = (content.blocks[1].block as TableBlock).rows[0].cells.map(({ blocks }) => blocks.length);
+            expect([content.unsupported, ...content.blocks.map(({ block }) => block.unsupported), cells]).to.deep.equal([
+                undefined,
+                undefined,
+                undefined,
+                undefined,
+                [1, 2],
+            ]);
+        });
+
         it("should mark a hidden paragraph mark Word hasn't been seen with as unsupported", () => {
             const unsupportedOf = (...elements: readonly object[]): string | undefined => {
                 const content = readBody(elements, {
@@ -3616,9 +3635,11 @@ describe("readDocument", () => {
             expect(unsupportedOf(p(pPr(hiddenMark), r(t("a"))), p(pPr(value("w:jc", "center")), r(t("b"))))).to.equal(
                 "a hidden paragraph mark between paragraphs of different formatting",
             );
-            expect(unsupportedOf(p(pPr(hiddenMark), r(t("a"))))).to.equal("a hidden paragraph mark with no paragraph after it");
-            expect(unsupportedOf(p(pPr(hiddenMark), r(t("a"))), tableOf(cellOf(p())))).to.equal(
-                "a hidden paragraph mark with no paragraph after it",
+            expect(unsupportedOf(p(pPr(hiddenMark), r(t("a"))), { "w:sdt": [{ "w:sdtContent": [p(r(t("b")))] }] })).to.equal(
+                "a hidden paragraph mark at the edge of a content control",
+            );
+            expect(unsupportedOf({ "w:sdt": [{ "w:sdtContent": [p(pPr(hiddenMark), r(t("a")))] }] }, p(r(t("b"))))).to.equal(
+                "a hidden paragraph mark at the edge of a content control",
             );
             expect(unsupportedOf(p(pPr({ "w:sectPr": [] }, hiddenMark), r(t("a"))), p(r(t("b"))))).to.equal("a hidden section break");
             const numbered = pPr({ "w:numPr": [value("w:ilvl", 0), value("w:numId", 1)] });
