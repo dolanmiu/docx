@@ -318,6 +318,8 @@ type OpenField = {
     /** Whether its result depends on the pages, so it is worked out rather than read */
     // eslint-disable-next-line functional/prefer-readonly-type
     replaced: boolean;
+    /** Whether its start is deleted in a tracked change, or moved elsewhere, as all of it then is */
+    readonly deleted?: boolean;
 };
 
 /**
@@ -385,6 +387,7 @@ const BOUND_CONTROL = "a content control filled from custom XML";
 const REMOVED_ROOM = new Set(["w:tab", "w:ptab", "w:br", "w:cr", "w:drawing", "mc:AlternateContent", "w:pict", "w:object"]);
 const REMOVED_NOTES = new Set(["w:footnoteReference", "w:endnoteReference"]);
 const SIZED_REMOVAL = "a deleted picture, tab, break or note reference in a table whose columns Word sizes to their text";
+const PARTLY_DELETED_FIELD = "a field partly deleted in a tracked change";
 
 const nameOf = (element: XmlObject): string => Object.keys(element)[0];
 
@@ -526,18 +529,22 @@ const readDrawing = (element: XmlObject, font: TextFont, reader: Reader): readon
 /**
  * Reads a field character (`w:fldChar`). The result of a field that depends on the pages is worked out, rather than read.
  */
-const readFieldCharacter = (element: XmlObject, font: TextFont, reader: Reader): readonly LayoutItem[] => {
+const readFieldCharacter = (element: XmlObject, font: TextFont, reader: Reader, deleted = false): readonly LayoutItem[] | string => {
     const type = attributesOf(element["w:fldChar"])["w:fldCharType"];
     const { fields } = reader;
     const field = fields[fields.length - 1];
     if (type === "begin") {
         // eslint-disable-next-line functional/immutable-data
-        fields.push({ instruction: "", inResult: false, replaced: false });
+        fields.push({ instruction: "", inResult: false, replaced: false, ...(deleted ? { deleted } : {}) });
+    } else if ((type === "separate" || type === "end") && field !== undefined && (field.deleted === true) !== deleted) {
+        // Word shows nothing of a field deleted in a tracked change, start to end, but how it shows one only part of which
+        // is deleted hasn't been seen
+        return PARTLY_DELETED_FIELD;
     } else if (type === "end") {
         // eslint-disable-next-line functional/immutable-data
         fields.pop();
     } else if (type === "separate" && field) {
-        const result = workedOutResultOf(field.instruction, font);
+        const result = deleted ? undefined : workedOutResultOf(field.instruction, font);
         // eslint-disable-next-line functional/immutable-data
         field.inResult = true;
         if (result !== undefined && isShown(reader)) {
@@ -597,6 +604,10 @@ const readRun = (element: XmlObject, paragraphRun: RunFormat, reader: Reader, re
         }
         if (!isShown(reader) || name === "w:rPr") {
             return [];
+        }
+        // What isn't deleted of the result of a field whose start is
+        if (reader.fields.some((open) => open.deleted === true)) {
+            return PARTLY_DELETED_FIELD;
         }
         if (removed && (REMOVED_ROOM.has(name) || REMOVED_NOTES.has(name))) {
             return SIZED_REMOVAL;
@@ -720,15 +731,17 @@ const readRemoved = (elements: readonly unknown[], kind: string, reader: Reader)
         elements.filter(isObject).map((element): readonly LayoutItem[] | string => {
             const name = nameOf(element);
             if (name === "w:r") {
-                const references = contentOf(element).filter((child) => isObject(child) && REMOVED_NOTES.has(nameOf(child)));
+                const children = contentOf(element).filter(isObject);
+                const references = children.filter((child) => REMOVED_NOTES.has(nameOf(child)));
                 if (references.length > 0 && kind === "w:moveFrom") {
                     return "a note reference moved in a tracked change";
                 }
-                if (references.some((reference) => isObject(reference) && "w:endnoteReference" in reference)) {
+                if (references.some((reference) => "w:endnoteReference" in reference)) {
                     return "a deleted endnote reference";
                 }
                 references.forEach(() => reader.notes?.skip("footnote"));
-                return [];
+                // Its field characters, which keep the fields' places, so a field partly deleted is found
+                return itemsOf(children.map((child) => (nameOf(child) === "w:fldChar" ? readFieldCharacter(child, {}, reader, true) : [])));
             }
             if (name === "w:bookmarkStart") {
                 return markerOf(element);

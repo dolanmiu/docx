@@ -2413,6 +2413,40 @@ describe("readDocument", () => {
             expect((header.sections[0].headers.default![0] as ParagraphBlock).items).to.deep.equal([]);
         });
 
+        it("should leave out a field deleted whole, as Word does, and mark one only partly deleted as unsupported", () => {
+            const del = (...runs: readonly object[]): object => ({ "w:del": runs });
+            const deletedInstruction = (text: string): object => r({ "w:delInstrText": [text] });
+            // Deleted whole, its runs each in a deletion of its own, as Word writes them, then a field after it, which
+            // is read as before
+            const whole = readBody([
+                p(
+                    r(t("a")),
+                    del(field("begin")),
+                    del(deletedInstruction("PAGEREF here")),
+                    del(field("separate")),
+                    del(r({ "w:delText": ["3"] })),
+                    del(field("end")),
+                    r(t("b")),
+                ),
+                p(field("begin"), instruction("PAGEREF there"), field("separate"), r(t("9")), field("end")),
+            ]);
+            expect(textOf(whole)).to.equal("ab");
+            expect(textOf(whole, 1)).to.equal("[there]");
+            expect(whole.blocks.map(({ block }) => block.unsupported)).to.deep.equal([undefined, undefined]);
+            const partly = (...content: readonly object[]): string | undefined => readBody([p(...content)]).blocks[0].block.unsupported;
+            const reason = "a field partly deleted in a tracked change";
+            // Its end deleted, or its separator, and not its start; its start deleted and not its separator or end; and
+            // its result not deleted, where its start is
+            expect(
+                partly(field("begin"), instruction("PAGEREF here"), field("separate"), r(t("3")), del(field("end")), r(t("after"))),
+            ).to.equal(reason);
+            expect(partly(field("begin"), instruction("PAGE"), del(field("separate")), r(t("3")), field("end"))).to.equal(reason);
+            expect(partly(del(field("begin")), instruction("PAGE"), field("separate"), r(t("3")), field("end"))).to.equal(reason);
+            expect(
+                partly(del(field("begin")), del(deletedInstruction("PAGE")), del(field("separate")), r(t("3")), del(field("end"))),
+            ).to.equal(reason);
+        });
+
         it("should mark a deleted endnote reference, and a note reference moved, as unsupported", () => {
             const note = (name: string): object => r({ [name]: { _attr: { "w:id": 1 } } });
             expect(readBody([p({ "w:del": [note("w:endnoteReference")] })]).blocks[0].block.unsupported).to.equal(
