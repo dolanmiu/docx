@@ -42,7 +42,7 @@ import {
     TextRun,
     patchDocument,
 } from "docx";
-import { buildTestFont, buildTestFontCollection } from "tests/font-file";
+import { buildTestFont, buildTestFontCollection, tableOffset } from "tests/font-file";
 
 import { estimatePageNumbers, estimatePageNumbersWith } from "./estimate-page-numbers";
 import { layoutDocument } from "./layout-document";
@@ -911,9 +911,16 @@ describe("estimatePageNumbersWith", () => {
             });
             expect(pageNumbersOf(embedded("Probe Wide", WIDE))).to.deep.include({ first: "1", last: "8" });
             expect(pageNumbersOf(embedded("Calibri", WIDE))).to.deep.include({ last: "8" });
-            // A file that isn't a font, or a collection of no fonts, is left out, so the layout stops at text in its font
+            // A file that isn't a font, a collection of no fonts, or a damaged font, is left out, so the layout stops at text in
+            // its font, rather than throwing when it is laid out
             expect(pageNumbersOf(embedded("Probe Wide", new Uint8Array(16)))).to.deep.equal({ first: "1" });
             expect(pageNumbersOf(embedded("Probe Wide", buildTestFontCollection([])))).to.deep.equal({ first: "1" });
+            const damaged = WIDE.slice();
+            const view = new DataView(damaged.buffer);
+            const characterMap = tableOffset(damaged, "cmap") + view.getUint32(tableOffset(damaged, "cmap") + 8);
+            // The glyph of "a", in the array of a map in format 4, past the end of the file
+            view.setUint16(characterMap + 16 + (view.getUint16(characterMap + 6) / 2) * 6 + 2, 0xfffe);
+            expect(pageNumbersOf(embedded("Probe Wide", damaged))).to.deep.equal({ first: "1" });
             // The fonts the caller gives are measured too, after those the document embeds
             const narrow = buildTestFont({ name: "Probe Wide", advances: { a: 1 }, windows: { ascent: 1000, descent: 1000 } });
             expect(pageNumbersOf(embedded("Probe Wide", WIDE), estimatePageNumbersWith({ fonts: [{ data: narrow }] }))).to.deep.include({

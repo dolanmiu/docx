@@ -50,6 +50,16 @@ const hasFlag = (flags: number, flag: number): boolean => Math.floor(flags / fla
 const tagOf = (view: DataView, offset: number): string =>
     String.fromCharCode(view.getUint8(offset), view.getUint8(offset + 1), view.getUint8(offset + 2), view.getUint8(offset + 3));
 
+/**
+ * Throws as a read past the end of the file does, for what is read only when text is laid out in the font, so that a
+ * damaged font throws when it is read, rather than when it is laid out
+ */
+const checkInFile = (view: DataView, end: number): void => {
+    if (end > view.byteLength) {
+        throw new RangeError(`The font file points past its end, to ${end}`);
+    }
+};
+
 /** Where each table of the font at an offset starts */
 const readTables = (view: DataView, offset: number): Tables =>
     new Map(
@@ -139,6 +149,15 @@ const readCharacterMap = (view: DataView, tables: Tables): ((code: number) => nu
     const starts = ends + segments * 2 + 2;
     const deltas = starts + segments * 2;
     const rangeOffsets = deltas + segments * 2;
+    // The segments, and the glyphs in the array of those mapped through it, are read when text is laid out in the font
+    checkInFile(view, rangeOffsets + segments * 2);
+    for (let segment = 0; segment < segments; segment++) {
+        const rangeOffset = view.getUint16(rangeOffsets + segment * 2);
+        const characters = view.getUint16(ends + segment * 2) - view.getUint16(starts + segment * 2) + 1;
+        if (rangeOffset !== 0) {
+            checkInFile(view, rangeOffsets + segment * 2 + rangeOffset + characters * 2);
+        }
+    }
     return (code) => {
         const segment = Array.from({ length: segments }, (_, index) => index).find((index) => view.getUint16(ends + index * 2) >= code);
         if (segment === undefined || view.getUint16(starts + segment * 2) > code) {
@@ -358,6 +377,8 @@ const readFace = (view: DataView, offset: number): FontFace => {
     const lineGap = view.getInt16(hhea + 8);
     const metricCount = view.getUint16(hhea + 34);
     const hmtx = tables.get("hmtx")!;
+    // The widths are read when text is laid out in the font
+    checkInFile(view, hmtx + metricCount * 4);
     const os2 = tables.get("OS/2");
 
     // Word's single line: the font's ascent and descent for Windows, and the gap between lines its hhea table adds to
