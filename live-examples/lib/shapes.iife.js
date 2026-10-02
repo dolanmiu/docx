@@ -4047,6 +4047,29 @@ var docxShapes = (function(exports, docx) {
 		};
 	};
 	/**
+	* Reads what a table style (`w:style` of type "table") gives its tables beyond paragraph and run formatting: the margins
+	* of their cells, its table, row and cell properties, and the parts of its formatting for some of their cells.
+	*/
+	var readTableStyle = (children, themeFonts) => {
+		const tableProperties = childrenOf(find(children, "w:tblPr"));
+		return {
+			cellMargins: readCellMargins(find(tableProperties, "w:tblCellMar")),
+			tableProperties,
+			rowProperties: childrenOf(find(children, "w:trPr")),
+			cellProperties: childrenOf(find(children, "w:tcPr")),
+			conditional: new Map(children.filter((child) => "w:tblStylePr" in child).map((child) => {
+				const parts = childrenOf(child["w:tblStylePr"]);
+				return [String(attributesOf(child["w:tblStylePr"])["w:type"]), {
+					run: readRunFormat(find(parts, "w:rPr"), themeFonts),
+					paragraph: readParagraphFormat(find(parts, "w:pPr")),
+					tableProperties: childrenOf(find(parts, "w:tblPr")),
+					rowProperties: childrenOf(find(parts, "w:trPr")),
+					cellProperties: childrenOf(find(parts, "w:tcPr"))
+				}];
+			}))
+		};
+	};
+	/**
 	* Reads the document's defaults and styles from its styles part (`w:styles`), once it is formatted, with the fonts of
 	* its theme.
 	*/
@@ -4070,7 +4093,7 @@ var docxShapes = (function(exports, docx) {
 				}) }), {}, {
 					run: readRunFormat(find(children, "w:rPr"), themeFonts),
 					paragraph: readParagraphFormat(find(children, "w:pPr"))
-				}, attributes["w:type"] === "table" ? { cellMargins: readCellMargins(find(childrenOf(find(children, "w:tblPr")), "w:tblCellMar")) } : {})
+				}, attributes["w:type"] === "table" ? readTableStyle(children, themeFonts) : {})
 			};
 		}).filter((style) => style.id !== void 0);
 		const defaultStyle = (type) => {
