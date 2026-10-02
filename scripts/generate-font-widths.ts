@@ -26,7 +26,7 @@
  *   python3 scripts/layout-probes/word-character-widths.py build/word-probes/word-character-widths --json \
  *     > build/word-probes/word-character-widths.word.json
  */
-// cspell:ignore hhea hmtx cmap Caladea crosextra
+// cspell:ignore hhea hmtx cmap Caladea crosextra Poppler bbox pdftohtml
 import { execSync } from "node:child_process";
 import { readFileSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
