@@ -153,7 +153,11 @@ const doc = new Document({
                         columnWidths: [3000, 6026],
                     }),
                 ),
-                ...probe("TW13", "no widths, a word of 12000 in the second", table([[{ text: "TW13 left two words" }, { text: `TW13 ${word(12000)}` }]])),
+                ...probe(
+                    "TW13",
+                    "no widths, a word of 12000 in the second",
+                    table([[{ text: "TW13 left two words" }, { text: `TW13 ${word(12000)}` }]]),
+                ),
                 ...probe(
                     "TW14",
                     "no cell widths, 9026 wide, a word of 12000 in the second",
@@ -239,9 +243,21 @@ const doc = new Document({
                         { width: dxa(9026), columnWidths: [2000, 2000, 5026] },
                     ),
                 ),
-                ...probe("TW20", "a word of 4000 across one and long", table([[{ text: word(4000), span: 2 }], [{ text: "one" }, { text: LONG }]])),
-                ...probe("TW21", "a word of 6000 across half and long", table([[{ text: word(6000), span: 2 }], [{ text: HALF }, { text: LONG }]])),
-                ...probe("TW22", "a word of 3000 across half and long", table([[{ text: word(3000), span: 2 }], [{ text: HALF }, { text: LONG }]])),
+                ...probe(
+                    "TW20",
+                    "a word of 4000 across one and long",
+                    table([[{ text: word(4000), span: 2 }], [{ text: "one" }, { text: LONG }]]),
+                ),
+                ...probe(
+                    "TW21",
+                    "a word of 6000 across half and long",
+                    table([[{ text: word(6000), span: 2 }], [{ text: HALF }, { text: LONG }]]),
+                ),
+                ...probe(
+                    "TW22",
+                    "a word of 3000 across half and long",
+                    table([[{ text: word(3000), span: 2 }], [{ text: HALF }, { text: LONG }]]),
+                ),
                 ...probe(
                     "TW23",
                     "a word of 4000 across one and two words, beside long",
