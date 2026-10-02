@@ -8,7 +8,7 @@
 import type { Element } from "xml-js";
 
 import { type XmlObject, attributesOf, childrenOf, find, readTextStyles, readThemeFonts } from "../text-layout";
-import { type DocumentContent, type DocumentParts, type EmbeddedFont, facesOf, readContent } from "./read-document";
+import { type DocumentContent, type DocumentParts, type EmbeddedFont, type ReadOptions, facesOf, readContent } from "./read-document";
 
 /** A relationship of a part to another part of the package */
 type Relationship = {
@@ -135,10 +135,12 @@ const embeddedFontsOf = (
  * @param parts - The XML parts of its package, parsed by xml-js's `xml2js`, not compact and keeping the spaces between
  * elements, by their paths, such as "word/document.xml"
  * @param binaryParts - Its other parts, such as the fonts it embeds, by their paths
+ * @param options - How it is read: to be laid out with a guess, or not
  */
 export const readDocx = (
     parts: ReadonlyMap<string, Element>,
     binaryParts: ReadonlyMap<string, Uint8Array> = new Map(),
+    options: ReadOptions = {},
 ): DocumentContent => {
     const documentPath = relationshipsOf(parts, "").find(({ type }) => type === "officeDocument")?.path ?? DEFAULT_DOCUMENT;
     const relationships = relationshipsOf(parts, documentPath);
@@ -163,5 +165,5 @@ export const readDocx = (
         fonts: fontTable === undefined ? [] : facesOf(embeddedFontsOf(parts, binaryParts, fontTable.path)),
     };
     const document = rootOf(parts.get(documentPath));
-    return readContent({ "w:body": find(childrenOf(document && contentOf(document)), "w:body") ?? [] }, documentParts);
+    return readContent({ "w:body": find(childrenOf(document && contentOf(document)), "w:body") ?? [] }, documentParts, options);
 };

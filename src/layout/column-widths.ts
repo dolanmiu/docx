@@ -213,7 +213,7 @@ const narrowed = (columns: readonly Column[], room: number): readonly number[] =
  * shared among them in proportion to their widest words and widest lines added together, as Word shares it. Word
  * shares one wider than their widest words in a way not yet followed when the columns are narrowed to the room, and
  * one with more text beside it, or in a way not yet seen, when it is wider than their widest lines too. The table is
- * then returned as unsupported.
+ * then returned as unsupported, sized as the layout would size it otherwise.
  *
  * A table whose cells all have widths keeps them, unless a word is longer than its cell gives it, or its rows give a
  * column different widths. Word then widens that column to the word, and makes each column as wide as the widest any
@@ -279,18 +279,20 @@ export const fitColumns = (table: TableBlock, available: number, measure: Measur
     // A table with a width of its own in twips keeps its columns as wide as their widest words when those don't fit in it,
     // past it and the page (`word-watertight-stops.docx` SP15a, `word-table-widths.docx` TW11, TW14, TW15). Without, or with
     // a share of the width, Word breaks a word longer than the room in a way not yet followed, narrowing the other columns
-    // past their widest words (`word-long-words.docx` L7, TW12, TW13)
-    if (sum(columns.map(({ min }) => min)) > room && tableWidth.width === undefined) {
-        return { ...table, unsupported: "a word longer than its table can make room for" };
-    }
-    // A table wider than its cells has its columns widened in proportion to fill it, after a column is widened for a long
-    // word (SP15b, TW3, TW4, TW9, TW10). With space between its cells, how isn't known
-    if (widen && spaced && target !== undefined && total < target) {
-        return { ...table, unsupported: "space between the cells of a table wider than its cells" };
-    }
-    if (unsettled.includes("always") || (unsettled.length > 0 && total > room)) {
-        return { ...table, unsupported: "a long word in cells merged across columns" };
-    }
+    // past their widest words (`word-long-words.docx` L7, TW12, TW13). A table with space between its cells wider than
+    // them has them widened in a way not yet followed, and long words in cells merged across columns are shared among them
+    // in ways not yet followed (see above). Each is sized as the others are, which is the layout's guess where it is asked
+    // to guess past them
+    const unsupported =
+        sum(columns.map(({ min }) => min)) > room && tableWidth.width === undefined
+            ? "a word longer than its table can make room for"
+            : // A table wider than its cells has its columns widened in proportion to fill it, after a column is widened
+              // for a long word (SP15b, TW3, TW4, TW9, TW10)
+              widen && spaced && target !== undefined && total < target
+              ? "space between the cells of a table wider than its cells"
+              : unsettled.includes("always") || (unsettled.length > 0 && total > room)
+                ? "a long word in cells merged across columns"
+                : undefined;
     const given = columns.filter((column) => column.given);
     const sized = columns.filter((column) => !column.given);
     // The columns given widths are narrowed only as far as those sized to their text, at their widest words, need. Those of
@@ -312,6 +314,7 @@ export const fitColumns = (table: TableBlock, available: number, measure: Measur
                 width: sum(widths.slice(cell.column, cell.column + (cell.span ?? 1))) - cell.marginLeft - cell.marginRight,
             })),
         })),
+        ...(unsupported === undefined ? {} : { unsupported }),
     };
 };
 

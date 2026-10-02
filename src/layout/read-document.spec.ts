@@ -4234,4 +4234,205 @@ describe("readDocument", () => {
             expect(paragraphOf(readWithSettings([decimal], [value("w:decimalSymbol", ".")])).unsupported).to.equal(undefined);
         });
     });
+
+    describe("read to be laid out with a guess", () => {
+        /** Reads a body of formatted elements as `readBody` does, to be laid out with a guess past what can't be */
+        const guessed = (elements: readonly unknown[], options: Partial<IPropertiesOptions> = {}): DocumentContent =>
+            readDocument({ "w:body": elements } as IXmlableObject, contextOf(new File({ sections: [], ...options })), { guess: true });
+        const border = rPr({ "w:bdr": { _attr: { "w:val": "single", "w:sz": 4, "w:space": 0 } } });
+        const bound = (...content: readonly unknown[]): object => ({
+            "w:sdt": [
+                { "w:sdtPr": [{ "w:dataBinding": { _attr: { "w:xpath": "/properties/title", "w:storeItemID": "{1}" } } }] },
+                { "w:sdtContent": content },
+            ],
+        });
+        /** Why each paragraph or table can't be laid out as Word does, and its text, or "table" */
+        const read = (content: DocumentContent): readonly (readonly [string | undefined, string])[] =>
+            content.blocks.map(({ block }, index) => [block.unsupported, block.type === "paragraph" ? textOf(content, index) : "table"]);
+
+        it("should leave out what it can't read, and read the rest of its paragraph, which says why", () => {
+            const elements = [
+                p(r(t("a")), { "m:oMath": [] }, r(t("b"))),
+                p(r(t("c"), { "w:contentPart": { _attr: { "r:id": "rId9" } } }), r(t("d"))),
+                p(r(t("e")), { "w:subDoc": { _attr: { "r:id": "rId9" } } }, r(t("f"), { "w:pict": [] })),
+            ];
+            expect(read(readBody(elements))).to.deep.equal([
+                ["an equation", ""],
+                ["a content part, such as ink", ""],
+                ["a subdocument", ""],
+            ]);
+            // The first thing guessed at in a paragraph is why
+            expect(read(guessed(elements))).to.deep.equal([
+                ["an equation", "ab"],
+                ["a content part, such as ink", "cd"],
+                ["a subdocument", "ef"],
+            ]);
+            expect(itemsOf(guessed(elements)).every((item) => item.type === "text")).to.equal(true);
+        });
+
+        it("should read a run past formatting it can't follow, as if it weren't so", () => {
+            const fitted = p(r(rPr({ "w:fitText": { _attr: { "w:val": 2000 } } }), t("fitted"), { "w:tab": {} }, t("more")));
+            const content = guessed([fitted]);
+            expect(read(content)).to.deep.equal([["text fitted to a width", "fittedmore"]]);
+            expect(itemsOf(content).map(({ type }) => type)).to.deep.equal(["text", "tab", "text"]);
+        });
+
+        it("should read tabs, soft hyphens and pictures in text with a border, a phonetic guide's base, and a note with a mark of its own", () => {
+            const content = guessed(
+                [
+                    p(r(border, { "w:tab": {} })),
+                    p(r(border, t("a\tb"))),
+                    p(r(border, t("a"), { "w:softHyphen": {} }, t("b"))),
+                    p(r(border, { "w:drawing": [{ "wp:inline": [{ "wp:extent": { _attr: { cx: 127000, cy: 127000 } } }] }] })),
+                    p(r({ "w:ruby": [{ "w:rubyPr": [] }, { "w:rt": [r(t("guide"))] }, { "w:rubyBase": [r(t("base"))] }] })),
+                    p(r({ "w:footnoteReference": { _attr: { "w:id": 1, "w:customMarkFollows": 1 } } }), r(t("*"))),
+                ],
+                { footnotes: { 1: { children: [new Paragraph("One")] } } },
+            );
+            expect(content.blocks.map(({ block }) => block.unsupported)).to.deep.equal([
+                "a tab in text with a border",
+                "a tab in text with a border",
+                "a soft hyphen in text with a border",
+                "a picture in text with a border",
+                "text with a phonetic guide",
+                "a footnote or endnote with a mark of its own",
+            ]);
+            expect([0, 1, 2, 3].map((index) => itemsOf(content, index).map(({ type }) => type))).to.deep.equal([
+                ["tab"],
+                ["text", "tab", "text"],
+                ["text", "softHyphen", "text"],
+                ["box"],
+            ]);
+            expect(textOf(content, 4)).to.equal("base");
+            // Its note is laid out with it, with its mark after it in place of its number
+            expect(itemsOf(content, 5)).to.deep.equal([
+                { type: "marker", name: "footnote 1" },
+                { type: "text", text: "*", font: {} },
+            ]);
+            expect(content.footnotes.has("footnote 1")).to.equal(true);
+            // And a soft hyphen in a table whose columns Word sizes to their text
+            const table = guessed([{ "w:tbl": [{ "w:tr": [{ "w:tc": [p(r(t("a"), { "w:softHyphen": {} }, t("b")))] }] }] }]);
+            expect(table.blocks[0].block.unsupported).to.equal("a soft hyphen in a table whose columns Word sizes to their text");
+            const [cellParagraph] = (table.blocks[0].block as TableBlock).rows[0].cells[0].blocks as readonly ParagraphBlock[];
+            expect(cellParagraph.items.map(({ type }) => type)).to.deep.equal(["text", "softHyphen", "text"]);
+        });
+
+        it("should read a date or time as it is written, and a number in a field format not yet written as its number", () => {
+            const fieldOf = (text: string, written = "?"): object =>
+                p(field("begin"), instruction(text), field("separate"), r(t(written)), field("end"));
+            const hidden = rPr({ "w:vanish": {} });
+            const content = guessed(
+                [
+                    fieldOf('DATE \\@ "d MMMM yyyy"', "1 January 2000"),
+                    p({ "w:fldSimple": [{ _attr: { "w:instr": "TIME" } }, r(t("12:00"))] }),
+                    p(r({ "w:dayLong": {} })),
+                    fieldOf("PAGEREF a \\* CardText"),
+                    fieldOf("NUMPAGES \\* Hex"),
+                    fieldOf("PAGE \\* OrdText"),
+                    // In hidden text, as nothing still
+                    p(
+                        field("begin"),
+                        instruction("DATE"),
+                        r(hidden, { "w:fldChar": { _attr: { "w:fldCharType": "separate" } } }),
+                        field("end"),
+                    ),
+                    p(pPr(value("w:pStyle", "Hidden"), rPr(value("w:vanish", "false"))), {
+                        "w:fldSimple": [{ _attr: { "w:instr": "DATE" } }, r(t("written"))],
+                    }),
+                ],
+                { styles: { paragraphStyles: [{ id: "Hidden", name: "Hidden", run: { vanish: true } }] } },
+            );
+            const date = "a date or time, which Word writes when it opens the document";
+            const format = "a number in a field format not yet written";
+            expect(read(content).slice(0, 3)).to.deep.equal([
+                [date, "1 January 2000"],
+                [date, "12:00"],
+                [date, ""],
+            ]);
+            expect([3, 4, 5].map((index) => [paragraphOf(content, index).unsupported, itemsOf(content, index)])).to.deep.equal([
+                [format, [{ type: "pageReference", bookmark: "a", font: {} }]],
+                [format, [{ type: "pageCount", scope: "document", font: {} }]],
+                [
+                    format,
+                    [
+                        { type: "marker", name: "field 1" },
+                        { type: "pageNumber", field: "field 1", font: {} },
+                    ],
+                ],
+            ]);
+            expect([6, 7].map((index) => [paragraphOf(content, index).unsupported, itemsOf(content, index)])).to.deep.equal([
+                [undefined, []],
+                [undefined, []],
+            ]);
+        });
+
+        it("should read a page reference with \\p in a footnote as it is written", () => {
+            const content = readContent(
+                { "w:body": [p(r({ "w:footnoteReference": { _attr: { "w:id": 1 } } }))] },
+                {
+                    styles: WORD_DEFAULT_STYLES,
+                    headersAndFooters: new Map(),
+                    footnotes: {
+                        "w:footnotes": [
+                            {
+                                "w:footnote": [
+                                    { _attr: { "w:id": 1 } },
+                                    p(field("begin"), instruction("PAGEREF a \\p"), field("separate"), r(t("below")), field("end")),
+                                    p({ "w:fldSimple": [{ _attr: { "w:instr": "PAGEREF a \\p" } }, r(t("above"))] }),
+                                ],
+                            },
+                        ],
+                    },
+                },
+                { guess: true },
+            );
+            const note = content.footnotes.get("footnote 1")! as readonly ParagraphBlock[];
+            expect(
+                note.map(({ unsupported, items }) => [unsupported, items.flatMap((item) => (item.type === "text" ? [item.text] : []))]),
+            ).to.deep.equal([
+                ["a page reference that says where its bookmark is, in a footnote or endnote", ["below"]],
+                ["a page reference that says where its bookmark is, in a footnote or endnote", ["above"]],
+            ]);
+        });
+
+        it("should read what is written in a content control bound to custom XML, unless it starts with a table", () => {
+            const control = "a content control filled from custom XML";
+            const content = guessed([bound(p(r(t("Title"))), p(r(t("Subtitle")))), p(bound(r(t("Inline")))), bound({ "w:tbl": [] })]);
+            expect(read(content)).to.deep.equal([
+                [control, "Title"],
+                [undefined, "Subtitle"],
+                [control, "Inline"],
+                [control, ""],
+            ]);
+            expect(content.blocks.map(({ block }) => block.noGuess)).to.deep.equal([undefined, undefined, undefined, true]);
+            // Read without a guess, the control stops the layout, with a guess or not
+            expect(readBody([bound({ "w:tbl": [] })]).blocks[0].block.noGuess).to.equal(undefined);
+        });
+
+        it("should have no guess for an imported document, nor for a table with one in a cell", () => {
+            const imported = { "w:altChunk": { _attr: { "r:id": "rId9" } } };
+            const content = guessed([imported, { "w:tbl": [{ "w:tr": [{ "w:tc": [p(r(t("a")), { "m:oMath": [] }), imported, p()] }] }] }]);
+            expect(content.blocks.map(({ block }) => [block.unsupported, block.noGuess])).to.deep.equal([
+                ["an imported document", true],
+                ["an imported document", true],
+            ]);
+        });
+
+        it("should have no guess for a table all of whose rows are deleted, when what Word does with one of them isn't known", () => {
+            const deleted = { "w:del": { _attr: { "w:id": 2 } } };
+            const content = guessed([{ "w:tbl": [{ "w:tr": [{ "w:trPr": [deleted, value("w:divId", 1)] }, { "w:tc": [p()] }] }] }]);
+            expect(content.blocks[0].block).to.deep.include({ rows: [], unsupported: "a table row in an HTML division", noGuess: true });
+        });
+
+        it("should read a paragraph whose hidden mark Word hasn't been seen with as it is, apart from the next", () => {
+            const hiddenMark = rPr({ "w:vanish": {} });
+            const content = guessed([p(pPr(value("w:pStyle", "Big"), hiddenMark), r(t("a"))), p(r(t("b")))], {
+                styles: { paragraphStyles: [{ id: "Big", name: "Big", run: { size: 32 } }] },
+            });
+            expect(read(content)).to.deep.equal([
+                ["a hidden paragraph mark between paragraphs formatted differently but for their alignment, left indent and space", "a"],
+                [undefined, "b"],
+            ]);
+        });
+    });
 });

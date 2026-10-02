@@ -976,4 +976,96 @@ describe("estimatePageNumbersWith", () => {
             expect(() => estimatePageNumbersWith({ fonts: [{ data: new Uint8Array(16) }] })).to.throw("isn't a TrueType or OpenType font");
         });
     });
+
+    describe("guessing", () => {
+        const GUESS = estimatePageNumbersWith({ guess: true });
+        /** A document of a heading, a paragraph of these runs, and a heading after them */
+        const around = (...children: readonly (TextRun | SimpleField)[]): IPropertiesOptions => ({
+            sections: [{ children: [heading("First", "first"), new Paragraph({ children }), heading("Last", "last")] }],
+        });
+
+        it("should give the page numbers past what it can't lay out as Word does, and say where it guessed", () => {
+            const framed: IPropertiesOptions = {
+                sections: [
+                    { children: [heading("First", "first"), new Paragraph({ frame: FRAME, text: "Framed" }), heading("Last", "last")] },
+                ],
+            };
+            expect(estimateOf(framed)).to.deep.include({ bookmarks: new Map([["first", "1"]]) });
+            expect(estimateOf(framed, GUESS)).to.deep.include({
+                bookmarks: new Map([
+                    ["first", "1"],
+                    ["last", "1"],
+                ]),
+                pageCount: 1,
+                guesses: [{ reason: "a text frame", page: 1 }],
+            });
+            // With nothing to guess at, it gives what estimatePageNumbers does, and says it guessed nowhere
+            expect(estimateOf(DOCUMENT, GUESS)).to.deep.equal({ ...estimateOf(DOCUMENT), guesses: [] });
+        });
+
+        it("should measure text in a font not in the width tables as the most similar font that is (word-watertight-text.docx TX18)", () => {
+            // Word drew the pangram 3781.2 twips wide in Aptos, 3905.6 in Georgia and 4384.2 in Verdana, and in Cambria,
+            // 3820.8, in a font it doesn't have. The guess measures them as Arial, Times New Roman and Arial, 2% wider, 8%
+            // narrower and 12% narrower than Word drew them, and each is a line, as it was in Word
+            const pangrams = ["Aptos", "Georgia", "Verdana", "Watertight Missing Sans"].map(
+                (font) => new Paragraph({ children: [new TextRun({ text: "Thequickbrownfoxjumpsoverthelazydog", font, size: 22 })] }),
+            );
+            const document = new Document({ sections: [{ children: pangrams }] });
+            expect(layoutDocument(document).stoppedAt).to.equal("a font not in the width tables");
+            const { pages, stoppedAt } = layoutDocument(document, { guess: true });
+            expect(stoppedAt).to.equal(undefined);
+            expect(pages[0].guesses).to.deep.equal(["a font not in the width tables"]);
+            // In twips, 15 to a pixel
+            const widths = pages[0].body.map((block) =>
+                block.type === "paragraph" ? block.lines.map(({ textWidth }) => Math.round(textWidth * 15)) : [],
+            );
+            expect(widths).to.deep.equal([[3864], [3580], [3864], [3864]]);
+            expect(pageNumbersOf(around(new TextRun({ text: "Text", font: "Aptos" })), GUESS)).to.deep.equal({ first: "1", last: "1" });
+        });
+
+        it("should measure a date as it is written, where Word writes the date it opens the document on (word-watertight-pages.docx PG7a)", () => {
+            // Word wrote 1 October 2026 over the 1 January 2000 written
+            const date = around(
+                new TextRun("PG7a date "),
+                new SimpleField('DATE \\@ "d MMMM yyyy"', "1 January 2000"),
+                new TextRun(" end"),
+            );
+            expect(pageNumbersOf(date)).to.deep.equal({ first: "1" });
+            expect(estimateOf(date, GUESS)).to.deep.include({
+                bookmarks: new Map([
+                    ["first", "1"],
+                    ["last", "1"],
+                ]),
+                guesses: [{ reason: "a date or time, which Word writes when it opens the document", page: 1 }],
+            });
+            const { pages } = layoutDocument(new Document(date), { guess: true });
+            expect(pages[0].body[1]).to.deep.include({ type: "paragraph" });
+            expect(pages[0].body.flatMap((block) => (block.type === "paragraph" ? block.lines.map(({ text }) => text) : []))).to.include(
+                "PG7a date 1 January 2000 end",
+            );
+        });
+
+        it("should lay out a document whose compatibility settings it doesn't follow as if it didn't have them", () => {
+            // Word laid out 2010's compatibility mode, and suppressTopSpacing, differently: the first line of a page of exact
+            // or at-least line spacing shorter (word-compat-settings2-suppressTopSpacing.docx), which a line of single spacing
+            // here isn't
+            const set = (compatibility: IPropertiesOptions["compatibility"]): IPropertiesOptions => ({
+                ...around(new TextRun("Text")),
+                compatibility,
+            });
+            for (const [compatibility, reason] of [
+                [{ version: 14 }, "a document in compatibility mode"],
+                [{ suppressTopSpacing: true }, "a compatibility setting not yet followed"],
+            ] as const) {
+                expect(pageNumbersOf(set(compatibility))).to.deep.equal({});
+                expect(estimateOf(set(compatibility), GUESS)).to.deep.include({
+                    bookmarks: new Map([
+                        ["first", "1"],
+                        ["last", "1"],
+                    ]),
+                    guesses: [{ reason, page: 1 }],
+                });
+            }
+        });
+    });
 });

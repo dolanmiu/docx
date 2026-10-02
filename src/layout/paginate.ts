@@ -12,7 +12,8 @@
  * lines, of the text and of table rows alike, take room at its bottom, laid out in the section's columns in a section in
  * columns, and one that doesn't fit below its reference continues at the bottom of the next page, or pages, broken as the
  * body is. The endnotes follow the body.
- * It stops at the first thing it can't lay out yet, and the bookmarks after it aren't placed.
+ * It stops at the first thing it can't lay out yet, and the bookmarks after it aren't placed, unless it is asked to
+ * guess, when it lays out past each that it has a guess for, and notes on each page what it guessed at.
  *
  * @module
  */
@@ -109,6 +110,11 @@ export type PaginateOptions = {
     readonly pageCount?: number;
     readonly sectionPageCounts?: readonly (number | undefined)[];
     readonly measurer?: TextMeasurer;
+    /**
+     * Whether it lays out past what it can't lay out as Word does yet, with its best guess, rather than stopping there,
+     * and notes on each page what it guessed at (see `stopAt`). It still stops where it has no guess
+     */
+    readonly guess?: boolean;
 };
 
 /**
@@ -250,13 +256,15 @@ type NotePiece = { readonly block: Block; readonly note?: string; readonly index
 
 /**
  * Something placed on the pages, in the order it was placed: the start of a page, a line or table row of a block, by the
- * block's index, or the footnotes at the bottom of the page
+ * block's index, the footnotes at the bottom of the page, or a guess at what the layout can't lay out as Word does, with
+ * why, and the page it was made on, counted from the first
  */
 type Placement =
     | { readonly type: "page"; readonly page: Omit<PageLayout, "body" | "footnotes" | "endnotes"> }
     | { readonly type: "line"; readonly block: number; readonly line: LineLayout }
     | { readonly type: "row"; readonly block: number; readonly row: RowLayout }
-    | { readonly type: "footnotes"; readonly notes: readonly NoteLayout[] };
+    | { readonly type: "footnotes"; readonly notes: readonly NoteLayout[] }
+    | { readonly type: "guess"; readonly reason: string; readonly page: number };
 
 /** A line or row placed on a page */
 type BlockPlacement = Extract<Placement, { readonly type: "line" | "row" }>;
@@ -348,32 +356,54 @@ class Unsupported extends Error {}
 /** Thrown to stop laying out columns being balanced in a height they don't fit in */
 class Overflow extends Error {}
 
+// Why the layout stops at text in a font the measurer doesn't know, at a character whose width in its font it doesn't, and
+// at a page number in a format it can't write
+const UNKNOWN_FONT = "a font not in the width tables";
+const UNKNOWN_CHARACTER = "a character whose width in its font isn't known";
+const UNWRITTEN_NUMBER = "a page number its format isn't written for yet";
+// Why the layout stops at endnotes that go on into the next column or page in a section of columns, and at a footnote that
+// would break in a paragraph kept together or after one kept with the next
+const ENDNOTES_IN_COLUMNS = "endnotes continued in columns";
+const KEPT_IN_NOTE = "a paragraph kept together or with the next in a footnote across pages";
+// Why the layout stops at a table row that can't break across pages and is taller than a column
+const KEPT_ROW_IN_COLUMNS = "a table row kept together taller than a column";
+
 /** The measurers the layout measures with, by those it is given, so the lines laid out with each are kept */
 const stoppingMeasurers = new WeakMap<TextMeasurer, TextMeasurer>();
 
 /**
- * A measurer that stops the layout where it would measure text in a font it doesn't know, or the height of a line in
+ * A measurer that calls `atUnknown` where it would measure text in a font it doesn't know, or the height of a line in
  * one, as it measures them as another font, where Word draws them in their own, or in another again when it doesn't have
- * them (`word-watertight-text.docx` TX18)
+ * them (`word-watertight-text.docx` TX18). Otherwise, and after `atUnknown` when it returns, it measures as the measurer
+ * does: such a font as the most similar font it knows
  */
-const stoppingAtUnknownFonts = (measurer: TextMeasurer): TextMeasurer => {
+const atUnknownFonts = (measurer: TextMeasurer, atUnknown: () => void): TextMeasurer => {
     const { unknownFont } = measurer;
     if (unknownFont === undefined) {
         return measurer;
     }
-    /** The font, unless the measurer doesn't know it, or this text in it */
+    /** The font, once `atUnknown` is called when the measurer doesn't know it, or this text in it */
     const known = (font: TextFont, text?: string): TextFont => {
         if (unknownFont(font, text)) {
-            throw new Unsupported("a font not in the width tables");
+            atUnknown();
         }
         return font;
     };
-    const stopping = stoppingMeasurers.get(measurer) ?? {
+    return {
         ...measurer,
         measureWidth: (text, font) => measurer.measureWidth(text, known(font, text)),
         measureLineHeight: (font) => measurer.measureLineHeight(known(font)),
         measureDescent: (font) => measurer.measureDescent(known(font)),
     };
+};
+
+/** A measurer that stops the layout where it would measure text in a font it doesn't know (see {@link atUnknownFonts}) */
+const stoppingAtUnknownFonts = (measurer: TextMeasurer): TextMeasurer => {
+    const stopping =
+        stoppingMeasurers.get(measurer) ??
+        atUnknownFonts(measurer, () => {
+            throw new Unsupported(UNKNOWN_FONT);
+        });
     stoppingMeasurers.set(measurer, stopping);
     return stopping;
 };
@@ -557,6 +587,7 @@ export const paginate = (
         pageCount: givenPageCount,
         sectionPageCounts: givenSectionPageCounts = [],
         measurer = DEFAULT_MEASURER,
+        guess = false,
     }: PaginateOptions = {},
 ): Pagination => {
     const {
@@ -597,14 +628,14 @@ export const paginate = (
 
     /**
      * A field's text in its format: its number in its number format or picture, or as it is, in its capitals. It stops the
-     * layout where Word's text for the number isn't known, such as 781 in letters
+     * layout where Word's text for the number isn't known, such as 781 in letters, or guessing, writes it in figures
      */
     const written = (value: number, text: string, format: FieldFormat = {}): string => {
         const inFormat = writesNumber(format) ? writeFieldNumber(value, format) : text;
         if (inFormat === undefined) {
-            throw new Unsupported("a page number its format isn't written for yet");
+            stopAt(UNWRITTEN_NUMBER);
         }
-        return inFieldCapitals(inFormat, format.capitals);
+        return inFieldCapitals(inFormat ?? String(value), format.capitals);
     };
 
     /**
@@ -672,25 +703,39 @@ export const paginate = (
         );
 
     /**
+     * Why the width of a character of a paragraph's content in its font isn't known to the measurer, when it isn't, such as
+     * a mathematical symbol in Calibri, which Word draws in Cambria Math
+     */
+    const unknownCharacterIn = (inline: readonly InlineItem[]): string | undefined =>
+        inline.some((item) => item.type === "text" && measurer.unknownCharacter?.(item.text, item.font) !== undefined)
+            ? UNKNOWN_CHARACTER
+            : undefined;
+
+    /**
      * A paragraph's content, as it is measured, which stops the layout at a character whose width the measurer doesn't
-     * know, such as a mathematical symbol in Calibri, which Word draws in Cambria Math
+     * know. Guessing, it is measured as the measurer measures it, as an average letter of the font, and the lines it is in
+     * say so (see `linesOf`)
      */
     const measurable = (items: readonly LayoutItem[]): readonly InlineItem[] => {
         const inline = itemsOf(items);
-        if (inline.some((item) => item.type === "text" && measurer.unknownCharacter?.(item.text, item.font) !== undefined)) {
-            throw new Unsupported("a character whose width in its font isn't known");
+        const unknown = unknownCharacterIn(inline);
+        if (unknown !== undefined && !guess) {
+            throw new Unsupported(unknown);
         }
         return inline;
     };
 
-    // Text in a font the measurer doesn't know stops the layout where it is measured
-    const measuring = stoppingAtUnknownFonts(measurer);
+    // Text in a font the measurer doesn't know stops the layout where it is measured. Guessing, it is measured as the
+    // measurer measures it, as the most similar font it knows, and the lines it is in say so (see `linesOf`)
+    const measuring = guess ? measurer : stoppingAtUnknownFonts(measurer);
     // eslint-disable-next-line functional/prefer-readonly-type
     const byParagraph = laidOutLines.get(measurer) ?? new WeakMap<ParagraphBlock, Map<string, readonly LaidOutLine[]>>();
     laidOutLines.set(measurer, byParagraph);
     /**
      * A paragraph's lines, broken at a width, or at the width of each line from those given on, and in the room given for
-     * each of those that have room of their own, beside drawings that text flows around
+     * each of those that have room of their own, beside drawings that text flows around. A line whose breaking, or height,
+     * Word hasn't shown stops the layout, or guessing, is laid out as it was broken, and so are lines of text in a font or
+     * with a character the measurer doesn't know, measured as it measures them
      */
     const linesOf = (paragraph: ParagraphBlock, widths: number | LineWidths, rooms: LineRooms = new Map()): readonly LaidOutLine[] => {
         const given = typeof widths === "number" ? [{ from: 0, width: widths }] : widths;
@@ -700,32 +745,42 @@ export const paginate = (
         ].join(" ");
         const widthOf = (line: number): number => given.findLast(({ from }) => from <= line)!.width;
         const layOut = (): readonly LaidOutLine[] => {
-            const laidOut = layoutLines(measurable(paragraph.items), {
+            const inline = measurable(paragraph.items);
+            let guessed = guess ? unknownCharacterIn(inline) : undefined;
+            const laidOut = layoutLines(inline, {
                 width: given.length === 1 && rooms.size === 0 ? given[0].width : (line) => rooms.get(line) ?? widthOf(line),
                 format: paragraph.format,
                 tabStops: paragraph.tabStops,
                 defaultTabStop,
                 markFont: paragraph.markFont,
-                measurer: measuring,
+                measurer: guess
+                    ? atUnknownFonts(measurer, () => {
+                          guessed ??= UNKNOWN_FONT;
+                      })
+                    : measuring,
                 breakRules,
                 numberAlignment: paragraph.numberAlignment,
                 hyphenation,
             });
-            // A line whose breaking, or height, Word hasn't shown stops the layout
-            const unknown = laidOut.find((line) => line.unsupported !== undefined);
-            if (unknown) {
-                throw new Unsupported(unknown.unsupported);
-            }
+            // The lines are kept with the guess they are, so a pass that lays them out again notes it too
+            return guessed === undefined
+                ? laidOut
+                : laidOut.map((line) => (line.unsupported === undefined ? { ...line, unsupported: guessed } : line));
+        };
+        /** Its lines as they were laid out at these widths before, or are now */
+        const kept = (): readonly LaidOutLine[] => {
+            const byWidths = byParagraph.get(paragraph) ?? new Map<string, readonly LaidOutLine[]>();
+            byParagraph.set(paragraph, byWidths);
+            const laidOut = byWidths.get(key) ?? layOut();
+            // eslint-disable-next-line functional/immutable-data
+            byWidths.set(key, laidOut);
             return laidOut;
         };
-        if (paragraph.items.some(isPageField)) {
-            return layOut();
+        // Those of a paragraph with a page reference or page number change with the numbers, so aren't kept
+        const lines = paragraph.items.some(isPageField) ? layOut() : kept();
+        for (const reason of new Set(lines.flatMap(({ unsupported }) => (unsupported === undefined ? [] : [unsupported])))) {
+            stopAt(reason);
         }
-        const byWidths = byParagraph.get(paragraph) ?? new Map<string, readonly LaidOutLine[]>();
-        byParagraph.set(paragraph, byWidths);
-        const lines = byWidths.get(key) ?? layOut();
-        // eslint-disable-next-line functional/immutable-data
-        byWidths.set(key, lines);
         return lines;
     };
 
@@ -734,7 +789,8 @@ export const paginate = (
      * is 14 points (`word-watertight-text.docx` TX6a, TX6b), but none above the first paragraph of the document, a table
      * cell or a header, nor below the last of a cell (TX6c, `word-paragraph-formats.docx` A0, A3), and none between two
      * paragraphs of the same list, where there is between a bulleted and a numbered one (A1). What Word does between
-     * those of other levels of a list, or of lists made from the same definition, isn't known
+     * those of other levels of a list, or of lists made from the same definition, isn't known: guessing, none, as between
+     * those of the same level
      */
     const ownSpace = (paragraph: ParagraphBlock, side: "before" | "after", next: Block | undefined, inCell: boolean): number => {
         const { format, list } = paragraph;
@@ -749,7 +805,7 @@ export const paginate = (
             return AUTOMATIC_SPACE;
         }
         if (list.id !== other.id || list.level !== other.level) {
-            throw new Unsupported("automatic spacing between paragraphs of other levels of a list, or of lists made alike");
+            stopAt("automatic spacing between paragraphs of other levels of a list, or of lists made alike");
         }
         return 0;
     };
@@ -757,14 +813,14 @@ export const paginate = (
     /**
      * Whether a paragraph is in one box of borders with a block next to it: a paragraph with the same borders and indents.
      * Whether Word joins two whose borders differ only by a between border isn't known: it leaves something between them,
-     * but not the room of two boxes (`word-paragraph-formats.docx` B5f)
+     * but not the room of two boxes (`word-paragraph-formats.docx` B5f). Guessing, they are two boxes
      */
     const sharesBorders = (one: ParagraphBlock, other?: Block): boolean => {
         if (one.borders === undefined || other?.type !== "paragraph" || other.sectionBreak || other.borders === undefined) {
             return false;
         }
         if (other.borders.box !== one.borders.box && other.borders.outline === one.borders.outline) {
-            throw new Unsupported("paragraphs with the same borders but for a between border");
+            stopAt("paragraphs with the same borders but for a between border");
         }
         return other.borders.box === one.borders.box;
     };
@@ -871,12 +927,13 @@ export const paginate = (
         byWidth.set(width, sized);
         return sized;
     };
-    /** A table sized to be laid out in a width, which stops the layout when Word's sizing of it isn't known */
+    /**
+     * A table sized to be laid out in a width, which stops the layout when Word's sizing of it isn't known, or guessing, is
+     * laid out as it is sized: as near Word's sizing as the layout gets, or as it was read
+     */
     const sizedToPlace = (table: TableBlock, width: number): TableBlock => {
         const sized = fitted(table, width);
-        if (sized.unsupported) {
-            throw new Unsupported(sized.unsupported);
-        }
+        stopAtRead(sized);
         return sized;
     };
 
@@ -1216,6 +1273,46 @@ export const paginate = (
         throw new Unsupported(reason);
     };
 
+    // The page what is guessed at is on when it isn't the one being laid out: the next, for its header and footer
+    let guessPage: number | undefined;
+
+    /**
+     * Stops at what the layout can't lay out as Word does yet, for why (`reason`). Guessing, it goes on instead, with the
+     * best guess it has: what is laid out from there is laid out as the layout lays it out without it, so that what was read
+     * is laid out as it was read, a line as it was broken, text in a font or with a character the measurer doesn't know as
+     * it measures it, and a page as the rule the layout follows nearest to Word's lays it out, as each place that calls
+     * this says. The guess is noted on the page it is made on (`page`), once. Where the layout has no guess, it doesn't
+     * call this, and stops even when guessing.
+     */
+    const stopAt = (reason: string, page = guessPage ?? Math.max(pageCount, 1)): void => {
+        if (!guess) {
+            throw new Unsupported(reason);
+        }
+        const pageStart = placements.findLastIndex(({ type }) => type === "page");
+        const noted = placements
+            .slice(pageStart + 1)
+            .some((placement) => placement.type === "guess" && placement.reason === reason && placement.page === page);
+        if (!noted) {
+            // eslint-disable-next-line functional/immutable-data
+            placements.push({ type: "guess", reason, page });
+        }
+    };
+
+    /**
+     * Stops at what was read that can't be laid out as Word does yet (see {@link stopAt}): a block, a section, the document,
+     * or a table as it is sized. Guessing, it is laid out as it was read, with the guess the reader made, unless the reader
+     * had nothing to lay out in its place (`noGuess`), where it stops
+     */
+    const stopAtRead = ({ unsupported, noGuess }: { readonly unsupported?: string; readonly noGuess?: boolean }, page?: number): void => {
+        if (unsupported === undefined) {
+            return;
+        }
+        if (noGuess === true) {
+            throw new Unsupported(unsupported);
+        }
+        stopAt(unsupported, page);
+    };
+
     const section = (): Section => sections[sectionIndex];
     /**
      * The section whose columns the text is laid out in: the one being laid out, or the one whose columns the page's are,
@@ -1267,17 +1364,18 @@ export const paginate = (
     /**
      * Whether the space a line's multiple spacing adds below its text can go below the bottom of the page, as Word lets it
      * (`word-mixed-heights.docx` MH1c), for a line that fits only without it. Stops where Word hasn't shown it: in columns
-     * being evened out, above footnotes, which it would go into, and above a paragraph's border below
+     * being evened out, above footnotes, which it would go into, and above a paragraph's border below. Guessing, it goes
+     * there too
      */
     const hangsBelow = (aboveNotes: boolean, aboveBorder = false): boolean => {
         if (balancing?.page === pageCount) {
-            throw new Unsupported("columns evened out above a line whose multiple spacing goes below them");
+            stopAt("columns evened out above a line whose multiple spacing goes below them");
         }
         if (aboveNotes) {
-            throw new Unsupported("a line whose multiple spacing goes below it into the footnotes");
+            stopAt("a line whose multiple spacing goes below it into the footnotes");
         }
         if (aboveBorder) {
-            throw new Unsupported("a line whose multiple spacing goes below the page, above its paragraph's border");
+            stopAt("a line whose multiple spacing goes below the page, above its paragraph's border");
         }
         return true;
     };
@@ -1288,9 +1386,7 @@ export const paginate = (
             return 0;
         }
         const part = parts[kind]!;
-        if (part.some((block) => block.unsupported !== undefined)) {
-            throw new Unsupported(part.find((block) => block.unsupported !== undefined)!.unsupported);
-        }
+        part.forEach((block) => stopAtRead(block));
         const bySection = headerHeights.get(part) ?? new Map<number, number>();
         const height = bySection.get(sectionIndex) ?? stackHeight(part, textWidth(), false);
         // eslint-disable-next-line functional/immutable-data
@@ -1308,10 +1404,7 @@ export const paginate = (
      * whatever its own formatting (see `readEndnoteSeparator`)
      */
     const continuationHeight = (): number => {
-        const unsupported = endnoteContinuationSeparator.find((block) => block.unsupported !== undefined)?.unsupported;
-        if (unsupported !== undefined) {
-            throw new Unsupported(unsupported);
-        }
+        endnoteContinuationSeparator.forEach((block) => stopAtRead(block));
         return stackHeight(endnoteContinuationSeparator, textWidth(), false);
     };
 
@@ -1338,8 +1431,8 @@ export const paginate = (
         checkReserve();
         if (deferred !== undefined && !notesOnly) {
             // Word starts the footnote on the next page, after its reference's page, but whether it puts the text that
-            // goes on there above it, or after it, isn't known
-            throw new Unsupported("text after a line whose footnote starts on the next page");
+            // goes on there above it, or after it, isn't known. Guessing, above it
+            stopAt("text after a line whose footnote starts on the next page", pageCount + 1);
         }
         deferred = undefined;
         checkAnchors();
@@ -1355,9 +1448,12 @@ export const paginate = (
         // `word-watertight-sections.docx` SC2b, SC2d)
         pageNumber = first && current.firstNumber !== undefined ? current.firstNumber : (restart ?? pageNumber) + 1;
         restart = undefined;
-        // A header or footer taller than the margin pushes the body away from it, unless the margin is negative
+        // A header or footer taller than the margin pushes the body away from it, unless the margin is negative. What is
+        // guessed at in them is on the page they are measured for
+        guessPage = pageCount + 1;
         const headerBottom = current.header + partHeight(current.headers, first);
         const footerTop = current.footer + partHeight(current.footers, first);
+        guessPage = undefined;
         pageCount++;
         const header = kindOf(current.headers, first);
         const footer = kindOf(current.footers, first);
@@ -1378,10 +1474,10 @@ export const paginate = (
         top = current.marginTop < 0 ? -current.marginTop : Math.max(current.marginTop + current.topGutter, headerBottom);
         // On each page after the first the endnotes are on, the continuation separator is above them, whether one of them
         // goes on to it or the next starts there (`word-watertight-pages.docx` PG8, `word-watertight-sections.docx` SC4).
-        // Whether Word puts it at the top of each column too isn't known
+        // Whether Word puts it at the top of each column too isn't known: guessing, it is only across the top of the page
         const endnotesOn = endnotesGoOn();
         if (endnotesOn && current.columns.length > 1) {
-            throw new Unsupported("endnotes continued in columns");
+            stopAt(ENDNOTES_IN_COLUMNS);
         }
         const continuation = endnotesOn ? continuationHeight() : 0;
         top += continuation;
@@ -1422,8 +1518,8 @@ export const paginate = (
             if (first) {
                 // Before a section on a new page, its pages are the section before's (`word-watertight-stops.docx` SP2),
                 // but which section Word puts them in after a continuous one, which can change the page numbers, isn't
-                // known
-                throw new Unsupported("a footnote continued across a continuous section break onto a page of its own");
+                // known. Guessing, the section after's
+                stopAt("a footnote continued across a continuous section break onto a page of its own");
             }
             const { name, from } = continued;
             const to = fillNote(name, from, (point) => areaOf([], undefined, { name, from, to: point }) <= bottom - top + TOLERANCE, true);
@@ -1442,7 +1538,7 @@ export const paginate = (
             return;
         }
         if (endnotesGoOn()) {
-            throw new Unsupported("endnotes continued in columns");
+            stopAt(ENDNOTES_IN_COLUMNS);
         }
         deepest = Math.max(deepest, position + spaceAfter);
         filledEnd = Math.max(filledEnd, position);
@@ -1558,9 +1654,8 @@ export const paginate = (
             // eslint-disable-next-line functional/immutable-data
             sharingPages.add(skipped);
         }
-        if (current.unsupported) {
-            throw new Unsupported(current.unsupported);
-        }
+        // Guessing, a section is laid out as it was read, on the page it starts on
+        stopAtRead(current, continuesOnPage(previous, current) || startsInNextColumn(previous, current) ? pageCount : pageCount + 1);
         const continuous = continuesOnPage(previous, current);
         if (continuous && previous.columns.length > 1 && (placedInColumn || column > 0)) {
             endColumns(firstBlock);
@@ -1739,16 +1834,14 @@ export const paginate = (
             ...notes.flatMap((name) => piecesOf({ name })),
             ...(split === undefined ? [] : piecesOf(split)),
         ];
-        const unsupported = pieces.find(({ block }) => block.unsupported !== undefined)?.block.unsupported;
-        if (unsupported) {
-            throw new Unsupported(unsupported);
-        }
-        // How Word lays out borders and automatic spacing in a footnote hasn't been seen
+        pieces.forEach(({ block }) => stopAtRead(block));
+        // How Word lays out borders and automatic spacing in a footnote hasn't been seen. Guessing, borders take no room
+        // there, and automatic spacing is as in the text
         if (pieces.some(({ block }) => block.type === "paragraph" && block.borders !== undefined)) {
-            throw new Unsupported("a paragraph border in a footnote");
+            stopAt("a paragraph border in a footnote");
         }
         if (pieces.some(({ block }) => hasAutomaticSpace(block))) {
-            throw new Unsupported("automatic spacing in a footnote");
+            stopAt("automatic spacing in a footnote");
         }
         const width = columns?.[0] ?? fullWidth;
         /**
@@ -2155,11 +2248,11 @@ export const paginate = (
     /**
      * Stops at a line or paragraph kept with the next below the top of a page that would move to the next page for a
      * footnote that can't go on a page with it: whether Word moves it, or leaves it where it is, as it leaves one at the top
-     * of a page (SP5), isn't known
+     * of a page (SP5), isn't known. Guessing, it moves
      */
     const stopAtNoteTallerThanPage = (notes: readonly string[]): void => {
         if (notes.some(startsOnNextPage)) {
-            throw new Unsupported("a footnote taller than a page from below the top of a page");
+            stopAt("a footnote taller than a page from below the top of a page");
         }
     };
 
@@ -2181,7 +2274,7 @@ export const paginate = (
      * of footnotes alone (`ownPage`), a paragraph kept together that starts it and is taller than the page breaks where
      * the page ends, as the body's does (SP5). Whether Word keeps a footnote's other paragraphs together or with the next
      * across pages, breaks a row whose lines could go on both pages, or leaves a table's header rows alone at the bottom of
-     * a page in one, isn't known, so it stops there.
+     * a page in one, isn't known, so it stops there, or guessing, breaks it there as the body's would break without them.
      */
     const fillNote = (name: string, from: NotePoint, fits: (to: NotePoint) => boolean, ownPage = false): NotePoint => {
         const note = footnotes.get(name)!;
@@ -2201,16 +2294,16 @@ export const paginate = (
         /** The point the part ends at, before a line or row of the block */
         const breakBefore = (at: number): NotePoint => {
             if (at === 0 && index > from.block && previous.type === "paragraph" && previous.format.keepNext === true) {
-                throw new Unsupported("a paragraph kept together or with the next in a footnote across pages");
+                stopAt(KEPT_IN_NOTE);
             }
             return { block: index, line: at };
         };
         if (block.type === "table") {
             if (!breaksBeforeRow(fitted(block, width).rows[line])) {
-                throw new Unsupported("a table row in a footnote that would break across pages");
+                stopAt("a table row in a footnote that would break across pages");
             }
             if (line > 0 && block.rows.slice(0, line).every(({ header }) => header)) {
-                throw new Unsupported("a table's header rows at the bottom of a page in a footnote");
+                stopAt("a table's header rows at the bottom of a page in a footnote");
             }
             return breakBefore(line);
         }
@@ -2218,7 +2311,7 @@ export const paginate = (
         const { lines, widowControl, keepLines } = measureParagraph(block, width);
         const count = linesKept(lines.length - begin, line - begin, { keepLines: false, widowControl }, begin === 0);
         if (keepLines && count > 0 && !(ownPage && index === from.block)) {
-            throw new Unsupported("a paragraph kept together or with the next in a footnote across pages");
+            stopAt(KEPT_IN_NOTE);
         }
         return breakBefore(begin + count);
     };
@@ -2262,18 +2355,22 @@ export const paginate = (
         carried = { name, from: to };
     };
 
-    /** The number of the page as the section writes it, after the chapter number when it has one */
+    /**
+     * The number of the page as the section writes it, after the chapter number when it has one. Guessing, a number in a
+     * format the layout can't write is in figures, and one whose chapter number isn't known has none
+     */
     const pageText = (): string => {
         const { numberFormat, chapters } = section();
         const page = formatPageNumber(pageNumber, numberFormat);
         if (page === undefined) {
-            throw new Unsupported("a page number its format isn't written for yet");
+            stopAt(UNWRITTEN_NUMBER);
         }
         const heading = chapters && chapterHeadings[blockStart!.index][chapters.level - 1];
         if (heading?.unsupported) {
-            throw new Unsupported(heading.unsupported);
+            stopAt(heading.unsupported);
         }
-        return heading?.chapter === undefined ? page : `${heading.chapter}${chapters!.separator}${page}`;
+        const text = page ?? String(pageNumber);
+        return heading?.chapter === undefined ? text : `${heading.chapter}${chapters!.separator}${text}`;
     };
 
     /**
@@ -2678,10 +2775,11 @@ export const paginate = (
         // One taller than some of the columns but not others goes in the first, from where it is, that it fits in, as any
         // paragraph kept together does, and moves on from the top of one it is taller than, as Word moves it: from the top
         // of a narrow first column to the wide second, and past a narrow second column to a new page
-        // (`word-column-stops.docx` CS3 to CS6). Where there are more than 2 columns, Word hasn't shown it
+        // (`word-column-stops.docx` CS3 to CS6). Where there are more than 2 columns, Word hasn't shown it: guessing, it moves
+        // on in the same way
         const movesOn = !keptTall && taller.some((tall) => tall);
         if (movesOn && columns.length > 2) {
-            throw new Unsupported("a paragraph kept together taller than some of 3 or more columns of different widths");
+            stopAt("a paragraph kept together taller than some of 3 or more columns of different widths");
         }
         // The lines that go down only the first column of each page: those up to its first break, when it is kept together
         const firstColumnsOnly = keptTall ? linesToBreak(linesOf(block, columns[0]), 0).length : 0;
@@ -3119,7 +3217,8 @@ export const paginate = (
      */
     const placeCutRow = (row: TableRow, index: number): void => {
         if (section().columns.length > 1) {
-            throw new Unsupported("a table row kept together taller than a column");
+            // Guessing, it is cut off at the bottom of the column
+            stopAt(KEPT_ROW_IN_COLUMNS);
         }
         const markers = row.cells.flatMap((cell) => cell.blocks.flatMap(markersOf));
         if (notesIn(markers).length > 0 || openMerges.length > 0 || row.header) {
@@ -3235,7 +3334,8 @@ export const paginate = (
                     referring.some((other) => other !== cell) &&
                     fillCell(cells[cell].paragraphs, roomOf(cell, heldRoom), cells[cell].isFirst).fits > part.lines.length;
                 if (filled.some(heldBack)) {
-                    throw new Unsupported("a footnote in a table row beside a cell whose lines it holds back");
+                    // Guessing, the cells keep their lines as the row is cut
+                    stopAt("a footnote in a table row beside a cell whose lines it holds back");
                 }
             }
             return { whole, filled, notes, noteRoom };
@@ -3277,26 +3377,24 @@ export const paginate = (
                 (!isFirstPart || (isLastPart ? height - borders : (row.height?.value ?? 0)) <= roomAbove(noteRoom) + TOLERANCE) &&
                 filled.some(({ lines }, cell) => decides(cell) && lines.length > 0) &&
                 cells.every(({ paragraphs }, cell) => !decides(cell) || paragraphs.length === 0 || filled[cell].lines.length > 0);
+            // Where Word's breaking of the row isn't known, guessing, it breaks as other rows do
             if (placesLines && !isLastPart) {
                 const hasTable = (cell: TableCell): boolean => cell.blocks.some(({ type }) => type === "table");
                 if (flowing.some(({ cell }) => hasTable(cell))) {
                     // Whether Word breaks a table in a cell merged down rows as it breaks one in a cell of a row isn't known
-                    throw new Unsupported("a table in a cell merged down table rows across pages");
+                    stopAt("a table in a cell merged down table rows across pages");
                 }
                 if (own.some(hasTable) && notesIn(row.cells.flatMap((cell) => cell.blocks.flatMap(markersOf))).length > 0) {
                     // Where Word breaks such a row for its footnotes isn't known
-                    throw new Unsupported("a footnote in a table row with a table in a cell, across pages");
+                    stopAt("a footnote in a table row with a table in a cell, across pages");
                 }
-                const unknown = filled.find(({ unsupported }) => unsupported !== undefined);
-                if (unknown !== undefined) {
-                    throw new Unsupported(unknown.unsupported!);
-                }
+                filled.forEach((part) => stopAtRead(part));
                 if (row.cells.some(({ vertical }) => vertical)) {
                     // Whether Word breaks text that runs up or down a cell with the row isn't known
-                    throw new Unsupported("text that runs up or down a table cell across pages");
+                    stopAt("text that runs up or down a table cell across pages");
                 }
                 if (table.spaced) {
-                    throw new Unsupported("a table row with space between its cells across pages");
+                    stopAt("a table row with space between its cells across pages");
                 }
             }
             // A row at the top of a page that doesn't fit there whole is taller than a page, unless the end of a footnote
@@ -3332,8 +3430,8 @@ export const paginate = (
                 }
                 if (section().columns.length > 1) {
                     // Word lays a paragraph kept together that is taller than a column down the first column of each page,
-                    // but what it does with a row isn't known
-                    throw new Unsupported("a table row kept together taller than a column");
+                    // but what it does with a row isn't known: guessing, it breaks there as on a page
+                    stopAt(KEPT_ROW_IN_COLUMNS);
                 }
                 parts = parts.map((paragraphs) =>
                     paragraphs.map((part, index) =>
@@ -3343,8 +3441,9 @@ export const paginate = (
                 continue;
             }
             if (!placesLines && isFirstPart && table.kept) {
-                // The rows kept with this one stayed on the page for its first lines, which would then move to the next
-                throw new Unsupported("a table row kept with the next before a row that moves to the next page");
+                // The rows kept with this one stayed on the page for its first lines, which would then move to the next.
+                // Guessing, it moves on its own
+                stopAt("a table row kept with the next before a row that moves to the next page");
             }
             if (!placesLines) {
                 // The row goes to the next page whole, so the text of the cells merged down to it from rows above ends in those
@@ -3379,15 +3478,17 @@ export const paginate = (
                     return [];
                 }
                 if (merge.broken) {
-                    throw new Unsupported("a cell merged down table rows whose text goes on across more than two pages");
+                    // Guessing, it goes on across the next page as it did across this one
+                    stopAt("a cell merged down table rows whose text goes on across more than two pages");
                 }
                 if (notesIn(merge.cell.blocks.flatMap(markersOf)).length > 0) {
-                    // Its footnotes went with the first of its rows
-                    throw new Unsupported("a footnote in a cell merged down table rows whose text goes on across pages");
+                    // Its footnotes went with the first of its rows, and stay there guessing
+                    stopAt("a footnote in a cell merged down table rows whose text goes on across pages");
                 }
                 if (merge.header) {
-                    // Whether Word repeats the part of it in the header rows above the rest of it isn't known
-                    throw new Unsupported("a cell merged down from a table's header rows whose text goes on across pages");
+                    // Whether Word repeats the part of it in the header rows above the rest of it isn't known: guessing, it
+                    // doesn't
+                    stopAt("a cell merged down from a table's header rows whose text goes on across pages");
                 }
                 return [{ ...merge, rest, start: undefined, broken: true }];
             });
@@ -3537,8 +3638,9 @@ export const paginate = (
             const notes = notesIn(markers);
             const keptWhole = row.cantSplit || row.height?.rule === "exact";
             if (table.cellSpacing !== undefined && row.breakBorder === undefined && !rowFits(roomNeeded, notes)) {
-                // What Word draws where a table with space between its cells and borders breaks across pages isn't known
-                throw new Unsupported("a table with space between its cells and borders across pages");
+                // What Word draws where a table with space between its cells and borders breaks across pages isn't known.
+                // Guessing, nothing more
+                stopAt("a table with space between its cells and borders across pages");
             }
             placeKeptRows(index);
             // On the next page, the end of a footnote continued from this one can leave too little room for it too, as for
@@ -3560,7 +3662,8 @@ export const paginate = (
                     continue;
                 }
                 if (section().columns.length > 1) {
-                    throw new Unsupported("a table row kept together taller than a column");
+                    // Guessing, it breaks as on a page
+                    stopAt(KEPT_ROW_IN_COLUMNS);
                 }
             }
             // One that can't break breaks there as other rows do, as in Word: 60 lines go 51 and 9 (`word-probes.docx` U5a,
@@ -3642,12 +3745,13 @@ export const paginate = (
             };
         }
         if (anchor.type === "table") {
-            // A table that can't be laid out has nothing kept with it, so what is kept is placed before the layout stops.
-            // They are kept with its first row, and the rows kept with it
-            const sized = anchor.unsupported ? anchor : fitted(anchor, width);
-            const rows = sized.unsupported ? [] : sized.rows.slice(0, keptRowsEnd(sized, 0) + 1);
+            // A table that can't be laid out has nothing kept with it, so what is kept is placed before the layout stops,
+            // but guessing, one with a guess is laid out as it is. They are kept with its first row, and the rows kept with it
+            const stops = ({ unsupported, noGuess }: TableBlock): boolean => unsupported !== undefined && (!guess || noGuess === true);
+            const sized = stops(anchor) ? anchor : fitted(anchor, width);
+            const rows = stops(sized) ? [] : sized.rows.slice(0, keptRowsEnd(sized, 0) + 1);
             return {
-                height: keptLines + lastAfter + sum(sized.unsupported ? [] : rowHeights(sized).slice(0, rows.length)),
+                height: keptLines + lastAfter + sum(stops(sized) ? [] : rowHeights(sized).slice(0, rows.length)),
                 spacingBelow: 0,
                 notes: [...keptNotes, ...notesIn(rows.flatMap(({ cells }) => cells.flatMap((cell) => cell.blocks.flatMap(markersOf))))],
                 kept: keptNotes,
@@ -3687,15 +3791,14 @@ export const paginate = (
 
     const placeBlock = (block: Block, index: number): void => {
         blockIndex = index;
-        if (block.unsupported) {
-            throw new Unsupported(block.unsupported);
-        }
+        stopAtRead(block);
         const width = columnsSection().columns[column];
         const previous = blocks[index - 1];
         if (block.type === "paragraph") {
             if (block.sectionBreak && (block.borders !== undefined || hasAutomaticSpace(block))) {
-                // It takes no room, and where its borders or Word's automatic spacing would go isn't known
-                throw new Unsupported("borders or automatic spacing on the empty paragraph that ends a section");
+                // It takes no room, and where its borders or Word's automatic spacing would go isn't known. Guessing, its
+                // borders take none either, and its automatic spacing is as any paragraph's
+                stopAt("borders or automatic spacing on the empty paragraph that ends a section");
             }
             if (
                 previous !== undefined &&
@@ -3703,8 +3806,8 @@ export const paginate = (
                 (previous.section !== blocks[index].section || block.format.pageBreakBefore === true)
             ) {
                 // Whether Word's box of borders goes on across a section break, or a page break before a paragraph in it,
-                // with no border above it on the new page, isn't known
-                throw new Unsupported("paragraphs with the same borders either side of a section or page break");
+                // with no border above it on the new page, isn't known. Guessing, it goes on
+                stopAt("paragraphs with the same borders either side of a section or page break");
             }
         }
         if (block.type === "paragraph" && block.sectionBreak && !endsAfterTable(index)) {
@@ -3758,10 +3861,9 @@ export const paginate = (
             const anchorTaller = anchor.type === "paragraph" ? columnsTallerThan(anchor) : [];
             const tallAnchor = anchorTaller.length > 0 && anchorTaller.every((tall) => tall);
             if (!tallAnchor && anchorTaller.some((tall) => tall)) {
-                // Whether they move with one that is taller than some of the columns but not others isn't known
-                throw new Unsupported(
-                    "a paragraph kept with the next before one kept together taller than some of the columns but not others",
-                );
+                // Whether they move with one that is taller than some of the columns but not others isn't known. Guessing,
+                // they are kept with it as with any paragraph
+                stopAt("a paragraph kept with the next before one kept together taller than some of the columns but not others");
             }
             if (tallAnchor) {
                 // Kept with a paragraph kept together that is taller than a column, they move to a new page with it, unless
@@ -3810,8 +3912,9 @@ export const paginate = (
                 fitsWith(leastNoteRoom(all)) &&
                 !fitsWith(moreNoteRoom(all));
             if (holdNotes && keptWith === "part" && keptLines === undefined) {
-                // How much of a table, or of a paragraph with a page break before it, Word puts above it isn't known
-                throw new Unsupported("a footnote continued below a paragraph kept with the next");
+                // How much of a table, or of a paragraph with a page break before it, Word puts above it isn't known.
+                // Guessing, all of it
+                stopAt("a footnote continued below a paragraph kept with the next");
             }
             heldLines = holdNotes && keptWith === "part" ? keptLines : undefined;
         }
@@ -3879,12 +3982,18 @@ export const paginate = (
     });
 
     /**
-     * The pages, from what was placed on them. The blocks after the body's are its endnotes'. The page the layout stopped
-     * on because Word might lay it out differently has nothing on it
+     * The pages, from what was placed on them, with what was guessed at on each, once each. The blocks after the body's are
+     * its endnotes'. The page the layout stopped on because Word might lay it out differently has nothing on it
      */
     const pagesOf = (): readonly PageLayout[] => {
         const starts = placements.flatMap((placement, index) => (placement.type === "page" ? [index] : []));
+        const guessesOn = (page: number): readonly string[] => [
+            ...new Set(
+                placements.flatMap((placement) => (placement.type === "guess" && placement.page === page ? [placement.reason] : [])),
+            ),
+        ];
         return starts.map((start, page) => {
+            const guesses = guessesOn(page + 1);
             const placed = page + 1 === stoppedOnPage ? [] : placements.slice(start + 1, starts[page + 1]);
             const pieces = placed.filter((placement): placement is BlockPlacement => placement.type === "line" || placement.type === "row");
             const endnotePieces = pieces.flatMap((piece) => {
@@ -3905,6 +4014,7 @@ export const paginate = (
                 body: blocksOf(pieces.filter(({ block }) => block < content.blocks.length).map((piece) => ({ index: piece.block, piece }))),
                 footnotes: placed.flatMap((placement) => (placement.type === "footnotes" ? placement.notes : [])),
                 endnotes: notes.map(({ noteNumber, pieces: notePieces }) => ({ noteNumber, content: blocksOf(notePieces) })),
+                ...(guesses.length > 0 ? { guesses } : {}),
             };
         });
     };
@@ -3935,12 +4045,9 @@ export const paginate = (
     });
 
     try {
-        if (content.unsupported) {
-            throw new Unsupported(content.unsupported);
-        }
-        if (section().unsupported) {
-            throw new Unsupported(section().unsupported);
-        }
+        // Guessing, the document and its first section are laid out as they were read, from the first page
+        stopAtRead(content);
+        stopAtRead(section());
         startPage(true);
         placeBlocks(0, blocks.length);
         checkAnchors();

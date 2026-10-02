@@ -3,7 +3,9 @@
  * bookmarks and formatting, its tables, and its sections, with their pages, margins, headers and footers.
  *
  * What can't be laid out yet, such as a picture that text wraps around, is marked as unsupported, with why, so the page
- * numbers after it are left blank rather than guessed.
+ * numbers after it are left blank rather than guessed. Read to be laid out with a guess, the reader reads past it with
+ * one: what it can read of it as it is written, and what it can't left out, with why kept where it would stop, so the
+ * layout notes the guess where it lays it out.
  *
  * @module
  */
@@ -190,8 +192,13 @@ export type ParagraphBlock = {
     readonly numberAlignment?: "center" | "right";
     /** The room its borders take above and below its lines, when it has a border there */
     readonly borders?: ParagraphBorders;
-    /** Why it can't be laid out, when it can't */
+    /** Why it can't be laid out as Word lays it out, when it can't */
     readonly unsupported?: string;
+    /**
+     * Whether a layout that guesses has no guess for it either, as it stands in for what couldn't be read, such as an
+     * imported document, and has nothing of it to lay out
+     */
+    readonly noGuess?: boolean;
 };
 
 /**
@@ -291,6 +298,8 @@ export type TableBlock = {
      */
     readonly deletedRows?: readonly TableRow[];
     readonly unsupported?: string;
+    /** Whether a layout that guesses has no guess for it either, for what is in one of its cells */
+    readonly noGuess?: boolean;
 };
 
 export type Block = ParagraphBlock | TableBlock;
@@ -505,6 +514,8 @@ type Reader = {
     readonly decimalSymbol?: string;
     /** Whether it reads the cells of a table */
     readonly inCell?: boolean;
+    /** Whether it reads past what can't be laid out as Word does, with a guess (see {@link guessedOr}) */
+    readonly guess?: boolean;
 };
 
 // Word's defaults for a section that doesn't give its page: Letter, with inch margins
@@ -550,6 +561,29 @@ const SIZED_REMOVAL = "a deleted picture, tab, break or note reference in a tabl
 const PARTLY_DELETED_FIELD = "a field partly deleted in a tracked change";
 // A mark of its own in place of a note's number, which Word may not count in the numbers of the others
 const OWN_NOTE_MARK = "a footnote or endnote with a mark of its own";
+// Whether a box of borders around text goes on round a tab in it isn't known
+const TAB_IN_BORDER = "a tab in text with a border";
+
+// The start of the name of a marker that stands in a paragraph's items for what the reader guessed at, read to be laid
+// out with a guess, with why after it. The paragraph takes the first as why it can't be laid out as Word does, and leaves
+// them out of its items
+const GUESS = "docx-layout:guess ";
+
+/** A marker that stands in a paragraph's items for what the reader guessed at, for why */
+const guessMarker = (reason: string): LayoutItem => ({ type: "marker", name: `${GUESS}${reason}` });
+
+/** Why the reader guessed at what an item stands for, when it is the marker of a guess */
+const guessOf = (item: LayoutItem): string | undefined =>
+    item.type === "marker" && item.name.startsWith(GUESS) ? item.name.slice(GUESS.length) : undefined;
+
+/**
+ * Why the layout stops at what is being read, in its place, or, read to be laid out with a guess, the reader's guess at
+ * it (`guess`), after the marker of why, so the paragraph it is in is laid out with the guess, and says why. Where the
+ * reader has no better guess, it returns why alone, and the paragraph is laid out without what it stands for (see
+ * {@link itemsOf}).
+ */
+const guessedOr = (reader: Reader, reason: string, guess: () => readonly LayoutItem[] | string): readonly LayoutItem[] | string =>
+    reader.guess ? [guessMarker(reason), ...(itemsOf([guess()], reader) as readonly LayoutItem[])] : reason;
 
 const nameOf = (element: XmlObject): string => Object.keys(element)[0];
 
@@ -571,15 +605,24 @@ const isBound = (control: XmlObject): boolean =>
 
 /**
  * The elements of a part of a document, such as a table's rows or a cell's paragraphs, with those in its content controls
- * and custom XML in their place. A content control bound to custom XML is kept whole, as it can't be laid out.
+ * and custom XML in their place. A content control bound to custom XML is kept whole, as it can't be laid out, unless it
+ * is read to be laid out with a guess (`guess`) and starts with a paragraph: then what is written in it is read as it is,
+ * and its first paragraph says why it is a guess.
  */
-const unwrap = (elements: readonly unknown[]): readonly XmlObject[] =>
+const unwrap = (elements: readonly unknown[], guess = false): readonly XmlObject[] =>
     elements.filter(isObject).flatMap((element) => {
         const name = nameOf(element);
-        if (name === "w:sdt" && !isBound(element)) {
-            return unwrap(childrenOf(find(childrenOf(element[name]), "w:sdtContent")));
+        if (name === "w:sdt") {
+            const content = unwrap(childrenOf(find(childrenOf(element[name]), "w:sdtContent")), guess);
+            if (!isBound(element)) {
+                return content;
+            }
+            const first = content.find((child) => BLOCK_ELEMENTS.has(nameOf(child)));
+            return guess && first !== undefined && "w:p" in first
+                ? content.map((child) => (child === first ? stopIn(child, BOUND_CONTROL) : child))
+                : [element];
         }
-        return name === "w:customXml" ? unwrap(contentOf(element)) : [element];
+        return name === "w:customXml" ? unwrap(contentOf(element), guess) : [element];
     });
 
 /** The name of the bookmark a bookmark's start (`w:bookmarkStart`) starts */
@@ -676,6 +719,10 @@ const numberSwitchesOf = (switches: string): NumberSwitches => {
 // The fields Word writes itself when it opens the document, from the computer's clock
 const DATE_FIELDS = new Set(["DATE", "TIME"]);
 const DATE_UNSUPPORTED = "a date or time, which Word writes when it opens the document";
+const RELATIVE_IN_NOTE = "a page reference that says where its bookmark is, in a footnote or endnote";
+// Why the layout stops at fields whose results Word writes in ways not yet followed, which, guessing, are read as they
+// are written
+const WRITTEN_GUESSES: ReadonlySet<string> = new Set([DATE_UNSUPPORTED, RELATIVE_IN_NOTE]);
 
 /** A marker at a field whose result depends on where it is placed */
 const fieldMarker = (markers: FieldMarkers): Extract<LayoutItem, { readonly type: "marker" }> => {
@@ -730,7 +777,8 @@ const workedOutResultOf = (instruction: string, font: TextFont, reader: Reader):
             references.push(at.name);
         }
         if (switched.unsupported) {
-            return switched.unsupported;
+            // Guessing, the page reference writes its bookmark's page as the page shows it
+            return guessedOr(reader, switched.unsupported, () => workedOutResultOf(`PAGEREF ${bookmark}`, font, reader)!);
         }
         const own = withoutUndefined({ format: switched.format });
         if (!switched.relative || writesNumber(switched.format)) {
@@ -741,23 +789,21 @@ const workedOutResultOf = (instruction: string, font: TextFont, reader: Reader):
             // Where a header's bookmark is from it isn't worked out, so it is read as it is written
             return undefined;
         }
-        return at
-            ? [at, { type: "pageReference", bookmark, font, relative: at.name, ...own }]
-            : "a page reference that says where its bookmark is, in a footnote or endnote";
+        return at ? [at, { type: "pageReference", bookmark, font, relative: at.name, ...own }] : RELATIVE_IN_NOTE;
     }
     const { format, unsupported } = numberSwitchesOf(field[2]);
+    // Guessing, a number in a format not yet written is written as the page or section shows it, or in figures
+    const unformatted = (): readonly LayoutItem[] | string => workedOutResultOf(name, font, reader)!;
     if (name === "NUMPAGES" || name === "SECTIONPAGES") {
-        return (
-            unsupported ?? [
-                { type: "pageCount", scope: name === "NUMPAGES" ? "document" : "section", font, ...withoutUndefined({ format }) },
-            ]
-        );
+        return unsupported === undefined
+            ? [{ type: "pageCount", scope: name === "NUMPAGES" ? "document" : "section", font, ...withoutUndefined({ format }) }]
+            : guessedOr(reader, unsupported, unformatted);
     }
     if (inHeader) {
         return undefined;
     }
     if (unsupported) {
-        return unsupported;
+        return guessedOr(reader, unsupported, unformatted);
     }
     if (name === "SECTION" && !inNote) {
         return [{ type: "sectionNumber", font, ...withoutUndefined({ format }) }];
@@ -940,6 +986,10 @@ const readFieldCharacter = (element: XmlObject, format: RunFormat, reader: Reade
         const result = deleted ? undefined : workedOutResultOf(field.instruction, fontOf(format), reader);
         // eslint-disable-next-line functional/immutable-data
         field.inResult = true;
+        if (typeof result === "string" && reader.guess === true && WRITTEN_GUESSES.has(result) && isShown(reader)) {
+            // Guessing, its result is read as it is written
+            return format.hidden ? [] : guessedOr(reader, result, () => []);
+        }
         if (result !== undefined && isShown(reader)) {
             // eslint-disable-next-line functional/immutable-data
             field.replaced = true;
@@ -980,6 +1030,8 @@ const readRun = (element: XmlObject, paragraphRun: RunFormat, reader: Reader, re
     ]);
     const font = fontOf(format);
     const unsupportedFormat = unsupportedFormatOf(childrenOf(properties)) ?? (format.hidden ? undefined : unknownRunFormatting(format));
+    // Whether what is shown of the run is read past its formatting, with a guess
+    let formatGuessed = false;
     const items: readonly (readonly LayoutItem[] | string)[] = children.map((child): readonly LayoutItem[] | string => {
         const name = nameOf(child);
         if (name === "w:fldChar") {
@@ -1006,7 +1058,11 @@ const readRun = (element: XmlObject, paragraphRun: RunFormat, reader: Reader, re
             return SIZED_REMOVAL;
         }
         if (unsupportedFormat !== undefined) {
-            return unsupportedFormat;
+            // Read to be laid out with a guess, the run is read as if it weren't formatted so
+            if (!reader.guess) {
+                return unsupportedFormat;
+            }
+            formatGuessed = true;
         }
         switch (name) {
             case "w:t":
@@ -1015,26 +1071,29 @@ const readRun = (element: XmlObject, paragraphRun: RunFormat, reader: Reader, re
                 const content = contentOf(child)
                     .filter((part) => typeof part === "string")
                     .join("");
-                // Whether a box goes on round a tab, or ends before it, isn't known
-                if (font.border && !format.hidden && content.includes("\t")) {
-                    return "a tab in text with a border";
-                }
-                return content.split("\t").flatMap((part, index): readonly LayoutItem[] => [
-                    ...(index > 0 && !format.hidden ? [{ type: "tab" as const, font }] : []),
-                    ...(part.length === 0 ? [] : spansOf(part, format)).map(({ text, ...spanFont }) => ({
-                        type: "text" as const,
-                        text,
-                        font: spanFont,
-                        // Where its lines break depends on its language, and whether its run is East Asian
-                        ...(format.eastAsianLanguage === undefined ? {} : { language: format.eastAsianLanguage }),
-                        ...(isEastAsianRun(format) ? { eastAsian: true } : {}),
-                        ...hyphenationOf(format),
-                    })),
-                ]);
+                const read = (): readonly LayoutItem[] =>
+                    content.split("\t").flatMap((part, index): readonly LayoutItem[] => [
+                        ...(index > 0 && !format.hidden ? [{ type: "tab" as const, font }] : []),
+                        ...(part.length === 0 ? [] : spansOf(part, format)).map(({ text, ...spanFont }) => ({
+                            type: "text" as const,
+                            text,
+                            font: spanFont,
+                            // Where its lines break depends on its language, and whether its run is East Asian
+                            ...(format.eastAsianLanguage === undefined ? {} : { language: format.eastAsianLanguage }),
+                            ...(isEastAsianRun(format) ? { eastAsian: true } : {}),
+                            ...hyphenationOf(format),
+                        })),
+                    ]);
+                // Whether a box goes on round a tab, or ends before it, isn't known. Guessing, it goes on
+                return font.border && !format.hidden && content.includes("\t") ? guessedOr(reader, TAB_IN_BORDER, read) : read();
             }
             case "w:tab":
             case "w:ptab":
-                return format.hidden ? [] : font.border ? "a tab in text with a border" : [{ type: "tab", font }];
+                return format.hidden
+                    ? []
+                    : font.border
+                      ? guessedOr(reader, TAB_IN_BORDER, () => [{ type: "tab", font }])
+                      : [{ type: "tab", font }];
             case "w:br": {
                 // A page break in hidden text breaks nothing (`word-hidden-paragraphs.docx` HP4a, HP4b)
                 const kind = attributesOf(child["w:br"])["w:type"];
@@ -1051,9 +1110,11 @@ const readRun = (element: XmlObject, paragraphRun: RunFormat, reader: Reader, re
                 return format.hidden
                     ? []
                     : font.border
-                      ? "a soft hyphen in text with a border"
+                      ? guessedOr(reader, "a soft hyphen in text with a border", () => [{ type: "softHyphen", font }])
                       : reader.inSizedTable
-                        ? "a soft hyphen in a table whose columns Word sizes to their text"
+                        ? guessedOr(reader, "a soft hyphen in a table whose columns Word sizes to their text", () => [
+                              { type: "softHyphen", font },
+                          ])
                         : [{ type: "softHyphen", font }];
             case "w:sym": {
                 // A symbol is a character of its own font: most often a symbol font's own, such as Wingdings' tick, F0FC,
@@ -1077,28 +1138,38 @@ const readRun = (element: XmlObject, paragraphRun: RunFormat, reader: Reader, re
             }
             case "w:footnoteReference":
             case "w:endnoteReference": {
+                /** The reference, with its note's number, unless a mark of its own follows it in its place */
+                const reference = (numbered: boolean): readonly LayoutItem[] => {
+                    const note = reader.notes?.read(
+                        name === "w:footnoteReference" ? "footnote" : "endnote",
+                        String(attributesOf(child[name])["w:id"]),
+                    );
+                    return note === undefined
+                        ? []
+                        : [
+                              ...(note.marker ? [{ type: "marker" as const, name: note.marker }] : []),
+                              ...(numbered ? [noteNumber(note.label, font)] : []),
+                          ];
+                };
                 if (hasOwnMark(child)) {
-                    return OWN_NOTE_MARK;
+                    // Guessing, a note with a mark of its own is numbered as the others are, with its mark in its number's
+                    // place, and one in hidden text isn't laid out
+                    return guessedOr(reader, OWN_NOTE_MARK, () => (format.hidden ? [] : reference(false)));
                 }
                 // Word doesn't lay out a note whose reference is hidden (`word-hidden-paragraphs.docx` HP4d, HP4e), but whether
                 // it counts it in the numbers of the notes after it hasn't been seen
-                if (format.hidden) {
-                    return "a footnote or endnote reference in hidden text";
-                }
-                const note = reader.notes?.read(
-                    name === "w:footnoteReference" ? "footnote" : "endnote",
-                    String(attributesOf(child[name])["w:id"]),
-                );
-                return note === undefined
-                    ? []
-                    : [...(note.marker ? [{ type: "marker" as const, name: note.marker }] : []), noteNumber(note.label, font)];
+                return format.hidden ? "a footnote or endnote reference in hidden text" : reference(true);
             }
             case "w:footnoteRef":
             case "w:endnoteRef":
                 return reader.noteNumber === undefined ? [] : [noteNumber(reader.noteNumber, font)];
             case "w:drawing":
                 // A picture in hidden text takes no room (`word-hidden-paragraphs.docx` HP4c)
-                return format.hidden ? [] : font.border ? "a picture in text with a border" : readDrawing(child, font, reader);
+                return format.hidden
+                    ? []
+                    : font.border
+                      ? guessedOr(reader, "a picture in text with a border", () => readDrawing(child, font, reader))
+                      : readDrawing(child, font, reader);
             case "mc:AlternateContent": {
                 // The drawing Word reads, rather than the one for older versions
                 const choice = childrenOf(child["mc:AlternateContent"]).find((option) => "mc:Choice" in option);
@@ -1116,8 +1187,8 @@ const readRun = (element: XmlObject, paragraphRun: RunFormat, reader: Reader, re
             case "w:yearShort":
             case "w:yearLong":
                 // Word writes the date it opens the document on (`word-watertight-pages.docx` PG7b). A header's is read as it
-                // is written, as nothing, as is one in hidden text, which takes no room
-                return reader.inHeader || format.hidden ? [] : DATE_UNSUPPORTED;
+                // is written, as nothing, as is one in hidden text, which takes no room, and guessing, any
+                return reader.inHeader || format.hidden ? [] : guessedOr(reader, DATE_UNSUPPORTED, () => []);
             case "w:pgNum": {
                 // The number of the page it is on, as a PAGE field writes it (PG7c). A header's is read as it is written
                 if (reader.inHeader || format.hidden) {
@@ -1127,16 +1198,17 @@ const readRun = (element: XmlObject, paragraphRun: RunFormat, reader: Reader, re
                 return [marker, { type: "pageNumber", field: marker.name, font }];
             }
             case "w:ruby":
-                // Its text is in its base and in the guide above it, which makes the line taller
-                return "text with a phonetic guide";
+                // Its text is in its base and in the guide above it, which makes the line taller. Guessing, its base alone
+                return guessedOr(reader, "text with a phonetic guide", () =>
+                    readInline(childrenOf(find(childrenOf(child["w:ruby"]), "w:rubyBase")), paragraphRun, reader, removed),
+                );
             case "w:contentPart":
                 return "a content part, such as ink";
             default:
                 return [];
         }
     });
-    const unsupported = items.find((item): item is string => typeof item === "string");
-    return unsupported ?? items.flatMap((item) => item as readonly LayoutItem[]);
+    return itemsOf(formatGuessed ? [[guessMarker(unsupportedFormat!)], ...items] : items, reader);
 };
 
 // Elements in a paragraph that hold runs and are read through
@@ -1153,8 +1225,14 @@ const COUNTED = "docx-layout:counted";
 // is, for its fields and number, and then left out, as it takes no room
 const LEFT_OUT = "docx-layout:left-out";
 
-/** The items of the parts of a paragraph, or why it can't be laid out */
-const itemsOf = (parts: readonly (readonly LayoutItem[] | string)[]): readonly LayoutItem[] | string => {
+/**
+ * The items of the parts of a paragraph, or why it can't be laid out. Read to be laid out with a guess, a part that can't
+ * be is left out, with the marker of why in its place
+ */
+const itemsOf = (parts: readonly (readonly LayoutItem[] | string)[], reader: Reader): readonly LayoutItem[] | string => {
+    if (reader.guess) {
+        return parts.flatMap((part) => (typeof part === "string" ? [guessMarker(part)] : part));
+    }
     const unsupported = parts.find((part): part is string => typeof part === "string");
     return unsupported ?? parts.flatMap((part) => part as readonly LayoutItem[]);
 };
@@ -1183,7 +1261,10 @@ const readRemoved = (elements: readonly unknown[], kind: string, reader: Reader)
                 }
                 references.forEach(() => reader.notes?.skip("footnote"));
                 // Its field characters, which keep the fields' places, so a field partly deleted is found
-                return itemsOf(children.map((child) => (nameOf(child) === "w:fldChar" ? readFieldCharacter(child, {}, reader, true) : [])));
+                return itemsOf(
+                    children.map((child) => (nameOf(child) === "w:fldChar" ? readFieldCharacter(child, {}, reader, true) : [])),
+                    reader,
+                );
             }
             if (name === "w:bookmarkStart") {
                 return markerOf(element);
@@ -1195,6 +1276,7 @@ const readRemoved = (elements: readonly unknown[], kind: string, reader: Reader)
                 ? readRemoved(contentOf(element), kind, reader)
                 : [];
         }),
+        reader,
     );
 
 /**
@@ -1222,9 +1304,10 @@ const readInline = (
                 return readInline(contentOf(element), paragraphRun, reader, removed);
             }
             if (name === "w:sdt") {
-                return isBound(element)
-                    ? BOUND_CONTROL
-                    : readInline(childrenOf(find(childrenOf(element[name]), "w:sdtContent")), paragraphRun, reader, removed);
+                // Guessing, what is written in one bound to custom XML is read as it is
+                const written = (): readonly LayoutItem[] | string =>
+                    readInline(childrenOf(find(childrenOf(element[name]), "w:sdtContent")), paragraphRun, reader, removed);
+                return isBound(element) ? guessedOr(reader, BOUND_CONTROL, written) : written();
             }
             if (name === "w:fldSimple") {
                 const result = workedOutResultOf(
@@ -1234,6 +1317,12 @@ const readInline = (
                 );
                 if (result === undefined || !isShown(reader)) {
                     return readInline(contentOf(element), paragraphRun, reader, removed);
+                }
+                if (typeof result === "string" && reader.guess === true && WRITTEN_GUESSES.has(result)) {
+                    // Guessing, its result is read as it is written
+                    return paragraphRun.hidden
+                        ? []
+                        : guessedOr(reader, result, () => readInline(contentOf(element), paragraphRun, reader, removed));
                 }
                 return paragraphRun.hidden ? [] : result;
             }
@@ -1248,6 +1337,7 @@ const readInline = (
             }
             return name === "m:oMath" || name === "m:oMathPara" ? "an equation" : [];
         }),
+        reader,
     );
 
 /**
@@ -1547,7 +1637,11 @@ const readParagraph = (element: XmlObject, reader: Reader, tableFormats: TableFo
         ...(list.level ? [list.level.paragraph] : []),
         readParagraphFormat(properties),
     ];
-    const items = readInline(children, paragraphRun, reader);
+    const read = readInline(children, paragraphRun, reader);
+    // Read to be laid out with a guess, the first thing the reader guessed at in the paragraph's content is why it can't be
+    // laid out as Word does, and the markers of what it guessed at are left out of its items
+    const guessed = typeof read === "string" ? undefined : read.map(guessOf).find((reason) => reason !== undefined);
+    const items = typeof read === "string" ? read : read.filter((item) => guessOf(item) === undefined);
     const combined = combine(formats);
     const own = typeof items === "string" ? [] : items;
     const content = typeof items === "string" ? [] : [...list.items, ...items];
@@ -1605,7 +1699,9 @@ const readParagraph = (element: XmlObject, reader: Reader, tableFormats: TableFo
                       ...withoutUndefined({ chapter: list.from === "style" ? list.chapter : undefined }),
                   },
               }),
-        ...(typeof items === "string" || unsupported ? { unsupported: typeof items === "string" ? items : unsupported } : {}),
+        ...(typeof items === "string" || guessed || unsupported
+            ? { unsupported: typeof items === "string" ? items : (guessed ?? unsupported) }
+            : {}),
     };
 };
 
@@ -2057,9 +2153,12 @@ const readTable = (element: XmlObject, reader: Reader): TableBlock | undefined =
     );
     const kept = read.filter(({ deleted }) => !deleted);
     if (kept.length === 0 && read.length > 0) {
-        // Every row is deleted, so the table takes no room, unless what Word does with a row hasn't been seen
+        // Every row is deleted, so the table takes no room, unless what Word does with a row hasn't been seen, which a
+        // layout that guesses has no guess for either
         const reason = read.find((row) => row.unsupported !== undefined)?.unsupported;
-        return reason === undefined ? undefined : { type: "table", rows: [], unsupported: reason };
+        return reason === undefined
+            ? undefined
+            : { type: "table", rows: [], unsupported: reason, ...(reader.guess ? { noGuess: true } : {}) };
     }
     const tableCells = read.flatMap(({ cells }) => cells);
     const fits = !fixed && tableCells.some(({ ownWidth }) => ownWidth === undefined);
@@ -2207,8 +2306,11 @@ const readTable = (element: XmlObject, reader: Reader): TableBlock | undefined =
         fixed &&
         evenable &&
         (unequal || (tableTwips !== undefined && read.some(({ edges, end }) => Math.abs(edges.get(end)! - tableTwips) > WIDTH_TOLERANCE)));
+    // What is in a cell that a layout that guesses has no guess for is why it can't lay out the table either
+    const withoutGuess = blocks.find((block) => block.noGuess === true);
     // Word puts the text after a floating table (`w:tblpPr`) beside it (`word-watertight-tables.docx` TB11)
     const unsupported =
+        withoutGuess?.unsupported ??
         (find(properties, "w:tblpPr") === undefined ? undefined : "a table that text flows around") ??
         (parts.some((part) => "w:sdt" in part) ? BOUND_CONTROL : undefined) ??
         read.find((row) => row.unsupported !== undefined)?.unsupported ??
@@ -2243,6 +2345,7 @@ const readTable = (element: XmlObject, reader: Reader): TableBlock | undefined =
         ...(spaced ? { cellSpacing: followedSpacing } : {}),
         ...(deletedRows.length > 0 ? { deletedRows } : {}),
         ...(unsupported ? { unsupported } : {}),
+        ...(withoutGuess ? { noGuess: true } : {}),
     };
 };
 
@@ -2317,15 +2420,18 @@ const endingWith = (block: Block, bookmarks: readonly string[]): Block | undefin
  * are deleted in a tracked change.
  */
 const readBlock = (element: XmlObject, reader: Reader, tableFormats?: TableFormats): Block | undefined => {
+    // Read to be laid out with a guess, there is none for a content control whose first block isn't a paragraph, nor for
+    // an imported document, which isn't read at all
+    const noGuess = reader.guess ? { noGuess: true } : {};
     switch (nameOf(element)) {
         case "w:p":
             return readParagraph(element, reader, tableFormats);
         case "w:tbl":
             return readTable(element, reader);
         case "w:sdt":
-            return unsupportedBlock(BOUND_CONTROL);
+            return { ...unsupportedBlock(BOUND_CONTROL), ...noGuess };
         case "w:altChunk":
-            return unsupportedBlock("an imported document");
+            return { ...unsupportedBlock("an imported document"), ...noGuess };
         case "m:oMath":
         case "m:oMathPara":
             return unsupportedBlock("an equation");
@@ -2699,7 +2805,10 @@ const readBlocks = (elements: readonly unknown[], reader: Reader, tableFormats?:
     let hidden: readonly ParagraphBlock[] = [];
     // Only a table's cells are read in their table's formatting
     const part = tableFormats === undefined ? "other" : "cell";
-    for (const element of unwrap(joinRemovedMarks(elements, reader.styles, { nested: false, sized: reader.inSizedTable === true, part }))) {
+    for (const element of unwrap(
+        joinRemovedMarks(elements, reader.styles, { nested: false, sized: reader.inSizedTable === true, part }),
+        reader.guess,
+    )) {
         const block = readBlock(element, reader, tableFormats);
         if (block === undefined) {
             bookmarks = [...bookmarks, ...bookmarksIn([element])];
@@ -3315,13 +3424,21 @@ const partsOfFile = (context: IContext): DocumentParts => {
 };
 
 /**
+ * How a document is read.
+ */
+export type ReadOptions = {
+    /** Whether it is read to be laid out with a guess, past what can't be laid out as Word does (see the module's notes) */
+    readonly guess?: boolean;
+};
+
+/**
  * Reads a document's body, as it is written, with its styles, lists, settings, headers and footers.
  *
  * @param body - The formatted body (`w:body`)
  * @param context - The context it was formatted in, with the document it is in
  */
-export const readDocument = (body: IXmlableObject, context: IContext): DocumentContent =>
-    readContent(body as XmlObject, partsOfFile(context));
+export const readDocument = (body: IXmlableObject, context: IContext, options: ReadOptions = {}): DocumentContent =>
+    readContent(body as XmlObject, partsOfFile(context), options);
 
 /** How a document or a section numbers and places its footnotes or endnotes (`w:footnotePr`, `w:endnotePr`) */
 type NoteProperties = { readonly format?: string; readonly start?: number; readonly restart?: string; readonly position?: string };
@@ -3355,7 +3472,7 @@ const sectionPropertiesOf = (element: XmlObject): unknown => {
 /**
  * Reads a document's body (`w:body`), with the other parts of the document.
  */
-export const readContent = (body: XmlObject, parts: DocumentParts): DocumentContent => {
+export const readContent = (body: XmlObject, parts: DocumentParts, { guess = false }: ReadOptions = {}): DocumentContent => {
     const { styles } = parts;
     const { lists: numbering, unsupported: inNumbering } = readNumbering(parts.numbering, styles, parts.otherListIds ?? new Map());
     const listIds = parts.otherListIds ?? new Map<string, string>();
@@ -3372,8 +3489,9 @@ export const readContent = (body: XmlObject, parts: DocumentParts): DocumentCont
         fields: [],
         counters: new Map(),
         ...(decimalSymbol === undefined ? {} : { decimalSymbol }),
+        ...(guess ? { guess } : {}),
     });
-    const elements = unwrap(joinRemovedMarks(contentOf(body), styles, { nested: false, sized: false, part: "body" }));
+    const elements = unwrap(joinRemovedMarks(contentOf(body), styles, { nested: false, sized: false, part: "body" }), guess);
 
     // Each header and footer, the first time a section refers to it
     const headersAndFooters = new Map<string, readonly Block[] | undefined>();

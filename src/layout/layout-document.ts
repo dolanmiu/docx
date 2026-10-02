@@ -128,6 +128,11 @@ export type PageLayout = {
     readonly footnotes: readonly NoteLayout[];
     /** The endnotes on the page, which follow the body */
     readonly endnotes: readonly NoteLayout[];
+    /**
+     * What the layout guessed at on the page, when it was asked to guess: why it would have stopped there, such as
+     * `"a font not in the width tables"`, once each. From there on, the lines may not be where Word puts them
+     */
+    readonly guesses?: readonly string[];
 };
 
 /**
@@ -172,6 +177,20 @@ const notesInPixels = (notes: readonly NoteLayout[]): readonly NoteLayout[] =>
     notes.map((note) => ({ ...note, content: note.content.map(inPixels) }));
 
 /**
+ * How {@link layoutDocument} lays out the pages.
+ *
+ * @publicApi
+ */
+export type LayoutDocumentOptions = {
+    /**
+     * Whether to lay out past what the layout can't lay out as Word does yet with the best guess it has, as
+     * `estimatePageNumbersWith({ guess: true })` does, rather than stop there. Each page says what was guessed at on it,
+     * in `guesses`, and `stoppedAt` says where it stopped all the same, where it has no guess. Default is off
+     */
+    readonly guess?: boolean;
+};
+
+/**
  * Lays out a document's pages as Word does, and gives what is on each page: the lines of its paragraphs, with their text
  * and where they are, the rows of its tables, its footnotes and endnotes, and which of its section's headers and footers
  * it shows.
@@ -182,16 +201,17 @@ const notesInPixels = (notes: readonly NoteLayout[]): readonly NoteLayout[] =>
  *
  * The pages are laid out as `estimatePageNumbers` lays them out, with the same fonts and rules, and the page numbers of
  * tables of contents and page references are laid out as it writes them. Where it can't lay out something yet, such as a
- * text box, it stops, and gives the pages up to there, with why in `stoppedAt`.
+ * text box, it stops, and gives the pages up to there, with why in `stoppedAt`, unless it is asked to guess.
  *
  * @param document - The document to lay out. It is laid out as it would be written
+ * @param options - Whether to guess past what it can't lay out as Word does yet
  *
  * @publicApi
  */
-export const layoutDocument = (document: Document): DocumentLayout => {
+export const layoutDocument = (document: Document, { guess = false }: LayoutDocumentOptions = {}): DocumentLayout => {
     const context: IContext = { file: document, viewWrapper: document.Document, stack: [] };
     const body = document.Document.View.Body.prepForXml(context) as IXmlableObject;
-    const { pages, stoppedAt } = layOutPasses(readDocument(body, context));
+    const { pages, stoppedAt } = layOutPasses(readDocument(body, context, { guess }), undefined, guess);
     return {
         pages: pages.map((page) => ({
             ...page,

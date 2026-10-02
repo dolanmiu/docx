@@ -104,6 +104,8 @@ describe("fitColumns", () => {
         expect(fitColumns(table([[cell(0, "aaaa"), cell(1, LONG)]]), 50, measure).unsupported).to.equal(
             "a word longer than its table can make room for",
         );
+        // Sized as one with a width of its own, past the room, for a layout that guesses past it
+        expect(widthsOf(fitColumns(table([[cell(0, "aaaa"), cell(1, LONG)]]), 50, measure))).to.deep.equal([40, 40]);
     });
 
     it("should keep the widths cells give their columns when the room is short, and narrow the other columns", () => {
@@ -197,6 +199,8 @@ describe("fitColumns", () => {
         expect(fitColumns(spaced("aaaaaaaaaa"), 300, measure).unsupported).to.equal("a long word in a table with space between its cells");
         const wider: TableBlock = { ...spaced("aaaa"), widen: { width: 400 } };
         expect(fitColumns(wider, 500, measure).unsupported).to.equal("space between the cells of a table wider than its cells");
+        // Widened to the table's width as one without space between its cells, for a layout that guesses past it
+        expect(widthsOf(fitColumns(wider, 500, measure))).to.deep.equal([126.7, 238.3]);
     });
 
     it("should stop at text that runs up or down a cell, in a table sized to its text, or with a word longer than its cell", () => {
@@ -454,6 +458,8 @@ describe("fitColumns", () => {
             const longWord = table([[across(0, 2, "aaaaaa")], [cell(0, "a bb cc"), cell(1, "a bb cc dd")]]);
             expect(widthsOf(fitColumns(longWord, 300, measure), 1)).to.deep.equal([70, 100]);
             expect(fitColumns(longWord, 150, measure).unsupported).to.equal(unsupported);
+            // Sized as the layout sizes a word it shares, for a layout that guesses past it
+            expect(widthsOf(fitColumns(longWord, 150, measure), 1)).to.deep.equal([54.6, 75.4]);
             // A share narrower than a column's widest line, which Word hasn't been seen to give
             expect(
                 fitColumns(table([[across(0, 2, "a".repeat(22))], [cell(0, "aaaa"), cell(1, "a a a a a a a a")]]), 400, measure)

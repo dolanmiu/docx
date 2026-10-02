@@ -138,14 +138,14 @@ if (stoppedAt) {
 }
 ```
 
-Lengths are in pixels, 96 to the inch, from the top left corner of the page. The page numbers of tables of contents and page references are laid out as `estimatePageNumbers` writes them, whether or not the document is given it.
+Lengths are in pixels, 96 to the inch, from the top left corner of the page. The page numbers of tables of contents and page references are laid out as `estimatePageNumbers` writes them, whether or not the document is given it. `layoutDocument(doc, { guess: true })` lays out past what it would stop at, as `estimatePageNumbersWith({ guess: true })` does (see [Guessing past what it can't lay out](#guessing-past-what-it-cant-lay-out)).
 
 The layout of the document, `DocumentLayout`:
 
-| Property    | Type                    | What it is                                                                                                                                                  |
-| ----------- | ----------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `pages`     | `readonly PageLayout[]` | The pages, in order                                                                                                                                         |
-| `stoppedAt` | `string` or `undefined` | What the layout [stopped at](#what-it-leaves-blank), such as `"a text box"`. The pages are those up to there, the last of them with what was laid out on it |
+| Property    | Type                    | What it is                                                                                                                                                                                                    |
+| ----------- | ----------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `pages`     | `readonly PageLayout[]` | The pages, in order                                                                                                                                                                                           |
+| `stoppedAt` | `string` or `undefined` | What the layout [stopped at](#what-it-leaves-blank), such as `"a text box"`. The pages are those up to there, the last of them with what was laid out on it. With `{ guess: true }`, what it has no guess for |
 
 Each page, `PageLayout`:
 
@@ -160,6 +160,7 @@ Each page, `PageLayout`:
 | `body`       | `readonly (ParagraphLayout \| TableLayout)[]` | The paragraphs and tables of the body on the page, or the parts of them on it, in order                                                                                                                              |
 | `footnotes`  | `readonly NoteLayout[]`                       | The footnotes at the bottom of the page, in order. The rest of one that goes on from the page before comes first                                                                                                     |
 | `endnotes`   | `readonly NoteLayout[]`                       | The endnotes on the page, which follow the body                                                                                                                                                                      |
+| `guesses`    | `readonly string[]` or none                   | With `{ guess: true }`, what the layout [guessed at](#guessing-past-what-it-cant-lay-out) while it laid out the page, such as `"a font not in the width tables"`. None when it guessed at nothing there              |
 
 A paragraph, `ParagraphLayout`, is `{ type: "paragraph", index, lines }`, and a table, `TableLayout`, is `{ type: "table", index, rows }`. `index` is where it is among the paragraphs and tables of the body, or of its footnote or endnote, counted from 0, so a paragraph on two pages has the same `index` on both. It counts each paragraph docx writes, such as the entries of a table of contents, and the empty paragraph it writes at the end of each section but the last, which takes no room, so it isn't on any page.
 
@@ -257,7 +258,43 @@ It stops at the first thing it can't lay out yet, and the page numbers of the he
 
 When laying out the pages again with the page numbers it worked out still changes them after three passes, as when a table of contents wraps one way with a number and the other way without it, all of them are left blank, and `layoutDocument` lays out the pages without them.
 
-A wrong page number is worse than a blank one, so it doesn't guess.
+A wrong page number is worse than a blank one, so it doesn't guess, unless it is asked to (see [Guessing past what it can't lay out](#guessing-past-what-it-cant-lay-out)).
+
+## Guessing past what it can't lay out
+
+Some documents would rather have page numbers that are nearly right than blank ones, such as one in a font `docx/layout` doesn't have the widths of. Give the document `estimatePageNumbersWith({ guess: true })`, and the layout goes on past each thing it would stop at, with the best guess it has, rather than leave the page numbers after it blank:
+
+```ts
+import { Document } from "docx";
+import { estimatePageNumbersWith } from "docx/layout";
+
+const doc = new Document({
+    pageNumbers: estimatePageNumbersWith({ guess: true }),
+    sections: [...],
+});
+```
+
+Its guesses, by what it would stop at:
+
+- text in a font that isn't in the width tables, isn't given as a file and isn't embedded is measured as the most similar font that is: Calibri Light and Segoe UI as Calibri, a serif font such as Georgia or Garamond as Times New Roman, a monospaced one as Courier New, and the others, such as Aptos, as Arial. Word draws them with their own widths, when it has them: in Word's PDF, Aptos was 2% narrower than its guess, Georgia 9% wider and Verdana 13% wider (`word-watertight-text.docx` TX18). A character whose width in its font isn't known is measured as an average letter of the font
+- a date or time is measured as it is written, where Word writes the date and time it opens the document
+- a setting or formatting the layout doesn't follow, such as hyphenation, a compatibility setting or mode, a document grid, a text frame or an indent in characters it hasn't seen, is laid out as if it weren't there, a page number in a format it can't write is written in figures, and a table whose widths it can't work out as Word does is sized as it sizes others
+- what it can't read at all, such as a picture or shape that text flows around, a text box, an equation or ink, is left out, and the rest of its paragraph is laid out without it. Text with a phonetic guide is laid out as its base, what is written in a content control bound to custom XML as it is, and a footnote with a mark of its own as the others are
+- where Word's rule for laying out a page isn't known, such as a footnote that would break in a paragraph kept together, the page is laid out by the rule `docx/layout` follows that is nearest to it
+- page numbers that still change how the pages are laid out after three passes are written as the last pass worked them out
+
+It still stops where it has no guess: at an imported document (`altChunk`), a content control bound to custom XML whose first block is a table, a table all of whose rows are deleted where what Word does with one of them isn't known, and a footnote or table row it can't fit on a page with what it is kept with, or that would go on across pages in columns, which it can't lay out past at all.
+
+The page numbers may then not be Word's. They are written clean all the same, so Word shows them as they are, without asking to update the fields, unless the document has `updateFields` on. What the estimator gives says where it guessed, in `guesses`: why it would have stopped, such as `"a font not in the width tables"`, and the page it was laying out then, counted from 1 for the document's first page, whatever number the page shows. The page numbers of what comes after it, from that page on, may not be Word's. With nothing to guess at, it gives what `estimatePageNumbers` gives.
+
+`layoutDocument` takes the same option, and each page says what it guessed at on it:
+
+```ts
+const { pages } = layoutDocument(doc, { guess: true });
+pages.forEach((page, index) => page.guesses?.forEach((reason) => console.log(`Guessed at ${reason} on page ${index + 1}`)));
+```
+
+Guessing is off by default, so the page numbers written are Word's, as near as `docx/layout` knows them, or blank.
 
 ## How close it is
 
