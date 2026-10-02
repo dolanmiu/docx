@@ -105,6 +105,8 @@ describe("layoutLines", () => {
             ]),
         ).to.equal(2);
         expect(linesOf([piece("AVA", {}), piece("VAV", {}), piece("AV aa", {})])).to.equal(2);
+        // Formatting written as Word's default is the same as none
+        expect(linesOf([piece("AVA"), piece("VAV", { ...kerned, bold: false, italic: false, scale: 100 }), piece("AV aa")])).to.equal(1);
         // Text smaller than the size kerning starts at isn't kerned. Each piece has a font of its own, as each run does
         const small = { kerning: 12, size: 10 };
         expect(linesOf([piece("AVA", { ...small }), piece("VAV", { ...small }), piece("AV aa", { ...small })])).to.equal(2);

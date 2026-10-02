@@ -11,6 +11,8 @@
  */
 import { type LineBreakRules, extendsCharacter, findLineBreaks, joinsNext } from "./line-break-rules";
 import {
+    DEFAULT_FONT,
+    DEFAULT_FONT_SIZE,
     type LineSpacing,
     type ParagraphFormat,
     type TextFont,
@@ -244,10 +246,22 @@ const othersOf = (pieces: readonly Piece[]): readonly Piece[] =>
 /** How many characters pieces have */
 const lengthOf = (pieces: readonly Piece[]): number => pieces.reduce((total, { text }) => total + [...text].length, 0);
 
+/** A font's formatting with Word's defaults where it gives none, so formatting written as the default is the same as none */
+const withDefaults = (font: TextFont): Readonly<Record<string, unknown>> => ({
+    font: DEFAULT_FONT,
+    size: DEFAULT_FONT_SIZE,
+    bold: false,
+    italic: false,
+    characterSpacing: 0,
+    scale: 100,
+    ...Object.fromEntries(Object.entries(font).filter(([, value]) => value !== undefined)),
+});
+
 /** Whether two pieces of text are in the same font, with the same formatting */
-const sameFont = (one: TextFont, other: TextFont): boolean =>
-    Object.keys(one).length === Object.keys(other).length &&
-    Object.entries(one).every(([key, value]) => other[key as keyof TextFont] === value);
+const sameFont = (one: TextFont, other: TextFont): boolean => {
+    const [first, second] = [withDefaults(one), withDefaults(other)];
+    return Object.keys(first).length === Object.keys(second).length && Object.entries(first).every(([key, value]) => second[key] === value);
+};
 
 /**
  * How wide pieces of text are. Pieces next to each other in the same font, and kerned, are measured together, so the pairs
