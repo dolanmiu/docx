@@ -126,18 +126,25 @@ var docxLayout = (function(exports) {
 	/**
 	* Estimates how much space text takes up, from the widths of the characters in common fonts.
 	*
-	* The estimate is close for the fonts in {@link FONT_WIDTHS}. Other fonts are measured with the one most like them,
-	* so their estimates are rougher. Kerning and ligatures are left out, which makes text a little wider than Word draws it.
+	* The estimate is close for the fonts in {@link FONT_WIDTHS}, and those made with the same widths, such as Carlito.
+	* Other fonts are measured with the one most like them, so their estimates are rougher, and {@link unknownFont} says
+	* which they are. Kerning and ligatures are left out, which makes text a little wider than Word draws it.
 	*
 	* @module
 	*/
 	var DEFAULT_FONT = "Times New Roman";
 	var TAB_STOP$2 = 36;
-	var SIMILAR_FONTS = [
-		[/^(carlito|calibri light|segoe ui|candara|corbel)$/i, "Calibri"],
+	var SAME_WIDTHS = [
+		[/^carlito$/i, "Calibri"],
 		[/^caladea$/i, "Cambria"],
+		[/^(liberation sans|arimo|helvetica)$/i, "Arial"],
+		[/^(liberation serif|tinos)$/i, "Times New Roman"],
+		[/^(liberation mono|cousine)$/i, "Courier New"]
+	];
+	var SIMILAR_FONTS = [
+		[/^(calibri light|segoe ui|candara|corbel)$/i, "Calibri"],
 		[/mono|courier|consolas|code|typewriter/i, "Courier New"],
-		[new RegExp("times|tinos|liberation serif|georgia|garamond|palatino|book antiqua|(?<!sans[ -]?)serif|roman", "i"), "Times New Roman"]
+		[new RegExp("times|georgia|garamond|palatino|book antiqua|(?<!sans[ -]?)serif|roman", "i"), "Times New Roman"]
 	];
 	var CHARACTERS = FONT_WIDTH_RANGES.flatMap(([first, last]) => Array.from({ length: last - first + 1 }, (_, offset) => first + offset));
 	var CHARACTER_INDEX = new Map(CHARACTERS.map((code, index) => [code, index]));
@@ -339,26 +346,35 @@ var docxLayout = (function(exports) {
 	];
 	var EAST_ASIAN_NAME = /[\u3040-\u30ff\u3400-\u9fff\uac00-\ud7af]|hiragino|cjk|source han|pingfang|songti|heiti|kaiti|fangsong|mincho|mingliu|simhei|gungsuh|nanum/i;
 	var EAST_ASIAN_SANS = /gothic|ゴシック|hei|黑|黒|sans|고딕|pingfang/i;
+	/** The East Asian font in the table a font is, by any of its names. Undefined for other fonts */
+	var knownEastAsianFontOf = (font) => {
+		const name = font.toLowerCase();
+		return EAST_ASIAN_FONTS.find((candidate) => [candidate.name, ...candidate.aliases].some((alias) => alias.toLowerCase() === name));
+	};
 	/**
 	* The East Asian font a font is, or is measured as, by its name. Undefined for other fonts.
 	*/
 	var eastAsianFontOf = (font) => {
-		const name = font.toLowerCase();
-		const known = EAST_ASIAN_FONTS.find((candidate) => [candidate.name, ...candidate.aliases].some((alias) => alias.toLowerCase() === name));
+		var _knownEastAsianFontOf;
 		const similar = EAST_ASIAN_SANS.test(font) ? "MS Gothic" : "MS Mincho";
-		return known !== null && known !== void 0 ? known : EAST_ASIAN_NAME.test(font) ? EAST_ASIAN_FONTS.find((candidate) => candidate.name === similar) : void 0;
+		return (_knownEastAsianFontOf = knownEastAsianFontOf(font)) !== null && _knownEastAsianFontOf !== void 0 ? _knownEastAsianFontOf : EAST_ASIAN_NAME.test(font) ? EAST_ASIAN_FONTS.find((candidate) => candidate.name === similar) : void 0;
 	};
 	/** Whether a font is one for Chinese, Japanese or Korean text */
 	var isEastAsianFont = (font) => font !== void 0 && eastAsianFontOf(font) !== void 0;
+	var named = (name) => FONT_WIDTHS.find((known) => known.name.toLowerCase() === name.toLowerCase());
+	/** The widths of a font in the table, or of a font with the same widths as one. Undefined for other fonts */
+	var exactWidthsOf = (font) => {
+		const same = SAME_WIDTHS.find(([pattern]) => pattern.test(font));
+		return named(same ? same[1] : font);
+	};
 	/**
 	* The widths to measure a font with: its own, or those of the most similar font in the table.
-	* Sans-serif fonts that aren't in the table, such as Aptos and Helvetica, are measured as Arial.
+	* Sans-serif fonts that aren't in the table, such as Aptos, are measured as Arial.
 	*/
 	var widthsOf = (font = DEFAULT_FONT) => {
-		var _named;
-		const named = (name) => FONT_WIDTHS.find((known) => known.name.toLowerCase() === name.toLowerCase());
+		var _exactWidthsOf;
 		const similar = SIMILAR_FONTS.find(([pattern]) => pattern.test(font));
-		return (_named = named(font)) !== null && _named !== void 0 ? _named : named(similar ? similar[1] : "Arial");
+		return (_exactWidthsOf = exactWidthsOf(font)) !== null && _exactWidthsOf !== void 0 ? _exactWidthsOf : named(similar ? similar[1] : "Arial");
 	};
 	/** The widths of the face text is in: its font's, bold, italic, both or neither */
 	var faceOf = ({ font, bold, italic }) => {
@@ -428,6 +444,25 @@ var docxLayout = (function(exports) {
 		});
 	};
 	/**
+	* Whether the tables measure text in a font as another font, as they don't have the font's own widths: a font that isn't
+	* in them and isn't made with the same widths as one that is, such as Aptos, which they measure as the most similar
+	* font that is. Word draws it with its own widths when it has it, and in another font when it doesn't, such as Cambria
+	* on the Mac (`word-watertight-text.docx` TX18), so a layout stops there rather than guessing. The East Asian fonts of
+	* the tables are measured as themselves, but for the other characters of those that aren't monospaced, such as Latin
+	* letters in Yu Gothic, which are measured as Times New Roman or Arial. Without text, whether the height of a line in
+	* the font is another font's.
+	*/
+	var unknownFont = (font = {}, text) => {
+		var _font$font2;
+		const name = (_font$font2 = font.font) !== null && _font$font2 !== void 0 ? _font$font2 : DEFAULT_FONT;
+		const eastAsian = knownEastAsianFontOf(name);
+		if (eastAsian === void 0) return exactWidthsOf(name) === void 0;
+		return !eastAsian.monospaced && text !== void 0 && [...text].some((character) => {
+			const code = character.codePointAt(0);
+			return !isWide(code) && !isHalfWidth(code) && !takesNoRoom(character);
+		});
+	};
+	/**
 	* How wide a line of text is, in points. Tabs move to the next half inch, counted from the start of the line.
 	*
 	* @param start - Where the text starts on its line, in points
@@ -443,8 +478,8 @@ var docxLayout = (function(exports) {
 	* How tall a line of single-spaced text is, in points.
 	*/
 	var measureLineHeight = (font = {}) => {
-		var _eastAsianFontOf, _font$font2;
-		return ((_eastAsianFontOf = eastAsianFontOf((_font$font2 = font.font) !== null && _font$font2 !== void 0 ? _font$font2 : "Times New Roman")) !== null && _eastAsianFontOf !== void 0 ? _eastAsianFontOf : widthsOf(font.font)).lineHeight * lineSizeOf(font) / 1e3;
+		var _eastAsianFontOf, _font$font3;
+		return ((_eastAsianFontOf = eastAsianFontOf((_font$font3 = font.font) !== null && _font$font3 !== void 0 ? _font$font3 : "Times New Roman")) !== null && _eastAsianFontOf !== void 0 ? _eastAsianFontOf : widthsOf(font.font)).lineHeight * lineSizeOf(font) / 1e3;
 	};
 	/**
 	* How far a line of single-spaced text goes below its baseline, in points. The rest of the line is above it, with the
@@ -452,8 +487,8 @@ var docxLayout = (function(exports) {
 	* Courier New's descent (scripts/layout-probes/word-mixed-heights.ts MH2a).
 	*/
 	var measureDescent = (font = {}) => {
-		var _eastAsianFontOf2, _font$font3;
-		return ((_eastAsianFontOf2 = eastAsianFontOf((_font$font3 = font.font) !== null && _font$font3 !== void 0 ? _font$font3 : "Times New Roman")) !== null && _eastAsianFontOf2 !== void 0 ? _eastAsianFontOf2 : widthsOf(font.font)).descent * lineSizeOf(font) / 1e3;
+		var _eastAsianFontOf2, _font$font4;
+		return ((_eastAsianFontOf2 = eastAsianFontOf((_font$font4 = font.font) !== null && _font$font4 !== void 0 ? _font$font4 : "Times New Roman")) !== null && _eastAsianFontOf2 !== void 0 ? _eastAsianFontOf2 : widthsOf(font.font)).descent * lineSizeOf(font) / 1e3;
 	};
 	//#endregion
 	//#region src/text-layout/line-break-rules.ts
@@ -1148,12 +1183,16 @@ var docxLayout = (function(exports) {
 	* @module
 	*/
 	var _excluded$1 = ["unsupported"];
-	var DEFAULT_MEASURER = {
+	/**
+	* Measures text with the widths of the fonts in {@link FONT_WIDTHS}, and says which fonts it doesn't have, which it
+	* measures as {@link SIMILAR_FONT_MEASURER} does, so a layout stops at them.
+	*/
+	var DEFAULT_MEASURER = _objectSpread2(_objectSpread2({}, {
 		measureWidth: (text, font) => measureTextWidth(text, font),
 		measureLineHeight,
 		measureDescent,
 		unknownCharacter
-	};
+	}), {}, { unknownFont });
 	var DEFAULT_TAB_STOP = 36;
 	var TOLERANCE$1 = .01;
 	var STRETCH_TO_SQUEEZE = 2.04;
@@ -1488,14 +1527,18 @@ var docxLayout = (function(exports) {
 	*/
 	var layoutLines = (items, { width, format = {}, tabStops = [], defaultTabStop = DEFAULT_TAB_STOP, markFont = {}, measurer = DEFAULT_MEASURER, breakRules }) => {
 		const { indentLeft = 0, indentRight = 0, firstLineIndent = 0, lineSpacing, alignment } = format;
-		const markHeight = measurer.measureLineHeight(markFont);
+		let markHeight;
+		const markLineHeight = () => {
+			var _markHeight;
+			return (_markHeight = markHeight) !== null && _markHeight !== void 0 ? _markHeight : markHeight = measurer.measureLineHeight(markFont);
+		};
 		/**
 		* Whether a line of only pictures is in a paragraph whose mark has a taller line than the pictures' runs, so that how
 		* tall the line is depends on whether the mark counts. Word hasn't shown that: in its probes the pictures' runs were as
 		* large as the mark or larger (scripts/layout-probes/word-mixed-heights.ts MH3d, MH7), and beside text the mark doesn't
 		* count
 		*/
-		const markMatters = ({ ascent, tallest, picture }) => picture > 0 && ascent === 0 && markHeight > tallest + TOLERANCE$1 && (picture < markHeight - TOLERANCE$1 || (lineSpacing === null || lineSpacing === void 0 ? void 0 : lineSpacing.rule) === "multiple" && lineSpacing.multiple !== 1);
+		const markMatters = ({ ascent, tallest, picture }) => picture > 0 && ascent === 0 && markLineHeight() > tallest + TOLERANCE$1 && (picture < markLineHeight() - TOLERANCE$1 || (lineSpacing === null || lineSpacing === void 0 ? void 0 : lineSpacing.rule) === "multiple" && lineSpacing.multiple !== 1);
 		/** The heights of a line with the text of the token on it too */
 		const withToken = (heights, token) => {
 			if (token.type === "box") {
@@ -1725,6 +1768,13 @@ var docxLayout = (function(exports) {
 	/** Whether a bit is set in a number of flags, such as 0x20 in an OS/2 table's fsSelection */
 	var hasFlag = (flags, flag) => Math.floor(flags / flag) % 2 === 1;
 	var tagOf = (view, offset) => String.fromCharCode(view.getUint8(offset), view.getUint8(offset + 1), view.getUint8(offset + 2), view.getUint8(offset + 3));
+	/**
+	* Throws as a read past the end of the file does, for what is read only when text is laid out in the font, so that a
+	* damaged font throws when it is read, rather than when it is laid out
+	*/
+	var checkInFile = (view, end) => {
+		if (end > view.byteLength) throw new RangeError(`The font file points past its end, to ${end}`);
+	};
 	/** Where each table of the font at an offset starts */
 	var readTables = (view, offset) => new Map(Array.from({ length: view.getUint16(offset + 4) }, (_, index) => {
 		const record = offset + 12 + index * 16;
@@ -1779,7 +1829,9 @@ var docxLayout = (function(exports) {
 		if (subtable === void 0) throw new Error("The font has no Unicode character map");
 		const { offset, format } = subtable;
 		if (format === 12) {
-			const groups = Array.from({ length: view.getUint32(offset + 12) }, (_, index) => {
+			const count = view.getUint32(offset + 12);
+			if (offset + 16 + count * 12 > view.byteLength) throw new Error("The font file is damaged: its character map says it has more ranges of characters than it has room for");
+			const groups = Array.from({ length: count }, (_, index) => {
 				const group = offset + 16 + index * 12;
 				return {
 					start: view.getUint32(group),
@@ -1797,6 +1849,12 @@ var docxLayout = (function(exports) {
 		const starts = ends + segments * 2 + 2;
 		const deltas = starts + segments * 2;
 		const rangeOffsets = deltas + segments * 2;
+		checkInFile(view, rangeOffsets + segments * 2);
+		for (let segment = 0; segment < segments; segment++) {
+			const rangeOffset = view.getUint16(rangeOffsets + segment * 2);
+			const characters = view.getUint16(ends + segment * 2) - view.getUint16(starts + segment * 2) + 1;
+			if (rangeOffset !== 0) checkInFile(view, rangeOffsets + segment * 2 + rangeOffset + characters * 2);
+		}
 		return (code) => {
 			const segment = Array.from({ length: segments }, (_, index) => index).find((index) => view.getUint16(ends + index * 2) >= code);
 			if (segment === void 0 || view.getUint16(starts + segment * 2) > code) return 0;
@@ -1961,6 +2019,7 @@ var docxLayout = (function(exports) {
 		const lineGap = view.getInt16(hhea + 8);
 		const metricCount = view.getUint16(hhea + 34);
 		const hmtx = tables.get("hmtx");
+		checkInFile(view, hmtx + metricCount * 4);
 		const os2 = tables.get("OS/2");
 		const fsSelection = os2 === void 0 ? 0 : view.getUint16(os2 + 62);
 		const windowsHeight = os2 === void 0 ? ascender - descender : view.getUint16(os2 + 74) + view.getUint16(os2 + 76);
@@ -2018,7 +2077,11 @@ var docxLayout = (function(exports) {
 				throw error;
 			}
 		};
-		if (tag === COLLECTION_TAG) return read(() => Array.from({ length: view.getUint32(8) }, (_, index) => readFace(view, view.getUint32(12 + index * 4))));
+		if (tag === COLLECTION_TAG) {
+			const count = view.getUint32(8);
+			if (12 + count * 4 > bytes.byteLength) throw new Error("The font file is damaged: it says it has more fonts than it has room for");
+			return read(() => Array.from({ length: count }, (_, index) => readFace(view, view.getUint32(12 + index * 4))));
+		}
 		if (FONT_TAGS.has(tag)) return read(() => [readFace(view, 0)]);
 		throw new Error(WEB_FONT_TAGS.has(tag) ? "The font is a web font (WOFF), which is compressed. Give it as a TrueType or OpenType font (.ttf or .otf)" : "The data isn't a TrueType or OpenType font");
 	};
@@ -2027,7 +2090,8 @@ var docxLayout = (function(exports) {
 	* Measures text in the fonts of these faces with their own widths, kerning and line height, and text in other fonts with
 	* `fallback`. Text that is bold, or not, is measured with a face that is too, and with one that is italic, or not, as the
 	* text is, when there is one. A character a face has no glyph for is one whose width isn't known, as Word draws it in
-	* another font, unless it takes no room, such as a soft hyphen.
+	* another font, unless it takes no room, such as a soft hyphen. Text in a font without a face as bold as it is in
+	* a font whose widths aren't known, unless `fallback` knows them, as Word makes that face itself from another.
 	*/
 	var createFontFileMeasurer = (faces, fallback = DEFAULT_MEASURER) => {
 		const chosen = /* @__PURE__ */ new Map();
@@ -2074,6 +2138,10 @@ var docxLayout = (function(exports) {
 				var _fallback$unknownChar;
 				const face = faceOf(font);
 				return face ? [...text].find((character) => character !== "	" && !takesNoRoom(character) && face.advanceOf(character.codePointAt(0)) === void 0) : (_fallback$unknownChar = fallback.unknownCharacter) === null || _fallback$unknownChar === void 0 ? void 0 : _fallback$unknownChar.call(fallback, text, font);
+			},
+			unknownFont: (font, text) => {
+				var _fallback$unknownFont;
+				return faceOf(font) === void 0 && ((_fallback$unknownFont = fallback.unknownFont) === null || _fallback$unknownFont === void 0 ? void 0 : _fallback$unknownFont.call(fallback, font, text)) === true;
 			}
 		};
 	};
@@ -4435,6 +4503,24 @@ var docxLayout = (function(exports) {
 		}, Object.keys(lists).length > 0 ? { breakRules: { lists } } : {}), unsupported ? { unsupported } : {});
 	};
 	/**
+	* The faces of the fonts a document embeds, which Word draws text in those fonts in. Each is the face of the font the
+	* document names, of the boldness and italics the document says it is (`w:embedRegular`, `w:embedBold` and the others),
+	* whatever its file says. A file that isn't a font, is damaged, or is a collection of no fonts, is left out, so text in
+	* its font is in a font the layout doesn't know, as it may not be in Word.
+	*/
+	var facesOf = (fonts) => fonts.flatMap(({ name, data, bold, italic }) => {
+		try {
+			const [face] = readFontFile(data);
+			return face === void 0 ? [] : [_objectSpread2(_objectSpread2({}, face), {}, {
+				name,
+				bold,
+				italic
+			})];
+		} catch (_unused) {
+			return [];
+		}
+	});
+	/**
 	* The parts of the document being written, formatted to be read.
 	*/
 	var partsOfFile = (context) => {
@@ -4456,7 +4542,13 @@ var docxLayout = (function(exports) {
 			settings: file.Settings.prepForXml(READING_CONTEXT),
 			headersAndFooters: new Map([...file.Headers, ...file.Footers].map((wrapper) => [`rId${wrapper.View.ReferenceId}`, Object.values(format(wrapper))[0]])),
 			footnotes: format(file.FootNotes),
-			endnotes: format(file.Endnotes)
+			endnotes: format(file.Endnotes),
+			fonts: facesOf(file.FontTable.options.map(({ name, data }) => ({
+				name,
+				data,
+				bold: false,
+				italic: false
+			})))
 		};
 	};
 	/**
@@ -4659,7 +4751,7 @@ var docxLayout = (function(exports) {
 			const all = sections.map((_, section) => notePropertiesOf(kind, section));
 			return all.some(({ restart }) => restart === "eachPage") ? "notes numbered afresh on each page" : all.some(({ restart, start }) => restart !== "eachSect" && start !== all[0].start) ? "notes numbered on from a number of their own in a later section" : kind === "footnote" && all.some(({ position }) => position !== "pageBottom") ? "footnotes put elsewhere than at the bottom of the page" : kind === "endnote" && all.length > 1 && all.some(({ position }) => position !== "docEnd") ? "endnotes at the end of each section" : void 0;
 		};
-		const documentContent = _objectSpread2({
+		const documentContent = _objectSpread2(_objectSpread2({
 			blocks,
 			sections,
 			footnotes,
@@ -4671,7 +4763,7 @@ var docxLayout = (function(exports) {
 			endnoteNumbers,
 			relativeReferences: markers.relative,
 			endnoteReferences
-		}, readSettings(parts.settings));
+		}, parts.fonts !== void 0 && parts.fonts.length > 0 ? { fonts: parts.fonts } : {}), readSettings(parts.settings));
 		return _objectSpread2(_objectSpread2({}, documentContent), withoutUndefined({ unsupported: (_ref21 = (_ref22 = (_ref23 = (_ref24 = (_documentContent$unsu = documentContent.unsupported) !== null && _documentContent$unsu !== void 0 ? _documentContent$unsu : styles.unsupported) !== null && _ref24 !== void 0 ? _ref24 : inNumbering) !== null && _ref23 !== void 0 ? _ref23 : footnotes.size > 0 ? notesUnsupported("footnote") : void 0) !== null && _ref22 !== void 0 ? _ref22 : endnotes.length > 0 ? notesUnsupported("endnote") : void 0) !== null && _ref21 !== void 0 ? _ref21 : unwrittenNumber ? "notes numbered in a format not yet written" : void 0 }));
 	};
 	//#endregion
@@ -4750,6 +4842,30 @@ var docxLayout = (function(exports) {
 	var Unsupported = class extends Error {};
 	/** Thrown to stop laying out columns being balanced in a height they don't fit in */
 	var Overflow = class extends Error {};
+	/** The measurers the layout measures with, by those it is given, so the lines laid out with each are kept */
+	var stoppingMeasurers = /* @__PURE__ */ new WeakMap();
+	/**
+	* A measurer that stops the layout where it would measure text in a font it doesn't know, or the height of a line in
+	* one, as it measures them as another font, where Word draws them in their own, or in another again when it doesn't have
+	* them (`word-watertight-text.docx` TX18)
+	*/
+	var stoppingAtUnknownFonts = (measurer) => {
+		var _stoppingMeasurers$ge;
+		const { unknownFont } = measurer;
+		if (unknownFont === void 0) return measurer;
+		/** The font, unless the measurer doesn't know it, or this text in it */
+		const known = (font, text) => {
+			if (unknownFont(font, text)) throw new Unsupported("a font not in the width tables");
+			return font;
+		};
+		const stopping = (_stoppingMeasurers$ge = stoppingMeasurers.get(measurer)) !== null && _stoppingMeasurers$ge !== void 0 ? _stoppingMeasurers$ge : _objectSpread2(_objectSpread2({}, measurer), {}, {
+			measureWidth: (text, font) => measurer.measureWidth(text, known(font, text)),
+			measureLineHeight: (font) => measurer.measureLineHeight(known(font)),
+			measureDescent: (font) => measurer.measureDescent(known(font))
+		});
+		stoppingMeasurers.set(measurer, stopping);
+		return stopping;
+	};
 	/**
 	* Thrown to lay out the columns of a page again when its footnotes take more room than the columns before the one being
 	* filled were laid out above (`area`)
@@ -4904,6 +5020,7 @@ var docxLayout = (function(exports) {
 			})) throw new Unsupported("a character whose width in its font isn't known");
 			return inline;
 		};
+		const measuring = stoppingAtUnknownFonts(measurer);
 		const byParagraph = (_laidOutLines$get = laidOutLines.get(measurer)) !== null && _laidOutLines$get !== void 0 ? _laidOutLines$get : /* @__PURE__ */ new WeakMap();
 		laidOutLines.set(measurer, byParagraph);
 		/** A paragraph's lines, broken at a width, or at the width of each line from those given on */
@@ -4921,7 +5038,7 @@ var docxLayout = (function(exports) {
 					tabStops: paragraph.tabStops,
 					defaultTabStop,
 					markFont: paragraph.markFont,
-					measurer,
+					measurer: measuring,
 					breakRules
 				});
 				const unknown = laidOut.find((line) => line.unsupported !== void 0);
@@ -4999,7 +5116,7 @@ var docxLayout = (function(exports) {
 				format: block.format,
 				tabStops: block.tabStops,
 				defaultTabStop,
-				measurer,
+				measurer: measuring,
 				breakRules
 			});
 			return {
@@ -6668,6 +6785,12 @@ var docxLayout = (function(exports) {
 	};
 	//#endregion
 	//#region src/layout/layout-passes.ts
+	/**
+	* Lays out a document's pages as many times as the page numbers it works out change how its lines wrap, such as those of
+	* a table of contents.
+	*
+	* @module
+	*/
 	var PASSES = 3;
 	/** The number of pages, which is known only when all of the document was laid out */
 	var knownPageCount = ({ pageCount, stoppedAt }) => stoppedAt === void 0 ? pageCount : void 0;
@@ -6683,12 +6806,13 @@ var docxLayout = (function(exports) {
 	* last. Each pass is laid out with the numbers of the pass before, so the last pass's numbers are those it was laid out
 	* with only when they stop changing. When they still change after three passes, as when a table of contents wraps one
 	* way with a number and the other way without it, none can be written, so it gives the first pass, laid out without them,
-	* as not settled.
+	* as not settled. Text in the fonts the document embeds is measured from their files, and the rest with `measurer`.
 	*/
-	var layOutPasses = (content, measurer) => {
+	var layOutPasses = (content, measurer = DEFAULT_MEASURER) => {
+		const measuring = content.fonts === void 0 ? measurer : createFontFileMeasurer(content.fonts, measurer);
 		const layOut = (before, pass, first, earlierPlaces) => {
 			const pagination = paginate(content, {
-				measurer,
+				measurer: measuring,
 				pageNumbers: before === null || before === void 0 ? void 0 : before.bookmarks,
 				places: before === null || before === void 0 ? void 0 : before.places,
 				earlierPlaces,
@@ -6746,9 +6870,11 @@ var docxLayout = (function(exports) {
 	};
 	/**
 	* A measurer that measures widths with a function, and lines' heights and descents with the width tables, as Word works
-	* them out from the font's height and the paragraph's spacing.
+	* them out from the font's height and the paragraph's spacing. The height of a line in a font that isn't in the tables
+	* isn't known, so a layout stops at text in one.
 	*/
 	var measurerOf = (measureWidth) => ({
+		unknownFont: (font) => unknownFont(font),
 		measureWidth: (text, { font = DEFAULT_FONT, size = 10, bold = false, italic = false, characterSpacing = 0, scale = 100 }) => {
 			const widthOf = (part) => part.length === 0 ? 0 : measureWidth(part, {
 				name: font,
@@ -6803,13 +6929,71 @@ var docxLayout = (function(exports) {
 			}];
 		});
 	};
+	var EMBEDDED_FACES = [
+		[
+			"w:embedRegular",
+			false,
+			false
+		],
+		[
+			"w:embedBold",
+			true,
+			false
+		],
+		[
+			"w:embedItalic",
+			false,
+			true
+		],
+		[
+			"w:embedBoldItalic",
+			true,
+			true
+		]
+	];
+	/**
+	* A font file as a document embeds it: its first 32 bytes mixed with the bytes of its key (`w:fontKey`), a GUID, from
+	* the last to the first, as Word obfuscates the fonts it embeds, and docx does. Undefined for a key that isn't a GUID.
+	*/
+	var deobfuscated = (bytes, fontKey) => {
+		if (fontKey === void 0) return bytes;
+		const digits = String(fontKey).replace(/[{}-]/g, "");
+		if (!/^[0-9a-f]{32}$/i.test(digits)) return;
+		const key = Array.from({ length: 16 }, (_, index) => parseInt(digits.slice(30 - index * 2, 32 - index * 2), 16));
+		return bytes.map((byte, index) => index < 32 ? byte ^ key[index % 16] : byte);
+	};
+	/**
+	* The font files a document embeds, from its font table (`w:fonts`) and the files the table's relationships refer to.
+	*/
+	var embeddedFontsOf = (parts, binaryParts, fontTablePath) => {
+		const fontTable = rootOf(parts.get(fontTablePath));
+		const relationships = relationshipsOf(parts, fontTablePath);
+		return childrenOf(fontTable && contentOf$1(fontTable)).filter((child) => "w:font" in child).flatMap((child) => {
+			const name = attributesOf(child["w:font"])["w:name"];
+			const faces = childrenOf(child["w:font"]);
+			return EMBEDDED_FACES.flatMap(([element, bold, italic]) => {
+				var _relationships$find;
+				const { "r:id": id, "w:fontKey": fontKey } = attributesOf(find(faces, element));
+				const path = (_relationships$find = relationships.find((relationship) => relationship.id === id)) === null || _relationships$find === void 0 ? void 0 : _relationships$find.path;
+				const bytes = path === void 0 ? void 0 : binaryParts.get(path);
+				const data = bytes && deobfuscated(bytes, fontKey);
+				return name === void 0 || data === void 0 ? [] : [{
+					name: String(name),
+					data,
+					bold,
+					italic
+				}];
+			});
+		});
+	};
 	/**
 	* Reads a .docx's main document, with the parts it refers to.
 	*
 	* @param parts - The XML parts of its package, parsed by xml-js's `xml2js`, not compact and keeping the spaces between
 	* elements, by their paths, such as "word/document.xml"
+	* @param binaryParts - Its other parts, such as the fonts it embeds, by their paths
 	*/
-	var readDocx = (parts) => {
+	var readDocx = (parts, binaryParts = /* @__PURE__ */ new Map()) => {
 		var _relationshipsOf$find, _relationshipsOf$find2, _partOf, _find;
 		const documentPath = (_relationshipsOf$find = (_relationshipsOf$find2 = relationshipsOf(parts, "").find(({ type }) => type === "officeDocument")) === null || _relationshipsOf$find2 === void 0 ? void 0 : _relationshipsOf$find2.path) !== null && _relationshipsOf$find !== void 0 ? _relationshipsOf$find : DEFAULT_DOCUMENT;
 		const relationships = relationshipsOf(parts, documentPath);
@@ -6818,6 +7002,7 @@ var docxLayout = (function(exports) {
 			return relationship && rootOf(parts.get(relationship.path));
 		};
 		const theme = partOf("theme");
+		const fontTable = relationships.find((relationship) => relationship.type === "fontTable");
 		const documentParts = {
 			styles: readTextStyles((_partOf = partOf("styles")) !== null && _partOf !== void 0 ? _partOf : { "w:styles": [] }, theme && readThemeFonts(theme)),
 			numbering: partOf("numbering"),
@@ -6827,7 +7012,8 @@ var docxLayout = (function(exports) {
 				return part ? [[id, contentOf$1(part)]] : [];
 			})),
 			footnotes: partOf("footnotes"),
-			endnotes: partOf("endnotes")
+			endnotes: partOf("endnotes"),
+			fonts: fontTable === void 0 ? [] : facesOf(embeddedFontsOf(parts, binaryParts, fontTable.path))
 		};
 		const document = rootOf(parts.get(documentPath));
 		return readContent({ "w:body": (_find = find(childrenOf(document && contentOf$1(document)), "w:body")) !== null && _find !== void 0 ? _find : [] }, documentParts);
@@ -6835,7 +7021,7 @@ var docxLayout = (function(exports) {
 	//#endregion
 	//#region src/layout/estimate-page-numbers.ts
 	/** What a document is read into: a template patchDocument patched, or the body of a document being written */
-	var contentOf = (document, context) => "parts" in document ? readDocx(document.parts) : (context === null || context === void 0 ? void 0 : context.file) && readDocument(document, context);
+	var contentOf = (document, context) => "parts" in document ? readDocx(document.parts, document.binaryParts) : (context === null || context === void 0 ? void 0 : context.file) && readDocument(document, context);
 	/** Lays out the pages until their page numbers stop changing, with a measurer. Gives none when they don't */
 	var estimateWith = (content, measurer) => {
 		const pagination = content && layOutPasses(content, measurer);
@@ -6860,19 +7046,21 @@ var docxLayout = (function(exports) {
 	* ```
 	*
 	* The pages are laid out with the widths and heights of the fonts Word documents use most, such as Calibri, Cambria,
-	* Arial and Times New Roman. To measure text in other fonts, such as Aptos, from their files, use
+	* Arial and Times New Roman, and of those made as wide, such as Carlito, and text in the fonts the document embeds is
+	* measured from their files. To measure text in other fonts, such as Aptos, from their files, use
 	* {@link estimatePageNumbersWith}. It follows paragraphs' spacing, indents, line spacing, tab stops and keep settings, widow
 	* and orphan control, lists, pictures in the line, tables, whose rows break across pages, footnotes and endnotes, page,
 	* column and section breaks, and each section's page size, margins, columns, headers, footers and page numbering.
 	*
 	* It stops at the first thing it can't lay out yet: a drawing or table that text flows around, a text box or frame, an
 	* equation, a footnote that continues on the next page, columns evened out before a continuous section break, a table
-	* row kept whole that is taller than a page, a character whose width in its font isn't known, such as a mathematical
-	* symbol in Calibri, which Word draws in Cambria Math, or a date in the text, which Word writes when it opens the document.
-	* The page references to bookmarks after it are left blank, for Word to fill in when it updates the fields. A document in
-	* compatibility mode, which Word lays out as an older version of Word did, isn't laid out at all. When laying the pages
-	* out again with the page numbers it worked out still changes them after three passes, as when a table of contents wraps
-	* one way with a number and the other way without it, all of them are left blank.
+	* row kept whole that is taller than a page, text in a font that isn't in the width tables and isn't embedded, such as
+	* Aptos, a character whose width in its font isn't known, such as a mathematical symbol in Calibri, which Word draws in
+	* Cambria Math, or a date in the text, which Word writes when it opens the document. The page references to bookmarks
+	* after it are left blank, for Word to fill in when it updates the fields. A document in compatibility mode, which Word
+	* lays out as an older version of Word did, isn't laid out at all. When laying the pages out again with the page numbers
+	* it worked out still changes them after three passes, as when a table of contents wraps one way with a number and the
+	* other way without it, all of them are left blank.
 	*
 	* Page references are written as Word writes them, with `\p` ("above", "below" or "on page 4") and in formats of their
 	* own, such as `\* roman`, and so are numbers of pages. Page references, tables of contents and SEQ fields (caption

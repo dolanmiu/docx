@@ -10673,6 +10673,8 @@ export declare type PatchedTemplate = {
      * (`captureSpacesBetweenElements`), as the spaces in a text element are its text
      */
     readonly parts: ReadonlyMap<string, Element_2>;
+    /** Each of its other parts, such as its pictures and the fonts it embeds, by its path in the package, as bytes */
+    readonly binaryParts?: ReadonlyMap<string, Uint8Array>;
 };
 
 /**

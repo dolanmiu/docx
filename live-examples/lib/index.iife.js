@@ -36564,12 +36564,16 @@ while (n === a[++i] && n === a[++i] && n === a[++i] && n === a[++i] && n === a[+
 	* as they are and doesn't ask to update the fields.
 	*
 	* @param parts - The template's XML parts, parsed, by their paths, which are changed in place
+	* @param binaryParts - Its other parts, by their paths, for the estimator to read the fonts it embeds
 	*/
-	var fillTemplatePageNumbers = (parts, estimator) => {
+	var fillTemplatePageNumbers = (parts, estimator, binaryParts = /* @__PURE__ */ new Map()) => {
 		var _rootOf$elements, _rootOf;
 		const document = rootOf(parts.get(DOCUMENT));
 		if (!document) return;
-		const estimate = estimator({ parts });
+		const estimate = estimator({
+			parts,
+			binaryParts
+		});
 		const partPageCounts = fillBodyFields(PARSED, document, estimate, { blank: true });
 		const relationships = (_rootOf$elements = (_rootOf = rootOf(parts.get(relationshipsPathOf(DOCUMENT)))) === null || _rootOf === void 0 ? void 0 : _rootOf.elements) !== null && _rootOf$elements !== void 0 ? _rootOf$elements : [];
 		for (const { attributes = {} } of relationships) {
@@ -37498,7 +37502,7 @@ while (n === a[++i] && n === a[++i] && n === a[++i] && n === a[++i] && n === a[+
 				map.set(relationshipKey, relationshipsJson);
 				appendRelationship(relationshipsJson, id, type, target, targetMode);
 			}
-			if (pageNumbers) fillTemplatePageNumbers(map, pageNumbers);
+			if (pageNumbers) fillTemplatePageNumbers(map, pageNumbers, binaryContentMap);
 			const packageParts = xmlifyPackageParts(file, void 0);
 			if (hasMedia || contentTypeOverrides.length > 0) {
 				const contentTypesJson = map.get("[Content_Types].xml");

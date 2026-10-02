@@ -3374,18 +3374,25 @@ var docxShapes = (function(exports, docx) {
 	/**
 	* Estimates how much space text takes up, from the widths of the characters in common fonts.
 	*
-	* The estimate is close for the fonts in {@link FONT_WIDTHS}. Other fonts are measured with the one most like them,
-	* so their estimates are rougher. Kerning and ligatures are left out, which makes text a little wider than Word draws it.
+	* The estimate is close for the fonts in {@link FONT_WIDTHS}, and those made with the same widths, such as Carlito.
+	* Other fonts are measured with the one most like them, so their estimates are rougher, and {@link unknownFont} says
+	* which they are. Kerning and ligatures are left out, which makes text a little wider than Word draws it.
 	*
 	* @module
 	*/
 	var DEFAULT_FONT = "Times New Roman";
 	var TAB_STOP = 36;
-	var SIMILAR_FONTS = [
-		[/^(carlito|calibri light|segoe ui|candara|corbel)$/i, "Calibri"],
+	var SAME_WIDTHS = [
+		[/^carlito$/i, "Calibri"],
 		[/^caladea$/i, "Cambria"],
+		[/^(liberation sans|arimo|helvetica)$/i, "Arial"],
+		[/^(liberation serif|tinos)$/i, "Times New Roman"],
+		[/^(liberation mono|cousine)$/i, "Courier New"]
+	];
+	var SIMILAR_FONTS = [
+		[/^(calibri light|segoe ui|candara|corbel)$/i, "Calibri"],
 		[/mono|courier|consolas|code|typewriter/i, "Courier New"],
-		[new RegExp("times|tinos|liberation serif|georgia|garamond|palatino|book antiqua|(?<!sans[ -]?)serif|roman", "i"), "Times New Roman"]
+		[new RegExp("times|georgia|garamond|palatino|book antiqua|(?<!sans[ -]?)serif|roman", "i"), "Times New Roman"]
 	];
 	var CHARACTERS = FONT_WIDTH_RANGES.flatMap(([first, last]) => Array.from({ length: last - first + 1 }, (_, offset) => first + offset));
 	var CHARACTER_INDEX = new Map(CHARACTERS.map((code, index) => [code, index]));
@@ -3587,26 +3594,35 @@ var docxShapes = (function(exports, docx) {
 	];
 	var EAST_ASIAN_NAME = /[\u3040-\u30ff\u3400-\u9fff\uac00-\ud7af]|hiragino|cjk|source han|pingfang|songti|heiti|kaiti|fangsong|mincho|mingliu|simhei|gungsuh|nanum/i;
 	var EAST_ASIAN_SANS = /gothic|ゴシック|hei|黑|黒|sans|고딕|pingfang/i;
+	/** The East Asian font in the table a font is, by any of its names. Undefined for other fonts */
+	var knownEastAsianFontOf = (font) => {
+		const name = font.toLowerCase();
+		return EAST_ASIAN_FONTS.find((candidate) => [candidate.name, ...candidate.aliases].some((alias) => alias.toLowerCase() === name));
+	};
 	/**
 	* The East Asian font a font is, or is measured as, by its name. Undefined for other fonts.
 	*/
 	var eastAsianFontOf = (font) => {
-		const name = font.toLowerCase();
-		const known = EAST_ASIAN_FONTS.find((candidate) => [candidate.name, ...candidate.aliases].some((alias) => alias.toLowerCase() === name));
+		var _knownEastAsianFontOf;
 		const similar = EAST_ASIAN_SANS.test(font) ? "MS Gothic" : "MS Mincho";
-		return known !== null && known !== void 0 ? known : EAST_ASIAN_NAME.test(font) ? EAST_ASIAN_FONTS.find((candidate) => candidate.name === similar) : void 0;
+		return (_knownEastAsianFontOf = knownEastAsianFontOf(font)) !== null && _knownEastAsianFontOf !== void 0 ? _knownEastAsianFontOf : EAST_ASIAN_NAME.test(font) ? EAST_ASIAN_FONTS.find((candidate) => candidate.name === similar) : void 0;
 	};
 	/** Whether a font is one for Chinese, Japanese or Korean text */
 	var isEastAsianFont = (font) => font !== void 0 && eastAsianFontOf(font) !== void 0;
+	var named = (name) => FONT_WIDTHS.find((known) => known.name.toLowerCase() === name.toLowerCase());
+	/** The widths of a font in the table, or of a font with the same widths as one. Undefined for other fonts */
+	var exactWidthsOf = (font) => {
+		const same = SAME_WIDTHS.find(([pattern]) => pattern.test(font));
+		return named(same ? same[1] : font);
+	};
 	/**
 	* The widths to measure a font with: its own, or those of the most similar font in the table.
-	* Sans-serif fonts that aren't in the table, such as Aptos and Helvetica, are measured as Arial.
+	* Sans-serif fonts that aren't in the table, such as Aptos, are measured as Arial.
 	*/
 	var widthsOf = (font = DEFAULT_FONT) => {
-		var _named;
-		const named = (name) => FONT_WIDTHS.find((known) => known.name.toLowerCase() === name.toLowerCase());
+		var _exactWidthsOf;
 		const similar = SIMILAR_FONTS.find(([pattern]) => pattern.test(font));
-		return (_named = named(font)) !== null && _named !== void 0 ? _named : named(similar ? similar[1] : "Arial");
+		return (_exactWidthsOf = exactWidthsOf(font)) !== null && _exactWidthsOf !== void 0 ? _exactWidthsOf : named(similar ? similar[1] : "Arial");
 	};
 	/** The widths of the face text is in: its font's, bold, italic, both or neither */
 	var faceOf = ({ font, bold, italic }) => {
@@ -3630,6 +3646,7 @@ var docxShapes = (function(exports, docx) {
 		if (isHalfWidth(code)) return 500;
 		return takesNoRoom(character) ? 0 : AVERAGE_LETTERS.reduce((total, letter) => total + widths[letter], 0) / AVERAGE_LETTERS.length;
 	};
+	var isPrivate = (code) => code >= 57344 && code <= 63743;
 	var FULL_WIDTH_SYMBOLS = /* @__PURE__ */ new Set([..."§¨°±´¶×÷‐―‖‘’“”†‡‥…‰′″※℃Å"]);
 	/**
 	* The width of a character of a monospaced East Asian font, in thousandths of an em: an em for ideographs and the symbols
@@ -3659,6 +3676,39 @@ var docxShapes = (function(exports, docx) {
 		};
 	};
 	/**
+	* The first character of text whose width in its font isn't known, so isn't what Word lays out: one of the tables'
+	* characters that Word draws in another font when the font doesn't have it, or whose width Word's PDF doesn't show, or a
+	* symbol font's own character. Undefined when the widths of all of them are known, or are measured as before: those of
+	* characters the tables don't have, as an average letter.
+	*/
+	var unknownCharacter = (text, font = {}) => {
+		const { widths, monospaced } = measuresOf(font);
+		return [...text].find((character) => {
+			const code = character.codePointAt(0);
+			const index = CHARACTER_INDEX.get(code);
+			return index === void 0 || monospaced ? isPrivate(code) : widths[index] === void 0;
+		});
+	};
+	/**
+	* Whether the tables measure text in a font as another font, as they don't have the font's own widths: a font that isn't
+	* in them and isn't made with the same widths as one that is, such as Aptos, which they measure as the most similar
+	* font that is. Word draws it with its own widths when it has it, and in another font when it doesn't, such as Cambria
+	* on the Mac (`word-watertight-text.docx` TX18), so a layout stops there rather than guessing. The East Asian fonts of
+	* the tables are measured as themselves, but for the other characters of those that aren't monospaced, such as Latin
+	* letters in Yu Gothic, which are measured as Times New Roman or Arial. Without text, whether the height of a line in
+	* the font is another font's.
+	*/
+	var unknownFont = (font = {}, text) => {
+		var _font$font2;
+		const name = (_font$font2 = font.font) !== null && _font$font2 !== void 0 ? _font$font2 : DEFAULT_FONT;
+		const eastAsian = knownEastAsianFontOf(name);
+		if (eastAsian === void 0) return exactWidthsOf(name) === void 0;
+		return !eastAsian.monospaced && text !== void 0 && [...text].some((character) => {
+			const code = character.codePointAt(0);
+			return !isWide(code) && !isHalfWidth(code) && !takesNoRoom(character);
+		});
+	};
+	/**
 	* How wide a line of text is, in points. Tabs move to the next half inch, counted from the start of the line.
 	*
 	* @param start - Where the text starts on its line, in points
@@ -3674,8 +3724,17 @@ var docxShapes = (function(exports, docx) {
 	* How tall a line of single-spaced text is, in points.
 	*/
 	var measureLineHeight = (font = {}) => {
-		var _eastAsianFontOf, _font$font2;
-		return ((_eastAsianFontOf = eastAsianFontOf((_font$font2 = font.font) !== null && _font$font2 !== void 0 ? _font$font2 : "Times New Roman")) !== null && _eastAsianFontOf !== void 0 ? _eastAsianFontOf : widthsOf(font.font)).lineHeight * lineSizeOf(font) / 1e3;
+		var _eastAsianFontOf, _font$font3;
+		return ((_eastAsianFontOf = eastAsianFontOf((_font$font3 = font.font) !== null && _font$font3 !== void 0 ? _font$font3 : "Times New Roman")) !== null && _eastAsianFontOf !== void 0 ? _eastAsianFontOf : widthsOf(font.font)).lineHeight * lineSizeOf(font) / 1e3;
+	};
+	/**
+	* How far a line of single-spaced text goes below its baseline, in points. The rest of the line is above it, with the
+	* font's line gap at the top, where Word puts it: Arial 11 with Courier New 11 is 272.42 twips, Arial's ascent and gap and
+	* Courier New's descent (scripts/layout-probes/word-mixed-heights.ts MH2a).
+	*/
+	var measureDescent = (font = {}) => {
+		var _eastAsianFontOf2, _font$font4;
+		return ((_eastAsianFontOf2 = eastAsianFontOf((_font$font4 = font.font) !== null && _font$font4 !== void 0 ? _font$font4 : "Times New Roman")) !== null && _eastAsianFontOf2 !== void 0 ? _eastAsianFontOf2 : widthsOf(font.font)).descent * lineSizeOf(font) / 1e3;
 	};
 	/**
 	* Splits spans into words and the spaces between them. A word can be made of pieces of several spans, such as a bold
@@ -4364,6 +4423,12 @@ var docxShapes = (function(exports, docx) {
 		}
 		return i;
 	}
+	_objectSpread2(_objectSpread2({}, {
+		measureWidth: (text, font) => measureTextWidth(text, font),
+		measureLineHeight,
+		measureDescent,
+		unknownCharacter
+	}), {}, { unknownFont });
 	//#endregion
 	//#region src/shapes/shape-floating.ts
 	/**
