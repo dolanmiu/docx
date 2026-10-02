@@ -238,7 +238,8 @@ const ANY_DICTIONARY = { letters: 2, part: 1 };
  * dictionary of its text, or none when Word leaves it whole: when it is in text Word doesn't hyphenate (HY7), has too few
  * letters, as numbers have none (HY6), or is in capitals and the document leaves those whole, typed so or shown so with
  * `w:caps` (HY10a, HY10b), but not when only its first letter is a capital (HY10c). Small capitals, and superscript and
- * subscript, which are smaller, Word hasn't been seen leaving whole.
+ * subscript, which are smaller, Word hasn't been seen leaving whole. Nor has it been seen with a word only part of which
+ * is in text it doesn't hyphenate, which is taken as one it may break anywhere, from its first characters on.
  */
 const dictionaryOf = (
     pieces: readonly Piece[],
