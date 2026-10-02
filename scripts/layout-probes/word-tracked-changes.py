@@ -184,10 +184,14 @@ def changes(pages):
     if index is None or index + 1 >= len(pages):
         print("  not found")
     else:
-        lines, _ = body_lines(pages[index + 1])
-        print(f"  the first lines of the next page: {[text_of(line) for line in sorted(lines, key=lambda line: line[0][1])[:2]]}")
-        _, header = find(pages, ["MK11g", "header"])
-        print(f"  'MK11g header' {'is' if header else 'is not'} shown")
+        first, _ = body_lines(pages[index])
+        following, _ = body_lines(pages[index + 1])
+        print(f"  the first lines of the next page: {[text_of(line) for line in sorted(following, key=lambda line: line[0][1])[:2]]}")
+
+        def header_in(lines):
+            return "is" if any("MK11g" in text_of(line) and "header" in text_of(line) for line in lines) else "is not"
+
+        print(f"  'MK11g header' {header_in(first)} on the table's first page, and {header_in(following)} repeated on the next")
     print("\n  The markup area: " + " / ".join(text for page in pages for text in balloons(page)))
 
 
