@@ -74,9 +74,10 @@ const estimateWith = (content: DocumentContent | undefined, measurer: TextMeasur
  *
  * It stops at the first thing it can't lay out yet: a drawing that text flows around, a text box or frame, an equation,
  * a footnote that continues on the next page, columns evened out before a continuous section break, a table row kept
- * whole that is taller than a page, or a character whose width in its font isn't known, such as Greek in Cambria. The
- * page references to bookmarks after it are left blank, for Word to fill in when it updates the fields. A document in
- * compatibility mode, which Word lays out as an older version of Word did, isn't laid out at all.
+ * whole that is taller than a page, or a character whose width in its font isn't known, such as a mathematical symbol in
+ * Calibri, which Word draws in Cambria Math. The page references to bookmarks after it are left blank, for Word to fill
+ * in when it updates the fields. A document in compatibility mode, which Word lays out as an older version of Word did,
+ * isn't laid out at all.
  *
  * Page references and tables of contents are written clean, so Word shows the numbers as they are written, and the
  * page numbers it left blank stay blank, without asking to update the fields, unless the document has `updateFields`

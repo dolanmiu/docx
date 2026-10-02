@@ -267,7 +267,7 @@ export const paginate = (
 
     /**
      * A paragraph's content, as it is measured, which stops the layout at a character whose width the measurer doesn't
-     * know, such as a Greek letter in Cambria, which the width tables don't have
+     * know, such as a mathematical symbol in Calibri, which Word draws in Cambria Math
      */
     const measurable = (items: readonly LayoutItem[]): readonly InlineItem[] => {
         const inline = itemsOf(items);
