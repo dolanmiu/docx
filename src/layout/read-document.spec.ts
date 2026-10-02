@@ -2388,7 +2388,7 @@ describe("readDocument", () => {
             expect(itemsOf(content)).to.deep.equal([
                 { type: "text", text: "a", font: {} },
                 { type: "marker", name: "footnote 2" },
-                { type: "text", text: "2", font: { scale: 65 } },
+                { type: "text", text: "2", font: {} },
             ]);
             expect([...content.footnotes.keys()]).to.deep.equal(["footnote 2"]);
             // A deleted reference in a header, which has no notes, is nothing
