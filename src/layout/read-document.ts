@@ -98,7 +98,56 @@ export type LayoutItem =
       }
     | { readonly type: "pageCount"; readonly scope: "document" | "section"; readonly font: TextFont; readonly format?: FieldFormat }
     | { readonly type: "pageNumber"; readonly field: string; readonly font: TextFont; readonly format?: FieldFormat }
-    | { readonly type: "sectionNumber"; readonly font: TextFont; readonly format?: FieldFormat; readonly field?: string };
+    | { readonly type: "sectionNumber"; readonly font: TextFont; readonly format?: FieldFormat; readonly field?: string }
+    /** A drawing that text flows around, anchored where it is in the paragraph */
+    | { readonly type: "drawing"; readonly drawing: FloatingDrawing };
+
+/** Lengths on each side of something, in points */
+export type Sides = { readonly top: number; readonly bottom: number; readonly left: number; readonly right: number };
+
+/**
+ * Where a drawing that text flows around is, across or down the page (`wp:positionH`, `wp:positionV`): from what, and
+ * lined up with it or at a distance from it.
+ */
+export type DrawingPosition = {
+    /** What it is placed from (`relativeFrom`), such as the margins, the page, the column, the paragraph or the line */
+    readonly from: string;
+    /** How it lines up with that (`wp:align`), such as left, centre or right, or top, centre or bottom */
+    readonly align?: string;
+    /** How far it is from the start of that, in points (`wp:posOffset`) */
+    readonly offset?: number;
+    /**
+     * How far it is from the start of that as a share of its width or height, such as 0.5 for half, as Word 2010 and later
+     * place it (`wp14:pctPosHOffset`, `wp14:pctPosVOffset`), in place of `offset`
+     */
+    readonly share?: number;
+};
+
+/**
+ * A drawing that text flows around (`wp:anchor`), anchored in a paragraph: a picture, a shape, a chart or a group of
+ * them. Lengths are in points.
+ */
+export type FloatingDrawing = {
+    /** How the text goes round it: beside its box, its outline, through its outline, or above and below it only */
+    readonly wrap: "square" | "tight" | "through" | "topAndBottom";
+    /** Which sides of it the text goes beside it on (`wrapText`): both, the left, the right, or the larger */
+    readonly side: "bothSides" | "left" | "right" | "largest";
+    /** Its size (`wp:extent`) */
+    readonly width: number;
+    readonly height: number;
+    /**
+     * Its width or height as a share of what it is sized by, such as 0.25 of the width between the margins, as Word 2010
+     * and later size it (`wp14:sizeRelH`, `wp14:sizeRelV`), in place of `width` or `height`
+     */
+    readonly relativeWidth?: { readonly from: string; readonly share: number };
+    readonly relativeHeight?: { readonly from: string; readonly share: number };
+    /** The room its effects, such as a shadow or its turning, take beyond its size on each side (`wp:effectExtent`) */
+    readonly effects: Sides;
+    /** How far the text keeps from it on each side (`distT`, `distB`, `distL`, `distR`) */
+    readonly distances: Sides;
+    readonly horizontal: DrawingPosition;
+    readonly vertical: DrawingPosition;
+};
 
 export type ParagraphBlock = {
     readonly type: "paragraph";
@@ -439,6 +488,8 @@ type Reader = {
     readonly inSizedTable?: boolean;
     /** The character the document's settings line up at decimal tab stops (`w:decimalSymbol`), if they give one */
     readonly decimalSymbol?: string;
+    /** Whether it reads the cells of a table */
+    readonly inCell?: boolean;
 };
 
 // Word's defaults for a section that doesn't give its page: Letter, with inch margins
@@ -745,8 +796,110 @@ const readDrawing = (element: XmlObject, font: TextFont, reader: Reader): readon
             },
         ];
     }
-    const flowsAround = !childrenOf(drawing["wp:anchor"]).some((child) => "wp:wrapNone" in child);
-    return flowsAround && !reader.inHeader ? "a drawing that text flows around" : [];
+    const anchor = childrenOf(drawing["wp:anchor"]);
+    const flowsAround = !anchor.some((child) => "wp:wrapNone" in child);
+    if (!flowsAround || reader.inHeader) {
+        return [];
+    }
+    if (reader.inCell || reader.inNote) {
+        return "a drawing that text flows around in a table cell, footnote or endnote";
+    }
+    const floating = readFloating(drawing["wp:anchor"]);
+    return typeof floating === "string" ? floating : [{ type: "drawing", drawing: floating }];
+};
+
+// The wrapping of a drawing that text flows around, by its element
+const WRAPS: Readonly<Record<string, FloatingDrawing["wrap"]>> = {
+    "wp:wrapSquare": "square",
+    "wp:wrapTight": "tight",
+    "wp:wrapThrough": "through",
+    "wp:wrapTopAndBottom": "topAndBottom",
+};
+const SIDES = new Set<string>(["bothSides", "left", "right", "largest"]);
+// Shares of a width or height, such as `wp14:pctPosHOffset`, are in thousandths of a percent
+const THOUSANDTHS_OF_A_PERCENT = 100000;
+
+/** The text of an element, such as `wp:align`'s */
+const textIn = (element: unknown): string =>
+    (Array.isArray(element) ? element : [element])
+        .filter((part) => typeof part === "string")
+        .join("")
+        .trim();
+
+/**
+ * An element of a drawing, or the one Word 2010 and later read in its place, in Word's choice of what is written for
+ * which versions (`mc:AlternateContent`)
+ */
+const drawingPart = (children: readonly XmlObject[], name: string): unknown => {
+    const alternate = find(children, "mc:AlternateContent");
+    const choice = find(childrenOf(alternate), "mc:Choice");
+    return find(children, name) ?? find(childrenOf(choice), name);
+};
+
+/** Where a drawing is across or down the page (`wp:positionH`, `wp:positionV`), or why it can't be followed */
+const readPosition = (element: unknown, share: string): DrawingPosition | string => {
+    const children = childrenOf(element);
+    const from = String(attributesOf(element).relativeFrom ?? "");
+    const percentage = numberOf(textIn(drawingPart(children, share)));
+    if (percentage !== undefined) {
+        return { from, share: percentage / THOUSANDTHS_OF_A_PERCENT };
+    }
+    const align = find(children, "wp:align");
+    const alternate = find(childrenOf(find(children, "mc:AlternateContent")), "mc:Fallback");
+    const offset = numberOf(textIn(find(children, "wp:posOffset") ?? find(childrenOf(alternate), "wp:posOffset")));
+    if (align !== undefined) {
+        return { from, align: textIn(align) };
+    }
+    return offset === undefined ? "a drawing placed by neither an alignment nor an offset" : { from, offset: offset / EMUS_PER_POINT };
+};
+
+/** A drawing's width or height as a share of what it is sized by (`wp14:sizeRelH`, `wp14:sizeRelV`) */
+const readRelativeSize = (element: unknown, name: string): { readonly from: string; readonly share: number } | undefined => {
+    const share = numberOf(textIn(find(childrenOf(element), name)));
+    return element === undefined || share === undefined
+        ? undefined
+        : { from: String(attributesOf(element).relativeFrom), share: share / THOUSANDTHS_OF_A_PERCENT };
+};
+
+/** Reads a drawing that text flows around (`wp:anchor`), or why it can't be laid out */
+const readFloating = (element: unknown): FloatingDrawing | string => {
+    const children = childrenOf(element);
+    const attributes = attributesOf(element);
+    if (isOn(attributes.simplePos)) {
+        // Word places it by its offsets, and its simple position is for other applications
+        return "a drawing placed by its simple position";
+    }
+    const wrapName = Object.keys(WRAPS).find((name) => find(children, name) !== undefined);
+    if (wrapName === undefined) {
+        return "a drawing that text flows around in a way not yet followed";
+    }
+    const wrapElement = find(children, wrapName);
+    const wrapAttributes = attributesOf(wrapElement);
+    const side = String(wrapAttributes.wrapText ?? "bothSides");
+    const horizontal = readPosition(find(children, "wp:positionH"), "wp14:pctPosHOffset");
+    const vertical = readPosition(find(children, "wp:positionV"), "wp14:pctPosVOffset");
+    const extent = attributesOf(find(children, "wp:extent"));
+    const effect = attributesOf(find(children, "wp:effectExtent"));
+    const points = (value: unknown): number => (numberOf(value) ?? 0) / EMUS_PER_POINT;
+    // The distances its wrapping gives, and the anchor's where it gives none
+    const distance = (name: string): number => points(wrapAttributes[name] ?? attributes[name]);
+    if (typeof horizontal === "string" || typeof vertical === "string") {
+        return typeof horizontal === "string" ? horizontal : (vertical as string);
+    }
+    return {
+        wrap: WRAPS[wrapName],
+        side: SIDES.has(side) ? (side as FloatingDrawing["side"]) : "bothSides",
+        width: points(extent.cx),
+        height: points(extent.cy),
+        ...withoutUndefined({
+            relativeWidth: readRelativeSize(drawingPart(children, "wp14:sizeRelH"), "wp14:pctWidth"),
+            relativeHeight: readRelativeSize(drawingPart(children, "wp14:sizeRelV"), "wp14:pctHeight"),
+        }),
+        effects: { top: points(effect.t), bottom: points(effect.b), left: points(effect.l), right: points(effect.r) },
+        distances: { top: distance("distT"), bottom: distance("distB"), left: distance("distL"), right: distance("distR") },
+        horizontal,
+        vertical,
+    };
 };
 
 /**
@@ -1633,7 +1786,7 @@ const readTable = (element: XmlObject, reader: Reader): TableBlock | undefined =
     const fixed = attributesOf(find(properties, "w:tblLayout"))["w:type"] === "fixed";
     // Whether Word sizes the columns to their text, or widens them for long words, by the cells' deleted text too
     const sized = !fixed || tableSpacing !== 0;
-    const cellReader: Reader = { ...reader, inSizedTable: sized };
+    const cellReader: Reader = { ...reader, inSizedTable: sized, inCell: true };
     // Which rows are deleted in a tracked change
     const deletedFlags = rows.map(
         ({ element: row }) => find(childrenOf(find(contentOf(row).filter(isObject), "w:trPr")), "w:del") !== undefined,

@@ -12,12 +12,18 @@ import {
     Footer,
     Header,
     HeadingLevel,
+    HorizontalPositionAlign,
+    HorizontalPositionRelativeFrom,
     type IContext,
     type IXmlableObject,
+    ImageRun,
     LevelFormat,
     LevelSuffix,
     Paragraph,
     TextRun,
+    TextWrappingSide,
+    TextWrappingType,
+    VerticalPositionRelativeFrom,
 } from "docx";
 
 import { WORD_DEFAULT_STYLES } from "../text-layout";
@@ -814,13 +820,165 @@ describe("readDocument", () => {
             expect(itemsOf(readBody([p(sized)]))).to.deep.equal([{ type: "box", width: 14, height: 22, font: { size: 15 } }]);
         });
 
-        it("should leave out drawings text doesn't flow around, and stop at those it does", () => {
+        it("should leave out drawings text doesn't flow around, and stop at VML drawings", () => {
             expect(itemsOf(readBody([p(drawing({ "wp:anchor": [{ "wp:wrapNone": {} }] }))]))).to.deep.equal([]);
-            expect(paragraphOf(readBody([p(drawing({ "wp:anchor": [{ "wp:wrapSquare": {} }] }))])).unsupported).to.equal(
-                "a drawing that text flows around",
-            );
             expect(paragraphOf(readBody([p(r({ "w:pict": [] }))])).unsupported).to.equal("a VML drawing");
             expect(paragraphOf(readBody([p(r({ "w:object": [] }))])).unsupported).to.equal("a VML drawing");
+        });
+
+        it("should read a drawing that text flows around as docx writes it: its wrapping, size, effects, distances and place", () => {
+            const content = readWritten({
+                sections: [
+                    {
+                        children: [
+                            new Paragraph({
+                                children: [
+                                    new ImageRun({
+                                        type: "png",
+                                        data: new Uint8Array([0]),
+                                        transformation: { width: 96, height: 48 },
+                                        floating: {
+                                            horizontalPosition: {
+                                                relative: HorizontalPositionRelativeFrom.MARGIN,
+                                                align: HorizontalPositionAlign.RIGHT,
+                                            },
+                                            verticalPosition: { relative: VerticalPositionRelativeFrom.PARAGRAPH, offset: 127000 },
+                                            wrap: { type: TextWrappingType.SQUARE, side: TextWrappingSide.LEFT },
+                                            margins: { top: 12700, bottom: 25400, left: 38100, right: 50800 },
+                                        },
+                                    }),
+                                    new TextRun("a"),
+                                ],
+                            }),
+                        ],
+                    },
+                ],
+            });
+            expect(itemsOf(content)[0]).to.deep.equal({
+                type: "drawing",
+                drawing: {
+                    wrap: "square",
+                    side: "left",
+                    width: 72,
+                    height: 36,
+                    effects: { top: 0, bottom: 0, left: 0, right: 0 },
+                    distances: { top: 1, bottom: 2, left: 3, right: 4 },
+                    horizontal: { from: "margin", align: "right" },
+                    vertical: { from: "paragraph", offset: 10 },
+                },
+            });
+            expect(paragraphOf(content).unsupported).to.equal(undefined);
+        });
+
+        it("should read each wrapping, its sides and distances, and the places and sizes Word 2010 and later give as shares", () => {
+            const anchor = (...children: readonly object[]): object => ({
+                "wp:anchor": [
+                    { _attr: { distT: 12700, distB: 12700, distL: 12700, distR: 12700, simplePos: "0" } },
+                    { "wp:positionH": [{ _attr: { relativeFrom: "page" } }, { "wp:posOffset": ["254000"] }] },
+                    { "wp:positionV": [{ _attr: { relativeFrom: "margin" } }, { "wp:align": ["bottom"] }] },
+                    { "wp:extent": { _attr: { cx: "127000", cy: "254000" } } },
+                    { "wp:effectExtent": { _attr: { l: "12700", t: "25400", r: "38100", b: "50800" } } },
+                    ...children,
+                ],
+            });
+            const drawingOf = (...children: readonly object[]): object =>
+                (itemsOf(readBody([p(drawing(anchor(...children)))]))[0] as { readonly drawing: object }).drawing;
+            // Tight wrapping gives only its distances left and right, and the anchor's are above and below
+            expect(drawingOf({ "wp:wrapTight": [{ _attr: { wrapText: "largest", distL: 25400, distR: 0 } }] })).to.deep.include({
+                wrap: "tight",
+                side: "largest",
+                width: 10,
+                height: 20,
+                effects: { top: 2, bottom: 4, left: 1, right: 3 },
+                distances: { top: 1, bottom: 1, left: 2, right: 0 },
+                horizontal: { from: "page", offset: 20 },
+                vertical: { from: "margin", align: "bottom" },
+            });
+            expect(drawingOf({ "wp:wrapThrough": [{ _attr: { wrapText: "right" } }] })).to.deep.include({ wrap: "through", side: "right" });
+            expect(drawingOf({ "wp:wrapTopAndBottom": {} })).to.deep.include({ wrap: "topAndBottom", side: "bothSides" });
+            // A side Word doesn't have is both
+            expect(drawingOf({ "wp:wrapSquare": { _attr: { wrapText: "bogus" } } })).to.deep.include({ side: "bothSides" });
+            // A place as a share of the width of what it is placed against, in Word's choice for its versions, or as Word
+            // writes it, and sizes as shares
+            const shared = drawingOf(
+                { "wp:wrapSquare": {} },
+                {
+                    "wp:positionH": [
+                        { _attr: { relativeFrom: "margin" } },
+                        {
+                            "mc:AlternateContent": [
+                                { "mc:Choice": [{ _attr: { Requires: "wp14" } }, { "wp14:pctPosHOffset": ["50000"] }] },
+                                { "mc:Fallback": [{ "wp:posOffset": ["0"] }] },
+                            ],
+                        },
+                    ],
+                },
+                { "wp14:sizeRelH": [{ _attr: { relativeFrom: "margin" } }, { "wp14:pctWidth": ["25000"] }] },
+                { "wp14:sizeRelV": [{ _attr: { relativeFrom: "page" } }, { "wp14:pctHeight": ["10000"] }] },
+            );
+            // A size as a share without the share is its own
+            expect(drawingOf({ "wp:wrapSquare": {} }, { "wp14:sizeRelH": [{ _attr: { relativeFrom: "margin" } }] })).not.to.have.property(
+                "relativeWidth",
+            );
+            expect(shared).to.deep.include({
+                horizontal: { from: "page", offset: 20 },
+                relativeWidth: { from: "margin", share: 0.25 },
+                relativeHeight: { from: "page", share: 0.1 },
+            });
+            const percentage = itemsOf(
+                readBody([
+                    p(
+                        drawing({
+                            "wp:anchor": [
+                                { "wp:wrapSquare": {} },
+                                { "wp:positionH": [{ _attr: { relativeFrom: "margin" } }, { "wp14:pctPosHOffset": ["50000"] }] },
+                                {
+                                    "wp:positionV": [
+                                        { _attr: { relativeFrom: "page" } },
+                                        { "mc:AlternateContent": [{ "mc:Fallback": [{ "wp:posOffset": ["12700"] }] }] },
+                                    ],
+                                },
+                            ],
+                        }),
+                    ),
+                ]),
+            )[0] as { readonly drawing: object };
+            expect(percentage.drawing).to.deep.include({
+                horizontal: { from: "margin", share: 0.5 },
+                vertical: { from: "page", offset: 1 },
+                width: 0,
+                effects: { top: 0, bottom: 0, left: 0, right: 0 },
+            });
+        });
+
+        it("should stop at drawings that text flows around placed or wrapped in ways not yet followed, and in table cells and notes", () => {
+            const reasonOf = (anchor: object): string | undefined => paragraphOf(readBody([p(drawing(anchor))])).unsupported;
+            const placed = [
+                { "wp:positionH": [{ _attr: { relativeFrom: "page" } }, { "wp:posOffset": ["0"] }] },
+                { "wp:positionV": [{ _attr: { relativeFrom: "page" } }, { "wp:posOffset": ["0"] }] },
+            ];
+            expect(reasonOf({ "wp:anchor": [{ _attr: { simplePos: "1" } }, { "wp:wrapSquare": {} }, ...placed] })).to.equal(
+                "a drawing placed by its simple position",
+            );
+            expect(reasonOf({ "wp:anchor": [{ "wp:wrapBogus": {} }, ...placed] })).to.equal(
+                "a drawing that text flows around in a way not yet followed",
+            );
+            expect(reasonOf({ "wp:anchor": [{ "wp:wrapSquare": {} }, placed[1], { "wp:positionH": [] }] })).to.equal(
+                "a drawing placed by neither an alignment nor an offset",
+            );
+            expect(reasonOf({ "wp:anchor": [{ "wp:wrapSquare": {} }, placed[0], { "wp:positionV": [] }] })).to.equal(
+                "a drawing placed by neither an alignment nor an offset",
+            );
+            const floating = drawing({ "wp:anchor": [{ "wp:wrapSquare": {} }, ...placed] });
+            const table = {
+                "w:tbl": [
+                    { "w:tblPr": [] },
+                    { "w:tblGrid": [{ "w:gridCol": { _attr: { "w:w": 2000 } } }] },
+                    { "w:tr": [{ "w:tc": [{ "w:tcPr": [{ "w:tcW": { _attr: { "w:w": 2000 } } }] }, p(floating)] }] },
+                ],
+            };
+            const cell = (readBody([table]).blocks[0].block as TableBlock).rows[0].cells[0].blocks[0];
+            expect(cell.unsupported).to.equal("a drawing that text flows around in a table cell, footnote or endnote");
         });
 
         it("should read the drawing Word reads of those with a fallback for older versions", () => {
