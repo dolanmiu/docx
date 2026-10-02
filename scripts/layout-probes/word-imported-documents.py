@@ -1,9 +1,10 @@
 # cspell:ignore bbox
-# Reads the probes of word-imported-documents.ts from PDFs of its four documents, and prints what each shows.
+# Reads the probes of word-imported-documents.ts from PDFs of its six documents, and prints what each shows.
 #
 #   pdftotext -bbox-layout word-imported-documents.pdf word-imported-documents.html
-#   (and the same for word-imported-text, word-imported-ends and word-imported-parts)
-#   python3 word-imported-documents.py word-imported-documents.html word-imported-text.html ...
+#   (and the same for word-imported-text, word-imported-ends, word-imported-parts, word-imported-bookmarks and
+#   word-imported-styles)
+#   python3 word-imported-documents.py word-imported-*.html
 #
 # Lengths are in twips. Word's PDFs put text on a grid of 1/300 inch, 4.8 twips, so one position is only good to about
 # 5 twips. Each line whose font is in question ends in ten m's, whose width says which font and size it is in.
