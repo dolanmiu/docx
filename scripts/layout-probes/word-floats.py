@@ -19,6 +19,7 @@ GAP = 600
 
 
 def words_by_page(base):
+    """Each page's words, from pdftotext's HTML: (left, top, right, bottom, text), in twips from the page's top left"""
     text = open(base + ".html", encoding="utf8").read()
     pages = []
     for content in re.findall(r"<page.*?</page>", text, re.S):
@@ -82,13 +83,14 @@ def lines_of(words):
 
 
 def main(base):
+    """Prints each probe's pages: where each picture is, and each line, with its parts either side of a picture"""
     pages = words_by_page(base)
     pictures = pictures_by_page(base)
     probe = None
     for index, words in enumerate(pages):
         lines = lines_of(words)
         first = lines[0][1][0][2] if lines else ""
-        match = re.match(r"(F\d+[a-z]?) above", first)
+        match = re.match(r"([FG]\d+[a-z]?) above", first)
         if match:
             probe = match.group(1)
             print(f"\n== {probe}, page {index + 1}")
