@@ -40,6 +40,8 @@ table style and each cell's width.
 | `word-watertight-settings`  | ST1 to ST3: whether a page reference written dirty makes Word ask to update the fields, a table style's spacing with Word's `overrideTableStyleFontSizeAndJustification`, and a gutter at the top (`w:gutterAtTop`), which Word takes from the page's height (ST3). One of the round of probes for the watertight inventory                                                                                                                                                                                                                                      | `word-watertight.py`           |
 | `word-watertight-sections`  | SC1 to SC5: the number of the page after a section numbered afresh that starts in the next column (SC1), or continuously, below text or at the top of a page, and two on one page (SC2); a gutter at the top with a header that goes below the margin (SC3); which separator is above endnotes on the pages after the first (SC4); and where the separator goes when no line of an endnote fits below it (SC5), which is `word-watertight-sections2`, as a document's endnotes are at its end                                                                    | `word-watertight.py`           |
 | `word-watertight-endnotes`  | EN1 to EN3: how many lines of endnotes Word puts below the continuation separator on a page after the first, where SC4 of `word-watertight-sections` had one more than the page has room for: whether the separator's room is left out, and how far past the margin a line may go. It writes `word-watertight-endnotes1` to `3`, as a document's endnotes are at its end. **Word's PDFs are still to be saved**, so the layout stops where a page after the first fills                                                                                          | `word-watertight.py`           |
+| `word-watertight-markup`    | MK1 to MK6: whether tracked changes and comments move Word's lines: deleted text, which Word shows in balloons beside the page and breaks the lines without, inserted text, a deleted paragraph mark, which joins its paragraph to the next, a comment, a change of formatting, and a deleted table row, which takes no room. Saved with markup in balloons, beside which Word scales the page down. One of the round of probes for the watertight inventory                                                                                                     | `word-watertight.py`           |
+| `word-tracked-changes`      | MK7 to MK13: what `word-watertight-markup` didn't show: which formatting a paragraph joined to the next by a deleted mark takes, a deleted mark before a table or at the end of a cell or section, numbered paragraphs, deleted pictures, breaks, tabs and footnote references, moved text, deleted rows and cells, and deleted rows and text in tables sized to their text. It writes `word-tracked-view-insdel` and `word-tracked-view-markup` too, which ask Word to hide insertions and deletions, or markup                                                 | `word-tracked-changes.py`      |
 | `word-character-widths`     | W, S, B and H: how wide Word draws each of the 1,995 characters of the width tables' ranges in Calibri, Cambria, Arial, Times New Roman and Courier New, plain and bold, and which font it draws those its fonts lack in; how wide each space is; whether lines break after each space; and whether a word before one at the end of a line stays on the line. Its `.json` has each paragraph's characters, for the reader. `scripts/generate-font-widths.ts` checks the width tables against what the reader reads                                               | `word-character-widths.py`     |
 | `word-italic-widths`        | W and S in italic and bold italic: how wide Word draws each character of the width tables' ranges in the italics of the five fonts, and which font it draws those their italics lack in, and how wide each space is. `word-character-widths.ts` writes it with `italic`, and `word-character-widths.json`'s italic twin, `word-italic-widths.json`, is beside it. `scripts/generate-font-widths.ts` checks the italic width tables against what the reader reads                                                                                                 | `word-character-widths.py`     |
 | `word-fonts`                | F1 to F7: when Word kerns text in Aptos, from what size and across runs, whether with the pairs only its GPOS table has, and how far apart its lines are, for measuring fonts from their files                                                                                                                                                                                                                                                                                                                                                                   | `word-fonts.py`                |
@@ -67,9 +69,9 @@ npm run run-ts -- scripts/layout-probes/word-rules2.ts
 
 It writes `build/word-probes/word-rules2.docx`. `fsplit`, `word-no-prompt` and `word-seq` import `docx/layout`, so build the
 package first (`npm run build`). `word-watertight-stops` and `word-justify` measure their lines with docx/layout's
-width tables, which they import from `src`. The others import only `docx`, as the demos do. `word-watertight-text`
-and `word-watertight-stops` replace markers in the XML with what docx can't write, as their `INJECTIONS` and
-`FIRST_ROW_STYLE` say. `word-fonts` also imports the measuring of text from
+width tables, which they import from `src`. The others import only `docx`, as the demos do. `word-watertight-text`,
+`word-watertight-stops` and `word-tracked-changes` replace markers in the XML with what docx can't write, as their
+`INJECTIONS` and `FIRST_ROW_STYLE` say. `word-fonts` also imports the measuring of text from
 `src/text-layout`, to print the widths docx/layout measures its probes at when it is given a folder with Aptos's and
 Calibri's files, such as Word's own:
 
@@ -233,6 +235,16 @@ heights over many lines.
 When Word's rule for something isn't known, write a probe in the shape of `word-rules2.ts`, with a reader for its PDF, and have
 it saved from Word as a PDF with the same name as its `.docx`. Commit the `.docx`, the PDF and the reader beside the
 script, and leave out LibreOffice's PDFs, `pdftotext`'s HTML, SVG pages and Word's `~$` lock files.
+
+`word-tracked-changes.py` reads the three documents `word-tracked-changes.ts` writes, each from where its text is, and
+gives each length unscaled, as Word scales the page down beside the balloons of the changes:
+
+```bash
+for name in word-tracked-changes word-tracked-view-insdel word-tracked-view-markup; do
+    pdftotext -bbox-layout scripts/layout-probes/$name.pdf build/word-probes/$name.html
+done
+python3 scripts/layout-probes/word-tracked-changes.py build/word-probes/word-tracked-{changes,view-insdel,view-markup}.html
+```
 
 ## Documents saved from Word
 

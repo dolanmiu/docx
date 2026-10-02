@@ -57,6 +57,7 @@ import {
     type BorderSet,
     type CellPosition,
     type Margins,
+    type TableGeometry,
     type TableLook,
     conditionalTypesOf,
     readBorderSet,
@@ -146,6 +147,12 @@ export type TableCell = {
     readonly vertical?: boolean;
     /** Whether the mark that ends it takes no room when its last paragraph is empty (`w:hideMark`), as in Word (TB7) */
     readonly hideMark?: boolean;
+    /**
+     * What is in it as Word sizes its table's columns by it, when that isn't `blocks`: with its deleted text in, which
+     * Word counts in the widths of columns it sizes to their text or widens for long words, though it lays out the lines
+     * without it (`word-tracked-changes.docx` MK11j)
+     */
+    readonly sizing?: readonly Block[];
 };
 
 export type TableRow = {
@@ -187,6 +194,11 @@ export type TableBlock = {
     readonly indent?: number;
     /** The space between its cells, in points, when it has any (`w:tblCellSpacing`) */
     readonly cellSpacing?: number;
+    /**
+     * Its rows deleted in a tracked change, which take no room, but which Word counts in the widths of the columns it sizes
+     * to their text or widens for long words (`word-tracked-changes.docx` MK11h, MK11i). Given when it sizes or widens them
+     */
+    readonly deletedRows?: readonly TableRow[];
     readonly unsupported?: string;
 };
 
@@ -287,8 +299,15 @@ type NoteKind = "footnote" | "endnote";
 /** What a reference to a footnote or endnote shows: its number, and, for a footnote, the marker its note is placed by */
 type NoteReference = { readonly label: string; readonly marker?: string };
 
-/** Reads the footnote or endnote a reference in the body refers to, and numbers it */
-type NoteReader = { readonly read: (kind: NoteKind, id: string) => NoteReference };
+/** Reads the footnotes and endnotes references in the body refer to, and numbers them */
+type NoteReader = {
+    /** Reads the note a reference refers to, and numbers it */
+    readonly read: (kind: NoteKind, id: string) => NoteReference;
+    /** Counts a note whose reference is deleted, which Word numbers but doesn't show (`word-tracked-changes.docx` MK10e) */
+    readonly skip: (kind: NoteKind) => void;
+    /** A reader that numbers notes as this one would from here, without reading them or counting them in this one */
+    readonly preview: () => NoteReader;
+};
 
 /** A complex field being read */
 type OpenField = {
@@ -299,6 +318,8 @@ type OpenField = {
     /** Whether its result depends on the pages, so it is worked out rather than read */
     // eslint-disable-next-line functional/prefer-readonly-type
     replaced: boolean;
+    /** Whether its start is deleted in a tracked change, or moved elsewhere, as all of it then is */
+    readonly deleted?: boolean;
 };
 
 /**
@@ -322,6 +343,10 @@ type Reader = {
     /** The numbers each list is at, by its id and then level */
     // eslint-disable-next-line functional/prefer-readonly-type
     readonly counters: Map<string, number[]>;
+    /** Whether deleted text is read as text, as Word sizes a table's columns by it */
+    readonly showDeleted?: boolean;
+    /** Whether it reads the cells of a table whose columns Word sizes to their text or widens for long words */
+    readonly inSizedTable?: boolean;
 };
 
 // Word's defaults for a section that doesn't give its page: Letter, with inch margins
@@ -357,6 +382,14 @@ const PLAIN_FORMATS = new Set(["mergeformat", "charformat", "mergeformatinet"]);
 // Word fills a content control bound to custom XML in from it when it opens the document, so what it shows there may not
 // be what is written
 const BOUND_CONTROL = "a content control filled from custom XML";
+// What a deleted run has that takes room, other than its text. Word lays its lines out without it (`word-tracked-changes.docx`
+// MK10), but how it sizes a table's columns by it hasn't been seen, as it has for deleted text (MK11j)
+const REMOVED_ROOM = new Set(["w:tab", "w:ptab", "w:br", "w:cr", "w:drawing", "mc:AlternateContent", "w:pict", "w:object"]);
+const REMOVED_NOTES = new Set(["w:footnoteReference", "w:endnoteReference"]);
+const SIZED_REMOVAL = "a deleted picture, tab, break or note reference in a table whose columns Word sizes to their text";
+const PARTLY_DELETED_FIELD = "a field partly deleted in a tracked change";
+// A mark of its own in place of a note's number, which Word may not count in the numbers of the others
+const OWN_NOTE_MARK = "a footnote or endnote with a mark of its own";
 
 const nameOf = (element: XmlObject): string => Object.keys(element)[0];
 
@@ -368,6 +401,9 @@ const contentOf = (element: XmlObject): readonly unknown[] => {
 
 /** Whether an attribute that is on or off, such as `w:combine`, is on: it is off when it isn't given */
 const isOn = (value: unknown): boolean => value !== undefined && !isOff(value);
+
+/** Whether a note's reference has a mark of its own in place of its number (`w:customMarkFollows`) */
+const hasOwnMark = (reference: XmlObject): boolean => isOn(attributesOf(reference[nameOf(reference)])["w:customMarkFollows"]);
 
 /** Whether a content control (`w:sdt`) is bound to custom XML (`w:dataBinding`), which Word fills it in from */
 const isBound = (control: XmlObject): boolean =>
@@ -388,6 +424,12 @@ const unwrap = (elements: readonly unknown[]): readonly XmlObject[] =>
 
 /** The name of the bookmark a bookmark's start (`w:bookmarkStart`) starts */
 const bookmarkOf = (element: XmlObject): string | undefined => stringOf(attributesOf(element["w:bookmarkStart"])["w:name"]);
+
+/** A bookmark's start (`w:bookmarkStart`), as a marker where it starts */
+const markerOf = (element: XmlObject): readonly LayoutItem[] => {
+    const bookmark = bookmarkOf(element);
+    return bookmark === undefined ? [] : [{ type: "marker", name: bookmark }];
+};
 
 /** The names of the bookmarks that start among elements, in order */
 const bookmarksIn = (elements: readonly XmlObject[]): readonly string[] =>
@@ -492,18 +534,22 @@ const readDrawing = (element: XmlObject, font: TextFont, reader: Reader): readon
 /**
  * Reads a field character (`w:fldChar`). The result of a field that depends on the pages is worked out, rather than read.
  */
-const readFieldCharacter = (element: XmlObject, font: TextFont, reader: Reader): readonly LayoutItem[] => {
+const readFieldCharacter = (element: XmlObject, font: TextFont, reader: Reader, deleted = false): readonly LayoutItem[] | string => {
     const type = attributesOf(element["w:fldChar"])["w:fldCharType"];
     const { fields } = reader;
     const field = fields[fields.length - 1];
     if (type === "begin") {
         // eslint-disable-next-line functional/immutable-data
-        fields.push({ instruction: "", inResult: false, replaced: false });
+        fields.push({ instruction: "", inResult: false, replaced: false, ...(deleted ? { deleted } : {}) });
+    } else if ((type === "separate" || type === "end") && field !== undefined && (field.deleted === true) !== deleted) {
+        // Word shows nothing of a field deleted in a tracked change, start to end, but how it shows one only part of which
+        // is deleted hasn't been seen
+        return PARTLY_DELETED_FIELD;
     } else if (type === "end") {
         // eslint-disable-next-line functional/immutable-data
         fields.pop();
     } else if (type === "separate" && field) {
-        const result = workedOutResultOf(field.instruction, font);
+        const result = deleted ? undefined : workedOutResultOf(field.instruction, font);
         // eslint-disable-next-line functional/immutable-data
         field.inResult = true;
         if (result !== undefined && isShown(reader)) {
@@ -531,9 +577,10 @@ const unsupportedFormatOf = (properties: readonly XmlObject[]): string | undefin
 };
 
 /**
- * Reads a run (`w:r`) in the paragraph's formatting, as its character style and its own formatting change it.
+ * Reads a run (`w:r`) in the paragraph's formatting, as its character style and its own formatting change it, and when it
+ * is deleted (`removed`), as Word sizes a table's columns by it.
  */
-const readRun = (element: XmlObject, paragraphRun: RunFormat, reader: Reader): readonly LayoutItem[] | string => {
+const readRun = (element: XmlObject, paragraphRun: RunFormat, reader: Reader, removed = false): readonly LayoutItem[] | string => {
     const { styles } = reader;
     const children = contentOf(element).filter(isObject);
     const properties = find(children, "w:rPr");
@@ -551,7 +598,7 @@ const readRun = (element: XmlObject, paragraphRun: RunFormat, reader: Reader): r
             return readFieldCharacter(child, font, reader);
         }
         const field = reader.fields[reader.fields.length - 1];
-        if (name === "w:instrText") {
+        if (name === "w:instrText" || name === "w:delInstrText") {
             if (field && !field.inResult) {
                 // eslint-disable-next-line functional/immutable-data
                 field.instruction += contentOf(child)
@@ -563,11 +610,19 @@ const readRun = (element: XmlObject, paragraphRun: RunFormat, reader: Reader): r
         if (!isShown(reader) || name === "w:rPr") {
             return [];
         }
+        // What isn't deleted of the result of a field whose start is
+        if (reader.fields.some((open) => open.deleted === true)) {
+            return PARTLY_DELETED_FIELD;
+        }
+        if (removed && (REMOVED_ROOM.has(name) || REMOVED_NOTES.has(name))) {
+            return SIZED_REMOVAL;
+        }
         if (unsupportedFormat !== undefined) {
             return unsupportedFormat;
         }
         switch (name) {
-            case "w:t": {
+            case "w:t":
+            case "w:delText": {
                 // A tab in the text is a tab, as Word lays it out, which is how docx writes those in a TextRun's text
                 const content = contentOf(child)
                     .filter((part) => typeof part === "string")
@@ -618,9 +673,8 @@ const readRun = (element: XmlObject, paragraphRun: RunFormat, reader: Reader): r
             }
             case "w:footnoteReference":
             case "w:endnoteReference": {
-                if (isOn(attributesOf(child[name])["w:customMarkFollows"])) {
-                    // A mark of its own in place of the note's number, which Word may not count in the numbers of the others
-                    return "a footnote or endnote with a mark of its own";
+                if (hasOwnMark(child)) {
+                    return OWN_NOTE_MARK;
                 }
                 const note = reader.notes?.read(
                     name === "w:footnoteReference" ? "footnote" : "endnote",
@@ -638,7 +692,7 @@ const readRun = (element: XmlObject, paragraphRun: RunFormat, reader: Reader): r
             case "mc:AlternateContent": {
                 // The drawing Word reads, rather than the one for older versions
                 const choice = childrenOf(child["mc:AlternateContent"]).find((option) => "mc:Choice" in option);
-                return choice ? readRun({ "w:r": [...childrenOf(choice["mc:Choice"])] }, paragraphRun, reader) : [];
+                return choice ? readRun({ "w:r": [...childrenOf(choice["mc:Choice"])] }, paragraphRun, reader, removed) : [];
             }
             case "w:pict":
             case "w:object":
@@ -658,40 +712,101 @@ const readRun = (element: XmlObject, paragraphRun: RunFormat, reader: Reader): r
 
 // Elements in a paragraph that hold runs and are read through
 const RUN_CONTAINERS = new Set(["w:hyperlink", "w:ins", "w:moveTo", "w:smartTag", "w:customXml", "w:dir", "w:bdo", "w:sdtContent"]);
+// Elements in a paragraph that hold runs deleted (`w:del`) or moved to elsewhere (`w:moveFrom`) in a tracked change
+const REMOVALS = new Set(["w:del", "w:moveFrom"]);
+// An element no document has, which stands in a paragraph's content for why the layout stops there, when the reason is
+// found before the paragraph is read
+const STOP = "docx-layout:unsupported";
 
-/**
- * Reads the content of a paragraph, or of an element in it, such as a hyperlink.
- */
-const readInline = (elements: readonly unknown[], paragraphRun: RunFormat, reader: Reader): readonly LayoutItem[] | string => {
-    const parts = elements.filter(isObject).map((element): readonly LayoutItem[] | string => {
-        const name = nameOf(element);
-        if (name === "w:r") {
-            return readRun(element, paragraphRun, reader);
-        }
-        if (RUN_CONTAINERS.has(name)) {
-            return readInline(contentOf(element), paragraphRun, reader);
-        }
-        if (name === "w:sdt") {
-            return isBound(element)
-                ? BOUND_CONTROL
-                : readInline(childrenOf(find(childrenOf(element[name]), "w:sdtContent")), paragraphRun, reader);
-        }
-        if (name === "w:fldSimple") {
-            const result = workedOutResultOf(String(attributesOf(element[name])["w:instr"]), fontOf(paragraphRun));
-            return result !== undefined && isShown(reader) ? [result] : readInline(contentOf(element), paragraphRun, reader);
-        }
-        if (name === "w:bookmarkStart") {
-            const bookmark = bookmarkOf(element);
-            return bookmark === undefined ? [] : [{ type: "marker", name: bookmark }];
-        }
-        if (name === "w:subDoc") {
-            return "a subdocument";
-        }
-        return name === "m:oMath" || name === "m:oMathPara" ? "an equation" : [];
-    });
+/** The items of the parts of a paragraph, or why it can't be laid out */
+const itemsOf = (parts: readonly (readonly LayoutItem[] | string)[]): readonly LayoutItem[] | string => {
     const unsupported = parts.find((part): part is string => typeof part === "string");
     return unsupported ?? parts.flatMap((part) => part as readonly LayoutItem[]);
 };
+
+/**
+ * Reads what is deleted (`w:del`), or moved to elsewhere (`w:moveFrom`), in a tracked change: nothing, as Word shows it in
+ * the markup area beside the page, and breaks the lines without it, pictures, tabs and breaks too (`word-watertight-markup.docx`
+ * MK1, `word-tracked-changes.docx` MK10), but for its bookmarks. Word numbers a footnote whose reference is deleted, though
+ * it doesn't show it (MK10e). A deleted endnote reference, and a note reference moved, haven't been seen.
+ */
+const readRemoved = (elements: readonly unknown[], kind: string, reader: Reader): readonly LayoutItem[] | string =>
+    itemsOf(
+        elements.filter(isObject).map((element): readonly LayoutItem[] | string => {
+            const name = nameOf(element);
+            if (name === "w:r") {
+                const children = contentOf(element).filter(isObject);
+                const references = children.filter((child) => REMOVED_NOTES.has(nameOf(child)));
+                if (references.length > 0 && kind === "w:moveFrom") {
+                    return "a note reference moved in a tracked change";
+                }
+                if (references.some((reference) => "w:endnoteReference" in reference)) {
+                    return "a deleted endnote reference";
+                }
+                if (references.some(hasOwnMark)) {
+                    return OWN_NOTE_MARK;
+                }
+                references.forEach(() => reader.notes?.skip("footnote"));
+                // Its field characters, which keep the fields' places, so a field partly deleted is found
+                return itemsOf(children.map((child) => (nameOf(child) === "w:fldChar" ? readFieldCharacter(child, {}, reader, true) : [])));
+            }
+            if (name === "w:bookmarkStart") {
+                return markerOf(element);
+            }
+            if (name === "w:sdt") {
+                return readRemoved(childrenOf(find(childrenOf(element[name]), "w:sdtContent")), kind, reader);
+            }
+            return RUN_CONTAINERS.has(name) || REMOVALS.has(name) || name === "w:fldSimple"
+                ? readRemoved(contentOf(element), kind, reader)
+                : [];
+        }),
+    );
+
+/**
+ * Reads the content of a paragraph, or of an element in it, such as a hyperlink, and when it is deleted (`removed`), as
+ * Word sizes a table's columns by it.
+ */
+const readInline = (
+    elements: readonly unknown[],
+    paragraphRun: RunFormat,
+    reader: Reader,
+    removed = false,
+): readonly LayoutItem[] | string =>
+    itemsOf(
+        elements.filter(isObject).map((element): readonly LayoutItem[] | string => {
+            const name = nameOf(element);
+            if (name === "w:r") {
+                return readRun(element, paragraphRun, reader, removed);
+            }
+            if (REMOVALS.has(name)) {
+                return reader.showDeleted
+                    ? readInline(contentOf(element), paragraphRun, reader, true)
+                    : readRemoved(contentOf(element), name, reader);
+            }
+            if (RUN_CONTAINERS.has(name)) {
+                return readInline(contentOf(element), paragraphRun, reader, removed);
+            }
+            if (name === "w:sdt") {
+                return isBound(element)
+                    ? BOUND_CONTROL
+                    : readInline(childrenOf(find(childrenOf(element[name]), "w:sdtContent")), paragraphRun, reader, removed);
+            }
+            if (name === "w:fldSimple") {
+                const result = workedOutResultOf(String(attributesOf(element[name])["w:instr"]), fontOf(paragraphRun));
+                return result !== undefined && isShown(reader) ? [result] : readInline(contentOf(element), paragraphRun, reader, removed);
+            }
+            if (name === "w:bookmarkStart") {
+                return markerOf(element);
+            }
+            if (name === "w:subDoc") {
+                return "a subdocument";
+            }
+            if (name === STOP) {
+                return String(element[name]);
+            }
+            return name === "m:oMath" || name === "m:oMathPara" ? "an equation" : [];
+        }),
+    );
 
 /**
  * The number of a paragraph in a list, and what follows it, as its list's level writes it, and its number as a chapter
@@ -1059,6 +1174,42 @@ const UNSAID_LOOK: TableLook = { firstRow: true, lastRow: false, firstColumn: tr
 /** A cell as it is read, before the room around its text, from its borders and the space between cells, is worked out */
 type ReadCell = TableCell & { readonly borders: BorderSet; readonly margins: Margins; readonly gridWidth: number };
 
+/** Whether an element has any of these elements in it, at any depth */
+const hasAnyOf = (element: unknown, names: ReadonlySet<string>): boolean =>
+    Array.isArray(element)
+        ? element.some((child) => hasAnyOf(child, names))
+        : isObject(element) &&
+          Object.entries(element).some(([name, value]) => names.has(name) || (name !== "_attr" && hasAnyOf(value, names)));
+
+/**
+ * A reader of what Word sizes a table's columns by: deleted text as text, unless `showDeleted` is false, with the notes and
+ * lists numbered as they would be, but left for the reader it is made from to read and count.
+ */
+const sizingReaderOf = (reader: Reader, showDeleted = true): Reader => ({
+    ...reader,
+    ...(reader.notes ? { notes: reader.notes.preview() } : {}),
+    fields: [],
+    counters: new Map([...reader.counters].map(([id, counts]) => [id, [...counts]])),
+    showDeleted,
+});
+
+/** The names of the bookmarks that start in blocks, in order: in their paragraphs, and their tables' cells */
+const markersIn = (blocks: readonly Block[]): readonly string[] =>
+    blocks.flatMap((block) =>
+        block.type === "paragraph"
+            ? block.items.flatMap((item) => (item.type === "marker" ? [item.name] : []))
+            : block.rows.flatMap(({ cells }) => cells.flatMap((cell) => markersIn(cell.blocks))),
+    );
+
+/** Whether blocks have anything in them that takes room */
+const hasContent = (blocks: readonly Block[]): boolean =>
+    blocks.some((block) => block.type === "table" || block.items.some((item) => item.type !== "marker"));
+
+/** Whether rows have no borders or space between cells that take room above or below them */
+const hasNoRowBorders = (geometry: TableGeometry | string): boolean =>
+    typeof geometry !== "string" &&
+    geometry.every(({ borderTop, borderBottom, breakBorder = 0 }) => borderTop === 0 && borderBottom === 0 && breakBorder === 0);
+
 /**
  * Reads a table (`w:tbl`): the width, margins and content of each cell, and the height and borders of each row. Word
  * sizes the columns of a table whose cells don't all have widths to their text, and widens a column of one whose cells
@@ -1070,8 +1221,15 @@ type ReadCell = TableCell & { readonly borders: BorderSet; readonly margins: Mar
  * style's paragraph and run formatting applies to its cells' paragraphs, then the formatting of the parts of its style
  * for the cell, such as its first row's (`w:tblStylePr`), where the table turns them on (`w:tblLook`), with the cell
  * borders and margins they give. A cell's own borders and margins are over those.
+ *
+ * A row deleted in a tracked change takes no room, as Word lays it out, nor does a table all of whose rows are deleted,
+ * which is read as nothing (`word-watertight-markup.docx` MK6, `word-tracked-changes.docx` MK11a, MK11g). Word sizes the
+ * columns by its text, and by deleted text in the other rows, all the same (MK11h to MK11j), so those are kept to size
+ * them by. A cell merged down from a deleted row starts the merge, empty, as Word lays it out (MK11c). Whether Word keeps
+ * a deleted row's borders, or the space between cells around it, and which rows the parts of a table style for its first
+ * and last rows and its bands count, haven't been seen.
  */
-const readTable = (element: XmlObject, reader: Reader): TableBlock => {
+const readTable = (element: XmlObject, reader: Reader): TableBlock | undefined => {
     const children = contentOf(element).filter(isObject);
     const properties = childrenOf(find(children, "w:tblPr"));
     const style = valueOf(properties, "w:tblStyle");
@@ -1099,6 +1257,17 @@ const readTable = (element: XmlObject, reader: Reader): TableBlock => {
     // The rows, and those in content controls and custom XML, with the bookmarks that start before each
     const parts = unwrap(children);
     const rows = withBookmarks(parts, "w:tr");
+    const fixed = attributesOf(find(properties, "w:tblLayout"))["w:type"] === "fixed";
+    // Whether Word sizes the columns to their text, or widens them for long words, by the cells' deleted text too
+    const sized = !fixed || tableSpacing !== 0;
+    const cellReader: Reader = { ...reader, inSizedTable: sized };
+    // Which rows are deleted in a tracked change, and where each of the others is among those laid out
+    const deletedFlags = rows.map(
+        ({ element: row }) => find(childrenOf(find(contentOf(row).filter(isObject), "w:trPr")), "w:del") !== undefined,
+    );
+    const keptCount = deletedFlags.filter((deleted) => !deleted).length;
+    let keptBefore = 0;
+    const keptIndexes = deletedFlags.map((deleted) => (deleted ? keptBefore : keptBefore++));
 
     // The parts of the table's style for some of its cells, by their type, from each of its styles in turn
     const conditional = ownStyles.flatMap(({ conditional: given = new Map() }) => [...given]);
@@ -1146,6 +1315,7 @@ const readTable = (element: XmlObject, reader: Reader): TableBlock => {
             rowIndex,
         ): {
             readonly cells: readonly ReadCell[];
+            readonly deleted: boolean;
             readonly row: Omit<TableRow, "cells" | "borderTop" | "borderBottom">;
             readonly spacing: number | undefined;
             readonly edges: ReadonlyMap<number, number>;
@@ -1165,6 +1335,22 @@ const readTable = (element: XmlObject, reader: Reader): TableBlock => {
             const skipped = numberOf(attributesOf(find(rowProperties, "w:gridBefore"))["w:val"]) ?? 0;
             const ownSpacing = find(rowProperties, "w:tblCellSpacing");
             const spacing = ownSpacing === undefined ? tableSpacing : readCellSpacing(ownSpacing);
+            // A deleted row is read only as Word sizes the columns by it, with its notes and lists left uncounted, or, where
+            // nothing sizes them, for its bookmarks, with its deleted runs read as nothing
+            const deleted = deletedFlags[rowIndex];
+            const rowReader = deleted ? sizingReaderOf(cellReader, sized) : cellReader;
+            const counts = deleted ? JSON.stringify([...rowReader.counters]) : "";
+            // Whether the parts of the table's style for some of its cells apply to the row otherwise than they would with
+            // its deleted rows laid out
+            const shifted =
+                !deleted &&
+                keptCount < rows.length &&
+                conditional.length > 0 &&
+                rowCells.some((_, cell) => {
+                    const typesAt = (at: number, count: number): string =>
+                        JSON.stringify(conditionalTypesOf({ row: at, rows: count, cell, cells: rowCells.length }, look, bands));
+                    return typesAt(rowIndex, rows.length) !== typesAt(keptIndexes[rowIndex], keptCount);
+                });
             // Where each cell's edges are, by the grid column they are at, to check the rows agree on them
             const {
                 cells,
@@ -1193,7 +1379,13 @@ const readTable = (element: XmlObject, reader: Reader): TableBlock => {
                     const hasWidth = inTwips > 0 || (widthType === "pct" && (shareOf(ownWidth) ?? 0) > 0);
                     const width = inTwips > 0 ? inTwips : gridWidth(column, column + span);
                     const direction = valueOf(cellProperties, "w:textDirection");
-                    const cellBlocks = readBlocks(cellChildren, reader, formatted.formats);
+                    // What Word sizes the columns by, with the cell's deleted text in, read before the cell is, so its lists
+                    // are at the same numbers
+                    const sizing =
+                        sized && !deleted && hasAnyOf(cellChildren, REMOVALS)
+                            ? readBlocks(cellChildren, sizingReaderOf(rowReader), formatted.formats)
+                            : undefined;
+                    const cellBlocks = readBlocks(cellChildren, rowReader, formatted.formats);
                     const vertical = direction !== undefined && VERTICAL.has(direction);
                     return {
                         column: column + span,
@@ -1220,6 +1412,7 @@ const readTable = (element: XmlObject, reader: Reader): TableBlock => {
                                 ...(merge ? { verticalMerge: merge } : {}),
                                 ...(vertical ? { vertical: true } : {}),
                                 ...(onOff(cellProperties, "w:hideMark") === true ? { hideMark: true } : {}),
+                                ...(sizing ? { sizing } : {}),
                                 borders:
                                     formatted === UNFORMATTED
                                         ? readBorderSet(find(cellProperties, "w:tcBorders"))
@@ -1241,9 +1434,14 @@ const readTable = (element: XmlObject, reader: Reader): TableBlock => {
                       ? BOUND_CONTROL
                       : changesLines(childrenOf(find(rowChildren, "w:tblPrEx")))
                         ? "a table row with table properties of its own"
-                        : cellsUnsupported;
+                        : deleted && (hasAnyOf(rowChildren, REMOVED_NOTES) || JSON.stringify([...rowReader.counters]) !== counts)
+                          ? "a list or a note in a deleted table row"
+                          : shifted
+                            ? "a deleted row in a table whose style formats some of its rows"
+                            : cellsUnsupported;
             return {
                 cells,
+                deleted,
                 edges,
                 end,
                 spacing,
@@ -1261,8 +1459,13 @@ const readTable = (element: XmlObject, reader: Reader): TableBlock => {
             };
         },
     );
+    const kept = read.filter(({ deleted }) => !deleted);
+    if (kept.length === 0 && read.length > 0) {
+        // Every row is deleted, so the table takes no room, unless what Word does with a row hasn't been seen
+        const reason = read.find((row) => row.unsupported !== undefined)?.unsupported;
+        return reason === undefined ? undefined : { type: "table", rows: [], unsupported: reason };
+    }
     const tableCells = read.flatMap(({ cells }) => cells);
-    const fixed = attributesOf(find(properties, "w:tblLayout"))["w:type"] === "fixed";
     const fits = !fixed && tableCells.some(({ ownWidth }) => ownWidth === undefined);
     // Space between cells that is a share of the table's width, or that a row has of its own, isn't known yet
     const spacingUnsupported =
@@ -1274,38 +1477,68 @@ const readTable = (element: XmlObject, reader: Reader): TableBlock => {
     // The room around each row's and cell's text, from the borders and the space between cells, which every row has the
     // same of when it is followed
     const followedSpacing = spacingUnsupported === undefined ? tableSpacing! : 0;
-    const geometry = tableGeometry(
-        read.map(({ cells }) => ({ cells, spacing: followedSpacing })),
-        { borders: tableBorders, spacing: followedSpacing },
-    );
+    const geometryOf = (laidOut: typeof read): TableGeometry | string =>
+        tableGeometry(
+            laidOut.map(({ cells }) => ({ cells, spacing: followedSpacing })),
+            { borders: tableBorders, spacing: followedSpacing },
+        );
+    const geometry = geometryOf(kept);
     const spaced = followedSpacing > 0;
-    // The bookmarks before each row and cell start where the text after them does: in the cell after them, or in the next
-    // with any text when it has none
+    // Whether Word keeps a deleted row's borders, or the space between cells around it, hasn't been seen, so a table with
+    // deleted rows is laid out only when it would have none with them laid out
+    const bordered =
+        kept.length < read.length && (spaced || !hasNoRowBorders(geometryOf(read)))
+            ? "a deleted row in a table with borders or space between its rows"
+            : undefined;
+    // The rows laid out. The bookmarks before each row and cell start where the text after them does: in the cell after
+    // them, or in the next with any text when it has none. Those before a deleted row and its cells, and in its cells,
+    // start in the next row laid out. Those after the last, as after a table's last row, aren't placed, so a page
+    // reference to them is left blank
+    // eslint-disable-next-line functional/prefer-readonly-type
+    const tableRows: TableRow[] = [];
     let carried: readonly string[] = [];
-    const tableRows = read.map(({ row, cells, bookmarks, cellBookmarks }, rowIndex): TableRow => {
-        carried = [...carried, ...bookmarks];
-        const placed = typeof geometry === "string" ? undefined : geometry[rowIndex];
-        return {
+    let unmerged: string | undefined;
+    read.forEach(({ row, cells, deleted, bookmarks, cellBookmarks }, index) => {
+        carried = [
+            ...carried,
+            ...bookmarks,
+            ...(deleted ? cells.flatMap((cell, cellIndex) => [...cellBookmarks[cellIndex], ...markersIn(cell.blocks)]) : []),
+        ];
+        if (deleted) {
+            return;
+        }
+        const placed = typeof geometry === "string" ? undefined : geometry[tableRows.length];
+        const above = tableRows[tableRows.length - 1];
+        // eslint-disable-next-line functional/immutable-data
+        tableRows.push({
             ...row,
             borderTop: placed?.borderTop ?? 0,
             borderBottom: placed?.borderBottom ?? 0,
             ...withoutUndefined({ breakBorder: placed?.breakBorder }),
-            cells: cells.map(({ borders: _, margins, gridWidth: __, ...cell }, index) => {
-                const pending = [...carried, ...cellBookmarks[index]];
+            cells: cells.map(({ borders: _, margins, gridWidth: __, ...cell }, cellIndex) => {
+                const pending = [...carried, ...cellBookmarks[cellIndex]];
                 const marked = pending.length === 0 ? undefined : startingAtFirst(cell.blocks, pending);
                 carried = marked === undefined ? pending : [];
-                const around = placed?.cells[index];
+                const around = placed?.cells[cellIndex];
                 // A cell's width with the space between cells is as wide as Word sizes its column from, as the table's columns
                 // are narrowed to keep its width (word-table-formats2.docx CS9)
                 const spacingRoom = around === undefined ? 0 : around.left - margins.left + around.right - margins.right;
+                // A cell merged down from a deleted row starts the merge, as Word lays it out when it is empty (MK11c). What
+                // it does with one with something in it hasn't been seen
+                const orphan =
+                    read[index - 1]?.deleted === true &&
+                    cell.verticalMerge === "continue" &&
+                    above?.cells.find((other) => other.column === cell.column)?.verticalMerge === undefined;
+                unmerged ??= orphan && hasContent(cell.blocks) ? "a cell merged down from a deleted table row" : undefined;
                 return {
                     ...cell,
                     ...(around === undefined ? {} : { width: around.width, marginLeft: around.left, marginRight: around.right }),
                     ...(spaced && cell.ownWidth !== undefined ? { ownWidth: cell.ownWidth + spacingRoom } : {}),
                     ...(marked === undefined ? {} : { blocks: marked }),
+                    ...(orphan ? { verticalMerge: "restart" as const } : {}),
                 };
             }),
-        };
+        });
     });
     // Cells over the same columns whose widths put a column's edge in different places in different rows, which Word
     // settles in a way not yet followed
@@ -1318,7 +1551,21 @@ const readTable = (element: XmlObject, reader: Reader): TableBlock => {
             return Math.abs(other - edge) > WIDTH_TOLERANCE;
         }),
     );
-    const blocks = tableCells.flatMap((cell) => cell.blocks);
+    // The rows Word sizes the columns by, deleted ones too, and the blocks it lays out, or sizes the columns by
+    const deletedRows: readonly TableRow[] = sized
+        ? read
+              .filter(({ deleted }) => deleted)
+              .map(({ row, cells }) => ({
+                  ...row,
+                  borderTop: 0,
+                  borderBottom: 0,
+                  cells: cells.map(({ borders: _, margins: __, gridWidth: ___, ...cell }) => cell),
+              }))
+        : [];
+    const blocks = [
+        ...tableRows.flatMap(({ cells }) => cells.flatMap((cell) => [...cell.blocks, ...(cell.sizing ?? [])])),
+        ...deletedRows.flatMap(({ cells }) => cells.flatMap((cell) => cell.blocks)),
+    ];
     // How Word lays out a table of more columns than it can have isn't known, and sizing one to its text would count a
     // column for each it says it has, however many
     const columns = read.reduce((most, { end }) => Math.max(most, end), 0);
@@ -1348,6 +1595,8 @@ const readTable = (element: XmlObject, reader: Reader): TableBlock => {
         (find(properties, "w:tblpPr") === undefined ? undefined : "a table that text flows around") ??
         (parts.some((part) => "w:sdt" in part) ? BOUND_CONTROL : undefined) ??
         read.find((row) => row.unsupported !== undefined)?.unsupported ??
+        unmerged ??
+        bordered ??
         (fits ? unfitted : unequal ? "a table whose rows give a column different widths" : undefined) ??
         spacingUnsupported ??
         (typeof geometry === "string" ? geometry : undefined) ??
@@ -1371,6 +1620,7 @@ const readTable = (element: XmlObject, reader: Reader): TableBlock => {
         borderRight: roomOf(tableBorders.right) ?? 0,
         ...(indent ? { indent } : {}),
         ...(spaced ? { cellSpacing: followedSpacing } : {}),
+        ...(deletedRows.length > 0 ? { deletedRows } : {}),
         ...(unsupported ? { unsupported } : {}),
     };
 };
@@ -1423,7 +1673,8 @@ const startingAtFirst = (blocks: readonly Block[], bookmarks: readonly string[])
 
 /**
  * Reads a paragraph or table, or what is in its place and can't be laid out: an imported document, an equation outside
- * a paragraph, or a content control bound to custom XML. Undefined for anything else.
+ * a paragraph, or a content control bound to custom XML. Undefined for anything else, and for a table all of whose rows
+ * are deleted in a tracked change.
  */
 const readBlock = (element: XmlObject, reader: Reader, tableFormats?: TableFormats): Block | undefined => {
     switch (nameOf(element)) {
@@ -1443,6 +1694,122 @@ const readBlock = (element: XmlObject, reader: Reader, tableFormats?: TableForma
     }
 };
 
+// The elements of a part of a document that are blocks, or end a section, rather than marks between them, such as a
+// bookmark's start
+const BLOCK_ELEMENTS = new Set(["w:p", "w:tbl", "w:sdt", "w:customXml", "w:altChunk", "m:oMath", "m:oMathPara", "w:sectPr"]);
+// What of a section's properties says how it starts, how its pages are numbered, and what headers and footers it has
+const SECTION_START = new Set(["w:type", "w:titlePg", "w:pgNumType", "w:headerReference", "w:footerReference"]);
+
+const paragraphPropertiesOf = (paragraph: XmlObject): readonly XmlObject[] =>
+    childrenOf(find(contentOf(paragraph).filter(isObject), "w:pPr"));
+
+/** How a paragraph's mark is removed in a tracked change, when it is: deleted (`w:del`), or moved elsewhere (`w:moveFrom`) */
+const removedMarkOf = (paragraph: XmlObject): string | undefined =>
+    childrenOf(find(paragraphPropertiesOf(paragraph), "w:rPr"))
+        .map(nameOf)
+        .find((name) => REMOVALS.has(name));
+
+/** Whether an element has anything in its runs, deleted or not, but their formatting */
+const hasRunContent = (element: unknown): boolean =>
+    Array.isArray(element)
+        ? element.some(hasRunContent)
+        : isObject(element) &&
+          Object.entries(element).some(([name, value]) =>
+              name === "w:r"
+                  ? childrenOf(value).some((child) => nameOf(child) !== "w:rPr" && nameOf(child) !== "_attr")
+                  : name !== "_attr" && name !== "w:pPr" && hasRunContent(value),
+          );
+
+/** What of a section's properties says how it starts, numbers its pages, and what headers and footers it has */
+const startOf = (section: unknown): string => JSON.stringify(childrenOf(section).filter((child) => SECTION_START.has(nameOf(child))));
+
+/** The properties of the first section that ends among elements: in a paragraph, or the body's own */
+const nextSectionIn = (elements: readonly XmlObject[]): unknown =>
+    elements.map(sectionPropertiesOf).find((section) => section !== undefined);
+
+/** A paragraph the layout stops at, for why */
+const stopIn = (paragraph: XmlObject, reason: string): XmlObject => ({ "w:p": [...contentOf(paragraph), { [STOP]: reason }] });
+
+/** A paragraph whose mark is deleted, joined to the next: the next, with the deleted one's content, then what is between them, first */
+const joinedParagraph = (first: XmlObject, between: readonly unknown[], next: XmlObject): XmlObject => {
+    const isHead = (child: unknown): boolean => isObject(child) && (nameOf(child) === "_attr" || nameOf(child) === "w:pPr");
+    const content = contentOf(next);
+    return {
+        "w:p": [
+            ...content.filter(isHead),
+            ...contentOf(first).filter((child) => !isHead(child)),
+            ...between,
+            ...content.filter((child) => !isHead(child)),
+        ],
+    };
+};
+
+/**
+ * Joins each paragraph whose mark is deleted in a tracked change to the paragraph after it, as Word lays it out: the next
+ * paragraph, with the deleted one's text at its start, all in the next one's formatting, style and list
+ * (`word-watertight-markup.docx` MK3, `word-tracked-changes.docx` MK7, MK9). A section break deleted so leaves its section
+ * to the next (MK8c). A paragraph with no paragraph after it, before a table or at the end of a table cell or of the
+ * document, stays as it is (MK8a, MK8b, MK8d). What Word does with a paragraph mark moved elsewhere, a deleted mark at the
+ * edge of a content control, a deleted section break before a table or between sections that start, number their pages or
+ * have headers and footers differently, and a deleted mark between paragraphs of text in a table whose columns it sizes,
+ * by the paragraphs either as they are written or as they are laid out, hasn't been seen, so the layout stops there.
+ *
+ * @param nested - Whether the elements are in a content control or custom XML
+ * @param sized - Whether they are in a cell of a table whose columns Word sizes to their text, or widens for long words
+ */
+const joinRemovedMarks = (elements: readonly unknown[], nested: boolean, sized: boolean): readonly XmlObject[] => {
+    // The elements after the one being read, as they are joined, from the last: the next is at the end
+    // eslint-disable-next-line functional/prefer-readonly-type
+    const after: XmlObject[] = [];
+    for (const element of [...elements.filter(isObject)].reverse()) {
+        const name = nameOf(element);
+        const mark = name === "w:p" ? removedMarkOf(element) : undefined;
+        // The next block, past the marks between them, such as bookmarks' starts
+        const at = after.findLastIndex((other) => BLOCK_ELEMENTS.has(nameOf(other)));
+        const next = after[at] as XmlObject | undefined;
+        const nextName = next === undefined ? undefined : nameOf(next);
+        const joins = mark !== undefined && nextName === "w:p";
+        const section = mark === undefined ? undefined : sectionPropertiesOf(element);
+        const reason =
+            mark === undefined
+                ? undefined
+                : mark === "w:moveFrom"
+                  ? "a paragraph mark moved in a tracked change"
+                  : nextName === "w:sdt" || nextName === "w:customXml" || (next === undefined && nested)
+                    ? "a deleted paragraph mark at the edge of a content control"
+                    : section !== undefined && !joins
+                      ? "a deleted section break with no paragraph after it"
+                      : section !== undefined && startOf(section) !== startOf(nextSectionIn([...after].reverse()))
+                        ? "a deleted section break between sections that start, number their pages or have headers and footers differently"
+                        : joins && sized && hasRunContent(element) && hasRunContent(next)
+                          ? "a deleted paragraph mark between paragraphs of text in a table whose columns Word sizes to their text"
+                          : undefined;
+        if (reason !== undefined) {
+            // eslint-disable-next-line functional/immutable-data
+            after.push(stopIn(element, reason));
+        } else if (joins) {
+            // eslint-disable-next-line functional/immutable-data
+            const [, ...between] = after.splice(at);
+            // eslint-disable-next-line functional/immutable-data
+            after.push(joinedParagraph(element, between.reverse(), next!));
+        } else if (name === "w:customXml") {
+            // eslint-disable-next-line functional/immutable-data
+            after.push({ [name]: joinRemovedMarks(contentOf(element), true, sized) });
+        } else if (name === "w:sdt" && !isBound(element)) {
+            const content = contentOf(element).map((child) =>
+                isObject(child) && "w:sdtContent" in child ? { "w:sdtContent": joinRemovedMarks(contentOf(child), true, sized) } : child,
+            );
+            // eslint-disable-next-line functional/immutable-data
+            after.push({ [name]: content });
+        } else {
+            // eslint-disable-next-line functional/immutable-data
+            after.push(element);
+        }
+    }
+    // eslint-disable-next-line functional/immutable-data
+    return after.reverse();
+};
+
 /**
  * Reads the paragraphs and tables in a part of a document, such as a table cell or a header, and in the content controls
  * and custom XML in it. A bookmark between them starts with the next.
@@ -1451,7 +1818,7 @@ const readBlocks = (elements: readonly unknown[], reader: Reader, tableFormats?:
     // eslint-disable-next-line functional/prefer-readonly-type
     const blocks: Block[] = [];
     let bookmarks: readonly string[] = [];
-    for (const element of unwrap(elements)) {
+    for (const element of unwrap(joinRemovedMarks(elements, false, reader.inSizedTable === true))) {
         const block = readBlock(element, reader, tableFormats);
         if (block === undefined) {
             bookmarks = [...bookmarks, ...bookmarksIn([element])];
@@ -1800,7 +2167,7 @@ export const readContent = (body: XmlObject, parts: DocumentParts): DocumentCont
     const listIds = parts.otherListIds ?? new Map<string, string>();
     const readerOf = (inHeader: boolean): Reader => ({ styles, numbering, listIds, inHeader, fields: [], counters: new Map() });
     const settings = childrenOf(parts.settings?.["w:settings"]);
-    const elements = unwrap(contentOf(body));
+    const elements = unwrap(joinRemovedMarks(contentOf(body), false, false));
 
     // Each header and footer, the first time a section refers to it
     const headersAndFooters = new Map<string, readonly Block[] | undefined>();
@@ -1855,17 +2222,35 @@ export const readContent = (body: XmlObject, parts: DocumentParts): DocumentCont
     let unwrittenNumber = false;
     // Footnotes are numbered 1, 2, 3 and endnotes i, ii, iii, as Word numbers them unless the document or the section
     // they are in says otherwise (`w:footnotePr`, `w:endnotePr`)
+    // eslint-disable-next-line functional/prefer-readonly-type
+    type LastNotes = Map<NoteKind, { readonly value: number; readonly section: number }>;
+    /** Numbers the next note of a kind after the last, in the section being read, and gives its number as it is written */
+    const numberNext = (kind: NoteKind, last: LastNotes): string | undefined => {
+        const section = sections.length;
+        const { format, start, restart } = notePropertiesOf(kind, section);
+        const previous = last.get(kind);
+        const value = previous === undefined || (restart === "eachSect" && previous.section !== section) ? start : previous.value + 1;
+        // eslint-disable-next-line functional/immutable-data
+        last.set(kind, { value, section });
+        return formatNumber(value, format);
+    };
+    /** Numbers notes on from the last ones, without reading them or numbering them in `lastNotes` */
+    const previewFrom = (last: LastNotes): NoteReader => {
+        const next: LastNotes = new Map(last);
+        return {
+            read: (kind) => ({ label: numberNext(kind, next) ?? "" }),
+            skip: (kind) => {
+                numberNext(kind, next);
+            },
+            preview: () => previewFrom(next),
+        };
+    };
     const readNote = (kind: NoteKind, id: string): NoteReference => {
         // eslint-disable-next-line functional/immutable-data
         noteCounts[kind]++;
-        const section = sections.length;
-        const { format, start, restart } = notePropertiesOf(kind, section);
-        const last = lastNotes.get(kind);
-        const value = last === undefined || (restart === "eachSect" && last.section !== section) ? start : last.value + 1;
-        // eslint-disable-next-line functional/immutable-data
-        lastNotes.set(kind, { value, section });
-        const label = formatNumber(value, format) ?? "";
-        unwrittenNumber ||= formatNumber(value, format) === undefined;
+        const written = numberNext(kind, lastNotes);
+        const label = written ?? "";
+        unwrittenNumber ||= written === undefined;
         const content = readNoteContent(kind, id, label);
         if (kind === "endnote") {
             // eslint-disable-next-line functional/immutable-data
@@ -1885,7 +2270,17 @@ export const readContent = (body: XmlObject, parts: DocumentParts): DocumentCont
         return { label, marker };
     };
 
-    const reader: Reader = { ...readerOf(false), notes: { read: readNote } };
+    const noteReader: NoteReader = {
+        read: readNote,
+        // A note whose reference is deleted is numbered, though it isn't laid out (MK10e)
+        skip: (kind) => {
+            // eslint-disable-next-line functional/immutable-data
+            noteCounts[kind]++;
+            numberNext(kind, lastNotes);
+        },
+        preview: () => previewFrom(lastNotes),
+    };
+    const reader: Reader = { ...readerOf(false), notes: noteReader };
     // eslint-disable-next-line functional/prefer-readonly-type
     const sections: Section[] = [];
     // eslint-disable-next-line functional/prefer-readonly-type
