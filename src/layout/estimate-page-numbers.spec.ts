@@ -30,7 +30,7 @@ import {
     TextRun,
     patchDocument,
 } from "docx";
-import { buildTestFont } from "tests/font-file";
+import { buildTestFont, buildTestFontCollection } from "tests/font-file";
 
 import { estimatePageNumbers, estimatePageNumbersWith } from "./estimate-page-numbers";
 import type { FontToMeasure } from "./measure-width";
@@ -437,8 +437,9 @@ describe("estimatePageNumbersWith", () => {
             });
             expect(pageNumbersOf(embedded("Probe Wide", WIDE))).to.deep.include({ first: "1", last: "8" });
             expect(pageNumbersOf(embedded("Calibri", WIDE))).to.deep.include({ last: "8" });
-            // A file that isn't a font is left out, so the layout stops at text in its font
+            // A file that isn't a font, or a collection of no fonts, is left out, so the layout stops at text in its font
             expect(pageNumbersOf(embedded("Probe Wide", new Uint8Array(16)))).to.deep.equal({ first: "1" });
+            expect(pageNumbersOf(embedded("Probe Wide", buildTestFontCollection([])))).to.deep.equal({ first: "1" });
             // The fonts the caller gives are measured too, after those the document embeds
             const narrow = buildTestFont({ name: "Probe Wide", advances: { a: 1 }, windows: { ascent: 1000, descent: 1000 } });
             expect(pageNumbersOf(embedded("Probe Wide", WIDE), estimatePageNumbersWith({ fonts: [{ data: narrow }] }))).to.deep.include({

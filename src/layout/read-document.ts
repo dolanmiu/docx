@@ -1741,14 +1741,15 @@ export type EmbeddedFont = {
 /**
  * The faces of the fonts a document embeds, which Word draws text in those fonts in. Each is the face of the font the
  * document names, of the boldness and italics the document says it is (`w:embedRegular`, `w:embedBold` and the others),
- * whatever its file says. A file that isn't a font, or is damaged, is left out, so text in its font is in a font the
- * layout doesn't know, as it may not be in Word.
+ * whatever its file says. A file that isn't a font, is damaged, or is a collection of no fonts, is left out, so text in
+ * its font is in a font the layout doesn't know, as it may not be in Word.
  */
 export const facesOf = (fonts: readonly EmbeddedFont[]): readonly FontFace[] =>
     fonts.flatMap(({ name, data, bold, italic }) => {
         try {
+            // The first face of a collection, which may have none
             const [face] = readFontFile(data);
-            return [{ ...face, name, bold, italic }];
+            return face === undefined ? [] : [{ ...face, name, bold, italic }];
         } catch {
             return [];
         }
