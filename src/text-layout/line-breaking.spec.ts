@@ -498,6 +498,32 @@ describe("layoutLines", () => {
             expect(layoutLines(tabbed, { width: 255, measurer: MEASURER, format: justified, defaultTabStop: 100 })).to.have.length(2);
         });
 
+        it("should mark a line that only fits squeezed at an en, em or ideographic space, which Word hasn't been seen squeezing", () => {
+            // As above, with the 5th space an en space: "bbbb" is 15 past the end of a line of 325, which its spaces could take
+            const items = [text(`aa aa aa aa aa${String.fromCodePoint(0x2002)}aa aa aa aa aa bbbb`)];
+            const reasonsOf = (width: number, format: ParagraphFormat): readonly (string | undefined)[] =>
+                layoutLines(items, { width, measurer: MEASURER, format }).map(({ unsupported }) => unsupported);
+            expect(reasonsOf(325, justified)).to.deep.equal([
+                "a justified line that only fits squeezed at an en, em or ideographic space",
+                undefined,
+            ]);
+            expect(reasonsOf(325, { alignment: "distributed" })[0]).to.equal(
+                "a justified line that only fits squeezed at an en, em or ideographic space",
+            );
+            // 40 past the end of a line of 300, more than a quarter of all its spaces, it goes on the next line in any case
+            expect(reasonsOf(300, justified)).to.deep.equal([undefined, undefined]);
+            // A left-aligned line isn't squeezed
+            expect(reasonsOf(325, {})).to.deep.equal([undefined, undefined]);
+            // Nor is an en space at the start of a line, before its first word
+            expect(
+                layoutLines([text(`${String.fromCodePoint(0x2002)}aa aa aa aa aa aa aa aa aa aa bbbb`)], {
+                    width: 335,
+                    measurer: MEASURER,
+                    format: justified,
+                }).map(({ unsupported }) => unsupported),
+            ).to.deep.equal([undefined]);
+        });
+
         it("should not break a word squeezed onto a line across lines", () => {
             // "bbbb" goes past the end of the line, but isn't longer than a line, so it is squeezed in whole
             expect(heightsOf([text("aa aa aa aa aa aa aa aa aa aa bbbb")], 325, { format: justified })).to.deep.equal([10]);

@@ -343,8 +343,8 @@ export const paginate = (
     const linesOf = (paragraph: ParagraphBlock, widths: number | LineWidths): readonly LaidOutLine[] => {
         const given = typeof widths === "number" ? [{ from: 0, width: widths }] : widths;
         const key = given.map(({ from, width }) => `${from}:${width}`).join(" ");
-        const layOut = (): readonly LaidOutLine[] =>
-            layoutLines(measurable(paragraph.items), {
+        const layOut = (): readonly LaidOutLine[] => {
+            const laidOut = layoutLines(measurable(paragraph.items), {
                 width: given.length === 1 ? given[0].width : (line) => given.findLast(({ from }) => from <= line)!.width,
                 format: paragraph.format,
                 tabStops: paragraph.tabStops,
@@ -353,6 +353,13 @@ export const paginate = (
                 measurer,
                 breakRules,
             });
+            // A line Word's breaking of isn't known stops the layout
+            const unknown = laidOut.find((line) => line.unsupported !== undefined);
+            if (unknown) {
+                throw new Unsupported(unknown.unsupported);
+            }
+            return laidOut;
+        };
         if (paragraph.items.some(({ type }) => type === "pageReference" || type === "pageCount")) {
             return layOut();
         }

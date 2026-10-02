@@ -97,6 +97,8 @@ export type LaidOutLine = {
     readonly text: string;
     /** How far its text goes from where the line starts, in points, without the spaces at its end */
     readonly textWidth: number;
+    /** Why Word's breaking of the line isn't known, when it isn't */
+    readonly unsupported?: string;
 };
 
 type Piece = { readonly text: string; readonly font: TextFont };
@@ -227,6 +229,10 @@ const charactersOf = (pieces: readonly Piece[]): readonly (readonly Piece[])[] =
         [],
     );
 
+/** The en, em, four-per-em and ideographic spaces of pieces of spaces, without the others */
+const othersOf = (pieces: readonly Piece[]): readonly Piece[] =>
+    pieces.map(({ text, font }) => ({ text: text.replace(/ /g, ""), font })).filter(({ text }) => text.length > 0);
+
 /** How many characters pieces have */
 const lengthOf = (pieces: readonly Piece[]): number => pieces.reduce((total, { text }) => total + [...text].length, 0);
 
@@ -271,6 +277,12 @@ type LineState = {
     readonly between: number;
     /** How many characters its words have after its last tab, and pictures it has */
     readonly letters: number;
+    /**
+     * How wide the en, em, four-per-em and ideographic spaces among its spaces are, which Word hasn't been seen squeezing,
+     * and whether a word past its end could be squeezed in, so Word's breaking of it isn't known
+     */
+    readonly otherSpaces: number;
+    readonly unknown?: boolean;
     readonly markers: readonly string[];
     /** The bookmarks that start with the next word, picture or tab, which may wrap onto the next line */
     readonly pending: readonly string[];
@@ -458,6 +470,12 @@ export const layoutLines = (
         const between = state.spaces - (state.position - state.end);
         return between <= 0 || slack / between >= STRETCH_TO_SQUEEZE * (over / state.spaces);
     };
+    /**
+     * Whether a word or picture past the end of a justified line could be squeezed in, were the spaces Word hasn't been
+     * seen squeezing among its spaces squeezed as the others are
+     */
+    const unsure = (state: LineState, tokenWidth: number): boolean =>
+        squeezes && state.otherSpaces > 0 && state.position + tokenWidth - limitOf() <= MOST_SQUEEZE * state.spaces;
     let first = true;
     for (const [segmentIndex, { tokens, end }] of segments.entries()) {
         const isLast = segmentIndex === segments.length - 1;
@@ -472,6 +490,7 @@ export const layoutLines = (
             spaceCount: 0,
             between: 0,
             letters: 0,
+            otherSpaces: 0,
             markers: [],
             pending: [],
             started: false,
@@ -488,6 +507,7 @@ export const layoutLines = (
                 ...(breakAfter ? { breakAfter } : {}),
                 text: state.text,
                 textWidth: Math.max(0, state.end - state.start),
+                ...(state.unknown ? { unsupported: "a justified line that only fits squeezed at an en, em or ideographic space" } : {}),
             });
         };
         const wrap = (state: LineState): LineState => {
@@ -502,6 +522,7 @@ export const layoutLines = (
                 spaceCount: 0,
                 between: 0,
                 letters: 0,
+                otherSpaces: 0,
                 markers: [],
                 pending: state.pending,
                 started: false,
@@ -525,6 +546,7 @@ export const layoutLines = (
                     text: line.text + textOf(token.pieces),
                     spaces: line.started ? line.spaces + spaces : 0,
                     spaceCount: line.started ? line.spaceCount + lengthOf(token.pieces) : 0,
+                    otherSpaces: line.started ? line.otherSpaces + widthOf(othersOf(token.pieces), measurer) : 0,
                     natural: Math.max(line.natural, height),
                 };
                 continue;
@@ -558,6 +580,7 @@ export const layoutLines = (
                     spaceCount: 0,
                     between: 0,
                     letters: 0,
+                    otherSpaces: 0,
                     started: true,
                 };
                 continue;
@@ -565,8 +588,12 @@ export const layoutLines = (
             const tokenWidth = token.type === "box" ? token.width : widthOf(token.pieces, measurer);
             const tokenHeight =
                 token.type === "box" ? token.height : Math.max(...token.pieces.map(({ font }) => measurer.measureLineHeight(font)));
-            const squeezed = line.started && line.position + tokenWidth > limitOf() + TOLERANCE && squeezesIn(line, tokenWidth);
-            if (line.started && line.position + tokenWidth > limitOf() + TOLERANCE && !squeezed) {
+            const overflows = line.started && line.position + tokenWidth > limitOf() + TOLERANCE;
+            if (overflows && unsure(line, tokenWidth)) {
+                line = { ...line, unknown: true };
+            }
+            const squeezed = overflows && !line.unknown && squeezesIn(line, tokenWidth);
+            if (overflows && !squeezed) {
                 line = wrap(line);
             }
             line = place(line);
