@@ -9,6 +9,7 @@
  *
  * @module
  */
+import { fillPartPageNumbers } from "@file/document/body/page-numbers";
 import type { FileChild } from "@file/file-child";
 import { Relationships } from "@file/relationships";
 import { type IContext, type IXmlableObject, XmlAttributeComponent, XmlComponent } from "@file/xml-components";
@@ -491,5 +492,15 @@ export class Comments extends XmlComponent {
     /** Whether there are no comments, in which case the document has no comments.xml part. */
     public get IsEmpty(): boolean {
         return this.isEmpty;
+    }
+
+    /**
+     * Formats the comments, with the page numbers worked out for their document written into their fields, when the
+     * document's body is written with an estimate of its pages.
+     */
+    public override prepForXml(context: IContext): IXmlableObject | undefined {
+        const xml = super.prepForXml(context);
+        fillPartPageNumbers(xml, context);
+        return xml;
     }
 }

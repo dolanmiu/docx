@@ -8,7 +8,8 @@
  *
  * @module
  */
-import { XmlComponent } from "@file/xml-components";
+import { fillPartPageNumbers } from "@file/document/body/page-numbers";
+import { type IContext, type IXmlableObject, XmlComponent } from "@file/xml-components";
 
 import { LineRuleType, Paragraph } from "../paragraph";
 import { Footnote, FootnoteType } from "./footnote/footnote";
@@ -132,5 +133,15 @@ export class FootNotes extends XmlComponent {
         });
 
         this.root.push(footnote);
+    }
+
+    /**
+     * Formats the footnotes, with the page numbers worked out for their document written into their fields, when the
+     * document's body is written with an estimate of its pages.
+     */
+    public override prepForXml(context: IContext): IXmlableObject | undefined {
+        const xml = super.prepForXml(context);
+        fillPartPageNumbers(xml, context);
+        return xml;
     }
 }

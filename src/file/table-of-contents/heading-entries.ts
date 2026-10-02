@@ -297,9 +297,36 @@ const styleOutlineLevelOf = (styleId: string | undefined, styles: ReadonlyMap<st
     return style?.outlineLevel ?? (heading === undefined ? styleOutlineLevelOf(style?.basedOn, styles, depth + 1) : heading - 1);
 };
 
+/**
+ * Reads the heading level of the document's paragraphs, as the `\s` switch of a SEQ field follows it: the level of a
+ * paragraph in a built-in heading style, Heading 1 to Heading 9. A paragraph whose outline level is another, or that has
+ * one without a heading style, is `"unclear"`, as which of the two Word follows hasn't been checked. Other paragraphs
+ * are undefined.
+ */
+export const headingLevels = (context: IContext): ((paragraph: Element) => number | "unclear" | undefined) => {
+    const styles = stylesOf(context);
+    return (paragraph) => {
+        const properties = childOf(paragraph, "w:pPr");
+        const styleId = attributeOf(childOf(properties, "w:pStyle"), "w:val") as string | undefined;
+        const heading = headingLevelOf(styleId, styles);
+        const outlineLevel = outlineLevelOf(
+            { styleId, outlineLevel: numberAttributeOf(childOf(properties, "w:outlineLvl"), "w:val") },
+            styles,
+        );
+        // Outline level 9 is body text
+        const outline = outlineLevel === undefined || outlineLevel >= 9 ? undefined : outlineLevel + 1;
+        if (heading !== undefined && (outline === undefined || outline === heading)) {
+            return heading;
+        }
+        return outline === undefined ? undefined : "unclear";
+    };
+};
+
 /** A paragraph's outline level, from 0: its own, or else its style's */
-const outlineLevelOf = (paragraph: ParagraphDetails, styles: ReadonlyMap<string, StyleDetails>): number | undefined =>
-    paragraph.outlineLevel ?? styleOutlineLevelOf(paragraph.styleId, styles);
+const outlineLevelOf = (
+    paragraph: Pick<ParagraphDetails, "styleId" | "outlineLevel">,
+    styles: ReadonlyMap<string, StyleDetails>,
+): number | undefined => paragraph.outlineLevel ?? styleOutlineLevelOf(paragraph.styleId, styles);
 
 /** The level a table of contents gives a paragraph, or undefined when it doesn't include it */
 const levelIn = (

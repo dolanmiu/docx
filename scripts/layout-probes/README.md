@@ -33,6 +33,7 @@ table style and each cell's width.
 | `word-unicode`              | K, E, L, H, N, W, A, P, KR, T, R and G: which characters Word keeps from starting or ending a line of Chinese and Japanese, with no language and in each language, hanging punctuation, kinsoku and wordWrap off, Latin words and numbers after ideographs, breaks after dashes, slashes and zero-width spaces, the space between ideographs and Latin text, punctuation compression, Korean and Thai, right-to-left paragraphs and runs, and the height of lines of East Asian, Thai and Hebrew fonts                                                           | `word-unicode.read.ts`         |
 | `word-unicode2`             | S, E, H, A, W, T, F and G: every character of Word's lists in Japanese, Chinese, Korean and English, hanging punctuation and the space around Latin text in Japanese, wordWrap off, zero-width spaces, Thai without marks above or below its letters, the font and size of Hebrew and Latin in runs that are right to left and runs that aren't, and the height of lines of 21 East Asian fonts. `word-unicode2-layout.ts` compares where docx/layout breaks the lines of S and E with where Word does                                                           | `word-unicode2.read.ts`        |
 | `word-no-prompt`            | NP1 to NP4: a document whose page numbers docx/layout writes, without `updateFields`: whether Word opens it without asking to update the fields, and whether the numbers of its table of contents, its page references in the text and the header, and its numbers of pages in the footers are the pages Word has. Word opened it without asking, and all 43 numbers were Word's                                                                                                                                                                                 | `word-no-prompt.py`            |
+| `word-seq`                  | Q1 to Q14: how Word numbers SEQ fields: `\r`, `\c`, `\h` and `\s`, the formats of `\*`, identifiers in other capitals or quotes, bookmarks, hidden text, simple fields, headings and their entries in the table of contents, and SEQ fields in a footnote, the header and footer, and a text box. `word-seq-clean` is the same document written clean with page numbers, which Word opened without asking to update the fields                                                                                                                                   | `word-seq.py`                  |
 | `word-watertight-text`      | TX1 to TX21: how Word measures text and lines where docx/layout read nothing or guessed: superscript, raised text, italics, small capitals, paragraph borders, automatic spacing, lengths in characters and lines, pictures in the line, two fonts on a line, soft hyphens, tabs past the margin, ligatures, emphasis marks, run borders, letters the width tables didn't have (TX17), fonts that aren't installed, the spaces other than U+0020 (TX19), justified lines and list numbers aligned right. One of the round of probes for the watertight inventory | `word-watertight.py`           |
 | `word-character-widths`     | W, S, B and H: how wide Word draws each of the 1,995 characters of the width tables' ranges in Calibri, Cambria, Arial, Times New Roman and Courier New, plain and bold, and which font it draws those its fonts lack in; how wide each space is; whether lines break after each space; and whether a word before one at the end of a line stays on the line. Its `.json` has each paragraph's characters, for the reader. `scripts/generate-font-widths.ts` checks the width tables against what the reader reads                                               | `word-character-widths.py`     |
 | `word-units`                | U1 to U8: lengths written with units, as docx writes a length given as a string, such as `"1in"` or `"12pt"`: whether Word reads them in a page's size and margins, a run's size, indents, character spacing, a table's widths and row height and the space between columns, and how it rounds a margin of a fraction of a twip and a size of a fraction of a half-point                                                                                                                                                                                         | `word-units.py`                |
@@ -48,7 +49,7 @@ From the root of the repository:
 npm run run-ts -- scripts/layout-probes/word-rules2.ts
 ```
 
-It writes `build/word-probes/word-rules2.docx`. `fsplit` and `word-no-prompt` import `docx/layout`, so build the
+It writes `build/word-probes/word-rules2.docx`. `fsplit`, `word-no-prompt` and `word-seq` import `docx/layout`, so build the
 package first (`npm run build`). The others import only `docx`, as the demos do.
 
 ## Lay it out in LibreOffice
@@ -91,6 +92,16 @@ python3 scripts/layout-probes/word-positions.py build/word-probes/word-positions
 ```bash
 pdftotext -bbox-layout scripts/layout-probes/word-unicode2.pdf build/word-probes/word-unicode2.html
 npm run run-ts -- scripts/layout-probes/word-unicode2.read.ts build/word-probes/word-unicode2.html
+```
+
+`word-seq.py` reads Word's PDF of `word-seq`, and the `.docx` of `word-seq-clean` docx writes, to check the numbers
+written in it against Word's. Word updates the fields of `word-seq-clean` when it saves it as a PDF, so its PDF has
+Word's numbers, not the ones written. The committed `word-seq-clean.docx` is the one Word opened; make it again to check
+docx as it is now:
+
+```bash
+pdftotext -layout -enc UTF-8 scripts/layout-probes/word-seq.pdf build/word-probes/word-seq.txt
+python3 scripts/layout-probes/word-seq.py build/word-probes/word-seq.txt build/word-probes/word-seq-clean.docx
 ```
 
 `word-page-number-formats.py` reads both page number probes, from the text of `pdftotext -layout` rather than where each

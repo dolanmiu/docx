@@ -9,7 +9,7 @@ import { Paragraph, ParagraphProperties } from "@file/paragraph";
 import { HeadingBookmarkIds, fillTablesOfContents } from "@file/table-of-contents/heading-entries";
 import { type IContext, type IXmlableObject, XmlComponent } from "@file/xml-components";
 
-import { type PageNumberEstimator, fillPageNumbers } from "./page-numbers";
+import { type PageNumberEstimator, fillPageNumbers, fillSequenceNumbers } from "./page-numbers";
 import { type ISectionPropertiesOptions, SectionProperties } from "./section-properties/section-properties";
 
 /**
@@ -138,7 +138,9 @@ export class Body extends XmlComponent {
      * Ensures that the last section's properties are placed as a direct child of the body
      * element, as required by the OOXML specification. Once the body is written, its tables
      * of contents are filled in from its headings, and, when the body has a page number
-     * estimator, its page references are given their page numbers.
+     * estimator, its page references are given their page numbers. Its SEQ fields are given
+     * their numbers after the tables of contents are filled in, as Word leaves a heading's SEQ
+     * number out of its entry.
      *
      * @param context - The XML serialization context
      * @returns The prepared XML object or undefined
@@ -152,6 +154,7 @@ export class Body extends XmlComponent {
         const xml = super.prepForXml(context) as IXmlableObject;
         fillTablesOfContents(xml, context, this.headingBookmarkIds);
         if (this.pageNumbers) {
+            fillSequenceNumbers(xml, context);
             fillPageNumbers(xml, context, this.pageNumbers);
         }
         return xml;

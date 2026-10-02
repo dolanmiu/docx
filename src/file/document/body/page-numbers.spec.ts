@@ -173,6 +173,29 @@ describe("fillPageNumbers", () => {
         expect(paragraphsOf(body).slice(1).map(textOf)).to.deep.equal(["old", "today5"]);
     });
 
+    it("should write the page number into a simple field in a table of contents, unless it writes a SEQ field's number before it", () => {
+        const tableWith = (instruction: string): Paragraph =>
+            new Paragraph({
+                children: [
+                    new Run({ children: [createBegin(false), new Instruction(instruction), createSeparate()] }),
+                    new SimpleField("PAGEREF target", "old"),
+                    new Run({ children: [createEnd()] }),
+                ],
+            });
+        const body = bodyWith([tableWith("TOC \\o"), tableWith('TOC \\o \\s "Chapter"')], { target: "5" });
+
+        expect(paragraphsOf(body).map(textOf)).to.deep.equal(["5", "old"]);
+    });
+
+    it("should write the page number into a simple field written without a result", () => {
+        const body = bodyWith(
+            [new Paragraph({ children: [new SimpleField("PAGEREF target")] }), new Paragraph({ children: [new SimpleField("DATE")] })],
+            { target: "5" },
+        );
+
+        expect(paragraphsOf(body).map(textOf)).to.deep.equal(["5", ""]);
+    });
+
     it("should ignore field characters without a field to belong to", () => {
         const body = bodyWith([new Paragraph({ children: [new Run({ children: [createSeparate()] }), new TextRun("text")] })], {
             target: "1",
@@ -475,6 +498,27 @@ describe("fillPageNumbers", () => {
                 ["PAGEREF", false],
                 ["PAGEREF", true],
             ]);
+        });
+
+        it("should write clean and blank the page numbers of a table of contents that writes a SEQ field's number before them", () => {
+            const file = new File({
+                pageNumbers: placingHeadings(),
+                sections: [
+                    {
+                        children: [
+                            new TableOfContents("Contents", { headingStyleRange: "1-3", seqFieldIdentifierForPrefix: "Chapter" }),
+                            new Paragraph({ heading: HeadingLevel.HEADING_1, children: [new TextRun("One")] }),
+                        ],
+                    },
+                ],
+            });
+            const body = bodyOf(file);
+
+            expect(dirtyFieldsOf(body)).to.deep.equal([
+                ["TOC", false],
+                ["PAGEREF", false],
+            ]);
+            expect(textOf(paragraphsOf(body)[0])).to.equal("One\t");
         });
 
         it("should write clean and blank a page reference that shows its position relative to the bookmark", () => {

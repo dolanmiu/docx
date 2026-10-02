@@ -85,10 +85,10 @@ class BeginDirtyWithoutPageNumbers extends BuilderElement<IFieldCharAttributes> 
 }
 
 /**
- * Creates the beginning of a field whose result is a page number, such as a page reference. It is written dirty, so
- * Word updates the field when it opens the document, and asks to. When the document is given page numbers, it is
- * written clean (see {@link isDirtyWithoutPageNumbers}), so Word shows the number written, or nothing when none could
- * be worked out, and doesn't ask.
+ * Creates the beginning of a field whose result is written when the document is given page numbers, such as a page
+ * reference or a SEQ field. It is written dirty, so Word updates the field when it opens the document, and asks to. When
+ * the document is given page numbers, it is written clean (see {@link isDirtyWithoutPageNumbers}), so Word shows the
+ * number written, or nothing when none could be worked out, and doesn't ask.
  */
 export const createBeginDirtyWithoutPageNumbers = (): XmlComponent => new BeginDirtyWithoutPageNumbers();
 
