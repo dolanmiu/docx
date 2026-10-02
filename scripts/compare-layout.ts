@@ -19,7 +19,8 @@
  * the document Word saved, read through the .docx adapter as patchDocument's templates are, and each bookmark a page
  * reference refers to, such as each heading of a table of contents, is compared with the page Word put it on. It fails
  * when one isn't on Word's page, and when the number of pages isn't Word's. A document whose marks don't have all of
- * Word's pages (see wordPagesOf) isn't compared.
+ * Word's pages (see wordPagesOf) isn't compared, and fails when it is one committed in scripts/layout-probes, which are
+ * there because their marks have them all.
  */
 import { existsSync, readFileSync, readdirSync } from "node:fs";
 import { join } from "node:path";
@@ -282,8 +283,9 @@ for (const name of readdirSync(directory)
 // the demo doesn't
 const saved = { compared: 0, matched: 0 };
 const savedPageCounts = { compared: 0, matched: 0 };
-// The documents whose marks don't have all of Word's pages, which aren't compared
+// The documents whose marks don't have all of Word's pages, which aren't compared, and those of them that are committed
 const notMarked: string[] = [];
+const notMarkedCommitted: string[] = [];
 for (const name of readdirSync(directory)
     .filter((file) => file.endsWith(".word.docx"))
     .sort()) {
@@ -294,10 +296,14 @@ for (const name of readdirSync(directory)
     const pagesElement = app && findElement(app, "Pages");
     const laidOut = pagesElement ? Number(textOf(pagesElement)) : undefined;
     if (laidOut !== marked.pageCount) {
+        // Those committed in scripts/layout-probes are there because their marks have all their pages, so one that doesn't
+        // is read wrong, and fails
+        const committed = existsSync(join("scripts", "layout-probes", name));
         console.log(
-            `\n${name}, saved from Word: its marks have ${marked.pageCount} of its ${laidOut ?? "unknown"} pages, so it isn't compared`,
+            `\n${name}, saved from Word: ${committed ? "FAIL, " : ""}its marks have ${marked.pageCount} of its ${laidOut ?? "unknown"} pages, so it isn't compared`,
         );
         notMarked.push(name);
+        notMarkedCommitted.push(...(committed ? [name] : []));
         continue;
     }
     console.log(`\n${name}, saved from Word`);
@@ -344,6 +350,7 @@ if (notLaidOut.length > 0) {
 }
 process.exit(
     notLaidOut.length === 0 &&
+        notMarkedCommitted.length === 0 &&
         [...counts.values(), ...pageCounts.values(), saved, savedPageCounts].every(({ compared, matched }) => compared === matched)
         ? 0
         : 1,
