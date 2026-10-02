@@ -4775,7 +4775,7 @@ var docxLayout = (function(exports) {
 	* and in columns, the first column and then the next, with each line broken at the width of the column it is in. The
 	* columns on the page before a continuous section break are balanced, as short as what is in them fits in. A section
 	* that starts in the next column starts in the next column of the page when the section before has as many columns and
-	* one is left, and on a new page otherwise.
+	* one is left, laid out in the page's columns, and on a new page otherwise.
 	* Paragraphs break into lines, and pages break between lines, as their keep and widow control settings allow. Table
 	* rows break across pages between the lines of their cells, unless they are kept whole, and the table's header rows are
 	* repeated at the top of each page and column. The footnotes of each page's lines, of the text and of table rows alike,
@@ -5273,6 +5273,7 @@ var docxLayout = (function(exports) {
 		let openMerges = [];
 		let sectionSpaceAfter = 0;
 		let sectionColumn = 0;
+		let pageColumns;
 		const placements = [];
 		let finished = 0;
 		let blockIndex = 0;
@@ -5347,6 +5348,16 @@ var docxLayout = (function(exports) {
 			throw new Unsupported(reason);
 		};
 		const section = () => sections[sectionIndex];
+		/**
+		* The section whose columns the text is laid out in: the one being laid out, or the one whose columns the page's are,
+		* for a section that started in the next column of columns of other widths. Word lays that out in the next column of
+		* the page, where it is and as wide as it is: after 2 columns of 4153 twips, one of 2000 and 6306 goes on at 4873, its
+		* lines broken at 4153 (`word-watertight-stops.docx` SP10, `word-next-column.docx` N4)
+		*/
+		const columnsSection = () => {
+			var _pageColumns;
+			return sections[(_pageColumns = pageColumns) !== null && _pageColumns !== void 0 ? _pageColumns : sectionIndex];
+		};
 		/** The width of the text across the page, as its headers, footers and footnotes are, unless those are in columns */
 		const textWidth = (current = section()) => current.pageWidth - current.marginLeft - current.marginRight - current.gutter;
 		/**
@@ -5425,6 +5436,7 @@ var docxLayout = (function(exports) {
 		const startPage = (isFirstOfSection = false) => {
 			var _restart;
 			if (balancing !== void 0 && pageCount >= balancing.page) throw new Overflow();
+			if (pageColumns !== void 0) throw new Unsupported("a section that starts in the next column of columns of other widths and goes on to the next page");
 			checkReserve();
 			if (continuedEndnotes) throw new Unsupported("endnotes that fill a page after the first they are on");
 			finishPage();
@@ -5487,7 +5499,7 @@ var docxLayout = (function(exports) {
 		};
 		/** Moves to the top of the next column, or of the next page after the last column */
 		const nextColumn = () => {
-			if (column + 1 >= section().columns.length) {
+			if (column + 1 >= columnsSection().columns.length) {
 				startPage();
 				return;
 			}
@@ -5514,10 +5526,11 @@ var docxLayout = (function(exports) {
 		* Ends the columns on the page before a continuous section break, as Word does. Unless a column break is in them, they
 		* are balanced: what is in them, up to the section's next block (`end`), is laid out again in the shortest columns it
 		* fits in, filled from the first, which halving the height tried finds. Nor are they when a section in them started
-		* in the next column, which Word leaves as they are (`word-next-column.docx` N6). The next section starts below the
-		* lowest of the columns and the space after the paragraph each ends with, and its space before is only as much as is
-		* more than the space after the section's last paragraph: the empty one that ends it, when there is one, whose space
-		* after is not below the columns itself (`word-rules2.docx` Q7b). Their footnotes stay at the bottom of the page, in
+		* in the next column, which Word leaves as they are, in the last column (`word-next-column.docx` N6) and with columns
+		* after it: 10 lines in the second of 3 stay there (`word-watertight-stops.docx` SP11). The next section starts below
+		* the lowest of the columns and the space after the paragraph each ends with, and its space before is only as much as
+		* is more than the space after the section's last paragraph: the empty one that ends it, when there is one, whose
+		* space after is not below the columns itself (`word-rules2.docx` Q7b). Their footnotes stay at the bottom of the page, in
 		* their columns, below what follows (`word-rules2.docx` Q6b, `word-footnotes-in-columns.docx` N6).
 		*/
 		const endColumns = (end) => {
@@ -5567,19 +5580,17 @@ var docxLayout = (function(exports) {
 		* one, after the columns before it are ended
 		*/
 		const startSection = (index, firstBlock) => {
-			var _end$format$spaceAfte, _restart2;
+			var _pageColumns2, _end$format$spaceAfte, _restart2;
 			const previous = section();
 			const current = sections[index];
 			lastPages.set(sectionIndex, pageCount);
 			for (let skipped = sectionIndex + 1; skipped < index; skipped++) sharingPages.add(skipped);
 			if (current.unsupported) throw new Unsupported(current.unsupported);
 			const continuous = continuesOnPage(previous, current);
-			if (continuous && previous.columns.length > 1 && (placedInColumn || column > 0)) {
-				if (startedInColumn() && columnsStart.column < previous.columns.length - 1) throw new Unsupported("columns evened out after a section that starts in the next column");
-				endColumns(firstBlock);
-			}
+			if (continuous && previous.columns.length > 1 && (placedInColumn || column > 0)) endColumns(firstBlock);
 			const inNextColumn = startsInNextColumn(previous, current);
-			if (inNextColumn && previous.columns.some((width, at) => width !== current.columns[at])) throw new Unsupported("a section that starts in the next column of columns of other widths");
+			const onPage = columnsSection();
+			pageColumns = inNextColumn && onPage.columns.some((width, at) => width !== current.columns[at] || columnLeft(onPage, at) !== columnLeft(current, at)) ? (_pageColumns2 = pageColumns) !== null && _pageColumns2 !== void 0 ? _pageColumns2 : sectionIndex : void 0;
 			filledEnd = inNextColumn ? Math.max(filledEnd, position) : 0;
 			const end = blocks[firstBlock - 1].block;
 			sectionSpaceAfter = end.type === "paragraph" && end.sectionBreak ? (_end$format$spaceAfte = end.format.spaceAfter) !== null && _end$format$spaceAfte !== void 0 ? _end$format$spaceAfte : 0 : spaceAfter;
@@ -5876,6 +5887,7 @@ var docxLayout = (function(exports) {
 		*/
 		const addNotes = (notes) => {
 			if (notes.length > 0) {
+				if (pageColumns !== void 0) stopOnPage("a footnote in a section that starts in the next column of columns of other widths");
 				if (pageNotes.length === 0 && continued === void 0 && section().columns.length > 1) notesInColumns = sectionIndex;
 				pageNotes = [...pageNotes, ...notes];
 				noteArea = pageArea(pageNotes);
@@ -6112,6 +6124,21 @@ var docxLayout = (function(exports) {
 			const end = lines.findIndex((line, index) => index >= from && line.breakAfter !== void 0);
 			return lines.slice(from, end === -1 ? lines.length : end + 1);
 		};
+		/** Whether the next line goes at the top of the page, in its first column */
+		const atTopOfPage = () => column === 0 && position <= top + TOLERANCE;
+		/**
+		* Whether a paragraph is kept together and taller than a column, up to its first break: than each of the columns at
+		* its width, in columns of different widths, where Word lays it out down the first column of each page at that
+		* column's width as it does in columns of the same width (`word-watertight-stops.docx` SP12). It stops at one taller
+		* than some of the columns but not others, which might go in one it fits in
+		*/
+		const keptTallerThanColumns = (block) => {
+			const { columns } = columnsSection();
+			if (block.format.keepLines !== true || columns.length < 2) return false;
+			const taller = columns.map((width) => heightToFit(linesToBreak(linesOf(block, width), 0)) > pageBottom - top + TOLERANCE);
+			if (taller.some((tall) => tall !== taller[0])) throw new Unsupported("a paragraph kept together taller than some of its columns of different widths but not others");
+			return taller[0];
+		};
 		/**
 		* Places a paragraph's lines, breaking pages and columns between them where they don't fit, and at its page and
 		* column breaks. Its lines are broken at the width of the column each goes in, so the part of it that goes on into a
@@ -6123,17 +6150,11 @@ var docxLayout = (function(exports) {
 		* section. Its footnotes go at the bottom of the page below its lines, unless they are held back to go below the
 		* lines of the next paragraph (`holdNotes`).
 		*/
-		const placeParagraph = (block, paragraph, keptWithPrevious, holdNotes) => {
+		const placeParagraph = (block, paragraph, holdNotes) => {
 			if (paragraph.pageBreakBefore && (placedInColumn || column > 0)) startPage();
-			const { columns } = section();
-			/** Whether its lines up to its first break are taller than a column, at a column's width */
-			const tallerThanColumn = (width) => heightToFit(linesToBreak(linesOf(block, width), 0)) > pageBottom - top + TOLERANCE;
-			const keptTall = paragraph.keepLines && columns.length > 1 && columns.some(tallerThanColumn);
-			if (keptTall && columns.some((width) => width !== columns[0])) throw new Unsupported("a paragraph kept together taller than a column, in columns of different widths");
-			if (keptTall && (column > 0 || position > top + TOLERANCE)) {
-				if (keptWithPrevious) throw new Unsupported("a paragraph kept with the next before a paragraph kept together taller than a column");
-				startPage();
-			}
+			const { columns } = columnsSection();
+			const keptTall = keptTallerThanColumns(block);
+			if (keptTall && !atTopOfPage()) startPage();
 			const firstColumnsOnly = keptTall ? linesToBreak(linesOf(block, columns[0]), 0).length : 0;
 			/**
 			* The space above the paragraph's first line: at the top of a page, or of the column its section starts in, only
@@ -6151,7 +6172,7 @@ var docxLayout = (function(exports) {
 			};
 			let index = 0;
 			for (;;) {
-				widths = widthsFrom(index, section().columns[column]);
+				widths = widthsFrom(index, columnsSection().columns[column]);
 				const lines = linesOf(block, widths);
 				const remaining = linesToBreak(lines, index);
 				const isFirstLine = index === 0;
@@ -6178,7 +6199,7 @@ var docxLayout = (function(exports) {
 				}
 				if (count > 0) {
 					position += space;
-					const current = section();
+					const current = columnsSection();
 					for (const [offset, line] of remaining.slice(0, count).entries()) {
 						mark(line.markers);
 						placements.push({
@@ -6460,11 +6481,9 @@ var docxLayout = (function(exports) {
 				startTablePage();
 			}
 		};
-		/** Whether the cells of a table are as wide as those of the same table laid out in another width */
-		const sameWidths = (table, other) => table.rows.every(({ cells }, row) => cells.every(({ width }, cell) => other.rows[row].cells[cell].width === width));
 		const placeTable = (block) => {
 			var _table$rows$borderBot, _table$rows;
-			const width = section().columns[column];
+			const width = columnsSection().columns[column];
 			const table = sizedToPlace(block, width);
 			const merges = mergesOf(table);
 			const heights = rowHeights(table, merges);
@@ -6474,8 +6493,6 @@ var docxLayout = (function(exports) {
 			spaceAfter = 0;
 			const startTablePage = (index) => {
 				nextColumn();
-				const next = section().columns[column];
-				if (next < width && !sameWidths(table, fitted(block, next))) throw new Unsupported("a table sized to its text that goes on into a narrower column");
 				if (index >= headerRows) {
 					heights.slice(0, Math.max(0, headerRows)).reduce((y, rowHeight, row) => {
 						placeRow(row, y, rowHeight);
@@ -6513,7 +6530,7 @@ var docxLayout = (function(exports) {
 				return next === void 0 || next.section !== blocks[blockIndex].section ? {
 					height: 0,
 					notes: []
-				} : keptHeight(blockIndex + 1, section().columns[column]);
+				} : keptHeight(blockIndex + 1, columnsSection().columns[column]);
 			};
 			let brokenUntil = -1;
 			/**
@@ -6598,6 +6615,11 @@ var docxLayout = (function(exports) {
 				placedInColumn = true;
 			}
 		};
+		/** How many paragraphs from one (`index`) on are kept with the next block of their section, one after the other */
+		const keptChain = (index) => blocks.slice(index).findIndex(({ block, section: blockSection }, offset) => {
+			const following = blocks[index + offset + 1];
+			return !(block.type === "paragraph" && block.format.keepNext === true && following && following.section === blockSection);
+		});
 		/**
 		* The room the paragraphs kept with the next one, from this one, need on the page: all of them, and the start of
 		* the block they are kept with, from where the next line would go. With the footnotes of all their lines (`notes`)
@@ -6606,10 +6628,7 @@ var docxLayout = (function(exports) {
 		*/
 		const keptHeight = (index, width) => {
 			var _kept$spaceAfter, _kept, _nextLines$at$spacing, _nextLines$at;
-			const chain = blocks.slice(index).findIndex(({ block, section: blockSection }, offset) => {
-				const following = blocks[index + offset + 1];
-				return !(block.type === "paragraph" && block.format.keepNext === true && following && following.section === blockSection);
-			});
+			const chain = keptChain(index);
 			const measured = (offset) => {
 				var _blocks, _blocks2;
 				return measureParagraph(blocks[offset].block, width, (_blocks = blocks[offset - 1]) === null || _blocks === void 0 ? void 0 : _blocks.block, (_blocks2 = blocks[offset + 1]) === null || _blocks2 === void 0 ? void 0 : _blocks2.block);
@@ -6665,7 +6684,7 @@ var docxLayout = (function(exports) {
 			var _blocks5, _blocks6;
 			blockIndex = index;
 			if (block.unsupported) throw new Unsupported(block.unsupported);
-			const width = section().columns[column];
+			const width = columnsSection().columns[column];
 			const previous = blocks[index - 1];
 			if (block.type === "paragraph") {
 				if (block.sectionBreak && (block.borders !== void 0 || hasAutomaticSpace(block))) throw new Unsupported("borders or automatic spacing on the empty paragraph that ends a section");
@@ -6692,17 +6711,21 @@ var docxLayout = (function(exports) {
 				* whether it fits with its footnotes taking some room
 				*/
 				const keptHere = () => {
-					const measured = keptHeight(index, section().columns[column]);
+					const measured = keptHeight(index, columnsSection().columns[column]);
 					const withHeld = [...held, ...measured.notes];
 					return _objectSpread2(_objectSpread2({}, measured), {}, {
 						all: withHeld,
 						fitsWith: (noteRoom) => fitsAbove(position, measured, linesBottom(noteRoom), noteArea > 0 || withHeld.length > 0)
 					});
 				};
-				if (placedInColumn) {
+				const keptWithPrevious = (previous === null || previous === void 0 ? void 0 : previous.section) === blocks[index].section && previous.block.type === "paragraph" && previous.block.format.keepNext === true;
+				const anchor = blocks[index + keptChain(index)].block;
+				if (anchor.type === "paragraph" && keptTallerThanColumns(anchor)) {
+					if (!keptWithPrevious && !atTopOfPage()) startPage();
+				} else if (placedInColumn) {
 					const here = keptHere();
 					const fitsHere = here.fitsWith(leastNoteRoom(here.all));
-					const { columns } = section();
+					const { columns } = columnsSection();
 					const fitsBelow = (from, area, below) => fitsAbove(from, keptHeight(index, below), Math.min(bottom, pageBottom - area), area > 0 || here.notes.length > 0);
 					if (!fitsHere && column + 1 < columns.length && fitsBelow(columnTop, noteArea + moreNoteRoom(here.notes), columns[column + 1])) nextColumn();
 					else if (!fitsHere && fitsBelow(nextTop(), leastAreaOf(here.notes, carried, columns.length > 1 ? columns : void 0), columns[0])) startPage();
@@ -6711,8 +6734,7 @@ var docxLayout = (function(exports) {
 				holdNotes = keptWith !== "nothing" && [...held, ...kept].length > 0 && notes.length === kept.length && fitsWith(leastNoteRoom(all)) && !fitsWith(moreNoteRoom(all));
 				if (holdNotes && keptWith === "part") throw new Unsupported("a footnote continued below a paragraph kept with the next");
 			}
-			const keptWithPrevious = (previous === null || previous === void 0 ? void 0 : previous.section) === blocks[index].section && previous.block.type === "paragraph" && previous.block.format.keepNext === true;
-			placeParagraph(block, paragraph, keptWithPrevious, holdNotes);
+			placeParagraph(block, paragraph, holdNotes);
 			sectionSpaceAfter = void 0;
 		};
 		/** Lays out the blocks from one (`from`) to the one before another (`to`), starting their sections */
