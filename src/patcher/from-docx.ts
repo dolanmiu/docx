@@ -549,7 +549,7 @@ export const patchDocument = async <T extends PatchDocumentOutputType = PatchDoc
 
     // The pages are worked out once everything is patched in
     if (pageNumbers) {
-        fillTemplatePageNumbers(map, pageNumbers, binaryContentMap);
+        await fillTemplatePageNumbers(map, pageNumbers, binaryContentMap);
     }
 
     // The parts that patches added to the package, such as charts, which add their own parts as they are written, such

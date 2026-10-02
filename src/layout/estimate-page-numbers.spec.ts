@@ -562,6 +562,74 @@ describe("estimatePageNumbers", () => {
         expect(document).not.to.contain("w:dirty");
     });
 
+    it("should lay out a .docx a template imports as Word turns it into the template's own, and stop at one in another format (word-imported-documents.docx)", async () => {
+        // Two pages of chapters, imported between a page reference and the heading it refers to
+        const chapters = await Packer.toBuffer(
+            new Document({
+                sections: [
+                    {
+                        children: [1, 2].map(
+                            (chapter) => new Paragraph({ children: [new TextRun(`Chapter ${chapter}`), new PageBreak()] }),
+                        ),
+                    },
+                ],
+            }),
+        );
+        const template = await JSZip.loadAsync(
+            await Packer.toBuffer(
+                new Document({
+                    sections: [
+                        {
+                            children: [
+                                new Paragraph({ children: [new TextRun("The end is on page "), new PageReference("end")] }),
+                                new Paragraph("Imported here"),
+                                heading("The end", "end"),
+                            ],
+                        },
+                    ],
+                }),
+            ),
+        );
+        /** The template importing a part in place of its second paragraph, patched with the page numbers worked out */
+        const importing = async (target: string, contentType: string, data: Uint8Array | string): Promise<string> => {
+            const zip = await JSZip.loadAsync(await template.generateAsync({ type: "uint8array" }));
+            const edit = async (path: string, change: (xml: string) => string): Promise<void> => {
+                zip.file(path, change(await zip.file(path)!.async("text")));
+            };
+            await edit("word/document.xml", (xml) =>
+                xml.replace(/<w:p>(?:(?!<w:p>).)*?Imported here.*?<\/w:p>/, '<w:altChunk r:id="rIdImported"/>'),
+            );
+            await edit("word/_rels/document.xml.rels", (xml) =>
+                xml.replace(
+                    "</Relationships>",
+                    `<Relationship Id="rIdImported" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/aFChunk" Target="${target}"/></Relationships>`,
+                ),
+            );
+            await edit("[Content_Types].xml", (xml) =>
+                xml.replace("</Types>", `<Override ContentType="${contentType}" PartName="/word/${target}"/></Types>`),
+            );
+            zip.file(`word/${target}`, data);
+            const patched = await patchDocument({
+                outputType: "nodebuffer",
+                data: await zip.generateAsync({ type: "nodebuffer" }),
+                patches: {},
+                pageNumbers: estimatePageNumbers,
+            });
+            return (await JSZip.loadAsync(patched)).file("word/document.xml")!.async("text");
+        };
+        expect(
+            resultsOf(
+                await importing(
+                    "chapters.docx",
+                    "application/vnd.openxmlformats-officedocument.wordprocessingml.document.main+xml",
+                    chapters,
+                ),
+            ),
+        ).to.deep.equal(["3"]);
+        // Word converts HTML its own way, so the page reference after it is left blank
+        expect(resultsOf(await importing("chapters.html", "text/html", "<p>Chapter 1</p>"))).to.deep.equal([""]);
+    });
+
     it('should lay a document out the same with its lengths given with units, such as "1in" and "12pt", as in numbers', () => {
         // 120 lines of 12 points on A4 pages with 1-inch margins run onto a third page, where the bookmark after them is.
         // Before docx/layout read units, "1in" was 1 twip and "12pt" 12 half-points, and the bookmark was on page 2

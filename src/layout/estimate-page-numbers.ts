@@ -21,12 +21,12 @@ import { type DocumentContent, readDocument } from "./read-document";
 import { readDocx } from "./read-docx";
 
 /**
- * What a document is read into: a template patchDocument patched, or the body of a document being written. Read to be
- * laid out with a guess (`guess`), past what can't be laid out as Word does
+ * What a document is read into: a template patchDocument patched, with the .docx files it imports, or the body of a
+ * document being written. Read to be laid out with a guess (`guess`), past what can't be laid out as Word does
  */
 const contentOf = (document: IXmlableObject | PatchedTemplate, context?: IContext, guess = false): DocumentContent | undefined =>
     "parts" in document
-        ? readDocx(document.parts, document.binaryParts, { guess })
+        ? readDocx(document.parts, document.binaryParts, { guess }, document.importedDocuments)
         : context?.file && readDocument(document, context, { guess });
 
 /**

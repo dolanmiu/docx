@@ -7,7 +7,8 @@
  */
 import type { Element } from "xml-js";
 
-import { type XmlObject, attributesOf, childrenOf, find, readTextStyles, readThemeFonts } from "../text-layout";
+import { type XmlObject, attributesOf, childrenOf, find, readTextStyles, readThemeFonts, stringOf, withoutUndefined } from "../text-layout";
+import { type DocxPackage, type DocxParts, type ImportedPart, type NotesPart, withImports } from "./imported-documents";
 import { type DocumentContent, type DocumentParts, type EmbeddedFont, type ReadOptions, facesOf, readContent } from "./read-document";
 
 /** A relationship of a part to another part of the package */
@@ -129,41 +130,98 @@ const embeddedFontsOf = (
         });
 };
 
+/** The content type of a part of a package, from its `[Content_Types].xml`: its own, or that of its extension */
+const contentTypeOf = (parts: ReadonlyMap<string, Element>, path: string): string | undefined => {
+    const root = rootOf(parts.get("[Content_Types].xml"));
+    const types = childrenOf(root && contentOf(root)).map((child) => attributesOf(Object.values(child)[0]));
+    const extension = path.slice(path.lastIndexOf(".") + 1).toLowerCase();
+    const type =
+        types.find(({ PartName: name }) => typeof name === "string" && name.replace(/^\//, "").toLowerCase() === path.toLowerCase()) ??
+        types.find(({ Extension: other, PartName: name }) => name === undefined && String(other).toLowerCase() === extension);
+    return stringOf(type?.ContentType);
+};
+
 /**
- * Reads a .docx's main document, with the parts it refers to.
+ * Reads a .docx's package into the parts of its main document the layout reads, formatted, with the documents each of
+ * them imports.
+ */
+const readParts = (docx: DocxPackage): DocxParts => {
+    const { parts, binaryParts = new Map(), importedDocuments = new Map() } = docx;
+    const documentPath = relationshipsOf(parts, "").find(({ type }) => type === "officeDocument")?.path ?? DEFAULT_DOCUMENT;
+    const relationships = relationshipsOf(parts, documentPath);
+    const pathOf = (type: string): string | undefined => relationships.find((candidate) => candidate.type === type)?.path;
+    const partOf = (type: string): XmlObject | undefined => {
+        const path = pathOf(type);
+        return path === undefined ? undefined : rootOf(parts.get(path));
+    };
+    /** The documents a part imports, by the ids of its relationships to them */
+    const importsOf = (path: string): ReadonlyMap<string, ImportedPart> =>
+        new Map(
+            relationshipsOf(parts, path)
+                .filter(({ type }) => type === "aFChunk")
+                .map(({ id, path: target }) => {
+                    const imported = importedDocuments.get(target);
+                    return [
+                        id,
+                        withoutUndefined({
+                            contentType: contentTypeOf(parts, target),
+                            document: imported && readParts(imported),
+                            data: binaryParts.get(target),
+                        }),
+                    ] as const;
+                }),
+        );
+    const fontTable = pathOf("fontTable");
+    const headersAndFooters = relationships.filter(({ type }) => type === "header" || type === "footer");
+    const document = rootOf(parts.get(documentPath));
+    const notes = (type: string): Pick<NotesPart, "notes" | "imports"> | undefined => {
+        const path = pathOf(type);
+        const root = path === undefined ? undefined : rootOf(parts.get(path));
+        return root && path !== undefined ? { notes: root, imports: importsOf(path) } : undefined;
+    };
+    return withoutUndefined({
+        body: { content: childrenOf(find(childrenOf(document && contentOf(document)), "w:body")), imports: importsOf(documentPath) },
+        styles: partOf("styles"),
+        theme: partOf("theme"),
+        numbering: partOf("numbering"),
+        settings: partOf("settings"),
+        headersAndFooters: new Map(
+            headersAndFooters.flatMap(({ id, path }) => {
+                const part = rootOf(parts.get(path));
+                return part ? [[id, { content: contentOf(part), imports: importsOf(path) }] as const] : [];
+            }),
+        ),
+        footnotes: notes("footnotes"),
+        endnotes: notes("endnotes"),
+        fonts: fontTable === undefined ? [] : facesOf(embeddedFontsOf(parts, binaryParts, fontTable)),
+    });
+};
+
+/**
+ * Reads a .docx's main document, with the parts it refers to, and the documents it imports (`w:altChunk`) as Word turns
+ * them into its own paragraphs and tables when it opens it (see `imported-documents.ts`).
  *
  * @param parts - The XML parts of its package, parsed by xml-js's `xml2js`, not compact and keeping the spaces between
  * elements, by their paths, such as "word/document.xml"
  * @param binaryParts - Its other parts, such as the fonts it embeds, by their paths
  * @param options - How it is read: to be laid out with a guess, or not
+ * @param importedDocuments - The .docx files it imports, by their paths, each read as it is
  */
 export const readDocx = (
     parts: ReadonlyMap<string, Element>,
     binaryParts: ReadonlyMap<string, Uint8Array> = new Map(),
     options: ReadOptions = {},
+    importedDocuments: ReadonlyMap<string, DocxPackage> = new Map(),
 ): DocumentContent => {
-    const documentPath = relationshipsOf(parts, "").find(({ type }) => type === "officeDocument")?.path ?? DEFAULT_DOCUMENT;
-    const relationships = relationshipsOf(parts, documentPath);
-    const partOf = (type: string): XmlObject | undefined => {
-        const relationship = relationships.find((candidate) => candidate.type === type);
-        return relationship && rootOf(parts.get(relationship.path));
-    };
-    const theme = partOf("theme");
-    const fontTable = relationships.find((relationship) => relationship.type === "fontTable");
+    const read = withImports(readParts({ parts, binaryParts, importedDocuments }));
     const documentParts: DocumentParts = {
-        styles: readTextStyles(partOf("styles") ?? { "w:styles": [] }, theme && readThemeFonts(theme)),
-        numbering: partOf("numbering"),
-        settings: partOf("settings"),
-        headersAndFooters: new Map(
-            relationships.flatMap(({ id, type, path }) => {
-                const part = type === "header" || type === "footer" ? rootOf(parts.get(path)) : undefined;
-                return part ? [[id, contentOf(part)] as const] : [];
-            }),
-        ),
-        footnotes: partOf("footnotes"),
-        endnotes: partOf("endnotes"),
-        fonts: fontTable === undefined ? [] : facesOf(embeddedFontsOf(parts, binaryParts, fontTable.path)),
+        styles: readTextStyles(read.styles ?? { "w:styles": [] }, read.theme && readThemeFonts(read.theme)),
+        numbering: read.numbering,
+        settings: read.settings,
+        headersAndFooters: new Map([...read.headersAndFooters].map(([id, { content }]) => [id, content])),
+        footnotes: read.footnotes?.notes,
+        endnotes: read.endnotes?.notes,
+        fonts: read.fonts,
     };
-    const document = rootOf(parts.get(documentPath));
-    return readContent({ "w:body": find(childrenOf(document && contentOf(document)), "w:body") ?? [] }, documentParts, options);
+    return readContent({ "w:body": read.body.content }, documentParts, options);
 };

@@ -75,6 +75,7 @@ table style and each cell's width.
 | `word-grid`                 | G1 to G14 and CA to CD: a document grid (`w:docGrid`). Of lines: how many of its lines a line of each font from 6 to 40 points takes, and where its text is in them, line spacing, space before and after and in lines, `w:snapToGrid` off, table cells, headers, footers and footnotes, other pitches, pictures, borders, emphasis marks, a continuous section, no pitch, and how many lines go on a page. Of lines and characters, and snapping to characters: ideographs, Latin, kana and half-width katakana, runs and paragraphs off the grid, indents in characters, justified lines and `w:adjustRightInd`. `word-grid2` is the second document it writes, with Normal larger than the default                  | `word-grid.py`                 |
 | `word-grid3`                | H1 to H11 and VH1: what `word-grid` left open: a grid of lines with `w:charSpace`, a footnote that goes on to the next page and endnotes on a grid, a grid of characters in a header, a footnote, a table cell, columns and text spaced out by its run, space in lines with `w:snapToGrid` off and in a cell, and a header on pages of text that runs down the page                                                                                                                                                                                                                                                                                                                                                    | `word-grid.py`                 |
 | `word-vertical`             | V1 to V13: text that runs down the page (`w:textDirection` on a section): how many characters go in a line down the page and how many lines across it, without a grid and on grids of lines and of characters, Latin text, a header, a footer and a footnote, indents and space before and after, landscape pages, the other directions, and a continuous section break into it                                                                                                                                                                                                                                                                                                                                        | `word-vertical.py`             |
+| `word-imported-documents`   | AC1 to AC16 and AS1 to AS9: what Word does with a document a document imports (`w:altChunk`), in six documents: where an imported .docx's paragraphs go, in the body, a table cell, a header, a note and another imported document, whose styles, defaults, theme, settings, sections, headers, lists and footnotes they take, which of two bookmarks of a name Word keeps, how a style only the imported document has keeps its look, what "keep source formatting" (`w:matchSrc`) keeps, and plain text. `word-imported-bookmarks` asks Word to update its fields, to show which bookmarks it kept                                                                                                                   | `word-imported-documents.py`   |
 | `fsplit`                    | How a footnote that doesn't fit below its reference goes on to the next page. Laid out in LibreOffice only, so it has no PDF from Word: Word's split of an 8-line footnote is `word-rules` P7b                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                         | `pagelines.py`                 |
 
 ## Make a probe's `.docx`
@@ -89,7 +90,8 @@ It writes `build/word-probes/word-rules2.docx`. `fsplit`, `word-no-prompt` and `
 package first (`npm run build`). `word-watertight-stops` and `word-justify` measure their lines with docx/layout's
 width tables, which they import from `src`. The others import only `docx`, as the demos do. `word-watertight-text`,
 `word-watertight-stops`, `word-tracked-changes`, `word-hidden-paragraphs`, `word-grid` and `word-grid3` replace markers in the XML with what docx can't write, as their
-`INJECTIONS` and `FIRST_ROW_STYLE` say. `word-fonts` also imports the measuring of text from
+`INJECTIONS` and `FIRST_ROW_STYLE` say, and `word-imported-documents` replaces each with `w:altChunk` and adds the part it
+imports to the package (`importInto`). `word-fonts` also imports the measuring of text from
 `src/text-layout`, to print the widths docx/layout measures its probes at when it is given a folder with Aptos's and
 Calibri's files, such as Word's own:
 
@@ -344,6 +346,17 @@ done
 cd build/word-probes
 python3 ../../scripts/layout-probes/word-compat-settings.py word-compat-settings $(ls word-compat-settings-*.html | sed 's/.html$//')
 python3 ../../scripts/layout-probes/word-compat-settings.py word-compat-settings2 $(ls word-compat-settings2-*.html | sed 's/.html$//')
+```
+
+`word-imported-documents.py` reads the six documents `word-imported-documents.ts` writes, and prints each line with its page,
+where it is and how wide its ten m's are, which says which font and size it is in, and then each probe's lines down from
+its line above:
+
+```bash
+for name in documents text ends parts bookmarks styles; do
+    pdftotext -bbox-layout scripts/layout-probes/word-imported-$name.pdf build/word-probes/word-imported-$name.html
+done
+python3 scripts/layout-probes/word-imported-documents.py build/word-probes/word-imported-*.html
 ```
 
 ## Documents saved from Word
