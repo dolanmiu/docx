@@ -312,6 +312,20 @@ describe("conditionalTypesOf", () => {
         // Bands of no rows are none
         expect(rowsOf(none, 0)).to.deep.equal([undefined, undefined, undefined, undefined]);
     });
+
+    it("should make all of a header of several rows the first row, and start the bands of rows below it", () => {
+        const none = { firstRow: false, lastRow: false, firstColumn: false, lastColumn: false, rowBands: true, columnBands: false };
+        const rowsOf = (look: typeof none, headerRows: number): readonly string[] =>
+            [0, 1, 2, 3, 4].map((row) => conditionalTypesOf({ row, rows: 5, cell: 0, cells: 1, headerRows }, look, bands)[0]);
+        // word-compat-off.docx CS2a, CS2b: the first row turned on, with 2 and 3 header rows
+        expect(rowsOf({ ...none, firstRow: true }, 2)).to.deep.equal(["firstRow", "firstRow", "band1Horz", "band2Horz", "band1Horz"]);
+        expect(rowsOf({ ...none, firstRow: true }, 3)).to.deep.equal(["firstRow", "firstRow", "firstRow", "band1Horz", "band2Horz"]);
+        // CS2f: turned off, the header is in the second band
+        expect(rowsOf(none, 2)).to.deep.equal(["band2Horz", "band2Horz", "band1Horz", "band2Horz", "band1Horz"]);
+        // CS2c: a header of one row is a row like the others
+        expect(rowsOf({ ...none, firstRow: true }, 1)).to.deep.equal(rowsOf({ ...none, firstRow: true }, 0));
+        expect(rowsOf(none, 1)).to.deep.equal(["band1Horz", "band2Horz", "band1Horz", "band2Horz", "band1Horz"]);
+    });
 });
 
 describe("tables laid out as Word lays them out", () => {
@@ -584,6 +598,53 @@ describe("tables laid out as Word lays them out", () => {
         expect(heights(firstAndRows, BAND_SIZES)).to.deep.equal([18, 14, 15, 14].map(lineOf));
         expect(heights(undefined, BAND_SIZES)).to.deep.equal([18, 14, 15, 14].map(lineOf));
         expect(heights(firstAndRows, "")).to.deep.equal([18, 11, 11, 11].map(lineOf));
+    });
+
+    describe("a header of several rows", () => {
+        // word-compat.ts's CompatHeaders: a first row of 16 points, and bands of rows of 14 and 10
+        const size = (type: string, points: number): string =>
+            `<w:tblStylePr w:type="${type}"><w:rPr><w:sz w:val="${points * 2}"/></w:rPr></w:tblStylePr>`;
+        const corners = `${size("nwCell", 20)}${size("neCell", 20)}`;
+        const headersStyle = (more = ""): string =>
+            `<w:style w:type="table" w:styleId="Headers"><w:name w:val="Headers"/><w:tblPr><w:tblStyleRowBandSize w:val="1"/></w:tblPr>${size("firstRow", 16)}${size("band1Horz", 14)}${size("band2Horz", 10)}${more}</w:style>`;
+        const lineOf = (points: number): number => Math.round((2500 / 2048) * points * 20 * 10) / 10;
+        /** 6 rows of one-line cells, the first `headers` of them header rows, in the style, with its first row on or off */
+        const headed = (headers: number, firstRow: boolean, cells = 1): Table =>
+            new Table({
+                width: { size: WIDTH, type: WidthType.DXA },
+                columnWidths: Array.from({ length: cells }, () => Math.floor(WIDTH / cells)),
+                borders: TableBorders.NONE,
+                margins: { top: 0, bottom: 0, left: 0, right: 0 },
+                style: "Headers",
+                tableLook: { firstRow, lastRow: false, firstColumn: true, lastColumn: true, noHBand: false, noVBand: true },
+                rows: Array.from(
+                    { length: 6 },
+                    (_, index) =>
+                        new TableRow({
+                            tableHeader: index < headers,
+                            children: Array.from({ length: cells }, () => new TableCell({ children: [new Paragraph(`row ${index + 1}`)] })),
+                        }),
+                ),
+            });
+
+        it("should apply the first row's part to all of it, and bands of rows below it, as Word applies them (CS2)", () => {
+            // word-compat-off.docx CS2a, CS2b, CS2c and CS2f, which word-compat-on.docx, with Word's own compatibility
+            // settings, has the same
+            const heights = (headers: number, firstRow: boolean): readonly number[] =>
+                rowHeights(layOut([headed(headers, firstRow)], headersStyle()));
+            expect(heights(2, true)).to.deep.equal([16, 16, 14, 10, 14, 10].map(lineOf));
+            expect(heights(3, true)).to.deep.equal([16, 16, 16, 14, 10, 14].map(lineOf));
+            expect(heights(1, true)).to.deep.equal([16, 14, 10, 14, 10, 14].map(lineOf));
+            expect(heights(2, false)).to.deep.equal([10, 10, 14, 10, 14, 10].map(lineOf));
+        });
+
+        it("should stop at a style's corner cells after its first row, and its bands of rows in a header of three rows with its first row off", () => {
+            const stoppedAt = (table: Table, more = ""): string | undefined => layOut([table], headersStyle(more)).stoppedAt;
+            expect(stoppedAt(headed(2, true, 2), corners)).to.equal("a table style's corner cells in a header of several rows");
+            expect(stoppedAt(headed(1, true, 2), corners)).to.equal(undefined);
+            expect(stoppedAt(headed(3, false))).to.equal("a table style's bands of rows in a header of three rows or more");
+            expect(stoppedAt(headed(3, true))).to.equal(undefined);
+        });
     });
 
     it("should apply a table style's first row's size where the table turns it on, and Normal has no size of its own (SP19)", () => {

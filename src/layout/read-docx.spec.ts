@@ -211,6 +211,37 @@ describe("readDocx", () => {
         expect(content.unsupported).to.equal("a document in compatibility mode");
     });
 
+    it("should read the compatibility settings Word writes, and stop at others that are on", () => {
+        const withCompatibility = (compatibility: string): DocumentContent =>
+            readDocx(
+                new Map([
+                    [
+                        "word/_rels/document.xml.rels",
+                        relationships(`<Relationship Id="rId1" Type="${TRANSITIONAL}/settings" Target="settings.xml"/>`),
+                    ],
+                    ["word/settings.xml", parse(COMPATIBLE.replace("</w:compat>", `${compatibility}</w:compat>`))],
+                    ["word/document.xml", documentOf("<w:p/>")],
+                ]),
+            );
+        const word = (name: string, val: string): string =>
+            `<w:compatSetting w:name="${name}" w:uri="http://schemas.microsoft.com/office/word" w:val="${val}"/>`;
+        // As Word 16 writes them in the documents it makes, with the spaces between them that are read
+        const written = [
+            "overrideTableStyleFontSizeAndJustification",
+            "enableOpenTypeFeatures",
+            "doNotFlipMirrorIndents",
+            "differentiateMultirowTableHeaders",
+        ].map((name) => word(name, "1"));
+        expect(withCompatibility(`\n${written.join("\n")}${word("useWord2013TrackBottomHyphenation", "0")}`).unsupported).to.equal(
+            undefined,
+        );
+        expect(withCompatibility('<w:noLeading w:val="0"/>').unsupported).to.equal(undefined);
+        expect(withCompatibility("<w:noLeading/>").unsupported).to.equal("a compatibility setting not yet followed");
+        expect(withCompatibility(word("allowTextAfterFloatingTableBreak", "1")).unsupported).to.equal(
+            "a compatibility setting not yet followed",
+        );
+    });
+
     it("should read the fonts it embeds, undoing the mixing of their keys, as the faces its font table says they are", () => {
         const font = buildTestFont({ name: "In The File", advances: { a: 500 } });
         const key = "{01234567-89AB-CDEF-0123-456789ABCDEF}";
