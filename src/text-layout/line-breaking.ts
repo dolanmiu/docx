@@ -185,6 +185,12 @@ type Segment = {
 const DEFAULT_TAB_STOP = 36;
 // How far past its end a line may go before it wraps, for the rounding of the widths
 const TOLERANCE = 0.01;
+// Word breaks a word at a soft hyphen when its hyphen ends 22.7 twips before the end of the line, and doesn't when it ends
+// 2.7 twips or less before it, or past it: of Calibri 11's hyphen of 67.3 twips, after a part that ends 90 twips short of the
+// end, and not 70, 50, 30 or 10 (scripts/layout-probes/word-breaks-and-tabs.ts SH2). A little less than 22.7 allows for the
+// rounding of the widths
+const HYPHEN_ROOM = 22.6 / 20;
+const NO_HYPHEN_ROOM = 2.7 / 20;
 // Word squeezes one more word onto a justified line when its spaces would otherwise stretch by a share of their width
 // more than twice as large as the share they're squeezed by: 2.06 times as large, and not 2.02 (`word-justify.docx` J01
 // to J09)
@@ -574,6 +580,8 @@ type LineState = {
     readonly started: boolean;
     /** Whether it is the first line of the paragraph, which starts at its first line indent */
     readonly first: boolean;
+    /** Whether it has a tab to one of the paragraph's stops past its right indent, after which it ends at the margin */
+    readonly pastIndent?: boolean;
     /** Why where its text goes isn't known, when it isn't */
     readonly unsupported?: string;
 };
@@ -639,14 +647,31 @@ const splitPieces = (pieces: readonly Piece[], at: number): readonly [readonly P
     return [parts.map(([before]) => before).filter(written), parts.map(([, after]) => after).filter(written)];
 };
 
-// A number as Word lines it up at a decimal stop: digits, after a minus sign or not, and a full stop and more digits or
-// not (scripts/layout-probes/word-watertight-text.ts TX12a: 12.5, 1234.56, 7 and -0.25)
-const PLAIN_NUMBER = /^-?\d+(\.\d+)?$/;
+/**
+ * Where text after a decimal stop lines up with it, as the number of its characters before the stop: at its first full
+ * stop, unless a number comes first and ends without one, which lines up its end. Word lined up "$1,234.50", "12.5%",
+ * "(3.25)", "x 1.5", "1.5 x", "Total 12.50" and ".75" at their full stop, "a.b", "1.2.3" and "e.g. 7" at their first, the end
+ * of "abc", "1,5", "7" and "-", and "1 234.5" at the end of its "1" (scripts/layout-probes/word-breaks-and-tabs.ts DT1 to
+ * DT15, word-watertight-text.ts TX12a). Undefined for a number that ends at anything but a full stop, a space or the end of
+ * the text, such as "12%", or with a comma, as where Word lines those up hasn't been seen.
+ */
+const decimalPointOf = (text: string): number | undefined => {
+    const characters = [...text];
+    const point = characters.indexOf(".");
+    const digit = characters.findIndex((character) => /[0-9]/.test(character));
+    if (digit === -1 || (point !== -1 && point < digit)) {
+        return point === -1 ? characters.length : point;
+    }
+    const end = characters.findIndex((character, index) => index > digit && !/[0-9,]/.test(character));
+    if (end === -1) {
+        return characters[characters.length - 1] === "," ? undefined : characters.length;
+    }
+    return characters[end] === "." || (characters[end] === " " && characters[end - 1] !== ",") ? end : undefined;
+};
 
 /**
- * How far the text after a tab goes before a decimal stop: up to the full stop of its number, whose left edge is at the
- * stop, or all of it when the number has none (TX12a). Undefined when the text isn't a plain number, as where Word lines up
- * other text, such as "$1,234.50" or "12.5%", hasn't been seen.
+ * How far the text after a tab goes before a decimal stop: up to where it lines up with it (see {@link decimalPointOf}).
+ * Undefined where that isn't known, or a picture comes before it.
  */
 const widthBeforeDecimal = (tokens: readonly Token[], measurer: TextMeasurer): number | undefined => {
     const text = textAfterTab(tokens).filter((token) => token.type !== "marker");
@@ -654,22 +679,29 @@ const widthBeforeDecimal = (tokens: readonly Token[], measurer: TextMeasurer): n
         .map((token) => (token.type === "word" || token.type === "space" ? textOf(token.pieces) : "\uFFFC"))
         .join("")
         .trimEnd();
-    if (!PLAIN_NUMBER.test(written)) {
+    const point = decimalPointOf(written);
+    if (point === undefined || [...written].slice(0, point).includes("\uFFFC")) {
         return undefined;
     }
-    const point = text.findIndex((token) => token.type === "word" && textOf(token.pieces).includes("."));
-    if (point === -1) {
-        return widthAfterTab(tokens, measurer);
-    }
-    const { pieces } = text[point] as Extract<Token, { readonly type: "word" }>;
-    const [before] = splitPieces(pieces, [...textOf(pieces)].indexOf("."));
-    return widthOfTokens([...text.slice(0, point), { type: "word", pieces: before }], measurer);
+    // The text before it, and the part of the word or spaces it is in
+    let count = 0;
+    const before = text.flatMap((token): readonly Token[] => {
+        const length = token.type === "word" || token.type === "space" ? lengthOf(token.pieces) : 1;
+        const from = count;
+        count += length;
+        if (from + length <= point) {
+            return [token];
+        }
+        // It lines up at a full stop, at a space or at the end, so never in spaces
+        return from < point && token.type === "word" ? [{ type: "word", pieces: splitPieces(token.pieces, point - from)[0] }] : [];
+    });
+    return widthOfTokens(before, measurer);
 };
 
 /**
  * How far before its stop the text after a tab starts: none for a left stop, half its width for a centred one, all of it
- * for a right one, and up to its number's full stop for a decimal one. Undefined for text at a decimal stop that isn't a
- * plain number.
+ * for a right one, and up to where it lines up for a decimal one. Undefined for text at a decimal stop that lines up
+ * where Word hasn't been seen to line it up.
  */
 const shiftAt = (alignment: TabStop["alignment"], tokens: readonly Token[], measurer: TextMeasurer): number | undefined => {
     if (alignment === "left") {
@@ -908,7 +940,14 @@ export const layoutLines = (
     // eslint-disable-next-line functional/prefer-readonly-type
     const lines: LaidOutLine[] = [];
     /** Where a line ends, from its index: where the line being filled ends, unless another is given */
-    const limitOf = (line = lines.length): number => (typeof width === "number" ? width : width(line)) - indentRight;
+    const limitOf = (line = lines.length): number => marginOf(line) - indentRight;
+    /** Where the room for a line ends, from its index, before the paragraph's right indent */
+    const marginOf = (line = lines.length): number => (typeof width === "number" ? width : width(line));
+    /**
+     * Where the line being filled ends: the margin after a tab to one of the paragraph's stops past its right indent, which
+     * Word lines text up with on the line (scripts/layout-probes/word-breaks-and-tabs.ts TP6, TP9)
+     */
+    const endOf = (state: LineState): number => (state.pastIndent ? marginOf() : limitOf());
     /**
      * Whether Word squeezes a word or picture this wide onto a justified or distributed line it goes past the end of,
      * rather than move it to the next line. It squeezes the line's spaces in proportion to their widths, and does when that
@@ -940,6 +979,25 @@ export const layoutLines = (
      */
     const unsure = (state: LineState, tokenWidth: number): boolean =>
         squeezes && state.otherSpaces > 0 && state.position + tokenWidth - limitOf() <= MOST_SQUEEZE * state.spaces;
+    /**
+     * Why where Word puts the text after a tab to one of the paragraph's own stops past the end of the line isn't known,
+     * when it isn't: its probes had no first line or hanging indent, no right indent past the margin, a left indent only
+     * with a left stop after text, a right indent only with a right stop after text, and centred and decimal stops after
+     * text in a paragraph without indents
+     */
+    const pastEndUnknown = ({ alignment: kind }: TabStop, started: boolean): string | undefined => {
+        if (firstLineIndent !== 0 || indentRight < 0) {
+            return "a tab stop past the end of the line in a paragraph with a first line or hanging indent, or indented past the margin";
+        }
+        if (kind === "left") {
+            return (started ? indentRight !== 0 : indentLeft !== 0 || indentRight !== 0)
+                ? "a left tab stop past the end of the line in a paragraph indented on the right"
+                : undefined;
+        }
+        return !started || indentLeft !== 0 || (kind !== "right" && indentRight !== 0)
+            ? "a tab stop past the end of the line at the start of a line, or in an indented paragraph"
+            : undefined;
+    };
     // A list number that isn't left-aligned starts before its line does, which its text is measured from
     const beforeStart = numberShift(items, numberAlignment, measurer);
     // Whether the next tab is the one after a right-aligned list number
@@ -1021,16 +1079,17 @@ export const layoutLines = (
             const boxEnd = token.type === "word" ? (lastBorder(token.pieces)?.room ?? 0) : 0;
             const needs = leadOf(line) + tokenWidth + boxEnd;
             const hyphens = token.type === "word" ? (token.hyphens ?? []).filter(({ at }) => at > 0 && at < lengthOf(token.pieces)) : [];
-            if (token.type === "word" && hyphens.length > 0 && line.position + needs > limitOf() + TOLERANCE) {
-                // Whether Word squeezes a justified line's spaces to fit a word with soft hyphens, or breaks it at one,
-                // and whether it breaks a word longer than a line at its soft hyphens, hasn't been seen
+            // A justified line Word can squeeze the word onto takes it whole, as it does a word without soft hyphens: at its
+            // spaces 3% to 20% narrower (scripts/layout-probes/word-breaks-and-tabs.ts SH1a to SH1e)
+            const squeezedIn = squeezes && line.started && squeezesIn(line, needs);
+            if (token.type === "word" && hyphens.length > 0 && !squeezedIn && line.position + needs > endOf(line) + TOLERANCE) {
+                // Whether Word breaks a word at a soft hyphen on a justified line it doesn't squeeze it onto, or moves it on
+                // to the next line, or squeezes the part before the hyphen on, hasn't been seen
                 const unknown = squeezes
-                    ? "a soft hyphen in a justified line"
-                    : !line.started
-                      ? "a word with soft hyphens longer than its line"
-                      : token.pieces.some(({ font }) => font.border !== undefined)
-                        ? "a soft hyphen in a word with a border"
-                        : undefined;
+                    ? "a soft hyphen in a justified line that doesn't fit squeezed"
+                    : token.pieces.some(({ font }) => font.border !== undefined)
+                      ? "a soft hyphen in a word with a border"
+                      : undefined;
                 if (unknown !== undefined) {
                     line = { ...line, unsupported: line.unsupported ?? unknown };
                 }
@@ -1045,8 +1104,11 @@ export const layoutLines = (
                     placeWord(token);
                     return;
                 }
+                // Not even its first part fits on a line of its own: Word broke such a word at its soft hyphens where its
+                // parts fit (SH4), but how it breaks one too long for a line hasn't been seen
+                line = { ...line, unsupported: line.unsupported ?? "a word whose part before a soft hyphen is longer than its line" };
             }
-            const overflows = line.started && line.position + needs > limitOf() + TOLERANCE;
+            const overflows = line.started && line.position + needs > endOf(line) + TOLERANCE;
             if (overflows && unsure(line, needs)) {
                 line = { ...line, unknown: true };
             }
@@ -1062,7 +1124,7 @@ export const layoutLines = (
                 line = wrap(line);
             }
             line = { ...place(line), position: line.position + leadOf(line) };
-            if (token.type === "word" && !squeezed && line.position + tokenWidth > limitOf() + TOLERANCE && limitOf() - indentLeft > 0) {
+            if (token.type === "word" && !squeezed && line.position + tokenWidth > endOf(line) + TOLERANCE && limitOf() - indentLeft > 0) {
                 // A word wider than a line is broken across as many lines as it needs, after the last character that fits
                 // on each, and never between a character and the marks on it or what a zero-width joiner joins to it
                 let placed = false;
@@ -1072,7 +1134,7 @@ export const layoutLines = (
                 for (const character of charactersOf(token.pieces)) {
                     const characterWidth = widthOf(character, measurer);
                     // Each line is as long as it is, for lines of different widths, and one with no room takes the rest
-                    if (placed && line.position + characterWidth > limitOf() + TOLERANCE && limitOf(lines.length + 1) - indentLeft > 0) {
+                    if (placed && line.position + characterWidth > endOf(line) + TOLERANCE && limitOf(lines.length + 1) - indentLeft > 0) {
                         line = wrap({ ...line, heights: withToken(line.heights, token), started: true });
                     }
                     line = {
@@ -1107,8 +1169,9 @@ export const layoutLines = (
         /**
          * Breaks a word at the last of its soft hyphens that leaves its part before it, and a hyphen in the soft hyphen's
          * font, on the line, as Word breaks it (scripts/layout-probes/word-watertight-text.ts TX10a: 12 lines, 8 of them
-         * ending in a hyphen, each where docx/layout's widths of Calibri end them). The rest of the word, which goes on to
-         * the next line, or undefined when no part of it fits
+         * ending in a hyphen, each where docx/layout's widths of Calibri end them), and a word longer than its line again on
+         * each line (word-breaks-and-tabs.ts SH4). The rest of the word, which goes on to the next line, or undefined when no
+         * part of it fits
          */
         const breakAtHyphen = (
             word: Extract<Token, { readonly type: "word" }>,
@@ -1119,7 +1182,8 @@ export const layoutLines = (
                 const [before, after] = splitPieces(word.pieces, hyphen.at);
                 const partEnd = line.position + lead + widthOf(before, measurer);
                 const withHyphen = partEnd + measurer.measureWidth("-", hyphen.font);
-                if (withHyphen <= limitOf() + TOLERANCE) {
+                const room = endOf(line) - withHyphen;
+                if (room >= HYPHEN_ROOM) {
                     const placed = place(line);
                     line = wrap({
                         ...placed,
@@ -1137,10 +1201,12 @@ export const layoutLines = (
                         hyphens: hyphens.filter(({ at }) => at > hyphen.at).map((later) => ({ ...later, at: later.at - hyphen.at })),
                     };
                 }
-                if (partEnd <= limitOf() + TOLERANCE) {
-                    // Whether Word breaks there with the hyphen past the end of the line, or at a soft hyphen before, hasn't
-                    // been seen: TX10a had no line where it mattered
-                    line = { ...line, unsupported: line.unsupported ?? "a soft hyphen whose hyphen would go past the end of the line" };
+                if (room > NO_HYPHEN_ROOM) {
+                    // Where between the two Word turns from one to the other hasn't been seen
+                    line = {
+                        ...line,
+                        unsupported: line.unsupported ?? "a soft hyphen whose hyphen ends this close to the end of the line",
+                    };
                 }
             }
             return undefined;
@@ -1178,33 +1244,49 @@ export const layoutLines = (
                 }
                 const given = line.first ? firstLineStops : stops;
                 const next = nextStop(line.position, given, defaultTabStop, Infinity)!;
-                // A stop of the paragraph's own past the end of the line: the text after a left one goes on to the start of
-                // the next line, and that after a right one lines up with the end of the line (scripts/layout-probes/
-                // word-watertight-text.ts TX12c, TX12d). Past the last of the default stops before the end of the line, the
-                // tab goes on to the next line, as below (TX12b). Word's probes had no indents, and text before the tab
-                const pastEnd = !numbered && given.includes(next) && next.position > limitOf() + TOLERANCE ? next : undefined;
-                const pastEndUnknown =
-                    pastEnd === undefined
-                        ? undefined
-                        : indentLeft !== 0 || indentRight !== 0 || firstLineIndent !== 0
-                          ? "a tab stop past the end of the line in an indented paragraph"
-                          : !line.started
-                            ? "a tab at the start of a line to a stop past its end"
-                            : pastEnd.alignment === "center" || pastEnd.alignment === "decimal"
-                              ? "a centred or decimal tab stop past the end of the line"
-                              : undefined;
-                if (pastEndUnknown !== undefined) {
-                    line = { ...line, unsupported: line.unsupported ?? pastEndUnknown };
-                } else if (pastEnd?.alignment === "left") {
-                    line = wrap(place({ ...line, text: `${line.text}\t`, heights: withToken(line.heights, token), started: true }));
+                const rest = tokens.slice(index + 1);
+                const own = !numbered && given.includes(next);
+                // One of the paragraph's own stops between its right indent and the margin: Word lines the text after it up
+                // with it on the line, past the indent, as far as the margin (scripts/layout-probes/word-breaks-and-tabs.ts
+                // TP6, TP9)
+                const pastIndent =
+                    own && indentRight > 0 && next.position > limitOf() + TOLERANCE && next.position <= marginOf() + TOLERANCE;
+                // One past the end of the line: the text after a right, centred or decimal one lines up with the end of the line,
+                // or of the next when it doesn't fit (word-watertight-text.ts TX12c, word-breaks-and-tabs.ts TP1, TP2, TP5, TP7);
+                // that after a left one goes on to the start of the next line (TX12d, TP4), or stays where it is at the start of
+                // a line (TP3). Past the last of the default stops before the end of the line, the tab goes on to the next line,
+                // as below (TX12b)
+                const pastEnd = own && next.position > Math.max(limitOf(), marginOf()) + TOLERANCE ? next : undefined;
+                const unknown =
+                    pastIndent && (next.alignment === "center" || next.alignment === "decimal" || squeezes)
+                        ? "a centred or decimal tab stop past the paragraph's right indent, or one in a justified line"
+                        : pastIndent && next.alignment === "left" && next.position + widthAfterTab(rest, measurer) > marginOf() + TOLERANCE
+                          ? "text after a tab stop past the paragraph's right indent that goes past the margin"
+                          : pastEnd === undefined
+                            ? undefined
+                            : pastEndUnknown(pastEnd, line.started);
+                if (unknown !== undefined) {
+                    line = { ...line, unsupported: line.unsupported ?? unknown };
+                }
+                if (pastEnd?.alignment === "left" && unknown === undefined) {
+                    const tab = { ...line, text: `${line.text}\t`, heights: withToken(line.heights, token), started: true };
+                    line = line.started ? wrap(place(tab)) : { ...tab, end: line.position };
                     continue;
+                }
+                const aligned = pastEnd !== undefined && pastEnd.alignment !== "left" && unknown === undefined;
+                if (aligned && line.position + widthAfterTab(rest, measurer) > limitOf() + TOLERANCE) {
+                    // The text doesn't fit before the end of the line, so the tab goes on to the next line, and the text lines
+                    // up with its end
+                    line = wrap(line);
                 }
                 const stop = numbered
                     ? numbered.stop
-                    : pastEnd !== undefined && pastEndUnknown === undefined
+                    : aligned
                       ? { position: limitOf(), alignment: "right" as const }
-                      : (nextStop(line.position, given, defaultTabStop, limitOf()) ??
-                        (line.started ? nextStop(indentLeft, stops, defaultTabStop, limitOf(lines.length + 1)) : undefined));
+                      : pastIndent
+                        ? next
+                        : (nextStop(line.position, given, defaultTabStop, limitOf()) ??
+                          (line.started ? nextStop(indentLeft, stops, defaultTabStop, limitOf(lines.length + 1)) : undefined));
                 if (stop === undefined) {
                     // No stop before the end of the line: the text after the tab starts where it is
                     line = { ...line, end: line.position, text: `${line.text}\t`, heights: withToken(line.heights, token), started: true };
@@ -1214,12 +1296,11 @@ export const layoutLines = (
                     // The tab moves to a stop on the next line
                     line = wrap(line);
                 }
-                line = place(line);
-                const rest = tokens.slice(index + 1);
+                line = { ...place(line), ...(pastIndent ? { pastIndent } : {}) };
                 const shift = shiftAt(stop.alignment, rest, measurer);
-                const unknown =
+                const misaligned =
                     shift === undefined
-                        ? "text at a decimal tab stop that isn't a number"
+                        ? "text at a decimal tab stop that Word hasn't been seen lining up"
                         : shift > 0 && hasBorder(rest)
                           ? "text with a border lined up with a tab stop"
                           : undefined;
@@ -1237,7 +1318,7 @@ export const layoutLines = (
                     letters: 0,
                     otherSpaces: 0,
                     started: true,
-                    ...(unknown === undefined ? {} : { unsupported: line.unsupported ?? unknown }),
+                    ...(misaligned === undefined ? {} : { unsupported: line.unsupported ?? misaligned }),
                 };
                 continue;
             }
