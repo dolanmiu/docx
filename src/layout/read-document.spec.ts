@@ -2726,7 +2726,8 @@ describe("readDocument", () => {
         const readCompatibility = (...settings: readonly object[]): DocumentContent =>
             readSettings({ "w:compat": [{ "w:compatSetting": { _attr: { "w:name": "compatibilityMode", "w:val": 15 } } }, ...settings] });
 
-        it("should mark a document with any of docx's compatibility settings on as unsupported, but the one followed", () => {
+        it("should lay out a document with the compatibility settings Word lays out lines alike with in compatibility mode 15", () => {
+            // word-compat-settings.docx and its groups: Word laid out the same probes alike with these on and without them
             const settings: readonly (keyof ICompatibilityOptions)[] = [
                 "useSingleBorderforContiguousCells",
                 "wordPerfectJustification",
@@ -2734,23 +2735,15 @@ describe("readDocument", () => {
                 "noLeading",
                 "spaceForUnderline",
                 "noColumnBalance",
-                "balanceSingleByteDoubleByteWidth",
                 "noExtraLineSpacing",
-                "doNotLeaveBackslashAlone",
                 "underlineTrailingSpaces",
                 "doNotExpandShiftReturn",
                 "spacingInWholePoints",
-                "lineWrapLikeWord6",
                 "printBodyTextBeforeHeader",
                 "printColorsBlack",
                 "spaceWidth",
                 "showBreaksInFrames",
                 "subFontBySize",
-                "suppressBottomSpacing",
-                "suppressTopSpacing",
-                "suppressSpacingAtTopOfPage",
-                "suppressTopSpacingWP",
-                "suppressSpBfAfterPgBrk",
                 "swapBordersFacingPages",
                 "convertMailMergeEsc",
                 "truncateFontHeightsLikeWP6",
@@ -2763,45 +2756,63 @@ describe("readDocument", () => {
                 "alignTablesRowByRow",
                 "forgetLastTabAlignment",
                 "adjustLineHeightInTable",
-                "autoSpaceLikeWord95",
                 "noSpaceRaiseLower",
                 "layoutRawTableWidth",
                 "layoutTableRowsApart",
-                "useWord97LineBreakRules",
                 "doNotBreakWrappedTables",
                 "doNotSnapToGridInCell",
                 "selectFieldWithFirstOrLastCharacter",
-                "applyBreakingRules",
-                "doNotWrapTextWithPunctuation",
-                "doNotUseEastAsianBreakRules",
                 "useWord2002TableStyleRules",
                 "growAutofit",
-                "useFELayout",
                 "useNormalStyleForList",
                 "doNotUseIndentAsNumberingTabStop",
-                "useAlternateEastAsianLineBreakRules",
                 "allowSpaceOfSameStyleInTable",
                 "doNotSuppressIndentation",
                 "doNotAutofitConstrainedTables",
                 "autofitToFirstFixedWidthCell",
                 "underlineTabInNumberingList",
-                "displayHangulFixedWidth",
-                "splitPgBreakAndParaMark",
                 "doNotVerticallyAlignCellWithSp",
                 "doNotBreakConstrainedForcedTable",
                 "ignoreVerticalAlignmentInTextboxes",
                 "useAnsiKerningPairs",
                 "cachedColumnBalance",
+                // Each alone (word-compat-settings2.docx and one document for each)
+                "suppressBottomSpacing",
+                "suppressTopSpacingWP",
+                "suppressSpacingAtTopOfPage",
+                "suppressSpBfAfterPgBrk",
+                "splitPgBreakAndParaMark",
+                "balanceSingleByteDoubleByteWidth",
+                "doNotLeaveBackslashAlone",
+                "displayHangulFixedWidth",
+                "autoSpaceLikeWord95",
+                "lineWrapLikeWord6",
+                "useWord97LineBreakRules",
+                "applyBreakingRules",
+                "doNotWrapTextWithPunctuation",
+                "doNotUseEastAsianBreakRules",
+                "useAlternateEastAsianLineBreakRules",
             ];
+            for (const setting of settings) {
+                expect(readBody([], { compatibility: { [setting]: true } }).unsupported, setting).to.equal(undefined);
+            }
+            // Automatic spacing as HTML has it is followed (see "automatic spacing")
+            expect(readBody([], { compatibility: { doNotUseHTMLParagraphAutoSpacing: true } }).unsupported).to.equal(undefined);
+        });
+
+        it("should mark a document with docx's other compatibility settings on as unsupported", () => {
+            // word-compat-settings2-suppressTopSpacing.docx and -useFELayout: the first line of a page at exactly or at least
+            // 30 points is shorter, and Latin letters next to Japanese are spaced apart
+            const settings: readonly (keyof ICompatibilityOptions)[] = ["suppressTopSpacing", "useFELayout"];
             for (const setting of settings) {
                 expect(readBody([], { compatibility: { [setting]: true } }).unsupported, setting).to.equal(UNFOLLOWED_COMPATIBILITY);
                 // Off, as docx writes false, Word lays it out as without it
                 expect(readBody([], { compatibility: { [setting]: false } }).unsupported, setting).to.equal(undefined);
             }
-            // Automatic spacing as HTML has it is followed (see "automatic spacing")
-            expect(readBody([], { compatibility: { doNotUseHTMLParagraphAutoSpacing: true } }).unsupported).to.equal(undefined);
             // Written as Word writes it, with no value, too
-            expect(readCompatibility({ "w:noLeading": {} }).unsupported).to.equal(UNFOLLOWED_COMPATIBILITY);
+            expect(readCompatibility({ "w:suppressTopSpacing": {} }).unsupported).to.equal(UNFOLLOWED_COMPATIBILITY);
+            // And one the schema doesn't have
+            expect(readCompatibility({ "w:someLaterSetting": {} }).unsupported).to.equal(UNFOLLOWED_COMPATIBILITY);
         });
 
         /** A compatibility setting of Word's own, as Word writes it, or without its application when `uri` is null */
@@ -2809,7 +2820,8 @@ describe("readDocument", () => {
             "w:compatSetting": { _attr: { "w:name": name, ...(uri === null ? {} : { "w:uri": uri }), "w:val": val } },
         });
 
-        it("should lay out a document with the compatibility settings Word writes in the documents it makes, on or off", () => {
+        it("should lay out a document with Word's own compatibility settings, on or off", () => {
+            // Those Word writes in the documents it makes, and its two others (word-compat-settings-other.docx)
             const written = (val: string): readonly object[] =>
                 [
                     "overrideTableStyleFontSizeAndJustification",
@@ -2817,18 +2829,16 @@ describe("readDocument", () => {
                     "doNotFlipMirrorIndents",
                     "differentiateMultirowTableHeaders",
                     "useWord2013TrackBottomHyphenation",
+                    "allowHyphenationAtTrackBottom",
+                    "allowTextAfterFloatingTableBreak",
                 ].map((name) => wordSetting(name, val));
             expect(readCompatibility(...written("1")).unsupported).to.equal(undefined);
             expect(readCompatibility(...written("0")).unsupported).to.equal(undefined);
         });
 
-        it("should mark a document with Word's other compatibility settings on, or settings Word may have that aren't known, as unsupported", () => {
-            for (const name of ["allowHyphenationAtTrackBottom", "allowTextAfterFloatingTableBreak"]) {
-                expect(readCompatibility(wordSetting(name, "1")).unsupported, name).to.equal(UNFOLLOWED_COMPATIBILITY);
-                expect(readCompatibility(wordSetting(name, "true", null)).unsupported, name).to.equal(UNFOLLOWED_COMPATIBILITY);
-                // Off, as Word has them unless they are given
-                expect(readCompatibility(wordSetting(name, "0")).unsupported, name).to.equal(undefined);
-            }
+        it("should mark a document with settings Word may have that aren't known as unsupported, on or off", () => {
+            expect(readCompatibility(wordSetting("someLaterSetting", "1")).unsupported).to.equal(UNFOLLOWED_COMPATIBILITY);
+            expect(readCompatibility(wordSetting("someLaterSetting", "true", null)).unsupported).to.equal(UNFOLLOWED_COMPATIBILITY);
             // One whose default isn't known, even off
             expect(readCompatibility(wordSetting("someLaterSetting", "0")).unsupported).to.equal(UNFOLLOWED_COMPATIBILITY);
         });

@@ -66,11 +66,11 @@ const estimateWith = (content: DocumentContent | undefined, measurer: TextMeasur
  * is in its own dictionaries, or a date in the text, which Word writes when it opens the document. The page references
  * to bookmarks after it are left blank, for Word to fill in when it updates the fields. A document in compatibility
  * mode, which Word lays out as an older version of Word did, isn't laid out at all, nor is one with a compatibility
- * setting that may change Word's lines in a way not yet followed: one of the schema's turned on, or one of Word's own
- * other than those Word writes in the documents it makes, turned on, or, for one the layout doesn't know, on or off.
- * Settings for other applications are left to them. When laying the pages out again with the page numbers it worked out
- * still changes them after three passes, as when a table of contents wraps one way with a number and the other way
- * without it, all of them are left blank.
+ * setting that changes Word's lines in a way not yet followed: `suppressTopSpacing` or `useFELayout` turned on, or one
+ * of Word's own the layout doesn't know, on or off. The schema's other settings, which ask for an older Word's or
+ * another application's layout, Word lays out lines with as without them, and settings for other applications are left
+ * to them. When laying the pages out again with the page numbers it worked out still changes them after three passes,
+ * as when a table of contents wraps one way with a number and the other way without it, all of them are left blank.
  *
  * Page references are written as Word writes them, with `\p` ("above", "below" or "on page 4") and in formats of their
  * own, such as `\* roman`, and so are numbers of pages. Page references, tables of contents and SEQ fields (caption
