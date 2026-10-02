@@ -39,6 +39,11 @@ export type TextFont = {
     /** Whether emphasis marks over the text, or under it, take room in its line (`w:em`) */
     readonly emphasis?: "above" | "below";
     /**
+     * Off when the text isn't laid out on the characters of its section's document grid (`w:snapToGrid` off), which its
+     * measurer leaves to the layout of its lines
+     */
+    readonly snapToGrid?: false;
+    /**
      * Whether it is a list's number, or the space or tab that follows it, which take up less of their line than text: a
      * number only the room above the baseline, and what follows it none
      */
@@ -158,6 +163,11 @@ export type ParagraphFormat = {
     readonly wordWrap?: boolean;
     /** Whether Word's automatic hyphenation leaves its words whole (`w:suppressAutoHyphens`) */
     readonly suppressAutoHyphens?: boolean;
+    /**
+     * Whether its lines are laid out on the document grid of its section, when the section has one (`w:snapToGrid`).
+     * Default is on
+     */
+    readonly snapToGrid?: boolean;
     /**
      * How its lines line up. Word squeezes the spaces of a justified line to fit one more word on it, so its lines can
      * break later than a left-aligned paragraph's
@@ -296,7 +306,9 @@ const EAST_ASIAN_FONTS: readonly EastAsianFont[] = [
     { name: "SimHei", aliases: ["黑体"], lineHeight: 1297, descent: 290, monospaced: true, latin: "Arial" },
     { name: "KaiTi", aliases: ["楷体"], lineHeight: 1297, descent: 289, monospaced: true, latin: "Times New Roman" },
     { name: "FangSong", aliases: ["仿宋"], lineHeight: 1297, descent: 290, monospaced: true, latin: "Times New Roman" },
-    { name: "Microsoft YaHei", aliases: ["微软雅黑"], lineHeight: 1714, descent: 460, latin: "Arial" },
+    // A fraction more than 12/7 of an em, as Microsoft YaHei 10.5, 21 and 31.5 take one more of a grid's lines of 360, 720
+    // and 1080 twips than the size before (scripts/layout-probes/word-grid.ts G1f), within the 20 lines' 1714
+    { name: "Microsoft YaHei", aliases: ["微软雅黑"], lineHeight: 1714.3, descent: 460, latin: "Arial" },
     { name: "DengXian", aliases: ["等线", "等线 Light", "DengXian Light"], lineHeight: 1354, descent: 388, latin: "Arial" },
     { name: "PMingLiU", aliases: ["新細明體"], lineHeight: 1300, descent: 350, latin: "Times New Roman" },
     { name: "MingLiU", aliases: ["細明體"], lineHeight: 1301, descent: 350, monospaced: true, latin: "Times New Roman" },
@@ -368,6 +380,15 @@ const isWide = (code: number): boolean =>
 
 // Half-width katakana, Hangul and symbols
 const isHalfWidth = (code: number): boolean => code >= 0xff61 && code <= 0xffdc;
+
+/**
+ * Whether a character is Chinese, Japanese or Korean, or one of their full-width or half-width forms, which a document
+ * grid that snaps to characters puts in cells of their own, where it puts other text in as many cells as it needs
+ */
+export const isGridCharacter = (character: string): boolean => {
+    const code = character.codePointAt(0)!;
+    return isWide(code) || isHalfWidth(code);
+};
 
 // Marks, which go on the character before them, and characters that only change how the text around them is laid out
 export const takesNoRoom = (character: string): boolean => /[\p{Mn}\p{Me}\p{Cf}]/u.test(character);

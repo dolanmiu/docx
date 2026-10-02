@@ -30,6 +30,7 @@ import {
     type TabStop,
     type TabStopSetting,
     type TextFont,
+    type TextGrid,
     type TextStyles,
     WIDEST_BORDER,
     type XmlObject,
@@ -192,6 +193,8 @@ export type ParagraphBlock = {
     readonly numberAlignment?: "center" | "right";
     /** The room its borders take above and below its lines, when it has a border there */
     readonly borders?: ParagraphBorders;
+    /** The document grid its lines, or its characters, are laid out on, when its section has one */
+    readonly grid?: TextGrid;
     /** Why it can't be laid out as Word lays it out, when it can't */
     readonly unsupported?: string;
     /**
@@ -516,6 +519,10 @@ type Reader = {
     readonly inCell?: boolean;
     /** Whether it reads past what can't be laid out as Word does, with a guess (see {@link guessedOr}) */
     readonly guess?: boolean;
+    /** The document grid of the section being read, which its body's paragraphs and footnotes are on */
+    readonly grid?: TextGrid;
+    /** The document grid of the section a table being read is in, which the lines of its cells aren't on */
+    readonly cellGrid?: TextGrid;
 };
 
 // Word's defaults for a section that doesn't give its page: Letter, with inch margins
@@ -1484,6 +1491,25 @@ const POINTS_PER_LINE = 12;
 const HUNDREDTHS = 100;
 
 /**
+ * How long a line of space before or after a paragraph is, and what a character of an indent is: the text's size and the
+ * space after each, or a cell
+ */
+type Units = { readonly line: number; readonly characterSpace: number; readonly characterPitch?: number };
+
+/**
+ * The units of a paragraph's space in lines and indents in characters: 12 points and the text's size, or on a document
+ * grid, its lines and characters. A line of space is a line of the grid, 360 twips on one of 360 and 312 on one of 312,
+ * in a paragraph that isn't on the grid's lines too, and in a table cell, whose lines aren't on them (scripts/layout-probes/
+ * word-grid.ts G6, word-grid3.ts H10, H11), and a character is the text's size and the space a grid of lines and
+ * characters adds after each, or a cell of one that snaps to characters (word-grid.ts CA6, CB6, CC6, CD6)
+ */
+const unitsOf = ({ linePitch, characterSpace = 0, characterPitch }: TextGrid = {}): Units => ({
+    line: linePitch ?? POINTS_PER_LINE,
+    characterSpace,
+    ...(characterPitch === undefined ? {} : { characterPitch }),
+});
+
+/**
  * A paragraph's formatting with its space in lines and its indents in characters in points, as Word takes them in place
  * of those in points when they aren't 0 (`word-paragraph-formats.docx` C7, C10, L2). A character is as wide as text is
  * tall: a first line or hanging indent's as the paragraph's first character, 2 of them 440 twips at 11 points and 800 at
@@ -1498,10 +1524,11 @@ const inPoints = (
     { listNumber, items }: { readonly listNumber: readonly LayoutItem[]; readonly items: readonly LayoutItem[] },
     markFont: TextFont,
     styleFont: TextFont,
+    { line, characterSpace, characterPitch }: Units = unitsOf(),
 ): ParagraphFormat | string => {
     const { spaceBeforeLines, spaceAfterLines, indentLeftChars, indentRightChars = 0, firstLineChars = 0 } = format;
     const lines = (count: number | undefined, points: number | undefined): number | undefined =>
-        count ? (count / HUNDREDTHS) * POINTS_PER_LINE : points;
+        count ? (count / HUNDREDTHS) * line : points;
     const spaced = withoutUndefined({
         ...format,
         spaceBefore: lines(spaceBeforeLines, format.spaceBefore),
@@ -1530,7 +1557,7 @@ const inPoints = (
     if (indentRightChars !== 0 && first !== mark) {
         return "an indent in characters right of text of another size than its mark";
     }
-    const characters = (count: number, size: number): number => (count / HUNDREDTHS) * size;
+    const characters = (count: number, size: number): number => (count / HUNDREDTHS) * (characterPitch ?? size + characterSpace);
     const right = indentRightChars === 0 ? {} : { indentRight: characters(indentRightChars, mark) };
     if (firstLineChars < 0) {
         if (indentLeftChars === 0 && (format.indentLeft ?? 0) !== 0) {
@@ -1646,7 +1673,19 @@ const readParagraph = (element: XmlObject, reader: Reader, tableFormats: TableFo
     const own = typeof items === "string" ? [] : items;
     const content = typeof items === "string" ? [] : [...list.items, ...items];
     const markFont = fontOf(markRun);
-    const format = inPoints(combined, { listNumber: list.items, items: own }, markFont, fontOf(paragraphRun));
+    // A paragraph's lines are on its section's grid unless it turns that off (`w:snapToGrid`), or is in a table cell, and
+    // its characters on a grid of characters either way (scripts/layout-probes/word-grid.ts G7, G8, CA11, CC11,
+    // word-grid3.ts H6)
+    const { grid, cellGrid } = reader;
+    const sectionGrid = grid ?? cellGrid;
+    const paragraphGrid =
+        sectionGrid &&
+        withoutUndefined({
+            linePitch: grid !== undefined && combined.snapToGrid !== false ? grid.linePitch : undefined,
+            characterSpace: sectionGrid.characterSpace,
+            characterPitch: sectionGrid.characterPitch,
+        });
+    const format = inPoints(combined, { listNumber: list.items, items: own }, markFont, fontOf(paragraphRun), unitsOf(sectionGrid));
     const borders = readBorders(typeof format === "string" ? combined : format);
     // A division of a web page (`w:divId`) has margins and borders of its own, in the document's web settings. Word breaks
     // the lines of Latin text justified for Thai or with a low kashida as justified ones, and those with a medium or high
@@ -1658,8 +1697,18 @@ const readParagraph = (element: XmlObject, reader: Reader, tableFormats: TableFo
     // decimal symbol a document's settings give instead, or the computer's, hasn't been seen
     const otherDecimalSymbol =
         reader.decimalSymbol !== undefined && reader.decimalSymbol !== "." && tabStops.some(({ alignment }) => alignment === "decimal");
+    // How Word lays out a grid that snaps to characters in footnotes, and over text spaced out by its run, isn't known
+    const snapping = sectionGrid?.characterPitch !== undefined;
+    const unknownOnGrid =
+        snapping && reader.inNote === true
+            ? "a footnote on a grid that snaps to characters"
+            : snapping &&
+                own.some((item) => item.type === "text" && (item.font.characterSpacing ?? 0) !== 0 && item.font.snapToGrid !== false)
+              ? "text spaced out by its run on a grid that snaps to characters"
+              : undefined;
     const unsupported =
         list.unsupported ??
+        unknownOnGrid ??
         (find(properties, "w:framePr") !== undefined
             ? "a text frame"
             : otherDecimalSymbol
@@ -1688,6 +1737,7 @@ const readParagraph = (element: XmlObject, reader: Reader, tableFormats: TableFo
         ...(list.list ? { list: list.list } : {}),
         ...(list.alignment ? { numberAlignment: list.alignment } : {}),
         ...(typeof borders === "object" ? { borders } : {}),
+        ...(paragraphGrid !== undefined && Object.keys(paragraphGrid).length > 0 ? { grid: paragraphGrid } : {}),
         style,
         // Word's chapter numbers are the numbers headings' styles give them, and it passes over headings numbered on their
         // own, or not at all
@@ -1743,6 +1793,9 @@ const unsupportedVerticalOf = (blocks: readonly Block[]): string | undefined => 
 // The directions of text in a cell (`w:textDirection`) across it, as transitional and strict documents write them, and
 // those that run up and down it
 const HORIZONTAL = new Set(["lrTb", "tb"]);
+// The directions of a section's text that run across the page, as the section's text does without one: from the left,
+// and from the left with East Asian characters on their side (scripts/layout-probes/word-vertical.ts V9, V12)
+const HORIZONTAL_PAGES = new Set(["lrTb", "tb", "lrTbV", "tbV"]);
 const VERTICAL = new Set(["btLr", "tbRl", "lr", "rl"]);
 
 /** A share of a width, as a fraction, from fiftieths of a percent or a percentage written with a % */
@@ -1917,7 +1970,15 @@ const readTable = (element: XmlObject, reader: Reader): TableBlock | undefined =
     const fixed = attributesOf(find(properties, "w:tblLayout"))["w:type"] === "fixed";
     // Whether Word sizes the columns to their text, or widens them for long words, by the cells' deleted text too
     const sized = !fixed || tableSpacing !== 0;
-    const cellReader: Reader = { ...reader, inSizedTable: sized, inCell: true };
+    // The lines of a table's cells aren't on its section's grid (scripts/layout-probes/word-grid.ts G8)
+    const cellGrid = reader.grid ?? reader.cellGrid;
+    const cellReader: Reader = {
+        ...reader,
+        inSizedTable: sized,
+        inCell: true,
+        grid: undefined,
+        ...(cellGrid === undefined ? {} : { cellGrid }),
+    };
     // Which rows are deleted in a tracked change
     const deletedFlags = rows.map(
         ({ element: row }) => find(childrenOf(find(contentOf(row).filter(isObject), "w:trPr")), "w:del") !== undefined,
@@ -2906,6 +2967,65 @@ const readColumns = (element: unknown, width: number): readonly number[] => {
 /** The document's settings that change where its pages' text is: the gutter at the top, and margins mirrored */
 type PageSettings = { readonly gutterAtTop: boolean; readonly mirrorMargins: boolean };
 
+// `w:charSpace` is in 4096ths of a point
+const CHARACTER_SPACE_UNITS = 4096;
+
+/** How wide a section's pages are, and their margins and gutter across them, in points */
+const pageAcross = (
+    properties: readonly XmlObject[],
+): { readonly pageWidth: number; readonly left: number; readonly right: number; readonly gutter: number } => {
+    const margins = attributesOf(find(properties, "w:pgMar"));
+    return {
+        pageWidth: twips(attributesOf(find(properties, "w:pgSz"))["w:w"]) ?? DEFAULT_SECTION.pageWidth,
+        left: twips(margins["w:left"] ?? margins["w:start"]) ?? DEFAULT_SECTION.marginLeft,
+        right: twips(margins["w:right"] ?? margins["w:end"]) ?? DEFAULT_SECTION.marginRight,
+        gutter: twips(margins["w:gutter"]) ?? DEFAULT_SECTION.gutter,
+    };
+};
+
+/** How wide a section's text is: its page's, less its margins and a gutter beside it */
+const textWidthOf = (properties: readonly XmlObject[], gutterAtTop: boolean): number => {
+    const { pageWidth, left, right, gutter } = pageAcross(properties);
+    return pageWidth - left - right - (gutterAtTop ? 0 : gutter);
+};
+
+/**
+ * Reads a section's document grid (`w:docGrid`), or why it isn't followed yet. A grid of lines (`lines`) puts the lines
+ * of its paragraphs on lines of its pitch (`w:linePitch`), whatever its `w:charSpace`, and one without a pitch does nothing
+ * (scripts/layout-probes/word-grid.ts G13, word-grid3.ts H1). A grid of lines and characters (`linesAndChars`) adds
+ * `w:charSpace` after each character too, and one that snaps to characters (`snapToChars`) puts them in cells: as many
+ * as fit across a column at the size of the Normal style's text and `w:charSpace` more, spread evenly across it. On 9026
+ * twips at 10.5 points and a point more, 39 cells of 231.44 twips, at 12 points (the Normal style's, over the document's
+ * default of 10.5) 37 of 243.95, and in columns of 4153 at 10.5, 19 of 218.58 (CC1, CD1, `word-grid2.docx` E1, H7b). The
+ * document's grid of no type (`default`) is no grid, whatever its pitch.
+ */
+const readGrid = (element: unknown, normalSize: number, { gutterAtTop }: PageSettings): TextGrid | string | undefined => {
+    const properties = childrenOf(element);
+    const attributes = attributesOf(find(properties, "w:docGrid"));
+    const type = attributes["w:type"];
+    if (type !== "lines" && type !== "linesAndChars" && type !== "snapToChars") {
+        return undefined;
+    }
+    const pitch = twips(attributes["w:linePitch"]);
+    const linePitch = pitch !== undefined && pitch > 0 ? pitch : undefined;
+    if (type === "lines") {
+        return linePitch === undefined ? undefined : { linePitch };
+    }
+    if (linePitch === undefined) {
+        return "a document grid of characters without the pitch of its lines";
+    }
+    const space = (numberOf(attributes["w:charSpace"]) ?? 0) / CHARACTER_SPACE_UNITS;
+    if (type === "linesAndChars") {
+        return { linePitch, ...(space === 0 ? {} : { characterSpace: space }) };
+    }
+    const columns = readColumns(find(properties, "w:cols"), textWidthOf(properties, gutterAtTop));
+    if (columns.some((width) => width !== columns[0])) {
+        return "a document grid that snaps to characters in columns of different widths";
+    }
+    const cells = normalSize + space > 0 ? Math.floor(columns[0] / (normalSize + space)) : 0;
+    return cells < 1 ? "a document grid of characters with no room for one" : { linePitch, characterPitch: columns[0] / cells };
+};
+
 /**
  * Reads a section's properties (`w:sectPr`): its pages, how it starts, and its headers and footers. A section that
  * doesn't give a header or footer for a kind of page has the one of the section before. Its gutter is beside the text,
@@ -2917,30 +3037,28 @@ const readSection = (
     readPart: (id: string) => readonly Block[] | undefined,
     previous: Section | undefined,
     { gutterAtTop, mirrorMargins }: PageSettings,
+    grid: TextGrid | string | undefined,
 ): Section => {
     const properties = childrenOf(element);
     const size = attributesOf(find(properties, "w:pgSz"));
     const margins = attributesOf(find(properties, "w:pgMar"));
     const numbering = attributesOf(find(properties, "w:pgNumType"));
-    const grid = attributesOf(find(properties, "w:docGrid"))["w:type"];
     const start = valueOf(properties, "w:type");
     const format = stringOf(numbering["w:fmt"]) ?? "decimal";
     const firstNumber = numberOf(numbering["w:start"]);
     const chapterLevel = numberOf(numbering["w:chapStyle"]);
-    const pageWidth = twips(size["w:w"]) ?? DEFAULT_SECTION.pageWidth;
-    const marginLeft = twips(margins["w:left"] ?? margins["w:start"]) ?? DEFAULT_SECTION.marginLeft;
-    const marginRight = twips(margins["w:right"] ?? margins["w:end"]) ?? DEFAULT_SECTION.marginRight;
-    const gutter = twips(margins["w:gutter"]) ?? DEFAULT_SECTION.gutter;
+    const { pageWidth, left: marginLeft, right: marginRight, gutter } = pageAcross(properties);
     const marginTop = twips(margins["w:top"]) ?? DEFAULT_SECTION.marginTop;
-    const columns = readColumns(find(properties, "w:cols"), pageWidth - marginLeft - marginRight - (gutterAtTop ? 0 : gutter));
+    const columns = readColumns(find(properties, "w:cols"), textWidthOf(properties, gutterAtTop));
     // Where Word puts a gutter at the top with mirrored margins, which put it on the inside of each page, or below a
     // negative top margin, which the header doesn't push the text below, isn't known
+    const direction = valueOf(properties, "w:textDirection");
     const unsupported =
-        grid === "lines" || grid === "linesAndChars" || grid === "snapToChars"
-            ? "a document grid"
+        typeof grid === "string"
+            ? grid
             : formatPageNumber(1, format) === undefined
               ? "page numbers in a format not yet written"
-              : find(properties, "w:textDirection") !== undefined
+              : direction !== undefined && !HORIZONTAL_PAGES.has(direction)
                 ? "text that runs down the page"
                 : find(properties, "w15:footnoteColumns") !== undefined
                   ? "footnotes in columns of their own"
@@ -3517,11 +3635,38 @@ export const readContent = (body: XmlObject, parts: DocumentParts, { guess = fal
         );
     };
     const notesByKind = { footnote: noteElements("footnote"), endnote: noteElements("endnote") };
+    // The size of the Normal style's text, which a grid that snaps to characters measures its cells by
+    const normalSize =
+        fontOf(combine([styles.run, ...styleChain(styles, styles.defaultParagraphStyle, "paragraph").map(({ run }) => run)])).size ??
+        DEFAULT_FONT_SIZE;
+    const pageSettings: PageSettings = {
+        gutterAtTop: onOff(settings, "w:gutterAtTop") === true,
+        mirrorMargins: onOff(settings, "w:mirrorMargins") === true,
+    };
+    const grids = new Map<number, TextGrid | undefined>();
+    const sameGrid = (one: TextGrid | undefined, other: TextGrid | undefined): boolean => JSON.stringify(one) === JSON.stringify(other);
+    /** The document grid of a section, by its index, when it has one that is followed */
+    const gridOf = (section: number): TextGrid | undefined => {
+        if (!grids.has(section)) {
+            const grid = readGrid(sectionElements[section], normalSize, pageSettings);
+            // eslint-disable-next-line functional/immutable-data
+            grids.set(section, typeof grid === "object" ? grid : undefined);
+        }
+        return grids.get(section);
+    };
     const readNoteContent = (kind: NoteKind, id: string, label?: string): readonly Block[] => {
         const note = notesByKind[kind].get(id);
+        // A note's lines are on the grid of the section of its reference, which is being read, but not its separators
+        // (word-grid.ts G9, word-grid3.ts H2, H3)
+        const grid = label === undefined ? undefined : gridOf(sections.length);
         return note === undefined
             ? []
-            : readBlocks(contentOf(note), { ...readerOf(false), inNote: true, ...(label === undefined ? {} : { noteNumber: label }) });
+            : readBlocks(contentOf(note), {
+                  ...readerOf(false),
+                  inNote: true,
+                  ...(label === undefined ? {} : { noteNumber: label }),
+                  ...(grid === undefined ? {} : { grid }),
+              });
     };
     /**
      * A separator above the endnotes as Word lays it out: a line of its paragraph style's text, at single spacing and with
@@ -3551,6 +3696,9 @@ export const readContent = (body: XmlObject, parts: DocumentParts, { guess = fal
     const footnoteNumbers = new Map<string, string>();
     // eslint-disable-next-line functional/prefer-readonly-type
     const endnotes: Block[] = [];
+    // The section of each endnote's reference
+    // eslint-disable-next-line functional/prefer-readonly-type
+    const endnoteSections: number[] = [];
     const endnoteNumbers = new Map<Block, string>();
     // Each section's properties, which come after its paragraphs, so its notes are numbered as it says as they are read
     const sectionElements = elements.flatMap((element) => {
@@ -3605,6 +3753,8 @@ export const readContent = (body: XmlObject, parts: DocumentParts, { guess = fal
         const marker = `${kind} ${noteCounts[kind]}`;
         if (kind === "endnote") {
             // eslint-disable-next-line functional/immutable-data
+            endnoteSections.push(sections.length);
+            // eslint-disable-next-line functional/immutable-data
             endnotes.push(...content);
             for (const block of content) {
                 // eslint-disable-next-line functional/immutable-data
@@ -3640,12 +3790,10 @@ export const readContent = (body: XmlObject, parts: DocumentParts, { guess = fal
     let bookmarks: string[] = [];
     // The paragraphs left out since the last block, which take no room
     let hidden: readonly ParagraphBlock[] = [];
-    const pageSettings: PageSettings = {
-        gutterAtTop: onOff(settings, "w:gutterAtTop") === true,
-        mirrorMargins: onOff(settings, "w:mirrorMargins") === true,
-    };
     const addSection = (element: unknown): void => {
-        sections.push(readSection(element, readPart, sections[sections.length - 1], pageSettings));
+        sections.push(
+            readSection(element, readPart, sections[sections.length - 1], pageSettings, readGrid(element, normalSize, pageSettings)),
+        );
     };
     // The body is written with its section's properties at its end, if nothing else
     for (const element of elements) {
@@ -3657,7 +3805,8 @@ export const readContent = (body: XmlObject, parts: DocumentParts, { guess = fal
             const bookmark = bookmarkOf(element);
             bookmarks = bookmark === undefined ? bookmarks : [...bookmarks, bookmark];
         } else {
-            const block = readBlock(element, reader);
+            const grid = gridOf(sections.length);
+            const block = readBlock(element, grid === undefined ? reader : { ...reader, grid });
             const sectionProperties = sectionPropertiesOf(element);
             if (block?.type === "paragraph" && block.hidden) {
                 bookmarks = [...bookmarks, ...markersIn([block])];
@@ -3738,6 +3887,11 @@ export const readContent = (body: XmlObject, parts: DocumentParts, { guess = fal
                 inNumbering ??
                 (footnotes.size > 0 ? notesUnsupported("footnote") : undefined) ??
                 (endnotes.length > 0 ? notesUnsupported("endnote") : undefined) ??
+                // Endnotes follow the last section's text, on its grid, and on the grid of another section in a way Word hasn't
+                // shown
+                (endnoteSections.some((section) => !sameGrid(gridOf(section), gridOf(sections.length - 1)))
+                    ? "endnotes from a section on another document grid than the last"
+                    : undefined) ??
                 (unwrittenNumber ? "notes numbered in a format not yet written" : undefined),
         }),
     };

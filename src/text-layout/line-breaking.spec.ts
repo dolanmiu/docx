@@ -1404,6 +1404,310 @@ describe("layoutLines with run formatting, as Word lays it out", () => {
     });
 });
 
+describe("layoutLines on a document grid, as Word lays it out (scripts/layout-probes/word-grid.ts)", () => {
+    // A4 with inch margins: 9026 twips across
+    const WIDTH = 451.3;
+    const IDEOGRAPH = "永";
+    const run = (value: string, font: string, size = 10.5, more: TextFont = {}): InlineItem => ({
+        type: "text",
+        text: value,
+        font: { font, size, ...more },
+    });
+    const mincho = (value: string, size = 10.5, more: TextFont = {}): InlineItem => run(value, "MS Mincho", size, more);
+    const linesOf = (items: readonly InlineItem[], options: Partial<LineLayoutOptions> = {}): readonly LaidOutLine[] =>
+        layoutLines(items, { width: WIDTH, ...options });
+    /** How many characters each line has, leaving out spaces */
+    const countsOf = (items: readonly InlineItem[], options: Partial<LineLayoutOptions> = {}): readonly number[] =>
+        linesOf(items, options).map((line) => [...line.text.replace(/ /g, "")].length);
+    const unsupportedOf = (items: readonly InlineItem[], options: Partial<LineLayoutOptions> = {}): string | undefined =>
+        linesOf(items, options).find((line) => line.unsupported !== undefined)?.unsupported;
+
+    describe("a grid of lines", () => {
+        const LINES = { grid: { linePitch: 18 } };
+        /** How many of a grid's lines of 360 twips a line of a font at a size takes */
+        const takes = (font: string, value: string, size: number): number => {
+            const [line] = linesOf([run(value, font, size)], { ...LINES, markFont: { font, size } });
+            return Math.round((line.height / 18) * 1000) / 1000;
+        };
+
+        it("should give each line as many of the grid's lines as its own height needs, from the sizes Word gives it one more (G1)", () => {
+            const sizes: readonly (readonly [string, string, readonly (readonly [number, number])[]])[] = [
+                [
+                    "Times New Roman",
+                    "Hxg",
+                    [
+                        [15.5, 1],
+                        [16, 2],
+                        [31, 2],
+                        [31.5, 3],
+                    ],
+                ],
+                [
+                    "Calibri",
+                    "Hxg",
+                    [
+                        [14.5, 1],
+                        [15, 2],
+                        [29, 2],
+                        [29.5, 3],
+                    ],
+                ],
+                [
+                    "MS Mincho",
+                    IDEOGRAPH,
+                    [
+                        [13.5, 1],
+                        [14, 2],
+                        [27.5, 2],
+                        [28.5, 3],
+                    ],
+                ],
+                [
+                    "Yu Mincho",
+                    IDEOGRAPH,
+                    [
+                        [12.5, 1],
+                        [13, 2],
+                        [25, 2],
+                        [25.5, 3],
+                        [37.5, 3],
+                        [38, 4],
+                    ],
+                ],
+                [
+                    "SimSun",
+                    IDEOGRAPH,
+                    [
+                        [13.5, 1],
+                        [14, 2],
+                        [27.5, 2],
+                        [28.5, 3],
+                    ],
+                ],
+                [
+                    "Microsoft YaHei",
+                    IDEOGRAPH,
+                    [
+                        [10, 1],
+                        [10.5, 2],
+                        [20.5, 2],
+                        [21, 3],
+                        [31, 3],
+                        [31.5, 4],
+                    ],
+                ],
+                [
+                    "Malgun Gothic",
+                    "가나다",
+                    [
+                        [10, 1],
+                        [10.5, 2],
+                        [20.5, 2],
+                        [21, 3],
+                        [31, 3],
+                        [31.5, 4],
+                    ],
+                ],
+            ];
+            for (const [font, value, expected] of sizes) {
+                expect(expected.map(([size]) => [size, takes(font, value, size)])).to.deep.equal(expected);
+            }
+        });
+
+        it("should give a line with multiple spacing the grid's lines times the spacing, unless its own height needs more (G3)", () => {
+            const heightOf = (font: string, size: number, multiple: number): number =>
+                linesOf([run("Hxg", font, size)], { ...LINES, format: { lineSpacing: { rule: "multiple", multiple } } })[0].height;
+            const rounded = (multiple: number): number => Math.round(heightOf("Times New Roman", 12, multiple) * 1000) / 1000;
+            expect([0.5, 0.8, 1, 1.08, 1.15, 1.5, 2, 2.5, 3].map(rounded)).to.deep.equal([18, 18, 18, 19.44, 20.7, 27, 36, 45, 54]);
+            expect(heightOf("Times New Roman", 20, 1.5)).to.equal(36);
+            expect(heightOf("Times New Roman", 20, 0.8)).to.equal(36);
+            expect(heightOf("Calibri", 11, 1.08)).to.be.closeTo(19.44, 1e-9);
+            expect(
+                linesOf([mincho(IDEOGRAPH)], { ...LINES, format: { lineSpacing: { rule: "multiple", multiple: 2 } } })[0].height,
+            ).to.equal(36);
+        });
+
+        it("should give a line exactly its height, and at least a height at least its grid's lines (G4)", () => {
+            const heightOf = (rule: "exact" | "atLeast", height: number, size = 12): number =>
+                linesOf([run("Hxg", "Times New Roman", size)], { ...LINES, format: { lineSpacing: { rule, height } } })[0].height;
+            expect([10, 12, 20, 30].map((height) => heightOf("exact", height))).to.deep.equal([10, 12, 20, 30]);
+            expect([10, 12, 20, 30, 40].map((height) => heightOf("atLeast", height))).to.deep.equal([18, 18, 20, 30, 40]);
+            expect(heightOf("atLeast", 20, 20)).to.equal(36);
+        });
+
+        it("should leave the room below a line's text, in the middle of its room, to go below the bottom of the page (G1, G14)", () => {
+            const [single] = linesOf([run("Hxg", "Times New Roman", 12)], LINES);
+            const natural = measureLineHeight({ font: "Times New Roman", size: 12 });
+            expect(single.spacingBelow).to.be.closeTo((18 - natural) / 2, 1e-9);
+            const [spaced] = linesOf([run("Hxg", "Times New Roman", 12)], {
+                ...LINES,
+                format: { lineSpacing: { rule: "multiple", multiple: 1.5 } },
+            });
+            expect(spaced.spacingBelow).to.be.closeTo((27 - natural) / 2, 1e-9);
+            // At least a height has its text in the middle of the grid's lines it takes, below the rest of the room
+            const [atLeast] = linesOf([run("Hxg", "Times New Roman", 12)], {
+                ...LINES,
+                format: { lineSpacing: { rule: "atLeast", height: 30 } },
+            });
+            expect(atLeast.spacingBelow).to.be.closeTo((18 - natural) / 2, 1e-9);
+            const [exact] = linesOf([run("Hxg", "Times New Roman", 12)], {
+                ...LINES,
+                format: { lineSpacing: { rule: "exact", height: 30 } },
+            });
+            expect(exact).to.not.have.property("spacingBelow");
+            // A line as tall as the grid's lines has none
+            const [full] = linesOf([run("Hxg", "Times New Roman", 12)], { grid: { linePitch: natural } });
+            expect(full).to.not.have.property("spacingBelow");
+        });
+
+        it("should put emphasis marks' room in a line before it is put on the grid, and stop at them with line spacing (G11d)", () => {
+            const marked = [mincho("ab"), mincho(IDEOGRAPH.repeat(4), 10.5, { emphasis: "above" })];
+            expect(linesOf(marked, LINES)[0].height).to.equal(18);
+            expect(linesOf(marked, { ...LINES, format: { lineSpacing: { rule: "multiple", multiple: 1 } } })[0].height).to.equal(18);
+            expect(unsupportedOf(marked, { ...LINES, format: { lineSpacing: { rule: "multiple", multiple: 1.5 } } })).to.equal(
+                "emphasis marks on a line with line spacing on a document grid",
+            );
+        });
+    });
+
+    describe("a grid of lines and characters", () => {
+        const spaced = (characterSpace: number): Partial<LineLayoutOptions> => ({ grid: { linePitch: 18, characterSpace } });
+        const ONE = spaced(1);
+        const MIXED = Array.from({ length: 10 }, () => `${IDEOGRAPH.repeat(5)}abc de`).join("");
+
+        it("should add the grid's space after each character, Chinese, Japanese, Korean, Latin or half-width (CA1 to CA3, CA9, CB1, CB3)", () => {
+            expect(countsOf([mincho(IDEOGRAPH.repeat(100))], ONE)).to.deep.equal([39, 39, 22]);
+            expect(countsOf([mincho(IDEOGRAPH.repeat(100), 12)], ONE)).to.deep.equal([34, 34, 32]);
+            const latin = Array.from({ length: 24 }, (_, index) => (index % 2 === 0 ? "iiiiiiiiii" : "mmmmmmmmmm")).join(" ");
+            expect(countsOf([run(latin, "Times New Roman")], ONE)).to.deep.equal([60, 60, 60, 60]);
+            expect(countsOf([mincho("ｱｲｳｴｵｶｷｸｹｺｻｼｽｾｿﾀﾁﾂﾃﾄ".repeat(8))], ONE)).to.deep.equal([72, 72, 16]);
+            expect(countsOf([mincho(IDEOGRAPH.repeat(100))], spaced(-1365 / 4096))).to.deep.equal([44, 44, 12]);
+            expect(countsOf([run(latin, "Times New Roman")], spaced(-1365 / 4096))).to.deep.equal([80, 80, 80]);
+        });
+
+        it("should leave a run that doesn't snap to the grid as it is (CA5)", () => {
+            expect(countsOf([mincho(IDEOGRAPH.repeat(100), 10.5, { snapToGrid: false })], ONE)).to.deep.equal([42, 42, 16]);
+        });
+
+        it("should space text of Word's default size, 10 points, as text of that size", () => {
+            const plain: InlineItem = { type: "text", text: `${IDEOGRAPH.repeat(99)}a`, font: { font: "MS Mincho" } };
+            expect(countsOf([plain], ONE)).to.deep.equal([41, 41, 18]);
+        });
+
+        it("should add a quarter of a character between Chinese, Japanese or Korean characters and Latin letters (CA4, CA7, CB4, CB7)", () => {
+            expect(countsOf([mincho(MIXED)], ONE)).to.deep.equal([44, 44, 12]);
+            expect(countsOf([mincho(MIXED)], { ...ONE, format: { alignment: "justified" } })).to.deep.equal([44, 46, 10]);
+            expect(countsOf([mincho(MIXED)], spaced(-1365 / 4096))).to.deep.equal([52, 48]);
+            expect(countsOf([mincho(MIXED)], { ...spaced(-1365 / 4096), format: { alignment: "justified" } })).to.deep.equal([52, 48]);
+            // Across runs, and a bookmark between them
+            const runs: readonly InlineItem[] = MIXED.split(/(?<=c)/).flatMap((part): readonly InlineItem[] => [
+                mincho(part),
+                { type: "marker", name: "between" },
+            ]);
+            expect(countsOf(runs, ONE)).to.deep.equal([44, 44, 12]);
+        });
+
+        it("should stop at numbers, punctuation and text of another size next to East Asian characters, but not spaces", () => {
+            const UNKNOWN = "a number, punctuation or text of another size next to an East Asian character on a grid of characters";
+            for (const value of [`${IDEOGRAPH}1`, `1${IDEOGRAPH}`, `${IDEOGRAPH}.`]) {
+                expect(unsupportedOf([mincho(value)], ONE)).to.equal(UNKNOWN);
+            }
+            // A space after a Latin word and before an ideograph takes no more room, as after "H4 body" (word-grid3.ts H4)
+            expect(unsupportedOf([mincho(`ab ${IDEOGRAPH} a`)], ONE)).to.equal(undefined);
+            // "ab " in half-width letters of 5.25 points and the ideograph of 10.5, each a point wider, and no more
+            expect(linesOf([mincho(`ab ${IDEOGRAPH}`)], ONE)[0].textWidth).to.be.closeTo(3 * 6.25 + 11.5, 1e-9);
+            expect(unsupportedOf([mincho(IDEOGRAPH), mincho("a", 12)], ONE)).to.equal(UNKNOWN);
+            // But for marks, which go on the character before them, and text off the grid between them
+            expect(unsupportedOf([mincho(`${IDEOGRAPH}\u0301a`)], ONE)).to.equal(undefined);
+            expect(unsupportedOf([mincho(IDEOGRAPH), mincho("1", 10.5, { snapToGrid: false }), mincho(IDEOGRAPH)], ONE)).to.equal(
+                undefined,
+            );
+            expect(unsupportedOf([mincho(IDEOGRAPH), { type: "tab", font: {} }, mincho("1")], ONE)).to.equal(undefined);
+        });
+    });
+
+    describe("a grid that snaps to characters", () => {
+        const snapping = (cells: number): Partial<LineLayoutOptions> => ({ grid: { linePitch: 18, characterPitch: WIDTH / cells } });
+        const CC = snapping(39);
+        const CD = snapping(42);
+
+        it("should put each Chinese, Japanese or Korean character in as many of the grid's cells as it needs (CC1, CC2, CC8, CC9, CD1, CD2)", () => {
+            expect(countsOf([mincho(IDEOGRAPH.repeat(100))], CC)).to.deep.equal([39, 39, 22]);
+            expect(countsOf([mincho(IDEOGRAPH.repeat(100), 12)], CC)).to.deep.equal([19, 19, 19, 19, 19, 5]);
+            expect(countsOf([run("あいうえおかきくけこさしすせそたちつてと".repeat(5), "MS PMincho")], CC)).to.deep.equal([39, 39, 22]);
+            expect(countsOf([mincho("ｱｲｳｴｵｶｷｸｹｺｻｼｽｾｿﾀﾁﾂﾃﾄ".repeat(8))], CC)).to.deep.equal([39, 39, 39, 39, 4]);
+            expect(countsOf([mincho(IDEOGRAPH.repeat(100))], CD)).to.deep.equal([42, 42, 16]);
+            expect(countsOf([mincho(IDEOGRAPH.repeat(100), 12)], CD)).to.deep.equal([21, 21, 21, 21, 16]);
+        });
+
+        it("should put the other text between them on a line in as many cells as it needs together (CC3, CC4, CC7, CD3, CD4)", () => {
+            const latin = Array.from({ length: 24 }, (_, index) => (index % 2 === 0 ? "iiiiiiiiii" : "mmmmmmmmmm")).join(" ");
+            expect(countsOf([run(latin, "Times New Roman")], CC)).to.deep.equal([70, 70, 70, 30]);
+            expect(countsOf([run(latin, "Times New Roman")], CD)).to.deep.equal([70, 70, 70, 30]);
+            const mixed = Array.from({ length: 10 }, () => `${IDEOGRAPH.repeat(5)}abc de`).join("");
+            expect(countsOf([mincho(mixed)], CC)).to.deep.equal([48, 47, 5]);
+            expect(countsOf([mincho(mixed)], { ...CC, format: { alignment: "justified" } })).to.deep.equal([48, 47, 5]);
+            expect(countsOf([mincho(mixed)], CD)).to.deep.equal([52, 48]);
+        });
+
+        it("should put marks on the character before them, in its cells", () => {
+            const lines = linesOf([mincho(`${IDEOGRAPH}\u0301`.repeat(50))], CC);
+            expect(lines.map((line) => [...line.text].filter((character) => character === IDEOGRAPH).length)).to.deep.equal([39, 11]);
+        });
+
+        it("should leave a run that doesn't snap to the grid as it is (CC5)", () => {
+            expect(countsOf([mincho(IDEOGRAPH.repeat(100), 10.5, { snapToGrid: false })], CC)).to.deep.equal([42, 42, 16]);
+            // And the text after it in cells from where it ends: 38 of them after it
+            expect(countsOf([mincho("a", 10.5, { snapToGrid: false }), mincho(IDEOGRAPH.repeat(39))], CC)).to.deep.equal([39, 1]);
+        });
+
+        it("should start each line on the grid's cells, indented a whole number of them (CC6, CD6)", () => {
+            const cell = WIDTH / 39;
+            expect(
+                countsOf([mincho(IDEOGRAPH.repeat(100))], { ...CC, format: { indentLeft: 2 * cell, firstLineIndent: 2 * cell } }),
+            ).to.deep.equal([35, 37, 28]);
+            expect(unsupportedOf([mincho(IDEOGRAPH)], { ...CC, format: { indentLeft: 36 } })).to.equal(
+                "an indent of part of a character on a grid that snaps to characters",
+            );
+            expect(unsupportedOf([mincho(IDEOGRAPH)], { ...CC, format: { firstLineIndent: 21 } })).to.equal(
+                "an indent of part of a character on a grid that snaps to characters",
+            );
+        });
+
+        it("should stop at tabs, pictures, words longer than their line and lines that only fit squeezed", () => {
+            expect(unsupportedOf([mincho(IDEOGRAPH), { type: "tab", font: {} }, mincho(IDEOGRAPH)], CC)).to.equal(
+                "a tab or picture on a grid that snaps to characters",
+            );
+            expect(unsupportedOf([mincho(IDEOGRAPH), { type: "box", width: 20, height: 10 }], CC)).to.equal(
+                "a tab or picture on a grid that snaps to characters",
+            );
+            expect(unsupportedOf([run("a".repeat(200), "Times New Roman")], CC)).to.equal(
+                "a word longer than its line on a grid that snaps to characters",
+            );
+            const softened: readonly InlineItem[] = [
+                run("ab", "Times New Roman"),
+                { type: "softHyphen", font: {} },
+                run("cd", "Times New Roman"),
+            ];
+            expect(unsupportedOf(softened, CC)).to.equal("a soft hyphen, or a line beside a drawing, on a grid that snaps to characters");
+            // After another reason, which it is the first of
+            expect(unsupportedOf(softened, { ...CC, format: { indentLeft: 1 } })).to.equal(
+                "an indent of part of a character on a grid that snaps to characters",
+            );
+            // 21 words of 3 letters, which end a cell short of the line: a word of one more, with its space, fits only
+            // squeezed
+            const squeezed = `${Array.from({ length: 33 }, () => "abc").join(" ")} abcd`;
+            expect(
+                unsupportedOf([run(squeezed, "Times New Roman", 10)], {
+                    grid: { characterPitch: 10 },
+                    width: 167,
+                    format: { alignment: "justified" },
+                }),
+            ).to.equal("a justified line on a grid that snaps to characters that only fits squeezed");
+        });
+    });
+});
+
 describe("measureContentWidths", () => {
     const widthsOf = (items: readonly InlineItem[], options = {}): { readonly min: number; readonly max: number } =>
         measureContentWidths(items, { measurer: MEASURER, ...options });

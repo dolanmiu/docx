@@ -749,7 +749,7 @@ describe("paginate", () => {
             const borders = { top: 0, bottom: 3, between: 0, betweenSpace: 0, box: "box", outline: "box" };
             const bordered = document([paragraph("a", 3), ...lines("b"), paragraph("c", 1), { ...paragraph("e", 1, spaced), borders }]);
             expect(paginate(bordered, { measurer: MEASURER }).stoppedAt).to.equal(
-                "a line whose multiple spacing goes below the page, above its paragraph's border",
+                "a line whose room below its text goes below the page, above its paragraph's border",
             );
         });
 
@@ -2373,7 +2373,7 @@ describe("paginate", () => {
                     format: { lineSpacing: { rule: "multiple" as const, multiple: 1.5 } },
                 }));
                 expect(paginate(balanced(spaced), { measurer: MEASURER }).stoppedAt).to.equal(
-                    "columns evened out above a line whose multiple spacing goes below them",
+                    "columns evened out above a line whose room below its text goes below them",
                 );
             });
 
@@ -3288,7 +3288,7 @@ describe("paginate", () => {
                 "footnote 1": [paragraph("note", 1)],
             });
             expect(paginate(content, { measurer: MEASURER }).stoppedAt).to.equal(
-                "a line whose multiple spacing goes below it into the footnotes",
+                "a line whose room below its text goes below it into the footnotes",
             );
             // So does what is kept with the next: c and d end at 55
             const kept = withNotes(
@@ -3301,7 +3301,7 @@ describe("paginate", () => {
                 { "footnote 1": [paragraph("note", 1)] },
             );
             expect(paginate(kept, { measurer: MEASURER }).stoppedAt).to.equal(
-                "a line whose multiple spacing goes below it into the footnotes",
+                "a line whose room below its text goes below it into the footnotes",
             );
         });
 

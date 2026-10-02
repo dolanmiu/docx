@@ -5,15 +5,19 @@ import {
     AlignmentType,
     BorderStyle,
     Document,
+    DocumentGridType,
     EndnoteReferenceRun,
+    Footer,
     FootnoteReferenceRun,
     FrameAnchorType,
     Header,
     HeadingLevel,
     type IContext,
     type IPropertiesOptions,
+    type ISectionOptions,
     LevelFormat,
     LevelSuffix,
+    LineRuleType,
     Paragraph,
     Table,
     TableBorders,
@@ -503,6 +507,204 @@ describe("layoutDocument", () => {
             // Word's is 443.6, to its PDF's 4.8 twips: Calibri 20's ascent and Calibri 11's descent
             expect(numbered.height * TWIPS).to.be.closeTo(439.94, 0.01);
             expect(next.y - numbered.y).to.be.closeTo(numbered.height, 1e-9);
+        });
+    });
+
+    describe("a document grid, as Word lays it out (scripts/layout-probes/word-grid.ts)", () => {
+        const TWIPS = 15;
+        const MARGIN = 1440;
+        // The document's Normal is MS Mincho 10.5 for East Asian text and Times New Roman 10.5 for Latin, as Japanese
+        // documents have it, single spaced with no space before or after
+        const styles: IPropertiesOptions["styles"] = {
+            default: {
+                document: {
+                    run: { font: { ascii: "Times New Roman", hAnsi: "Times New Roman", eastAsia: "MS Mincho" }, size: 21 },
+                    paragraph: { spacing: { before: 0, after: 0, line: 240 } },
+                },
+            },
+        };
+        const LINES = { type: DocumentGridType.LINES, linePitch: 360 };
+        const inFont = (text: string, font: string, points: number): TextRun =>
+            new TextRun({ text, font: { ascii: font, hAnsi: font, eastAsia: font, cs: font }, size: points * 2 });
+        const tnr = (text: string, points = 12): TextRun => inFont(text, "Times New Roman", points);
+        const IDEOGRAPHS = "永".repeat(100);
+        /** A paragraph of lines of Times New Roman broken by line breaks */
+        const broken = (
+            name: string,
+            count: number,
+            points = 12,
+            options: Partial<ConstructorParameters<typeof Paragraph>[0] & object> = {},
+        ): Paragraph =>
+            new Paragraph({
+                ...options,
+                children: Array.from({ length: count }, (_, i) => [
+                    ...(i > 0 ? [new TextRun({ break: 1 })] : []),
+                    tnr(`${name} ${i + 1}`, points),
+                ]).flat(),
+            });
+        const laidOut = (sections: readonly ISectionOptions[], more: Partial<IPropertiesOptions> = {}) =>
+            layoutDocument(new Document({ styles, ...more, sections: [...sections] }));
+        /** The tops of the lines of a page's text, in twips from the top margin */
+        const topsOf = (body: readonly BlockLayout[]): readonly number[] => linesOf(body).map(({ y }) => y * TWIPS - MARGIN);
+        /** How many characters each line of a page's text has, leaving out spaces */
+        const countsOf = (body: readonly BlockLayout[]): readonly number[] =>
+            linesOf(body).map(({ text }) => [...text.replace(/ /g, "")].length);
+
+        it("should put lines on the grid's lines, with the space before and after between them where it falls (G5)", () => {
+            const { pages, stoppedAt } = laidOut([
+                {
+                    properties: { grid: LINES },
+                    children: [
+                        broken("a", 3),
+                        broken("b", 3, 12, { spacing: { before: 120 } }),
+                        broken("c", 3, 12, { spacing: { after: 180 } }),
+                        broken("d", 3, 12, { spacing: { before: 260 } }),
+                        broken("e", 3, 12, { spacing: { before: 360 } }),
+                        broken("f", 3, 12, { spacing: { after: 120 } }),
+                        broken("g", 3, 12, { spacing: { before: 540 } }),
+                    ],
+                },
+            ]);
+            expect(stoppedAt).to.equal(undefined);
+            // The tops of Word's lines' text, 55 twips below the tops of their lines
+            const word = [
+                55, 415, 775, 1255, 1615, 1975, 2335, 2695, 3055, 3674, 4034, 4394, 5114, 5474, 5834, 6194, 6554, 6914, 7812, 8177, 8537,
+            ];
+            topsOf(pages[0].body).forEach((top, index) => expect(top + 55).to.be.closeTo(word[index], 5));
+        });
+
+        it("should fill a page with as many lines as fit, with the room below the last one's text below the page (G1, G14)", () => {
+            const firstPage = (...paragraphs: readonly Paragraph[]): number =>
+                linesOf(laidOut([{ properties: { grid: LINES }, children: [...paragraphs] }]).pages[0].body).length;
+            // 38 lines of Times New Roman 12, of 360 twips, on a page of 13958, and 26 of 540 at 1.5 lines, the last 82
+            // below it. 39 paragraphs of Times New Roman 8, whose text ends 6 above it
+            expect(firstPage(broken("G14a", 45))).to.equal(38);
+            expect(firstPage(broken("G14b", 30, 12, { spacing: { line: 360, lineRule: LineRuleType.AUTO } }))).to.equal(26);
+            expect(firstPage(...Array.from({ length: 45 }, (_, i) => new Paragraph({ children: [tnr(`r${i + 1}`, 8)] })))).to.equal(39);
+        });
+
+        it("should lay out table cells and headers off the grid, and footnotes on it, below a separator off it (G8, G9)", () => {
+            const { pages, stoppedAt } = laidOut(
+                [
+                    {
+                        properties: { grid: LINES, page: { margin: { top: 1440, header: 720, footer: 720 } } },
+                        headers: { default: new Header({ children: [broken("G9 head", 3, 10)] }) },
+                        footers: { default: new Footer({ children: [broken("G9 foot", 2, 10)] }) },
+                        children: [
+                            new Paragraph({ children: [tnr("G9 body 1"), new FootnoteReferenceRun(1)] }),
+                            new Table({
+                                columnWidths: [4000],
+                                rows: [
+                                    new TableRow({
+                                        children: [
+                                            new TableCell({
+                                                width: { size: 4000, type: WidthType.DXA },
+                                                children: [new Paragraph({ children: [tnr("G8 row")] })],
+                                            }),
+                                        ],
+                                    }),
+                                ],
+                            }),
+                            new Paragraph({ children: [tnr("G8 after")] }),
+                        ],
+                    },
+                ],
+                { footnotes: { 1: { children: [broken("G9 note", 4, 10)] } } },
+            );
+            expect(stoppedAt).to.equal(undefined);
+            const [body, after] = linesOf(pages[0].body);
+            // The header's 3 lines of 230 twips end above the margin, so the text starts there, on the grid
+            expect(body.y * TWIPS - MARGIN).to.be.closeTo(0, 0.01);
+            expect(body.height * TWIPS).to.be.closeTo(360, 0.01);
+            // A row of a line of Times New Roman 12 is its own 276 twips and its borders of 10 above and below, and the text
+            // after it goes on below it on the grid (G8)
+            const [table] = pages[0].body.filter((block) => block.type === "table");
+            const [row] = table.type === "table" ? table.rows : [];
+            expect(row.height * TWIPS).to.be.closeTo(296, 0.1);
+            expect(after.y).to.be.closeTo(row.y + row.height, 0.01);
+            expect(after.height * TWIPS).to.be.closeTo(360, 0.01);
+            // The footnote's lines are 360 apart, and the last ends at the bottom of the page: Word's text of them is 75 below
+            const notes = pages[0].footnotes.flatMap(({ content }) => linesOf(content));
+            expect(notes.map(({ y }) => Math.round(y * TWIPS - MARGIN))).to.deep.equal([12518, 12878, 13238, 13598]);
+        });
+
+        it("should space characters on a grid of lines and characters, and put them in cells on one that snaps to them (CA1, CA4, CC1, CC2)", () => {
+            const mixed = Array.from({ length: 10 }, () => `${"永".repeat(5)}abc de`).join("");
+            const counts = (type: (typeof DocumentGridType)[keyof typeof DocumentGridType], ...paragraphs: readonly string[]) => {
+                const { pages, stoppedAt } = laidOut([
+                    {
+                        properties: { grid: { type, linePitch: 360, charSpace: 4096 } },
+                        children: paragraphs.map(
+                            (text) => new Paragraph({ children: [inFont(text, "MS Mincho", text === `${IDEOGRAPHS} ` ? 12 : 10.5)] }),
+                        ),
+                    },
+                ]);
+                expect(stoppedAt).to.equal(undefined);
+                return countsOf(pages[0].body);
+            };
+            expect(counts(DocumentGridType.LINES_AND_CHARS, IDEOGRAPHS, mixed)).to.deep.equal([39, 39, 22, 44, 44, 12]);
+            expect(counts(DocumentGridType.SNAP_TO_CHARS, IDEOGRAPHS, mixed)).to.deep.equal([39, 39, 22, 48, 47, 5]);
+        });
+
+        it("should put characters in cells of the Normal style's size, over the document's default (word-grid2.docx E1)", () => {
+            const { pages } = laidOut(
+                [
+                    {
+                        properties: { grid: { type: DocumentGridType.SNAP_TO_CHARS, linePitch: 360 } },
+                        children: [new Paragraph({ children: [inFont(IDEOGRAPHS, "MS Mincho", 10.5)] })],
+                    },
+                ],
+                { styles: { ...styles, paragraphStyles: [{ id: "Normal", name: "Normal", run: { size: 24 } }] } },
+            );
+            expect(countsOf(pages[0].body)).to.deep.equal([37, 37, 26]);
+        });
+
+        it("should lay out headers and footers off a grid of characters, and its footnotes on it (word-grid3.ts H4, H5)", () => {
+            const { pages, stoppedAt } = laidOut(
+                [
+                    {
+                        properties: { grid: { type: DocumentGridType.LINES_AND_CHARS, linePitch: 360, charSpace: 4096 } },
+                        headers: {
+                            default: new Header({
+                                children: [new Paragraph({ children: [inFont(`H4 ${"永".repeat(40)}`, "MS Mincho", 10.5)] })],
+                            }),
+                        },
+                        children: [
+                            new Paragraph({
+                                children: [inFont(`H5 body ${"永".repeat(10)}`, "MS Mincho", 10.5), new FootnoteReferenceRun(1)],
+                            }),
+                        ],
+                    },
+                ],
+                { footnotes: { 1: { children: [new Paragraph({ children: [inFont(`H5 ${"永".repeat(38)}`, "MS Mincho", 10.5)] })] } } },
+            );
+            expect(stoppedAt).to.equal(undefined);
+            // The header's 40 ideographs are on one line, as they are without the grid, so it ends above the margin
+            expect(linesOf(pages[0].body)[0].y * TWIPS).to.be.closeTo(MARGIN, 0.01);
+            // The footnote's 38 aren't, with a point after each, and its lines are 360 apart
+            const notes = pages[0].footnotes.flatMap(({ content }) => linesOf(content));
+            expect(notes.map(({ text }) => [...text].filter((character) => character === "永").length)).to.deep.equal([37, 1]);
+            expect((notes[1].y - notes[0].y) * TWIPS).to.be.closeTo(360, 0.01);
+        });
+
+        it("should lay out a footnote on a grid that goes on to the next page below the continuation separator, off the grid (word-grid3.ts H2)", () => {
+            const { pages, stoppedAt } = laidOut(
+                [
+                    {
+                        properties: { grid: LINES },
+                        children: [
+                            broken("H2 body", 29),
+                            new Paragraph({ children: [tnr("H2 body 30"), new FootnoteReferenceRun(1)] }),
+                            broken("H2 more", 14),
+                        ],
+                    },
+                ],
+                { footnotes: { 1: { children: [broken("H2 note", 14, 10)] } } },
+            );
+            expect(stoppedAt).to.equal(undefined);
+            // As in Word: 30 lines and 8 of the footnote's on the first page, and the other 14 and 6 on the next
+            expect(pages.map(({ body }) => linesOf(body).length)).to.deep.equal([30, 14]);
+            expect(pages.map(({ footnotes }) => footnotes.flatMap(({ content }) => linesOf(content)).length)).to.deep.equal([8, 6]);
         });
     });
 });

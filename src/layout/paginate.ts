@@ -761,6 +761,7 @@ export const paginate = (
                 breakRules,
                 numberAlignment: paragraph.numberAlignment,
                 hyphenation,
+                grid: paragraph.grid,
             });
             // The lines are kept with the guess they are, so a pass that lays them out again notes it too
             return guessed === undefined
@@ -1362,20 +1363,20 @@ export const paginate = (
     };
 
     /**
-     * Whether the space a line's multiple spacing adds below its text can go below the bottom of the page, as Word lets it
-     * (`word-mixed-heights.docx` MH1c), for a line that fits only without it. Stops where Word hasn't shown it: in columns
-     * being evened out, above footnotes, which it would go into, and above a paragraph's border below. Guessing, it goes
-     * there too
+     * Whether the space a line's multiple spacing adds below its text, or a document grid leaves below it, can go below the
+     * bottom of the page, as Word lets it (`word-mixed-heights.docx` MH1c, `word-grid.docx` G1), for a line that fits only
+     * without it. Stops where Word hasn't shown it: in columns being evened out, above footnotes, which it would go into,
+     * and above a paragraph's border below. Guessing, it goes there too
      */
     const hangsBelow = (aboveNotes: boolean, aboveBorder = false): boolean => {
         if (balancing?.page === pageCount) {
-            stopAt("columns evened out above a line whose multiple spacing goes below them");
+            stopAt("columns evened out above a line whose room below its text goes below them");
         }
         if (aboveNotes) {
-            stopAt("a line whose multiple spacing goes below it into the footnotes");
+            stopAt("a line whose room below its text goes below it into the footnotes");
         }
         if (aboveBorder) {
-            stopAt("a line whose multiple spacing goes below the page, above its paragraph's border");
+            stopAt("a line whose room below its text goes below the page, above its paragraph's border");
         }
         return true;
     };
