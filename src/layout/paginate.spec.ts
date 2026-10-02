@@ -2582,24 +2582,126 @@ describe("paginate", () => {
             expect(pagesOf(content)).to.deep.equal({ a: "1", b: "1", c: "1", d: "1", e: "2" });
         });
 
-        it("should stop where Word's way of starting a section in the next column isn't known", () => {
-            const blocks: readonly (readonly [Block, number])[] = [
-                [paragraph("a", 1), 0],
-                [paragraph("b", 1), 1],
-                [paragraph("c", 1), 2],
-            ];
-            const stoppedAt = (sections: readonly Section[]): string | undefined =>
-                paginate(document(blocks, { sections }), { measurer: MEASURER }).stoppedAt;
+        it("should leave a section that started in the next column as it is before a continuous section break, as Word does", () => {
             const three: Section = { ...SECTION, columns: [80, 80, 80] };
-            // Columns of other widths, which Word starts it in the next column of (N4), but at which width isn't known
-            expect(stoppedAt([COLUMNS, { ...COLUMNS, columns: [70, 70], start: "nextColumn" }, SECTION])).to.equal(
-                "a section that starts in the next column of columns of other widths",
-            );
-            // Columns evened out before a continuous section break, when a section that started in the next column has
-            // columns after it
-            expect(stoppedAt([three, { ...three, start: "nextColumn" }, { ...SECTION, start: "continuous" }])).to.equal(
-                "columns evened out after a section that starts in the next column",
-            );
+            const content = (first: number, last: number): DocumentContent =>
+                document(
+                    [
+                        [paragraph("a", first), 0],
+                        [paragraph("b", 4), 1],
+                        [paragraph("c", 1), 2],
+                        [paragraph("d", last), 2],
+                    ],
+                    { sections: [three, { ...three, start: "nextColumn" }, { ...SECTION, start: "continuous" }] },
+                );
+            // b's 4 lines stay in the second of 3 columns, rather than going 2 and 2 into the third, and c and d go below
+            // them, so d's 3 lines don't fit (`word-watertight-stops.docx` SP11)
+            expect(pagesOf(content(1, 3))).to.deep.equal({ a: "1", b: "1", c: "1", d: "2" });
+            // Below the longest column, which is the first when it goes further down, so d's 2 lines don't fit either
+            expect(pagesOf(content(6, 2))).to.deep.equal({ a: "1", b: "1", c: "1", d: "2" });
+        });
+
+        describe("a section that starts in the next column of columns of other widths", () => {
+            // Pages 200 points wide, with 2 columns of 80 points, 20 apart, and 2 of 40 and 120
+            const WIDE: Section = { ...SECTION, pageWidth: 200 };
+            const EQUAL: Section = { ...WIDE, columns: [80, 80] };
+            const NARROW_FIRST: Section = { ...WIDE, columns: [40, 120], start: "nextColumn" };
+            /** A paragraph of words of 3 letters: 2 to a line in a column of 80 points, and 3 in one of 120 */
+            const words = (name: string, count: number): ParagraphBlock => ({
+                ...paragraph(name, 0),
+                items: [
+                    { type: "marker", name },
+                    { type: "text", text: Array.from({ length: count }, () => "abc").join(" "), font: {} },
+                ],
+            });
+            /** Each line of the body of a page, as its text and where it is: [text, x, y, width] */
+            const linesOn = (content: DocumentContent, page = 0): readonly (readonly [string, number, number, number])[] =>
+                paginate(content, { measurer: MEASURER }).pages[page].body.flatMap((block) =>
+                    block.type === "paragraph" ? block.lines.map(({ text, x, y, width }) => [text, x, y, width] as const) : [],
+                );
+
+            it("should lay it out in the page's next column, as wide as that is, as Word does", () => {
+                const content = document(
+                    [
+                        [paragraph("a", 1), 0],
+                        [words("b", 6), 1],
+                    ],
+                    { sections: [EQUAL, NARROW_FIRST] },
+                );
+                // At 110, 80 wide, with 2 words to a line, where its own second column is at 70, 120 wide
+                // (`word-watertight-stops.docx` SP10)
+                expect(linesOn(content)).to.deep.equal([
+                    ["abcdefgh", 10, 10, 80],
+                    ["abc abc ", 110, 10, 80],
+                    ["abc abc ", 110, 20, 80],
+                    ["abc abc", 110, 30, 80],
+                ]);
+                // Columns as wide, but further apart, which Word starts it in the next column of (`word-next-column.docx` N4)
+                const apart = document(
+                    [
+                        [paragraph("a", 1), 0],
+                        [words("b", 2), 1],
+                    ],
+                    { sections: [EQUAL, { ...EQUAL, marginRight: 0, start: "nextColumn" }] },
+                );
+                expect(linesOn(apart)[1]).to.deep.equal(["abc abc", 110, 10, 80]);
+            });
+
+            it("should lay out a section after it in the next column in the page's columns too, and one below them in its own", () => {
+                const three: Section = { ...WIDE, columns: [40, 40, 40] };
+                const content = document(
+                    [
+                        [words("a", 1), 0],
+                        [words("b", 1), 1],
+                        [words("c", 1), 2],
+                        [words("d", 2), 3],
+                    ],
+                    {
+                        sections: [
+                            three,
+                            { ...three, columns: [20, 60, 60], start: "nextColumn" },
+                            { ...three, columns: [20, 60, 60], start: "nextColumn" },
+                            { ...EQUAL, start: "continuous" },
+                        ],
+                    },
+                );
+                // b and c in the second and third of the first section's columns, 40 wide and 30 apart, where their own are
+                // 60 wide, and d below them in a column of its own, 80 wide
+                expect(linesOn(content).map(([text, x, , width]) => [text.trim(), x, width])).to.deep.equal([
+                    ["abc", 10, 40],
+                    ["abc", 80, 40],
+                    ["abc", 150, 40],
+                    ["abc abc", 10, 80],
+                ]);
+            });
+
+            it("should stop where it goes on to the next page, or has a footnote, which Word hasn't shown", () => {
+                const stoppedAt = (
+                    blocks: readonly (readonly [Block, number])[],
+                    changes: Partial<DocumentContent> = {},
+                ): string | undefined =>
+                    paginate(document(blocks, { sections: [EQUAL, NARROW_FIRST], ...changes }), { measurer: MEASURER }).stoppedAt;
+                // 16 words on 8 lines, one more than the column has
+                expect(
+                    stoppedAt([
+                        [paragraph("a", 1), 0],
+                        [words("b", 16), 1],
+                    ]),
+                ).to.equal("a section that starts in the next column of columns of other widths and goes on to the next page");
+                // A footnote in columns of the same width further apart, as one in columns of different widths stops anyway
+                expect(
+                    stoppedAt(
+                        [
+                            [paragraph("a", 1), 0],
+                            [withItems(words("b", 1), [{ type: "marker", name: "note" }]), 1],
+                        ],
+                        {
+                            footnotes: new Map([["note", [paragraph("text", 1)]]]),
+                            sections: [EQUAL, { ...EQUAL, marginRight: 0, start: "nextColumn" }],
+                        },
+                    ),
+                ).to.equal("a footnote in a section that starts in the next column of columns of other widths");
+            });
         });
 
         describe("a paragraph kept together that is taller than a column", () => {
@@ -2645,13 +2747,24 @@ describe("paginate", () => {
                 expect(below([paragraph("a", 7)])).to.deep.equal({ a: "1", kept: "2", eighth: "3" });
             });
 
-            it("should stop where it would move away from a paragraph kept with it, which Word hasn't shown", () => {
-                const stopped = (blocks: readonly Block[]): string | undefined =>
-                    paginate(document(blocks, { sections: [COLUMNS] }), { measurer: MEASURER }).stoppedAt;
-                const reason = "a paragraph kept with the next before a paragraph kept together taller than a column";
-                // Below a line, and at the top of a page, a heading kept with it would be left on its own
-                expect(stopped([paragraph("a", 1), paragraph("heading", 1, { keepNext: true }), kept])).to.equal(reason);
-                expect(stopped([paragraph("heading", 1, { keepNext: true }), kept])).to.equal(reason);
+            it("should move the paragraphs kept with it to a new page, and it on to the next, as Word does", () => {
+                const below = (blocks: readonly Block[]): Record<string, string> =>
+                    pagesOf(document([...blocks, kept], { sections: [COLUMNS] }));
+                const heading = (name: string): ParagraphBlock => paragraph(name, 1, { keepNext: true });
+                // A heading kept with it below a line goes to a new page with it, where it is alone, as it isn't at the top
+                // of that page (`word-watertight-stops.docx` SP13)
+                expect(below([paragraph("a", 1), heading("heading")])).to.deep.equal({ a: "1", heading: "2", kept: "3", eighth: "4" });
+                // Two headings go together, and one at the top of the second column goes too
+                expect(below([paragraph("a", 1), heading("one"), heading("two")])).to.deep.equal({
+                    a: "1",
+                    one: "2",
+                    two: "2",
+                    kept: "3",
+                    eighth: "4",
+                });
+                expect(below([paragraph("a", 7), heading("heading")])).to.deep.equal({ a: "1", heading: "2", kept: "3", eighth: "4" });
+                // One at the top of a page stays there
+                expect(below([heading("heading")])).to.deep.equal({ heading: "1", kept: "2", eighth: "3" });
                 // Kept with it at the top of a page of a section of its own, it doesn't move, and isn't kept with what is before
                 const nextPage = document(
                     [
@@ -2779,13 +2892,29 @@ describe("paginate", () => {
                 expect(pagesOf(kept)).to.include({ kept: "1", b: "1" });
             });
 
-            it("should stop at a paragraph kept together that is taller than one of the columns, which Word lays out in a way not yet known", () => {
-                // 9 lines in the narrow column, and 3 in the wide one. Word lays one taller than a column down only the first
-                // column of each page, in columns of the same width
+            it("should lay a paragraph kept together that is taller than each column down the first column of each page, as Word does", () => {
+                // 30 lines in the narrow column, and 10 in the wide one: 7 in the first column of each page, at its width, from
+                // a new page below a line (`word-watertight-stops.docx` SP12), where 21 words would fit in the wide column
+                const kept = words("kept", 30, { 7: "w8", 28: "w29" }, { keepLines: true });
+                expect(pagesOf(document([kept], { sections: [NARROW_FIRST] }))).to.deep.equal({ kept: "1", w8: "2", w29: "5" });
+                expect(pagesOf(document([words("a", 1), kept], { sections: [NARROW_FIRST] }))).to.deep.equal({
+                    a: "1",
+                    kept: "2",
+                    w8: "3",
+                    w29: "6",
+                });
+            });
+
+            it("should stop at a paragraph kept together that is taller than some of the columns but not others, which Word hasn't shown", () => {
+                // 9 lines in the narrow column, and 3 in the wide one, which it could go in. Before it, a heading kept with it
+                // stops too
                 const kept = words("kept", 9, {}, { keepLines: true });
-                const reason = "a paragraph kept together taller than a column, in columns of different widths";
+                const reason = "a paragraph kept together taller than some of its columns of different widths but not others";
                 expect(stoppedAt(document([kept], { sections: [NARROW_FIRST] }))).to.equal(reason);
                 expect(stoppedAt(document([...lines("a", 7), kept], { sections: [NARROW_FIRST] }))).to.equal(reason);
+                expect(stoppedAt(document([words("heading", 1, {}, { keepNext: true }), kept], { sections: [NARROW_FIRST] }))).to.equal(
+                    reason,
+                );
             });
 
             it("should count the lines left for the next column as they are broken in this one, for widow control, as Word does", () => {
@@ -2824,7 +2953,7 @@ describe("paginate", () => {
                 expect(pagesOf(balanced([words("p", 14)], 3))).to.include({ b: "1", c: "2" });
             });
 
-            it("should break a table across columns of different widths, keeping the widths it is sized to in a wider column", () => {
+            it("should break a table across columns of different widths, keeping the widths it is sized to in each column", () => {
                 const rows = (text: string): TableBlock =>
                     table(
                         Array.from({ length: 10 }, (_, index) =>
@@ -2848,10 +2977,11 @@ describe("paginate", () => {
                 // (word-column-widths.docx R5 and R6), so 3 rows go in each column of the first page, and the rest on the next
                 const fitted: TableBlock = { ...rows("abc abc"), fit: {} };
                 expect(pagesOf(document([fitted], { sections: [NARROW_FIRST] }))).to.include({ row6: "1", row7: "2" });
-                // Going on into a narrower column, which it might not fit in
-                expect(stoppedAt(document([fitted], { sections: [WIDE_FIRST] }))).to.equal(
-                    "a table sized to its text that goes on into a narrower column",
-                );
+                // Sized in the wide column, each row takes a line there and in the narrow one, which it goes past the edge of,
+                // as in Word (`word-watertight-stops.docx` SP16), so the 3 rows in the narrow column leave room for b's 4 lines,
+                // where 2 lines a row would leave room for 1
+                const after = words("b", 4, { 3: "w4" });
+                expect(pagesOf(document([fitted, after], { sections: [WIDE_FIRST] }))).to.include({ row10: "1", b: "1", w4: "1" });
                 expect(pagesOf(document([{ ...fixed, fit: {} }], { sections: [WIDE_FIRST] }))).to.include({ row10: "1" });
             });
         });
