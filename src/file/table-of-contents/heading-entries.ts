@@ -6,14 +6,15 @@
  * any it is empty. So once the body is written, each table of contents that wasn't given `cachedEntries` or
  * `contentChildren` is filled in from the headings its switches include, the way Word fills it in: each heading is
  * bookmarked, and its entry links to the bookmark and gives its page with a PAGEREF field. The page numbers are left
- * empty, because they depend on how the document is laid out. Word fills them in when it updates the field.
+ * empty, because they depend on how the document is laid out. Word fills them in when it updates the field, unless the
+ * document's `pageNumbers` writes them.
  *
  * @module
  */
 import { BookmarkEnd, BookmarkStart, InternalHyperlink, PageReference, Paragraph, type ParagraphChild } from "@file/paragraph";
 import { Run, Tab, TextRun } from "@file/paragraph/run";
-import { createBegin, createEnd, createSeparate } from "@file/paragraph/run/field";
-import type { IContext, IXmlableObject } from "@file/xml-components";
+import { createBegin, createBeginDirtyWithoutPageNumbers, createEnd, createSeparate } from "@file/paragraph/run/field";
+import type { IContext, IXmlableObject, XmlComponent } from "@file/xml-components";
 import { bookmarkUniqueNumericId } from "@util/convenience-functions";
 
 import { FieldInstruction } from "./field-instruction";
@@ -23,10 +24,21 @@ import type { ITableOfContentsOptions } from "./table-of-contents-properties";
 /** A table of contents to fill in from the headings */
 export type HeadingEntriesOptions = {
     readonly properties: ITableOfContentsOptions;
-    readonly beginDirty: boolean;
+    /**
+     * Whether the field is written dirty, as the caller set it. Undefined when the caller didn't: then it is dirty unless
+     * the document is given page numbers
+     */
+    readonly beginDirty?: boolean;
     /** The width, in twips, of the text in its section, where the page numbers are aligned */
     readonly textWidth: number;
 };
+
+/**
+ * The beginning of a table of contents' field: dirty or clean, as the caller set it, or else dirty unless the document
+ * is given page numbers
+ */
+export const beginOf = (beginDirty: boolean | undefined): XmlComponent =>
+    beginDirty === undefined ? createBeginDirtyWithoutPageNumbers() : createBegin(beginDirty);
 
 /** A formatted element, such as `{ "w:p": [...] }` */
 type Element = Record<string, unknown>;
@@ -387,7 +399,11 @@ const contentOf = (
                 tabStops: [{ type: "right", position: textWidth, leader: "dot" }],
                 children: [
                     ...(index === 0
-                        ? [new Run({ children: [createBegin(beginDirty), new FieldInstruction(properties), createSeparate()] })]
+                        ? [
+                              new Run({
+                                  children: [beginOf(beginDirty), new FieldInstruction(properties), createSeparate()],
+                              }),
+                          ]
                         : []),
                     ...(properties.hyperlink ? [new InternalHyperlink({ anchor: entry.bookmark, children })] : children),
                 ],

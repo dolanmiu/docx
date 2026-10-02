@@ -7,7 +7,7 @@ showed. Each line of text names its probe, such as `Q3a fill 12`, so it can be f
 probe starts on a page of its own or is marked off by lines above and below it.
 
 Each probe has the `.docx` Word opened and the PDF Word saved from it, beside the script that makes it. They were saved
-from Word 16 for Mac on 2026-09-30 and 2026-10-01 (Save As, PDF, Best for printing). docx writes some of them differently
+from Word 16 for Mac on 2026-09-30 to 2026-10-02 (Save As, PDF, Best for printing). docx writes some of them differently
 now, so the committed `.docx` is the one each PDF is of: `word-rules` and `word-tables` were made before docx wrote a
 table style and each cell's width.
 
@@ -32,6 +32,7 @@ table style and each cell's width.
 | `word-page-number-formats2` | P: page numbers in each format where its letters run out and at 0, and C12 to C15: chapter numbers after a heading that isn't numbered, from one numbered on its own too, from a level with no number in its text, and from a style based on heading 1                                                                                                                                                                                                                                                 | `word-page-number-formats.py`  |
 | `word-unicode`              | K, E, L, H, N, W, A, P, KR, T, R and G: which characters Word keeps from starting or ending a line of Chinese and Japanese, with no language and in each language, hanging punctuation, kinsoku and wordWrap off, Latin words and numbers after ideographs, breaks after dashes, slashes and zero-width spaces, the space between ideographs and Latin text, punctuation compression, Korean and Thai, right-to-left paragraphs and runs, and the height of lines of East Asian, Thai and Hebrew fonts | `word-unicode.read.ts`         |
 | `word-unicode2`             | S, E, H, A, W, T, F and G: every character of Word's lists in Japanese, Chinese, Korean and English, hanging punctuation and the space around Latin text in Japanese, wordWrap off, zero-width spaces, Thai without marks above or below its letters, the font and size of Hebrew and Latin in runs that are right to left and runs that aren't, and the height of lines of 21 East Asian fonts. `word-unicode2-layout.ts` compares where docx/layout breaks the lines of S and E with where Word does | `word-unicode2.read.ts`        |
+| `word-no-prompt`            | NP1 to NP4: a document whose page numbers docx/layout writes, without `updateFields`: whether Word opens it without asking to update the fields, and whether the numbers of its table of contents, its page references in the text and the header, and its numbers of pages in the footers are the pages Word has. Word opened it without asking, and all 43 numbers were Word's                                                                                                                       | `word-no-prompt.py`            |
 | `fsplit`                    | How a footnote that doesn't fit below its reference goes on to the next page. Laid out in LibreOffice only, so it has no PDF from Word: Word's split of an 8-line footnote is `word-rules` P7b                                                                                                                                                                                                                                                                                                         | `pagelines.py`                 |
 
 ## Make a probe's `.docx`
@@ -42,8 +43,8 @@ From the root of the repository:
 npm run run-ts -- scripts/layout-probes/word-rules2.ts
 ```
 
-It writes `build/word-probes/word-rules2.docx`. `fsplit` imports `docx/layout`, so build the package first
-(`npm run build`). The others import only `docx`, as the demos do.
+It writes `build/word-probes/word-rules2.docx`. `fsplit` and `word-no-prompt` import `docx/layout`, so build the
+package first (`npm run build`). The others import only `docx`, as the demos do.
 
 ## Lay it out in LibreOffice
 

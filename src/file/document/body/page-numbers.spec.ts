@@ -69,7 +69,7 @@ const fieldWithResult = (instruction: string, result: string): readonly Run[] =>
 ];
 
 describe("fillPageNumbers", () => {
-    it("should write the page number of the bookmark into a page reference, between its separate and end", () => {
+    it("should write the page number of the bookmark into a page reference, between its separate and end, and write it clean", () => {
         const body = bodyWith([new Paragraph({ children: [new TextRun("See page "), new PageReference("target")] })], { target: "4" });
 
         expect(paragraphsOf(body)[0]).to.deep.equal({
@@ -77,7 +77,7 @@ describe("fillPageNumbers", () => {
                 { "w:r": [{ "w:t": [{ _attr: { "xml:space": "preserve" } }, "See page "] }] },
                 {
                     "w:r": [
-                        { "w:fldChar": { _attr: { "w:fldCharType": "begin", "w:dirty": true } } },
+                        { "w:fldChar": { _attr: { "w:fldCharType": "begin" } } },
                         { "w:instrText": [{ _attr: { "xml:space": "preserve" } }, "PAGEREF target"] },
                         { "w:fldChar": { _attr: { "w:fldCharType": "separate" } } },
                         { "w:t": [{ _attr: { "xml:space": "preserve" } }, "4"] },
@@ -327,5 +327,181 @@ describe("fillPageNumbers", () => {
         body.push(new Paragraph({ children: [new PageReference("target")] }));
 
         expect(textOf(paragraphsOf(new Formatter().format(body))[0])).to.equal("");
+    });
+
+    describe("fields written clean", () => {
+        /** The field characters and instructions in an element, in order */
+        const fieldPartsOf = (element: unknown): readonly Record<string, unknown>[] => {
+            if (typeof element !== "object" || element === null) {
+                return [];
+            }
+            const [name] = Object.keys(element);
+            const content = (element as Record<string, unknown>)[name];
+            if (name === "w:fldChar" || name === "w:instrText") {
+                return [element as Record<string, unknown>];
+            }
+            return Array.isArray(content) ? content.flatMap(fieldPartsOf) : [];
+        };
+
+        /** Whether each field in an element is written dirty, by the first word of its instruction, in the order they begin */
+        const dirtyFieldsOf = (element: unknown): readonly (readonly [string, boolean])[] => {
+            const parts = fieldPartsOf(element);
+            return parts.flatMap((part, index) => {
+                const attributes = (part["w:fldChar"] as { readonly _attr: Record<string, unknown> } | undefined)?._attr;
+                if (attributes?.["w:fldCharType"] !== "begin") {
+                    return [];
+                }
+                const instruction = parts.slice(index + 1).find((next) => "w:instrText" in next)!["w:instrText"] as readonly unknown[];
+                const [word] = instruction
+                    .filter((text) => typeof text === "string")
+                    .join("")
+                    .trim()
+                    .split(/\s+/);
+                return [[word, attributes["w:dirty"] === true] as const];
+            });
+        };
+
+        /** A document with a table of contents filled in from its headings, and a page reference to each heading */
+        const documentWith = (pageNumbers: PageNumberEstimator | undefined, tableOptions: { readonly beginDirty?: boolean } = {}): File =>
+            new File({
+                ...(pageNumbers ? { pageNumbers } : {}),
+                sections: [
+                    {
+                        children: [
+                            new TableOfContents("Contents", { headingStyleRange: "1-3", ...tableOptions }),
+                            new Paragraph({ heading: HeadingLevel.HEADING_1, children: [new TextRun("One")] }),
+                            new Paragraph({ heading: HeadingLevel.HEADING_1, children: [new TextRun("Two")] }),
+                        ],
+                    },
+                ],
+            });
+        const bodyOf = (file: File): IXmlableObject =>
+            (
+                new Formatter().format(file.Document.View, { file, viewWrapper: file.Document, stack: [] } as unknown as IContext) as {
+                    readonly "w:document": readonly IXmlableObject[];
+                }
+            )["w:document"][1];
+        /** An estimator that puts the first of the headings' bookmarks on page 2, the next on 3, and so on, up to a number of them */
+        const placingHeadings =
+            (count = Infinity): PageNumberEstimator =>
+            (body) => {
+                const names = [...JSON.stringify(body).matchAll(/"w:name":"(_Toc\d+)"/g)].map(([, name]) => name).slice(0, count);
+                return { bookmarks: new Map(names.map((name, index) => [name, String(index + 2)])) };
+            };
+
+        it("should write a table of contents filled in from the headings, and its page references, clean", () => {
+            expect(dirtyFieldsOf(bodyOf(documentWith(placingHeadings())))).to.deep.equal([
+                ["TOC", false],
+                ["PAGEREF", false],
+                ["PAGEREF", false],
+            ]);
+        });
+
+        it("should write clean and blank the page numbers the estimator didn't work out, so Word doesn't ask to update them", () => {
+            const body = bodyOf(documentWith(placingHeadings(1)));
+
+            expect(dirtyFieldsOf(body)).to.deep.equal([
+                ["TOC", false],
+                ["PAGEREF", false],
+                ["PAGEREF", false],
+            ]);
+            const [table] = paragraphsOf(body);
+            expect(textOf(table)).to.equal("One\t2Two\t");
+        });
+
+        it("should keep a table of contents dirty or clean as its beginDirty says, when it is given", () => {
+            expect(dirtyFieldsOf(bodyOf(documentWith(placingHeadings(), { beginDirty: true })))).to.deep.equal([
+                ["TOC", true],
+                ["PAGEREF", false],
+                ["PAGEREF", false],
+            ]);
+            expect(dirtyFieldsOf(bodyOf(documentWith(placingHeadings(), { beginDirty: false })))).to.deep.equal([
+                ["TOC", false],
+                ["PAGEREF", false],
+                ["PAGEREF", false],
+            ]);
+        });
+
+        it("should write page references and tables of contents dirty, as before, without an estimator", () => {
+            expect(dirtyFieldsOf(bodyOf(documentWith(undefined)))).to.deep.equal([
+                ["TOC", true],
+                ["PAGEREF", true],
+                ["PAGEREF", true],
+            ]);
+        });
+
+        it("should write clean the tables of contents not filled in from the headings", () => {
+            const file = new File({
+                pageNumbers: placingHeadings(),
+                sections: [
+                    {
+                        children: [
+                            new TableOfContents("Empty"),
+                            new TableOfContents("Given", { cachedEntries: [{ title: "Given", level: 1, page: 3 }] }),
+                            new Paragraph("No headings"),
+                        ],
+                    },
+                ],
+            });
+
+            expect(dirtyFieldsOf(bodyOf(file))).to.deep.equal([
+                ["TOC", false],
+                ["TOC", false],
+            ]);
+        });
+
+        it("should leave dirty the fields written dirty by hand", () => {
+            const body = bodyWith(
+                [
+                    new Paragraph({
+                        children: [
+                            new Run({ children: [createBegin(true), new Instruction("TOC \\o"), createSeparate()] }),
+                            new PageReference("chapter"),
+                            new Run({ children: [createEnd()] }),
+                        ],
+                    }),
+                    new Paragraph({
+                        children: [
+                            new Run({ children: [createBegin(true), new Instruction("PAGEREF chapter"), createSeparate()] }),
+                            new Run({ children: [createEnd()] }),
+                        ],
+                    }),
+                ],
+                { chapter: "12" },
+            );
+
+            expect(dirtyFieldsOf(body)).to.deep.equal([
+                ["TOC", true],
+                ["PAGEREF", false],
+                ["PAGEREF", true],
+            ]);
+        });
+
+        it("should write clean and blank a page reference that shows its position relative to the bookmark", () => {
+            const body = bodyWith([new Paragraph({ children: [new PageReference("target", { useRelativePosition: true })] })], {
+                target: "3",
+            });
+
+            expect(dirtyFieldsOf(body)).to.deep.equal([["PAGEREF", false]]);
+            expect(textOf(paragraphsOf(body)[0])).to.equal("");
+        });
+
+        it("should write the page references in headers and footers clean", () => {
+            const file = new File({
+                pageNumbers: () => ({ bookmarks: new Map([["target", "4"]]) }),
+                sections: [
+                    {
+                        headers: { default: new Header({ children: [new Paragraph({ children: [new PageReference("target")] })] }) },
+                        children: [new Paragraph("a")],
+                    },
+                ],
+            });
+            bodyOf(file);
+            const [wrapper] = file.Headers;
+
+            expect(
+                dirtyFieldsOf(new Formatter().format(wrapper.View, { file, viewWrapper: wrapper, stack: [] } as unknown as IContext)),
+            ).to.deep.equal([["PAGEREF", false]]);
+        });
     });
 });

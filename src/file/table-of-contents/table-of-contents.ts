@@ -11,13 +11,13 @@
 import { FileChild } from "@file/file-child";
 import { InternalHyperlink, Paragraph, type TabStopDefinition } from "@file/paragraph";
 import { Run, Tab } from "@file/paragraph/run";
-import { createBegin, createEnd, createSeparate } from "@file/paragraph/run/field";
+import { createEnd, createSeparate } from "@file/paragraph/run/field";
 import { Text } from "@file/paragraph/run/run-components/text";
 import { DEFAULT_AVAILABLE_WIDTH } from "@file/table/column-widths";
 import type { IContext, IXmlableObject, XmlComponent } from "@file/xml-components";
 
 import { FieldInstruction } from "./field-instruction";
-import { type HeadingEntriesOptions, recordTableOfContents } from "./heading-entries";
+import { type HeadingEntriesOptions, beginOf, recordTableOfContents } from "./heading-entries";
 import { StructuredDocumentTagContent } from "./sdt-content";
 import { StructuredDocumentTagProperties } from "./sdt-properties";
 import type { ITableOfContentsOptions } from "./table-of-contents-properties";
@@ -38,7 +38,8 @@ type ToCEntry = {
  * Unless it is given `cachedEntries` or `contentChildren`, it is written with an
  * entry for each heading its options include, linked to a bookmark on the heading,
  * so it isn't empty before Word updates it or in applications that don't update it.
- * The page numbers are left for Word to fill in when it updates the field.
+ * The page numbers are left for Word to fill in when it updates the field, unless the document's `pageNumbers`
+ * writes them.
  *
  * Reference: http://officeopenxml.com/WPtableOfContents.php
  *
@@ -72,7 +73,7 @@ export class TableOfContents extends FileChild {
         {
             contentChildren = [],
             cachedEntries = [],
-            beginDirty = true,
+            beginDirty,
             ...properties
         }: ITableOfContentsOptions & {
             readonly contentChildren?: readonly (XmlComponent | string)[];
@@ -82,6 +83,11 @@ export class TableOfContents extends FileChild {
              * Note that indentation should come from the paragraph styles defined on the document. By default the styles are TOC1, TOC2, etc. These can be overridden with stylesWithLevels (\t)
              */
             readonly cachedEntries?: readonly ToCEntry[];
+            /**
+             * Whether the field is written dirty, so Word updates the table when it opens the document, after asking to.
+             * Default is dirty, unless the document is given `pageNumbers`: then it is written clean, so Word shows it as
+             * it is written, and doesn't ask.
+             */
             readonly beginDirty?: boolean;
         } = {},
     ) {
@@ -92,7 +98,7 @@ export class TableOfContents extends FileChild {
 
         const beginParagraphMandatoryChildren = [
             new Run({
-                children: [createBegin(beginDirty), new FieldInstruction(properties), createSeparate()],
+                children: [beginOf(beginDirty), new FieldInstruction(properties), createSeparate()],
             }),
         ];
 

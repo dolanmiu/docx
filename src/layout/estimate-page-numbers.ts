@@ -63,6 +63,10 @@ const estimateWith = (body: IXmlableObject, context: IContext, measurer: TextMea
  * whole that is taller than a page. The page references to bookmarks after it are left blank, for
  * Word to fill in when it updates the fields.
  *
+ * Page references and tables of contents are written clean, so Word shows the numbers as they are written, and the
+ * page numbers it left blank stay blank, without asking to update the fields, unless the document has `updateFields`
+ * on.
+ *
  * @publicApi
  */
 export const estimatePageNumbers = (body: IXmlableObject, context: IContext): EstimatedPageNumbers =>

@@ -9,7 +9,7 @@
  *
  * @module
  */
-import { BuilderElement, type XmlComponent } from "@file/xml-components";
+import { BuilderElement, type IContext, type IXmlableObject, type XmlComponent } from "@file/xml-components";
 
 /**
  * Field character types that delimit field regions.
@@ -61,6 +61,40 @@ const createFieldChar = (type: (typeof FieldCharacterType)[keyof typeof FieldCha
  * field instructions, an optional separate character, field result, and an end character.
  */
 export const createBegin = (dirty?: boolean): XmlComponent => createFieldChar(FieldCharacterType.BEGIN, dirty);
+
+/** The formatted begin characters of the fields that are dirty only when the document isn't given page numbers */
+const dirtyWithoutPageNumbers = new WeakSet<object>();
+
+/** The beginning of a field that is dirty, so Word updates it, unless the document is given page numbers */
+class BeginDirtyWithoutPageNumbers extends BuilderElement<IFieldCharAttributes> {
+    public constructor() {
+        super({
+            name: "w:fldChar",
+            attributes: {
+                type: { key: "w:fldCharType", value: FieldCharacterType.BEGIN },
+                dirty: { key: "w:dirty", value: true },
+            },
+        });
+    }
+
+    public prepForXml(context: IContext): IXmlableObject | undefined {
+        const xml = super.prepForXml(context)!;
+        dirtyWithoutPageNumbers.add(xml);
+        return xml;
+    }
+}
+
+/**
+ * Creates the beginning of a field whose result is a page number, such as a page reference. It is written dirty, so
+ * Word updates the field when it opens the document, and asks to. When the document is given page numbers, it is
+ * written clean (see {@link isDirtyWithoutPageNumbers}), so Word shows the number written, or nothing when none could
+ * be worked out, and doesn't ask.
+ */
+export const createBeginDirtyWithoutPageNumbers = (): XmlComponent => new BeginDirtyWithoutPageNumbers();
+
+/** Whether a formatted field character is the beginning of a field that is dirty only without page numbers */
+export const isDirtyWithoutPageNumbers = (element: unknown): boolean =>
+    typeof element === "object" && element !== null && dirtyWithoutPageNumbers.has(element);
 
 /**
  * Creates the separator between field code and field result in a complex field.
