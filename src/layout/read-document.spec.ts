@@ -654,6 +654,28 @@ describe("readDocument", () => {
             expect(content.unsupported).to.equal(undefined);
         });
 
+        it("should number a note in a table cell with deleted text as it is numbered where it is, to size the columns by", () => {
+            // A cell with deleted text is read again as Word sizes the table's columns by it, which numbers its footnote as
+            // the cell does, in a format not yet written too
+            const cell = {
+                "w:tc": [
+                    { "w:tcPr": [{ "w:tcW": { _attr: { "w:w": 2000 } } }] },
+                    p(r(t("a")), { "w:del": [r({ "w:delText": ["b"] })] }, reference("footnote", 1)),
+                ],
+            };
+            const table = {
+                "w:tbl": [{ "w:tblPr": [] }, { "w:tblGrid": [{ "w:gridCol": { _attr: { "w:w": 2000 } } }] }, { "w:tr": [cell] }],
+            };
+            const content = readWithSettings([table], [properties("footnote", value("w:numFmt", "bogus"))], NOTES);
+            const sized = (content.blocks[0].block as TableBlock).rows[0].cells[0];
+            expect((sized.sizing![0] as ParagraphBlock).items.map((item) => (item.type === "text" ? item.text : item.type))).to.deep.equal([
+                "a",
+                "b",
+                "",
+            ]);
+            expect(content.unsupported).to.equal("notes numbered in a format not yet written");
+        });
+
         it("should stop at notes numbered or placed in a way not yet followed", () => {
             const reasonOf = (...args: Parameters<typeof twoSections>): string | undefined => twoSections(...args).unsupported;
             expect(reasonOf([], [], [properties("endnote", value("w:numRestart", "eachPage"))])).to.equal(
@@ -2583,6 +2605,15 @@ describe("readDocument", () => {
                 tableOf([fixed], row([deletedRow], cell(p(r({ "w:footnoteReference": { _attr: { "w:id": 1 } } })))), row([], cell(p()))),
             ]);
             expect(noted.blocks[0].block.unsupported).to.equal("a list or a note in a deleted table row");
+            // A deleted reference in it too, which is numbered on from the notes before it, and not counted
+            const deletedNote = readBody([
+                tableOf(
+                    [fixed],
+                    row([deletedRow], cell(p({ "w:del": [r({ "w:footnoteReference": { _attr: { "w:id": 1 } } })] }))),
+                    row([], cell(p())),
+                ),
+            ]);
+            expect(deletedNote.blocks[0].block.unsupported).to.equal("a list or a note in a deleted table row");
             // Every row deleted, so the table is only why it stops
             const listed = readWritten({
                 numbering: { config: [{ reference: "list", levels: [{ level: 0, format: LevelFormat.DECIMAL, text: "%1." }] }] },
