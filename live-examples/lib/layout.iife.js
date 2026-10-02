@@ -2761,11 +2761,12 @@ var docxLayout = (function(exports) {
 	*/
 	var paginate = (content, { pageNumbers = /* @__PURE__ */ new Map(), pageCount: givenPageCount, sectionPageCounts: givenSectionPageCounts = [], measurer = DEFAULT_MEASURER } = {}) => {
 		var _laidOutLines$get;
-		const { sections, defaultTabStop, evenAndOddHeaders, addsParagraphSpacing, footnotes, footnoteSeparator, footnoteContinuationSeparator, endnotes, breakRules, footnoteNumbers, endnoteNumbers } = content;
+		const { sections, defaultTabStop, evenAndOddHeaders, addsParagraphSpacing, footnotes, footnoteSeparator, footnoteContinuationSeparator, endnotes, endnoteContinuationSeparator, breakRules, footnoteNumbers, endnoteNumbers } = content;
 		const blocks = [...content.blocks, ...endnotes.map((block) => ({
-			block,
+			block: block.type === "paragraph" && !endnoteNumbers.has(block) ? _objectSpread2(_objectSpread2({}, block), {}, { format: _objectSpread2(_objectSpread2({}, block.format), {}, { keepNext: true }) }) : block,
 			section: sections.length - 1
 		}))];
+		const firstEndnote = content.blocks.length;
 		/** The space between two paragraphs: the larger of the space after the first and before the second, or both */
 		const between = (after, before) => addsParagraphSpacing ? after + before : Math.max(after, before);
 		let sectionIndex = 0;
@@ -3018,10 +3019,13 @@ var docxLayout = (function(exports) {
 		const headerHeights = /* @__PURE__ */ new Map();
 		let pageCount = 0;
 		let pageNumber = 0;
+		let restart;
 		const firstPages = /* @__PURE__ */ new Map([[0, 1]]);
 		const lastPages = /* @__PURE__ */ new Map();
 		const sharingPages = /* @__PURE__ */ new Set();
 		let top = 0;
+		let pageContinuation = 0;
+		let continuedEndnotes = false;
 		let pageBottom = 0;
 		let bottom = 0;
 		let position = 0;
@@ -3063,7 +3067,10 @@ var docxLayout = (function(exports) {
 			index,
 			pageCount,
 			pageNumber,
+			restart,
 			top,
+			pageContinuation,
+			continuedEndnotes,
 			pageBottom,
 			position,
 			column,
@@ -3093,7 +3100,7 @@ var docxLayout = (function(exports) {
 		* out again only moves them between the columns of the same page
 		*/
 		const restore = (state) => {
-			({pageCount, pageNumber, top, pageBottom, position, column, columnTop, placedInColumn, deepest, columnBroken, pageNotes, noteArea, notesSection, notesInColumns, filledEnd, continued, carried, held, spaceAfter, sectionSpaceAfter, finished} = state);
+			({pageCount, pageNumber, restart, top, pageContinuation, continuedEndnotes, pageBottom, position, column, columnTop, placedInColumn, deepest, columnBroken, pageNotes, noteArea, notesSection, notesInColumns, filledEnd, continued, carried, held, spaceAfter, sectionSpaceAfter, finished} = state);
 			placements.length = Math.min(placements.length, state.placed);
 			bottom = columnsBottom();
 			noteArea = Math.max(noteArea, reserved());
@@ -3173,17 +3180,35 @@ var docxLayout = (function(exports) {
 			headerHeights.set(part, bySection.set(sectionIndex, height));
 			return height;
 		};
+		/** Whether the endnotes are on the pages before, so they go on below the continuation separator on the next */
+		const endnotesGoOn = () => blockIndex >= firstEndnote && placements.some((placement) => (placement.type === "line" || placement.type === "row") && placement.block >= firstEndnote);
+		/**
+		* The room the endnotes' continuation separator takes above them: its paragraphs, without the space after the last,
+		* which Word leaves out (`word-watertight-sections.docx` SC4)
+		*/
+		const continuationHeight = () => {
+			const parts = stackParts(endnoteContinuationSeparator, textWidth(), false);
+			return heightOf(parts.map((part, index) => index === parts.length - 1 ? _objectSpread2(_objectSpread2({}, part), {}, { after: 0 }) : part), true);
+		};
+		/** Where the body starts on the next page: where it does on this one, below the continuation separator for endnotes */
+		const nextTop = () => top - pageContinuation + (endnotesGoOn() ? continuationHeight() : 0);
+		/** Whether a line or row of the section being laid out is on the page */
+		const sectionOnPage = () => placements.slice(placements.findLastIndex(({ type }) => type === "page")).some((placement) => (placement.type === "line" || placement.type === "row") && blocks[placement.block].section === sectionIndex);
 		const startPage = (isFirstOfSection = false) => {
+			var _restart;
 			if (balancing !== void 0 && pageCount >= balancing.page) throw new Overflow();
 			checkReserve();
+			if (continuedEndnotes) throw new Unsupported("endnotes that fill a page after the first they are on");
 			finishPage();
 			const current = section();
-			pageNumber = isFirstOfSection && current.firstNumber !== void 0 ? current.firstNumber : pageNumber + 1;
-			const headerBottom = current.header + partHeight(current.headers, isFirstOfSection);
-			const footerTop = current.footer + partHeight(current.footers, isFirstOfSection);
+			const first = isFirstOfSection || current.start === "continuous" && firstPages.get(sectionIndex) === pageCount && !sectionOnPage();
+			pageNumber = first && current.firstNumber !== void 0 ? current.firstNumber : ((_restart = restart) !== null && _restart !== void 0 ? _restart : pageNumber) + 1;
+			restart = void 0;
+			const headerBottom = current.header + partHeight(current.headers, first);
+			const footerTop = current.footer + partHeight(current.footers, first);
 			pageCount++;
-			const header = kindOf(current.headers, isFirstOfSection);
-			const footer = kindOf(current.footers, isFirstOfSection);
+			const header = kindOf(current.headers, first);
+			const footer = kindOf(current.footers, first);
 			placements.push({
 				type: "page",
 				page: _objectSpread2(_objectSpread2(_objectSpread2({}, pageNumberOf(current)), {}, {
@@ -3192,7 +3217,12 @@ var docxLayout = (function(exports) {
 					height: current.pageHeight
 				}, header ? { header } : {}), footer ? { footer } : {})
 			});
-			top = current.marginTop < 0 ? -current.marginTop : Math.max(current.marginTop, headerBottom);
+			top = current.marginTop < 0 ? -current.marginTop : Math.max(current.marginTop + current.topGutter, headerBottom);
+			const endnotesOn = endnotesGoOn();
+			if (endnotesOn && current.columns.length > 1) throw new Unsupported("endnotes continued in columns");
+			continuedEndnotes = endnotesOn;
+			pageContinuation = endnotesOn ? continuationHeight() : 0;
+			top += pageContinuation;
 			pageBottom = current.pageHeight - (current.marginBottom < 0 ? -current.marginBottom : Math.max(current.marginBottom, footerTop));
 			position = top;
 			column = 0;
@@ -3212,7 +3242,7 @@ var docxLayout = (function(exports) {
 			notesSection = sectionIndex;
 			if (continued !== void 0 && current.columns.length > 1) throw new Unsupported("a footnote across pages in columns");
 			if (continued !== void 0 && noteArea > bottom - top + TOLERANCE) {
-				if (isFirstOfSection) throw new Unsupported("a footnote continued across a section break onto a page of its own");
+				if (first) throw new Unsupported("a footnote continued across a section break onto a page of its own");
 				const { name, from } = continued;
 				const to = fillNote(name, from, (point) => areaOf([], void 0, {
 					name,
@@ -3233,6 +3263,7 @@ var docxLayout = (function(exports) {
 				startPage();
 				return;
 			}
+			if (endnotesGoOn()) throw new Unsupported("endnotes continued in columns");
 			deepest = Math.max(deepest, position + spaceAfter);
 			filledEnd = Math.max(filledEnd, position);
 			column++;
@@ -3308,7 +3339,7 @@ var docxLayout = (function(exports) {
 		* one, after the columns before it are ended
 		*/
 		const startSection = (index, firstBlock) => {
-			var _end$format$spaceAfte;
+			var _end$format$spaceAfte, _restart2;
 			const previous = section();
 			const current = sections[index];
 			lastPages.set(sectionIndex, pageCount);
@@ -3328,8 +3359,10 @@ var docxLayout = (function(exports) {
 			const before = sectionIndex;
 			sectionIndex = index;
 			if (continuous) {
+				var _current$firstNumber;
 				column = 0;
 				columnTop = position;
+				restart = (_current$firstNumber = current.firstNumber) !== null && _current$firstNumber !== void 0 ? _current$firstNumber : restart;
 				firstPages.set(index, pageCount);
 				sharingPages.add(before).add(index);
 				return;
@@ -3345,11 +3378,12 @@ var docxLayout = (function(exports) {
 				sharingPages.add(before).add(index);
 				return;
 			}
-			const nextNumber = pageNumber + 1;
+			const nextNumber = ((_restart2 = restart) !== null && _restart2 !== void 0 ? _restart2 : pageNumber) + 1;
 			if (current.start === "evenPage" && nextNumber % 2 !== 0 || current.start === "oddPage" && nextNumber % 2 === 0) {
 				finishPage();
 				pageCount++;
-				pageNumber++;
+				pageNumber = nextNumber;
+				restart = void 0;
 				finished = pageCount;
 				placements.push({
 					type: "page",
@@ -4397,7 +4431,7 @@ var docxLayout = (function(exports) {
 					const { columns } = section();
 					const fitsBelow = (from, area, below) => fitsAbove(from, keptHeight(index, below), Math.min(bottom, pageBottom - area), area > 0 || here.notes.length > 0);
 					if (!fitsHere && column + 1 < columns.length && fitsBelow(columnTop, noteArea + moreNoteRoom(here.notes), columns[column + 1])) nextColumn();
-					else if (!fitsHere && fitsBelow(top, leastAreaOf(here.notes, carried, columns.length > 1 ? columns : void 0), columns[0])) startPage();
+					else if (!fitsHere && fitsBelow(nextTop(), leastAreaOf(here.notes, carried, columns.length > 1 ? columns : void 0), columns[0])) startPage();
 				}
 				const { notes, kept, keptWith, all, fitsWith } = keptHere();
 				holdNotes = keptWith !== "nothing" && [...held, ...kept].length > 0 && notes.length === kept.length && fitsWith(leastNoteRoom(all)) && !fitsWith(moreNoteRoom(all));
@@ -4965,6 +4999,7 @@ var docxLayout = (function(exports) {
 		header: 36,
 		footer: 36,
 		gutter: 0,
+		topGutter: 0,
 		start: "nextPage",
 		titlePage: false,
 		numberFormat: "decimal"
@@ -5206,6 +5241,7 @@ var docxLayout = (function(exports) {
 				case "w:footnoteReference":
 				case "w:endnoteReference": {
 					var _reader$notes;
+					if (isOn(attributesOf(child[name])["w:customMarkFollows"])) return "a footnote or endnote with a mark of its own";
 					const note = (_reader$notes = reader.notes) === null || _reader$notes === void 0 ? void 0 : _reader$notes.read(name === "w:footnoteReference" ? "footnote" : "endnote", String(attributesOf(child[name])["w:id"]));
 					return note === void 0 ? [] : [...note.marker ? [{
 						type: "marker",
@@ -5843,9 +5879,11 @@ var docxLayout = (function(exports) {
 	};
 	/**
 	* Reads a section's properties (`w:sectPr`): its pages, how it starts, and its headers and footers. A section that
-	* doesn't give a header or footer for a kind of page has the one of the section before.
+	* doesn't give a header or footer for a kind of page has the one of the section before. Its gutter is beside the text,
+	* or above it when the document puts it at the top, which takes the room from the page's height, as Word does
+	* (`word-watertight-settings.docx` ST3).
 	*/
-	var readSection = (element, readPart, previous) => {
+	var readSection = (element, readPart, previous, { gutterAtTop, mirrorMargins }) => {
 		var _stringOf, _twips6, _twips7, _margins$wLeft, _twips8, _margins$wRight, _twips9, _twips10, _twips11, _twips12, _twips13, _twips14, _CHAPTER_SEPARATORS$S;
 		const properties = childrenOf(element);
 		const size = attributesOf(find(properties, "w:pgSz"));
@@ -5860,20 +5898,22 @@ var docxLayout = (function(exports) {
 		const marginLeft = (_twips7 = twips((_margins$wLeft = margins["w:left"]) !== null && _margins$wLeft !== void 0 ? _margins$wLeft : margins["w:start"])) !== null && _twips7 !== void 0 ? _twips7 : DEFAULT_SECTION.marginLeft;
 		const marginRight = (_twips8 = twips((_margins$wRight = margins["w:right"]) !== null && _margins$wRight !== void 0 ? _margins$wRight : margins["w:end"])) !== null && _twips8 !== void 0 ? _twips8 : DEFAULT_SECTION.marginRight;
 		const gutter = (_twips9 = twips(margins["w:gutter"])) !== null && _twips9 !== void 0 ? _twips9 : DEFAULT_SECTION.gutter;
-		const columns = readColumns(find(properties, "w:cols"), pageWidth - marginLeft - marginRight - gutter);
-		const unsupported = grid === "lines" || grid === "linesAndChars" || grid === "snapToChars" ? "a document grid" : formatPageNumber(1, format) === void 0 ? "page numbers in a format not yet written" : find(properties, "w:textDirection") !== void 0 ? "text that runs down the page" : find(properties, "w15:footnoteColumns") === void 0 ? unknownLengthIn(element) : "footnotes in columns of their own";
+		const marginTop = (_twips10 = twips(margins["w:top"])) !== null && _twips10 !== void 0 ? _twips10 : DEFAULT_SECTION.marginTop;
+		const columns = readColumns(find(properties, "w:cols"), pageWidth - marginLeft - marginRight - (gutterAtTop ? 0 : gutter));
+		const unsupported = grid === "lines" || grid === "linesAndChars" || grid === "snapToChars" ? "a document grid" : formatPageNumber(1, format) === void 0 ? "page numbers in a format not yet written" : find(properties, "w:textDirection") !== void 0 ? "text that runs down the page" : find(properties, "w15:footnoteColumns") !== void 0 ? "footnotes in columns of their own" : gutterAtTop && gutter !== 0 && (mirrorMargins || marginTop < 0) ? "a gutter at the top with mirrored margins or a negative top margin" : unknownLengthIn(element);
 		const headers = readReferences(properties, "w:headerReference", readPart);
 		const footers = readReferences(properties, "w:footerReference", readPart);
 		return _objectSpread2(_objectSpread2(_objectSpread2({
 			pageWidth,
-			pageHeight: (_twips10 = twips(size["w:h"])) !== null && _twips10 !== void 0 ? _twips10 : DEFAULT_SECTION.pageHeight,
-			marginTop: (_twips11 = twips(margins["w:top"])) !== null && _twips11 !== void 0 ? _twips11 : DEFAULT_SECTION.marginTop,
+			pageHeight: (_twips11 = twips(size["w:h"])) !== null && _twips11 !== void 0 ? _twips11 : DEFAULT_SECTION.pageHeight,
+			marginTop,
 			marginBottom: (_twips12 = twips(margins["w:bottom"])) !== null && _twips12 !== void 0 ? _twips12 : DEFAULT_SECTION.marginBottom,
 			marginLeft,
 			marginRight,
 			header: (_twips13 = twips(margins["w:header"])) !== null && _twips13 !== void 0 ? _twips13 : DEFAULT_SECTION.header,
 			footer: (_twips14 = twips(margins["w:footer"])) !== null && _twips14 !== void 0 ? _twips14 : DEFAULT_SECTION.footer,
-			gutter,
+			gutter: gutterAtTop ? 0 : gutter,
+			topGutter: gutterAtTop ? gutter : 0,
 			start: start !== void 0 && START_TYPES.has(start) ? start : "nextPage",
 			titlePage: onOff(properties, "w:titlePg") === true,
 			columns,
@@ -5995,11 +6035,40 @@ var docxLayout = (function(exports) {
 	* @param context - The context it was formatted in, with the document it is in
 	*/
 	var readDocument = (body, context) => readContent(body, partsOfFile(context));
+	var readNoteProperties = (element) => {
+		const children = childrenOf(element);
+		return withoutUndefined({
+			format: valueOf(children, "w:numFmt"),
+			start: numberOf(attributesOf(find(children, "w:numStart"))["w:val"]),
+			restart: valueOf(children, "w:numRestart"),
+			position: valueOf(children, "w:pos")
+		});
+	};
+	var NOTE_DEFAULTS = {
+		footnote: {
+			format: "decimal",
+			start: 1,
+			restart: "continuous",
+			position: "pageBottom"
+		},
+		endnote: {
+			format: "lowerRoman",
+			start: 1,
+			restart: "continuous",
+			position: "docEnd"
+		}
+	};
+	/** The section properties an element of the body ends a section with: the body's own, or a paragraph's */
+	var sectionPropertiesOf = (element) => {
+		const name = nameOf(element);
+		if (name === "w:sectPr") return element[name];
+		return name === "w:p" ? find(childrenOf(find(contentOf$2(element).filter(isObject), "w:pPr")), "w:sectPr") : void 0;
+	};
 	/**
 	* Reads a document's body (`w:body`), with the other parts of the document.
 	*/
 	var readContent = (body, parts) => {
-		var _parts$otherListIds, _parts$otherListIds2, _ref18, _documentContent$unsu;
+		var _parts$otherListIds, _parts$otherListIds2, _parts$settings, _ref18, _ref19, _ref20, _ref21, _documentContent$unsu;
 		const { styles } = parts;
 		const { lists: numbering, unsupported: inNumbering } = readNumbering(parts.numbering, styles, (_parts$otherListIds = parts.otherListIds) !== null && _parts$otherListIds !== void 0 ? _parts$otherListIds : /* @__PURE__ */ new Map());
 		const listIds = (_parts$otherListIds2 = parts.otherListIds) !== null && _parts$otherListIds2 !== void 0 ? _parts$otherListIds2 : /* @__PURE__ */ new Map();
@@ -6011,6 +6080,8 @@ var docxLayout = (function(exports) {
 			fields: [],
 			counters: /* @__PURE__ */ new Map()
 		});
+		const settings = childrenOf((_parts$settings = parts.settings) === null || _parts$settings === void 0 ? void 0 : _parts$settings["w:settings"]);
+		const elements = unwrap(contentOf$2(body));
 		const headersAndFooters = /* @__PURE__ */ new Map();
 		const readPart = (id) => {
 			if (!headersAndFooters.has(id)) {
@@ -6040,13 +6111,31 @@ var docxLayout = (function(exports) {
 		const footnoteNumbers = /* @__PURE__ */ new Map();
 		const endnotes = [];
 		const endnoteNumbers = /* @__PURE__ */ new Map();
+		const sectionElements = elements.flatMap((element) => {
+			const properties = sectionPropertiesOf(element);
+			return properties === void 0 ? [] : [properties];
+		});
+		/** How a section numbers and places its notes of a kind: as it says, or the document does, or as Word does */
+		const notePropertiesOf = (kind, section) => _objectSpread2(_objectSpread2(_objectSpread2({}, NOTE_DEFAULTS[kind]), readNoteProperties(find(settings, `w:${kind}Pr`))), readNoteProperties(find(childrenOf(sectionElements[section]), `w:${kind}Pr`)));
 		const noteCounts = {
 			footnote: 0,
 			endnote: 0
 		};
+		const lastNotes = /* @__PURE__ */ new Map();
+		let unwrittenNumber = false;
 		const readNote = (kind, id) => {
+			var _formatNumber2;
 			noteCounts[kind]++;
-			const label = formatNumber(noteCounts[kind], kind === "footnote" ? "decimal" : "lowerRoman");
+			const section = sections.length;
+			const { format, start, restart } = notePropertiesOf(kind, section);
+			const last = lastNotes.get(kind);
+			const value = last === void 0 || restart === "eachSect" && last.section !== section ? start : last.value + 1;
+			lastNotes.set(kind, {
+				value,
+				section
+			});
+			const label = (_formatNumber2 = formatNumber(value, format)) !== null && _formatNumber2 !== void 0 ? _formatNumber2 : "";
+			unwrittenNumber || (unwrittenNumber = formatNumber(value, format) === void 0);
 			const content = readNoteContent(kind, id, label);
 			if (kind === "endnote") {
 				endnotes.push(...content);
@@ -6065,10 +6154,14 @@ var docxLayout = (function(exports) {
 		const sections = [];
 		const blocks = [];
 		let bookmarks = [];
-		const addSection = (element) => {
-			sections.push(readSection(element, readPart, sections[sections.length - 1]));
+		const pageSettings = {
+			gutterAtTop: onOff(settings, "w:gutterAtTop") === true,
+			mirrorMargins: onOff(settings, "w:mirrorMargins") === true
 		};
-		for (const element of unwrap(contentOf$2(body))) {
+		const addSection = (element) => {
+			sections.push(readSection(element, readPart, sections[sections.length - 1], pageSettings));
+		};
+		for (const element of elements) {
 			const name = nameOf(element);
 			if (name === "w:sectPr") addSection(element[name]);
 			else if (name === "w:bookmarkStart") {
@@ -6076,7 +6169,7 @@ var docxLayout = (function(exports) {
 				bookmarks = bookmark === void 0 ? bookmarks : [...bookmarks, bookmark];
 			} else {
 				const block = readBlock(element, reader);
-				const sectionProperties = name === "w:p" ? find(childrenOf(find(contentOf$2(element).filter(isObject), "w:pPr")), "w:sectPr") : void 0;
+				const sectionProperties = sectionPropertiesOf(element);
 				if (block !== void 0) {
 					const marked = startingWith(block, bookmarks);
 					const sectionBreak = sectionProperties !== void 0 && block.type === "paragraph" && block.items.length === 0 && bookmarks.length === 0;
@@ -6090,6 +6183,15 @@ var docxLayout = (function(exports) {
 			}
 		}
 		if (sections.length === 0 || blocks.some(({ section }) => section >= sections.length)) addSection(void 0);
+		/**
+		* Why the notes of a kind can't be laid out yet, when Word numbers or places them in a way not yet followed: afresh on
+		* each page, from a number of its own in a section after the first though they are numbered on through the document,
+		* footnotes anywhere but at the bottom of the page, and endnotes at the end of each section
+		*/
+		const notesUnsupported = (kind) => {
+			const all = sections.map((_, section) => notePropertiesOf(kind, section));
+			return all.some(({ restart }) => restart === "eachPage") ? "notes numbered afresh on each page" : all.some(({ restart, start }) => restart !== "eachSect" && start !== all[0].start) ? "notes numbered on from a number of their own in a later section" : kind === "footnote" && all.some(({ position }) => position !== "pageBottom") ? "footnotes put elsewhere than at the bottom of the page" : kind === "endnote" && all.length > 1 && all.some(({ position }) => position !== "docEnd") ? "endnotes at the end of each section" : void 0;
+		};
 		const documentContent = _objectSpread2({
 			blocks,
 			sections,
@@ -6097,10 +6199,11 @@ var docxLayout = (function(exports) {
 			footnoteSeparator: footnotes.size > 0 ? readNoteContent("footnote", "separator") : [],
 			footnoteContinuationSeparator: footnotes.size > 0 ? readNoteContent("footnote", "continuationSeparator") : [],
 			endnotes: endnotes.length > 0 ? [...readNoteContent("endnote", "separator"), ...endnotes] : [],
+			endnoteContinuationSeparator: endnotes.length > 0 ? readNoteContent("endnote", "continuationSeparator") : [],
 			footnoteNumbers,
 			endnoteNumbers
 		}, readSettings(parts.settings));
-		return _objectSpread2(_objectSpread2({}, documentContent), withoutUndefined({ unsupported: (_ref18 = (_documentContent$unsu = documentContent.unsupported) !== null && _documentContent$unsu !== void 0 ? _documentContent$unsu : styles.unsupported) !== null && _ref18 !== void 0 ? _ref18 : inNumbering }));
+		return _objectSpread2(_objectSpread2({}, documentContent), withoutUndefined({ unsupported: (_ref18 = (_ref19 = (_ref20 = (_ref21 = (_documentContent$unsu = documentContent.unsupported) !== null && _documentContent$unsu !== void 0 ? _documentContent$unsu : styles.unsupported) !== null && _ref21 !== void 0 ? _ref21 : inNumbering) !== null && _ref20 !== void 0 ? _ref20 : footnotes.size > 0 ? notesUnsupported("footnote") : void 0) !== null && _ref19 !== void 0 ? _ref19 : endnotes.length > 0 ? notesUnsupported("endnote") : void 0) !== null && _ref18 !== void 0 ? _ref18 : unwrittenNumber ? "notes numbered in a format not yet written" : void 0 }));
 	};
 	//#endregion
 	//#region src/layout/read-docx.ts
