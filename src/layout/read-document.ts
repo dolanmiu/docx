@@ -1162,15 +1162,15 @@ const hasAnyOf = (element: unknown, names: ReadonlySet<string>): boolean =>
           Object.entries(element).some(([name, value]) => names.has(name) || (name !== "_attr" && hasAnyOf(value, names)));
 
 /**
- * A reader of what Word sizes a table's columns by: deleted text as text, with the notes and lists numbered as they would
- * be, but left for the reader it is made from to read and count.
+ * A reader of what Word sizes a table's columns by: deleted text as text, unless `showDeleted` is false, with the notes and
+ * lists numbered as they would be, but left for the reader it is made from to read and count.
  */
-const sizingReaderOf = (reader: Reader): Reader => ({
+const sizingReaderOf = (reader: Reader, showDeleted = true): Reader => ({
     ...reader,
     ...(reader.notes ? { notes: reader.notes.preview() } : {}),
     fields: [],
     counters: new Map([...reader.counters].map(([id, counts]) => [id, [...counts]])),
-    showDeleted: true,
+    showDeleted,
 });
 
 /** The names of the bookmarks that start in blocks, in order: in their paragraphs, and their tables' cells */
@@ -1315,9 +1315,10 @@ const readTable = (element: XmlObject, reader: Reader): TableBlock | undefined =
             const skipped = numberOf(attributesOf(find(rowProperties, "w:gridBefore"))["w:val"]) ?? 0;
             const ownSpacing = find(rowProperties, "w:tblCellSpacing");
             const spacing = ownSpacing === undefined ? tableSpacing : readCellSpacing(ownSpacing);
-            // A deleted row is read only as Word sizes the columns by it, with its notes and lists left uncounted
+            // A deleted row is read only as Word sizes the columns by it, with its notes and lists left uncounted, or, where
+            // nothing sizes them, for its bookmarks, with its deleted runs read as nothing
             const deleted = deletedFlags[rowIndex];
-            const rowReader = deleted ? sizingReaderOf(cellReader) : cellReader;
+            const rowReader = deleted ? sizingReaderOf(cellReader, sized) : cellReader;
             const counts = deleted ? JSON.stringify([...rowReader.counters]) : "";
             // Whether the parts of the table's style for some of its cells apply to the row otherwise than they would with
             // its deleted rows laid out

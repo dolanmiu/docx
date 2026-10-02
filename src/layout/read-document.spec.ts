@@ -2457,6 +2457,21 @@ describe("readDocument", () => {
             expect(textOf(content, 1)).to.equal("after");
         });
 
+        it("should start the bookmarks in a deleted row of a table laid out fixed in the next row, with its deleted tabs and breaks", () => {
+            // Nothing sizes the columns of a table laid out fixed by its deleted row, so its deleted runs are read as the
+            // layout reads them: nothing, but for their bookmarks
+            const content = readBody([
+                tableOf(
+                    [fixed],
+                    row([deletedRow], cell(p(bookmark("deleted"), { "w:del": [r({ "w:tab": {} }, { "w:br": {} })] }))),
+                    row([], cell(p(r(t("kept"))))),
+                ),
+            ]);
+            const table = content.blocks[0].block as TableBlock;
+            expect(table.unsupported).to.equal(undefined);
+            expect((table.rows[0].cells[0].blocks[0] as ParagraphBlock).items[0]).to.deep.equal({ type: "marker", name: "deleted" });
+        });
+
         it("should mark a deleted row in a table with borders or space between its rows as unsupported, as Word may keep them", () => {
             const bordered = "a deleted row in a table with borders or space between its rows";
             const unsupportedOf = (properties: readonly object[], deletedCell: readonly object[] = []): string | undefined =>
