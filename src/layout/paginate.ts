@@ -7,10 +7,11 @@
  * that starts in the next column starts in the next column of the page when the section before has as many columns and
  * one is left, laid out in the page's columns, and on a new page otherwise.
  * Paragraphs break into lines, and pages break between lines, as their keep and widow control settings allow. Table
- * rows break across pages between the lines of their cells, unless they are kept whole, and the table's header rows are
- * repeated at the top of each page and column. The footnotes of each page's lines, of the text and of table rows alike,
- * take room at its bottom, laid out in the section's columns in a section in columns, and one that doesn't fit below its
- * reference continues at the bottom of the next page, or pages, broken as the body is. The endnotes follow the body.
+ * rows break across pages between the lines of their cells, and the rows and lines of the tables in them, unless they are
+ * kept whole, and the table's header rows are repeated at the top of each page and column. The footnotes of each page's
+ * lines, of the text and of table rows alike, take room at its bottom, laid out in the section's columns in a section in
+ * columns, and one that doesn't fit below its reference continues at the bottom of the next page, or pages, broken as the
+ * body is. The endnotes follow the body.
  * It stops at the first thing it can't lay out yet, and the bookmarks after it aren't placed.
  *
  * @module
@@ -146,7 +147,7 @@ const AUTOMATIC_SPACE = 14;
 // eslint-disable-next-line functional/prefer-readonly-type
 const laidOutLines = new WeakMap<TextMeasurer, WeakMap<ParagraphBlock, Map<string, readonly LaidOutLine[]>>>();
 
-/** How a table in a table cell is placed when its row breaks across pages: whole, as a line that can't be broken */
+/** How the rows of a table in a footnote are measured: as a line that can't be broken */
 const UNBROKEN: Omit<MeasuredParagraph, "lines"> = {
     spaceBefore: 0,
     spaceAfter: 0,
@@ -158,8 +159,20 @@ const UNBROKEN: Omit<MeasuredParagraph, "lines"> = {
     pageBreakBefore: false,
 };
 
-/** A paragraph in a table cell, and the first of its lines not yet placed */
-type CellParagraph = { readonly paragraph: MeasuredParagraph; readonly from: number };
+/**
+ * A table in a table cell, as a row that breaks across pages fills it: the table as it is laid out in the cell, the
+ * height of each of its rows, the first of them not yet placed, and, when that row broke across pages, the paragraphs
+ * left in each of its cells (`broken`)
+ */
+type CellTable = {
+    readonly table: TableBlock;
+    readonly heights: readonly number[];
+    readonly from: number;
+    readonly broken?: readonly (readonly CellParagraph[])[];
+};
+
+/** A paragraph in a table cell, and the first of its lines not yet placed, or a table in the cell */
+type CellParagraph = { readonly paragraph: MeasuredParagraph; readonly from: number } | CellTable;
 
 /**
  * A cell's part of a row that breaks across pages: how tall it is, its lines, the paragraphs left for the next page, and
@@ -170,6 +183,8 @@ type CellPart = {
     readonly lines: readonly LaidOutLine[];
     readonly rest: readonly CellParagraph[];
     readonly fits: number;
+    /** Why the layout stops if the part goes on the page: a table in the cell that breaks there as Word's breaking isn't known */
+    readonly unsupported?: string;
 };
 
 /**
@@ -1907,8 +1922,14 @@ export const paginate = (
                 .filter(({ vertical }) => !vertical)
                 .map((cell) => {
                     const [first, second] = blocksWithRoom(cell);
-                    if (first === undefined || first.type === "table") {
-                        return first === undefined ? 0 : sum(rowHeights(sizedToPlace(first, cell.width)));
+                    if (first === undefined) {
+                        return 0;
+                    }
+                    if (first.type === "table") {
+                        // A table first in the cell breaks as its rows do, so the least of it is its first row's
+                        const sized = sizedToPlace(first, cell.width);
+                        const [firstRow] = sized.rows;
+                        return firstRow === undefined ? 0 : canSplit(firstRow) ? leastPartOf(firstRow) : rowHeights(sized)[0];
                     }
                     const {
                         lines,
@@ -2359,7 +2380,30 @@ export const paginate = (
         let used = 0;
         let previousAfter: number | undefined;
         let placed: readonly LaidOutLine[] = [];
-        for (const [index, { paragraph, from }] of paragraphs.entries()) {
+        for (const [index, item] of paragraphs.entries()) {
+            if (!("paragraph" in item)) {
+                // A table has no space of its own, so the space after the paragraph before it is kept above it, as where the
+                // row is whole
+                const above = item.from > 0 || item.broken !== undefined ? 0 : (previousAfter ?? 0);
+                const part = fillTable(item, room - used - above);
+                const placedAbove = placed.length;
+                if (part.lines.length > 0) {
+                    used += above + part.height;
+                    placed = [...placed, ...part.lines];
+                }
+                if (part.rest.length > 0) {
+                    return {
+                        ...part,
+                        height: used,
+                        lines: placed,
+                        rest: [...part.rest, ...paragraphs.slice(index + 1)],
+                        fits: placedAbove + part.fits,
+                    };
+                }
+                previousAfter = 0;
+                continue;
+            }
+            const { paragraph, from } = item;
             const space =
                 from > 0
                     ? 0
@@ -2404,28 +2448,124 @@ export const paginate = (
     };
 
     /**
+     * Fills a table in a cell's part of a row that breaks across pages: as many of its rows left as fit in the room, and
+     * then as many of the next row's lines as fit, broken as a row of the body breaks, as Word breaks a table in a cell
+     * between its rows, and in them between their lines, keeping to widow control (`word-probes.docx` U4c, U4d), and as it
+     * breaks a table in the body, with its borders and its cells' margins (`word-nested-tables.docx` N1 to N8). Each row
+     * on the page, or part of one, is a line of the cell's part. It says why where Word's breaking of the table isn't known.
+     */
+    const fillTable = ({ table, heights, from, broken }: CellTable, room: number): CellPart => {
+        const last = table.rows.length - 1;
+        const bottomBorder = table.rows.at(-1)?.borderBottom ?? 0;
+        // Whether Word repeats the header rows of a table in a cell, how it breaks the text of a cell merged down its rows,
+        // and what it draws where one with space between its cells breaks, aren't known
+        const unknown = table.rows.some(({ header }) => header)
+            ? "a header row of a table in a table cell across pages"
+            : table.rows.some(({ cells }) => cells.some(({ verticalMerge }) => verticalMerge !== undefined))
+              ? "a cell merged down the rows of a table in a table cell across pages"
+              : table.cellSpacing === undefined
+                ? undefined
+                : "a table with space between its cells in a table cell across pages";
+        let used = 0;
+        let placed: readonly LaidOutLine[] = [];
+        /** The cell's part where the table breaks before a row (`index`), or in it with the paragraphs left in its cells */
+        const breaksAt = (
+            index: number,
+            cells: readonly (readonly CellParagraph[])[] | undefined,
+            unsupported: string | undefined,
+        ): CellPart => ({
+            height: used,
+            lines: placed,
+            rest: [{ table, heights, from: index, ...(cells === undefined ? {} : { broken: cells }) }],
+            fits: placed.length,
+            ...(placed.length === 0 || unsupported === undefined ? {} : { unsupported }),
+        });
+        for (let index = from; index <= last; index++) {
+            const row = table.rows[index];
+            // The border below the row where the table breaks after it, which takes room on the page as in the body
+            const breakBorder = index < last ? (row.breakBorder ?? bottomBorder) : 0;
+            // The paragraphs left in the row's cells, when it broke across pages on the page before
+            const brokenCells = index === from ? broken : undefined;
+            // Where the table goes on from the page before, the first of its rows on the page has the table's top border
+            // above it, as Word draws it, whatever the border between the rows (`word-nested-tables.docx` N1c)
+            const borderTop = index === from && (from > 0 || broken !== undefined) ? table.rows[0].borderTop : row.borderTop;
+            const whole = heights[index] - row.borderTop + borderTop;
+            if (brokenCells === undefined && used + whole + breakBorder <= room + TOLERANCE) {
+                placed = [
+                    ...placed,
+                    {
+                        height: whole,
+                        markers: row.cells.flatMap((cell) => cell.blocks.flatMap(markersOf)),
+                        text: "",
+                        textWidth: 0,
+                    },
+                ];
+                used += whole;
+                continue;
+            }
+            if (unknown !== undefined) {
+                return breaksAt(index, brokenCells, unknown);
+            }
+            const borders = borderTop + row.borderBottom;
+            const margins = rowMarginsOf(row);
+            const cells = brokenCells ?? row.cells.map(cellParagraphs);
+            const cellRoom = room - used - borders - margins - breakBorder;
+            const parts = cells.map((paragraphs) => fillCell(paragraphs, cellRoom, brokenCells === undefined));
+            // As a row of the body, it breaks only where each of its cells with lines left keeps some of them on the page,
+            // and not when it is kept whole (N4, N7). One of an at-least height breaks only where its height fits (N5). Its
+            // margins above and below are around its cells' lines on each page (N3)
+            const placesLines =
+                (brokenCells !== undefined ||
+                    (!row.cantSplit &&
+                        row.height?.rule !== "exact" &&
+                        (row.height?.value ?? 0) <= room - used - borders - breakBorder + TOLERANCE)) &&
+                parts.some(({ lines }) => lines.length > 0) &&
+                cells.every((paragraphs, cell) => paragraphs.length === 0 || parts[cell].lines.length > 0);
+            if (!placesLines) {
+                // The table breaks before the row, with the border below the row above it (N1)
+                used += index > from ? (table.rows[index - 1].breakBorder ?? bottomBorder) : 0;
+                return breaksAt(index, brokenCells, undefined);
+            }
+            const rows = parts.map(({ rest }) => rest);
+            const height = Math.max(...parts.map((part) => part.height)) + margins + borders;
+            placed = [
+                ...placed,
+                {
+                    height,
+                    markers: [
+                        ...parts.flatMap(({ lines }) => lines.flatMap(({ markers }) => markers)),
+                        ...(brokenCells === undefined ? row.cells.flatMap(roomlessOf) : []),
+                    ],
+                    text: "",
+                    textWidth: 0,
+                },
+            ];
+            used += height;
+            if (rows.some((rest) => rest.length > 0)) {
+                // The row breaks, with the border below it where the table breaks (N2). Whether Word breaks text that runs
+                // up or down one of its cells isn't known
+                const unsupported =
+                    parts.find((part) => part.unsupported !== undefined)?.unsupported ??
+                    (row.cells.some(({ vertical }) => vertical) ? "text that runs up or down a table cell across pages" : undefined);
+                used += breakBorder;
+                return breaksAt(index, rows, unsupported);
+            }
+        }
+        return { height: used, lines: placed, rest: [], fits: placed.length };
+    };
+
+    /**
      * A cell's paragraphs, as a row that breaks across pages fills them. Text that runs up or down a cell, and an empty
      * paragraph whose mark takes no room, take none here
      */
     const cellParagraphs = (cell: TableCell): readonly CellParagraph[] =>
-        // A table in a cell is measured as a line that doesn't break, which is enough to tell whether the row breaks
-        (cell.vertical ? [] : blocksWithRoom(cell)).map((block, index, stack) => ({
-            paragraph:
-                block.type === "paragraph"
-                    ? measureParagraph(block, cell.width, stack[index - 1], stack[index + 1], true)
-                    : {
-                          ...UNBROKEN,
-                          lines: [
-                              {
-                                  height: sum(rowHeights(sizedToPlace(block, cell.width))),
-                                  markers: markersOf(block),
-                                  text: "",
-                                  textWidth: 0,
-                              },
-                          ],
-                      },
-            from: 0,
-        }));
+        (cell.vertical ? [] : blocksWithRoom(cell)).map((block, index, stack): CellParagraph => {
+            if (block.type === "paragraph") {
+                return { paragraph: measureParagraph(block, cell.width, stack[index - 1], stack[index + 1], true), from: 0 };
+            }
+            const table = sizedToPlace(block, cell.width);
+            return { table, heights: rowHeights(table), from: 0 };
+        });
 
     /** The markers of what in a cell takes no room: text that runs up or down it, and an empty paragraph whose mark takes none */
     const roomlessOf = (cell: TableCell): readonly string[] =>
@@ -2434,9 +2574,16 @@ export const paginate = (
     /** Whether a cell starts a merge down rows, whose text is laid out with the rows it is merged down */
     const startsMerge = ({ verticalMerge, vertical }: TableCell): boolean => verticalMerge === "restart" && !vertical;
 
-    /** The markers of the lines of paragraphs left, from the first not yet placed */
+    /**
+     * The markers of the lines of paragraphs left, from the first not yet placed, and of the rows of tables left, from the
+     * first not yet placed, all of whose markers are given, as those of a row that broke placed already stay where they are
+     */
     const markersLeft = (paragraphs: readonly CellParagraph[]): readonly string[] =>
-        paragraphs.flatMap(({ paragraph, from }) => paragraph.lines.slice(from).flatMap(({ markers }) => markers));
+        paragraphs.flatMap((item) =>
+            "paragraph" in item
+                ? item.paragraph.lines.slice(item.from).flatMap(({ markers }) => markers)
+                : item.table.rows.slice(item.from).flatMap(({ cells }) => cells.flatMap((cell) => cell.blocks.flatMap(markersOf))),
+        );
 
     /**
      * Ends the text of the cells merged down rows that have rows on the page, where the page breaks below them (`end`):
@@ -2626,8 +2773,18 @@ export const paginate = (
                 filled.some(({ lines }, cell) => decides(cell) && lines.length > 0) &&
                 cells.every(({ paragraphs }, cell) => !decides(cell) || paragraphs.length === 0 || filled[cell].lines.length > 0);
             if (placesLines && !isLastPart) {
-                if ([...row.cells, ...flowing.map(({ cell }) => cell)].some((cell) => cell.blocks.some(({ type }) => type === "table"))) {
-                    throw new Unsupported("a table in a table row across pages");
+                const hasTable = (cell: TableCell): boolean => cell.blocks.some(({ type }) => type === "table");
+                if (flowing.some(({ cell }) => hasTable(cell))) {
+                    // Whether Word breaks a table in a cell merged down rows as it breaks one in a cell of a row isn't known
+                    throw new Unsupported("a table in a cell merged down table rows across pages");
+                }
+                if (own.some(hasTable) && notesIn(row.cells.flatMap((cell) => cell.blocks.flatMap(markersOf))).length > 0) {
+                    // Where Word breaks such a row for its footnotes isn't known
+                    throw new Unsupported("a footnote in a table row with a table in a cell, across pages");
+                }
+                const unknown = filled.find(({ unsupported }) => unsupported !== undefined);
+                if (unknown !== undefined) {
+                    throw new Unsupported(unknown.unsupported!);
                 }
                 if (row.cells.some(({ vertical }) => vertical)) {
                     // Whether Word breaks text that runs up or down a cell with the row isn't known
@@ -2658,7 +2815,9 @@ export const paginate = (
                 // A paragraph kept together at the top of a cell's part breaks there when the row's lines can't go on the
                 // page without it, as one does at the top of a page in the text: 60 lines kept together in a row go 51
                 // and 9 (U8c1 to U8c3)
-                const kept = parts.some(([first]) => first?.paragraph.keepLines === true && first.from === 0);
+                const kept = parts.some(
+                    ([first]) => first !== undefined && "paragraph" in first && first.paragraph.keepLines && first.from === 0,
+                );
                 if (!kept) {
                     throw new Unsupported(
                         isFirstPart && row.height !== undefined && row.height.value > roomAbove(0) + TOLERANCE
@@ -2672,7 +2831,9 @@ export const paginate = (
                     throw new Unsupported("a table row kept together taller than a column");
                 }
                 parts = parts.map((paragraphs) =>
-                    paragraphs.map((part, index) => (index === 0 ? { ...part, paragraph: { ...part.paragraph, keepLines: false } } : part)),
+                    paragraphs.map((part, index) =>
+                        index === 0 && "paragraph" in part ? { ...part, paragraph: { ...part.paragraph, keepLines: false } } : part,
+                    ),
                 );
                 continue;
             }
