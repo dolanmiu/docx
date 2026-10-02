@@ -9,7 +9,7 @@
     ![image](https://user-images.githubusercontent.com/2917613/41195113-65edebfa-6c1f-11e8-97b4-77de2d60044a.png)
     ![image](https://user-images.githubusercontent.com/2917613/41195126-ca99c36c-6c1f-11e8-9e58-19e5f69b3b87.png)
 
-    _Note_: Font and color selection from the theme are currently not supported.
+    _Note_: Fonts and colors picked from the theme, such as "(Headings)" or "Accent 1", come from the theme of the document `docx` writes. See [Theme fonts and colors](#theme-fonts-and-colors).
 
 3.  You can even create a totally new `Style`:
 
@@ -73,5 +73,46 @@ const doc = new Document({
     ],
 });
 ```
+
+## Theme fonts and colors
+
+Styles made in Word often name the theme's fonts and colors rather than a font or a color: "(Headings)" is written as `w:asciiTheme="majorHAnsi"`, and "Accent 1" as `w:themeColor="accent1"`. Word looks them up in the document's theme, which is the one `docx` writes, not the theme of the document your `styles.xml` came from. It's Office's theme, with Calibri Light for headings and Calibri for body text, unless the [`theme`](usage/themes.md) option changes it.
+
+To keep the fonts and colors of the document the styles came from, give its theme's fonts and colors in `theme`. They're in that document's `word/theme/theme1.xml`: the `typeface` of `a:latin` in `a:majorFont` is the font for headings, the one in `a:minorFont` is the font for body text, and `a:clrScheme` has the colors.
+
+```ts live
+import { Document, HeadingLevel, Paragraph } from "docx";
+
+// Heading 1 in Word's "(Headings)" font
+const styles = `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<w:styles xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main">
+    <w:style w:type="paragraph" w:styleId="Heading1">
+        <w:name w:val="heading 1"/>
+        <w:basedOn w:val="Normal"/>
+        <w:next w:val="Normal"/>
+        <w:qFormat/>
+        <w:pPr><w:keepNext/><w:outlineLvl w:val="0"/></w:pPr>
+        <w:rPr>
+            <w:rFonts w:asciiTheme="majorHAnsi" w:eastAsiaTheme="majorEastAsia" w:hAnsiTheme="majorHAnsi" w:cstheme="majorBidi"/>
+            <w:b/>
+            <w:caps/>
+            <w:sz w:val="28"/>
+        </w:rPr>
+    </w:style>
+</w:styles>`;
+
+const doc = new Document({
+    externalStyles: styles,
+    // The fonts in the theme1.xml of the document the styles came from
+    theme: { fonts: { headings: "Georgia", body: "Georgia" } },
+    sections: [
+        {
+            children: [new Paragraph({ text: "In Georgia", heading: HeadingLevel.HEADING_1 })],
+        },
+    ],
+});
+```
+
+Page sizes and margins aren't styles, so they aren't in `styles.xml`. Give them in each section's `properties`, as [Page Layout](usage/page-layout.md#page-margins) shows.
 
 Example: https://github.com/dolanmiu/docx/blob/master/demo/styles/xml-styles.ts
