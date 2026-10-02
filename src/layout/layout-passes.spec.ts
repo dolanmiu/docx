@@ -51,6 +51,48 @@ describe("layOutPasses", () => {
         expect(textOf(passes)).to.deep.equal(["On page", "Target"]);
     });
 
+    it("should give the last pass, guessing, when the page numbers still change after three passes, with the guess on the first page they moved on", () => {
+        // As above, with the first line in a font not in the width tables, which is a guess too, and a page after
+        const withStart = contentOf([
+            new Paragraph({
+                spacing: line,
+                children: [
+                    new Bookmark({ id: "start", children: [new TextRun({ text: "On page", font: "Aptos" })] }),
+                    new PageReference("target"),
+                ],
+            }),
+            new Paragraph({ spacing: line, children: [new Bookmark({ id: "target", children: [new TextRun("Target")] })] }),
+            new Paragraph({ pageBreakBefore: true, children: [new TextRun("After")] }),
+        ]);
+        const passes = layOutPasses(
+            withStart,
+            measurerOf((text) => (text === "1" ? 1000 : text.length)),
+            true,
+        );
+        // The third pass, laid out with the second's 2, which puts the target back on page 1, where the second had it on page 2
+        expect(passes.settled).to.equal(true);
+        expect(textOf(passes)).to.deep.equal(["On page2", "Target", "After"]);
+        expect(passes.pages.map(({ guesses }) => guesses)).to.deep.equal([
+            ["a font not in the width tables", "page numbers that move when the pages are laid out with them"],
+            undefined,
+        ]);
+        // Alone on its page
+        expect(
+            layOutPasses(
+                content,
+                measurerOf((text) => (text === "1" ? 1000 : text.length)),
+                true,
+            ).pages.map(({ guesses }) => guesses),
+        ).to.deep.equal([["page numbers that move when the pages are laid out with them"]]);
+        // Numbers that settle are no guess
+        const settled = layOutPasses(
+            withStart,
+            measurerOf((text) => text.length),
+            true,
+        );
+        expect(settled.pages.map(({ guesses }) => guesses)).to.deep.equal([["a font not in the width tables"], undefined]);
+    });
+
     it("should stop each pass at a field whose number its format doesn't write, once a pass has placed it, so the passes settle", () => {
         // Page 1 with a picture of 3 digits only where the number has them, which Word writes with spaces, not yet seen.
         // The first pass doesn't know the page, the second stops at the reference, and so does the third, which hasn't

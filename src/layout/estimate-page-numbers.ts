@@ -20,13 +20,21 @@ import { type MeasureWidth, measurerOf } from "./measure-width";
 import { type DocumentContent, readDocument } from "./read-document";
 import { readDocx } from "./read-docx";
 
-/** What a document is read into: a template patchDocument patched, or the body of a document being written */
-const contentOf = (document: IXmlableObject | PatchedTemplate, context?: IContext): DocumentContent | undefined =>
-    "parts" in document ? readDocx(document.parts, document.binaryParts) : context?.file && readDocument(document, context);
+/**
+ * What a document is read into: a template patchDocument patched, or the body of a document being written. Read to be
+ * laid out with a guess (`guess`), past what can't be laid out as Word does
+ */
+const contentOf = (document: IXmlableObject | PatchedTemplate, context?: IContext, guess = false): DocumentContent | undefined =>
+    "parts" in document
+        ? readDocx(document.parts, document.binaryParts, { guess })
+        : context?.file && readDocument(document, context, { guess });
 
-/** Lays out the pages until their page numbers stop changing, with a measurer. Gives none when they don't */
-const estimateWith = (content: DocumentContent | undefined, measurer: TextMeasurer): EstimatedPageNumbers => {
-    const pagination = content && layOutPasses(content, measurer);
+/**
+ * Lays out the pages until their page numbers stop changing, with a measurer. Gives none when they don't, unless it
+ * guesses, when it gives where it guessed too
+ */
+const estimateWith = (content: DocumentContent | undefined, measurer: TextMeasurer, guess = false): EstimatedPageNumbers => {
+    const pagination = content && layOutPasses(content, measurer, guess);
     if (!pagination?.settled) {
         return { bookmarks: new Map() };
     }
@@ -37,6 +45,9 @@ const estimateWith = (content: DocumentContent | undefined, measurer: TextMeasur
         bookmarkPageNumbers: pagination.bookmarkNumbers,
         relativePositions: pagination.relativePositions,
         ...(pageCount === undefined ? {} : { pageCount }),
+        ...(guess
+            ? { guesses: pagination.pages.flatMap(({ guesses = [] }, index) => guesses.map((reason) => ({ reason, page: index + 1 }))) }
+            : {}),
     };
 };
 
@@ -70,7 +81,9 @@ const estimateWith = (content: DocumentContent | undefined, measurer: TextMeasur
  * of Word's own the layout doesn't know, on or off. The schema's other settings, which ask for an older Word's or
  * another application's layout, Word lays out lines with as without them, and settings for other applications are left
  * to them. When laying the pages out again with the page numbers it worked out still changes them after three passes,
- * as when a table of contents wraps one way with a number and the other way without it, all of them are left blank.
+ * as when a table of contents wraps one way with a number and the other way without it, all of them are left blank. To
+ * lay out past what it stops at with the best guess it has instead, give the document
+ * `estimatePageNumbersWith({ guess: true })`.
  *
  * Page references are written as Word writes them, with `\p` ("above", "below" or "on page 4") and in formats of their
  * own, such as `\* roman`, and so are numbers of pages. Page references, tables of contents and SEQ fields (caption
@@ -125,6 +138,19 @@ export type EstimatePageNumbersOptions = {
      * width tables, so the layout stops at text in a font that isn't in them and isn't given as a file or embedded.
      */
     readonly measureWidth?: MeasureWidth;
+    /**
+     * Whether to lay out past what the layout can't lay out as Word does yet with the best guess it has, rather than
+     * leave the page numbers after it blank. Text in a font that isn't in the width tables, and isn't given as a file or
+     * embedded, is measured as the most similar font that is, such as Aptos as Arial, and a character whose width isn't
+     * known as an average letter of its font. A date is measured as it is written, and a setting or formatting the layout
+     * doesn't follow, such as hyphenation or a compatibility setting, is left as if it weren't there. What it can't read,
+     * such as a drawing that text flows around or an equation, is left out, and a page laid out as the rule it follows
+     * nearest to Word's lays it out. It still stops where it has no guess, such as at an imported document.
+     *
+     * The page numbers may then not be Word's, so `guesses`, in what the estimator gives, says where it guessed. Default
+     * is off, so the numbers written are Word's, as near as the layout knows, or blank.
+     */
+    readonly guess?: boolean;
 };
 
 /**
@@ -135,6 +161,7 @@ export type EstimatePageNumbersOptions = {
  * new Document({ pageNumbers: estimatePageNumbersWith({ measureWidth: measureWithPretext(pretext) }), sections: [...] });
  * const fonts = [{ data: await readFile("Aptos.ttf") }, { data: await readFile("Aptos-Bold.ttf") }];
  * new Document({ pageNumbers: estimatePageNumbersWith({ fonts }), sections: [...] });
+ * new Document({ pageNumbers: estimatePageNumbersWith({ guess: true }), sections: [...] });
  * ```
  *
  * It throws when a font file isn't a TrueType or OpenType font.
@@ -144,11 +171,13 @@ export type EstimatePageNumbersOptions = {
 export const estimatePageNumbersWith = ({
     measureWidth,
     fonts = [],
+    guess = false,
 }: EstimatePageNumbersOptions): PageNumberEstimator & TemplatePageNumberEstimator => {
     // Text in the fonts given as files is measured from them, and the rest as measureWidth, or the width tables, measure it
     const faces = fonts.flatMap(({ data, name }) => readFontFile(data).map((face) => (name === undefined ? face : { ...face, name })));
     const others = measureWidth ? measurerOf(measureWidth) : DEFAULT_MEASURER;
     // One measurer for every document, so the lines laid out for one are kept for the passes after
     const measurer = faces.length === 0 ? others : createFontFileMeasurer(faces, others);
-    return (document: IXmlableObject | PatchedTemplate, context?: IContext) => estimateWith(contentOf(document, context), measurer);
+    return (document: IXmlableObject | PatchedTemplate, context?: IContext) =>
+        estimateWith(contentOf(document, context, guess), measurer, guess);
 };

@@ -5820,4 +5820,142 @@ describe("paginate with automatic hyphenation", () => {
         expect(paginate(content([text("x", "123456"), text("w", "abcde")]), { measurer: MEASURER }).stoppedAt).to.equal(undefined);
         expect(paginate(content([text("x", "123456")]), { measurer: MEASURER }).stoppedAt).to.equal(undefined);
     });
+
+    describe("guessing past what can't be laid out as Word does", () => {
+        /** The pages laid out with a guess, as the guesses noted on each, and where it stopped, if it did */
+        const guessed = (
+            content: DocumentContent,
+            measurer: TextMeasurer = MEASURER,
+        ): {
+            readonly guesses: readonly (readonly string[])[];
+            readonly stoppedAt?: string;
+            readonly bookmarks: Record<string, string>;
+        } => {
+            const { pages, stoppedAt, bookmarks } = paginate(content, { measurer, guess: true });
+            return {
+                guesses: pages.map((page) => page.guesses ?? []),
+                bookmarks: Object.fromEntries(inBody(content, bookmarks)),
+                ...(stoppedAt === undefined ? {} : { stoppedAt }),
+            };
+        };
+
+        it("should lay out a block it would stop at as it was read, and note the guess on the page it was laying out then", () => {
+            const content = document([
+                paragraph("a", 6),
+                { ...paragraph("b", 3), unsupported: "a text frame" },
+                { ...paragraph("c", 1), unsupported: "a text frame" },
+                paragraph("d", 1),
+            ]);
+            expect(numbersOf(content)).to.deep.include({ stoppedAt: "a text frame", bookmarks: new Map([["a", "1"]]) });
+            // b's first line would fit below a's 6, but widow control moves it to page 2, which it is laid out on when the
+            // layout meets it: its page, and those after, may not be Word's from there on. c's guess is the same, on page 2
+            expect(guessed(content)).to.deep.equal({
+                guesses: [["a text frame"], ["a text frame"]],
+                bookmarks: { a: "1", b: "2", c: "2", d: "2" },
+            });
+        });
+
+        it("should still stop at what the reader had nothing to lay out in place of, as it has no guess for it", () => {
+            const content = document([paragraph("a", 1), { ...paragraph("b", 0), unsupported: "an imported document", noGuess: true }]);
+            expect(guessed(content)).to.deep.equal({ guesses: [[]], bookmarks: { a: "1" }, stoppedAt: "an imported document" });
+        });
+
+        it("should measure text in a font the measurer doesn't know as it measures it, each time the pages are laid out", () => {
+            const CHOOSY: TextMeasurer = { ...MEASURER, unknownFont: ({ font }) => font === "Unknown" };
+            const content = document([
+                paragraph("a", 6),
+                withItems(paragraph("b", 1), [{ type: "text", text: " x", font: { font: "Unknown" } }]),
+                paragraph("c", 1),
+            ]);
+            expect(numbersOf(content, CHOOSY).stoppedAt).to.equal("a font not in the width tables");
+            // b's two lines don't fit below a's 6 with widow control, so they are measured on page 1 and placed on page 2
+            const expected = {
+                guesses: [["a font not in the width tables"], ["a font not in the width tables"]],
+                bookmarks: { a: "1", b: "2", c: "2" },
+            };
+            expect(guessed(content, CHOOSY)).to.deep.equal(expected);
+            // The lines laid out the first time are laid out again as they were, and still say they are a guess
+            expect(guessed(content, CHOOSY)).to.deep.equal(expected);
+            // As is an empty paragraph whose mark is in it, and a line whose breaking Word hasn't shown keeps its own reason
+            const mark: ParagraphBlock = { ...paragraph("mark", 0), markFont: { font: "Unknown" } };
+            const picture: ParagraphBlock = {
+                ...paragraph("picture", 0),
+                items: [
+                    { type: "text", text: "x", font: { font: "Unknown" } },
+                    { type: "break", kind: "line", font: { size: 4 } },
+                    { type: "box", width: 10, height: 5, font: { size: 4 } },
+                ],
+            };
+            expect(guessed(document([mark, picture]), CHOOSY).guesses).to.deep.equal([
+                ["a font not in the width tables", "a picture alone in a line of a paragraph whose mark is larger"],
+            ]);
+        });
+
+        it("should measure a character whose width the measurer doesn't know as it measures it", () => {
+            const CHARACTERS: TextMeasurer = { ...MEASURER, unknownCharacter: (value) => (value.includes("∑") ? "∑" : undefined) };
+            const content = document([withItems(paragraph("a", 1), [{ type: "text", text: " ∑", font: {} }]), paragraph("b", 1)]);
+            expect(numbersOf(content, CHARACTERS).stoppedAt).to.equal("a character whose width in its font isn't known");
+            expect(guessed(content, CHARACTERS)).to.deep.equal({
+                guesses: [["a character whose width in its font isn't known"]],
+                bookmarks: { a: "1", b: "1" },
+            });
+        });
+
+        it("should lay out the document, a section and a header as they were read, noting the guess on the page each is on", () => {
+            expect(guessed(document([paragraph("a", 1)], { unsupported: "hyphenation" })).guesses).to.deep.equal([["hyphenation"]]);
+            const sections = (start: Section["start"]): DocumentContent =>
+                document(
+                    [
+                        [paragraph("a", 1), 0],
+                        [paragraph("b", 1), 1],
+                    ],
+                    { sections: [SECTION, { ...SECTION, start, unsupported: "a document grid" }] },
+                );
+            expect(guessed(sections("nextPage")).guesses).to.deep.equal([[], ["a document grid"]]);
+            expect(guessed(sections("continuous")).guesses).to.deep.equal([["a document grid"]]);
+            // A header is laid out with the guess on each page it is on
+            const header = document([paragraph("a", 9)], {
+                sections: [{ ...SECTION, headers: { default: [{ ...paragraph("h", 1), unsupported: "an equation" }] } }],
+            });
+            expect(guessed(header).guesses).to.deep.equal([["an equation"], ["an equation"]]);
+        });
+
+        it("should write a page number in a format it can't write in figures", () => {
+            const numbered = document([paragraph("a", 1)], { sections: [{ ...SECTION, numberFormat: "lowerLetter", firstNumber: 781 }] });
+            expect(guessed(numbered)).to.deep.equal({
+                guesses: [["a page number its format isn't written for yet"]],
+                bookmarks: { a: "781" },
+            });
+            const counted = withItems(paragraph("b", 0), [
+                { type: "pageCount", scope: "document", font: {}, format: { numberFormat: "nonsense" } },
+            ]);
+            const passes = paginate(document([paragraph("a", 1), counted]), { measurer: MEASURER, guess: true, pageCount: 1 });
+            expect(passes.pages[0].guesses).to.deep.equal(["a page number its format isn't written for yet"]);
+            expect(passes.pages[0].body[1]).to.deep.include({ lines: [{ text: "1", x: 10, y: 20, width: 80, height: 10, textWidth: 10 }] });
+        });
+
+        it("should keep what is kept with a table it lays out with a guess with the table, but not with one it has no guess for", () => {
+            const keptBefore = (anchor: TableBlock): Record<string, string> =>
+                guessed(document([paragraph("a", 5), paragraph("b", 1, { keepNext: true }), anchor, paragraph("c", 1)])).bookmarks;
+            const rows = table([row([[paragraph("one", 2)]], { cantSplit: true })]);
+            // b goes on to page 2 with the table's first row, which doesn't fit below it
+            expect(keptBefore({ ...rows, unsupported: "a table that text flows around" })).to.deep.equal({
+                a: "1",
+                b: "2",
+                one: "2",
+                c: "2",
+            });
+            expect(keptBefore({ ...rows, unsupported: "an imported document", noGuess: true })).to.deep.equal({ a: "1", b: "1" });
+        });
+
+        it("should still stop where it has no guess, such as at the multiple spacing of a line in a table row across pages", () => {
+            // Letting it go below the page, as in the text, would leave the row's lines below the page as it is cut for them
+            const spaced = { lineSpacing: { rule: "multiple", multiple: 1.5 } } as const;
+            const rowAcross = document([paragraph("a", 3), table([row([[paragraph("cell", 6, spaced)]])]), paragraph("b", 1)]);
+            expect(guessed(rowAcross)).to.deep.include({
+                stoppedAt: "a table row across pages whose line's multiple spacing goes below the page",
+                bookmarks: { a: "1" },
+            });
+        });
+    });
 });
