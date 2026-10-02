@@ -3604,7 +3604,7 @@ var docxShapes = (function(exports, docx) {
 		if (takesNoRoom(character)) return 0;
 		return isWide(code) || FULL_WIDTH_SYMBOLS.has(character) || code >= 8592 && code <= 9983 ? 1e3 : 500;
 	};
-	var sizeOf = ({ size = 10 }) => size;
+	var sizeOf$1 = ({ size = 10 }) => size;
 	/**
 	* How a font's characters are measured: an East Asian font's Latin letters with the widths of the font in the table they
 	* are measured as, or all of a monospaced one's as half an em or an em, and other fonts with their own widths, or those of
@@ -3626,7 +3626,7 @@ var docxShapes = (function(exports, docx) {
 	var measureTextWidth = (text, font = {}, start = 0) => {
 		const { widths, monospaced } = measuresOf(font);
 		const widthOf = monospaced ? monospacedWidth : (character) => characterWidth(widths, character);
-		const size = sizeOf(font);
+		const size = sizeOf$1(font);
 		const { characterSpacing = 0, scale = 100 } = font;
 		return [...text].reduce((position, character) => character === "	" ? (Math.floor(position / TAB_STOP) + 1) * TAB_STOP : position + widthOf(character) * size * scale / 1e5 + characterSpacing, start) - start;
 	};
@@ -3635,7 +3635,7 @@ var docxShapes = (function(exports, docx) {
 	*/
 	var measureLineHeight = (font = {}) => {
 		var _eastAsianFontOf, _font$font2;
-		return ((_eastAsianFontOf = eastAsianFontOf((_font$font2 = font.font) !== null && _font$font2 !== void 0 ? _font$font2 : "Times New Roman")) !== null && _eastAsianFontOf !== void 0 ? _eastAsianFontOf : widthsOf(font.font)).lineHeight * sizeOf(font) / 1e3;
+		return ((_eastAsianFontOf = eastAsianFontOf((_font$font2 = font.font) !== null && _font$font2 !== void 0 ? _font$font2 : "Times New Roman")) !== null && _eastAsianFontOf !== void 0 ? _eastAsianFontOf : widthsOf(font.font)).lineHeight * sizeOf$1(font) / 1e3;
 	};
 	/**
 	* Splits spans into words and the spaces between them. A word can be made of pieces of several spans, such as a bold
@@ -3804,6 +3804,62 @@ var docxShapes = (function(exports, docx) {
 	};
 	var stringOf = (value) => typeof value === "string" && value.length > 0 ? value : void 0;
 	var scaled = (value, divisor) => value === void 0 ? void 0 : value / divisor;
+	var POINTS_PER_UNIT = {
+		mm: 72 / 25.4,
+		cm: 72 / 2.54,
+		in: 72,
+		pt: 1,
+		pc: 12,
+		pi: 12
+	};
+	var METRIC = /* @__PURE__ */ new Set(["mm", "cm"]);
+	var MEASURE = /^\s*(-?)(\d+)(\.\d+)?(mm|cm|in|pt|pc|pi)\s*$/;
+	var ROUNDING = 1e-9;
+	/**
+	* A length in points, from an attribute in its own unit, `perPoint` of which make a point (20 for twips, 2 for
+	* half-points), or in a unit of OOXML's universal measure, such as "1in", "2.5cm" or "12pt", as the schema allows for
+	* every length docx writes from a string.
+	*
+	* Word reads a universal measure as a whole number of the attribute's unit (word-units and word-units2): rounded down
+	* from inches, points and picas, so "240.7pt" is 4814 twips, and to the nearest from centimeters and millimeters, so
+	* "84.67724mm" (4800.6 twips) is 4801. Its minus sign is the whole number's only, and the fraction is added to it:
+	* "-10.7pt" is -10 points and 0.7 more, -186 twips, and "-0.16708in" is 240 twips.
+	*/
+	var pointsOf = (value, perPoint) => {
+		const measure = typeof value === "string" ? MEASURE.exec(value) : null;
+		if (!measure) return scaled(numberOf(value), perPoint);
+		const [, minus, whole, fraction = "", unit] = measure;
+		const inUnits = ((minus ? -Number(whole) : Number(whole)) + Number(`0${fraction}`)) * POINTS_PER_UNIT[unit] * perPoint;
+		return (METRIC.has(unit) ? Math.round(inUnits) : Math.floor(inUnits + ROUNDING)) / perPoint;
+	};
+	/**
+	* A run's size (`w:sz`, or `w:szCs` for complex scripts) in points, from half-points, or from points, which Word rounds down to a half-point:
+	* "11.75pt" is 11.5. Word ignores a size in inches, centimeters or millimeters, as if it had none (word-units2).
+	*/
+	var sizeOf = (value) => {
+		var _MEASURE$exec;
+		const unit = typeof value === "string" ? (_MEASURE$exec = MEASURE.exec(value)) === null || _MEASURE$exec === void 0 ? void 0 : _MEASURE$exec[4] : void 0;
+		return unit === void 0 || unit === "pt" ? pointsOf(value, 2) : void 0;
+	};
+	/**
+	* Why how Word reads a length in formatted XML isn't known, when it isn't: a size in picas, which Word's PDFs didn't
+	* tell from one it ignores, or in another unit but points, which they showed it ignores only with no style giving a
+	* size, and a negative length of a fraction of a centimeter or millimeter, whose minus sign and rounding together they
+	* didn't show. Undefined when every length's reading is known.
+	*/
+	var unknownLengthIn = (element, name = "") => {
+		if (Array.isArray(element)) return element.reduce((found, child) => found !== null && found !== void 0 ? found : unknownLengthIn(child, name), void 0);
+		if (!isObject(element)) return;
+		return Object.entries(element).reduce((found, [key, child]) => {
+			if (found !== void 0 || key !== "_attr") return found !== null && found !== void 0 ? found : unknownLengthIn(child, key);
+			return Object.values(child).reduce((reason, value) => {
+				const measure = typeof value === "string" ? MEASURE.exec(value) : null;
+				if (reason !== void 0 || !measure) return reason;
+				const [, minus, , fraction, unit] = measure;
+				return (name === "w:sz" || name === "w:szCs") && unit !== "pt" ? "a size given in a unit other than points" : minus && fraction && METRIC.has(unit) ? "a negative length of a fraction of a centimeter or millimeter" : void 0;
+			}, void 0);
+		}, void 0);
+	};
 	var isOff = (value) => value === false || value === 0 || value === "false" || value === "0" || value === "off";
 	/**
 	* An on/off property, such as `w:b`: on when present, unless its value says otherwise.
@@ -3836,17 +3892,17 @@ var docxShapes = (function(exports, docx) {
 		const fonts = attributesOf(find(children, "w:rFonts"));
 		return withoutUndefined({
 			font: (_ref = (_ref2 = (_themeFontOf = themeFontOf(fonts["w:asciiTheme"], themeFonts)) !== null && _themeFontOf !== void 0 ? _themeFontOf : stringOf(fonts["w:ascii"])) !== null && _ref2 !== void 0 ? _ref2 : themeFontOf(fonts["w:hAnsiTheme"], themeFonts)) !== null && _ref !== void 0 ? _ref : stringOf(fonts["w:hAnsi"]),
-			size: scaled(numberOf(attributesOf(find(children, "w:sz"))["w:val"]), 2),
+			size: sizeOf(attributesOf(find(children, "w:sz"))["w:val"]),
 			bold: onOff(children, "w:b"),
 			italic: onOff(children, "w:i"),
 			allCaps: onOff(children, "w:caps"),
 			smallCaps: onOff(children, "w:smallCaps"),
 			hidden: onOff(children, "w:vanish"),
-			characterSpacing: scaled(numberOf(attributesOf(find(children, "w:spacing"))["w:val"]), 20),
+			characterSpacing: pointsOf(attributesOf(find(children, "w:spacing"))["w:val"], 20),
 			scale: numberOf(attributesOf(find(children, "w:w"))["w:val"]),
 			eastAsiaFont: (_themeFontOf2 = themeFontOf(fonts["w:eastAsiaTheme"], themeFonts)) !== null && _themeFontOf2 !== void 0 ? _themeFontOf2 : stringOf(fonts["w:eastAsia"]),
 			complexScriptFont: (_themeFontOf3 = themeFontOf(fonts["w:cstheme"], themeFonts)) !== null && _themeFontOf3 !== void 0 ? _themeFontOf3 : stringOf(fonts["w:cs"]),
-			complexScriptSize: scaled(numberOf(attributesOf(find(children, "w:szCs"))["w:val"]), 2),
+			complexScriptSize: sizeOf(attributesOf(find(children, "w:szCs"))["w:val"]),
 			complexScriptBold: onOff(children, "w:bCs"),
 			rightToLeft: onOff(children, "w:rtl"),
 			complexScript: onOff(children, "w:cs"),
@@ -3854,15 +3910,15 @@ var docxShapes = (function(exports, docx) {
 		});
 	};
 	var readLineSpacing = (spacing) => {
-		const line = numberOf(spacing["w:line"]);
+		const line = pointsOf(spacing["w:line"], 20);
 		if (line === void 0) return;
 		const rule = spacing["w:lineRule"];
 		return rule === "exact" || rule === "atLeast" ? {
 			rule,
-			height: line / 20
+			height: line
 		} : {
 			rule: "multiple",
-			multiple: line / SINGLE_LINE
+			multiple: line * 20 / SINGLE_LINE
 		};
 	};
 	var TAB_ALIGNMENTS = {
@@ -3882,10 +3938,10 @@ var docxShapes = (function(exports, docx) {
 	var readTabs = (element) => {
 		const tabs = childrenOf(element).filter((child) => "w:tab" in child);
 		return tabs.length === 0 ? void 0 : tabs.map((tab) => {
-			var _numberOf, _TAB_ALIGNMENTS$Strin;
+			var _pointsOf, _TAB_ALIGNMENTS$Strin;
 			const attributes = attributesOf(tab["w:tab"]);
 			return {
-				position: ((_numberOf = numberOf(attributes["w:pos"])) !== null && _numberOf !== void 0 ? _numberOf : 0) / 20,
+				position: (_pointsOf = pointsOf(attributes["w:pos"], 20)) !== null && _pointsOf !== void 0 ? _pointsOf : 0,
 				alignment: (_TAB_ALIGNMENTS$Strin = TAB_ALIGNMENTS[String(attributes["w:val"])]) !== null && _TAB_ALIGNMENTS$Strin !== void 0 ? _TAB_ALIGNMENTS$Strin : "left"
 			};
 		});
@@ -3897,11 +3953,11 @@ var docxShapes = (function(exports, docx) {
 		const children = childrenOf(element);
 		const spacing = attributesOf(find(children, "w:spacing"));
 		const indent = attributesOf(find(children, "w:ind"));
-		const twips = (...names) => scaled(names.map((name) => numberOf(indent[name])).find((value) => value !== void 0), 20);
+		const twips = (...names) => names.map((name) => pointsOf(indent[name], 20)).find((value) => value !== void 0);
 		const hanging = twips("w:hanging");
 		return withoutUndefined({
-			spaceBefore: scaled(numberOf(spacing["w:before"]), 20),
-			spaceAfter: scaled(numberOf(spacing["w:after"]), 20),
+			spaceBefore: pointsOf(spacing["w:before"], 20),
+			spaceAfter: pointsOf(spacing["w:after"], 20),
 			lineSpacing: readLineSpacing(spacing),
 			indentLeft: twips("w:start", "w:left"),
 			indentRight: twips("w:end", "w:right"),
@@ -3959,7 +4015,7 @@ var docxShapes = (function(exports, docx) {
 			return (_styles$find = styles.find((style) => style.isDefault && style.definition.type === type)) === null || _styles$find === void 0 ? void 0 : _styles$find.id;
 		};
 		const byId = new Map(styles.map((style) => [style.id, style.definition]));
-		return {
+		return _objectSpread2({
 			run: combine(defaults.map((children) => readRunFormat(find(childrenOf(find(children, "w:rPrDefault")), "w:rPr"), themeFonts))),
 			paragraph: combine(defaults.map((children) => readParagraphFormat(find(childrenOf(find(children, "w:pPrDefault")), "w:pPr")))),
 			styles: byId,
@@ -3967,14 +4023,14 @@ var docxShapes = (function(exports, docx) {
 			defaultCharacterStyle: defaultStyle("character"),
 			defaultTableStyle: defaultStyle("table"),
 			themeFonts
-		};
+		}, withoutUndefined({ unsupported: unknownLengthIn(xml) }));
 	};
 	/**
 	* Reads the margins of a table's cells (`w:tblCellMar`), or of one cell (`w:tcMar`), in points.
 	*/
 	var readCellMargins = (element) => {
 		const children = childrenOf(element);
-		const side = (...names) => names.map((name) => scaled(numberOf(attributesOf(find(children, name))["w:w"]), 20)).find((value) => value !== void 0);
+		const side = (...names) => names.map((name) => pointsOf(attributesOf(find(children, name))["w:w"], 20)).find((value) => value !== void 0);
 		return Object.fromEntries(Object.entries({
 			top: side("w:top"),
 			bottom: side("w:bottom"),

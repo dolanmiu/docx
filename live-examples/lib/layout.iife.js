@@ -357,7 +357,7 @@ var docxLayout = (function(exports) {
 		if (takesNoRoom(character)) return 0;
 		return isWide(code) || FULL_WIDTH_SYMBOLS.has(character) || code >= 8592 && code <= 9983 ? 1e3 : 500;
 	};
-	var sizeOf = ({ size = 10 }) => size;
+	var sizeOf$1 = ({ size = 10 }) => size;
 	/**
 	* How a font's characters are measured: an East Asian font's Latin letters with the widths of the font in the table they
 	* are measured as, or all of a monospaced one's as half an em or an em, and other fonts with their own widths, or those of
@@ -393,7 +393,7 @@ var docxLayout = (function(exports) {
 	var measureTextWidth = (text, font = {}, start = 0) => {
 		const { widths, monospaced } = measuresOf(font);
 		const widthOf = monospaced ? monospacedWidth : (character) => characterWidth(widths, character);
-		const size = sizeOf(font);
+		const size = sizeOf$1(font);
 		const { characterSpacing = 0, scale = 100 } = font;
 		return [...text].reduce((position, character) => character === "	" ? (Math.floor(position / TAB_STOP$1) + 1) * TAB_STOP$1 : position + widthOf(character) * size * scale / 1e5 + characterSpacing, start) - start;
 	};
@@ -402,7 +402,7 @@ var docxLayout = (function(exports) {
 	*/
 	var measureLineHeight = (font = {}) => {
 		var _eastAsianFontOf, _font$font2;
-		return ((_eastAsianFontOf = eastAsianFontOf((_font$font2 = font.font) !== null && _font$font2 !== void 0 ? _font$font2 : "Times New Roman")) !== null && _eastAsianFontOf !== void 0 ? _eastAsianFontOf : widthsOf(font.font)).lineHeight * sizeOf(font) / 1e3;
+		return ((_eastAsianFontOf = eastAsianFontOf((_font$font2 = font.font) !== null && _font$font2 !== void 0 ? _font$font2 : "Times New Roman")) !== null && _eastAsianFontOf !== void 0 ? _eastAsianFontOf : widthsOf(font.font)).lineHeight * sizeOf$1(font) / 1e3;
 	};
 	//#endregion
 	//#region src/text-layout/line-break-rules.ts
@@ -556,6 +556,62 @@ var docxLayout = (function(exports) {
 	};
 	var stringOf = (value) => typeof value === "string" && value.length > 0 ? value : void 0;
 	var scaled = (value, divisor) => value === void 0 ? void 0 : value / divisor;
+	var POINTS_PER_UNIT = {
+		mm: 72 / 25.4,
+		cm: 72 / 2.54,
+		in: 72,
+		pt: 1,
+		pc: 12,
+		pi: 12
+	};
+	var METRIC = /* @__PURE__ */ new Set(["mm", "cm"]);
+	var MEASURE = /^\s*(-?)(\d+)(\.\d+)?(mm|cm|in|pt|pc|pi)\s*$/;
+	var ROUNDING = 1e-9;
+	/**
+	* A length in points, from an attribute in its own unit, `perPoint` of which make a point (20 for twips, 2 for
+	* half-points), or in a unit of OOXML's universal measure, such as "1in", "2.5cm" or "12pt", as the schema allows for
+	* every length docx writes from a string.
+	*
+	* Word reads a universal measure as a whole number of the attribute's unit (word-units and word-units2): rounded down
+	* from inches, points and picas, so "240.7pt" is 4814 twips, and to the nearest from centimeters and millimeters, so
+	* "84.67724mm" (4800.6 twips) is 4801. Its minus sign is the whole number's only, and the fraction is added to it:
+	* "-10.7pt" is -10 points and 0.7 more, -186 twips, and "-0.16708in" is 240 twips.
+	*/
+	var pointsOf = (value, perPoint) => {
+		const measure = typeof value === "string" ? MEASURE.exec(value) : null;
+		if (!measure) return scaled(numberOf(value), perPoint);
+		const [, minus, whole, fraction = "", unit] = measure;
+		const inUnits = ((minus ? -Number(whole) : Number(whole)) + Number(`0${fraction}`)) * POINTS_PER_UNIT[unit] * perPoint;
+		return (METRIC.has(unit) ? Math.round(inUnits) : Math.floor(inUnits + ROUNDING)) / perPoint;
+	};
+	/**
+	* A run's size (`w:sz`, or `w:szCs` for complex scripts) in points, from half-points, or from points, which Word rounds down to a half-point:
+	* "11.75pt" is 11.5. Word ignores a size in inches, centimeters or millimeters, as if it had none (word-units2).
+	*/
+	var sizeOf = (value) => {
+		var _MEASURE$exec;
+		const unit = typeof value === "string" ? (_MEASURE$exec = MEASURE.exec(value)) === null || _MEASURE$exec === void 0 ? void 0 : _MEASURE$exec[4] : void 0;
+		return unit === void 0 || unit === "pt" ? pointsOf(value, 2) : void 0;
+	};
+	/**
+	* Why how Word reads a length in formatted XML isn't known, when it isn't: a size in picas, which Word's PDFs didn't
+	* tell from one it ignores, or in another unit but points, which they showed it ignores only with no style giving a
+	* size, and a negative length of a fraction of a centimeter or millimeter, whose minus sign and rounding together they
+	* didn't show. Undefined when every length's reading is known.
+	*/
+	var unknownLengthIn = (element, name = "") => {
+		if (Array.isArray(element)) return element.reduce((found, child) => found !== null && found !== void 0 ? found : unknownLengthIn(child, name), void 0);
+		if (!isObject(element)) return;
+		return Object.entries(element).reduce((found, [key, child]) => {
+			if (found !== void 0 || key !== "_attr") return found !== null && found !== void 0 ? found : unknownLengthIn(child, key);
+			return Object.values(child).reduce((reason, value) => {
+				const measure = typeof value === "string" ? MEASURE.exec(value) : null;
+				if (reason !== void 0 || !measure) return reason;
+				const [, minus, , fraction, unit] = measure;
+				return (name === "w:sz" || name === "w:szCs") && unit !== "pt" ? "a size given in a unit other than points" : minus && fraction && METRIC.has(unit) ? "a negative length of a fraction of a centimeter or millimeter" : void 0;
+			}, void 0);
+		}, void 0);
+	};
 	var isOff = (value) => value === false || value === 0 || value === "false" || value === "0" || value === "off";
 	/**
 	* An on/off property, such as `w:b`: on when present, unless its value says otherwise.
@@ -588,17 +644,17 @@ var docxLayout = (function(exports) {
 		const fonts = attributesOf(find(children, "w:rFonts"));
 		return withoutUndefined({
 			font: (_ref = (_ref2 = (_themeFontOf = themeFontOf(fonts["w:asciiTheme"], themeFonts)) !== null && _themeFontOf !== void 0 ? _themeFontOf : stringOf(fonts["w:ascii"])) !== null && _ref2 !== void 0 ? _ref2 : themeFontOf(fonts["w:hAnsiTheme"], themeFonts)) !== null && _ref !== void 0 ? _ref : stringOf(fonts["w:hAnsi"]),
-			size: scaled(numberOf(attributesOf(find(children, "w:sz"))["w:val"]), 2),
+			size: sizeOf(attributesOf(find(children, "w:sz"))["w:val"]),
 			bold: onOff(children, "w:b"),
 			italic: onOff(children, "w:i"),
 			allCaps: onOff(children, "w:caps"),
 			smallCaps: onOff(children, "w:smallCaps"),
 			hidden: onOff(children, "w:vanish"),
-			characterSpacing: scaled(numberOf(attributesOf(find(children, "w:spacing"))["w:val"]), 20),
+			characterSpacing: pointsOf(attributesOf(find(children, "w:spacing"))["w:val"], 20),
 			scale: numberOf(attributesOf(find(children, "w:w"))["w:val"]),
 			eastAsiaFont: (_themeFontOf2 = themeFontOf(fonts["w:eastAsiaTheme"], themeFonts)) !== null && _themeFontOf2 !== void 0 ? _themeFontOf2 : stringOf(fonts["w:eastAsia"]),
 			complexScriptFont: (_themeFontOf3 = themeFontOf(fonts["w:cstheme"], themeFonts)) !== null && _themeFontOf3 !== void 0 ? _themeFontOf3 : stringOf(fonts["w:cs"]),
-			complexScriptSize: scaled(numberOf(attributesOf(find(children, "w:szCs"))["w:val"]), 2),
+			complexScriptSize: sizeOf(attributesOf(find(children, "w:szCs"))["w:val"]),
 			complexScriptBold: onOff(children, "w:bCs"),
 			rightToLeft: onOff(children, "w:rtl"),
 			complexScript: onOff(children, "w:cs"),
@@ -606,15 +662,15 @@ var docxLayout = (function(exports) {
 		});
 	};
 	var readLineSpacing = (spacing) => {
-		const line = numberOf(spacing["w:line"]);
+		const line = pointsOf(spacing["w:line"], 20);
 		if (line === void 0) return;
 		const rule = spacing["w:lineRule"];
 		return rule === "exact" || rule === "atLeast" ? {
 			rule,
-			height: line / 20
+			height: line
 		} : {
 			rule: "multiple",
-			multiple: line / SINGLE_LINE
+			multiple: line * 20 / SINGLE_LINE
 		};
 	};
 	var TAB_ALIGNMENTS = {
@@ -634,10 +690,10 @@ var docxLayout = (function(exports) {
 	var readTabs = (element) => {
 		const tabs = childrenOf(element).filter((child) => "w:tab" in child);
 		return tabs.length === 0 ? void 0 : tabs.map((tab) => {
-			var _numberOf, _TAB_ALIGNMENTS$Strin;
+			var _pointsOf, _TAB_ALIGNMENTS$Strin;
 			const attributes = attributesOf(tab["w:tab"]);
 			return {
-				position: ((_numberOf = numberOf(attributes["w:pos"])) !== null && _numberOf !== void 0 ? _numberOf : 0) / 20,
+				position: (_pointsOf = pointsOf(attributes["w:pos"], 20)) !== null && _pointsOf !== void 0 ? _pointsOf : 0,
 				alignment: (_TAB_ALIGNMENTS$Strin = TAB_ALIGNMENTS[String(attributes["w:val"])]) !== null && _TAB_ALIGNMENTS$Strin !== void 0 ? _TAB_ALIGNMENTS$Strin : "left"
 			};
 		});
@@ -649,11 +705,11 @@ var docxLayout = (function(exports) {
 		const children = childrenOf(element);
 		const spacing = attributesOf(find(children, "w:spacing"));
 		const indent = attributesOf(find(children, "w:ind"));
-		const twips = (...names) => scaled(names.map((name) => numberOf(indent[name])).find((value) => value !== void 0), 20);
+		const twips = (...names) => names.map((name) => pointsOf(indent[name], 20)).find((value) => value !== void 0);
 		const hanging = twips("w:hanging");
 		return withoutUndefined({
-			spaceBefore: scaled(numberOf(spacing["w:before"]), 20),
-			spaceAfter: scaled(numberOf(spacing["w:after"]), 20),
+			spaceBefore: pointsOf(spacing["w:before"], 20),
+			spaceAfter: pointsOf(spacing["w:after"], 20),
 			lineSpacing: readLineSpacing(spacing),
 			indentLeft: twips("w:start", "w:left"),
 			indentRight: twips("w:end", "w:right"),
@@ -711,7 +767,7 @@ var docxLayout = (function(exports) {
 			return (_styles$find = styles.find((style) => style.isDefault && style.definition.type === type)) === null || _styles$find === void 0 ? void 0 : _styles$find.id;
 		};
 		const byId = new Map(styles.map((style) => [style.id, style.definition]));
-		return {
+		return _objectSpread2({
 			run: combine(defaults.map((children) => readRunFormat(find(childrenOf(find(children, "w:rPrDefault")), "w:rPr"), themeFonts))),
 			paragraph: combine(defaults.map((children) => readParagraphFormat(find(childrenOf(find(children, "w:pPrDefault")), "w:pPr")))),
 			styles: byId,
@@ -719,14 +775,14 @@ var docxLayout = (function(exports) {
 			defaultCharacterStyle: defaultStyle("character"),
 			defaultTableStyle: defaultStyle("table"),
 			themeFonts
-		};
+		}, withoutUndefined({ unsupported: unknownLengthIn(xml) }));
 	};
 	/**
 	* Reads the margins of a table's cells (`w:tblCellMar`), or of one cell (`w:tcMar`), in points.
 	*/
 	var readCellMargins = (element) => {
 		const children = childrenOf(element);
-		const side = (...names) => names.map((name) => scaled(numberOf(attributesOf(find(children, name))["w:w"]), 20)).find((value) => value !== void 0);
+		const side = (...names) => names.map((name) => pointsOf(attributesOf(find(children, name))["w:w"], 20)).find((value) => value !== void 0);
 		return Object.fromEntries(Object.entries({
 			top: side("w:top"),
 			bottom: side("w:bottom"),
@@ -3137,10 +3193,8 @@ var docxLayout = (function(exports) {
 			font: _objectSpread2(_objectSpread2({}, font), {}, { scale: ((_font$scale = font.scale) !== null && _font$scale !== void 0 ? _font$scale : 100) * SUPERSCRIPT_WIDTH })
 		};
 	};
-	var twips = (value) => {
-		const amount = numberOf(value);
-		return amount === void 0 ? void 0 : amount / 20;
-	};
+	/** A length in points, from twips or from a universal measure, such as "1in" */
+	var twips = (value) => pointsOf(value, 20);
 	/** Whether a field's switches give its number a format of its own, such as `\* roman`, or a picture, such as `\# "00"` */
 	var hasOwnFormat = (switches) => {
 		const formats = [...switches.matchAll(/\\\*\s*"?([^\s"\\]+)/g)].map(([, format]) => format.toLowerCase());
@@ -3409,7 +3463,7 @@ var docxLayout = (function(exports) {
 			readParagraphFormat(properties)
 		];
 		const items = readInline(children, paragraphRun, reader);
-		const unsupported = find(properties, "w:framePr") === void 0 ? void 0 : "a text frame";
+		const unsupported = find(properties, "w:framePr") === void 0 ? unknownLengthIn(element) : "a text frame";
 		return _objectSpread2(_objectSpread2({
 			type: "paragraph",
 			items: typeof items === "string" ? [] : [...list.items, ...items],
@@ -3459,7 +3513,7 @@ var docxLayout = (function(exports) {
 	* out.
 	*/
 	var readTable = (element, reader) => {
-		var _ref5, _blocks$find;
+		var _ref5, _ref6, _blocks$find;
 		const children = contentOf$2(element).filter(isObject);
 		const properties = childrenOf(find(children, "w:tblPr"));
 		const style = valueOf(properties, "w:tblStyle");
@@ -3540,7 +3594,15 @@ var docxLayout = (function(exports) {
 		const fixed = attributesOf(find(properties, "w:tblLayout"))["w:type"] === "fixed";
 		const fits = !fixed && tableCells.some(({ ownWidth }) => ownWidth === void 0);
 		const unfitted = read.reduce((most, { end }) => Math.max(most, end), 0) > MOST_COLUMNS ? `a table given no widths of more than ${MOST_COLUMNS} columns` : void 0;
-		const unsupported = (_ref5 = fits ? unfitted : unequal ? "a table whose rows give a column different widths" : void 0) !== null && _ref5 !== void 0 ? _ref5 : (_blocks$find = blocks.find((block) => block.unsupported !== void 0)) === null || _blocks$find === void 0 ? void 0 : _blocks$find.unsupported;
+		const lengths = unknownLengthIn([
+			find(children, "w:tblPr"),
+			find(children, "w:tblGrid"),
+			...rows.flatMap((row) => {
+				const rowChildren = contentOf$2(row).filter(isObject);
+				return [find(rowChildren, "w:trPr"), ...cellsOf(rowChildren).map((cell) => find(contentOf$2(cell).filter(isObject), "w:tcPr"))];
+			})
+		]);
+		const unsupported = (_ref5 = (_ref6 = fits ? unfitted : unequal ? "a table whose rows give a column different widths" : void 0) !== null && _ref6 !== void 0 ? _ref6 : lengths) !== null && _ref5 !== void 0 ? _ref5 : (_blocks$find = blocks.find((block) => block.unsupported !== void 0)) === null || _blocks$find === void 0 ? void 0 : _blocks$find.unsupported;
 		return _objectSpread2(_objectSpread2(_objectSpread2({
 			type: "table",
 			rows: read.map(({ row }) => row)
@@ -3624,7 +3686,7 @@ var docxLayout = (function(exports) {
 		const marginRight = (_twips7 = twips((_margins$wRight = margins["w:right"]) !== null && _margins$wRight !== void 0 ? _margins$wRight : margins["w:end"])) !== null && _twips7 !== void 0 ? _twips7 : DEFAULT_SECTION.marginRight;
 		const gutter = (_twips8 = twips(margins["w:gutter"])) !== null && _twips8 !== void 0 ? _twips8 : DEFAULT_SECTION.gutter;
 		const columns = readColumns(find(properties, "w:cols"), pageWidth - marginLeft - marginRight - gutter);
-		const unsupported = grid === "lines" || grid === "linesAndChars" || grid === "snapToChars" ? "a document grid" : formatPageNumber(1, format) === void 0 ? "page numbers in a format not yet written" : find(properties, "w:textDirection") !== void 0 ? "text that runs down the page" : void 0;
+		const unsupported = grid === "lines" || grid === "linesAndChars" || grid === "snapToChars" ? "a document grid" : formatPageNumber(1, format) === void 0 ? "page numbers in a format not yet written" : find(properties, "w:textDirection") !== void 0 ? "text that runs down the page" : unknownLengthIn(element);
 		const headers = readReferences(properties, "w:headerReference", readPart);
 		const footers = readReferences(properties, "w:footerReference", readPart);
 		return _objectSpread2(_objectSpread2(_objectSpread2({
@@ -3682,10 +3744,10 @@ var docxLayout = (function(exports) {
 			const levels = abstract.get(abstractId);
 			return levels ? [[String(attributesOf(child["w:num"])["w:numId"]), levels]] : [];
 		}));
-		return new Map([...numbers, ...[...otherIds].flatMap(([other, id]) => {
+		return _objectSpread2({ lists: new Map([...numbers, ...[...otherIds].flatMap(([other, id]) => {
 			const levels = numbers.get(id);
 			return levels ? [[other, levels]] : [];
-		})]);
+		})]) }, withoutUndefined({ unsupported: unknownLengthIn(xml) }));
 	};
 	var CURRENT_COMPATIBILITY_MODE = 15;
 	/**
@@ -3711,7 +3773,7 @@ var docxLayout = (function(exports) {
 		const lists = readKinsokuLists(settings);
 		const spacingControl = valueOf(settings, "w:characterSpacingControl");
 		const mode = numberOf(attributesOf((_compatibility$find = compatibility.find((child) => "w:compatSetting" in child && attributesOf(child["w:compatSetting"])["w:name"] === "compatibilityMode")) === null || _compatibility$find === void 0 ? void 0 : _compatibility$find["w:compatSetting"])["w:val"]);
-		const unsupported = onOff(settings, "w:autoHyphenation") === true ? "hyphenation" : onOff(settings, "w:strictFirstAndLastChars") === true ? "the strict rules for the characters that can't start a line" : spacingControl !== void 0 && spacingControl !== "doNotCompress" ? "punctuation compressed" : mode === void 0 || mode < CURRENT_COMPATIBILITY_MODE ? "a document in compatibility mode" : void 0;
+		const unsupported = onOff(settings, "w:autoHyphenation") === true ? "hyphenation" : onOff(settings, "w:strictFirstAndLastChars") === true ? "the strict rules for the characters that can't start a line" : spacingControl !== void 0 && spacingControl !== "doNotCompress" ? "punctuation compressed" : mode === void 0 || mode < CURRENT_COMPATIBILITY_MODE ? "a document in compatibility mode" : unknownLengthIn(settings);
 		return _objectSpread2(_objectSpread2({
 			defaultTabStop: (_twips14 = twips(attributesOf(find(settings, "w:defaultTabStop"))["w:val"])) !== null && _twips14 !== void 0 ? _twips14 : 36,
 			evenAndOddHeaders: onOff(settings, "w:evenAndOddHeaders") === true,
@@ -3754,9 +3816,9 @@ var docxLayout = (function(exports) {
 	* Reads a document's body (`w:body`), with the other parts of the document.
 	*/
 	var readContent = (body, parts) => {
-		var _parts$otherListIds;
+		var _parts$otherListIds, _ref7, _documentContent$unsu;
 		const { styles } = parts;
-		const numbering = readNumbering(parts.numbering, styles, (_parts$otherListIds = parts.otherListIds) !== null && _parts$otherListIds !== void 0 ? _parts$otherListIds : /* @__PURE__ */ new Map());
+		const { lists: numbering, unsupported: inNumbering } = readNumbering(parts.numbering, styles, (_parts$otherListIds = parts.otherListIds) !== null && _parts$otherListIds !== void 0 ? _parts$otherListIds : /* @__PURE__ */ new Map());
 		const readerOf = (inHeader) => ({
 			styles,
 			numbering,
@@ -3845,7 +3907,7 @@ var docxLayout = (function(exports) {
 		};
 		read(contentOf$2(body));
 		if (sections.length === 0 || blocks.some(({ section }) => section >= sections.length)) addSection(void 0);
-		return _objectSpread2({
+		const documentContent = _objectSpread2({
 			blocks,
 			sections,
 			footnotes,
@@ -3853,6 +3915,7 @@ var docxLayout = (function(exports) {
 			footnoteContinuationSeparator: footnotes.size > 0 ? readNoteContent("footnote", "continuationSeparator") : [],
 			endnotes: endnotes.length > 0 ? [...readNoteContent("endnote", "separator"), ...endnotes] : []
 		}, readSettings(parts.settings));
+		return _objectSpread2(_objectSpread2({}, documentContent), withoutUndefined({ unsupported: (_ref7 = (_documentContent$unsu = documentContent.unsupported) !== null && _documentContent$unsu !== void 0 ? _documentContent$unsu : styles.unsupported) !== null && _ref7 !== void 0 ? _ref7 : inNumbering }));
 	};
 	//#endregion
 	//#region src/layout/read-docx.ts
