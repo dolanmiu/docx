@@ -5312,6 +5312,29 @@ var docxLayout = (function(exports) {
 			const note = notesByKind[kind].get(id);
 			return note === void 0 ? [] : readBlocks(contentOf$2(note), _objectSpread2(_objectSpread2({}, readerOf(false)), {}, { inNote: true }, label === void 0 ? {} : { noteNumber: label }));
 		};
+		/**
+		* A separator above the endnotes as Word lays it out: a line of its paragraph style's text, at single spacing and with
+		* no space before or after, whatever its own formatting. Word left out the space before and after, the line spacing
+		* and the size of the text of the separator and the continuation separator alike (`word-continued-endnotes.docx` CE3
+		* to CE5, `word-watertight-endnotes2.docx` EN2, `word-watertight-sections.docx` SC4). Its bookmarks are kept. One with
+		* text in it, or more than a paragraph, stops, as Word hasn't been seen laying one out, and so does one with something
+		* in it that stops the layout anywhere, such as an equation
+		*/
+		const readEndnoteSeparator = (type) => {
+			const content = readNoteContent("endnote", type);
+			const [first] = content;
+			if (content.length === 0) return [];
+			if (content.length > 1 || first.type !== "paragraph" || first.items.some((item) => item.type !== "marker")) return [_objectSpread2(_objectSpread2({}, first), {}, { unsupported: "an endnote separator with text in it, or of more than a paragraph" })];
+			if (first.unsupported !== void 0) return [first];
+			const { items, style } = first;
+			return [_objectSpread2({
+				type: "paragraph",
+				items,
+				format: {},
+				tabStops: [],
+				markFont: fontOf(combine([styles.run, ...styleChain(styles, style, "paragraph").map(({ run }) => run)]))
+			}, withoutUndefined({ style }))];
+		};
 		const footnotes = /* @__PURE__ */ new Map();
 		const footnoteNumbers = /* @__PURE__ */ new Map();
 		const endnotes = [];
@@ -5434,8 +5457,8 @@ var docxLayout = (function(exports) {
 			footnotes,
 			footnoteSeparator: footnotes.size > 0 ? readNoteContent("footnote", "separator") : [],
 			footnoteContinuationSeparator: footnotes.size > 0 ? readNoteContent("footnote", "continuationSeparator") : [],
-			endnotes: endnotes.length > 0 ? [...readNoteContent("endnote", "separator"), ...endnotes] : [],
-			endnoteContinuationSeparator: endnotes.length > 0 ? readNoteContent("endnote", "continuationSeparator") : [],
+			endnotes: endnotes.length > 0 ? [...readEndnoteSeparator("separator"), ...endnotes] : [],
+			endnoteContinuationSeparator: endnotes.length > 0 ? readEndnoteSeparator("continuationSeparator") : [],
 			footnoteNumbers,
 			endnoteNumbers,
 			relativeReferences: markers.relative,
@@ -5939,8 +5962,6 @@ var docxLayout = (function(exports) {
 		const lastPages = /* @__PURE__ */ new Map();
 		const sharingPages = /* @__PURE__ */ new Set();
 		let top = 0;
-		let pageContinuation = 0;
-		let continuedEndnotes = false;
 		let pageBottom = 0;
 		let bottom = 0;
 		let position = 0;
@@ -5987,8 +6008,6 @@ var docxLayout = (function(exports) {
 			pageNumber,
 			restart,
 			top,
-			pageContinuation,
-			continuedEndnotes,
 			pageBottom,
 			position,
 			column,
@@ -6021,7 +6040,7 @@ var docxLayout = (function(exports) {
 		* out again only moves them between the columns of the same page
 		*/
 		const restore = (state) => {
-			({pageCount, pageNumber, restart, top, pageContinuation, continuedEndnotes, pageBottom, position, column, columnTop, placedInColumn, deepest, columnBroken, pageNotes, noteArea, notesSection, notesInColumns, filledEnd, continued, carried, held, heldLines, deferred, spaceAfter, sectionSpaceAfter, finished, pageColumns} = state);
+			({pageCount, pageNumber, restart, top, pageBottom, position, column, columnTop, placedInColumn, deepest, columnBroken, pageNotes, noteArea, notesSection, notesInColumns, filledEnd, continued, carried, held, heldLines, deferred, spaceAfter, sectionSpaceAfter, finished, pageColumns} = state);
 			placements.length = Math.min(placements.length, state.placed);
 			bottom = columnsBottom();
 			noteArea = Math.max(noteArea, reserved());
@@ -6119,15 +6138,15 @@ var docxLayout = (function(exports) {
 		/** Whether the endnotes are on the pages before, so they go on below the continuation separator on the next */
 		const endnotesGoOn = () => blockIndex >= firstEndnote && placements.some((placement) => (placement.type === "line" || placement.type === "row") && placement.block >= firstEndnote);
 		/**
-		* The room the endnotes' continuation separator takes above them: its paragraphs, without the space after the last,
-		* which Word leaves out (`word-watertight-sections.docx` SC4)
+		* The room the endnotes' continuation separator takes above them, which is read as Word lays it out, a line tall
+		* whatever its own formatting (see `readEndnoteSeparator`)
 		*/
 		const continuationHeight = () => {
-			const parts = stackParts(endnoteContinuationSeparator, textWidth(), false);
-			return heightOf(parts.map((part, index) => index === parts.length - 1 ? _objectSpread2(_objectSpread2({}, part), {}, { after: 0 }) : part), true);
+			var _endnoteContinuationS;
+			const unsupported = (_endnoteContinuationS = endnoteContinuationSeparator.find((block) => block.unsupported !== void 0)) === null || _endnoteContinuationS === void 0 ? void 0 : _endnoteContinuationS.unsupported;
+			if (unsupported !== void 0) throw new Unsupported(unsupported);
+			return stackHeight(endnoteContinuationSeparator, textWidth(), false);
 		};
-		/** Where the body starts on the next page: where it does on this one, below the continuation separator for endnotes */
-		const nextTop = () => top - pageContinuation + (endnotesGoOn() ? continuationHeight() : 0);
 		/** Whether a line or row of the section being laid out is on the page */
 		const sectionOnPage = () => placements.slice(placements.findLastIndex(({ type }) => type === "page")).some((placement) => (placement.type === "line" || placement.type === "row") && blocks[placement.block].section === sectionIndex);
 		/**
@@ -6141,7 +6160,6 @@ var docxLayout = (function(exports) {
 			checkReserve();
 			if (deferred !== void 0 && !notesOnly) throw new Unsupported("text after a line whose footnote starts on the next page");
 			deferred = void 0;
-			if (continuedEndnotes) throw new Unsupported("endnotes that fill a page after the first they are on");
 			finishPage();
 			const current = section();
 			const first = isFirstOfSection || current.start === "continuous" && firstPages.get(sectionIndex) === pageCount && !sectionOnPage();
@@ -6163,10 +6181,9 @@ var docxLayout = (function(exports) {
 			top = current.marginTop < 0 ? -current.marginTop : Math.max(current.marginTop + current.topGutter, headerBottom);
 			const endnotesOn = endnotesGoOn();
 			if (endnotesOn && current.columns.length > 1) throw new Unsupported("endnotes continued in columns");
-			continuedEndnotes = endnotesOn;
-			pageContinuation = endnotesOn ? continuationHeight() : 0;
-			top += pageContinuation;
-			pageBottom = current.pageHeight - (current.marginBottom < 0 ? -current.marginBottom : Math.max(current.marginBottom, footerTop));
+			const continuation = endnotesOn ? continuationHeight() : 0;
+			top += continuation;
+			pageBottom = current.pageHeight - (current.marginBottom < 0 ? -current.marginBottom : Math.max(current.marginBottom, footerTop)) + continuation;
 			position = top;
 			column = 0;
 			columnTop = top;
@@ -7591,7 +7608,7 @@ var docxLayout = (function(exports) {
 					const { columns } = columnsSection();
 					const fitsBelow = (from, area, below) => fitsAbove(from, keptHeight(index, below), Math.min(bottom, pageBottom - area), area > 0 || here.notes.length > 0);
 					if (!fitsHere && column + 1 < columns.length && fitsBelow(columnTop, noteArea + moreNoteRoom(here.notes), columns[column + 1])) nextColumn();
-					else if (!fitsHere && fitsBelow(nextTop(), leastAreaOf(here.notes, carried, columns.length > 1 ? columns : void 0), columns[0])) startPage();
+					else if (!fitsHere && fitsBelow(top, leastAreaOf(here.notes, carried, columns.length > 1 ? columns : void 0), columns[0])) startPage();
 				}
 				const { notes, kept, keptWith, keptLines, all, fitsWith } = keptHere();
 				holdNotes = keptWith !== "nothing" && [...held, ...kept].length > 0 && notes.length === kept.length && fitsWith(leastNoteRoom(all)) && !fitsWith(moreNoteRoom(all));
