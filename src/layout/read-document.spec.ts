@@ -3,7 +3,9 @@ import { describe, expect, it } from "vitest";
 import { Formatter } from "@export/formatter";
 import type { IPropertiesOptions } from "@file/core-properties";
 import { File } from "@file/file";
+import { FootnoteReferenceRun } from "@file/footnotes";
 import { HeightRule, Table, TableCell, TableRow, WidthType } from "@file/table";
+import { DeletedTextRun } from "@file/track-revision";
 import {
     AlignmentType,
     Footer,
@@ -2203,5 +2205,479 @@ describe("readDocument", () => {
             { type: "text", text: "a", font: { italic: true } },
             { type: "text", text: "b", font: {} },
         ]);
+    });
+
+    describe("tracked changes", () => {
+        const REVISION = { id: 1, author: "Reviewer", date: "2026-10-02T09:00:00Z" };
+        const deletedMark = rPr({ "w:del": { _attr: { "w:id": 1 } } });
+        const bookmark = (name: string): object => ({ "w:bookmarkStart": { _attr: { "w:name": name, "w:id": 9 } } });
+        const sectPr = (...children: readonly object[]): object => ({ "w:sectPr": children });
+        const pageSize = (width: number, height: number): object => ({ "w:pgSz": { _attr: { "w:w": width, "w:h": height } } });
+        const cell = (...paragraphs: readonly object[]): object => ({
+            "w:tc": [{ "w:tcPr": [{ "w:tcW": { _attr: { "w:w": 2000 } } }] }, ...paragraphs],
+        });
+        const fixed = { "w:tblLayout": { _attr: { "w:type": "fixed" } } };
+        const row = (properties: readonly object[], ...cells: readonly object[]): object => ({
+            "w:tr": [{ "w:trPr": properties }, ...cells],
+        });
+        const deletedRow = { "w:del": { _attr: { "w:id": 2 } } };
+        const tableOf = (properties: readonly object[], ...rows: readonly object[]): object => ({
+            "w:tbl": [{ "w:tblPr": properties }, { "w:tblGrid": [{ "w:gridCol": { _attr: { "w:w": 2000 } } }] }, ...rows],
+        });
+        const texts = (blocks: readonly unknown[]): readonly string[] =>
+            (blocks as readonly ParagraphBlock[]).map((block) =>
+                block.items.map((item) => (item.type === "text" ? item.text : "")).join(""),
+            );
+
+        it("should join a paragraph whose mark is deleted to the next, in the next one's formatting, as Word lays it out", () => {
+            // word-watertight-markup.docx MK3, word-tracked-changes.docx MK7a and MK7c: the next paragraph's alignment and
+            // spacing, the bookmarks between them in their place, and a run of deleted marks joined to the first that isn't
+            const content = readBody([
+                p(pPr(value("w:jc", "right"), { "w:spacing": { _attr: { "w:after": 600 } } }, deletedMark), r(t("first"))),
+                bookmark("between"),
+                p(pPr(value("w:jc", "center"), deletedMark), r(t("second"))),
+                p(r(t("third"))),
+                p(r(t("after"))),
+            ]);
+            expect(content.blocks).to.have.length(2);
+            expect(itemsOf(content).map((item) => (item.type === "text" ? item.text : item.type))).to.deep.equal([
+                "first",
+                "marker",
+                "second",
+                "third",
+            ]);
+            expect(paragraphOf(content).format).to.deep.equal({});
+            expect(paragraphOf(content).unsupported).to.equal(undefined);
+            expect(textOf(content, 1)).to.equal("after");
+        });
+
+        it("should lay out the text of a paragraph whose mark is deleted in the next one's style and list, as Word does", () => {
+            // word-tracked-changes.docx MK7e, MK7f and MK9: the first paragraph's text in the next one's style, and one number
+            // for the paragraphs joined, which the list counts once
+            const content = readWritten({
+                styles: { paragraphStyles: [{ id: "Big", name: "Big", run: { size: 32 } }] },
+                numbering: {
+                    config: [
+                        {
+                            reference: "list",
+                            levels: [{ level: 0, format: LevelFormat.DECIMAL, text: "%1.", alignment: AlignmentType.START }],
+                        },
+                    ],
+                },
+                sections: [
+                    {
+                        children: [
+                            new Paragraph({ style: "Big", run: { deletion: REVISION }, children: [new TextRun("first")] }),
+                            new Paragraph({ children: [new TextRun("second")] }),
+                            new Paragraph({ numbering: { reference: "list", level: 0 }, children: [new TextRun("one")] }),
+                            new Paragraph({
+                                numbering: { reference: "list", level: 0 },
+                                run: { deletion: REVISION },
+                                children: [new TextRun("two")],
+                            }),
+                            new Paragraph({ numbering: { reference: "list", level: 0 }, children: [new TextRun("three")] }),
+                            new Paragraph({ numbering: { reference: "list", level: 0 }, children: [new TextRun("four")] }),
+                        ],
+                    },
+                ],
+            });
+            const [first, second] = itemsOf(content);
+            expect(first).to.deep.include({ type: "text", text: "first" });
+            expect((first as { readonly font: object }).font).to.deep.equal((second as { readonly font: object }).font);
+            expect(paragraphOf(content).style).to.not.equal("Big");
+            expect([1, 2, 3].map((index) => textOf(content, index))).to.deep.equal(["1.one", "2.twothree", "3.four"]);
+        });
+
+        it("should keep a paragraph whose mark is deleted as it is when no paragraph follows it, as Word does", () => {
+            // word-tracked-changes.docx MK8a, MK8b and MK8d: before a table, at the end of a cell, and at the end of the document
+            const content = readBody([
+                p(pPr(deletedMark), r(t("before"))),
+                tableOf([fixed], row([], cell(p(pPr(deletedMark), r(t("one"))), p(pPr(deletedMark), r(t("two")))))),
+                p(pPr(deletedMark), r(t("last"))),
+            ]);
+            expect(content.blocks.map(({ block }) => block.unsupported)).to.deep.equal([undefined, undefined, undefined]);
+            expect(textOf(content)).to.equal("before");
+            expect(texts((content.blocks[1].block as TableBlock).rows[0].cells[0].blocks)).to.deep.equal(["onetwo"]);
+            expect(textOf(content, 2)).to.equal("last");
+        });
+
+        it("should leave a section whose break is deleted to the next section, laid out on its pages, as Word does", () => {
+            // word-tracked-changes.docx MK8c: a section on A4 whose break is deleted, before one on landscape pages
+            const content = readBody([
+                p(r(t("first"))),
+                p(pPr(deletedMark, sectPr(pageSize(11906, 16838)))),
+                p(r(t("second"))),
+                sectPr(pageSize(16838, 11906)),
+            ]);
+            expect(content.sections).to.have.length(1);
+            expect(content.sections[0]).to.deep.include({ pageWidth: 841.9, pageHeight: 595.3 });
+            expect(content.blocks.map(({ block, section }) => [texts([block])[0], section])).to.deep.equal([
+                ["first", 0],
+                ["second", 0],
+            ]);
+        });
+
+        it("should mark a deleted section break as unsupported where Word's layout of it hasn't been seen", () => {
+            // Between sections that start differently, and with no paragraph after it
+            expect(
+                readBody([p(pPr(deletedMark, sectPr(value("w:type", "continuous")))), p(r(t("next"))), sectPr()]).blocks[0].block
+                    .unsupported,
+            ).to.equal("a deleted section break between sections that start, number their pages or have headers and footers differently");
+            expect(readBody([p(pPr(deletedMark, sectPr())), tableOf([fixed], row([], cell(p())))]).blocks[0].block.unsupported).to.equal(
+                "a deleted section break with no paragraph after it",
+            );
+            // The next section's properties are found past paragraphs that don't end one, as the body's own
+            expect(readBody([p(pPr(deletedMark, sectPr())), p(r(t("a"))), p(r(t("b")))]).blocks[0].block.unsupported).to.equal(undefined);
+        });
+
+        it("should mark a paragraph mark moved, and a deleted mark at the edge of a content control, as unsupported", () => {
+            expect(
+                readBody([p(pPr(rPr({ "w:moveFrom": { _attr: { "w:id": 3 } } })), r(t("moved"))), p(r(t("next")))]).blocks[0].block
+                    .unsupported,
+            ).to.equal("a paragraph mark moved in a tracked change");
+            const control = (...content: readonly object[]): object => ({ "w:sdt": [{ "w:sdtPr": [] }, { "w:sdtContent": content }] });
+            const edge = "a deleted paragraph mark at the edge of a content control";
+            // Before a content control, and at the end of one
+            expect(readBody([p(pPr(deletedMark), r(t("a"))), control(p(r(t("b"))))]).blocks[0].block.unsupported).to.equal(edge);
+            expect(readBody([control(p(pPr(deletedMark), r(t("a")))), p(r(t("b")))]).blocks[0].block.unsupported).to.equal(edge);
+            // In custom XML, and in a content control, paragraphs are joined as anywhere else
+            const nested = readBody([
+                { "w:customXml": [p(pPr(deletedMark), r(t("a"))), p(r(t("b")))] },
+                control(p(pPr(deletedMark), r(t("c"))), p(r(t("d")))),
+            ]);
+            expect(nested.blocks.map(({ block }) => texts([block])[0])).to.deep.equal(["ab", "cd"]);
+        });
+
+        it("should leave out deleted pictures, tabs, breaks and text moved elsewhere, but keep their bookmarks, as Word does", () => {
+            // word-tracked-changes.docx MK10a to MK10d and MK10f
+            const content = readBody([
+                p(
+                    r(t("a")),
+                    {
+                        "w:del": [
+                            r({ "w:tab": {} }, { "w:br": { _attr: { "w:type": "page" } } }, { "w:delText": ["text"] }),
+                            bookmark("deleted"),
+                            { "w:hyperlink": [r({ "w:delText": ["link"] })] },
+                            { "w:sdt": [{ "w:sdtPr": [] }, { "w:sdtContent": [r({ "w:delText": ["control"] })] }] },
+                            { "w:proofErr": {} },
+                        ],
+                    },
+                    { "w:moveFrom": [r(t("moved"))] },
+                    { "w:moveTo": [r(t("b"))] },
+                ),
+            ]);
+            expect(itemsOf(content)).to.deep.equal([
+                { type: "text", text: "a", font: {} },
+                { type: "marker", name: "deleted" },
+                { type: "text", text: "b", font: {} },
+            ]);
+        });
+
+        it("should number a footnote whose reference is deleted without laying it out, as Word does", () => {
+            // word-tracked-changes.docx MK10e: the footnote after it is numbered 2
+            const content = readBody(
+                [
+                    p(
+                        r(t("a")),
+                        { "w:del": [r({ "w:footnoteReference": { _attr: { "w:id": 1 } } })] },
+                        r({ "w:footnoteReference": { _attr: { "w:id": 2 } } }),
+                    ),
+                ],
+                { footnotes: { 1: { children: [new Paragraph("Deleted")] }, 2: { children: [new Paragraph("Kept")] } } },
+            );
+            expect(itemsOf(content)).to.deep.equal([
+                { type: "text", text: "a", font: {} },
+                { type: "marker", name: "footnote 2" },
+                { type: "text", text: "2", font: { scale: 65 } },
+            ]);
+            expect([...content.footnotes.keys()]).to.deep.equal(["footnote 2"]);
+            // A deleted reference in a header, which has no notes, is nothing
+            const header = readWritten({
+                footnotes: { 1: { children: [new Paragraph("Note")] } },
+                sections: [
+                    {
+                        headers: {
+                            default: new Header({
+                                children: [
+                                    new Paragraph({
+                                        children: [new DeletedTextRun({ ...REVISION, children: [new FootnoteReferenceRun(1)] })],
+                                    }),
+                                ],
+                            }),
+                        },
+                        children: [new Paragraph("Body")],
+                    },
+                ],
+            });
+            expect(header.sections[0].headers.default![0].unsupported).to.equal(undefined);
+            expect((header.sections[0].headers.default![0] as ParagraphBlock).items).to.deep.equal([]);
+        });
+
+        it("should mark a deleted endnote reference, and a note reference moved, as unsupported", () => {
+            const note = (name: string): object => r({ [name]: { _attr: { "w:id": 1 } } });
+            expect(readBody([p({ "w:del": [note("w:endnoteReference")] })]).blocks[0].block.unsupported).to.equal(
+                "a deleted endnote reference",
+            );
+            expect(readBody([p({ "w:moveFrom": [note("w:footnoteReference")] })]).blocks[0].block.unsupported).to.equal(
+                "a note reference moved in a tracked change",
+            );
+        });
+
+        it("should leave out a deleted row, and a table all of whose rows are deleted, with their bookmarks after them, as Word does", () => {
+            // word-watertight-markup.docx MK6, word-tracked-changes.docx MK11a and MK11g: tables without borders
+            const content = readBody([
+                {
+                    "w:tbl": [
+                        { "w:tblPr": [fixed] },
+                        { "w:tblGrid": [{ "w:gridCol": { _attr: { "w:w": 2000 } } }] },
+                        bookmark("row"),
+                        row([deletedRow, { "w:tblHeader": {} }], bookmark("cell"), cell(p(bookmark("inside"), r(t("deleted"))))),
+                        row([], cell(p(r(t("kept"))))),
+                        row([deletedRow], cell(p(r(t("deleted too"))))),
+                    ],
+                },
+                tableOf([fixed], row([deletedRow], cell(p(r(t("gone")))))),
+                p(r(t("after"))),
+            ]);
+            expect(content.blocks).to.have.length(2);
+            const table = content.blocks[0].block as TableBlock;
+            expect(table.rows).to.have.length(1);
+            expect(table.rows[0]).to.deep.include({ header: false, borderTop: 0, borderBottom: 0 });
+            expect(table.rows[0].cells[0].blocks[0]).to.deep.include({
+                items: [
+                    { type: "marker", name: "row" },
+                    { type: "marker", name: "cell" },
+                    { type: "marker", name: "inside" },
+                    { type: "text", text: "kept", font: {} },
+                ],
+            });
+            // A table laid out fixed isn't sized by its deleted rows
+            expect(table.deletedRows).to.equal(undefined);
+            expect(table.unsupported).to.equal(undefined);
+            expect(textOf(content, 1)).to.equal("after");
+        });
+
+        it("should mark a deleted row in a table with borders or space between its rows as unsupported, as Word may keep them", () => {
+            const bordered = "a deleted row in a table with borders or space between its rows";
+            const unsupportedOf = (properties: readonly object[], deletedCell: readonly object[] = []): string | undefined =>
+                (
+                    readBody([
+                        tableOf(
+                            [fixed, ...properties],
+                            row([], cell(p())),
+                            row([deletedRow], { "w:tc": [{ "w:tcPr": deletedCell }, p()] }),
+                            row([], cell(p())),
+                        ),
+                    ]).blocks[0].block as TableBlock
+                ).unsupported;
+            const border = (name: string, style = "single"): object => ({ [name]: { _attr: { "w:val": style, "w:sz": 8 } } });
+            // The table's borders between its rows, the deleted row's own, one in a style not yet followed, and space
+            // between cells
+            expect(unsupportedOf([{ "w:tblBorders": [border("w:insideH")] }])).to.equal(bordered);
+            expect(unsupportedOf([], [{ "w:tcBorders": [border("w:top")] }])).to.equal(bordered);
+            expect(unsupportedOf([], [{ "w:tcBorders": [border("w:top", "apples")] }])).to.equal(bordered);
+            expect(unsupportedOf([{ "w:tblCellSpacing": { _attr: { "w:w": 100, "w:type": "dxa" } } }])).to.equal(bordered);
+            // Borders left and right of the cells, which a deleted row leaves as they are
+            expect(unsupportedOf([{ "w:tblBorders": [border("w:left"), border("w:insideV")] }])).to.equal(undefined);
+        });
+
+        it("should mark a deleted row in a table whose style formats some rows by where they are as unsupported", () => {
+            const options = {
+                externalStyles: `<w:styles xmlns:w="main"><w:style w:type="table" w:styleId="FirstRow"><w:name w:val="FirstRow"/><w:tblStylePr w:type="firstRow"><w:rPr><w:b/></w:rPr></w:tblStylePr></w:style></w:styles>`,
+            };
+            const look = { "w:tblLook": { _attr: { "w:firstRow": 1, "w:noHBand": 1, "w:noVBand": 1 } } };
+            const unsupportedOf = (...rows: readonly object[]): string | undefined =>
+                (readBody([tableOf([fixed, value("w:tblStyle", "FirstRow"), look], ...rows)], options).blocks[0].block as TableBlock)
+                    .unsupported;
+            // The first row deleted, so the second would be the first, or not
+            expect(unsupportedOf(row([deletedRow], cell(p())), row([], cell(p())), row([], cell(p())))).to.equal(
+                "a deleted row in a table whose style formats some of its rows",
+            );
+            // The last row deleted, which the style doesn't format apart
+            expect(unsupportedOf(row([], cell(p())), row([], cell(p())), row([deletedRow], cell(p())))).to.equal(undefined);
+        });
+
+        it("should start a merge in a cell merged down from a deleted row, as Word lays it out when it is empty", () => {
+            // word-tracked-changes.docx MK11b and MK11c
+            const merged = (merge: string, ...paragraphs: readonly object[]): object => ({
+                "w:tc": [{ "w:tcPr": [{ "w:tcW": { _attr: { "w:w": 2000 } } }, value("w:vMerge", merge)] }, ...paragraphs],
+            });
+            const mergesOf = (...rows: readonly object[]): readonly (string | undefined)[] => {
+                const table = readBody([tableOf([fixed], ...rows)]).blocks[0].block as TableBlock;
+                return [...table.rows.map(({ cells }) => cells[0].verticalMerge), table.unsupported];
+            };
+            // The row a merge starts in deleted: the next starts it
+            expect(
+                mergesOf(
+                    row([deletedRow], merged("restart", p(r(t("a"))))),
+                    row([], merged("continue", p())),
+                    row([], merged("continue", p())),
+                ),
+            ).to.deep.equal(["restart", "continue", undefined]);
+            // A row it goes on through deleted: it goes on
+            expect(
+                mergesOf(
+                    row([], merged("restart", p(r(t("a"))))),
+                    row([deletedRow], merged("continue", p())),
+                    row([], merged("continue", p())),
+                ),
+            ).to.deep.equal(["restart", "continue", undefined]);
+            // A cell that would start it with text in it, which Word hasn't been seen laying out
+            expect(mergesOf(row([deletedRow], merged("restart", p(r(t("a"))))), row([], merged("continue", p(r(t("b"))))))).to.deep.equal([
+                "restart",
+                "a cell merged down from a deleted table row",
+            ]);
+        });
+
+        it("should mark a deleted row with a list or a note in it as unsupported, as Word may count them", () => {
+            const noted = readBody([
+                tableOf([fixed], row([deletedRow], cell(p(r({ "w:footnoteReference": { _attr: { "w:id": 1 } } })))), row([], cell(p()))),
+            ]);
+            expect(noted.blocks[0].block.unsupported).to.equal("a list or a note in a deleted table row");
+            // Every row deleted, so the table is only why it stops
+            const listed = readWritten({
+                numbering: { config: [{ reference: "list", levels: [{ level: 0, format: LevelFormat.DECIMAL, text: "%1." }] }] },
+                sections: [
+                    {
+                        children: [
+                            new Paragraph({ numbering: { reference: "list", level: 0 }, text: "before" }),
+                            new Table({
+                                layout: "fixed",
+                                rows: [
+                                    new TableRow({
+                                        deletion: REVISION,
+                                        children: [
+                                            new TableCell({
+                                                children: [new Paragraph({ numbering: { reference: "list", level: 0 }, text: "item" })],
+                                            }),
+                                        ],
+                                    }),
+                                ],
+                            }),
+                        ],
+                    },
+                ],
+            });
+            expect(textOf(listed)).to.equal("1.before");
+            expect(listed.blocks[1].block).to.deep.equal({
+                type: "table",
+                rows: [],
+                unsupported: "a list or a note in a deleted table row",
+            });
+        });
+
+        it("should keep deleted rows and deleted text to size the columns of a table by, as Word sizes them", () => {
+            // word-tracked-changes.docx MK11h to MK11j: a table whose cells have widths, which Word widens for long words
+            const content = readBody(
+                [
+                    tableOf(
+                        [],
+                        row(
+                            [],
+                            cell(
+                                p(
+                                    r(t("a")),
+                                    { "w:del": [r({ "w:delText": [" deleted"] }), r({ "w:delInstrText": ["PAGE"] })] },
+                                    r({ "w:footnoteReference": { _attr: { "w:id": 1 } } }),
+                                ),
+                            ),
+                        ),
+                        row([], cell(p(r(t("plain"))))),
+                        row([deletedRow], cell(p(r(t("deleted row"))))),
+                    ),
+                    p(r({ "w:footnoteReference": { _attr: { "w:id": 2 } } })),
+                ],
+                { footnotes: { 1: { children: [new Paragraph("One")] }, 2: { children: [new Paragraph("Two")] } } },
+            );
+            const table = content.blocks[0].block as TableBlock;
+            expect(table.widen).to.deep.equal({ acrossColumns: false });
+            const [first, second] = table.rows.map(({ cells }) => cells[0]);
+            expect(texts(first.blocks)).to.deep.equal(["a1"]);
+            // The footnote is numbered as it is where it is laid out, and counted once
+            expect(texts(first.sizing!)).to.deep.equal(["a deleted1"]);
+            expect(second.sizing).to.equal(undefined);
+            expect(table.deletedRows!.map(({ cells }) => texts(cells[0].blocks))).to.deep.equal([["deleted row"]]);
+            expect(table.unsupported).to.equal(undefined);
+            expect(textOf(content, 1)).to.equal("2");
+        });
+
+        it("should mark what isn't known of how Word sizes a table's columns by tracked changes as unsupported", () => {
+            const sized = (...paragraphs: readonly object[]): string | undefined =>
+                readBody([tableOf([], row([], cell(...paragraphs)))]).blocks[0].block.unsupported;
+            // A deleted picture, tab, break or note reference, whose room Word may count
+            expect(sized(p(r(t("a")), { "w:del": [r({ "w:tab": {} })] }))).to.equal(
+                "a deleted picture, tab, break or note reference in a table whose columns Word sizes to their text",
+            );
+            expect(sized(p({ "w:del": [r({ "mc:AlternateContent": [{ "mc:Choice": [{ "w:t": ["x"] }] }] })] }))).to.equal(
+                "a deleted picture, tab, break or note reference in a table whose columns Word sizes to their text",
+            );
+            // Paragraphs of text joined by a deleted mark, which Word may size the columns by as they are written
+            expect(sized(p(pPr(deletedMark), r(t("one"))), p(r(t("two"))))).to.equal(
+                "a deleted paragraph mark between paragraphs of text in a table whose columns Word sizes to their text",
+            );
+            // An empty paragraph joined to the next is the next, either way
+            expect(sized(p(pPr(deletedMark), r(rPr())), p(r(t("two"))))).to.equal(undefined);
+        });
+
+        it("should read the deleted rows of tables in tables, and of tables in headers, to size their columns by", () => {
+            // A table in a deleted row, whose cell has deleted text: read as Word sizes the columns by it, twice over
+            const inner = tableOf([], row([], cell(p(bookmark("nested"), r(t("a")), { "w:del": [r({ "w:delText": ["b"] })] }))));
+            const content = readBody([tableOf([], row([deletedRow], cell(inner, p())), row([], cell(p(r(t("c"))))))]);
+            const outer = content.blocks[0].block as TableBlock;
+            const nested = outer.deletedRows![0].cells[0].blocks[0] as TableBlock;
+            expect(texts(nested.rows[0].cells[0].blocks)).to.deep.equal(["ab"]);
+            // The bookmark in the deleted row's table starts in the next row laid out
+            expect((outer.rows[0].cells[0].blocks[0] as ParagraphBlock).items[0]).to.deep.equal({ type: "marker", name: "nested" });
+            // A header has no notes to number
+            const header = readWritten({
+                sections: [
+                    {
+                        headers: {
+                            default: new Header({
+                                children: [
+                                    new Table({
+                                        rows: [
+                                            new TableRow({
+                                                deletion: REVISION,
+                                                children: [new TableCell({ children: [new Paragraph("deleted")] })],
+                                            }),
+                                            new TableRow({ children: [new TableCell({ children: [new Paragraph("kept")] })] }),
+                                        ],
+                                    }),
+                                ],
+                            }),
+                        },
+                        children: [new Paragraph("Body")],
+                    },
+                ],
+            });
+            const headerTable = header.sections[0].headers.default![0] as TableBlock;
+            expect(headerTable.rows).to.have.length(1);
+            expect(headerTable.deletedRows).to.have.length(1);
+        });
+
+        it("should lay out a document that asks for a view of tracked changes as Word for Mac opened it, in its own view", () => {
+            // word-tracked-changes.docx MK12 and MK13: with insertions and deletions, or markup, turned off, Word for Mac
+            // opened the document in its own view, with deleted text in balloons and its lines without it
+            const file = new File({ sections: [] });
+            const settings = Object.create(file, {
+                Settings: {
+                    value: {
+                        prepForXml: () => ({
+                            "w:settings": [
+                                { "w:revisionView": { _attr: { "w:insDel": "0", "w:markup": "0" } } },
+                                { "w:compat": [{ "w:compatSetting": { _attr: { "w:name": "compatibilityMode", "w:val": 15 } } }] },
+                            ],
+                        }),
+                    },
+                },
+            }) as File;
+            const content = readDocument(
+                { "w:body": [p(r(t("a")), { "w:del": [r({ "w:delText": ["b"] })] })] } as IXmlableObject,
+                contextOf(settings),
+            );
+            expect(content.unsupported).to.equal(undefined);
+            expect(textOf(content)).to.equal("a");
+        });
     });
 });

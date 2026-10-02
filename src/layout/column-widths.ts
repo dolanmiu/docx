@@ -5,7 +5,7 @@
  * @module
  */
 import type { ContentWidths } from "../text-layout";
-import type { Block, TableBlock, TableCell } from "./read-document";
+import type { Block, TableBlock, TableCell, TableRow } from "./read-document";
 
 const sum = (values: readonly number[]): number => values.reduce((total, value) => total + value, 0);
 
@@ -22,12 +22,21 @@ type Measure = (blocks: readonly Block[]) => ContentWidths;
  */
 type Sizing = { readonly columns: readonly Column[]; readonly unsettled: readonly ("always" | "narrowed")[] };
 
-/** How narrow and how wide the content of each cell of a table can be, with the cell's margins */
+/**
+ * The rows Word sizes a table's columns by: those it lays out, and those deleted in a tracked change, which it counts
+ * though they take no room (`word-tracked-changes.docx` MK11h, MK11i)
+ */
+const sizingRows = ({ rows, deletedRows = [] }: TableBlock): readonly TableRow[] => [...rows, ...deletedRows];
+
+/**
+ * How narrow and how wide the content of each cell of a table can be, with the cell's margins, as Word sizes the columns
+ * by it: with its deleted text in (MK11j)
+ */
 const measureCells = (table: TableBlock, measure: Measure): ReadonlyMap<TableCell, ContentWidths> =>
     new Map(
-        table.rows.flatMap(({ cells }) =>
+        sizingRows(table).flatMap(({ cells }) =>
             cells.map((cell) => {
-                const text = measure(cell.blocks);
+                const text = measure(cell.sizing ?? cell.blocks);
                 const margins = cell.marginLeft + cell.marginRight;
                 return [cell, { min: text.min + margins, max: text.max + margins }];
             }),
@@ -43,7 +52,7 @@ const measureCells = (table: TableBlock, measure: Measure): ReadonlyMap<TableCel
  * are all 0 wide share it equally, which Word's probes didn't show.
  */
 const sizeColumns = (table: TableBlock, content: ReadonlyMap<TableCell, ContentWidths>): Sizing => {
-    const cells = table.rows.flatMap((row) => row.cells);
+    const cells = sizingRows(table).flatMap((row) => row.cells);
     const spanOf = (cell: TableCell): number => cell.span ?? 1;
     const count = largest(cells.map((cell) => cell.column + spanOf(cell)));
     const columns = Array.from({ length: count }, (_, column): Column => {
@@ -128,14 +137,14 @@ export const fitColumns = (table: TableBlock, available: number, measure: Measur
         return table;
     }
     // How Word sizes a column whose text runs up or down isn't known
-    if (fit && rows.some(({ cells }) => cells.some(({ vertical }) => vertical))) {
+    if (fit && sizingRows(table).some(({ cells }) => cells.some(({ vertical }) => vertical))) {
         return { ...table, unsupported: "text that runs up or down a cell of a table sized to its text" };
     }
     const content = measureCells(table, measure);
     // With space between cells, Word narrows the columns to keep the table's width (word-table-formats2.docx CS9)
     const spaced = table.cellSpacing !== undefined;
     if (widen) {
-        const tooLong = rows.flatMap(({ cells }) => cells.filter((cell) => content.get(cell)!.min > cell.ownWidth!));
+        const tooLong = sizingRows(table).flatMap(({ cells }) => cells.filter((cell) => content.get(cell)!.min > cell.ownWidth!));
         if (tooLong.length === 0 && !spaced) {
             return table;
         }
@@ -206,7 +215,8 @@ export const fitColumns = (table: TableBlock, available: number, measure: Measur
  * @param measure - How narrow and how wide the content of a cell can be, in points
  */
 export const tableWidths = (table: TableBlock, measure: Measure): ContentWidths => {
-    const { fit, rows, borderLeft = 0, borderRight = 0 } = table;
+    const { fit, borderLeft = 0, borderRight = 0 } = table;
+    const rows = sizingRows(table);
     const borders = (borderLeft + borderRight) / 2;
     if (fit !== undefined && fit.width === undefined) {
         const { columns } = sizeColumns(table, measureCells(table, measure));

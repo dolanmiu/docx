@@ -64,6 +64,20 @@ const widthsOf = (sized: TableBlock, row = 0): readonly number[] => sized.rows[r
 
 const LONG = "aaaa bbbb cccc dddd eeee ffff";
 
+/** A row of cells, deleted in a tracked change */
+const deleted = (cells: readonly Cell[]): TableBlock["rows"][number] => ({
+    cells,
+    header: false,
+    cantSplit: false,
+    borderTop: 0,
+    borderBottom: 0,
+});
+
+/** A paragraph of text, as a cell is sized by it */
+const sizingOf = (text: string): readonly Block[] => [
+    { type: "paragraph", items: [{ type: "text", text, font: {} }], format: {}, tabStops: [], markFont: {} },
+];
+
 describe("fitColumns", () => {
     it("should make each column as wide as its widest line when they all fit, leaving the table narrower than the room", () => {
         const sized = fitColumns(
@@ -101,6 +115,21 @@ describe("fitColumns", () => {
         const sized = fitColumns(table([[cell(0, "a", 30), cell(1, "aaaaaa", 20), cell(2, "bb")], [cell(0, "b", 50)]]), 200, measure);
         // The widest the column's cells give it, less the margins, and the width of the word
         expect(widthsOf(sized)).to.deep.equal([40, 60, 20]);
+    });
+
+    it("should size columns by the rows deleted in a tracked change, and by deleted text, as Word does", () => {
+        // word-tracked-changes.docx MK11h and MK11j: a deleted row's text, and deleted text in a cell, widen a column of a
+        // table sized to its text, though neither is laid out. Here, a deleted row of 12 letters, and a cell's 9
+        const sized = fitColumns(
+            { ...table([[cell(0, "a"), cell(1, "b")]]), deletedRows: [deleted([cell(0, "aaaa bbbb cc"), cell(1, "b")])] },
+            300,
+            measure,
+        );
+        expect(widthsOf(sized)).to.deep.equal([120, 10]);
+        expect(sized.rows).to.have.length(1);
+        expect(
+            widthsOf(fitColumns(table([[{ ...cell(0, "a"), sizing: sizingOf("a deleted") }, cell(1, "b")]]), 300, measure)),
+        ).to.deep.equal([90, 10]);
     });
 
     it("should widen the columns in proportion to fill the table's own width", () => {
@@ -202,6 +231,16 @@ describe("fitColumns", () => {
             );
             expect(widthsOf(sized)).to.deep.equal([60, 220]);
             expect(sized.rows[1].cells.map(({ width }) => width)).to.deep.equal([60, 220]);
+        });
+
+        it("should widen a column for a long word in a row deleted in a tracked change, as Word does", () => {
+            // word-tracked-changes.docx MK11i: a 1500-twip column widened for a 3000-twip word in a deleted row
+            const sized = fitColumns(
+                { ...given([[cell(0, "a", 30), cell(1, LONG, 270)]]), deletedRows: [deleted([cell(0, "aaaaaa", 30), cell(1, "b", 270)])] },
+                300,
+                measure,
+            );
+            expect(widthsOf(sized)).to.deep.equal([60, 220]);
         });
 
         it("should narrow the other columns toward their widest words, each by its share of the width they give up", () => {
@@ -334,6 +373,15 @@ describe("tableWidths", () => {
         // A share of the width it is in counts as its text
         expect(tableWidths({ ...inner, fit: { share: 1 } }, measure)).to.deep.equal({ min: 51.5, max: 151.5 });
         expect(tableWidths({ ...inner, borderLeft: undefined, borderRight: undefined }, measure)).to.deep.equal({ min: 50, max: 150 });
+    });
+
+    it("should count the rows of a table deleted in a tracked change, as Word sizes its columns by them", () => {
+        const inner = { ...table([[cell(0, "a")]]), deletedRows: [deleted([cell(0, "aaaa bbbb")])] };
+        expect(tableWidths(inner, measure)).to.deep.equal({ min: 50, max: 100 });
+        expect(tableWidths({ ...inner, fit: undefined, deletedRows: [deleted([{ ...cell(0, "b"), width: 80 }])] }, measure)).to.deep.equal({
+            min: 90,
+            max: 90,
+        });
     });
 
     it("should count a table with a width of its own as that wide, and one not sized to its text as its cells", () => {
