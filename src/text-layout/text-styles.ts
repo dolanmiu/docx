@@ -87,6 +87,8 @@ export type TextStyles = {
     readonly defaultTableStyle?: string;
     /** The theme's fonts, for text in them */
     readonly themeFonts: ThemeFonts;
+    /** Why a length in the styles can't be read as Word reads it, when one can't */
+    readonly unsupported?: string;
 };
 
 /**
@@ -140,6 +142,77 @@ export const stringOf = (value: unknown): string | undefined => (typeof value ==
 
 const scaled = (value: number | undefined, divisor: number): number | undefined => (value === undefined ? undefined : value / divisor);
 
+// Points in each unit of OOXML's universal measure (`ST_UniversalMeasure`), in which docx writes a length given as a
+// string, such as "1in" or "12pt"
+const POINTS_PER_UNIT: Readonly<Record<string, number>> = { mm: 72 / 25.4, cm: 72 / 2.54, in: 72, pt: 1, pc: 12, pi: 12 };
+const METRIC = new Set(["mm", "cm"]);
+// A universal measure, as the schema writes it: a minus sign, a whole number, a fraction and a unit
+const MEASURE = /^\s*(-?)(\d+)(\.\d+)?(mm|cm|in|pt|pc|pi)\s*$/;
+// Allows for a length that comes to a whole number of its attribute's unit being a little less in floating point
+const ROUNDING = 1e-9;
+
+/**
+ * A length in points, from an attribute in its own unit, `perPoint` of which make a point (20 for twips, 2 for
+ * half-points), or in a unit of OOXML's universal measure, such as "1in", "2.5cm" or "12pt", as the schema allows for
+ * every length docx writes from a string.
+ *
+ * Word reads a universal measure as a whole number of the attribute's unit (word-units and word-units2): rounded down
+ * from inches, points and picas, so "240.7pt" is 4814 twips, and to the nearest from centimeters and millimeters, so
+ * "84.67724mm" (4800.6 twips) is 4801. Its minus sign is the whole number's only, and the fraction is added to it:
+ * "-10.7pt" is -10 points and 0.7 more, -186 twips, and "-0.16708in" is 240 twips.
+ */
+export const pointsOf = (value: unknown, perPoint: number): number | undefined => {
+    const measure = typeof value === "string" ? MEASURE.exec(value) : null;
+    if (!measure) {
+        return scaled(numberOf(value), perPoint);
+    }
+    const [, minus, whole, fraction = "", unit] = measure;
+    const amount = (minus ? -Number(whole) : Number(whole)) + Number(`0${fraction}`);
+    const inUnits = amount * POINTS_PER_UNIT[unit] * perPoint;
+    return (METRIC.has(unit) ? Math.round(inUnits) : Math.floor(inUnits + ROUNDING)) / perPoint;
+};
+
+/**
+ * A run's size (`w:sz`, or `w:szCs` for complex scripts) in points, from half-points, or from points, which Word rounds down to a half-point:
+ * "11.75pt" is 11.5. Word ignores a size in inches, centimeters or millimeters, as if it had none (word-units2).
+ */
+const sizeOf = (value: unknown): number | undefined => {
+    const unit = typeof value === "string" ? MEASURE.exec(value)?.[4] : undefined;
+    return unit === undefined || unit === "pt" ? pointsOf(value, 2) : undefined;
+};
+
+/**
+ * Why how Word reads a length in formatted XML isn't known, when it isn't: a size in picas, which Word's PDFs didn't
+ * tell from one it ignores, or in another unit but points, which they showed it ignores only with no style giving a
+ * size, and a negative length of a fraction of a centimeter or millimeter, whose minus sign and rounding together they
+ * didn't show. Undefined when every length's reading is known.
+ */
+export const unknownLengthIn = (element: unknown, name = ""): string | undefined => {
+    if (Array.isArray(element)) {
+        return element.reduce<string | undefined>((found, child) => found ?? unknownLengthIn(child, name), undefined);
+    }
+    if (!isObject(element)) {
+        return undefined;
+    }
+    return Object.entries(element).reduce<string | undefined>((found, [key, child]) => {
+        if (found !== undefined || key !== "_attr") {
+            return found ?? unknownLengthIn(child, key);
+        }
+        return Object.values(child as XmlObject).reduce<string | undefined>((reason, value) => {
+            const measure = typeof value === "string" ? MEASURE.exec(value) : null;
+            if (reason !== undefined || !measure) {
+                return reason;
+            }
+            const [, minus, , fraction, unit] = measure;
+            return (name === "w:sz" || name === "w:szCs") && unit !== "pt"
+                ? "a size given in a unit other than points"
+                : minus && fraction && METRIC.has(unit)
+                  ? "a negative length of a fraction of a centimeter or millimeter"
+                  : undefined;
+        }, undefined);
+    }, undefined);
+};
+
 export const isOff = (value: unknown): boolean => value === false || value === 0 || value === "false" || value === "0" || value === "off";
 
 /**
@@ -188,17 +261,17 @@ export const readRunFormat = (element: unknown, themeFonts: ThemeFonts): RunForm
             stringOf(fonts["w:ascii"]) ??
             themeFontOf(fonts["w:hAnsiTheme"], themeFonts) ??
             stringOf(fonts["w:hAnsi"]),
-        size: scaled(numberOf(attributesOf(find(children, "w:sz"))["w:val"]), 2),
+        size: sizeOf(attributesOf(find(children, "w:sz"))["w:val"]),
         bold: onOff(children, "w:b"),
         italic: onOff(children, "w:i"),
         allCaps: onOff(children, "w:caps"),
         smallCaps: onOff(children, "w:smallCaps"),
         hidden: onOff(children, "w:vanish"),
-        characterSpacing: scaled(numberOf(attributesOf(find(children, "w:spacing"))["w:val"]), TWIPS_PER_POINT),
+        characterSpacing: pointsOf(attributesOf(find(children, "w:spacing"))["w:val"], TWIPS_PER_POINT),
         scale: numberOf(attributesOf(find(children, "w:w"))["w:val"]),
         eastAsiaFont: themeFontOf(fonts["w:eastAsiaTheme"], themeFonts) ?? stringOf(fonts["w:eastAsia"]),
         complexScriptFont: themeFontOf(fonts["w:cstheme"], themeFonts) ?? stringOf(fonts["w:cs"]),
-        complexScriptSize: scaled(numberOf(attributesOf(find(children, "w:szCs"))["w:val"]), 2),
+        complexScriptSize: sizeOf(attributesOf(find(children, "w:szCs"))["w:val"]),
         complexScriptBold: onOff(children, "w:bCs"),
         rightToLeft: onOff(children, "w:rtl"),
         complexScript: onOff(children, "w:cs"),
@@ -207,14 +280,14 @@ export const readRunFormat = (element: unknown, themeFonts: ThemeFonts): RunForm
 };
 
 const readLineSpacing = (spacing: XmlObject): LineSpacing | undefined => {
-    const line = numberOf(spacing["w:line"]);
+    const line = pointsOf(spacing["w:line"], TWIPS_PER_POINT);
     if (line === undefined) {
         return undefined;
     }
     const rule = spacing["w:lineRule"];
     return rule === "exact" || rule === "atLeast"
-        ? { rule, height: line / TWIPS_PER_POINT }
-        : { rule: "multiple", multiple: line / SINGLE_LINE };
+        ? { rule, height: line }
+        : { rule: "multiple", multiple: (line * TWIPS_PER_POINT) / SINGLE_LINE };
 };
 
 const TAB_ALIGNMENTS: Readonly<Record<string, TabStopSetting["alignment"]>> = {
@@ -240,7 +313,7 @@ const readTabs = (element: unknown): readonly TabStopSetting[] | undefined => {
         : tabs.map((tab) => {
               const attributes = attributesOf(tab["w:tab"]);
               return {
-                  position: (numberOf(attributes["w:pos"]) ?? 0) / TWIPS_PER_POINT,
+                  position: pointsOf(attributes["w:pos"], TWIPS_PER_POINT) ?? 0,
                   alignment: TAB_ALIGNMENTS[String(attributes["w:val"])] ?? "left",
               };
           });
@@ -254,14 +327,11 @@ export const readParagraphFormat = (element: unknown): ParagraphFormat => {
     const spacing = attributesOf(find(children, "w:spacing"));
     const indent = attributesOf(find(children, "w:ind"));
     const twips = (...names: readonly string[]): number | undefined =>
-        scaled(
-            names.map((name) => numberOf(indent[name])).find((value) => value !== undefined),
-            TWIPS_PER_POINT,
-        );
+        names.map((name) => pointsOf(indent[name], TWIPS_PER_POINT)).find((value) => value !== undefined);
     const hanging = twips("w:hanging");
     return withoutUndefined({
-        spaceBefore: scaled(numberOf(spacing["w:before"]), TWIPS_PER_POINT),
-        spaceAfter: scaled(numberOf(spacing["w:after"]), TWIPS_PER_POINT),
+        spaceBefore: pointsOf(spacing["w:before"], TWIPS_PER_POINT),
+        spaceAfter: pointsOf(spacing["w:after"], TWIPS_PER_POINT),
         lineSpacing: readLineSpacing(spacing),
         indentLeft: twips("w:start", "w:left"),
         indentRight: twips("w:end", "w:right"),
@@ -338,6 +408,7 @@ export const readTextStyles = (xml: XmlObject, themeFonts: ThemeFonts = OFFICE_T
         defaultCharacterStyle: defaultStyle("character"),
         defaultTableStyle: defaultStyle("table"),
         themeFonts,
+        ...withoutUndefined({ unsupported: unknownLengthIn(xml) }),
     };
 };
 
@@ -347,9 +418,7 @@ export const readTextStyles = (xml: XmlObject, themeFonts: ThemeFonts = OFFICE_T
 export const readCellMargins = (element: unknown): CellMargins => {
     const children = childrenOf(element);
     const side = (...names: readonly string[]): number | undefined =>
-        names
-            .map((name) => scaled(numberOf(attributesOf(find(children, name))["w:w"]), TWIPS_PER_POINT))
-            .find((value) => value !== undefined);
+        names.map((name) => pointsOf(attributesOf(find(children, name))["w:w"], TWIPS_PER_POINT)).find((value) => value !== undefined);
     return Object.fromEntries(
         Object.entries({
             top: side("w:top"),

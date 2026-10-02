@@ -9,10 +9,13 @@ import {
     getTextStyles,
     hasDefaultParagraphSpacing,
     isEastAsianRun,
+    pointsOf,
+    readCellMargins,
     readParagraphFormat,
     readRunFormat,
     spansOf,
     styleChain,
+    unknownLengthIn,
 } from "./text-styles";
 
 const contextOf = (file: File): IContext => ({ file, stack: [] }) as unknown as IContext;
@@ -211,6 +214,16 @@ describe("readRunFormat", () => {
         expect(readRunFormat([{ "w:i": { _attr: { "w:val": false } } }], themeFonts)).to.deep.equal({ italic: false });
         expect(fontOf({ font: "Arial", size: 12, italic: true, allCaps: true })).to.deep.equal({ font: "Arial", size: 12, italic: true });
     });
+
+    it("should read a size and character spacing written with units, as docx writes them from strings", () => {
+        const themeFonts = { headings: "Calibri Light", body: "Calibri" };
+        expect(
+            readRunFormat([{ "w:sz": { _attr: { "w:val": "12pt" } } }, { "w:spacing": { _attr: { "w:val": "-1pt" } } }], themeFonts),
+        ).to.deep.equal({ size: 12, characterSpacing: -1 });
+        // Word rounds a size in points down to a half-point, and ignores one in another unit (word-units2 V3)
+        expect(readRunFormat([{ "w:sz": { _attr: { "w:val": "11.75pt" } } }], themeFonts)).to.deep.equal({ size: 11.5 });
+        expect(readRunFormat([{ "w:sz": { _attr: { "w:val": "1cm" } } }], themeFonts)).to.deep.equal({});
+    });
 });
 
 describe("hasDefaultParagraphSpacing", () => {
@@ -248,6 +261,103 @@ describe("readParagraphFormat", () => {
                 { position: 0, alignment: "left" },
             ],
         });
+    });
+
+    it("should read lengths written with units, such as an imported document may have where docx's options take only numbers", () => {
+        expect(
+            readParagraphFormat([
+                { "w:spacing": { _attr: { "w:before": "6pt", "w:after": "0.25in", "w:line": "14pt", "w:lineRule": "exact" } } },
+                { "w:ind": { _attr: { "w:left": "1in", "w:right": "-1in", "w:hanging": "18pt" } } },
+                { "w:tabs": [{ "w:tab": { _attr: { "w:val": "left", "w:pos": "3in" } } }] },
+            ]),
+        ).to.deep.equal({
+            spaceBefore: 6,
+            spaceAfter: 18,
+            lineSpacing: { rule: "exact", height: 14 },
+            indentLeft: 72,
+            indentRight: -72,
+            firstLineIndent: -18,
+            tabs: [{ position: 216, alignment: "left" }],
+        });
+        // A line spacing in lines is in 240ths of a line, as twips are: 12 points is a single line
+        expect(readParagraphFormat([{ "w:spacing": { _attr: { "w:line": "18pt", "w:lineRule": "auto" } } }])).to.deep.equal({
+            lineSpacing: { rule: "multiple", multiple: 1.5 },
+        });
+        expect(readCellMargins([{ "w:top": { _attr: { "w:w": "0.1in", "w:type": "dxa" } } }])).to.deep.equal({ top: 7.2 });
+    });
+});
+
+describe("pointsOf", () => {
+    it("should read a length in its attribute's own unit, as a number or as a string from an imported document", () => {
+        expect(pointsOf(1440, 20)).to.equal(72);
+        expect(pointsOf("-360", 20)).to.equal(-18);
+        expect(pointsOf(24, 2)).to.equal(12);
+        expect(pointsOf(undefined, 20)).to.equal(undefined);
+        expect(pointsOf("auto", 20)).to.equal(undefined);
+    });
+
+    it("should read a length in a unit of OOXML's universal measure, as docx writes a length given as a string", () => {
+        expect(pointsOf("1in", 20)).to.equal(72);
+        expect(pointsOf("12pt", 2)).to.equal(12);
+        expect(pointsOf("-6pt", 20)).to.equal(-6);
+        expect(pointsOf("1pc", 20)).to.equal(12);
+        expect(pointsOf("2pi", 20)).to.equal(24);
+        expect(pointsOf("2.54cm", 20)).to.be.closeTo(72, 1e-9);
+        expect(pointsOf("25.4mm", 20)).to.be.closeTo(72, 1e-9);
+        expect(pointsOf("0.5in", 2)).to.equal(36);
+    });
+
+    it("should read a length that isn't a whole number of twips as Word does: rounded down from inches, points and picas", () => {
+        // word-units2 V1 and V4, in twips
+        expect(pointsOf("240.7pt", 20)! * 20).to.equal(4814);
+        expect(pointsOf("240.04pt", 20)! * 20).to.equal(4800);
+        expect(pointsOf("3.33375in", 20)! * 20).to.equal(4800);
+        expect(pointsOf("20.0025pc", 20)! * 20).to.equal(4800);
+        expect(pointsOf("0.0305in", 20)! * 20).to.equal(43);
+        // Lengths that come to whole twips, which floating point makes a little less
+        expect(pointsOf("0.7in", 20)! * 20).to.equal(1008);
+        expect(pointsOf("0.35pt", 20)! * 20).to.equal(7);
+    });
+
+    it("should read a length that isn't a whole number of twips as Word does: to the nearest from centimeters and millimeters", () => {
+        // word-units U7 and word-units2 V1: 4800.4 and 4800.6 twips
+        expect(pointsOf("8.46737cm", 20)! * 20).to.equal(4800);
+        expect(pointsOf("8.46772cm", 20)! * 20).to.equal(4801);
+        expect(pointsOf("84.67724mm", 20)! * 20).to.equal(4801);
+        expect(pointsOf("2.5cm", 20)! * 20).to.equal(1417);
+    });
+
+    it("should read a negative length's minus sign as Word does, as its whole number's only, with the fraction added", () => {
+        // word-units2 V1: -10 points and 0.7 more, and 0 inches and 0.16708 more
+        expect(pointsOf("-10.7pt", 20)! * 20).to.equal(-186);
+        expect(pointsOf("-0.16708in", 20)! * 20).to.equal(240);
+        expect(pointsOf("-6pt", 20)).to.equal(-6);
+    });
+
+    it("should read nothing from a unit without a number", () => {
+        expect(pointsOf("xpt", 20)).to.equal(undefined);
+        expect(pointsOf("in", 20)).to.equal(undefined);
+    });
+});
+
+describe("unknownLengthIn", () => {
+    it("should find a size in a unit other than points, and a negative fraction of a centimeter or millimeter, in any element", () => {
+        const size = (val: string): object => ({ "w:rPr": [{ "w:sz": { _attr: { "w:val": val } } }] });
+        expect(unknownLengthIn([{ "w:p": [{ "w:r": [size("1pc")] }] }])).to.equal("a size given in a unit other than points");
+        expect(unknownLengthIn({ "w:szCs": { _attr: { "w:val": "1cm" } } })).to.equal("a size given in a unit other than points");
+        expect(unknownLengthIn({ "w:ind": { _attr: { "w:left": "-1.5cm" } } })).to.equal(
+            "a negative length of a fraction of a centimeter or millimeter",
+        );
+        expect(unknownLengthIn([size("11.5pt"), size("23"), { "w:ind": { _attr: { "w:left": "-1cm", "w:right": "-1.5in" } } }])).to.equal(
+            undefined,
+        );
+        expect(unknownLengthIn([{ "w:t": ["-1.5cm"] }, "text"])).to.equal(undefined);
+    });
+
+    it("should find one in the styles as they are read", () => {
+        const styles = stylesOf({ paragraphStyles: [{ id: "Small", name: "Small", run: { size: "0.1in" } }] });
+        expect(styles.unsupported).to.equal("a size given in a unit other than points");
+        expect(stylesOf({}).unsupported).to.equal(undefined);
     });
 });
 
