@@ -5329,7 +5329,8 @@ var docxLayout = (function(exports) {
 			spaceAfter,
 			sectionSpaceAfter,
 			placed: placements.length,
-			finished
+			finished,
+			pageColumns
 		});
 		let blockStart;
 		let columnsStart;
@@ -5340,7 +5341,7 @@ var docxLayout = (function(exports) {
 		* out again only moves them between the columns of the same page
 		*/
 		const restore = (state) => {
-			({pageCount, pageNumber, restart, top, pageContinuation, continuedEndnotes, pageBottom, position, column, columnTop, placedInColumn, deepest, columnBroken, pageNotes, noteArea, notesSection, notesInColumns, filledEnd, continued, carried, held, heldLines, deferred, spaceAfter, sectionSpaceAfter, finished} = state);
+			({pageCount, pageNumber, restart, top, pageContinuation, continuedEndnotes, pageBottom, position, column, columnTop, placedInColumn, deepest, columnBroken, pageNotes, noteArea, notesSection, notesInColumns, filledEnd, continued, carried, held, heldLines, deferred, spaceAfter, sectionSpaceAfter, finished, pageColumns} = state);
 			placements.length = Math.min(placements.length, state.placed);
 			bottom = columnsBottom();
 			noteArea = Math.max(noteArea, reserved());
@@ -5366,7 +5367,9 @@ var docxLayout = (function(exports) {
 		* The section whose columns the text is laid out in: the one being laid out, or the one whose columns the page's are,
 		* for a section that started in the next column of columns of other widths. Word lays that out in the next column of
 		* the page, where it is and as wide as it is: after 2 columns of 4153 twips, one of 2000 and 6306 goes on at 4873, its
-		* lines broken at 4153 (`word-watertight-stops.docx` SP10, `word-next-column.docx` N4)
+		* lines broken at 4153 (`word-watertight-stops.docx` SP10, `word-next-column.docx` N4). It goes on in its own columns
+		* on the next page, and its footnotes are laid out in its own columns, at 0 and 2720, where its text is at 4873
+		* (`word-column-stops.docx` CS1 and CS2)
 		*/
 		const columnsSection = () => {
 			var _pageColumns;
@@ -5454,7 +5457,7 @@ var docxLayout = (function(exports) {
 		const startPage = (isFirstOfSection = false, notesOnly = false) => {
 			var _restart;
 			if (balancing !== void 0 && pageCount >= balancing.page) throw new Overflow();
-			if (pageColumns !== void 0) throw new Unsupported("a section that starts in the next column of columns of other widths and goes on to the next page");
+			pageColumns = void 0;
 			checkReserve();
 			if (deferred !== void 0 && !notesOnly) throw new Unsupported("text after a line whose footnote starts on the next page");
 			deferred = void 0;
@@ -5930,7 +5933,6 @@ var docxLayout = (function(exports) {
 		*/
 		const addNotes = (notes) => {
 			if (notes.length > 0) {
-				if (pageColumns !== void 0) stopOnPage("a footnote in a section that starts in the next column of columns of other widths");
 				if (pageNotes.length === 0 && continued === void 0 && section().columns.length > 1) notesInColumns = sectionIndex;
 				pageNotes = [...pageNotes, ...notes];
 				noteArea = pageArea(pageNotes);
@@ -6187,17 +6189,12 @@ var docxLayout = (function(exports) {
 		/** Whether the next line goes at the top of the page, in its first column */
 		const atTopOfPage = () => column === 0 && position <= top + TOLERANCE;
 		/**
-		* Whether a paragraph is kept together and taller than a column, up to its first break: than each of the columns at
-		* its width, in columns of different widths, where Word lays it out down the first column of each page at that
-		* column's width as it does in columns of the same width (`word-watertight-stops.docx` SP12). It stops at one taller
-		* than some of the columns but not others, which might go in one it fits in
+		* Which of the columns a paragraph kept together is taller than, up to its first break, each at its own width: none
+		* when it isn't kept together, or isn't in columns
 		*/
-		const keptTallerThanColumns = (block) => {
+		const columnsTallerThan = (block) => {
 			const { columns } = columnsSection();
-			if (block.format.keepLines !== true || columns.length < 2) return false;
-			const taller = columns.map((width) => heightToFit(linesToBreak(linesOf(block, width), 0)) > pageBottom - top + TOLERANCE);
-			if (taller.some((tall) => tall !== taller[0])) throw new Unsupported("a paragraph kept together taller than some of its columns of different widths but not others");
-			return taller[0];
+			return block.format.keepLines !== true || columns.length < 2 ? [] : columns.map((width) => heightToFit(linesToBreak(linesOf(block, width), 0)) > pageBottom - top + TOLERANCE);
 		};
 		/**
 		* Places a paragraph's lines, breaking pages and columns between them where they don't fit, and at its page and
@@ -6213,8 +6210,11 @@ var docxLayout = (function(exports) {
 		const placeParagraph = (block, paragraph, holdNotes) => {
 			if (paragraph.pageBreakBefore && (placedInColumn || column > 0)) startPage();
 			const { columns } = columnsSection();
-			const keptTall = keptTallerThanColumns(block);
+			const taller = columnsTallerThan(block);
+			const keptTall = taller.length > 0 && taller.every((tall) => tall);
 			if (keptTall && !atTopOfPage()) startPage();
+			const movesOn = !keptTall && taller.some((tall) => tall);
+			if (movesOn && columns.length > 2) throw new Unsupported("a paragraph kept together taller than some of 3 or more columns of different widths");
 			const firstColumnsOnly = keptTall ? linesToBreak(linesOf(block, columns[0]), 0).length : 0;
 			/**
 			* The space above the paragraph's first line: at the top of a page, or of the column its section starts in, only
@@ -6228,6 +6228,10 @@ var docxLayout = (function(exports) {
 				const lines = linesOf(block, widths);
 				const remaining = linesToBreak(lines, index);
 				const isFirstLine = index === 0;
+				if (movesOn && isFirstLine && !placedInColumn && taller[column]) {
+					nextColumn();
+					continue;
+				}
 				const space = isFirstLine ? spaceAbove() + paragraph.borderAbove : 0;
 				const heldNotes = held;
 				const notesOf = (upTo) => [...heldNotes, ...notesIn(remaining.slice(0, upTo).flatMap(({ markers }) => markers))];
@@ -6786,7 +6790,10 @@ var docxLayout = (function(exports) {
 				};
 				const keptWithPrevious = (previous === null || previous === void 0 ? void 0 : previous.section) === blocks[index].section && previous.block.type === "paragraph" && previous.block.format.keepNext === true;
 				const anchor = blocks[index + keptChain(index)].block;
-				if (anchor.type === "paragraph" && keptTallerThanColumns(anchor)) {
+				const anchorTaller = anchor.type === "paragraph" ? columnsTallerThan(anchor) : [];
+				const tallAnchor = anchorTaller.length > 0 && anchorTaller.every((tall) => tall);
+				if (!tallAnchor && anchorTaller.some((tall) => tall)) throw new Unsupported("a paragraph kept with the next before one kept together taller than some of the columns but not others");
+				if (tallAnchor) {
 					if (!keptWithPrevious && !atTopOfPage()) startPage();
 				} else if (placedInColumn) {
 					const here = keptHere();
