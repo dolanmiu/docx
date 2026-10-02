@@ -9787,6 +9787,40 @@ var docx = (function(exports) {
 	* field instructions, an optional separate character, field result, and an end character.
 	*/
 	var createBegin = (dirty) => createFieldChar(FieldCharacterType.BEGIN, dirty);
+	/** The formatted begin characters of the fields that are dirty only when the document isn't given page numbers */
+	var dirtyWithoutPageNumbers = /* @__PURE__ */ new WeakSet();
+	/** The beginning of a field that is dirty, so Word updates it, unless the document is given page numbers */
+	var BeginDirtyWithoutPageNumbers = class extends BuilderElement {
+		constructor() {
+			super({
+				name: "w:fldChar",
+				attributes: {
+					type: {
+						key: "w:fldCharType",
+						value: FieldCharacterType.BEGIN
+					},
+					dirty: {
+						key: "w:dirty",
+						value: true
+					}
+				}
+			});
+		}
+		prepForXml(context) {
+			const xml = super.prepForXml(context);
+			dirtyWithoutPageNumbers.add(xml);
+			return xml;
+		}
+	};
+	/**
+	* Creates the beginning of a field whose result is a page number, such as a page reference. It is written dirty, so
+	* Word updates the field when it opens the document, and asks to. When the document is given page numbers, it is
+	* written clean (see {@link isDirtyWithoutPageNumbers}), so Word shows the number written, or nothing when none could
+	* be worked out, and doesn't ask.
+	*/
+	var createBeginDirtyWithoutPageNumbers = () => new BeginDirtyWithoutPageNumbers();
+	/** Whether a formatted field character is the beginning of a field that is dirty only without page numbers */
+	var isDirtyWithoutPageNumbers = (element) => typeof element === "object" && element !== null && dirtyWithoutPageNumbers.has(element);
 	/**
 	* Creates the separator between field code and field result in a complex field.
 	*
@@ -18352,6 +18386,10 @@ MAX: 9026 };
 	* The PAGEREF field displays the page number of the page containing
 	* the specified bookmark, useful for cross-references like "see page 5".
 	*
+	* It is written dirty, so Word fills in the page number when it opens the document, after asking to. When the
+	* document is given `pageNumbers`, it is written clean, with the number they work out, or blank when they couldn't,
+	* and Word doesn't ask.
+	*
 	* @publicApi
 	*
 	* @example
@@ -18372,7 +18410,7 @@ MAX: 9026 };
 	var PageReference = class extends Run {
 		constructor(bookmarkId, options = {}) {
 			super({ children: [
-				createBegin(true),
+				createBeginDirtyWithoutPageNumbers(),
 				new PageReferenceFieldInstruction(bookmarkId, options),
 				createSeparate(),
 				createEnd()
@@ -21026,10 +21064,16 @@ MAX: 9026 };
 	* any it is empty. So once the body is written, each table of contents that wasn't given `cachedEntries` or
 	* `contentChildren` is filled in from the headings its switches include, the way Word fills it in: each heading is
 	* bookmarked, and its entry links to the bookmark and gives its page with a PAGEREF field. The page numbers are left
-	* empty, because they depend on how the document is laid out. Word fills them in when it updates the field.
+	* empty, because they depend on how the document is laid out. Word fills them in when it updates the field, unless the
+	* document's `pageNumbers` writes them.
 	*
 	* @module
 	*/
+	/**
+	* The beginning of a table of contents' field: dirty or clean, as the caller set it, or else dirty unless the document
+	* is given page numbers
+	*/
+	var beginOf = (beginDirty) => beginDirty === void 0 ? createBeginDirtyWithoutPageNumbers() : createBegin(beginDirty);
 	/** The formatted tables of contents, with what each is filled in with, or undefined when it was given its content */
 	var writtenTables = /* @__PURE__ */ new WeakMap();
 	/**
@@ -21270,7 +21314,7 @@ MAX: 9026 };
 					leader: "dot"
 				}],
 				children: [...index === 0 ? [new Run({ children: [
-					createBegin(beginDirty),
+					beginOf(beginDirty),
 					new FieldInstruction(properties),
 					createSeparate()
 				] })] : [], ...properties.hyperlink ? [new InternalHyperlink({
@@ -21326,6 +21370,23 @@ MAX: 9026 };
 	};
 	//#endregion
 	//#region src/file/document/body/page-numbers.ts
+	/**
+	* Page numbers written into the fields of a document that show them, when it is written, from an estimate of its pages.
+	*
+	* A page reference is a PAGEREF field, such as the page number of an entry in a table of contents, and the numbers of
+	* pages of the document and of a section are NUMPAGES and SECTIONPAGES fields. Word works their results out when it
+	* updates the fields, or lays the pages out, and until then, and in applications that don't, the fields show the results
+	* they were written with. `docx` doesn't lay out pages, so it writes the results empty, unless the document is given a
+	* {@link PageNumberEstimator}, such as `estimatePageNumbers` from `docx/layout`. Then, once the body is written, each of
+	* those fields in the body, and then in the headers and footers, is given the number the estimator worked out.
+	*
+	* Page references and tables of contents are written dirty, so Word updates them when it opens the document, and asks
+	* "This document contains fields that may refer to other files. Do you want to update the fields in this document?".
+	* When the document is given page numbers, they are written clean, so Word shows them as they are and doesn't ask. A
+	* page number the estimator didn't work out is left blank, until the fields are updated.
+	*
+	* @module
+	*/
 	var PLAIN_FORMATS = /* @__PURE__ */ new Set([
 		"mergeformat",
 		"charformat",
@@ -21373,6 +21434,14 @@ MAX: 9026 };
 	};
 	var textElement = (text) => ({ "w:t": [{ _attr: { "xml:space": "preserve" } }, text] });
 	/**
+	* Writes clean the beginning of a field that is dirty only without page numbers, such as a page reference, so Word
+	* shows its result as it is written and doesn't ask to update the fields
+	*/
+	var writeClean = (begin) => {
+		const attributes = begin["w:fldChar"]._attr;
+		begin["w:fldChar"] = { _attr: Object.fromEntries(Object.entries(attributes).filter(([key]) => key !== "w:dirty")) };
+	};
+	/**
 	* Writes the results the filling works out into the fields in the elements, in order. A field's result is written just
 	* after its `separate` field character, and any result it had is taken out.
 	*/
@@ -21384,11 +21453,13 @@ MAX: 9026 };
 			const current = open[open.length - 1];
 			if (name === "w:fldChar") {
 				const type = attributeOf(element, name, "w:fldCharType");
-				if (type === "begin") open.push({
-					instruction: "",
-					inResult: false
-				});
-				else if (type === "separate" && current) {
+				if (type === "begin") {
+					open.push({
+						instruction: "",
+						inResult: false
+					});
+					if (isDirtyWithoutPageNumbers(element)) writeClean(element);
+				} else if (type === "separate" && current) {
 					current.inResult = true;
 					current.result = filling.resultOf(current.instruction);
 					if (current.result !== void 0) {
@@ -21455,7 +21526,8 @@ MAX: 9026 };
 	/**
 	* Writes the page numbers the estimator works out into the fields of a formatted body that show them: the PAGEREF fields
 	* in its tables of contents and elsewhere, and its NUMPAGES and SECTIONPAGES fields. A field whose number the estimator
-	* didn't work out is left as it is. The estimate is kept for the document's headers and footers.
+	* didn't work out is left as it is. Page references and tables of contents are written clean, whether or not their
+	* numbers were worked out. The estimate is kept for the document's headers and footers.
 	*/
 	var fillPageNumbers = (body, context, estimator) => {
 		const estimate = estimator(body, context);
@@ -30081,7 +30153,8 @@ MAX: 9026 };
 	* Unless it is given `cachedEntries` or `contentChildren`, it is written with an
 	* entry for each heading its options include, linked to a bookmark on the heading,
 	* so it isn't empty before Word updates it or in applications that don't update it.
-	* The page numbers are left for Word to fill in when it updates the field.
+	* The page numbers are left for Word to fill in when it updates the field, unless the document's `pageNumbers`
+	* writes them.
 	*
 	* Reference: http://officeopenxml.com/WPtableOfContents.php
 	*
@@ -30108,7 +30181,7 @@ MAX: 9026 };
 	*/
 	var TableOfContents = class extends FileChild {
 		constructor(alias = "Table of Contents", _ref = {}) {
-			let { contentChildren = [], cachedEntries = [], beginDirty = true } = _ref, properties = _objectWithoutProperties(_ref, _excluded$2);
+			let { contentChildren = [], cachedEntries = [], beginDirty } = _ref, properties = _objectWithoutProperties(_ref, _excluded$2);
 			super("w:sdt");
 			_defineProperty(
 				this,
@@ -30119,7 +30192,7 @@ MAX: 9026 };
 			this.root.push(new StructuredDocumentTagProperties(alias));
 			const content = new StructuredDocumentTagContent();
 			const beginParagraphMandatoryChildren = [new Run({ children: [
-				createBegin(beginDirty),
+				beginOf(beginDirty),
 				new FieldInstruction(properties),
 				createSeparate()
 			] })];

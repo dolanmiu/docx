@@ -3758,7 +3758,8 @@ declare type FilePatch = {
 /**
  * Writes the page numbers the estimator works out into the fields of a formatted body that show them: the PAGEREF fields
  * in its tables of contents and elsewhere, and its NUMPAGES and SECTIONPAGES fields. A field whose number the estimator
- * didn't work out is left as it is. The estimate is kept for the document's headers and footers.
+ * didn't work out is left as it is. Page references and tables of contents are written clean, whether or not their
+ * numbers were worked out. The estimate is kept for the document's headers and footers.
  */
 export declare const fillPageNumbers: (body: IXmlableObject, context: IContext, estimator: PageNumberEstimator) => void;
 
@@ -10198,6 +10199,10 @@ export declare const PageOrientation: {
  * The PAGEREF field displays the page number of the page containing
  * the specified bookmark, useful for cross-references like "see page 5".
  *
+ * It is written dirty, so Word fills in the page number when it opens the document, after asking to. When the
+ * document is given `pageNumbers`, it is written clean, with the number they work out, or blank when they couldn't,
+ * and Word doesn't ask.
+ *
  * @publicApi
  *
  * @example
@@ -12229,7 +12234,8 @@ export declare const TableLayoutType: {
  * Unless it is given `cachedEntries` or `contentChildren`, it is written with an
  * entry for each heading its options include, linked to a bookmark on the heading,
  * so it isn't empty before Word updates it or in applications that don't update it.
- * The page numbers are left for Word to fill in when it updates the field.
+ * The page numbers are left for Word to fill in when it updates the field, unless the document's `pageNumbers`
+ * writes them.
  *
  * Reference: http://officeopenxml.com/WPtableOfContents.php
  *
@@ -12265,6 +12271,11 @@ export declare class TableOfContents extends FileChild {
          * Note that indentation should come from the paragraph styles defined on the document. By default the styles are TOC1, TOC2, etc. These can be overridden with stylesWithLevels (\t)
          */
         readonly cachedEntries?: readonly ToCEntry[];
+        /**
+         * Whether the field is written dirty, so Word updates the table when it opens the document, after asking to.
+         * Default is dirty, unless the document is given `pageNumbers`: then it is written clean, so Word shows it as
+         * it is written, and doesn't ask.
+         */
         readonly beginDirty?: boolean;
     });
     /**

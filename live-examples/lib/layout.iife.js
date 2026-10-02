@@ -5802,6 +5802,10 @@ var docxLayout = (function(exports) {
 	* whole that is taller than a page. The page references to bookmarks after it are left blank, for
 	* Word to fill in when it updates the fields.
 	*
+	* Page references and tables of contents are written clean, so Word shows the numbers as they are written, and the
+	* page numbers it left blank stay blank, without asking to update the fields, unless the document has `updateFields`
+	* on.
+	*
 	* @publicApi
 	*/
 	var estimatePageNumbers = (body, context) => estimateWith(body, context, DEFAULT_MEASURER);

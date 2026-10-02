@@ -8,7 +8,7 @@
 
 Without it, their page numbers are blank until Word updates the fields, because they depend on how the document is laid out. Word only updates them when the document asks it to (`updateFields`) and the reader says yes, or when the reader updates the table. LibreOffice never fills in a table of contents' page numbers, so documents it converts to PDF have none.
 
-It is opt-in. The page numbers are estimates: Word still works them out again when it updates the fields.
+It is opt-in. The page numbers are estimates: Word still works them out again when it updates the fields, such as when the reader updates the table.
 
 ## Importing
 
@@ -32,8 +32,7 @@ import { estimatePageNumbers } from "docx/layout";
 const text = "The harbour was rebuilt after the storm, and this report sets out what it cost and what is left to do. ".repeat(12);
 
 const doc = new Document({
-    // Word still updates the page numbers when it opens the document
-    features: { updateFields: true },
+    // Without updateFields, Word shows the page numbers as they are written, and doesn't ask to update them
     pageNumbers: estimatePageNumbers,
     sections: [
         {
@@ -63,6 +62,21 @@ The page numbers are written into:
 - each [`PageReference`](usage/bookmarks.md#page-references), unless it shows its position relative to the bookmark (`useRelativePosition`)
 - the [number of pages](usage/page-numbers.md#total-number-of-pages) of the document (`PageNumber.TOTAL_PAGES`) and of [each section](usage/page-numbers.md#total-number-of-pages-in-a-section) (`PageNumber.TOTAL_PAGES_IN_SECTION`), in the text, headers and footers. A section's is left blank when it shares a page with another section, or has a blank page before or after it
 
+## Opening the document in Word
+
+Without `pageNumbers`, `docx` writes page references and tables of contents as fields for Word to update, so Word asks "This document contains fields that may refer to other files. Do you want to update the fields in this document?" when it opens the document. With `pageNumbers`, they are written as they are, so Word shows them as they are written, and doesn't update them or ask. Leave `updateFields` off, and Word opens the document without asking.
+
+A page number `docx/layout` couldn't work out, after it stopped (see [What it leaves blank](#what-it-leaves-blank)), is left blank, and stays blank in Word until the fields are updated: by the reader, such as by updating the table of contents, or by turning `updateFields` on. A wrong page number is worse than a blank one. The same goes for what `docx/layout` doesn't write at all:
+
+- a page reference that shows its position relative to the bookmark (`useRelativePosition`)
+- a table of contents that lists no heading, or of captions or TC fields, which is left empty, and the entries of one given `cachedEntries` or `contentChildren`, which are left as they were given
+
+Word still asks when:
+
+- the document has `updateFields` on, which asks Word to update all of its fields
+- a table of contents is given `beginDirty: true`
+- the document has a `SequentialIdentifier`, a SEQ field, which is written for Word to number
+
 ## What it follows
 
 The pages are laid out with the widths and heights of the characters of the fonts Word documents use most: Calibri, Cambria, Arial, Times New Roman and Courier New, and the heights of the lines of the Chinese, Japanese and Korean fonts Office has, such as MS Mincho, Yu Gothic, SimSun, Microsoft YaHei, PMingLiU and Malgun Gothic. It follows:
@@ -79,7 +93,7 @@ The pages are laid out with the widths and heights of the characters of the font
 
 ## What it leaves blank
 
-It stops at the first thing it can't lay out yet, and the page numbers of the headings and bookmarks after it are left blank, for Word to fill in:
+It stops at the first thing it can't lay out yet, and the page numbers of the headings and bookmarks after it are left blank, until the fields are updated in Word (see [Opening the document in Word](#opening-the-document-in-word)):
 
 - a picture or shape that text wraps around, a text box, or a text frame
 - an equation
@@ -102,7 +116,7 @@ A wrong page number is worse than a blank one, so it doesn't guess.
 
 Text in fonts other than those five is measured as the most similar of them, so its page numbers are rougher. Aptos, Office's default font since 2023, is measured as Arial. In a browser, text can be measured in the fonts the page has instead (see [Measuring with a page's fonts](#measuring-with-a-pages-fonts)). Letters the fonts have no widths for, such as Greek, Cyrillic, Hebrew, Arabic and Thai, are measured as an average letter of the font, and East Asian fonts Office doesn't have as MS Mincho or MS Gothic.
 
-Each change to `docx/layout` is checked against LibreOffice's layout of a set of documents. Word lays out some things differently from LibreOffice, so keep `updateFields` on if the page numbers must be exact once the document is opened in Word. LibreOffice rounds the height of each line to whole twips, 269 for Calibri 11, so where a line only just fits on a page, it can be on the next page in LibreOffice and on this one in Word, and in `docx/layout`, which follows Word.
+Each change to `docx/layout` is checked against LibreOffice's layout of a set of documents. Word lays out some things differently from LibreOffice, so turn `updateFields` on if the page numbers must be Word's own once the document is opened in Word: Word then asks to update the fields, and works them out again. LibreOffice rounds the height of each line to whole twips, 269 for Calibri 11, so where a line only just fits on a page, it can be on the next page in LibreOffice and on this one in Word, and in `docx/layout`, which follows Word.
 
 Laying out a document takes about 0.3 seconds per 100 pages in Node.
 
