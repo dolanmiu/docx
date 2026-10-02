@@ -105,6 +105,12 @@ describe("layoutLines", () => {
             ]),
         ).to.equal(2);
         expect(linesOf([piece("AVA", {}), piece("VAV", {}), piece("AV aa", {})])).to.equal(2);
+        // Text smaller than the size kerning starts at isn't kerned. Each piece has a font of its own, as each run does
+        const small = { kerning: 12, size: 10 };
+        expect(linesOf([piece("AVA", { ...small }), piece("VAV", { ...small }), piece("AV aa", { ...small })])).to.equal(2);
+        expect(
+            linesOf([piece("AVA", { ...small, size: 12 }), piece("VAV", { ...small, size: 12 }), piece("AV aa", { ...small, size: 12 })]),
+        ).to.equal(1);
     });
 
     it("should space the lines as the paragraph says", () => {

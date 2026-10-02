@@ -6,7 +6,7 @@
  */
 // cspell:ignore hhea hmtx cmap fsSelection ttcf OTTO GPOS DFLT Aptos
 import { DEFAULT_MEASURER, type TextMeasurer } from "./line-breaking";
-import { DEFAULT_FONT, DEFAULT_FONT_SIZE, type TextFont, takesNoRoom } from "./text-width";
+import { DEFAULT_FONT, DEFAULT_FONT_SIZE, type TextFont, isKerned, takesNoRoom } from "./text-width";
 
 /**
  * A font file's bytes: a TrueType or OpenType font (`.ttf` or `.otf`), or a collection of them (`.ttc`).
@@ -457,8 +457,8 @@ export const createFontFileMeasurer = (faces: readonly FontFace[], fallback: Tex
     };
     /** How wide text with no tabs is in a face, in points */
     const widthIn = (face: FontFace, text: string, font: TextFont): number => {
-        const { size = DEFAULT_FONT_SIZE, characterSpacing = 0, scale = 100, kerning } = font;
-        const kerns = kerning !== undefined && size >= kerning;
+        const { size = DEFAULT_FONT_SIZE, characterSpacing = 0, scale = 100 } = font;
+        const kerns = isKerned(font);
         const em = (size * scale) / 100;
         const characters = [...text];
         return characters.reduce((width, character, index) => {

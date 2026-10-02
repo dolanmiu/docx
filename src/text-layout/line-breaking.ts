@@ -10,7 +10,15 @@
  * @module
  */
 import { type LineBreakRules, extendsCharacter, findLineBreaks, joinsNext } from "./line-break-rules";
-import { type LineSpacing, type ParagraphFormat, type TextFont, measureLineHeight, measureTextWidth, unknownCharacter } from "./text-width";
+import {
+    type LineSpacing,
+    type ParagraphFormat,
+    type TextFont,
+    isKerned,
+    measureLineHeight,
+    measureTextWidth,
+    unknownCharacter,
+} from "./text-width";
 
 /**
  * Measures text. The default measures it with the widths of the fonts in {@link FONT_WIDTHS}.
@@ -242,8 +250,8 @@ const sameFont = (one: TextFont, other: TextFont): boolean =>
     Object.entries(one).every(([key, value]) => other[key as keyof TextFont] === value);
 
 /**
- * How wide pieces of text are. Pieces next to each other in the same font, with kerning on, are measured together, so the
- * pairs of characters across them are kerned, as Word kerns them across runs (word-fonts.docx F4). Others are measured
+ * How wide pieces of text are. Pieces next to each other in the same font, and kerned, are measured together, so the pairs
+ * of characters across them are kerned, as Word kerns them across runs (word-fonts.docx F4). Others are measured
  * apart, as a measurer may measure a piece, such as a page number, differently on its own.
  */
 const widthOf = (pieces: readonly Piece[], measurer: TextMeasurer): number => {
@@ -253,7 +261,7 @@ const widthOf = (pieces: readonly Piece[], measurer: TextMeasurer): number => {
     let total = 0;
     let [{ text, font }] = pieces;
     for (const piece of pieces.slice(1)) {
-        if (font.kerning !== undefined && sameFont(font, piece.font)) {
+        if (isKerned(font) && sameFont(font, piece.font)) {
             text += piece.text;
             continue;
         }

@@ -316,6 +316,9 @@ const monospacedWidth = (character: string): number => {
 
 const sizeOf = ({ size = DEFAULT_FONT_SIZE }: TextFont): number => size;
 
+/** Whether text is kerned: with kerning on (`w:kern`), and at its size or larger, as Word kerns it (word-fonts.docx F3) */
+export const isKerned = ({ kerning, size = DEFAULT_FONT_SIZE }: TextFont): boolean => kerning !== undefined && size >= kerning;
+
 /**
  * How a font's characters are measured: an East Asian font's Latin letters with the widths of the font in the table they
  * are measured as, or all of a monospaced one's as half an em or an em, and other fonts with their own widths, or those of
