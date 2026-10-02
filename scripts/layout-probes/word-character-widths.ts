@@ -16,8 +16,22 @@
 // The fonts, and the spaces and words of S, B and H, are written in word-character-widths.json, beside the document, for
 // the reader.
 //
+// Word's PDF, saved from Word 16 for Mac on 2026-10-02, showed:
+// W: the open fonts' widths are Word's, to within a thousandth of an em, for all but a few characters: Calibri's ƒ and ɪ,
+//    Cambria's arrows, primes and some symbols, Arial's and Times New Roman's superscript and subscript digits, and some
+//    of Arial Bold's Cyrillic. Word's Cambria has the Greek, Cyrillic and Latin Extended-B that Caladea lacks. Word draws
+//    most mathematical symbols and letterlike symbols in Cambria Math, and others in Segoe UI Symbol, MS Gothic and other
+//    fonts, when the font lacks them. It drew three lines of Courier New squeezed, with Ž to Ƌ, ˙ to ˝ and Ͻ to Ђ on them
+// S: Calibri's en, em, three-per-em, four-per-em and six-per-em spaces are 498, 905, 301, 226 and 151 thousandths of an
+//    em, where Carlito's are 500, 1000, 335, 250 and 167, and Arial's en space is 556, where Liberation Sans' is 500. The
+//    zero-width characters take no room
+// B and H: lines break after en, em and four-per-em spaces, which Word has as spaces of its own, and ideographic spaces,
+//    and the word before one at the end of a line stays on it, as before a U+0020. Word joins the words around the other
+//    spaces, as it does around a no-break space, but splits a run of words joined by six-per-em spaces that is longer than
+//    a line at one of them
+//
 // Usage: npm run run-ts -- scripts/layout-probes/word-character-widths.ts, which writes build/word-probes/word-character-widths.docx
-// cspell:ignore bbox
+// cspell:ignore bbox Caladea
 import { mkdirSync, writeFileSync } from "node:fs";
 
 import { Document, Packer, Paragraph, TextRun } from "docx";

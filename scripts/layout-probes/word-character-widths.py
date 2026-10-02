@@ -7,9 +7,10 @@
 #   python3 word-character-widths.py word-character-widths [--json]
 #
 # It takes the name of the PDF without its extension, and reads the two files above beside it, and word-character-widths.json,
-# which the probe's script writes beside the document, with the characters of each paragraph of W, and the spaces and words
-# of S, B and H. Widths are in thousandths of
-# an em. With --json, it prints them as JSON: for each font and face, each character's width and the font it was drawn in.
+# beside this reader, which the probe's script writes with the document: the fonts, the characters of each paragraph of W,
+# and the spaces and words of S, B and H. Widths are in thousandths of an em. With --json, it prints what it read as JSON,
+# which scripts/generate-font-widths.ts takes: for each font and face, each character's width and the font Word drew it
+# in, and each space's width. Characters on a line Word drew squeezed, and those it drew with no text, aren't in it.
 # cspell:ignore bbox fontspec pdftohtml WSBH AAAAAC caladea carlito liberationsans liberationserif liberationmono couriernew timesnewroman
 import html
 import json
@@ -18,7 +19,7 @@ import re
 import sys
 
 base = sys.argv[1]
-probe = json.load(open(os.path.join(os.path.dirname(base) or ".", "word-character-widths.json"), encoding="utf8"))
+probe = json.load(open(os.path.join(os.path.dirname(os.path.abspath(__file__)), "word-character-widths.json"), encoding="utf8"))
 SIZE = probe["size"]
 COPIES = probe["copies"]
 FACES = probe["faces"]
@@ -103,6 +104,17 @@ problems = []
 # pieces, where a line breaks after a dash in it, or where pdftotext finds gaps in it, so its width is what the pieces
 # between its code point and the next take on each line
 CODE = re.compile(r"^u([0-9a-f]{4})$")
+# Calibri's widths of the characters of the code points, in thousandths of an em, and their size in points. Word drew a
+# few lines squeezed, closer together than their characters' widths, even the code points in Calibri, so a line whose code
+# points aren't as wide as they are in Calibri doesn't show its characters' widths
+LABEL_WIDTHS = {"u": 525, **{digit: 507 for digit in "0123456789"}, "a": 479, "b": 525, "c": 423, "d": 525, "e": 498, "f": 305}
+LABEL_SIZE = 6
+squeezed = {
+    word[0]
+    for words in probes.values()
+    for word in words
+    if CODE.match(word[5]) and abs((word[4] - word[3]) / (sum(LABEL_WIDTHS[c] for c in word[5]) * LABEL_SIZE * 20 / 1000) - 1) > 0.03
+}
 for face_index, face in enumerate(FACES):
     key = f"{face['font']}{' bold' if face['bold'] else ''}"
     widths = result["widths"].setdefault(key, {})
@@ -122,16 +134,15 @@ for face_index, face in enumerate(FACES):
             if not parts:
                 problems.append(f"W{number} ({key}): no word for {expected:04x}")
                 continue
+            if any(part[0] in squeezed for part in parts):
+                problems.append(f"W{number} ({key}): {expected:04x} on a line drawn squeezed")
+                continue
             width = sum(
                 max(part[4] for part in parts if part[0] == line) - min(part[3] for part in parts if part[0] == line)
                 for line in {part[0] for part in parts}
             )
-            _, page, top, left, right, text = parts[0]
-            widths[f"{expected:04x}"] = {
-                "width": round(width / COPIES / EM * 1000, 2),
-                "font": font_at(pieces, page, top, left, right),
-                "text": text[0],
-            }
+            _, page, top, left, right, _ = parts[0]
+            widths[f"{expected:04x}"] = {"width": round(width / COPIES / EM * 1000, 2), "font": font_at(pieces, page, top, left, right)}
 
 # S: eleven H's and ten spaces, less the eleven H's of the word before them
 for face_index, face in enumerate(FACES):
@@ -175,7 +186,7 @@ for number, hang in enumerate(probe["hangs"], 1):
     result["hangs"][f"{hang['code']:04x}"] = {"stays": bool(on) and on[0][0] == first_line, "word": hang["word"]}
 
 if "--json" in sys.argv:
-    print(json.dumps(result, ensure_ascii=False, indent=1, sort_keys=True))
+    print(json.dumps(result, ensure_ascii=False, separators=(",", ":"), sort_keys=True))
     sys.exit()
 
 print("== W: characters drawn in another font than their own, by font and face")

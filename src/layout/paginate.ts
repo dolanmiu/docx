@@ -265,6 +265,18 @@ export const paginate = (
             return item;
         });
 
+    /**
+     * A paragraph's content, as it is measured, which stops the layout at a character whose width the measurer doesn't
+     * know, such as a Greek letter in Cambria, which the width tables don't have
+     */
+    const measurable = (items: readonly LayoutItem[]): readonly InlineItem[] => {
+        const inline = itemsOf(items);
+        if (inline.some((item) => item.type === "text" && measurer.unknownCharacter?.(item.text, item.font) !== undefined)) {
+            throw new Unsupported("a character whose width in its font isn't known");
+        }
+        return inline;
+    };
+
     // eslint-disable-next-line functional/prefer-readonly-type
     const byParagraph = laidOutLines.get(measurer) ?? new WeakMap<ParagraphBlock, Map<string, readonly LaidOutLine[]>>();
     laidOutLines.set(measurer, byParagraph);
@@ -273,7 +285,7 @@ export const paginate = (
         const given = typeof widths === "number" ? [{ from: 0, width: widths }] : widths;
         const key = given.map(({ from, width }) => `${from}:${width}`).join(" ");
         const layOut = (): readonly LaidOutLine[] =>
-            layoutLines(itemsOf(paragraph.items), {
+            layoutLines(measurable(paragraph.items), {
                 width: given.length === 1 ? given[0].width : (line) => given.findLast(({ from }) => from <= line)!.width,
                 format: paragraph.format,
                 tabStops: paragraph.tabStops,
@@ -329,7 +341,7 @@ export const paginate = (
                 const { min, max } =
                     block.type === "table"
                         ? tableWidths(block, contentWidths)
-                        : measureContentWidths(itemsOf(block.items), {
+                        : measureContentWidths(measurable(block.items), {
                               format: block.format,
                               tabStops: block.tabStops,
                               defaultTabStop,

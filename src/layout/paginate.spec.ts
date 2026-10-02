@@ -445,6 +445,38 @@ describe("paginate", () => {
         });
     });
 
+    describe("characters", () => {
+        const STOP = "a character whose width in its font isn't known";
+        // Knows every character's width but Ж's
+        const CHOOSY: TextMeasurer = { ...MEASURER, unknownCharacter: (text) => [...text].find((character) => character === "Ж") };
+        const withText = (name: string, text: string, font = {}): ParagraphBlock =>
+            withItems(paragraph(name, 1), [{ type: "text", text: ` ${text}`, font }]);
+
+        it("should stop at a character whose width the measurer doesn't know", () => {
+            const content = document([paragraph("a", 1), withText("b", "abcЖ"), paragraph("c", 1)]);
+            expect(paginate(content, { measurer: CHOOSY })).to.deep.equal({
+                bookmarks: new Map([["a", "1"]]),
+                pageCount: 1,
+                sectionPageCounts: [undefined],
+                stoppedAt: STOP,
+            });
+            // A measurer that measures with the fonts themselves knows every character
+            expect(pagesOf(content)).to.deep.equal({ a: "1", b: "1", c: "1" });
+        });
+
+        it("should stop at a character whose width the measurer doesn't know in a table sized to its text", () => {
+            const fitted: TableBlock = { ...table([row([[withText("cell", "Ж")]])]), fit: {} };
+            expect(paginate(document([paragraph("a", 1), fitted]), { measurer: CHOOSY }).stoppedAt).to.equal(STOP);
+        });
+
+        it("should stop at a character Word draws in another font, measuring with the width tables", () => {
+            // Word draws the symbol for all in Calibri in Cambria Math, and in Cambria in Cambria
+            const symbol = (font: string): DocumentContent => document([withText("a", "\u2200x", { font, size: 11 }), paragraph("b", 1)]);
+            expect(paginate(symbol("Calibri")).stoppedAt).to.equal(STOP);
+            expect(paginate(symbol("Cambria")).stoppedAt).to.equal(undefined);
+        });
+    });
+
     describe("breaks", () => {
         it("should start the text after a page or column break on a new page", () => {
             const broken = withItems(paragraph("a", 1), [
