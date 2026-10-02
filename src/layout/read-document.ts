@@ -2556,7 +2556,9 @@ const readBlock = (element: XmlObject, reader: Reader, tableFormats?: TableForma
         case "w:sdt":
             return { ...unsupportedBlock(BOUND_CONTROL), ...noGuess };
         case "w:altChunk":
-            return { ...unsupportedBlock("an imported document"), ...noGuess };
+            // The .docx adapter turns the documents it can into paragraphs and tables, as Word does, and says why it left
+            // the others (see `imported-documents.ts`)
+            return { ...unsupportedBlock(stringOf(attributesOf(element["w:altChunk"]).reason) ?? "an imported document"), ...noGuess };
         case "m:oMath":
         case "m:oMathPara":
             return unsupportedBlock("an equation");

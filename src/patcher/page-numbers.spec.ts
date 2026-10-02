@@ -1,7 +1,8 @@
+import JSZip from "jszip";
 import { describe, expect, it, vi } from "vitest";
 import { type Element, js2xml } from "xml-js";
 
-import { fillTemplatePageNumbers } from "./page-numbers";
+import { type PatchedTemplate, fillTemplatePageNumbers } from "./page-numbers";
 import { toJson } from "./util";
 
 const W = 'xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main"';
@@ -27,7 +28,7 @@ const textOf = (part: Element): string =>
         .replace(/<w:t[^>]*>([^<]*)<\/w:t>|<w:t[^>]*\/>|<[^>]+>/g, "$1");
 
 describe("fillTemplatePageNumbers", () => {
-    it("should write the estimate into the fields of the body, headers and footers, and leave those it has no number for blank", () => {
+    it("should write the estimate into the fields of the body, headers and footers, and leave those it has no number for blank", async () => {
         const parts = new Map([
             [
                 "word/document.xml",
@@ -69,7 +70,7 @@ describe("fillTemplatePageNumbers", () => {
 
         const binaryParts = new Map([["word/fonts/font1.odttf", new Uint8Array(4)]]);
 
-        fillTemplatePageNumbers(parts, estimator, binaryParts);
+        await fillTemplatePageNumbers(parts, estimator, binaryParts);
 
         expect(estimator).toHaveBeenCalledWith({ parts, binaryParts });
         expect(textOf(parts.get("word/document.xml")!)).to.equal("3|" + "4|3" + "7empty" + "4" + "7" + "5");
@@ -78,15 +79,15 @@ describe("fillTemplatePageNumbers", () => {
         expect(textOf(parts.get("word/footer1.xml")!)).to.equal("5");
     });
 
-    it("should write the numbers of a document without headers and footers", () => {
+    it("should write the numbers of a document without headers and footers", async () => {
         const parts = new Map([
             ["word/document.xml", toJson(`<w:document ${W}><w:body>${paragraph(field("NUMPAGES", "1"))}<w:sectPr/></w:body></w:document>`)],
         ]);
-        fillTemplatePageNumbers(parts, () => ({ bookmarks: new Map(), pageCount: 2 }));
+        await fillTemplatePageNumbers(parts, () => ({ bookmarks: new Map(), pageCount: 2 }));
         expect(textOf(parts.get("word/document.xml")!)).to.equal("2");
     });
 
-    it("should write page references and tables of contents clean, as a document's are with page numbers, and leave other fields dirty", () => {
+    it("should write page references and tables of contents clean, as a document's are with page numbers, and leave other fields dirty", async () => {
         const parts = new Map([
             [
                 "word/document.xml",
@@ -99,7 +100,7 @@ describe("fillTemplatePageNumbers", () => {
                 ),
             ],
         ]);
-        fillTemplatePageNumbers(parts, () => ({ bookmarks: new Map([["_Toc1", "3"]]) }));
+        await fillTemplatePageNumbers(parts, () => ({ bookmarks: new Map([["_Toc1", "3"]]) }));
         const document = js2xml(parts.get("word/document.xml")!);
         expect(document.match(/<w:fldChar [^>]*w:fldCharType="begin"[^>]*\/>/g)).to.deep.equal([
             '<w:fldChar w:fldCharType="begin"/>',
@@ -109,9 +110,98 @@ describe("fillTemplatePageNumbers", () => {
         expect(textOf(parts.get("word/document.xml")!)).to.equal("3today");
     });
 
-    it("should leave a package without its main document as it is", () => {
+    it("should leave a package without its main document as it is", async () => {
         const estimator = vi.fn(() => ({ bookmarks: new Map() }));
-        fillTemplatePageNumbers(new Map(), estimator);
+        await fillTemplatePageNumbers(new Map(), estimator);
         expect(estimator).not.toHaveBeenCalled();
+    });
+
+    describe("documents the template imports", () => {
+        /** A zip file of these files */
+        const zipOf = (files: ReadonlyMap<string, string>): Promise<Uint8Array> => {
+            const zip = new JSZip();
+            for (const [path, text] of files) {
+                zip.file(path, text);
+            }
+            return zip.generateAsync({ type: "uint8array" });
+        };
+        const relationships = (...targets: readonly (readonly [string, string, string?])[]): Element =>
+            toJson(
+                `<Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships">${targets
+                    .map(
+                        ([id, target, mode]) =>
+                            `<Relationship Id="${id}" Type="${RELATIONSHIPS}/aFChunk" Target="${target}"${mode ? ` TargetMode="${mode}"` : ""}/>`,
+                    )
+                    .join("")}</Relationships>`,
+            );
+
+        it("should give the estimator each .docx the template imports, unzipped, with those they import in turn", async () => {
+            const inner = await zipOf(new Map([["word/document.xml", `<w:document ${W}><w:body><w:p/></w:body></w:document>`]]));
+            const outer = await zipOf(
+                new Map([
+                    ["word/document.xml", `<w:document ${W}><w:body><w:altChunk/></w:body></w:document>`],
+                    ["word/_rels/document.xml.rels", js2xml(relationships(["rId1", "inner.docx"]))],
+                    ["word/inner.docx", ""],
+                    ["word/media/image1.png", "png"],
+                    ["word/folder/", ""],
+                ]),
+            );
+            // A zip file docx can't read, though it starts as one
+            const damaged = new Uint8Array([0x50, 0x4b, 0x03, 0x04, 1, 2, 3]);
+            const parts = new Map([
+                ["word/document.xml", toJson(`<w:document ${W}><w:body/></w:document>`)],
+                [
+                    "word/_rels/document.xml.rels",
+                    relationships(
+                        ["rId1", "outer.docx"],
+                        ["rId2", "page.html"],
+                        ["rId3", "missing.docx"],
+                        ["rId4", "https://example.com/a.docx", "External"],
+                        ["rId5", "damaged.docx"],
+                    ),
+                ],
+                ["word/_rels/header1.xml.rels", relationships(["rId1", "/word/header.docx"])],
+            ]);
+            const binaryParts = new Map([
+                ["word/outer.docx", outer],
+                ["word/header.docx", inner],
+                ["word/page.html", new TextEncoder().encode("<p>Imported</p>")],
+                ["word/damaged.docx", damaged],
+            ]);
+            const estimator = vi.fn((_: PatchedTemplate) => ({ bookmarks: new Map() }));
+
+            await fillTemplatePageNumbers(parts, estimator, binaryParts);
+
+            const { importedDocuments } = estimator.mock.calls[0][0];
+            expect([...importedDocuments!.keys()]).to.deep.equal(["word/outer.docx", "word/header.docx"]);
+            const read = importedDocuments!.get("word/outer.docx")!;
+            expect([...read.parts.keys()]).to.deep.equal(["word/document.xml", "word/_rels/document.xml.rels"]);
+            expect(new TextDecoder().decode(read.binaryParts!.get("word/media/image1.png"))).to.equal("png");
+            // The .docx it imports, which is empty, so can't be read
+            expect(read.importedDocuments).to.equal(undefined);
+            expect([...importedDocuments!.get("word/header.docx")!.parts.keys()]).to.deep.equal(["word/document.xml"]);
+        });
+
+        it("should read a .docx a .docx the template imports imports", async () => {
+            const inner = await zipOf(new Map([["word/document.xml", `<w:document ${W}><w:body><w:p/></w:body></w:document>`]]));
+            const outer = new JSZip();
+            outer.file("word/document.xml", `<w:document ${W}><w:body><w:altChunk/></w:body></w:document>`);
+            outer.file("word/_rels/document.xml.rels", js2xml(relationships(["rId1", "inner.docx"])));
+            outer.file("word/inner.docx", inner);
+            const parts = new Map([
+                ["word/document.xml", toJson(`<w:document ${W}><w:body/></w:document>`)],
+                ["word/_rels/document.xml.rels", relationships(["rId1", "outer.docx"])],
+            ]);
+            const estimator = vi.fn((_: PatchedTemplate) => ({ bookmarks: new Map() }));
+
+            await fillTemplatePageNumbers(
+                parts,
+                estimator,
+                new Map([["word/outer.docx", await outer.generateAsync({ type: "uint8array" })]]),
+            );
+
+            const read = estimator.mock.calls[0][0].importedDocuments!.get("word/outer.docx")!;
+            expect([...read.importedDocuments!.keys()]).to.deep.equal(["word/inner.docx"]);
+        });
     });
 });
