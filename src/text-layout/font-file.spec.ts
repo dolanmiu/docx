@@ -5,7 +5,7 @@ import { type TestFontOptions, buildTestFont, buildTestFontCollection } from "te
 import { createFontFileMeasurer, readFontFile } from "./font-file";
 import { DEFAULT_MEASURER } from "./line-breaking";
 
-// cspell:ignore hhea hmtx Aptos aptos GPOS DFLT
+// cspell:ignore hhea hmtx cmap Aptos aptos GPOS DFLT
 
 // A font of 1000 units to the em, whose letters are as wide as their place in the alphabet, in hundreds of units
 const LETTERS: TestFontOptions["advances"] = Object.fromEntries([
@@ -259,6 +259,23 @@ describe("readFontFile", () => {
         expect(() => readFontFile(start("wOF2"))).to.throw("web font");
         expect(() => readFontFile(start("%PDF"))).to.throw("isn't a TrueType or OpenType font");
         expect(() => readFontFile(new Uint8Array(4))).to.throw("isn't a TrueType or OpenType font");
+    });
+
+    it("should throw when a font file is read for one cut short or damaged, rather than when text is laid out in it", () => {
+        // The kern table is the last of a font without an OS/2 table, and its kerning is read when the font is
+        const font = buildTestFont({ advances: LETTERS, kerning: { AV: -50 }, windows: false });
+        expect(() => readFontFile(font.slice(0, font.length - 10))).to.throw(
+            "The font file is cut short: its kern table goes past its end",
+        );
+        // A character map whose subtable is past the end of the file
+        const damaged = font.slice();
+        const view = new DataView(damaged.buffer);
+        const record = Array.from({ length: view.getUint16(4) }, (_, index) => 12 + index * 16).find(
+            (offset) => String.fromCharCode(...damaged.slice(offset, offset + 4)) === "cmap",
+        )!;
+        view.setUint32(view.getUint32(record + 8) + 8, 0xfffff);
+        expect(() => readFontFile(damaged)).to.throw("The font file is damaged: it points past its end");
+        expect(() => readFontFile(buildTestFontCollection([{ advances: LETTERS }]).slice(0, 40))).to.throw("The font file is damaged");
     });
 
     it("should throw for a font without the tables it needs", () => {

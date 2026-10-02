@@ -50,7 +50,13 @@ const readTables = (view: DataView, offset: number): Tables =>
     new Map(
         Array.from({ length: view.getUint16(offset + 4) }, (_, index) => {
             const record = offset + 12 + index * 16;
-            return [tagOf(view, record), view.getUint32(record + 8)] as const;
+            const tag = tagOf(view, record);
+            const start = view.getUint32(record + 8);
+            // A file cut short, so its tables are read before it is laid out, rather than failing as it is
+            if (start + view.getUint32(record + 12) > view.byteLength) {
+                throw new Error(`The font file is cut short: its ${tag} table goes past its end`);
+            }
+            return [tag, start] as const;
         }),
     );
 
@@ -357,9 +363,9 @@ const readFace = (view: DataView, offset: number): FontFace => {
         : windowsHeight + externalLeading;
 
     const glyphOf = readCharacterMap(view, tables);
-    // The kerning is read when text is first kerned, which only text with kerning on is. Word kerns with the GPOS table,
-    // and with the kern table of fonts without one (word-fonts.docx F1 and F2)
-    let kerning: Kerning | undefined;
+    // Word kerns with the GPOS table, and with the kern table of fonts without one (word-fonts.docx F1 and F2). It is read
+    // with the rest, in a few milliseconds, so a damaged table throws here rather than when text is laid out
+    const kerning = readGlyphPositioning(view, tables) ?? readKernTable(view, tables);
     const pairs = new Map<number, number>();
     const advances = new Map<number, number | undefined>();
     const glyphs = new Map<number, number>();
@@ -388,7 +394,6 @@ const readFace = (view: DataView, offset: number): FontFace => {
             return advance;
         },
         kerningOf: (left, right) => {
-            kerning = kerning ?? readGlyphPositioning(view, tables) ?? readKernTable(view, tables);
             const key = cachedGlyph(left) * 0x10000 + cachedGlyph(right);
             const value = pairs.get(key) ?? kerning(cachedGlyph(left), cachedGlyph(right)) / unitsPerEm;
             // eslint-disable-next-line functional/immutable-data
@@ -405,11 +410,22 @@ export const readFontFile = (data: FontData): readonly FontFace[] => {
     const bytes = data instanceof Uint8Array ? data : new Uint8Array(data);
     const view = new DataView(bytes.buffer, bytes.byteOffset, bytes.byteLength);
     const tag = bytes.byteLength < 12 ? 0 : view.getUint32(0);
+    /** Reads faces, turning a read past the end of the file, from an offset in it that is wrong, into an error that says so */
+    const read = (faces: () => readonly FontFace[]): readonly FontFace[] => {
+        try {
+            return faces();
+        } catch (error) {
+            if (error instanceof RangeError) {
+                throw new Error("The font file is damaged: it points past its end", { cause: error });
+            }
+            throw error;
+        }
+    };
     if (tag === COLLECTION_TAG) {
-        return Array.from({ length: view.getUint32(8) }, (_, index) => readFace(view, view.getUint32(12 + index * 4)));
+        return read(() => Array.from({ length: view.getUint32(8) }, (_, index) => readFace(view, view.getUint32(12 + index * 4))));
     }
     if (FONT_TAGS.has(tag)) {
-        return [readFace(view, 0)];
+        return read(() => [readFace(view, 0)]);
     }
     throw new Error(
         WEB_FONT_TAGS.has(tag)
