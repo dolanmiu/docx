@@ -12,6 +12,8 @@ import {
     HeadingLevel,
     type IContext,
     type IPropertiesOptions,
+    LevelFormat,
+    LevelSuffix,
     Paragraph,
     Table,
     TableBorders,
@@ -384,6 +386,123 @@ describe("layoutDocument", () => {
             const [fromLeft, rest] = indents(new Paragraph({ indent: { left: 720, firstLineChars: 200 }, text }));
             expect(fromLeft).to.be.closeTo(1160, 0.01);
             expect(rest).to.be.closeTo(720, 0.01);
+        });
+    });
+
+    describe("lists, as Word lays them out (scripts/layout-probes/word-lists.ts)", () => {
+        const TWIPS = 1440 / 96;
+        const styles: IPropertiesOptions["styles"] = {
+            default: { document: { run: { font: "Calibri", size: 22 }, paragraph: { spacing: { before: 0, after: 0, line: 240 } } } },
+        };
+        const words = "the survey of the coast was made in the summer by boat and on foot from the lighthouse to the river mouth".split(
+            " ",
+        );
+        const prose = Array.from({ length: 40 }, (_, index) => words[(index * 7) % words.length]).join(" ");
+        const wide = (
+            reference: string,
+            alignment: (typeof AlignmentType)[keyof typeof AlignmentType],
+            indent: { readonly left: number; readonly hanging?: number },
+            suffix?: (typeof LevelSuffix)[keyof typeof LevelSuffix],
+        ): NonNullable<IPropertiesOptions["numbering"]>["config"][number] => ({
+            reference,
+            levels: [
+                {
+                    level: 0,
+                    format: LevelFormat.DECIMAL,
+                    text: "Paragraph%1.",
+                    alignment,
+                    ...(suffix ? { suffix } : {}),
+                    style: { paragraph: { indent } },
+                },
+            ],
+        });
+
+        it("should put the text after a number aligned right or centred where Word puts it, which breaks its first line there (LJ1 to LJ6)", () => {
+            const hanging = { left: 1800, hanging: 360 };
+            const { pages, stoppedAt } = layoutDocument(
+                new Document({
+                    styles,
+                    numbering: {
+                        config: [
+                            wide("lj1", AlignmentType.END, hanging),
+                            wide("lj2", AlignmentType.CENTER, hanging),
+                            wide("lj3", AlignmentType.START, hanging),
+                            wide("lj4", AlignmentType.END, hanging, LevelSuffix.SPACE),
+                            wide("lj6", AlignmentType.END, { left: 1440 }),
+                        ],
+                    },
+                    sections: [
+                        {
+                            children: ["lj1", "lj2", "lj3", "lj4", "lj6"].map(
+                                (reference) =>
+                                    new Paragraph({
+                                        numbering: { reference, level: 0 },
+                                        children: [new TextRun(`${reference.toUpperCase()} ${prose}`)],
+                                    }),
+                            ),
+                        },
+                    ],
+                }),
+            );
+            expect(stoppedAt).to.equal(undefined);
+            const lines = linesOf(pages[0].body);
+            const endings = (probe: string): readonly string[] => {
+                const first = lines.findIndex(({ text }) => text.includes(probe));
+                return lines.slice(first, first + 3).map(({ text }) => text.trim().split(" ").slice(-1)[0]);
+            };
+            // Word's lines end at these words, and those of LJ1, LJ2, LJ4 and LJ6 elsewhere with the number aligned left
+            expect(endings("LJ1")).to.deep.equal(["lighthouse", "the", "summer"]);
+            expect(endings("LJ2")).to.deep.equal(["by", "was", "summer"]);
+            expect(endings("LJ3")).to.deep.equal(["the", "river", "summer"]);
+            expect(endings("LJ4")).to.deep.equal(["of", "coast", "summer"]);
+            expect(endings("LJ6")).to.deep.equal(["of", "coast", "summer"]);
+            // LJ6's text starts at the left indent, right after the number
+            const lj6 = lines.find(({ text }) => text.includes("LJ6"))!;
+            expect(lj6.x * TWIPS).to.be.closeTo(2880, 0.01);
+        });
+
+        it("should number lists made from one definition on from one another, as docx writes each instance of a list (LO3)", () => {
+            const { pages } = layoutDocument(
+                new Document({
+                    styles,
+                    numbering: { config: [{ reference: "lo3", levels: [{ level: 0, format: LevelFormat.DECIMAL, text: "%1." }] }] },
+                    sections: [
+                        {
+                            children: ["A", "A", "B", "B", "B", "A", "A"].map(
+                                (list) =>
+                                    new Paragraph({
+                                        numbering: { reference: "lo3", level: 0, instance: list === "A" ? 0 : 1 },
+                                        text: list,
+                                    }),
+                            ),
+                        },
+                    ],
+                }),
+            );
+            expect(textsOf(pages[0].body)).to.deep.equal(["1.\tA", "2.\tA", "1.\tB", "2.\tB", "3.\tB", "4.\tA", "5.\tA"]);
+        });
+
+        it("should make a line as tall as its number above the baseline and its text below it (LF1)", () => {
+            const { pages } = layoutDocument(
+                new Document({
+                    styles,
+                    numbering: {
+                        config: [{ reference: "lf", levels: [{ level: 0, format: LevelFormat.DECIMAL, text: "%1.", start: 10 }] }],
+                    },
+                    sections: [
+                        {
+                            children: [
+                                new Paragraph({ numbering: { reference: "lf", level: 0 }, run: { size: 40 }, text: "LF1 mark 20" }),
+                                new Paragraph("LF1 next"),
+                            ],
+                        },
+                    ],
+                }),
+            );
+            const [numbered, next] = linesOf(pages[0].body);
+            // Word's is 443.6, to its PDF's 4.8 twips: Calibri 20's ascent and Calibri 11's descent
+            expect(numbered.height * TWIPS).to.be.closeTo(439.94, 0.01);
+            expect(next.y - numbered.y).to.be.closeTo(numbered.height, 1e-9);
         });
     });
 });

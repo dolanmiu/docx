@@ -38,6 +38,11 @@ export type TextFont = {
     readonly border?: TextBorder;
     /** Whether emphasis marks over the text, or under it, take room in its line (`w:em`) */
     readonly emphasis?: "above" | "below";
+    /**
+     * Whether it is a list's number, or the space or tab that follows it, which take up less of their line than text: a
+     * number only the room above the baseline, and what follows it none
+     */
+    readonly listNumber?: "number" | "separator";
 };
 
 /**

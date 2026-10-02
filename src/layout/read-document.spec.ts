@@ -1045,7 +1045,7 @@ describe("readDocument", () => {
                         },
                         { level: 2, format: LevelFormat.UPPER_ROMAN, text: "", suffix: LevelSuffix.NOTHING },
                         { level: 3, format: LevelFormat.THAI_COUNTING, text: "%4", alignment: AlignmentType.START },
-                        // A level without a format is in decimal, and one it refers to that doesn't exist is at 1
+                        // A level without a format is in decimal
                         { level: 4, text: "%5.%7" },
                     ],
                 },
@@ -1069,18 +1069,24 @@ describe("readDocument", () => {
                 ["2.a", " ", "a again"],
             ]);
             expect(paragraphOf(content).format).to.deep.include({ indentLeft: 36, firstLineIndent: -18 });
-            expect(itemsOf(content, 1)[0]).to.deep.equal({ type: "text", text: "1.a", font: { bold: true } });
+            expect(itemsOf(content, 1)[0]).to.deep.equal({ type: "text", text: "1.a", font: { bold: true, listNumber: "number" } });
+            // Word draws the space after a number in Arial (word-lists.docx LJ4), and a tab or space takes no room in its line
+            expect(itemsOf(content, 1)[1]).to.deep.equal({
+                type: "text",
+                text: " ",
+                font: { bold: true, font: "Arial", listNumber: "separator" },
+            });
+            expect(itemsOf(content, 0)[1]).to.deep.equal({ type: "tab", font: { listNumber: "separator" } });
         });
 
-        it("should write nothing for a level without text or suffix, and a number for a format it doesn't write", () => {
-            const content = readWritten({ numbering, sections: [{ children: [item(2, "none"), item(3, "circled"), item(4, "missing")] }] });
+        it("should write nothing for a level without text or suffix, and stop at a format it doesn't write, or a level that doesn't exist", () => {
+            const content = readWritten({ numbering, sections: [{ children: [item(2, "none"), item(3, "counted"), item(4, "missing")] }] });
             expect(textOf(content, 0)).to.equal("none");
-            expect(itemsOf(content, 1).map((part) => (part.type === "text" ? part.text : part.type))).to.deep.equal([
-                "1",
-                "tab",
-                "circled",
-            ]);
-            expect(textOf(content, 2)).to.equal("1.1missing");
+            expect(paragraphOf(content, 0).unsupported).to.equal(undefined);
+            // Word's Thai counting isn't known, so Word's number isn't, where docx/layout wrote "1"
+            expect(paragraphOf(content, 1).unsupported).to.equal("a list number in a format not yet written");
+            expect(paragraphOf(content, 2).unsupported).to.equal("a list number of a level its list doesn't have");
+            expect(textOf(content, 2)).to.equal("1.missing");
         });
 
         it("should write no number for a list or level that doesn't exist", () => {
@@ -1105,6 +1111,245 @@ describe("readDocument", () => {
                 { styles: WORD_DEFAULT_STYLES, otherListIds: new Map([["{list-0}", "1"]]), headersAndFooters: new Map() },
             );
             expect(textOf(content)).to.equal("Item");
+        });
+    });
+
+    describe("lists in Word's numbering", () => {
+        const abstractNum = (id: number, ...children: readonly unknown[]): object => ({
+            "w:abstractNum": [{ _attr: { "w:abstractNumId": id } }, ...children],
+        });
+        const lvl = (index: number, ...children: readonly unknown[]): object => ({
+            "w:lvl": [{ _attr: { "w:ilvl": index } }, ...children],
+        });
+        const num = (id: number, definition: number, ...overrides: readonly unknown[]): object => ({
+            "w:num": [{ _attr: { "w:numId": id } }, value("w:abstractNumId", definition), ...overrides],
+        });
+        const lvlOverride = (index: number, ...children: readonly unknown[]): object => ({
+            "w:lvlOverride": [{ _attr: { "w:ilvl": index } }, ...children],
+        });
+        /** A decimal level, "%1." at level 0 and "%1.%2." at level 1, with more of its properties */
+        const decimal = (index: number, ...children: readonly unknown[]): object =>
+            lvl(
+                index,
+                value("w:start", 1),
+                value("w:numFmt", "decimal"),
+                value("w:lvlText", Array.from({ length: index + 1 }, (_, at) => `%${at + 1}.`).join("")),
+                ...children,
+            );
+        const listItem = (id: number, level: number, text: string): object =>
+            p(pPr({ "w:numPr": [value("w:ilvl", level), value("w:numId", id)] }), r(t(text)));
+        /** Reads a body with the lists in the numbering */
+        const readLists = (numbering: readonly object[], body: readonly object[]): DocumentContent =>
+            readContent(
+                { "w:body": body },
+                { styles: WORD_DEFAULT_STYLES, headersAndFooters: new Map(), numbering: { "w:numbering": numbering } },
+            );
+        const numbersOf = (content: DocumentContent): readonly string[] =>
+            content.blocks.map(({ block }) => {
+                const [first] = (block as ParagraphBlock).items;
+                return first.type === "text" ? first.text : "";
+            });
+
+        it("should note how a number is aligned at the start of its line, as Word lines it up (word-watertight-text.docx TX21)", () => {
+            const aligned = (jc?: string): ParagraphBlock =>
+                paragraphOf(
+                    readLists(
+                        [abstractNum(0, decimal(0, ...(jc === undefined ? [] : [value("w:lvlJc", jc)]))), num(1, 0)],
+                        [listItem(1, 0, "item")],
+                    ),
+                );
+            expect(aligned("right").numberAlignment).to.equal("right");
+            expect(aligned("end").numberAlignment).to.equal("right");
+            expect(aligned("center").numberAlignment).to.equal("center");
+            for (const jc of [undefined, "left", "start"]) {
+                expect(aligned(jc).numberAlignment).to.equal(undefined);
+                expect(aligned(jc).unsupported).to.equal(undefined);
+            }
+            expect(aligned("both").unsupported).to.equal("a list number aligned in a way not yet followed");
+            // A level with no number has nothing to align
+            const empty = readLists(
+                [abstractNum(0, lvl(0, value("w:numFmt", "bullet"), value("w:lvlText", ""), value("w:lvlJc", "right"))), num(1, 0)],
+                [listItem(1, 0, "item")],
+            );
+            expect(paragraphOf(empty).numberAlignment).to.equal(undefined);
+        });
+
+        it("should stop at bullets that are pictures, numbers laid out as Word 6 laid them out, and lists defined by list styles", () => {
+            const stopsAt = (...children: readonly unknown[]): string | undefined =>
+                paragraphOf(readLists([abstractNum(0, ...children), num(1, 0)], [listItem(1, 0, "item")])).unsupported;
+            expect(stopsAt(decimal(0, value("w:lvlPicBulletId", 0)))).to.equal("a list whose bullets are pictures");
+            expect(stopsAt(decimal(0, { "w:legacy": { _attr: { "w:legacy": 1, "w:legacySpace": 0, "w:legacyIndent": 360 } } }))).to.equal(
+                "a list numbered as Word 6 numbered lists",
+            );
+            expect(stopsAt(decimal(0, { "w:legacy": { _attr: { "w:legacy": 0 } } }))).to.equal(undefined);
+            expect(stopsAt(value("w:numStyleLink", "OutlineList"))).to.equal("a list defined by a list style");
+        });
+
+        it("should start a level again after the level it gives, or never, as the schema has it (w:lvlRestart)", () => {
+            const content = readLists(
+                [abstractNum(0, decimal(0), decimal(1, value("w:lvlRestart", 0)), decimal(2, value("w:lvlRestart", 1))), num(1, 0)],
+                [0, 1, 1, 2, 0, 1, 2, 1, 2].map((level, index) => listItem(1, level, `item ${index}`)),
+            );
+            // Level 1 never starts again, and level 2 starts again after level 0 but not level 1
+            expect(numbersOf(content)).to.deep.equal(["1.", "1.1.", "1.2.", "1.2.1.", "2.", "2.3.", "2.3.1.", "2.4.", "2.4.2."]);
+        });
+
+        it("should start a level again after any level above it when it gives itself or a level below it", () => {
+            const content = readLists(
+                [abstractNum(0, decimal(0), decimal(1, value("w:lvlRestart", 2)), decimal(2, value("w:lvlRestart", 5))), num(1, 0)],
+                [0, 1, 2, 1, 2, 0, 1].map((level, index) => listItem(1, level, `item ${index}`)),
+            );
+            expect(numbersOf(content)).to.deep.equal(["1.", "1.1.", "1.1.1.", "1.2.", "1.2.1.", "2.", "2.1."]);
+        });
+
+        it("should write every level's number in decimal in a legal level's text (w:isLgl)", () => {
+            const content = readLists(
+                [
+                    abstractNum(
+                        0,
+                        lvl(0, value("w:start", 1), value("w:numFmt", "upperRoman"), value("w:lvlText", "%1.")),
+                        lvl(1, value("w:start", 1), value("w:numFmt", "lowerLetter"), { "w:isLgl": {} }, value("w:lvlText", "%1.%2")),
+                    ),
+                    num(1, 0),
+                ],
+                [listItem(1, 0, "one"), listItem(1, 1, "a"), listItem(1, 1, "b")],
+            );
+            expect(numbersOf(content)).to.deep.equal(["I.", "1.1", "1.2"]);
+        });
+
+        it("should count lists made from one definition on from one another, as Word counts them (word-lists.docx LO1, LO8, LO9)", () => {
+            const content = readLists(
+                [abstractNum(0, decimal(0)), abstractNum(1, decimal(0)), num(1, 0), num(2, 0), num(3, 1), num(4, 0, lvlOverride(0))],
+                [
+                    [1, "a"],
+                    [1, "b"],
+                    [2, "c"],
+                    [2, "d"],
+                    [3, "other"],
+                    [1, "e"],
+                    [4, "f"],
+                ].map(([id, text]) => listItem(id as number, 0, text as string)),
+            );
+            // The list of the other definition counts on its own, and an override that gives nothing starts nothing again
+            expect(numbersOf(content)).to.deep.equal(["1.", "2.", "3.", "4.", "1.", "5.", "6."]);
+        });
+
+        it("should start a level at a list's own first number at its first paragraph of the level, once (LO2 to LO6)", () => {
+            const content = readLists(
+                [
+                    abstractNum(0, decimal(0), decimal(1)),
+                    num(1, 0),
+                    num(2, 0, lvlOverride(0, value("w:startOverride", 1))),
+                    num(3, 0, lvlOverride(1, value("w:startOverride", 4))),
+                    num(4, 0, lvlOverride(0, value("w:startOverride", 7)), { "w:lvlOverride": [value("w:startOverride", 9)] }),
+                ],
+                (
+                    [
+                        [1, 0],
+                        [1, 0],
+                        [2, 1],
+                        [2, 0],
+                        [2, 0],
+                        [1, 0],
+                        [2, 0],
+                        [3, 1],
+                        [3, 1],
+                        [1, 1],
+                        [4, 0],
+                        [4, 0],
+                    ] as const
+                ).map(([id, level], index) => listItem(id, level, `item ${index}`)),
+            );
+            expect(numbersOf(content)).to.deep.equal([
+                "1.",
+                "2.",
+                // List 2's first paragraph is at level 1, so its level 0 starts again only at its first paragraph of level 0
+                "2.1.",
+                "1.",
+                "2.",
+                "3.",
+                "4.",
+                // List 3 starts level 1 at 4, and list 1 goes on from it
+                "4.4.",
+                "4.5.",
+                "4.6.",
+                "7.",
+                "8.",
+            ]);
+        });
+
+        it("should start a list again with a level it gives, at the level's own first number, and go on in the other lists' formats (LO7)", () => {
+            const content = readLists(
+                [
+                    abstractNum(0, decimal(0)),
+                    num(1, 0),
+                    num(2, 0, lvlOverride(0, lvl(0, value("w:start", 3), value("w:numFmt", "upperRoman"), value("w:lvlText", "%1)")))),
+                ],
+                [listItem(1, 0, "a"), listItem(1, 0, "b"), listItem(2, 0, "c"), listItem(2, 0, "d"), listItem(1, 0, "e")],
+            );
+            expect(numbersOf(content)).to.deep.equal(["1.", "2.", "III)", "IV)", "5."]);
+        });
+
+        it("should show a level not counted yet at its first number, and stop where its list starts it at another (LR4)", () => {
+            const content = readLists(
+                [
+                    abstractNum(0, lvl(0, value("w:start", 3), value("w:numFmt", "decimal"), value("w:lvlText", "%1.")), decimal(1)),
+                    num(1, 0),
+                    num(2, 0, lvlOverride(0, value("w:startOverride", 3))),
+                    num(3, 0, lvlOverride(0, value("w:startOverride", 5))),
+                ],
+                [listItem(1, 1, "a"), listItem(2, 1, "b"), listItem(3, 1, "c")],
+            );
+            expect(numbersOf(content)).to.deep.equal(["3.1.", "3.2.", "3.3."]);
+            expect(content.blocks.map(({ block }) => (block as ParagraphBlock).unsupported)).to.deep.equal([
+                undefined,
+                undefined,
+                "a list number of a level not counted yet, which its list starts at a number of its own",
+            ]);
+        });
+
+        it("should write a number in its paragraph mark's formatting, but for what its level gives it (LF1 to LF6)", () => {
+            const content = readLists(
+                [abstractNum(0, decimal(0)), abstractNum(1, decimal(0, rPr(value("w:sz", 16)))), num(1, 0), num(2, 1)],
+                [
+                    p(pPr({ "w:numPr": [value("w:ilvl", 0), value("w:numId", 1)] }, rPr(value("w:sz", 40))), r(t("mark 20"))),
+                    p(pPr({ "w:numPr": [value("w:ilvl", 0), value("w:numId", 1)] }), r(rPr({ "w:b": {} }), t("text bold"))),
+                    p(pPr({ "w:numPr": [value("w:ilvl", 0), value("w:numId", 2)] }, rPr(value("w:sz", 40))), r(t("level 8"))),
+                ],
+            );
+            const fontOfNumber = (index: number): object => (itemsOf(content, index)[0] as { readonly font: object }).font;
+            expect(fontOfNumber(0)).to.deep.include({ size: 20, listNumber: "number" });
+            expect(fontOfNumber(1)).to.not.have.property("bold");
+            expect(fontOfNumber(2)).to.deep.include({ size: 8 });
+        });
+
+        it("should stop at a centred number followed by a space, and at a number with a border, emphasis marks, or raised", () => {
+            const stopsAt = (level: object, mark: readonly object[] = []): string | undefined =>
+                paragraphOf(
+                    readLists(
+                        [abstractNum(0, level), num(1, 0)],
+                        [p(pPr({ "w:numPr": [value("w:ilvl", 0), value("w:numId", 1)] }, rPr(...mark)), r(t("item")))],
+                    ),
+                ).unsupported;
+            expect(stopsAt(decimal(0, value("w:suff", "space"), value("w:lvlJc", "center")))).to.equal(
+                "a centred list number followed by a space",
+            );
+            expect(stopsAt(decimal(0, value("w:suff", "space"), value("w:lvlJc", "right")))).to.equal(undefined);
+            const numberStop = "a list number with a border or emphasis marks, or raised or lowered";
+            expect(stopsAt(decimal(0), [{ "w:bdr": { _attr: { "w:val": "single", "w:sz": 4, "w:space": 0 } } }])).to.equal(numberStop);
+            expect(stopsAt(decimal(0), [value("w:em", "dot")])).to.equal(numberStop);
+            expect(stopsAt(decimal(0), [value("w:position", 6)])).to.equal(numberStop);
+        });
+
+        it("should number a list with the levels it gives in place of its definition's", () => {
+            const content = readLists(
+                [
+                    abstractNum(0, decimal(0)),
+                    num(1, 0, lvlOverride(0, lvl(0, value("w:start", 3), value("w:numFmt", "upperRoman"), value("w:lvlText", "%1)")))),
+                ],
+                [listItem(1, 0, "one"), listItem(1, 0, "two")],
+            );
+            expect(numbersOf(content)).to.deep.equal(["III)", "IV)"]);
         });
     });
 
