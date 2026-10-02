@@ -39,7 +39,7 @@ const measureCells = (table: TableBlock, measure: Measure): ReadonlyMap<TableCel
             cells.map((cell) => {
                 const text = measure(cell.sizing ?? cell.blocks);
                 const margins = cell.marginLeft + cell.marginRight;
-                return [cell, { min: text.min + margins, max: text.max + margins }];
+                return [cell, { ...text, min: text.min + margins, max: text.max + margins }];
             }),
         ),
     );
@@ -251,6 +251,10 @@ export const fitColumns = (table: TableBlock, available: number, measure: Measur
         if (tooLong.some(({ vertical }) => vertical)) {
             return { ...table, unsupported: "a long word in text that runs up or down a table cell" };
         }
+        // Word may hyphenate the word rather than widen its column (`word-hyphenation.docx` HY11)
+        if (tooLong.some((cell) => content.get(cell)!.hyphenated)) {
+            return { ...table, unsupported: "a word Word may hyphenate, longer than its cell" };
+        }
     }
     const { columns, unsettled } = widen ? sizeGivenColumns(table, content) : sizeColumns(table, content);
     const total = sum(columns.map(({ width }) => width));
@@ -261,6 +265,17 @@ export const fitColumns = (table: TableBlock, available: number, measure: Measur
     // and TI4). One with a width of its own, or a share of the width, keeps it (TI2). One laid out fixed with no width of
     // its own keeps the widths its rows give its columns, past the room (`word-table-widths.docx` TW2)
     const room = target ?? (widen?.fixed ? Number.POSITIVE_INFINITY : available - indent);
+    // Word sizes columns to the parts of the words it hyphenates, which the layout can't know, where a column's widest word
+    // counts: in a table narrowed to the room, and in a column given less than its widest word (`word-hyphenation.docx`
+    // HY11)
+    const sizingCells = sizingRows(table).flatMap((row) => row.cells);
+    if (
+        fit &&
+        sizingCells.some((cell) => content.get(cell)!.hyphenated) &&
+        (total > room || sizingCells.some((cell) => cell.ownWidth !== undefined && content.get(cell)!.min > cell.ownWidth))
+    ) {
+        return { ...table, unsupported: "a table sized to its text whose columns' widths depend on words Word may hyphenate" };
+    }
     // A table with a width of its own in twips keeps its columns as wide as their widest words when those don't fit in it,
     // past it and the page (`word-watertight-stops.docx` SP15a, `word-table-widths.docx` TW11, TW14, TW15). Without, or with
     // a share of the width, Word breaks a word longer than the room in a way not yet followed, narrowing the other columns
@@ -316,8 +331,13 @@ export const tableWidths = (table: TableBlock, measure: Measure): ContentWidths 
     const rows = laidOut === table || laidOut.unsupported !== undefined ? sizingRows(table) : laidOut.rows;
     const borders = (borderLeft + borderRight) / 2;
     if (fit !== undefined && fit.width === undefined) {
-        const { columns } = sizeColumns(table, measureCells(table, measure));
-        return { min: sum(columns.map(({ min }) => min)) + borders, max: sum(columns.map((column) => column.width)) + borders };
+        const content = measureCells(table, measure);
+        const { columns } = sizeColumns(table, content);
+        return {
+            min: sum(columns.map(({ min }) => min)) + borders,
+            max: sum(columns.map((column) => column.width)) + borders,
+            ...([...content.values()].some(({ hyphenated }) => hyphenated) ? { hyphenated: true } : {}),
+        };
     }
     const width = fit?.width ?? largest(rows.map(({ cells }) => sum(cells.map((cell) => cell.width + cell.marginLeft + cell.marginRight))));
     return { min: width + borders, max: width + borders };

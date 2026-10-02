@@ -15,6 +15,7 @@ import {
     FURTHEST_BORDER,
     type FontData,
     type FontFace,
+    type Hyphenation,
     type InlineItem,
     type KinsokuList,
     type LineBreakRules,
@@ -304,6 +305,8 @@ export type DocumentContent = {
     readonly endnoteContinuationSeparator: readonly Block[];
     /** Where its lines break: the characters that can't start or end a line, where it gives its own */
     readonly breakRules?: LineBreakRules;
+    /** Word's automatic hyphenation of its words, with its settings, when it has it on */
+    readonly hyphenation?: Hyphenation;
     /** The number each footnote shows, by the name of its marker */
     readonly footnoteNumbers: ReadonlyMap<string, string>;
     /** The number of the endnote each of the endnotes' blocks is in: all but their separator's */
@@ -860,6 +863,7 @@ const readRun = (element: XmlObject, paragraphRun: RunFormat, reader: Reader, re
                         // Where its lines break depends on its language, and whether its run is East Asian
                         ...(format.eastAsianLanguage === undefined ? {} : { language: format.eastAsianLanguage }),
                         ...(isEastAsianRun(format) ? { eastAsian: true } : {}),
+                        ...hyphenationOf(format),
                     })),
                 ]);
             }
@@ -2709,7 +2713,7 @@ const FOLLOWED_COMPATIBILITY = new Set(["w:doNotUseHTMLParagraphAutoSpacing"]);
 // style's parts in a header of several rows, which `differentiateMultirowTableHeaders` is about (CS2), kerning, ligatures
 // and figures spaced proportionally, which `enableOpenTypeFeatures` turns on (CS3), and a line that ends at a hyphen at the
 // foot of a page (CS4), which `useWord2013TrackBottomHyphenation` moves only when hyphenation made the hyphen, and the
-// layout stops at hyphenation. `doNotFlipMirrorIndents` swaps a mirrored paragraph's indents, which leaves its lines as
+// layout stops at any line Word may hyphenate. `doNotFlipMirrorIndents` swaps a mirrored paragraph's indents, which leaves its lines as
 // long
 const WORD_SETTINGS_LINES_ALIKE = new Set([
     "compatibilityMode",
@@ -2767,11 +2771,36 @@ const readKinsokuLists = (settings: readonly XmlObject[]): NonNullable<LineBreak
     }, {});
 
 /**
+ * How Word may hyphenate a run's words when the document hyphenates: not at all in text not checked for spelling or in no
+ * language (`word-hyphenation.docx` HY7), by its English dictionary in English, or in no language given, which Word for
+ * Mac hyphenates as English (HY1a to HY1c), and otherwise by a dictionary it hasn't been seen using.
+ */
+const hyphenationOf = ({ noProof, language }: RunFormat): { readonly hyphenation?: "none" | "unknown" } => {
+    if (noProof === true || language?.toLowerCase() === "zxx") {
+        return { hyphenation: "none" };
+    }
+    return language === undefined || /^en(-|$)/i.test(language) ? {} : { hyphenation: "unknown" };
+};
+
+/**
+ * The settings of Word's automatic hyphenation: whether words in capitals are left whole (`w:doNotHyphenateCaps`). The
+ * hyphenation zone (`w:hyphenationZone`) Word doesn't keep in compatibility mode 15 (`word-hyphenation-zone.docx`), and the
+ * most lines in a row that end with a hyphen (`w:consecutiveHyphenLimit`) only leaves whole words Word could otherwise
+ * hyphenate, which the layout stops at all the same (`word-hyphenation-limit.docx` HY9c). Lines broken at soft hyphens it
+ * leaves as they are (`word-hyphenation-manual.docx` HY9a).
+ */
+const readHyphenation = (settings: readonly XmlObject[]): Hyphenation =>
+    onOff(settings, "w:doNotHyphenateCaps") === true ? { capitalsWhole: true } : {};
+
+/**
  * Reads the parts of the document's settings (`w:settings`) that change how it is laid out.
  */
 const readSettings = (
     xml: XmlObject | undefined,
-): Pick<DocumentContent, "defaultTabStop" | "evenAndOddHeaders" | "addsParagraphSpacing" | "breakRules" | "unsupported"> => {
+): Pick<
+    DocumentContent,
+    "defaultTabStop" | "evenAndOddHeaders" | "addsParagraphSpacing" | "breakRules" | "hyphenation" | "unsupported"
+> => {
     const settings = childrenOf(xml?.["w:settings"]);
     const compatibility = childrenOf(find(settings, "w:compat"));
     const lists = readKinsokuLists(settings);
@@ -2784,7 +2813,6 @@ const readSettings = (
     const unsupported =
         (
             [
-                [onOff(settings, "w:autoHyphenation"), "hyphenation"],
                 [onOff(settings, "w:strictFirstAndLastChars"), "the strict rules for the characters that can't start a line"],
                 [spacingControl !== undefined && spacingControl !== "doNotCompress", "punctuation compressed"],
                 [mode === undefined || mode < CURRENT_COMPATIBILITY_MODE, "a document in compatibility mode"],
@@ -2799,6 +2827,7 @@ const readSettings = (
         evenAndOddHeaders: onOff(settings, "w:evenAndOddHeaders") === true,
         addsParagraphSpacing: onOff(compatibility, "w:doNotUseHTMLParagraphAutoSpacing") === true,
         ...(Object.keys(lists).length > 0 ? { breakRules: { lists } } : {}),
+        ...(onOff(settings, "w:autoHyphenation") === true ? { hyphenation: readHyphenation(settings) } : {}),
         ...(unsupported ? { unsupported } : {}),
     };
 };

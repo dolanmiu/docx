@@ -467,6 +467,49 @@ describe("fitColumns", () => {
     });
 });
 
+describe("fitColumns and tableWidths with automatic hyphenation", () => {
+    // cspell:ignore incomprehensibilities
+    /** How narrow and how wide a cell's paragraph or table can be, in a document that hyphenates its words */
+    const hyphenating = ([block]: readonly Block[]): ContentWidths =>
+        block.type === "table"
+            ? tableWidths(block, hyphenating)
+            : measureContentWidths(block.items as readonly InlineItem[], { measurer: MEASURER, hyphenation: {} });
+    const HYPHENATED = "a table sized to its text whose columns' widths depend on words Word may hyphenate";
+
+    it("should stop at a table sized to its text narrowed to the room, or with a column given less than its widest word, which Word may hyphenate", () => {
+        // word-hyphenation.docx HY11a: Word sized a column to the parts of "incomprehensibilities" it hyphenated
+        expect(fitColumns(table([[cell(0, "a"), cell(1, "aaaaaaaa bbbbbbbb")]]), 100, hyphenating).unsupported).to.equal(HYPHENATED);
+        expect(fitColumns(table([[cell(0, "a"), cell(1, "aaaaaaaa", 50)]]), 300, hyphenating).unsupported).to.equal(HYPHENATED);
+    });
+
+    it("should size a table to its text as without hyphenation where its columns' widest words don't count, or Word leaves them whole", () => {
+        // At their widest lines, in the room
+        expect(widthsOf(fitColumns(table([[cell(0, "a"), cell(1, "aaaaaaaa bbbbbbbb")]]), 200, hyphenating))).to.deep.equal([10, 170]);
+        // Narrowed toward words of four letters
+        expect(widthsOf(fitColumns(table([[cell(0, "a"), cell(1, LONG), cell(2, `${LONG} ${LONG}`)]]), 200, hyphenating))).to.deep.equal([
+            10, 65, 95,
+        ]);
+        // A word of more letters as wide as a number, which Word leaves whole, sets the width as much
+        const numbered = table([[cell(0, "a"), cell(1, `${LONG} 12345678 bbbbbbbb`)]]);
+        expect(widthsOf(fitColumns(numbered, 120, hyphenating))).to.deep.equal(widthsOf(fitColumns(numbered, 120, measure)));
+    });
+
+    it("should stop at a word Word may hyphenate that is longer than its cell, rather than widen the column for it", () => {
+        const given = (text: string): TableBlock => ({
+            ...table([[cell(0, text, 30), cell(1, LONG, 270)]]),
+            fit: undefined,
+            widen: {},
+        });
+        expect(fitColumns(given("aaaaaa"), 300, hyphenating).unsupported).to.equal("a word Word may hyphenate, longer than its cell");
+        expect(widthsOf(fitColumns(given("123456"), 300, hyphenating))).to.deep.equal([60, 220]);
+    });
+
+    it("should say when a table in a cell, sized to its text, has words Word may hyphenate", () => {
+        expect(tableWidths(table([[cell(0, "aaaaaaaa")]]), hyphenating)).to.deep.equal({ min: 90, max: 90, hyphenated: true });
+        expect(tableWidths(table([[cell(0, "aaaa")]]), hyphenating)).to.deep.equal({ min: 50, max: 50 });
+    });
+});
+
 describe("tableWidths", () => {
     // 1 and 2 points of borders either side, half of each outside the columns
     const borders = { borderLeft: 1, borderRight: 2 };

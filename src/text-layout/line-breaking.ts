@@ -75,7 +75,20 @@ export type InlineItem =
      * Text, with the East Asian language of its run, which decides which characters can't start or end a line, and whether
      * its run is East Asian, whose words break anywhere with word wrap off
      */
-    | { readonly type: "text"; readonly text: string; readonly font: TextFont; readonly language?: string; readonly eastAsian?: boolean }
+    | {
+          readonly type: "text";
+          readonly text: string;
+          readonly font: TextFont;
+          readonly language?: string;
+          readonly eastAsian?: boolean;
+          /**
+           * How Word may hyphenate its words when the document hyphenates: not at all (`"none"`), as text not checked for
+           * spelling (`w:noProof`) or in no language (`zxx`) is, or by the dictionary of a language Word hasn't been seen
+           * hyphenating (`"unknown"`). Without it, by Word's English dictionary, as for text in English or in no language
+           * given, which Word hyphenates in its own
+           */
+          readonly hyphenation?: "none" | "unknown";
+      }
     | { readonly type: "tab"; readonly font: TextFont }
     /**
      * A soft hyphen (`w:softHyphen`), where a word may break, with a hyphen in its font drawn at the end of the line. It
@@ -105,6 +118,16 @@ export type TabStop = {
 };
 
 /**
+ * Word's automatic hyphenation of a document's words (`w:autoHyphenation`), with the document's settings for it. Word
+ * hyphenates by its own dictionary for each language, which the layout can't have, so a line is laid out only where Word
+ * certainly leaves the word after it whole, and says why it can't be anywhere else.
+ */
+export type Hyphenation = {
+    /** Whether words in capitals are left whole (`w:doNotHyphenateCaps`) */
+    readonly capitalsWhole?: boolean;
+};
+
+/**
  * How a paragraph's lines are laid out.
  */
 export type LineLayoutOptions = {
@@ -130,6 +153,8 @@ export type LineLayoutOptions = {
      * (`word-watertight-text.docx` TX21, `word-lists.docx` LJ1 to LJ9)
      */
     readonly numberAlignment?: "center" | "right";
+    /** The document's automatic hyphenation, when it has it on. A paragraph that suppresses it is laid out without */
+    readonly hyphenation?: Hyphenation;
 };
 
 /**
@@ -160,7 +185,7 @@ export type LaidOutLine = {
     readonly unsupported?: string;
 };
 
-type Piece = { readonly text: string; readonly font: TextFont };
+type Piece = { readonly text: string; readonly font: TextFont; readonly hyphenation?: TextItem["hyphenation"] };
 
 /** A soft hyphen in a word: how many characters of the word are before it, and the font its hyphen is drawn in */
 type Hyphen = { readonly at: number; readonly font: TextFont };
@@ -198,6 +223,37 @@ const STRETCH_TO_SQUEEZE = 2.04;
 // and never squeezes them by more than a quarter of their width: by 24.9%, and not 25.4% (J03 and J05 to J07), even on a
 // line whose other words have no spaces between them to stretch (`word-justify2.docx` K10, K11)
 const MOST_SQUEEZE = 0.25;
+// Why a line Word may end with part of a word and a hyphen isn't known
+const MAY_HYPHENATE = "a word Word may hyphenate, whose parts the layout can't know";
+// Word's English dictionary breaks no word of fewer than five letters, and leaves at least two letters before the hyphen:
+// "into", "upon", "also", "after" and "never" stay whole with room for "in-", "up-", "al-", "af-" and "nev-", "under" is
+// broken as "un-", and "unbelievably" and "abandonment" stay whole with room for "u-" and "a-" but not "un-" and "ab-"
+// (scripts/layout-probes/word-hyphenation.ts HY5, HY3a, HY3f). A dictionary Word hasn't been seen using might break any
+// word of two letters or more after its first
+const ENGLISH_DICTIONARY = { letters: 5, part: 2 };
+const ANY_DICTIONARY = { letters: 2, part: 1 };
+
+/**
+ * The fewest letters a word Word may hyphenate has, and the fewest characters it leaves before the hyphen, by the
+ * dictionary of its text, or none when Word leaves it whole: when it is in text Word doesn't hyphenate (HY7), has too few
+ * letters, as numbers have none (HY6), or is in capitals and the document leaves those whole, typed so or shown so with
+ * `w:caps` (HY10a, HY10b), but not when only its first letter is a capital (HY10c). Small capitals, and superscript and
+ * subscript, which are smaller, Word hasn't been seen leaving whole. Nor has it been seen with a word only part of which
+ * is in text it doesn't hyphenate, which is taken as one it may break anywhere, from its first characters on.
+ */
+const dictionaryOf = (
+    pieces: readonly Piece[],
+    { capitalsWhole }: Hyphenation,
+): { readonly letters: number; readonly part: number } | undefined => {
+    const hyphenated = pieces.filter(({ hyphenation }) => hyphenation !== "none");
+    const letters = [...textOf(pieces)].filter((character) => /\p{L}/u.test(character));
+    const dictionary = hyphenated.some(({ hyphenation }) => hyphenation === "unknown") ? ANY_DICTIONARY : ENGLISH_DICTIONARY;
+    const capitals =
+        capitalsWhole === true &&
+        letters.every((letter) => /\p{Lu}/u.test(letter)) &&
+        pieces.every(({ font }) => font.lineSize === undefined);
+    return hyphenated.length === 0 || letters.length < dictionary.letters || capitals ? undefined : dictionary;
+};
 // A distributed line can spread its letters as well as its spaces, so Word squeezes a word onto it less often. It weighs
 // how far the line would stretch without the word as if each space took this many times what each letter does: between
 // 6.94 and 7.37 times puts every one of Word's lines of K01 to K07 and K12 where Word put them
@@ -236,20 +292,19 @@ const tokenizeText = (items: readonly (TextItem | SoftHyphenItem)[], rules: Line
             }
             continue;
         }
-        const { text, font } = item;
+        const { text, font, hyphenation } = item;
+        const own = hyphenation === undefined ? {} : { hyphenation };
         for (const character of text) {
             const type = SPACES.has(character) ? "space" : "word";
             const last = tokens[tokens.length - 1];
             if (last?.type !== type || (type === "word" && breaks.has(index))) {
                 // eslint-disable-next-line functional/immutable-data
-                tokens.push({ type, pieces: [{ text: character, font }] });
+                tokens.push({ type, pieces: [{ text: character, font, ...own }] });
             } else {
                 const piece = last.pieces[last.pieces.length - 1];
+                const same = piece.font === font && piece.hyphenation === hyphenation;
                 // eslint-disable-next-line functional/immutable-data
-                last.pieces[last.pieces.length - 1 + (piece.font === font ? 0 : 1)] = {
-                    text: piece.font === font ? piece.text + character : character,
-                    font,
-                };
+                last.pieces[last.pieces.length - 1 + (same ? 0 : 1)] = { text: same ? piece.text + character : character, font, ...own };
             }
             index++;
         }
@@ -794,6 +849,12 @@ export type ContentWidths = {
     readonly min: number;
     /** On lines as long as it needs: its widest line, broken only where it has breaks */
     readonly max: number;
+    /**
+     * Whether Word may hyphenate a word as wide as the narrowest it can be, so it can be narrower by a part of the word the
+     * layout can't know, as Word sizes the columns of a table to the parts of its words it hyphenates
+     * (`word-hyphenation.docx` HY11)
+     */
+    readonly hyphenated?: boolean;
 };
 
 /**
@@ -811,19 +872,22 @@ export const measureContentWidths = (
         measurer = DEFAULT_MEASURER,
         breakRules,
         numberAlignment,
+        hyphenation,
     }: Omit<LineLayoutOptions, "width" | "markFont">,
 ): ContentWidths => {
     const { indentLeft = 0, indentRight = 0, firstLineIndent = 0 } = format;
     const { stops, firstLineStops } = stopsOf(tabStops, format);
     const beforeStart = numberShift(items, numberAlignment, measurer);
     const numberTab = numberAlignment === "right" && items[1]?.type === "tab";
-    return segmentsOf(items, rulesOf(format, breakRules)).reduce<ContentWidths>(
+    const hyphenating = hyphenation !== undefined && format.suppressAutoHyphens !== true ? hyphenation : undefined;
+    // The narrowest it can be, and as narrow as its words and pictures Word doesn't hyphenate let it be
+    const { min, max, whole } = segmentsOf(items, rulesOf(format, breakRules)).reduce(
         (widths, { tokens }, segmentIndex) => {
             const first = segmentIndex === 0;
             const lineStart = first ? indentLeft + firstLineIndent - beforeStart : indentLeft;
             let position = lineStart;
             let end = position;
-            let { min } = widths;
+            let { min: narrowest, whole: wholeWords } = widths;
             // The border of the text before, whose box is open, and of the last word, picture or tab
             let border: TextBorder | undefined;
             let endBorder: TextBorder | undefined;
@@ -856,14 +920,18 @@ export const measureContentWidths = (
                 const close = border?.room ?? 0;
                 const start =
                     end === lineStart ? position + lead : indentLeft + (token.type === "word" ? (firstBorder(token.pieces)?.room ?? 0) : 0);
-                min = Math.max(min, start + tokenWidth + close + indentRight);
+                narrowest = Math.max(narrowest, start + tokenWidth + close + indentRight);
+                if (token.type === "box" || !hyphenating || !dictionaryOf(token.pieces, hyphenating)) {
+                    wholeWords = Math.max(wholeWords, start + tokenWidth + close + indentRight);
+                }
                 position += lead + tokenWidth;
                 end = position;
             }
-            return { min, max: Math.max(widths.max, min, end + (endBorder?.room ?? 0) + indentRight) };
+            return { min: narrowest, whole: wholeWords, max: Math.max(widths.max, narrowest, end + (endBorder?.room ?? 0) + indentRight) };
         },
-        { min: 0, max: 0 },
+        { min: 0, max: 0, whole: 0 },
     );
+    return { min, max, ...(min > whole + TOLERANCE ? { hyphenated: true } : {}) };
 };
 
 /**
@@ -882,6 +950,7 @@ export const layoutLines = (
         measurer = DEFAULT_MEASURER,
         breakRules,
         numberAlignment,
+        hyphenation,
     }: LineLayoutOptions,
 ): readonly LaidOutLine[] => {
     const { indentLeft = 0, indentRight = 0, firstLineIndent = 0, lineSpacing, alignment } = format;
@@ -972,6 +1041,26 @@ export const layoutLines = (
         }
         const between = state.spaces - (state.position - state.end);
         return between <= 0 || slack / between >= STRETCH_TO_SQUEEZE * (over / state.spaces);
+    };
+    // Word's automatic hyphenation, unless the paragraph suppresses it (HY2)
+    const hyphenating = hyphenation !== undefined && format.suppressAutoHyphens !== true ? hyphenation : undefined;
+    /**
+     * Whether Word may hyphenate a word that goes past the end of a line, putting a part of it and a hyphen on the line.
+     * Which parts Word can break a word into is in its dictionary for the word's language, which the layout doesn't have,
+     * so a word Word may hyphenate stops the layout. Word certainly leaves it whole when its dictionary breaks no word like
+     * it, or the shortest part it can leave before the hyphen doesn't fit in the room the line has left. It hyphenates
+     * whenever a part fits, however little room is left: in compatibility mode 15 it has no hyphenation zone, so a zone of
+     * an inch hyphenates as the default quarter of an inch does, and "un-" fits in 16 points (word-hyphenation-zone.docx
+     * HY1 to HY13, HY3b). It doesn't squeeze a justified line's spaces to fit a part, as it does to fit a word (HY4a)
+     */
+    const mayHyphenate = (state: LineState, token: Extract<Token, { readonly type: "word" }>, lead: number): boolean => {
+        const dictionary = hyphenating && dictionaryOf(token.pieces, hyphenating);
+        if (!dictionary) {
+            return false;
+        }
+        const part = charactersOf(token.pieces).slice(0, dictionary.part).flat();
+        const hyphen = { text: "-", font: part[part.length - 1].font };
+        return state.position + lead + widthOf([...part, hyphen], measurer) <= limitOf() + TOLERANCE;
     };
     /**
      * Whether a word or picture past the end of a justified line could be squeezed in, were the spaces Word hasn't been
@@ -1093,6 +1182,11 @@ export const layoutLines = (
                 if (unknown !== undefined) {
                     line = { ...line, unsupported: line.unsupported ?? unknown };
                 }
+                // With automatic hyphenation, Word breaks the word where its dictionary does too, after its last soft hyphen
+                // that fits or before its first (scripts/layout-probes/word-hyphenation.ts HY8a, HY8b)
+                if (line.started && mayHyphenate(line, token, leadOf(line))) {
+                    line = { ...line, unsupported: line.unsupported ?? MAY_HYPHENATE };
+                }
                 const rest = breakAtHyphen(token, hyphens);
                 if (rest !== undefined) {
                     placeWord(rest);
@@ -1120,6 +1214,11 @@ export const layoutLines = (
                 line = { ...line, unsupported: "a justified line with text in a border that only fits squeezed" };
             }
             const squeezed = squeezable && !boxed;
+            // Word squeezes a word onto a justified line rather than hyphenate it (HY4b), but hasn't been seen choosing between
+            // them on a distributed line, whose letters it spreads too
+            if (overflows && (!squeezed || alignment !== "justified") && token.type === "word" && mayHyphenate(line, token, leadOf(line))) {
+                line = { ...line, unsupported: line.unsupported ?? MAY_HYPHENATE };
+            }
             if (overflows && !squeezed) {
                 line = wrap(line);
             }
@@ -1130,6 +1229,10 @@ export const layoutLines = (
                 let placed = false;
                 if (token.pieces.some(({ font }) => font.border !== undefined)) {
                     line = { ...line, unsupported: "a word longer than its line with a border" };
+                }
+                // Word may hyphenate it instead
+                if (mayHyphenate(line, token, 0)) {
+                    line = { ...line, unsupported: line.unsupported ?? MAY_HYPHENATE };
                 }
                 for (const character of charactersOf(token.pieces)) {
                     const characterWidth = widthOf(character, measurer);

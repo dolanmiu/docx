@@ -482,6 +482,7 @@ export const paginate = (
         endnotes,
         endnoteContinuationSeparator,
         breakRules,
+        hyphenation,
         footnoteNumbers,
         endnoteNumbers,
     } = content;
@@ -604,6 +605,7 @@ export const paginate = (
                 measurer: measuring,
                 breakRules,
                 numberAlignment: paragraph.numberAlignment,
+                hyphenation,
             });
             // A line whose breaking, or height, Word hasn't shown stops the layout
             const unknown = laidOut.find((line) => line.unsupported !== undefined);
@@ -716,11 +718,14 @@ export const paginate = (
         aboveNotes: boolean,
     ): boolean => from + height <= end + TOLERANCE || (from + height - spacingBelow <= end + TOLERANCE && hangsBelow(aboveNotes));
 
-    /** How narrow and how wide the paragraphs and tables in a table cell can be */
+    /**
+     * How narrow and how wide the paragraphs and tables in a table cell can be, and whether Word may hyphenate a word as
+     * wide as the narrowest of them
+     */
     const contentWidths = (stack: readonly Block[]): ContentWidths =>
         stack.reduce<ContentWidths>(
             (widths, block) => {
-                const { min, max } =
+                const own =
                     block.type === "table"
                         ? tableWidths(block, contentWidths)
                         : measureContentWidths(measurable(block.items), {
@@ -730,8 +735,11 @@ export const paginate = (
                               measurer: measuring,
                               breakRules,
                               numberAlignment: block.numberAlignment,
+                              hyphenation,
                           });
-                return { min: Math.max(widths.min, min), max: Math.max(widths.max, max) };
+                const hyphenated =
+                    own.min > widths.min ? own.hyphenated : own.min < widths.min ? widths.hyphenated : own.hyphenated || widths.hyphenated;
+                return { min: Math.max(widths.min, own.min), max: Math.max(widths.max, own.max), ...(hyphenated ? { hyphenated } : {}) };
             },
             { min: 0, max: 0 },
         );
