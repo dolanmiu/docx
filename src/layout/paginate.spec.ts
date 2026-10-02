@@ -482,6 +482,20 @@ describe("paginate", () => {
                     spaceBetween(paragraph("a", 1, { spaceAfter: 20 }), paragraph("b", 1, { spaceBefore: 10, ...contextual }), adding),
                 ).to.equal(20);
             });
+
+            it("should go by the style of a paragraph all of which is hidden between them, which takes no room, as Word does", () => {
+                // `word-hidden-paragraphs.docx` HP6c and HP6d: 240 twips after and before paragraphs of a style with contextual
+                // spacing leave 240 around a hidden one of another style, and none around one of theirs. Here, 20 points
+                const around = (hiddenStyle: string): number => {
+                    const hidden: ParagraphBlock = { ...paragraph("hidden", 1, {}, hiddenStyle), hidden: true };
+                    return spaceBetween(
+                        { ...paragraph("a", 1, { spaceAfter: 20, ...contextual }, "Spaced"), hiddenAfter: hidden },
+                        { ...paragraph("b", 1, { spaceBefore: 20, ...contextual }, "Spaced"), hiddenBefore: hidden },
+                    );
+                };
+                expect(around("Normal")).to.equal(20);
+                expect(around("Spaced")).to.equal(0);
+            });
         });
     });
 

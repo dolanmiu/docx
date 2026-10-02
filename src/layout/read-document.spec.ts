@@ -138,7 +138,15 @@ describe("readDocument", () => {
                         { "w:endnoteReference": { _attr: { "w:id": 1 } } },
                         { "w:lastRenderedPageBreak": {} },
                     ),
-                    r(rPr({ "w:vanish": {} }), t("hidden"), { "w:tab": {} }, { "w:br": {} }, { "w:cr": {} }),
+                    r(
+                        rPr({ "w:vanish": {} }),
+                        t("hidden"),
+                        { "w:tab": {} },
+                        { "w:br": {} },
+                        { "w:cr": {} },
+                        { "w:noBreakHyphen": {} },
+                        { "w:sym": { _attr: { "w:char": "F0A7" } } },
+                    ),
                     r(rPr({ "w:caps": {} }), t("caps")),
                 ),
             ]);
@@ -3621,6 +3629,14 @@ describe("readDocument", () => {
         const cellOf = (...paragraphs: readonly object[]): object => ({
             "w:tc": [{ "w:tcPr": [{ "w:tcW": { _attr: { "w:w": 2000 } } }] }, ...paragraphs],
         });
+        /** A table of these cells in a row, whose columns are fixed, so Word doesn't size them to their text */
+        const fixedTableOf = (...cells: readonly object[]): object => ({
+            "w:tbl": [
+                { "w:tblPr": [{ "w:tblLayout": { _attr: { "w:type": "fixed" } } }] },
+                { "w:tblGrid": [{ "w:gridCol": { _attr: { "w:w": 2000 } } }] },
+                { "w:tr": cells },
+            ],
+        });
         const tableOf = (...cells: readonly object[]): object => ({
             "w:tbl": [{ "w:tblPr": [] }, { "w:tblGrid": [{ "w:gridCol": { _attr: { "w:w": 2000 } } }] }, { "w:tr": cells }],
         });
@@ -3797,26 +3813,187 @@ describe("readDocument", () => {
                 "a hidden paragraph mark at the edge of a content control",
             );
             expect(unsupportedOf(p(pPr({ "w:sectPr": [] }, hiddenMark), r(t("a"))), p(r(t("b"))))).to.equal("a hidden section break");
-            // A paragraph with nothing shown: with no paragraph after it, in a list, or with a field in it
-            expect(unsupportedOf(p(r(t("a"))), p(pPr(hiddenMark)))).to.equal(
-                "a paragraph with nothing shown and its mark hidden, with no paragraph after it",
-            );
+            // Joined past a paragraph with nothing shown that is in a list, or has a field in it, which would be read out of
+            // order, by a hidden or deleted mark
             const numbered = pPr(hiddenMark, { "w:numPr": [value("w:ilvl", 0), value("w:numId", 1)] });
-            expect(unsupportedOf(p(numbered), p(r(t("b"))))).to.equal("a list's paragraph with nothing shown and its mark hidden");
+            expect(unsupportedOf(p(pPr(hiddenMark), r(t("a"))), p(numbered), p(r(t("b"))))).to.equal(
+                "a hidden paragraph mark before a paragraph with nothing shown and its mark hidden",
+            );
             const hiddenRun = (child: object): object => r(rPr({ "w:vanish": {} }), child);
             const pageField = [
                 hiddenRun({ "w:fldChar": { _attr: { "w:fldCharType": "begin" } } }),
                 hiddenRun({ "w:instrText": ["PAGE"] }),
                 hiddenRun({ "w:fldChar": { _attr: { "w:fldCharType": "end" } } }),
             ];
-            expect(unsupportedOf(p(pPr(hiddenMark), ...pageField), p(r(t("b"))))).to.equal(
-                "a field in a paragraph with nothing shown and its mark hidden",
+            const deletedMark = pPr(rPr({ "w:del": { _attr: { "w:id": 1, "w:author": "a", "w:date": "2026-01-01T00:00:00Z" } } }));
+            expect(unsupportedOf(p(deletedMark, r(t("a"))), p(pPr(hiddenMark), ...pageField), p(r(t("b"))))).to.equal(
+                "a deleted paragraph mark before a paragraph with nothing shown and its mark hidden",
             );
             // In a table whose columns Word sizes to their text, between paragraphs of text
             expect(unsupportedOf(tableOf(cellOf(p(pPr(hiddenMark), r(t("a"))), p(r(t("b"))))))).to.equal(
                 "a hidden paragraph mark between paragraphs of text in a table whose columns Word sizes to their text",
             );
             expect(unsupportedOf(tableOf(cellOf(p(pPr(hiddenMark)), p(r(t("b"))))))).to.equal(undefined);
+        });
+
+        it("should give a paragraph whose text and mark are all hidden no room, whatever its formatting, as Word lays it out", () => {
+            // word-breaks-and-tabs.docx HM3: text and mark hidden (HM3a), an empty paragraph whose mark is hidden (HM3b), a
+            // paragraph of a hidden style (HM3c, word-seq.docx Q8), and an empty one with space before and after (HM3e)
+            // take no room, but one whose text is hidden and mark isn't takes a line (HM3d)
+            const hiddenText = rPr({ "w:vanish": {} });
+            const content = readBody(
+                [
+                    p(r(t("above"))),
+                    p(pPr(hiddenMark), r(hiddenText, t("text and mark"))),
+                    // word-seq.docx Q8: with a SEQ field in it, which is counted where it is
+                    p(
+                        pPr(value("w:pStyle", "Hidden")),
+                        r(t("hidden style ")),
+                        field("begin"),
+                        instruction("SEQ Figure"),
+                        field("separate"),
+                        field("end"),
+                    ),
+                    p(pPr({ "w:spacing": { _attr: { "w:before": 480, "w:after": 480 } } }, hiddenMark)),
+                    p(pPr(hiddenMark), r(rPr(value("w:rStyle", "HiddenRun")), t("hidden character style"))),
+                    p(pPr(hiddenMark)),
+                    p(r(hiddenText, t("text only"))),
+                    p(pPr(value("w:jc", "center")), r(t("below"))),
+                ],
+                {
+                    styles: {
+                        // Hidden by the style the paragraph's is based on
+                        paragraphStyles: [
+                            { id: "HiddenBase", name: "Hidden Base", run: { vanish: true } },
+                            { id: "Hidden", name: "Hidden", basedOn: "HiddenBase", paragraph: { indent: { left: 720 } } },
+                        ],
+                        characterStyles: [{ id: "HiddenRun", name: "Hidden Run", run: { vanish: true } }],
+                    },
+                },
+            );
+            expect(texts(content)).to.deep.equal(["above", "", "below"]);
+            expect([content.unsupported, ...content.blocks.map(({ block }) => block.unsupported)]).to.deep.equal([
+                undefined,
+                undefined,
+                undefined,
+                undefined,
+            ]);
+            // The paragraph after it in its own formatting
+            expect(paragraphOf(content, 2).format.alignment).to.equal("center");
+        });
+
+        it("should start the bookmarks in a paragraph whose text and mark are all hidden with the block after it", () => {
+            const hiddenParagraph = (name: string): object =>
+                p(pPr(hiddenMark, value("w:jc", "right")), bookmark(name), r(hiddenMark, t("x")));
+            const content = readBody([
+                p(r(t("above"))),
+                hiddenParagraph("body"),
+                p(r(t("next"))),
+                // In a table cell
+                fixedTableOf(cellOf(p(r(t("a"))), hiddenParagraph("cell"), p(r(t("b"))))),
+            ]);
+            expect(texts(content)).to.deep.equal(["above", "next", "table"]);
+            expect(itemsOf(content, 1)[0]).to.deep.equal({ type: "marker", name: "body" });
+            const [cell] = (content.blocks[2].block as TableBlock).rows[0].cells;
+            expect(cell.blocks.map((block) => (block.type === "paragraph" ? block.items[0] : undefined))).to.deep.equal([
+                { type: "text", text: "a", font: {} },
+                { type: "marker", name: "cell" },
+            ]);
+            // The paragraphs next to it know it is there, for their contextual spacing
+            const [first, second] = cell.blocks as readonly ParagraphBlock[];
+            expect([first.hiddenAfter?.style, second.hiddenBefore?.style]).to.deep.equal(["Normal", "Normal"]);
+            expect(content.blocks.map(({ block }) => block.unsupported)).to.deep.equal([undefined, undefined, undefined]);
+        });
+
+        it("should give a paragraph whose text and mark are all hidden no room before a table and at the end of the document, and a line at the end of a table cell", () => {
+            const hiddenParagraph = (...children: readonly object[]): object => p(pPr(hiddenMark), r(hiddenMark, ...children));
+            const content = readBody([
+                // word-hidden-paragraphs.docx HP2a: before a table
+                hiddenParagraph(t("before")),
+                // First in a cell, one after the other (HP2d)
+                fixedTableOf(cellOf(hiddenParagraph(t("one")), hiddenParagraph(t("two")), p(r(t("first"))), hiddenParagraph(t("last")))),
+                // HP4a, HP4b, HP4c: a page break and a picture in hidden text take no room
+                // Formatted otherwise than the next, so it isn't joined to it, after a table
+                p(
+                    pPr(value("w:jc", "center"), hiddenMark),
+                    r(hiddenMark, { "w:br": { _attr: { "w:type": "page" } } }, { "w:drawing": [] }),
+                ),
+                p(r(t("a")), r(hiddenMark, { "w:br": { _attr: { "w:type": "column" } } }), r(t("b"))),
+                {
+                    "w:p": [pPr(hiddenMark), r(hiddenMark, { "mc:AlternateContent": [{ "mc:Choice": [{ "w:drawing": [] }] }] })],
+                },
+                // HP8: at the end of the document
+                p(pPr(hiddenMark)),
+            ]);
+            expect(texts(content)).to.deep.equal(["table", "ab"]);
+            // HP2b, HP2c: at the end of a table cell, it is a line of its own
+            const [cell] = (content.blocks[0].block as TableBlock).rows[0].cells;
+            expect(cell.blocks.map((block) => block.type === "paragraph" && block.hidden === true)).to.deep.equal([false, false]);
+            expect([content.unsupported, ...content.blocks.map(({ block }) => block.unsupported)]).to.deep.equal([
+                undefined,
+                undefined,
+                undefined,
+            ]);
+        });
+
+        it("should give a paragraph whose text and mark are all hidden in a list no room, but a number", () => {
+            // word-hidden-paragraphs.docx HP5: 1. and 3.
+            const item = (text: string, vanish = false): Paragraph =>
+                new Paragraph({ numbering: { reference: "list", level: 0 }, run: { vanish }, children: [new TextRun({ text, vanish })] });
+            const content = readWritten({
+                numbering: { config: [{ reference: "list", levels: [{ level: 0, format: LevelFormat.DECIMAL, text: "%1." }] }] },
+                sections: [{ children: [item("one"), item("two", true), item("three")] }],
+            });
+            expect(texts(content)).to.deep.equal(["1.one", "3.three"]);
+        });
+
+        it("should mark a paragraph whose text and mark are all hidden as unsupported where Word hasn't been seen with it", () => {
+            const unsupportedOf = (...elements: readonly object[]): string | undefined => {
+                const content = readBody(elements);
+                return content.unsupported ?? content.blocks.find(({ block }) => block.unsupported)?.block.unsupported;
+            };
+            const hiddenParagraph = (...children: readonly object[]): object => p(pPr(hiddenMark), r(hiddenMark, ...children));
+            // Holding a note reference, whose note Word doesn't lay out (HP4d, HP4e), and the notes after it may not be
+            // numbered as Word numbers them
+            expect(unsupportedOf(hiddenParagraph({ "w:footnoteReference": { _attr: { "w:id": 1 } } }), p(r(t("b"))))).to.equal(
+                "a footnote or endnote reference in hidden text",
+            );
+            // After a paragraph kept with the next
+            const centred = p(pPr(value("w:jc", "center"), hiddenMark), r(hiddenMark, t("b")));
+            expect(unsupportedOf(p(pPr({ "w:keepNext": {} }), r(t("a"))), centred, p(r(t("c"))))).to.equal(
+                "a paragraph kept with the next before a hidden paragraph",
+            );
+            expect(unsupportedOf(p(pPr({ "w:keepNext": {} }, { "w:framePr": {} }), r(t("a"))), centred, p(r(t("c"))))).to.equal(
+                "a text frame",
+            );
+            // Between paragraphs of the same borders, without them
+            const bordered = { "w:pBdr": [{ "w:top": { _attr: { "w:val": "single", "w:sz": 4, "w:space": 1 } } }] };
+            expect(unsupportedOf(p(pPr(bordered), r(t("a"))), hiddenParagraph(t("b")), p(pPr(bordered), r(t("c"))))).to.equal(
+                "a box of borders around a hidden paragraph without them",
+            );
+            expect(
+                unsupportedOf(
+                    p(pPr(bordered), r(t("a"))),
+                    p(pPr(bordered, hiddenMark), r(hiddenMark, t("b"))),
+                    p(pPr(bordered), r(t("c"))),
+                ),
+            ).to.equal(undefined);
+            expect(unsupportedOf(p(r(t("a"))), hiddenParagraph(t("b")), p(pPr(bordered), r(t("c"))))).to.equal(undefined);
+            // Before something that isn't a paragraph or table
+            expect(unsupportedOf(hiddenParagraph(t("a")), { "w:altChunk": {} })).to.equal(
+                "a paragraph with nothing shown and its mark hidden before something that isn't a paragraph or table",
+            );
+        });
+
+        it("should mark a paragraph whose text and mark are all hidden at the end of a header as unsupported", () => {
+            const hidden = new Paragraph({ run: { vanish: true }, children: [new TextRun({ text: "b", vanish: true })] });
+            const content = readWritten({
+                sections: [{ headers: { default: new Header({ children: [new Paragraph("a"), hidden] }) }, children: [] }],
+            });
+            expect(content.sections[0].headers.default?.map(({ unsupported }) => unsupported)).to.deep.equal([
+                undefined,
+                "a paragraph with nothing shown and its mark hidden at the end of a header, footer or note",
+            ]);
         });
 
         it("should mark a decimal tab stop in a document whose decimal symbol isn't a full stop as unsupported", () => {

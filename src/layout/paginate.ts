@@ -676,18 +676,22 @@ export const paginate = (
         // style next to it: the first's space after, and the part of the second's space before that is more than the
         // first's space after. The other paragraph's share stays, so 200 after a contextual paragraph and 400 before the
         // next leave 200, where LibreOffice leaves 400 (`word-rules.docx` P1, `word-rules2.docx` Q1). With the space after
-        // and before added, each paragraph's share is its own
+        // and before added, each paragraph's share is its own. A paragraph left out between them, as it shows nothing,
+        // takes no room, but is the one next to each, by its style (`word-hidden-paragraphs.docx` HP6c, HP6d)
         const contextual = (one: ParagraphBlock, other?: Block): boolean =>
             one.format.contextualSpacing === true && other?.type === "paragraph" && other.style === one.style;
         const spaceBefore = ownSpace(paragraph, "before", before, inCell);
         const shareBefore =
-            before?.type === "paragraph" && !before.sectionBreak && contextual(before, paragraph) && !addsParagraphSpacing
+            before?.type === "paragraph" &&
+            !before.sectionBreak &&
+            contextual(before, before.hiddenAfter ?? paragraph) &&
+            !addsParagraphSpacing
                 ? Math.max(0, spaceBefore - ownSpace(before, "after", paragraph, inCell))
                 : spaceBefore;
         return {
             lines,
-            spaceBefore: contextual(paragraph, before) ? 0 : shareBefore,
-            spaceAfter: contextual(paragraph, after) ? 0 : ownSpace(paragraph, "after", after, inCell),
+            spaceBefore: contextual(paragraph, paragraph.hiddenBefore ?? before) ? 0 : shareBefore,
+            spaceAfter: contextual(paragraph, paragraph.hiddenAfter ?? after) ? 0 : ownSpace(paragraph, "after", after, inCell),
             // The top border is above the first paragraph of a box, and a between border above each of the others, and
             // they stay above it at the top of a page, where the box goes on with no border otherwise. A between border
             // leaves its space below each paragraph of the box but the last, so 15 twips of it 20 from the text are 55
