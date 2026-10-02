@@ -20,13 +20,14 @@ export type LineLayout = {
      * so the texts of a paragraph's lines, one after the other, are its text
      */
     readonly text: string;
-    /** Where the room for the line starts across the page */
+    /** Where the room for the line starts across the page: beside a drawing that text flows around, where that room starts */
     readonly x: number;
     /** Where the top of the line is down the page */
     readonly y: number;
     /**
-     * How wide the room for the line is: its column, or the page's text, less the paragraph's indents. Its text is lined
-     * up in it as the paragraph's alignment says
+     * How wide the room for the line is: its column, or the page's text, less the paragraph's indents, or the room beside a
+     * drawing that text flows around. Its text is lined up in it as the paragraph's alignment says. A line with text on both
+     * sides of a drawing is two lines with the same `y`, the left first
      */
     readonly width: number;
     /** How tall the line is, with the paragraph's line spacing */

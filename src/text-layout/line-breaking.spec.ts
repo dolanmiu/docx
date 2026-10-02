@@ -328,6 +328,56 @@ describe("layoutLines", () => {
         expect(layoutLines(tabbed, { width: 100, measurer: MEASURER })).to.have.length(2);
     });
 
+    it("should break a line in the room given to it, in place of its indents, as beside a drawing that text flows around", () => {
+        const words = ["aaa", "bbb", "ccc", "ddd", "eee"].flatMap((word): readonly InlineItem[] => [
+            { type: "marker", name: word },
+            text(`${word} `),
+        ]);
+        const format = { indentLeft: 10, firstLineIndent: 10, indentRight: 10 };
+        const laidOut = (
+            width: (line: number) => number | { readonly start: number; readonly end: number },
+        ): readonly (readonly [string, number])[] =>
+            layoutLines(words, { width, format, measurer: MEASURER }).map(
+                ({ text: lineText, textWidth }) => [lineText, textWidth] as const,
+            );
+        // The first line has room from 50 to 90, beside a drawing on its left, the second from 0 to 40 and the rest the
+        // width less the indents
+        expect(laidOut((line) => (line === 0 ? { start: 50, end: 90 } : line === 1 ? { start: 0, end: 40 } : 100))).to.deep.equal([
+            ["aaa ", 30],
+            ["bbb ", 30],
+            ["ccc ddd ", 70],
+            ["eee ", 30],
+        ]);
+        // A tab with no stop left on its line moves to one on the next line, from where that line starts
+        const tabbed = [text("aaaaaaaaa"), { type: "tab", font: {} } as const, text("b")];
+        expect(
+            layoutLines(tabbed, { width: (line) => (line === 0 ? 100 : { start: 50, end: 100 }), measurer: MEASURER }).map(
+                ({ text: lineText }) => lineText,
+            ),
+        ).to.deep.equal(["aaaaaaaaa", "\tb"]);
+        // A line in a room of its own that the next word doesn't fit in is left empty, as Word leaves a room beside a drawing,
+        // and the word goes on the next line, broken there when it is wider than that line too
+        const textsIn = (
+            items: readonly InlineItem[],
+            width: (line: number) => number | { readonly start: number; readonly end: number },
+        ): readonly string[] => layoutLines(items, { width, measurer: MEASURER }).map(({ text: lineText }) => lineText);
+        expect(textsIn([text("a".repeat(12))], (line) => (line === 0 ? { start: 40, end: 100 } : 100))).to.deep.equal([
+            "",
+            "aaaaaaaaaa",
+            "aa",
+        ]);
+        expect(textsIn([text("aaa bbbbbbb cc")], (line) => (line < 3 ? { start: 0, end: 40 } : 100))).to.deep.equal([
+            "aaa ",
+            "",
+            "",
+            "bbbbbbb cc",
+        ]);
+        // A picture likewise, and a word that fits starts the line as on any other
+        expect(
+            textsIn([{ type: "box", width: 50, height: 10 }, text("a")], (line) => (line === 0 ? { start: 0, end: 40 } : 100)),
+        ).to.deep.equal(["", "a"]);
+    });
+
     it("should break a word wider than a line after the last character that fits on each line, as Word does", () => {
         // Each letter is 30 points, so 3 fit on a line of 100, and 10 take 4 lines
         const wide: TextMeasurer = {
@@ -1456,6 +1506,11 @@ describe("soft hyphens", () => {
             ["aaaaa ", undefined],
             ["bbbbcc", undefined],
         ]);
+    });
+
+    it("should mark a line beside a drawing that a word with soft hyphens doesn't fit in, as how Word breaks it there isn't known", () => {
+        const lines = linesOf([text("aa bbb"), softHyphen(), text("ccc")], { width: (line) => (line === 0 ? 60 : { start: 0, end: 40 }) });
+        expect(lines.map(({ unsupported }) => unsupported)).to.include("a word with a soft hyphen beside a drawing it doesn't fit beside");
     });
 
     it("should squeeze a word with soft hyphens onto a justified line whole, as a word without them", () => {

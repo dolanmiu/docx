@@ -102,8 +102,11 @@ export type InlineItem =
      * tall as
      */
     | { readonly type: "box"; readonly width: number; readonly height: number; readonly font?: TextFont }
-    /** Where a bookmark starts */
-    | { readonly type: "marker"; readonly name: string };
+    /**
+     * Where a bookmark starts, which is on the line of the word, picture or tab after it, or, for one that goes with the text
+     * before it (`after`), such as a drawing's anchor, on the line of the word or picture right before it
+     */
+    | { readonly type: "marker"; readonly name: string; readonly after?: boolean };
 
 /**
  * A tab stop, in points from the left edge of the text.
@@ -134,9 +137,10 @@ export type LineLayoutOptions = {
     /**
      * The width of the text, in points: the page's, a column's, or a table cell's, less their margins. Or the width of
      * each line, from its index in the paragraph, for lines of different widths, such as those of a paragraph that goes on
-     * into a column of another width
+     * into a column of another width, or the room of a line of its own, such as one beside a drawing that text flows
+     * around
      */
-    readonly width: number | ((line: number) => number);
+    readonly width: number | ((line: number) => number | LineRoom);
     readonly format?: ParagraphFormat;
     readonly tabStops?: readonly TabStop[];
     /** The distance between the document's default tab stops, in points. Default is half an inch */
@@ -156,6 +160,13 @@ export type LineLayoutOptions = {
     /** The document's automatic hyphenation, when it has it on. A paragraph that suppresses it is laid out without */
     readonly hyphenation?: Hyphenation;
 };
+
+/**
+ * The room of a line of its own, in points from where the paragraph's lines start without indents: where its text starts
+ * and where it ends, which the paragraph's indents don't move, as they are in them. A line in a room of its own is beside
+ * a drawing, and is left empty when its first word doesn't fit in it.
+ */
+export type LineRoom = { readonly start: number; readonly end: number };
 
 /**
  * A line of a paragraph.
@@ -197,7 +208,7 @@ type Token =
     | { readonly type: "space"; readonly pieces: readonly Piece[] }
     | { readonly type: "tab"; readonly font: TextFont }
     | { readonly type: "box"; readonly width: number; readonly height: number; readonly font?: TextFont }
-    | { readonly type: "marker"; readonly name: string };
+    | { readonly type: "marker"; readonly name: string; readonly after?: boolean };
 
 /** A part of a paragraph up to a break */
 type Segment = {
@@ -1008,10 +1019,23 @@ export const layoutLines = (
 
     // eslint-disable-next-line functional/prefer-readonly-type
     const lines: LaidOutLine[] = [];
+    /** The room of a line of its own, from its index, when it has one */
+    const roomOf = (line: number): LineRoom | undefined => {
+        const given = typeof width === "number" ? width : width(line);
+        return typeof given === "number" ? undefined : given;
+    };
     /** Where a line ends, from its index: where the line being filled ends, unless another is given */
-    const limitOf = (line = lines.length): number => marginOf(line) - indentRight;
-    /** Where the room for a line ends, from its index, before the paragraph's right indent */
-    const marginOf = (line = lines.length): number => (typeof width === "number" ? width : width(line));
+    const limitOf = (line = lines.length): number => marginOf(line) - (roomOf(line) === undefined ? indentRight : 0);
+    /**
+     * Where the room for a line ends, from its index, before the paragraph's right indent, or the end of its own room, which
+     * is in the indents
+     */
+    const marginOf = (line = lines.length): number => {
+        const given = typeof width === "number" ? width : width(line);
+        return typeof given === "number" ? given : given.end;
+    };
+    /** Where a line starts, from its index, and whether it is the paragraph's first */
+    const startOf = (line: number, isFirst: boolean): number => roomOf(line)?.start ?? indentLeft + (isFirst ? firstLineIndent : 0);
     /**
      * Where the line being filled ends: the margin after a tab to one of the paragraph's stops past its right indent, which
      * Word lines text up with on the line (scripts/layout-probes/word-breaks-and-tabs.ts TP6, TP9)
@@ -1094,7 +1118,7 @@ export const layoutLines = (
     let first = true;
     for (const [segmentIndex, { tokens, end }] of segments.entries()) {
         const isLast = segmentIndex === segments.length - 1;
-        const start = indentLeft + (first ? firstLineIndent : 0);
+        const start = startOf(lines.length, first);
         let line: LineState = {
             position: first ? start - beforeStart : start,
             start,
@@ -1136,10 +1160,11 @@ export const layoutLines = (
         };
         const wrap = (state: LineState): LineState => {
             finish({ ...state, pending: [] });
+            const next = startOf(lines.length, false);
             return {
-                position: indentLeft,
-                start: indentLeft,
-                end: indentLeft,
+                position: next,
+                start: next,
+                end: next,
                 text: "",
                 heights: NOTHING,
                 spaces: 0,
@@ -1156,6 +1181,22 @@ export const layoutLines = (
         /** Puts the bookmarks waiting for the next word, picture or tab on the line it is on */
         const place = (state: LineState): LineState => ({ ...state, markers: [...state.markers, ...state.pending], pending: [] });
 
+        /**
+         * Leaves a line with room of its own, beside a drawing, that the next word or picture doesn't fit in empty, and the
+         * next too, until one it fits in, as Word leaves it however narrow the room is: "of", 183 twips wide, goes in a room
+         * of 360, and not of 180 (`word-floats.docx` F13, F14). Whether Word puts the part of a word before a soft hyphen in
+         * it hasn't been seen
+         */
+        const skipRooms = (needs: number, hyphenated: boolean): void => {
+            while (!line.started && roomOf(lines.length) !== undefined && line.position + needs > limitOf() + TOLERANCE) {
+                if (hyphenated) {
+                    line = { ...line, unsupported: line.unsupported ?? "a word with a soft hyphen beside a drawing it doesn't fit beside" };
+                    return;
+                }
+                line = wrap(line);
+            }
+        };
+
         /** Puts a word or picture on the line, or on the next, or breaks it across lines */
         const placeWord = (token: Extract<Token, { readonly type: "word" | "box" }>): void => {
             const tokenWidth = token.type === "box" ? token.width : widthOf(token.pieces, measurer);
@@ -1168,6 +1209,7 @@ export const layoutLines = (
             const boxEnd = token.type === "word" ? (lastBorder(token.pieces)?.room ?? 0) : 0;
             const needs = leadOf(line) + tokenWidth + boxEnd;
             const hyphens = token.type === "word" ? (token.hyphens ?? []).filter(({ at }) => at > 0 && at < lengthOf(token.pieces)) : [];
+            skipRooms(needs, hyphens.length > 0);
             // A justified line Word can squeeze the word onto takes it whole, as it does a word without soft hyphens: at its
             // spaces 3% to 20% narrower (scripts/layout-probes/word-breaks-and-tabs.ts SH1a to SH1e)
             const squeezedIn = squeezes && line.started && squeezesIn(line, needs);
@@ -1221,9 +1263,15 @@ export const layoutLines = (
             }
             if (overflows && !squeezed) {
                 line = wrap(line);
+                skipRooms(needs, hyphens.length > 0);
             }
             line = { ...place(line), position: line.position + leadOf(line) };
-            if (token.type === "word" && !squeezed && line.position + tokenWidth > endOf(line) + TOLERANCE && limitOf() - indentLeft > 0) {
+            if (
+                token.type === "word" &&
+                !squeezed &&
+                line.position + tokenWidth > endOf(line) + TOLERANCE &&
+                limitOf() - startOf(lines.length, false) > 0
+            ) {
                 // A word wider than a line is broken across as many lines as it needs, after the last character that fits
                 // on each, and never between a character and the marks on it or what a zero-width joiner joins to it
                 let placed = false;
@@ -1237,7 +1285,11 @@ export const layoutLines = (
                 for (const character of charactersOf(token.pieces)) {
                     const characterWidth = widthOf(character, measurer);
                     // Each line is as long as it is, for lines of different widths, and one with no room takes the rest
-                    if (placed && line.position + characterWidth > endOf(line) + TOLERANCE && limitOf(lines.length + 1) - indentLeft > 0) {
+                    if (
+                        placed &&
+                        line.position + characterWidth > endOf(line) + TOLERANCE &&
+                        limitOf(lines.length + 1) - startOf(lines.length + 1, false) > 0
+                    ) {
                         line = wrap({ ...line, heights: withToken(line.heights, token), started: true });
                     }
                     line = {
@@ -1317,7 +1369,11 @@ export const layoutLines = (
 
         for (const [index, token] of tokens.entries()) {
             if (token.type === "marker") {
-                line = { ...line, pending: [...line.pending, token.name] };
+                const before = tokens[index - 1]?.type;
+                line =
+                    token.after === true && (before === "word" || before === "box")
+                        ? { ...line, markers: [...line.markers, token.name] }
+                        : { ...line, pending: [...line.pending, token.name] };
                 continue;
             }
             if (token.type === "space") {
@@ -1389,7 +1445,9 @@ export const layoutLines = (
                       : pastIndent
                         ? next
                         : (nextStop(line.position, given, defaultTabStop, limitOf()) ??
-                          (line.started ? nextStop(indentLeft, stops, defaultTabStop, limitOf(lines.length + 1)) : undefined));
+                          (line.started
+                              ? nextStop(startOf(lines.length + 1, false), stops, defaultTabStop, limitOf(lines.length + 1))
+                              : undefined));
                 if (stop === undefined) {
                     // No stop before the end of the line: the text after the tab starts where it is
                     line = { ...line, end: line.position, text: `${line.text}\t`, heights: withToken(line.heights, token), started: true };
