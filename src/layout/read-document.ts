@@ -437,6 +437,8 @@ type Reader = {
     readonly showDeleted?: boolean;
     /** Whether it reads the cells of a table whose columns Word sizes to their text or widens for long words */
     readonly inSizedTable?: boolean;
+    /** The character the document's settings line up at decimal tab stops (`w:decimalSymbol`), if they give one */
+    readonly decimalSymbol?: string;
 };
 
 // Word's defaults for a section that doesn't give its page: Letter, with inch margins
@@ -872,6 +874,17 @@ const readRun = (element: XmlObject, paragraphRun: RunFormat, reader: Reader, re
                 return format.hidden ? [] : [{ type: "break", kind: "line", font }];
             case "w:noBreakHyphen":
                 return [{ type: "text", text: "\u2011", font }];
+            case "w:softHyphen":
+                // Where a word may break, with a hyphen drawn there (`word-watertight-text.docx` TX10a). Whether a box goes
+                // on round its hyphen, and whether Word sizes a table's columns by the parts of a word between them, hasn't
+                // been seen
+                return format.hidden
+                    ? []
+                    : font.border
+                      ? "a soft hyphen in text with a border"
+                      : reader.inSizedTable
+                        ? "a soft hyphen in a table whose columns Word sizes to their text"
+                        : [{ type: "softHyphen", font }];
             case "w:sym": {
                 // A symbol is a character of its own font: most often a symbol font's own, such as Wingdings' tick, F0FC,
                 // whose width isn't known, so the layout stops there, as it does at other characters it can't measure. Its
@@ -1356,26 +1369,33 @@ const readParagraph = (element: XmlObject, reader: Reader, tableFormats: TableFo
     // kashida otherwise (`word-justify.docx` J14, `word-justify2.docx` K08, K09). Thai or Arabic text in them hasn't been
     // seen
     const forThaiOrArabic = combined.alignment === "thaiDistributed" || combined.alignment === "lowKashida";
+    const tabStops = tabStopsOf(formats);
+    // Word lined up the full stop of numbers at decimal stops (`word-watertight-text.docx` TX12a). Whether it lines up the
+    // decimal symbol a document's settings give instead, or the computer's, hasn't been seen
+    const otherDecimalSymbol =
+        reader.decimalSymbol !== undefined && reader.decimalSymbol !== "." && tabStops.some(({ alignment }) => alignment === "decimal");
     const unsupported =
         list.unsupported ??
         (find(properties, "w:framePr") !== undefined
             ? "a text frame"
-            : find(properties, "w:divId") !== undefined
-              ? "a paragraph in an HTML division"
-              : combined.alignment === "mediumKashida" || combined.alignment === "highKashida"
-                ? "a paragraph justified for Arabic with a medium or high kashida"
-                : forThaiOrArabic &&
-                    typeof items !== "string" &&
-                    items.some((item) => item.type === "text" && THAI_OR_ARABIC.test(item.text))
-                  ? "Thai or Arabic text justified for it"
-                  : (unknownLengthIn(element) ??
-                    (typeof format === "string" ? format : undefined) ??
-                    (typeof borders === "string" ? borders : undefined)));
+            : otherDecimalSymbol
+              ? "a decimal tab stop in a document whose decimal symbol isn't a full stop"
+              : find(properties, "w:divId") !== undefined
+                ? "a paragraph in an HTML division"
+                : combined.alignment === "mediumKashida" || combined.alignment === "highKashida"
+                  ? "a paragraph justified for Arabic with a medium or high kashida"
+                  : forThaiOrArabic &&
+                      typeof items !== "string" &&
+                      items.some((item) => item.type === "text" && THAI_OR_ARABIC.test(item.text))
+                    ? "Thai or Arabic text justified for it"
+                    : (unknownLengthIn(element) ??
+                      (typeof format === "string" ? format : undefined) ??
+                      (typeof borders === "string" ? borders : undefined)));
     return {
         type: "paragraph",
         items: content,
         format: typeof format === "string" ? combined : format,
-        tabStops: tabStopsOf(formats),
+        tabStops,
         markFont,
         ...(list.list ? { list: list.list } : {}),
         ...(list.alignment ? { numberAlignment: list.alignment } : {}),
@@ -2116,6 +2136,42 @@ const removedMarkOf = (paragraph: XmlObject): string | undefined =>
         .map(nameOf)
         .find((name) => REMOVALS.has(name));
 
+/**
+ * Whether a paragraph's mark is hidden (`w:vanish`), by its own formatting or its style's, or has `w:specVanish` without
+ * being hidden.
+ */
+const hiddenMarkOf = (paragraph: XmlObject, styles: TextStyles): "hidden" | "specVanish" | undefined => {
+    const properties = paragraphPropertiesOf(paragraph);
+    const style = valueOf(properties, "w:pStyle") ?? styles.defaultParagraphStyle;
+    const mark = find(properties, "w:rPr");
+    const { hidden } = combine([
+        styles.run,
+        ...styleChain(styles, style, "paragraph").map(({ run }) => run),
+        readRunFormat(mark, styles.themeFonts),
+    ]);
+    return hidden ? "hidden" : onOff(childrenOf(mark), "w:specVanish") ? "specVanish" : undefined;
+};
+
+/** Whether a paragraph is in a list, its own or its style's */
+const isNumbered = (paragraph: XmlObject, styles: TextStyles): boolean => {
+    const properties = paragraphPropertiesOf(paragraph);
+    const style = valueOf(properties, "w:pStyle") ?? styles.defaultParagraphStyle;
+    return (
+        find(properties, "w:numPr") !== undefined ||
+        styleChain(styles, style, "paragraph").some(({ numbering }) => numbering?.id !== undefined)
+    );
+};
+
+/** A paragraph's own formatting, but for its mark's, and its style when it names the default one, as none does */
+const paragraphFormatOf = (paragraph: XmlObject, styles: TextStyles): string =>
+    JSON.stringify(
+        paragraphPropertiesOf(paragraph).filter(
+            (child) =>
+                nameOf(child) !== "w:rPr" &&
+                !(nameOf(child) === "w:pStyle" && valueOf([child], "w:pStyle") === styles.defaultParagraphStyle),
+        ),
+    );
+
 /** Whether an element has anything in its runs, deleted or not, but their formatting */
 const hasRunContent = (element: unknown): boolean =>
     Array.isArray(element)
@@ -2152,19 +2208,59 @@ const joinedParagraph = (first: XmlObject, between: readonly unknown[], next: Xm
 };
 
 /**
+ * Why a paragraph whose mark is hidden, or has `w:specVanish`, can't be laid out, when it can't. Word joins two paragraphs
+ * of the same formatting so, on one line (`word-watertight-text.docx` TX11a), and leaves one with no paragraph after it,
+ * before a table or at the end of a table cell, as it is (`word-breaks-and-tabs.docx` HM2a, HM2b). Which formatting the
+ * joined paragraph takes where theirs differ, what Word does with a hidden mark at the edge of a content control, with a
+ * hidden section break, in a list, between paragraphs of text in a table whose columns it sizes to their text, and with a
+ * mark that has `w:specVanish` and isn't hidden, which doesn't hide text (TX11b), isn't followed yet.
+ */
+const unjoinedHiddenMark = (
+    paragraph: XmlObject,
+    hidden: "hidden" | "specVanish",
+    next: XmlObject | undefined,
+    { styles, nested, sized }: { readonly styles: TextStyles; readonly nested: boolean; readonly sized: boolean },
+): string | undefined => {
+    const nextName = next === undefined ? undefined : nameOf(next);
+    if (hidden === "specVanish") {
+        return "a paragraph mark with specVanish that isn't hidden";
+    }
+    if (sectionPropertiesOf(paragraph) !== undefined) {
+        return "a hidden section break";
+    }
+    if (nextName === "w:sdt" || nextName === "w:customXml" || (next === undefined && nested)) {
+        return "a hidden paragraph mark at the edge of a content control";
+    }
+    if (next === undefined || nextName !== "w:p") {
+        return undefined;
+    }
+    if (isNumbered(paragraph, styles) || isNumbered(next, styles)) {
+        return "a hidden paragraph mark in a list";
+    }
+    if (paragraphFormatOf(paragraph, styles) !== paragraphFormatOf(next, styles)) {
+        return "a hidden paragraph mark between paragraphs of different formatting";
+    }
+    return sized && hasRunContent(paragraph) && hasRunContent(next)
+        ? "a hidden paragraph mark between paragraphs of text in a table whose columns Word sizes to their text"
+        : undefined;
+};
+
+/**
  * Joins each paragraph whose mark is deleted in a tracked change to the paragraph after it, as Word lays it out: the next
  * paragraph, with the deleted one's text at its start, all in the next one's formatting, style and list
- * (`word-watertight-markup.docx` MK3, `word-tracked-changes.docx` MK7, MK9). A section break deleted so leaves its section
- * to the next (MK8c). A paragraph with no paragraph after it, before a table or at the end of a table cell or of the
+ * (`word-watertight-markup.docx` MK3, `word-tracked-changes.docx` MK7, MK9). A paragraph whose mark is hidden is joined to
+ * the next too, where they are formatted the same (`word-watertight-text.docx` TX11a), or else is left as it is or stops
+ * the layout (see {@link unjoinedHiddenMark}). A section break deleted so leaves its section to the next (MK8c). A paragraph with no paragraph after it, before a table or at the end of a table cell or of the
  * document, stays as it is (MK8a, MK8b, MK8d). What Word does with a paragraph mark moved elsewhere, a deleted mark at the
  * edge of a content control, a deleted section break before a table or between sections that start, number their pages or
  * have headers and footers differently, and a deleted mark between paragraphs of text in a table whose columns it sizes,
  * by the paragraphs either as they are written or as they are laid out, hasn't been seen, so the layout stops there.
  *
+ * @param styles - The document's styles, which may hide a paragraph's mark
  * @param nested - Whether the elements are in a content control or custom XML
  * @param sized - Whether they are in a cell of a table whose columns Word sizes to their text, or widens for long words
  */
-const joinRemovedMarks = (elements: readonly unknown[], nested: boolean, sized: boolean): readonly XmlObject[] => {
+const joinRemovedMarks = (elements: readonly unknown[], styles: TextStyles, nested: boolean, sized: boolean): readonly XmlObject[] => {
     // The elements after the one being read, as they are joined, from the last: the next is at the end
     // eslint-disable-next-line functional/prefer-readonly-type
     const after: XmlObject[] = [];
@@ -2175,11 +2271,13 @@ const joinRemovedMarks = (elements: readonly unknown[], nested: boolean, sized: 
         const at = after.findLastIndex((other) => BLOCK_ELEMENTS.has(nameOf(other)));
         const next = after[at] as XmlObject | undefined;
         const nextName = next === undefined ? undefined : nameOf(next);
-        const joins = mark !== undefined && nextName === "w:p";
+        const hidden = mark === undefined && name === "w:p" ? hiddenMarkOf(element, styles) : undefined;
+        const unjoined = hidden === undefined ? undefined : unjoinedHiddenMark(element, hidden, next, { styles, nested, sized });
+        const joins = (mark !== undefined || (hidden !== undefined && unjoined === undefined)) && nextName === "w:p";
         const section = mark === undefined ? undefined : sectionPropertiesOf(element);
         const reason =
             mark === undefined
-                ? undefined
+                ? unjoined
                 : mark === "w:moveFrom"
                   ? "a paragraph mark moved in a tracked change"
                   : nextName === "w:sdt" || nextName === "w:customXml" || (next === undefined && nested)
@@ -2201,10 +2299,12 @@ const joinRemovedMarks = (elements: readonly unknown[], nested: boolean, sized: 
             after.push(joinedParagraph(element, between.reverse(), next!));
         } else if (name === "w:customXml") {
             // eslint-disable-next-line functional/immutable-data
-            after.push({ [name]: joinRemovedMarks(contentOf(element), true, sized) });
+            after.push({ [name]: joinRemovedMarks(contentOf(element), styles, true, sized) });
         } else if (name === "w:sdt" && !isBound(element)) {
             const content = contentOf(element).map((child) =>
-                isObject(child) && "w:sdtContent" in child ? { "w:sdtContent": joinRemovedMarks(contentOf(child), true, sized) } : child,
+                isObject(child) && "w:sdtContent" in child
+                    ? { "w:sdtContent": joinRemovedMarks(contentOf(child), styles, true, sized) }
+                    : child,
             );
             // eslint-disable-next-line functional/immutable-data
             after.push({ [name]: content });
@@ -2225,7 +2325,7 @@ const readBlocks = (elements: readonly unknown[], reader: Reader, tableFormats?:
     // eslint-disable-next-line functional/prefer-readonly-type
     const blocks: Block[] = [];
     let bookmarks: readonly string[] = [];
-    for (const element of unwrap(joinRemovedMarks(elements, false, reader.inSizedTable === true))) {
+    for (const element of unwrap(joinRemovedMarks(elements, reader.styles, false, reader.inSizedTable === true))) {
         const block = readBlock(element, reader, tableFormats);
         if (block === undefined) {
             bookmarks = [...bookmarks, ...bookmarksIn([element])];
@@ -2730,9 +2830,19 @@ export const readContent = (body: XmlObject, parts: DocumentParts): DocumentCont
     const listIds = parts.otherListIds ?? new Map<string, string>();
     // The markers at fields, numbered across the body and its notes
     const markers: FieldMarkers = { count: 0, relative: new Map() };
-    const readerOf = (inHeader: boolean): Reader => ({ styles, numbering, listIds, inHeader, markers, fields: [], counters: new Map() });
     const settings = childrenOf(parts.settings?.["w:settings"]);
-    const elements = unwrap(joinRemovedMarks(contentOf(body), false, false));
+    const decimalSymbol = valueOf(settings, "w:decimalSymbol");
+    const readerOf = (inHeader: boolean): Reader => ({
+        styles,
+        numbering,
+        listIds,
+        inHeader,
+        markers,
+        fields: [],
+        counters: new Map(),
+        ...(decimalSymbol === undefined ? {} : { decimalSymbol }),
+    });
+    const elements = unwrap(joinRemovedMarks(contentOf(body), styles, false, false));
 
     // Each header and footer, the first time a section refers to it
     const headersAndFooters = new Map<string, readonly Block[] | undefined>();
