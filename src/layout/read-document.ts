@@ -388,6 +388,8 @@ const REMOVED_ROOM = new Set(["w:tab", "w:ptab", "w:br", "w:cr", "w:drawing", "m
 const REMOVED_NOTES = new Set(["w:footnoteReference", "w:endnoteReference"]);
 const SIZED_REMOVAL = "a deleted picture, tab, break or note reference in a table whose columns Word sizes to their text";
 const PARTLY_DELETED_FIELD = "a field partly deleted in a tracked change";
+// A mark of its own in place of a note's number, which Word may not count in the numbers of the others
+const OWN_NOTE_MARK = "a footnote or endnote with a mark of its own";
 
 const nameOf = (element: XmlObject): string => Object.keys(element)[0];
 
@@ -399,6 +401,9 @@ const contentOf = (element: XmlObject): readonly unknown[] => {
 
 /** Whether an attribute that is on or off, such as `w:combine`, is on: it is off when it isn't given */
 const isOn = (value: unknown): boolean => value !== undefined && !isOff(value);
+
+/** Whether a note's reference has a mark of its own in place of its number (`w:customMarkFollows`) */
+const hasOwnMark = (reference: XmlObject): boolean => isOn(attributesOf(reference[nameOf(reference)])["w:customMarkFollows"]);
 
 /** Whether a content control (`w:sdt`) is bound to custom XML (`w:dataBinding`), which Word fills it in from */
 const isBound = (control: XmlObject): boolean =>
@@ -668,9 +673,8 @@ const readRun = (element: XmlObject, paragraphRun: RunFormat, reader: Reader, re
             }
             case "w:footnoteReference":
             case "w:endnoteReference": {
-                if (isOn(attributesOf(child[name])["w:customMarkFollows"])) {
-                    // A mark of its own in place of the note's number, which Word may not count in the numbers of the others
-                    return "a footnote or endnote with a mark of its own";
+                if (hasOwnMark(child)) {
+                    return OWN_NOTE_MARK;
                 }
                 const note = reader.notes?.read(
                     name === "w:footnoteReference" ? "footnote" : "endnote",
@@ -738,6 +742,9 @@ const readRemoved = (elements: readonly unknown[], kind: string, reader: Reader)
                 }
                 if (references.some((reference) => "w:endnoteReference" in reference)) {
                     return "a deleted endnote reference";
+                }
+                if (references.some(hasOwnMark)) {
+                    return OWN_NOTE_MARK;
                 }
                 references.forEach(() => reader.notes?.skip("footnote"));
                 // Its field characters, which keep the fields' places, so a field partly deleted is found

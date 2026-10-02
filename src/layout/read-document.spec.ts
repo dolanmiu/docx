@@ -2477,6 +2477,11 @@ describe("readDocument", () => {
             expect(readBody([p({ "w:moveFrom": [note("w:footnoteReference")] })]).blocks[0].block.unsupported).to.equal(
                 "a note reference moved in a tracked change",
             );
+            // A deleted footnote reference with a mark of its own, which Word may not count, as one that isn't deleted
+            const ownMark = r({ "w:footnoteReference": { _attr: { "w:id": 1, "w:customMarkFollows": 1 } } });
+            expect(readBody([p({ "w:del": [ownMark] })]).blocks[0].block.unsupported).to.equal(
+                "a footnote or endnote with a mark of its own",
+            );
         });
 
         it("should leave out a deleted row, and a table all of whose rows are deleted, with their bookmarks after them, as Word does", () => {
