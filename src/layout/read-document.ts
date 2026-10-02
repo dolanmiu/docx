@@ -197,6 +197,10 @@ export type DocumentContent = {
     readonly endnotes: readonly Block[];
     /** Where its lines break: the characters that can't start or end a line, where it gives its own */
     readonly breakRules?: LineBreakRules;
+    /** The number each footnote shows, by the name of its marker */
+    readonly footnoteNumbers: ReadonlyMap<string, string>;
+    /** The number of the endnote each of the endnotes' blocks is in: all but their separator's */
+    readonly endnoteNumbers: ReadonlyMap<Block, string>;
     /** Why none of it can be laid out, when a setting of the whole document changes its lines in ways not yet followed */
     readonly unsupported?: string;
 };
@@ -433,19 +437,22 @@ const readRun = (element: XmlObject, paragraphRun: RunFormat, reader: Reader): r
         }
         switch (name) {
             case "w:t":
-                return spansOf(
-                    contentOf(child)
-                        .filter((part) => typeof part === "string")
-                        .join(""),
-                    format,
-                ).map(({ text, ...spanFont }) => ({
-                    type: "text" as const,
-                    text,
-                    font: spanFont,
-                    // Where its lines break depends on its language, and whether its run is East Asian
-                    ...(format.eastAsianLanguage === undefined ? {} : { language: format.eastAsianLanguage }),
-                    ...(isEastAsianRun(format) ? { eastAsian: true } : {}),
-                }));
+                // A tab in the text is a tab, as Word lays it out, which is how docx writes those in a TextRun's text
+                return contentOf(child)
+                    .filter((part) => typeof part === "string")
+                    .join("")
+                    .split("\t")
+                    .flatMap((part, index): readonly LayoutItem[] => [
+                        ...(index > 0 && !format.hidden ? [{ type: "tab" as const, font }] : []),
+                        ...(part.length === 0 ? [] : spansOf(part, format)).map(({ text, ...spanFont }) => ({
+                            type: "text" as const,
+                            text,
+                            font: spanFont,
+                            // Where its lines break depends on its language, and whether its run is East Asian
+                            ...(format.eastAsianLanguage === undefined ? {} : { language: format.eastAsianLanguage }),
+                            ...(isEastAsianRun(format) ? { eastAsian: true } : {}),
+                        })),
+                    ]);
             case "w:tab":
             case "w:ptab":
                 return format.hidden ? [] : [{ type: "tab", font }];
@@ -1168,8 +1175,10 @@ export const readContent = (body: XmlObject, parts: DocumentParts): DocumentCont
             : readBlocks(contentOf(note), { ...readerOf(false), ...(label === undefined ? {} : { noteNumber: label }) });
     };
     const footnotes = new Map<string, readonly Block[]>();
+    const footnoteNumbers = new Map<string, string>();
     // eslint-disable-next-line functional/prefer-readonly-type
     const endnotes: Block[] = [];
+    const endnoteNumbers = new Map<Block, string>();
     const noteCounts = { footnote: 0, endnote: 0 };
     // Footnotes are numbered 1, 2, 3 and endnotes i, ii, iii, as Word numbers them unless the document says otherwise
     const readNote = (kind: NoteKind, id: string): NoteReference => {
@@ -1180,12 +1189,18 @@ export const readContent = (body: XmlObject, parts: DocumentParts): DocumentCont
         if (kind === "endnote") {
             // eslint-disable-next-line functional/immutable-data
             endnotes.push(...content);
+            for (const block of content) {
+                // eslint-disable-next-line functional/immutable-data
+                endnoteNumbers.set(block, label);
+            }
             return { label };
         }
         // A name no bookmark can have, as bookmarks' names have no spaces
         const marker = `footnote ${noteCounts[kind]}`;
         // eslint-disable-next-line functional/immutable-data
         footnotes.set(marker, content);
+        // eslint-disable-next-line functional/immutable-data
+        footnoteNumbers.set(marker, label);
         return { label, marker };
     };
 
@@ -1249,6 +1264,8 @@ export const readContent = (body: XmlObject, parts: DocumentParts): DocumentCont
         footnoteSeparator: footnotes.size > 0 ? readNoteContent("footnote", "separator") : [],
         footnoteContinuationSeparator: footnotes.size > 0 ? readNoteContent("footnote", "continuationSeparator") : [],
         endnotes: endnotes.length > 0 ? [...readNoteContent("endnote", "separator"), ...endnotes] : [],
+        footnoteNumbers,
+        endnoteNumbers,
         ...readSettings(parts.settings),
     };
     // A length in the styles or lists stops the layout before anything, as any paragraph may be in them

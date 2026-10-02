@@ -20,11 +20,13 @@ import {
     DEFAULT_MEASURER,
     type InlineItem,
     type LaidOutLine,
+    type ParagraphFormat,
     type TextMeasurer,
     layoutLines,
     measureContentWidths,
 } from "../text-layout";
 import { fitColumns, tableWidths } from "./column-widths";
+import type { BlockLayout, LineLayout, NoteLayout, PageLayout, RowLayout } from "./layout-document";
 import { formatPageNumber } from "./number-format";
 import type {
     Block,
@@ -53,6 +55,8 @@ export type Pagination = {
     readonly sectionPageCounts: readonly (number | undefined)[];
     /** What it stopped at, when it couldn't lay out all of the document */
     readonly stoppedAt?: string;
+    /** The pages laid out, and what is on each, with lengths in points */
+    readonly pages: readonly PageLayout[];
 };
 
 export type PaginateOptions = {
@@ -127,6 +131,56 @@ type NoteRest = { readonly name: string; readonly from: NotePoint };
 /** A part of a footnote: from a point in it, or its start, up to another, or its end */
 type NotePart = { readonly name: string; readonly from?: NotePoint; readonly to?: NotePoint };
 
+/**
+ * A block of the footnotes at the bottom of a page: a paragraph or table of a footnote, by its marker (`note`) and its
+ * index in it, unless it is the separator's, with the first of its lines or rows there, and the one after the last
+ */
+type NotePiece = { readonly block: Block; readonly note?: string; readonly index: number; readonly start: number; readonly end?: number };
+
+/**
+ * Something placed on the pages, in the order it was placed: the start of a page, a line or table row of a block, by the
+ * block's index, or the footnotes at the bottom of the page
+ */
+type Placement =
+    | { readonly type: "page"; readonly page: Omit<PageLayout, "body" | "footnotes" | "endnotes"> }
+    | { readonly type: "line"; readonly block: number; readonly line: LineLayout }
+    | { readonly type: "row"; readonly block: number; readonly row: RowLayout }
+    | { readonly type: "footnotes"; readonly notes: readonly NoteLayout[] };
+
+/** A line or row placed on a page */
+type BlockPlacement = Extract<Placement, { readonly type: "line" | "row" }>;
+
+/** A line or row placed on a page, with the index of its block in what it is in */
+type BlockPiece = { readonly index: number; readonly piece: BlockPlacement };
+
+/** The blocks lines and rows are of, in order, with those of the same block one after the other together */
+const blocksOf = (pieces: readonly BlockPiece[]): readonly BlockLayout[] =>
+    pieces.reduce<readonly BlockLayout[]>((blocks, { index, piece }) => {
+        const last = blocks[blocks.length - 1];
+        if (piece.type === "line") {
+            return last?.type === "paragraph" && last.index === index
+                ? [...blocks.slice(0, -1), { ...last, lines: [...last.lines, piece.line] }]
+                : [...blocks, { type: "paragraph", index, lines: [piece.line] }];
+        }
+        return last?.type === "table" && last.index === index
+            ? [...blocks.slice(0, -1), { ...last, rows: [...last.rows, piece.row] }]
+            : [...blocks, { type: "table", index, rows: [piece.row] }];
+    }, []);
+
+/** The blocks of footnotes, in order, by the footnotes they are in, with those of the same footnote together */
+const groupedNotes = (
+    blocks: readonly { readonly note: string; readonly block: BlockLayout }[],
+    numbers: ReadonlyMap<string, string>,
+): readonly NoteLayout[] =>
+    blocks
+        .reduce<readonly { readonly note: string; readonly content: readonly BlockLayout[] }[]>((notes, { note, block }) => {
+            const last = notes[notes.length - 1];
+            return last?.note === note
+                ? [...notes.slice(0, -1), { note, content: [...last.content, block] }]
+                : [...notes, { note, content: [block] }];
+        }, [])
+        .map(({ note, content }) => ({ noteNumber: numbers.get(note)!, content }));
+
 /** Where the layout was at the start of a block, from which the blocks can be laid out again */
 type Snapshot = {
     readonly index: number;
@@ -142,6 +196,7 @@ type Snapshot = {
     readonly columnBroken: boolean;
     readonly pageNotes: readonly string[];
     readonly noteArea: number;
+    readonly notesSection: number;
     readonly notesInColumns: number | undefined;
     readonly filledEnd: number;
     readonly continued: NoteRest | undefined;
@@ -149,6 +204,8 @@ type Snapshot = {
     readonly held: readonly string[];
     readonly spaceAfter: number;
     readonly sectionSpaceAfter: number | undefined;
+    readonly placed: number;
+    readonly finished: number;
 };
 
 /** A heading of a level, with its number as a chapter number, or why its chapter number isn't known */
@@ -243,6 +300,8 @@ export const paginate = (
         footnoteContinuationSeparator,
         endnotes,
         breakRules,
+        footnoteNumbers,
+        endnoteNumbers,
     } = content;
     // The body, and then its endnotes, which Word lays out after it
     const blocks = [...content.blocks, ...endnotes.map((block) => ({ block, section: sections.length - 1 }))];
@@ -490,6 +549,8 @@ export const paginate = (
     // column of the page ends above
     let pageNotes: readonly string[] = [];
     let noteArea = 0;
+    // The section whose text's width the page's footnotes were last laid out in, which they are given in
+    let notesSection = 0;
     // The section in columns whose columns the page's footnotes are laid out in, when its footnote is the page's first,
     // and where the lines of the columns of the page before the one being filled end, the lowest of them
     let notesInColumns: number | undefined;
@@ -510,6 +571,13 @@ export const paginate = (
     let sectionSpaceAfter: number | undefined = 0;
     // The column the section starts in: the first, unless it starts in the next column
     let sectionColumn = 0;
+    // What has been placed on the pages, which laying out blocks again takes back, the last page whose footnotes are
+    // placed, the index of the block being placed, and the page the layout stopped on, whose lines might not be Word's
+    // eslint-disable-next-line functional/prefer-readonly-type
+    const placements: Placement[] = [];
+    let finished = 0;
+    let blockIndex = 0;
+    let stoppedOnPage: number | undefined;
 
     /** Whether nothing of the section is placed yet, in the column it starts in or the first of a page */
     const atSectionStart = (): boolean => sectionSpaceAfter !== undefined && (column === 0 || column === sectionColumn);
@@ -539,6 +607,7 @@ export const paginate = (
         columnBroken,
         pageNotes,
         noteArea,
+        notesSection,
         notesInColumns,
         filledEnd,
         continued,
@@ -546,6 +615,8 @@ export const paginate = (
         held,
         spaceAfter,
         sectionSpaceAfter,
+        placed: placements.length,
+        finished,
     });
     // Where the block being laid out started, and where the block started whose text the page's columns start with
     let blockStart: Snapshot | undefined;
@@ -572,6 +643,7 @@ export const paginate = (
             columnBroken,
             pageNotes,
             noteArea,
+            notesSection,
             notesInColumns,
             filledEnd,
             continued,
@@ -579,7 +651,10 @@ export const paginate = (
             held,
             spaceAfter,
             sectionSpaceAfter,
+            finished,
         } = state);
+        // eslint-disable-next-line functional/immutable-data
+        placements.length = Math.min(placements.length, state.placed);
         bottom = columnsBottom();
         noteArea = Math.max(noteArea, reserved());
     };
@@ -596,6 +671,7 @@ export const paginate = (
      * of them on the next page
      */
     const stopOnPage = (reason: string): never => {
+        stoppedOnPage = pageCount;
         for (const [name, page] of markedOn) {
             if (page === pageCount) {
                 // eslint-disable-next-line functional/immutable-data
@@ -632,12 +708,24 @@ export const paginate = (
     /** How much higher the lines of the column being filled end for more footnotes that take this much more room */
     const noteCost = (more: number): number => linesBottom() - linesBottom(more);
 
+    /** Which of a section's headers or footers a page shows: the first page's, an even page's or the default, if it has it */
+    const kindOf = (parts: HeadersOrFooters, isFirst: boolean): keyof HeadersOrFooters | undefined => {
+        const kind = section().titlePage && isFirst ? "first" : evenAndOddHeaders && pageNumber % 2 === 0 ? "even" : "default";
+        return parts[kind] ? kind : undefined;
+    };
+
+    /** A page's number as its section writes it, unless it starts with a chapter number, which isn't known for the page */
+    const pageNumberOf = (current: Section): { readonly pageNumber?: string } => {
+        const text = current.chapters ? undefined : formatPageNumber(pageNumber, current.numberFormat);
+        return text === undefined ? {} : { pageNumber: text };
+    };
+
     const partHeight = (parts: HeadersOrFooters, isFirst: boolean): number => {
-        const current = section();
-        const part = current.titlePage && isFirst ? parts.first : evenAndOddHeaders && pageNumber % 2 === 0 ? parts.even : parts.default;
-        if (!part) {
+        const kind = kindOf(parts, isFirst);
+        if (!kind) {
             return 0;
         }
+        const part = parts[kind]!;
         if (part.some((block) => block.unsupported !== undefined)) {
             throw new Unsupported(part.find((block) => block.unsupported !== undefined)!.unsupported);
         }
@@ -654,12 +742,27 @@ export const paginate = (
             throw new Overflow();
         }
         checkReserve();
+        finishPage();
         const current = section();
         pageNumber = isFirstOfSection && current.firstNumber !== undefined ? current.firstNumber : pageNumber + 1;
         // A header or footer taller than the margin pushes the body away from it, unless the margin is negative
         const headerBottom = current.header + partHeight(current.headers, isFirstOfSection);
         const footerTop = current.footer + partHeight(current.footers, isFirstOfSection);
         pageCount++;
+        const header = kindOf(current.headers, isFirstOfSection);
+        const footer = kindOf(current.footers, isFirstOfSection);
+        // eslint-disable-next-line functional/immutable-data
+        placements.push({
+            type: "page",
+            page: {
+                ...pageNumberOf(current),
+                section: sectionIndex,
+                width: current.pageWidth,
+                height: current.pageHeight,
+                ...(header ? { header } : {}),
+                ...(footer ? { footer } : {}),
+            },
+        });
         top = current.marginTop < 0 ? -current.marginTop : Math.max(current.marginTop, headerBottom);
         pageBottom = current.pageHeight - (current.marginBottom < 0 ? -current.marginBottom : Math.max(current.marginBottom, footerTop));
         position = top;
@@ -677,6 +780,7 @@ export const paginate = (
         continued = carried;
         carried = undefined;
         noteArea = Math.max(areaOf([], undefined, continued), reserved());
+        notesSection = sectionIndex;
         if (continued !== undefined && current.columns.length > 1) {
             throw new Unsupported("a footnote across pages in columns");
         }
@@ -773,15 +877,21 @@ export const paginate = (
         };
         let short = 0;
         let tall = pageBottom - columnTop;
-        while (tall - short > TOLERANCE) {
-            const middle = (short + tall) / 2;
-            if (fitsIn(middle)) {
-                tall = middle;
-            } else {
-                short = middle;
+        try {
+            while (tall - short > TOLERANCE) {
+                const middle = (short + tall) / 2;
+                if (fitsIn(middle)) {
+                    tall = middle;
+                } else {
+                    short = middle;
+                }
             }
+            layOut(tall);
+        } catch (error) {
+            // Where the columns would be isn't known, so what is in them isn't placed
+            restore(from);
+            throw error;
         }
-        layOut(tall);
         balancing = undefined;
         bottom = pageBottom;
         placeBlocks(balanced, end);
@@ -853,11 +963,22 @@ export const paginate = (
             sharingPages.add(before).add(index);
             return;
         }
-        const nextNumber = current.firstNumber ?? pageNumber + 1;
+        // Word goes by the page's number before the section numbers its pages from its own first number: after page 6, it
+        // leaves a blank page before a section that starts on an even page numbered from 2 (word-positions.docx H3). Whether
+        // it goes by the number or by where the page is in the document, which are the same there, isn't known
+        const nextNumber = pageNumber + 1;
         if ((current.start === "evenPage" && nextNumber % 2 !== 0) || (current.start === "oddPage" && nextNumber % 2 === 0)) {
-            // A blank page, so the section starts on an even or odd page, which isn't either section's
+            // A blank page, so the section starts on an even or odd page, which isn't either section's. It has no header
+            // or footer in Word (word-positions.docx H1 and H2)
+            finishPage();
             pageCount++;
             pageNumber++;
+            finished = pageCount;
+            // eslint-disable-next-line functional/immutable-data
+            placements.push({
+                type: "page",
+                page: { ...pageNumberOf(previous), section: before, width: previous.pageWidth, height: previous.pageHeight },
+            });
             // eslint-disable-next-line functional/immutable-data
             sharingPages.add(before).add(index);
         }
@@ -870,7 +991,7 @@ export const paginate = (
      * The height of the tallest of the columns footnotes are laid out in when they fit in columns of a height, or
      * undefined when they don't: one paragraph after the other from the first column, breaking between lines as widow
      * control and keepLines let them, below the separator at the top of each (`separator`, with the space after it,
-     * `separatorAfter`)
+     * `separatorAfter`). Each line placed is given to `place`, with the column it is in and how far down it its top is
      */
     const fillNoteColumns = (
         paragraphs: readonly MeasuredParagraph[],
@@ -878,17 +999,21 @@ export const paginate = (
         separator: number,
         separatorAfter: number | undefined,
         height: number,
+        place: (paragraph: number, line: number, column: number, top: number) => void = () => undefined,
     ): number | undefined => {
         let noteColumn = 0;
         let used = separator;
         let above = separatorAfter;
         let tallest = separator;
-        for (const paragraph of paragraphs) {
+        for (const [at, paragraph] of paragraphs.entries()) {
             let from = 0;
             while (from < paragraph.lines.length) {
                 const space = above === undefined ? 0 : between(above, from === 0 ? paragraph.spaceBefore : 0);
                 const rest = paragraph.lines.slice(from);
                 const placed = linesThatFit(rest, height - used - space, paragraph, from === 0).count;
+                for (const [offset] of rest.slice(0, placed).entries()) {
+                    place(at, from + offset, noteColumn, used + space + linesHeight(rest.slice(0, offset)));
+                }
                 used += placed > 0 ? space + linesHeight(rest.slice(0, placed)) : 0;
                 tallest = Math.max(tallest, used);
                 from += placed;
@@ -907,17 +1032,15 @@ export const paginate = (
     };
 
     /** The blocks of a part of a footnote, each with the first of its lines or rows in the part, and the one after the last */
-    const piecesOf = ({
-        name,
-        from = { block: 0, line: 0 },
-        to,
-    }: NotePart): readonly { readonly block: Block; readonly start: number; readonly end?: number }[] =>
+    const piecesOf = ({ name, from = { block: 0, line: 0 }, to }: NotePart): readonly NotePiece[] =>
         footnotes.get(name)!.flatMap((block, index) =>
             index < from.block || (to !== undefined && (index > to.block || (index === to.block && to.line === 0)))
                 ? []
                 : [
                       {
                           block,
+                          note: name,
+                          index,
                           start: index === from.block ? from.line : 0,
                           end: to !== undefined && index === to.block ? to.line : undefined,
                       },
@@ -925,20 +1048,32 @@ export const paginate = (
         );
 
     /**
-     * The room footnotes take at the bottom of the page: the separator's line above them, the rest of a footnote
-     * continued from the page before (`from`), their blocks, and the first part of one continued on the next page
-     * (`split`), without the space before the first or after the last, as LibreOffice lays them out. In columns
+     * The footnotes at the bottom of the page: the separator's line above them, the rest of a footnote continued from the
+     * page before (`from`), their blocks, and the first part of one continued on the next page (`split`), without the space
+     * before the first or after the last, as LibreOffice lays them out, with the room they take (`area`). In columns
      * (`columns`), Word lays them out in the columns, one after the other from the first, with the separator at the top of
      * each, and evens them out, as it evens out columns before a continuous section break: the room is the tallest, in the
-     * shortest height they fit in (`word-footnotes-in-columns.docx` N2, N4 and N9)
+     * shortest height they fit in (`word-footnotes-in-columns.docx` N2, N4 and N9), and `fillColumns` says where each of
+     * their lines goes then. Across the page, they are as wide as its text (`fullWidth`)
      */
-    const areaOf = (notes: readonly string[], split: NotePart | undefined, from: NotePart | undefined, columns = noteColumns()): number => {
-        if (notes.length === 0 && split === undefined && from === undefined) {
-            return 0;
-        }
+    const noteStack = (
+        notes: readonly string[],
+        split: NotePart | undefined,
+        from: NotePart | undefined,
+        columns = noteColumns(),
+        fullWidth = textWidth(),
+    ): {
+        readonly pieces: readonly NotePiece[];
+        readonly parts: readonly StackPart[];
+        readonly separatorCount: number;
+        readonly width: number;
+        readonly area: number;
+        readonly measured: (piece: NotePiece, index: number) => MeasuredParagraph;
+        readonly fillColumns?: (place: (paragraph: number, line: number, column: number, top: number) => void) => void;
+    } => {
         const separator = from === undefined ? footnoteSeparator : footnoteContinuationSeparator;
         const pieces = [
-            ...separator.map((block) => ({ block, start: 0, end: undefined })),
+            ...separator.map((block, index): NotePiece => ({ block, index, start: 0, end: undefined })),
             ...(from === undefined ? [] : piecesOf(from)),
             ...notes.flatMap((name) => piecesOf({ name })),
             ...(split === undefined ? [] : piecesOf(split)),
@@ -951,11 +1086,14 @@ export const paginate = (
             // Word has only been seen to lay out footnotes in columns of the same width
             stopOnPage("footnotes in columns of different widths");
         }
-        const width = columns?.[0] ?? textWidth();
+        const width = columns?.[0] ?? fullWidth;
         /** A piece's paragraph, with only its lines in the piece, or its table's rows as a line that doesn't break */
-        const measured = ({ block, start, end }: (typeof pieces)[number], index: number): MeasuredParagraph => {
+        const measured = ({ block, start, end }: NotePiece, index: number): MeasuredParagraph => {
             if (block.type === "table") {
-                return { ...UNBROKEN, lines: [{ height: sum(rowHeights(sizedToPlace(block, width)).slice(start, end)), markers: [] }] };
+                return {
+                    ...UNBROKEN,
+                    lines: [{ height: sum(rowHeights(sizedToPlace(block, width)).slice(start, end)), markers: [], text: "", textWidth: 0 }],
+                };
             }
             const paragraph = measureParagraph(block, width, pieces[index - 1]?.block, pieces[index + 1]?.block);
             return { ...paragraph, lines: paragraph.lines.slice(start, end) };
@@ -965,14 +1103,17 @@ export const paginate = (
             const { lines, spaceBefore, spaceAfter: after } = measured(piece, index);
             return { height: linesHeight(lines), before: from !== undefined && index === separator.length ? 0 : spaceBefore, after };
         });
+        const stack = { pieces, parts, separatorCount: separator.length, width, measured };
         if (columns !== undefined) {
             // The rest of a footnote continued from the page before isn't laid out in columns: the layout stops there
             const separatorParts = parts.slice(0, separator.length);
             const paragraphs = pieces.slice(separator.length).map((piece, index) => measured(piece, separator.length + index));
             const separatorHeight = heightOf(separatorParts, false);
             const separatorAfter = separatorParts[separatorParts.length - 1]?.after;
-            const fill = (height: number): number | undefined =>
-                fillNoteColumns(paragraphs, columns.length, separatorHeight, separatorAfter, height);
+            const fill = (
+                height: number,
+                place?: (paragraph: number, line: number, column: number, top: number) => void,
+            ): number | undefined => fillNoteColumns(paragraphs, columns.length, separatorHeight, separatorAfter, height, place);
             let short = separatorHeight;
             let tall = fill(Infinity)!;
             while (tall - short > TOLERANCE) {
@@ -983,9 +1124,133 @@ export const paginate = (
                     tall = middle;
                 }
             }
-            return fill(tall)!;
+            return { ...stack, area: fill(tall)!, fillColumns: (place) => void fill(tall, place) };
         }
-        return heightOf(parts, false);
+        return { ...stack, area: heightOf(parts, false) };
+    };
+
+    /** The room footnotes take at the bottom of the page, as {@link noteStack} lays them out */
+    const areaOf = (notes: readonly string[], split: NotePart | undefined, from: NotePart | undefined, columns = noteColumns()): number =>
+        notes.length === 0 && split === undefined && from === undefined ? 0 : noteStack(notes, split, from, columns).area;
+
+    /** Where a section's text, or one of its columns, starts across the page, in points from its left edge */
+    const columnLeft = (current: Section, index: number): number => {
+        const { columns } = current;
+        const space = columns.length > 1 ? (textWidth(current) - sum(columns)) / (columns.length - 1) : 0;
+        return current.marginLeft + current.gutter + sum(columns.slice(0, index)) + index * space;
+    };
+
+    /**
+     * A line placed with its top at a height (`y`), in the room between its paragraph's indents in a width that starts at
+     * `left`: a column, or the page's text. The first line of a paragraph starts at its first line indent
+     */
+    const placedLine = (
+        line: LaidOutLine,
+        { indentLeft = 0, indentRight = 0, firstLineIndent = 0 }: ParagraphFormat,
+        isFirst: boolean,
+        left: number,
+        width: number,
+        y: number,
+    ): LineLayout => {
+        const indent = indentLeft + (isFirst ? firstLineIndent : 0);
+        return {
+            text: line.text,
+            x: left + indent,
+            y,
+            width: width - indent - indentRight,
+            height: line.height,
+            textWidth: line.textWidth,
+        };
+    };
+
+    /**
+     * The footnotes at the bottom of the page, with where their lines and rows are: across the page, in the width of the
+     * text of the section they were laid out in, or in the columns of the section whose columns they are laid out in. The last of them is cut
+     * where it continues on the next page, and the rest of one continued from the page before is only as much of it as
+     * fits, when the page is all footnote
+     */
+    const footnotesOnPage = (): readonly NoteLayout[] => {
+        if (pageNotes.length === 0 && continued === undefined) {
+            return [];
+        }
+        // The width the page's footnotes were laid out in when the room for them was worked out
+        const current = sections[notesSection];
+        const split =
+            carried !== undefined && pageNotes[pageNotes.length - 1] === carried.name
+                ? { name: carried.name, to: carried.from }
+                : undefined;
+        const from = continued && { ...continued, ...(carried !== undefined && split === undefined ? { to: carried.from } : {}) };
+        const columns = noteColumns();
+        const stack = noteStack(split ? pageNotes.slice(0, -1) : pageNotes, split, from, columns, textWidth(current));
+        const notesTop = pageBottom - stack.area;
+        /** A piece's lines, from its first in it, each at a height, in a column, or its table's rows from a height */
+        const blockAt = (
+            piece: NotePiece,
+            index: number,
+            at: readonly { readonly line: number; readonly left: number; readonly y: number }[],
+        ): BlockLayout => {
+            const { block, start, end } = piece;
+            if (block.type === "table") {
+                const heights = rowHeights(sizedToPlace(block, stack.width)).slice(start, end);
+                return {
+                    type: "table",
+                    index: piece.index,
+                    rows: heights.map((height, row) => ({ index: start + row, y: at[0].y + sum(heights.slice(0, row)), height })),
+                };
+            }
+            const { lines } = stack.measured(piece, index);
+            return {
+                type: "paragraph",
+                index: piece.index,
+                lines: at.map(({ line, left, y }) => placedLine(lines[line], block.format, start + line === 0, left, stack.width, y)),
+            };
+        };
+        // eslint-disable-next-line functional/prefer-readonly-type
+        const placed: { readonly line: number; readonly left: number; readonly y: number }[][] = stack.pieces.map(() => []);
+        if (stack.fillColumns !== undefined) {
+            const noteSection = sections[notesInColumns!];
+            stack.fillColumns((paragraph, line, noteColumn, offset) => {
+                // eslint-disable-next-line functional/immutable-data
+                placed[stack.separatorCount + paragraph].push({ line, left: columnLeft(noteSection, noteColumn), y: notesTop + offset });
+            });
+        } else {
+            let y = notesTop;
+            for (const [index, piece] of stack.pieces.entries()) {
+                y += index === 0 ? 0 : stack.parts[index - 1].height + between(stack.parts[index - 1].after, stack.parts[index].before);
+                const { lines } = stack.measured(piece, index);
+                for (const [line] of lines.entries()) {
+                    // eslint-disable-next-line functional/immutable-data
+                    placed[index].push({ line, left: columnLeft(current, 0), y: y + linesHeight(lines.slice(0, line)) });
+                }
+            }
+        }
+        return groupedNotes(
+            stack.pieces.flatMap((piece, index) =>
+                piece.note === undefined || placed[index].length === 0
+                    ? []
+                    : [{ note: piece.note, block: blockAt(piece, index, placed[index]) }],
+            ),
+            footnoteNumbers,
+        );
+    };
+
+    /** Places the footnotes at the bottom of the page when it is full, once */
+    const finishPage = (): void => {
+        if (finished === pageCount) {
+            return;
+        }
+        finished = pageCount;
+        const notes = footnotesOnPage();
+        if (notes.length > 0) {
+            // eslint-disable-next-line functional/immutable-data
+            placements.push({ type: "footnotes", notes });
+        }
+    };
+
+    /** Places a row of the table being placed, or the part of it on the page */
+    const placeRow = (index: number, y: number, height: number): void => {
+        // eslint-disable-next-line functional/immutable-data
+        placements.push({ type: "row", block: blockIndex, row: { index, y, height } });
     };
 
     const notesIn = (markers: readonly string[]): readonly string[] => markers.filter((name) => footnotes.has(name));
@@ -1019,6 +1284,7 @@ export const paginate = (
             }
             pageNotes = [...pageNotes, ...notes];
             noteArea = pageArea(pageNotes);
+            notesSection = sectionIndex;
             // Only when they take more room than was kept for them, as a line that doesn't fit in a column at all can still
             // go down further
             if (noteArea > reserved() + TOLERANCE && filledEnd > pageBottom - noteArea + TOLERANCE) {
@@ -1172,6 +1438,7 @@ export const paginate = (
         );
         pageNotes = [...whole, name];
         noteArea = bottom - position - below;
+        notesSection = sectionIndex;
         carried = { name, from: to };
     };
 
@@ -1321,8 +1588,22 @@ export const paginate = (
             }
             if (count > 0) {
                 position += space;
-                for (const line of remaining.slice(0, count)) {
+                const current = section();
+                for (const [offset, line] of remaining.slice(0, count).entries()) {
                     mark(line.markers);
+                    // eslint-disable-next-line functional/immutable-data
+                    placements.push({
+                        type: "line",
+                        block: blockIndex,
+                        line: placedLine(
+                            line,
+                            block.format,
+                            index + offset === 0,
+                            columnLeft(current, column),
+                            current.columns[column],
+                            position,
+                        ),
+                    });
                     position += line.height;
                 }
                 // The space after the paragraph before is above these lines now, and this one's comes at its end
@@ -1410,14 +1691,24 @@ export const paginate = (
      * @param breakBorder - The border below the row on a page where the table breaks: the table's bottom border, which the
      * last row has counted already
      */
-    const splitRow = (row: TableRow, height: number, breakBorder: number, startTablePage: () => void): void => {
+    const splitRow = (row: TableRow, rowIndex: number, height: number, breakBorder: number, startTablePage: () => void): void => {
         // A table in a cell is measured as a line that doesn't break, which is enough to tell whether the row breaks
         let parts = row.cells.map((cell): readonly CellParagraph[] =>
             cell.blocks.map((block, index) => ({
                 paragraph:
                     block.type === "paragraph"
                         ? measureParagraph(block, cell.width, cell.blocks[index - 1], cell.blocks[index + 1])
-                        : { ...UNBROKEN, lines: [{ height: sum(rowHeights(sizedToPlace(block, cell.width))), markers: markersOf(block) }] },
+                        : {
+                              ...UNBROKEN,
+                              lines: [
+                                  {
+                                      height: sum(rowHeights(sizedToPlace(block, cell.width))),
+                                      markers: markersOf(block),
+                                      text: "",
+                                      textWidth: 0,
+                                  },
+                              ],
+                          },
                 from: 0,
             })),
         );
@@ -1531,9 +1822,11 @@ export const paginate = (
                 mark(filled.flatMap(({ lines }) => lines.flatMap(({ markers }) => markers)));
                 // A row that moved to the next page whole is as tall there as it is anywhere. The part of a row on this page or
                 // in this column, which columns being balanced end below, has the table's bottom border below it
-                position += isLastPart
+                const rowPart = isLastPart
                     ? (isFirstPart ? height - borders : tallestOf(filled)) + borders
                     : tallestOf(filled) + borders + breakBorder;
+                placeRow(rowIndex, position, rowPart);
+                position += rowPart;
                 // Its footnotes go below it, and one that continues takes the rest of the page, below the table's bottom
                 // border when the table breaks after it
                 placeNotes(notes, isLastPart ? breakBorder : 0);
@@ -1574,6 +1867,10 @@ export const paginate = (
                 throw new Unsupported("a table sized to its text that goes on into a narrower column");
             }
             if (index >= headerRows) {
+                heights.slice(0, Math.max(0, headerRows)).reduce((y, rowHeight, row) => {
+                    placeRow(row, y, rowHeight);
+                    return y + rowHeight;
+                }, position);
                 position += repeated;
             }
         };
@@ -1621,7 +1918,7 @@ export const paginate = (
                 }
             }
             if (!rowFits(roomNeeded, notes) && !keptWhole) {
-                splitRow(row, height, breakBorder, () => startTablePage(index));
+                splitRow(row, index, height, breakBorder, () => startTablePage(index));
                 continue;
             }
             if (!rowStays(roomNeeded, notes)) {
@@ -1633,6 +1930,7 @@ export const paginate = (
                 );
             }
             mark(markers);
+            placeRow(index, position, height);
             position += height;
             // Its footnotes go below it, and one that continues takes the rest of the page, below the table's bottom border
             // when the table breaks after it
@@ -1711,6 +2009,7 @@ export const paginate = (
     };
 
     const placeBlock = (block: Block, index: number): void => {
+        blockIndex = index;
         if (block.unsupported) {
             throw new Unsupported(block.unsupported);
         }
@@ -1826,6 +2125,45 @@ export const paginate = (
         }
     };
 
+    /** The number and index of the endnote each of the endnotes' blocks is in, or nothing for those of their separator */
+    const endnoteParts = endnotes.map((block, index) => {
+        const noteNumber = endnoteNumbers.get(block);
+        return noteNumber === undefined
+            ? undefined
+            : { noteNumber, index: endnotes.slice(0, index).filter((other) => endnoteNumbers.get(other) === noteNumber).length };
+    });
+
+    /**
+     * The pages, from what was placed on them. The blocks after the body's are its endnotes'. The page the layout stopped
+     * on because Word might lay it out differently has nothing on it
+     */
+    const pagesOf = (): readonly PageLayout[] => {
+        const starts = placements.flatMap((placement, index) => (placement.type === "page" ? [index] : []));
+        return starts.map((start, page) => {
+            const placed = page + 1 === stoppedOnPage ? [] : placements.slice(start + 1, starts[page + 1]);
+            const pieces = placed.filter((placement): placement is BlockPlacement => placement.type === "line" || placement.type === "row");
+            const endnotePieces = pieces.flatMap((piece) => {
+                const note = endnoteParts[piece.block - content.blocks.length];
+                return note === undefined ? [] : [{ ...note, piece }];
+            });
+            const notes = endnotePieces.reduce<readonly { readonly noteNumber: string; readonly pieces: readonly BlockPiece[] }[]>(
+                (all, { noteNumber, index, piece }) => {
+                    const last = all[all.length - 1];
+                    return last?.noteNumber === noteNumber
+                        ? [...all.slice(0, -1), { noteNumber, pieces: [...last.pieces, { index, piece }] }]
+                        : [...all, { noteNumber, pieces: [{ index, piece }] }];
+                },
+                [],
+            );
+            return {
+                ...(placements[start] as Extract<Placement, { readonly type: "page" }>).page,
+                body: blocksOf(pieces.filter(({ block }) => block < content.blocks.length).map((piece) => ({ index: piece.block, piece }))),
+                footnotes: placed.flatMap((placement) => (placement.type === "footnotes" ? placement.notes : [])),
+                endnotes: notes.map(({ noteNumber, pieces: notePieces }) => ({ noteNumber, content: blocksOf(notePieces) })),
+            };
+        });
+    };
+
     /** The number of pages of each section whose pages are its alone, and that was laid out to its end */
     const countsOf = (): readonly (number | undefined)[] =>
         sections.map((_, index) => {
@@ -1852,9 +2190,11 @@ export const paginate = (
         if (!(error instanceof Unsupported)) {
             throw error;
         }
-        return { bookmarks, pageCount, sectionPageCounts: countsOf(), stoppedAt: error.message };
+        finishPage();
+        return { bookmarks, pageCount, sectionPageCounts: countsOf(), stoppedAt: error.message, pages: pagesOf() };
     }
+    finishPage();
     // eslint-disable-next-line functional/immutable-data
     lastPages.set(sectionIndex, pageCount);
-    return { bookmarks, pageCount, sectionPageCounts: countsOf() };
+    return { bookmarks, pageCount, sectionPageCounts: countsOf(), pages: pagesOf() };
 };

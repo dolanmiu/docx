@@ -10,16 +10,18 @@ Without it, their page numbers are blank until Word updates the fields, because 
 
 It is opt-in. The page numbers are estimates: Word still works them out again when it updates the fields, such as when the reader updates the table.
 
+It can also give what is on each page, with [`layoutDocument`](#what-is-on-each-page): the lines of each paragraph, with their text and where they are, the rows of tables, the footnotes and endnotes, and which header and footer each page shows.
+
 ## Importing
 
 Layout comes with the `docx` package. Import it from `docx/layout`, and everything else from `docx`:
 
 ```ts
 import { Document, TableOfContents } from "docx";
-import { estimatePageNumbers } from "docx/layout";
+import { estimatePageNumbers, layoutDocument } from "docx/layout";
 ```
 
-In a page without a bundler, load `dist/layout.umd.cjs` after `dist/index.umd.cjs` (or `dist/layout.iife.js` after `dist/index.iife.js`). It adds a `docxLayout` global, such as `docxLayout.estimatePageNumbers`.
+In a page without a bundler, load `dist/layout.umd.cjs` after `dist/index.umd.cjs` (or `dist/layout.iife.js` after `dist/index.iife.js`). It adds a `docxLayout` global, such as `docxLayout.estimatePageNumbers` and `docxLayout.layoutDocument`.
 
 ## Example
 
@@ -99,6 +101,77 @@ const doc = await patchDocument({
 The template is read as Word saved it, with its styles, theme, lists, settings, headers, footers and notes, and the numbers are written into its tables of contents, page references and numbers of pages, in its text, headers and footers. The numbers a template was saved with are those of the template before it was filled in, so one that `docx/layout` can't work out, after something it can't lay out, is left blank rather than kept. Its page references and tables of contents are written clean, as a document's are, so Word shows them as they are (see [Opening the document in Word](#opening-the-document-in-word)). What `estimatePageNumbersWith` returns works the same way.
 
 `patchDocument` doesn't add entries to a table of contents for the headings patches add. Word adds them when it updates the table.
+
+## What is on each page
+
+`layoutDocument` lays out a document's pages as `estimatePageNumbers` does, and gives what is on each of them:
+
+```ts
+import { Document, Paragraph } from "docx";
+import { layoutDocument } from "docx/layout";
+
+const doc = new Document({ sections: [{ children: [new Paragraph("The harbour was rebuilt after the storm.")] }] });
+
+const { pages, stoppedAt } = layoutDocument(doc);
+for (const page of pages) {
+    for (const block of page.body) {
+        if (block.type === "paragraph") {
+            for (const line of block.lines) {
+                console.log(`Page ${page.pageNumber}: "${line.text}", ${line.y} pixels down`);
+            }
+        }
+    }
+}
+if (stoppedAt) {
+    console.log(`Laid out up to ${stoppedAt}`);
+}
+```
+
+Lengths are in pixels, 96 to the inch, from the top left corner of the page. The page numbers of tables of contents and page references are laid out as `estimatePageNumbers` writes them, whether or not the document is given it.
+
+The layout of the document, `DocumentLayout`:
+
+| Property    | Type                    | What it is                                                                                                                                                  |
+| ----------- | ----------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `pages`     | `readonly PageLayout[]` | The pages, in order                                                                                                                                         |
+| `stoppedAt` | `string` or `undefined` | What the layout [stopped at](#what-it-leaves-blank), such as `"a text box"`. The pages are those up to there, the last of them with what was laid out on it |
+
+Each page, `PageLayout`:
+
+| Property     | Type                                          | What it is                                                                                                                                                                                                           |
+| ------------ | --------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `pageNumber` | `string` or none                              | The page's number, as the page shows it, such as `"3"` or `"iv"`. None when Word's isn't known: when the section's page numbers start with a chapter number                                                          |
+| `section`    | `number`                                      | The section the page starts in, counted from 0                                                                                                                                                                       |
+| `width`      | `number`                                      | The width of the page                                                                                                                                                                                                |
+| `height`     | `number`                                      | The height of the page                                                                                                                                                                                               |
+| `header`     | `"default"`, `"first"`, `"even"` or none      | Which of the section's [headers](usage/headers-and-footers.md) the page shows, by the name the section's `headers` give it. A section without one of them shows the one of the section before. None when it has none |
+| `footer`     | `"default"`, `"first"`, `"even"` or none      | Which of the section's footers the page shows, in the same way                                                                                                                                                       |
+| `body`       | `readonly (ParagraphLayout \| TableLayout)[]` | The paragraphs and tables of the body on the page, or the parts of them on it, in order                                                                                                                              |
+| `footnotes`  | `readonly NoteLayout[]`                       | The footnotes at the bottom of the page, in order. The rest of one that goes on from the page before comes first                                                                                                     |
+| `endnotes`   | `readonly NoteLayout[]`                       | The endnotes on the page, which follow the body                                                                                                                                                                      |
+
+A paragraph, `ParagraphLayout`, is `{ type: "paragraph", index, lines }`, and a table, `TableLayout`, is `{ type: "table", index, rows }`. `index` is where it is among the paragraphs and tables of the body, or of its footnote or endnote, counted from 0, so a paragraph on two pages has the same `index` on both. It counts each paragraph docx writes, such as the entries of a table of contents, and the empty paragraph it writes at the end of each section but the last, which takes no room, so it isn't on any page.
+
+Each line, `LineLayout`:
+
+| Property    | Type     | What it is                                                                                                                                  |
+| ----------- | -------- | ------------------------------------------------------------------------------------------------------------------------------------------- |
+| `text`      | `string` | The text on the line, with the spaces where it wraps and a tab as `\t`. The texts of a paragraph's lines, one after the other, are its text |
+| `x`         | `number` | Where the room for the line starts across the page: the left of its column, or of the page's text, and the paragraph's indent               |
+| `y`         | `number` | Where the top of the line is down the page                                                                                                  |
+| `width`     | `number` | How wide the room for the line is, between the paragraph's indents                                                                          |
+| `height`    | `number` | How tall the line is, with the paragraph's line spacing                                                                                     |
+| `textWidth` | `number` | How far its text goes from `x`, without the spaces at its end                                                                               |
+
+The text is lined up in the line's room as the paragraph's alignment says, so it starts at `x` when it is aligned to the left, `(width - textWidth) / 2` further on when it is centred, and `width - textWidth` further on when it is aligned to the right. Justified lines but the last fill it.
+
+Each row of a table, or the part of a row on the page when it breaks across pages, `RowLayout`, is `{ index, y, height }`: which of the table's rows it is, counted from 0, the top of the row, and its height, with its borders. A table's header rows are repeated at the top of each page it goes on to.
+
+A footnote or endnote, `NoteLayout`, is `{ noteNumber, content }`: its number, as its reference shows it, such as `"1"` or `"iv"`, and its paragraphs and tables on the page.
+
+A blank page that Word adds so a section starts on an odd or even page has nothing on it, and no header or footer, as Word prints it.
+
+`layoutDocument` doesn't give the lines in table cells, in headers and footers, or where tables are across the page, yet. Each line is where Word puts it, to within a few twentieths of a point.
 
 ## What it follows
 
