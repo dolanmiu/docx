@@ -76,6 +76,14 @@ describe("layOutPasses", () => {
             ["a font not in the width tables", "page numbers that move when the pages are laid out with them"],
             undefined,
         ]);
+        // Alone on its page
+        expect(
+            layOutPasses(
+                content,
+                measurerOf((text) => (text === "1" ? 1000 : text.length)),
+                true,
+            ).pages.map(({ guesses }) => guesses),
+        ).to.deep.equal([["page numbers that move when the pages are laid out with them"]]);
         // Numbers that settle are no guess
         const settled = layOutPasses(
             withStart,

@@ -382,3 +382,20 @@ On 2026-10-02 it put every line on Word's page in `keeping-text-together`, `sect
 Word's PDFs of them. In `tables-across-pages`, docx/layout leaves the header row of survey 9's table alone at the bottom
 of page 14, as the table's first row, set to a height taller than the room left, goes on to page 15, and Word moves the
 header row to page 15 with it.
+
+`guess-lines.ts` checks how near docx/layout's best guess comes to Word past where it would stop: it lays out a document
+saved from Word without a guess and with one (`estimatePageNumbersWith({ guess: true })`), prints what it guessed at on
+each page and how many pages each layout and Word's PDF have, and finds each line from the first page it guessed on among
+Word's lines, as `demo-lines.ts` does:
+
+```bash
+pdftotext -bbox-layout scripts/layout-probes/word-watertight-pages.pdf build/word-probes/word-watertight-pages.html
+npm run run-ts -- scripts/layout-probes/guess-lines.ts scripts/layout-probes/word-watertight-pages.docx build/word-probes/word-watertight-pages.html
+```
+
+On 2026-10-02, of the documents here that stop without a guess, `word-watertight-pages` (a date measured as it is
+written) had 91 of the 91 lines found on Word's page from the guess on, `word-mixed-heights` (a font not in the width
+tables measured as Arial) 420 of 420, `word-hidden-paragraphs` 87 of 87, and `word-paragraph-formats` 460 of 460, each with
+as many pages as Word's PDF. Guesses at many characters whose widths aren't known, as in `word-character-widths` and
+`word-italic-widths`, and at page numbers in formats not yet written, as in `word-page-number-formats`, which Word writes as
+error messages, end a few pages short of Word's.

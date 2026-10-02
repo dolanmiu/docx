@@ -5892,7 +5892,7 @@ describe("paginate with automatic hyphenation", () => {
         });
 
         it("should measure a character whose width the measurer doesn't know as it measures it", () => {
-            const CHARACTERS: TextMeasurer = { ...MEASURER, unknownCharacter: (text) => (text.includes("∑") ? "∑" : undefined) };
+            const CHARACTERS: TextMeasurer = { ...MEASURER, unknownCharacter: (value) => (value.includes("∑") ? "∑" : undefined) };
             const content = document([withItems(paragraph("a", 1), [{ type: "text", text: " ∑", font: {} }]), paragraph("b", 1)]);
             expect(numbersOf(content, CHARACTERS).stoppedAt).to.equal("a character whose width in its font isn't known");
             expect(guessed(content, CHARACTERS)).to.deep.equal({

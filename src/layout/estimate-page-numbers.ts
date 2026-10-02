@@ -81,7 +81,9 @@ const estimateWith = (content: DocumentContent | undefined, measurer: TextMeasur
  * of Word's own the layout doesn't know, on or off. The schema's other settings, which ask for an older Word's or
  * another application's layout, Word lays out lines with as without them, and settings for other applications are left
  * to them. When laying the pages out again with the page numbers it worked out still changes them after three passes,
- * as when a table of contents wraps one way with a number and the other way without it, all of them are left blank.
+ * as when a table of contents wraps one way with a number and the other way without it, all of them are left blank. To
+ * lay out past what it stops at with the best guess it has instead, give the document
+ * `estimatePageNumbersWith({ guess: true })`.
  *
  * Page references are written as Word writes them, with `\p` ("above", "below" or "on page 4") and in formats of their
  * own, such as `\* roman`, and so are numbers of pages. Page references, tables of contents and SEQ fields (caption

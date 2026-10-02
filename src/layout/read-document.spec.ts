@@ -4310,6 +4310,14 @@ describe("readDocument", () => {
                 { type: "text", text: "*", font: {} },
             ]);
             expect(content.footnotes.has("footnote 1")).to.equal(true);
+            // One in hidden text isn't laid out, as a hidden reference isn't
+            const hidden = guessed(
+                [p(r(rPr({ "w:vanish": {} }), { "w:footnoteReference": { _attr: { "w:id": 1, "w:customMarkFollows": 1 } } }))],
+                {
+                    footnotes: { 1: { children: [new Paragraph("One")] } },
+                },
+            );
+            expect(paragraphOf(hidden)).to.deep.include({ items: [], unsupported: "a footnote or endnote with a mark of its own" });
             // And a soft hyphen in a table whose columns Word sizes to their text
             const table = guessed([{ "w:tbl": [{ "w:tr": [{ "w:tc": [p(r(t("a"), { "w:softHyphen": {} }, t("b")))] }] }] }]);
             expect(table.blocks[0].block.unsupported).to.equal("a soft hyphen in a table whose columns Word sizes to their text");
