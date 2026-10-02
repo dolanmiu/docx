@@ -5386,6 +5386,163 @@ var docxShapes = (function(exports, docx) {
 	];
 	var CHARACTER_INDEX = new Map([...FONT_WIDTH_CHARACTERS].map((character, index) => [character.codePointAt(0), index]));
 	var AVERAGE_LETTER_INDEXES = [..."abcdefghijklmnopqrstuvwxyz"].map((letter) => CHARACTER_INDEX.get(letter.codePointAt(0)));
+	var EAST_ASIAN_FONTS = [
+		{
+			name: "MS Mincho",
+			aliases: ["ＭＳ 明朝", "MS 明朝"],
+			lineHeight: 1297,
+			monospaced: true,
+			latin: "Times New Roman"
+		},
+		{
+			name: "MS Gothic",
+			aliases: ["ＭＳ ゴシック", "MS ゴシック"],
+			lineHeight: 1297,
+			monospaced: true,
+			latin: "Arial"
+		},
+		{
+			name: "MS PMincho",
+			aliases: ["ＭＳ Ｐ明朝", "MS P明朝"],
+			lineHeight: 1297,
+			latin: "Times New Roman"
+		},
+		{
+			name: "MS PGothic",
+			aliases: ["ＭＳ Ｐゴシック", "MS Pゴシック"],
+			lineHeight: 1297,
+			latin: "Arial"
+		},
+		{
+			name: "Yu Mincho",
+			aliases: ["游明朝"],
+			lineHeight: 1433,
+			latin: "Times New Roman"
+		},
+		{
+			name: "Yu Gothic",
+			aliases: [
+				"游ゴシック",
+				"游ゴシック Light",
+				"Yu Gothic Light"
+			],
+			lineHeight: 1434,
+			latin: "Arial"
+		},
+		{
+			name: "Meiryo",
+			aliases: ["メイリオ"],
+			lineHeight: 1950,
+			latin: "Arial"
+		},
+		{
+			name: "SimSun",
+			aliases: ["宋体"],
+			lineHeight: 1297,
+			monospaced: true,
+			latin: "Times New Roman"
+		},
+		{
+			name: "NSimSun",
+			aliases: ["新宋体"],
+			lineHeight: 1296,
+			monospaced: true,
+			latin: "Times New Roman"
+		},
+		{
+			name: "SimHei",
+			aliases: ["黑体"],
+			lineHeight: 1297,
+			monospaced: true,
+			latin: "Arial"
+		},
+		{
+			name: "KaiTi",
+			aliases: ["楷体"],
+			lineHeight: 1297,
+			monospaced: true,
+			latin: "Times New Roman"
+		},
+		{
+			name: "FangSong",
+			aliases: ["仿宋"],
+			lineHeight: 1297,
+			monospaced: true,
+			latin: "Times New Roman"
+		},
+		{
+			name: "Microsoft YaHei",
+			aliases: ["微软雅黑"],
+			lineHeight: 1714,
+			latin: "Arial"
+		},
+		{
+			name: "DengXian",
+			aliases: [
+				"等线",
+				"等线 Light",
+				"DengXian Light"
+			],
+			lineHeight: 1354,
+			latin: "Arial"
+		},
+		{
+			name: "PMingLiU",
+			aliases: ["新細明體"],
+			lineHeight: 1300,
+			latin: "Times New Roman"
+		},
+		{
+			name: "MingLiU",
+			aliases: ["細明體"],
+			lineHeight: 1301,
+			monospaced: true,
+			latin: "Times New Roman"
+		},
+		{
+			name: "Microsoft JhengHei",
+			aliases: ["微軟正黑體"],
+			lineHeight: 1730,
+			latin: "Arial"
+		},
+		{
+			name: "Malgun Gothic",
+			aliases: ["맑은 고딕"],
+			lineHeight: 1730,
+			latin: "Arial"
+		},
+		{
+			name: "Batang",
+			aliases: ["바탕"],
+			lineHeight: 1300,
+			latin: "Times New Roman"
+		},
+		{
+			name: "Gulim",
+			aliases: ["굴림"],
+			lineHeight: 1301,
+			latin: "Arial"
+		},
+		{
+			name: "Dotum",
+			aliases: ["돋움"],
+			lineHeight: 1301,
+			latin: "Arial"
+		}
+	];
+	var EAST_ASIAN_NAME = /[\u3040-\u30ff\u3400-\u9fff\uac00-\ud7af]|hiragino|cjk|source han|pingfang|songti|heiti|kaiti|fangsong|mincho|mingliu|simhei|gungsuh|nanum/i;
+	var EAST_ASIAN_SANS = /gothic|ゴシック|hei|黑|黒|sans|고딕|pingfang/i;
+	/**
+	* The East Asian font a font is, or is measured as, by its name. Undefined for other fonts.
+	*/
+	var eastAsianFontOf = (font) => {
+		const name = font.toLowerCase();
+		const known = EAST_ASIAN_FONTS.find((candidate) => [candidate.name, ...candidate.aliases].some((alias) => alias.toLowerCase() === name));
+		const similar = EAST_ASIAN_SANS.test(font) ? "MS Gothic" : "MS Mincho";
+		return known !== null && known !== void 0 ? known : EAST_ASIAN_NAME.test(font) ? EAST_ASIAN_FONTS.find((candidate) => candidate.name === similar) : void 0;
+	};
+	/** Whether a font is one for Chinese, Japanese or Korean text */
+	var isEastAsianFont = (font) => font !== void 0 && eastAsianFontOf(font) !== void 0;
 	/**
 	* The widths to measure a font with: its own, or those of the most similar font in the table.
 	* Sans-serif fonts that aren't in the table, such as Aptos and Helvetica, are measured as Arial.
@@ -5397,15 +5554,29 @@ var docxShapes = (function(exports, docx) {
 		return (_named = named(font)) !== null && _named !== void 0 ? _named : named(similar ? similar[1] : "Arial");
 	};
 	var isWide = (code) => code >= 4352 && code <= 4447 || code >= 11904 && code <= 42191 || code >= 44032 && code <= 55203 || code >= 63744 && code <= 64255 || code >= 65072 && code <= 65103 || code >= 65280 && code <= 65376 || code >= 65504 && code <= 65510 || code >= 127744;
+	var isHalfWidth = (code) => code >= 65377 && code <= 65500;
+	var takesNoRoom = (character) => new RegExp("[\\p{Mn}\\p{Me}\\p{Cf}]", "u").test(character);
 	/**
 	* The width of a character in thousandths of an em. Characters that aren't in the table are as wide as an average
-	* lowercase letter, or a whole em for wide characters, and combining accents take no space.
+	* lowercase letter, a whole em for wide characters and half an em for half-width ones, and marks take no space.
 	*/
-	var characterWidth = (widths, code) => {
+	var characterWidth = (widths, character) => {
+		const code = character.codePointAt(0);
 		const index = CHARACTER_INDEX.get(code);
 		if (index !== void 0) return widths[index];
 		if (isWide(code)) return 1e3;
-		return code >= 768 && code <= 879 ? 0 : AVERAGE_LETTER_INDEXES.reduce((total, letter) => total + widths[letter], 0) / AVERAGE_LETTER_INDEXES.length;
+		if (isHalfWidth(code)) return 500;
+		return takesNoRoom(character) ? 0 : AVERAGE_LETTER_INDEXES.reduce((total, letter) => total + widths[letter], 0) / AVERAGE_LETTER_INDEXES.length;
+	};
+	var FULL_WIDTH_SYMBOLS = /* @__PURE__ */ new Set([..."§¨°±´¶×÷‐―‖‘’“”†‡‥…‰′″※℃Å"]);
+	/**
+	* The width of a character of a monospaced East Asian font, in thousandths of an em: an em for ideographs and the symbols
+	* of Japanese and Chinese, and half an em for the rest.
+	*/
+	var monospacedWidth = (character) => {
+		const code = character.codePointAt(0);
+		if (takesNoRoom(character)) return 0;
+		return isWide(code) || FULL_WIDTH_SYMBOLS.has(character) || code >= 8592 && code <= 9983 ? 1e3 : 500;
 	};
 	var sizeOf = ({ size = 10 }) => size;
 	/**
@@ -5414,16 +5585,22 @@ var docxShapes = (function(exports, docx) {
 	* @param start - Where the text starts on its line, in points
 	*/
 	var measureTextWidth = (text, font = {}, start = 0) => {
-		const { regular, bold } = widthsOf(font.font);
+		var _font$font, _eastAsian$latin;
+		const eastAsian = eastAsianFontOf((_font$font = font.font) !== null && _font$font !== void 0 ? _font$font : DEFAULT_FONT);
+		const { regular, bold } = widthsOf((_eastAsian$latin = eastAsian === null || eastAsian === void 0 ? void 0 : eastAsian.latin) !== null && _eastAsian$latin !== void 0 ? _eastAsian$latin : font.font);
 		const widths = font.bold ? bold : regular;
+		const widthOf = (eastAsian === null || eastAsian === void 0 ? void 0 : eastAsian.monospaced) ? monospacedWidth : (character) => characterWidth(widths, character);
 		const size = sizeOf(font);
 		const { characterSpacing = 0, scale = 100 } = font;
-		return [...text].reduce((position, character) => character === "	" ? (Math.floor(position / TAB_STOP) + 1) * TAB_STOP : position + characterWidth(widths, character.codePointAt(0)) * size * scale / 1e5 + characterSpacing, start) - start;
+		return [...text].reduce((position, character) => character === "	" ? (Math.floor(position / TAB_STOP) + 1) * TAB_STOP : position + widthOf(character) * size * scale / 1e5 + characterSpacing, start) - start;
 	};
 	/**
 	* How tall a line of single-spaced text is, in points.
 	*/
-	var measureLineHeight = (font = {}) => widthsOf(font.font).lineHeight * sizeOf(font) / 1e3;
+	var measureLineHeight = (font = {}) => {
+		var _eastAsianFontOf, _font$font2;
+		return ((_eastAsianFontOf = eastAsianFontOf((_font$font2 = font.font) !== null && _font$font2 !== void 0 ? _font$font2 : "Times New Roman")) !== null && _eastAsianFontOf !== void 0 ? _eastAsianFontOf : widthsOf(font.font)).lineHeight * sizeOf(font) / 1e3;
+	};
 	/**
 	* Splits spans into words and the spaces between them. A word can be made of pieces of several spans, such as a bold
 	* letter in a plain word, so each token is a list of pieces.
@@ -5536,6 +5713,12 @@ var docxShapes = (function(exports, docx) {
 		};
 	};
 	//#endregion
+	//#region src/text-layout/line-break-rules.ts
+	var EAST_ASIAN = new RegExp("[\\u1100-\\u11ff\\u2e80-\\u2fff\\u3000-\\u30ff\\u3130-\\u318f\\u31c0-\\u33ff\\u3400-\\u4dbf\\u4e00-\\u9fff\\ua960-\\ua97f\\uac00-\\ud7ff\\uf900-\\ufaff\\ufe30-\\ufe4f\\uff00-\\uffef\\p{Script=Han}\\p{Script=Hiragana}\\p{Script=Katakana}\\p{Script=Hangul}]", "u");
+	new RegExp("\\p{Script=Hangul}", "u");
+	/** Whether a character is Chinese, Japanese or Korean, or East Asian punctuation, which Word draws in a run's East Asian font */
+	var isEastAsian = (character) => EAST_ASIAN.test(character);
+	//#endregion
 	//#region src/text-layout/text-styles.ts
 	var OFFICE_THEME_FONTS = {
 		headings: "Calibri Light",
@@ -5612,7 +5795,7 @@ var docxShapes = (function(exports, docx) {
 	* Reads run properties (`w:rPr`). A font of the theme (`w:asciiTheme`) takes the place of the font named beside it.
 	*/
 	var readRunFormat = (element, themeFonts) => {
-		var _ref, _ref2, _themeFontOf;
+		var _ref, _ref2, _themeFontOf, _themeFontOf2, _themeFontOf3;
 		const children = childrenOf(element);
 		const fonts = attributesOf(find(children, "w:rFonts"));
 		return withoutUndefined({
@@ -5624,7 +5807,14 @@ var docxShapes = (function(exports, docx) {
 			smallCaps: onOff(children, "w:smallCaps"),
 			hidden: onOff(children, "w:vanish"),
 			characterSpacing: scaled(numberOf(attributesOf(find(children, "w:spacing"))["w:val"]), 20),
-			scale: numberOf(attributesOf(find(children, "w:w"))["w:val"])
+			scale: numberOf(attributesOf(find(children, "w:w"))["w:val"]),
+			eastAsiaFont: (_themeFontOf2 = themeFontOf(fonts["w:eastAsiaTheme"], themeFonts)) !== null && _themeFontOf2 !== void 0 ? _themeFontOf2 : stringOf(fonts["w:eastAsia"]),
+			complexScriptFont: (_themeFontOf3 = themeFontOf(fonts["w:cstheme"], themeFonts)) !== null && _themeFontOf3 !== void 0 ? _themeFontOf3 : stringOf(fonts["w:cs"]),
+			complexScriptSize: scaled(numberOf(attributesOf(find(children, "w:szCs"))["w:val"]), 2),
+			complexScriptBold: onOff(children, "w:bCs"),
+			rightToLeft: onOff(children, "w:rtl"),
+			complexScript: onOff(children, "w:cs"),
+			eastAsianLanguage: stringOf(attributesOf(find(children, "w:lang"))["w:eastAsia"])
 		});
 	};
 	var readLineSpacing = (spacing) => {
@@ -5685,7 +5875,9 @@ var docxShapes = (function(exports, docx) {
 			keepLines: onOff(children, "w:keepLines"),
 			pageBreakBefore: onOff(children, "w:pageBreakBefore"),
 			widowControl: onOff(children, "w:widowControl"),
-			tabs: readTabs(find(children, "w:tabs"))
+			tabs: readTabs(find(children, "w:tabs")),
+			kinsoku: onOff(children, "w:kinsoku"),
+			wordWrap: onOff(children, "w:wordWrap")
 		});
 	};
 	/**
@@ -5791,16 +5983,57 @@ var docxShapes = (function(exports, docx) {
 		scale
 	});
 	/**
-	* A span of text in its formatting: capitals for all caps, and smaller capitals for the small letters of small caps.
+	* Which of a run's fonts Word draws a character in: the font for complex scripts, in their size and boldness, for all of a
+	* run that is right to left or of a complex script; the East Asian font for Chinese, Japanese and Korean; the run's font
+	* for the rest. Hebrew in a run that isn't right to left is in the run's size, as Word lays it out. A mark is drawn in the
+	* font of the character it is on.
+	*/
+	var slotOf = (character, previous, complexRun) => {
+		if (complexRun) return "complex";
+		if (isEastAsian(character)) return "eastAsian";
+		return new RegExp("\\p{M}", "u").test(character) ? previous : "latin";
+	};
+	var FALLBACK_EAST_ASIAN_FONT = "MS Mincho";
+	/**
+	* The font of a character of a run, by the run's font Word draws it in. Complex scripts have their own size and boldness,
+	* and Word's defaults where the run doesn't give them.
+	*/
+	var fontOfSlot = (format, slot) => {
+		const font = fontOf(format);
+		if (slot === "latin") return font;
+		const { eastAsiaFont, complexScriptFont, complexScriptSize, complexScriptBold } = format;
+		return slot === "eastAsian" ? _objectSpread2(_objectSpread2({}, font), {}, { font: isEastAsianFont(eastAsiaFont) ? eastAsiaFont : FALLBACK_EAST_ASIAN_FONT }) : withoutUndefined(_objectSpread2(_objectSpread2({}, font), {}, {
+			font: complexScriptFont,
+			size: complexScriptSize,
+			bold: complexScriptBold
+		}));
+	};
+	/**
+	* A span of text in its formatting: in the run's font for its script, capitals for all caps, and smaller capitals for the
+	* small letters of small caps.
 	*/
 	var spansOf = (text, format) => {
-		var _font$size;
-		const { allCaps, smallCaps, hidden } = format;
-		const font = fontOf(format);
+		const { allCaps, smallCaps, hidden, rightToLeft, complexScript } = format;
 		if (hidden) return [];
-		if (allCaps || !smallCaps) return [_objectSpread2(_objectSpread2({}, font), {}, { text: allCaps ? text.toUpperCase() : text })];
-		const small = _objectSpread2(_objectSpread2({}, font), {}, { size: ((_font$size = font.size) !== null && _font$size !== void 0 ? _font$size : 10) * SMALL_CAPS_SCALE });
-		return text.split(new RegExp("(\\p{Ll}+)", "u")).filter((part) => part.length > 0).map((part) => new RegExp("^\\p{Ll}", "u").test(part) ? _objectSpread2(_objectSpread2({}, small), {}, { text: part.toUpperCase() }) : _objectSpread2(_objectSpread2({}, font), {}, { text: part }));
+		const complexRun = rightToLeft === true || complexScript === true;
+		return [...text].reduce((all, character) => {
+			var _last$slot;
+			const last = all[all.length - 1];
+			const slot = slotOf(character, (_last$slot = last === null || last === void 0 ? void 0 : last.slot) !== null && _last$slot !== void 0 ? _last$slot : "latin", complexRun);
+			return (last === null || last === void 0 ? void 0 : last.slot) === slot ? [...all.slice(0, -1), {
+				slot,
+				text: last.text + character
+			}] : [...all, {
+				slot,
+				text: character
+			}];
+		}, []).flatMap(({ slot, text: part }) => {
+			var _font$size;
+			const font = fontOfSlot(format, slot);
+			if (allCaps || !smallCaps) return [_objectSpread2(_objectSpread2({}, font), {}, { text: allCaps ? part.toUpperCase() : part })];
+			const small = _objectSpread2(_objectSpread2({}, font), {}, { size: ((_font$size = font.size) !== null && _font$size !== void 0 ? _font$size : 10) * SMALL_CAPS_SCALE });
+			return part.split(new RegExp("(\\p{Ll}+)", "u")).filter((piece) => piece.length > 0).map((piece) => new RegExp("^\\p{Ll}", "u").test(piece) ? _objectSpread2(_objectSpread2({}, small), {}, { text: piece.toUpperCase() }) : _objectSpread2(_objectSpread2({}, font), {}, { text: piece }));
+		});
 	};
 	/**
 	* Whether a paragraph in the default style, without formatting of its own, has space before or after it.
@@ -5809,7 +6042,6 @@ var docxShapes = (function(exports, docx) {
 		const { spaceBefore = 0, spaceAfter = 0 } = combine([styles.paragraph, ...styleChain(styles, styles.defaultParagraphStyle, "paragraph").map(({ paragraph }) => paragraph)]);
 		return spaceBefore !== 0 || spaceAfter !== 0;
 	};
-	new RegExp("[\\p{Script=Han}\\p{Script=Hiragana}\\p{Script=Katakana}\\p{Script=Hangul}]", "u");
 	//#endregion
 	//#region \0@oxc-project+runtime@0.150.0/helpers/esm/objectWithoutPropertiesLoose.js
 	function _objectWithoutPropertiesLoose(r, e) {

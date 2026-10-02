@@ -2138,6 +2138,163 @@ var docxLayout = (function(exports) {
 	];
 	var CHARACTER_INDEX = new Map([...FONT_WIDTH_CHARACTERS].map((character, index) => [character.codePointAt(0), index]));
 	var AVERAGE_LETTER_INDEXES = [..."abcdefghijklmnopqrstuvwxyz"].map((letter) => CHARACTER_INDEX.get(letter.codePointAt(0)));
+	var EAST_ASIAN_FONTS = [
+		{
+			name: "MS Mincho",
+			aliases: ["ＭＳ 明朝", "MS 明朝"],
+			lineHeight: 1297,
+			monospaced: true,
+			latin: "Times New Roman"
+		},
+		{
+			name: "MS Gothic",
+			aliases: ["ＭＳ ゴシック", "MS ゴシック"],
+			lineHeight: 1297,
+			monospaced: true,
+			latin: "Arial"
+		},
+		{
+			name: "MS PMincho",
+			aliases: ["ＭＳ Ｐ明朝", "MS P明朝"],
+			lineHeight: 1297,
+			latin: "Times New Roman"
+		},
+		{
+			name: "MS PGothic",
+			aliases: ["ＭＳ Ｐゴシック", "MS Pゴシック"],
+			lineHeight: 1297,
+			latin: "Arial"
+		},
+		{
+			name: "Yu Mincho",
+			aliases: ["游明朝"],
+			lineHeight: 1433,
+			latin: "Times New Roman"
+		},
+		{
+			name: "Yu Gothic",
+			aliases: [
+				"游ゴシック",
+				"游ゴシック Light",
+				"Yu Gothic Light"
+			],
+			lineHeight: 1434,
+			latin: "Arial"
+		},
+		{
+			name: "Meiryo",
+			aliases: ["メイリオ"],
+			lineHeight: 1950,
+			latin: "Arial"
+		},
+		{
+			name: "SimSun",
+			aliases: ["宋体"],
+			lineHeight: 1297,
+			monospaced: true,
+			latin: "Times New Roman"
+		},
+		{
+			name: "NSimSun",
+			aliases: ["新宋体"],
+			lineHeight: 1296,
+			monospaced: true,
+			latin: "Times New Roman"
+		},
+		{
+			name: "SimHei",
+			aliases: ["黑体"],
+			lineHeight: 1297,
+			monospaced: true,
+			latin: "Arial"
+		},
+		{
+			name: "KaiTi",
+			aliases: ["楷体"],
+			lineHeight: 1297,
+			monospaced: true,
+			latin: "Times New Roman"
+		},
+		{
+			name: "FangSong",
+			aliases: ["仿宋"],
+			lineHeight: 1297,
+			monospaced: true,
+			latin: "Times New Roman"
+		},
+		{
+			name: "Microsoft YaHei",
+			aliases: ["微软雅黑"],
+			lineHeight: 1714,
+			latin: "Arial"
+		},
+		{
+			name: "DengXian",
+			aliases: [
+				"等线",
+				"等线 Light",
+				"DengXian Light"
+			],
+			lineHeight: 1354,
+			latin: "Arial"
+		},
+		{
+			name: "PMingLiU",
+			aliases: ["新細明體"],
+			lineHeight: 1300,
+			latin: "Times New Roman"
+		},
+		{
+			name: "MingLiU",
+			aliases: ["細明體"],
+			lineHeight: 1301,
+			monospaced: true,
+			latin: "Times New Roman"
+		},
+		{
+			name: "Microsoft JhengHei",
+			aliases: ["微軟正黑體"],
+			lineHeight: 1730,
+			latin: "Arial"
+		},
+		{
+			name: "Malgun Gothic",
+			aliases: ["맑은 고딕"],
+			lineHeight: 1730,
+			latin: "Arial"
+		},
+		{
+			name: "Batang",
+			aliases: ["바탕"],
+			lineHeight: 1300,
+			latin: "Times New Roman"
+		},
+		{
+			name: "Gulim",
+			aliases: ["굴림"],
+			lineHeight: 1301,
+			latin: "Arial"
+		},
+		{
+			name: "Dotum",
+			aliases: ["돋움"],
+			lineHeight: 1301,
+			latin: "Arial"
+		}
+	];
+	var EAST_ASIAN_NAME = /[\u3040-\u30ff\u3400-\u9fff\uac00-\ud7af]|hiragino|cjk|source han|pingfang|songti|heiti|kaiti|fangsong|mincho|mingliu|simhei|gungsuh|nanum/i;
+	var EAST_ASIAN_SANS = /gothic|ゴシック|hei|黑|黒|sans|고딕|pingfang/i;
+	/**
+	* The East Asian font a font is, or is measured as, by its name. Undefined for other fonts.
+	*/
+	var eastAsianFontOf = (font) => {
+		const name = font.toLowerCase();
+		const known = EAST_ASIAN_FONTS.find((candidate) => [candidate.name, ...candidate.aliases].some((alias) => alias.toLowerCase() === name));
+		const similar = EAST_ASIAN_SANS.test(font) ? "MS Gothic" : "MS Mincho";
+		return known !== null && known !== void 0 ? known : EAST_ASIAN_NAME.test(font) ? EAST_ASIAN_FONTS.find((candidate) => candidate.name === similar) : void 0;
+	};
+	/** Whether a font is one for Chinese, Japanese or Korean text */
+	var isEastAsianFont = (font) => font !== void 0 && eastAsianFontOf(font) !== void 0;
 	/**
 	* The widths to measure a font with: its own, or those of the most similar font in the table.
 	* Sans-serif fonts that aren't in the table, such as Aptos and Helvetica, are measured as Arial.
@@ -2149,15 +2306,29 @@ var docxLayout = (function(exports) {
 		return (_named = named(font)) !== null && _named !== void 0 ? _named : named(similar ? similar[1] : "Arial");
 	};
 	var isWide = (code) => code >= 4352 && code <= 4447 || code >= 11904 && code <= 42191 || code >= 44032 && code <= 55203 || code >= 63744 && code <= 64255 || code >= 65072 && code <= 65103 || code >= 65280 && code <= 65376 || code >= 65504 && code <= 65510 || code >= 127744;
+	var isHalfWidth = (code) => code >= 65377 && code <= 65500;
+	var takesNoRoom = (character) => new RegExp("[\\p{Mn}\\p{Me}\\p{Cf}]", "u").test(character);
 	/**
 	* The width of a character in thousandths of an em. Characters that aren't in the table are as wide as an average
-	* lowercase letter, or a whole em for wide characters, and combining accents take no space.
+	* lowercase letter, a whole em for wide characters and half an em for half-width ones, and marks take no space.
 	*/
-	var characterWidth = (widths, code) => {
+	var characterWidth = (widths, character) => {
+		const code = character.codePointAt(0);
 		const index = CHARACTER_INDEX.get(code);
 		if (index !== void 0) return widths[index];
 		if (isWide(code)) return 1e3;
-		return code >= 768 && code <= 879 ? 0 : AVERAGE_LETTER_INDEXES.reduce((total, letter) => total + widths[letter], 0) / AVERAGE_LETTER_INDEXES.length;
+		if (isHalfWidth(code)) return 500;
+		return takesNoRoom(character) ? 0 : AVERAGE_LETTER_INDEXES.reduce((total, letter) => total + widths[letter], 0) / AVERAGE_LETTER_INDEXES.length;
+	};
+	var FULL_WIDTH_SYMBOLS = /* @__PURE__ */ new Set([..."§¨°±´¶×÷‐―‖‘’“”†‡‥…‰′″※℃Å"]);
+	/**
+	* The width of a character of a monospaced East Asian font, in thousandths of an em: an em for ideographs and the symbols
+	* of Japanese and Chinese, and half an em for the rest.
+	*/
+	var monospacedWidth = (character) => {
+		const code = character.codePointAt(0);
+		if (takesNoRoom(character)) return 0;
+		return isWide(code) || FULL_WIDTH_SYMBOLS.has(character) || code >= 8592 && code <= 9983 ? 1e3 : 500;
 	};
 	var sizeOf = ({ size = 10 }) => size;
 	/**
@@ -2166,16 +2337,124 @@ var docxLayout = (function(exports) {
 	* @param start - Where the text starts on its line, in points
 	*/
 	var measureTextWidth = (text, font = {}, start = 0) => {
-		const { regular, bold } = widthsOf(font.font);
+		var _font$font, _eastAsian$latin;
+		const eastAsian = eastAsianFontOf((_font$font = font.font) !== null && _font$font !== void 0 ? _font$font : DEFAULT_FONT);
+		const { regular, bold } = widthsOf((_eastAsian$latin = eastAsian === null || eastAsian === void 0 ? void 0 : eastAsian.latin) !== null && _eastAsian$latin !== void 0 ? _eastAsian$latin : font.font);
 		const widths = font.bold ? bold : regular;
+		const widthOf = (eastAsian === null || eastAsian === void 0 ? void 0 : eastAsian.monospaced) ? monospacedWidth : (character) => characterWidth(widths, character);
 		const size = sizeOf(font);
 		const { characterSpacing = 0, scale = 100 } = font;
-		return [...text].reduce((position, character) => character === "	" ? (Math.floor(position / TAB_STOP$1) + 1) * TAB_STOP$1 : position + characterWidth(widths, character.codePointAt(0)) * size * scale / 1e5 + characterSpacing, start) - start;
+		return [...text].reduce((position, character) => character === "	" ? (Math.floor(position / TAB_STOP$1) + 1) * TAB_STOP$1 : position + widthOf(character) * size * scale / 1e5 + characterSpacing, start) - start;
 	};
 	/**
 	* How tall a line of single-spaced text is, in points.
 	*/
-	var measureLineHeight = (font = {}) => widthsOf(font.font).lineHeight * sizeOf(font) / 1e3;
+	var measureLineHeight = (font = {}) => {
+		var _eastAsianFontOf, _font$font2;
+		return ((_eastAsianFontOf = eastAsianFontOf((_font$font2 = font.font) !== null && _font$font2 !== void 0 ? _font$font2 : "Times New Roman")) !== null && _eastAsianFontOf !== void 0 ? _eastAsianFontOf : widthsOf(font.font)).lineHeight * sizeOf(font) / 1e3;
+	};
+	//#endregion
+	//#region src/text-layout/line-break-rules.ts
+	var WORD_LISTS = {
+		japanese: {
+			noLineStart: "!%),.:;?]}¢°’”‰′″℃、。々〉》」』】〕゛゜ゝゞ・ヽヾ！％），．：；？］｝｡｣､･ﾞﾟ￠",
+			noLineEnd: "$([\\{£¥‘“〈《「『【〔＄（［｛｢￡￥"
+		},
+		simplifiedChinese: {
+			noLineStart: "!%),.:;?]}¢°·ˇˉ―‖’”…‰′″›℃∶、。〃〉》」』】〕〗〞︶︺︾﹀﹄﹚﹜﹞！＂％＇），．：；？］｀｜｝～￠",
+			noLineEnd: "$([{£¥·‘“〈《「『【〔〖〝﹙﹛﹝＄（．［｛￡￥"
+		},
+		traditionalChinese: {
+			noLineStart: "!),.:;?]}¢·’”•‥…‧′﹏﹐﹑﹒﹔﹕﹖﹗﹚﹜﹞！），．：；？］｝｜、。〉》」』】〕〞︰︱︳︴︶︸︺︼︾﹀﹂﹄､",
+			noLineEnd: "([{£¥‘“‵〈《「『【〔〝﹙﹛﹝（｛"
+		},
+		korean: {
+			noLineStart: "",
+			noLineEnd: ""
+		}
+	};
+	var EAST_ASIAN = new RegExp("[\\u1100-\\u11ff\\u2e80-\\u2fff\\u3000-\\u30ff\\u3130-\\u318f\\u31c0-\\u33ff\\u3400-\\u4dbf\\u4e00-\\u9fff\\ua960-\\ua97f\\uac00-\\ud7ff\\uf900-\\ufaff\\ufe30-\\ufe4f\\uff00-\\uffef\\p{Script=Han}\\p{Script=Hiragana}\\p{Script=Katakana}\\p{Script=Hangul}]", "u");
+	var HANGUL = new RegExp("\\p{Script=Hangul}", "u");
+	var DASHES = /* @__PURE__ */ new Set([
+		"-",
+		"‐",
+		"–",
+		"—"
+	]);
+	var GLUE = /* @__PURE__ */ new Set([
+		"\xA0",
+		" ",
+		" ",
+		"⁠",
+		"﻿"
+	]);
+	var isExtender = (character) => {
+		const code = character.codePointAt(0);
+		return new RegExp("\\p{M}", "u").test(character) || code === 8205 || code >= 65024 && code <= 65039 || code >= 127995 && code <= 127999 || code >= 917536 && code <= 917631;
+	};
+	var ZERO_WIDTH_SPACE = "​";
+	/** Whether a character is Chinese, Japanese or Korean, or East Asian punctuation, which Word draws in a run's East Asian font */
+	var isEastAsian = (character) => EAST_ASIAN.test(character);
+	/** Whether a line can break before and after a character: Chinese and Japanese characters, but not Korean */
+	var breaksAround = (character) => EAST_ASIAN.test(character) && !HANGUL.test(character);
+	/** Whether a character belongs to the one before it, so a line never breaks between them */
+	var extendsCharacter = isExtender;
+	/** Whether a character joins the one after it to the one before it, as the zero-width joiner joins emoji */
+	var joinsNext = (character) => character === "‍";
+	/**
+	* The list of Word's for a language, by its tag, such as `"zh-TW"`. Text in another language, or with none, has none: Word
+	* lets any character start or end its lines.
+	*/
+	var kinsokuLanguageOf = (language) => {
+		const tag = (language !== null && language !== void 0 ? language : "").toLowerCase();
+		if (tag.startsWith("zh")) return /^zh-(tw|hk|mo|hant)/.test(tag) ? "traditionalChinese" : "simplifiedChinese";
+		if (tag.startsWith("ja")) return "japanese";
+		return tag.startsWith("ko") ? "korean" : void 0;
+	};
+	var NO_KINSOKU = {
+		noLineStart: /* @__PURE__ */ new Set(),
+		noLineEnd: /* @__PURE__ */ new Set()
+	};
+	var listOf = (language, { lists = {} }) => {
+		var _lists$language;
+		const { noLineStart = WORD_LISTS[language].noLineStart, noLineEnd = WORD_LISTS[language].noLineEnd } = (_lists$language = lists[language]) !== null && _lists$language !== void 0 ? _lists$language : {};
+		return {
+			noLineStart: new Set(noLineStart),
+			noLineEnd: new Set(noLineEnd)
+		};
+	};
+	/**
+	* Where a line can break inside text that has no spaces in it: before which of its characters, by their index, counted
+	* in characters rather than UTF-16 code units. A line can always break after spaces, which aren't in it.
+	*
+	* @param pieces - The text's pieces, with the language of their runs
+	*/
+	var findLineBreaks = (pieces, rules = {}) => {
+		var _rules$kinsoku;
+		const anywhere = rules.wordWrap === false && pieces.some(({ eastAsian }) => eastAsian);
+		const text = pieces.map((piece) => piece.text).join("");
+		if (!anywhere && ![...text].some((character) => character.codePointAt(0) > 767) && !text.includes("-")) return /* @__PURE__ */ new Set();
+		const characters = pieces.flatMap(({ text: piece }) => [...piece]);
+		const runs = pieces.flatMap(({ text: piece, language, eastAsian }) => [...piece].map(() => ({
+			language: kinsokuLanguageOf(language),
+			anywhere: rules.wordWrap === false && eastAsian === true
+		})));
+		const kinsoku = (_rules$kinsoku = rules.kinsoku) !== null && _rules$kinsoku !== void 0 ? _rules$kinsoku : true;
+		const lists = /* @__PURE__ */ new Map([[void 0, NO_KINSOKU]]);
+		const listAt = (index) => {
+			const { language } = runs[index];
+			if (!lists.has(language)) lists.set(language, listOf(language, rules));
+			return lists.get(language);
+		};
+		const breaks = /* @__PURE__ */ new Set();
+		for (let index = 1; index < characters.length; index++) {
+			const before = characters[index - 1];
+			const after = characters[index];
+			if (isExtender(after) || joinsNext(before) || GLUE.has(before) || GLUE.has(after)) continue;
+			if ((before === ZERO_WIDTH_SPACE || DASHES.has(before) && !/[\d-]/.test(after) || breaksAround(before) || breaksAround(after) || runs[index - 1].anywhere && runs[index].anywhere) && !(kinsoku && (listAt(index).noLineStart.has(after) || listAt(index - 1).noLineEnd.has(before)))) breaks.add(index);
+		}
+		return breaks;
+	};
 	//#endregion
 	//#region src/text-layout/text-styles.ts
 	var OFFICE_THEME_FONTS = {
@@ -2253,7 +2532,7 @@ var docxLayout = (function(exports) {
 	* Reads run properties (`w:rPr`). A font of the theme (`w:asciiTheme`) takes the place of the font named beside it.
 	*/
 	var readRunFormat = (element, themeFonts) => {
-		var _ref, _ref2, _themeFontOf;
+		var _ref, _ref2, _themeFontOf, _themeFontOf2, _themeFontOf3;
 		const children = childrenOf(element);
 		const fonts = attributesOf(find(children, "w:rFonts"));
 		return withoutUndefined({
@@ -2265,7 +2544,14 @@ var docxLayout = (function(exports) {
 			smallCaps: onOff(children, "w:smallCaps"),
 			hidden: onOff(children, "w:vanish"),
 			characterSpacing: scaled(numberOf(attributesOf(find(children, "w:spacing"))["w:val"]), 20),
-			scale: numberOf(attributesOf(find(children, "w:w"))["w:val"])
+			scale: numberOf(attributesOf(find(children, "w:w"))["w:val"]),
+			eastAsiaFont: (_themeFontOf2 = themeFontOf(fonts["w:eastAsiaTheme"], themeFonts)) !== null && _themeFontOf2 !== void 0 ? _themeFontOf2 : stringOf(fonts["w:eastAsia"]),
+			complexScriptFont: (_themeFontOf3 = themeFontOf(fonts["w:cstheme"], themeFonts)) !== null && _themeFontOf3 !== void 0 ? _themeFontOf3 : stringOf(fonts["w:cs"]),
+			complexScriptSize: scaled(numberOf(attributesOf(find(children, "w:szCs"))["w:val"]), 2),
+			complexScriptBold: onOff(children, "w:bCs"),
+			rightToLeft: onOff(children, "w:rtl"),
+			complexScript: onOff(children, "w:cs"),
+			eastAsianLanguage: stringOf(attributesOf(find(children, "w:lang"))["w:eastAsia"])
 		});
 	};
 	var readLineSpacing = (spacing) => {
@@ -2326,7 +2612,9 @@ var docxLayout = (function(exports) {
 			keepLines: onOff(children, "w:keepLines"),
 			pageBreakBefore: onOff(children, "w:pageBreakBefore"),
 			widowControl: onOff(children, "w:widowControl"),
-			tabs: readTabs(find(children, "w:tabs"))
+			tabs: readTabs(find(children, "w:tabs")),
+			kinsoku: onOff(children, "w:kinsoku"),
+			wordWrap: onOff(children, "w:wordWrap")
 		});
 	};
 	/**
@@ -2432,26 +2720,72 @@ var docxLayout = (function(exports) {
 		scale
 	});
 	/**
-	* A span of text in its formatting: capitals for all caps, and smaller capitals for the small letters of small caps.
+	* Which of a run's fonts Word draws a character in: the font for complex scripts, in their size and boldness, for all of a
+	* run that is right to left or of a complex script; the East Asian font for Chinese, Japanese and Korean; the run's font
+	* for the rest. Hebrew in a run that isn't right to left is in the run's size, as Word lays it out. A mark is drawn in the
+	* font of the character it is on.
+	*/
+	var slotOf = (character, previous, complexRun) => {
+		if (complexRun) return "complex";
+		if (isEastAsian(character)) return "eastAsian";
+		return new RegExp("\\p{M}", "u").test(character) ? previous : "latin";
+	};
+	var FALLBACK_EAST_ASIAN_FONT = "MS Mincho";
+	/**
+	* The font of a character of a run, by the run's font Word draws it in. Complex scripts have their own size and boldness,
+	* and Word's defaults where the run doesn't give them.
+	*/
+	var fontOfSlot = (format, slot) => {
+		const font = fontOf(format);
+		if (slot === "latin") return font;
+		const { eastAsiaFont, complexScriptFont, complexScriptSize, complexScriptBold } = format;
+		return slot === "eastAsian" ? _objectSpread2(_objectSpread2({}, font), {}, { font: isEastAsianFont(eastAsiaFont) ? eastAsiaFont : FALLBACK_EAST_ASIAN_FONT }) : withoutUndefined(_objectSpread2(_objectSpread2({}, font), {}, {
+			font: complexScriptFont,
+			size: complexScriptSize,
+			bold: complexScriptBold
+		}));
+	};
+	/**
+	* A span of text in its formatting: in the run's font for its script, capitals for all caps, and smaller capitals for the
+	* small letters of small caps.
 	*/
 	var spansOf = (text, format) => {
-		var _font$size;
-		const { allCaps, smallCaps, hidden } = format;
-		const font = fontOf(format);
+		const { allCaps, smallCaps, hidden, rightToLeft, complexScript } = format;
 		if (hidden) return [];
-		if (allCaps || !smallCaps) return [_objectSpread2(_objectSpread2({}, font), {}, { text: allCaps ? text.toUpperCase() : text })];
-		const small = _objectSpread2(_objectSpread2({}, font), {}, { size: ((_font$size = font.size) !== null && _font$size !== void 0 ? _font$size : 10) * SMALL_CAPS_SCALE });
-		return text.split(new RegExp("(\\p{Ll}+)", "u")).filter((part) => part.length > 0).map((part) => new RegExp("^\\p{Ll}", "u").test(part) ? _objectSpread2(_objectSpread2({}, small), {}, { text: part.toUpperCase() }) : _objectSpread2(_objectSpread2({}, font), {}, { text: part }));
+		const complexRun = rightToLeft === true || complexScript === true;
+		return [...text].reduce((all, character) => {
+			var _last$slot;
+			const last = all[all.length - 1];
+			const slot = slotOf(character, (_last$slot = last === null || last === void 0 ? void 0 : last.slot) !== null && _last$slot !== void 0 ? _last$slot : "latin", complexRun);
+			return (last === null || last === void 0 ? void 0 : last.slot) === slot ? [...all.slice(0, -1), {
+				slot,
+				text: last.text + character
+			}] : [...all, {
+				slot,
+				text: character
+			}];
+		}, []).flatMap(({ slot, text: part }) => {
+			var _font$size;
+			const font = fontOfSlot(format, slot);
+			if (allCaps || !smallCaps) return [_objectSpread2(_objectSpread2({}, font), {}, { text: allCaps ? part.toUpperCase() : part })];
+			const small = _objectSpread2(_objectSpread2({}, font), {}, { size: ((_font$size = font.size) !== null && _font$size !== void 0 ? _font$size : 10) * SMALL_CAPS_SCALE });
+			return part.split(new RegExp("(\\p{Ll}+)", "u")).filter((piece) => piece.length > 0).map((piece) => new RegExp("^\\p{Ll}", "u").test(piece) ? _objectSpread2(_objectSpread2({}, small), {}, { text: piece.toUpperCase() }) : _objectSpread2(_objectSpread2({}, font), {}, { text: piece }));
+		});
 	};
+	/**
+	* Whether a run is East Asian, by its East Asian font or language, so its words break anywhere with word wrap off, as
+	* Word breaks them.
+	*/
+	var isEastAsianRun = ({ eastAsiaFont, eastAsianLanguage }) => isEastAsianFont(eastAsiaFont) || kinsokuLanguageOf(eastAsianLanguage) !== void 0;
 	//#endregion
 	//#region src/text-layout/line-breaking.ts
 	/**
 	* Breaks a paragraph into lines as Word breaks it, for laying out pages: where each line wraps, how tall it is, and
 	* which bookmarks start on it.
 	*
-	* Lines break at spaces, after hyphens, and between Chinese, Japanese and Korean characters. Tabs move to the
-	* paragraph's tab stops, or to the document's default ones. Each line is as tall as the tallest text or picture on
-	* it, with the paragraph's line spacing.
+	* Lines break at spaces, after hyphens, between Chinese, Japanese and Korean characters, and between the words of Thai and
+	* the other scripts without spaces, as {@link findLineBreaks} finds. Tabs move to the paragraph's tab stops, or to the
+	* document's default ones. Each line is as tall as the tallest text or picture on it, with the paragraph's line spacing.
 	*
 	* @module
 	*/
@@ -2461,66 +2795,81 @@ var docxLayout = (function(exports) {
 	};
 	var DEFAULT_TAB_STOP = 36;
 	var TOLERANCE$1 = .01;
-	var CJK_LETTER = new RegExp("[\\p{Script=Han}\\p{Script=Hiragana}\\p{Script=Katakana}\\p{Script=Hangul}]", "u");
-	var NO_LINE_START = /* @__PURE__ */ new Set([..."、。，．：；？！）」』】〕〉》ー々ぁぃぅぇぉっゃゅょゎァィゥェォッャュョヮヵヶ,.:;?!)]}"]);
-	var NO_LINE_END = /* @__PURE__ */ new Set([..."（「『【〔〈《([{"]);
 	/**
-	* Whether a line can break between two characters with no space between them: after a hyphen that isn't before a
-	* digit, and before or after a Chinese, Japanese or Korean letter.
+	* Turns text next to each other into words and the spaces between them. Pieces of words next to each other in different
+	* fonts are one word, unless the line can break between them.
 	*/
-	var canBreakBetween = (before, after) => !NO_LINE_START.has(after) && !NO_LINE_END.has(before) && (before === "-" && !/[\d-]/.test(after) || CJK_LETTER.test(before) || CJK_LETTER.test(after));
-	var splitText = (text) => text.split(/( +)/).filter((part) => part.length > 0).flatMap((part) => {
-		if (part.startsWith(" ")) return [{
-			text: part,
-			isSpace: true
-		}];
-		const characters = [...part];
-		return characters.reduce((words, character, index) => {
-			var _words;
-			return index > 0 && canBreakBetween(characters[index - 1], character) ? [...words, character] : [...words.slice(0, -1), `${(_words = words[words.length - 1]) !== null && _words !== void 0 ? _words : ""}${character}`];
-		}, []).map((word) => ({
-			text: word,
-			isSpace: false
-		}));
-	});
-	var lastCharacter = (text) => [...text].pop();
-	/**
-	* Turns a part of a paragraph into tokens. Pieces of words next to each other in different fonts are one word, unless
-	* the line can break between them.
-	*/
-	var tokenize = (items) => items.reduce((tokens, item) => {
-		if (item.type === "text") return splitText(item.text).reduce((all, { text, isSpace }) => {
-			const last = all[all.length - 1];
-			const type = isSpace ? "space" : "word";
-			return (last === null || last === void 0 ? void 0 : last.type) === type && (isSpace || !canBreakBetween(lastCharacter(last.pieces[last.pieces.length - 1].text), [...text][0])) ? [...all.slice(0, -1), {
-				type,
-				pieces: [...last.pieces, {
-					text,
-					font: item.font
-				}]
-			}] : [...all, {
+	var tokenizeText = (items, rules) => {
+		const breaks = findLineBreaks(items, rules);
+		const tokens = [];
+		let index = 0;
+		for (const { text, font } of items) for (const character of text) {
+			const type = character === " " ? "space" : "word";
+			const last = tokens[tokens.length - 1];
+			if ((last === null || last === void 0 ? void 0 : last.type) !== type || type === "word" && breaks.has(index)) tokens.push({
 				type,
 				pieces: [{
-					text,
-					font: item.font
+					text: character,
+					font
 				}]
-			}];
-		}, tokens);
-		return [...tokens, item];
-	}, []);
+			});
+			else {
+				const piece = last.pieces[last.pieces.length - 1];
+				last.pieces[last.pieces.length - 1 + (piece.font === font ? 0 : 1)] = {
+					text: piece.font === font ? piece.text + character : character,
+					font
+				};
+			}
+			index++;
+		}
+		return tokens;
+	};
+	/**
+	* Turns a part of a paragraph into tokens.
+	*/
+	var tokenize = (items, rules) => {
+		const tokens = [];
+		let text = [];
+		for (const item of items) if (item.type === "text") text.push(item);
+		else {
+			tokens.push(...tokenizeText(text, rules), item);
+			text = [];
+		}
+		return [...tokens, ...tokenizeText(text, rules)];
+	};
 	/**
 	* Splits a paragraph's content at its breaks.
 	*/
-	var segmentsOf = (items) => {
+	var segmentsOf = (items, rules) => {
 		const breaks = items.flatMap((item, index) => item.type === "break" ? [index] : []);
 		return [0, ...breaks.map((index) => index + 1)].map((start, index) => {
 			const end = breaks[index];
 			return {
-				tokens: tokenize(items.slice(start, end)),
+				tokens: tokenize(items.slice(start, end), rules),
 				end: end === void 0 ? void 0 : items[end]
 			};
 		});
 	};
+	/**
+	* A word's characters, each with the marks on it and anything a zero-width joiner joins to it, which a line never breaks
+	* between, in the pieces of the fonts they are in.
+	*/
+	var charactersOf = (pieces) => pieces.reduce((all, { text, font }) => [...text].reduce((characters, character) => {
+		const last = characters[characters.length - 1];
+		const lastPiece = last === null || last === void 0 ? void 0 : last[last.length - 1];
+		if (!lastPiece || !(extendsCharacter(character) || joinsNext([...lastPiece.text].pop()))) return [...characters, [{
+			text: character,
+			font
+		}]];
+		const joined = lastPiece.font === font ? [...last.slice(0, -1), {
+			text: `${lastPiece.text}${character}`,
+			font
+		}] : [...last, {
+			text: character,
+			font
+		}];
+		return [...characters.slice(0, -1), joined];
+	}, all), []);
 	var widthOf = (pieces, measurer) => pieces.reduce((total, { text, font }) => total + measurer.measureWidth(text, font), 0);
 	/**
 	* The height of single-spaced lines, with this line spacing. Word doesn't round it: Calibri 11 is 268.55 twips, and
@@ -2570,16 +2919,18 @@ var docxLayout = (function(exports) {
 			}].sort((a, b) => a.position - b.position) : stops
 		};
 	};
+	/** The rules for where a paragraph's lines break: the document's, with the paragraph's own */
+	var rulesOf = ({ kinsoku, wordWrap }, rules = {}) => _objectSpread2(_objectSpread2(_objectSpread2({}, rules), kinsoku === void 0 ? {} : { kinsoku }), wordWrap === void 0 ? {} : { wordWrap });
 	/**
 	* Measures how narrow and how wide a paragraph can be, which Word sizes the columns of tables whose cells have no widths
 	* by. Spaces at the end of a line take no room, as they don't when it wraps.
 	*
 	* @param items - The paragraph's content, in order
 	*/
-	var measureContentWidths = (items, { format = {}, tabStops = [], defaultTabStop = DEFAULT_TAB_STOP, measurer = DEFAULT_MEASURER }) => {
+	var measureContentWidths = (items, { format = {}, tabStops = [], defaultTabStop = DEFAULT_TAB_STOP, measurer = DEFAULT_MEASURER, breakRules }) => {
 		const { indentLeft = 0, indentRight = 0, firstLineIndent = 0 } = format;
 		const { stops, firstLineStops } = stopsOf(tabStops, format);
-		return segmentsOf(items).reduce((widths, { tokens }, segmentIndex) => {
+		return segmentsOf(items, rulesOf(format, breakRules)).reduce((widths, { tokens }, segmentIndex) => {
 			const first = segmentIndex === 0;
 			let position = indentLeft + (first ? firstLineIndent : 0);
 			let end = position;
@@ -2618,11 +2969,11 @@ var docxLayout = (function(exports) {
 	*
 	* @param items - The paragraph's content, in order
 	*/
-	var layoutLines = (items, { width, format = {}, tabStops = [], defaultTabStop = DEFAULT_TAB_STOP, markFont = {}, measurer = DEFAULT_MEASURER }) => {
+	var layoutLines = (items, { width, format = {}, tabStops = [], defaultTabStop = DEFAULT_TAB_STOP, markFont = {}, measurer = DEFAULT_MEASURER, breakRules }) => {
 		const { indentLeft = 0, indentRight = 0, firstLineIndent = 0, lineSpacing } = format;
 		const markHeight = measurer.measureLineHeight(markFont);
 		const { stops, firstLineStops } = stopsOf(tabStops, format);
-		const parts = segmentsOf(items);
+		const parts = segmentsOf(items, rulesOf(format, breakRules));
 		const [previous, last] = parts.slice(-2);
 		const segments = parts.length > 1 && previous.end.kind === "page" && last.tokens.every((token) => token.type === "marker") ? [...parts.slice(0, -2), {
 			tokens: [...previous.tokens, ...last.tokens],
@@ -2704,16 +3055,19 @@ var docxLayout = (function(exports) {
 				const tokenHeight = token.type === "box" ? token.height : Math.max(...token.pieces.map(({ font }) => measurer.measureLineHeight(font)));
 				if (line.started && line.position + tokenWidth > limitOf() + TOLERANCE$1) line = wrap(line);
 				line = place(line);
-				let rest = tokenWidth;
-				while (token.type === "word" && line.position + rest > limitOf() + TOLERANCE$1 && limitOf() - indentLeft > 0) {
-					rest -= limitOf() - line.position;
-					line = wrap(_objectSpread2(_objectSpread2({}, line), {}, {
-						natural: Math.max(line.natural, tokenHeight),
-						started: true
-					}));
-				}
+				if (token.type === "word" && line.position + tokenWidth > limitOf() + TOLERANCE$1 && limitOf() - indentLeft > 0) {
+					let placed = false;
+					for (const character of charactersOf(token.pieces)) {
+						const characterWidth = widthOf(character, measurer);
+						if (placed && line.position + characterWidth > limitOf() + TOLERANCE$1 && limitOf(lines.length + 1) - indentLeft > 0) line = wrap(_objectSpread2(_objectSpread2({}, line), {}, {
+							natural: Math.max(line.natural, tokenHeight),
+							started: true
+						}));
+						line = _objectSpread2(_objectSpread2({}, line), {}, { position: line.position + characterWidth });
+						placed = true;
+					}
+				} else line = _objectSpread2(_objectSpread2({}, line), {}, { position: line.position + tokenWidth });
 				line = _objectSpread2(_objectSpread2({}, line), {}, {
-					position: line.position + rest,
 					natural: Math.max(line.natural, tokenHeight),
 					started: true
 				});
@@ -3427,7 +3781,7 @@ var docxLayout = (function(exports) {
 	*/
 	var paginate = (content, { pageNumbers = /* @__PURE__ */ new Map(), pageCount: givenPageCount, sectionPageCounts: givenSectionPageCounts = [], measurer = DEFAULT_MEASURER } = {}) => {
 		var _laidOutLines$get;
-		const { sections, defaultTabStop, evenAndOddHeaders, addsParagraphSpacing, footnotes, footnoteSeparator, footnoteContinuationSeparator, endnotes } = content;
+		const { sections, defaultTabStop, evenAndOddHeaders, addsParagraphSpacing, footnotes, footnoteSeparator, footnoteContinuationSeparator, endnotes, breakRules } = content;
 		const blocks = [...content.blocks, ...endnotes.map((block) => ({
 			block,
 			section: sections.length - 1
@@ -3471,7 +3825,8 @@ var docxLayout = (function(exports) {
 				tabStops: paragraph.tabStops,
 				defaultTabStop,
 				markFont: paragraph.markFont,
-				measurer
+				measurer,
+				breakRules
 			});
 			if (paragraph.items.some(({ type }) => type === "pageReference" || type === "pageCount")) return layOut();
 			const byWidths = (_byParagraph$get = byParagraph.get(paragraph)) !== null && _byParagraph$get !== void 0 ? _byParagraph$get : /* @__PURE__ */ new Map();
@@ -3504,7 +3859,8 @@ var docxLayout = (function(exports) {
 				format: block.format,
 				tabStops: block.tabStops,
 				defaultTabStop,
-				measurer
+				measurer,
+				breakRules
 			});
 			return {
 				min: Math.max(widths.min, min),
@@ -4817,13 +5173,13 @@ var docxLayout = (function(exports) {
 			}
 			if (!isShown(reader)) return [];
 			switch (name) {
-				case "w:t": return spansOf(contentOf(child).filter((part) => typeof part === "string").join(""), format).map((span) => {
-					const { text } = span;
-					return {
+				case "w:t": return spansOf(contentOf(child).filter((part) => typeof part === "string").join(""), format).map((_ref) => {
+					let { text } = _ref;
+					return _objectSpread2(_objectSpread2({
 						type: "text",
 						text,
-						font: _objectWithoutProperties(span, _excluded)
-					};
+						font: _objectWithoutProperties(_ref, _excluded)
+					}, format.eastAsianLanguage === void 0 ? {} : { language: format.eastAsianLanguage }), isEastAsianRun(format) ? { eastAsian: true } : {});
 				});
 				case "w:tab":
 				case "w:ptab": return format.hidden ? [] : [{
@@ -4917,24 +5273,24 @@ var docxLayout = (function(exports) {
 	* number. A paragraph is in the list it gives, or else in its style's. The list's numbers move on.
 	*/
 	var readListNumber = (properties, style, paragraphRun, reader) => {
-		var _valueOf2, _numberOf2, _ref, _levels$findIndex, _ref2, _reader$counters$get, _counts$index, _exec;
+		var _valueOf2, _numberOf2, _ref2, _levels$findIndex, _ref3, _reader$counters$get, _counts$index, _exec;
 		const numbering = childrenOf(find(properties, "w:numPr"));
 		const ownId = (_valueOf2 = valueOf(numbering, "w:numId")) !== null && _valueOf2 !== void 0 ? _valueOf2 : (_numberOf2 = numberOf(attributesOf(find(numbering, "w:numId"))["w:val"])) === null || _numberOf2 === void 0 ? void 0 : _numberOf2.toString();
 		const ownLevel = numberOf(attributesOf(find(numbering, "w:ilvl"))["w:val"]);
 		const fromStyle = styleChain(reader.styles, style, "paragraph").reduce((inherited, { numbering: given }) => _objectSpread2(_objectSpread2({}, inherited), given), {});
-		const id = (_ref = ownId !== null && ownId !== void 0 ? ownId : fromStyle.id) !== null && _ref !== void 0 ? _ref : "";
+		const id = (_ref2 = ownId !== null && ownId !== void 0 ? ownId : fromStyle.id) !== null && _ref2 !== void 0 ? _ref2 : "";
 		const levels = reader.numbering.get(id);
 		const linked = (_levels$findIndex = levels === null || levels === void 0 ? void 0 : levels.findIndex((other) => (other === null || other === void 0 ? void 0 : other.style) !== void 0 && other.style === style)) !== null && _levels$findIndex !== void 0 ? _levels$findIndex : -1;
-		const index = (_ref2 = ownLevel !== null && ownLevel !== void 0 ? ownLevel : ownId === void 0 ? fromStyle.level : void 0) !== null && _ref2 !== void 0 ? _ref2 : Math.max(linked, 0);
+		const index = (_ref3 = ownLevel !== null && ownLevel !== void 0 ? ownLevel : ownId === void 0 ? fromStyle.level : void 0) !== null && _ref3 !== void 0 ? _ref3 : Math.max(linked, 0);
 		const level = levels === null || levels === void 0 ? void 0 : levels[index];
 		if (!levels || !level) return { items: [] };
 		const counts = (_reader$counters$get = reader.counters.get(id)) !== null && _reader$counters$get !== void 0 ? _reader$counters$get : [];
 		const current = [...counts.slice(0, index), ((_counts$index = counts[index]) !== null && _counts$index !== void 0 ? _counts$index : level.start - 1) + 1];
 		reader.counters.set(id, current);
 		const numberAt = (at) => {
-			var _formatNumber, _ref3, _current$at;
+			var _formatNumber, _ref4, _current$at;
 			const other = levels[at];
-			return (_formatNumber = formatNumber((_ref3 = (_current$at = current[at]) !== null && _current$at !== void 0 ? _current$at : other === null || other === void 0 ? void 0 : other.start) !== null && _ref3 !== void 0 ? _ref3 : 1, other === null || other === void 0 ? void 0 : other.format)) !== null && _formatNumber !== void 0 ? _formatNumber : "1";
+			return (_formatNumber = formatNumber((_ref4 = (_current$at = current[at]) !== null && _current$at !== void 0 ? _current$at : other === null || other === void 0 ? void 0 : other.start) !== null && _ref4 !== void 0 ? _ref4 : 1, other === null || other === void 0 ? void 0 : other.format)) !== null && _formatNumber !== void 0 ? _formatNumber : "1";
 		};
 		const text = level.text.replace(/%([1-9])/g, (_, digit) => numberAt(Number(digit) - 1));
 		const numbers = (_exec = /%[1-9](?:.*%[1-9])?/.exec(level.text)) === null || _exec === void 0 ? void 0 : _exec[0];
@@ -5027,7 +5383,7 @@ var docxLayout = (function(exports) {
 	* out.
 	*/
 	var readTable = (element, reader) => {
-		var _ref4, _blocks$find;
+		var _ref5, _blocks$find;
 		const children = contentOf(element).filter(isObject);
 		const properties = childrenOf(find(children, "w:tblPr"));
 		const style = valueOf(properties, "w:tblStyle");
@@ -5108,7 +5464,7 @@ var docxLayout = (function(exports) {
 		const fixed = attributesOf(find(properties, "w:tblLayout"))["w:type"] === "fixed";
 		const fits = !fixed && tableCells.some(({ ownWidth }) => ownWidth === void 0);
 		const unfitted = read.reduce((most, { end }) => Math.max(most, end), 0) > MOST_COLUMNS ? `a table given no widths of more than ${MOST_COLUMNS} columns` : void 0;
-		const unsupported = (_ref4 = fits ? unfitted : unequal ? "a table whose rows give a column different widths" : void 0) !== null && _ref4 !== void 0 ? _ref4 : (_blocks$find = blocks.find((block) => block.unsupported !== void 0)) === null || _blocks$find === void 0 ? void 0 : _blocks$find.unsupported;
+		const unsupported = (_ref5 = fits ? unfitted : unequal ? "a table whose rows give a column different widths" : void 0) !== null && _ref5 !== void 0 ? _ref5 : (_blocks$find = blocks.find((block) => block.unsupported !== void 0)) === null || _blocks$find === void 0 ? void 0 : _blocks$find.unsupported;
 		return _objectSpread2(_objectSpread2(_objectSpread2({
 			type: "table",
 			rows: read.map(({ row }) => row)
@@ -5260,16 +5616,32 @@ var docxLayout = (function(exports) {
 		return new Map([...byNumber, ...placeholders]);
 	};
 	/**
+	* The document's own lists of the characters that can't start a line (`w:noLineBreaksBefore`) and can't end one
+	* (`w:noLineBreaksAfter`), which take the place of Word's for their language.
+	*/
+	var readKinsokuLists = (settings) => settings.reduce((lists, child) => {
+		var _attributes$wVal;
+		const name = nameOf(child);
+		const attributes = attributesOf(child[name]);
+		const language = kinsokuLanguageOf(stringOf(attributes["w:lang"]));
+		if (name !== "w:noLineBreaksBefore" && name !== "w:noLineBreaksAfter" || language === void 0) return lists;
+		const list = { [name === "w:noLineBreaksBefore" ? "noLineStart" : "noLineEnd"]: String((_attributes$wVal = attributes["w:val"]) !== null && _attributes$wVal !== void 0 ? _attributes$wVal : "") };
+		return _objectSpread2(_objectSpread2({}, lists), {}, { [language]: _objectSpread2(_objectSpread2({}, lists[language]), list) });
+	}, {});
+	/**
 	* Reads the parts of the document's settings (`w:settings`) that change how it is laid out.
 	*/
 	var readSettings = (context) => {
 		var _twips14;
 		const settings = childrenOf(context.file.Settings.prepForXml(READING_CONTEXT)["w:settings"]);
-		return _objectSpread2({
+		const lists = readKinsokuLists(settings);
+		const spacingControl = valueOf(settings, "w:characterSpacingControl");
+		const unsupported = onOff(settings, "w:autoHyphenation") === true ? "hyphenation" : onOff(settings, "w:strictFirstAndLastChars") === true ? "the strict rules for the characters that can't start a line" : spacingControl !== void 0 && spacingControl !== "doNotCompress" ? "punctuation compressed" : void 0;
+		return _objectSpread2(_objectSpread2({
 			defaultTabStop: (_twips14 = twips(attributesOf(find(settings, "w:defaultTabStop"))["w:val"])) !== null && _twips14 !== void 0 ? _twips14 : 36,
 			evenAndOddHeaders: onOff(settings, "w:evenAndOddHeaders") === true,
 			addsParagraphSpacing: onOff(childrenOf(find(settings, "w:compat")), "w:doNotUseHTMLParagraphAutoSpacing") === true
-		}, onOff(settings, "w:autoHyphenation") === true ? { unsupported: "hyphenation" } : {});
+		}, Object.keys(lists).length > 0 ? { breakRules: { lists } } : {}), unsupported ? { unsupported } : {});
 	};
 	/**
 	* Reads a document's body, as it is written, with its styles, lists, settings, headers and footers.
