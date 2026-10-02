@@ -3972,6 +3972,23 @@ var docxShapes = (function(exports, docx) {
 		});
 	};
 	/**
+	* Reads a border of a paragraph (`w:pBdr`), on one side.
+	*/
+	var readParagraphBorder = (element) => {
+		var _stringOf, _numberOf;
+		if (element === void 0) return;
+		const attributes = attributesOf(element);
+		const on = (name) => attributes[name] !== void 0 && !isOff(attributes[name]);
+		return withoutUndefined({
+			style: (_stringOf = stringOf(attributes["w:val"])) !== null && _stringOf !== void 0 ? _stringOf : "none",
+			size: numberOf(attributes["w:sz"]),
+			space: (_numberOf = numberOf(attributes["w:space"])) !== null && _numberOf !== void 0 ? _numberOf : 0,
+			shadow: on("w:shadow"),
+			frame: on("w:frame"),
+			key: JSON.stringify(Object.entries(attributes).map(([name, value]) => [name, String(value)]).sort(([a], [b]) => a < b ? -1 : 1))
+		});
+	};
+	/**
 	* Reads paragraph properties (`w:pPr`).
 	*/
 	var readParagraphFormat = (element) => {
@@ -3979,15 +3996,33 @@ var docxShapes = (function(exports, docx) {
 		const children = childrenOf(element);
 		const spacing = attributesOf(find(children, "w:spacing"));
 		const indent = attributesOf(find(children, "w:ind"));
+		const borders = childrenOf(find(children, "w:pBdr"));
 		const twips = (...names) => names.map((name) => pointsOf(indent[name], 20)).find((value) => value !== void 0);
+		const chars = (...names) => names.map((name) => numberOf(indent[name])).find((value) => value !== void 0);
+		const automatic = (name) => spacing[name] === void 0 ? void 0 : !isOff(spacing[name]);
+		const border = (...names) => names.map((name) => readParagraphBorder(find(borders, name))).find((value) => value !== void 0);
 		const hanging = twips("w:hanging");
+		const hangingChars = chars("w:hangingChars");
 		return withoutUndefined({
 			spaceBefore: pointsOf(spacing["w:before"], 20),
 			spaceAfter: pointsOf(spacing["w:after"], 20),
+			spaceBeforeLines: numberOf(spacing["w:beforeLines"]),
+			spaceAfterLines: numberOf(spacing["w:afterLines"]),
+			autoSpaceBefore: automatic("w:beforeAutospacing"),
+			autoSpaceAfter: automatic("w:afterAutospacing"),
 			lineSpacing: readLineSpacing(spacing),
 			indentLeft: twips("w:start", "w:left"),
 			indentRight: twips("w:end", "w:right"),
 			firstLineIndent: hanging === void 0 ? twips("w:firstLine") : -hanging,
+			indentLeftChars: chars("w:startChars", "w:leftChars"),
+			indentRightChars: chars("w:endChars", "w:rightChars"),
+			firstLineChars: hangingChars === void 0 ? chars("w:firstLineChars") : -hangingChars,
+			borderTop: border("w:top"),
+			borderBottom: border("w:bottom"),
+			borderLeft: border("w:start", "w:left"),
+			borderRight: border("w:end", "w:right"),
+			borderBetween: border("w:between"),
+			borderBar: border("w:bar"),
 			contextualSpacing: onOff(children, "w:contextualSpacing"),
 			keepNext: onOff(children, "w:keepNext"),
 			keepLines: onOff(children, "w:keepLines"),
@@ -4018,7 +4053,7 @@ var docxShapes = (function(exports, docx) {
 		const root = childrenOf(xml["w:styles"]);
 		const defaults = root.filter((child) => "w:docDefaults" in child).map((child) => childrenOf(child["w:docDefaults"]));
 		const styles = root.filter((child) => "w:style" in child).map((child) => {
-			var _stringOf;
+			var _stringOf2;
 			const children = childrenOf(child["w:style"]);
 			const attributes = attributesOf(child["w:style"]);
 			const numbering = childrenOf(find(childrenOf(find(children, "w:pPr")), "w:numPr"));
@@ -4028,7 +4063,7 @@ var docxShapes = (function(exports, docx) {
 			return {
 				id: stringOf(attributes["w:styleId"]),
 				isDefault: attributes["w:default"] !== void 0 && !isOff(attributes["w:default"]),
-				definition: _objectSpread2(_objectSpread2(_objectSpread2({ type: (_stringOf = stringOf(attributes["w:type"])) !== null && _stringOf !== void 0 ? _stringOf : "paragraph" }, name === void 0 ? {} : { name }), {}, { basedOn: valueOf(children, "w:basedOn") }, list === void 0 && level === void 0 ? {} : { numbering: withoutUndefined({
+				definition: _objectSpread2(_objectSpread2(_objectSpread2({ type: (_stringOf2 = stringOf(attributes["w:type"])) !== null && _stringOf2 !== void 0 ? _stringOf2 : "paragraph" }, name === void 0 ? {} : { name }), {}, { basedOn: valueOf(children, "w:basedOn") }, list === void 0 && level === void 0 ? {} : { numbering: withoutUndefined({
 					id: list === void 0 ? void 0 : String(list),
 					level
 				}) }), {}, {
