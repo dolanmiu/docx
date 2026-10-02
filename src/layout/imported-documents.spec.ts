@@ -421,6 +421,15 @@ describe("imported documents", () => {
         expect(textsOf(content)).to.deep.equal(["1", "outer", "inner"]);
     });
 
+    it("should find an imported .docx whose relationship's target has backslashes, as patchDocument reads it", () => {
+        // patchDocument reads the .docx at the target with slashes, as other tools write backslashes in targets
+        const docx = packageOf(
+            { body: `${imports("rIdImport")}${SECTION}`, imported: { rIdImport: ["sub\\imported.docx", DOCX] } },
+            new Map([["word/sub/imported.docx", packageOf({ body: paragraph("imported") })]]),
+        );
+        expect(textsOf(readDocx(docx.parts, docx.binaryParts, {}, docx.importedDocuments))).to.deep.equal(["imported"]);
+    });
+
     describe("what it stops at", () => {
         /** Why a document importing one stops, with the content type given, and where */
         const stopOf = (

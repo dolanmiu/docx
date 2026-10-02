@@ -53,10 +53,12 @@ const folderOf = (path: string): string => path.slice(0, path.lastIndexOf("/") +
 
 /**
  * The path of the part a relationship's target refers to: relative to the folder of the part the relationship belongs to,
- * or from the package's root if it starts with "/".
+ * or from the package's root if it starts with "/". Backslashes, which some tools write, are read as slashes, as
+ * patchDocument reads them.
  */
-const resolveTarget = (from: string, target: string): string =>
-    (target.startsWith("/") ? target : `${folderOf(from)}${target}`)
+const resolveTarget = (from: string, target: string): string => {
+    const normalized = target.replace(/\\/g, "/");
+    return (normalized.startsWith("/") ? normalized : `${folderOf(from)}${normalized}`)
         .split("/")
         .reduce<readonly string[]>((segments, segment) => {
             if (segment === "" || segment === ".") {
@@ -65,6 +67,7 @@ const resolveTarget = (from: string, target: string): string =>
             return segment === ".." ? segments.slice(0, -1) : [...segments, segment];
         }, [])
         .join("/");
+};
 
 /** The relationships of the part at the path to the other parts of the package, from its relationships part */
 const relationshipsOf = (parts: ReadonlyMap<string, Element>, from: string): readonly Relationship[] => {
