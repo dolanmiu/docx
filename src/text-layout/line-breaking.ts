@@ -672,6 +672,9 @@ export const layoutLines = (
     // font the measurer doesn't know
     let markHeight: number | undefined;
     const markLineHeight = (): number => (markHeight ??= measurer.measureLineHeight(markFont));
+    // A line with no text on it is as tall as the mark, and a border on the mark takes no room
+    // (scripts/layout-probes/word-run-formatting.ts RF8d)
+    const emptyLineFont: TextFont = { ...markFont, border: undefined };
     /**
      * Whether a line of only pictures is in a paragraph whose mark has a taller line than the pictures' runs, so that how
      * tall the line is depends on whether the mark counts. Word hasn't shown that: in its probes the pictures' runs were as
@@ -763,8 +766,8 @@ export const layoutLines = (
         };
         const finish = (state: LineState, breakAfter?: LaidOutLine["breakAfter"]): void => {
             // Spaces add nothing to the height of a line with no text on it, which is as tall as its mark, as Word and
-            // LibreOffice lay it out. A border on the mark takes no room (scripts/layout-probes/word-run-formatting.ts RF8d)
-            const heights = state.started ? state.heights : withFont(NOTHING, { ...markFont, border: undefined }, measurer);
+            // LibreOffice lay it out
+            const heights = state.started ? state.heights : withFont(NOTHING, emptyLineFont, measurer);
             const { unsupported: unknownHeight, ...height } = heightOf(heights, lineSpacing);
             const unsupported = state.unknown
                 ? "a justified line that only fits squeezed at an en, em or ideographic space"
@@ -937,7 +940,7 @@ export const layoutLines = (
             // A page break that ends the paragraph has the mark on its line, which with no text on it is as tall as the mark,
             // however big the break and the spaces before it are: 28-point spaces before a 28-point break, in an 11-point
             // paragraph, are an 11-point line in Word and LibreOffice (word-probes.docx U8a7)
-            const breakFont = isLast && !line.started ? markFont : end.font;
+            const breakFont = isLast && !line.started ? emptyLineFont : end.font;
             finish(
                 { ...line, heights: withFont(line.started ? line.heights : NOTHING, breakFont, measurer), started: true },
                 end.kind === "line" ? undefined : end.kind,

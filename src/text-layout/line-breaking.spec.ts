@@ -1026,6 +1026,11 @@ describe("layoutLines with run formatting, as Word lays it out", () => {
         expect(rf7g.spacingBelow! * 20).to.be.closeTo(224.28, 0.01);
         // A border on an empty paragraph's mark takes no room: 268.34 (RF8d)
         expect(twipsOf([], { markFont: { ...CALIBRI, ...boxed(4.5) } })).to.be.closeTo(268.55, 0.01);
+        // Nor on the line of a page break that ends an empty paragraph, which is as tall as the mark too
+        expect(twipsOf([{ type: "break", kind: "page", font: CALIBRI }], { markFont: { ...CALIBRI, ...boxed(4.5) } })).to.be.closeTo(
+            268.55,
+            0.01,
+        );
     });
 
     it("should give a border its room beside its box, which goes on round text next to it with the same border", () => {
