@@ -82,6 +82,49 @@ describe("layoutLines", () => {
         expect(heightsOf([text("aa"), text(" ", 16), text("bb")])).to.deep.equal([16]);
     });
 
+    it("should measure the pieces of a word in the same font together when it is kerned, so they are kerned across runs as Word kerns them", () => {
+        // cspell:ignore AVAVAVAV
+        // "AV" kerned is 15 points, rather than 20
+        const kerning: TextMeasurer = {
+            measureWidth: (value) => [...value].length * 10 - value.split("AV").length * 5 + 5,
+            measureLineHeight: () => 10,
+        };
+        const linesOf = (items: readonly InlineItem[]): number => layoutLines(items, { width: 90, measurer: kerning }).length;
+        const kerned = { kerning: 1 };
+        const piece = (value: string, font: TextFont = kerned): InlineItem => ({ type: "text", text: value, font });
+        // "AVAVAVAV" has 4 pairs kerned, 2 of them across the pieces, so it is 60 points, and " aa" fits after it. Measured
+        // apart, the pieces are 65 points
+        expect(linesOf([piece("AVA"), piece("VAV", { kerning: 1 }), piece("AV aa")])).to.equal(1);
+        // Pieces in different fonts aren't, nor pieces of the same font with different formatting, nor pieces not kerned
+        expect(linesOf([piece("AVA"), piece("VAV", { ...kerned, bold: true }), piece("AV aa")])).to.equal(2);
+        expect(
+            linesOf([
+                piece("AVA", { ...kerned, size: 10 }),
+                piece("VAV", { ...kerned, size: 11 }),
+                piece("AV aa", { ...kerned, size: 10 }),
+            ]),
+        ).to.equal(2);
+        expect(linesOf([piece("AVA", {}), piece("VAV", {}), piece("AV aa", {})])).to.equal(2);
+        // Formatting written as Word's default is the same as none
+        expect(linesOf([piece("AVA"), piece("VAV", { ...kerned, bold: false, italic: false, scale: 100 }), piece("AV aa")])).to.equal(1);
+        // A font's name in other capitals is the same font
+        expect(
+            linesOf([
+                piece("AVA", { ...kerned, font: "Probe Sans" }),
+                piece("VAV", { ...kerned, font: "probe sans" }),
+                piece("AV aa", { ...kerned, font: "Probe Sans" }),
+            ]),
+        ).to.equal(1);
+        // Pieces kerned from different sizes are both kerned
+        expect(linesOf([piece("AVA", { kerning: 1 }), piece("VAV", { kerning: 2 }), piece("AV aa", { kerning: 1 })])).to.equal(1);
+        // Text smaller than the size kerning starts at isn't kerned. Each piece has a font of its own, as each run does
+        const small = { kerning: 12, size: 10 };
+        expect(linesOf([piece("AVA", { ...small }), piece("VAV", { ...small }), piece("AV aa", { ...small })])).to.equal(2);
+        expect(
+            linesOf([piece("AVA", { ...small, size: 12 }), piece("VAV", { ...small, size: 12 }), piece("AV aa", { ...small, size: 12 })]),
+        ).to.equal(1);
+    });
+
     it("should space the lines as the paragraph says", () => {
         const lines = [text("aaaa bbbb cccc")];
         expect(heightsOf(lines, 100, { format: { lineSpacing: { rule: "multiple", multiple: 1.5 } } })).to.deep.equal([15, 15]);

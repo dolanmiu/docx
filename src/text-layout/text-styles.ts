@@ -277,6 +277,8 @@ export const readRunFormat = (element: unknown, themeFonts: ThemeFonts): RunForm
         size: sizeOf(attributesOf(find(children, "w:sz"))["w:val"]),
         bold: onOff(children, "w:b"),
         italic: onOff(children, "w:i"),
+        // The size kerning starts at is a size too (`ST_HpsMeasure`), read as Word reads a run's
+        kerning: sizeOf(attributesOf(find(children, "w:kern"))["w:val"]),
         allCaps: onOff(children, "w:caps"),
         smallCaps: onOff(children, "w:smallCaps"),
         hidden: onOff(children, "w:vanish"),
@@ -542,8 +544,8 @@ export const styleChain = ({ styles }: TextStyles, id: string | undefined, type:
 /**
  * The parts of run formatting that change the font text is measured in.
  */
-export const fontOf = ({ font, size, bold, italic, characterSpacing, scale }: RunFormat): TextFont =>
-    withoutUndefined({ font, size, bold, italic, characterSpacing, scale });
+export const fontOf = ({ font, size, bold, italic, kerning, characterSpacing, scale }: RunFormat): TextFont =>
+    withoutUndefined({ font, size, bold, italic, kerning, characterSpacing, scale });
 
 type FontSlot = "latin" | "eastAsian" | "complex";
 

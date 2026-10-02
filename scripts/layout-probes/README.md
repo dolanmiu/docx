@@ -1,6 +1,6 @@
 # Layout probes
 
-<!-- cspell:ignore fsplit soffice Poppler pdftocairo autoSpace pdftohtml -->
+<!-- cspell:ignore fsplit soffice Poppler pdftocairo autoSpace pdftohtml Aptos GPOS DFonts -->
 
 Documents made to find out how Word lays out pages, where its rules aren't written down. docx/layout follows what they
 showed. Each line of text names its probe, such as `Q3a fill 12`, so it can be found in a PDF of the document, and each
@@ -38,6 +38,7 @@ table style and each cell's width.
 | `word-watertight-tables`    | TB1 to TB11: how Word lays out table formatting docx/layout read nothing of: a table style's spacing and size against Normal's, borders only a table style has, cell borders, space between cells, rows kept with the next, vertical text in a cell, `hideMark`, a table style's first row, a table sized to its text and indented, hidden rows, and a floating table, the text after which Word puts beside it (TB11), where docx/layout stops. One of the round of probes for the watertight inventory                                                         | `word-watertight.py`           |
 | `word-character-widths`     | W, S, B and H: how wide Word draws each of the 1,995 characters of the width tables' ranges in Calibri, Cambria, Arial, Times New Roman and Courier New, plain and bold, and which font it draws those its fonts lack in; how wide each space is; whether lines break after each space; and whether a word before one at the end of a line stays on the line. Its `.json` has each paragraph's characters, for the reader. `scripts/generate-font-widths.ts` checks the width tables against what the reader reads                                               | `word-character-widths.py`     |
 | `word-italic-widths`        | W and S in italic and bold italic: how wide Word draws each character of the width tables' ranges in the italics of the five fonts, and which font it draws those their italics lack in, and how wide each space is. `word-character-widths.ts` writes it with `italic`, and `word-character-widths.json`'s italic twin, `word-italic-widths.json`, is beside it. `scripts/generate-font-widths.ts` checks the italic width tables against what the reader reads                                                                                                 | `word-character-widths.py`     |
+| `word-fonts`                | F1 to F7: when Word kerns text in Aptos, from what size and across runs, whether with the pairs only its GPOS table has, and how far apart its lines are, for measuring fonts from their files                                                                                                                                                                                                                                                                                                                                                                   | `word-fonts.py`                |
 | `word-units`                | U1 to U8: lengths written with units, as docx writes a length given as a string, such as `"1in"` or `"12pt"`: whether Word reads them in a page's size and margins, a run's size, indents, character spacing, a table's widths and row height and the space between columns, and how it rounds a margin of a fraction of a twip and a size of a fraction of a half-point                                                                                                                                                                                         | `word-units.py`                |
 | `word-units2`               | V1 to V6: how Word reads a length with a unit that isn't a whole number of twips or half-points, measured across the page: indents and a margin in each unit, negative ones, sizes, character spacing, a table's column and a row's height                                                                                                                                                                                                                                                                                                                       | `word-units.py`                |
 | `word-paragraph-formats`    | B1 to B10, A0 to A8, C1 to C16 and L1 to L3: what TX5 to TX7 of `word-watertight-text` left open: where the space before and after goes against a border, whether a border below a paragraph's last line needs room at the foot of a page, which paragraphs with the same borders are one box, the room each style of border takes, borders in a cell and with contextual spacing; automatic spacing at the start of a document, in lists, beside tables, in footnotes and headers; indents in characters beside those in twips, and space in lines              | `word-paragraph-formats.py`    |
@@ -59,7 +60,13 @@ It writes `build/word-probes/word-rules2.docx`. `fsplit`, `word-no-prompt` and `
 package first (`npm run build`). `word-watertight-stops` and `word-justify` measure their lines with docx/layout's
 width tables, which they import from `src`. The others import only `docx`, as the demos do. `word-watertight-text`
 and `word-watertight-stops` replace markers in the XML with what docx can't write, as their `INJECTIONS` and
-`FIRST_ROW_STYLE` say.
+`FIRST_ROW_STYLE` say. `word-fonts` also imports the measuring of text from
+`src/text-layout`, to print the widths docx/layout measures its probes at when it is given a folder with Aptos's and
+Calibri's files, such as Word's own:
+
+```bash
+npm run run-ts -- scripts/layout-probes/word-fonts.ts build/word-probes/word-fonts.docx "/Applications/Microsoft Word.app/Contents/Resources/DFonts"
+```
 
 ## Lay it out in LibreOffice
 

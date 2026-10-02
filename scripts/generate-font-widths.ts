@@ -27,10 +27,12 @@
  *   python3 scripts/layout-probes/word-character-widths.py build/word-probes/word-character-widths --json \
  *     > build/word-probes/word-character-widths.word.json
  */
-// cspell:ignore hhea hmtx cmap Caladea crosextra Poppler bbox pdftohtml
+// cspell:ignore Caladea crosextra Poppler bbox pdftohtml
 import { execSync } from "node:child_process";
 import { readFileSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
+
+import { readFontFile } from "../src/text-layout/font-file";
 
 const OUTPUT = "src/text-layout/font-widths.ts";
 
@@ -102,69 +104,19 @@ const isOwnFont = (drawnIn: string | null, font: string): boolean => {
 };
 
 /**
- * Reads a TrueType font's height of a line and the width of each of its characters from its `head`, `hhea`, `hmtx` and
- * `cmap` tables.
+ * Reads a font's height of a line and the width of each of its characters, as docx/layout reads the font files it is
+ * given.
  */
 const readFont = (path: string): { readonly lineHeight: number; readonly widthOf: (code: number) => number | undefined } => {
-    const font = readFileSync(path);
-    const tables = new Map(
-        Array.from({ length: font.readUInt16BE(4) }, (_, index) => {
-            const record = 12 + index * 16;
-            return [font.toString("latin1", record, record + 4), font.readUInt32BE(record + 8)] as const;
-        }),
-    );
-    const table = (tag: string): number => {
-        const offset = tables.get(tag);
-        if (offset === undefined) {
-            throw new Error(`${path} has no ${tag} table`);
-        }
-        return offset;
-    };
-
-    const unitsPerEm = font.readUInt16BE(table("head") + 18);
-    const hhea = table("hhea");
-    const ascender = font.readInt16BE(hhea + 4);
-    const descender = font.readInt16BE(hhea + 6);
-    const lineGap = font.readInt16BE(hhea + 8);
-    const metricCount = font.readUInt16BE(hhea + 34);
-    const hmtx = table("hmtx");
-    const advance = (glyph: number): number => font.readUInt16BE(hmtx + Math.min(glyph, metricCount - 1) * 4);
-
-    // The Unicode (platform 3, encoding 1) subtable, in format 4
-    const cmap = table("cmap");
-    const subtable = Array.from({ length: font.readUInt16BE(cmap + 2) }, (_, index) => cmap + 4 + index * 8)
-        .filter((record) => font.readUInt16BE(record) === 3 && font.readUInt16BE(record + 2) === 1)
-        .map((record) => cmap + font.readUInt32BE(record + 4))[0];
-    if (subtable === undefined || font.readUInt16BE(subtable) !== 4) {
-        throw new Error(`${path} has no Unicode character map in format 4`);
-    }
-    const segments = font.readUInt16BE(subtable + 6) / 2;
-    const ends = subtable + 14;
-    const starts = ends + segments * 2 + 2;
-    const deltas = starts + segments * 2;
-    const rangeOffsets = deltas + segments * 2;
-    const glyphOf = (code: number): number => {
-        const segment = Array.from({ length: segments }, (_, index) => index).find((index) => font.readUInt16BE(ends + index * 2) >= code);
-        if (segment === undefined || font.readUInt16BE(starts + segment * 2) > code) {
-            return 0;
-        }
-        const delta = font.readUInt16BE(deltas + segment * 2);
-        const rangeOffset = font.readUInt16BE(rangeOffsets + segment * 2);
-        if (rangeOffset === 0) {
-            return (code + delta) & 0xffff;
-        }
-        const glyph = font.readUInt16BE(rangeOffsets + segment * 2 + rangeOffset + (code - font.readUInt16BE(starts + segment * 2)) * 2);
-        return glyph === 0 ? 0 : (glyph + delta) & 0xffff;
-    };
-
+    const [face] = readFontFile(readFileSync(path));
     return {
         // Not rounded, as Word doesn't round it: Calibri's 2500 units of 2048 are 1220.703125 thousandths, and lines of
         // 268.55 twips at 11 points, where 1221 would be 268.62
-        lineHeight: ((ascender - descender + lineGap) * 1000) / unitsPerEm,
+        lineHeight: face.lineHeight * 1000,
         // In thousandths of an em, or undefined when the font doesn't have the character
         widthOf: (code) => {
-            const glyph = glyphOf(code);
-            return glyph === 0 ? undefined : Math.round((advance(glyph) * 1000) / unitsPerEm);
+            const advance = face.advanceOf(code);
+            return advance === undefined ? undefined : Math.round(advance * 1000);
         },
     };
 };

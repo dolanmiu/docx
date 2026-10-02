@@ -10,7 +10,17 @@
  * @module
  */
 import { type LineBreakRules, extendsCharacter, findLineBreaks, joinsNext } from "./line-break-rules";
-import { type LineSpacing, type ParagraphFormat, type TextFont, measureLineHeight, measureTextWidth, unknownCharacter } from "./text-width";
+import {
+    DEFAULT_FONT,
+    DEFAULT_FONT_SIZE,
+    type LineSpacing,
+    type ParagraphFormat,
+    type TextFont,
+    isKerned,
+    measureLineHeight,
+    measureTextWidth,
+    unknownCharacter,
+} from "./text-width";
 
 /**
  * Measures text. The default measures it with the widths of the fonts in {@link FONT_WIDTHS}.
@@ -236,8 +246,49 @@ const othersOf = (pieces: readonly Piece[]): readonly Piece[] =>
 /** How many characters pieces have */
 const lengthOf = (pieces: readonly Piece[]): number => pieces.reduce((total, { text }) => total + [...text].length, 0);
 
-const widthOf = (pieces: readonly Piece[], measurer: TextMeasurer): number =>
-    pieces.reduce((total, { text, font }) => total + measurer.measureWidth(text, font), 0);
+/**
+ * A font's formatting with Word's defaults where it gives none, so formatting written as the default is the same as none,
+ * its name in small letters, as the measurers find a font by its name in any case, and whether it is kerned, rather than
+ * from what size
+ */
+const withDefaults = (font: TextFont): Readonly<Record<string, unknown>> => ({
+    size: DEFAULT_FONT_SIZE,
+    bold: false,
+    italic: false,
+    characterSpacing: 0,
+    scale: 100,
+    ...Object.fromEntries(Object.entries(font).filter(([, value]) => value !== undefined)),
+    font: (font.font ?? DEFAULT_FONT).toLowerCase(),
+    kerning: isKerned(font),
+});
+
+/** Whether two pieces of text are in the same font, with the same formatting */
+const sameFont = (one: TextFont, other: TextFont): boolean => {
+    const [first, second] = [withDefaults(one), withDefaults(other)];
+    return Object.keys(first).length === Object.keys(second).length && Object.entries(first).every(([key, value]) => second[key] === value);
+};
+
+/**
+ * How wide pieces of text are. Pieces next to each other in the same font, and kerned, are measured together, so the pairs
+ * of characters across them are kerned, as Word kerns them across runs (word-fonts.docx F4). Others are measured
+ * apart, as a measurer may measure a piece, such as a page number, differently on its own.
+ */
+const widthOf = (pieces: readonly Piece[], measurer: TextMeasurer): number => {
+    if (pieces.length === 0) {
+        return 0;
+    }
+    let total = 0;
+    let [{ text, font }] = pieces;
+    for (const piece of pieces.slice(1)) {
+        if (isKerned(font) && sameFont(font, piece.font)) {
+            text += piece.text;
+            continue;
+        }
+        total += measurer.measureWidth(text, font);
+        ({ text, font } = piece);
+    }
+    return total + measurer.measureWidth(text, font);
+};
 
 // Most words are in one font, so their text needn't be joined
 const textOf = (pieces: readonly Piece[]): string => (pieces.length === 1 ? pieces[0].text : pieces.map(({ text }) => text).join(""));

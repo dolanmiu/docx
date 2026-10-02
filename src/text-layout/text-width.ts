@@ -20,6 +20,8 @@ export type TextFont = {
     readonly bold?: boolean;
     /** Measured in the font's italics, or bold italics */
     readonly italic?: boolean;
+    /** Kerns pairs of characters in text of this size or larger, in points (`w:kern`). Not kerned when it isn't given */
+    readonly kerning?: number;
     /** Space added after each character, in points */
     readonly characterSpacing?: number;
     /** How wide the characters are drawn, as a percentage of their width */
@@ -313,7 +315,7 @@ const isWide = (code: number): boolean =>
 const isHalfWidth = (code: number): boolean => code >= 0xff61 && code <= 0xffdc;
 
 // Marks, which go on the character before them, and characters that only change how the text around them is laid out
-const takesNoRoom = (character: string): boolean => /[\p{Mn}\p{Me}\p{Cf}]/u.test(character);
+export const takesNoRoom = (character: string): boolean => /[\p{Mn}\p{Me}\p{Cf}]/u.test(character);
 
 /**
  * The width of a character in thousandths of an em. Characters that aren't in the table are as wide as an average
@@ -355,6 +357,9 @@ const monospacedWidth = (character: string): number => {
 };
 
 const sizeOf = ({ size = DEFAULT_FONT_SIZE }: TextFont): number => size;
+
+/** Whether text is kerned: with kerning on (`w:kern`), and at its size or larger, as Word kerns it (word-fonts.docx F3) */
+export const isKerned = ({ kerning, size = DEFAULT_FONT_SIZE }: TextFont): boolean => kerning !== undefined && size >= kerning;
 
 /**
  * How a font's characters are measured: an East Asian font's Latin letters with the widths of the font in the table they
