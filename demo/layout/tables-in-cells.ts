@@ -2,7 +2,8 @@
 // rows, as Word breaks them (word-probes.docx U4c in scripts/layout-probes). It is one of the documents
 // scripts/compare-layout.sh checks against LibreOffice, which breaks them the same way. Each row of a table in a cell is a
 // line, and the cell beside it is a line, as LibreOffice doesn't keep to widow control in table cells, where Word does.
-// The tables in cells have no borders, which docx/layout doesn't yet break across pages, and a line after them, as
+// The tables in cells have no borders, as LibreOffice breaks those with borders where Word doesn't, and draws no top
+// border above the rest of them on the next page (word-nested-tables.docx N1b, N1c). They have a line after them, as
 // LibreOffice gives the empty paragraph docx writes after a table that ends a cell no room. See docs/usage/layout.md.
 
 import * as fs from "fs";
