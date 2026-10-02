@@ -20,7 +20,7 @@ as a <a href="index.PageNumberEstimator.html" class="tsd-kind-type-alias">PageNu
 <h4 class="tsd-anchor-link" id="public-api">Public Api<a href="#public-api" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="../assets/icons.svg#icon-anchor"></use></svg></a></h4></div></div></section>
 <div class="tsd-signature"><span class="tsd-signature-keyword">type</span> <span class="tsd-kind-type-alias">EstimatedPageNumbers</span> <span class="tsd-signature-symbol">=</span> <span class="tsd-signature-symbol">{</span><br/>    <a class="tsd-kind-property" href="#bookmarkpagenumbers">bookmarkPageNumbers</a><span class="tsd-signature-symbol">?:</span> <span class="tsd-signature-type">ReadonlyMap</span><span class="tsd-signature-symbol">&lt;</span><span class="tsd-signature-type">string</span><span class="tsd-signature-symbol">,</span> <span class="tsd-signature-type">number</span><span class="tsd-signature-symbol">&gt;</span><span class="tsd-signature-symbol">;</span><br/>    <a class="tsd-kind-property" href="#bookmarks">bookmarks</a><span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">ReadonlyMap</span><span class="tsd-signature-symbol">&lt;</span><span class="tsd-signature-type">string</span><span class="tsd-signature-symbol">,</span> <span class="tsd-signature-type">string</span><span class="tsd-signature-symbol">&gt;</span><span class="tsd-signature-symbol">;</span><br/>    <a class="tsd-kind-property" href="#pagecount">pageCount</a><span class="tsd-signature-symbol">?:</span> <span class="tsd-signature-type">number</span><span class="tsd-signature-symbol">;</span><br/>    <a class="tsd-kind-property" href="#relativepositions">relativePositions</a><span class="tsd-signature-symbol">?:</span> <span class="tsd-signature-type">ReadonlyMap</span><span class="tsd-signature-symbol">&lt;</span><span class="tsd-signature-type">string</span><span class="tsd-signature-symbol">,</span> <span class="tsd-signature-keyword">readonly</span> (<span class="tsd-signature-type">string</span> <span class="tsd-signature-symbol">|</span> <span class="tsd-signature-type">undefined</span>)<span class="tsd-signature-symbol">[]</span><span class="tsd-signature-symbol">&gt;</span><span class="tsd-signature-symbol">;</span><br/>    <a class="tsd-kind-property" href="#sectionpagecounts">sectionPageCounts</a><span class="tsd-signature-symbol">?:</span> <span class="tsd-signature-keyword">readonly</span> (<span class="tsd-signature-type">number</span> <span class="tsd-signature-symbol">|</span> <span class="tsd-signature-type">undefined</span>)<span class="tsd-signature-symbol">[]</span><span class="tsd-signature-symbol">;</span><br/><span class="tsd-signature-symbol">}</span></div><aside class="tsd-sources">
 <ul>
-<li>Defined in <a href="https://github.com/dolanmiu/docx/blob/e70b43dd8f1d7d29a735775a6be4f062ba866440/src/file/document/body/page-numbers.ts#L31">file/document/body/page-numbers.ts:31</a></li></ul></aside>
+<li>Defined in <a href="https://github.com/dolanmiu/docx/blob/c81d06d2b56ea8cf369971742f1bff87f3b095da/src/file/document/body/page-numbers.ts#L31">file/document/body/page-numbers.ts:31</a></li></ul></aside>
 <section class="tsd-panel-group tsd-index-group">
 <section class="tsd-panel tsd-index-panel">
 <details class="tsd-index-content tsd-accordion" open><summary class="tsd-accordion-summary tsd-index-summary"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" aria-hidden="true"><use href="../assets/icons.svg#icon-chevronDown"></use></svg>
@@ -45,7 +45,7 @@ references to it with a number format of their own write in that format: <code>P
 Those to a bookmark that isn't in it are left blank.</p>
 </div><aside class="tsd-sources">
 <ul>
-<li>Defined in <a href="https://github.com/dolanmiu/docx/blob/e70b43dd8f1d7d29a735775a6be4f062ba866440/src/file/document/body/page-numbers.ts#L49">file/document/body/page-numbers.ts:49</a></li></ul></aside></section>
+<li>Defined in <a href="https://github.com/dolanmiu/docx/blob/c81d06d2b56ea8cf369971742f1bff87f3b095da/src/file/document/body/page-numbers.ts#L49">file/document/body/page-numbers.ts:49</a></li></ul></aside></section>
 <section class="tsd-panel tsd-member">
 <h3 class="tsd-anchor-link" id="bookmarks"><code class="tsd-tag">Readonly</code><span>bookmarks</span><a href="#bookmarks" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="../assets/icons.svg#icon-anchor"></use></svg></a></h3>
 <div class="tsd-signature"><span class="tsd-kind-property">bookmarks</span><span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">ReadonlyMap</span><span class="tsd-signature-symbol">&lt;</span><span class="tsd-signature-type">string</span><span class="tsd-signature-symbol">,</span> <span class="tsd-signature-type">string</span><span class="tsd-signature-symbol">&gt;</span></div>
@@ -53,14 +53,14 @@ Those to a bookmark that isn't in it are left blank.</p>
 name. The page references to a bookmark that isn't in it are left blank.</p>
 </div><aside class="tsd-sources">
 <ul>
-<li>Defined in <a href="https://github.com/dolanmiu/docx/blob/e70b43dd8f1d7d29a735775a6be4f062ba866440/src/file/document/body/page-numbers.ts#L36">file/document/body/page-numbers.ts:36</a></li></ul></aside></section>
+<li>Defined in <a href="https://github.com/dolanmiu/docx/blob/c81d06d2b56ea8cf369971742f1bff87f3b095da/src/file/document/body/page-numbers.ts#L36">file/document/body/page-numbers.ts:36</a></li></ul></aside></section>
 <section class="tsd-panel tsd-member">
 <h3 class="tsd-anchor-link" id="pagecount"><code class="tsd-tag">Optional</code> <code class="tsd-tag">Readonly</code><span>page<wbr/>Count</span><a href="#pagecount" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="../assets/icons.svg#icon-anchor"></use></svg></a></h3>
 <div class="tsd-signature"><span class="tsd-kind-property">pageCount</span><span class="tsd-signature-symbol">?:</span> <span class="tsd-signature-type">number</span></div>
 <div class="tsd-comment tsd-typography"><p>The number of pages of the document, which its NUMPAGES fields show. They are left blank without it</p>
 </div><aside class="tsd-sources">
 <ul>
-<li>Defined in <a href="https://github.com/dolanmiu/docx/blob/e70b43dd8f1d7d29a735775a6be4f062ba866440/src/file/document/body/page-numbers.ts#L38">file/document/body/page-numbers.ts:38</a></li></ul></aside></section>
+<li>Defined in <a href="https://github.com/dolanmiu/docx/blob/c81d06d2b56ea8cf369971742f1bff87f3b095da/src/file/document/body/page-numbers.ts#L38">file/document/body/page-numbers.ts:38</a></li></ul></aside></section>
 <section class="tsd-panel tsd-member">
 <h3 class="tsd-anchor-link" id="relativepositions"><code class="tsd-tag">Optional</code> <code class="tsd-tag">Readonly</code><span>relative<wbr/>Positions</span><a href="#relativepositions" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="../assets/icons.svg#icon-anchor"></use></svg></a></h3>
 <div class="tsd-signature"><span class="tsd-kind-property">relativePositions</span><span class="tsd-signature-symbol">?:</span> <span class="tsd-signature-type">ReadonlyMap</span><span class="tsd-signature-symbol">&lt;</span><span class="tsd-signature-type">string</span><span class="tsd-signature-symbol">,</span> <span class="tsd-signature-keyword">readonly</span> (<span class="tsd-signature-type">string</span> <span class="tsd-signature-symbol">|</span> <span class="tsd-signature-type">undefined</span>)<span class="tsd-signature-symbol">[]</span><span class="tsd-signature-symbol">&gt;</span></div>
@@ -70,7 +70,7 @@ refers to, in the order they are in the body: &quot;above&quot; or &quot;below&q
 those in headers, footers and notes.</p>
 </div><aside class="tsd-sources">
 <ul>
-<li>Defined in <a href="https://github.com/dolanmiu/docx/blob/e70b43dd8f1d7d29a735775a6be4f062ba866440/src/file/document/body/page-numbers.ts#L56">file/document/body/page-numbers.ts:56</a></li></ul></aside></section>
+<li>Defined in <a href="https://github.com/dolanmiu/docx/blob/c81d06d2b56ea8cf369971742f1bff87f3b095da/src/file/document/body/page-numbers.ts#L56">file/document/body/page-numbers.ts:56</a></li></ul></aside></section>
 <section class="tsd-panel tsd-member">
 <h3 class="tsd-anchor-link" id="sectionpagecounts"><code class="tsd-tag">Optional</code> <code class="tsd-tag">Readonly</code><span>section<wbr/>Page<wbr/>Counts</span><a href="#sectionpagecounts" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="../assets/icons.svg#icon-anchor"></use></svg></a></h3>
 <div class="tsd-signature"><span class="tsd-kind-property">sectionPageCounts</span><span class="tsd-signature-symbol">?:</span> <span class="tsd-signature-keyword">readonly</span> (<span class="tsd-signature-type">number</span> <span class="tsd-signature-symbol">|</span> <span class="tsd-signature-type">undefined</span>)<span class="tsd-signature-symbol">[]</span></div>
@@ -78,7 +78,7 @@ those in headers, footers and notes.</p>
 in headers and footers only on its pages, show. Those of a section whose number is undefined are left blank.</p>
 </div><aside class="tsd-sources">
 <ul>
-<li>Defined in <a href="https://github.com/dolanmiu/docx/blob/e70b43dd8f1d7d29a735775a6be4f062ba866440/src/file/document/body/page-numbers.ts#L43">file/document/body/page-numbers.ts:43</a></li></ul></aside></section></section></details></div>
+<li>Defined in <a href="https://github.com/dolanmiu/docx/blob/c81d06d2b56ea8cf369971742f1bff87f3b095da/src/file/document/body/page-numbers.ts#L43">file/document/body/page-numbers.ts:43</a></li></ul></aside></section></section></details></div>
 <div class="col-sidebar">
 <div class="page-menu">
 <div class="tsd-navigation settings">

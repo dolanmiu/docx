@@ -1176,9 +1176,10 @@ var docxLayout = (function(exports) {
 	* which bookmarks start on it.
 	*
 	* Lines break at spaces, and at en, em, four-per-em and ideographic spaces, after hyphens, between Chinese, Japanese and
-	* Korean characters, and between the words of Thai and the other scripts without spaces, as {@link findLineBreaks} finds.
-	* Tabs move to the paragraph's tab stops, or to the document's default ones. Each line is as tall as its text's tallest
-	* ascent and deepest descent, with its pictures standing on the baseline, and the paragraph's line spacing.
+	* Korean characters, and between the words of Thai and the other scripts without spaces, as {@link findLineBreaks} finds,
+	* and at soft hyphens, with a hyphen drawn at the end of the line. Tabs move to the paragraph's tab stops, or to the
+	* document's default ones. Each line is as tall as its text's tallest ascent and deepest descent, with its pictures
+	* standing on the baseline, and the paragraph's line spacing.
 	*
 	* @module
 	*/
@@ -1205,32 +1206,48 @@ var docxLayout = (function(exports) {
 		" ",
 		"　"
 	]);
+	/** How many characters pieces have */
+	var lengthOf = (pieces) => pieces.reduce((total, { text }) => total + [...text].length, 0);
 	/**
 	* Turns text next to each other into words and the spaces between them. Pieces of words next to each other in different
-	* fonts are one word, unless the line can break between them.
+	* fonts are one word, unless the line can break between them. A soft hyphen in a word is where it may break.
 	*/
 	var tokenizeText = (items, rules) => {
-		const breaks = findLineBreaks(items, rules);
+		const breaks = findLineBreaks(items.filter((item) => item.type === "text"), rules);
 		const tokens = [];
 		let index = 0;
-		for (const { text, font } of items) for (const character of text) {
-			const type = SPACES.has(character) ? "space" : "word";
-			const last = tokens[tokens.length - 1];
-			if ((last === null || last === void 0 ? void 0 : last.type) !== type || type === "word" && breaks.has(index)) tokens.push({
-				type,
-				pieces: [{
-					text: character,
-					font
-				}]
-			});
-			else {
-				const piece = last.pieces[last.pieces.length - 1];
-				last.pieces[last.pieces.length - 1 + (piece.font === font ? 0 : 1)] = {
-					text: piece.font === font ? piece.text + character : character,
-					font
-				};
+		for (const item of items) {
+			if (item.type === "softHyphen") {
+				const word = tokens[tokens.length - 1];
+				if ((word === null || word === void 0 ? void 0 : word.type) === "word") {
+					var _word$hyphens;
+					word.hyphens = [...(_word$hyphens = word.hyphens) !== null && _word$hyphens !== void 0 ? _word$hyphens : [], {
+						at: lengthOf(word.pieces),
+						font: item.font
+					}];
+				}
+				continue;
 			}
-			index++;
+			const { text, font } = item;
+			for (const character of text) {
+				const type = SPACES.has(character) ? "space" : "word";
+				const last = tokens[tokens.length - 1];
+				if ((last === null || last === void 0 ? void 0 : last.type) !== type || type === "word" && breaks.has(index)) tokens.push({
+					type,
+					pieces: [{
+						text: character,
+						font
+					}]
+				});
+				else {
+					const piece = last.pieces[last.pieces.length - 1];
+					last.pieces[last.pieces.length - 1 + (piece.font === font ? 0 : 1)] = {
+						text: piece.font === font ? piece.text + character : character,
+						font
+					};
+				}
+				index++;
+			}
 		}
 		return tokens;
 	};
@@ -1240,7 +1257,7 @@ var docxLayout = (function(exports) {
 	var tokenize = (items, rules) => {
 		const tokens = [];
 		let text = [];
-		for (const item of items) if (item.type === "text") text.push(item);
+		for (const item of items) if (item.type === "text" || item.type === "softHyphen") text.push(item);
 		else {
 			tokens.push(...tokenizeText(text, rules), item);
 			text = [];
@@ -1285,8 +1302,6 @@ var docxLayout = (function(exports) {
 		text: text.replace(/ /g, ""),
 		font
 	})).filter(({ text }) => text.length > 0);
-	/** How many characters pieces have */
-	var lengthOf = (pieces) => pieces.reduce((total, { text }) => total + [...text].length, 0);
 	/**
 	* A font's formatting with Word's defaults where it gives none, so formatting written as the default is the same as none,
 	* its name in small letters, as the measurers find a font by its name in any case, and whether it is kerned, rather than
@@ -1447,6 +1462,23 @@ var docxLayout = (function(exports) {
 		};
 		return stop.position > limit + TOLERANCE$1 ? void 0 : stop;
 	};
+	/** How wide tokens are, one after the other, with the room of the borders between them */
+	var widthOfTokens = (tokens, measurer) => tokens.reduce(({ total, border }, token) => {
+		if (token.type === "box") return {
+			total: total + roomBetween(border, void 0) + token.width,
+			border: void 0
+		};
+		return token.type === "word" || token.type === "space" ? {
+			total: total + roomBetween(border, firstBorder(token.pieces)) + widthOf(token.pieces, measurer),
+			border: lastBorder(token.pieces)
+		} : {
+			total,
+			border
+		};
+	}, {
+		total: 0,
+		border: void 0
+	}).total;
 	/**
 	* The width of the text after a tab, up to the next tab or the end of the part: what lines up with a right or centered
 	* stop. Spaces at its end aren't counted.
@@ -1454,22 +1486,55 @@ var docxLayout = (function(exports) {
 	var widthAfterTab = (tokens, measurer) => {
 		const text = textAfterTab(tokens);
 		const lastWord = text.findLastIndex((token) => token.type !== "space" && token.type !== "marker");
-		return text.slice(0, lastWord + 1).reduce(({ total, border }, token) => {
-			if (token.type === "box") return {
-				total: total + roomBetween(border, void 0) + token.width,
-				border: void 0
-			};
-			return token.type === "word" || token.type === "space" ? {
-				total: total + roomBetween(border, firstBorder(token.pieces)) + widthOf(token.pieces, measurer),
-				border: lastBorder(token.pieces)
-			} : {
-				total,
-				border
-			};
-		}, {
-			total: 0,
-			border: void 0
-		}).total;
+		return widthOfTokens(text.slice(0, lastWord + 1), measurer);
+	};
+	/** Pieces of text split after this many characters */
+	var splitPieces = (pieces, at) => {
+		let count = 0;
+		const parts = pieces.map(({ text, font }) => {
+			const characters = [...text];
+			const taken = Math.max(0, Math.min(characters.length, at - count));
+			count += characters.length;
+			return [{
+				text: characters.slice(0, taken).join(""),
+				font
+			}, {
+				text: characters.slice(taken).join(""),
+				font
+			}];
+		});
+		const written = (piece) => piece.text.length > 0;
+		return [parts.map(([before]) => before).filter(written), parts.map(([, after]) => after).filter(written)];
+	};
+	var PLAIN_NUMBER = /^-?\d+(\.\d+)?$/;
+	/**
+	* How far the text after a tab goes before a decimal stop: up to the full stop of its number, whose left edge is at the
+	* stop, or all of it when the number has none (TX12a). Undefined when the text isn't a plain number, as where Word lines up
+	* other text, such as "$1,234.50" or "12.5%", hasn't been seen.
+	*/
+	var widthBeforeDecimal = (tokens, measurer) => {
+		const text = textAfterTab(tokens).filter((token) => token.type !== "marker");
+		const written = text.map((token) => token.type === "word" || token.type === "space" ? textOf(token.pieces) : "￼").join("").trimEnd();
+		if (!PLAIN_NUMBER.test(written)) return;
+		const point = text.findIndex((token) => token.type === "word" && textOf(token.pieces).includes("."));
+		if (point === -1) return widthAfterTab(tokens, measurer);
+		const { pieces } = text[point];
+		const [before] = splitPieces(pieces, [...textOf(pieces)].indexOf("."));
+		return widthOfTokens([...text.slice(0, point), {
+			type: "word",
+			pieces: before
+		}], measurer);
+	};
+	/**
+	* How far before its stop the text after a tab starts: none for a left stop, half its width for a centred one, all of it
+	* for a right one, and up to its number's full stop for a decimal one. Undefined for text at a decimal stop that isn't a
+	* plain number.
+	*/
+	var shiftAt = (alignment, tokens, measurer) => {
+		if (alignment === "left") return 0;
+		if (alignment === "decimal") return widthBeforeDecimal(tokens, measurer);
+		const after = widthAfterTab(tokens, measurer);
+		return alignment === "center" ? after / 2 : after;
 	};
 	/** The tokens after a tab, up to the next tab or the end of the part */
 	var textAfterTab = (tokens) => {
@@ -1555,10 +1620,10 @@ var docxLayout = (function(exports) {
 				border = token.type === "word" ? lastBorder(token.pieces) : void 0;
 				endBorder = border;
 				if (token.type === "tab") {
-					var _ref;
+					var _ref, _shiftAt;
 					const stop = (_ref = first && numberTab && tokens.findIndex((other) => other.type === "tab") === index ? numberTabStop(position + lead, firstLineStops, format, defaultTabStop, Infinity).stop : void 0) !== null && _ref !== void 0 ? _ref : nextStop(position + lead, first ? firstLineStops : stops, defaultTabStop, Infinity);
-					const after = widthAfterTab(tokens.slice(index + 1), measurer);
-					const shift = stop.alignment === "left" ? 0 : stop.alignment === "center" ? after / 2 : after;
+					const rest = tokens.slice(index + 1);
+					const shift = (_shiftAt = shiftAt(stop.alignment, rest, measurer)) !== null && _shiftAt !== void 0 ? _shiftAt : widthAfterTab(rest, measurer);
 					position = Math.max(position + lead, stop.position - shift);
 					end = position;
 					continue;
@@ -1713,67 +1778,31 @@ var docxLayout = (function(exports) {
 				markers: [...state.markers, ...state.pending],
 				pending: []
 			});
-			for (const [index, token] of tokens.entries()) {
-				var _lastBorder$room, _lastBorder;
-				if (token.type === "marker") {
-					line = _objectSpread2(_objectSpread2({}, line), {}, { pending: [...line.pending, token.name] });
-					continue;
-				}
-				if (token.type === "space") {
-					const spaces = widthOf(token.pieces, measurer);
-					line = _objectSpread2(_objectSpread2({}, line), {}, {
-						position: line.position + roomBetween(line.border, firstBorder(token.pieces)) + spaces,
-						text: line.text + textOf(token.pieces),
-						spaces: line.started ? line.spaces + spaces : 0,
-						spaceCount: line.started ? line.spaceCount + lengthOf(token.pieces) : 0,
-						otherSpaces: line.started ? line.otherSpaces + widthOf(othersOf(token.pieces), measurer) : 0,
-						heights: withToken(line.heights, token),
-						border: lastBorder(token.pieces)
-					});
-					continue;
-				}
-				line = token.type === "word" ? line : _objectSpread2(_objectSpread2({}, line), {}, {
-					position: line.position + roomBetween(line.border, void 0),
-					border: void 0
-				});
-				if (token.type === "tab") {
-					var _nextStop;
-					const numbered = numberTab ? numberTabStop(line.position, firstLineStops, format, defaultTabStop, limitOf()) : void 0;
-					numberTab = false;
-					const stop = numbered ? numbered.stop : (_nextStop = nextStop(line.position, line.first ? firstLineStops : stops, defaultTabStop, limitOf())) !== null && _nextStop !== void 0 ? _nextStop : line.started ? nextStop(indentLeft, stops, defaultTabStop, limitOf(lines.length + 1)) : void 0;
-					if ((numbered === null || numbered === void 0 ? void 0 : numbered.unsupported) !== void 0) line = _objectSpread2(_objectSpread2({}, line), {}, { unsupported: numbered.unsupported });
-					if (stop === void 0) {
-						line = _objectSpread2(_objectSpread2({}, line), {}, {
-							end: line.position,
-							text: `${line.text}\t`,
-							heights: withToken(line.heights, token),
-							started: true
-						});
-						continue;
-					}
-					if (!numbered && stop.position <= line.position + TOLERANCE$1) line = wrap(line);
-					line = place(line);
-					const after = widthAfterTab(tokens.slice(index + 1), measurer);
-					const shift = stop.alignment === "left" ? 0 : stop.alignment === "center" ? after / 2 : after;
-					const position = Math.max(line.position, stop.position - shift);
-					line = _objectSpread2(_objectSpread2({}, line), {}, {
-						position,
-						end: position,
-						text: `${line.text}\t`,
-						heights: withToken(line.heights, token),
-						spaces: 0,
-						spaceCount: 0,
-						between: 0,
-						letters: 0,
-						otherSpaces: 0,
-						started: true
-					}, shift > 0 && hasBorder(tokens.slice(index + 1)) ? { unsupported: "text with a border lined up with a tab stop" } : {});
-					continue;
-				}
+			/** Puts a word or picture on the line, or on the next, or breaks it across lines */
+			const placeWord = (token) => {
+				var _lastBorder$room, _lastBorder, _token$hyphens;
 				const tokenWidth = token.type === "box" ? token.width : widthOf(token.pieces, measurer);
 				const leadOf = (state) => token.type === "word" ? roomBetween(state.border, firstBorder(token.pieces)) : 0;
 				const boxEnd = token.type === "word" ? (_lastBorder$room = (_lastBorder = lastBorder(token.pieces)) === null || _lastBorder === void 0 ? void 0 : _lastBorder.room) !== null && _lastBorder$room !== void 0 ? _lastBorder$room : 0 : 0;
 				const needs = leadOf(line) + tokenWidth + boxEnd;
+				const hyphens = token.type === "word" ? ((_token$hyphens = token.hyphens) !== null && _token$hyphens !== void 0 ? _token$hyphens : []).filter(({ at }) => at > 0 && at < lengthOf(token.pieces)) : [];
+				if (token.type === "word" && hyphens.length > 0 && line.position + needs > limitOf() + TOLERANCE$1) {
+					const unknown = squeezes ? "a soft hyphen in a justified line" : !line.started ? "a word with soft hyphens longer than its line" : token.pieces.some(({ font }) => font.border !== void 0) ? "a soft hyphen in a word with a border" : void 0;
+					if (unknown !== void 0) {
+						var _line$unsupported;
+						line = _objectSpread2(_objectSpread2({}, line), {}, { unsupported: (_line$unsupported = line.unsupported) !== null && _line$unsupported !== void 0 ? _line$unsupported : unknown });
+					}
+					const rest = breakAtHyphen(token, hyphens);
+					if (rest !== void 0) {
+						placeWord(rest);
+						return;
+					}
+					if (line.started) {
+						line = wrap(line);
+						placeWord(token);
+						return;
+					}
+				}
 				const overflows = line.started && line.position + needs > limitOf() + TOLERANCE$1;
 				if (overflows && unsure(line, needs)) line = _objectSpread2(_objectSpread2({}, line), {}, { unknown: true });
 				const squeezable = overflows && !line.unknown && squeezesIn(line, needs);
@@ -1816,6 +1845,121 @@ var docxLayout = (function(exports) {
 					border: token.type === "word" ? lastBorder(token.pieces) : void 0,
 					boxed: line.boxed === true || token.type === "word" && token.pieces.some(({ font }) => font.border !== void 0)
 				});
+			};
+			/**
+			* Breaks a word at the last of its soft hyphens that leaves its part before it, and a hyphen in the soft hyphen's
+			* font, on the line, as Word breaks it (scripts/layout-probes/word-watertight-text.ts TX10a: 12 lines, 8 of them
+			* ending in a hyphen, each where docx/layout's widths of Calibri end them). The rest of the word, which goes on to
+			* the next line, or undefined when no part of it fits
+			*/
+			const breakAtHyphen = (word, hyphens) => {
+				const lead = roomBetween(line.border, firstBorder(word.pieces));
+				for (const hyphen of [...hyphens].reverse()) {
+					const [before, after] = splitPieces(word.pieces, hyphen.at);
+					const partEnd = line.position + lead + widthOf(before, measurer);
+					const withHyphen = partEnd + measurer.measureWidth("-", hyphen.font);
+					if (withHyphen <= limitOf() + TOLERANCE$1) {
+						const placed = place(line);
+						line = wrap(_objectSpread2(_objectSpread2({}, placed), {}, {
+							position: withHyphen,
+							end: withHyphen,
+							text: placed.text + textOf(before),
+							letters: placed.letters + lengthOf(before),
+							between: placed.spaceCount,
+							heights: withFont(withToken(placed.heights, {
+								type: "word",
+								pieces: before
+							}), hyphen.font, measurer),
+							started: true
+						}));
+						return {
+							type: "word",
+							pieces: after,
+							hyphens: hyphens.filter(({ at }) => at > hyphen.at).map((later) => _objectSpread2(_objectSpread2({}, later), {}, { at: later.at - hyphen.at }))
+						};
+					}
+					if (partEnd <= limitOf() + TOLERANCE$1) {
+						var _line$unsupported2;
+						line = _objectSpread2(_objectSpread2({}, line), {}, { unsupported: (_line$unsupported2 = line.unsupported) !== null && _line$unsupported2 !== void 0 ? _line$unsupported2 : "a soft hyphen whose hyphen would go past the end of the line" });
+					}
+				}
+			};
+			for (const [index, token] of tokens.entries()) {
+				if (token.type === "marker") {
+					line = _objectSpread2(_objectSpread2({}, line), {}, { pending: [...line.pending, token.name] });
+					continue;
+				}
+				if (token.type === "space") {
+					const spaces = widthOf(token.pieces, measurer);
+					line = _objectSpread2(_objectSpread2({}, line), {}, {
+						position: line.position + roomBetween(line.border, firstBorder(token.pieces)) + spaces,
+						text: line.text + textOf(token.pieces),
+						spaces: line.started ? line.spaces + spaces : 0,
+						spaceCount: line.started ? line.spaceCount + lengthOf(token.pieces) : 0,
+						otherSpaces: line.started ? line.otherSpaces + widthOf(othersOf(token.pieces), measurer) : 0,
+						heights: withToken(line.heights, token),
+						border: lastBorder(token.pieces)
+					});
+					continue;
+				}
+				line = token.type === "word" ? line : _objectSpread2(_objectSpread2({}, line), {}, {
+					position: line.position + roomBetween(line.border, void 0),
+					border: void 0
+				});
+				if (token.type === "tab") {
+					var _nextStop, _line$unsupported4;
+					const numbered = numberTab ? numberTabStop(line.position, firstLineStops, format, defaultTabStop, limitOf()) : void 0;
+					numberTab = false;
+					if ((numbered === null || numbered === void 0 ? void 0 : numbered.unsupported) !== void 0) line = _objectSpread2(_objectSpread2({}, line), {}, { unsupported: numbered.unsupported });
+					const given = line.first ? firstLineStops : stops;
+					const next = nextStop(line.position, given, defaultTabStop, Infinity);
+					const pastEnd = !numbered && given.includes(next) && next.position > limitOf() + TOLERANCE$1 ? next : void 0;
+					const pastEndUnknown = pastEnd === void 0 ? void 0 : indentLeft !== 0 || indentRight !== 0 || firstLineIndent !== 0 ? "a tab stop past the end of the line in an indented paragraph" : !line.started ? "a tab at the start of a line to a stop past its end" : pastEnd.alignment === "center" || pastEnd.alignment === "decimal" ? "a centred or decimal tab stop past the end of the line" : void 0;
+					if (pastEndUnknown !== void 0) {
+						var _line$unsupported3;
+						line = _objectSpread2(_objectSpread2({}, line), {}, { unsupported: (_line$unsupported3 = line.unsupported) !== null && _line$unsupported3 !== void 0 ? _line$unsupported3 : pastEndUnknown });
+					} else if ((pastEnd === null || pastEnd === void 0 ? void 0 : pastEnd.alignment) === "left") {
+						line = wrap(place(_objectSpread2(_objectSpread2({}, line), {}, {
+							text: `${line.text}\t`,
+							heights: withToken(line.heights, token),
+							started: true
+						})));
+						continue;
+					}
+					const stop = numbered ? numbered.stop : pastEnd !== void 0 && pastEndUnknown === void 0 ? {
+						position: limitOf(),
+						alignment: "right"
+					} : (_nextStop = nextStop(line.position, given, defaultTabStop, limitOf())) !== null && _nextStop !== void 0 ? _nextStop : line.started ? nextStop(indentLeft, stops, defaultTabStop, limitOf(lines.length + 1)) : void 0;
+					if (stop === void 0) {
+						line = _objectSpread2(_objectSpread2({}, line), {}, {
+							end: line.position,
+							text: `${line.text}\t`,
+							heights: withToken(line.heights, token),
+							started: true
+						});
+						continue;
+					}
+					if (!numbered && stop.position <= line.position + TOLERANCE$1) line = wrap(line);
+					line = place(line);
+					const rest = tokens.slice(index + 1);
+					const shift = shiftAt(stop.alignment, rest, measurer);
+					const unknown = shift === void 0 ? "text at a decimal tab stop that isn't a number" : shift > 0 && hasBorder(rest) ? "text with a border lined up with a tab stop" : void 0;
+					const position = Math.max(line.position, stop.position - (shift !== null && shift !== void 0 ? shift : widthAfterTab(rest, measurer)));
+					line = _objectSpread2(_objectSpread2({}, line), {}, {
+						position,
+						end: position,
+						text: `${line.text}\t`,
+						heights: withToken(line.heights, token),
+						spaces: 0,
+						spaceCount: 0,
+						between: 0,
+						letters: 0,
+						otherSpaces: 0,
+						started: true
+					}, unknown === void 0 ? {} : { unsupported: (_line$unsupported4 = line.unsupported) !== null && _line$unsupported4 !== void 0 ? _line$unsupported4 : unknown });
+					continue;
+				}
+				placeWord(token);
 			}
 			if (!end) finish(line);
 			else {
@@ -3711,6 +3855,10 @@ var docxLayout = (function(exports) {
 					text: "‑",
 					font
 				}];
+				case "w:softHyphen": return format.hidden ? [] : font.border ? "a soft hyphen in text with a border" : reader.inSizedTable ? "a soft hyphen in a table whose columns Word sizes to their text" : [{
+					type: "softHyphen",
+					font
+				}];
 				case "w:sym": {
 					const { "w:font": symbolFont, "w:char": character } = attributesOf(child["w:sym"]);
 					const code = String(character);
@@ -4058,12 +4206,14 @@ var docxLayout = (function(exports) {
 		}, markFont, fontOf(paragraphRun));
 		const borders = readBorders(typeof format === "string" ? combined : format);
 		const forThaiOrArabic = combined.alignment === "thaiDistributed" || combined.alignment === "lowKashida";
-		const unsupported = (_list$unsupported = list.unsupported) !== null && _list$unsupported !== void 0 ? _list$unsupported : find(properties, "w:framePr") !== void 0 ? "a text frame" : find(properties, "w:divId") !== void 0 ? "a paragraph in an HTML division" : combined.alignment === "mediumKashida" || combined.alignment === "highKashida" ? "a paragraph justified for Arabic with a medium or high kashida" : forThaiOrArabic && typeof items !== "string" && items.some((item) => item.type === "text" && THAI_OR_ARABIC.test(item.text)) ? "Thai or Arabic text justified for it" : (_ref4 = (_unknownLengthIn = unknownLengthIn(element)) !== null && _unknownLengthIn !== void 0 ? _unknownLengthIn : typeof format === "string" ? format : void 0) !== null && _ref4 !== void 0 ? _ref4 : typeof borders === "string" ? borders : void 0;
+		const tabStops = tabStopsOf(formats);
+		const otherDecimalSymbol = reader.decimalSymbol !== void 0 && reader.decimalSymbol !== "." && tabStops.some(({ alignment }) => alignment === "decimal");
+		const unsupported = (_list$unsupported = list.unsupported) !== null && _list$unsupported !== void 0 ? _list$unsupported : find(properties, "w:framePr") !== void 0 ? "a text frame" : otherDecimalSymbol ? "a decimal tab stop in a document whose decimal symbol isn't a full stop" : find(properties, "w:divId") !== void 0 ? "a paragraph in an HTML division" : combined.alignment === "mediumKashida" || combined.alignment === "highKashida" ? "a paragraph justified for Arabic with a medium or high kashida" : forThaiOrArabic && typeof items !== "string" && items.some((item) => item.type === "text" && THAI_OR_ARABIC.test(item.text)) ? "Thai or Arabic text justified for it" : (_ref4 = (_unknownLengthIn = unknownLengthIn(element)) !== null && _unknownLengthIn !== void 0 ? _unknownLengthIn : typeof format === "string" ? format : void 0) !== null && _ref4 !== void 0 ? _ref4 : typeof borders === "string" ? borders : void 0;
 		return _objectSpread2(_objectSpread2(_objectSpread2(_objectSpread2(_objectSpread2({
 			type: "paragraph",
 			items: content,
 			format: typeof format === "string" ? combined : format,
-			tabStops: tabStopsOf(formats),
+			tabStops,
 			markFont
 		}, list.list ? { list: list.list } : {}), list.alignment ? { numberAlignment: list.alignment } : {}), typeof borders === "object" ? { borders } : {}), {}, { style }, headingLevel === void 0 ? {} : { heading: _objectSpread2({ level: Number(headingLevel) }, withoutUndefined({ chapter: list.from === "style" ? list.chapter : void 0 })) }), typeof items === "string" || unsupported ? { unsupported: typeof items === "string" ? items : unsupported } : {});
 	};
@@ -4545,6 +4695,31 @@ var docxLayout = (function(exports) {
 	var paragraphPropertiesOf = (paragraph) => childrenOf(find(contentOf$2(paragraph).filter(isObject), "w:pPr"));
 	/** How a paragraph's mark is removed in a tracked change, when it is: deleted (`w:del`), or moved elsewhere (`w:moveFrom`) */
 	var removedMarkOf = (paragraph) => childrenOf(find(paragraphPropertiesOf(paragraph), "w:rPr")).map(nameOf).find((name) => REMOVALS.has(name));
+	/**
+	* Whether a paragraph's mark is hidden (`w:vanish`), by its own formatting or its style's, or has `w:specVanish` without
+	* being hidden.
+	*/
+	var hiddenMarkOf = (paragraph, styles) => {
+		var _valueOf4;
+		const properties = paragraphPropertiesOf(paragraph);
+		const style = (_valueOf4 = valueOf(properties, "w:pStyle")) !== null && _valueOf4 !== void 0 ? _valueOf4 : styles.defaultParagraphStyle;
+		const mark = find(properties, "w:rPr");
+		const { hidden } = combine([
+			styles.run,
+			...styleChain(styles, style, "paragraph").map(({ run }) => run),
+			readRunFormat(mark, styles.themeFonts)
+		]);
+		return hidden ? "hidden" : onOff(childrenOf(mark), "w:specVanish") ? "specVanish" : void 0;
+	};
+	/** Whether a paragraph is in a list, its own or its style's */
+	var isNumbered = (paragraph, styles) => {
+		var _valueOf5;
+		const properties = paragraphPropertiesOf(paragraph);
+		const style = (_valueOf5 = valueOf(properties, "w:pStyle")) !== null && _valueOf5 !== void 0 ? _valueOf5 : styles.defaultParagraphStyle;
+		return find(properties, "w:numPr") !== void 0 || styleChain(styles, style, "paragraph").some(({ numbering }) => (numbering === null || numbering === void 0 ? void 0 : numbering.id) !== void 0);
+	};
+	/** A paragraph's own formatting, but for its mark's, and its style when it names the default one, as none does */
+	var paragraphFormatOf = (paragraph, styles) => JSON.stringify(paragraphPropertiesOf(paragraph).filter((child) => nameOf(child) !== "w:rPr" && !(nameOf(child) === "w:pStyle" && valueOf([child], "w:pStyle") === styles.defaultParagraphStyle)));
 	/** Whether an element has anything in its runs, deleted or not, but their formatting */
 	var hasRunContent = (element) => Array.isArray(element) ? element.some(hasRunContent) : isObject(element) && Object.entries(element).some(([name, value]) => name === "w:r" ? childrenOf(value).some((child) => nameOf(child) !== "w:rPr" && nameOf(child) !== "_attr") : name !== "_attr" && name !== "w:pPr" && hasRunContent(value));
 	/** What of a section's properties says how it starts, numbers its pages, and what headers and footers it has */
@@ -4565,19 +4740,39 @@ var docxLayout = (function(exports) {
 		] };
 	};
 	/**
+	* Why a paragraph whose mark is hidden, or has `w:specVanish`, can't be laid out, when it can't. Word joins two paragraphs
+	* of the same formatting so, on one line (`word-watertight-text.docx` TX11a), and leaves one with no paragraph after it,
+	* before a table or at the end of a table cell, as it is (`word-breaks-and-tabs.docx` HM2a, HM2b). Which formatting the
+	* joined paragraph takes where theirs differ, what Word does with a hidden mark at the edge of a content control, with a
+	* hidden section break, in a list, between paragraphs of text in a table whose columns it sizes to their text, and with a
+	* mark that has `w:specVanish` and isn't hidden, which doesn't hide text (TX11b), isn't followed yet.
+	*/
+	var unjoinedHiddenMark = (paragraph, hidden, next, { styles, nested, sized }) => {
+		const nextName = next === void 0 ? void 0 : nameOf(next);
+		if (hidden === "specVanish") return "a paragraph mark with specVanish that isn't hidden";
+		if (sectionPropertiesOf(paragraph) !== void 0) return "a hidden section break";
+		if (nextName === "w:sdt" || nextName === "w:customXml" || next === void 0 && nested) return "a hidden paragraph mark at the edge of a content control";
+		if (next === void 0 || nextName !== "w:p") return;
+		if (isNumbered(paragraph, styles) || isNumbered(next, styles)) return "a hidden paragraph mark in a list";
+		if (paragraphFormatOf(paragraph, styles) !== paragraphFormatOf(next, styles)) return "a hidden paragraph mark between paragraphs of different formatting";
+		return sized && hasRunContent(paragraph) && hasRunContent(next) ? "a hidden paragraph mark between paragraphs of text in a table whose columns Word sizes to their text" : void 0;
+	};
+	/**
 	* Joins each paragraph whose mark is deleted in a tracked change to the paragraph after it, as Word lays it out: the next
 	* paragraph, with the deleted one's text at its start, all in the next one's formatting, style and list
-	* (`word-watertight-markup.docx` MK3, `word-tracked-changes.docx` MK7, MK9). A section break deleted so leaves its section
-	* to the next (MK8c). A paragraph with no paragraph after it, before a table or at the end of a table cell or of the
+	* (`word-watertight-markup.docx` MK3, `word-tracked-changes.docx` MK7, MK9). A paragraph whose mark is hidden is joined to
+	* the next too, where they are formatted the same (`word-watertight-text.docx` TX11a), or else is left as it is or stops
+	* the layout (see {@link unjoinedHiddenMark}). A section break deleted so leaves its section to the next (MK8c). A paragraph with no paragraph after it, before a table or at the end of a table cell or of the
 	* document, stays as it is (MK8a, MK8b, MK8d). What Word does with a paragraph mark moved elsewhere, a deleted mark at the
 	* edge of a content control, a deleted section break before a table or between sections that start, number their pages or
 	* have headers and footers differently, and a deleted mark between paragraphs of text in a table whose columns it sizes,
 	* by the paragraphs either as they are written or as they are laid out, hasn't been seen, so the layout stops there.
 	*
+	* @param styles - The document's styles, which may hide a paragraph's mark
 	* @param nested - Whether the elements are in a content control or custom XML
 	* @param sized - Whether they are in a cell of a table whose columns Word sizes to their text, or widens for long words
 	*/
-	var joinRemovedMarks = (elements, nested, sized) => {
+	var joinRemovedMarks = (elements, styles, nested, sized) => {
 		const after = [];
 		for (const element of [...elements.filter(isObject)].reverse()) {
 			const name = nameOf(element);
@@ -4585,16 +4780,22 @@ var docxLayout = (function(exports) {
 			const at = after.findLastIndex((other) => BLOCK_ELEMENTS.has(nameOf(other)));
 			const next = after[at];
 			const nextName = next === void 0 ? void 0 : nameOf(next);
-			const joins = mark !== void 0 && nextName === "w:p";
+			const hidden = mark === void 0 && name === "w:p" ? hiddenMarkOf(element, styles) : void 0;
+			const unjoined = hidden === void 0 ? void 0 : unjoinedHiddenMark(element, hidden, next, {
+				styles,
+				nested,
+				sized
+			});
+			const joins = (mark !== void 0 || hidden !== void 0 && unjoined === void 0) && nextName === "w:p";
 			const section = mark === void 0 ? void 0 : sectionPropertiesOf(element);
-			const reason = mark === void 0 ? void 0 : mark === "w:moveFrom" ? "a paragraph mark moved in a tracked change" : nextName === "w:sdt" || nextName === "w:customXml" || next === void 0 && nested ? "a deleted paragraph mark at the edge of a content control" : section !== void 0 && !joins ? "a deleted section break with no paragraph after it" : section !== void 0 && startOf(section) !== startOf(nextSectionIn([...after].reverse())) ? "a deleted section break between sections that start, number their pages or have headers and footers differently" : joins && sized && hasRunContent(element) && hasRunContent(next) ? "a deleted paragraph mark between paragraphs of text in a table whose columns Word sizes to their text" : void 0;
+			const reason = mark === void 0 ? unjoined : mark === "w:moveFrom" ? "a paragraph mark moved in a tracked change" : nextName === "w:sdt" || nextName === "w:customXml" || next === void 0 && nested ? "a deleted paragraph mark at the edge of a content control" : section !== void 0 && !joins ? "a deleted section break with no paragraph after it" : section !== void 0 && startOf(section) !== startOf(nextSectionIn([...after].reverse())) ? "a deleted section break between sections that start, number their pages or have headers and footers differently" : joins && sized && hasRunContent(element) && hasRunContent(next) ? "a deleted paragraph mark between paragraphs of text in a table whose columns Word sizes to their text" : void 0;
 			if (reason !== void 0) after.push(stopIn(element, reason));
 			else if (joins) {
 				const [, ...between] = after.splice(at);
 				after.push(joinedParagraph(element, between.reverse(), next));
-			} else if (name === "w:customXml") after.push({ [name]: joinRemovedMarks(contentOf$2(element), true, sized) });
+			} else if (name === "w:customXml") after.push({ [name]: joinRemovedMarks(contentOf$2(element), styles, true, sized) });
 			else if (name === "w:sdt" && !isBound(element)) {
-				const content = contentOf$2(element).map((child) => isObject(child) && "w:sdtContent" in child ? { "w:sdtContent": joinRemovedMarks(contentOf$2(child), true, sized) } : child);
+				const content = contentOf$2(element).map((child) => isObject(child) && "w:sdtContent" in child ? { "w:sdtContent": joinRemovedMarks(contentOf$2(child), styles, true, sized) } : child);
 				after.push({ [name]: content });
 			} else after.push(element);
 		}
@@ -4607,7 +4808,7 @@ var docxLayout = (function(exports) {
 	var readBlocks = (elements, reader, tableFormats) => {
 		const blocks = [];
 		let bookmarks = [];
-		for (const element of unwrap(joinRemovedMarks(elements, false, reader.inSizedTable === true))) {
+		for (const element of unwrap(joinRemovedMarks(elements, reader.styles, false, reader.inSizedTable === true))) {
 			const block = readBlock(element, reader, tableFormats);
 			if (block === void 0) bookmarks = [...bookmarks, ...bookmarksIn([element])];
 			else {
@@ -4714,17 +4915,17 @@ var docxLayout = (function(exports) {
 	* pictures (`w:lvlPicBulletId`), and numbers laid out as Word 6 laid them out (`w:legacy`).
 	*/
 	var readLevel = (element, styles) => {
-		var _valueOf4, _numberOf6, _valueOf5, _stringOf2, _valueOf6, _numberOf7;
+		var _valueOf6, _numberOf6, _valueOf7, _stringOf2, _valueOf8, _numberOf7;
 		const children = childrenOf(element);
-		const jc = (_valueOf4 = valueOf(children, "w:lvlJc")) !== null && _valueOf4 !== void 0 ? _valueOf4 : "left";
+		const jc = (_valueOf6 = valueOf(children, "w:lvlJc")) !== null && _valueOf6 !== void 0 ? _valueOf6 : "left";
 		const restart = numberOf(attributesOf(find(children, "w:lvlRestart"))["w:val"]);
 		const unsupported = !(jc in NUMBER_ALIGNMENTS) ? "a list number aligned in a way not yet followed" : find(children, "w:lvlPicBulletId") !== void 0 ? "a list whose bullets are pictures" : isOn(attributesOf(find(children, "w:legacy"))["w:legacy"]) ? "a list numbered as Word 6 numbered lists" : void 0;
 		return {
 			index: (_numberOf6 = numberOf(attributesOf(element)["w:ilvl"])) !== null && _numberOf6 !== void 0 ? _numberOf6 : 0,
 			level: _objectSpread2(_objectSpread2(_objectSpread2({}, withoutUndefined({ style: valueOf(children, "w:pStyle") })), {}, {
-				format: (_valueOf5 = valueOf(children, "w:numFmt")) !== null && _valueOf5 !== void 0 ? _valueOf5 : "decimal",
+				format: (_valueOf7 = valueOf(children, "w:numFmt")) !== null && _valueOf7 !== void 0 ? _valueOf7 : "decimal",
 				text: (_stringOf2 = stringOf(attributesOf(find(children, "w:lvlText"))["w:val"])) !== null && _stringOf2 !== void 0 ? _stringOf2 : "",
-				suffix: (_valueOf6 = valueOf(children, "w:suff")) !== null && _valueOf6 !== void 0 ? _valueOf6 : "tab",
+				suffix: (_valueOf8 = valueOf(children, "w:suff")) !== null && _valueOf8 !== void 0 ? _valueOf8 : "tab",
 				start: (_numberOf7 = numberOf(attributesOf(find(children, "w:start"))["w:val"])) !== null && _numberOf7 !== void 0 ? _numberOf7 : 0
 			}, withoutUndefined({
 				alignment: NUMBER_ALIGNMENTS[jc],
@@ -4962,7 +5163,9 @@ var docxLayout = (function(exports) {
 			count: 0,
 			relative: /* @__PURE__ */ new Map()
 		};
-		const readerOf = (inHeader) => ({
+		const settings = childrenOf((_parts$settings = parts.settings) === null || _parts$settings === void 0 ? void 0 : _parts$settings["w:settings"]);
+		const decimalSymbol = valueOf(settings, "w:decimalSymbol");
+		const readerOf = (inHeader) => _objectSpread2({
 			styles,
 			numbering,
 			listIds,
@@ -4970,9 +5173,8 @@ var docxLayout = (function(exports) {
 			markers,
 			fields: [],
 			counters: /* @__PURE__ */ new Map()
-		});
-		const settings = childrenOf((_parts$settings = parts.settings) === null || _parts$settings === void 0 ? void 0 : _parts$settings["w:settings"]);
-		const elements = unwrap(joinRemovedMarks(contentOf$2(body), false, false));
+		}, decimalSymbol === void 0 ? {} : { decimalSymbol });
+		const elements = unwrap(joinRemovedMarks(contentOf$2(body), styles, false, false));
 		const headersAndFooters = /* @__PURE__ */ new Map();
 		const readPart = (id) => {
 			if (!headersAndFooters.has(id)) {
