@@ -1187,8 +1187,6 @@ describe("paginate", () => {
                 paragraph("d", 1),
             ]);
             expect(pagesOf(content)).to.deep.equal({ a: "1", kept: "2", b: "2", exact: "3", c: "3", atLeast: "4", d: "4" });
-            const tall = document([table([row([[paragraph("tall", 1)]], { height: { value: 80, rule: "atLeast" } })])]);
-            expect(paginate(tall, { measurer: MEASURER }).stoppedAt).to.equal("a table row taller than a page");
         });
 
         describe("rows kept with the next", () => {
@@ -1417,13 +1415,129 @@ describe("paginate", () => {
             );
         });
 
-        it("should stop at a row kept whole that is taller than a page", () => {
-            const result = numbersOf(document([paragraph("a", 1), table([row([[paragraph("tall", 9)]], { cantSplit: true })])]));
-            expect(result).to.deep.equal({
-                bookmarks: new Map([["a", "1"]]),
-                pageCount: 2,
-                sectionPageCounts: [undefined],
-                stoppedAt: "a table row taller than a page",
+        describe("rows taller than a page", () => {
+            /** The rows on each page, and the lines of the paragraphs after the table */
+            const laidOut = (content: DocumentContent): readonly (readonly BlockLayout[])[] =>
+                paginate(content, { measurer: MEASURER }).pages.map(({ body }) => body.filter(({ index }) => index > 0));
+            /** A table of a row of these cells, after a paragraph of lines, 7 of which fill a page, and a line after it */
+            const tall = (before: number, cells: readonly (readonly Block[])[], changes: Partial<TableRow> = {}): DocumentContent =>
+                document([paragraph("a", before), table([row(cells, changes)]), paragraph("below", 1)]);
+            const kept = (name: string, lines: number): ParagraphBlock => ({ ...endMarked(name, lines), format: { keepLines: true } });
+
+            it("should move a row that can't break, taller than a page, to a new page, and break it there, as Word does", () => {
+                // As word-probes.docx's U5a: a row of 60 lines that can't break, from line 11 of 51, goes on the next page,
+                // 51 lines and then 9, and the line below it follows them. Here 9 lines from line 3 of 7
+                const cantSplit = tall(2, [[endMarked("tall", 9)]], { cantSplit: true });
+                expect(pagesOf(cantSplit)).to.deep.equal({ a: "1", tall: "2", tallEnd: "3", below: "3" });
+                expect(laidOut(cantSplit)).to.deep.equal([
+                    [],
+                    [{ type: "table", index: 1, rows: [{ index: 0, y: 10, height: 70 }] }],
+                    [
+                        { type: "table", index: 1, rows: [{ index: 0, y: 10, height: 20 }] },
+                        { type: "paragraph", index: 2, lines: [{ text: "abcdefgh", x: 10, y: 30, width: 80, height: 10, textWidth: 80 }] },
+                    ],
+                ]);
+                // At the top of a page, it breaks there, 51 and 9 (U5b)
+                expect(pagesOf(tall(7, [[endMarked("tall", 9)]], { cantSplit: true }))).to.deep.equal({
+                    a: "1",
+                    tall: "2",
+                    tallEnd: "3",
+                    below: "3",
+                });
+            });
+
+            it("should move a row of a paragraph kept together, taller than a page, to a new page, and break it there, as Word does", () => {
+                // As word-probes.docx's U8c1: a row of a 60-line paragraph kept together, from line 11 of 51, goes on the next
+                // page, 51 lines and then 9, where LibreOffice breaks it where it is, 41 and 19
+                const content = tall(2, [[kept("tall", 9)]]);
+                expect(pagesOf(content)).to.deep.equal({ a: "1", tall: "2", tallEnd: "3", below: "3" });
+                expect(laidOut(content)).to.deep.equal(laidOut(tall(2, [[endMarked("tall", 9)]], { cantSplit: true })));
+                // At the top of a page, it breaks there (U8c2), and beside a cell of a line, the line goes with the first 51
+                // (U8c3)
+                expect(pagesOf(tall(7, [[kept("tall", 9)]]))).to.deep.equal({ a: "1", tall: "2", tallEnd: "3", below: "3" });
+                expect(pagesOf(tall(2, [[kept("tall", 9)], [paragraph("right", 1)]]))).to.deep.equal({
+                    a: "1",
+                    tall: "2",
+                    tallEnd: "3",
+                    right: "2",
+                    below: "3",
+                });
+                // What follows it in its cell goes on below it
+                expect(pagesOf(tall(2, [[kept("tall", 9), paragraph("after", 1)]]))).to.deep.equal({
+                    a: "1",
+                    tall: "2",
+                    tallEnd: "3",
+                    after: "3",
+                    below: "3",
+                });
+                // After other lines in its cell, the row breaks above it, and it breaks at the top of the next page
+                expect(pagesOf(tall(2, [[paragraph("first", 2), kept("tall", 9)]]))).to.deep.equal({
+                    a: "1",
+                    first: "1",
+                    tall: "2",
+                    tallEnd: "3",
+                    below: "3",
+                });
+            });
+
+            it("should give a row of a set height taller than a page a page of its own, cut off at its bottom, as Word does", () => {
+                // As word-probes.docx's U5c and U5d: a row of 3 lines set to exactly or at least 15000 twips high, from line
+                // 11 of a page with 13958 twips of room, takes all of the next page, and the line below it starts the page
+                // after. Here 80 points, from line 3 of a page with 70
+                for (const rule of ["exact", "atLeast"] as const) {
+                    const content = tall(2, [[endMarked("set", 3)]], { height: { value: 80, rule } });
+                    expect(pagesOf(content)).to.deep.equal({ a: "1", set: "2", setEnd: "2", below: "3" });
+                    expect(laidOut(content)).to.deep.equal([
+                        [],
+                        [{ type: "table", index: 1, rows: [{ index: 0, y: 10, height: 70 }] }],
+                        [
+                            {
+                                type: "paragraph",
+                                index: 2,
+                                lines: [{ text: "abcdefgh", x: 10, y: 10, width: 80, height: 10, textWidth: 80 }],
+                            },
+                        ],
+                    ]);
+                }
+                // At the top of a page, it takes that page, and the table's next row goes on the next
+                const rows = document([
+                    table([row([[paragraph("set", 1)]], { height: { value: 80, rule: "exact" } }), row([[paragraph("next", 1)]])]),
+                ]);
+                expect(pagesOf(rows)).to.deep.equal({ set: "1", next: "2" });
+            });
+
+            it("should stop at a row taller than a page that Word hasn't been seen laying out", () => {
+                const stoppedAt = (content: DocumentContent): string | undefined => paginate(content, { measurer: MEASURER }).stoppedAt;
+                const KEPT = "a table row kept together taller than a column";
+                // In columns, where Word lays a paragraph kept together that is taller than a column down the first column
+                // of each page
+                const inColumns = (cells: readonly (readonly Block[])[], changes: Partial<TableRow> = {}): DocumentContent => ({
+                    ...tall(2, cells, changes),
+                    sections: [{ ...SECTION, columns: [80, 80] }],
+                });
+                expect(stoppedAt(inColumns([[paragraph("tall", 9)]], { cantSplit: true }))).to.equal(KEPT);
+                expect(stoppedAt(inColumns([[kept("tall", 9)]]))).to.equal(KEPT);
+                expect(stoppedAt(inColumns([[paragraph("set", 1)]], { height: { value: 80, rule: "exact" } }))).to.equal(KEPT);
+                // A row of a set height with a footnote, merged cells or as a header row
+                const CUT = "a footnote, merged cells or a header row in a table row of a set height taller than a page";
+                const set = { height: { value: 80, rule: "exact" as const } };
+                const noted = withItems(paragraph("set", 1), [{ type: "marker", name: "note" }]);
+                expect(stoppedAt({ ...tall(2, [[noted]], set), footnotes: new Map([["note", [paragraph("n", 1)]]]) })).to.equal(CUT);
+                expect(stoppedAt(tall(2, [[paragraph("set", 1)]], { ...set, header: true }))).to.equal(CUT);
+                expect(
+                    stoppedAt(
+                        document([
+                            table([
+                                mergedRow(merged("restart", [paragraph("merged", 1)]), [[paragraph("r1", 1)]], set),
+                                mergedRow(merged("continue"), [[paragraph("r2", 1)]]),
+                            ]),
+                        ]),
+                    ),
+                ).to.equal(CUT);
+                // A row whose text is taller than a page too, and one whose first line is
+                expect(stoppedAt(tall(2, [[paragraph("set", 9)]], { height: { value: 80, rule: "atLeast" } }))).to.equal(
+                    "a table row whose text and set height are both taller than a page",
+                );
             });
         });
 
@@ -1645,7 +1759,7 @@ describe("paginate", () => {
         it("should stop at a line in a table cell taller than a page", () => {
             const tall = paragraph("tall", 1, { lineSpacing: { rule: "exact", height: 100 } });
             expect(paginate(document([table([row([[tall]])])]), { measurer: MEASURER }).stoppedAt).to.equal(
-                "a table row taller than a page",
+                "a line in a table cell taller than a page",
             );
         });
 
@@ -3412,13 +3526,14 @@ describe("paginate", () => {
             const note = { "footnote 1": [paragraph("note", 1, exact)] };
             const content = withNotes([table([row([[noted(paragraph("cell", 1), "footnote 1")]])])], note);
             expect(paginate(content, { measurer: MEASURER }).stoppedAt).to.equal("a table row and its footnote taller than a page");
-            // And one kept whole, unless it is taller than a page itself
+            // And one kept whole, unless it is taller than a page itself, when it breaks across pages as other rows do
             const kept = (lines: number): DocumentContent =>
                 withNotes([table([row([[noted(paragraph("cell", lines), "footnote 1")]], { cantSplit: true })])], {
                     "footnote 1": [paragraph("note", 1)],
                 });
             expect(paginate(kept(6), { measurer: MEASURER }).stoppedAt).to.equal("a table row and its footnote taller than a page");
-            expect(paginate(kept(8), { measurer: MEASURER }).stoppedAt).to.equal("a table row taller than a page");
+            const { pageCount, stoppedAt } = paginate(kept(8), { measurer: MEASURER });
+            expect([pageCount, stoppedAt]).to.deep.equal([2, undefined]);
         });
 
         it("should keep a paragraph with the next on the page only when their footnotes fit too", () => {

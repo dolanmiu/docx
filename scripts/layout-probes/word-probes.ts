@@ -20,11 +20,15 @@
 //     next page with it, and one whose footnote can continue stays. In a row broken across pages, each line's footnote
 //     goes on the page its line is on, and the row breaks after the line whose footnote continues
 // U4: a row with cells merged down, a table in a cell, or a set height taller than its text, broken across pages
-// U5: a row that can't break, taller than a page
+// U5: a row that can't break, taller than a page. Word (word-probes.pdf): it moves to a new page, unless it is at the top
+//     of one, and breaks there as other rows do, 51 lines and 9. A row set to a height taller than a page, exactly or at
+//     least, takes a page of its own, cut off at its bottom, and what follows starts the next. LibreOffice does the same
 // U6: footnotes in columns: under their reference's column, or flowing from the first
 // U7: the space before a continuous section's first paragraph with a page break before it
 // U8: from #3603: spaces before a line or page break with no text, a cell whose first line doesn't fit beside cells whose
-//     lines do, and a paragraph kept together in a cell taller than a page
+//     lines do, and a paragraph kept together in a cell taller than a page. Word (word-probes.pdf): the row of a paragraph
+//     kept together that is taller than a page moves to a new page and breaks there, as one that can't break does (U5),
+//     where LibreOffice breaks it where it is
 //
 // From U2 on, each probe is a section of its own, starting on a new page, and "<probe> top" is its first line. "fill"
 // lines are one-line paragraphs. A probe named with a number, such as "U2a 48", has its reference or table on that line
