@@ -1191,6 +1191,336 @@ describe("readDocument", () => {
             expect(unsupportedOf([], [], [], [{ "w:tcFitText": {} }], [{ "w:noWrap": {} }])).to.equal("text fitted to its table cell");
         });
 
+        describe("formatting", () => {
+            const border = (side: string, size: number, style = "single"): object => ({
+                [`w:${side}`]: { _attr: { "w:val": style, "w:sz": size } },
+            });
+            const styles = (...definitions: readonly string[]): Partial<IPropertiesOptions> => ({
+                externalStyles: `<w:styles xmlns:w="main">${definitions.join("")}</w:styles>`,
+            });
+            const tableStyle = (id: string, content: string): string =>
+                `<w:style w:type="table" w:styleId="${id}"><w:name w:val="${id}"/>${content}</w:style>`;
+            /** A table of one-cell rows, each of a paragraph of its number */
+            const tableOf = (
+                properties: readonly unknown[],
+                rows: readonly (readonly unknown[])[],
+                options: Partial<IPropertiesOptions> = {},
+            ): TableBlock =>
+                readBody(
+                    [
+                        {
+                            "w:tbl": [
+                                { "w:tblPr": properties },
+                                { "w:tblGrid": [{ "w:gridCol": { _attr: { "w:w": 2000 } } }] },
+                                ...rows.map((cellProperties, index) => ({ "w:tr": [cell(cellProperties, p(r(t(`row ${index + 1}`))))] })),
+                            ],
+                        },
+                    ],
+                    options,
+                ).blocks[0].block as TableBlock;
+            const bordersOf = ({ rows }: TableBlock): readonly (readonly [number, number])[] =>
+                rows.map(({ borderTop, borderBottom }) => [borderTop, borderBottom]);
+
+            it("should take a table's borders from its style, side by side, and from itself over them, as Word does", () => {
+                // word-watertight-tables.docx TB2a: borders only the style has make the rows as tall as the table's own do
+                const bordered = tableStyle(
+                    "Bordered",
+                    `<w:tblPr><w:tblBorders><w:top w:val="single" w:sz="24"/><w:bottom w:val="single" w:sz="24"/><w:insideH w:val="single" w:sz="24"/></w:tblBorders></w:tblPr>`,
+                );
+                const fromStyle = tableOf([value("w:tblStyle", "Bordered")], [[], [], []], styles(bordered));
+                expect(bordersOf(fromStyle)).to.deep.equal([
+                    [3, 0],
+                    [3, 0],
+                    [3, 3],
+                ]);
+                // TB2b: the table's own, here over the style's
+                const own = tableOf(
+                    [value("w:tblStyle", "Bordered"), { "w:tblBorders": [border("insideH", 8), border("bottom", 0, "nil")] }],
+                    [[], []],
+                    styles(bordered),
+                );
+                expect(bordersOf(own)).to.deep.equal([
+                    [3, 0],
+                    [1, 0],
+                ]);
+            });
+
+            it("should count a border between two rows once, the wider of the cells' borders there, each its own or the table's", () => {
+                // word-watertight-tables.docx TB3: cells' 3-point top and bottom borders make each row 3 points taller
+                const cells = [border("top", 24), border("bottom", 24)];
+                expect(bordersOf(tableOf([], [[{ "w:tcBorders": cells }], [{ "w:tcBorders": cells }]]))).to.deep.equal([
+                    [3, 0],
+                    [3, 3],
+                ]);
+                // The wider of two cells' own (word-table-formats.docx BC2)
+                const table = { "w:tblBorders": [border("top", 24), border("insideH", 24), border("bottom", 24)] };
+                const mixed = tableOf([table], [[{ "w:tcBorders": [border("bottom", 8)] }], [{ "w:tcBorders": [border("top", 16)] }], []]);
+                expect(bordersOf(mixed)).to.deep.equal([
+                    [3, 0],
+                    [2, 0],
+                    [3, 3],
+                ]);
+                // A cell's narrower border, nil or none beside the table's border on the cell above (BC3 to BC5)
+                for (const top of [border("top", 4), border("top", 8, "nil"), border("top", 8, "none")]) {
+                    expect(bordersOf(tableOf([table], [[], [{ "w:tcBorders": [top] }]]))).to.deep.equal([
+                        [3, 0],
+                        [3, 3],
+                    ]);
+                }
+                // A border's space adds to the room it takes (word-table-formats.docx BS31)
+                const spaced = { "w:tblBorders": [{ "w:top": { _attr: { "w:val": "single", "w:sz": 12, "w:space": 10 } } }] };
+                expect(bordersOf(tableOf([spaced], [[]]))).to.deep.equal([[11.5, 0]]);
+            });
+
+            it("should keep a cell's text its margin, or half the border beside it when that is more, from its edges", () => {
+                // word-table-formats.docx BC7 to BC9: 6-point borders left and right of a cell beside text
+                const sides = { "w:tcBorders": [border("left", 48), border("right", 48)] };
+                const margins = (left: number): object => ({
+                    "w:tcMar": [{ "w:left": { _attr: { "w:w": left } } }, { "w:right": { _attr: { "w:w": left } } }],
+                });
+                const [narrow] = tableOf([], [[sides, margins(0)]]).rows[0].cells;
+                expect([narrow.marginLeft, narrow.marginRight, narrow.width]).to.deep.equal([3, 3, 94]);
+                const [wide] = tableOf([], [[sides, margins(108)]]).rows[0].cells;
+                expect([wide.marginLeft, wide.marginRight, Math.round(wide.width * 10) / 10]).to.deep.equal([5.4, 5.4, 89.2]);
+            });
+
+            it("should stop at borders whose room Word's PDFs haven't shown, and at two cells' borders of different styles that meet", () => {
+                expect(tableOf([{ "w:tblBorders": [border("insideH", 8, "wave")] }], [[], []]).unsupported).to.equal(
+                    "a table border in a style not yet followed",
+                );
+                const sides = tableOf([{ "w:tblBorders": [border("left", 8, "wave"), border("right", 8, "wave")] }], [[]]);
+                expect([sides.unsupported, sides.borderLeft, sides.borderRight]).to.deep.equal([
+                    "a table border in a style not yet followed",
+                    0,
+                    0,
+                ]);
+                const meeting = tableOf(
+                    [],
+                    [[{ "w:tcBorders": [border("bottom", 8, "dotted")] }], [{ "w:tcBorders": [border("top", 8)] }]],
+                );
+                expect(meeting.unsupported).to.equal("table cell borders of different styles that meet");
+            });
+
+            it("should put space between cells around each cell, and inside the table's edges, as Word does", () => {
+                // word-watertight-tables.docx TB4: 100 twips between cells put 200 between each row's text and the next's, and
+                // between the table's edges and its first and last rows' text, and make the text of the first and last cell of
+                // a row 300 twips narrower, and of the others 200, as margins do
+                const spacing = { "w:tblCellSpacing": { _attr: { "w:w": 100, "w:type": "dxa" } } };
+                const spaced = readBody([
+                    {
+                        "w:tbl": [
+                            { "w:tblPr": [spacing, { "w:tblBorders": [border("top", 0, "nil")] }] },
+                            { "w:tblGrid": [2000, 2000, 2000].map((width) => ({ "w:gridCol": { _attr: { "w:w": width } } })) },
+                            ...[0, 1].map(() => ({ "w:tr": [cell([], p()), cell([], p()), cell([], p())] })),
+                        ],
+                    },
+                ]).blocks[0].block as TableBlock;
+                expect(bordersOf(spaced)).to.deep.equal([
+                    [10, 5],
+                    [5, 10],
+                ]);
+                expect(spaced.cellSpacing).to.equal(5);
+                // docx's Normal Table gives cells 5.4 points on the left and right
+                const tenths = (length: number): number => Math.round(length * 10) / 10;
+                expect(
+                    spaced.rows[0].cells.map(({ width, marginLeft, marginRight }) => [width, marginLeft, marginRight].map(tenths)),
+                ).to.deep.equal([
+                    [100 - 10.8 - 15, 15.4, 10.4],
+                    [100 - 10.8 - 10, 10.4, 10.4],
+                    [100 - 10.8 - 15, 10.4, 15.4],
+                ]);
+                // A table whose cells have widths keeps its width, its own or its cells', laid out fixed or not, and its columns
+                // are narrowed for the space (word-table-formats2.docx CS9, CS10, CS14)
+                const given = readBody([
+                    {
+                        "w:tbl": [
+                            { "w:tblPr": [spacing, { "w:tblLayout": { _attr: { "w:type": "fixed" } } }] },
+                            {
+                                "w:tr": [
+                                    cell([{ "w:tcW": { _attr: { "w:w": 2000, "w:type": "dxa" } } }], p()),
+                                    cell([{ "w:tcW": { _attr: { "w:w": 4000 } } }], p()),
+                                ],
+                            },
+                        ],
+                    },
+                ]).blocks[0].block as TableBlock;
+                expect(given.widen).to.deep.equal({ width: 300, acrossColumns: false });
+                // Each cell as wide as it is with its room for the space: the space on each side, and inside the table's edges
+                expect(given.rows[0].cells.map(({ ownWidth }) => ownWidth)).to.deep.equal([115, 215]);
+            });
+
+            it("should stop at space between cells that Word's PDFs haven't shown: a share, a row's own, beside borders left or right", () => {
+                const spacing = (attributes: object): object => ({ "w:tblCellSpacing": { _attr: attributes } });
+                const unsupportedOf = (properties: readonly unknown[], row: readonly unknown[] = [], width = 2000): string | undefined =>
+                    (
+                        readBody([
+                            {
+                                "w:tbl": [
+                                    { "w:tblPr": properties },
+                                    { "w:tblGrid": [{ "w:gridCol": { _attr: { "w:w": 2000 } } }] },
+                                    { "w:tr": [{ "w:trPr": row }, cell([{ "w:tcW": { _attr: { "w:w": width, "w:type": "dxa" } } }], p())] },
+                                ],
+                            },
+                        ]).blocks[0].block as TableBlock
+                    ).unsupported;
+                expect(unsupportedOf([spacing({ "w:w": 100, "w:type": "nil" })])).to.equal(undefined);
+                expect(unsupportedOf([spacing({ "w:w": 100, "w:type": "pct" })])).to.equal(
+                    "space between table cells as a share of the table's width",
+                );
+                expect(unsupportedOf([], [spacing({ "w:w": 100 })])).to.equal("a table row with space between its cells of its own");
+                // word-table-formats2.docx CS11
+                expect(unsupportedOf([spacing({ "w:w": 100 }), { "w:tblBorders": [border("left", 4)] }])).to.equal(
+                    "space between table cells beside borders left or right of them",
+                );
+                // Borders above and below, and a table sized to its text, are followed (CS1 to CS3, CS5, CS6)
+                expect(unsupportedOf([spacing({ "w:w": 100 }), { "w:tblBorders": [border("top", 4), border("insideH", 4)] }])).to.equal(
+                    undefined,
+                );
+                expect(unsupportedOf([spacing({ "w:w": 100 })], [], 0)).to.equal(undefined);
+            });
+
+            it("should read text that runs up or down a cell, and a cell whose mark takes no room", () => {
+                const { rows, unsupported } = tableOf(
+                    [],
+                    [
+                        [value("w:textDirection", "btLr"), { "w:hideMark": {} }],
+                        [value("w:textDirection", "lrTb"), value("w:hideMark", "false")],
+                        [value("w:textDirection", "tbRl")],
+                    ],
+                );
+                expect(rows.map(({ cells }) => [cells[0].vertical, cells[0].hideMark])).to.deep.equal([
+                    [true, true],
+                    [undefined, undefined],
+                    [true, undefined],
+                ]);
+                // A row of only text running up or down is as tall as a line of its mark (word-table-formats.docx VT1)
+                expect(unsupported).to.equal(undefined);
+                // East Asian characters upright, or on their side
+                expect(tableOf([], [[value("w:textDirection", "tbRlV")]]).unsupported).to.equal(
+                    "text in a table cell in a direction not yet followed",
+                );
+                // Marks of different sizes, a picture or a table in it
+                const marks = readBody([
+                    {
+                        "w:tbl": [
+                            { "w:tr": [cell([value("w:textDirection", "btLr")], p(r(t("a"))), p(pPr(rPr(value("w:sz", 40))), r(t("b"))))] },
+                        ],
+                    },
+                ]).blocks[0].block as TableBlock;
+                expect(marks.unsupported).to.equal(
+                    "text running up or down a table cell with marks of different sizes, a picture or a table",
+                );
+                const nested = readBody([{ "w:tbl": [{ "w:tr": [cell([value("w:textDirection", "btLr")], { "w:tbl": [] }, p())] }] }])
+                    .blocks[0].block as TableBlock;
+                expect(nested.unsupported).to.equal(
+                    "text running up or down a table cell with marks of different sizes, a picture or a table",
+                );
+            });
+
+            it("should read a table's indent from its style or itself, and stop at one that is a share of the width", () => {
+                const indented = tableStyle("Indented", `<w:tblPr><w:tblInd w:w="2000" w:type="dxa"/></w:tblPr>`);
+                expect(tableOf([value("w:tblStyle", "Indented")], [[]], styles(indented)).indent).to.equal(100);
+                expect(tableOf([{ "w:tblInd": { _attr: { "w:w": -500, "w:type": "dxa" } } }], [[]]).indent).to.equal(-25);
+                expect(tableOf([{ "w:tblInd": { _attr: { "w:w": 500, "w:type": "nil" } } }], [[]]).indent).to.equal(undefined);
+                expect(tableOf([{ "w:tblInd": { _attr: { "w:w": 500, "w:type": "pct" } } }], [[]]).unsupported).to.equal(
+                    "a table indented by a share of the width",
+                );
+            });
+
+            it("should apply a table style's first row's formatting to it where the table turns it on, as Word does", () => {
+                // word-watertight-stops.docx SP19: a table style's 16-point first row, where Normal has no size of its own
+                const firstRow = tableStyle(
+                    "FirstRow",
+                    `<w:tblStylePr w:type="firstRow"><w:rPr><w:b/><w:sz w:val="32"/></w:rPr></w:tblStylePr>`,
+                );
+                const look = (on: boolean): object => ({
+                    "w:tblLook": { _attr: { "w:firstRow": on ? 1 : 0, "w:noHBand": 1, "w:noVBand": 1 } },
+                });
+                const fontsOf = (table: TableBlock): readonly unknown[] =>
+                    table.rows.map(({ cells }) => ((cells[0].blocks[0] as ParagraphBlock).items[0] as { readonly font: unknown }).font);
+                expect(fontsOf(tableOf([value("w:tblStyle", "FirstRow"), look(true)], [[], []], styles(firstRow)))).to.deep.equal([
+                    { size: 16, bold: true },
+                    {},
+                ]);
+                // SP19b: off
+                expect(fontsOf(tableOf([value("w:tblStyle", "FirstRow"), look(false)], [[], []], styles(firstRow)))).to.deep.equal([
+                    {},
+                    {},
+                ]);
+                // Word's default as w:val, as Word 2007 writes it: the first row and column, and bands of rows
+                const old = { "w:tblLook": { _attr: { "w:val": "04A0" } } };
+                expect(fontsOf(tableOf([value("w:tblStyle", "FirstRow"), old], [[], []], styles(firstRow)))).to.deep.equal([
+                    { size: 16, bold: true },
+                    {},
+                ]);
+            });
+
+            it("should apply the parts of a table style for some cells as Word does, with the borders and margins they give", () => {
+                // word-table-formats.docx CF1 to CF9, word-table-formats2.docx CF10 to CF14
+                const parts = tableStyle(
+                    "Parts",
+                    `<w:tblStylePr w:type="wholeTable"><w:rPr><w:sz w:val="20"/></w:rPr></w:tblStylePr><w:tblStylePr w:type="lastRow"><w:rPr><w:sz w:val="32"/></w:rPr><w:tcPr><w:tcBorders><w:top w:val="single" w:sz="24"/></w:tcBorders><w:tcMar><w:top w:w="200" w:type="dxa"/></w:tcMar></w:tcPr></w:tblStylePr><w:tblStylePr w:type="band1Horz"><w:tcPr><w:shd w:val="clear" w:fill="EEEEEE"/></w:tcPr></w:tblStylePr>`,
+                );
+                const sizesOf = (table: TableBlock): readonly unknown[] =>
+                    table.rows.map(
+                        ({ cells }) =>
+                            ((cells[0].blocks[0] as ParagraphBlock).items[0] as { readonly font: { readonly size?: number } }).font.size,
+                    );
+                const all = { "w:tblLook": { _attr: { "w:firstRow": 1, "w:lastRow": 1, "w:noHBand": 0, "w:noVBand": 1 } } };
+                const laidOut = tableOf(
+                    [value("w:tblStyle", "Parts"), all],
+                    [[], [], [{ "w:tcMar": [{ "w:top": { _attr: { "w:w": 100 } } }] }]],
+                    styles(parts),
+                );
+                // Word doesn't apply wholeTable, and a cell's own margins are over a part's
+                expect(sizesOf(laidOut)).to.deep.equal([undefined, undefined, 16]);
+                expect(laidOut.rows.map(({ borderTop }) => borderTop)).to.deep.equal([0, 0, 3]);
+                expect(laidOut.rows[2].cells[0].marginTop).to.equal(5);
+                expect(laidOut.unsupported).to.equal(undefined);
+                // A table that doesn't say turns on its first row and column and its bands of rows, as Word's default does
+                expect(sizesOf(tableOf([value("w:tblStyle", "Parts")], [[], [], []], styles(parts)))).to.deep.equal([
+                    undefined,
+                    undefined,
+                    undefined,
+                ]);
+            });
+
+            it("should stop at the parts of a table style for some cells that give properties of the table, its rows or cells not followed", () => {
+                const unsupportedOf = (properties: string): string | undefined =>
+                    tableOf(
+                        [value("w:tblStyle", "Parts"), { "w:tblLook": { _attr: { "w:firstRow": 1 } } }],
+                        [[], []],
+                        styles(tableStyle("Parts", `<w:tblStylePr w:type="firstRow">${properties}</w:tblStylePr>`)),
+                    ).unsupported;
+                expect(unsupportedOf(`<w:trPr><w:cantSplit/></w:trPr>`)).to.equal("a table style's formatting for some of its cells");
+                expect(unsupportedOf(`<w:tcPr><w:textDirection w:val="btLr"/></w:tcPr>`)).to.equal(
+                    "a table style's formatting for some of its cells",
+                );
+                expect(unsupportedOf(`<w:tcPr><w:vAlign w:val="center"/></w:tcPr>`)).to.equal(undefined);
+            });
+
+            it("should stop at a row with table properties of its own, and a table style with formatting of its rows or cells", () => {
+                const exceptions = readBody([
+                    {
+                        "w:tbl": [
+                            { "w:tr": [{ "w:tblPrEx": [{ "w:tblBorders": [border("top", 8)] }] }, cell([], p())] },
+                            { "w:tr": [{ "w:tblPrEx": [{ "w:shd": {} }] }, cell([], p())] },
+                        ],
+                    },
+                ]).blocks[0].block as TableBlock;
+                expect(exceptions.unsupported).to.equal("a table row with table properties of its own");
+                const shaded = tableStyle(
+                    "Shaded",
+                    `<w:trPr><w:jc w:val="center"/></w:trPr><w:tcPr><w:shd w:val="clear" w:fill="EEEEEE"/></w:tcPr>`,
+                );
+                expect(tableOf([value("w:tblStyle", "Shaded")], [[]], styles(shaded)).unsupported).to.equal(undefined);
+                const kept = tableStyle("Kept", `<w:trPr><w:cantSplit/></w:trPr>`);
+                expect(tableOf([value("w:tblStyle", "Kept")], [[]], styles(kept)).unsupported).to.equal(
+                    "a table style with formatting of its rows or cells",
+                );
+            });
+        });
+
         const bookmark = (name: string): object => ({ "w:bookmarkStart": { _attr: { "w:name": name, "w:id": 1 } } });
         /** The names of the bookmarks at the start of each block of each cell of a table, or "table" for a table */
         const markersIn = (table: TableBlock): readonly (readonly (readonly unknown[])[])[] =>

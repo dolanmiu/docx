@@ -537,13 +537,37 @@ export const paginate = (
         return sum(parts.map(({ height, before }, index) => height + (index === 0 ? 0 : between(parts[index - 1].after, before)))) + outer;
     };
 
-    const cellHeight = (cell: TableCell): number => cell.marginTop + stackHeight(cell.blocks, cell.width, true) + cell.marginBottom;
+    /**
+     * The blocks of a cell that take room: all of them, but an empty paragraph that ends a cell whose mark takes none
+     * (`w:hideMark`), as in Word (`word-watertight-tables.docx` TB7)
+     */
+    const blocksWithRoom = ({ blocks: stack, hideMark }: TableCell): readonly Block[] => {
+        const last = stack[stack.length - 1];
+        const empty = last?.type === "paragraph" && last.items.every(({ type }) => type === "marker");
+        return hideMark && empty ? stack.slice(0, -1) : stack;
+    };
+
+    /**
+     * How tall a cell's text makes its row. Text that runs up or down a cell makes it as tall as a line of its paragraph
+     * mark, whatever its size, as Word breaks the text into lines as long as the row is tall (`word-watertight-tables.docx`
+     * TB6, `word-table-formats.docx` VT1, `word-table-formats2.docx` VT5 to VT7)
+     */
+    const contentHeight = (cell: TableCell): number => {
+        if (!cell.vertical) {
+            return stackHeight(blocksWithRoom(cell), cell.width, true);
+        }
+        const [first] = cell.blocks as readonly ParagraphBlock[];
+        return linesHeight(measureParagraph({ ...first, items: [] }, cell.width, undefined, undefined, true).lines);
+    };
+
+    /** How tall a cell makes its row with its own margins, as a cell merged down rows does */
+    const cellHeight = (cell: TableCell): number => cell.marginTop + contentHeight(cell) + cell.marginBottom;
 
     /** The cells merged down several rows of a table: the row each starts in, its last row, and the height its text needs */
     const mergesOf = ({ rows }: TableBlock): readonly { readonly first: number; readonly last: number; readonly height: number }[] =>
         rows.flatMap(({ cells }, first) =>
             cells
-                .filter(({ verticalMerge }) => verticalMerge === "restart")
+                .filter(({ verticalMerge, vertical }) => verticalMerge === "restart" && !vertical)
                 .map((cell) => {
                     // The rest of the merge is in the same column of the grid, which cells spanning columns can put at another index
                     const span = rows
@@ -554,13 +578,22 @@ export const paginate = (
         );
 
     /**
-     * The height of each row of a table: its tallest cell, with the cell's margins, or the row's own height, and its
-     * borders. Cells merged down several rows make the last of them taller when their text needs more room.
+     * The height of each row of a table: its tallest cell's text, with the largest of its cells' margins, or the row's own
+     * height, and its borders. Cells merged down several rows make the last of them taller when their text needs more room.
      */
     const rowHeights = (table: TableBlock, merges = mergesOf(table)): readonly number[] => {
         const { rows } = table;
         const heights = rows.map(({ cells, height, borderTop, borderBottom }) => {
-            const natural = Math.max(0, ...cells.filter(({ verticalMerge }) => verticalMerge === undefined).map(cellHeight));
+            const own = cells.filter(({ verticalMerge }) => verticalMerge === undefined);
+            const largest = (lengths: readonly number[]): number => Math.max(0, ...lengths);
+            // The tallest cell's text, and the largest margins above and below of the row's cells, which needn't be its
+            // (word-table-formats2.docx MG1 to MG4)
+            const natural =
+                own.length === 0
+                    ? 0
+                    : largest(own.map(({ marginTop }) => marginTop)) +
+                      largest(own.map(contentHeight)) +
+                      largest(own.map(({ marginBottom }) => marginBottom));
             const rowHeight = height === undefined ? natural : height.rule === "exact" ? height.value : Math.max(height.value, natural);
             return rowHeight + borderTop + borderBottom;
         });
@@ -1391,6 +1424,65 @@ export const paginate = (
     };
 
     /**
+     * Whether Word keeps a table row with the next: when the first paragraph of its first cell is kept with the next
+     * (`word-watertight-tables.docx` TB5, `word-table-formats.docx` KR1). Its other paragraphs don't keep it (KR2)
+     */
+    const keptWithNext = ({ cells }: TableRow): boolean => {
+        const [first] = cells[0]?.blocks ?? [];
+        return first?.type === "paragraph" && first.format.keepNext === true;
+    };
+
+    /**
+     * The last of the rows of a table from one (`index`) that are kept together, because each but the last is kept with
+     * the next. The row itself when it isn't kept with the next, or is the table's last
+     */
+    const keptRowsEnd = ({ rows }: TableBlock, index: number): number => {
+        let end = index;
+        while (end < rows.length - 1 && keptWithNext(rows[end])) {
+            end++;
+        }
+        return end;
+    };
+
+    /**
+     * The least of a row that goes on a page when it breaks across pages after the rows kept with it, as the paragraphs
+     * kept with the next keep the next paragraph's first lines: in each cell, its first paragraph's first lines, all of them
+     * when it is kept together or widow control keeps them together, and the room around them
+     */
+    const leastPartOf = (row: TableRow): number =>
+        row.borderTop +
+        Math.max(
+            0,
+            ...row.cells
+                .filter(({ vertical }) => !vertical)
+                .map((cell) => {
+                    const [first, second] = blocksWithRoom(cell);
+                    if (first === undefined || first.type === "table") {
+                        return (
+                            cell.marginTop +
+                            (first === undefined ? 0 : sum(rowHeights(sizedToPlace(first, cell.width)))) +
+                            cell.marginBottom
+                        );
+                    }
+                    const {
+                        lines,
+                        spaceBefore,
+                        spaceAfter: after,
+                        keepLines,
+                        widowControl,
+                    } = measureParagraph(first, cell.width, undefined, second, true);
+                    const count = keepLines || (widowControl && lines.length <= 3) ? lines.length : widowControl ? 2 : 1;
+                    return (
+                        cell.marginTop +
+                        spaceBefore +
+                        linesHeight(lines.slice(0, count)) +
+                        (count >= lines.length ? after : 0) +
+                        cell.marginBottom
+                    );
+                }),
+        );
+
+    /**
      * Whether a table row could break across pages between the lines of its cells: one not kept whole, with more than a
      * line in a cell
      */
@@ -1782,14 +1874,23 @@ export const paginate = (
      *
      * @param breakBorder - The border below the row on a page where the table breaks: the table's bottom border, which the
      * last row has counted already
+     * @param table - Whether the table has space between its cells, and whether the row before is kept with this one
      */
-    const splitRow = (row: TableRow, rowIndex: number, height: number, breakBorder: number, startTablePage: () => void): void => {
-        // A table in a cell is measured as a line that doesn't break, which is enough to tell whether the row breaks
+    const splitRow = (
+        row: TableRow,
+        rowIndex: number,
+        height: number,
+        breakBorder: number,
+        startTablePage: () => void,
+        table: { readonly spaced: boolean; readonly kept: boolean },
+    ): void => {
+        // A table in a cell is measured as a line that doesn't break, which is enough to tell whether the row breaks. Text
+        // that runs up or down a cell, and an empty paragraph whose mark takes no room, take none here either
         let parts = row.cells.map((cell): readonly CellParagraph[] =>
-            cell.blocks.map((block, index) => ({
+            (cell.vertical ? [] : blocksWithRoom(cell)).map((block, index, stack) => ({
                 paragraph:
                     block.type === "paragraph"
-                        ? measureParagraph(block, cell.width, cell.blocks[index - 1], cell.blocks[index + 1], true)
+                        ? measureParagraph(block, cell.width, stack[index - 1], stack[index + 1], true)
                         : {
                               ...UNBROKEN,
                               lines: [
@@ -1805,10 +1906,19 @@ export const paginate = (
             })),
         );
         let isFirstPart = true;
+        // The bookmarks of what takes no room start with the row's first part
+        const roomless = row.cells.flatMap((cell) =>
+            (cell.vertical ? cell.blocks : cell.blocks.slice(blocksWithRoom(cell).length)).flatMap(markersOf),
+        );
+        if (notesIn(roomless).length > 0) {
+            throw new Unsupported("a footnote in text that runs up or down a table cell");
+        }
         const borders = row.borderTop + row.borderBottom;
-        const margins = (cell: number): number => row.cells[cell].marginTop + row.cells[cell].marginBottom;
+        // The largest margins above and below of the row's cells, around each cell's text
+        const rowMargins =
+            Math.max(0, ...row.cells.map(({ marginTop }) => marginTop)) + Math.max(0, ...row.cells.map(({ marginBottom }) => marginBottom));
         /** How tall the cells' parts make the row's, with their margins */
-        const tallestOf = (cells: readonly CellPart[]): number => Math.max(...cells.map((part, cell) => margins(cell) + part.height));
+        const tallestOf = (cells: readonly CellPart[]): number => Math.max(...cells.map((part) => rowMargins + part.height));
         const notesOf = (cells: readonly CellPart[]): readonly string[] =>
             notesIn(cells.flatMap(({ lines }) => lines.flatMap(({ markers }) => markers)));
         const placesAny = (cells: readonly CellPart[]): boolean => cells.some(({ lines }) => lines.length > 0);
@@ -1833,7 +1943,7 @@ export const paginate = (
         } => {
             /** Each cell's part in a room for the row's, or the part given for one of them (`cut`) */
             const fill = (room: number, cut?: { readonly cell: number; readonly part: CellPart }): readonly CellPart[] =>
-                left.map((paragraphs, cell) => (cell === cut?.cell ? cut.part : fillCell(paragraphs, room - margins(cell), isFirst)));
+                left.map((paragraphs, cell) => (cell === cut?.cell ? cut.part : fillCell(paragraphs, room - rowMargins, isFirst)));
             const whole = fill(roomAbove(0));
             let cutAt = roomAbove(0);
             let filled = whole;
@@ -1844,7 +1954,7 @@ export const paginate = (
                 }
                 // Just above the bottom of the lowest of the cells' lines, so the part loses a line each time, even beside a
                 // cell without lines that its margins make taller
-                cutAt = Math.max(...filled.map((part, cell) => (part.lines.length > 0 ? margins(cell) + part.height : 0))) - 2 * TOLERANCE;
+                cutAt = Math.max(...filled.map((part) => (part.lines.length > 0 ? rowMargins + part.height : 0))) - 2 * TOLERANCE;
                 filled = fill(cutAt);
             }
             const continues = placesAny(filled) && !fitsWith(filled, moreNoteRoom(notesOf(filled)));
@@ -1855,11 +1965,11 @@ export const paginate = (
                 const name = notesOf(filled)[notesOf(filled).length - 1];
                 const cell = filled.findLastIndex(({ lines }) => lines.some(({ markers }) => markers.includes(name)));
                 const reference = filled[cell].lines.findIndex(({ markers }) => markers.includes(name)) + 1;
-                let part = fillCell(left[cell], cutAt - margins(cell), isFirst, reference);
+                let part = fillCell(left[cell], cutAt - rowMargins, isFirst, reference);
                 for (let limit = reference + 1; part.lines.length < reference; limit++) {
-                    part = fillCell(left[cell], cutAt - margins(cell), isFirst, limit);
+                    part = fillCell(left[cell], cutAt - rowMargins, isFirst, limit);
                 }
-                filled = fill(margins(cell) + part.height, { cell, part });
+                filled = fill(rowMargins + part.height, { cell, part });
             }
             const notes = notesOf(filled);
             const noteRoom = fitsWith(filled, moreNoteRoom(notes)) ? moreNoteRoom(notes) : leastNoteRoom(notes);
@@ -1871,7 +1981,7 @@ export const paginate = (
                 const heldRoom = continues ? tallestOf(filled) : roomAbove(noteRoom);
                 const heldBack = (part: CellPart, cell: number): boolean =>
                     referring.some((other) => other !== cell) &&
-                    fillCell(left[cell], heldRoom - margins(cell), isFirst).fits > part.lines.length;
+                    fillCell(left[cell], heldRoom - rowMargins, isFirst).fits > part.lines.length;
                 if (filled.some(heldBack)) {
                     throw new Unsupported("a footnote in a table row beside a cell whose lines it holds back");
                 }
@@ -1897,6 +2007,13 @@ export const paginate = (
                 if (row.cells.some((cell) => cell.blocks.some(({ type }) => type === "table"))) {
                     throw new Unsupported("a table in a table row across pages");
                 }
+                if (row.cells.some(({ vertical }) => vertical)) {
+                    // Whether Word breaks text that runs up or down a cell with the row isn't known
+                    throw new Unsupported("text that runs up or down a table cell across pages");
+                }
+                if (table.spaced) {
+                    throw new Unsupported("a table row with space between its cells across pages");
+                }
             }
             // A row at the top of a page that doesn't fit there whole is taller than a page, which the layout stops at, unless
             // the end of a footnote continued from the page before takes room on it, which leaves the next page for it. So is
@@ -1910,8 +2027,12 @@ export const paginate = (
                         : "a table row taller than a page",
                 );
             }
+            if (!placesLines && isFirstPart && table.kept) {
+                // The rows kept with this one stayed on the page for its first lines, which would then move to the next
+                throw new Unsupported("a table row kept with the next before a row that moves to the next page");
+            }
             if (placesLines) {
-                mark(filled.flatMap(({ lines }) => lines.flatMap(({ markers }) => markers)));
+                mark([...filled.flatMap(({ lines }) => lines.flatMap(({ markers }) => markers)), ...roomless]);
                 // A row that moved to the next page whole is as tall there as it is anywhere. The part of a row on this page or
                 // in this column, which columns being balanced end below, has the table's bottom border below it
                 const rowPart = isLastPart
@@ -1977,16 +2098,70 @@ export const paginate = (
         const rowStays = (height: number, notes: readonly string[]): boolean =>
             position + height <= linesBottom(leastNoteRoom(notes)) + TOLERANCE;
         const markersIn = (row: TableRow): readonly string[] => row.cells.flatMap((cell) => cell.blocks.flatMap(markersOf));
+        /**
+         * What the table's last row is kept with when it is kept with the next: the first lines of the paragraph after the
+         * table, or what keeps with them, as for a paragraph kept with the next, when it is in the same section
+         */
+        const afterTable = (): { readonly height: number; readonly notes: readonly string[] } => {
+            const next = blocks[blockIndex + 1];
+            return next === undefined || next.section !== blocks[blockIndex].section
+                ? { height: 0, notes: [] }
+                : keptHeight(blockIndex + 1, section().columns[column]);
+        };
+        // The last row of rows kept with the next that were laid out from the top of a page, which they don't fit on, and
+        // so break across pages
+        let brokenUntil = -1;
+        /**
+         * Moves the rows kept with the next from one (`index`) to the next page or column, with what they are kept with, when
+         * they don't fit on this one with it, as Word keeps them (`word-watertight-tables.docx` TB5): the next row, or the
+         * first lines of the paragraph after the table when the last row is kept with the next (`word-table-formats.docx`
+         * KR3, KR4), or, where the next row breaks across pages, as much of it as must go on the page with them (KR7). Rows
+         * that don't fit on a page of their own break across pages where it ends, as Word breaks them (KR5)
+         */
+        const placeKeptRows = (index: number): void => {
+            const end = keptRowsEnd(table, index);
+            const last = table.rows.length - 1;
+            const keptPastTable = end === last && keptWithNext(table.rows[last]);
+            if ((end === index && !keptPastTable) || index <= brokenUntil) {
+                return;
+            }
+            const following = keptPastTable ? afterTable() : undefined;
+            const kept = table.rows.slice(index, end + 1);
+            const keptNotes = [...notesIn(kept.flatMap(markersIn)), ...(following?.notes ?? [])];
+            const together = sum(heights.slice(index, end + 1)) + (end < last ? (table.rows[end].breakBorder ?? bottomBorder) : 0);
+            const fitsHere = (): boolean =>
+                rowStays(together + (following?.height ?? 0), keptNotes) ||
+                (!keptPastTable &&
+                    canSplit(table.rows[end]) &&
+                    rowStays(
+                        sum(heights.slice(index, end)) + leastPartOf(table.rows[end]) + (table.rows[end].breakBorder ?? bottomBorder),
+                        keptNotes,
+                    ));
+            if (fitsHere()) {
+                return;
+            }
+            if (placedInColumn || continued !== undefined) {
+                startTablePage(index);
+            }
+            if (!fitsHere()) {
+                brokenUntil = end;
+            }
+        };
         // Where a table breaks across pages, Word draws its bottom border below the last of it on the page, which takes room
         // there too, whether the table breaks between rows or in one (`word-line-heights.docx` T1 and T4)
         const bottomBorder = table.rows[table.rows.length - 1]?.borderBottom ?? 0;
         for (const [index, row] of table.rows.entries()) {
-            const breakBorder = index < table.rows.length - 1 ? bottomBorder : 0;
+            const breakBorder = index < table.rows.length - 1 ? (row.breakBorder ?? bottomBorder) : 0;
             const height = heights[index];
             const roomNeeded = height + breakBorder;
             const markers = markersIn(row);
             const notes = notesIn(markers);
             const keptWhole = row.cantSplit || row.height?.rule === "exact";
+            if (table.cellSpacing !== undefined && row.breakBorder === undefined && !rowFits(roomNeeded, notes)) {
+                // What Word draws where a table with space between its cells and borders breaks across pages isn't known
+                throw new Unsupported("a table with space between its cells and borders across pages");
+            }
+            placeKeptRows(index);
             // On the next page, the end of a footnote continued from this one can leave too little room for it too, as for
             // a paragraph's lines, so it goes on the page after
             while (keptWhole && !rowStays(roomNeeded, notes) && (placedInColumn || continued !== undefined)) {
@@ -2010,7 +2185,11 @@ export const paginate = (
                 }
             }
             if (!rowFits(roomNeeded, notes) && !keptWhole) {
-                splitRow(row, index, height, breakBorder, () => startTablePage(index));
+                splitRow(row, index, height, breakBorder, () => startTablePage(index), {
+                    spaced: table.cellSpacing !== undefined,
+                    // Rows kept with the next that are too tall for a page break where the page ends (KR5)
+                    kept: index > brokenUntil && index > 0 && keptWithNext(table.rows[index - 1]),
+                });
                 continue;
             }
             if (!rowStays(roomNeeded, notes)) {
@@ -2070,12 +2249,13 @@ export const paginate = (
             return { height: keptLines, notes: keptNotes, kept: keptNotes, keptWith: "nothing" };
         }
         if (anchor.type === "table") {
-            const [firstRow] = anchor.rows;
-            // A table that can't be laid out has nothing kept with it, so what is kept is placed before the layout stops
+            // A table that can't be laid out has nothing kept with it, so what is kept is placed before the layout stops.
+            // They are kept with its first row, and the rows kept with it
             const sized = anchor.unsupported ? anchor : fitted(anchor, width);
+            const rows = sized.unsupported ? [] : sized.rows.slice(0, keptRowsEnd(sized, 0) + 1);
             return {
-                height: keptLines + lastAfter + (sized.unsupported ? 0 : (rowHeights(sized)[0] ?? 0)),
-                notes: [...keptNotes, ...notesIn(firstRow ? firstRow.cells.flatMap((cell) => cell.blocks.flatMap(markersOf)) : [])],
+                height: keptLines + lastAfter + sum(sized.unsupported ? [] : rowHeights(sized).slice(0, rows.length)),
+                notes: [...keptNotes, ...notesIn(rows.flatMap(({ cells }) => cells.flatMap((cell) => cell.blocks.flatMap(markersOf))))],
                 kept: keptNotes,
                 keptWith: "part",
             };
