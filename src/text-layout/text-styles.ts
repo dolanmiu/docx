@@ -67,6 +67,18 @@ const OFFICE_THEME_FONTS: ThemeFonts = { headings: "Calibri Light", body: "Calib
  */
 export type CellMargins = Partial<Record<"top" | "bottom" | "left" | "right", number>>;
 
+/**
+ * A part of a table style's formatting that applies to some of a table's cells, such as those of its first row
+ * (`w:tblStylePr`): its paragraph and run formatting, and its table, row and cell properties, as they are written.
+ */
+export type ConditionalFormat = {
+    readonly run: RunFormat;
+    readonly paragraph: ParagraphFormat;
+    readonly tableProperties: readonly XmlObject[];
+    readonly rowProperties: readonly XmlObject[];
+    readonly cellProperties: readonly XmlObject[];
+};
+
 type StyleDefinition = {
     readonly type: string;
     /** Its name, such as "heading 1", by which Word finds its built-in styles */
@@ -81,6 +93,14 @@ type StyleDefinition = {
     readonly paragraph: ParagraphFormat;
     /** The margins a table style gives its cells */
     readonly cellMargins?: CellMargins;
+    /**
+     * A table style's table, row and cell properties (`w:tblPr`, `w:trPr`, `w:tcPr`), as they are written, and the parts
+     * of its formatting for some of the cells, by their type (`w:tblStylePr`), such as "firstRow"
+     */
+    readonly tableProperties?: readonly XmlObject[];
+    readonly rowProperties?: readonly XmlObject[];
+    readonly cellProperties?: readonly XmlObject[];
+    readonly conditional?: ReadonlyMap<string, ConditionalFormat>;
 };
 
 /**
@@ -437,6 +457,40 @@ export const readThemeFonts = (xml: XmlObject): ThemeFonts => {
 };
 
 /**
+ * Reads what a table style (`w:style` of type "table") gives its tables beyond paragraph and run formatting: the margins
+ * of their cells, its table, row and cell properties, and the parts of its formatting for some of their cells.
+ */
+const readTableStyle = (
+    children: readonly XmlObject[],
+    themeFonts: ThemeFonts,
+): Pick<StyleDefinition, "cellMargins" | "tableProperties" | "rowProperties" | "cellProperties" | "conditional"> => {
+    const tableProperties = childrenOf(find(children, "w:tblPr"));
+    return {
+        cellMargins: readCellMargins(find(tableProperties, "w:tblCellMar")),
+        tableProperties,
+        rowProperties: childrenOf(find(children, "w:trPr")),
+        cellProperties: childrenOf(find(children, "w:tcPr")),
+        conditional: new Map(
+            children
+                .filter((child) => "w:tblStylePr" in child)
+                .map((child) => {
+                    const parts = childrenOf(child["w:tblStylePr"]);
+                    return [
+                        String(attributesOf(child["w:tblStylePr"])["w:type"]),
+                        {
+                            run: readRunFormat(find(parts, "w:rPr"), themeFonts),
+                            paragraph: readParagraphFormat(find(parts, "w:pPr")),
+                            tableProperties: childrenOf(find(parts, "w:tblPr")),
+                            rowProperties: childrenOf(find(parts, "w:trPr")),
+                            cellProperties: childrenOf(find(parts, "w:tcPr")),
+                        },
+                    ] as const;
+                }),
+        ),
+    };
+};
+
+/**
  * Reads the document's defaults and styles from its styles part (`w:styles`), once it is formatted, with the fonts of
  * its theme.
  */
@@ -466,9 +520,7 @@ export const readTextStyles = (xml: XmlObject, themeFonts: ThemeFonts = OFFICE_T
                         : { numbering: withoutUndefined({ id: list === undefined ? undefined : String(list), level }) }),
                     run: readRunFormat(find(children, "w:rPr"), themeFonts),
                     paragraph: readParagraphFormat(find(children, "w:pPr")),
-                    ...(attributes["w:type"] === "table"
-                        ? { cellMargins: readCellMargins(find(childrenOf(find(children, "w:tblPr")), "w:tblCellMar")) }
-                        : {}),
+                    ...(attributes["w:type"] === "table" ? readTableStyle(children, themeFonts) : {}),
                 },
             };
         })

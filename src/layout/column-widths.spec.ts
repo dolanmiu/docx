@@ -111,6 +111,65 @@ describe("fitColumns", () => {
         expect(widthsOf(fitColumns(table(cells, { width: 100 }), 400, measure))).to.deep.equal([20, 60]);
     });
 
+    it("should size a table to its text in the room its indent leaves, as Word does", () => {
+        // word-watertight-tables.docx TB9: a table of one cell of prose, indented 2000 twips in 9026, wrapped its text in
+        // 7026, in 10 lines where it took 8 without
+        const prose = [[cell(0, `${LONG} ${LONG} ${LONG}`)]];
+        expect(widthsOf(fitColumns({ ...table(prose), indent: 100 }, 300, measure))).to.deep.equal([190]);
+        expect(widthsOf(fitColumns(table(prose), 300, measure))).to.deep.equal([290]);
+        // A table with a width of its own keeps it
+        expect(widthsOf(fitColumns({ ...table(prose, { width: 250 }), indent: 100 }, 300, measure))).to.deep.equal([240]);
+    });
+
+    it("should take a negative indent from the room too, and leave a table of a share of the width its width", () => {
+        // word-table-formats.docx TI1: indented -500 twips, a table sized to its text has 9526 twips; TI2: one of 100% keeps
+        // the 9026 of the page's text, past its right edge
+        const prose = [[cell(0, `${LONG} ${LONG} ${LONG}`)]];
+        expect(widthsOf(fitColumns({ ...table(prose), indent: -20 }, 300, measure))).to.deep.equal([310]);
+        expect(widthsOf(fitColumns({ ...table(prose, { share: 1 }), indent: 100 }, 300, measure))).to.deep.equal([290]);
+    });
+
+    it("should widen a column for a long word in an indented table in the room the indent leaves", () => {
+        // word-table-formats.docx TI3: columns of 2000 and 2500 twips and a word 2894 wide, indented 4000 in 9026, came out
+        // 2894 and 2132, narrowing the second to fit in 5026
+        const long = (indent: number): TableBlock => ({
+            ...table([[cell(0, "aaaaaa", 30), cell(1, LONG, 150)]]),
+            fit: undefined,
+            widen: { acrossColumns: false },
+            indent,
+        });
+        expect(widthsOf(fitColumns(long(100), 300, measure))).to.deep.equal([60, 120]);
+        expect(widthsOf(fitColumns(long(0), 300, measure))).to.deep.equal([60, 140]);
+    });
+
+    it("should narrow the columns of a table with space between its cells to keep its width, and stop at a long word in one", () => {
+        // word-table-formats2.docx CS9: each column's room for the space around it, as margins, is taken from the columns
+        // toward their widest words, each by its share of what they give up
+        const spaced = (first: string): TableBlock => ({
+            ...table([
+                [
+                    { ...cell(0, first, 110), marginLeft: 15 },
+                    { ...cell(1, LONG, 190), marginLeft: 10 },
+                ],
+            ]),
+            fit: undefined,
+            widen: { width: 280, acrossColumns: false },
+            cellSpacing: 5,
+        });
+        expect(widthsOf(fitColumns(spaced("aaaa bb"), 300, measure))).to.deep.equal([84.6, 160.4]);
+        expect(fitColumns(spaced("aaaaaaaaaa"), 300, measure).unsupported).to.equal("a long word in a table with space between its cells");
+        const wider: TableBlock = { ...spaced("aaaa"), widen: { width: 400, acrossColumns: false } };
+        expect(fitColumns(wider, 500, measure).unsupported).to.equal("space between the cells of a table wider than its cells");
+    });
+
+    it("should stop at text that runs up or down a cell, in a table sized to its text, or with a word longer than its cell", () => {
+        expect(fitColumns(table([[{ ...cell(0, "a"), vertical: true }]]), 300, measure).unsupported).to.equal(
+            "text that runs up or down a cell of a table sized to its text",
+        );
+        const given = { ...table([[{ ...cell(0, "aaaaaa", 30), vertical: true }]]), fit: undefined, widen: { acrossColumns: false } };
+        expect(fitColumns(given, 300, measure).unsupported).to.equal("a long word in text that runs up or down a table cell");
+    });
+
     describe("in a table whose cells all have widths", () => {
         /** A table of rows of cells that all have widths */
         const given = (

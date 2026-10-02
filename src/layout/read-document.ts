@@ -48,6 +48,18 @@ import {
     withoutUndefined,
 } from "../text-layout";
 import { formatNumber, formatPageNumber } from "./number-format";
+import {
+    type BorderSet,
+    type CellPosition,
+    type Margins,
+    type TableLook,
+    conditionalTypesOf,
+    readBorderSet,
+    readCellSpacing,
+    readTableLook,
+    roomOf,
+    tableGeometry,
+} from "./table-formats";
 
 /**
  * A paragraph's content: text, tabs, breaks, pictures and bookmarks, and the results of fields that depend on the pages
@@ -122,6 +134,13 @@ export type TableCell = {
     readonly marginRight: number;
     /** Whether it is the first of cells merged down the rows, or one of the rest */
     readonly verticalMerge?: "restart" | "continue";
+    /**
+     * Whether its text runs up or down it (`w:textDirection` btLr or tbRl), so that it takes no room in the row's height,
+     * as in Word (`word-watertight-tables.docx` TB6)
+     */
+    readonly vertical?: boolean;
+    /** Whether the mark that ends it takes no room when its last paragraph is empty (`w:hideMark`), as in Word (TB7) */
+    readonly hideMark?: boolean;
 };
 
 export type TableRow = {
@@ -131,9 +150,14 @@ export type TableRow = {
     readonly header: boolean;
     /** Whether it moves to the next page whole, rather than breaking across the pages, when it doesn't fit */
     readonly cantSplit: boolean;
-    /** The width of the border above the row, and, for the last row, below it, in points */
+    /**
+     * The room above the row's cells, in points: the border between it and the row above, or the table's top border, and
+     * the space between cells. For the last row, the same below it
+     */
     readonly borderTop: number;
     readonly borderBottom: number;
+    /** The room of the border below the row where the table breaks across pages after it, in points */
+    readonly breakBorder?: number;
 };
 
 export type TableBlock = {
@@ -154,6 +178,10 @@ export type TableBlock = {
     /** The width of the borders left and right of the table, in points */
     readonly borderLeft?: number;
     readonly borderRight?: number;
+    /** How far it is indented from the start of the width it is in, in points (`w:tblInd`) */
+    readonly indent?: number;
+    /** The space between its cells, in points, when it has any (`w:tblCellSpacing`) */
+    readonly cellSpacing?: number;
     readonly unsupported?: string;
 };
 
@@ -878,14 +906,20 @@ const readBorders = (format: ParagraphFormat): ParagraphBorders | string | undef
 };
 
 /**
+ * The paragraph and run formatting a table's style gives the paragraphs of one of its cells: its own and its base styles',
+ * then those of the parts of it for the cell, such as its first row's, each over those before.
+ */
+type TableFormats = readonly { readonly run: RunFormat; readonly paragraph: ParagraphFormat }[];
+
+/**
  * Reads a paragraph (`w:p`), in the formatting of its styles, and of its table's style when it is in a table.
  */
-const readParagraph = (element: XmlObject, reader: Reader, tableStyle?: string): ParagraphBlock => {
+const readParagraph = (element: XmlObject, reader: Reader, tableFormats: TableFormats = []): ParagraphBlock => {
     const { styles } = reader;
     const children = contentOf(element);
     const properties = childrenOf(find(children.filter(isObject), "w:pPr"));
     const style = valueOf(properties, "w:pStyle") ?? styles.defaultParagraphStyle;
-    const paragraphStyles = [...styleChain(styles, tableStyle, "table"), ...styleChain(styles, style, "paragraph")];
+    const paragraphStyles = [...tableFormats, ...styleChain(styles, style, "paragraph")];
     const paragraphRun = combine([styles.run, ...paragraphStyles.map(({ run }) => run)]);
     const list = readListNumber(properties, style, paragraphRun, reader);
     const headingLevel = /^heading ([1-9])$/i.exec(styleChain(styles, style, "paragraph").slice(-1)[0]?.name ?? "")?.[1];
@@ -944,16 +978,11 @@ const readParagraph = (element: XmlObject, reader: Reader, tableStyle?: string):
     };
 };
 
-const borderWidth = (borders: readonly XmlObject[], name: string): number => {
-    const attributes = attributesOf(find(borders, name));
-    const style = attributes["w:val"];
-    return style === undefined || style === "nil" || style === "none" ? 0 : (numberOf(attributes["w:sz"]) ?? 0) / EIGHTHS_PER_POINT;
-};
-
 /**
  * Why a cell's properties (`w:tcPr`) change how its text is laid out in a way not yet followed, when they do: cells merged
- * across columns as the oldest versions of Word wrote them (`w:hMerge`), text that doesn't wrap (`w:noWrap`), and text
- * fitted to the cell (`w:tcFitText`).
+ * across columns as the oldest versions of Word wrote them (`w:hMerge`), text that doesn't wrap (`w:noWrap`), text
+ * fitted to the cell (`w:tcFitText`), and text that runs down the cell with its East Asian characters upright, or across
+ * with them on their side (`w:textDirection` tbLrV, tbRlV and lrTbV).
  */
 const unsupportedCellOf = (properties: readonly XmlObject[]): string | undefined => {
     if (find(properties, "w:hMerge") !== undefined) {
@@ -962,8 +991,32 @@ const unsupportedCellOf = (properties: readonly XmlObject[]): string | undefined
     if (onOff(properties, "w:noWrap") === true) {
         return "a table cell whose text doesn't wrap";
     }
-    return onOff(properties, "w:tcFitText") === true ? "text fitted to its table cell" : undefined;
+    if (onOff(properties, "w:tcFitText") === true) {
+        return "text fitted to its table cell";
+    }
+    const direction = valueOf(properties, "w:textDirection");
+    return direction === undefined || HORIZONTAL.has(direction) || VERTICAL.has(direction)
+        ? undefined
+        : "text in a table cell in a direction not yet followed";
 };
+
+/**
+ * Why text that runs up or down a cell makes its row taller in a way not yet followed, when it does. Word makes the row
+ * as tall as a line of the cell's paragraph marks, whatever the text's size and the space around its paragraphs
+ * (`word-table-formats.docx` VT1, VT2, `word-table-formats2.docx` VT5 to VT7). Which line, for marks of different fonts or
+ * sizes, isn't known, nor what a picture or a table in it does.
+ */
+const unsupportedVerticalOf = (blocks: readonly Block[]): string | undefined => {
+    const paragraphs = blocks.filter((block): block is ParagraphBlock => block.type === "paragraph");
+    const marks = new Set(paragraphs.map(({ markFont: { font, size } }) => `${font} ${size}`));
+    const other = paragraphs.length < blocks.length || paragraphs.some(({ items }) => items.some(({ type }) => type === "box"));
+    return marks.size > 1 || other ? "text running up or down a table cell with marks of different sizes, a picture or a table" : undefined;
+};
+
+// The directions of text in a cell (`w:textDirection`) across it, as transitional and strict documents write them, and
+// those that run up and down it
+const HORIZONTAL = new Set(["lrTb", "tb"]);
+const VERTICAL = new Set(["btLr", "tbRl", "lr", "rl"]);
 
 /** A share of a width, as a fraction, from fiftieths of a percent or a percentage written with a % */
 const shareOf = (value: unknown): number | undefined => {
@@ -985,11 +1038,57 @@ const readTableWidth = (properties: readonly XmlObject[]): NonNullable<TableBloc
     };
 };
 
+// Table, row and cell properties that don't change how a table's text is laid out, or that are read with the table's
+// own: its style, shading, alignment, the parts of its style it shows, what describes it, and changes to it
+const LAID_OUT_ALIKE = new Set([
+    "w:tblStyle",
+    "w:shd",
+    "w:jc",
+    "w:vAlign",
+    "w:cnfStyle",
+    "w:hidden",
+    "w:headers",
+    "w:tblLook",
+    "w:tblStyleRowBandSize",
+    "w:tblStyleColBandSize",
+    "w:tblCaption",
+    "w:tblDescription",
+    "w:tblPrChange",
+    "w:trPrChange",
+    "w:tcPrChange",
+    "w:tblPrExChange",
+]);
+
+/** Whether table, row or cell properties change how its text is laid out, beyond those that don't or are read */
+const changesLines = (properties: readonly XmlObject[], read: ReadonlySet<string> = new Set()): boolean =>
+    properties.some((property) => !LAID_OUT_ALIKE.has(nameOf(property)) && !read.has(nameOf(property)));
+
+// The cell properties of a part of a table style for some of its cells that are followed: its borders and margins, which
+// Word applies as the cell's own (word-table-formats.docx CF8, CF9)
+const FOLLOWED_CELL_PROPERTIES = new Set(["w:tcBorders", "w:tcMar"]);
+
+/** The last of a property given among properties, each over those before: those of a table's styles, then its own */
+const lastOf = (properties: readonly (readonly XmlObject[])[], name: string): unknown =>
+    properties.reduce<unknown>((found, given) => find(given, name) ?? found, undefined);
+
+// Which parts of its style Word turns on for a table that doesn't say: its first row and column and its bands of rows, as
+// it turns on in the tables it makes (word-table-formats.docx CF2, word-table-formats2.docx CF14)
+const UNSAID_LOOK: TableLook = { firstRow: true, lastRow: false, firstColumn: true, lastColumn: false, rowBands: true, columnBands: false };
+
+/** A cell as it is read, before the room around its text, from its borders and the space between cells, is worked out */
+type ReadCell = TableCell & { readonly borders: BorderSet; readonly margins: Margins; readonly gridWidth: number };
+
 /**
  * Reads a table (`w:tbl`): the width, margins and content of each cell, and the height and borders of each row. Word
  * sizes the columns of a table whose cells don't all have widths to their text, and widens a column of one whose cells
  * all have widths for a word longer than they give it, unless its layout is fixed, so those are worked out as it is laid
  * out.
+ *
+ * The table takes its margins, borders, space between cells and indent from its style and the styles that is based on,
+ * or the default table style when it has none that is a table style, then from itself, each over those before. Its
+ * style's paragraph and run formatting applies to its cells' paragraphs, then the formatting of the parts of its style
+ * for the cell, such as its first row's (`w:tblStylePr`), where the table turns them on (`w:tblLook`), with the cell
+ * borders and margins they give. A cell's own borders and margins are over those.
  */
 const readTable = (element: XmlObject, reader: Reader): TableBlock => {
     const children = contentOf(element).filter(isObject);
@@ -999,7 +1098,8 @@ const readTable = (element: XmlObject, reader: Reader): TableBlock => {
     // styles it is based on, then its own. Without any, Word gives cells none
     const ownStyles = styleChain(reader.styles, style, "table");
     const tableStyles = ownStyles.length > 0 ? ownStyles : styleChain(reader.styles, reader.styles.defaultTableStyle, "table");
-    const tableMargins = {
+    const allProperties = [...tableStyles.map(({ tableProperties = [] }) => tableProperties), properties];
+    const tableMargins: Margins = {
         top: 0,
         bottom: 0,
         left: 0,
@@ -1007,13 +1107,55 @@ const readTable = (element: XmlObject, reader: Reader): TableBlock => {
         ...Object.assign({}, ...tableStyles.map(({ cellMargins }) => cellMargins)),
         ...readCellMargins(find(properties, "w:tblCellMar")),
     };
-    const borders = childrenOf(find(properties, "w:tblBorders"));
+    // Each of the table's borders from the last that gives it: its styles', then its own (word-table-formats.docx BC6)
+    const tableBorders: BorderSet = Object.assign({}, ...allProperties.map((given) => readBorderSet(find(given, "w:tblBorders"))));
+    const tableSpacing = readCellSpacing(lastOf(allProperties, "w:tblCellSpacing"));
+    const { "w:w": indentValue, "w:type": indentType = "dxa" } = attributesOf(lastOf(allProperties, "w:tblInd"));
+    const indent = indentType === "nil" ? 0 : indentType === "dxa" ? (twips(indentValue) ?? 0) : undefined;
     const grid = childrenOf(find(children, "w:tblGrid"))
         .filter((child) => "w:gridCol" in child)
         .map((column) => twips(attributesOf(column["w:gridCol"])["w:w"]) ?? 0);
     // The rows, and those in content controls and custom XML, with the bookmarks that start before each
     const parts = unwrap(children);
     const rows = withBookmarks(parts, "w:tr");
+
+    // The parts of the table's style for some of its cells, by their type, from each of its styles in turn
+    const conditional = ownStyles.flatMap(({ conditional: given = new Map() }) => [...given]);
+    const look = readTableLook(lastOf(allProperties, "w:tblLook")) ?? UNSAID_LOOK;
+    const bandSize = (name: string): number | undefined => numberOf(attributesOf(lastOf(allProperties, name))["w:val"]);
+    const bands = { rows: bandSize("w:tblStyleRowBandSize"), columns: bandSize("w:tblStyleColBandSize") };
+    /**
+     * The paragraph and run formatting the table's style gives a cell's paragraphs, with that of the parts of it for the
+     * cell, the borders and margins those give the cell, and why a part of it for the cell changes its lines in a way not
+     * yet followed: with table or row properties, or cell properties other than borders and margins
+     */
+    const formatsOf = (
+        position: CellPosition,
+    ): {
+        readonly formats: TableFormats;
+        readonly borders: BorderSet;
+        readonly margins: Partial<Margins>;
+        readonly unsupported?: string;
+    } => {
+        if (conditional.length === 0) {
+            return UNFORMATTED;
+        }
+        const applying = conditionalTypesOf(position, look, bands).flatMap((type) => conditional.filter(([given]) => given === type));
+        const unfollowed = applying.some(
+            ([, format]) =>
+                changesLines([...format.tableProperties, ...format.rowProperties]) ||
+                changesLines(format.cellProperties, FOLLOWED_CELL_PROPERTIES),
+        );
+        return {
+            formats: [...ownStyles, ...applying.map(([, format]) => format)],
+            borders: Object.assign({}, ...applying.map(([, { cellProperties }]) => readBorderSet(find(cellProperties, "w:tcBorders")))),
+            margins: Object.assign({}, ...applying.map(([, { cellProperties }]) => readCellMargins(find(cellProperties, "w:tcMar")))),
+            ...(unfollowed ? { unsupported: "a table style's formatting for some of its cells" } : {}),
+        };
+    };
+
+    // What a style without parts for some cells gives each cell
+    const UNFORMATTED = { formats: ownStyles, borders: {}, margins: {} };
 
     const gridWidth = (from: number, to: number): number => grid.slice(from, to).reduce((total, value) => total + value, 0);
 
@@ -1022,7 +1164,9 @@ const readTable = (element: XmlObject, reader: Reader): TableBlock => {
             { element: row, bookmarks: rowBookmarks },
             rowIndex,
         ): {
-            readonly row: TableRow;
+            readonly cells: readonly ReadCell[];
+            readonly row: Omit<TableRow, "cells" | "borderTop" | "borderBottom">;
+            readonly spacing: number | undefined;
             readonly edges: ReadonlyMap<number, number>;
             readonly end: number;
             readonly unsupported?: string;
@@ -1038,6 +1182,8 @@ const readTable = (element: XmlObject, reader: Reader): TableBlock => {
             const height = twips(heightAttributes["w:val"]);
             const { "w:hRule": rule } = heightAttributes;
             const skipped = numberOf(attributesOf(find(rowProperties, "w:gridBefore"))["w:val"]) ?? 0;
+            const ownSpacing = find(rowProperties, "w:tblCellSpacing");
+            const spacing = ownSpacing === undefined ? tableSpacing : readCellSpacing(ownSpacing);
             // Where each cell's edges are, by the grid column they are at, to check the rows agree on them
             const {
                 cells,
@@ -1046,28 +1192,38 @@ const readTable = (element: XmlObject, reader: Reader): TableBlock => {
                 unsupported: cellsUnsupported,
             } = rowCells.reduce<{
                 readonly column: number;
-                readonly cells: readonly TableCell[];
+                readonly cells: readonly ReadCell[];
                 readonly edges: ReadonlyMap<number, number>;
                 readonly unsupported?: string;
             }>(
-                ({ column, cells: done, edges: before, unsupported: unsupportedBefore }, { element: cell }) => {
+                ({ column, cells: done, edges: before, unsupported: unsupportedBefore }, { element: cell }, cellIndex) => {
                     const cellChildren = contentOf(cell).filter(isObject);
                     const cellProperties = childrenOf(find(cellChildren, "w:tcPr"));
                     const span = numberOf(attributesOf(find(cellProperties, "w:gridSpan"))["w:val"]) ?? 1;
                     const mergeElement = find(cellProperties, "w:vMerge");
                     const merge =
                         mergeElement === undefined ? undefined : attributesOf(mergeElement)["w:val"] === "restart" ? "restart" : "continue";
-                    const margins = { ...tableMargins, ...readCellMargins(find(cellProperties, "w:tcMar")) };
+                    const formatted = formatsOf({ row: rowIndex, rows: rows.length, cell: cellIndex, cells: rowCells.length });
+                    const margins = { ...tableMargins, ...formatted.margins, ...readCellMargins(find(cellProperties, "w:tcMar")) };
                     // Word lays a cell out at its own width in twips, when it has one, rather than the grid's. A share of the
                     // table's width is the grid's
                     const { "w:w": ownWidth, "w:type": widthType = "dxa" } = attributesOf(find(cellProperties, "w:tcW"));
                     const inTwips = widthType === "dxa" ? (twips(ownWidth) ?? 0) : 0;
                     const hasWidth = inTwips > 0 || (widthType === "pct" && (shareOf(ownWidth) ?? 0) > 0);
                     const width = inTwips > 0 ? inTwips : gridWidth(column, column + span);
+                    const direction = valueOf(cellProperties, "w:textDirection");
+                    const cellBlocks = readBlocks(cellChildren, reader, formatted.formats);
+                    const vertical = direction !== undefined && VERTICAL.has(direction);
                     return {
                         column: column + span,
                         edges: new Map([...before, [column + span, before.get(column)! + width]]),
-                        ...withoutUndefined({ unsupported: unsupportedBefore ?? unsupportedCellOf(cellProperties) }),
+                        ...withoutUndefined({
+                            unsupported:
+                                unsupportedBefore ??
+                                unsupportedCellOf(cellProperties) ??
+                                formatted.unsupported ??
+                                (vertical ? unsupportedVerticalOf(cellBlocks) : undefined),
+                        }),
                         cells: [
                             ...done,
                             {
@@ -1075,57 +1231,98 @@ const readTable = (element: XmlObject, reader: Reader): TableBlock => {
                                 ...(span > 1 ? { span } : {}),
                                 width: width - margins.left - margins.right,
                                 ...(hasWidth ? { ownWidth: width } : {}),
-                                blocks: readBlocks(cellChildren, reader, style),
+                                blocks: cellBlocks,
                                 marginTop: margins.top,
                                 marginBottom: margins.bottom,
                                 marginLeft: margins.left,
                                 marginRight: margins.right,
                                 ...(merge ? { verticalMerge: merge } : {}),
+                                ...(vertical ? { vertical: true } : {}),
+                                ...(onOff(cellProperties, "w:hideMark") === true ? { hideMark: true } : {}),
+                                borders:
+                                    formatted === UNFORMATTED
+                                        ? readBorderSet(find(cellProperties, "w:tcBorders"))
+                                        : { ...formatted.borders, ...readBorderSet(find(cellProperties, "w:tcBorders")) },
+                                margins,
+                                gridWidth: width,
                             },
                         ],
                     };
                 },
                 { column: skipped, cells: [], edges: new Map([[skipped, gridWidth(0, skipped)]]) },
             );
-            // A row of a division of a web page (`w:divId`) has the division's margins and borders
+            // A row of a division of a web page (`w:divId`) has the division's margins and borders, and one with table
+            // properties of its own (`w:tblPrEx`) has borders, margins or widths of its own
             const rowUnsupported =
                 find(rowProperties, "w:divId") !== undefined
                     ? "a table row in an HTML division"
                     : rowParts.some((part) => "w:sdt" in part)
                       ? BOUND_CONTROL
-                      : cellsUnsupported;
+                      : changesLines(childrenOf(find(rowChildren, "w:tblPrEx")))
+                        ? "a table row with table properties of its own"
+                        : cellsUnsupported;
             return {
+                cells,
                 edges,
                 end,
+                spacing,
                 ...withoutUndefined({ unsupported: rowUnsupported }),
                 bookmarks: rowBookmarks,
                 cellBookmarks: rowCells.map(({ bookmarks }) => bookmarks),
                 row: {
-                    cells,
                     // A height without a rule is the least the row can be, as Word writes it
                     ...(height !== undefined && rule !== "auto"
                         ? { height: { value: height, rule: rule === "exact" ? "exact" : "atLeast" } }
                         : {}),
                     header: onOff(rowProperties, "w:tblHeader") === true,
                     cantSplit: onOff(rowProperties, "w:cantSplit") === true,
-                    borderTop: borderWidth(borders, rowIndex === 0 ? "w:top" : "w:insideH"),
-                    borderBottom: rowIndex === rows.length - 1 ? borderWidth(borders, "w:bottom") : 0,
                 },
             };
         },
     );
+    const tableCells = read.flatMap(({ cells }) => cells);
+    const fixed = attributesOf(find(properties, "w:tblLayout"))["w:type"] === "fixed";
+    const fits = !fixed && tableCells.some(({ ownWidth }) => ownWidth === undefined);
+    // Space between cells that is a share of the table's width, or that a row has of its own, isn't known yet
+    const spacingUnsupported =
+        tableSpacing === undefined || read.some(({ spacing }) => spacing === undefined)
+            ? "space between table cells as a share of the table's width"
+            : read.some(({ spacing }) => spacing !== tableSpacing)
+              ? "a table row with space between its cells of its own"
+              : undefined;
+    // The room around each row's and cell's text, from the borders and the space between cells, which every row has the
+    // same of when it is followed
+    const followedSpacing = spacingUnsupported === undefined ? tableSpacing! : 0;
+    const geometry = tableGeometry(
+        read.map(({ cells }) => ({ cells, spacing: followedSpacing })),
+        { borders: tableBorders, spacing: followedSpacing },
+    );
+    const spaced = followedSpacing > 0;
     // The bookmarks before each row and cell start where the text after them does: in the cell after them, or in the next
     // with any text when it has none
     let carried: readonly string[] = [];
-    const tableRows = read.map(({ row, bookmarks, cellBookmarks }): TableRow => {
+    const tableRows = read.map(({ row, cells, bookmarks, cellBookmarks }, rowIndex): TableRow => {
         carried = [...carried, ...bookmarks];
+        const placed = typeof geometry === "string" ? undefined : geometry[rowIndex];
         return {
             ...row,
-            cells: row.cells.map((cell, index) => {
+            borderTop: placed?.borderTop ?? 0,
+            borderBottom: placed?.borderBottom ?? 0,
+            ...withoutUndefined({ breakBorder: placed?.breakBorder }),
+            cells: cells.map(({ borders: _, margins, gridWidth: __, ...cell }, index) => {
                 const pending = [...carried, ...cellBookmarks[index]];
                 const marked = pending.length === 0 ? undefined : startingAtFirst(cell.blocks, pending);
                 carried = marked === undefined ? pending : [];
-                return marked === undefined ? cell : { ...cell, blocks: marked };
+                const around = placed?.cells[index];
+                // A cell's width with the space between cells is as wide as Word sizes its column from, as the table's columns
+                // are narrowed to keep its width (word-table-formats2.docx CS9)
+                const spacingRoom = around === undefined ? 0 : around.left - margins.left + around.right - margins.right;
+                return {
+                    ...cell,
+                    ...(around === undefined ? {} : { width: around.width, marginLeft: around.left, marginRight: around.right }),
+                    ...(spaced && cell.ownWidth !== undefined ? { ownWidth: cell.ownWidth + spacingRoom } : {}),
+                    ...(marked === undefined ? {} : { blocks: marked }),
+                };
             }),
         };
     });
@@ -1140,10 +1337,7 @@ const readTable = (element: XmlObject, reader: Reader): TableBlock => {
             return Math.abs(other - edge) > WIDTH_TOLERANCE;
         }),
     );
-    const tableCells = read.flatMap(({ row }) => row.cells);
     const blocks = tableCells.flatMap((cell) => cell.blocks);
-    const fixed = attributesOf(find(properties, "w:tblLayout"))["w:type"] === "fixed";
-    const fits = !fixed && tableCells.some(({ ownWidth }) => ownWidth === undefined);
     // How Word lays out a table of more columns than it can have isn't known, and sizing one to its text would count a
     // column for each it says it has, however many
     const columns = read.reduce((most, { end }) => Math.max(most, end), 0);
@@ -1162,23 +1356,40 @@ const readTable = (element: XmlObject, reader: Reader): TableBlock => {
             ];
         }),
     ]);
+    // A table style's own row and cell properties apply to every row and cell, in a way not yet followed
+    const styleUnsupported = tableStyles.some(({ rowProperties = [], cellProperties = [] }) =>
+        changesLines([...rowProperties, ...cellProperties]),
+    )
+        ? "a table style with formatting of its rows or cells"
+        : undefined;
     // Word puts the text after a floating table (`w:tblpPr`) beside it (`word-watertight-tables.docx` TB11)
     const unsupported =
         (find(properties, "w:tblpPr") === undefined ? undefined : "a table that text flows around") ??
         (parts.some((part) => "w:sdt" in part) ? BOUND_CONTROL : undefined) ??
         read.find((row) => row.unsupported !== undefined)?.unsupported ??
         (fits ? unfitted : unequal ? "a table whose rows give a column different widths" : undefined) ??
+        spacingUnsupported ??
+        (typeof geometry === "string" ? geometry : undefined) ??
+        (indent === undefined ? "a table indented by a share of the width" : undefined) ??
+        styleUnsupported ??
         lengths ??
         blocks.find((block) => block.unsupported !== undefined)?.unsupported;
+    // With space between cells, Word keeps a table's width, its own or its first row's cells', laid out fixed or not, and
+    // narrows its columns for the space (word-table-formats2.docx CS9, CS10, CS14)
+    const givenWidth = readTableWidth(properties);
+    const rowWidth = (read[0]?.cells ?? []).reduce((total, cell) => total + (cell.ownWidth ?? 0), 0);
+    const tableWidth = spaced && givenWidth.width === undefined && givenWidth.share === undefined ? { width: rowWidth } : givenWidth;
     return {
         type: "table",
         rows: tableRows,
-        ...(fits ? { fit: readTableWidth(properties) } : {}),
-        ...(!fits && !fixed
-            ? { widen: { ...readTableWidth(properties), acrossColumns: tableCells.some(({ span }) => span !== undefined) } }
+        ...(fits ? { fit: givenWidth } : {}),
+        ...(!fits && (!fixed || spaced)
+            ? { widen: { ...tableWidth, acrossColumns: tableCells.some(({ span }) => span !== undefined) } }
             : {}),
-        borderLeft: borderWidth(borders, "w:left"),
-        borderRight: borderWidth(borders, "w:right"),
+        borderLeft: roomOf(tableBorders.left) ?? 0,
+        borderRight: roomOf(tableBorders.right) ?? 0,
+        ...(indent ? { indent } : {}),
+        ...(spaced ? { cellSpacing: followedSpacing } : {}),
         ...(unsupported ? { unsupported } : {}),
     };
 };
@@ -1233,10 +1444,10 @@ const startingAtFirst = (blocks: readonly Block[], bookmarks: readonly string[])
  * Reads a paragraph or table, or what is in its place and can't be laid out: an imported document, an equation outside
  * a paragraph, or a content control bound to custom XML. Undefined for anything else.
  */
-const readBlock = (element: XmlObject, reader: Reader, tableStyle?: string): Block | undefined => {
+const readBlock = (element: XmlObject, reader: Reader, tableFormats?: TableFormats): Block | undefined => {
     switch (nameOf(element)) {
         case "w:p":
-            return readParagraph(element, reader, tableStyle);
+            return readParagraph(element, reader, tableFormats);
         case "w:tbl":
             return readTable(element, reader);
         case "w:sdt":
@@ -1255,12 +1466,12 @@ const readBlock = (element: XmlObject, reader: Reader, tableStyle?: string): Blo
  * Reads the paragraphs and tables in a part of a document, such as a table cell or a header, and in the content controls
  * and custom XML in it. A bookmark between them starts with the next.
  */
-const readBlocks = (elements: readonly unknown[], reader: Reader, tableStyle?: string): readonly Block[] => {
+const readBlocks = (elements: readonly unknown[], reader: Reader, tableFormats?: TableFormats): readonly Block[] => {
     // eslint-disable-next-line functional/prefer-readonly-type
     const blocks: Block[] = [];
     let bookmarks: readonly string[] = [];
     for (const element of unwrap(elements)) {
-        const block = readBlock(element, reader, tableStyle);
+        const block = readBlock(element, reader, tableFormats);
         if (block === undefined) {
             bookmarks = [...bookmarks, ...bookmarksIn([element])];
         } else {

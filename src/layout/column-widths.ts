@@ -123,25 +123,40 @@ const narrowed = (columns: readonly Column[], room: number): readonly number[] =
  * @param measure - How narrow and how wide the content of a cell can be, in points
  */
 export const fitColumns = (table: TableBlock, available: number, measure: Measure): TableBlock => {
-    const { fit, widen, rows } = table;
+    const { fit, widen, rows, indent = 0 } = table;
     if (!fit && !widen) {
         return table;
     }
+    // How Word sizes a column whose text runs up or down isn't known
+    if (fit && rows.some(({ cells }) => cells.some(({ vertical }) => vertical))) {
+        return { ...table, unsupported: "text that runs up or down a cell of a table sized to its text" };
+    }
     const content = measureCells(table, measure);
+    // With space between cells, Word narrows the columns to keep the table's width (word-table-formats2.docx CS9)
+    const spaced = table.cellSpacing !== undefined;
     if (widen) {
-        const tooLong = rows.some(({ cells }) => cells.some((cell) => content.get(cell)!.min > cell.ownWidth!));
-        if (!tooLong) {
+        const tooLong = rows.flatMap(({ cells }) => cells.filter((cell) => content.get(cell)!.min > cell.ownWidth!));
+        if (tooLong.length === 0 && !spaced) {
             return table;
         }
-        if (widen.acrossColumns) {
+        if (tooLong.length > 0 && widen.acrossColumns) {
             return { ...table, unsupported: "a word longer than its cell in a table with cells merged across columns" };
+        }
+        if (tooLong.length > 0 && spaced) {
+            return { ...table, unsupported: "a long word in a table with space between its cells" };
+        }
+        if (tooLong.some(({ vertical }) => vertical)) {
+            return { ...table, unsupported: "a long word in text that runs up or down a table cell" };
         }
     }
     const { columns, unsettled } = sizeColumns(table, content);
     const total = sum(columns.map(({ width }) => width));
     const tableWidth = fit ?? widen!;
     const target = tableWidth.width ?? (tableWidth.share === undefined ? undefined : tableWidth.share * available);
-    const room = target ?? available;
+    // A table sized to its text in the width it is in, or one whose cells all have widths, which grows up to it for a long
+    // word, takes its indent from it, as in Word (`word-watertight-tables.docx` TB9, `word-table-formats.docx` TI1, TI3
+    // and TI4). One with a width of its own, or a share of the width, keeps it (TI2)
+    const room = target ?? available - indent;
     if (widen) {
         // Word breaks a word longer than the room in a way not yet followed, narrowing the other columns past their widest
         // words, and how it widens a table wider than its cells around a long word isn't known
@@ -149,7 +164,12 @@ export const fitColumns = (table: TableBlock, available: number, measure: Measur
             return { ...table, unsupported: "a word longer than its table can make room for" };
         }
         if (target !== undefined && total < target) {
-            return { ...table, unsupported: "a long word in a table wider than its cells" };
+            return {
+                ...table,
+                unsupported: spaced
+                    ? "space between the cells of a table wider than its cells"
+                    : "a long word in a table wider than its cells",
+            };
         }
     }
     if (unsettled.includes("always") || (unsettled.length > 0 && total > room)) {
