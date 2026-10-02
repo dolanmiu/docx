@@ -18,7 +18,8 @@
  * Word writes a w:lastRenderedPageBreak where each page began when it last laid the document out. docx/layout lays out
  * the document Word saved, read through the .docx adapter as patchDocument's templates are, and each bookmark a page
  * reference refers to, such as each heading of a table of contents, is compared with the page Word put it on. It fails
- * when one isn't on Word's page, and when the number of pages isn't Word's.
+ * when one isn't on Word's page, and when the number of pages isn't Word's. A document whose marks don't have all of
+ * Word's pages (see wordPagesOf) isn't compared.
  */
 import { existsSync, readFileSync, readdirSync } from "node:fs";
 import { join } from "node:path";
@@ -276,59 +277,45 @@ for (const name of readdirSync(directory)
     }
 }
 
-// Documents saved from Word, laid out through the .docx adapter, and compared with the pages Word marked in them, and
-// with Word's PDF of the document it saved, when that is there
+// Documents saved from Word, laid out through the .docx adapter, and compared with the pages Word marked in them. Each has
+// Word's own pages in it, so it stays a check of docx/layout when the demo it was saved from changes, as Word's PDF of
+// the demo doesn't
 const saved = { compared: 0, matched: 0 };
 const savedPageCounts = { compared: 0, matched: 0 };
-// The documents whose marks don't have all of Word's pages, which are compared only with Word's PDF
+// The documents whose marks don't have all of Word's pages, which aren't compared
 const notMarked: string[] = [];
 for (const name of readdirSync(directory)
     .filter((file) => file.endsWith(".word.docx"))
     .sort()) {
     const parts = await partsOf(join(directory, name));
-    const estimate = estimatePageNumbers({ parts });
     const marked = wordPagesOf(parts.get("word/document.xml")!);
     // The number of pages Word had laid out when it saved the document
     const app = parts.get("docProps/app.xml");
     const pagesElement = app && findElement(app, "Pages");
     const laidOut = pagesElement ? Number(textOf(pagesElement)) : undefined;
-    const complete = laidOut === marked.pageCount;
-    const pdf = pagesOf(join(directory, name.replace(/\.docx$/, ".txt")));
-    console.log(
-        `\n${name}, saved from Word${complete ? "" : `: its marks have ${marked.pageCount} of its ${laidOut ?? "unknown"} pages, so only Word's PDF is compared`}`,
-    );
-    if (!complete) {
-        notMarked.push(name);
-    }
-    for (const bookmark of marked.referred.filter((referredTo) => marked.titles.has(referredTo))) {
-        const page = estimate.bookmarks.get(bookmark) ?? "";
-        const title = marked.titles.get(bookmark)!;
-        const found = [
-            ...(complete ? [{ reference: "Word's marks", page: String(marked.pages.get(bookmark) ?? 0) }] : []),
-            ...(pdf ? [{ reference: "Word's PDF", page: String(pdf.findLastIndex((lines) => lines.includes(title)) + 1) }] : []),
-        ];
-        const results = found.map(({ reference, page: wordPage }) => {
-            saved.compared++;
-            saved.matched += page === wordPage ? 1 : 0;
-            return `${page === wordPage ? " " : "*"}${reference} ${wordPage === "0" ? "none" : wordPage.padStart(4)}`;
-        });
-        const matches = results.every((result) => result.startsWith(" "));
+    if (laidOut !== marked.pageCount) {
         console.log(
-            `${matches ? "  ok  " : "  FAIL"}  ${title.slice(0, 50).padEnd(50)}  docx/layout ${(page || "blank").padStart(5)} ${results.join(" ")}`,
+            `\n${name}, saved from Word: its marks have ${marked.pageCount} of its ${laidOut ?? "unknown"} pages, so it isn't compared`,
+        );
+        notMarked.push(name);
+        continue;
+    }
+    console.log(`\n${name}, saved from Word`);
+    const estimate = estimatePageNumbers({ parts });
+    for (const bookmark of marked.referred.filter((referredTo) => marked.pages.has(referredTo))) {
+        const page = estimate.bookmarks.get(bookmark) ?? "";
+        const found = String(marked.pages.get(bookmark));
+        saved.compared++;
+        saved.matched += page === found ? 1 : 0;
+        console.log(
+            `${page === found ? "  ok  " : "  FAIL"}  ${marked.titles.get(bookmark)!.slice(0, 50).padEnd(50)}  docx/layout ${(page || "blank").padStart(5)} ${page === found ? " " : "*"}Word ${found.padStart(4)}`,
         );
     }
     const counted = String(estimate.pageCount ?? "");
-    const wordCounts = [
-        ...(complete ? [{ reference: "Word's marks", count: String(laidOut) }] : []),
-        ...(pdf ? [{ reference: "Word's PDF", count: String(pdf.length - 1) }] : []),
-    ];
-    const countResults = wordCounts.map(({ reference, count }) => {
-        savedPageCounts.compared++;
-        savedPageCounts.matched += counted === count ? 1 : 0;
-        return `${counted === count ? " " : "*"}${reference} ${count.padStart(4)}`;
-    });
+    savedPageCounts.compared++;
+    savedPageCounts.matched += counted === String(laidOut) ? 1 : 0;
     console.log(
-        `${countResults.every((result) => result.startsWith(" ")) ? "  ok  " : "  FAIL"}  ${"Number of pages".padEnd(50)}  docx/layout ${(counted || "blank").padStart(5)} ${countResults.join(" ")}`,
+        `${counted === String(laidOut) ? "  ok  " : "  FAIL"}  ${"Number of pages".padEnd(50)}  docx/layout ${(counted || "blank").padStart(5)} ${counted === String(laidOut) ? " " : "*"}Word ${String(laidOut).padStart(4)}`,
     );
 }
 
@@ -350,7 +337,7 @@ if (saved.compared > 0) {
     console.log(`${savedPageCounts.matched} of ${savedPageCounts.compared} numbers of pages are Word's in the documents saved from Word`);
 }
 if (notMarked.length > 0) {
-    console.log(`Word's marks don't have all the pages of ${notMarked.join(", ")}`);
+    console.log(`Word's marks don't have all the pages of ${notMarked.join(", ")}, which aren't compared`);
 }
 if (notLaidOut.length > 0) {
     console.log(`LibreOffice didn't lay out ${notLaidOut.join(", ")}`);
