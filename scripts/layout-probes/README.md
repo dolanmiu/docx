@@ -61,6 +61,7 @@ table style and each cell's width.
 | `word-mixed-heights`        | MH1 to MH7: how tall Word makes a line of two fonts, or with a picture, where `word-watertight-text`'s TX8 and TX9 left it open: multiple and at-least spacing over two fonts, the line gap above the text, a picture alone or beside text at 0.8 to 1.5 lines, the font of a picture's run, the descent of each East Asian font, and a picture shorter than its line                                                                                                                                                                                                                                                                                                                                     | `word-mixed-heights.py`        |
 | `word-run-formatting`       | RF1 to RF8: run formatting, where `word-watertight-text`'s TX1, TX2, TX4, TX15 and TX16 left it open: the size of superscript, subscript and small capitals in each font and at the sizes where Word rounds them, which size's line they take up, raised and lowered text smaller than its line, in another font, with line spacing and written with units, emphasis marks at each size, in each font and of each kind, run borders of each size, space and style, on runs next to each other and across a line, and empty paragraphs whose marks have each                                                                                                                                               | `word-run-formatting.py`       |
 | `word-run-formatting2`      | RF9 to RF14: where `word-run-formatting` left it open: emphasis marks at each line spacing and on lines taller than their fonts' own, whether a line has room for a border's end after its last word, the room borders of 21 other styles take, and borders round raised text, superscript and small capitals. It imports docx/layout's widths, to end RF11's lines where it means to, so run it from a checkout                                                                                                                                                                                                                                                                                          | `word-run-formatting.py`       |
+| `word-compat`               | CS1 to CS4: whether the compatibility settings Word writes in every document it makes change its lines in compatibility mode 15: Normal's size and alignment against a table style's (`overrideTableStyleFontSizeAndJustification`), a table style's parts in a header of several rows (`differentiateMultirowTableHeaders`), kerning, ligatures and figures spaced proportionally (`enableOpenTypeFeatures`), and a hyphen at the foot of a page (`useWord2013TrackBottomHyphenation`). Word laid out `word-compat-on`, with them, and `word-compat-off`, without, alike, and made all of a header of several rows the first row (CS2)                                                                   | `word-compat.py`               |
 | `fsplit`                    | How a footnote that doesn't fit below its reference goes on to the next page. Laid out in LibreOffice only, so it has no PDF from Word: Word's split of an 8-line footnote is `word-rules` P7b                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                            | `pagelines.py`                 |
 
 ## Make a probe's `.docx`
@@ -256,6 +257,16 @@ for name in word-tracked-changes word-tracked-view-insdel word-tracked-view-mark
     pdftotext -bbox-layout scripts/layout-probes/$name.pdf build/word-probes/$name.html
 done
 python3 scripts/layout-probes/word-tracked-changes.py build/word-probes/word-tracked-{changes,view-insdel,view-markup}.html
+```
+
+`word-compat.py` reads the two documents `word-compat.ts` writes, and prints what each probe shows in both, side by
+side:
+
+```bash
+for name in word-compat-on word-compat-off; do
+    pdftotext -bbox-layout scripts/layout-probes/$name.pdf build/word-probes/$name.html
+done
+python3 scripts/layout-probes/word-compat.py build/word-probes/word-compat-on.html build/word-probes/word-compat-off.html
 ```
 
 ## Documents saved from Word

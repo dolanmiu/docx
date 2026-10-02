@@ -277,27 +277,43 @@ export const readTableLook = (element: unknown): TableLook | undefined => {
     };
 };
 
-/** Where a cell is in its table: its row and the rows of the table, and its place among the cells of its row */
-export type CellPosition = { readonly row: number; readonly rows: number; readonly cell: number; readonly cells: number };
+/**
+ * Where a cell is in its table: its row and the rows of the table, its place among the cells of its row, and how many of
+ * the table's first rows are its header rows (`w:tblHeader`), when it has any
+ */
+export type CellPosition = {
+    readonly row: number;
+    readonly rows: number;
+    readonly cell: number;
+    readonly cells: number;
+    readonly headerRows?: number;
+};
 
 /**
  * The parts of a table style that apply to a cell (`w:tblStylePr`), by its position in the table, the parts the table
  * turns on, and the sizes of its style's bands, in the order they apply, each over those before, as Word applies them
  * (`word-table-formats.docx` CF1 to CF6). Word applies bands only of a style that gives their size, and counts them from
  * the first row and column that aren't the first row or column it applies. It doesn't apply `wholeTable`.
+ *
+ * A table's header of several rows is its first row, all of it, and its bands of rows start below it. With its first row
+ * turned off, all of the header is in the band before the first, the second band (`word-compat-off.docx` CS2a to CS2f).
+ * A header of one row is a row like the others (CS2c).
  */
 export const conditionalTypesOf = (
-    { row, rows, cell, cells }: CellPosition,
+    { row, rows, cell, cells, headerRows = 0 }: CellPosition,
     look: TableLook,
     bands: { readonly rows?: number; readonly columns?: number },
 ): readonly string[] => {
-    const firstRow = look.firstRow && row === 0;
+    const header = headerRows > 1 ? headerRows : 0;
+    const inHeader = row < header;
+    const firstRow = look.firstRow && (header > 0 ? inHeader : row === 0);
     const lastRow = look.lastRow && row === rows - 1;
     const firstColumn = look.firstColumn && cell === 0;
     const lastColumn = look.lastColumn && cell === cells - 1;
     const bandOf = (on: boolean, size: number | undefined, index: number, edge: boolean): number | undefined =>
-        on && size !== undefined && size > 0 && !edge ? Math.floor(index / size) % 2 : undefined;
-    const rowBand = bandOf(look.rowBands, bands.rows, row - (look.firstRow ? 1 : 0), firstRow || lastRow);
+        on && size !== undefined && size > 0 && !edge ? Math.abs(Math.floor(index / size) % 2) : undefined;
+    const firstBanded = header > 0 ? header : look.firstRow ? 1 : 0;
+    const rowBand = bandOf(look.rowBands, bands.rows, inHeader ? -1 : row - firstBanded, firstRow || lastRow);
     const columnBand = bandOf(look.columnBands, bands.columns, cell - (look.firstColumn ? 1 : 0), firstColumn || lastColumn);
     return [
         ...(rowBand === undefined ? [] : [rowBand === 0 ? "band1Horz" : "band2Horz"]),

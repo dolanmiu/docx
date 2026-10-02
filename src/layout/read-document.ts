@@ -1469,6 +1469,12 @@ const readTable = (element: XmlObject, reader: Reader): TableBlock | undefined =
     const keptCount = deletedFlags.filter((deleted) => !deleted).length;
     let keptBefore = 0;
     const keptIndexes = deletedFlags.map((deleted) => (deleted ? keptBefore : keptBefore++));
+    // How many of the first rows are header rows, and how many of those are laid out
+    const headerFlags = rows.map(
+        ({ element: row }) => onOff(childrenOf(find(contentOf(row).filter(isObject), "w:trPr")), "w:tblHeader") === true,
+    );
+    const headerRows = headerFlags.includes(false) ? headerFlags.indexOf(false) : headerFlags.length;
+    const keptHeaderRows = deletedFlags.slice(0, headerRows).filter((deleted) => !deleted).length;
 
     // The parts of the table's style for some of its cells, by their type, from each of its styles in turn
     const conditional = ownStyles.flatMap(({ conditional: given = new Map() }) => [...given]);
@@ -1501,12 +1507,33 @@ const readTable = (element: XmlObject, reader: Reader): TableBlock | undefined =
             formats: [...ownStyles, ...applying.map(([, format]) => format)],
             borders: Object.assign({}, ...applying.map(([, { cellProperties }]) => readBorderSet(find(cellProperties, "w:tcBorders")))),
             margins: Object.assign({}, ...applying.map(([, { cellProperties }]) => readCellMargins(find(cellProperties, "w:tcMar")))),
-            ...(unfollowed ? { unsupported: "a table style's formatting for some of its cells" } : {}),
+            ...withoutUndefined({
+                unsupported: unfollowed ? "a table style's formatting for some of its cells" : unseenInHeaderOf(position, applying),
+            }),
         };
     };
 
     // What a style without parts for some cells gives each cell
     const UNFORMATTED = { formats: ownStyles, borders: {}, margins: {} };
+
+    /**
+     * Why the parts of the table's style for a cell in a header of several rows apply in a way Word hasn't been seen to
+     * apply them, when they do: its corners in the header's rows after the first, and its bands in a header of three rows
+     * or more with its first row turned off. Word made all of a header of two or three rows its first row, and put one of
+     * two in the second band (`word-compat-off.docx` CS2a, CS2b and CS2f)
+     */
+    const unseenInHeaderOf = (
+        { row, headerRows: header = 0 }: CellPosition,
+        applying: readonly (readonly [string, unknown])[],
+    ): string | undefined => {
+        const types = new Set(applying.map(([type]) => type));
+        if (row > 0 && row < header && (types.has("nwCell") || types.has("neCell"))) {
+            return "a table style's corner cells in a header of several rows";
+        }
+        return row < header && header > 2 && (types.has("band1Horz") || types.has("band2Horz"))
+            ? "a table style's bands of rows in a header of three rows or more"
+            : undefined;
+    };
 
     const gridWidth = (from: number, to: number): number => grid.slice(from, to).reduce((total, value) => total + value, 0);
 
@@ -1549,9 +1576,11 @@ const readTable = (element: XmlObject, reader: Reader): TableBlock | undefined =
                 keptCount < rows.length &&
                 conditional.length > 0 &&
                 rowCells.some((_, cell) => {
-                    const typesAt = (at: number, count: number): string =>
-                        JSON.stringify(conditionalTypesOf({ row: at, rows: count, cell, cells: rowCells.length }, look, bands));
-                    return typesAt(rowIndex, rows.length) !== typesAt(keptIndexes[rowIndex], keptCount);
+                    const typesAt = (at: number, count: number, header: number): string =>
+                        JSON.stringify(
+                            conditionalTypesOf({ row: at, rows: count, cell, cells: rowCells.length, headerRows: header }, look, bands),
+                        );
+                    return typesAt(rowIndex, rows.length, headerRows) !== typesAt(keptIndexes[rowIndex], keptCount, keptHeaderRows);
                 });
             // Where each cell's edges are, by the grid column they are at, to check the rows agree on them
             const {
@@ -1572,7 +1601,7 @@ const readTable = (element: XmlObject, reader: Reader): TableBlock | undefined =
                     const mergeElement = find(cellProperties, "w:vMerge");
                     const merge =
                         mergeElement === undefined ? undefined : attributesOf(mergeElement)["w:val"] === "restart" ? "restart" : "continue";
-                    const formatted = formatsOf({ row: rowIndex, rows: rows.length, cell: cellIndex, cells: rowCells.length });
+                    const formatted = formatsOf({ row: rowIndex, rows: rows.length, cell: cellIndex, cells: rowCells.length, headerRows });
                     const margins = { ...tableMargins, ...formatted.margins, ...readCellMargins(find(cellProperties, "w:tcMar")) };
                     // Word lays a cell out at its own width in twips, when it has one, rather than the grid's. A share of the
                     // table's width is the grid's
@@ -2214,16 +2243,16 @@ const WORD_SETTINGS = "http://schemas.microsoft.com/office/word";
 // The compatibility settings of the schema (`w:compat`) that are followed: automatic spacing as HTML has it
 const FOLLOWED_COMPATIBILITY = new Set(["w:doNotUseHTMLParagraphAutoSpacing"]);
 
-// Word's own compatibility settings known to leave its lines in compatibility mode 15 as they are, on or off, which Word
-// 16 writes in every document it makes, so in every template and document Word saved. With
-// `overrideTableStyleFontSizeAndJustification` on, Word takes a paragraph's size and alignment from its styles over its
-// table style's, as the standard has them and the layout takes them, and Word's lines were the same with it as without
-// it (`word-watertight-settings.docx` ST2, against `word-watertight-tables.docx` TB1). `enableOpenTypeFeatures` turns on
-// the font features, such as kerning and ligatures, that Word applied without it (`word-fonts.docx`,
-// `word-watertight-text.docx` TX14). `doNotFlipMirrorIndents` swaps a mirrored paragraph's indents, which leaves its lines
-// as long. `differentiateMultirowTableHeaders` changes how a table style's parts for its rows apply to several header
-// rows, and `useWord2013TrackBottomHyphenation` moves a hyphenated word that ends a page, with hyphenation, at which
-// the layout stops
+// Word's own compatibility settings known to leave its lines in compatibility mode 15 as they are, on or off: those Word
+// 16 writes in every document it makes, so in every template and document Word saved. Word laid out the same document
+// alike with them all on and without them (`word-compat-on.docx` and `word-compat-off.docx`): a paragraph's size and
+// alignment from its style over its table style's, as the standard has them, with
+// `overrideTableStyleFontSizeAndJustification` or without it (CS1, and `word-watertight-settings.docx` ST2), a table
+// style's parts in a header of several rows, which `differentiateMultirowTableHeaders` is about (CS2), kerning, ligatures
+// and figures spaced proportionally, which `enableOpenTypeFeatures` turns on (CS3), and a line that ends at a hyphen at the
+// foot of a page (CS4), which `useWord2013TrackBottomHyphenation` moves only when hyphenation made the hyphen, and the
+// layout stops at hyphenation. `doNotFlipMirrorIndents` swaps a mirrored paragraph's indents, which leaves its lines as
+// long
 const WORD_SETTINGS_LINES_ALIKE = new Set([
     "compatibilityMode",
     "overrideTableStyleFontSizeAndJustification",
