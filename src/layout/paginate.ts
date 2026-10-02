@@ -74,11 +74,13 @@ export type PaginateOptions = {
  */
 type LineWidths = readonly { readonly from: number; readonly width: number }[];
 
-/** A paragraph broken into lines, with the space around it */
+/** A paragraph broken into lines, with the space around it, and the room its borders take above and below its lines */
 type MeasuredParagraph = {
     readonly lines: readonly LaidOutLine[];
     readonly spaceBefore: number;
     readonly spaceAfter: number;
+    readonly borderAbove: number;
+    readonly borderBelow: number;
     readonly keepNext: boolean;
     readonly keepLines: boolean;
     readonly widowControl: boolean;
@@ -87,6 +89,9 @@ type MeasuredParagraph = {
 
 // How far past the bottom of a page a line may go, for the rounding of the heights
 const TOLERANCE = 0.01;
+
+// Word's automatic space before and after a paragraph, in points (`word-watertight-text.docx` TX6a, TX6b)
+const AUTOMATIC_SPACE = 14;
 
 /**
  * The lines of paragraphs without page references, by the measurer and widths they were laid out with. They are the same
@@ -99,6 +104,8 @@ const laidOutLines = new WeakMap<TextMeasurer, WeakMap<ParagraphBlock, Map<strin
 const UNBROKEN: Omit<MeasuredParagraph, "lines"> = {
     spaceBefore: 0,
     spaceAfter: 0,
+    borderAbove: 0,
+    borderBelow: 0,
     keepNext: false,
     keepLines: true,
     widowControl: false,
@@ -220,6 +227,10 @@ const headingsIn = (block: Block): readonly ChapterHeading[] =>
         : block.rows
               .flatMap(({ cells }) => cells.flatMap((cell) => cell.blocks.flatMap(headingsIn)))
               .map(({ level }) => ({ level, unsupported: "a chapter heading in a table" }));
+
+/** Whether a block is a paragraph with Word's automatic space before or after it */
+const hasAutomaticSpace = (block: Block): boolean =>
+    block.type === "paragraph" && (block.format.autoSpaceBefore === true || block.format.autoSpaceAfter === true);
 
 /** Thrown to stop laying out at something that can't be laid out yet */
 class Unsupported extends Error {}
@@ -371,8 +382,54 @@ export const paginate = (
         return lines;
     };
 
-    const measureParagraph = (paragraph: ParagraphBlock, width: number, before?: Block, after?: Block): MeasuredParagraph => {
-        const { format } = paragraph;
+    /**
+     * The space before or after a paragraph by its own formatting, next to a block on that side. Word's automatic spacing
+     * is 14 points (`word-watertight-text.docx` TX6a, TX6b), but none above the first paragraph of the document, a table
+     * cell or a header, nor below the last of a cell (TX6c, `word-paragraph-formats.docx` A0, A3), and none between two
+     * paragraphs of the same list, where there is between a bulleted and a numbered one (A1). What Word does between
+     * those of other levels of a list, or of lists made from the same definition, isn't known
+     */
+    const ownSpace = (paragraph: ParagraphBlock, side: "before" | "after", next: Block | undefined, inCell: boolean): number => {
+        const { format, list } = paragraph;
+        if (!(side === "before" ? format.autoSpaceBefore : format.autoSpaceAfter)) {
+            return (side === "before" ? format.spaceBefore : format.spaceAfter) ?? 0;
+        }
+        if (next === undefined) {
+            return side === "before" || inCell ? 0 : AUTOMATIC_SPACE;
+        }
+        const other = next.type === "paragraph" ? next.list : undefined;
+        if (list === undefined || other === undefined || (list.id !== other.id && list.definition !== other.definition)) {
+            return AUTOMATIC_SPACE;
+        }
+        if (list.id !== other.id || list.level !== other.level) {
+            throw new Unsupported("automatic spacing between paragraphs of other levels of a list, or of lists made alike");
+        }
+        return 0;
+    };
+
+    /**
+     * Whether a paragraph is in one box of borders with a block next to it: a paragraph with the same borders and indents.
+     * Whether Word joins two whose borders differ only by a between border isn't known: it leaves something between them,
+     * but not the room of two boxes (`word-paragraph-formats.docx` B5f)
+     */
+    const sharesBorders = (one: ParagraphBlock, other?: Block): boolean => {
+        if (one.borders === undefined || other?.type !== "paragraph" || other.sectionBreak || other.borders === undefined) {
+            return false;
+        }
+        if (other.borders.box !== one.borders.box && other.borders.outline === one.borders.outline) {
+            throw new Unsupported("paragraphs with the same borders but for a between border");
+        }
+        return other.borders.box === one.borders.box;
+    };
+
+    const measureParagraph = (
+        paragraph: ParagraphBlock,
+        width: number,
+        before?: Block,
+        after?: Block,
+        inCell = false,
+    ): MeasuredParagraph => {
+        const { format, borders } = paragraph;
         const lines = linesOf(paragraph, width);
         // With contextual spacing, Word leaves out a paragraph's own share of the space between it and one of the same
         // style next to it: the first's space after, and the part of the second's space before that is more than the
@@ -381,15 +438,21 @@ export const paginate = (
         // and before added, each paragraph's share is its own
         const contextual = (one: ParagraphBlock, other?: Block): boolean =>
             one.format.contextualSpacing === true && other?.type === "paragraph" && other.style === one.style;
-        const spaceBefore = format.spaceBefore ?? 0;
+        const spaceBefore = ownSpace(paragraph, "before", before, inCell);
         const shareBefore =
             before?.type === "paragraph" && !before.sectionBreak && contextual(before, paragraph) && !addsParagraphSpacing
-                ? Math.max(0, spaceBefore - (before.format.spaceAfter ?? 0))
+                ? Math.max(0, spaceBefore - ownSpace(before, "after", paragraph, inCell))
                 : spaceBefore;
         return {
             lines,
             spaceBefore: contextual(paragraph, before) ? 0 : shareBefore,
-            spaceAfter: contextual(paragraph, after) ? 0 : (format.spaceAfter ?? 0),
+            spaceAfter: contextual(paragraph, after) ? 0 : ownSpace(paragraph, "after", after, inCell),
+            // The top border is above the first paragraph of a box, and a between border above each of the others, and
+            // they stay above it at the top of a page, where the box goes on with no border otherwise. A between border
+            // leaves its space below each paragraph of the box but the last, so 15 twips of it 20 from the text are 55
+            // between two paragraphs, and 35 above one at the top of a page (`word-watertight-text.docx` TX5b, TX5h)
+            borderAbove: borders === undefined ? 0 : sharesBorders(paragraph, before) ? borders.between : borders.top,
+            borderBelow: borders === undefined ? 0 : sharesBorders(paragraph, after) ? borders.betweenSpace : borders.bottom,
             keepNext: format.keepNext === true,
             keepLines: format.keepLines === true,
             // Word controls widows and orphans unless a paragraph or its style turns it off
@@ -448,21 +511,25 @@ export const paginate = (
     };
 
     /** The heights of blocks stacked in a width, with the space before and after each */
-    const stackParts = (stack: readonly Block[], width: number): readonly StackPart[] =>
+    const stackParts = (stack: readonly Block[], width: number, inCell: boolean): readonly StackPart[] =>
         stack.map((block, index) => {
             if (block.type === "table") {
                 return { height: sum(rowHeights(sizedToPlace(block, width))), before: 0, after: 0 };
             }
-            const { lines, spaceBefore: before, spaceAfter: after } = measureParagraph(block, width, stack[index - 1], stack[index + 1]);
-            return { height: linesHeight(lines), before, after };
+            const measured = measureParagraph(block, width, stack[index - 1], stack[index + 1], inCell);
+            return {
+                height: measured.borderAbove + linesHeight(measured.lines) + measured.borderBelow,
+                before: measured.spaceBefore,
+                after: measured.spaceAfter,
+            };
         });
 
     /**
-     * The height of blocks stacked in a width, such as those in a table cell or a header, with the space before the
-     * first and after the last, unless it is left out
+     * The height of blocks stacked in a width, those in a table cell or a header, with the space before the first and
+     * after the last
      */
-    const stackHeight = (stack: readonly Block[], width: number, withOuterSpace = true): number =>
-        heightOf(stackParts(stack, width), withOuterSpace);
+    const stackHeight = (stack: readonly Block[], width: number, inCell: boolean): number =>
+        heightOf(stackParts(stack, width, inCell), true);
 
     /** The height of stacked parts, with the space between them, and before the first and after the last unless left out */
     const heightOf = (parts: readonly StackPart[], withOuterSpace: boolean): number => {
@@ -470,7 +537,7 @@ export const paginate = (
         return sum(parts.map(({ height, before }, index) => height + (index === 0 ? 0 : between(parts[index - 1].after, before)))) + outer;
     };
 
-    const cellHeight = (cell: TableCell): number => cell.marginTop + stackHeight(cell.blocks, cell.width) + cell.marginBottom;
+    const cellHeight = (cell: TableCell): number => cell.marginTop + stackHeight(cell.blocks, cell.width, true) + cell.marginBottom;
 
     /** The cells merged down several rows of a table: the row each starts in, its last row, and the height its text needs */
     const mergesOf = ({ rows }: TableBlock): readonly { readonly first: number; readonly last: number; readonly height: number }[] =>
@@ -737,7 +804,7 @@ export const paginate = (
             throw new Unsupported(part.find((block) => block.unsupported !== undefined)!.unsupported);
         }
         const bySection = headerHeights.get(part) ?? new Map<number, number>();
-        const height = bySection.get(sectionIndex) ?? stackHeight(part, textWidth());
+        const height = bySection.get(sectionIndex) ?? stackHeight(part, textWidth(), false);
         // eslint-disable-next-line functional/immutable-data
         headerHeights.set(part, bySection.set(sectionIndex, height));
         return height;
@@ -1088,6 +1155,13 @@ export const paginate = (
         const unsupported = pieces.find(({ block }) => block.unsupported !== undefined)?.block.unsupported;
         if (unsupported) {
             throw new Unsupported(unsupported);
+        }
+        // How Word lays out borders and automatic spacing in a footnote hasn't been seen
+        if (pieces.some(({ block }) => block.type === "paragraph" && block.borders !== undefined)) {
+            throw new Unsupported("a paragraph border in a footnote");
+        }
+        if (pieces.some(({ block }) => hasAutomaticSpace(block))) {
+            throw new Unsupported("automatic spacing in a footnote");
         }
         if (columns?.some((columnWidth) => columnWidth !== columns[0])) {
             // Word has only been seen to lay out footnotes in columns of the same width
@@ -1559,7 +1633,8 @@ export const paginate = (
             const lines = linesOf(block, widths);
             const remaining = linesToBreak(lines, index);
             const isFirstLine = index === 0;
-            const space = isFirstLine ? spaceAbove() : 0;
+            // The border above the first line stays at the top of a page, as the space before doesn't
+            const space = isFirstLine ? spaceAbove() + paragraph.borderAbove : 0;
             // The footnotes of the lines up to one, after those held back from the paragraph kept with this one
             const heldNotes = held;
             const notesOf = (upTo: number): readonly string[] => [
@@ -1570,8 +1645,15 @@ export const paginate = (
             // The lines fit when their footnotes do, with the last continued on the next page when it can be. Widow control
             // and keepLines hold lines back from those, and the footnotes continue below the lines left on the page, as in
             // Word (`word-probes.docx` U2j, U2k)
-            const { fits, count: kept } = linesThatFit(remaining, room, paragraph, isFirstLine, (upTo) =>
-                noteCost(leastNoteRoom(notesOf(upTo))),
+            // A paragraph's last line needs room for its border below it too, or the space a between border leaves, and
+            // goes to the next page without it (`word-paragraph-formats.docx` B4a, B4b)
+            const ends = index + remaining.length === lines.length;
+            const { fits, count: kept } = linesThatFit(
+                remaining,
+                room,
+                paragraph,
+                isFirstLine,
+                (upTo) => noteCost(leastNoteRoom(notesOf(upTo))) + (ends && upTo === remaining.length ? paragraph.borderBelow : 0),
             );
             if (section().columns.length > 1 && linesThatFit(remaining, room, paragraph, isFirstLine).fits > fits) {
                 // A line in columns that fits, but not with its footnotes, moves with them, unless part of one would fit
@@ -1612,6 +1694,9 @@ export const paginate = (
                         ),
                     });
                     position += line.height;
+                }
+                if (index + count === lines.length) {
+                    position += paragraph.borderBelow;
                 }
                 // The space after the paragraph before is above these lines now, and this one's comes at its end
                 spaceAfter = 0;
@@ -1657,23 +1742,23 @@ export const paginate = (
             const space =
                 from > 0
                     ? 0
-                    : previousAfter === undefined
-                      ? isFirstPart
-                          ? paragraph.spaceBefore
-                          : 0
-                      : between(previousAfter, paragraph.spaceBefore);
+                    : (previousAfter === undefined
+                          ? isFirstPart
+                              ? paragraph.spaceBefore
+                              : 0
+                          : between(previousAfter, paragraph.spaceBefore)) + paragraph.borderAbove;
             const remaining = paragraph.lines.slice(from);
             // Widow control and keepLines hold lines back in a row that breaks across pages, as in Word, where LibreOffice
             // lets them go (`word-rules.docx` P8, `word-rules2.docx` Q3). A paragraph that ends in the cell's part on the
-            // page needs room for its space after there too, as in Word (`word-line-heights.docx` T2)
+            // page needs room for its space after there too, as in Word (`word-line-heights.docx` T2), and for its border
             const { fits, count: kept } = linesThatFit(remaining, room - used - space, paragraph, from === 0, (upTo) =>
-                upTo === remaining.length ? paragraph.spaceAfter : 0,
+                upTo === remaining.length ? paragraph.borderBelow + paragraph.spaceAfter : 0,
             );
             const upToLimit = limit - placed.length;
             const count = fits <= upToLimit ? kept : upToLimit > 0 ? linesKept(remaining.length, upToLimit, paragraph, from === 0) : 0;
             const before = placed.length;
             if (count > 0) {
-                used += space + linesHeight(remaining.slice(0, count));
+                used += space + linesHeight(remaining.slice(0, count)) + (count === remaining.length ? paragraph.borderBelow : 0);
                 placed = [...placed, ...remaining.slice(0, count)];
             }
             if (count < remaining.length) {
@@ -1704,7 +1789,7 @@ export const paginate = (
             cell.blocks.map((block, index) => ({
                 paragraph:
                     block.type === "paragraph"
-                        ? measureParagraph(block, cell.width, cell.blocks[index - 1], cell.blocks[index + 1])
+                        ? measureParagraph(block, cell.width, cell.blocks[index - 1], cell.blocks[index + 1], true)
                         : {
                               ...UNBROKEN,
                               lines: [
@@ -1970,8 +2055,11 @@ export const paginate = (
         const kept = Array.from({ length: chain }, (_, offset) => measured(index + offset));
         const keptLines = sum(
             kept.map(
-                ({ lines, spaceBefore }, offset) =>
-                    linesHeight(lines) + (offset === 0 ? spaceAboveOf(spaceBefore) : between(kept[offset - 1].spaceAfter, spaceBefore)),
+                ({ lines, spaceBefore, borderAbove, borderBelow }, offset) =>
+                    borderAbove +
+                    linesHeight(lines) +
+                    borderBelow +
+                    (offset === 0 ? spaceAboveOf(spaceBefore) : between(kept[offset - 1].spaceAfter, spaceBefore)),
             ),
         );
         const lastAfter = kept[kept.length - 1]?.spaceAfter ?? spaceAfter;
@@ -1998,7 +2086,12 @@ export const paginate = (
         const firstLines = next.keepLines || (next.widowControl && next.lines.length <= 3) ? next.lines.length : next.widowControl ? 2 : 1;
         const nextLines = next.lines.slice(0, firstLines);
         return {
-            height: keptLines + between(lastAfter, next.spaceBefore) + linesHeight(nextLines),
+            height:
+                keptLines +
+                between(lastAfter, next.spaceBefore) +
+                next.borderAbove +
+                linesHeight(nextLines) +
+                (nextLines.length === next.lines.length ? next.borderBelow : 0),
             notes: [...keptNotes, ...notesIn(nextLines.flatMap(({ markers }) => markers))],
             kept: keptNotes,
             keptWith: chain === 0 ? "nothing" : firstLines === next.lines.length && !next.pageBreakBefore ? "whole" : "part",
@@ -2021,6 +2114,22 @@ export const paginate = (
             throw new Unsupported(block.unsupported);
         }
         const width = section().columns[column];
+        const previous = blocks[index - 1];
+        if (block.type === "paragraph") {
+            if (block.sectionBreak && (block.borders !== undefined || hasAutomaticSpace(block))) {
+                // It takes no room, and where its borders or Word's automatic spacing would go isn't known
+                throw new Unsupported("borders or automatic spacing on the empty paragraph that ends a section");
+            }
+            if (
+                previous !== undefined &&
+                sharesBorders(block, previous.block) &&
+                (previous.section !== blocks[index].section || block.format.pageBreakBefore === true)
+            ) {
+                // Whether Word's box of borders goes on across a section break, or a page break before a paragraph in it,
+                // with no border above it on the new page, isn't known
+                throw new Unsupported("paragraphs with the same borders either side of a section or page break");
+            }
+        }
         if (block.type === "paragraph" && block.sectionBreak && !endsAfterTable(index)) {
             // The empty paragraph that ends a section after a paragraph takes no room, in Word and LibreOffice. In Word, the
             // space around it is still its own: the space after the paragraph before and its space before are the larger of
@@ -2097,7 +2206,6 @@ export const paginate = (
                 throw new Unsupported("a footnote continued below a paragraph kept with the next");
             }
         }
-        const previous = blocks[index - 1];
         const keptWithPrevious =
             previous?.section === blocks[index].section && previous.block.type === "paragraph" && previous.block.format.keepNext === true;
         placeParagraph(block, paragraph, keptWithPrevious, holdNotes);

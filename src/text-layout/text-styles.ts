@@ -14,6 +14,7 @@ import { isEastAsian, kinsokuLanguageOf } from "./line-break-rules";
 import {
     type LineSpacing,
     type ParagraphAlignment,
+    type ParagraphBorder,
     type ParagraphFormat,
     type TabStopSetting,
     type TextFont,
@@ -351,22 +352,65 @@ const readTabs = (element: unknown): readonly TabStopSetting[] | undefined => {
 };
 
 /**
+ * Reads a border of a paragraph (`w:pBdr`), on one side.
+ */
+const readParagraphBorder = (element: unknown): ParagraphBorder | undefined => {
+    if (element === undefined) {
+        return undefined;
+    }
+    const attributes = attributesOf(element);
+    const on = (name: string): boolean => attributes[name] !== undefined && !isOff(attributes[name]);
+    return withoutUndefined({
+        style: stringOf(attributes["w:val"]) ?? "none",
+        size: numberOf(attributes["w:sz"]),
+        space: numberOf(attributes["w:space"]) ?? 0,
+        shadow: on("w:shadow"),
+        frame: on("w:frame"),
+        key: JSON.stringify(
+            Object.entries(attributes)
+                .map(([name, value]) => [name, String(value)])
+                .sort(([a], [b]) => (a < b ? -1 : 1)),
+        ),
+    });
+};
+
+/**
  * Reads paragraph properties (`w:pPr`).
  */
 export const readParagraphFormat = (element: unknown): ParagraphFormat => {
     const children = childrenOf(element);
     const spacing = attributesOf(find(children, "w:spacing"));
     const indent = attributesOf(find(children, "w:ind"));
+    const borders = childrenOf(find(children, "w:pBdr"));
     const twips = (...names: readonly string[]): number | undefined =>
         names.map((name) => pointsOf(indent[name], TWIPS_PER_POINT)).find((value) => value !== undefined);
+    const chars = (...names: readonly string[]): number | undefined =>
+        names.map((name) => numberOf(indent[name])).find((value) => value !== undefined);
+    const automatic = (name: string): boolean | undefined => (spacing[name] === undefined ? undefined : !isOff(spacing[name]));
+    const border = (...names: readonly string[]): ParagraphBorder | undefined =>
+        names.map((name) => readParagraphBorder(find(borders, name))).find((value) => value !== undefined);
     const hanging = twips("w:hanging");
+    const hangingChars = chars("w:hangingChars");
     return withoutUndefined({
         spaceBefore: pointsOf(spacing["w:before"], TWIPS_PER_POINT),
         spaceAfter: pointsOf(spacing["w:after"], TWIPS_PER_POINT),
+        spaceBeforeLines: numberOf(spacing["w:beforeLines"]),
+        spaceAfterLines: numberOf(spacing["w:afterLines"]),
+        autoSpaceBefore: automatic("w:beforeAutospacing"),
+        autoSpaceAfter: automatic("w:afterAutospacing"),
         lineSpacing: readLineSpacing(spacing),
         indentLeft: twips("w:start", "w:left"),
         indentRight: twips("w:end", "w:right"),
         firstLineIndent: hanging === undefined ? twips("w:firstLine") : -hanging,
+        indentLeftChars: chars("w:startChars", "w:leftChars"),
+        indentRightChars: chars("w:endChars", "w:rightChars"),
+        firstLineChars: hangingChars === undefined ? chars("w:firstLineChars") : -hangingChars,
+        borderTop: border("w:top"),
+        borderBottom: border("w:bottom"),
+        borderLeft: border("w:start", "w:left"),
+        borderRight: border("w:end", "w:right"),
+        borderBetween: border("w:between"),
+        borderBar: border("w:bar"),
         contextualSpacing: onOff(children, "w:contextualSpacing"),
         keepNext: onOff(children, "w:keepNext"),
         keepLines: onOff(children, "w:keepLines"),

@@ -59,17 +59,59 @@ export type TabStopSetting = {
 };
 
 /**
+ * A border of a paragraph, on one side (`w:pBdr`), as it is written.
+ */
+export type ParagraphBorder = {
+    /** Its style, such as "single" or "double", or "none" or "nil" for none */
+    readonly style: string;
+    /** How wide it is, in eighths of a point, when it says */
+    readonly size?: number;
+    /** The space between it and the text, in points */
+    readonly space: number;
+    readonly shadow: boolean;
+    readonly frame: boolean;
+    /** All it says, which tells whether two paragraphs have the same border */
+    readonly key: string;
+};
+
+/**
  * The formatting of a paragraph that changes how tall it is, where its lines wrap, or where pages break around it.
  * Lengths are in points.
  */
 export type ParagraphFormat = {
     readonly spaceBefore?: number;
     readonly spaceAfter?: number;
+    /**
+     * The space before and after in hundredths of a line (`w:beforeLines`, `w:afterLines`), which Word takes in place
+     * of the space in points when it isn't 0
+     */
+    readonly spaceBeforeLines?: number;
+    readonly spaceAfterLines?: number;
+    /**
+     * Word's automatic space before and after (`w:beforeAutospacing`, `w:afterAutospacing`), as documents made from HTML
+     * have it, in place of the space given
+     */
+    readonly autoSpaceBefore?: boolean;
+    readonly autoSpaceAfter?: boolean;
     readonly lineSpacing?: LineSpacing;
     readonly indentLeft?: number;
     readonly indentRight?: number;
     /** How much further in the first line starts than the others. Negative for a hanging indent */
     readonly firstLineIndent?: number;
+    /**
+     * Indents in hundredths of a character (`w:leftChars`, `w:rightChars`, `w:firstLineChars` and `w:hangingChars`, the
+     * last as a negative first line indent), which Word takes in place of those in points when they aren't 0
+     */
+    readonly indentLeftChars?: number;
+    readonly indentRightChars?: number;
+    readonly firstLineChars?: number;
+    /** Its borders, each of which its own formatting gives or takes away apart from its style's */
+    readonly borderTop?: ParagraphBorder;
+    readonly borderBottom?: ParagraphBorder;
+    readonly borderLeft?: ParagraphBorder;
+    readonly borderRight?: ParagraphBorder;
+    readonly borderBetween?: ParagraphBorder;
+    readonly borderBar?: ParagraphBorder;
     /** Leaves out the space before and after the paragraph next to a paragraph of the same style */
     readonly contextualSpacing?: boolean;
     /** Keeps the paragraph on the same page as the next one */

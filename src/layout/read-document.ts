@@ -10,9 +10,11 @@
 import type { IContext, IXmlableObject } from "docx";
 
 import {
+    DEFAULT_FONT_SIZE,
     type InlineItem,
     type KinsokuList,
     type LineBreakRules,
+    type ParagraphBorder,
     type ParagraphFormat,
     READING_CONTEXT,
     type RunFormat,
@@ -73,8 +75,34 @@ export type ParagraphBlock = {
     readonly heading?: { readonly level: number; readonly chapter?: string };
     /** Whether it is empty but for its section's properties, as docx writes the end of each section but the last */
     readonly sectionBreak?: boolean;
+    /**
+     * The list it is numbered in, when it is: the list's id, its level in it, and the definition the list numbers by,
+     * which lists made from the same definition share
+     */
+    readonly list?: { readonly id: string; readonly level: number; readonly definition: object };
+    /** The room its borders take above and below its lines, when it has a border there */
+    readonly borders?: ParagraphBorders;
     /** Why it can't be laid out, when it can't */
     readonly unsupported?: string;
+};
+
+/**
+ * The room a paragraph's borders take above and below its lines, in points: each border's width and the space between it
+ * and the text. Word puts paragraphs next to each other with the same borders in one box, with the top border above the
+ * first, the bottom border below the last, and a between border, if they have one, between each two
+ * (`word-watertight-text.docx` TX5b, TX5h).
+ */
+export type ParagraphBorders = {
+    readonly top: number;
+    readonly bottom: number;
+    /** The room a between border takes above each paragraph of the box after the first */
+    readonly between: number;
+    /** The space a between border leaves below each paragraph of the box before the last */
+    readonly betweenSpace: number;
+    /** What the paragraphs of one box share: their borders, and their left and right indents */
+    readonly box: string;
+    /** The same, but for the between border */
+    readonly outline: string;
 };
 
 export type TableCell = {
@@ -247,6 +275,8 @@ type Reader = {
     readonly styles: TextStyles;
     /** The levels of each list, by the id its paragraphs refer to it by */
     readonly numbering: ReadonlyMap<string, readonly NumberingLevel[]>;
+    /** The number of each list a paragraph may refer to by another id, such as the placeholder docx writes */
+    readonly listIds: ReadonlyMap<string, string>;
     /** Whether it is a header or footer, where drawings that text doesn't flow around don't matter */
     readonly inHeader: boolean;
     // eslint-disable-next-line functional/prefer-readonly-type
@@ -637,6 +667,7 @@ const readListNumber = (
     /** Whether it is in its style's list, or in one it gives itself, and its number as a chapter number, when it has one */
     readonly from?: "style" | "paragraph";
     readonly chapter?: string;
+    readonly list?: ParagraphBlock["list"];
 } => {
     const numbering = childrenOf(find(properties, "w:numPr"));
     const ownId = valueOf(numbering, "w:numId") ?? numberOf(attributesOf(find(numbering, "w:numId"))["w:val"])?.toString();
@@ -674,12 +705,177 @@ const readListNumber = (
         items: [...(text.length > 0 ? [{ type: "text" as const, text, font }] : []), ...suffix],
         level,
         from: ownId === undefined ? "style" : "paragraph",
+        list: { id: reader.listIds.get(id) ?? id, level: index, definition: levels },
         ...withoutUndefined({ chapter: numbers?.replace(/%([1-9])/g, (_, digit: string) => numberAt(Number(digit) - 1)) }),
     };
 };
 
 // Letters of Thai and Arabic, which their justifications are for
 const THAI_OR_ARABIC = /[\p{Script=Thai}\p{Script=Arabic}]/u;
+
+// A line of space before or after a paragraph, in `w:beforeLines` and `w:afterLines`, is 12 points whatever the font: 100
+// is 240 twips in Calibri 11, whose lines are 268.55 (`word-watertight-text.docx` TX7d)
+const POINTS_PER_LINE = 12;
+// Lines and characters are given in hundredths
+const HUNDREDTHS = 100;
+
+/**
+ * A paragraph's formatting with its space in lines and its indents in characters in points, as Word takes them in place
+ * of those in points when they aren't 0 (`word-paragraph-formats.docx` C7, C10, L2). A character is as wide as text is
+ * tall: a first line or hanging indent's as the paragraph's first character, 2 of them 440 twips at 11 points and 800 at
+ * 20, whatever the size of its mark or its other text (`word-watertight-text.docx` TX7a, TX7b, C5, C6, C12), and a left
+ * indent's as its mark, 4 of them 880 beside 20-point text (C11). A hanging indent in characters puts the first line at
+ * the left indent and the other lines that much further in, and the left indent is in characters then, 0 when it isn't
+ * given: 2 characters hanging put the first line at 0 and the others at 440, with a left indent of 1440 twips or none
+ * (TX7c, C3, C9). It says why when Word's way with them isn't known.
+ */
+const inPoints = (
+    format: ParagraphFormat,
+    { listNumber, items }: { readonly listNumber: readonly LayoutItem[]; readonly items: readonly LayoutItem[] },
+    markFont: TextFont,
+    styleFont: TextFont,
+): ParagraphFormat | string => {
+    const { spaceBeforeLines, spaceAfterLines, indentLeftChars, indentRightChars = 0, firstLineChars = 0 } = format;
+    const lines = (count: number | undefined, points: number | undefined): number | undefined =>
+        count ? (count / HUNDREDTHS) * POINTS_PER_LINE : points;
+    const spaced = withoutUndefined({
+        ...format,
+        spaceBefore: lines(spaceBeforeLines, format.spaceBefore),
+        spaceAfter: lines(spaceAfterLines, format.spaceAfter),
+    });
+    const leftChars = indentLeftChars ?? 0;
+    if (leftChars === 0 && indentRightChars === 0 && firstLineChars === 0) {
+        return spaced;
+    }
+    const sizeOf = (font: TextFont): number => font.size ?? DEFAULT_FONT_SIZE;
+    const textOf = (from: readonly LayoutItem[]): readonly TextFont[] =>
+        from.flatMap((item) =>
+            (item.type === "text" && item.text.length > 0) || item.type === "pageReference" || item.type === "pageCount" ? [item.font] : [],
+        );
+    // The first character's size, which first line and hanging indents are in, and the mark's, which left and right
+    // indents are in. Which of the mark's and its style's it is, and which the first character is of a list's number and
+    // its text, isn't known where they differ, nor whether a right indent is in the mark's or the text's
+    const first = sizeOf(textOf(items)[0] ?? markFont);
+    const mark = sizeOf(markFont);
+    if (firstLineChars !== 0 && textOf(listNumber).some((font) => sizeOf(font) !== first)) {
+        return "an indent in characters in a list whose number is another size than its text";
+    }
+    if ((leftChars !== 0 || indentRightChars !== 0) && mark !== sizeOf(styleFont)) {
+        return "an indent in characters left or right of a paragraph whose mark is another size than its style";
+    }
+    if (indentRightChars !== 0 && first !== mark) {
+        return "an indent in characters right of text of another size than its mark";
+    }
+    const characters = (count: number, size: number): number => (count / HUNDREDTHS) * size;
+    const right = indentRightChars === 0 ? {} : { indentRight: characters(indentRightChars, mark) };
+    if (firstLineChars < 0) {
+        if (indentLeftChars === 0 && (format.indentLeft ?? 0) !== 0) {
+            return "an indent in characters hanging from a left indent in twips";
+        }
+        return {
+            ...spaced,
+            ...right,
+            indentLeft: characters(leftChars, mark) - characters(firstLineChars, first),
+            firstLineIndent: characters(firstLineChars, first),
+        };
+    }
+    if (leftChars !== 0 && firstLineChars === 0 && (format.firstLineIndent ?? 0) !== 0) {
+        return "an indent in characters left of a first line indent in twips";
+    }
+    return {
+        ...spaced,
+        ...right,
+        ...(leftChars === 0 ? {} : { indentLeft: characters(leftChars, mark) }),
+        ...(firstLineChars === 0 ? {} : { firstLineIndent: characters(firstLineChars, first) }),
+    };
+};
+
+// The styles of a border that draw none
+const NO_BORDER = new Set(["none", "nil"]);
+// The room each style of border takes as Word draws it, in eighths of a point, from the width it is given, at 6 and 18
+// eighths (`word-paragraph-formats.docx` B6). Lines of one stroke are as wide as they are given, a double line 3 times
+// and a triple 5, waves and dash-dot strokes are as wide whatever they are given, and lines thin and thick 12 or 24
+// eighths more, which Word was seen to draw only from 6 eighths to 18
+const BORDER_WIDTHS: Readonly<Record<string, (size: number) => number | undefined>> = {
+    ...Object.fromEntries(
+        ["single", "thick", "dotted", "dashed", "dotDash", "dotDotDash", "dashSmallGap", "inset", "outset"].map((style) => [
+            style,
+            (size: number) => size,
+        ]),
+    ),
+    double: (size) => 3 * size,
+    triple: (size) => 5 * size,
+    wave: () => 24,
+    dashDotStroked: () => 24,
+    doubleWave: () => 42,
+    ...Object.fromEntries(
+        (
+            [
+                ["thinThickSmallGap", 12],
+                ["thickThinSmallGap", 12],
+                ["threeDEmboss", 12],
+                ["threeDEngrave", 12],
+                ["thinThickThinSmallGap", 24],
+            ] as const
+        ).map(([style, more]) => [style, (size: number) => (size >= 6 && size <= 18 ? size + more : undefined)]),
+    ),
+};
+// The narrowest and widest borders Word draws, in eighths of a point, and the furthest from the text, in points
+const NARROWEST_BORDER = 2;
+const WIDEST_BORDER = 96;
+const FURTHEST_BORDER = 31;
+
+/**
+ * The room a border of a paragraph takes, in points: its width and the space between it and the text, or why it isn't
+ * known. A shadow doubles a single line (B6)
+ */
+const borderRoom = (border: ParagraphBorder | undefined): number | string => {
+    if (border === undefined || NO_BORDER.has(border.style)) {
+        return 0;
+    }
+    const style = BORDER_WIDTHS[border.style];
+    if (style === undefined || border.frame || (border.shadow && border.style !== "single")) {
+        return "a paragraph border of a style not yet followed";
+    }
+    const width =
+        border.size === undefined || border.size < NARROWEST_BORDER || border.size > WIDEST_BORDER || border.space > FURTHEST_BORDER
+            ? undefined
+            : style(border.size);
+    return width === undefined
+        ? "a paragraph border of a width or space not yet followed"
+        : ((border.shadow ? 2 : 1) * width) / EIGHTHS_PER_POINT + border.space;
+};
+
+/**
+ * The room a paragraph's borders take above and below its lines, or why it isn't known. Left and right borders take
+ * none, and leave the lines as wide as they are without them (`word-watertight-text.docx` TX5f). Word puts paragraphs
+ * with the same borders and the same left and right indents in one box, whatever their first line indents, spacing and
+ * alignment, and those with borders of other colours or at their sides, or other indents, in boxes of their own
+ * (`word-paragraph-formats.docx` B5).
+ */
+const readBorders = (format: ParagraphFormat): ParagraphBorders | string | undefined => {
+    const { borderTop, borderBottom, borderBetween } = format;
+    const rooms = [borderTop, borderBottom, borderBetween].map(borderRoom);
+    const unknown = rooms.find((room): room is string => typeof room === "string");
+    if (unknown !== undefined) {
+        return unknown;
+    }
+    const [top, bottom, between] = rooms as readonly number[];
+    if (top === 0 && bottom === 0 && between === 0) {
+        return undefined;
+    }
+    const keyOf = (border: ParagraphBorder | undefined): string => (border === undefined || NO_BORDER.has(border.style) ? "" : border.key);
+    const outline = [borderTop, borderBottom, format.borderLeft, format.borderRight, format.borderBar].map(keyOf);
+    const indents = [format.indentLeft ?? 0, format.indentRight ?? 0];
+    return {
+        top,
+        bottom,
+        between,
+        betweenSpace: between > 0 ? borderBetween!.space : 0,
+        box: JSON.stringify([...outline, keyOf(borderBetween), ...indents]),
+        outline: JSON.stringify([...outline, ...indents]),
+    };
+};
 
 /**
  * Reads a paragraph (`w:p`), in the formatting of its styles, and of its table's style when it is in a table.
@@ -700,30 +896,39 @@ const readParagraph = (element: XmlObject, reader: Reader, tableStyle?: string):
         readParagraphFormat(properties),
     ];
     const items = readInline(children, paragraphRun, reader);
-    const format = combine(formats);
+    const combined = combine(formats);
+    const own = typeof items === "string" ? [] : items;
+    const content = typeof items === "string" ? [] : [...list.items, ...items];
+    const markFont = fontOf(combine([paragraphRun, readRunFormat(find(properties, "w:rPr"), styles.themeFonts)]));
+    const format = inPoints(combined, { listNumber: list.items, items: own }, markFont, fontOf(paragraphRun));
+    const borders = readBorders(typeof format === "string" ? combined : format);
     // A division of a web page (`w:divId`) has margins and borders of its own, in the document's web settings. Word breaks
     // the lines of Latin text justified for Thai or with a low kashida as justified ones, and those with a medium or high
     // kashida otherwise (`word-justify.docx` J14, `word-justify2.docx` K08, K09). Thai or Arabic text in them hasn't been
     // seen
-    const forThaiOrArabic = format.alignment === "thaiDistributed" || format.alignment === "lowKashida";
+    const forThaiOrArabic = combined.alignment === "thaiDistributed" || combined.alignment === "lowKashida";
     const unsupported =
         find(properties, "w:framePr") !== undefined
             ? "a text frame"
             : find(properties, "w:divId") !== undefined
               ? "a paragraph in an HTML division"
-              : format.alignment === "mediumKashida" || format.alignment === "highKashida"
+              : combined.alignment === "mediumKashida" || combined.alignment === "highKashida"
                 ? "a paragraph justified for Arabic with a medium or high kashida"
                 : forThaiOrArabic &&
                     typeof items !== "string" &&
                     items.some((item) => item.type === "text" && THAI_OR_ARABIC.test(item.text))
                   ? "Thai or Arabic text justified for it"
-                  : unknownLengthIn(element);
+                  : (unknownLengthIn(element) ??
+                    (typeof format === "string" ? format : undefined) ??
+                    (typeof borders === "string" ? borders : undefined));
     return {
         type: "paragraph",
-        items: typeof items === "string" ? [] : [...list.items, ...items],
-        format,
+        items: content,
+        format: typeof format === "string" ? combined : format,
         tabStops: tabStopsOf(formats),
-        markFont: fontOf(combine([paragraphRun, readRunFormat(find(properties, "w:rPr"), styles.themeFonts)])),
+        markFont,
+        ...(list.list ? { list: list.list } : {}),
+        ...(typeof borders === "object" ? { borders } : {}),
         style,
         // Word's chapter numbers are the numbers headings' styles give them, and it passes over headings numbered on their
         // own, or not at all
@@ -1355,7 +1560,8 @@ export const readDocument = (body: IXmlableObject, context: IContext): DocumentC
 export const readContent = (body: XmlObject, parts: DocumentParts): DocumentContent => {
     const { styles } = parts;
     const { lists: numbering, unsupported: inNumbering } = readNumbering(parts.numbering, styles, parts.otherListIds ?? new Map());
-    const readerOf = (inHeader: boolean): Reader => ({ styles, numbering, inHeader, fields: [], counters: new Map() });
+    const listIds = parts.otherListIds ?? new Map<string, string>();
+    const readerOf = (inHeader: boolean): Reader => ({ styles, numbering, listIds, inHeader, fields: [], counters: new Map() });
 
     // Each header and footer, the first time a section refers to it
     const headersAndFooters = new Map<string, readonly Block[] | undefined>();
