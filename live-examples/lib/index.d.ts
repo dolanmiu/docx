@@ -422,7 +422,9 @@ declare class Body_2 extends XmlComponent {
      * Ensures that the last section's properties are placed as a direct child of the body
      * element, as required by the OOXML specification. Once the body is written, its tables
      * of contents are filled in from its headings, and, when the body has a page number
-     * estimator, its page references are given their page numbers.
+     * estimator, its page references are given their page numbers. Its SEQ fields are given
+     * their numbers after the tables of contents are filled in, as Word leaves a heading's SEQ
+     * number out of its entry.
      *
      * @param context - The XML serialization context
      * @returns The prepared XML object or undefined
@@ -1202,6 +1204,11 @@ export declare class Comments extends XmlComponent {
     get CommentIdsData(): readonly ICommentIdData[] | undefined;
     /** Whether there are no comments, in which case the document has no comments.xml part. */
     get IsEmpty(): boolean;
+    /**
+     * Formats the comments, with the page numbers worked out for their document written into their fields, when the
+     * document's body is written with an estimate of its pages.
+     */
+    prepForXml(context: IContext): IXmlableObject | undefined;
 }
 
 /**
@@ -3501,6 +3508,11 @@ export declare class EndnoteReferenceRunAttributes extends XmlAttributeComponent
 export declare class Endnotes extends XmlComponent {
     constructor();
     createEndnote(id: number, paragraph: readonly Paragraph[]): void;
+    /**
+     * Formats the endnotes, with the page numbers worked out for their document written into their fields, when the
+     * document's body is written with an estimate of its pages.
+     */
+    prepForXml(context: IContext): IXmlableObject | undefined;
 }
 
 declare class EndnotesWrapper implements IViewWrapper {
@@ -3764,14 +3776,23 @@ declare type FilePatch = {
 export declare const fillPageNumbers: (body: IXmlableObject, context: IContext, estimator: PageNumberEstimator) => void;
 
 /**
- * Writes the page numbers worked out for the document a header or footer is in into the fields of the formatted header or
- * footer that show them, once the document's body is written.
+ * Writes the page numbers worked out for the document a header, footer, footnote, endnote or comment is in into the
+ * fields of the formatted part that show them, once the document's body is written. Its page references and SEQ fields
+ * are written clean, and its SEQ fields are left blank: Word writes them as an error, "Error! Main Document Only.".
  *
- * @param part - The formatted header or footer, if it has anything to write
+ * @param part - The formatted part, if it has anything to write
  * @param context - The context it was formatted in, with the document it is in
- * @param referenceId - The number of the relationship to it
+ * @param referenceId - The number of the relationship to a header or footer. The SECTIONPAGES fields of the other parts
+ * are left as they are
  */
-export declare const fillPartPageNumbers: (part: IXmlableObject | undefined, context: IContext, referenceId: number) => void;
+export declare const fillPartPageNumbers: (part: IXmlableObject | undefined, context: IContext, referenceId?: number) => void;
+
+/**
+ * Writes the numbers of the SEQ fields of a formatted body into them, counted as Word counts them (see
+ * {@link sequenceNumbering}), and writes them clean, whether or not their numbers were worked out. It is done after its
+ * tables of contents are filled in from its headings, as Word leaves a heading's SEQ number out of its entry.
+ */
+export declare const fillSequenceNumbers: (body: IXmlableObject, context: IContext) => void;
 
 /**
  * Options for embedding a font in the document.
@@ -4042,6 +4063,11 @@ export declare class FootNotes extends XmlComponent {
      * @param paragraph - Array of paragraphs that make up the footnote content
      */
     createFootNote(id: number, paragraph: readonly Paragraph[]): void;
+    /**
+     * Formats the footnotes, with the page numbers worked out for their document written into their fields, when the
+     * document's body is written with an estimate of its pages.
+     */
+    prepForXml(context: IContext): IXmlableObject | undefined;
 }
 
 /**
@@ -11369,6 +11395,10 @@ export declare class Separator extends EmptyElement {
  * SequentialIdentifier creates a SEQ field that automatically numbers items in a document.
  * Each identifier maintains its own sequence, allowing you to have separate numbering
  * for figures, tables, equations, etc.
+ *
+ * It is written dirty, so Word numbers it when it opens the document, after asking to update the fields. When the
+ * document is given `pageNumbers`, it is written clean, with its number counted as Word counts it, or blank where
+ * Word's count isn't known, and Word doesn't ask.
  *
  * Reference: http://officeopenxml.com/WPrun.php
  *

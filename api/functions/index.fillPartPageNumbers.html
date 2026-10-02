@@ -14,26 +14,28 @@
 <section class="tsd-panel">
 <ul class="tsd-signatures">
 <li class="">
-<div class="tsd-signature tsd-anchor-link" id="fillpartpagenumbers"><span class="tsd-kind-call-signature">fillPartPageNumbers</span><span class="tsd-signature-symbol">(</span><br/>    <span class="tsd-kind-parameter">part</span><span class="tsd-signature-symbol">:</span> <a href="../interfaces/index.IXmlableObject.html" class="tsd-signature-type tsd-kind-interface">IXmlableObject</a> <span class="tsd-signature-symbol">|</span> <span class="tsd-signature-type">undefined</span><span class="tsd-signature-symbol">,</span><br/>    <span class="tsd-kind-parameter">context</span><span class="tsd-signature-symbol">:</span> <a href="../types/index.IContext.html" class="tsd-signature-type tsd-kind-type-alias">IContext</a><span class="tsd-signature-symbol">,</span><br/>    <span class="tsd-kind-parameter">referenceId</span><span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">number</span><span class="tsd-signature-symbol">,</span><br/><span class="tsd-signature-symbol">)</span><span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">void</span><a href="#fillpartpagenumbers" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="../assets/icons.svg#icon-anchor"></use></svg></a></div>
+<div class="tsd-signature tsd-anchor-link" id="fillpartpagenumbers"><span class="tsd-kind-call-signature">fillPartPageNumbers</span><span class="tsd-signature-symbol">(</span><br/>    <span class="tsd-kind-parameter">part</span><span class="tsd-signature-symbol">:</span> <a href="../interfaces/index.IXmlableObject.html" class="tsd-signature-type tsd-kind-interface">IXmlableObject</a> <span class="tsd-signature-symbol">|</span> <span class="tsd-signature-type">undefined</span><span class="tsd-signature-symbol">,</span><br/>    <span class="tsd-kind-parameter">context</span><span class="tsd-signature-symbol">:</span> <a href="../types/index.IContext.html" class="tsd-signature-type tsd-kind-type-alias">IContext</a><span class="tsd-signature-symbol">,</span><br/>    <span class="tsd-kind-parameter">referenceId</span><span class="tsd-signature-symbol">?:</span> <span class="tsd-signature-type">number</span><span class="tsd-signature-symbol">,</span><br/><span class="tsd-signature-symbol">)</span><span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">void</span><a href="#fillpartpagenumbers" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="../assets/icons.svg#icon-anchor"></use></svg></a></div>
 <div class="tsd-description">
-<div class="tsd-comment tsd-typography"><p>Writes the page numbers worked out for the document a header or footer is in into the fields of the formatted header or
-footer that show them, once the document's body is written.</p>
+<div class="tsd-comment tsd-typography"><p>Writes the page numbers worked out for the document a header, footer, footnote, endnote or comment is in into the
+fields of the formatted part that show them, once the document's body is written. Its page references and SEQ fields
+are written clean, and its SEQ fields are left blank: Word writes them as an error, &quot;Error! Main Document Only.&quot;.</p>
 </div>
 <div class="tsd-parameters">
 <h4 class="tsd-parameters-title">Parameters</h4>
 <ul class="tsd-parameter-list">
 <li><span><span class="tsd-kind-parameter">part</span>: <a href="../interfaces/index.IXmlableObject.html" class="tsd-signature-type tsd-kind-interface">IXmlableObject</a> <span class="tsd-signature-symbol">|</span> <span class="tsd-signature-type">undefined</span></span>
-<div class="tsd-comment tsd-typography"><p>The formatted header or footer, if it has anything to write</p>
+<div class="tsd-comment tsd-typography"><p>The formatted part, if it has anything to write</p>
 </div></li>
 <li><span><span class="tsd-kind-parameter">context</span>: <a href="../types/index.IContext.html" class="tsd-signature-type tsd-kind-type-alias">IContext</a></span>
 <div class="tsd-comment tsd-typography"><p>The context it was formatted in, with the document it is in</p>
 </div></li>
-<li><span><span class="tsd-kind-parameter">referenceId</span>: <span class="tsd-signature-type">number</span></span>
-<div class="tsd-comment tsd-typography"><p>The number of the relationship to it</p>
+<li><span><code class="tsd-tag">Optional</code><span class="tsd-kind-parameter">referenceId</span>: <span class="tsd-signature-type">number</span></span>
+<div class="tsd-comment tsd-typography"><p>The number of the relationship to a header or footer. The SECTIONPAGES fields of the other parts
+are left as they are</p>
 </div></li></ul></div>
 <h4 class="tsd-returns-title">Returns <span class="tsd-signature-type">void</span></h4><aside class="tsd-sources">
 <ul>
-<li>Defined in <a href="https://github.com/dolanmiu/docx/blob/2424d51b50d078efa73a164795d12364d2bcec14/src/file/document/body/page-numbers.ts#L131">file/document/body/page-numbers.ts:131</a></li></ul></aside></div></li></ul></section></div>
+<li>Defined in <a href="https://github.com/dolanmiu/docx/blob/16bdaa1b2541f633f026e0ded5c605624061199f/src/file/document/body/page-numbers.ts#L152">file/document/body/page-numbers.ts:152</a></li></ul></aside></div></li></ul></section></div>
 <div class="col-sidebar">
 <div class="page-menu">
 <div class="tsd-navigation settings">

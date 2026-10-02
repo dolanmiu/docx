@@ -9813,10 +9813,10 @@ var docx = (function(exports) {
 		}
 	};
 	/**
-	* Creates the beginning of a field whose result is a page number, such as a page reference. It is written dirty, so
-	* Word updates the field when it opens the document, and asks to. When the document is given page numbers, it is
-	* written clean (see {@link isDirtyWithoutPageNumbers}), so Word shows the number written, or nothing when none could
-	* be worked out, and doesn't ask.
+	* Creates the beginning of a field whose result is written when the document is given page numbers, such as a page
+	* reference or a SEQ field. It is written dirty, so Word updates the field when it opens the document, and asks to. When
+	* the document is given page numbers, it is written clean (see {@link isDirtyWithoutPageNumbers}), so Word shows the
+	* number written, or nothing when none could be worked out, and doesn't ask.
 	*/
 	var createBeginDirtyWithoutPageNumbers = () => new BeginDirtyWithoutPageNumbers();
 	/** Whether a formatted field character is the beginning of a field that is dirty only without page numbers */
@@ -16276,6 +16276,10 @@ EXTERNAL: "External" };
 	* Each identifier maintains its own sequence, allowing you to have separate numbering
 	* for figures, tables, equations, etc.
 	*
+	* It is written dirty, so Word numbers it when it opens the document, after asking to update the fields. When the
+	* document is given `pageNumbers`, it is written clean, with its number counted as Word counts it, or blank where
+	* Word's count isn't known, and Word doesn't ask.
+	*
 	* Reference: http://officeopenxml.com/WPrun.php
 	*
 	* @publicApi
@@ -16304,7 +16308,7 @@ EXTERNAL: "External" };
 	var SequentialIdentifier = class extends Run {
 		constructor(identifier) {
 			super({});
-			this.root.push(createBegin(true));
+			this.root.push(createBeginDirtyWithoutPageNumbers());
 			this.root.push(new SequentialIdentifierInstruction(identifier));
 			this.root.push(createSeparate());
 			this.root.push(createEnd());
@@ -16390,6 +16394,941 @@ EXTERNAL: "External" };
 		constructor(fieldName) {
 			super(` MERGEFIELD ${fieldName} `, `«${fieldName}»`);
 		}
+	};
+	//#endregion
+	//#region src/file/document/body/page-number-fields.ts
+	var PLAIN_FORMATS$1 = /* @__PURE__ */ new Set([
+		"mergeformat",
+		"charformat",
+		"mergeformatinet"
+	]);
+	/** Whether a field's switches give its number a format of its own, such as `\* roman`, or a picture, such as `\# "00"` */
+	var hasOwnFormat = (switches) => {
+		const formats = [...switches.matchAll(/\\\*\s*"?([^\s"\\]+)/g)].map(([, format]) => format.toLowerCase());
+		return /\\#/.test(switches) || formats.some((format) => !PLAIN_FORMATS$1.has(format));
+	};
+	/**
+	* The bookmark a PAGEREF field refers to, unless the field shows something other than the page's number: its
+	* position relative to the bookmark (`\p`), or the number in a format of its own (`\* roman`).
+	*/
+	var bookmarkOf = (instruction) => {
+		const match = /^\s*PAGEREF\s+("?)([^\s"\\]+)\1(.*)$/i.exec(instruction);
+		if (!match) return;
+		const [, , bookmark, switches] = match;
+		return /\\p\b/i.test(switches) || hasOwnFormat(switches) ? void 0 : bookmark;
+	};
+	/** The number of pages a NUMPAGES or SECTIONPAGES field shows, unless it writes it in a format of its own */
+	var pageCountOf = (instruction) => {
+		const match = /^\s*(NUMPAGES|SECTIONPAGES)\b(.*)$/i.exec(instruction);
+		if (!match || hasOwnFormat(match[2])) return;
+		return match[1].toUpperCase() === "NUMPAGES" ? "document" : "section";
+	};
+	/**
+	* Whether a field is a table of contents that writes the number of a SEQ field before each page number (`\s`), such as
+	* 2-5 for page 5 of chapter 2, which isn't written
+	*/
+	var prefixesPageNumbers = (instruction) => new RegExp("^\\s*TOC\\b.*\\\\s\\b", "is").test(instruction);
+	/**
+	* The result of a field that shows a page's number or a number of pages, or undefined to leave it as it is. A field
+	* the estimate has no number for is left as it is, or made blank, and so is a page number in a table of contents that
+	* writes a SEQ field's number before it.
+	*/
+	var resultFrom = (instruction, { enclosing }, { bookmarks, pageCount }, { sectionPageCount, blank }) => {
+		const bookmark = bookmarkOf(instruction);
+		const count = bookmark === void 0 ? pageCountOf(instruction) : void 0;
+		if (bookmark === void 0 && count === void 0) return;
+		const value = bookmark !== void 0 ? enclosing.some(prefixesPageNumbers) ? void 0 : bookmarks.get(bookmark) : count === "document" ? pageCount : sectionPageCount;
+		return value === void 0 ? blank ? "" : void 0 : String(value);
+	};
+	/** Where the content of an element is: in what an application that doesn't read Word's own shows, or in deleted text */
+	var placeIn = (name, within) => name === "mc:Fallback" || within === "fallback" ? "fallback" : name === "w:del" || name === "w:moveFrom" ? "deleted" : within;
+	/**
+	* Writes the results the filling works out into the fields in the elements, in order.
+	*/
+	var fillFields = (tree, elements, open, filling, within = "counted") => {
+		for (let index = 0; index < elements.length; index++) {
+			const element = elements[index];
+			const name = tree.nameOf(element);
+			if (name === void 0) continue;
+			const current = open[open.length - 1];
+			if (name === "w:fldChar") {
+				const type = tree.attributeOf(element, "w:fldCharType");
+				if (type === "begin") open.push({
+					begin: element,
+					instruction: "",
+					inResult: false
+				});
+				else if (type === "separate" && current) {
+					tree.writeClean(current.begin, current.instruction);
+					current.inResult = true;
+					current.result = filling.resultOf(current.instruction, {
+						within,
+						enclosing: open.slice(0, -1).map((field) => field.instruction)
+					});
+					if (current.result !== void 0) {
+						elements.splice(index + 1, 0, tree.textElement(current.result));
+						index++;
+					}
+				} else if (type === "end") open.pop();
+			} else if (name === "w:instrText" && current && !current.inResult) current.instruction += tree.textOf(element);
+			else if ((name === "w:t" || name === "w:tab" || name === "w:br" || name === "w:cr") && (current === null || current === void 0 ? void 0 : current.result) !== void 0) {
+				elements.splice(index, 1);
+				index--;
+			} else if (name === "w:fldSimple") {
+				const result = filling.resultOf(String(tree.attributeOf(element, "w:instr")), {
+					within,
+					enclosing: open.map((field) => field.instruction)
+				});
+				if (result === void 0) {
+					var _tree$contentOf;
+					fillFields(tree, (_tree$contentOf = tree.contentOf(element)) !== null && _tree$contentOf !== void 0 ? _tree$contentOf : [], [], filling, within);
+				} else tree.setSimpleFieldResult(element, result);
+			} else {
+				var _tree$contentOf2;
+				if (name === "w:p") {
+					var _filling$beforeParagr;
+					(_filling$beforeParagr = filling.beforeParagraph) === null || _filling$beforeParagr === void 0 || _filling$beforeParagr.call(filling, element);
+				}
+				fillFields(tree, (_tree$contentOf2 = tree.contentOf(element)) !== null && _tree$contentOf2 !== void 0 ? _tree$contentOf2 : [], open, filling, placeIn(name, within));
+				if (name === "w:p") filling.afterParagraph(element);
+			}
+		}
+	};
+	/** The section properties (`w:sectPr`) in the elements, in order: those of the paragraphs that end sections, and the last */
+	var sectionPropertiesIn = (tree, elements) => elements.flatMap((element) => {
+		var _tree$contentOf3;
+		const name = tree.nameOf(element);
+		if (name === void 0) return [];
+		return name === "w:sectPr" ? [element] : sectionPropertiesIn(tree, (_tree$contentOf3 = tree.contentOf(element)) !== null && _tree$contentOf3 !== void 0 ? _tree$contentOf3 : []);
+	});
+	/** Whether a paragraph ends a section: whether its properties have the section's */
+	var endsSection = (tree, paragraph) => {
+		var _tree$contentOf4;
+		return ((_tree$contentOf4 = tree.contentOf(paragraph)) !== null && _tree$contentOf4 !== void 0 ? _tree$contentOf4 : []).some((child) => {
+			var _tree$contentOf5;
+			return tree.nameOf(child) === "w:pPr" && ((_tree$contentOf5 = tree.contentOf(child)) !== null && _tree$contentOf5 !== void 0 ? _tree$contentOf5 : []).some((part) => tree.nameOf(part) === "w:sectPr");
+		});
+	};
+	/**
+	* The number of pages each header and footer shows in its SECTIONPAGES fields, by the id of the relationship to it:
+	* that of the sections whose pages it is on, when they all have the same. A section without a header or footer of a kind
+	* has the one of the section before, as Word lays them out.
+	*/
+	var partPageCountsOf = (tree, body, sectionPageCounts) => {
+		const countsOfParts = sectionPropertiesIn(tree, [body]).reduce((all, properties) => {
+			var _tree$contentOf6, _all;
+			const references = ((_tree$contentOf6 = tree.contentOf(properties)) !== null && _tree$contentOf6 !== void 0 ? _tree$contentOf6 : []).flatMap((child) => {
+				const name = tree.nameOf(child);
+				return name === "w:headerReference" || name === "w:footerReference" ? [[`${name} ${String(tree.attributeOf(child, "w:type"))}`, String(tree.attributeOf(child, "r:id"))]] : [];
+			});
+			return [...all, new Map([...(_all = all[all.length - 1]) !== null && _all !== void 0 ? _all : [], ...references])];
+		}, []).reduce((counts, parts, section) => {
+			for (const id of parts.values()) {
+				var _counts$get;
+				counts.set(id, [...(_counts$get = counts.get(id)) !== null && _counts$get !== void 0 ? _counts$get : [], sectionPageCounts[section]]);
+			}
+			return counts;
+		}, /* @__PURE__ */ new Map());
+		return new Map([...countsOfParts].flatMap(([id, [first, ...rest]]) => first !== void 0 && rest.every((count) => count === first) ? [[id, first]] : []));
+	};
+	/**
+	* Writes the estimated page numbers into the fields of a document's body that show them: its PAGEREF fields, in its
+	* tables of contents and elsewhere, and its NUMPAGES and SECTIONPAGES fields.
+	*
+	* @returns The number of pages each header and footer shows in its SECTIONPAGES fields, by the id of the relationship to it
+	*/
+	var fillBodyFields = (tree, body, estimate, { blank }) => {
+		const { sectionPageCounts = [] } = estimate;
+		let section = 0;
+		fillFields(tree, [body], [], {
+			resultOf: (instruction, place) => resultFrom(instruction, place, estimate, {
+				sectionPageCount: sectionPageCounts[section],
+				blank
+			}),
+			afterParagraph: (paragraph) => {
+				section += endsSection(tree, paragraph) ? 1 : 0;
+			}
+		});
+		return partPageCountsOf(tree, body, sectionPageCounts);
+	};
+	/**
+	* Writes the estimated page numbers into the fields of a header or footer that show them, with the number of pages its
+	* SECTIONPAGES fields show, if it is known.
+	*/
+	var fillPartFields = (tree, part, estimate, { blank, sectionPageCount }) => fillFields(tree, [part], [], {
+		resultOf: (instruction, place) => resultFrom(instruction, place, estimate, {
+			sectionPageCount,
+			blank
+		}),
+		afterParagraph: () => void 0
+	});
+	/** Writes the numbers of the SEQ fields of a document's body into them */
+	var fillSequenceFields = (tree, body, { beforeParagraph, resultOf }) => fillFields(tree, [body], [], {
+		resultOf: (instruction, { within }) => resultOf(instruction, within),
+		beforeParagraph,
+		afterParagraph: () => void 0
+	});
+	//#endregion
+	//#region src/file/table-of-contents/field-instruction.ts
+	/**
+	* Field Instruction module for Table of Contents.
+	*
+	* This module handles the generation of TOC field instruction text
+	* that controls how the table of contents is built.
+	*
+	* Reference: http://officeopenxml.com/WPfieldInstructions.php
+	*
+	* @module
+	*/
+	/**
+	* Represents a field instruction for a Table of Contents.
+	*
+	* The FieldInstruction class generates the TOC field code string that Word uses
+	* to determine how to build the table of contents, including which headings to include,
+	* formatting options, and other TOC-specific settings.
+	*
+	* Reference: http://officeopenxml.com/WPfieldInstructions.php
+	*
+	* ## XSD Schema
+	* ```xml
+	* <xsd:element name="instrText" type="CT_Text"/>
+	* ```
+	*
+	* @example
+	* ```typescript
+	* // Basic TOC field instruction
+	* new FieldInstruction({ headingStyleRange: "1-3" });
+	*
+	* // TOC with hyperlinks and custom styles
+	* new FieldInstruction({
+	*   hyperlink: true,
+	*   headingStyleRange: "1-3",
+	*   stylesWithLevels: [new StyleLevel("CustomStyle", 2)],
+	* });
+	* ```
+	*/
+	var FieldInstruction = class extends XmlComponent {
+		constructor(properties = {}) {
+			super("w:instrText");
+			_defineProperty(this, "properties", void 0);
+			this.properties = properties;
+			this.root.push(new TextAttributes({ space: SpaceType.PRESERVE }));
+			let instruction = "TOC";
+			if (this.properties.captionLabel) instruction = `${instruction} \\a "${this.properties.captionLabel}"`;
+			if (this.properties.entriesFromBookmark) instruction = `${instruction} \\b "${this.properties.entriesFromBookmark}"`;
+			if (this.properties.captionLabelIncludingNumbers) instruction = `${instruction} \\c "${this.properties.captionLabelIncludingNumbers}"`;
+			if (this.properties.sequenceAndPageNumbersSeparator) instruction = `${instruction} \\d "${this.properties.sequenceAndPageNumbersSeparator}"`;
+			if (this.properties.tcFieldIdentifier) instruction = `${instruction} \\f "${this.properties.tcFieldIdentifier}"`;
+			if (this.properties.hyperlink) instruction = `${instruction} \\h`;
+			if (this.properties.tcFieldLevelRange) instruction = `${instruction} \\l "${this.properties.tcFieldLevelRange}"`;
+			if (this.properties.pageNumbersEntryLevelsRange) instruction = `${instruction} \\n "${this.properties.pageNumbersEntryLevelsRange}"`;
+			if (this.properties.headingStyleRange) instruction = `${instruction} \\o "${this.properties.headingStyleRange}"`;
+			if (this.properties.entryAndPageNumberSeparator) instruction = `${instruction} \\p "${this.properties.entryAndPageNumberSeparator}"`;
+			if (this.properties.seqFieldIdentifierForPrefix) instruction = `${instruction} \\s "${this.properties.seqFieldIdentifierForPrefix}"`;
+			if (this.properties.stylesWithLevels && this.properties.stylesWithLevels.length) {
+				const styles = this.properties.stylesWithLevels.map((sl) => `${sl.styleName},${sl.level}`).join(",");
+				instruction = `${instruction} \\t "${styles}"`;
+			}
+			if (this.properties.useAppliedParagraphOutlineLevel) instruction = `${instruction} \\u`;
+			if (this.properties.preserveTabInEntries) instruction = `${instruction} \\w`;
+			if (this.properties.preserveNewLineInEntries) instruction = `${instruction} \\x`;
+			if (this.properties.hideTabAndPageNumbersInWebView) instruction = `${instruction} \\z`;
+			this.root.push(instruction);
+		}
+	};
+	//#endregion
+	//#region src/file/table-of-contents/sdt-content.ts
+	/**
+	* Structured Document Tag Content module.
+	*
+	* This module represents the content container for structured document tags,
+	* including table of contents elements.
+	*
+	* Reference: http://officeopenxml.com/WPtableOfContents.php
+	*
+	* @module
+	*/
+	/**
+	* Represents the content portion of a Structured Document Tag.
+	*
+	* The StructuredDocumentTagContent contains the actual content elements
+	* (paragraphs, tables, etc.) within a structured document tag, such as
+	* the paragraphs that make up a table of contents.
+	*
+	* Reference: http://officeopenxml.com/WPtableOfContents.php
+	*
+	* ## XSD Schema
+	* ```xml
+	* <xsd:complexType name="CT_SdtContentBlock">
+	*   <xsd:group ref="EG_ContentBlockContent" minOccurs="0" maxOccurs="unbounded"/>
+	* </xsd:complexType>
+	* ```
+	*
+	* @example
+	* ```typescript
+	* const content = new StructuredDocumentTagContent();
+	* content.addChildElement(new Paragraph("Content"));
+	* ```
+	*/
+	var StructuredDocumentTagContent = class extends XmlComponent {
+		constructor() {
+			super("w:sdtContent");
+		}
+	};
+	//#endregion
+	//#region src/file/table-of-contents/heading-entries.ts
+	/**
+	* Entries written into a table of contents from the headings of the document.
+	*
+	* A table of contents is a TOC field. Word fills in its entries when it updates the field. Until then, and in
+	* applications that don't update it, such as LibreOffice, it shows the entries it was last filled in with, and without
+	* any it is empty. So once the body is written, each table of contents that wasn't given `cachedEntries` or
+	* `contentChildren` is filled in from the headings its switches include, the way Word fills it in: each heading is
+	* bookmarked, and its entry links to the bookmark and gives its page with a PAGEREF field. The page numbers are left
+	* empty, because they depend on how the document is laid out. Word fills them in when it updates the field, unless the
+	* document's `pageNumbers` writes them.
+	*
+	* @module
+	*/
+	/**
+	* The beginning of a table of contents' field: dirty or clean, as the caller set it, or else dirty unless the document
+	* is given page numbers
+	*/
+	var beginOf = (beginDirty) => beginDirty === void 0 ? createBeginDirtyWithoutPageNumbers() : createBegin(beginDirty);
+	/** The formatted tables of contents, with what each is filled in with, or undefined when it was given its content */
+	var writtenTables = /* @__PURE__ */ new WeakMap();
+	/**
+	* Records a formatted table of contents, so the paragraphs in it aren't taken for headings, with what to fill it in
+	* with from the headings once the body it is in is written. That is undefined when it was given its content.
+	*/
+	var recordTableOfContents = (table, fillWith) => {
+		writtenTables.set(table, fillWith);
+	};
+	/**
+	* The ids of the bookmarks on a body's headings: the first for its first bookmarked heading, and so on. Each is taken
+	* from the counter every bookmark shares, the first time it is needed, so a document packed again is written the same.
+	*/
+	var HeadingBookmarkIds = class {
+		constructor() {
+			_defineProperty(this, "ids", []);
+		}
+		get(index) {
+			var _this$ids, _this$ids$index;
+			(_this$ids$index = (_this$ids = this.ids)[index]) !== null && _this$ids$index !== void 0 || (_this$ids[index] = bookmarkUniqueNumericId());
+			return this.ids[index];
+		}
+	};
+	/** The name of a formatted element, or `_attr` for its parent's attributes */
+	var nameOf$2 = (element) => typeof element === "object" && element !== null ? Object.keys(element)[0] : void 0;
+	/** The children of a formatted element. An element with only attributes has them as its one child */
+	var childrenOf = (element) => {
+		const name = nameOf$2(element);
+		const content = name === void 0 ? void 0 : element[name];
+		return Array.isArray(content) ? content : content === void 0 ? [] : [content];
+	};
+	var childOf = (element, name) => childrenOf(element).find((child) => nameOf$2(child) === name);
+	var attributeOf = (element, attribute) => {
+		var _childOf;
+		return (_childOf = childOf(element, "_attr")) === null || _childOf === void 0 || (_childOf = _childOf._attr) === null || _childOf === void 0 ? void 0 : _childOf[attribute];
+	};
+	/** An attribute such as `w:val="2"` as a number. Imported XML gives it as a string */
+	var numberAttributeOf = (element, attribute) => {
+		const value = attributeOf(element, attribute);
+		return value === void 0 ? void 0 : Number(value);
+	};
+	/** The block-level containers of paragraphs: tables, their rows and cells, and content controls */
+	var BLOCK_CONTAINERS = /* @__PURE__ */ new Set([
+		"w:tbl",
+		"w:tr",
+		"w:tc",
+		"w:sdt",
+		"w:sdtContent",
+		"w:customXml"
+	]);
+	/**
+	* The paragraphs and the tables of contents, in the order they are in the body. A table of contents isn't looked into,
+	* so the paragraphs in it aren't taken for headings. Nor are paragraphs in text boxes, as in Word.
+	*/
+	var blocksOf = (elements) => elements.flatMap((element) => {
+		const name = nameOf$2(element);
+		if (name === "w:p" || writtenTables.has(element)) return [element];
+		return name !== void 0 && BLOCK_CONTAINERS.has(name) ? blocksOf(childrenOf(element)) : [];
+	});
+	/** The elements in a paragraph that its text is in. Deleted text, field instructions and drawings aren't */
+	var TEXT_CONTAINERS = /* @__PURE__ */ new Set([
+		"w:r",
+		"w:hyperlink",
+		"w:ins",
+		"w:moveTo",
+		"w:smartTag",
+		"w:customXml",
+		"w:sdt",
+		"w:sdtContent",
+		"w:fldSimple",
+		"w:dir",
+		"w:bdo"
+	]);
+	/** The text an element in a run stands for, such as `\t` for a tab. A page or column break isn't text */
+	var textOfRunContent = (element) => {
+		switch (nameOf$2(element)) {
+			case "w:t": return childrenOf(element).filter((child) => typeof child === "string").join("");
+			case "w:tab": return "	";
+			case "w:br": return [void 0, "textWrapping"].includes(attributeOf(element, "w:type")) ? "\n" : "";
+			case "w:cr": return "\n";
+			case "w:noBreakHyphen": return "-";
+			default: return "";
+		}
+	};
+	/** The text of a paragraph. Of a field, only its result is text, not its instruction */
+	var textOf = (paragraph) => {
+		const fields = [];
+		const read = (element) => {
+			const name = nameOf$2(element);
+			if (name !== void 0 && TEXT_CONTAINERS.has(name)) return childrenOf(element).map(read).join("");
+			if (name === "w:fldChar") {
+				const type = attributeOf(element, "w:fldCharType");
+				if (type === "begin") fields.push(false);
+				else if (type === "separate") fields[fields.length - 1] = true;
+				else fields.pop();
+				return "";
+			}
+			return fields.every(Boolean) ? textOfRunContent(element) : "";
+		};
+		return childrenOf(paragraph).map(read).join("");
+	};
+	/** The bookmarks started and ended in an element, in order */
+	var bookmarkMarksOf = (element) => {
+		const name = nameOf$2(element);
+		if (name === "w:bookmarkStart") return [{
+			start: true,
+			id: attributeOf(element, "w:id"),
+			name: attributeOf(element, "w:name")
+		}];
+		if (name === "w:bookmarkEnd") return [{
+			start: false,
+			id: attributeOf(element, "w:id")
+		}];
+		return name === void 0 || name === "_attr" ? [] : childrenOf(element).flatMap(bookmarkMarksOf);
+	};
+	/**
+	* The names of the bookmarks each paragraph is in, for the `\b` switch: those open where it starts, followed through the
+	* body, and those that start in it.
+	*/
+	var bookmarksOf = (paragraphs) => {
+		const open = /* @__PURE__ */ new Map();
+		return paragraphs.map((paragraph) => {
+			const marks = bookmarkMarksOf(paragraph);
+			const names = /* @__PURE__ */ new Set([...open.values(), ...marks.flatMap((mark) => mark.start ? [mark.name] : [])]);
+			for (const mark of marks) if (mark.start) open.set(mark.id, mark.name);
+			else open.delete(mark.id);
+			return names;
+		});
+	};
+	/** The details of each paragraph that could be a heading. The bookmarks it is in are only followed when needed */
+	var paragraphDetailsOf = (paragraphs, followBookmarks) => {
+		const bookmarks = followBookmarks ? bookmarksOf(paragraphs) : [];
+		return paragraphs.map((element, index) => {
+			var _bookmarks$index;
+			const properties = childOf(element, "w:pPr");
+			return {
+				element,
+				styleId: attributeOf(childOf(properties, "w:pStyle"), "w:val"),
+				outlineLevel: numberAttributeOf(childOf(properties, "w:outlineLvl"), "w:val"),
+				text: textOf(element),
+				bookmarks: (_bookmarks$index = bookmarks[index]) !== null && _bookmarks$index !== void 0 ? _bookmarks$index : /* @__PURE__ */ new Set()
+			};
+		});
+	};
+	/** The document's paragraph styles, by id, read from the styles as they are written */
+	var stylesOf = (context) => {
+		var _context$file;
+		const styles = (_context$file = context.file) === null || _context$file === void 0 || (_context$file = _context$file.Styles) === null || _context$file === void 0 ? void 0 : _context$file.prepForXml(context);
+		return new Map(childrenOf(styles).filter((style) => nameOf$2(style) === "w:style" && ["paragraph", void 0].includes(attributeOf(style, "w:type"))).map((style) => [attributeOf(style, "w:styleId"), {
+			name: attributeOf(childOf(style, "w:name"), "w:val"),
+			basedOn: attributeOf(childOf(style, "w:basedOn"), "w:val"),
+			outlineLevel: numberAttributeOf(childOf(childOf(style, "w:pPr"), "w:outlineLvl"), "w:val")
+		}]));
+	};
+	/** A range such as `1-3` */
+	var parseRange = (range) => {
+		const match = /^\s*(\d+)\s*-\s*(\d+)\s*$/.exec(range);
+		return match ? [Number(match[1]), Number(match[2])] : void 0;
+	};
+	var isWithin = (level, [from, to]) => level >= from && level <= to;
+	/** The level of a built-in heading style, Heading 1 to Heading 9, by its name, or by its id when it has no name */
+	var headingLevelOf = (styleId, styles) => {
+		var _styles$get$name, _styles$get;
+		if (styleId === void 0) return;
+		const match = /^heading ?([1-9])$/i.exec((_styles$get$name = (_styles$get = styles.get(styleId)) === null || _styles$get === void 0 ? void 0 : _styles$get.name) !== null && _styles$get$name !== void 0 ? _styles$get$name : styleId);
+		return match ? Number(match[1]) : void 0;
+	};
+	/**
+	* A style's outline level, from 0: its own, or else the one of the style it is based on. A built-in heading style has
+	* its heading's. Following the styles it is based on stops after as many as there are, in case they loop.
+	*/
+	var styleOutlineLevelOf = (styleId, styles, depth = 0) => {
+		var _style$outlineLevel;
+		if (styleId === void 0 || depth > styles.size) return;
+		const style = styles.get(styleId);
+		const heading = headingLevelOf(styleId, styles);
+		return (_style$outlineLevel = style === null || style === void 0 ? void 0 : style.outlineLevel) !== null && _style$outlineLevel !== void 0 ? _style$outlineLevel : heading === void 0 ? styleOutlineLevelOf(style === null || style === void 0 ? void 0 : style.basedOn, styles, depth + 1) : heading - 1;
+	};
+	/**
+	* Reads the heading level of the document's paragraphs, as the `\s` switch of a SEQ field follows it: the level of a
+	* paragraph in a built-in heading style, Heading 1 to Heading 9. A paragraph whose outline level is another, or that has
+	* one without a heading style, is `"unclear"`, as which of the two Word follows hasn't been checked. Other paragraphs
+	* are undefined.
+	*/
+	var headingLevels = (context) => {
+		const styles = stylesOf(context);
+		return (paragraph) => {
+			const properties = childOf(paragraph, "w:pPr");
+			const styleId = attributeOf(childOf(properties, "w:pStyle"), "w:val");
+			const heading = headingLevelOf(styleId, styles);
+			const outlineLevel = outlineLevelOf({
+				styleId,
+				outlineLevel: numberAttributeOf(childOf(properties, "w:outlineLvl"), "w:val")
+			}, styles);
+			const outline = outlineLevel === void 0 || outlineLevel >= 9 ? void 0 : outlineLevel + 1;
+			if (heading !== void 0 && (outline === void 0 || outline === heading)) return heading;
+			return outline === void 0 ? void 0 : "unclear";
+		};
+	};
+	/** A paragraph's outline level, from 0: its own, or else its style's */
+	var outlineLevelOf = (paragraph, styles) => {
+		var _paragraph$outlineLev;
+		return (_paragraph$outlineLev = paragraph.outlineLevel) !== null && _paragraph$outlineLev !== void 0 ? _paragraph$outlineLev : styleOutlineLevelOf(paragraph.styleId, styles);
+	};
+	/** The level a table of contents gives a paragraph, or undefined when it doesn't include it */
+	var levelIn = (properties, paragraph, styles) => {
+		var _styles$get2;
+		const { entriesFromBookmark, headingStyleRange, stylesWithLevels = [], useAppliedParagraphOutlineLevel } = properties;
+		if (paragraph.text.trim() === "" || entriesFromBookmark && !paragraph.bookmarks.has(entriesFromBookmark)) return;
+		const names = [paragraph.styleId, paragraph.styleId === void 0 ? void 0 : (_styles$get2 = styles.get(paragraph.styleId)) === null || _styles$get2 === void 0 ? void 0 : _styles$get2.name].filter((name) => name !== void 0).map((name) => name.toLowerCase());
+		const listed = stylesWithLevels.find((style) => names.includes(style.styleName.toLowerCase()));
+		if (listed) return listed.level;
+		const namesItsEntries = Boolean(headingStyleRange) || stylesWithLevels.length > 0 || Boolean(useAppliedParagraphOutlineLevel) || Boolean(properties.tcFieldIdentifier) || Boolean(properties.tcFieldLevelRange) || Boolean(properties.captionLabel) || Boolean(properties.captionLabelIncludingNumbers);
+		const headingRange = headingStyleRange ? parseRange(headingStyleRange) : namesItsEntries ? void 0 : [1, 9];
+		const heading = headingLevelOf(paragraph.styleId, styles);
+		if (headingRange && heading !== void 0 && isWithin(heading, headingRange)) return heading;
+		const outlineLevel = useAppliedParagraphOutlineLevel ? outlineLevelOf(paragraph, styles) : void 0;
+		return outlineLevel !== void 0 && isWithin(outlineLevel + 1, headingRange !== null && headingRange !== void 0 ? headingRange : [1, 9]) ? outlineLevel + 1 : void 0;
+	};
+	/** The runs of an entry's title. Tabs and line breaks are kept only when the table of contents keeps them (\w and \x) */
+	var titleRunsOf = (title, properties) => {
+		const text = properties.preserveTabInEntries ? title : title.replace(/\t/g, " ");
+		return (properties.preserveNewLineInEntries ? text.split("\n") : [text.replace(/\n/g, " ")]).map((line, index) => new TextRun({
+			break: index > 0 ? 1 : void 0,
+			children: line.split("	").flatMap((part, partIndex) => [...partIndex > 0 ? [new Tab()] : [], ...part === "" ? [] : [part]])
+		}));
+	};
+	/**
+	* The paragraph style of the entries at a level: the built-in TOC style, found by its name, "toc 1" to "toc 9". When
+	* the document doesn't have it, the entries are indented as Word's are, 220 twips a level.
+	*/
+	var entryStyleOf = (level, styles) => {
+		var _find;
+		const named = (_find = [...styles].find(([, style]) => {
+			var _style$name;
+			return ((_style$name = style.name) === null || _style$name === void 0 ? void 0 : _style$name.toLowerCase()) === `toc ${level}`;
+		})) === null || _find === void 0 ? void 0 : _find[0];
+		const id = named !== null && named !== void 0 ? named : `TOC${level}`;
+		return named !== void 0 || styles.has(id) || level === 1 ? { id } : {
+			id,
+			indent: (level - 1) * 220
+		};
+	};
+	/** The formatted content of a table of contents with its entries */
+	var contentOf = ({ properties, beginDirty, textWidth }, entries, styles, context) => {
+		var _parseRange;
+		const withoutPageNumbers = properties.pageNumbersEntryLevelsRange ? (_parseRange = parseRange(properties.pageNumbersEntryLevelsRange)) !== null && _parseRange !== void 0 ? _parseRange : [1, 9] : void 0;
+		const content = new StructuredDocumentTagContent();
+		entries.forEach((entry, index) => {
+			const hasPageNumber = withoutPageNumbers === void 0 || !isWithin(entry.level, withoutPageNumbers);
+			const children = [...titleRunsOf(entry.title, properties), ...hasPageNumber ? [new TextRun({ children: [properties.entryAndPageNumberSeparator || new Tab()] }), new PageReference(entry.bookmark, { hyperlink: properties.hyperlink })] : []];
+			const style = entryStyleOf(entry.level, styles);
+			content.addChildElement(new Paragraph({
+				style: style.id,
+				indent: style.indent === void 0 ? void 0 : { left: style.indent },
+				tabStops: [{
+					type: "right",
+					position: textWidth,
+					leader: "dot"
+				}],
+				children: [...index === 0 ? [new Run({ children: [
+					beginOf(beginDirty),
+					new FieldInstruction(properties),
+					createSeparate()
+				] })] : [], ...properties.hyperlink ? [new InternalHyperlink({
+					anchor: entry.bookmark,
+					children
+				})] : children]
+			}));
+		});
+		content.addChildElement(new Paragraph({ children: [new Run({ children: [createEnd()] })] }));
+		return content.prepForXml(context);
+	};
+	/** Puts a bookmark around the content of a formatted paragraph */
+	var bookmark = (paragraph, name, id, context) => {
+		const children = childrenOf(paragraph);
+		const start = children.findIndex((child) => nameOf$2(child) === "w:pPr") + 1;
+		paragraph["w:p"] = [
+			...children.slice(0, start),
+			new BookmarkStart(name, id).prepForXml(context),
+			...children.slice(start),
+			new BookmarkEnd(id).prepForXml(context)
+		];
+	};
+	/**
+	* Fills in the tables of contents in a formatted body from its headings, and bookmarks the headings they list. A
+	* table of contents that doesn't list any heading is left empty, for Word to fill in.
+	*/
+	var fillTablesOfContents = (body, context, bookmarkIds) => {
+		const blocks = blocksOf(childrenOf(body));
+		const tables = blocks.flatMap((block) => {
+			const options = writtenTables.get(block);
+			return options ? [[block, options]] : [];
+		});
+		if (tables.length === 0) return;
+		const styles = stylesOf(context);
+		const followBookmarks = tables.some(([, { properties }]) => Boolean(properties.entriesFromBookmark));
+		const headings = paragraphDetailsOf(blocks.filter((block) => nameOf$2(block) === "w:p"), followBookmarks).map((paragraph) => ({
+			paragraph,
+			levels: tables.map(([, { properties }]) => levelIn(properties, paragraph, styles))
+		})).filter(({ levels }) => levels.some((level) => level !== void 0)).map((heading, index) => _objectSpread2(_objectSpread2({}, heading), {}, { id: bookmarkIds.get(index) }));
+		for (const { paragraph, id } of headings) bookmark(paragraph.element, `_Toc${id}`, id, context);
+		tables.forEach(([table, options], index) => {
+			const entries = headings.flatMap(({ paragraph, levels, id }) => {
+				const level = levels[index];
+				return level === void 0 ? [] : [{
+					title: paragraph.text,
+					level,
+					bookmark: `_Toc${id}`
+				}];
+			});
+			if (entries.length === 0) return;
+			table["w:sdt"] = childrenOf(table).map((child) => nameOf$2(child) === "w:sdtContent" ? contentOf(options, entries, styles, context) : child);
+		});
+	};
+	//#endregion
+	//#region src/file/document/body/sequence-numbers.ts
+	/**
+	* Caption numbers written into the SEQ fields of a document, such as the 2 of "Figure 2", when the document is given page
+	* numbers.
+	*
+	* A SEQ field (`SequentialIdentifier`) shows how many SEQ fields of its identifier, such as "Figure", there are up to and
+	* including it, so the number doesn't depend on how the pages are laid out. Its switches change the count: `\r 5` starts
+	* it again from 5, `\c` repeats the number of the one before, `\s 1` starts it again after each Heading 1, `\h` hides the
+	* number, and `\* ROMAN` writes it in roman numerals. `docx` writes SEQ fields dirty, for Word to number when it opens the
+	* document, which makes Word ask to update the fields. When the document is given page numbers, each is written clean
+	* with its number, counted as Word counts it. What Word does was read from its PDF of `scripts/layout-probes/word-seq.ts`.
+	*
+	* Word counts the SEQ fields of the body, those in text boxes and hidden text too, in order, and counts an identifier in
+	* any capitals, or in quotes, as the same one. It writes the SEQ fields of headers, footers, footnotes and endnotes as an
+	* error, "Error! Main Document Only.", and doesn't count them with the body's.
+	*
+	* Where Word's count isn't known, the field is left blank rather than given a number that could be wrong: a switch it
+	* doesn't follow, a SEQ field in deleted text, and every SEQ field of an identifier that also has SEQ fields in a comment.
+	* The fields of its identifier after one whose number isn't known are left blank too, until one starts the count again
+	* with `\r`. A number in a format not followed is left blank, but the count goes on.
+	*
+	* @module
+	*/
+	var LARGEST_ROMAN = 32767;
+	var LARGEST_LETTERS = 780;
+	var ROMAN = [
+		[1e3, "M"],
+		[900, "CM"],
+		[500, "D"],
+		[400, "CD"],
+		[100, "C"],
+		[90, "XC"],
+		[50, "L"],
+		[40, "XL"],
+		[10, "X"],
+		[9, "IX"],
+		[5, "V"],
+		[4, "IV"],
+		[1, "I"]
+	];
+	var roman = (value) => value <= LARGEST_ROMAN ? ROMAN.reduce(({ rest, text }, [amount, numeral]) => ({
+		rest: rest % amount,
+		text: text + numeral.repeat(Math.floor(rest / amount))
+	}), {
+		rest: value,
+		text: ""
+	}).text : void 0;
+	var letters = (value) => value === 0 ? "" : value <= LARGEST_LETTERS ? String.fromCharCode(65 + (value - 1) % 26).repeat(Math.ceil(value / 26)) : void 0;
+	var ordinal = (value) => {
+		var _ref;
+		return `${value}${value % 100 >= 11 && value % 100 <= 13 ? "th" : (_ref = [
+			"th",
+			"st",
+			"nd",
+			"rd"
+		][value % 10]) !== null && _ref !== void 0 ? _ref : "th"}`;
+	};
+	/**
+	* The number formats of a field's `\*` switch that are written as Word writes them, by their names in any capitals.
+	* Word writes roman numerals and letters in small letters when the name starts with a small letter, as `roman`, and in
+	* capitals otherwise, as `Roman` and `ROMAN`
+	*/
+	var writerOf = (format) => {
+		const small = format.charAt(0) !== format.charAt(0).toUpperCase();
+		const inCase = (write) => (value) => {
+			var _write;
+			return small ? (_write = write(value)) === null || _write === void 0 ? void 0 : _write.toLowerCase() : write(value);
+		};
+		switch (format.toLowerCase()) {
+			case "arabic": return String;
+			case "roman": return inCase(roman);
+			case "alphabetic": return inCase(letters);
+			case "ordinal": return (value) => value > 0 ? ordinal(value) : void 0;
+			case "arabicdash": return (value) => `- ${value} -`;
+			default: return;
+		}
+	};
+	var PLAIN_FORMATS = /* @__PURE__ */ new Set([
+		"mergeformat",
+		"charformat",
+		"mergeformatinet"
+	]);
+	var CASE_FORMATS = /* @__PURE__ */ new Set([
+		"upper",
+		"lower",
+		"firstcap",
+		"caps"
+	]);
+	var IDENTIFIER = new RegExp("^\\p{L}[\\p{L}\\p{N}_]*$", "u");
+	/** Reads the switches of a SEQ field, and a bookmark before them, or undefined when one of them isn't followed */
+	var sequenceOf = (switches) => {
+		var _step, _format;
+		let step;
+		let hidden = false;
+		let format;
+		let caseFormat = false;
+		let picture = false;
+		for (let index = 0; index < switches.length; index++) {
+			var _switches, _next;
+			const name = switches[index];
+			const argument = (_switches = switches[index + 1]) !== null && _switches !== void 0 ? _switches : "";
+			let next;
+			if (index === 0 && !name.startsWith("\\")) next = { type: "bookmark" };
+			else if (name === "\\c" || name === "\\n") next = { type: name === "\\c" ? "repeat" : "next" };
+			else if ((name === "\\r" || name === "\\s") && /^\d+$/.test(argument)) {
+				index++;
+				next = name === "\\r" ? {
+					type: "reset",
+					to: Number(argument)
+				} : {
+					type: "heading",
+					level: Number(argument)
+				};
+			} else if (name === "\\h") hidden = true;
+			else if (name === "\\#" && index + 1 < switches.length) {
+				index++;
+				picture = true;
+			} else if (name === "\\*" && index + 1 < switches.length) {
+				const value = switches[++index];
+				if (CASE_FORMATS.has(value.toLowerCase())) caseFormat = true;
+				else if (!PLAIN_FORMATS.has(value.toLowerCase())) {
+					if (format !== void 0) return;
+					format = value;
+				}
+			} else return;
+			if (next && step) return;
+			step = (_next = next) !== null && _next !== void 0 ? _next : step;
+		}
+		if ((step === null || step === void 0 ? void 0 : step.type) === "bookmark" && switches.length > 1) return;
+		const written = !picture && !(caseFormat && format !== void 0 && format.toLowerCase() !== "arabic");
+		return {
+			step: (_step = step) !== null && _step !== void 0 ? _step : { type: "next" },
+			hidden: hidden && format === void 0,
+			format: written ? (_format = format) !== null && _format !== void 0 ? _format : "ARABIC" : ""
+		};
+	};
+	/** Reads a SEQ field's instruction, or undefined when the field isn't a SEQ field */
+	var sequenceFieldOf = (instruction) => {
+		var _match$1$match;
+		const match = new RegExp("^\\s*SEQ\\b(.*)$", "is").exec(instruction);
+		if (!match) return;
+		const [written, ...switches] = (_match$1$match = match[1].match(/"[^"]*"|\S+/g)) !== null && _match$1$match !== void 0 ? _match$1$match : [];
+		if (written === void 0) return {};
+		const identifier = written.replace(/^"(.*)"$/, "$1");
+		return IDENTIFIER.test(identifier) ? {
+			identifier,
+			sequence: sequenceOf(switches)
+		} : { identifier };
+	};
+	/** Whether a field's instruction is that of a SEQ field */
+	var isSequenceField = (instruction) => sequenceFieldOf(instruction) !== void 0;
+	/** The identifier, in small letters, of each SEQ field in the formatted elements */
+	var identifiersIn = (element) => {
+		if (typeof element !== "object" || element === null) return [];
+		if (Array.isArray(element)) return element.flatMap(identifiersIn);
+		return Object.entries(element).flatMap(([name, content]) => {
+			return [...(name === "w:instrText" && Array.isArray(content) ? content : name === "_attr" ? [content["w:instr"]] : []).flatMap((instruction) => {
+				const field = typeof instruction === "string" ? sequenceFieldOf(instruction) : void 0;
+				return (field === null || field === void 0 ? void 0 : field.identifier) === void 0 ? [] : [field.identifier.toLowerCase()];
+			}), ...identifiersIn(content)];
+		});
+	};
+	/** The identifiers, in small letters, of the SEQ fields in the document's comments, whose count in Word isn't known */
+	var identifiersInCommentsOf = (context) => {
+		var _context$file;
+		const comments = (_context$file = context.file) === null || _context$file === void 0 ? void 0 : _context$file.Comments;
+		if (!comments) return /* @__PURE__ */ new Set();
+		const wrapper = {
+			View: comments,
+			Relationships: comments.Relationships
+		};
+		return new Set(identifiersIn(comments.prepForXml(_objectSpread2(_objectSpread2({}, context), {}, {
+			viewWrapper: wrapper,
+			stack: []
+		}))));
+	};
+	/** Counts the SEQ fields of a document's body, in order, as Word counts them */
+	var sequenceNumbering = (context) => {
+		const levelOf = headingLevels(context);
+		const numbers = /* @__PURE__ */ new Map();
+		const counted = /* @__PURE__ */ new Map();
+		const headingsAt = [];
+		let unclearAt = -1;
+		let paragraph = -1;
+		let unknown;
+		/**
+		* The number of a field that starts the count again after headings of a level or a higher one (`\s`): the number of
+		* fields of its identifier since the last of them, with it, as Word counts them. It isn't known when a paragraph
+		* whose level isn't clear came after that heading, or a field since it whose number didn't follow as the next one's
+		*/
+		const afterHeading = (key, level) => {
+			var _counted$get;
+			const headingAt = Math.max(-1, ...headingsAt.slice(1, level + 1).filter((at) => at !== void 0));
+			const since = ((_counted$get = counted.get(key)) !== null && _counted$get !== void 0 ? _counted$get : []).filter((field) => field.paragraph >= headingAt);
+			const followed = since.every(({ step }) => (step === null || step === void 0 ? void 0 : step.type) === "next" || (step === null || step === void 0 ? void 0 : step.type) === "heading" && step.level === level);
+			if (unclearAt > headingAt || !followed) return;
+			return since.length + 1;
+		};
+		return {
+			startParagraph: (element) => {
+				paragraph++;
+				const level = levelOf(element);
+				if (level === "unclear") unclearAt = paragraph;
+				else if (level !== void 0) headingsAt[level] = paragraph;
+			},
+			numberOf: (instruction, place) => {
+				var _unknown, _counted$get2, _writerOf;
+				const { identifier, sequence } = sequenceFieldOf(instruction);
+				if (identifier === void 0 || place === "fallback") return;
+				(_unknown = unknown) !== null && _unknown !== void 0 || (unknown = identifiersInCommentsOf(context));
+				const key = identifier.toLowerCase();
+				if ((sequence === null || sequence === void 0 ? void 0 : sequence.step.type) === "bookmark" && place === "counted" && !unknown.has(key)) return;
+				const before = numbers.has(key) ? numbers.get(key) : 0;
+				const step = unknown.has(key) || place === "deleted" ? void 0 : sequence === null || sequence === void 0 ? void 0 : sequence.step;
+				const value = (step === null || step === void 0 ? void 0 : step.type) === "reset" ? step.to : (step === null || step === void 0 ? void 0 : step.type) === "repeat" ? before : (step === null || step === void 0 ? void 0 : step.type) === "heading" ? afterHeading(key, step.level) : (step === null || step === void 0 ? void 0 : step.type) === "next" && before !== void 0 ? before + 1 : void 0;
+				numbers.set(key, value);
+				counted.set(key, [...(_counted$get2 = counted.get(key)) !== null && _counted$get2 !== void 0 ? _counted$get2 : [], _objectSpread2({ paragraph }, value === void 0 ? {} : { step })]);
+				return value === void 0 || sequence === void 0 ? void 0 : sequence.hidden ? "" : (_writerOf = writerOf(sequence.format)) === null || _writerOf === void 0 ? void 0 : _writerOf(value);
+			}
+		};
+	};
+	//#endregion
+	//#region src/file/document/body/page-numbers.ts
+	/**
+	* Page numbers written into the fields of a document that show them, when it is written, from an estimate of its pages.
+	*
+	* A page reference is a PAGEREF field, such as the page number of an entry in a table of contents, and the numbers of
+	* pages of the document and of a section are NUMPAGES and SECTIONPAGES fields. Word works their results out when it
+	* updates the fields, or lays the pages out, and until then, and in applications that don't, the fields show the results
+	* they were written with. `docx` doesn't lay out pages, so it writes the results empty, unless the document is given a
+	* {@link PageNumberEstimator}, such as `estimatePageNumbers` from `docx/layout`. Then, once the body is written, each of
+	* those fields in the body, and then in the headers and footers, is given the number the estimator worked out.
+	*
+	* Page references and tables of contents are written dirty, so Word updates them when it opens the document, and asks
+	* "This document contains fields that may refer to other files. Do you want to update the fields in this document?".
+	* When the document is given page numbers, they are written clean, so Word shows them as they are and doesn't ask. A
+	* page number the estimator didn't work out is left blank, until the fields are updated. So are SEQ fields, the numbers
+	* of captions, which are given their numbers then too.
+	*
+	* @module
+	*/
+	var nameOf$1 = (element) => {
+		const name = typeof element === "object" && element !== null && !Array.isArray(element) ? Object.keys(element)[0] : void 0;
+		return name === "_attr" ? void 0 : name;
+	};
+	var textElement = (text) => ({ "w:t": [{ _attr: { "xml:space": "preserve" } }, text] });
+	/** The elements docx formats to write a document */
+	var FORMATTED = {
+		nameOf: nameOf$1,
+		contentOf: (element) => {
+			const content = element[nameOf$1(element)];
+			return Array.isArray(content) ? content : void 0;
+		},
+		attributeOf: (element, attribute) => {
+			var _holder$_attr;
+			const content = element[nameOf$1(element)];
+			const holder = Array.isArray(content) ? content.find((child) => typeof child === "object" && child !== null && "_attr" in child) : content;
+			return holder === null || holder === void 0 || (_holder$_attr = holder._attr) === null || _holder$_attr === void 0 ? void 0 : _holder$_attr[attribute];
+		},
+		textOf: (element) => FORMATTED.contentOf(element).filter((part) => typeof part === "string").join(""),
+		textElement,
+		writeClean: (begin) => {
+			if (isDirtyWithoutPageNumbers(begin)) {
+				const attributes = begin["w:fldChar"]._attr;
+				begin["w:fldChar"] = { _attr: Object.fromEntries(Object.entries(attributes).filter(([key]) => key !== "w:dirty")) };
+			}
+		},
+		setSimpleFieldResult: (element, text) => {
+			const content = element["w:fldSimple"];
+			element["w:fldSimple"] = [...(Array.isArray(content) ? content : [content]).filter((child) => typeof child === "object" && child !== null && "_attr" in child), { "w:r": [textElement(text)] }];
+		}
+	};
+	/** The estimate of each document's pages, and the numbers of pages its headers and footers show, once its body is written */
+	var estimates = /* @__PURE__ */ new WeakMap();
+	/**
+	* Writes the numbers of the SEQ fields of a formatted body into them, counted as Word counts them (see
+	* {@link sequenceNumbering}), and writes them clean, whether or not their numbers were worked out. It is done after its
+	* tables of contents are filled in from its headings, as Word leaves a heading's SEQ number out of its entry.
+	*/
+	var fillSequenceNumbers = (body, context) => {
+		const { startParagraph, numberOf } = sequenceNumbering(context);
+		fillSequenceFields(FORMATTED, body, {
+			beforeParagraph: (paragraph) => startParagraph(paragraph),
+			resultOf: (instruction, within) => isSequenceField(instruction) ? numberOf(instruction, within) : void 0
+		});
+	};
+	/**
+	* Writes the page numbers the estimator works out into the fields of a formatted body that show them: the PAGEREF fields
+	* in its tables of contents and elsewhere, and its NUMPAGES and SECTIONPAGES fields. A field whose number the estimator
+	* didn't work out is left as it is. Page references and tables of contents are written clean, whether or not their
+	* numbers were worked out. The estimate is kept for the document's headers and footers.
+	*/
+	var fillPageNumbers = (body, context, estimator) => {
+		const estimate = estimator(body, context);
+		const partPageCounts = fillBodyFields(FORMATTED, body, estimate, { blank: false });
+		if (context.file) estimates.set(context.file, {
+			estimate,
+			partPageCounts
+		});
+	};
+	/**
+	* Writes the page numbers worked out for the document a header, footer, footnote, endnote or comment is in into the
+	* fields of the formatted part that show them, once the document's body is written. Its page references and SEQ fields
+	* are written clean, and its SEQ fields are left blank: Word writes them as an error, "Error! Main Document Only.".
+	*
+	* @param part - The formatted part, if it has anything to write
+	* @param context - The context it was formatted in, with the document it is in
+	* @param referenceId - The number of the relationship to a header or footer. The SECTIONPAGES fields of the other parts
+	* are left as they are
+	*/
+	var fillPartPageNumbers = (part, context, referenceId) => {
+		const written = context.file && estimates.get(context.file);
+		if (!part || !written) return;
+		const sectionPageCount = referenceId === void 0 ? void 0 : written.partPageCounts.get(`rId${referenceId}`);
+		fillPartFields(FORMATTED, part, written.estimate, {
+			blank: false,
+			sectionPageCount
+		});
 	};
 	//#endregion
 	//#region src/file/relationships/attributes.ts
@@ -16481,6 +17420,17 @@ EXTERNAL: "External" };
 	};
 	//#endregion
 	//#region src/file/paragraph/run/comment-run.ts
+	/**
+	* Comment module for WordprocessingML documents.
+	*
+	* This module provides support for comments (annotations) in documents. Comments
+	* consist of comment ranges (start/end markers), comment references, and the
+	* actual comment content.
+	*
+	* Reference: http://officeopenxml.com/WPrun.php
+	*
+	* @module
+	*/
 	/**
 	* @internal
 	*/
@@ -16820,6 +17770,15 @@ EXTERNAL: "External" };
 		/** Whether there are no comments, in which case the document has no comments.xml part. */
 		get IsEmpty() {
 			return this.isEmpty;
+		}
+		/**
+		* Formats the comments, with the page numbers worked out for their document written into their fields, when the
+		* document's body is written with an estimate of its pages.
+		*/
+		prepForXml(context) {
+			const xml = super.prepForXml(context);
+			fillPartPageNumbers(xml, context);
+			return xml;
 		}
 	};
 	//#endregion
@@ -20948,657 +21907,6 @@ MAX: 9026 };
 		}
 	};
 	//#endregion
-	//#region src/file/table-of-contents/field-instruction.ts
-	/**
-	* Field Instruction module for Table of Contents.
-	*
-	* This module handles the generation of TOC field instruction text
-	* that controls how the table of contents is built.
-	*
-	* Reference: http://officeopenxml.com/WPfieldInstructions.php
-	*
-	* @module
-	*/
-	/**
-	* Represents a field instruction for a Table of Contents.
-	*
-	* The FieldInstruction class generates the TOC field code string that Word uses
-	* to determine how to build the table of contents, including which headings to include,
-	* formatting options, and other TOC-specific settings.
-	*
-	* Reference: http://officeopenxml.com/WPfieldInstructions.php
-	*
-	* ## XSD Schema
-	* ```xml
-	* <xsd:element name="instrText" type="CT_Text"/>
-	* ```
-	*
-	* @example
-	* ```typescript
-	* // Basic TOC field instruction
-	* new FieldInstruction({ headingStyleRange: "1-3" });
-	*
-	* // TOC with hyperlinks and custom styles
-	* new FieldInstruction({
-	*   hyperlink: true,
-	*   headingStyleRange: "1-3",
-	*   stylesWithLevels: [new StyleLevel("CustomStyle", 2)],
-	* });
-	* ```
-	*/
-	var FieldInstruction = class extends XmlComponent {
-		constructor(properties = {}) {
-			super("w:instrText");
-			_defineProperty(this, "properties", void 0);
-			this.properties = properties;
-			this.root.push(new TextAttributes({ space: SpaceType.PRESERVE }));
-			let instruction = "TOC";
-			if (this.properties.captionLabel) instruction = `${instruction} \\a "${this.properties.captionLabel}"`;
-			if (this.properties.entriesFromBookmark) instruction = `${instruction} \\b "${this.properties.entriesFromBookmark}"`;
-			if (this.properties.captionLabelIncludingNumbers) instruction = `${instruction} \\c "${this.properties.captionLabelIncludingNumbers}"`;
-			if (this.properties.sequenceAndPageNumbersSeparator) instruction = `${instruction} \\d "${this.properties.sequenceAndPageNumbersSeparator}"`;
-			if (this.properties.tcFieldIdentifier) instruction = `${instruction} \\f "${this.properties.tcFieldIdentifier}"`;
-			if (this.properties.hyperlink) instruction = `${instruction} \\h`;
-			if (this.properties.tcFieldLevelRange) instruction = `${instruction} \\l "${this.properties.tcFieldLevelRange}"`;
-			if (this.properties.pageNumbersEntryLevelsRange) instruction = `${instruction} \\n "${this.properties.pageNumbersEntryLevelsRange}"`;
-			if (this.properties.headingStyleRange) instruction = `${instruction} \\o "${this.properties.headingStyleRange}"`;
-			if (this.properties.entryAndPageNumberSeparator) instruction = `${instruction} \\p "${this.properties.entryAndPageNumberSeparator}"`;
-			if (this.properties.seqFieldIdentifierForPrefix) instruction = `${instruction} \\s "${this.properties.seqFieldIdentifierForPrefix}"`;
-			if (this.properties.stylesWithLevels && this.properties.stylesWithLevels.length) {
-				const styles = this.properties.stylesWithLevels.map((sl) => `${sl.styleName},${sl.level}`).join(",");
-				instruction = `${instruction} \\t "${styles}"`;
-			}
-			if (this.properties.useAppliedParagraphOutlineLevel) instruction = `${instruction} \\u`;
-			if (this.properties.preserveTabInEntries) instruction = `${instruction} \\w`;
-			if (this.properties.preserveNewLineInEntries) instruction = `${instruction} \\x`;
-			if (this.properties.hideTabAndPageNumbersInWebView) instruction = `${instruction} \\z`;
-			this.root.push(instruction);
-		}
-	};
-	//#endregion
-	//#region src/file/table-of-contents/sdt-content.ts
-	/**
-	* Structured Document Tag Content module.
-	*
-	* This module represents the content container for structured document tags,
-	* including table of contents elements.
-	*
-	* Reference: http://officeopenxml.com/WPtableOfContents.php
-	*
-	* @module
-	*/
-	/**
-	* Represents the content portion of a Structured Document Tag.
-	*
-	* The StructuredDocumentTagContent contains the actual content elements
-	* (paragraphs, tables, etc.) within a structured document tag, such as
-	* the paragraphs that make up a table of contents.
-	*
-	* Reference: http://officeopenxml.com/WPtableOfContents.php
-	*
-	* ## XSD Schema
-	* ```xml
-	* <xsd:complexType name="CT_SdtContentBlock">
-	*   <xsd:group ref="EG_ContentBlockContent" minOccurs="0" maxOccurs="unbounded"/>
-	* </xsd:complexType>
-	* ```
-	*
-	* @example
-	* ```typescript
-	* const content = new StructuredDocumentTagContent();
-	* content.addChildElement(new Paragraph("Content"));
-	* ```
-	*/
-	var StructuredDocumentTagContent = class extends XmlComponent {
-		constructor() {
-			super("w:sdtContent");
-		}
-	};
-	//#endregion
-	//#region src/file/table-of-contents/heading-entries.ts
-	/**
-	* Entries written into a table of contents from the headings of the document.
-	*
-	* A table of contents is a TOC field. Word fills in its entries when it updates the field. Until then, and in
-	* applications that don't update it, such as LibreOffice, it shows the entries it was last filled in with, and without
-	* any it is empty. So once the body is written, each table of contents that wasn't given `cachedEntries` or
-	* `contentChildren` is filled in from the headings its switches include, the way Word fills it in: each heading is
-	* bookmarked, and its entry links to the bookmark and gives its page with a PAGEREF field. The page numbers are left
-	* empty, because they depend on how the document is laid out. Word fills them in when it updates the field, unless the
-	* document's `pageNumbers` writes them.
-	*
-	* @module
-	*/
-	/**
-	* The beginning of a table of contents' field: dirty or clean, as the caller set it, or else dirty unless the document
-	* is given page numbers
-	*/
-	var beginOf = (beginDirty) => beginDirty === void 0 ? createBeginDirtyWithoutPageNumbers() : createBegin(beginDirty);
-	/** The formatted tables of contents, with what each is filled in with, or undefined when it was given its content */
-	var writtenTables = /* @__PURE__ */ new WeakMap();
-	/**
-	* Records a formatted table of contents, so the paragraphs in it aren't taken for headings, with what to fill it in
-	* with from the headings once the body it is in is written. That is undefined when it was given its content.
-	*/
-	var recordTableOfContents = (table, fillWith) => {
-		writtenTables.set(table, fillWith);
-	};
-	/**
-	* The ids of the bookmarks on a body's headings: the first for its first bookmarked heading, and so on. Each is taken
-	* from the counter every bookmark shares, the first time it is needed, so a document packed again is written the same.
-	*/
-	var HeadingBookmarkIds = class {
-		constructor() {
-			_defineProperty(this, "ids", []);
-		}
-		get(index) {
-			var _this$ids, _this$ids$index;
-			(_this$ids$index = (_this$ids = this.ids)[index]) !== null && _this$ids$index !== void 0 || (_this$ids[index] = bookmarkUniqueNumericId());
-			return this.ids[index];
-		}
-	};
-	/** The name of a formatted element, or `_attr` for its parent's attributes */
-	var nameOf$2 = (element) => typeof element === "object" && element !== null ? Object.keys(element)[0] : void 0;
-	/** The children of a formatted element. An element with only attributes has them as its one child */
-	var childrenOf = (element) => {
-		const name = nameOf$2(element);
-		const content = name === void 0 ? void 0 : element[name];
-		return Array.isArray(content) ? content : content === void 0 ? [] : [content];
-	};
-	var childOf = (element, name) => childrenOf(element).find((child) => nameOf$2(child) === name);
-	var attributeOf = (element, attribute) => {
-		var _childOf;
-		return (_childOf = childOf(element, "_attr")) === null || _childOf === void 0 || (_childOf = _childOf._attr) === null || _childOf === void 0 ? void 0 : _childOf[attribute];
-	};
-	/** An attribute such as `w:val="2"` as a number. Imported XML gives it as a string */
-	var numberAttributeOf = (element, attribute) => {
-		const value = attributeOf(element, attribute);
-		return value === void 0 ? void 0 : Number(value);
-	};
-	/** The block-level containers of paragraphs: tables, their rows and cells, and content controls */
-	var BLOCK_CONTAINERS = /* @__PURE__ */ new Set([
-		"w:tbl",
-		"w:tr",
-		"w:tc",
-		"w:sdt",
-		"w:sdtContent",
-		"w:customXml"
-	]);
-	/**
-	* The paragraphs and the tables of contents, in the order they are in the body. A table of contents isn't looked into,
-	* so the paragraphs in it aren't taken for headings. Nor are paragraphs in text boxes, as in Word.
-	*/
-	var blocksOf = (elements) => elements.flatMap((element) => {
-		const name = nameOf$2(element);
-		if (name === "w:p" || writtenTables.has(element)) return [element];
-		return name !== void 0 && BLOCK_CONTAINERS.has(name) ? blocksOf(childrenOf(element)) : [];
-	});
-	/** The elements in a paragraph that its text is in. Deleted text, field instructions and drawings aren't */
-	var TEXT_CONTAINERS = /* @__PURE__ */ new Set([
-		"w:r",
-		"w:hyperlink",
-		"w:ins",
-		"w:moveTo",
-		"w:smartTag",
-		"w:customXml",
-		"w:sdt",
-		"w:sdtContent",
-		"w:fldSimple",
-		"w:dir",
-		"w:bdo"
-	]);
-	/** The text an element in a run stands for, such as `\t` for a tab. A page or column break isn't text */
-	var textOfRunContent = (element) => {
-		switch (nameOf$2(element)) {
-			case "w:t": return childrenOf(element).filter((child) => typeof child === "string").join("");
-			case "w:tab": return "	";
-			case "w:br": return [void 0, "textWrapping"].includes(attributeOf(element, "w:type")) ? "\n" : "";
-			case "w:cr": return "\n";
-			case "w:noBreakHyphen": return "-";
-			default: return "";
-		}
-	};
-	/** The text of a paragraph. Of a field, only its result is text, not its instruction */
-	var textOf = (paragraph) => {
-		const fields = [];
-		const read = (element) => {
-			const name = nameOf$2(element);
-			if (name !== void 0 && TEXT_CONTAINERS.has(name)) return childrenOf(element).map(read).join("");
-			if (name === "w:fldChar") {
-				const type = attributeOf(element, "w:fldCharType");
-				if (type === "begin") fields.push(false);
-				else if (type === "separate") fields[fields.length - 1] = true;
-				else fields.pop();
-				return "";
-			}
-			return fields.every(Boolean) ? textOfRunContent(element) : "";
-		};
-		return childrenOf(paragraph).map(read).join("");
-	};
-	/** The bookmarks started and ended in an element, in order */
-	var bookmarkMarksOf = (element) => {
-		const name = nameOf$2(element);
-		if (name === "w:bookmarkStart") return [{
-			start: true,
-			id: attributeOf(element, "w:id"),
-			name: attributeOf(element, "w:name")
-		}];
-		if (name === "w:bookmarkEnd") return [{
-			start: false,
-			id: attributeOf(element, "w:id")
-		}];
-		return name === void 0 || name === "_attr" ? [] : childrenOf(element).flatMap(bookmarkMarksOf);
-	};
-	/**
-	* The names of the bookmarks each paragraph is in, for the `\b` switch: those open where it starts, followed through the
-	* body, and those that start in it.
-	*/
-	var bookmarksOf = (paragraphs) => {
-		const open = /* @__PURE__ */ new Map();
-		return paragraphs.map((paragraph) => {
-			const marks = bookmarkMarksOf(paragraph);
-			const names = /* @__PURE__ */ new Set([...open.values(), ...marks.flatMap((mark) => mark.start ? [mark.name] : [])]);
-			for (const mark of marks) if (mark.start) open.set(mark.id, mark.name);
-			else open.delete(mark.id);
-			return names;
-		});
-	};
-	/** The details of each paragraph that could be a heading. The bookmarks it is in are only followed when needed */
-	var paragraphDetailsOf = (paragraphs, followBookmarks) => {
-		const bookmarks = followBookmarks ? bookmarksOf(paragraphs) : [];
-		return paragraphs.map((element, index) => {
-			var _bookmarks$index;
-			const properties = childOf(element, "w:pPr");
-			return {
-				element,
-				styleId: attributeOf(childOf(properties, "w:pStyle"), "w:val"),
-				outlineLevel: numberAttributeOf(childOf(properties, "w:outlineLvl"), "w:val"),
-				text: textOf(element),
-				bookmarks: (_bookmarks$index = bookmarks[index]) !== null && _bookmarks$index !== void 0 ? _bookmarks$index : /* @__PURE__ */ new Set()
-			};
-		});
-	};
-	/** The document's paragraph styles, by id, read from the styles as they are written */
-	var stylesOf = (context) => {
-		var _context$file;
-		const styles = (_context$file = context.file) === null || _context$file === void 0 || (_context$file = _context$file.Styles) === null || _context$file === void 0 ? void 0 : _context$file.prepForXml(context);
-		return new Map(childrenOf(styles).filter((style) => nameOf$2(style) === "w:style" && ["paragraph", void 0].includes(attributeOf(style, "w:type"))).map((style) => [attributeOf(style, "w:styleId"), {
-			name: attributeOf(childOf(style, "w:name"), "w:val"),
-			basedOn: attributeOf(childOf(style, "w:basedOn"), "w:val"),
-			outlineLevel: numberAttributeOf(childOf(childOf(style, "w:pPr"), "w:outlineLvl"), "w:val")
-		}]));
-	};
-	/** A range such as `1-3` */
-	var parseRange = (range) => {
-		const match = /^\s*(\d+)\s*-\s*(\d+)\s*$/.exec(range);
-		return match ? [Number(match[1]), Number(match[2])] : void 0;
-	};
-	var isWithin = (level, [from, to]) => level >= from && level <= to;
-	/** The level of a built-in heading style, Heading 1 to Heading 9, by its name, or by its id when it has no name */
-	var headingLevelOf = (styleId, styles) => {
-		var _styles$get$name, _styles$get;
-		if (styleId === void 0) return;
-		const match = /^heading ?([1-9])$/i.exec((_styles$get$name = (_styles$get = styles.get(styleId)) === null || _styles$get === void 0 ? void 0 : _styles$get.name) !== null && _styles$get$name !== void 0 ? _styles$get$name : styleId);
-		return match ? Number(match[1]) : void 0;
-	};
-	/**
-	* A style's outline level, from 0: its own, or else the one of the style it is based on. A built-in heading style has
-	* its heading's. Following the styles it is based on stops after as many as there are, in case they loop.
-	*/
-	var styleOutlineLevelOf = (styleId, styles, depth = 0) => {
-		var _style$outlineLevel;
-		if (styleId === void 0 || depth > styles.size) return;
-		const style = styles.get(styleId);
-		const heading = headingLevelOf(styleId, styles);
-		return (_style$outlineLevel = style === null || style === void 0 ? void 0 : style.outlineLevel) !== null && _style$outlineLevel !== void 0 ? _style$outlineLevel : heading === void 0 ? styleOutlineLevelOf(style === null || style === void 0 ? void 0 : style.basedOn, styles, depth + 1) : heading - 1;
-	};
-	/** A paragraph's outline level, from 0: its own, or else its style's */
-	var outlineLevelOf = (paragraph, styles) => {
-		var _paragraph$outlineLev;
-		return (_paragraph$outlineLev = paragraph.outlineLevel) !== null && _paragraph$outlineLev !== void 0 ? _paragraph$outlineLev : styleOutlineLevelOf(paragraph.styleId, styles);
-	};
-	/** The level a table of contents gives a paragraph, or undefined when it doesn't include it */
-	var levelIn = (properties, paragraph, styles) => {
-		var _styles$get2;
-		const { entriesFromBookmark, headingStyleRange, stylesWithLevels = [], useAppliedParagraphOutlineLevel } = properties;
-		if (paragraph.text.trim() === "" || entriesFromBookmark && !paragraph.bookmarks.has(entriesFromBookmark)) return;
-		const names = [paragraph.styleId, paragraph.styleId === void 0 ? void 0 : (_styles$get2 = styles.get(paragraph.styleId)) === null || _styles$get2 === void 0 ? void 0 : _styles$get2.name].filter((name) => name !== void 0).map((name) => name.toLowerCase());
-		const listed = stylesWithLevels.find((style) => names.includes(style.styleName.toLowerCase()));
-		if (listed) return listed.level;
-		const namesItsEntries = Boolean(headingStyleRange) || stylesWithLevels.length > 0 || Boolean(useAppliedParagraphOutlineLevel) || Boolean(properties.tcFieldIdentifier) || Boolean(properties.tcFieldLevelRange) || Boolean(properties.captionLabel) || Boolean(properties.captionLabelIncludingNumbers);
-		const headingRange = headingStyleRange ? parseRange(headingStyleRange) : namesItsEntries ? void 0 : [1, 9];
-		const heading = headingLevelOf(paragraph.styleId, styles);
-		if (headingRange && heading !== void 0 && isWithin(heading, headingRange)) return heading;
-		const outlineLevel = useAppliedParagraphOutlineLevel ? outlineLevelOf(paragraph, styles) : void 0;
-		return outlineLevel !== void 0 && isWithin(outlineLevel + 1, headingRange !== null && headingRange !== void 0 ? headingRange : [1, 9]) ? outlineLevel + 1 : void 0;
-	};
-	/** The runs of an entry's title. Tabs and line breaks are kept only when the table of contents keeps them (\w and \x) */
-	var titleRunsOf = (title, properties) => {
-		const text = properties.preserveTabInEntries ? title : title.replace(/\t/g, " ");
-		return (properties.preserveNewLineInEntries ? text.split("\n") : [text.replace(/\n/g, " ")]).map((line, index) => new TextRun({
-			break: index > 0 ? 1 : void 0,
-			children: line.split("	").flatMap((part, partIndex) => [...partIndex > 0 ? [new Tab()] : [], ...part === "" ? [] : [part]])
-		}));
-	};
-	/**
-	* The paragraph style of the entries at a level: the built-in TOC style, found by its name, "toc 1" to "toc 9". When
-	* the document doesn't have it, the entries are indented as Word's are, 220 twips a level.
-	*/
-	var entryStyleOf = (level, styles) => {
-		var _find;
-		const named = (_find = [...styles].find(([, style]) => {
-			var _style$name;
-			return ((_style$name = style.name) === null || _style$name === void 0 ? void 0 : _style$name.toLowerCase()) === `toc ${level}`;
-		})) === null || _find === void 0 ? void 0 : _find[0];
-		const id = named !== null && named !== void 0 ? named : `TOC${level}`;
-		return named !== void 0 || styles.has(id) || level === 1 ? { id } : {
-			id,
-			indent: (level - 1) * 220
-		};
-	};
-	/** The formatted content of a table of contents with its entries */
-	var contentOf = ({ properties, beginDirty, textWidth }, entries, styles, context) => {
-		var _parseRange;
-		const withoutPageNumbers = properties.pageNumbersEntryLevelsRange ? (_parseRange = parseRange(properties.pageNumbersEntryLevelsRange)) !== null && _parseRange !== void 0 ? _parseRange : [1, 9] : void 0;
-		const content = new StructuredDocumentTagContent();
-		entries.forEach((entry, index) => {
-			const hasPageNumber = withoutPageNumbers === void 0 || !isWithin(entry.level, withoutPageNumbers);
-			const children = [...titleRunsOf(entry.title, properties), ...hasPageNumber ? [new TextRun({ children: [properties.entryAndPageNumberSeparator || new Tab()] }), new PageReference(entry.bookmark, { hyperlink: properties.hyperlink })] : []];
-			const style = entryStyleOf(entry.level, styles);
-			content.addChildElement(new Paragraph({
-				style: style.id,
-				indent: style.indent === void 0 ? void 0 : { left: style.indent },
-				tabStops: [{
-					type: "right",
-					position: textWidth,
-					leader: "dot"
-				}],
-				children: [...index === 0 ? [new Run({ children: [
-					beginOf(beginDirty),
-					new FieldInstruction(properties),
-					createSeparate()
-				] })] : [], ...properties.hyperlink ? [new InternalHyperlink({
-					anchor: entry.bookmark,
-					children
-				})] : children]
-			}));
-		});
-		content.addChildElement(new Paragraph({ children: [new Run({ children: [createEnd()] })] }));
-		return content.prepForXml(context);
-	};
-	/** Puts a bookmark around the content of a formatted paragraph */
-	var bookmark = (paragraph, name, id, context) => {
-		const children = childrenOf(paragraph);
-		const start = children.findIndex((child) => nameOf$2(child) === "w:pPr") + 1;
-		paragraph["w:p"] = [
-			...children.slice(0, start),
-			new BookmarkStart(name, id).prepForXml(context),
-			...children.slice(start),
-			new BookmarkEnd(id).prepForXml(context)
-		];
-	};
-	/**
-	* Fills in the tables of contents in a formatted body from its headings, and bookmarks the headings they list. A
-	* table of contents that doesn't list any heading is left empty, for Word to fill in.
-	*/
-	var fillTablesOfContents = (body, context, bookmarkIds) => {
-		const blocks = blocksOf(childrenOf(body));
-		const tables = blocks.flatMap((block) => {
-			const options = writtenTables.get(block);
-			return options ? [[block, options]] : [];
-		});
-		if (tables.length === 0) return;
-		const styles = stylesOf(context);
-		const followBookmarks = tables.some(([, { properties }]) => Boolean(properties.entriesFromBookmark));
-		const headings = paragraphDetailsOf(blocks.filter((block) => nameOf$2(block) === "w:p"), followBookmarks).map((paragraph) => ({
-			paragraph,
-			levels: tables.map(([, { properties }]) => levelIn(properties, paragraph, styles))
-		})).filter(({ levels }) => levels.some((level) => level !== void 0)).map((heading, index) => _objectSpread2(_objectSpread2({}, heading), {}, { id: bookmarkIds.get(index) }));
-		for (const { paragraph, id } of headings) bookmark(paragraph.element, `_Toc${id}`, id, context);
-		tables.forEach(([table, options], index) => {
-			const entries = headings.flatMap(({ paragraph, levels, id }) => {
-				const level = levels[index];
-				return level === void 0 ? [] : [{
-					title: paragraph.text,
-					level,
-					bookmark: `_Toc${id}`
-				}];
-			});
-			if (entries.length === 0) return;
-			table["w:sdt"] = childrenOf(table).map((child) => nameOf$2(child) === "w:sdtContent" ? contentOf(options, entries, styles, context) : child);
-		});
-	};
-	//#endregion
-	//#region src/file/document/body/page-number-fields.ts
-	var PLAIN_FORMATS = /* @__PURE__ */ new Set([
-		"mergeformat",
-		"charformat",
-		"mergeformatinet"
-	]);
-	/** Whether a field's switches give its number a format of its own, such as `\* roman`, or a picture, such as `\# "00"` */
-	var hasOwnFormat = (switches) => {
-		const formats = [...switches.matchAll(/\\\*\s*"?([^\s"\\]+)/g)].map(([, format]) => format.toLowerCase());
-		return /\\#/.test(switches) || formats.some((format) => !PLAIN_FORMATS.has(format));
-	};
-	/**
-	* The bookmark a PAGEREF field refers to, unless the field shows something other than the page's number: its
-	* position relative to the bookmark (`\p`), or the number in a format of its own (`\* roman`).
-	*/
-	var bookmarkOf = (instruction) => {
-		const match = /^\s*PAGEREF\s+("?)([^\s"\\]+)\1(.*)$/i.exec(instruction);
-		if (!match) return;
-		const [, , bookmark, switches] = match;
-		return /\\p\b/i.test(switches) || hasOwnFormat(switches) ? void 0 : bookmark;
-	};
-	/** The number of pages a NUMPAGES or SECTIONPAGES field shows, unless it writes it in a format of its own */
-	var pageCountOf = (instruction) => {
-		const match = /^\s*(NUMPAGES|SECTIONPAGES)\b(.*)$/i.exec(instruction);
-		if (!match || hasOwnFormat(match[2])) return;
-		return match[1].toUpperCase() === "NUMPAGES" ? "document" : "section";
-	};
-	/**
-	* The result of a field that shows a page's number or a number of pages, or undefined to leave it as it is. A field
-	* the estimate has no number for is left as it is, or made blank.
-	*/
-	var resultFrom = (instruction, { bookmarks, pageCount }, { sectionPageCount, blank }) => {
-		const bookmark = bookmarkOf(instruction);
-		const count = bookmark === void 0 ? pageCountOf(instruction) : void 0;
-		if (bookmark === void 0 && count === void 0) return;
-		const value = bookmark !== void 0 ? bookmarks.get(bookmark) : count === "document" ? pageCount : sectionPageCount;
-		return value === void 0 ? blank ? "" : void 0 : String(value);
-	};
-	/**
-	* Writes the results the filling works out into the fields in the elements, in order.
-	*/
-	var fillFields = (tree, elements, open, filling) => {
-		for (let index = 0; index < elements.length; index++) {
-			const element = elements[index];
-			const name = tree.nameOf(element);
-			if (name === void 0) continue;
-			const current = open[open.length - 1];
-			if (name === "w:fldChar") {
-				const type = tree.attributeOf(element, "w:fldCharType");
-				if (type === "begin") open.push({
-					begin: element,
-					instruction: "",
-					inResult: false
-				});
-				else if (type === "separate" && current) {
-					tree.writeClean(current.begin, current.instruction);
-					current.inResult = true;
-					current.result = filling.resultOf(current.instruction);
-					if (current.result !== void 0) {
-						elements.splice(index + 1, 0, tree.textElement(current.result));
-						index++;
-					}
-				} else if (type === "end") open.pop();
-			} else if (name === "w:instrText" && current && !current.inResult) current.instruction += tree.textOf(element);
-			else if ((name === "w:t" || name === "w:tab" || name === "w:br" || name === "w:cr") && (current === null || current === void 0 ? void 0 : current.result) !== void 0) {
-				elements.splice(index, 1);
-				index--;
-			} else if (name === "w:fldSimple") {
-				const result = filling.resultOf(String(tree.attributeOf(element, "w:instr")));
-				if (result === void 0) {
-					var _tree$contentOf;
-					fillFields(tree, (_tree$contentOf = tree.contentOf(element)) !== null && _tree$contentOf !== void 0 ? _tree$contentOf : [], [], filling);
-				} else tree.setSimpleFieldResult(element, result);
-			} else {
-				var _tree$contentOf2;
-				fillFields(tree, (_tree$contentOf2 = tree.contentOf(element)) !== null && _tree$contentOf2 !== void 0 ? _tree$contentOf2 : [], open, filling);
-				if (name === "w:p") filling.afterParagraph(element);
-			}
-		}
-	};
-	/** The section properties (`w:sectPr`) in the elements, in order: those of the paragraphs that end sections, and the last */
-	var sectionPropertiesIn = (tree, elements) => elements.flatMap((element) => {
-		var _tree$contentOf3;
-		const name = tree.nameOf(element);
-		if (name === void 0) return [];
-		return name === "w:sectPr" ? [element] : sectionPropertiesIn(tree, (_tree$contentOf3 = tree.contentOf(element)) !== null && _tree$contentOf3 !== void 0 ? _tree$contentOf3 : []);
-	});
-	/** Whether a paragraph ends a section: whether its properties have the section's */
-	var endsSection = (tree, paragraph) => {
-		var _tree$contentOf4;
-		return ((_tree$contentOf4 = tree.contentOf(paragraph)) !== null && _tree$contentOf4 !== void 0 ? _tree$contentOf4 : []).some((child) => {
-			var _tree$contentOf5;
-			return tree.nameOf(child) === "w:pPr" && ((_tree$contentOf5 = tree.contentOf(child)) !== null && _tree$contentOf5 !== void 0 ? _tree$contentOf5 : []).some((part) => tree.nameOf(part) === "w:sectPr");
-		});
-	};
-	/**
-	* The number of pages each header and footer shows in its SECTIONPAGES fields, by the id of the relationship to it:
-	* that of the sections whose pages it is on, when they all have the same. A section without a header or footer of a kind
-	* has the one of the section before, as Word lays them out.
-	*/
-	var partPageCountsOf = (tree, body, sectionPageCounts) => {
-		const countsOfParts = sectionPropertiesIn(tree, [body]).reduce((all, properties) => {
-			var _tree$contentOf6, _all;
-			const references = ((_tree$contentOf6 = tree.contentOf(properties)) !== null && _tree$contentOf6 !== void 0 ? _tree$contentOf6 : []).flatMap((child) => {
-				const name = tree.nameOf(child);
-				return name === "w:headerReference" || name === "w:footerReference" ? [[`${name} ${String(tree.attributeOf(child, "w:type"))}`, String(tree.attributeOf(child, "r:id"))]] : [];
-			});
-			return [...all, new Map([...(_all = all[all.length - 1]) !== null && _all !== void 0 ? _all : [], ...references])];
-		}, []).reduce((counts, parts, section) => {
-			for (const id of parts.values()) {
-				var _counts$get;
-				counts.set(id, [...(_counts$get = counts.get(id)) !== null && _counts$get !== void 0 ? _counts$get : [], sectionPageCounts[section]]);
-			}
-			return counts;
-		}, /* @__PURE__ */ new Map());
-		return new Map([...countsOfParts].flatMap(([id, [first, ...rest]]) => first !== void 0 && rest.every((count) => count === first) ? [[id, first]] : []));
-	};
-	/**
-	* Writes the estimated page numbers into the fields of a document's body that show them: its PAGEREF fields, in its
-	* tables of contents and elsewhere, and its NUMPAGES and SECTIONPAGES fields.
-	*
-	* @returns The number of pages each header and footer shows in its SECTIONPAGES fields, by the id of the relationship to it
-	*/
-	var fillBodyFields = (tree, body, estimate, { blank }) => {
-		const { sectionPageCounts = [] } = estimate;
-		let section = 0;
-		fillFields(tree, [body], [], {
-			resultOf: (instruction) => resultFrom(instruction, estimate, {
-				sectionPageCount: sectionPageCounts[section],
-				blank
-			}),
-			afterParagraph: (paragraph) => {
-				section += endsSection(tree, paragraph) ? 1 : 0;
-			}
-		});
-		return partPageCountsOf(tree, body, sectionPageCounts);
-	};
-	/**
-	* Writes the estimated page numbers into the fields of a header or footer that show them, with the number of pages its
-	* SECTIONPAGES fields show, if it is known.
-	*/
-	var fillPartFields = (tree, part, estimate, { blank, sectionPageCount }) => fillFields(tree, [part], [], {
-		resultOf: (instruction) => resultFrom(instruction, estimate, {
-			sectionPageCount,
-			blank
-		}),
-		afterParagraph: () => void 0
-	});
-	//#endregion
-	//#region src/file/document/body/page-numbers.ts
-	/**
-	* Page numbers written into the fields of a document that show them, when it is written, from an estimate of its pages.
-	*
-	* A page reference is a PAGEREF field, such as the page number of an entry in a table of contents, and the numbers of
-	* pages of the document and of a section are NUMPAGES and SECTIONPAGES fields. Word works their results out when it
-	* updates the fields, or lays the pages out, and until then, and in applications that don't, the fields show the results
-	* they were written with. `docx` doesn't lay out pages, so it writes the results empty, unless the document is given a
-	* {@link PageNumberEstimator}, such as `estimatePageNumbers` from `docx/layout`. Then, once the body is written, each of
-	* those fields in the body, and then in the headers and footers, is given the number the estimator worked out.
-	*
-	* Page references and tables of contents are written dirty, so Word updates them when it opens the document, and asks
-	* "This document contains fields that may refer to other files. Do you want to update the fields in this document?".
-	* When the document is given page numbers, they are written clean, so Word shows them as they are and doesn't ask. A
-	* page number the estimator didn't work out is left blank, until the fields are updated.
-	*
-	* @module
-	*/
-	var nameOf$1 = (element) => {
-		const name = typeof element === "object" && element !== null && !Array.isArray(element) ? Object.keys(element)[0] : void 0;
-		return name === "_attr" ? void 0 : name;
-	};
-	var textElement = (text) => ({ "w:t": [{ _attr: { "xml:space": "preserve" } }, text] });
-	/** The elements docx formats to write a document */
-	var FORMATTED = {
-		nameOf: nameOf$1,
-		contentOf: (element) => {
-			const content = element[nameOf$1(element)];
-			return Array.isArray(content) ? content : void 0;
-		},
-		attributeOf: (element, attribute) => {
-			var _holder$_attr;
-			const content = element[nameOf$1(element)];
-			const holder = Array.isArray(content) ? content.find((child) => typeof child === "object" && child !== null && "_attr" in child) : content;
-			return holder === null || holder === void 0 || (_holder$_attr = holder._attr) === null || _holder$_attr === void 0 ? void 0 : _holder$_attr[attribute];
-		},
-		textOf: (element) => FORMATTED.contentOf(element).filter((part) => typeof part === "string").join(""),
-		textElement,
-		writeClean: (begin) => {
-			if (isDirtyWithoutPageNumbers(begin)) {
-				const attributes = begin["w:fldChar"]._attr;
-				begin["w:fldChar"] = { _attr: Object.fromEntries(Object.entries(attributes).filter(([key]) => key !== "w:dirty")) };
-			}
-		},
-		setSimpleFieldResult: (element, text) => {
-			element["w:fldSimple"] = [...FORMATTED.contentOf(element).filter((child) => typeof child === "object" && child !== null && "_attr" in child), { "w:r": [textElement(text)] }];
-		}
-	};
-	/** The estimate of each document's pages, and the numbers of pages its headers and footers show, once its body is written */
-	var estimates = /* @__PURE__ */ new WeakMap();
-	/**
-	* Writes the page numbers the estimator works out into the fields of a formatted body that show them: the PAGEREF fields
-	* in its tables of contents and elsewhere, and its NUMPAGES and SECTIONPAGES fields. A field whose number the estimator
-	* didn't work out is left as it is. Page references and tables of contents are written clean, whether or not their
-	* numbers were worked out. The estimate is kept for the document's headers and footers.
-	*/
-	var fillPageNumbers = (body, context, estimator) => {
-		const estimate = estimator(body, context);
-		const partPageCounts = fillBodyFields(FORMATTED, body, estimate, { blank: false });
-		if (context.file) estimates.set(context.file, {
-			estimate,
-			partPageCounts
-		});
-	};
-	/**
-	* Writes the page numbers worked out for the document a header or footer is in into the fields of the formatted header or
-	* footer that show them, once the document's body is written.
-	*
-	* @param part - The formatted header or footer, if it has anything to write
-	* @param context - The context it was formatted in, with the document it is in
-	* @param referenceId - The number of the relationship to it
-	*/
-	var fillPartPageNumbers = (part, context, referenceId) => {
-		const written = context.file && estimates.get(context.file);
-		if (!part || !written) return;
-		fillPartFields(FORMATTED, part, written.estimate, {
-			blank: false,
-			sectionPageCount: written.partPageCounts.get(`rId${referenceId}`)
-		});
-	};
-	//#endregion
 	//#region src/file/vertical-align/vertical-align.ts
 	/**
 	* Vertical alignment module for WordprocessingML documents.
@@ -22739,7 +23047,9 @@ MAX: 9026 };
 		* Ensures that the last section's properties are placed as a direct child of the body
 		* element, as required by the OOXML specification. Once the body is written, its tables
 		* of contents are filled in from its headings, and, when the body has a page number
-		* estimator, its page references are given their page numbers.
+		* estimator, its page references are given their page numbers. Its SEQ fields are given
+		* their numbers after the tables of contents are filled in, as Word leaves a heading's SEQ
+		* number out of its entry.
 		*
 		* @param context - The XML serialization context
 		* @returns The prepared XML object or undefined
@@ -22751,7 +23061,10 @@ MAX: 9026 };
 			}
 			const xml = super.prepForXml(context);
 			fillTablesOfContents(xml, context, this.headingBookmarkIds);
-			if (this.pageNumbers) fillPageNumbers(xml, context, this.pageNumbers);
+			if (this.pageNumbers) {
+				fillSequenceNumbers(xml, context);
+				fillPageNumbers(xml, context, this.pageNumbers);
+			}
 			return xml;
 		}
 		/**
@@ -26115,6 +26428,15 @@ MAX: 9026 };
 			});
 			this.root.push(endnote);
 		}
+		/**
+		* Formats the endnotes, with the page numbers worked out for their document written into their fields, when the
+		* document's body is written with an estimate of its pages.
+		*/
+		prepForXml(context) {
+			const xml = super.prepForXml(context);
+			fillPartPageNumbers(xml, context);
+			return xml;
+		}
 	};
 	//#endregion
 	//#region src/file/endnotes-wrapper.ts
@@ -26614,6 +26936,15 @@ MAX: 9026 };
 				children: paragraph
 			});
 			this.root.push(footnote);
+		}
+		/**
+		* Formats the footnotes, with the page numbers worked out for their document written into their fields, when the
+		* document's body is written with an estimate of its pages.
+		*/
+		prepForXml(context) {
+			const xml = super.prepForXml(context);
+			fillPartPageNumbers(xml, context);
+			return xml;
 		}
 	};
 	//#endregion
@@ -37480,6 +37811,7 @@ while (n === a[++i] && n === a[++i] && n === a[++i] && n === a[++i] && n === a[+
 	exports.encodeUtf8 = encodeUtf8;
 	exports.fillPageNumbers = fillPageNumbers;
 	exports.fillPartPageNumbers = fillPartPageNumbers;
+	exports.fillSequenceNumbers = fillSequenceNumbers;
 	exports.hashedId = hashedId;
 	exports.hexColorValue = hexColorValue;
 	exports.hpsMeasureValue = hpsMeasureValue;

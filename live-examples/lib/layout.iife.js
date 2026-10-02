@@ -4480,9 +4480,9 @@ var docxLayout = (function(exports) {
 	* them after three passes, as when a table of contents wraps one way with a number and the other way without it, all of
 	* them are left blank.
 	*
-	* Page references and tables of contents are written clean, so Word shows the numbers as they are written, and the
-	* page numbers it left blank stay blank, without asking to update the fields, unless the document has `updateFields`
-	* on.
+	* Page references, tables of contents and SEQ fields (caption numbers, which are counted without laying out the pages)
+	* are written clean, so Word shows the numbers as they are written, and the numbers left blank stay blank, without
+	* asking to update the fields, unless the document has `updateFields` on.
 	*
 	* @publicApi
 	*/
