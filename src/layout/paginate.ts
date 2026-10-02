@@ -21,6 +21,7 @@ import {
     type InlineItem,
     type LaidOutLine,
     type ParagraphFormat,
+    type TextFont,
     type TextMeasurer,
     layoutLines,
     measureContentWidths,
@@ -251,26 +252,18 @@ const stoppingAtUnknownFonts = (measurer: TextMeasurer): TextMeasurer => {
     if (unknownFont === undefined) {
         return measurer;
     }
+    /** The font, unless the measurer doesn't know it, or this text in it */
+    const known = (font: TextFont, text?: string): TextFont => {
+        if (unknownFont(font, text)) {
+            throw new Unsupported("a font not in the width tables");
+        }
+        return font;
+    };
     const stopping = stoppingMeasurers.get(measurer) ?? {
         ...measurer,
-        measureWidth: (text, font) => {
-            if (unknownFont(font, text)) {
-                throw new Unsupported("a font not in the width tables");
-            }
-            return measurer.measureWidth(text, font);
-        },
-        measureLineHeight: (font) => {
-            if (unknownFont(font)) {
-                throw new Unsupported("a font not in the width tables");
-            }
-            return measurer.measureLineHeight(font);
-        },
-        measureDescent: (font) => {
-            if (unknownFont(font)) {
-                throw new Unsupported("a font not in the width tables");
-            }
-            return measurer.measureDescent(font);
-        },
+        measureWidth: (text, font) => measurer.measureWidth(text, known(font, text)),
+        measureLineHeight: (font) => measurer.measureLineHeight(known(font)),
+        measureDescent: (font) => measurer.measureDescent(known(font)),
     };
     stoppingMeasurers.set(measurer, stopping);
     return stopping;
