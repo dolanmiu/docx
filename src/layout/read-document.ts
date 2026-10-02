@@ -359,7 +359,7 @@ type FieldMarkers = {
     // eslint-disable-next-line functional/prefer-readonly-type
     count: number;
     // eslint-disable-next-line functional/prefer-readonly-type
-    readonly relative: Map<string, readonly string[]>;
+    readonly relative: Map<string, string[]>;
 };
 
 /**
@@ -608,8 +608,12 @@ const workedOutResultOf = (instruction: string, font: TextFont, reader: Reader):
         // Each page reference with \p in the body is counted, whatever it writes, as docx counts them to write them
         const at = switched.relative && !inHeader && !inNote ? fieldMarker(markers) : undefined;
         if (at) {
+            // Added to in place, as a document can have any number of them to one bookmark
+            const references = markers.relative.get(bookmark) ?? [];
             // eslint-disable-next-line functional/immutable-data
-            markers.relative.set(bookmark, [...(markers.relative.get(bookmark) ?? []), at.name]);
+            markers.relative.set(bookmark, references);
+            // eslint-disable-next-line functional/immutable-data
+            references.push(at.name);
         }
         if (switched.unsupported) {
             return switched.unsupported;
