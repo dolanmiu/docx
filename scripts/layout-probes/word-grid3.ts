@@ -1,7 +1,7 @@
 /**
  * Probes of what word-grid.ts left open about document grids, and of a header on pages of text down the page. Each probe
  * starts a page, and each line's text names its probe, so the lines can be found in a PDF saved from Word with pdftotext
- * -bbox-layout, which word-grid3.py reads. A4 with 1440 margins, so the text is 9026 twips wide, no space before or after,
+ * -bbox-layout, which word-grid.py reads. A4 with 1440 margins, so the text is 9026 twips wide, no space before or after,
  * single spaced, with the document's Normal in MS Mincho 10.5 and Times New Roman 10.5, as in word-grid.ts. The grid is
  * 360 twips a line, and `w:charSpace` 4096 adds a point to each character of a grid of lines and characters. In MS
  * Mincho 10.5, 42 ideographs fit across the page without a grid of characters, and 39 with it.
