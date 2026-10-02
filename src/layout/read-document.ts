@@ -71,6 +71,7 @@ import {
     type TableGeometry,
     type TableLook,
     conditionalTypesOf,
+    isDrawn,
     readBorderSet,
     readCellSpacing,
     readTableLook,
@@ -1524,10 +1525,35 @@ const markersIn = (blocks: readonly Block[]): readonly string[] =>
 const hasContent = (blocks: readonly Block[]): boolean =>
     blocks.some((block) => block.type === "table" || block.items.some((item) => item.type !== "marker"));
 
-/** Whether rows have no borders or space between cells that take room above or below them */
-const hasNoRowBorders = (geometry: TableGeometry | string): boolean =>
-    typeof geometry !== "string" &&
-    geometry.every(({ borderTop, borderBottom, breakBorder = 0 }) => borderTop === 0 && borderBottom === 0 && breakBorder === 0);
+/**
+ * The room around the rows of a table without space between its cells, laid out without its deleted rows, from the room
+ * around those rows as though the deleted ones weren't there (`kept`), and around all its rows (`all`). Where deleted
+ * rows are, Word draws one border between the rows around them, a deleted row's own too, so where the borders above,
+ * between and below them all take the same room, the rows around them have that room between them, whatever their own
+ * borders (`word-tracked-tables.docx` MK14a to MK14g). At the top and bottom of the table, Word has been seen to do so
+ * only where that is the room the table's own top or bottom would take there. Why, where Word's room isn't known.
+ */
+const withDeletedBorders = (kept: TableGeometry, all: TableGeometry | string, deleted: readonly boolean[]): TableGeometry | string => {
+    if (typeof all === "string") {
+        return all;
+    }
+    // The room of the borders between all the rows: above each, and below the last
+    const rooms = [...all.map(({ borderTop }) => borderTop), all[all.length - 1].borderBottom];
+    const keptIndexes = deleted.flatMap((isDeleted, index) => (isDeleted ? [] : [index]));
+    const last = keptIndexes.length - 1;
+    // The room of the one border Word draws for these, or undefined where they don't all take the same
+    const oneOf = (found: readonly number[]): number | undefined => (found.every((room) => room === found[0]) ? found[0] : undefined);
+    const tops = keptIndexes.map((index, at) =>
+        oneOf([...rooms.slice((keptIndexes[at - 1] ?? -1) + 1, index + 1), ...(at === 0 && index > 0 ? [kept[0].borderTop] : [])]),
+    );
+    const bottom = oneOf([
+        ...rooms.slice(keptIndexes[last] + 1),
+        ...(keptIndexes[last] < deleted.length - 1 ? [kept[last].borderBottom] : []),
+    ]);
+    return bottom === undefined || tops.includes(undefined)
+        ? "a deleted table row with borders other than those around it"
+        : kept.map((row, at) => ({ ...row, borderTop: tops[at]!, ...(at === last ? { borderBottom: bottom } : {}) }));
+};
 
 /**
  * Reads a table (`w:tbl`): the width, margins and content of each cell, and the height and borders of each row. Word
@@ -1544,9 +1570,10 @@ const hasNoRowBorders = (geometry: TableGeometry | string): boolean =>
  * A row deleted in a tracked change takes no room, as Word lays it out, nor does a table all of whose rows are deleted,
  * which is read as nothing (`word-watertight-markup.docx` MK6, `word-tracked-changes.docx` MK11a, MK11g). Word sizes the
  * columns by its text, and by deleted text in the other rows, all the same (MK11h to MK11j), so those are kept to size
- * them by. A cell merged down from a deleted row starts the merge, empty, as Word lays it out (MK11c). Whether Word keeps
- * a deleted row's borders, or the space between cells around it, and which rows the parts of a table style for its first
- * and last rows and its bands count, haven't been seen.
+ * them by. A cell merged down from a deleted row starts the merge, empty, as Word lays it out (MK11c). Word draws one
+ * border where deleted rows are, a deleted row's own too, and leaves out the space between cells around them
+ * (`word-tracked-tables.docx` MK14a to MK14h). It applies the parts of a table style for the first and last rows and the
+ * bands by each row's place among all the rows, the deleted ones too (MK14j to MK14l).
  */
 const readTable = (element: XmlObject, reader: Reader): TableBlock | undefined => {
     const children = contentOf(element).filter(isObject);
@@ -1580,19 +1607,16 @@ const readTable = (element: XmlObject, reader: Reader): TableBlock | undefined =
     // Whether Word sizes the columns to their text, or widens them for long words, by the cells' deleted text too
     const sized = !fixed || tableSpacing !== 0;
     const cellReader: Reader = { ...reader, inSizedTable: sized };
-    // Which rows are deleted in a tracked change, and where each of the others is among those laid out
+    // Which rows are deleted in a tracked change
     const deletedFlags = rows.map(
         ({ element: row }) => find(childrenOf(find(contentOf(row).filter(isObject), "w:trPr")), "w:del") !== undefined,
     );
-    const keptCount = deletedFlags.filter((deleted) => !deleted).length;
-    let keptBefore = 0;
-    const keptIndexes = deletedFlags.map((deleted) => (deleted ? keptBefore : keptBefore++));
-    // How many of the first rows are header rows, and how many of those are laid out
+    // How many of the first rows are header rows, and how many of those are deleted
     const headerFlags = rows.map(
         ({ element: row }) => onOff(childrenOf(find(contentOf(row).filter(isObject), "w:trPr")), "w:tblHeader") === true,
     );
     const headerRows = headerFlags.includes(false) ? headerFlags.indexOf(false) : headerFlags.length;
-    const keptHeaderRows = deletedFlags.slice(0, headerRows).filter((deleted) => !deleted).length;
+    const deletedHeaderRows = deletedFlags.slice(0, headerRows).filter((deleted) => deleted).length;
 
     // The parts of the table's style for some of its cells, by their type, from each of its styles in turn
     const conditional = ownStyles.flatMap(({ conditional: given = new Map() }) => [...given]);
@@ -1687,18 +1711,26 @@ const readTable = (element: XmlObject, reader: Reader): TableBlock | undefined =
             // A deleted row's page references with \p are counted, as docx counts them, but for those in its deleted text
             const rowReader = deleted ? sizingReaderOf(cellReader, sized, true) : cellReader;
             const counts = deleted ? JSON.stringify([...rowReader.counters]) : "";
-            // Whether the parts of the table's style for some of its cells apply to the row otherwise than they would with
-            // its deleted rows laid out
-            const shifted =
+            // Word applies the parts of the table's style to each row by its place among all the rows, the deleted ones
+            // too: with the first row deleted, the second isn't the first row, nor is the one before a deleted last row
+            // the last, and the bands count the deleted rows (word-tracked-tables.docx MK14j to MK14l). Whether a header
+            // of several rows counts its deleted rows hasn't been seen, so where the parts that apply to a row would be
+            // others without them, it isn't known which Word applies
+            const unseenHeaderCount =
                 !deleted &&
-                keptCount < rows.length &&
+                deletedHeaderRows > 0 &&
+                headerRows > 1 &&
                 conditional.length > 0 &&
                 rowCells.some((_, cell) => {
                     const typesAt = (at: number, count: number, header: number): string =>
                         JSON.stringify(
                             conditionalTypesOf({ row: at, rows: count, cell, cells: rowCells.length, headerRows: header }, look, bands),
                         );
-                    return typesAt(rowIndex, rows.length, headerRows) !== typesAt(keptIndexes[rowIndex], keptCount, keptHeaderRows);
+                    const deletedBefore = deletedFlags.slice(0, Math.min(rowIndex, headerRows)).filter((flag) => flag).length;
+                    return (
+                        typesAt(rowIndex, rows.length, headerRows) !==
+                        typesAt(rowIndex - deletedBefore, rows.length - deletedHeaderRows, headerRows - deletedHeaderRows)
+                    );
                 });
             // Where each cell's edges are, by the grid column they are at, to check the rows agree on them
             const {
@@ -1785,8 +1817,8 @@ const readTable = (element: XmlObject, reader: Reader): TableBlock | undefined =
                         ? "a table row with table properties of its own"
                         : deleted && (hasAnyOf(rowChildren, REMOVED_NOTES) || JSON.stringify([...rowReader.counters]) !== counts)
                           ? "a list or a note in a deleted table row"
-                          : shifted
-                            ? "a deleted row in a table whose style formats some of its rows"
+                          : unseenHeaderCount
+                            ? "a deleted row in a table's header of several rows, whose style formats some of its rows"
                             : cellsUnsupported;
             return {
                 cells,
@@ -1831,14 +1863,21 @@ const readTable = (element: XmlObject, reader: Reader): TableBlock | undefined =
             laidOut.map(({ cells }) => ({ cells, spacing: followedSpacing })),
             { borders: tableBorders, spacing: followedSpacing },
         );
-    const geometry = geometryOf(kept);
     const spaced = followedSpacing > 0;
-    // Whether Word keeps a deleted row's borders, or the space between cells around it, hasn't been seen, so a table with
-    // deleted rows is laid out only when it would have none with them laid out
-    const bordered =
-        kept.length < read.length && (spaced || !hasNoRowBorders(geometryOf(read)))
-            ? "a deleted row in a table with borders or space between its rows"
-            : undefined;
+    const keptGeometry = geometryOf(kept);
+    // With space between cells, a deleted row takes no room, nor does the space around it (word-tracked-tables.docx
+    // MK14h), but whether Word keeps its borders, or which of the table's the rows around it take, hasn't been seen
+    const bordered = (): boolean =>
+        [tableBorders.top, tableBorders.bottom, tableBorders.insideH].some(isDrawn) ||
+        read.some(({ cells }) => cells.some(({ borders }) => isDrawn(borders.top) || isDrawn(borders.bottom)));
+    const geometry =
+        kept.length === read.length || typeof keptGeometry === "string"
+            ? keptGeometry
+            : !spaced
+              ? withDeletedBorders(keptGeometry, geometryOf(read), deletedFlags)
+              : bordered()
+                ? "a deleted row in a table with borders and space between its cells"
+                : keptGeometry;
     // The rows laid out. The bookmarks before each row and cell start where the text after them does: in the cell after
     // them, or in the next with any text when it has none. Those before a deleted row and its cells, and in its cells,
     // start in the next row laid out. Those after the last, as after a table's last row, aren't placed, so a page
@@ -1945,7 +1984,6 @@ const readTable = (element: XmlObject, reader: Reader): TableBlock | undefined =
         (parts.some((part) => "w:sdt" in part) ? BOUND_CONTROL : undefined) ??
         read.find((row) => row.unsupported !== undefined)?.unsupported ??
         unmerged ??
-        bordered ??
         (fits ? unfitted : unequal ? "a table whose rows give a column different widths" : undefined) ??
         spacingUnsupported ??
         (typeof geometry === "string" ? geometry : undefined) ??

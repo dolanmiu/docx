@@ -3109,44 +3109,161 @@ describe("readDocument", () => {
             expect((table.rows[0].cells[0].blocks[0] as ParagraphBlock).items[0]).to.deep.equal({ type: "marker", name: "deleted" });
         });
 
-        it("should mark a deleted row in a table with borders or space between its rows as unsupported, as Word may keep them", () => {
-            const bordered = "a deleted row in a table with borders or space between its rows";
-            const unsupportedOf = (properties: readonly object[], deletedCell: readonly object[] = []): string | undefined =>
-                (
-                    readBody([
-                        tableOf(
-                            [fixed, ...properties],
-                            row([], cell(p())),
-                            row([deletedRow], { "w:tc": [{ "w:tcPr": deletedCell }, p()] }),
-                            row([], cell(p())),
+        describe("borders around a deleted row", () => {
+            const border = (name: string, eighths = 24, style = "single"): object => ({
+                [name]: { _attr: { "w:val": style, "w:sz": eighths } },
+            });
+            const allOf = (top: number, insideH: number, bottom: number): object => ({
+                "w:tblBorders": [border("w:top", top), border("w:insideH", insideH), border("w:bottom", bottom)],
+            });
+            /** A table of five rows, those of `deleted` (from 1) deleted, with borders of their own when given */
+            const tableWith = (
+                properties: readonly object[],
+                deleted: readonly number[],
+                deletedCell: readonly object[] = [],
+            ): TableBlock =>
+                readBody([
+                    tableOf(
+                        [fixed, ...properties],
+                        ...[1, 2, 3, 4, 5].map((at) =>
+                            deleted.includes(at)
+                                ? row([deletedRow], { "w:tc": [{ "w:tcPr": deletedCell }, p(r(t(`row ${at}`)))] })
+                                : row([], cell(p(r(t(`row ${at}`))))),
                         ),
-                    ]).blocks[0].block as TableBlock
-                ).unsupported;
-            const border = (name: string, style = "single"): object => ({ [name]: { _attr: { "w:val": style, "w:sz": 8 } } });
-            // The table's borders between its rows, the deleted row's own, one in a style not yet followed, and space
-            // between cells
-            expect(unsupportedOf([{ "w:tblBorders": [border("w:insideH")] }])).to.equal(bordered);
-            expect(unsupportedOf([], [{ "w:tcBorders": [border("w:top")] }])).to.equal(bordered);
-            expect(unsupportedOf([], [{ "w:tcBorders": [border("w:top", "apples")] }])).to.equal(bordered);
-            expect(unsupportedOf([{ "w:tblCellSpacing": { _attr: { "w:w": 100, "w:type": "dxa" } } }])).to.equal(bordered);
-            // Borders left and right of the cells, which a deleted row leaves as they are
-            expect(unsupportedOf([{ "w:tblBorders": [border("w:left"), border("w:insideV")] }])).to.equal(undefined);
+                    ),
+                ]).blocks[0].block as TableBlock;
+            const roomsOf = (table: TableBlock): readonly (readonly number[])[] =>
+                table.rows.map(({ borderTop, borderBottom }) => [borderTop, borderBottom]);
+            const ownBorders = (...borders: readonly object[]): readonly object[] => [{ "w:tcBorders": borders }];
+
+            it("should lay out a table whose borders are all alike as though its deleted rows weren't there, as Word does", () => {
+                // word-tracked-tables.docx MK14a to MK14f: borders of 3 points, the third row deleted, the first, the
+                // last, and the second and third
+                const without = [
+                    [3, 0],
+                    [3, 0],
+                    [3, 0],
+                    [3, 3],
+                ];
+                for (const deleted of [[3], [1], [5]]) {
+                    const table = tableWith([allOf(24, 24, 24)], deleted);
+                    expect(table.unsupported).to.equal(undefined);
+                    expect(roomsOf(table)).to.deep.equal(without);
+                }
+                expect(roomsOf(tableWith([allOf(24, 24, 24)], [2, 3]))).to.deep.equal([
+                    [3, 0],
+                    [3, 0],
+                    [3, 3],
+                ]);
+                // Borders left and right of the cells, which a deleted row leaves as they are
+                const sides = tableWith([{ "w:tblBorders": [border("w:left"), border("w:insideV")] }], [3]);
+                expect(sides.unsupported).to.equal(undefined);
+                expect(roomsOf(sides)).to.deep.equal([
+                    [0, 0],
+                    [0, 0],
+                    [0, 0],
+                    [0, 0],
+                ]);
+            });
+
+            it("should keep a deleted row's own borders as one border between the rows around it, as Word does", () => {
+                // word-tracked-tables.docx MK14g: no borders but the deleted third row's, 3 points above and below it,
+                // which leave one border of 3 points between the second and fourth
+                const table = tableWith([], [3], ownBorders(border("w:top"), border("w:bottom")));
+                expect(table.unsupported).to.equal(undefined);
+                expect(roomsOf(table)).to.deep.equal([
+                    [0, 0],
+                    [0, 0],
+                    [3, 0],
+                    [0, 0],
+                ]);
+            });
+
+            it("should mark a deleted row whose borders take other room than those around it as unsupported, as Word's room isn't known", () => {
+                const reason = "a deleted table row with borders other than those around it";
+                // Its own border above it and none below it
+                expect(tableWith([], [3], ownBorders(border("w:top"))).unsupported).to.equal(reason);
+                // At the top and bottom, the table's top or bottom border wider than its borders between rows
+                expect(tableWith([allOf(24, 8, 8)], [1]).unsupported).to.equal(reason);
+                expect(tableWith([allOf(8, 8, 24)], [5]).unsupported).to.equal(reason);
+                // At the top, its own borders, which aren't the table's top border, none
+                expect(tableWith([], [1], ownBorders(border("w:top"), border("w:bottom"))).unsupported).to.equal(reason);
+                // Its own border in a style not yet followed
+                expect(tableWith([], [3], ownBorders(border("w:top", 8, "apples"))).unsupported).to.equal(
+                    "a table border in a style not yet followed",
+                );
+            });
+
+            it("should leave out the space between cells around a deleted row, as Word does, but for a table with borders", () => {
+                // word-tracked-tables.docx MK14h and MK14i: 100 twips between cells, and no borders
+                const spacing = { "w:tblCellSpacing": { _attr: { "w:w": 100, "w:type": "dxa" } } };
+                const table = tableWith([spacing], [3]);
+                expect(table.unsupported).to.equal(undefined);
+                expect(roomsOf(table)).to.deep.equal([
+                    [10, 5],
+                    [5, 5],
+                    [5, 5],
+                    [5, 10],
+                ]);
+                // Whether Word keeps the deleted row's borders, or which of the table's the rows around it take, hasn't
+                // been seen
+                const bordered = "a deleted row in a table with borders and space between its cells";
+                expect(tableWith([spacing, allOf(8, 8, 8)], [3]).unsupported).to.equal(bordered);
+                expect(tableWith([spacing], [3], ownBorders(border("w:bottom"))).unsupported).to.equal(bordered);
+            });
         });
 
-        it("should mark a deleted row in a table whose style formats some rows by where they are as unsupported", () => {
+        describe("a table style around a deleted row", () => {
+            // A table style whose parts are each of a size of their own: its first row 16 points, its last 14, and its
+            // bands of one row 12 and 10
+            const part = (type: string, halfPoints: number): string =>
+                `<w:tblStylePr w:type="${type}"><w:rPr><w:sz w:val="${halfPoints}"/></w:rPr></w:tblStylePr>`;
             const options = {
-                externalStyles: `<w:styles xmlns:w="main"><w:style w:type="table" w:styleId="FirstRow"><w:name w:val="FirstRow"/><w:tblStylePr w:type="firstRow"><w:rPr><w:b/></w:rPr></w:tblStylePr></w:style></w:styles>`,
+                externalStyles: `<w:styles xmlns:w="main"><w:style w:type="table" w:styleId="Parts"><w:name w:val="Parts"/><w:tblPr><w:tblStyleRowBandSize w:val="1"/></w:tblPr>${part("firstRow", 32)}${part("lastRow", 28)}${part("band1Horz", 24)}${part("band2Horz", 20)}</w:style></w:styles>`,
             };
-            const look = { "w:tblLook": { _attr: { "w:firstRow": 1, "w:noHBand": 1, "w:noVBand": 1 } } };
-            const unsupportedOf = (...rows: readonly object[]): string | undefined =>
-                (readBody([tableOf([fixed, value("w:tblStyle", "FirstRow"), look], ...rows)], options).blocks[0].block as TableBlock)
-                    .unsupported;
-            // The first row deleted, so the second would be the first, or not
-            expect(unsupportedOf(row([deletedRow], cell(p())), row([], cell(p())), row([], cell(p())))).to.equal(
-                "a deleted row in a table whose style formats some of its rows",
-            );
-            // The last row deleted, which the style doesn't format apart
-            expect(unsupportedOf(row([], cell(p())), row([], cell(p())), row([deletedRow], cell(p())))).to.equal(undefined);
+            const look = (firstRow: number, lastRow: number, noHBand: number): object => ({
+                "w:tblLook": { _attr: { "w:firstRow": firstRow, "w:lastRow": lastRow, "w:noHBand": noHBand, "w:noVBand": 1 } },
+            });
+            const tableWith = (tableLook: object, ...rows: readonly object[]): TableBlock =>
+                readBody([tableOf([fixed, value("w:tblStyle", "Parts"), tableLook], ...rows)], options).blocks[0].block as TableBlock;
+            /** The size of the text of each row laid out */
+            const sizesOf = (table: TableBlock): readonly (number | undefined)[] =>
+                table.rows.map(({ cells }) => {
+                    const [item] = (cells[0].blocks[0] as ParagraphBlock).items;
+                    return item.type === "text" ? item.font.size : undefined;
+                });
+            const kept = (text: string, ...properties: readonly object[]): object => row(properties, cell(p(r(t(text)))));
+            const deleted = (text: string, ...properties: readonly object[]): object =>
+                row([deletedRow, ...properties], cell(p(r(t(text)))));
+
+            it("should format each row by its place among all the rows, the deleted ones too, as Word does", () => {
+                // word-tracked-tables.docx MK14j: the first row deleted, so the second isn't the first
+                const first = tableWith(look(1, 0, 1), deleted("1"), kept("2"), kept("3"));
+                expect(first.unsupported).to.equal(undefined);
+                expect(sizesOf(first)).to.deep.equal([undefined, undefined]);
+                // MK14k: the last row deleted, so the one before isn't the last
+                const last = tableWith(look(0, 1, 1), kept("1"), kept("2"), deleted("3"));
+                expect(last.unsupported).to.equal(undefined);
+                expect(sizesOf(last)).to.deep.equal([undefined, undefined]);
+                // MK14l: bands of one row, which count the deleted second row
+                const bands = tableWith(look(0, 0, 0), kept("1"), deleted("2"), kept("3"), kept("4"), kept("5"));
+                expect(bands.unsupported).to.equal(undefined);
+                expect(sizesOf(bands)).to.deep.equal([12, 12, 10, 12]);
+            });
+
+            it("should mark a deleted row in a header of several rows as unsupported where it isn't known which parts of the style apply", () => {
+                const header = { "w:tblHeader": {} };
+                // The first of two header rows deleted, with the first row turned off: the second is in the band before
+                // the first with the deleted row counted, and in the first without it
+                expect(tableWith(look(0, 0, 0), deleted("1", header), kept("2", header), kept("3"), kept("4")).unsupported).to.equal(
+                    "a deleted row in a table's header of several rows, whose style formats some of its rows",
+                );
+                // With the first row turned on, the rows are formatted alike either way: the header row left is the first row,
+                // and the bands start below it
+                const alike = tableWith(look(1, 0, 0), deleted("1", header), kept("2", header), kept("3"), kept("4"));
+                expect(alike.unsupported).to.equal(undefined);
+                expect(sizesOf(alike)).to.deep.equal([16, 12, 10]);
+            });
         });
 
         it("should start a merge in a cell merged down from a deleted row, as Word lays it out when it is empty", () => {
