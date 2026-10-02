@@ -294,8 +294,6 @@ type Snapshot = {
     readonly pageNumber: number;
     readonly restart: number | undefined;
     readonly top: number;
-    readonly pageContinuation: number;
-    readonly continuedEndnotes: boolean;
     readonly pageBottom: number;
     readonly position: number;
     readonly column: number;
@@ -919,10 +917,6 @@ export const paginate = (
     // Where the page's body starts and ends, where its columns end, and where the next line goes, in points from the top
     // of the page
     let top = 0;
-    // The room the endnotes' continuation separator takes at the top of the page, which is in `top`, and whether the page
-    // is one after the first the endnotes are on
-    let pageContinuation = 0;
-    let continuedEndnotes = false;
     let pageBottom = 0;
     let bottom = 0;
     let position = 0;
@@ -1000,8 +994,6 @@ export const paginate = (
         pageNumber,
         restart,
         top,
-        pageContinuation,
-        continuedEndnotes,
         pageBottom,
         position,
         column,
@@ -1042,8 +1034,6 @@ export const paginate = (
             pageNumber,
             restart,
             top,
-            pageContinuation,
-            continuedEndnotes,
             pageBottom,
             position,
             column,
@@ -1184,19 +1174,16 @@ export const paginate = (
         placements.some((placement) => (placement.type === "line" || placement.type === "row") && placement.block >= firstEndnote);
 
     /**
-     * The room the endnotes' continuation separator takes above them: its paragraphs, without the space after the last,
-     * which Word leaves out (`word-watertight-sections.docx` SC4)
+     * The room the endnotes' continuation separator takes above them, which is read as Word lays it out, a line tall
+     * whatever its own formatting (see `readEndnoteSeparator`)
      */
     const continuationHeight = (): number => {
-        const parts = stackParts(endnoteContinuationSeparator, textWidth(), false);
-        return heightOf(
-            parts.map((part, index) => (index === parts.length - 1 ? { ...part, after: 0 } : part)),
-            true,
-        );
+        const unsupported = endnoteContinuationSeparator.find((block) => block.unsupported !== undefined)?.unsupported;
+        if (unsupported !== undefined) {
+            throw new Unsupported(unsupported);
+        }
+        return stackHeight(endnoteContinuationSeparator, textWidth(), false);
     };
-
-    /** Where the body starts on the next page: where it does on this one, below the continuation separator for endnotes */
-    const nextTop = (): number => top - pageContinuation + (endnotesGoOn() ? continuationHeight() : 0);
 
     /** Whether a line or row of the section being laid out is on the page */
     const sectionOnPage = (): boolean =>
@@ -1225,12 +1212,6 @@ export const paginate = (
             throw new Unsupported("text after a line whose footnote starts on the next page");
         }
         deferred = undefined;
-        if (continuedEndnotes) {
-            // Word put a line more below the continuation separator than the page has room for by the heights of the lines,
-            // 6.6 twips past the margin (`word-watertight-sections.docx` SC4), where it puts none past it on the first page
-            // of endnotes or of text, and how far past the margin it puts one isn't known
-            throw new Unsupported("endnotes that fill a page after the first they are on");
-        }
         finishPage();
         const current = section();
         // A continuous section none of which is on the page it started on, as its first line didn't fit there, starts on
@@ -1271,10 +1252,17 @@ export const paginate = (
         if (endnotesOn && current.columns.length > 1) {
             throw new Unsupported("endnotes continued in columns");
         }
-        continuedEndnotes = endnotesOn;
-        pageContinuation = endnotesOn ? continuationHeight() : 0;
-        top += pageContinuation;
-        pageBottom = current.pageHeight - (current.marginBottom < 0 ? -current.marginBottom : Math.max(current.marginBottom, footerTop));
+        const continuation = endnotesOn ? continuationHeight() : 0;
+        top += continuation;
+        // Below it, Word puts as many lines of endnotes as fit on the page without it, so they can go past the margin by as
+        // much as it takes: 48 lines exactly 288 twips tall below one 268.55 tall, where 47 end above the margin, and a line
+        // of 183 and 47 of 288 (`word-watertight-endnotes1.docx` to `3`), as 51 lines of Calibri 11 fit below it as they
+        // do on a page of text (`word-watertight-sections.docx` SC4). No footnote goes on to such a page, as one only goes
+        // on from a line of the body, which ends its page
+        pageBottom =
+            current.pageHeight -
+            (current.marginBottom < 0 ? -current.marginBottom : Math.max(current.marginBottom, footerTop)) +
+            continuation;
         position = top;
         column = 0;
         columnTop = top;
@@ -3268,7 +3256,8 @@ export const paginate = (
                 const fitsHere = here.fitsWith(leastNoteRoom(here.all));
                 // What is kept together moves to the next column, or to a new page when the columns of this one start too
                 // low for it, unless it is too tall for those too. The next column ends above the page's footnotes with
-                // theirs, and a new page has the rest of a footnote continued from this one. What is kept is broken into
+                // theirs, and a new page has the rest of a footnote continued from this one, and as much room as this one
+                // otherwise, as the continuation separator above endnotes takes none from them. What is kept is broken into
                 // lines at the width of the column it goes in
                 const { columns } = columnsSection();
                 const fitsBelow = (from: number, area: number, below: number): boolean =>
@@ -3281,7 +3270,7 @@ export const paginate = (
                     nextColumn();
                 } else if (
                     !fitsHere &&
-                    fitsBelow(nextTop(), leastAreaOf(here.notes, carried, columns.length > 1 ? columns : undefined), columns[0])
+                    fitsBelow(top, leastAreaOf(here.notes, carried, columns.length > 1 ? columns : undefined), columns[0])
                 ) {
                     startPage();
                 }

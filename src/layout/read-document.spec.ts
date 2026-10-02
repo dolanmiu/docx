@@ -599,6 +599,81 @@ describe("readDocument", () => {
             expect(content.endnoteContinuationSeparator).to.have.length(1);
             expect(readBody([]).endnoteContinuationSeparator).to.deep.equal([]);
         });
+
+        it("should read the endnotes' separators a line of their style's text, whatever their own formatting, as Word lays them out", () => {
+            const sized = rPr({ "w:sz": { _attr: { "w:val": 40 } } });
+            /** A document whose line refers to an endnote, with the separators given */
+            const withSeparators = (separator: readonly object[], continuation: readonly object[]): DocumentContent =>
+                readContent(
+                    { "w:body": [p(r({ "w:endnoteReference": { _attr: { "w:id": 1 } } })), p()] },
+                    {
+                        styles: {
+                            ...WORD_DEFAULT_STYLES,
+                            styles: new Map([
+                                ...WORD_DEFAULT_STYLES.styles,
+                                ["Large", { type: "paragraph", run: { size: 20 }, paragraph: { spaceBefore: 30 } }],
+                            ]),
+                        },
+                        headersAndFooters: new Map(),
+                        endnotes: {
+                            "w:endnotes": [
+                                ...(separator.length > 0
+                                    ? [{ "w:endnote": [{ _attr: { "w:type": "separator", "w:id": -1 } }, ...separator] }]
+                                    : []),
+                                { "w:endnote": [{ _attr: { "w:type": "continuationSeparator", "w:id": 0 } }, ...continuation] },
+                                { "w:endnote": [{ _attr: { "w:id": 1 } }, p(r(t("One")))] },
+                            ],
+                        },
+                    },
+                );
+            // 400 before and exactly 1100 tall, and double spaced, in 20 points, all left out, as Word left them out
+            // (`word-continued-endnotes.docx` CE3 to CE5)
+            const formatted = withSeparators(
+                [
+                    p(
+                        pPr({ "w:spacing": { _attr: { "w:before": 400, "w:line": 1100, "w:lineRule": "exact" } } }, sized),
+                        r(sized, { "w:separator": {} }),
+                    ),
+                ],
+                [
+                    p(
+                        pPr({ "w:spacing": { _attr: { "w:line": 480, "w:lineRule": "auto" } } }, sized),
+                        r(sized, { "w:continuationSeparator": {} }),
+                    ),
+                ],
+            );
+            const plain = {
+                type: "paragraph",
+                items: [],
+                format: {},
+                tabStops: [],
+                markFont: paragraphOf(formatted, 1).markFont,
+                style: "Normal",
+            };
+            expect(formatted.endnotes[0]).to.deep.equal(plain);
+            expect(formatted.endnoteContinuationSeparator).to.deep.equal([plain]);
+            // In a style of their own, its text, in a content control too
+            const styled = withSeparators([p(pPr(value("w:pStyle", "Large")), r(sized, { "w:separator": {} }))], []);
+            expect(styled.endnotes[0]).to.deep.include({ style: "Large", format: {}, markFont: { size: 20 } });
+            const controlled = withSeparators([{ "w:sdt": [{ "w:sdtContent": [p(pPr(value("w:pStyle", "Large")))] }] }], []);
+            expect(controlled.endnotes[0]).to.deep.include({ style: "Large", markFont: { size: 20 } });
+            // Its bookmarks kept, to be placed where it is
+            const bookmarked = withSeparators(
+                [p({ "w:bookmarkStart": { _attr: { "w:id": 1, "w:name": "above" } } }, r({ "w:separator": {} }))],
+                [],
+            );
+            expect((bookmarked.endnotes[0] as ParagraphBlock).items).to.deep.equal([{ type: "marker", name: "above" }]);
+            // One with an equation in it stops as an equation anywhere does
+            expect(withSeparators([p({ "m:oMath": [] })], []).endnotes[0].unsupported).to.equal("an equation");
+            // One with text in it, more than a paragraph or a table hasn't been seen
+            const unknown = "an endnote separator with text in it, or of more than a paragraph";
+            expect(withSeparators([p(r(t("Endnotes")))], []).endnotes[0].unsupported).to.equal(unknown);
+            expect(withSeparators([p(), p()], []).endnotes[0].unsupported).to.equal(unknown);
+            expect(withSeparators([{ "w:tbl": [{ "w:tr": [{ "w:tc": [p()] }] }] }], []).endnotes[0].unsupported).to.equal(unknown);
+            // None, when the endnotes have none, or it is empty
+            expect(styled.endnoteContinuationSeparator).to.deep.equal([]);
+            expect(withSeparators([], []).endnotes).to.have.length(1);
+        });
     });
 
     describe("numbering footnotes and endnotes", () => {

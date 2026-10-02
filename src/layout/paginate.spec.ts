@@ -5037,10 +5037,10 @@ describe("paginate", () => {
             ]);
         });
 
-        it("should put the continuation separator above the endnotes on each page after the first, without its space after, as Word does", () => {
+        it("should put the continuation separator above the endnotes on each page after the first, and fill the page below it, as Word does", () => {
             const SEPARATOR: ParagraphBlock = { type: "paragraph", items: [], format: {}, tabStops: [], markFont: {} };
-            // A line tall, and its space after left out (`word-watertight-sections.docx` SC4)
-            const CONTINUATION: ParagraphBlock = { ...SEPARATOR, format: { spaceAfter: 20 } };
+            // A line tall, as it is read (`readEndnoteSeparator`)
+            const CONTINUATION = SEPARATOR;
             /** The endnotes' lines' tops on each page, after a line of text, with endnotes of these numbers of lines */
             const endnoteTops = (
                 lengths: readonly number[],
@@ -5071,13 +5071,24 @@ describe("paginate", () => {
                 [30, 40, 50, 60, 70],
                 [20, 30, 40, 50],
             ]);
-            // A continuation separator of two paragraphs keeps the space after the first
-            const twoParagraphs = [{ ...SEPARATOR, format: { spaceAfter: 10 } }, CONTINUATION];
-            expect(endnoteTops([5, 3], twoParagraphs).tops[1]).to.deep.equal([40, 50, 60]);
-            // Word put a line more below it than the page had room for, and how far past the margin it puts one isn't known
-            const filled = endnoteTops([5, 8]);
-            expect(filled.stoppedAt).to.equal("endnotes that fill a page after the first they are on");
-            expect(filled.tops[1]).to.deep.equal([20, 30, 40, 50, 60, 70]);
+            // A taller one, in larger text, pushes them down
+            expect(endnoteTops([5, 3], [{ ...CONTINUATION, markFont: { size: 20 } }]).tops[1]).to.deep.equal([30, 40, 50]);
+            // One Word hasn't been seen laying out stops the layout where it would go
+            const unknown = endnoteTops(
+                [5, 3],
+                [{ ...CONTINUATION, unsupported: "an endnote separator with text in it, or of more than a paragraph" }],
+            );
+            expect(unknown.stoppedAt).to.equal("an endnote separator with text in it, or of more than a paragraph");
+            expect(unknown.tops[1]).to.deep.equal([]);
+            // Below it, as many lines as fit on a page without it, the last going past the margin by as much as it takes
+            // (`word-watertight-endnotes1.docx` to `3`)
+            const filled = endnoteTops([5, 16]);
+            expect(filled.stoppedAt).to.equal(undefined);
+            expect(filled.tops.slice(1)).to.deep.equal([
+                [20, 30, 40, 50, 60, 70, 80],
+                [20, 30, 40, 50, 60, 70, 80],
+                [20, 30],
+            ]);
         });
 
         it("should keep endnote paragraphs with the next on a page below the continuation separator", () => {
@@ -5094,6 +5105,20 @@ describe("paginate", () => {
             expect(pages[1].endnotes[0].content.map((block) => [block.index, linesOf([block])[0][2]])).to.deep.equal([
                 [1, 20],
                 [2, 30],
+            ]);
+            // With a paragraph kept together after them as tall as a page with kept, they still go there, as the
+            // continuation separator takes no room from the endnotes below it
+            const together = [paragraph("p", 3), paragraph("kept", 1, { keepNext: true }), paragraph("m", 6, { keepLines: true })];
+            const moved = pagesLaidOut(
+                document([paragraph("a", 1)], {
+                    endnotes: [SEPARATOR, ...together],
+                    endnoteContinuationSeparator: [SEPARATOR],
+                    endnoteNumbers: new Map<Block, string>(together.map((block) => [block, "i"])),
+                }),
+            );
+            expect(moved[1].endnotes[0].content.map((block) => linesOf([block]).map(([, , y]) => y))).to.deep.equal([
+                [20],
+                [30, 40, 50, 60, 70, 80],
             ]);
         });
 
