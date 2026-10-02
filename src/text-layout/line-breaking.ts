@@ -19,10 +19,12 @@ import {
     type ParagraphFormat,
     type TextBorder,
     type TextFont,
+    isGridCharacter,
     isKerned,
     measureDescent,
     measureLineHeight,
     measureTextWidth,
+    takesNoRoom,
     unknownCharacter,
     unknownFont,
 } from "./text-width";
@@ -131,6 +133,21 @@ export type Hyphenation = {
 };
 
 /**
+ * How a section's document grid (`w:docGrid`) lays out a paragraph's lines. Lengths are in points.
+ */
+export type TextGrid = {
+    /**
+     * How far apart the grid's lines are, when the paragraph's lines are on them: each line takes as many of them as it
+     * needs, or as its line spacing gives it, with its text in the middle
+     */
+    readonly linePitch?: number;
+    /** What a grid of lines and characters adds after each character of text on it (`w:charSpace`, over 4096) */
+    readonly characterSpace?: number;
+    /** How wide each cell of a grid that snaps to characters is */
+    readonly characterPitch?: number;
+};
+
+/**
  * How a paragraph's lines are laid out.
  */
 export type LineLayoutOptions = {
@@ -159,6 +176,8 @@ export type LineLayoutOptions = {
     readonly numberAlignment?: "center" | "right";
     /** The document's automatic hyphenation, when it has it on. A paragraph that suppresses it is laid out without */
     readonly hyphenation?: Hyphenation;
+    /** The document grid of the paragraph's section, when it has one */
+    readonly grid?: TextGrid;
 };
 
 /**
@@ -593,6 +612,42 @@ const heightOf = (given: Heights, spacing: LineSpacing | undefined): Pick<LaidOu
     return { height: natural + spacingBelow, ...(spacingBelow > 0 ? { spacingBelow } : {}) };
 };
 
+/**
+ * How tall a line on a document grid's lines is: as many of them as its own height needs, from the first fraction of a
+ * twip more, and with multiple line spacing as many times one of them as the spacing says, when that is taller. So 18
+ * lines of 360 twips, and at least 18 points, hold a line of Times New Roman of up to 15.5 points, and from 16 points it
+ * takes 2, and 1.08 lines are 388.8 twips (scripts/layout-probes/word-grid.ts G1, G3, G4). At least a height is that
+ * height, when it is taller, and exact spacing is as it is without the grid. Its text is in the middle of the room,
+ * and at least a height's in the middle of the grid's lines it takes, so the room below the text can go below the bottom
+ * of the page, as multiple spacing's can: a line of Times New Roman 8 that ends 82 twips below it is on the page, and one
+ * of Times New Roman 12 that would end there isn't (G1, G14a). Emphasis marks take their room in the line before it is
+ * put on the grid (G11d), with line spacing in a way Word hasn't shown
+ */
+const gridHeightOf = (
+    given: Heights,
+    spacing: LineSpacing | undefined,
+    pitch: number,
+): Pick<LaidOutLine, "height" | "spacingBelow" | "unsupported"> => {
+    if (spacing?.rule === "exact") {
+        return heightOf(given, spacing);
+    }
+    const own = heightOf(given, undefined);
+    const single = spacing === undefined || (spacing.rule === "multiple" && spacing.multiple === 1);
+    const unsupported =
+        given.marks !== undefined && !single
+            ? "emphasis marks on a line with line spacing on a document grid"
+            : (own.unsupported ?? heightOf(given, spacing).unsupported);
+    const gridded = Math.max(1, Math.ceil(own.height / pitch - GRID_ROUNDING)) * pitch;
+    const height =
+        spacing === undefined ? gridded : Math.max(spacing.rule === "multiple" ? spacing.multiple * pitch : spacing.height, gridded);
+    const below = ((spacing?.rule === "atLeast" ? gridded : height) - own.height) / 2;
+    return { height, ...(below > 0 ? { spacingBelow: below } : {}), ...(unsupported === undefined ? {} : { unsupported }) };
+};
+
+// How far short of a whole number of a grid's lines a line's height can be and take only that many, for the rounding of
+// its sum
+const GRID_ROUNDING = 1e-9;
+
 /** Whether a line has nothing on it but a list number and what follows it */
 const onlyNumber = ({ ascent, descent, tallest, picture, listNumber }: Heights): boolean =>
     listNumber !== undefined && ascent === 0 && descent === 0 && tallest === 0 && picture === 0;
@@ -648,6 +703,11 @@ type LineState = {
     readonly first: boolean;
     /** Whether it has a tab to one of the paragraph's stops past its right indent, after which it ends at the margin */
     readonly pastIndent?: boolean;
+    /**
+     * On a grid that snaps to characters, where the text that isn't Chinese, Japanese or Korean at the end of the line
+     * started, and how wide it is, which takes as many of the grid's cells as it needs
+     */
+    readonly latin?: { readonly start: number; readonly width: number };
     /** Why where its text goes isn't known, when it isn't */
     readonly unsupported?: string;
 };
@@ -945,6 +1005,94 @@ export const measureContentWidths = (
     return { min, max, ...(min > whole + TOLERANCE ? { hyphenated: true } : {}) };
 };
 
+/** What a character is next to another for the space a grid of lines and characters puts between them */
+const kindOnGrid = (character: string): "grid" | "letter" | "space" | "other" | undefined =>
+    isGridCharacter(character)
+        ? "grid"
+        : takesNoRoom(character)
+          ? undefined
+          : /\p{L}/u.test(character)
+            ? "letter"
+            : /\s/u.test(character)
+              ? "space"
+              : "other";
+
+/**
+ * A paragraph's content on a grid of lines and characters, which adds its space after each character of the text on it,
+ * Chinese, Japanese and Korean or not, and half-width ones too: 39 ideographs of MS Mincho 10.5 on a line of 9026 twips,
+ * 230 apart, rather than 42, and 10 i's of Times New Roman 10.5 763 twips from the first to the end of the last, rather
+ * than 583. Between a Chinese, Japanese or Korean character and a Latin letter, either way, it adds a quarter of the first's
+ * size and that space more: 57 twips at 10.5 points and a point more, and 50 at a third of a point less, but nothing next
+ * to a space or a note's number (scripts/layout-probes/word-grid.ts CA1 to CA4, CA9, CB1 to CB4, word-grid3.ts H4, H5). A
+ * run's own space after each character adds to it (H9), and text in a run that doesn't snap to the grid is as it is
+ * without it (CA5, CB5). Where Word puts a space between those characters and numbers or punctuation, or text of another
+ * size, isn't known
+ */
+const spacedOnGrid = (
+    items: readonly InlineItem[],
+    space: number,
+): { readonly items: readonly InlineItem[]; readonly unsupported?: string } => {
+    // eslint-disable-next-line functional/prefer-readonly-type
+    const spaced: InlineItem[] = [];
+    let unsupported: string | undefined;
+    // The last character, its item in what is laid out, and its kind and size
+    let last: { readonly index: number; readonly kind: "grid" | "letter" | "space" | "other"; readonly size: number } | undefined;
+    for (const item of items) {
+        if (item.type !== "text" || item.font.snapToGrid === false) {
+            // eslint-disable-next-line functional/immutable-data
+            spaced.push(item);
+            last = item.type === "marker" ? last : undefined;
+            continue;
+        }
+        const size = item.font.size ?? DEFAULT_FONT_SIZE;
+        const font = { ...item.font, characterSpacing: (item.font.characterSpacing ?? 0) + space };
+        for (const character of item.text) {
+            // Text drawn smaller than its line, such as a note's number in superscript, has no space before it either: the
+            // reference after "H5 body" and 10 ideographs is where they end (word-grid3.ts H5)
+            const kind = item.font.lineSize === undefined ? kindOnGrid(character) : "space";
+            const boundary =
+                kind !== undefined &&
+                kind !== "space" &&
+                last !== undefined &&
+                last.kind !== "space" &&
+                (last.kind === "grid") !== (kind === "grid");
+            if (boundary && (last!.kind === "other" || kind === "other" || last!.size !== size)) {
+                unsupported ??= "a number, punctuation or text of another size next to an East Asian character on a grid of characters";
+            }
+            if (boundary) {
+                // The space goes after the character before, the last of its item, which it is split from
+                const before = spaced[last!.index] as Extract<InlineItem, { readonly type: "text" }>;
+                const characters = [...before.text];
+                const eastAsianSize = last!.kind === "grid" ? last!.size : size;
+                // eslint-disable-next-line functional/immutable-data
+                spaced.splice(
+                    last!.index,
+                    1,
+                    { ...before, text: characters.slice(0, -1).join("") },
+                    {
+                        ...before,
+                        text: characters[characters.length - 1],
+                        font: { ...before.font, characterSpacing: before.font.characterSpacing! + (eastAsianSize + space) / 4 },
+                    },
+                );
+            }
+            const current = spaced[spaced.length - 1];
+            if (!boundary && current?.type === "text" && current.font === font) {
+                // eslint-disable-next-line functional/immutable-data
+                spaced[spaced.length - 1] = { ...current, text: current.text + character };
+            } else {
+                // eslint-disable-next-line functional/immutable-data
+                spaced.push({ ...item, text: character, font });
+            }
+            last = kind === undefined ? last && { ...last, index: spaced.length - 1 } : { index: spaced.length - 1, kind, size };
+        }
+    }
+    return {
+        items: spaced.filter((item) => item.type !== "text" || item.text.length > 0),
+        ...(unsupported === undefined ? {} : { unsupported }),
+    };
+};
+
 /**
  * Breaks a paragraph into lines, as Word breaks it.
  *
@@ -962,9 +1110,51 @@ export const layoutLines = (
         breakRules,
         numberAlignment,
         hyphenation,
+        grid = {},
     }: LineLayoutOptions,
 ): readonly LaidOutLine[] => {
     const { indentLeft = 0, indentRight = 0, firstLineIndent = 0, lineSpacing, alignment } = format;
+    const { linePitch, characterSpace, characterPitch: cell } = grid;
+    // A grid of lines and characters adds its space after each character of the text on it, Chinese, Japanese and Korean
+    // or not, and half-width ones too: 39 ideographs of MS Mincho 10.5 on a line of 9026 twips, 230 apart, rather than 42,
+    // and 10 i's of Times New Roman 10.5 763 twips from the first to the end of the last, rather than 583. Text in a run
+    // that doesn't snap to the grid is as it is without it (scripts/layout-probes/word-grid.ts CA1 to CA5, CA9, CB1 to
+    // CB5)
+    const spaced = characterSpace === undefined ? undefined : spacedOnGrid(items, characterSpace);
+    const content = spaced?.items ?? items;
+    /** The width of the cells a width of text takes on a grid that snaps to characters */
+    const cellsOf = (textWidth: number): number => (textWidth <= 0 ? 0 : Math.max(1, Math.ceil(textWidth / cell! - GRID_ROUNDING)) * cell!);
+    /**
+     * Where a line goes on to after pieces of text, on a grid that snaps to characters, with what of it isn't Chinese,
+     * Japanese or Korean. Each of those characters takes as many of the grid's cells as it is wide, and the other text
+     * between them on a line as many as it needs, together: 19 ideographs of MS Mincho 12 to a line of 39 cells of 231.44
+     * twips, and "abc de" between ideographs 3 cells (scripts/layout-probes/word-grid.ts CC1 to CC4, CD1 to CD4). Text in a
+     * run that doesn't snap to the grid is as wide as it is (CC5)
+     */
+    const snapped = (state: Pick<LineState, "position" | "latin">, pieces: readonly Piece[]): Pick<LineState, "position" | "latin"> => {
+        let { position, latin } = state;
+        for (const { text, font } of pieces) {
+            for (const character of text) {
+                const characterWidth = measurer.measureWidth(character, font);
+                if (font.snapToGrid === false) {
+                    position += characterWidth;
+                    latin = undefined;
+                } else if (isGridCharacter(character)) {
+                    position = (latin ? latin.start + cellsOf(latin.width) : position) + cellsOf(characterWidth);
+                    latin = undefined;
+                } else {
+                    latin = { start: latin?.start ?? position, width: (latin?.width ?? 0) + characterWidth };
+                    position = latin.start + cellsOf(latin.width);
+                }
+            }
+        }
+        return { position, latin };
+    };
+    // Where each line starts is on the grid's cells, with indents of a whole number of them
+    const offCells =
+        cell !== undefined &&
+        [indentLeft, indentLeft + firstLineIndent].some((start) => Math.abs(start / cell - Math.round(start / cell)) > TOLERANCE / cell);
+    const unknownOnGrid = offCells ? "an indent of part of a character on a grid that snaps to characters" : spaced?.unsupported;
     // How tall a line as tall as the paragraph's mark is, measured only where it counts, as a layout stops at a mark in a
     // font the measurer doesn't know
     let markHeight: number | undefined;
@@ -1009,7 +1199,7 @@ export const layoutLines = (
     const squeezes =
         alignment === "justified" || alignment === "distributed" || alignment === "thaiDistributed" || alignment === "lowKashida";
     const { stops, firstLineStops } = stopsOf(tabStops, format);
-    const parts = segmentsOf(items, rulesOf(format, breakRules));
+    const parts = segmentsOf(content, rulesOf(format, breakRules));
     // A page break at the end of a paragraph has the paragraph's mark on its line, as Word lays it out from Word 2013,
     // rather than on a line of its own on the next page. A column break's mark is on a line at the top of the next column,
     // in Word and LibreOffice
@@ -1112,9 +1302,9 @@ export const layoutLines = (
             : undefined;
     };
     // A list number that isn't left-aligned starts before its line does, which its text is measured from
-    const beforeStart = numberShift(items, numberAlignment, measurer);
+    const beforeStart = numberShift(content, numberAlignment, measurer);
     // Whether the next tab is the one after a right-aligned list number
-    let numberTab = numberAlignment === "right" && items[1]?.type === "tab";
+    let numberTab = numberAlignment === "right" && content[1]?.type === "tab";
     let first = true;
     for (const [segmentIndex, { tokens, end }] of segments.entries()) {
         const isLast = segmentIndex === segments.length - 1;
@@ -1134,12 +1324,14 @@ export const layoutLines = (
             pending: [],
             started: false,
             first,
+            ...(unknownOnGrid === undefined ? {} : { unsupported: unknownOnGrid }),
         };
         const finish = (state: LineState, breakAfter?: LaidOutLine["breakAfter"]): void => {
             // Spaces add nothing to the height of a line with no text on it, which is as tall as its mark, as Word and
             // LibreOffice lay it out
             const heights = state.started ? state.heights : withFont(NOTHING, emptyLineFont, measurer);
-            const { unsupported: unknownHeight, ...height } = heightOf(heights, lineSpacing);
+            const { unsupported: unknownHeight, ...height } =
+                linePitch === undefined ? heightOf(heights, lineSpacing) : gridHeightOf(heights, lineSpacing, linePitch);
             const unsupported = state.unknown
                 ? "a justified line that only fits squeezed at an en, em or ideographic space"
                 : (state.unsupported ??
@@ -1199,7 +1391,14 @@ export const layoutLines = (
 
         /** Puts a word or picture on the line, or on the next, or breaks it across lines */
         const placeWord = (token: Extract<Token, { readonly type: "word" | "box" }>): void => {
-            const tokenWidth = token.type === "box" ? token.width : widthOf(token.pieces, measurer);
+            /** How wide the token is on the line, which on a grid that snaps to characters depends on the text before it */
+            const widthOn = (state: LineState): number =>
+                token.type === "box"
+                    ? token.width
+                    : cell === undefined
+                      ? widthOf(token.pieces, measurer)
+                      : snapped(state, token.pieces).position - state.position;
+            let tokenWidth = widthOn(line);
             // A word in a border starts its box, unless it goes on from the text before it, and on the next line it starts
             // it again: a bordered run that goes on to the next line starts it 90 twips in, for a border of half a point 4
             // points away (scripts/layout-probes/word-run-formatting.ts RF7n). A line has room for its box to end after its
@@ -1209,6 +1408,14 @@ export const layoutLines = (
             const boxEnd = token.type === "word" ? (lastBorder(token.pieces)?.room ?? 0) : 0;
             const needs = leadOf(line) + tokenWidth + boxEnd;
             const hyphens = token.type === "word" ? (token.hyphens ?? []).filter(({ at }) => at > 0 && at < lengthOf(token.pieces)) : [];
+            // Where Word breaks a word at a soft hyphen on a grid that snaps to characters, and where a line beside a drawing
+            // starts on one, haven't been seen
+            if (cell !== undefined && (hyphens.length > 0 || roomOf(lines.length) !== undefined)) {
+                line = {
+                    ...line,
+                    unsupported: line.unsupported ?? "a soft hyphen, or a line beside a drawing, on a grid that snaps to characters",
+                };
+            }
             skipRooms(needs, hyphens.length > 0);
             // A justified line Word can squeeze the word onto takes it whole, as it does a word without soft hyphens: at its
             // spaces 3% to 20% narrower (scripts/layout-probes/word-breaks-and-tabs.ts SH1a to SH1e)
@@ -1251,11 +1458,15 @@ export const layoutLines = (
             // Whether Word squeezes the spaces of a justified line with a box on it to fit one more word, and by how much,
             // isn't known
             const squeezable = overflows && !line.unknown && squeezesIn(line, needs);
+            // Word hasn't been seen squeezing a line on a grid that snaps to characters
+            if (squeezable && cell !== undefined) {
+                line = { ...line, unsupported: "a justified line on a grid that snaps to characters that only fits squeezed" };
+            }
             const boxed = line.boxed === true || (token.type === "word" && token.pieces.some(({ font }) => font.border !== undefined));
             if (squeezable && boxed) {
                 line = { ...line, unsupported: "a justified line with text in a border that only fits squeezed" };
             }
-            const squeezed = squeezable && !boxed;
+            const squeezed = squeezable && !boxed && cell === undefined;
             // Word squeezes a word onto a justified line rather than hyphenate it (HY4b), but hasn't been seen choosing between
             // them on a distributed line, whose letters it spreads too
             if (overflows && (!squeezed || alignment !== "justified") && token.type === "word" && mayHyphenate(line, token, leadOf(line))) {
@@ -1264,8 +1475,12 @@ export const layoutLines = (
             if (overflows && !squeezed) {
                 line = wrap(line);
                 skipRooms(needs, hyphens.length > 0);
+                tokenWidth = widthOn(line);
             }
             line = { ...place(line), position: line.position + leadOf(line) };
+            if (cell !== undefined && token.type === "word" && line.position + tokenWidth > endOf(line) + TOLERANCE) {
+                line = { ...line, unsupported: "a word longer than its line on a grid that snaps to characters" };
+            }
             if (
                 token.type === "word" &&
                 !squeezed &&
@@ -1305,6 +1520,7 @@ export const layoutLines = (
                 const text = token.type === "word" ? textOf(token.pieces) : "";
                 line = {
                     ...line,
+                    ...(cell !== undefined && token.type === "word" ? { latin: snapped(line, token.pieces).latin } : {}),
                     position: line.position + tokenWidth,
                     end: line.position + tokenWidth,
                     text: line.text + text,
@@ -1380,7 +1596,9 @@ export const layoutLines = (
                 const spaces = widthOf(token.pieces, measurer);
                 line = {
                     ...line,
-                    position: line.position + roomBetween(line.border, firstBorder(token.pieces)) + spaces,
+                    ...(cell === undefined
+                        ? { position: line.position + roomBetween(line.border, firstBorder(token.pieces)) + spaces }
+                        : snapped(line, token.pieces)),
                     text: line.text + textOf(token.pieces),
                     spaces: line.started ? line.spaces + spaces : 0,
                     spaceCount: line.started ? line.spaceCount + lengthOf(token.pieces) : 0,
@@ -1395,6 +1613,9 @@ export const layoutLines = (
                 token.type === "word"
                     ? line
                     : { ...line, position: line.position + roomBetween(line.border, undefined), border: undefined };
+            if (cell !== undefined && token.type !== "word") {
+                line = { ...line, latin: undefined, unsupported: "a tab or picture on a grid that snaps to characters" };
+            }
             if (token.type === "tab") {
                 const numbered = numberTab ? numberTabStop(line.position, firstLineStops, format, defaultTabStop, limitOf()) : undefined;
                 numberTab = false;

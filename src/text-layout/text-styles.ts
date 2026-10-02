@@ -29,7 +29,7 @@ export type XmlObject = Readonly<Record<string, unknown>>;
 /**
  * Run formatting that changes how much room text takes up.
  */
-export type RunFormat = Omit<TextFont, "size" | "lineSize" | "raise" | "border" | "emphasis"> & {
+export type RunFormat = Omit<TextFont, "size" | "lineSize" | "raise" | "border" | "emphasis" | "snapToGrid"> & {
     /** Size in points */
     readonly size?: number;
     readonly allCaps?: boolean;
@@ -44,6 +44,8 @@ export type RunFormat = Omit<TextFont, "size" | "lineSize" | "raise" | "border" 
     readonly border?: ParagraphBorder;
     /** Hidden text takes up no room */
     readonly hidden?: boolean;
+    /** Whether the run is laid out on the characters of its section's document grid (`w:snapToGrid`). Default is on */
+    readonly snapToGrid?: boolean;
     /** The font of Chinese, Japanese and Korean text (`w:eastAsia`) */
     readonly eastAsiaFont?: string;
     /**
@@ -346,6 +348,7 @@ export const readRunFormat = (element: unknown, themeFonts: ThemeFonts): RunForm
         position: pointsOf(attributesOf(find(children, "w:position"))["w:val"], 2),
         emphasisMark: valueOf(children, "w:em"),
         border: readBorder(find(children, "w:bdr")),
+        snapToGrid: onOff(children, "w:snapToGrid"),
     });
 };
 
@@ -476,6 +479,7 @@ export const readParagraphFormat = (element: unknown): ParagraphFormat => {
         kinsoku: onOff(children, "w:kinsoku"),
         wordWrap: onOff(children, "w:wordWrap"),
         suppressAutoHyphens: onOff(children, "w:suppressAutoHyphens"),
+        snapToGrid: onOff(children, "w:snapToGrid"),
         alignment: ALIGNMENTS[valueOf(children, "w:jc") ?? ""],
     });
 };
@@ -711,7 +715,19 @@ const textBorderOf = (border: ParagraphBorder | undefined): TextBorder | undefin
 // Emphasis marks over the text, or under it
 const EMPHASIS: Readonly<Record<string, TextFont["emphasis"]>> = { dot: "above", comma: "above", circle: "above", underDot: "below" };
 
-const plainFontOf = ({ font, size, bold, italic, kerning, characterSpacing, scale, position, border, emphasisMark }: RunFormat): TextFont =>
+const plainFontOf = ({
+    font,
+    size,
+    bold,
+    italic,
+    kerning,
+    characterSpacing,
+    scale,
+    position,
+    border,
+    emphasisMark,
+    snapToGrid,
+}: RunFormat): TextFont =>
     withoutUndefined({
         font,
         size,
@@ -723,6 +739,7 @@ const plainFontOf = ({ font, size, bold, italic, kerning, characterSpacing, scal
         raise: position === 0 ? undefined : position,
         border: textBorderOf(border),
         emphasis: emphasisMark === undefined ? undefined : EMPHASIS[emphasisMark],
+        snapToGrid: snapToGrid === false ? false : undefined,
     });
 
 /**
