@@ -248,7 +248,8 @@ const lengthOf = (pieces: readonly Piece[]): number => pieces.reduce((total, { t
 
 /**
  * A font's formatting with Word's defaults where it gives none, so formatting written as the default is the same as none,
- * and its name in small letters, as the measurers find a font by its name in any case
+ * its name in small letters, as the measurers find a font by its name in any case, and whether it is kerned, rather than
+ * from what size
  */
 const withDefaults = (font: TextFont): Readonly<Record<string, unknown>> => ({
     size: DEFAULT_FONT_SIZE,
@@ -258,6 +259,7 @@ const withDefaults = (font: TextFont): Readonly<Record<string, unknown>> => ({
     scale: 100,
     ...Object.fromEntries(Object.entries(font).filter(([, value]) => value !== undefined)),
     font: (font.font ?? DEFAULT_FONT).toLowerCase(),
+    kerning: isKerned(font),
 });
 
 /** Whether two pieces of text are in the same font, with the same formatting */

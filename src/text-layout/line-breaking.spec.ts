@@ -115,6 +115,8 @@ describe("layoutLines", () => {
                 piece("AV aa", { ...kerned, font: "Probe Sans" }),
             ]),
         ).to.equal(1);
+        // Pieces kerned from different sizes are both kerned
+        expect(linesOf([piece("AVA", { kerning: 1 }), piece("VAV", { kerning: 2 }), piece("AV aa", { kerning: 1 })])).to.equal(1);
         // Text smaller than the size kerning starts at isn't kerned. Each piece has a font of its own, as each run does
         const small = { kerning: 12, size: 10 };
         expect(linesOf([piece("AVA", { ...small }), piece("VAV", { ...small }), piece("AV aa", { ...small })])).to.equal(2);
