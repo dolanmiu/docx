@@ -6,8 +6,8 @@
 #   python3 word-watertight.py word-watertight-text
 #
 # It takes the name of the PDF without its extension, reads the files above beside it, and knows which document it is by
-# its name: word-watertight-text, -tables, -pages, -markup, -settings, -fields, -stops, -sections, -sections2 or
-# -endnotes1 to 3. Lengths are in twips, and positions are from the top and left of the page. Word's PDFs put text on a
+# its name: word-watertight-text, -tables, -pages, -markup, -settings, -fields, -stops, -sections, -sections2,
+# -endnotes1 to 3 or -notes. Lengths are in twips, and positions are from the top and left of the page. Word's PDFs put text on a
 # grid of 1/300 inch, 4.8 twips, so one position is only good to about 5 twips; the pitch of lines is found over a page
 # of them, as word-line-heights.py finds it.
 import html
@@ -750,6 +750,36 @@ def endnotes_probes(base):
     notes_by_page(lines, probe)
 
 
+def notes_probes(base):
+    lines = read(base)
+    raw = read_raw(base)
+    for probe, note in [
+        ("FN1", "a 3-line note from line 47 of the second of 2 columns, after a full first column"),
+        ("FN2", "a section starting in the second column, with a 10-line note, beside 48 lines"),
+        ("FN3", "a 120-line note from line 11 of the first of 2 columns"),
+        ("FN4", "a 12-line note from line 48 at a section's end, before a section numbered from 1"),
+        ("FN5", "a 120-line note from line 6 at a section's end, before a continuous section"),
+        ("FN6", "a line at a page's top with a note of 55 lines kept together, then 70 lines"),
+        ("FN7", "the same from line 21, then 10 lines"),
+        ("FN8", "as FN6, with a 2-line note from line 7"),
+        ("FN9", "room for 3 note lines, a note of a line, 4 lines kept together and 2 lines"),
+        ("FN10", "room for 2, a note of a line, a line kept with the next and 4 lines"),
+        ("FN11", "room for 4, a note of a line and a table of a 6-line row and a 1-line row"),
+        ("FN12", "room for 2, a note of a line and a table of a header row and 4 rows"),
+        ("FN13", "a line kept with a table on line 45, with an 8-line note"),
+        ("FN14", "footnotes from a section of 2 columns and a continuous one of 3"),
+        ("FN15", "footnotes from a section of 2 columns and a continuous one of one"),
+    ]:
+        print(f"== {probe}: {note}")
+        for row in layout_of(raw, probe):
+            print(row)
+        if probe in ("FN4", "FN5"):
+            for line in lines:
+                if text_of(line).startswith(f"{probe} next"):
+                    print(f"  {text_of(line)} (PDF page {line[0][0]})")
+        print()
+
+
 PROBES = {
     "word-watertight-text": text_probes,
     "word-watertight-tables": tables_probes,
@@ -763,6 +793,7 @@ PROBES = {
     "word-watertight-endnotes1": endnotes_probes,
     "word-watertight-endnotes2": endnotes_probes,
     "word-watertight-endnotes3": endnotes_probes,
+    "word-watertight-notes": notes_probes,
 }
 
 if __name__ == "__main__":
