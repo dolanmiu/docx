@@ -263,6 +263,21 @@ describe("readParagraphFormat", () => {
         });
     });
 
+    it("should read how its lines line up, which decides whether Word squeezes their spaces", () => {
+        const alignment = (value: string): unknown => readParagraphFormat([{ "w:jc": { _attr: { "w:val": value } } }]).alignment;
+        expect(["start", "left", "numTab"].map(alignment)).to.deep.equal(["left", "left", "left"]);
+        expect(["center", "end", "right"].map(alignment)).to.deep.equal(["center", "right", "right"]);
+        expect(["both", "distribute"].map(alignment)).to.deep.equal(["justified", "distributed"]);
+        expect(["lowKashida", "mediumKashida", "highKashida", "thaiDistribute"].map(alignment)).to.deep.equal([
+            "lowKashida",
+            "mediumKashida",
+            "highKashida",
+            "thaiDistributed",
+        ]);
+        expect(alignment("unknown")).to.equal(undefined);
+        expect(readParagraphFormat([])).to.deep.equal({});
+    });
+
     it("should read lengths written with units, such as an imported document may have where docx's options take only numbers", () => {
         expect(
             readParagraphFormat([

@@ -11,7 +11,15 @@
 import type { IContext } from "docx";
 
 import { isEastAsian, kinsokuLanguageOf } from "./line-break-rules";
-import { type LineSpacing, type ParagraphFormat, type TabStopSetting, type TextFont, type TextSpan, isEastAsianFont } from "./text-width";
+import {
+    type LineSpacing,
+    type ParagraphAlignment,
+    type ParagraphFormat,
+    type TabStopSetting,
+    type TextFont,
+    type TextSpan,
+    isEastAsianFont,
+} from "./text-width";
 
 export type XmlObject = Readonly<Record<string, unknown>>;
 
@@ -308,6 +316,24 @@ const TAB_ALIGNMENTS: Readonly<Record<string, TabStopSetting["alignment"]>> = {
     num: "left",
 };
 
+// `start` and `end` are the left and right of a left-to-right paragraph, and `left` and `right` stay there in a
+// right-to-left one, which lines its lines up the other way but breaks them in the same places. A list's tab (`numTab`)
+// lines up as the start
+const ALIGNMENTS: Readonly<Record<string, ParagraphAlignment>> = {
+    start: "left",
+    left: "left",
+    numTab: "left",
+    center: "center",
+    end: "right",
+    right: "right",
+    both: "justified",
+    distribute: "distributed",
+    lowKashida: "lowKashida",
+    mediumKashida: "mediumKashida",
+    highKashida: "highKashida",
+    thaiDistribute: "thaiDistributed",
+};
+
 /**
  * Reads the tab stops of paragraph properties (`w:tabs`).
  */
@@ -349,6 +375,7 @@ export const readParagraphFormat = (element: unknown): ParagraphFormat => {
         tabs: readTabs(find(children, "w:tabs")),
         kinsoku: onOff(children, "w:kinsoku"),
         wordWrap: onOff(children, "w:wordWrap"),
+        alignment: ALIGNMENTS[valueOf(children, "w:jc") ?? ""],
     });
 };
 

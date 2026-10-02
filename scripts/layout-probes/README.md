@@ -41,6 +41,9 @@ table style and each cell's width.
 | `word-units`                | U1 to U8: lengths written with units, as docx writes a length given as a string, such as `"1in"` or `"12pt"`: whether Word reads them in a page's size and margins, a run's size, indents, character spacing, a table's widths and row height and the space between columns, and how it rounds a margin of a fraction of a twip and a size of a fraction of a half-point                                                                                                                                                                                         | `word-units.py`                |
 | `word-units2`               | V1 to V6: how Word reads a length with a unit that isn't a whole number of twips or half-points, measured across the page: indents and a margin in each unit, negative ones, sizes, character spacing, a table's column and a row's height                                                                                                                                                                                                                                                                                                                       | `word-units.py`                |
 | `word-positions`            | H1 to H3, X1 to X9 and Y1: the header and footer of the blank page Word adds before a section on an odd or even page, which page it adds it before a section numbered from its own first number, and where each line is across and down the page with indents, alignment, a list, a right tab, a table, columns and a footnote, against `layoutDocument`                                                                                                                                                                                                         | `word-positions.py`            |
+| `word-watertight-stops`     | SP1 to SP19: what Word does where docx/layout stops. SP18, justified lines whose last word fits only with their spaces 3% to 33% narrower, showed how far Word squeezed them                                                                                                                                                                                                                                                                                                                                                                                     | `word-watertight.py`           |
+| `word-justify`              | J00 to J18: when Word squeezes a justified line to fit one more word on it: lines of 19, 6 and 2 spaces ending with short, medium and long words, in other fonts, last lines, lines before a line break, distributed and the other justifications, tabs, no-break spaces, spaces at the start of a line, and ideographs                                                                                                                                                                                                                                          | `word-justify.py`              |
+| `word-justify2`             | K00 to K12: when Word squeezes a distributed line, and Latin text justified for Thai or with a low kashida, as J01 to J07 and J04 for justified ones, and justified and distributed lines with one space                                                                                                                                                                                                                                                                                                                                                         | `word-justify.py`              |
 | `fsplit`                    | How a footnote that doesn't fit below its reference goes on to the next page. Laid out in LibreOffice only, so it has no PDF from Word: Word's split of an 8-line footnote is `word-rules` P7b                                                                                                                                                                                                                                                                                                                                                                   | `pagelines.py`                 |
 
 ## Make a probe's `.docx`
@@ -52,7 +55,10 @@ npm run run-ts -- scripts/layout-probes/word-rules2.ts
 ```
 
 It writes `build/word-probes/word-rules2.docx`. `fsplit`, `word-no-prompt` and `word-seq` import `docx/layout`, so build the
-package first (`npm run build`). The others import only `docx`, as the demos do.
+package first (`npm run build`). `word-watertight-stops` and `word-justify` measure their lines with docx/layout's
+width tables, which they import from `src`. The others import only `docx`, as the demos do. `word-watertight-text`
+and `word-watertight-stops` replace markers in the XML with what docx can't write, as their `INJECTIONS` and
+`FIRST_ROW_STYLE` say.
 
 ## Lay it out in LibreOffice
 
@@ -150,6 +156,31 @@ five pages as SVG:
 pdftotext -bbox-layout scripts/layout-probes/word-probes.pdf build/word-probes/word-probes.html
 for n in 1 2 3 4 5; do pdftocairo -svg -f $n -l $n scripts/layout-probes/word-probes.pdf build/word-probes/word-probes-$n.svg; done
 python3 scripts/layout-probes/word-probes.py build/word-probes/word-probes
+```
+
+For `word-watertight-text` and `word-watertight-stops`, `word-watertight.py` reads the pictures on each page from
+`pdfimages -list` too, which some of their probes need:
+
+```bash
+pdftotext -bbox-layout scripts/layout-probes/word-watertight-text.pdf build/word-probes/word-watertight-text.html
+pdfimages -list scripts/layout-probes/word-watertight-text.pdf > build/word-probes/word-watertight-text.images.txt
+pdftohtml -xml -i -q -zoom 1 scripts/layout-probes/word-watertight-text.pdf build/word-probes/word-watertight-text
+python3 scripts/layout-probes/word-watertight.py build/word-probes/word-watertight-text
+```
+
+`word-justify.py` takes the name of the PDF without its extension too, and reads only its HTML:
+
+```bash
+pdftotext -bbox-layout scripts/layout-probes/word-justify.pdf build/word-probes/word-justify.html
+python3 scripts/layout-probes/word-justify.py build/word-probes/word-justify
+```
+
+`word-justify.ts` also writes `word-justify2.docx`, the K probes of distributed lines, and the reader reads its PDF the
+same way, by its name:
+
+```bash
+pdftotext -bbox-layout scripts/layout-probes/word-justify2.pdf build/word-probes/word-justify2.html
+python3 scripts/layout-probes/word-justify.py build/word-probes/word-justify2
 ```
 
 `word-line-heights.py` also measures the height of lines in other PDFs, such as `word-rules`' P3 and Word's PDFs of the

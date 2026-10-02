@@ -678,6 +678,9 @@ const readListNumber = (
     };
 };
 
+// Letters of Thai and Arabic, which their justifications are for
+const THAI_OR_ARABIC = /[\p{Script=Thai}\p{Script=Arabic}]/u;
+
 /**
  * Reads a paragraph (`w:p`), in the formatting of its styles, and of its table's style when it is in a table.
  */
@@ -697,17 +700,28 @@ const readParagraph = (element: XmlObject, reader: Reader, tableStyle?: string):
         readParagraphFormat(properties),
     ];
     const items = readInline(children, paragraphRun, reader);
-    // A division of a web page (`w:divId`) has margins and borders of its own, in the document's web settings
+    const format = combine(formats);
+    // A division of a web page (`w:divId`) has margins and borders of its own, in the document's web settings. Word breaks
+    // the lines of Latin text justified for Thai or with a low kashida as justified ones, and those with a medium or high
+    // kashida otherwise (`word-justify.docx` J14, `word-justify2.docx` K08, K09). Thai or Arabic text in them hasn't been
+    // seen
+    const forThaiOrArabic = format.alignment === "thaiDistributed" || format.alignment === "lowKashida";
     const unsupported =
         find(properties, "w:framePr") !== undefined
             ? "a text frame"
-            : find(properties, "w:divId") === undefined
-              ? unknownLengthIn(element)
-              : "a paragraph in an HTML division";
+            : find(properties, "w:divId") !== undefined
+              ? "a paragraph in an HTML division"
+              : format.alignment === "mediumKashida" || format.alignment === "highKashida"
+                ? "a paragraph justified for Arabic with a medium or high kashida"
+                : forThaiOrArabic &&
+                    typeof items !== "string" &&
+                    items.some((item) => item.type === "text" && THAI_OR_ARABIC.test(item.text))
+                  ? "Thai or Arabic text justified for it"
+                  : unknownLengthIn(element);
     return {
         type: "paragraph",
         items: typeof items === "string" ? [] : [...list.items, ...items],
-        format: combine(formats),
+        format,
         tabStops: tabStopsOf(formats),
         markFont: fontOf(combine([paragraphRun, readRunFormat(find(properties, "w:rPr"), styles.themeFonts)])),
         style,

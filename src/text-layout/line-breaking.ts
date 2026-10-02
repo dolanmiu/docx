@@ -97,6 +97,8 @@ export type LaidOutLine = {
     readonly text: string;
     /** How far its text goes from where the line starts, in points, without the spaces at its end */
     readonly textWidth: number;
+    /** Why Word's breaking of the line isn't known, when it isn't */
+    readonly unsupported?: string;
 };
 
 type Piece = { readonly text: string; readonly font: TextFont };
@@ -120,6 +122,17 @@ type Segment = {
 const DEFAULT_TAB_STOP = 36;
 // How far past its end a line may go before it wraps, for the rounding of the widths
 const TOLERANCE = 0.01;
+// Word squeezes one more word onto a justified line when its spaces would otherwise stretch by a share of their width
+// more than twice as large as the share they're squeezed by: 2.06 times as large, and not 2.02 (`word-justify.docx` J01
+// to J09)
+const STRETCH_TO_SQUEEZE = 2.04;
+// and never squeezes them by more than a quarter of their width: by 24.9%, and not 25.4% (J03 and J05 to J07), even on a
+// line whose other words have no spaces between them to stretch (`word-justify2.docx` K10, K11)
+const MOST_SQUEEZE = 0.25;
+// A distributed line can spread its letters as well as its spaces, so Word squeezes a word onto it less often. It weighs
+// how far the line would stretch without the word as if each space took this many times what each letter does: between
+// 6.94 and 7.37 times puts every one of Word's lines of K01 to K07 and K12 where Word put them
+const SPACE_TO_LETTER = 7.2;
 
 type TextItem = Extract<InlineItem, { readonly type: "text" }>;
 
@@ -216,6 +229,13 @@ const charactersOf = (pieces: readonly Piece[]): readonly (readonly Piece[])[] =
         [],
     );
 
+/** The en, em, four-per-em and ideographic spaces of pieces of spaces, without the others */
+const othersOf = (pieces: readonly Piece[]): readonly Piece[] =>
+    pieces.map(({ text, font }) => ({ text: text.replace(/ /g, ""), font })).filter(({ text }) => text.length > 0);
+
+/** How many characters pieces have */
+const lengthOf = (pieces: readonly Piece[]): number => pieces.reduce((total, { text }) => total + [...text].length, 0);
+
 const widthOf = (pieces: readonly Piece[], measurer: TextMeasurer): number =>
     pieces.reduce((total, { text, font }) => total + measurer.measureWidth(text, font), 0);
 
@@ -246,6 +266,23 @@ type LineState = {
     readonly text: string;
     /** The tallest text or picture on it, in points */
     readonly natural: number;
+    /**
+     * How wide its spaces are after its first word or its last tab, which Word squeezes in a justified line, in points.
+     * Those at the start of the line, and before a tab, aren't squeezed (`word-justify.docx` J15, J18), nor are no-break
+     * spaces, which are in the words (J16)
+     */
+    readonly spaces: number;
+    /** How many spaces those are, and how many of them are before its last word */
+    readonly spaceCount: number;
+    readonly between: number;
+    /** How many characters its words have after its last tab, and pictures it has */
+    readonly letters: number;
+    /**
+     * How wide the en, em, four-per-em and ideographic spaces among its spaces are, which Word hasn't been seen squeezing,
+     * and whether a word past its end could be squeezed in, so Word's breaking of it isn't known
+     */
+    readonly otherSpaces: number;
+    readonly unknown?: boolean;
     readonly markers: readonly string[];
     /** The bookmarks that start with the next word, picture or tab, which may wrap onto the next line */
     readonly pending: readonly string[];
@@ -389,8 +426,12 @@ export const layoutLines = (
         breakRules,
     }: LineLayoutOptions,
 ): readonly LaidOutLine[] => {
-    const { indentLeft = 0, indentRight = 0, firstLineIndent = 0, lineSpacing } = format;
+    const { indentLeft = 0, indentRight = 0, firstLineIndent = 0, lineSpacing, alignment } = format;
     const markHeight = measurer.measureLineHeight(markFont);
+    // Word squeezes the spaces of a justified line to fit one more word on it, so it has more words to a line than a
+    // left-aligned one (`word-watertight-text.docx` TX20)
+    const squeezes =
+        alignment === "justified" || alignment === "distributed" || alignment === "thaiDistributed" || alignment === "lowKashida";
     const { stops, firstLineStops } = stopsOf(tabStops, format);
     const parts = segmentsOf(items, rulesOf(format, breakRules));
     // A page break at the end of a paragraph has the paragraph's mark on its line, as Word lays it out from Word 2013,
@@ -404,6 +445,37 @@ export const layoutLines = (
     const lines: LaidOutLine[] = [];
     /** Where a line ends, from its index: where the line being filled ends, unless another is given */
     const limitOf = (line = lines.length): number => (typeof width === "number" ? width : width(line)) - indentRight;
+    /**
+     * Whether Word squeezes a word or picture this wide onto a justified or distributed line it goes past the end of,
+     * rather than move it to the next line. It squeezes the line's spaces in proportion to their widths, and does when that
+     * takes less of their width than a quarter, and than half of what the spaces between the words already on it would
+     * stretch by with it on the next line, or, on a distributed line, the spaces and letters. That is so on a paragraph's
+     * last line, and one that ends with a line break, too (J10 to J12). Latin text justified for Thai or with a low kashida
+     * is squeezed as justified text is (K08, K09)
+     */
+    const squeezesIn = (state: LineState, tokenWidth: number): boolean => {
+        if (!squeezes || state.spaces <= 0) {
+            return false;
+        }
+        const over = state.position + tokenWidth - limitOf();
+        const slack = limitOf() - state.end;
+        if (over / state.spaces > MOST_SQUEEZE) {
+            return false;
+        }
+        if (alignment === "distributed") {
+            // How far each space would stretch, and be squeezed, in points
+            const stretch = (slack * SPACE_TO_LETTER) / (SPACE_TO_LETTER * state.between + state.letters);
+            return stretch >= STRETCH_TO_SQUEEZE * (over / state.spaceCount);
+        }
+        const between = state.spaces - (state.position - state.end);
+        return between <= 0 || slack / between >= STRETCH_TO_SQUEEZE * (over / state.spaces);
+    };
+    /**
+     * Whether a word or picture past the end of a justified line could be squeezed in, were the spaces Word hasn't been
+     * seen squeezing among its spaces squeezed as the others are
+     */
+    const unsure = (state: LineState, tokenWidth: number): boolean =>
+        squeezes && state.otherSpaces > 0 && state.position + tokenWidth - limitOf() <= MOST_SQUEEZE * state.spaces;
     let first = true;
     for (const [segmentIndex, { tokens, end }] of segments.entries()) {
         const isLast = segmentIndex === segments.length - 1;
@@ -414,6 +486,11 @@ export const layoutLines = (
             end: start,
             text: "",
             natural: 0,
+            spaces: 0,
+            spaceCount: 0,
+            between: 0,
+            letters: 0,
+            otherSpaces: 0,
             markers: [],
             pending: [],
             started: false,
@@ -430,6 +507,7 @@ export const layoutLines = (
                 ...(breakAfter ? { breakAfter } : {}),
                 text: state.text,
                 textWidth: Math.max(0, state.end - state.start),
+                ...(state.unknown ? { unsupported: "a justified line that only fits squeezed at an en, em or ideographic space" } : {}),
             });
         };
         const wrap = (state: LineState): LineState => {
@@ -440,6 +518,11 @@ export const layoutLines = (
                 end: indentLeft,
                 text: "",
                 natural: 0,
+                spaces: 0,
+                spaceCount: 0,
+                between: 0,
+                letters: 0,
+                otherSpaces: 0,
                 markers: [],
                 pending: state.pending,
                 started: false,
@@ -456,10 +539,14 @@ export const layoutLines = (
             }
             if (token.type === "space") {
                 const height = Math.max(...token.pieces.map(({ font }) => measurer.measureLineHeight(font)));
+                const spaces = widthOf(token.pieces, measurer);
                 line = {
                     ...line,
-                    position: line.position + widthOf(token.pieces, measurer),
+                    position: line.position + spaces,
                     text: line.text + textOf(token.pieces),
+                    spaces: line.started ? line.spaces + spaces : 0,
+                    spaceCount: line.started ? line.spaceCount + lengthOf(token.pieces) : 0,
+                    otherSpaces: line.started ? line.otherSpaces + widthOf(othersOf(token.pieces), measurer) : 0,
                     natural: Math.max(line.natural, height),
                 };
                 continue;
@@ -481,18 +568,36 @@ export const layoutLines = (
                 line = place(line);
                 const after = widthAfterTab(tokens.slice(index + 1), measurer);
                 const shift = stop.alignment === "left" ? 0 : stop.alignment === "center" ? after / 2 : after;
+                // The text after it starts at the stop however much the spaces before it are squeezed
                 const position = Math.max(line.position, stop.position - shift);
-                line = { ...line, position, end: position, text: `${line.text}\t`, natural: Math.max(line.natural, height), started: true };
+                line = {
+                    ...line,
+                    position,
+                    end: position,
+                    text: `${line.text}\t`,
+                    natural: Math.max(line.natural, height),
+                    spaces: 0,
+                    spaceCount: 0,
+                    between: 0,
+                    letters: 0,
+                    otherSpaces: 0,
+                    started: true,
+                };
                 continue;
             }
             const tokenWidth = token.type === "box" ? token.width : widthOf(token.pieces, measurer);
             const tokenHeight =
                 token.type === "box" ? token.height : Math.max(...token.pieces.map(({ font }) => measurer.measureLineHeight(font)));
-            if (line.started && line.position + tokenWidth > limitOf() + TOLERANCE) {
+            const overflows = line.started && line.position + tokenWidth > limitOf() + TOLERANCE;
+            if (overflows && unsure(line, tokenWidth)) {
+                line = { ...line, unknown: true };
+            }
+            const squeezed = overflows && !line.unknown && squeezesIn(line, tokenWidth);
+            if (overflows && !squeezed) {
                 line = wrap(line);
             }
             line = place(line);
-            if (token.type === "word" && line.position + tokenWidth > limitOf() + TOLERANCE && limitOf() - indentLeft > 0) {
+            if (token.type === "word" && !squeezed && line.position + tokenWidth > limitOf() + TOLERANCE && limitOf() - indentLeft > 0) {
                 // A word wider than a line is broken across as many lines as it needs, after the last character that fits
                 // on each, and never between a character and the marks on it or what a zero-width joiner joins to it
                 let placed = false;
@@ -507,14 +612,21 @@ export const layoutLines = (
                         position: line.position + characterWidth,
                         end: line.position + characterWidth,
                         text: line.text + textOf(character),
+                        letters: line.letters + lengthOf(character),
                     };
                     placed = true;
                 }
             } else {
                 const text = token.type === "word" ? textOf(token.pieces) : "";
-                line = { ...line, position: line.position + tokenWidth, end: line.position + tokenWidth, text: line.text + text };
+                line = {
+                    ...line,
+                    position: line.position + tokenWidth,
+                    end: line.position + tokenWidth,
+                    text: line.text + text,
+                    letters: line.letters + (token.type === "box" ? 1 : lengthOf(token.pieces)),
+                };
             }
-            line = { ...line, natural: Math.max(line.natural, tokenHeight), started: true };
+            line = { ...line, end: line.position, between: line.spaceCount, natural: Math.max(line.natural, tokenHeight), started: true };
         }
 
         if (!end) {
