@@ -23,6 +23,44 @@ describe("measureTextWidth", () => {
         expect(measureTextWidth("Yes", { font: "Arial", bold: true })).to.be.greaterThan(measureTextWidth("Yes", { font: "Arial" }));
     });
 
+    it("should measure italic and bold italic text in the fonts' own italics, as Word draws them", () => {
+        // Word's widths in twips of the alphabet twice, as one word, upright, italic, bold and bold italic, from its PDF of
+        // word-watertight-text.ts (TX3). Times New Roman's italics are 2.8% narrower than its upright letters, Cambria's 3.7%,
+        // and Arial's are as wide. Word's PDFs put text on a grid, so each is good to about 3 twips
+        const alphabet = "abcdefghijklmnopqrstuvwxyz".repeat(2);
+        const lines: readonly (readonly [string, number, readonly [number, number, number, number]])[] = [
+            ["Times New Roman", 10, [4778.2, 4643.9, 5090.0, 4801.1]],
+            ["Calibri", 11, [5215.1, 5185.3, 5365.4, 5352.2]],
+            ["Cambria", 11, [5582.4, 5373.8, 6021.3, 5834.2]],
+            ["Arial", 11, [5600.2, 5600.2, 6160.1, 6160.1]],
+        ];
+        for (const [font, size, [upright, italic, bold, boldItalic]] of lines) {
+            const width = (face: { readonly bold?: boolean; readonly italic?: boolean }): number =>
+                measureTextWidth(alphabet, { font, size, ...face }) * 20;
+            expect(width({})).to.be.closeTo(upright, 3);
+            expect(width({ italic: true })).to.be.closeTo(italic, 3);
+            expect(width({ bold: true })).to.be.closeTo(bold, 3);
+            expect(width({ bold: true, italic: true })).to.be.closeTo(boldItalic, 3);
+        }
+        // Fonts that aren't in the tables are measured in the italics of the one most like them
+        expect(measureTextWidth(alphabet, { font: "Georgia", italic: true })).to.equal(
+            measureTextWidth(alphabet, { font: "Times New Roman", italic: true }),
+        );
+    });
+
+    it("should measure italic characters with Word's widths where they aren't the open fonts', or the upright ones'", () => {
+        // From Word's PDF of word-italic-widths, in thousandths of an em: Times New Roman's italic superscript 4 is 300, where
+        // Liberation Serif's is 348; Calibri's italic т is drawn as an m, 791 where the upright one is 387; and Times New
+        // Roman's italic em space is 889, where the upright one is 1000
+        const width = (character: string, font: string, bold = false): number =>
+            measureTextWidth(character, { font, bold, italic: true, size: 1000 });
+        expect(width("\u2074", "Times New Roman")).to.equal(300);
+        expect(width("\u0442", "Calibri")).to.equal(791);
+        expect(measureTextWidth("\u0442", { font: "Calibri", size: 1000 })).to.equal(387);
+        expect(width("\u2003", "Times New Roman")).to.equal(889);
+        expect(width("\u2003", "Times New Roman", true)).to.equal(1000);
+    });
+
     it("should measure fonts that aren't in the table with the most similar one", () => {
         const width = (font: string): number => measureTextWidth("Hello", { font });
         expect(width("Carlito")).to.equal(width("Calibri"));
@@ -126,6 +164,11 @@ describe("unknownCharacter", () => {
         expect(unknownCharacter("\u017d", { font: "Arial" })).to.equal(undefined);
         // Every space's width is known
         expect(unknownCharacter("a\u2000b\u2003c\u2009d\u200ae\u202ff\u205fg", { font: "Cambria", bold: true })).to.equal(undefined);
+        expect(unknownCharacter("a\u2000b\u2003c\u2009d\u200ae\u202ff\u205fg", { font: "Cambria", italic: true })).to.equal(undefined);
+        // Word's PDF of Cambria's italics doesn't show the widths of most of its arrows and mathematical symbols, which it
+        // shows upright, as it drew them with no text
+        expect(unknownCharacter("\u2197", { font: "Cambria" })).to.equal(undefined);
+        expect(unknownCharacter("\u2197", { font: "Cambria", italic: true })).to.equal("\u2197");
     });
 
     it("should find a symbol font's own character, and leave the characters the tables don't have as they are measured", () => {

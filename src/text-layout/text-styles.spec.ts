@@ -375,13 +375,14 @@ describe("readParagraphFormat with East Asian typography", () => {
 describe("readRunFormat with East Asian text and complex scripts", () => {
     const THEME = { headings: "Cambria", body: "Calibri" };
 
-    it("should read the fonts, size and boldness of East Asian text and complex scripts, and the run's direction and language", () => {
+    it("should read the fonts, size, boldness and italics of East Asian text and complex scripts, and the run's direction and language", () => {
         expect(
             readRunFormat(
                 [
                     { "w:rFonts": { _attr: { "w:ascii": "Arial", "w:eastAsia": "MS Mincho", "w:cs": "Times New Roman" } } },
                     { "w:b": {} },
                     { "w:bCs": { _attr: { "w:val": "0" } } },
+                    { "w:iCs": {} },
                     { "w:sz": { _attr: { "w:val": 22 } } },
                     { "w:szCs": { _attr: { "w:val": "28" } } },
                     { "w:rtl": {} },
@@ -398,6 +399,7 @@ describe("readRunFormat with East Asian text and complex scripts", () => {
             complexScriptFont: "Times New Roman",
             complexScriptSize: 14,
             complexScriptBold: false,
+            complexScriptItalic: true,
             rightToLeft: true,
             complexScript: true,
             eastAsianLanguage: "ja-JP",
@@ -436,13 +438,13 @@ describe("spansOf", () => {
         ]);
     });
 
-    it("should put all of a right-to-left run in the font, size and boldness of complex scripts, and Hebrew in other runs in the run's", () => {
-        const format = { font: "Calibri", size: 11, bold: true, complexScriptFont: "Arial", complexScriptSize: 14 };
+    it("should put all of a right-to-left run in the font, size, boldness and italics of complex scripts, and Hebrew in other runs in the run's", () => {
+        const format = { font: "Calibri", size: 11, bold: true, italic: true, complexScriptFont: "Arial", complexScriptSize: 14 };
         expect(spansOf("ab שלום", { ...format, rightToLeft: true })).to.deep.equal([{ font: "Arial", size: 14, text: "ab שלום" }]);
-        expect(spansOf("ab", { ...format, complexScript: true, complexScriptBold: true })).to.deep.equal([
-            { font: "Arial", size: 14, bold: true, text: "ab" },
+        expect(spansOf("ab", { ...format, complexScript: true, complexScriptBold: true, complexScriptItalic: true })).to.deep.equal([
+            { font: "Arial", size: 14, bold: true, italic: true, text: "ab" },
         ]);
-        expect(spansOf("שלום", format)).to.deep.equal([{ font: "Calibri", size: 11, bold: true, text: "שלום" }]);
+        expect(spansOf("שלום", format)).to.deep.equal([{ font: "Calibri", size: 11, bold: true, italic: true, text: "שלום" }]);
     });
 
     it("should keep marks in the font of the character they are on, and write capitals and small capitals in each font", () => {

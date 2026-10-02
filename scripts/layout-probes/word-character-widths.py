@@ -6,9 +6,10 @@
 #   pdftohtml -xml -i -q -zoom 1 word-character-widths.pdf word-character-widths
 #   python3 word-character-widths.py word-character-widths [--json]
 #
-# It takes the name of the PDF without its extension, and reads the two files above beside it, and word-character-widths.json,
-# beside this reader, which the probe's script writes with the document: the fonts, the characters of each paragraph of W,
-# and the spaces and words of S, B and H. Widths are in thousandths of an em. With --json, it prints what it read as JSON,
+# It takes the name of the PDF without its extension, and reads the two files above beside it, and the .json of the same
+# name beside this reader, which the probe's script writes with the document: the fonts, the characters of each paragraph
+# of W, and the spaces and words of S, B and H. It reads word-italic-widths.pdf, which the script writes with "italic", the
+# same way. Widths are in thousandths of an em. With --json, it prints what it read as JSON,
 # which scripts/generate-font-widths.ts takes: for each font and face, each character's width and the font Word drew it
 # in, and each space's width. Characters on a line Word drew squeezed, and those it drew with no text, aren't in it.
 # cspell:ignore bbox fontspec pdftohtml WSBH AAAAAC caladea carlito liberationsans liberationserif liberationmono couriernew timesnewroman
@@ -19,7 +20,7 @@ import re
 import sys
 
 base = sys.argv[1]
-probe = json.load(open(os.path.join(os.path.dirname(os.path.abspath(__file__)), "word-character-widths.json"), encoding="utf8"))
+probe = json.load(open(os.path.join(os.path.dirname(os.path.abspath(__file__)), os.path.basename(base) + ".json"), encoding="utf8"))
 SIZE = probe["size"]
 COPIES = probe["copies"]
 FACES = probe["faces"]
@@ -28,6 +29,11 @@ SPACES = probe["spaces"]
 # A twip is a twentieth of a point, and an em of 10-point text 200 of them
 EM = SIZE * 20
 LABEL = re.compile(r"^([WSBH])(\d+)$")
+
+
+def key_of(face):
+    """The name of a font's face, such as "Calibri bold italic\""""
+    return f"{face['font']}{' bold' if face['bold'] else ''}{' italic' if face.get('italic') else ''}"
 
 
 def read_lines():
@@ -72,7 +78,7 @@ def is_own(font, key):
     """Whether a font is the one of a face, such as ArialMT or Arial-BoldMT for Arial, and not another, such as Cambria Math"""
     name = re.sub(r"[^a-z]", "", (font or "").lower())
     name = next((word + name[len(alias) :] for alias, word in ALIASES.items() if name.startswith(alias)), name)
-    return name.startswith(re.sub(r"[^a-z]", "", key.replace(" bold", "").lower())) and "math" not in name
+    return name.startswith(re.sub(r"[^a-z]", "", key.replace(" bold", "").replace(" italic", "").lower())) and "math" not in name
 
 
 def font_at(pieces, page, top, left, right):
@@ -97,7 +103,7 @@ for index, (page, words) in enumerate(lines):
         elif current is not None:
             probes[current].append((index, page, top, left, right, word))
 
-result = {"widths": {}, "spaces": {}, "breaks": {}, "hangs": {}}
+result = {"widths": {}, "lines": {}, "spaces": {}, "breaks": {}, "hangs": {}}
 problems = []
 
 # W: each character's word is ten of it, after its code point, so its width is a tenth of the word's. A word can be in
@@ -115,8 +121,30 @@ squeezed = {
     for word in words
     if CODE.match(word[5]) and abs((word[4] - word[3]) / (sum(LABEL_WIDTHS[c] for c in word[5]) * LABEL_SIZE * 20 / 1000) - 1) > 0.03
 }
+# A character's word is the pieces that follow on from its code point: on the code point's line, the first within a space
+# of it and each next within GAP of the one before, and where the word is broken at the end of the line, those that follow
+# on from where the next line starts. Word draws some characters in another font, such as the arrows it draws in Apple
+# Color Emoji, with a box pdftotext puts above or below their line, so they can be read in among the words of the line
+# before or after it: those don't follow on from the code point, and are left out
+MARGIN = min((left for _, words in lines for left, _, _, word in words if LABEL.match(word)), default=0)
+SPACE = 200
+GAP = 40
+
+
+def follow_on(parts, start, first):
+    """The parts that follow on from `start`: the first that starts within `first` after it, and each next within GAP of
+    the end of the one before"""
+    kept = []
+    end = start
+    for part in sorted(parts, key=lambda part: part[3]):
+        if end - GAP / 2 <= part[3] <= end + (GAP if kept else first):
+            kept.append(part)
+            end = part[4]
+    return kept
+
+
 for face_index, face in enumerate(FACES):
-    key = f"{face['font']}{' bold' if face['bold'] else ''}"
+    key = key_of(face)
     widths = result["widths"].setdefault(key, {})
     for paragraph_index, codes in enumerate(PARAGRAPHS):
         number = face_index * len(PARAGRAPHS) + paragraph_index + 1
@@ -126,9 +154,26 @@ for face_index, face in enumerate(FACES):
             found = CODE.match(word[5])
             if found:
                 code = found.group(1)
-                words[code] = []
+                words[code] = [word]
             elif code is not None:
                 words[code].append(word)
+        labels = {}
+        for code, (label, *parts) in words.items():
+            labels[code] = label[0]
+            on_line = follow_on([part for part in parts if part[0] == label[0]], label[4], SPACE)
+            later = sorted({part[0] for part in parts if part[0] > label[0]})
+            starts = [follow_on([part for part in parts if part[0] == line], MARGIN, GAP / 2) for line in later]
+            words[code] = on_line + next((start for start in starts if start), [])
+        # Where the paragraph's lines break: the code point, such as u0041, or the word of ten of its character, such as
+        # 0041, that starts each line after the first, where every code point and word was read
+        tokens = [
+            (line, token)
+            for expected in codes
+            for line, token in [(labels.get(f"{expected:04x}"), f"u{expected:04x}"), (min((part[0] for part in words.get(f"{expected:04x}", [])), default=None), f"{expected:04x}")]
+        ]
+        if all(line is not None for line, _ in tokens):
+            starts = [token for (line, token), (previous, _) in zip(tokens[1:], tokens) if line != previous]
+            result["lines"][f"W{number}"] = starts
         for expected in codes:
             parts = words.get(f"{expected:04x}", [])
             if not parts:
@@ -146,7 +191,7 @@ for face_index, face in enumerate(FACES):
 
 # S: eleven H's and ten spaces, less the eleven H's of the word before them
 for face_index, face in enumerate(FACES):
-    key = f"{face['font']}{' bold' if face['bold'] else ''}"
+    key = key_of(face)
     spaces = result["spaces"].setdefault(key, {})
     for space_index, code in enumerate(SPACES):
         number = face_index * len(SPACES) + space_index + 1
@@ -201,17 +246,19 @@ for key, widths in result["widths"].items():
 
 print("\n== S: the width of each space, and of the characters that take no room")
 codes = [f"{code:04x}" for code in SPACES]
-print("  " + " " * 22 + " ".join(f"{code:>6}" for code in codes))
+print("  " + " " * 28 + " ".join(f"{code:>6}" for code in codes))
 for key, spaces in result["spaces"].items():
-    print(f"  {key:22}" + " ".join(f"{spaces.get(code, float('nan')):6.1f}" for code in codes))
+    print(f"  {key:28}" + " ".join(f"{spaces.get(code, float('nan')):6.1f}" for code in codes))
 
-print("\n== B: forty words joined by each space, in Calibri 11: the last word of each line, and whether each line ends with a whole word")
-for code, found in result["breaks"].items():
-    print(f"  {code}: {found['lines']} lines, whole words: {found['wholeWords']}, ending: {' | '.join(found['ends'])}")
+# B and H, which the italic probe leaves out
+if result["breaks"]:
+    print("\n== B: forty words joined by each space, in Calibri 11: the last word of each line, and whether each line ends with a whole word")
+    for code, found in result["breaks"].items():
+        print(f"  {code}: {found['lines']} lines, whole words: {found['wholeWords']}, ending: {' | '.join(found['ends'])}")
 
-print("\n== H: whether the word before the space stays on its line, half the space's width before the margin")
-for code, found in result["hangs"].items():
-    print(f"  {code}: {'stays' if found['stays'] else 'goes to the next line'} ({found['word']})")
+    print("\n== H: whether the word before the space stays on its line, half the space's width before the margin")
+    for code, found in result["hangs"].items():
+        print(f"  {code}: {'stays' if found['stays'] else 'goes to the next line'} ({found['word']})")
 
 if problems:
     print("\n== Not read")
