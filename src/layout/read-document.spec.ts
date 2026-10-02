@@ -73,6 +73,21 @@ describe("readDocument", () => {
             expect(paragraphOf(content).style).to.equal("Heading1");
         });
 
+        it("should read East Asian text in its run's East Asian font, with its language, and right-to-left runs in the font of complex scripts", () => {
+            const fonts = { "w:rFonts": { _attr: { "w:ascii": "Arial", "w:eastAsia": "SimSun", "w:cs": "Times New Roman" } } };
+            const content = readBody([
+                p(
+                    r(rPr(fonts, { "w:lang": { _attr: { "w:eastAsia": "zh-CN" } } }), t("a永")),
+                    r(rPr(fonts, { "w:rtl": {} }, value("w:szCs", 28)), t("b")),
+                ),
+            ]);
+            expect(itemsOf(content)).to.deep.equal([
+                { type: "text", text: "a", font: { font: "Arial" }, language: "zh-CN", eastAsian: true },
+                { type: "text", text: "永", font: { font: "SimSun" }, language: "zh-CN", eastAsian: true },
+                { type: "text", text: "b", font: { font: "Times New Roman", size: 14 }, eastAsian: true },
+            ]);
+        });
+
         it("should read an empty paragraph", () => {
             expect(paragraphOf(readBody([{ "w:p": {} }]))).to.deep.include({ items: [], style: "Normal" });
         });
@@ -1086,6 +1101,40 @@ describe("readDocument", () => {
 
         it("should mark a document that hyphenates its words as unsupported", () => {
             expect(readBody([], { hyphenation: { autoHyphenation: true } }).unsupported).to.equal("hyphenation");
+        });
+
+        /** Reads a document whose settings are these elements, which docx doesn't write */
+        const readSettings = (...settings: readonly object[]): DocumentContent => {
+            const file = new File({ sections: [] });
+            const withSettings = Object.create(file, { Settings: { value: { prepForXml: () => ({ "w:settings": settings }) } } }) as File;
+            return readDocument({ "w:body": [] } as IXmlableObject, contextOf(withSettings));
+        };
+
+        it("should read the document's own lists of the characters that can't start or end a line, for their languages", () => {
+            const kinsoku = (name: string, lang: string, val?: string): object => ({
+                [name]: { _attr: { "w:lang": lang, ...(val === undefined ? {} : { "w:val": val }) } },
+            });
+            // cspell:disable
+            const content = readSettings(
+                kinsoku("w:noLineBreaksBefore", "ja-JP", "、。"),
+                kinsoku("w:noLineBreaksAfter", "ja-JP", "「"),
+                kinsoku("w:noLineBreaksAfter", "zh-TW"),
+                kinsoku("w:noLineBreaksBefore", "en-US", "!"),
+            );
+            expect(content.breakRules).to.deep.equal({
+                lists: { japanese: { noLineStart: "、。", noLineEnd: "「" }, traditionalChinese: { noLineEnd: "" } },
+            });
+            // cspell:enable
+            expect(content.unsupported).to.equal(undefined);
+            expect(readBody([]).breakRules).to.equal(undefined);
+        });
+
+        it("should mark a document with Word's strict rules for the first and last characters of lines, or that compresses punctuation, as unsupported", () => {
+            expect(readSettings({ "w:strictFirstAndLastChars": {} }).unsupported).to.equal(
+                "the strict rules for the characters that can't start a line",
+            );
+            expect(readSettings(value("w:characterSpacingControl", "compressPunctuation")).unsupported).to.equal("punctuation compressed");
+            expect(readSettings(value("w:characterSpacingControl", "doNotCompress")).unsupported).to.equal(undefined);
         });
     });
 

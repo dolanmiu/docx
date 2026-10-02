@@ -10,7 +10,8 @@
  */
 import type { IContext } from "docx";
 
-import type { LineSpacing, ParagraphFormat, TabStopSetting, TextFont, TextSpan } from "./text-width";
+import { isEastAsian, kinsokuLanguageOf } from "./line-break-rules";
+import { type LineSpacing, type ParagraphFormat, type TabStopSetting, type TextFont, type TextSpan, isEastAsianFont } from "./text-width";
 
 export type XmlObject = Readonly<Record<string, unknown>>;
 
@@ -24,6 +25,17 @@ export type RunFormat = Omit<TextFont, "size"> & {
     readonly smallCaps?: boolean;
     /** Hidden text takes up no room */
     readonly hidden?: boolean;
+    /** The font of Chinese, Japanese and Korean text (`w:eastAsia`) */
+    readonly eastAsiaFont?: string;
+    /** The font, size in points and boldness of complex scripts, such as Arabic, Hebrew and Thai (`w:cs`, `w:szCs`, `w:bCs`) */
+    readonly complexScriptFont?: string;
+    readonly complexScriptSize?: number;
+    readonly complexScriptBold?: boolean;
+    /** Whether the run is right to left (`w:rtl`), or of a complex script (`w:cs`), so all of it is in the complex script's formatting */
+    readonly rightToLeft?: boolean;
+    readonly complexScript?: boolean;
+    /** The East Asian language of the run (`w:lang w:eastAsia`), which decides which characters can't start or end a line */
+    readonly eastAsianLanguage?: string;
 };
 
 /**
@@ -184,6 +196,13 @@ export const readRunFormat = (element: unknown, themeFonts: ThemeFonts): RunForm
         hidden: onOff(children, "w:vanish"),
         characterSpacing: scaled(numberOf(attributesOf(find(children, "w:spacing"))["w:val"]), TWIPS_PER_POINT),
         scale: numberOf(attributesOf(find(children, "w:w"))["w:val"]),
+        eastAsiaFont: themeFontOf(fonts["w:eastAsiaTheme"], themeFonts) ?? stringOf(fonts["w:eastAsia"]),
+        complexScriptFont: themeFontOf(fonts["w:cstheme"], themeFonts) ?? stringOf(fonts["w:cs"]),
+        complexScriptSize: scaled(numberOf(attributesOf(find(children, "w:szCs"))["w:val"]), 2),
+        complexScriptBold: onOff(children, "w:bCs"),
+        rightToLeft: onOff(children, "w:rtl"),
+        complexScript: onOff(children, "w:cs"),
+        eastAsianLanguage: stringOf(attributesOf(find(children, "w:lang"))["w:eastAsia"]),
     });
 };
 
@@ -253,6 +272,8 @@ export const readParagraphFormat = (element: unknown): ParagraphFormat => {
         pageBreakBefore: onOff(children, "w:pageBreakBefore"),
         widowControl: onOff(children, "w:widowControl"),
         tabs: readTabs(find(children, "w:tabs")),
+        kinsoku: onOff(children, "w:kinsoku"),
+        wordWrap: onOff(children, "w:wordWrap"),
     });
 };
 
@@ -379,24 +400,77 @@ export const styleChain = ({ styles }: TextStyles, id: string | undefined, type:
 export const fontOf = ({ font, size, bold, italic, characterSpacing, scale }: RunFormat): TextFont =>
     withoutUndefined({ font, size, bold, italic, characterSpacing, scale });
 
+type FontSlot = "latin" | "eastAsian" | "complex";
+
 /**
- * A span of text in its formatting: capitals for all caps, and smaller capitals for the small letters of small caps.
+ * Which of a run's fonts Word draws a character in: the font for complex scripts, in their size and boldness, for all of a
+ * run that is right to left or of a complex script; the East Asian font for Chinese, Japanese and Korean; the run's font
+ * for the rest. Hebrew in a run that isn't right to left is in the run's size, as Word lays it out. A mark is drawn in the
+ * font of the character it is on.
+ */
+const slotOf = (character: string, previous: FontSlot, complexRun: boolean): FontSlot => {
+    if (complexRun) {
+        return "complex";
+    }
+    if (isEastAsian(character)) {
+        return "eastAsian";
+    }
+    return /\p{M}/u.test(character) ? previous : "latin";
+};
+
+// The font Word draws Chinese, Japanese and Korean in when the run's East Asian font has none, such as Calibri
+const FALLBACK_EAST_ASIAN_FONT = "MS Mincho";
+
+/**
+ * The font of a character of a run, by the run's font Word draws it in. Complex scripts have their own size and boldness,
+ * and Word's defaults where the run doesn't give them.
+ */
+const fontOfSlot = (format: RunFormat, slot: FontSlot): TextFont => {
+    const font = fontOf(format);
+    if (slot === "latin") {
+        return font;
+    }
+    const { eastAsiaFont, complexScriptFont, complexScriptSize, complexScriptBold } = format;
+    return slot === "eastAsian"
+        ? { ...font, font: isEastAsianFont(eastAsiaFont) ? eastAsiaFont : FALLBACK_EAST_ASIAN_FONT }
+        : withoutUndefined({ ...font, font: complexScriptFont, size: complexScriptSize, bold: complexScriptBold });
+};
+
+/**
+ * A span of text in its formatting: in the run's font for its script, capitals for all caps, and smaller capitals for the
+ * small letters of small caps.
  */
 export const spansOf = (text: string, format: RunFormat): readonly TextSpan[] => {
-    const { allCaps, smallCaps, hidden } = format;
-    const font = fontOf(format);
+    const { allCaps, smallCaps, hidden, rightToLeft, complexScript } = format;
     if (hidden) {
         return [];
     }
-    if (allCaps || !smallCaps) {
-        return [{ ...font, text: allCaps ? text.toUpperCase() : text }];
-    }
-    const small = { ...font, size: (font.size ?? 10) * SMALL_CAPS_SCALE };
-    return text
-        .split(/(\p{Ll}+)/u)
-        .filter((part) => part.length > 0)
-        .map((part) => (/^\p{Ll}/u.test(part) ? { ...small, text: part.toUpperCase() } : { ...font, text: part }));
+    const complexRun = rightToLeft === true || complexScript === true;
+    // The parts of the text in each of the run's fonts
+    const parts = [...text].reduce<readonly { readonly slot: FontSlot; readonly text: string }[]>((all, character) => {
+        const last = all[all.length - 1];
+        const slot = slotOf(character, last?.slot ?? "latin", complexRun);
+        return last?.slot === slot ? [...all.slice(0, -1), { slot, text: last.text + character }] : [...all, { slot, text: character }];
+    }, []);
+    return parts.flatMap(({ slot, text: part }) => {
+        const font = fontOfSlot(format, slot);
+        if (allCaps || !smallCaps) {
+            return [{ ...font, text: allCaps ? part.toUpperCase() : part }];
+        }
+        const small = { ...font, size: (font.size ?? 10) * SMALL_CAPS_SCALE };
+        return part
+            .split(/(\p{Ll}+)/u)
+            .filter((piece) => piece.length > 0)
+            .map((piece) => (/^\p{Ll}/u.test(piece) ? { ...small, text: piece.toUpperCase() } : { ...font, text: piece }));
+    });
 };
+
+/**
+ * Whether a run is East Asian, by its East Asian font or language, so its words break anywhere with word wrap off, as
+ * Word breaks them.
+ */
+export const isEastAsianRun = ({ eastAsiaFont, eastAsianLanguage }: RunFormat): boolean =>
+    isEastAsianFont(eastAsiaFont) || kinsokuLanguageOf(eastAsianLanguage) !== undefined;
 
 /**
  * Whether a paragraph in the default style, without formatting of its own, has space before or after it.
