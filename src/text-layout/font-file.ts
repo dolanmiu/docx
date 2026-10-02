@@ -23,6 +23,11 @@ export type FontFace = {
     readonly italic: boolean;
     /** How tall a line of single-spaced text is, in ems, as Word works it out */
     readonly lineHeight: number;
+    /**
+     * How far a line of single-spaced text goes below its baseline, in ems: the descent the line is worked out from. The
+     * rest is above it, with the line gap at the top
+     */
+    readonly descent: number;
 } & {
     /** How wide a character is, in ems, or undefined when the font has no glyph for it */
     readonly advanceOf: (code: number) => number | undefined;
@@ -358,9 +363,13 @@ const readFace = (view: DataView, offset: number): FontFace => {
     const fsSelection = os2 === undefined ? 0 : view.getUint16(os2 + 62);
     const windowsHeight = os2 === undefined ? ascender - descender : view.getUint16(os2 + 74) + view.getUint16(os2 + 76);
     const externalLeading = Math.max(0, lineGap - (windowsHeight - (ascender - descender)));
-    const lineHeight = hasFlag(fsSelection, 0x80)
+    const typographic = hasFlag(fsSelection, 0x80);
+    const lineHeight = typographic
         ? view.getInt16(os2! + 68) - view.getInt16(os2! + 70) + view.getInt16(os2! + 72)
         : windowsHeight + externalLeading;
+    // Word's lines go as far below the baseline as the descent their height is worked out from: Calibri's descent for
+    // Windows, 550 of its 2048 units, below a picture beside Calibri 11 (word-watertight-text.docx TX8b)
+    const descent = typographic ? -view.getInt16(os2! + 70) : os2 === undefined ? -descender : view.getUint16(os2 + 76);
 
     const glyphOf = readCharacterMap(view, tables);
     // Word kerns with the GPOS table, and with the kern table of fonts without one (word-fonts.docx F1 and F2). It is read
@@ -383,6 +392,7 @@ const readFace = (view: DataView, offset: number): FontFace => {
         bold: os2 === undefined ? hasFlag(macStyle, 1) : hasFlag(fsSelection, 0x20),
         italic: os2 === undefined ? hasFlag(macStyle, 2) : hasFlag(fsSelection, 1),
         lineHeight: lineHeight / unitsPerEm,
+        descent: descent / unitsPerEm,
         advanceOf: (code) => {
             if (advances.has(code)) {
                 return advances.get(code);
@@ -494,6 +504,10 @@ export const createFontFileMeasurer = (faces: readonly FontFace[], fallback: Tex
         measureLineHeight: (font) => {
             const face = faceOf(font);
             return face ? face.lineHeight * (font.size ?? DEFAULT_FONT_SIZE) : fallback.measureLineHeight(font);
+        },
+        measureDescent: (font) => {
+            const face = faceOf(font);
+            return face ? face.descent * (font.size ?? DEFAULT_FONT_SIZE) : fallback.measureDescent(font);
         },
         unknownCharacter: (text, font) => {
             const face = faceOf(font);

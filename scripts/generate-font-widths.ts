@@ -104,15 +104,18 @@ const isOwnFont = (drawnIn: string | null, font: string): boolean => {
 };
 
 /**
- * Reads a font's height of a line and the width of each of its characters, as docx/layout reads the font files it is
- * given.
+ * Reads a font's height of a line, how far it goes below the baseline, and the width of each of its characters, as
+ * docx/layout reads the font files it is given.
  */
-const readFont = (path: string): { readonly lineHeight: number; readonly widthOf: (code: number) => number | undefined } => {
+const readFont = (
+    path: string,
+): { readonly lineHeight: number; readonly descent: number; readonly widthOf: (code: number) => number | undefined } => {
     const [face] = readFontFile(readFileSync(path));
     return {
         // Not rounded, as Word doesn't round it: Calibri's 2500 units of 2048 are 1220.703125 thousandths, and lines of
         // 268.55 twips at 11 points, where 1221 would be 268.62
         lineHeight: face.lineHeight * 1000,
+        descent: face.descent * 1000,
         // In thousandths of an em, or undefined when the font doesn't have the character
         widthOf: (code) => {
             const advance = face.advanceOf(code);
@@ -230,6 +233,7 @@ const entries = FONTS.map((font) => {
     return `    {
         name: "${font.name}",
         lineHeight: ${lineHeight},
+        descent: ${readFont(fileOf(font, "regular")).descent},
 ${FACES.map((face) => `        ${face}: "${encode(widthsOf(font, face))}",`).join("\n")}
     },`;
 });
@@ -256,6 +260,11 @@ export type FontWidths = {
     readonly name: string;
     /** Height of a line of single-spaced text, in thousandths of an em, unrounded */
     readonly lineHeight: number;
+    /**
+     * How far a line of single-spaced text goes below its baseline, in thousandths of an em, unrounded. The rest of the
+     * line is above it, with the font's line gap at the top
+     */
+    readonly descent: number;
     /**
      * The width of each character of {@link FONT_WIDTH_RANGES}, in thousandths of an em, written in a string: each width
      * is two digits of the 64 of \`0-9a-zA-Z+/\`, the first of 64ths; "=" is a width that is the same as that of the letter

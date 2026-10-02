@@ -77,6 +77,10 @@ describe("readFontFile", () => {
             hhea: { ascender: 1536, descender: -512, lineGap: 452 },
         };
         expect(faceOf({ advances: LETTERS, ...calibri }).lineHeight).to.be.closeTo(1.2207, 0.0001);
+        // Its lines go Windows' descent below the baseline, as a picture beside Calibri 11 shows in Word
+        // (word-watertight-text.docx TX8b), and the hhea table's gap is above the text
+        expect(faceOf({ advances: LETTERS, ...calibri }).descent).to.be.closeTo(550 / 2048, 1e-9);
+        expect(faceOf({ advances: LETTERS, ...times }).descent).to.be.closeTo(443 / 2048, 1e-9);
     });
 
     it("should make a line as tall as the typographic ascent, descent and line gap of a font that asks for them, as Aptos does", () => {
@@ -88,6 +92,8 @@ describe("readFontFile", () => {
         };
         expect(faceOf({ advances: LETTERS, ...aptos }).lineHeight).to.be.closeTo(1.2207, 0.0001);
         expect(faceOf({ advances: LETTERS, typographic: { ascent: 700, descent: 200, lineGap: 100 } }).lineHeight).to.equal(1);
+        // And go its typographic descent below the baseline
+        expect(faceOf({ advances: LETTERS, ...aptos }).descent).to.be.closeTo(577 / 2048, 1e-9);
     });
 
     it("should read whether a face is bold or italic from its OS/2 table", () => {
@@ -104,6 +110,7 @@ describe("readFontFile", () => {
             hhea: { ascender: 900, descender: -300, lineGap: 100 },
         });
         expect(face.lineHeight).to.equal(1.3);
+        expect(face.descent).to.equal(0.3);
         expect(face.bold).to.equal(true);
         expect(face.italic).to.equal(false);
         expect(faceOf({ advances: LETTERS, windows: false, italic: true }).italic).to.equal(true);
@@ -301,6 +308,12 @@ describe("createFontFileMeasurer", () => {
         const measurer = createFontFileMeasurer(fonts({ advances: LETTERS, windows: { ascent: 900, descent: 300 } }));
         expect(measurer.measureLineHeight({ font: "Probe Sans", size: 10 })).to.be.closeTo(12, 1e-9);
         expect(measurer.measureLineHeight({ font: "Probe Sans" })).to.be.closeTo(12, 1e-9);
+        // And as far below the baseline as its descent, and other fonts as the fallback measures them
+        expect(measurer.measureDescent({ font: "Probe Sans", size: 10 })).to.be.closeTo(3, 1e-9);
+        expect(measurer.measureDescent({ font: "Probe Sans" })).to.be.closeTo(3, 1e-9);
+        expect(measurer.measureDescent({ font: "Calibri", size: 11 })).to.equal(
+            DEFAULT_MEASURER.measureDescent({ font: "Calibri", size: 11 }),
+        );
     });
 
     it("should kern text from the size its kerning starts at", () => {
@@ -342,7 +355,11 @@ describe("createFontFileMeasurer", () => {
         const measurer = createFontFileMeasurer(fonts({ advances: LETTERS }));
         const calibri = { font: "Calibri", size: 11 };
         expect(measurer.unknownCharacter!("a\u2211", calibri)).to.equal(DEFAULT_MEASURER.unknownCharacter!("a\u2211", calibri));
-        const withoutUnknown = createFontFileMeasurer(fonts({ advances: LETTERS }), { measureWidth: () => 0, measureLineHeight: () => 0 });
+        const withoutUnknown = createFontFileMeasurer(fonts({ advances: LETTERS }), {
+            measureWidth: () => 0,
+            measureLineHeight: () => 0,
+            measureDescent: () => 0,
+        });
         expect(withoutUnknown.unknownCharacter!("a\u2211", calibri)).to.equal(undefined);
     });
 

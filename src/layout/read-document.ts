@@ -460,10 +460,10 @@ const tabStopsOf = (formats: readonly ParagraphFormat[]): readonly TabStop[] =>
         .filter((stop): stop is TabStop => stop.alignment !== "bar" && stop.alignment !== "clear");
 
 /**
- * Reads a drawing in a run (`w:drawing`): a picture in the line is a box, and one that text doesn't flow around, such as
- * one behind the text, takes up no room.
+ * Reads a drawing in a run (`w:drawing`): a picture in the line is a box, with its run's font, and one that text doesn't
+ * flow around, such as one behind the text, takes up no room.
  */
-const readDrawing = (element: XmlObject, reader: Reader): readonly LayoutItem[] | string => {
+const readDrawing = (element: XmlObject, font: TextFont, reader: Reader): readonly LayoutItem[] | string => {
     const [drawing] = childrenOf(element["w:drawing"]);
     const inline = drawing["wp:inline"];
     if (inline !== undefined) {
@@ -477,6 +477,7 @@ const readDrawing = (element: XmlObject, reader: Reader): readonly LayoutItem[] 
                 type: "box",
                 width: emus(extent.cx, effect.l, effect.r, around.distL, around.distR) / EMUS_PER_POINT,
                 height: emus(extent.cy, effect.t, effect.b, around.distT, around.distB) / EMUS_PER_POINT,
+                font,
             },
         ];
     }
@@ -621,7 +622,7 @@ const readRun = (element: XmlObject, paragraphRun: RunFormat, reader: Reader): r
             case "w:endnoteRef":
                 return reader.noteNumber === undefined ? [] : [noteNumber(reader.noteNumber, font)];
             case "w:drawing":
-                return readDrawing(child, reader);
+                return readDrawing(child, font, reader);
             case "mc:AlternateContent": {
                 // The drawing Word reads, rather than the one for older versions
                 const choice = childrenOf(child["mc:AlternateContent"]).find((option) => "mc:Choice" in option);

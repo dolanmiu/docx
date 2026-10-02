@@ -14,6 +14,7 @@ import { type Block, type TableBlock, readDocument } from "./read-document";
 const MEASURER: TextMeasurer = {
     measureWidth: (text) => [...text].length * 10,
     measureLineHeight: () => 10,
+    measureDescent: () => 0,
 };
 
 /** How narrow and how wide the paragraphs and tables of a cell can be, as the layout measures them */

@@ -5,7 +5,7 @@
  * @module
  */
 // cspell:ignore chenglou
-import { DEFAULT_FONT, DEFAULT_FONT_SIZE, type TextMeasurer, measureLineHeight } from "../text-layout";
+import { DEFAULT_FONT, DEFAULT_FONT_SIZE, type TextMeasurer, measureDescent, measureLineHeight } from "../text-layout";
 
 /**
  * The font to measure text in.
@@ -103,8 +103,8 @@ export const measureWithPretext = <Prepared>(
 };
 
 /**
- * A measurer that measures widths with a function, and lines' heights with the width tables, as Word works them out
- * from the font's height and the paragraph's spacing.
+ * A measurer that measures widths with a function, and lines' heights and descents with the width tables, as Word works
+ * them out from the font's height and the paragraph's spacing.
  */
 export const measurerOf = (measureWidth: MeasureWidth): TextMeasurer => ({
     measureWidth: (
@@ -122,4 +122,5 @@ export const measurerOf = (measureWidth: MeasureWidth): TextMeasurer => ({
             .reduce((position, part, index) => (index === 0 ? 0 : (Math.floor(position / TAB_STOP) + 1) * TAB_STOP) + widthOf(part), 0);
     },
     measureLineHeight,
+    measureDescent,
 });
