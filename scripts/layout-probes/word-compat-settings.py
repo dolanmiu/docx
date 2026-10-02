@@ -48,8 +48,8 @@ def by_probe(lines):
 
 def compare(base, other):
     """The probes whose lines differ, each with how its first line that differs does. A probe that starts on another page
-    is compared from there, and only says so when the probe before ended on the page it did, so a probe that moves a page
-    doesn't make those after it differ"""
+    is compared from there, and says so only when the probe before didn't end as many pages later, so a probe that moves a
+    page doesn't make those after it differ, nor one that moves its own last line onto the next probe's page"""
     found = {}
     others = by_probe(other)
     # How many pages later the probe before ended, which those after it start later by too
@@ -57,7 +57,7 @@ def compare(base, other):
     for probe, lines in by_probe(base).items():
         theirs = others.get(probe, [])
         shift = theirs[0][0] - lines[0][0] if theirs else before
-        moved = f"starts on page {theirs[0][0]}, not {lines[0][0] + before}; " if shift != before else ""
+        moved = f"starts on page {theirs[0][0]}, not {lines[0][0]}; " if shift not in (0, before) else ""
         before = theirs[-1][0] - lines[-1][0] if theirs else before
         for index, line in enumerate(lines):
             if index >= len(theirs):
