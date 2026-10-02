@@ -7,7 +7,7 @@ showed. Each line of text names its probe, such as `Q3a fill 12`, so it can be f
 probe starts on a page of its own or is marked off by lines above and below it.
 
 Each probe has the `.docx` Word opened and the PDF Word saved from it, beside the script that makes it. They were saved
-from Word 16 for Mac on 2026-09-30 and 2026-10-01 (Save As, PDF, Best for printing). docx writes some of them differently
+from Word 16 for Mac on 2026-09-30 to 2026-10-02 (Save As, PDF, Best for printing). docx writes some of them differently
 now, so the committed `.docx` is the one each PDF is of: `word-rules` and `word-tables` were made before docx wrote a
 table style and each cell's width.
 
