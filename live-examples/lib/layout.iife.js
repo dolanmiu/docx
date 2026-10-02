@@ -17,6 +17,7 @@ var docxLayout = (function(exports) {
 		{
 			name: "Calibri",
 			lineHeight: 1220.703125,
+			descent: 268.5546875,
 			regular: "3y566h7O7XbbaG3t4L4L7O7O3W4O3Y627X*094c4c7O*027fd+938w8l9D7E7b9T9L3Y4/886Adna6am85ax8v7b7Da28TdW877D7k4P624P7O7O4z7v8d6D8d7O4N7n8d3B3L773Bcv8d8f8d8d5t675f8d74bb6N756b4W7c4W7O3y567O7X7O7X7O7O69d26i807O4O7X6a5j7O5g5e4A8C9a3Y4P3S6C809Yavaz7f=93*04bX==7E*02=3Y*029N==am*037Oao=a2*02=858f=7v*04c5==7O*02=3B*028d8d=8f*037O8h=8d*02=8d=*0f8U9N8E=*0jag8l=*083B8X7l=*0377=*036D488y5S6K3U=*05939Q8d=*05dzdi=*0g5q7D5m=*0m3P8E9D8q8d8j8d8A917e9NaL8q8d8b7Ea37q7b4N9U8Tcf4x4d88774q7fdLa68pamaV92c5af9z8d8v7b677a6L5D8j5f7Dbi9raoa28k7O7k6b7q*026F7X7X6G678d3Q6b8+56gXfOeobLak7lf4dRbZ=*0f7O=*059T8p=*087q=gNfOeo==d/9s=*0z7q7q==a39o7X7X7I6s=*0d4Z9D5f3LcScR938l6D6A7D676b6/6/8Eaj8Z7E7O594p9S8d8D5T927B7v8d*026D738d8d7O7O9+6D6D8e8h4q8d8d8s747t8d*024q4i4I5H5Q3B8Rcucucv8d8d8t8fb8aUab5t*044/4/7171673L4q3L4Z5f5f948K8u74bb756v6b7u7j7i6/*026D9Q7v8h8E8n4Z77638d6/6/cAdmdT9H7naJbQ998D7I7I8d8q5I5I2O3R3R3X4+7I4X3t6g3W*023y3y55557O7O8p8p6b6b4y6a4A4z4y6a4z4A4m4m3y3y5d*035Z3y514U727l5d5d4F2H4h4U555/*045d5d6b8/6y5d*03514z7l7l724c5d*038j8j5U7U6I7D633W3Wa28s!!4i6D*02=4/!*034Z7K93=7E9L3Y!am!7Dao4i938w6w8Q7E7k9Lam3Y888Zdna67Iam9L85!7a7D7DbT87bKao==8T788p4i8u8T8j6+8b785s8p8k4i777f8C715U8f8F7Z6r8k638uab6Gb4aU=*04878c8L7D8u=aecK9tam8f8l6r7b6O8x729393dLcv8x8b8I808l6z9q7Vax8k7p6a9t7Z6D3Lam6M6M858K8laX9k7Z8l*027E7E9N6K8z7b3Y3Y4/dEdI9G8va28f9I938q8w6Ka47Ecx7qa2a28v9zdn9Lam9K858l7D8faV879/8IdAdW9DbW8j8AdL8H7v8l7v5q8K7OaN6D8t8t7g7+aA8n8f898d6D63759M6N8u7lbpbJ8oaq7m6Xbi7q=7O8t=6Y673B3B3LbLc28l=*028dewaB9P87ceaa9S8dd0b6bj8PeabP7q6tbKb4am8c9e7u==gledam90ewceewaB8l6D9x00*06an8y8j7A858d6N5y6F5Q8k75d5bf7q6D957K8v7g8E7G9T8na38Hb79te6bDa68G8l6D7D637D747D748K7ebo9k8/7F8I7l8I7lbF9mbF9m3Y==8y7s9U849L8n9L8t8I7ldKba3Y=*03bXc5==a37O=*057q7j=*05am8c=*0b6w5q==6F5Q8R7d876N=*2p7v=4N4N8N8b=*0VaV92aV92aV92aV92aV92=*03bi9rbi9rbi9rbi9rbi9r=*079z6F8K7q8f747QfE7Oe94J3y2n8r3p381Z00*044O4O7X7Oe9e96b7O3W*036y*037O*02!*02aO!*0200*043yge!3s6g94!*02665j5j!8K7z7O!*045g!*0o4c3u00*04!00*09672J!!5B5b5D515E5D5I5D5w3p3p5G673S5g5e5B5b5D515E5D5I5D5w3p3p!5e5k5G4U5k!*0a9E8l8l7b7Xcva6eqchdWbF8E7X887DgW8g8P9b8Z7b8l!!7X*02a3ar7Xaf9a!*0f00*0w!*0jb+!*0c7S!!g1d2!*07b5!b1!*02=!*06bz!*027b!*0pb+5K!*03aAbjaAbjbabla7aKaqb0b0a660!*0y8l6D!*0ae9*03k8c9dO*03!*0d7o!*1o8l!*028Q!*07cv!8t7O!!5g!*023Y7O!*02dlaI!*08a+!5K!*0r7O!*0m=7O!!7O7O!*2p",
 			bold: "3y566S7O7Xbpb13F4U4U7O7O424O4b6K7X*094k4k7O*027fe29u8N8h9S7E7b9Z9T4b5b8z6DdGajaA8kaK8P7p7Lad9fea8D887u556K557O7O4I7K8p6y8p7T4Y7q8p3S3/7w3ScJ8p8q8p8p5z6f5r8p7pbF7b7q6d5o7r5o7O3y567O7X7O7X7O7O6vd26w8r7O4O7X665m7O5i5g4J8P9m4c4L3Y6P8raiaPa+7f=9u*04c7==7E*02=4b*029/==aA*037OaF=ad*02=8k8H=7K*04c7==7T*02=3S*028p8p=8q*037O8w=8p*02=8p=*0f9l9/8V=*0jai8z=*083S9m7R=*037w=*036K4O8O6C6N48=*059Ka18p=*05dGdb=*0g5H7L5y=*0m428Xas8I8p8Y8y8d9v7g9/by8I8p8l7Eai7J7b4YaF9fcA4I4J8B7w4V7CdVaj8paAbZ9VcyaPa08p8P7s6j7m6+5K8x5r7LbVa7aFad8B827u6d7G7J7v6M7X7X6D698p487x9b56hkg4eCc2aC7Rfueico=*0f7T=*04c7a58J=*087a=h8g4eC==dR9A=*04c7=*0t7G7a==a29v8g837G6j=*0d5a9L5v3/cXcY9u8m6D6U7V6f6d6S6P8Zav9i7E7O5p4F9U8p915X9c7J7K8p*026D6V8p8z7T7Ta36H6H8r8f4A8y8o8o7v7A8p*024K4u576a6i3Y97cJ*028p8p8D8obfb3aX5z5z5A5z5z58587F7F6f3N4s3N585r5r9a988k7pbF7q7f6i7v7a7c6S*026ya77L8f8t8x5a7w6k8z6S6Sd6dGena27Ta/cu9H9h8d7I8x8y5R5R2Z3W3R405i815b3m6o42*023y3y55557O7O8p8p6h6h4y664J4I4y6a4I4J4m4m3y3y5d*03613H584X6Y7C5d*022T4m5d555/*045d5d6h8/6P5d*03584I7l7C6Y4k5d*038j8j5U8a757L7i4242ac8J!!4i6D6y6D=5b!*034Z7K9u=7E9T4b!aA!88aF4u9u8N6q927E7u9TaA4b8z9idGaj7IaA9T8k!7m7L88cx8DcEaF==9f7a8w4u8A9f8x7j8l7a5I8w8x4u7w7C8P7n618q938i6n8w698AaX73bybe=*048z8o9e8b*02b0de9zaA8q8d6q7b6+8E7o9o9qdPcJ8x8g8N897X6A957sas8s7T6j9t8g6y3/aA6/6/8k8y8hbe9E8i8u8h8u7E7E9Y6M8r7p4b4b5be0e09U8Pac8z9Q9u8I8N6Max7Ed17yacac8P9RdG9TaA9S8k8h7L8zbk8Dai8Ve1ev9/cu8F8rei8+7K8k7L5y967Tbx6H8J8J7L8eb98x8q8m8p6y667qaz7b8O7EbXcl8Kb87L6RbN7O=7T8F=6S6f3S3S3/c8cq8z=*028peObf9+8kcdadab8Zd/clbo9OeZd97J6FcEbyaA8o9A7N==hbeZbb9aeOcreObf866n9x00*06aP9d8U7T8k8p6O5L6V5W8G79dUcc7y6H9H8p9b8h907/a68Vax8Ybo9IembEak8Q8h6y7L65887s887s9t7RbM9A9n8i8V7T8V7Tcc9Pcc9P4b==987Yas8K9T8xau918V7Teibv4b=*03c7c7==ai7T=*057G7a=*05aA8q=*0b6H5y==6V5W9l7P8D7b=*2p7K=4Y4Y8Z8l=*0VaV9VaV9VaV9VaV9VaV9V=*03bVa7bVa7bVa7bVa7bVa7=*07a36+9n7S8z7q7QfE7Oe94J3y2n7X3p381Z00*044O4O7X7Oe9e97x7P42*036P*037O*02!*02b7!*0200*043ygC!3m6o9k!*02665o5o!9b7V7O!*045z!*0o4B3u00*04!00*096e2V!!5K5h5F575K5F5z5w5r3u3u5Q6e3Y5i5g5K5h5F575K5F5z5w5r3u3u!5n5k5O5d5r!*0aa68w8h7g7XcJaNeobXeSbY8V7X8N7Lhs8N9f9y9K878h!!7X*02b4bu8kaU9a!*0f00*0w!*0jc8!*0c8g!!gmd2!*07br!bg!*02=!*06bz!*027b!*0pb+5K!*03aVbHaVbHbAbNatb7aUbybyaE6c!*0y8h6D!*0ae9*03kuc1d7*03!*0d7o!*1o8p!*0292!*07ce!8C7O!!5Z!*024b7O!*02d6aI!*08a+!5T!*0r7O!*0m=7O!!7O7O!*2p",
 			italic: "3y566h7O7XbbaG3t4L4L7O7O3W4O3Y647X*094c4c7O*027fd+938w8a9D7E7b9T9L3Y4/886Adna5ae85ao8v747Da28TdW877D7k4P604P7O7O4z82826w827u4N82823B3L773Bcn828182825n655f826+bb6N6/6b4W7c4W7O3y567O7X7O7X7O7O69d26L807O4O7X6a5j7O5g5e4A8q9a3Y4P3S6C809Yavaz7f=93*04bX==7E*02=3Y*029N==ae*037Oai=a2*02=858f=82*04bO==7u*02=3B*028d==81*037O8h=82*02=82=*0f8H9N8D=*0jag89=*083B8X7l=*0377=*036D488y5S6K3U=*058V9P82=*05dzcK=*0g5q7D5m=*0m3P829l8q828j8d8a8a6w9Nas85828b7E9o7q7b4N9T8Tb/4x4r88774q7fd1a58daeaN8Qc59E8V828v74657a6L5f7S5f7Dbi9faoa27D7d7k6b7q7q796C7G7w6G5T8b3Q6b8+56h1fResbYak7lf3dQbN=*0f7u=*059T82=*087j=h1fRes==d/9s=*0z7q7j==9W957X7X7k6b=*0d4E974Z3Lcwcv938a6w6A7D656b6/6/8wa28Z7E7u4/3L9T828v5n7D7g7v82*026w73828d7d7u9L786D8j873L82828v747t82*023B4i4U5H5H3B8Rcn*0282828p83auaoab5n*044/4/6+7b653L*024Z5f5f828K8o6+bb6/6v6b7Q7j7j6/*026Dae7C818v8f4Z7763826/6/codje19E7saJbE998D7I7I82825A5A2O3O3O3X4+7I4X3t6g3W*023y3y55557O7O8p8p6b6b4y6a4A4z4y6a4z4A4m4m3y3y5d*035Z3v514U727l5d5d4F2H4h4T555/*045d5d6b8/6y5d*03514z7l7l724c5d*038j8j5U7U6I7D633W3Wa28s!!4U6w*02=4/!*034Z7K93=7E9L3Y!ae!7Dao4i938w6w8Q7E7k9Lag3Y888Zdna57Iae9L85!7a7D7DbU87bKao==8R788d4i8u8R8g6+8b785s8d8L4i777f8q715U818F7Z6r8k638uae6Gb4aU=*04878g8k7D8u=abcK9tae818a6r7b6O8x729393dLcn8x8b8I808f6u9q7Vax8k7p6a9t7Z6w3Lae6M6M85828aaV9g7Z8a*027E7E9N6K8z743Y3Y4/dEdI9G8va28f9I938q8w6Ka47Ecx7qa2a28v9zdn9Lae9K858a7D8faV879/8IdAdW9DbW8j8AdL8H828l7v6r8e7uci6D82827g7+aA8f8189826wcn6/b16N8n7lc8ct8oaq7i6Xbh7q=7u8p=6Y653B3B3LbKc289=*0282ewaz9P87ca9N9S8dd0b6bj8PeabP7q6DbKb4ae839d7u==g2edae81ewceewaz8a6w9x00*06a2828j7x85826N5y6K5y8k75c+ci7q6D8Y7K8v7g8v7g9L8l9X8yb79te5bD9Z8n8a6w7DcE7D747D748H7eb98n8T7D8I7l8I7lb896b8963Y==8v7s9U849L8f9L8i8I7ldKaA3Y=*03bXbO==9o7u=*057q7j=*05ae83=*0b6K6r==6K5y8H7e876N=*2p82=4N4N8N8b=*0VaN8QaN8QaN8QaN8QaN8Q=*03bi9fbi9fbi9fbi9fbi9f=*079z6F8n7q8f6/7QfE7Oe94J3y2n8r3p381Z00*044O4O7X7Oe9e97X7O3W*036y*037O*02!*02aO!*0200*043yge!3s6g94!*02665j5j!8K7z7O!*045g!*0o4c3u00*04!00*09672J!!5B5b5D515E5D5I5D5w3p3p5B673S5g5e5B5b5D515E5D5I5D5w3p3p!5z595y4T59!*0a9E8a8a7b7Xcna5ehc8dWbF8C7X887DgW8g8P9b8Z7b8a!!7X*02a6ar7Xaf9a!*0f00*0w!*0jbQ!*0c7S!!f+d2!*07b5!b1!*02=!*06bz!*027b!*0pb+5K!*03aAbjaAbjbabla7aKaqb0b0a660!*0y8K6w!*0ae9*03k8c9dO*03!*0d7o!*1o8l!*028Q!*07cv!8t7O!!5g!*023Y7O!*02dlaI!*08a+!5K!*0r7O!*0m=7O!!7O7O!*2p",
@@ -25,6 +26,7 @@ var docxLayout = (function(exports) {
 		{
 			name: "Cambria",
 			lineHeight: 1172.36328125,
+			descent: 222,
 			regular: "3s4u699H7WdWaL3J5+5+6H8G3d5c3d7G8G*0948488G*026CdR9L9z8Oam8/8p9zaL544P9R8pcLaFad8Uad9J7M9ha89sep8X8W8q5u7G5u8G5P4t7E8z6V8H7E4L7K8E4m4a8c4fd08K8j8I8z6u6K5i8E7Uc67z7U77634Y63b83s4u6V8g8w9x4Y7Q4tdj6x7E8G5cdj4t5T8G6n6n4t8w9c4q4t6n6I7EdxdWdx6C=9L*04dy==8/*02=54*02ap==ad*038Gad=a8*02=8+9t=7E*04bM==7E*02=4m*028i==8j*038G8j=8E*02=8z=*0faCap8H=*0jaP8E=*084m9T8w=*038j=*04619K5U8s4R=*05aOaF8D=*05excO=*0g739h5x=*0m4n8za+9n8z9l8H8O8O8hapbM9n8H8d94ad8v8p4K9z9GcF4X549R8c4Q7EemaF8Aadbm9ncOaHai8w977M6K8A4Z5n9h5i9hbO9La7a79J9Z8q768l8n786S7G8M7a6A8u3Z6o4A4diMhtfOdccz8qfsePcU=*0f7H=*059E7K=*0878=iMhtfO==eq9O=*0o6t=6t=*078v7u==aqaS97838q76=*0d6maZ6o4acOcO9L8O778p9h6K767N5/9za89t8/7E4O4Kaj8z9J6B8W7U7L8G8I8x7d7c8H8L7E7Max7h7aa2894U8w8w877U8I8x8E8w4U4m4s4+4G458WcWcOcV8K8I8X8gbZbBbi6n6n6g6p6t6e6i898c6K4c4A6d4n5i5i9a8c877Uc67U77767F78785H5B5V79ce8b878J9d4c85748z5H5BdhdldPaj8ebfd09m8/9881aBaB6q6q3l4W4S5n5X8+603I693t*023I3I41418G*034t4t2Y4t4e4e2Y4v4e4e4i3+49494f*034t*052N5x5X3n555H456g*045I5I5h6n5T5h4L3N3N4s4e6+6+562W4K*036S*02!*033333!*034s6R*0247!*044s4s9H3Qb2cJ72!bw!cabQ4s9L9z8o9k8/8qaLad549R9tcMaF8Yaday8U!8A9h9vch8XcfaD==8+6Y8v4s8t8+8H7X8d6Y6g8v8z4s8f7E8y7y6l8j9q8k6L8Y7u8tb87CbfbL=*04!8r8K9vca=b3cs8vad8j8i6J8p6M7o6M8I8zexbO9v8C9r897T6x8G729m7U8U7A8W8i6R4aad7979978C8Ocl8F8k8O*028/8/bz8m8W7M54544OeDeAbNaaaQ9oar9L9n9z8maf8/er8vaQaQaaaCcMaLaday8U8O9h9ocb8Xaw9Oevevbsdi9l8Zep9T7E8t8b6/8K7Eba7a9e9e8s8Lax9d8j8T8I6V7/7UaJ7z8W8jcxcx9FbI827mb/8j=7E8q=7m6K4m4m4abXcu8E=*028TdSaZbi9Kd3b59y8eencndna1hFea8o6Wcfbfad8gal8H==hrfFaM8Th6bHdSaZ8o6M6e00*06aQ9e9l878U8I7S6x8m769r85eNbo8v7aax8xaD8Uaa8fcfa7aM9gdKbpeScpaX8u8O6V9h7/8W7U8W7U9y7MdkbB9O8l9O8m9N8Ebh95bh9554==ar8KaE8LaC98aM9d9O8jcNax4f=*03dybM==ad7M=7H=*038l78=*05ad8g=*0b8m6/==8m768Q7s8X7z=*0u4K=*0tcM=cM=cM=*0l6t=6t=6t=6t=*0r9r=9r=*06eq=eq=*0776=76=76=*037E=!!ar!=*0Vbm9nbm9nbm9nbm9nbm9n=*03bO9LbO9LbO9LbO9LbO9L=*07!*057QfE7QfE5e3W2C8F3d2C0T00*045c5c8w7QfEbK8h5P3t3t3d3t5T5T5E5T85856X!*02bM!*0200*0439jL!426K9v!*034L4L!836H5G!*048G!*0o473u00*04!00*096n3r!!6n*084A4A6v6n*0c4A4A!5K5K6c5H5K!*0aal8G*03d08GjCfXdL8G8G9Q8G8Gie8G*029A8G8G!*02858Z!!8S!*0h00*0w!*0jfM!*0c86!!gfdjcaaPbY!*06aD!*02=!*06dn!*028p!*056d!*0if776!*03ew*0b!*0z8O7d!*0ad67kd67kep7kac*03=d6dRdReE7DeE7DdxdxdE7kdE7k7EcTcTdXdXiDeS938S*039X8RcFcFape8ceced6d66N6Md6d66N6Nd6cgd6d6cud6cud6d6dIgTdIdy9ady9agb9abr*03dVdVfkfk7D7DdO7kdO7kdududs9hds9h9h9x*039IdSc4c49xeNcgdtd6d6eSdTdTfDdXdXgM9Q8a8x9b9s9Q9k!9La08G9L9L8GcdcIcIb48GbHbH1O8G7z6X3Tah9Y9Ya/djaPaiaiaB4B5S7g8w9e9eaFaF6FerjJ9peSk69V9Uaa8Z8Z4M9hbjeDc8bvb8bwcDaL5J=bH*058GbwbHbwbH*07eDeDbH*06d7bHbH=bH*028G8GbH*03dXdX7v=bH*0bbt*03bwbw=btbH*099v*02bH*03bbbbfz*08fh*03ayam!!8787bgbNdWe9bgbgcK=8G8Gbj*03g2g2e9bj6k9e*02aPaYapapc3c3724q878Zc+bObObbbbbj9e9ebcbcbUbUaKa8bJbJjojobLbLbJbJbt*03=bH*04bwbwbzbzbIbP4Sdp9G9Gbt9M8H9M9M8H9M9Mbt9M8H9V8Hbq",
 			bold: "3s5f6C9G8vfgbA3X6o6o759g3E5h3E7V9g*094o4o9g*0274epacab8Zb1928Da6bi5u5laG8DdeaDaT9CaTam819/aA9Wf19H9s8S5M7V5M9g5P4t8n9f7l9l8j56889l4W4K9g4QdW9s8V9l9f7d7b5J9l8jcu8d8j7v6950699g3s5f7l8I9ba1508l4tdj6A8a9g5hdj4t5W9g6R6R4t9t9c4k4t6R6Q8aeJfgeJ74=ac*04dM==92*02=5u*02b5==aT*039gaT=aA*02=9FaB=8n*04cq==8j*02=4W*028Y==8V*039g8V=9l*02=9f=*0fblb59l=*0jbn9l=*084WaO9F=*039m=*046Qav6X8I5m=*05bDaD9n=*05eUdp=*0g7O9/5U=*0m519fbOa49fa99n8+8Z99b5cDa49l8S97aT8r8D56a69+dF5D5taG9g5n8gfPaD9oaTcnaCeJd3bc9e9W8g7k9f5P5O9/5Q9/cKa/a/aVaGar8S7v8F8F7J7D8j8N876+9e4g7j5j4GjCiwgQdJdl9yfYfmea==5t=*0c8q=*03dN=aj88=*087y=jCiwgQ==ftaI=9r=*0d5t=5t=*0g8r7P==aRb+9L8O8S7v=*0d7tc87p4Kdwdwac8Z7u8I9/7b7u816MagaAac928i5l5ba+9faq7s9s8j8o9l9l9e7p7C9l9r8l8qc57C7vbn8O5b9d9f8w8j9b9f9j9f5n574Z6u5V4Ia4dQdKdS9r9q8Z8Vcicwb+777774777d6u6w8/8/7b4T5b6s545J5J9O8+918jcu8j857v8E7y7y6v6n6H7xc18J8V9o9H4U9a7i9k6v6neqeFfybn9zbQeiaA9U9e8Eb3b36W6W3I5s5p5X6z9e6j3X6C3H*023W3W4A4z9g9g9b9b4t4t3a4s4k4k3a4D4k4k4E4k4o4o4E*034t*053I9g6j3M5q684E6v*046c6c5w6R6e5w4+4v4v4s4f797b5o394Z*036S6J7f!*036g6g!*034s7g7f7g=!*044u4uac3Ebbds7G!c6!d8cC58acab8Da2928Sbib15taGacdeaD9faTaZ9C!9f9/akcy9Hd6bE==9H7J9n58949H9p8R8X7J789n94589s8g9w8H6Z8V9Q997u9A8J94bO8pcycv=*04!949sakd8=b+dy9saT8V8K7c8D7M877n8W8Dg3ct9X9map908O7f9F7Ma08ra08w9r8Z7f4KaT7w7w9u998ZcN9W998+8Z8+9292cF8y8T815t5t5lfjfyd0aybr9Gbiaca4ab8yaE92eJ8rbrbrayb8debiaTb39C8Z9/9Gco9HbgaGfUg5cjeNa28Xfeay8n8T8J7o9m8jch7v9S9S9f9xa/9H8V9p9l7l898jbJ8d9C9ldIdUa1cA8s7Jcn8Z=8j8X=7J7b4W4W4Kc+d89l=*029pfgcDcfa2dsbxam8WfodwdObIj1gf8h7hd6cyaT8Vb39d==iDgObl9dgHcvfgcD8A7d6y00*06bu9Sa28w9H9p8h778y7tae8KfpcJ8r7vbb9Eb99UaC9bcPaRbv9Oe7c0fQdabZ9y8Z7l9/899s8j9s8jas8ueycGaN9qaL9rax9lcN9VcN9V5t==b39tbb9xbd9xbk9HaG9ldha/4N=*03dNcq==aT8q=*058F7y=*05aT8V=*0b8y7o==8y7t9w8i9H8d=*0H5t=5t=*0l9r=9r=9r=9r=*0Vf2=f2=*0g8n=!!bb!=*0D5t=5t=*0ecnaCcnaCcnaCcnaCcnaC=*03cKa/cKa/cKa/cKa/cKa/=*07!*057QfE7QfE5e3W2C8F3e2C0T00*045h5h9g7QfEbK8l5P3H3H3E3H6e6e6b6e85856X!*02c4!*0200*0439lA!4h7iai!*035151!5f7d5V!*041V!*0o4w3u00*04!00*096R3R!!6R*084Q4Q6/6R*0c4Q4Q!6f6c6D686g!*0aaz9g*03dW9glrh9el9g9la0a29gkd9g*05!*028E9/!!a3!*0h00*0w!*0jfQ!*0c8R!!godj!*09aI!*02bh!*06dg!*028N!*0pfh7+!*03fz*0b!*0z8+7p!*0ad67Hd67Hep7I!*0h7I!*1o9f!*02a2!*07d4!br9g!!9g!*024Cb+!*02dBaP!*08aJ!6F!*0r9g!*0m=bH!!9g9g!*2p",
 			italic: "3s4o659H7Edqaj3G5Q5Q6v8g374/377i8g*0943438g*026ndR9c9k8sa68U8f99at504H9r8bcoav9K8H9K9e7x8+9U8/e08x8A805j7i5j8g5P4f8e896N8c794A8a8i4f4a7N4bcv8n7X8f896n5+5p8n7cbo717c725T4X5T8g3s4o6R7Q8G9n4X7r4fdj6c7l8g5cdj4f5T8g6b6b4f8D8V3N4f6b6m7ldqdOdq6n=9c*04d2==8U*02=50*02a9==9K*038g9K=9U*02=8M8S=8e*04b5==79*02=4f*027Z==7X*038g7X=8n*02=89=*0f9Za98c=*0jax8i=*084f9I8p=*037S=*045V9u5G8e4D=*05apav8k=*05e0c4=*0g6L8+5D=*0m4i89aG9f899c8g8u8s82a9bs9f8c7Q8Z9G818f4A999jc14Q509r7N4k7le0av8i9Kb295csara18f8R7A5+8e4/5p8+5p8+bI9E9Ha39i8U80727T7W786V7g8y705Q853Z6o4A49i0h9fecScl8lfaeFcx=*0f79=*03d3=9e8a=*0876=i0h9fe==dX9G=*0z817n==acap977T8072=*0d6iaC6t4ac3c99c8s6N8e8+5+727p5Q9k9U9c8U7i4H4I9X899e6u8A7m7R8e8e896Z6N8c8c79799W6O6C9f7S4k8a8a7P778D8f8i8f4F4q4t4N4B458RbUbLcr8n8p8v7Xblbqao6n6n6f6n6n625X7O7S5+4e4e5X4q5p5p8x7T7N7cbf7370727v76765J5B637ocd7N7Y828J4e7J6P895J5BcHcUd99I89aJcy8A8F8v81araz6c6c3j4S4N595D8m5q3G653l*023I3I4a458g8g8G8G4f4f2Y4e*022Y4v4e4e4d3V3I3Ianan4f*064e2N5x5w3k4K5j416g*045I5I5h6a5B5h4L3N3N4j4b6X7d4T2W4K*036S6J6S!*033333!*034s6w*0242!*044u4u9c37aPck6X!b8!blbn4v9c9k8c8Y8U80at9K509r9ccoav8v9Kaj8H!8e8+8Lbj8xbxa7==8K6N8m4v8c8K8f7u7Q6N6x8m8v4v7J7l8u7t6I7X978e6A8G7u8caC7kaBbn=*04!7/8E8Lbl=aocg7J9K7X886s8f6J7j6R8j8aesbq9b8x9b7C7L6h956Q937l8R7A8M8a6w4a9K6N6N8I8q8sc68w8e8u8s8u8U8Ub78b8B7x50504Hejedba9YaB8Ka99c9f9k8i9/8Ue681aBaB9Yaxcoat9Kak8H8s8+8Kbx8xah9befefb9de9c8Be09x8e7L7L6H8779dI6C8n8n7M8AaY8t7X8n8f6Ncv7cbo718x7SbUc28Abe7L6Vbo86=797Y=6N5+4f4f4abZbZ8i=*028ndlaKaPbRd9ac9m7Te2bHd29xhjd57R60bxaB9K7Xag8H==gCeDag8ofdbpdlaK846D6e00*06aB8x9c7P8H8f7y6p8i6N9j7CeldI816C9Z7Maz8A9Y7MbU9eat8tdsaLeBbRaG8u8s6N8+cv8A7c8A7c8x71d48x9b7S9t7X9h8ib68rb68r50==af80ax8Aaj8kat8t9b7LcoaY4a=*03d3b5==9G79=*057T76=*059K7X=*0b8i6H==8f6N8q6T8x71=*0S4a=4a=4a=4a=*17e1=e1=*0g8e=!!ad!=*0E4m=*0fb295b295b295b295b295=*03bI9EbI9EbI9EbI9EbI9E=*07!*057QfD7QfE5d3W2D8G3d2D0U00*044/4/8w7QfEbK8g5O3l3l373l5L5L5v5S7K7K6X!*02bf!*0200*0438j6!3P6A9l!*034y4y!826t5G!*041I!*0o473u00*04!00*096a3m!!6a*084t4t6f6a*0c4t4t!695p5Y5j5p!*0aaa8g*03cv8gj5ePdw8g8c9s8g8gie8g*029l8g8g!*027W8P!!8x!*0h00*0w!*0jfz!*0c7B!!fGdj!*09a6!*02=!*06dg!*028f!*0peK6T!*03djdhedebeleldWe2egejeoee!*0z8u6Z!*0ad67kd67kep7k!*0h7E!*1o8x!*028Y!*07eE!cT8g!!8g!*024qb+!*02djaP!*08aF!6F!*0r8g!*0m=bH!!8g8g!*2p",
@@ -33,6 +35,7 @@ var docxLayout = (function(exports) {
 		{
 			name: "Arial",
 			lineHeight: 1149.90234375,
+			descent: 211.9140625,
 			regular: "4m4m5z8I8IdVar2/5d5d65984m5d4m4m8I*094m4m98*028IfTararbibiar9zcabi4m7Qar8Id1bicaarcabiar9zbiareMarar9z4m*027l8I5d8I8I7Q8I8I4m8I8I3u3u7Q3ud18I*035d7Q4m8I7Qbi7Q*025e445e984m5d8I*03448I5dbx5O8I985dbx8E6g8B5d*02908p5d*025J8Id2*029z=ar*04fE==ar*02=4m*02bibi=ca*0398ca=bi*02=ar9z=8I*04dV==8I*024m*038I*068B9z=8I*02=8I=*0f9Dbi8I=*0jbi8I=4m*05==4mbv6Y=*037Q=*044A8I5e8I3u=*059sbj8I=*05fEeM=*0g5T9z4m=*0m3u8IbSag8Iag8Ibibi7QbicGag8I8JarbM9s9z8Ica9MdN3u4mar7Q3u7QdXbi8IcadpagdAarbO8Iarar7Q9G5Y4m9z4m9zdmatbIbic47Q9z7Q9z9z8x8x8I8I7a7D8I446t984mkRj6gpgCd173j6eMc3=*0f8I=*05ca8I=*088x=kRj6gp==ga9G=*0g4m*02=*0f8x6R==b2aG9s8R9z7Q=*0d5taJ5L3udTdTarbi7Q8I9z7Q7Q9575arbiasar8I7Q3ubx8Ibi5dar7Q8I*037Q7Q8I*03bz7a7a9T7X4m8I8I8L7R9F8I*023u3u5A574M3u8Yd1*028I8I8F8Icncd8C5d*068u8u7Q3u443u5t4m4m8I8U8z7Qbi7Q887Q8t8x8x7Q*03ca8j7X8L8E6d7Q6k8I7Q7Qf4eafJb86JbfbYal9U7B8faLaL5/5/2v3M*025I7x512/5z3u*025d5d5t5t98*035d*094m4m5d*0d522t5k585t5/*045d*0d4m5d*036d6d5d917r9z7a5d5dbf98!!5d7Q*02=!*045d5dar4mcgd660!c6!dnbM3uarar8Dasar9zbica4marasd1biaacabiar!9G9zarcuard3bI==926+8I3u8z928/7Q8J6+6V8I8I3u7Q7Q907Q708IaO8V7y9F6b8za88db9cd=*04ar8/8zc4e+=8Mcd9pca8Ibi7Q9z6k9N8hbQ91dXd1ay8Iay7Qarar9x9kbx8G7g6q9p8Z7Q3uca6W6War8Ibid1aM8Vbi*02arardx8ubfar4m4m7QgxfOdm97bf9Xbfaragar8uaBarer9sbfbf97agd1bicabfarbi9z9XbUarbAareleGcodRagbffObi8I8Z8j5J978Iat7a8L8L6S97aM8E8I8u8I7Q7a7QcT7Q8Z89cycT9Nbf897+bK8u=8I8I=7+7Q3u4m3ueacJ8I=*028EkW9Mca9BeSb9as7Qe1aTcZaJgtdz9s7acsaMca8Icz9T==gOe0d19AiDdkkW9Mbi7Q7T00*06bf8Lag89ar8I7F6r8u5Jau8Berat9s7a976S976S976SbC8obi8EdLa8hNdCbN89bi7Q9z7a8I7Q8I7Qar7QetaPar89ar89ar8Idtaqdtaq4m==ar8Dag97bi8Ebi8Ear89d1aM3u=*03fEdV==bM8I=*059s8x=*05ca8I=*0b8u5J==8u5Jar7Qar7Q=*0K4m=*0ed1*04=*1l8I=4m4ma/8J=*0Vdpagdpagdpagdpagdpag=*03dmatdmatdmatdmatdmat=*07b/6e9f8Jas907QfE8IfE5d3W2D8I4m381j00*04!5d8I8IfEfE6t8E3u*035d*038I8I5u!*02fE!*0200*0438fE!2Y5y5y!*035d5d!7Q8I5d!*042D!*0o4m3u00*04!00*095d!*025d*05!*045J!*0f5Q5Q5V585Q!*0a8Ibibi8I8Id1bih6iceMcM818Iar9zfE89arcaar8Ibi8Iar9z8I8I!*0k00*0w!*0jdR!*0c53!!gNbx!*09fE!*02c0!*069o!*0teL7G!*03d2d2!*05d2*03!*0A7Q!*0afE7QfE7QfE7Q!*0h7Q!*1o7K!*029A!*07cT!b998!!2D!*024m8B!*02b9fj!*08bf!4i!*0r8B!*0m8B97!!8B8B!*2p",
 			bold: "4m5d7q8I8IdVbi3K5d5d65984m5d4m4m8I*095d5d98*029zffbi*03ar9zcabi4m8Ibi9zd1bicaarcabiar9zbiareMarar9z5d4m5d988I5d8I9z8I9z8I5d9z9z4m4m8I4mdV9z*03658I5d9z8Ica8I8I7Q654o65984m5d8I*034o8I5dbx5O8I985dbx8E6g8B5d*02908I5d*025J8Id2*029z=bi*04fE==ar*02=4m*02bibi=ca*0398ca=bi*02=ar9z=8I*04dV=8I*03=4m*029z*068B9z*04=9z=*0fbfbi9z=*0jbi9z=4m*08ch8I8I=*028I=*04619z7v9z4m=*05b4bj9z=*05fEeM=*0g7v9z5d=*0m4m9zd4bf9zbf9zbibi8Ibid5bf9z9uarbm9O9z8Ica9Zez4m4mbi8I4m8Ifwbi9zcadlb7dTbEce9zarar8I9o5E5d9z5d9zc+bkcybic28I9z7Q9z9z8e8e8I8I7N939z4o7O985dkRj6hnifdV8Ij+fEdV=*024m=*0b8I=*05ca9z=*079z8e=kRj6hn==g9ap=*0g4m*02=*0f9188==a/d59T9T9z7Q=*0d7Pd17W4meWeWbibi8I9z9z8I7Qa57Abibiarar8I8I4mc79zbi65ar8I8I9z*028I8I9z9z8I8Ice7N7NaP8T5d9z9z9a8I9p9z*024m4m6l5c5A4m9sdV*029z9z9D9zd1ddbK65*0697978I5d*028s5d5d9z9J968Ica8I8X7QaE8e8e8I*03ca9D8T9a9s7a8I749z8I8Ig7eKiWcJ8mcUdBc8aQ8m8Pbpbp5M5M323Y*025T8b5E3K7q4m*025d5d5T5T98*035d*0p5K2d5U5K5T5/*045d*037Q5d*0d6d6d5d8t7e9z995d5dbf9W!!5d8I*02=!*045d7hbi=dlea7q!cV!evd64mbibi9pbfar9zbica4mbiard1bia4cabiar!9o9zarcRarcFcy==9D7q9z4m969D9y8I9u7r7c9z8t4m8K8I9A8I6Z9zb+9H88aI6+96bb90bNdd=*04bi9y96c2fF=bKddaAca9zbi8I9z74bL8hcA9yfwdVa/9za/9tarara39sbv927X6TaA9G8I4mca7v7var9zbid1bA9Hbi*02arardR9pb7ar4m4m8Ih6gDdH9ybf9Kbfbibfbi8Tb8are89Obfbf9ya+d1bicabfarbi9z9Kdmarbqa/fJfXdCfjbfb7g7bf8I9G9D6x9X8Ib57N9D9D7Q9XbA9s9z9s9z8I7G8IdH8I9D95d1dcbpdm9D8Edm97=8I9z=8E8I4m*02f9ea9z=*029sk0cadBa/fgcsar8IeucwcFbNgRfk9O7NcFbNca9zcLa6==hwfecK9+k0e5k0cabi8I9800*06bf9Dbf9Dar9z7D6/8T6xa/9me8b59O7N9y7Q9y7Q9y7QbV9Lbi9sdLbahCepbi92bi8I9z7G8I*03ar8IdlaNa/95a/95a/9zdoaCdoaC4m==a+9ma+9Xbi9sbi9sa/95d1bA4m=*03fEdV==bm8I=*059O8e=*05ca9z=*0b8T6x==8T6xar8Iar8I=*0I4m*02=*1F8I=5d5dbb9u=*0E4m*02=*0ddlb7dlb7dlb7dlb7dlb7=*03c+bkc+bkc+bkc+bkc+bk=*07d8819X9ub1ac7QfE8IfE5d3W2D8I4m381j00*04!5d8I8IfEfE7O8E4m*037Q*038I8I5u!*02fE!*0200*0438fE!3M7v7v!*035d5d!9s9z5d!*042D!*0o5d3u00*04!00*095d!*025d*05!*046c!*0f5V5U6q5K5U!*0a8Ibibi8I8IdVbih6j9eMcO818Ibi9zg+8Iarcabiarbi8Kar9z8I9j!*0k00*0w!*0jdR!*0c7F!!hrbx!*09fE!*02c0!*069o!*0tfE7Q!*03d2d2!*05d2*03!*0A8I!*0afE7QfE7QfE7Q!*0h7Q!*1o7K!*029A!*07cT!b998!!2D!*024m8B!*02b9fj!*08bi!4i!*0r8B!*0m8B97!!8B8B!*2p",
 			italic: "4m4m5z8I8IdVar2/5d5d65984m5d4m4m8I*094m4m98*028IfTararbibiar9zcabi4m7Qar8Id1bicaarcabiar9zbiareMarar9z4m*027l8I5d8I8I7Q8I8I4m8I8I3u3u7Q3ud18I*035d7Q4m8I7Qbi7Q*025e445e984m5d8I*03448I5dbx5O8I985dbx8E6g8B5d*02908p5d*025J8Id2*029z=ar*04fE==ar*02=4m*02bibi=ca*0398ca=bi*02=ar9z=8I*04dV==8I*024m*038I*068B9z=8I*02=8I=*0f9Nbi8I=*0jbi8I=*084mbt6Y=*037Q=*044p8I6g8I3u=*059Dbj8I=*05fEeM=*0g5y9z4m=*0m3u8Ibqab8Iab8Ibibi7Qbicgab8I8Iarca9C9z8Ica7NdL3u4mar7Q3u7Idebi8IcacI9sdAarbq8Iarar7Q9o5d4m9z4m9zcp9WbVbibd7Q9z7Q9z9z7Q7Q8I7+6S7Q8I446t984mkRj6gwgwca6Yj6eMca=*0f8I=*05ca8I=*087Q=kRj6gw==ga9G=*0g4m*02=*0f8x6R==at9Q9s9s9z7Q=*0d4C9R5s3udPdNarbi7Q8I9z7Q7Q9575arbiarar8I7Q3ubP8Ibi5dar7Q8I*037Q7Q8I*03b06T7h9E7Z4m8I8I8C7R9F8I*023u3u5A3u*028Pd1*028I8I978Ib+cb8I5d*068m8m7Q4z4N4y5s4m4m8I8P8C7Qbi7Q837Q8z7Q*05ca807Z8C8C4B7Q708I7Q7Qeve9fcav7db4bLa29h7B8farar4Q4Q1W3r*02577+5s2/5z3u*025d5d5A5A98*035d*094m4m5d*0d5J1j555g5A5/*045d*0d4m5d*036d6d5d9q7k9z7a5d5dbb9q!!5d7Q*02=!*045d5dar4mclde65!cq!dxc73uarar8Wavar9zbica4marard1bia8cablar!9o9zard5arc/bV==8W6T8H3u8C8W8X7Q8I6T7f8H8u3u7Q7I8A7Q6/8Iau8Z7C9r5S8Cac8ybocb=*04ar7V8CbcdO=8Icb8Pca8Ibi7Q9z5W9N8hbQ91ded1ax8Iax80arar9x9kbG8G6v5C8P937Q3uca6V6Var8Ibid1aK8Zbi*02arardb8wb4ar4m4m7QgGfmdc9dbb9/bkarabar8wb0arel9Cbbbb9daKd1bicablarbi9z9/crarbnaxeoercBdSabaSf+aG8I8P8a7J8F8IaM7h8I8I7o8QaK8C8I8C8I7Qd17Qd37Q8Y86c+dj9Jbw8e7IbM8m=8I8I5W7M7Q3u*02eecY8I=*028Ikm9jbUcbe7aSas7QdKaFcZaJg0do9C7hc/boca8IbU9e==hkemcY9ok2dIkm9jbi7Q8I00*06bb8Iab8ear8I7I5j8w5Wa58delaM9C7h9d7o9d7o9d7obD8Tbi8CdXaZg/d7bi7Qbi7Q9zd18I7Q8I7Qar7Qe18Yax86ax86ax8Idi9Xdi9X4m==9P88aK8Qbi8Cbi8Cax86d1aK3u=*03fEdV==ca8I=*059C7Q=*05ca8I=*0b8w7Q==8w5War7Qar7Q=*0K4m=*0ed1*04=*1l8I=4m4max8J=*0VcI9scI9scI9scI9scI9s=*03cp9Wcp9Wcp9Wcp9Wcp9W=*07b+6e9A8OaU8N7QfE8IfE5d3W2D8I4m381j00*04!5d8I8IfEfE6t8E3u*035d*038I8I5u!*02fE!*0200*0438fE!2Y5y5y!*035d5d!7Q8I5d!*042D!*0o4m3u00*04!00*095d!*025d*05!*045J!*0f5C636b5Z63!*0a8Ibibi8I8Id1bih6hGeMcM818Iar9zfE89arcaararbi8Iar9z8I8I!*0k00*0w!*0jdR!*0c53!!gXbx!*09fE!*02c0!*069o!*0teL7G!*03d2d2!*05d2*03!*0A7Q!*0afE7QfE7QfE7Q!!eV!*0e7Q!*1o7K!*029A!*07cT!b998!!2D!*024m8B!*02b9fj!*08bf!4i!*0r8B!*0m8B98!!8B8B!*2p",
@@ -41,6 +44,7 @@ var docxLayout = (function(exports) {
 		{
 			name: "Times New Roman",
 			lineHeight: 1149.90234375,
+			descent: 216.30859375,
 			regular: "3W5d6o7Q7Qd1ca2Q5d5d7Q8Q3W5d3W4m7Q*094m4m8Q*026Yepbiararbi9z8Ibibi5d65bi9zdVbibi8Ibiar8I9zbibieMbibi9z5d4m5d7l7Q5d6Y7Q6Y7Q6Y5d7Q7Q4m4m7Q4mca7Q*035d654m7Q7Qbi7Q7Q6Y7w387w8t3W5d7Q*03387Q5dbU4k7Q8Q5dbU7Q6g8B4I4I5d90755d5d4I4S7QbK*026Y=bi*04dV==9z*02=5d*02bi*068Qbi*058I7Q=6Y*04ar=6Y*03=4m*027Q*068B7Q*07=*0ea6bi7Q=*0jbi7Q=*084mb48E=*037Q=*046m9z5o9z4m=*059sa+7L=*05dVbi=*0g6H9z4m=*0dbi=*074m7QbU8+7Q8+7Qarar6YbicL8+7Q7n9zbi7R8I7Qbibic23Z5dbi7Q4m7BcMbi7Qbibi8hetaPaa7Q8I8I65965o4m9z4m9zc88ubDbicd7Q9z6Y8r8r6Y6Y7Q7Q6X6C7Q384p3V5dkRieeMfEdV8IhnfEca=*0f6Y=*05bi7Q=*086Y=kRieeM==eS8M=*0z8P6b==aa7Q9s7Q9z6Y=*0d4m7Q4Z4mc6c4biar7Q9z9z656Y8m6darbibl9z6Y654ma+7Qar5dbi7Q6Y8b8b7Q6Y6Y7Q7Q6Y6Y9P6A6A9c6X5d7Q7Q757Q6Y7Q*024m4d4m*0392ca*027Q7Q7N7Q9Sai8F5d*067E7E655d5d6Q5d4m4m7Q8B7m7Qbi7Q7J6Y7M6Y*05bi7o6X758n4m7Q6K7Q6Y6Ycydddl8R7ca9ck8S8M827x9N9E51512r3p*024B6I4F3r5J5d*043U3U8Q*035d*094m4m5d*0c5+4B2C3k4x3U5/*045d*036Y5d*084m5d*036d6d5d8E6t9z6R5d5dbi8u!!5d6Y*02=65!*035d5dbi4maScE6r!bi!cMbD4dbiar92a39z9zbibi5dbibldVbia3bibi8I!969zbibrbibybD==8c6A8b4d7L8c7Z6W7n6A6u8b7v4d7U7B8o746+7Q7V7P6c8r6i7L916Y9Oai=*04ak7Z7LbidW=8eai8Mbi7Qar6A8I6/9073br8GcYca9E89al6Y8u8uag95aX7Z7r628M7Z6Y4mbi6l6l8I7QardV9V7Par*029z9zbM92ak8I5d5d65dEdEbBarbib4bibi8+ar92aG9ze07RbibiaraCdVbi*028Iar9zb4cmbibiaafNfNb2dE8+akg4ar6Y7Z7o6q7Z6YaP6b8n8n7C7P9V8n7Q8n7Q6Y6R7Qa87Q8n7Tc2c285aw786JbH7c=6Y7z=6J654m*02bnbj7Q=*028nik9Vav8vf8aBbi9eg9d2e0aPiUeD7R6bby9Obi7QcJ9d==h7dMbX8SiZcoik9Var6Y5e00*06bi8n8+7m8I7Q725v926q9T83e0aP7R6bar7Car7Car7Cci8Zbi8ndj9Lg8clar6Yar6Y9z6Rbi7Qbi7Qbi7Qct9raa7Taa7Taa7QdK8ydK8y5d==ar83aC7Pbi8nbi8naa7TdV9V4m=*03dVar==bi6Y=*057R6Y=*05bi7Q=*0b926q==926qbi7Qbi7Q=*29bi=*0e6Y=5d5db97n=*0W8h=8h=8h=8h=8h=*03c88uc88uc88uc88uc88u=*07dn8f8t7Mab8B7QfE7QfE5d3W2D7Q3W381j00*045d5d7Q7QfEfE4p7Q5d*036Y*037Q7Q5u5u5daqfE3W!!00*0438fEkJ3r6x6x3q6w6w4U5d5dfE8Z6Y5deZeZ56eH5d2D5d5ddkayat7E75*027Q4meZ7Q7Q8teZ7Q7P8I9D9/4hdP9/4h4m3u00*04!00*094I2C!!4I*055i*0237374X4I*095i*023737!4h404w4y404I4I2C7j4I4I3F2C!*029Farar7Q7Qcabif9heeMc8817Qbi9zfE7Q8Ibibi8Iar7Q7Q9z7Q7QaHbc7QbTar!*0f00*0w!*0ed2cHarg09zd1dK7Rareh7+eafsbi7Q7QaM8Fb47vcabieWbxbA8Ibievcrar*02ebiKfkbi9z6Yc0bDaW4d=bieva69o619DaM8Ihs6m9g8L6s8356ekiq8B6W92bib9ca8I8Iarbi7Q6Y4m4m9Xcac9dO6xgsbKbKfSbK*0b7g5da6f0gsbigolhqagtbigolh9zarbidV4m8cc3bz7QbVfMjDb+7QbTfK4m6Y7QcahBbihBar6YbsaMbihBbK7Q7Q!*03fE7QfE7QfE7Q!*0h7Q!*1o7K!*029A!*07cT!b98Q!!2D!*023W8B!*02b9fj!*08bi!4i!*0r8B!*0m8B8Q!!8B8B!*2p",
 			bold: "3W5d8H7Q7QfEd14m5d5d7Q8W3W5d3W4m7Q*095d5d8W*027Qeybiarbibiar9zcaca657QcaareMbica9zcabi8IarbibifEbibiar5d4m5d957Q5d7Q8I6Y8I6Y5d7Q8I4m5d8I4md18I7Q8I8I6Y655d8I7Qbi7Q7Q6Y6a3s6a883W5d7Q*033s7Q5dbH4I7Q8W5dbH7Q6g8B4I4I5d908s5d5d4I5a7QbK*027Q=bi*04fE==ar*02=65*02bibi=ca*038Wca=bi*039z8I=7Q*04bi=6Y*03=4m*027Q==7Q*038B7Q=8I*02=8I=*0fbtbi8I=*0jca8I=*084mcT8E=*038I=*047lar6car4m=*05bpc18I=*05fEbibi=*0f89ar5d=*0dbi=*074m8IbPal8Ial8Ibibi6YbicMal8I87arbz8g9z7Qcabice4P65ca8I4m7HeIbi8Icaca8Ggwc3aS8I9z8I65ae815dar5darcs9ocxaccn7Qar6Y96967a757Q7U615d9k3s544n5dlJiefEiffE9zj6gvdV=*0f6Y=*05ca7Q=*087a=lJiefE==faa6=*0v8I=*028G5S==bu8IaA7Rar6Y=*0d4m8I5F5dcTcTbibi7Qarar656Y8k7iarbibdar6Y7Q5dcV8Ibi6Ybi7Q7Q8/8/8I6Y6Y8I8I6Y6Y9P6H6H9h795d8D8D9f7Q868I*024m4S4w4m*029vd1*028I8I8b7QbTbrbi6Y*046h6h8/8/654K5d5v4/5d5d8I9F8b7Qbi7Q8l6Y817a7a6Y*027Oca8s799f905d8I7X8I6Y6YdtdEeya88pb4dh9K9k807xarar55552R3+3+4a5s6M4H4p7M5d*043X3X8W*035d*094m4m5d*0c5+4H2N3p4u3X5/*045d*037Q5d*0d6d6d5d9w7vaU8a5d5dca94!!5d6Y*02=7Q!*035d5dbi=cved8a!ca!dxcx4Sbiar9Y9Pararcaca65cabdeMbiaBcaca9z!aearbicZbicccx==8K6H8U4S878K8f7k876H6t8U8a4S8H7H8T6/6+7Q8A8n6C8w7d879M7eaMbr=*04ca8f9nbier=9Mbr94ca7Qbi6C9z8y9j7dbL8GdCd1bl9abA6Y9N9aaG9tbl848s72947Q6Y5dca6B6B9z8IbieMaF8nbi*02ararcw9YaC8I65657QfHfGcwblcabucabialar9YaMarft8gcacablbFeMca*029zbiarbudrbicabuhahabZfmalaChCbi7Q7Q8s767W6Ybl6i90*028NaF907Q908I6Y7H7QaQ7Q908Qdcdc97cd8h6MbY8t=6Y8p=6M654m4m5dccct8I=90=90jy9HbY9ofLaobi7Qhac5ftbllgfD8g6iccaMca7QcL9t==hQeocU99jkcEjy9Hbi6Y5i00*06ca90al8h9z8I88659Y76bi91ftbl8g6ibl90bl90bl90cZ9Sca90eparhrdcbp8mbi6Yar7Hbi7Qbi7Qbi7Qdz9xbu8Qbu8Qbu8IdM8QdM8Q65==bx9hbF8Nca90ca90bu8QeMaF4m=*03fEbi==bz6Y=*058g7a=*05ca7Q=*0b9Y76==9Y76bi7Qbi7Q=*29bi=*0e7Q=5d5dbS87=*0W8G=8G=8G=8G=8G=*03cs9ocs9ocs9ocs9ocs9o=*07fk8D8L7Mab8r7QfE7QfE5d3W2D7Q3W381j00*045d5d7Q7QfEfE547Q5d*037Q*055u5u5darfE3W!!00*0438fEkQ4p8E8E4p7M8E4U5d5dfE9s7Q5deZeZ5ueH5d2D5d5deAbPbL7E8s7K7K7Q5deZ7Q8W8veZ7Q8+bxadad5dgkad5d5d3u00*04!00*094I2C!!4I*0837375s4I*0c3737!4A434v4u43555g2N7I5d553p3k!*029Zbibi7Q7Qd1bif9iZfEbS817Qcaarht7Q9zcabi8Ibi8H8Iar7Q7Qa+cm7QbEar!*0f00*0w!*0ed1d1bigWbad1dT8CaCfi7+eafsca8I8IaM8Fb45TdtbifJbHbA9zcaevcrbi*02eSiPfEbiar7ac0cxb94S==eva69o619DaM9zhs6ma88Q738X56e6jn8A7k9Ycabpca9z9zarbi7Q6Y4m4ma+d1dQem7vlrbKbKfSbK*0b7b65bZhRhobihlndt5hpbihpngarbibieM4m8Gc+bT7QcagukOc57Qc3gn4m6Y8Id1gNbigNbi6YbKaMbigNbK7Q7Q!*03fE7QfE7QfE7Q!*0h7Q!*1o7K!*029A!*07cT!b98W!!2D!*023W8B!*02b9fj!*08bf!4i!*0r8B!*0m8B8W!!8B8B!*2p",
 			italic: "3W5d6A7Q7Qd1ca3m5d5d7Qaz3W5d3W4m7Q*095d5daz*027Qeo9z9zarbi9z9zbibi5d6Yar8Id1arbi9zbi9z7Q8Ibi9zd19z8I8I654m656C7Q5d7Q7Q6Y7Q6Y4m7Q7Q4m4m6Y4mbi7Q*0365654m7Q6Yar6Y6Y656g4j6g8t3W657Q*034j7Q5dbU4k7Qaz5dbU7Q6g8B4I4I5d908b3W5d4I4S7QbK*027Q=9z*04dV==9z*02=5d*02bi==bi*03azbi*04=9z7Q*06ar=6Y*03=4m*027Q*068B7Q*04=7Q=*0f9wbi7Q=*0jbi7Q=*084mbK7Q=*036Y=*045I8I538I4m=*0591aU7y=*05eMar=*0g5I8I4m=*0g8I=*044m7Qam9e7Q9e7Qarar6Ybicc9e7Q7h9zaT7L9z7Qbib1bR4m5dar6Y4m6Ncgar7Mbibi8metaAan7Q9z7Q659i4b4m8I4m8IbO8xbjaD917/8I658t8t6Y6Y7Q7e5/538a384p3V5dj+hndVfEd28IhoeNca=*0f6Y=*05bi7Q=*086Y=j+hndV==eP9l=*0v7Q=*029G67==aj7Q9A8s8I65=*0d4m7Q4m4mbMbO9zar7Q8I8I65657D6Q9zbi9s9z6Y6Y4mb47Q9z658I6Y6W7Q*026Y6Y7Q7Q6Y6Y9g6a668C7k4m7Q7Q7L7s797Q*024m4m4d4m*028Ebi*027Q7Q7X7Qaxb28u65*045D5D6Y7v654v4v3Y4v4m4m7Q887G6Yar6Y5V65656Y6Y6r*026Wbi6K7k7L804m6Y667Q6r6rbQcrbP8M709/bm8x81827x8o8o4s4s2B3u*024t653/3m6A5d*044g4gaz*035d*094m4m5d*0c5+4A283j4q4g5/*045d*038I5d*0d6d6d5d87648I855d5dbi8j!!5d6+*02=6Y!*035d5d9z5daDco6i!bi!akbm4m9z9z8V9b9z8Ibibi5dar9sd1ar9/bibi9z!9i8I8IbV9za/bj==8d6a7M4m7b8d7O6a7h6a6l7M7H4m7w6N7S6Y6I7Q7R7w6m7J5C7b8F6U9Jb2=*03aWa77O7H9YbT=86b28Obi7Qar6Y9z7f8573a+8acgbi9587c56R8u8u9I8caZ7L685j8O7X6+4mbi6j6j9z7Qard19o7war*029z9zct8Vat7Q5d5d6Yevepcvaobiaxbi9z9e9z8V9Y9zek7LbibiaoaBd1bi*029zar8IaxcA9zbiaNgjgjaAdE9eafg8ah7Q7T6O667W6Yey667Q7Q7k6Q9+7M7Q*026Ybi6Yb66Y7Q7tbPbP87aB776Vb17h=6Y7v5V6Q654m*02aDb87Q=*027QhM9Yazarf2ayaV8ufXcddo9YiAdR7L66a/9Jbi7Qau8H==hkdUce90hMcEhM9Yar6Y4n00*06bi7Q9e779z7Q6U4X8V669Y6Yekey7L66ao7kao7kao7kbK8fbi7MdA9KfVaPar6Yar6Y8Ibi8I7Q8I7Q9z6Ybi7QaN7taN7taN7QcK8ycK8y5d==ao7kaB6Qbi7Mbi7MaN7td19+4m=*03dVar==aT6Y=*057L6Y=*05bi7Q=*0b8V66==8V669z6Y9z6Y=*2p7Q=4m4maI7h=*0W8m=8m=8m=8m=8m=*03bO8xbO8xbO8xbO8xbO8x=*07cM8f8E7c9M7i7QfE7QdV4F3u2l7Q3W381j00*045d5d7Q7QdVfE4p7Q5d*038I*037Q7Q5u5u5Q9TdV3W!!00*0438fEkZ3r6x6A3q6w6A4U5d5dfE8Z7Q5deZeZ4UeH5d2D6565dkazbY7Q8b75757Q4GeZ7Q7Q8teZ7Q7Q8R9D9/5ddP9/5d5d3u00*04!00*094I2D!!4I*0837374X4I*0c3737!4A464u4s464r4p286x4r4q3j2E!*029Farar7Q7Qbiarfugvd1cj817Qar8IfE7Q9zbi9z7Qar7Q7Q8I7Q7Qabah7QbT9z!*0f00*0w!*0edYdlarfl9zd1dU7Rafe47+eafsbi7Q7QaM8Fb46xbHbieLbUbA8Ibievcrarar9zebgAfk9z9z6Yc0bDaW4d==eva69o619DaM8Ihs6m9g8L6s8356fehg8B6W92bib9ca8I8Iarbi7Q6Y4m4m9Xcac9dO66gsbKbKfabK*0b7a5d9XeFep9zeAjik5eQ9zeVjD8Iarbid14m8cc3bg6Yblfbj2bl6Ybkfb4m6Y7Qbihobihoar6+bs9XbihobK7Q7Q!*03fE7QfE7QfE7Q!*0h7Q!*1o7K!*029A!*07cT!b9az!!2D!*023W8B!*02b9fj!*08bi!4i!*0r8B!*0m8Baz!!8B8B!*2p",
@@ -49,6 +53,7 @@ var docxLayout = (function(exports) {
 		{
 			name: "Courier New",
 			lineHeight: 1132.8125,
+			descent: 300.29296875,
 			regular: "9o*4X!*0e9o*2G!9o*09!*0d9o*27!*059o*06!*069o*0j!*03=9o!*039o!*02=!*049o*06!9o!9o*0j!9o*0H!9o*0I!*049o*2000*069o*14!=9o*0E!*05=9o*2k!=9o*03!*03=9o*1o!*057QfE7QfE5d3W2D8G3d2D0U00*04!9o*04!9o*0b!*029o!*0200*04389o!9o*02!*039o9o!9o!9o!*049o!*0o9o3u00*04!00*09!*0e9o!*0f9o*04!*0a9o*0l!*0p00*0w!*0j9o!*0c9o!!9o!*0a9o!*02=!*069o!*0z9o9o!*059o*03!*0M9o*05!*0h9o!*1o9o!*029o!*079o!9o9o!!9o!*029o9o!*029o9o!*089o!9o!*0r9o!*0m=9o!!9o9o!*2p",
 			bold: "9o*4X!*0e9o*2G!9o*09!*0d9o*27!*059o*06!*069o*0j!*03=9o!*039o!*02=!*049o*06!9o!9o*0j!9o*0H!9o*0I!*049o*2000*069o*14!=9o*0E!*05=9o*2k!=9o*03!*03=9o*1o!*057QfE88fY5k3/2G8G3d2D0U00*04!9o*04!9o*0b!*029o!*0200*04389o!9o*02!*039o9o!9o!9o!*049o!*0o9o3u00*04!00*09!*0e9o!*0f9o*04!*0a9o*0l!*0p00*0w!*0j9o!*0c9o!!9o!*0a9o!*02=!*069o!*0z9o9o!*059o*03!*0M9o*05!*0h9o!*1o9o!*029o!*079o!9o9o!!9o!*029o9o!*029o9o!*089o!9o!*0r9o!*0m=9o!!9o9o!*2p",
 			italic: "9o*7R!9o*09!*0d9o*27!*059o*06!*069o*0j!*03=9o!*039o!*02=!*049o*06!9o!9o*0j!9o*0H!9o*2O00*069o*14!=9o*0E!*05=9o*2q!*03=9o*1o!*057QfE7QfE5d3W2D8G3d2D0U00*04!9o*04!9o*0b!*029o!*0200*04389o!9o*02!*039o9o!9o!9o!*049o!*0o9o3u00*04!00*09!*0e9o!*0f9o*04!*0a9o*0l!*0p00*0w!*0j9o!*0c9o!!9o!*0a9o!*02=!*069o!*0z9o9o!*059o*03!*0M9o*05!!eV!*0e9o!*1o9o!*029o!*079o!9o9o!!9o!*029o9o!*029o9o!*089o!9o!*0r9o!*0m=9o!!9o9o!*2p",
@@ -172,6 +177,7 @@ var docxLayout = (function(exports) {
 			name: "MS Mincho",
 			aliases: ["ＭＳ 明朝", "MS 明朝"],
 			lineHeight: 1297,
+			descent: 289,
 			monospaced: true,
 			latin: "Times New Roman"
 		},
@@ -179,6 +185,7 @@ var docxLayout = (function(exports) {
 			name: "MS Gothic",
 			aliases: ["ＭＳ ゴシック", "MS ゴシック"],
 			lineHeight: 1297,
+			descent: 289,
 			monospaced: true,
 			latin: "Arial"
 		},
@@ -186,18 +193,21 @@ var docxLayout = (function(exports) {
 			name: "MS PMincho",
 			aliases: ["ＭＳ Ｐ明朝", "MS P明朝"],
 			lineHeight: 1297,
+			descent: 289,
 			latin: "Times New Roman"
 		},
 		{
 			name: "MS PGothic",
 			aliases: ["ＭＳ Ｐゴシック", "MS Pゴシック"],
 			lineHeight: 1297,
+			descent: 289,
 			latin: "Arial"
 		},
 		{
 			name: "Yu Mincho",
 			aliases: ["游明朝"],
 			lineHeight: 1433,
+			descent: 387,
 			latin: "Times New Roman"
 		},
 		{
@@ -208,18 +218,21 @@ var docxLayout = (function(exports) {
 				"Yu Gothic Light"
 			],
 			lineHeight: 1434,
+			descent: 388,
 			latin: "Arial"
 		},
 		{
 			name: "Meiryo",
 			aliases: ["メイリオ"],
 			lineHeight: 1950,
+			descent: 665,
 			latin: "Arial"
 		},
 		{
 			name: "SimSun",
 			aliases: ["宋体"],
 			lineHeight: 1297,
+			descent: 289,
 			monospaced: true,
 			latin: "Times New Roman"
 		},
@@ -227,6 +240,7 @@ var docxLayout = (function(exports) {
 			name: "NSimSun",
 			aliases: ["新宋体"],
 			lineHeight: 1296,
+			descent: 290,
 			monospaced: true,
 			latin: "Times New Roman"
 		},
@@ -234,6 +248,7 @@ var docxLayout = (function(exports) {
 			name: "SimHei",
 			aliases: ["黑体"],
 			lineHeight: 1297,
+			descent: 290,
 			monospaced: true,
 			latin: "Arial"
 		},
@@ -241,6 +256,7 @@ var docxLayout = (function(exports) {
 			name: "KaiTi",
 			aliases: ["楷体"],
 			lineHeight: 1297,
+			descent: 289,
 			monospaced: true,
 			latin: "Times New Roman"
 		},
@@ -248,6 +264,7 @@ var docxLayout = (function(exports) {
 			name: "FangSong",
 			aliases: ["仿宋"],
 			lineHeight: 1297,
+			descent: 290,
 			monospaced: true,
 			latin: "Times New Roman"
 		},
@@ -255,6 +272,7 @@ var docxLayout = (function(exports) {
 			name: "Microsoft YaHei",
 			aliases: ["微软雅黑"],
 			lineHeight: 1714,
+			descent: 460,
 			latin: "Arial"
 		},
 		{
@@ -265,18 +283,21 @@ var docxLayout = (function(exports) {
 				"DengXian Light"
 			],
 			lineHeight: 1354,
+			descent: 388,
 			latin: "Arial"
 		},
 		{
 			name: "PMingLiU",
 			aliases: ["新細明體"],
 			lineHeight: 1300,
+			descent: 350,
 			latin: "Times New Roman"
 		},
 		{
 			name: "MingLiU",
 			aliases: ["細明體"],
 			lineHeight: 1301,
+			descent: 350,
 			monospaced: true,
 			latin: "Times New Roman"
 		},
@@ -284,30 +305,35 @@ var docxLayout = (function(exports) {
 			name: "Microsoft JhengHei",
 			aliases: ["微軟正黑體"],
 			lineHeight: 1730,
+			descent: 454,
 			latin: "Arial"
 		},
 		{
 			name: "Malgun Gothic",
 			aliases: ["맑은 고딕"],
 			lineHeight: 1730,
+			descent: 440,
 			latin: "Arial"
 		},
 		{
 			name: "Batang",
 			aliases: ["바탕"],
 			lineHeight: 1300,
+			descent: 292,
 			latin: "Times New Roman"
 		},
 		{
 			name: "Gulim",
 			aliases: ["굴림"],
 			lineHeight: 1301,
+			descent: 292,
 			latin: "Arial"
 		},
 		{
 			name: "Dotum",
 			aliases: ["돋움"],
 			lineHeight: 1301,
+			descent: 292,
 			latin: "Arial"
 		}
 	];
@@ -415,6 +441,15 @@ var docxLayout = (function(exports) {
 	var measureLineHeight = (font = {}) => {
 		var _eastAsianFontOf, _font$font2;
 		return ((_eastAsianFontOf = eastAsianFontOf((_font$font2 = font.font) !== null && _font$font2 !== void 0 ? _font$font2 : "Times New Roman")) !== null && _eastAsianFontOf !== void 0 ? _eastAsianFontOf : widthsOf(font.font)).lineHeight * sizeOf$1(font) / 1e3;
+	};
+	/**
+	* How far a line of single-spaced text goes below its baseline, in points. The rest of the line is above it, with the
+	* font's line gap at the top, where Word puts it: Arial 11 with Courier New 11 is 272.42 twips, Arial's ascent and gap and
+	* Courier New's descent (scripts/layout-probes/word-mixed-heights.ts MH2a).
+	*/
+	var measureDescent = (font = {}) => {
+		var _eastAsianFontOf2, _font$font3;
+		return ((_eastAsianFontOf2 = eastAsianFontOf((_font$font3 = font.font) !== null && _font$font3 !== void 0 ? _font$font3 : "Times New Roman")) !== null && _eastAsianFontOf2 !== void 0 ? _eastAsianFontOf2 : widthsOf(font.font)).descent * sizeOf$1(font) / 1e3;
 	};
 	//#endregion
 	//#region src/text-layout/line-break-rules.ts
@@ -982,14 +1017,15 @@ var docxLayout = (function(exports) {
 	*
 	* Lines break at spaces, and at en, em, four-per-em and ideographic spaces, after hyphens, between Chinese, Japanese and
 	* Korean characters, and between the words of Thai and the other scripts without spaces, as {@link findLineBreaks} finds.
-	* Tabs move to the paragraph's tab stops, or to the document's default ones. Each line is as tall as the tallest text or
-	* picture on it, with the paragraph's line spacing.
+	* Tabs move to the paragraph's tab stops, or to the document's default ones. Each line is as tall as its text's tallest
+	* ascent and deepest descent, with its pictures standing on the baseline, and the paragraph's line spacing.
 	*
 	* @module
 	*/
 	var DEFAULT_MEASURER = {
 		measureWidth: (text, font) => measureTextWidth(text, font),
 		measureLineHeight,
+		measureDescent,
 		unknownCharacter
 	};
 	var DEFAULT_TAB_STOP = 36;
@@ -1129,14 +1165,33 @@ var docxLayout = (function(exports) {
 		return total + measurer.measureWidth(text, font);
 	};
 	var textOf = (pieces) => pieces.length === 1 ? pieces[0].text : pieces.map(({ text }) => text).join("");
+	var NOTHING = {
+		ascent: 0,
+		descent: 0,
+		tallest: 0,
+		picture: 0
+	};
+	/** The heights of a line, with text in this font on it too */
+	var withFont = (heights, font, measurer) => {
+		const line = measurer.measureLineHeight(font);
+		const descent = measurer.measureDescent(font);
+		return _objectSpread2(_objectSpread2({}, heights), {}, {
+			ascent: Math.max(heights.ascent, line - descent),
+			descent: Math.max(heights.descent, descent),
+			tallest: Math.max(heights.tallest, line)
+		});
+	};
 	/**
-	* The height of single-spaced lines, with this line spacing. Word doesn't round it: Calibri 11 is 268.55 twips, and
-	* 289.82 at 259 twips' multiple spacing, where LibreOffice rounds them to whole twips, 269 and 290.
+	* How tall a line is, with the paragraph's line spacing, and how much of that multiple spacing adds below its text. Word
+	* doesn't round it: Calibri 11 is 268.55 twips, and 289.82 at 259 twips' multiple spacing, where LibreOffice rounds them
+	* to whole twips, 269 and 290.
 	*/
-	var spaced = (natural, spacing) => {
-		if (!spacing) return natural;
-		if (spacing.rule === "multiple") return natural * spacing.multiple;
-		return spacing.rule === "exact" ? spacing.height : Math.max(natural, spacing.height);
+	var heightOf = ({ ascent, descent, tallest, picture }, spacing) => {
+		const natural = Math.max(Math.max(picture, ascent) + descent, tallest);
+		if (spacing === void 0) return { height: natural };
+		if (spacing.rule !== "multiple") return { height: spacing.rule === "exact" ? spacing.height : Math.max(natural, spacing.height) };
+		const spacingBelow = (spacing.multiple - 1) * tallest;
+		return _objectSpread2({ height: natural + spacingBelow }, spacingBelow > 0 ? { spacingBelow } : {});
 	};
 	/**
 	* Where a tab moves to: the next of the paragraph's tab stops, or the next default one past the last of them. On the
@@ -1230,6 +1285,24 @@ var docxLayout = (function(exports) {
 	var layoutLines = (items, { width, format = {}, tabStops = [], defaultTabStop = DEFAULT_TAB_STOP, markFont = {}, measurer = DEFAULT_MEASURER, breakRules }) => {
 		const { indentLeft = 0, indentRight = 0, firstLineIndent = 0, lineSpacing, alignment } = format;
 		const markHeight = measurer.measureLineHeight(markFont);
+		/**
+		* Whether a line of only pictures is in a paragraph whose mark has a taller line than the pictures' runs, so that how
+		* tall the line is depends on whether the mark counts. Word hasn't shown that: in its probes the pictures' runs were as
+		* large as the mark or larger (scripts/layout-probes/word-mixed-heights.ts MH3d, MH7), and beside text the mark doesn't
+		* count
+		*/
+		const markMatters = ({ ascent, tallest, picture }) => picture > 0 && ascent === 0 && markHeight > tallest + TOLERANCE$1 && (picture < markHeight - TOLERANCE$1 || (lineSpacing === null || lineSpacing === void 0 ? void 0 : lineSpacing.rule) === "multiple" && lineSpacing.multiple !== 1);
+		/** The heights of a line with the text of the token on it too */
+		const withToken = (heights, token) => {
+			if (token.type === "box") {
+				const tallest = token.font ? Math.max(heights.tallest, measurer.measureLineHeight(token.font)) : heights.tallest;
+				return _objectSpread2(_objectSpread2({}, heights), {}, {
+					picture: Math.max(heights.picture, token.height),
+					tallest
+				});
+			}
+			return token.type === "tab" ? withFont(heights, token.font, measurer) : token.pieces.reduce((all, { font }) => withFont(all, font, measurer), heights);
+		};
 		const squeezes = alignment === "justified" || alignment === "distributed" || alignment === "thaiDistributed" || alignment === "lowKashida";
 		const { stops, firstLineStops } = stopsOf(tabStops, format);
 		const parts = segmentsOf(items, rulesOf(format, breakRules));
@@ -1272,7 +1345,7 @@ var docxLayout = (function(exports) {
 				start,
 				end: start,
 				text: "",
-				natural: 0,
+				heights: NOTHING,
 				spaces: 0,
 				spaceCount: 0,
 				between: 0,
@@ -1283,15 +1356,13 @@ var docxLayout = (function(exports) {
 				started: false,
 				first
 			};
-			const finish = (state, breakAfter, extra = 0) => {
-				const natural = Math.max(state.started ? state.natural : markHeight, extra);
-				lines.push(_objectSpread2(_objectSpread2({
-					height: spaced(natural, lineSpacing),
-					markers: [...state.markers, ...state.pending]
-				}, breakAfter ? { breakAfter } : {}), {}, {
+			const finish = (state, breakAfter) => {
+				const heights = state.started ? state.heights : withFont(NOTHING, markFont, measurer);
+				const unsupported = state.unknown ? "a justified line that only fits squeezed at an en, em or ideographic space" : markMatters(heights) ? "a picture alone in a line of a paragraph whose mark is larger" : void 0;
+				lines.push(_objectSpread2(_objectSpread2(_objectSpread2({}, heightOf(heights, lineSpacing)), {}, { markers: [...state.markers, ...state.pending] }, breakAfter ? { breakAfter } : {}), {}, {
 					text: state.text,
 					textWidth: Math.max(0, state.end - state.start)
-				}, state.unknown ? { unsupported: "a justified line that only fits squeezed at an en, em or ideographic space" } : {}));
+				}, unsupported ? { unsupported } : {}));
 			};
 			const wrap = (state) => {
 				finish(_objectSpread2(_objectSpread2({}, state), {}, { pending: [] }));
@@ -1300,7 +1371,7 @@ var docxLayout = (function(exports) {
 					start: indentLeft,
 					end: indentLeft,
 					text: "",
-					natural: 0,
+					heights: NOTHING,
 					spaces: 0,
 					spaceCount: 0,
 					between: 0,
@@ -1323,7 +1394,6 @@ var docxLayout = (function(exports) {
 					continue;
 				}
 				if (token.type === "space") {
-					const height = Math.max(...token.pieces.map(({ font }) => measurer.measureLineHeight(font)));
 					const spaces = widthOf(token.pieces, measurer);
 					line = _objectSpread2(_objectSpread2({}, line), {}, {
 						position: line.position + spaces,
@@ -1331,19 +1401,18 @@ var docxLayout = (function(exports) {
 						spaces: line.started ? line.spaces + spaces : 0,
 						spaceCount: line.started ? line.spaceCount + lengthOf(token.pieces) : 0,
 						otherSpaces: line.started ? line.otherSpaces + widthOf(othersOf(token.pieces), measurer) : 0,
-						natural: Math.max(line.natural, height)
+						heights: withToken(line.heights, token)
 					});
 					continue;
 				}
 				if (token.type === "tab") {
 					var _nextStop;
-					const height = measurer.measureLineHeight(token.font);
 					const stop = (_nextStop = nextStop(line.position, line.first ? firstLineStops : stops, defaultTabStop, limitOf())) !== null && _nextStop !== void 0 ? _nextStop : line.started ? nextStop(indentLeft, stops, defaultTabStop, limitOf(lines.length + 1)) : void 0;
 					if (stop === void 0) {
 						line = _objectSpread2(_objectSpread2({}, line), {}, {
 							end: line.position,
 							text: `${line.text}\t`,
-							natural: Math.max(line.natural, height),
+							heights: withToken(line.heights, token),
 							started: true
 						});
 						continue;
@@ -1357,7 +1426,7 @@ var docxLayout = (function(exports) {
 						position,
 						end: position,
 						text: `${line.text}\t`,
-						natural: Math.max(line.natural, height),
+						heights: withToken(line.heights, token),
 						spaces: 0,
 						spaceCount: 0,
 						between: 0,
@@ -1368,7 +1437,6 @@ var docxLayout = (function(exports) {
 					continue;
 				}
 				const tokenWidth = token.type === "box" ? token.width : widthOf(token.pieces, measurer);
-				const tokenHeight = token.type === "box" ? token.height : Math.max(...token.pieces.map(({ font }) => measurer.measureLineHeight(font)));
 				const overflows = line.started && line.position + tokenWidth > limitOf() + TOLERANCE$1;
 				if (overflows && unsure(line, tokenWidth)) line = _objectSpread2(_objectSpread2({}, line), {}, { unknown: true });
 				const squeezed = overflows && !line.unknown && squeezesIn(line, tokenWidth);
@@ -1379,7 +1447,7 @@ var docxLayout = (function(exports) {
 					for (const character of charactersOf(token.pieces)) {
 						const characterWidth = widthOf(character, measurer);
 						if (placed && line.position + characterWidth > limitOf() + TOLERANCE$1 && limitOf(lines.length + 1) - indentLeft > 0) line = wrap(_objectSpread2(_objectSpread2({}, line), {}, {
-							natural: Math.max(line.natural, tokenHeight),
+							heights: withToken(line.heights, token),
 							started: true
 						}));
 						line = _objectSpread2(_objectSpread2({}, line), {}, {
@@ -1402,15 +1470,15 @@ var docxLayout = (function(exports) {
 				line = _objectSpread2(_objectSpread2({}, line), {}, {
 					end: line.position,
 					between: line.spaceCount,
-					natural: Math.max(line.natural, tokenHeight),
+					heights: withToken(line.heights, token),
 					started: true
 				});
 			}
 			if (!end) finish(line);
 			else {
-				const breakHeight = isLast && !line.started ? markHeight : measurer.measureLineHeight(end.font);
+				const breakFont = isLast && !line.started ? markFont : end.font;
 				finish(_objectSpread2(_objectSpread2({}, line), {}, {
-					natural: Math.max(line.started ? line.natural : 0, breakHeight),
+					heights: withFont(line.started ? line.heights : NOTHING, breakFont, measurer),
 					started: true
 				}), end.kind === "line" ? void 0 : end.kind);
 			}
@@ -1676,7 +1744,9 @@ var docxLayout = (function(exports) {
 		const fsSelection = os2 === void 0 ? 0 : view.getUint16(os2 + 62);
 		const windowsHeight = os2 === void 0 ? ascender - descender : view.getUint16(os2 + 74) + view.getUint16(os2 + 76);
 		const externalLeading = Math.max(0, lineGap - (windowsHeight - (ascender - descender)));
-		const lineHeight = hasFlag(fsSelection, 128) ? view.getInt16(os2 + 68) - view.getInt16(os2 + 70) + view.getInt16(os2 + 72) : windowsHeight + externalLeading;
+		const typographic = hasFlag(fsSelection, 128);
+		const lineHeight = typographic ? view.getInt16(os2 + 68) - view.getInt16(os2 + 70) + view.getInt16(os2 + 72) : windowsHeight + externalLeading;
+		const descent = typographic ? -view.getInt16(os2 + 70) : os2 === void 0 ? -descender : view.getUint16(os2 + 76);
 		const glyphOf = readCharacterMap(view, tables);
 		const kerning = (_readGlyphPositioning = readGlyphPositioning(view, tables)) !== null && _readGlyphPositioning !== void 0 ? _readGlyphPositioning : readKernTable(view, tables);
 		const pairs = /* @__PURE__ */ new Map();
@@ -1694,6 +1764,7 @@ var docxLayout = (function(exports) {
 			bold: os2 === void 0 ? hasFlag(macStyle, 1) : hasFlag(fsSelection, 32),
 			italic: os2 === void 0 ? hasFlag(macStyle, 2) : hasFlag(fsSelection, 1),
 			lineHeight: lineHeight / unitsPerEm,
+			descent: descent / unitsPerEm,
 			advanceOf: (code) => {
 				if (advances.has(code)) return advances.get(code);
 				const glyph = cachedGlyph(code);
@@ -1772,6 +1843,11 @@ var docxLayout = (function(exports) {
 				var _font$size;
 				const face = faceOf(font);
 				return face ? face.lineHeight * ((_font$size = font.size) !== null && _font$size !== void 0 ? _font$size : 10) : fallback.measureLineHeight(font);
+			},
+			measureDescent: (font) => {
+				var _font$size2;
+				const face = faceOf(font);
+				return face ? face.descent * ((_font$size2 = font.size) !== null && _font$size2 !== void 0 ? _font$size2 : 10) : fallback.measureDescent(font);
 			},
 			unknownCharacter: (text, font) => {
 				var _fallback$unknownChar;
@@ -2429,9 +2505,18 @@ var docxLayout = (function(exports) {
 	* at the top of the next, and with keepLines, a paragraph that doesn't fit moves to the next page whole. The first lines
 	* can need room below them too, for their footnotes, or for the space after a paragraph that ends in a table cell
 	* (`roomBelow`, from the number of lines).
+	*
+	* A line that fits only without the space its multiple spacing adds below its text goes on the page when `hangs` says
+	* it can, from the number of lines, as Word lets that space go below the bottom of a page: 26 lines of 544.09 twips fit
+	* on a page of 13958, the last without its 268.55 (`word-mixed-heights.docx` MH1c), as do 20 lines of a picture beside
+	* text at 1.15 lines (`word-watertight-text.docx` TX8c). Without `hangs`, it doesn't.
 	*/
-	var linesThatFit = (lines, room, { keepLines, widowControl }, isFirstLine, roomBelow = () => 0) => {
-		const fits = lines.map((_, line) => sum(lines.slice(0, line + 1).map(({ height }) => height))).findIndex((end, line) => end + roomBelow(line + 1) > room + TOLERANCE);
+	var linesThatFit = (lines, room, { keepLines, widowControl }, isFirstLine, roomBelow = () => 0, hangs) => {
+		var _lines$past$spacingBe;
+		const ends = lines.map((_, line) => sum(lines.slice(0, line + 1).map(({ height }) => height)));
+		const past = ends.findIndex((end, line) => end + roomBelow(line + 1) > room + TOLERANCE);
+		const hung = past !== -1 && ends[past] - ((_lines$past$spacingBe = lines[past].spacingBelow) !== null && _lines$past$spacingBe !== void 0 ? _lines$past$spacingBe : 0) + roomBelow(past + 1) <= room + TOLERANCE && (hangs === null || hangs === void 0 ? void 0 : hangs(past + 1)) === true;
+		const fits = hung && past + 1 < lines.length ? past + 1 : hung ? -1 : past;
 		return fits === -1 ? {
 			fits: lines.length,
 			count: lines.length
@@ -2574,6 +2659,16 @@ var docxLayout = (function(exports) {
 			};
 		};
 		const linesHeight = (lines) => sum(lines.map(({ height }) => height));
+		/** How tall lines are on a page, at the bottom of which the multiple spacing of their last can go below it */
+		const heightToFit = (lines) => {
+			var _lines$at$spacingBelo, _lines$at;
+			return linesHeight(lines) - ((_lines$at$spacingBelo = (_lines$at = lines.at(-1)) === null || _lines$at === void 0 ? void 0 : _lines$at.spacingBelow) !== null && _lines$at$spacingBelo !== void 0 ? _lines$at$spacingBelo : 0);
+		};
+		/**
+		* Whether what is kept together, `height` tall from `from`, fits above `end`, with its last line's multiple spacing
+		* below it when that can be (`hangsBelow`)
+		*/
+		const fitsAbove = (from, { height, spacingBelow }, end, aboveNotes) => from + height <= end + TOLERANCE || from + height - spacingBelow <= end + TOLERANCE && hangsBelow(aboveNotes);
 		/** How narrow and how wide the paragraphs and tables in a table cell can be */
 		const contentWidths = (stack) => stack.reduce((widths, block) => {
 			const { min, max } = block.type === "table" ? tableWidths(block, contentWidths) : measureContentWidths(measurable(block.items), {
@@ -2829,6 +2924,17 @@ var docxLayout = (function(exports) {
 		const pageNumberOf = (current) => {
 			const text = current.chapters ? void 0 : formatPageNumber(pageNumber, current.numberFormat);
 			return text === void 0 ? {} : { pageNumber: text };
+		};
+		/**
+		* Whether the space a line's multiple spacing adds below its text can go below the bottom of the page, as Word lets it
+		* (`word-mixed-heights.docx` MH1c), for a line that fits only without it. Stops where Word hasn't shown it: in columns
+		* being evened out, above footnotes, which it would go into, and above a paragraph's border below
+		*/
+		const hangsBelow = (aboveNotes, aboveBorder = false) => {
+			if ((balancing === null || balancing === void 0 ? void 0 : balancing.page) === pageCount) throw new Unsupported("columns evened out above a line whose multiple spacing goes below them");
+			if (aboveNotes) throw new Unsupported("a line whose multiple spacing goes below it into the footnotes");
+			if (aboveBorder) throw new Unsupported("a line whose multiple spacing goes below the page, above its paragraph's border");
+			return true;
 		};
 		const partHeight = (parts, isFirst) => {
 			var _headerHeights$get, _bySection$get;
@@ -3520,7 +3626,7 @@ var docxLayout = (function(exports) {
 			if (paragraph.pageBreakBefore && (placedInColumn || column > 0)) startPage();
 			const { columns } = section();
 			/** Whether its lines up to its first break are taller than a column, at a column's width */
-			const tallerThanColumn = (width) => linesHeight(linesToBreak(linesOf(block, width), 0)) > pageBottom - top + TOLERANCE;
+			const tallerThanColumn = (width) => heightToFit(linesToBreak(linesOf(block, width), 0)) > pageBottom - top + TOLERANCE;
 			const keptTall = paragraph.keepLines && columns.length > 1 && columns.some(tallerThanColumn);
 			if (keptTall && columns.some((width) => width !== columns[0])) throw new Unsupported("a paragraph kept together taller than a column, in columns of different widths");
 			if (keptTall && (column > 0 || position > top + TOLERANCE)) {
@@ -3553,8 +3659,10 @@ var docxLayout = (function(exports) {
 				const notesOf = (upTo) => [...heldNotes, ...notesIn(remaining.slice(0, upTo).flatMap(({ markers }) => markers))];
 				const room = linesBottom() - position - space;
 				const ends = index + remaining.length === lines.length;
-				const { fits, count: kept } = linesThatFit(remaining, room, paragraph, isFirstLine, (upTo) => noteCost(leastNoteRoom(notesOf(upTo))) + (ends && upTo === remaining.length ? paragraph.borderBelow : 0));
-				if (section().columns.length > 1 && linesThatFit(remaining, room, paragraph, isFirstLine).fits > fits) {
+				const notesOnPage = noteArea > 0 || reserved() > 0;
+				const hangs = (upTo) => hangsBelow(notesOnPage || notesOf(upTo).length > 0, ends && upTo === remaining.length && paragraph.borderBelow > 0);
+				const { fits, count: kept } = linesThatFit(remaining, room, paragraph, isFirstLine, (upTo) => noteCost(leastNoteRoom(notesOf(upTo))) + (ends && upTo === remaining.length ? paragraph.borderBelow : 0), hangs);
+				if (section().columns.length > 1 && linesThatFit(remaining, room, paragraph, isFirstLine, void 0, hangs).fits > fits) {
 					const above = room - linesHeight(remaining.slice(0, fits));
 					stopAtPartOfFootnote(notesOf(fits), notesIn(remaining[fits].markers), above - remaining[fits].height);
 				}
@@ -3614,7 +3722,9 @@ var docxLayout = (function(exports) {
 			for (const [index, { paragraph, from }] of paragraphs.entries()) {
 				const space = from > 0 ? 0 : (previousAfter === void 0 ? isFirstPart ? paragraph.spaceBefore : 0 : between(previousAfter, paragraph.spaceBefore)) + paragraph.borderAbove;
 				const remaining = paragraph.lines.slice(from);
-				const { fits, count: kept } = linesThatFit(remaining, room - used - space, paragraph, from === 0, (upTo) => upTo === remaining.length ? paragraph.borderBelow + paragraph.spaceAfter : 0);
+				const { fits, count: kept } = linesThatFit(remaining, room - used - space, paragraph, from === 0, (upTo) => upTo === remaining.length ? paragraph.borderBelow + paragraph.spaceAfter : 0, () => {
+					throw new Unsupported("a table row across pages whose line's multiple spacing goes below the page");
+				});
 				const upToLimit = limit - placed.length;
 				const count = fits <= upToLimit ? kept : upToLimit > 0 ? linesKept(remaining.length, upToLimit, paragraph, from === 0) : 0;
 				const before = placed.length;
@@ -3865,7 +3975,7 @@ var docxLayout = (function(exports) {
 		* of a paragraph's lines, or the first lines of a longer one, or a table's first row.
 		*/
 		const keptHeight = (index, width) => {
-			var _kept$spaceAfter, _kept;
+			var _kept$spaceAfter, _kept, _nextLines$at$spacing, _nextLines$at;
 			const chain = blocks.slice(index).findIndex(({ block, section: blockSection }, offset) => {
 				const following = blocks[index + offset + 1];
 				return !(block.type === "paragraph" && block.format.keepNext === true && following && following.section === blockSection);
@@ -3879,17 +3989,22 @@ var docxLayout = (function(exports) {
 			const lastAfter = (_kept$spaceAfter = (_kept = kept[kept.length - 1]) === null || _kept === void 0 ? void 0 : _kept.spaceAfter) !== null && _kept$spaceAfter !== void 0 ? _kept$spaceAfter : spaceAfter;
 			const keptNotes = notesIn(kept.flatMap(({ lines }) => lines.flatMap(({ markers }) => markers)));
 			const anchor = blocks[index + chain].block;
-			if (anchor.type === "paragraph" && anchor.sectionBreak) return {
-				height: keptLines,
-				notes: keptNotes,
-				kept: keptNotes,
-				keptWith: "nothing"
-			};
+			if (anchor.type === "paragraph" && anchor.sectionBreak) {
+				var _kept$lines$at$spacin, _kept2;
+				return {
+					height: keptLines,
+					spacingBelow: (_kept$lines$at$spacin = (_kept2 = kept[kept.length - 1]) === null || _kept2 === void 0 || (_kept2 = _kept2.lines.at(-1)) === null || _kept2 === void 0 ? void 0 : _kept2.spacingBelow) !== null && _kept$lines$at$spacin !== void 0 ? _kept$lines$at$spacin : 0,
+					notes: keptNotes,
+					kept: keptNotes,
+					keptWith: "nothing"
+				};
+			}
 			if (anchor.type === "table") {
 				const sized = anchor.unsupported ? anchor : fitted(anchor, width);
 				const rows = sized.unsupported ? [] : sized.rows.slice(0, keptRowsEnd(sized, 0) + 1);
 				return {
 					height: keptLines + lastAfter + sum(sized.unsupported ? [] : rowHeights(sized).slice(0, rows.length)),
+					spacingBelow: 0,
 					notes: [...keptNotes, ...notesIn(rows.flatMap(({ cells }) => cells.flatMap((cell) => cell.blocks.flatMap(markersOf))))],
 					kept: keptNotes,
 					keptWith: "part"
@@ -3900,6 +4015,7 @@ var docxLayout = (function(exports) {
 			const nextLines = next.lines.slice(0, firstLines);
 			return {
 				height: keptLines + between(lastAfter, next.spaceBefore) + next.borderAbove + linesHeight(nextLines) + (nextLines.length === next.lines.length ? next.borderBelow : 0),
+				spacingBelow: nextLines.length === next.lines.length && next.borderBelow > 0 ? 0 : (_nextLines$at$spacing = (_nextLines$at = nextLines.at(-1)) === null || _nextLines$at === void 0 ? void 0 : _nextLines$at.spacingBelow) !== null && _nextLines$at$spacing !== void 0 ? _nextLines$at$spacing : 0,
 				notes: [...keptNotes, ...notesIn(nextLines.flatMap(({ markers }) => markers))],
 				kept: keptNotes,
 				keptWith: chain === 0 ? "nothing" : firstLines === next.lines.length && !next.pageBreakBefore ? "whole" : "part"
@@ -3947,16 +4063,17 @@ var docxLayout = (function(exports) {
 				*/
 				const keptHere = () => {
 					const measured = keptHeight(index, section().columns[column]);
+					const withHeld = [...held, ...measured.notes];
 					return _objectSpread2(_objectSpread2({}, measured), {}, {
-						all: [...held, ...measured.notes],
-						fitsWith: (noteRoom) => position + measured.height <= linesBottom(noteRoom) + TOLERANCE
+						all: withHeld,
+						fitsWith: (noteRoom) => fitsAbove(position, measured, linesBottom(noteRoom), noteArea > 0 || withHeld.length > 0)
 					});
 				};
 				if (placedInColumn) {
 					const here = keptHere();
 					const fitsHere = here.fitsWith(leastNoteRoom(here.all));
 					const { columns } = section();
-					const fitsBelow = (from, area, below) => from + keptHeight(index, below).height <= Math.min(bottom, pageBottom - area) + TOLERANCE;
+					const fitsBelow = (from, area, below) => fitsAbove(from, keptHeight(index, below), Math.min(bottom, pageBottom - area), area > 0 || here.notes.length > 0);
 					if (!fitsHere && column + 1 < columns.length && fitsBelow(columnTop, noteArea + moreNoteRoom(here.notes), columns[column + 1])) nextColumn();
 					else if (!fitsHere && fitsBelow(top, leastAreaOf(here.notes, carried, columns.length > 1 ? columns : void 0), columns[0])) startPage();
 				}
@@ -4139,8 +4256,8 @@ var docxLayout = (function(exports) {
 		};
 	};
 	/**
-	* A measurer that measures widths with a function, and lines' heights with the width tables, as Word works them out
-	* from the font's height and the paragraph's spacing.
+	* A measurer that measures widths with a function, and lines' heights and descents with the width tables, as Word works
+	* them out from the font's height and the paragraph's spacing.
 	*/
 	var measurerOf = (measureWidth) => ({
 		measureWidth: (text, { font = DEFAULT_FONT, size = 10, bold = false, italic = false, characterSpacing = 0, scale = 100 }) => {
@@ -4152,7 +4269,8 @@ var docxLayout = (function(exports) {
 			}) * scale / 100 + characterSpacing * [...part].length;
 			return text.split("	").reduce((position, part, index) => (index === 0 ? 0 : (Math.floor(position / TAB_STOP) + 1) * TAB_STOP) + widthOf(part), 0);
 		},
-		measureLineHeight
+		measureLineHeight,
+		measureDescent
 	});
 	//#endregion
 	//#region src/layout/table-formats.ts
@@ -4659,10 +4777,10 @@ var docxLayout = (function(exports) {
 	var addTabs = (stops, settings = []) => settings.reduce((all, setting) => [...all.filter((stop) => Math.abs(stop.position - setting.position) > .01), ...setting.alignment === "clear" ? [] : [setting]], stops);
 	var tabStopsOf = (formats) => formats.reduce((stops, { tabs }) => addTabs(stops, tabs), []).filter((stop) => stop.alignment !== "bar" && stop.alignment !== "clear");
 	/**
-	* Reads a drawing in a run (`w:drawing`): a picture in the line is a box, and one that text doesn't flow around, such as
-	* one behind the text, takes up no room.
+	* Reads a drawing in a run (`w:drawing`): a picture in the line is a box, with its run's font, and one that text doesn't
+	* flow around, such as one behind the text, takes up no room.
 	*/
-	var readDrawing = (element, reader) => {
+	var readDrawing = (element, font, reader) => {
 		const [drawing] = childrenOf(element["w:drawing"]);
 		const inline = drawing["wp:inline"];
 		if (inline !== void 0) {
@@ -4677,7 +4795,8 @@ var docxLayout = (function(exports) {
 			return [{
 				type: "box",
 				width: emus(extent.cx, effect.l, effect.r, around.distL, around.distR) / EMUS_PER_POINT,
-				height: emus(extent.cy, effect.t, effect.b, around.distT, around.distB) / EMUS_PER_POINT
+				height: emus(extent.cy, effect.t, effect.b, around.distT, around.distB) / EMUS_PER_POINT,
+				font
 			}];
 		}
 		return !childrenOf(drawing["wp:anchor"]).some((child) => "wp:wrapNone" in child) && !reader.inHeader ? "a drawing that text flows around" : [];
@@ -4795,7 +4914,7 @@ var docxLayout = (function(exports) {
 				}
 				case "w:footnoteRef":
 				case "w:endnoteRef": return reader.noteNumber === void 0 ? [] : [noteNumber(reader.noteNumber, font)];
-				case "w:drawing": return readDrawing(child, reader);
+				case "w:drawing": return readDrawing(child, font, reader);
 				case "mc:AlternateContent": {
 					const choice = childrenOf(child["mc:AlternateContent"]).find((option) => "mc:Choice" in option);
 					return choice ? readRun({ "w:r": [...childrenOf(choice["mc:Choice"])] }, paragraphRun, reader) : [];
