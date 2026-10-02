@@ -954,7 +954,10 @@ describe("readDocument", () => {
                         field("end"),
                     ),
                     p(r(hidden, { "w:dayLong": {} })),
-                    p(pPr(value("w:pStyle", "Hidden")), { "w:fldSimple": [{ _attr: { "w:instr": "TIME" } }] }),
+                    // Its mark shown, as a hidden one would join it to the paragraph after it
+                    p(pPr(value("w:pStyle", "Hidden"), rPr(value("w:vanish", "false"))), {
+                        "w:fldSimple": [{ _attr: { "w:instr": "TIME" } }],
+                    }),
                 ],
                 { styles: { paragraphStyles: [{ id: "Hidden", name: "Hidden", run: { vanish: true } }] } },
             );
@@ -3534,6 +3537,111 @@ describe("readDocument", () => {
             );
             expect(content.unsupported).to.equal(undefined);
             expect(textOf(content)).to.equal("a");
+        });
+    });
+
+    describe("soft hyphens, hidden paragraph marks and decimal tab stops", () => {
+        const hiddenMark = rPr({ "w:vanish": {} });
+        const cellOf = (...paragraphs: readonly object[]): object => ({
+            "w:tc": [{ "w:tcPr": [{ "w:tcW": { _attr: { "w:w": 2000 } } }] }, ...paragraphs],
+        });
+        const tableOf = (...cells: readonly object[]): object => ({
+            "w:tbl": [{ "w:tblPr": [] }, { "w:tblGrid": [{ "w:gridCol": { _attr: { "w:w": 2000 } } }] }, { "w:tr": cells }],
+        });
+        const texts = (content: DocumentContent): readonly string[] =>
+            content.blocks.map(({ block }) =>
+                block.type === "paragraph" ? block.items.map((item) => (item.type === "text" ? item.text : "")).join("") : "table",
+            );
+
+        it("should read a soft hyphen as where a word may break, in its run's font, and nothing in hidden text", () => {
+            const content = readBody([
+                p(
+                    r(rPr(value("w:sz", 30)), t("Donau"), { "w:softHyphen": {} }, t("dampf")),
+                    r(rPr({ "w:vanish": {} }), { "w:softHyphen": {} }),
+                ),
+            ]);
+            expect(itemsOf(content).map((item) => (item.type === "text" ? item.text : item))).to.deep.equal([
+                "Donau",
+                { type: "softHyphen", font: { size: 15 } },
+                "dampf",
+            ]);
+        });
+
+        it("should mark a soft hyphen whose breaking Word hasn't been seen with as unsupported", () => {
+            const bordered = rPr({ "w:bdr": { _attr: { "w:val": "single", "w:sz": 4, "w:space": 4 } } });
+            expect(paragraphOf(readBody([p(r(bordered, t("a"), { "w:softHyphen": {} }, t("b")))])).unsupported).to.equal(
+                "a soft hyphen in text with a border",
+            );
+            // In a table whose columns Word sizes to their text, whose narrowest may be a word's widest part
+            expect(readBody([tableOf(cellOf(p(r(t("a"), { "w:softHyphen": {} }, t("b")))))]).blocks[0].block.unsupported).to.equal(
+                "a soft hyphen in a table whose columns Word sizes to their text",
+            );
+        });
+
+        it("should join a paragraph whose mark is hidden to the next, as Word lays it out, where they are formatted the same", () => {
+            // word-watertight-text.docx TX11a: the two paragraphs on one line. Its hidden text takes no room
+            const content = readBody([
+                p(pPr(value("w:jc", "center"), hiddenMark), r(t("first"))),
+                p(pPr(value("w:jc", "center"), hiddenMark), r(rPr({ "w:vanish": {} }), t("hidden"))),
+                p(pPr(value("w:jc", "center")), r(t("second"))),
+                p(r(t("after"))),
+            ]);
+            expect(texts(content)).to.deep.equal(["firstsecond", "after"]);
+            expect(paragraphOf(content).format.alignment).to.equal("center");
+            // A mark hidden by its style, the same as the next's, and a mark that is shown though its style is hidden
+            const styles = { paragraphStyles: [{ id: "Hidden", name: "Hidden", run: { vanish: true } }] };
+            const byStyle = readBody(
+                [
+                    p(pPr(value("w:pStyle", "Hidden")), r(rPr(value("w:vanish", "false")), t("one"))),
+                    p(pPr(value("w:pStyle", "Hidden"), rPr(value("w:vanish", "false"))), r(rPr(value("w:vanish", "false")), t("two"))),
+                    p(r(t("three"))),
+                ],
+                { styles },
+            );
+            expect(texts(byStyle)).to.deep.equal(["onetwo", "three"]);
+            // With specVanish too, as Word's style separator writes it
+            const separator = readBody([p(pPr(rPr({ "w:vanish": {} }, { "w:specVanish": {} })), r(t("one"))), p(r(t("two")))]);
+            expect(texts(separator)).to.deep.equal(["onetwo"]);
+        });
+
+        it("should mark a hidden paragraph mark Word hasn't been seen with as unsupported", () => {
+            const unsupportedOf = (...elements: readonly object[]): string | undefined => {
+                const content = readBody(elements, {
+                    numbering: {
+                        config: [{ reference: "list", levels: [{ level: 0, format: LevelFormat.DECIMAL, text: "%1." }] }],
+                    },
+                });
+                return content.unsupported ?? content.blocks.find(({ block }) => block.unsupported)?.block.unsupported;
+            };
+            expect(unsupportedOf(p(pPr(hiddenMark), r(t("a"))), p(pPr(value("w:jc", "center")), r(t("b"))))).to.equal(
+                "a hidden paragraph mark between paragraphs of different formatting",
+            );
+            expect(unsupportedOf(p(pPr(hiddenMark), r(t("a"))))).to.equal("a hidden paragraph mark with no paragraph after it");
+            expect(unsupportedOf(p(pPr(hiddenMark), r(t("a"))), tableOf(cellOf(p())))).to.equal(
+                "a hidden paragraph mark with no paragraph after it",
+            );
+            expect(unsupportedOf(p(pPr({ "w:sectPr": [] }, hiddenMark), r(t("a"))), p(r(t("b"))))).to.equal("a hidden section break");
+            const numbered = pPr({ "w:numPr": [value("w:ilvl", 0), value("w:numId", 1)] });
+            expect(unsupportedOf(p(pPr(hiddenMark), r(t("a"))), p(numbered, r(t("b"))))).to.equal("a hidden paragraph mark in a list");
+            expect(unsupportedOf(p(pPr(rPr({ "w:specVanish": {} })), r(t("a"))), p(r(t("b"))))).to.equal(
+                "a paragraph mark with specVanish that isn't hidden",
+            );
+            // In a table whose columns Word sizes to their text, between paragraphs of text
+            expect(unsupportedOf(tableOf(cellOf(p(pPr(hiddenMark), r(t("a"))), p(r(t("b"))))))).to.equal(
+                "a hidden paragraph mark between paragraphs of text in a table whose columns Word sizes to their text",
+            );
+            expect(unsupportedOf(tableOf(cellOf(p(pPr(hiddenMark)), p(r(t("b"))))))).to.equal(undefined);
+        });
+
+        it("should mark a decimal tab stop in a document whose decimal symbol isn't a full stop as unsupported", () => {
+            const decimal = p(pPr({ "w:tabs": [{ "w:tab": { _attr: { "w:val": "decimal", "w:pos": 4000 } } }] }), r(t("a")));
+            const plain = p(r(t("a")));
+            const comma = value("w:decimalSymbol", ",");
+            expect(paragraphOf(readWithSettings([decimal], [comma])).unsupported).to.equal(
+                "a decimal tab stop in a document whose decimal symbol isn't a full stop",
+            );
+            expect(paragraphOf(readWithSettings([plain], [comma])).unsupported).to.equal(undefined);
+            expect(paragraphOf(readWithSettings([decimal], [value("w:decimalSymbol", ".")])).unsupported).to.equal(undefined);
         });
     });
 });

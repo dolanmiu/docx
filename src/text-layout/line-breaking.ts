@@ -3,8 +3,9 @@
  * which bookmarks start on it.
  *
  * Lines break at spaces, and at en, em, four-per-em and ideographic spaces, after hyphens, between Chinese, Japanese and
- * Korean characters, and between the words of Thai and the other scripts without spaces, as {@link findLineBreaks} finds.
- * Tabs move to the paragraph's tab stops, or to the document's default ones. Each line is as tall as its text's tallest
+ * Korean characters, and between the words of Thai and the other scripts without spaces, as {@link findLineBreaks} finds,
+ * and at soft hyphens, with a hyphen drawn at the end of the line. Tabs move to the paragraph's tab stops, or to the
+ * document's default ones. Each line is as tall as its text's tallest
  * ascent and deepest descent, with its pictures standing on the baseline, and the paragraph's line spacing.
  *
  * @module
@@ -76,6 +77,11 @@ export type InlineItem =
      */
     | { readonly type: "text"; readonly text: string; readonly font: TextFont; readonly language?: string; readonly eastAsian?: boolean }
     | { readonly type: "tab"; readonly font: TextFont }
+    /**
+     * A soft hyphen (`w:softHyphen`), where a word may break, with a hyphen in its font drawn at the end of the line. It
+     * takes no room in a line that doesn't break there (scripts/layout-probes/word-watertight-text.ts TX10a, TX10d)
+     */
+    | { readonly type: "softHyphen"; readonly font: TextFont }
     /** A line break, or a page or column break, which ends the line and starts the rest on a new page or column */
     | { readonly type: "break"; readonly kind: "line" | "page" | "column"; readonly font: TextFont }
     /**
@@ -91,7 +97,10 @@ export type InlineItem =
  */
 export type TabStop = {
     readonly position: number;
-    /** How the text after the tab lines up with the stop. Decimal stops line up the end of the text, as right stops do */
+    /**
+     * How the text after the tab lines up with the stop. A decimal stop lines up the full stop of a number, or its end when
+     * it has none, as a right stop does
+     */
     readonly alignment: "left" | "right" | "center" | "decimal";
 };
 
@@ -134,8 +143,8 @@ export type LaidOutLine = {
     /** Whether the line ends with a page or column break */
     readonly breakAfter?: "page" | "column";
     /**
-     * The text on the line, with the spaces where it wraps and a tab as `\t`. A picture or a break adds nothing to it, so
-     * the texts of a paragraph's lines, one after the other, are its text
+     * The text on the line, with the spaces where it wraps and a tab as `\t`. A picture, a break or the hyphen drawn where it
+     * breaks at a soft hyphen adds nothing to it, so the texts of a paragraph's lines, one after the other, are its text
      */
     readonly text: string;
     /** How far its text goes from where the line starts, in points, without the spaces at its end */
@@ -153,9 +162,13 @@ export type LaidOutLine = {
 
 type Piece = { readonly text: string; readonly font: TextFont };
 
+/** A soft hyphen in a word: how many characters of the word are before it, and the font its hyphen is drawn in */
+type Hyphen = { readonly at: number; readonly font: TextFont };
+
 /** A part of a line that is placed as a whole: a word, the spaces after it, a tab, a picture or a bookmark */
 type Token =
-    | { readonly type: "word"; readonly pieces: readonly Piece[] }
+    /** A word, with the soft hyphens it may break at */
+    | { readonly type: "word"; readonly pieces: readonly Piece[]; readonly hyphens?: readonly Hyphen[] }
     | { readonly type: "space"; readonly pieces: readonly Piece[] }
     | { readonly type: "tab"; readonly font: TextFont }
     | { readonly type: "box"; readonly width: number; readonly height: number; readonly font?: TextFont }
@@ -185,22 +198,39 @@ const MOST_SQUEEZE = 0.25;
 const SPACE_TO_LETTER = 7.2;
 
 type TextItem = Extract<InlineItem, { readonly type: "text" }>;
+type SoftHyphenItem = Extract<InlineItem, { readonly type: "softHyphen" }>;
 
 // The spaces lines break after, which go past the end of a line as U+0020 does: the en, em and four-per-em spaces, which
 // Word has as spaces of its own, and the ideographic space. Word joins the words around the other spaces, such as the thin
 // space (word-character-widths B and H, and word-watertight-text TX19g)
 const SPACES: ReadonlySet<string> = new Set([" ", "\u2002", "\u2003", "\u2005", "\u3000"]);
 
+/** How many characters pieces have */
+const lengthOf = (pieces: readonly Piece[]): number => pieces.reduce((total, { text }) => total + [...text].length, 0);
+
 /**
  * Turns text next to each other into words and the spaces between them. Pieces of words next to each other in different
- * fonts are one word, unless the line can break between them.
+ * fonts are one word, unless the line can break between them. A soft hyphen in a word is where it may break.
  */
-const tokenizeText = (items: readonly TextItem[], rules: LineBreakRules): readonly Token[] => {
-    const breaks = findLineBreaks(items, rules);
+const tokenizeText = (items: readonly (TextItem | SoftHyphenItem)[], rules: LineBreakRules): readonly Token[] => {
+    const breaks = findLineBreaks(
+        items.filter((item): item is TextItem => item.type === "text"),
+        rules,
+    );
     // eslint-disable-next-line functional/prefer-readonly-type
-    const tokens: { readonly type: "word" | "space"; readonly pieces: Piece[] }[] = [];
+    const tokens: { readonly type: "word" | "space"; readonly pieces: Piece[]; hyphens?: Hyphen[] }[] = [];
     let index = 0;
-    for (const { text, font } of items) {
+    for (const item of items) {
+        if (item.type === "softHyphen") {
+            // One after a space, or at the start, is where the line can break anyway
+            const word = tokens[tokens.length - 1];
+            if (word?.type === "word") {
+                // eslint-disable-next-line functional/immutable-data
+                word.hyphens = [...(word.hyphens ?? []), { at: lengthOf(word.pieces), font: item.font }];
+            }
+            continue;
+        }
+        const { text, font } = item;
         for (const character of text) {
             const type = SPACES.has(character) ? "space" : "word";
             const last = tokens[tokens.length - 1];
@@ -228,14 +258,14 @@ const tokenize = (items: readonly InlineItem[], rules: LineBreakRules): readonly
     // eslint-disable-next-line functional/prefer-readonly-type
     const tokens: Token[] = [];
     // eslint-disable-next-line functional/prefer-readonly-type
-    let text: TextItem[] = [];
+    let text: (TextItem | SoftHyphenItem)[] = [];
     for (const item of items) {
-        if (item.type === "text") {
+        if (item.type === "text" || item.type === "softHyphen") {
             // eslint-disable-next-line functional/immutable-data
             text.push(item);
         } else {
             // eslint-disable-next-line functional/immutable-data
-            tokens.push(...tokenizeText(text, rules), item as Exclude<InlineItem, { readonly type: "text" | "break" }>);
+            tokens.push(...tokenizeText(text, rules), item as Exclude<InlineItem, { readonly type: "text" | "softHyphen" | "break" }>);
             text = [];
         }
     }
@@ -282,9 +312,6 @@ const charactersOf = (pieces: readonly Piece[]): readonly (readonly Piece[])[] =
 /** The en, em, four-per-em and ideographic spaces of pieces of spaces, without the others */
 const othersOf = (pieces: readonly Piece[]): readonly Piece[] =>
     pieces.map(({ text, font }) => ({ text: text.replace(/ /g, ""), font })).filter(({ text }) => text.length > 0);
-
-/** How many characters pieces have */
-const lengthOf = (pieces: readonly Piece[]): number => pieces.reduce((total, { text }) => total + [...text].length, 0);
 
 /**
  * A font's formatting with Word's defaults where it gives none, so formatting written as the default is the same as none,
@@ -569,14 +596,9 @@ const nextStop = (
     return stop.position > limit + TOLERANCE ? undefined : stop;
 };
 
-/**
- * The width of the text after a tab, up to the next tab or the end of the part: what lines up with a right or centered
- * stop. Spaces at its end aren't counted.
- */
-const widthAfterTab = (tokens: readonly Token[], measurer: TextMeasurer): number => {
-    const text = textAfterTab(tokens);
-    const lastWord = text.findLastIndex((token) => token.type !== "space" && token.type !== "marker");
-    return text.slice(0, lastWord + 1).reduce(
+/** How wide tokens are, one after the other, with the room of the borders between them */
+const widthOfTokens = (tokens: readonly Token[], measurer: TextMeasurer): number =>
+    tokens.reduce(
         ({ total, border }, token) => {
             if (token.type === "box") {
                 return { total: total + roomBetween(border, undefined) + token.width, border: undefined };
@@ -590,6 +612,74 @@ const widthAfterTab = (tokens: readonly Token[], measurer: TextMeasurer): number
         },
         { total: 0, border: undefined as TextBorder | undefined },
     ).total;
+
+/**
+ * The width of the text after a tab, up to the next tab or the end of the part: what lines up with a right or centered
+ * stop. Spaces at its end aren't counted.
+ */
+const widthAfterTab = (tokens: readonly Token[], measurer: TextMeasurer): number => {
+    const text = textAfterTab(tokens);
+    const lastWord = text.findLastIndex((token) => token.type !== "space" && token.type !== "marker");
+    return widthOfTokens(text.slice(0, lastWord + 1), measurer);
+};
+
+/** Pieces of text split after this many characters */
+const splitPieces = (pieces: readonly Piece[], at: number): readonly [readonly Piece[], readonly Piece[]] => {
+    let count = 0;
+    const parts = pieces.map(({ text, font }) => {
+        const characters = [...text];
+        const taken = Math.max(0, Math.min(characters.length, at - count));
+        count += characters.length;
+        return [
+            { text: characters.slice(0, taken).join(""), font },
+            { text: characters.slice(taken).join(""), font },
+        ] as const;
+    });
+    const written = (piece: Piece): boolean => piece.text.length > 0;
+    return [parts.map(([before]) => before).filter(written), parts.map(([, after]) => after).filter(written)];
+};
+
+// A number as Word lines it up at a decimal stop: digits, after a minus sign or not, and a full stop and more digits or
+// not (scripts/layout-probes/word-watertight-text.ts TX12a: 12.5, 1234.56, 7 and -0.25)
+const PLAIN_NUMBER = /^-?\d+(\.\d+)?$/;
+
+/**
+ * How far the text after a tab goes before a decimal stop: up to the full stop of its number, whose left edge is at the
+ * stop, or all of it when the number has none (TX12a). Undefined when the text isn't a plain number, as where Word lines up
+ * other text, such as "$1,234.50" or "12.5%", hasn't been seen.
+ */
+const widthBeforeDecimal = (tokens: readonly Token[], measurer: TextMeasurer): number | undefined => {
+    const text = textAfterTab(tokens).filter((token) => token.type !== "marker");
+    const written = text
+        .map((token) => (token.type === "word" || token.type === "space" ? textOf(token.pieces) : "\uFFFC"))
+        .join("")
+        .trimEnd();
+    if (!PLAIN_NUMBER.test(written)) {
+        return undefined;
+    }
+    const point = text.findIndex((token) => token.type === "word" && textOf(token.pieces).includes("."));
+    if (point === -1) {
+        return widthAfterTab(tokens, measurer);
+    }
+    const { pieces } = text[point] as Extract<Token, { readonly type: "word" }>;
+    const [before] = splitPieces(pieces, [...textOf(pieces)].indexOf("."));
+    return widthOfTokens([...text.slice(0, point), { type: "word", pieces: before }], measurer);
+};
+
+/**
+ * How far before its stop the text after a tab starts: none for a left stop, half its width for a centred one, all of it
+ * for a right one, and up to its number's full stop for a decimal one. Undefined for text at a decimal stop that isn't a
+ * plain number.
+ */
+const shiftAt = (alignment: TabStop["alignment"], tokens: readonly Token[], measurer: TextMeasurer): number | undefined => {
+    if (alignment === "left") {
+        return 0;
+    }
+    if (alignment === "decimal") {
+        return widthBeforeDecimal(tokens, measurer);
+    }
+    const after = widthAfterTab(tokens, measurer);
+    return alignment === "center" ? after / 2 : after;
 };
 
 /** The tokens after a tab, up to the next tab or the end of the part */
@@ -722,8 +812,8 @@ export const measureContentWidths = (
                         (first && numberTab && tokens.findIndex((other) => other.type === "tab") === index
                             ? numberTabStop(position + lead, firstLineStops, format, defaultTabStop, Infinity).stop
                             : undefined) ?? nextStop(position + lead, first ? firstLineStops : stops, defaultTabStop, Infinity)!;
-                    const after = widthAfterTab(tokens.slice(index + 1), measurer);
-                    const shift = stop.alignment === "left" ? 0 : stop.alignment === "center" ? after / 2 : after;
+                    const rest = tokens.slice(index + 1);
+                    const shift = shiftAt(stop.alignment, rest, measurer) ?? widthAfterTab(rest, measurer);
                     position = Math.max(position + lead, stop.position - shift);
                     end = position;
                     continue;
@@ -919,72 +1009,8 @@ export const layoutLines = (
         /** Puts the bookmarks waiting for the next word, picture or tab on the line it is on */
         const place = (state: LineState): LineState => ({ ...state, markers: [...state.markers, ...state.pending], pending: [] });
 
-        for (const [index, token] of tokens.entries()) {
-            if (token.type === "marker") {
-                line = { ...line, pending: [...line.pending, token.name] };
-                continue;
-            }
-            if (token.type === "space") {
-                const spaces = widthOf(token.pieces, measurer);
-                line = {
-                    ...line,
-                    position: line.position + roomBetween(line.border, firstBorder(token.pieces)) + spaces,
-                    text: line.text + textOf(token.pieces),
-                    spaces: line.started ? line.spaces + spaces : 0,
-                    spaceCount: line.started ? line.spaceCount + lengthOf(token.pieces) : 0,
-                    otherSpaces: line.started ? line.otherSpaces + widthOf(othersOf(token.pieces), measurer) : 0,
-                    heights: withToken(line.heights, token),
-                    border: lastBorder(token.pieces),
-                };
-                continue;
-            }
-            // A tab or picture after text with a border closes its box
-            line =
-                token.type === "word"
-                    ? line
-                    : { ...line, position: line.position + roomBetween(line.border, undefined), border: undefined };
-            if (token.type === "tab") {
-                const numbered = numberTab ? numberTabStop(line.position, firstLineStops, format, defaultTabStop, limitOf()) : undefined;
-                numberTab = false;
-                const stop = numbered
-                    ? numbered.stop
-                    : (nextStop(line.position, line.first ? firstLineStops : stops, defaultTabStop, limitOf()) ??
-                      (line.started ? nextStop(indentLeft, stops, defaultTabStop, limitOf(lines.length + 1)) : undefined));
-                if (numbered?.unsupported !== undefined) {
-                    line = { ...line, unsupported: numbered.unsupported };
-                }
-                if (stop === undefined) {
-                    // No stop before the end of the line: the text after the tab starts where it is
-                    line = { ...line, end: line.position, text: `${line.text}\t`, heights: withToken(line.heights, token), started: true };
-                    continue;
-                }
-                if (!numbered && stop.position <= line.position + TOLERANCE) {
-                    // The tab moves to a stop on the next line
-                    line = wrap(line);
-                }
-                line = place(line);
-                const after = widthAfterTab(tokens.slice(index + 1), measurer);
-                const shift = stop.alignment === "left" ? 0 : stop.alignment === "center" ? after / 2 : after;
-                // The text after it starts at the stop however much the spaces before it are squeezed
-                const position = Math.max(line.position, stop.position - shift);
-                line = {
-                    ...line,
-                    position,
-                    end: position,
-                    text: `${line.text}\t`,
-                    heights: withToken(line.heights, token),
-                    spaces: 0,
-                    spaceCount: 0,
-                    between: 0,
-                    letters: 0,
-                    otherSpaces: 0,
-                    started: true,
-                    ...(shift > 0 && hasBorder(tokens.slice(index + 1))
-                        ? { unsupported: "text with a border lined up with a tab stop" }
-                        : {}),
-                };
-                continue;
-            }
+        /** Puts a word or picture on the line, or on the next, or breaks it across lines */
+        const placeWord = (token: Extract<Token, { readonly type: "word" | "box" }>): void => {
             const tokenWidth = token.type === "box" ? token.width : widthOf(token.pieces, measurer);
             // A word in a border starts its box, unless it goes on from the text before it, and on the next line it starts
             // it again: a bordered run that goes on to the next line starts it 90 twips in, for a border of half a point 4
@@ -994,6 +1020,32 @@ export const layoutLines = (
             const leadOf = (state: LineState): number => (token.type === "word" ? roomBetween(state.border, firstBorder(token.pieces)) : 0);
             const boxEnd = token.type === "word" ? (lastBorder(token.pieces)?.room ?? 0) : 0;
             const needs = leadOf(line) + tokenWidth + boxEnd;
+            const hyphens = token.type === "word" ? (token.hyphens ?? []).filter(({ at }) => at > 0 && at < lengthOf(token.pieces)) : [];
+            if (token.type === "word" && hyphens.length > 0 && line.position + needs > limitOf() + TOLERANCE) {
+                // Whether Word squeezes a justified line's spaces to fit a word with soft hyphens, or breaks it at one,
+                // and whether it breaks a word longer than a line at its soft hyphens, hasn't been seen
+                const unknown = squeezes
+                    ? "a soft hyphen in a justified line"
+                    : !line.started
+                      ? "a word with soft hyphens longer than its line"
+                      : token.pieces.some(({ font }) => font.border !== undefined)
+                        ? "a soft hyphen in a word with a border"
+                        : undefined;
+                if (unknown !== undefined) {
+                    line = { ...line, unsupported: line.unsupported ?? unknown };
+                }
+                const rest = breakAtHyphen(token, hyphens);
+                if (rest !== undefined) {
+                    placeWord(rest);
+                    return;
+                }
+                if (line.started) {
+                    // No part of it fits with a hyphen: it goes on to the next line, where it may break again
+                    line = wrap(line);
+                    placeWord(token);
+                    return;
+                }
+            }
             const overflows = line.started && line.position + needs > limitOf() + TOLERANCE;
             if (overflows && unsure(line, needs)) {
                 line = { ...line, unknown: true };
@@ -1051,6 +1103,145 @@ export const layoutLines = (
                 border: token.type === "word" ? lastBorder(token.pieces) : undefined,
                 boxed: line.boxed === true || (token.type === "word" && token.pieces.some(({ font }) => font.border !== undefined)),
             };
+        };
+        /**
+         * Breaks a word at the last of its soft hyphens that leaves its part before it, and a hyphen in the soft hyphen's
+         * font, on the line, as Word breaks it (scripts/layout-probes/word-watertight-text.ts TX10a: 12 lines, 8 of them
+         * ending in a hyphen, each where docx/layout's widths of Calibri end them). The rest of the word, which goes on to
+         * the next line, or undefined when no part of it fits
+         */
+        const breakAtHyphen = (
+            word: Extract<Token, { readonly type: "word" }>,
+            hyphens: readonly Hyphen[],
+        ): Extract<Token, { readonly type: "word" }> | undefined => {
+            const lead = roomBetween(line.border, firstBorder(word.pieces));
+            for (const hyphen of [...hyphens].reverse()) {
+                const [before, after] = splitPieces(word.pieces, hyphen.at);
+                const partEnd = line.position + lead + widthOf(before, measurer);
+                const withHyphen = partEnd + measurer.measureWidth("-", hyphen.font);
+                if (withHyphen <= limitOf() + TOLERANCE) {
+                    const placed = place(line);
+                    line = wrap({
+                        ...placed,
+                        position: withHyphen,
+                        end: withHyphen,
+                        text: placed.text + textOf(before),
+                        letters: placed.letters + lengthOf(before),
+                        between: placed.spaceCount,
+                        heights: withFont(withToken(placed.heights, { type: "word", pieces: before }), hyphen.font, measurer),
+                        started: true,
+                    });
+                    return {
+                        type: "word",
+                        pieces: after,
+                        hyphens: hyphens.filter(({ at }) => at > hyphen.at).map((later) => ({ ...later, at: later.at - hyphen.at })),
+                    };
+                }
+                if (partEnd <= limitOf() + TOLERANCE) {
+                    // Whether Word breaks there with the hyphen past the end of the line, or at a soft hyphen before, hasn't
+                    // been seen: TX10a had no line where it mattered
+                    line = { ...line, unsupported: line.unsupported ?? "a soft hyphen whose hyphen would go past the end of the line" };
+                }
+            }
+            return undefined;
+        };
+
+        for (const [index, token] of tokens.entries()) {
+            if (token.type === "marker") {
+                line = { ...line, pending: [...line.pending, token.name] };
+                continue;
+            }
+            if (token.type === "space") {
+                const spaces = widthOf(token.pieces, measurer);
+                line = {
+                    ...line,
+                    position: line.position + roomBetween(line.border, firstBorder(token.pieces)) + spaces,
+                    text: line.text + textOf(token.pieces),
+                    spaces: line.started ? line.spaces + spaces : 0,
+                    spaceCount: line.started ? line.spaceCount + lengthOf(token.pieces) : 0,
+                    otherSpaces: line.started ? line.otherSpaces + widthOf(othersOf(token.pieces), measurer) : 0,
+                    heights: withToken(line.heights, token),
+                    border: lastBorder(token.pieces),
+                };
+                continue;
+            }
+            // A tab or picture after text with a border closes its box
+            line =
+                token.type === "word"
+                    ? line
+                    : { ...line, position: line.position + roomBetween(line.border, undefined), border: undefined };
+            if (token.type === "tab") {
+                const numbered = numberTab ? numberTabStop(line.position, firstLineStops, format, defaultTabStop, limitOf()) : undefined;
+                numberTab = false;
+                if (numbered?.unsupported !== undefined) {
+                    line = { ...line, unsupported: numbered.unsupported };
+                }
+                const given = line.first ? firstLineStops : stops;
+                const next = nextStop(line.position, given, defaultTabStop, Infinity)!;
+                // A stop of the paragraph's own past the end of the line: the text after a left one goes on to the start of
+                // the next line, and that after a right one lines up with the end of the line (scripts/layout-probes/
+                // word-watertight-text.ts TX12c, TX12d). Past the last of the default stops before the end of the line, the
+                // tab goes on to the next line, as below (TX12b). Word's probes had no indents, and text before the tab
+                const pastEnd = !numbered && given.includes(next) && next.position > limitOf() + TOLERANCE ? next : undefined;
+                const pastEndUnknown =
+                    pastEnd === undefined
+                        ? undefined
+                        : indentLeft !== 0 || indentRight !== 0 || firstLineIndent !== 0
+                          ? "a tab stop past the end of the line in an indented paragraph"
+                          : !line.started
+                            ? "a tab at the start of a line to a stop past its end"
+                            : pastEnd.alignment === "center" || pastEnd.alignment === "decimal"
+                              ? "a centred or decimal tab stop past the end of the line"
+                              : undefined;
+                if (pastEndUnknown !== undefined) {
+                    line = { ...line, unsupported: line.unsupported ?? pastEndUnknown };
+                } else if (pastEnd?.alignment === "left") {
+                    line = wrap(place({ ...line, text: `${line.text}\t`, heights: withToken(line.heights, token), started: true }));
+                    continue;
+                }
+                const stop = numbered
+                    ? numbered.stop
+                    : pastEnd !== undefined && pastEndUnknown === undefined
+                      ? { position: limitOf(), alignment: "right" as const }
+                      : (nextStop(line.position, given, defaultTabStop, limitOf()) ??
+                        (line.started ? nextStop(indentLeft, stops, defaultTabStop, limitOf(lines.length + 1)) : undefined));
+                if (stop === undefined) {
+                    // No stop before the end of the line: the text after the tab starts where it is
+                    line = { ...line, end: line.position, text: `${line.text}\t`, heights: withToken(line.heights, token), started: true };
+                    continue;
+                }
+                if (!numbered && stop.position <= line.position + TOLERANCE) {
+                    // The tab moves to a stop on the next line
+                    line = wrap(line);
+                }
+                line = place(line);
+                const rest = tokens.slice(index + 1);
+                const shift = shiftAt(stop.alignment, rest, measurer);
+                const unknown =
+                    shift === undefined
+                        ? "text at a decimal tab stop that isn't a number"
+                        : shift > 0 && hasBorder(rest)
+                          ? "text with a border lined up with a tab stop"
+                          : undefined;
+                // The text after it starts at the stop however much the spaces before it are squeezed
+                const position = Math.max(line.position, stop.position - (shift ?? widthAfterTab(rest, measurer)));
+                line = {
+                    ...line,
+                    position,
+                    end: position,
+                    text: `${line.text}\t`,
+                    heights: withToken(line.heights, token),
+                    spaces: 0,
+                    spaceCount: 0,
+                    between: 0,
+                    letters: 0,
+                    otherSpaces: 0,
+                    started: true,
+                    ...(unknown === undefined ? {} : { unsupported: line.unsupported ?? unknown }),
+                };
+                continue;
+            }
+            placeWord(token);
         }
 
         if (!end) {
