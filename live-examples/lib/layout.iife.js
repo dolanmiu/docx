@@ -4039,16 +4039,16 @@ var docxLayout = (function(exports) {
 	* {@link itemsOf}).
 	*/
 	var guessedOr = (reader, reason, guess) => reader.guess ? [guessMarker(reason), ...itemsOf([guess()], reader)] : reason;
-	var nameOf = (element) => Object.keys(element)[0];
+	var nameOf$1 = (element) => Object.keys(element)[0];
 	/** The content of an element, including its text. An element without content has its attributes, or nothing */
-	var contentOf$2 = (element) => {
-		const content = element[nameOf(element)];
+	var contentOf$3 = (element) => {
+		const content = element[nameOf$1(element)];
 		return Array.isArray(content) ? content : [content];
 	};
 	/** Whether an attribute that is on or off, such as `w:combine`, is on: it is off when it isn't given */
 	var isOn = (value) => value !== void 0 && !isOff(value);
 	/** Whether a note's reference has a mark of its own in place of its number (`w:customMarkFollows`) */
-	var hasOwnMark = (reference) => isOn(attributesOf(reference[nameOf(reference)])["w:customMarkFollows"]);
+	var hasOwnMark = (reference) => isOn(attributesOf(reference[nameOf$1(reference)])["w:customMarkFollows"]);
 	/** Whether a content control (`w:sdt`) is bound to custom XML (`w:dataBinding`), which Word fills it in from */
 	var isBound = (control) => find(childrenOf(find(childrenOf(control["w:sdt"]), "w:sdtPr")), "w:dataBinding") !== void 0;
 	/**
@@ -4058,14 +4058,14 @@ var docxLayout = (function(exports) {
 	* and its first paragraph says why it is a guess.
 	*/
 	var unwrap = (elements, guess = false) => elements.filter(isObject).flatMap((element) => {
-		const name = nameOf(element);
+		const name = nameOf$1(element);
 		if (name === "w:sdt") {
 			const content = unwrap(childrenOf(find(childrenOf(element[name]), "w:sdtContent")), guess);
 			if (!isBound(element)) return content;
-			const first = content.find((child) => BLOCK_ELEMENTS.has(nameOf(child)));
+			const first = content.find((child) => BLOCK_ELEMENTS.has(nameOf$1(child)));
 			return guess && first !== void 0 && "w:p" in first ? content.map((child) => child === first ? stopIn(child, BOUND_CONTROL) : child) : [element];
 		}
-		return name === "w:customXml" ? unwrap(contentOf$2(element), guess) : [element];
+		return name === "w:customXml" ? unwrap(contentOf$3(element), guess) : [element];
 	});
 	/** The name of the bookmark a bookmark's start (`w:bookmarkStart`) starts */
 	var bookmarkOf = (element) => stringOf(attributesOf(element["w:bookmarkStart"])["w:name"]);
@@ -4078,7 +4078,7 @@ var docxLayout = (function(exports) {
 		}];
 	};
 	/** The names of the bookmarks that start among elements, in order */
-	var bookmarksIn = (elements) => elements.flatMap((element) => {
+	var bookmarksIn$1 = (elements) => elements.flatMap((element) => {
 		const bookmark = "w:bookmarkStart" in element ? bookmarkOf(element) : void 0;
 		return bookmark === void 0 ? [] : [bookmark];
 	});
@@ -4091,7 +4091,7 @@ var docxLayout = (function(exports) {
 		const indexes = elements.flatMap((element, index) => name in element ? [index] : []);
 		return indexes.map((at, index) => ({
 			element: elements[at],
-			bookmarks: bookmarksIn(elements.slice(index === 0 ? 0 : indexes[index - 1] + 1, at))
+			bookmarks: bookmarksIn$1(elements.slice(index === 0 ? 0 : indexes[index - 1] + 1, at))
 		}));
 	};
 	/**
@@ -4421,7 +4421,7 @@ var docxLayout = (function(exports) {
 	var readRun = (element, paragraphRun, reader, removed = false) => {
 		var _valueOf, _unsupportedFormatOf;
 		const { styles } = reader;
-		const children = contentOf$2(element).filter(isObject);
+		const children = contentOf$3(element).filter(isObject);
 		const properties = find(children, "w:rPr");
 		const format = combine([
 			paragraphRun,
@@ -4432,11 +4432,11 @@ var docxLayout = (function(exports) {
 		const unsupportedFormat = (_unsupportedFormatOf = unsupportedFormatOf(childrenOf(properties))) !== null && _unsupportedFormatOf !== void 0 ? _unsupportedFormatOf : format.hidden ? void 0 : unknownRunFormatting(format);
 		let formatGuessed = false;
 		const items = children.map((child) => {
-			const name = nameOf(child);
+			const name = nameOf$1(child);
 			if (name === "w:fldChar") return readFieldCharacter(child, format, removed ? uncounted(reader) : reader);
 			const field = reader.fields[reader.fields.length - 1];
 			if (name === "w:instrText" || name === "w:delInstrText") {
-				if (field && !field.inResult) field.instruction += contentOf$2(child).filter((part) => typeof part === "string").join("");
+				if (field && !field.inResult) field.instruction += contentOf$3(child).filter((part) => typeof part === "string").join("");
 				return [];
 			}
 			if (!isShown(reader) || name === "w:rPr") return [];
@@ -4449,7 +4449,7 @@ var docxLayout = (function(exports) {
 			switch (name) {
 				case "w:t":
 				case "w:delText": {
-					const content = contentOf$2(child).filter((part) => typeof part === "string").join("");
+					const content = contentOf$3(child).filter((part) => typeof part === "string").join("");
 					const read = () => content.split("	").flatMap((part, index) => [...index > 0 && !format.hidden ? [{
 						type: "tab",
 						font
@@ -4584,10 +4584,10 @@ var docxLayout = (function(exports) {
 	* it doesn't show it (MK10e). A deleted endnote reference, and a note reference moved, haven't been seen.
 	*/
 	var readRemoved = (elements, kind, reader) => itemsOf(elements.filter(isObject).map((element) => {
-		const name = nameOf(element);
+		const name = nameOf$1(element);
 		if (name === "w:r") {
-			const children = contentOf$2(element).filter(isObject);
-			const references = children.filter((child) => REMOVED_NOTES.has(nameOf(child)));
+			const children = contentOf$3(element).filter(isObject);
+			const references = children.filter((child) => REMOVED_NOTES.has(nameOf$1(child)));
 			if (references.length > 0 && kind === "w:moveFrom") return "a note reference moved in a tracked change";
 			if (references.some((reference) => "w:endnoteReference" in reference)) return "a deleted endnote reference";
 			if (references.some(hasOwnMark)) return OWN_NOTE_MARK;
@@ -4595,29 +4595,29 @@ var docxLayout = (function(exports) {
 				var _reader$notes2;
 				return (_reader$notes2 = reader.notes) === null || _reader$notes2 === void 0 ? void 0 : _reader$notes2.skip("footnote");
 			});
-			return itemsOf(children.map((child) => nameOf(child) === "w:fldChar" ? readFieldCharacter(child, {}, reader, true) : []), reader);
+			return itemsOf(children.map((child) => nameOf$1(child) === "w:fldChar" ? readFieldCharacter(child, {}, reader, true) : []), reader);
 		}
 		if (name === "w:bookmarkStart") return markerOf(element);
 		if (name === "w:sdt") return readRemoved(childrenOf(find(childrenOf(element[name]), "w:sdtContent")), kind, reader);
-		return RUN_CONTAINERS.has(name) || REMOVALS.has(name) || name === "w:fldSimple" ? readRemoved(contentOf$2(element), kind, reader) : [];
+		return RUN_CONTAINERS.has(name) || REMOVALS.has(name) || name === "w:fldSimple" ? readRemoved(contentOf$3(element), kind, reader) : [];
 	}), reader);
 	/**
 	* Reads the content of a paragraph, or of an element in it, such as a hyperlink, and when it is deleted (`removed`), as
 	* Word sizes a table's columns by it.
 	*/
 	var readInline = (elements, paragraphRun, reader, removed = false) => itemsOf(elements.filter(isObject).map((element) => {
-		const name = nameOf(element);
+		const name = nameOf$1(element);
 		if (name === "w:r") return readRun(element, paragraphRun, reader, removed);
-		if (REMOVALS.has(name)) return reader.showDeleted ? readInline(contentOf$2(element), paragraphRun, reader, true) : readRemoved(contentOf$2(element), name, reader);
-		if (RUN_CONTAINERS.has(name)) return readInline(contentOf$2(element), paragraphRun, reader, removed);
+		if (REMOVALS.has(name)) return reader.showDeleted ? readInline(contentOf$3(element), paragraphRun, reader, true) : readRemoved(contentOf$3(element), name, reader);
+		if (RUN_CONTAINERS.has(name)) return readInline(contentOf$3(element), paragraphRun, reader, removed);
 		if (name === "w:sdt") {
 			const written = () => readInline(childrenOf(find(childrenOf(element[name]), "w:sdtContent")), paragraphRun, reader, removed);
 			return isBound(element) ? guessedOr(reader, BOUND_CONTROL, written) : written();
 		}
 		if (name === "w:fldSimple") {
 			const result = workedOutResultOf(String(attributesOf(element[name])["w:instr"]), fontOf(paragraphRun), removed ? uncounted(reader) : reader);
-			if (result === void 0 || !isShown(reader)) return readInline(contentOf$2(element), paragraphRun, reader, removed);
-			if (typeof result === "string" && reader.guess === true && WRITTEN_GUESSES.has(result)) return paragraphRun.hidden ? [] : guessedOr(reader, result, () => readInline(contentOf$2(element), paragraphRun, reader, removed));
+			if (result === void 0 || !isShown(reader)) return readInline(contentOf$3(element), paragraphRun, reader, removed);
+			if (typeof result === "string" && reader.guess === true && WRITTEN_GUESSES.has(result)) return paragraphRun.hidden ? [] : guessedOr(reader, result, () => readInline(contentOf$3(element), paragraphRun, reader, removed));
 			return paragraphRun.hidden ? [] : result;
 		}
 		if (name === "w:bookmarkStart") return markerOf(element);
@@ -4860,7 +4860,7 @@ var docxLayout = (function(exports) {
 	var readParagraph = (element, reader, tableFormats = []) => {
 		var _valueOf3, _exec2, _styleChain$slice$0$n, _styleChain$slice$, _ref4, _ref5, _ref6, _list$unsupported, _ref7, _unknownLengthIn;
 		const { styles } = reader;
-		const children = contentOf$2(element);
+		const children = contentOf$3(element);
 		const properties = childrenOf(find(children.filter(isObject), "w:pPr"));
 		const style = (_valueOf3 = valueOf(properties, "w:pStyle")) !== null && _valueOf3 !== void 0 ? _valueOf3 : styles.defaultParagraphStyle;
 		const paragraphStyles = [...tableFormats, ...styleChain(styles, style, "paragraph")];
@@ -4999,7 +4999,7 @@ var docxLayout = (function(exports) {
 		"w:tblPrExChange"
 	]);
 	/** Whether table, row or cell properties change how its text is laid out, beyond those that don't or are read */
-	var changesLines = (properties, read = /* @__PURE__ */ new Set()) => properties.some((property) => !LAID_OUT_ALIKE.has(nameOf(property)) && !read.has(nameOf(property)));
+	var changesLines = (properties, read = /* @__PURE__ */ new Set()) => properties.some((property) => !LAID_OUT_ALIKE.has(nameOf$1(property)) && !read.has(nameOf$1(property)));
 	var FOLLOWED_CELL_PROPERTIES = /* @__PURE__ */ new Set(["w:tcBorders", "w:tcMar"]);
 	/** The last of a property given among properties, each over those before: those of a table's styles, then its own */
 	var lastOf = (properties, name) => properties.reduce((found, given) => {
@@ -5072,7 +5072,7 @@ var docxLayout = (function(exports) {
 	*/
 	var readTable = (element, reader) => {
 		var _twips, _reader$grid, _readTableLook, _ref12, _ref13, _ref14, _ref15, _ref16, _ref17, _ref18, _ref19, _ref20, _ref21, _ref22, _withoutGuess$unsuppo, _read$find2, _blocks$find, _read$0$cells, _read$, _roomOf, _roomOf2;
-		const children = contentOf$2(element).filter(isObject);
+		const children = contentOf$3(element).filter(isObject);
 		const properties = childrenOf(find(children, "w:tblPr"));
 		const style = valueOf(properties, "w:tblStyle");
 		const ownStyles = styleChain(reader.styles, style, "table");
@@ -5102,8 +5102,8 @@ var docxLayout = (function(exports) {
 			inCell: true,
 			grid: void 0
 		}, cellGrid === void 0 ? {} : { cellGrid });
-		const deletedFlags = rows.map(({ element: row }) => find(childrenOf(find(contentOf$2(row).filter(isObject), "w:trPr")), "w:del") !== void 0);
-		const headerFlags = rows.map(({ element: row }) => onOff(childrenOf(find(contentOf$2(row).filter(isObject), "w:trPr")), "w:tblHeader") === true);
+		const deletedFlags = rows.map(({ element: row }) => find(childrenOf(find(contentOf$3(row).filter(isObject), "w:trPr")), "w:del") !== void 0);
+		const headerFlags = rows.map(({ element: row }) => onOff(childrenOf(find(contentOf$3(row).filter(isObject), "w:trPr")), "w:tblHeader") === true);
 		const headerRows = headerFlags.includes(false) ? headerFlags.indexOf(false) : headerFlags.length;
 		const deletedHeaderRows = deletedFlags.slice(0, headerRows).filter((deleted) => deleted).length;
 		const conditional = ownStyles.flatMap(({ conditional: given = /* @__PURE__ */ new Map() }) => [...given]);
@@ -5147,7 +5147,7 @@ var docxLayout = (function(exports) {
 		const gridWidth = (from, to) => grid.slice(from, to).reduce((total, value) => total + value, 0);
 		const read = rows.map(({ element: row, bookmarks: rowBookmarks }, rowIndex) => {
 			var _numberOf4;
-			const rowChildren = contentOf$2(row).filter(isObject);
+			const rowChildren = contentOf$3(row).filter(isObject);
 			const rowProperties = childrenOf(find(rowChildren, "w:trPr"));
 			const rowParts = unwrap(rowChildren);
 			const rowCells = withBookmarks(rowParts, "w:tc");
@@ -5173,7 +5173,7 @@ var docxLayout = (function(exports) {
 			});
 			const { cells, edges, column: end, unsupported: cellsUnsupported } = rowCells.reduce(({ column, cells: done, edges: before, unsupported: unsupportedBefore }, { element: cell }, cellIndex) => {
 				var _numberOf5, _twips3, _shareOf, _ref8, _ref9;
-				const cellChildren = contentOf$2(cell).filter(isObject);
+				const cellChildren = contentOf$3(cell).filter(isObject);
 				const cellProperties = childrenOf(find(cellChildren, "w:tcPr"));
 				const span = (_numberOf5 = numberOf(attributesOf(find(cellProperties, "w:gridSpan"))["w:val"])) !== null && _numberOf5 !== void 0 ? _numberOf5 : 1;
 				const mergeElement = find(cellProperties, "w:vMerge");
@@ -5318,8 +5318,8 @@ var docxLayout = (function(exports) {
 			find(children, "w:tblPr"),
 			find(children, "w:tblGrid"),
 			...rows.flatMap(({ element: row }) => {
-				const rowChildren = contentOf$2(row).filter(isObject);
-				return [find(rowChildren, "w:trPr"), ...unwrap(rowChildren).filter((part) => "w:tc" in part).map((cell) => find(contentOf$2(cell).filter(isObject), "w:tcPr"))];
+				const rowChildren = contentOf$3(row).filter(isObject);
+				return [find(rowChildren, "w:trPr"), ...unwrap(rowChildren).filter((part) => "w:tc" in part).map((cell) => find(contentOf$3(cell).filter(isObject), "w:tcPr"))];
 			})
 		]);
 		const styleUnsupported = tableStyles.some(({ rowProperties = [], cellProperties = [] }) => changesLines([...rowProperties, ...cellProperties])) ? "a table style with formatting of its rows or cells" : void 0;
@@ -5407,11 +5407,13 @@ var docxLayout = (function(exports) {
 	*/
 	var readBlock = (element, reader, tableFormats) => {
 		const noGuess = reader.guess ? { noGuess: true } : {};
-		switch (nameOf(element)) {
+		switch (nameOf$1(element)) {
 			case "w:p": return readParagraph(element, reader, tableFormats);
 			case "w:tbl": return readTable(element, reader);
 			case "w:sdt": return _objectSpread2(_objectSpread2({}, unsupportedBlock(BOUND_CONTROL)), noGuess);
-			case "w:altChunk": return _objectSpread2(_objectSpread2({}, unsupportedBlock("an imported document")), noGuess);
+			case "w:altChunk":
+				var _stringOf;
+				return _objectSpread2(_objectSpread2({}, unsupportedBlock((_stringOf = stringOf(attributesOf(element["w:altChunk"]).reason)) !== null && _stringOf !== void 0 ? _stringOf : "an imported document")), noGuess);
 			case "m:oMath":
 			case "m:oMathPara": return unsupportedBlock("an equation");
 			default: return;
@@ -5434,11 +5436,11 @@ var docxLayout = (function(exports) {
 		"w:headerReference",
 		"w:footerReference"
 	]);
-	var paragraphPropertiesOf = (paragraph) => childrenOf(find(contentOf$2(paragraph).filter(isObject), "w:pPr"));
+	var paragraphPropertiesOf = (paragraph) => childrenOf(find(contentOf$3(paragraph).filter(isObject), "w:pPr"));
 	/** How a paragraph's mark is removed in a tracked change, when it is: deleted (`w:del`), or moved elsewhere (`w:moveFrom`) */
-	var removedMarkOf = (paragraph) => childrenOf(find(paragraphPropertiesOf(paragraph), "w:rPr")).map(nameOf).find((name) => REMOVALS.has(name));
+	var removedMarkOf = (paragraph) => childrenOf(find(paragraphPropertiesOf(paragraph), "w:rPr")).map(nameOf$1).find((name) => REMOVALS.has(name));
 	/** The elements of the names given among elements and in them, in order */
-	var elementsIn = (elements, named) => elements.filter(isObject).flatMap((element) => named(nameOf(element)) ? [element] : nameOf(element) === "_attr" ? [] : elementsIn(contentOf$2(element), named));
+	var elementsIn$1 = (elements, named) => elements.filter(isObject).flatMap((element) => named(nameOf$1(element)) ? [element] : nameOf$1(element) === "_attr" ? [] : elementsIn$1(contentOf$3(element), named));
 	/** The run formatting a paragraph's styles give its text */
 	var paragraphRunOf = (paragraph, styles) => {
 		var _valueOf5;
@@ -5455,19 +5457,19 @@ var docxLayout = (function(exports) {
 	* its character style's or its paragraph's, or anything but runs, which may be
 	*/
 	var showsSomething = (elements, paragraphRun, styles) => elements.filter(isObject).some((element) => {
-		const name = nameOf(element);
+		const name = nameOf$1(element);
 		if (name === "w:r") {
 			var _valueOf6;
-			const children = contentOf$2(element).filter(isObject);
+			const children = contentOf$3(element).filter(isObject);
 			const properties = find(children, "w:rPr");
 			const format = combine([
 				paragraphRun,
 				...styleChain(styles, (_valueOf6 = valueOf(childrenOf(properties), "w:rStyle")) !== null && _valueOf6 !== void 0 ? _valueOf6 : styles.defaultCharacterStyle, "character").map(({ run }) => run),
 				readRunFormat(properties, styles.themeFonts)
 			]);
-			return children.some((child) => nameOf(child) !== "w:rPr") && format.hidden !== true;
+			return children.some((child) => nameOf$1(child) !== "w:rPr") && format.hidden !== true;
 		}
-		return RUN_CONTAINERS.has(name) ? showsSomething(contentOf$2(element), paragraphRun, styles) : !REMOVALS.has(name) && !NEVER_SHOWN.test(name);
+		return RUN_CONTAINERS.has(name) ? showsSomething(contentOf$3(element), paragraphRun, styles) : !REMOVALS.has(name) && !NEVER_SHOWN.test(name);
 	});
 	/** Whether a paragraph is in a list, its own or its style's */
 	var isNumbered = (paragraph, styles) => {
@@ -5486,7 +5488,7 @@ var docxLayout = (function(exports) {
 	* that may differ between paragraphs joined by a hidden mark
 	*/
 	var paragraphFormatOf = (paragraph, styles) => JSON.stringify(paragraphPropertiesOf(paragraph).flatMap((child) => {
-		const name = nameOf(child);
+		const name = nameOf$1(child);
 		if (name === "w:rPr" || name === "w:pStyle" && valueOf([child], "w:pStyle") === styles.defaultParagraphStyle) return [];
 		const joined = JOINED_FORMATTING[name];
 		if (joined === void 0) return [child];
@@ -5494,20 +5496,20 @@ var docxLayout = (function(exports) {
 		return kept.length === 0 ? [] : [{ [name]: Object.fromEntries(kept) }];
 	}));
 	/** Whether an element has anything in its runs, deleted or not, but their formatting */
-	var hasRunContent = (element) => Array.isArray(element) ? element.some(hasRunContent) : isObject(element) && Object.entries(element).some(([name, value]) => name === "w:r" ? childrenOf(value).some((child) => nameOf(child) !== "w:rPr" && nameOf(child) !== "_attr") : name !== "_attr" && name !== "w:pPr" && hasRunContent(value));
+	var hasRunContent = (element) => Array.isArray(element) ? element.some(hasRunContent) : isObject(element) && Object.entries(element).some(([name, value]) => name === "w:r" ? childrenOf(value).some((child) => nameOf$1(child) !== "w:rPr" && nameOf$1(child) !== "_attr") : name !== "_attr" && name !== "w:pPr" && hasRunContent(value));
 	/** What of a section's properties says how it starts, numbers its pages, and what headers and footers it has */
-	var startOf = (section) => JSON.stringify(childrenOf(section).filter((child) => SECTION_START.has(nameOf(child))));
+	var startOf = (section) => JSON.stringify(childrenOf(section).filter((child) => SECTION_START.has(nameOf$1(child))));
 	/** The properties of the first section that ends among elements: in a paragraph, or the body's own */
 	var nextSectionIn = (elements) => elements.map(sectionPropertiesOf).find((section) => section !== void 0);
 	/** A paragraph the layout stops at, for why */
-	var stopIn = (paragraph, reason) => ({ "w:p": [...contentOf$2(paragraph), { [STOP]: reason }] });
+	var stopIn = (paragraph, reason) => ({ "w:p": [...contentOf$3(paragraph), { [STOP]: reason }] });
 	/** A paragraph whose mark is deleted, joined to the next: the next, with the deleted one's content, then what is between them, first */
 	var joinedParagraph = (first, between, next) => {
-		const isHead = (child) => isObject(child) && (nameOf(child) === "_attr" || nameOf(child) === "w:pPr");
-		const content = contentOf$2(next);
+		const isHead = (child) => isObject(child) && (nameOf$1(child) === "_attr" || nameOf$1(child) === "w:pPr");
+		const content = contentOf$3(next);
 		return { "w:p": [
 			...content.filter(isHead),
-			...contentOf$2(first).filter((child) => !isHead(child)),
+			...contentOf$3(first).filter((child) => !isHead(child)),
 			...between,
 			...content.filter((child) => !isHead(child))
 		] };
@@ -5518,24 +5520,24 @@ var docxLayout = (function(exports) {
 	* (`word-breaks-and-tabs.docx` HM1a to HM1f). The next one's number, when they are in a list, is counted (HM4).
 	*/
 	var joinedToNext = (first, between, next, styles) => {
-		const isHead = (child) => isObject(child) && (nameOf(child) === "_attr" || nameOf(child) === "w:pPr");
+		const isHead = (child) => isObject(child) && (nameOf$1(child) === "_attr" || nameOf$1(child) === "w:pPr");
 		const own = paragraphPropertiesOf(first);
 		const nextProperties = paragraphPropertiesOf(next);
 		const { "w:after": after } = attributesOf(find(nextProperties, "w:spacing"));
 		const spacing = _objectSpread2(_objectSpread2({}, Object.fromEntries(Object.entries(attributesOf(find(own, "w:spacing"))).filter(([key]) => key !== "w:after"))), after === void 0 ? {} : { "w:after": after });
-		const mark = nextProperties.filter((child) => nameOf(child) === "w:rPr");
+		const mark = nextProperties.filter((child) => nameOf$1(child) === "w:rPr");
 		const properties = [
-			...own.filter((child) => nameOf(child) !== "w:spacing" && nameOf(child) !== "w:rPr"),
+			...own.filter((child) => nameOf$1(child) !== "w:spacing" && nameOf$1(child) !== "w:rPr"),
 			...Object.keys(spacing).length === 0 ? [] : [{ "w:spacing": { _attr: spacing } }],
 			...mark
 		];
-		const content = contentOf$2(first);
+		const content = contentOf$3(first);
 		return { "w:p": [
-			...content.filter((child) => isObject(child) && nameOf(child) === "_attr"),
+			...content.filter((child) => isObject(child) && nameOf$1(child) === "_attr"),
 			{ "w:pPr": properties },
 			...content.filter((child) => !isHead(child)),
 			...between,
-			...contentOf$2(next).filter((child) => !isHead(child)),
+			...contentOf$3(next).filter((child) => !isHead(child)),
 			...isNumbered(next, styles) ? [{ [COUNTED]: {} }] : []
 		] };
 	};
@@ -5546,9 +5548,9 @@ var docxLayout = (function(exports) {
 		"w:endnoteReference"
 	]);
 	/** Whether a paragraph has anything read where it is, its fields, note references, or number in a list */
-	var readInPlace = (paragraph, styles) => elementsIn(contentOf$2(paragraph), (name) => READ_IN_PLACE.has(name)).length > 0 || isNumbered(paragraph, styles);
+	var readInPlace = (paragraph, styles) => elementsIn$1(contentOf$3(paragraph), (name) => READ_IN_PLACE.has(name)).length > 0 || isNumbered(paragraph, styles);
 	/** Whether a paragraph is one with nothing shown and its mark hidden, which is left out */
-	var isLeftOut = (paragraph) => contentOf$2(paragraph).some((child) => isObject(child) && LEFT_OUT in child);
+	var isLeftOut = (paragraph) => contentOf$3(paragraph).some((child) => isObject(child) && LEFT_OUT in child);
 	/**
 	* How a paragraph whose mark is hidden is laid out, or why it can't be. Word joins it to the next: one whose text is
 	* shown in the formatting of the first, but for the next one's space after, where the two differ only in their alignment,
@@ -5565,8 +5567,8 @@ var docxLayout = (function(exports) {
 	* followed yet.
 	*/
 	var hiddenMarkJoin = (paragraph, next, { styles, nested, sized, part }) => {
-		const nextName = next === void 0 ? void 0 : nameOf(next);
-		const shown = showsSomething(contentOf$2(paragraph), paragraphRunOf(paragraph, styles), styles);
+		const nextName = next === void 0 ? void 0 : nameOf$1(next);
+		const shown = showsSomething(contentOf$3(paragraph), paragraphRunOf(paragraph, styles), styles);
 		if (sectionPropertiesOf(paragraph) !== void 0) return { reason: "a hidden section break" };
 		if (nextName === "w:sdt" || nextName === "w:customXml" || next === void 0 && nested) return { reason: "a hidden paragraph mark at the edge of a content control" };
 		if (next === void 0 || nextName === "w:sectPr") return shown || part === "cell" ? void 0 : part === "body" ? { leftOut: true } : { reason: "a paragraph with nothing shown and its mark hidden at the end of a header, footer or note" };
@@ -5594,19 +5596,19 @@ var docxLayout = (function(exports) {
 	var joinRemovedMarks = (elements, styles, { nested, sized, part }) => {
 		const after = [];
 		for (const element of [...elements.filter(isObject)].reverse()) {
-			const name = nameOf(element);
+			const name = nameOf$1(element);
 			const mark = name === "w:p" ? removedMarkOf(element) : void 0;
-			if (name === "w:p" && (mark !== void 0 || isMarkHidden(element, styles) && showsSomething(contentOf$2(element), paragraphRunOf(element, styles), styles))) {
-				let last = after.findLastIndex((other) => BLOCK_ELEMENTS.has(nameOf(other)));
+			if (name === "w:p" && (mark !== void 0 || isMarkHidden(element, styles) && showsSomething(contentOf$3(element), paragraphRunOf(element, styles), styles))) {
+				let last = after.findLastIndex((other) => BLOCK_ELEMENTS.has(nameOf$1(other)));
 				while (last >= 0 && isLeftOut(after[last]) && !readInPlace(after[last], styles)) {
-					const bookmarks = elementsIn(contentOf$2(after[last]), (inner) => inner === "w:bookmarkStart");
+					const bookmarks = elementsIn$1(contentOf$3(after[last]), (inner) => inner === "w:bookmarkStart");
 					after.splice(last, 1, ...[...bookmarks].reverse());
-					last = after.findLastIndex((other) => BLOCK_ELEMENTS.has(nameOf(other)));
+					last = after.findLastIndex((other) => BLOCK_ELEMENTS.has(nameOf$1(other)));
 				}
 			}
-			const at = after.findLastIndex((other) => BLOCK_ELEMENTS.has(nameOf(other)));
+			const at = after.findLastIndex((other) => BLOCK_ELEMENTS.has(nameOf$1(other)));
 			const next = after[at];
-			const nextName = next === void 0 ? void 0 : nameOf(next);
+			const nextName = next === void 0 ? void 0 : nameOf$1(next);
 			const hidden = mark === void 0 && name === "w:p" && isMarkHidden(element, styles) ? hiddenMarkJoin(element, next, {
 				styles,
 				nested,
@@ -5618,18 +5620,18 @@ var docxLayout = (function(exports) {
 			const section = mark === void 0 ? void 0 : sectionPropertiesOf(element);
 			const reason = mark === void 0 ? unjoined : mark === "w:moveFrom" ? "a paragraph mark moved in a tracked change" : nextName === "w:sdt" || nextName === "w:customXml" || next === void 0 && nested ? "a deleted paragraph mark at the edge of a content control" : joins && isLeftOut(next) ? "a deleted paragraph mark before a paragraph with nothing shown and its mark hidden" : section !== void 0 && !joins ? "a deleted section break with no paragraph after it" : section !== void 0 && startOf(section) !== startOf(nextSectionIn([...after].reverse())) ? "a deleted section break between sections that start, number their pages or have headers and footers differently" : joins && sized && hasRunContent(element) && hasRunContent(next) ? "a deleted paragraph mark between paragraphs of text in a table whose columns Word sizes to their text" : void 0;
 			if (reason !== void 0) after.push(stopIn(element, reason));
-			else if (hidden !== void 0 && "leftOut" in hidden) after.push({ "w:p": [...contentOf$2(element), { [LEFT_OUT]: {} }] });
+			else if (hidden !== void 0 && "leftOut" in hidden) after.push({ "w:p": [...contentOf$3(element), { [LEFT_OUT]: {} }] });
 			else if (joins) {
 				const [, ...between] = after.splice(at);
 				const inOrder = between.reverse();
 				after.push(hidden !== void 0 && "joins" in hidden ? joinedToNext(element, inOrder, next, styles) : joinedParagraph(element, inOrder, next));
-			} else if (name === "w:customXml") after.push({ [name]: joinRemovedMarks(contentOf$2(element), styles, {
+			} else if (name === "w:customXml") after.push({ [name]: joinRemovedMarks(contentOf$3(element), styles, {
 				nested: true,
 				sized,
 				part
 			}) });
 			else if (name === "w:sdt" && !isBound(element)) {
-				const content = contentOf$2(element).map((child) => isObject(child) && "w:sdtContent" in child ? { "w:sdtContent": joinRemovedMarks(contentOf$2(child), styles, {
+				const content = contentOf$3(element).map((child) => isObject(child) && "w:sdtContent" in child ? { "w:sdtContent": joinRemovedMarks(contentOf$3(child), styles, {
 					nested: true,
 					sized,
 					part
@@ -5654,7 +5656,7 @@ var docxLayout = (function(exports) {
 			part
 		}), reader.guess)) {
 			const block = readBlock(element, reader, tableFormats);
-			if (block === void 0) bookmarks = [...bookmarks, ...bookmarksIn([element])];
+			if (block === void 0) bookmarks = [...bookmarks, ...bookmarksIn$1([element])];
 			else if (block.type === "paragraph" && block.hidden) {
 				bookmarks = [...bookmarks, ...markersIn([block])];
 				if (hidden.length === 0 && blocks.length > 0) blocks[blocks.length - 1] = beforeHidden(blocks[blocks.length - 1], block);
@@ -5773,13 +5775,13 @@ var docxLayout = (function(exports) {
 	* (`word-watertight-settings.docx` ST3).
 	*/
 	var readSection = (element, readPart, previous, { gutterAtTop, mirrorMargins }, grid) => {
-		var _stringOf, _twips10, _twips11, _twips12, _twips13, _twips14, _CHAPTER_SEPARATORS$S;
+		var _stringOf2, _twips10, _twips11, _twips12, _twips13, _twips14, _CHAPTER_SEPARATORS$S;
 		const properties = childrenOf(element);
 		const size = attributesOf(find(properties, "w:pgSz"));
 		const margins = attributesOf(find(properties, "w:pgMar"));
 		const numbering = attributesOf(find(properties, "w:pgNumType"));
 		const start = valueOf(properties, "w:type");
-		const format = (_stringOf = stringOf(numbering["w:fmt"])) !== null && _stringOf !== void 0 ? _stringOf : "decimal";
+		const format = (_stringOf2 = stringOf(numbering["w:fmt"])) !== null && _stringOf2 !== void 0 ? _stringOf2 : "decimal";
 		const firstNumber = numberOf(numbering["w:start"]);
 		const chapterLevel = numberOf(numbering["w:chapStyle"]);
 		const { pageWidth, left: marginLeft, right: marginRight, gutter } = pageAcross(properties);
@@ -5845,7 +5847,7 @@ var docxLayout = (function(exports) {
 	* pictures (`w:lvlPicBulletId`), and numbers laid out as Word 6 laid them out (`w:legacy`).
 	*/
 	var readLevel = (element, styles) => {
-		var _valueOf8, _numberOf8, _valueOf9, _stringOf2, _valueOf10, _numberOf9;
+		var _valueOf8, _numberOf8, _valueOf9, _stringOf3, _valueOf10, _numberOf9;
 		const children = childrenOf(element);
 		const jc = (_valueOf8 = valueOf(children, "w:lvlJc")) !== null && _valueOf8 !== void 0 ? _valueOf8 : "left";
 		const restart = numberOf(attributesOf(find(children, "w:lvlRestart"))["w:val"]);
@@ -5854,7 +5856,7 @@ var docxLayout = (function(exports) {
 			index: (_numberOf8 = numberOf(attributesOf(element)["w:ilvl"])) !== null && _numberOf8 !== void 0 ? _numberOf8 : 0,
 			level: _objectSpread2(_objectSpread2(_objectSpread2({}, withoutUndefined({ style: valueOf(children, "w:pStyle") })), {}, {
 				format: (_valueOf9 = valueOf(children, "w:numFmt")) !== null && _valueOf9 !== void 0 ? _valueOf9 : "decimal",
-				text: (_stringOf2 = stringOf(attributesOf(find(children, "w:lvlText"))["w:val"])) !== null && _stringOf2 !== void 0 ? _stringOf2 : "",
+				text: (_stringOf3 = stringOf(attributesOf(find(children, "w:lvlText"))["w:val"])) !== null && _stringOf3 !== void 0 ? _stringOf3 : "",
 				suffix: (_valueOf10 = valueOf(children, "w:suff")) !== null && _valueOf10 !== void 0 ? _valueOf10 : "tab",
 				start: (_numberOf9 = numberOf(attributesOf(find(children, "w:start"))["w:val"])) !== null && _numberOf9 !== void 0 ? _numberOf9 : 0
 			}, withoutUndefined({
@@ -6019,7 +6021,7 @@ var docxLayout = (function(exports) {
 	* or off. Each changes how Word lays out lines, or may, in ways not yet followed.
 	*/
 	var asksForUnfollowedCompatibility = (compatibility) => compatibility.some((child) => {
-		const name = nameOf(child);
+		const name = nameOf$1(child);
 		return name !== "w:compatSetting" && !FOLLOWED_COMPATIBILITY.has(name) && !COMPATIBILITY_LINES_ALIKE.has(name) && onOff([child], name) === true;
 	}) || wordSettingsOf(compatibility).some(({ "w:name": setting }) => !WORD_SETTINGS_LINES_ALIKE.has(String(setting)));
 	/**
@@ -6028,7 +6030,7 @@ var docxLayout = (function(exports) {
 	*/
 	var readKinsokuLists = (settings) => settings.reduce((lists, child) => {
 		var _attributes$wVal;
-		const name = nameOf(child);
+		const name = nameOf$1(child);
 		const attributes = attributesOf(child[name]);
 		const language = kinsokuLanguageOf(stringOf(attributes["w:lang"]));
 		if (name !== "w:noLineBreaksBefore" && name !== "w:noLineBreaksAfter" || language === void 0) return lists;
@@ -6158,9 +6160,9 @@ var docxLayout = (function(exports) {
 	};
 	/** The section properties an element of the body ends a section with: the body's own, or a paragraph's */
 	var sectionPropertiesOf = (element) => {
-		const name = nameOf(element);
+		const name = nameOf$1(element);
 		if (name === "w:sectPr") return element[name];
-		return name === "w:p" ? find(childrenOf(find(contentOf$2(element).filter(isObject), "w:pPr")), "w:sectPr") : void 0;
+		return name === "w:p" ? find(childrenOf(find(contentOf$3(element).filter(isObject), "w:pPr")), "w:sectPr") : void 0;
 	};
 	/**
 	* Reads a document's body (`w:body`), with the other parts of the document.
@@ -6185,7 +6187,7 @@ var docxLayout = (function(exports) {
 			fields: [],
 			counters: /* @__PURE__ */ new Map()
 		}, decimalSymbol === void 0 ? {} : { decimalSymbol }), guess ? { guess } : {});
-		const elements = unwrap(joinRemovedMarks(contentOf$2(body), styles, {
+		const elements = unwrap(joinRemovedMarks(contentOf$3(body), styles, {
 			nested: false,
 			sized: false,
 			part: "body"
@@ -6230,7 +6232,7 @@ var docxLayout = (function(exports) {
 			const note = notesByKind[kind].get(id);
 			const grid = label === void 0 ? void 0 : gridOf(sections.length);
 			const down = label !== void 0 && downOf(childrenOf(sectionElements[sections.length])) !== void 0;
-			return note === void 0 ? [] : readBlocks(contentOf$2(note), _objectSpread2(_objectSpread2(_objectSpread2(_objectSpread2({}, readerOf(false)), {}, { inNote: true }, label === void 0 ? {} : { noteNumber: label }), grid === void 0 ? {} : { grid }), down ? { down } : {}));
+			return note === void 0 ? [] : readBlocks(contentOf$3(note), _objectSpread2(_objectSpread2(_objectSpread2(_objectSpread2({}, readerOf(false)), {}, { inNote: true }, label === void 0 ? {} : { noteNumber: label }), grid === void 0 ? {} : { grid }), down ? { down } : {}));
 		};
 		/**
 		* A separator above the endnotes as Word lays it out: a line of its paragraph style's text, at single spacing and with
@@ -6340,7 +6342,7 @@ var docxLayout = (function(exports) {
 			sections.push(readSection(element, readPart, sections[sections.length - 1], pageSettings, readGrid(element, normalSize, pageSettings)));
 		};
 		for (const element of elements) {
-			const name = nameOf(element);
+			const name = nameOf$1(element);
 			if (name === "w:sectPr") addSection(element[name]);
 			else if (name === "w:bookmarkStart") {
 				const bookmark = bookmarkOf(element);
@@ -9200,6 +9202,387 @@ var docxLayout = (function(exports) {
 		measureDescent
 	});
 	//#endregion
+	//#region src/layout/imported-documents.ts
+	var nameOf = (element) => Object.keys(element)[0];
+	var contentOf$2 = (element) => {
+		const [content] = Object.values(element);
+		return Array.isArray(content) ? content : [];
+	};
+	var DOCX_TYPES = /* @__PURE__ */ new Set([
+		"application/vnd.openxmlformats-officedocument.wordprocessingml.document.main+xml",
+		"application/vnd.openxmlformats-officedocument.wordprocessingml.template.main+xml",
+		"application/vnd.ms-word.document.macroEnabled.main+xml",
+		"application/vnd.ms-word.template.macroEnabledTemplate.main+xml"
+	]);
+	var OTHER_FORMATS = [
+		[/^(text\/html|application\/xhtml\+xml)$/, "HTML"],
+		[/^(application|text)\/rtf$/, "RTF"],
+		[/^message\/rfc822$/, "MHT"],
+		[/^text\/plain$/, "plain text"],
+		[/^(application|text)\/xml$/, "XML"]
+	];
+	/** Why an imported part that isn't turned into the document's own can't be laid out */
+	var reasonOf = (imported) => {
+		var _imported$contentType, _imported$contentType2, _OTHER_FORMATS$find;
+		const contentType = (_imported$contentType = imported === null || imported === void 0 || (_imported$contentType2 = imported.contentType) === null || _imported$contentType2 === void 0 ? void 0 : _imported$contentType2.toLowerCase().split(";")[0].trim()) !== null && _imported$contentType !== void 0 ? _imported$contentType : "";
+		if (imported === void 0 || DOCX_TYPES.has(contentType)) return "an imported document that can't be read";
+		const format = (_OTHER_FORMATS$find = OTHER_FORMATS.find(([type]) => type.test(contentType))) === null || _OTHER_FORMATS$find === void 0 ? void 0 : _OTHER_FORMATS$find[1];
+		return format === void 0 ? "an imported document in a format not yet followed" : `an imported document in ${format}`;
+	};
+	/**
+	* Content with each `w:altChunk` in it, and in its tables, content controls and notes, replaced by what Word turns the
+	* part it imports into, or, where that isn't followed, by itself with why (`reason`), which the layout stops at.
+	*/
+	var replaceImports = (content, imports, turn) => content.flatMap((element) => {
+		if (!isObject(element)) return [element];
+		const name = nameOf(element);
+		if (name === "w:altChunk") {
+			const imported = imports.get(String(attributesOf(element[name])["r:id"]));
+			const turned = (imported === null || imported === void 0 ? void 0 : imported.document) === void 0 ? reasonOf(imported) : turn(imported, element);
+			return typeof turned === "string" ? [{ [name]: [{ _attr: _objectSpread2(_objectSpread2({}, attributesOf(element[name])), {}, { reason: turned }) }] }] : turned;
+		}
+		return name === "_attr" || name === "w:p" ? [element] : [{ [name]: replaceImports(contentOf$2(element), imports, turn) }];
+	});
+	/** The elements among content, and in them, that satisfy a test, in order */
+	var elementsIn = (content, test) => content.filter(isObject).flatMap((element) => [...test(element) ? [element] : [], ...elementsIn(contentOf$2(element), test)]);
+	/** The names of the bookmarks that start in content */
+	var bookmarksIn = (content) => elementsIn(content, (element) => "w:bookmarkStart" in element).flatMap((element) => {
+		const name = stringOf(attributesOf(element["w:bookmarkStart"])["w:name"]);
+		return name === void 0 ? [] : [name];
+	});
+	/** Content without the bookmarks of these names, and their ends */
+	var withoutBookmarks = (content, names) => {
+		const isLeftOut = (element) => "w:bookmarkStart" in element && names.has(String(attributesOf(element["w:bookmarkStart"])["w:name"]));
+		const ids = new Set(elementsIn(content, isLeftOut).map((element) => String(attributesOf(element["w:bookmarkStart"])["w:id"])));
+		const without = (elements) => elements.flatMap((element) => {
+			if (!isObject(element)) return [element];
+			const name = nameOf(element);
+			if (isLeftOut(element) || name === "w:bookmarkEnd" && ids.has(String(attributesOf(element[name])["w:id"]))) return [];
+			return name === "_attr" ? [element] : [{ [name]: without(contentOf$2(element)) }];
+		});
+		return ids.size === 0 ? content : without(content);
+	};
+	var PAGE_FIELD = /^\s*(PAGEREF|NUMPAGES|SECTIONPAGES)\b/i;
+	/** Whether content has a page reference or number of pages, as a field of runs or a simple field */
+	var hasPageField = (content) => elementsIn(content, (element) => {
+		const name = nameOf(element);
+		const instruction = name === "w:fldSimple" ? String(attributesOf(element[name])["w:instr"]) : contentOf$2(element).filter((text) => typeof text === "string").join("");
+		return (name === "w:fldSimple" || name === "w:instrText") && PAGE_FIELD.test(instruction);
+	}).length > 0;
+	var REFERENCES = {
+		"w:pStyle": ["w:val", "styles"],
+		"w:rStyle": ["w:val", "styles"],
+		"w:tblStyle": ["w:val", "styles"],
+		"w:basedOn": ["w:val", "styles"],
+		"w:next": ["w:val", "styles"],
+		"w:link": ["w:val", "styles"],
+		"w:numStyleLink": ["w:val", "styles"],
+		"w:styleLink": ["w:val", "styles"],
+		"w:numId": ["w:val", "lists"],
+		"w:footnoteReference": ["w:id", "footnotes"],
+		"w:endnoteReference": ["w:id", "endnotes"]
+	};
+	/** Content with what it refers to by id renamed */
+	var renamed = (content, renames) => content.map((element) => {
+		if (!isObject(element)) return element;
+		const name = nameOf(element);
+		if (name === "_attr") return element;
+		const reference = REFERENCES[name];
+		const children = contentOf$2(element).map((child) => {
+			if (reference === void 0 || !isObject(child) || !("_attr" in child)) return child;
+			const [attribute, kind] = reference;
+			const id = renames[kind].get(String(attributesOf(child)[attribute]));
+			return id === void 0 ? child : { _attr: _objectSpread2(_objectSpread2({}, attributesOf(child)), {}, { [attribute]: id }) };
+		});
+		return { [name]: renamed(children, renames) };
+	});
+	/** An id not among those taken: the one given if it isn't, or else it with the lowest number after it that isn't */
+	var freeId = (id, taken) => {
+		let free = id;
+		for (let count = 1; taken.has(free); count++) free = `${id}${count}`;
+		return free;
+	};
+	/** The elements of a name in a part's root, such as the `w:style` elements of `w:styles` */
+	var elementsOf = (root, name) => childrenOf(root && Object.values(root)[0]).filter((child) => name in child);
+	/** A part's root with elements added at its end */
+	var withAdded = (root, added) => ({ [nameOf(root)]: [...contentOf$2(root), ...added] });
+	/** An element with new values of its attributes, and without those given as undefined */
+	var withAttributes = (element, attributes) => {
+		const name = nameOf(element);
+		const all = Object.entries(_objectSpread2(_objectSpread2({}, attributesOf(element[name])), attributes)).filter(([, value]) => value !== void 0);
+		return { [name]: [{ _attr: Object.fromEntries(all) }, ...childrenOf(element[name]).filter((child) => !("_attr" in child))] };
+	};
+	/** A part's styles */
+	var stylesOf = (root) => elementsOf(root, "w:style").flatMap((element) => {
+		var _stringOf;
+		const attributes = attributesOf(element["w:style"]);
+		const id = stringOf(attributes["w:styleId"]);
+		const children = childrenOf(element["w:style"]);
+		const name = stringOf(attributesOf(find(children, "w:name"))["w:val"]);
+		const type = (_stringOf = stringOf(attributes["w:type"])) !== null && _stringOf !== void 0 ? _stringOf : "paragraph";
+		const basedOn = stringOf(attributesOf(find(children, "w:basedOn"))["w:val"]);
+		const isDefault = attributes["w:default"] !== void 0 && ![
+			"0",
+			"false",
+			"off"
+		].includes(String(attributes["w:default"]));
+		return id === void 0 ? [] : [{
+			id,
+			element,
+			type,
+			key: name === void 0 ? void 0 : `${type} ${name.toLowerCase()}`,
+			basedOn,
+			isDefault
+		}];
+	});
+	/** The properties a document's defaults (`w:docDefaults`) give paragraphs or runs: their element, `w:pPr` or `w:rPr` */
+	var defaultsOf = (root, kind) => childrenOf(find(childrenOf(find(childrenOf(find(elementsOf(root, "w:docDefaults"), "w:docDefaults")), `${kind}Default`)), kind));
+	/**
+	* What a document's defaults give, each named by its element, and the spacing and indents by each of their attributes,
+	* which a document may give some of
+	*/
+	var defaultKeysOf = (root) => new Set([...defaultsOf(root, "w:pPr"), ...defaultsOf(root, "w:rPr")].flatMap((element) => {
+		const name = nameOf(element);
+		return name === "w:spacing" || name === "w:ind" ? Object.keys(attributesOf(element[name])).map((attribute) => `${name} ${attribute}`) : [name];
+	}));
+	/**
+	* The styles of an imported document, put into a document's. Each of the same type and name as one of the document's is
+	* the document's (AC3), and the others are added, with new ids where the document has their ids (AC3f), looking as they
+	* do in the imported document: a paragraph style with the styles it is based on there and its defaults, whatever the
+	* document's of their names (AC3d, AS1, AS2, AS4), a character style with those it is based on there (AS3), and a table
+	* style based on the document's of the names of those it is based on (AS6). Those added for others to be based on aren't
+	* any type's default, nor are those added, and paragraphs and tables of no style of their own are in the imported
+	* document's default, added or not (AS5).
+	*/
+	var mergeStyles = (into, imported) => {
+		const own = stylesOf(into);
+		const keys = own.flatMap(({ key, id }) => key === void 0 ? [] : [[key, id]]);
+		const byKey = new Map(keys.filter(([key], index) => keys.findIndex(([other]) => other === key) === index));
+		const theirs = stylesOf(imported);
+		const byId = new Map(theirs.map((style) => [style.id, style]));
+		const matched = new Map(theirs.flatMap(({ id, key }) => key !== void 0 && byKey.has(key) ? [[id, byKey.get(key)]] : []));
+		const chainOf = (id, seen) => {
+			const style = id === void 0 ? void 0 : byId.get(id);
+			return style === void 0 || seen.includes(style.id) || style.type === "table" && matched.has(style.id) ? seen : chainOf(style.basedOn, [...seen, style.id]);
+		};
+		const kept = new Set(theirs.filter((style) => !matched.has(style.id)).flatMap(({ id }) => chainOf(id, [])));
+		const keptParagraphs = theirs.filter(({ id, type }) => kept.has(id) && type === "paragraph");
+		const ownDefaults = defaultKeysOf(into);
+		const theirDefaults = defaultKeysOf(imported);
+		if (keptParagraphs.length > 0 && [...ownDefaults].some((key) => !theirDefaults.has(key))) return {
+			added: [],
+			ids: /* @__PURE__ */ new Map(),
+			defaults: {},
+			unsupported: "a style of an imported document's own, where its defaults leave out some of the document's"
+		};
+		const taken = [...own.map((style) => style.id), ...theirs.filter(({ id }) => kept.has(id)).map(({ id }) => id)];
+		const defaultsId = freeId("ImportedDefaults", new Set(taken));
+		const keptIds = [...kept].reduce((before, id) => new Map([...before, [id, freeId(id, /* @__PURE__ */ new Set([
+			...own.map((style) => style.id),
+			defaultsId,
+			...before.values()
+		]))]]), /* @__PURE__ */ new Map());
+		const ids = new Map(theirs.map(({ id }) => {
+			var _matched$get;
+			return [id, (_matched$get = matched.get(id)) !== null && _matched$get !== void 0 ? _matched$get : keptIds.get(id)];
+		}));
+		const bases = new Map([...ids, ...keptIds]);
+		const added = theirs.filter(({ id }) => kept.has(id)).map(({ id, element, type, basedOn }) => {
+			const children = contentOf$2(withAttributes(element, {
+				"w:styleId": keptIds.get(id),
+				"w:default": void 0
+			})).filter((child) => !isObject(child) || !("w:name" in child && matched.has(id) || "w:basedOn" in child && type === "paragraph" && !kept.has(String(basedOn))));
+			return renamed([{ "w:style": type === "paragraph" && !kept.has(String(basedOn)) ? [...children, { "w:basedOn": [{ _attr: { "w:val": defaultsId } }] }] : children }], {
+				styles: bases,
+				lists: /* @__PURE__ */ new Map(),
+				footnotes: /* @__PURE__ */ new Map(),
+				endnotes: /* @__PURE__ */ new Map()
+			})[0];
+		});
+		const defaults = keptParagraphs.length === 0 ? [] : [{ "w:style": [
+			{ _attr: {
+				"w:type": "paragraph",
+				"w:styleId": defaultsId
+			} },
+			{ "w:pPr": defaultsOf(imported, "w:pPr") },
+			{ "w:rPr": defaultsOf(imported, "w:rPr") }
+		] }];
+		/** The id of the imported document's default style of a type, where paragraphs or tables of no style are in another than the document's */
+		const defaultOf = (type) => {
+			var _own$find;
+			const theirsDefault = theirs.find((style) => style.type === type && style.isDefault);
+			const id = theirsDefault && ids.get(theirsDefault.id);
+			return id === ((_own$find = own.find((style) => style.type === type && style.isDefault)) === null || _own$find === void 0 ? void 0 : _own$find.id) ? void 0 : id;
+		};
+		return {
+			added: [...defaults, ...added],
+			ids,
+			defaults: withoutUndefined({
+				paragraph: defaultOf("paragraph"),
+				table: defaultOf("table")
+			})
+		};
+	};
+	/** Content whose paragraphs and tables of no style of their own are in these */
+	var withDefaultStyles = (content, defaults) => {
+		const styled = (element, properties, styleElement, id) => {
+			const name = nameOf(element);
+			const children = contentOf$2(element);
+			const given = children.find((child) => isObject(child) && properties in child);
+			if (id === void 0 || given !== void 0 && find(childrenOf(given[properties]), styleElement) !== void 0) return element;
+			const style = { [styleElement]: [{ _attr: { "w:val": id } }] };
+			return { [name]: given === void 0 ? [{ [properties]: [style] }, ...children] : children.map((child) => child === given ? { [properties]: [style, ...contentOf$2(given)] } : child) };
+		};
+		return content.map((element) => {
+			if (!isObject(element)) return element;
+			const name = nameOf(element);
+			if (name === "w:p") return styled(element, "w:pPr", "w:pStyle", defaults.paragraph);
+			const inner = name === "_attr" ? element : { [name]: withDefaultStyles(contentOf$2(element), defaults) };
+			return name === "w:tbl" ? styled(inner, "w:tblPr", "w:tblStyle", defaults.table) : inner;
+		});
+	};
+	/** The numbers an attribute gives elements of a part's root, such as each list's `w:numId` */
+	var numbersOf = (root, name, attribute) => elementsOf(root, name).map((element) => Number(attributesOf(element[name])[attribute])).filter(Number.isFinite);
+	/** Elements given new numbers by an attribute, from one past the highest of those taken, in order */
+	var renumbered = (elements, attribute, taken) => {
+		const first = Math.max(0, ...taken) + 1;
+		const ids = new Map(elements.map((element, index) => [String(attributesOf(Object.values(element)[0])[attribute]), String(first + index)]));
+		return {
+			elements: elements.map((element) => withAttributes(element, { [attribute]: ids.get(String(attributesOf(Object.values(element)[0])[attribute])) })),
+			ids
+		};
+	};
+	/**
+	* The lists of an imported document, put into a document's: its definitions (`w:abstractNum`) and lists (`w:num`), each
+	* with a new number after the document's own, so they are lists of their own (AC5)
+	*/
+	var mergeLists = (into, imported) => {
+		const definitions = renumbered(elementsOf(imported, "w:abstractNum"), "w:abstractNumId", numbersOf(into, "w:abstractNum", "w:abstractNumId"));
+		const lists = renumbered(elementsOf(imported, "w:num"), "w:numId", numbersOf(into, "w:num", "w:numId"));
+		const withDefinitions = lists.elements.map((list) => ({ "w:num": contentOf$2(list).map((child) => isObject(child) && "w:abstractNumId" in child ? withAttributes(child, { "w:val": definitions.ids.get(String(attributesOf(child["w:abstractNumId"])["w:val"])) }) : child) }));
+		return {
+			added: [...definitions.elements, ...withDefinitions],
+			ids: lists.ids
+		};
+	};
+	var SEPARATORS = /* @__PURE__ */ new Set([
+		"separator",
+		"continuationSeparator",
+		"continuationNotice"
+	]);
+	/** The footnotes or endnotes of an imported document, each with a new id after the document's own (AC6) */
+	var mergeNotes = (into, imported, name) => renumbered(elementsOf(imported, name).filter((note) => !SEPARATORS.has(String(attributesOf(note[name])["w:type"]))), "w:id", numbersOf(into, name, "w:id"));
+	/** The block-level elements Word lays out as a paragraph or a table, which a document's body ends with */
+	var lastBlockOf = (content) => {
+		const blocks = content.filter(isObject).filter((element) => [
+			"w:p",
+			"w:tbl",
+			"w:sdt",
+			"w:customXml"
+		].includes(nameOf(element)));
+		const last = blocks[blocks.length - 1];
+		if (last === void 0 || nameOf(last) === "w:p" || nameOf(last) === "w:tbl") return last;
+		return lastBlockOf(nameOf(last) === "w:sdt" ? childrenOf(find(childrenOf(last["w:sdt"]), "w:sdtContent")) : contentOf$2(last));
+	};
+	/** Whether a part imports anything */
+	var importsAnything = (part) => part !== void 0 && part.imports.size > 0;
+	/**
+	* A .docx's parts with the documents they import turned into their own paragraphs and tables, as Word turns them when it
+	* opens the document, and those not followed left in place with why the layout stops at them.
+	*/
+	var withImports = (parts) => {
+		const contentParts = [parts.body, ...parts.headersAndFooters.values()];
+		const notesParts = [parts.footnotes, parts.endnotes].filter((part) => part !== void 0);
+		if (![...contentParts, ...notesParts].some(importsAnything)) return parts;
+		const documents = new Map([...contentParts, ...notesParts].flatMap((part) => [...part.imports.values()].flatMap((imported) => imported.document ? [[imported, withImports(imported.document)]] : [])));
+		const importedBookmarks = [...documents.values()].flatMap((document) => [...new Set(bookmarksIn(document.body.content))]);
+		const leftOut = /* @__PURE__ */ new Set([
+			...contentParts.flatMap(({ content }) => bookmarksIn(content)),
+			...notesParts.flatMap(({ notes }) => bookmarksIn([notes])),
+			...importedBookmarks.filter((name, index) => importedBookmarks.indexOf(name) !== index)
+		]);
+		let { styles, numbering } = parts;
+		const added = {
+			footnote: {
+				separators: [],
+				notes: []
+			},
+			endnote: {
+				separators: [],
+				notes: []
+			}
+		};
+		/** The notes of a kind the document has, its own and those added, by which new ones are numbered */
+		const notesSoFar = (kind) => {
+			var _parts;
+			return { [`w:${kind}s`]: [...elementsOf((_parts = parts[`${kind}s`]) === null || _parts === void 0 ? void 0 : _parts.notes, `w:${kind}`), ...added[kind].notes] };
+		};
+		const addNotes = (kind, document, renames, defaults) => {
+			var _document;
+			const imported = (_document = document[`${kind}s`]) === null || _document === void 0 ? void 0 : _document.notes;
+			const { elements, ids } = mergeNotes(notesSoFar(kind), imported, `w:${kind}`);
+			const separators = elementsOf(imported, `w:${kind}`).filter((note) => SEPARATORS.has(String(attributesOf(note[`w:${kind}`])["w:type"])));
+			added[kind] = {
+				separators: added[kind].separators.length > 0 ? added[kind].separators : separators,
+				notes: [...added[kind].notes, ...withDefaultStyles(renamed(elements, renames(ids)), defaults)]
+			};
+			return ids;
+		};
+		const turn = (imported, element) => {
+			var _styles, _numbering;
+			const document = documents.get(imported);
+			const { content } = document.body;
+			if (elementsIn(content, (child) => "w:sectPr" in child).length > content.filter((child) => isObject(child) && "w:sectPr" in child).length) return "an imported document of several sections";
+			if (find(childrenOf(find(childrenOf(element["w:altChunk"]), "w:altChunkPr")), "w:matchSrc") !== void 0) return "an imported document whose formatting is kept";
+			if (hasPageField(content) || [document.footnotes, document.endnotes].some((part) => part !== void 0 && hasPageField([part.notes]))) return "a page reference or number of pages in an imported document";
+			const style = mergeStyles(styles, document.styles);
+			if (style.unsupported !== void 0) return style.unsupported;
+			const list = mergeLists(numbering, document.numbering);
+			const withIds = (notes) => {
+				var _notes$footnotes, _notes$endnotes;
+				return {
+					styles: style.ids,
+					lists: list.ids,
+					footnotes: (_notes$footnotes = notes.footnotes) !== null && _notes$footnotes !== void 0 ? _notes$footnotes : /* @__PURE__ */ new Map(),
+					endnotes: (_notes$endnotes = notes.endnotes) !== null && _notes$endnotes !== void 0 ? _notes$endnotes : /* @__PURE__ */ new Map()
+				};
+			};
+			const renames = withIds({
+				footnotes: addNotes("footnote", document, () => withIds({}), style.defaults),
+				endnotes: addNotes("endnote", document, () => withIds({}), style.defaults)
+			});
+			const none = /* @__PURE__ */ new Map();
+			styles = withAdded((_styles = styles) !== null && _styles !== void 0 ? _styles : { "w:styles": [] }, renamed(style.added, _objectSpread2(_objectSpread2({}, renames), {}, { styles: none })));
+			numbering = withAdded((_numbering = numbering) !== null && _numbering !== void 0 ? _numbering : { "w:numbering": [] }, renamed(list.added, renames));
+			const blocks = content.filter((child) => !isObject(child) || !("w:sectPr" in child));
+			const last = lastBlockOf(blocks);
+			return withoutBookmarks(withDefaultStyles(renamed(last !== void 0 && nameOf(last) === "w:p" ? blocks : [...blocks, { "w:p": [] }], renames), style.defaults), leftOut);
+		};
+		const turned = (part) => part.imports.size === 0 ? part : _objectSpread2(_objectSpread2({}, part), {}, { content: replaceImports(part.content, part.imports, turn) });
+		const body = turned(parts.body);
+		const headersAndFooters = new Map([...parts.headersAndFooters].map(([id, part]) => [id, turned(part)]));
+		const ownNotes = (part) => part && (part.imports.size === 0 ? part.notes : { [nameOf(part.notes)]: replaceImports(contentOf$2(part.notes), part.imports, turn) });
+		const ownFootnotes = ownNotes(parts.footnotes);
+		const ownEndnotes = ownNotes(parts.endnotes);
+		/** A document's notes of a kind, its own and those added: with the imported document's separators if it had none */
+		const notesOf = (kind, own, part) => {
+			var _part$imports;
+			const { separators, notes } = added[kind];
+			const root = own !== null && own !== void 0 ? own : notes.length > 0 ? { [`w:${kind}s`]: separators } : void 0;
+			return root && {
+				notes: withAdded(root, notes),
+				imports: (_part$imports = part === null || part === void 0 ? void 0 : part.imports) !== null && _part$imports !== void 0 ? _part$imports : /* @__PURE__ */ new Map()
+			};
+		};
+		return _objectSpread2(_objectSpread2(_objectSpread2(_objectSpread2({}, parts), {}, {
+			body,
+			headersAndFooters
+		}, styles === void 0 ? {} : { styles }), numbering === void 0 ? {} : { numbering }), withoutUndefined({
+			footnotes: notesOf("footnote", ownFootnotes, parts.footnotes),
+			endnotes: notesOf("endnote", ownEndnotes, parts.endnotes)
+		}));
+	};
+	//#endregion
 	//#region src/layout/read-docx.ts
 	var DEFAULT_DOCUMENT = "word/document.xml";
 	/**
@@ -9222,12 +9605,16 @@ var docxLayout = (function(exports) {
 	var folderOf = (path) => path.slice(0, path.lastIndexOf("/") + 1);
 	/**
 	* The path of the part a relationship's target refers to: relative to the folder of the part the relationship belongs to,
-	* or from the package's root if it starts with "/".
+	* or from the package's root if it starts with "/". Backslashes, which some tools write, are read as slashes, as
+	* patchDocument reads them.
 	*/
-	var resolveTarget = (from, target) => (target.startsWith("/") ? target : `${folderOf(from)}${target}`).split("/").reduce((segments, segment) => {
-		if (segment === "" || segment === ".") return segments;
-		return segment === ".." ? segments.slice(0, -1) : [...segments, segment];
-	}, []).join("/");
+	var resolveTarget = (from, target) => {
+		const normalized = target.replace(/\\/g, "/");
+		return (normalized.startsWith("/") ? normalized : `${folderOf(from)}${normalized}`).split("/").reduce((segments, segment) => {
+			if (segment === "" || segment === ".") return segments;
+			return segment === ".." ? segments.slice(0, -1) : [...segments, segment];
+		}, []).join("/");
+	};
 	/** The relationships of the part at the path to the other parts of the package, from its relationships part */
 	var relationshipsOf = (parts, from) => {
 		const relationshipsPath = `${folderOf(from)}_rels/${from.slice(folderOf(from).length)}.rels`;
@@ -9298,46 +9685,108 @@ var docxLayout = (function(exports) {
 			});
 		});
 	};
+	/** The content type of a part of a package, from its `[Content_Types].xml`: its own, or that of its extension */
+	var contentTypeOf = (parts, path) => {
+		var _types$find;
+		const root = rootOf(parts.get("[Content_Types].xml"));
+		const types = childrenOf(root && contentOf$1(root)).map((child) => attributesOf(Object.values(child)[0]));
+		const extension = path.slice(path.lastIndexOf(".") + 1).toLowerCase();
+		const type = (_types$find = types.find(({ PartName: name }) => typeof name === "string" && name.replace(/^\//, "").toLowerCase() === path.toLowerCase())) !== null && _types$find !== void 0 ? _types$find : types.find(({ Extension: other, PartName: name }) => name === void 0 && String(other).toLowerCase() === extension);
+		return stringOf(type === null || type === void 0 ? void 0 : type.ContentType);
+	};
 	/**
-	* Reads a .docx's main document, with the parts it refers to.
+	* Reads a .docx's package into the parts of its main document the layout reads, formatted, with the documents each of
+	* them imports.
+	*/
+	var readParts = (docx) => {
+		var _relationshipsOf$find, _relationshipsOf$find2;
+		const { parts, binaryParts = /* @__PURE__ */ new Map(), importedDocuments = /* @__PURE__ */ new Map() } = docx;
+		const documentPath = (_relationshipsOf$find = (_relationshipsOf$find2 = relationshipsOf(parts, "").find(({ type }) => type === "officeDocument")) === null || _relationshipsOf$find2 === void 0 ? void 0 : _relationshipsOf$find2.path) !== null && _relationshipsOf$find !== void 0 ? _relationshipsOf$find : DEFAULT_DOCUMENT;
+		const relationships = relationshipsOf(parts, documentPath);
+		const pathOf = (type) => {
+			var _relationships$find2;
+			return (_relationships$find2 = relationships.find((candidate) => candidate.type === type)) === null || _relationships$find2 === void 0 ? void 0 : _relationships$find2.path;
+		};
+		const partOf = (type) => {
+			const path = pathOf(type);
+			return path === void 0 ? void 0 : rootOf(parts.get(path));
+		};
+		/** The documents a part imports, by the ids of its relationships to them */
+		const importsOf = (path) => new Map(relationshipsOf(parts, path).filter(({ type }) => type === "aFChunk").map(({ id, path: target }) => {
+			const imported = importedDocuments.get(target);
+			return [id, withoutUndefined({
+				contentType: contentTypeOf(parts, target),
+				document: imported && readParts(imported),
+				data: binaryParts.get(target)
+			})];
+		}));
+		const fontTable = pathOf("fontTable");
+		const headersAndFooters = relationships.filter(({ type }) => type === "header" || type === "footer");
+		const document = rootOf(parts.get(documentPath));
+		const notes = (type) => {
+			const path = pathOf(type);
+			const root = path === void 0 ? void 0 : rootOf(parts.get(path));
+			return root && path !== void 0 ? {
+				notes: root,
+				imports: importsOf(path)
+			} : void 0;
+		};
+		return withoutUndefined({
+			body: {
+				content: childrenOf(find(childrenOf(document && contentOf$1(document)), "w:body")),
+				imports: importsOf(documentPath)
+			},
+			styles: partOf("styles"),
+			theme: partOf("theme"),
+			numbering: partOf("numbering"),
+			settings: partOf("settings"),
+			headersAndFooters: new Map(headersAndFooters.flatMap(({ id, path }) => {
+				const part = rootOf(parts.get(path));
+				return part ? [[id, {
+					content: contentOf$1(part),
+					imports: importsOf(path)
+				}]] : [];
+			})),
+			footnotes: notes("footnotes"),
+			endnotes: notes("endnotes"),
+			fonts: fontTable === void 0 ? [] : facesOf(embeddedFontsOf(parts, binaryParts, fontTable))
+		});
+	};
+	/**
+	* Reads a .docx's main document, with the parts it refers to, and the documents it imports (`w:altChunk`) as Word turns
+	* them into its own paragraphs and tables when it opens it (see `imported-documents.ts`).
 	*
 	* @param parts - The XML parts of its package, parsed by xml-js's `xml2js`, not compact and keeping the spaces between
 	* elements, by their paths, such as "word/document.xml"
 	* @param binaryParts - Its other parts, such as the fonts it embeds, by their paths
 	* @param options - How it is read: to be laid out with a guess, or not
+	* @param importedDocuments - The .docx files it imports, by their paths, each read as it is
 	*/
-	var readDocx = (parts, binaryParts = /* @__PURE__ */ new Map(), options = {}) => {
-		var _relationshipsOf$find, _relationshipsOf$find2, _partOf, _find;
-		const documentPath = (_relationshipsOf$find = (_relationshipsOf$find2 = relationshipsOf(parts, "").find(({ type }) => type === "officeDocument")) === null || _relationshipsOf$find2 === void 0 ? void 0 : _relationshipsOf$find2.path) !== null && _relationshipsOf$find !== void 0 ? _relationshipsOf$find : DEFAULT_DOCUMENT;
-		const relationships = relationshipsOf(parts, documentPath);
-		const partOf = (type) => {
-			const relationship = relationships.find((candidate) => candidate.type === type);
-			return relationship && rootOf(parts.get(relationship.path));
-		};
-		const theme = partOf("theme");
-		const fontTable = relationships.find((relationship) => relationship.type === "fontTable");
+	var readDocx = (parts, binaryParts = /* @__PURE__ */ new Map(), options = {}, importedDocuments = /* @__PURE__ */ new Map()) => {
+		var _read$styles, _read$footnotes, _read$endnotes;
+		const read = withImports(readParts({
+			parts,
+			binaryParts,
+			importedDocuments
+		}));
 		const documentParts = {
-			styles: readTextStyles((_partOf = partOf("styles")) !== null && _partOf !== void 0 ? _partOf : { "w:styles": [] }, theme && readThemeFonts(theme)),
-			numbering: partOf("numbering"),
-			settings: partOf("settings"),
-			headersAndFooters: new Map(relationships.flatMap(({ id, type, path }) => {
-				const part = type === "header" || type === "footer" ? rootOf(parts.get(path)) : void 0;
-				return part ? [[id, contentOf$1(part)]] : [];
-			})),
-			footnotes: partOf("footnotes"),
-			endnotes: partOf("endnotes"),
-			fonts: fontTable === void 0 ? [] : facesOf(embeddedFontsOf(parts, binaryParts, fontTable.path))
+			styles: readTextStyles((_read$styles = read.styles) !== null && _read$styles !== void 0 ? _read$styles : { "w:styles": [] }, read.theme && readThemeFonts(read.theme)),
+			numbering: read.numbering,
+			settings: read.settings,
+			headersAndFooters: new Map([...read.headersAndFooters].map(([id, { content }]) => [id, content])),
+			footnotes: (_read$footnotes = read.footnotes) === null || _read$footnotes === void 0 ? void 0 : _read$footnotes.notes,
+			endnotes: (_read$endnotes = read.endnotes) === null || _read$endnotes === void 0 ? void 0 : _read$endnotes.notes,
+			fonts: read.fonts
 		};
-		const document = rootOf(parts.get(documentPath));
-		return readContent({ "w:body": (_find = find(childrenOf(document && contentOf$1(document)), "w:body")) !== null && _find !== void 0 ? _find : [] }, documentParts, options);
+		return readContent({ "w:body": read.body.content }, documentParts, options);
 	};
 	//#endregion
 	//#region src/layout/estimate-page-numbers.ts
 	/**
-	* What a document is read into: a template patchDocument patched, or the body of a document being written. Read to be
-	* laid out with a guess (`guess`), past what can't be laid out as Word does
+	* What a document is read into: a template patchDocument patched, with the .docx files it imports, or the body of a
+	* document being written. Read to be laid out with a guess (`guess`), past what can't be laid out as Word does
 	*/
-	var contentOf = (document, context, guess = false) => "parts" in document ? readDocx(document.parts, document.binaryParts, { guess }) : (context === null || context === void 0 ? void 0 : context.file) && readDocument(document, context, { guess });
+	var contentOf = (document, context, guess = false) => "parts" in document ? readDocx(document.parts, document.binaryParts, { guess }, document.importedDocuments) : (context === null || context === void 0 ? void 0 : context.file) && readDocument(document, context, { guess });
 	/**
 	* Lays out the pages until their page numbers stop changing, with a measurer. Gives none when they don't, unless it
 	* guesses, when it gives where it guessed too

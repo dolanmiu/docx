@@ -36516,6 +36516,12 @@ while (n === a[++i] && n === a[++i] && n === a[++i] && n === a[++i] && n === a[+
 	};
 	//#endregion
 	//#region src/patcher/page-numbers.ts
+	/**
+	* Page numbers written into a template's fields once `patchDocument` has patched it, from an estimate of its pages, as
+	* a document's are when it is written with `pageNumbers`.
+	*
+	* @module
+	*/
 	/** The elements of a template, as xml-js parses them */
 	var PARSED = {
 		nameOf: (element) => element.type === "element" ? element.name : void 0,
@@ -36550,6 +36556,62 @@ while (n === a[++i] && n === a[++i] && n === a[++i] && n === a[++i] && n === a[+
 		}
 	};
 	var DOCUMENT = "word/document.xml";
+	var IMPORT = "http://schemas.openxmlformats.org/officeDocument/2006/relationships/aFChunk";
+	var ZIP = [
+		80,
+		75,
+		3,
+		4
+	];
+	/** A package's parts, from a zip file: its XML parts parsed, as patchDocument parses a template's, and the rest as bytes */
+	var readPackage = function() {
+		var _ref = _asyncToGenerator(function* (data) {
+			if (!ZIP.every((byte, index) => data[index] === byte)) return;
+			try {
+				const zip = yield import_jszip_min.default.loadAsync(data);
+				const parts = /* @__PURE__ */ new Map();
+				const binaryParts = /* @__PURE__ */ new Map();
+				for (const [path, file] of Object.entries(zip.files)) {
+					if (file.dir) continue;
+					if (/\.(xml|rels)$/.test(path)) parts.set(path, toJson(yield file.async("text")));
+					else binaryParts.set(path, yield file.async("uint8array"));
+				}
+				const importedDocuments = yield readImportedDocuments(parts, binaryParts);
+				return _objectSpread2({
+					parts,
+					binaryParts
+				}, importedDocuments.size > 0 ? { importedDocuments } : {});
+			} catch (_unused) {
+				return;
+			}
+		});
+		return function readPackage(_x) {
+			return _ref.apply(this, arguments);
+		};
+	}();
+	/**
+	* Each .docx the parts of a package import (`w:altChunk`), by its path: the parts the relationships of each part refer to
+	* as imported, which are zip files that can be read. Those in other formats, such as HTML, are left to the layout.
+	*/
+	var readImportedDocuments = function() {
+		var _ref2 = _asyncToGenerator(function* (parts, binaryParts) {
+			const imported = /* @__PURE__ */ new Map();
+			for (const [path, relationships] of parts) {
+				var _rootOf$elements, _rootOf;
+				if (!path.endsWith(".rels")) continue;
+				for (const { attributes = {} } of (_rootOf$elements = (_rootOf = rootOf(relationships)) === null || _rootOf === void 0 ? void 0 : _rootOf.elements) !== null && _rootOf$elements !== void 0 ? _rootOf$elements : []) {
+					const target = resolveTarget(sourceOfRelationships(path), String(attributes.Target));
+					const data = binaryParts.get(target);
+					const read = attributes.Type === IMPORT && attributes.TargetMode !== "External" && data ? yield readPackage(data) : void 0;
+					if (read) imported.set(target, read);
+				}
+			}
+			return imported;
+		});
+		return function readImportedDocuments(_x2, _x3) {
+			return _ref2.apply(this, arguments);
+		};
+	}();
 	/** The root element of a part, such as `w:document` */
 	var rootOf = (part) => {
 		var _part$elements;
@@ -36563,27 +36625,37 @@ while (n === a[++i] && n === a[++i] && n === a[++i] && n === a[++i] && n === a[+
 	* tables of contents are written clean, as they are in a document written with `pageNumbers`, so Word shows their numbers
 	* as they are and doesn't ask to update the fields.
 	*
+	* The documents it imports (`w:altChunk`) as .docx files are unzipped for the estimator to read, as Word turns them into
+	* paragraphs and tables of the template's own when it opens it.
+	*
 	* @param parts - The template's XML parts, parsed, by their paths, which are changed in place
-	* @param binaryParts - Its other parts, by their paths, for the estimator to read the fonts it embeds
+	* @param binaryParts - Its other parts, by their paths, for the estimator to read the fonts it embeds and the documents
+	* it imports
 	*/
-	var fillTemplatePageNumbers = (parts, estimator, binaryParts = /* @__PURE__ */ new Map()) => {
-		var _rootOf$elements, _rootOf;
-		const document = rootOf(parts.get(DOCUMENT));
-		if (!document) return;
-		const estimate = estimator({
-			parts,
-			binaryParts
+	var fillTemplatePageNumbers = function() {
+		var _ref3 = _asyncToGenerator(function* (parts, estimator, binaryParts = /* @__PURE__ */ new Map()) {
+			var _rootOf$elements2, _rootOf2;
+			const document = rootOf(parts.get(DOCUMENT));
+			if (!document) return;
+			const importedDocuments = yield readImportedDocuments(parts, binaryParts);
+			const estimate = estimator(_objectSpread2({
+				parts,
+				binaryParts
+			}, importedDocuments.size > 0 ? { importedDocuments } : {}));
+			const partPageCounts = fillBodyFields(PARSED, document, estimate, { blank: true });
+			const relationships = (_rootOf$elements2 = (_rootOf2 = rootOf(parts.get(relationshipsPathOf(DOCUMENT)))) === null || _rootOf2 === void 0 ? void 0 : _rootOf2.elements) !== null && _rootOf$elements2 !== void 0 ? _rootOf$elements2 : [];
+			for (const { attributes = {} } of relationships) {
+				const part = /\/(header|footer)$/.test(String(attributes.Type)) ? rootOf(parts.get(resolveTarget(DOCUMENT, String(attributes.Target)))) : void 0;
+				if (part) fillPartFields(PARSED, part, estimate, {
+					blank: true,
+					sectionPageCount: partPageCounts.get(String(attributes.Id))
+				});
+			}
 		});
-		const partPageCounts = fillBodyFields(PARSED, document, estimate, { blank: true });
-		const relationships = (_rootOf$elements = (_rootOf = rootOf(parts.get(relationshipsPathOf(DOCUMENT)))) === null || _rootOf === void 0 ? void 0 : _rootOf.elements) !== null && _rootOf$elements !== void 0 ? _rootOf$elements : [];
-		for (const { attributes = {} } of relationships) {
-			const part = /\/(header|footer)$/.test(String(attributes.Type)) ? rootOf(parts.get(resolveTarget(DOCUMENT, String(attributes.Target)))) : void 0;
-			if (part) fillPartFields(PARSED, part, estimate, {
-				blank: true,
-				sectionPageCount: partPageCounts.get(String(attributes.Id))
-			});
-		}
-	};
+		return function fillTemplatePageNumbers(_x4, _x5) {
+			return _ref3.apply(this, arguments);
+		};
+	}();
 	//#endregion
 	//#region src/patcher/paragraph-split-inject.ts
 	var TokenNotFoundError = class extends Error {
@@ -37502,7 +37574,7 @@ while (n === a[++i] && n === a[++i] && n === a[++i] && n === a[++i] && n === a[+
 				map.set(relationshipKey, relationshipsJson);
 				appendRelationship(relationshipsJson, id, type, target, targetMode);
 			}
-			if (pageNumbers) fillTemplatePageNumbers(map, pageNumbers, binaryContentMap);
+			if (pageNumbers) yield fillTemplatePageNumbers(map, pageNumbers, binaryContentMap);
 			const packageParts = xmlifyPackageParts(file, void 0);
 			if (hasMedia || contentTypeOverrides.length > 0) {
 				const contentTypesJson = map.get("[Content_Types].xml");

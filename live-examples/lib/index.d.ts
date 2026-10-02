@@ -10693,6 +10693,11 @@ export declare type PatchedTemplate = {
     readonly parts: ReadonlyMap<string, Element_2>;
     /** Each of its other parts, such as its pictures and the fonts it embeds, by its path in the package, as bytes */
     readonly binaryParts?: ReadonlyMap<string, Uint8Array>;
+    /**
+     * Each .docx the template imports (`w:altChunk`), which Word turns into paragraphs and tables of the template's own
+     * when it opens it, unzipped and read as the template is, by its path in the template's package
+     */
+    readonly importedDocuments?: ReadonlyMap<string, PatchedTemplate>;
 };
 
 /**
