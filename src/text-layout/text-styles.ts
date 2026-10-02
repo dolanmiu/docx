@@ -13,6 +13,7 @@ import type { IContext } from "docx";
 import { isEastAsian, kinsokuLanguageOf } from "./line-break-rules";
 import {
     DEFAULT_FONT_SIZE,
+    type Ligatures,
     type LineSpacing,
     type ParagraphAlignment,
     type ParagraphBorder,
@@ -61,10 +62,22 @@ export type RunFormat = Omit<TextFont, "size" | "lineSize" | "raise" | "border" 
     readonly complexScript?: boolean;
     /** The East Asian language of the run (`w:lang w:eastAsia`), which decides which characters can't start or end a line */
     readonly eastAsianLanguage?: string;
-    /** The language of the run's other text (`w:lang w:val`), by whose dictionary Word hyphenates its words */
+    /**
+     * The language of the run's other text (`w:lang w:val`), by whose dictionary Word hyphenates its words, and which parts
+     * kerned runs, or runs with ligatures, from runs of other languages
+     */
     readonly language?: string;
     /** Whether the run isn't checked for spelling and grammar (`w:noProof`), which Word doesn't hyphenate */
     readonly noProof?: boolean;
+    /**
+     * The other OpenType features Word draws the font with, beside its ligatures, which change the widths of its glyphs:
+     * the form and spacing of its numbers (`w14:numForm`, `w14:numSpacing`) when they aren't the font's own, its stylistic
+     * sets (`w14:stylisticSets`) and contextual alternates (`w14:cntxtAlts`)
+     */
+    readonly numberForm?: string;
+    readonly numberSpacing?: string;
+    readonly stylisticSets?: boolean;
+    readonly contextualAlternates?: boolean;
 };
 
 /**
@@ -283,6 +296,12 @@ export const onOff = (children: readonly XmlObject[], name: string): boolean | u
     return element ? !isOff(attributesOf(element[name])["w:val"]) : undefined;
 };
 
+/** An on/off property of Word 2010's (`w14`), such as `w14:cntxtAlts`, whose value is `w14:val` */
+const onOff14 = (children: readonly XmlObject[], name: string): boolean | undefined => {
+    const element = children.find((child) => name in child);
+    return element ? !isOff(attributesOf(element[name])["w14:val"]) : undefined;
+};
+
 export const withoutUndefined = <T extends object>(object: T): T =>
     Object.fromEntries(Object.entries(object).filter(([, value]) => value !== undefined)) as T;
 
@@ -344,6 +363,12 @@ export const readRunFormat = (element: unknown, themeFonts: ThemeFonts): RunForm
         eastAsianLanguage: stringOf(attributesOf(find(children, "w:lang"))["w:eastAsia"]),
         language: stringOf(attributesOf(find(children, "w:lang"))["w:val"]),
         noProof: onOff(children, "w:noProof"),
+        ligatures: stringOf(attributesOf(find(children, "w14:ligatures"))["w14:val"]) as Ligatures | undefined,
+        numberForm: stringOf(attributesOf(find(children, "w14:numForm"))["w14:val"]),
+        numberSpacing: stringOf(attributesOf(find(children, "w14:numSpacing"))["w14:val"]),
+        stylisticSets:
+            find(children, "w14:stylisticSets") === undefined ? undefined : childrenOf(find(children, "w14:stylisticSets")).length > 0,
+        contextualAlternates: onOff14(children, "w14:cntxtAlts"),
         verticalAlign: readVerticalAlign(valueOf(children, "w:vertAlign")),
         position: pointsOf(attributesOf(find(children, "w:position"))["w:val"], 2),
         emphasisMark: valueOf(children, "w:em"),
@@ -721,6 +746,8 @@ const plainFontOf = ({
     bold,
     italic,
     kerning,
+    ligatures,
+    language,
     characterSpacing,
     scale,
     position,
@@ -734,6 +761,9 @@ const plainFontOf = ({
         bold,
         italic,
         kerning,
+        ligatures: ligatures === "none" ? undefined : ligatures,
+        // Only where it parts kerning and ligatures
+        language: kerning !== undefined || (ligatures !== undefined && ligatures !== "none") ? language : undefined,
         characterSpacing,
         scale,
         raise: position === 0 ? undefined : position,
@@ -743,10 +773,24 @@ const plainFontOf = ({
     });
 
 /**
- * Why a run's formatting can't be laid out as Word lays it out, when it can't: a border of a style, width or space Word
- * hasn't been seen to draw, or with a shadow or drawn as a frame, and emphasis marks of a kind the schema doesn't have.
+ * Why a run's formatting can't be laid out as Word lays it out, when it can't: OpenType features other than ligatures,
+ * whose widths the width tables don't have, a border of a style, width or space Word hasn't been seen to draw, or with a
+ * shadow or drawn as a frame, and emphasis marks of a kind the schema doesn't have.
  */
-export const unknownRunFormatting = ({ border, emphasisMark }: RunFormat): string | undefined => {
+export const unknownRunFormatting = ({
+    border,
+    emphasisMark,
+    numberForm,
+    numberSpacing,
+    stylisticSets,
+    contextualAlternates,
+}: RunFormat): string | undefined => {
+    if ((numberForm ?? "default") !== "default" || (numberSpacing ?? "default") !== "default") {
+        return "OpenType number forms or spacing";
+    }
+    if (stylisticSets === true || contextualAlternates === true) {
+        return "OpenType stylistic sets or contextual alternates";
+    }
     if (border !== undefined && border.style !== "nil" && (border.shadow || border.frame)) {
         return "a run border with a shadow or drawn as a frame";
     }

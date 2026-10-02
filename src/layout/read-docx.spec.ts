@@ -206,6 +206,32 @@ describe("readDocx", () => {
         expect(textOf(content)).to.equal("A & B");
     });
 
+    it("should read the kerning and ligatures Word's own Normal template turns on into the text's font", () => {
+        const W14 = 'xmlns:w14="http://schemas.microsoft.com/office/word/2010/wordml"';
+        const content = readDocx(
+            new Map([
+                [
+                    "_rels/.rels",
+                    relationships(`<Relationship Id="rId1" Type="${TRANSITIONAL}/officeDocument" Target="word/document.xml"/>`),
+                ],
+                [
+                    "word/_rels/document.xml.rels",
+                    relationships(`<Relationship Id="rId1" Type="${TRANSITIONAL}/styles" Target="styles.xml"/>`),
+                ],
+                [
+                    "word/styles.xml",
+                    parse(
+                        `<w:styles ${W} ${W14}><w:docDefaults><w:rPrDefault><w:rPr><w:rFonts w:ascii="Calibri"/><w:kern w:val="2"/><w14:ligatures w14:val="standardContextual"/></w:rPr></w:rPrDefault></w:docDefaults></w:styles>`,
+                    ),
+                ],
+                ["word/document.xml", documentOf("<w:p><w:r><w:t>Office</w:t></w:r></w:p>")],
+            ]),
+        );
+        const [item] = (content.blocks[0].block as ParagraphBlock).items;
+        expect(item).to.deep.include({ type: "text", text: "Office" });
+        expect(item.type === "text" && item.font).to.deep.equal({ font: "Calibri", kerning: 1, ligatures: "standardContextual" });
+    });
+
     it("should read a .docx without settings as one in compatibility mode, as Word lays it out", () => {
         const content = readDocx(new Map([["word/document.xml", documentOf("<w:p/>")]]));
         expect(content.unsupported).to.equal("a document in compatibility mode");

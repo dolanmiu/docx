@@ -11,6 +11,7 @@
  * @module
  */
 // cspell:ignore Aptos
+import { hasLigatures } from "./kerning";
 import { type LineBreakRules, extendsCharacter, findLineBreaks, joinsNext } from "./line-break-rules";
 import {
     DEFAULT_FONT,
@@ -23,10 +24,11 @@ import {
     isKerned,
     measureDescent,
     measureLineHeight,
-    measureTextWidth,
+    measureTextWidthAsDrawn,
     takesNoRoom,
     unknownCharacter,
     unknownFont,
+    unknownShaping,
 } from "./text-width";
 
 /**
@@ -50,6 +52,11 @@ export type TextMeasurer = {
      * measurer without it measures every font as best it can
      */
     readonly unknownFont?: (font: TextFont, text?: string) => boolean;
+    /**
+     * Why this measurer doesn't know how Word kerns text in a font, or joins its letters into ligatures, when it doesn't,
+     * so a layout stops there rather than guessing. A measurer without it measures them as best it can
+     */
+    readonly unknownShaping?: (text: string, font: TextFont) => string | undefined;
 };
 
 /**
@@ -57,7 +64,7 @@ export type TextMeasurer = {
  * similar font in them, such as Aptos as Arial: a best guess, for a layout asked to lay out past what it can't follow.
  */
 export const SIMILAR_FONT_MEASURER: TextMeasurer = {
-    measureWidth: (text, font) => measureTextWidth(text, font),
+    measureWidth: (text, font) => measureTextWidthAsDrawn(text, font),
     measureLineHeight,
     measureDescent,
     unknownCharacter,
@@ -65,9 +72,18 @@ export const SIMILAR_FONT_MEASURER: TextMeasurer = {
 
 /**
  * Measures text with the widths of the fonts in {@link FONT_WIDTHS}, and says which fonts it doesn't have, which it
- * measures as {@link SIMILAR_FONT_MEASURER} does, so a layout stops at them.
+ * measures as {@link SIMILAR_FONT_MEASURER} does, and the kerning and ligatures it doesn't know, so a layout stops at them.
  */
-export const DEFAULT_MEASURER: TextMeasurer = { ...SIMILAR_FONT_MEASURER, unknownFont };
+export const DEFAULT_MEASURER: TextMeasurer = {
+    // Written out, rather than spread from SIMILAR_FONT_MEASURER, which a bundle would keep, and the kerning tables with
+    // it, in an entry that doesn't use it, such as docx/shapes
+    measureWidth: (text, font) => measureTextWidthAsDrawn(text, font),
+    measureLineHeight,
+    measureDescent,
+    unknownCharacter,
+    unknownFont,
+    unknownShaping,
+};
 
 /**
  * A piece of a paragraph's content, in the order it is written.
@@ -439,11 +455,14 @@ const roomBetween = (before: TextBorder | undefined, after: TextBorder | undefin
 const firstBorder = (pieces: readonly Piece[]): TextBorder | undefined => pieces[0].font.border;
 const lastBorder = (pieces: readonly Piece[]): TextBorder | undefined => pieces[pieces.length - 1].font.border;
 
+/** Whether pieces of text in the same font are measured together: when they are kerned, or join letters */
+const shaped = (font: TextFont): boolean => isKerned(font) || hasLigatures(font);
+
 /**
  * How wide pieces of text are, with the room of the borders between them. Pieces next to each other in the same font, and
- * kerned, are measured together, so the pairs of characters across them are kerned, as Word kerns them across runs
- * (word-fonts.docx F4). Others are measured apart, as a measurer may measure a piece, such as a page number, differently on
- * its own.
+ * kerned or with ligatures, are measured together, so the pairs of characters across them are kerned, as Word kerns them
+ * across runs (word-fonts.docx F4), and their letters joined. Others are measured apart, as a measurer may measure a
+ * piece, such as a page number, differently on its own.
  */
 const widthOf = (pieces: readonly Piece[], measurer: TextMeasurer): number => {
     if (pieces.length === 0) {
@@ -453,7 +472,7 @@ const widthOf = (pieces: readonly Piece[], measurer: TextMeasurer): number => {
     let [{ text, font }] = pieces;
     for (const piece of pieces.slice(1)) {
         total += roomBetween(font.border, piece.font.border);
-        if (isKerned(font) && sameFont(font, piece.font)) {
+        if (shaped(font) && sameFont(font, piece.font)) {
             text += piece.text;
             continue;
         }
@@ -461,6 +480,94 @@ const widthOf = (pieces: readonly Piece[], measurer: TextMeasurer): number => {
         ({ text, font } = piece);
     }
     return total + measurer.measureWidth(text, font);
+};
+
+/**
+ * A paragraph's text in the pieces it is measured in: text next to text in the same font, kerned or with ligatures, as one,
+ * across bookmarks and soft hyphens between them, as its pairs of characters are kerned and its letters joined across
+ * runs, and other text on its own. So kerning and ligatures a measurer doesn't know are found across runs too. Text
+ * beside a soft hyphen, which Word hasn't been seen with, is marked: text kerned or joined across one, and kerned text
+ * before one in its font, with whose last letter the hyphen Word draws at the end of a line may be kerned.
+ */
+export const textMeasuredTogether = (items: readonly InlineItem[]): readonly (Piece & { readonly besideSoftHyphen?: boolean })[] => {
+    // eslint-disable-next-line functional/prefer-readonly-type
+    const pieces: (Piece & { readonly besideSoftHyphen?: boolean })[] = [];
+    let joins = false;
+    // Whether a soft hyphen is between the text before and the next
+    let hyphen = false;
+    for (const item of items) {
+        if (item.type === "marker") {
+            continue;
+        }
+        const last = pieces[pieces.length - 1];
+        if (item.type === "softHyphen") {
+            // Text before it with a letter to kern or join with, which a field's result left empty doesn't have
+            const before = joins && last.text.length > 0;
+            hyphen = before;
+            if (before && isKerned(item.font) && sameFont(last.font, item.font)) {
+                // eslint-disable-next-line functional/immutable-data
+                pieces[pieces.length - 1] = { ...last, besideSoftHyphen: true };
+            }
+            continue;
+        }
+        if (item.type !== "text") {
+            joins = false;
+        } else if (joins && shaped(last.font) && sameFont(last.font, item.font)) {
+            // eslint-disable-next-line functional/immutable-data
+            pieces[pieces.length - 1] = {
+                text: last.text + item.text,
+                font: last.font,
+                ...(hyphen || last.besideSoftHyphen === true ? { besideSoftHyphen: true } : {}),
+            };
+        } else {
+            // eslint-disable-next-line functional/immutable-data
+            pieces.push({ text: item.text, font: item.font });
+            joins = true;
+        }
+        hyphen = false;
+    }
+    return pieces;
+};
+
+/** The text of the pieces at the start or end of a token in the same font as the first or last, which are measured together */
+const edgeOf = (pieces: readonly Piece[], end: boolean): Piece => {
+    const ordered = end ? [...pieces].reverse() : pieces;
+    const [{ font }] = ordered;
+    const different = ordered.findIndex((piece) => !sameFont(piece.font, font));
+    const same = different === -1 ? ordered : ordered.slice(0, different);
+    return { text: (end ? [...same].reverse() : same).map((piece) => piece.text).join(""), font };
+};
+
+/**
+ * The kerning between each word or space and the text before it on its line, in points: between the last character of a
+ * word and the space after it, and between the space and the next word, which Word kerns when they are in the same font
+ * and kerned (scripts/layout-probes/word-kerning.ts K: Arial and Times New Roman kern A, L, P, T, V, W and Y with the
+ * space). It is how much narrower the two are measured together than apart. Nothing for a token after a tab, a picture or
+ * nothing.
+ */
+const kerningBefore = (tokens: readonly Token[], measurer: TextMeasurer): readonly number[] => {
+    // Most paragraphs aren't kerned
+    if (!tokens.some((token) => (token.type === "word" || token.type === "space") && token.pieces.some(({ font }) => isKerned(font)))) {
+        return tokens.map(() => 0);
+    }
+    let previous: Piece | undefined;
+    return tokens.map((token) => {
+        if (token.type === "marker") {
+            return 0;
+        }
+        if (token.type !== "word" && token.type !== "space") {
+            previous = undefined;
+            return 0;
+        }
+        const before = previous;
+        const after = edgeOf(token.pieces, false);
+        previous = edgeOf(token.pieces, true);
+        return before === undefined || !isKerned(after.font) || !sameFont(before.font, after.font)
+            ? 0
+            : measurer.measureWidth(before.text + after.text, after.font) -
+                  measurer.measureWidth(before.text, before.font) -
+                  measurer.measureWidth(after.text, after.font);
+    });
 };
 
 // Most words are in one font, so their text needn't be joined
@@ -730,22 +837,24 @@ const nextStop = (
     return stop.position > limit + TOLERANCE ? undefined : stop;
 };
 
-/** How wide tokens are, one after the other, with the room of the borders between them */
-const widthOfTokens = (tokens: readonly Token[], measurer: TextMeasurer): number =>
-    tokens.reduce(
-        ({ total, border }, token) => {
+/** How wide tokens are, one after the other, with the room of the borders between them and the kerning before each */
+const widthOfTokens = (tokens: readonly Token[], measurer: TextMeasurer): number => {
+    const kerning = kerningBefore(tokens, measurer);
+    return tokens.reduce(
+        ({ total, border }, token, index) => {
             if (token.type === "box") {
                 return { total: total + roomBetween(border, undefined) + token.width, border: undefined };
             }
             return token.type === "word" || token.type === "space"
                 ? {
-                      total: total + roomBetween(border, firstBorder(token.pieces)) + widthOf(token.pieces, measurer),
+                      total: total + roomBetween(border, firstBorder(token.pieces)) + kerning[index] + widthOf(token.pieces, measurer),
                       border: lastBorder(token.pieces),
                   }
                 : { total, border };
         },
         { total: 0, border: undefined as TextBorder | undefined },
     ).total;
+};
 
 /**
  * The width of the text after a tab, up to the next tab or the end of the part: what lines up with a right or centered
@@ -962,12 +1071,13 @@ export const measureContentWidths = (
             // The border of the text before, whose box is open, and of the last word, picture or tab
             let border: TextBorder | undefined;
             let endBorder: TextBorder | undefined;
+            const kerning = kerningBefore(tokens, measurer);
             for (const [index, token] of tokens.entries()) {
                 if (token.type === "marker") {
                     continue;
                 }
                 if (token.type === "space") {
-                    position += roomBetween(border, firstBorder(token.pieces)) + widthOf(token.pieces, measurer);
+                    position += roomBetween(border, firstBorder(token.pieces)) + kerning[index] + widthOf(token.pieces, measurer);
                     border = lastBorder(token.pieces);
                     continue;
                 }
@@ -995,7 +1105,7 @@ export const measureContentWidths = (
                 if (token.type === "box" || !hyphenating || !dictionaryOf(token.pieces, hyphenating)) {
                     wholeWords = Math.max(wholeWords, start + tokenWidth + close + indentRight);
                 }
-                position += lead + tokenWidth;
+                position += lead + kerning[index] + tokenWidth;
                 end = position;
             }
             return { min: narrowest, whole: wholeWords, max: Math.max(widths.max, narrowest, end + (endBorder?.room ?? 0) + indentRight) };
@@ -1154,7 +1264,16 @@ export const layoutLines = (
     const offCells =
         cell !== undefined &&
         [indentLeft, indentLeft + firstLineIndent].some((start) => Math.abs(start / cell - Math.round(start / cell)) > TOLERANCE / cell);
-    const unknownOnGrid = offCells ? "an indent of part of a character on a grid that snaps to characters" : spaced?.unsupported;
+    // Whether Word kerns text, and joins its letters, on a grid of characters, which measures the other text a character
+    // at a time, or adds space after each, hasn't been seen
+    const shapedOnGrid =
+        (cell !== undefined || characterSpace !== undefined) &&
+        items.some((item) => item.type === "text" && shaped(item.font) && item.font.snapToGrid !== false)
+            ? "kerning or ligatures on a document grid of characters"
+            : undefined;
+    const unknownOnGrid = offCells
+        ? "an indent of part of a character on a grid that snaps to characters"
+        : (spaced?.unsupported ?? shapedOnGrid);
     // How tall a line as tall as the paragraph's mark is, measured only where it counts, as a layout stops at a mark in a
     // font the measurer doesn't know
     let markHeight: number | undefined;
@@ -1372,25 +1491,32 @@ export const layoutLines = (
         };
         /** Puts the bookmarks waiting for the next word, picture or tab on the line it is on */
         const place = (state: LineState): LineState => ({ ...state, markers: [...state.markers, ...state.pending], pending: [] });
+        const kerning = kerningBefore(tokens, measurer);
 
         /**
          * Leaves a line with room of its own, beside a drawing, that the next word or picture doesn't fit in empty, and the
          * next too, until one it fits in, as Word leaves it however narrow the room is: "of", 183 twips wide, goes in a room
          * of 360, and not of 180 (`word-floats.docx` F13, F14). Whether Word puts the part of a word before a soft hyphen in
-         * it hasn't been seen
+         * it hasn't been seen. Whether it left a line, so the word starts the next
          */
-        const skipRooms = (needs: number, hyphenated: boolean): void => {
+        const skipRooms = (needs: number, hyphenated: boolean): boolean => {
+            let skipped = false;
             while (!line.started && roomOf(lines.length) !== undefined && line.position + needs > limitOf() + TOLERANCE) {
                 if (hyphenated) {
                     line = { ...line, unsupported: line.unsupported ?? "a word with a soft hyphen beside a drawing it doesn't fit beside" };
-                    return;
+                    return skipped;
                 }
                 line = wrap(line);
+                skipped = true;
             }
+            return skipped;
         };
 
-        /** Puts a word or picture on the line, or on the next, or breaks it across lines */
-        const placeWord = (token: Extract<Token, { readonly type: "word" | "box" }>): void => {
+        /**
+         * Puts a word or picture on the line, or on the next, or breaks it across lines. A word is kerned with the text
+         * before it on the line by `kern`, unless it starts the next line
+         */
+        const placeWord = (token: Extract<Token, { readonly type: "word" | "box" }>, kern = 0): void => {
             /** How wide the token is on the line, which on a grid that snaps to characters depends on the text before it */
             const widthOn = (state: LineState): number =>
                 token.type === "box"
@@ -1404,7 +1530,8 @@ export const layoutLines = (
             // points away (scripts/layout-probes/word-run-formatting.ts RF7n). A line has room for its box to end after its
             // last word, whether the box goes on to the next line or not: such a word 70 twips short of the end of the line
             // goes on to the next, and one 110 short stays (word-run-formatting2.ts RF11)
-            const leadOf = (state: LineState): number => (token.type === "word" ? roomBetween(state.border, firstBorder(token.pieces)) : 0);
+            const leadOf = (state: LineState, wrapped = false): number =>
+                (token.type === "word" ? roomBetween(state.border, firstBorder(token.pieces)) : 0) + (wrapped ? 0 : kern);
             const boxEnd = token.type === "word" ? (lastBorder(token.pieces)?.room ?? 0) : 0;
             const needs = leadOf(line) + tokenWidth + boxEnd;
             const hyphens = token.type === "word" ? (token.hyphens ?? []).filter(({ at }) => at > 0 && at < lengthOf(token.pieces)) : [];
@@ -1416,7 +1543,7 @@ export const layoutLines = (
                     unsupported: line.unsupported ?? "a soft hyphen, or a line beside a drawing, on a grid that snaps to characters",
                 };
             }
-            skipRooms(needs, hyphens.length > 0);
+            const skipped = skipRooms(needs, hyphens.length > 0);
             // A justified line Word can squeeze the word onto takes it whole, as it does a word without soft hyphens: at its
             // spaces 3% to 20% narrower (scripts/layout-probes/word-breaks-and-tabs.ts SH1a to SH1e)
             const squeezedIn = squeezes && line.started && squeezesIn(line, needs);
@@ -1436,7 +1563,7 @@ export const layoutLines = (
                 if (line.started && mayHyphenate(line, token, leadOf(line))) {
                     line = { ...line, unsupported: line.unsupported ?? MAY_HYPHENATE };
                 }
-                const rest = breakAtHyphen(token, hyphens);
+                const rest = breakAtHyphen(token, hyphens, kern);
                 if (rest !== undefined) {
                     placeWord(rest);
                     return;
@@ -1477,7 +1604,7 @@ export const layoutLines = (
                 skipRooms(needs, hyphens.length > 0);
                 tokenWidth = widthOn(line);
             }
-            line = { ...place(line), position: line.position + leadOf(line) };
+            line = { ...place(line), position: line.position + leadOf(line, skipped || (overflows && !squeezed)) };
             if (cell !== undefined && token.type === "word" && line.position + tokenWidth > endOf(line) + TOLERANCE) {
                 line = { ...line, unsupported: "a word longer than its line on a grid that snaps to characters" };
             }
@@ -1496,6 +1623,11 @@ export const layoutLines = (
                 // Word may hyphenate it instead
                 if (mayHyphenate(line, token, 0)) {
                     line = { ...line, unsupported: line.unsupported ?? MAY_HYPHENATE };
+                }
+                // Its characters are measured each on its own, which kerned letters, or those joined into ligatures, don't
+                // add up to, and where Word breaks such a word hasn't been seen
+                if (token.pieces.some(({ font }) => shaped(font))) {
+                    line = { ...line, unsupported: line.unsupported ?? "a word longer than its line, kerned or with ligatures" };
                 }
                 for (const character of charactersOf(token.pieces)) {
                     const characterWidth = widthOf(character, measurer);
@@ -1541,14 +1673,15 @@ export const layoutLines = (
          * Breaks a word at the last of its soft hyphens that leaves its part before it, and a hyphen in the soft hyphen's
          * font, on the line, as Word breaks it (scripts/layout-probes/word-watertight-text.ts TX10a: 12 lines, 8 of them
          * ending in a hyphen, each where docx/layout's widths of Calibri end them), and a word longer than its line again on
-         * each line (word-breaks-and-tabs.ts SH4). The rest of the word, which goes on to the next line, or undefined when no
-         * part of it fits
+         * each line (word-breaks-and-tabs.ts SH4), after the text before it on the line, which it is kerned with by `kern`.
+         * The rest of the word, which goes on to the next line, or undefined when no part of it fits
          */
         const breakAtHyphen = (
             word: Extract<Token, { readonly type: "word" }>,
             hyphens: readonly Hyphen[],
+            kern: number,
         ): Extract<Token, { readonly type: "word" }> | undefined => {
-            const lead = roomBetween(line.border, firstBorder(word.pieces));
+            const lead = roomBetween(line.border, firstBorder(word.pieces)) + kern;
             for (const hyphen of [...hyphens].reverse()) {
                 const [before, after] = splitPieces(word.pieces, hyphen.at);
                 const partEnd = line.position + lead + widthOf(before, measurer);
@@ -1597,7 +1730,7 @@ export const layoutLines = (
                 line = {
                     ...line,
                     ...(cell === undefined
-                        ? { position: line.position + roomBetween(line.border, firstBorder(token.pieces)) + spaces }
+                        ? { position: line.position + roomBetween(line.border, firstBorder(token.pieces)) + kerning[index] + spaces }
                         : snapped(line, token.pieces)),
                     text: line.text + textOf(token.pieces),
                     spaces: line.started ? line.spaces + spaces : 0,
@@ -1704,7 +1837,7 @@ export const layoutLines = (
                 };
                 continue;
             }
-            placeWord(token);
+            placeWord(token, kerning[index]);
         }
 
         if (!end) {

@@ -4,9 +4,10 @@
  *
  * @module
  */
-// cspell:ignore hhea hmtx cmap fsSelection ttcf OTTO GPOS DFLT Aptos
+// cspell:ignore hhea hmtx cmap fsSelection ttcf OTTO GPOS DFLT Aptos clig dlig GSUB hlig liga
+import { hasLigatures } from "./kerning";
 import { DEFAULT_MEASURER, type TextMeasurer } from "./line-breaking";
-import { DEFAULT_FONT, DEFAULT_FONT_SIZE, type TextFont, isKerned, takesNoRoom } from "./text-width";
+import { DEFAULT_FONT, DEFAULT_FONT_SIZE, type Ligatures, type TextFont, isKerned, takesNoRoom } from "./text-width";
 
 /**
  * A font file's bytes: a TrueType or OpenType font (`.ttf` or `.otf`), or a collection of them (`.ttc`).
@@ -33,6 +34,24 @@ export type FontFace = {
     readonly advanceOf: (code: number) => number | undefined;
     /** How much closer, or further apart, kerning puts two characters, in ems. Negative when it brings them together */
     readonly kerningOf: (left: number, right: number) => number;
+    /** The glyph of a character, or 0 when the font has none */
+    readonly glyphOf: (code: number) => number;
+    /** How wide a glyph is, in ems */
+    readonly advanceOfGlyph: (glyph: number) => number;
+    /** How much closer, or further apart, kerning puts two glyphs, in ems */
+    readonly kerningOfGlyphs: (left: number, right: number) => number;
+    /**
+     * The glyphs the font's ligatures of a setting put in place of glyphs, and whether a substitution the setting has that
+     * isn't a ligature, such as a contextual one, could change them
+     */
+    readonly join: (glyphs: readonly number[], ligatures: Ligatures) => JoinedGlyphs;
+};
+
+/** Glyphs, after a font's ligatures have joined them */
+export type JoinedGlyphs = {
+    readonly glyphs: readonly number[];
+    /** Whether a substitution not yet followed could change them */
+    readonly unknown: boolean;
 };
 
 type Tables = ReadonlyMap<string, number>;
@@ -299,6 +318,55 @@ const readPairSubtable = (view: DataView, offset: number): ((left: number, right
 };
 
 /**
+ * The lookups of a GPOS or GSUB table's features with these tags, for Latin text: those of the script for Latin text, or
+ * the default one, or the first, and of its features for any language, or for the first language it has. In the order
+ * of the table's lookups, as they are applied.
+ */
+const lookupsOfFeatures = (view: DataView, table: number, tags: readonly string[]): readonly number[] => {
+    const tagAt = (offset: number): string => tagOf(view, offset);
+    const scriptList = table + view.getUint16(table + 4);
+    const scripts = Array.from({ length: view.getUint16(scriptList) }, (_, index) => scriptList + 2 + index * 6);
+    const script = ["latn", "DFLT"].map((tag) => scripts.find((record) => tagAt(record) === tag)).find(Boolean) ?? scripts[0];
+    if (script === undefined) {
+        return [];
+    }
+    const scriptTable = scriptList + view.getUint16(script + 4);
+    const languages = scriptTable + (view.getUint16(scriptTable) || view.getUint16(scriptTable + 8));
+    const featureList = table + view.getUint16(table + 6);
+    return [
+        ...new Set(
+            Array.from({ length: view.getUint16(languages + 4) }, (_, index) => view.getUint16(languages + 6 + index * 2))
+                .map((feature) => featureList + 2 + feature * 6)
+                .filter((record) => tags.includes(tagAt(record)))
+                .flatMap((record) => {
+                    const feature = featureList + view.getUint16(record + 4);
+                    return Array.from({ length: view.getUint16(feature + 2) }, (_, index) => view.getUint16(feature + 4 + index * 2));
+                }),
+        ),
+    ].sort((one, other) => one - other);
+};
+
+/**
+ * Each subtable of a lookup of a GPOS or GSUB table, with its kind, through the extensions (kind 9 in GPOS, 7 in GSUB)
+ * that point to subtables further on.
+ */
+const subtablesOf = (
+    view: DataView,
+    table: number,
+    index: number,
+    extension: number,
+): readonly { readonly type: number; readonly offset: number }[] => {
+    const lookupList = table + view.getUint16(table + 8);
+    const lookup = lookupList + view.getUint16(lookupList + 2 + index * 2);
+    return Array.from({ length: view.getUint16(lookup + 4) }, (_, subtable) => lookup + view.getUint16(lookup + 6 + subtable * 2)).map(
+        (subtable) =>
+            view.getUint16(lookup) === extension
+                ? { type: view.getUint16(subtable + 2), offset: subtable + view.getUint32(subtable + 4) }
+                : { type: view.getUint16(lookup), offset: subtable },
+    );
+};
+
+/**
  * The kerning of pairs of glyphs in the font's GPOS table, in font units: the pair adjustments of its `kern` feature for
  * Latin text, as Word kerns with them (word-fonts.docx F2). Undefined when the font has none.
  */
@@ -307,48 +375,19 @@ const readGlyphPositioning = (view: DataView, tables: Tables): Kerning | undefin
     if (table === undefined) {
         return undefined;
     }
-    const tagAt = (offset: number): string => tagOf(view, offset);
-    // The script for Latin text, or the default one, or the first
-    const scriptList = table + view.getUint16(table + 4);
-    const scripts = Array.from({ length: view.getUint16(scriptList) }, (_, index) => scriptList + 2 + index * 6);
-    const script = ["latn", "DFLT"].map((tag) => scripts.find((record) => tagAt(record) === tag)).find(Boolean) ?? scripts[0];
-    if (script === undefined) {
-        return undefined;
-    }
-    // Its features for any language, or for the first language it has
-    const scriptTable = scriptList + view.getUint16(script + 4);
-    const languages = scriptTable + (view.getUint16(scriptTable) || view.getUint16(scriptTable + 8));
-    const featureList = table + view.getUint16(table + 6);
-    const lookups = [
-        ...new Set(
-            Array.from({ length: view.getUint16(languages + 4) }, (_, index) => view.getUint16(languages + 6 + index * 2))
-                .map((feature) => featureList + 2 + feature * 6)
-                .filter((record) => tagAt(record) === "kern")
-                .flatMap((record) => {
-                    const feature = featureList + view.getUint16(record + 4);
-                    return Array.from({ length: view.getUint16(feature + 2) }, (_, index) => view.getUint16(feature + 4 + index * 2));
-                }),
-        ),
-    ].sort((one, other) => one - other);
+    const lookups = lookupsOfFeatures(view, table, ["kern"]);
     if (lookups.length === 0) {
         return undefined;
     }
-    // Each lookup's subtables of pair adjustments, through the extensions that point to subtables further on
-    const lookupList = table + view.getUint16(table + 8);
-    const subtablesOf = lookups.map((index) => {
-        const lookup = lookupList + view.getUint16(lookupList + 2 + index * 2);
-        return Array.from({ length: view.getUint16(lookup + 4) }, (_, subtable) => lookup + view.getUint16(lookup + 6 + subtable * 2))
-            .map((subtable) =>
-                view.getUint16(lookup) === 9
-                    ? { type: view.getUint16(subtable + 2), offset: subtable + view.getUint32(subtable + 4) }
-                    : { type: view.getUint16(lookup), offset: subtable },
-            )
+    // Each lookup's subtables of pair adjustments
+    const pairSubtables = lookups.map((index) =>
+        subtablesOf(view, table, index, 9)
             .filter(({ type }) => type === 2)
-            .map(({ offset }) => readPairSubtable(view, offset));
-    });
+            .map(({ offset }) => readPairSubtable(view, offset)),
+    );
     // Each lookup kerns a pair with the first of its subtables that covers it, and the lookups' kerning adds up
     return (left, right) =>
-        subtablesOf.reduce((total, subtables) => {
+        pairSubtables.reduce((total, subtables) => {
             for (const subtable of subtables) {
                 const kerning = subtable(left, right);
                 if (kerning !== undefined) {
@@ -358,6 +397,135 @@ const readGlyphPositioning = (view: DataView, tables: Tables): Kerning | undefin
             return total;
         }, 0);
 };
+
+/** A ligature: the glyphs after its first that it joins, and the glyph it puts in place of them all */
+type Ligature = { readonly components: readonly number[]; readonly glyph: number };
+
+/**
+ * A lookup of the GSUB table: the ligatures of a ligature substitution (kind 4), by their first glyph, in the order they
+ * are tried, or the glyphs a substitution of another kind starts at, which isn't followed
+ */
+type SubstitutionLookup = { readonly ligatures: ReadonlyMap<number, readonly Ligature[]> } | { readonly starts: ReadonlySet<number> };
+
+// The OpenType features of each kind of ligature Word's ligature settings name
+const LIGATURE_FEATURES: Readonly<Record<string, string>> = {
+    standard: "liga",
+    contextual: "clig",
+    historical: "hlig",
+    discretional: "dlig",
+};
+
+/** The features of a ligature setting, such as "liga" and "clig" for "standardContextual" */
+const featuresOf = (ligatures: Ligatures): readonly string[] =>
+    Object.entries(LIGATURE_FEATURES)
+        .filter(([kind]) => ligatures === "all" || ligatures.toLowerCase().includes(kind))
+        .map(([, feature]) => feature);
+
+/** Reads a ligature substitution subtable (kind 4): the ligatures of each glyph it covers, in the order they are tried */
+const readLigatureSubtable = (view: DataView, offset: number): ReadonlyMap<number, readonly Ligature[]> =>
+    new Map(
+        [...readCoverage(view, offset + view.getUint16(offset + 2))].map(([glyph, index]) => {
+            const set = offset + view.getUint16(offset + 6 + index * 2);
+            const ligatures = Array.from({ length: view.getUint16(set) }, (_, ligature): Ligature => {
+                const at = set + view.getUint16(set + 2 + ligature * 2);
+                return {
+                    glyph: view.getUint16(at),
+                    components: Array.from({ length: view.getUint16(at + 2) - 1 }, (__, component) =>
+                        view.getUint16(at + 4 + component * 2),
+                    ),
+                };
+            });
+            return [glyph, ligatures] as const;
+        }),
+    );
+
+/**
+ * The glyphs a substitution of a kind that isn't followed starts at: those of its coverage, or, for a contextual one of
+ * format 3, of its first input glyph's coverage.
+ */
+const startsOf = (view: DataView, type: number, offset: number): readonly number[] => {
+    const format = view.getUint16(offset);
+    const backtrack = type === 6 && format === 3 ? view.getUint16(offset + 2) : 0;
+    const coverage = format === 3 && (type === 5 || type === 6) ? view.getUint16(offset + 6 + backtrack * 2) : view.getUint16(offset + 2);
+    return [...readCoverage(view, offset + coverage).keys()];
+};
+
+/**
+ * Reads a lookup of the GSUB table: its ligatures, the first subtable's first, as each glyph's are tried in the order of
+ * the subtables, or, when it has substitutions of other kinds, the glyphs they start at.
+ */
+const readSubstitutionLookup = (view: DataView, table: number, index: number): SubstitutionLookup => {
+    const subtables = subtablesOf(view, table, index, 7);
+    const starts = subtables.filter(({ type }) => type !== 4).flatMap(({ type, offset }) => startsOf(view, type, offset));
+    if (starts.length > 0) {
+        return { starts: new Set(starts) };
+    }
+    const maps = subtables.map(({ offset }) => readLigatureSubtable(view, offset));
+    const glyphs = [...new Set(maps.flatMap((map) => [...map.keys()]))];
+    return { ligatures: new Map(glyphs.map((glyph) => [glyph, maps.flatMap((map) => map.get(glyph) ?? [])])) };
+};
+
+/**
+ * The lookups of the font's GSUB table for each ligature setting, which put ligatures in place of glyphs: the lookups of
+ * its features for each kind of ligature, for Latin text, in the order of the table's lookups. They are read with the
+ * rest of the font, as there are few, so a damaged table throws then rather than when text is laid out. Undefined when
+ * the font has no GSUB table.
+ */
+const readGlyphSubstitution = (view: DataView, tables: Tables): ((ligatures: Ligatures) => readonly SubstitutionLookup[]) | undefined => {
+    const table = tables.get("GSUB");
+    if (table === undefined) {
+        return undefined;
+    }
+    const byFeature = new Map(Object.values(LIGATURE_FEATURES).map((feature) => [feature, lookupsOfFeatures(view, table, [feature])]));
+    const lookups = new Map(
+        [...new Set([...byFeature.values()].flat())].map((index) => [index, readSubstitutionLookup(view, table, index)]),
+    );
+    const bySetting = new Map<Ligatures, readonly SubstitutionLookup[]>();
+    return (ligatures) => {
+        if (!bySetting.has(ligatures)) {
+            const indexes = [...new Set(featuresOf(ligatures).flatMap((feature) => byFeature.get(feature)!))].sort(
+                (one, other) => one - other,
+            );
+            // eslint-disable-next-line functional/immutable-data
+            bySetting.set(
+                ligatures,
+                indexes.map((index) => lookups.get(index)!),
+            );
+        }
+        return bySetting.get(ligatures)!;
+    };
+};
+
+/** The ligature of a lookup at a glyph: the first of the glyph's ligatures whose other glyphs follow it */
+const ligatureAt = (glyphs: readonly number[], at: number, ligatures: ReadonlyMap<number, readonly Ligature[]>): Ligature | undefined =>
+    ligatures.get(glyphs[at])?.find(({ components }) => components.every((glyph, index) => glyphs[at + 1 + index] === glyph));
+
+/** Joins glyphs with the ligatures of a lookup: at each glyph, its ligature, and the next glyph after the ligature's */
+const joinWith = (glyphs: readonly number[], ligatures: ReadonlyMap<number, readonly Ligature[]>): readonly number[] => {
+    // eslint-disable-next-line functional/prefer-readonly-type
+    const joined: number[] = [];
+    let at = 0;
+    while (at < glyphs.length) {
+        const ligature = ligatureAt(glyphs, at, ligatures);
+        // eslint-disable-next-line functional/immutable-data
+        joined.push(ligature?.glyph ?? glyphs[at]);
+        at += ligature === undefined ? 1 : ligature.components.length + 1;
+    }
+    return joined;
+};
+
+/**
+ * Joins glyphs with the ligatures of a setting's lookups, in their order, and says whether a substitution of another kind
+ * could change them.
+ */
+const joinGlyphs = (glyphs: readonly number[], lookups: readonly SubstitutionLookup[]): JoinedGlyphs =>
+    lookups.reduce<JoinedGlyphs>(
+        (joined, lookup) =>
+            "starts" in lookup
+                ? { ...joined, unknown: joined.unknown || joined.glyphs.some((glyph) => lookup.starts.has(glyph)) }
+                : { ...joined, glyphs: joinWith(joined.glyphs, lookup.ligatures) },
+        { glyphs, unknown: false },
+    );
 
 /**
  * Reads a face of a font file, whose table directory is at `offset`.
@@ -401,10 +569,19 @@ const readFace = (view: DataView, offset: number): FontFace => {
     // Word kerns with the GPOS table, and with the kern table of fonts without one (word-fonts.docx F1 and F2). It is read
     // with the rest, in a few milliseconds, so a damaged table throws here rather than when text is laid out
     const kerning = readGlyphPositioning(view, tables) ?? readKernTable(view, tables);
+    // Word joins letters with the ligatures of the GSUB table, as a ligature setting asks (word-kerning.docx A)
+    const substitution = readGlyphSubstitution(view, tables);
     const pairs = new Map<number, number>();
     const advances = new Map<number, number | undefined>();
     const glyphs = new Map<number, number>();
     const advanceOfGlyph = (glyph: number): number => view.getUint16(hmtx + Math.min(glyph, metricCount - 1) * 4) / unitsPerEm;
+    const kerningOfGlyphs = (left: number, right: number): number => {
+        const key = left * 0x10000 + right;
+        const value = pairs.get(key) ?? kerning(left, right) / unitsPerEm;
+        // eslint-disable-next-line functional/immutable-data
+        pairs.set(key, value);
+        return value;
+    };
     const cachedGlyph = (code: number): number => {
         const glyph = glyphs.get(code) ?? glyphOf(code);
         // eslint-disable-next-line functional/immutable-data
@@ -429,13 +606,11 @@ const readFace = (view: DataView, offset: number): FontFace => {
             advances.set(code, advance);
             return advance;
         },
-        kerningOf: (left, right) => {
-            const key = cachedGlyph(left) * 0x10000 + cachedGlyph(right);
-            const value = pairs.get(key) ?? kerning(cachedGlyph(left), cachedGlyph(right)) / unitsPerEm;
-            // eslint-disable-next-line functional/immutable-data
-            pairs.set(key, value);
-            return value;
-        },
+        kerningOf: (left, right) => kerningOfGlyphs(cachedGlyph(left), cachedGlyph(right)),
+        glyphOf: cachedGlyph,
+        advanceOfGlyph,
+        kerningOfGlyphs,
+        join: (sequence, ligatures) => joinGlyphs(sequence, substitution?.(ligatures) ?? []),
     };
 };
 
@@ -498,25 +673,39 @@ export const createFontFileMeasurer = (faces: readonly FontFace[], fallback: Tex
         }
         return chosen.get(key);
     };
-    /** How wide text with no tabs is in a face, in points */
+    /**
+     * How wide text with no tabs is in a face, in points: its glyphs, joined by the ligatures it has and kerned when it is
+     * kerned. A character the face has no glyph for is measured apart, by `fallback`, and parts the glyphs either side
+     */
     const widthIn = (face: FontFace, text: string, font: TextFont): number => {
         const { size = DEFAULT_FONT_SIZE, characterSpacing = 0, scale = 100 } = font;
-        const kerns = isKerned(font);
         const em = (size * scale) / 100;
-        const characters = [...text];
-        return characters.reduce((width, character, index) => {
-            const advance = face.advanceOf(character.codePointAt(0)!);
-            if (advance === undefined) {
-                // The layout stops at a character the font has no glyph for, unless it takes no room
-                return takesNoRoom(character) ? width : width + fallback.measureWidth(character, font);
+        let width = 0;
+        // eslint-disable-next-line functional/prefer-readonly-type
+        let run: number[] = [];
+        const measureRun = (): void => {
+            const { glyphs } = hasLigatures(font) ? face.join(run, font.ligatures!) : { glyphs: run };
+            for (const [index, glyph] of glyphs.entries()) {
+                const next = glyphs[index + 1];
+                const kern = isKerned(font) && next !== undefined ? face.kerningOfGlyphs(glyph, next) : 0;
+                width += (face.advanceOfGlyph(glyph) + kern) * em;
             }
-            const before = characters[index - 1]?.codePointAt(0);
-            const kern =
-                kerns && before !== undefined && face.advanceOf(before) !== undefined
-                    ? face.kerningOf(before, character.codePointAt(0)!)
-                    : 0;
-            return width + (advance + kern) * em + characterSpacing;
-        }, 0);
+            width += characterSpacing * run.length;
+            run = [];
+        };
+        for (const character of text) {
+            const glyph = face.glyphOf(character.codePointAt(0)!);
+            if (glyph !== 0) {
+                // eslint-disable-next-line functional/immutable-data
+                run.push(glyph);
+                continue;
+            }
+            measureRun();
+            // The layout stops at a character the font has no glyph for, unless it takes no room
+            width += takesNoRoom(character) ? 0 : fallback.measureWidth(character, font);
+        }
+        measureRun();
+        return width;
     };
     return {
         measureWidth: (text, font) => {
@@ -553,5 +742,33 @@ export const createFontFileMeasurer = (faces: readonly FontFace[], fallback: Tex
                 : fallback.unknownCharacter?.(text, font);
         },
         unknownFont: (font, text) => faceOf(font) === undefined && fallback.unknownFont?.(font, text) === true,
+        // Word kerns with the font's own pairs (word-fonts.docx F1 and F2), and joins letters with its ligatures, but for
+        // substitutions other than ligatures, such as contextual ones, which aren't followed yet
+        unknownShaping: (text, font) => {
+            const face = faceOf(font);
+            if (face === undefined) {
+                return fallback.unknownShaping?.(text, font);
+            }
+            if (!hasLigatures(font)) {
+                return undefined;
+            }
+            // The glyphs as they are joined when they are measured: apart either side of a tab, or of a character the face
+            // has no glyph for
+            // eslint-disable-next-line functional/prefer-readonly-type
+            const runs: number[][] = [[]];
+            for (const character of text) {
+                const glyph = character === "\t" ? 0 : face.glyphOf(character.codePointAt(0)!);
+                if (glyph === 0) {
+                    // eslint-disable-next-line functional/immutable-data
+                    runs.push([]);
+                } else {
+                    // eslint-disable-next-line functional/immutable-data
+                    runs[runs.length - 1].push(glyph);
+                }
+            }
+            return runs.some((run) => face.join(run, font.ligatures!).unknown)
+                ? "ligatures of a font file of a kind not yet followed"
+                : undefined;
+        },
     };
 };

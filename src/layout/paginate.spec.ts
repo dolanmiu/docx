@@ -1,7 +1,7 @@
 // cspell:ignore Aptos
 import { describe, expect, it } from "vitest";
 
-import { type ParagraphFormat, SIMILAR_FONT_MEASURER, type TextMeasurer } from "../text-layout";
+import { type ParagraphFormat, SIMILAR_FONT_MEASURER, type TextFont, type TextMeasurer } from "../text-layout";
 import type { BlockLayout, PageLayout } from "./layout-document";
 import type { FieldFormat } from "./number-format";
 import { type Pagination, paginate } from "./paginate";
@@ -696,6 +696,83 @@ describe("paginate", () => {
         it("should stop at a character whose width the measurer doesn't know in a table sized to its text", () => {
             const fitted: TableBlock = { ...table([row([[withText("cell", "Ж")]])]), fit: {} };
             expect(paginate(document([paragraph("a", 1), fitted]), { measurer: CHOOSY }).stoppedAt).to.equal(STOP);
+        });
+
+        it("should stop at kerning and ligatures the measurer doesn't know, with its reason", () => {
+            // Knows how text is kerned but where it has a Ж
+            const kerning: TextMeasurer = {
+                ...MEASURER,
+                unknownShaping: (text) => (text.includes("Ж") ? "kerned text with a Ж" : undefined),
+            };
+            expect(numbersOf(document([paragraph("a", 1), withText("b", "abc"), withText("c", "abcЖ")]), kerning).stoppedAt).to.equal(
+                "kerned text with a Ж",
+            );
+            // Measuring with the width tables, which don't have Carlito's own kerning, though it is as wide as Calibri
+            const kerned = (font: string): DocumentContent =>
+                document([withText("a", "To", { font, size: 11, kerning: 1 }), paragraph("b", 1)]);
+            expect(paginate(kerned("Carlito")).stoppedAt).to.equal("kerned text in a font whose kerning isn't known");
+        });
+
+        it("should stop at kerning and ligatures the measurer doesn't know across runs, which are measured together", () => {
+            // Cambria Bold's kerning before a hyphen, where Word moves it, which isn't known, in runs of their own
+            const cambria = { font: "Cambria", bold: true, size: 11, kerning: 1 };
+            const split = (between: readonly LayoutItem[], after: TextFont = cambria): DocumentContent =>
+                document([
+                    withItems(paragraph("a", 1), [
+                        { type: "text", text: " AT", font: cambria },
+                        ...between,
+                        { type: "text", text: "-B", font: after },
+                    ]),
+                    paragraph("b", 1),
+                ]);
+            const UNKNOWN = "kerning of a pair of characters not yet followed";
+            expect(paginate(split([])).stoppedAt).to.equal(UNKNOWN);
+            // With a bookmark between them, which they are measured across
+            expect(paginate(split([{ type: "marker", name: "m" }])).stoppedAt).to.equal(UNKNOWN);
+            // But not in another font, or with a tab between them, as they are measured apart
+            expect(paginate(split([], { ...cambria, italic: true })).stoppedAt).to.equal(undefined);
+            expect(paginate(split([{ type: "tab", font: cambria }])).stoppedAt).to.equal(undefined);
+            // Calibri's ligatures beside a Greek letter, which aren't known, in runs of their own
+            const calibri = { font: "Calibri", size: 11, ligatures: "standardContextual" } as const;
+            const greek = withItems(paragraph("a", 1), [
+                { type: "text", text: " of", font: calibri },
+                { type: "text", text: "\u03a9", font: calibri },
+            ]);
+            expect(paginate(document([greek, paragraph("b", 1)])).stoppedAt).to.equal("ligatures beside a character not yet followed");
+        });
+
+        it("should stop at text kerned or with ligatures beside a soft hyphen, which Word hasn't been seen with", () => {
+            const hyphenated = (
+                font: TextFont,
+                before: readonly LayoutItem[] = [{ type: "text", text: " ef", font }],
+                { hyphen = font, after = font }: { readonly hyphen?: TextFont; readonly after?: TextFont } = {},
+            ): DocumentContent =>
+                document([
+                    withItems(paragraph("a", 1), [
+                        ...before,
+                        { type: "softHyphen", font: hyphen },
+                        { type: "text", text: "fort", font: after },
+                    ]),
+                    paragraph("b", 1),
+                ]);
+            const BESIDE = "kerning or ligatures beside a soft hyphen";
+            expect(paginate(hyphenated({ font: "Calibri", size: 11, kerning: 1 })).stoppedAt).to.equal(BESIDE);
+            expect(paginate(hyphenated({ font: "Calibri", size: 11, ligatures: "standardContextual" })).stoppedAt).to.equal(BESIDE);
+            // Text neither kerned nor with ligatures, or with nothing before the soft hyphen to kern or join with, is laid out
+            expect(paginate(hyphenated({ font: "Calibri", size: 11 })).stoppedAt).to.equal(undefined);
+            const kerned = { font: "Calibri", size: 11, kerning: 1 };
+            expect(paginate(hyphenated(kerned, [{ type: "tab", font: kerned }])).stoppedAt).to.equal(undefined);
+            // The hyphen at the end of a line in the font of the kerned text before it, which it may be kerned with, though
+            // the text after it is in another font, but not one in another font
+            const plain = { font: "Calibri", size: 11 };
+            expect(paginate(hyphenated(kerned, undefined, { after: plain })).stoppedAt).to.equal(BESIDE);
+            expect(paginate(hyphenated(kerned, undefined, { hyphen: plain, after: plain })).stoppedAt).to.equal(undefined);
+            // Nor after empty text, such as a field's result not yet worked out, with no letter to kern the hyphen with
+            const empty: readonly LayoutItem[] = [
+                { type: "tab", font: kerned },
+                { type: "text", text: "", font: kerned },
+            ];
+            expect(paginate(hyphenated(kerned, empty, { after: plain })).stoppedAt).to.equal(undefined);
         });
 
         it("should stop at a character Word draws in another font, measuring with the width tables", () => {
@@ -5899,6 +5976,16 @@ describe("paginate with automatic hyphenation", () => {
                 guesses: [["a character whose width in its font isn't known"]],
                 bookmarks: { a: "1", b: "1" },
             });
+        });
+
+        it("should measure text whose kerning or ligatures the measurer doesn't know as it measures it", () => {
+            const SHAPING: TextMeasurer = {
+                ...MEASURER,
+                unknownShaping: (value) => (value.includes("Ж") ? "kerned text with a Ж" : undefined),
+            };
+            const content = document([withItems(paragraph("a", 1), [{ type: "text", text: " Ж", font: {} }]), paragraph("b", 1)]);
+            expect(numbersOf(content, SHAPING).stoppedAt).to.equal("kerned text with a Ж");
+            expect(guessed(content, SHAPING)).to.deep.equal({ guesses: [["kerned text with a Ж"]], bookmarks: { a: "1", b: "1" } });
         });
 
         it("should lay out the document, a section and a header as they were read, noting the guess on the page each is on", () => {
