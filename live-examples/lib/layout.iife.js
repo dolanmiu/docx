@@ -2082,9 +2082,18 @@ var docxLayout = (function(exports) {
 	var sum$1 = (values) => values.reduce((total, value) => total + value, 0);
 	/** The largest of the values and the least given, without spreading them into `Math.max`, which takes too few for a long table */
 	var largest = (values, least = 0) => values.reduce((most, value) => Math.max(most, value), least);
-	/** How narrow and how wide the content of each cell of a table can be, with the cell's margins */
-	var measureCells = (table, measure) => new Map(table.rows.flatMap(({ cells }) => cells.map((cell) => {
-		const text = measure(cell.blocks);
+	/**
+	* The rows Word sizes a table's columns by: those it lays out, and those deleted in a tracked change, which it counts
+	* though they take no room (`word-tracked-changes.docx` MK11h, MK11i)
+	*/
+	var sizingRows = ({ rows, deletedRows = [] }) => [...rows, ...deletedRows];
+	/**
+	* How narrow and how wide the content of each cell of a table can be, with the cell's margins, as Word sizes the columns
+	* by it: with its deleted text in (MK11j)
+	*/
+	var measureCells = (table, measure) => new Map(sizingRows(table).flatMap(({ cells }) => cells.map((cell) => {
+		var _cell$sizing;
+		const text = measure((_cell$sizing = cell.sizing) !== null && _cell$sizing !== void 0 ? _cell$sizing : cell.blocks);
 		const margins = cell.marginLeft + cell.marginRight;
 		return [cell, {
 			min: text.min + margins,
@@ -2100,7 +2109,7 @@ var docxLayout = (function(exports) {
 	* are all 0 wide share it equally, which Word's probes didn't show.
 	*/
 	var sizeColumns = (table, content) => {
-		const cells = table.rows.flatMap((row) => row.cells);
+		const cells = sizingRows(table).flatMap((row) => row.cells);
 		const spanOf = (cell) => {
 			var _cell$span;
 			return (_cell$span = cell.span) !== null && _cell$span !== void 0 ? _cell$span : 1;
@@ -2170,11 +2179,11 @@ var docxLayout = (function(exports) {
 		var _tableWidth$width;
 		const { fit, widen, rows, indent = 0 } = table;
 		if (!fit && !widen) return table;
-		if (fit && rows.some(({ cells }) => cells.some(({ vertical }) => vertical))) return _objectSpread2(_objectSpread2({}, table), {}, { unsupported: "text that runs up or down a cell of a table sized to its text" });
+		if (fit && sizingRows(table).some(({ cells }) => cells.some(({ vertical }) => vertical))) return _objectSpread2(_objectSpread2({}, table), {}, { unsupported: "text that runs up or down a cell of a table sized to its text" });
 		const content = measureCells(table, measure);
 		const spaced = table.cellSpacing !== void 0;
 		if (widen) {
-			const tooLong = rows.flatMap(({ cells }) => cells.filter((cell) => content.get(cell).min > cell.ownWidth));
+			const tooLong = sizingRows(table).flatMap(({ cells }) => cells.filter((cell) => content.get(cell).min > cell.ownWidth));
 			if (tooLong.length === 0 && !spaced) return table;
 			if (tooLong.length > 0 && widen.acrossColumns) return _objectSpread2(_objectSpread2({}, table), {}, { unsupported: "a word longer than its cell in a table with cells merged across columns" });
 			if (tooLong.length > 0 && spaced) return _objectSpread2(_objectSpread2({}, table), {}, { unsupported: "a long word in a table with space between its cells" });
@@ -2212,7 +2221,8 @@ var docxLayout = (function(exports) {
 	*/
 	var tableWidths = (table, measure) => {
 		var _fit$width;
-		const { fit, rows, borderLeft = 0, borderRight = 0 } = table;
+		const { fit, borderLeft = 0, borderRight = 0 } = table;
+		const rows = sizingRows(table);
 		const borders = (borderLeft + borderRight) / 2;
 		if (fit !== void 0 && fit.width === void 0) {
 			const { columns } = sizeColumns(table, measureCells(table, measure));
@@ -4989,6 +4999,11 @@ var docxLayout = (function(exports) {
 		"margins",
 		"gridWidth"
 	];
+	var _excluded3 = [
+		"borders",
+		"margins",
+		"gridWidth"
+	];
 	var DEFAULT_SECTION = {
 		pageWidth: 612,
 		pageHeight: 792,
@@ -5025,6 +5040,20 @@ var docxLayout = (function(exports) {
 		"mergeformatinet"
 	]);
 	var BOUND_CONTROL = "a content control filled from custom XML";
+	var REMOVED_ROOM = /* @__PURE__ */ new Set([
+		"w:tab",
+		"w:ptab",
+		"w:br",
+		"w:cr",
+		"w:drawing",
+		"mc:AlternateContent",
+		"w:pict",
+		"w:object"
+	]);
+	var REMOVED_NOTES = /* @__PURE__ */ new Set(["w:footnoteReference", "w:endnoteReference"]);
+	var SIZED_REMOVAL = "a deleted picture, tab, break or note reference in a table whose columns Word sizes to their text";
+	var PARTLY_DELETED_FIELD = "a field partly deleted in a tracked change";
+	var OWN_NOTE_MARK = "a footnote or endnote with a mark of its own";
 	var nameOf = (element) => Object.keys(element)[0];
 	/** The content of an element, including its text. An element without content has its attributes, or nothing */
 	var contentOf$2 = (element) => {
@@ -5033,6 +5062,8 @@ var docxLayout = (function(exports) {
 	};
 	/** Whether an attribute that is on or off, such as `w:combine`, is on: it is off when it isn't given */
 	var isOn = (value) => value !== void 0 && !isOff(value);
+	/** Whether a note's reference has a mark of its own in place of its number (`w:customMarkFollows`) */
+	var hasOwnMark = (reference) => isOn(attributesOf(reference[nameOf(reference)])["w:customMarkFollows"]);
 	/** Whether a content control (`w:sdt`) is bound to custom XML (`w:dataBinding`), which Word fills it in from */
 	var isBound = (control) => find(childrenOf(find(childrenOf(control["w:sdt"]), "w:sdtPr")), "w:dataBinding") !== void 0;
 	/**
@@ -5046,6 +5077,14 @@ var docxLayout = (function(exports) {
 	});
 	/** The name of the bookmark a bookmark's start (`w:bookmarkStart`) starts */
 	var bookmarkOf = (element) => stringOf(attributesOf(element["w:bookmarkStart"])["w:name"]);
+	/** A bookmark's start (`w:bookmarkStart`), as a marker where it starts */
+	var markerOf = (element) => {
+		const bookmark = bookmarkOf(element);
+		return bookmark === void 0 ? [] : [{
+			type: "marker",
+			name: bookmark
+		}];
+	};
 	/** The names of the bookmarks that start among elements, in order */
 	var bookmarksIn = (elements) => elements.flatMap((element) => {
 		const bookmark = "w:bookmarkStart" in element ? bookmarkOf(element) : void 0;
@@ -5135,18 +5174,19 @@ var docxLayout = (function(exports) {
 	/**
 	* Reads a field character (`w:fldChar`). The result of a field that depends on the pages is worked out, rather than read.
 	*/
-	var readFieldCharacter = (element, font, reader) => {
+	var readFieldCharacter = (element, font, reader, deleted = false) => {
 		const type = attributesOf(element["w:fldChar"])["w:fldCharType"];
 		const { fields } = reader;
 		const field = fields[fields.length - 1];
-		if (type === "begin") fields.push({
+		if (type === "begin") fields.push(_objectSpread2({
 			instruction: "",
 			inResult: false,
 			replaced: false
-		});
+		}, deleted ? { deleted } : {}));
+		else if ((type === "separate" || type === "end") && field !== void 0 && field.deleted === true !== deleted) return PARTLY_DELETED_FIELD;
 		else if (type === "end") fields.pop();
 		else if (type === "separate" && field) {
-			const result = workedOutResultOf(field.instruction, font);
+			const result = deleted ? void 0 : workedOutResultOf(field.instruction, font);
 			field.inResult = true;
 			if (result !== void 0 && isShown(reader)) {
 				field.replaced = true;
@@ -5166,9 +5206,10 @@ var docxLayout = (function(exports) {
 		return isOn(across) ? "text across in vertical text" : void 0;
 	};
 	/**
-	* Reads a run (`w:r`) in the paragraph's formatting, as its character style and its own formatting change it.
+	* Reads a run (`w:r`) in the paragraph's formatting, as its character style and its own formatting change it, and when it
+	* is deleted (`removed`), as Word sizes a table's columns by it.
 	*/
-	var readRun = (element, paragraphRun, reader) => {
+	var readRun = (element, paragraphRun, reader, removed = false) => {
 		var _valueOf, _unsupportedFormatOf;
 		const { styles } = reader;
 		const children = contentOf$2(element).filter(isObject);
@@ -5184,14 +5225,17 @@ var docxLayout = (function(exports) {
 			const name = nameOf(child);
 			if (name === "w:fldChar") return readFieldCharacter(child, font, reader);
 			const field = reader.fields[reader.fields.length - 1];
-			if (name === "w:instrText") {
+			if (name === "w:instrText" || name === "w:delInstrText") {
 				if (field && !field.inResult) field.instruction += contentOf$2(child).filter((part) => typeof part === "string").join("");
 				return [];
 			}
 			if (!isShown(reader) || name === "w:rPr") return [];
+			if (reader.fields.some((open) => open.deleted === true)) return PARTLY_DELETED_FIELD;
+			if (removed && (REMOVED_ROOM.has(name) || REMOVED_NOTES.has(name))) return SIZED_REMOVAL;
 			if (unsupportedFormat !== void 0) return unsupportedFormat;
 			switch (name) {
-				case "w:t": {
+				case "w:t":
+				case "w:delText": {
 					const content = contentOf$2(child).filter((part) => typeof part === "string").join("");
 					if (font.border && !format.hidden && content.includes("	")) return "a tab in text with a border";
 					return content.split("	").flatMap((part, index) => [...index > 0 && !format.hidden ? [{
@@ -5241,7 +5285,7 @@ var docxLayout = (function(exports) {
 				case "w:footnoteReference":
 				case "w:endnoteReference": {
 					var _reader$notes;
-					if (isOn(attributesOf(child[name])["w:customMarkFollows"])) return "a footnote or endnote with a mark of its own";
+					if (hasOwnMark(child)) return OWN_NOTE_MARK;
 					const note = (_reader$notes = reader.notes) === null || _reader$notes === void 0 ? void 0 : _reader$notes.read(name === "w:footnoteReference" ? "footnote" : "endnote", String(attributesOf(child[name])["w:id"]));
 					return note === void 0 ? [] : [...note.marker ? [{
 						type: "marker",
@@ -5253,7 +5297,7 @@ var docxLayout = (function(exports) {
 				case "w:drawing": return font.border ? "a picture in text with a border" : readDrawing(child, font, reader);
 				case "mc:AlternateContent": {
 					const choice = childrenOf(child["mc:AlternateContent"]).find((option) => "mc:Choice" in option);
-					return choice ? readRun({ "w:r": [...childrenOf(choice["mc:Choice"])] }, paragraphRun, reader) : [];
+					return choice ? readRun({ "w:r": [...childrenOf(choice["mc:Choice"])] }, paragraphRun, reader, removed) : [];
 				}
 				case "w:pict":
 				case "w:object": return reader.inHeader ? [] : "a VML drawing";
@@ -5275,32 +5319,56 @@ var docxLayout = (function(exports) {
 		"w:bdo",
 		"w:sdtContent"
 	]);
-	/**
-	* Reads the content of a paragraph, or of an element in it, such as a hyperlink.
-	*/
-	var readInline = (elements, paragraphRun, reader) => {
-		const parts = elements.filter(isObject).map((element) => {
-			const name = nameOf(element);
-			if (name === "w:r") return readRun(element, paragraphRun, reader);
-			if (RUN_CONTAINERS.has(name)) return readInline(contentOf$2(element), paragraphRun, reader);
-			if (name === "w:sdt") return isBound(element) ? BOUND_CONTROL : readInline(childrenOf(find(childrenOf(element[name]), "w:sdtContent")), paragraphRun, reader);
-			if (name === "w:fldSimple") {
-				const result = workedOutResultOf(String(attributesOf(element[name])["w:instr"]), fontOf(paragraphRun));
-				return result !== void 0 && isShown(reader) ? [result] : readInline(contentOf$2(element), paragraphRun, reader);
-			}
-			if (name === "w:bookmarkStart") {
-				const bookmark = bookmarkOf(element);
-				return bookmark === void 0 ? [] : [{
-					type: "marker",
-					name: bookmark
-				}];
-			}
-			if (name === "w:subDoc") return "a subdocument";
-			return name === "m:oMath" || name === "m:oMathPara" ? "an equation" : [];
-		});
+	var REMOVALS = /* @__PURE__ */ new Set(["w:del", "w:moveFrom"]);
+	var STOP = "docx-layout:unsupported";
+	/** The items of the parts of a paragraph, or why it can't be laid out */
+	var itemsOf = (parts) => {
 		const unsupported = parts.find((part) => typeof part === "string");
 		return unsupported !== null && unsupported !== void 0 ? unsupported : parts.flatMap((part) => part);
 	};
+	/**
+	* Reads what is deleted (`w:del`), or moved to elsewhere (`w:moveFrom`), in a tracked change: nothing, as Word shows it in
+	* the markup area beside the page, and breaks the lines without it, pictures, tabs and breaks too (`word-watertight-markup.docx`
+	* MK1, `word-tracked-changes.docx` MK10), but for its bookmarks. Word numbers a footnote whose reference is deleted, though
+	* it doesn't show it (MK10e). A deleted endnote reference, and a note reference moved, haven't been seen.
+	*/
+	var readRemoved = (elements, kind, reader) => itemsOf(elements.filter(isObject).map((element) => {
+		const name = nameOf(element);
+		if (name === "w:r") {
+			const children = contentOf$2(element).filter(isObject);
+			const references = children.filter((child) => REMOVED_NOTES.has(nameOf(child)));
+			if (references.length > 0 && kind === "w:moveFrom") return "a note reference moved in a tracked change";
+			if (references.some((reference) => "w:endnoteReference" in reference)) return "a deleted endnote reference";
+			if (references.some(hasOwnMark)) return OWN_NOTE_MARK;
+			references.forEach(() => {
+				var _reader$notes2;
+				return (_reader$notes2 = reader.notes) === null || _reader$notes2 === void 0 ? void 0 : _reader$notes2.skip("footnote");
+			});
+			return itemsOf(children.map((child) => nameOf(child) === "w:fldChar" ? readFieldCharacter(child, {}, reader, true) : []));
+		}
+		if (name === "w:bookmarkStart") return markerOf(element);
+		if (name === "w:sdt") return readRemoved(childrenOf(find(childrenOf(element[name]), "w:sdtContent")), kind, reader);
+		return RUN_CONTAINERS.has(name) || REMOVALS.has(name) || name === "w:fldSimple" ? readRemoved(contentOf$2(element), kind, reader) : [];
+	}));
+	/**
+	* Reads the content of a paragraph, or of an element in it, such as a hyperlink, and when it is deleted (`removed`), as
+	* Word sizes a table's columns by it.
+	*/
+	var readInline = (elements, paragraphRun, reader, removed = false) => itemsOf(elements.filter(isObject).map((element) => {
+		const name = nameOf(element);
+		if (name === "w:r") return readRun(element, paragraphRun, reader, removed);
+		if (REMOVALS.has(name)) return reader.showDeleted ? readInline(contentOf$2(element), paragraphRun, reader, true) : readRemoved(contentOf$2(element), name, reader);
+		if (RUN_CONTAINERS.has(name)) return readInline(contentOf$2(element), paragraphRun, reader, removed);
+		if (name === "w:sdt") return isBound(element) ? BOUND_CONTROL : readInline(childrenOf(find(childrenOf(element[name]), "w:sdtContent")), paragraphRun, reader, removed);
+		if (name === "w:fldSimple") {
+			const result = workedOutResultOf(String(attributesOf(element[name])["w:instr"]), fontOf(paragraphRun));
+			return result !== void 0 && isShown(reader) ? [result] : readInline(contentOf$2(element), paragraphRun, reader, removed);
+		}
+		if (name === "w:bookmarkStart") return markerOf(element);
+		if (name === "w:subDoc") return "a subdocument";
+		if (name === STOP) return String(element[name]);
+		return name === "m:oMath" || name === "m:oMathPara" ? "an equation" : [];
+	}));
 	/**
 	* The number of a paragraph in a list, and what follows it, as its list's level writes it, and its number as a chapter
 	* number. A paragraph is in the list it gives, or else in its style's. The list's numbers move on.
@@ -5568,6 +5636,23 @@ var docxLayout = (function(exports) {
 		rowBands: true,
 		columnBands: false
 	};
+	/** Whether an element has any of these elements in it, at any depth */
+	var hasAnyOf = (element, names) => Array.isArray(element) ? element.some((child) => hasAnyOf(child, names)) : isObject(element) && Object.entries(element).some(([name, value]) => names.has(name) || name !== "_attr" && hasAnyOf(value, names));
+	/**
+	* A reader of what Word sizes a table's columns by: deleted text as text, unless `showDeleted` is false, with the notes and
+	* lists numbered as they would be, but left for the reader it is made from to read and count.
+	*/
+	var sizingReaderOf = (reader, showDeleted = true) => _objectSpread2(_objectSpread2(_objectSpread2({}, reader), reader.notes ? { notes: reader.notes.preview() } : {}), {}, {
+		fields: [],
+		counters: new Map([...reader.counters].map(([id, counts]) => [id, [...counts]])),
+		showDeleted
+	});
+	/** The names of the bookmarks that start in blocks, in order: in their paragraphs, and their tables' cells */
+	var markersIn = (blocks) => blocks.flatMap((block) => block.type === "paragraph" ? block.items.flatMap((item) => item.type === "marker" ? [item.name] : []) : block.rows.flatMap(({ cells }) => cells.flatMap((cell) => markersIn(cell.blocks))));
+	/** Whether blocks have anything in them that takes room */
+	var hasContent = (blocks) => blocks.some((block) => block.type === "table" || block.items.some((item) => item.type !== "marker"));
+	/** Whether rows have no borders or space between cells that take room above or below them */
+	var hasNoRowBorders = (geometry) => typeof geometry !== "string" && geometry.every(({ borderTop, borderBottom, breakBorder = 0 }) => borderTop === 0 && borderBottom === 0 && breakBorder === 0);
 	/**
 	* Reads a table (`w:tbl`): the width, margins and content of each cell, and the height and borders of each row. Word
 	* sizes the columns of a table whose cells don't all have widths to their text, and widens a column of one whose cells
@@ -5579,9 +5664,16 @@ var docxLayout = (function(exports) {
 	* style's paragraph and run formatting applies to its cells' paragraphs, then the formatting of the parts of its style
 	* for the cell, such as its first row's (`w:tblStylePr`), where the table turns them on (`w:tblLook`), with the cell
 	* borders and margins they give. A cell's own borders and margins are over those.
+	*
+	* A row deleted in a tracked change takes no room, as Word lays it out, nor does a table all of whose rows are deleted,
+	* which is read as nothing (`word-watertight-markup.docx` MK6, `word-tracked-changes.docx` MK11a, MK11g). Word sizes the
+	* columns by its text, and by deleted text in the other rows, all the same (MK11h to MK11j), so those are kept to size
+	* them by. A cell merged down from a deleted row starts the merge, empty, as Word lays it out (MK11c). Whether Word keeps
+	* a deleted row's borders, or the space between cells around it, and which rows the parts of a table style for its first
+	* and last rows and its bands count, haven't been seen.
 	*/
 	var readTable = (element, reader) => {
-		var _twips, _readTableLook, _ref9, _ref10, _ref11, _ref12, _ref13, _ref14, _ref15, _ref16, _ref17, _read$find, _blocks$find, _read$0$cells, _read$, _roomOf, _roomOf2;
+		var _twips, _readTableLook, _ref10, _ref11, _ref12, _ref13, _ref14, _ref15, _ref16, _ref17, _ref18, _ref19, _ref20, _read$find2, _blocks$find, _read$0$cells, _read$, _roomOf, _roomOf2;
 		const children = contentOf$2(element).filter(isObject);
 		const properties = childrenOf(find(children, "w:tblPr"));
 		const style = valueOf(properties, "w:tblStyle");
@@ -5604,6 +5696,13 @@ var docxLayout = (function(exports) {
 		});
 		const parts = unwrap(children);
 		const rows = withBookmarks(parts, "w:tr");
+		const fixed = attributesOf(find(properties, "w:tblLayout"))["w:type"] === "fixed";
+		const sized = !fixed || tableSpacing !== 0;
+		const cellReader = _objectSpread2(_objectSpread2({}, reader), {}, { inSizedTable: sized });
+		const deletedFlags = rows.map(({ element: row }) => find(childrenOf(find(contentOf$2(row).filter(isObject), "w:trPr")), "w:del") !== void 0);
+		const keptCount = deletedFlags.filter((deleted) => !deleted).length;
+		let keptBefore = 0;
+		const keptIndexes = deletedFlags.map((deleted) => deleted ? keptBefore : keptBefore++);
 		const conditional = ownStyles.flatMap(({ conditional: given = /* @__PURE__ */ new Map() }) => [...given]);
 		const look = (_readTableLook = readTableLook(lastOf(allProperties, "w:tblLook"))) !== null && _readTableLook !== void 0 ? _readTableLook : UNSAID_LOOK;
 		const bandSize = (name) => numberOf(attributesOf(lastOf(allProperties, name))["w:val"]);
@@ -5644,6 +5743,18 @@ var docxLayout = (function(exports) {
 			const skipped = (_numberOf3 = numberOf(attributesOf(find(rowProperties, "w:gridBefore"))["w:val"])) !== null && _numberOf3 !== void 0 ? _numberOf3 : 0;
 			const ownSpacing = find(rowProperties, "w:tblCellSpacing");
 			const spacing = ownSpacing === void 0 ? tableSpacing : readCellSpacing(ownSpacing);
+			const deleted = deletedFlags[rowIndex];
+			const rowReader = deleted ? sizingReaderOf(cellReader, sized) : cellReader;
+			const counts = deleted ? JSON.stringify([...rowReader.counters]) : "";
+			const shifted = !deleted && keptCount < rows.length && conditional.length > 0 && rowCells.some((_, cell) => {
+				const typesAt = (at, count) => JSON.stringify(conditionalTypesOf({
+					row: at,
+					rows: count,
+					cell,
+					cells: rowCells.length
+				}, look, bands));
+				return typesAt(rowIndex, rows.length) !== typesAt(keptIndexes[rowIndex], keptCount);
+			});
 			const { cells, edges, column: end, unsupported: cellsUnsupported } = rowCells.reduce(({ column, cells: done, edges: before, unsupported: unsupportedBefore }, { element: cell }, cellIndex) => {
 				var _numberOf4, _twips3, _shareOf, _ref6, _ref7;
 				const cellChildren = contentOf$2(cell).filter(isObject);
@@ -5663,18 +5774,19 @@ var docxLayout = (function(exports) {
 				const hasWidth = inTwips > 0 || widthType === "pct" && ((_shareOf = shareOf(ownWidth)) !== null && _shareOf !== void 0 ? _shareOf : 0) > 0;
 				const width = inTwips > 0 ? inTwips : gridWidth(column, column + span);
 				const direction = valueOf(cellProperties, "w:textDirection");
-				const cellBlocks = readBlocks(cellChildren, reader, formatted.formats);
+				const sizing = sized && !deleted && hasAnyOf(cellChildren, REMOVALS) ? readBlocks(cellChildren, sizingReaderOf(rowReader), formatted.formats) : void 0;
+				const cellBlocks = readBlocks(cellChildren, rowReader, formatted.formats);
 				const vertical = direction !== void 0 && VERTICAL.has(direction);
 				return _objectSpread2(_objectSpread2({
 					column: column + span,
 					edges: new Map([...before, [column + span, before.get(column) + width]])
-				}, withoutUndefined({ unsupported: (_ref6 = (_ref7 = unsupportedBefore !== null && unsupportedBefore !== void 0 ? unsupportedBefore : unsupportedCellOf(cellProperties)) !== null && _ref7 !== void 0 ? _ref7 : formatted.unsupported) !== null && _ref6 !== void 0 ? _ref6 : vertical ? unsupportedVerticalOf(cellBlocks) : void 0 })), {}, { cells: [...done, _objectSpread2(_objectSpread2(_objectSpread2(_objectSpread2(_objectSpread2(_objectSpread2({ column }, span > 1 ? { span } : {}), {}, { width: width - margins.left - margins.right }, hasWidth ? { ownWidth: width } : {}), {}, {
+				}, withoutUndefined({ unsupported: (_ref6 = (_ref7 = unsupportedBefore !== null && unsupportedBefore !== void 0 ? unsupportedBefore : unsupportedCellOf(cellProperties)) !== null && _ref7 !== void 0 ? _ref7 : formatted.unsupported) !== null && _ref6 !== void 0 ? _ref6 : vertical ? unsupportedVerticalOf(cellBlocks) : void 0 })), {}, { cells: [...done, _objectSpread2(_objectSpread2(_objectSpread2(_objectSpread2(_objectSpread2(_objectSpread2(_objectSpread2({ column }, span > 1 ? { span } : {}), {}, { width: width - margins.left - margins.right }, hasWidth ? { ownWidth: width } : {}), {}, {
 					blocks: cellBlocks,
 					marginTop: margins.top,
 					marginBottom: margins.bottom,
 					marginLeft: margins.left,
 					marginRight: margins.right
-				}, merge ? { verticalMerge: merge } : {}), vertical ? { vertical: true } : {}), onOff(cellProperties, "w:hideMark") === true ? { hideMark: true } : {}), {}, {
+				}, merge ? { verticalMerge: merge } : {}), vertical ? { vertical: true } : {}), onOff(cellProperties, "w:hideMark") === true ? { hideMark: true } : {}), sizing ? { sizing } : {}), {}, {
 					borders: formatted === UNFORMATTED ? readBorderSet(find(cellProperties, "w:tcBorders")) : _objectSpread2(_objectSpread2({}, formatted.borders), readBorderSet(find(cellProperties, "w:tcBorders"))),
 					margins,
 					gridWidth: width
@@ -5684,9 +5796,10 @@ var docxLayout = (function(exports) {
 				cells: [],
 				edges: /* @__PURE__ */ new Map([[skipped, gridWidth(0, skipped)]])
 			});
-			const rowUnsupported = find(rowProperties, "w:divId") !== void 0 ? "a table row in an HTML division" : rowParts.some((part) => "w:sdt" in part) ? BOUND_CONTROL : changesLines(childrenOf(find(rowChildren, "w:tblPrEx"))) ? "a table row with table properties of its own" : cellsUnsupported;
+			const rowUnsupported = find(rowProperties, "w:divId") !== void 0 ? "a table row in an HTML division" : rowParts.some((part) => "w:sdt" in part) ? BOUND_CONTROL : changesLines(childrenOf(find(rowChildren, "w:tblPrEx"))) ? "a table row with table properties of its own" : deleted && (hasAnyOf(rowChildren, REMOVED_NOTES) || JSON.stringify([...rowReader.counters]) !== counts) ? "a list or a note in a deleted table row" : shifted ? "a deleted row in a table whose style formats some of its rows" : cellsUnsupported;
 			return _objectSpread2(_objectSpread2({
 				cells,
+				deleted,
 				edges,
 				end,
 				spacing
@@ -5702,40 +5815,62 @@ var docxLayout = (function(exports) {
 				})
 			});
 		});
+		const kept = read.filter(({ deleted }) => !deleted);
+		if (kept.length === 0 && read.length > 0) {
+			var _read$find;
+			const reason = (_read$find = read.find((row) => row.unsupported !== void 0)) === null || _read$find === void 0 ? void 0 : _read$find.unsupported;
+			return reason === void 0 ? void 0 : {
+				type: "table",
+				rows: [],
+				unsupported: reason
+			};
+		}
 		const tableCells = read.flatMap(({ cells }) => cells);
-		const fixed = attributesOf(find(properties, "w:tblLayout"))["w:type"] === "fixed";
 		const fits = !fixed && tableCells.some(({ ownWidth }) => ownWidth === void 0);
 		const spacingUnsupported = tableSpacing === void 0 || read.some(({ spacing }) => spacing === void 0) ? "space between table cells as a share of the table's width" : read.some(({ spacing }) => spacing !== tableSpacing) ? "a table row with space between its cells of its own" : void 0;
 		const followedSpacing = spacingUnsupported === void 0 ? tableSpacing : 0;
-		const geometry = tableGeometry(read.map(({ cells }) => ({
+		const geometryOf = (laidOut) => tableGeometry(laidOut.map(({ cells }) => ({
 			cells,
 			spacing: followedSpacing
 		})), {
 			borders: tableBorders,
 			spacing: followedSpacing
 		});
+		const geometry = geometryOf(kept);
 		const spaced = followedSpacing > 0;
+		const bordered = kept.length < read.length && (spaced || !hasNoRowBorders(geometryOf(read))) ? "a deleted row in a table with borders or space between its rows" : void 0;
+		const tableRows = [];
 		let carried = [];
-		const tableRows = read.map(({ row, cells, bookmarks, cellBookmarks }, rowIndex) => {
+		let unmerged;
+		read.forEach(({ row, cells, deleted, bookmarks, cellBookmarks }, index) => {
 			var _placed$borderTop, _placed$borderBottom;
-			carried = [...carried, ...bookmarks];
-			const placed = typeof geometry === "string" ? void 0 : geometry[rowIndex];
-			return _objectSpread2(_objectSpread2(_objectSpread2({}, row), {}, {
+			carried = [
+				...carried,
+				...bookmarks,
+				...deleted ? cells.flatMap((cell, cellIndex) => [...cellBookmarks[cellIndex], ...markersIn(cell.blocks)]) : []
+			];
+			if (deleted) return;
+			const placed = typeof geometry === "string" ? void 0 : geometry[tableRows.length];
+			const above = tableRows[tableRows.length - 1];
+			tableRows.push(_objectSpread2(_objectSpread2(_objectSpread2({}, row), {}, {
 				borderTop: (_placed$borderTop = placed === null || placed === void 0 ? void 0 : placed.borderTop) !== null && _placed$borderTop !== void 0 ? _placed$borderTop : 0,
 				borderBottom: (_placed$borderBottom = placed === null || placed === void 0 ? void 0 : placed.borderBottom) !== null && _placed$borderBottom !== void 0 ? _placed$borderBottom : 0
-			}, withoutUndefined({ breakBorder: placed === null || placed === void 0 ? void 0 : placed.breakBorder })), {}, { cells: cells.map((_ref8, index) => {
+			}, withoutUndefined({ breakBorder: placed === null || placed === void 0 ? void 0 : placed.breakBorder })), {}, { cells: cells.map((_ref8, cellIndex) => {
+				var _read, _above$cells$find, _unmerged;
 				let { borders: _, margins, gridWidth: __ } = _ref8, cell = _objectWithoutProperties(_ref8, _excluded2);
-				const pending = [...carried, ...cellBookmarks[index]];
+				const pending = [...carried, ...cellBookmarks[cellIndex]];
 				const marked = pending.length === 0 ? void 0 : startingAtFirst(cell.blocks, pending);
 				carried = marked === void 0 ? pending : [];
-				const around = placed === null || placed === void 0 ? void 0 : placed.cells[index];
+				const around = placed === null || placed === void 0 ? void 0 : placed.cells[cellIndex];
 				const spacingRoom = around === void 0 ? 0 : around.left - margins.left + around.right - margins.right;
-				return _objectSpread2(_objectSpread2(_objectSpread2(_objectSpread2({}, cell), around === void 0 ? {} : {
+				const orphan = ((_read = read[index - 1]) === null || _read === void 0 ? void 0 : _read.deleted) === true && cell.verticalMerge === "continue" && (above === null || above === void 0 || (_above$cells$find = above.cells.find((other) => other.column === cell.column)) === null || _above$cells$find === void 0 ? void 0 : _above$cells$find.verticalMerge) === void 0;
+				(_unmerged = unmerged) !== null && _unmerged !== void 0 || (unmerged = orphan && hasContent(cell.blocks) ? "a cell merged down from a deleted table row" : void 0);
+				return _objectSpread2(_objectSpread2(_objectSpread2(_objectSpread2(_objectSpread2({}, cell), around === void 0 ? {} : {
 					width: around.width,
 					marginLeft: around.left,
 					marginRight: around.right
-				}), spaced && cell.ownWidth !== void 0 ? { ownWidth: cell.ownWidth + spacingRoom } : {}), marked === void 0 ? {} : { blocks: marked });
-			}) });
+				}), spaced && cell.ownWidth !== void 0 ? { ownWidth: cell.ownWidth + spacingRoom } : {}), marked === void 0 ? {} : { blocks: marked }), orphan ? { verticalMerge: "restart" } : {});
+			}) }));
 		});
 		const edgesAt = /* @__PURE__ */ new Map();
 		const unequal = read.some(({ edges }) => [...edges].some(([column, edge]) => {
@@ -5744,7 +5879,18 @@ var docxLayout = (function(exports) {
 			edgesAt.set(column, other);
 			return Math.abs(other - edge) > WIDTH_TOLERANCE;
 		}));
-		const blocks = tableCells.flatMap((cell) => cell.blocks);
+		const deletedRows = sized ? read.filter(({ deleted }) => deleted).map(({ row, cells }) => _objectSpread2(_objectSpread2({}, row), {}, {
+			borderTop: 0,
+			borderBottom: 0,
+			cells: cells.map((_ref9) => {
+				let { borders: _, margins: __, gridWidth: ___ } = _ref9;
+				return _objectWithoutProperties(_ref9, _excluded3);
+			})
+		})) : [];
+		const blocks = [...tableRows.flatMap(({ cells }) => cells.flatMap((cell) => {
+			var _cell$sizing;
+			return [...cell.blocks, ...(_cell$sizing = cell.sizing) !== null && _cell$sizing !== void 0 ? _cell$sizing : []];
+		})), ...deletedRows.flatMap(({ cells }) => cells.flatMap((cell) => cell.blocks))];
 		const unfitted = read.reduce((most, { end }) => Math.max(most, end), 0) > MOST_COLUMNS ? `a table given no widths of more than ${MOST_COLUMNS} columns` : void 0;
 		const lengths = unknownLengthIn([
 			find(children, "w:tblPr"),
@@ -5755,20 +5901,20 @@ var docxLayout = (function(exports) {
 			})
 		]);
 		const styleUnsupported = tableStyles.some(({ rowProperties = [], cellProperties = [] }) => changesLines([...rowProperties, ...cellProperties])) ? "a table style with formatting of its rows or cells" : void 0;
-		const unsupported = (_ref9 = (_ref10 = (_ref11 = (_ref12 = (_ref13 = (_ref14 = (_ref15 = (_ref16 = (_ref17 = find(properties, "w:tblpPr") === void 0 ? void 0 : "a table that text flows around") !== null && _ref17 !== void 0 ? _ref17 : parts.some((part) => "w:sdt" in part) ? BOUND_CONTROL : void 0) !== null && _ref16 !== void 0 ? _ref16 : (_read$find = read.find((row) => row.unsupported !== void 0)) === null || _read$find === void 0 ? void 0 : _read$find.unsupported) !== null && _ref15 !== void 0 ? _ref15 : fits ? unfitted : unequal ? "a table whose rows give a column different widths" : void 0) !== null && _ref14 !== void 0 ? _ref14 : spacingUnsupported) !== null && _ref13 !== void 0 ? _ref13 : typeof geometry === "string" ? geometry : void 0) !== null && _ref12 !== void 0 ? _ref12 : indent === void 0 ? "a table indented by a share of the width" : void 0) !== null && _ref11 !== void 0 ? _ref11 : styleUnsupported) !== null && _ref10 !== void 0 ? _ref10 : lengths) !== null && _ref9 !== void 0 ? _ref9 : (_blocks$find = blocks.find((block) => block.unsupported !== void 0)) === null || _blocks$find === void 0 ? void 0 : _blocks$find.unsupported;
+		const unsupported = (_ref10 = (_ref11 = (_ref12 = (_ref13 = (_ref14 = (_ref15 = (_ref16 = (_ref17 = (_ref18 = (_ref19 = (_ref20 = find(properties, "w:tblpPr") === void 0 ? void 0 : "a table that text flows around") !== null && _ref20 !== void 0 ? _ref20 : parts.some((part) => "w:sdt" in part) ? BOUND_CONTROL : void 0) !== null && _ref19 !== void 0 ? _ref19 : (_read$find2 = read.find((row) => row.unsupported !== void 0)) === null || _read$find2 === void 0 ? void 0 : _read$find2.unsupported) !== null && _ref18 !== void 0 ? _ref18 : unmerged) !== null && _ref17 !== void 0 ? _ref17 : bordered) !== null && _ref16 !== void 0 ? _ref16 : fits ? unfitted : unequal ? "a table whose rows give a column different widths" : void 0) !== null && _ref15 !== void 0 ? _ref15 : spacingUnsupported) !== null && _ref14 !== void 0 ? _ref14 : typeof geometry === "string" ? geometry : void 0) !== null && _ref13 !== void 0 ? _ref13 : indent === void 0 ? "a table indented by a share of the width" : void 0) !== null && _ref12 !== void 0 ? _ref12 : styleUnsupported) !== null && _ref11 !== void 0 ? _ref11 : lengths) !== null && _ref10 !== void 0 ? _ref10 : (_blocks$find = blocks.find((block) => block.unsupported !== void 0)) === null || _blocks$find === void 0 ? void 0 : _blocks$find.unsupported;
 		const givenWidth = readTableWidth(properties);
 		const rowWidth = ((_read$0$cells = (_read$ = read[0]) === null || _read$ === void 0 ? void 0 : _read$.cells) !== null && _read$0$cells !== void 0 ? _read$0$cells : []).reduce((total, cell) => {
 			var _cell$ownWidth;
 			return total + ((_cell$ownWidth = cell.ownWidth) !== null && _cell$ownWidth !== void 0 ? _cell$ownWidth : 0);
 		}, 0);
 		const tableWidth = spaced && givenWidth.width === void 0 && givenWidth.share === void 0 ? { width: rowWidth } : givenWidth;
-		return _objectSpread2(_objectSpread2(_objectSpread2(_objectSpread2(_objectSpread2({
+		return _objectSpread2(_objectSpread2(_objectSpread2(_objectSpread2(_objectSpread2(_objectSpread2({
 			type: "table",
 			rows: tableRows
 		}, fits ? { fit: givenWidth } : {}), !fits && (!fixed || spaced) ? { widen: _objectSpread2(_objectSpread2({}, tableWidth), {}, { acrossColumns: tableCells.some(({ span }) => span !== void 0) }) } : {}), {}, {
 			borderLeft: (_roomOf = roomOf(tableBorders.left)) !== null && _roomOf !== void 0 ? _roomOf : 0,
 			borderRight: (_roomOf2 = roomOf(tableBorders.right)) !== null && _roomOf2 !== void 0 ? _roomOf2 : 0
-		}, indent ? { indent } : {}), spaced ? { cellSpacing: followedSpacing } : {}), unsupported ? { unsupported } : {});
+		}, indent ? { indent } : {}), spaced ? { cellSpacing: followedSpacing } : {}), deletedRows.length > 0 ? { deletedRows } : {}), unsupported ? { unsupported } : {});
 	};
 	/** A block in place of what can't be laid out, with why */
 	var unsupportedBlock = (unsupported) => ({
@@ -5812,7 +5958,8 @@ var docxLayout = (function(exports) {
 	};
 	/**
 	* Reads a paragraph or table, or what is in its place and can't be laid out: an imported document, an equation outside
-	* a paragraph, or a content control bound to custom XML. Undefined for anything else.
+	* a paragraph, or a content control bound to custom XML. Undefined for anything else, and for a table all of whose rows
+	* are deleted in a tracked change.
 	*/
 	var readBlock = (element, reader, tableFormats) => {
 		switch (nameOf(element)) {
@@ -5825,6 +5972,81 @@ var docxLayout = (function(exports) {
 			default: return;
 		}
 	};
+	var BLOCK_ELEMENTS = /* @__PURE__ */ new Set([
+		"w:p",
+		"w:tbl",
+		"w:sdt",
+		"w:customXml",
+		"w:altChunk",
+		"m:oMath",
+		"m:oMathPara",
+		"w:sectPr"
+	]);
+	var SECTION_START = /* @__PURE__ */ new Set([
+		"w:type",
+		"w:titlePg",
+		"w:pgNumType",
+		"w:headerReference",
+		"w:footerReference"
+	]);
+	var paragraphPropertiesOf = (paragraph) => childrenOf(find(contentOf$2(paragraph).filter(isObject), "w:pPr"));
+	/** How a paragraph's mark is removed in a tracked change, when it is: deleted (`w:del`), or moved elsewhere (`w:moveFrom`) */
+	var removedMarkOf = (paragraph) => childrenOf(find(paragraphPropertiesOf(paragraph), "w:rPr")).map(nameOf).find((name) => REMOVALS.has(name));
+	/** Whether an element has anything in its runs, deleted or not, but their formatting */
+	var hasRunContent = (element) => Array.isArray(element) ? element.some(hasRunContent) : isObject(element) && Object.entries(element).some(([name, value]) => name === "w:r" ? childrenOf(value).some((child) => nameOf(child) !== "w:rPr" && nameOf(child) !== "_attr") : name !== "_attr" && name !== "w:pPr" && hasRunContent(value));
+	/** What of a section's properties says how it starts, numbers its pages, and what headers and footers it has */
+	var startOf = (section) => JSON.stringify(childrenOf(section).filter((child) => SECTION_START.has(nameOf(child))));
+	/** The properties of the first section that ends among elements: in a paragraph, or the body's own */
+	var nextSectionIn = (elements) => elements.map(sectionPropertiesOf).find((section) => section !== void 0);
+	/** A paragraph the layout stops at, for why */
+	var stopIn = (paragraph, reason) => ({ "w:p": [...contentOf$2(paragraph), { [STOP]: reason }] });
+	/** A paragraph whose mark is deleted, joined to the next: the next, with the deleted one's content, then what is between them, first */
+	var joinedParagraph = (first, between, next) => {
+		const isHead = (child) => isObject(child) && (nameOf(child) === "_attr" || nameOf(child) === "w:pPr");
+		const content = contentOf$2(next);
+		return { "w:p": [
+			...content.filter(isHead),
+			...contentOf$2(first).filter((child) => !isHead(child)),
+			...between,
+			...content.filter((child) => !isHead(child))
+		] };
+	};
+	/**
+	* Joins each paragraph whose mark is deleted in a tracked change to the paragraph after it, as Word lays it out: the next
+	* paragraph, with the deleted one's text at its start, all in the next one's formatting, style and list
+	* (`word-watertight-markup.docx` MK3, `word-tracked-changes.docx` MK7, MK9). A section break deleted so leaves its section
+	* to the next (MK8c). A paragraph with no paragraph after it, before a table or at the end of a table cell or of the
+	* document, stays as it is (MK8a, MK8b, MK8d). What Word does with a paragraph mark moved elsewhere, a deleted mark at the
+	* edge of a content control, a deleted section break before a table or between sections that start, number their pages or
+	* have headers and footers differently, and a deleted mark between paragraphs of text in a table whose columns it sizes,
+	* by the paragraphs either as they are written or as they are laid out, hasn't been seen, so the layout stops there.
+	*
+	* @param nested - Whether the elements are in a content control or custom XML
+	* @param sized - Whether they are in a cell of a table whose columns Word sizes to their text, or widens for long words
+	*/
+	var joinRemovedMarks = (elements, nested, sized) => {
+		const after = [];
+		for (const element of [...elements.filter(isObject)].reverse()) {
+			const name = nameOf(element);
+			const mark = name === "w:p" ? removedMarkOf(element) : void 0;
+			const at = after.findLastIndex((other) => BLOCK_ELEMENTS.has(nameOf(other)));
+			const next = after[at];
+			const nextName = next === void 0 ? void 0 : nameOf(next);
+			const joins = mark !== void 0 && nextName === "w:p";
+			const section = mark === void 0 ? void 0 : sectionPropertiesOf(element);
+			const reason = mark === void 0 ? void 0 : mark === "w:moveFrom" ? "a paragraph mark moved in a tracked change" : nextName === "w:sdt" || nextName === "w:customXml" || next === void 0 && nested ? "a deleted paragraph mark at the edge of a content control" : section !== void 0 && !joins ? "a deleted section break with no paragraph after it" : section !== void 0 && startOf(section) !== startOf(nextSectionIn([...after].reverse())) ? "a deleted section break between sections that start, number their pages or have headers and footers differently" : joins && sized && hasRunContent(element) && hasRunContent(next) ? "a deleted paragraph mark between paragraphs of text in a table whose columns Word sizes to their text" : void 0;
+			if (reason !== void 0) after.push(stopIn(element, reason));
+			else if (joins) {
+				const [, ...between] = after.splice(at);
+				after.push(joinedParagraph(element, between.reverse(), next));
+			} else if (name === "w:customXml") after.push({ [name]: joinRemovedMarks(contentOf$2(element), true, sized) });
+			else if (name === "w:sdt" && !isBound(element)) {
+				const content = contentOf$2(element).map((child) => isObject(child) && "w:sdtContent" in child ? { "w:sdtContent": joinRemovedMarks(contentOf$2(child), true, sized) } : child);
+				after.push({ [name]: content });
+			} else after.push(element);
+		}
+		return after.reverse();
+	};
 	/**
 	* Reads the paragraphs and tables in a part of a document, such as a table cell or a header, and in the content controls
 	* and custom XML in it. A bookmark between them starts with the next.
@@ -5832,7 +6054,7 @@ var docxLayout = (function(exports) {
 	var readBlocks = (elements, reader, tableFormats) => {
 		const blocks = [];
 		let bookmarks = [];
-		for (const element of unwrap(elements)) {
+		for (const element of unwrap(joinRemovedMarks(elements, false, reader.inSizedTable === true))) {
 			const block = readBlock(element, reader, tableFormats);
 			if (block === void 0) bookmarks = [...bookmarks, ...bookmarksIn([element])];
 			else {
@@ -6068,7 +6290,7 @@ var docxLayout = (function(exports) {
 	* Reads a document's body (`w:body`), with the other parts of the document.
 	*/
 	var readContent = (body, parts) => {
-		var _parts$otherListIds, _parts$otherListIds2, _parts$settings, _ref18, _ref19, _ref20, _ref21, _documentContent$unsu;
+		var _parts$otherListIds, _parts$otherListIds2, _parts$settings, _ref21, _ref22, _ref23, _ref24, _documentContent$unsu;
 		const { styles } = parts;
 		const { lists: numbering, unsupported: inNumbering } = readNumbering(parts.numbering, styles, (_parts$otherListIds = parts.otherListIds) !== null && _parts$otherListIds !== void 0 ? _parts$otherListIds : /* @__PURE__ */ new Map());
 		const listIds = (_parts$otherListIds2 = parts.otherListIds) !== null && _parts$otherListIds2 !== void 0 ? _parts$otherListIds2 : /* @__PURE__ */ new Map();
@@ -6081,7 +6303,7 @@ var docxLayout = (function(exports) {
 			counters: /* @__PURE__ */ new Map()
 		});
 		const settings = childrenOf((_parts$settings = parts.settings) === null || _parts$settings === void 0 ? void 0 : _parts$settings["w:settings"]);
-		const elements = unwrap(contentOf$2(body));
+		const elements = unwrap(joinRemovedMarks(contentOf$2(body), false, false));
 		const headersAndFooters = /* @__PURE__ */ new Map();
 		const readPart = (id) => {
 			if (!headersAndFooters.has(id)) {
@@ -6123,19 +6345,37 @@ var docxLayout = (function(exports) {
 		};
 		const lastNotes = /* @__PURE__ */ new Map();
 		let unwrittenNumber = false;
-		const readNote = (kind, id) => {
-			var _formatNumber2;
-			noteCounts[kind]++;
+		/** Numbers the next note of a kind after the last, in the section being read, and gives its number as it is written */
+		const numberNext = (kind, last) => {
 			const section = sections.length;
 			const { format, start, restart } = notePropertiesOf(kind, section);
-			const last = lastNotes.get(kind);
-			const value = last === void 0 || restart === "eachSect" && last.section !== section ? start : last.value + 1;
-			lastNotes.set(kind, {
+			const previous = last.get(kind);
+			const value = previous === void 0 || restart === "eachSect" && previous.section !== section ? start : previous.value + 1;
+			last.set(kind, {
 				value,
 				section
 			});
-			const label = (_formatNumber2 = formatNumber(value, format)) !== null && _formatNumber2 !== void 0 ? _formatNumber2 : "";
-			unwrittenNumber || (unwrittenNumber = formatNumber(value, format) === void 0);
+			return formatNumber(value, format);
+		};
+		/** Numbers notes on from the last ones, without reading them or numbering them in `lastNotes` */
+		const previewFrom = (last) => {
+			const next = new Map(last);
+			return {
+				read: (kind) => {
+					var _numberNext;
+					return { label: (_numberNext = numberNext(kind, next)) !== null && _numberNext !== void 0 ? _numberNext : "" };
+				},
+				skip: (kind) => {
+					numberNext(kind, next);
+				},
+				preview: () => previewFrom(next)
+			};
+		};
+		const readNote = (kind, id) => {
+			noteCounts[kind]++;
+			const written = numberNext(kind, lastNotes);
+			const label = written !== null && written !== void 0 ? written : "";
+			unwrittenNumber || (unwrittenNumber = written === void 0);
 			const content = readNoteContent(kind, id, label);
 			if (kind === "endnote") {
 				endnotes.push(...content);
@@ -6150,7 +6390,15 @@ var docxLayout = (function(exports) {
 				marker
 			};
 		};
-		const reader = _objectSpread2(_objectSpread2({}, readerOf(false)), {}, { notes: { read: readNote } });
+		const noteReader = {
+			read: readNote,
+			skip: (kind) => {
+				noteCounts[kind]++;
+				numberNext(kind, lastNotes);
+			},
+			preview: () => previewFrom(lastNotes)
+		};
+		const reader = _objectSpread2(_objectSpread2({}, readerOf(false)), {}, { notes: noteReader });
 		const sections = [];
 		const blocks = [];
 		let bookmarks = [];
@@ -6203,7 +6451,7 @@ var docxLayout = (function(exports) {
 			footnoteNumbers,
 			endnoteNumbers
 		}, readSettings(parts.settings));
-		return _objectSpread2(_objectSpread2({}, documentContent), withoutUndefined({ unsupported: (_ref18 = (_ref19 = (_ref20 = (_ref21 = (_documentContent$unsu = documentContent.unsupported) !== null && _documentContent$unsu !== void 0 ? _documentContent$unsu : styles.unsupported) !== null && _ref21 !== void 0 ? _ref21 : inNumbering) !== null && _ref20 !== void 0 ? _ref20 : footnotes.size > 0 ? notesUnsupported("footnote") : void 0) !== null && _ref19 !== void 0 ? _ref19 : endnotes.length > 0 ? notesUnsupported("endnote") : void 0) !== null && _ref18 !== void 0 ? _ref18 : unwrittenNumber ? "notes numbered in a format not yet written" : void 0 }));
+		return _objectSpread2(_objectSpread2({}, documentContent), withoutUndefined({ unsupported: (_ref21 = (_ref22 = (_ref23 = (_ref24 = (_documentContent$unsu = documentContent.unsupported) !== null && _documentContent$unsu !== void 0 ? _documentContent$unsu : styles.unsupported) !== null && _ref24 !== void 0 ? _ref24 : inNumbering) !== null && _ref23 !== void 0 ? _ref23 : footnotes.size > 0 ? notesUnsupported("footnote") : void 0) !== null && _ref22 !== void 0 ? _ref22 : endnotes.length > 0 ? notesUnsupported("endnote") : void 0) !== null && _ref21 !== void 0 ? _ref21 : unwrittenNumber ? "notes numbered in a format not yet written" : void 0 }));
 	};
 	//#endregion
 	//#region src/layout/read-docx.ts
