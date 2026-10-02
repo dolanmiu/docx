@@ -1654,6 +1654,23 @@ describe("readDocument", () => {
                 unsupported,
             );
             expect(tableOf([ownWidth, fixed], [[1000], [2000]], [[3000], [undefined]]).unsupported).to.equal(unsupported);
+            // Nor with a row that starts past the first column
+            const skipping = readBody([
+                {
+                    "w:tbl": [
+                        { "w:tblPr": [ownWidth] },
+                        { "w:tblGrid": [{ "w:gridCol": { _attr: { "w:w": 1000 } } }, { "w:gridCol": { _attr: { "w:w": 2000 } } }] },
+                        {
+                            "w:tr": [
+                                cell([{ "w:tcW": { _attr: { "w:w": 1000 } } }], p()),
+                                cell([{ "w:tcW": { _attr: { "w:w": 2000 } } }], p()),
+                            ],
+                        },
+                        { "w:tr": [{ "w:trPr": [value("w:gridBefore", 1)] }, cell([{ "w:tcW": { _attr: { "w:w": 3000 } } }], p())] },
+                    ],
+                },
+            ]).blocks[0].block as TableBlock;
+            expect(skipping.unsupported).to.equal(unsupported);
             // A cell over both columns as wide as the two, and widths a twip apart from rounding, agree
             const even = tableOf([], [[1000], [2000]], [[3000, 2]], [[1001], [2000]]);
             expect(even.unsupported).to.equal(undefined);

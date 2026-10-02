@@ -1981,7 +1981,14 @@ const readTable = (element: XmlObject, reader: Reader): TableBlock | undefined =
         ? "a table style with formatting of its rows or cells"
         : undefined;
     const givenWidth = readTableWidth(properties);
-    const evened = unequal && !spaced && givenWidth.width !== undefined && tableCells.every(({ ownWidth }) => ownWidth !== undefined);
+    // Rows that disagree are evened out when every cell has a width and no row starts past the first column (`w:gridBefore`),
+    // whose width Word's probes haven't shown it evening out
+    const evened =
+        unequal &&
+        !spaced &&
+        givenWidth.width !== undefined &&
+        tableCells.every(({ ownWidth }) => ownWidth !== undefined) &&
+        read.every(({ edges }) => edges.has(0));
     // Word puts the text after a floating table (`w:tblpPr`) beside it (`word-watertight-tables.docx` TB11)
     const unsupported =
         (find(properties, "w:tblpPr") === undefined ? undefined : "a table that text flows around") ??
