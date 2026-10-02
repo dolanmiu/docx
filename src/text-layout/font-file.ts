@@ -120,7 +120,12 @@ const readCharacterMap = (view: DataView, tables: Tables): ((code: number) => nu
     }
     const { offset, format } = subtable;
     if (format === 12) {
-        const groups = Array.from({ length: view.getUint32(offset + 12) }, (_, index) => {
+        // A number of ranges the file has no room for is found before an array of that many is made, as a collection's is
+        const count = view.getUint32(offset + 12);
+        if (offset + 16 + count * 12 > view.byteLength) {
+            throw new Error("The font file is damaged: its character map says it has more ranges of characters than it has room for");
+        }
+        const groups = Array.from({ length: count }, (_, index) => {
             const group = offset + 16 + index * 12;
             return { start: view.getUint32(group), end: view.getUint32(group + 4), glyph: view.getUint32(group + 8) };
         });
@@ -432,7 +437,13 @@ export const readFontFile = (data: FontData): readonly FontFace[] => {
         }
     };
     if (tag === COLLECTION_TAG) {
-        return read(() => Array.from({ length: view.getUint32(8) }, (_, index) => readFace(view, view.getUint32(12 + index * 4))));
+        // A number of fonts the file has no room for is found before an array of that many is made, which a few bytes could
+        // otherwise make hundreds of megabytes of
+        const count = view.getUint32(8);
+        if (12 + count * 4 > bytes.byteLength) {
+            throw new Error("The font file is damaged: it says it has more fonts than it has room for");
+        }
+        return read(() => Array.from({ length: count }, (_, index) => readFace(view, view.getUint32(12 + index * 4))));
     }
     if (FONT_TAGS.has(tag)) {
         return read(() => [readFace(view, 0)]);

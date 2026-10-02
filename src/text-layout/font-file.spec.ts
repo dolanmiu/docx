@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import { type TestFontOptions, buildTestFont, buildTestFontCollection } from "tests/font-file";
+import { type TestFontOptions, buildTestFont, buildTestFontCollection, tableOffset } from "tests/font-file";
 
 import { createFontFileMeasurer, readFontFile } from "./font-file";
 import { DEFAULT_MEASURER } from "./line-breaking";
@@ -283,6 +283,20 @@ describe("readFontFile", () => {
         view.setUint32(view.getUint32(record + 8) + 8, 0xfffff);
         expect(() => readFontFile(damaged)).to.throw("The font file is damaged: it points past its end");
         expect(() => readFontFile(buildTestFontCollection([{ advances: LETTERS }]).slice(0, 40))).to.throw("The font file is damaged");
+    });
+
+    it("should throw for a collection or character map that says it has more entries than the file has room for, before making room for them", () => {
+        // 33,554,432 of them, which V8 makes an array with room for at once, of about 270 MB, in a file of a few hundred bytes
+        const collection = buildTestFontCollection([{ advances: LETTERS }]);
+        new DataView(collection.buffer).setUint32(8, 0x2000000);
+        expect(() => readFontFile(collection)).to.throw("The font file is damaged: it says it has more fonts than it has room for");
+        const font = buildTestFont({ advances: LETTERS, characterMap: "full" });
+        const view = new DataView(font.buffer);
+        const characterMap = tableOffset(font, "cmap");
+        view.setUint32(characterMap + view.getUint32(characterMap + 8) + 12, 0x2000000);
+        expect(() => readFontFile(font)).to.throw(
+            "The font file is damaged: its character map says it has more ranges of characters than it has room for",
+        );
     });
 
     it("should throw for a font without the tables it needs", () => {

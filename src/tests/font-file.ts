@@ -520,3 +520,14 @@ export const buildTestFontCollection = (fonts: readonly TestFontOptions[]): Uint
         ...fonts.map((options, index) => fontBytes(options, starts[index])),
     ]);
 };
+
+/**
+ * Where a table of a font built for a test starts, for tests that damage it.
+ */
+export const tableOffset = (font: Uint8Array, tag: string): number => {
+    const view = new DataView(font.buffer, font.byteOffset, font.byteLength);
+    const record = Array.from({ length: view.getUint16(4) }, (_, index) => 12 + index * 16).find(
+        (offset) => String.fromCharCode(...font.slice(offset, offset + 4)) === tag,
+    )!;
+    return view.getUint32(record + 8);
+};
