@@ -256,6 +256,11 @@ const sum = (values: readonly number[]): number => values.reduce((total, value) 
  * at the top of the next, and with keepLines, a paragraph that doesn't fit moves to the next page whole. The first lines
  * can need room below them too, for their footnotes, or for the space after a paragraph that ends in a table cell
  * (`roomBelow`, from the number of lines).
+ *
+ * A line that fits only without the space its multiple spacing adds below its text goes on the page when `hangs` says
+ * it can, from the number of lines, as Word lets that space go below the bottom of a page: 26 lines of 544.09 twips fit
+ * on a page of 13958, the last without its 268.55 (`word-mixed-heights.docx` MH1c), as do 20 lines of a picture beside
+ * text at 1.15 lines (`word-watertight-text.docx` TX8c). Without `hangs`, it doesn't.
  */
 const linesThatFit = (
     lines: readonly LaidOutLine[],
@@ -263,9 +268,13 @@ const linesThatFit = (
     { keepLines, widowControl }: Pick<MeasuredParagraph, "keepLines" | "widowControl">,
     isFirstLine: boolean,
     roomBelow: (count: number) => number = () => 0,
+    hangs?: (count: number) => boolean,
 ): { readonly fits: number; readonly count: number } => {
     const ends = lines.map((_, line) => sum(lines.slice(0, line + 1).map(({ height }) => height)));
-    const fits = ends.findIndex((end, line) => end + roomBelow(line + 1) > room + TOLERANCE);
+    const past = ends.findIndex((end, line) => end + roomBelow(line + 1) > room + TOLERANCE);
+    const hung =
+        past !== -1 && ends[past] - (lines[past].spacingBelow ?? 0) + roomBelow(past + 1) <= room + TOLERANCE && hangs?.(past + 1) === true;
+    const fits = hung && past + 1 < lines.length ? past + 1 : hung ? -1 : past;
     return fits === -1
         ? { fits: lines.length, count: lines.length }
         : { fits, count: linesKept(lines.length, fits, { keepLines, widowControl }, isFirstLine) };
@@ -364,7 +373,7 @@ export const paginate = (
                 measurer,
                 breakRules,
             });
-            // A line Word's breaking of isn't known stops the layout
+            // A line whose breaking, or height, Word hasn't shown stops the layout
             const unknown = laidOut.find((line) => line.unsupported !== undefined);
             if (unknown) {
                 throw new Unsupported(unknown.unsupported);
@@ -462,6 +471,18 @@ export const paginate = (
     };
 
     const linesHeight = (lines: readonly LaidOutLine[]): number => sum(lines.map(({ height }) => height));
+    /** How tall lines are on a page, at the bottom of which the multiple spacing of their last can go below it */
+    const heightToFit = (lines: readonly LaidOutLine[]): number => linesHeight(lines) - (lines.at(-1)?.spacingBelow ?? 0);
+    /**
+     * Whether what is kept together, `height` tall from `from`, fits above `end`, with its last line's multiple spacing
+     * below it when that can be (`hangsBelow`)
+     */
+    const fitsAbove = (
+        from: number,
+        { height, spacingBelow }: { readonly height: number; readonly spacingBelow: number },
+        end: number,
+        aboveNotes: boolean,
+    ): boolean => from + height <= end + TOLERANCE || (from + height - spacingBelow <= end + TOLERANCE && hangsBelow(aboveNotes));
 
     /** How narrow and how wide the paragraphs and tables in a table cell can be */
     const contentWidths = (stack: readonly Block[]): ContentWidths =>
@@ -825,6 +846,24 @@ export const paginate = (
     const pageNumberOf = (current: Section): { readonly pageNumber?: string } => {
         const text = current.chapters ? undefined : formatPageNumber(pageNumber, current.numberFormat);
         return text === undefined ? {} : { pageNumber: text };
+    };
+
+    /**
+     * Whether the space a line's multiple spacing adds below its text can go below the bottom of the page, as Word lets it
+     * (`word-mixed-heights.docx` MH1c), for a line that fits only without it. Stops where Word hasn't shown it: in columns
+     * being evened out, above footnotes, which it would go into, and above a paragraph's border below
+     */
+    const hangsBelow = (aboveNotes: boolean, aboveBorder = false): boolean => {
+        if (balancing?.page === pageCount) {
+            throw new Unsupported("columns evened out above a line whose multiple spacing goes below them");
+        }
+        if (aboveNotes) {
+            throw new Unsupported("a line whose multiple spacing goes below it into the footnotes");
+        }
+        if (aboveBorder) {
+            throw new Unsupported("a line whose multiple spacing goes below the page, above its paragraph's border");
+        }
+        return true;
     };
 
     const partHeight = (parts: HeadersOrFooters, isFirst: boolean): number => {
@@ -1685,7 +1724,7 @@ export const paginate = (
         const { columns } = section();
         /** Whether its lines up to its first break are taller than a column, at a column's width */
         const tallerThanColumn = (width: number): boolean =>
-            linesHeight(linesToBreak(linesOf(block, width), 0)) > pageBottom - top + TOLERANCE;
+            heightToFit(linesToBreak(linesOf(block, width), 0)) > pageBottom - top + TOLERANCE;
         const keptTall = paragraph.keepLines && columns.length > 1 && columns.some(tallerThanColumn);
         if (keptTall && columns.some((width) => width !== columns[0])) {
             // Word lays one out down the first column of each page, in columns of the same width, but whether it does in
@@ -1738,14 +1777,18 @@ export const paginate = (
             // A paragraph's last line needs room for its border below it too, or the space a between border leaves, and
             // goes to the next page without it (`word-paragraph-formats.docx` B4a, B4b)
             const ends = index + remaining.length === lines.length;
+            const notesOnPage = noteArea > 0 || reserved() > 0;
+            const hangs = (upTo: number): boolean =>
+                hangsBelow(notesOnPage || notesOf(upTo).length > 0, ends && upTo === remaining.length && paragraph.borderBelow > 0);
             const { fits, count: kept } = linesThatFit(
                 remaining,
                 room,
                 paragraph,
                 isFirstLine,
                 (upTo) => noteCost(leastNoteRoom(notesOf(upTo))) + (ends && upTo === remaining.length ? paragraph.borderBelow : 0),
+                hangs,
             );
-            if (section().columns.length > 1 && linesThatFit(remaining, room, paragraph, isFirstLine).fits > fits) {
+            if (section().columns.length > 1 && linesThatFit(remaining, room, paragraph, isFirstLine, undefined, hangs).fits > fits) {
                 // A line in columns that fits, but not with its footnotes, moves with them, unless part of one would fit
                 const above = room - linesHeight(remaining.slice(0, fits));
                 stopAtPartOfFootnote(notesOf(fits), notesIn(remaining[fits].markers), above - remaining[fits].height);
@@ -1840,9 +1883,17 @@ export const paginate = (
             const remaining = paragraph.lines.slice(from);
             // Widow control and keepLines hold lines back in a row that breaks across pages, as in Word, where LibreOffice
             // lets them go (`word-rules.docx` P8, `word-rules2.docx` Q3). A paragraph that ends in the cell's part on the
-            // page needs room for its space after there too, as in Word (`word-line-heights.docx` T2), and for its border
-            const { fits, count: kept } = linesThatFit(remaining, room - used - space, paragraph, from === 0, (upTo) =>
-                upTo === remaining.length ? paragraph.borderBelow + paragraph.spaceAfter : 0,
+            // page needs room for its space after there too, as in Word (`word-line-heights.docx` T2), and for its border.
+            // Whether a line's multiple spacing can go below the bottom of the page at the end of a row's part isn't known
+            const { fits, count: kept } = linesThatFit(
+                remaining,
+                room - used - space,
+                paragraph,
+                from === 0,
+                (upTo) => (upTo === remaining.length ? paragraph.borderBelow + paragraph.spaceAfter : 0),
+                () => {
+                    throw new Unsupported("a table row across pages whose line's multiple spacing goes below the page");
+                },
             );
             const upToLimit = limit - placed.length;
             const count = fits <= upToLimit ? kept : upToLimit > 0 ? linesKept(remaining.length, upToLimit, paragraph, from === 0) : 0;
@@ -2218,6 +2269,8 @@ export const paginate = (
         width: number,
     ): {
         readonly height: number;
+        /** The space the multiple spacing of its last line adds below the line's text */
+        readonly spacingBelow: number;
         readonly notes: readonly string[];
         readonly kept: readonly string[];
         readonly keptWith: "nothing" | "whole" | "part";
@@ -2243,7 +2296,13 @@ export const paginate = (
         const anchor = blocks[index + chain].block;
         if (anchor.type === "paragraph" && anchor.sectionBreak) {
             // The paragraph that ends the section takes no room, so they are kept with nothing
-            return { height: keptLines, notes: keptNotes, kept: keptNotes, keptWith: "nothing" };
+            return {
+                height: keptLines,
+                spacingBelow: kept[kept.length - 1]?.lines.at(-1)?.spacingBelow ?? 0,
+                notes: keptNotes,
+                kept: keptNotes,
+                keptWith: "nothing",
+            };
         }
         if (anchor.type === "table") {
             // A table that can't be laid out has nothing kept with it, so what is kept is placed before the layout stops.
@@ -2252,6 +2311,7 @@ export const paginate = (
             const rows = sized.unsupported ? [] : sized.rows.slice(0, keptRowsEnd(sized, 0) + 1);
             return {
                 height: keptLines + lastAfter + sum(sized.unsupported ? [] : rowHeights(sized).slice(0, rows.length)),
+                spacingBelow: 0,
                 notes: [...keptNotes, ...notesIn(rows.flatMap(({ cells }) => cells.flatMap((cell) => cell.blocks.flatMap(markersOf))))],
                 kept: keptNotes,
                 keptWith: "part",
@@ -2269,6 +2329,8 @@ export const paginate = (
                 next.borderAbove +
                 linesHeight(nextLines) +
                 (nextLines.length === next.lines.length ? next.borderBelow : 0),
+            // Below a border, the spacing of the last line isn't known to go below the bottom of the page
+            spacingBelow: nextLines.length === next.lines.length && next.borderBelow > 0 ? 0 : (nextLines.at(-1)?.spacingBelow ?? 0),
             notes: [...keptNotes, ...notesIn(nextLines.flatMap(({ markers }) => markers))],
             kept: keptNotes,
             keptWith: chain === 0 ? "nothing" : firstLines === next.lines.length && !next.pageBreakBefore ? "whole" : "part",
@@ -2338,10 +2400,11 @@ export const paginate = (
                 readonly fitsWith: (noteRoom: number) => boolean;
             } => {
                 const measured = keptHeight(index, section().columns[column]);
+                const withHeld = [...held, ...measured.notes];
                 return {
                     ...measured,
-                    all: [...held, ...measured.notes],
-                    fitsWith: (noteRoom) => position + measured.height <= linesBottom(noteRoom) + TOLERANCE,
+                    all: withHeld,
+                    fitsWith: (noteRoom) => fitsAbove(position, measured, linesBottom(noteRoom), noteArea > 0 || withHeld.length > 0),
                 };
             };
             if (placedInColumn) {
@@ -2355,7 +2418,7 @@ export const paginate = (
                 // lines at the width of the column it goes in
                 const { columns } = section();
                 const fitsBelow = (from: number, area: number, below: number): boolean =>
-                    from + keptHeight(index, below).height <= Math.min(bottom, pageBottom - area) + TOLERANCE;
+                    fitsAbove(from, keptHeight(index, below), Math.min(bottom, pageBottom - area), area > 0 || here.notes.length > 0);
                 if (
                     !fitsHere &&
                     column + 1 < columns.length &&

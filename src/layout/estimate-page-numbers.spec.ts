@@ -15,6 +15,7 @@ import {
     type IFrameOptions,
     type IPropertiesOptions,
     type IXmlableObject,
+    ImageRun,
     LineRuleType,
     Packer,
     PageBreak,
@@ -289,6 +290,42 @@ describe("estimatePageNumbers", () => {
         expect(estimateOf(document("1in", "12pt"))).to.deep.equal(inNumbers);
         expect(inNumbers).to.deep.include({ pageCount: 3 });
         expect(Object.fromEntries(inNumbers.bookmarks)).to.deep.equal({ end: "3" });
+    });
+
+    it("should make lines of two fonts, and with pictures, as tall as Word does", () => {
+        const styles: IPropertiesOptions["styles"] = {
+            default: { document: { run: { font: "Calibri", size: 22 }, paragraph: { spacing: { before: 0, after: 0, line: 240 } } } },
+        };
+        /** The page of each of these paragraphs, whose first words are bookmarked as line1, line2 and on */
+        const pagesOf = (count: number, line: (label: Bookmark) => ConstructorParameters<typeof Paragraph>[0]): Record<string, string> =>
+            pageNumbersOf({
+                styles,
+                sections: [
+                    {
+                        children: Array.from(
+                            { length: count },
+                            (_, index) =>
+                                new Paragraph(
+                                    line(new Bookmark({ id: `line${index + 1}`, children: [new TextRun(`line ${index + 1} `)] })),
+                                ),
+                        ),
+                    },
+                ],
+            });
+        // Calibri 11 with a word of Courier New: 50 lines on a page in Word, where docx/layout had 51
+        // (scripts/layout-probes/word-watertight-text.ts TX9a)
+        expect(pagesOf(52, (label) => ({ children: [label, new TextRun({ text: "mono", font: "Courier New" })] }))).to.include({
+            line50: "1",
+            line51: "2",
+        });
+        // A 30-point picture beside Calibri 11, on the baseline: 21 on a page, where docx/layout had 23 (TX8b), and at 1.15
+        // lines, 20, the last with its spacing below the bottom of the page (TX8c)
+        const picture = (): ImageRun => new ImageRun({ type: "png", data: Buffer.from(""), transformation: { width: 27, height: 40 } });
+        expect(pagesOf(22, (label) => ({ children: [label, picture()] }))).to.include({ line21: "1", line22: "2" });
+        expect(pagesOf(22, (label) => ({ spacing: { line: 276, lineRule: LineRuleType.AUTO }, children: [label, picture()] }))).to.include({
+            line20: "1",
+            line21: "2",
+        });
     });
 
     it("should place nothing without a document to lay out", () => {

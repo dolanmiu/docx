@@ -1,6 +1,6 @@
 import { describe, expect, it, vi } from "vitest";
 
-import { measureLineHeight, measureTextWidth } from "../text-layout";
+import { measureDescent, measureLineHeight, measureTextWidth } from "../text-layout";
 import { type FontToMeasure, measureWithPretext, measurerOf } from "./measure-width";
 
 const CALIBRI: FontToMeasure = { name: "Calibri", size: 12, bold: false, italic: false };
@@ -97,8 +97,9 @@ describe("measurerOf", () => {
         expect(measurer.measureWidth("\tab", font)).to.equal(measureTextWidth("\t", font) + 22);
     });
 
-    it("should make lines as tall as Word makes them, from the width tables", () => {
+    it("should make lines as tall as Word makes them, and as deep below their baselines, from the width tables", () => {
         const measurer = measurerOf(() => 0);
         expect(measurer.measureLineHeight({ font: "Calibri", size: 11 })).to.equal(measureLineHeight({ font: "Calibri", size: 11 }));
+        expect(measurer.measureDescent({ font: "Courier New", size: 11 })).to.equal(measureDescent({ font: "Courier New", size: 11 }));
     });
 });

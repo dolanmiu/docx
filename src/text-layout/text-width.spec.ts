@@ -1,7 +1,7 @@
 // cspell:ignore Caladea
 import { describe, expect, it } from "vitest";
 
-import { measureLineHeight, measureText, measureTextWidth, unknownCharacter } from "./text-width";
+import { measureDescent, measureLineHeight, measureText, measureTextWidth, unknownCharacter } from "./text-width";
 
 /** How wide text is in twips, a twentieth of a point, which Word's PDFs are read in */
 const twips = (text: string, font: string, size: number): number => measureTextWidth(text, { font, size }) * 20;
@@ -189,6 +189,26 @@ describe("measureLineHeight", () => {
         // Calibri's lines are 2500 of its 2048 units: 268.55 twips at 11 points in Word, measured over 50 lines
         expect(measureLineHeight({ font: "Calibri", size: 11 })).to.be.closeTo((2500 / 2048) * 11, 1e-9);
         expect(measureLineHeight({ font: "Times New Roman", size: 10 })).to.be.closeTo((2355 / 2048) * 10, 1e-9);
+    });
+});
+
+describe("measureDescent", () => {
+    it("should be the font's descent for Windows at its size, which Word's lines go below the baseline", () => {
+        // 550 of Calibri's 2048 units: a 30-point picture beside Calibri 11 is a line of 659.08 twips in Word
+        // (scripts/layout-probes/word-watertight-text.ts TX8b)
+        expect(measureDescent({ font: "Calibri", size: 11 })).to.be.closeTo((550 / 2048) * 11, 1e-9);
+        // Times New Roman 10 without a font or size: 643.26 beside the picture (TX8g)
+        expect(measureDescent()).to.be.closeTo((443 / 2048) * 10, 1e-9);
+        expect(measureDescent({ font: "Courier New", size: 11 })).to.be.closeTo((615 / 2048) * 11, 1e-9);
+        expect(measureDescent({ font: "Cambria", size: 10 })).to.be.closeTo(2.22, 1e-9);
+        // A font not in the tables has the descent of the one most like it
+        expect(measureDescent({ font: "Liberation Mono", size: 11 })).to.equal(measureDescent({ font: "Courier New", size: 11 }));
+    });
+
+    it("should give East Asian fonts the descent Word gives them, about half the extra of their lines", () => {
+        // 289 thousandths of an em, from a picture beside MS Mincho 12 (scripts/layout-probes/word-mixed-heights.ts MH5)
+        expect(measureDescent({ font: "MS Mincho", size: 12 })).to.be.closeTo(3.468, 1e-9);
+        expect(measureDescent({ font: "Meiryo", size: 10 })).to.be.closeTo(6.65, 1e-9);
     });
 });
 

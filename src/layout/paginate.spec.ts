@@ -5,10 +5,12 @@ import type { BlockLayout, PageLayout } from "./layout-document";
 import { type Pagination, paginate } from "./paginate";
 import type { Block, DocumentContent, LayoutItem, ParagraphBlock, Section, TableBlock, TableCell, TableRow } from "./read-document";
 
-// Every character is 10 points wide, and a line is as tall as its font's size, 10 points unless it says otherwise
+// Every character is 10 points wide, and a line is as tall as its font's size, 10 points unless it says otherwise, all of it
+// above the baseline
 const MEASURER: TextMeasurer = {
     measureWidth: (text) => [...text].length * 10,
     measureLineHeight: ({ size = 10 }) => size,
+    measureDescent: () => 0,
 };
 
 // Pages 100 points wide and 90 tall, with 10 point margins: 8 characters to a line, and 7 lines to a page
@@ -649,6 +651,66 @@ describe("paginate", () => {
             const symbol = (font: string): DocumentContent => document([withText("a", "\u2200x", { font, size: 11 }), paragraph("b", 1)]);
             expect(paginate(symbol("Calibri")).stoppedAt).to.equal(STOP);
             expect(paginate(symbol("Cambria")).stoppedAt).to.equal(undefined);
+        });
+    });
+
+    describe("multiple line spacing at the bottom of a page", () => {
+        // Lines of 15 points at 1.5 lines, 5 of which are the spacing below their text
+        const spaced: ParagraphFormat = { lineSpacing: { rule: "multiple", multiple: 1.5 } };
+        const lines = (names: string): readonly ParagraphBlock[] => [...names].map((name) => paragraph(name, 1, spaced));
+
+        it("should put a line on a page when only the spacing below its text goes past the bottom, as Word does", () => {
+            // e ends at 75 points, 5 past the 70 of the page: Word puts 26 lines of 544.09 twips on a page of 13958, the last
+            // without its 268.55 (`word-mixed-heights.docx` MH1c), and 20 of 699.37, a picture beside text, without 40.28
+            // (`word-watertight-text.docx` TX8c)
+            expect(pagesOf(document(lines("abcdef")))).to.deep.equal({ a: "1", b: "1", c: "1", d: "1", e: "1", f: "2" });
+            // In a paragraph, the fifth of its 8 lines goes on the page that way, and the other 3 on the next, with next, and
+            // after, which goes below the bottom that way too
+            const long = document([paragraph("long", 8, spaced), ...lines("na"), paragraph("last", 1)]);
+            expect(pagesOf(long)).to.deep.equal({ long: "1", n: "2", a: "2", last: "3" });
+            // A line whose text goes past the bottom too goes on the next page: d's ends at 75 below 2 lines of 10
+            expect(pagesOf(document([paragraph("z", 2), ...lines("abcde")]))).to.include({ c: "1", d: "2" });
+            // What is kept with the next fits when it does that way
+            const kept = document([...lines("abc"), paragraph("d", 1, { ...spaced, keepNext: true }), ...lines("ef")]);
+            expect(pagesOf(kept)).to.include({ d: "1", e: "1", f: "2" });
+            // And at the end of a section, kept with nothing
+            const atEnd: ParagraphBlock = { ...paragraph("end", 0), sectionBreak: true };
+            const keptAtEnd = document(
+                [
+                    ...lines("abcd").map((block): readonly [Block, number] => [block, 0]),
+                    [{ ...paragraph("e", 1, { ...spaced, keepNext: true }) }, 0],
+                    [atEnd, 0],
+                    [paragraph("f", 1), 1],
+                ],
+                { sections: [SECTION, SECTION] },
+            );
+            expect(pagesOf(keptAtEnd)).to.include({ e: "1", f: "2" });
+        });
+
+        it("should stop where Word hasn't shown whether the spacing below a line goes past the bottom", () => {
+            // In a table row across pages, at 40 points down, where the third line of the cell ends at 85
+            const rowAcross = document([paragraph("a", 3), table([row([[paragraph("cell", 6, spaced)]])]), paragraph("b", 1)]);
+            expect(paginate(rowAcross, { measurer: MEASURER }).stoppedAt).to.equal(
+                "a table row across pages whose line's multiple spacing goes below the page",
+            );
+            // Above a paragraph's border below: e's line ends at 70, and its border at 73, but at 68 without the spacing
+            const borders = { top: 0, bottom: 3, between: 0, betweenSpace: 0, box: "box", outline: "box" };
+            const bordered = document([paragraph("a", 3), ...lines("b"), paragraph("c", 1), { ...paragraph("e", 1, spaced), borders }]);
+            expect(paginate(bordered, { measurer: MEASURER }).stoppedAt).to.equal(
+                "a line whose multiple spacing goes below the page, above its paragraph's border",
+            );
+        });
+
+        it("should stop at a line whose height Word hasn't shown, with or without fields", () => {
+            // A picture alone in its line, shorter than the paragraph's mark, which is larger than its run's font
+            const picture: ParagraphBlock = {
+                ...paragraph("picture", 0),
+                items: [{ type: "box", width: 10, height: 5, font: { size: 4 } }],
+            };
+            const reason = "a picture alone in a line of a paragraph whose mark is larger";
+            expect(paginate(document([paragraph("a", 1), picture]), { measurer: MEASURER }).stoppedAt).to.equal(reason);
+            const withField = withItems(picture, [{ type: "pageCount", scope: "document", font: {} }]);
+            expect(paginate(document([paragraph("a", 1), withField]), { measurer: MEASURER }).stoppedAt).to.equal(reason);
         });
     });
 
@@ -1622,6 +1684,16 @@ describe("paginate", () => {
                 expect(pagesOf(balanced(lines("a", 1), COLUMNS, 5))).to.include({ b: "1", c: "1" });
             });
 
+            it("should stop at lines whose multiple spacing would go below the columns, which Word hasn't shown", () => {
+                const spaced = lines("a", 5).map((block) => ({
+                    ...block,
+                    format: { lineSpacing: { rule: "multiple" as const, multiple: 1.5 } },
+                }));
+                expect(paginate(balanced(spaced), { measurer: MEASURER }).stoppedAt).to.equal(
+                    "columns evened out above a line whose multiple spacing goes below them",
+                );
+            });
+
             it("should keep a paragraph's lines together as widow control and keepLines do", () => {
                 // A paragraph of 3 lines stays in the first column with widow control, and goes 2 and 1 without
                 expect(pagesOf(balanced([paragraph("a", 3)], COLUMNS, 4))).to.include({ b: "1", c: "2" });
@@ -2344,6 +2416,30 @@ describe("paginate", () => {
             });
             // The separator and the footnote take 2 lines, so c goes on the next page. Bookmarks in footnotes aren't placed
             expect(pagesOf(content)).to.deep.equal({ a: "1", b: "1", c: "2" });
+        });
+
+        it("should stop at a line whose multiple spacing would go below its page's text into the footnotes", () => {
+            // c ends at 55, 5 past the footnotes' separator, which only the spacing below its text does
+            const spaced: ParagraphFormat = { lineSpacing: { rule: "multiple", multiple: 1.5 } };
+            const content = withNotes([paragraph("a", 3), noted(paragraph("b", 1), "footnote 1"), paragraph("c", 1, spaced)], {
+                "footnote 1": [paragraph("note", 1)],
+            });
+            expect(paginate(content, { measurer: MEASURER }).stoppedAt).to.equal(
+                "a line whose multiple spacing goes below it into the footnotes",
+            );
+            // So does what is kept with the next: c and d end at 55
+            const kept = withNotes(
+                [
+                    paragraph("a", 1, spaced),
+                    noted(paragraph("b", 1), "footnote 1"),
+                    paragraph("c", 1, { ...spaced, keepNext: true }),
+                    paragraph("d", 1, spaced),
+                ],
+                { "footnote 1": [paragraph("note", 1)] },
+            );
+            expect(paginate(kept, { measurer: MEASURER }).stoppedAt).to.equal(
+                "a line whose multiple spacing goes below it into the footnotes",
+            );
         });
 
         it("should move a line to the next page with its footnote when they don't both fit", () => {

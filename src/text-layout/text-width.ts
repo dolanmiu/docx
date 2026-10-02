@@ -231,6 +231,8 @@ type EastAsianFont = {
     readonly aliases: readonly string[];
     /** The height of its lines, in thousandths of an em: about 1.3 times the font's height, as Word lays them out */
     readonly lineHeight: number;
+    /** How far its lines go below the baseline, in thousandths of an em, as Word lays them out */
+    readonly descent: number;
     /** Whether its Latin letters are all half an em wide */
     readonly monospaced?: boolean;
     /** The font in the table its Latin letters are measured with, when they aren't monospaced */
@@ -238,30 +240,32 @@ type EastAsianFont = {
 };
 
 /* cspell:disable */
-// The heights of their lines are Word's, from its PDF of scripts/layout-probes/word-unicode2.ts, over 20 lines of each.
-// Their Chinese, Japanese and Korean characters are an em wide
+// The heights of their lines are Word's, from its PDF of scripts/layout-probes/word-unicode2.ts, over 20 lines of each, and
+// their descents are from its PDF of word-mixed-heights.ts, over 10 lines of a picture beside each (MH5): MS Mincho's 289
+// thousandths, with Courier New and Times New Roman beside it, make lines of 313.99 and 284.75 twips, where Word's are
+// 313.92 to 314 and 284.73 to 284.8 (MH6a, MH6b). Their Chinese, Japanese and Korean characters are an em wide
 const EAST_ASIAN_FONTS: readonly EastAsianFont[] = [
-    { name: "MS Mincho", aliases: ["ＭＳ 明朝", "MS 明朝"], lineHeight: 1297, monospaced: true, latin: "Times New Roman" },
-    { name: "MS Gothic", aliases: ["ＭＳ ゴシック", "MS ゴシック"], lineHeight: 1297, monospaced: true, latin: "Arial" },
-    { name: "MS PMincho", aliases: ["ＭＳ Ｐ明朝", "MS P明朝"], lineHeight: 1297, latin: "Times New Roman" },
-    { name: "MS PGothic", aliases: ["ＭＳ Ｐゴシック", "MS Pゴシック"], lineHeight: 1297, latin: "Arial" },
-    { name: "Yu Mincho", aliases: ["游明朝"], lineHeight: 1433, latin: "Times New Roman" },
-    { name: "Yu Gothic", aliases: ["游ゴシック", "游ゴシック Light", "Yu Gothic Light"], lineHeight: 1434, latin: "Arial" },
-    { name: "Meiryo", aliases: ["メイリオ"], lineHeight: 1950, latin: "Arial" },
-    { name: "SimSun", aliases: ["宋体"], lineHeight: 1297, monospaced: true, latin: "Times New Roman" },
-    { name: "NSimSun", aliases: ["新宋体"], lineHeight: 1296, monospaced: true, latin: "Times New Roman" },
-    { name: "SimHei", aliases: ["黑体"], lineHeight: 1297, monospaced: true, latin: "Arial" },
-    { name: "KaiTi", aliases: ["楷体"], lineHeight: 1297, monospaced: true, latin: "Times New Roman" },
-    { name: "FangSong", aliases: ["仿宋"], lineHeight: 1297, monospaced: true, latin: "Times New Roman" },
-    { name: "Microsoft YaHei", aliases: ["微软雅黑"], lineHeight: 1714, latin: "Arial" },
-    { name: "DengXian", aliases: ["等线", "等线 Light", "DengXian Light"], lineHeight: 1354, latin: "Arial" },
-    { name: "PMingLiU", aliases: ["新細明體"], lineHeight: 1300, latin: "Times New Roman" },
-    { name: "MingLiU", aliases: ["細明體"], lineHeight: 1301, monospaced: true, latin: "Times New Roman" },
-    { name: "Microsoft JhengHei", aliases: ["微軟正黑體"], lineHeight: 1730, latin: "Arial" },
-    { name: "Malgun Gothic", aliases: ["맑은 고딕"], lineHeight: 1730, latin: "Arial" },
-    { name: "Batang", aliases: ["바탕"], lineHeight: 1300, latin: "Times New Roman" },
-    { name: "Gulim", aliases: ["굴림"], lineHeight: 1301, latin: "Arial" },
-    { name: "Dotum", aliases: ["돋움"], lineHeight: 1301, latin: "Arial" },
+    { name: "MS Mincho", aliases: ["ＭＳ 明朝", "MS 明朝"], lineHeight: 1297, descent: 289, monospaced: true, latin: "Times New Roman" },
+    { name: "MS Gothic", aliases: ["ＭＳ ゴシック", "MS ゴシック"], lineHeight: 1297, descent: 289, monospaced: true, latin: "Arial" },
+    { name: "MS PMincho", aliases: ["ＭＳ Ｐ明朝", "MS P明朝"], lineHeight: 1297, descent: 289, latin: "Times New Roman" },
+    { name: "MS PGothic", aliases: ["ＭＳ Ｐゴシック", "MS Pゴシック"], lineHeight: 1297, descent: 289, latin: "Arial" },
+    { name: "Yu Mincho", aliases: ["游明朝"], lineHeight: 1433, descent: 387, latin: "Times New Roman" },
+    { name: "Yu Gothic", aliases: ["游ゴシック", "游ゴシック Light", "Yu Gothic Light"], lineHeight: 1434, descent: 388, latin: "Arial" },
+    { name: "Meiryo", aliases: ["メイリオ"], lineHeight: 1950, descent: 665, latin: "Arial" },
+    { name: "SimSun", aliases: ["宋体"], lineHeight: 1297, descent: 289, monospaced: true, latin: "Times New Roman" },
+    { name: "NSimSun", aliases: ["新宋体"], lineHeight: 1296, descent: 290, monospaced: true, latin: "Times New Roman" },
+    { name: "SimHei", aliases: ["黑体"], lineHeight: 1297, descent: 290, monospaced: true, latin: "Arial" },
+    { name: "KaiTi", aliases: ["楷体"], lineHeight: 1297, descent: 289, monospaced: true, latin: "Times New Roman" },
+    { name: "FangSong", aliases: ["仿宋"], lineHeight: 1297, descent: 290, monospaced: true, latin: "Times New Roman" },
+    { name: "Microsoft YaHei", aliases: ["微软雅黑"], lineHeight: 1714, descent: 460, latin: "Arial" },
+    { name: "DengXian", aliases: ["等线", "等线 Light", "DengXian Light"], lineHeight: 1354, descent: 388, latin: "Arial" },
+    { name: "PMingLiU", aliases: ["新細明體"], lineHeight: 1300, descent: 350, latin: "Times New Roman" },
+    { name: "MingLiU", aliases: ["細明體"], lineHeight: 1301, descent: 350, monospaced: true, latin: "Times New Roman" },
+    { name: "Microsoft JhengHei", aliases: ["微軟正黑體"], lineHeight: 1730, descent: 454, latin: "Arial" },
+    { name: "Malgun Gothic", aliases: ["맑은 고딕"], lineHeight: 1730, descent: 440, latin: "Arial" },
+    { name: "Batang", aliases: ["바탕"], lineHeight: 1300, descent: 292, latin: "Times New Roman" },
+    { name: "Gulim", aliases: ["굴림"], lineHeight: 1301, descent: 292, latin: "Arial" },
+    { name: "Dotum", aliases: ["돋움"], lineHeight: 1301, descent: 292, latin: "Arial" },
 ];
 // East Asian fonts that aren't in the table, which are measured as MS Gothic, or MS Mincho for those with serifs
 const EAST_ASIAN_NAME =
@@ -412,6 +416,14 @@ export const measureTextWidth = (text: string, font: TextFont = {}, start = 0): 
  */
 export const measureLineHeight = (font: TextFont = {}): number =>
     ((eastAsianFontOf(font.font ?? DEFAULT_FONT) ?? widthsOf(font.font)).lineHeight * sizeOf(font)) / 1000;
+
+/**
+ * How far a line of single-spaced text goes below its baseline, in points. The rest of the line is above it, with the
+ * font's line gap at the top, where Word puts it: Arial 11 with Courier New 11 is 272.42 twips, Arial's ascent and gap and
+ * Courier New's descent (scripts/layout-probes/word-mixed-heights.ts MH2a).
+ */
+export const measureDescent = (font: TextFont = {}): number =>
+    ((eastAsianFontOf(font.font ?? DEFAULT_FONT) ?? widthsOf(font.font)).descent * sizeOf(font)) / 1000;
 
 /**
  * The size of text laid out in lines, in points.

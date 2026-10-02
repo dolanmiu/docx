@@ -539,7 +539,7 @@ describe("readDocument", () => {
     describe("drawings", () => {
         const drawing = (child: object): object => r({ "w:drawing": [child] });
 
-        it("should read a picture in the line as a box, with its effects and the space around it", () => {
+        it("should read a picture in the line as a box, with its effects, the space around it, and its run's font", () => {
             const inline = {
                 "wp:inline": [
                     { _attr: { distT: 12700, distB: 12700, distL: 0, distR: 25400 } },
@@ -547,10 +547,13 @@ describe("readDocument", () => {
                     { "wp:effectExtent": { _attr: { l: 12700, t: 0, r: 12700, b: 0 } } },
                 ],
             };
-            expect(itemsOf(readBody([p(drawing(inline))]))).to.deep.equal([{ type: "box", width: 14, height: 22 }]);
+            expect(itemsOf(readBody([p(drawing(inline))]))).to.deep.equal([{ type: "box", width: 14, height: 22, font: {} }]);
             expect(itemsOf(readBody([p(drawing({ "wp:inline": [{ "wp:extent": { _attr: { cx: 127000 } } }] }))]))).to.deep.equal([
-                { type: "box", width: 10, height: 0 },
+                { type: "box", width: 10, height: 0, font: {} },
             ]);
+            // The font of its run, whose line Word makes the picture's at least as tall as
+            const sized = r(rPr(value("w:sz", 30)), { "w:drawing": [inline] });
+            expect(itemsOf(readBody([p(sized)]))).to.deep.equal([{ type: "box", width: 14, height: 22, font: { size: 15 } }]);
         });
 
         it("should leave out drawings text doesn't flow around, and stop at those it does", () => {
@@ -574,7 +577,7 @@ describe("readDocument", () => {
                     { "mc:Fallback": [{ "w:pict": [] }] },
                 ],
             };
-            expect(itemsOf(readBody([p(r(alternate))]))).to.deep.equal([{ type: "box", width: 1, height: 1 }]);
+            expect(itemsOf(readBody([p(r(alternate))]))).to.deep.equal([{ type: "box", width: 1, height: 1, font: {} }]);
             expect(itemsOf(readBody([p(r({ "mc:AlternateContent": [{ "mc:Fallback": [] }] }))]))).to.deep.equal([]);
         });
     });

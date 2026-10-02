@@ -4,8 +4,8 @@
  *
  * Lines break at spaces, and at en, em, four-per-em and ideographic spaces, after hyphens, between Chinese, Japanese and
  * Korean characters, and between the words of Thai and the other scripts without spaces, as {@link findLineBreaks} finds.
- * Tabs move to the paragraph's tab stops, or to the document's default ones. Each line is as tall as the tallest text or
- * picture on it, with the paragraph's line spacing.
+ * Tabs move to the paragraph's tab stops, or to the document's default ones. Each line is as tall as its text's tallest
+ * ascent and deepest descent, with its pictures standing on the baseline, and the paragraph's line spacing.
  *
  * @module
  */
@@ -17,6 +17,7 @@ import {
     type ParagraphFormat,
     type TextFont,
     isKerned,
+    measureDescent,
     measureLineHeight,
     measureTextWidth,
     unknownCharacter,
@@ -30,6 +31,8 @@ export type TextMeasurer = {
     readonly measureWidth: (text: string, font: TextFont) => number;
     /** How tall a line of single-spaced text is, in points */
     readonly measureLineHeight: (font: TextFont) => number;
+    /** How far a line of single-spaced text goes below its baseline, in points */
+    readonly measureDescent: (font: TextFont) => number;
     /**
      * The first character of text whose width this measurer doesn't know as Word lays it out, so a layout stops there
      * rather than guessing. A measurer that measures with the fonts themselves leaves it out
@@ -40,6 +43,7 @@ export type TextMeasurer = {
 export const DEFAULT_MEASURER: TextMeasurer = {
     measureWidth: (text, font) => measureTextWidth(text, font),
     measureLineHeight,
+    measureDescent,
     unknownCharacter,
 };
 
@@ -55,8 +59,11 @@ export type InlineItem =
     | { readonly type: "tab"; readonly font: TextFont }
     /** A line break, or a page or column break, which ends the line and starts the rest on a new page or column */
     | { readonly type: "break"; readonly kind: "line" | "page" | "column"; readonly font: TextFont }
-    /** A picture or other drawing in the line, in points */
-    | { readonly type: "box"; readonly width: number; readonly height: number }
+    /**
+     * A picture or other drawing in the line, in points, with the font of its run, whose line the picture's is at least as
+     * tall as
+     */
+    | { readonly type: "box"; readonly width: number; readonly height: number; readonly font?: TextFont }
     /** Where a bookmark starts */
     | { readonly type: "marker"; readonly name: string };
 
@@ -107,7 +114,14 @@ export type LaidOutLine = {
     readonly text: string;
     /** How far its text goes from where the line starts, in points, without the spaces at its end */
     readonly textWidth: number;
-    /** Why Word's breaking of the line isn't known, when it isn't */
+    /**
+     * The space multiple line spacing adds below the line's text, in points, which Word lets go below the bottom of a page:
+     * 20 lines of 699.37 twips go on a page of 13958, the last without its 40.28
+     * (scripts/layout-probes/word-watertight-text.ts TX8c), and 26 of 544.09, the last without its 268.55
+     * (word-mixed-heights.ts MH1c)
+     */
+    readonly spacingBelow?: number;
+    /** Why Word's breaking of the line, or how tall it is, isn't known, when it isn't */
     readonly unsupported?: string;
 };
 
@@ -118,7 +132,7 @@ type Token =
     | { readonly type: "word"; readonly pieces: readonly Piece[] }
     | { readonly type: "space"; readonly pieces: readonly Piece[] }
     | { readonly type: "tab"; readonly font: TextFont }
-    | { readonly type: "box"; readonly width: number; readonly height: number }
+    | { readonly type: "box"; readonly width: number; readonly height: number; readonly font?: TextFont }
     | { readonly type: "marker"; readonly name: string };
 
 /** A part of a paragraph up to a break */
@@ -293,18 +307,60 @@ const widthOf = (pieces: readonly Piece[], measurer: TextMeasurer): number => {
 // Most words are in one font, so their text needn't be joined
 const textOf = (pieces: readonly Piece[]): string => (pieces.length === 1 ? pieces[0].text : pieces.map(({ text }) => text).join(""));
 
+/** How tall what is on a line is, in points */
+type Heights = {
+    /** The tallest ascent of its text, with the line gap of the text's font, which Word puts above the text */
+    readonly ascent: number;
+    /** The deepest descent of its text */
+    readonly descent: number;
+    /** The tallest line of the fonts of its text and of its pictures' runs, each on its own */
+    readonly tallest: number;
+    /** The tallest picture, which stands on the baseline */
+    readonly picture: number;
+};
+
+const NOTHING: Heights = { ascent: 0, descent: 0, tallest: 0, picture: 0 };
+
+/** The heights of a line, with text in this font on it too */
+const withFont = (heights: Heights, font: TextFont, measurer: TextMeasurer): Heights => {
+    const line = measurer.measureLineHeight(font);
+    const descent = measurer.measureDescent(font);
+    return {
+        ...heights,
+        ascent: Math.max(heights.ascent, line - descent),
+        descent: Math.max(heights.descent, descent),
+        tallest: Math.max(heights.tallest, line),
+    };
+};
+
 /**
- * The height of single-spaced lines, with this line spacing. Word doesn't round it: Calibri 11 is 268.55 twips, and
- * 289.82 at 259 twips' multiple spacing, where LibreOffice rounds them to whole twips, 269 and 290.
+ * How tall a line is, with the paragraph's line spacing, and how much of that multiple spacing adds below its text. Word
+ * doesn't round it: Calibri 11 is 268.55 twips, and 289.82 at 259 twips' multiple spacing, where LibreOffice rounds them
+ * to whole twips, 269 and 290.
  */
-const spaced = (natural: number, spacing: LineSpacing | undefined): number => {
-    if (!spacing) {
-        return natural;
+const heightOf = (
+    { ascent, descent, tallest, picture }: Heights,
+    spacing: LineSpacing | undefined,
+): Pick<LaidOutLine, "height" | "spacingBelow"> => {
+    // The line is its text's tallest ascent and deepest descent, as Word makes a line of two fonts: Calibri 11 with Courier
+    // New 11 is 275.53 twips, Calibri's ascent and Courier New's descent, where each alone is 268.55 and 249.2
+    // (scripts/layout-probes/word-watertight-text.ts TX9a). A picture stands on the baseline, so with text it is the
+    // picture and the text's descent: 600 twips and Calibri 11's 59.08, or Times New Roman 10's 43.26 (TX8b, TX8g). The
+    // line is at least as tall as each font's own, and a picture's run counts its font's: a 6-point picture alone in its
+    // line, in a run of Calibri 11, is 268.55, and a 30-point one 600 (word-mixed-heights.ts MH7, MH3e)
+    const natural = Math.max(Math.max(picture, ascent) + descent, tallest);
+    if (spacing === undefined) {
+        return { height: natural };
     }
-    if (spacing.rule === "multiple") {
-        return natural * spacing.multiple;
+    if (spacing.rule !== "multiple") {
+        // At least a height over a picture is the picture's line when that is taller: 659.08 at least 12 points (TX8e)
+        return { height: spacing.rule === "exact" ? spacing.height : Math.max(natural, spacing.height) };
     }
-    return spacing.rule === "exact" ? spacing.height : Math.max(natural, spacing.height);
+    // Multiple spacing adds its share of the tallest font's own line, below the text, rather than of the line: Calibri 11
+    // with Courier New 11 at 1.5 lines is 275.53 and half of Calibri's 268.55, and with a picture, 659.08 and 0.15 of 268.55
+    // at 1.15 lines, also beside Calibri 8 in the picture's run of Calibri 11 (MH1b, TX8c, MH4e)
+    const spacingBelow = (spacing.multiple - 1) * tallest;
+    return { height: natural + spacingBelow, ...(spacingBelow > 0 ? { spacingBelow } : {}) };
 };
 
 /** A line being laid out */
@@ -315,8 +371,8 @@ type LineState = {
     readonly start: number;
     readonly end: number;
     readonly text: string;
-    /** The tallest text or picture on it, in points */
-    readonly natural: number;
+    /** How tall its text and pictures are */
+    readonly heights: Heights;
     /**
      * How wide its spaces are after its first word or its last tab, which Word squeezes in a justified line, in points.
      * Those at the start of the line, and before a tab, aren't squeezed (`word-justify.docx` J15, J18), nor are no-break
@@ -479,6 +535,27 @@ export const layoutLines = (
 ): readonly LaidOutLine[] => {
     const { indentLeft = 0, indentRight = 0, firstLineIndent = 0, lineSpacing, alignment } = format;
     const markHeight = measurer.measureLineHeight(markFont);
+    /**
+     * Whether a line of only pictures is in a paragraph whose mark has a taller line than the pictures' runs, so that how
+     * tall the line is depends on whether the mark counts. Word hasn't shown that: in its probes the pictures' runs were as
+     * large as the mark or larger (scripts/layout-probes/word-mixed-heights.ts MH3d, MH7), and beside text the mark doesn't
+     * count
+     */
+    const markMatters = ({ ascent, tallest, picture }: Heights): boolean =>
+        picture > 0 &&
+        ascent === 0 &&
+        markHeight > tallest + TOLERANCE &&
+        (picture < markHeight - TOLERANCE || (lineSpacing?.rule === "multiple" && lineSpacing.multiple !== 1));
+    /** The heights of a line with the text of the token on it too */
+    const withToken = (heights: Heights, token: Exclude<Token, { readonly type: "marker" }>): Heights => {
+        if (token.type === "box") {
+            const tallest = token.font ? Math.max(heights.tallest, measurer.measureLineHeight(token.font)) : heights.tallest;
+            return { ...heights, picture: Math.max(heights.picture, token.height), tallest };
+        }
+        return token.type === "tab"
+            ? withFont(heights, token.font, measurer)
+            : token.pieces.reduce((all, { font }) => withFont(all, font, measurer), heights);
+    };
     // Word squeezes the spaces of a justified line to fit one more word on it, so it has more words to a line than a
     // left-aligned one (`word-watertight-text.docx` TX20)
     const squeezes =
@@ -536,7 +613,7 @@ export const layoutLines = (
             start,
             end: start,
             text: "",
-            natural: 0,
+            heights: NOTHING,
             spaces: 0,
             spaceCount: 0,
             between: 0,
@@ -547,18 +624,23 @@ export const layoutLines = (
             started: false,
             first,
         };
-        const finish = (state: LineState, breakAfter?: LaidOutLine["breakAfter"], extra = 0): void => {
+        const finish = (state: LineState, breakAfter?: LaidOutLine["breakAfter"]): void => {
             // Spaces add nothing to the height of a line with no text on it, which is as tall as its mark, as Word and
             // LibreOffice lay it out
-            const natural = Math.max(state.started ? state.natural : markHeight, extra);
+            const heights = state.started ? state.heights : withFont(NOTHING, markFont, measurer);
+            const unsupported = state.unknown
+                ? "a justified line that only fits squeezed at an en, em or ideographic space"
+                : markMatters(heights)
+                  ? "a picture alone in a line of a paragraph whose mark is larger"
+                  : undefined;
             // eslint-disable-next-line functional/immutable-data
             lines.push({
-                height: spaced(natural, lineSpacing),
+                ...heightOf(heights, lineSpacing),
                 markers: [...state.markers, ...state.pending],
                 ...(breakAfter ? { breakAfter } : {}),
                 text: state.text,
                 textWidth: Math.max(0, state.end - state.start),
-                ...(state.unknown ? { unsupported: "a justified line that only fits squeezed at an en, em or ideographic space" } : {}),
+                ...(unsupported ? { unsupported } : {}),
             });
         };
         const wrap = (state: LineState): LineState => {
@@ -568,7 +650,7 @@ export const layoutLines = (
                 start: indentLeft,
                 end: indentLeft,
                 text: "",
-                natural: 0,
+                heights: NOTHING,
                 spaces: 0,
                 spaceCount: 0,
                 between: 0,
@@ -589,7 +671,6 @@ export const layoutLines = (
                 continue;
             }
             if (token.type === "space") {
-                const height = Math.max(...token.pieces.map(({ font }) => measurer.measureLineHeight(font)));
                 const spaces = widthOf(token.pieces, measurer);
                 line = {
                     ...line,
@@ -598,18 +679,17 @@ export const layoutLines = (
                     spaces: line.started ? line.spaces + spaces : 0,
                     spaceCount: line.started ? line.spaceCount + lengthOf(token.pieces) : 0,
                     otherSpaces: line.started ? line.otherSpaces + widthOf(othersOf(token.pieces), measurer) : 0,
-                    natural: Math.max(line.natural, height),
+                    heights: withToken(line.heights, token),
                 };
                 continue;
             }
             if (token.type === "tab") {
-                const height = measurer.measureLineHeight(token.font);
                 const stop =
                     nextStop(line.position, line.first ? firstLineStops : stops, defaultTabStop, limitOf()) ??
                     (line.started ? nextStop(indentLeft, stops, defaultTabStop, limitOf(lines.length + 1)) : undefined);
                 if (stop === undefined) {
                     // No stop before the end of the line: the text after the tab starts where it is
-                    line = { ...line, end: line.position, text: `${line.text}\t`, natural: Math.max(line.natural, height), started: true };
+                    line = { ...line, end: line.position, text: `${line.text}\t`, heights: withToken(line.heights, token), started: true };
                     continue;
                 }
                 if (stop.position <= line.position + TOLERANCE) {
@@ -626,7 +706,7 @@ export const layoutLines = (
                     position,
                     end: position,
                     text: `${line.text}\t`,
-                    natural: Math.max(line.natural, height),
+                    heights: withToken(line.heights, token),
                     spaces: 0,
                     spaceCount: 0,
                     between: 0,
@@ -637,8 +717,6 @@ export const layoutLines = (
                 continue;
             }
             const tokenWidth = token.type === "box" ? token.width : widthOf(token.pieces, measurer);
-            const tokenHeight =
-                token.type === "box" ? token.height : Math.max(...token.pieces.map(({ font }) => measurer.measureLineHeight(font)));
             const overflows = line.started && line.position + tokenWidth > limitOf() + TOLERANCE;
             if (overflows && unsure(line, tokenWidth)) {
                 line = { ...line, unknown: true };
@@ -656,7 +734,7 @@ export const layoutLines = (
                     const characterWidth = widthOf(character, measurer);
                     // Each line is as long as it is, for lines of different widths, and one with no room takes the rest
                     if (placed && line.position + characterWidth > limitOf() + TOLERANCE && limitOf(lines.length + 1) - indentLeft > 0) {
-                        line = wrap({ ...line, natural: Math.max(line.natural, tokenHeight), started: true });
+                        line = wrap({ ...line, heights: withToken(line.heights, token), started: true });
                     }
                     line = {
                         ...line,
@@ -677,7 +755,7 @@ export const layoutLines = (
                     letters: line.letters + (token.type === "box" ? 1 : lengthOf(token.pieces)),
                 };
             }
-            line = { ...line, end: line.position, between: line.spaceCount, natural: Math.max(line.natural, tokenHeight), started: true };
+            line = { ...line, end: line.position, between: line.spaceCount, heights: withToken(line.heights, token), started: true };
         }
 
         if (!end) {
@@ -687,9 +765,9 @@ export const layoutLines = (
             // A page break that ends the paragraph has the mark on its line, which with no text on it is as tall as the mark,
             // however big the break and the spaces before it are: 28-point spaces before a 28-point break, in an 11-point
             // paragraph, are an 11-point line in Word and LibreOffice (word-probes.docx U8a7)
-            const breakHeight = isLast && !line.started ? markHeight : measurer.measureLineHeight(end.font);
+            const breakFont = isLast && !line.started ? markFont : end.font;
             finish(
-                { ...line, natural: Math.max(line.started ? line.natural : 0, breakHeight), started: true },
+                { ...line, heights: withFont(line.started ? line.heights : NOTHING, breakFont, measurer), started: true },
                 end.kind === "line" ? undefined : end.kind,
             );
         }

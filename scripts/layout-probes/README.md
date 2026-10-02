@@ -48,6 +48,7 @@ table style and each cell's width.
 | `word-table-formats2`       | MG, BS, BC, VT, CF, KR and CS: what `word-table-formats` left open: cells of a row with different margins, borders at half a point and 3 points, left and right borders beside text, text running up a cell in other sizes, the corners and bands of rows of a table style, a row kept by its second cell, and space between cells of different widths, beside borders and across pages                                                                                                                                                                          | `word-table-formats.py`        |
 | `word-justify`              | J00 to J18: when Word squeezes a justified line to fit one more word on it: lines of 19, 6 and 2 spaces ending with short, medium and long words, in other fonts, last lines, lines before a line break, distributed and the other justifications, tabs, no-break spaces, spaces at the start of a line, and ideographs                                                                                                                                                                                                                                          | `word-justify.py`              |
 | `word-justify2`             | K00 to K12: when Word squeezes a distributed line, and Latin text justified for Thai or with a low kashida, as J01 to J07 and J04 for justified ones, and justified and distributed lines with one space                                                                                                                                                                                                                                                                                                                                                         | `word-justify.py`              |
+| `word-mixed-heights`        | MH1 to MH7: how tall Word makes a line of two fonts, or with a picture, where `word-watertight-text`'s TX8 and TX9 left it open: multiple and at-least spacing over two fonts, the line gap above the text, a picture alone or beside text at 0.8 to 1.5 lines, the font of a picture's run, the descent of each East Asian font, and a picture shorter than its line                                                                                                                                                                                            | `word-mixed-heights.py`        |
 | `fsplit`                    | How a footnote that doesn't fit below its reference goes on to the next page. Laid out in LibreOffice only, so it has no PDF from Word: Word's split of an 8-line footnote is `word-rules` P7b                                                                                                                                                                                                                                                                                                                                                                   | `pagelines.py`                 |
 
 ## Make a probe's `.docx`
@@ -157,6 +158,14 @@ with where docx/layout breaks them:
 ```bash
 python3 scripts/layout-probes/word-character-widths.py build/word-probes/word-italic-widths --json > build/word-probes/word-italic-widths.word.json
 npm run run-ts -- scripts/layout-probes/word-character-widths-layout.ts word-italic-widths build/word-probes/word-italic-widths.word.json
+```
+
+`word-mixed-heights.py` takes the HTML, and prints the height of each probe's lines beside the heights each way Word might
+work them out gives:
+
+```bash
+pdftotext -bbox-layout scripts/layout-probes/word-mixed-heights.pdf build/word-probes/word-mixed-heights.html
+python3 scripts/layout-probes/word-mixed-heights.py build/word-probes/word-mixed-heights.html
 ```
 
 `word-probes.py` takes the name of the PDF without its extension, and reads its HTML and, for U1's tables, its first

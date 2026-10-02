@@ -3,6 +3,7 @@ import { describe, expect, it } from "vitest";
 import {
     DEFAULT_MEASURER,
     type InlineItem,
+    type LaidOutLine,
     type LineLayoutOptions,
     type TextMeasurer,
     layoutLines,
@@ -10,10 +11,11 @@ import {
 } from "./line-breaking";
 import { type ParagraphFormat, type TextFont, measureLineHeight, measureTextWidth } from "./text-width";
 
-// Every character is 10 points wide, and a line is as tall as its font's size
+// Every character is 10 points wide, and a line is as tall as its font's size, all of it above the baseline
 const MEASURER: TextMeasurer = {
     measureWidth: (value) => [...value].length * 10,
     measureLineHeight: ({ size = 10 }) => size,
+    measureDescent: () => 0,
 };
 
 const text = (value: string, size?: number): InlineItem => ({ type: "text", text: value, font: size === undefined ? {} : { size } });
@@ -88,6 +90,7 @@ describe("layoutLines", () => {
         const kerning: TextMeasurer = {
             measureWidth: (value) => [...value].length * 10 - value.split("AV").length * 5 + 5,
             measureLineHeight: () => 10,
+            measureDescent: () => 0,
         };
         const linesOf = (items: readonly InlineItem[]): number => layoutLines(items, { width: 90, measurer: kerning }).length;
         const kerned = { kerning: 1 };
@@ -325,7 +328,11 @@ describe("layoutLines", () => {
 
     it("should break a word wider than a line after the last character that fits on each line, as Word does", () => {
         // Each letter is 30 points, so 3 fit on a line of 100, and 10 take 4 lines
-        const wide: TextMeasurer = { measureWidth: (value) => [...value].length * 30, measureLineHeight: () => 10 };
+        const wide: TextMeasurer = {
+            measureWidth: (value) => [...value].length * 30,
+            measureLineHeight: () => 10,
+            measureDescent: () => 0,
+        };
         expect(layoutLines([text("a".repeat(10))], { width: 100, measurer: wide })).to.have.length(4);
         // An accent stays with its letter: "aa" and "a\u0301a"
         expect(layoutLines([text("aaa\u0301a")], { width: 100, measurer: wide })).to.have.length(2);
@@ -739,6 +746,112 @@ describe("layoutLines", () => {
                 one("K12_05"),
             );
         });
+    });
+});
+
+describe("the height of a line of fonts and pictures of different heights", () => {
+    // In twips, laid out with the width tables, as Word's PDFs of scripts/layout-probes/word-watertight-text.ts (TX) and
+    // word-mixed-heights.ts (MH) measure them, which give each to within about 0.1 twips over a page of lines
+    const linesOf = (items: readonly InlineItem[], options: Omit<LineLayoutOptions, "width"> = {}): readonly LaidOutLine[] =>
+        layoutLines(items, { width: 500, markFont: CALIBRI, ...options });
+    const twipsOf = (items: readonly InlineItem[], options: Omit<LineLayoutOptions, "width"> = {}): readonly number[] =>
+        linesOf(items, options).map(({ height }) => height * 20);
+    const CALIBRI = { font: "Calibri", size: 11 };
+    const word = (value: string, font: TextFont = CALIBRI): InlineItem => ({ type: "text", text: value, font });
+    /** A picture this many points tall, in a run of Calibri 11 unless another font is given */
+    const picture = (points: number, font: TextFont = CALIBRI): InlineItem => ({ type: "box", width: 20, height: points, font });
+    const multiple = (lines: number): Omit<LineLayoutOptions, "width"> => ({
+        format: { lineSpacing: { rule: "multiple", multiple: lines } },
+    });
+    const courier = { font: "Courier New", size: 11 };
+
+    it("should make a line of two fonts as tall as the tallest ascent and the deepest descent, as Word does", () => {
+        // Calibri's ascent and Courier New's descent: 275.52 to 275.56 in Word, where each alone is 268.55 and 249.2 (TX9a)
+        expect(twipsOf([word("TX9a 1 "), word("mono", courier)])[0]).to.be.closeTo(275.54, 0.02);
+        // Times New Roman and Arial have shorter ascents and descents than Calibri (TX9b, TX9c)
+        expect(twipsOf([word("TX9b 1 "), word("serif", { font: "Times New Roman", size: 11 })])[0]).to.be.closeTo(268.55, 0.01);
+        expect(twipsOf([word("TX9c 1 "), word("arial", { font: "Arial", size: 11 })])[0]).to.be.closeTo(268.55, 0.01);
+        // The line gap of Arial and Times New Roman is above their text: 272.37 to 272.42, and 493.53 to 493.6 at 20 points
+        // (MH2a, MH2b)
+        expect(twipsOf([word("MH2a 1 ", { font: "Arial", size: 11 }), word("mono", courier)])[0]).to.be.closeTo(272.4, 0.03);
+        expect(
+            twipsOf([word("MH2b 1 ", { font: "Times New Roman", size: 20 }), word("mono", { font: "Courier New", size: 20 })])[0],
+        ).to.be.closeTo(493.57, 0.04);
+        // East Asian fonts too, with their own descents: 313.92 to 314, and 300.94 to 300.98 (MH6a, MH6c)
+        // cspell:disable-next-line
+        expect(
+            twipsOf([word("MH6a 1 ", { font: "MS Mincho", size: 12 }), word("mono", { font: "Courier New", size: 12 })])[0],
+        ).to.be.closeTo(313.96, 0.05);
+        expect(
+            twipsOf([word("MH6c 1 ", { font: "Yu Mincho", size: 10.5 }), word("sans", { font: "Calibri", size: 10.5 })])[0],
+        ).to.be.closeTo(300.96, 0.05);
+    });
+
+    it("should stand a picture on the baseline, with the text's descent below it, as Word does", () => {
+        // 30 points and Calibri 11's descent: 659.04 to 659.2 in Word, where docx/layout had the picture's 600 (TX8b)
+        expect(twipsOf([word("TX8b 1 "), picture(30)])[0]).to.be.closeTo(659.08, 0.05);
+        // And Times New Roman 10's: 642.96 to 643.44 (TX8g)
+        expect(twipsOf([word("TX8g 1 ", { font: "Times New Roman", size: 10 }), picture(30)])[0]).to.be.closeTo(643.26, 0.01);
+        // Alone, it is the picture: 23 lines of 600 on a page (TX8a, and 599.65 to 600.25 in MH3e)
+        expect(twipsOf([picture(30)])[0]).to.be.closeTo(600, 0.01);
+        // A picture shorter than the text's ascent leaves the line as it is (TX8f)
+        expect(twipsOf([word("TX8f 1 "), picture(6)])[0]).to.be.closeTo(268.55, 0.01);
+        // Alone, a picture shorter than its run's line is as tall as that line: 268.54 to 268.59 (MH7a, MH7b)
+        expect(twipsOf([picture(6)])[0]).to.be.closeTo(268.55, 0.01);
+        expect(twipsOf([picture(12)])[0]).to.be.closeTo(268.55, 0.01);
+        // East Asian text's descent: 69.26 to 69.86 below a picture beside MS Mincho 12 (MH5)
+        expect(twipsOf([word("MH5 1-1 ", { font: "MS Mincho", size: 12 }), picture(30)])[0]).to.be.closeTo(669.36, 0.3);
+    });
+
+    it("should space a line by the tallest of its fonts' own lines, as Word does", () => {
+        // Exactly 12 points, and at least 12 points (TX8d, TX8e)
+        expect(twipsOf([word("TX8d 1 "), picture(30)], { format: { lineSpacing: { rule: "exact", height: 12 } } })).to.deep.equal([240]);
+        expect(twipsOf([word("TX8e 1 "), picture(30)], { format: { lineSpacing: { rule: "atLeast", height: 12 } } })[0]).to.be.closeTo(
+            659.08,
+            0.01,
+        );
+        // At least 13.5 points over a line of two fonts taller than either: 275.52 to 275.56 (MH1e)
+        expect(
+            twipsOf([word("MH1e 1 "), word("mono", courier)], { format: { lineSpacing: { rule: "atLeast", height: 13.5 } } })[0],
+        ).to.be.closeTo(275.54, 0.02);
+        // 1.15 lines over a picture add 0.15 of Calibri's 268.55, below the text: 699.32 to 699.42 (TX8c)
+        const [tx8c] = linesOf([word("TX8c 1 "), picture(30)], multiple(1.15));
+        expect(tx8c.height * 20).to.be.closeTo(699.37, 0.05);
+        expect(tx8c.spacingBelow! * 20).to.be.closeTo(40.28, 0.01);
+        // 1.5 lines of Calibri with Courier New add half of Calibri's line, not of theirs: 409.78 to 409.82, and 0.8 lines take
+        // a fifth of it away: 221.82 to 221.83 (MH1b, MH1d)
+        expect(twipsOf([word("MH1b 1 "), word("mono", courier)], multiple(1.5))[0]).to.be.closeTo(409.81, 0.02);
+        const [mh1d] = linesOf([word("MH1d 1 "), word("mono", courier)], multiple(0.8));
+        expect(mh1d.height * 20).to.be.closeTo(221.83, 0.01);
+        expect(mh1d.spacingBelow).to.equal(undefined);
+        // Times New Roman 10 with Courier New 10 add half of Times New Roman's 230: 361.76 to 361.8 (MH2c)
+        const times = { font: "Times New Roman", size: 10 };
+        expect(twipsOf([word("MH2c 1 ", times), word("mono", { ...courier, size: 10 })], multiple(1.5))[0]).to.be.closeTo(361.78, 0.02);
+        // A picture's run counts its font: alone at 1.15 and 0.8 lines, 640.13 to 640.39 and 546.14 to 546.34, and beside
+        // Calibri 8, 777.12 to 777.6, from the run's Calibri 11, though the mark is Times New Roman 10 (MH3a, MH3c, MH4e, MH3d)
+        expect(twipsOf([picture(30)], multiple(1.15))[0]).to.be.closeTo(640.28, 0.05);
+        expect(twipsOf([picture(30)], multiple(0.8))[0]).to.be.closeTo(546.29, 0.05);
+        expect(twipsOf([word("MH4e 1 ", { font: "Calibri", size: 8 }), picture(30)], multiple(1.5))[0]).to.be.closeTo(777.25, 0.2);
+        expect(twipsOf([picture(30)], { ...multiple(1.5), markFont: times })[0]).to.be.closeTo(734.28, 0.4);
+        // Tabs and breaks are text in their fonts
+        expect(twipsOf([word("a"), { type: "tab", font: courier }, word("b")])[0]).to.be.closeTo(275.54, 0.02);
+        expect(twipsOf([word("a"), { type: "break", kind: "line", font: courier }, word("b")])).to.have.length(2);
+        expect(twipsOf([word("a"), { type: "break", kind: "line", font: courier }, word("b")])[0]).to.be.closeTo(275.54, 0.02);
+    });
+
+    it("should stop at a line of only pictures in a paragraph whose mark is larger than the pictures' runs, which Word hasn't shown", () => {
+        const larger = { font: "Calibri", size: 16 };
+        // The mark's line or the picture's
+        expect(linesOf([picture(12)], { markFont: larger })[0].unsupported).to.equal(
+            "a picture alone in a line of a paragraph whose mark is larger",
+        );
+        // The share of the mark's line or of the run's that the spacing adds
+        expect(linesOf([picture(30)], { ...multiple(1.5), markFont: larger })[0].unsupported).to.equal(
+            "a picture alone in a line of a paragraph whose mark is larger",
+        );
+        // A picture taller than the mark's line, single spaced, is itself either way, and beside text the mark doesn't count
+        expect(linesOf([picture(30)], { markFont: larger })[0].unsupported).to.equal(undefined);
+        expect(linesOf([word("a"), picture(6)], { markFont: larger })[0].unsupported).to.equal(undefined);
     });
 });
 
