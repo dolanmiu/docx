@@ -103,7 +103,7 @@ for index, (page, words) in enumerate(lines):
         elif current is not None:
             probes[current].append((index, page, top, left, right, word))
 
-result = {"widths": {}, "spaces": {}, "breaks": {}, "hangs": {}}
+result = {"widths": {}, "lines": {}, "spaces": {}, "breaks": {}, "hangs": {}}
 problems = []
 
 # W: each character's word is ten of it, after its code point, so its width is a tenth of the word's. A word can be in
@@ -157,11 +157,23 @@ for face_index, face in enumerate(FACES):
                 words[code] = [word]
             elif code is not None:
                 words[code].append(word)
+        labels = {}
         for code, (label, *parts) in words.items():
+            labels[code] = label[0]
             on_line = follow_on([part for part in parts if part[0] == label[0]], label[4], SPACE)
             later = sorted({part[0] for part in parts if part[0] > label[0]})
             starts = [follow_on([part for part in parts if part[0] == line], MARGIN, GAP / 2) for line in later]
             words[code] = on_line + next((start for start in starts if start), [])
+        # Where the paragraph's lines break: the code point, such as u0041, or the word of ten of its character, such as
+        # 0041, that starts each line after the first, where every code point and word was read
+        tokens = [
+            (line, token)
+            for expected in codes
+            for line, token in [(labels.get(f"{expected:04x}"), f"u{expected:04x}"), (min((part[0] for part in words.get(f"{expected:04x}", [])), default=None), f"{expected:04x}")]
+        ]
+        if all(line is not None for line, _ in tokens):
+            starts = [token for (line, token), (previous, _) in zip(tokens[1:], tokens) if line != previous]
+            result["lines"][f"W{number}"] = starts
         for expected in codes:
             parts = words.get(f"{expected:04x}", [])
             if not parts:

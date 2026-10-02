@@ -123,7 +123,13 @@ python3 scripts/layout-probes/word-character-widths.py build/word-probes/word-ch
 ```
 
 It reads `word-italic-widths` the same way. With `--json`, `word-character-widths.py` prints the widths it read, which
-`scripts/generate-font-widths.ts` takes.
+`scripts/generate-font-widths.ts` takes, and where the lines of W break, which `word-character-widths-layout.ts` compares
+with where docx/layout breaks them:
+
+```bash
+python3 scripts/layout-probes/word-character-widths.py build/word-probes/word-italic-widths --json > build/word-probes/word-italic-widths.word.json
+npm run run-ts -- scripts/layout-probes/word-character-widths-layout.ts word-italic-widths build/word-probes/word-italic-widths.word.json
+```
 
 `word-probes.py` takes the name of the PDF without its extension, and reads its HTML and, for U1's tables, its first
 five pages as SVG:
