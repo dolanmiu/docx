@@ -1,8 +1,8 @@
 // Page numbers worked out by docx/layout for tables with cells merged down rows, whose text breaks across pages with the
 // row of them that crosses the page, as Word breaks it (word-probes.docx U4a and U4b in scripts/layout-probes). It is one
 // of the documents scripts/compare-layout.sh checks against LibreOffice, which breaks them the same way. Each entry
-// beside a merged cell is a line, and the merged cells' text keeps more than one line on each page, as LibreOffice
-// doesn't keep to widow control in table cells, where Word does. See docs/usage/layout.md.
+// beside a merged cell is a line, and widow control moves none of the merged cells' lines where they break, as
+// LibreOffice doesn't keep to it in table cells, where Word does. See docs/usage/layout.md.
 
 import * as fs from "fs";
 import {
