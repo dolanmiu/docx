@@ -16,7 +16,8 @@ import {
     TextRun,
 } from "docx";
 
-import { type DocumentContent, type LayoutItem, type ParagraphBlock, type TableBlock, readDocument } from "./read-document";
+import { WORD_DEFAULT_STYLES } from "../text-layout";
+import { type DocumentContent, type LayoutItem, type ParagraphBlock, type TableBlock, readContent, readDocument } from "./read-document";
 
 const contextOf = (file: File): IContext => ({ file, viewWrapper: file.Document, stack: [] }) as unknown as IContext;
 
@@ -425,6 +426,14 @@ describe("readDocument", () => {
             const content = readBody([p(pPr({ "w:numPr": [value("w:ilvl", 0), value("w:numId", 1)] }), r(t("a")))]);
             expect(itemsOf(content).map((part) => part.type)).to.deep.equal(["text", "tab", "text"]);
             expect(textOf(content).endsWith("a")).to.equal(true);
+        });
+
+        it("should write no number for a placeholder of a list that doesn't exist", () => {
+            const content = readContent(
+                { "w:body": [p(pPr({ "w:numPr": [value("w:ilvl", 0), value("w:numId", "{list-0}")] }), r(t("Item")))] },
+                { styles: WORD_DEFAULT_STYLES, otherListIds: new Map([["{list-0}", "1"]]), headersAndFooters: new Map() },
+            );
+            expect(textOf(content)).to.equal("Item");
         });
     });
 
@@ -1103,10 +1112,13 @@ describe("readDocument", () => {
             expect(readBody([], { hyphenation: { autoHyphenation: true } }).unsupported).to.equal("hyphenation");
         });
 
-        /** Reads a document whose settings are these elements, which docx doesn't write */
+        /** Reads a document whose settings are these elements, which docx doesn't write, in Word 2013's compatibility mode */
         const readSettings = (...settings: readonly object[]): DocumentContent => {
             const file = new File({ sections: [] });
-            const withSettings = Object.create(file, { Settings: { value: { prepForXml: () => ({ "w:settings": settings }) } } }) as File;
+            const compatibility = { "w:compat": [{ "w:compatSetting": { _attr: { "w:name": "compatibilityMode", "w:val": 15 } } }] };
+            const withSettings = Object.create(file, {
+                Settings: { value: { prepForXml: () => ({ "w:settings": [...settings, compatibility] }) } },
+            }) as File;
             return readDocument({ "w:body": [] } as IXmlableObject, contextOf(withSettings));
         };
 
@@ -1135,6 +1147,11 @@ describe("readDocument", () => {
             );
             expect(readSettings(value("w:characterSpacingControl", "compressPunctuation")).unsupported).to.equal("punctuation compressed");
             expect(readSettings(value("w:characterSpacingControl", "doNotCompress")).unsupported).to.equal(undefined);
+        });
+
+        it("should mark a document in the compatibility mode of a version of Word before 2013 as unsupported", () => {
+            expect(readBody([], { compatibility: { version: 14 } }).unsupported).to.equal("a document in compatibility mode");
+            expect(readBody([], { compatibility: { version: 15 } }).unsupported).to.equal(undefined);
         });
     });
 

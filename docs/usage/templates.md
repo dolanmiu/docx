@@ -337,6 +337,27 @@ The ids only link each reference to its note. In the patched document, each note
 
 A template that has no footnotes or endnotes yet is given what they need, including the styles that show their numbers as superscript.
 
+### Page numbers
+
+A template's table of contents, page references and numbers of pages show the page numbers the template was saved with, which the patches can change. Give `patchDocument` `estimatePageNumbers` from `docx/layout` as its `pageNumbers`, and it lays out the filled-in document's pages as Word would, and writes their numbers:
+
+```ts
+import * as fs from "fs";
+import { patchDocument, PatchType, TextRun } from "docx";
+import { estimatePageNumbers } from "docx/layout";
+
+const doc = await patchDocument({
+    outputType: "nodebuffer",
+    data: fs.readFileSync("Report template.docx"),
+    patches: {
+        name: { type: PatchType.PARAGRAPH, children: [new TextRun("John Doe")] },
+    },
+    pageNumbers: estimatePageNumbers,
+});
+```
+
+Its page references and tables of contents are written clean, so Word shows the numbers as they are, rather than asking to update the fields when it opens the document. See [Layout](usage/layout.md#templates) for what it follows, and what it leaves blank.
+
 ## Preserving Styles
 
 Set `keepOriginalStyles: true` to preserve the formatting of the placeholder text:

@@ -1,9 +1,11 @@
+import JSZip from "jszip";
 import { describe, expect, it, vi } from "vitest";
 
 import { Formatter } from "@export/formatter";
 import { File } from "@file/file";
 import {
     Bookmark,
+    Document,
     type EstimatedPageNumbers,
     FrameAnchorType,
     HeadingLevel,
@@ -11,14 +13,18 @@ import {
     type IFrameOptions,
     type IPropertiesOptions,
     type IXmlableObject,
+    Packer,
     PageBreak,
     PageNumber,
     type PageNumberEstimator,
     PageReference,
     Paragraph,
+    PatchType,
     TabStopType,
     TableOfContents,
+    type TemplatePageNumberEstimator,
     TextRun,
+    patchDocument,
 } from "docx";
 
 import { estimatePageNumbers, estimatePageNumbersWith } from "./estimate-page-numbers";
@@ -54,6 +60,43 @@ const FRAME: IFrameOptions = {
 
 const heading = (text: string, bookmark: string): Paragraph =>
     new Paragraph({ heading: HeadingLevel.HEADING_1, children: [new Bookmark({ id: bookmark, children: [new TextRun(text)] })] });
+
+/**
+ * The document of a template with a page reference and a number of pages, once patchDocument has filled it in with two
+ * pages of chapters, with the page numbers the estimator works out
+ */
+const patchedTemplateOf = async (pageNumbers: TemplatePageNumberEstimator): Promise<string> => {
+    const template = await Packer.toBuffer(
+        new Document({
+            sections: [
+                {
+                    children: [
+                        new Paragraph({ children: [new TextRun("The end is on page "), new PageReference("end")] }),
+                        new Paragraph("{{chapters}}"),
+                        heading("The end", "end"),
+                        new Paragraph({ children: [new TextRun({ children: ["Pages: ", PageNumber.TOTAL_PAGES] })] }),
+                    ],
+                },
+            ],
+        }),
+    );
+    const patched = await patchDocument({
+        outputType: "nodebuffer",
+        data: template,
+        patches: {
+            chapters: {
+                type: PatchType.DOCUMENT,
+                children: [1, 2].map((chapter) => new Paragraph({ children: [new TextRun(`Chapter ${chapter}`), new PageBreak()] })),
+            },
+        },
+        pageNumbers,
+    });
+    return (await JSZip.loadAsync(patched)).file("word/document.xml")!.async("text");
+};
+
+/** The results written into the fields of a document */
+const resultsOf = (document: string): readonly string[] =>
+    [...document.matchAll(/<w:fldChar w:fldCharType="separate"\/><w:t xml:space="preserve">([^<]*)<\/w:t>/g)].map(([, result]) => result);
 
 describe("estimatePageNumbers", () => {
     it("should work out the page each bookmark starts on", () => {
@@ -121,8 +164,19 @@ describe("estimatePageNumbers", () => {
         expect(stopped.sectionPageCounts).to.deep.equal([undefined]);
     });
 
+    it("should work out the page numbers of a template once patchDocument has patched it, and write them clean", async () => {
+        const document = await patchedTemplateOf(estimatePageNumbers);
+        // The page reference and the number of pages
+        expect(resultsOf(document)).to.deep.equal(["3", "3"]);
+        // The template's page reference was written dirty, without page numbers
+        expect(document).not.to.contain("w:dirty");
+    });
+
     it("should place nothing without a document to lay out", () => {
         expect(estimatePageNumbers({ "w:body": [] } as IXmlableObject, { stack: [] } as unknown as IContext)).to.deep.equal({
+            bookmarks: new Map(),
+        });
+        expect((estimatePageNumbers as (body: IXmlableObject) => EstimatedPageNumbers)({ "w:body": [] })).to.deep.equal({
             bookmarks: new Map(),
         });
     });
@@ -160,5 +214,9 @@ describe("estimatePageNumbersWith", () => {
 
     it("should measure text with the width tables, as estimatePageNumbers does, without a way to measure it", () => {
         expect(estimateOf(DOCUMENT, estimatePageNumbersWith({}))).to.deep.equal(estimateOf(DOCUMENT));
+    });
+
+    it("should work out the page numbers of a template once patchDocument has patched it, as estimatePageNumbers does", async () => {
+        expect(resultsOf(await patchedTemplateOf(estimatePageNumbersWith({})))).to.deep.equal(["3", "3"]);
     });
 });

@@ -45,6 +45,8 @@ The patcher also takes in a `keepOriginalStyles` boolean, which will preserve th
 
 It also takes in `footnotes` and `endnotes`, for the notes that patches refer to with a `FootnoteReferenceRun` or an `EndnoteReferenceRun`. See [Footnotes and endnotes](usage/templates.md#footnotes-and-endnotes).
 
+Given `estimatePageNumbers` from `docx/layout` as its `pageNumbers`, it writes the page numbers of the template's tables of contents and page references, and its numbers of pages, once the patches are in. See [Page numbers](usage/templates.md#page-numbers).
+
 A patch can also be for a drawing whose alt text holds the placeholder, rather than for text: `ChartDataPatch` from `docx/charts` gives a chart made in Word new data, keeping its look. See [Charts in Templates](usage/chart-templates.md).
 
 ### How to patch existing document
