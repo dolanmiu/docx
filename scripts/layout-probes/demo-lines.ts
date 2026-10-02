@@ -29,6 +29,10 @@ import { layOutPasses } from "../../src/layout/layout-passes";
 import { readDocx } from "../../src/layout/read-docx";
 
 const [docxPath, htmlPath] = process.argv.slice(2);
+if (docxPath === undefined || htmlPath === undefined) {
+    console.error("Usage: npm run run-ts -- scripts/layout-probes/demo-lines.ts <demo>.docx <Word's PDF of it>.html");
+    process.exit(2);
+}
 
 const unescape = (text: string): string =>
     text
@@ -181,19 +185,21 @@ for (const item of items) {
     }
     if (found === undefined) {
         failed++;
+        continuing.delete(item.shown);
         console.log(`  none  page ${String(item.page).padStart(3)}            ${item.shown.slice(0, 70)}`);
         continue;
     }
     const word = WORD[found];
     if (item.kind === "row") {
-        // The lines of each of its cells, which start level with the one found, and what is left of each for the next page
+        // The lines of each of its cells, which start level with the one found, and what is left of each for the next page:
+        // none of a cell not found, such as one whose text runs up it
         const rests = texts.map((text) => {
             const level = WORD.findIndex(
                 (line, index) => line.page === word.page && Math.abs(line.y - word.y) < 1 && cellFrom(text, index) !== undefined,
             );
             const cell = level === -1 ? undefined : cellFrom(text, level);
             cell?.lines.forEach((line) => claimed.add(line));
-            return cell ? cell.rest : text;
+            return cell?.rest ?? "";
         });
         // A row repeated at the top of each page, as a header, starts again there
         if (rests.some((rest) => rest.length > 0)) {
@@ -209,7 +215,14 @@ for (const item of items) {
         `${word.page === item.page ? "  ok  " : "  FAIL"}  page ${String(item.page).padStart(3)} ${word.page === item.page ? " " : "*"}Word ${String(word.page).padStart(3)}  ${item.kind} ${item.y.toFixed(1).padStart(6)} Word ${word.y.toFixed(1).padStart(6)} gap ${(word.y - item.y).toFixed(1).padStart(5)}  ${item.shown.slice(0, 50)}`,
     );
 }
+// The rows Word broke across pages that docx/layout didn't, so the rest of them, on Word's next page, wasn't looked for
+for (const row of continuing.keys()) {
+    console.log(`  FAIL  Word breaks it across pages, docx/layout doesn't  ${row.slice(0, 50)}`);
+}
 console.log(
     `\n${items.length - failed} of ${items.length} lines and rows are on Word's page${laidOut.stoppedAt ? `; it stopped at ${laidOut.stoppedAt}` : ""}`,
 );
-process.exit(failed === 0 && laidOut.stoppedAt === undefined ? 0 : 1);
+if (continuing.size > 0) {
+    console.log(`${continuing.size} rows Word breaks across pages aren't broken by docx/layout`);
+}
+process.exit(failed === 0 && continuing.size === 0 && laidOut.stoppedAt === undefined ? 0 : 1);
