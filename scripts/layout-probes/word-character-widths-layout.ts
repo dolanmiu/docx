@@ -34,7 +34,10 @@ const LABEL_SIZE = 6;
 
 const hex = (code: number): string => code.toString(16).padStart(4, "0");
 
-/** Where docx/layout starts each line of a paragraph after the first: the code point or word each starts with */
+/**
+ * Where docx/layout starts each line of a paragraph after the first: the first code point or word that starts on it. A word
+ * broken across lines counts on the line it starts on, as the reader counts it, so a line with only the end of one has none
+ */
 const linesOf = (number: number, codes: readonly number[], face: TextFont): readonly string[] => {
     const text = (value: string, font: TextFont): InlineItem => ({ type: "text", text: value, font });
     const marker = (value: string): InlineItem => ({ type: "marker", name: value });
@@ -50,7 +53,7 @@ const linesOf = (number: number, codes: readonly number[], face: TextFont): read
     ];
     return layoutLines(items, { width: WIDTH })
         .slice(1)
-        .map(({ markers }) => markers[0]);
+        .flatMap(({ markers }) => markers.slice(0, 1));
 };
 
 const results = PROBE.faces.map(({ font, bold, italic }, faceIndex) => {
