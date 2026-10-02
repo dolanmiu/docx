@@ -3641,6 +3641,10 @@ var docxShapes = (function(exports, docx) {
 		return isWide(code) || FULL_WIDTH_SYMBOLS.has(character) || code >= 8592 && code <= 9983 ? 1e3 : 500;
 	};
 	var sizeOf$1 = ({ size = 10 }) => size;
+	var lineSizeOf = (font) => {
+		var _font$lineSize;
+		return (_font$lineSize = font.lineSize) !== null && _font$lineSize !== void 0 ? _font$lineSize : sizeOf$1(font);
+	};
 	/**
 	* How a font's characters are measured: an East Asian font's Latin letters with the widths of the font in the table they
 	* are measured as, or all of a monospaced one's as half an em or an em, and other fonts with their own widths, or those of
@@ -3671,7 +3675,7 @@ var docxShapes = (function(exports, docx) {
 	*/
 	var measureLineHeight = (font = {}) => {
 		var _eastAsianFontOf, _font$font2;
-		return ((_eastAsianFontOf = eastAsianFontOf((_font$font2 = font.font) !== null && _font$font2 !== void 0 ? _font$font2 : "Times New Roman")) !== null && _eastAsianFontOf !== void 0 ? _eastAsianFontOf : widthsOf(font.font)).lineHeight * sizeOf$1(font) / 1e3;
+		return ((_eastAsianFontOf = eastAsianFontOf((_font$font2 = font.font) !== null && _font$font2 !== void 0 ? _font$font2 : "Times New Roman")) !== null && _eastAsianFontOf !== void 0 ? _eastAsianFontOf : widthsOf(font.font)).lineHeight * lineSizeOf(font) / 1e3;
 	};
 	/**
 	* Splits spans into words and the spaces between them. A word can be made of pieces of several spans, such as a bold
@@ -3812,6 +3816,8 @@ var docxShapes = (function(exports, docx) {
 		themeFonts: OFFICE_THEME_FONTS
 	};
 	var SMALL_CAPS_SCALE = .8;
+	var SCRIPT_SCALE = .65;
+	var EIGHTHS_PER_POINT = 8;
 	var SINGLE_LINE = 240;
 	/**
 	* A context for formatting parts of the document to read them. Formatting paragraph properties that refer to a
@@ -3880,8 +3886,9 @@ var docxShapes = (function(exports, docx) {
 	/**
 	* Why how Word reads a length in formatted XML isn't known, when it isn't: a size in picas, which Word's PDFs didn't
 	* tell from one it ignores, or in another unit but points, which they showed it ignores only with no style giving a
-	* size, and a negative length of a fraction of a centimeter or millimeter, whose minus sign and rounding together they
-	* didn't show. Undefined when every length's reading is known.
+	* size, a negative length of a fraction of a centimeter or millimeter, and a lowered position (`w:position`) of a
+	* fraction of its unit, whose minus sign and rounding together they didn't show. Undefined when every length's reading
+	* is known.
 	*/
 	var unknownLengthIn = (element, name = "") => {
 		if (Array.isArray(element)) return element.reduce((found, child) => found !== null && found !== void 0 ? found : unknownLengthIn(child, name), void 0);
@@ -3892,7 +3899,9 @@ var docxShapes = (function(exports, docx) {
 				const measure = typeof value === "string" ? MEASURE.exec(value) : null;
 				if (reason !== void 0 || !measure) return reason;
 				const [, minus, , fraction, unit] = measure;
-				return (name === "w:sz" || name === "w:szCs") && unit !== "pt" ? "a size given in a unit other than points" : minus && fraction && METRIC.has(unit) ? "a negative length of a fraction of a centimeter or millimeter" : void 0;
+				if ((name === "w:sz" || name === "w:szCs") && unit !== "pt") return "a size given in a unit other than points";
+				if (name === "w:position" && minus && fraction) return "a lowered position of a fraction of its unit";
+				return minus && fraction && METRIC.has(unit) ? "a negative length of a fraction of a centimeter or millimeter" : void 0;
 			}, void 0);
 		}, void 0);
 	};
@@ -3919,6 +3928,7 @@ var docxShapes = (function(exports, docx) {
 		if (theme.startsWith("major")) return themeFonts.headings;
 		return theme.startsWith("minor") ? themeFonts.body : void 0;
 	};
+	var readVerticalAlign = (value) => value === "superscript" || value === "subscript" ? value : value === void 0 ? void 0 : "baseline";
 	/**
 	* Reads run properties (`w:rPr`). A font of the theme (`w:asciiTheme`) takes the place of the font named beside it.
 	*/
@@ -3944,7 +3954,11 @@ var docxShapes = (function(exports, docx) {
 			complexScriptItalic: onOff(children, "w:iCs"),
 			rightToLeft: onOff(children, "w:rtl"),
 			complexScript: onOff(children, "w:cs"),
-			eastAsianLanguage: stringOf(attributesOf(find(children, "w:lang"))["w:eastAsia"])
+			eastAsianLanguage: stringOf(attributesOf(find(children, "w:lang"))["w:eastAsia"]),
+			verticalAlign: readVerticalAlign(valueOf(children, "w:vertAlign")),
+			position: pointsOf(attributesOf(find(children, "w:position"))["w:val"], 2),
+			emphasisMark: valueOf(children, "w:em"),
+			border: readBorder(find(children, "w:bdr"))
 		});
 	};
 	var readLineSpacing = (spacing) => {
@@ -3999,9 +4013,9 @@ var docxShapes = (function(exports, docx) {
 		});
 	};
 	/**
-	* Reads a border of a paragraph (`w:pBdr`), on one side.
+	* Reads a border of a paragraph (`w:pBdr`), on one side, or of a run (`w:bdr`).
 	*/
-	var readParagraphBorder = (element) => {
+	var readBorder = (element) => {
 		var _stringOf, _numberOf;
 		if (element === void 0) return;
 		const attributes = attributesOf(element);
@@ -4027,7 +4041,7 @@ var docxShapes = (function(exports, docx) {
 		const twips = (...names) => names.map((name) => pointsOf(indent[name], 20)).find((value) => value !== void 0);
 		const chars = (...names) => names.map((name) => numberOf(indent[name])).find((value) => value !== void 0);
 		const automatic = (name) => spacing[name] === void 0 ? void 0 : !isOff(spacing[name]);
-		const border = (...names) => names.map((name) => readParagraphBorder(find(borders, name))).find((value) => value !== void 0);
+		const border = (...names) => names.map((name) => readBorder(find(borders, name))).find((value) => value !== void 0);
 		const hanging = twips("w:hanging");
 		const hangingChars = chars("w:hangingChars");
 		return withoutUndefined({
@@ -4176,17 +4190,93 @@ var docxShapes = (function(exports, docx) {
 		return walk(id, /* @__PURE__ */ new Set());
 	};
 	/**
-	* The parts of run formatting that change the font text is measured in.
+	* A share of a size in points, to the nearest half-point, and down from a quarter, as Word draws superscript and small
+	* capitals: superscript is 3 points at 5, 9.5 at 15 and 16 at 25 (scripts/layout-probes/word-run-formatting.ts RF1)
 	*/
-	var fontOf = ({ font, size, bold, italic, kerning, characterSpacing, scale }) => withoutUndefined({
+	var nearestHalfPoint = (size, share) => Math.ceil(size * 2 * share - .5 - ROUNDING) / 2;
+	/**
+	* Text in superscript or subscript, drawn smaller, in a line of its own size: a superscript or subscript doesn't make a line
+	* of its size taller, though Word raises its top above the line's (scripts/layout-probes/word-watertight-text.ts TX1a)
+	*/
+	var scripted = (font, { verticalAlign }) => {
+		var _font$size;
+		if (verticalAlign !== "superscript" && verticalAlign !== "subscript") return font;
+		const size = (_font$size = font.size) !== null && _font$size !== void 0 ? _font$size : 10;
+		return _objectSpread2(_objectSpread2({}, font), {}, {
+			size: nearestHalfPoint(size, SCRIPT_SCALE),
+			lineSize: size
+		});
+	};
+	var BORDER_WIDTHS = _objectSpread2(_objectSpread2({}, Object.fromEntries([
+		"single",
+		"thick",
+		"dotted",
+		"dashed",
+		"dotDash",
+		"dotDotDash",
+		"dashSmallGap",
+		"inset",
+		"outset"
+	].map((style) => [style, (size) => size]))), {}, {
+		double: (size) => 3 * size,
+		triple: (size) => 5 * size,
+		wave: () => 24,
+		dashDotStroked: () => 24,
+		doubleWave: () => 42
+	}, Object.fromEntries([
+		["thinThickSmallGap", 12],
+		["thickThinSmallGap", 12],
+		["threeDEmboss", 12],
+		["threeDEngrave", 12],
+		["thinThickThinSmallGap", 24]
+	].map(([style, more]) => [style, (size) => size >= 4 && size <= 18 ? size + more : void 0])));
+	/**
+	* How wide a run's border is as Word draws it, in eighths of a point: as a paragraph's of its style. A border of no style
+	* ("none") takes its space still, but no width (scripts/layout-probes/word-run-formatting.ts RF7h). Undefined when Word
+	* hasn't been seen to draw it.
+	*/
+	var runBorderWidth = ({ style, size, space, shadow, frame }) => {
+		var _BORDER_WIDTHS$style;
+		if (shadow || frame || space > 31) return;
+		return style === "none" || size === void 0 || size < 2 || size > 96 ? style === "none" ? 0 : void 0 : (_BORDER_WIDTHS$style = BORDER_WIDTHS[style]) === null || _BORDER_WIDTHS$style === void 0 ? void 0 : _BORDER_WIDTHS$style.call(BORDER_WIDTHS, size);
+	};
+	/**
+	* The room a run's border takes, beside the run and above and below it: its space and its width, as Word gives it room (a
+	* single border of half a point 4 points away takes 90 twips on each side and above and below, RF7a). Undefined when it
+	* takes none, as one of "nil" takes none at all (word-run-formatting2.ts RF12), and when how much isn't known: see
+	* {@link unknownRunFormatting}.
+	*/
+	var textBorderOf = (border) => {
+		const width = border === void 0 || border.style === "nil" ? void 0 : runBorderWidth(border);
+		const room = width === void 0 ? 0 : width / EIGHTHS_PER_POINT + border.space;
+		return room > 0 ? {
+			room,
+			key: border.key
+		} : void 0;
+	};
+	var EMPHASIS = {
+		dot: "above",
+		comma: "above",
+		circle: "above",
+		underDot: "below"
+	};
+	var plainFontOf = ({ font, size, bold, italic, kerning, characterSpacing, scale, position, border, emphasisMark }) => withoutUndefined({
 		font,
 		size,
 		bold,
 		italic,
 		kerning,
 		characterSpacing,
-		scale
+		scale,
+		raise: position === 0 ? void 0 : position,
+		border: textBorderOf(border),
+		emphasis: emphasisMark === void 0 ? void 0 : EMPHASIS[emphasisMark]
 	});
+	/**
+	* The parts of run formatting that change the font text is measured in: its font, size, boldness, character spacing and
+	* scale, superscript and subscript, which draw it smaller, how far it is raised, its border, and its emphasis marks.
+	*/
+	var fontOf = (format) => scripted(plainFontOf(format), format);
 	/**
 	* Which of a run's fonts Word draws a character in: the font for complex scripts, in their size, boldness and italics, for
 	* all of a run that is right to left or of a complex script; the East Asian font for Chinese, Japanese and Korean; the
@@ -4204,15 +4294,15 @@ var docxShapes = (function(exports, docx) {
 	* italics, and Word's defaults where the run doesn't give them.
 	*/
 	var fontOfSlot = (format, slot) => {
-		const font = fontOf(format);
-		if (slot === "latin") return font;
+		const font = plainFontOf(format);
+		if (slot === "latin") return scripted(font, format);
 		const { eastAsiaFont, complexScriptFont, complexScriptSize, complexScriptBold, complexScriptItalic } = format;
-		return slot === "eastAsian" ? _objectSpread2(_objectSpread2({}, font), {}, { font: isEastAsianFont(eastAsiaFont) ? eastAsiaFont : FALLBACK_EAST_ASIAN_FONT }) : withoutUndefined(_objectSpread2(_objectSpread2({}, font), {}, {
+		return scripted(slot === "eastAsian" ? _objectSpread2(_objectSpread2({}, font), {}, { font: isEastAsianFont(eastAsiaFont) ? eastAsiaFont : FALLBACK_EAST_ASIAN_FONT }) : withoutUndefined(_objectSpread2(_objectSpread2({}, font), {}, {
 			font: complexScriptFont,
 			size: complexScriptSize,
 			bold: complexScriptBold,
 			italic: complexScriptItalic
-		}));
+		})), format);
 	};
 	/**
 	* A span of text in its formatting: in the run's font for its script, capitals for all caps, and smaller capitals for the
@@ -4234,10 +4324,14 @@ var docxShapes = (function(exports, docx) {
 				text: character
 			}];
 		}, []).flatMap(({ slot, text: part }) => {
-			var _font$size;
+			var _font$size2, _font$lineSize;
 			const font = fontOfSlot(format, slot);
 			if (allCaps || !smallCaps) return [_objectSpread2(_objectSpread2({}, font), {}, { text: allCaps ? part.toUpperCase() : part })];
-			const small = _objectSpread2(_objectSpread2({}, font), {}, { size: ((_font$size = font.size) !== null && _font$size !== void 0 ? _font$size : 10) * SMALL_CAPS_SCALE });
+			const size = (_font$size2 = font.size) !== null && _font$size2 !== void 0 ? _font$size2 : 10;
+			const small = _objectSpread2(_objectSpread2({}, font), {}, {
+				size: nearestHalfPoint(size, SMALL_CAPS_SCALE),
+				lineSize: (_font$lineSize = font.lineSize) !== null && _font$lineSize !== void 0 ? _font$lineSize : size
+			});
 			return part.split(new RegExp("(\\p{Ll}+)", "u")).filter((piece) => piece.length > 0).map((piece) => new RegExp("^\\p{Ll}", "u").test(piece) ? _objectSpread2(_objectSpread2({}, small), {}, { text: piece.toUpperCase() }) : _objectSpread2(_objectSpread2({}, font), {}, { text: piece }));
 		});
 	};

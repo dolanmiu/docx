@@ -396,6 +396,10 @@ var docxLayout = (function(exports) {
 	var sizeOf$1 = ({ size = 10 }) => size;
 	/** Whether text is kerned: with kerning on (`w:kern`), and at its size or larger, as Word kerns it (word-fonts.docx F3) */
 	var isKerned = ({ kerning, size = 10 }) => kerning !== void 0 && size >= kerning;
+	var lineSizeOf = (font) => {
+		var _font$lineSize;
+		return (_font$lineSize = font.lineSize) !== null && _font$lineSize !== void 0 ? _font$lineSize : sizeOf$1(font);
+	};
 	/**
 	* How a font's characters are measured: an East Asian font's Latin letters with the widths of the font in the table they
 	* are measured as, or all of a monospaced one's as half an em or an em, and other fonts with their own widths, or those of
@@ -440,7 +444,7 @@ var docxLayout = (function(exports) {
 	*/
 	var measureLineHeight = (font = {}) => {
 		var _eastAsianFontOf, _font$font2;
-		return ((_eastAsianFontOf = eastAsianFontOf((_font$font2 = font.font) !== null && _font$font2 !== void 0 ? _font$font2 : "Times New Roman")) !== null && _eastAsianFontOf !== void 0 ? _eastAsianFontOf : widthsOf(font.font)).lineHeight * sizeOf$1(font) / 1e3;
+		return ((_eastAsianFontOf = eastAsianFontOf((_font$font2 = font.font) !== null && _font$font2 !== void 0 ? _font$font2 : "Times New Roman")) !== null && _eastAsianFontOf !== void 0 ? _eastAsianFontOf : widthsOf(font.font)).lineHeight * lineSizeOf(font) / 1e3;
 	};
 	/**
 	* How far a line of single-spaced text goes below its baseline, in points. The rest of the line is above it, with the
@@ -449,7 +453,7 @@ var docxLayout = (function(exports) {
 	*/
 	var measureDescent = (font = {}) => {
 		var _eastAsianFontOf2, _font$font3;
-		return ((_eastAsianFontOf2 = eastAsianFontOf((_font$font3 = font.font) !== null && _font$font3 !== void 0 ? _font$font3 : "Times New Roman")) !== null && _eastAsianFontOf2 !== void 0 ? _eastAsianFontOf2 : widthsOf(font.font)).descent * sizeOf$1(font) / 1e3;
+		return ((_eastAsianFontOf2 = eastAsianFontOf((_font$font3 = font.font) !== null && _font$font3 !== void 0 ? _font$font3 : "Times New Roman")) !== null && _eastAsianFontOf2 !== void 0 ? _eastAsianFontOf2 : widthsOf(font.font)).descent * lineSizeOf(font) / 1e3;
 	};
 	//#endregion
 	//#region src/text-layout/line-break-rules.ts
@@ -575,6 +579,8 @@ var docxLayout = (function(exports) {
 		themeFonts: OFFICE_THEME_FONTS
 	};
 	var SMALL_CAPS_SCALE = .8;
+	var SCRIPT_SCALE = .65;
+	var EIGHTHS_PER_POINT$2 = 8;
 	var SINGLE_LINE = 240;
 	/**
 	* A context for formatting parts of the document to read them. Formatting paragraph properties that refer to a
@@ -643,8 +649,9 @@ var docxLayout = (function(exports) {
 	/**
 	* Why how Word reads a length in formatted XML isn't known, when it isn't: a size in picas, which Word's PDFs didn't
 	* tell from one it ignores, or in another unit but points, which they showed it ignores only with no style giving a
-	* size, and a negative length of a fraction of a centimeter or millimeter, whose minus sign and rounding together they
-	* didn't show. Undefined when every length's reading is known.
+	* size, a negative length of a fraction of a centimeter or millimeter, and a lowered position (`w:position`) of a
+	* fraction of its unit, whose minus sign and rounding together they didn't show. Undefined when every length's reading
+	* is known.
 	*/
 	var unknownLengthIn = (element, name = "") => {
 		if (Array.isArray(element)) return element.reduce((found, child) => found !== null && found !== void 0 ? found : unknownLengthIn(child, name), void 0);
@@ -655,7 +662,9 @@ var docxLayout = (function(exports) {
 				const measure = typeof value === "string" ? MEASURE.exec(value) : null;
 				if (reason !== void 0 || !measure) return reason;
 				const [, minus, , fraction, unit] = measure;
-				return (name === "w:sz" || name === "w:szCs") && unit !== "pt" ? "a size given in a unit other than points" : minus && fraction && METRIC.has(unit) ? "a negative length of a fraction of a centimeter or millimeter" : void 0;
+				if ((name === "w:sz" || name === "w:szCs") && unit !== "pt") return "a size given in a unit other than points";
+				if (name === "w:position" && minus && fraction) return "a lowered position of a fraction of its unit";
+				return minus && fraction && METRIC.has(unit) ? "a negative length of a fraction of a centimeter or millimeter" : void 0;
 			}, void 0);
 		}, void 0);
 	};
@@ -682,6 +691,7 @@ var docxLayout = (function(exports) {
 		if (theme.startsWith("major")) return themeFonts.headings;
 		return theme.startsWith("minor") ? themeFonts.body : void 0;
 	};
+	var readVerticalAlign = (value) => value === "superscript" || value === "subscript" ? value : value === void 0 ? void 0 : "baseline";
 	/**
 	* Reads run properties (`w:rPr`). A font of the theme (`w:asciiTheme`) takes the place of the font named beside it.
 	*/
@@ -707,7 +717,11 @@ var docxLayout = (function(exports) {
 			complexScriptItalic: onOff(children, "w:iCs"),
 			rightToLeft: onOff(children, "w:rtl"),
 			complexScript: onOff(children, "w:cs"),
-			eastAsianLanguage: stringOf(attributesOf(find(children, "w:lang"))["w:eastAsia"])
+			eastAsianLanguage: stringOf(attributesOf(find(children, "w:lang"))["w:eastAsia"]),
+			verticalAlign: readVerticalAlign(valueOf(children, "w:vertAlign")),
+			position: pointsOf(attributesOf(find(children, "w:position"))["w:val"], 2),
+			emphasisMark: valueOf(children, "w:em"),
+			border: readBorder$1(find(children, "w:bdr"))
 		});
 	};
 	var readLineSpacing = (spacing) => {
@@ -762,9 +776,9 @@ var docxLayout = (function(exports) {
 		});
 	};
 	/**
-	* Reads a border of a paragraph (`w:pBdr`), on one side.
+	* Reads a border of a paragraph (`w:pBdr`), on one side, or of a run (`w:bdr`).
 	*/
-	var readParagraphBorder = (element) => {
+	var readBorder$1 = (element) => {
 		var _stringOf, _numberOf;
 		if (element === void 0) return;
 		const attributes = attributesOf(element);
@@ -790,7 +804,7 @@ var docxLayout = (function(exports) {
 		const twips = (...names) => names.map((name) => pointsOf(indent[name], 20)).find((value) => value !== void 0);
 		const chars = (...names) => names.map((name) => numberOf(indent[name])).find((value) => value !== void 0);
 		const automatic = (name) => spacing[name] === void 0 ? void 0 : !isOff(spacing[name]);
-		const border = (...names) => names.map((name) => readParagraphBorder(find(borders, name))).find((value) => value !== void 0);
+		const border = (...names) => names.map((name) => readBorder$1(find(borders, name))).find((value) => value !== void 0);
 		const hanging = twips("w:hanging");
 		const hangingChars = chars("w:hangingChars");
 		return withoutUndefined({
@@ -939,17 +953,102 @@ var docxLayout = (function(exports) {
 		return walk(id, /* @__PURE__ */ new Set());
 	};
 	/**
-	* The parts of run formatting that change the font text is measured in.
+	* A share of a size in points, to the nearest half-point, and down from a quarter, as Word draws superscript and small
+	* capitals: superscript is 3 points at 5, 9.5 at 15 and 16 at 25 (scripts/layout-probes/word-run-formatting.ts RF1)
 	*/
-	var fontOf = ({ font, size, bold, italic, kerning, characterSpacing, scale }) => withoutUndefined({
+	var nearestHalfPoint = (size, share) => Math.ceil(size * 2 * share - .5 - ROUNDING) / 2;
+	/**
+	* Text in superscript or subscript, drawn smaller, in a line of its own size: a superscript or subscript doesn't make a line
+	* of its size taller, though Word raises its top above the line's (scripts/layout-probes/word-watertight-text.ts TX1a)
+	*/
+	var scripted = (font, { verticalAlign }) => {
+		var _font$size;
+		if (verticalAlign !== "superscript" && verticalAlign !== "subscript") return font;
+		const size = (_font$size = font.size) !== null && _font$size !== void 0 ? _font$size : 10;
+		return _objectSpread2(_objectSpread2({}, font), {}, {
+			size: nearestHalfPoint(size, SCRIPT_SCALE),
+			lineSize: size
+		});
+	};
+	var BORDER_WIDTHS = _objectSpread2(_objectSpread2({}, Object.fromEntries([
+		"single",
+		"thick",
+		"dotted",
+		"dashed",
+		"dotDash",
+		"dotDotDash",
+		"dashSmallGap",
+		"inset",
+		"outset"
+	].map((style) => [style, (size) => size]))), {}, {
+		double: (size) => 3 * size,
+		triple: (size) => 5 * size,
+		wave: () => 24,
+		dashDotStroked: () => 24,
+		doubleWave: () => 42
+	}, Object.fromEntries([
+		["thinThickSmallGap", 12],
+		["thickThinSmallGap", 12],
+		["threeDEmboss", 12],
+		["threeDEngrave", 12],
+		["thinThickThinSmallGap", 24]
+	].map(([style, more]) => [style, (size) => size >= 4 && size <= 18 ? size + more : void 0])));
+	/**
+	* How wide a run's border is as Word draws it, in eighths of a point: as a paragraph's of its style. A border of no style
+	* ("none") takes its space still, but no width (scripts/layout-probes/word-run-formatting.ts RF7h). Undefined when Word
+	* hasn't been seen to draw it.
+	*/
+	var runBorderWidth = ({ style, size, space, shadow, frame }) => {
+		var _BORDER_WIDTHS$style;
+		if (shadow || frame || space > 31) return;
+		return style === "none" || size === void 0 || size < 2 || size > 96 ? style === "none" ? 0 : void 0 : (_BORDER_WIDTHS$style = BORDER_WIDTHS[style]) === null || _BORDER_WIDTHS$style === void 0 ? void 0 : _BORDER_WIDTHS$style.call(BORDER_WIDTHS, size);
+	};
+	/**
+	* The room a run's border takes, beside the run and above and below it: its space and its width, as Word gives it room (a
+	* single border of half a point 4 points away takes 90 twips on each side and above and below, RF7a). Undefined when it
+	* takes none, as one of "nil" takes none at all (word-run-formatting2.ts RF12), and when how much isn't known: see
+	* {@link unknownRunFormatting}.
+	*/
+	var textBorderOf = (border) => {
+		const width = border === void 0 || border.style === "nil" ? void 0 : runBorderWidth(border);
+		const room = width === void 0 ? 0 : width / EIGHTHS_PER_POINT$2 + border.space;
+		return room > 0 ? {
+			room,
+			key: border.key
+		} : void 0;
+	};
+	var EMPHASIS = {
+		dot: "above",
+		comma: "above",
+		circle: "above",
+		underDot: "below"
+	};
+	var plainFontOf = ({ font, size, bold, italic, kerning, characterSpacing, scale, position, border, emphasisMark }) => withoutUndefined({
 		font,
 		size,
 		bold,
 		italic,
 		kerning,
 		characterSpacing,
-		scale
+		scale,
+		raise: position === 0 ? void 0 : position,
+		border: textBorderOf(border),
+		emphasis: emphasisMark === void 0 ? void 0 : EMPHASIS[emphasisMark]
 	});
+	/**
+	* Why a run's formatting can't be laid out as Word lays it out, when it can't: a border of a style, width or space Word
+	* hasn't been seen to draw, or with a shadow or drawn as a frame, and emphasis marks of a kind the schema doesn't have.
+	*/
+	var unknownRunFormatting = ({ border, emphasisMark }) => {
+		if (border !== void 0 && border.style !== "nil" && (border.shadow || border.frame)) return "a run border with a shadow or drawn as a frame";
+		if (border !== void 0 && border.style !== "nil" && runBorderWidth(border) === void 0) return "a run border of a style, width or space not yet followed";
+		return emphasisMark === void 0 || emphasisMark === "none" || EMPHASIS[emphasisMark] !== void 0 ? void 0 : "emphasis marks of a kind that isn't known";
+	};
+	/**
+	* The parts of run formatting that change the font text is measured in: its font, size, boldness, character spacing and
+	* scale, superscript and subscript, which draw it smaller, how far it is raised, its border, and its emphasis marks.
+	*/
+	var fontOf = (format) => scripted(plainFontOf(format), format);
 	/**
 	* Which of a run's fonts Word draws a character in: the font for complex scripts, in their size, boldness and italics, for
 	* all of a run that is right to left or of a complex script; the East Asian font for Chinese, Japanese and Korean; the
@@ -967,15 +1066,15 @@ var docxLayout = (function(exports) {
 	* italics, and Word's defaults where the run doesn't give them.
 	*/
 	var fontOfSlot = (format, slot) => {
-		const font = fontOf(format);
-		if (slot === "latin") return font;
+		const font = plainFontOf(format);
+		if (slot === "latin") return scripted(font, format);
 		const { eastAsiaFont, complexScriptFont, complexScriptSize, complexScriptBold, complexScriptItalic } = format;
-		return slot === "eastAsian" ? _objectSpread2(_objectSpread2({}, font), {}, { font: isEastAsianFont(eastAsiaFont) ? eastAsiaFont : FALLBACK_EAST_ASIAN_FONT }) : withoutUndefined(_objectSpread2(_objectSpread2({}, font), {}, {
+		return scripted(slot === "eastAsian" ? _objectSpread2(_objectSpread2({}, font), {}, { font: isEastAsianFont(eastAsiaFont) ? eastAsiaFont : FALLBACK_EAST_ASIAN_FONT }) : withoutUndefined(_objectSpread2(_objectSpread2({}, font), {}, {
 			font: complexScriptFont,
 			size: complexScriptSize,
 			bold: complexScriptBold,
 			italic: complexScriptItalic
-		}));
+		})), format);
 	};
 	/**
 	* A span of text in its formatting: in the run's font for its script, capitals for all caps, and smaller capitals for the
@@ -997,10 +1096,14 @@ var docxLayout = (function(exports) {
 				text: character
 			}];
 		}, []).flatMap(({ slot, text: part }) => {
-			var _font$size;
+			var _font$size2, _font$lineSize;
 			const font = fontOfSlot(format, slot);
 			if (allCaps || !smallCaps) return [_objectSpread2(_objectSpread2({}, font), {}, { text: allCaps ? part.toUpperCase() : part })];
-			const small = _objectSpread2(_objectSpread2({}, font), {}, { size: ((_font$size = font.size) !== null && _font$size !== void 0 ? _font$size : 10) * SMALL_CAPS_SCALE });
+			const size = (_font$size2 = font.size) !== null && _font$size2 !== void 0 ? _font$size2 : 10;
+			const small = _objectSpread2(_objectSpread2({}, font), {}, {
+				size: nearestHalfPoint(size, SMALL_CAPS_SCALE),
+				lineSize: (_font$lineSize = font.lineSize) !== null && _font$lineSize !== void 0 ? _font$lineSize : size
+			});
 			return part.split(new RegExp("(\\p{Ll}+)", "u")).filter((piece) => piece.length > 0).map((piece) => new RegExp("^\\p{Ll}", "u").test(piece) ? _objectSpread2(_objectSpread2({}, small), {}, { text: piece.toUpperCase() }) : _objectSpread2(_objectSpread2({}, font), {}, { text: piece }));
 		});
 	};
@@ -1009,6 +1112,28 @@ var docxLayout = (function(exports) {
 	* Word breaks them.
 	*/
 	var isEastAsianRun = ({ eastAsiaFont, eastAsianLanguage }) => isEastAsianFont(eastAsiaFont) || kinsokuLanguageOf(eastAsianLanguage) !== void 0;
+	//#endregion
+	//#region \0@oxc-project+runtime@0.150.0/helpers/esm/objectWithoutPropertiesLoose.js
+	function _objectWithoutPropertiesLoose(r, e) {
+		if (null == r) return {};
+		var t = {};
+		for (var n in r) if ({}.hasOwnProperty.call(r, n)) {
+			if (e.includes(n)) continue;
+			t[n] = r[n];
+		}
+		return t;
+	}
+	//#endregion
+	//#region \0@oxc-project+runtime@0.150.0/helpers/esm/objectWithoutProperties.js
+	function _objectWithoutProperties(e, t) {
+		if (null == e) return {};
+		var o, r, i = _objectWithoutPropertiesLoose(e, t);
+		if (Object.getOwnPropertySymbols) {
+			var s = Object.getOwnPropertySymbols(e);
+			for (r = 0; r < s.length; r++) o = s[r], t.includes(o) || {}.propertyIsEnumerable.call(e, o) && (i[o] = e[o]);
+		}
+		return i;
+	}
 	//#endregion
 	//#region src/text-layout/line-breaking.ts
 	/**
@@ -1022,6 +1147,7 @@ var docxLayout = (function(exports) {
 	*
 	* @module
 	*/
+	var _excluded$1 = ["unsupported"];
 	var DEFAULT_MEASURER = {
 		measureWidth: (text, font) => measureTextWidth(text, font),
 		measureLineHeight,
@@ -1146,15 +1272,30 @@ var docxLayout = (function(exports) {
 		return Object.keys(first).length === Object.keys(second).length && Object.entries(first).every(([key, value]) => second[key] === value);
 	};
 	/**
-	* How wide pieces of text are. Pieces next to each other in the same font, and kerned, are measured together, so the pairs
-	* of characters across them are kerned, as Word kerns them across runs (word-fonts.docx F4). Others are measured
-	* apart, as a measurer may measure a piece, such as a page number, differently on its own.
+	* The room borders take between text in one and text in another: the end of the one's box and the start of the other's.
+	* Text next to text with the same border is in one box with it, with no room between: two runs with the same border are
+	* as wide as one, and two with borders of other widths or colours are each in a box of their own
+	* (scripts/layout-probes/word-run-formatting.ts RF7i, RF7k, word-run-formatting2.ts RF12)
+	*/
+	var roomBetween = (before, after) => {
+		var _before$room, _after$room;
+		return (before === null || before === void 0 ? void 0 : before.key) === (after === null || after === void 0 ? void 0 : after.key) ? 0 : ((_before$room = before === null || before === void 0 ? void 0 : before.room) !== null && _before$room !== void 0 ? _before$room : 0) + ((_after$room = after === null || after === void 0 ? void 0 : after.room) !== null && _after$room !== void 0 ? _after$room : 0);
+	};
+	/** The border of the start or end of pieces of text */
+	var firstBorder = (pieces) => pieces[0].font.border;
+	var lastBorder = (pieces) => pieces[pieces.length - 1].font.border;
+	/**
+	* How wide pieces of text are, with the room of the borders between them. Pieces next to each other in the same font, and
+	* kerned, are measured together, so the pairs of characters across them are kerned, as Word kerns them across runs
+	* (word-fonts.docx F4). Others are measured apart, as a measurer may measure a piece, such as a page number, differently on
+	* its own.
 	*/
 	var widthOf = (pieces, measurer) => {
 		if (pieces.length === 0) return 0;
 		let total = 0;
 		let [{ text, font }] = pieces;
 		for (const piece of pieces.slice(1)) {
+			total += roomBetween(font.border, piece.font.border);
 			if (isKerned(font) && sameFont(font, piece.font)) {
 				text += piece.text;
 				continue;
@@ -1173,21 +1314,57 @@ var docxLayout = (function(exports) {
 	};
 	/** The heights of a line, with text in this font on it too */
 	var withFont = (heights, font, measurer) => {
+		var _border$room;
 		const line = measurer.measureLineHeight(font);
 		const descent = measurer.measureDescent(font);
+		const { raise = 0, border, emphasis } = font;
+		const room = (_border$room = border === null || border === void 0 ? void 0 : border.room) !== null && _border$room !== void 0 ? _border$room : 0;
 		return _objectSpread2(_objectSpread2({}, heights), {}, {
-			ascent: Math.max(heights.ascent, line - descent),
-			descent: Math.max(heights.descent, descent),
-			tallest: Math.max(heights.tallest, line)
-		});
+			ascent: Math.max(heights.ascent, Math.max(0, line - descent + raise) + room),
+			descent: Math.max(heights.descent, Math.max(0, descent - raise) + room),
+			tallest: Math.max(heights.tallest, line + 2 * room)
+		}, emphasis === void 0 ? {} : { marks: _objectSpread2(_objectSpread2({}, heights.marks), {}, { [emphasis]: true }) });
+	};
+	var MARKS_OVER_SPACING = .1916;
+	var MARKS_IN_SPACING = .3405;
+	/**
+	* How tall a line with emphasis marks is: a quarter of the line more, over its text or under it, whatever the font and
+	* the size of the text they are on: 67.14 twips in a line of Calibri 11 and 122 of Calibri 20, 57.5 of Times New Roman 10
+	* and 63.25 of Arial 11, and 67.14 still for marks on a word of 7 points, or on a space, in a line of Calibri 11
+	* (scripts/layout-probes/word-run-formatting.ts RF6, word-watertight-text.ts TX15). A line taller than its fonts' own
+	* lines takes a quarter of itself: 616.95 for marks on Courier New 20 in a line of Times New Roman 20, and 485.69 for a
+	* line with a word raised 6 points (word-run-formatting2.ts RF10). Line spacing that adds a little room adds it below the
+	* marks' room, and spacing that adds enough holds the marks
+	*/
+	var markedHeightOf = ({ tallest, picture, marks }, natural, spacing) => {
+		const room = natural / 4;
+		if (marks.above && marks.below) return {
+			height: natural + room,
+			unsupported: "emphasis marks over and under text on one line"
+		};
+		if (picture > 0) return {
+			height: natural + room,
+			unsupported: "emphasis marks on a line with a picture"
+		};
+		if (spacing === void 0 || spacing.rule === "exact") return { height: spacing === void 0 ? natural + room : spacing.height };
+		const extra = spacing.rule === "multiple" ? (spacing.multiple - 1) * tallest : Math.max(0, spacing.height - natural);
+		const share = extra / natural;
+		if (!(extra >= 0 && (extra === 0 || Math.abs(natural - tallest) <= TOLERANCE$1) && (share <= MARKS_OVER_SPACING || share >= MARKS_IN_SPACING))) return {
+			height: natural + room,
+			unsupported: "emphasis marks on a line whose line spacing Word hasn't shown with them"
+		};
+		const below = spacing.rule === "multiple" ? share <= MARKS_OVER_SPACING ? extra : extra - room : 0;
+		return _objectSpread2({ height: natural + extra + (share <= MARKS_OVER_SPACING ? room : 0) }, below > 0 ? { spacingBelow: below } : {});
 	};
 	/**
 	* How tall a line is, with the paragraph's line spacing, and how much of that multiple spacing adds below its text. Word
 	* doesn't round it: Calibri 11 is 268.55 twips, and 289.82 at 259 twips' multiple spacing, where LibreOffice rounds them
 	* to whole twips, 269 and 290.
 	*/
-	var heightOf = ({ ascent, descent, tallest, picture }, spacing) => {
+	var heightOf = (heights, spacing) => {
+		const { ascent, descent, tallest, picture, marks } = heights;
 		const natural = Math.max(Math.max(picture, ascent) + descent, tallest);
+		if (marks !== void 0) return markedHeightOf(heights, natural, spacing);
 		if (spacing === void 0) return { height: natural };
 		if (spacing.rule !== "multiple") return { height: spacing.rule === "exact" ? spacing.height : Math.max(natural, spacing.height) };
 		const spacingBelow = (spacing.multiple - 1) * tallest;
@@ -1211,14 +1388,32 @@ var docxLayout = (function(exports) {
 	* stop. Spaces at its end aren't counted.
 	*/
 	var widthAfterTab = (tokens, measurer) => {
-		const next = tokens.findIndex((token) => token.type === "tab");
-		const text = next === -1 ? tokens : tokens.slice(0, next);
+		const text = textAfterTab(tokens);
 		const lastWord = text.findLastIndex((token) => token.type !== "space" && token.type !== "marker");
-		return text.slice(0, lastWord + 1).reduce((total, token) => {
-			if (token.type === "box") return total + token.width;
-			return token.type === "word" || token.type === "space" ? total + widthOf(token.pieces, measurer) : total;
-		}, 0);
+		return text.slice(0, lastWord + 1).reduce(({ total, border }, token) => {
+			if (token.type === "box") return {
+				total: total + roomBetween(border, void 0) + token.width,
+				border: void 0
+			};
+			return token.type === "word" || token.type === "space" ? {
+				total: total + roomBetween(border, firstBorder(token.pieces)) + widthOf(token.pieces, measurer),
+				border: lastBorder(token.pieces)
+			} : {
+				total,
+				border
+			};
+		}, {
+			total: 0,
+			border: void 0
+		}).total;
 	};
+	/** The tokens after a tab, up to the next tab or the end of the part */
+	var textAfterTab = (tokens) => {
+		const next = tokens.findIndex((token) => token.type === "tab");
+		return next === -1 ? tokens : tokens.slice(0, next);
+	};
+	/** Whether the text after a tab has a border */
+	var hasBorder = (tokens) => textAfterTab(tokens).some((token) => (token.type === "word" || token.type === "space") && token.pieces.some(({ font }) => font.border));
 	/**
 	* A paragraph's tab stops in order, and those of its first line, where a hanging indent is a stop too.
 	*/
@@ -1244,33 +1439,42 @@ var docxLayout = (function(exports) {
 		const { indentLeft = 0, indentRight = 0, firstLineIndent = 0 } = format;
 		const { stops, firstLineStops } = stopsOf(tabStops, format);
 		return segmentsOf(items, rulesOf(format, breakRules)).reduce((widths, { tokens }, segmentIndex) => {
+			var _endBorder$room;
 			const first = segmentIndex === 0;
 			let position = indentLeft + (first ? firstLineIndent : 0);
 			let end = position;
 			let { min } = widths;
+			let border;
+			let endBorder;
 			for (const [index, token] of tokens.entries()) {
+				var _border$room2, _firstBorder$room, _firstBorder;
 				if (token.type === "marker") continue;
 				if (token.type === "space") {
-					position += widthOf(token.pieces, measurer);
+					position += roomBetween(border, firstBorder(token.pieces)) + widthOf(token.pieces, measurer);
+					border = lastBorder(token.pieces);
 					continue;
 				}
+				const lead = token.type === "word" ? roomBetween(border, firstBorder(token.pieces)) : roomBetween(border, void 0);
+				border = token.type === "word" ? lastBorder(token.pieces) : void 0;
+				endBorder = border;
 				if (token.type === "tab") {
-					const stop = nextStop(position, first ? firstLineStops : stops, defaultTabStop, Infinity);
+					const stop = nextStop(position + lead, first ? firstLineStops : stops, defaultTabStop, Infinity);
 					const after = widthAfterTab(tokens.slice(index + 1), measurer);
 					const shift = stop.alignment === "left" ? 0 : stop.alignment === "center" ? after / 2 : after;
-					position = Math.max(position, stop.position - shift);
+					position = Math.max(position + lead, stop.position - shift);
 					end = position;
 					continue;
 				}
 				const tokenWidth = token.type === "box" ? token.width : widthOf(token.pieces, measurer);
-				const start = end === indentLeft + (first ? firstLineIndent : 0) ? position : indentLeft;
-				min = Math.max(min, start + tokenWidth + indentRight);
-				position += tokenWidth;
+				const close = (_border$room2 = border === null || border === void 0 ? void 0 : border.room) !== null && _border$room2 !== void 0 ? _border$room2 : 0;
+				const start = end === indentLeft + (first ? firstLineIndent : 0) ? position + lead : indentLeft + (token.type === "word" ? (_firstBorder$room = (_firstBorder = firstBorder(token.pieces)) === null || _firstBorder === void 0 ? void 0 : _firstBorder.room) !== null && _firstBorder$room !== void 0 ? _firstBorder$room : 0 : 0);
+				min = Math.max(min, start + tokenWidth + close + indentRight);
+				position += lead + tokenWidth;
 				end = position;
 			}
 			return {
 				min,
-				max: Math.max(widths.max, min, end + indentRight)
+				max: Math.max(widths.max, min, end + ((_endBorder$room = endBorder === null || endBorder === void 0 ? void 0 : endBorder.room) !== null && _endBorder$room !== void 0 ? _endBorder$room : 0) + indentRight)
 			};
 		}, {
 			min: 0,
@@ -1357,12 +1561,14 @@ var docxLayout = (function(exports) {
 				first
 			};
 			const finish = (state, breakAfter) => {
-				const heights = state.started ? state.heights : withFont(NOTHING, markFont, measurer);
-				const unsupported = state.unknown ? "a justified line that only fits squeezed at an en, em or ideographic space" : markMatters(heights) ? "a picture alone in a line of a paragraph whose mark is larger" : void 0;
-				lines.push(_objectSpread2(_objectSpread2(_objectSpread2({}, heightOf(heights, lineSpacing)), {}, { markers: [...state.markers, ...state.pending] }, breakAfter ? { breakAfter } : {}), {}, {
+				var _state$unsupported;
+				const heights = state.started ? state.heights : withFont(NOTHING, _objectSpread2(_objectSpread2({}, markFont), {}, { border: void 0 }), measurer);
+				const _heightOf = heightOf(heights, lineSpacing), { unsupported: unknownHeight } = _heightOf, height = _objectWithoutProperties(_heightOf, _excluded$1);
+				const unsupported = state.unknown ? "a justified line that only fits squeezed at an en, em or ideographic space" : (_state$unsupported = state.unsupported) !== null && _state$unsupported !== void 0 ? _state$unsupported : markMatters(heights) ? "a picture alone in a line of a paragraph whose mark is larger" : unknownHeight;
+				lines.push(_objectSpread2(_objectSpread2(_objectSpread2({}, height), {}, { markers: [...state.markers, ...state.pending] }, breakAfter ? { breakAfter } : {}), {}, {
 					text: state.text,
 					textWidth: Math.max(0, state.end - state.start)
-				}, unsupported ? { unsupported } : {}));
+				}, unsupported === void 0 ? {} : { unsupported }));
 			};
 			const wrap = (state) => {
 				finish(_objectSpread2(_objectSpread2({}, state), {}, { pending: [] }));
@@ -1389,6 +1595,7 @@ var docxLayout = (function(exports) {
 				pending: []
 			});
 			for (const [index, token] of tokens.entries()) {
+				var _lastBorder$room, _lastBorder;
 				if (token.type === "marker") {
 					line = _objectSpread2(_objectSpread2({}, line), {}, { pending: [...line.pending, token.name] });
 					continue;
@@ -1396,15 +1603,20 @@ var docxLayout = (function(exports) {
 				if (token.type === "space") {
 					const spaces = widthOf(token.pieces, measurer);
 					line = _objectSpread2(_objectSpread2({}, line), {}, {
-						position: line.position + spaces,
+						position: line.position + roomBetween(line.border, firstBorder(token.pieces)) + spaces,
 						text: line.text + textOf(token.pieces),
 						spaces: line.started ? line.spaces + spaces : 0,
 						spaceCount: line.started ? line.spaceCount + lengthOf(token.pieces) : 0,
 						otherSpaces: line.started ? line.otherSpaces + widthOf(othersOf(token.pieces), measurer) : 0,
-						heights: withToken(line.heights, token)
+						heights: withToken(line.heights, token),
+						border: lastBorder(token.pieces)
 					});
 					continue;
 				}
+				line = token.type === "word" ? line : _objectSpread2(_objectSpread2({}, line), {}, {
+					position: line.position + roomBetween(line.border, void 0),
+					border: void 0
+				});
 				if (token.type === "tab") {
 					var _nextStop;
 					const stop = (_nextStop = nextStop(line.position, line.first ? firstLineStops : stops, defaultTabStop, limitOf())) !== null && _nextStop !== void 0 ? _nextStop : line.started ? nextStop(indentLeft, stops, defaultTabStop, limitOf(lines.length + 1)) : void 0;
@@ -1433,17 +1645,24 @@ var docxLayout = (function(exports) {
 						letters: 0,
 						otherSpaces: 0,
 						started: true
-					});
+					}, shift > 0 && hasBorder(tokens.slice(index + 1)) ? { unsupported: "text with a border lined up with a tab stop" } : {});
 					continue;
 				}
 				const tokenWidth = token.type === "box" ? token.width : widthOf(token.pieces, measurer);
-				const overflows = line.started && line.position + tokenWidth > limitOf() + TOLERANCE$1;
-				if (overflows && unsure(line, tokenWidth)) line = _objectSpread2(_objectSpread2({}, line), {}, { unknown: true });
-				const squeezed = overflows && !line.unknown && squeezesIn(line, tokenWidth);
+				const leadOf = (state) => token.type === "word" ? roomBetween(state.border, firstBorder(token.pieces)) : 0;
+				const boxEnd = token.type === "word" ? (_lastBorder$room = (_lastBorder = lastBorder(token.pieces)) === null || _lastBorder === void 0 ? void 0 : _lastBorder.room) !== null && _lastBorder$room !== void 0 ? _lastBorder$room : 0 : 0;
+				const needs = leadOf(line) + tokenWidth + boxEnd;
+				const overflows = line.started && line.position + needs > limitOf() + TOLERANCE$1;
+				if (overflows && unsure(line, needs)) line = _objectSpread2(_objectSpread2({}, line), {}, { unknown: true });
+				const squeezable = overflows && !line.unknown && squeezesIn(line, needs);
+				const boxed = line.boxed === true || token.type === "word" && token.pieces.some(({ font }) => font.border !== void 0);
+				if (squeezable && boxed) line = _objectSpread2(_objectSpread2({}, line), {}, { unsupported: "a justified line with text in a border that only fits squeezed" });
+				const squeezed = squeezable && !boxed;
 				if (overflows && !squeezed) line = wrap(line);
-				line = place(line);
+				line = _objectSpread2(_objectSpread2({}, place(line)), {}, { position: line.position + leadOf(line) });
 				if (token.type === "word" && !squeezed && line.position + tokenWidth > limitOf() + TOLERANCE$1 && limitOf() - indentLeft > 0) {
 					let placed = false;
+					if (token.pieces.some(({ font }) => font.border !== void 0)) line = _objectSpread2(_objectSpread2({}, line), {}, { unsupported: "a word longer than its line with a border" });
 					for (const character of charactersOf(token.pieces)) {
 						const characterWidth = widthOf(character, measurer);
 						if (placed && line.position + characterWidth > limitOf() + TOLERANCE$1 && limitOf(lines.length + 1) - indentLeft > 0) line = wrap(_objectSpread2(_objectSpread2({}, line), {}, {
@@ -1471,7 +1690,9 @@ var docxLayout = (function(exports) {
 					end: line.position,
 					between: line.spaceCount,
 					heights: withToken(line.heights, token),
-					started: true
+					started: true,
+					border: token.type === "word" ? lastBorder(token.pieces) : void 0,
+					boxed: line.boxed === true || token.type === "word" && token.pieces.some(({ font }) => font.border !== void 0)
 				});
 			}
 			if (!end) finish(line);
@@ -1840,14 +2061,14 @@ var docxLayout = (function(exports) {
 				return text.split("	").reduce((position, part, index) => (index === 0 ? 0 : (Math.floor(position / TAB_STOP$1) + 1) * TAB_STOP$1) + widthIn(face, part, font), 0);
 			},
 			measureLineHeight: (font) => {
-				var _font$size;
+				var _ref2, _font$lineSize;
 				const face = faceOf(font);
-				return face ? face.lineHeight * ((_font$size = font.size) !== null && _font$size !== void 0 ? _font$size : 10) : fallback.measureLineHeight(font);
+				return face ? face.lineHeight * ((_ref2 = (_font$lineSize = font.lineSize) !== null && _font$lineSize !== void 0 ? _font$lineSize : font.size) !== null && _ref2 !== void 0 ? _ref2 : 10) : fallback.measureLineHeight(font);
 			},
 			measureDescent: (font) => {
-				var _font$size2;
+				var _ref3, _font$lineSize2;
 				const face = faceOf(font);
-				return face ? face.descent * ((_font$size2 = font.size) !== null && _font$size2 !== void 0 ? _font$size2 : 10) : fallback.measureDescent(font);
+				return face ? face.descent * ((_ref3 = (_font$lineSize2 = font.lineSize) !== null && _font$lineSize2 !== void 0 ? _font$lineSize2 : font.size) !== null && _ref3 !== void 0 ? _ref3 : 10) : fallback.measureDescent(font);
 			},
 			unknownCharacter: (text, font) => {
 				var _fallback$unknownChar;
@@ -4727,28 +4948,6 @@ var docxLayout = (function(exports) {
 		});
 	};
 	//#endregion
-	//#region \0@oxc-project+runtime@0.150.0/helpers/esm/objectWithoutPropertiesLoose.js
-	function _objectWithoutPropertiesLoose(r, e) {
-		if (null == r) return {};
-		var t = {};
-		for (var n in r) if ({}.hasOwnProperty.call(r, n)) {
-			if (e.includes(n)) continue;
-			t[n] = r[n];
-		}
-		return t;
-	}
-	//#endregion
-	//#region \0@oxc-project+runtime@0.150.0/helpers/esm/objectWithoutProperties.js
-	function _objectWithoutProperties(e, t) {
-		if (null == e) return {};
-		var o, r, i = _objectWithoutPropertiesLoose(e, t);
-		if (Object.getOwnPropertySymbols) {
-			var s = Object.getOwnPropertySymbols(e);
-			for (r = 0; r < s.length; r++) o = s[r], t.includes(o) || {}.propertyIsEnumerable.call(e, o) && (i[o] = e[o]);
-		}
-		return i;
-	}
-	//#endregion
 	//#region src/layout/read-document.ts
 	var _excluded = ["text"];
 	var _excluded2 = [
@@ -4829,19 +5028,15 @@ var docxLayout = (function(exports) {
 			bookmarks: bookmarksIn(elements.slice(index === 0 ? 0 : indexes[index - 1] + 1, at))
 		}));
 	};
-	var SUPERSCRIPT_WIDTH = .65;
 	/**
-	* The number of a footnote or endnote, at its reference or at the start of the note: as narrow as superscript, and as tall
-	* as its font, as LibreOffice lays it out.
+	* The number of a footnote or endnote, at its reference or at the start of the note, in its run's font: in superscript
+	* where its style has it, as docx's FootnoteReference and EndnoteReference do.
 	*/
-	var noteNumber = (text, font) => {
-		var _font$scale;
-		return {
-			type: "text",
-			text,
-			font: _objectSpread2(_objectSpread2({}, font), {}, { scale: ((_font$scale = font.scale) !== null && _font$scale !== void 0 ? _font$scale : 100) * SUPERSCRIPT_WIDTH })
-		};
-	};
+	var noteNumber = (text, font) => ({
+		type: "text",
+		text,
+		font
+	});
 	/** A length in points, from twips or from a universal measure, such as "1in" */
 	var twips = (value) => pointsOf(value, 20);
 	/** Whether a field's switches give its number a format of its own, such as `\* roman`, or a picture, such as `\# "00"` */
@@ -4939,7 +5134,7 @@ var docxLayout = (function(exports) {
 	* Reads a run (`w:r`) in the paragraph's formatting, as its character style and its own formatting change it.
 	*/
 	var readRun = (element, paragraphRun, reader) => {
-		var _valueOf;
+		var _valueOf, _unsupportedFormatOf;
 		const { styles } = reader;
 		const children = contentOf$2(element).filter(isObject);
 		const properties = find(children, "w:rPr");
@@ -4949,7 +5144,7 @@ var docxLayout = (function(exports) {
 			readRunFormat(properties, styles.themeFonts)
 		]);
 		const font = fontOf(format);
-		const unsupportedFormat = unsupportedFormatOf(childrenOf(properties));
+		const unsupportedFormat = (_unsupportedFormatOf = unsupportedFormatOf(childrenOf(properties))) !== null && _unsupportedFormatOf !== void 0 ? _unsupportedFormatOf : format.hidden ? void 0 : unknownRunFormatting(format);
 		const items = children.map((child) => {
 			const name = nameOf(child);
 			if (name === "w:fldChar") return readFieldCharacter(child, font, reader);
@@ -4961,19 +5156,23 @@ var docxLayout = (function(exports) {
 			if (!isShown(reader) || name === "w:rPr") return [];
 			if (unsupportedFormat !== void 0) return unsupportedFormat;
 			switch (name) {
-				case "w:t": return contentOf$2(child).filter((part) => typeof part === "string").join("").split("	").flatMap((part, index) => [...index > 0 && !format.hidden ? [{
-					type: "tab",
-					font
-				}] : [], ...(part.length === 0 ? [] : spansOf(part, format)).map((_ref) => {
-					let { text } = _ref;
-					return _objectSpread2(_objectSpread2({
-						type: "text",
-						text,
-						font: _objectWithoutProperties(_ref, _excluded)
-					}, format.eastAsianLanguage === void 0 ? {} : { language: format.eastAsianLanguage }), isEastAsianRun(format) ? { eastAsian: true } : {});
-				})]);
+				case "w:t": {
+					const content = contentOf$2(child).filter((part) => typeof part === "string").join("");
+					if (font.border && !format.hidden && content.includes("	")) return "a tab in text with a border";
+					return content.split("	").flatMap((part, index) => [...index > 0 && !format.hidden ? [{
+						type: "tab",
+						font
+					}] : [], ...(part.length === 0 ? [] : spansOf(part, format)).map((_ref) => {
+						let { text } = _ref;
+						return _objectSpread2(_objectSpread2({
+							type: "text",
+							text,
+							font: _objectWithoutProperties(_ref, _excluded)
+						}, format.eastAsianLanguage === void 0 ? {} : { language: format.eastAsianLanguage }), isEastAsianRun(format) ? { eastAsian: true } : {});
+					})]);
+				}
 				case "w:tab":
-				case "w:ptab": return format.hidden ? [] : [{
+				case "w:ptab": return format.hidden ? [] : font.border ? "a tab in text with a border" : [{
 					type: "tab",
 					font
 				}];
@@ -5015,7 +5214,7 @@ var docxLayout = (function(exports) {
 				}
 				case "w:footnoteRef":
 				case "w:endnoteRef": return reader.noteNumber === void 0 ? [] : [noteNumber(reader.noteNumber, font)];
-				case "w:drawing": return readDrawing(child, font, reader);
+				case "w:drawing": return font.border ? "a picture in text with a border" : readDrawing(child, font, reader);
 				case "mc:AlternateContent": {
 					const choice = childrenOf(child["mc:AlternateContent"]).find((option) => "mc:Choice" in option);
 					return choice ? readRun({ "w:r": [...childrenOf(choice["mc:Choice"])] }, paragraphRun, reader) : [];
@@ -5163,32 +5362,6 @@ var docxLayout = (function(exports) {
 		return _objectSpread2(_objectSpread2(_objectSpread2(_objectSpread2({}, spaced), right), leftChars === 0 ? {} : { indentLeft: characters(leftChars, mark) }), firstLineChars === 0 ? {} : { firstLineIndent: characters(firstLineChars, first) });
 	};
 	var NO_BORDER = /* @__PURE__ */ new Set(["none", "nil"]);
-	var BORDER_WIDTHS = _objectSpread2(_objectSpread2({}, Object.fromEntries([
-		"single",
-		"thick",
-		"dotted",
-		"dashed",
-		"dotDash",
-		"dotDotDash",
-		"dashSmallGap",
-		"inset",
-		"outset"
-	].map((style) => [style, (size) => size]))), {}, {
-		double: (size) => 3 * size,
-		triple: (size) => 5 * size,
-		wave: () => 24,
-		dashDotStroked: () => 24,
-		doubleWave: () => 42
-	}, Object.fromEntries([
-		["thinThickSmallGap", 12],
-		["thickThinSmallGap", 12],
-		["threeDEmboss", 12],
-		["threeDEngrave", 12],
-		["thinThickThinSmallGap", 24]
-	].map(([style, more]) => [style, (size) => size >= 6 && size <= 18 ? size + more : void 0])));
-	var NARROWEST_BORDER = 2;
-	var WIDEST_BORDER = 96;
-	var FURTHEST_BORDER = 31;
 	/**
 	* The room a border of a paragraph takes, in points: its width and the space between it and the text, or why it isn't
 	* known. A shadow doubles a single line (B6)
@@ -5197,7 +5370,7 @@ var docxLayout = (function(exports) {
 		if (border === void 0 || NO_BORDER.has(border.style)) return 0;
 		const style = BORDER_WIDTHS[border.style];
 		if (style === void 0 || border.frame || border.shadow && border.style !== "single") return "a paragraph border of a style not yet followed";
-		const width = border.size === void 0 || border.size < NARROWEST_BORDER || border.size > WIDEST_BORDER || border.space > FURTHEST_BORDER ? void 0 : style(border.size);
+		const width = border.size === void 0 || border.size < 2 || border.size > 96 || border.space > 31 ? void 0 : style(border.size);
 		return width === void 0 ? "a paragraph border of a width or space not yet followed" : (border.shadow ? 2 : 1) * width / EIGHTHS_PER_POINT + border.space;
 	};
 	/**
