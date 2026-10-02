@@ -2154,9 +2154,9 @@ export const paginate = (
     /**
      * Puts footnotes at the bottom of the page, the last of them only as far as it fits in a room, with the rest of it
      * continued at the bottom of the next page. Across the page, it takes the rest of the page, so what follows goes on
-     * the next (`word-probes.docx` U2), but in columns the text goes on above it, as in Word (`word-watertight-notes.docx`
-     * FN2, FN3). It stops where none of it fits, and in columns of different widths, where its lines on the page and on
-     * the next aren't known to be those it is broken into in the first column
+     * the next (`word-probes.docx` U2), but in the columns the page's footnotes are laid out in, the text goes on above it,
+     * as in Word (`word-watertight-notes.docx` FN2, FN3). It stops where none of it fits, and in columns of different
+     * widths, where its lines on the page and on the next aren't known to be those it is broken into in the first column
      */
     const splitLast = (whole: readonly string[], name: string, room: number): void => {
         const fits = (point: NotePoint): boolean => areaOf(whole, { name, to: point }, continued) <= room + TOLERANCE;
@@ -2171,12 +2171,12 @@ export const paginate = (
                 (point) => fits(point) && (point.block < limit.block || (point.block === limit.block && point.line < limit.line)),
             );
         }
-        const { columns } = section();
-        if (atStart(to) || columns.some((width) => width !== columns[0])) {
+        const columns = noteColumns();
+        if (atStart(to) || columns?.some((width) => width !== columns[0])) {
             stopOnPage("a footnote across pages in columns");
         }
         pageNotes = [...whole, name];
-        noteArea = columns.length > 1 ? areaOf(whole, { name, to }, continued) : room;
+        noteArea = columns === undefined ? room : areaOf(whole, { name, to }, continued);
         notesSection = sectionIndex;
         carried = { name, from: to };
     };
