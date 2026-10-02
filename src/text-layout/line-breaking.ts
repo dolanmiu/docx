@@ -246,15 +246,18 @@ const othersOf = (pieces: readonly Piece[]): readonly Piece[] =>
 /** How many characters pieces have */
 const lengthOf = (pieces: readonly Piece[]): number => pieces.reduce((total, { text }) => total + [...text].length, 0);
 
-/** A font's formatting with Word's defaults where it gives none, so formatting written as the default is the same as none */
+/**
+ * A font's formatting with Word's defaults where it gives none, so formatting written as the default is the same as none,
+ * and its name in small letters, as the measurers find a font by its name in any case
+ */
 const withDefaults = (font: TextFont): Readonly<Record<string, unknown>> => ({
-    font: DEFAULT_FONT,
     size: DEFAULT_FONT_SIZE,
     bold: false,
     italic: false,
     characterSpacing: 0,
     scale: 100,
     ...Object.fromEntries(Object.entries(font).filter(([, value]) => value !== undefined)),
+    font: (font.font ?? DEFAULT_FONT).toLowerCase(),
 });
 
 /** Whether two pieces of text are in the same font, with the same formatting */
