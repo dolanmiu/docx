@@ -2277,6 +2277,26 @@ export const paginate = (
     };
 
     /**
+     * Places a row of a set height taller than the page, at the top of one: it takes the rest of the page, cut off at its
+     * bottom, so what follows goes on the next page, as Word lays out one set to exactly or at least 15000 twips, with
+     * 13958 of room (`word-probes.docx` U5c, U5d), as LibreOffice does. What Word does with one in columns, one with
+     * footnotes or cells merged down, or a header row, isn't known
+     */
+    const placeCutRow = (row: TableRow, index: number): void => {
+        if (section().columns.length > 1) {
+            throw new Unsupported("a table row kept together taller than a column");
+        }
+        const markers = row.cells.flatMap((cell) => cell.blocks.flatMap(markersOf));
+        if (notesIn(markers).length > 0 || openMerges.length > 0 || row.header) {
+            throw new Unsupported("a footnote, merged cells or a header row in a table row of a set height taller than a page");
+        }
+        mark(markers);
+        placeRow(index, position, linesBottom() - position);
+        position = linesBottom();
+        placedInColumn = true;
+    };
+
+    /**
      * Places a row that doesn't fit on the page with its footnotes by breaking it across pages between the lines of its
      * cells, as Word breaks a row unless it is kept whole, with the footnotes of the lines on each page at its bottom. A
      * row none of whose lines fit with their footnotes moves to the next page. The table's header rows are repeated above
@@ -2438,17 +2458,44 @@ export const paginate = (
                     throw new Unsupported("a table row with space between its cells across pages");
                 }
             }
-            // A row at the top of a page that doesn't fit there whole is taller than a page, which the layout stops at, unless
-            // the end of a footnote continued from the page before takes room on it, which leaves the next page for it. So is
-            // one that fits, but not with its footnotes
+            // A row at the top of a page that doesn't fit there whole is taller than a page, unless the end of a footnote
+            // continued from the page before takes room on it, which leaves the next page for it. It breaks there, as Word
+            // breaks one that can't break or whose paragraph is kept together (`word-probes.docx` U5b, U8c2). The layout
+            // stops at one that fits, but not with its footnotes
             const fitsWhole = !isFirstPart || position + height + breakBorder <= linesBottom() + TOLERANCE;
-            if ((!placesLines || !fitsWhole) && !placedInColumn && continued === undefined) {
+            const atTop = !placedInColumn && continued === undefined;
+            if ((!placesLines || !fitsWhole) && atTop) {
                 stopIfBalancing();
-                throw new Unsupported(
-                    fitsWhole && notesOf(whole).length > 0
-                        ? "a table row and its footnote taller than a page"
-                        : "a table row taller than a page",
+                if (fitsWhole && notesOf(whole).length > 0) {
+                    throw new Unsupported("a table row and its footnote taller than a page");
+                }
+            }
+            if (!placesLines && atTop) {
+                if (isFirstPart && isLastPart) {
+                    // All of its text fits, but not the height it is set to
+                    placeCutRow(row, rowIndex);
+                    return;
+                }
+                // A paragraph kept together at the top of a cell's part breaks there when the row's lines can't go on the
+                // page without it, as one does at the top of a page in the text: 60 lines kept together in a row go 51
+                // and 9 (U8c1 to U8c3)
+                const kept = parts.some(([first]) => first?.paragraph.keepLines === true && first.from === 0);
+                if (!kept) {
+                    throw new Unsupported(
+                        isFirstPart && row.height !== undefined && row.height.value > roomAbove(0) + TOLERANCE
+                            ? "a table row whose text and set height are both taller than a page"
+                            : "a line in a table cell taller than a page",
+                    );
+                }
+                if (section().columns.length > 1) {
+                    // Word lays a paragraph kept together that is taller than a column down the first column of each page,
+                    // but what it does with a row isn't known
+                    throw new Unsupported("a table row kept together taller than a column");
+                }
+                parts = parts.map((paragraphs) =>
+                    paragraphs.map((part, index) => (index === 0 ? { ...part, paragraph: { ...part.paragraph, keepLines: false } } : part)),
                 );
+                continue;
             }
             if (!placesLines && isFirstPart && table.kept) {
                 // The rows kept with this one stayed on the page for its first lines, which would then move to the next
@@ -2666,21 +2713,30 @@ export const paginate = (
                 closeMerges(position);
                 startTablePage(index);
             }
-            if (!rowFits(roomNeeded, notes) && !keptWhole) {
+            // A row kept whole that is still too tall for the page is at the top of one, and taller than it
+            const tooTall = keptWhole && !rowStays(roomNeeded, notes);
+            if (tooTall) {
+                stopIfBalancing();
+                if (notes.length > 0 && position + roomNeeded <= linesBottom() + TOLERANCE) {
+                    throw new Unsupported("a table row and its footnote taller than a page");
+                }
+                if (row.height?.rule === "exact") {
+                    placeCutRow(row, index);
+                    continue;
+                }
+                if (section().columns.length > 1) {
+                    throw new Unsupported("a table row kept together taller than a column");
+                }
+            }
+            // One that can't break breaks there as other rows do, as in Word: 60 lines go 51 and 9 (`word-probes.docx` U5a,
+            // U5b), as LibreOffice breaks them
+            if (tooTall || (!rowFits(roomNeeded, notes) && !keptWhole)) {
                 splitRow(row, index, height, breakBorder, () => startTablePage(index), {
                     spaced: table.cellSpacing !== undefined,
                     // Rows kept with the next that are too tall for a page break where the page ends (KR5)
                     kept: index > brokenUntil && index > 0 && keptWithNext(table.rows[index - 1]),
                 });
                 continue;
-            }
-            if (!rowStays(roomNeeded, notes)) {
-                stopIfBalancing();
-                throw new Unsupported(
-                    notes.length > 0 && position + roomNeeded <= linesBottom() + TOLERANCE
-                        ? "a table row and its footnote taller than a page"
-                        : "a table row taller than a page",
-                );
             }
             // The text of a cell merged down from the row is placed with the rows it goes down, and its footnotes with it
             mark(row.cells.flatMap((cell) => (startsMerge(cell) ? roomlessOf(cell) : cell.blocks.flatMap(markersOf))));

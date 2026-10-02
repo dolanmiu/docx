@@ -59,8 +59,8 @@ const estimateWith = (content: DocumentContent | undefined, measurer: TextMeasur
  * column and section breaks, and each section's page size, margins, columns, headers, footers and page numbering.
  *
  * It stops at the first thing it can't lay out yet: a drawing or table that text flows around, a text box or frame, an
- * equation, a footnote that continues on the next page, columns evened out before a continuous section break, a table
- * row kept whole that is taller than a page, text in a font that isn't in the width tables and isn't embedded, such as
+ * equation, a footnote that continues on the next page, columns evened out before a continuous section break, a line in
+ * a table cell that is taller than a page, text in a font that isn't in the width tables and isn't embedded, such as
  * Aptos, a character whose width in its font isn't known, such as a mathematical symbol in Calibri, which Word draws in
  * Cambria Math, or a date in the text, which Word writes when it opens the document. The page references to bookmarks
  * after it are left blank, for Word to fill in when it updates the fields. A document in compatibility mode, which Word
