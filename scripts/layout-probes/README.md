@@ -289,7 +289,8 @@ python3 scripts/layout-probes/word-compat.py build/word-probes/word-compat-on.ht
 
 Each `<demo>.word.docx` is a layout demo, as `scripts/compare-layout.sh` writes it, opened in Word 16 for Mac in Print
 Layout, with No to updating the fields, and saved as a Word Document once Word had laid out all its pages (2026-10-01,
-and `text-and-spacing` again on 2026-10-02, once its headings were in Calibri rather than Calibri Light). Word writes a
+`text-and-spacing` again on 2026-10-02, once its headings were in Calibri rather than Calibri Light, and
+`table-formatting` on 2026-10-02). Word writes a
 `w:lastRenderedPageBreak` where each page began, and the number of pages in `docProps/app.xml`.
 
 `scripts/compare-layout.sh` copies them into its output directory, and `scripts/compare-layout.ts` lays each out through
@@ -300,3 +301,26 @@ it doesn't (see `wordPagesOf` in `scripts/compare-layout.ts`).
 `columns` and `long-table-of-contents` aren't here: Word writes no mark where a column break starts a page, nor in a
 table of contents, so their marks don't have all of Word's pages. Word's PDFs of them put all their headings on the
 pages docx/layout puts them on.
+
+## Check every line of a demo
+
+`scripts/compare-layout.sh` checks the page of each heading. `demo-lines.ts` checks every line of a demo, and every row of
+its tables: it lays out the demo's `.docx` through the `.docx` adapter, finds each line and row among the lines of Word's
+PDF of it, and fails when one is on another page from Word's. `table-formatting.word.pdf` is Word's PDF of
+`table-formatting`, saved from Word 16 for Mac on 2026-10-02 from the `.docx` that `table-formatting.word.docx` was saved
+from:
+
+```bash
+pdftotext -bbox-layout scripts/layout-probes/table-formatting.word.pdf build/word-probes/table-formatting.word.html
+npm run run-ts -- scripts/layout-probes/demo-lines.ts scripts/layout-probes/table-formatting.word.docx build/word-probes/table-formatting.word.html
+```
+
+Each line it prints has the gap between where docx/layout puts the top of the line or row and where the top of Word's
+text is. For `table-formatting`, all 195 lines and rows are on Word's page, the lines within 0.3 points of Word's, and the
+rows' gaps are 0.4 to 0.7 points below rows of thin borders and 2.9 to 3.2 below those of thick ones.
+
+On 2026-10-02 it put every line on Word's page in `keeping-text-together`, `sections-headers-and-footers`,
+`table-of-contents-page-numbers`, `tables-lists-and-pictures` and `text-and-spacing`, read from their `.word.docx` and
+Word's PDFs of them. In `tables-across-pages`, docx/layout leaves the header row of survey 9's table alone at the bottom
+of page 14, as the table's first row, set to a height taller than the room left, goes on to page 15, and Word moves the
+header row to page 15 with it.
