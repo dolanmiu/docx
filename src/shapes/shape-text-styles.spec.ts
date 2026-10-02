@@ -97,14 +97,15 @@ describe("readTextParagraphs", () => {
                 ],
             }),
         );
+        // The small letters are capitals in the line of the run's size
         expect(spans).to.deep.equal([
             { text: "CAPS" },
             { text: "S", size: 10 },
-            { text: "MALL", size: 8 },
+            { text: "MALL", size: 8, lineSize: 10 },
             { text: " ", size: 10 },
-            { text: "CAPS", size: 8 },
+            { text: "CAPS", size: 8, lineSize: 10 },
             // Without a size, small capitals are 80% of 10pt
-            { text: "X", size: 8 },
+            { text: "X", size: 8, lineSize: 10 },
         ]);
     });
 

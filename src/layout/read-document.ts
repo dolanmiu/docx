@@ -10,10 +10,13 @@
 import type { IContext, IXmlableObject } from "docx";
 
 import {
+    BORDER_WIDTHS,
     DEFAULT_FONT_SIZE,
+    FURTHEST_BORDER,
     type InlineItem,
     type KinsokuList,
     type LineBreakRules,
+    NARROWEST_BORDER,
     type ParagraphBorder,
     type ParagraphFormat,
     READING_CONTEXT,
@@ -23,6 +26,7 @@ import {
     type TabStopSetting,
     type TextFont,
     type TextStyles,
+    WIDEST_BORDER,
     type XmlObject,
     attributesOf,
     childrenOf,
@@ -44,6 +48,7 @@ import {
     stringOf,
     styleChain,
     unknownLengthIn,
+    unknownRunFormatting,
     valueOf,
     withoutUndefined,
 } from "../text-layout";
@@ -401,18 +406,11 @@ const withBookmarks = (
     }));
 };
 
-// How wide the number of a footnote or endnote is, next to text of its size: Word writes it in superscript
-const SUPERSCRIPT_WIDTH = 0.65;
-
 /**
- * The number of a footnote or endnote, at its reference or at the start of the note: as narrow as superscript, and as tall
- * as its font, as LibreOffice lays it out.
+ * The number of a footnote or endnote, at its reference or at the start of the note, in its run's font: in superscript
+ * where its style has it, as docx's FootnoteReference and EndnoteReference do.
  */
-const noteNumber = (text: string, font: TextFont): LayoutItem => ({
-    type: "text",
-    text,
-    font: { ...font, scale: (font.scale ?? 100) * SUPERSCRIPT_WIDTH },
-});
+const noteNumber = (text: string, font: TextFont): LayoutItem => ({ type: "text", text, font });
 
 /** A length in points, from twips or from a universal measure, such as "1in" */
 const twips = (value: unknown): number | undefined => pointsOf(value, TWIPS_PER_POINT);
@@ -540,7 +538,7 @@ const readRun = (element: XmlObject, paragraphRun: RunFormat, reader: Reader): r
         readRunFormat(properties, styles.themeFonts),
     ]);
     const font = fontOf(format);
-    const unsupportedFormat = unsupportedFormatOf(childrenOf(properties));
+    const unsupportedFormat = unsupportedFormatOf(childrenOf(properties)) ?? (format.hidden ? undefined : unknownRunFormatting(format));
     const items: readonly (readonly LayoutItem[] | string)[] = children.map((child): readonly LayoutItem[] | string => {
         const name = nameOf(child);
         if (name === "w:fldChar") {
@@ -563,26 +561,30 @@ const readRun = (element: XmlObject, paragraphRun: RunFormat, reader: Reader): r
             return unsupportedFormat;
         }
         switch (name) {
-            case "w:t":
+            case "w:t": {
                 // A tab in the text is a tab, as Word lays it out, which is how docx writes those in a TextRun's text
-                return contentOf(child)
+                const content = contentOf(child)
                     .filter((part) => typeof part === "string")
-                    .join("")
-                    .split("\t")
-                    .flatMap((part, index): readonly LayoutItem[] => [
-                        ...(index > 0 && !format.hidden ? [{ type: "tab" as const, font }] : []),
-                        ...(part.length === 0 ? [] : spansOf(part, format)).map(({ text, ...spanFont }) => ({
-                            type: "text" as const,
-                            text,
-                            font: spanFont,
-                            // Where its lines break depends on its language, and whether its run is East Asian
-                            ...(format.eastAsianLanguage === undefined ? {} : { language: format.eastAsianLanguage }),
-                            ...(isEastAsianRun(format) ? { eastAsian: true } : {}),
-                        })),
-                    ]);
+                    .join("");
+                // Whether a box goes on round a tab, or ends before it, isn't known
+                if (font.border && !format.hidden && content.includes("\t")) {
+                    return "a tab in text with a border";
+                }
+                return content.split("\t").flatMap((part, index): readonly LayoutItem[] => [
+                    ...(index > 0 && !format.hidden ? [{ type: "tab" as const, font }] : []),
+                    ...(part.length === 0 ? [] : spansOf(part, format)).map(({ text, ...spanFont }) => ({
+                        type: "text" as const,
+                        text,
+                        font: spanFont,
+                        // Where its lines break depends on its language, and whether its run is East Asian
+                        ...(format.eastAsianLanguage === undefined ? {} : { language: format.eastAsianLanguage }),
+                        ...(isEastAsianRun(format) ? { eastAsian: true } : {}),
+                    })),
+                ]);
+            }
             case "w:tab":
             case "w:ptab":
-                return format.hidden ? [] : [{ type: "tab", font }];
+                return format.hidden ? [] : font.border ? "a tab in text with a border" : [{ type: "tab", font }];
             case "w:br": {
                 const kind = attributesOf(child["w:br"])["w:type"];
                 return format.hidden ? [] : [{ type: "break", kind: kind === "page" || kind === "column" ? kind : "line", font }];
@@ -622,7 +624,7 @@ const readRun = (element: XmlObject, paragraphRun: RunFormat, reader: Reader): r
             case "w:endnoteRef":
                 return reader.noteNumber === undefined ? [] : [noteNumber(reader.noteNumber, font)];
             case "w:drawing":
-                return readDrawing(child, font, reader);
+                return font.border ? "a picture in text with a border" : readDrawing(child, font, reader);
             case "mc:AlternateContent": {
                 // The drawing Word reads, rather than the one for older versions
                 const choice = childrenOf(child["mc:AlternateContent"]).find((option) => "mc:Choice" in option);
@@ -821,38 +823,6 @@ const inPoints = (
 
 // The styles of a border that draw none
 const NO_BORDER = new Set(["none", "nil"]);
-// The room each style of border takes as Word draws it, in eighths of a point, from the width it is given, at 6 and 18
-// eighths (`word-paragraph-formats.docx` B6). Lines of one stroke are as wide as they are given, a double line 3 times
-// and a triple 5, waves and dash-dot strokes are as wide whatever they are given, and lines thin and thick 12 or 24
-// eighths more, which Word was seen to draw only from 6 eighths to 18
-const BORDER_WIDTHS: Readonly<Record<string, (size: number) => number | undefined>> = {
-    ...Object.fromEntries(
-        ["single", "thick", "dotted", "dashed", "dotDash", "dotDotDash", "dashSmallGap", "inset", "outset"].map((style) => [
-            style,
-            (size: number) => size,
-        ]),
-    ),
-    double: (size) => 3 * size,
-    triple: (size) => 5 * size,
-    wave: () => 24,
-    dashDotStroked: () => 24,
-    doubleWave: () => 42,
-    ...Object.fromEntries(
-        (
-            [
-                ["thinThickSmallGap", 12],
-                ["thickThinSmallGap", 12],
-                ["threeDEmboss", 12],
-                ["threeDEngrave", 12],
-                ["thinThickThinSmallGap", 24],
-            ] as const
-        ).map(([style, more]) => [style, (size: number) => (size >= 6 && size <= 18 ? size + more : undefined)]),
-    ),
-};
-// The narrowest and widest borders Word draws, in eighths of a point, and the furthest from the text, in points
-const NARROWEST_BORDER = 2;
-const WIDEST_BORDER = 96;
-const FURTHEST_BORDER = 31;
 
 /**
  * The room a border of a paragraph takes, in points: its width and the space between it and the text, or why it isn't

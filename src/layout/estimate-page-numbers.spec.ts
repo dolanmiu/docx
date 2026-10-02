@@ -7,7 +7,9 @@ import { Table, TableCell, TableRow, WidthType } from "@file/table";
 import {
     AlignmentType,
     Bookmark,
+    BorderStyle,
     Document,
+    EmphasisMarkType,
     type EstimatedPageNumbers,
     FrameAnchorType,
     HeadingLevel,
@@ -325,6 +327,44 @@ describe("estimatePageNumbers", () => {
         expect(pagesOf(22, (label) => ({ spacing: { line: 276, lineRule: LineRuleType.AUTO }, children: [label, picture()] }))).to.include({
             line20: "1",
             line21: "2",
+        });
+    });
+
+    it("should lay out superscript, raised text, emphasis marks and borders around text as Word does", () => {
+        const styles: IPropertiesOptions["styles"] = {
+            default: { document: { run: { font: "Calibri", size: 22 }, paragraph: { spacing: { before: 0, after: 0, line: 240 } } } },
+        };
+        /** The page of each of these paragraphs, whose first words are bookmarked as line1, line2 and on */
+        const pagesOf = (count: number, word: ConstructorParameters<typeof TextRun>[0]): Record<string, string> =>
+            pageNumbersOf({
+                styles,
+                sections: [
+                    {
+                        children: Array.from(
+                            { length: count },
+                            (_, index) =>
+                                new Paragraph({
+                                    children: [
+                                        new Bookmark({ id: `line${index + 1}`, children: [new TextRun(`line ${index + 1} `)] }),
+                                        new TextRun(word),
+                                    ],
+                                }),
+                        ),
+                    },
+                ],
+            });
+        // 100 digits in superscript, at 7 points, fit on a line, as they don't at 11, so 51 such lines are on a page
+        // (scripts/layout-probes/word-watertight-text.ts TX1)
+        expect(pagesOf(52, { text: "0123456789".repeat(10), superScript: true })).to.include({ line51: "1", line52: "2" });
+        // Raised 6 points, as docx writes it: 35 lines on a page, where docx/layout had 51 (TX2a, and word-run-formatting.ts
+        // RF5f)
+        expect(pagesOf(36, { text: "raised", position: "6pt" })).to.include({ line35: "1", line36: "2" });
+        // Emphasis marks: 41 lines on a page (TX15)
+        expect(pagesOf(42, { text: "dotted", emphasisMark: { type: EmphasisMarkType.DOT } })).to.include({ line41: "1", line42: "2" });
+        // A border of half a point 4 points away: 31 lines on a page (word-run-formatting.ts RF7a)
+        expect(pagesOf(32, { text: "boxed", border: { style: BorderStyle.SINGLE, size: 4, space: 4, color: "auto" } })).to.include({
+            line31: "1",
+            line32: "2",
         });
     });
 

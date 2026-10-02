@@ -520,6 +520,15 @@ describe("layoutLines", () => {
             expect(countOf(items, 330, {})).to.equal(3);
             // A picture is squeezed in as a word is
             expect(countOf([text("aa aa aa aa aa aa aa aa aa aa "), { type: "box", width: 40, height: 10 }], 325)).to.equal(1);
+            // Whether Word squeezes a line with text in a border isn't known, whether the border is on the word squeezed in or
+            // on a word before it
+            const box = (value: string): InlineItem => ({ type: "text", text: value, font: { border: { room: 1, key: "a" } } });
+            const unsupported = (boxed: readonly InlineItem[]): string | undefined =>
+                layoutLines(boxed, { width: 330, measurer: MEASURER, format: justified })[0].unsupported;
+            const squeezed = "a justified line with text in a border that only fits squeezed";
+            expect(unsupported([text("aa aa aa aa aa aa aa aa aa aa "), box("bbbb"), text(` ${"c".repeat(30)}`)])).to.equal(squeezed);
+            expect(unsupported([box("aa"), text(" aa aa aa aa aa aa aa aa aa bbbb"), text(` ${"c".repeat(30)}`)])).to.equal(squeezed);
+            expect(unsupported([box("aa"), text(" aa aa aa aa aa aa aa aa aa"), text(` ${"c".repeat(30)}`)])).to.equal(undefined);
         });
 
         it("should squeeze the spaces by no more than a quarter of their width", () => {
@@ -852,6 +861,219 @@ describe("the height of a line of fonts and pictures of different heights", () =
         // A picture taller than the mark's line, single spaced, is itself either way, and beside text the mark doesn't count
         expect(linesOf([picture(30)], { markFont: larger })[0].unsupported).to.equal(undefined);
         expect(linesOf([word("a"), picture(6)], { markFont: larger })[0].unsupported).to.equal(undefined);
+    });
+});
+
+describe("layoutLines with run formatting, as Word lays it out", () => {
+    // Lines in twips, from scripts/layout-probes/word-run-formatting.ts unless another probe is named: Word's are the
+    // range of heights that put a page of its lines where they are on its grid
+    const CALIBRI = { font: "Calibri", size: 11 };
+    const linesOf = (items: readonly InlineItem[], options: Omit<LineLayoutOptions, "width"> = {}): readonly LaidOutLine[] =>
+        layoutLines(items, { width: 451.3, markFont: CALIBRI, ...options });
+    const twipsOf = (items: readonly InlineItem[], options: Omit<LineLayoutOptions, "width"> = {}): number =>
+        linesOf(items, options)[0].height * 20;
+    const word = (value: string, font: TextFont = CALIBRI): InlineItem => ({ type: "text", text: value, font });
+    /** A line of Calibri 11 with a word in this formatting after its label */
+    const lineWith = (font: TextFont, label = "RF 1 x "): readonly InlineItem[] => [word(label), word("word", { ...CALIBRI, ...font })];
+    const multiple = (lines: number): Omit<LineLayoutOptions, "width"> => ({
+        format: { lineSpacing: { rule: "multiple", multiple: lines } },
+    });
+    const boxed = (room: number, key = "single"): TextFont => ({ border: { room, key } });
+
+    it("should make superscript and subscript take up the line of their run's size", () => {
+        // Calibri 11 with a digit in superscript, drawn at 7 points: 268.55 (TX1a), and Calibri 20 with one at 13: 488.0 to
+        // 488.64 (RF2k)
+        expect(twipsOf(lineWith({ size: 7, lineSize: 11 }))).to.be.closeTo(268.55, 0.01);
+        expect(
+            twipsOf([word("RF2k 1 x ", { font: "Calibri", size: 20 }), word("2", { font: "Calibri", size: 13, lineSize: 20 })]),
+        ).to.be.closeTo(488.28, 0.01);
+        // Alone, and a 20-point superscript in a line of Calibri 11, which is Calibri 20's line: 268.11 to 268.8, and 488.23
+        // to 488.64 (RF3a, RF3c)
+        expect(twipsOf([word("RF3a 1 superscript only", { ...CALIBRI, size: 7, lineSize: 11 })])).to.be.closeTo(268.55, 0.01);
+        expect(twipsOf(lineWith({ size: 13, lineSize: 20 }))).to.be.closeTo(488.28, 0.01);
+    });
+
+    it("should raise and lower text's ascent and descent with it", () => {
+        // 7 points raised 3 in a line of Calibri 11: 268.11 to 268.8 (RF5a)
+        expect(twipsOf(lineWith({ size: 7, raise: 3 }))).to.be.closeTo(268.55, 0.01);
+        // Courier New 11 raised 2: 282.0 to 282.4 (RF5b); 7 points lowered 3: 306.67 to 307.73 (RF5c)
+        expect(twipsOf(lineWith({ font: "Courier New", raise: 2 }))).to.be.closeTo(282.2, 0.2);
+        expect(twipsOf(lineWith({ size: 7, raise: -3 }))).to.be.closeTo(307.2, 0.53);
+        // Times New Roman 10 raised 6, its line gap too: 365.76 to 366.4 (RF5e)
+        expect(twipsOf(lineWith({ font: "Times New Roman", size: 10, raise: 6 }))).to.be.closeTo(366.08, 0.32);
+        // Raised 6 and lowered 6: 388.11 to 388.8 and 388.27 to 389.33 (RF5f, RF5g), and a superscript digit raised 6 (RF5l)
+        expect(twipsOf(lineWith({ raise: 6 }))).to.be.closeTo(388.55, 0.01);
+        expect(twipsOf(lineWith({ raise: -6 }))).to.be.closeTo(388.55, 0.01);
+        expect(twipsOf(lineWith({ size: 7, lineSize: 11, raise: 6 }))).to.be.closeTo(388.55, 0.01);
+        // At 1.5 lines, half of Calibri's own line below the text: 522.24 to 523.2 (RF5d); at least 18 points, the line as it
+        // is (RF5m)
+        const [rf5d] = linesOf(lineWith({ raise: 6 }), multiple(1.5));
+        expect(rf5d.height * 20).to.be.closeTo(522.83, 0.01);
+        expect(rf5d.spacingBelow! * 20).to.be.closeTo(134.28, 0.01);
+        expect(twipsOf(lineWith({ raise: 6 }), { format: { lineSpacing: { rule: "atLeast", height: 18 } } })).to.be.closeTo(388.55, 0.01);
+        // An empty paragraph whose mark is raised 6 is Calibri's ascent and the raise, with nothing below: 329.3 (RF8a)
+        expect(twipsOf([], { markFont: { ...CALIBRI, raise: 6 } })).to.be.closeTo(329.5, 0.5);
+    });
+
+    it("should give emphasis marks a quarter of their line, over the text or under it", () => {
+        // 67.14 more in a line of Calibri 11: 335.69 (TX15), and of Calibri 10, 12 and 20: 305.07 to 305.28, 366.0 to 366.4 and
+        // 609.6 to 610.66 (RF6a, RF6b, RF6c)
+        expect(twipsOf(lineWith({ emphasis: "above" }))).to.be.closeTo(335.69, 0.01);
+        const calibri = (size: number): number =>
+            twipsOf([word("RF6 1 x ", { font: "Calibri", size }), word("dotted", { font: "Calibri", size, emphasis: "above" })]);
+        expect(calibri(10)).to.be.closeTo(305.18, 0.11);
+        expect(calibri(12)).to.be.closeTo(366.2, 0.2);
+        expect(calibri(20)).to.be.closeTo(610.13, 0.53);
+        // Times New Roman 10, Arial 11 and Cambria 11: 287.2 to 288.0, 316.11 to 316.26 and 321.6 to 322.56 (RF6d, RF6e, RF6f)
+        const font = (name: string, size: number): number =>
+            twipsOf([word("RF6 1 x ", { font: name, size }), word("dotted", { font: name, size, emphasis: "above" })]);
+        expect(font("Times New Roman", 10)).to.be.closeTo(287.6, 0.4);
+        expect(font("Arial", 11)).to.be.closeTo(316.19, 0.08);
+        expect(font("Cambria", 11)).to.be.closeTo(322.08, 0.48);
+        // Under the text, a word of 7 points, a space, and an empty paragraph's mark: all 335.5 or so (RF6i, RF6j, RF6n, RF8c)
+        expect(twipsOf(lineWith({ emphasis: "below" }))).to.be.closeTo(335.69, 0.01);
+        expect(twipsOf(lineWith({ size: 7, emphasis: "above" }))).to.be.closeTo(335.69, 0.01);
+        expect(twipsOf([word("RF6n 1 x"), word(" ", { ...CALIBRI, emphasis: "above" }), word("y")])).to.be.closeTo(335.69, 0.01);
+        expect(twipsOf([], { markFont: { ...CALIBRI, emphasis: "above" } })).to.be.closeTo(335.54, 0.5);
+        // Exactly 12 points is 12 points still
+        expect(twipsOf(lineWith({ emphasis: "above" }), { format: { lineSpacing: { rule: "exact", height: 12 } } })).to.equal(240);
+    });
+
+    it("should give emphasis marks a quarter of a line taller than its fonts' own lines", () => {
+        // Courier New 20 with marks in a line of Times New Roman 20: 616.8 to 617.4; a word with marks raised 6 points, and
+        // one beside a raised word: 485.49 to 486.0; a word with marks and a border: 560.4 to 560.8 (RF10)
+        const times = { font: "Times New Roman", size: 20 };
+        expect(twipsOf([word("RF10a 1 x ", times), word("dotted", { font: "Courier New", size: 20, emphasis: "above" })])).to.be.closeTo(
+            617.1,
+            0.3,
+        );
+        expect(twipsOf(lineWith({ emphasis: "above", raise: 6 }))).to.be.closeTo(485.69, 0.2);
+        expect(twipsOf([...lineWith({ emphasis: "above" }), word(" "), word("raised", { ...CALIBRI, raise: 6 })])).to.be.closeTo(
+            485.69,
+            0.2,
+        );
+        expect(twipsOf(lineWith({ emphasis: "above", ...boxed(4.5) }))).to.be.closeTo(560.69, 0.2);
+    });
+
+    it("should add line spacing that gives a little room below the marks' room, and fit the marks in spacing that gives enough", () => {
+        // 1.08 and 1.15 lines add their room below the marks': 356.8 to 357.25, and 375.77 to 376.2 (RF9a, RF9b)
+        const [rf9a] = linesOf(lineWith({ emphasis: "above" }), multiple(259 / 240));
+        expect(rf9a.height * 20).to.be.closeTo(356.96, 0.23);
+        expect(rf9a.spacingBelow! * 20).to.be.closeTo(21.27, 0.01);
+        expect(twipsOf(lineWith({ emphasis: "above" }), multiple(1.15))).to.be.closeTo(375.97, 0.22);
+        // 1.5 and 2 lines hold the marks: 402.83 (RF6k) and 536.53 to 537.6, with the rest of their room below the text (RF9c)
+        const [rf9c] = linesOf(lineWith({ emphasis: "above" }), multiple(2));
+        expect(rf9c.height * 20).to.be.closeTo(537.1, 0.01);
+        expect(rf9c.spacingBelow! * 20).to.be.closeTo(201.41, 0.01);
+        expect(twipsOf(lineWith({ emphasis: "above" }), multiple(1.5))).to.be.closeTo(402.83, 0.01);
+        // At least 12 and 16 points add the marks' room: 335.47 to 336.53, and 386.88 to 387.2; at least 18 holds them:
+        // 359.47 to 360.53 (RF9e, RF9f, RF9g)
+        const atLeast = (points: number): Omit<LineLayoutOptions, "width"> => ({
+            format: { lineSpacing: { rule: "atLeast", height: points } },
+        });
+        expect(twipsOf(lineWith({ emphasis: "above" }), atLeast(12))).to.be.closeTo(335.69, 0.01);
+        expect(twipsOf(lineWith({ emphasis: "above" }), atLeast(16))).to.be.closeTo(387.14, 0.15);
+        const [rf9g] = linesOf(lineWith({ emphasis: "above" }), atLeast(18));
+        expect(rf9g.height).to.equal(18);
+        expect(rf9g.spacingBelow).to.equal(undefined);
+        // Marks under the text the same: 402.67 to 403.73 at 1.5 lines, and 375.77 to 376.32 at 1.15 (RF9h, RF9i)
+        expect(twipsOf(lineWith({ emphasis: "below" }), multiple(1.5))).to.be.closeTo(402.83, 0.01);
+        expect(twipsOf(lineWith({ emphasis: "below" }), multiple(1.15))).to.be.closeTo(375.97, 0.22);
+    });
+
+    it("should stop at emphasis marks where how much room Word gives them isn't known", () => {
+        const unsupported = (items: readonly InlineItem[], options: Omit<LineLayoutOptions, "width"> = {}): string | undefined =>
+            linesOf(items, options)[0].unsupported;
+        const spacing = "emphasis marks on a line whose line spacing Word hasn't shown with them";
+        // Less than a line, and between the room Word added below the marks' and the room that held them
+        expect(unsupported(lineWith({ emphasis: "above" }), multiple(0.8))).to.equal(spacing);
+        expect(unsupported(lineWith({ emphasis: "above" }), multiple(1.25))).to.equal(spacing);
+        expect(unsupported(lineWith({ emphasis: "above" }), { format: { lineSpacing: { rule: "atLeast", height: 17 } } })).to.equal(
+            spacing,
+        );
+        // On a line taller than its fonts' own, with spacing, though single spaced it is known
+        expect(unsupported(lineWith({ emphasis: "above", raise: 6 }), multiple(1.5))).to.equal(spacing);
+        expect(unsupported(lineWith({ emphasis: "above", raise: 6 }), multiple(1))).to.equal(undefined);
+        expect(unsupported([word("x", { ...CALIBRI, emphasis: "above" }), { type: "box", width: 20, height: 30, font: CALIBRI }])).to.equal(
+            "emphasis marks on a line with a picture",
+        );
+        expect(unsupported([word("x ", { ...CALIBRI, emphasis: "below" }), word("y", { ...CALIBRI, emphasis: "above" })])).to.equal(
+            "emphasis marks over and under text on one line",
+        );
+    });
+
+    it("should give a border its room above and below the text, and to its own line", () => {
+        // A border of half a point 4 points away: 448.46 to 449.06; touching: 288.0 to 288.68; of 3 points: 388.27 to 389.33
+        // (RF7a, RF7b, RF7c)
+        expect(twipsOf(lineWith(boxed(4.5)))).to.be.closeTo(448.55, 0.01);
+        expect(twipsOf(lineWith(boxed(0.5)))).to.be.closeTo(288.55, 0.01);
+        expect(twipsOf(lineWith(boxed(3)))).to.be.closeTo(388.55, 0.01);
+        // Double, triple and of no style 4 points away: 358.4 to 358.8, 368.4 to 368.8 and 428.4 to 428.8 (RF7d, RF7e, RF7h)
+        expect(twipsOf(lineWith(boxed(2.25)))).to.be.closeTo(358.55, 0.01);
+        expect(twipsOf(lineWith(boxed(2.5)))).to.be.closeTo(368.55, 0.01);
+        expect(twipsOf(lineWith(boxed(4)))).to.be.closeTo(428.55, 0.01);
+        // Around a word of 7 points: 349.87 to 350.93 (RF7f)
+        expect(twipsOf(lineWith({ size: 7, ...boxed(4.5) }))).to.be.closeTo(350.4, 0.53);
+        // Raised 6 points, round the raised text and down to the baseline: 508.8 to 509.76; lowered 6: 478.4 to 478.8
+        // (RF13a, RF13b)
+        expect(twipsOf(lineWith({ raise: 6, ...boxed(4.5) }))).to.be.closeTo(509.5, 0.26);
+        expect(twipsOf(lineWith({ raise: -6, ...boxed(4.5) }))).to.be.closeTo(478.58, 0.22);
+        // Round superscript, and small capitals, it is round the run's own line: 448.46 to 449.06, and 448.32 to 448.8 (RF14)
+        expect(twipsOf(lineWith({ size: 7, lineSize: 11, ...boxed(4.5) }))).to.be.closeTo(448.55, 0.01);
+        // At 1.5 lines, half of the bordered line below it: 672.8 to 673.2 (RF7g)
+        const [rf7g] = linesOf(lineWith(boxed(4.5)), multiple(1.5));
+        expect(rf7g.height * 20).to.be.closeTo(672.83, 0.01);
+        expect(rf7g.spacingBelow! * 20).to.be.closeTo(224.28, 0.01);
+        // A border on an empty paragraph's mark takes no room: 268.34 (RF8d)
+        expect(twipsOf([], { markFont: { ...CALIBRI, ...boxed(4.5) } })).to.be.closeTo(268.55, 0.01);
+    });
+
+    it("should give a border its room beside its box, which goes on round text next to it with the same border", () => {
+        // Every character is 10 points wide, and each border's room is 5 points
+        const box = (value: string, key = "a"): InlineItem => ({ type: "text", text: value, font: boxed(5, key) });
+        const plain = (value: string): InlineItem => ({ type: "text", text: value, font: {} });
+        const widths = (items: readonly InlineItem[]): { readonly min: number; readonly max: number } =>
+            measureContentWidths(items, { measurer: { ...MEASURER } });
+        // Room before and after its run (RF7a), once round runs next to each other with the same border, and round each of
+        // two with other borders (RF7i, RF7k)
+        expect(widths([plain("x "), box("bb"), plain(" c")])).to.deep.equal({ min: 30, max: 70 });
+        expect(widths([box("bb"), box("cc")]).max).to.equal(50);
+        expect(widths([box("bb"), box("cc", "b")]).max).to.equal(60);
+        // Spaces in the box are in it, and a word that starts a line starts its box again, with the room after it too
+        expect(widths([box("bb cc")])).to.deep.equal({ min: 30, max: 60 });
+        expect(widths([box("bb "), plain("c")]).max).to.equal(50);
+        // A picture after a box ends it, and starts a line where it is
+        expect(widths([box("bb"), { type: "box", width: 30, height: 10 }])).to.deep.equal({ min: 30, max: 60 });
+        // A tab after a box ends it
+        expect(widths([box("bb"), { type: "tab", font: {} }, plain("c")]).max).to.equal(46);
+    });
+
+    it("should wrap text in a border with its box's room, and start the box again on the next line", () => {
+        const box = (value: string): InlineItem => ({ type: "text", text: value, font: boxed(5) });
+        const marker = (name: string): InlineItem => ({ type: "marker", name });
+        const markersOf = (items: readonly InlineItem[], width: number): readonly (readonly string[])[] =>
+            layoutLines(items, { width, measurer: MEASURER }).map(({ markers }) => markers);
+        // "aaaa bbbb" in the box is 5, 90 and 5 wide, and "cccc" goes on to the next line, where the box starts again 5 in
+        // (RF7n)
+        expect(markersOf([box("aaaa bbbb "), marker("c"), box("cccc")], 100)).to.deep.equal([[], ["c"]]);
+        // A line has room for the box's end after its last word, whether the box goes on or not (word-run-formatting2.ts
+        // RF11): 98 points fit "aaaa" and no more, on each line
+        expect(markersOf([box("aaaa "), marker("b"), box("bbbb "), marker("c"), box("cccc")], 98)).to.deep.equal([[], ["b"], ["c"]]);
+        expect(markersOf([box("aaaa "), marker("b"), box("bbbb"), { type: "text", text: " c", font: {} }], 98)).to.deep.equal([[], ["b"]]);
+        // Before a box, the room it starts with moves its first word on with it: "aaaa " is 50, and the box 5, 40 and 5
+        expect(markersOf([{ type: "text", text: "aaaa ", font: {} }, marker("b"), box("bbbb")], 99)).to.deep.equal([[], ["b"]]);
+        expect(markersOf([{ type: "text", text: "aaaa ", font: {} }, marker("b"), box("bbbb")], 100)).to.deep.equal([["b"]]);
+        // Nor how a box goes on round a word broken across lines, or round text lined up with a right tab stop
+        expect(layoutLines([box("aaaaaaaaaaaaaaa")], { width: 100, measurer: MEASURER })[0].unsupported).to.equal(
+            "a word longer than its line with a border",
+        );
+        expect(
+            layoutLines([{ type: "tab", font: {} }, box("aa")], {
+                width: 100,
+                measurer: MEASURER,
+                tabStops: [{ position: 90, alignment: "right" }],
+            })[0].unsupported,
+        ).to.equal("text with a border lined up with a tab stop");
     });
 });
 

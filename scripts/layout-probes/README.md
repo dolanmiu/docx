@@ -49,6 +49,8 @@ table style and each cell's width.
 | `word-justify`              | J00 to J18: when Word squeezes a justified line to fit one more word on it: lines of 19, 6 and 2 spaces ending with short, medium and long words, in other fonts, last lines, lines before a line break, distributed and the other justifications, tabs, no-break spaces, spaces at the start of a line, and ideographs                                                                                                                                                                                                                                          | `word-justify.py`              |
 | `word-justify2`             | K00 to K12: when Word squeezes a distributed line, and Latin text justified for Thai or with a low kashida, as J01 to J07 and J04 for justified ones, and justified and distributed lines with one space                                                                                                                                                                                                                                                                                                                                                         | `word-justify.py`              |
 | `word-mixed-heights`        | MH1 to MH7: how tall Word makes a line of two fonts, or with a picture, where `word-watertight-text`'s TX8 and TX9 left it open: multiple and at-least spacing over two fonts, the line gap above the text, a picture alone or beside text at 0.8 to 1.5 lines, the font of a picture's run, the descent of each East Asian font, and a picture shorter than its line                                                                                                                                                                                            | `word-mixed-heights.py`        |
+| `word-run-formatting`       | RF1 to RF8: run formatting, where `word-watertight-text`'s TX1, TX2, TX4, TX15 and TX16 left it open: the size of superscript, subscript and small capitals in each font and at the sizes where Word rounds them, which size's line they take up, raised and lowered text smaller than its line, in another font, with line spacing and written with units, emphasis marks at each size, in each font and of each kind, run borders of each size, space and style, on runs next to each other and across a line, and empty paragraphs whose marks have each      | `word-run-formatting.py`       |
+| `word-run-formatting2`      | RF9 to RF14: where `word-run-formatting` left it open: emphasis marks at each line spacing and on lines taller than their fonts' own, whether a line has room for a border's end after its last word, the room borders of 21 other styles take, and borders round raised text, superscript and small capitals. It imports docx/layout's widths, to end RF11's lines where it means to, so run it from a checkout                                                                                                                                                 | `word-run-formatting.py`       |
 | `fsplit`                    | How a footnote that doesn't fit below its reference goes on to the next page. Laid out in LibreOffice only, so it has no PDF from Word: Word's split of an 8-line footnote is `word-rules` P7b                                                                                                                                                                                                                                                                                                                                                                   | `pagelines.py`                 |
 
 ## Make a probe's `.docx`
@@ -166,6 +168,13 @@ work them out gives:
 ```bash
 pdftotext -bbox-layout scripts/layout-probes/word-mixed-heights.pdf build/word-probes/word-mixed-heights.html
 python3 scripts/layout-probes/word-mixed-heights.py build/word-probes/word-mixed-heights.html
+```
+
+`word-run-formatting.py` reads both run formatting probes, from the HTML beside the name of the PDF without its extension:
+
+```bash
+pdftotext -bbox-layout scripts/layout-probes/word-run-formatting.pdf build/word-probes/word-run-formatting.html
+python3 scripts/layout-probes/word-run-formatting.py build/word-probes/word-run-formatting
 ```
 
 `word-probes.py` takes the name of the PDF without its extension, and reads its HTML and, for U1's tables, its first

@@ -314,6 +314,9 @@ describe("createFontFileMeasurer", () => {
         expect(measurer.measureDescent({ font: "Calibri", size: 11 })).to.equal(
             DEFAULT_MEASURER.measureDescent({ font: "Calibri", size: 11 }),
         );
+        // Superscript takes up the line of its run's size (word-run-formatting.ts RF3)
+        expect(measurer.measureLineHeight({ font: "Probe Sans", size: 6.5, lineSize: 10 })).to.be.closeTo(12, 1e-9);
+        expect(measurer.measureDescent({ font: "Probe Sans", size: 6.5, lineSize: 10 })).to.be.closeTo(3, 1e-9);
     });
 
     it("should kern text from the size its kerning starts at", () => {
