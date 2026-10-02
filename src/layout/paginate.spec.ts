@@ -14,6 +14,7 @@ import type {
     Section,
     TableBlock,
     TableCell,
+    TableFloat,
     TableRow,
 } from "./read-document";
 
@@ -5907,6 +5908,241 @@ describe("paginate", () => {
             expect(rowsBelow([prose("a", 1, [across]), narrow])).to.deep.equal([55]);
             // One before a drawing that is beside it is laid out again below it, with the drawing on the page from its top
             expect(rowsBelow([wide, prose("a", 2, [floating({ vertical: { from: "page", offset: 10 } })])])).to.deep.equal([40, 50]);
+        });
+
+        describe("tables that text flows around", () => {
+            /**
+             * A table of rows of a line, 80 wide with its borders of 2 points unless it says otherwise, at the left of the margins
+             * and the top of the paragraph after it, 10 from the text right of it
+             */
+            const floatingTable = (float: Partial<TableFloat> = {}, width = 80): TableBlock => ({
+                ...table(
+                    Array.from({ length: 3 }, () => row([[prose("cell", 1)]])).map((one) => ({
+                        ...one,
+                        cells: one.cells.map((cell) => ({ ...cell, width: width - 2 })),
+                    })),
+                ),
+                borderLeft: 2,
+                borderRight: 2,
+                float: {
+                    horizontal: { from: "margin", align: "left" },
+                    vertical: { from: "paragraph", offset: 0 },
+                    distances: { ...NONE, right: 10 },
+                    mayOverlap: true,
+                    ...float,
+                },
+            });
+            /** Each table row on the pages: its table's index, its own, and where it is down the page */
+            const tableRowsOf = (pagination: Pagination): readonly (readonly [number, number, number])[] =>
+                pagination.pages.flatMap(({ body }) =>
+                    body.flatMap((block) =>
+                        block.type === "table" ? block.rows.map(({ index, y }) => [block.index, index, y] as const) : [],
+                    ),
+                );
+
+            it("should put the text after one beside it, placed against the top of the paragraph after it, as Word does (G24 to G29)", () => {
+                // From 10 to 90 across and 10 to 40 down, before the paragraph after it, whose first 3 lines are beside it
+                const beside = laidOut([floatingTable(), prose("a", 12)]);
+                expect(beside.pages[0].body.map(({ type }) => type)).to.deep.equal(["table", "paragraph"]);
+                expect(tableRowsOf(beside)).to.deep.equal([
+                    [0, 0, 10],
+                    [0, 1, 20],
+                    [0, 2, 30],
+                ]);
+                expect(roomsOf([floatingTable(), prose("a", 12)])).to.deep.equal([
+                    [
+                        [100, 10, 90],
+                        [100, 20, 90],
+                        [100, 30, 90],
+                        [10, 40, 180],
+                        [10, 50, 180],
+                    ],
+                ]);
+                // 10 below the top of the paragraph after it, after a line (G27)
+                const lower = [prose("x", 1), floatingTable({ vertical: { from: "paragraph", offset: 10 } }), prose("a", 12)];
+                expect(tableRowsOf(laidOut(lower)).map(([, , y]) => y)).to.deep.equal([30, 40, 50]);
+                expect(roomsOf(lower)[0].map(([x, y]) => [x, y])).to.deep.equal([
+                    [10, 10],
+                    [10, 20],
+                    [100, 30],
+                    [100, 40],
+                    [100, 50],
+                    [10, 60],
+                ]);
+                // Placed against the page (G24)
+                const byPage = [floatingTable({ vertical: { from: "page", offset: 100 } }), prose("a", 40)];
+                expect(tableRowsOf(laidOut(byPage)).map(([, , y]) => y)).to.deep.equal([100, 110, 120]);
+                expect(
+                    roomsOf(byPage)[0]
+                        .filter(([x]) => x === 100)
+                        .map(([, y]) => y),
+                ).to.deep.equal([100, 110, 120]);
+                // Two before a paragraph, at the left and the right, with the text between them (G29)
+                const two = [
+                    floatingTable({ distances: { ...NONE, right: 5 } }, 50),
+                    floatingTable({ horizontal: { from: "column", align: "right" }, distances: { ...NONE, left: 5 } }, 50),
+                    prose("a", 6),
+                ];
+                expect(tableRowsOf(laidOut(two)).map(([index, , y]) => [index, y])).to.deep.equal([
+                    [0, 10],
+                    [0, 20],
+                    [0, 30],
+                    [1, 10],
+                    [1, 20],
+                    [1, 30],
+                ]);
+                expect(roomsOf(two)[0]).to.deep.equal([
+                    [65, 10, 70],
+                    [65, 20, 70],
+                    [65, 30, 70],
+                    [10, 40, 180],
+                ]);
+            });
+
+            it("should make the room of one without borders left and right 0.75 points wider than its rows (H1, H8)", () => {
+                const borderless = { ...floatingTable(), borderLeft: 0, borderRight: 0 };
+                expect(roomsOf([borderless, prose("a", 6)])[0][0]).to.deep.equal([98.75, 10, 91.25]);
+                // At the right, it starts 0.75 further left
+                const right = {
+                    ...borderless,
+                    float: { ...borderless.float!, horizontal: { from: "margin", align: "right" }, distances: { ...NONE, left: 10 } },
+                };
+                expect(roomsOf([right, prose("a", 6)])[0][0]).to.deep.equal([10, 10, 91.25]);
+                // How much room Word gives one with a border on one side only isn't known
+                expect(stopOf([{ ...floatingTable(), borderRight: 0 }, prose("a", 3)])).to.equal(
+                    "a table that text flows around with a border on one side only",
+                );
+            });
+
+            it("should place one below the space after the paragraph before, and lay out the text before it again beside it", () => {
+                // It is below the space after the paragraph before, and the paragraph after it has all of its space before below
+                // that, as after a table, where the larger of the two would be between the paragraphs: 5 after and 10 before put
+                // its first line 15 below the paragraph before (`word-floats3.docx` H9)
+                const spaced = [prose("x", 1, [], { spaceAfter: 5 }), floatingTable(), prose("a", 6, [], { spaceBefore: 10 })];
+                expect(tableRowsOf(laidOut(spaced)).map(([, , y]) => y)).to.deep.equal([25, 35, 45]);
+                expect(roomsOf(spaced)[0]).to.deep.equal([
+                    [10, 10, 180],
+                    [100, 35, 90],
+                    [100, 45, 90],
+                    [10, 55, 180],
+                ]);
+                // Placed against the page beside the lines before it, they go round it too, as the page is laid out again
+                const above = [prose("x", 6), floatingTable({ vertical: { from: "page", offset: 10 } }), prose("a", 12)];
+                expect(tableRowsOf(laidOut(above)).map(([, , y]) => y)).to.deep.equal([10, 20, 30]);
+                expect(roomsOf(above)[0].slice(0, 4)).to.deep.equal([
+                    [100, 10, 90],
+                    [100, 20, 90],
+                    [100, 30, 90],
+                    [10, 40, 180],
+                ]);
+            });
+
+            it("should stop where Word's way with one hasn't been seen", () => {
+                // Without a paragraph after it to place it against
+                const without = "a table that text flows around without a paragraph after it";
+                expect(stopOf([prose("x", 1), floatingTable()])).to.equal(without);
+                expect(stopOf([floatingTable(), table([row([[prose("c", 1)]])])])).to.equal(without);
+                const sectionBreak: ParagraphBlock = { ...paragraph("break", 0), items: [], sectionBreak: true };
+                expect(stopOf([floatingTable(), sectionBreak])).to.equal(without);
+                expect(
+                    stopOf(
+                        [
+                            [floatingTable(), 0],
+                            [prose("a", 1), 1],
+                        ],
+                        { sections: [PAGE, PAGE] },
+                    ),
+                ).to.equal(without);
+                // Going past the bottom of the page, which Word breaks across pages (G28)
+                const fill = Array.from({ length: 16 }, (_, index) => prose(`f${index}`, 3));
+                expect(stopOf([...fill, floatingTable(), prose("a", 3)])).to.equal(
+                    "a table that text flows around going past the bottom of the page",
+                );
+                // Kept with the next, or before one kept with the next
+                const kept = "a paragraph kept with the next with a table that text flows around";
+                expect(stopOf([prose("h", 1, [], { keepNext: true }), floatingTable(), prose("a", 3)])).to.equal(kept);
+                expect(stopOf([floatingTable(), prose("h", 1, [], { keepNext: true }), prose("a", 3)])).to.equal(kept);
+                // With a footnote in it
+                const noted = withItems(prose("n", 1), [{ type: "marker", name: "note" }]);
+                expect(
+                    stopOf([{ ...floatingTable(), rows: [row([[noted]])] }, prose("a", 3)], {
+                        footnotes: new Map([["note", [prose("note", 1)]]]),
+                    }),
+                ).to.equal("a footnote in a table that text flows around");
+                // Overlapping another that may not overlap it, which Word moves out of the way (G3)
+                expect(stopOf([floatingTable({ mayOverlap: false }), floatingTable(), prose("a", 3)])).to.equal(
+                    "drawings that text flows around that may not overlap, overlapping",
+                );
+            });
+
+            it("should lay one out in the text where Word's way with it hasn't been seen, guessing", () => {
+                /** The pages' tables' rows and lines, down the page, and what was guessed at */
+                const guessed = (
+                    blocks: readonly Block[],
+                    changes: Partial<DocumentContent> = {},
+                ): {
+                    readonly placed: readonly (readonly (number | string)[])[];
+                    readonly guesses: readonly string[];
+                    readonly stoppedAt?: string;
+                } => {
+                    const { pages, stoppedAt } = paginate(document(blocks, { sections: [PAGE], ...changes }), {
+                        measurer: MEASURER,
+                        guess: true,
+                    });
+                    return {
+                        placed: pages.flatMap(({ body }, page) =>
+                            body.flatMap((block) =>
+                                block.type === "table"
+                                    ? block.rows.map(({ y }) => [page, "row", y])
+                                    : block.lines.map(({ x, y }) => [page, "line", x, y]),
+                            ),
+                        ),
+                        guesses: pages.flatMap((page) => page.guesses ?? []),
+                        ...(stoppedAt === undefined ? {} : { stoppedAt }),
+                    };
+                };
+                // Without a paragraph after it, it is laid out in the text
+                expect(guessed([prose("x", 1), floatingTable()])).to.deep.equal({
+                    placed: [
+                        [0, "line", 10, 10],
+                        [0, "row", 20],
+                        [0, "row", 30],
+                        [0, "row", 40],
+                    ],
+                    guesses: ["a table that text flows around without a paragraph after it"],
+                });
+                // Before a paragraph kept with the next, or as what a paragraph is kept with
+                const kept = "a paragraph kept with the next with a table that text flows around";
+                expect(guessed([floatingTable(), prose("h", 1, [], { keepNext: true }), prose("a", 1)])).to.deep.include({
+                    placed: [
+                        [0, "row", 10],
+                        [0, "row", 20],
+                        [0, "row", 30],
+                        [0, "line", 10, 40],
+                        [0, "line", 10, 50],
+                    ],
+                    guesses: [kept],
+                });
+                expect(guessed([prose("h", 1, [], { keepNext: true }), floatingTable(), prose("a", 1)]).guesses).to.deep.equal([kept]);
+                // With a footnote in it
+                const noted = withItems(prose("n", 1), [{ type: "marker", name: "note" }]);
+                expect(
+                    guessed([{ ...floatingTable(), rows: [row([[noted]])] }, prose("a", 1)], {
+                        footnotes: new Map([["note", [prose("note", 1)]]]),
+                    }).guesses,
+                ).to.deep.equal(["a footnote in a table that text flows around"]);
+                // Going past the bottom of the page, it is laid out in the text where the paragraph after it would start,
+                // across the pages, and the paragraph after it
+                const fill = Array.from({ length: 16 }, (_, index) => prose(`f${index}`, 3));
+                const past = guessed([...fill, floatingTable(), prose("a", 1)]);
+                expect(past.placed.slice(-4)).to.deep.equal([
+                    [0, "row", 170],
+                    [0, "row", 180],
+                    [1, "row", 10],
+                    [1, "line", 10, 20],
+                ]);
+                expect(past.guesses).to.deep.equal(["a table that text flows around going past the bottom of the page"]);
+            });
         });
 
         it("should keep the text out of the room of drawings that overlap, and stop at those that may not overlap (G1 to G3)", () => {

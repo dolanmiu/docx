@@ -2124,7 +2124,84 @@ describe("readDocument", () => {
             expect((outside.blocks[0].block as TableBlock).unsupported).to.equal("an equation");
         });
 
-        it("should stop at a table that text flows around, a row in an HTML division, and cells merged the old way, whose text doesn't wrap or that fit their text to them", () => {
+        it("should read where a table that text flows around is, and stop where it can't be followed", () => {
+            const floatOf = (attributes: object, ...properties: readonly object[]): TableBlock =>
+                readBody([
+                    { "w:tbl": [{ "w:tblPr": [{ "w:tblpPr": { _attr: attributes } }, ...properties] }, { "w:tr": [cell([], p())] }] },
+                    p(),
+                ]).blocks[0].block as TableBlock;
+            // Placed as a drawing is: against the column or the paragraph after it for text, the margins or the page, at a
+            // distance in twips or lined up with it, the text kept from it by its distances
+            const placed = floatOf({
+                "w:horzAnchor": "text",
+                "w:vertAnchor": "text",
+                "w:tblpX": 400,
+                "w:tblpY": -200,
+                "w:leftFromText": 180,
+                "w:rightFromText": 200,
+                "w:topFromText": 20,
+                "w:bottomFromText": 40,
+            });
+            expect(placed.unsupported).to.equal(undefined);
+            expect(placed.float).to.deep.equal({
+                horizontal: { from: "column", offset: 20 },
+                vertical: { from: "paragraph", offset: -10 },
+                distances: { top: 1, bottom: 2, left: 9, right: 10 },
+                mayOverlap: true,
+            });
+            const lined = floatOf(
+                { "w:horzAnchor": "margin", "w:vertAnchor": "page", "w:tblpXSpec": "right", "w:tblpYSpec": "bottom", "w:tblpX": 400 },
+                value("w:tblOverlap", "never"),
+            );
+            expect(lined.float).to.deep.equal({
+                horizontal: { from: "margin", align: "right" },
+                vertical: { from: "page", align: "bottom" },
+                distances: { top: 0, bottom: 0, left: 0, right: 0 },
+                mayOverlap: false,
+            });
+            expect(floatOf({ "w:horzAnchor": "page", "w:vertAnchor": "margin" }, value("w:tblOverlap", "overlap")).float).to.deep.include({
+                horizontal: { from: "page", offset: 0 },
+                vertical: { from: "margin", offset: 0 },
+                mayOverlap: true,
+            });
+            // Without what it is placed against, or lined up with the line it would be in, it isn't followed yet
+            expect(floatOf({ "w:vertAnchor": "text" }).unsupported).to.equal(
+                "a table that text flows around placed against what isn't given",
+            );
+            expect(floatOf({ "w:horzAnchor": "text" }).unsupported).to.equal(
+                "a table that text flows around placed against what isn't given",
+            );
+            const lining = "a table that text flows around lined up in a way not yet followed";
+            expect(floatOf({ "w:horzAnchor": "text", "w:vertAnchor": "text", "w:tblpYSpec": "inline" }).unsupported).to.equal(lining);
+            expect(floatOf({ "w:horzAnchor": "text", "w:vertAnchor": "text", "w:tblpXSpec": "top" }).unsupported).to.equal(lining);
+            // In a table cell, a header or a footnote, where Word puts it hasn't been seen
+            const floating = {
+                "w:tbl": [
+                    { "w:tblPr": [{ "w:tblpPr": { _attr: { "w:horzAnchor": "text", "w:vertAnchor": "text" } } }] },
+                    { "w:tr": [cell([], p())] },
+                ],
+            };
+            const inCell = readBody([{ "w:tbl": [{ "w:tr": [cell([], floating, p())] }] }]).blocks[0].block as TableBlock;
+            const unsupported = "a table that text flows around in a table cell, header, footer or note";
+            expect(inCell.rows[0].cells[0].blocks[0].unsupported).to.equal(unsupported);
+            const content = readContent(
+                {
+                    "w:body": [
+                        p(r({ "w:footnoteReference": { _attr: { "w:id": 1 } } })),
+                        { "w:sectPr": [{ "w:headerReference": { _attr: { "r:id": "rId1" } } }] },
+                    ],
+                },
+                {
+                    styles: WORD_DEFAULT_STYLES,
+                    headersAndFooters: new Map([["rId1", [floating, p()]]]),
+                    footnotes: { "w:footnotes": [{ "w:footnote": [{ _attr: { "w:id": 1 } }, floating, p()] }] },
+                },
+            );
+            expect(content.sections[0].headers.default![0].unsupported).to.equal(unsupported);
+            expect(content.footnotes.get("footnote 1")![0].unsupported).to.equal(unsupported);
+        });
+
+        it("should stop at a row in an HTML division, and cells merged the old way, whose text doesn't wrap or that fit their text to them", () => {
             const unsupportedOf = (
                 table: readonly unknown[],
                 row: readonly unknown[],
@@ -2141,10 +2218,6 @@ describe("readDocument", () => {
                     ]).blocks[0].block as TableBlock
                 ).unsupported;
             expect(unsupportedOf([], [], [])).to.equal(undefined);
-            // Word puts the text after a floating table beside it (word-watertight-tables.docx TB11)
-            expect(unsupportedOf([{ "w:tblpPr": { _attr: { "w:tblpY": 0, "w:vertAnchor": "text" } } }], [], [])).to.equal(
-                "a table that text flows around",
-            );
             expect(unsupportedOf([], [value("w:divId", 3)], [])).to.equal("a table row in an HTML division");
             expect(unsupportedOf([], [], [value("w:hMerge", "restart")])).to.equal(
                 "cells merged across columns as old versions of Word wrote them",

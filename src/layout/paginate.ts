@@ -37,6 +37,7 @@ import { type FieldFormat, formatPageNumber, inFieldCapitals, writeFieldNumber, 
 import {
     type Block,
     type DocumentContent,
+    type FloatingDrawing,
     type HeadersOrFooters,
     type LayoutItem,
     type ParagraphBlock,
@@ -481,8 +482,35 @@ const rowOf = (lines: readonly LaidOutLine[], first: number, skip = 0, top?: num
     };
 };
 
-/** A drawing of a paragraph placed on a page, the paragraph's line it is anchored in, and where it is in its items */
-type AnchoredDrawing = { readonly line: number; readonly item: number; readonly drawing: PlacedDrawing };
+/**
+ * A drawing of a paragraph placed on a page, the paragraph's line it is anchored in, and where it is in its items. A table
+ * that text flows around before the paragraph is one of its drawings, anchored in its first line, at no item of its own,
+ * with the index of its block and the heights of its rows (`table`)
+ */
+type AnchoredDrawing = {
+    readonly line: number;
+    readonly item: number;
+    readonly drawing: PlacedDrawing;
+    readonly table?: FloatingTable;
+};
+
+/** A table that text flows around, as a drawing of the paragraph after it: its block's index and its rows' heights */
+type FloatingTable = { readonly index: number; readonly heights: readonly number[] };
+
+const KEPT_FLOATING = "a paragraph kept with the next with a table that text flows around";
+
+// How much wider than its rows Word makes the room of a table that text flows around without borders left and right, in
+// points (`word-floats3.docx` H1, H8, `word-floats2.docx` G25)
+const BORDERLESS_FLOAT = 0.75;
+
+/** Whether a block is a table that text flows around */
+const isFloating = (block: Block): block is TableBlock & { readonly float: NonNullable<TableBlock["float"]> } =>
+    block.type === "table" && block.float !== undefined;
+
+/** The width of a table's rows, with its cells' margins and the halves of its borders outside them */
+const tableWidthOf = (table: TableBlock): number =>
+    Math.max(0, ...table.rows.map(({ cells }) => sum(cells.map((cell) => cell.width + cell.marginLeft + cell.marginRight)))) +
+    ((table.borderLeft ?? 0) + (table.borderRight ?? 0)) / 2;
 
 // How many times a paragraph's lines are broken again beside drawings, each time in the room the last left them, before
 // the layout stops at them
@@ -2101,6 +2129,16 @@ export const paginate = (
 
     const notesIn = (markers: readonly string[]): readonly string[] => markers.filter((name) => footnotes.has(name));
 
+    /** Places the rows of a table that text flows around down from the top of where it was placed */
+    const placeFloatingRows = ({ index, heights }: FloatingTable, from: number): void => {
+        mark(markersOf(blocks[index].block));
+        heights.reduce((y, height, row) => {
+            // eslint-disable-next-line functional/immutable-data
+            placements.push({ type: "row", block: index, row: { index: row, y, height } });
+            return y + height;
+        }, from);
+    };
+
     /** The room footnotes take at the bottom of the page, or the room kept for them there, when that is more */
     const pageArea = (notes: readonly string[], split?: NotePart): number => Math.max(reserved(), areaOf(notes, split, continued));
 
@@ -2540,6 +2578,99 @@ export const paginate = (
         }
     };
 
+    // The tables that text flows around that are laid out in the text instead, guessing, where Word's way with them isn't
+    // known, by their blocks' indexes
+    const inlined = new Set<number>();
+
+    /** Whether a block is a table that text flows around, laid out round the paragraph after it */
+    const floatsAt = (index: number): boolean => {
+        const entry = blocks[index];
+        return entry !== undefined && isFloating(entry.block) && !inlined.has(index);
+    };
+
+    /**
+     * The tables that text flows around right before a block, which the paragraph after them goes round. Those before a
+     * paragraph are in its section, as those that aren't stop the layout
+     */
+    const floatsBefore = (index: number): readonly number[] => {
+        const first = blocks.slice(0, index).findLastIndex((_, at) => !floatsAt(at)) + 1;
+        return Array.from({ length: index - first }, (_, offset) => first + offset);
+    };
+
+    /** The tables that text flows around from one, one after the other */
+    const floatsFrom = (index: number): readonly number[] => {
+        const end = blocks.findIndex((_, at) => at >= index && !floatsAt(at));
+        return Array.from({ length: (end === -1 ? blocks.length : end) - index }, (_, offset) => index + offset);
+    };
+
+    /**
+     * Why Word's way with the tables that text flows around from one (`index`) isn't known: without a paragraph after them
+     * in their section to place them against, before a paragraph kept with the next, or with a footnote in one
+     */
+    const floatsUnknown = (index: number): string | undefined => {
+        const run = floatsFrom(index);
+        const after = blocks[index + run.length];
+        if (after?.section !== blocks[index].section || after.block.type !== "paragraph" || after.block.sectionBreak) {
+            return "a table that text flows around without a paragraph after it";
+        }
+        if (after.block.format.keepNext === true) {
+            return KEPT_FLOATING;
+        }
+        if (
+            run.some((table) => {
+                const { borderLeft, borderRight } = blocks[table].block as TableBlock;
+                return !borderLeft !== !borderRight;
+            })
+        ) {
+            // How much room Word gives one with a border on one side only isn't known
+            return "a table that text flows around with a border on one side only";
+        }
+        return run.some((table) => notesIn(markersOf(blocks[table].block)).length > 0)
+            ? "a footnote in a table that text flows around"
+            : undefined;
+    };
+
+    /**
+     * Stops at tables that text flows around, one after the other, where Word's way with them isn't known (`reason`), or,
+     * guessing, lays them out in the text, as tables it doesn't flow around, from where they are
+     */
+    const inlineFloats = (run: readonly number[], reason: string): void => {
+        stopAt(reason);
+        for (const table of run) {
+            // eslint-disable-next-line functional/immutable-data
+            inlined.add(table);
+        }
+    };
+
+    /**
+     * A table that text flows around, sized in the column, as a drawing with square wrapping the size of its rows, as Word
+     * puts the text beside it (`word-floats2.docx` G24 to G29), with its rows' heights. It is as wide as its rows with the
+     * halves of its borders left and right, from half a point to 3 points, and without borders there, 0.75 points wider, at
+     * the left of the margins and at the right: 3010, 3020, 3060 and 3015 twips for 3000 (`word-floats3.docx` H1 to H5, H8).
+     * Its cells' margins don't change it, and its indent doesn't move it (H6, H7)
+     */
+    const floatingTable = (index: number): { readonly drawing: FloatingDrawing; readonly table: FloatingTable } => {
+        const block = blocks[index].block as TableBlock;
+        const { horizontal, vertical, distances, mayOverlap } = block.float!;
+        const table = sizedToPlace(block, columnsSection().columns[column]);
+        const heights = rowHeights(table);
+        const borderless = !table.borderLeft && !table.borderRight;
+        return {
+            drawing: {
+                wrap: "square",
+                side: "bothSides",
+                width: tableWidthOf(table) + (borderless ? BORDERLESS_FLOAT : 0),
+                height: sum(heights),
+                effects: { top: 0, bottom: 0, left: 0, right: 0 },
+                distances,
+                horizontal,
+                vertical,
+                mayOverlap,
+            },
+            table: { index, heights },
+        };
+    };
+
     /**
      * Places a table beside the drawings that text flows around on its page when it fits beside them, as Word places one of
      * 3000 twips beside a drawing on the right or the left, moving it to the right past one on the left
@@ -2553,9 +2684,7 @@ export const paginate = (
         const current = columnsSection();
         const columnStart = columnLeft(current, column);
         const within = { start: columnStart, end: columnStart + current.columns[column] };
-        const tableWidth =
-            Math.max(0, ...table.rows.map(({ cells }) => sum(cells.map((cell) => cell.width + cell.marginLeft + cell.marginRight)))) +
-            ((table.borderLeft ?? 0) + (table.borderRight ?? 0)) / 2;
+        const tableWidth = tableWidthOf(table);
         const tableHeight = sum(heights);
         const indent = table.indent ?? 0;
         for (;;) {
@@ -2635,7 +2764,10 @@ export const paginate = (
                           top: placement.line.y,
                           bottom: placement.line.y + placement.line.height,
                       })
-                    : placement.type === "row" && placement.row.y + placement.row.height > keepOut.top && placement.row.y < keepOut.bottom,
+                    : placement.type === "row" &&
+                      !floatsAt(placement.block) &&
+                      placement.row.y + placement.row.height > keepOut.top &&
+                      placement.row.y < keepOut.bottom,
             );
             if (besideEarlier) {
                 // The page is laid out again with it on the page from the top, so the text before it goes round it too
@@ -2688,15 +2820,19 @@ export const paginate = (
         const within: Span = { start: left, end: left + current.columns[column] };
         const earlier: LineRooms = new Map([...given].filter(([line]) => line < from));
         const firstLines = linesOf(block, widths, earlier);
+        // The tables that text flows around before it are anchored in its first line, at no item of their own
         const anchorLine = (lines: readonly LaidOutLine[], index: number): number =>
-            lines.findIndex(({ markers }) => markers.includes(drawingMarker(index)));
+            index < 0 ? 0 : lines.findIndex(({ markers }) => markers.includes(drawingMarker(index)));
         // Its own drawings anchored in its lines from this one on, by where they are in its items, but for those left for a
-        // later page: those before were placed with the lines they are anchored in
-        const own = block.items.flatMap((item, index) =>
-            item.type === "drawing" && anchorLine(firstLines, index) >= from && !excluded.has(index)
-                ? [{ drawing: item.drawing, index }]
-                : [],
-        );
+        // later page: those before were placed with the lines they are anchored in. The tables before it go with its first
+        const own: readonly { readonly drawing: FloatingDrawing; readonly index: number; readonly table?: FloatingTable }[] = [
+            ...(from === 0 ? floatsBefore(at).map((table, offset) => ({ ...floatingTable(table), index: -1 - offset })) : []),
+            ...block.items.flatMap((item, index) =>
+                item.type === "drawing" && anchorLine(firstLines, index) >= from && !excluded.has(index)
+                    ? [{ drawing: item.drawing, index }]
+                    : [],
+            ),
+        ];
         const beside = drawings.filter(({ keepOut }) => keepOut.bottom > rowsTop + TOLERANCE);
         if (own.length === 0 && beside.length === 0) {
             return {
@@ -2709,15 +2845,16 @@ export const paginate = (
         const { indentLeft = 0, indentRight = 0, firstLineIndent = 0 } = block.format;
         const columnEnd = linesBottom();
         /** Places one of its own drawings, against its paragraph's top, or the top of a line from `lineTop`, `height` tall */
-        const place = ({ drawing, index }: (typeof own)[number], line: number, lineTop: number, height: number): AnchoredDrawing => {
+        const place = ({ drawing, index, table }: (typeof own)[number], line: number, lineTop: number, height: number): AnchoredDrawing => {
             if (drawing.horizontal.from === "character") {
                 throw new Unsupported("a drawing placed against where it is anchored along its line");
             }
-            const anchor = `${at} ${index}`;
+            const anchor = table === undefined ? `${at} ${index}` : `${table.index} table`;
+            const withTable = table === undefined ? {} : { table };
             // One placed from the top of the page stays where it was first placed (`word-floats2.docx` G4)
             const pin = (pinned.get(pageCount) ?? []).find((one) => one.anchor === anchor);
             if (pin !== undefined) {
-                return { line, item: index, drawing: pin };
+                return { line, item: index, drawing: pin, ...withTable };
             }
             const where = placeDrawing(drawing, {
                 section: section(),
@@ -2738,7 +2875,7 @@ export const paginate = (
                 throw new Unsupported("a drawing that would go above the page's text, with a distance from the text above it");
             }
             const box = over > TOLERANCE ? { ...where, top: where.top + over, bottom: where.bottom + over } : where;
-            return { line, item: index, drawing: { drawing, box, keepOut: keepOutOf(drawing, box), anchor } };
+            return { line, item: index, drawing: { drawing, box, keepOut: keepOutOf(drawing, box), anchor }, ...withTable };
         };
         /**
          * The room of each line of a row from `y`, `height` tall, its first line `line`, beside some drawings: the room beside
@@ -3048,6 +3185,19 @@ export const paginate = (
                     (drawing.vertical.from === "paragraph" || drawing.vertical.from === "line") &&
                     keepOut.bottom > linesBottom() + TOLERANCE,
             );
+            if (sinking.some(({ table }) => table !== undefined)) {
+                // Word breaks it across pages, with the paragraph after it on the last (`word-floats2.docx` G28), in ways not
+                // yet followed. Guessing, the tables before the paragraph are laid out in the text, and it after them
+                const run = floatsBefore(blockIndex);
+                inlineFloats(run, "a table that text flows around going past the bottom of the page");
+                const paragraphIndex = blockIndex;
+                for (const table of run) {
+                    blockIndex = table;
+                    placeTable(blocks[table].block as TableBlock);
+                }
+                blockIndex = paragraphIndex;
+                continue;
+            }
             if (sinking.length > 0) {
                 // Columns being evened out are too short for it, so they are tried taller
                 stopIfBalancing();
@@ -3061,6 +3211,12 @@ export const paginate = (
                 continue;
             }
             if (count > 0) {
+                // The tables that text flows around before it are on the page where they were placed, before its lines
+                for (const { drawing, table } of laid.placed) {
+                    if (table !== undefined) {
+                        placeFloatingRows(table, drawing.box.top);
+                    }
+                }
                 position += space;
                 const current = columnsSection();
                 const placedLines = linesUpTo(count);
@@ -4078,6 +4234,20 @@ export const paginate = (
             spaceAfter = 0;
             return;
         }
+        if (floatsAt(index)) {
+            // It goes round the paragraph after it, against which Word places it, with those after it before that paragraph.
+            // Where Word's way with them isn't known, guessing, they are laid out in the text
+            const unknown = floatsAt(index - 1) ? undefined : floatsUnknown(index);
+            if (unknown === undefined) {
+                // The space after the paragraph before is above them, and the paragraph after them has all its space before
+                // below that, as after a table: 200 after and 300 before put its first line 500 below the paragraph before
+                // (`word-floats3.docx` H9)
+                position += spaceAfter;
+                spaceAfter = 0;
+                return;
+            }
+            inlineFloats(floatsFrom(index), unknown);
+        }
         if (block.type === "table") {
             placeTable(block);
             sectionSpaceAfter = undefined;
@@ -4087,6 +4257,10 @@ export const paginate = (
         let holdNotes = false;
         if (paragraph.keepNext) {
             const chain = blocks.slice(index, index + keptChain(index) + 1).map(({ block: one }) => one);
+            if (floatsAt(index + keptChain(index))) {
+                // How Word keeps them with tables that text flows around isn't known. Guessing, those are laid out in the text
+                inlineFloats(floatsFrom(index + keptChain(index)), KEPT_FLOATING);
+            }
             // Beside drawings, or kept with a paragraph with one, they are measured as they are laid out beside them
             const beside =
                 besideDrawing() || chain.some((one) => one.type === "paragraph" && one.items.some(({ type }) => type === "drawing"));
