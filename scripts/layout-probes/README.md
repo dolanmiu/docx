@@ -259,8 +259,9 @@ python3 scripts/layout-probes/word-tracked-changes.py build/word-probes/word-tra
 ## Documents saved from Word
 
 Each `<demo>.word.docx` is a layout demo, as `scripts/compare-layout.sh` writes it, opened in Word 16 for Mac in Print
-Layout, with No to updating the fields, and saved as a Word Document once Word had laid out all its pages (2026-10-01).
-Word writes a `w:lastRenderedPageBreak` where each page began, and the number of pages in `docProps/app.xml`.
+Layout, with No to updating the fields, and saved as a Word Document once Word had laid out all its pages (2026-10-01,
+and `text-and-spacing` again on 2026-10-02, once its headings were in Calibri rather than Calibri Light). Word writes a
+`w:lastRenderedPageBreak` where each page began, and the number of pages in `docProps/app.xml`.
 
 `scripts/compare-layout.sh` copies them into its output directory, and `scripts/compare-layout.ts` lays each out through
 the `.docx` adapter, as `patchDocument` lays out a template, and compares the page of each heading in its table of
