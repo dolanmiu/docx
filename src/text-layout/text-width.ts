@@ -18,7 +18,7 @@ export type TextFont = {
     /** Size in points. Default is 10, which Word uses when a document doesn't give a size */
     readonly size?: number;
     readonly bold?: boolean;
-    /** The width tables measure italic text as upright, and Pretext measures it in the font's italics */
+    /** Measured in the font's italics, or bold italics */
     readonly italic?: boolean;
     /** Space added after each character, in points */
     readonly characterSpacing?: number;
@@ -237,10 +237,10 @@ const widthsOf = (font = DEFAULT_FONT): FontWidths => {
     return named(font) ?? named(similar ? similar[1] : "Arial")!;
 };
 
-/** The widths of the face text is in: its font's, bold or not */
-const faceOf = ({ font, bold }: TextFont): readonly (number | undefined)[] => {
-    const { regular, bold: heavy } = widthsOf(font);
-    return decodeWidths(bold ? heavy : regular);
+/** The widths of the face text is in: its font's, bold, italic, both or neither */
+const faceOf = ({ font, bold, italic }: TextFont): readonly (number | undefined)[] => {
+    const widths = widthsOf(font);
+    return decodeWidths(italic ? (bold ? widths.boldItalic : widths.italic) : bold ? widths.bold : widths.regular);
 };
 
 // Characters as wide as they are tall: Chinese, Japanese and Korean, full-width forms and emoji

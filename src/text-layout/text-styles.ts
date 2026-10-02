@@ -27,10 +27,14 @@ export type RunFormat = Omit<TextFont, "size"> & {
     readonly hidden?: boolean;
     /** The font of Chinese, Japanese and Korean text (`w:eastAsia`) */
     readonly eastAsiaFont?: string;
-    /** The font, size in points and boldness of complex scripts, such as Arabic, Hebrew and Thai (`w:cs`, `w:szCs`, `w:bCs`) */
+    /**
+     * The font, size in points, boldness and italics of complex scripts, such as Arabic, Hebrew and Thai (`w:cs`, `w:szCs`,
+     * `w:bCs`, `w:iCs`)
+     */
     readonly complexScriptFont?: string;
     readonly complexScriptSize?: number;
     readonly complexScriptBold?: boolean;
+    readonly complexScriptItalic?: boolean;
     /** Whether the run is right to left (`w:rtl`), or of a complex script (`w:cs`), so all of it is in the complex script's formatting */
     readonly rightToLeft?: boolean;
     readonly complexScript?: boolean;
@@ -273,6 +277,7 @@ export const readRunFormat = (element: unknown, themeFonts: ThemeFonts): RunForm
         complexScriptFont: themeFontOf(fonts["w:cstheme"], themeFonts) ?? stringOf(fonts["w:cs"]),
         complexScriptSize: sizeOf(attributesOf(find(children, "w:szCs"))["w:val"]),
         complexScriptBold: onOff(children, "w:bCs"),
+        complexScriptItalic: onOff(children, "w:iCs"),
         rightToLeft: onOff(children, "w:rtl"),
         complexScript: onOff(children, "w:cs"),
         eastAsianLanguage: stringOf(attributesOf(find(children, "w:lang"))["w:eastAsia"]),
@@ -472,10 +477,10 @@ export const fontOf = ({ font, size, bold, italic, characterSpacing, scale }: Ru
 type FontSlot = "latin" | "eastAsian" | "complex";
 
 /**
- * Which of a run's fonts Word draws a character in: the font for complex scripts, in their size and boldness, for all of a
- * run that is right to left or of a complex script; the East Asian font for Chinese, Japanese and Korean; the run's font
- * for the rest. Hebrew in a run that isn't right to left is in the run's size, as Word lays it out. A mark is drawn in the
- * font of the character it is on.
+ * Which of a run's fonts Word draws a character in: the font for complex scripts, in their size, boldness and italics, for
+ * all of a run that is right to left or of a complex script; the East Asian font for Chinese, Japanese and Korean; the
+ * run's font for the rest. Hebrew in a run that isn't right to left is in the run's size, as Word lays it out. A mark is
+ * drawn in the font of the character it is on.
  */
 const slotOf = (character: string, previous: FontSlot, complexRun: boolean): FontSlot => {
     if (complexRun) {
@@ -491,18 +496,24 @@ const slotOf = (character: string, previous: FontSlot, complexRun: boolean): Fon
 const FALLBACK_EAST_ASIAN_FONT = "MS Mincho";
 
 /**
- * The font of a character of a run, by the run's font Word draws it in. Complex scripts have their own size and boldness,
- * and Word's defaults where the run doesn't give them.
+ * The font of a character of a run, by the run's font Word draws it in. Complex scripts have their own size, boldness and
+ * italics, and Word's defaults where the run doesn't give them.
  */
 const fontOfSlot = (format: RunFormat, slot: FontSlot): TextFont => {
     const font = fontOf(format);
     if (slot === "latin") {
         return font;
     }
-    const { eastAsiaFont, complexScriptFont, complexScriptSize, complexScriptBold } = format;
+    const { eastAsiaFont, complexScriptFont, complexScriptSize, complexScriptBold, complexScriptItalic } = format;
     return slot === "eastAsian"
         ? { ...font, font: isEastAsianFont(eastAsiaFont) ? eastAsiaFont : FALLBACK_EAST_ASIAN_FONT }
-        : withoutUndefined({ ...font, font: complexScriptFont, size: complexScriptSize, bold: complexScriptBold });
+        : withoutUndefined({
+              ...font,
+              font: complexScriptFont,
+              size: complexScriptSize,
+              bold: complexScriptBold,
+              italic: complexScriptItalic,
+          });
 };
 
 /**

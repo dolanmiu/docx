@@ -1286,4 +1286,27 @@ describe("readDocument", () => {
         });
         expect(textOf(content)).to.equal("Title");
     });
+
+    it("should read docx's Heading 4 in italics, and a right-to-left run in the italics of complex scripts", () => {
+        const content = readWritten({
+            sections: [
+                {
+                    children: [
+                        new Paragraph({ heading: HeadingLevel.HEADING_4, children: [new TextRun("Heading")] }),
+                        new Paragraph({
+                            children: [
+                                new TextRun({ text: "a", italics: true, rightToLeft: true }),
+                                new TextRun({ text: "b", italics: true, italicsComplexScript: false, rightToLeft: true }),
+                            ],
+                        }),
+                    ],
+                },
+            ],
+        });
+        expect(itemsOf(content)).to.deep.equal([{ type: "text", text: "Heading", font: { italic: true } }]);
+        expect(itemsOf(content, 1)).to.deep.equal([
+            { type: "text", text: "a", font: { italic: true } },
+            { type: "text", text: "b", font: {} },
+        ]);
+    });
 });

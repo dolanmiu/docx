@@ -1,5 +1,5 @@
 // Probes of how wide Word draws the characters of the width tables' ranges, in each of the five fonts the tables have,
-// plain and bold, and of how lines break after the spaces other than U+0020. Each paragraph's first word names its probe,
+// plain and bold, or italic and bold italic, and of how lines break after the spaces other than U+0020. Each paragraph's first word names its probe,
 // so it can be found in a PDF saved from Word with pdftotext. Open the document in Word and save it as a PDF beside it.
 // Read the PDF with word-character-widths.py.
 //
@@ -16,6 +16,9 @@
 // The fonts, and the spaces and words of S, B and H, are written in word-character-widths.json, beside the document, for
 // the reader.
 //
+// With "italic", it writes word-italic-widths.docx and word-italic-widths.json: W and S in italic and bold italic, in the
+// same paragraphs, numbered the same way. B and H are left out, as where lines break after a space doesn't depend on the face.
+//
 // Word's PDF, saved from Word 16 for Mac on 2026-10-02, showed:
 // W: the open fonts' widths are Word's, to within a thousandth of an em, for all but a few characters: Calibri's ƒ and ɪ,
 //    Cambria's arrows, primes and some symbols, Arial's and Times New Roman's superscript and subscript digits, and some
@@ -30,7 +33,18 @@
 //    spaces, as it does around a no-break space, but splits a run of words joined by six-per-em spaces that is longer than
 //    a line at one of them
 //
-// Usage: npm run run-ts -- scripts/layout-probes/word-character-widths.ts, which writes build/word-probes/word-character-widths.docx
+// Word's PDF of word-italic-widths, saved from Word 16 for Mac on 2026-10-02, showed:
+// W: the open fonts' italics and bold italics are Word's, to within a thousandth of an em, for all but a few characters, as
+//    upright: Calibri's ƒ and ɪ, Cambria's arrows, primes, some symbols and, in bold italic, its accents, Arial's and Times
+//    New Roman's superscript and subscript digits, and a few of Arial's Cyrillic. Calibri's italic т is drawn as an m, 791
+//    thousandths of an em, where the upright one is 387, as Carlito's is. Word draws what the italics lack in other fonts,
+//    as upright, such as the arrows ↖ to ↙ in Apple Color Emoji, whose boxes pdftotext puts off their line. It drew most of
+//    Cambria's italic arrows and mathematical symbols with no text, as it drew Cambria Bold's, so their widths can't be read
+// S: the spaces are as wide as upright, but for Times New Roman italic's em, three-per-em, four-per-em and six-per-em
+//    spaces, which are 889, 297, 222 and 149 thousandths of an em, where the upright ones are 1000, 333, 250 and 167
+//
+// Usage: npm run run-ts -- scripts/layout-probes/word-character-widths.ts [italic], which writes
+// build/word-probes/word-character-widths.docx, or word-italic-widths.docx with "italic"
 // cspell:ignore bbox Caladea
 import { mkdirSync, writeFileSync } from "node:fs";
 
@@ -50,7 +64,9 @@ const RANGES = [
 ] as const;
 
 const FONTS = ["Calibri", "Cambria", "Arial", "Times New Roman", "Courier New"] as const;
-const FACES = FONTS.flatMap((font) => [false, true].map((bold) => ({ font, bold })));
+const ITALIC = process.argv[2] === "italic";
+const NAME = ITALIC ? "word-italic-widths" : "word-character-widths";
+const FACES = FONTS.flatMap((font) => [false, true].map((bold) => (ITALIC ? { font, bold, italic: true } : { font, bold })));
 
 // Points, and how many times each character is written in its word
 const SIZE = 10;
@@ -130,17 +146,26 @@ const PARAGRAPHS = Array.from({ length: Math.ceil(DRAWN.length / PER_PARAGRAPH) 
 );
 const BREAK_WORDS = prose(40);
 
+// A face's bold and italic, as a run writes them
+const runFace = ({
+    bold,
+    italic,
+}: {
+    readonly bold: boolean;
+    readonly italic?: boolean;
+}): { readonly bold: boolean; readonly italics?: boolean } => (italic ? { bold, italics: true } : { bold });
+
 // W1 to W1250: the paragraphs of characters in each face in turn, the first face's first
-const widthParagraphs = FACES.flatMap(({ font, bold }, face) =>
+const widthParagraphs = FACES.flatMap(({ font, ...face }, faceIndex) =>
     PARAGRAPHS.map(
         (codes, index) =>
             new Paragraph({
                 children: [
-                    label(`W${face * PARAGRAPHS.length + index + 1}`),
+                    label(`W${faceIndex * PARAGRAPHS.length + index + 1}`),
                     ...codes.flatMap((code) => [
                         new TextRun({ text: `u${hex(code)}`, font: "Calibri", size: LABEL_SIZE * 2 }),
                         // The spaces around the word are in its font, so they are wide enough for pdftotext to part the words
-                        new TextRun({ text: ` ${String.fromCodePoint(code).repeat(COPIES)} `, font, bold, size: SIZE * 2 }),
+                        new TextRun({ text: ` ${String.fromCodePoint(code).repeat(COPIES)} `, font, ...runFace(face), size: SIZE * 2 }),
                     ]),
                 ],
             }),
@@ -148,16 +173,16 @@ const widthParagraphs = FACES.flatMap(({ font, bold }, face) =>
 );
 
 // S1 to S220: each space in each face in turn
-const spaceParagraphs = FACES.flatMap(({ font, bold }, face) =>
+const spaceParagraphs = FACES.flatMap(({ font, ...face }, faceIndex) =>
     SPACES.map(
         (code, index) =>
             new Paragraph({
                 children: [
-                    label(`S${face * SPACES.length + index + 1}`),
+                    label(`S${faceIndex * SPACES.length + index + 1}`),
                     new TextRun({
                         text: `${"H".repeat(COPIES)} H${`${String.fromCodePoint(code)}H`.repeat(COPIES)}`,
                         font,
-                        bold,
+                        ...runFace(face),
                         size: SIZE * 2,
                     }),
                 ],
@@ -187,23 +212,30 @@ const doc = new Document({
     styles: {
         default: { document: { run: { font: "Calibri", size: 22 }, paragraph: { spacing: { before: 0, after: 0, line: 240 } } } },
     },
-    sections: [{ children: widthParagraphs }, { children: spaceParagraphs }, { children: [...breakParagraphs, ...hangParagraphs] }],
+    sections: [
+        { children: widthParagraphs },
+        { children: spaceParagraphs },
+        ...(ITALIC ? [] : [{ children: [...breakParagraphs, ...hangParagraphs] }]),
+    ],
 });
 
 const main = async (): Promise<void> => {
     mkdirSync("build/word-probes", { recursive: true });
-    writeFileSync("build/word-probes/word-character-widths.docx", await Packer.toBuffer(doc));
+    writeFileSync(`build/word-probes/${NAME}.docx`, await Packer.toBuffer(doc));
     const sidecar = {
         size: SIZE,
         copies: COPIES,
         faces: FACES,
         paragraphs: PARAGRAPHS,
         spaces: SPACES,
-        breaks: { codes: BREAKS, words: BREAK_WORDS },
-        hangs: HANGS.map(({ code, word, end }) => ({ code, word, end })),
+        breaks: ITALIC ? { codes: [], words: [] } : { codes: BREAKS, words: BREAK_WORDS },
+        hangs: ITALIC ? [] : HANGS.map(({ code, word, end }) => ({ code, word, end })),
     };
-    writeFileSync("build/word-probes/word-character-widths.json", `${JSON.stringify(sidecar)}\n`);
+    writeFileSync(`build/word-probes/${NAME}.json`, `${JSON.stringify(sidecar)}\n`);
     console.log(`${DRAWN.length} characters in each of ${FACES.length} faces, in ${widthParagraphs.length} paragraphs`);
+    if (ITALIC) {
+        return;
+    }
     console.log(
         HANGS.map(
             ({ code, word, end, filler }, index) =>
