@@ -8,9 +8,12 @@
  *   and with an empty paragraph at its end when it doesn't end with one, as Word gives every document (AC1, AC2, AC4a, AC7,
  *   AC9, AC10). An imported document of several sections stops, as Word lays it out in ways not yet followed (AC4b)
  * - a style of the same type and name as one of the document's, whatever its id and the case of its name, is the
- *   document's, and the document's defaults, theme and settings are the document's (AC3, AC16). A style only the imported
- *   document has keeps how it looks there, with the styles it is based on (AC3d), and new ids where the document has its
- *   ids (AC3f)
+ *   document's, and the document's defaults, theme and settings are the document's (AC3, AC16). A style only the
+ *   imported document has keeps how it looks there, with new ids where the document has its ids (AC3f): a paragraph
+ *   style with the styles it is based on there and the imported document's defaults (AC3d, AS1, AS2, AS4), a character
+ *   style with only what it and the character styles it is based on give (AS3), and a table style based on the
+ *   document's styles of the names of those it is based on (AS6). Paragraphs and tables of no style are in the imported
+ *   document's default style, the document's of its name or one added (AS5)
  * - its lists are lists of their own, numbered from their own start, and its notes are numbered with the document's
  *   (AC5, AC6)
  * - a bookmark of a name the document has is the document's, wherever it is (AC11a, AC11b). A bookmark of a name two
@@ -18,8 +21,10 @@
  * - a .docx it imports is turned into its own first (AC12)
  *
  * Those that aren't followed are left for the layout to stop at, with why: a document in another format, such as HTML or
- * plain text, which Word converts its own way (AC8), one whose formatting is kept as it is (`w:matchSrc`), and one with a
- * page reference or number of pages, whose number docx can't write in it.
+ * plain text, which Word converts its own way (AC8); one whose formatting is kept as it is (`w:matchSrc`), whose last
+ * paragraph Word gives none of its space after, though it keeps its text's look (AC3g, AS9); one with a style of its own
+ * whose defaults leave out some of the document's, which Word's PDFs haven't shown; and one with a page reference or
+ * number of pages, whose number docx can't write in it.
  *
  * @module
  */
@@ -236,31 +241,71 @@ const withAttributes = (element: XmlObject, attributes: Readonly<Record<string, 
     return { [name]: [{ _attr: Object.fromEntries(all) }, ...childrenOf(element[name]).filter((child) => !("_attr" in child))] };
 };
 
-type Style = { readonly id: string; readonly element: XmlObject; readonly key?: string; readonly basedOn?: string };
+type Style = {
+    readonly id: string;
+    readonly element: XmlObject;
+    /** A paragraph style for one without a type, as Word takes it */
+    readonly type: string;
+    /** Its type and name, which Word knows it by, whatever its name's case (AC3k) */
+    readonly key?: string;
+    readonly basedOn?: string;
+    /** Whether it is its type's default, which paragraphs or tables that name no style are in */
+    readonly isDefault: boolean;
+};
 
-/** A part's styles: each with its id, the type and name it is known by, and the style it is based on */
+/** A part's styles */
 const stylesOf = (root: XmlObject | undefined): readonly Style[] =>
     elementsOf(root, "w:style").flatMap((element) => {
         const attributes = attributesOf(element["w:style"]);
         const id = stringOf(attributes["w:styleId"]);
         const children = childrenOf(element["w:style"]);
         const name = stringOf(attributesOf(find(children, "w:name"))["w:val"]);
-        // A style without a type is a paragraph style, and Word knows a style by its name, whatever its case (AC3k)
-        const key = name === undefined ? undefined : `${stringOf(attributes["w:type"]) ?? "paragraph"} ${name.toLowerCase()}`;
+        const type = stringOf(attributes["w:type"]) ?? "paragraph";
         const basedOn = stringOf(attributesOf(find(children, "w:basedOn"))["w:val"]);
-        return id === undefined ? [] : [{ id, element, key, basedOn }];
+        const isDefault = attributes["w:default"] !== undefined && !["0", "false", "off"].includes(String(attributes["w:default"]));
+        return id === undefined
+            ? []
+            : [{ id, element, type, key: name === undefined ? undefined : `${type} ${name.toLowerCase()}`, basedOn, isDefault }];
     });
 
+/** The properties a document's defaults (`w:docDefaults`) give paragraphs or runs: their element, `w:pPr` or `w:rPr` */
+const defaultsOf = (root: XmlObject | undefined, kind: "w:pPr" | "w:rPr"): readonly XmlObject[] =>
+    childrenOf(find(childrenOf(find(childrenOf(find(elementsOf(root, "w:docDefaults"), "w:docDefaults")), `${kind}Default`)), kind));
+
 /**
- * The styles of an imported document, put into a document's: each of the same type and name as one of the document's
- * is the document's, and the others are added, with the styles they are based on, so they look as they do in the
- * imported document, and with new ids where the document has their ids. The styles added for the others to be based on
- * aren't any type's default, nor are those added.
+ * What a document's defaults give, each named by its element, and the spacing and indents by each of their attributes,
+ * which a document may give some of
  */
-const mergeStyles = (
-    into: XmlObject | undefined,
-    imported: XmlObject | undefined,
-): { readonly added: readonly XmlObject[]; readonly ids: Ids } => {
+const defaultKeysOf = (root: XmlObject | undefined): ReadonlySet<string> =>
+    new Set(
+        [...defaultsOf(root, "w:pPr"), ...defaultsOf(root, "w:rPr")].flatMap((element) => {
+            const name = nameOf(element);
+            return name === "w:spacing" || name === "w:ind"
+                ? Object.keys(attributesOf(element[name])).map((attribute) => `${name} ${attribute}`)
+                : [name];
+        }),
+    );
+
+/** An imported document's styles put into a document's: those added, and the ids its paragraphs and tables refer to */
+type MergedStyles = {
+    readonly added: readonly XmlObject[];
+    readonly ids: Ids;
+    /** The style that paragraphs, or tables, of no style of their own are in, where it isn't the document's default */
+    readonly defaults: { readonly paragraph?: string; readonly table?: string };
+    /** Why its styles can't be put in as Word puts them, where they can't */
+    readonly unsupported?: string;
+};
+
+/**
+ * The styles of an imported document, put into a document's. Each of the same type and name as one of the document's is
+ * the document's (AC3), and the others are added, with new ids where the document has their ids (AC3f), looking as they
+ * do in the imported document: a paragraph style with the styles it is based on there and its defaults, whatever the
+ * document's of their names (AC3d, AS1, AS2, AS4), a character style with those it is based on there (AS3), and a table
+ * style based on the document's of the names of those it is based on (AS6). Those added for others to be based on aren't
+ * any type's default, nor are those added, and paragraphs and tables of no style of their own are in the imported
+ * document's default, added or not (AS5).
+ */
+const mergeStyles = (into: XmlObject | undefined, imported: XmlObject | undefined): MergedStyles => {
     const own = stylesOf(into);
     // The first of a name, as one added for an imported document may have the name of one before it
     const keys = own.flatMap(({ key, id }) => (key === undefined ? [] : [[key, id] as const]));
@@ -269,13 +314,32 @@ const mergeStyles = (
     const byId = new Map(theirs.map((style) => [style.id, style]));
     const matched = new Map(theirs.flatMap(({ id, key }) => (key !== undefined && byKey.has(key) ? [[id, byKey.get(key)!] as const] : [])));
     // The styles added: those the document doesn't have, and those they are based on, as far as a style based on one
-    // before it, or on none
-    const chainOf = (id: string | undefined, seen: readonly string[]): readonly string[] =>
-        id === undefined || !byId.has(id) || seen.includes(id) ? seen : chainOf(byId.get(id)!.basedOn, [...seen, id]);
+    // before it, or on none, or, for a table style, on one the document has
+    const chainOf = (id: string | undefined, seen: readonly string[]): readonly string[] => {
+        const style = id === undefined ? undefined : byId.get(id);
+        return style === undefined || seen.includes(style.id) || (style.type === "table" && matched.has(style.id))
+            ? seen
+            : chainOf(style.basedOn, [...seen, style.id]);
+    };
     const kept = new Set(theirs.filter((style) => !matched.has(style.id)).flatMap(({ id }) => chainOf(id, [])));
+    const keptParagraphs = theirs.filter(({ id, type }) => kept.has(id) && type === "paragraph");
+    // The paragraph styles added are based on the imported document's defaults, as a style of their own, as they look
+    // as they do there, unless the document's defaults give something the imported document's don't, which isn't known
+    const ownDefaults = defaultKeysOf(into);
+    const theirDefaults = defaultKeysOf(imported);
+    if (keptParagraphs.length > 0 && [...ownDefaults].some((key) => !theirDefaults.has(key))) {
+        return {
+            added: [],
+            ids: new Map(),
+            defaults: {},
+            unsupported: "a style of an imported document's own, where its defaults leave out some of the document's",
+        };
+    }
+    const taken = [...own.map((style) => style.id), ...theirs.filter(({ id }) => kept.has(id)).map(({ id }) => id)];
+    const defaultsId = freeId("ImportedDefaults", new Set(taken));
     // Each with an id the document doesn't have, nor those added before it
     const keptIds = [...kept].reduce<ReadonlyMap<string, string>>(
-        (before, id) => new Map([...before, [id, freeId(id, new Set([...own.map((style) => style.id), ...before.values()]))]]),
+        (before, id) => new Map([...before, [id, freeId(id, new Set([...own.map((style) => style.id), defaultsId, ...before.values()]))]]),
         new Map(),
     );
     // What refers to a style refers to the document's, or to the one added
@@ -284,16 +348,83 @@ const mergeStyles = (
     const bases = new Map([...ids, ...keptIds]);
     const added = theirs
         .filter(({ id }) => kept.has(id))
-        .map(({ id, element }) => {
+        .map(({ id, element, type, basedOn }) => {
             const style = withAttributes(element, { "w:styleId": keptIds.get(id), "w:default": undefined });
-            // One added only for others to be based on, as the document has a style of its name, has no name, so the
-            // documents imported after it don't take it for the document's
-            const named = matched.has(id)
-                ? { "w:style": contentOf(style).filter((child) => !isObject(child) || !("w:name" in child)) }
-                : style;
-            return renamed([named], { styles: bases, lists: new Map(), footnotes: new Map(), endnotes: new Map() })[0] as XmlObject;
+            const children = contentOf(style).filter(
+                // One added only for others to be based on, as the document has a style of its name, has no name, so the
+                // documents imported after it don't take it for the document's
+                (child) =>
+                    !isObject(child) ||
+                    !(
+                        ("w:name" in child && matched.has(id)) ||
+                        ("w:basedOn" in child && type === "paragraph" && !kept.has(String(basedOn)))
+                    ),
+            );
+            // A paragraph style based on no other added is based on the imported document's defaults
+            const based =
+                type === "paragraph" && !kept.has(String(basedOn))
+                    ? [...children, { "w:basedOn": [{ _attr: { "w:val": defaultsId } }] }]
+                    : children;
+            return renamed([{ "w:style": based }], {
+                styles: bases,
+                lists: new Map(),
+                footnotes: new Map(),
+                endnotes: new Map(),
+            })[0] as XmlObject;
         });
-    return { added, ids };
+    const defaults =
+        keptParagraphs.length === 0
+            ? []
+            : [
+                  {
+                      "w:style": [
+                          { _attr: { "w:type": "paragraph", "w:styleId": defaultsId } },
+                          { "w:pPr": defaultsOf(imported, "w:pPr") },
+                          { "w:rPr": defaultsOf(imported, "w:rPr") },
+                      ],
+                  },
+              ];
+    /** The id of the imported document's default style of a type, where paragraphs or tables of no style are in another than the document's */
+    const defaultOf = (type: string): string | undefined => {
+        const theirsDefault = theirs.find((style) => style.type === type && style.isDefault);
+        const id = theirsDefault && ids.get(theirsDefault.id);
+        return id === own.find((style) => style.type === type && style.isDefault)?.id ? undefined : id;
+    };
+    return {
+        added: [...defaults, ...added],
+        ids,
+        defaults: withoutUndefined({ paragraph: defaultOf("paragraph"), table: defaultOf("table") }),
+    };
+};
+
+/** Content whose paragraphs and tables of no style of their own are in these */
+const withDefaultStyles = (content: readonly unknown[], defaults: MergedStyles["defaults"]): readonly unknown[] => {
+    const styled = (element: XmlObject, properties: string, styleElement: string, id: string | undefined): XmlObject => {
+        const name = nameOf(element);
+        const children = contentOf(element);
+        const given = children.find((child) => isObject(child) && properties in child) as XmlObject | undefined;
+        if (id === undefined || (given !== undefined && find(childrenOf(given[properties]), styleElement) !== undefined)) {
+            return element;
+        }
+        const style = { [styleElement]: [{ _attr: { "w:val": id } }] };
+        return {
+            [name]:
+                given === undefined
+                    ? [{ [properties]: [style] }, ...children]
+                    : children.map((child) => (child === given ? { [properties]: [style, ...contentOf(given)] } : child)),
+        };
+    };
+    return content.map((element) => {
+        if (!isObject(element)) {
+            return element;
+        }
+        const name = nameOf(element);
+        if (name === "w:p") {
+            return styled(element, "w:pPr", "w:pStyle", defaults.paragraph);
+        }
+        const inner = name === "_attr" ? element : { [name]: withDefaultStyles(contentOf(element), defaults) };
+        return name === "w:tbl" ? styled(inner, "w:tblPr", "w:tblStyle", defaults.table) : inner;
+    });
 };
 
 /** The numbers an attribute gives elements of a part's root, such as each list's `w:numId` */
@@ -414,7 +545,12 @@ export const withImports = (parts: DocxParts): DocxParts => {
     const notesSoFar = (kind: "footnote" | "endnote"): XmlObject => ({
         [`w:${kind}s`]: [...elementsOf(parts[`${kind}s`]?.notes, `w:${kind}`), ...added[kind].notes],
     });
-    const addNotes = (kind: "footnote" | "endnote", document: DocxParts, renames: (ids: Ids) => Renames): Ids => {
+    const addNotes = (
+        kind: "footnote" | "endnote",
+        document: DocxParts,
+        renames: (ids: Ids) => Renames,
+        defaults: MergedStyles["defaults"],
+    ): Ids => {
         const imported = document[`${kind}s`]?.notes;
         const { elements, ids } = mergeNotes(notesSoFar(kind), imported, `w:${kind}`);
         const separators = elementsOf(imported, `w:${kind}`).filter((note) =>
@@ -423,7 +559,7 @@ export const withImports = (parts: DocxParts): DocxParts => {
         // eslint-disable-next-line functional/immutable-data
         added[kind] = {
             separators: added[kind].separators.length > 0 ? added[kind].separators : separators,
-            notes: [...added[kind].notes, ...(renamed(elements, renames(ids)) as readonly XmlObject[])],
+            notes: [...added[kind].notes, ...(withDefaultStyles(renamed(elements, renames(ids)), defaults) as readonly XmlObject[])],
         };
         return ids;
     };
@@ -448,6 +584,9 @@ export const withImports = (parts: DocxParts): DocxParts => {
             return "a page reference or number of pages in an imported document";
         }
         const style = mergeStyles(styles, document.styles);
+        if (style.unsupported !== undefined) {
+            return style.unsupported;
+        }
         const list = mergeLists(numbering, document.numbering);
         const withIds = (notes: { readonly footnotes?: Ids; readonly endnotes?: Ids }): Renames => ({
             styles: style.ids,
@@ -456,8 +595,8 @@ export const withImports = (parts: DocxParts): DocxParts => {
             endnotes: notes.endnotes ?? new Map(),
         });
         // A note refers to no other notes
-        const footnotes = addNotes("footnote", document, () => withIds({}));
-        const endnotes = addNotes("endnote", document, () => withIds({}));
+        const footnotes = addNotes("footnote", document, () => withIds({}), style.defaults);
+        const endnotes = addNotes("endnote", document, () => withIds({}), style.defaults);
         const renames = withIds({ footnotes, endnotes });
         const none = new Map<string, string>();
         // The styles added are already based on each other by their new ids
@@ -467,7 +606,7 @@ export const withImports = (parts: DocxParts): DocxParts => {
         const blocks = content.filter((child) => !isObject(child) || !("w:sectPr" in child));
         const last = lastBlockOf(blocks);
         const ended = last !== undefined && nameOf(last) === "w:p" ? blocks : [...blocks, { "w:p": [] }];
-        return withoutBookmarks(renamed(ended, renames), leftOut);
+        return withoutBookmarks(withDefaultStyles(renamed(ended, renames), style.defaults), leftOut);
     };
 
     const turned = (part: ContentPart): ContentPart =>

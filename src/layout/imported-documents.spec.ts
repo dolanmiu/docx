@@ -180,6 +180,80 @@ describe("imported documents", () => {
         expect(sizeOf(content, "plain again")).to.equal(11);
     });
 
+    it("should give the styles only an imported document has the look its defaults give them there, but for character and table styles (AS1 to AS6)", () => {
+        const defaults =
+            '<w:docDefaults><w:pPrDefault><w:pPr><w:spacing w:after="240"/></w:pPr></w:pPrDefault><w:rPrDefault><w:rPr><w:sz w:val="28"/></w:rPr></w:rPrDefault></w:docDefaults>';
+        const margins = (width: number): string =>
+            `<w:tblPr><w:tblCellMar><w:left w:w="${width}" w:type="dxa"/><w:right w:w="${width}" w:type="dxa"/></w:tblCellMar></w:tblPr>`;
+        const tableIn = (id: string | undefined, text: string): string =>
+            `<w:tbl>${id === undefined ? "" : `<w:tblPr><w:tblStyle w:val="${id}"/></w:tblPr>`}<w:tr><w:tc>${paragraph(text)}</w:tc></w:tr></w:tbl>`;
+        const content = read(
+            {
+                body: `${imports("rIdImport")}${SECTION}`,
+                styles: `<w:docDefaults><w:pPrDefault><w:pPr><w:spacing w:after="0"/></w:pPr></w:pPrDefault><w:rPrDefault><w:rPr><w:sz w:val="22"/></w:rPr></w:rPrDefault></w:docDefaults>${style("Normal", "Normal", "")}<w:style w:type="table" w:default="1" w:styleId="TableNormal"><w:name w:val="Normal Table"/>${margins(108)}</w:style>`,
+                imported: IMPORTED,
+            },
+            {
+                imported: {
+                    body: `${styled("based on nothing", "Alone")}<w:p><w:r><w:rPr><w:rStyle w:val="Bold"/></w:rPr><w:t>bold</w:t></w:r></w:p>${tableIn("ProbeTable", "probe table")}${tableIn(undefined, "default table")}`,
+                    styles: `${defaults}${style("Normal", "Normal", "")}${style("Alone", "Alone", '<w:pPr><w:spacing w:before="480"/></w:pPr>')}${style("Bold", "Bold", "<w:rPr><w:b/></w:rPr>", "character")}<w:style w:type="table" w:default="1" w:styleId="TableNormal"><w:name w:val="Normal Table"/>${margins(0)}</w:style>${style("ProbeTable", "Probe Table", '<w:basedOn w:val="TableNormal"/>', "table")}`,
+                },
+            },
+        );
+        // Its defaults' size and space after, with its own space before
+        expect(sizeOf(content, "based on nothing")).to.equal(14);
+        expect(paragraphOf(content, "based on nothing").format).to.deep.include({ spaceBefore: 24, spaceAfter: 12 });
+        // Bold in the document's size
+        const [bold] = paragraphOf(content, "bold").items;
+        expect(bold.type === "text" && bold.font).to.deep.include({ bold: true, size: 11 });
+        // Its table style is based on the document's Normal Table, and its Normal Table is the document's
+        const margin = (index: number): number | false => {
+            const { block } = content.blocks[index];
+            return block.type === "table" && block.rows[0].cells[0].marginLeft;
+        };
+        expect([margin(2), margin(3)]).to.deep.equal([5.4, 5.4]);
+    });
+
+    it("should put paragraphs and tables of no style of an imported document in its default styles, where the document's are others (AS5)", () => {
+        const content = read(
+            {
+                body: `${imports("rIdImport")}${SECTION}`,
+                styles: `${style("Normal", "Normal", size(22))}<w:style w:type="table" w:default="1" w:styleId="TableNormal"><w:name w:val="Normal Table"/></w:style>`,
+                imported: IMPORTED,
+            },
+            {
+                imported: {
+                    body: `${paragraph("no style")}${paragraph("aligned", '<w:jc w:val="center"/>')}${styled("styled", "Normal")}<w:tbl>\n<w:tr><w:tc>${paragraph("cell")}</w:tc></w:tr></w:tbl><w:tbl><w:tblPr><w:tblW w:w="0" w:type="auto"/></w:tblPr><w:tr><w:tc>${paragraph("cell")}</w:tc></w:tr></w:tbl>`,
+                    styles: `<w:style w:type="paragraph" w:default="1" w:styleId="Body"><w:name w:val="Body Default"/>${size(28)}</w:style>${style("Normal", "Normal", size(36))}<w:style w:type="table" w:default="1" w:styleId="Plain"><w:name w:val="Plain Table"/></w:style>`,
+                },
+            },
+        );
+        expect(textsOf(content)).to.deep.equal(["no style", "aligned", "styled", "[table]", "[table]", ""]);
+        expect(paragraphOf(content, "no style")).to.deep.include({ style: "Body" });
+        expect(paragraphOf(content, "aligned")).to.deep.include({ style: "Body" });
+        expect(paragraphOf(content, "aligned").format.alignment).to.equal("center");
+        expect(sizeOf(content, "styled")).to.equal(11);
+    });
+
+    it("should stop at a style only an imported document has, where its defaults leave out some of the document's", () => {
+        const content = read(
+            {
+                body: `${imports("rIdImport")}${SECTION}`,
+                styles: '<w:docDefaults><w:pPrDefault><w:pPr><w:spacing w:before="0" w:after="160"/></w:pPr></w:pPrDefault></w:docDefaults>',
+                imported: IMPORTED,
+            },
+            {
+                imported: {
+                    body: styled("alone", "Alone"),
+                    styles: `<w:docDefaults><w:pPrDefault><w:pPr><w:spacing w:after="240"/><w:ind w:left="0"/></w:pPr></w:pPrDefault></w:docDefaults>${style("Alone", "Alone", "")}`,
+                },
+            },
+        );
+        expect(content.blocks[0].block).to.deep.include({
+            unsupported: "a style of an imported document's own, where its defaults leave out some of the document's",
+        });
+    });
+
     it("should number an imported document's lists as lists of their own, and its notes with the document's (AC5, AC6)", () => {
         const level = (text: string): string =>
             `<w:lvl w:ilvl="0"><w:start w:val="1"/><w:numFmt w:val="decimal"/><w:lvlText w:val="${text}"/><w:pPr><w:pStyle w:val="Listed"/></w:pPr></w:lvl>`;
