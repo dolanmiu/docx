@@ -59,6 +59,10 @@ export type RunFormat = Omit<TextFont, "size" | "lineSize" | "raise" | "border" 
     readonly complexScript?: boolean;
     /** The East Asian language of the run (`w:lang w:eastAsia`), which decides which characters can't start or end a line */
     readonly eastAsianLanguage?: string;
+    /** The language of the run's other text (`w:lang w:val`), by whose dictionary Word hyphenates its words */
+    readonly language?: string;
+    /** Whether the run isn't checked for spelling and grammar (`w:noProof`), which Word doesn't hyphenate */
+    readonly noProof?: boolean;
 };
 
 /**
@@ -336,6 +340,8 @@ export const readRunFormat = (element: unknown, themeFonts: ThemeFonts): RunForm
         rightToLeft: onOff(children, "w:rtl"),
         complexScript: onOff(children, "w:cs"),
         eastAsianLanguage: stringOf(attributesOf(find(children, "w:lang"))["w:eastAsia"]),
+        language: stringOf(attributesOf(find(children, "w:lang"))["w:val"]),
+        noProof: onOff(children, "w:noProof"),
         verticalAlign: readVerticalAlign(valueOf(children, "w:vertAlign")),
         position: pointsOf(attributesOf(find(children, "w:position"))["w:val"], 2),
         emphasisMark: valueOf(children, "w:em"),
@@ -469,6 +475,7 @@ export const readParagraphFormat = (element: unknown): ParagraphFormat => {
         tabs: readTabs(find(children, "w:tabs")),
         kinsoku: onOff(children, "w:kinsoku"),
         wordWrap: onOff(children, "w:wordWrap"),
+        suppressAutoHyphens: onOff(children, "w:suppressAutoHyphens"),
         alignment: ALIGNMENTS[valueOf(children, "w:jc") ?? ""],
     });
 };

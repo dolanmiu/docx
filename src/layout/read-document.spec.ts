@@ -95,6 +95,30 @@ describe("readDocument", () => {
             expect(paragraphOf(content).style).to.equal("Heading1");
         });
 
+        it("should mark text Word doesn't hyphenate, and text in a language other than English, whose dictionary Word hasn't shown", () => {
+            const lang = (val: string): object => ({ "w:lang": { _attr: { "w:val": val } } });
+            const content = readBody([
+                p(
+                    r(t("a")),
+                    r(rPr(lang("en-GB")), t("b")),
+                    r(rPr(lang("EN")), t("c")),
+                    r(rPr({ "w:noProof": {} }, lang("en-US")), t("d")),
+                    r(rPr(lang("zxx")), t("e")),
+                    r(rPr(lang("de-DE")), t("f")),
+                    r(rPr(lang("eng")), t("g")),
+                ),
+            ]);
+            expect(itemsOf(content).map((item) => (item.type === "text" ? item.hyphenation : item.type))).to.deep.equal([
+                undefined,
+                undefined,
+                undefined,
+                "none",
+                "none",
+                "unknown",
+                "unknown",
+            ]);
+        });
+
         it("should read East Asian text in its run's East Asian font, with its language, and right-to-left runs in the font of complex scripts", () => {
             const fonts = { "w:rFonts": { _attr: { "w:ascii": "Arial", "w:eastAsia": "SimSun", "w:cs": "Times New Roman" } } };
             const content = readBody([
@@ -2560,8 +2584,20 @@ describe("readDocument", () => {
             expect(readBody([])).to.deep.include({ defaultTabStop: 36, evenAndOddHeaders: false, addsParagraphSpacing: false });
         });
 
-        it("should mark a document that hyphenates its words as unsupported", () => {
-            expect(readBody([], { hyphenation: { autoHyphenation: true } }).unsupported).to.equal("hyphenation");
+        it("should read automatic hyphenation with its settings, rather than stop at it", () => {
+            const hyphenated = readBody([], { hyphenation: { autoHyphenation: true } });
+            expect(hyphenated.hyphenation).to.deep.equal({});
+            expect(hyphenated.unsupported).to.equal(undefined);
+            // The zone, which Word doesn't keep in compatibility mode 15, and the limit to the lines in a row that end with a
+            // hyphen, which only leaves more words whole, change nothing the layout lays out
+            expect(
+                readBody([], {
+                    hyphenation: { autoHyphenation: true, consecutiveHyphenLimit: 2, doNotHyphenateCaps: true, hyphenationZone: 720 },
+                }).hyphenation,
+            ).to.deep.equal({ capitalsWhole: true });
+            // The settings without automatic hyphenation hyphenate nothing
+            expect(readBody([], { hyphenation: { consecutiveHyphenLimit: 2, doNotHyphenateCaps: true } }).hyphenation).to.equal(undefined);
+            expect(readBody([], { hyphenation: { autoHyphenation: false } }).hyphenation).to.equal(undefined);
         });
 
         /** Reads a document whose settings are these elements, which docx doesn't write, in Word 2013's compatibility mode */

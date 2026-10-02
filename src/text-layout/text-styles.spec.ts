@@ -591,6 +591,16 @@ describe("readParagraphFormat with East Asian typography", () => {
     });
 });
 
+describe("readParagraphFormat with hyphenation", () => {
+    it("should read whether the paragraph's words are left whole by automatic hyphenation", () => {
+        expect(readParagraphFormat([{ "w:suppressAutoHyphens": {} }])).to.deep.equal({ suppressAutoHyphens: true });
+        expect(readParagraphFormat([{ "w:suppressAutoHyphens": { _attr: { "w:val": "false" } } }])).to.deep.equal({
+            suppressAutoHyphens: false,
+        });
+        expect(readParagraphFormat([])).to.deep.equal({});
+    });
+});
+
 describe("readRunFormat with East Asian text and complex scripts", () => {
     const THEME = { headings: "Cambria", body: "Calibri" };
 
@@ -622,6 +632,14 @@ describe("readRunFormat with East Asian text and complex scripts", () => {
             rightToLeft: true,
             complexScript: true,
             eastAsianLanguage: "ja-JP",
+            language: "en-US",
+        });
+    });
+
+    it("should read the language of the run's other text, and whether it is checked for spelling, which Word hyphenates by", () => {
+        expect(readRunFormat([{ "w:lang": { _attr: { "w:val": "de-DE" } } }, { "w:noProof": {} }], THEME)).to.deep.equal({
+            language: "de-DE",
+            noProof: true,
         });
     });
 

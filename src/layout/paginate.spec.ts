@@ -5314,3 +5314,43 @@ describe("paginate", () => {
         });
     });
 });
+
+describe("paginate with automatic hyphenation", () => {
+    // cspell:ignore efgh efghijkl
+    const HYPHENATED = "a word Word may hyphenate, whose parts the layout can't know";
+    const TABLE = "a table sized to its text whose columns' widths depend on words Word may hyphenate";
+    /** A paragraph of text, bookmarked with its name */
+    const text = (name: string, value: string, format: ParagraphFormat = {}): ParagraphBlock => ({
+        ...paragraph(name, 0, format),
+        items: [
+            { type: "marker", name },
+            { type: "text", text: value, font: {} },
+        ],
+    });
+
+    it("should stop at a line Word may end with part of the next word, and lay out the paragraphs that suppress hyphenation", () => {
+        // 30 points are left after "abcd ", room for "ef-"
+        const content = (format: ParagraphFormat): DocumentContent =>
+            document([paragraph("a", 1), text("b", "abcd efghijkl", format), paragraph("c", 1)], { hyphenation: {} });
+        expect(paginate(content({}), { measurer: MEASURER }).stoppedAt).to.equal(HYPHENATED);
+        expect(pagesOf(content({ suppressAutoHyphens: true }))).to.deep.equal({ a: "1", b: "1", c: "1" });
+        // Words Word leaves whole
+        expect(pagesOf(document([text("a", "abcd efgh 12345678")], { hyphenation: {} }))).to.deep.equal({ a: "1" });
+    });
+
+    it("should stop at a table sized to its text whose columns are narrowed past words Word may hyphenate", () => {
+        // Two columns whose widest words are 60 and 20 points, and widest lines wider, narrowed into 80
+        const sized = (first: readonly Block[]): TableBlock => ({
+            ...table([row([first, [text("y", "ab ab ab ab ab ab ab ab")]])]),
+            fit: {},
+        });
+        const content = (first: readonly Block[]): DocumentContent => document([paragraph("a", 1), sized(first)], { hyphenation: {} });
+        expect(paginate(content([text("x", "abcdef")]), { measurer: MEASURER }).stoppedAt).to.equal(TABLE);
+        // The widest word of a cell is one Word may hyphenate when one of its paragraphs is as wide or wider
+        expect(paginate(content([text("x", "12"), text("w", "abcdef")]), { measurer: MEASURER }).stoppedAt).to.equal(TABLE);
+        expect(paginate(content([text("x", "123456"), text("w", "abcdef")]), { measurer: MEASURER }).stoppedAt).to.equal(TABLE);
+        // and not when one Word leaves whole is wider
+        expect(paginate(content([text("x", "123456"), text("w", "abcde")]), { measurer: MEASURER }).stoppedAt).to.equal(undefined);
+        expect(paginate(content([text("x", "123456")]), { measurer: MEASURER }).stoppedAt).to.equal(undefined);
+    });
+});

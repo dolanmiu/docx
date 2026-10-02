@@ -156,6 +156,8 @@ export type ParagraphFormat = {
     readonly kinsoku?: boolean;
     /** Whether its lines break between words (`w:wordWrap`), or, when off, anywhere in the words of East Asian runs */
     readonly wordWrap?: boolean;
+    /** Whether Word's automatic hyphenation leaves its words whole (`w:suppressAutoHyphens`) */
+    readonly suppressAutoHyphens?: boolean;
     /**
      * How its lines line up. Word squeezes the spaces of a justified line to fit one more word on it, so its lines can
      * break later than a left-aligned paragraph's

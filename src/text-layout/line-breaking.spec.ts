@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 
 import {
+    type ContentWidths,
     DEFAULT_MEASURER,
     type InlineItem,
     type LaidOutLine,
@@ -820,6 +821,163 @@ describe("layoutLines", () => {
                 one("K12_05"),
             );
         });
+    });
+});
+
+describe("layoutLines with automatic hyphenation", () => {
+    // cspell:ignore extraordinar bbbbcccc meerrrrrii meerrriiii mrrrrri merrrriiiiii eeeerrriii unbeliev mmmii mmeer mmmeeiii unbelieva mmmerr mmmme meeeeiii mmeerrrr
+    const HYPHENATED = "a word Word may hyphenate, whose parts the layout can't know";
+
+    /** Each line's text, and why the layout stops there, when it does */
+    const linesOf = (items: readonly InlineItem[], options: Partial<LineLayoutOptions> = {}): readonly string[] =>
+        layoutLines(items, { width: 100, measurer: MEASURER, hyphenation: {}, ...options }).map(({ text: line, unsupported }) =>
+            unsupported === undefined ? line : `${line}| ${unsupported}`,
+        );
+
+    it("should stop at a line Word may end with a part of the next word and a hyphen, as which parts its dictionary has isn't known", () => {
+        // "bb-" fits in the 50 points left after "aaaa "
+        expect(linesOf([text("aaaa bbbbbbbb")])).to.deep.equal([`aaaa | ${HYPHENATED}`, "bbbbbbbb"]);
+        // Without hyphenation, the word goes to the next line whole
+        expect(linesOf([text("aaaa bbbbbbbb")], { hyphenation: undefined })).to.deep.equal(["aaaa ", "bbbbbbbb"]);
+    });
+
+    it("should leave a word whole where its first two letters and a hyphen don't fit on the line, as Word leaves two at least", () => {
+        // 20 points are left after "aaaaaaa ", and "bb-" is 30
+        expect(linesOf([text("aaaaaaa bbbbbbbb")])).to.deep.equal(["aaaaaaa ", "bbbbbbbb"]);
+        expect(linesOf([text("aaaaaa bbbbbbbb")])).to.deep.equal([`aaaaaa | ${HYPHENATED}`, "bbbbbbbb"]);
+    });
+
+    it("should leave words of fewer than five letters whole, and numbers, which have none", () => {
+        expect(linesOf([text("aaaaaa bbbb")])).to.deep.equal(["aaaaaa ", "bbbb"]);
+        expect(linesOf([text("aaaaaa bbbbb")])).to.deep.equal([`aaaaaa | ${HYPHENATED}`, "bbbbb"]);
+        expect(linesOf([text("aaaaaa 1234567890")])).to.deep.equal(["aaaaaa ", "1234567890"]);
+        expect(linesOf([text("aaaaaa (1234.56)")])).to.deep.equal(["aaaaaa ", "(1234.56)"]);
+        expect(linesOf([text("aaaaaa ab12345cd")])).to.deep.equal(["aaaaaa ", "ab12345cd"]);
+    });
+
+    it("should leave text Word doesn't hyphenate whole, and take any word in a language Word hasn't shown as one it may hyphenate", () => {
+        const whole: InlineItem = { type: "text", text: "bbbbbbbb", font: {}, hyphenation: "none" };
+        expect(linesOf([text("aaaaaa "), whole])).to.deep.equal(["aaaaaa ", "bbbbbbbb"]);
+        // In part, by the part Word may hyphenate
+        expect(linesOf([text("aaaaaa "), { ...whole, text: "bbbb" }, text("cccc")])).to.deep.equal([`aaaaaa | ${HYPHENATED}`, "bbbbcccc"]);
+        // Another language's dictionary may break a word of two letters or more after its first, with room for "b-"
+        const other: InlineItem = { type: "text", text: "bbb", font: {}, hyphenation: "unknown" };
+        expect(linesOf([text("aaaaaaa "), other])).to.deep.equal([`aaaaaaa | ${HYPHENATED}`, "bbb"]);
+        expect(linesOf([text("aaaaaaa "), { ...other, text: "b12" }])).to.deep.equal(["aaaaaaa ", "b12"]);
+        expect(linesOf([text("aaaaaaaa "), other])).to.deep.equal(["aaaaaaaa ", "bbb"]);
+    });
+
+    it("should leave words in capitals whole when the document says so, but not those in small capitals", () => {
+        expect(linesOf([text("aaaaaa BBBBBBB")], { hyphenation: { capitalsWhole: true } })).to.deep.equal(["aaaaaa ", "BBBBBBB"]);
+        expect(linesOf([text("aaaaaa BB-12")], { hyphenation: { capitalsWhole: true } })).to.deep.equal(["aaaaaa ", "BB-12"]);
+        expect(linesOf([text("aaaaaa Bbbbbbb")], { hyphenation: { capitalsWhole: true } })).to.deep.equal([
+            `aaaaaa | ${HYPHENATED}`,
+            "Bbbbbbb",
+        ]);
+        expect(linesOf([text("aaaaaa BBBBBBB")])).to.deep.equal([`aaaaaa | ${HYPHENATED}`, "BBBBBBB"]);
+        const small: InlineItem = { type: "text", text: "BBBBBB", font: { size: 8, lineSize: 10 } };
+        expect(linesOf([text("aaaaaa B"), small], { hyphenation: { capitalsWhole: true } })).to.deep.equal([
+            `aaaaaa | ${HYPHENATED}`,
+            "BBBBBBB",
+        ]);
+    });
+
+    it("should stop at a word with soft hyphens Word may break where its dictionary does, and break one it leaves whole at them", () => {
+        // word-hyphenation.docx HY8a and HY8b: Word broke "extra¬ordinarily" as "extraordinar-" and "ex-", past and before
+        // its soft hyphen, with automatic hyphenation
+        const soft = (hyphenation?: "none"): readonly InlineItem[] => [
+            text("aaaa "),
+            { type: "text", text: "bbb", font: {}, ...(hyphenation ? { hyphenation } : {}) },
+            { type: "softHyphen", font: {} },
+            { type: "text", text: "bbbbbbb", font: {}, ...(hyphenation ? { hyphenation } : {}) },
+        ];
+        expect(linesOf(soft())).to.deep.equal([`aaaa bbb| ${HYPHENATED}`, "bbbbbbb"]);
+        expect(linesOf(soft("none"))).to.deep.equal(["aaaa bbb", "bbbbbbb"]);
+        expect(linesOf(soft(), { hyphenation: undefined })).to.deep.equal(["aaaa bbb", "bbbbbbb"]);
+    });
+
+    it("should lay out a paragraph that suppresses hyphenation as without it", () => {
+        expect(linesOf([text("aaaa bbbbbbbb")], { format: { suppressAutoHyphens: true } })).to.deep.equal(["aaaa ", "bbbbbbbb"]);
+        expect(linesOf([text("aaaa bbbbbbbb")], { format: { suppressAutoHyphens: false } })).to.deep.equal([
+            `aaaa | ${HYPHENATED}`,
+            "bbbbbbbb",
+        ]);
+    });
+
+    it("should stop at a word longer than its line, which Word may hyphenate rather than break after the last character that fits", () => {
+        expect(linesOf([text("bbbbbbbbbbbbbbb")])).to.deep.equal([`bbbbbbbbbb| ${HYPHENATED}`, "bbbbb"]);
+        expect(linesOf([text("bbbbbbbbbbbbbbb")], { format: { suppressAutoHyphens: true } })).to.deep.equal(["bbbbbbbbbb", "bbbbb"]);
+    });
+
+    describe("in Word's probes", () => {
+        // scripts/layout-probes/word-hyphenation.ts, in Calibri 11 in lines of 9026 twips, with the parts each line ends
+        // with in Word's PDF
+        const font = { font: "Calibri", size: 11 };
+        const HEAD = "the sea was calm and we set out at dawn to see the old fort on the hill by";
+        const probe = (
+            start: string,
+            word: string,
+            wordFont: TextFont = font,
+            alignment?: ParagraphFormat["alignment"],
+        ): readonly string[] =>
+            layoutLines(
+                [
+                    { type: "text", text: `${start} `, font },
+                    { type: "text", text: word, font: wordFont },
+                    { type: "text", text: " and so on to the end", font },
+                ],
+                { width: 9026 / 20, format: alignment === undefined ? {} : { alignment }, hyphenation: { capitalsWhole: true } },
+            ).map(({ text: line, unsupported }) => `${line.trim().split(" ").at(-1)}${unsupported === undefined ? "" : " | stops"}`);
+
+        it("should lay out the lines Word leaves the word after whole, and stop at those it may hyphenate", () => {
+            // HY3a: 13.9 points left, too few for "un-", which Word leaves "unbelievably" whole in, as it does with room for "u-"
+            expect(probe(`HY3a ${HEAD} the bay meerrrrrii`, "unbelievably")).to.deep.equal(["meerrrrrii", "end"]);
+            // HY3b: 16 points, which Word ends with "un-", short of the default hyphenation zone, which it doesn't keep
+            expect(probe(`HY3b ${HEAD} the bay meerrriiii`, "unbelievably")).to.deep.equal(["meerrriiii | stops", "end"]);
+            // HY3f: 10 points, room for "a-" but not "ab-"
+            expect(probe(`HY3f ${HEAD} the bay and mrrrrri`, "abandonment")).to.deep.equal(["mrrrrri", "end"]);
+            // HY5a and HY5d: room for "in-" and "un-": Word leaves "into" whole, and ends with "un-" of "under"
+            expect(probe(`HY5a ${HEAD} the bay merrrriiiiii`, "into")).to.deep.equal(["merrrriiiiii", "end"]);
+            expect(probe(`HY5d ${HEAD} the bay eeeerrriii`, "under")).to.deep.equal(["eeeerrriii | stops", "end"]);
+            // HY6a and HY7a: room for half the number, and for "unbeliev-" in text not checked for spelling
+            expect(probe(`HY6a ${HEAD} the mmmii`, "1234567890123")).to.deep.equal(["mmmii", "end"]);
+            expect(probe(`HY7a ${HEAD} the mmeer`, "unbelievably", font)).to.deep.equal(["mmeer | stops", "end"]);
+        });
+
+        it("should leave a word whole on a justified line that only fits its part squeezed, and squeeze one in rather than hyphenate it", () => {
+            // HY4a: 13 points left, which Word doesn't squeeze the spaces to fit "un-" in
+            expect(probe(`HY4a ${HEAD} the bay mmmeeiii`, "unbelievably", font, "justified")).to.deep.equal(["mmmeeiii", "end"]);
+            // HY4b: "unbelievably" squeezed in, where "unbelieva-" fits without squeezing; left-aligned, Word ends with that
+            // (HY4c)
+            expect(probe(`HY4b ${HEAD} mmmerr`, "unbelievably", font, "justified")).to.deep.equal(["unbelievably", "end"]);
+            expect(probe(`HY4c ${HEAD} mmmme`, "unbelievably")).to.deep.equal(["mmmme | stops", "end"]);
+            // Word hasn't been seen choosing between squeezing and hyphenating on a distributed line
+            expect(probe(`HY4b ${HEAD} mmmerr`, "unbelievably", font, "distributed")).to.deep.equal(["unbelievably | stops", "end"]);
+        });
+
+        it("should leave words in capitals whole, typed so or shown so, but not those with only their first letter a capital", () => {
+            // HY10a and HY10b, with doNotHyphenateCaps: room for "UNBELIEV-"; and HY10c, without it, which Word ends with
+            // "Unbeliev-"
+            expect(probe(`HY10a ${HEAD} meeeeiii`, "UNBELIEVABLY")).to.deep.equal(["meeeeiii", "end"]);
+            expect(probe(`HY10c ${HEAD} mmeerrrr`, "Unbelievably")).to.deep.equal(["mmeerrrr | stops", "end"]);
+        });
+    });
+});
+
+describe("measureContentWidths with automatic hyphenation", () => {
+    const widthsOf = (items: readonly InlineItem[], options: Partial<LineLayoutOptions> = {}): ContentWidths =>
+        measureContentWidths(items, { measurer: MEASURER, hyphenation: {}, ...options });
+
+    it("should say when Word may hyphenate a word as wide as the narrowest the paragraph can be, as Word sizes columns to its parts", () => {
+        expect(widthsOf([text("aa bbbbbbbb")])).to.deep.equal({ min: 80, max: 110, hyphenated: true });
+        // A word Word leaves whole as wide, or wider
+        expect(widthsOf([text("aa bbbbbbbb 12345678")])).to.deep.equal({ min: 80, max: 200 });
+        expect(widthsOf([text("bbbbbbbb"), { type: "box", width: 80, height: 10 }])).to.deep.equal({ min: 80, max: 160 });
+        expect(widthsOf([text("bbbbbbbb 123456789")])).to.deep.equal({ min: 90, max: 180 });
+        // Words Word leaves whole, and without hyphenation
+        expect(widthsOf([text("aa bbbb")])).to.deep.equal({ min: 40, max: 70 });
+        expect(widthsOf([text("aa bbbbbbbb")], { format: { suppressAutoHyphens: true } })).to.deep.equal({ min: 80, max: 110 });
+        expect(widthsOf([text("aa bbbbbbbb")], { hyphenation: undefined })).to.deep.equal({ min: 80, max: 110 });
     });
 });
 
