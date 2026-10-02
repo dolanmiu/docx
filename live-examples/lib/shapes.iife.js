@@ -3369,6 +3369,41 @@ var docxShapes = (function(exports, docx) {
 			boldItalic: "9o*7R!9o*09!*0d9o*2k!*069o*0j!*03=9o!*039o!*02=!*049o*06!9o!9o*0j!9o*0H!9o*2O00*069o*14!=9o*0E!*05=9o*2q!*03=9o*1o!*057QfE88fY5k3/2G8G3d2D0U00*04!9o*04!9o*0b!*029o!*0200*04389o!9o*02!*039o9o!9o!9o!*049o!*0o9o3u00*04!00*09!*0e9o!*0f9o*04!*0a9o*0l!*0p00*0w!*0j9o!*0c9o!!9o!*0a9o!*02=!*069o!*0z9o9o!*059o*03!*0M9o*05!*0h9o!*1o9o!*029o!*079o!9o9o!!9o!*029o9o!*029o9o!*089o!9o!*0r9o!*0m=9o!!9o9o!*2p"
 		}
 	];
+	[
+		...Array.from({ length: 95 }, (_, index) => 32 + index),
+		...Array.from({ length: 96 }, (_, index) => 160 + index).filter((code) => code !== 173),
+		...[
+			8364,
+			8218,
+			402,
+			8222,
+			8230,
+			8224,
+			8225,
+			710,
+			8240,
+			352,
+			8249,
+			338,
+			381,
+			8216,
+			8217
+		],
+		...[
+			8220,
+			8221,
+			8226,
+			8211,
+			8212,
+			732,
+			8482,
+			353,
+			8250,
+			339,
+			382,
+			376
+		]
+	].sort((one, other) => one - other).map((code) => String.fromCodePoint(code)).join("");
 	//#endregion
 	//#region src/text-layout/text-width.ts
 	/**
@@ -3376,7 +3411,9 @@ var docxShapes = (function(exports, docx) {
 	*
 	* The estimate is close for the fonts in {@link FONT_WIDTHS}, and those made with the same widths, such as Carlito.
 	* Other fonts are measured with the one most like them, so their estimates are rougher, and {@link unknownFont} says
-	* which they are. Kerning and ligatures are left out, which makes text a little wider than Word draws it.
+	* which they are. {@link measureTextWidthAsDrawn} kerns text that asks for kerning, and joins its letters into
+	* ligatures, as Word draws the fonts of the tables, from `font-kerning.ts`, and {@link unknownShaping} says where that
+	* isn't known.
 	*
 	* @module
 	*/
@@ -3646,7 +3683,6 @@ var docxShapes = (function(exports, docx) {
 		if (isHalfWidth(code)) return 500;
 		return takesNoRoom(character) ? 0 : AVERAGE_LETTERS.reduce((total, letter) => total + widths[letter], 0) / AVERAGE_LETTERS.length;
 	};
-	var isPrivate = (code) => code >= 57344 && code <= 63743;
 	var FULL_WIDTH_SYMBOLS = /* @__PURE__ */ new Set([..."§¨°±´¶×÷‐―‖‘’“”†‡‥…‰′″※℃Å"]);
 	/**
 	* The width of a character of a monospaced East Asian font, in thousandths of an em: an em for ideographs and the symbols
@@ -3676,39 +3712,6 @@ var docxShapes = (function(exports, docx) {
 		};
 	};
 	/**
-	* The first character of text whose width in its font isn't known, so isn't what Word lays out: one of the tables'
-	* characters that Word draws in another font when the font doesn't have it, or whose width Word's PDF doesn't show, or a
-	* symbol font's own character. Undefined when the widths of all of them are known, or are measured as before: those of
-	* characters the tables don't have, as an average letter.
-	*/
-	var unknownCharacter = (text, font = {}) => {
-		const { widths, monospaced } = measuresOf(font);
-		return [...text].find((character) => {
-			const code = character.codePointAt(0);
-			const index = CHARACTER_INDEX.get(code);
-			return index === void 0 || monospaced ? isPrivate(code) : widths[index] === void 0;
-		});
-	};
-	/**
-	* Whether the tables measure text in a font as another font, as they don't have the font's own widths: a font that isn't
-	* in them and isn't made with the same widths as one that is, such as Aptos, which they measure as the most similar
-	* font that is. Word draws it with its own widths when it has it, and in another font when it doesn't, such as Cambria
-	* on the Mac (`word-watertight-text.docx` TX18), so a layout stops there rather than guessing. The East Asian fonts of
-	* the tables are measured as themselves, but for the other characters of those that aren't monospaced, such as Latin
-	* letters in Yu Gothic, which are measured as Times New Roman or Arial. Without text, whether the height of a line in
-	* the font is another font's.
-	*/
-	var unknownFont = (font = {}, text) => {
-		var _font$font2;
-		const name = (_font$font2 = font.font) !== null && _font$font2 !== void 0 ? _font$font2 : DEFAULT_FONT;
-		const eastAsian = knownEastAsianFontOf(name);
-		if (eastAsian === void 0) return exactWidthsOf(name) === void 0;
-		return !eastAsian.monospaced && text !== void 0 && [...text].some((character) => {
-			const code = character.codePointAt(0);
-			return !isWide(code) && !isHalfWidth(code) && !takesNoRoom(character);
-		});
-	};
-	/**
 	* How wide a line of text is, in points. Tabs move to the next half inch, counted from the start of the line.
 	*
 	* @param start - Where the text starts on its line, in points
@@ -3720,21 +3723,13 @@ var docxShapes = (function(exports, docx) {
 		const { characterSpacing = 0, scale = 100 } = font;
 		return [...text].reduce((position, character) => character === "	" ? (Math.floor(position / TAB_STOP) + 1) * TAB_STOP : position + widthOf(character) * size * scale / 1e5 + characterSpacing, start) - start;
 	};
+	new RegExp("\\p{L}\\p{L}", "u");
 	/**
 	* How tall a line of single-spaced text is, in points.
 	*/
 	var measureLineHeight = (font = {}) => {
-		var _eastAsianFontOf, _font$font3;
-		return ((_eastAsianFontOf = eastAsianFontOf((_font$font3 = font.font) !== null && _font$font3 !== void 0 ? _font$font3 : "Times New Roman")) !== null && _eastAsianFontOf !== void 0 ? _eastAsianFontOf : widthsOf(font.font)).lineHeight * lineSizeOf(font) / 1e3;
-	};
-	/**
-	* How far a line of single-spaced text goes below its baseline, in points. The rest of the line is above it, with the
-	* font's line gap at the top, where Word puts it: Arial 11 with Courier New 11 is 272.42 twips, Arial's ascent and gap and
-	* Courier New's descent (scripts/layout-probes/word-mixed-heights.ts MH2a).
-	*/
-	var measureDescent = (font = {}) => {
-		var _eastAsianFontOf2, _font$font4;
-		return ((_eastAsianFontOf2 = eastAsianFontOf((_font$font4 = font.font) !== null && _font$font4 !== void 0 ? _font$font4 : "Times New Roman")) !== null && _eastAsianFontOf2 !== void 0 ? _eastAsianFontOf2 : widthsOf(font.font)).descent * lineSizeOf(font) / 1e3;
+		var _eastAsianFontOf2, _font$font5;
+		return ((_eastAsianFontOf2 = eastAsianFontOf((_font$font5 = font.font) !== null && _font$font5 !== void 0 ? _font$font5 : "Times New Roman")) !== null && _eastAsianFontOf2 !== void 0 ? _eastAsianFontOf2 : widthsOf(font.font)).lineHeight * lineSizeOf(font) / 1e3;
 	};
 	/**
 	* Splits spans into words and the spaces between them. A word can be made of pieces of several spans, such as a bold
@@ -3972,6 +3967,11 @@ var docxShapes = (function(exports, docx) {
 		const element = children.find((child) => name in child);
 		return element ? !isOff(attributesOf(element[name])["w:val"]) : void 0;
 	};
+	/** An on/off property of Word 2010's (`w14`), such as `w14:cntxtAlts`, whose value is `w14:val` */
+	var onOff14 = (children, name) => {
+		const element = children.find((child) => name in child);
+		return element ? !isOff(attributesOf(element[name])["w14:val"]) : void 0;
+	};
 	var withoutUndefined = (object) => Object.fromEntries(Object.entries(object).filter(([, value]) => value !== void 0));
 	/**
 	* Combines formatting, with later formatting overriding earlier formatting.
@@ -4016,6 +4016,11 @@ var docxShapes = (function(exports, docx) {
 			eastAsianLanguage: stringOf(attributesOf(find(children, "w:lang"))["w:eastAsia"]),
 			language: stringOf(attributesOf(find(children, "w:lang"))["w:val"]),
 			noProof: onOff(children, "w:noProof"),
+			ligatures: stringOf(attributesOf(find(children, "w14:ligatures"))["w14:val"]),
+			numberForm: stringOf(attributesOf(find(children, "w14:numForm"))["w14:val"]),
+			numberSpacing: stringOf(attributesOf(find(children, "w14:numSpacing"))["w14:val"]),
+			stylisticSets: find(children, "w14:stylisticSets") === void 0 ? void 0 : childrenOf(find(children, "w14:stylisticSets")).length > 0,
+			contextualAlternates: onOff14(children, "w14:cntxtAlts"),
 			verticalAlign: readVerticalAlign(valueOf(children, "w:vertAlign")),
 			position: pointsOf(attributesOf(find(children, "w:position"))["w:val"], 2),
 			emphasisMark: valueOf(children, "w:em"),
@@ -4324,12 +4329,14 @@ var docxShapes = (function(exports, docx) {
 		circle: "above",
 		underDot: "below"
 	};
-	var plainFontOf = ({ font, size, bold, italic, kerning, characterSpacing, scale, position, border, emphasisMark, snapToGrid }) => withoutUndefined({
+	var plainFontOf = ({ font, size, bold, italic, kerning, ligatures, language, characterSpacing, scale, position, border, emphasisMark, snapToGrid }) => withoutUndefined({
 		font,
 		size,
 		bold,
 		italic,
 		kerning,
+		ligatures: ligatures === "none" ? void 0 : ligatures,
+		language: kerning !== void 0 || ligatures !== void 0 && ligatures !== "none" ? language : void 0,
 		characterSpacing,
 		scale,
 		raise: position === 0 ? void 0 : position,
@@ -4429,12 +4436,6 @@ var docxShapes = (function(exports, docx) {
 		}
 		return i;
 	}
-	_objectSpread2(_objectSpread2({}, {
-		measureWidth: (text, font) => measureTextWidth(text, font),
-		measureLineHeight,
-		measureDescent,
-		unknownCharacter
-	}), {}, { unknownFont });
 	//#endregion
 	//#region src/shapes/shape-floating.ts
 	/**

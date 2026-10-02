@@ -78,12 +78,12 @@ export declare const estimatePageNumbers: PageNumberEstimator & TemplatePageNumb
  */
 export declare type EstimatePageNumbersOptions = {
     /**
-     * Font files to measure text in, with their own widths, kerning and line heights, as Word measures it. Give a file
-     * for each of a font's faces the document uses, such as Aptos, Aptos Bold and Aptos Italic: text in fonts without
-     * files is measured as it is without them, and so is bold text, or text that isn't bold, in a font without a file for
-     * it, which stops the layout when the font isn't in the width tables. Italic text in a font without an italic file is
-     * measured with the upright one. The layout stops at a character a font's file has no glyph for, as Word draws it in
-     * another font. A font the document embeds is measured from the document's own file
+     * Font files to measure text in, with their own widths, kerning, ligatures and line heights, as Word measures it. Give
+     * a file for each of a font's faces the document uses, such as Aptos, Aptos Bold and Aptos Italic: text in fonts
+     * without files is measured as it is without them, and so is bold text, or text that isn't bold, in a font without a
+     * file for it, which stops the layout when the font isn't in the width tables. Italic text in a font without an italic
+     * file is measured with the upright one. The layout stops at a character a font's file has no glyph for, as Word draws
+     * it in another font. A font the document embeds is measured from the document's own file
      */
     readonly fonts?: readonly FontFile[];
     /**
