@@ -936,6 +936,32 @@ describe("readDocument", () => {
             expect(header.map((block) => textOf({ ...content, blocks: [{ block, section: 0 }] }))).to.deep.equal(["1 January 2000", "on "]);
         });
 
+        it("should read a date, or a field in a format not yet written, in hidden text as nothing, as hidden text takes no room", () => {
+            const hidden = rPr({ "w:vanish": {} });
+            const content = readBody(
+                [
+                    p(
+                        field("begin"),
+                        instruction("DATE"),
+                        r(hidden, { "w:fldChar": { _attr: { "w:fldCharType": "separate" } } }),
+                        field("end"),
+                    ),
+                    p(
+                        field("begin"),
+                        instruction("PAGE \\* CardText"),
+                        r(hidden, { "w:fldChar": { _attr: { "w:fldCharType": "separate" } } }),
+                        field("end"),
+                    ),
+                    p(r(hidden, { "w:dayLong": {} })),
+                    p(pPr(value("w:pStyle", "Hidden")), { "w:fldSimple": [{ _attr: { "w:instr": "TIME" } }] }),
+                ],
+                { styles: { paragraphStyles: [{ id: "Hidden", name: "Hidden", run: { vanish: true } }] } },
+            );
+            expect([0, 1, 2, 3].map((index) => paragraphOf(content, index))).to.satisfy((paragraphs: readonly ParagraphBlock[]) =>
+                paragraphs.every(({ items, unsupported }) => items.length === 0 && unsupported === undefined),
+            );
+        });
+
         it("should read PAGE, SECTION and page references with \\p in headers as they are written, and those in notes where their references are", () => {
             const fieldOf = (text: string): object =>
                 p(field("begin"), instruction(text), field("separate"), r(t("written")), field("end"));

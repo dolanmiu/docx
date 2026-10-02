@@ -703,7 +703,8 @@ const readDrawing = (element: XmlObject, font: TextFont, reader: Reader): readon
 
 /**
  * Reads a field character (`w:fldChar`). The result of a field that depends on the pages is worked out, rather than read,
- * and is nothing in hidden text. Why it can't be laid out, when it can't.
+ * and is nothing in hidden text, which takes no room, even where it couldn't be laid out. Why it can't be laid out, when
+ * it can't.
  */
 const readFieldCharacter = (element: XmlObject, format: RunFormat, reader: Reader, deleted = false): readonly LayoutItem[] | string => {
     const type = attributesOf(element["w:fldChar"])["w:fldCharType"];
@@ -726,7 +727,7 @@ const readFieldCharacter = (element: XmlObject, format: RunFormat, reader: Reade
         if (result !== undefined && isShown(reader)) {
             // eslint-disable-next-line functional/immutable-data
             field.replaced = true;
-            return typeof result === "string" || !format.hidden ? result : [];
+            return format.hidden ? [] : result;
         }
     }
     return [];
@@ -875,8 +876,8 @@ const readRun = (element: XmlObject, paragraphRun: RunFormat, reader: Reader, re
             case "w:yearShort":
             case "w:yearLong":
                 // Word writes the date it opens the document on (`word-watertight-pages.docx` PG7b). A header's is read as it
-                // is written, as nothing
-                return reader.inHeader ? [] : DATE_UNSUPPORTED;
+                // is written, as nothing, as is one in hidden text, which takes no room
+                return reader.inHeader || format.hidden ? [] : DATE_UNSUPPORTED;
             case "w:pgNum": {
                 // The number of the page it is on, as a PAGE field writes it (PG7c). A header's is read as it is written
                 if (reader.inHeader || format.hidden) {
@@ -988,7 +989,7 @@ const readInline = (
                 if (result === undefined || !isShown(reader)) {
                     return readInline(contentOf(element), paragraphRun, reader, removed);
                 }
-                return typeof result === "string" || !paragraphRun.hidden ? result : [];
+                return paragraphRun.hidden ? [] : result;
             }
             if (name === "w:bookmarkStart") {
                 return markerOf(element);
