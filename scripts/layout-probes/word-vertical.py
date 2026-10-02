@@ -1,5 +1,5 @@
 # Reads the probes of word-vertical.ts from a PDF of it, and prints each page's lines: for text down the page, each line
-# across it from the right, with where it is across the page, where its text starts and ends down it, how many ideographs
+# across it from the right, or from the left for V10 and V11, with where it is across the page, where its text starts and ends down it, how many ideographs
 # it has, and the words it starts with; for text across the page, each line down it.
 #
 #   pdftotext -bbox-layout word-vertical.pdf word-vertical.html
@@ -13,6 +13,8 @@ import re
 import sys
 
 IDEOGRAPH = "永"
+# Where the text starts down the page, below the top margin
+TOP = 1440
 # How far apart across the page the words of one line down it can be
 SAME_LINE = 60
 
@@ -29,10 +31,15 @@ def read(path):
     ]
 
 
-def down(words):
-    """Words put into lines down the page, from the right: each (middle across, top, bottom, ideographs, text)"""
+# The probes whose lines go across the page from the left, rather than the right: tbRlV and tbLrV
+FROM_LEFT = {"V10", "V11"}
+
+
+def down(words, from_left=False):
+    """Words put into lines down the page, from the right, or the left: each (middle across, top, bottom, ideographs,
+    text)"""
     lines = []
-    for word in sorted(words, key=lambda w: -(w[0] + w[2]) / 2):
+    for word in sorted(words, key=lambda w: (1 if from_left else -1) * (w[0] + w[2]) / 2):
         middle = (word[0] + word[2]) / 2
         if lines and abs(lines[-1][0] - middle) <= SAME_LINE:
             lines[-1][1].append(word)
@@ -63,19 +70,23 @@ def across(words):
     return found
 
 
+# The probes whose text runs down the page, as word-vertical.ts writes them: all but V9 (lrTbV), V12 (lrTb) and the text
+# across the page before V13b
+ACROSS = {"V9", "V12", "V13a"}
+
+
 def is_down(words):
-    """Whether a page's text runs down it: whether the word after each probe's name, such as "V1", is below or above it
-    rather than beside it"""
-    votes = 0
-    names = [w for w in words if re.fullmatch(r"V\d+[a-z]?", w[4])]
-    others = [w for w in words if w not in names and len(w[4]) > 1]
-    for name in names:
-        middle = ((name[0] + name[2]) / 2, (name[1] + name[3]) / 2)
-        if not others:
-            continue
-        nearest = min(others, key=lambda w: abs((w[0] + w[2]) / 2 - middle[0]) + abs((w[1] + w[3]) / 2 - middle[1]))
-        votes += 1 if abs((nearest[0] + nearest[2]) / 2 - middle[0]) < abs((nearest[1] + nearest[3]) / 2 - middle[1]) else -1
-    return votes > 0
+    """Whether a page's text runs down it, by the probe the most of its names, such as "V1" or "V4a", are of, leaving out
+    those of the header and footer of V5, which the sections after it have too"""
+    names = [
+        w[4]
+        for i, w in enumerate(words)
+        if re.fullmatch(r"V\d+[a-z]?", w[4]) and (i + 1 == len(words) or words[i + 1][4] not in ("head", "foot"))
+    ]
+    if not names:
+        return False
+    name = max(set(names), key=names.count)
+    return name not in ACROSS and re.sub(r"[a-z]$", "", name) not in ACROSS
 
 
 def main(path):
@@ -84,8 +95,12 @@ def main(path):
             print(f"page {number}: empty")
             continue
         vertical = is_down(words)
-        lines = down(words) if vertical else across(words)
-        print(f"page {number}: {len(lines)} lines {'down' if vertical else 'across'} the page")
+        from_left = any(w[4] in FROM_LEFT for w in words)
+        # Down the page, the header and footer are across it, above the top margin and below the text
+        bottom = max((w[3] for w in words if IDEOGRAPH in w[4]), default=0) + 20
+        text = [w for w in words if TOP - 20 <= w[1] and w[3] <= bottom] if vertical else words
+        lines = down(text, from_left) if vertical else across(words)
+        print(f"page {number}: {len(lines)} lines {'down' if vertical else 'across'} the page{' from the left' if vertical and from_left else ''}")
         previous = None
         for middle, start, end, count, text in lines:
             gap = "" if previous is None else f" gap {abs(previous - middle):5.0f}"
