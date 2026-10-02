@@ -26,6 +26,27 @@ export type TextFont = {
     readonly characterSpacing?: number;
     /** How wide the characters are drawn, as a percentage of their width */
     readonly scale?: number;
+    /**
+     * The size in points of the line the text takes up, when it is drawn smaller than its run's size: superscript,
+     * subscript and the small letters of small capitals take up the line of their run's size. Default is its size
+     */
+    readonly lineSize?: number;
+    /** How far the text is raised, in points, or lowered when it is negative (`w:position`), which raises its line too */
+    readonly raise?: number;
+    /** A border around the text, which takes room beside it, and above and below it */
+    readonly border?: TextBorder;
+    /** Whether emphasis marks over the text, or under it, take room in its line (`w:em`) */
+    readonly emphasis?: "above" | "below";
+};
+
+/**
+ * A border around text, as its run gives it (`w:bdr`).
+ */
+export type TextBorder = {
+    /** The room it takes on each side of the text, and above and below it, in points: its space and its width */
+    readonly room: number;
+    /** Which border it is: text next to text with the same border is in one box with it, with room only at the box's ends */
+    readonly key: string;
 };
 
 /**
@@ -365,6 +386,8 @@ const sizeOf = ({ size = DEFAULT_FONT_SIZE }: TextFont): number => size;
 /** Whether text is kerned: with kerning on (`w:kern`), and at its size or larger, as Word kerns it (word-fonts.docx F3) */
 export const isKerned = ({ kerning, size = DEFAULT_FONT_SIZE }: TextFont): boolean => kerning !== undefined && size >= kerning;
 
+const lineSizeOf = (font: TextFont): number => font.lineSize ?? sizeOf(font);
+
 /**
  * How a font's characters are measured: an East Asian font's Latin letters with the widths of the font in the table they
  * are measured as, or all of a monospaced one's as half an em or an em, and other fonts with their own widths, or those of
@@ -415,7 +438,7 @@ export const measureTextWidth = (text: string, font: TextFont = {}, start = 0): 
  * How tall a line of single-spaced text is, in points.
  */
 export const measureLineHeight = (font: TextFont = {}): number =>
-    ((eastAsianFontOf(font.font ?? DEFAULT_FONT) ?? widthsOf(font.font)).lineHeight * sizeOf(font)) / 1000;
+    ((eastAsianFontOf(font.font ?? DEFAULT_FONT) ?? widthsOf(font.font)).lineHeight * lineSizeOf(font)) / 1000;
 
 /**
  * How far a line of single-spaced text goes below its baseline, in points. The rest of the line is above it, with the
@@ -423,7 +446,7 @@ export const measureLineHeight = (font: TextFont = {}): number =>
  * Courier New's descent (scripts/layout-probes/word-mixed-heights.ts MH2a).
  */
 export const measureDescent = (font: TextFont = {}): number =>
-    ((eastAsianFontOf(font.font ?? DEFAULT_FONT) ?? widthsOf(font.font)).descent * sizeOf(font)) / 1000;
+    ((eastAsianFontOf(font.font ?? DEFAULT_FONT) ?? widthsOf(font.font)).descent * lineSizeOf(font)) / 1000;
 
 /**
  * The size of text laid out in lines, in points.

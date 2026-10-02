@@ -125,8 +125,41 @@ describe("readDocument", () => {
             expect(
                 itemsOf(content).map((item) => (item.type === "break" ? item.kind : item.type === "text" ? item.text : item.type)),
             ).to.deep.equal(["a", "tab", "tab", "page", "column", "line", "line", "\u2011", "\uf0a7", "i", "CAPS"]);
-            // An endnote's number, in superscript, and numbered as Word numbers endnotes
-            expect(itemsOf(content)[9]).to.deep.equal({ type: "text", text: "i", font: { scale: 65 } });
+            // An endnote's number, in its run's font, and numbered as Word numbers endnotes
+            expect(itemsOf(content)[9]).to.deep.equal({ type: "text", text: "i", font: {} });
+        });
+
+        it("should read superscript, raised text, emphasis marks and borders into the font text is laid out in", () => {
+            const bdr = (style: string): object => ({ "w:bdr": { _attr: { "w:val": style, "w:sz": 4, "w:space": 4 } } });
+            const content = readBody([
+                p(
+                    r(rPr(value("w:vertAlign", "superscript"), value("w:sz", 22)), t("2")),
+                    r(rPr(value("w:position", 12), value("w:em", "underDot"), bdr("single")), t("up")),
+                ),
+            ]);
+            expect(itemsOf(content)).to.deep.equal([
+                { type: "text", text: "2", font: { size: 7, lineSize: 11 } },
+                {
+                    type: "text",
+                    text: "up",
+                    font: { raise: 6, emphasis: "below", border: { room: 4.5, key: '[["w:space","4"],["w:sz","4"],["w:val","single"]]' } },
+                },
+            ]);
+            // A border on the paragraph's mark is in its font, and takes no room in its line (word-run-formatting.ts RF8d)
+            expect(paragraphOf(readBody([p(pPr(rPr(bdr("single"))))])).markFont.border?.room).to.equal(4.5);
+        });
+
+        it("should stop at a run's formatting whose room Word hasn't shown, and at tabs and pictures in a box", () => {
+            const bdr = (style: string): object => ({ "w:bdr": { _attr: { "w:val": style, "w:sz": 4, "w:space": 0 } } });
+            const stopsAt = (...children: readonly unknown[]): string | undefined => paragraphOf(readBody([p(...children)])).unsupported;
+            expect(stopsAt(r(rPr(bdr("thinThickMediumGap")), t("a")))).to.equal("a run border of a style, width or space not yet followed");
+            expect(stopsAt(r(rPr(bdr("single")), { "w:tab": {} }))).to.equal("a tab in text with a border");
+            expect(stopsAt(r(rPr(bdr("single")), t("a\tb")))).to.equal("a tab in text with a border");
+            expect(stopsAt(r(rPr({ "w:vanish": {} }, bdr("single")), t("a\tb")))).to.equal(undefined);
+            expect(stopsAt(r(rPr(bdr("single")), { "w:drawing": [{ "wp:inline": [] }] }))).to.equal("a picture in text with a border");
+            expect(stopsAt(r(rPr(value("w:position", "-2.5pt")), t("a")))).to.equal("a lowered position of a fraction of its unit");
+            // Hidden text takes no room, whatever its formatting
+            expect(stopsAt(r(rPr({ "w:vanish": {} }, bdr("wave")), t("a")))).to.equal(undefined);
         });
 
         it("should read a symbol as its character in its own font, which the width tables don't have when it's a symbol font's", () => {
@@ -419,7 +452,7 @@ describe("readDocument", () => {
                 border("single", 1),
                 border("single", 97),
                 border("single", 6, 32),
-                border("thinThickSmallGap", 4),
+                border("thinThickSmallGap", 2),
                 border("threeDEmboss", 19),
             ]) {
                 expect(bordered({ "w:top": side }).unsupported).to.equal("a paragraph border of a width or space not yet followed");
@@ -491,23 +524,24 @@ describe("readDocument", () => {
             const content = readBody(
                 [
                     p(r(t("a"), { "w:footnoteReference": { _attr: { "w:id": 1 } } })),
-                    p(r({ "w:footnoteReference": { _attr: { "w:id": 7 } } })),
+                    p(r(rPr(value("w:rStyle", "FootnoteReference")), { "w:footnoteReference": { _attr: { "w:id": 7 } } })),
                 ],
                 { footnotes: { 1: { children: [new Paragraph("Note")] } } },
             );
-            // A reference is the marker its footnote is placed by, and the footnote's number, in superscript
+            // A reference is the marker its footnote is placed by, and the footnote's number, in its run's font
             expect(itemsOf(content)).to.deep.equal([
                 { type: "text", text: "a", font: {} },
                 { type: "marker", name: "footnote 1" },
-                { type: "text", text: "1", font: { scale: 65 } },
+                { type: "text", text: "1", font: {} },
             ]);
-            // The footnote starts with its number
+            // The footnote starts with its number, in docx's FootnoteReference style, in superscript: 6.5 points of 10, in a
+            // line of 10
             expect((content.footnotes.get("footnote 1")![0] as ParagraphBlock).items).to.deep.equal([
-                { type: "text", text: "1", font: { scale: 65 } },
+                { type: "text", text: "1", font: { size: 6.5, lineSize: 10 } },
                 { type: "text", text: "Note", font: {} },
             ]);
             // A reference to a footnote the document doesn't have is numbered, and has nothing to place
-            expect(itemsOf(content, 1)).to.deep.include({ type: "text", text: "2", font: { scale: 65 } });
+            expect(itemsOf(content, 1)).to.deep.include({ type: "text", text: "2", font: { size: 6.5, lineSize: 10 } });
             expect(content.footnotes.get("footnote 2")).to.deep.equal([]);
             // The separators' paragraphs, whose lines are as tall as their marks
             expect(content.footnoteSeparator).to.have.length(1);

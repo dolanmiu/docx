@@ -16,6 +16,7 @@ import {
     spansOf,
     styleChain,
     unknownLengthIn,
+    unknownRunFormatting,
 } from "./text-styles";
 
 const contextOf = (file: File): IContext => ({ file, stack: [] }) as unknown as IContext;
@@ -235,6 +236,135 @@ describe("readRunFormat", () => {
     });
 });
 
+describe("run formatting", () => {
+    const themeFonts = { headings: "Calibri Light", body: "Calibri" };
+    const border = (attributes: object): object => ({ "w:bdr": { _attr: attributes } });
+
+    it("should read superscript and subscript, raised and lowered text, emphasis marks and a border", () => {
+        expect(
+            readRunFormat(
+                [
+                    { "w:vertAlign": { _attr: { "w:val": "superscript" } } },
+                    { "w:position": { _attr: { "w:val": -12 } } },
+                    { "w:em": { _attr: { "w:val": "dot" } } },
+                    border({ "w:val": "single", "w:sz": 4, "w:space": 4, "w:color": "auto" }),
+                ],
+                themeFonts,
+            ),
+        ).to.deep.equal({
+            verticalAlign: "superscript",
+            position: -6,
+            emphasisMark: "dot",
+            // Read as a paragraph's border is
+            border: {
+                style: "single",
+                size: 4,
+                space: 4,
+                shadow: false,
+                frame: false,
+                key: '[["w:color","auto"],["w:space","4"],["w:sz","4"],["w:val","single"]]',
+            },
+        });
+        // "baseline" turns a style's superscript off
+        expect(readRunFormat([{ "w:vertAlign": { _attr: { "w:val": "baseline" } } }], themeFonts)).to.deep.equal({
+            verticalAlign: "baseline",
+        });
+    });
+
+    it("should read a position written with a unit as Word does, as docx writes it: rounded down to a half-point", () => {
+        // word-run-formatting.ts RF5f to RF5k: 6 points, 2.75 as 2.5, 0.1 inches as 7 points, 3 millimeters as 8.5, a pica
+        const positions = ["6pt", "-6pt", "2.75pt", "0.1in", "3mm", "1pc"].map(
+            (value) => readRunFormat([{ "w:position": { _attr: { "w:val": value } } }], themeFonts).position,
+        );
+        expect(positions).to.deep.equal([6, -6, 2.5, 7, 8.5, 12]);
+    });
+
+    it("should draw superscript and subscript at 65% of the size, to the nearest half-point and down from a quarter, in a line of the size", () => {
+        // word-run-formatting.ts RF1: 10 points are 6.5, 9 are 6, 7.5 are 5, 12 are 8, 13 are 8.5, 11 are 7, and 5, 15 and
+        // 25 points are 3, 9.5 and 16, where 65% is a quarter point
+        const drawn = [10, 9, 7.5, 12, 13, 11, 5, 15, 25].map((size) => fontOf({ size, verticalAlign: "superscript" }).size);
+        expect(drawn).to.deep.equal([6.5, 6, 5, 8, 8.5, 7, 3, 9.5, 16]);
+        expect(fontOf({ font: "Arial", size: 15, verticalAlign: "subscript" })).to.deep.equal({ font: "Arial", size: 9.5, lineSize: 15 });
+        // Word's default size, 10 points, without one
+        expect(fontOf({ verticalAlign: "superscript" })).to.deep.equal({ size: 6.5, lineSize: 10 });
+        expect(fontOf({ size: 11, verticalAlign: "baseline" })).to.deep.equal({ size: 11 });
+        // In each of a run's fonts
+        expect(spansOf("a永", { size: 20, verticalAlign: "superscript" })).to.deep.equal([
+            { size: 13, lineSize: 20, text: "a" },
+            { font: "MS Mincho", size: 13, lineSize: 20, text: "永" },
+        ]);
+    });
+
+    it("should draw small capitals at 80% of the size, to the nearest half-point, and at 80% of superscript's", () => {
+        // word-run-formatting.ts RF4: 12 points are 9.5, 13 are 10.5, 7 are 5.5 and 11 are 9; in superscript at 12 points, 6.5
+        const small = (format: Parameters<typeof spansOf>[1]): unknown =>
+            spansOf("a", format).map(({ size, lineSize }) => [size, lineSize]);
+        expect([12, 13, 7, 11].map((size) => small({ size, smallCaps: true }))).to.deep.equal([
+            [[9.5, 12]],
+            [[10.5, 13]],
+            [[5.5, 7]],
+            [[9, 11]],
+        ]);
+        expect(small({ size: 12, smallCaps: true, verticalAlign: "superscript" })).to.deep.equal([[6.5, 12]]);
+    });
+
+    it("should carry how far text is raised, its border's room and its emphasis marks into the font it is laid out in", () => {
+        const single = { style: "single", size: 4, space: 4, shadow: false, frame: false, key: "single" };
+        expect(fontOf({ position: 3, border: single, emphasisMark: "dot" })).to.deep.equal({
+            raise: 3,
+            border: { room: 4.5, key: "single" },
+            emphasis: "above",
+        });
+        // A double border is three times its width and a triple five, and one of no style takes its space (RF7d, RF7e, RF7h)
+        expect(fontOf({ border: { ...single, style: "double", size: 6, space: 0 } }).border?.room).to.equal(2.25);
+        expect(fontOf({ border: { ...single, style: "triple", size: 4, space: 0 } }).border?.room).to.equal(2.5);
+        expect(fontOf({ border: { ...single, style: "none", size: 200 } }).border?.room).to.equal(4);
+        // No room, no raise and no marks
+        expect(fontOf({ position: 0, border: { ...single, style: "none", space: 0 }, emphasisMark: "none" })).to.deep.equal({});
+        expect(fontOf({ emphasisMark: "underDot" })).to.deep.equal({ emphasis: "below" });
+        expect(fontOf({ emphasisMark: "comma" }).emphasis).to.equal("above");
+    });
+
+    it("should give a border round a run the room of a paragraph's border of its style", () => {
+        // word-run-formatting2.ts RF12, in twips: dots, dashes, thick, outset and inset of half a point take 10, as single
+        // does; waves of 3/4 of a point 60 and 105, whatever their width; thin and thick lines of half a point 40, 40, 40, 40
+        // and 70, as `word-paragraph-formats.docx` B6 has them for paragraphs; and one of "nil" with a space nothing
+        const twips = (style: string, size = 4, space = 0): number | undefined => {
+            const room = fontOf({ border: { style, size, space, shadow: false, frame: false, key: style } }).border?.room;
+            return room === undefined ? undefined : room * 20;
+        };
+        expect(
+            ["dotted", "dashed", "dashSmallGap", "dotDash", "dotDotDash", "thick", "outset", "inset"].map((style) => twips(style)),
+        ).to.deep.equal([10, 10, 10, 10, 10, 10, 10, 10]);
+        expect([twips("wave", 6), twips("doubleWave", 6)]).to.deep.equal([60, 105]);
+        expect(
+            ["thinThickSmallGap", "thickThinSmallGap", "threeDEmboss", "threeDEngrave", "thinThickThinSmallGap"].map((style) =>
+                twips(style),
+            ),
+        ).to.deep.equal([40, 40, 40, 40, 70]);
+        expect(twips("nil", 4, 4)).to.equal(undefined);
+    });
+
+    it("should stop at a border whose room isn't known, and at emphasis marks of a kind the schema doesn't have", () => {
+        const single = { style: "single", size: 4, space: 4, shadow: false, frame: false, key: "single" };
+        const unknown = "a run border of a style, width or space not yet followed";
+        expect(unknownRunFormatting({ border: single, emphasisMark: "circle" })).to.equal(undefined);
+        expect(unknownRunFormatting({ border: { ...single, style: "nil", shadow: true } })).to.equal(undefined);
+        expect(unknownRunFormatting({ border: { ...single, shadow: true } })).to.equal("a run border with a shadow or drawn as a frame");
+        expect(unknownRunFormatting({ border: { ...single, frame: true } })).to.equal("a run border with a shadow or drawn as a frame");
+        // A style Word hasn't been seen to draw, thin and thick lines wider than 2¼ points, and a border without a width,
+        // narrower or wider than Word draws, or further from the text
+        expect(unknownRunFormatting({ border: { ...single, style: "thinThickMediumGap" } })).to.equal(unknown);
+        expect(unknownRunFormatting({ border: { ...single, style: "thinThickSmallGap", size: 24 } })).to.equal(unknown);
+        expect(unknownRunFormatting({ border: { ...single, size: undefined } })).to.equal(unknown);
+        expect(unknownRunFormatting({ border: { ...single, size: 1 } })).to.equal(unknown);
+        expect(unknownRunFormatting({ border: { ...single, size: 97 } })).to.equal(unknown);
+        expect(unknownRunFormatting({ border: { ...single, space: 32 } })).to.equal(unknown);
+        expect(unknownRunFormatting({ emphasisMark: "star" })).to.equal("emphasis marks of a kind that isn't known");
+        expect(fontOf({ border: { ...single, style: "thinThickMediumGap" } })).to.deep.equal({});
+    });
+});
+
 describe("hasDefaultParagraphSpacing", () => {
     it("should be whether a paragraph without formatting has space before or after it", () => {
         expect(hasDefaultParagraphSpacing(WORD_DEFAULT_STYLES)).to.equal(false);
@@ -436,6 +566,11 @@ describe("unknownLengthIn", () => {
             undefined,
         );
         expect(unknownLengthIn([{ "w:t": ["-1.5cm"] }, "text"])).to.equal(undefined);
+        // A lowered position of a fraction of its unit, whose minus sign and rounding Word's PDFs didn't show together
+        expect(unknownLengthIn({ "w:position": { _attr: { "w:val": "-2.75pt" } } })).to.equal(
+            "a lowered position of a fraction of its unit",
+        );
+        expect(unknownLengthIn({ "w:position": { _attr: { "w:val": "-6pt" } } })).to.equal(undefined);
     });
 
     it("should find one in the styles as they are read", () => {
@@ -538,7 +673,7 @@ describe("spansOf", () => {
             { font: "MS Mincho", size: 10, text: "永" },
         ]);
         expect(spansOf("aB永", { smallCaps: true })).to.deep.equal([
-            { size: 8, text: "A" },
+            { size: 8, lineSize: 10, text: "A" },
             { text: "B" },
             { font: "MS Mincho", text: "永" },
         ]);

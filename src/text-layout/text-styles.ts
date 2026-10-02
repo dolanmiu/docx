@@ -12,11 +12,13 @@ import type { IContext } from "docx";
 
 import { isEastAsian, kinsokuLanguageOf } from "./line-break-rules";
 import {
+    DEFAULT_FONT_SIZE,
     type LineSpacing,
     type ParagraphAlignment,
     type ParagraphBorder,
     type ParagraphFormat,
     type TabStopSetting,
+    type TextBorder,
     type TextFont,
     type TextSpan,
     isEastAsianFont,
@@ -27,11 +29,19 @@ export type XmlObject = Readonly<Record<string, unknown>>;
 /**
  * Run formatting that changes how much room text takes up.
  */
-export type RunFormat = Omit<TextFont, "size"> & {
+export type RunFormat = Omit<TextFont, "size" | "lineSize" | "raise" | "border" | "emphasis"> & {
     /** Size in points */
     readonly size?: number;
     readonly allCaps?: boolean;
     readonly smallCaps?: boolean;
+    /** Superscript or subscript (`w:vertAlign`), drawn smaller than the run's size, or "baseline" where a style's is turned off */
+    readonly verticalAlign?: "baseline" | "superscript" | "subscript";
+    /** How far the run is raised (`w:position`), in points, or lowered when it is negative */
+    readonly position?: number;
+    /** The marks over or under each character (`w:em`): "dot", "comma", "circle" or "underDot", or "none" */
+    readonly emphasisMark?: string;
+    /** The border around the run (`w:bdr`), written as a paragraph's are, which takes room beside it and above and below it */
+    readonly border?: ParagraphBorder;
     /** Hidden text takes up no room */
     readonly hidden?: boolean;
     /** The font of Chinese, Japanese and Korean text (`w:eastAsia`) */
@@ -136,9 +146,17 @@ export const WORD_DEFAULT_STYLES: TextStyles = {
     themeFonts: OFFICE_THEME_FONTS,
 };
 
-// Small capitals are drawn as capitals at 80% of the size of the text, as LibreOffice draws them
+// Small capitals are drawn as capitals at 80% of the size of the text, to the nearest half-point: 9 points at 11, and 16
+// at 20 (scripts/layout-probes/word-watertight-text.ts TX4), and 9.5 at 12, 10.5 at 13 and 5.5 at 7, in Times New Roman,
+// Arial and Cambria too, and 80% of superscript's size in superscript (word-run-formatting.ts RF4)
 const SMALL_CAPS_SCALE = 0.8;
+// Superscript and subscript are drawn at 65% of the size of the text, to the nearest half-point: 7 points at 11, and 13
+// at 20 (TX1), in Times New Roman, Arial, Cambria and Courier New too (scripts/layout-probes/word-run-formatting.ts RF1).
+// It is the fonts' own size for them: Calibri, Cambria, Arial and Times New Roman each give 1331 of 2048
+const SCRIPT_SCALE = 0.65;
 export const TWIPS_PER_POINT = 20;
+// A border's width is in eighths of a point
+const EIGHTHS_PER_POINT = 8;
 // Single line spacing, in 240ths of a line
 const SINGLE_LINE = 240;
 
@@ -217,8 +235,9 @@ const sizeOf = (value: unknown): number | undefined => {
 /**
  * Why how Word reads a length in formatted XML isn't known, when it isn't: a size in picas, which Word's PDFs didn't
  * tell from one it ignores, or in another unit but points, which they showed it ignores only with no style giving a
- * size, and a negative length of a fraction of a centimeter or millimeter, whose minus sign and rounding together they
- * didn't show. Undefined when every length's reading is known.
+ * size, a negative length of a fraction of a centimeter or millimeter, and a lowered position (`w:position`) of a
+ * fraction of its unit, whose minus sign and rounding together they didn't show. Undefined when every length's reading
+ * is known.
  */
 export const unknownLengthIn = (element: unknown, name = ""): string | undefined => {
     if (Array.isArray(element)) {
@@ -237,11 +256,13 @@ export const unknownLengthIn = (element: unknown, name = ""): string | undefined
                 return reason;
             }
             const [, minus, , fraction, unit] = measure;
-            return (name === "w:sz" || name === "w:szCs") && unit !== "pt"
-                ? "a size given in a unit other than points"
-                : minus && fraction && METRIC.has(unit)
-                  ? "a negative length of a fraction of a centimeter or millimeter"
-                  : undefined;
+            if ((name === "w:sz" || name === "w:szCs") && unit !== "pt") {
+                return "a size given in a unit other than points";
+            }
+            if (name === "w:position" && minus && fraction) {
+                return "a lowered position of a fraction of its unit";
+            }
+            return minus && fraction && METRIC.has(unit) ? "a negative length of a fraction of a centimeter or millimeter" : undefined;
         }, undefined);
     }, undefined);
 };
@@ -282,6 +303,9 @@ const themeFontOf = (theme: unknown, themeFonts: ThemeFonts): string | undefined
     return theme.startsWith("minor") ? themeFonts.body : undefined;
 };
 
+const readVerticalAlign = (value: string | undefined): RunFormat["verticalAlign"] =>
+    value === "superscript" || value === "subscript" ? value : value === undefined ? undefined : "baseline";
+
 /**
  * Reads run properties (`w:rPr`). A font of the theme (`w:asciiTheme`) takes the place of the font named beside it.
  */
@@ -312,6 +336,10 @@ export const readRunFormat = (element: unknown, themeFonts: ThemeFonts): RunForm
         rightToLeft: onOff(children, "w:rtl"),
         complexScript: onOff(children, "w:cs"),
         eastAsianLanguage: stringOf(attributesOf(find(children, "w:lang"))["w:eastAsia"]),
+        verticalAlign: readVerticalAlign(valueOf(children, "w:vertAlign")),
+        position: pointsOf(attributesOf(find(children, "w:position"))["w:val"], 2),
+        emphasisMark: valueOf(children, "w:em"),
+        border: readBorder(find(children, "w:bdr")),
     });
 };
 
@@ -374,9 +402,9 @@ const readTabs = (element: unknown): readonly TabStopSetting[] | undefined => {
 };
 
 /**
- * Reads a border of a paragraph (`w:pBdr`), on one side.
+ * Reads a border of a paragraph (`w:pBdr`), on one side, or of a run (`w:bdr`).
  */
-const readParagraphBorder = (element: unknown): ParagraphBorder | undefined => {
+const readBorder = (element: unknown): ParagraphBorder | undefined => {
     if (element === undefined) {
         return undefined;
     }
@@ -410,7 +438,7 @@ export const readParagraphFormat = (element: unknown): ParagraphFormat => {
         names.map((name) => numberOf(indent[name])).find((value) => value !== undefined);
     const automatic = (name: string): boolean | undefined => (spacing[name] === undefined ? undefined : !isOff(spacing[name]));
     const border = (...names: readonly string[]): ParagraphBorder | undefined =>
-        names.map((name) => readParagraphBorder(find(borders, name))).find((value) => value !== undefined);
+        names.map((name) => readBorder(find(borders, name))).find((value) => value !== undefined);
     const hanging = twips("w:hanging");
     const hangingChars = chars("w:hangingChars");
     return withoutUndefined({
@@ -594,10 +622,123 @@ export const styleChain = ({ styles }: TextStyles, id: string | undefined, type:
 };
 
 /**
- * The parts of run formatting that change the font text is measured in.
+ * A share of a size in points, to the nearest half-point, and down from a quarter, as Word draws superscript and small
+ * capitals: superscript is 3 points at 5, 9.5 at 15 and 16 at 25 (scripts/layout-probes/word-run-formatting.ts RF1)
  */
-export const fontOf = ({ font, size, bold, italic, kerning, characterSpacing, scale }: RunFormat): TextFont =>
-    withoutUndefined({ font, size, bold, italic, kerning, characterSpacing, scale });
+const nearestHalfPoint = (size: number, share: number): number => Math.ceil(size * 2 * share - 0.5 - ROUNDING) / 2;
+
+/**
+ * Text in superscript or subscript, drawn smaller, in a line of its own size: a superscript or subscript doesn't make a line
+ * of its size taller, though Word raises its top above the line's (scripts/layout-probes/word-watertight-text.ts TX1a)
+ */
+const scripted = (font: TextFont, { verticalAlign }: RunFormat): TextFont => {
+    if (verticalAlign !== "superscript" && verticalAlign !== "subscript") {
+        return font;
+    }
+    const size = font.size ?? DEFAULT_FONT_SIZE;
+    return { ...font, size: nearestHalfPoint(size, SCRIPT_SCALE), lineSize: size };
+};
+
+// The room each style of border takes as Word draws it, in eighths of a point, from the width it is given, at 6 and 18
+// eighths (`word-paragraph-formats.docx` B6), and round a run at 4 eighths, and 6 for waves
+// (scripts/layout-probes/word-run-formatting2.ts RF12). Lines of one stroke are as wide as they are given, a double line
+// 3 times and a triple 5, waves and dash-dot strokes are as wide whatever they are given, and lines thin and thick 12 or
+// 24 eighths more, which Word was seen to draw only from 4 eighths to 18
+export const BORDER_WIDTHS: Readonly<Record<string, (size: number) => number | undefined>> = {
+    ...Object.fromEntries(
+        ["single", "thick", "dotted", "dashed", "dotDash", "dotDotDash", "dashSmallGap", "inset", "outset"].map((style) => [
+            style,
+            (size: number) => size,
+        ]),
+    ),
+    double: (size) => 3 * size,
+    triple: (size) => 5 * size,
+    wave: () => 24,
+    dashDotStroked: () => 24,
+    doubleWave: () => 42,
+    ...Object.fromEntries(
+        (
+            [
+                ["thinThickSmallGap", 12],
+                ["thickThinSmallGap", 12],
+                ["threeDEmboss", 12],
+                ["threeDEngrave", 12],
+                ["thinThickThinSmallGap", 24],
+            ] as const
+        ).map(([style, more]) => [style, (size: number) => (size >= 4 && size <= 18 ? size + more : undefined)]),
+    ),
+};
+// The narrowest and widest borders Word draws, in eighths of a point, and the furthest from the text, in points
+export const NARROWEST_BORDER = 2;
+export const WIDEST_BORDER = 96;
+export const FURTHEST_BORDER = 31;
+
+/**
+ * How wide a run's border is as Word draws it, in eighths of a point: as a paragraph's of its style. A border of no style
+ * ("none") takes its space still, but no width (scripts/layout-probes/word-run-formatting.ts RF7h). Undefined when Word
+ * hasn't been seen to draw it.
+ */
+const runBorderWidth = ({ style, size, space, shadow, frame }: ParagraphBorder): number | undefined => {
+    if (shadow || frame || space > FURTHEST_BORDER) {
+        return undefined;
+    }
+    return style === "none" || size === undefined || size < NARROWEST_BORDER || size > WIDEST_BORDER
+        ? style === "none"
+            ? 0
+            : undefined
+        : BORDER_WIDTHS[style]?.(size);
+};
+
+/**
+ * The room a run's border takes, beside the run and above and below it: its space and its width, as Word gives it room (a
+ * single border of half a point 4 points away takes 90 twips on each side and above and below, RF7a). Undefined when it
+ * takes none, as one of "nil" takes none at all (word-run-formatting2.ts RF12), and when how much isn't known: see
+ * {@link unknownRunFormatting}.
+ */
+const textBorderOf = (border: ParagraphBorder | undefined): TextBorder | undefined => {
+    const width = border === undefined || border.style === "nil" ? undefined : runBorderWidth(border);
+    const room = width === undefined ? 0 : width / EIGHTHS_PER_POINT + border!.space;
+    return room > 0 ? { room, key: border!.key } : undefined;
+};
+
+// Emphasis marks over the text, or under it
+const EMPHASIS: Readonly<Record<string, TextFont["emphasis"]>> = { dot: "above", comma: "above", circle: "above", underDot: "below" };
+
+const plainFontOf = ({ font, size, bold, italic, kerning, characterSpacing, scale, position, border, emphasisMark }: RunFormat): TextFont =>
+    withoutUndefined({
+        font,
+        size,
+        bold,
+        italic,
+        kerning,
+        characterSpacing,
+        scale,
+        raise: position === 0 ? undefined : position,
+        border: textBorderOf(border),
+        emphasis: emphasisMark === undefined ? undefined : EMPHASIS[emphasisMark],
+    });
+
+/**
+ * Why a run's formatting can't be laid out as Word lays it out, when it can't: a border of a style, width or space Word
+ * hasn't been seen to draw, or with a shadow or drawn as a frame, and emphasis marks of a kind the schema doesn't have.
+ */
+export const unknownRunFormatting = ({ border, emphasisMark }: RunFormat): string | undefined => {
+    if (border !== undefined && border.style !== "nil" && (border.shadow || border.frame)) {
+        return "a run border with a shadow or drawn as a frame";
+    }
+    if (border !== undefined && border.style !== "nil" && runBorderWidth(border) === undefined) {
+        return "a run border of a style, width or space not yet followed";
+    }
+    return emphasisMark === undefined || emphasisMark === "none" || EMPHASIS[emphasisMark] !== undefined
+        ? undefined
+        : "emphasis marks of a kind that isn't known";
+};
+
+/**
+ * The parts of run formatting that change the font text is measured in: its font, size, boldness, character spacing and
+ * scale, superscript and subscript, which draw it smaller, how far it is raised, its border, and its emphasis marks.
+ */
+export const fontOf = (format: RunFormat): TextFont => scripted(plainFontOf(format), format);
 
 type FontSlot = "latin" | "eastAsian" | "complex";
 
@@ -625,20 +766,23 @@ const FALLBACK_EAST_ASIAN_FONT = "MS Mincho";
  * italics, and Word's defaults where the run doesn't give them.
  */
 const fontOfSlot = (format: RunFormat, slot: FontSlot): TextFont => {
-    const font = fontOf(format);
+    const font = plainFontOf(format);
     if (slot === "latin") {
-        return font;
+        return scripted(font, format);
     }
     const { eastAsiaFont, complexScriptFont, complexScriptSize, complexScriptBold, complexScriptItalic } = format;
-    return slot === "eastAsian"
-        ? { ...font, font: isEastAsianFont(eastAsiaFont) ? eastAsiaFont : FALLBACK_EAST_ASIAN_FONT }
-        : withoutUndefined({
-              ...font,
-              font: complexScriptFont,
-              size: complexScriptSize,
-              bold: complexScriptBold,
-              italic: complexScriptItalic,
-          });
+    return scripted(
+        slot === "eastAsian"
+            ? { ...font, font: isEastAsianFont(eastAsiaFont) ? eastAsiaFont : FALLBACK_EAST_ASIAN_FONT }
+            : withoutUndefined({
+                  ...font,
+                  font: complexScriptFont,
+                  size: complexScriptSize,
+                  bold: complexScriptBold,
+                  italic: complexScriptItalic,
+              }),
+        format,
+    );
 };
 
 /**
@@ -662,7 +806,9 @@ export const spansOf = (text: string, format: RunFormat): readonly TextSpan[] =>
         if (allCaps || !smallCaps) {
             return [{ ...font, text: allCaps ? part.toUpperCase() : part }];
         }
-        const small = { ...font, size: (font.size ?? 10) * SMALL_CAPS_SCALE };
+        // The small letters are capitals in the line of the run's size
+        const size = font.size ?? DEFAULT_FONT_SIZE;
+        const small = { ...font, size: nearestHalfPoint(size, SMALL_CAPS_SCALE), lineSize: font.lineSize ?? size };
         return part
             .split(/(\p{Ll}+)/u)
             .filter((piece) => piece.length > 0)
