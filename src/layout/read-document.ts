@@ -13,6 +13,8 @@ import {
     BORDER_WIDTHS,
     DEFAULT_FONT_SIZE,
     FURTHEST_BORDER,
+    type FontData,
+    type FontFace,
     type InlineItem,
     type KinsokuList,
     type LineBreakRules,
@@ -42,6 +44,7 @@ import {
     onOff,
     pointsOf,
     readCellMargins,
+    readFontFile,
     readParagraphFormat,
     readRunFormat,
     spansOf,
@@ -305,6 +308,8 @@ export type DocumentContent = {
     readonly relativeReferences: ReadonlyMap<string, readonly string[]>;
     /** The endnotes the body refers to, by the names of the markers at their references */
     readonly endnoteReferences: ReadonlyMap<string, readonly Block[]>;
+    /** The faces of the fonts it embeds, which Word draws text in those fonts in */
+    readonly fonts?: readonly FontFace[];
     /** Why none of it can be laid out, when a setting of the whole document changes its lines in ways not yet followed */
     readonly unsupported?: string;
 };
@@ -2279,7 +2284,36 @@ export type DocumentParts = {
     readonly footnotes?: XmlObject;
     /** Its endnotes (`w:endnotes`), if it has any */
     readonly endnotes?: XmlObject;
+    /** The faces of the fonts it embeds */
+    readonly fonts?: readonly FontFace[];
 };
+
+/**
+ * A font file a document embeds, with the name it gives the font, and which of its faces the file is.
+ */
+export type EmbeddedFont = {
+    readonly name: string;
+    readonly data: FontData;
+    readonly bold: boolean;
+    readonly italic: boolean;
+};
+
+/**
+ * The faces of the fonts a document embeds, which Word draws text in those fonts in. Each is the face of the font the
+ * document names, of the boldness and italics the document says it is (`w:embedRegular`, `w:embedBold` and the others),
+ * whatever its file says. A file that isn't a font, is damaged, or is a collection of no fonts, is left out, so text in
+ * its font is in a font the layout doesn't know, as it may not be in Word.
+ */
+export const facesOf = (fonts: readonly EmbeddedFont[]): readonly FontFace[] =>
+    fonts.flatMap(({ name, data, bold, italic }) => {
+        try {
+            // The first face of a collection, which may have none
+            const [face] = readFontFile(data);
+            return face === undefined ? [] : [{ ...face, name, bold, italic }];
+        } catch {
+            return [];
+        }
+    });
 
 /**
  * The parts of the document being written, formatted to be read.
@@ -2314,6 +2348,8 @@ const partsOfFile = (context: IContext): DocumentParts => {
         ),
         footnotes: format(file.FootNotes),
         endnotes: format(file.Endnotes),
+        // docx embeds each font of its fonts option as the font's regular face
+        fonts: facesOf(file.FontTable.options.map(({ name, data }) => ({ name, data, bold: false, italic: false }))),
     };
 };
 
@@ -2555,6 +2591,7 @@ export const readContent = (body: XmlObject, parts: DocumentParts): DocumentCont
         endnoteNumbers,
         relativeReferences: markers.relative,
         endnoteReferences,
+        ...(parts.fonts !== undefined && parts.fonts.length > 0 ? { fonts: parts.fonts } : {}),
         ...readSettings(parts.settings),
     };
     // A length in the styles or lists stops the layout before anything, as any paragraph may be in them, and so do notes

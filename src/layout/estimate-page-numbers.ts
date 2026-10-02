@@ -22,7 +22,7 @@ import { readDocx } from "./read-docx";
 
 /** What a document is read into: a template patchDocument patched, or the body of a document being written */
 const contentOf = (document: IXmlableObject | PatchedTemplate, context?: IContext): DocumentContent | undefined =>
-    "parts" in document ? readDocx(document.parts) : context?.file && readDocument(document, context);
+    "parts" in document ? readDocx(document.parts, document.binaryParts) : context?.file && readDocument(document, context);
 
 /** Lays out the pages until their page numbers stop changing, with a measurer. Gives none when they don't */
 const estimateWith = (content: DocumentContent | undefined, measurer: TextMeasurer): EstimatedPageNumbers => {
@@ -52,19 +52,21 @@ const estimateWith = (content: DocumentContent | undefined, measurer: TextMeasur
  * ```
  *
  * The pages are laid out with the widths and heights of the fonts Word documents use most, such as Calibri, Cambria,
- * Arial and Times New Roman. To measure text in other fonts, such as Aptos, from their files, use
+ * Arial and Times New Roman, and of those made as wide, such as Carlito, and text in the fonts the document embeds is
+ * measured from their files. To measure text in other fonts, such as Aptos, from their files, use
  * {@link estimatePageNumbersWith}. It follows paragraphs' spacing, indents, line spacing, tab stops and keep settings, widow
  * and orphan control, lists, pictures in the line, tables, whose rows break across pages, footnotes and endnotes, page,
  * column and section breaks, and each section's page size, margins, columns, headers, footers and page numbering.
  *
  * It stops at the first thing it can't lay out yet: a drawing or table that text flows around, a text box or frame, an
  * equation, a footnote that continues on the next page, columns evened out before a continuous section break, a table
- * row kept whole that is taller than a page, a character whose width in its font isn't known, such as a mathematical
- * symbol in Calibri, which Word draws in Cambria Math, or a date in the text, which Word writes when it opens the document.
- * The page references to bookmarks after it are left blank, for Word to fill in when it updates the fields. A document in
- * compatibility mode, which Word lays out as an older version of Word did, isn't laid out at all. When laying the pages
- * out again with the page numbers it worked out still changes them after three passes, as when a table of contents wraps
- * one way with a number and the other way without it, all of them are left blank.
+ * row kept whole that is taller than a page, text in a font that isn't in the width tables and isn't embedded, such as
+ * Aptos, a character whose width in its font isn't known, such as a mathematical symbol in Calibri, which Word draws in
+ * Cambria Math, or a date in the text, which Word writes when it opens the document. The page references to bookmarks
+ * after it are left blank, for Word to fill in when it updates the fields. A document in compatibility mode, which Word
+ * lays out as an older version of Word did, isn't laid out at all. When laying the pages out again with the page numbers
+ * it worked out still changes them after three passes, as when a table of contents wraps one way with a number and the
+ * other way without it, all of them are left blank.
  *
  * Page references are written as Word writes them, with `\p` ("above", "below" or "on page 4") and in formats of their
  * own, such as `\* roman`, and so are numbers of pages. Page references, tables of contents and SEQ fields (caption
@@ -107,14 +109,16 @@ export type EstimatePageNumbersOptions = {
      * Font files to measure text in, with their own widths, kerning and line heights, as Word measures it. Give a file
      * for each of a font's faces the document uses, such as Aptos, Aptos Bold and Aptos Italic: text in fonts without
      * files is measured as it is without them, and so is bold text, or text that isn't bold, in a font without a file for
-     * it. Italic text in a font without an italic file is measured with the upright one. The layout stops at a character
-     * a font's file has no glyph for, as Word draws it in another font
+     * it, which stops the layout when the font isn't in the width tables. Italic text in a font without an italic file is
+     * measured with the upright one. The layout stops at a character a font's file has no glyph for, as Word draws it in
+     * another font. A font the document embeds is measured from the document's own file
      */
     readonly fonts?: readonly FontFile[];
     /**
      * Measures how wide text is, such as {@link measureWithPretext}, which measures it with the fonts a browser has.
      * Default is the widths of the fonts Word documents use most, which {@link estimatePageNumbers} uses. Lines still
-     * break, and tabs move to their stops, as Word lays them out, and lines are as tall as Word makes them.
+     * break, and tabs move to their stops, as Word lays them out, and lines are as tall as Word makes them, from the
+     * width tables, so the layout stops at text in a font that isn't in them and isn't given as a file or embedded.
      */
     readonly measureWidth?: MeasureWidth;
 };

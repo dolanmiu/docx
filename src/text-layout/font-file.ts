@@ -50,6 +50,16 @@ const hasFlag = (flags: number, flag: number): boolean => Math.floor(flags / fla
 const tagOf = (view: DataView, offset: number): string =>
     String.fromCharCode(view.getUint8(offset), view.getUint8(offset + 1), view.getUint8(offset + 2), view.getUint8(offset + 3));
 
+/**
+ * Throws as a read past the end of the file does, for what is read only when text is laid out in the font, so that a
+ * damaged font throws when it is read, rather than when it is laid out
+ */
+const checkInFile = (view: DataView, end: number): void => {
+    if (end > view.byteLength) {
+        throw new RangeError(`The font file points past its end, to ${end}`);
+    }
+};
+
 /** Where each table of the font at an offset starts */
 const readTables = (view: DataView, offset: number): Tables =>
     new Map(
@@ -120,7 +130,12 @@ const readCharacterMap = (view: DataView, tables: Tables): ((code: number) => nu
     }
     const { offset, format } = subtable;
     if (format === 12) {
-        const groups = Array.from({ length: view.getUint32(offset + 12) }, (_, index) => {
+        // A number of ranges the file has no room for is found before an array of that many is made, as a collection's is
+        const count = view.getUint32(offset + 12);
+        if (offset + 16 + count * 12 > view.byteLength) {
+            throw new Error("The font file is damaged: its character map says it has more ranges of characters than it has room for");
+        }
+        const groups = Array.from({ length: count }, (_, index) => {
             const group = offset + 16 + index * 12;
             return { start: view.getUint32(group), end: view.getUint32(group + 4), glyph: view.getUint32(group + 8) };
         });
@@ -134,6 +149,15 @@ const readCharacterMap = (view: DataView, tables: Tables): ((code: number) => nu
     const starts = ends + segments * 2 + 2;
     const deltas = starts + segments * 2;
     const rangeOffsets = deltas + segments * 2;
+    // The segments, and the glyphs in the array of those mapped through it, are read when text is laid out in the font
+    checkInFile(view, rangeOffsets + segments * 2);
+    for (let segment = 0; segment < segments; segment++) {
+        const rangeOffset = view.getUint16(rangeOffsets + segment * 2);
+        const characters = view.getUint16(ends + segment * 2) - view.getUint16(starts + segment * 2) + 1;
+        if (rangeOffset !== 0) {
+            checkInFile(view, rangeOffsets + segment * 2 + rangeOffset + characters * 2);
+        }
+    }
     return (code) => {
         const segment = Array.from({ length: segments }, (_, index) => index).find((index) => view.getUint16(ends + index * 2) >= code);
         if (segment === undefined || view.getUint16(starts + segment * 2) > code) {
@@ -353,6 +377,8 @@ const readFace = (view: DataView, offset: number): FontFace => {
     const lineGap = view.getInt16(hhea + 8);
     const metricCount = view.getUint16(hhea + 34);
     const hmtx = tables.get("hmtx")!;
+    // The widths are read when text is laid out in the font
+    checkInFile(view, hmtx + metricCount * 4);
     const os2 = tables.get("OS/2");
 
     // Word's single line: the font's ascent and descent for Windows, and the gap between lines its hhea table adds to
@@ -432,7 +458,13 @@ export const readFontFile = (data: FontData): readonly FontFace[] => {
         }
     };
     if (tag === COLLECTION_TAG) {
-        return read(() => Array.from({ length: view.getUint32(8) }, (_, index) => readFace(view, view.getUint32(12 + index * 4))));
+        // A number of fonts the file has no room for is found before an array of that many is made, which a few bytes could
+        // otherwise make hundreds of megabytes of
+        const count = view.getUint32(8);
+        if (12 + count * 4 > bytes.byteLength) {
+            throw new Error("The font file is damaged: it says it has more fonts than it has room for");
+        }
+        return read(() => Array.from({ length: count }, (_, index) => readFace(view, view.getUint32(12 + index * 4))));
     }
     if (FONT_TAGS.has(tag)) {
         return read(() => [readFace(view, 0)]);
@@ -451,7 +483,8 @@ const TAB_STOP = 36;
  * Measures text in the fonts of these faces with their own widths, kerning and line height, and text in other fonts with
  * `fallback`. Text that is bold, or not, is measured with a face that is too, and with one that is italic, or not, as the
  * text is, when there is one. A character a face has no glyph for is one whose width isn't known, as Word draws it in
- * another font, unless it takes no room, such as a soft hyphen.
+ * another font, unless it takes no room, such as a soft hyphen. Text in a font without a face as bold as it is in
+ * a font whose widths aren't known, unless `fallback` knows them, as Word makes that face itself from another.
  */
 export const createFontFileMeasurer = (faces: readonly FontFace[], fallback: TextMeasurer = DEFAULT_MEASURER): TextMeasurer => {
     // The face of each font, bold or not, and italic or not, as text is measured many times in each
@@ -519,5 +552,6 @@ export const createFontFileMeasurer = (faces: readonly FontFace[], fallback: Tex
                   )
                 : fallback.unknownCharacter?.(text, font);
         },
+        unknownFont: (font, text) => faceOf(font) === undefined && fallback.unknownFont?.(font, text) === true,
     };
 };

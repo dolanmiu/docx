@@ -4,7 +4,7 @@
  *
  * @module
  */
-import type { TextMeasurer } from "../text-layout";
+import { DEFAULT_MEASURER, type TextMeasurer, createFontFileMeasurer } from "../text-layout";
 import { type PagePlace, type Pagination, paginate } from "./paginate";
 import type { DocumentContent } from "./read-document";
 
@@ -34,9 +34,14 @@ const sameNumbers = (one: Pagination, other: Pagination): boolean =>
  * last. Each pass is laid out with the numbers of the pass before, so the last pass's numbers are those it was laid out
  * with only when they stop changing. When they still change after three passes, as when a table of contents wraps one
  * way with a number and the other way without it, none can be written, so it gives the first pass, laid out without them,
- * as not settled.
+ * as not settled. Text in the fonts the document embeds is measured from their files, and the rest with `measurer`.
  */
-export const layOutPasses = (content: DocumentContent, measurer?: TextMeasurer): Pagination & { readonly settled: boolean } => {
+export const layOutPasses = (
+    content: DocumentContent,
+    measurer: TextMeasurer = DEFAULT_MEASURER,
+): Pagination & { readonly settled: boolean } => {
+    // Text in the fonts the document embeds is measured from their files, as Word draws it in them
+    const measuring = content.fonts === undefined ? measurer : createFontFileMeasurer(content.fonts, measurer);
     const layOut = (
         before: Pagination | undefined,
         pass: number,
@@ -44,7 +49,7 @@ export const layOutPasses = (content: DocumentContent, measurer?: TextMeasurer):
         earlierPlaces: ReadonlyMap<string, PagePlace>,
     ): Pagination & { readonly settled: boolean } => {
         const pagination = paginate(content, {
-            measurer,
+            measurer: measuring,
             pageNumbers: before?.bookmarks,
             places: before?.places,
             earlierPlaces,

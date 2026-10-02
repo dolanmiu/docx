@@ -23,6 +23,8 @@ export type PatchedTemplate = {
      * (`captureSpacesBetweenElements`), as the spaces in a text element are its text
      */
     readonly parts: ReadonlyMap<string, Element>;
+    /** Each of its other parts, such as its pictures and the fonts it embeds, by its path in the package, as bytes */
+    readonly binaryParts?: ReadonlyMap<string, Uint8Array>;
 };
 
 /**
@@ -76,13 +78,18 @@ const rootOf = (part: Element | undefined): Element | undefined => part?.element
  * as they are and doesn't ask to update the fields.
  *
  * @param parts - The template's XML parts, parsed, by their paths, which are changed in place
+ * @param binaryParts - Its other parts, by their paths, for the estimator to read the fonts it embeds
  */
-export const fillTemplatePageNumbers = (parts: ReadonlyMap<string, Element>, estimator: TemplatePageNumberEstimator): void => {
+export const fillTemplatePageNumbers = (
+    parts: ReadonlyMap<string, Element>,
+    estimator: TemplatePageNumberEstimator,
+    binaryParts: ReadonlyMap<string, Uint8Array> = new Map(),
+): void => {
     const document = rootOf(parts.get(DOCUMENT));
     if (!document) {
         return;
     }
-    const estimate = estimator({ parts });
+    const estimate = estimator({ parts, binaryParts });
     const partPageCounts = fillBodyFields(PARSED, document, estimate, { blank: true });
     // The headers and footers the document refers to
     const relationships = rootOf(parts.get(relationshipsPathOf(DOCUMENT)))?.elements ?? [];

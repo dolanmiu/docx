@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import { type TestFontOptions, buildTestFont, buildTestFontCollection } from "tests/font-file";
+import { type TestFontOptions, buildTestFont, buildTestFontCollection, tableOffset } from "tests/font-file";
 
 import { createFontFileMeasurer, readFontFile } from "./font-file";
 import { DEFAULT_MEASURER } from "./line-breaking";
@@ -285,6 +285,47 @@ describe("readFontFile", () => {
         expect(() => readFontFile(buildTestFontCollection([{ advances: LETTERS }]).slice(0, 40))).to.throw("The font file is damaged");
     });
 
+    it("should throw when a font file is read whose character map or widths point past its end, rather than when text is laid out in it", () => {
+        const damaged = (change: (view: DataView, font: Uint8Array) => void): Uint8Array => {
+            const font = buildTestFont({ advances: LETTERS });
+            change(new DataView(font.buffer), font);
+            return font;
+        };
+        const subtableOf = (view: DataView, font: Uint8Array): number => {
+            const characterMap = tableOffset(font, "cmap");
+            return characterMap + view.getUint32(characterMap + 8);
+        };
+        // A segment of a map in format 4 whose glyphs are in an array past the end of the file: A's, which goes through it
+        const pastArray = damaged((view, font) => {
+            const subtable = subtableOf(view, font);
+            const segments = view.getUint16(subtable + 6) / 2;
+            view.setUint16(subtable + 16 + segments * 6 + 2, 0xfffe);
+        });
+        expect(() => readFontFile(pastArray)).to.throw("The font file is damaged: it points past its end");
+        // A map in format 4 of more segments than the file has room for
+        expect(() => readFontFile(damaged((view, font) => view.setUint16(subtableOf(view, font) + 6, 0xfffe)))).to.throw(
+            "The font file is damaged: it points past its end",
+        );
+        // Widths of more glyphs than the file has room for
+        expect(() => readFontFile(damaged((view, font) => view.setUint16(tableOffset(font, "hhea") + 34, 0xffff)))).to.throw(
+            "The font file is damaged: it points past its end",
+        );
+    });
+
+    it("should throw for a collection or character map that says it has more entries than the file has room for, before making room for them", () => {
+        // 33,554,432 of them, which V8 makes an array with room for at once, of about 270 MB, in a file of a few hundred bytes
+        const collection = buildTestFontCollection([{ advances: LETTERS }]);
+        new DataView(collection.buffer).setUint32(8, 0x2000000);
+        expect(() => readFontFile(collection)).to.throw("The font file is damaged: it says it has more fonts than it has room for");
+        const font = buildTestFont({ advances: LETTERS, characterMap: "full" });
+        const view = new DataView(font.buffer);
+        const characterMap = tableOffset(font, "cmap");
+        view.setUint32(characterMap + view.getUint32(characterMap + 8) + 12, 0x2000000);
+        expect(() => readFontFile(font)).to.throw(
+            "The font file is damaged: its character map says it has more ranges of characters than it has room for",
+        );
+    });
+
     it("should throw for a font without the tables it needs", () => {
         expect(() => readFontFile(buildTestFont({ advances: LETTERS, without: ["hmtx"] }))).to.throw("The font has no hmtx table");
         expect(() => readFontFile(buildTestFont({ advances: LETTERS, characterMap: "mac" }))).to.throw("no Unicode character map");
@@ -364,6 +405,22 @@ describe("createFontFileMeasurer", () => {
             measureDescent: () => 0,
         });
         expect(withoutUnknown.unknownCharacter!("a\u2211", calibri)).to.equal(undefined);
+    });
+
+    it("should know the fonts it has a face of, and leave whether it knows other fonts to the fallback", () => {
+        const measurer = createFontFileMeasurer(fonts({ advances: LETTERS }));
+        expect(measurer.unknownFont!({ font: "Probe Sans" }, "AB")).to.equal(false);
+        // Italic text is measured with the upright face, and bold text with none, as Word makes a bold face itself
+        expect(measurer.unknownFont!({ font: "Probe Sans", italic: true })).to.equal(false);
+        expect(measurer.unknownFont!({ font: "Probe Sans", bold: true }, "AB")).to.equal(true);
+        expect(measurer.unknownFont!({ font: "Calibri" }, "AB")).to.equal(false);
+        expect(measurer.unknownFont!({ font: "Aptos" })).to.equal(true);
+        const withoutUnknown = createFontFileMeasurer(fonts({ advances: LETTERS }), {
+            measureWidth: () => 0,
+            measureLineHeight: () => 0,
+            measureDescent: () => 0,
+        });
+        expect(withoutUnknown.unknownFont!({ font: "Aptos" })).to.equal(false);
     });
 
     it("should move a tab typed in the text to the next half inch from the start of the text", () => {

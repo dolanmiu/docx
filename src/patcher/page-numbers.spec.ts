@@ -67,9 +67,11 @@ describe("fillTemplatePageNumbers", () => {
         ]);
         const estimator = vi.fn(() => ({ bookmarks: new Map([["_Toc1", "3"]]), pageCount: 4, sectionPageCounts: [3, 5] }));
 
-        fillTemplatePageNumbers(parts, estimator);
+        const binaryParts = new Map([["word/fonts/font1.odttf", new Uint8Array(4)]]);
 
-        expect(estimator).toHaveBeenCalledWith({ parts });
+        fillTemplatePageNumbers(parts, estimator, binaryParts);
+
+        expect(estimator).toHaveBeenCalledWith({ parts, binaryParts });
         expect(textOf(parts.get("word/document.xml")!)).to.equal("3|" + "4|3" + "7empty" + "4" + "7" + "5");
         // The header is on the pages of both sections, which have different numbers of pages, and the footer on the second's
         expect(textOf(parts.get("word/header1.xml")!)).to.equal("4");

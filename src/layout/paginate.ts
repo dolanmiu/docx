@@ -21,6 +21,7 @@ import {
     type InlineItem,
     type LaidOutLine,
     type ParagraphFormat,
+    type TextFont,
     type TextMeasurer,
     layoutLines,
     measureContentWidths,
@@ -309,6 +310,36 @@ class Unsupported extends Error {}
 /** Thrown to stop laying out columns being balanced in a height they don't fit in */
 class Overflow extends Error {}
 
+/** The measurers the layout measures with, by those it is given, so the lines laid out with each are kept */
+const stoppingMeasurers = new WeakMap<TextMeasurer, TextMeasurer>();
+
+/**
+ * A measurer that stops the layout where it would measure text in a font it doesn't know, or the height of a line in
+ * one, as it measures them as another font, where Word draws them in their own, or in another again when it doesn't have
+ * them (`word-watertight-text.docx` TX18)
+ */
+const stoppingAtUnknownFonts = (measurer: TextMeasurer): TextMeasurer => {
+    const { unknownFont } = measurer;
+    if (unknownFont === undefined) {
+        return measurer;
+    }
+    /** The font, unless the measurer doesn't know it, or this text in it */
+    const known = (font: TextFont, text?: string): TextFont => {
+        if (unknownFont(font, text)) {
+            throw new Unsupported("a font not in the width tables");
+        }
+        return font;
+    };
+    const stopping = stoppingMeasurers.get(measurer) ?? {
+        ...measurer,
+        measureWidth: (text, font) => measurer.measureWidth(text, known(font, text)),
+        measureLineHeight: (font) => measurer.measureLineHeight(known(font)),
+        measureDescent: (font) => measurer.measureDescent(known(font)),
+    };
+    stoppingMeasurers.set(measurer, stopping);
+    return stopping;
+};
+
 /**
  * Thrown to lay out the columns of a page again when its footnotes take more room than the columns before the one being
  * filled were laid out above (`area`)
@@ -523,6 +554,8 @@ export const paginate = (
         return inline;
     };
 
+    // Text in a font the measurer doesn't know stops the layout where it is measured
+    const measuring = stoppingAtUnknownFonts(measurer);
     // eslint-disable-next-line functional/prefer-readonly-type
     const byParagraph = laidOutLines.get(measurer) ?? new WeakMap<ParagraphBlock, Map<string, readonly LaidOutLine[]>>();
     laidOutLines.set(measurer, byParagraph);
@@ -537,7 +570,7 @@ export const paginate = (
                 tabStops: paragraph.tabStops,
                 defaultTabStop,
                 markFont: paragraph.markFont,
-                measurer,
+                measurer: measuring,
                 breakRules,
             });
             // A line whose breaking, or height, Word hasn't shown stops the layout
@@ -662,7 +695,7 @@ export const paginate = (
                               format: block.format,
                               tabStops: block.tabStops,
                               defaultTabStop,
-                              measurer,
+                              measurer: measuring,
                               breakRules,
                           });
                 return { min: Math.max(widths.min, min), max: Math.max(widths.max, max) };

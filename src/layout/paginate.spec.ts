@@ -1,6 +1,7 @@
+// cspell:ignore Aptos
 import { describe, expect, it } from "vitest";
 
-import type { ParagraphFormat, TextMeasurer } from "../text-layout";
+import { type ParagraphFormat, SIMILAR_FONT_MEASURER, type TextMeasurer } from "../text-layout";
 import type { BlockLayout, PageLayout } from "./layout-document";
 import type { FieldFormat } from "./number-format";
 import { type Pagination, paginate } from "./paginate";
@@ -738,6 +739,53 @@ describe("paginate", () => {
             expect(paginate(document([paragraph("a", 1), picture]), { measurer: MEASURER }).stoppedAt).to.equal(reason);
             const withField = withItems(picture, [{ type: "pageCount", scope: "document", font: {} }]);
             expect(paginate(document([paragraph("a", 1), withField]), { measurer: MEASURER }).stoppedAt).to.equal(reason);
+        });
+    });
+
+    describe("fonts", () => {
+        const STOP = "a font not in the width tables";
+        // Knows every font but Unknown
+        const CHOOSY: TextMeasurer = { ...MEASURER, unknownFont: ({ font }) => font === "Unknown" };
+        const UNKNOWN = { font: "Unknown" };
+        const withText = (name: string, text: string, font = {}): ParagraphBlock =>
+            withItems(paragraph(name, 1), [{ type: "text", text: ` ${text}`, font }]);
+
+        it("should stop at text in a font the measurer doesn't know, rather than measure it as another font", () => {
+            const content = document([paragraph("a", 1), withText("b", "x", UNKNOWN), paragraph("c", 1)]);
+            expect(numbersOf(content, CHOOSY)).to.deep.equal({
+                bookmarks: new Map([["a", "1"]]),
+                pageCount: 1,
+                sectionPageCounts: [undefined],
+                stoppedAt: STOP,
+            });
+            // A measurer that measures every font as best it can lays it all out
+            expect(pagesOf(content)).to.deep.equal({ a: "1", b: "1", c: "1" });
+        });
+
+        it("should stop at a tab or break in such a font, and an empty paragraph whose mark is, as their lines are as tall as it", () => {
+            for (const item of [
+                { type: "tab", font: UNKNOWN },
+                { type: "break", kind: "line", font: UNKNOWN },
+            ] as const) {
+                expect(numbersOf(document([withItems(paragraph("a", 1), [item])]), CHOOSY).stoppedAt).to.equal(STOP);
+            }
+            const empty: ParagraphBlock = { ...paragraph("a", 1), items: [{ type: "marker", name: "a" }], markFont: UNKNOWN };
+            expect(numbersOf(document([empty]), CHOOSY).stoppedAt).to.equal(STOP);
+            // A paragraph with text on each of its lines isn't as tall as its mark anywhere
+            expect(numbersOf(document([{ ...paragraph("a", 2), markFont: UNKNOWN }]), CHOOSY).stoppedAt).to.equal(undefined);
+        });
+
+        it("should stop at text in a font the measurer doesn't know in a table sized to its text", () => {
+            const fitted: TableBlock = { ...table([row([[withText("cell", "x", UNKNOWN)]])]), fit: {} };
+            expect(paginate(document([paragraph("a", 1), fitted]), { measurer: CHOOSY }).stoppedAt).to.equal(STOP);
+        });
+
+        it("should stop at a font not in the width tables, measuring with them, unless asked to measure it as the most similar", () => {
+            const inFont = (font: string): DocumentContent => document([withText("a", "x", { font, size: 11 }), paragraph("b", 1)]);
+            expect(paginate(inFont("Aptos")).stoppedAt).to.equal(STOP);
+            expect(paginate(inFont("Aptos"), { measurer: SIMILAR_FONT_MEASURER }).stoppedAt).to.equal(undefined);
+            // Carlito is made as wide as Calibri, so is measured as it
+            expect(paginate(inFont("Carlito")).stoppedAt).to.equal(undefined);
         });
     });
 

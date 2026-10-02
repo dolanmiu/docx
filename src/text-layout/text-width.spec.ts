@@ -1,7 +1,7 @@
-// cspell:ignore Caladea
+// cspell:ignore Caladea Aptos
 import { describe, expect, it } from "vitest";
 
-import { measureDescent, measureLineHeight, measureText, measureTextWidth, unknownCharacter } from "./text-width";
+import { measureDescent, measureLineHeight, measureText, measureTextWidth, unknownCharacter, unknownFont } from "./text-width";
 
 /** How wide text is in twips, a twentieth of a point, which Word's PDFs are read in */
 const twips = (text: string, font: string, size: number): number => measureTextWidth(text, { font, size }) * 20;
@@ -177,6 +177,61 @@ describe("unknownCharacter", () => {
         expect(unknownCharacter("\u05e9\u05dc\u05d5\u05dd \t\u4e2d\u6587", { font: "Arial" })).to.equal(undefined);
         expect(unknownCharacter("plain text")).to.equal(undefined);
     });
+});
+
+describe("unknownFont", () => {
+    // The pangram of word-watertight-text.docx's TX18, in each font at 11 points
+    const PANGRAM = "Thequickbrownfoxjumpsoverthelazydog";
+
+    it("should find the fonts the tables don't have, which Word draws in themselves, or in Cambria when it doesn't have them", () => {
+        // In TX18, Word drew the pangram in Cambria, 3820.8 twips wide, for the two fonts it didn't have, and Aptos 3781.2,
+        // Segoe UI 3616.5, Garamond 3457.5, Georgia 3905.6, Verdana 4384.2, Tahoma 3839.4 and Calibri Light 3540.2 in
+        // themselves, where the tables measure them as Arial (3863.6), Times New Roman (3580.5) or Calibri (3589.3)
+        expect(twips(PANGRAM, "Aptos", 11)).to.be.closeTo(3863.6, 0.1);
+        expect(twips(PANGRAM, "Georgia", 11)).to.be.closeTo(3580.5, 0.1);
+        expect(twips(PANGRAM, "Calibri Light", 11)).to.be.closeTo(3589.3, 0.1);
+        const fonts = ["Watertight Missing Sans", "Watertight Missing Serif", "Aptos", "Segoe UI", "Garamond", "Georgia", "Verdana"];
+        for (const font of [...fonts, "Tahoma", "Calibri Light"]) {
+            expect(unknownFont({ font }), font).to.equal(true);
+            expect(unknownFont({ font }, "a"), font).to.equal(true);
+        }
+    });
+
+    it("should know the fonts of the tables, and those made with the same widths, which are measured as them", () => {
+        const sameWidths = [
+            ["Carlito", "Calibri"],
+            ["Caladea", "Cambria"],
+            ["Liberation Sans", "Arial"],
+            ["Arimo", "Arial"],
+            ["Helvetica", "Arial"],
+            ["Liberation Serif", "Times New Roman"],
+            ["Tinos", "Times New Roman"],
+            ["Liberation Mono", "Courier New"],
+            ["Cousine", "Courier New"],
+        ];
+        for (const [font, same] of sameWidths) {
+            expect(unknownFont({ font }, "a"), font).to.equal(false);
+            expect(unknownFont({ font: same }), same).to.equal(false);
+            expect(twips(PANGRAM, font, 11)).to.equal(twips(PANGRAM, same, 11));
+            expect(measureLineHeight({ font, size: 11 })).to.equal(measureLineHeight({ font: same, size: 11 }));
+        }
+        expect(unknownFont()).to.equal(false);
+        expect(unknownFont({ font: "times new roman" })).to.equal(false);
+        // Word drew TX18's pangram in Helvetica 3867.0 twips wide, within 0.1% of Arial's
+        expect(twips(PANGRAM, "Helvetica", 11)).to.be.closeTo(3867.0, 3.9);
+    });
+
+    // cspell:disable
+    it("should know the East Asian fonts of the table, but for the Latin text of those that aren't monospaced", () => {
+        expect(unknownFont({ font: "MS Mincho" }, "ab永")).to.equal(false);
+        expect(unknownFont({ font: "Yu Gothic" })).to.equal(false);
+        // Ideographs and the symbols of Japanese and Chinese an em wide, half-width katakana and marks, but not Latin letters
+        expect(unknownFont({ font: "Yu Gothic" }, "永、\u0301ｱ")).to.equal(false);
+        expect(unknownFont({ font: "游ゴシック" }, "永a")).to.equal(true);
+        // An East Asian font the table doesn't have, which is measured as MS Mincho or MS Gothic
+        expect(unknownFont({ font: "Hiragino Mincho ProN" })).to.equal(true);
+    });
+    // cspell:enable
 });
 
 describe("measureLineHeight", () => {
