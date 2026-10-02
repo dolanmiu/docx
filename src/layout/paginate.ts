@@ -1445,12 +1445,20 @@ export const paginate = (
     };
 
     /**
+     * The largest margins above and below of a row's cells, which Word puts around every cell's text in the row
+     * (`word-table-formats2.docx` MG1 to MG4)
+     */
+    const rowMarginsOf = ({ cells }: TableRow): number =>
+        Math.max(0, ...cells.map(({ marginTop }) => marginTop)) + Math.max(0, ...cells.map(({ marginBottom }) => marginBottom));
+
+    /**
      * The least of a row that goes on a page when it breaks across pages after the rows kept with it, as the paragraphs
      * kept with the next keep the next paragraph's first lines: in each cell, its first paragraph's first lines, all of them
-     * when it is kept together or widow control keeps them together, and the room around them
+     * when it is kept together or widow control keeps them together, with the row's margins around them
      */
     const leastPartOf = (row: TableRow): number =>
         row.borderTop +
+        rowMarginsOf(row) +
         Math.max(
             0,
             ...row.cells
@@ -1458,11 +1466,7 @@ export const paginate = (
                 .map((cell) => {
                     const [first, second] = blocksWithRoom(cell);
                     if (first === undefined || first.type === "table") {
-                        return (
-                            cell.marginTop +
-                            (first === undefined ? 0 : sum(rowHeights(sizedToPlace(first, cell.width)))) +
-                            cell.marginBottom
-                        );
+                        return first === undefined ? 0 : sum(rowHeights(sizedToPlace(first, cell.width)));
                     }
                     const {
                         lines,
@@ -1472,13 +1476,7 @@ export const paginate = (
                         widowControl,
                     } = measureParagraph(first, cell.width, undefined, second, true);
                     const count = keepLines || (widowControl && lines.length <= 3) ? lines.length : widowControl ? 2 : 1;
-                    return (
-                        cell.marginTop +
-                        spaceBefore +
-                        linesHeight(lines.slice(0, count)) +
-                        (count >= lines.length ? after : 0) +
-                        cell.marginBottom
-                    );
+                    return spaceBefore + linesHeight(lines.slice(0, count)) + (count >= lines.length ? after : 0);
                 }),
         );
 
@@ -1915,8 +1913,7 @@ export const paginate = (
         }
         const borders = row.borderTop + row.borderBottom;
         // The largest margins above and below of the row's cells, around each cell's text
-        const rowMargins =
-            Math.max(0, ...row.cells.map(({ marginTop }) => marginTop)) + Math.max(0, ...row.cells.map(({ marginBottom }) => marginBottom));
+        const rowMargins = rowMarginsOf(row);
         /** How tall the cells' parts make the row's, with their margins */
         const tallestOf = (cells: readonly CellPart[]): number => Math.max(...cells.map((part) => rowMargins + part.height));
         const notesOf = (cells: readonly CellPart[]): readonly string[] =>

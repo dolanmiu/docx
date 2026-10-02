@@ -1155,6 +1155,17 @@ describe("paginate", () => {
                 );
             });
 
+            it("should count the largest margins of the next row's cells among its first lines, as the row has them", () => {
+                // A cell of a line 5 points below the top, beside one of 4 lines: the row's first part is 5 points and 2
+                // lines tall, which doesn't fit in the 2 lines left, so the kept row moves with it
+                const kept = row([[paragraph("kept", 1, { keepNext: true })]]);
+                const laid = row([[paragraph("left", 1)], [paragraph("tall", 4)]]);
+                const next: TableRow = { ...laid, cells: [{ ...laid.cells[0], marginTop: 5 }, laid.cells[1]] };
+                const content = document([paragraph("a", 4), table([kept, next])]);
+                expect(numbersOf(content).stoppedAt).to.equal(undefined);
+                expect(pagesOf(content)).to.deep.include({ a: "1", kept: "2", tall: "2" });
+            });
+
             it("should stop at a row kept with the next before a row whose first lines then move to the next page", () => {
                 // The next row has room for its first 2 lines, but not for the height it is set to, so it moves whole
                 const next = row([[paragraph("left", 4)]], { height: { value: 50, rule: "atLeast" } });
