@@ -590,6 +590,7 @@ export const paginate = (
                 markFont: paragraph.markFont,
                 measurer: measuring,
                 breakRules,
+                numberAlignment: paragraph.numberAlignment,
             });
             // A line whose breaking, or height, Word hasn't shown stops the layout
             const unknown = laidOut.find((line) => line.unsupported !== undefined);
@@ -715,6 +716,7 @@ export const paginate = (
                               defaultTabStop,
                               measurer: measuring,
                               breakRules,
+                              numberAlignment: block.numberAlignment,
                           });
                 return { min: Math.max(widths.min, min), max: Math.max(widths.max, max) };
             },

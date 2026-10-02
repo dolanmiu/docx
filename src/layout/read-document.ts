@@ -120,6 +120,11 @@ export type ParagraphBlock = {
      * which lists made from the same definition share
      */
     readonly list?: { readonly id: string; readonly level: number; readonly definition: object };
+    /**
+     * How its list number lines up at the start of its first line, when not to the left: right-aligned it ends there, and
+     * centred its middle is there (`w:lvlJc`)
+     */
+    readonly numberAlignment?: "center" | "right";
     /** The room its borders take above and below its lines, when it has a border there */
     readonly borders?: ParagraphBorders;
     /** Why it can't be laid out, when it can't */
@@ -321,8 +326,42 @@ type NumberingLevel = {
     readonly text: string;
     readonly suffix: string;
     readonly start: number;
+    /** How its number lines up at the start of its paragraph's first line (`w:lvlJc`), when not to the left */
+    readonly alignment?: "center" | "right";
+    /**
+     * Which level it starts again after, counted from 1, or 0 for none (`w:lvlRestart`). Unless it gives one, or gives
+     * itself or one below it, it starts again after any level above it
+     */
+    readonly restart?: number;
+    /** Whether its text writes the numbers of every level in decimal, whatever their formats (`w:isLgl`) */
+    readonly legal?: boolean;
     readonly paragraph: ParagraphFormat;
     readonly run: RunFormat;
+    /** Why its number isn't written or placed as Word does, when it isn't */
+    readonly unsupported?: string;
+};
+
+/**
+ * Where the lists made from one definition are in their counting, which they share: the number each level is at, and
+ * which of their own first numbers they have started levels at, as each list's id and the level
+ */
+type ListCount = { readonly numbers: readonly (number | undefined)[]; readonly started: readonly string[] };
+
+/** A list paragraphs are numbered in (`w:num`) */
+type NumberingList = {
+    /** Its levels: its definition's, or those it gives in their place */
+    readonly levels: readonly NumberingLevel[];
+    /** The id of the definition it is made from (`w:abstractNum`) */
+    readonly definition: string;
+    /** The levels of the definition, which every list made from it shares */
+    readonly shared: readonly NumberingLevel[];
+    /**
+     * The first numbers it starts levels at, in place of where the lists made from its definition are (`w:startOverride`,
+     * or the first number of a level it gives), by level
+     */
+    readonly starts: ReadonlyMap<number, number>;
+    /** Why its numbers aren't written as Word writes them, when they aren't */
+    readonly unsupported?: string;
 };
 
 type NoteKind = "footnote" | "endnote";
@@ -377,8 +416,8 @@ type Reader = {
     /** The number of the footnote or endnote being read, which the mark at its start shows */
     readonly noteNumber?: string;
     readonly styles: TextStyles;
-    /** The levels of each list, by the id its paragraphs refer to it by */
-    readonly numbering: ReadonlyMap<string, readonly NumberingLevel[]>;
+    /** Each list, by the id its paragraphs refer to it by */
+    readonly numbering: ReadonlyMap<string, NumberingList>;
     /** The number of each list a paragraph may refer to by another id, such as the placeholder docx writes */
     readonly listIds: ReadonlyMap<string, string>;
     /** Whether it is a header or footer, where drawings that text doesn't flow around don't matter */
@@ -389,9 +428,9 @@ type Reader = {
     readonly markers: FieldMarkers;
     // eslint-disable-next-line functional/prefer-readonly-type
     readonly fields: OpenField[];
-    /** The numbers each list is at, by its id and then level */
+    /** Where the lists made from each definition are in their counting, by the definition's id */
     // eslint-disable-next-line functional/prefer-readonly-type
-    readonly counters: Map<string, number[]>;
+    readonly counters: Map<string, ListCount>;
     /** Whether deleted text is read as text, as Word sizes a table's columns by it */
     readonly showDeleted?: boolean;
     /** Whether it reads the cells of a table whose columns Word sizes to their text or widens for long words */
@@ -1016,7 +1055,7 @@ const readInline = (
 const readListNumber = (
     properties: readonly XmlObject[],
     style: string | undefined,
-    paragraphRun: RunFormat,
+    markRun: RunFormat,
     reader: Reader,
 ): {
     readonly items: readonly LayoutItem[];
@@ -1025,6 +1064,10 @@ const readListNumber = (
     readonly from?: "style" | "paragraph";
     readonly chapter?: string;
     readonly list?: ParagraphBlock["list"];
+    /** How its number lines up at the start of its first line, when not to the left */
+    readonly alignment?: "center" | "right";
+    /** Why its number isn't written or placed as Word does, when it isn't */
+    readonly unsupported?: string;
 } => {
     const numbering = childrenOf(find(properties, "w:numPr"));
     const ownId = valueOf(numbering, "w:numId") ?? numberOf(attributesOf(find(numbering, "w:numId"))["w:val"])?.toString();
@@ -1035,36 +1078,108 @@ const readListNumber = (
         {},
     );
     const id = ownId ?? fromStyle.id ?? "";
-    const levels = reader.numbering.get(id);
+    const list = reader.numbering.get(id);
+    if (list?.unsupported !== undefined) {
+        return { items: [], unsupported: list.unsupported };
+    }
+    const levels = list?.levels;
     // A style's list numbers it at the level it gives, or else at the level that is for it
     const linked = levels?.findIndex((other) => other?.style !== undefined && other.style === style) ?? -1;
     const index = ownLevel ?? (ownId === undefined ? fromStyle.level : undefined) ?? Math.max(linked, 0);
     const level = levels?.[index];
-    if (!levels || !level) {
+    if (!list || !levels || !level) {
         return { items: [] };
     }
-    const counts = reader.counters.get(id) ?? [];
-    const current = [...counts.slice(0, index), (counts[index] ?? level.start - 1) + 1];
-    // eslint-disable-next-line functional/immutable-data
-    reader.counters.set(id, current);
-    const numberAt = (at: number): string => {
+    const current = countIn(reader.counters, id, list, index);
+    const { started } = reader.counters.get(list.definition)!;
+    // A level not counted yet shows its first number: 1.1 and 3.1 for a list's first paragraph at level 1, whose level 0
+    // starts at 1 and 3 (scripts/layout-probes/word-lists.ts LR4). A legal level writes every level's number in decimal
+    // (LR3)
+    const numberAt = (at: number): string | undefined => {
         const other = levels[at];
-        return formatNumber(current[at] ?? other?.start ?? 1, other?.format) ?? "1";
+        return other && formatNumber(current[at] ?? other.start, level.legal ? "decimal" : other.format);
     };
-    const text = level.text.replace(/%([1-9])/g, (_, digit: string) => numberAt(Number(digit) - 1));
+    const referred = [...level.text.matchAll(/%([1-9])/g)].map(([, digit]) => Number(digit) - 1);
+    // Whether a level not counted yet would show its first number or the list's own for it isn't known
+    const ownStart = (at: number): boolean =>
+        current[at] === undefined && !started.includes(`${id} ${at}`) && (list.starts.get(at) ?? levels[at]!.start) !== levels[at]!.start;
+    // The number is in the formatting of its paragraph's mark, but for what its level gives it: in the mark's 20 points
+    // or Courier New, or bold, beside text that isn't, and not bold beside bold text, and in its level's 8 points beside a
+    // mark of 20 (LF1 to LF6)
+    const font = fontOf(combine([markRun, level.run]));
+    const unsupported =
+        level.unsupported ??
+        (referred.some((at) => levels[at] === undefined)
+            ? "a list number of a level its list doesn't have"
+            : referred.some((at) => numberAt(at) === undefined)
+              ? "a list number in a format not yet written"
+              : referred.some(ownStart)
+                ? "a list number of a level not counted yet, which its list starts at a number of its own"
+                : level.alignment === "center" && level.suffix === "space"
+                  ? "a centred list number followed by a space"
+                  : font.border !== undefined || font.emphasis !== undefined || (font.raise ?? 0) !== 0
+                    ? "a list number with a border or emphasis marks, or raised or lowered"
+                    : undefined);
+    const text = level.text.replace(/%([1-9])/g, (_, digit: string) => numberAt(Number(digit) - 1) ?? "");
     // As a chapter number, Word writes the level's text from its first number to its last, so "Chapter %1" is 1 and
     // "%1.%2" is 1.2
     const numbers = /%[1-9](?:.*%[1-9])?/.exec(level.text)?.[0];
-    const font = fontOf(combine([paragraphRun, level.run]));
+    // Word draws the space or tab after the number in Arial, and the space is as wide as Arial's: a right-aligned number
+    // followed by a space in Calibri 11 ends 60.6 twips before the text (LJ4)
+    const separator: TextFont = { ...font, listNumber: "separator" };
     const suffix: readonly LayoutItem[] =
-        level.suffix === "nothing" ? [] : level.suffix === "space" ? [{ type: "text", text: " ", font }] : [{ type: "tab", font }];
+        level.suffix === "nothing"
+            ? []
+            : level.suffix === "space"
+              ? [{ type: "text", text: " ", font: { ...separator, font: "Arial" } }]
+              : [{ type: "tab", font: separator }];
     return {
-        items: [...(text.length > 0 ? [{ type: "text" as const, text, font }] : []), ...suffix],
+        items: [...(text.length > 0 ? [{ type: "text" as const, text, font: { ...font, listNumber: "number" as const } }] : []), ...suffix],
         level,
         from: ownId === undefined ? "style" : "paragraph",
-        list: { id: reader.listIds.get(id) ?? id, level: index, definition: levels },
-        ...withoutUndefined({ chapter: numbers?.replace(/%([1-9])/g, (_, digit: string) => numberAt(Number(digit) - 1)) }),
+        list: { id: reader.listIds.get(id) ?? id, level: index, definition: list.shared },
+        ...withoutUndefined({
+            chapter: numbers?.replace(/%([1-9])/g, (_, digit: string) => numberAt(Number(digit) - 1) ?? ""),
+            alignment: text.length > 0 ? level.alignment : undefined,
+            unsupported,
+        }),
     };
+};
+
+/**
+ * Counts a paragraph of a list at a level, and gives the numbers its levels are at with it. Lists made from the same
+ * definition count on from one another, as Word counts them: two lists' paragraphs, one after the other, are numbered 1
+ * to 5 (scripts/layout-probes/word-lists.ts LO1, LO9). A list's own first number for a level starts that level there, at
+ * the list's first paragraph of that level, once: between the paragraphs of a list made from the same definition, a list
+ * that starts at 1 goes 1, 2, then the other list goes on with 3 and 4, and the first list with 5 (LO2, LO3, LO5, LO6).
+ * A level starts again at its first number after a level above it, or after the level it gives (`w:lvlRestart`), or never,
+ * as the schema has it (LR1, LR2).
+ */
+const countIn = (
+    // eslint-disable-next-line functional/prefer-readonly-type
+    counters: Map<string, ListCount>,
+    id: string,
+    { levels, starts, definition }: NumberingList,
+    index: number,
+): readonly (number | undefined)[] => {
+    const { numbers, started } = counters.get(definition) ?? { numbers: [], started: [] };
+    const level = levels[index];
+    const own = starts.get(index);
+    const starting = own !== undefined && !started.includes(`${id} ${index}`);
+    const current = Array.from({ length: Math.max(numbers.length, index + 1) }, (_, at): number | undefined => {
+        if (at < index) {
+            return numbers[at];
+        }
+        if (at === index) {
+            return starting ? own : (numbers[at] ?? level.start - 1) + 1;
+        }
+        // A level below starts again unless it starts again only after a level below this one, or never
+        const restart = levels[at]?.restart;
+        return restart !== undefined && restart <= at && restart <= index ? numbers[at] : undefined;
+    });
+    // eslint-disable-next-line functional/immutable-data
+    counters.set(definition, { numbers: current, started: starting ? [...started, `${id} ${index}`] : started });
+    return current;
 };
 
 // Letters of Thai and Arabic, which their justifications are for
@@ -1218,7 +1333,8 @@ const readParagraph = (element: XmlObject, reader: Reader, tableFormats: TableFo
     const style = valueOf(properties, "w:pStyle") ?? styles.defaultParagraphStyle;
     const paragraphStyles = [...tableFormats, ...styleChain(styles, style, "paragraph")];
     const paragraphRun = combine([styles.run, ...paragraphStyles.map(({ run }) => run)]);
-    const list = readListNumber(properties, style, paragraphRun, reader);
+    const markRun = combine([paragraphRun, readRunFormat(find(properties, "w:rPr"), styles.themeFonts)]);
+    const list = readListNumber(properties, style, markRun, reader);
     const headingLevel = /^heading ([1-9])$/i.exec(styleChain(styles, style, "paragraph").slice(-1)[0]?.name ?? "")?.[1];
     const formats = [
         styles.paragraph,
@@ -1230,7 +1346,7 @@ const readParagraph = (element: XmlObject, reader: Reader, tableFormats: TableFo
     const combined = combine(formats);
     const own = typeof items === "string" ? [] : items;
     const content = typeof items === "string" ? [] : [...list.items, ...items];
-    const markFont = fontOf(combine([paragraphRun, readRunFormat(find(properties, "w:rPr"), styles.themeFonts)]));
+    const markFont = fontOf(markRun);
     const format = inPoints(combined, { listNumber: list.items, items: own }, markFont, fontOf(paragraphRun));
     const borders = readBorders(typeof format === "string" ? combined : format);
     // A division of a web page (`w:divId`) has margins and borders of its own, in the document's web settings. Word breaks
@@ -1239,7 +1355,8 @@ const readParagraph = (element: XmlObject, reader: Reader, tableFormats: TableFo
     // seen
     const forThaiOrArabic = combined.alignment === "thaiDistributed" || combined.alignment === "lowKashida";
     const unsupported =
-        find(properties, "w:framePr") !== undefined
+        list.unsupported ??
+        (find(properties, "w:framePr") !== undefined
             ? "a text frame"
             : find(properties, "w:divId") !== undefined
               ? "a paragraph in an HTML division"
@@ -1251,7 +1368,7 @@ const readParagraph = (element: XmlObject, reader: Reader, tableFormats: TableFo
                   ? "Thai or Arabic text justified for it"
                   : (unknownLengthIn(element) ??
                     (typeof format === "string" ? format : undefined) ??
-                    (typeof borders === "string" ? borders : undefined));
+                    (typeof borders === "string" ? borders : undefined)));
     return {
         type: "paragraph",
         items: content,
@@ -1259,6 +1376,7 @@ const readParagraph = (element: XmlObject, reader: Reader, tableFormats: TableFo
         tabStops: tabStopsOf(formats),
         markFont,
         ...(list.list ? { list: list.list } : {}),
+        ...(list.alignment ? { numberAlignment: list.alignment } : {}),
         ...(typeof borders === "object" ? { borders } : {}),
         style,
         // Word's chapter numbers are the numbers headings' styles give them, and it passes over headings numbered on their
@@ -1390,7 +1508,7 @@ const sizingReaderOf = (reader: Reader, showDeleted = true, counted = false): Re
     ...(counted ? reader : uncounted(reader)),
     ...(reader.notes ? { notes: reader.notes.preview() } : {}),
     fields: [],
-    counters: new Map([...reader.counters].map(([id, counts]) => [id, [...counts]])),
+    counters: new Map(reader.counters),
     showDeleted,
 });
 
@@ -2170,63 +2288,137 @@ const readSection = (
     };
 };
 
+// How a list's number lines up at the start of its paragraph's first line (`w:lvlJc`), when not to the left, which is
+// how Word lines it up when the level doesn't say. Word's own lists are aligned to the left, the centre or the right, as
+// docx writes them, and transitional documents may write the start and end of the line for left and right
+const NUMBER_ALIGNMENTS: Readonly<Record<string, NumberingLevel["alignment"]>> = {
+    left: undefined,
+    start: undefined,
+    center: "center",
+    right: "right",
+    end: "right",
+};
+
 /**
- * Reads the levels of each list in the document's numbering (`w:numbering`), by the ids its paragraphs refer to it by:
- * its number, and any other name it has, such as the placeholder docx writes before it is given one.
+ * Reads a level of a list (`w:lvl`), in a definition or in a list's override of it. It says why Word's way with it isn't
+ * followed, when it isn't: a number aligned some other way than to the left, the centre or the right, bullets that are
+ * pictures (`w:lvlPicBulletId`), and numbers laid out as Word 6 laid them out (`w:legacy`).
+ */
+const readLevel = (element: unknown, styles: TextStyles): { readonly index: number; readonly level: NumberingLevel } => {
+    const children = childrenOf(element);
+    const jc = valueOf(children, "w:lvlJc") ?? "left";
+    const restart = numberOf(attributesOf(find(children, "w:lvlRestart"))["w:val"]);
+    const unsupported = !(jc in NUMBER_ALIGNMENTS)
+        ? "a list number aligned in a way not yet followed"
+        : find(children, "w:lvlPicBulletId") !== undefined
+          ? "a list whose bullets are pictures"
+          : isOn(attributesOf(find(children, "w:legacy"))["w:legacy"])
+            ? "a list numbered as Word 6 numbered lists"
+            : undefined;
+    return {
+        index: numberOf(attributesOf(element)["w:ilvl"]) ?? 0,
+        level: {
+            ...withoutUndefined({ style: valueOf(children, "w:pStyle") }),
+            format: valueOf(children, "w:numFmt") ?? "decimal",
+            text: stringOf(attributesOf(find(children, "w:lvlText"))["w:val"]) ?? "",
+            suffix: valueOf(children, "w:suff") ?? "tab",
+            // A level that doesn't give its first number starts at 0
+            start: numberOf(attributesOf(find(children, "w:start"))["w:val"]) ?? 0,
+            ...withoutUndefined({
+                alignment: NUMBER_ALIGNMENTS[jc],
+                restart,
+                legal: onOff(children, "w:isLgl") === true ? true : undefined,
+                unsupported,
+            }),
+            paragraph: readParagraphFormat(find(children, "w:pPr")),
+            run: readRunFormat(find(children, "w:rPr"), styles.themeFonts),
+        },
+    };
+};
+
+/** Levels by their indexes, from levels read in any order */
+const byIndex = (levels: readonly { readonly index: number; readonly level: NumberingLevel }[]): readonly NumberingLevel[] =>
+    levels.reduce<readonly NumberingLevel[]>((all, { index, level }) => {
+        const copy = [...all];
+        // eslint-disable-next-line functional/immutable-data
+        copy[index] = level;
+        return copy;
+    }, []);
+
+/**
+ * Reads each list in the document's numbering (`w:numbering`), by the ids its paragraphs refer to it by: its number,
+ * and any other name it has, such as the placeholder docx writes before it is given one. A list (`w:num`) is made from a
+ * definition (`w:abstractNum`), and may give its own first number for a level (`w:startOverride`), or a level of its own
+ * in place of the definition's (`w:lvl`), in an override (`w:lvlOverride`).
  */
 const readNumbering = (
     xml: XmlObject | undefined,
     styles: TextStyles,
     otherIds: ReadonlyMap<string, string>,
-): { readonly lists: ReadonlyMap<string, readonly NumberingLevel[]>; readonly unsupported?: string } => {
+): { readonly lists: ReadonlyMap<string, NumberingList>; readonly unsupported?: string } => {
     const root = childrenOf(xml?.["w:numbering"]);
-    const abstract = new Map(
+    const definitions = new Map(
         root
             .filter((child) => "w:abstractNum" in child)
             .map((child) => {
-                const levels = childrenOf(child["w:abstractNum"])
-                    .filter((level) => "w:lvl" in level)
-                    .map((level) => {
-                        const levelChildren = childrenOf(level["w:lvl"]);
-                        return {
-                            index: numberOf(attributesOf(level["w:lvl"])["w:ilvl"]) ?? 0,
-                            level: {
-                                ...withoutUndefined({ style: valueOf(levelChildren, "w:pStyle") }),
-                                format: valueOf(levelChildren, "w:numFmt") ?? "decimal",
-                                text: stringOf(attributesOf(find(levelChildren, "w:lvlText"))["w:val"]) ?? "",
-                                suffix: valueOf(levelChildren, "w:suff") ?? "tab",
-                                // A level that doesn't give its first number starts at 0
-                                start: numberOf(attributesOf(find(levelChildren, "w:start"))["w:val"]) ?? 0,
-                                paragraph: readParagraphFormat(find(levelChildren, "w:pPr")),
-                                run: readRunFormat(find(levelChildren, "w:rPr"), styles.themeFonts),
-                            },
-                        };
-                    });
-                const byIndex = levels.reduce<readonly NumberingLevel[]>((all, { index, level }) => {
-                    const copy = [...all];
-                    // eslint-disable-next-line functional/immutable-data
-                    copy[index] = level;
-                    return copy;
-                }, []);
-                return [String(attributesOf(child["w:abstractNum"])["w:abstractNumId"]), byIndex] as const;
+                const children = childrenOf(child["w:abstractNum"]);
+                const levels = byIndex(children.filter((level) => "w:lvl" in level).map((level) => readLevel(level["w:lvl"], styles)));
+                // A definition that takes its levels from a list style (`w:numStyleLink`) has none of its own
+                const unsupported = find(children, "w:numStyleLink") === undefined ? undefined : "a list defined by a list style";
+                return [String(attributesOf(child["w:abstractNum"])["w:abstractNumId"]), { levels, unsupported }] as const;
             }),
     );
     // Each list refers to one of the definitions
-    const numbers = new Map(
+    const lists = new Map(
         root
             .filter((child) => "w:num" in child)
             .flatMap((child) => {
-                const abstractId = String(numberOf(attributesOf(find(childrenOf(child["w:num"]), "w:abstractNumId"))["w:val"]));
-                const levels = abstract.get(abstractId);
-                return levels ? [[String(attributesOf(child["w:num"])["w:numId"]), levels] as const] : [];
+                const children = childrenOf(child["w:num"]);
+                const definition = String(numberOf(attributesOf(find(children, "w:abstractNumId"))["w:val"]));
+                const found = definitions.get(definition);
+                if (!found) {
+                    return [];
+                }
+                // An override names its level, which the schema requires, so one that doesn't overrides nothing
+                const overrides = children.flatMap((override) => {
+                    const index = numberOf(attributesOf(override["w:lvlOverride"])["w:ilvl"]);
+                    return "w:lvlOverride" in override && index !== undefined
+                        ? [{ index, children: childrenOf(override["w:lvlOverride"]) }]
+                        : [];
+                });
+                const own = overrides.flatMap(({ index, children: given }) => {
+                    const level = find(given, "w:lvl");
+                    return level === undefined ? [] : [{ ...readLevel(level, styles), index }];
+                });
+                const levels = byIndex([...found.levels.map((level, index) => ({ index, level })), ...own]);
+                // A level it gives starts at its own first number too, as Word starts it, unless the list gives another:
+                // in roman numerals from 3, between paragraphs of a list in decimal, III and IV, then 5
+                // (scripts/layout-probes/word-lists.ts LO7). An override that gives neither starts nothing again (LO9)
+                const starts = new Map(
+                    overrides.flatMap(({ index, children: given }) => {
+                        const level = childrenOf(find(given, "w:lvl"));
+                        const start =
+                            numberOf(attributesOf(find(given, "w:startOverride"))["w:val"]) ??
+                            numberOf(attributesOf(find(level, "w:start"))["w:val"]);
+                        return start === undefined ? [] : [[index, start] as const];
+                    }),
+                );
+                const list: NumberingList = {
+                    levels,
+                    definition,
+                    shared: found.levels,
+                    starts,
+                    ...withoutUndefined({ unsupported: found.unsupported }),
+                };
+                return [[String(attributesOf(child["w:num"])["w:numId"]), list] as const];
             }),
     );
     return {
         lists: new Map([
-            ...numbers,
+            ...lists,
             ...[...otherIds].flatMap(([other, id]) => {
-                const levels = numbers.get(id);
-                return levels ? [[other, levels] as const] : [];
+                const list = lists.get(id);
+                return list ? [[other, list] as const] : [];
             }),
         ]),
         ...withoutUndefined({ unsupported: unknownLengthIn(xml) }),

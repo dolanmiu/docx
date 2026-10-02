@@ -402,6 +402,70 @@ describe("layoutLines", () => {
         expect(heightsOf([text("a"), tab, text("b")], 100, { tabStops: [], defaultTabStop: 200 })).to.deep.equal([10]);
     });
 
+    it("should put a list number aligned right before the start of its first line, and a centred one around it, with the text after it from its end", () => {
+        // The number "1234." is 50 points wide, the first line starts at 30, and the hanging indent's stop is at 40
+        // (word-watertight-text.docx TX21)
+        const format = { indentLeft: 40, firstLineIndent: -10 };
+        const items: readonly InlineItem[] = [text("1234."), { type: "tab", font: {} }, text("bbbbbbbbbb")];
+        const linesOf = (numberAlignment?: "center" | "right"): readonly Pick<LaidOutLine, "text" | "textWidth">[] =>
+            layoutLines(items, { width: 200, format, measurer: MEASURER, numberAlignment }).map(({ text: lineText, textWidth }) => ({
+                text: lineText,
+                textWidth,
+            }));
+        // Right-aligned, it ends at 30, so the text goes from the stop at 40 to 140
+        expect(linesOf("right")).to.deep.equal([{ text: "1234.\tbbbbbbbbbb", textWidth: 110 }]);
+        // Centred, it ends at 55, past the stop, so the text goes from the next default stop, 72, to 172
+        expect(linesOf("center")).to.deep.equal([{ text: "1234.\tbbbbbbbbbb", textWidth: 142 }]);
+        // Left-aligned, it ends at 80, and the text from the default stop at 108 doesn't fit
+        expect(linesOf().map(({ text: lineText }) => lineText)).to.deep.equal(["1234.\t", "bbbbbbbbbb"]);
+        // A paragraph whose first item isn't text has no number to align
+        expect(
+            layoutLines([{ type: "tab", font: {} }, text("b")], { width: 200, format, measurer: MEASURER, numberAlignment: "right" })[0]
+                .textWidth,
+        ).to.equal(20);
+    });
+
+    it("should put the text after a right-aligned number and its space where the number would end without it", () => {
+        // word-lists.docx LJ4: "Paragraph1. " ends at the start of the line, so the text starts there. The space is 15 points
+        // here, as Word measures it in Arial
+        const format = { indentLeft: 40, firstLineIndent: -10 };
+        const separator = { listNumber: "separator" as const, size: 15 };
+        const items: readonly InlineItem[] = [text("1234."), { type: "text", text: " ", font: separator }, text("bbbbbbbbbbbbbbbbb")];
+        const widthOfSpace = (value: string, font: TextFont): number => [...value].length * (font.size ?? 10);
+        const [line] = layoutLines(items, {
+            width: 200,
+            format,
+            measurer: { ...MEASURER, measureWidth: widthOfSpace },
+            numberAlignment: "right",
+        });
+        // From 30, the line has room for the 170 points of b's
+        expect(line.text).to.equal("1234. bbbbbbbbbbbbbbbbb");
+        expect(line.textWidth).to.equal(170);
+    });
+
+    it("should move the tab after a right-aligned number to the first stop at or after its end, and stop where Word hasn't shown which", () => {
+        const items: readonly InlineItem[] = [text("1234."), { type: "tab", font: { listNumber: "separator" } }, text("b")];
+        const laidOut = (format: ParagraphFormat, tabStops: readonly { readonly position: number; readonly alignment: "left" }[] = []) =>
+            layoutLines(items, { width: 300, format, tabStops, defaultTabStop: 36, measurer: MEASURER, numberAlignment: "right" })[0];
+        // word-lists.docx LJ6: the number ends at the left indent, on a default stop, and the text starts there
+        expect(laidOut({ indentLeft: 72 })).to.deep.include({ textWidth: 10 });
+        expect(laidOut({ indentLeft: 72 }).unsupported).to.equal(undefined);
+        // LJ1, LJ7: with a hanging indent, at its stop past the default one the number ends at
+        expect(laidOut({ indentLeft: 108, firstLineIndent: -36 })).to.deep.include({ textWidth: 46 });
+        expect(laidOut({ indentLeft: 108, firstLineIndent: -36 }).unsupported).to.equal(undefined);
+        // At a left indent off the default stops, or a stop of the paragraph's own or a default one at the end of a number
+        // after a first line indent, Word may move it on, and hasn't shown it
+        const unknown = "a tab after a list number aligned right, which Word hasn't been seen to move";
+        expect(laidOut({ indentLeft: 80 }).unsupported).to.equal(unknown);
+        expect(laidOut({ indentLeft: 108, firstLineIndent: -36 }, [{ position: 72, alignment: "left" }]).unsupported).to.equal(unknown);
+        expect(laidOut({ indentLeft: 36, firstLineIndent: 36 }).unsupported).to.equal(unknown);
+        expect(laidOut({ indentLeft: 36, firstLineIndent: 40 }).unsupported).to.equal(undefined);
+        // A number too wide for its line has no stop to go to
+        expect(
+            layoutLines(items, { width: 60, format: { indentLeft: 72 }, measurer: MEASURER, numberAlignment: "right" })[0].unsupported,
+        ).to.equal(undefined);
+    });
+
     it("should take a hanging indent as a tab stop on the first line", () => {
         const format = { indentLeft: 50, firstLineIndent: -50 };
         const tab: InlineItem = { type: "tab", font: { size: 14 } };
@@ -864,6 +928,55 @@ describe("the height of a line of fonts and pictures of different heights", () =
     });
 });
 
+describe("the height of a line with a list number, as Word lays it out", () => {
+    // A line is 1.2 times its font's size, a fifth of which is below the baseline
+    const measurer: TextMeasurer = {
+        measureWidth: (value) => [...value].length * 10,
+        measureLineHeight: ({ size = 10 }) => size * 1.2,
+        measureDescent: ({ size = 10, font }) => size * (font === "Deep" ? 0.4 : 0.2),
+    };
+    const listNumber = (size: number, font?: string): InlineItem => ({
+        type: "text",
+        text: "1.",
+        font: { size, listNumber: "number", ...(font ? { font } : {}) },
+    });
+    const tab = (size: number): InlineItem => ({ type: "tab", font: { size, listNumber: "separator" } });
+    const heightOf = (items: readonly InlineItem[], options: Partial<LineLayoutOptions> = {}): LaidOutLine =>
+        layoutLines(items, { width: 500, measurer, markFont: { size: 20 }, ...options })[0];
+
+    it("should count a number's ascent but not its descent, nor its line, nor the tab after it (word-lists.docx LF1, LF2)", () => {
+        // A 20-point number beside 10-point text: its ascent, 20, and the text's descent, 2
+        expect(heightOf([listNumber(20), tab(20), text("b")]).height).to.be.closeTo(22, 1e-9);
+        // A number of a font deeper below its baseline than the text's leaves the line as it is
+        expect(heightOf([listNumber(10, "Deep"), tab(10), text("b")]).height).to.be.closeTo(12, 1e-9);
+    });
+
+    it("should make a line of only a number as tall as the number, and stop where its mark is of another size or font", () => {
+        expect(heightOf([listNumber(20), tab(20)])).to.deep.include({ height: 24 });
+        expect(heightOf([listNumber(20), tab(20)]).unsupported).to.equal(undefined);
+        expect(heightOf([listNumber(20), tab(20)], { markFont: { size: 10 } }).unsupported).to.equal(
+            "a line of only a list number of another size or font than its paragraph's mark",
+        );
+    });
+
+    it("should stop at multiple line spacing in a line whose number is taller than its text", () => {
+        const spacing = (multiple: number): Partial<LineLayoutOptions> => ({
+            format: { lineSpacing: { rule: "multiple", multiple } },
+        });
+        expect(heightOf([listNumber(20), tab(20), text("b")], spacing(1.5)).unsupported).to.equal(
+            "a list number taller than its line's text, with multiple line spacing",
+        );
+        expect(heightOf([listNumber(20), tab(20), text("b")], spacing(1)).unsupported).to.equal(undefined);
+        expect(heightOf([listNumber(10), tab(10), text("b")], spacing(1.5)).unsupported).to.equal(undefined);
+        // A line of only a number is as tall as text of its font
+        expect(heightOf([listNumber(20), tab(20)], spacing(1.5))).to.deep.include({ height: 36 });
+        // A number beside a picture is text beside it, and its line as tall as the number above the baseline and the picture
+        expect(heightOf([listNumber(10), tab(10), { type: "box", width: 5, height: 5, font: { size: 10 } }])).to.deep.include({
+            height: 12,
+        });
+    });
+});
+
 describe("layoutLines with run formatting, as Word lays it out", () => {
     // Lines in twips, from scripts/layout-probes/word-run-formatting.ts unless another probe is named: Word's are the
     // range of heights that put a page of its lines where they are on its grid
@@ -1118,6 +1231,15 @@ describe("measureContentWidths", () => {
         expect(
             widthsOf([text("a"), { type: "break", kind: "line", font: {} }, { type: "tab", font: {} }, text("b")], { defaultTabStop: 36 }),
         ).to.deep.equal({ min: 10, max: 46 });
+    });
+
+    it("should measure a list number aligned right or centred from before the start of its first line", () => {
+        // As in layoutLines: the number "1234." ends at 30 right-aligned, at 55 centred, and at 80 left-aligned
+        const format = { indentLeft: 40, firstLineIndent: -10 };
+        const items: readonly InlineItem[] = [text("1234."), { type: "tab", font: {} }, text("bbbbbbbbbb")];
+        expect(widthsOf(items, { format, numberAlignment: "right" })).to.deep.equal({ min: 140, max: 140 });
+        expect(widthsOf(items, { format, numberAlignment: "center" })).to.deep.equal({ min: 140, max: 172 });
+        expect(widthsOf(items, { format })).to.deep.equal({ min: 140, max: 208 });
     });
 
     it("should measure with the widths of the fonts by default", () => {

@@ -114,6 +114,13 @@ export type LineLayoutOptions = {
     readonly measurer?: TextMeasurer;
     /** The document's rules for where lines break. The paragraph's `kinsoku` takes the place of the rules' */
     readonly breakRules?: LineBreakRules;
+    /**
+     * How the list number the paragraph starts with, its first item, lines up at the start of its first line
+     * (`w:lvlJc`), when not to the left: right-aligned it ends there, with the space after it when one follows it, and
+     * centred its middle is there. The text after it goes on from its end, to the next tab stop, or the left indent
+     * (`word-watertight-text.docx` TX21, `word-lists.docx` LJ1 to LJ9)
+     */
+    readonly numberAlignment?: "center" | "right";
 };
 
 /**
@@ -353,12 +360,25 @@ type Heights = {
     readonly picture: number;
     /** Whether it has text with emphasis marks over it, or under it */
     readonly marks?: { readonly above?: boolean; readonly below?: boolean };
+    /** Those of its list number, as it would be were it text, when it has one */
+    readonly listNumber?: Pick<Heights, "ascent" | "descent" | "tallest">;
 };
 
 const NOTHING: Heights = { ascent: 0, descent: 0, tallest: 0, picture: 0 };
 
 /** The heights of a line, with text in this font on it too */
 const withFont = (heights: Heights, font: TextFont, measurer: TextMeasurer): Heights => {
+    // A list's number takes up only the room above the baseline, and what follows it, a space or tab, none: a 20-point
+    // number beside Calibri 11 makes the line its ascent and Calibri's descent, 443.6 twips, and one in Courier New 11
+    // leaves it 268.55 (scripts/layout-probes/word-lists.ts LF1, LF2). Word draws what follows it in Arial, which in a
+    // line of Times New Roman 12 would add a twip, and doesn't (tables-lists-and-pictures)
+    if (font.listNumber === "separator") {
+        return heights;
+    }
+    if (font.listNumber === "number") {
+        const own = withFont({ ...NOTHING, ...heights.listNumber }, { ...font, listNumber: undefined }, measurer);
+        return { ...heights, listNumber: { ascent: own.ascent, descent: own.descent, tallest: own.tallest } };
+    }
     const line = measurer.measureLineHeight(font);
     const descent = measurer.measureDescent(font);
     // Raised text raises its ascent and descent with it, its line gap too: Courier New 11 raised 2 points beside Calibri 11
@@ -437,8 +457,19 @@ const markedHeightOf = (
  * doesn't round it: Calibri 11 is 268.55 twips, and 289.82 at 259 twips' multiple spacing, where LibreOffice rounds them
  * to whole twips, 269 and 290.
  */
-const heightOf = (heights: Heights, spacing: LineSpacing | undefined): Pick<LaidOutLine, "height" | "spacingBelow" | "unsupported"> => {
+const heightOf = (given: Heights, spacing: LineSpacing | undefined): Pick<LaidOutLine, "height" | "spacingBelow" | "unsupported"> => {
+    const heights = withNumber(given);
     const { ascent, descent, tallest, picture, marks } = heights;
+    // How much multiple spacing adds to a line whose list number is taller than its text isn't known
+    if (
+        given.listNumber !== undefined &&
+        !onlyNumber(given) &&
+        heights.ascent > given.ascent + TOLERANCE &&
+        spacing?.rule === "multiple" &&
+        spacing.multiple !== 1
+    ) {
+        return { height: 0, unsupported: "a list number taller than its line's text, with multiple line spacing" };
+    }
     // The line is its text's tallest ascent and deepest descent, as Word makes a line of two fonts: Calibri 11 with Courier
     // New 11 is 275.53 twips, Calibri's ascent and Courier New's descent, where each alone is 268.55 and 249.2
     // (scripts/layout-probes/word-watertight-text.ts TX9a). A picture stands on the baseline, so with text it is the
@@ -461,6 +492,22 @@ const heightOf = (heights: Heights, spacing: LineSpacing | undefined): Pick<Laid
     // at 1.15 lines, also beside Calibri 8 in the picture's run of Calibri 11 (MH1b, TX8c, MH4e)
     const spacingBelow = (spacing.multiple - 1) * tallest;
     return { height: natural + spacingBelow, ...(spacingBelow > 0 ? { spacingBelow } : {}) };
+};
+
+/** Whether a line has nothing on it but a list number and what follows it */
+const onlyNumber = ({ ascent, descent, tallest, picture, listNumber }: Heights): boolean =>
+    listNumber !== undefined && ascent === 0 && descent === 0 && tallest === 0 && picture === 0;
+
+/**
+ * A line's heights with its list number's: the number's ascent beside text, or all of it as text when nothing else is on
+ * the line.
+ */
+const withNumber = (heights: Heights): Heights => {
+    const { listNumber } = heights;
+    if (listNumber === undefined) {
+        return heights;
+    }
+    return onlyNumber(heights) ? { ...heights, ...listNumber } : { ...heights, ascent: Math.max(heights.ascent, listNumber.ascent) };
 };
 
 /** A line being laid out */
@@ -570,6 +617,48 @@ const stopsOf = (
     return { stops, firstLineStops };
 };
 
+/**
+ * How far before the start of its first line a paragraph's list number starts, when it isn't left-aligned: half its
+ * width when it is centred, and all of it when it is right-aligned, with the space after it, when one follows it, so the
+ * text after the space starts there (`word-lists.docx` LJ4).
+ */
+const numberShift = (items: readonly InlineItem[], alignment: LineLayoutOptions["numberAlignment"], measurer: TextMeasurer): number => {
+    const [listNumber, separator] = items;
+    if (alignment === undefined || listNumber?.type !== "text") {
+        return 0;
+    }
+    const width = widthOf([listNumber], measurer);
+    if (alignment === "center") {
+        return width / 2;
+    }
+    return width + (separator?.type === "text" && separator.font.listNumber === "separator" ? widthOf([separator], measurer) : 0);
+};
+
+/**
+ * Where the tab after a right-aligned list number moves to, from the number's end at the start of the first line. Word
+ * moves it to the first stop at or after the number's end: the hanging indent's (`word-lists.docx` LJ1, LJ7, LJ9), or,
+ * without one, the left indent, when it is on a default stop too (LJ6). It says why when Word may move it to the next
+ * stop instead, which it hasn't shown: where the number ends at another stop, or at a left indent that isn't one.
+ */
+const numberTabStop = (
+    position: number,
+    stops: readonly TabStop[],
+    { indentLeft = 0, firstLineIndent = 0 }: ParagraphFormat,
+    defaultStop: number,
+    limit: number,
+): { readonly stop?: TabStop; readonly unsupported?: string } => {
+    const stop = nextStop(position - 2 * TOLERANCE, stops, defaultStop, limit);
+    // Moved on past the number's end, but to the left indent without a hanging indent
+    const past =
+        firstLineIndent !== 0
+            ? nextStop(position, stops, defaultStop, limit)
+            : indentLeft <= limit + TOLERANCE
+              ? { position: indentLeft, alignment: "left" as const }
+              : undefined;
+    const agree = stop === undefined || past === undefined ? stop === past : Math.abs(stop.position - past.position) <= TOLERANCE;
+    return agree ? { stop } : { stop, unsupported: "a tab after a list number aligned right, which Word hasn't been seen to move" };
+};
+
 /** The rules for where a paragraph's lines break: the document's, with the paragraph's own */
 const rulesOf = ({ kinsoku, wordWrap }: ParagraphFormat, rules: LineBreakRules = {}): LineBreakRules => ({
     ...rules,
@@ -599,14 +688,18 @@ export const measureContentWidths = (
         defaultTabStop = DEFAULT_TAB_STOP,
         measurer = DEFAULT_MEASURER,
         breakRules,
+        numberAlignment,
     }: Omit<LineLayoutOptions, "width" | "markFont">,
 ): ContentWidths => {
     const { indentLeft = 0, indentRight = 0, firstLineIndent = 0 } = format;
     const { stops, firstLineStops } = stopsOf(tabStops, format);
+    const beforeStart = numberShift(items, numberAlignment, measurer);
+    const numberTab = numberAlignment === "right" && items[1]?.type === "tab";
     return segmentsOf(items, rulesOf(format, breakRules)).reduce<ContentWidths>(
         (widths, { tokens }, segmentIndex) => {
             const first = segmentIndex === 0;
-            let position = indentLeft + (first ? firstLineIndent : 0);
+            const lineStart = first ? indentLeft + firstLineIndent - beforeStart : indentLeft;
+            let position = lineStart;
             let end = position;
             let { min } = widths;
             // The border of the text before, whose box is open, and of the last word, picture or tab
@@ -625,7 +718,10 @@ export const measureContentWidths = (
                 border = token.type === "word" ? lastBorder(token.pieces) : undefined;
                 endBorder = border;
                 if (token.type === "tab") {
-                    const stop = nextStop(position + lead, first ? firstLineStops : stops, defaultTabStop, Infinity)!;
+                    const stop =
+                        (first && numberTab && tokens.findIndex((other) => other.type === "tab") === index
+                            ? numberTabStop(position + lead, firstLineStops, format, defaultTabStop, Infinity).stop
+                            : undefined) ?? nextStop(position + lead, first ? firstLineStops : stops, defaultTabStop, Infinity)!;
                     const after = widthAfterTab(tokens.slice(index + 1), measurer);
                     const shift = stop.alignment === "left" ? 0 : stop.alignment === "center" ? after / 2 : after;
                     position = Math.max(position + lead, stop.position - shift);
@@ -637,9 +733,7 @@ export const measureContentWidths = (
                 // a border starts its box again. A box ends on its line with the border's room after it
                 const close = border?.room ?? 0;
                 const start =
-                    end === indentLeft + (first ? firstLineIndent : 0)
-                        ? position + lead
-                        : indentLeft + (token.type === "word" ? (firstBorder(token.pieces)?.room ?? 0) : 0);
+                    end === lineStart ? position + lead : indentLeft + (token.type === "word" ? (firstBorder(token.pieces)?.room ?? 0) : 0);
                 min = Math.max(min, start + tokenWidth + close + indentRight);
                 position += lead + tokenWidth;
                 end = position;
@@ -665,6 +759,7 @@ export const layoutLines = (
         markFont = {},
         measurer = DEFAULT_MEASURER,
         breakRules,
+        numberAlignment,
     }: LineLayoutOptions,
 ): readonly LaidOutLine[] => {
     const { indentLeft = 0, indentRight = 0, firstLineIndent = 0, lineSpacing, alignment } = format;
@@ -683,6 +778,17 @@ export const layoutLines = (
         ascent === 0 &&
         markLineHeight() > tallest + TOLERANCE &&
         (picture < markLineHeight() - TOLERANCE || (lineSpacing?.rule === "multiple" && lineSpacing.multiple !== 1));
+    /**
+     * Whether a line of only a list number is as tall as the number, or as the paragraph's mark, where they differ, which
+     * Word hasn't shown. The number is in the mark's formatting, but for what its list's level gives it
+     */
+    const unlikeMark = (heights: Heights): boolean => {
+        if (!onlyNumber(heights)) {
+            return false;
+        }
+        const mark = withFont(NOTHING, { ...markFont, border: undefined }, measurer);
+        return (["ascent", "descent", "tallest"] as const).some((part) => Math.abs(mark[part] - heights.listNumber![part]) > TOLERANCE);
+    };
     /** The heights of a line with the text of the token on it too */
     const withToken = (heights: Heights, token: Exclude<Token, { readonly type: "marker" }>): Heights => {
         if (token.type === "box") {
@@ -741,12 +847,16 @@ export const layoutLines = (
      */
     const unsure = (state: LineState, tokenWidth: number): boolean =>
         squeezes && state.otherSpaces > 0 && state.position + tokenWidth - limitOf() <= MOST_SQUEEZE * state.spaces;
+    // A list number that isn't left-aligned starts before its line does, which its text is measured from
+    const beforeStart = numberShift(items, numberAlignment, measurer);
+    // Whether the next tab is the one after a right-aligned list number
+    let numberTab = numberAlignment === "right" && items[1]?.type === "tab";
     let first = true;
     for (const [segmentIndex, { tokens, end }] of segments.entries()) {
         const isLast = segmentIndex === segments.length - 1;
         const start = indentLeft + (first ? firstLineIndent : 0);
         let line: LineState = {
-            position: start,
+            position: first ? start - beforeStart : start,
             start,
             end: start,
             text: "",
@@ -769,7 +879,11 @@ export const layoutLines = (
             const unsupported = state.unknown
                 ? "a justified line that only fits squeezed at an en, em or ideographic space"
                 : (state.unsupported ??
-                  (markMatters(heights) ? "a picture alone in a line of a paragraph whose mark is larger" : unknownHeight));
+                  (markMatters(withNumber(heights))
+                      ? "a picture alone in a line of a paragraph whose mark is larger"
+                      : unlikeMark(heights)
+                        ? "a line of only a list number of another size or font than its paragraph's mark"
+                        : unknownHeight));
             // eslint-disable-next-line functional/immutable-data
             lines.push({
                 ...height,
@@ -827,15 +941,21 @@ export const layoutLines = (
                     ? line
                     : { ...line, position: line.position + roomBetween(line.border, undefined), border: undefined };
             if (token.type === "tab") {
-                const stop =
-                    nextStop(line.position, line.first ? firstLineStops : stops, defaultTabStop, limitOf()) ??
-                    (line.started ? nextStop(indentLeft, stops, defaultTabStop, limitOf(lines.length + 1)) : undefined);
+                const numbered = numberTab ? numberTabStop(line.position, firstLineStops, format, defaultTabStop, limitOf()) : undefined;
+                numberTab = false;
+                const stop = numbered
+                    ? numbered.stop
+                    : (nextStop(line.position, line.first ? firstLineStops : stops, defaultTabStop, limitOf()) ??
+                      (line.started ? nextStop(indentLeft, stops, defaultTabStop, limitOf(lines.length + 1)) : undefined));
+                if (numbered?.unsupported !== undefined) {
+                    line = { ...line, unsupported: numbered.unsupported };
+                }
                 if (stop === undefined) {
                     // No stop before the end of the line: the text after the tab starts where it is
                     line = { ...line, end: line.position, text: `${line.text}\t`, heights: withToken(line.heights, token), started: true };
                     continue;
                 }
-                if (stop.position <= line.position + TOLERANCE) {
+                if (!numbered && stop.position <= line.position + TOLERANCE) {
                     // The tab moves to a stop on the next line
                     line = wrap(line);
                 }
