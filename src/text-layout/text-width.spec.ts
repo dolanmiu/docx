@@ -547,5 +547,11 @@ describe("kerning and ligatures", () => {
         expect(unknownShaping("fi-", { font: "Times New Roman", ligatures: "all", kerning: 1 })).to.equal(
             "kerning beside a ligature not yet followed",
         );
+        // Nothing is kerned or joined across a tab, as the parts either side of it are measured apart
+        expect(unknownShaping("T\t-", { font: "Cambria", bold: true, kerning: 1 })).to.equal(undefined);
+        expect(unknownShaping("a\tT-", { font: "Cambria", bold: true, kerning: 1 })).to.equal(
+            "kerning of a pair of characters not yet followed",
+        );
+        expect(unknownShaping("f\t\u03a9", calibri({ ligatures: "standard" }))).to.equal(undefined);
     });
 });

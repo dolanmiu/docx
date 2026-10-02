@@ -621,9 +621,11 @@ export const unknownShaping = (text: string, font: TextFont = {}): string | unde
         return undefined;
     }
     const shaping = shapingFor(font);
-    // Characters that take no room, such as a zero-width space or a combining mark, are measured as characters of their own,
-    // whose kerning, and whether Word kerns and joins the letters beside them across them, isn't known
-    const characters = [...text].filter((character) => character !== "\t");
+    // The parts between tabs, which are measured apart, so nothing is kerned or joined across a tab. Characters that take
+    // no room, such as a zero-width space or a combining mark, are measured as characters of their own, whose kerning,
+    // and whether Word kerns and joins the letters beside them across them, isn't known
+    const parts = text.split("\t").map((part) => [...part]);
+    const characters = parts.flat();
     if (shaping === undefined) {
         return kerned
             ? "kerned text in a font whose kerning isn't known"
@@ -642,17 +644,21 @@ export const unknownShaping = (text: string, font: TextFont = {}): string | unde
     // A character a rule starts with, followed by one the ligatures haven't been seen beside
     if (
         rules !== undefined &&
-        characters.some(
-            (character, index) =>
-                rules.has(character) && characters.slice(index + 1, index + 3).some((next) => !shaping.characters.has(next)),
+        parts.some((part) =>
+            part.some(
+                (character, index) =>
+                    rules.has(character) && part.slice(index + 1, index + 3).some((next) => !shaping.characters.has(next)),
+            ),
         )
     ) {
         return "ligatures beside a character not yet followed";
     }
-    const glyphs = glyphsOf(characters.join(""), font, shaping);
-    const unknownPair = kerned
-        ? glyphs.findIndex((glyph, index) => index > 0 && Number.isNaN(kerningBetween(shaping, glyphs[index - 1], glyph)))
-        : -1;
+    return kerned ? parts.map((part) => unknownPairIn(glyphsOf(part.join(""), font, shaping), shaping)).find(Boolean) : undefined;
+};
+
+/** Why the kerning of a pair of glyphs isn't known, when one's isn't */
+const unknownPairIn = (glyphs: readonly Glyph[], shaping: FaceShaping): string | undefined => {
+    const unknownPair = glyphs.findIndex((glyph, index) => index > 0 && Number.isNaN(kerningBetween(shaping, glyphs[index - 1], glyph)));
     if (unknownPair < 0) {
         return undefined;
     }
