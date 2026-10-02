@@ -1,5 +1,5 @@
-# Reads the probes of word-floats.ts from a PDF of word-floats.docx: for each probe, where each picture is, and where each
-# line is, with the parts of a line either side of a picture apart.
+# Reads the probes of word-floats.ts and word-floats2.ts from a PDF of word-floats.docx or word-floats2.docx: for each
+# probe, where each picture is, and where each line is, with the parts of a line either side of a picture apart.
 #
 #   pdftotext -bbox-layout word-floats.pdf word-floats.html
 #   pdftocairo -svg word-floats.pdf word-floats.svg
