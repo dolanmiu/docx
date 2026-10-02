@@ -11,14 +11,16 @@
  * Page references and tables of contents are written dirty, so Word updates them when it opens the document, and asks
  * "This document contains fields that may refer to other files. Do you want to update the fields in this document?".
  * When the document is given page numbers, they are written clean, so Word shows them as they are and doesn't ask. A
- * page number the estimator didn't work out is left blank, until the fields are updated.
+ * page number the estimator didn't work out is left blank, until the fields are updated. So are SEQ fields, the numbers
+ * of captions, which are given their numbers then too.
  *
  * @module
  */
 import { isDirtyWithoutPageNumbers } from "@file/paragraph/run/field";
 import type { IContext, IXmlableObject } from "@file/xml-components";
 
-import { type ElementTree, fillBodyFields, fillPartFields } from "./page-number-fields";
+import { type ElementTree, fillBodyFields, fillPartFields, fillSequenceFields } from "./page-number-fields";
+import { isSequenceField, sequenceNumbering } from "./sequence-numbers";
 
 /**
  * The page each bookmark of a document starts on, and the number of pages of the document and of each of its sections,
@@ -96,8 +98,12 @@ const FORMATTED: ElementTree<Element> = {
             };
         }
     },
+    // A simple field written without a result is only its attributes
     setSimpleFieldResult: (element, text) => {
-        const attributes = FORMATTED.contentOf(element)!.filter((child) => typeof child === "object" && child !== null && "_attr" in child);
+        const content = (element as Record<string, unknown>)["w:fldSimple"];
+        const attributes = (Array.isArray(content) ? content : [content]).filter(
+            (child) => typeof child === "object" && child !== null && "_attr" in child,
+        );
         // eslint-disable-next-line functional/immutable-data
         (element as Record<string, unknown>)["w:fldSimple"] = [...attributes, { "w:r": [textElement(text)] }];
     },
@@ -105,6 +111,19 @@ const FORMATTED: ElementTree<Element> = {
 
 /** The estimate of each document's pages, and the numbers of pages its headers and footers show, once its body is written */
 const estimates = new WeakMap<object, { readonly estimate: EstimatedPageNumbers; readonly partPageCounts: ReadonlyMap<string, number> }>();
+
+/**
+ * Writes the numbers of the SEQ fields of a formatted body into them, counted as Word counts them (see
+ * {@link sequenceNumbering}), and writes them clean, whether or not their numbers were worked out. It is done after its
+ * tables of contents are filled in from its headings, as Word leaves a heading's SEQ number out of its entry.
+ */
+export const fillSequenceNumbers = (body: IXmlableObject, context: IContext): void => {
+    const { startParagraph, numberOf } = sequenceNumbering(context);
+    fillSequenceFields<Element>(FORMATTED, body, {
+        beforeParagraph: (paragraph) => startParagraph(paragraph as Record<string, unknown>),
+        resultOf: (instruction, within) => (isSequenceField(instruction) ? numberOf(instruction, within) : undefined),
+    });
+};
 
 /**
  * Writes the page numbers the estimator works out into the fields of a formatted body that show them: the PAGEREF fields
@@ -121,17 +140,20 @@ export const fillPageNumbers = (body: IXmlableObject, context: IContext, estimat
 };
 
 /**
- * Writes the page numbers worked out for the document a header or footer is in into the fields of the formatted header or
- * footer that show them, once the document's body is written.
+ * Writes the page numbers worked out for the document a header, footer, footnote, endnote or comment is in into the
+ * fields of the formatted part that show them, once the document's body is written. Its page references and SEQ fields
+ * are written clean, and its SEQ fields are left blank: Word writes them as an error, "Error! Main Document Only.".
  *
- * @param part - The formatted header or footer, if it has anything to write
+ * @param part - The formatted part, if it has anything to write
  * @param context - The context it was formatted in, with the document it is in
- * @param referenceId - The number of the relationship to it
+ * @param referenceId - The number of the relationship to a header or footer. The SECTIONPAGES fields of the other parts
+ * are left as they are
  */
-export const fillPartPageNumbers = (part: IXmlableObject | undefined, context: IContext, referenceId: number): void => {
+export const fillPartPageNumbers = (part: IXmlableObject | undefined, context: IContext, referenceId?: number): void => {
     const written = context.file && estimates.get(context.file);
     if (!part || !written) {
         return;
     }
-    fillPartFields(FORMATTED, part, written.estimate, { blank: false, sectionPageCount: written.partPageCounts.get(`rId${referenceId}`) });
+    const sectionPageCount = referenceId === undefined ? undefined : written.partPageCounts.get(`rId${referenceId}`);
+    fillPartFields(FORMATTED, part, written.estimate, { blank: false, sectionPageCount });
 };

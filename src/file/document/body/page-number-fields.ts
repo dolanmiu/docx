@@ -9,6 +9,7 @@
  * @module
  */
 import type { EstimatedPageNumbers } from "./page-numbers";
+import type { SequencePlace } from "./sequence-numbers";
 
 /**
  * How the elements of a tree are read and changed.
@@ -45,10 +46,20 @@ type OpenField<E> = {
     result?: string;
 };
 
+/** Where a field is */
+type FieldPlace = {
+    /** Whether it is in the text Word counts SEQ fields in, or in deleted text or `mc:Fallback`, which it doesn't */
+    readonly within: SequencePlace;
+    /** The instructions of the fields whose results it is in, outermost first */
+    readonly enclosing: readonly string[];
+};
+
 /** How the fields of a part of a document are filled in */
 type FieldFilling<E> = {
-    /** The result of a field, from its instruction, or undefined to leave the field as it is */
-    readonly resultOf: (instruction: string) => string | undefined;
+    /** The result of a field, from its instruction and where it is, or undefined to leave the field as it is */
+    readonly resultOf: (instruction: string, place: FieldPlace) => string | undefined;
+    /** Called before the fields of each paragraph */
+    readonly beforeParagraph?: (paragraph: E) => void;
     /** Called after each paragraph, whose properties can end a section */
     readonly afterParagraph: (paragraph: E) => void;
 };
@@ -86,11 +97,19 @@ const pageCountOf = (instruction: string): "document" | "section" | undefined =>
 };
 
 /**
+ * Whether a field is a table of contents that writes the number of a SEQ field before each page number (`\s`), such as
+ * 2-5 for page 5 of chapter 2, which isn't written
+ */
+const prefixesPageNumbers = (instruction: string): boolean => /^\s*TOC\b.*\\s\b/is.test(instruction);
+
+/**
  * The result of a field that shows a page's number or a number of pages, or undefined to leave it as it is. A field
- * the estimate has no number for is left as it is, or made blank.
+ * the estimate has no number for is left as it is, or made blank, and so is a page number in a table of contents that
+ * writes a SEQ field's number before it.
  */
 const resultFrom = (
     instruction: string,
+    { enclosing }: FieldPlace,
     { bookmarks, pageCount }: EstimatedPageNumbers,
     { sectionPageCount, blank }: { readonly sectionPageCount?: number; readonly blank: boolean },
 ): string | undefined => {
@@ -99,15 +118,33 @@ const resultFrom = (
     if (bookmark === undefined && count === undefined) {
         return undefined;
     }
-    const value = bookmark !== undefined ? bookmarks.get(bookmark) : count === "document" ? pageCount : sectionPageCount;
+    const value =
+        bookmark !== undefined
+            ? enclosing.some(prefixesPageNumbers)
+                ? undefined
+                : bookmarks.get(bookmark)
+            : count === "document"
+              ? pageCount
+              : sectionPageCount;
     return value === undefined ? (blank ? "" : undefined) : String(value);
 };
+
+/** Where the content of an element is: in what an application that doesn't read Word's own shows, or in deleted text */
+const placeIn = (name: string, within: SequencePlace): SequencePlace =>
+    name === "mc:Fallback" || within === "fallback" ? "fallback" : name === "w:del" || name === "w:moveFrom" ? "deleted" : within;
 
 /**
  * Writes the results the filling works out into the fields in the elements, in order.
  */
-// eslint-disable-next-line functional/prefer-readonly-type
-const fillFields = <E>(tree: ElementTree<E>, elements: E[], open: OpenField<E>[], filling: FieldFilling<E>): void => {
+const fillFields = <E>(
+    tree: ElementTree<E>,
+    // eslint-disable-next-line functional/prefer-readonly-type
+    elements: E[],
+    // eslint-disable-next-line functional/prefer-readonly-type
+    open: OpenField<E>[],
+    filling: FieldFilling<E>,
+    within: SequencePlace = "counted",
+): void => {
     for (let index = 0; index < elements.length; index++) {
         const element = elements[index];
         const name = tree.nameOf(element);
@@ -125,7 +162,10 @@ const fillFields = <E>(tree: ElementTree<E>, elements: E[], open: OpenField<E>[]
                 // eslint-disable-next-line functional/immutable-data
                 current.inResult = true;
                 // eslint-disable-next-line functional/immutable-data
-                current.result = filling.resultOf(current.instruction);
+                current.result = filling.resultOf(current.instruction, {
+                    within,
+                    enclosing: open.slice(0, -1).map((field) => field.instruction),
+                });
                 if (current.result !== undefined) {
                     // eslint-disable-next-line functional/immutable-data
                     elements.splice(index + 1, 0, tree.textElement(current.result));
@@ -145,14 +185,20 @@ const fillFields = <E>(tree: ElementTree<E>, elements: E[], open: OpenField<E>[]
             index--;
         } else if (name === "w:fldSimple") {
             // A simple field's runs are its result
-            const result = filling.resultOf(String(tree.attributeOf(element, "w:instr")));
+            const result = filling.resultOf(String(tree.attributeOf(element, "w:instr")), {
+                within,
+                enclosing: open.map((field) => field.instruction),
+            });
             if (result === undefined) {
-                fillFields(tree, tree.contentOf(element) ?? [], [], filling);
+                fillFields(tree, tree.contentOf(element) ?? [], [], filling, within);
             } else {
                 tree.setSimpleFieldResult(element, result);
             }
         } else {
-            fillFields(tree, tree.contentOf(element) ?? [], open, filling);
+            if (name === "w:p") {
+                filling.beforeParagraph?.(element);
+            }
+            fillFields(tree, tree.contentOf(element) ?? [], open, filling, placeIn(name, within));
             if (name === "w:p") {
                 filling.afterParagraph(element);
             }
@@ -230,7 +276,7 @@ export const fillBodyFields = <E>(
     const { sectionPageCounts = [] } = estimate;
     let section = 0;
     fillFields(tree, [body], [], {
-        resultOf: (instruction) => resultFrom(instruction, estimate, { sectionPageCount: sectionPageCounts[section], blank }),
+        resultOf: (instruction, place) => resultFrom(instruction, place, estimate, { sectionPageCount: sectionPageCounts[section], blank }),
         afterParagraph: (paragraph) => {
             section += endsSection(tree, paragraph) ? 1 : 0;
         },
@@ -249,6 +295,22 @@ export const fillPartFields = <E>(
     { blank, sectionPageCount }: UnknownNumbers & { readonly sectionPageCount?: number },
 ): void =>
     fillFields(tree, [part], [], {
-        resultOf: (instruction) => resultFrom(instruction, estimate, { sectionPageCount, blank }),
+        resultOf: (instruction, place) => resultFrom(instruction, place, estimate, { sectionPageCount, blank }),
+        afterParagraph: () => undefined,
+    });
+
+/** How the SEQ fields of a body are numbered, in order */
+export type SequenceFilling<E> = {
+    /** Called at the start of each paragraph */
+    readonly beforeParagraph: (paragraph: E) => void;
+    /** The result of a field, from its instruction and where it is, or undefined to leave it as it is */
+    readonly resultOf: (instruction: string, within: SequencePlace) => string | undefined;
+};
+
+/** Writes the numbers of the SEQ fields of a document's body into them */
+export const fillSequenceFields = <E>(tree: ElementTree<E>, body: E, { beforeParagraph, resultOf }: SequenceFilling<E>): void =>
+    fillFields(tree, [body], [], {
+        resultOf: (instruction, { within }) => resultOf(instruction, within),
+        beforeParagraph,
         afterParagraph: () => undefined,
     });

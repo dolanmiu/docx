@@ -64,20 +64,26 @@ The page numbers are written into:
 - each [`PageReference`](usage/bookmarks.md#page-references), unless it shows its position relative to the bookmark (`useRelativePosition`)
 - the [number of pages](usage/page-numbers.md#total-number-of-pages) of the document (`PageNumber.TOTAL_PAGES`) and of [each section](usage/page-numbers.md#total-number-of-pages-in-a-section) (`PageNumber.TOTAL_PAGES_IN_SECTION`), in the text, headers and footers. A section's is left blank when it shares a page with another section, or has a blank page before or after it
 
+The numbers of captions, such as the 2 of "Figure 2", are written too. Each `SequentialIdentifier` is a SEQ field, which counts the SEQ fields of its identifier, such as `"Figure"`, up to it, so its number doesn't depend on the layout. It is counted as Word counts it: the SEQ fields of the text, in text boxes and hidden text too, in order, with an identifier in any capitals, or in quotes, counted as the same one. The switches written after the identifier, such as `new SequentialIdentifier("Figure \\r 5")`, are followed: `\r 5` starts the count again from 5, `\c` repeats the number before, or writes 0 before the first, `\n` is the next number, `\s 1` starts the count again after each Heading 1, or heading of a higher level, and `\h` hides the number, unless it is given a format. A `\* ARABIC`, `\* ROMAN`, `\* ALPHABETIC`, `\* Ordinal` (4th) or `\* ArabicDash` (- 4 -) writes it in that format, and `\* roman` and `\* alphabetic` in small letters. A heading's caption number is left out of its entry in the table of contents, as Word leaves it out.
+
 ## Opening the document in Word
 
-Without `pageNumbers`, `docx` writes page references and tables of contents as fields for Word to update, so Word asks "This document contains fields that may refer to other files. Do you want to update the fields in this document?" when it opens the document. With `pageNumbers`, they are written as they are, so Word shows them as they are written, and doesn't update them or ask. Leave `updateFields` off, and Word opens the document without asking.
+Without `pageNumbers`, `docx` writes page references, tables of contents and SEQ fields as fields for Word to update, so Word asks "This document contains fields that may refer to other files. Do you want to update the fields in this document?" when it opens the document. With `pageNumbers`, they are written as they are, so Word shows them as they are written, and doesn't update them or ask. Leave `updateFields` off, and Word opens the document without asking.
 
 A page number `docx/layout` couldn't work out, after it stopped (see [What it leaves blank](#what-it-leaves-blank)), is left blank, and stays blank in Word until the fields are updated: by the reader, such as by updating the table of contents, or by turning `updateFields` on. A wrong page number is worse than a blank one. The same goes for what `docx/layout` doesn't write at all:
 
 - a page reference that shows its position relative to the bookmark (`useRelativePosition`)
 - a table of contents that lists no heading, or of captions or TC fields, which is left empty, and the entries of one given `cachedEntries` or `contentChildren`, which are left as they were given
+- the page numbers of a table of contents that writes a SEQ field's number before each of them (`seqFieldIdentifierForPrefix`), such as 2-5 for page 5 of chapter 2
+- a SEQ field in a format other than those above, such as `\* CardText` or `\# 00`, or past what the format writes, such as 781 in letters, for which Word writes an error
+- a SEQ field with a bookmark after its identifier, which shows the number of the SEQ field at the bookmark
+- a SEQ field with a switch not followed, such as `\c` with `\r`, or in deleted text, and the SEQ fields of its identifier after it, until one starts the count again with `\r`. So is a field with `\s` after a paragraph with an outline level but no heading style (`outlineLevel`), or another than its heading style's
+- the SEQ fields in headers, footers, footnotes and endnotes, which Word writes as an error, "Error! Main Document Only.", and every SEQ field of an identifier that has one in a comment
 
 Word still asks when:
 
 - the document has `updateFields` on, which asks Word to update all of its fields
 - a table of contents is given `beginDirty: true`
-- the document has a `SequentialIdentifier`, a SEQ field, which is written for Word to number
 
 ## Templates
 

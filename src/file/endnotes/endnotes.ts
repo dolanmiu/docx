@@ -1,4 +1,5 @@
-import { XmlComponent } from "@file/xml-components";
+import { fillPartPageNumbers } from "@file/document/body/page-numbers";
+import { type IContext, type IXmlableObject, XmlComponent } from "@file/xml-components";
 
 import { EndnotesAttributes } from "./endnotes-attributes";
 import { LineRuleType, Paragraph } from "../paragraph";
@@ -74,5 +75,15 @@ export class Endnotes extends XmlComponent {
         });
 
         this.root.push(endnote);
+    }
+
+    /**
+     * Formats the endnotes, with the page numbers worked out for their document written into their fields, when the
+     * document's body is written with an estimate of its pages.
+     */
+    public override prepForXml(context: IContext): IXmlableObject | undefined {
+        const xml = super.prepForXml(context);
+        fillPartPageNumbers(xml, context);
+        return xml;
     }
 }
