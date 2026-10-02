@@ -9,6 +9,7 @@
  *
  * @module
  */
+// cspell:ignore Aptos
 import { type LineBreakRules, extendsCharacter, findLineBreaks, joinsNext } from "./line-break-rules";
 import {
     DEFAULT_FONT,
@@ -21,6 +22,7 @@ import {
     measureLineHeight,
     measureTextWidth,
     unknownCharacter,
+    unknownFont,
 } from "./text-width";
 
 /**
@@ -38,14 +40,30 @@ export type TextMeasurer = {
      * rather than guessing. A measurer that measures with the fonts themselves leaves it out
      */
     readonly unknownCharacter?: (text: string, font: TextFont) => string | undefined;
+    /**
+     * Whether this measurer measures text in a font as another font, as it doesn't know the font's own widths, so a layout
+     * stops there rather than guessing. Without text, whether it knows the height and descent of the font's lines. A
+     * measurer without it measures every font as best it can
+     */
+    readonly unknownFont?: (font: TextFont, text?: string) => boolean;
 };
 
-export const DEFAULT_MEASURER: TextMeasurer = {
+/**
+ * Measures text with the widths of the fonts in {@link FONT_WIDTHS}, and text in other fonts with those of the most
+ * similar font in them, such as Aptos as Arial: a best guess, for a layout asked to lay out past what it can't follow.
+ */
+export const SIMILAR_FONT_MEASURER: TextMeasurer = {
     measureWidth: (text, font) => measureTextWidth(text, font),
     measureLineHeight,
     measureDescent,
     unknownCharacter,
 };
+
+/**
+ * Measures text with the widths of the fonts in {@link FONT_WIDTHS}, and says which fonts it doesn't have, which it
+ * measures as {@link SIMILAR_FONT_MEASURER} does, so a layout stops at them.
+ */
+export const DEFAULT_MEASURER: TextMeasurer = { ...SIMILAR_FONT_MEASURER, unknownFont };
 
 /**
  * A piece of a paragraph's content, in the order it is written.
@@ -534,7 +552,10 @@ export const layoutLines = (
     }: LineLayoutOptions,
 ): readonly LaidOutLine[] => {
     const { indentLeft = 0, indentRight = 0, firstLineIndent = 0, lineSpacing, alignment } = format;
-    const markHeight = measurer.measureLineHeight(markFont);
+    // How tall a line as tall as the paragraph's mark is, measured only where it counts, as a layout stops at a mark in a
+    // font the measurer doesn't know
+    let markHeight: number | undefined;
+    const markLineHeight = (): number => (markHeight ??= measurer.measureLineHeight(markFont));
     /**
      * Whether a line of only pictures is in a paragraph whose mark has a taller line than the pictures' runs, so that how
      * tall the line is depends on whether the mark counts. Word hasn't shown that: in its probes the pictures' runs were as
@@ -544,8 +565,8 @@ export const layoutLines = (
     const markMatters = ({ ascent, tallest, picture }: Heights): boolean =>
         picture > 0 &&
         ascent === 0 &&
-        markHeight > tallest + TOLERANCE &&
-        (picture < markHeight - TOLERANCE || (lineSpacing?.rule === "multiple" && lineSpacing.multiple !== 1));
+        markLineHeight() > tallest + TOLERANCE &&
+        (picture < markLineHeight() - TOLERANCE || (lineSpacing?.rule === "multiple" && lineSpacing.multiple !== 1));
     /** The heights of a line with the text of the token on it too */
     const withToken = (heights: Heights, token: Exclude<Token, { readonly type: "marker" }>): Heights => {
         if (token.type === "box") {

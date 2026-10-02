@@ -1,8 +1,9 @@
 /**
  * Estimates how much space text takes up, from the widths of the characters in common fonts.
  *
- * The estimate is close for the fonts in {@link FONT_WIDTHS}. Other fonts are measured with the one most like them,
- * so their estimates are rougher. Kerning and ligatures are left out, which makes text a little wider than Word draws it.
+ * The estimate is close for the fonts in {@link FONT_WIDTHS}, and those made with the same widths, such as Carlito.
+ * Other fonts are measured with the one most like them, so their estimates are rougher, and {@link unknownFont} says
+ * which they are. Kerning and ligatures are left out, which makes text a little wider than Word draws it.
  *
  * @module
  */
@@ -162,12 +163,22 @@ export const DEFAULT_FONT_SIZE = 10;
 // Word's default tab stops are half an inch apart
 const TAB_STOP = 36;
 
-// Fonts that are measured with a font in the table, because they have the same widths or are close to them
-const SIMILAR_FONTS: readonly (readonly [RegExp, string])[] = [
-    [/^(carlito|calibri light|segoe ui|candara|corbel)$/i, "Calibri"],
+// Fonts made to have the same widths and heights as a font in the table, which are measured exactly as it. Helvetica is
+// within 0.1% of Arial in Word (`word-watertight-text.docx` TX18)
+const SAME_WIDTHS: readonly (readonly [RegExp, string])[] = [
+    [/^carlito$/i, "Calibri"],
     [/^caladea$/i, "Cambria"],
+    [/^(liberation sans|arimo|helvetica)$/i, "Arial"],
+    [/^(liberation serif|tinos)$/i, "Times New Roman"],
+    [/^(liberation mono|cousine)$/i, "Courier New"],
+];
+
+// Fonts that are measured with a font in the table because they are close to it, which is a guess: Word draws them with
+// their own widths, such as Calibri Light 1.4% narrower than Calibri and Georgia 9% wider than Times New Roman (TX18)
+const SIMILAR_FONTS: readonly (readonly [RegExp, string])[] = [
+    [/^(calibri light|segoe ui|candara|corbel)$/i, "Calibri"],
     [/mono|courier|consolas|code|typewriter/i, "Courier New"],
-    [/times|tinos|liberation serif|georgia|garamond|palatino|book antiqua|(?<!sans[ -]?)serif|roman/i, "Times New Roman"],
+    [/times|georgia|garamond|palatino|book antiqua|(?<!sans[ -]?)serif|roman/i, "Times New Roman"],
 ];
 
 // The characters of the tables, in their order, and the index of each
@@ -273,29 +284,41 @@ const EAST_ASIAN_NAME =
 const EAST_ASIAN_SANS = /gothic|ゴシック|hei|黑|黒|sans|고딕|pingfang/i;
 /* cspell:enable */
 
+/** The East Asian font in the table a font is, by any of its names. Undefined for other fonts */
+const knownEastAsianFontOf = (font: string): EastAsianFont | undefined => {
+    const name = font.toLowerCase();
+    return EAST_ASIAN_FONTS.find((candidate) => [candidate.name, ...candidate.aliases].some((alias) => alias.toLowerCase() === name));
+};
+
 /**
  * The East Asian font a font is, or is measured as, by its name. Undefined for other fonts.
  */
 const eastAsianFontOf = (font: string): EastAsianFont | undefined => {
-    const name = font.toLowerCase();
-    const known = EAST_ASIAN_FONTS.find((candidate) =>
-        [candidate.name, ...candidate.aliases].some((alias) => alias.toLowerCase() === name),
-    );
     const similar = EAST_ASIAN_SANS.test(font) ? "MS Gothic" : "MS Mincho";
-    return known ?? (EAST_ASIAN_NAME.test(font) ? EAST_ASIAN_FONTS.find((candidate) => candidate.name === similar) : undefined);
+    return (
+        knownEastAsianFontOf(font) ??
+        (EAST_ASIAN_NAME.test(font) ? EAST_ASIAN_FONTS.find((candidate) => candidate.name === similar) : undefined)
+    );
 };
 
 /** Whether a font is one for Chinese, Japanese or Korean text */
 export const isEastAsianFont = (font: string | undefined): boolean => font !== undefined && eastAsianFontOf(font) !== undefined;
 
+const named = (name: string): FontWidths | undefined => FONT_WIDTHS.find((known) => known.name.toLowerCase() === name.toLowerCase());
+
+/** The widths of a font in the table, or of a font with the same widths as one. Undefined for other fonts */
+const exactWidthsOf = (font: string): FontWidths | undefined => {
+    const same = SAME_WIDTHS.find(([pattern]) => pattern.test(font));
+    return named(same ? same[1] : font);
+};
+
 /**
  * The widths to measure a font with: its own, or those of the most similar font in the table.
- * Sans-serif fonts that aren't in the table, such as Aptos and Helvetica, are measured as Arial.
+ * Sans-serif fonts that aren't in the table, such as Aptos, are measured as Arial.
  */
 const widthsOf = (font = DEFAULT_FONT): FontWidths => {
-    const named = (name: string): FontWidths | undefined => FONT_WIDTHS.find((known) => known.name.toLowerCase() === name.toLowerCase());
     const similar = SIMILAR_FONTS.find(([pattern]) => pattern.test(font));
-    return named(font) ?? named(similar ? similar[1] : "Arial")!;
+    return exactWidthsOf(font) ?? named(similar ? similar[1] : "Arial")!;
 };
 
 /** The widths of the face text is in: its font's, bold, italic, both or neither */
@@ -388,6 +411,31 @@ export const unknownCharacter = (text: string, font: TextFont = {}): string | un
         const index = CHARACTER_INDEX.get(code);
         return index === undefined || monospaced ? isPrivate(code) : widths[index] === undefined;
     });
+};
+
+/**
+ * Whether the tables measure text in a font as another font, as they don't have the font's own widths: a font that isn't
+ * in them and isn't made with the same widths as one that is, such as Aptos, which they measure as the most similar
+ * font that is. Word draws it with its own widths when it has it, and in another font when it doesn't, such as Cambria
+ * on the Mac (`word-watertight-text.docx` TX18), so a layout stops there rather than guessing. The East Asian fonts of
+ * the tables are measured as themselves, but for the other characters of those that aren't monospaced, such as Latin
+ * letters in Yu Gothic, which are measured as Times New Roman or Arial. Without text, whether the height of a line in
+ * the font is another font's.
+ */
+export const unknownFont = (font: TextFont = {}, text?: string): boolean => {
+    const name = font.font ?? DEFAULT_FONT;
+    const eastAsian = knownEastAsianFontOf(name);
+    if (eastAsian === undefined) {
+        return exactWidthsOf(name) === undefined;
+    }
+    return (
+        !eastAsian.monospaced &&
+        text !== undefined &&
+        [...text].some((character) => {
+            const code = character.codePointAt(0)!;
+            return !isWide(code) && !isHalfWidth(code) && !takesNoRoom(character);
+        })
+    );
 };
 
 /**

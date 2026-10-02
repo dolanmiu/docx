@@ -368,6 +368,23 @@ describe("estimatePageNumbersWith", () => {
         });
     });
 
+    it("should stop at text in a font that isn't in the width tables, whose lines it doesn't know the height of", () => {
+        const measureWidth = (text: string, font: FontToMeasure): number => text.length * font.size;
+        const inFont = (font: string): IPropertiesOptions => ({
+            sections: [
+                {
+                    children: [
+                        heading("First", "first"),
+                        new Paragraph({ children: [new TextRun({ text: "Text", font })] }),
+                        heading("Last", "last"),
+                    ],
+                },
+            ],
+        });
+        expect(pageNumbersOf(inFont("Aptos"), estimatePageNumbersWith({ measureWidth }))).to.deep.equal({ first: "1" });
+        expect(pageNumbersOf(inFont("Arial"), estimatePageNumbersWith({ measureWidth }))).to.deep.equal({ first: "1", last: "1" });
+    });
+
     it("should measure text with the width tables, as estimatePageNumbers does, without a way to measure it", () => {
         expect(estimateOf(DOCUMENT, estimatePageNumbersWith({}))).to.deep.equal(estimateOf(DOCUMENT));
     });
@@ -401,18 +418,66 @@ describe("estimatePageNumbersWith", () => {
             // Measured from the file, the 30 paragraphs take 300 lines of 18 points, 38 to a page
             const estimator = estimatePageNumbersWith({ fonts: [{ data: WIDE }] });
             expect(pageNumbersOf(document("Probe Wide"), estimator)).to.deep.include({ first: "1", last: "8" });
-            // Measured as Arial, as without the file, they take 150 lines of about 10 points
-            expect(pageNumbersOf(document("Probe Wide"))).to.deep.include({ first: "1", last: "3" });
-            expect(pageNumbersOf(document("Probe Wide"), estimatePageNumbersWith({ fonts: [] }))).to.deep.include({
-                first: "1",
-                last: "3",
-            });
+            // Without the file, Probe Wide isn't in the width tables, so the layout stops at it, and the page after is blank
+            expect(pageNumbersOf(document("Probe Wide"))).to.deep.equal({ first: "1" });
+            expect(pageNumbersOf(document("Probe Wide"), estimatePageNumbersWith({ fonts: [] }))).to.deep.equal({ first: "1" });
         });
 
         it("should give the fonts in a file the name the caller gives them", () => {
             const estimator = estimatePageNumbersWith({ fonts: [{ data: WIDE.slice().buffer, name: "Calibri" }] });
             expect(pageNumbersOf(document("Calibri"), estimator)).to.deep.include({ last: "8" });
-            expect(pageNumbersOf(document("Probe Wide"), estimator)).to.deep.include({ last: "3" });
+            expect(pageNumbersOf(document("Probe Wide"), estimator)).to.deep.equal({ first: "1" });
+        });
+
+        it("should measure text in the fonts the document embeds from their files, as Word draws it in them", () => {
+            // docx embeds the file as the font's regular face, by the name it is given
+            const embedded = (font: string, data: Uint8Array): IPropertiesOptions => ({
+                ...document(font),
+                fonts: [{ name: font, data: Buffer.from(data) }],
+            });
+            expect(pageNumbersOf(embedded("Probe Wide", WIDE))).to.deep.include({ first: "1", last: "8" });
+            expect(pageNumbersOf(embedded("Calibri", WIDE))).to.deep.include({ last: "8" });
+            // A file that isn't a font is left out, so the layout stops at text in its font
+            expect(pageNumbersOf(embedded("Probe Wide", new Uint8Array(16)))).to.deep.equal({ first: "1" });
+            // The fonts the caller gives are measured too, after those the document embeds
+            const narrow = buildTestFont({ name: "Probe Wide", advances: { a: 1 }, windows: { ascent: 1000, descent: 1000 } });
+            expect(pageNumbersOf(embedded("Probe Wide", WIDE), estimatePageNumbersWith({ fonts: [{ data: narrow }] }))).to.deep.include({
+                last: "8",
+            });
+        });
+
+        it("should stop at bold text in a font the document embeds only a regular face of", () => {
+            const bold: IPropertiesOptions = {
+                fonts: [{ name: "Probe Wide", data: Buffer.from(WIDE) }],
+                sections: [
+                    {
+                        children: [
+                            heading("First", "first"),
+                            new Paragraph({ children: [new TextRun({ text: "abcd", font: "Probe Wide", bold: true })] }),
+                            heading("Last", "last"),
+                        ],
+                    },
+                ],
+            };
+            expect(pageNumbersOf(bold)).to.deep.equal({ first: "1" });
+        });
+
+        it("should measure the fonts a template embeds from their files, once patchDocument has patched it", async () => {
+            // docx obfuscates the fonts it embeds, with a key of its own for each, as Word does
+            const template = await Packer.toBuffer(
+                new Document({ ...document("Probe Wide"), fonts: [{ name: "Probe Wide", data: Buffer.from(WIDE) }] }),
+            );
+            let estimate: EstimatedPageNumbers | undefined;
+            await patchDocument({
+                outputType: "nodebuffer",
+                data: template,
+                patches: {},
+                pageNumbers: (patched) => {
+                    estimate = estimatePageNumbers(patched);
+                    return estimate;
+                },
+            });
+            expect(Object.fromEntries(estimate!.bookmarks)).to.deep.include({ first: "1", last: "8" });
         });
 
         it("should measure text in other fonts as the options say", () => {

@@ -38,8 +38,10 @@ const doc = new Document({
                 run: { font: "Calibri", size: 22 },
                 paragraph: { spacing: { after: 160, line: 259, lineRule: LineRuleType.AUTO } },
             },
+            // Headings in Calibri, rather than Office's Calibri Light, which isn't in the width tables, so the layout would stop
+            // at it
             heading1: {
-                run: { font: "Calibri Light", size: 32, color: "2F5496" },
+                run: { font: "Calibri", size: 32, color: "2F5496" },
                 paragraph: { spacing: { before: 240, after: 0 }, keepNext: true },
             },
         },

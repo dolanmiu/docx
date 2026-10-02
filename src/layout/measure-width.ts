@@ -5,7 +5,7 @@
  * @module
  */
 // cspell:ignore chenglou
-import { DEFAULT_FONT, DEFAULT_FONT_SIZE, type TextMeasurer, measureDescent, measureLineHeight } from "../text-layout";
+import { DEFAULT_FONT, DEFAULT_FONT_SIZE, type TextMeasurer, measureDescent, measureLineHeight, unknownFont } from "../text-layout";
 
 /**
  * The font to measure text in.
@@ -104,9 +104,11 @@ export const measureWithPretext = <Prepared>(
 
 /**
  * A measurer that measures widths with a function, and lines' heights and descents with the width tables, as Word works
- * them out from the font's height and the paragraph's spacing.
+ * them out from the font's height and the paragraph's spacing. The height of a line in a font that isn't in the tables
+ * isn't known, so a layout stops at text in one.
  */
 export const measurerOf = (measureWidth: MeasureWidth): TextMeasurer => ({
+    unknownFont: (font) => unknownFont(font),
     measureWidth: (
         text,
         { font = DEFAULT_FONT, size = DEFAULT_FONT_SIZE, bold = false, italic = false, characterSpacing = 0, scale = 100 },

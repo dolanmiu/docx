@@ -363,6 +363,22 @@ describe("createFontFileMeasurer", () => {
         expect(withoutUnknown.unknownCharacter!("a\u2211", calibri)).to.equal(undefined);
     });
 
+    it("should know the fonts it has a face of, and leave whether it knows other fonts to the fallback", () => {
+        const measurer = createFontFileMeasurer(fonts({ advances: LETTERS }));
+        expect(measurer.unknownFont!({ font: "Probe Sans" }, "AB")).to.equal(false);
+        // Italic text is measured with the upright face, and bold text with none, as Word makes a bold face itself
+        expect(measurer.unknownFont!({ font: "Probe Sans", italic: true })).to.equal(false);
+        expect(measurer.unknownFont!({ font: "Probe Sans", bold: true }, "AB")).to.equal(true);
+        expect(measurer.unknownFont!({ font: "Calibri" }, "AB")).to.equal(false);
+        expect(measurer.unknownFont!({ font: "Aptos" })).to.equal(true);
+        const withoutUnknown = createFontFileMeasurer(fonts({ advances: LETTERS }), {
+            measureWidth: () => 0,
+            measureLineHeight: () => 0,
+            measureDescent: () => 0,
+        });
+        expect(withoutUnknown.unknownFont!({ font: "Aptos" })).to.equal(false);
+    });
+
     it("should move a tab typed in the text to the next half inch from the start of the text", () => {
         const measurer = createFontFileMeasurer(fonts({ advances: LETTERS }));
         // A is a point wide at 10 points, so the tab moves to 36, and B is 2 more

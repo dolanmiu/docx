@@ -451,7 +451,8 @@ const TAB_STOP = 36;
  * Measures text in the fonts of these faces with their own widths, kerning and line height, and text in other fonts with
  * `fallback`. Text that is bold, or not, is measured with a face that is too, and with one that is italic, or not, as the
  * text is, when there is one. A character a face has no glyph for is one whose width isn't known, as Word draws it in
- * another font, unless it takes no room, such as a soft hyphen.
+ * another font, unless it takes no room, such as a soft hyphen. Text in a font without a face as bold as it is in
+ * a font whose widths aren't known, unless `fallback` knows them, as Word makes that face itself from another.
  */
 export const createFontFileMeasurer = (faces: readonly FontFace[], fallback: TextMeasurer = DEFAULT_MEASURER): TextMeasurer => {
     // The face of each font, bold or not, and italic or not, as text is measured many times in each
@@ -518,5 +519,6 @@ export const createFontFileMeasurer = (faces: readonly FontFace[], fallback: Tex
                   )
                 : fallback.unknownCharacter?.(text, font);
         },
+        unknownFont: (font, text) => faceOf(font) === undefined && fallback.unknownFont?.(font, text) === true,
     };
 };

@@ -1,3 +1,4 @@
+// cspell:ignore Aptos
 import { describe, expect, it, vi } from "vitest";
 
 import { measureDescent, measureLineHeight, measureTextWidth } from "../text-layout";
@@ -101,5 +102,14 @@ describe("measurerOf", () => {
         const measurer = measurerOf(() => 0);
         expect(measurer.measureLineHeight({ font: "Calibri", size: 11 })).to.equal(measureLineHeight({ font: "Calibri", size: 11 }));
         expect(measurer.measureDescent({ font: "Courier New", size: 11 })).to.equal(measureDescent({ font: "Courier New", size: 11 }));
+    });
+
+    it("should not know the height of the lines of a font that isn't in the width tables, whatever its text", () => {
+        const measurer = measurerOf(() => 0);
+        expect(measurer.unknownFont!({ font: "Calibri" }, "a")).to.equal(false);
+        expect(measurer.unknownFont!({ font: "Carlito" })).to.equal(false);
+        expect(measurer.unknownFont!({ font: "Aptos" }, "a")).to.equal(true);
+        // An East Asian font's lines are as tall as the table says, and the function measures its Latin letters
+        expect(measurer.unknownFont!({ font: "Yu Gothic" }, "a")).to.equal(false);
     });
 });

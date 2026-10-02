@@ -2,6 +2,7 @@ import JSZip from "jszip";
 import { describe, expect, it } from "vitest";
 import { type Element, xml2js } from "xml-js";
 
+import { obfuscate } from "@file/fonts/obfuscate-ttf-to-odttf";
 import {
     AlignmentType,
     Document,
@@ -23,6 +24,7 @@ import {
     TextRun,
     WidthType,
 } from "docx";
+import { buildTestFont } from "tests/font-file";
 
 import { type DocumentContent, type ParagraphBlock, readDocument } from "./read-document";
 import { readDocx } from "./read-docx";
@@ -207,6 +209,58 @@ describe("readDocx", () => {
     it("should read a .docx without settings as one in compatibility mode, as Word lays it out", () => {
         const content = readDocx(new Map([["word/document.xml", documentOf("<w:p/>")]]));
         expect(content.unsupported).to.equal("a document in compatibility mode");
+    });
+
+    it("should read the fonts it embeds, undoing the mixing of their keys, as the faces its font table says they are", () => {
+        const font = buildTestFont({ name: "In The File", advances: { a: 500 } });
+        const key = "{01234567-89AB-CDEF-0123-456789ABCDEF}";
+        const embed = (element: string, id: string, fontKey?: string): string =>
+            `<w:${element} r:id="${id}"${fontKey === undefined ? "" : ` w:fontKey="${fontKey}"`}/>`;
+        const parts = new Map([
+            [
+                "word/_rels/document.xml.rels",
+                relationships(
+                    `<Relationship Id="rId1" Type="${TRANSITIONAL}/settings" Target="settings.xml"/>`,
+                    `<Relationship Id="rId2" Type="${TRANSITIONAL}/fontTable" Target="fontTable.xml"/>`,
+                ),
+            ],
+            ["word/settings.xml", parse(COMPATIBLE)],
+            [
+                "word/_rels/fontTable.xml.rels",
+                relationships(
+                    ...["plain", "keyed", "badKey", "noFile"].map(
+                        (name, index) => `<Relationship Id="rId${index + 1}" Type="${TRANSITIONAL}/font" Target="fonts/${name}.odttf"/>`,
+                    ),
+                ),
+            ],
+            [
+                "word/fontTable.xml",
+                parse(
+                    `<w:fonts ${W} ${R}>` +
+                        `<w:font w:name="Plain">${embed("embedRegular", "rId1")}</w:font>` +
+                        `<w:font w:name="Keyed">${embed("embedBoldItalic", "rId2", key)}</w:font>` +
+                        // A key that isn't a GUID, a file the package doesn't have, a relationship it doesn't have, and no name
+                        `<w:font w:name="Bad">${embed("embedRegular", "rId3", "{not a key}")}${embed("embedBold", "rId4")}${embed("embedItalic", "rId9")}</w:font>` +
+                        `<w:font>${embed("embedRegular", "rId1")}</w:font>` +
+                        "</w:fonts>",
+                ),
+            ],
+            ["word/document.xml", documentOf("<w:p/>")],
+        ]);
+        const binaryParts = new Map([
+            ["word/fonts/plain.odttf", font],
+            ["word/fonts/keyed.odttf", obfuscate(font, key.slice(1, -1))],
+            ["word/fonts/badKey.odttf", obfuscate(font, key.slice(1, -1))],
+        ]);
+        const fonts = readDocx(parts, binaryParts).fonts!;
+        expect(fonts.map(({ name, bold, italic }) => ({ name, bold, italic }))).to.deep.equal([
+            { name: "Plain", bold: false, italic: false },
+            { name: "Keyed", bold: true, italic: true },
+        ]);
+        expect(fonts.map((face) => face.advanceOf("a".codePointAt(0)!))).to.deep.equal([0.5, 0.5]);
+        // Without the files, or a font table, it has no fonts
+        expect(readDocx(parts).fonts).to.equal(undefined);
+        expect(readDocx(new Map([...parts].filter(([path]) => path !== "word/fontTable.xml")), binaryParts).fonts).to.equal(undefined);
     });
 
     it("should read an empty body from a package without its main document", () => {
