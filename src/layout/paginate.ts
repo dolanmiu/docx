@@ -222,7 +222,10 @@ type Snapshot = {
     readonly index: number;
     readonly pageCount: number;
     readonly pageNumber: number;
+    readonly restart: number | undefined;
     readonly top: number;
+    readonly pageContinuation: number;
+    readonly continuedEndnotes: boolean;
     readonly pageBottom: number;
     readonly position: number;
     readonly column: number;
@@ -348,12 +351,26 @@ export const paginate = (
         footnoteSeparator,
         footnoteContinuationSeparator,
         endnotes,
+        endnoteContinuationSeparator,
         breakRules,
         footnoteNumbers,
         endnoteNumbers,
     } = content;
-    // The body, and then its endnotes, which Word lays out after it
-    const blocks = [...content.blocks, ...endnotes.map((block) => ({ block, section: sections.length - 1 }))];
+    // The body, and then its endnotes, which Word lays out after it. The separator above them goes on the page of their
+    // first line, as Word puts it there when it would be alone at the bottom of a page (`word-watertight-sections2.docx`
+    // SC5), so it is kept with the next
+    const blocks = [
+        ...content.blocks,
+        ...endnotes.map((block) => ({
+            block:
+                block.type === "paragraph" && !endnoteNumbers.has(block)
+                    ? { ...block, format: { ...block.format, keepNext: true } }
+                    : block,
+            section: sections.length - 1,
+        })),
+    ];
+    // The first of the endnotes' blocks, the first of their separator's
+    const firstEndnote = content.blocks.length;
     /** The space between two paragraphs: the larger of the space after the first and before the second, or both */
     const between = (after: number, before: number): number => (addsParagraphSpacing ? after + before : Math.max(after, before));
 
@@ -686,6 +703,9 @@ export const paginate = (
     const headerHeights = new Map<readonly Block[], Map<number, number>>();
     let pageCount = 0;
     let pageNumber = 0;
+    // The first number of a continuous section numbered afresh that started on the page, which the next page is numbered
+    // on from
+    let restart: number | undefined;
     // The first and last page of each section, and the sections whose pages aren't theirs alone
     const firstPages = new Map<number, number>([[0, 1]]);
     const lastPages = new Map<number, number>();
@@ -693,6 +713,10 @@ export const paginate = (
     // Where the page's body starts and ends, where its columns end, and where the next line goes, in points from the top
     // of the page
     let top = 0;
+    // The room the endnotes' continuation separator takes at the top of the page, which is in `top`, and whether the page
+    // is one after the first the endnotes are on
+    let pageContinuation = 0;
+    let continuedEndnotes = false;
     let pageBottom = 0;
     let bottom = 0;
     let position = 0;
@@ -761,7 +785,10 @@ export const paginate = (
         index,
         pageCount,
         pageNumber,
+        restart,
         top,
+        pageContinuation,
+        continuedEndnotes,
         pageBottom,
         position,
         column,
@@ -797,7 +824,10 @@ export const paginate = (
         ({
             pageCount,
             pageNumber,
+            restart,
             top,
+            pageContinuation,
+            continuedEndnotes,
             pageBottom,
             position,
             column,
@@ -918,21 +948,64 @@ export const paginate = (
         return height;
     };
 
+    /** Whether the endnotes are on the pages before, so they go on below the continuation separator on the next */
+    const endnotesGoOn = (): boolean =>
+        blockIndex >= firstEndnote &&
+        placements.some((placement) => (placement.type === "line" || placement.type === "row") && placement.block >= firstEndnote);
+
+    /**
+     * The room the endnotes' continuation separator takes above them: its paragraphs, without the space after the last,
+     * which Word leaves out (`word-watertight-sections.docx` SC4)
+     */
+    const continuationHeight = (): number => {
+        const parts = stackParts(endnoteContinuationSeparator, textWidth(), false);
+        return heightOf(
+            parts.map((part, index) => (index === parts.length - 1 ? { ...part, after: 0 } : part)),
+            true,
+        );
+    };
+
+    /** Where the body starts on the next page: where it does on this one, below the continuation separator for endnotes */
+    const nextTop = (): number => top - pageContinuation + (endnotesGoOn() ? continuationHeight() : 0);
+
+    /** Whether a line or row of the section being laid out is on the page */
+    const sectionOnPage = (): boolean =>
+        placements
+            .slice(placements.findLastIndex(({ type }) => type === "page"))
+            .some(
+                (placement) => (placement.type === "line" || placement.type === "row") && blocks[placement.block].section === sectionIndex,
+            );
+
     const startPage = (isFirstOfSection = false): void => {
         if (balancing !== undefined && pageCount >= balancing.page) {
             // The columns being balanced don't fit on their page in the height they are laid out in
             throw new Overflow();
         }
         checkReserve();
+        if (continuedEndnotes) {
+            // Word put a line more below the continuation separator than the page has room for by the heights of the lines,
+            // 6.6 twips past the margin (`word-watertight-sections.docx` SC4), where it puts none past it on the first page
+            // of endnotes or of text, and how far past the margin it puts one isn't known
+            throw new Unsupported("endnotes that fill a page after the first they are on");
+        }
         finishPage();
         const current = section();
-        pageNumber = isFirstOfSection && current.firstNumber !== undefined ? current.firstNumber : pageNumber + 1;
+        // A continuous section none of which is on the page it started on, as its first line didn't fit there, starts on
+        // the next, as a section on a new page does: Word numbers that page with the section's first number
+        // (`word-watertight-sections.docx` SC2a, SC2c)
+        const first =
+            isFirstOfSection || (current.start === "continuous" && firstPages.get(sectionIndex) === pageCount && !sectionOnPage());
+        // After a continuous section numbered afresh, the page it starts on keeps its number, and the next is numbered on
+        // from the section's first number, as Word numbers them (`word-watertight-pages.docx` PG2,
+        // `word-watertight-sections.docx` SC2b, SC2d)
+        pageNumber = first && current.firstNumber !== undefined ? current.firstNumber : (restart ?? pageNumber) + 1;
+        restart = undefined;
         // A header or footer taller than the margin pushes the body away from it, unless the margin is negative
-        const headerBottom = current.header + partHeight(current.headers, isFirstOfSection);
-        const footerTop = current.footer + partHeight(current.footers, isFirstOfSection);
+        const headerBottom = current.header + partHeight(current.headers, first);
+        const footerTop = current.footer + partHeight(current.footers, first);
         pageCount++;
-        const header = kindOf(current.headers, isFirstOfSection);
-        const footer = kindOf(current.footers, isFirstOfSection);
+        const header = kindOf(current.headers, first);
+        const footer = kindOf(current.footers, first);
         // eslint-disable-next-line functional/immutable-data
         placements.push({
             type: "page",
@@ -945,7 +1018,19 @@ export const paginate = (
                 ...(footer ? { footer } : {}),
             },
         });
-        top = current.marginTop < 0 ? -current.marginTop : Math.max(current.marginTop, headerBottom);
+        // A gutter at the top is below the top margin, and a header taller than both pushes the body below it, as in Word,
+        // where the header stays where it is (`word-watertight-sections.docx` SC3)
+        top = current.marginTop < 0 ? -current.marginTop : Math.max(current.marginTop + current.topGutter, headerBottom);
+        // On each page after the first the endnotes are on, the continuation separator is above them, whether one of them
+        // goes on to it or the next starts there (`word-watertight-pages.docx` PG8, `word-watertight-sections.docx` SC4).
+        // Whether Word puts it at the top of each column too isn't known
+        const endnotesOn = endnotesGoOn();
+        if (endnotesOn && current.columns.length > 1) {
+            throw new Unsupported("endnotes continued in columns");
+        }
+        continuedEndnotes = endnotesOn;
+        pageContinuation = endnotesOn ? continuationHeight() : 0;
+        top += pageContinuation;
         pageBottom = current.pageHeight - (current.marginBottom < 0 ? -current.marginBottom : Math.max(current.marginBottom, footerTop));
         position = top;
         column = 0;
@@ -970,7 +1055,7 @@ export const paginate = (
             // The rest of the footnote is longer than the page, so the page is all footnote, as much of it as fits, and the
             // rest continues on the next page. The text goes on above its last part, on the page it ends on
             // (`word-probes.docx` U2o, U2q)
-            if (isFirstOfSection) {
+            if (first) {
                 // Which section Word puts its pages in, which can change the page numbers, isn't known
                 throw new Unsupported("a footnote continued across a section break onto a page of its own");
             }
@@ -989,6 +1074,9 @@ export const paginate = (
         if (column + 1 >= section().columns.length) {
             startPage();
             return;
+        }
+        if (endnotesGoOn()) {
+            throw new Unsupported("endnotes continued in columns");
         }
         deepest = Math.max(deepest, position + spaceAfter);
         filledEnd = Math.max(filledEnd, position);
@@ -1119,9 +1207,10 @@ export const paginate = (
         const before = sectionIndex;
         sectionIndex = index;
         if (continuous) {
-            // The section's columns start below what is on the page
+            // The section's columns start below what is on the page. One numbered afresh numbers the pages after this one
             column = 0;
             columnTop = position;
+            restart = current.firstNumber ?? restart;
             // eslint-disable-next-line functional/immutable-data
             firstPages.set(index, pageCount);
             // eslint-disable-next-line functional/immutable-data
@@ -1148,13 +1237,14 @@ export const paginate = (
         // Word goes by the page's number before the section numbers its pages from its own first number: after page 6, it
         // leaves a blank page before a section that starts on an even page numbered from 2 (word-positions.docx H3). Whether
         // it goes by the number or by where the page is in the document, which are the same there, isn't known
-        const nextNumber = pageNumber + 1;
+        const nextNumber = (restart ?? pageNumber) + 1;
         if ((current.start === "evenPage" && nextNumber % 2 !== 0) || (current.start === "oddPage" && nextNumber % 2 === 0)) {
             // A blank page, so the section starts on an even or odd page, which isn't either section's. It has no header
             // or footer in Word (word-positions.docx H1 and H2)
             finishPage();
             pageCount++;
-            pageNumber++;
+            pageNumber = nextNumber;
+            restart = undefined;
             finished = pageCount;
             // eslint-disable-next-line functional/immutable-data
             placements.push({
@@ -2598,7 +2688,7 @@ export const paginate = (
                     nextColumn();
                 } else if (
                     !fitsHere &&
-                    fitsBelow(top, leastAreaOf(here.notes, carried, columns.length > 1 ? columns : undefined), columns[0])
+                    fitsBelow(nextTop(), leastAreaOf(here.notes, carried, columns.length > 1 ? columns : undefined), columns[0])
                 ) {
                     startPage();
                 }

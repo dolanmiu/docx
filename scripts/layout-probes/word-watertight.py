@@ -6,9 +6,10 @@
 #   python3 word-watertight.py word-watertight-text
 #
 # It takes the name of the PDF without its extension, reads the files above beside it, and knows which document it is by
-# its name: word-watertight-text, -tables, -pages, -markup, -settings, -fields or -stops. Lengths are in twips, and positions
-# are from the top and left of the page. Word's PDFs put text on a grid of 1/300 inch, 4.8 twips, so one position is only good to about
-# 5 twips; the pitch of lines is found over a page of them, as word-line-heights.py finds it.
+# its name: word-watertight-text, -tables, -pages, -markup, -settings, -fields, -stops, -sections, -sections2 or
+# -endnotes1 to 3. Lengths are in twips, and positions are from the top and left of the page. Word's PDFs put text on a
+# grid of 1/300 inch, 4.8 twips, so one position is only good to about 5 twips; the pitch of lines is found over a page
+# of them, as word-line-heights.py finds it.
 import html
 import os
 import re
@@ -660,6 +661,95 @@ def stops_probes(base):
         print(f"  {probe} {note}: {gaps(lines, probe, ['above', 'row 1', 'row 2', 'row 3'])}")
 
 
+def numbers_shown(lines, probe, kinds):
+    """The page numbers a probe's lines show, by the section each is in (`kinds`), and its footer, on each page"""
+    own = [line for line in lines if line[0][5] == probe and len(line) > 3 and line[1][5] in kinds]
+    footers = [line for line in lines if line[0][5] == probe and len(line) > 1 and line[1][5] == "footer"]
+    for page in sorted({line[0][0] for line in own})[:3]:
+        on = [line for line in own if line[0][0] == page]
+        shown = ", ".join(f"{kind}'s {sorted({line[-1][5] for line in on if line[1][5] == kind}, key=lambda n: (len(n), n))}" for kind in kinds)
+        foot = [text_of(line) for line in footers if line[0][0] == page]
+        print(f"  {probe} page {page - own[0][0][0] + 1}: lines show {shown}, footer: {foot}")
+    starts = [first(lines, probe, kind, "1") for kind in kinds[1:]]
+    for kind, start in zip(kinds[1:], starts):
+        if start:
+            print(f"  {probe} {kind} starts on page {start[0][0] - own[0][0][0] + 1}, {round(start[0][2] - TOP, 1)} below the margin")
+
+
+def notes_by_page(lines, probe):
+    """Where a probe's endnotes are on each page: how many lines, and where the first and last are"""
+    refs = first(lines, probe, "refs")
+    notes = [line for line in lines if f"{probe} note" in text_of(line)]
+    if not refs or not notes:
+        print(f"  {probe}: not found")
+        return
+    print(f"  the line referring to them at {round(refs[0][2] - TOP, 1)} below the margin, on page 1")
+    for page in sorted({line[0][0] for line in notes}):
+        on = [line for line in notes if line[0][0] == page]
+        print(
+            f"  page {page - refs[0][0] + 1}: {len(on)} endnote lines, from '{text_of(on[0])}' at {round(on[0][0][2] - TOP, 1)} below the margin"
+            f" to '{text_of(on[-1])}' at {round(on[-1][0][2] - TOP, 1)}"
+        )
+
+
+def sections_probes(base):
+    raw = read_raw(base)
+    lines = read(base)
+    print("== SC1: a section in the next column numbered from 7, after 30 lines in the first of 2 columns (docx/layout:")
+    print("   numbers the page after on from the page it starts on)")
+    numbers_shown(raw, "SC1", ["A", "B"])
+    print("\n== SC2: continuous sections numbered from 7 (docx/layout: the page the section starts on keeps its number, and the")
+    print("   next is numbered on from it)")
+    for probe, note in [
+        ("SC2a", "after 51 lines, the empty paragraph ending the section at the top of page 2"),
+        ("SC2b", "after 50 lines and the empty paragraph ending the section, at the top of page 2"),
+        ("SC2c", "after 51 lines, the last of which ends the section, at the top of page 2"),
+        ("SC2d", "after 10 lines, then one numbered from 20 after 10 more, on one page"),
+    ]:
+        print(f"  {probe}: {note}")
+        numbers_shown(raw, probe, ["A", "B", "C"] if probe == "SC2d" else ["A", "B"])
+    print("\n== SC3: a 1440 gutter at the top with a header below the top margin (header at 708; docx/layout: the body starts")
+    print("   at the margin and gutter or below the header, whichever is lower)")
+    for probe, count in [("SC3a", 5), ("SC3b", 10)]:
+        body = [line for line in lines if line[0][5] == probe and len(line) > 1 and line[1][5].isdigit()]
+        header = [line for line in lines if line[0][5] == probe and len(line) > 1 and line[1][5] == "header" and body and line[0][0] == body[0][0][0]]
+        if len(header) == count:
+            print(f"  {probe} header: the first line at {round(header[0][0][2], 1)}, the last at {round(header[-1][0][2], 1)}, which ends at {round(header[-1][0][2] + LINE, 1)}")
+        if body:
+            print(f"  {probe} body: {page_probe(lines, probe)}, the first at {round(body[0][0][2], 1)}, from {round(body[0][0][1], 1)} across")
+    start = next((index for index, line in enumerate(lines) if text_of(line).startswith("SC3a prose")), None)
+    if start is not None:
+        found = [lines[start]]
+        for line in lines[start + 1 :]:
+            if line[0][5].startswith("SC") and not (len(line) > 1 and line[1][5] == "header"):
+                break
+            if not line[0][5].startswith("SC"):
+                found.append(line)
+        print(f"  SC3a prose: {len(found)} lines, ending: " + " | ".join(f"{line[-1][5]} {round(line[-1][3] - LEFT)}" for line in found[:12]))
+    print("\n== SC4: endnotes of 49, 60 and 10 lines after a line; the separator 1 line tall, the continuation separator 3")
+    print("   (docx/layout: the continuation separator above an endnote continued on the next page, as PG8)")
+    notes_by_page(lines, "SC4")
+
+
+def sections2_probes(base):
+    lines = read(base)
+    print("== SC5: endnotes of 5 and 5 lines after 50 lines, so only the separator fits below them; the separator 1 line tall,")
+    print("   the continuation separator 3 (docx/layout stops)")
+    last = first(lines, "SC5", "49")
+    if last:
+        print(f"  SC5 49 at {round(last[0][2] - TOP, 1)} below the margin, on page {last[0][0]}")
+    notes_by_page(lines, "SC5")
+
+
+def endnotes_probes(base):
+    lines = read(base)
+    probe = "EN" + base[-1]
+    print(f"== {probe}: endnotes of lines exactly 288 tall, on the pages after the first, below the continuation separator")
+    print("   (EN1: 47 fit with the separator's 268.55 counted, 48 without; EN2, the separator 1100 tall: 44 with it counted,")
+    print("   48 without; EN3: a first line of 183, then 47 with the separator counted unless a line may go 29.55 past the margin)")
+    notes_by_page(lines, probe)
+
+
 PROBES = {
     "word-watertight-text": text_probes,
     "word-watertight-tables": tables_probes,
@@ -668,6 +758,11 @@ PROBES = {
     "word-watertight-settings": settings_probes,
     "word-watertight-fields": fields_probes,
     "word-watertight-stops": stops_probes,
+    "word-watertight-sections": sections_probes,
+    "word-watertight-sections2": sections2_probes,
+    "word-watertight-endnotes1": endnotes_probes,
+    "word-watertight-endnotes2": endnotes_probes,
+    "word-watertight-endnotes3": endnotes_probes,
 }
 
 if __name__ == "__main__":
