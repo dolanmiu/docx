@@ -3943,6 +3943,20 @@ var docxShapes = (function(exports, docx) {
 		clear: "clear",
 		num: "left"
 	};
+	var ALIGNMENTS = {
+		start: "left",
+		left: "left",
+		numTab: "left",
+		center: "center",
+		end: "right",
+		right: "right",
+		both: "justified",
+		distribute: "distributed",
+		lowKashida: "lowKashida",
+		mediumKashida: "mediumKashida",
+		highKashida: "highKashida",
+		thaiDistribute: "thaiDistributed"
+	};
 	/**
 	* Reads the tab stops of paragraph properties (`w:tabs`).
 	*/
@@ -3961,6 +3975,7 @@ var docxShapes = (function(exports, docx) {
 	* Reads paragraph properties (`w:pPr`).
 	*/
 	var readParagraphFormat = (element) => {
+		var _valueOf;
 		const children = childrenOf(element);
 		const spacing = attributesOf(find(children, "w:spacing"));
 		const indent = attributesOf(find(children, "w:ind"));
@@ -3980,7 +3995,8 @@ var docxShapes = (function(exports, docx) {
 			widowControl: onOff(children, "w:widowControl"),
 			tabs: readTabs(find(children, "w:tabs")),
 			kinsoku: onOff(children, "w:kinsoku"),
-			wordWrap: onOff(children, "w:wordWrap")
+			wordWrap: onOff(children, "w:wordWrap"),
+			alignment: ALIGNMENTS[(_valueOf = valueOf(children, "w:jc")) !== null && _valueOf !== void 0 ? _valueOf : ""]
 		});
 	};
 	/**

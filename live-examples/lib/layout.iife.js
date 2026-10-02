@@ -695,6 +695,20 @@ var docxLayout = (function(exports) {
 		clear: "clear",
 		num: "left"
 	};
+	var ALIGNMENTS = {
+		start: "left",
+		left: "left",
+		numTab: "left",
+		center: "center",
+		end: "right",
+		right: "right",
+		both: "justified",
+		distribute: "distributed",
+		lowKashida: "lowKashida",
+		mediumKashida: "mediumKashida",
+		highKashida: "highKashida",
+		thaiDistribute: "thaiDistributed"
+	};
 	/**
 	* Reads the tab stops of paragraph properties (`w:tabs`).
 	*/
@@ -713,6 +727,7 @@ var docxLayout = (function(exports) {
 	* Reads paragraph properties (`w:pPr`).
 	*/
 	var readParagraphFormat = (element) => {
+		var _valueOf;
 		const children = childrenOf(element);
 		const spacing = attributesOf(find(children, "w:spacing"));
 		const indent = attributesOf(find(children, "w:ind"));
@@ -732,7 +747,8 @@ var docxLayout = (function(exports) {
 			widowControl: onOff(children, "w:widowControl"),
 			tabs: readTabs(find(children, "w:tabs")),
 			kinsoku: onOff(children, "w:kinsoku"),
-			wordWrap: onOff(children, "w:wordWrap")
+			wordWrap: onOff(children, "w:wordWrap"),
+			alignment: ALIGNMENTS[(_valueOf = valueOf(children, "w:jc")) !== null && _valueOf !== void 0 ? _valueOf : ""]
 		});
 	};
 	/**
@@ -916,6 +932,9 @@ var docxLayout = (function(exports) {
 	};
 	var DEFAULT_TAB_STOP = 36;
 	var TOLERANCE$1 = .01;
+	var STRETCH_TO_SQUEEZE = 2.04;
+	var MOST_SQUEEZE = .25;
+	var SPACE_TO_LETTER = 7.2;
 	var SPACES = /* @__PURE__ */ new Set([
 		" ",
 		" ",
@@ -998,6 +1017,13 @@ var docxLayout = (function(exports) {
 		}];
 		return [...characters.slice(0, -1), joined];
 	}, all), []);
+	/** The en, em, four-per-em and ideographic spaces of pieces of spaces, without the others */
+	var othersOf = (pieces) => pieces.map(({ text, font }) => ({
+		text: text.replace(/ /g, ""),
+		font
+	})).filter(({ text }) => text.length > 0);
+	/** How many characters pieces have */
+	var lengthOf = (pieces) => pieces.reduce((total, { text }) => total + [...text].length, 0);
 	var widthOf = (pieces, measurer) => pieces.reduce((total, { text, font }) => total + measurer.measureWidth(text, font), 0);
 	var textOf = (pieces) => pieces.length === 1 ? pieces[0].text : pieces.map(({ text }) => text).join("");
 	/**
@@ -1099,8 +1125,9 @@ var docxLayout = (function(exports) {
 	* @param items - The paragraph's content, in order
 	*/
 	var layoutLines = (items, { width, format = {}, tabStops = [], defaultTabStop = DEFAULT_TAB_STOP, markFont = {}, measurer = DEFAULT_MEASURER, breakRules }) => {
-		const { indentLeft = 0, indentRight = 0, firstLineIndent = 0, lineSpacing } = format;
+		const { indentLeft = 0, indentRight = 0, firstLineIndent = 0, lineSpacing, alignment } = format;
 		const markHeight = measurer.measureLineHeight(markFont);
+		const squeezes = alignment === "justified" || alignment === "distributed" || alignment === "thaiDistributed" || alignment === "lowKashida";
 		const { stops, firstLineStops } = stopsOf(tabStops, format);
 		const parts = segmentsOf(items, rulesOf(format, breakRules));
 		const [previous, last] = parts.slice(-2);
@@ -1111,6 +1138,28 @@ var docxLayout = (function(exports) {
 		const lines = [];
 		/** Where a line ends, from its index: where the line being filled ends, unless another is given */
 		const limitOf = (line = lines.length) => (typeof width === "number" ? width : width(line)) - indentRight;
+		/**
+		* Whether Word squeezes a word or picture this wide onto a justified or distributed line it goes past the end of,
+		* rather than move it to the next line. It squeezes the line's spaces in proportion to their widths, and does when that
+		* takes less of their width than a quarter, and than half of what the spaces between the words already on it would
+		* stretch by with it on the next line, or, on a distributed line, the spaces and letters. That is so on a paragraph's
+		* last line, and one that ends with a line break, too (J10 to J12). Latin text justified for Thai or with a low kashida
+		* is squeezed as justified text is (K08, K09)
+		*/
+		const squeezesIn = (state, tokenWidth) => {
+			if (!squeezes || state.spaces <= 0) return false;
+			const over = state.position + tokenWidth - limitOf();
+			const slack = limitOf() - state.end;
+			if (over / state.spaces > MOST_SQUEEZE) return false;
+			if (alignment === "distributed") return slack * SPACE_TO_LETTER / (SPACE_TO_LETTER * state.between + state.letters) >= STRETCH_TO_SQUEEZE * (over / state.spaceCount);
+			const between = state.spaces - (state.position - state.end);
+			return between <= 0 || slack / between >= STRETCH_TO_SQUEEZE * (over / state.spaces);
+		};
+		/**
+		* Whether a word or picture past the end of a justified line could be squeezed in, were the spaces Word hasn't been
+		* seen squeezing among its spaces squeezed as the others are
+		*/
+		const unsure = (state, tokenWidth) => squeezes && state.otherSpaces > 0 && state.position + tokenWidth - limitOf() <= MOST_SQUEEZE * state.spaces;
 		let first = true;
 		for (const [segmentIndex, { tokens, end }] of segments.entries()) {
 			const isLast = segmentIndex === segments.length - 1;
@@ -1121,6 +1170,11 @@ var docxLayout = (function(exports) {
 				end: start,
 				text: "",
 				natural: 0,
+				spaces: 0,
+				spaceCount: 0,
+				between: 0,
+				letters: 0,
+				otherSpaces: 0,
 				markers: [],
 				pending: [],
 				started: false,
@@ -1134,7 +1188,7 @@ var docxLayout = (function(exports) {
 				}, breakAfter ? { breakAfter } : {}), {}, {
 					text: state.text,
 					textWidth: Math.max(0, state.end - state.start)
-				}));
+				}, state.unknown ? { unsupported: "a justified line that only fits squeezed at an en, em or ideographic space" } : {}));
 			};
 			const wrap = (state) => {
 				finish(_objectSpread2(_objectSpread2({}, state), {}, { pending: [] }));
@@ -1144,6 +1198,11 @@ var docxLayout = (function(exports) {
 					end: indentLeft,
 					text: "",
 					natural: 0,
+					spaces: 0,
+					spaceCount: 0,
+					between: 0,
+					letters: 0,
+					otherSpaces: 0,
 					markers: [],
 					pending: state.pending,
 					started: false,
@@ -1162,9 +1221,13 @@ var docxLayout = (function(exports) {
 				}
 				if (token.type === "space") {
 					const height = Math.max(...token.pieces.map(({ font }) => measurer.measureLineHeight(font)));
+					const spaces = widthOf(token.pieces, measurer);
 					line = _objectSpread2(_objectSpread2({}, line), {}, {
-						position: line.position + widthOf(token.pieces, measurer),
+						position: line.position + spaces,
 						text: line.text + textOf(token.pieces),
+						spaces: line.started ? line.spaces + spaces : 0,
+						spaceCount: line.started ? line.spaceCount + lengthOf(token.pieces) : 0,
+						otherSpaces: line.started ? line.otherSpaces + widthOf(othersOf(token.pieces), measurer) : 0,
 						natural: Math.max(line.natural, height)
 					});
 					continue;
@@ -1192,15 +1255,23 @@ var docxLayout = (function(exports) {
 						end: position,
 						text: `${line.text}\t`,
 						natural: Math.max(line.natural, height),
+						spaces: 0,
+						spaceCount: 0,
+						between: 0,
+						letters: 0,
+						otherSpaces: 0,
 						started: true
 					});
 					continue;
 				}
 				const tokenWidth = token.type === "box" ? token.width : widthOf(token.pieces, measurer);
 				const tokenHeight = token.type === "box" ? token.height : Math.max(...token.pieces.map(({ font }) => measurer.measureLineHeight(font)));
-				if (line.started && line.position + tokenWidth > limitOf() + TOLERANCE$1) line = wrap(line);
+				const overflows = line.started && line.position + tokenWidth > limitOf() + TOLERANCE$1;
+				if (overflows && unsure(line, tokenWidth)) line = _objectSpread2(_objectSpread2({}, line), {}, { unknown: true });
+				const squeezed = overflows && !line.unknown && squeezesIn(line, tokenWidth);
+				if (overflows && !squeezed) line = wrap(line);
 				line = place(line);
-				if (token.type === "word" && line.position + tokenWidth > limitOf() + TOLERANCE$1 && limitOf() - indentLeft > 0) {
+				if (token.type === "word" && !squeezed && line.position + tokenWidth > limitOf() + TOLERANCE$1 && limitOf() - indentLeft > 0) {
 					let placed = false;
 					for (const character of charactersOf(token.pieces)) {
 						const characterWidth = widthOf(character, measurer);
@@ -1211,7 +1282,8 @@ var docxLayout = (function(exports) {
 						line = _objectSpread2(_objectSpread2({}, line), {}, {
 							position: line.position + characterWidth,
 							end: line.position + characterWidth,
-							text: line.text + textOf(character)
+							text: line.text + textOf(character),
+							letters: line.letters + lengthOf(character)
 						});
 						placed = true;
 					}
@@ -1220,10 +1292,13 @@ var docxLayout = (function(exports) {
 					line = _objectSpread2(_objectSpread2({}, line), {}, {
 						position: line.position + tokenWidth,
 						end: line.position + tokenWidth,
-						text: line.text + text
+						text: line.text + text,
+						letters: line.letters + (token.type === "box" ? 1 : lengthOf(token.pieces))
 					});
 				}
 				line = _objectSpread2(_objectSpread2({}, line), {}, {
+					end: line.position,
+					between: line.spaceCount,
 					natural: Math.max(line.natural, tokenHeight),
 					started: true
 				});
@@ -1955,15 +2030,20 @@ var docxLayout = (function(exports) {
 				width: widths
 			}] : widths;
 			const key = given.map(({ from, width }) => `${from}:${width}`).join(" ");
-			const layOut = () => layoutLines(measurable(paragraph.items), {
-				width: given.length === 1 ? given[0].width : (line) => given.findLast(({ from }) => from <= line).width,
-				format: paragraph.format,
-				tabStops: paragraph.tabStops,
-				defaultTabStop,
-				markFont: paragraph.markFont,
-				measurer,
-				breakRules
-			});
+			const layOut = () => {
+				const laidOut = layoutLines(measurable(paragraph.items), {
+					width: given.length === 1 ? given[0].width : (line) => given.findLast(({ from }) => from <= line).width,
+					format: paragraph.format,
+					tabStops: paragraph.tabStops,
+					defaultTabStop,
+					markFont: paragraph.markFont,
+					measurer,
+					breakRules
+				});
+				const unknown = laidOut.find((line) => line.unsupported !== void 0);
+				if (unknown) throw new Unsupported(unknown.unsupported);
+				return laidOut;
+			};
 			if (paragraph.items.some(({ type }) => type === "pageReference" || type === "pageCount")) return layOut();
 			const byWidths = (_byParagraph$get = byParagraph.get(paragraph)) !== null && _byParagraph$get !== void 0 ? _byParagraph$get : /* @__PURE__ */ new Map();
 			byParagraph.set(paragraph, byWidths);
@@ -3836,6 +3916,7 @@ var docxLayout = (function(exports) {
 			from: ownId === void 0 ? "style" : "paragraph"
 		}, withoutUndefined({ chapter: numbers === null || numbers === void 0 ? void 0 : numbers.replace(/%([1-9])/g, (_, digit) => numberAt(Number(digit) - 1)) }));
 	};
+	var THAI_OR_ARABIC = new RegExp("[\\p{Script=Thai}\\p{Script=Arabic}]", "u");
 	/**
 	* Reads a paragraph (`w:p`), in the formatting of its styles, and of its table's style when it is in a table.
 	*/
@@ -3856,11 +3937,13 @@ var docxLayout = (function(exports) {
 			readParagraphFormat(properties)
 		];
 		const items = readInline(children, paragraphRun, reader);
-		const unsupported = find(properties, "w:framePr") !== void 0 ? "a text frame" : find(properties, "w:divId") === void 0 ? unknownLengthIn(element) : "a paragraph in an HTML division";
+		const format = combine(formats);
+		const forThaiOrArabic = format.alignment === "thaiDistributed" || format.alignment === "lowKashida";
+		const unsupported = find(properties, "w:framePr") !== void 0 ? "a text frame" : find(properties, "w:divId") !== void 0 ? "a paragraph in an HTML division" : format.alignment === "mediumKashida" || format.alignment === "highKashida" ? "a paragraph justified for Arabic with a medium or high kashida" : forThaiOrArabic && typeof items !== "string" && items.some((item) => item.type === "text" && THAI_OR_ARABIC.test(item.text)) ? "Thai or Arabic text justified for it" : unknownLengthIn(element);
 		return _objectSpread2(_objectSpread2({
 			type: "paragraph",
 			items: typeof items === "string" ? [] : [...list.items, ...items],
-			format: combine(formats),
+			format,
 			tabStops: tabStopsOf(formats),
 			markFont: fontOf(combine([paragraphRun, readRunFormat(find(properties, "w:rPr"), styles.themeFonts)])),
 			style
