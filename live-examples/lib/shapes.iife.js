@@ -4014,6 +4014,8 @@ var docxShapes = (function(exports, docx) {
 			rightToLeft: onOff(children, "w:rtl"),
 			complexScript: onOff(children, "w:cs"),
 			eastAsianLanguage: stringOf(attributesOf(find(children, "w:lang"))["w:eastAsia"]),
+			language: stringOf(attributesOf(find(children, "w:lang"))["w:val"]),
+			noProof: onOff(children, "w:noProof"),
 			verticalAlign: readVerticalAlign(valueOf(children, "w:vertAlign")),
 			position: pointsOf(attributesOf(find(children, "w:position"))["w:val"], 2),
 			emphasisMark: valueOf(children, "w:em"),
@@ -4131,6 +4133,7 @@ var docxShapes = (function(exports, docx) {
 			tabs: readTabs(find(children, "w:tabs")),
 			kinsoku: onOff(children, "w:kinsoku"),
 			wordWrap: onOff(children, "w:wordWrap"),
+			suppressAutoHyphens: onOff(children, "w:suppressAutoHyphens"),
 			alignment: ALIGNMENTS[(_valueOf = valueOf(children, "w:jc")) !== null && _valueOf !== void 0 ? _valueOf : ""]
 		});
 	};

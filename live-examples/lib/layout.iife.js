@@ -753,6 +753,8 @@ var docxLayout = (function(exports) {
 			rightToLeft: onOff(children, "w:rtl"),
 			complexScript: onOff(children, "w:cs"),
 			eastAsianLanguage: stringOf(attributesOf(find(children, "w:lang"))["w:eastAsia"]),
+			language: stringOf(attributesOf(find(children, "w:lang"))["w:val"]),
+			noProof: onOff(children, "w:noProof"),
 			verticalAlign: readVerticalAlign(valueOf(children, "w:vertAlign")),
 			position: pointsOf(attributesOf(find(children, "w:position"))["w:val"], 2),
 			emphasisMark: valueOf(children, "w:em"),
@@ -870,6 +872,7 @@ var docxLayout = (function(exports) {
 			tabs: readTabs(find(children, "w:tabs")),
 			kinsoku: onOff(children, "w:kinsoku"),
 			wordWrap: onOff(children, "w:wordWrap"),
+			suppressAutoHyphens: onOff(children, "w:suppressAutoHyphens"),
 			alignment: ALIGNMENTS[(_valueOf = valueOf(children, "w:jc")) !== null && _valueOf !== void 0 ? _valueOf : ""]
 		});
 	};
@@ -1200,6 +1203,30 @@ var docxLayout = (function(exports) {
 	var NO_HYPHEN_ROOM = 2.7 / 20;
 	var STRETCH_TO_SQUEEZE = 2.04;
 	var MOST_SQUEEZE = .25;
+	var MAY_HYPHENATE = "a word Word may hyphenate, whose parts the layout can't know";
+	var ENGLISH_DICTIONARY = {
+		letters: 5,
+		part: 2
+	};
+	var ANY_DICTIONARY = {
+		letters: 2,
+		part: 1
+	};
+	/**
+	* The fewest letters a word Word may hyphenate has, and the fewest characters it leaves before the hyphen, by the
+	* dictionary of its text, or none when Word leaves it whole: when it is in text Word doesn't hyphenate (HY7), has too few
+	* letters, as numbers have none (HY6), or is in capitals and the document leaves those whole, typed so or shown so with
+	* `w:caps` (HY10a, HY10b), but not when only its first letter is a capital (HY10c). Small capitals, and superscript and
+	* subscript, which are smaller, Word hasn't been seen leaving whole. Nor has it been seen with a word only part of which
+	* is in text it doesn't hyphenate, which is taken as one it may break anywhere, from its first characters on.
+	*/
+	var dictionaryOf = (pieces, { capitalsWhole }) => {
+		const hyphenated = pieces.filter(({ hyphenation }) => hyphenation !== "none");
+		const letters = [...textOf(pieces)].filter((character) => new RegExp("\\p{L}", "u").test(character));
+		const dictionary = hyphenated.some(({ hyphenation }) => hyphenation === "unknown") ? ANY_DICTIONARY : ENGLISH_DICTIONARY;
+		const capitals = capitalsWhole === true && letters.every((letter) => new RegExp("\\p{Lu}", "u").test(letter)) && pieces.every(({ font }) => font.lineSize === void 0);
+		return hyphenated.length === 0 || letters.length < dictionary.letters || capitals ? void 0 : dictionary;
+	};
 	var SPACE_TO_LETTER = 7.2;
 	var SPACES = /* @__PURE__ */ new Set([
 		" ",
@@ -1230,23 +1257,25 @@ var docxLayout = (function(exports) {
 				}
 				continue;
 			}
-			const { text, font } = item;
+			const { text, font, hyphenation } = item;
+			const own = hyphenation === void 0 ? {} : { hyphenation };
 			for (const character of text) {
 				const type = SPACES.has(character) ? "space" : "word";
 				const last = tokens[tokens.length - 1];
 				if ((last === null || last === void 0 ? void 0 : last.type) !== type || type === "word" && breaks.has(index)) tokens.push({
 					type,
-					pieces: [{
+					pieces: [_objectSpread2({
 						text: character,
 						font
-					}]
+					}, own)]
 				});
 				else {
 					const piece = last.pieces[last.pieces.length - 1];
-					last.pieces[last.pieces.length - 1 + (piece.font === font ? 0 : 1)] = {
-						text: piece.font === font ? piece.text + character : character,
+					const same = piece.font === font && piece.hyphenation === hyphenation;
+					last.pieces[last.pieces.length - 1 + (same ? 0 : 1)] = _objectSpread2({
+						text: same ? piece.text + character : character,
 						font
-					};
+					}, own);
 				}
 				index++;
 			}
@@ -1614,19 +1643,20 @@ var docxLayout = (function(exports) {
 	*
 	* @param items - The paragraph's content, in order
 	*/
-	var measureContentWidths = (items, { format = {}, tabStops = [], defaultTabStop = DEFAULT_TAB_STOP, measurer = DEFAULT_MEASURER, breakRules, numberAlignment }) => {
+	var measureContentWidths = (items, { format = {}, tabStops = [], defaultTabStop = DEFAULT_TAB_STOP, measurer = DEFAULT_MEASURER, breakRules, numberAlignment, hyphenation }) => {
 		var _items$;
 		const { indentLeft = 0, indentRight = 0, firstLineIndent = 0 } = format;
 		const { stops, firstLineStops } = stopsOf(tabStops, format);
 		const beforeStart = numberShift(items, numberAlignment, measurer);
 		const numberTab = numberAlignment === "right" && ((_items$ = items[1]) === null || _items$ === void 0 ? void 0 : _items$.type) === "tab";
-		return segmentsOf(items, rulesOf(format, breakRules)).reduce((widths, { tokens }, segmentIndex) => {
+		const hyphenating = hyphenation !== void 0 && format.suppressAutoHyphens !== true ? hyphenation : void 0;
+		const { min, max, whole } = segmentsOf(items, rulesOf(format, breakRules)).reduce((widths, { tokens }, segmentIndex) => {
 			var _endBorder$room;
 			const first = segmentIndex === 0;
 			const lineStart = first ? indentLeft + firstLineIndent - beforeStart : indentLeft;
 			let position = lineStart;
 			let end = position;
-			let { min } = widths;
+			let { min: narrowest, whole: wholeWords } = widths;
 			let border;
 			let endBorder;
 			for (const [index, token] of tokens.entries()) {
@@ -1652,25 +1682,32 @@ var docxLayout = (function(exports) {
 				const tokenWidth = token.type === "box" ? token.width : widthOf(token.pieces, measurer);
 				const close = (_border$room2 = border === null || border === void 0 ? void 0 : border.room) !== null && _border$room2 !== void 0 ? _border$room2 : 0;
 				const start = end === lineStart ? position + lead : indentLeft + (token.type === "word" ? (_firstBorder$room = (_firstBorder = firstBorder(token.pieces)) === null || _firstBorder === void 0 ? void 0 : _firstBorder.room) !== null && _firstBorder$room !== void 0 ? _firstBorder$room : 0 : 0);
-				min = Math.max(min, start + tokenWidth + close + indentRight);
+				narrowest = Math.max(narrowest, start + tokenWidth + close + indentRight);
+				if (token.type === "box" || !hyphenating || !dictionaryOf(token.pieces, hyphenating)) wholeWords = Math.max(wholeWords, start + tokenWidth + close + indentRight);
 				position += lead + tokenWidth;
 				end = position;
 			}
 			return {
-				min,
-				max: Math.max(widths.max, min, end + ((_endBorder$room = endBorder === null || endBorder === void 0 ? void 0 : endBorder.room) !== null && _endBorder$room !== void 0 ? _endBorder$room : 0) + indentRight)
+				min: narrowest,
+				whole: wholeWords,
+				max: Math.max(widths.max, narrowest, end + ((_endBorder$room = endBorder === null || endBorder === void 0 ? void 0 : endBorder.room) !== null && _endBorder$room !== void 0 ? _endBorder$room : 0) + indentRight)
 			};
 		}, {
 			min: 0,
-			max: 0
+			max: 0,
+			whole: 0
 		});
+		return _objectSpread2({
+			min,
+			max
+		}, min > whole + TOLERANCE$1 ? { hyphenated: true } : {});
 	};
 	/**
 	* Breaks a paragraph into lines, as Word breaks it.
 	*
 	* @param items - The paragraph's content, in order
 	*/
-	var layoutLines = (items, { width, format = {}, tabStops = [], defaultTabStop = DEFAULT_TAB_STOP, markFont = {}, measurer = DEFAULT_MEASURER, breakRules, numberAlignment }) => {
+	var layoutLines = (items, { width, format = {}, tabStops = [], defaultTabStop = DEFAULT_TAB_STOP, markFont = {}, measurer = DEFAULT_MEASURER, breakRules, numberAlignment, hyphenation }) => {
 		var _items$2;
 		const { indentLeft = 0, indentRight = 0, firstLineIndent = 0, lineSpacing, alignment } = format;
 		let markHeight;
@@ -1744,6 +1781,26 @@ var docxLayout = (function(exports) {
 			if (alignment === "distributed") return slack * SPACE_TO_LETTER / (SPACE_TO_LETTER * state.between + state.letters) >= STRETCH_TO_SQUEEZE * (over / state.spaceCount);
 			const between = state.spaces - (state.position - state.end);
 			return between <= 0 || slack / between >= STRETCH_TO_SQUEEZE * (over / state.spaces);
+		};
+		const hyphenating = hyphenation !== void 0 && format.suppressAutoHyphens !== true ? hyphenation : void 0;
+		/**
+		* Whether Word may hyphenate a word that goes past the end of a line, putting a part of it and a hyphen on the line.
+		* Which parts Word can break a word into is in its dictionary for the word's language, which the layout doesn't have,
+		* so a word Word may hyphenate stops the layout. Word certainly leaves it whole when its dictionary breaks no word like
+		* it, or the shortest part it can leave before the hyphen doesn't fit in the room the line has left. It hyphenates
+		* whenever a part fits, however little room is left: in compatibility mode 15 it has no hyphenation zone, so a zone of
+		* an inch hyphenates as the default quarter of an inch does, and "un-" fits in 16 points (word-hyphenation-zone.docx
+		* HY1 to HY13, HY3b). It doesn't squeeze a justified line's spaces to fit a part, as it does to fit a word (HY4a)
+		*/
+		const mayHyphenate = (state, token, lead) => {
+			const dictionary = hyphenating && dictionaryOf(token.pieces, hyphenating);
+			if (!dictionary) return false;
+			const part = charactersOf(token.pieces).slice(0, dictionary.part).flat();
+			const hyphen = {
+				text: "-",
+				font: part[part.length - 1].font
+			};
+			return state.position + lead + widthOf([...part, hyphen], measurer) <= limitOf() + TOLERANCE$1;
 		};
 		/**
 		* Whether a word or picture past the end of a justified line could be squeezed in, were the spaces Word hasn't been
@@ -1827,11 +1884,15 @@ var docxLayout = (function(exports) {
 				const hyphens = token.type === "word" ? ((_token$hyphens = token.hyphens) !== null && _token$hyphens !== void 0 ? _token$hyphens : []).filter(({ at }) => at > 0 && at < lengthOf(token.pieces)) : [];
 				const squeezedIn = squeezes && line.started && squeezesIn(line, needs);
 				if (token.type === "word" && hyphens.length > 0 && !squeezedIn && line.position + needs > endOf(line) + TOLERANCE$1) {
-					var _line$unsupported2;
+					var _line$unsupported3;
 					const unknown = squeezes ? "a soft hyphen in a justified line that doesn't fit squeezed" : token.pieces.some(({ font }) => font.border !== void 0) ? "a soft hyphen in a word with a border" : void 0;
 					if (unknown !== void 0) {
 						var _line$unsupported;
 						line = _objectSpread2(_objectSpread2({}, line), {}, { unsupported: (_line$unsupported = line.unsupported) !== null && _line$unsupported !== void 0 ? _line$unsupported : unknown });
+					}
+					if (line.started && mayHyphenate(line, token, leadOf(line))) {
+						var _line$unsupported2;
+						line = _objectSpread2(_objectSpread2({}, line), {}, { unsupported: (_line$unsupported2 = line.unsupported) !== null && _line$unsupported2 !== void 0 ? _line$unsupported2 : MAY_HYPHENATE });
 					}
 					const rest = breakAtHyphen(token, hyphens);
 					if (rest !== void 0) {
@@ -1843,7 +1904,7 @@ var docxLayout = (function(exports) {
 						placeWord(token);
 						return;
 					}
-					line = _objectSpread2(_objectSpread2({}, line), {}, { unsupported: (_line$unsupported2 = line.unsupported) !== null && _line$unsupported2 !== void 0 ? _line$unsupported2 : "a word whose part before a soft hyphen is longer than its line" });
+					line = _objectSpread2(_objectSpread2({}, line), {}, { unsupported: (_line$unsupported3 = line.unsupported) !== null && _line$unsupported3 !== void 0 ? _line$unsupported3 : "a word whose part before a soft hyphen is longer than its line" });
 				}
 				const overflows = line.started && line.position + needs > endOf(line) + TOLERANCE$1;
 				if (overflows && unsure(line, needs)) line = _objectSpread2(_objectSpread2({}, line), {}, { unknown: true });
@@ -1851,11 +1912,19 @@ var docxLayout = (function(exports) {
 				const boxed = line.boxed === true || token.type === "word" && token.pieces.some(({ font }) => font.border !== void 0);
 				if (squeezable && boxed) line = _objectSpread2(_objectSpread2({}, line), {}, { unsupported: "a justified line with text in a border that only fits squeezed" });
 				const squeezed = squeezable && !boxed;
+				if (overflows && (!squeezed || alignment !== "justified") && token.type === "word" && mayHyphenate(line, token, leadOf(line))) {
+					var _line$unsupported4;
+					line = _objectSpread2(_objectSpread2({}, line), {}, { unsupported: (_line$unsupported4 = line.unsupported) !== null && _line$unsupported4 !== void 0 ? _line$unsupported4 : MAY_HYPHENATE });
+				}
 				if (overflows && !squeezed) line = wrap(line);
 				line = _objectSpread2(_objectSpread2({}, place(line)), {}, { position: line.position + leadOf(line) });
 				if (token.type === "word" && !squeezed && line.position + tokenWidth > endOf(line) + TOLERANCE$1 && limitOf() - indentLeft > 0) {
 					let placed = false;
 					if (token.pieces.some(({ font }) => font.border !== void 0)) line = _objectSpread2(_objectSpread2({}, line), {}, { unsupported: "a word longer than its line with a border" });
+					if (mayHyphenate(line, token, 0)) {
+						var _line$unsupported5;
+						line = _objectSpread2(_objectSpread2({}, line), {}, { unsupported: (_line$unsupported5 = line.unsupported) !== null && _line$unsupported5 !== void 0 ? _line$unsupported5 : MAY_HYPHENATE });
+					}
 					for (const character of charactersOf(token.pieces)) {
 						const characterWidth = widthOf(character, measurer);
 						if (placed && line.position + characterWidth > endOf(line) + TOLERANCE$1 && limitOf(lines.length + 1) - indentLeft > 0) line = wrap(_objectSpread2(_objectSpread2({}, line), {}, {
@@ -1922,8 +1991,8 @@ var docxLayout = (function(exports) {
 						};
 					}
 					if (room > NO_HYPHEN_ROOM) {
-						var _line$unsupported3;
-						line = _objectSpread2(_objectSpread2({}, line), {}, { unsupported: (_line$unsupported3 = line.unsupported) !== null && _line$unsupported3 !== void 0 ? _line$unsupported3 : "a soft hyphen whose hyphen ends this close to the end of the line" });
+						var _line$unsupported6;
+						line = _objectSpread2(_objectSpread2({}, line), {}, { unsupported: (_line$unsupported6 = line.unsupported) !== null && _line$unsupported6 !== void 0 ? _line$unsupported6 : "a soft hyphen whose hyphen ends this close to the end of the line" });
 					}
 				}
 			};
@@ -1950,7 +2019,7 @@ var docxLayout = (function(exports) {
 					border: void 0
 				});
 				if (token.type === "tab") {
-					var _nextStop, _line$unsupported5;
+					var _nextStop, _line$unsupported8;
 					const numbered = numberTab ? numberTabStop(line.position, firstLineStops, format, defaultTabStop, limitOf()) : void 0;
 					numberTab = false;
 					if ((numbered === null || numbered === void 0 ? void 0 : numbered.unsupported) !== void 0) line = _objectSpread2(_objectSpread2({}, line), {}, { unsupported: numbered.unsupported });
@@ -1962,8 +2031,8 @@ var docxLayout = (function(exports) {
 					const pastEnd = own && next.position > Math.max(limitOf(), marginOf()) + TOLERANCE$1 ? next : void 0;
 					const unknown = pastIndent && (next.alignment === "center" || next.alignment === "decimal" || squeezes) ? "a centred or decimal tab stop past the paragraph's right indent, or one in a justified line" : pastIndent && next.alignment === "left" && next.position + widthAfterTab(rest, measurer) > marginOf() + TOLERANCE$1 ? "text after a tab stop past the paragraph's right indent that goes past the margin" : pastEnd === void 0 ? void 0 : pastEndUnknown(pastEnd, line.started);
 					if (unknown !== void 0) {
-						var _line$unsupported4;
-						line = _objectSpread2(_objectSpread2({}, line), {}, { unsupported: (_line$unsupported4 = line.unsupported) !== null && _line$unsupported4 !== void 0 ? _line$unsupported4 : unknown });
+						var _line$unsupported7;
+						line = _objectSpread2(_objectSpread2({}, line), {}, { unsupported: (_line$unsupported7 = line.unsupported) !== null && _line$unsupported7 !== void 0 ? _line$unsupported7 : unknown });
 					}
 					if ((pastEnd === null || pastEnd === void 0 ? void 0 : pastEnd.alignment) === "left" && unknown === void 0) {
 						const tab = _objectSpread2(_objectSpread2({}, line), {}, {
@@ -2005,7 +2074,7 @@ var docxLayout = (function(exports) {
 						letters: 0,
 						otherSpaces: 0,
 						started: true
-					}, misaligned === void 0 ? {} : { unsupported: (_line$unsupported5 = line.unsupported) !== null && _line$unsupported5 !== void 0 ? _line$unsupported5 : misaligned });
+					}, misaligned === void 0 ? {} : { unsupported: (_line$unsupported8 = line.unsupported) !== null && _line$unsupported8 !== void 0 ? _line$unsupported8 : misaligned });
 					continue;
 				}
 				placeWord(token);
@@ -2435,10 +2504,10 @@ var docxLayout = (function(exports) {
 		var _cell$sizing;
 		const text = measure((_cell$sizing = cell.sizing) !== null && _cell$sizing !== void 0 ? _cell$sizing : cell.blocks);
 		const margins = cell.marginLeft + cell.marginRight;
-		return [cell, {
+		return [cell, _objectSpread2(_objectSpread2({}, text), {}, {
 			min: text.min + margins,
 			max: text.max + margins
-		}];
+		})];
 	})));
 	/** How far apart two widths, in points, can be and still be the same: a twentieth of a point, a twip */
 	var SAME = .05;
@@ -2618,12 +2687,15 @@ var docxLayout = (function(exports) {
 			if (tooLong.length === 0 && !spaced && !widen.uneven && widen.width === void 0) return table;
 			if (tooLong.length > 0 && spaced) return _objectSpread2(_objectSpread2({}, table), {}, { unsupported: "a long word in a table with space between its cells" });
 			if (tooLong.some(({ vertical }) => vertical)) return _objectSpread2(_objectSpread2({}, table), {}, { unsupported: "a long word in text that runs up or down a table cell" });
+			if (tooLong.some((cell) => content.get(cell).hyphenated)) return _objectSpread2(_objectSpread2({}, table), {}, { unsupported: "a word Word may hyphenate, longer than its cell" });
 		}
 		const { columns, unsettled } = widen ? sizeGivenColumns(table, content) : sizeColumns(table, content);
 		const total = sum$1(columns.map(({ width }) => width));
 		const tableWidth = fit !== null && fit !== void 0 ? fit : widen;
 		const target = (_tableWidth$width = tableWidth.width) !== null && _tableWidth$width !== void 0 ? _tableWidth$width : tableWidth.share === void 0 ? void 0 : tableWidth.share * available;
 		const room = target !== null && target !== void 0 ? target : (widen === null || widen === void 0 ? void 0 : widen.fixed) ? Number.POSITIVE_INFINITY : available - indent;
+		const sizingCells = sizingRows(table).flatMap((row) => row.cells);
+		if (fit && sizingCells.some((cell) => content.get(cell).hyphenated) && (total > room || sizingCells.some((cell) => cell.ownWidth !== void 0 && content.get(cell).min > cell.ownWidth))) return _objectSpread2(_objectSpread2({}, table), {}, { unsupported: "a table sized to its text whose columns' widths depend on words Word may hyphenate" });
 		if (sum$1(columns.map(({ min }) => min)) > room && tableWidth.width === void 0) return _objectSpread2(_objectSpread2({}, table), {}, { unsupported: "a word longer than its table can make room for" });
 		if (widen && spaced && target !== void 0 && total < target) return _objectSpread2(_objectSpread2({}, table), {}, { unsupported: "space between the cells of a table wider than its cells" });
 		if (unsettled.includes("always") || unsettled.length > 0 && total > room) return _objectSpread2(_objectSpread2({}, table), {}, { unsupported: "a long word in cells merged across columns" });
@@ -2656,11 +2728,12 @@ var docxLayout = (function(exports) {
 		const rows = laidOut === table || laidOut.unsupported !== void 0 ? sizingRows(table) : laidOut.rows;
 		const borders = (borderLeft + borderRight) / 2;
 		if (fit !== void 0 && fit.width === void 0) {
-			const { columns } = sizeColumns(table, measureCells(table, measure));
-			return {
+			const content = measureCells(table, measure);
+			const { columns } = sizeColumns(table, content);
+			return _objectSpread2({
 				min: sum$1(columns.map(({ min }) => min)) + borders,
 				max: sum$1(columns.map((column) => column.width)) + borders
-			};
+			}, [...content.values()].some(({ hyphenated }) => hyphenated) ? { hyphenated: true } : {});
 		}
 		const width = (_fit$width = fit === null || fit === void 0 ? void 0 : fit.width) !== null && _fit$width !== void 0 ? _fit$width : largest(rows.map(({ cells }) => sum$1(cells.map((cell) => cell.width + cell.marginLeft + cell.marginRight))));
 		return {
@@ -3874,11 +3947,11 @@ var docxLayout = (function(exports) {
 						font
 					}] : [], ...(part.length === 0 ? [] : spansOf(part, format)).map((_ref) => {
 						let { text } = _ref;
-						return _objectSpread2(_objectSpread2({
+						return _objectSpread2(_objectSpread2(_objectSpread2({
 							type: "text",
 							text,
 							font: _objectWithoutProperties(_ref, _excluded)
-						}, format.eastAsianLanguage === void 0 ? {} : { language: format.eastAsianLanguage }), isEastAsianRun(format) ? { eastAsian: true } : {});
+						}, format.eastAsianLanguage === void 0 ? {} : { language: format.eastAsianLanguage }), isEastAsianRun(format) ? { eastAsian: true } : {}), hyphenationOf(format));
 					})]);
 				}
 				case "w:tab":
@@ -5153,6 +5226,23 @@ var docxLayout = (function(exports) {
 		return _objectSpread2(_objectSpread2({}, lists), {}, { [language]: _objectSpread2(_objectSpread2({}, lists[language]), list) });
 	}, {});
 	/**
+	* How Word may hyphenate a run's words when the document hyphenates: not at all in text not checked for spelling or in no
+	* language (`word-hyphenation.docx` HY7), by its English dictionary in English, or in no language given, which Word for
+	* Mac hyphenates as English (HY1a to HY1c), and otherwise by a dictionary it hasn't been seen using.
+	*/
+	var hyphenationOf = ({ noProof, language }) => {
+		if (noProof === true || (language === null || language === void 0 ? void 0 : language.toLowerCase()) === "zxx") return { hyphenation: "none" };
+		return language === void 0 || /^en(-|$)/i.test(language) ? {} : { hyphenation: "unknown" };
+	};
+	/**
+	* The settings of Word's automatic hyphenation: whether words in capitals are left whole (`w:doNotHyphenateCaps`). The
+	* hyphenation zone (`w:hyphenationZone`) Word doesn't keep in compatibility mode 15 (`word-hyphenation-zone.docx`), and the
+	* most lines in a row that end with a hyphen (`w:consecutiveHyphenLimit`) only leaves whole words Word could otherwise
+	* hyphenate, which the layout stops at all the same (`word-hyphenation-limit.docx` HY9c). Lines broken at soft hyphens it
+	* leaves as they are (`word-hyphenation-manual.docx` HY9a).
+	*/
+	var readHyphenation = (settings) => onOff(settings, "w:doNotHyphenateCaps") === true ? { capitalsWhole: true } : {};
+	/**
 	* Reads the parts of the document's settings (`w:settings`) that change how it is laid out.
 	*/
 	var readSettings = (xml) => {
@@ -5163,7 +5253,6 @@ var docxLayout = (function(exports) {
 		const spacingControl = valueOf(settings, "w:characterSpacingControl");
 		const mode = numberOf((_wordSettingsOf$find = wordSettingsOf(compatibility).find(({ "w:name": setting }) => setting === "compatibilityMode")) === null || _wordSettingsOf$find === void 0 ? void 0 : _wordSettingsOf$find["w:val"]);
 		const unsupported = (_find$ = (_find2 = [
-			[onOff(settings, "w:autoHyphenation"), "hyphenation"],
 			[onOff(settings, "w:strictFirstAndLastChars"), "the strict rules for the characters that can't start a line"],
 			[spacingControl !== void 0 && spacingControl !== "doNotCompress", "punctuation compressed"],
 			[mode === void 0 || mode < CURRENT_COMPATIBILITY_MODE, "a document in compatibility mode"],
@@ -5172,11 +5261,11 @@ var docxLayout = (function(exports) {
 			[onOff(settings, "w:printTwoOnOne"), "two pages printed on each sheet"],
 			[onOff(settings, "w:linkStyles"), "styles updated from the document's template when Word opens it"]
 		].find(([applies]) => applies === true)) === null || _find2 === void 0 ? void 0 : _find2[1]) !== null && _find$ !== void 0 ? _find$ : unknownLengthIn(settings);
-		return _objectSpread2(_objectSpread2({
+		return _objectSpread2(_objectSpread2(_objectSpread2({
 			defaultTabStop: (_twips15 = twips(attributesOf(find(settings, "w:defaultTabStop"))["w:val"])) !== null && _twips15 !== void 0 ? _twips15 : 36,
 			evenAndOddHeaders: onOff(settings, "w:evenAndOddHeaders") === true,
 			addsParagraphSpacing: onOff(compatibility, "w:doNotUseHTMLParagraphAutoSpacing") === true
-		}, Object.keys(lists).length > 0 ? { breakRules: { lists } } : {}), unsupported ? { unsupported } : {});
+		}, Object.keys(lists).length > 0 ? { breakRules: { lists } } : {}), onOff(settings, "w:autoHyphenation") === true ? { hyphenation: readHyphenation(settings) } : {}), unsupported ? { unsupported } : {});
 	};
 	/**
 	* The faces of the fonts a document embeds, which Word draws text in those fonts in. Each is the face of the font the
@@ -5651,7 +5740,7 @@ var docxLayout = (function(exports) {
 	*/
 	var paginate = (content, { pageNumbers = /* @__PURE__ */ new Map(), places: givenPlaces = /* @__PURE__ */ new Map(), earlierPlaces = /* @__PURE__ */ new Map(), pageCount: givenPageCount, sectionPageCounts: givenSectionPageCounts = [], measurer = DEFAULT_MEASURER } = {}) => {
 		var _laidOutLines$get;
-		const { sections, defaultTabStop, evenAndOddHeaders, addsParagraphSpacing, footnotes, footnoteSeparator, footnoteContinuationSeparator, endnotes, endnoteContinuationSeparator, breakRules, footnoteNumbers, endnoteNumbers } = content;
+		const { sections, defaultTabStop, evenAndOddHeaders, addsParagraphSpacing, footnotes, footnoteSeparator, footnoteContinuationSeparator, endnotes, endnoteContinuationSeparator, breakRules, hyphenation, footnoteNumbers, endnoteNumbers } = content;
 		const blocks = [...content.blocks, ...endnotes.map((block) => ({
 			block: block.type === "paragraph" && !endnoteNumbers.has(block) ? _objectSpread2(_objectSpread2({}, block), {}, { format: _objectSpread2(_objectSpread2({}, block.format), {}, { keepNext: true }) }) : block,
 			section: sections.length - 1
@@ -5751,7 +5840,8 @@ var docxLayout = (function(exports) {
 					markFont: paragraph.markFont,
 					measurer: measuring,
 					breakRules,
-					numberAlignment: paragraph.numberAlignment
+					numberAlignment: paragraph.numberAlignment,
+					hyphenation
 				});
 				const unknown = laidOut.find((line) => line.unsupported !== void 0);
 				if (unknown) throw new Unsupported(unknown.unsupported);
@@ -5822,20 +5912,25 @@ var docxLayout = (function(exports) {
 		* below it when that can be (`hangsBelow`)
 		*/
 		const fitsAbove = (from, { height, spacingBelow }, end, aboveNotes) => from + height <= end + TOLERANCE || from + height - spacingBelow <= end + TOLERANCE && hangsBelow(aboveNotes);
-		/** How narrow and how wide the paragraphs and tables in a table cell can be */
+		/**
+		* How narrow and how wide the paragraphs and tables in a table cell can be, and whether Word may hyphenate a word as
+		* wide as the narrowest of them
+		*/
 		const contentWidths = (stack) => stack.reduce((widths, block) => {
-			const { min, max } = block.type === "table" ? tableWidths(block, contentWidths) : measureContentWidths(measurable(block.items), {
+			const own = block.type === "table" ? tableWidths(block, contentWidths) : measureContentWidths(measurable(block.items), {
 				format: block.format,
 				tabStops: block.tabStops,
 				defaultTabStop,
 				measurer: measuring,
 				breakRules,
-				numberAlignment: block.numberAlignment
+				numberAlignment: block.numberAlignment,
+				hyphenation
 			});
-			return {
-				min: Math.max(widths.min, min),
-				max: Math.max(widths.max, max)
-			};
+			const hyphenated = own.min > widths.min ? own.hyphenated : own.min < widths.min ? widths.hyphenated : own.hyphenated || widths.hyphenated;
+			return _objectSpread2({
+				min: Math.max(widths.min, own.min),
+				max: Math.max(widths.max, own.max)
+			}, hyphenated ? { hyphenated } : {});
 		}, {
 			min: 0,
 			max: 0
@@ -7992,14 +8087,15 @@ var docxLayout = (function(exports) {
 	* equation, a footnote that continues on the next page, columns evened out before a continuous section break, a line in
 	* a table cell that is taller than a page, text in a font that isn't in the width tables and isn't embedded, such as
 	* Aptos, a character whose width in its font isn't known, such as a mathematical symbol in Calibri, which Word draws in
-	* Cambria Math, or a date in the text, which Word writes when it opens the document. The page references to bookmarks
-	* after it are left blank, for Word to fill in when it updates the fields. A document in compatibility mode, which Word
-	* lays out as an older version of Word did, isn't laid out at all, nor is one with a compatibility setting that may
-	* change Word's lines in a way not yet followed: one of the schema's turned on, or one of Word's own other than those
-	* Word writes in the documents it makes, turned on, or, for one the layout doesn't know, on or off. Settings for other
-	* applications are left to them. When laying the pages out again with the page numbers it worked out still changes them
-	* after three passes, as when a table of contents wraps one way with a number and the other way without it, all of them
-	* are left blank.
+	* Cambria Math, a word Word may hyphenate, in a document that hyphenates its words, as which parts Word breaks it into
+	* is in its own dictionaries, or a date in the text, which Word writes when it opens the document. The page references
+	* to bookmarks after it are left blank, for Word to fill in when it updates the fields. A document in compatibility
+	* mode, which Word lays out as an older version of Word did, isn't laid out at all, nor is one with a compatibility
+	* setting that may change Word's lines in a way not yet followed: one of the schema's turned on, or one of Word's own
+	* other than those Word writes in the documents it makes, turned on, or, for one the layout doesn't know, on or off.
+	* Settings for other applications are left to them. When laying the pages out again with the page numbers it worked out
+	* still changes them after three passes, as when a table of contents wraps one way with a number and the other way
+	* without it, all of them are left blank.
 	*
 	* Page references are written as Word writes them, with `\p` ("above", "below" or "on page 4") and in formats of their
 	* own, such as `\* roman`, and so are numbers of pages. Page references, tables of contents and SEQ fields (caption
