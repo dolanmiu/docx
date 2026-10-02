@@ -105,6 +105,10 @@ const mergedRow = (first: TableCell, cells: readonly (readonly Block[])[] = [], 
 
 const table = (rows: readonly TableRow[]): TableBlock => ({ type: "table", rows });
 
+/** A paragraph as `paragraph` makes it, with a bookmark at the end of its last line too, named with its name and "End" */
+const endMarked = (name: string, lines: number): ParagraphBlock =>
+    withItems(paragraph(name, lines), [{ type: "marker", name: `${name}End` }]);
+
 describe("paginate", () => {
     it("should fill each page with lines, and start the next where they don't fit", () => {
         const content = document([paragraph("a", 3), paragraph("b", 3), paragraph("c", 3)]);
@@ -1062,19 +1066,21 @@ describe("paginate", () => {
         });
 
         it("should move a row of an at-least height to the next page whole, unless the page has room for its height, as Word does", () => {
-            const atLeast = (lines: number, room: number): Record<string, string> =>
+            const atLeast = (lines: number, room: number, height = 45): Record<string, string> =>
                 pagesOf(
                     document([
                         paragraph("a", 7 - room),
-                        table([row([[paragraph("set", lines)], [paragraph("beside", 1)]], { height: { value: 45, rule: "atLeast" } })]),
+                        table([row([[paragraph("set", lines)], [paragraph("beside", 1)]], { height: { value: height, rule: "atLeast" } })]),
                     ]),
                 );
             // With room for 4 of its 6 lines, but not its 45 points, it moves (`word-line-heights.docx` T3a). With room for
             // 5 lines, it breaks, 4 and 2 with widow control (T3c)
             expect(atLeast(6, 4)).to.deep.equal({ a: "1", set: "2", beside: "2" });
             expect(atLeast(6, 5)).to.deep.equal({ a: "1", set: "1", beside: "1" });
-            // Shorter than its height, it moves too (T3d)
+            // Shorter than its height, it moves too (T3d), and so it does when its text doesn't fit either: 8 lines at least
+            // 2700 twips high, with room for 6, move whole (`word-probes.docx` U4f), where LibreOffice breaks them 6 and 2
             expect(atLeast(2, 4)).to.deep.equal({ a: "1", set: "2", beside: "2" });
+            expect(atLeast(5, 4, 60)).to.deep.equal({ a: "1", set: "2", beside: "2" });
         });
 
         it("should move a row to the next page whole when widow control holds back all of a cell's lines, as Word does", () => {
@@ -1350,38 +1356,162 @@ describe("paginate", () => {
             });
         });
 
-        it("should stop at a row that breaks across pages with merged cells or a table in it", () => {
-            const stoppedAt = (breaking: TableRow): string | undefined =>
-                paginate(document([paragraph("a", 5), table([breaking])]), { measurer: MEASURER }).stoppedAt;
-            expect(stoppedAt(mergedRow(merged("restart", [paragraph("merged", 4)])))).to.equal(
-                "a table row with merged cells across pages",
-            );
-            expect(stoppedAt(row([[paragraph("beside", 4)], [table([row([[paragraph("inner", 1)]])])]]))).to.equal(
+        it("should stop at a row that breaks across pages with a table in it, or in a cell merged down to it", () => {
+            const stoppedAt = (rows: readonly TableRow[], before = 5): string | undefined =>
+                paginate(document([paragraph("a", before), table(rows)]), { measurer: MEASURER }).stoppedAt;
+            expect(stoppedAt([row([[paragraph("beside", 4)], [table([row([[paragraph("inner", 1)]])])]])])).to.equal(
                 "a table in a table row across pages",
             );
             // A table in a cell of a row that moves to the next page whole is laid out there
-            expect(stoppedAt(row([[table([row([[paragraph("inner", 3)]])])]]))).to.equal(undefined);
+            expect(stoppedAt([row([[table([row([[paragraph("inner", 3)]])])]])])).to.equal(undefined);
+            // The cell's text goes down to the second row, which breaks across pages
+            const inMerge = [
+                mergedRow(merged("restart", [paragraph("merged", 3), table([row([[paragraph("inner", 1)]])])]), [[paragraph("r1", 1)]]),
+                mergedRow(merged("continue"), [[paragraph("r2", 1)]]),
+            ];
+            expect(stoppedAt(inMerge, 4)).to.equal("a table in a table row across pages");
         });
 
-        it("should stop at a merge that doesn't fit on the page with its cell's text, which Word breaks across pages", () => {
-            // As word-probes.docx's U4a: an 8-line cell merged down 2 rows, beside one-line cells, from line 47 of 51. Here
-            // a 4-line cell from line 5 of 7
-            const merge = (lines: number): TableBlock =>
-                table([
-                    mergedRow(merged("restart", [paragraph("merged", lines)]), [[paragraph("r1", 1)]]),
-                    mergedRow(merged("continue"), [[paragraph("r2", 1)]]),
+        it("should break the text of a cell merged down rows with the row of them that breaks across pages, as Word does", () => {
+            // As word-probes.docx's U4a: an 8-line cell merged down 2 rows, beside one-line cells, from line 47 of 51. Its
+            // text goes down from the top of the first row, so the second row breaks across pages with it, after its 5th line
+            // at the bottom of the page, and the text after the table follows its last 3 at the top of the next. Here a 5-line
+            // cell from line 5 of 7
+            const merge = (lines: number): DocumentContent =>
+                document([
+                    paragraph("a", 4),
+                    table([
+                        mergedRow(merged("restart", [endMarked("merged", lines)]), [[paragraph("r1", 1)]]),
+                        mergedRow(merged("continue"), [[paragraph("r2", 1)]]),
+                    ]),
+                    paragraph("b", 1),
                 ]);
-            const laidOut = (lines: number): ReturnType<typeof paginate> =>
-                paginate(document([paragraph("a", 4), merge(lines), paragraph("b", 1)]), { measurer: MEASURER });
-            // It stops before the merge's first row, so none of the cell's lines are given the page before Word's
-            expect(laidOut(4)).to.deep.include({
-                bookmarks: new Map([["a", "1"]]),
-                stoppedAt: "a table row with merged cells across pages",
+            expect(pagesOf(merge(5))).to.deep.equal({ a: "1", merged: "1", mergedEnd: "2", r1: "1", r2: "1", b: "2" });
+            /** The rows on each page, and the line of the paragraph after the table */
+            const laidOut = (lines: number): readonly (readonly BlockLayout[])[] =>
+                paginate(merge(lines), { measurer: MEASURER }).pages.map(({ body }) => body.filter(({ index }) => index > 0));
+            expect(laidOut(5)).to.deep.equal([
+                [
+                    {
+                        type: "table",
+                        index: 1,
+                        rows: [
+                            { index: 0, y: 50, height: 10 },
+                            { index: 1, y: 60, height: 20 },
+                        ],
+                    },
+                ],
+                [
+                    { type: "table", index: 1, rows: [{ index: 1, y: 10, height: 20 }] },
+                    { type: "paragraph", index: 2, lines: [{ text: "abcdefgh", x: 10, y: 30, width: 80, height: 10, textWidth: 80 }] },
+                ],
+            ]);
+            // With widow control, 2 of 4 lines are on the page, so the row's part on it is only a line tall
+            expect(pagesOf(merge(4))).to.deep.include({ merged: "1", mergedEnd: "2", b: "2" });
+            expect(laidOut(4)[0][0]).to.deep.equal({
+                type: "table",
+                index: 1,
+                rows: [
+                    { index: 0, y: 50, height: 10 },
+                    { index: 1, y: 60, height: 10 },
+                ],
             });
-            // A merge that fits on the page is laid out
-            expect(Object.fromEntries(laidOut(3).bookmarks)).to.deep.equal({ a: "1", merged: "1", r1: "1", r2: "1", b: "2" });
-            // With the cell's text all in the rows on the page, the next row of the merge moves to the next page, as in Word
-            // (U4b)
+            // A merge that fits on the page is laid out on it
+            expect(pagesOf(merge(3))).to.deep.equal({ a: "1", merged: "1", mergedEnd: "1", r1: "1", r2: "1", b: "2" });
+        });
+
+        it("should put the text of a cell merged down from a row that breaks across pages beside it, and its next rows below the rest of it", () => {
+            // As word-probes.docx's U4b: a 3-line cell merged down the first 2 of 3 rows, beside 6 lines in the first, from
+            // line 48 of 51. All 3 are on the page beside the first 4, and the second row goes below the other 2 on the next
+            // page. Here 2 lines beside 4 from line 6 of 7
+            const content = document([
+                paragraph("a", 5),
+                table([
+                    mergedRow(merged("restart", [endMarked("merged", 2)]), [[endMarked("r1", 4)]]),
+                    mergedRow(merged("continue"), [[paragraph("r2", 1)]]),
+                    row([[paragraph("left3", 1)], [paragraph("r3", 1)]]),
+                ]),
+            ]);
+            expect(pagesOf(content)).to.deep.equal({
+                a: "1",
+                merged: "1",
+                mergedEnd: "1",
+                r1: "1",
+                r1End: "2",
+                r2: "2",
+                left3: "2",
+                r3: "2",
+            });
+            expect(paginate(content, { measurer: MEASURER }).pages[1].body).to.deep.equal([
+                {
+                    type: "table",
+                    index: 1,
+                    rows: [
+                        { index: 0, y: 10, height: 20 },
+                        { index: 1, y: 30, height: 10 },
+                        { index: 2, y: 40, height: 10 },
+                    ],
+                },
+            ]);
+        });
+
+        it("should go on with the text of a cell merged down rows across the rows after the one that breaks across pages", () => {
+            // 3 of the cell's 6 lines go on the page, beside 2 of the first row's 4, which widow control keeps from leaving
+            // one alone. The other 3 go on from the top of its rows on the next page, so the second row is a line tall there,
+            // below the first row's last 2, rather than the 2 lines it would be on one page
+            const content = (last: Partial<TableRow> = {}): DocumentContent =>
+                document([
+                    paragraph("a", 4),
+                    table([
+                        mergedRow(merged("restart", [endMarked("merged", 6)]), [[endMarked("r1", 4)]]),
+                        mergedRow(merged("continue"), [[paragraph("r2", 1)]], last),
+                    ]),
+                    paragraph("b", 1),
+                ]);
+            expect(pagesOf(content())).to.deep.equal({ a: "1", merged: "1", mergedEnd: "2", r1: "1", r1End: "2", r2: "2", b: "2" });
+            const pages = paginate(content(), { measurer: MEASURER }).pages;
+            expect(pages[0].body[1]).to.deep.equal({ type: "table", index: 1, rows: [{ index: 0, y: 50, height: 30 }] });
+            expect(pages[1].body[0]).to.deep.equal({
+                type: "table",
+                index: 1,
+                rows: [
+                    { index: 0, y: 10, height: 20 },
+                    { index: 1, y: 30, height: 10 },
+                ],
+            });
+            // A row of an exact height is as tall as it is set to
+            const exact = paginate(content({ height: { value: 5, rule: "exact" } }), { measurer: MEASURER }).pages[1].body;
+            expect(exact[0]).to.deep.equal({
+                type: "table",
+                index: 1,
+                rows: [
+                    { index: 0, y: 10, height: 20 },
+                    { index: 1, y: 30, height: 5 },
+                ],
+            });
+        });
+
+        it("should stop where a page breaks between rows of a cell merged down them, with its text going on across the break", () => {
+            // The page breaks below the first row, as the second is kept whole, or as widow control keeps the cell's lines
+            // beside it together. Which rows Word puts the rest of the cell's text in then isn't known
+            const content = (changes: Partial<TableRow>): DocumentContent =>
+                document([
+                    paragraph("a", 5),
+                    table([
+                        mergedRow(merged("restart", [paragraph("merged", 3)]), [[paragraph("r1", 1)]]),
+                        mergedRow(merged("continue"), [[paragraph("r2", 1)]], changes),
+                    ]),
+                ]);
+            for (const changes of [{ cantSplit: true }, {}]) {
+                expect(numbersOf(content(changes))).to.deep.include({
+                    bookmarks: new Map([
+                        ["a", "1"],
+                        ["r1", "1"],
+                    ]),
+                    stoppedAt: "a cell merged down table rows whose text goes on across a page break between them",
+                });
+            }
+            // With all of its text in the rows on the page, the rest of its rows go on the next page (U4b)
             const fitting = (first: number): DocumentContent =>
                 document([
                     paragraph("a", 4),
@@ -1404,6 +1534,41 @@ describe("paginate", () => {
                 ]);
             expect(pagesOf(kept({ cantSplit: true }))).to.deep.equal({ a: "1", merged: "2", r1: "2", r2: "2" });
             expect(pagesOf(kept({ height: { value: 20, rule: "exact" } }))).to.deep.equal({ a: "1", merged: "2", r1: "2", r2: "2" });
+        });
+
+        it("should stop at the text of a cell merged down rows that goes on across more than two pages, or from a table's header rows", () => {
+            // Word has been seen to break it across one page break only
+            const stoppedAt = (rows: readonly TableRow[]): string | undefined =>
+                paginate(document([paragraph("a", 5), table(rows)]), { measurer: MEASURER }).stoppedAt;
+            const MORE = "a cell merged down table rows whose text goes on across more than two pages";
+            // In the last of its rows, which breaks across 3 pages
+            expect(
+                stoppedAt([
+                    mergedRow(merged("restart", [paragraph("merged", 12)]), [[paragraph("r1", 1)]]),
+                    mergedRow(merged("continue"), [[paragraph("r2", 1)]]),
+                ]),
+            ).to.equal(MORE);
+            // Or beside a row before the last that breaks across 3 pages, where 6 lines of it would fit on the second
+            const beside = (lines: number): readonly TableRow[] => [
+                mergedRow(merged("restart", [endMarked("merged", lines)]), [[endMarked("r1", 12)]]),
+                mergedRow(merged("continue"), [[paragraph("r2", 1)]]),
+            ];
+            expect(stoppedAt(beside(12))).to.equal(MORE);
+            expect(pagesOf(document([paragraph("a", 5), table(beside(8))]))).to.deep.equal({
+                a: "1",
+                merged: "1",
+                mergedEnd: "2",
+                r1: "1",
+                r1End: "3",
+                r2: "3",
+            });
+            // Whether Word repeats the part of it in the header rows above the rest of it isn't known
+            expect(
+                stoppedAt([
+                    mergedRow(merged("restart", [paragraph("merged", 5)]), [[paragraph("head", 1)]], { header: true }),
+                    mergedRow(merged("continue"), [[paragraph("r2", 1)]]),
+                ]),
+            ).to.equal("a cell merged down from a table's header rows whose text goes on across pages");
         });
 
         it("should stop at a line in a table cell taller than a page", () => {
@@ -1807,9 +1972,17 @@ describe("paginate", () => {
             });
 
             it("should stop at what it can't lay out in the columns it balances, though it can in a column as tall as the page", () => {
-                // The row of a merged cell fits in the first column, but breaks across the columns as short as they fit in
-                const headed = balanced([table([mergedRow(merged("restart", [paragraph("merged", 4)]))])]);
-                expect(paginate(headed, { measurer: MEASURER }).stoppedAt).to.equal("a table row with merged cells across pages");
+                // The rows of a merged cell fit in the first column, but in the columns as short as they fit in, the second
+                // goes in the second column, and the cell's text would go on across the break between them
+                const merge = balanced([
+                    table([
+                        mergedRow(merged("restart", [paragraph("merged", 4)]), [[paragraph("r1", 1)]]),
+                        mergedRow(merged("continue"), [[paragraph("r2", 1)]], { cantSplit: true }),
+                    ]),
+                ]);
+                expect(paginate(merge, { measurer: MEASURER }).stoppedAt).to.equal(
+                    "a cell merged down table rows whose text goes on across a page break between them",
+                );
             });
 
             it("should put the line of the empty paragraph that ends the section after a table below the last column, as Word does", () => {
@@ -2910,6 +3083,54 @@ describe("paginate", () => {
                 );
                 expect(pagesOf(bordered)).to.deep.equal({ a: "1", cell: "1", next: "2", c: "3" });
             }
+        });
+
+        it("should end a row whose footnote continues beside a cell merged down to the next row, whose text goes on in that one", () => {
+            // The row stays on the page with the first 3 lines of its footnote, as one alone does (U3b), and the merged cell's
+            // line goes in it, so the next row goes on the next page, below the rest of the footnote
+            const content = withNotes(
+                [
+                    paragraph("a", 2),
+                    table([
+                        mergedRow(merged("restart", [paragraph("merged", 1)]), [[noted(paragraph("cell", 1), "footnote 1")]]),
+                        mergedRow(merged("continue"), [[paragraph("r2", 1)]]),
+                    ]),
+                ],
+                { "footnote 1": [paragraph("note", 5)] },
+            );
+            expect(pagesOf(content)).to.deep.equal({ a: "1", merged: "1", cell: "1", r2: "2" });
+        });
+
+        it("should put the footnote of a cell merged down rows on the page of its first row, and stop where its text goes on across pages", () => {
+            const note = { "footnote 1": [paragraph("note", 1)] };
+            // The cell's 2 lines are on the page beside the first row's first 2, as in U4b, with its footnote below them
+            const fitting = withNotes(
+                [
+                    paragraph("a", 3),
+                    table([
+                        mergedRow(merged("restart", [noted(paragraph("merged", 2), "footnote 1")]), [[paragraph("r1", 4)]]),
+                        mergedRow(merged("continue"), [[paragraph("r2", 1)]]),
+                    ]),
+                ],
+                note,
+            );
+            expect(pagesOf(fitting)).to.deep.equal({ a: "1", merged: "1", r1: "1", r2: "2" });
+            expect(paginate(fitting, { measurer: MEASURER }).pages[0].footnotes).to.have.length(1);
+            // Its footnote went with its first row, and the page Word puts it on when the line that refers to it goes on the
+            // next page isn't known
+            const merge = (lines: number): DocumentContent =>
+                withNotes(
+                    [
+                        paragraph("a", 2),
+                        table([
+                            mergedRow(merged("restart", [noted(paragraph("merged", lines), "footnote 1")]), [[paragraph("r1", 1)]]),
+                            mergedRow(merged("continue"), [[paragraph("r2", 1)]]),
+                        ]),
+                    ],
+                    note,
+                );
+            expect(numbersOf(merge(4)).stoppedAt).to.equal("a footnote in a cell merged down table rows whose text goes on across pages");
+            expect(pagesOf(merge(3))).to.deep.equal({ a: "1", merged: "1", r1: "1", r2: "1" });
         });
 
         it("should break a row across pages with the footnote of each of its lines on the page the line is on, as Word does", () => {
