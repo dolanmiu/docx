@@ -34,12 +34,14 @@ import {
     kinsokuLanguageOf,
     numberOf,
     onOff,
+    pointsOf,
     readCellMargins,
     readParagraphFormat,
     readRunFormat,
     spansOf,
     stringOf,
     styleChain,
+    unknownLengthIn,
     valueOf,
     withoutUndefined,
 } from "../text-layout";
@@ -301,10 +303,8 @@ const noteNumber = (text: string, font: TextFont): LayoutItem => ({
     font: { ...font, scale: (font.scale ?? 100) * SUPERSCRIPT_WIDTH },
 });
 
-const twips = (value: unknown): number | undefined => {
-    const amount = numberOf(value);
-    return amount === undefined ? undefined : amount / TWIPS_PER_POINT;
-};
+/** A length in points, from twips or from a universal measure, such as "1in" */
+const twips = (value: unknown): number | undefined => pointsOf(value, TWIPS_PER_POINT);
 
 /** Whether a field's switches give its number a format of its own, such as `\* roman`, or a picture, such as `\# "00"` */
 const hasOwnFormat = (switches: string): boolean => {
@@ -612,7 +612,7 @@ const readParagraph = (element: XmlObject, reader: Reader, tableStyle?: string):
         readParagraphFormat(properties),
     ];
     const items = readInline(children, paragraphRun, reader);
-    const unsupported = find(properties, "w:framePr") === undefined ? undefined : "a text frame";
+    const unsupported = find(properties, "w:framePr") === undefined ? unknownLengthIn(element) : "a text frame";
     return {
         type: "paragraph",
         items: typeof items === "string" ? [] : [...list.items, ...items],
@@ -806,8 +806,18 @@ const readTable = (element: XmlObject, reader: Reader): TableBlock => {
     // column for each it says it has, however many
     const columns = read.reduce((most, { end }) => Math.max(most, end), 0);
     const unfitted = columns > MOST_COLUMNS ? `a table given no widths of more than ${MOST_COLUMNS} columns` : undefined;
+    // The lengths of the table, its rows and its cells, whose paragraphs have their own
+    const lengths = unknownLengthIn([
+        find(children, "w:tblPr"),
+        find(children, "w:tblGrid"),
+        ...rows.flatMap((row) => {
+            const rowChildren = contentOf(row).filter(isObject);
+            return [find(rowChildren, "w:trPr"), ...cellsOf(rowChildren).map((cell) => find(contentOf(cell).filter(isObject), "w:tcPr"))];
+        }),
+    ]);
     const unsupported =
         (fits ? unfitted : unequal ? "a table whose rows give a column different widths" : undefined) ??
+        lengths ??
         blocks.find((block) => block.unsupported !== undefined)?.unsupported;
     return {
         type: "table",
@@ -906,7 +916,7 @@ const readSection = (element: unknown, readPart: (id: string) => readonly Block[
               ? "page numbers in a format not yet written"
               : find(properties, "w:textDirection") !== undefined
                 ? "text that runs down the page"
-                : undefined;
+                : unknownLengthIn(element);
     const headers = readReferences(properties, "w:headerReference", readPart);
     const footers = readReferences(properties, "w:footerReference", readPart);
     return {
@@ -941,7 +951,7 @@ const readNumbering = (
     xml: XmlObject | undefined,
     styles: TextStyles,
     otherIds: ReadonlyMap<string, string>,
-): ReadonlyMap<string, readonly NumberingLevel[]> => {
+): { readonly lists: ReadonlyMap<string, readonly NumberingLevel[]>; readonly unsupported?: string } => {
     const root = childrenOf(xml?.["w:numbering"]);
     const abstract = new Map(
         root
@@ -984,13 +994,16 @@ const readNumbering = (
                 return levels ? [[String(attributesOf(child["w:num"])["w:numId"]), levels] as const] : [];
             }),
     );
-    return new Map([
-        ...numbers,
-        ...[...otherIds].flatMap(([other, id]) => {
-            const levels = numbers.get(id);
-            return levels ? [[other, levels] as const] : [];
-        }),
-    ]);
+    return {
+        lists: new Map([
+            ...numbers,
+            ...[...otherIds].flatMap(([other, id]) => {
+                const levels = numbers.get(id);
+                return levels ? [[other, levels] as const] : [];
+            }),
+        ]),
+        ...withoutUndefined({ unsupported: unknownLengthIn(xml) }),
+    };
 };
 
 // The compatibility mode of Word 2013 and later, which lay out pages as Word does today. A document in an older one, or
@@ -1040,7 +1053,7 @@ const readSettings = (
                 ? "punctuation compressed"
                 : mode === undefined || mode < CURRENT_COMPATIBILITY_MODE
                   ? "a document in compatibility mode"
-                  : undefined;
+                  : unknownLengthIn(settings);
     return {
         defaultTabStop: twips(attributesOf(find(settings, "w:defaultTabStop"))["w:val"]) ?? 36,
         evenAndOddHeaders: onOff(settings, "w:evenAndOddHeaders") === true,
@@ -1121,7 +1134,7 @@ export const readDocument = (body: IXmlableObject, context: IContext): DocumentC
  */
 export const readContent = (body: XmlObject, parts: DocumentParts): DocumentContent => {
     const { styles } = parts;
-    const numbering = readNumbering(parts.numbering, styles, parts.otherListIds ?? new Map());
+    const { lists: numbering, unsupported: inNumbering } = readNumbering(parts.numbering, styles, parts.otherListIds ?? new Map());
     const readerOf = (inHeader: boolean): Reader => ({ styles, numbering, inHeader, fields: [], counters: new Map() });
 
     // Each header and footer, the first time a section refers to it
@@ -1229,7 +1242,7 @@ export const readContent = (body: XmlObject, parts: DocumentParts): DocumentCont
         addSection(undefined);
     }
 
-    return {
+    const documentContent: DocumentContent = {
         blocks,
         sections,
         footnotes,
@@ -1237,5 +1250,10 @@ export const readContent = (body: XmlObject, parts: DocumentParts): DocumentCont
         footnoteContinuationSeparator: footnotes.size > 0 ? readNoteContent("footnote", "continuationSeparator") : [],
         endnotes: endnotes.length > 0 ? [...readNoteContent("endnote", "separator"), ...endnotes] : [],
         ...readSettings(parts.settings),
+    };
+    // A length in the styles or lists stops the layout before anything, as any paragraph may be in them
+    return {
+        ...documentContent,
+        ...withoutUndefined({ unsupported: documentContent.unsupported ?? styles.unsupported ?? inNumbering }),
     };
 };

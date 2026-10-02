@@ -3,6 +3,7 @@ import { describe, expect, it } from "vitest";
 import { Formatter } from "@export/formatter";
 import type { IPropertiesOptions } from "@file/core-properties";
 import { File } from "@file/file";
+import { HeightRule, Table, TableCell, TableRow, WidthType } from "@file/table";
 import {
     AlignmentType,
     Footer,
@@ -1177,6 +1178,96 @@ describe("readDocument", () => {
         it("should mark a document in the compatibility mode of a version of Word before 2013 as unsupported", () => {
             expect(readBody([], { compatibility: { version: 14 } }).unsupported).to.equal("a document in compatibility mode");
             expect(readBody([], { compatibility: { version: 15 } }).unsupported).to.equal(undefined);
+        });
+    });
+
+    describe("lengths", () => {
+        type Length = number | `${number}${"in" | "pt" | "pc" | "pi"}`;
+
+        /** A document of every length docx takes a string for that the layout reads, each given by `length` */
+        const writtenWith = (length: (twips: number, measure: `${number}${"in" | "pt" | "pc" | "pi"}`) => Length): DocumentContent =>
+            readWritten({
+                sections: [
+                    {
+                        properties: {
+                            page: {
+                                size: { width: length(12240, "8.5in"), height: length(15840, "11in") },
+                                margin: {
+                                    top: length(1440, "1in"),
+                                    bottom: length(1440, "72pt"),
+                                    left: length(2160, "9pc"),
+                                    right: length(1440, "6pi"),
+                                    header: length(720, "0.5in"),
+                                    footer: length(720, "36pt"),
+                                    gutter: length(360, "0.25in"),
+                                },
+                            },
+                            column: { count: 2, space: length(720, "0.5in") },
+                        },
+                        children: [
+                            new Paragraph({
+                                indent: { left: length(720, "0.5in"), right: length(360, "18pt"), hanging: length(360, "0.25in") },
+                                children: [new TextRun({ text: "Indented", size: length(24, "12pt"), characterSpacing: 20 })],
+                            }),
+                            new Paragraph({ indent: { firstLine: length(360, "18pt") }, children: [new TextRun("First line")] }),
+                            new Table({
+                                width: { size: length(4320, "3in"), type: WidthType.DXA },
+                                // docx's columnWidths takes only numbers
+                                columnWidths: [1440, 2880],
+                                rows: [
+                                    new TableRow({
+                                        height: { value: length(720, "0.5in"), rule: HeightRule.ATLEAST },
+                                        children: [
+                                            new TableCell({
+                                                width: { size: length(1440, "1in"), type: WidthType.DXA },
+                                                children: [new Paragraph("A")],
+                                            }),
+                                            new TableCell({
+                                                width: { size: length(2880, "2in"), type: WidthType.DXA },
+                                                children: [new Paragraph("B")],
+                                            }),
+                                        ],
+                                    }),
+                                ],
+                            }),
+                        ],
+                    },
+                ],
+            });
+
+        it('should read lengths docx writes with units, such as "1in" or "12pt", as the same lengths given in numbers', () => {
+            const inNumbers = writtenWith((twips) => twips);
+            const withUnits = writtenWith((_, measure) => measure);
+            expect(withUnits.sections).to.deep.equal(inNumbers.sections);
+            expect(withUnits.blocks).to.deep.equal(inNumbers.blocks);
+            expect(withUnits.sections[0]).to.deep.include({ pageWidth: 612, marginLeft: 108, gutter: 18, columns: [189, 189] });
+            expect(itemsOf(withUnits)).to.deep.equal([{ type: "text", text: "Indented", font: { size: 12, characterSpacing: 1 } }]);
+            expect(paragraphOf(withUnits).format).to.deep.include({ indentLeft: 36, indentRight: 18, firstLineIndent: -18 });
+        });
+
+        it("should stop at a size in a unit other than points, and a negative fraction of a centimeter or millimeter, wherever it is", () => {
+            const SIZE = "a size given in a unit other than points";
+            const NEGATIVE = "a negative length of a fraction of a centimeter or millimeter";
+            const ind = (left: string): object => pPr({ "w:ind": { _attr: { "w:left": left } } });
+            // Word ignores a size in centimeters where no style gives one, so it may take another style's
+            expect(paragraphOf(readBody([p(r(rPr(value("w:sz", "1cm")), t("Text")))])).unsupported).to.equal(SIZE);
+            expect(paragraphOf(readBody([p(ind("-1.5cm"), r(t("Text")))])).unsupported).to.equal(NEGATIVE);
+            expect(paragraphOf(readBody([p(ind("-1cm"), r(rPr(value("w:sz", "11.5pt")), t("Text")))])).unsupported).to.equal(undefined);
+            const table = (properties: object): DocumentContent =>
+                readBody([{ "w:tbl": [{ "w:tblPr": [properties] }, { "w:tr": [{ "w:tc": [p(r(t("Cell")))] }] }] }]);
+            expect(table({ "w:tblInd": { _attr: { "w:w": "-0.5mm", "w:type": "dxa" } } }).blocks[0].block.unsupported).to.equal(NEGATIVE);
+            expect(table({ "w:tblInd": { _attr: { "w:w": "-1mm", "w:type": "dxa" } } }).blocks[0].block.unsupported).to.equal(undefined);
+            const section = readBody([{ "w:sectPr": [{ "w:pgMar": { _attr: { "w:top": "-2.5cm" } } }] }]).sections[0];
+            expect(section.unsupported).to.equal(NEGATIVE);
+            // In the styles, lists and settings, it stops the document
+            expect(readBody([], { styles: { default: { document: { run: { size: "0.2in" } } } } }).unsupported).to.equal(SIZE);
+            expect(
+                readBody([], {
+                    numbering: { config: [{ reference: "list", levels: [{ level: 0, text: "%1.", style: { run: { size: "1pc" } } }] }] },
+                }).unsupported,
+            ).to.equal(SIZE);
+            expect(readBody([], { defaultTabStop: "-1.5cm" as unknown as number }).unsupported).to.equal(NEGATIVE);
+            expect(readBody([]).unsupported).to.equal(undefined);
         });
     });
 

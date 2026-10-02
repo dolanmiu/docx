@@ -172,6 +172,29 @@ describe("estimatePageNumbers", () => {
         expect(document).not.to.contain("w:dirty");
     });
 
+    it('should lay a document out the same with its lengths given with units, such as "1in" and "12pt", as in numbers', () => {
+        // 120 lines of 12 points on A4 pages with 1-inch margins run onto a third page, where the bookmark after them is.
+        // Before docx/layout read units, "1in" was 1 twip and "12pt" 12 half-points, and the bookmark was on page 2
+        const document = (margin: number | "1in", size: number | "12pt"): IPropertiesOptions => ({
+            sections: [
+                {
+                    properties: { page: { margin: { top: margin, bottom: margin, left: margin, right: margin } } },
+                    children: [
+                        ...Array.from(
+                            { length: 120 },
+                            (_, index) => new Paragraph({ children: [new TextRun({ text: `Line ${index}`, size })] }),
+                        ),
+                        new Paragraph({ children: [new Bookmark({ id: "end", children: [new TextRun("End")] })] }),
+                    ],
+                },
+            ],
+        });
+        const inNumbers = estimateOf(document(1440, 24));
+        expect(estimateOf(document("1in", "12pt"))).to.deep.equal(inNumbers);
+        expect(inNumbers).to.deep.include({ pageCount: 3 });
+        expect(Object.fromEntries(inNumbers.bookmarks)).to.deep.equal({ end: "3" });
+    });
+
     it("should place nothing without a document to lay out", () => {
         expect(estimatePageNumbers({ "w:body": [] } as IXmlableObject, { stack: [] } as unknown as IContext)).to.deep.equal({
             bookmarks: new Map(),
