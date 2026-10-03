@@ -2502,6 +2502,7 @@ const readTable = (element: XmlObject, reader: Reader): TableBlock | undefined =
     };
 };
 
+// cspell:ignore tblp
 // What a floating table is placed against across and down the page, by its `horzAnchor` and `vertAnchor`, as a drawing
 // names the same, and what it can be lined up with them by (`tblpXSpec`, `tblpYSpec`)
 const TABLE_AXES = {
