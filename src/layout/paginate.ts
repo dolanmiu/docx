@@ -150,6 +150,9 @@ type MeasuredParagraph = {
 // How far past the bottom of a page a line may go, for the rounding of the heights
 const TOLERANCE = 0.01;
 
+// How much more or less room than its insets leave a text box's text may have, in points (`word-vml.docx` VM1, VM5)
+const TEXT_BOX_DOUBT = 0.72;
+
 // Word's automatic space before and after a paragraph, in points (`word-watertight-text.docx` TX6a, TX6b)
 const AUTOMATIC_SPACE = 14;
 
@@ -343,9 +346,14 @@ type ChapterHeading = { readonly level: number; readonly chapter?: string; reado
 /** The headings in a block: a paragraph's own, and those in a table's cells, whose chapter numbers aren't known yet */
 const headingsIn = (block: Block): readonly ChapterHeading[] =>
     block.type === "paragraph"
-        ? block.heading
-            ? [block.heading]
-            : []
+        ? [
+              // Those of the text frames anchored in it, which are before it in the text
+              ...block.items
+                  .flatMap((item) => (item.type === "drawing" ? (item.drawing.frame?.blocks ?? []) : []))
+                  .flatMap(headingsIn)
+                  .map(({ level }) => ({ level, unsupported: "a chapter heading in a text frame" })),
+              ...(block.heading ? [block.heading] : []),
+          ]
         : block.rows
               .flatMap(({ cells }) => cells.flatMap((cell) => cell.blocks.flatMap(headingsIn)))
               .map(({ level }) => ({ level, unsupported: "a chapter heading in a table" }));
@@ -573,7 +581,7 @@ const linesKept = (
 };
 
 /** The result of a field that depends on the pages */
-type PageField = Exclude<LayoutItem, InlineItem | { readonly type: "drawing" }>;
+type PageField = Exclude<LayoutItem, InlineItem | { readonly type: "drawing" | "textBox" }>;
 
 const PAGE_FIELDS: ReadonlySet<string> = new Set(["pageReference", "pageCount", "pageNumber", "sectionNumber"]);
 
@@ -726,9 +734,11 @@ export const paginate = (
         items.map((item, index) =>
             item.type === "drawing"
                 ? { type: "marker", name: drawingMarker(index), after: true }
-                : isPageField(item)
-                  ? { type: "text", text: resultText(item), font: item.font }
-                  : item,
+                : item.type === "textBox"
+                  ? { type: "box", width: item.width, height: textBoxHeight(item), font: item.font }
+                  : isPageField(item)
+                    ? { type: "text", text: resultText(item), font: item.font }
+                    : item,
         );
 
     /**
@@ -751,6 +761,21 @@ export const paginate = (
         return together.some(({ besideSoftHyphen }) => besideSoftHyphen)
             ? "kerning or ligatures beside a soft hyphen"
             : together.map(({ text, font }) => measurer.unknownShaping?.(text, font)).find(Boolean);
+    };
+
+    /**
+     * How tall a text box in the line is: its paragraphs, and the room above and below them. Where its text starts across
+     * the box, Word's PDFs show to within a little less than the room it adds to its height (`word-vml.docx` VM1, VM5), so
+     * it stops where its lines would break differently in that much more or less room, or, guessing, takes them as they
+     * break in the room its insets leave
+     */
+    const textBoxHeight = (box: Extract<LayoutItem, { readonly type: "textBox" }>): number => {
+        const { room, textWidth: inside, blocks: inBox } = box;
+        const [narrower, wider] = [inside - TEXT_BOX_DOUBT, inside + TEXT_BOX_DOUBT].map((width) => stackHeight(inBox, width, true));
+        if (Math.abs(narrower - wider) > TOLERANCE) {
+            stopAt("a line in a text box that only just fits");
+        }
+        return room + stackHeight(inBox, inside, true);
     };
 
     /**
@@ -2720,6 +2745,23 @@ export const paginate = (
         }
     };
 
+    /**
+     * A text frame at the size its paragraphs give it: as wide as their widest line when it has no width of its own, and
+     * as tall as they are, at least its own height, or its own height exactly, as its height rule says. Another drawing
+     * is as it is
+     */
+    const sizedFrame = (drawing: FloatingDrawing): FloatingDrawing => {
+        const { frame } = drawing;
+        if (frame === undefined) {
+            return drawing;
+        }
+        const width = frame.fitsWidth ? contentWidths(frame.blocks).max : drawing.width;
+        const ofText = stackHeight(frame.blocks, width, false);
+        const height =
+            frame.heightRule === "exact" ? drawing.height : frame.heightRule === "atLeast" ? Math.max(drawing.height, ofText) : ofText;
+        return { ...drawing, width, height };
+    };
+
     /** Whether a drawing that text flows around on the page goes down below where the next line goes */
     const besideDrawing = (): boolean => drawings.some(({ keepOut }) => keepOut.bottom > position + TOLERANCE);
 
@@ -2845,7 +2887,13 @@ export const paginate = (
         const { indentLeft = 0, indentRight = 0, firstLineIndent = 0 } = block.format;
         const columnEnd = linesBottom();
         /** Places one of its own drawings, against its paragraph's top, or the top of a line from `lineTop`, `height` tall */
-        const place = ({ drawing, index, table }: (typeof own)[number], line: number, lineTop: number, height: number): AnchoredDrawing => {
+        const place = (
+            { drawing: unsized, index, table }: (typeof own)[number],
+            line: number,
+            lineTop: number,
+            height: number,
+        ): AnchoredDrawing => {
+            const drawing = sizedFrame(unsized);
             if (drawing.horizontal.from === "character") {
                 throw new Unsupported("a drawing placed against where it is anchored along its line");
             }

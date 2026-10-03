@@ -75,6 +75,8 @@ const FRAME: IFrameOptions = {
     height: 1000,
     anchor: { horizontal: FrameAnchorType.PAGE, vertical: FrameAnchorType.PAGE },
 };
+// A border round a text frame's paragraph, which takes room beside it in a way not yet followed
+const FRAME_BORDER = { top: { style: BorderStyle.SINGLE, size: 6, space: 1, color: "auto" } } as const;
 
 const heading = (text: string, bookmark: string): Paragraph =>
     new Paragraph({ heading: HeadingLevel.HEADING_1, children: [new Bookmark({ id: bookmark, children: [new TextRun(text)] })] });
@@ -526,7 +528,7 @@ describe("estimatePageNumbers", () => {
                 {
                     children: [
                         heading("Before", "before"),
-                        new Paragraph({ frame: FRAME, children: [new TextRun("In a text frame")] }),
+                        new Paragraph({ frame: FRAME, border: FRAME_BORDER, children: [new TextRun("In a text frame")] }),
                         heading("After", "after"),
                     ],
                 },
@@ -1054,7 +1056,13 @@ describe("estimatePageNumbersWith", () => {
         it("should give the page numbers past what it can't lay out as Word does, and say where it guessed", () => {
             const framed: IPropertiesOptions = {
                 sections: [
-                    { children: [heading("First", "first"), new Paragraph({ frame: FRAME, text: "Framed" }), heading("Last", "last")] },
+                    {
+                        children: [
+                            heading("First", "first"),
+                            new Paragraph({ frame: FRAME, border: FRAME_BORDER, text: "Framed" }),
+                            heading("Last", "last"),
+                        ],
+                    },
                 ],
             };
             expect(estimateOf(framed)).to.deep.include({ bookmarks: new Map([["first", "1"]]) });
@@ -1064,7 +1072,7 @@ describe("estimatePageNumbersWith", () => {
                     ["last", "1"],
                 ]),
                 pageCount: 1,
-                guesses: [{ reason: "a text frame", page: 1 }],
+                guesses: [{ reason: "a text frame with borders", page: 1 }],
             });
             // With nothing to guess at, it gives what estimatePageNumbers does, and says it guessed nowhere
             expect(estimateOf(DOCUMENT, GUESS)).to.deep.equal({ ...estimateOf(DOCUMENT), guesses: [] });
