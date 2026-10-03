@@ -143,6 +143,8 @@ describe("layoutDocument", () => {
                                     height: 1000,
                                     anchor: { horizontal: FrameAnchorType.PAGE, vertical: FrameAnchorType.PAGE },
                                 },
+                                // With borders, which take room beside it in a way not yet followed
+                                border: { top: { style: BorderStyle.SINGLE, size: 6, space: 1, color: "auto" } },
                                 text: "In a frame",
                             }),
                             new Paragraph("After the frame"),
@@ -151,7 +153,7 @@ describe("layoutDocument", () => {
                 ],
             }),
         );
-        expect(stoppedAt).to.equal("a text frame");
+        expect(stoppedAt).to.equal("a text frame with borders");
         expect(pages.map(({ body }) => textsOf(body))).to.deep.equal([["Before the frame"]]);
     });
 

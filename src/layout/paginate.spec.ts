@@ -2,7 +2,7 @@
 import { describe, expect, it } from "vitest";
 
 import { type ParagraphFormat, SIMILAR_FONT_MEASURER, type TextFont, type TextMeasurer } from "../text-layout";
-import type { BlockLayout, PageLayout } from "./layout-document";
+import type { BlockLayout, PageLayout, ParagraphLayout } from "./layout-document";
 import type { FieldFormat } from "./number-format";
 import { type Pagination, paginate } from "./paginate";
 import type {
@@ -2308,6 +2308,26 @@ describe("paginate", () => {
                     inTable: "1",
                     a: "1",
                 });
+            });
+
+            it("should stop at a chapter number when a heading of its level is in a text frame", () => {
+                const framed: LayoutItem = {
+                    type: "drawing",
+                    drawing: {
+                        wrap: "square",
+                        side: "bothSides",
+                        width: 20,
+                        height: 10,
+                        effects: { top: 0, bottom: 0, left: 0, right: 0 },
+                        distances: { top: 0, bottom: 0, left: 0, right: 0 },
+                        horizontal: { from: "margin", offset: 0 },
+                        vertical: { from: "paragraph", offset: 0 },
+                        mayOverlap: false,
+                        frame: { blocks: [heading("inFrame", 1, "1")], heightRule: "exact", fitsWidth: false },
+                    },
+                };
+                const content = document([withItems(paragraph("a", 1), [framed])], { sections: [{ ...SECTION, chapters }] });
+                expect(paginate(content, { measurer: MEASURER }).stoppedAt).to.equal("a chapter heading in a text frame");
             });
         });
 
@@ -6408,6 +6428,84 @@ describe("paginate", () => {
                 ],
             };
             expect(stopOf([block])).to.equal("lines beside a drawing that don't settle");
+        });
+
+        describe("text frames", () => {
+            /** A text frame of paragraphs, sized as given, placed and wrapped as `floating` places a drawing */
+            const frame = (
+                blocks: readonly ParagraphBlock[],
+                sized: Partial<FloatingDrawing> & Partial<NonNullable<FloatingDrawing["frame"]>>,
+            ): LayoutItem => {
+                const { heightRule = "exact", fitsWidth = false, ...drawing } = sized;
+                return floating({ ...drawing, frame: { blocks, heightRule, fitsWidth } });
+            };
+            const text = (value: string, format: ParagraphFormat = {}): ParagraphBlock => ({
+                ...paragraph("in", 0, format),
+                items: [{ type: "text", text: value, font: {} }],
+            });
+
+            it("should size a frame by its height rule: its height exactly, at least its height, or its text's (FM1 to FM5)", () => {
+                // 4 lines of 10 in a frame 50 wide
+                const lines = [text("abcd abcd abcd abcd")];
+                const besideOf = (sized: Parameters<typeof frame>[1]): number =>
+                    roomsOf([prose("a", 30, [frame(lines, sized)])])[0].filter(([, , width]) => width < 180).length;
+                expect(besideOf({ height: 30, heightRule: "exact" })).to.equal(3);
+                expect(besideOf({ height: 30, heightRule: "atLeast" })).to.equal(4);
+                expect(besideOf({ height: 60, heightRule: "atLeast" })).to.equal(6);
+                expect(besideOf({ height: 60, heightRule: "auto" })).to.equal(4);
+                // With its paragraphs' space before the first and after the last, and between them: 10, 10, 5, 10 and 10 are
+                // 45, beside 5 lines (FM12)
+                const spaced = [text("abcd", { spaceBefore: 10 }), text("abcd", { spaceBefore: 5, spaceAfter: 10 })];
+                expect(besideOf({ height: 0, heightRule: "auto" })).to.equal(4);
+                expect(
+                    roomsOf([prose("a", 30, [frame(spaced, { height: 0, heightRule: "auto" })])])[0].filter(([, , width]) => width < 180),
+                ).to.have.length(5);
+            });
+
+            it("should make a frame with no width as wide as its text (FM14, FM17)", () => {
+                expect(
+                    roomsOf([prose("a", 9, [frame([text("ab")], { width: 0, fitsWidth: true, height: 10 })])])[0].slice(0, 2),
+                ).to.deep.equal([
+                    [10, 10, 160],
+                    [10, 20, 180],
+                ]);
+            });
+        });
+
+        describe("text boxes in the line", () => {
+            /** A text box 60 wide in the line, its paragraphs in 50 of it, with 6 above and below them */
+            const textBox = (value: string): LayoutItem => ({
+                type: "textBox",
+                width: 60,
+                textWidth: 50,
+                room: 6,
+                blocks: [{ ...paragraph("in", 0), items: [{ type: "text", text: value, font: {} }] }],
+                font: {},
+            });
+            const boxed = (value: string): ParagraphBlock => ({
+                ...paragraph("a", 0),
+                items: [{ type: "text", text: "ab ", font: {} }, textBox(value)],
+            });
+
+            it("should make a text box as tall as its paragraphs, broken in the room for its text, and the room around them", () => {
+                // 2 lines of 10, and 6: the line is 26 tall
+                expect(
+                    laidOut([boxed("abcd abcd"), paragraph("b", 1)]).pages[0].body.map((block) =>
+                        block.type === "paragraph" ? block.lines.map(({ y, height }) => [y, height]) : [],
+                    ),
+                ).to.deep.equal([[[10, 26]], [[36, 10]]]);
+            });
+
+            it("should stop at a line in a text box that breaks differently in a little more or less room (VM1, VM5)", () => {
+                // "ab abc" is 60 wide: in 50 it is two lines, and in 50.72 one, as "ab ab" is 50 wide
+                expect(stopOf([boxed("ab abcd")])).to.equal(undefined);
+                expect(stopOf([boxed("ab ab")])).to.equal("a line in a text box that only just fits");
+                // Guessing, its lines are broken in the room its insets leave: one line of 10, and 6
+                const guessed = paginate(document([boxed("ab ab")], { sections: [PAGE] }), { measurer: MEASURER, guess: true });
+                expect(guessed.stoppedAt).to.equal(undefined);
+                expect(guessed.pages[0]).to.deep.include({ guesses: ["a line in a text box that only just fits"] });
+                expect((guessed.pages[0].body[0] as ParagraphLayout).lines[0].height).to.equal(16);
+            });
         });
     });
 });

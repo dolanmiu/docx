@@ -120,6 +120,8 @@ type StyleDefinition = {
     readonly numbering?: { readonly id?: string; readonly level?: number };
     readonly run: RunFormat;
     readonly paragraph: ParagraphFormat;
+    /** The text frame a paragraph style puts its paragraphs in (`w:framePr`), as it is written, when it gives one */
+    readonly frame?: unknown;
     /** The margins a table style gives its cells */
     readonly cellMargins?: CellMargins;
     /**
@@ -567,7 +569,9 @@ export const readTextStyles = (xml: XmlObject, themeFonts: ThemeFonts = OFFICE_T
         .map((child) => {
             const children = childrenOf(child["w:style"]);
             const attributes = attributesOf(child["w:style"]);
-            const numbering = childrenOf(find(childrenOf(find(children, "w:pPr")), "w:numPr"));
+            const paragraphProperties = childrenOf(find(children, "w:pPr"));
+            const numbering = childrenOf(find(paragraphProperties, "w:numPr"));
+            const frame = find(paragraphProperties, "w:framePr");
             const list = attributesOf(find(numbering, "w:numId"))["w:val"];
             const level = numberOf(attributesOf(find(numbering, "w:ilvl"))["w:val"]);
             const name = valueOf(children, "w:name");
@@ -584,6 +588,7 @@ export const readTextStyles = (xml: XmlObject, themeFonts: ThemeFonts = OFFICE_T
                         : { numbering: withoutUndefined({ id: list === undefined ? undefined : String(list), level }) }),
                     run: readRunFormat(find(children, "w:rPr"), themeFonts),
                     paragraph: readParagraphFormat(find(children, "w:pPr")),
+                    ...(frame === undefined ? {} : { frame }),
                     ...(attributes["w:type"] === "table" ? readTableStyle(children, themeFonts) : {}),
                 },
             };

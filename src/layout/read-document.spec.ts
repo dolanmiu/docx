@@ -6,9 +6,11 @@ import { File } from "@file/file";
 import { FootnoteReferenceRun } from "@file/footnotes";
 import type { ICompatibilityOptions } from "@file/settings/compatibility";
 import { HeightRule, Table, TableCell, TableRow, WidthType } from "@file/table";
+import { Textbox } from "@file/textbox";
 import { DeletedTextRun } from "@file/track-revision";
 import {
     AlignmentType,
+    Bookmark,
     DocumentGridType,
     EndnoteReferenceRun,
     Footer,
@@ -31,7 +33,15 @@ import {
 } from "docx";
 
 import { type TextGrid, WORD_DEFAULT_STYLES } from "../text-layout";
-import { type DocumentContent, type LayoutItem, type ParagraphBlock, type TableBlock, readContent, readDocument } from "./read-document";
+import {
+    type DocumentContent,
+    type FloatingDrawing,
+    type LayoutItem,
+    type ParagraphBlock,
+    type TableBlock,
+    readContent,
+    readDocument,
+} from "./read-document";
 
 const contextOf = (file: File): IContext => ({ file, viewWrapper: file.Document, stack: [] }) as unknown as IContext;
 
@@ -525,10 +535,7 @@ describe("readDocument", () => {
             }
         });
 
-        it("should mark a paragraph in a text frame, or with an equation, as unsupported", () => {
-            expect(paragraphOf(readBody([p(pPr({ "w:framePr": { _attr: { "w:w": 2000 } } }), r(t("a")))])).unsupported).to.equal(
-                "a text frame",
-            );
+        it("should mark a paragraph with an equation as unsupported", () => {
             const equation = paragraphOf(readBody([p(r(t("a")), { "m:oMath": [] })]));
             expect(equation.unsupported).to.equal("an equation");
             expect(equation.items).to.deep.equal([]);
@@ -856,10 +863,11 @@ describe("readDocument", () => {
             expect(itemsOf(readBody([p(sized)]))).to.deep.equal([{ type: "box", width: 14, height: 22, font: { size: 15 } }]);
         });
 
-        it("should leave out drawings text doesn't flow around, and stop at VML drawings", () => {
+        it("should leave out drawings text doesn't flow around, and stop at embedded objects", () => {
             expect(itemsOf(readBody([p(drawing({ "wp:anchor": [{ "wp:wrapNone": {} }] }))]))).to.deep.equal([]);
-            expect(paragraphOf(readBody([p(r({ "w:pict": [] }))])).unsupported).to.equal("a VML drawing");
-            expect(paragraphOf(readBody([p(r({ "w:object": [] }))])).unsupported).to.equal("a VML drawing");
+            expect(paragraphOf(readBody([p(r({ "w:object": [] }))])).unsupported).to.equal("an embedded object");
+            // One in hidden text takes no room
+            expect(itemsOf(readBody([p(r(rPr({ "w:vanish": {} }), { "w:object": [] }))]))).to.deep.equal([]);
         });
 
         it("should read a drawing that text flows around as docx writes it: its wrapping, size, effects, distances and place", () => {
@@ -1032,7 +1040,7 @@ describe("readDocument", () => {
                 ],
             };
             const cell = (readBody([table]).blocks[0].block as TableBlock).rows[0].cells[0].blocks[0];
-            expect(cell.unsupported).to.equal("a drawing that text flows around in a table cell, footnote or endnote");
+            expect(cell.unsupported).to.equal("a drawing that text flows around in a table cell, footnote, endnote or text box");
         });
 
         it("should read the drawing Word reads of those with a fallback for older versions", () => {
@@ -1049,6 +1057,338 @@ describe("readDocument", () => {
             };
             expect(itemsOf(readBody([p(r(alternate))]))).to.deep.equal([{ type: "box", width: 1, height: 1, font: {} }]);
             expect(itemsOf(readBody([p(r({ "mc:AlternateContent": [{ "mc:Fallback": [] }] }))]))).to.deep.equal([]);
+        });
+    });
+
+    describe("text frames", () => {
+        const framed = (attributes: object, ...children: readonly object[]): object =>
+            p(pPr({ "w:framePr": { _attr: { "w:hAnchor": "margin", "w:vAnchor": "text", ...attributes } } }), ...children);
+        const drawingsOf = (content: DocumentContent, index = 0): readonly FloatingDrawing[] =>
+            itemsOf(content, index).flatMap((item) => (item.type === "drawing" ? [item.drawing] : []));
+
+        it("should take a frame's paragraph out of the text, and anchor it in the next paragraph as a drawing text flows around", () => {
+            const content = readBody([
+                framed(
+                    { "w:w": 2000, "w:h": 1000, "w:x": 100, "w:y": 200, "w:hSpace": 360, "w:vSpace": 288 },
+                    { "w:bookmarkStart": { _attr: { "w:id": 1, "w:name": "inside" } } },
+                    r(t("In the frame")),
+                ),
+                p(r(t("After"))),
+            ]);
+            expect(content.blocks).to.have.length(1);
+            const [drawing] = drawingsOf(content);
+            // With no wrapping given, the text goes beside it on both sides, and a height with no rule is the least it is
+            // (`word-frames.docx` FM1, FM2)
+            expect(drawing).to.deep.include({
+                wrap: "square",
+                side: "bothSides",
+                width: 100,
+                height: 50,
+                effects: { top: 0, bottom: 0, left: 0, right: 0 },
+                distances: { top: 14.4, bottom: 14.4, left: 18, right: 18 },
+                horizontal: { from: "margin", offset: 5 },
+                vertical: { from: "paragraph", offset: 10 },
+            });
+            expect(drawing.frame).to.deep.include({ heightRule: "atLeast", fitsWidth: false });
+            expect(drawing.frame?.blocks.map((block) => block.items.filter(({ type }) => type === "text"))).to.deep.equal([
+                [{ type: "text", text: "In the frame", font: {} }],
+            ]);
+            // Its bookmarks are where its anchor is, as it is on its page, before the drawing and the anchor's text
+            expect(itemsOf(content).map(({ type }) => type)).to.deep.equal(["marker", "drawing", "text"]);
+            expect(itemsOf(content)[0]).to.deep.equal({ type: "marker", name: "inside" });
+        });
+
+        it("should put paragraphs next to each other with the same frame in one frame, and others in frames of their own", () => {
+            const content = readBody([
+                framed({ "w:w": 2000 }, r(t("a"))),
+                framed({ "w:w": 2000 }, r(t("b"))),
+                framed({ "w:w": 3000 }, r(t("c"))),
+                p(r(t("After"))),
+            ]);
+            expect(drawingsOf(content).map(({ frame }) => frame?.blocks.length)).to.deep.equal([2, 1]);
+            expect(drawingsOf(content).map(({ width }) => width)).to.deep.equal([100, 150]);
+        });
+
+        it("should read how the text goes round a frame as Word lays it out", () => {
+            const wrapOf = (wrap: string): string | undefined =>
+                drawingsOf(readBody([framed({ "w:w": 2000, "w:wrap": wrap }, r(t("a"))), p(r(t("b")))]))[0]?.wrap;
+            // Tight, through and automatic wrapping are around it, beside it, and not beside it is above and below it (FM6)
+            expect(["around", "tight", "through", "auto", "notBeside"].map(wrapOf)).to.deep.equal([
+                "square",
+                "square",
+                "square",
+                "square",
+                "topAndBottom",
+            ]);
+            // With none, it is in front of the text and takes no room, but its bookmarks are still where its anchor is (FM6c)
+            const inFront = readBody([
+                framed({ "w:wrap": "none" }, { "w:bookmarkStart": { _attr: { "w:id": 1, "w:name": "in" } } }, r(t("a"))),
+                p(r(t("b"))),
+            ]);
+            expect(itemsOf(inFront).map(({ type }) => type)).to.deep.equal(["marker", "text"]);
+            expect(paragraphOf(readBody([framed({ "w:wrap": "bogus" }, r(t("a"))), p(r(t("b")))])).unsupported).to.equal(
+                "a text frame that text flows around in a way not yet followed",
+            );
+        });
+
+        it("should read a frame a paragraph's style gives it, and stop where it gives another of its own", () => {
+            const styles = {
+                paragraphStyles: [
+                    {
+                        id: "Framed",
+                        name: "Framed",
+                        paragraph: {
+                            frame: {
+                                type: "absolute",
+                                position: { x: 0, y: 0 },
+                                width: 2000,
+                                height: 0,
+                                anchor: { horizontal: "margin", vertical: "text" },
+                            },
+                        },
+                    },
+                ],
+            } as unknown as IPropertiesOptions["styles"];
+            const styled = (frame?: object): object =>
+                p(pPr(value("w:pStyle", "Framed"), ...(frame ? [{ "w:framePr": { _attr: frame } }] : [])), r(t("a")));
+            expect(drawingsOf(readBody([styled(), p(r(t("b")))], { styles }))).to.have.length(1);
+            // Its own frame the same as its style's is that frame
+            const same = { "w:w": 2000, "w:h": 0, "w:x": 0, "w:y": 0, "w:hAnchor": "margin", "w:vAnchor": "text" };
+            expect(drawingsOf(readBody([styled(same), p(r(t("b")))], { styles }))).to.have.length(1);
+            expect(paragraphOf(readBody([styled({ ...same, "w:w": 3000 }), p(r(t("b")))], { styles })).unsupported).to.equal(
+                "a text frame given by both a paragraph and its style",
+            );
+            // Its own that can't be laid out stops for its own reason
+            expect(paragraphOf(readBody([styled({ "w:hAnchor": "margin" }), p(r(t("b")))], { styles })).unsupported).to.equal(
+                "a text frame that doesn't say what it is placed against",
+            );
+        });
+
+        it("should stop at a frame with no paragraph after it in its section, with borders, notes, or where it isn't followed yet", () => {
+            const table = {
+                "w:tbl": [
+                    { "w:tblPr": [] },
+                    { "w:tblGrid": [{ "w:gridCol": { _attr: { "w:w": 2000 } } }] },
+                    { "w:tr": [{ "w:tc": [p(r(t("a")))] }] },
+                ],
+            };
+            expect(readBody([framed({}, r(t("a"))), table]).blocks[0].block.unsupported).to.equal(
+                "a text frame with no paragraph after it in its section",
+            );
+            const atEnd = readBody([p(r(t("before"))), framed({}, r(t("a")))]);
+            expect(atEnd.blocks.map(({ block }) => block.unsupported)).to.deep.equal([
+                undefined,
+                "a text frame with no paragraph after it in its section",
+            ]);
+            const sectionEnd = readBody([framed({}, r(t("a"))), p(pPr({ "w:sectPr": [] })), p(r(t("b")))]);
+            expect(sectionEnd.blocks[0].block.unsupported).to.equal("a text frame with no paragraph after it in its section");
+            // Borders take room beside it in a way not yet followed (FM13)
+            const bordered = { "w:pBdr": [{ "w:top": { _attr: { "w:val": "single", "w:sz": 4, "w:space": 1 } } }] };
+            expect(
+                paragraphOf(
+                    readBody([
+                        p(pPr(bordered, { "w:framePr": { _attr: { "w:hAnchor": "page", "w:vAnchor": "page" } } }), r(t("a"))),
+                        p(r(t("b"))),
+                    ]),
+                ).unsupported,
+            ).to.equal("a text frame with borders");
+            expect(
+                paragraphOf(readBody([framed({}, r({ "w:footnoteReference": { _attr: { "w:id": 1 } } })), p(r(t("b")))])).unsupported,
+            ).to.equal("a footnote or endnote in a text frame");
+            expect(paragraphOf(readBody([framed({ "w:hAnchor": "cell" }, r(t("a"))), p(r(t("b")))])).unsupported).to.equal(
+                "a text frame placed against what isn't followed yet",
+            );
+            const cellTable = {
+                "w:tbl": [
+                    { "w:tblPr": [] },
+                    { "w:tblGrid": [{ "w:gridCol": { _attr: { "w:w": 2000 } } }] },
+                    { "w:tr": [{ "w:tc": [framed({}, r(t("a"))), p(r(t("b")))] }] },
+                ],
+            };
+            expect((readBody([cellTable]).blocks[0].block as TableBlock).rows[0].cells[0].blocks[0].unsupported).to.equal(
+                "a text frame in a table cell, footnote, endnote, header, footer or text box",
+            );
+        });
+    });
+
+    describe("VML drawings", () => {
+        /** A VML drawing of a shape of a style, with its attributes and children */
+        const pict = (style: string, children: readonly object[] = [], attributes: object = {}, name = "v:rect"): object =>
+            r({ "w:pict": [{ [name]: [{ _attr: { style, ...attributes } }, ...children] }] });
+        const UNOUTLINED = { stroked: "f" };
+        const SQUARE = { "w10:wrap": { _attr: { type: "square" } } };
+        const reasonOf = (...children: readonly object[]): string | undefined => paragraphOf(readBody([p(...children)])).unsupported;
+
+        it("should read a shape in the line as a box of its size, with its run's font, and stop at pictures and outlines", () => {
+            expect(itemsOf(readBody([p(pict("width:100pt;height:50pt", [], UNOUTLINED))]))).to.deep.equal([
+                { type: "box", width: 100, height: 50, font: {} },
+            ]);
+            // A hidden one takes its room, with no outline drawn (`word-vml.docx` VM4)
+            expect(itemsOf(readBody([p(pict("width:1in;height:1in;visibility:hidden"))]))).to.deep.equal([
+                { type: "box", width: 72, height: 72, font: {} },
+            ]);
+            // Word drew a picture at a size other than its own (VM8), and an outline takes room around the shape (VM1)
+            expect(reasonOf(pict("width:72pt;height:36pt", [{ "v:imagedata": {} }], UNOUTLINED, "v:shape"))).to.equal("a VML picture");
+            expect(reasonOf(pict("width:72pt;height:36pt"))).to.equal("a VML shape with an outline in the line");
+            expect(reasonOf(pict("width:72px;height:36pt", [], UNOUTLINED))).to.equal(
+                "a VML drawing with a length in units not yet followed",
+            );
+            expect(reasonOf(pict("width:72pt", [], UNOUTLINED))).to.equal("a VML drawing with no size");
+            expect(reasonOf(pict("width:72pt;height:2em", [], UNOUTLINED))).to.equal(
+                "a VML drawing with a length in units not yet followed",
+            );
+            expect(reasonOf(r({ "w:pict": [{ "v:shapetype": [] }] }))).to.equal("a VML drawing with no shape");
+            // In hidden text, it takes no room, and in text with a border, it stops as a picture does
+            expect(itemsOf(readBody([p(r(rPr({ "w:vanish": {} }), { "w:pict": [] }))]))).to.deep.equal([]);
+            const bordered = rPr({ "w:bdr": { _attr: { "w:val": "single", "w:sz": 4, "w:space": 0 } } });
+            expect(reasonOf(r(bordered, { "w:pict": [] }))).to.equal("a picture in text with a border");
+        });
+
+        it("should read docx's text box in the line as a box sized to its text, with Word's insets and its outline", () => {
+            const content = readWritten({
+                sections: [
+                    {
+                        children: [
+                            new Paragraph({
+                                children: [
+                                    new TextRun("Before "),
+                                    new Textbox({
+                                        children: [
+                                            new Paragraph({ children: [new Bookmark({ id: "inside", children: [new TextRun("In")] })] }),
+                                        ],
+                                        style: { width: "200pt", height: "auto" },
+                                    }),
+                                ],
+                            }),
+                            new Textbox({
+                                children: [new Paragraph("Hidden")],
+                                style: { width: "100pt", height: "100pt", visibility: "hidden" },
+                            }),
+                        ],
+                    },
+                ],
+            });
+            const [, marker, box] = itemsOf(content);
+            expect(marker).to.deep.equal({ type: "marker", name: "inside" });
+            // As wide as it is with its outline, and its text in the room its insets leave, with the insets, what Word adds to
+            // a box sized to its text and its outline above and below it (VM1 to VM5)
+            const { width, textWidth, room } = box as { readonly width: number; readonly textWidth: number; readonly room: number };
+            expect(box).to.deep.include({ type: "textBox", font: {} });
+            expect([width, textWidth, room].map((length) => Math.round(length * 100) / 100)).to.deep.equal([200.72, 185.6, 8.64]);
+            expect((box as { readonly blocks: readonly ParagraphBlock[] }).blocks[0].items).to.deep.include({
+                type: "text",
+                text: "In",
+                font: {},
+            });
+            // Sized to its text whatever height it gives, with no outline drawn when it is hidden (VM3, VM4)
+            const hidden = itemsOf(content, 1)[0] as { readonly width: number; readonly textWidth: number; readonly room: number };
+            expect([hidden.width, hidden.textWidth, hidden.room].map((length) => Math.round(length * 100) / 100)).to.deep.equal([
+                100, 85.6, 7.92,
+            ]);
+        });
+
+        it("should stop at a text box Word doesn't size to its text, or with insets, an outline, notes, lists or drawings of its own", () => {
+            const textBox = (text: readonly object[], style = "width:200pt;height:auto", box: object = {}, shape: object = {}): object =>
+                pict(
+                    style,
+                    [{ "v:textbox": [{ _attr: { style: "mso-fit-shape-to-text:t", ...box } }, { "w:txbxContent": text }] }],
+                    shape,
+                    "v:shape",
+                );
+            const line = [p(r(t("a")))];
+            expect(reasonOf(textBox(line))).to.equal(undefined);
+            expect(reasonOf(pict("width:200pt", [{ "v:textbox": [{ "w:txbxContent": line }] }], {}, "v:shape"))).to.equal(
+                "a text box not sized to its text",
+            );
+            expect(reasonOf(textBox(line, "width:200pt;height:auto", { inset: "0,0,0,0" }))).to.equal("a text box with insets of its own");
+            expect(reasonOf(textBox(line, "width:200pt;height:auto", {}, { strokeweight: "2pt" }))).to.equal(
+                "a text box with an outline of its own",
+            );
+            expect(reasonOf(textBox(line, "height:auto"))).to.equal("a VML drawing with no size");
+            expect(reasonOf(textBox(line, "width:auto"))).to.equal("a VML drawing with a length that isn't a number");
+            expect(reasonOf(textBox([p(r({ "w:footnoteReference": { _attr: { "w:id": 1 } } }))]))).to.equal(
+                "a footnote or endnote in a text box",
+            );
+            const numbered = readBody([p(textBox([p(pPr({ "w:numPr": [value("w:ilvl", 0), value("w:numId", 1)] }), r(t("a")))]))], {
+                numbering: { config: [{ reference: "list", levels: [{ level: 0, format: LevelFormat.DECIMAL, text: "%1." }] }] },
+            });
+            expect(paragraphOf(numbered).unsupported).to.equal("a list in a text box");
+            expect(reasonOf(textBox([p(pict("width:1pt;height:1pt", [], UNOUTLINED))]))).to.equal(
+                "a VML drawing in the line of a header, footer or text box",
+            );
+            expect(
+                reasonOf(textBox([p(pPr({ "w:framePr": { _attr: { "w:hAnchor": "page", "w:vAnchor": "page" } } }), r(t("a")))])),
+            ).to.equal("a text frame in a table cell, footnote, endnote, header, footer or text box");
+            const anchor = { "wp:anchor": [{ "wp:wrapSquare": {} }] };
+            expect(reasonOf(textBox([p(r({ "w:drawing": [anchor] }))]))).to.equal(
+                "a drawing that text flows around in a table cell, footnote, endnote or text box",
+            );
+            // A paragraph in it that can't be laid out stops it
+            expect(reasonOf(textBox([p(r({ "w:ruby": [] }))]))).to.equal("text with a phonetic guide");
+        });
+
+        it("should leave out a shape placed on the page with no wrapping, and read one that text flows around as a drawing", () => {
+            const placed = "position:absolute;margin-left:10pt;margin-top:20pt;width:100pt;height:72pt";
+            expect(itemsOf(readBody([p(pict(placed))]))).to.deep.equal([]);
+            expect(itemsOf(readBody([p(pict(placed, [{ "w10:wrap": { _attr: { type: "none" } } }]))]))).to.deep.equal([]);
+            const [item] = itemsOf(readBody([p(pict(placed, [SQUARE], UNOUTLINED))]));
+            expect(item).to.deep.include({ type: "drawing" });
+            expect((item as { readonly drawing: object }).drawing).to.deep.include({
+                wrap: "square",
+                width: 100,
+                height: 72,
+                distances: { top: 0, bottom: 0, left: 9, right: 9 },
+                horizontal: { from: "column", offset: 10 },
+                vertical: { from: "paragraph", offset: 20 },
+            });
+        });
+
+        it("should stop at a shape that text flows around where Word's way with it isn't known", () => {
+            const placed = "position:absolute;width:100pt;height:72pt";
+            expect(reasonOf(pict(placed, [SQUARE]))).to.equal("a VML drawing with an outline that text flows around");
+            expect(reasonOf(pict(placed, [SQUARE, { "v:imagedata": {} }], UNOUTLINED, "v:shape"))).to.equal("a VML picture");
+            expect(reasonOf(pict(placed, [SQUARE, { "v:textbox": [{ "w:txbxContent": [] }] }], UNOUTLINED, "v:shape"))).to.equal(
+                "a text box that text flows around",
+            );
+            expect(reasonOf(pict("position:absolute;width:100pt", [SQUARE], UNOUTLINED))).to.equal("a VML drawing with no size");
+            expect(reasonOf(pict(placed, [{ "w10:wrap": { _attr: { type: "tight" } } }], UNOUTLINED))).to.equal(
+                "a VML drawing that text flows around in a way not yet followed",
+            );
+            const table = {
+                "w:tbl": [
+                    { "w:tblPr": [] },
+                    { "w:tblGrid": [{ "w:gridCol": { _attr: { "w:w": 2000 } } }] },
+                    {
+                        "w:tr": [
+                            { "w:tc": [{ "w:tcPr": [{ "w:tcW": { _attr: { "w:w": 2000 } } }] }, p(pict(placed, [SQUARE], UNOUTLINED))] },
+                        ],
+                    },
+                ],
+            };
+            expect((readBody([table]).blocks[0].block as TableBlock).rows[0].cells[0].blocks[0].unsupported).to.equal(
+                "a drawing that text flows around in a table cell, footnote, endnote or text box",
+            );
+        });
+
+        it("should stop at a shape in a header's line, or one there that text flows around, which the body's text goes round", () => {
+            const headerOf = (...children: readonly object[]): readonly unknown[] => {
+                const file = new File({ sections: [{ headers: { default: new Header({ children: [] }) }, children: [] }] });
+                const [wrapper] = file.Headers;
+                // eslint-disable-next-line functional/immutable-data
+                wrapper.View.prepForXml = (): IXmlableObject => ({ "w:hdr": [p(...children)] });
+                const id = `rId${wrapper.View.ReferenceId}`;
+                const content = readDocument(
+                    { "w:body": [{ "w:sectPr": [{ "w:headerReference": { _attr: { "r:id": id } } }] }] } as IXmlableObject,
+                    contextOf(file),
+                );
+                return content.sections[0].headers.default!.map((block) => block.unsupported);
+            };
+            expect(headerOf(pict("position:absolute;width:100pt;height:72pt", [SQUARE], UNOUTLINED))).to.deep.equal([
+                "a VML drawing that text flows around in a header or footer",
+            ]);
+            expect(headerOf(pict("width:100pt;height:72pt", [], UNOUTLINED))).to.deep.equal([
+                "a VML drawing in the line of a header, footer or text box",
+            ]);
         });
     });
 
@@ -2876,7 +3216,7 @@ describe("readDocument", () => {
             wrapper.View.prepForXml = (): IXmlableObject => ({
                 "w:hdr": [
                     p(
-                        r({ "w:pict": [] }),
+                        r({ "w:pict": [{ "v:shape": [{ _attr: { style: "position:absolute;width:100pt;height:50pt" } }] }] }),
                         r({ "w:drawing": [{ "wp:anchor": [{ "wp:wrapSquare": {} }] }] }),
                         r({ "w:footnoteReference": { _attr: { "w:id": 1 } } }),
                         r(t("text")),
@@ -4611,7 +4951,7 @@ describe("readDocument", () => {
                 "a paragraph kept with the next before a hidden paragraph",
             );
             expect(unsupportedOf(p(pPr({ "w:keepNext": {} }, { "w:framePr": {} }), r(t("a"))), centred, p(r(t("c"))))).to.equal(
-                "a text frame",
+                "a text frame that doesn't say what it is placed against",
             );
             // Between paragraphs of the same borders, without them
             const bordered = { "w:pBdr": [{ "w:top": { _attr: { "w:val": "single", "w:sz": 4, "w:space": 1 } } }] };
@@ -4861,6 +5201,54 @@ describe("readDocument", () => {
                 ["a hidden paragraph mark between paragraphs formatted differently but for their alignment, left indent and space", "a"],
                 [undefined, "b"],
             ]);
+        });
+
+        it("should read a VML shape in the line Word's way with isn't known as a box of its size", () => {
+            const shape = (children: readonly object[] = [], attributes: object = {}): object => ({
+                "w:pict": [{ "v:shape": [{ _attr: { style: "width:72pt;height:36pt", ...attributes } }, ...children] }],
+            });
+            const guessedItems = (...children: readonly object[]): readonly LayoutItem[] => itemsOf(guessed([p(r(...children))]));
+            const box = { type: "box", width: 72, height: 36, font: {} };
+            expect(guessedItems(shape([{ "v:imagedata": {} }], { stroked: "f" }))).to.deep.equal([box]);
+            expect(guessedItems(shape())).to.deep.equal([box]);
+            expect(paragraphOf(guessed([p(r(shape()))])).unsupported).to.equal("a VML shape with an outline in the line");
+            // In text with a border, it is read as it would be without it
+            expect(guessedItems(border, shape([], { stroked: "f" }))[0]).to.deep.include({ type: "box", width: 72, height: 36 });
+            // One whose size isn't known has no guess, and is left out
+            expect(itemsOf(guessed([p(r({ "w:pict": [{ "v:shape": [{ _attr: { style: "width:72pt" } }] }] }), r(t("a")))]))).to.deep.equal([
+                { type: "text", text: "a", font: {} },
+            ]);
+        });
+
+        it("should read a text frame Word's way with isn't known as its paragraph's text, or leave it out, with its bookmarks", () => {
+            const framed = (...children: readonly object[]): object =>
+                p(pPr({ "w:framePr": { _attr: { "w:hAnchor": "page", "w:vAnchor": "page" } } }), ...children);
+            const bookmark = { "w:bookmarkStart": { _attr: { "w:id": 1, "w:name": "inside" } } };
+            // One with no paragraph after it in its section is laid out where it is in the text
+            const table = {
+                "w:tbl": [
+                    { "w:tblPr": [] },
+                    { "w:tblGrid": [{ "w:gridCol": { _attr: { "w:w": 2000 } } }] },
+                    { "w:tr": [{ "w:tc": [p(r(t("b")))] }] },
+                ],
+            };
+            expect(read(guessed([framed(r(t("a"))), framed(r(t("b"))), table]))).to.deep.equal([
+                ["a text frame with no paragraph after it in its section", "a"],
+                [undefined, "b"],
+                [undefined, "table"],
+            ]);
+            // One with borders is left out of the paragraph after it, which keeps its bookmarks
+            const bordered = p(
+                pPr(
+                    { "w:pBdr": [{ "w:top": { _attr: { "w:val": "single", "w:sz": 4, "w:space": 1 } } }] },
+                    { "w:framePr": { _attr: { "w:hAnchor": "page", "w:vAnchor": "page" } } },
+                ),
+                bookmark,
+                r(t("a")),
+            );
+            const content = guessed([bordered, p(r(t("b")))]);
+            expect(read(content)).to.deep.equal([["a text frame with borders", "b"]]);
+            expect(itemsOf(content).map(({ type }) => type)).to.deep.equal(["marker", "text"]);
         });
     });
 });
