@@ -1,4 +1,4 @@
-// cspell:ignore anchorx anchory
+// cspell:ignore anchorx anchory allowoverlap
 import { describe, expect, it } from "vitest";
 
 import { readVmlFloating, readVmlStyle, vmlLength, vmlShapeOf } from "./vml-drawings";
@@ -91,8 +91,19 @@ describe("readVmlFloating", () => {
             distances: { top: 0, bottom: 0, left: 9, right: 9 },
             horizontal: { from: "column", offset: 10 },
             vertical: { from: "paragraph", offset: 20 },
-            mayOverlap: false,
+            mayOverlap: true,
         });
+    });
+
+    it("should read whether a shape may overlap other drawings, which it may unless it says not", () => {
+        const overlapOf = (attributes: Record<string, unknown>): unknown => {
+            const read = vmlShapeOf([{ "v:rect": [{ _attr: { style: "", ...attributes } }] }]);
+            return typeof read === "string" ? read : (readVmlFloating(read, SQUARE, 1, 1) as { readonly mayOverlap: boolean }).mayOverlap;
+        };
+        expect(overlapOf({})).to.equal(true);
+        expect(overlapOf({ "o:allowoverlap": "t" })).to.equal(true);
+        expect(overlapOf({ "o:allowoverlap": "f" })).to.equal(false);
+        expect(overlapOf({ "o:allowoverlap": "false" })).to.equal(false);
     });
 
     it("should read what a shape is placed against, how it lines up with it, its distances and its wrapping", () => {

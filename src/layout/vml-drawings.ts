@@ -5,7 +5,7 @@
  *
  * @module
  */
-// cspell:ignore roundrect polyline shapetype textbox txbx anchorx anchory
+// cspell:ignore roundrect polyline shapetype textbox txbx anchorx anchory allowoverlap
 import { type XmlObject, attributesOf, childrenOf, find, isObject } from "../text-layout";
 import type { DrawingPosition, FloatingDrawing } from "./read-document";
 
@@ -186,8 +186,9 @@ export const readVmlFloating = (shape: VmlShape, wrap: XmlObject, width: number,
         distances: { top, bottom, left, right },
         horizontal: horizontal as DrawingPosition,
         vertical: vertical as DrawingPosition,
-        // How Word lays out a VML shape that overlaps another drawing hasn't been seen, so it stops there as at a drawing
-        // that may not overlap
-        mayOverlap: false,
+        // Whether it may overlap other drawings (`o:allowoverlap`), which VML lets it unless it says not, as DrawingML's
+        // `allowOverlap` does: Word wraps the text round a VML shape as round a DrawingML one (VM9 to VM11, VM15), keeping it
+        // out of all the room of those that may overlap, and moving one that may not out of the way, where the layout stops
+        mayOverlap: !isVmlFalse(attributesOf(shape.element[Object.keys(shape.element)[0]])["o:allowoverlap"] ?? "t"),
     };
 };
