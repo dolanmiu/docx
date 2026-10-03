@@ -499,9 +499,8 @@ describe("estimatePageNumbers", () => {
         expect((await JSZip.loadAsync(written)).file("word/document.xml")).not.to.equal(null);
     });
 
-    it("should leave the bookmarks after a table that text flows around without page numbers, as Word puts the text after it beside it", () => {
-        // word-watertight-tables.docx TB11: the lines after the table start beside it, 3220 twips in, where docx/layout would
-        // lay them out below it
+    it("should give the bookmarks after a table that text flows around page numbers, as Word puts the text after it beside it", () => {
+        // word-watertight-tables.docx TB11: the lines after the table start beside it, 3220 twips in
         const pages = pageNumbersOf({
             sections: [
                 {
@@ -518,7 +517,7 @@ describe("estimatePageNumbers", () => {
                 },
             ],
         });
-        expect(pages).to.deep.equal({ before: "1" });
+        expect(pages).to.deep.equal({ before: "1", after: "1" });
     });
 
     it("should leave the bookmarks after something it can't lay out without page numbers", () => {

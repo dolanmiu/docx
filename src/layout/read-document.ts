@@ -306,9 +306,23 @@ export type TableBlock = {
      * to their text or widens for long words (`word-tracked-changes.docx` MK11h, MK11i). Given when it sizes or widens them
      */
     readonly deletedRows?: readonly TableRow[];
+    /** Where it floats, when text flows around it (`w:tblpPr`) */
+    readonly float?: TableFloat;
     readonly unsupported?: string;
     /** Whether a layout that guesses has no guess for it either, for what is in one of its cells */
     readonly noGuess?: boolean;
+};
+
+/**
+ * Where a table that text flows around is (`w:tblpPr`): across and down the page, from the page, its margins, or the
+ * column and the top of the paragraph after it, at a distance or lined up with it, and how far the text keeps from it.
+ */
+export type TableFloat = {
+    readonly horizontal: DrawingPosition;
+    readonly vertical: DrawingPosition;
+    readonly distances: Sides;
+    /** Whether it may overlap other tables that text flows around (`w:tblOverlap`) */
+    readonly mayOverlap: boolean;
 };
 
 export type Block = ParagraphBlock | TableBlock;
@@ -2438,11 +2452,18 @@ const readTable = (element: XmlObject, reader: Reader): TableBlock | undefined =
         (unequal || (tableTwips !== undefined && read.some(({ edges, end }) => Math.abs(edges.get(end)! - tableTwips) > WIDTH_TOLERANCE)));
     // What is in a cell that a layout that guesses has no guess for is why it can't lay out the table either
     const withoutGuess = blocks.find((block) => block.noGuess === true);
-    // Word puts the text after a floating table (`w:tblpPr`) beside it (`word-watertight-tables.docx` TB11)
+    // Word puts the text after a floating table (`w:tblpPr`) beside it (`word-watertight-tables.docx` TB11), as it does
+    // beside a drawing with square wrapping (`word-floats2.docx` G24 to G29). One in a table cell, a header or footer, or a
+    // note hasn't been seen
+    const floatElement = find(properties, "w:tblpPr");
+    const float = floatElement === undefined ? undefined : readTableFloat(floatElement, find(properties, "w:tblOverlap"));
     const unsupported =
         withoutGuess?.unsupported ??
         (reader.down === true ? "a table on text that runs down the page" : undefined) ??
-        (find(properties, "w:tblpPr") === undefined ? undefined : "a table that text flows around") ??
+        (float !== undefined && (reader.inCell || reader.inNote || reader.inHeader)
+            ? "a table that text flows around in a table cell, header, footer or note"
+            : undefined) ??
+        (typeof float === "string" ? float : undefined) ??
         (parts.some((part) => "w:sdt" in part) ? BOUND_CONTROL : undefined) ??
         read.find((row) => row.unsupported !== undefined)?.unsupported ??
         unmerged ??
@@ -2475,8 +2496,62 @@ const readTable = (element: XmlObject, reader: Reader): TableBlock | undefined =
         ...(indent ? { indent } : {}),
         ...(spaced ? { cellSpacing: followedSpacing } : {}),
         ...(deletedRows.length > 0 ? { deletedRows } : {}),
+        ...(typeof float === "object" ? { float } : {}),
         ...(unsupported ? { unsupported } : {}),
         ...(withoutGuess ? { noGuess: true } : {}),
+    };
+};
+
+// cspell:ignore tblp
+// What a floating table is placed against across and down the page, by its `horzAnchor` and `vertAnchor`, as a drawing
+// names the same, and what it can be lined up with them by (`tblpXSpec`, `tblpYSpec`)
+const TABLE_AXES = {
+    horzAnchor: {
+        from: new Map([
+            ["text", "column"],
+            ["margin", "margin"],
+            ["page", "page"],
+        ]),
+        alignments: new Set(["left", "center", "right", "inside", "outside"]),
+    },
+    vertAnchor: {
+        from: new Map([
+            ["text", "paragraph"],
+            ["margin", "margin"],
+            ["page", "page"],
+        ]),
+        alignments: new Set(["top", "center", "bottom", "inside", "outside"]),
+    },
+};
+
+/** Where a table that text flows around is (`w:tblpPr`), or why it can't be followed */
+const readTableFloat = (element: unknown, overlap: unknown): TableFloat | string => {
+    const attributes = attributesOf(element);
+    const position = (anchor: keyof typeof TABLE_AXES, spec: string, at: string): DrawingPosition | string => {
+        const { from: anchors, alignments } = TABLE_AXES[anchor];
+        const from = anchors.get(String(attributes[`w:${anchor}`]));
+        const align = attributes[`w:${spec}`];
+        if (from === undefined) {
+            return "a table that text flows around placed against what isn't given";
+        }
+        if (align !== undefined) {
+            return alignments.has(String(align))
+                ? { from, align: String(align) }
+                : "a table that text flows around lined up in a way not yet followed";
+        }
+        return { from, offset: twips(attributes[`w:${at}`]) ?? 0 };
+    };
+    const horizontal = position("horzAnchor", "tblpXSpec", "tblpX");
+    const vertical = position("vertAnchor", "tblpYSpec", "tblpY");
+    if (typeof horizontal === "string" || typeof vertical === "string") {
+        return typeof horizontal === "string" ? horizontal : (vertical as string);
+    }
+    const distance = (name: string): number => twips(attributes[`w:${name}FromText`]) ?? 0;
+    return {
+        horizontal,
+        vertical,
+        distances: { top: distance("top"), bottom: distance("bottom"), left: distance("left"), right: distance("right") },
+        mayOverlap: attributesOf(overlap)["w:val"] !== "never",
     };
 };
 
