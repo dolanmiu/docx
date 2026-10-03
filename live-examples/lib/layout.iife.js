@@ -3466,7 +3466,7 @@ var docxLayout = (function(exports) {
 	};
 	var stringOf = (value) => typeof value === "string" && value.length > 0 ? value : void 0;
 	var scaled = (value, divisor) => value === void 0 ? void 0 : value / divisor;
-	var POINTS_PER_UNIT = {
+	var POINTS_PER_UNIT$1 = {
 		mm: 72 / 25.4,
 		cm: 72 / 2.54,
 		in: 72,
@@ -3491,7 +3491,7 @@ var docxLayout = (function(exports) {
 		const measure = typeof value === "string" ? MEASURE.exec(value) : null;
 		if (!measure) return scaled(numberOf(value), perPoint);
 		const [, minus, whole, fraction = "", unit] = measure;
-		const inUnits = ((minus ? -Number(whole) : Number(whole)) + Number(`0${fraction}`)) * POINTS_PER_UNIT[unit] * perPoint;
+		const inUnits = ((minus ? -Number(whole) : Number(whole)) + Number(`0${fraction}`)) * POINTS_PER_UNIT$1[unit] * perPoint;
 		return (METRIC.has(unit) ? Math.round(inUnits) : Math.floor(inUnits + ROUNDING)) / perPoint;
 	};
 	/**
@@ -3755,20 +3755,22 @@ var docxLayout = (function(exports) {
 			var _stringOf2;
 			const children = childrenOf(child["w:style"]);
 			const attributes = attributesOf(child["w:style"]);
-			const numbering = childrenOf(find(childrenOf(find(children, "w:pPr")), "w:numPr"));
+			const paragraphProperties = childrenOf(find(children, "w:pPr"));
+			const numbering = childrenOf(find(paragraphProperties, "w:numPr"));
+			const frame = find(paragraphProperties, "w:framePr");
 			const list = attributesOf(find(numbering, "w:numId"))["w:val"];
 			const level = numberOf(attributesOf(find(numbering, "w:ilvl"))["w:val"]);
 			const name = valueOf(children, "w:name");
 			return {
 				id: stringOf(attributes["w:styleId"]),
 				isDefault: attributes["w:default"] !== void 0 && !isOff(attributes["w:default"]),
-				definition: _objectSpread2(_objectSpread2(_objectSpread2({ type: (_stringOf2 = stringOf(attributes["w:type"])) !== null && _stringOf2 !== void 0 ? _stringOf2 : "paragraph" }, name === void 0 ? {} : { name }), {}, { basedOn: valueOf(children, "w:basedOn") }, list === void 0 && level === void 0 ? {} : { numbering: withoutUndefined({
+				definition: _objectSpread2(_objectSpread2(_objectSpread2(_objectSpread2({ type: (_stringOf2 = stringOf(attributes["w:type"])) !== null && _stringOf2 !== void 0 ? _stringOf2 : "paragraph" }, name === void 0 ? {} : { name }), {}, { basedOn: valueOf(children, "w:basedOn") }, list === void 0 && level === void 0 ? {} : { numbering: withoutUndefined({
 					id: list === void 0 ? void 0 : String(list),
 					level
 				}) }), {}, {
 					run: readRunFormat(find(children, "w:rPr"), themeFonts),
 					paragraph: readParagraphFormat(find(children, "w:pPr"))
-				}, attributes["w:type"] === "table" ? readTableStyle(children, themeFonts) : {})
+				}, frame === void 0 ? {} : { frame }), attributes["w:type"] === "table" ? readTableStyle(children, themeFonts) : {})
 			};
 		}).filter((style) => style.id !== void 0);
 		const defaultStyle = (type) => {
@@ -6728,7 +6730,7 @@ var docxLayout = (function(exports) {
 			width
 		}, space > 0 ? { space } : {});
 	};
-	var SIDES$1 = [
+	var SIDES$2 = [
 		["top", ["w:top"]],
 		["bottom", ["w:bottom"]],
 		["left", ["w:start", "w:left"]],
@@ -6742,7 +6744,7 @@ var docxLayout = (function(exports) {
 	*/
 	var readBorderSet = (element) => {
 		const children = childrenOf(element);
-		return Object.fromEntries(SIDES$1.flatMap(([side, names]) => {
+		return Object.fromEntries(SIDES$2.flatMap(([side, names]) => {
 			const given = names.map((name) => find(children, name)).find((border) => border !== void 0);
 			return given === void 0 ? [] : [[side, readBorder(given)]];
 		}));
@@ -7009,6 +7011,288 @@ var docxLayout = (function(exports) {
 				};
 			}) });
 		});
+	};
+	//#endregion
+	//#region src/layout/text-frames.ts
+	/**
+	* Reads text frames (`w:framePr`): paragraphs Word takes out of the text and puts in a box of their own, placed on the
+	* page as a drawing is, which the text after them flows around, such as docx's `frame` and drop caps.
+	*
+	* Word's PDFs of scripts/layout-probes/word-frames.ts showed a frame laid out as a drawing that text flows around is, at
+	* the place and with the distances its properties give: against the page, the margins, the column, or the paragraph
+	* after it, at the top of that paragraph's space before (FM7 to FM10, FM11). A drop cap is a frame like any other, as wide
+	* as its letter, and the lines beside it are those its box is beside, whatever its number of lines (FM14).
+	*
+	* @module
+	*/
+	/** What a frame is placed against across the page (`w:hAnchor`) and down it (`w:vAnchor`), as drawings name them */
+	var ACROSS$1 = {
+		page: "page",
+		margin: "margin",
+		text: "column"
+	};
+	var DOWN$1 = {
+		page: "page",
+		margin: "margin",
+		text: "paragraph"
+	};
+	var ACROSS_ALIGNS$1 = /* @__PURE__ */ new Set([
+		"left",
+		"center",
+		"right",
+		"inside",
+		"outside"
+	]);
+	var DOWN_ALIGNS$1 = /* @__PURE__ */ new Set([
+		"top",
+		"center",
+		"bottom",
+		"inside",
+		"outside"
+	]);
+	var HEIGHT_RULES = /* @__PURE__ */ new Set([
+		"auto",
+		"atLeast",
+		"exact"
+	]);
+	var twips$1 = (value) => pointsOf(value, 20);
+	/**
+	* Where a frame is across or down the page: what it is placed against, lined up with it or at a distance from it, or why
+	* it isn't known
+	*/
+	var positionOf$1 = (anchor, align, offset, names, aligns) => {
+		var _twips;
+		const from = anchor === void 0 ? void 0 : names[String(anchor)];
+		if (from === void 0) return anchor === void 0 ? "a text frame that doesn't say what it is placed against" : "a text frame placed against what isn't followed yet";
+		if (align !== void 0) return aligns.has(String(align)) ? {
+			from,
+			align: String(align)
+		} : "a text frame lined up in a way not yet followed";
+		return {
+			from,
+			offset: (_twips = twips$1(offset)) !== null && _twips !== void 0 ? _twips : 0
+		};
+	};
+	/** Reads a paragraph's frame properties (`w:framePr`), or why the frame can't be laid out */
+	var readFrameProperties = (element) => {
+		var _twips2, _twips3, _twips4;
+		const attributes = attributesOf(element);
+		const { "w:w": width, "w:h": height, "w:hRule": heightRule = "atLeast", "w:hAnchor": hAnchor, "w:vAnchor": vAnchor, "w:xAlign": xAlign, "w:yAlign": yAlign, "w:x": x, "w:y": y, "w:wrap": wrap, "w:hSpace": hSpace, "w:vSpace": vSpace } = attributes;
+		const horizontal = positionOf$1(hAnchor, xAlign, x, ACROSS$1, ACROSS_ALIGNS$1);
+		const vertical = positionOf$1(vAnchor, yAlign, y, DOWN$1, DOWN_ALIGNS$1);
+		if (!HEIGHT_RULES.has(String(heightRule))) return "a text frame of a height rule not yet followed";
+		if (typeof horizontal === "string" || typeof vertical === "string") return typeof horizontal === "string" ? horizontal : vertical;
+		const given = twips$1(width);
+		return _objectSpread2(_objectSpread2(_objectSpread2({ key: JSON.stringify(Object.entries(attributes).sort(([one], [other]) => one.localeCompare(other))) }, given === void 0 || given === 0 ? {} : { width: given }), {}, {
+			height: (_twips2 = twips$1(height)) !== null && _twips2 !== void 0 ? _twips2 : 0,
+			heightRule: String(heightRule),
+			horizontal,
+			vertical
+		}, wrap === void 0 ? {} : { wrap: String(wrap) }), {}, {
+			across: (_twips3 = twips$1(hSpace)) !== null && _twips3 !== void 0 ? _twips3 : 0,
+			down: (_twips4 = twips$1(vSpace)) !== null && _twips4 !== void 0 ? _twips4 : 0
+		});
+	};
+	//#endregion
+	//#region src/layout/vml-drawings.ts
+	/**
+	* Reads VML drawings (`w:pict`), which docx writes for its text boxes and documents made by older versions of Word have
+	* for their shapes and pictures: the box one in the line takes, and where one that text flows around is, as the floating
+	* drawings of DrawingML are laid out.
+	*
+	* @module
+	*/
+	var SHAPES = /* @__PURE__ */ new Set([
+		"v:shape",
+		"v:rect",
+		"v:roundrect",
+		"v:oval",
+		"v:line",
+		"v:polyline",
+		"v:arc",
+		"v:curve",
+		"v:image",
+		"v:group"
+	]);
+	var POINTS_PER_UNIT = {
+		pt: 1,
+		in: 72,
+		cm: 72 / 2.54,
+		mm: 72 / 25.4,
+		pc: 12
+	};
+	/** Whether a VML true or false value is false: "f", "false", or 0 */
+	var isVmlFalse = (value) => [
+		"f",
+		"false",
+		"0"
+	].includes(String(value).trim().toLowerCase());
+	/** The properties of a VML style, such as `width:100pt;position:absolute`, by their names in lower case */
+	var readVmlStyle = (style) => new Map(String(style !== null && style !== void 0 ? style : "").split(";").map((declaration) => declaration.split(":")).filter((parts) => parts.length === 2 && parts[0].trim() !== "").map(([name, value]) => [name.trim().toLowerCase(), value.trim()]));
+	/**
+	* A length of a VML style in points, or why it isn't known: one in pixels, ems or a share of something, or a number with
+	* no unit, which isn't 0. Undefined when it isn't given.
+	*/
+	var vmlLength = (value) => {
+		var _length$2$toLowerCase;
+		if (value === void 0) return;
+		const length = /^(-?\d*\.?\d+)([a-z%]*)$/i.exec(value.trim());
+		const amount = Number(length === null || length === void 0 ? void 0 : length[1]);
+		const unit = (_length$2$toLowerCase = length === null || length === void 0 ? void 0 : length[2].toLowerCase()) !== null && _length$2$toLowerCase !== void 0 ? _length$2$toLowerCase : "";
+		if (length === null || Number.isNaN(amount)) return "a VML drawing with a length that isn't a number";
+		if (unit === "" && amount === 0) return 0;
+		return unit in POINTS_PER_UNIT ? amount * POINTS_PER_UNIT[unit] : "a VML drawing with a length in units not yet followed";
+	};
+	/**
+	* The shape a VML drawing (`w:pict`) draws, past the types of shapes it defines (`v:shapetype`), or why it can't be laid
+	* out: none, or more than one
+	*/
+	var vmlShapeOf = (pict) => {
+		const shapes = childrenOf(pict).filter((child) => SHAPES.has(Object.keys(child)[0]));
+		if (shapes.length !== 1) return shapes.length === 0 ? "a VML drawing with no shape" : "a VML drawing of more than one shape";
+		const [element] = shapes;
+		const [name] = Object.keys(element);
+		const textbox = find(childrenOf(element[name]), "v:textbox");
+		const content = find(childrenOf(textbox), "w:txbxContent");
+		return _objectSpread2(_objectSpread2({
+			element,
+			style: readVmlStyle(attributesOf(element[name]).style)
+		}, textbox === void 0 ? {} : { textStyle: readVmlStyle(attributesOf(textbox).style) }), content === void 0 ? {} : { text: childrenOf(content).filter(isObject) });
+	};
+	/** What a VML shape is placed against across the page (`mso-position-horizontal-relative`), as DrawingML names it */
+	var ACROSS = /* @__PURE__ */ new Map([
+		["margin", "margin"],
+		["page", "page"],
+		["text", "column"],
+		["char", "character"],
+		["left-margin-area", "leftMargin"],
+		["right-margin-area", "rightMargin"],
+		["inner-margin-area", "insideMargin"],
+		["outer-margin-area", "outsideMargin"]
+	]);
+	/**
+	* What a VML shape is placed against down the page (`mso-position-vertical-relative`), as DrawingML names it. Word places
+	* one against "paragraph", which VML writes as "text", against its paragraph (`word-vml.docx` VM9, VM10)
+	*/
+	var DOWN = /* @__PURE__ */ new Map([
+		["margin", "margin"],
+		["page", "page"],
+		["text", "paragraph"],
+		["paragraph", "paragraph"],
+		["line", "line"],
+		["top-margin-area", "topMargin"],
+		["bottom-margin-area", "bottomMargin"],
+		["inner-margin-area", "insideMargin"],
+		["outer-margin-area", "outsideMargin"]
+	]);
+	var ACROSS_ALIGNS = /* @__PURE__ */ new Set([
+		"left",
+		"center",
+		"right",
+		"inside",
+		"outside"
+	]);
+	var DOWN_ALIGNS = /* @__PURE__ */ new Set([
+		"top",
+		"center",
+		"bottom",
+		"inside",
+		"outside"
+	]);
+	/**
+	* The wrapping of the text round a VML shape (`w10:wrap`'s type), as DrawingML names it, of those Word has been seen to lay
+	* out as DrawingML's: square, and above and below only. Word wraps tightly round a rectangle closer than square wrapping
+	* does, in a way not yet followed (`word-vml.docx` VM14)
+	*/
+	var WRAPS$1 = {
+		square: "square",
+		topAndBottom: "topAndBottom"
+	};
+	/** The sides of a VML shape the text goes on (`w10:wrap`'s side), as DrawingML names them */
+	var SIDES$1 = {
+		both: "bothSides",
+		left: "left",
+		right: "right",
+		largest: "largest"
+	};
+	/**
+	* Where a VML shape is across or down the page, from its style: what it is placed against, which is the column and the
+	* paragraph when it doesn't say, lined up with it, or at a distance from it, its margin-left or margin-top. Or why it
+	* isn't known
+	*/
+	var positionOf = (style, direction, anchor) => {
+		var _ref, _style$get, _style$get2, _style$get3;
+		const names = direction === "horizontal" ? ACROSS : DOWN;
+		const relative = (_ref = (_style$get = style.get(`mso-position-${direction}-relative`)) !== null && _style$get !== void 0 ? _style$get : anchor) !== null && _ref !== void 0 ? _ref : "text";
+		const from = names.get(relative);
+		const align = (_style$get2 = style.get(`mso-position-${direction}`)) !== null && _style$get2 !== void 0 ? _style$get2 : "absolute";
+		if (from === void 0) return "a VML drawing placed against what isn't followed yet";
+		if (align !== "absolute") return (direction === "horizontal" ? ACROSS_ALIGNS : DOWN_ALIGNS).has(align) ? {
+			from,
+			align
+		} : "a VML drawing lined up in a way not yet followed";
+		const side = direction === "horizontal" ? "left" : "top";
+		if (style.has(side)) return "a VML drawing placed by its left or top";
+		const offset = vmlLength((_style$get3 = style.get(`margin-${side}`)) !== null && _style$get3 !== void 0 ? _style$get3 : "0");
+		return typeof offset === "string" ? offset : {
+			from,
+			offset
+		};
+	};
+	/**
+	* Reads a VML shape that text flows around, from its style and its wrapping (`w10:wrap`), or why it can't be followed:
+	* one turned, sized by a share of something, or placed or wrapped in a way not yet followed. The text keeps 9 points from
+	* it on the left and right, and none above and below, as VML has it, where its style doesn't say (`word-vml.docx` VM9).
+	*/
+	var readVmlFloating = (shape, wrap, width, height) => {
+		var _attributes$side, _style$get4, _attributesOf$oAllow;
+		const { style } = shape;
+		const attributes = attributesOf(wrap);
+		const type = WRAPS$1[String(attributes.type)];
+		const side = SIDES$1[String((_attributes$side = attributes.side) !== null && _attributes$side !== void 0 ? _attributes$side : "both")];
+		if (type === void 0 || side === void 0) return "a VML drawing that text flows around in a way not yet followed";
+		if (Number((_style$get4 = style.get("rotation")) !== null && _style$get4 !== void 0 ? _style$get4 : 0) !== 0) return "a turned VML drawing that text flows around";
+		if (style.has("mso-width-percent") || style.has("mso-height-percent")) return "a VML drawing sized by a share of what it is placed against";
+		const horizontal = positionOf(style, "horizontal", attributes.anchorx === void 0 ? void 0 : String(attributes.anchorx));
+		const vertical = positionOf(style, "vertical", attributes.anchory === void 0 ? void 0 : String(attributes.anchory));
+		const distance = (name, otherwise) => {
+			var _vmlLength;
+			return (_vmlLength = vmlLength(style.get(`mso-wrap-distance-${name}`))) !== null && _vmlLength !== void 0 ? _vmlLength : otherwise;
+		};
+		const distances = [
+			distance("top", 0),
+			distance("bottom", 0),
+			distance("left", 9),
+			distance("right", 9)
+		];
+		const unknown = [
+			horizontal,
+			vertical,
+			...distances
+		].find((value) => typeof value === "string");
+		if (unknown !== void 0) return unknown;
+		const [top, bottom, left, right] = distances;
+		return {
+			wrap: type,
+			side,
+			width,
+			height,
+			effects: {
+				top: 0,
+				bottom: 0,
+				left: 0,
+				right: 0
+			},
+			distances: {
+				top,
+				bottom,
+				left,
+				right
+			},
+			horizontal,
+			vertical,
+			mayOverlap: !isVmlFalse((_attributesOf$oAllow = attributesOf(shape.element[Object.keys(shape.element)[0]])["o:allowoverlap"]) !== null && _attributesOf$oAllow !== void 0 ? _attributesOf$oAllow : "t")
+		};
 	};
 	//#endregion
 	//#region src/layout/read-document.ts
@@ -7324,11 +7608,100 @@ var docxLayout = (function(exports) {
 			}];
 		}
 		if (!!childrenOf(drawing["wp:anchor"]).some((child) => "wp:wrapNone" in child) || reader.inHeader) return [];
-		if (reader.inCell || reader.inNote) return "a drawing that text flows around in a table cell, footnote or endnote";
+		if (reader.inCell || reader.inNote || reader.inTextBox) return "a drawing that text flows around in a table cell, footnote, endnote or text box";
 		const floating = readFloating(drawing["wp:anchor"]);
 		return typeof floating === "string" ? floating : [{
 			type: "drawing",
 			drawing: floating
+		}];
+	};
+	/**
+	* Reads a VML drawing (`w:pict`), as Word lays it out (scripts/layout-probes/word-vml.ts). A shape in the line is a box of
+	* its size, with its run's font, standing on the baseline, as a picture is (VM7), and a text box in it is a box sized to
+	* its text (VM1 to VM5). One placed on the page (`position:absolute`) that text flows around (`w10:wrap`) is a drawing
+	* that text flows around, as a DrawingML one is (VM9 to VM11, VM15), and one with no wrapping is in front of the text or
+	* behind it, and takes no room (VM6), in a header or footer too, as docx's watermarks are. It says why where Word's way
+	* with it isn't known: a picture, which Word drew at a size other than its own (VM8), a shape with an outline, which
+	* takes room around it (VM1), tight or through wrapping, which Word doesn't wrap as square wrapping (VM14), one in a
+	* header or footer that text flows around, which the body's text goes round too (VM13), and one in a header's line, whose
+	* room there doesn't follow the body's (VM12).
+	*/
+	var readVml = (pict, font, reader) => {
+		var _attributes$stroked;
+		const shape = vmlShapeOf(pict);
+		if (typeof shape === "string") return shape;
+		const { style, element } = shape;
+		const children = childrenOf(element[nameOf$1(element)]);
+		const attributes = attributesOf(element[nameOf$1(element)]);
+		const width = vmlLength(style.get("width"));
+		const height = vmlLength(style.get("height"));
+		const outlined = !isVmlFalse((_attributes$stroked = attributes.stroked) !== null && _attributes$stroked !== void 0 ? _attributes$stroked : "t") && style.get("visibility") !== "hidden";
+		const unsized = () => typeof width === "string" ? width : typeof height === "string" ? height : "a VML drawing with no size";
+		if (style.get("position") === "absolute") {
+			const wrap = find(children, "w10:wrap");
+			if (wrap === void 0 || attributesOf(wrap).type === "none") return [];
+			const reason = reader.inHeader ? "a VML drawing that text flows around in a header or footer" : reader.inCell || reader.inNote || reader.inTextBox ? "a drawing that text flows around in a table cell, footnote, endnote or text box" : shape.text !== void 0 ? "a text box that text flows around" : find(children, "v:imagedata") !== void 0 ? "a VML picture" : outlined ? "a VML drawing with an outline that text flows around" : typeof width !== "number" || typeof height !== "number" ? unsized() : void 0;
+			if (reason !== void 0) return reason;
+			const floating = readVmlFloating(shape, wrap, width, height);
+			return typeof floating === "string" ? floating : [{
+				type: "drawing",
+				drawing: floating
+			}];
+		}
+		const sized = (reason) => typeof width === "number" && typeof height === "number" ? guessedOr(reader, reason, () => [{
+			type: "box",
+			width,
+			height,
+			font
+		}]) : reason;
+		if (reader.inHeader || reader.inTextBox) return sized("a VML drawing in the line of a header, footer or text box");
+		if (shape.text !== void 0) return readTextBox(shape, width, font, outlined, reader);
+		if (find(children, "v:imagedata") !== void 0) return sized("a VML picture");
+		if (outlined) return sized("a VML shape with an outline in the line");
+		return typeof width !== "number" || typeof height !== "number" ? unsized() : [{
+			type: "box",
+			width,
+			height,
+			font
+		}];
+	};
+	var TEXT_BOX_INSETS = {
+		left: 7.2,
+		top: 3.6,
+		right: 7.2,
+		bottom: 3.6
+	};
+	var TEXT_BOX_FIT = .72;
+	var TEXT_BOX_OUTLINE = .72;
+	/**
+	* Reads a text box in the line (docx's `Textbox`): its paragraphs, and the box they are in, which Word sizes to them, as
+	* docx writes it to be (`mso-fit-shape-to-text`), whatever height it gives (`word-vml.docx` VM3). The bookmarks and fields
+	* in it are where it is, in the paragraph it is in. Or why it can't be laid out: one Word doesn't size to its text, one
+	* with insets of its own or an outline of another weight, which Word hasn't been seen with, and one with notes or lists
+	* in it, which Word may number in an order not yet followed
+	*/
+	var readTextBox = (shape, width, font, outlined, reader) => {
+		var _shape$textStyle, _blocks$map$find;
+		const attributes = attributesOf(shape.element[nameOf$1(shape.element)]);
+		const textbox = find(childrenOf(shape.element[nameOf$1(shape.element)]), "v:textbox");
+		const references = elementsIn$1(shape.text, (name) => name === "w:footnoteReference" || name === "w:endnoteReference");
+		const reason = typeof width !== "number" ? width !== null && width !== void 0 ? width : "a VML drawing with no size" : ((_shape$textStyle = shape.textStyle) === null || _shape$textStyle === void 0 ? void 0 : _shape$textStyle.get("mso-fit-shape-to-text")) !== "t" ? "a text box not sized to its text" : attributesOf(textbox).inset !== void 0 ? "a text box with insets of its own" : attributes.strokeweight !== void 0 ? "a text box with an outline of its own" : references.length > 0 ? "a footnote or endnote in a text box" : void 0;
+		if (reason !== void 0) return reason;
+		const blocks = readBlocks(shape.text, _objectSpread2(_objectSpread2({}, reader), {}, { inTextBox: true }));
+		const unsupported = (_blocks$map$find = blocks.map(({ unsupported: why }) => why).find((why) => why !== void 0)) !== null && _blocks$map$find !== void 0 ? _blocks$map$find : blocks.some((block) => block.type === "paragraph" && block.list !== void 0) ? "a list in a text box" : void 0;
+		if (unsupported !== void 0) return unsupported;
+		const outline = outlined ? TEXT_BOX_OUTLINE : 0;
+		const { left, right, top, bottom } = TEXT_BOX_INSETS;
+		return [...markersIn(blocks).map((name) => ({
+			type: "marker",
+			name
+		})), {
+			type: "textBox",
+			width: width + outline,
+			textWidth: width - left - right,
+			room: top + bottom + TEXT_BOX_FIT + outline,
+			blocks,
+			font
 		}];
 	};
 	var WRAPS = {
@@ -7587,8 +7960,8 @@ var docxLayout = (function(exports) {
 					const choice = childrenOf(child["mc:AlternateContent"]).find((option) => "mc:Choice" in option);
 					return choice && !format.hidden ? readRun({ "w:r": [...childrenOf(choice["mc:Choice"])] }, paragraphRun, reader, removed) : [];
 				}
-				case "w:pict":
-				case "w:object": return reader.inHeader ? [] : "a VML drawing";
+				case "w:pict": return format.hidden ? [] : font.border ? guessedOr(reader, "a picture in text with a border", () => readVml(child["w:pict"], font, reader)) : readVml(child["w:pict"], font, reader);
+				case "w:object": return format.hidden ? [] : "an embedded object";
 				case "w:dayShort":
 				case "w:dayLong":
 				case "w:monthShort":
@@ -7912,6 +8285,26 @@ var docxLayout = (function(exports) {
 		return (format.alignment === "justified" || format.alignment === "distributed") && texts.some(({ text }) => / /.test(text)) ? "a justified line with spaces down the page" : void 0;
 	};
 	/**
+	* The text frame a paragraph is in (`w:framePr`), its own or its style's, or why it can't be laid out: one in a table
+	* cell, a footnote, an endnote, a header or a footer, one given by both the paragraph and its style differently, and one
+	* with a note's reference in it, which aren't followed yet. Undefined when it isn't in one.
+	*/
+	var readFrameOf = (paragraph, properties, paragraphStyles, reader) => {
+		var _paragraphStyles$find;
+		const own = find(properties, "w:framePr");
+		const fromStyle = (_paragraphStyles$find = paragraphStyles.findLast((style) => style.frame !== void 0)) === null || _paragraphStyles$find === void 0 ? void 0 : _paragraphStyles$find.frame;
+		const element = own !== null && own !== void 0 ? own : fromStyle;
+		if (element === void 0) return;
+		if (reader.inCell || reader.inNote || reader.inHeader || reader.inTextBox) return "a text frame in a table cell, footnote, endnote, header, footer or text box";
+		const frame = readFrameProperties(element);
+		if (typeof frame === "string") return frame;
+		if (own !== void 0 && fromStyle !== void 0) {
+			const styled = readFrameProperties(fromStyle);
+			if (typeof styled === "string" || styled.key !== frame.key) return "a text frame given by both a paragraph and its style";
+		}
+		return elementsIn$1(contentOf$3(paragraph), (name) => name === "w:footnoteReference" || name === "w:endnoteReference").length > 0 ? "a footnote or endnote in a text frame" : frame;
+	};
+	/**
 	* Reads a paragraph (`w:p`), in the formatting of its styles, and of its table's style when it is in a table.
 	*/
 	var readParagraph = (element, reader, tableFormats = []) => {
@@ -7959,14 +8352,15 @@ var docxLayout = (function(exports) {
 			var _item$font$characterS;
 			return item.type === "text" && ((_item$font$characterS = item.font.characterSpacing) !== null && _item$font$characterS !== void 0 ? _item$font$characterS : 0) !== 0 && item.font.snapToGrid !== false;
 		}) ? "text spaced out by its run on a grid that snaps to characters" : void 0;
-		const unsupported = (_ref4 = (_ref5 = (_ref6 = (_list$unsupported = list.unsupported) !== null && _list$unsupported !== void 0 ? _list$unsupported : unknownOnGrid) !== null && _ref6 !== void 0 ? _ref6 : reader.down === true && reader.inNote === true ? "a footnote or endnote on text that runs down the page" : void 0) !== null && _ref5 !== void 0 ? _ref5 : reader.down === true ? unknownDownOf(own, combined, borders) : void 0) !== null && _ref4 !== void 0 ? _ref4 : find(properties, "w:framePr") !== void 0 ? "a text frame" : otherDecimalSymbol ? "a decimal tab stop in a document whose decimal symbol isn't a full stop" : find(properties, "w:divId") !== void 0 ? "a paragraph in an HTML division" : combined.alignment === "mediumKashida" || combined.alignment === "highKashida" ? "a paragraph justified for Arabic with a medium or high kashida" : forThaiOrArabic && typeof items !== "string" && items.some((item) => item.type === "text" && THAI_OR_ARABIC.test(item.text)) ? "Thai or Arabic text justified for it" : (_ref7 = (_unknownLengthIn = unknownLengthIn(element)) !== null && _unknownLengthIn !== void 0 ? _unknownLengthIn : typeof format === "string" ? format : void 0) !== null && _ref7 !== void 0 ? _ref7 : typeof borders === "string" ? borders : void 0;
-		return _objectSpread2(_objectSpread2(_objectSpread2(_objectSpread2(_objectSpread2(_objectSpread2(_objectSpread2({
+		const frame = readFrameOf(element, properties, styleChain(styles, style, "paragraph"), reader);
+		const unsupported = (_ref4 = (_ref5 = (_ref6 = (_list$unsupported = list.unsupported) !== null && _list$unsupported !== void 0 ? _list$unsupported : unknownOnGrid) !== null && _ref6 !== void 0 ? _ref6 : reader.down === true && reader.inNote === true ? "a footnote or endnote on text that runs down the page" : void 0) !== null && _ref5 !== void 0 ? _ref5 : reader.down === true ? unknownDownOf(own, combined, borders) : void 0) !== null && _ref4 !== void 0 ? _ref4 : typeof frame === "string" ? frame : otherDecimalSymbol ? "a decimal tab stop in a document whose decimal symbol isn't a full stop" : find(properties, "w:divId") !== void 0 ? "a paragraph in an HTML division" : combined.alignment === "mediumKashida" || combined.alignment === "highKashida" ? "a paragraph justified for Arabic with a medium or high kashida" : forThaiOrArabic && typeof items !== "string" && items.some((item) => item.type === "text" && THAI_OR_ARABIC.test(item.text)) ? "Thai or Arabic text justified for it" : (_ref7 = (_unknownLengthIn = unknownLengthIn(element)) !== null && _unknownLengthIn !== void 0 ? _unknownLengthIn : typeof format === "string" ? format : void 0) !== null && _ref7 !== void 0 ? _ref7 : typeof borders === "string" ? borders : void 0;
+		return _objectSpread2(_objectSpread2(_objectSpread2(_objectSpread2(_objectSpread2(_objectSpread2(_objectSpread2(_objectSpread2({
 			type: "paragraph",
 			items: content,
 			format: typeof format === "string" ? combined : format,
 			tabStops,
 			markFont
-		}, unsupported === void 0 && typeof items !== "string" && children.some((child) => isObject(child) && LEFT_OUT in child) ? { hidden: true } : {}), list.list ? { list: list.list } : {}), list.alignment ? { numberAlignment: list.alignment } : {}), typeof borders === "object" ? { borders } : {}), paragraphGrid !== void 0 && Object.keys(paragraphGrid).length > 0 ? { grid: paragraphGrid } : {}), {}, { style }, headingLevel === void 0 ? {} : { heading: _objectSpread2({ level: Number(headingLevel) }, withoutUndefined({ chapter: list.from === "style" ? list.chapter : void 0 })) }), typeof items === "string" || guessed || unsupported ? { unsupported: typeof items === "string" ? items : guessed !== null && guessed !== void 0 ? guessed : unsupported } : {});
+		}, unsupported === void 0 && typeof items !== "string" && children.some((child) => isObject(child) && LEFT_OUT in child) ? { hidden: true } : {}), list.list ? { list: list.list } : {}), list.alignment ? { numberAlignment: list.alignment } : {}), typeof borders === "object" ? { borders } : {}), paragraphGrid !== void 0 && Object.keys(paragraphGrid).length > 0 ? { grid: paragraphGrid } : {}), typeof frame === "object" ? { frame } : {}), {}, { style }, headingLevel === void 0 ? {} : { heading: _objectSpread2({ level: Number(headingLevel) }, withoutUndefined({ chapter: list.from === "style" ? list.chapter : void 0 })) }), typeof items === "string" || guessed || unsupported ? { unsupported: typeof items === "string" ? items : guessed !== null && guessed !== void 0 ? guessed : unsupported } : {});
 	};
 	/**
 	* Why a cell's properties (`w:tcPr`) change how its text is laid out in a way not yet followed, when they do: cells merged
@@ -8797,6 +9191,109 @@ var docxLayout = (function(exports) {
 		}
 		return blocks;
 	};
+	/**
+	* How the text goes round a text frame (`w:wrap`), as Word lays it out: beside it on both sides, with no wrapping given,
+	* and around it, tightly, through it and automatically alike (`word-frames.docx` FM1, FM6), or above and below it only,
+	* when it isn't beside it, or not at all, when it has none, as the frame is in front of the text (FM6b, FM6c)
+	*/
+	var FRAME_WRAPS = {
+		around: "square",
+		tight: "square",
+		through: "square",
+		auto: "square",
+		notBeside: "topAndBottom",
+		none: "none"
+	};
+	/**
+	* A text frame as a drawing that text flows around, placed and sized by its properties and its paragraphs, nothing when
+	* it is in front of the text, or why it can't be laid out: one with borders, which take room beside it in a way not yet
+	* followed (FM13)
+	*/
+	var frameDrawing = (frame, blocks) => {
+		var _frame$wrap;
+		const wrap = FRAME_WRAPS[(_frame$wrap = frame.wrap) !== null && _frame$wrap !== void 0 ? _frame$wrap : "around"];
+		if (wrap === void 0) return "a text frame that text flows around in a way not yet followed";
+		if (blocks.some(({ borders }) => borders !== void 0)) return "a text frame with borders";
+		if (wrap === "none") return;
+		const { width = 0, height, heightRule, horizontal, vertical, across, down } = frame;
+		return {
+			wrap,
+			side: "bothSides",
+			width,
+			height,
+			effects: {
+				top: 0,
+				bottom: 0,
+				left: 0,
+				right: 0
+			},
+			distances: {
+				top: down,
+				bottom: down,
+				left: across,
+				right: across
+			},
+			horizontal,
+			vertical,
+			mayOverlap: false,
+			frame: {
+				blocks,
+				heightRule,
+				fitsWidth: frame.width === void 0
+			}
+		};
+	};
+	/**
+	* Takes the paragraphs in text frames out of the body's text, and anchors each frame in the paragraph after it, as a
+	* drawing that text flows around, at its start. Frames elsewhere stop the layout as they are read. The paragraphs of a frame are those next to each other with the same frame. The
+	* bookmarks and fields in a frame are where its anchor is, as the frame is on its page. A frame with no paragraph after it
+	* in its section, such as one before a table, isn't followed yet, so the layout stops there.
+	*/
+	var anchorFrames = (entries, withBlock) => {
+		const isFramed = (block) => block.type === "paragraph" && block.frame !== void 0 && block.unsupported === void 0;
+		const anchored = [];
+		let framed = [];
+		for (const entry of entries) {
+			const { block } = entry;
+			if (isFramed(block)) {
+				framed = [...framed, entry];
+				continue;
+			}
+			if (framed.length === 0) {
+				anchored.push(entry);
+				continue;
+			}
+			if (block.type !== "paragraph" || block.sectionBreak || entry.section !== framed[0].section) {
+				anchored.push(...unanchored(framed, withBlock), entry);
+				framed = [];
+				continue;
+			}
+			const paragraphs = framed.map((one) => one.block);
+			const drawings = paragraphs.reduce((all, paragraph, index) => index > 0 && paragraphs[index - 1].frame.key === paragraph.frame.key ? [...all.slice(0, -1), [...all[all.length - 1], paragraph]] : [...all, [paragraph]], []).map((blocks) => frameDrawing(blocks[0].frame, blocks));
+			const unsupported = drawings.find((drawing) => typeof drawing === "string");
+			const markers = markersIn(paragraphs).map((name) => ({
+				type: "marker",
+				name
+			}));
+			const laidOut = drawings.flatMap((drawing) => drawing === void 0 || typeof drawing === "string" ? [] : [{
+				type: "drawing",
+				drawing
+			}]);
+			anchored.push(withBlock(entry, _objectSpread2(_objectSpread2({}, block), {}, { items: [
+				...markers,
+				...laidOut,
+				...block.items
+			] }, unsupported !== void 0 && block.unsupported === void 0 ? { unsupported } : {})));
+			framed = [];
+		}
+		anchored.push(...unanchored(framed, withBlock));
+		return anchored;
+	};
+	/**
+	* The paragraphs of text frames with no paragraph after them in their section to be anchored in, as they are in the text,
+	* the first stopping the layout, which Word lays out in a way not yet followed
+	*/
+	var unanchored = (framed, withBlock) => framed.map((entry, index) => index === 0 ? withBlock(entry, _objectSpread2(_objectSpread2({}, entry.block), {}, { unsupported: "a text frame with no paragraph after it in its section" })) : entry);
 	var START_TYPES = /* @__PURE__ */ new Set([
 		"nextPage",
 		"continuous",
@@ -9498,6 +9995,7 @@ var docxLayout = (function(exports) {
 				if (sectionProperties !== void 0) addSection(sectionProperties);
 			}
 		}
+		blocks.splice(0, blocks.length, ...anchorFrames(blocks, (entry, block) => _objectSpread2(_objectSpread2({}, entry), {}, { block })));
 		const final = blocks[blocks.length - 1];
 		const ending = hidden.length > 0 && final !== void 0 ? endingWith(final.block, bookmarks) : void 0;
 		if (ending !== void 0) blocks[blocks.length - 1] = _objectSpread2(_objectSpread2({}, final), {}, { block: ending });
@@ -9556,6 +10054,7 @@ var docxLayout = (function(exports) {
 		}];
 	};
 	var TOLERANCE = .01;
+	var TEXT_BOX_DOUBT = .72;
 	var AUTOMATIC_SPACE = 14;
 	/**
 	* The lines of paragraphs without page references, by the measurer and widths they were laid out with. They are the same
@@ -9604,7 +10103,13 @@ var docxLayout = (function(exports) {
 		content
 	}));
 	/** The headings in a block: a paragraph's own, and those in a table's cells, whose chapter numbers aren't known yet */
-	var headingsIn = (block) => block.type === "paragraph" ? block.heading ? [block.heading] : [] : block.rows.flatMap(({ cells }) => cells.flatMap((cell) => cell.blocks.flatMap(headingsIn))).map(({ level }) => ({
+	var headingsIn = (block) => block.type === "paragraph" ? [...block.items.flatMap((item) => {
+		var _item$drawing$frame$b, _item$drawing$frame;
+		return item.type === "drawing" ? (_item$drawing$frame$b = (_item$drawing$frame = item.drawing.frame) === null || _item$drawing$frame === void 0 ? void 0 : _item$drawing$frame.blocks) !== null && _item$drawing$frame$b !== void 0 ? _item$drawing$frame$b : [] : [];
+	}).flatMap(headingsIn).map(({ level }) => ({
+		level,
+		unsupported: "a chapter heading in a text frame"
+	})), ...block.heading ? [block.heading] : []] : block.rows.flatMap(({ cells }) => cells.flatMap((cell) => cell.blocks.flatMap(headingsIn))).map(({ level }) => ({
 		level,
 		unsupported: "a chapter heading in a table"
 	}));
@@ -9848,6 +10353,11 @@ var docxLayout = (function(exports) {
 			type: "marker",
 			name: drawingMarker(index),
 			after: true
+		} : item.type === "textBox" ? {
+			type: "box",
+			width: item.width,
+			height: textBoxHeight(item),
+			font: item.font
 		} : isPageField(item) ? {
 			type: "text",
 			text: resultText(item),
@@ -9873,6 +10383,18 @@ var docxLayout = (function(exports) {
 				var _measurer$unknownShap;
 				return (_measurer$unknownShap = measurer.unknownShaping) === null || _measurer$unknownShap === void 0 ? void 0 : _measurer$unknownShap.call(measurer, text, font);
 			}).find(Boolean);
+		};
+		/**
+		* How tall a text box in the line is: its paragraphs, and the room above and below them. Where its text starts across
+		* the box, Word's PDFs show to within a little less than the room it adds to its height (`word-vml.docx` VM1, VM5), so
+		* it stops where its lines would break differently in that much more or less room, or, guessing, takes them as they
+		* break in the room its insets leave
+		*/
+		const textBoxHeight = (box) => {
+			const { room, textWidth: inside, blocks: inBox } = box;
+			const [narrower, wider] = [inside - TEXT_BOX_DOUBT, inside + TEXT_BOX_DOUBT].map((width) => stackHeight(inBox, width, true));
+			if (Math.abs(narrower - wider) > TOLERANCE) stopAt("a line in a text box that only just fits");
+			return room + stackHeight(inBox, inside, true);
 		};
 		/**
 		* A paragraph's content, as it is measured, which stops the layout at a character whose width the measurer doesn't
@@ -11340,6 +11862,22 @@ var docxLayout = (function(exports) {
 				position = Math.min(...beside.map(({ keepOut }) => keepOut.bottom));
 			}
 		};
+		/**
+		* A text frame at the size its paragraphs give it: as wide as their widest line when it has no width of its own, and
+		* as tall as they are, at least its own height, or its own height exactly, as its height rule says. Another drawing
+		* is as it is
+		*/
+		const sizedFrame = (drawing) => {
+			const { frame } = drawing;
+			if (frame === void 0) return drawing;
+			const width = frame.fitsWidth ? contentWidths(frame.blocks).max : drawing.width;
+			const ofText = stackHeight(frame.blocks, width, false);
+			const height = frame.heightRule === "exact" ? drawing.height : frame.heightRule === "atLeast" ? Math.max(drawing.height, ofText) : ofText;
+			return _objectSpread2(_objectSpread2({}, drawing), {}, {
+				width,
+				height
+			});
+		};
 		/** Whether a drawing that text flows around on the page goes down below where the next line goes */
 		const besideDrawing = () => drawings.some(({ keepOut }) => keepOut.bottom > position + TOLERANCE);
 		/**
@@ -11407,8 +11945,9 @@ var docxLayout = (function(exports) {
 			const { indentLeft = 0, indentRight = 0, firstLineIndent = 0 } = block.format;
 			const columnEnd = linesBottom();
 			/** Places one of its own drawings, against its paragraph's top, or the top of a line from `lineTop`, `height` tall */
-			const place = ({ drawing, index, table }, line, lineTop, height) => {
+			const place = ({ drawing: unsized, index, table }, line, lineTop, height) => {
 				var _pinned$get5;
+				const drawing = sizedFrame(unsized);
 				if (drawing.horizontal.from === "character") throw new Unsupported("a drawing placed against where it is anchored along its line");
 				const anchor = table === void 0 ? `${at} ${index}` : `${table.index} table`;
 				const withTable = table === void 0 ? {} : { table };

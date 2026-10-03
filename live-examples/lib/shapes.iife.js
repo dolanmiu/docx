@@ -4189,20 +4189,22 @@ var docxShapes = (function(exports, docx) {
 			var _stringOf2;
 			const children = childrenOf(child["w:style"]);
 			const attributes = attributesOf(child["w:style"]);
-			const numbering = childrenOf(find(childrenOf(find(children, "w:pPr")), "w:numPr"));
+			const paragraphProperties = childrenOf(find(children, "w:pPr"));
+			const numbering = childrenOf(find(paragraphProperties, "w:numPr"));
+			const frame = find(paragraphProperties, "w:framePr");
 			const list = attributesOf(find(numbering, "w:numId"))["w:val"];
 			const level = numberOf(attributesOf(find(numbering, "w:ilvl"))["w:val"]);
 			const name = valueOf(children, "w:name");
 			return {
 				id: stringOf(attributes["w:styleId"]),
 				isDefault: attributes["w:default"] !== void 0 && !isOff(attributes["w:default"]),
-				definition: _objectSpread2(_objectSpread2(_objectSpread2({ type: (_stringOf2 = stringOf(attributes["w:type"])) !== null && _stringOf2 !== void 0 ? _stringOf2 : "paragraph" }, name === void 0 ? {} : { name }), {}, { basedOn: valueOf(children, "w:basedOn") }, list === void 0 && level === void 0 ? {} : { numbering: withoutUndefined({
+				definition: _objectSpread2(_objectSpread2(_objectSpread2(_objectSpread2({ type: (_stringOf2 = stringOf(attributes["w:type"])) !== null && _stringOf2 !== void 0 ? _stringOf2 : "paragraph" }, name === void 0 ? {} : { name }), {}, { basedOn: valueOf(children, "w:basedOn") }, list === void 0 && level === void 0 ? {} : { numbering: withoutUndefined({
 					id: list === void 0 ? void 0 : String(list),
 					level
 				}) }), {}, {
 					run: readRunFormat(find(children, "w:rPr"), themeFonts),
 					paragraph: readParagraphFormat(find(children, "w:pPr"))
-				}, attributes["w:type"] === "table" ? readTableStyle(children, themeFonts) : {})
+				}, frame === void 0 ? {} : { frame }), attributes["w:type"] === "table" ? readTableStyle(children, themeFonts) : {})
 			};
 		}).filter((style) => style.id !== void 0);
 		const defaultStyle = (type) => {
