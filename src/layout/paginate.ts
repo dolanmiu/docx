@@ -325,9 +325,11 @@ type Snapshot = {
     readonly held: readonly string[];
     readonly heldLines: number | undefined;
     readonly deferred: string | undefined;
+    readonly pending: readonly string[];
     readonly spaceAfter: number;
     readonly sectionSpaceAfter: number | undefined;
     readonly placed: number;
+    readonly marks: number;
     readonly finished: number;
     readonly pageColumns: number | undefined;
     readonly drawings: readonly PlacedDrawing[];
@@ -410,11 +412,16 @@ const stoppingAtUnknownFonts = (measurer: TextMeasurer): TextMeasurer => {
 };
 
 /**
- * Thrown to lay out the columns of a page again when its footnotes take more room than the columns before the one being
- * filled were laid out above (`area`)
+ * Thrown to lay out the columns of a page again when its footnotes (`notes`) take more room than the columns before the one
+ * being filled were laid out above (`area`), or, with `moved`, without that room, with the references to these footnotes
+ * on the next page
  */
 class NotesGrew extends Error {
-    public constructor(public readonly area: number) {
+    public constructor(
+        public readonly area: number,
+        public readonly notes: readonly string[],
+        public readonly moved?: readonly string[],
+    ) {
         super();
     }
 }
@@ -1124,8 +1131,11 @@ export const paginate = (
     let notesInColumns: number | undefined;
     let filledEnd = 0;
     // The room kept at the bottom of pages for their footnotes, by the number of the page, counted from the first, when
-    // their columns are laid out again for footnotes referred to from a later column
+    // their columns are laid out again for footnotes referred to from a later column, the footnotes it is kept for, and
+    // those whose references are on the next page, as they moved on from the page when it was laid out again
     const reserves = new Map<number, number>();
+    const reservedFor = new Map<number, readonly string[]>();
+    const movedOn = new Map<number, readonly string[]>();
     // The rest of a footnote continued from the page before, above the page's own, and of one continued on the next page
     let continued: NoteRest | undefined;
     let carried: NoteRest | undefined;
@@ -1133,8 +1143,10 @@ export const paginate = (
     // them as it is kept with (`heldLines`) when they continue on the next page
     let held: readonly string[] = [];
     let heldLines: number | undefined;
-    // A footnote referred to from the page, none of which goes on it, as it starts on the next
+    // A footnote referred to from the page, none of which goes on it, as it starts on the next, and the footnotes referred
+    // to after it, which go after it, on the page it ends on
     let deferred: string | undefined;
+    let pending: readonly string[] = [];
     // The space after the last paragraph, which goes before what is next on the page
     let spaceAfter = 0;
     // The cells merged down rows of the table being placed whose text isn't all on a page yet
@@ -1201,9 +1213,11 @@ export const paginate = (
         held,
         heldLines,
         deferred,
+        pending,
         spaceAfter,
         sectionSpaceAfter,
         placed: placements.length,
+        marks: places.size,
         finished,
         pageColumns,
         drawings,
@@ -1218,7 +1232,7 @@ export const paginate = (
 
     /**
      * Goes back to where the layout was at the start of a block. The bookmarks placed since are kept, as laying the blocks
-     * out again only moves them between the columns of the same page
+     * out again to even out columns only moves them between the columns of the same page
      */
     const restore = (state: Snapshot): void => {
         ({
@@ -1243,6 +1257,7 @@ export const paginate = (
             held,
             heldLines,
             deferred,
+            pending,
             spaceAfter,
             sectionSpaceAfter,
             finished,
@@ -1425,11 +1440,7 @@ export const paginate = (
                 (placement) => (placement.type === "line" || placement.type === "row") && blocks[placement.block].section === sectionIndex,
             );
 
-    /**
-     * Starts a new page, the first of a section's when it says so. With `notesOnly`, it is for the rest of a footnote
-     * continued from the page before alone, at the end of a section or of the document
-     */
-    const startPage = (isFirstOfSection = false, notesOnly = false): void => {
+    const startPage = (isFirstOfSection = false): void => {
         if (balancing !== undefined && pageCount >= balancing.page) {
             // The columns being balanced don't fit on their page in the height they are laid out in
             throw new Overflow();
@@ -1438,11 +1449,6 @@ export const paginate = (
         // (`word-column-stops.docx` CS1)
         pageColumns = undefined;
         checkReserve();
-        if (deferred !== undefined && !notesOnly) {
-            // Word starts the footnote on the next page, after its reference's page, but whether it puts the text that
-            // goes on there above it, or after it, isn't known. Guessing, above it
-            stopAt("text after a line whose footnote starts on the next page", pageCount + 1);
-        }
         deferred = undefined;
         checkAnchors();
         finishPage();
@@ -1533,11 +1539,12 @@ export const paginate = (
         anchored = [];
         continued = carried;
         carried = undefined;
+        if (continued !== undefined && current.columns.length > 1) {
+            // The rest of a footnote goes on at the foot of the next page's columns, as Word continues it (FN2, FN3)
+            notesInColumns = sectionIndex;
+        }
         noteArea = Math.max(areaOf([], undefined, continued), reserved());
         notesSection = sectionIndex;
-        if (continued !== undefined && current.columns.length > 1) {
-            throw new Unsupported("a footnote across pages in columns");
-        }
         if (continued !== undefined && noteArea > bottom - top + TOLERANCE) {
             // The rest of the footnote is longer than the page, so the page is all footnote, as much of it as fits, and the
             // rest continues on the next page. The text goes on above its last part, on the page it ends on
@@ -1555,6 +1562,18 @@ export const paginate = (
             }
             carried = { name, from: to };
             startPage();
+            return;
+        }
+        if (pending.length > 0) {
+            // The footnotes referred to after one that started on the page after its reference's go below its end, on the
+            // page it ends on, though they would fit on their references' page (`word-watertight-notes.docx` FN8)
+            pageNotes = pending;
+            pending = [];
+            noteArea = Math.max(areaOf(pageNotes, undefined, continued), reserved());
+            if (noteArea > bottom - top + TOLERANCE) {
+                // Whether Word continues one of them on the next page too isn't known
+                throw new Unsupported("footnotes after one that starts on the next page that don't fit below its end");
+            }
         }
     };
 
@@ -1669,11 +1688,26 @@ export const paginate = (
     const startSection = (index: number, firstBlock: number): void => {
         const previous = section();
         const current = sections[index];
-        if (carried !== undefined && !continuesOnPage(previous, current) && !startsInNextColumn(previous, current)) {
-            // The rest of a footnote continued from the section's last page goes on pages of the section, with no text, and
-            // the next section starts on the page after them, as in Word: its last part too, which would have room for
-            // text (`word-watertight-stops.docx` SP2)
-            startPage(false, true);
+        // The rest of a footnote continued from the section's last page goes on pages of the section, with no text, and the
+        // next section starts on the page after them, as in Word: its last part too, which would have room for text, and
+        // a continuous section too, which starts on a new page then (`word-watertight-stops.docx` SP2,
+        // `word-watertight-notes.docx` FN4, FN5). After a line whose footnote starts on the next page, there is room for a
+        // continuous section on its page, and it goes on there
+        const restOnPages =
+            carried !== undefined &&
+            !startsInNextColumn(previous, current) &&
+            (deferred === undefined || !continuesOnPage(previous, current));
+        if (
+            carried !== undefined &&
+            previous.columns.length > 1 &&
+            (startsInNextColumn(previous, current) || continuesOnPage(previous, current))
+        ) {
+            // In columns, the text goes on above a footnote that continues, and whether Word puts a section that starts in
+            // the next column or below the columns there isn't known
+            throw new Unsupported("a footnote continued from columns before a section on the same page");
+        }
+        if (restOnPages) {
+            startPage();
         }
         // eslint-disable-next-line functional/immutable-data
         lastPages.set(sectionIndex, pageCount);
@@ -1684,7 +1718,7 @@ export const paginate = (
         }
         // Guessing, a section is laid out as it was read, on the page it starts on
         stopAtRead(current, continuesOnPage(previous, current) || startsInNextColumn(previous, current) ? pageCount : pageCount + 1);
-        const continuous = continuesOnPage(previous, current);
+        const continuous = continuesOnPage(previous, current) && !restOnPages;
         if (continuous && previous.columns.length > 1 && (placedInColumn || column > 0)) {
             endColumns(firstBlock);
         }
@@ -1887,12 +1921,13 @@ export const paginate = (
                 };
             }
             const paragraph = measureParagraph(block, widths, pieces[index - 1]?.block, pieces[index + 1]?.block);
-            return { ...paragraph, lines: paragraph.lines.slice(start, end) };
+            // The lines continued from the page before have no space before them
+            const spaceBefore = continuedFrom && index === separator.length ? 0 : paragraph.spaceBefore;
+            return { ...paragraph, spaceBefore, lines: paragraph.lines.slice(start, end) };
         };
-        // The lines continued from the page before have no space before them
         const parts = pieces.map((piece, index): StackPart => {
             const { lines, spaceBefore, spaceAfter: after } = measured(piece, index);
-            return { height: linesHeight(lines), before: continuedFrom && index === separator.length ? 0 : spaceBefore, after };
+            return { height: linesHeight(lines), before: spaceBefore, after };
         });
         const stack = { pieces, parts, separatorCount: separator.length, width, measured };
         if (columns !== undefined) {
@@ -1935,11 +1970,6 @@ export const paginate = (
         const space = columns.length > 1 ? (textWidth(current) - sum(columns)) / (columns.length - 1) : 0;
         return current.marginLeft + current.gutter + sum(columns.slice(0, index)) + index * space;
     };
-
-    /** Whether two sections' columns are as wide and where the other's are across the page */
-    const sameColumns = (one: Section, other: Section): boolean =>
-        one.columns.length === other.columns.length &&
-        one.columns.every((width, index) => width === other.columns[index] && columnLeft(one, index) === columnLeft(other, index));
 
     /**
      * A line placed with its top at a height (`y`), in the room between its paragraph's indents in a width that starts at
@@ -2075,19 +2105,27 @@ export const paginate = (
     const pageArea = (notes: readonly string[], split?: NotePart): number => Math.max(reserved(), areaOf(notes, split, continued));
 
     /**
-     * The room footnotes take below those on the page already. Those of a section whose columns are the same as those of
-     * the page's first footnote's are laid out in them with the others, one after the other from the first column
-     * (`word-watertight-stops.docx` SP6). It stops at one referred to from a section of other columns, when the page's
-     * footnotes are in columns, which Word hasn't been seen to lay out
+     * The room footnotes take below those on the page already. Those of another section are laid out in the columns of
+     * the page's first footnote's section with the others, one after the other from the first column, whatever its own
+     * columns (`word-watertight-stops.docx` SP6, `word-watertight-notes.docx` FN14 and FN15). Those referred to after a
+     * footnote that starts on the next page take none, as they go after it
      */
     const moreNoteRoom = (notes: readonly string[]): number => {
-        if (notes.length === 0) {
+        if (notes.length === 0 || deferred !== undefined) {
             return 0;
         }
-        if (notesInColumns !== undefined && !sameColumns(sections[notesInColumns], section())) {
-            stopOnPage("a footnote on a page whose footnotes are in another section's columns");
-        }
+        stopBelowContinued();
         return pageArea([...pageNotes, ...notes]) - noteArea;
+    };
+
+    /**
+     * Stops at footnotes referred to below one that continues on the next page in columns, where the text goes on above
+     * it: whether Word puts them on the page or after the rest of that one isn't known
+     */
+    const stopBelowContinued = (): void => {
+        if (carried !== undefined && columnsSection().columns.length > 1) {
+            stopOnPage("a footnote below one that continues on the next page in columns");
+        }
     };
 
     /**
@@ -2096,34 +2134,77 @@ export const paginate = (
      * filled are laid out again when they go down further than these leave room for
      */
     const addNotes = (notes: readonly string[]): void => {
-        if (notes.length > 0) {
-            if (pageNotes.length === 0 && continued === undefined && section().columns.length > 1) {
-                notesInColumns = sectionIndex;
+        startNoteColumns();
+        const before = pageNotes;
+        pageNotes = [...pageNotes, ...notes];
+        noteArea = pageArea(pageNotes);
+        notesSection = sectionIndex;
+        // Only when they take more room than was kept for them, as a line that doesn't fit in a column at all can still go
+        // down further
+        if (noteArea > reserved() + TOLERANCE && filledEnd > pageBottom - noteArea + TOLERANCE) {
+            if (startedInColumn()) {
+                // The columns before it are the section before's, which aren't laid out again: the last footnote goes on
+                // the page as far as it fits below them, and the rest on the next page, as Word continues one referred to
+                // from the first line of such a section (`word-watertight-notes.docx` FN2)
+                splitLast([...before, ...notes.slice(0, -1)], notes[notes.length - 1], pageBottom - filledEnd);
+                return;
             }
-            pageNotes = [...pageNotes, ...notes];
-            noteArea = pageArea(pageNotes);
-            notesSection = sectionIndex;
-            // Only when they take more room than was kept for them, as a line that doesn't fit in a column at all can still
-            // go down further
-            if (noteArea > reserved() + TOLERANCE && filledEnd > pageBottom - noteArea + TOLERANCE) {
-                if (startedInColumn()) {
-                    // The columns before it are the section before's, which aren't laid out again, and what Word does
-                    // with them isn't known
-                    stopOnPage("a footnote in a section that starts in the next column, below a longer column");
-                }
-                throw new NotesGrew(noteArea);
-            }
+            throw new NotesGrew(noteArea, pageNotes);
+        }
+    };
+
+    /** Lays the page's footnotes out in the section's columns, when it is in columns and they are its first */
+    const startNoteColumns = (): void => {
+        if (pageNotes.length === 0 && continued === undefined && section().columns.length > 1) {
+            notesInColumns = sectionIndex;
         }
     };
 
     /**
-     * Stops at a page whose columns were laid out again to leave room for footnotes that moved a reference to one of
-     * them on to the next page, so the room left is more than the footnotes on the page take: what Word does then isn't
-     * known
+     * Puts footnotes at the bottom of the page, the last of them only as far as it fits in a room, with the rest of it
+     * continued at the bottom of the next page. Across the page, it takes the rest of the page, so what follows goes on
+     * the next (`word-probes.docx` U2), but in the columns the page's footnotes are laid out in, the text goes on above it,
+     * as in Word (`word-watertight-notes.docx` FN2, FN3). It stops where none of it fits, and in columns of different
+     * widths, where its lines on the page and on the next aren't known to be those it is broken into in the first column
+     */
+    const splitLast = (whole: readonly string[], name: string, room: number): void => {
+        const fits = (point: NotePoint): boolean => areaOf(whole, { name, to: point }, continued) <= room + TOLERANCE;
+        let to = fillNote(name, { block: 0, line: 0 }, fits);
+        // Widow control can hold back a line from a part that fits to leave one that doesn't, in columns, and less of it
+        // is tried then
+        while (!atStart(to) && !fits(to)) {
+            const limit = to;
+            to = fillNote(
+                name,
+                { block: 0, line: 0 },
+                (point) => fits(point) && (point.block < limit.block || (point.block === limit.block && point.line < limit.line)),
+            );
+        }
+        const columns = noteColumns();
+        if (atStart(to) || columns?.some((width) => width !== columns[0])) {
+            stopOnPage("a footnote across pages in columns");
+        }
+        pageNotes = [...whole, name];
+        noteArea = columns === undefined ? room : areaOf(whole, { name, to }, continued);
+        notesSection = sectionIndex;
+        carried = { name, from: to };
+    };
+
+    /** The footnotes whose references are on the next page, as they moved on from this one when it was laid out again */
+    const movedFromPage = (): readonly string[] => movedOn.get(pageCount) ?? [];
+
+    /**
+     * Lays out a page again whose columns were laid out again to leave room for footnotes that moved a reference to one
+     * of them on to the next page, so the room left is more than the footnotes on the page take: without the room, and
+     * with the page ending above the reference, as Word moves the reference on and leaves the page as it is without the
+     * footnote (`word-watertight-notes.docx` FN1). It stops at a page with table rows on it, which isn't known
      */
     const checkReserve = (): void => {
         if (reserved() > areaOf(pageNotes, undefined, continued) + TOLERANCE) {
-            stopOnPage("a footnote in columns that moves its reference to the next page");
+            if (placements.slice(placements.findLastIndex(({ type }) => type === "page") + 1).some(({ type }) => type === "row")) {
+                stopOnPage("a footnote in columns that moves its reference to the next page");
+            }
+            throw new NotesGrew(0, [], [...movedFromPage(), ...reservedFor.get(pageCount)!.filter((name) => !pageNotes.includes(name))]);
         }
     };
 
@@ -2249,7 +2330,12 @@ export const paginate = (
             index === note.length - 1 && line >= length ? undefined : { block: index, line };
         if (block.type === "table") {
             const { rows } = fitted(block, noteWidth());
-            return point(breaksBeforeRow(rows[0]) ? 1 : 0, rows.length);
+            // With its header rows, which aren't left alone at the bottom of a page (`word-watertight-notes.docx` FN12)
+            let headers = 0;
+            while (headers < rows.length - 1 && rows[headers].header) {
+                headers++;
+            }
+            return point(breaksBeforeRow(rows[headers]) ? headers + 1 : 0, rows.length);
         }
         const { lines, widowControl, keepLines } = measureParagraph(block, noteWidth());
         return point(keepLines || (widowControl && lines.length <= 3) ? lines.length : widowControl ? 2 : 1, lines.length);
@@ -2274,73 +2360,75 @@ export const paginate = (
     const startsOnNextPage = (name: string): boolean => leastAreaOf([name], undefined, undefined) > pageBottom - top + TOLERANCE;
 
     /**
-     * Stops at a line or paragraph kept with the next below the top of a page that would move to the next page for a
-     * footnote that can't go on a page with it: whether Word moves it, or leaves it where it is, as it leaves one at the top
-     * of a page (SP5), isn't known. Guessing, it moves
-     */
-    const stopAtNoteTallerThanPage = (notes: readonly string[]): void => {
-        if (notes.some(startsOnNextPage)) {
-            stopAt("a footnote taller than a page from below the top of a page");
-        }
-    };
-
-    /**
      * The least room footnotes take below those on the page: all of them, but the last only as far as it has to go on the
      * page, when it can continue on the next
      */
     const leastNoteRoom = (notes: readonly string[]): number => {
-        const room = moreNoteRoom(notes);
-        return notes.length === 0 ? room : Math.max(reserved(), leastAreaOf([...pageNotes, ...notes], continued)) - noteArea;
+        if (notes.length === 0 || deferred !== undefined) {
+            return 0;
+        }
+        stopBelowContinued();
+        return Math.max(reserved(), leastAreaOf([...pageNotes, ...notes], continued)) - noteArea;
     };
 
     /**
      * Where the part of a footnote on a page ends, from where it starts (`from`), when not all of it fits (`fits`, up to
      * a point): after as many of its lines and table rows as fit, less those its paragraphs' widow and orphan control
      * hold back, as the body's are, so it breaks between its paragraphs and rows, or in a paragraph with 2 lines or more
-     * on each page (`word-probes.docx` U2a to U2h). A row that widow control keeps whole goes on the next page, and a
-     * table's header rows aren't repeated above the rest of it there (`word-watertight-stops.docx` SP3c, SP3d). On a page
-     * of footnotes alone (`ownPage`), a paragraph kept together that starts it and is taller than the page breaks where
-     * the page ends, as the body's does (SP5). Whether Word keeps a footnote's other paragraphs together or with the next
-     * across pages, breaks a row whose lines could go on both pages, or leaves a table's header rows alone at the bottom of
-     * a page in one, isn't known, so it stops there, or guessing, breaks it there as the body's would break without them.
+     * on each page (`word-probes.docx` U2a to U2h). A paragraph kept together goes on the next page whole, and those kept
+     * with the next go with the paragraph they are kept with, as the body's do (`word-watertight-notes.docx` FN9, FN10).
+     * A row that widow control keeps whole goes on the next page, and a table's header rows aren't repeated above the rest
+     * of it there (`word-watertight-stops.docx` SP3c, SP3d), nor left alone at the bottom of a page, as the table goes on
+     * the next page whole then (FN12). On a page of footnotes alone (`ownPage`), a paragraph kept together that starts it
+     * and is taller than the page breaks where the page ends, as the body's does (SP5). Word breaks a row whose lines could
+     * go on both pages as the body's (FN11), which isn't laid out yet, so it stops there, and at paragraphs kept with the
+     * next from the start of the part, which would leave none of it, or guessing, breaks before the row, and where those
+     * paragraphs don't fit, as the body's would break without them.
      */
     const fillNote = (name: string, from: NotePoint, fits: (to: NotePoint) => boolean, ownPage = false): NotePoint => {
         const note = footnotes.get(name)!;
         const width = noteWidth();
-        // The first line or row of the part that doesn't fit, which there is, as all of it doesn't
-        const { block: index, line } = note
+        // The first line or row of the part that doesn't fit, which there is, as all of it doesn't: the one after the last
+        // that does, as in columns, a part of a paragraph can fit where less of it doesn't, as widow control keeps 3 lines
+        // in one column and evens 4 out in two
+        const points = note
             .flatMap((part, at) =>
                 Array.from({ length: part.type === "table" ? part.rows.length : linesOf(part, width).length }, (_, unit) => ({
                     block: at,
                     line: unit,
                 })),
             )
-            .filter((point) => point.block > from.block || (point.block === from.block && point.line >= from.line))
-            .find((point) => !fits({ block: point.block, line: point.line + 1 }))!;
+            .filter((point) => point.block > from.block || (point.block === from.block && point.line >= from.line));
+        const { block: index, line } = points[points.findLastIndex((point) => fits({ block: point.block, line: point.line + 1 })) + 1];
         const block = note[index];
-        const previous = note[index - 1];
-        /** The point the part ends at, before a line or row of the block */
-        const breakBefore = (at: number): NotePoint => {
-            if (at === 0 && index > from.block && previous.type === "paragraph" && previous.format.keepNext === true) {
-                stopAt(KEPT_IN_NOTE);
-            }
-            return { block: index, line: at };
+        const withNext = (at: number): boolean => {
+            const kept = note[at];
+            return kept.type === "paragraph" && kept.format.keepNext === true;
         };
+        /** The point the part ends at, before a line or row of the block, and before its first, before those kept with it */
+        const breakBefore = (at: number): NotePoint => {
+            let start = index;
+            while (at === 0 && start > from.block && withNext(start - 1)) {
+                start--;
+            }
+            if (start < index && start === from.block) {
+                stopAt(KEPT_IN_NOTE);
+                start = index;
+            }
+            return { block: start, line: at };
+        };
+        const begin = index === from.block ? from.line : 0;
         if (block.type === "table") {
             if (!breaksBeforeRow(fitted(block, width).rows[line])) {
                 stopAt("a table row in a footnote that would break across pages");
             }
-            if (line > 0 && block.rows.slice(0, line).every(({ header }) => header)) {
-                stopAt("a table's header rows at the bottom of a page in a footnote");
-            }
-            return breakBefore(line);
+            return breakBefore(begin === 0 && block.rows.slice(0, line).every(({ header }) => header) ? 0 : line);
         }
-        const begin = index === from.block ? from.line : 0;
         const { lines, widowControl, keepLines } = measureParagraph(block, width);
-        const count = linesKept(lines.length - begin, line - begin, { keepLines: false, widowControl }, begin === 0);
-        if (keepLines && count > 0 && !(ownPage && index === from.block)) {
-            stopAt(KEPT_IN_NOTE);
-        }
+        const count =
+            keepLines && !(ownPage && index === from.block)
+                ? 0
+                : linesKept(lines.length - begin, line - begin, { keepLines: false, widowControl }, begin === 0);
         return breakBefore(begin + count);
     };
 
@@ -2355,32 +2443,29 @@ export const paginate = (
      * breaks across pages below them
      */
     const placeNotes = (notes: readonly string[], below = 0): void => {
-        if (notes.length > 0 && deferred !== undefined) {
-            // Where Word puts a footnote referred to below one that starts on the next page, before it or after it, isn't
-            // known
-            throw new Unsupported("a footnote after one that starts on the next page");
+        if (notes.length === 0) {
+            return;
         }
-        if (notes.length > 0 && drawings.some(({ keepOut }) => keepOut.bottom > linesBottom(moreNoteRoom(notes)) + TOLERANCE)) {
+        if (deferred !== undefined) {
+            // A footnote referred to below one that starts on the next page goes after it (`word-watertight-notes.docx` FN8)
+            pending = [...pending, ...notes];
+            return;
+        }
+        if (drawings.some(({ keepOut }) => keepOut.bottom > linesBottom(moreNoteRoom(notes)) + TOLERANCE)) {
             throw new Unsupported("a drawing that text flows around beside the footnotes at the bottom of its page");
         }
-        if (notes.length === 0 || position + below <= linesBottom(moreNoteRoom(notes)) + TOLERANCE) {
+        if (position + below <= linesBottom(moreNoteRoom(notes)) + TOLERANCE) {
             addNotes(notes);
             return;
         }
-        if (section().columns.length > 1) {
+        // In columns, a line whose footnotes don't fit is at the top of the page's columns, or of the column a section
+        // starts in, where it stays, and they go below the lines of every column on the page (FN2, FN3)
+        startNoteColumns();
+        if (section().columns.length > 1 && noteColumns() === undefined) {
+            // Below footnotes across the page, which those of columns go on below, how Word continues one isn't known
             stopOnPage("a footnote across pages in columns");
         }
-        const whole = [...pageNotes, ...notes.slice(0, -1)];
-        const name = notes[notes.length - 1];
-        const to = fillNote(
-            name,
-            { block: 0, line: 0 },
-            (point) => areaOf(whole, { name, to: point }, continued) <= bottom - position - below + TOLERANCE,
-        );
-        pageNotes = [...whole, name];
-        noteArea = bottom - position - below;
-        notesSection = sectionIndex;
-        carried = { name, from: to };
+        splitLast([...pageNotes, ...notes.slice(0, -1)], notes[notes.length - 1], bottom - Math.max(position + below, filledEnd));
     };
 
     /**
@@ -2887,17 +2972,19 @@ export const paginate = (
                 (upTo) => noteCost(leastNoteRoom(notesOf(upTo))) + (ends && upTo === remaining.length ? paragraph.borderBelow : 0),
                 hangs,
             );
+            // A line whose footnote moved on from the page when it was laid out again goes on the next page, and what follows
+            // it (`word-watertight-notes.docx` FN1)
+            const moved = movedFromPage();
+            const movedLine = remaining.findIndex(({ markers }) => markers.some((marker) => moved.includes(marker)));
             // The footnotes held back from the paragraph kept with this one that continue on the next page go below as many
             // of its lines as it is kept with, and take the rest of the page (`word-watertight-stops.docx` SP4)
-            let count = heldLines !== undefined && heldNotes.length > 0 && !holdNotes ? Math.min(kept, heldLines) : kept;
+            let count = Math.min(
+                heldLines !== undefined && heldNotes.length > 0 && !holdNotes ? Math.min(kept, heldLines) : kept,
+                movedLine === -1 ? Infinity : linesKept(remaining.length, movedLine, paragraph, isFirstLine),
+            );
             /** Whether its first line fits without its footnotes, when it doesn't with them */
             const fitsAlone = (): boolean => fits === 0 && linesThatFit(remaining, room, paragraph, isFirstLine, undefined, hangs).fits > 0;
             const lineNotes = notesOf(1);
-            if (count === 0 && placedInColumn && columnsSection().columns.length === 1 && fitsAlone()) {
-                // Whether Word moves a line to the next page for a footnote that can't go on a page with it, or leaves it
-                // where it is, as it leaves one at the top of a page, isn't known
-                stopAtNoteTallerThanPage(lineNotes);
-            }
             // Nothing fits on an empty page, so as much as fits goes on it, and at least a line, unless the end of a
             // footnote continued from the page before is on it, which leaves the next page for them
             if (count === 0 && !placedInColumn && continued === undefined) {
@@ -2908,12 +2995,15 @@ export const paginate = (
                         throw new Unsupported("a line and its footnote taller than a page");
                     }
                     if (columnsSection().columns.length > 1) {
-                        // At the top of a column after the page's first, it goes on in the next with them, as anywhere in
-                        // columns. At the top of the first, they don't fit in the page's columns, and how Word continues a
-                        // footnote in columns isn't known
-                        if (column === 0) {
+                        // At the top of the page's columns, or of the column a section starts in after the section before's,
+                        // a line whose footnotes don't fit stays, and the last of them continues on the next page
+                        // (`word-watertight-notes.docx` FN2, FN3). At the top of another column, Word lays out the columns
+                        // before it again above as much of the footnote as leaves the line on the page (FN3), which isn't
+                        // followed yet
+                        if (column > 0 && !(startedInColumn() && column === sectionColumn)) {
                             throw new Unsupported("a footnote across pages in columns");
                         }
+                        count = 1;
                     } else if (lineNotes.length === 1 && startsOnNextPage(lineNotes[0])) {
                         // At the top of a page, a line whose footnote can't go on a page with it, as its least is taller than
                         // a page, stays there without it, and the footnote starts on the next page (SP5)
@@ -3698,8 +3788,12 @@ export const paginate = (
             const height = heightAt(index);
             const roomNeeded = height + breakBorder;
             const markers = markersIn(row);
-            const notes = notesIn(markers);
-            const keptWhole = row.cantSplit || row.height?.rule === "exact";
+            // The footnotes held back from the paragraph kept with the table go below the rows it is kept with, which go on
+            // the page whole, and take the rest of the page, as Word puts one below its first row (`word-watertight-notes.docx`
+            // FN13)
+            const holding = held.length > 0 && heldLines !== undefined && index < heldLines;
+            const notes = [...(holding && index === heldLines! - 1 ? held : []), ...notesIn(markers)];
+            const keptWhole = holding || row.cantSplit || row.height?.rule === "exact";
             if (table.cellSpacing !== undefined && row.breakBorder === undefined && !rowFits(roomNeeded, notes)) {
                 // What Word draws where a table with space between its cells and borders breaks across pages isn't known.
                 // Guessing, nothing more
@@ -3748,6 +3842,10 @@ export const paginate = (
             // Its footnotes go below it, and one that continues takes the rest of the page, below the table's bottom border
             // when the table breaks after it
             placeNotes(notes, breakBorder);
+            if (holding && index === heldLines! - 1) {
+                held = [];
+                heldLines = undefined;
+            }
             // The cells merged down to the row end in it, with the rest of their text
             mark(openMerges.filter(({ last }) => last === index).flatMap(({ rest }) => markersLeft(rest)));
             openMerges = openMerges.filter(({ last }) => last !== index);
@@ -3778,7 +3876,7 @@ export const paginate = (
         readonly notes: readonly string[];
         readonly kept: readonly string[];
         readonly keptWith: "nothing" | "whole" | "part";
-        /** The lines of the paragraph they are kept with that go with them, when they are only part of it */
+        /** The lines of the paragraph, or the rows of the table, they are kept with that go with them, when they are only part of it */
         readonly keptLines?: number;
     } => {
         const chain = keptChain(index);
@@ -3819,6 +3917,7 @@ export const paginate = (
                 notes: [...keptNotes, ...notesIn(rows.flatMap(({ cells }) => cells.flatMap((cell) => cell.blocks.flatMap(markersOf))))],
                 kept: keptNotes,
                 keptWith: "part",
+                keptLines: rows.length,
             };
         }
         // As much of the next paragraph as can't be left at the bottom of a page on its own. The last paragraph of a
@@ -4058,7 +4157,8 @@ export const paginate = (
             // Where they go, here or where they moved to, a footnote continued on the next page from the paragraphs kept with
             // the next goes below the lines they are kept with, which Word keeps on the page with them (U2l), and of a longer
             // paragraph, below as many of its first lines as they are kept with, as Word puts as much of the footnote as fits
-            // below those, rather than more of the paragraph (`word-watertight-stops.docx` SP4)
+            // below those, rather than more of the paragraph (`word-watertight-stops.docx` SP4), and of a table, below the
+            // rows they are kept with (`word-watertight-notes.docx` FN13)
             const { notes, kept, keptWith, keptLines, all, fitsWith } = keptHere();
             holdNotes =
                 keptWith !== "nothing" &&
@@ -4067,8 +4167,7 @@ export const paginate = (
                 fitsWith(leastNoteRoom(all)) &&
                 !fitsWith(moreNoteRoom(all));
             if (holdNotes && keptWith === "part" && keptLines === undefined) {
-                // How much of a table, or of a paragraph with a page break before it, Word puts above it isn't known.
-                // Guessing, all of it
+                // How much of a paragraph with a page break before it Word puts above it isn't known. Guessing, all of it
                 stopAt("a footnote continued below a paragraph kept with the next");
             }
             heldLines = holdNotes && keptWith === "part" ? keptLines : undefined;
@@ -4121,6 +4220,21 @@ export const paginate = (
                     // The page's columns are laid out again from the block they start with, above the room its footnotes take
                     // eslint-disable-next-line functional/immutable-data
                     reserves.set(pageCount, error.area);
+                    // eslint-disable-next-line functional/immutable-data
+                    reservedFor.set(pageCount, error.notes);
+                    if (error.moved !== undefined) {
+                        // eslint-disable-next-line functional/immutable-data
+                        movedOn.set(pageCount, error.moved);
+                    }
+                    // The bookmarks placed since are placed again, as a reference can move on to the next page
+                    for (const [name, { order }] of places) {
+                        if (order >= columnsStart!.marks) {
+                            // eslint-disable-next-line functional/immutable-data
+                            places.delete(name);
+                            // eslint-disable-next-line functional/immutable-data
+                            bookmarks.delete(name);
+                        }
+                    }
                 }
                 restore(columnsStart!);
                 index = columnsStart!.index - 1;
@@ -4209,7 +4323,7 @@ export const paginate = (
         checkReserve();
         if (carried !== undefined) {
             // The rest of a footnote continued from the last page goes on a page of its own
-            startPage(false, true);
+            startPage();
         }
     } catch (error) {
         if (!(error instanceof Unsupported)) {

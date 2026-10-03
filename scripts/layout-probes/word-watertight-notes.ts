@@ -24,6 +24,15 @@
  * FN13: a line kept with a table, whose 8-line footnote doesn't fit with it and the table's first row, as SP4 with a table
  * FN14: footnotes from a section of 2 columns and a continuous section of 3 on one page
  * FN15: footnotes from a section of 2 columns and a continuous section of one on one page
+ *
+ * Word (word-watertight-notes.pdf, Word 16 for Mac): FN1's reference moves to the next page, and the page is as it was
+ * without the footnote, 51 and 46 lines. FN2's footnote goes 2 and 2 below the first column's 48 lines, and 3 and 3 on a
+ * page of its own; FN3's 44 and 44, as much as leaves its reference on the page once the first column is laid out again
+ * with 6 lines, and 16 and 16 below the text on the next. The rests of FN4 and FN5 have pages of their own, and the next
+ * section, continuous too, starts on the page after. FN6's text goes on below the footnote's page, above its end; FN7's
+ * reference moves to the next page; FN8's second footnote goes below the end of the first. FN9 and FN10 break before the
+ * kept paragraph and the one kept with the next; FN11's row breaks 3 and 3; FN12's table goes on the next page whole. FN13's
+ * footnote goes below the table's first row. FN14's and FN15's footnotes are in the first section's 2 columns
  */
 // cspell:ignore bbox
 import { mkdirSync, writeFileSync } from "node:fs";
