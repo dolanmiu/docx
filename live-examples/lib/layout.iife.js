@@ -8128,7 +8128,7 @@ var docxLayout = (function(exports) {
 	* bands by each row's place among all the rows, the deleted ones too (MK14j to MK14l).
 	*/
 	var readTable = (element, reader) => {
-		var _twips, _reader$grid, _readTableLook, _ref12, _ref13, _ref14, _ref15, _ref16, _ref17, _ref18, _ref19, _ref20, _ref21, _ref22, _withoutGuess$unsuppo, _read$find2, _blocks$find, _read$0$cells, _read$, _roomOf, _roomOf2;
+		var _twips, _reader$grid, _readTableLook, _ref12, _ref13, _ref14, _ref15, _ref16, _ref17, _ref18, _ref19, _ref20, _ref21, _ref22, _ref23, _withoutGuess$unsuppo, _read$find2, _blocks$find, _read$0$cells, _read$, _roomOf, _roomOf2;
 		const children = contentOf$3(element).filter(isObject);
 		const properties = childrenOf(find(children, "w:tblPr"));
 		const style = valueOf(properties, "w:tblStyle");
@@ -8386,19 +8386,88 @@ var docxLayout = (function(exports) {
 		const tableTwips = givenWidth.width;
 		const fixedFit = fixed && evenable && (unequal || tableTwips !== void 0 && read.some(({ edges, end }) => Math.abs(edges.get(end) - tableTwips) > WIDTH_TOLERANCE));
 		const withoutGuess = blocks.find((block) => block.noGuess === true);
-		const unsupported = (_ref12 = (_ref13 = (_ref14 = (_ref15 = (_ref16 = (_ref17 = (_ref18 = (_ref19 = (_ref20 = (_ref21 = (_ref22 = (_withoutGuess$unsuppo = withoutGuess === null || withoutGuess === void 0 ? void 0 : withoutGuess.unsupported) !== null && _withoutGuess$unsuppo !== void 0 ? _withoutGuess$unsuppo : reader.down === true ? "a table on text that runs down the page" : void 0) !== null && _ref22 !== void 0 ? _ref22 : find(properties, "w:tblpPr") === void 0 ? void 0 : "a table that text flows around") !== null && _ref21 !== void 0 ? _ref21 : parts.some((part) => "w:sdt" in part) ? BOUND_CONTROL : void 0) !== null && _ref20 !== void 0 ? _ref20 : (_read$find2 = read.find((row) => row.unsupported !== void 0)) === null || _read$find2 === void 0 ? void 0 : _read$find2.unsupported) !== null && _ref19 !== void 0 ? _ref19 : unmerged) !== null && _ref18 !== void 0 ? _ref18 : fits ? unfitted : unequal && !evened ? "a table whose rows give a column different widths" : void 0) !== null && _ref17 !== void 0 ? _ref17 : spacingUnsupported) !== null && _ref16 !== void 0 ? _ref16 : typeof geometry === "string" ? geometry : void 0) !== null && _ref15 !== void 0 ? _ref15 : indent === void 0 ? "a table indented by a share of the width" : void 0) !== null && _ref14 !== void 0 ? _ref14 : styleUnsupported) !== null && _ref13 !== void 0 ? _ref13 : lengths) !== null && _ref12 !== void 0 ? _ref12 : (_blocks$find = blocks.find((block) => block.unsupported !== void 0)) === null || _blocks$find === void 0 ? void 0 : _blocks$find.unsupported;
+		const floatElement = find(properties, "w:tblpPr");
+		const float = floatElement === void 0 ? void 0 : readTableFloat(floatElement, find(properties, "w:tblOverlap"));
+		const unsupported = (_ref12 = (_ref13 = (_ref14 = (_ref15 = (_ref16 = (_ref17 = (_ref18 = (_ref19 = (_ref20 = (_ref21 = (_ref22 = (_ref23 = (_withoutGuess$unsuppo = withoutGuess === null || withoutGuess === void 0 ? void 0 : withoutGuess.unsupported) !== null && _withoutGuess$unsuppo !== void 0 ? _withoutGuess$unsuppo : reader.down === true ? "a table on text that runs down the page" : void 0) !== null && _ref23 !== void 0 ? _ref23 : float !== void 0 && (reader.inCell || reader.inNote || reader.inHeader) ? "a table that text flows around in a table cell, header, footer or note" : void 0) !== null && _ref22 !== void 0 ? _ref22 : typeof float === "string" ? float : void 0) !== null && _ref21 !== void 0 ? _ref21 : parts.some((part) => "w:sdt" in part) ? BOUND_CONTROL : void 0) !== null && _ref20 !== void 0 ? _ref20 : (_read$find2 = read.find((row) => row.unsupported !== void 0)) === null || _read$find2 === void 0 ? void 0 : _read$find2.unsupported) !== null && _ref19 !== void 0 ? _ref19 : unmerged) !== null && _ref18 !== void 0 ? _ref18 : fits ? unfitted : unequal && !evened ? "a table whose rows give a column different widths" : void 0) !== null && _ref17 !== void 0 ? _ref17 : spacingUnsupported) !== null && _ref16 !== void 0 ? _ref16 : typeof geometry === "string" ? geometry : void 0) !== null && _ref15 !== void 0 ? _ref15 : indent === void 0 ? "a table indented by a share of the width" : void 0) !== null && _ref14 !== void 0 ? _ref14 : styleUnsupported) !== null && _ref13 !== void 0 ? _ref13 : lengths) !== null && _ref12 !== void 0 ? _ref12 : (_blocks$find = blocks.find((block) => block.unsupported !== void 0)) === null || _blocks$find === void 0 ? void 0 : _blocks$find.unsupported;
 		const rowWidth = ((_read$0$cells = (_read$ = read[0]) === null || _read$ === void 0 ? void 0 : _read$.cells) !== null && _read$0$cells !== void 0 ? _read$0$cells : []).reduce((total, cell) => {
 			var _cell$ownWidth;
 			return total + ((_cell$ownWidth = cell.ownWidth) !== null && _cell$ownWidth !== void 0 ? _cell$ownWidth : 0);
 		}, 0);
 		const tableWidth = spaced && givenWidth.width === void 0 && givenWidth.share === void 0 ? { width: rowWidth } : givenWidth;
-		return _objectSpread2(_objectSpread2(_objectSpread2(_objectSpread2(_objectSpread2(_objectSpread2(_objectSpread2({
+		return _objectSpread2(_objectSpread2(_objectSpread2(_objectSpread2(_objectSpread2(_objectSpread2(_objectSpread2(_objectSpread2({
 			type: "table",
 			rows: tableRows
 		}, fits ? { fit: givenWidth } : {}), !fits && (!fixed || spaced || fixedFit) ? { widen: _objectSpread2(_objectSpread2(_objectSpread2({}, tableWidth), evened ? { uneven: true } : {}), fixed && !spaced ? { fixed: true } : {}) } : {}), {}, {
 			borderLeft: (_roomOf = roomOf(tableBorders.left)) !== null && _roomOf !== void 0 ? _roomOf : 0,
 			borderRight: (_roomOf2 = roomOf(tableBorders.right)) !== null && _roomOf2 !== void 0 ? _roomOf2 : 0
-		}, indent ? { indent } : {}), spaced ? { cellSpacing: followedSpacing } : {}), deletedRows.length > 0 ? { deletedRows } : {}), unsupported ? { unsupported } : {}), withoutGuess ? { noGuess: true } : {});
+		}, indent ? { indent } : {}), spaced ? { cellSpacing: followedSpacing } : {}), deletedRows.length > 0 ? { deletedRows } : {}), typeof float === "object" ? { float } : {}), unsupported ? { unsupported } : {}), withoutGuess ? { noGuess: true } : {});
+	};
+	var TABLE_AXES = {
+		horzAnchor: {
+			from: /* @__PURE__ */ new Map([
+				["text", "column"],
+				["margin", "margin"],
+				["page", "page"]
+			]),
+			alignments: /* @__PURE__ */ new Set([
+				"left",
+				"center",
+				"right",
+				"inside",
+				"outside"
+			])
+		},
+		vertAnchor: {
+			from: /* @__PURE__ */ new Map([
+				["text", "paragraph"],
+				["margin", "margin"],
+				["page", "page"]
+			]),
+			alignments: /* @__PURE__ */ new Set([
+				"top",
+				"center",
+				"bottom",
+				"inside",
+				"outside"
+			])
+		}
+	};
+	/** Where a table that text flows around is (`w:tblpPr`), or why it can't be followed */
+	var readTableFloat = (element, overlap) => {
+		const attributes = attributesOf(element);
+		const position = (anchor, spec, at) => {
+			var _twips4;
+			const { from: anchors, alignments } = TABLE_AXES[anchor];
+			const from = anchors.get(String(attributes[`w:${anchor}`]));
+			const align = attributes[`w:${spec}`];
+			if (from === void 0) return "a table that text flows around placed against what isn't given";
+			if (align !== void 0) return alignments.has(String(align)) ? {
+				from,
+				align: String(align)
+			} : "a table that text flows around lined up in a way not yet followed";
+			return {
+				from,
+				offset: (_twips4 = twips(attributes[`w:${at}`])) !== null && _twips4 !== void 0 ? _twips4 : 0
+			};
+		};
+		const horizontal = position("horzAnchor", "tblpXSpec", "tblpX");
+		const vertical = position("vertAnchor", "tblpYSpec", "tblpY");
+		if (typeof horizontal === "string" || typeof vertical === "string") return typeof horizontal === "string" ? horizontal : vertical;
+		const distance = (name) => {
+			var _twips5;
+			return (_twips5 = twips(attributes[`w:${name}FromText`])) !== null && _twips5 !== void 0 ? _twips5 : 0;
+		};
+		return {
+			horizontal,
+			vertical,
+			distances: {
+				top: distance("top"),
+				bottom: distance("bottom"),
+				left: distance("left"),
+				right: distance("right")
+			},
+			mayOverlap: attributesOf(overlap)["w:val"] !== "never"
+		};
 	};
 	/** A block in place of what can't be laid out, with why */
 	var unsupportedBlock = (unsupported) => ({
@@ -8767,27 +8836,27 @@ var docxLayout = (function(exports) {
 	* the same space between them, unless the section gives each column's width.
 	*/
 	var readColumns = (element, width) => {
-		var _numberOf6, _twips5;
+		var _numberOf6, _twips7;
 		const attributes = attributesOf(element);
 		const given = childrenOf(element).filter((child) => "w:col" in child);
 		if (isOff(attributes["w:equalWidth"]) && given.length > 0) return given.map((column) => {
-			var _twips4;
-			return (_twips4 = twips(attributesOf(column["w:col"])["w:w"])) !== null && _twips4 !== void 0 ? _twips4 : 0;
+			var _twips6;
+			return (_twips6 = twips(attributesOf(column["w:col"])["w:w"])) !== null && _twips6 !== void 0 ? _twips6 : 0;
 		});
 		const count = Math.max(1, (_numberOf6 = numberOf(attributes["w:num"])) !== null && _numberOf6 !== void 0 ? _numberOf6 : 1);
-		const space = (_twips5 = twips(attributes["w:space"])) !== null && _twips5 !== void 0 ? _twips5 : DEFAULT_COLUMN_SPACE;
+		const space = (_twips7 = twips(attributes["w:space"])) !== null && _twips7 !== void 0 ? _twips7 : DEFAULT_COLUMN_SPACE;
 		return Array.from({ length: count }, () => (width - space * (count - 1)) / count);
 	};
 	var CHARACTER_SPACE_UNITS = 4096;
 	/** How wide a section's pages are, and their margins and gutter across them, in points */
 	var pageAcross = (properties) => {
-		var _twips6, _twips7, _margins$wLeft, _twips8, _margins$wRight, _twips9;
+		var _twips8, _twips9, _margins$wLeft, _twips10, _margins$wRight, _twips11;
 		const margins = attributesOf(find(properties, "w:pgMar"));
 		return {
-			pageWidth: (_twips6 = twips(attributesOf(find(properties, "w:pgSz"))["w:w"])) !== null && _twips6 !== void 0 ? _twips6 : DEFAULT_SECTION.pageWidth,
-			left: (_twips7 = twips((_margins$wLeft = margins["w:left"]) !== null && _margins$wLeft !== void 0 ? _margins$wLeft : margins["w:start"])) !== null && _twips7 !== void 0 ? _twips7 : DEFAULT_SECTION.marginLeft,
-			right: (_twips8 = twips((_margins$wRight = margins["w:right"]) !== null && _margins$wRight !== void 0 ? _margins$wRight : margins["w:end"])) !== null && _twips8 !== void 0 ? _twips8 : DEFAULT_SECTION.marginRight,
-			gutter: (_twips9 = twips(margins["w:gutter"])) !== null && _twips9 !== void 0 ? _twips9 : DEFAULT_SECTION.gutter
+			pageWidth: (_twips8 = twips(attributesOf(find(properties, "w:pgSz"))["w:w"])) !== null && _twips8 !== void 0 ? _twips8 : DEFAULT_SECTION.pageWidth,
+			left: (_twips9 = twips((_margins$wLeft = margins["w:left"]) !== null && _margins$wLeft !== void 0 ? _margins$wLeft : margins["w:start"])) !== null && _twips9 !== void 0 ? _twips9 : DEFAULT_SECTION.marginLeft,
+			right: (_twips10 = twips((_margins$wRight = margins["w:right"]) !== null && _margins$wRight !== void 0 ? _margins$wRight : margins["w:end"])) !== null && _twips10 !== void 0 ? _twips10 : DEFAULT_SECTION.marginRight,
+			gutter: (_twips11 = twips(margins["w:gutter"])) !== null && _twips11 !== void 0 ? _twips11 : DEFAULT_SECTION.gutter
 		};
 	};
 	/** How wide a section's text is: its page's, less its margins and a gutter beside it */
@@ -8832,7 +8901,7 @@ var docxLayout = (function(exports) {
 	* (`word-watertight-settings.docx` ST3).
 	*/
 	var readSection = (element, readPart, previous, { gutterAtTop, mirrorMargins }, grid) => {
-		var _stringOf2, _twips10, _twips11, _twips12, _twips13, _twips14, _CHAPTER_SEPARATORS$S;
+		var _stringOf2, _twips12, _twips13, _twips14, _twips15, _twips16, _CHAPTER_SEPARATORS$S;
 		const properties = childrenOf(element);
 		const size = attributesOf(find(properties, "w:pgSz"));
 		const margins = attributesOf(find(properties, "w:pgMar"));
@@ -8842,24 +8911,24 @@ var docxLayout = (function(exports) {
 		const firstNumber = numberOf(numbering["w:start"]);
 		const chapterLevel = numberOf(numbering["w:chapStyle"]);
 		const { pageWidth, left: marginLeft, right: marginRight, gutter } = pageAcross(properties);
-		const marginTop = (_twips10 = twips(margins["w:top"])) !== null && _twips10 !== void 0 ? _twips10 : DEFAULT_SECTION.marginTop;
+		const marginTop = (_twips12 = twips(margins["w:top"])) !== null && _twips12 !== void 0 ? _twips12 : DEFAULT_SECTION.marginTop;
 		const columns = readColumns(find(properties, "w:cols"), textWidthOf(properties, gutterAtTop));
 		const direction = valueOf(properties, "w:textDirection");
 		const down = downOf(properties);
 		const sectionStart = start !== void 0 && START_TYPES.has(start) ? start : "nextPage";
-		const marginBottom = (_twips11 = twips(margins["w:bottom"])) !== null && _twips11 !== void 0 ? _twips11 : DEFAULT_SECTION.marginBottom;
+		const marginBottom = (_twips13 = twips(margins["w:bottom"])) !== null && _twips13 !== void 0 ? _twips13 : DEFAULT_SECTION.marginBottom;
 		const unsupported = typeof grid === "string" ? grid : formatPageNumber(1, format) === void 0 ? "page numbers in a format not yet written" : direction !== void 0 && !HORIZONTAL_PAGES.has(direction) && down === void 0 ? "text in a direction not yet followed" : down !== void 0 && (gutter !== 0 || mirrorMargins || columns.length > 1 || Math.min(marginTop, marginBottom) < 0) ? "text that runs down the page with a gutter, mirrored margins, columns or a negative margin" : (previous === null || previous === void 0 ? void 0 : previous.textRunsDown) !== void 0 && (sectionStart === "continuous" || sectionStart === "nextColumn") ? "a continuous section break after text that runs down the page" : down !== void 0 && typeof grid === "object" && grid.characterPitch !== void 0 ? "a document grid that snaps to characters on text that runs down the page" : find(properties, "w15:footnoteColumns") !== void 0 ? "footnotes in columns of their own" : gutterAtTop && gutter !== 0 && (mirrorMargins || marginTop < 0) ? "a gutter at the top with mirrored margins or a negative top margin" : unknownLengthIn(element);
 		const headers = readReferences(properties, "w:headerReference", readPart);
 		const footers = readReferences(properties, "w:footerReference", readPart);
 		const section = _objectSpread2(_objectSpread2(_objectSpread2({
 			pageWidth,
-			pageHeight: (_twips12 = twips(size["w:h"])) !== null && _twips12 !== void 0 ? _twips12 : DEFAULT_SECTION.pageHeight,
+			pageHeight: (_twips14 = twips(size["w:h"])) !== null && _twips14 !== void 0 ? _twips14 : DEFAULT_SECTION.pageHeight,
 			marginTop,
 			marginBottom,
 			marginLeft,
 			marginRight,
-			header: (_twips13 = twips(margins["w:header"])) !== null && _twips13 !== void 0 ? _twips13 : DEFAULT_SECTION.header,
-			footer: (_twips14 = twips(margins["w:footer"])) !== null && _twips14 !== void 0 ? _twips14 : DEFAULT_SECTION.footer,
+			header: (_twips15 = twips(margins["w:header"])) !== null && _twips15 !== void 0 ? _twips15 : DEFAULT_SECTION.header,
+			footer: (_twips16 = twips(margins["w:footer"])) !== null && _twips16 !== void 0 ? _twips16 : DEFAULT_SECTION.footer,
 			gutter: gutterAtTop ? 0 : gutter,
 			topGutter: gutterAtTop ? gutter : 0,
 			start: down !== void 0 && sectionStart === "continuous" ? "nextPage" : sectionStart,
@@ -9115,7 +9184,7 @@ var docxLayout = (function(exports) {
 	* Reads the parts of the document's settings (`w:settings`) that change how it is laid out.
 	*/
 	var readSettings = (xml) => {
-		var _wordSettingsOf$find, _find$, _find4, _twips15;
+		var _wordSettingsOf$find, _find$, _find4, _twips17;
 		const settings = childrenOf(xml === null || xml === void 0 ? void 0 : xml["w:settings"]);
 		const compatibility = childrenOf(find(settings, "w:compat"));
 		const lists = readKinsokuLists(settings);
@@ -9131,7 +9200,7 @@ var docxLayout = (function(exports) {
 			[onOff(settings, "w:linkStyles"), "styles updated from the document's template when Word opens it"]
 		].find(([applies]) => applies === true)) === null || _find4 === void 0 ? void 0 : _find4[1]) !== null && _find$ !== void 0 ? _find$ : unknownLengthIn(settings);
 		return _objectSpread2(_objectSpread2(_objectSpread2({
-			defaultTabStop: (_twips15 = twips(attributesOf(find(settings, "w:defaultTabStop"))["w:val"])) !== null && _twips15 !== void 0 ? _twips15 : 36,
+			defaultTabStop: (_twips17 = twips(attributesOf(find(settings, "w:defaultTabStop"))["w:val"])) !== null && _twips17 !== void 0 ? _twips17 : 36,
 			evenAndOddHeaders: onOff(settings, "w:evenAndOddHeaders") === true,
 			addsParagraphSpacing: onOff(compatibility, "w:doNotUseHTMLParagraphAutoSpacing") === true
 		}, Object.keys(lists).length > 0 ? { breakRules: { lists } } : {}), onOff(settings, "w:autoHyphenation") === true ? { hyphenation: readHyphenation(settings) } : {}), unsupported ? { unsupported } : {});
@@ -9225,7 +9294,7 @@ var docxLayout = (function(exports) {
 	* Reads a document's body (`w:body`), with the other parts of the document.
 	*/
 	var readContent = (body, parts, { guess = false } = {}) => {
-		var _parts$otherListIds, _parts$otherListIds2, _parts$settings, _fontOf$size, _ref23, _ref24, _ref25, _ref26, _ref27, _ref28, _documentContent$unsu;
+		var _parts$otherListIds, _parts$otherListIds2, _parts$settings, _fontOf$size, _ref24, _ref25, _ref26, _ref27, _ref28, _ref29, _documentContent$unsu;
 		const { styles } = parts;
 		const { lists: numbering, unsupported: inNumbering } = readNumbering(parts.numbering, styles, (_parts$otherListIds = parts.otherListIds) !== null && _parts$otherListIds !== void 0 ? _parts$otherListIds : /* @__PURE__ */ new Map());
 		const listIds = (_parts$otherListIds2 = parts.otherListIds) !== null && _parts$otherListIds2 !== void 0 ? _parts$otherListIds2 : /* @__PURE__ */ new Map();
@@ -9455,7 +9524,7 @@ var docxLayout = (function(exports) {
 			relativeReferences: markers.relative,
 			endnoteReferences
 		}, parts.fonts !== void 0 && parts.fonts.length > 0 ? { fonts: parts.fonts } : {}), readSettings(parts.settings));
-		return _objectSpread2(_objectSpread2({}, documentContent), withoutUndefined({ unsupported: (_ref23 = (_ref24 = (_ref25 = (_ref26 = (_ref27 = (_ref28 = (_documentContent$unsu = documentContent.unsupported) !== null && _documentContent$unsu !== void 0 ? _documentContent$unsu : styles.unsupported) !== null && _ref28 !== void 0 ? _ref28 : inNumbering) !== null && _ref27 !== void 0 ? _ref27 : footnotes.size > 0 ? notesUnsupported("footnote") : void 0) !== null && _ref26 !== void 0 ? _ref26 : endnotes.length > 0 ? notesUnsupported("endnote") : void 0) !== null && _ref25 !== void 0 ? _ref25 : [...endnoteSections, sections.length - 1].some((section) => sections[section].textRunsDown !== void 0) && endnotes.length > 0 ? "endnotes on text that runs down the page" : void 0) !== null && _ref24 !== void 0 ? _ref24 : endnoteSections.some((section) => !sameGrid(gridOf(section), gridOf(sections.length - 1))) ? "endnotes from a section on another document grid than the last" : void 0) !== null && _ref23 !== void 0 ? _ref23 : unwrittenNumber ? "notes numbered in a format not yet written" : void 0 }));
+		return _objectSpread2(_objectSpread2({}, documentContent), withoutUndefined({ unsupported: (_ref24 = (_ref25 = (_ref26 = (_ref27 = (_ref28 = (_ref29 = (_documentContent$unsu = documentContent.unsupported) !== null && _documentContent$unsu !== void 0 ? _documentContent$unsu : styles.unsupported) !== null && _ref29 !== void 0 ? _ref29 : inNumbering) !== null && _ref28 !== void 0 ? _ref28 : footnotes.size > 0 ? notesUnsupported("footnote") : void 0) !== null && _ref27 !== void 0 ? _ref27 : endnotes.length > 0 ? notesUnsupported("endnote") : void 0) !== null && _ref26 !== void 0 ? _ref26 : [...endnoteSections, sections.length - 1].some((section) => sections[section].textRunsDown !== void 0) && endnotes.length > 0 ? "endnotes on text that runs down the page" : void 0) !== null && _ref25 !== void 0 ? _ref25 : endnoteSections.some((section) => !sameGrid(gridOf(section), gridOf(sections.length - 1))) ? "endnotes from a section on another document grid than the last" : void 0) !== null && _ref24 !== void 0 ? _ref24 : unwrittenNumber ? "notes numbered in a format not yet written" : void 0 }));
 	};
 	//#endregion
 	//#region src/layout/paginate.ts
@@ -9627,6 +9696,15 @@ var docxLayout = (function(exports) {
 			text: lines.map(({ text }) => text).join(""),
 			textWidth: sum(lines.map(({ textWidth }) => textWidth))
 		}, breakAfter === void 0 ? {} : { breakAfter }), spacingBelow === void 0 ? {} : { spacingBelow }) });
+	};
+	var KEPT_FLOATING = "a paragraph kept with the next with a table that text flows around";
+	var BORDERLESS_FLOAT = .75;
+	/** Whether a block is a table that text flows around */
+	var isFloating = (block) => block.type === "table" && block.float !== void 0;
+	/** The width of a table's rows, with its cells' margins and the halves of its borders outside them */
+	var tableWidthOf = (table) => {
+		var _table$borderLeft, _table$borderRight;
+		return Math.max(0, ...table.rows.map(({ cells }) => sum(cells.map((cell) => cell.width + cell.marginLeft + cell.marginRight)))) + (((_table$borderLeft = table.borderLeft) !== null && _table$borderLeft !== void 0 ? _table$borderLeft : 0) + ((_table$borderRight = table.borderRight) !== null && _table$borderRight !== void 0 ? _table$borderRight : 0)) / 2;
 	};
 	var MOST_ATTEMPTS = 10;
 	/** Whether two sets of lines' rooms are the same */
@@ -10773,6 +10851,22 @@ var docxLayout = (function(exports) {
 			});
 		};
 		const notesIn = (markers) => markers.filter((name) => footnotes.has(name));
+		/** Places the rows of a table that text flows around down from the top of where it was placed */
+		const placeFloatingRows = ({ index, heights }, from) => {
+			mark(markersOf(blocks[index].block));
+			heights.reduce((y, height, row) => {
+				placements.push({
+					type: "row",
+					block: index,
+					row: {
+						index: row,
+						y,
+						height
+					}
+				});
+				return y + height;
+			}, from);
+		};
 		/** The room footnotes take at the bottom of the page, or the room kept for them there, when that is more */
 		const pageArea = (notes, split) => Math.max(reserved(), areaOf(notes, split, continued));
 		/**
@@ -11131,6 +11225,84 @@ var docxLayout = (function(exports) {
 			var _pinned$get3;
 			if (((_pinned$get3 = pinned.get(pageCount)) !== null && _pinned$get3 !== void 0 ? _pinned$get3 : []).some(({ anchor }) => !anchored.includes(anchor))) throw new Unsupported("a drawing whose paragraph goes on to the next page as the text before it goes round it");
 		};
+		const inlined = /* @__PURE__ */ new Set();
+		/** Whether a block is a table that text flows around, laid out round the paragraph after it */
+		const floatsAt = (index) => {
+			const entry = blocks[index];
+			return entry !== void 0 && isFloating(entry.block) && !inlined.has(index);
+		};
+		/**
+		* The tables that text flows around right before a block, which the paragraph after them goes round. Those before a
+		* paragraph are in its section, as those that aren't stop the layout
+		*/
+		const floatsBefore = (index) => {
+			const first = blocks.slice(0, index).findLastIndex((_, at) => !floatsAt(at)) + 1;
+			return Array.from({ length: index - first }, (_, offset) => first + offset);
+		};
+		/** The tables that text flows around from one, one after the other */
+		const floatsFrom = (index) => {
+			const end = blocks.findIndex((_, at) => at >= index && !floatsAt(at));
+			return Array.from({ length: (end === -1 ? blocks.length : end) - index }, (_, offset) => index + offset);
+		};
+		/**
+		* Why Word's way with the tables that text flows around from one (`index`) isn't known: without a paragraph after them
+		* in their section to place them against, before a paragraph kept with the next, or with a footnote in one
+		*/
+		const floatsUnknown = (index) => {
+			const run = floatsFrom(index);
+			const after = blocks[index + run.length];
+			if ((after === null || after === void 0 ? void 0 : after.section) !== blocks[index].section || after.block.type !== "paragraph" || after.block.sectionBreak) return "a table that text flows around without a paragraph after it";
+			if (after.block.format.keepNext === true) return KEPT_FLOATING;
+			if (run.some((table) => {
+				const { borderLeft, borderRight } = blocks[table].block;
+				return !borderLeft !== !borderRight;
+			})) return "a table that text flows around with a border on one side only";
+			return run.some((table) => notesIn(markersOf(blocks[table].block)).length > 0) ? "a footnote in a table that text flows around" : void 0;
+		};
+		/**
+		* Stops at tables that text flows around, one after the other, where Word's way with them isn't known (`reason`), or,
+		* guessing, lays them out in the text, as tables it doesn't flow around, from where they are
+		*/
+		const inlineFloats = (run, reason) => {
+			stopAt(reason);
+			for (const table of run) inlined.add(table);
+		};
+		/**
+		* A table that text flows around, sized in the column, as a drawing with square wrapping the size of its rows, as Word
+		* puts the text beside it (`word-floats2.docx` G24 to G29), with its rows' heights. It is as wide as its rows with the
+		* halves of its borders left and right, from half a point to 3 points, and without borders there, 0.75 points wider, at
+		* the left of the margins and at the right: 3010, 3020, 3060 and 3015 twips for 3000 (`word-floats3.docx` H1 to H5, H8).
+		* Its cells' margins don't change it, and its indent doesn't move it (H6, H7)
+		*/
+		const floatingTable = (index) => {
+			const block = blocks[index].block;
+			const { horizontal, vertical, distances, mayOverlap } = block.float;
+			const table = sizedToPlace(block, columnsSection().columns[column]);
+			const heights = rowHeights(table);
+			const borderless = !table.borderLeft && !table.borderRight;
+			return {
+				drawing: {
+					wrap: "square",
+					side: "bothSides",
+					width: tableWidthOf(table) + (borderless ? BORDERLESS_FLOAT : 0),
+					height: sum(heights),
+					effects: {
+						top: 0,
+						bottom: 0,
+						left: 0,
+						right: 0
+					},
+					distances,
+					horizontal,
+					vertical,
+					mayOverlap
+				},
+				table: {
+					index,
+					heights
+				}
+			};
+		};
 		/**
 		* Places a table beside the drawings that text flows around on its page when it fits beside them, as Word places one of
 		* 3000 twips beside a drawing on the right or the left, moving it to the right past one on the left
@@ -11141,14 +11313,14 @@ var docxLayout = (function(exports) {
 		* isn't known.
 		*/
 		const placeBesideDrawings = (table, heights) => {
-			var _table$borderLeft, _table$borderRight, _table$indent;
+			var _table$indent;
 			const current = columnsSection();
 			const columnStart = columnLeft(current, column);
 			const within = {
 				start: columnStart,
 				end: columnStart + current.columns[column]
 			};
-			const tableWidth = Math.max(0, ...table.rows.map(({ cells }) => sum(cells.map((cell) => cell.width + cell.marginLeft + cell.marginRight)))) + (((_table$borderLeft = table.borderLeft) !== null && _table$borderLeft !== void 0 ? _table$borderLeft : 0) + ((_table$borderRight = table.borderRight) !== null && _table$borderRight !== void 0 ? _table$borderRight : 0)) / 2;
+			const tableWidth = tableWidthOf(table);
 			const tableHeight = sum(heights);
 			const indent = (_table$indent = table.indent) !== null && _table$indent !== void 0 ? _table$indent : 0;
 			for (;;) {
@@ -11189,7 +11361,7 @@ var docxLayout = (function(exports) {
 					right: placement.line.x + placement.line.width,
 					top: placement.line.y,
 					bottom: placement.line.y + placement.line.height
-				}) : placement.type === "row" && placement.row.y + placement.row.height > keepOut.top && placement.row.y < keepOut.bottom)) throw new DrawingAbove(drawing);
+				}) : placement.type === "row" && !floatsAt(placement.block) && placement.row.y + placement.row.height > keepOut.top && placement.row.y < keepOut.bottom)) throw new DrawingAbove(drawing);
 				if (noteArea > 0 && keepOut.bottom > linesBottom() + TOLERANCE) throw new Unsupported("a drawing that text flows around beside the footnotes at the bottom of its page");
 			}
 			drawings = [...drawings.filter(({ anchor }) => !placed.some(({ drawing }) => drawing.anchor === anchor)), ...placed.map(({ drawing }) => drawing)];
@@ -11220,11 +11392,11 @@ var docxLayout = (function(exports) {
 			};
 			const earlier = new Map([...given].filter(([line]) => line < from));
 			const firstLines = linesOf(block, widths, earlier);
-			const anchorLine = (lines, index) => lines.findIndex(({ markers }) => markers.includes(drawingMarker(index)));
-			const own = block.items.flatMap((item, index) => item.type === "drawing" && anchorLine(firstLines, index) >= from && !excluded.has(index) ? [{
+			const anchorLine = (lines, index) => index < 0 ? 0 : lines.findIndex(({ markers }) => markers.includes(drawingMarker(index)));
+			const own = [...from === 0 ? floatsBefore(at).map((table, offset) => _objectSpread2(_objectSpread2({}, floatingTable(table)), {}, { index: -1 - offset })) : [], ...block.items.flatMap((item, index) => item.type === "drawing" && anchorLine(firstLines, index) >= from && !excluded.has(index) ? [{
 				drawing: item.drawing,
 				index
-			}] : []);
+			}] : [])];
 			const beside = drawings.filter(({ keepOut }) => keepOut.bottom > rowsTop + TOLERANCE);
 			if (own.length === 0 && beside.length === 0) return {
 				lines: firstLines,
@@ -11235,16 +11407,17 @@ var docxLayout = (function(exports) {
 			const { indentLeft = 0, indentRight = 0, firstLineIndent = 0 } = block.format;
 			const columnEnd = linesBottom();
 			/** Places one of its own drawings, against its paragraph's top, or the top of a line from `lineTop`, `height` tall */
-			const place = ({ drawing, index }, line, lineTop, height) => {
+			const place = ({ drawing, index, table }, line, lineTop, height) => {
 				var _pinned$get5;
 				if (drawing.horizontal.from === "character") throw new Unsupported("a drawing placed against where it is anchored along its line");
-				const anchor = `${at} ${index}`;
+				const anchor = table === void 0 ? `${at} ${index}` : `${table.index} table`;
+				const withTable = table === void 0 ? {} : { table };
 				const pin = ((_pinned$get5 = pinned.get(pageCount)) !== null && _pinned$get5 !== void 0 ? _pinned$get5 : []).find((one) => one.anchor === anchor);
-				if (pin !== void 0) return {
+				if (pin !== void 0) return _objectSpread2({
 					line,
 					item: index,
 					drawing: pin
-				};
+				}, withTable);
 				const where = placeDrawing(drawing, {
 					section: section(),
 					oddPage: pageNumber % 2 === 1,
@@ -11263,7 +11436,7 @@ var docxLayout = (function(exports) {
 					top: where.top + over,
 					bottom: where.bottom + over
 				}) : where;
-				return {
+				return _objectSpread2({
 					line,
 					item: index,
 					drawing: {
@@ -11272,7 +11445,7 @@ var docxLayout = (function(exports) {
 						keepOut: keepOutOf(drawing, box),
 						anchor
 					}
-				};
+				}, withTable);
 			};
 			/**
 			* The room of each line of a row from `y`, `height` tall, its first line `line`, beside some drawings: the room beside
@@ -11455,6 +11628,17 @@ var docxLayout = (function(exports) {
 				if (count > 0 && [...excluded].some((item) => lines.findIndex(({ markers }) => markers.includes(drawingMarker(item))) < placedEnd)) throw new Unsupported("a drawing whose anchor's page changes as the text goes round it");
 				const onPage = Math.max(placedEnd, index + 1);
 				const sinking = laid.placed.filter(({ line, drawing: { drawing, keepOut } }) => line < onPage && (drawing.vertical.from === "paragraph" || drawing.vertical.from === "line") && keepOut.bottom > linesBottom() + TOLERANCE);
+				if (sinking.some(({ table }) => table !== void 0)) {
+					const run = floatsBefore(blockIndex);
+					inlineFloats(run, "a table that text flows around going past the bottom of the page");
+					const paragraphIndex = blockIndex;
+					for (const table of run) {
+						blockIndex = table;
+						placeTable(blocks[table].block);
+					}
+					blockIndex = paragraphIndex;
+					continue;
+				}
 				if (sinking.length > 0) {
 					stopIfBalancing();
 					if (!sinking.every(({ drawing: { drawing, box } }) => box.bottom + drawing.effects.bottom > linesBottom() + TOLERANCE) || !placedInColumn || noteArea > 0) throw new Unsupported("a drawing that moves with its paragraph past the bottom of the page's text");
@@ -11462,6 +11646,7 @@ var docxLayout = (function(exports) {
 					continue;
 				}
 				if (count > 0) {
+					for (const { drawing, table } of laid.placed) if (table !== void 0) placeFloatingRows(table, drawing.box.top);
 					position += space;
 					const current = columnsSection();
 					const placedLines = linesUpTo(count);
@@ -12148,6 +12333,15 @@ var docxLayout = (function(exports) {
 				spaceAfter = 0;
 				return;
 			}
+			if (floatsAt(index)) {
+				const unknown = floatsAt(index - 1) ? void 0 : floatsUnknown(index);
+				if (unknown === void 0) {
+					position += spaceAfter;
+					spaceAfter = 0;
+					return;
+				}
+				inlineFloats(floatsFrom(index), unknown);
+			}
 			if (block.type === "table") {
 				placeTable(block);
 				sectionSpaceAfter = void 0;
@@ -12157,6 +12351,7 @@ var docxLayout = (function(exports) {
 			let holdNotes = false;
 			if (paragraph.keepNext) {
 				const chain = blocks.slice(index, index + keptChain(index) + 1).map(({ block: one }) => one);
+				if (floatsAt(index + keptChain(index))) inlineFloats(floatsFrom(index + keptChain(index)), KEPT_FLOATING);
 				const beside = besideDrawing() || chain.some((one) => one.type === "paragraph" && one.items.some(({ type }) => type === "drawing"));
 				/**
 				* What is kept together, from where the next line goes, broken into lines at the width of the column it goes in,
