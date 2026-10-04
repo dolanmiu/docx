@@ -60,6 +60,7 @@ import {
     valueOf,
     withoutUndefined,
 } from "../text-layout";
+import { layOutEquation } from "./equations";
 import {
     type FieldCapitals,
     type FieldFormat,
@@ -588,6 +589,8 @@ type Reader = {
     readonly down?: boolean;
     /** Whether it reads the paragraphs of a text box */
     readonly inTextBox?: boolean;
+    /** Why its equations can't be laid out as Word does for the document's maths settings, when they can't */
+    readonly maths?: string;
 };
 
 // Word's defaults for a section that doesn't give its page: Letter, with inch margins
@@ -1492,6 +1495,78 @@ const readRemoved = (elements: readonly unknown[], kind: string, reader: Reader)
         reader,
     );
 
+// Why the layout stops at an equation that doesn't fit in the room left on its line, which Word breaks after an
+// operator (`word-equations.docx` EQ5), in a way not yet followed
+const EQUATION_BROKEN = "an equation that doesn't fit on its line";
+
+/**
+ * Reads an equation (`m:oMath`), or a paragraph of one (`m:oMathPara`), as Word lays out one of text: a box as wide as it
+ * is, which takes room above and below the baseline as a line of Cambria Math does, in the size of its paragraph's text,
+ * with its bookmarks before it. Word shows one alone in its paragraph on a line of its own, centred, which is as tall
+ * (`word-equations.docx` EQ2c, EQ2d). Or why it can't be laid out: one of more than text (see {@link layOutEquation}), a
+ * paragraph of more than one equation, and one in a document whose maths settings aren't followed (see
+ * {@link readMathsSettings})
+ */
+const readEquation = (element: XmlObject, paragraphRun: RunFormat, reader: Reader): readonly LayoutItem[] | string => {
+    if (reader.maths !== undefined) {
+        return reader.maths;
+    }
+    const name = nameOf(element);
+    const equations = name === "m:oMath" ? [element] : childrenOf(element[name]).filter((child) => "m:oMath" in child);
+    if (equations.length !== 1) {
+        return equations.length === 0 ? [] : "a paragraph of more than one equation";
+    }
+    const [equation] = equations;
+    const box = layOutEquation(equation["m:oMath"], fontOf(paragraphRun).size ?? DEFAULT_FONT_SIZE);
+    if (typeof box === "string") {
+        return box;
+    }
+    const bookmarks = elementsIn(contentOf(equation), (inner) => inner === "w:bookmarkStart").flatMap((bookmark) => markerOf(bookmark));
+    return [...bookmarks, { type: "box", width: box.width, height: box.ascent, descent: box.descent, unbroken: EQUATION_BROKEN }];
+};
+
+/**
+ * Whether a paragraph's content has an equation displayed (`m:oMathPara`) that the reader reads: one among it, or in what
+ * its text is in, such as a hyperlink, but not one in its runs' text boxes, nor one deleted or moved elsewhere in a tracked
+ * change, unless deleted text is read as text (see {@link readInline})
+ */
+const isDisplayedIn = (elements: readonly unknown[], reader: Reader): boolean =>
+    elements.filter(isObject).some((element) => {
+        const name = nameOf(element);
+        const read = name !== "w:r" && name !== "_attr" && (reader.showDeleted === true || !REMOVALS.has(name));
+        return name === "m:oMathPara" || (read && isDisplayedIn(contentOf(element), reader));
+    });
+
+/**
+ * A paragraph's content, as read, or why it can't be laid out for the equations in it. Word shows an equation in a line of
+ * text in the line, and one alone in its paragraph displayed, on a line of its own (`word-equations.docx` EQ2). One in
+ * `m:oMathPara`, which is displayed, beside text in its paragraph, more than one alone in a paragraph, and one alone after
+ * its list's number haven't been seen.
+ */
+const withEquations = (
+    elements: readonly unknown[],
+    read: readonly LayoutItem[] | string,
+    numbered: boolean,
+    reader: Reader,
+): readonly LayoutItem[] | string => {
+    if (typeof read === "string") {
+        return read;
+    }
+    const shown = read.filter((item) => item.type !== "marker");
+    // The equations read, which are the boxes that stop where they don't fit on their line
+    const equations = shown.filter((item) => item.type === "box" && item.unbroken === EQUATION_BROKEN).length;
+    if (equations === 0) {
+        return read;
+    }
+    const reason =
+        shown.length > equations && isDisplayedIn(elements, reader)
+            ? "an equation displayed (`m:oMathPara`) beside text in its paragraph"
+            : shown.length === equations && (equations > 1 || numbered)
+              ? "an equation alone in its paragraph beside another, or after its list's number"
+              : undefined;
+    return reason === undefined ? read : guessedOr(reader, reason, () => read);
+};
+
 /**
  * Reads the content of a paragraph, or of an element in it, such as a hyperlink, and when it is deleted (`removed`), as
  * Word sizes a table's columns by it.
@@ -1548,7 +1623,7 @@ const readInline = (
             if (name === STOP) {
                 return String(element[name]);
             }
-            return name === "m:oMath" || name === "m:oMathPara" ? "an equation" : [];
+            return name === "m:oMath" || name === "m:oMathPara" ? readEquation(element, paragraphRun, reader) : [];
         }),
         reader,
     );
@@ -1946,7 +2021,7 @@ const readParagraph = (element: XmlObject, reader: Reader, tableFormats: TableFo
         ...(list.level ? [list.level.paragraph] : []),
         readParagraphFormat(properties),
     ];
-    const read = readInline(children, paragraphRun, reader);
+    const read = withEquations(children, readInline(children, paragraphRun, reader), list.items.length > 0, reader);
     // Read to be laid out with a guess, the first thing the reader guessed at in the paragraph's content is why it can't be
     // laid out as Word does, and the markers of what it guessed at are left out of its items
     const guessed = typeof read === "string" ? undefined : read.map(guessOf).find((reason) => reason !== undefined);
@@ -3929,6 +4004,23 @@ const readHyphenation = (settings: readonly XmlObject[]): Hyphenation =>
     onOff(settings, "w:doNotHyphenateCaps") === true ? { capitalsWhole: true } : {};
 
 /**
+ * Why a document's equations can't be laid out as Word does for its maths settings (`m:mathPr`), when they say what isn't
+ * followed: a maths font other than Cambria Math, whose widths aren't known, and margins or space around equations shown
+ * on lines of their own, which haven't been seen. Word writes Cambria Math and margins of 0. Its other maths settings are
+ * of what the layout stops at anyway, such as how an equation is broken or built up, or line an equation up on its line.
+ */
+const readMathsSettings = (settings: readonly XmlObject[]): string | undefined => {
+    const maths = childrenOf(find(settings, "m:mathPr"));
+    const valueIn = (name: string): string | undefined => stringOf(attributesOf(find(maths, name))["m:val"]);
+    if ((valueIn("m:mathFont") ?? "Cambria Math") !== "Cambria Math") {
+        return "an equation in a maths font other than Cambria Math";
+    }
+    return ["m:lMargin", "m:rMargin", "m:preSp", "m:postSp"].some((name) => (numberOf(valueIn(name)) ?? 0) !== 0)
+        ? "an equation in a document whose maths settings give equations on lines of their own margins or space around them"
+        : undefined;
+};
+
+/**
  * Reads the parts of the document's settings (`w:settings`) that change how it is laid out.
  */
 const readSettings = (
@@ -4113,6 +4205,7 @@ export const readContent = (body: XmlObject, parts: DocumentParts, { guess = fal
     const markers: FieldMarkers = { count: 0, relative: new Map() };
     const settings = childrenOf(parts.settings?.["w:settings"]);
     const decimalSymbol = valueOf(settings, "w:decimalSymbol");
+    const maths = readMathsSettings(settings);
     const readerOf = (inHeader: boolean): Reader => ({
         styles,
         numbering,
@@ -4122,6 +4215,7 @@ export const readContent = (body: XmlObject, parts: DocumentParts, { guess = fal
         fields: [],
         counters: new Map(),
         ...(decimalSymbol === undefined ? {} : { decimalSymbol }),
+        ...(maths === undefined ? {} : { maths }),
         ...(guess ? { guess } : {}),
     });
     const elements = unwrap(joinRemovedMarks(contentOf(body), styles, { nested: false, sized: false, part: "body" }), guess);

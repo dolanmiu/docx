@@ -1091,6 +1091,21 @@ describe("measureContentWidths with automatic hyphenation", () => {
     });
 });
 
+describe("a box that Word may break where it doesn't fit", () => {
+    const box = (width: number): InlineItem => ({ type: "box", width, height: 10, unbroken: "an equation that doesn't fit on its line" });
+    const unsupportedOf = (items: readonly InlineItem[], width = 100): readonly (string | undefined)[] =>
+        layoutLines(items, { width, measurer: MEASURER }).map(({ unsupported }) => unsupported);
+
+    it("should lay out one that fits in the room left on its line", () => {
+        expect(unsupportedOf([text("aaaa "), box(50)])).to.deep.equal([undefined]);
+    });
+
+    it("should stop where one doesn't fit in the room left on its line, or on a line of its own", () => {
+        expect(unsupportedOf([text("aaaa "), box(60)])).to.deep.equal(["an equation that doesn't fit on its line", undefined]);
+        expect(unsupportedOf([box(110)])).to.deep.equal(["an equation that doesn't fit on its line"]);
+    });
+});
+
 describe("the height of a line of fonts and pictures of different heights", () => {
     // In twips, laid out with the width tables, as Word's PDFs of scripts/layout-probes/word-watertight-text.ts (TX) and
     // word-mixed-heights.ts (MH) measure them, which give each to within about 0.1 twips over a page of lines
@@ -1106,6 +1121,21 @@ describe("the height of a line of fonts and pictures of different heights", () =
         format: { lineSpacing: { rule: "multiple", multiple: lines } },
     });
     const courier = { font: "Courier New", size: 11 };
+
+    it("should make a line with a box that takes room as text does as tall as its ascent and descent with the text's", () => {
+        // An equation of Cambria Math at 11 points: 1946 and 455 of its 2048 units above and below its baseline
+        // (`word-equations.docx` EQ2)
+        const equation: InlineItem = { type: "box", width: 20, height: (1946 / 2048) * 11, descent: (455 / 2048) * 11 };
+        // Alone, it is a line of Cambria Math, 257.92 twips, without its paragraph mark's Calibri (EQ2c)
+        expect(twipsOf([equation])[0]).to.be.closeTo(257.92, 0.01);
+        // Beside Calibri, whose ascent and descent are deeper, it leaves the line as Calibri's (EQ2a)
+        expect(twipsOf([word("a "), equation])[0]).to.be.closeTo(268.55, 0.01);
+        // Beside Courier New, whose ascent is less, its ascent and Courier New's descent make the line
+        const descent = DEFAULT_MEASURER.measureDescent!(courier);
+        expect(twipsOf([word("a ", courier), equation])[0]).to.be.closeTo(((1946 / 2048) * 11 + descent) * 20, 0.01);
+        // A box's descent is deepest where it is deeper than the text's: a box 5 points below a line of 10 makes it 15
+        expect(heightsOf([text("a "), { type: "box", width: 10, height: 2, descent: 5 }])).to.deep.equal([15]);
+    });
 
     it("should make a line of two fonts as tall as the tallest ascent and the deepest descent, as Word does", () => {
         // Calibri's ascent and Courier New's descent: 275.52 to 275.56 in Word, where each alone is 268.55 and 249.2 (TX9a)
