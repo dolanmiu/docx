@@ -213,8 +213,10 @@ export declare type LineLayout = {
     readonly y: number;
     /**
      * How wide the room for the line is: its column, or the page's text, less the paragraph's indents, or the room beside a
-     * drawing that text flows around. Its text is lined up in it as the paragraph's alignment says. A line with text on both
-     * sides of a drawing is two lines with the same `y`, the left first
+     * drawing that text flows around. Its text is lined up in it as the paragraph's alignment says, but for an equation alone
+     * in its paragraph, which Word lines up as the equation's own justification says (`m:jc`, or the document's
+     * `m:defJc`), centred unless that says otherwise. A line with text on both sides of a drawing is two lines with the same
+     * `y`, the left first
      */
     readonly width: number;
     /** How tall the line is, with the paragraph's line spacing */

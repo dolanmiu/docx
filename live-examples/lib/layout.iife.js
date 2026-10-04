@@ -2782,7 +2782,7 @@ var docxLayout = (function(exports) {
 		return faces === void 0 ? void 0 : decodeFace(faces[italic ? bold ? "boldItalic" : "italic" : bold ? "bold" : "regular"]);
 	};
 	/** A glyph's kerning classes: a ligature's own, or a character's */
-	var classesOf = (shaping, glyph) => {
+	var classesOf$1 = (shaping, glyph) => {
 		var _shaping$classes$get;
 		return glyph.width === void 0 ? (_shaping$classes$get = shaping.classes.get(glyph.text)) !== null && _shaping$classes$get !== void 0 ? _shaping$classes$get : {} : glyph;
 	};
@@ -2793,8 +2793,8 @@ var docxLayout = (function(exports) {
 	var kerningBetween = (shaping, before, after) => {
 		var _shaping$pairs$get;
 		if (shaping.pairs.size === 0) return 0;
-		const { first } = classesOf(shaping, before);
-		const { second } = classesOf(shaping, after);
+		const { first } = classesOf$1(shaping, before);
+		const { second } = classesOf$1(shaping, after);
 		return first === void 0 || second === void 0 ? NaN : (_shaping$pairs$get = shaping.pairs.get(first * 4096 + second)) !== null && _shaping$pairs$get !== void 0 ? _shaping$pairs$get : 0;
 	};
 	//#endregion
@@ -4066,13 +4066,13 @@ var docxLayout = (function(exports) {
 	*/
 	var dictionaryOf = (pieces, { capitalsWhole }) => {
 		const hyphenated = pieces.filter(({ hyphenation }) => hyphenation !== "none");
-		const letters = [...textOf(pieces)].filter((character) => new RegExp("\\p{L}", "u").test(character));
+		const letters = [...textOf$1(pieces)].filter((character) => new RegExp("\\p{L}", "u").test(character));
 		const dictionary = hyphenated.some(({ hyphenation }) => hyphenation === "unknown") ? ANY_DICTIONARY : ENGLISH_DICTIONARY;
 		const capitals = capitalsWhole === true && letters.every((letter) => new RegExp("\\p{Lu}", "u").test(letter)) && pieces.every(({ font }) => font.lineSize === void 0);
 		return hyphenated.length === 0 || letters.length < dictionary.letters || capitals ? void 0 : dictionary;
 	};
 	var SPACE_TO_LETTER = 7.2;
-	var SPACES = /* @__PURE__ */ new Set([
+	var SPACES$1 = /* @__PURE__ */ new Set([
 		" ",
 		" ",
 		" ",
@@ -4104,7 +4104,7 @@ var docxLayout = (function(exports) {
 			const { text, font, hyphenation } = item;
 			const own = hyphenation === void 0 ? {} : { hyphenation };
 			for (const character of text) {
-				const type = SPACES.has(character) ? "space" : "word";
+				const type = SPACES$1.has(character) ? "space" : "word";
 				const last = tokens[tokens.length - 1];
 				if ((last === null || last === void 0 ? void 0 : last.type) !== type || type === "word" && breaks.has(index)) tokens.push({
 					type,
@@ -4305,7 +4305,7 @@ var docxLayout = (function(exports) {
 			return before === void 0 || !isKerned(after.font) || !sameFont(before.font, after.font) ? 0 : measurer.measureWidth(before.text + after.text, after.font) - measurer.measureWidth(before.text, before.font) - measurer.measureWidth(after.text, after.font);
 		});
 	};
-	var textOf = (pieces) => pieces.length === 1 ? pieces[0].text : pieces.map(({ text }) => text).join("");
+	var textOf$1 = (pieces) => pieces.length === 1 ? pieces[0].text : pieces.map(({ text }) => text).join("");
 	var NOTHING = {
 		ascent: 0,
 		descent: 0,
@@ -4501,7 +4501,7 @@ var docxLayout = (function(exports) {
 	*/
 	var widthBeforeDecimal = (tokens, measurer) => {
 		const text = textAfterTab(tokens).filter((token) => token.type !== "marker");
-		const written = text.map((token) => token.type === "word" || token.type === "space" ? textOf(token.pieces) : "￼").join("").trimEnd();
+		const written = text.map((token) => token.type === "word" || token.type === "space" ? textOf$1(token.pieces) : "￼").join("").trimEnd();
 		const point = decimalPointOf(written);
 		if (point === void 0 || [...written].slice(0, point).includes("￼")) return;
 		let count = 0;
@@ -4778,9 +4778,13 @@ var docxLayout = (function(exports) {
 		const withToken = (heights, token) => {
 			if (token.type === "box") {
 				const tallest = token.font ? Math.max(heights.tallest, measurer.measureLineHeight(token.font)) : heights.tallest;
-				return _objectSpread2(_objectSpread2({}, heights), {}, {
+				return token.descent === void 0 ? _objectSpread2(_objectSpread2({}, heights), {}, {
 					picture: Math.max(heights.picture, token.height),
 					tallest
+				}) : _objectSpread2(_objectSpread2({}, heights), {}, {
+					ascent: Math.max(heights.ascent, token.height),
+					descent: Math.max(heights.descent, token.descent),
+					tallest: Math.max(tallest, token.height + token.descent)
 				});
 			}
 			return token.type === "tab" ? withFont(heights, token.font, measurer) : token.pieces.reduce((all, { font }) => withFont(all, font, measurer), heights);
@@ -4992,6 +4996,10 @@ var docxLayout = (function(exports) {
 					line = _objectSpread2(_objectSpread2({}, line), {}, { unsupported: (_line$unsupported5 = line.unsupported) !== null && _line$unsupported5 !== void 0 ? _line$unsupported5 : "a word whose part before a soft hyphen is longer than its line" });
 				}
 				const overflows = line.started && line.position + needs > endOf(line) + TOLERANCE$1;
+				if (token.type === "box" && token.unbroken !== void 0 && line.position + needs > endOf(line) + TOLERANCE$1) {
+					var _line$unsupported6;
+					line = _objectSpread2(_objectSpread2({}, line), {}, { unsupported: (_line$unsupported6 = line.unsupported) !== null && _line$unsupported6 !== void 0 ? _line$unsupported6 : token.unbroken });
+				}
 				if (overflows && unsure(line, needs)) line = _objectSpread2(_objectSpread2({}, line), {}, { unknown: true });
 				const squeezable = overflows && !line.unknown && squeezesIn(line, needs);
 				if (squeezable && cell !== void 0) line = _objectSpread2(_objectSpread2({}, line), {}, { unsupported: "a justified line on a grid that snaps to characters that only fits squeezed" });
@@ -4999,8 +5007,8 @@ var docxLayout = (function(exports) {
 				if (squeezable && boxed) line = _objectSpread2(_objectSpread2({}, line), {}, { unsupported: "a justified line with text in a border that only fits squeezed" });
 				const squeezed = squeezable && !boxed && cell === void 0;
 				if (overflows && (!squeezed || alignment !== "justified") && token.type === "word" && mayHyphenate(line, token, leadOf(line))) {
-					var _line$unsupported6;
-					line = _objectSpread2(_objectSpread2({}, line), {}, { unsupported: (_line$unsupported6 = line.unsupported) !== null && _line$unsupported6 !== void 0 ? _line$unsupported6 : MAY_HYPHENATE });
+					var _line$unsupported7;
+					line = _objectSpread2(_objectSpread2({}, line), {}, { unsupported: (_line$unsupported7 = line.unsupported) !== null && _line$unsupported7 !== void 0 ? _line$unsupported7 : MAY_HYPHENATE });
 				}
 				if (overflows && !squeezed) {
 					line = wrap(line);
@@ -5013,12 +5021,12 @@ var docxLayout = (function(exports) {
 					let placed = false;
 					if (token.pieces.some(({ font }) => font.border !== void 0)) line = _objectSpread2(_objectSpread2({}, line), {}, { unsupported: "a word longer than its line with a border" });
 					if (mayHyphenate(line, token, 0)) {
-						var _line$unsupported7;
-						line = _objectSpread2(_objectSpread2({}, line), {}, { unsupported: (_line$unsupported7 = line.unsupported) !== null && _line$unsupported7 !== void 0 ? _line$unsupported7 : MAY_HYPHENATE });
+						var _line$unsupported8;
+						line = _objectSpread2(_objectSpread2({}, line), {}, { unsupported: (_line$unsupported8 = line.unsupported) !== null && _line$unsupported8 !== void 0 ? _line$unsupported8 : MAY_HYPHENATE });
 					}
 					if (token.pieces.some(({ font }) => shaped(font))) {
-						var _line$unsupported8;
-						line = _objectSpread2(_objectSpread2({}, line), {}, { unsupported: (_line$unsupported8 = line.unsupported) !== null && _line$unsupported8 !== void 0 ? _line$unsupported8 : "a word longer than its line, kerned or with ligatures" });
+						var _line$unsupported9;
+						line = _objectSpread2(_objectSpread2({}, line), {}, { unsupported: (_line$unsupported9 = line.unsupported) !== null && _line$unsupported9 !== void 0 ? _line$unsupported9 : "a word longer than its line, kerned or with ligatures" });
 					}
 					for (const character of charactersOf(token.pieces)) {
 						const characterWidth = widthOf(character, measurer);
@@ -5029,13 +5037,13 @@ var docxLayout = (function(exports) {
 						line = _objectSpread2(_objectSpread2({}, line), {}, {
 							position: line.position + characterWidth,
 							end: line.position + characterWidth,
-							text: line.text + textOf(character),
+							text: line.text + textOf$1(character),
 							letters: line.letters + lengthOf(character)
 						});
 						placed = true;
 					}
 				} else {
-					const text = token.type === "word" ? textOf(token.pieces) : "";
+					const text = token.type === "word" ? textOf$1(token.pieces) : "";
 					line = _objectSpread2(_objectSpread2(_objectSpread2({}, line), cell !== void 0 && token.type === "word" ? { latin: snapped(line, token.pieces).latin } : {}), {}, {
 						position: line.position + tokenWidth,
 						end: line.position + tokenWidth,
@@ -5070,7 +5078,7 @@ var docxLayout = (function(exports) {
 						line = wrap(_objectSpread2(_objectSpread2({}, placed), {}, {
 							position: withHyphen,
 							end: withHyphen,
-							text: placed.text + textOf(before),
+							text: placed.text + textOf$1(before),
 							letters: placed.letters + lengthOf(before),
 							between: placed.spaceCount,
 							heights: withFont(withToken(placed.heights, {
@@ -5086,8 +5094,8 @@ var docxLayout = (function(exports) {
 						};
 					}
 					if (room > NO_HYPHEN_ROOM) {
-						var _line$unsupported9;
-						line = _objectSpread2(_objectSpread2({}, line), {}, { unsupported: (_line$unsupported9 = line.unsupported) !== null && _line$unsupported9 !== void 0 ? _line$unsupported9 : "a soft hyphen whose hyphen ends this close to the end of the line" });
+						var _line$unsupported10;
+						line = _objectSpread2(_objectSpread2({}, line), {}, { unsupported: (_line$unsupported10 = line.unsupported) !== null && _line$unsupported10 !== void 0 ? _line$unsupported10 : "a soft hyphen whose hyphen ends this close to the end of the line" });
 					}
 				}
 			};
@@ -5101,7 +5109,7 @@ var docxLayout = (function(exports) {
 				if (token.type === "space") {
 					const spaces = widthOf(token.pieces, measurer);
 					line = _objectSpread2(_objectSpread2(_objectSpread2({}, line), cell === void 0 ? { position: line.position + roomBetween(line.border, firstBorder(token.pieces)) + kerning[index] + spaces } : snapped(line, token.pieces)), {}, {
-						text: line.text + textOf(token.pieces),
+						text: line.text + textOf$1(token.pieces),
 						spaces: line.started ? line.spaces + spaces : 0,
 						spaceCount: line.started ? line.spaceCount + lengthOf(token.pieces) : 0,
 						otherSpaces: line.started ? line.otherSpaces + widthOf(othersOf(token.pieces), measurer) : 0,
@@ -5119,7 +5127,7 @@ var docxLayout = (function(exports) {
 					unsupported: "a tab or picture on a grid that snaps to characters"
 				});
 				if (token.type === "tab") {
-					var _nextStop, _line$unsupported11;
+					var _nextStop, _line$unsupported12;
 					const numbered = numberTab ? numberTabStop(line.position, firstLineStops, format, defaultTabStop, limitOf()) : void 0;
 					numberTab = false;
 					if ((numbered === null || numbered === void 0 ? void 0 : numbered.unsupported) !== void 0) line = _objectSpread2(_objectSpread2({}, line), {}, { unsupported: numbered.unsupported });
@@ -5131,8 +5139,8 @@ var docxLayout = (function(exports) {
 					const pastEnd = own && next.position > Math.max(limitOf(), marginOf()) + TOLERANCE$1 ? next : void 0;
 					const unknown = pastIndent && (next.alignment === "center" || next.alignment === "decimal" || squeezes) ? "a centred or decimal tab stop past the paragraph's right indent, or one in a justified line" : pastIndent && next.alignment === "left" && next.position + widthAfterTab(rest, measurer) > marginOf() + TOLERANCE$1 ? "text after a tab stop past the paragraph's right indent that goes past the margin" : pastEnd === void 0 ? void 0 : pastEndUnknown(pastEnd, line.started);
 					if (unknown !== void 0) {
-						var _line$unsupported10;
-						line = _objectSpread2(_objectSpread2({}, line), {}, { unsupported: (_line$unsupported10 = line.unsupported) !== null && _line$unsupported10 !== void 0 ? _line$unsupported10 : unknown });
+						var _line$unsupported11;
+						line = _objectSpread2(_objectSpread2({}, line), {}, { unsupported: (_line$unsupported11 = line.unsupported) !== null && _line$unsupported11 !== void 0 ? _line$unsupported11 : unknown });
 					}
 					if ((pastEnd === null || pastEnd === void 0 ? void 0 : pastEnd.alignment) === "left" && unknown === void 0) {
 						const tab = _objectSpread2(_objectSpread2({}, line), {}, {
@@ -5174,7 +5182,7 @@ var docxLayout = (function(exports) {
 						letters: 0,
 						otherSpaces: 0,
 						started: true
-					}, misaligned === void 0 ? {} : { unsupported: (_line$unsupported11 = line.unsupported) !== null && _line$unsupported11 !== void 0 ? _line$unsupported11 : misaligned });
+					}, misaligned === void 0 ? {} : { unsupported: (_line$unsupported12 = line.unsupported) !== null && _line$unsupported12 !== void 0 ? _line$unsupported12 : misaligned });
 					continue;
 				}
 				placeWord(token, kerning[index]);
@@ -6653,6 +6661,436 @@ var docxLayout = (function(exports) {
 		}
 	};
 	//#endregion
+	//#region src/layout/equation-widths.ts
+	/**
+	* How wide each character of an equation of text is in Cambria Math, and the italic correction Word adds after each
+	* italic letter, in thousandths of an em, as Word's PDFs of scripts/layout-probes/word-equations.ts and word-equations2.ts
+	* show them.
+	*
+	* Generated by scripts/generate-equation-widths.ts. Do not edit by hand.
+	*
+	* @module
+	*/
+	var EQUATION_WIDTHS = /* @__PURE__ */ new Map([
+		[" ", [220.22, 0]],
+		["!", [285.64, 0]],
+		["(", [415.04, 0]],
+		[")", [415.04, 0]],
+		["+", [747.06, 0]],
+		[",", [205.07, 0]],
+		[".", [205.08, 0]],
+		["/", [490.23, 0]],
+		["0", [554, 0]],
+		["1", [554, 0]],
+		["2", [553.71, 0]],
+		["3", [554, 0]],
+		["4", [554, 0]],
+		["5", [554, 0]],
+		["6", [554, 0]],
+		["7", [554, 0]],
+		["8", [554, 0]],
+		["9", [554, 0]],
+		[":", [263.66, 0]],
+		[";", [263.66, 0]],
+		["<", [749.03, 0]],
+		["=", [747.08, 0]],
+		[">", [749.03, 0]],
+		["?", [422.36, 0]],
+		["A", [623, 0]],
+		["B", [611, 0]],
+		["C", [563, 0]],
+		["D", [662, 0]],
+		["E", [575, 0]],
+		["F", [537, 0]],
+		["G", [611, 0]],
+		["H", [687, 0]],
+		["I", [324, 0]],
+		["J", [307, 0]],
+		["K", [629, 0]],
+		["L", [537, 0]],
+		["M", [815, 0]],
+		["N", [681, 0]],
+		["O", [653, 0]],
+		["P", [568, 0]],
+		["Q", [653, 0]],
+		["R", [621, 0]],
+		["S", [496, 0]],
+		["T", [593, 0]],
+		["U", [648, 0]],
+		["V", [604, 0]],
+		["W", [921, 0]],
+		["X", [571, 0]],
+		["Y", [570, 0]],
+		["Z", [538, 0]],
+		["[", [350.1, 0]],
+		["]", [350.1, 0]],
+		["a", [488.28, 0]],
+		["b", [547, 0]],
+		["c", [441, 0]],
+		["d", [555, 0]],
+		["e", [488, 0]],
+		["f", [303, 0]],
+		["g", [494, 0]],
+		["h", [552, 0]],
+		["i", [278, 0]],
+		["j", [266, 0]],
+		["k", [524, 0]],
+		["l", [271, 0]],
+		["m", [832, 0]],
+		["n", [558, 0]],
+		["o", [531, 0]],
+		["p", [556, 0]],
+		["q", [547, 0]],
+		["r", [414, 0]],
+		["s", [430, 0]],
+		["t", [338, 0]],
+		["u", [552, 0]],
+		["v", [504, 0]],
+		["w", [774, 0]],
+		["x", [483, 0]],
+		["y", [504, 0]],
+		["z", [455, 0]],
+		["{", [387.21, 0]],
+		["|", [316.41, 0]],
+		["}", [387.21, 0]],
+		["±", [747.06, 0]],
+		["×", [714.35, 0]],
+		["÷", [747.06, 0]],
+		["′", [258.3, 0]],
+		["ℎ", [554.69, 17.08]],
+		["←", [837.89, 0]],
+		["→", [837.89, 0]],
+		["−", [747.06, 0]],
+		["∓", [747.07, 0]],
+		["∗", [482.9, 0]],
+		["∘", [443.36, 0]],
+		["∞", [851, 0]],
+		["∼", [712.4, 0]],
+		["≈", [735.85, 0]],
+		["≠", [747.09, 0]],
+		["≡", [747.09, 0]],
+		["≤", [749.03, 0]],
+		["≥", [749.03, 0]],
+		["⋅", [282.21, 0]],
+		["𝐴", [633, 10.06]],
+		["𝐵", [656, 27.09]],
+		["𝐶", [597, 43.61]],
+		["𝐷", [692, 29.67]],
+		["𝐸", [625, 38.57]],
+		["𝐹", [611, 38.89]],
+		["𝐺", [630, 43.82]],
+		["𝐻", [728, 29.32]],
+		["𝐼", [379, 31.63]],
+		["𝐽", [382, 19.36]],
+		["𝐾", [698, 30.51]],
+		["𝐿", [532, 20.24]],
+		["𝑀", [851, 24.48]],
+		["𝑁", [732, 24.83]],
+		["𝑂", [676, 24.67]],
+		["𝑃", [620, 24.52]],
+		["𝑄", [676, 29.56]],
+		["𝑅", [637, 29.49]],
+		["𝑆", [529, 19.82]],
+		["𝑇", [595, 22.18]],
+		["𝑈", [689, 19.49]],
+		["𝑉", [625, 32.22]],
+		["𝑊", [950, 38.76]],
+		["𝑋", [645, 24.42]],
+		["𝑌", [603, 23.95]],
+		["𝑍", [592, 24.69]],
+		["𝑎", [557.13, 24.41]],
+		["𝑏", [539, 22.02]],
+		["𝑐", [460, 31.69]],
+		["𝑑", [580, 31.32]],
+		["𝑒", [496.09, 21.96]],
+		["𝑓", [549.81, 29.28]],
+		["𝑔", [612, 16.9]],
+		["𝑖", [317, 31.62]],
+		["𝑗", [359, 17.46]],
+		["𝑘", [552, 29.04]],
+		["𝑙", [316, 31.65]],
+		["𝑚", [838, 17.46]],
+		["𝑛", [574, 16.81]],
+		["𝑜", [533, 21.68]],
+		["𝑝", [558, 11.81]],
+		["𝑞", [539, 29.84]],
+		["𝑟", [476, 21.55]],
+		["𝑠", [462, 20.41]],
+		["𝑡", [395, 23.94]],
+		["𝑢", [574, 25.11]],
+		["𝑣", [544, 29.23]],
+		["𝑤", [739, 29.06]],
+		["𝑥", [532.23, 30.26]],
+		["𝑦", [560, 16.65]],
+		["𝑧", [483, 17.48]],
+		["𝛢", [633, 10.06]],
+		["𝛣", [656, 27.09]],
+		["𝛤", [608, 29.2]],
+		["𝛥", [613, 9.55]],
+		["𝛦", [625, 38.56]],
+		["𝛧", [592, 24.69]],
+		["𝛨", [728, 29.31]],
+		["𝛩", [680, 24.58]],
+		["𝛪", [379, 31.63]],
+		["𝛫", [698, 30.51]],
+		["𝛬", [625, 20.01]],
+		["𝛭", [851, 24.48]],
+		["𝛮", [732, 24.83]],
+		["𝛯", [603, 28.83]],
+		["𝛰", [676, 24.67]],
+		["𝛱", [716, 25.2]],
+		["𝛲", [620, 24.52]],
+		["𝛴", [607, 30.2]],
+		["𝛵", [595, 22.18]],
+		["𝛶", [623, 25.43]],
+		["𝛷", [731, 30.22]],
+		["𝛸", [645, 24.42]],
+		["𝛹", [762, 30.47]],
+		["𝛺", [679, 26.56]],
+		["𝛻", [613, 0]],
+		["𝛼", [600, 29.87]],
+		["𝛽", [606, 30.22]],
+		["𝛾", [525, 27.24]],
+		["𝛿", [538, 38.65]],
+		["𝜀", [455, 31.81]],
+		["𝜁", [475, 38.66]],
+		["𝜂", [524, 29.7]],
+		["𝜃", [563, 28.79]],
+		["𝜄", [260, 16.84]],
+		["𝜅", [541, 26.86]],
+		["𝜆", [518, 16.66]],
+		["𝜇", [548, 27.18]],
+		["𝜈", [509, 29.08]],
+		["𝜉", [482, 38.99]],
+		["𝜊", [533, 21.68]],
+		["𝜋", [593, 21.25]],
+		["𝜌", [564, 12.65]],
+		["𝜍", [432, 26.97]],
+		["𝜎", [585, 24.36]],
+		["𝜏", [458, 21.97]],
+		["𝜐", [506, 16.94]],
+		["𝜑", [677, 21.72]],
+		["𝜒", [581, 9.81]],
+		["𝜓", [704, 14.25]],
+		["𝜔", [726, 21.55]],
+		["𝜕", [556, 0]]
+	]);
+	//#endregion
+	//#region src/layout/equations.ts
+	/**
+	* Lays out equations (`m:oMath`) of text, as Word lays them out in Cambria Math: letters in italic, digits and operators
+	* upright, each as wide as Cambria Math draws it, with Word's italic correction after an italic letter and the spaces
+	* TeX puts between atoms, as scripts/layout-probes/word-equations.ts and word-equations2.ts showed. An equation of more
+	* than text, such as one with a fraction, a script or a root, which Word builds up, stops the layout.
+	*
+	* @module
+	*/
+	var ASCENT = 1946 / 2048;
+	var DESCENT = 455 / 2048;
+	var CLASSES = new Map([
+		...[..."+−±∓×÷⋅∗∘"].map((character) => [character, "binary"]),
+		...[..."=<>≤≥≠≈≡∼→←"].map((character) => [character, "relation"]),
+		...[..."([{"].map((character) => [character, "open"]),
+		...[...")]}"].map((character) => [character, "close"]),
+		...[...",;:!?"].map((character) => [character, "punctuation"]),
+		...[..."|/"].map((character) => [character, "fence"])
+	]);
+	/**
+	* The space between two atoms, in eighteenths of an em, as TeX puts it and Word's PDFs showed: 4 either side of a binary
+	* operator, 5 either side of a relation, 3 after punctuation, and none between ordinary atoms, two relations, or beside a
+	* bracket, a bar or a slash (`word-equations.docx` EQ1, `word-equations2.docx` EQ7, EQ8). Pairs not here, such as a
+	* bracket after an operator, Word hasn't been seen to space
+	*/
+	var SPACES = /* @__PURE__ */ new Map([
+		["ordinary ordinary", 0],
+		["ordinary binary", 4],
+		["binary ordinary", 4],
+		["ordinary relation", 5],
+		["relation ordinary", 5],
+		["close relation", 5],
+		["relation relation", 0],
+		["ordinary punctuation", 0],
+		["punctuation ordinary", 3],
+		["ordinary open", 0],
+		["open ordinary", 0],
+		["ordinary close", 0],
+		["close open", 0],
+		["ordinary fence", 0],
+		["fence ordinary", 0],
+		["close fence", 0]
+	]);
+	var ITALIC_CAPITAL = 119860;
+	var ITALIC_SMALL = 119886;
+	var ITALIC_GREEK_CAPITAL = 120546;
+	var ITALIC_GREEK_SMALL = 120572;
+	var PLANCK = 8462;
+	var DRAWN_AS = /* @__PURE__ */ new Map([
+		["'", "′"],
+		["∂", "𝜕"],
+		["∇", "𝛻"]
+	]);
+	var ITALIC_SIGNS = /* @__PURE__ */ new Set(["∂", "∇"]);
+	/** The character Word draws for one of an equation's text, and whether it is an italic letter, in italic unless plain */
+	var drawnAs = (character, plain) => {
+		var _DRAWN_AS$get;
+		const code = character.codePointAt(0);
+		const letter = (first, offset) => plain ? {
+			drawn: character,
+			italic: false
+		} : {
+			drawn: String.fromCodePoint(first + offset),
+			italic: true
+		};
+		if (character === "h") return letter(PLANCK, 0);
+		if (/^[a-z]$/.test(character)) return letter(ITALIC_SMALL, code - 97);
+		if (/^[A-Z]$/.test(character)) return letter(ITALIC_CAPITAL, code - 65);
+		if (code >= 945 && code <= 969) return letter(ITALIC_GREEK_SMALL, code - 945);
+		return code >= 913 && code <= 937 ? letter(ITALIC_GREEK_CAPITAL, code - 913) : {
+			drawn: (_DRAWN_AS$get = DRAWN_AS.get(character)) !== null && _DRAWN_AS$get !== void 0 ? _DRAWN_AS$get : character,
+			italic: false
+		};
+	};
+	/** The text in an element, such as `m:t`'s */
+	var textOf = (element) => (Array.isArray(element) ? element : [element]).filter((part) => typeof part === "string").join("");
+	var RUN_SIZES = /* @__PURE__ */ new Set(["w:sz", "w:szCs"]);
+	/** The atoms of a run of an equation (`m:r`), or why it can't be laid out */
+	var atomsOfRun = (run) => {
+		const children = childrenOf(run);
+		const properties = childrenOf(find(children, "m:rPr"));
+		const style = attributesOf(find(properties, "m:sty"))["m:val"];
+		const formatting = childrenOf(find(children, "w:rPr"));
+		if (formatting.some((child) => !RUN_SIZES.has(Object.keys(child)[0]))) return "an equation whose text has formatting of its own";
+		if (find(properties, "m:nor") !== void 0 || find(properties, "m:scr") !== void 0 || style !== void 0 && style !== "p" && style !== "i") return "an equation in normal text, another alphabet or bold";
+		const drawn = [...children.filter((child) => "m:t" in child).map((child) => textOf(child["m:t"])).join("")].map((character) => _objectSpread2({ character }, drawnAs(character, style === "p")));
+		if (drawn.some(({ drawn: shown }) => !EQUATION_WIDTHS.has(shown))) return "a character in an equation whose width isn't known";
+		const size = pointsOf(attributesOf(find(formatting, "w:sz"))["w:val"], 2);
+		return drawn.map(({ character, drawn: shown, italic }) => {
+			var _CLASSES$get;
+			const [width, italicCorrection] = EQUATION_WIDTHS.get(shown);
+			return _objectSpread2(_objectSpread2(_objectSpread2({
+				character,
+				width: width / 1e3,
+				italicCorrection: italicCorrection / 1e3,
+				italic,
+				kind: (_CLASSES$get = CLASSES.get(character)) !== null && _CLASSES$get !== void 0 ? _CLASSES$get : "ordinary"
+			}, character === " " ? { space: true } : {}), ITALIC_SIGNS.has(character) ? { unknownCorrection: true } : {}), size === void 0 ? {} : { size });
+		});
+	};
+	var THIN_SPACE = 3;
+	var IGNORED = /* @__PURE__ */ new Set([
+		"m:oMathPr",
+		"m:ctrlPr",
+		"m:funcPr",
+		"w:bookmarkStart",
+		"w:bookmarkEnd",
+		"w:proofErr",
+		"_attr"
+	]);
+	var BUILT_UP = "an equation with a fraction, a script, a root or another part Word builds up";
+	/**
+	* The atoms of the parts of an equation in turn: its runs, and a function (`m:func`), as its name, a space of 3
+	* eighteenths, and its argument, as Word puts them (`word-equations.docx` EQ1z, `word-equations2.docx` EQ8e), when it is
+	* all of the equation. Why it can't be laid out, for anything else, such as a fraction or a script, which Word builds up
+	* in ways not yet followed
+	*/
+	var atomsOf = (parts, alone) => parts.reduce((atoms, part) => {
+		const [name] = Object.keys(part);
+		if (typeof atoms === "string" || IGNORED.has(name)) return atoms;
+		if (name === "m:r") {
+			const run = atomsOfRun(part[name]);
+			return typeof run === "string" ? run : [...atoms, ...run];
+		}
+		if (name !== "m:func" || !alone) return BUILT_UP;
+		const children = childrenOf(part[name]);
+		const functionName = atomsOf(childrenOf(find(children, "m:fName")), false);
+		const argument = atomsOf(childrenOf(find(children, "m:e")), false);
+		if (typeof functionName === "string" || typeof argument === "string") return typeof functionName === "string" ? functionName : argument;
+		return [
+			...atoms,
+			...functionName,
+			THIN_SPACE,
+			...argument
+		];
+	}, []);
+	var OPERATORS_TOGETHER = "an equation with operators next to each other, which Word spaces in a way not yet followed";
+	/**
+	* The classes of an equation's atoms, past its spaces, as Word spaces them: a binary operator at the start, or after
+	* another operator, a relation, an opening bracket or punctuation, is an ordinary atom, as in TeX (`word-equations.docx`
+	* EQ1n, `word-equations2.docx` EQ8c), and a full stop between digits is a decimal point (EQ1i). Or why Word's spacing
+	* isn't known: an operator before a relation, a bracket, punctuation or the end, which Word spaces unlike TeX
+	* (`word-equations.docx` EQ1x), and a full stop elsewhere
+	*/
+	var classesOf = (atoms) => atoms.reduce((classes, atom, index) => {
+		var _atoms;
+		if (typeof classes === "string") return classes;
+		const digit = (other) => {
+			var _other$character;
+			return /^\d$/.test((_other$character = other === null || other === void 0 ? void 0 : other.character) !== null && _other$character !== void 0 ? _other$character : "");
+		};
+		if (atom.character === "." && (!digit(atoms[index - 1]) || !digit(atoms[index + 1]))) return "a full stop in an equation other than a decimal point";
+		const previous = classes[index - 1];
+		const unary = atom.kind === "binary" && (previous === void 0 || ![
+			"ordinary",
+			"close",
+			"fence"
+		].includes(previous));
+		const next = (_atoms = atoms[index + 1]) === null || _atoms === void 0 ? void 0 : _atoms.kind;
+		if (atom.kind === "binary" && (next === void 0 || next !== "ordinary" && (unary || next !== "binary"))) return OPERATORS_TOGETHER;
+		return [...classes, unary ? "ordinary" : atom.kind];
+	}, []);
+	/**
+	* Lays out an equation (`m:oMath`) of text at a size, in points, or the size its runs give: how wide it is, and how far it
+	* goes above and below its baseline, as a line of Cambria Math (`word-equations.docx` EQ2, `word-equations2.docx` EQ9). It
+	* is as wide as its characters, the spaces between its atoms, and each italic letter's italic correction, which Word adds
+	* unless an ordinary atom, such as a letter, a digit or a prime, follows it (EQ1d, EQ1t, EQ7g, EQ8a, EQ8b), as before an
+	* operator, a bracket, punctuation, a bar, a slash, a space and its end (EQ1, EQ7). Or why it can't be laid out: atoms
+	* Word hasn't been seen to space, runs of different sizes, and an italic sign whose italic correction Word hasn't shown
+	*/
+	var layOutEquation = (equation, size) => {
+		const parts = childrenOf(equation).filter(isObject);
+		const all = atomsOf(parts, parts.filter((part) => !IGNORED.has(Object.keys(part)[0])).length === 1);
+		if (typeof all === "string") return all;
+		const atoms = all.filter((atom) => typeof atom !== "number" && !atom.space);
+		if (atoms.length === 0) return "an empty equation";
+		const sizes = new Set(all.flatMap((atom) => {
+			var _atom$size;
+			return typeof atom === "number" ? [] : [(_atom$size = atom.size) !== null && _atom$size !== void 0 ? _atom$size : size];
+		}));
+		if (sizes.size > 1) return "an equation whose runs are of different sizes";
+		const classes = classesOf(atoms);
+		if (typeof classes === "string") return classes;
+		let width = 0;
+		let previous;
+		let between = 0;
+		for (const [position, atom] of all.entries()) {
+			if (typeof atom === "number" || atom.space) {
+				between += typeof atom === "number" ? atom : 0;
+				width += typeof atom === "number" ? 0 : atom.width;
+				continue;
+			}
+			const index = atoms.indexOf(atom);
+			const kind = classes[index];
+			if (previous !== void 0) {
+				const space = SPACES.get(`${previous} ${kind}`);
+				if (space === void 0) return OPERATORS_TOGETHER;
+				width += (space + between) / 18;
+			}
+			between = 0;
+			width += atom.width;
+			const following = all[position + 1];
+			const beforeOrdinary = typeof following === "object" && !following.space && classes[index + 1] === "ordinary";
+			if (atom.unknownCorrection && !beforeOrdinary) return "an italic sign in an equation before what isn't ordinary, such as a letter or digit";
+			width += atom.italic && !beforeOrdinary ? atom.italicCorrection : 0;
+			previous = kind;
+		}
+		const [drawnSize] = sizes;
+		return {
+			width: width * drawnSize,
+			ascent: ASCENT * drawnSize,
+			descent: DESCENT * drawnSize
+		};
+	};
+	//#endregion
 	//#region src/layout/table-formats.ts
 	/**
 	* Reads the formatting of a table that changes how its rows and cells are laid out, beyond their widths: its borders and
@@ -8031,6 +8469,56 @@ var docxLayout = (function(exports) {
 		if (name === "w:sdt") return readRemoved(childrenOf(find(childrenOf(element[name]), "w:sdtContent")), kind, reader);
 		return RUN_CONTAINERS.has(name) || REMOVALS.has(name) || name === "w:fldSimple" ? readRemoved(contentOf$3(element), kind, reader) : [];
 	}), reader);
+	var EQUATION_BROKEN = "an equation that doesn't fit on its line";
+	/**
+	* Reads an equation (`m:oMath`), or a paragraph of one (`m:oMathPara`), as Word lays out one of text: a box as wide as it
+	* is, which takes room above and below the baseline as a line of Cambria Math does, in the size of its paragraph's text,
+	* with its bookmarks before it. Word shows one alone in its paragraph on a line of its own, centred, which is as tall
+	* (`word-equations.docx` EQ2c, EQ2d). Or why it can't be laid out: one of more than text (see {@link layOutEquation}), a
+	* paragraph of more than one equation, and one in a document whose maths settings aren't followed (see
+	* {@link readMathsSettings})
+	*/
+	var readEquation = (element, paragraphRun, reader) => {
+		var _fontOf$size;
+		if (reader.maths !== void 0) return reader.maths;
+		const name = nameOf$1(element);
+		const equations = name === "m:oMath" ? [element] : childrenOf(element[name]).filter((child) => "m:oMath" in child);
+		if (equations.length !== 1) return equations.length === 0 ? [] : "a paragraph of more than one equation";
+		const [equation] = equations;
+		const box = layOutEquation(equation["m:oMath"], (_fontOf$size = fontOf(paragraphRun).size) !== null && _fontOf$size !== void 0 ? _fontOf$size : 10);
+		if (typeof box === "string") return box;
+		return [...elementsIn$1(contentOf$3(equation), (inner) => inner === "w:bookmarkStart").flatMap((bookmark) => markerOf(bookmark)), {
+			type: "box",
+			width: box.width,
+			height: box.ascent,
+			descent: box.descent,
+			unbroken: EQUATION_BROKEN
+		}];
+	};
+	/**
+	* Whether a paragraph's content has an equation displayed (`m:oMathPara`) that the reader reads: one among it, or in what
+	* its text is in, such as a hyperlink, but not one in its runs' text boxes, nor one deleted or moved elsewhere in a tracked
+	* change, unless deleted text is read as text (see {@link readInline})
+	*/
+	var isDisplayedIn = (elements, reader) => elements.filter(isObject).some((element) => {
+		const name = nameOf$1(element);
+		const read = name !== "w:r" && name !== "_attr" && (reader.showDeleted === true || !REMOVALS.has(name));
+		return name === "m:oMathPara" || read && isDisplayedIn(contentOf$3(element), reader);
+	});
+	/**
+	* A paragraph's content, as read, or why it can't be laid out for the equations in it. Word shows an equation in a line of
+	* text in the line, and one alone in its paragraph displayed, on a line of its own (`word-equations.docx` EQ2). One in
+	* `m:oMathPara`, which is displayed, beside text in its paragraph, more than one alone in a paragraph, and one alone after
+	* its list's number haven't been seen.
+	*/
+	var withEquations = (elements, read, numbered, reader) => {
+		if (typeof read === "string") return read;
+		const shown = read.filter((item) => item.type !== "marker");
+		const equations = shown.filter((item) => item.type === "box" && item.unbroken === EQUATION_BROKEN).length;
+		if (equations === 0) return read;
+		const reason = shown.length > equations && isDisplayedIn(elements, reader) ? "an equation displayed (`m:oMathPara`) beside text in its paragraph" : shown.length === equations && (equations > 1 || numbered) ? "an equation alone in its paragraph beside another, or after its list's number" : void 0;
+		return reason === void 0 ? read : guessedOr(reader, reason, () => read);
+	};
 	/**
 	* Reads the content of a paragraph, or of an element in it, such as a hyperlink, and when it is deleted (`removed`), as
 	* Word sizes a table's columns by it.
@@ -8053,7 +8541,7 @@ var docxLayout = (function(exports) {
 		if (name === "w:bookmarkStart") return markerOf(element);
 		if (name === "w:subDoc") return "a subdocument";
 		if (name === STOP) return String(element[name]);
-		return name === "m:oMath" || name === "m:oMathPara" ? "an equation" : [];
+		return name === "m:oMath" || name === "m:oMathPara" ? readEquation(element, paragraphRun, reader) : [];
 	}), reader);
 	/**
 	* The number of a paragraph in a list, and what follows it, as its list's level writes it, and its number as a chapter
@@ -8325,7 +8813,7 @@ var docxLayout = (function(exports) {
 			...list.level ? [list.level.paragraph] : [],
 			readParagraphFormat(properties)
 		];
-		const read = readInline(children, paragraphRun, reader);
+		const read = withEquations(children, readInline(children, paragraphRun, reader), list.items.length > 0, reader);
 		const guessed = typeof read === "string" ? void 0 : read.map(guessOf).find((reason) => reason !== void 0);
 		const items = typeof read === "string" ? read : read.filter((item) => guessOf(item) === void 0);
 		const combined = combine(formats);
@@ -9678,6 +10166,27 @@ var docxLayout = (function(exports) {
 	*/
 	var readHyphenation = (settings) => onOff(settings, "w:doNotHyphenateCaps") === true ? { capitalsWhole: true } : {};
 	/**
+	* Why a document's equations can't be laid out as Word does for its maths settings (`m:mathPr`), when they say what isn't
+	* followed: a maths font other than Cambria Math, whose widths aren't known, and margins or space around equations shown
+	* on lines of their own, which haven't been seen. Word writes Cambria Math and margins of 0. Its other maths settings are
+	* of what the layout stops at anyway, such as how an equation is broken or built up, or line an equation up on its line.
+	*/
+	var readMathsSettings = (settings) => {
+		var _valueIn;
+		const maths = childrenOf(find(settings, "m:mathPr"));
+		const valueIn = (name) => stringOf(attributesOf(find(maths, name))["m:val"]);
+		if (((_valueIn = valueIn("m:mathFont")) !== null && _valueIn !== void 0 ? _valueIn : "Cambria Math") !== "Cambria Math") return "an equation in a maths font other than Cambria Math";
+		return [
+			"m:lMargin",
+			"m:rMargin",
+			"m:preSp",
+			"m:postSp"
+		].some((name) => {
+			var _numberOf11;
+			return ((_numberOf11 = numberOf(valueIn(name))) !== null && _numberOf11 !== void 0 ? _numberOf11 : 0) !== 0;
+		}) ? "an equation in a document whose maths settings give equations on lines of their own margins or space around them" : void 0;
+	};
+	/**
 	* Reads the parts of the document's settings (`w:settings`) that change how it is laid out.
 	*/
 	var readSettings = (xml) => {
@@ -9791,7 +10300,7 @@ var docxLayout = (function(exports) {
 	* Reads a document's body (`w:body`), with the other parts of the document.
 	*/
 	var readContent = (body, parts, { guess = false } = {}) => {
-		var _parts$otherListIds, _parts$otherListIds2, _parts$settings, _fontOf$size, _ref24, _ref25, _ref26, _ref27, _ref28, _ref29, _documentContent$unsu;
+		var _parts$otherListIds, _parts$otherListIds2, _parts$settings, _fontOf$size2, _ref24, _ref25, _ref26, _ref27, _ref28, _ref29, _documentContent$unsu;
 		const { styles } = parts;
 		const { lists: numbering, unsupported: inNumbering } = readNumbering(parts.numbering, styles, (_parts$otherListIds = parts.otherListIds) !== null && _parts$otherListIds !== void 0 ? _parts$otherListIds : /* @__PURE__ */ new Map());
 		const listIds = (_parts$otherListIds2 = parts.otherListIds) !== null && _parts$otherListIds2 !== void 0 ? _parts$otherListIds2 : /* @__PURE__ */ new Map();
@@ -9801,7 +10310,8 @@ var docxLayout = (function(exports) {
 		};
 		const settings = childrenOf((_parts$settings = parts.settings) === null || _parts$settings === void 0 ? void 0 : _parts$settings["w:settings"]);
 		const decimalSymbol = valueOf(settings, "w:decimalSymbol");
-		const readerOf = (inHeader) => _objectSpread2(_objectSpread2({
+		const maths = readMathsSettings(settings);
+		const readerOf = (inHeader) => _objectSpread2(_objectSpread2(_objectSpread2({
 			styles,
 			numbering,
 			listIds,
@@ -9809,7 +10319,7 @@ var docxLayout = (function(exports) {
 			markers,
 			fields: [],
 			counters: /* @__PURE__ */ new Map()
-		}, decimalSymbol === void 0 ? {} : { decimalSymbol }), guess ? { guess } : {});
+		}, decimalSymbol === void 0 ? {} : { decimalSymbol }), maths === void 0 ? {} : { maths }), guess ? { guess } : {});
 		const elements = unwrap(joinRemovedMarks(contentOf$3(body), styles, {
 			nested: false,
 			sized: false,
@@ -9836,7 +10346,7 @@ var docxLayout = (function(exports) {
 			footnote: noteElements("footnote"),
 			endnote: noteElements("endnote")
 		};
-		const normalSize = (_fontOf$size = fontOf(combine([styles.run, ...styleChain(styles, styles.defaultParagraphStyle, "paragraph").map(({ run }) => run)])).size) !== null && _fontOf$size !== void 0 ? _fontOf$size : 10;
+		const normalSize = (_fontOf$size2 = fontOf(combine([styles.run, ...styleChain(styles, styles.defaultParagraphStyle, "paragraph").map(({ run }) => run)])).size) !== null && _fontOf$size2 !== void 0 ? _fontOf$size2 : 10;
 		const pageSettings = {
 			gutterAtTop: onOff(settings, "w:gutterAtTop") === true,
 			mirrorMargins: onOff(settings, "w:mirrorMargins") === true
