@@ -2,17 +2,20 @@
 
 import * as fs from "fs";
 import { File, HeadingLevel, Packer, Paragraph, StyleLevel, TableOfContents } from "docx";
+import { estimatePageNumbers } from "docx/layout";
 
 // WordprocessingML docs for TableOfContents can be found here:
 // http://officeopenxml.com/WPtableOfContents.php
 
 // Let's define the properties for generate a TOC for heading 1-5 and MySpectacularStyle,
-// making the entries be hyperlinks for the paragraph. The entries are written from the headings,
-// and Word fills in their page numbers when it updates the fields
+// making the entries be hyperlinks for the paragraph. docx/layout lays out the pages as Word would and
+// writes the table of contents with its page numbers (see docs/usage/layout.md), and with updateFields
+// off, Word shows it as it is written and doesn't ask to update the fields
 const doc = new File({
     features: {
-        updateFields: true,
+        updateFields: false,
     },
+    pageNumbers: estimatePageNumbers,
     styles: {
         paragraphStyles: [
             {
