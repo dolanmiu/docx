@@ -535,11 +535,38 @@ describe("readDocument", () => {
             }
         });
 
-        it("should mark a paragraph with an equation as unsupported", () => {
-            const equation = paragraphOf(readBody([p(r(t("a")), { "m:oMath": [] })]));
-            expect(equation.unsupported).to.equal("an equation");
+        it("should read an equation of text as a box that takes room as a line of Cambria Math does, in its paragraph's size", () => {
+            const math = (...parts: readonly object[]): object => ({ "m:oMath": parts });
+            const mathRun = (characters: string): object => ({ "m:r": [{ "m:t": [characters] }] });
+            const [text, box] = itemsOf(readBody([p(r(t("a ")), math(mathRun("x")))]));
+            expect(text).to.deep.include({ type: "text", text: "a " });
+            // As wide as Word makes it, and 1946 and 455 of Cambria Math's 2048 units above and below its baseline, at the 10
+            // points of the text here: at 11, 123.75 twips wide (`word-equations.docx` EQ1a, EQ2c)
+            expect(box).to.deep.include({ type: "box", unbroken: "an equation that doesn't fit on its line" });
+            const { width, height, descent } = box as { readonly width: number; readonly height: number; readonly descent: number };
+            expect([width * 22, height * 20, descent * 20].map((length) => Math.round(length * 100) / 100)).to.deep.equal([
+                123.75, 190.04, 44.43,
+            ]);
+            // In the size of its paragraph's text, with its bookmarks before it
+            const bookmark = { "w:bookmarkStart": { _attr: { "w:id": 1, "w:name": "in" } } };
+            const big = readBody([p(pPr(value("w:pStyle", "Big")), math(bookmark, mathRun("x")))], {
+                styles: { paragraphStyles: [{ id: "Big", name: "Big", run: { size: 44 } }] },
+            });
+            expect(itemsOf(big)[0]).to.deep.equal({ type: "marker", name: "in" });
+            expect((itemsOf(big)[1] as { readonly width: number }).width * 10).to.be.closeTo(123.75, 0.01);
+            // A paragraph of one equation is that equation, and one of none nothing
+            const paragraphOfOne = { "m:oMathPara": [{ "m:oMathParaPr": [] }, math(mathRun("x"))] };
+            expect(itemsOf(readBody([p(paragraphOfOne)]))[0]).to.deep.include({ type: "box" });
+            expect(paragraphOf(readBody([p({ "m:oMathPara": [] })])).items).to.deep.equal([]);
+        });
+
+        it("should stop at an equation Word builds up, and at a paragraph of more than one equation", () => {
+            const equation = paragraphOf(readBody([p(r(t("a")), { "m:oMath": [{ "m:f": [] }] })]));
+            expect(equation.unsupported).to.equal("an equation with a fraction, a script, a root or another part Word builds up");
             expect(equation.items).to.deep.equal([]);
-            expect(paragraphOf(readBody([p({ "m:oMathPara": [] })])).unsupported).to.equal("an equation");
+            expect(paragraphOf(readBody([p({ "m:oMath": [] })])).unsupported).to.equal("an empty equation");
+            const two = { "m:oMathPara": [{ "m:oMath": [{ "m:r": [{ "m:t": ["x"] }] }] }, { "m:oMath": [{ "m:r": [{ "m:t": ["y"] }] }] }] };
+            expect(paragraphOf(readBody([p(two)])).unsupported).to.equal("a paragraph of more than one equation");
         });
 
         it("should stop at text with a phonetic guide, a content part, text fitted to a width, two lines in one, text across in vertical text, a subdocument and a paragraph in an HTML division", () => {
@@ -713,7 +740,9 @@ describe("readDocument", () => {
             );
             expect((bookmarked.endnotes[0] as ParagraphBlock).items).to.deep.equal([{ type: "marker", name: "above" }]);
             // One with an equation in it stops as an equation anywhere does
-            expect(withSeparators([p({ "m:oMath": [] })], []).endnotes[0].unsupported).to.equal("an equation");
+            expect(withSeparators([p({ "m:oMath": [{ "m:f": [] }] })], []).endnotes[0].unsupported).to.equal(
+                "an equation with a fraction, a script, a root or another part Word builds up",
+            );
             // One with text in it, more than a paragraph or a table hasn't been seen
             const unknown = "an endnote separator with text in it, or of more than a paragraph";
             expect(withSeparators([p(r(t("Endnotes")))], []).endnotes[0].unsupported).to.equal(unknown);
@@ -2457,8 +2486,10 @@ describe("readDocument", () => {
         });
 
         it("should mark a table with something unsupported in a cell as unsupported", () => {
-            const content = readBody([{ "w:tbl": [{ "w:tr": [{ "w:tc": [p({ "m:oMath": [] })] }] }] }]);
-            expect((content.blocks[0].block as TableBlock).unsupported).to.equal("an equation");
+            const content = readBody([{ "w:tbl": [{ "w:tr": [{ "w:tc": [p({ "m:oMath": [{ "m:f": [] }] })] }] }] }]);
+            expect((content.blocks[0].block as TableBlock).unsupported).to.equal(
+                "an equation with a fraction, a script, a root or another part Word builds up",
+            );
             // An equation outside a paragraph too
             const outside = readBody([{ "w:tbl": [{ "w:tr": [{ "w:tc": [{ "m:oMath": [] }] }] }] }]);
             expect((outside.blocks[0].block as TableBlock).unsupported).to.equal("an equation");
@@ -5012,18 +5043,18 @@ describe("readDocument", () => {
 
         it("should leave out what it can't read, and read the rest of its paragraph, which says why", () => {
             const elements = [
-                p(r(t("a")), { "m:oMath": [] }, r(t("b"))),
+                p(r(t("a")), { "m:oMath": [{ "m:f": [] }] }, r(t("b"))),
                 p(r(t("c"), { "w:contentPart": { _attr: { "r:id": "rId9" } } }), r(t("d"))),
                 p(r(t("e")), { "w:subDoc": { _attr: { "r:id": "rId9" } } }, r(t("f"), { "w:pict": [] })),
             ];
             expect(read(readBody(elements))).to.deep.equal([
-                ["an equation", ""],
+                ["an equation with a fraction, a script, a root or another part Word builds up", ""],
                 ["a content part, such as ink", ""],
                 ["a subdocument", ""],
             ]);
             // The first thing guessed at in a paragraph is why
             expect(read(guessed(elements))).to.deep.equal([
-                ["an equation", "ab"],
+                ["an equation with a fraction, a script, a root or another part Word builds up", "ab"],
                 ["a content part, such as ink", "cd"],
                 ["a subdocument", "ef"],
             ]);

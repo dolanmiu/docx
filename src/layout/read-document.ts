@@ -60,6 +60,7 @@ import {
     valueOf,
     withoutUndefined,
 } from "../text-layout";
+import { layOutEquation } from "./equations";
 import {
     type FieldCapitals,
     type FieldFormat,
@@ -1492,6 +1493,32 @@ const readRemoved = (elements: readonly unknown[], kind: string, reader: Reader)
         reader,
     );
 
+// Why the layout stops at an equation that doesn't fit in the room left on its line, which Word breaks after an
+// operator (`word-equations.docx` EQ5), in a way not yet followed
+const EQUATION_BROKEN = "an equation that doesn't fit on its line";
+
+/**
+ * Reads an equation (`m:oMath`), or a paragraph of one (`m:oMathPara`), as Word lays out one of text: a box as wide as it
+ * is, which takes room above and below the baseline as a line of Cambria Math does, in the size of its paragraph's text,
+ * with its bookmarks before it. Word shows one alone in its paragraph on a line of its own, centred, which is as tall
+ * (`word-equations.docx` EQ2c, EQ2d). Or why it can't be laid out: one of more than text (see {@link layOutEquation}), and
+ * a paragraph of more than one equation
+ */
+const readEquation = (element: XmlObject, paragraphRun: RunFormat): readonly LayoutItem[] | string => {
+    const name = nameOf(element);
+    const equations = name === "m:oMath" ? [element] : childrenOf(element[name]).filter((child) => "m:oMath" in child);
+    if (equations.length !== 1) {
+        return equations.length === 0 ? [] : "a paragraph of more than one equation";
+    }
+    const [equation] = equations;
+    const box = layOutEquation(equation["m:oMath"], fontOf(paragraphRun).size ?? DEFAULT_FONT_SIZE);
+    if (typeof box === "string") {
+        return box;
+    }
+    const bookmarks = elementsIn(contentOf(equation), (inner) => inner === "w:bookmarkStart").flatMap((bookmark) => markerOf(bookmark));
+    return [...bookmarks, { type: "box", width: box.width, height: box.ascent, descent: box.descent, unbroken: EQUATION_BROKEN }];
+};
+
 /**
  * Reads the content of a paragraph, or of an element in it, such as a hyperlink, and when it is deleted (`removed`), as
  * Word sizes a table's columns by it.
@@ -1548,7 +1575,7 @@ const readInline = (
             if (name === STOP) {
                 return String(element[name]);
             }
-            return name === "m:oMath" || name === "m:oMathPara" ? "an equation" : [];
+            return name === "m:oMath" || name === "m:oMathPara" ? readEquation(element, paragraphRun) : [];
         }),
         reader,
     );

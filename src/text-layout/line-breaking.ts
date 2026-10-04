@@ -117,9 +117,19 @@ export type InlineItem =
     | { readonly type: "break"; readonly kind: "line" | "page" | "column"; readonly font: TextFont }
     /**
      * A picture or other drawing in the line, in points, with the font of its run, whose line the picture's is at least as
-     * tall as
+     * tall as. One that takes room in its line as text does, such as an equation, goes `descent` below the baseline, and
+     * its height is the room it takes above it, with the line gap, rather than standing on the baseline as a picture does.
+     * Where Word may break one in a way not yet followed when it doesn't fit in the room left on its line, the layout stops
+     * there, for why (`unbroken`)
      */
-    | { readonly type: "box"; readonly width: number; readonly height: number; readonly font?: TextFont }
+    | {
+          readonly type: "box";
+          readonly width: number;
+          readonly height: number;
+          readonly font?: TextFont;
+          readonly descent?: number;
+          readonly unbroken?: string;
+      }
     /**
      * Where a bookmark starts, which is on the line of the word, picture or tab after it, or, for one that goes with the text
      * before it (`after`), such as a drawing's anchor, on the line of the word or picture right before it
@@ -242,7 +252,7 @@ type Token =
     | { readonly type: "word"; readonly pieces: readonly Piece[]; readonly hyphens?: readonly Hyphen[] }
     | { readonly type: "space"; readonly pieces: readonly Piece[] }
     | { readonly type: "tab"; readonly font: TextFont }
-    | { readonly type: "box"; readonly width: number; readonly height: number; readonly font?: TextFont }
+    | Extract<InlineItem, { readonly type: "box" }>
     | { readonly type: "marker"; readonly name: string; readonly after?: boolean };
 
 /** A part of a paragraph up to a break */
@@ -1307,7 +1317,15 @@ export const layoutLines = (
     const withToken = (heights: Heights, token: Exclude<Token, { readonly type: "marker" }>): Heights => {
         if (token.type === "box") {
             const tallest = token.font ? Math.max(heights.tallest, measurer.measureLineHeight(token.font)) : heights.tallest;
-            return { ...heights, picture: Math.max(heights.picture, token.height), tallest };
+            // One that takes room as text does has an ascent and descent of its own
+            return token.descent === undefined
+                ? { ...heights, picture: Math.max(heights.picture, token.height), tallest }
+                : {
+                      ...heights,
+                      ascent: Math.max(heights.ascent, token.height),
+                      descent: Math.max(heights.descent, token.descent),
+                      tallest: Math.max(tallest, token.height + token.descent),
+                  };
         }
         return token.type === "tab"
             ? withFont(heights, token.font, measurer)
@@ -1579,6 +1597,9 @@ export const layoutLines = (
                 line = { ...line, unsupported: line.unsupported ?? "a word whose part before a soft hyphen is longer than its line" };
             }
             const overflows = line.started && line.position + needs > endOf(line) + TOLERANCE;
+            if (token.type === "box" && token.unbroken !== undefined && line.position + needs > endOf(line) + TOLERANCE) {
+                line = { ...line, unsupported: line.unsupported ?? token.unbroken };
+            }
             if (overflows && unsure(line, needs)) {
                 line = { ...line, unknown: true };
             }
