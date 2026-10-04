@@ -16,9 +16,9 @@ const text = (words: number, seed: number): string =>
 const CHAPTERS = ["The coast", "The harbour wall", "The footings", "The costs", "What is left to do"];
 
 // A report template, as it might be made in Word: a table of contents, and a placeholder for each chapter's text. Its
-// table of contents has no page numbers yet
+// table of contents has no page numbers yet. It leaves updateFields off, which patchDocument keeps as it is, so Word
+// shows the page numbers docx/layout writes, and doesn't ask to update the fields
 const template = new Document({
-    features: { updateFields: true },
     sections: [
         {
             footers: {
