@@ -569,6 +569,27 @@ describe("readDocument", () => {
             expect(paragraphOf(readBody([p(two)])).unsupported).to.equal("a paragraph of more than one equation");
         });
 
+        it("should stop at an equation displayed beside text, at equations alone in a paragraph together, and at one alone after its list's number", () => {
+            const math = (characters: string): object => ({ "m:oMath": [{ "m:r": [{ "m:t": [characters] }] }] });
+            const displayed = { "m:oMathPara": [{ "m:oMathParaPr": [{ "m:jc": { _attr: { "m:val": "right" } } }] }, math("x")] };
+            const reasonOf = (content: DocumentContent): string | undefined => paragraphOf(content).unsupported;
+            // Word displays one in `m:oMathPara`, beside text in its paragraph or in a hyperlink there
+            const beside = "an equation displayed (`m:oMathPara`) beside text in its paragraph";
+            expect(reasonOf(readBody([p(r(t("a")), displayed)]))).to.equal(beside);
+            const link = { "w:hyperlink": [{ _attr: { "w:anchor": "a" } }, displayed] };
+            expect(reasonOf(readBody([p(link, r(t("a")))]))).to.equal(beside);
+            // Two alone in a paragraph, and one alone after its list's number
+            const alone = "an equation alone in its paragraph beside another, or after its list's number";
+            expect(reasonOf(readBody([p(math("x"), math("y"))]))).to.equal(alone);
+            const numbering = { config: [{ reference: "list", levels: [{ level: 0, format: LevelFormat.DECIMAL, text: "%1." }] }] };
+            const numbered = pPr({ "w:numPr": [value("w:ilvl", 0), value("w:numId", 1)] });
+            expect(reasonOf(readBody([p(numbered, math("x"))], { numbering }))).to.equal(alone);
+            // One alone in its paragraph, its justification its own, and one in a line of text, numbered or not, are laid out
+            expect(reasonOf(readBody([p(displayed)]))).to.equal(undefined);
+            expect(reasonOf(readBody([p(numbered, r(t("a ")), math("x"))], { numbering }))).to.equal(undefined);
+            expect(reasonOf(readBody([p(r(t("a ")), math("x"), r(t(" b ")), math("y"))]))).to.equal(undefined);
+        });
+
         it("should stop at text with a phonetic guide, a content part, text fitted to a width, two lines in one, text across in vertical text, a subdocument and a paragraph in an HTML division", () => {
             const unsupportedOf = (...children: readonly unknown[]): string | undefined =>
                 paragraphOf(readBody([p(...children)])).unsupported;
@@ -5066,6 +5087,13 @@ describe("readDocument", () => {
             const content = guessed([fitted]);
             expect(read(content)).to.deep.equal([["text fitted to a width", "fittedmore"]]);
             expect(itemsOf(content).map(({ type }) => type)).to.deep.equal(["text", "tab", "text"]);
+        });
+
+        it("should read an equation displayed beside text as one in the line", () => {
+            const displayed = { "m:oMathPara": [{ "m:oMath": [{ "m:r": [{ "m:t": ["x"] }] }] }] };
+            const content = guessed([p(r(t("a ")), displayed)]);
+            expect(read(content)).to.deep.equal([["an equation displayed (`m:oMathPara`) beside text in its paragraph", "a "]]);
+            expect(itemsOf(content).map(({ type }) => type)).to.deep.equal(["text", "box"]);
         });
 
         it("should read tabs, soft hyphens and pictures in text with a border, a phonetic guide's base, and a note with a mark of its own", () => {

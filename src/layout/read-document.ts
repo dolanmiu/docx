@@ -1520,6 +1520,45 @@ const readEquation = (element: XmlObject, paragraphRun: RunFormat): readonly Lay
 };
 
 /**
+ * The equations (`m:oMath`, `m:oMathPara`) among a paragraph's content and in what its text is in, such as a hyperlink, but
+ * not those in its runs' text boxes
+ */
+const equationsIn = (elements: readonly unknown[]): readonly XmlObject[] =>
+    elements.filter(isObject).flatMap((element) => {
+        const name = nameOf(element);
+        if (name === "m:oMath" || name === "m:oMathPara") {
+            return [element];
+        }
+        return name === "w:r" || name === "_attr" ? [] : equationsIn(contentOf(element));
+    });
+
+/**
+ * A paragraph's content, as read, or why it can't be laid out for the equations in it. Word shows an equation in a line of
+ * text in the line, and one alone in its paragraph displayed, on a line of its own (`word-equations.docx` EQ2). One in
+ * `m:oMathPara`, which is displayed, beside text in its paragraph, more than one alone in a paragraph, and one alone after
+ * its list's number haven't been seen.
+ */
+const withEquations = (
+    elements: readonly unknown[],
+    read: readonly LayoutItem[] | string,
+    numbered: boolean,
+    reader: Reader,
+): readonly LayoutItem[] | string => {
+    const equations = equationsIn(elements);
+    if (equations.length === 0 || typeof read === "string") {
+        return read;
+    }
+    const shown = read.filter((item) => item.type !== "marker").length;
+    const reason =
+        shown > equations.length && equations.some((equation) => nameOf(equation) === "m:oMathPara")
+            ? "an equation displayed (`m:oMathPara`) beside text in its paragraph"
+            : shown === equations.length && (equations.length > 1 || numbered)
+              ? "an equation alone in its paragraph beside another, or after its list's number"
+              : undefined;
+    return reason === undefined ? read : guessedOr(reader, reason, () => read);
+};
+
+/**
  * Reads the content of a paragraph, or of an element in it, such as a hyperlink, and when it is deleted (`removed`), as
  * Word sizes a table's columns by it.
  */
@@ -1973,7 +2012,7 @@ const readParagraph = (element: XmlObject, reader: Reader, tableFormats: TableFo
         ...(list.level ? [list.level.paragraph] : []),
         readParagraphFormat(properties),
     ];
-    const read = readInline(children, paragraphRun, reader);
+    const read = withEquations(children, readInline(children, paragraphRun, reader), list.items.length > 0, reader);
     // Read to be laid out with a guess, the first thing the reader guessed at in the paragraph's content is why it can't be
     // laid out as Word does, and the markers of what it guessed at are left out of its items
     const guessed = typeof read === "string" ? undefined : read.map(guessOf).find((reason) => reason !== undefined);
