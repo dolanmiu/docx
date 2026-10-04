@@ -1526,16 +1526,15 @@ const readEquation = (element: XmlObject, paragraphRun: RunFormat, reader: Reade
 };
 
 /**
- * The equations (`m:oMath`, `m:oMathPara`) among a paragraph's content and in what its text is in, such as a hyperlink, but
- * not those in its runs' text boxes
+ * Whether a paragraph's content has an equation displayed (`m:oMathPara`) that the reader reads: one among it, or in what
+ * its text is in, such as a hyperlink, but not one in its runs' text boxes, nor one deleted or moved elsewhere in a tracked
+ * change, unless deleted text is read as text (see {@link readInline})
  */
-const equationsIn = (elements: readonly unknown[]): readonly XmlObject[] =>
-    elements.filter(isObject).flatMap((element) => {
+const isDisplayedIn = (elements: readonly unknown[], reader: Reader): boolean =>
+    elements.filter(isObject).some((element) => {
         const name = nameOf(element);
-        if (name === "m:oMath" || name === "m:oMathPara") {
-            return [element];
-        }
-        return name === "w:r" || name === "_attr" ? [] : equationsIn(contentOf(element));
+        const read = name !== "w:r" && name !== "_attr" && (reader.showDeleted === true || !REMOVALS.has(name));
+        return name === "m:oMathPara" || (read && isDisplayedIn(contentOf(element), reader));
     });
 
 /**
@@ -1550,15 +1549,19 @@ const withEquations = (
     numbered: boolean,
     reader: Reader,
 ): readonly LayoutItem[] | string => {
-    const equations = equationsIn(elements);
-    if (equations.length === 0 || typeof read === "string") {
+    if (typeof read === "string") {
         return read;
     }
-    const shown = read.filter((item) => item.type !== "marker").length;
+    const shown = read.filter((item) => item.type !== "marker");
+    // The equations read, which are the boxes that stop where they don't fit on their line
+    const equations = shown.filter((item) => item.type === "box" && item.unbroken === EQUATION_BROKEN).length;
+    if (equations === 0) {
+        return read;
+    }
     const reason =
-        shown > equations.length && equations.some((equation) => nameOf(equation) === "m:oMathPara")
+        shown.length > equations && isDisplayedIn(elements, reader)
             ? "an equation displayed (`m:oMathPara`) beside text in its paragraph"
-            : shown === equations.length && (equations.length > 1 || numbered)
+            : shown.length === equations && (equations > 1 || numbered)
               ? "an equation alone in its paragraph beside another, or after its list's number"
               : undefined;
     return reason === undefined ? read : guessedOr(reader, reason, () => read);

@@ -588,6 +588,11 @@ describe("readDocument", () => {
             expect(reasonOf(readBody([p(displayed)]))).to.equal(undefined);
             expect(reasonOf(readBody([p(numbered, r(t("a ")), math("x"))], { numbering }))).to.equal(undefined);
             expect(reasonOf(readBody([p(r(t("a ")), math("x"), r(t(" b ")), math("y"))]))).to.equal(undefined);
+            // Equations deleted, or moved elsewhere, in a tracked change are left out, as their paragraph is laid out without
+            // them
+            expect(reasonOf(readBody([p(r(t("a ")), math("x"), { "w:del": [math("y")] })]))).to.equal(undefined);
+            expect(reasonOf(readBody([p(numbered, { "w:moveFrom": [math("x")] }, r(t("a")))], { numbering }))).to.equal(undefined);
+            expect(reasonOf(readBody([p(r(t("a")), r(t("b")), { "w:del": [displayed] })]))).to.equal(undefined);
         });
 
         it("should stop at equations in a maths font other than Cambria Math, or with margins or space around them, in a document's maths settings", () => {
