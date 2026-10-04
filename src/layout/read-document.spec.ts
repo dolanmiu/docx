@@ -590,6 +590,34 @@ describe("readDocument", () => {
             expect(reasonOf(readBody([p(r(t("a ")), math("x"), r(t(" b ")), math("y"))]))).to.equal(undefined);
         });
 
+        it("should stop at equations in a maths font other than Cambria Math, or with margins or space around them, in a document's maths settings", () => {
+            const equation = p(r(t("a ")), { "m:oMath": [{ "m:r": [{ "m:t": ["x"] }] }] });
+            const setting = (name: string, val: string): object => ({ [name]: { _attr: { "m:val": val } } });
+            const reasonWith = (...settings: readonly object[]): string | undefined =>
+                paragraphOf(readWithSettings([equation], [{ "m:mathPr": settings }])).unsupported;
+            // Those Word writes are followed
+            const word = [
+                setting("m:mathFont", "Cambria Math"),
+                setting("m:brkBin", "before"),
+                setting("m:lMargin", "0"),
+                setting("m:rMargin", "0"),
+                setting("m:defJc", "centerGroup"),
+                setting("m:wrapIndent", "1440"),
+            ];
+            expect(reasonWith(...word)).to.equal(undefined);
+            expect(paragraphOf(readWithSettings([equation], [])).unsupported).to.equal(undefined);
+            expect(reasonWith(setting("m:mathFont", "STIX Two Math"))).to.equal("an equation in a maths font other than Cambria Math");
+            const around =
+                "an equation in a document whose maths settings give equations on lines of their own margins or space around them";
+            for (const name of ["m:lMargin", "m:rMargin", "m:preSp", "m:postSp"]) {
+                expect(reasonWith(...word.filter((given) => !(name in given)), setting(name, "240")), name).to.equal(around);
+            }
+            // Text without equations is laid out as it is
+            expect(
+                paragraphOf(readWithSettings([p(r(t("a")))], [{ "m:mathPr": [setting("m:mathFont", "STIX Two Math")] }])).unsupported,
+            ).to.equal(undefined);
+        });
+
         it("should stop at text with a phonetic guide, a content part, text fitted to a width, two lines in one, text across in vertical text, a subdocument and a paragraph in an HTML division", () => {
             const unsupportedOf = (...children: readonly unknown[]): string | undefined =>
                 paragraphOf(readBody([p(...children)])).unsupported;

@@ -589,6 +589,8 @@ type Reader = {
     readonly down?: boolean;
     /** Whether it reads the paragraphs of a text box */
     readonly inTextBox?: boolean;
+    /** Why its equations can't be laid out as Word does for the document's maths settings, when they can't */
+    readonly maths?: string;
 };
 
 // Word's defaults for a section that doesn't give its page: Letter, with inch margins
@@ -1501,10 +1503,14 @@ const EQUATION_BROKEN = "an equation that doesn't fit on its line";
  * Reads an equation (`m:oMath`), or a paragraph of one (`m:oMathPara`), as Word lays out one of text: a box as wide as it
  * is, which takes room above and below the baseline as a line of Cambria Math does, in the size of its paragraph's text,
  * with its bookmarks before it. Word shows one alone in its paragraph on a line of its own, centred, which is as tall
- * (`word-equations.docx` EQ2c, EQ2d). Or why it can't be laid out: one of more than text (see {@link layOutEquation}), and
- * a paragraph of more than one equation
+ * (`word-equations.docx` EQ2c, EQ2d). Or why it can't be laid out: one of more than text (see {@link layOutEquation}), a
+ * paragraph of more than one equation, and one in a document whose maths settings aren't followed (see
+ * {@link readMathsSettings})
  */
-const readEquation = (element: XmlObject, paragraphRun: RunFormat): readonly LayoutItem[] | string => {
+const readEquation = (element: XmlObject, paragraphRun: RunFormat, reader: Reader): readonly LayoutItem[] | string => {
+    if (reader.maths !== undefined) {
+        return reader.maths;
+    }
     const name = nameOf(element);
     const equations = name === "m:oMath" ? [element] : childrenOf(element[name]).filter((child) => "m:oMath" in child);
     if (equations.length !== 1) {
@@ -1614,7 +1620,7 @@ const readInline = (
             if (name === STOP) {
                 return String(element[name]);
             }
-            return name === "m:oMath" || name === "m:oMathPara" ? readEquation(element, paragraphRun) : [];
+            return name === "m:oMath" || name === "m:oMathPara" ? readEquation(element, paragraphRun, reader) : [];
         }),
         reader,
     );
@@ -3995,6 +4001,23 @@ const readHyphenation = (settings: readonly XmlObject[]): Hyphenation =>
     onOff(settings, "w:doNotHyphenateCaps") === true ? { capitalsWhole: true } : {};
 
 /**
+ * Why a document's equations can't be laid out as Word does for its maths settings (`m:mathPr`), when they say what isn't
+ * followed: a maths font other than Cambria Math, whose widths aren't known, and margins or space around equations shown
+ * on lines of their own, which haven't been seen. Word writes Cambria Math and margins of 0. Its other maths settings are
+ * of what the layout stops at anyway, such as how an equation is broken or built up, or line an equation up on its line.
+ */
+const readMathsSettings = (settings: readonly XmlObject[]): string | undefined => {
+    const maths = childrenOf(find(settings, "m:mathPr"));
+    const valueIn = (name: string): string | undefined => stringOf(attributesOf(find(maths, name))["m:val"]);
+    if ((valueIn("m:mathFont") ?? "Cambria Math") !== "Cambria Math") {
+        return "an equation in a maths font other than Cambria Math";
+    }
+    return ["m:lMargin", "m:rMargin", "m:preSp", "m:postSp"].some((name) => (numberOf(valueIn(name)) ?? 0) !== 0)
+        ? "an equation in a document whose maths settings give equations on lines of their own margins or space around them"
+        : undefined;
+};
+
+/**
  * Reads the parts of the document's settings (`w:settings`) that change how it is laid out.
  */
 const readSettings = (
@@ -4179,6 +4202,7 @@ export const readContent = (body: XmlObject, parts: DocumentParts, { guess = fal
     const markers: FieldMarkers = { count: 0, relative: new Map() };
     const settings = childrenOf(parts.settings?.["w:settings"]);
     const decimalSymbol = valueOf(settings, "w:decimalSymbol");
+    const maths = readMathsSettings(settings);
     const readerOf = (inHeader: boolean): Reader => ({
         styles,
         numbering,
@@ -4188,6 +4212,7 @@ export const readContent = (body: XmlObject, parts: DocumentParts, { guess = fal
         fields: [],
         counters: new Map(),
         ...(decimalSymbol === undefined ? {} : { decimalSymbol }),
+        ...(maths === undefined ? {} : { maths }),
         ...(guess ? { guess } : {}),
     });
     const elements = unwrap(joinRemovedMarks(contentOf(body), styles, { nested: false, sized: false, part: "body" }), guess);
