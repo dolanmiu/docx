@@ -7,11 +7,12 @@ import { File, HeadingLevel, Packer, Paragraph, StyleLevel, TableOfContents } fr
 // http://officeopenxml.com/WPtableOfContents.php
 
 // Let's define the properties for generate a TOC for heading 1-5 and MySpectacularStyle,
-// making the entries be hyperlinks for the paragraph. The entries are written from the headings,
-// and Word fills in their page numbers when it updates the fields
+// making the entries be hyperlinks for the paragraph. With updateFields off, Word doesn't update all
+// of the document's fields when it opens it, so the table of contents stays empty until the reader
+// updates it in Word. Without pageNumbers, the table is written dirty, so Word still asks to update it
 const doc = new File({
     features: {
-        updateFields: true,
+        updateFields: false,
     },
     styles: {
         paragraphStyles: [

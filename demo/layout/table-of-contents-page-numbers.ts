@@ -26,9 +26,10 @@ const chapter = (number: number): readonly Paragraph[] => [
 ];
 
 const doc = new Document({
-    // Lays out the pages as Word would, and writes the page numbers of the table of contents and the page references.
-    // Without updateFields, Word shows them as they are written, and doesn't ask to update the fields
+    // Lays out the pages as Word would, and writes the page numbers of the table of contents and the page references
     pageNumbers: estimatePageNumbers,
+    // With updateFields off, Word shows the page numbers as they are written, and doesn't ask to update the fields
+    features: { updateFields: false },
     sections: [
         {
             children: [
