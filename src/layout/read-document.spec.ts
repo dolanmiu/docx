@@ -4692,10 +4692,14 @@ describe("readDocument", () => {
             expect(two.unsupported).to.equal(undefined);
             expect(two.noteColumns!.map((width) => Math.round(width * 100) / 100)).to.deep.equal([207.65, 207.65]);
             expect(sectionOf({ "w15:footnoteColumns": { _attr: { "w:val": 1 } } })).to.not.have.property("noteColumns");
-            // In a section of several columns, of text that runs down the page, or whose columns are spaced otherwise, which
-            // hasn't been seen
+            // More than Word's dialog offers, in a section of several columns, of text that runs down the page, or whose columns
+            // are spaced otherwise, which hasn't been seen: more aren't made, as a document can ask for any number
             const unseen =
-                "footnotes in columns of their own, in a section of several columns, of text that runs down the page, or whose columns are spaced otherwise than half an inch apart";
+                "footnotes in more than 4 columns of their own, or in columns of their own in a section of several columns, of text that runs down the page, or whose columns are spaced otherwise than half an inch apart";
+            expect(sectionOf({ "w15:footnoteColumns": { _attr: { "w:val": 4 } } }).noteColumns).to.have.length(4);
+            const many = sectionOf({ "w15:footnoteColumns": { _attr: { "w:val": 1e9 } } });
+            expect(many.unsupported).to.equal(unseen);
+            expect(many).to.not.have.property("noteColumns");
             const footnoteColumns = { "w15:footnoteColumns": { _attr: { "w:val": 2 } } };
             expect(sectionOf({ "w:cols": { _attr: { "w:num": 2 } } }, footnoteColumns).unsupported).to.equal(unseen);
             expect(sectionOf({ "w:cols": { _attr: { "w:space": 708 } } }, footnoteColumns).unsupported).to.equal(unseen);

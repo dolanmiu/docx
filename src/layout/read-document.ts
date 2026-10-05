@@ -4744,6 +4744,9 @@ const readGrid = (element: unknown, normalSize: number, { gutterAtTop }: PageSet
         : { linePitch, characterPitch: columns[0] / Math.floor(columns[0] / room) };
 };
 
+// Word's Footnote and Endnote dialog offers up to 4 columns of footnotes
+const MOST_NOTE_COLUMNS = 4;
+
 /**
  * Reads a section's properties (`w:sectPr`): its pages, how it starts, and its headers and footers. A section that
  * doesn't give a header or footer for a kind of page has the one of the section before. Its gutter is beside the text,
@@ -4774,6 +4777,7 @@ const readSection = (
     // Word lays a section's footnotes out in columns of their own, of the same width, half an inch apart, and evens them
     // out, as a page's footnotes in the section's own columns (stops2/word-stops-notes2.ts NT16b to NT16e)
     const noteColumnCount = numberOf(attributesOf(find(properties, "w15:footnoteColumns"))["w:val"]) ?? 0;
+    const inNoteColumns = noteColumnCount > 1 && noteColumnCount <= MOST_NOTE_COLUMNS;
     const marginBottom = twips(margins["w:bottom"]) ?? DEFAULT_SECTION.marginBottom;
     const unsupported =
         typeof grid === "string"
@@ -4790,10 +4794,11 @@ const readSection = (
                       (sectionStart === "nextColumn" || (sectionStart === "continuous" && down !== previous.textRunsDown))
                     ? "a continuous section break after text that runs down the page, into text that doesn't"
                     : noteColumnCount > 1 &&
-                        (columns.length > 1 ||
+                        (!inNoteColumns ||
+                            columns.length > 1 ||
                             down !== undefined ||
                             (twips(attributesOf(find(properties, "w:cols"))["w:space"]) ?? DEFAULT_COLUMN_SPACE) !== DEFAULT_COLUMN_SPACE)
-                      ? "footnotes in columns of their own, in a section of several columns, of text that runs down the page, or whose columns are spaced otherwise than half an inch apart"
+                      ? "footnotes in more than 4 columns of their own, or in columns of their own in a section of several columns, of text that runs down the page, or whose columns are spaced otherwise than half an inch apart"
                       : undefined;
     const headers = readReferences(properties, "w:headerReference", readPart);
     const footers = readReferences(properties, "w:footerReference", readPart);
@@ -4814,7 +4819,7 @@ const readSection = (
         start: down !== undefined && sectionStart === "continuous" && previous?.textRunsDown !== down ? "nextPage" : sectionStart,
         titlePage: onOff(properties, "w:titlePg") === true,
         columns,
-        ...(noteColumnCount > 1
+        ...(inNoteColumns
             ? {
                   noteColumns: Array.from(
                       { length: noteColumnCount },
