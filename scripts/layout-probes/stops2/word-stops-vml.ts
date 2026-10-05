@@ -31,6 +31,7 @@
  * - word-stops-vml-nested: VM22d, a text box in a text box
  * - word-stops-vml-note: VM26a, a footnote in a text box
  * - word-stops-vml-shape-type: VM29e, a w:pict with only a shape type
+ * - word-stops-vml-pictures2: VM30a to VM30h, for the next batch: the pictures as Word writes them
  *
  * VM20a to VM20f: a VML picture (v:imagedata) in the line of 72 by 36 points (a, VM8 again), 36 by 72 (b), 100 by 100
  *   (c), 20 by 20 (d), 72 by 36 with o:ole (e), and with cropping (f)
@@ -50,9 +51,17 @@
  * VM28a to VM28d: placed against the inside margin (a), the outside margin (b); lined up inside (c) and outside (d)
  * VM29a to VM29d: lengths in pixels (a), ems (b), with no unit (c), and a shape with no size (d)
  * VM29e, VM29f: a w:pict with only a v:shapetype (e), and a v:group of two rectangles (f)
+ * VM30a to VM30h: Word's PDF of word-stops-vml-pictures drew VM20's pictures, a PNG of one pixel in a shape of 72 by 36
+ *   points, 36 by 72 and 100 by 100, 33 points square, and one of 20 by 20 at 20, by no rule found. These are the
+ *   pictures as Word writes them, with Word's shape type for pictures, whose formulas crop the picture by its pixels, and
+ *   o:spid: the pixel in 72 by 36 (a); a PNG of 100 by 50 pixels in 72 by 36 (b), 36 by 72 (c), 20 by 20 (d), 100 by 100
+ *   (e) and 150 by 75 (h), as Word writes it (g, with visibility:visible and mso-wrap-style:square); and the PNG of 100
+ *   by 50 in 72 by 36 with the shape type without formulas of the first batch (f)
  *
  * Usage: npm run run-ts -- scripts/layout-probes/stops2/word-stops-vml.ts [folder]
  */
+import { deflateSync } from "node:zlib";
+
 import JSZip from "jszip";
 
 import { AlignmentType, Document, Header, LevelFormat, Packer, Paragraph, TextRun } from "docx";
@@ -236,6 +245,62 @@ const proseDocument = async (
 };
 
 await proseDocument("word-stops-vml-pictures", PICTURES);
+
+// Word's shape type for pictures, with its formulas, which crop the picture by its pixels (pixelWidth, pixelHeight)
+const WORD_SHAPETYPE_PICTURE =
+    '<v:shapetype id="_x0000_t75" coordsize="21600,21600" o:spt="75" o:preferrelative="t" path="m@4@5l@4@11@9@11@9@5xe" filled="f" stroked="f"><v:stroke joinstyle="miter"/><v:formulas><v:f eqn="if lineDrawn pixelLineWidth 0"/><v:f eqn="sum @0 1 0"/><v:f eqn="sum 0 0 @1"/><v:f eqn="prod @2 1 2"/><v:f eqn="prod @3 21600 pixelWidth"/><v:f eqn="prod @3 21600 pixelHeight"/><v:f eqn="sum @0 0 1"/><v:f eqn="prod @6 1 2"/><v:f eqn="prod @7 21600 pixelWidth"/><v:f eqn="sum @8 21600 0"/><v:f eqn="prod @7 21600 pixelHeight"/><v:f eqn="sum @10 21600 0"/></v:formulas><v:path o:extrusionok="f" gradientshapeok="t" o:connecttype="rect"/><o:lock v:ext="edit" aspectratio="t"/></v:shapetype>';
+// The first batch's shape type without formulas, as another type, so that a document can have both
+const BARE_SHAPETYPE_PICTURE = SHAPETYPE_PICTURE.replace('id="_x0000_t75"', 'id="_x0000_t750"');
+let spids = 1025;
+/** A picture as Word writes one: its shape with o:spid, of Word's shape type unless another is given */
+const wordPicture = (style: string, image: string, type = WORD_SHAPETYPE_PICTURE): string =>
+    `<w:r><w:pict>${type}<v:shape id="${shapeId()}" o:spid="_x0000_i${spids++}" type="#${/id="([^"]+)"/.exec(type)![1]}" style="${style}"><v:imagedata r:id="${image}" o:title=""/></v:shape></w:pict></w:r>`;
+const PICTURES2: readonly Case[] = [
+    ["VM30a", () => wordPicture("width:72pt;height:36pt", "rIdStopsImage")],
+    ["VM30b", () => wordPicture("width:72pt;height:36pt", "rIdStopsWide")],
+    ["VM30c", () => wordPicture("width:36pt;height:72pt", "rIdStopsWide")],
+    ["VM30d", () => wordPicture("width:20pt;height:20pt", "rIdStopsWide")],
+    ["VM30e", () => wordPicture("width:100pt;height:100pt", "rIdStopsWide")],
+    ["VM30f", () => wordPicture("width:72pt;height:36pt", "rIdStopsWide", BARE_SHAPETYPE_PICTURE)],
+    ["VM30g", () => wordPicture("width:72pt;height:36pt;visibility:visible;mso-wrap-style:square", "rIdStopsWide")],
+    ["VM30h", () => wordPicture("width:150pt;height:75pt", "rIdStopsWide")],
+];
+
+/** A grey PNG of a size, 8 bits a channel, for a picture of more than one pixel */
+const greyPng = (width: number, height: number): Buffer => {
+    const table = Array.from(
+        { length: 256 },
+        (_, n) => Array.from({ length: 8 }).reduce<number>((c) => (c & 1 ? 0xedb88320 ^ (c >>> 1) : c >>> 1), n) >>> 0,
+    );
+    const crc = (data: Buffer): number => (data.reduce((c, byte) => table[(c ^ byte) & 0xff] ^ (c >>> 8), 0xffffffff) ^ 0xffffffff) >>> 0;
+    const chunk = (type: string, data: Buffer): Buffer => {
+        const length = Buffer.alloc(4);
+        length.writeUInt32BE(data.length);
+        const typed = Buffer.concat([Buffer.from(type, "latin1"), data]);
+        const sum = Buffer.alloc(4);
+        sum.writeUInt32BE(crc(typed));
+        return Buffer.concat([length, typed, sum]);
+    };
+    const header = Buffer.alloc(13);
+    header.writeUInt32BE(width, 0);
+    header.writeUInt32BE(height, 4);
+    header[8] = 8;
+    header[9] = 2;
+    // Each row filtered with 0, then grey
+    const rows = Buffer.concat(Array.from({ length: height }, () => Buffer.concat([Buffer.from([0]), Buffer.alloc(width * 3, 0x80)])));
+    return Buffer.concat([
+        Buffer.from([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a]),
+        chunk("IHDR", header),
+        chunk("IDAT", deflateSync(rows)),
+        chunk("IEND", Buffer.alloc(0)),
+    ]);
+};
+await proseDocument("word-stops-vml-pictures2", PICTURES2, {
+    files: { "word/media/stops-wide.png": greyPng(100, 50) },
+    injections: [
+        relationship("rIdStopsWide", "http://schemas.openxmlformats.org/officeDocument/2006/relationships/image", "media/stops-wide.png"),
+    ],
+});
 
 // The embedded objects' document: a Word document, embedded twice
 const embedded = await Packer.toBuffer(new Document({ sections: [{ children: [new Paragraph("VM21 embedded document")] }] }));

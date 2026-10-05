@@ -89,7 +89,7 @@ import {
     tableGeometry,
 } from "./table-formats";
 import { type FrameProperties, readFrameProperties } from "./text-frames";
-import { type VmlShape, isVmlFalse, readVmlFloating, vmlLength, vmlShapeOf } from "./vml-drawings";
+import { DEFAULT_OUTLINE, type VmlShape, groupOutlined, readVmlFloating, vmlLength, vmlOutline, vmlShapeOf } from "./vml-drawings";
 
 /**
  * A paragraph's content: text, tabs, breaks, pictures and bookmarks, and the results of fields that depend on the pages
@@ -123,7 +123,9 @@ export type LayoutItem =
     /**
      * A text box in the line (a VML shape with `v:textbox`), with its run's font: as wide in the line as it is with its
      * outline, and as tall as its paragraphs, broken into lines in the room for its text (`textWidth`), and the room it
-     * takes above and below them (`room`): its insets, what Word adds to a box sized to its text, and its outline
+     * takes above and below them (`room`): its insets, its outline inside the box and outside it, and what Word adds to its
+     * line. One Word doesn't size to its text is as tall as its own height, with its outline and that (`fixed`), with the
+     * room its text has in it (`inner`), which the text must fit in
      */
     | {
           readonly type: "textBox";
@@ -132,6 +134,7 @@ export type LayoutItem =
           readonly room: number;
           readonly blocks: readonly Block[];
           readonly font: TextFont;
+          readonly fixed?: { readonly height: number; readonly inner: number };
       };
 
 /** Lengths on each side of something, in points */
@@ -190,20 +193,28 @@ export type FloatingDrawing = {
      */
     readonly mayOverlap: boolean;
     /**
-     * The paragraphs of a text frame (`w:framePr`), when it is one, which are laid out in its box, and size it: its width,
-     * when it is as wide as its text, and its height, as its height rule says
+     * The paragraphs of a text frame (`w:framePr`), or of a VML text box that text flows around, when it is one, which
+     * are laid out in its box, and size it: its width, when it is as wide as its text, and its height, as its height rule
+     * says
      */
     readonly frame?: TextFrame;
+    /**
+     * Whether Word moves it back onto the page when it would go past the page's right edge, as it does a VML drawing
+     * (`word-stops-vml-shapes.docx` VM28a, VM28b)
+     */
+    readonly keptOnPage?: true;
 };
 
 /**
  * A text frame's paragraphs, and how they size it: its height is theirs, at least its own, or its own exactly, and its
- * width is its own, or theirs (`fitsWidth`)
+ * width is its own, or theirs (`fitsWidth`). Its text is laid out within its insets (`inset`), which it is wider and
+ * taller by: a VML text box's insets and its outline
  */
 export type TextFrame = {
     readonly blocks: readonly ParagraphBlock[];
     readonly heightRule: "auto" | "atLeast" | "exact";
     readonly fitsWidth: boolean;
+    readonly inset?: Sides;
 };
 
 export type ParagraphBlock = {
@@ -661,6 +672,12 @@ type Reader = {
     readonly down?: boolean;
     /** Whether it reads the paragraphs of a text box */
     readonly inTextBox?: boolean;
+    /**
+     * The ids of the footnotes whose references are in text boxes, which Word leaves out, reference and note
+     * (`word-stops-vml-note.docx` VM26a)
+     */
+    // eslint-disable-next-line functional/prefer-readonly-type
+    readonly notesInTextBoxes: Set<string>;
     /** Why its equations can't be laid out as Word does for the document's maths settings, when they can't */
     readonly maths?: string;
     /** Why its displayed equations can't be laid out as Word does for the document's maths settings, when they can't */
@@ -1053,33 +1070,58 @@ const readDrawing = (element: XmlObject, font: TextFont, reader: Reader): readon
 // (`word-stops-compat-12.docx` CM14), so the layout stops at a VML drawing that takes room in a document in their
 // compatibility modes
 const OLDER_VML = "a VML drawing in a document in compatibility mode 12 or 11";
+// A VML shape with neither a width nor a height is 50 points square (`word-stops-vml-shapes.docx` VM29d)
+const DEFAULT_VML_SIZE = 50;
+// Word draws a VML picture at a size other than its own: one of 72 by 36 points, 36 by 72 or 100 by 100 as 33 points
+// square, and one of 20 by 20 at 20 (`word-vml.docx` VM8, `word-stops-vml-pictures.docx` VM20a to VM20d, VM20f), by no
+// rule found. A picture that is an object's (`o:ole`), and an embedded object (`w:object`), it draws at the size given
+// (`word-stops-vml-objects.docx` VM20e, VM21a, VM21b)
+const VML_PICTURE = "a VML picture";
 
 /** Whether the document is in Word 2007's or 2003's compatibility mode, where VML drawings aren't laid out as Word does */
 const olderVml = ({ compatibilityMode }: Reader): boolean => compatibilityMode !== undefined && compatibilityMode < 14;
 
 /**
- * Reads a VML drawing (`w:pict`), as Word lays it out (scripts/layout-probes/word-vml.ts). A shape in the line is a box of
- * its size, with its run's font, standing on the baseline, as a picture is (VM7), and a text box in it is a box sized to
- * its text (VM1 to VM5). One placed on the page (`position:absolute`) that text flows around (`w10:wrap`) is a drawing
- * that text flows around, as a DrawingML one is (VM9 to VM11, VM15), and one with no wrapping is in front of the text or
- * behind it, and takes no room (VM6), in a header or footer too, as docx's watermarks are. One in a header or footer that
- * text flows around is one the body's text goes round (VM13), as a DrawingML one is. It says why where Word's way with it
- * isn't known: a picture, which Word drew at a size other than its own (VM8), a shape with an outline, which takes room
- * around it (VM1), tight or through wrapping, which Word doesn't wrap as square wrapping (VM14), and one in a header's
- * line, whose room there doesn't follow the body's (VM12).
+ * Reads a VML drawing (`w:pict`), as Word lays it out (scripts/layout-probes/word-vml.ts and
+ * scripts/layout-probes/stops2/word-stops-vml.ts). A shape in the line is a box of its size, with its run's font, standing
+ * on the baseline, as a picture is (VM7), and its outline takes its weight more across and down (VM23a, VM23b); a group of
+ * shapes is a box of its size (VM29f). A text box in it is a box sized to its text (VM1 to VM5, VM25a to VM25e). One placed
+ * on the page (`position:absolute`) that text flows around (`w10:wrap`) is a drawing that text flows around, as a
+ * DrawingML one is (VM9 to VM11, VM15, VM24a to VM24c), and one with no wrapping is in front of the text or behind it, and
+ * takes no room (VM6), in a header or footer too, as docx's watermarks are. One in a header or footer that text flows
+ * around is one the body's text goes round (VM13), as a DrawingML one is, and one in the line of a header or footer takes
+ * the room it takes in the body (VM22a to VM22c). It says why where Word's way with it isn't known: a picture, which Word
+ * drew at a size other than its own (VM8, VM20), one in the line of a text box, which Word wouldn't open, and a group with a
+ * shape with an outline, or that text flows around
  */
 const readVml = (pict: unknown, font: TextFont, reader: Reader): readonly LayoutItem[] | string => {
     const shape = vmlShapeOf(pict);
-    if (typeof shape === "string") {
-        return shape;
+    if (shape === undefined || typeof shape === "string") {
+        return shape ?? [];
     }
     const { style, element } = shape;
-    const children = childrenOf(element[nameOf(element)]);
-    const attributes = attributesOf(element[nameOf(element)]);
-    const width = vmlLength(style.get("width"));
-    const height = vmlLength(style.get("height"));
-    const outlined = !isVmlFalse(attributes.stroked ?? "t") && style.get("visibility") !== "hidden";
-    const unsized = (): string => (typeof width === "string" ? width : typeof height === "string" ? height : "a VML drawing with no size");
+    const name = nameOf(element);
+    const children = childrenOf(element[name]);
+    const attributes = attributesOf(element[name]);
+    const given = { width: vmlLength(style.get("width")), height: vmlLength(style.get("height")) };
+    const { width, height } =
+        given.width === undefined && given.height === undefined ? { width: DEFAULT_VML_SIZE, height: DEFAULT_VML_SIZE } : given;
+    const unsized = (): string =>
+        typeof width === "string"
+            ? width
+            : typeof height === "string"
+              ? height
+              : "a VML drawing with a width but no height, or a height but no width";
+    const group = name === "v:group";
+    if (group && groupOutlined(element)) {
+        // Whether the outlines of its shapes take room beyond it hasn't been seen
+        return "a VML group of shapes with an outline";
+    }
+    const outline = group ? { weight: 0, drawn: false } : vmlOutline(attributes, style);
+    if (typeof outline === "string") {
+        return outline;
+    }
+    const picture = find(children, "v:imagedata") !== undefined && attributes["o:ole"] === undefined;
     if (style.get("position") === "absolute") {
         const wrap = find(children, "w10:wrap");
         if (wrap === undefined || attributesOf(wrap).type === "none") {
@@ -1089,19 +1131,20 @@ const readVml = (pict: unknown, font: TextFont, reader: Reader): readonly Layout
             ? OLDER_VML
             : reader.inCell || reader.inNote || reader.inTextBox
               ? IN_CELL_OR_NOTE
-              : shape.text !== undefined
-                ? "a text box that text flows around"
-                : find(children, "v:imagedata") !== undefined
-                  ? "a VML picture"
-                  : outlined
-                    ? "a VML drawing with an outline that text flows around"
-                    : typeof width !== "number" || typeof height !== "number"
-                      ? unsized()
-                      : undefined;
+              : group
+                ? "a VML group of shapes that text flows around"
+                : picture
+                  ? VML_PICTURE
+                  : typeof width !== "number" || typeof height !== "number"
+                    ? unsized()
+                    : undefined;
         if (reason !== undefined) {
             return reason;
         }
-        const floating = readVmlFloating(shape, wrap as XmlObject, width as number, height as number);
+        if (shape.text !== undefined) {
+            return readFloatingTextBox(shape, wrap as XmlObject, width as number, height as number, outline, reader);
+        }
+        const floating = readVmlFloating(shape, wrap as XmlObject, width as number, height as number, outline.drawn ? outline.weight : 0);
         return typeof floating === "string" ? floating : floatingItem(floating, reader);
     }
     // Guessing, a shape in the line of a size Word's way with isn't known takes that size
@@ -1112,84 +1155,160 @@ const readVml = (pict: unknown, font: TextFont, reader: Reader): readonly Layout
     if (olderVml(reader)) {
         return OLDER_VML;
     }
-    if (reader.inHeader || reader.inTextBox) {
-        return sized("a VML drawing in the line of a header, footer or text box");
+    if (reader.inTextBox) {
+        return sized("a VML drawing in the line of a text box");
     }
     if (shape.text !== undefined) {
-        return readTextBox(shape, width, font, outlined, reader);
+        return readTextBox(shape, width, height, outline, font, reader);
     }
-    if (find(children, "v:imagedata") !== undefined) {
-        return sized("a VML picture");
+    if (picture) {
+        return sized(VML_PICTURE);
     }
-    if (outlined) {
-        return sized("a VML shape with an outline in the line");
+    if (typeof width !== "number" || typeof height !== "number") {
+        return unsized();
     }
-    return typeof width !== "number" || typeof height !== "number" ? unsized() : [{ type: "box", width, height, font }];
+    const room = outline.drawn ? outline.weight : 0;
+    return [{ type: "box", width: width + room, height: height + room, font }];
 };
 
 // The room between a text box's edges and its text when it doesn't say (`v:textbox`'s inset): 0.1 inch left and right,
 // and 0.05 inch above and below
 const TEXT_BOX_INSETS: Sides = { left: 7.2, top: 3.6, right: 7.2, bottom: 3.6 };
-// What Word adds to the height of a text box sized to its text, besides its insets, and the room its outline takes in the
-// line, across and down, in points (`word-vml.docx` VM1 to VM5): a box of one line of Calibri 11 is 271132 EMUs, 21.35
-// points, and of three lines 612108, which is the lines, the insets and 0.72 points, and its line is 0.72 taller again,
-// as a hidden one's, which Word draws no outline for, isn't (VM4)
-const TEXT_BOX_FIT = 0.72;
-const TEXT_BOX_OUTLINE = 0.72;
+// What Word adds to the line of a text box beyond its box and its outline, in points: half a point, but for one sized to
+// its text with Word's own outline, whose line is its box and its outline, to within half a point (`word-vml.docx` VM1 to
+// VM5, `word-stops-vml-header.docx` VM22a, VM22b, `word-stops-vml-text-boxes.docx` VM25a to VM25e,
+// `word-stops-vml-note.docx` VM26a)
+const TEXT_BOX_EXTRA = 0.5;
+
+/**
+ * The room between a text box's edges and its text (`v:textbox`'s inset, "left,top,right,bottom", each as Word has it when
+ * it isn't given: `word-stops-vml-text-boxes.docx` VM25b, VM25c), or why it isn't known
+ */
+const textBoxInsets = (textbox: unknown): Sides | string => {
+    const given = String(attributesOf(textbox).inset ?? "")
+        .split(",")
+        .map((value) => value.trim());
+    const [left, top, right, bottom] = (["left", "top", "right", "bottom"] as const).map((side, index) =>
+        given[index] ? vmlLength(given[index]) : TEXT_BOX_INSETS[side],
+    );
+    const unknown = [left, top, right, bottom].find((value): value is string => typeof value === "string");
+    return unknown ?? { left: left as number, top: top as number, right: right as number, bottom: bottom as number };
+};
+
+/**
+ * The paragraphs of a text box, read with the lists in them counted apart from the text's, as Word numbers them: a list
+ * in a text box starts at 1, and the text's paragraphs of the same list after it don't count the box's
+ * (`word-stops-vml-text-boxes.docx` VM26b). Or why they can't be laid out: a paragraph that can't be, or a list with
+ * paragraphs before the box, in the text or in another box, which Word may number on from or not
+ */
+const textBoxBlocks = (shape: VmlShape, reader: Reader): readonly Block[] | string => {
+    const counters = new Map<string, ListCount>();
+    const blocks = readBlocks(shape.text!, { ...reader, inTextBox: true, counters });
+    const unsupported = blocks.map(({ unsupported: why }) => why).find((why) => why !== undefined);
+    if (unsupported !== undefined) {
+        return unsupported;
+    }
+    for (const definition of counters.keys()) {
+        if (reader.counters.has(definition)) {
+            return "a list in a text box with paragraphs of its list before it";
+        }
+        // Known to the text as counted, with its count as it was, so that a later box's paragraphs of the list stop
+        // eslint-disable-next-line functional/immutable-data
+        reader.counters.set(definition, { numbers: [], started: [] });
+    }
+    return blocks;
+};
 
 /**
  * Reads a text box in the line (docx's `Textbox`): its paragraphs, and the box they are in, which Word sizes to them, as
- * docx writes it to be (`mso-fit-shape-to-text`), whatever height it gives (`word-vml.docx` VM3). The bookmarks and fields
- * in it are where it is, in the paragraph it is in. Or why it can't be laid out: one Word doesn't size to its text, one
- * with insets of its own or an outline of another weight, which Word hasn't been seen with, and one with notes or lists
- * in it, which Word may number in an order not yet followed
+ * docx writes it to be (`mso-fit-shape-to-text`), whatever height it gives (`word-vml.docx` VM3), or which is as tall as
+ * it says otherwise, its text at its top (`word-stops-vml-text-boxes.docx` VM25a). Its text is laid out in its width less
+ * its insets and its outline (`word-stops-floats2.docx` TX1a to TX1k), and the box is as tall as its lines, its insets and
+ * its outline, which takes its weight more in the line, or none when it is hidden (VM25b to VM25e). The bookmarks and
+ * fields in it are where it is, in the paragraph it is in, and a footnote referred to in it is left out, reference and
+ * note, as Word leaves it (`word-stops-vml-note.docx` VM26a). Or why it can't be laid out
  */
 const readTextBox = (
     shape: VmlShape,
     width: number | string | undefined,
+    height: number | string | undefined,
+    outline: { readonly weight: number; readonly drawn: boolean },
     font: TextFont,
-    outlined: boolean,
     reader: Reader,
 ): readonly LayoutItem[] | string => {
-    const attributes = attributesOf(shape.element[nameOf(shape.element)]);
     const textbox = find(childrenOf(shape.element[nameOf(shape.element)]), "v:textbox");
-    const references = elementsIn(shape.text!, (name) => name === "w:footnoteReference" || name === "w:endnoteReference");
-    const reason =
-        typeof width !== "number"
-            ? (width ?? "a VML drawing with no size")
-            : shape.textStyle?.get("mso-fit-shape-to-text") !== "t"
-              ? "a text box not sized to its text"
-              : attributesOf(textbox).inset !== undefined
-                ? "a text box with insets of its own"
-                : attributes.strokeweight !== undefined
-                  ? "a text box with an outline of its own"
-                  : references.length > 0
-                    ? "a footnote or endnote in a text box"
-                    : undefined;
-    if (reason !== undefined) {
-        return reason;
+    const insets = textBoxInsets(textbox);
+    const fits = shape.textStyle?.get("mso-fit-shape-to-text") === "t";
+    if (typeof width !== "number") {
+        return width ?? "a VML drawing with no size";
     }
-    const blocks = readBlocks(shape.text!, { ...reader, inTextBox: true });
-    const unsupported =
-        blocks.map(({ unsupported: why }) => why).find((why) => why !== undefined) ??
-        (blocks.some((block) => block.type === "paragraph" && block.list !== undefined) ? "a list in a text box" : undefined);
-    if (unsupported !== undefined) {
-        return unsupported;
+    if (typeof insets === "string") {
+        return insets;
     }
-    const outline = outlined ? TEXT_BOX_OUTLINE : 0;
-    const { left, right, top, bottom } = TEXT_BOX_INSETS;
+    if (!fits && typeof height !== "number") {
+        return height ?? "a VML drawing with no size";
+    }
+    const blocks = textBoxBlocks(shape, reader);
+    if (typeof blocks === "string") {
+        return blocks;
+    }
+    const { weight, drawn } = outline;
+    const { left, right, top, bottom } = insets;
+    const outside = drawn ? weight : 0;
+    const extra = fits && weight === DEFAULT_OUTLINE ? 0 : TEXT_BOX_EXTRA;
     const markers = markersIn(blocks).map((name) => ({ type: "marker" as const, name }));
     return [
         ...markers,
         {
             type: "textBox",
-            width: (width as number) + outline,
-            textWidth: (width as number) - left - right,
-            room: top + bottom + TEXT_BOX_FIT + outline,
+            width: width + outside,
+            textWidth: width - left - right - weight,
+            room: top + bottom + weight + outside + extra,
             blocks,
             font,
+            ...(fits ? {} : { fixed: { height: (height as number) + outside + extra, inner: (height as number) - top - bottom - weight } }),
         },
     ];
+};
+
+/**
+ * Reads a text box placed on the page that text flows around (`position:absolute` with `w10:wrap`), as Word lays it out:
+ * a drawing that text flows around, sized to its text as a text box in the line is, with its outline's room beside it
+ * (`word-stops-vml-text-boxes.docx` VM24c). The bookmarks and fields in it are on its anchor's page. One Word doesn't size
+ * to its text, and one with a table in it, haven't been seen
+ */
+const readFloatingTextBox = (
+    shape: VmlShape,
+    wrap: XmlObject,
+    width: number,
+    height: number,
+    outline: { readonly weight: number; readonly drawn: boolean },
+    reader: Reader,
+): readonly LayoutItem[] | string => {
+    const textbox = find(childrenOf(shape.element[nameOf(shape.element)]), "v:textbox");
+    const insets = textBoxInsets(textbox);
+    if (typeof insets === "string") {
+        return insets;
+    }
+    if (shape.textStyle?.get("mso-fit-shape-to-text") !== "t") {
+        return "a text box that text flows around not sized to its text";
+    }
+    const blocks = textBoxBlocks(shape, reader);
+    if (typeof blocks === "string") {
+        return blocks;
+    }
+    const paragraphs = blocks.filter((block): block is ParagraphBlock => block.type === "paragraph");
+    if (paragraphs.length !== blocks.length) {
+        return "a table in a text box that text flows around";
+    }
+    const floating = readVmlFloating(shape, wrap, width, height, outline.drawn ? outline.weight : 0);
+    if (typeof floating === "string") {
+        return floating;
+    }
+    const half = outline.weight / 2;
+    const inset = { left: insets.left + half, right: insets.right + half, top: insets.top + half, bottom: insets.bottom + half };
+    const items = floatingItem({ ...floating, frame: { blocks: paragraphs, heightRule: "auto", fitsWidth: false, inset } }, reader);
+    return typeof items === "string" ? items : [...markersIn(blocks).map((name) => ({ type: "marker" as const, name })), ...items];
 };
 
 // The wrapping of a drawing that text flows around, by its element
@@ -1522,6 +1641,20 @@ const readRun = (element: XmlObject, paragraphRun: RunFormat, reader: Reader, re
             case "w:footnoteReference":
             case "w:endnoteReference": {
                 const id = String(attributesOf(child[name])["w:id"]);
+                if (reader.inTextBox) {
+                    // Word leaves a footnote referred to in a text box out, reference and note (`word-stops-vml-note.docx`
+                    // VM26a). Whether it does an endnote hasn't been seen
+                    if (name === "w:endnoteReference") {
+                        return "an endnote in a text box";
+                    }
+                    // eslint-disable-next-line functional/immutable-data
+                    reader.notesInTextBoxes.add(id);
+                    return [];
+                }
+                if (name === "w:footnoteReference" && reader.notesInTextBoxes.size > 0) {
+                    // Whether Word counts a footnote left out of a text box in the numbers of those after it hasn't been seen
+                    return "a footnote after one in a text box";
+                }
                 /** The marker at the reference, and its note's number, unless a mark of its own follows it in its place */
                 const reference = (note: NoteReference | undefined, numbered: boolean): readonly LayoutItem[] =>
                     note === undefined
@@ -1576,11 +1709,27 @@ const readRun = (element: XmlObject, paragraphRun: RunFormat, reader: Reader, re
                     : font.border
                       ? guessedOr(reader, "a picture in text with a border", () => readVml(child["w:pict"], font, reader))
                       : readVml(child["w:pict"], font, reader);
-            case "w:object":
-                // An object embedded in the document, such as a spreadsheet or an old equation, whose picture Word may draw at
-                // a size other than its own, as it does a VML picture (`word-vml.docx` VM8), in a header or footer too, where it
-                // takes room in the line
-                return format.hidden ? [] : "an embedded object";
+            case "w:object": {
+                // An object embedded in the document, such as a spreadsheet or an old equation, whose picture Word draws at the
+                // size its shape gives, standing on the baseline, as it does a VML picture that is an object's
+                // (`word-stops-vml-objects.docx` VM20e, VM21a, VM21b), where it drew other VML pictures at other sizes (VM8). One
+                // in hidden text takes no room
+                if (format.hidden) {
+                    return [];
+                }
+                if (olderVml(reader)) {
+                    return OLDER_VML;
+                }
+                const object = vmlShapeOf(child["w:object"]);
+                if (object === undefined || typeof object === "string") {
+                    return "an embedded object without a shape of its own";
+                }
+                const width = vmlLength(object.style.get("width"));
+                const height = vmlLength(object.style.get("height"));
+                return typeof width === "number" && typeof height === "number"
+                    ? [{ type: "box", width, height, font }]
+                    : "an embedded object with no size";
+            }
             case "w:dayShort":
             case "w:dayLong":
             case "w:monthShort":
@@ -2210,12 +2359,13 @@ const readFrameOf = (
     if (element === undefined) {
         return undefined;
     }
-    if (reader.inNote && !reader.inEndnote && !reader.inCell && !reader.inTextBox) {
-        // In a footnote's text, Word lays its paragraph out there, as one not in a frame (`word-stops-floats.docx` FR3b)
+    if (reader.inNote && !reader.inCell && !reader.inTextBox) {
+        // In a footnote's or endnote's text, Word lays its paragraph out there, as one not in a frame
+        // (`word-stops-floats.docx` FR3b, `word-stops-floats2.docx` EN1b)
         return undefined;
     }
-    if (reader.inCell || reader.inNote || reader.inHeader || reader.inTextBox) {
-        return "a text frame in a table cell, endnote, header, footer or text box";
+    if (reader.inCell || reader.inHeader || reader.inTextBox) {
+        return "a text frame in a table cell, header, footer or text box";
     }
     const frame = readFrameProperties(element);
     if (typeof frame === "string") {
@@ -3089,8 +3239,10 @@ const readTable = (element: XmlObject, reader: Reader): TableBlock | undefined =
     // beside a drawing with square wrapping (`word-floats2.docx` G24 to G29). In a footnote's text, Word lays it out there,
     // as a table that doesn't float (`word-stops-floats.docx` FT6c). One in a table cell, a header or footer, or an
     // endnote, which Word lays out otherwise (FT6a, FT6b) or hasn't been seen, isn't followed yet
-    const inFootnote = reader.inNote === true && reader.inEndnote !== true && !reader.inCell && reader.inTextBox !== true;
-    const floatElement = inFootnote ? undefined : find(properties, "w:tblpPr");
+    // In a footnote's or an endnote's text, Word lays a table that text flows around out as one it doesn't flow around
+    // (`word-stops-floats.docx` FT6c, `word-stops-floats2.docx` EN1a)
+    const inNoteText = reader.inNote === true && !reader.inCell && reader.inTextBox !== true;
+    const floatElement = inNoteText ? undefined : find(properties, "w:tblpPr");
     const float = floatElement === undefined ? undefined : readTableFloat(floatElement, find(properties, "w:tblOverlap"));
     // In compatibility mode, Word 2010 and before put a table's text, rather than its borders, at its indent, and give one
     // sized to its text its cells' margins beside the page's text (`word-stops-compat-14.docx` CM4, CM5, CM11, CM16). That
@@ -3108,8 +3260,8 @@ const readTable = (element: XmlObject, reader: Reader): TableBlock | undefined =
     const unsupported =
         withoutGuess?.unsupported ??
         (reader.down === true ? "a table on text that runs down the page" : undefined) ??
-        (float !== undefined && (reader.inCell || reader.inNote || reader.inHeader)
-            ? "a table that text flows around in a table cell, header, footer or endnote"
+        (float !== undefined && (reader.inCell || reader.inHeader)
+            ? "a table that text flows around in a table cell, header or footer"
             : undefined) ??
         (float !== undefined && older ? "a table that text flows around in a document in compatibility mode" : undefined) ??
         (marginsBeside && fits && (reader.inCell === true || indent !== 0 || givenWidth.share !== undefined)
@@ -3190,33 +3342,31 @@ const TABLE_AXES = {
 
 /**
  * Where a table that text flows around is (`w:tblpPr`), or why it can't be followed. One that doesn't say what it is
- * placed against is placed against the margins, as Word places it: across the page, where the margins and the column are
- * the same in one column, so it stops in columns, and down the page, from the top margin (`word-stops-floats.docx` FT7a,
- * FT7b). Lined up inline against the text, it is at the top of the paragraph after it (FT7c)
+ * placed against is placed against the column across the page and the margins down it, as Word places it
+ * (`word-stops-floats.docx` FT7a, FT7b, `word-stops-floats2.docx` CO1a). Lined up inline against the text, it is at the
+ * top of the paragraph after it (FT7c)
  */
 const readTableFloat = (element: unknown, overlap: unknown): TableFloat | string => {
     const attributes = attributesOf(element);
     const position = (anchor: keyof typeof TABLE_AXES, spec: string, at: string): DrawingPosition | string => {
         const { from: anchors, alignments } = TABLE_AXES[anchor];
         const given = attributes[`w:${anchor}`];
-        const from = given === undefined ? "margin" : anchors.get(String(given));
+        // Without what it is placed against, Word places it against the column across the page (`word-stops-floats.docx`
+        // FT7a, `word-stops-floats2.docx` CO1a) and the margins down it (FT7b)
+        const from = given === undefined ? (anchor === "horzAnchor" ? "column" : "margin") : anchors.get(String(given));
         const align = attributes[`w:${spec}`];
         if (from === undefined) {
             return "a table that text flows around placed against what isn't followed yet";
         }
-        const unsaid =
-            given === undefined && anchor === "horzAnchor"
-                ? { inColumns: "a table that text flows around placed against what isn't given, in columns" }
-                : {};
         if (align === "inline" && from === "paragraph") {
             return { from, align: "top" };
         }
         if (align !== undefined) {
             return alignments.has(String(align))
-                ? { from, align: String(align), ...unsaid }
+                ? { from, align: String(align) }
                 : "a table that text flows around lined up in a way not yet followed";
         }
-        return { from, offset: twips(attributes[`w:${at}`]) ?? 0, ...unsaid };
+        return { from, offset: twips(attributes[`w:${at}`]) ?? 0 };
     };
     const horizontal = position("horzAnchor", "tblpXSpec", "tblpX");
     const vertical = position("vertAnchor", "tblpYSpec", "tblpY");
@@ -3747,9 +3897,9 @@ const frameBorderRoom = (border: ParagraphBorder | undefined): number | string =
 /**
  * A text frame as a drawing that text flows around, placed and sized by its properties and its paragraphs, nothing when
  * it is in front of the text, or why it can't be laid out. Its borders at its sides keep the text further from it, and
- * those above and below are in it, above and below its text, as a paragraph's are (FR2a to FR2j). Where its paragraphs
- * have other borders at their sides, and where a frame with borders there has a distance from the text too, Word's way
- * isn't known
+ * those above and below are in it, above and below its text, as a paragraph's are (FR2a to FR2j), and its distance from
+ * the text keeps it further again (`word-stops-floats2.docx` FB1a). Where its paragraphs have other borders at their
+ * sides, Word's way isn't known
  */
 const frameDrawing = (frame: FrameProperties, blocks: readonly ParagraphBlock[]): FloatingDrawing | undefined | string => {
     const wrap = FRAME_WRAPS[frame.wrap ?? "around"];
@@ -3766,9 +3916,6 @@ const frameDrawing = (frame: FrameProperties, blocks: readonly ParagraphBlock[])
         return typeof left === "string" ? left : (right as string);
     }
     const { width = 0, height, heightRule, horizontal, vertical, across, down } = frame;
-    if (left + right > 0 && across > 0) {
-        return "a text frame with borders at its sides and a distance from the text";
-    }
     if (wrap === "none") {
         return undefined;
     }
@@ -3843,12 +3990,9 @@ const anchorFrames = <Entry extends { readonly block: Block; readonly section: n
         const laidOut = drawings.flatMap((drawing) =>
             drawing === undefined || typeof drawing === "string" ? [] : [{ type: "drawing" as const, drawing }],
         );
-        const why =
-            block.unsupported ??
-            unsupported ??
-            (block.type === "table" && laidOut.some(({ drawing }) => drawing.vertical.from === "paragraph")
-                ? "a text frame placed against the paragraph after it, before a table"
-                : undefined);
+        // Placed against the paragraph after it, before a table, it is placed against the table's top (`word-stops-floats2.docx`
+        // FB1b), as one placed against the margins is (FR1a)
+        const why = block.unsupported ?? unsupported;
         // eslint-disable-next-line functional/immutable-data
         anchored.push(
             withBlock(entry, {
@@ -4902,6 +5046,7 @@ export const readContent = (writtenBody: XmlObject, writtenParts: DocumentParts,
         markers,
         fields: [],
         counters: new Map(),
+        notesInTextBoxes: new Set(),
         ...(decimalSymbol === undefined ? {} : { decimalSymbol }),
         ...mathsSettings,
         ...(eastAsianRules === undefined ? {} : { eastAsianRules }),

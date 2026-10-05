@@ -78,7 +78,8 @@ const FRAME: IFrameOptions = {
 // A border beside a text frame's paragraph, which with a distance from the text beside the frame takes room in a way not
 // yet followed
 const FRAME_BORDER = { left: { style: BorderStyle.SINGLE, size: 6, space: 1, color: "auto" } } as const;
-const SPACED_FRAME: IFrameOptions = { ...FRAME, space: { horizontal: 100, vertical: 0 } };
+// The next paragraph of a frame, with another border at its side, which take room in a way not yet followed
+const OTHER_FRAME_BORDER = { right: { style: BorderStyle.SINGLE, size: 6, space: 1, color: "auto" } } as const;
 
 const heading = (text: string, bookmark: string): Paragraph =>
     new Paragraph({ heading: HeadingLevel.HEADING_1, children: [new Bookmark({ id: bookmark, children: [new TextRun(text)] })] });
@@ -530,7 +531,8 @@ describe("estimatePageNumbers", () => {
                 {
                     children: [
                         heading("Before", "before"),
-                        new Paragraph({ frame: SPACED_FRAME, border: FRAME_BORDER, children: [new TextRun("In a text frame")] }),
+                        new Paragraph({ frame: FRAME, border: FRAME_BORDER, children: [new TextRun("In a text frame")] }),
+                        new Paragraph({ frame: FRAME, border: OTHER_FRAME_BORDER, children: [new TextRun("Also in it")] }),
                         heading("After", "after"),
                     ],
                 },
@@ -1067,7 +1069,8 @@ describe("estimatePageNumbersWith", () => {
                     {
                         children: [
                             heading("First", "first"),
-                            new Paragraph({ frame: SPACED_FRAME, border: FRAME_BORDER, text: "Framed" }),
+                            new Paragraph({ frame: FRAME, border: FRAME_BORDER, text: "Framed" }),
+                            new Paragraph({ frame: FRAME, border: OTHER_FRAME_BORDER, text: "Framed too" }),
                             heading("Last", "last"),
                         ],
                     },
@@ -1080,7 +1083,7 @@ describe("estimatePageNumbersWith", () => {
                     ["last", "1"],
                 ]),
                 pageCount: 1,
-                guesses: [{ reason: "a text frame with borders at its sides and a distance from the text", page: 1 }],
+                guesses: [{ reason: "a text frame of paragraphs with other borders at their sides", page: 1 }],
             });
             // With nothing to guess at, it gives what estimatePageNumbers does, and says it guessed nowhere
             expect(estimateOf(DOCUMENT, GUESS)).to.deep.equal({ ...estimateOf(DOCUMENT), guesses: [] });

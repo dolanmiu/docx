@@ -44,15 +44,11 @@ const HEIGHT_RULES = new Set<FrameProperties["heightRule"]>(["auto", "atLeast", 
 
 const twips = (value: unknown): number | undefined => pointsOf(value, TWIPS_PER_POINT);
 
-// Why a frame that doesn't say what it is placed against across the page can't be laid out in columns
-const UNSAID_ACROSS = "a text frame that doesn't say what it is placed against, in columns";
-
 /**
  * Where a frame is across or down the page: what it is placed against, lined up with it or at a distance from it, or why
- * it isn't known. One that doesn't say is placed against the margins, as Word places it: across the page, where the
- * margins and the column are the same in one column, so it stops in columns, and down the page, from the top margin
- * rather than the page, as the standard has it (`word-stops-floats.docx` FR6a, FR6b). Lined up inline down the margins,
- * it is at their top (FR6c)
+ * it isn't known. One that doesn't say is placed against the column across the page, as the standard has it, and down
+ * the page from the top margin rather than the page, as Word places it (`word-stops-floats.docx` FR6a, FR6b,
+ * `word-stops-floats2.docx` CO1b). Lined up inline down the margins, it is at their top (FR6c)
  */
 const positionOf = (
     anchor: unknown,
@@ -61,18 +57,17 @@ const positionOf = (
     names: Readonly<Record<string, string>>,
     aligns: ReadonlySet<string>,
 ): DrawingPosition | string => {
-    const from = anchor === undefined ? "margin" : names[String(anchor)];
+    const from = anchor === undefined ? (names === ACROSS ? "column" : "margin") : names[String(anchor)];
     if (from === undefined) {
         return "a text frame placed against what isn't followed yet";
     }
-    const unsaid = anchor === undefined && names === ACROSS ? { inColumns: UNSAID_ACROSS } : {};
     if (align === "inline" && aligns === DOWN_ALIGNS && from === "margin") {
         return { from, align: "top" };
     }
     if (align !== undefined) {
-        return aligns.has(String(align)) ? { from, align: String(align), ...unsaid } : "a text frame lined up in a way not yet followed";
+        return aligns.has(String(align)) ? { from, align: String(align) } : "a text frame lined up in a way not yet followed";
     }
-    return { from, offset: twips(offset) ?? 0, ...unsaid };
+    return { from, offset: twips(offset) ?? 0 };
 };
 
 /** Reads a paragraph's frame properties (`w:framePr`), or why the frame can't be laid out */
