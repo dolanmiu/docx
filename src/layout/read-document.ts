@@ -551,8 +551,11 @@ type NumberingLevel = {
 type ListCount = {
     readonly numbers: readonly (number | undefined)[];
     readonly started: readonly string[];
-    /** The highest level Word leaves out that a paragraph has been at since one above it was counted, when one has */
-    readonly leftOutSince?: number;
+    /**
+     * The levels a paragraph at a level Word leaves out above them may have started again, which have numbers from before
+     * it and haven't been counted since, when there are any
+     */
+    readonly uncertain?: readonly number[];
 };
 
 /** A list paragraphs are numbered in (`w:num`) */
@@ -1859,13 +1862,14 @@ const isLevelLeftOut = (level: NumberingLevel, levels: readonly NumberingLevel[]
 
 /**
  * Where the lists made from a definition are in their counting after a paragraph at a level Word leaves out: as they
- * were, as it isn't counted, and since a level above those below it, which may start them again
+ * were, as it isn't counted, but for the levels below it that have numbers, which it may start again
  */
-const leftOutIn = (count: ListCount | undefined, index: number): ListCount => ({
-    numbers: count?.numbers ?? [],
-    started: count?.started ?? [],
-    leftOutSince: Math.min(count?.leftOutSince ?? index, index),
-});
+const leftOutIn = (count: ListCount | undefined, index: number): ListCount => {
+    const numbers = count?.numbers ?? [];
+    const below = numbers.flatMap((counted, at) => (at > index && counted !== undefined ? [at] : []));
+    const uncertain = [...new Set([...(count?.uncertain ?? []), ...below])];
+    return { numbers, started: count?.started ?? [], ...(uncertain.length > 0 ? { uncertain } : {}) };
+};
 
 /**
  * The number of a paragraph in a list, and what follows it, as its list's level writes it, and its number as a chapter
@@ -1916,7 +1920,7 @@ const readListNumber = (
     }
     const before = reader.counters.get(list.definition);
     // Whether a level left out above it may have started it again, which Word hasn't shown
-    const restartedByLeftOut = before?.leftOutSince !== undefined && before.leftOutSince < index && before.numbers[index] !== undefined;
+    const restartedByLeftOut = before?.uncertain?.includes(index) === true;
     const current = countIn(reader.counters, id, list, index);
     const { started } = reader.counters.get(list.definition)!;
     // A level not counted yet shows its first number: 1.1 and 3.1 for a list's first paragraph at level 1, whose level 0
@@ -1992,7 +1996,7 @@ const countIn = (
     { levels, starts, definition }: NumberingList,
     index: number,
 ): readonly (number | undefined)[] => {
-    const { numbers, started, leftOutSince } = counters.get(definition) ?? { numbers: [], started: [] };
+    const { numbers, started, uncertain = [] } = counters.get(definition) ?? { numbers: [], started: [] };
     const level = levels[index];
     const own = starts.get(index);
     const starting = own !== undefined && !started.includes(`${id} ${index}`);
@@ -2007,12 +2011,13 @@ const countIn = (
         const restart = levels[at]?.restart;
         return restart !== undefined && restart <= at && restart <= index ? numbers[at] : undefined;
     });
+    const stillUncertain = uncertain.filter((at) => at !== index && current[at] !== undefined);
     // eslint-disable-next-line functional/immutable-data
     counters.set(definition, {
         numbers: current,
         started: starting ? [...started, `${id} ${index}`] : started,
-        // A level counted at or above one left out starts those below it again, as it does any
-        ...(leftOutSince !== undefined && leftOutSince < index ? { leftOutSince } : {}),
+        // A level that may have been started again is known once it is counted, or started again by a level above it
+        ...(stillUncertain.length > 0 ? { uncertain: stillUncertain } : {}),
     });
     return current;
 };

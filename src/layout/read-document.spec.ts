@@ -2575,6 +2575,19 @@ describe("readDocument", () => {
             const content = readLists(definition, [listItem(1, 0, "one"), listItem(1, 1, "one one"), listItem(1, 0, "two")]);
             expect([0, 1, 2].map((index) => textOf(content, index))).to.deep.equal(["one", ".1.one one", "two"]);
             expect([0, 1, 2].map((index) => paragraphOf(content, index).unsupported)).to.deep.equal([undefined, undefined, undefined]);
+            // Paragraphs of the level below counted after it are certain: 1 and 2 after a left-out heading
+            const after = readLists(definition, [listItem(1, 0, "left out"), listItem(1, 1, "a"), listItem(1, 1, "b")]);
+            expect([1, 2].map((index) => textOf(after, index))).to.deep.equal([".1.a", ".2.b"]);
+            expect([1, 2].map((index) => paragraphOf(after, index).unsupported)).to.deep.equal([undefined, undefined]);
+            // One counted below a level that may have been started again leaves that level uncertain
+            const deeper = readLists(
+                [abstractNum(0, lvl(0, value("w:lvlText", "%1.%4.")), decimal(1), decimal(2)), num(1, 0)],
+                [listItem(1, 1, "a"), listItem(1, 0, "left out"), listItem(1, 2, "deeper"), listItem(1, 1, "b")],
+            );
+            expect([2, 3].map((index) => paragraphOf(deeper, index).unsupported)).to.deep.equal([
+                undefined,
+                "a list number after a paragraph at a level Word leaves out above it",
+            ]);
             // Whether a paragraph of the level left out starts the level below it again isn't known, where it was counted
             const again = readLists(definition, [listItem(1, 1, "a"), listItem(1, 0, "left out"), listItem(1, 1, "b")]);
             expect(paragraphOf(again, 2).unsupported).to.equal("a list number after a paragraph at a level Word leaves out above it");
