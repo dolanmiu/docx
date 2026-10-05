@@ -33,8 +33,9 @@
  * SH18b: the same, distributed
  * SH18c, SH18d: "LASTWORD" and "SURVEYTOWN", with a soft hyphen in each, kerned from a point, in Calibri, broken at the
  *   soft hyphen at the end of a line: whether the hyphen Word draws is kerned with the "T" or "Y" before it
- * SH18e: "office efficient", with soft hyphens between "f" and "f" and between "f" and "i", in standard ligatures, and
- *   "office efficient" after it without them, on one line: whether the letters join across the soft hyphens
+ * SH18e: "office efficient", with a soft hyphen between the "f" and "f" of "office" and between the "f" and "i" of
+ *   "efficient", in standard ligatures, and "office efficient" after it without them, on one line: whether the letters join
+ *   across the soft hyphens
  *
  * Justified lines:
  * JU5a, JU5b: justified lines of 10 ordinary spaces and 6 en spaces whose last word is past the end by 12% and 20% of the
@@ -369,7 +370,7 @@ const injections: Injection[] = [
     // Standard ligatures, which docx doesn't write, across soft hyphens and, to measure them by, without
     replaceMarkerRun(
         "LIGATURES",
-        '<w:r><w:rPr><w14:ligatures w14:val="standard"/></w:rPr><w:t xml:space="preserve">of</w:t><w:softHyphen/><w:t xml:space="preserve">fice ef</w:t><w:softHyphen/><w:t xml:space="preserve">fi</w:t><w:softHyphen/><w:t xml:space="preserve">cient office efficient</w:t></w:r>',
+        '<w:r><w:rPr><w14:ligatures w14:val="standard"/></w:rPr><w:t xml:space="preserve">of</w:t><w:softHyphen/><w:t xml:space="preserve">fice eff</w:t><w:softHyphen/><w:t xml:space="preserve">icient office efficient</w:t></w:r>',
     ),
     softHyphens(),
     replaceMarkerRun(
