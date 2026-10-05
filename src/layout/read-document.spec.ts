@@ -3203,6 +3203,22 @@ describe("readDocument", () => {
                     },
                 ]).blocks[0].block as TableBlock;
                 expect(indented.unsupported).to.equal("a table row with table properties of its own");
+                // With space between its cells, the table's borders go around the space (word-stops-table-borders.docx TB5),
+                // and where a row's own go hasn't been seen, but its margins are its cells'
+                const spaced = (exception: object): TableBlock =>
+                    readBody([
+                        {
+                            "w:tbl": [
+                                { "w:tblPr": [{ "w:tblCellSpacing": { _attr: { "w:w": 40, "w:type": "dxa" } } }] },
+                                { "w:tblGrid": [2000, 2000].map((width) => ({ "w:gridCol": { _attr: { "w:w": width } } })) },
+                                { "w:tr": [{ "w:tblPrEx": [exception] }, cell([], p()), cell([], p())] },
+                            ],
+                        },
+                    ]).blocks[0].block as TableBlock;
+                expect(spaced({ "w:tblBorders": [border("insideV", 12)] }).unsupported).to.equal(
+                    "a table row with borders of its own in a table with space between its cells",
+                );
+                expect(spaced({ "w:tblCellMar": [margin("left")] }).unsupported).to.equal(undefined);
             });
 
             it("should follow a table style's cell margins and ignore its row height, as Word does, and stop at its other row and cell formatting", () => {

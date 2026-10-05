@@ -2747,16 +2747,20 @@ const readTable = (element: XmlObject, reader: Reader): TableBlock | undefined =
             // A row of a division of a web page (`w:divId`) Word moves across by the division's left margin, as wide and
             // as tall as it is without, with the division's borders beside it but not above or below
             // (`word-stops-pages.docx` DV1b), so its lines are as they are. One with table properties of its own
-            // (`w:tblPrEx`) other than borders and cell margins, such as a width, isn't followed
+            // (`w:tblPrEx`) other than borders and cell margins, such as a width, isn't followed, nor are its own borders
+            // where there is space between its cells, whose table borders go around the space (word-stops-table-borders.docx
+            // TB5) and whose own Word hasn't been seen to place
             const rowUnsupported = rowParts.some((part) => "w:sdt" in part)
                 ? BOUND_CONTROL
                 : changesLines(exceptions, FOLLOWED_ROW_TABLE_PROPERTIES)
                   ? "a table row with table properties of its own"
-                  : deleted && (hasAnyOf(rowChildren, REMOVED_NOTES) || JSON.stringify([...rowReader.counters]) !== counts)
-                    ? "a list or a note in a deleted table row"
-                    : unseenHeaderCount
-                      ? "a deleted row in a table's header of several rows, whose style formats some of its rows"
-                      : cellsUnsupported;
+                  : spacing !== 0 && find(exceptions, "w:tblBorders") !== undefined
+                    ? "a table row with borders of its own in a table with space between its cells"
+                    : deleted && (hasAnyOf(rowChildren, REMOVED_NOTES) || JSON.stringify([...rowReader.counters]) !== counts)
+                      ? "a list or a note in a deleted table row"
+                      : unseenHeaderCount
+                        ? "a deleted row in a table's header of several rows, whose style formats some of its rows"
+                        : cellsUnsupported;
             return {
                 cells,
                 deleted,
