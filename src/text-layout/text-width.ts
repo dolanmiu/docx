@@ -249,11 +249,11 @@ const SAME_WIDTHS: readonly (readonly [RegExp, string])[] = [
 ];
 
 // Fonts that are measured with a font in the table because they are close to it, which is a guess: Word draws them with
-// their own widths, such as Calibri Light 1.4% narrower than Calibri and Georgia 9% wider than Times New Roman (TX18)
+// their own widths, as it draws Calibri Light 1.4% narrower than Calibri and Georgia 9% wider than Times New Roman (TX18)
 const SIMILAR_FONTS: readonly (readonly [RegExp, string])[] = [
-    [/^(calibri light|segoe ui|candara|corbel)$/i, "Calibri"],
-    [/mono|courier|consolas|code|typewriter/i, "Courier New"],
-    [/times|georgia|garamond|palatino|book antiqua|(?<!sans[ -]?)serif|roman/i, "Times New Roman"],
+    [/^segoe ui$/i, "Calibri"],
+    [/mono|courier|code|typewriter/i, "Courier New"],
+    [/times|garamond|palatino|(?<!sans[ -]?)serif|roman/i, "Times New Roman"],
 ];
 
 // The characters of the tables, in their order, and the index of each
@@ -395,17 +395,30 @@ const exactWidthsOf = (font: string): FontWidths | undefined => {
 
 /**
  * The widths to measure a font with: its own, or those of the most similar font in the table.
- * Sans-serif fonts that aren't in the table, such as Aptos, are measured as Arial.
+ * Sans-serif fonts that aren't in the table, such as Roboto, are measured as Arial.
  */
 const widthsOf = (font = DEFAULT_FONT): FontWidths => {
     const similar = SIMILAR_FONTS.find(([pattern]) => pattern.test(font));
     return exactWidthsOf(font) ?? named(similar ? similar[1] : "Arial")!;
 };
 
-/** The widths of the face text is in: its font's, bold, italic, both or neither */
-const faceOf = ({ font, bold, italic }: TextFont): readonly (number | undefined)[] => {
+/**
+ * The widths of a font's face, as the table writes them, or undefined for bold in a font without a bold face, such as
+ * Calibri Light, which Word makes itself, drawing each character 18 thousandths of an em wider than the face it makes it
+ * from at 10 points (`word-stops-font-widths.docx`). Italic in a font without an italic face, such as Tahoma, is the
+ * upright face's, as Word slants it, as wide (`word-stops-font-italic-widths.docx`), and so is Trebuchet MS's bold italic,
+ * which Word draws as its bold, slanted
+ */
+const encodedFaceOf = (widths: FontWidths, bold: boolean, italic: boolean): string | undefined =>
+    bold ? (italic ? (widths.boldItalic ?? widths.bold) : widths.bold) : italic ? (widths.italic ?? widths.regular) : widths.regular;
+
+/**
+ * The widths of the face text is in: its font's, bold, italic, both or neither. Bold that Word makes itself, which
+ * {@link unknownFont} says, is measured as the face Word makes it from
+ */
+const faceOf = ({ font, bold = false, italic = false }: TextFont): readonly (number | undefined)[] => {
     const widths = widthsOf(font);
-    return decodeWidths(italic ? (bold ? widths.boldItalic : widths.italic) : bold ? widths.bold : widths.regular);
+    return decodeWidths(encodedFaceOf(widths, bold, italic) ?? encodedFaceOf(widths, false, italic)!);
 };
 
 // Characters as wide as they are tall: Chinese, Japanese and Korean, full-width forms and emoji
@@ -507,18 +520,21 @@ export const unknownCharacter = (text: string, font: TextFont = {}): string | un
 
 /**
  * Whether the tables measure text in a font as another font, as they don't have the font's own widths: a font that isn't
- * in them and isn't made with the same widths as one that is, such as Aptos, which they measure as the most similar
+ * in them and isn't made with the same widths as one that is, such as Roboto, which they measure as the most similar
  * font that is. Word draws it with its own widths when it has it, and in another font when it doesn't, such as Cambria
- * on the Mac (`word-watertight-text.docx` TX18), so a layout stops there rather than guessing. The East Asian fonts of
- * the tables are measured as themselves, but for the other characters of those that aren't monospaced, such as Latin
- * letters in Yu Gothic, which are measured as Times New Roman or Arial. Without text, whether the height of a line in
- * the font is another font's.
+ * on the Mac (`word-watertight-text.docx` TX18), so a layout stops there rather than guessing. Bold in a font of the
+ * tables without a bold face, such as Calibri Light, Franklin Gothic Book and Impact, is one too: Word makes it itself,
+ * each character wider than the face it makes it from, by 18 thousandths of an em at 10 points
+ * (`word-stops-font-widths.docx`), which other sizes haven't shown. The East Asian fonts of the tables are measured as
+ * themselves, but for the other characters of those that aren't monospaced, such as Latin letters in Yu Gothic, which
+ * are measured as Times New Roman or Arial. Without text, whether the height of a line in the font is another font's.
  */
 export const unknownFont = (font: TextFont = {}, text?: string): boolean => {
     const name = font.font ?? DEFAULT_FONT;
     const eastAsian = knownEastAsianFontOf(name);
     if (eastAsian === undefined) {
-        return exactWidthsOf(name) === undefined;
+        const widths = exactWidthsOf(name);
+        return widths === undefined || encodedFaceOf(widths, font.bold === true, font.italic === true) === undefined;
     }
     return (
         !eastAsian.monospaced &&
@@ -568,7 +584,7 @@ export const measureTextWidthAsDrawn = (text: string, font: TextFont = {}, start
     const widthOf = (character: string): number => characterWidth(widths, character);
     const size = sizeOf(font);
     const { characterSpacing = 0, scale = 100 } = font;
-    const kerned = isKerned(font);
+    const kerned = kernedIn(font, shaping);
     return (
         text.split("\t").reduce((position, part, index) => {
             const at = index === 0 ? position : (Math.floor(position / TAB_STOP) + 1) * TAB_STOP;
@@ -597,6 +613,14 @@ const shapingFor = (font: TextFont): FaceShaping | undefined =>
         ? shapingOf(named(font.font ?? DEFAULT_FONT)?.name ?? "", font.bold === true, font.italic === true)
         : undefined;
 
+/**
+ * Whether Word kerns text: when it asks for kerning, but for text with ligatures in a face whose kerning is only in its
+ * font's kern table, such as Trebuchet MS's, which Word kerns without ligatures and not with them
+ * (scripts/layout-probes/stops2/word-stops-font-kerning.ts K and P)
+ */
+const kernedIn = (font: TextFont, shaping: FaceShaping): boolean =>
+    isKerned(font) && !(hasLigatures(font) && shaping.notKernedWithLigatures);
+
 /** The glyphs text is drawn in: its characters, joined into ligatures as its font's rules join them */
 const glyphsOf = (text: string, font: TextFont, shaping: FaceShaping | undefined): readonly Glyph[] => {
     const rules = shaping !== undefined && hasLigatures(font) ? rulesOf(shaping, font.ligatures!) : undefined;
@@ -611,16 +635,21 @@ const LETTERS = /\p{L}\p{L}/u;
  * kerning they don't have, or with a character whose kerning they don't have, and ligatures in a font or of a setting
  * whose ligatures they don't have, or beside a character they haven't seen them beside. The tables have Word's kerning of
  * the characters of Windows-1252, and its ligatures of Word's settings, in the fonts of the tables, but for those of East
- * Asian fonts (scripts/layout-probes/word-kerning.ts). Courier New, of which Word kerned no pair of printable ASCII, and
- * monospaced East Asian fonts, aren't kerned.
+ * Asian fonts (scripts/layout-probes/word-kerning.ts), and in Office's other fonts in the tables
+ * (scripts/layout-probes/stops2/word-stops-font-kerning.ts). Courier New, of which Word kerned no pair of printable ASCII,
+ * and monospaced East Asian fonts, aren't kerned, and nor is text with ligatures in a face Word kerns only without them,
+ * which Word's PDF showed with Normal's ligatures, standard and contextual, and no others.
  */
 export const unknownShaping = (text: string, font: TextFont = {}): string | undefined => {
-    const kerned = isKerned(font);
     const ligatures = hasLigatures(font);
-    if ((!kerned && !ligatures) || eastAsianFontOf(font.font ?? DEFAULT_FONT)?.monospaced === true) {
+    if ((!isKerned(font) && !ligatures) || eastAsianFontOf(font.font ?? DEFAULT_FONT)?.monospaced === true) {
         return undefined;
     }
     const shaping = shapingFor(font);
+    if (isKerned(font) && ligatures && shaping?.notKernedWithLigatures === true && font.ligatures !== "standardContextual") {
+        return "ligatures of a setting not yet followed";
+    }
+    const kerned = shaping === undefined ? isKerned(font) : kernedIn(font, shaping);
     // The parts between tabs, which are measured apart, so nothing is kerned or joined across a tab. Characters that take
     // no room, such as a zero-width space or a combining mark, are measured as characters of their own, whose kerning,
     // and whether Word kerns and joins the letters beside them across them, isn't known

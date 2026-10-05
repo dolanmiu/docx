@@ -924,7 +924,7 @@ describe("estimatePageNumbersWith", () => {
                 },
             ],
         });
-        expect(pageNumbersOf(inFont("Aptos"), estimatePageNumbersWith({ measureWidth }))).to.deep.equal({ first: "1" });
+        expect(pageNumbersOf(inFont("Roboto"), estimatePageNumbersWith({ measureWidth }))).to.deep.equal({ first: "1" });
         expect(pageNumbersOf(inFont("Arial"), estimatePageNumbersWith({ measureWidth }))).to.deep.equal({ first: "1", last: "1" });
     });
 
@@ -1079,10 +1079,10 @@ describe("estimatePageNumbersWith", () => {
         });
 
         it("should measure text in a font not in the width tables as the most similar font that is (word-watertight-text.docx TX18)", () => {
-            // Word drew the pangram 3781.2 twips wide in Aptos, 3905.6 in Georgia and 4384.2 in Verdana, and in Cambria,
-            // 3820.8, in a font it doesn't have. The guess measures them as Arial, Times New Roman and Arial, 2% wider, 8%
-            // narrower and 12% narrower than Word drew them, and each is a line, as it was in Word
-            const pangrams = ["Aptos", "Georgia", "Verdana", "Watertight Missing Sans"].map(
+            // Word drew the pangram 3616.5 twips wide in Segoe UI and 3457.5 in Garamond, and in Cambria, 3820.8, in a font
+            // it doesn't have. The guess measures them as Calibri, Times New Roman and Arial, 1% narrower, 4% wider and 1%
+            // wider than Word drew them, and each is a line, as it was in Word
+            const pangrams = ["Segoe UI", "Garamond", "Watertight Missing Sans"].map(
                 (font) => new Paragraph({ children: [new TextRun({ text: "Thequickbrownfoxjumpsoverthelazydog", font, size: 22 })] }),
             );
             const document = new Document({ sections: [{ children: pangrams }] });
@@ -1094,8 +1094,8 @@ describe("estimatePageNumbersWith", () => {
             const widths = pages[0].body.map((block) =>
                 block.type === "paragraph" ? block.lines.map(({ textWidth }) => Math.round(textWidth * 15)) : [],
             );
-            expect(widths).to.deep.equal([[3864], [3580], [3864], [3864]]);
-            expect(pageNumbersOf(around(new TextRun({ text: "Text", font: "Aptos" })), GUESS)).to.deep.equal({ first: "1", last: "1" });
+            expect(widths).to.deep.equal([[3589], [3580], [3864]]);
+            expect(pageNumbersOf(around(new TextRun({ text: "Text", font: "Roboto" })), GUESS)).to.deep.equal({ first: "1", last: "1" });
         });
 
         it("should measure a date as it is written, where Word writes the date it opens the document on (word-watertight-pages.docx PG7a)", () => {

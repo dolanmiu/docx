@@ -415,13 +415,13 @@ describe("createFontFileMeasurer", () => {
         expect(measurer.unknownFont!({ font: "Probe Sans", italic: true })).to.equal(false);
         expect(measurer.unknownFont!({ font: "Probe Sans", bold: true }, "AB")).to.equal(true);
         expect(measurer.unknownFont!({ font: "Calibri" }, "AB")).to.equal(false);
-        expect(measurer.unknownFont!({ font: "Aptos" })).to.equal(true);
+        expect(measurer.unknownFont!({ font: "Roboto" })).to.equal(true);
         const withoutUnknown = createFontFileMeasurer(fonts({ advances: LETTERS }), {
             measureWidth: () => 0,
             measureLineHeight: () => 0,
             measureDescent: () => 0,
         });
-        expect(withoutUnknown.unknownFont!({ font: "Aptos" })).to.equal(false);
+        expect(withoutUnknown.unknownFont!({ font: "Roboto" })).to.equal(false);
     });
 
     it("should move a tab typed in the text to the next half inch from the start of the text", () => {

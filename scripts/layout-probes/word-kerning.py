@@ -28,7 +28,13 @@ import unicodedata
 sys.setrecursionlimit(20000)
 
 base = sys.argv[1]
-probe = json.load(open(os.path.join(os.path.dirname(os.path.abspath(__file__)), os.path.basename(base) + ".json"), encoding="utf8"))
+# The probe's .json is beside this reader, or in stops2 beside it for the documents of lay-stops2's batch, such as
+# word-stops-font-kerning
+HERE = os.path.dirname(os.path.abspath(__file__))
+SIDECAR = os.path.join(HERE, os.path.basename(base) + ".json")
+if not os.path.exists(SIDECAR):
+    SIDECAR = os.path.join(HERE, "stops2", os.path.basename(base) + ".json")
+probe = json.load(open(SIDECAR, encoding="utf8"))
 SIZE = probe["size"]
 SPACES = {" ", " "}
 # The outline of a space, which has none
@@ -46,7 +52,8 @@ def read_glyph_lines():
     outlines = {}
     for glyph, body in re.findall(r'<g id="glyph-(\d+-\d+)">(.*?)</g>', svg, re.S):
         path = re.search(r' d="([^"]*)"', body)
-        outlines[glyph] = path.group(1) if path else EMPTY
+        # A path of moves alone, such as "M 0 0 Z M 0 0", draws nothing, as Calibri Light italic's space doesn't
+        outlines[glyph] = path.group(1) if path and re.search(r"[LCQ]", path.group(1)) else EMPTY
     lines = []
     run = 0
     for page in svg.split("<page>")[1:]:
@@ -60,6 +67,9 @@ def read_glyph_lines():
 
 
 glyph_lines = read_glyph_lines()
+# The run of the first glyph of a line a probe's line broke onto, which has no place, as it can't be measured from the
+# glyph before it, at the end of the line before
+BROKEN = -1
 LINES = probe["lines"]
 if len(glyph_lines) < len(LINES):
     sys.exit(f"The PDF has {len(glyph_lines)} lines of glyphs, fewer than the probe's {len(LINES)}")
@@ -209,6 +219,15 @@ for index, (name, face, kerned, ligatures, text) in enumerate(LINES):
         advances = advance_of.setdefault(face, {})
         drawn = [(at, glyph, x) for at, (glyph, x, _) in enumerate(glyphs) if glyph != EMPTY]
         letters = [character for character in text if character not in SPACES]
+        # A line that broke in two or more, in a font wider than the probe made room for, goes on on the next lines of
+        # glyphs, whose characters' widths are read on their own
+        while len(drawn) < len(letters) and cursor < len(glyph_lines) - 1:
+            following = [(len(glyphs) + at, glyph, x) for at, (glyph, x, _) in enumerate(glyph_lines[cursor]) if glyph != EMPTY]
+            if len(drawn) + len(following) > len(letters):
+                break
+            glyphs = glyphs + glyph_lines[cursor]
+            drawn = drawn + following
+            cursor += 1
         if len(drawn) != len(letters):
             problems.append(f"line {index + 1} ({name}): {len(drawn)} glyphs for {len(letters)} characters")
             continue
@@ -220,17 +239,32 @@ for index, (name, face, kerned, ligatures, text) in enumerate(LINES):
         continue
     units = units_of(face, text, glyphs, kind)
     if units is None and cursor < len(glyph_lines):
-        # A line that broke in two is drawn on two lines, whose glyphs' places can't be measured across the break, so it
-        # is left out, and its second half passed over, so the lines after it are read as theirs. A line after a line of
-        # glyphs that isn't one of the probe's is read from the next
-        if units_of(face, text, glyphs + glyph_lines[cursor], kind) is not None:
-            problems.append(f"line {index + 1} ({name}, {face}): broke in two, so left out")
-            cursor += 1
-            continue
-        units = units_of(face, text, glyph_lines[cursor], kind)
-        if units is not None:
-            problems.append(f"line {index + 1} ({name}, {face}): after a line of glyphs not of the probe")
-            cursor += 1
+        # A line that broke in two or more, in a font wider than the probe made room for, is drawn on as many lines,
+        # whose glyphs' places can't be measured across a break: so the first glyph of each line after the first has no
+        # place, which leaves out the pairs either side of it. The lines of prose (P), whose words' places are measured
+        # from the start of the line, are left out. A line after a line of glyphs that isn't one of the probe's is read
+        # from the next
+        broken = glyphs
+        for extra in range(1, 6):
+            if cursor + extra - 1 >= len(glyph_lines) - 1:
+                break
+            following = glyph_lines[cursor + extra - 1]
+            broken = broken + [(glyph, None, BROKEN) if at == 0 else (glyph, x, run) for at, (glyph, x, run) in enumerate(following)]
+            units = units_of(face, text, broken, kind)
+            if units is not None:
+                problems.append(f"line {index + 1} ({name}, {face}): broke into {extra + 1} lines")
+                cursor += extra
+                if kind == "P":
+                    units = None
+                    glyphs = None
+                break
+        if units is None and glyphs is not None:
+            units = units_of(face, text, glyph_lines[cursor], kind)
+            if units is not None:
+                problems.append(f"line {index + 1} ({name}, {face}): after a line of glyphs not of the probe")
+                cursor += 1
+    if units is None and glyphs is None:
+        continue
     if units is None:
         problems.append(f"line {index + 1} ({name}, {face}): its {len(glyphs)} glyphs can't be read as its {len(text)} characters")
         continue
@@ -252,18 +286,19 @@ for index, (name, face, kerned, ligatures, text) in enumerate(LINES):
         words = joined.setdefault(f"{face}|{ligatures}", {})
         word = []
         # Words are parted by spaces, U+0020; a no-break space is in its word. The last ends with the line
-        for unit, x, end in [*units, (" ", None, "end")]:
+        for unit, x, run in [*units, (" ", None, "end")]:
             if unit != " ":
-                word.append((unit, x))
+                word.append((unit, x, run))
                 continue
-            # A space ends a word, drawn or not: where it is drawn, A's word is as wide as from its start to the space
-            if word and all(at is not None for _, at in word):
-                key = "".join(letters_of(unit) for unit, _ in word)
+            # A space ends a word, drawn or not: where it is drawn, A's word is as wide as from its start to the space. A
+            # word whose first glyph starts a line a probe's line broke onto, so has no place, is read as the others are
+            if word and all(at is not None or within == BROKEN for _, at, within in word):
+                key = "".join(letters_of(unit) for unit, _, _ in word)
                 read_words.setdefault(f"{face}|{ligatures}", set()).add(key)
-                if any(unit.startswith("⟨") for unit, _ in word):
-                    words[key] = [unit for unit, _ in word]
-                if kind == "A" and x is not None:
-                    aptos.append([face, ligatures, key, [unit for unit, _ in word], round(x - word[0][1], 4)])
+                if any(unit.startswith("⟨") for unit, _, _ in word):
+                    words[key] = [unit for unit, _, _ in word]
+                if kind == "A" and x is not None and word[0][1] is not None:
+                    aptos.append([face, ligatures, key, [unit for unit, _, _ in word], round(x - word[0][1], 4)])
             word = []
     elif kind == "P":
         # Where each word starts, from the start of the line, in points
@@ -315,7 +350,7 @@ for face, units in kerned_lines:
         offs = [
             units[step + 1][1] - units[step][1] - advances.get(units[step][0], 0) * SIZE / 1000
             for step in range(at, end)
-            if units[step][0] in advances
+            if units[step][0] in advances and units[step][1] is not None
         ]
         # The pairs that aren't kerned, which are off by the run's drift alone
         plain = sorted(off for off in offs if abs(off) < 0.03)
@@ -391,7 +426,7 @@ if "--json" in sys.argv:
     print(json.dumps(result, ensure_ascii=False))
     sys.exit()
 
-for problem in problems[:20]:
+for problem in problems[: int(os.environ.get("PROBLEMS", "20"))]:
     print("!", problem)
 print(f"== K: kerning of each pair of the {len(probe['characters'])} characters, in thousandths of an em, of the pairs read")
 for face, table in kerning.items():

@@ -899,8 +899,8 @@ describe("paginate", () => {
 
         it("should stop at a font not in the width tables, measuring with them, unless asked to measure it as the most similar", () => {
             const inFont = (font: string): DocumentContent => document([withText("a", "x", { font, size: 11 }), paragraph("b", 1)]);
-            expect(paginate(inFont("Aptos")).stoppedAt).to.equal(STOP);
-            expect(paginate(inFont("Aptos"), { measurer: SIMILAR_FONT_MEASURER }).stoppedAt).to.equal(undefined);
+            expect(paginate(inFont("Roboto")).stoppedAt).to.equal(STOP);
+            expect(paginate(inFont("Roboto"), { measurer: SIMILAR_FONT_MEASURER }).stoppedAt).to.equal(undefined);
             // Carlito is made as wide as Calibri, so is measured as it
             expect(paginate(inFont("Carlito")).stoppedAt).to.equal(undefined);
         });

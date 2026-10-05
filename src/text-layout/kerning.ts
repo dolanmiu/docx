@@ -67,6 +67,8 @@ export type FaceShaping = {
     readonly glyphs: FaceKerning["glyphs"];
     /** The rules of each setting Word's PDFs showed */
     readonly ligatures: FaceKerning["ligatures"];
+    /** Whether Word leaves the face's text not kerned when it has ligatures */
+    readonly notKernedWithLigatures: boolean;
 };
 
 /** The first character of text */
@@ -120,7 +122,14 @@ export const decodeFace = (face: FaceKerning): FaceShaping => {
         // eslint-disable-next-line functional/immutable-data
         pairs.set(twoDigits(face.pairs, at) * 4096 + twoDigits(face.pairs, at + 2), value === UNKNOWN ? Number.NaN : value - 2048);
     }
-    const shaping: FaceShaping = { characters: new Set(characters), classes, pairs, glyphs: face.glyphs, ligatures: face.ligatures };
+    const shaping: FaceShaping = {
+        characters: new Set(characters),
+        classes,
+        pairs,
+        glyphs: face.glyphs,
+        ligatures: face.ligatures,
+        notKernedWithLigatures: face.notKernedWithLigatures === true,
+    };
     // eslint-disable-next-line functional/immutable-data
     decoded.set(face, shaping);
     return shaping;
@@ -161,10 +170,22 @@ export const joinLetters = (characters: readonly string[], rules: RuleIndex, gly
     return joined;
 };
 
-/** The font's kerning and ligatures in the tables, by its name and face, when they have them */
+/**
+ * The font's kerning and ligatures in the tables, by its name and face, when they have them. An italic face a font
+ * doesn't have, which Word slants from the upright one, is kerned and joined as the upright one, as Word kerns Trebuchet
+ * MS's bold italic, which it draws as its bold (scripts/layout-probes/stops2/word-stops-font-kerning.ts K18). A bold
+ * face it doesn't have, which Word makes itself, such as Calibri Light's, isn't known
+ */
 export const shapingOf = (font: string, bold: boolean, italic: boolean): FaceShaping | undefined => {
     const faces = FONT_KERNING.find(({ name }) => name === font);
-    return faces === undefined ? undefined : decodeFace(faces[italic ? (bold ? "boldItalic" : "italic") : bold ? "bold" : "regular"]);
+    const face = bold
+        ? italic
+            ? (faces?.boldItalic ?? faces?.bold)
+            : faces?.bold
+        : italic
+          ? (faces?.italic ?? faces?.regular)
+          : faces?.regular;
+    return face === undefined ? undefined : decodeFace(face);
 };
 
 /** A glyph's kerning classes: a ligature's own, or a character's */

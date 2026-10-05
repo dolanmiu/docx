@@ -1,8 +1,10 @@
 /**
  * Generates src/text-layout/font-widths.ts: how wide each character is
- * in the fonts Word documents use most, so shapes can be sized to fit their text and pages laid out.
+ * in the fonts Word documents use most, and in Office's other fonts that Word installs, so shapes can be sized to fit
+ * their text and pages laid out.
  *
- * The widths come from fonts with an open license that are made to have the same widths as Word's fonts:
+ * Calibri, Cambria, Arial, Times New Roman and Courier New: the widths come from fonts with an open license that are made
+ * to have the same widths as Word's fonts:
  * Carlito (Calibri), Caladea (Cambria), and Liberation Sans, Serif and Mono (Arial, Times New Roman and Courier New).
  * Carlito and Liberation are in the Debian packages fonts-crosextra-carlito and fonts-liberation2. Caladea is the one
  * LibreOffice installs with itself: the one in Debian's fonts-crosextra-caladea (20200211) has narrower letters and
@@ -13,26 +15,51 @@
  * in italic and bold italic. Where Word's width isn't the open font's, it is Word's, and where Word draws the character in
  * another font, it isn't known, so the layout stops at it.
  *
- * Usage:
- *   npm run run-ts -- scripts/generate-font-widths.ts <directory with the .ttf files> <Word's widths, as JSON> <Word's italic widths, as JSON>
+ * Office's other fonts that Word for Mac installs, such as Calibri Light, Aptos, Georgia and Trebuchet MS ({@link
+ * OFFICE_FONTS}): the widths and heights come from Word's own font files, which aren't open, so aren't in the image: those
+ * in Word's folder of fonts, and Georgia, Impact and Trebuchet MS, which Word takes from the Mac's. Word's PDFs of
+ * scripts/layout-probes/stops2/word-stops-font-widths.ts, which has every character of the tables in each of them, plain
+ * and bold, and of word-stops-font-italic-widths, in italic and bold italic, show that Word draws each character the font
+ * has as wide as its file has it, but for the spaces Word works out itself, which are Word's, as for the five above. A
+ * character the font doesn't have, Word draws in another font, so it isn't known. A face the font has no file for, Word
+ * makes itself: an italic slanted from the upright face, as wide as it, which the tables write as none, so the upright
+ * face is measured; and a bold, each character 18 thousandths of an em wider than the face it is made from at 10 points,
+ * which the tables leave out, so the layout stops at it. Each font's line is as tall as its file's hhea table makes it,
+ * which Word's PDF of word-stops-font-heights shows (FH1 to FH16), with Corbel's and Book Antiqua's, whose ascent and
+ * descent for Windows make their lines taller.
  *
- * To copy the fonts out of the image:
+ * Usage, with the open fonts' directory first, then Word's widths, as JSON, of the five, and for Office's fonts the
+ * directories Word's fonts are in, searched in order, Word's widths of them, and its heights of their lines:
+ *   npm run run-ts -- scripts/generate-font-widths.ts build/fonts build/word-probes/word-character-widths.word.json \
+ *     build/word-probes/word-italic-widths.word.json "/Applications/Microsoft Word.app/Contents/Resources/DFonts" \
+ *     /System/Library/Fonts/Supplemental build/word-probes/word-stops-font-widths.word.json \
+ *     build/word-probes/word-stops-font-italic-widths.word.json build/word-probes/word-stops-font-heights.word.json
+ *
+ * To copy the open fonts out of the image:
  *   docker run --rm --platform linux/amd64 -v "$PWD/build/fonts:/out" docx-shape-renderer \
  *     sh -c 'cp /usr/share/fonts/truetype/crosextra/Carlito-*.ttf /usr/share/fonts/truetype/liberation/*.ttf /out/ &&
  *       cp "$(ls -d /opt/libreoffice*)"/share/fonts/truetype/Caladea-*.ttf /out/'
  *
- * To read Word's widths from its PDF, with Poppler (in the same image), and the same for word-italic-widths:
+ * To read Word's widths from its PDF, with Poppler (in the same image), and the same for word-italic-widths and the
+ * PDFs of scripts/layout-probes/stops2:
  *   pdftotext -bbox-layout scripts/layout-probes/word-character-widths.pdf build/word-probes/word-character-widths.html
  *   pdftohtml -xml -i -q -zoom 1 scripts/layout-probes/word-character-widths.pdf build/word-probes/word-character-widths
  *   python3 scripts/layout-probes/word-character-widths.py build/word-probes/word-character-widths --json \
  *     > build/word-probes/word-character-widths.word.json
+ *
+ * And Word's heights of the lines:
+ *   pdftotext -bbox-layout scripts/layout-probes/stops2/word-stops-font-heights.pdf build/word-probes/word-stops-font-heights.html
+ *   python3 scripts/layout-probes/stops2/word-font-heights.py build/word-probes/word-stops-font-heights --json \
+ *     > build/word-probes/word-stops-font-heights.word.json
  */
-// cspell:ignore Caladea crosextra Poppler bbox pdftohtml
+// cspell:ignore Caladea crosextra Poppler bbox pdftohtml DFonts hhea Aptos
 import { execSync } from "node:child_process";
-import { readFileSync, writeFileSync } from "node:fs";
+import { existsSync, readFileSync, statSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 
 import { readFontFile } from "../src/text-layout/font-file";
+
+import { OFFICE_FONTS, type OfficeFont } from "./office-fonts";
 
 const OUTPUT = "src/text-layout/font-widths.ts";
 
@@ -78,10 +105,13 @@ const HYPHEN = 0x2d;
 const SOFT_HYPHEN = 0xad;
 const NO_BREAK_HYPHEN = 0x2011;
 
-const [directory, ...wordPaths] = process.argv.slice(2);
-if (!directory || wordPaths.length === 0) {
+// The open fonts' directory first, then the readings of Word's PDFs, as JSON, and the directories of Word's own fonts
+const [directory, ...rest] = process.argv.slice(2);
+const wordPaths = rest.filter((path) => path.endsWith(".json"));
+const fontDirectories = rest.filter((path) => !path.endsWith(".json") && existsSync(path) && statSync(path).isDirectory());
+if (!directory || wordPaths.length === 0 || fontDirectories.length === 0) {
     console.error(
-        "Usage: npm run run-ts -- scripts/generate-font-widths.ts <directory with the .ttf files> <Word's widths, as JSON> <Word's italic widths, as JSON>",
+        "Usage: npm run run-ts -- scripts/generate-font-widths.ts <directory with the open .ttf files> <directories of Word's fonts>... <Word's widths, as JSON>... <Word's heights, as JSON>",
     );
     process.exit(1);
 }
@@ -124,61 +154,125 @@ const readFont = (
     };
 };
 
+/** The path of one of Word's own font files, from the first of the directories it is in */
+const officeFileOf = (file: string): string => {
+    const found = fontDirectories.map((folder) => join(folder, file)).find(existsSync);
+    if (found === undefined) {
+        throw new Error(`${file} isn't in ${fontDirectories.join(", ") || "any directory of Word's fonts"}`);
+    }
+    return found;
+};
+
 /**
- * How much wider one of Word's PDFs reads characters than they are: the middle of how much wider than the open fonts' Word's
+ * How tall a line of one of Word's own fonts is, and how far it goes below its baseline, in thousandths of an em: as its
+ * hhea table makes them, its ascender and descender and the line gap above them, as Word's lines are on the Mac
+ * (word-stops-font-heights FH1 to FH16): Corbel's 1207.5 and Book Antiqua's 1205.6, where their ascent and descent for
+ * Windows would make them 1220.7 and 1242.7
+ */
+const hheaOf = (path: string): { readonly lineHeight: number; readonly descent: number } => {
+    const data = readFileSync(path);
+    const view = new DataView(data.buffer, data.byteOffset, data.byteLength);
+    const tables = new Map(
+        Array.from({ length: view.getUint16(4) }, (_, index) => {
+            const at = 12 + index * 16;
+            return [String.fromCharCode(...data.subarray(at, at + 4)), view.getUint32(at + 8)] as const;
+        }),
+    );
+    const unitsPerEm = view.getUint16(tables.get("head")! + 18);
+    const hhea = tables.get("hhea")!;
+    const [ascender, descender, lineGap] = [4, 6, 8].map((offset) => view.getInt16(hhea + offset));
+    return { lineHeight: ((ascender - descender + lineGap) * 1000) / unitsPerEm, descent: (-descender * 1000) / unitsPerEm };
+};
+
+/**
+ * How much wider one of Word's PDFs reads characters than they are: the middle of how much wider than the fonts' Word's
  * widths of the characters in the faces' own fonts are, about 0.4 thousandths of an em, as Word's PDF puts each character
  * a little further on than its width
  */
-const offsetOf = (word: WordWidths): number => {
-    const differences = FONTS.flatMap((font) =>
-        FACES.flatMap((face) => {
-            const drawn = word.widths[keyOf(font.name, face)];
-            if (drawn === undefined) {
-                return [];
-            }
-            const { widthOf } = readFont(fileOf(font, face));
-            return Object.entries(drawn).flatMap(([hex, { width, font: drawnIn }]) => {
-                const open = widthOf(parseInt(hex, 16));
-                return open !== undefined && isOwnFont(drawnIn, font.name) ? [width - open] : [];
-            });
+const offsetOf = (
+    word: WordWidths,
+    faces: readonly { readonly key: string; readonly font: string; readonly widthOf: (code: number) => number | undefined }[],
+): number => {
+    const differences = faces.flatMap(({ key, font, widthOf }) =>
+        Object.entries(word.widths[key] ?? {}).flatMap(([hex, { width, font: drawnIn }]) => {
+            const open = widthOf(parseInt(hex, 16));
+            return open !== undefined && isOwnFont(drawnIn, font) ? [width - open] : [];
         }),
     );
     return [...differences].sort((one, other) => one - other)[Math.floor(differences.length / 2)];
 };
 
-// Each of Word's PDFs, read, with how much wider it reads characters than they are
-const WORD = wordPaths.map((path) => {
-    const word: WordWidths = JSON.parse(readFileSync(path, "utf8"));
-    return { ...word, offset: offsetOf(word) };
-});
+// Each of Word's PDFs, read, with how much wider it reads characters than they are, from the faces of the fonts it has
+const READINGS = wordPaths.map((path) => JSON.parse(readFileSync(path, "utf8")));
+const WORD = READINGS.filter((reading): reading is WordWidths => reading.widths !== undefined).map((word) => ({
+    ...word,
+    offset: offsetOf(
+        word,
+        [
+            ...FONTS.flatMap((font) =>
+                FACES.map((face) => ({ key: keyOf(font.name, face), font: font.name, face, file: fileOf(font, face) })),
+            ),
+            ...OFFICE_FONTS.flatMap((font) =>
+                FACES.flatMap((face) =>
+                    font.files[face] === undefined
+                        ? []
+                        : [{ key: keyOf(font.name, face), font: font.name, face, file: officeFileOf(font.files[face]) }],
+                ),
+            ),
+        ]
+            .filter(({ key }) => word.widths[key] !== undefined)
+            .map(({ key, font, file }) => ({ key, font, widthOf: readFont(file).widthOf })),
+    ),
+}));
+// Word's heights of the lines of Office's fonts, in thousandths of an em, by font and size
+const HEIGHTS: Readonly<Record<string, Readonly<Record<string, number>>>> =
+    READINGS.find((reading) => reading.heights !== undefined)?.heights ?? {};
+
+/** The reading of Word's PDF that has a face */
+const wordOf = (key: string): (typeof WORD)[number] => {
+    const word = WORD.find((reading) => reading.widths[key] !== undefined);
+    if (word === undefined) {
+        throw new Error(`None of Word's widths are of ${key}`);
+    }
+    return word;
+};
+
+/**
+ * The width of a character that takes no room, or that the layout measures as another: marks, which go on the character
+ * before them, and formatting characters, such as the zero-width space, take no room, but for the soft hyphen, which Word
+ * draws as a hyphen. A font without a soft hyphen, as Carlito has none, has it as wide as a hyphen, as Word draws it
+ * (word-watertight-text TX10b: 67.4 twips for each U+00AD in Calibri 11), and the no-break hyphen is as wide as a hyphen,
+ * as the layout reads `w:noBreakHyphen` as one, which Word draws as a hyphen whether the font has a no-break hyphen or not
+ * (TX17: "state-of-the-art" 1388.3 twips with them and 1388.5 with hyphens). Undefined for the other characters.
+ */
+const specialWidthOf = (code: number, widthOf: (code: number) => number | undefined): number | undefined => {
+    if (/[\p{Mn}\p{Me}\p{Cf}]/u.test(String.fromCodePoint(code)) && code !== SOFT_HYPHEN) {
+        return 0;
+    }
+    if (code === SOFT_HYPHEN || code === NO_BREAK_HYPHEN) {
+        return (code === SOFT_HYPHEN ? widthOf(code) : undefined) ?? widthOf(HYPHEN);
+    }
+    return undefined;
+};
 
 /**
  * The width of each character of a font's face, in thousandths of an em, or undefined where Word's width isn't known.
  * Each is the open font's, where Word's PDF shows it is Word's too, or else Word's own, and undefined where Word drew the
  * character in another font, which depends on the fonts where the document is opened, or where Word's PDF doesn't show
- * it. Marks, which go on the character before them, and formatting characters, such as the zero-width space, take no
- * room, but for the soft hyphen, which Word draws as a hyphen. A font without a soft hyphen, as Carlito has none, has it
- * as wide as a hyphen, as Word draws it (word-watertight-text TX10b: 67.4 twips for each U+00AD in Calibri 11), and the
- * no-break hyphen is as wide as a hyphen, as the layout reads `w:noBreakHyphen` as one, which Word draws as a hyphen
- * whether the font has a no-break hyphen or not (TX17: "state-of-the-art" 1388.3 twips with them and 1388.5 with hyphens).
+ * it. Characters that take no room, and the hyphens, are as {@link specialWidthOf} says.
  */
 const widthsOf = (font: Font, face: Face): readonly (number | undefined)[] => {
     const { widthOf } = readFont(fileOf(font, face));
     const key = keyOf(font.name, face);
-    const word = WORD.find((reading) => reading.widths[key] !== undefined);
-    if (word === undefined) {
-        throw new Error(`None of Word's widths are of ${key}`);
-    }
+    const word = wordOf(key);
     /** The open font's width where it is Word's, or else Word's */
     const checked = (open: number | undefined, word: number): number =>
         open !== undefined && Math.abs(open - word) <= TOLERANCE ? open : Math.round(word);
     return CHARACTERS.map((code) => {
         const hex = code.toString(16).padStart(4, "0");
-        if (/[\p{Mn}\p{Me}\p{Cf}]/u.test(String.fromCodePoint(code)) && code !== SOFT_HYPHEN) {
-            return 0;
-        }
-        if (code === SOFT_HYPHEN || code === NO_BREAK_HYPHEN) {
-            return (code === SOFT_HYPHEN ? widthOf(code) : undefined) ?? widthOf(HYPHEN);
+        const special = specialWidthOf(code, widthOf);
+        if (special !== undefined) {
+            return special;
         }
         // Spaces are read from the space between letters, so Word's PDF reads them as they are
         const space = word.spaces[key]?.[hex];
@@ -188,6 +282,92 @@ const widthsOf = (font: Font, face: Face): readonly (number | undefined)[] => {
         const drawn = word.widths[key][hex];
         return drawn !== undefined && isOwnFont(drawn.font, font.name) ? checked(widthOf(code), drawn.width - word.offset) : undefined;
     });
+};
+
+// What Word's PDFs showed of Office's fonts that the tables don't follow, for the report printed at the end
+const report: string[] = [];
+
+/**
+ * The width of each character of a face of one of Office's fonts, from Word's own file of it, in thousandths of an em,
+ * or undefined where the font doesn't have the character, which Word draws in another font, or for a face the font has
+ * no file for, which Word makes itself. Word's PDF of the face is checked: Word draws each character the file has in
+ * the font, as wide as the file has it, to within its reading, but for some of the spaces, which Word works out itself,
+ * as it does Calibri's em space, 905 thousandths of an em where its file has 1000, and are Word's. Characters that take
+ * no room, and the hyphens, are as {@link specialWidthOf} says.
+ */
+const officeWidthsOf = (font: OfficeFont, face: Face): readonly (number | undefined)[] | undefined => {
+    const file = font.files[face];
+    if (file === undefined) {
+        return undefined;
+    }
+    const { widthOf } = readFont(officeFileOf(file));
+    const key = keyOf(font.name, face);
+    const word = wordOf(key);
+    const off: string[] = [];
+    const elsewhere = new Map<string, number>();
+    const widths = CHARACTERS.map((code) => {
+        const hex = code.toString(16).padStart(4, "0");
+        const special = specialWidthOf(code, widthOf);
+        if (special !== undefined) {
+            return special;
+        }
+        const own = widthOf(code);
+        const space = word.spaces[key]?.[hex];
+        if (space !== undefined) {
+            return own !== undefined && Math.abs(own - space) > TOLERANCE ? Math.round(space) : own;
+        }
+        const drawn = word.widths[key][hex];
+        if (own === undefined) {
+            if (drawn?.font) {
+                elsewhere.set(drawn.font, (elsewhere.get(drawn.font) ?? 0) + 1);
+            }
+            return undefined;
+        }
+        if (drawn !== undefined && !isOwnFont(drawn.font, font.name)) {
+            throw new Error(`Word drew ${hex} in ${drawn.font}, where ${font.name}'s file has it`);
+        }
+        if (drawn !== undefined && Math.abs(drawn.width - word.offset - own) > TOLERANCE) {
+            off.push(`${hex} ${(drawn.width - word.offset - own).toFixed(1)}`);
+        }
+        return own;
+    });
+    report.push(
+        `${key}: ${widths.filter((width) => width !== undefined).length} characters; Word's PDF reads ${off.length} of them otherwise` +
+            `${off.length > 0 ? ` (${off.join(", ")})` : ""}; the rest Word draws in ${[...elsewhere]
+                .sort(([, one], [, other]) => other - one)
+                .map(([name, count]) => `${name} ${count}`)
+                .join(", ")}`,
+    );
+    return widths;
+};
+
+/**
+ * Checks Word's PDF of a face of one of Office's fonts that it makes itself: an italic is as wide as the upright face,
+ * and a bold, each character 18 thousandths of an em wider than the face it is made from, but for the spaces, which are as
+ * wide as they are
+ */
+const checkMadeFace = (font: OfficeFont, face: Face): void => {
+    const bold = face === "bold" || face === "boldItalic";
+    const italic = face === "italic" || face === "boldItalic";
+    // Word makes a bold for a font without one from its regular face, or its italic for bold italic, and an italic from
+    // the upright face as bold as it
+    const madeBold = bold && font.files.bold === undefined;
+    const from: Face = madeBold ? (italic && font.files.italic !== undefined ? "italic" : "regular") : bold ? "bold" : "regular";
+    const { widthOf } = readFont(officeFileOf(font.files[from]!));
+    const key = keyOf(font.name, face);
+    const word = wordOf(key);
+    const differences = Object.entries(word.widths[key])
+        .filter(([hex, { font: drawnIn }]) => isOwnFont(drawnIn, font.name) && widthOf(parseInt(hex, 16)) !== undefined)
+        .map(([hex, { width }]) => width - word.offset - widthOf(parseInt(hex, 16))!)
+        .sort((one, other) => one - other);
+    const middle = differences[Math.floor(differences.length / 2)];
+    const expected = madeBold ? 18 : 0;
+    if (Math.abs(middle - expected) > TOLERANCE) {
+        throw new Error(`Word's ${key} is ${middle.toFixed(2)} wider than ${font.name} ${from}, not ${expected}`);
+    }
+    report.push(
+        `${key}: made by Word from ${from}, ${middle.toFixed(2)} thousandths of an em wider in the middle of ${differences.length} characters`,
+    );
 };
 
 // The digits of the widths, two to a width, from 0 to 4095 thousandths of an em
@@ -238,15 +418,48 @@ ${FACES.map((face) => `        ${face}: "${encode(widthsOf(font, face))}",`).joi
     },`;
 });
 
+// Office's fonts, whose faces' files have the same hhea tables, so their lines are as tall as each other's too
+const officeEntries = OFFICE_FONTS.map((font) => {
+    const heights = FACES.flatMap((face) => (font.files[face] === undefined ? [] : [hheaOf(officeFileOf(font.files[face]))]));
+    const [{ lineHeight, descent }] = heights;
+    if (heights.some((height) => height.lineHeight !== lineHeight || height.descent !== descent)) {
+        throw new Error(`${font.name}'s faces' lines aren't as tall as each other`);
+    }
+    for (const [size, height] of Object.entries(HEIGHTS[font.name] ?? {})) {
+        if (Math.abs(height - lineHeight) > TOLERANCE) {
+            throw new Error(`Word's lines of ${font.name} ${size} are ${height}, not ${lineHeight}`);
+        }
+    }
+    if (HEIGHTS[font.name] === undefined) {
+        throw new Error(`Word's heights don't have ${font.name}`);
+    }
+    const faces = FACES.flatMap((face) => {
+        const widths = officeWidthsOf(font, face);
+        if (widths === undefined) {
+            checkMadeFace(font, face);
+            return [];
+        }
+        return [`        ${face}: "${encode(widths)}",`];
+    });
+    return `    {
+        name: "${font.name}",
+        lineHeight: ${lineHeight},
+        descent: ${descent},
+${faces.join("\n")}
+    },`;
+});
+
 writeFileSync(
     OUTPUT,
     `/**
- * How wide each character is in the fonts Word documents use most, and how tall a line of text is.
+ * How wide each character is in the fonts Word documents use most, and in Office's other fonts that Word installs, and how
+ * tall a line of text is.
  *
  * Generated by scripts/generate-font-widths.ts from fonts with an open license that have the same widths:
  * Carlito (Calibri), Caladea (Cambria), and Liberation Sans, Serif and Mono (Arial, Times New Roman and Courier New),
  * plain, bold, italic and bold italic, checked against Word's: Word's own widths where its PDFs show they differ, and none
- * where Word draws a character in another font, as its width isn't known. Do not edit by hand.
+ * where Word draws a character in another font, as its width isn't known; and from Word's own files of Office's other
+ * fonts, checked against Word's PDFs of every character of them, and of how tall their lines are. Do not edit by hand.
  *
  * @module
  */
@@ -272,12 +485,18 @@ export type FontWidths = {
      * known; and "*" with two digits repeats what is before it that many more times
      */
     readonly regular: string;
-    /** The same for bold text */
-    readonly bold: string;
-    /** The same for italic text */
-    readonly italic: string;
-    /** The same for bold italic text */
-    readonly boldItalic: string;
+    /**
+     * The same for bold text, or none for a font without a bold face, such as Calibri Light, whose bold Word makes itself,
+     * each character wider than the regular, which the tables don't follow yet
+     */
+    readonly bold?: string;
+    /**
+     * The same for italic text, or none for a font without an italic face, such as Tahoma, whose italic Word slants from
+     * the upright face, as wide as it
+     */
+    readonly italic?: string;
+    /** The same for bold italic text, or none for a font without a bold italic face, as for italic text */
+    readonly boldItalic?: string;
 };
 
 /**
@@ -291,9 +510,10 @@ ${RANGES.map(([first, last]) => `    [0x${first.toString(16)}, 0x${last.toString
 
 /* cspell:disable */
 export const FONT_WIDTHS: readonly FontWidths[] = [
-${entries.join("\n")}
+${[...entries, ...officeEntries].join("\n")}
 ];
 /* cspell:enable */
 `,
 );
 execSync(`npx prettier --write ${OUTPUT}`);
+console.log(report.join("\n"));
