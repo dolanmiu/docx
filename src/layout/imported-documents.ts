@@ -10,10 +10,14 @@
  * - a style of the same type and name as one of the document's, whatever its id and the case of its name, is the
  *   document's, and the document's defaults, theme and settings are the document's (AC3, AC16). A style only the
  *   imported document has keeps how it looks there, with new ids where the document has its ids (AC3f): a paragraph
- *   style with the styles it is based on there and the imported document's defaults (AC3d, AS1, AS2, AS4), a character
+ *   style with the styles it is based on there and the imported document's defaults (AC3d, AS1, AS2, AS4), and Word's
+ *   own font and size, Times New Roman 10, where those give none (`stops2/word-stops-imported.ts` IM3), a character
  *   style with only what it and the character styles it is based on give (AS3), and a table style based on the
  *   document's styles of the names of those it is based on (AS6). Paragraphs and tables of no style are in the imported
  *   document's default style, the document's of its name or one added (AS5)
+ * - one whose formatting is kept as it is (`w:matchSrc`) keeps its paragraph and character styles of the document's
+ *   names too, as styles only it has, but its table styles of the document's names, such as Normal Table, are the
+ *   document's, and so is its theme, and Word gives its last paragraph none of its space after (AC3g, AS7 to AS9, IM2)
  * - its lists are lists of their own, numbered from their own start, and its notes are numbered with the document's
  *   (AC5, AC6)
  * - a bookmark of a name the document has is the document's, wherever it is (AC11a, AC11b). A bookmark of a name two
@@ -21,16 +25,26 @@
  * - a .docx it imports is turned into its own first (AC12)
  *
  * Those that aren't followed are left for the layout to stop at, with why: a document in another format, such as HTML or
- * plain text, which Word converts its own way (AC8); one whose formatting is kept as it is (`w:matchSrc`), whose last
- * paragraph Word gives none of its space after, though it keeps its text's look (AC3g, AS9); one with a style of its own
- * whose defaults leave out some of the document's, which Word's PDFs haven't shown; and one with a page reference or
+ * plain text, which Word converts its own way (AC8); one with a style of its own whose defaults leave out some of the
+ * document's other than its font and size, or its spacing and indents where they are Word's own, and East Asian or
+ * right-to-left text in one whose styles give no font, which Word's PDFs haven't shown; and one with a page reference or
  * number of pages, whose number docx can't write in it.
  *
  * @module
  */
 import type { Element } from "xml-js";
 
-import { type FontFace, type XmlObject, attributesOf, childrenOf, find, isObject, stringOf, withoutUndefined } from "../text-layout";
+import {
+    type FontFace,
+    type XmlObject,
+    attributesOf,
+    childrenOf,
+    find,
+    isEastAsian,
+    isObject,
+    stringOf,
+    withoutUndefined,
+} from "../text-layout";
 
 /** A .docx's package: its XML parts, parsed, its other parts, and the .docx files it imports, read the same way */
 export type DocxPackage = {
@@ -286,6 +300,34 @@ const defaultKeysOf = (root: XmlObject | undefined): ReadonlySet<string> =>
         }),
     );
 
+// What Word gives a document whose defaults leave out its text's font or size: Times New Roman 10, as it gave the
+// paragraphs of an imported document's own style, based on its defaults of neither, where the document's are Calibri 11
+// (scripts/layout-probes/stops2/word-stops-imported.ts IM3a, IM3b: lines of 230 twips)
+const BUILT_IN_RUN: Readonly<Record<string, XmlObject>> = {
+    "w:rFonts": { "w:rFonts": [{ _attr: { "w:ascii": "Times New Roman", "w:hAnsi": "Times New Roman" } }] },
+    "w:sz": { "w:sz": [{ _attr: { "w:val": 20 } }] },
+    "w:szCs": { "w:szCs": [{ _attr: { "w:val": 20 } }] },
+};
+// Word's spacing and indents where a document gives none: nothing before or after a paragraph, single lines, no indent
+const BUILT_IN_PARAGRAPH: Readonly<Record<string, string>> = {
+    "w:spacing w:before": "0",
+    "w:spacing w:after": "0",
+    "w:spacing w:line": "240",
+    "w:spacing w:lineRule": "auto",
+    "w:ind w:left": "0",
+    "w:ind w:start": "0",
+    "w:ind w:right": "0",
+    "w:ind w:end": "0",
+    "w:ind w:firstLine": "0",
+    "w:ind w:hanging": "0",
+};
+
+/** The value of a key of {@link defaultKeysOf} in a document's defaults: an attribute of its spacing or indents */
+const defaultValueOf = (root: XmlObject | undefined, key: string): string | undefined => {
+    const [name, attribute] = key.split(" ");
+    return stringOf(attributesOf(find(defaultsOf(root, "w:pPr"), name))[attribute]);
+};
+
 /** An imported document's styles put into a document's: those added, and the ids its paragraphs and tables refer to */
 type MergedStyles = {
     readonly added: readonly XmlObject[];
@@ -294,6 +336,8 @@ type MergedStyles = {
     readonly defaults: { readonly paragraph?: string; readonly table?: string };
     /** Why its styles can't be put in as Word puts them, where they can't */
     readonly unsupported?: string;
+    /** Whether the styles added give its Latin text Word's own font, as the imported document's defaults give none */
+    readonly ownFont?: boolean;
 };
 
 /**
@@ -303,16 +347,24 @@ type MergedStyles = {
  * document's of their names (AC3d, AS1, AS2, AS4), a character style with those it is based on there (AS3), and a table
  * style based on the document's of the names of those it is based on (AS6). Those added for others to be based on aren't
  * any type's default, nor are those added, and paragraphs and tables of no style of their own are in the imported
- * document's default, added or not (AS5).
+ * document's default, added or not (AS5). With its formatting kept (`keep`), its paragraph and character styles are all
+ * added so, those of the document's names too, and only its table styles of the document's names are the document's:
+ * Times New Roman 14 with 240 after in its Normal is kept, and so is its Heading 1 of 20 points where the document's is
+ * 16, but its Normal Table's cells of no margins are the document's of 108 (word-imported-styles.docx AS7, AS9,
+ * stops2/word-stops-imported.ts IM2a, IM2d).
  */
-const mergeStyles = (into: XmlObject | undefined, imported: XmlObject | undefined): MergedStyles => {
+const mergeStyles = (into: XmlObject | undefined, imported: XmlObject | undefined, keep = false): MergedStyles => {
     const own = stylesOf(into);
     // The first of a name, as one added for an imported document may have the name of one before it
     const keys = own.flatMap(({ key, id }) => (key === undefined ? [] : [[key, id] as const]));
     const byKey = new Map(keys.filter(([key], index) => keys.findIndex(([other]) => other === key) === index));
     const theirs = stylesOf(imported);
     const byId = new Map(theirs.map((style) => [style.id, style]));
-    const matched = new Map(theirs.flatMap(({ id, key }) => (key !== undefined && byKey.has(key) ? [[id, byKey.get(key)!] as const] : [])));
+    const matched = new Map(
+        theirs.flatMap(({ id, key, type }) =>
+            key !== undefined && byKey.has(key) && (!keep || type === "table") ? [[id, byKey.get(key)!] as const] : [],
+        ),
+    );
     // The styles added: those the document doesn't have, and those they are based on, as far as a style based on one
     // before it, or on none, or, for a table style, on one the document has
     const chainOf = (id: string | undefined, seen: readonly string[]): readonly string[] => {
@@ -324,10 +376,17 @@ const mergeStyles = (into: XmlObject | undefined, imported: XmlObject | undefine
     const kept = new Set(theirs.filter((style) => !matched.has(style.id)).flatMap(({ id }) => chainOf(id, [])));
     const keptParagraphs = theirs.filter(({ id, type }) => kept.has(id) && type === "paragraph");
     // The paragraph styles added are based on the imported document's defaults, as a style of their own, as they look
-    // as they do there, unless the document's defaults give something the imported document's don't, which isn't known
+    // as they do there, and where those leave out the document's font or size, or its spacing or indents of other than
+    // Word's own, Word's own (IM3a, IM3b). Where they leave out something else, it isn't known
     const ownDefaults = defaultKeysOf(into);
     const theirDefaults = defaultKeysOf(imported);
-    if (keptParagraphs.length > 0 && [...ownDefaults].some((key) => !theirDefaults.has(key))) {
+    const leftOut = [...ownDefaults].filter((key) => !theirDefaults.has(key));
+    if (
+        keptParagraphs.length > 0 &&
+        leftOut.some(
+            (key) => !(key in BUILT_IN_RUN) && (!(key in BUILT_IN_PARAGRAPH) || defaultValueOf(into, key) !== BUILT_IN_PARAGRAPH[key]),
+        )
+    ) {
         return {
             added: [],
             ids: new Map(),
@@ -380,7 +439,12 @@ const mergeStyles = (into: XmlObject | undefined, imported: XmlObject | undefine
                       "w:style": [
                           { _attr: { "w:type": "paragraph", "w:styleId": defaultsId } },
                           { "w:pPr": defaultsOf(imported, "w:pPr") },
-                          { "w:rPr": defaultsOf(imported, "w:rPr") },
+                          {
+                              "w:rPr": [
+                                  ...defaultsOf(imported, "w:rPr"),
+                                  ...leftOut.flatMap((key) => (key in BUILT_IN_RUN ? [BUILT_IN_RUN[key]] : [])),
+                              ],
+                          },
                       ],
                   },
               ];
@@ -394,6 +458,7 @@ const mergeStyles = (into: XmlObject | undefined, imported: XmlObject | undefine
         added: [...defaults, ...added],
         ids,
         defaults: withoutUndefined({ paragraph: defaultOf("paragraph"), table: defaultOf("table") }),
+        ...(keptParagraphs.length > 0 && leftOut.includes("w:rFonts") ? { ownFont: true } : {}),
     };
 };
 
@@ -425,6 +490,24 @@ const withDefaultStyles = (content: readonly unknown[], defaults: MergedStyles["
         const inner = name === "_attr" ? element : { [name]: withDefaultStyles(contentOf(element), defaults) };
         return name === "w:tbl" ? styled(inner, "w:tblPr", "w:tblStyle", defaults.table) : inner;
     });
+};
+
+/** Content whose last paragraph has no space after it, whatever its style gives it */
+const withNoSpaceAfter = (content: readonly unknown[]): readonly unknown[] => {
+    const at = content.findLastIndex((element) => isObject(element) && nameOf(element) === "w:p");
+    const paragraph = content[at] as XmlObject;
+    const children = contentOf(paragraph);
+    const properties = children.find((child) => isObject(child) && "w:pPr" in child) as XmlObject | undefined;
+    const ownProperties = childrenOf(properties?.["w:pPr"]);
+    const given = attributesOf(ownProperties.find((child) => "w:spacing" in child)?.["w:spacing"]);
+    const spacing = { "w:spacing": [{ _attr: { ...given, "w:after": 0, "w:afterAutospacing": 0 } }] };
+    const spaced = {
+        "w:p": [
+            { "w:pPr": [...ownProperties.filter((child) => !("w:spacing" in child)), spacing] },
+            ...children.filter((child) => child !== properties),
+        ],
+    };
+    return [...content.slice(0, at), spaced, ...content.slice(at + 1)];
 };
 
 /** The numbers an attribute gives elements of a part's root, such as each list's `w:numId` */
@@ -574,18 +657,24 @@ export const withImports = (parts: DocxParts): DocxParts => {
         ) {
             return "an imported document of several sections";
         }
-        if (find(childrenOf(find(childrenOf(element["w:altChunk"]), "w:altChunkPr")), "w:matchSrc") !== undefined) {
-            return "an imported document whose formatting is kept";
-        }
+        const keep = find(childrenOf(find(childrenOf(element["w:altChunk"]), "w:altChunkPr")), "w:matchSrc") !== undefined;
         if (
             hasPageField(content) ||
             [document.footnotes, document.endnotes].some((part) => part !== undefined && hasPageField([part.notes]))
         ) {
             return "a page reference or number of pages in an imported document";
         }
-        const style = mergeStyles(styles, document.styles);
+        const style = mergeStyles(styles, document.styles, keep);
         if (style.unsupported !== undefined) {
             return style.unsupported;
+        }
+        // Which font Word gives its East Asian and right-to-left text, where its styles give its Latin text Word's own, hasn't
+        // been seen
+        const eastAsianOrComplex =
+            elementsIn(content, (child) => "w:rtl" in child || "w:cs" in child).length > 0 ||
+            elementsIn(content, (child) => "w:t" in child).some((text) => [...contentOf(text).join("")].some(isEastAsian));
+        if (style.ownFont === true && eastAsianOrComplex) {
+            return "East Asian or right-to-left text in an imported document whose own styles give no font";
         }
         const list = mergeLists(numbering, document.numbering);
         const withIds = (notes: { readonly footnotes?: Ids; readonly endnotes?: Ids }): Renames => ({
@@ -602,11 +691,13 @@ export const withImports = (parts: DocxParts): DocxParts => {
         // The styles added are already based on each other by their new ids
         styles = withAdded(styles ?? { "w:styles": [] }, renamed(style.added, { ...renames, styles: none }) as readonly XmlObject[]);
         numbering = withAdded(numbering ?? { "w:numbering": [] }, renamed(list.added, renames) as readonly XmlObject[]);
-        // Its body, without its section's properties, and ending with a paragraph, as Word gives every document (AC2b, AC2c)
+        // Its body, without its section's properties, and ending with a paragraph, as Word gives every document (AC2b, AC2c).
+        // With its formatting kept, Word gives its last paragraph none of its space after (AS9, IM2a, IM2b)
         const blocks = content.filter((child) => !isObject(child) || !("w:sectPr" in child));
         const last = lastBlockOf(blocks);
         const ended = last !== undefined && nameOf(last) === "w:p" ? blocks : [...blocks, { "w:p": [] }];
-        return withoutBookmarks(withDefaultStyles(renamed(ended, renames), style.defaults), leftOut);
+        const own = withDefaultStyles(renamed(ended, renames), style.defaults);
+        return withoutBookmarks(keep ? withNoSpaceAfter(own) : own, leftOut);
     };
 
     const turned = (part: ContentPart): ContentPart =>
