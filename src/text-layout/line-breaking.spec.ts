@@ -3147,7 +3147,11 @@ describe("layoutLines in compatibility mode, as Word lays it out (scripts/layout
                 ({ textWidth }) => textWidth,
             ),
         ).to.deep.equal([140]);
-        // Past where Word was seen keeping it on the line, 941.4 points past the margin, how it breaks it hasn't been seen
+        // Past where Word was seen keeping it on the line, 941.4 points from the margin, how it breaks it hasn't been seen: text
+        // to 930 is laid out, and to 950 isn't
+        expect(linesOf([text("a"), tab, text("b".repeat(78))], left(150))).to.deep.equal([
+            { text: `a\t${"b".repeat(78)}`, textWidth: 930 },
+        ]);
         expect(linesOf([text("a"), tab, text("b".repeat(80))], left(150))[0].unsupported).to.equal(
             "text after a tab past the end of the line that goes further past the margin than Word was seen keeping it on the line, in a document in compatibility mode",
         );

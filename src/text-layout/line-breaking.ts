@@ -314,8 +314,9 @@ type Segment = {
 const DEFAULT_TAB_STOP = 36;
 // How far past its end a line may go before it wraps, for the rounding of the widths
 const TOLERANCE = 0.01;
-// How far past the margin Word 2010 and before were seen keeping the text after a tab past the end of a line on it, in
-// points: 18827 twips (`word-stops-compat2-14.docx` CN5a). Whether they break a longer line hasn't been seen
+// How far from where its lines start, at the margin, Word 2010 and before were seen keeping the text after a tab past the
+// end of a line on it, in points: to 18827 twips, past the margin's 9026 (`word-stops-compat2-14.docx` CN5a). Whether they
+// break a longer line hasn't been seen. A line's positions are from where the paragraph's lines start, as its tab stops are
 const OLDER_TAB_REACH = 941.4;
 
 // Word squeezes one more word onto a justified line when its spaces would otherwise stretch by a share of their width
