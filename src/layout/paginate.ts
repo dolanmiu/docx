@@ -2457,7 +2457,7 @@ export const paginate = (
         y: number,
         room?: LineRoom,
     ): LineLayout => {
-        const indent = room?.start ?? indentLeft + (isFirst ? firstLineIndent : 0);
+        const indent = room?.start ?? line.start ?? indentLeft + (isFirst ? firstLineIndent : 0);
         return {
             text: line.text,
             x: left + indent,

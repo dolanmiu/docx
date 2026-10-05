@@ -1925,7 +1925,7 @@ describe("layoutLines on a document grid, as Word lays it out (scripts/layout-pr
             expect(full).to.not.have.property("spacingBelow");
         });
 
-        it("should put emphasis marks' room in a line before it is put on the grid, with multiple line spacing too, and stop at them with at least a height (G11d, GR3)", () => {
+        it("should put emphasis marks' room in a line before it is put on the grid, with multiple line spacing and at least a height too (G11d, GR3, GR16d)", () => {
             const marked = [mincho("ab"), mincho(IDEOGRAPH.repeat(4), 10.5, { emphasis: "above" })];
             expect(linesOf(marked, LINES)[0].height).to.equal(18);
             expect(linesOf(marked, { ...LINES, format: { lineSpacing: { rule: "multiple", multiple: 1 } } })[0].height).to.equal(18);
@@ -1933,9 +1933,10 @@ describe("layoutLines on a document grid, as Word lays it out (scripts/layout-pr
             const spaced = linesOf(marked, { ...LINES, format: { lineSpacing: { rule: "multiple", multiple: 1.5 } } })[0];
             expect(spaced.height).to.equal(27);
             expect(spaced.unsupported).to.equal(undefined);
-            expect(unsupportedOf(marked, { ...LINES, format: { lineSpacing: { rule: "atLeast", height: 20 } } })).to.equal(
-                "emphasis marks on a line with at least a height of line spacing on a document grid",
-            );
+            // At least 20 points are 400 twips (stops2/word-stops-east-asian2.ts GR16d)
+            const atLeast = linesOf(marked, { ...LINES, format: { lineSpacing: { rule: "atLeast", height: 20 } } })[0];
+            expect(atLeast.height).to.equal(20);
+            expect(atLeast.unsupported).to.equal(undefined);
         });
     });
 
@@ -2052,27 +2053,81 @@ describe("layoutLines on a document grid, as Word lays it out (scripts/layout-pr
             expect(
                 countsOf([mincho(IDEOGRAPH.repeat(100))], { ...CC, format: { indentLeft: 2 * cell, firstLineIndent: 2 * cell } }),
             ).to.deep.equal([35, 37, 28]);
-            expect(unsupportedOf([mincho(IDEOGRAPH)], { ...CC, format: { indentLeft: 36 } })).to.equal(
-                "an indent of part of a character on a grid that snaps to characters",
-            );
-            expect(unsupportedOf([mincho(IDEOGRAPH)], { ...CC, format: { firstLineIndent: 21 } })).to.equal(
-                "an indent of part of a character on a grid that snaps to characters",
-            );
+            // Where the indents are, the lines start
+            expect(
+                linesOf([mincho(IDEOGRAPH.repeat(100))], { ...CC, format: { indentLeft: 2 * cell } }).map((line) => line.start),
+            ).to.deep.equal([undefined, undefined, undefined]);
         });
 
-        it("should start Chinese, Japanese or Korean text after a left tab at the next of the grid's cells, and stop at other tabs and text (GR10a)", () => {
+        it("should round an indent of part of a cell up to the next, and a hanging indent's other lines that many more cells in (GR14)", () => {
+            // The probes' grid: 40 cells of 225.65 twips
+            const cell = WIDTH / 40;
+            const GR14 = { grid: { linePitch: 18, characterPitch: cell } };
+            const startsOf = (format: LineLayoutOptions["format"]): readonly (number | undefined)[] =>
+                linesOf([mincho(IDEOGRAPH.repeat(80))], { ...GR14, format }).map(({ start }) =>
+                    start === undefined ? start : Math.round((start / cell) * 1e6) / 1e6,
+                );
+            // 1.2, 1.7 characters, and 300 twips: the 3rd cell (GR14a to GR14c)
+            expect(startsOf({ indentLeft: 1.2 * cell })).to.deep.equal([2, 2, 2]);
+            expect(startsOf({ indentLeft: 1.7 * cell })).to.deep.equal([2, 2, 2]);
+            expect(startsOf({ indentLeft: 15 })).to.deep.equal([2, 2, 2]);
+            expect(countsOf([mincho(IDEOGRAPH.repeat(80))], { ...GR14, format: { indentLeft: 1.2 * cell } })).to.deep.equal([38, 38, 4]);
+            // A first line indent of half a character: the 2nd cell, and the others at the 1st (GR14d)
+            expect(startsOf({ firstLineIndent: 0.5 * cell })).to.deep.equal([1, 0, 0]);
+            // 2 characters hanging half a character: the 3rd cell, and the others at the 4th (GR14e)
+            expect(startsOf({ indentLeft: 2 * cell, firstLineIndent: -0.5 * cell })).to.deep.equal([2, 3, 3]);
+            expect(
+                countsOf([mincho(IDEOGRAPH.repeat(80))], { ...GR14, format: { indentLeft: 2 * cell, firstLineIndent: -0.5 * cell } }),
+            ).to.deep.equal([38, 37, 5]);
+            // A whole first line indent beside a left indent of part of a cell
+            expect(startsOf({ indentLeft: 1.2 * cell, firstLineIndent: cell })).to.deep.equal([3, 2, 2]);
+            // A right indent of 1.5 characters leaves 38 cells (GR14f)
+            expect(countsOf([mincho(IDEOGRAPH.repeat(80))], { ...GR14, format: { indentRight: 1.5 * cell } })).to.deep.equal([38, 38, 4]);
+        });
+
+        it("should stop at indents of part of a cell Word hasn't been seen rounding, and at a tab in a paragraph with one", () => {
+            const cell = WIDTH / 40;
+            const GR14 = { grid: { linePitch: 18, characterPitch: cell } };
+            expect(
+                unsupportedOf([mincho(IDEOGRAPH)], { ...GR14, format: { indentLeft: 1.2 * cell, firstLineIndent: 0.5 * cell } }),
+            ).to.equal("a first line indent of part of a character beside a left indent of part of one on a grid that snaps to characters");
+            expect(unsupportedOf([mincho(IDEOGRAPH)], { ...GR14, format: { indentLeft: 0.5 * cell, firstLineIndent: -cell } })).to.equal(
+                "an indent of part of a character before the margin on a grid that snaps to characters",
+            );
+            expect(unsupportedOf([mincho(IDEOGRAPH)], { ...GR14, format: { indentLeft: -0.5 * cell } })).to.equal(
+                "an indent of part of a character before the margin on a grid that snaps to characters",
+            );
+            expect(
+                unsupportedOf([mincho(IDEOGRAPH), { type: "tab", font: {} }, mincho(IDEOGRAPH)], {
+                    ...GR14,
+                    format: { indentLeft: 0.5 * cell },
+                }),
+            ).to.equal("a tab in a paragraph indented part of a character on a grid that snaps to characters");
+        });
+
+        it("should start text after a left tab at the next of the grid's cells, and stop at other tabs and text (GR10a, GR16c)", () => {
             const cell = WIDTH / 39;
             // A default stop at 36 points, after one cell: the next character in the fourth, after 3 cells
             const [line] = linesOf([mincho(IDEOGRAPH), { type: "tab", font: {} }, mincho(IDEOGRAPH)], CC);
             expect(line.unsupported).to.equal(undefined);
             expect(line.textWidth).to.be.closeTo(5 * cell, 1e-9);
-            const STOP = "a tab on a grid that snaps to characters, but for a left one before Chinese, Japanese or Korean text";
-            expect(unsupportedOf([mincho(IDEOGRAPH), { type: "tab", font: {} }, run("a", "Times New Roman")], CC)).to.equal(STOP);
+            // Latin text too, in as many cells as it needs from there
+            const [latin] = linesOf([mincho(IDEOGRAPH), { type: "tab", font: {} }, run("a", "Times New Roman")], CC);
+            expect(latin.unsupported).to.equal(undefined);
+            expect(latin.textWidth).to.be.closeTo(5 * cell, 1e-9);
+            const STOP =
+                "a tab on a grid that snaps to characters, but for a left one before text, or a right or centred one before Chinese, Japanese or Korean text";
             expect(unsupportedOf([mincho(IDEOGRAPH), { type: "tab", font: {} }], CC)).to.equal(STOP);
+            expect(
+                unsupportedOf([mincho(IDEOGRAPH), { type: "tab", font: {} }, run("a", "Times New Roman")], {
+                    ...CC,
+                    tabStops: [{ position: 200, alignment: "right" }],
+                }),
+            ).to.equal(STOP);
             expect(
                 unsupportedOf([mincho(IDEOGRAPH), { type: "tab", font: {} }, mincho(IDEOGRAPH)], {
                     ...CC,
-                    tabStops: [{ position: 200, alignment: "right" }],
+                    tabStops: [{ position: 200, alignment: "decimal" }],
                 }),
             ).to.equal(STOP);
             // And one with no stop before the end of the line
@@ -2081,15 +2136,52 @@ describe("layoutLines on a document grid, as Word lays it out (scripts/layout-pr
             ).to.equal(STOP);
         });
 
-        it("should put a picture in as many of the grid's cells as it needs, and stop at one after other text, and at an equation (GR10b)", () => {
+        it("should end Chinese, Japanese or Korean text's cells at a right tab stop, and centre them on a centred one, off the grid's cells (GR16c)", () => {
+            // The probes' grid: 40 cells of 225.65 twips
+            const cell = WIDTH / 40;
+            const GR16 = { grid: { linePitch: 18, characterPitch: cell } };
+            const tabbed = (alignment: "right" | "center", position: number, after: string): LaidOutLine =>
+                linesOf([run("GR16c right", "Calibri"), { type: "tab", font: {} }, mincho(after)], {
+                    ...GR16,
+                    tabStops: [{ position, alignment }],
+                })[0];
+            // 6 ideographs at a right stop at 6000 twips start at 4646.1, and at a centred one at 4000 at 3323.1
+            const right = tabbed("right", 300, "日本語のタブ");
+            expect(right.unsupported).to.equal(undefined);
+            expect(right.textWidth).to.be.closeTo(300, 1e-9);
+            const centred = tabbed("center", 200, "日本語のタブ");
+            expect(centred.unsupported).to.equal(undefined);
+            expect(centred.textWidth).to.be.closeTo(200 + 3 * cell, 1e-9);
+            // Latin words at a left stop at 3000, from the 14th cell at 3159.1, in 5 cells
+            const [left] = linesOf([run("GR16c left", "Calibri"), { type: "tab", font: {} }, run("Latin words", "Calibri")], {
+                ...GR16,
+                tabStops: [{ position: 150, alignment: "left" }],
+            });
+            expect(left.unsupported).to.equal(undefined);
+            expect(left.textWidth).to.be.closeTo(19 * cell, 1e-9);
+            // And a picture after it
+            expect(
+                linesOf([run("a", "Calibri"), { type: "tab", font: {} }, mincho(IDEOGRAPH), { type: "box", width: 15, height: 10 }], {
+                    ...GR16,
+                    tabStops: [{ position: 300, alignment: "right" }],
+                })[0].textWidth,
+            ).to.be.closeTo(300, 1e-9);
+        });
+
+        it("should put a picture in as many of the grid's cells as it needs, after the cells of the text before it, and stop at an equation (GR10b, GR16f)", () => {
             const cell = WIDTH / 39;
             // 15 points in 2 cells of 11.57
             const [line] = linesOf([mincho(IDEOGRAPH), { type: "box", width: 15, height: 10 }, mincho(IDEOGRAPH)], CC);
             expect(line.unsupported).to.equal(undefined);
             expect(line.textWidth).to.be.closeTo(4 * cell, 1e-9);
-            const STOP = "an equation, or a picture after text other than Chinese, Japanese or Korean, on a grid that snaps to characters";
-            expect(unsupportedOf([run("a", "Times New Roman"), { type: "box", width: 15, height: 10 }], CC)).to.equal(STOP);
-            expect(unsupportedOf([mincho(IDEOGRAPH), { type: "box", width: 15, height: 10, descent: 2 }], CC)).to.equal(STOP);
+            // "GR16f abc" in 4 cells of 225.65 twips, the picture in 2 more, and 5 ideographs after them
+            const GR16 = { grid: { linePitch: 18, characterPitch: WIDTH / 40 } };
+            const [after] = linesOf([run("GR16f abc", "Calibri"), { type: "box", width: 15, height: 15 }, mincho("日本語の絵")], GR16);
+            expect(after.unsupported).to.equal(undefined);
+            expect(after.textWidth).to.be.closeTo((11 * WIDTH) / 40, 1e-9);
+            expect(unsupportedOf([mincho(IDEOGRAPH), { type: "box", width: 15, height: 10, descent: 2 }], CC)).to.equal(
+                "an equation on a grid that snaps to characters",
+            );
         });
 
         it("should break a word longer than its line after the last character that fits, and put the rest with the text after it in as many cells as they need (GR9)", () => {
@@ -2104,20 +2196,33 @@ describe("layoutLines on a document grid, as Word lays it out (scripts/layout-pr
             expect(lines[1].textWidth).to.be.closeTo((rest + 1) * cell, 1e-9);
         });
 
-        it("should leave a word with a soft hyphen that fits whole, and stop at one that doesn't fit (GR7a)", () => {
+        it("should leave a word with a soft hyphen that fits whole, and break one that doesn't at its last soft hyphen whose part fits in the cells left (GR7a, GR16a)", () => {
             const softened = (before: string): readonly InlineItem[] => [
                 run(before, "Times New Roman"),
                 { type: "softHyphen", font: {} },
                 run("cd", "Times New Roman"),
             ];
             expect(unsupportedOf(softened("ab"), CC)).to.equal(undefined);
-            expect(unsupportedOf(softened(`ab ${"a".repeat(100)}`), CC)).to.equal(
-                "a soft hyphen at the end of a line on a grid that snaps to characters",
+            expect(linesOf(softened("ab"), CC).map((line) => line.text)).to.deep.equal(["abcd"]);
+            // "GR16a " and 30 ideographs, then "Donaudampf-" in the 6 cells left of 40, and the rest of the word in 12 cells at
+            // the start of the next line, before 28 ideographs (stops2/word-stops-east-asian2.ts GR16a)
+            const JAPANESE = "測量は夏に船と徒歩で行われ、灯台から河口まで続いた。記録には見つかったものが書かれている。";
+            const hyphen = { type: "softHyphen", font: { font: "Calibri", size: 10.5 } } as const;
+            const word = ["Donau", "dampf", "schiff", "fahrts", "gesell", "schaft", "kapitän"].flatMap(
+                (part, index): readonly InlineItem[] => (index === 0 ? [run(part, "Calibri")] : [hyphen, run(part, "Calibri")]),
             );
-            // After another reason, which it is the first of
-            expect(unsupportedOf(softened("ab"), { ...CC, format: { indentLeft: 1 } })).to.equal(
-                "an indent of part of a character on a grid that snaps to characters",
+            const lines = linesOf(
+                [run("GR16a ", "Calibri"), mincho(JAPANESE.slice(0, 30)), ...word, run(" ", "Calibri"), mincho(JAPANESE)],
+                {
+                    grid: { linePitch: 18, characterPitch: WIDTH / 40 },
+                },
             );
+            expect(lines.map((line) => line.unsupported)).to.deep.equal([undefined, undefined, undefined]);
+            expect(lines.map((line) => line.text)).to.deep.equal([
+                `GR16a ${JAPANESE.slice(0, 30)}Donaudampf`,
+                `schifffahrtsgesellschaftkapitän ${JAPANESE.slice(0, 28)}`,
+                JAPANESE.slice(28),
+            ]);
         });
 
         it("should start a line beside a drawing at the next of the grid's cells (GR7b)", () => {
@@ -2127,20 +2232,22 @@ describe("layoutLines on a document grid, as Word lays it out (scripts/layout-pr
             expect([...line.text].length).to.equal(36);
         });
 
-        it("should not squeeze a justified line, and stop at a distributed one that only fits squeezed (GR8)", () => {
+        it("should squeeze neither a justified line nor a distributed one, and stop at one justified for Thai that only fits squeezed (GR8, GR16b)", () => {
             // 21 words of 3 letters, which end a cell short of the line: a word of one more, with its space, fits only
             // squeezed
             const squeezed = `${Array.from({ length: 33 }, () => "abc").join(" ")} abcd`;
-            const options = (alignment: "justified" | "distributed"): Partial<LineLayoutOptions> => ({
+            const options = (alignment: "justified" | "distributed" | "thaiDistributed"): Partial<LineLayoutOptions> => ({
                 grid: { characterPitch: 10 },
                 width: 167,
                 format: { alignment },
             });
-            const justified = linesOf([run(squeezed, "Times New Roman", 10)], options("justified"));
-            expect(justified.map((line) => line.unsupported)).to.deep.equal(justified.map(() => undefined));
-            expect(justified[0].text.endsWith("abc ")).to.equal(true);
-            expect(unsupportedOf([run(squeezed, "Times New Roman", 10)], options("distributed"))).to.equal(
-                "a distributed line on a grid that snaps to characters that only fits squeezed",
+            for (const alignment of ["justified", "distributed"] as const) {
+                const lines = linesOf([run(squeezed, "Times New Roman", 10)], options(alignment));
+                expect(lines.map((line) => line.unsupported)).to.deep.equal(lines.map(() => undefined));
+                expect(lines[0].text.endsWith("abc ")).to.equal(true);
+            }
+            expect(unsupportedOf([run(squeezed, "Times New Roman", 10)], options("thaiDistributed"))).to.equal(
+                "a line justified for Thai or with a kashida on a grid that snaps to characters that only fits squeezed",
             );
         });
 
@@ -2169,22 +2276,33 @@ describe("layoutLines on a document grid, as Word lays it out (scripts/layout-pr
         ]);
     });
 
-    it("should kern text on a grid of lines and characters, and stop at text kerned or with ligatures where how Word kerns and joins it hasn't been seen (GR5)", () => {
-        const STOP = "ligatures on a document grid of characters, or kerning on one that snaps to characters";
+    it("should kern text on a grid of lines and characters, and on one that snaps to characters, and stop at ligatures on either (GR5, GR16e)", () => {
+        const STOP = "ligatures on a document grid of characters";
         const kerned = run("To", "Calibri", 10.5, { kerning: 1 });
-        expect(unsupportedOf([kerned], { grid: { characterPitch: 10 } })).to.equal(STOP);
+        expect(unsupportedOf([run("office", "Calibri", 10.5, { ligatures: "standard" })], { grid: { characterPitch: 10 } })).to.equal(STOP);
         expect(
             unsupportedOf([run("office", "Calibri", 10.5, { ligatures: "standard" })], { grid: { linePitch: 18, characterSpace: 2 } }),
         ).to.equal(STOP);
+        // Kerned, Latin text on a grid that snaps to characters takes 20 cells of 225.65 twips, which takes 21 as it is
+        // without (stops2/word-stops-east-asian2.ts GR16e)
+        const cell = WIDTH / 40;
+        const GR16e = "GR16e AVATAR Toyota WAVE Yo Te LT kerned text";
+        const cellsOf = (font: TextFont): number =>
+            linesOf([run(GR16e, "Calibri", 11, font)], { grid: { linePitch: 18, characterPitch: cell } })[0].textWidth / cell;
+        expect(cellsOf({ kerning: 1 })).to.be.closeTo(20, 1e-9);
+        expect(cellsOf({})).to.be.closeTo(21, 1e-9);
+        // Kerned across the words, between the space and the letter after it too
+        const words = GR16e.split(/(?<= )/u).map((word): InlineItem => run(word, "Calibri", 11, { kerning: 1 }));
+        expect(linesOf(words, { grid: { linePitch: 18, characterPitch: cell } })[0].textWidth / cell).to.be.closeTo(20, 1e-9);
         // Kerned on a grid of lines and characters, with the grid's space after each character
         const [line] = linesOf([kerned], { grid: { linePitch: 18, characterSpace: 1 } });
         expect(line.unsupported).to.equal(undefined);
         expect(line.textWidth).to.be.lessThan(measureTextWidth("To", kerned.type === "text" ? kerned.font : {}) + 2);
         // But not text in a run that doesn't snap to the grid, which is as it is without one, nor on a grid of lines only
-        expect(unsupportedOf([run("To", "Calibri", 10.5, { kerning: 1, snapToGrid: false })], { grid: { characterPitch: 10 } })).to.equal(
-            undefined,
-        );
-        expect(unsupportedOf([kerned], { grid: { linePitch: 18 } })).to.equal(undefined);
+        expect(
+            unsupportedOf([run("office", "Calibri", 10.5, { ligatures: "standard", snapToGrid: false })], { grid: { characterPitch: 10 } }),
+        ).to.equal(undefined);
+        expect(unsupportedOf([run("office", "Calibri", 10.5, { ligatures: "standard" })], { grid: { linePitch: 18 } })).to.equal(undefined);
     });
 });
 

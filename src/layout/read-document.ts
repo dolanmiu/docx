@@ -712,8 +712,8 @@ type Reader = {
     readonly feLayout?: boolean;
     /** Whether the document turns on OpenType features, such as ligatures, in compatibility mode (`enableOpenTypeFeatures`) */
     readonly openTypeFeatures?: boolean;
-    /** Why its text in an East Asian language can't be laid out as Word does for the document's settings, when it can't */
-    readonly eastAsianRules?: string;
+    /** The document's settings for text in an East Asian language that Word lays out only in some of it (see `EastAsianRules`) */
+    readonly eastAsianRules?: EastAsianRules;
 };
 
 // Word's defaults for a section that doesn't give its page: Letter, with inch margins
@@ -2627,9 +2627,7 @@ const readParagraph = (element: XmlObject, reader: Reader, tableFormats: TableFo
     const unsupported =
         list.unsupported ??
         ownCells ??
-        (reader.eastAsianRules !== undefined && own.some((item) => item.type === "text" && kinsokuLanguageOf(item.language) !== undefined)
-            ? reader.eastAsianRules
-            : undefined) ??
+        unknownEastAsianRules(reader.eastAsianRules, own, combined.alignment) ??
         (reader.down === true ? unknownDownOf(own, tabStops) : undefined) ??
         (typeof frame === "string"
             ? frame
@@ -5059,21 +5057,69 @@ const readMathsSettings = (settings: readonly XmlObject[]): Pick<Reader, "maths"
 };
 
 /**
- * Why text in Japanese, Chinese or Korean can't be laid out as Word does for the document's settings, when it can't: with
- * Word's strict rules for the characters that can't start a line (`w:strictFirstAndLastChars`), or its punctuation, or
- * its punctuation and kana, compressed (`w:characterSpacingControl`). Word left the lines of Japanese text in no language
- * as they are without them, as it leaves out its rules for the characters that can't start or end a line there
- * (scripts/layout-probes/stops2/word-stops-east-asian.ts EA1 to EA3: small kana, iteration marks and closing brackets
- * started lines, and opening brackets ended them, at 42 ideographs a line). In text in one of those languages, they
- * haven't been seen.
+ * The document's settings for text in Japanese, Chinese or Korean that Word has been seen laying out only in some of it:
+ * Word's strict rules for the characters that can't start a line (`w:strictFirstAndLastChars`), and its punctuation, or
+ * its punctuation and kana, compressed (`w:characterSpacingControl`).
  */
-const readEastAsianRules = (settings: readonly XmlObject[]): string | undefined => {
+type EastAsianRules = {
+    readonly strict: boolean;
+    readonly compressed: boolean;
+    /** Whether the document has its own list of the characters that can't start or end a line of Japanese */
+    readonly ownJapaneseList: boolean;
+};
+
+/** The document's settings for text in an East Asian language that Word lays out only in some of it, when it has any */
+const readEastAsianRules = (settings: readonly XmlObject[]): EastAsianRules | undefined => {
     const spacingControl = valueOf(settings, "w:characterSpacingControl");
-    return onOff(settings, "w:strictFirstAndLastChars") === true
-        ? "the strict rules for the characters that can't start a line, in text in an East Asian language"
-        : spacingControl !== undefined && spacingControl !== "doNotCompress"
-          ? "punctuation compressed in text in an East Asian language"
-          : undefined;
+    const rules = {
+        strict: onOff(settings, "w:strictFirstAndLastChars") === true,
+        compressed: spacingControl !== undefined && spacingControl !== "doNotCompress",
+        ownJapaneseList: readKinsokuLists(settings).japanese !== undefined,
+    };
+    return rules.strict || rules.compressed ? rules : undefined;
+};
+
+// Half-width small katakana and the half-width prolonged sound mark, which the specification's strict list keeps from the
+// start of a line of Japanese, but Word's normal list doesn't (see `line-break-rules.ts`)
+// cspell:disable-next-line
+const HALF_WIDTH_SMALL_KANA = /[ｧ-ｯｰ]/u;
+
+/**
+ * Why a paragraph's text in Japanese, Chinese or Korean can't be laid out as Word does for the document's settings, when it
+ * can't. Word left the lines of Japanese text in no language as they are with them, as it leaves out its rules for the
+ * characters that can't start or end a line there (scripts/layout-probes/stops2/word-stops-east-asian.ts EA1 to EA3:
+ * small kana, iteration marks and closing brackets started lines, and opening brackets ended them, at 42 ideographs a
+ * line). In text in Japanese, its strict rules kept small kana from starting a line: lines of 37 ideographs and kana where
+ * 42 fit, ended before the ideograph before them (`word-stops-east-asian2.ts` EA4a). Punctuation compressed, or punctuation
+ * and kana, Word left as it is in Japanese text aligned left: lines of 41 ideographs, kana and brackets, as many as without
+ * (EA4b, EA4c). Those rules in Chinese and Korean text haven't been seen, nor the strict ones with the document's own list
+ * for Japanese, or before the half-width small katakana they may keep from the start of a line, nor compressed punctuation
+ * in a justified or distributed line, which may squeeze it to fit more.
+ */
+const unknownEastAsianRules = (
+    rules: EastAsianRules | undefined,
+    items: readonly LayoutItem[],
+    alignment: ParagraphFormat["alignment"],
+): string | undefined => {
+    const texts = items.filter((item) => item.type === "text");
+    const languages = new Set(texts.map((item) => kinsokuLanguageOf(item.language)).filter((language) => language !== undefined));
+    if (rules === undefined || languages.size === 0) {
+        return undefined;
+    }
+    const japanese = texts.filter((item) => kinsokuLanguageOf(item.language) === "japanese");
+    const otherLanguage = [...languages].some((language) => language !== "japanese");
+    if (rules.strict && (otherLanguage || rules.ownJapaneseList || japanese.some((item) => HALF_WIDTH_SMALL_KANA.test(item.text)))) {
+        return otherLanguage
+            ? "the strict rules for the characters that can't start a line, in text in Chinese or Korean"
+            : "the strict rules for the characters that can't start a line of Japanese, with the document's own list of them or before half-width small katakana";
+    }
+    const stretched = alignment !== undefined && alignment !== "left" && alignment !== "center" && alignment !== "right";
+    if (rules.compressed && (otherLanguage || stretched)) {
+        return otherLanguage
+            ? "punctuation compressed in text in Chinese or Korean"
+            : "punctuation compressed in a justified or distributed paragraph of text in Japanese";
+    }
+    return undefined;
 };
 
 /**
@@ -5095,6 +5141,11 @@ const readSettings = (
     const settings = childrenOf(xml?.["w:settings"]);
     const compatibility = childrenOf(find(settings, "w:compat"));
     const lists = readKinsokuLists(settings);
+    // With Word's strict rules for the characters that can't start a line of Japanese (see `unknownEastAsianRules`)
+    const breakRules: LineBreakRules = {
+        ...(Object.keys(lists).length > 0 ? { lists } : {}),
+        ...(onOff(settings, "w:strictFirstAndLastChars") === true ? { strict: true } : {}),
+    };
     const mode = compatibilityModeOf(settings);
     const olderMode = olderModeOf(settings);
     // Pages printed folded as a booklet are half the paper, in a way Word's PDF hasn't shown (`word-stops-booklet.docx` BK1:
@@ -5116,7 +5167,7 @@ const readSettings = (
         defaultTabStop: twips(attributesOf(find(settings, "w:defaultTabStop"))["w:val"]) ?? 36,
         evenAndOddHeaders: onOff(settings, "w:evenAndOddHeaders") === true,
         addsParagraphSpacing: onOff(compatibility, "w:doNotUseHTMLParagraphAutoSpacing") === true,
-        ...(Object.keys(lists).length > 0 ? { breakRules: { lists } } : {}),
+        ...(Object.keys(breakRules).length > 0 ? { breakRules } : {}),
         ...(onOff(settings, "w:autoHyphenation") === true ? { hyphenation: readHyphenation(settings) } : {}),
         ...(olderMode === undefined ? {} : { compatibilityMode: olderMode }),
         ...(onOff(compatibility, "w:suppressTopSpacing") === true ? { suppressesTopSpacing: true } : {}),
@@ -5339,7 +5390,6 @@ export const readContent = (writtenBody: XmlObject, writtenParts: DocumentParts,
         mirrorMargins: onOff(settings, "w:mirrorMargins") === true,
     };
     const grids = new Map<number, TextGrid | undefined>();
-    const sameGrid = (one: TextGrid | undefined, other: TextGrid | undefined): boolean => JSON.stringify(one) === JSON.stringify(other);
     /** The document grid of a section, by its index, when it has one that is followed */
     const gridOf = (section: number): TextGrid | undefined => {
         if (!grids.has(section)) {
@@ -5359,11 +5409,14 @@ export const readContent = (writtenBody: XmlObject, writtenParts: DocumentParts,
         shows?: Reader["noteNumber"],
         content = contentOf(notesByKind[kind].get(id) ?? { [`w:${kind}`]: [] }),
     ): readonly Block[] => {
-        // A note's lines are on the grid of the section of its reference, which is being read, but not its separators
-        // (word-grid.ts G9, word-grid3.ts H2, H3)
+        // A footnote's lines are on the grid of the section of its reference, which is being read, and an endnote's on the
+        // last section's, which they follow, but not their separators (word-grid.ts G9, word-grid3.ts H2, H3): an endnote's
+        // lines of MS Mincho 10.5 are 268 twips apart after a last section on no grid, from a section on a grid of lines of
+        // 360, and before one, from a section on none (stops2/word-stops-east-asian2.ts GR15a, GR15c)
         const separator = shows === undefined;
-        const grid = separator ? undefined : gridOf(sections.length);
-        const down = !separator && downOf(childrenOf(sectionElements[sections.length])) !== undefined;
+        const section = kind === "endnote" ? lastSection : sections.length;
+        const grid = separator ? undefined : gridOf(section);
+        const down = !separator && downOf(childrenOf(sectionElements[section])) !== undefined;
         const readerOfNote: Reader = {
             ...readerOf(false),
             inNote: true,
@@ -5468,6 +5521,8 @@ export const readContent = (writtenBody: XmlObject, writtenParts: DocumentParts,
         const properties = sectionPropertiesOf(element);
         return properties === undefined ? [] : [properties];
     });
+    // The last section, whose properties end the body, or one of Word's after the last that does when they don't
+    const lastSection = elements.some((element) => nameOf(element) === "w:sectPr") ? sectionElements.length - 1 : sectionElements.length;
     /** How a section numbers and places its notes of a kind: as it says, or the document does, or as Word does */
     const notePropertiesOf = (kind: NoteKind, section: number): Required<NoteProperties> => ({
         ...NOTE_DEFAULTS[kind],
@@ -5760,19 +5815,18 @@ export const readContent = (writtenBody: XmlObject, writtenParts: DocumentParts,
                 documentContent.unsupported ??
                 (footnotes.size > 0 ? notesUnsupported("footnote") : undefined) ??
                 (endnotes.length > 0 ? notesUnsupported("endnote") : undefined) ??
-                // Endnotes follow the last section's text, on its grid, where the sections from theirs on are all on one grid
-                // and run across the page. Word ended those of a section on a grid of lines that a section of text running down
-                // the page followed with their own section, and that one's with it too, rather than at the end of the document
-                // (stops2/word-stops-east-asian.ts GR13), which isn't followed, and whether it does so for another grid alone, or
-                // the direction alone, hasn't been seen
-                (sections.slice(Math.min(...endnoteSections)).some(({ textRunsDown }) => textRunsDown !== undefined)
-                    ? "endnotes on or before text that runs down the page"
-                    : undefined) ??
+                // Endnotes follow the last section's text, on its grid, after sections on other grids too
+                // (stops2/word-stops-east-asian2.ts GR15a, GR15c). Word ends those of a section followed by one whose text runs
+                // another way, down the page or across it, with their own section, rather than at the end of the document
+                // (word-stops-east-asian.ts GR13, word-stops-east-asian2.ts GR15b), which isn't followed. Where they go
+                // after text that runs down the page hasn't been seen without that
                 (endnoteSections.some((section) =>
-                    sections.slice(section + 1).some((_, after) => !sameGrid(gridOf(section), gridOf(section + 1 + after))),
+                    sections.slice(section + 1).some(({ textRunsDown }) => textRunsDown !== sections[section].textRunsDown),
                 )
-                    ? "endnotes from a section followed by one on another document grid"
-                    : undefined) ??
+                    ? "endnotes from a section followed by one whose text runs another way"
+                    : endnoteSections.length > 0 && sections[sections.length - 1].textRunsDown !== undefined
+                      ? "endnotes after text that runs down the page"
+                      : undefined) ??
                 (unwrittenNumber ? "notes numbered in a format not yet written" : undefined) ??
                 unseenNumbering,
         }),

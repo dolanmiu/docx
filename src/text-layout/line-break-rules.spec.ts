@@ -67,6 +67,17 @@ describe("findLineBreaks", () => {
         expect(breaksOf("永、永「永", "ja-JP", { kinsoku: false })).to.deep.equal([1, 2, 3, 4]);
     });
 
+    it("should keep small kana and the prolonged sound mark from starting a line of Japanese by Word's strict rules (EA4a)", () => {
+        expect(breaksOf("記録ぁぃ記ーァ", "ja-JP")).to.deep.equal([1, 2, 3, 4, 5, 6]);
+        expect(breaksOf("記録ぁぃ記ーァ", "ja-JP", { strict: true })).to.deep.equal([1, 4]);
+        // Not in Chinese, nor half-width small katakana
+        expect(breaksOf("記録ぁ", "zh-CN", { strict: true })).to.deep.equal([1, 2]);
+        expect(breaksOf("記録ｧ", "ja-JP", { strict: true })).to.deep.equal([1, 2]);
+        // The document's own list takes their place
+        expect(breaksOf("記録ぁ", "ja-JP", { strict: true, lists: { japanese: { noLineEnd: "" } } })).to.deep.equal([1]);
+        expect(breaksOf("記録ぁ", "ja-JP", { strict: true, lists: { japanese: { noLineStart: "" } } })).to.deep.equal([1, 2]);
+    });
+
     it("should take the document's own lists in place of Word's", () => {
         // The document's list of characters that can't start a line, with Word's of those that can't end one
         const lists = { japanese: { noLineStart: "永" } };
