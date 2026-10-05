@@ -4971,7 +4971,7 @@ export const paginate = (
             // its header rows repeated there, which have the table's top border above them, the row is as far below them as
             // on the page before (word-stops-table-borders2.docx BT4c). The part of a row that breaks there hasn't been seen
             const { breakTop = 0 } = table.rows[index];
-            const belowHeaders = headerRows > 0 && index >= headerRows;
+            const belowHeaders = headerRows > 0 && index >= headerRows && !cutHeader;
             if (breakTop > 0 && (index > 0 || continuing)) {
                 if (belowHeaders && continuing) {
                     stopAt("a table row with space between its cells that breaks across pages below header rows");
