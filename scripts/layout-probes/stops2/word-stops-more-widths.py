@@ -276,4 +276,6 @@ def main(path):
         print(f"    {face} {code}: {least} to {most}")
 
 
-main(sys.argv[1])
+# Its functions read other probes' PDFs too, such as word-stops-arabic.py's
+if __name__ == "__main__":
+    main(sys.argv[1])
