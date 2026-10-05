@@ -1457,13 +1457,13 @@ export const layoutLines = (
         state.position + tokenWidth - limitOf() <= MOST_SQUEEZE * state.spaces;
     /**
      * Why where Word puts the text after a tab to one of the paragraph's own stops past the end of the line isn't known,
-     * when it isn't: its probes had no first line or hanging indent, no right indent past the margin, indents only with a
-     * left stop after text, a left indent with a right stop at the start of a line (scripts/layout-probes/stops2/word-stops-tabs.ts
-     * TA3d), a right indent only with a right stop after text, and centred and decimal stops in a paragraph without indents,
-     * after text and at the start of a line (TA3a to TA3c)
+     * when it isn't: its probes had no right indent past the margin, indents, first line and hanging ones too
+     * (scripts/layout-probes/stops2/word-stops-tabs.ts TA1a, TA1b), only with a left stop after text, a left indent with a
+     * right stop at the start of a line (TA3d), a right indent only with a right stop after text, and centred and decimal
+     * stops in a paragraph without indents, after text and at the start of a line (TA3a to TA3c)
      */
     const pastEndUnknown = ({ alignment: kind }: TabStop, started: boolean): string | undefined => {
-        if (firstLineIndent !== 0 || indentRight < 0) {
+        if (indentRight < 0 || (firstLineIndent !== 0 && (kind !== "left" || !started))) {
             return "a tab stop past the end of the line in a paragraph with a first line or hanging indent, or indented past the margin";
         }
         if (kind === "left") {
@@ -1836,17 +1836,28 @@ export const layoutLines = (
                 // or of the next when it doesn't fit (word-watertight-text.ts TX12c, word-breaks-and-tabs.ts TP1, TP2, TP5, TP7),
                 // at the start of a line too (word-stops-tabs.ts TA3a to TA3d); a left one takes a line of its own, below the text
                 // before it, and the text after it goes on to the start of the next (TX12d, TP3, TP4, word-stops-tabs.docx TA8a to
-                // TA8g). Past the last of the default stops before the end of the line, the tab goes on to the next line, as below
-                // (TX12b)
+                // TA8g), with a first line or hanging indent too (TA1a, TA1b). Past the last of the default stops before the end of
+                // the line, the tab goes on to the next line, as below (TX12b)
                 const pastEnd = own && next.position > Math.max(limitOf(), marginOf()) + TOLERANCE ? next : undefined;
+                // A left one past the margin in a paragraph indented past it, with text after it that doesn't fit: Word put the
+                // tab on the next line, at its stop, and broke the text after it there as a word longer than its line
+                // (word-stops-tabs.ts TA1c), which a word after a tab elsewhere isn't
+                const pastMargin =
+                    own &&
+                    indentRight < 0 &&
+                    next.alignment === "left" &&
+                    next.position > marginOf() + TOLERANCE &&
+                    next.position + widthAfterTab(rest, measurer) > limitOf() + TOLERANCE;
                 const unknown =
                     pastIndent && squeezes
                         ? "a tab stop past the paragraph's right indent in a justified line"
                         : pastIndent && next.alignment === "left" && next.position + widthAfterTab(rest, measurer) > marginOf() + TOLERANCE
                           ? "text after a tab stop past the paragraph's right indent that goes past the margin"
-                          : pastEnd === undefined
-                            ? undefined
-                            : pastEndUnknown(pastEnd, line.started);
+                          : pastMargin && pastEnd === undefined
+                            ? "text after a left tab stop past the margin, in a paragraph indented past it, that goes past the end of the line"
+                            : pastEnd === undefined
+                              ? undefined
+                              : pastEndUnknown(pastEnd, line.started);
                 if (unknown !== undefined) {
                     line = { ...line, unsupported: line.unsupported ?? unknown };
                 }

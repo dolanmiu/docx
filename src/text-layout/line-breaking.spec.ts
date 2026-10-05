@@ -2410,14 +2410,15 @@ describe("tab stops past the end of the line", () => {
     it("should give a left stop past the end of the line a line of its own, and put the text after it on the next, as Word does", () => {
         // word-breaks-and-tabs TP3, TP4, word-stops-tabs.docx TA8a to TA8g: at the start of a paragraph, the tab takes its
         // first line, and the text goes on the next; after text, in a paragraph indented on the left or the right too, the
-        // tab takes the next line, and the text the one after, at the indent
+        // tab takes the next line, and the text the one after, at the indent. TA1a, TA1b: with a first line or hanging
+        // indent too, the text going at the start of its line, the left indent
         expect(
             linesOf([tab, text("bb")], at("left")).map(({ text: value, textWidth, unsupported }) => [value, textWidth, unsupported]),
         ).to.deep.equal([
             ["\t", 0, undefined],
             ["bb", 20, undefined],
         ]);
-        for (const format of [{ indentLeft: 10 }, { indentRight: 10 }]) {
+        for (const format of [{ indentLeft: 10 }, { indentRight: 10 }, { firstLineIndent: 10 }, { firstLineIndent: -10, indentLeft: 10 }]) {
             const indented = linesOf([text("a"), tab, text("bb")], { ...at("left"), format });
             expect(indented.map(({ text: value, unsupported }) => [value, unsupported])).to.deep.equal([
                 ["a", undefined],
@@ -2444,11 +2445,18 @@ describe("tab stops past the end of the line", () => {
         const unsupportedOf = (items: readonly InlineItem[], options: Partial<LineLayoutOptions>): string | undefined =>
             linesOf(items, options)[0].unsupported;
         const indented = (format: object) => ({ format });
-        for (const format of [{ firstLineIndent: 10 }, { firstLineIndent: -10, indentLeft: 10 }, { indentRight: -10 }]) {
-            expect(unsupportedOf([text("a"), tab, text("b")], { ...at("left", 150), ...indented(format) })).to.equal(
-                "a tab stop past the end of the line in a paragraph with a first line or hanging indent, or indented past the margin",
-            );
+        // With a first line or hanging indent, a right, centred or decimal stop, and a left one at the start of a line indented
+        // further (a hanging indent's line starts before its stop at the indent); and a left one after text in a paragraph
+        // indented past the margin
+        const firstLineStop =
+            "a tab stop past the end of the line in a paragraph with a first line or hanging indent, or indented past the margin";
+        for (const format of [{ firstLineIndent: 10 }, { firstLineIndent: -10, indentLeft: 10 }]) {
+            for (const alignment of ["right", "center", "decimal"] as const) {
+                expect(unsupportedOf([text("a"), tab, text("b")], { ...at(alignment), ...indented(format) })).to.equal(firstLineStop);
+            }
         }
+        expect(unsupportedOf([tab, text("b")], { ...at("left"), ...indented({ firstLineIndent: 10 }) })).to.equal(firstLineStop);
+        expect(unsupportedOf([text("a"), tab, text("b")], { ...at("left"), ...indented({ indentRight: -10 }) })).to.equal(firstLineStop);
         expect(unsupportedOf([tab, text("b")], { ...at("left"), ...indented({ indentLeft: 10 }) })).to.equal(
             "a left tab stop past the end of the line at the start of a line in an indented paragraph",
         );
@@ -2464,6 +2472,14 @@ describe("tab stops past the end of the line", () => {
         expect(unsupportedOf([text("a"), tab, text("bbbbb")], { ...at("left", 85), format: { indentRight: 20 } })).to.equal(
             "text after a tab stop past the paragraph's right indent that goes past the margin",
         );
+        // word-stops-tabs TA1c: past the margin in a paragraph indented past it, a left stop whose text doesn't fit before the
+        // end of the line, but not one whose text does
+        const pastMargin = { ...at("left", 105), format: { indentRight: -20 } };
+        expect(unsupportedOf([text("a"), tab, text("bbb")], pastMargin)).to.equal(
+            "text after a left tab stop past the margin, in a paragraph indented past it, that goes past the end of the line",
+        );
+        const [fits] = linesOf([text("a"), tab, text("b")], pastMargin);
+        expect([fits.text, fits.textWidth, fits.unsupported]).to.deep.equal(["a\tb", 115, undefined]);
     });
 
     it("should put the text after tabs past the end of the line where Word puts it", () => {
