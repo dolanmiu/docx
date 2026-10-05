@@ -1761,7 +1761,12 @@ const readRun = (element: XmlObject, paragraphRun: RunFormat, reader: Reader, re
                 return [marker, { type: "pageNumber", field: marker.name, font }];
             }
             case "w:ruby":
-                // Its text is in its base and in the guide above it, which makes the line taller. Guessing, its base alone
+                // Its text is in its base and in the guide above it, which makes the line taller. Word made it as wide as the
+                // wider of the two, with the narrower spread across it or centred on it as its alignment says: kana of 5.5
+                // points 990 twips wide over two ideographs of 11, spread with half a share of the room at each end, and over
+                // two of 20 points, 800 wide (scripts/layout-probes/stops2/word-stops-text2.ts RF31b to RF31d). How tall it
+                // makes its line doesn't follow from its raise and sizes yet: 20 twips above the guide's top over Calibri 11,
+                // 17 at the top of a page, and 20 above Calibri 20's own line, which the guide is below. Guessing, its base alone
                 return guessedOr(reader, "text with a phonetic guide", () =>
                     readInline(childrenOf(find(childrenOf(child["w:ruby"]), "w:rubyBase")), paragraphRun, reader, removed),
                 );
