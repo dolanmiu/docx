@@ -314,8 +314,9 @@ type Segment = {
 const DEFAULT_TAB_STOP = 36;
 // How far past its end a line may go before it wraps, for the rounding of the widths
 const TOLERANCE = 0.01;
-// Why the layout stops at a paragraph that ends with a page break in a document in compatibility mode
-const OLDER_PAGE_BREAK = "a page break at the end of a paragraph in a document in compatibility mode";
+// How far past the margin Word 2010 and before were seen keeping the text after a tab past the end of a line on it, in
+// points: 18827 twips (`word-stops-compat2-14.docx` CN5a). Whether they break a longer line hasn't been seen
+const OLDER_TAB_REACH = 941.4;
 
 // Word squeezes one more word onto a justified line when its spaces would otherwise stretch by a share of their width
 // more than twice as large as the share they're squeezed by: 2.022 times as large, and not 2.008 (`word-justify.docx` J01
@@ -899,6 +900,11 @@ type LineState = {
     readonly pastIndent?: boolean;
     /** Whether it has only tabs on it yet, which the word after them goes on the line with however long it is */
     readonly tabsOnly?: boolean;
+    /**
+     * Whether it has a tab to a stop past its end in a document in compatibility mode, after which the rest of the
+     * paragraph's text stays on it, past the margin
+     */
+    readonly unbroken?: boolean;
     /**
      * On a grid that snaps to characters, where the text that isn't Chinese, Japanese or Korean at the end of the line
      * started, and how wide it is, which takes as many of the grid's cells as it needs
@@ -1653,15 +1659,18 @@ export const layoutLines = (
     };
     // Word squeezes the spaces of a justified line to fit one more word on it, so it has more words to a line than a
     // left-aligned one (`word-watertight-text.docx` TX20). Word 2010 and before don't: in their compatibility modes, Word
-    // breaks a justified line where it breaks one aligned left (`word-stops-compat-14.docx` CM1, CM9, CM10, CM14)
+    // breaks a justified line where it breaks one aligned left (`word-stops-compat-14.docx` CM1, CM9, CM10, CM14), and a
+    // distributed one, or one justified for Thai or with a low kashida, too (`word-stops-compat2-14.docx`, `-12` CN4a to
+    // CN4c)
     const squeezes =
         alignment === "justified" || alignment === "distributed" || alignment === "thaiDistributed" || alignment === "lowKashida";
     const older = compatibilityMode !== undefined;
     const { stops, firstLineStops } = stopsOf(tabStops, format);
     const parts = segmentsOf(content, rulesOf(format, breakRules));
-    // A page break at the end of a paragraph has the paragraph's mark on its line, as Word lays it out from Word 2013,
-    // rather than on a line of its own on the next page. A column break's mark is on a line at the top of the next column,
-    // in Word and LibreOffice
+    // A page break at the end of a paragraph has the paragraph's mark on its line, as Word lays it out from Word 2013, and
+    // in the compatibility modes of Word 2010 and 2007 too, rather than on a line of its own on the next page
+    // (`word-stops-compat2-14.docx`, `-12` CN1a). A column break's mark is on a line at the top of the next column, in Word
+    // and LibreOffice
     const [previous, last] = parts.slice(-2);
     const endsWithBreak = parts.length > 1 && previous.end!.kind === "page" && last.tokens.every((token) => token.type === "marker");
     const segments = endsWithBreak ? [...parts.slice(0, -2), { tokens: [...previous.tokens, ...last.tokens], end: previous.end }] : parts;
@@ -1698,9 +1707,10 @@ export const layoutLines = (
     };
     /**
      * Where the line being filled ends: the margin after a tab to one of the paragraph's stops past its right indent, which
-     * Word lines text up with on the line (scripts/layout-probes/word-breaks-and-tabs.ts TP6, TP9)
+     * Word lines text up with on the line (scripts/layout-probes/word-breaks-and-tabs.ts TP6, TP9), and nowhere after a tab
+     * past its end in a document in compatibility mode
      */
-    const endOf = (state: LineState): number => (state.pastIndent ? marginOf() : limitOf());
+    const endOf = (state: LineState): number => (state.unbroken ? Infinity : state.pastIndent ? marginOf() : limitOf());
     /**
      * Whether Word squeezes a word or picture this wide onto a justified or distributed line it goes past the end of,
      * rather than move it to the next line. It squeezes the line's spaces in proportion to their widths, and does when that
@@ -1826,6 +1836,9 @@ export const layoutLines = (
             const unsupported = state.unknown
                 ? "a justified line that only fits squeezed at a four-per-em space, or at an en, em or ideographic space beside ordinary spaces"
                 : (state.unsupported ??
+                  (state.unbroken && state.end > OLDER_TAB_REACH + TOLERANCE
+                      ? "text after a tab past the end of the line that goes further past the margin than Word was seen keeping it on the line, in a document in compatibility mode"
+                      : undefined) ??
                   (markMatters(withNumber(heights))
                       ? "a picture alone in a line of a paragraph whose mark is larger, with multiple line spacing"
                       : typeof marked === "string"
@@ -2229,7 +2242,14 @@ export const layoutLines = (
                 const given = line.first ? firstLineStops : stops;
                 const next = nextStop(line.position, given, defaultTabStop, Infinity)!;
                 const rest = tokens.slice(index + 1);
-                const own = !numbered && given.includes(next);
+                // Word 2010 and before put a tab to a stop past the end of the line, the paragraph's own or a default one, at its
+                // stop on the line, past the margin, where Word 2013 moves it to the next, and keep the rest of the paragraph's
+                // text on the line, past the margin and the page: a left stop at 9500 twips with 20 words after it, a default
+                // stop after a right one at the margin, centred and decimal stops at 9800, and a left one between a right
+                // indent and the margin (`word-stops-compat-14.docx` CM12a, CM12d, `word-stops-compat2-14.docx`, `-12` CN5a to
+                // CN5e)
+                const olderPast = older && !numbered && next.position > limitOf() + TOLERANCE;
+                const own = !numbered && !olderPast && given.includes(next);
                 // One of the paragraph's own stops between its right indent and the margin: Word lines the text after it up
                 // with it on the line, past the indent, as far as the margin, at a left or right stop (scripts/layout-probes/word-breaks-and-tabs.ts
                 // TP6, TP9) and at a centred or decimal one (scripts/layout-probes/stops2/word-stops-tabs.ts TA4a, TA4b)
@@ -2256,15 +2276,6 @@ export const layoutLines = (
                 if (unknown !== undefined) {
                     line = { ...line, unsupported: line.unsupported ?? unknown };
                 }
-                // Word 2010 and before put the text after a tab to a stop past the end of the line, the paragraph's own or a
-                // default one, past the margin on the line, where Word 2013 moves it to the next (`word-stops-compat-14.docx`
-                // CM12a, CM12d), in ways not yet followed. Guessing, it goes where Word 2013 puts it
-                if (older && !numbered && next.position > limitOf() + TOLERANCE) {
-                    line = {
-                        ...line,
-                        unsupported: line.unsupported ?? "a tab past the end of the line in a document in compatibility mode",
-                    };
-                }
                 if (pastEnd?.alignment === "left" && unknown === undefined) {
                     const below = line.started ? wrap(line) : line;
                     line = wrap(place({ ...below, text: `${below.text}\t`, heights: withToken(below.heights, token), started: true }));
@@ -2279,14 +2290,16 @@ export const layoutLines = (
                 // The stop the tab moves to from where the line is, or from the start of the next when none is left on it
                 let stop = numbered
                     ? numbered.stop
-                    : aligned
-                      ? { position: limitOf(), alignment: "right" as const }
-                      : pastIndent
-                        ? next
-                        : (nextStop(line.position, given, defaultTabStop, limitOf()) ??
-                          (line.started
-                              ? nextStop(startOf(lines.length + 1, false), stops, defaultTabStop, limitOf(lines.length + 1))
-                              : undefined));
+                    : olderPast
+                      ? next
+                      : aligned
+                        ? { position: limitOf(), alignment: "right" as const }
+                        : pastIndent
+                          ? next
+                          : (nextStop(line.position, given, defaultTabStop, limitOf()) ??
+                            (line.started
+                                ? nextStop(startOf(lines.length + 1, false), stops, defaultTabStop, limitOf(lines.length + 1))
+                                : undefined));
                 if (stop === undefined) {
                     // No stop before the end of the line: the text after the tab starts where it is, which on a grid that snaps
                     // to characters hasn't been seen
@@ -2340,10 +2353,12 @@ export const layoutLines = (
                 // (stops2/word-stops-text2.ts SH16a to SH16i). A picture after a tab, a word after tabs in a row, and a word with
                 // soft hyphens whose first part doesn't fit, haven't been seen, nor text that doesn't fit after the tab that
                 // follows a list's number. Guessing, the tab stays, and they go on to the next line, but for the word with soft
-                // hyphens, which takes the tab with it
+                // hyphens, which takes the tab with it. Word 2010 and before keep it on the line after a tab past its end (see
+                // `olderPast`)
                 const after = rest.find((other) => other.type !== "marker");
                 if (
                     !numbered &&
+                    !olderPast &&
                     token.font.listNumber !== "separator" &&
                     !aligned &&
                     !pastIndent &&
@@ -2382,7 +2397,7 @@ export const layoutLines = (
                         }
                     }
                 }
-                line = { ...place(line), ...(pastIndent ? { pastIndent } : {}) };
+                line = { ...place(line), ...(pastIndent ? { pastIndent } : {}), ...(olderPast ? { unbroken: olderPast } : {}) };
                 const { lineUp, position } = startAt(stop, line);
                 const misaligned = lineUp === undefined ? "text at a decimal tab stop that Word hasn't been seen lining up" : undefined;
                 if (snapping && !inCells(stop) && (stop.alignment !== "left" || starting === undefined)) {
@@ -2434,9 +2449,5 @@ export const layoutLines = (
         }
         first = false;
     }
-    // Word 2010 and before put the mark of a paragraph that ends with a page break on a line of its own on the next page,
-    // as `splitPgBreakAndParaMark` brings back, in a way not yet followed
-    return older && endsWithBreak
-        ? lines.map((line, index) => (index === lines.length - 1 ? { ...line, unsupported: OLDER_PAGE_BREAK } : line))
-        : lines;
+    return lines;
 };

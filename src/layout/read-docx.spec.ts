@@ -217,7 +217,10 @@ describe("readDocx", () => {
                 ],
                 [
                     "word/_rels/document.xml.rels",
-                    relationships(`<Relationship Id="rId1" Type="${TRANSITIONAL}/styles" Target="styles.xml"/>`),
+                    relationships(
+                        `<Relationship Id="rId1" Type="${TRANSITIONAL}/styles" Target="styles.xml"/>` +
+                            `<Relationship Id="rId2" Type="${TRANSITIONAL}/settings" Target="settings.xml"/>`,
+                    ),
                 ],
                 [
                     "word/styles.xml",
@@ -225,6 +228,8 @@ describe("readDocx", () => {
                         `<w:styles ${W} ${W14}><w:docDefaults><w:rPrDefault><w:rPr><w:rFonts w:ascii="Calibri"/><w:kern w:val="2"/><w14:ligatures w14:val="standardContextual"/></w:rPr></w:rPrDefault></w:docDefaults></w:styles>`,
                     ),
                 ],
+                // In Word 2013's mode, as the template is, rather than Word 2007's, which draws no ligatures
+                ["word/settings.xml", parse(COMPATIBLE)],
                 ["word/document.xml", documentOf("<w:p><w:r><w:t>Office</w:t></w:r></w:p>")],
             ]),
         );
@@ -452,6 +457,108 @@ describe("readDocx", () => {
         // Word fills one with other text in, as it opens the document
         expect(readDocx(packageOf("Annual report", "Report")).blocks[0].block.unsupported).to.equal(
             "a content control Word fills in from custom XML with other text than is written in it",
+        );
+    });
+
+    it("should lay out paragraphs in the divisions of a web page in its web settings as Word does, and stop where it hasn't been seen", () => {
+        // word-stops-divisions.docx: 1001 with margins of 720 left and right and 120 above and below, and borders of 1.5
+        // points 4 points away, and 1002 with the margins alone, and 1003, as 1002, in 1002
+        const border = 'w:val="single" w:sz="12" w:space="4" w:color="000000"';
+        const margins = '<w:marLeft w:val="720"/><w:marRight w:val="720"/><w:marTop w:val="120"/><w:marBottom w:val="120"/>';
+        const web =
+            `<w:webSettings ${W}><w:divs>` +
+            `<w:div w:id="1001">${margins}<w:divBdr><w:top ${border}/><w:left ${border}/><w:bottom ${border}/><w:right ${border}/></w:divBdr></w:div>` +
+            `<w:div w:id="1002">${margins}<w:divsChild><w:div w:id="1003">${margins}</w:div>` +
+            `<w:div w:id="1004"><w:bodyDiv/>${margins}</w:div><w:div w:id="1005"><w:marTop w:val="240"/></w:div></w:divsChild></w:div>` +
+            "</w:divs></w:webSettings>";
+        const read = (body: string): DocumentContent =>
+            readDocx(
+                new Map([
+                    [
+                        "word/_rels/document.xml.rels",
+                        relationships(
+                            `<Relationship Id="rId1" Type="${TRANSITIONAL}/settings" Target="settings.xml"/>` +
+                                `<Relationship Id="rId2" Type="${TRANSITIONAL}/webSettings" Target="webSettings.xml"/>`,
+                        ),
+                    ],
+                    ["word/settings.xml", parse(COMPATIBLE)],
+                    ["word/webSettings.xml", parse(web)],
+                    ["word/document.xml", documentOf(body)],
+                ]),
+            );
+        const inDivision = (id: number, pPr = ""): string =>
+            `<w:p><w:pPr>${pPr}<w:divId w:val="${id}"/></w:pPr><w:r><w:t>a</w:t></w:r></w:p>`;
+        const plain = "<w:p><w:r><w:t>a</w:t></w:r></w:p>";
+        const paragraphs = (content: DocumentContent): readonly ParagraphBlock[] =>
+            content.blocks.map(({ block }) => block as ParagraphBlock);
+        // DV2a: three paragraphs in one box, indented by the margins, with the margins above the first and below the last
+        const boxed = paragraphs(read(plain + inDivision(1001) + inDivision(1001) + inDivision(1001) + plain)).slice(1, 4);
+        expect(
+            boxed.map(({ format: { indentLeft, indentRight, spaceBefore, spaceAfter } }) => [
+                indentLeft,
+                indentRight,
+                spaceBefore,
+                spaceAfter,
+            ]),
+        ).to.deep.equal([
+            [36, 36, 6, 0],
+            [36, 36, 0, 0],
+            [36, 36, 0, 6],
+        ]);
+        expect(boxed.map(({ borders }) => [borders?.top, borders?.bottom])).to.deep.equal([
+            [5.5, 5.5],
+            [5.5, 5.5],
+            [5.5, 5.5],
+        ]);
+        expect(new Set(boxed.map(({ borders }) => borders?.box)).size).to.equal(1);
+        expect(boxed.map(({ unsupported, division, unknownAtTop }) => [unsupported, division, unknownAtTop])).to.deep.include([
+            undefined,
+            { id: "1001", above: 6, below: 6 },
+            "a paragraph in an HTML division at the top of a page or column",
+        ]);
+        // DV2b, DV2d: one without borders, and one in another, its margins left and right added up and those above and
+        // below once
+        const [, , nested] = paragraphs(read(plain + inDivision(1002) + plain + inDivision(1003) + plain)).slice(1);
+        expect(paragraphs(read(plain + inDivision(1002) + plain))[1].format).to.deep.include({
+            indentLeft: 36,
+            spaceBefore: 6,
+            spaceAfter: 6,
+        });
+        expect(nested.format).to.deep.include({ indentLeft: 72, indentRight: 72, spaceBefore: 6, spaceAfter: 6 });
+        expect(nested.borders).to.equal(undefined);
+        const reasonOf = (body: string, index = 1): string | undefined => read(body).blocks[index].block.unsupported;
+        // DV2c: with space of its own before or after it, or next to one with space after it or before it
+        expect(reasonOf(plain + inDivision(1001, '<w:spacing w:before="240"/>') + plain)).to.equal(
+            "a paragraph in an HTML division with space before or after it",
+        );
+        const spacedAfter = '<w:p><w:pPr><w:spacing w:after="240"/></w:pPr></w:p>';
+        const spacedBefore = '<w:p><w:pPr><w:spacing w:before="240"/></w:pPr></w:p>';
+        expect(reasonOf(`${spacedAfter}${inDivision(1001)}${plain}`)).to.equal(
+            "an HTML division next to a paragraph with space before or after it",
+        );
+        expect(reasonOf(`${plain}${inDivision(1001)}${spacedBefore}`)).to.equal(
+            "an HTML division next to a paragraph with space before or after it",
+        );
+        // And with indents or borders of its own, next to another division, in another with other margins or borders, the
+        // page's body, or not in the web settings at all
+        expect(reasonOf(plain + inDivision(1001, '<w:ind w:left="100"/>') + plain)).to.equal(
+            "a paragraph in an HTML division with indents or borders of its own",
+        );
+        expect(reasonOf(plain + inDivision(1001) + inDivision(1002) + plain)).to.equal("an HTML division next to another");
+        // A table next to one is as it is
+        const table = `<w:tbl><w:tr><w:tc>${plain}</w:tc></w:tr></w:tbl>`;
+        expect(paragraphs(read(table + inDivision(1001) + table))[1].format).to.deep.include({ spaceBefore: 6, spaceAfter: 6 });
+        expect(reasonOf(plain + inDivision(1005) + plain)).to.equal(
+            "an HTML division in another, with borders, or other margins above or below",
+        );
+        expect(reasonOf(plain + inDivision(1004) + plain)).to.equal("an HTML division that is a quotation or a page's body");
+        expect(reasonOf(plain + inDivision(9) + plain)).to.equal("a paragraph in an HTML division the document's web settings don't have");
+        // In a table cell, or without web settings
+        expect(reasonOf(`<w:tbl><w:tr><w:tc>${inDivision(1001)}</w:tc></w:tr></w:tbl>`, 0)).to.equal(
+            "a paragraph in an HTML division in a table cell, note, header, footer or text box",
+        );
+        expect(readDocx(new Map([["word/document.xml", documentOf(inDivision(1001))]])).blocks[0].block.unsupported).to.equal(
+            "a paragraph in an HTML division the document's web settings don't have",
         );
     });
 

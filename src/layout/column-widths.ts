@@ -487,16 +487,24 @@ const fitTo = (table: TableBlock, available: number, content: ReadonlyMap<TableC
         if (tooLong.some((cell) => content.get(cell)!.hyphenated)) {
             return { ...table, unsupported: "a word Word may hyphenate, longer than its cell" };
         }
-        // How far Word 2010 and before let such a table grow, with its cells' margins beside the room, hasn't been seen
-        if (table.marginsBeside === true) {
-            return {
-                ...table,
-                unsupported: "a table widened for a long word, or its rows evened out, in a document in compatibility mode",
-            };
-        }
     }
     const { columns, unsettled } = widen ? sizeGivenColumns(table, content) : sizeColumns(table, content);
     const total = sum(columns.map(({ width }) => width));
+    // Word 2010 and before widen a table for a long word as Word 2013 does, when it fits in the room for it
+    // (`word-stops-compat2-14.docx`, `-12` CN8e). How far they let one grow past it, with its cells' margins beside the
+    // room, and how they even out its rows, or widen one with space between its cells or a share of the width, hasn't
+    // been seen
+    if (
+        widen &&
+        table.marginsBeside === true &&
+        (widen.uneven || spaced || widen.share !== undefined || total > available - indent + SAME)
+    ) {
+        return {
+            ...table,
+            unsupported:
+                "a table widened for a long word past the room for it, or with its rows evened out, in a document in compatibility mode",
+        };
+    }
     const tableWidth = fit ?? widen!;
     // A table that fills the width it is in, or a share of it, has half of each of its left and right borders inside it,
     // outside its columns, as one of a width in twips has them outside it (`word-stops-long-words.docx` LW1,
