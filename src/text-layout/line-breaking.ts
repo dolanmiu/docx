@@ -1831,11 +1831,6 @@ export const layoutLines = (
             if (beyond && line.tabsOnly === true && token.type === "box") {
                 line = { ...line, unsupported: line.unsupported ?? "a picture that doesn't fit after a tab that starts its line" };
             }
-            // Text fitted to a width goes on to the next line whole where it doesn't fit (stops2/word-stops-text2.ts RF29d), but
-            // one wider than its line hasn't been seen
-            if (beyond && token.type === "box" && token.text !== undefined && !line.started) {
-                line = { ...line, unsupported: line.unsupported ?? "text fitted to a width wider than its line" };
-            }
             const overflows = line.started && beyond && (line.tabsOnly !== true || token.type === "box");
             if (token.type === "box" && token.unbroken !== undefined && beyond) {
                 line = { ...line, unsupported: line.unsupported ?? token.unbroken };
@@ -1864,6 +1859,11 @@ export const layoutLines = (
                 line = wrap(line);
                 skipRooms(needs, hyphens.length > 0);
                 tokenWidth = widthOn(line);
+            }
+            // Text fitted to a width goes on to the next line whole where it doesn't fit (stops2/word-stops-text2.ts RF29d), but
+            // one wider than its line hasn't been seen
+            if (token.type === "box" && token.text !== undefined && !squeezed && line.position + tokenWidth > endOf(line) + TOLERANCE) {
+                line = { ...line, unsupported: line.unsupported ?? "text fitted to a width wider than its line" };
             }
             line = { ...place(line), position: line.position + leadOf(line, skipped || (overflows && !squeezed)) };
             if (

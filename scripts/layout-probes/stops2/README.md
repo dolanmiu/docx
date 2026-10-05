@@ -43,6 +43,14 @@ of Thai in Calibri as tall as Tahoma's, which Word draws them in, also followed.
 `word-stops-text2.ts` has the cases around what `word-stops-text`, `-tabs` and `-kerning` settled (RF24, RF27, RF29,
 RF31, RF32, PB3, PB5, PB7, SH16, SH17, JU4, TA10, TA11 and KE9), whose PDF, saved from Word in round 25, is followed as
 the table says, but for RF31b to RF31d, phonetic guides, whose line heights don't follow from their raise and sizes yet.
+`word-stops-text3.ts` has what it left stopping, for the next batch Word saves: phonetic guides of other raises and sizes
+(RF31e to RF31l), a picture, tabs in a row and a word with soft hyphens that don't fit after a tab, a list's number's tab,
+stops past the end with a right indent, and past the right indent in a distributed line (TA12d to TA12l), a soft hyphen's
+longer part squeezed against a shorter one with twice the room, kerned before its hyphen, and with ligatures across it
+(SH18), en spaces beside ordinary ones within a quarter of theirs (JU5), run borders and pictures in borders (RF24e to
+RF24g, RF32c, RF32d), fitted text wider than its line or of two sizes (RF29e, RF29f), and a grid's room above footnotes
+(PB7h to PB7j); TA12a to TA12c check that a word that doesn't fit after a tab to a default, right or centred stop takes the
+tab on to the next line, as docx/layout lays it out. It has no PDF from Word yet.
 
 `word-stops-edges.ts` has the cases around those of the table, where docx/layout still stops (DH2, PB9, HR2 and TA9),
 for the next batch Word saves: it has no PDF from Word yet. Nor has `word-stops-compat2.ts`, for what the compatibility

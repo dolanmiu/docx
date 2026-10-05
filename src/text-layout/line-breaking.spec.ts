@@ -584,8 +584,12 @@ describe("layoutLines", () => {
             ["aaaa ", 40, 10, undefined],
             ["fitted text b", 80, 10, undefined],
         ]);
-        // One wider than its line hasn't been seen
+        // One wider than its line hasn't been seen, at its start or after text
         expect(lines([fitted(120)])[0][3]).to.equal("text fitted to a width wider than its line");
+        expect(lines([text("aa "), fitted(120)]).map((line) => line[3])).to.deep.equal([
+            undefined,
+            "text fitted to a width wider than its line",
+        ]);
     });
 
     it("should move tabs to the default tab stops", () => {
