@@ -342,6 +342,11 @@ export type TableRow = {
     /** Whether it moves to the next page whole, rather than breaking across the pages, when it doesn't fit */
     readonly cantSplit: boolean;
     /**
+     * The width before it, in points, when it starts past the table's first column (`w:gridBefore`) and says how wide in
+     * twips (`w:wBefore`), which Word sizes the columns by as a cell's
+     */
+    readonly before?: number;
+    /**
      * The room above the row's cells, in points: the border between it and the row above, or the table's top border, and
      * the space between cells. For the last row, the same below it
      */
@@ -3079,6 +3084,10 @@ const readTable = (element: XmlObject, reader: Reader): TableBlock | undefined =
             const height = twips(heightAttributes["w:val"]);
             const { "w:hRule": rule } = heightAttributes;
             const skipped = numberOf(attributesOf(find(rowProperties, "w:gridBefore"))["w:val"]) ?? 0;
+            // The width before a row that starts past the first column (`w:wBefore`), which Word sizes the columns by as a
+            // cell's (word-stops-long-words2.docx LW7a, LW7b), when it is in twips
+            const { "w:w": beforeValue, "w:type": beforeType = "dxa" } = attributesOf(find(rowProperties, "w:wBefore"));
+            const before = skipped > 0 && beforeType === "dxa" ? twips(beforeValue) : undefined;
             const ownSpacing = find(rowProperties, "w:tblCellSpacing");
             const spacing = ownSpacing === undefined ? tableSpacing : readCellSpacing(ownSpacing);
             // A deleted row is read only as Word sizes the columns by it, with its notes and lists left uncounted, or, where
@@ -3218,7 +3227,7 @@ const readTable = (element: XmlObject, reader: Reader): TableBlock | undefined =
                         ],
                     };
                 },
-                { column: skipped, cells: [], edges: new Map([[skipped, gridWidth(0, skipped)]]) },
+                { column: skipped, cells: [], edges: new Map([[skipped, before ?? gridWidth(0, skipped)]]) },
             );
             // A row of a division of a web page (`w:divId`) Word moves across by the division's left margin, as wide and
             // as tall as it is without, with the division's borders beside it but not above or below
@@ -3252,6 +3261,7 @@ const readTable = (element: XmlObject, reader: Reader): TableBlock | undefined =
                         : {}),
                     header: onOff(rowProperties, "w:tblHeader") === true,
                     cantSplit: onOff(rowProperties, "w:cantSplit") === true,
+                    ...(before === undefined ? {} : { before }),
                 },
             };
         },
@@ -3415,11 +3425,12 @@ const readTable = (element: XmlObject, reader: Reader): TableBlock | undefined =
         ? "a table style with formatting of its rows or cells"
         : undefined;
     // Word evens out the rows of a table whose cells all have widths, or of one laid out fixed, that give a column different
-    // widths, with a width of its own in twips or none (`word-watertight-stops.docx` SP14, `word-table-widths.docx` TW1 to
-    // TW6), and with space between its cells, not laid out fixed (`word-stops-long-words.docx` LW5c). With a share of the
-    // width, space between the cells of one laid out fixed, or a row that starts past the first column (`w:gridBefore`),
-    // how isn't known
-    const evenable = !(spaced && fixed) && givenWidth.share === undefined && read.every(({ edges }) => edges.has(0));
+    // widths, with a width of its own in twips, a share of the width, or none (`word-watertight-stops.docx` SP14,
+    // `word-table-widths.docx` TW1 to TW6, `word-stops-long-words2.docx` LW6d to LW6f), with space between its cells, not
+    // laid out fixed (`word-stops-long-words.docx` LW5c), and with a row that starts past the first column, the width before
+    // it as a cell's (`w:gridBefore`, `w:wBefore`: LW7a, LW7b). Space between the cells of one laid out fixed, and a row
+    // that starts past the first column with no width in twips before it, aren't known
+    const evenable = !(spaced && fixed) && read.every(({ edges, row }) => edges.has(0) || row.before !== undefined);
     const evened = unequal && evenable;
     // And fits a table laid out fixed to its own width in twips, when its rows aren't as wide (TW8, TW10)
     const tableTwips = givenWidth.width;

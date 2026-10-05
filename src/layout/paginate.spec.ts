@@ -1196,12 +1196,19 @@ describe("paginate", () => {
             expect(pagesOf(document([paragraph("a", 2), given, paragraph("b", 1)]))).to.deep.equal({ a: "1", b: "1" });
             const widened = { ...given, widen: {} };
             expect(pagesOf(document([paragraph("a", 2), widened, paragraph("b", 1)]))).to.deep.equal({ a: "1", b: "2" });
-            // Not yet in a table of a share of the width that the word is longer than, which stops the layout
+            // In a table of a share of the width that the word is longer than, the table grows to the word
+            // (word-stops-long-words2.docx LW6b)
             const share = { ...given, widen: { share: 0.25 } };
-            const unknown = paginate(document([paragraph("a", 2), share]), { measurer: MEASURER });
-            expect(unknown.stoppedAt).to.equal("a word longer than its table can make room for");
+            expect(pagesOf(document([paragraph("a", 2), share, paragraph("b", 1)]))).to.deep.equal({ a: "1", b: "2" });
+            // Not yet where its cells' margins are wider than the room, which stops the layout
+            const crowded = {
+                ...widened,
+                rows: given.rows.map((one) => ({ ...one, cells: one.cells.map((cell) => ({ ...cell, marginLeft: 30, marginRight: 30 })) })),
+            };
+            const reason = "a table whose cells' margins are wider than the room for it";
+            expect(paginate(document([paragraph("a", 2), crowded]), { measurer: MEASURER }).stoppedAt).to.equal(reason);
             // A paragraph kept with it is laid out before the layout stops there, as it is before any table it can't lay out
-            const kept = paginate(document([paragraph("a", 2), paragraph("heading", 1, { keepNext: true }), share]), {
+            const kept = paginate(document([paragraph("a", 2), paragraph("heading", 1, { keepNext: true }), crowded]), {
                 measurer: MEASURER,
             });
             expect(kept.bookmarks).to.deep.equal(
@@ -1210,7 +1217,7 @@ describe("paginate", () => {
                     ["heading", "1"],
                 ]),
             );
-            expect(kept.stoppedAt).to.equal("a word longer than its table can make room for");
+            expect(kept.stoppedAt).to.equal(reason);
         });
 
         it("should size the columns of a table given no widths around a cell across them, and to a table in a cell", () => {
@@ -4596,9 +4603,14 @@ describe("paginate", () => {
             expect(paginate(content, { measurer: MEASURER }).stoppedAt).to.equal("an equation");
             // Nor a table in it whose columns can't be sized, as in the text
             const [cell] = row([[paragraph("cell", 1)]]).cells;
-            const unsized = { ...table([{ ...row([]), cells: [{ ...cell, width: 20, ownWidth: 20 }] }]), widen: { share: 0.25 } };
+            const unsized = {
+                ...table([{ ...row([]), cells: [{ ...cell, width: 20, ownWidth: 20, marginLeft: 50, marginRight: 50 }] }]),
+                widen: {},
+            };
             const tabled = withNotes([noted(paragraph("b", 1), "footnote 1")], { "footnote 1": [unsized] });
-            expect(paginate(tabled, { measurer: MEASURER }).stoppedAt).to.equal("a word longer than its table can make room for");
+            expect(paginate(tabled, { measurer: MEASURER }).stoppedAt).to.equal(
+                "a table whose cells' margins are wider than the room for it",
+            );
         });
 
         it("should put the space between footnotes, but not before the separator or after the last footnote", () => {

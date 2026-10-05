@@ -120,10 +120,26 @@ describe("fitColumns", () => {
         expect(widthsOf(fitColumns(given, 70, measure))).to.deep.equal([8.3, 41.7]);
     });
 
+    it("should grow a table of a share of less than the width to its widest words, up to the room, and share the room past it", () => {
+        // word-stops-long-words2.docx LW6b: words that don't fit half the width, but fit all of it, as wide as they are
+        const half = table([[cell(0, "aa"), cell(1, "aaaaaaaaaa")]], { share: 0.5 });
+        expect(fitColumns(half, 140, measure).unsupported).to.equal(undefined);
+        expect(widthsOf(fitColumns(half, 140, measure))).to.deep.equal([20, 100]);
+        // LW6c: and where they don't fit all of it either, sharing it in proportion to them, as a table of all of it does
+        expect(widthsOf(fitColumns(half, 100, measure))).to.deep.equal([13.3, 66.7]);
+    });
+
+    it("should leave half of each of a table's left and right borders outside its columns in the room it fills", () => {
+        // word-stops-long-words.docx LW1, word-stops-long-words2.docx LW6: borders of half a point, 10 twips
+        const bordered = { ...table([[cell(0, "aa"), cell(1, "aaaaaaaaaa")]]), borderLeft: 0.5, borderRight: 0.5 };
+        expect(widthsOf(fitColumns(bordered, 70.5, measure))).to.deep.equal([8.3, 41.7]);
+        expect(widthsOf(fitColumns({ ...bordered, fit: { share: 1 } }, 70.5, measure))).to.deep.equal([8.3, 41.7]);
+        // Not one of a width of its own in twips, whose borders are outside it
+        expect(widthsOf(fitColumns({ ...bordered, fit: { width: 70 } }, 300, measure))).to.deep.equal([20, 100]);
+    });
+
     it("should stop at words that don't fit in the room where how Word shares it isn't known", () => {
         const reason = "a word longer than its table can make room for";
-        // A share of less than the width
-        expect(fitColumns(table([[cell(0, "aa"), cell(1, "aaaaaaaaaa")]], { share: 0.5 }), 140, measure).unsupported).to.equal(reason);
         // A column's cells of different margins
         const margins = table([
             [cell(0, "aa"), cell(1, "aaaaaaaaaa")],
@@ -474,6 +490,12 @@ describe("fitColumns", () => {
             expect(widthsOf(fitColumns(given([[cell(0, "a", 150), cell(1, "bb", 100)]], { width: 300 }), 400, measure))).to.deep.equal([
                 170, 110,
             ]);
+            // A row that starts past the first column gives it the width before it, as a cell does (word-stops-long-words2.docx
+            // LW7a): 150 and 150 after 100 and 200, which give it 150 and 200 as above
+            const skipping = given([rows[0], [cell(1, "bb", 150)]], { width: 300, uneven: true });
+            const before = { ...skipping, rows: [skipping.rows[0], { ...skipping.rows[1], before: 150 }] };
+            expect(widthsOf(fitColumns(before, 400, measure))).to.deep.equal([118.3, 161.7]);
+            expect(widthsOf(fitColumns(before, 400, measure), 1)).to.deep.equal([161.7]);
         });
 
         it("should size a table laid out fixed by the widths its cells give alone, as Word does", () => {

@@ -338,11 +338,18 @@ const givenWidthOf = (cell: TableCell): number => cell.ownWidth ?? cell.width + 
 const sizeGivenColumns = (table: TableBlock, content: ReadonlyMap<TableCell, ContentWidths>): Sizing => {
     const cells = sizingRows(table).flatMap((row) => row.cells);
     const count = largest(cells.map((cell) => cell.column + spanOf(cell)));
+    // Where each cell ends, and where a row that starts past the first column does, its width before it as a cell's
+    const ends = [
+        ...cells.map((cell) => ({ from: cell.column, to: cell.column + spanOf(cell), width: givenWidthOf(cell) })),
+        ...sizingRows(table).flatMap(({ cells: rowCells, before }) =>
+            before === undefined || rowCells.length === 0 ? [] : [{ from: 0, to: rowCells[0].column, width: before }],
+        ),
+    ];
     const edges = Array.from({ length: count }, (_, index) => index + 1).reduce<readonly number[]>(
         (done, edge) =>
             done.concat(
                 largest(
-                    cells.filter((cell) => cell.column + spanOf(cell) === edge).map((cell) => done[cell.column] + givenWidthOf(cell)),
+                    ends.filter(({ to }) => to === edge).map(({ from, width }) => done[from] + width),
                     done[edge - 1],
                 ),
             ),
@@ -483,15 +490,20 @@ const fitTo = (table: TableBlock, available: number, content: ReadonlyMap<TableC
     const { columns, unsettled } = widen ? sizeGivenColumns(table, content) : sizeColumns(table, content);
     const total = sum(columns.map(({ width }) => width));
     const tableWidth = fit ?? widen!;
-    const target = tableWidth.width ?? (tableWidth.share === undefined ? undefined : tableWidth.share * available);
+    // A table that fills the width it is in, or a share of it, has half of each of its left and right borders inside it,
+    // outside its columns, as one of a width in twips has them outside it (`word-stops-long-words.docx` LW1,
+    // `word-stops-long-words2.docx` LW6, LW8: borders of half a point, its columns 10 twips less than the width or its
+    // share). In compatibility mode, its first and last cells' margins are beside the room, as Word 2010 and before line its
+    // text up with the margins (`word-stops-compat-14.docx` CM4)
+    const borders = table.marginsBeside === true ? 0 : ((table.borderLeft ?? 0) + (table.borderRight ?? 0)) / 2;
+    const beside = table.marginsBeside === true ? outerMargins(table) : 0;
+    const target = tableWidth.width ?? (tableWidth.share === undefined ? undefined : tableWidth.share * available - borders);
     // A table sized to its text in the width it is in, or one whose cells all have widths, which grows up to it for a long
     // word, takes its indent from it, as in Word (`word-watertight-tables.docx` TB9, `word-table-formats.docx` TI1, TI3
     // and TI4). One with a width of its own, or a share of the width, keeps it (TI2). One laid out fixed with no width of
     // its own keeps the widths its rows give its columns, past the room (`word-table-widths.docx` TW2)
-    // In compatibility mode, its first and last cells' margins are beside the room, as Word 2010 and before line its text
-    // up with the margins (`word-stops-compat-14.docx` CM4)
-    const beside = table.marginsBeside === true ? outerMargins(table) : 0;
-    const room = target ?? (widen?.fixed ? Number.POSITIVE_INFINITY : available - indent + beside);
+    const fullRoom = widen?.fixed ? Number.POSITIVE_INFINITY : available - indent + beside - borders;
+    const room = target ?? fullRoom;
     // Word sizes columns to the parts of the words it hyphenates, which the layout can't know, where a column's widest word
     // counts: in a table narrowed to the room, and in a column given less than its widest word (`word-hyphenation.docx`
     // HY11)
@@ -504,22 +516,27 @@ const fitTo = (table: TableBlock, available: number, content: ReadonlyMap<TableC
         return { ...table, unsupported: "a table sized to its text whose columns' widths depend on words Word may hyphenate" };
     }
     // A table with a width of its own in twips keeps its columns as wide as their widest words when those don't fit in it,
-    // past it and the page (`word-watertight-stops.docx` SP15a, `word-table-widths.docx` TW11, TW14, TW15). Without, or with
-    // all of the width, Word narrows the columns past their widest words, whatever widths their cells give them, each to a
-    // share of the room for their text in proportion to its widest word, and breaks the words (`word-stops-long-words.docx`
-    // LW1a to LW1l, LW4d: every column within 3 twips, columns of two and three words, of a word and three, and a line of
-    // three words whose widest is the word that counts; `word-table-widths.docx` TW12, TW13: 595 twips for a column whose
-    // widest word is 552, beside one of 12146). With a share of less than the width, cells merged across columns, or a
-    // column's cells of different margins, how isn't known. Long words in cells merged across columns are shared among them
-    // in ways not yet followed (see above). Each is sized as the others are, which is the layout's guess where it is asked
-    // to guess past them
+    // past it and the page (`word-watertight-stops.docx` SP15a, `word-table-widths.docx` TW11, TW14, TW15), and one of a
+    // share of less than all of the width, up to the room (`word-stops-long-words2.docx` LW6b). Without, with all of the
+    // width, or with a share of less where they don't fit the room either (LW6c), Word narrows the columns past their widest
+    // words, whatever widths their cells give them, each to a share of the room for their text in proportion to its widest
+    // word, and breaks the words (`word-stops-long-words.docx` LW1a to LW1l, LW4d: every column within 3 twips, columns of
+    // two and three words, of a word and three, and a line of three words whose widest is the word that counts;
+    // `word-table-widths.docx` TW12, TW13: 595 twips for a column whose widest word is 552, beside one of 12146; LW6a). With
+    // cells merged across columns, or a column's cells of different margins, how isn't known. Long words in cells merged
+    // across columns are shared among them in ways not yet followed (see above). Each is sized as the others are, which is
+    // the layout's guess where it is asked to guess past them
     const words = proportionalWords(table, columns);
-    const overflowing = sum(columns.map(({ min }) => min)) > room && tableWidth.width === undefined;
+    const least = sum(columns.map(({ min }) => min));
+    const overflowing = least > room && tableWidth.width === undefined;
+    // The room the words are shared in when they don't fit: that of a share of less than all of the width grows to the room
+    const sharedRoom = (tableWidth.share ?? 1) < 1 ? fullRoom : room;
+    const grows = overflowing && least <= sharedRoom;
     // Where the cells' margins alone are wider than the room, such as a table in a narrow cell, there is none for the words to
     // share, and what Word does hasn't been seen
-    const crowded = overflowing && words !== undefined && sum(words.margins) > room;
+    const crowded = overflowing && !grows && words !== undefined && sum(words.margins) > sharedRoom;
     const unsupported =
-        overflowing && ((tableWidth.share ?? 1) < 1 || words === undefined || unsettled.length > 0)
+        overflowing && (unsettled.length > 0 || (!grows && words === undefined))
             ? "a word longer than its table can make room for"
             : crowded
               ? "a table whose cells' margins are wider than the room for it"
@@ -537,8 +554,11 @@ const fitTo = (table: TableBlock, available: number, content: ReadonlyMap<TableC
     const spacingRooms = columns.map((_, index) => (spaced ? spacingOf(table.cellSpacing!, index, columns.length) : 0));
     const spacing = sum(spacingRooms);
     const widths = columns.map((column, index) => {
+        if (grows) {
+            return column.min;
+        }
         if (overflowing && words !== undefined && !crowded) {
-            return words.margins[index] + ((room - sum(words.margins)) * words.widths[index]) / sum(words.widths);
+            return words.margins[index] + ((sharedRoom - sum(words.margins)) * words.widths[index]) / sum(words.widths);
         }
         // A table wider than its columns has them widened in proportion to fill it, after a column is widened for a long
         // word (SP15b, TW3, TW4, TW9, TW10), their space between cells aside

@@ -3165,29 +3165,42 @@ describe("readDocument", () => {
             const spacing = { "w:tblCellSpacing": { _attr: { "w:w": 20, "w:type": "dxa" } } };
             expect(tableOf([ownWidth, spacing], ...uneven).widen).to.deep.equal({ width: 200, uneven: true });
             expect(tableOf([ownWidth, spacing, fixed], ...uneven).unsupported).to.equal(unsupported);
-            // With a share of the width, how isn't known
-            expect(tableOf([{ "w:tblW": { _attr: { "w:w": 5000, "w:type": "pct" } } }], ...uneven).unsupported).to.equal(unsupported);
+            // With a share of the width too (word-stops-long-words2.docx LW6d to LW6f)
+            expect(tableOf([{ "w:tblW": { _attr: { "w:w": 5000, "w:type": "pct" } } }], ...uneven).widen).to.deep.equal({
+                share: 1,
+                uneven: true,
+            });
             // Nor a table of a share of more than the width it is in (word-stops-long-words.docx LW1h, LW1i, LW5a, LW5b, LW5f)
             expect(tableOf([{ "w:tblW": { _attr: { "w:w": 250000, "w:type": "pct" } } }], [[1000], [2000]]).unsupported).to.equal(
                 "a table whose width is a share of more than the width it is in",
             );
-            // Nor with a row that starts past the first column
-            const skipping = readBody([
-                {
-                    "w:tbl": [
-                        { "w:tblPr": [ownWidth] },
-                        { "w:tblGrid": [{ "w:gridCol": { _attr: { "w:w": 1000 } } }, { "w:gridCol": { _attr: { "w:w": 2000 } } }] },
-                        {
-                            "w:tr": [
-                                cell([{ "w:tcW": { _attr: { "w:w": 1000 } } }], p()),
-                                cell([{ "w:tcW": { _attr: { "w:w": 2000 } } }], p()),
-                            ],
-                        },
-                        { "w:tr": [{ "w:trPr": [value("w:gridBefore", 1)] }, cell([{ "w:tcW": { _attr: { "w:w": 3000 } } }], p())] },
-                    ],
-                },
-            ]).blocks[0].block as TableBlock;
-            expect(skipping.unsupported).to.equal(unsupported);
+            // And with a row that starts past the first column, its width before it as a cell's (LW7a, LW7b), but not where it
+            // doesn't say how wide in twips
+            const skipping = (before: readonly object[]): TableBlock =>
+                readBody([
+                    {
+                        "w:tbl": [
+                            { "w:tblPr": [ownWidth] },
+                            { "w:tblGrid": [{ "w:gridCol": { _attr: { "w:w": 1000 } } }, { "w:gridCol": { _attr: { "w:w": 2000 } } }] },
+                            {
+                                "w:tr": [
+                                    cell([{ "w:tcW": { _attr: { "w:w": 1000 } } }], p()),
+                                    cell([{ "w:tcW": { _attr: { "w:w": 2000 } } }], p()),
+                                ],
+                            },
+                            {
+                                "w:tr": [
+                                    { "w:trPr": [value("w:gridBefore", 1), ...before] },
+                                    cell([{ "w:tcW": { _attr: { "w:w": 3000 } } }], p()),
+                                ],
+                            },
+                        ],
+                    },
+                ]).blocks[0].block as TableBlock;
+            const before = skipping([{ "w:wBefore": { _attr: { "w:w": 1500, "w:type": "dxa" } } }]);
+            expect([before.unsupported, before.widen, before.rows[1].before]).to.deep.equal([undefined, { width: 200, uneven: true }, 75]);
+            expect(skipping([]).unsupported).to.equal(unsupported);
+            expect(skipping([{ "w:wBefore": { _attr: { "w:w": 1500, "w:type": "pct" } } }]).unsupported).to.equal(unsupported);
             // A cell over both columns as wide as the two, and widths a twip apart from rounding, agree
             const even = tableOf([], [[1000], [2000]], [[3000, 2]], [[1001], [2000]]);
             expect(even.unsupported).to.equal(undefined);
