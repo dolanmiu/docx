@@ -44,6 +44,7 @@ import {
 } from "docx";
 import { buildTestFont, buildTestFontCollection, tableOffset } from "tests/font-file";
 
+import { OFFICE_COPY } from "../text-layout";
 import { estimatePageNumbers, estimatePageNumbersWith } from "./estimate-page-numbers";
 import { layoutDocument } from "./layout-document";
 import type { FontToMeasure } from "./measure-width";
@@ -1021,6 +1022,23 @@ describe("estimatePageNumbersWith", () => {
                 ],
             };
             expect(pageNumbersOf(bold)).to.deep.equal({ first: "1" });
+        });
+
+        it("should stop at text in a font Office offers a copy of its own of, given or embedded, and measure the file guessing", () => {
+            // Word for Mac drew Pacifico, which a document embedded, in Office's copy of it (word-stops-office-fonts.docx MB4)
+            const given = estimatePageNumbersWith({ fonts: [{ data: WIDE, name: "Pacifico" }] });
+            expect(pageNumbersOf(document("Pacifico"), given)).to.deep.equal({ first: "1" });
+            const guessing = estimatePageNumbersWith({ fonts: [{ data: WIDE, name: "Pacifico" }], guess: true });
+            expect(pageNumbersOf(document("Pacifico"), guessing)).to.deep.include({ first: "1", last: "8" });
+            const embedded = new Document({ ...document("Pacifico"), fonts: [{ name: "Pacifico", data: Buffer.from(WIDE) }] });
+            expect(layoutDocument(embedded).stoppedAt).to.equal(OFFICE_COPY);
+            const { pages, stoppedAt } = layoutDocument(embedded, { guess: true });
+            expect(stoppedAt).to.equal(undefined);
+            expect(pages).to.have.length(8);
+            expect(pages[0].guesses).to.deep.equal([OFFICE_COPY]);
+            // Office's fonts of the width tables are measured from the file, as before
+            const aptos = new Document({ ...document("Aptos"), fonts: [{ name: "Aptos", data: Buffer.from(WIDE) }] });
+            expect(layoutDocument(aptos).pages).to.have.length(8);
         });
 
         it("should measure the fonts a template embeds from their files, once patchDocument has patched it", async () => {

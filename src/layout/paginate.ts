@@ -471,20 +471,22 @@ const KEPT_ROW_IN_COLUMNS = "a table row kept together taller than a column";
 const stoppingMeasurers = new WeakMap<TextMeasurer, TextMeasurer>();
 
 /**
- * A measurer that calls `atUnknown` where it would measure text in a font it doesn't know, or the height of a line in
- * one, as it measures them as another font, where Word draws them in their own, or in another again when it doesn't have
- * them (`word-watertight-text.docx` TX18). Otherwise, and after `atUnknown` when it returns, it measures as the measurer
- * does: such a font as the most similar font it knows
+ * A measurer that calls `atUnknown`, with why, where it would measure text in a font it doesn't know, or the height of a
+ * line in one, as it measures them as another font, where Word draws them in their own, or in another again when it
+ * doesn't have them (`word-watertight-text.docx` TX18), or from a file Word may not draw them from, as for a font Office
+ * offers a copy of its own of. Otherwise, and after `atUnknown` when it returns, it measures as the measurer does: such a
+ * font as the most similar font it knows, or from its file
  */
-const atUnknownFonts = (measurer: TextMeasurer, atUnknown: () => void): TextMeasurer => {
+const atUnknownFonts = (measurer: TextMeasurer, atUnknown: (reason: string) => void): TextMeasurer => {
     const { unknownFont } = measurer;
     if (unknownFont === undefined) {
         return measurer;
     }
     /** The font, once `atUnknown` is called when the measurer doesn't know it, or this text in it */
     const known = (font: TextFont, text?: string): TextFont => {
-        if (unknownFont(font, text)) {
-            atUnknown();
+        const unknown = unknownFont(font, text);
+        if (unknown !== false) {
+            atUnknown(unknown === true ? UNKNOWN_FONT : unknown);
         }
         return font;
     };
@@ -500,8 +502,8 @@ const atUnknownFonts = (measurer: TextMeasurer, atUnknown: () => void): TextMeas
 const stoppingAtUnknownFonts = (measurer: TextMeasurer): TextMeasurer => {
     const stopping =
         stoppingMeasurers.get(measurer) ??
-        atUnknownFonts(measurer, () => {
-            throw new Unsupported(UNKNOWN_FONT);
+        atUnknownFonts(measurer, (reason) => {
+            throw new Unsupported(reason);
         });
     stoppingMeasurers.set(measurer, stopping);
     return stopping;
@@ -1014,8 +1016,8 @@ export const paginate = (
                 defaultTabStop,
                 markFont: paragraph.markFont,
                 measurer: guess
-                    ? atUnknownFonts(measurer, () => {
-                          guessed ??= UNKNOWN_FONT;
+                    ? atUnknownFonts(measurer, (reason) => {
+                          guessed ??= reason;
                       })
                     : measuring,
                 breakRules,

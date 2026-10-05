@@ -56,10 +56,11 @@ export type TextMeasurer = {
     readonly unknownCharacter?: (text: string, font: TextFont) => string | undefined;
     /**
      * Whether this measurer measures text in a font as another font, as it doesn't know the font's own widths, so a layout
-     * stops there rather than guessing. Without text, whether it knows the height and descent of the font's lines. A
-     * measurer without it measures every font as best it can
+     * stops there rather than guessing, or why it doesn't know whether Word draws the text with the widths it measures it
+     * with, as for a font from a file that Office offers a copy of its own of. Without text, whether it knows the height
+     * and descent of the font's lines, or why not. A measurer without it measures every font as best it can
      */
-    readonly unknownFont?: (font: TextFont, text?: string) => boolean;
+    readonly unknownFont?: (font: TextFont, text?: string) => boolean | string;
     /**
      * Why this measurer doesn't know how Word kerns text in a font, or joins its letters into ligatures, when it doesn't,
      * so a layout stops there rather than guessing. A measurer without it measures them as best it can

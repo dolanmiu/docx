@@ -1,8 +1,10 @@
 // Page numbers worked out by docx/layout for text in a font the document embeds, which it measures from the embedded
-// file, as Word draws the text in it, with nothing more given to estimatePageNumbers. The text is in Pacifico, which isn't
-// in the width tables, so without the file the layout would stop at it. It is one of the documents
-// scripts/compare-layout.sh checks against LibreOffice. See docs/usage/layout.md.
-// cspell:ignore Pacifico
+// file, as Word draws the text in it, with nothing more given to estimatePageNumbers. The text is in Kaushan Script, which
+// isn't in the width tables, so without the file the layout would stop at it. It isn't one of the fonts Office offers
+// either: Word for Mac draws text in one of those, such as Pacifico, in Office's own copy of it, rather than in the file
+// the document embeds, so the layout stops at it. It is one of the documents scripts/compare-layout.sh checks against
+// LibreOffice. See docs/usage/layout.md.
+// cspell:ignore Kaushan Pacifico
 
 import * as fs from "fs";
 import { CharacterSet, Document, HeadingLevel, Packer, Paragraph, TableOfContents, TextRun } from "docx";
@@ -16,10 +18,10 @@ const heading = (title: string): Paragraph => new Paragraph({ heading: HeadingLe
 
 const doc = new Document({
     pageNumbers: estimatePageNumbers,
-    fonts: [{ name: "Pacifico", data: fs.readFileSync("./demo/assets/Pacifico.ttf"), characterSet: CharacterSet.ANSI }],
+    fonts: [{ name: "Kaushan Script", data: fs.readFileSync("./demo/assets/KaushanScript-Regular.ttf"), characterSet: CharacterSet.ANSI }],
     styles: {
         default: {
-            document: { run: { font: "Pacifico", size: 22 }, paragraph: { spacing: { after: 160 } } },
+            document: { run: { font: "Kaushan Script", size: 22 }, paragraph: { spacing: { after: 160 } } },
             heading1: {
                 run: { font: "Calibri", size: 32, color: "2F5496" },
                 paragraph: { spacing: { before: 240, after: 0 }, keepNext: true },
