@@ -2213,11 +2213,13 @@ describe("tab stops past the end of the line", () => {
         expect(linesOf([text("a"), tab, text("bb")], at("right")).map(({ textWidth }) => textWidth)).to.deep.equal([100]);
     });
 
-    it("should put the text after a left stop past the end of the line on the next line, as Word does", () => {
-        // word-watertight-text TX12d: a left stop at 9500 twips puts the text at the start of the next line
+    it("should put the text after a left stop past the end of the line two lines down, as Word does", () => {
+        // word-watertight-text TX12d: a left stop at 9500 twips puts the tab on the next line, and the text at the start of
+        // the one after
         const lines = linesOf([text("a"), tab, { type: "marker", name: "m" }, text("bb")], at("left"));
         expect(lines.map(({ text: value, textWidth, markers }) => [value, textWidth, markers])).to.deep.equal([
-            ["a\t", 10, []],
+            ["a", 10, []],
+            ["\t", 0, []],
             ["bb", 20, ["m"]],
         ]);
         // A default stop past the end, after the paragraph's own stops, goes on to the next line
@@ -2242,17 +2244,24 @@ describe("tab stops past the end of the line", () => {
         ]);
     });
 
-    it("should leave the text after a left stop past the end of the line where it is at the start of a line, and move it to the next after a left indent", () => {
-        // word-breaks-and-tabs TP3, TP4: at the start of a paragraph, the text stays at its start; after text in a paragraph
-        // indented on the left, it goes on to the next line, at the indent
+    it("should give a left stop past the end of the line a line of its own, and put the text after it on the next, as Word does", () => {
+        // word-breaks-and-tabs TP3, TP4, word-stops-tabs.docx TA8a to TA8g: at the start of a paragraph, the tab takes its
+        // first line, and the text goes on the next; after text, in a paragraph indented on the left or the right too, the
+        // tab takes the next line, and the text the one after, at the indent
         expect(
             linesOf([tab, text("bb")], at("left")).map(({ text: value, textWidth, unsupported }) => [value, textWidth, unsupported]),
-        ).to.deep.equal([["\tbb", 20, undefined]]);
-        const indented = linesOf([text("a"), tab, text("bb")], { ...at("left"), format: { indentLeft: 10 } });
-        expect(indented.map(({ text: value, unsupported }) => [value, unsupported])).to.deep.equal([
-            ["a\t", undefined],
-            ["bb", undefined],
+        ).to.deep.equal([
+            ["\t", 0, undefined],
+            ["bb", 20, undefined],
         ]);
+        for (const format of [{ indentLeft: 10 }, { indentRight: 10 }]) {
+            const indented = linesOf([text("a"), tab, text("bb")], { ...at("left"), format });
+            expect(indented.map(({ text: value, unsupported }) => [value, unsupported])).to.deep.equal([
+                ["a", undefined],
+                ["\t", undefined],
+                ["bb", undefined],
+            ]);
+        }
     });
 
     it("should line up the text after a stop past the right indent with it, as far as the margin, as Word does", () => {
@@ -2272,11 +2281,8 @@ describe("tab stops past the end of the line", () => {
                 "a tab stop past the end of the line in a paragraph with a first line or hanging indent, or indented past the margin",
             );
         }
-        expect(unsupportedOf([text("a"), tab, text("b")], { ...at("left"), ...indented({ indentRight: 10 }) })).to.equal(
-            "a left tab stop past the end of the line in a paragraph indented on the right",
-        );
         expect(unsupportedOf([tab, text("b")], { ...at("left"), ...indented({ indentLeft: 10 }) })).to.equal(
-            "a left tab stop past the end of the line in a paragraph indented on the right",
+            "a left tab stop past the end of the line at the start of a line in an indented paragraph",
         );
         expect(unsupportedOf([tab, text("b")], at("right"))).to.equal(
             "a tab stop past the end of the line at the start of a line, or in an indented paragraph",
@@ -2298,7 +2304,8 @@ describe("tab stops past the end of the line", () => {
 
     it("should put the text after tabs past the end of the line where Word puts it", () => {
         // word-watertight-text TX12c, TX12d, TX12e: in Calibri 11, a right stop at 10000 twips and at 9026 put "right" at the
-        // margin, its right edge at 9026.3, and a left stop at 9500 puts "left" at the start of the next line
+        // margin, its right edge at 9026.3, and a left stop at 9500 puts the tab on the next line, and "left" at the start of
+        // the one after
         const font = { font: "Calibri", size: 11 };
         const items = (label: string, after: string): readonly InlineItem[] => [
             { type: "text", text: label, font },
@@ -2311,10 +2318,14 @@ describe("tab stops past the end of the line", () => {
         });
         expect(layoutLines(items("TX12c", "right"), stop("right", 10000)).map(({ textWidth }) => textWidth * 20)).to.deep.equal([9026]);
         expect(layoutLines(items("TX12e", "right"), stop("right", 9026)).map(({ textWidth }) => textWidth * 20)).to.deep.equal([9026]);
-        expect(layoutLines(items("TX12d", "left"), stop("left", 9500)).map(({ text: value }) => value)).to.deep.equal(["TX12d\t", "left"]);
+        expect(layoutLines(items("TX12d", "left"), stop("left", 9500)).map(({ text: value }) => value)).to.deep.equal([
+            "TX12d",
+            "\t",
+            "left",
+        ]);
         // word-breaks-and-tabs TP1 to TP9: "centred" and "12.5" after centred and decimal stops at 9800 end at 9026.0 and
-        // 9026.5; "TP3 left" after a left stop at 9500 at the start of the paragraph stays there, 683.0 long; with a left
-        // indent of 1000, "left" goes on to the next line; with a right indent of 1000, "right" after a stop at 10000 ends at
+        // 9026.5; "TP3 left" after a left stop at 9500 at the start of the paragraph goes on the line after the tab's, 683.0
+        // long; with a left indent of 1000, "left" goes on the line after the tab's; with a right indent of 1000, "right" after a stop at 10000 ends at
         // 8026.3, "left" after one at 8500 ends at 8801.0, and "right" after one at 8500 at 8500.3; and "right" after a stop
         // at 10000 that doesn't fit after 49 m's goes on to the next line, ending at 9026.3
         const widthsOf = (laidOut: readonly LaidOutLine[]): readonly number[] => laidOut.map(({ textWidth }) => textWidth * 20);
@@ -2332,10 +2343,10 @@ describe("tab stops past the end of the line", () => {
             ],
             withStop("left", 9500),
         );
-        expect(widthsOf(startOfLine)[0]).to.be.closeTo(683.0, 5);
+        expect(widthsOf(startOfLine)[1]).to.be.closeTo(683.0, 5);
         expect(
             layoutLines(items("TP4 text", "left"), withStop("left", 9500, { indentLeft: 50 })).map(({ text: value }) => value),
-        ).to.deep.equal(["TP4 text\t", "left"]);
+        ).to.deep.equal(["TP4 text", "\t", "left"]);
         expect(widthsOf(layoutLines(items("TP5 text", "right"), withStop("right", 10000, { indentRight: 50 })))).to.deep.equal([8026]);
         expect(widthsOf(layoutLines(items("TP6 text", "left"), withStop("left", 8500, { indentRight: 50 })))[0]).to.be.closeTo(8801.0, 5);
         expect(widthsOf(layoutLines(items("TP9 text", "right"), withStop("right", 8500, { indentRight: 50 })))).to.deep.equal([8500]);

@@ -434,6 +434,21 @@ describe("paginate", () => {
             expect(pagesOf(content)).to.deep.equal({ a: "1", b: "1", c: "2" });
         });
 
+        it("should leave out the space at a table cell's edges that Word leaves out for contextual spacing with what is outside it", () => {
+            // word-stops-text.docx PB6a: the reader marks the first paragraph's space before and the last's space after as
+            // left out, as the paragraph before the table and the end of the row are of their style
+            const spaced = { spaceBefore: 10, spaceAfter: 10, contextualSpacing: true };
+            const cellOf = (leftOut?: ParagraphBlock["leftOut"]): DocumentContent => {
+                const first = { ...paragraph("first", 2, spaced), ...(leftOut ? { leftOut } : {}) };
+                const last = { ...paragraph("last", 2, spaced), ...(leftOut ? { leftOut } : {}) };
+                return document([paragraph("a", 1), table([row([[first, last]])]), paragraph("b", 1), paragraph("c", 1)]);
+            };
+            // 1 line, 10 before, 4 lines and 10 after are 7 lines: b goes on the next page
+            expect(pagesOf(cellOf())).to.deep.include({ b: "2" });
+            expect(pagesOf(cellOf({ before: true }))).to.deep.include({ b: "1", c: "2" });
+            expect(pagesOf(cellOf({ before: true, after: true }))).to.deep.include({ b: "1", c: "1" });
+        });
+
         describe("contextual spacing on one of two paragraphs of the same style", () => {
             /** The space between two paragraphs of a line each, from how many lines of 10 points fit below them on the page */
             const spaceBetween = (first: ParagraphBlock, second: ParagraphBlock, changes: Partial<DocumentContent> = {}): number => {
@@ -930,6 +945,57 @@ describe("paginate", () => {
                 paragraph("b", 1),
             ]);
             expect(pagesOf(headerMoves)).to.deep.equal({ a: "1", header: "2", one: "2", b: "2" });
+        });
+
+        it("should move a table's header rows to the next page with the first row when none of it fits below them, as Word does", () => {
+            const headed = (first: TableRow, before: readonly Block[] = [paragraph("a", 5)]): DocumentContent =>
+                document([...before, table([row([[paragraph("header", 1)]], { header: true }), first, row([[paragraph("next", 1)]])])]);
+            // word-stops-floats.docx HR1b: a row that can't break, of 2 lines, beside the header row on the last line
+            expect(pagesOf(headed(row([[paragraph("first", 2)]], { cantSplit: true })))).to.deep.equal({
+                a: "1",
+                header: "2",
+                first: "2",
+                next: "2",
+            });
+            // HR1d: the first row kept with the next, so the header row and both rows go on the next page
+            const kept = row([[paragraph("first", 1, { keepNext: true })]]);
+            expect(pagesOf(headed(kept, [paragraph("a", 6)]))).to.deep.equal({ a: "1", header: "2", first: "2", next: "2" });
+            // HR1c, HR1f: a row that breaks, with lines of it below the header row, leaves it there
+            expect(pagesOf(headed(row([[paragraph("first", 4)]]), [paragraph("a", 4)]))).to.deep.equal({
+                a: "1",
+                header: "1",
+                first: "1",
+                next: "2",
+            });
+            // At the top of a page, they stay, as the next page has no more room for the row, which can't break, and goes on
+            // to the next page, where it breaks as it is taller than a page
+            expect(pagesOf(headed(row([[paragraph("first", 9)]], { cantSplit: true }), []))).to.deep.equal({
+                header: "1",
+                first: "2",
+                next: "3",
+            });
+            // Below a paragraph kept with the next, which Word may move with them
+            const heading = paragraph("heading", 1, { keepNext: true });
+            const afterHeading = headed(row([[paragraph("first", 2)]], { cantSplit: true }), [paragraph("a", 4), heading]);
+            expect(paginate(afterHeading, { measurer: MEASURER }).stoppedAt).to.equal(
+                "a paragraph kept with the next before a table whose header rows go on to the next page",
+            );
+            const guessed = paginate(afterHeading, { measurer: MEASURER, guess: true });
+            expect(Object.fromEntries(inBody(afterHeading, guessed.bookmarks))).to.deep.include({ heading: "1", header: "2", first: "2" });
+            // At the foot of a column, which Word may do otherwise
+            const narrow = (one: TableRow): TableRow => ({ ...one, cells: one.cells.map((cell) => ({ ...cell, width: 35 })) });
+            const inColumns = document(
+                [
+                    paragraph("a", 5),
+                    table(
+                        [row([[paragraph("header", 1)]], { header: true }), row([[paragraph("first", 2)]], { cantSplit: true })].map(
+                            narrow,
+                        ),
+                    ),
+                ],
+                { sections: [{ ...SECTION, columns: [35, 35] }] },
+            );
+            expect(paginate(inColumns, { measurer: MEASURER }).stoppedAt).to.equal("a table's header rows alone at the foot of a column");
         });
 
         it("should size the columns of a table given no widths to their text, in the width it is in", () => {
@@ -1493,6 +1559,15 @@ describe("paginate", () => {
                 paragraph("b", 1),
             ]);
             expect(pagesOf(content)).to.deep.include({ long: "1", r1: "1", r2: "1", b: "1" });
+            // One with a table before its paragraph, which the reader stops at without a guess, is as tall as a line of the
+            // paragraph's mark, rather than failing to measure the table as a paragraph (`word-stops-vertical-cells.docx`
+            // TV5d)
+            const nested = table([row([[paragraph("nested", 3)]])]);
+            expect(laidOut(cellOf([nested, paragraph("after", 1)], { vertical: true }))).to.deep.include({
+                beside: "1",
+                nested: "1",
+                b: "1",
+            });
         });
 
         it("should move rows with text running up or down, or an empty paragraph whose mark takes no room, whole, and stop at one breaking across pages", () => {
@@ -6505,6 +6580,80 @@ describe("paginate", () => {
                 expect(guessed.stoppedAt).to.equal(undefined);
                 expect(guessed.pages[0]).to.deep.include({ guesses: ["a line in a text box that only just fits"] });
                 expect((guessed.pages[0].body[0] as ParagraphLayout).lines[0].height).to.equal(16);
+            });
+        });
+
+        describe("in headers and footers", () => {
+            // 30 by 30 points, 80 across the page and 40 down it
+            const onPage = floating({ width: 30, horizontal: { from: "page", offset: 80 }, vertical: { from: "page", offset: 40 } });
+            const withPart = (item: LayoutItem): readonly Block[] => [{ ...paragraph("part", 0), items: [item] }];
+            // Headers and footers of a line, at the edges of the page, which leave the margins as they are
+            const PARTS: Section = { ...PAGE, header: 0, footer: 0 };
+
+            it("should put a header's or footer's drawing on each page that shows it, with the body's text going round it, as Word does", () => {
+                // word-stops-drawings.docx DH1a: lines from 40 to 60 down are either side of it, from 10 to 80 across and 110 to 190
+                const header = { ...PARTS, headers: { default: withPart(onPage) } };
+                const rooms = roomsOf([prose("a", 60)], { sections: [header] });
+                expect(rooms[0].slice(2, 6)).to.deep.equal([
+                    [10, 30, 180],
+                    [10, 40, 70],
+                    [110, 40, 80],
+                    [10, 50, 70],
+                ]);
+                // On every page it shows on, and in a footer too
+                const footer = { ...PARTS, footers: { default: withPart(onPage) } };
+                const twice = roomsOf([prose("a", 30), { ...prose("b", 30), format: { pageBreakBefore: true } }], { sections: [footer] });
+                expect(twice.map((page) => page.filter(([, y]) => y === 40).length)).to.deep.equal([2, 2]);
+                // DH1d: the first page's header, of a section whose first page has one
+                const first = { ...PARTS, titlePage: true, headers: { first: withPart(onPage) } };
+                const firstOnly = roomsOf([prose("a", 30), { ...prose("b", 30), format: { pageBreakBefore: true } }], {
+                    sections: [first],
+                });
+                expect(firstOnly.map((page) => page.filter(([, y]) => y === 40).length)).to.deep.equal([2, 1]);
+                // Placed against the column, it is against the text across the page
+                const column = floating({ width: 30, horizontal: { from: "column", offset: 70 }, vertical: { from: "page", offset: 40 } });
+                expect(roomsOf([prose("a", 9)], { sections: [{ ...PARTS, headers: { default: withPart(column) } }] })[0][2]).to.deep.equal([
+                    10, 30, 180,
+                ]);
+            });
+
+            it("should stop where Word's way with them isn't known, and guessing, leave them out", () => {
+                // A table in a header has none of them
+                expect(
+                    stopOf([prose("a", 9)], { sections: [{ ...PARTS, headers: { default: [table([row([[paragraph("cell", 1)]])])] } }] }),
+                ).to.equal(undefined);
+                const stopsAt = (
+                    section: Section,
+                    blocks: readonly Block[] = [prose("a", 9)],
+                    changes: Partial<DocumentContent> = {},
+                ): string | undefined => stopOf(blocks, { sections: [section], ...changes });
+                const header = (item: LayoutItem): Section => ({ ...PARTS, headers: { default: withPart(item) } });
+                expect(
+                    stopsAt(header(floating({ horizontal: { from: "bogus", offset: 0 }, vertical: { from: "page", offset: 0 } }))),
+                ).to.equal("a drawing placed against what isn't followed yet");
+                expect(stopsAt({ ...header(onPage), textRunsDown: "fromRight" })).to.equal(
+                    "a drawing that text flows around in a header or footer of text that runs down the page",
+                );
+                const column = floating({ horizontal: { from: "column", offset: 0 }, vertical: { from: "page", offset: 40 } });
+                expect(stopsAt({ ...header(column), columns: [85, 85] })).to.equal(
+                    "a drawing that text flows around in a header or footer, placed against a column of several",
+                );
+                // Beside the header's own line, which may go round it
+                const high = floating({ width: 30, horizontal: { from: "page", offset: 80 }, vertical: { from: "page", offset: 5 } });
+                expect(stopsAt(header(high))).to.equal("a drawing that text flows around in a header or footer, beside its text");
+                // Beside the rest of a footnote continued from the page before, at the bottom of the page after the first
+                const low = floating({ width: 30, horizontal: { from: "page", offset: 80 }, vertical: { from: "page", offset: 160 } });
+                const noted = withItems(prose("a", 30), [{ type: "marker", name: "note" }]);
+                expect(
+                    stopsAt({ ...PARTS, titlePage: true, footers: { default: withPart(low) } }, [noted, prose("b", 3)], {
+                        footnotes: new Map([["note", [paragraph("n", 30)]]]),
+                    }),
+                ).to.equal("a drawing that text flows around beside the footnotes at the bottom of its page");
+                const guessed = paginate(document([prose("a", 9)], { sections: [{ ...header(onPage), columns: [85, 85] }] }), {
+                    measurer: MEASURER,
+                    guess: true,
+                });
+                expect(guessed.stoppedAt).to.equal(undefined);
             });
         });
     });

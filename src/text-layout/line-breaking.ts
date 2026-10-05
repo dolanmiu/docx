@@ -1421,17 +1421,17 @@ export const layoutLines = (
         squeezes && state.otherSpaces > 0 && state.position + tokenWidth - limitOf() <= MOST_SQUEEZE * state.spaces;
     /**
      * Why where Word puts the text after a tab to one of the paragraph's own stops past the end of the line isn't known,
-     * when it isn't: its probes had no first line or hanging indent, no right indent past the margin, a left indent only
-     * with a left stop after text, a right indent only with a right stop after text, and centred and decimal stops after
-     * text in a paragraph without indents
+     * when it isn't: its probes had no first line or hanging indent, no right indent past the margin, indents only with a
+     * left stop after text and a right stop after text, and centred and decimal stops after text in a paragraph without
+     * indents
      */
     const pastEndUnknown = ({ alignment: kind }: TabStop, started: boolean): string | undefined => {
         if (firstLineIndent !== 0 || indentRight < 0) {
             return "a tab stop past the end of the line in a paragraph with a first line or hanging indent, or indented past the margin";
         }
         if (kind === "left") {
-            return (started ? indentRight !== 0 : indentLeft !== 0 || indentRight !== 0)
-                ? "a left tab stop past the end of the line in a paragraph indented on the right"
+            return !started && (indentLeft !== 0 || indentRight !== 0)
+                ? "a left tab stop past the end of the line at the start of a line in an indented paragraph"
                 : undefined;
         }
         return !started || indentLeft !== 0 || (kind !== "right" && indentRight !== 0)
@@ -1787,9 +1787,9 @@ export const layoutLines = (
                     own && indentRight > 0 && next.position > limitOf() + TOLERANCE && next.position <= marginOf() + TOLERANCE;
                 // One past the end of the line: the text after a right, centred or decimal one lines up with the end of the line,
                 // or of the next when it doesn't fit (word-watertight-text.ts TX12c, word-breaks-and-tabs.ts TP1, TP2, TP5, TP7);
-                // that after a left one goes on to the start of the next line (TX12d, TP4), or stays where it is at the start of
-                // a line (TP3). Past the last of the default stops before the end of the line, the tab goes on to the next line,
-                // as below (TX12b)
+                // a left one takes a line of its own, below the text before it, and the text after it goes on to the start of
+                // the next (TX12d, TP3, TP4, word-stops-tabs.docx TA8a to TA8g). Past the last of the default stops before the
+                // end of the line, the tab goes on to the next line, as below (TX12b)
                 const pastEnd = own && next.position > Math.max(limitOf(), marginOf()) + TOLERANCE ? next : undefined;
                 const unknown =
                     pastIndent && (next.alignment === "center" || next.alignment === "decimal" || squeezes)
@@ -1803,8 +1803,8 @@ export const layoutLines = (
                     line = { ...line, unsupported: line.unsupported ?? unknown };
                 }
                 if (pastEnd?.alignment === "left" && unknown === undefined) {
-                    const tab = { ...line, text: `${line.text}\t`, heights: withToken(line.heights, token), started: true };
-                    line = line.started ? wrap(place(tab)) : { ...tab, end: line.position };
+                    const below = line.started ? wrap(line) : line;
+                    line = wrap(place({ ...below, text: `${below.text}\t`, heights: withToken(below.heights, token), started: true }));
                     continue;
                 }
                 const aligned = pastEnd !== undefined && pastEnd.alignment !== "left" && unknown === undefined;

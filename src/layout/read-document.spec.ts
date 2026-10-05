@@ -1453,7 +1453,7 @@ describe("readDocument", () => {
             );
         });
 
-        it("should stop at a shape in a header's line, or one there that text flows around, which the body's text goes round", () => {
+        it("should read a shape in a header that text flows around, which the body's text goes round, and stop at one in its line", () => {
             const headerOf = (...children: readonly object[]): readonly unknown[] => {
                 const file = new File({ sections: [{ headers: { default: new Header({ children: [] }) }, children: [] }] });
                 const [wrapper] = file.Headers;
@@ -1464,10 +1464,16 @@ describe("readDocument", () => {
                     { "w:body": [{ "w:sectPr": [{ "w:headerReference": { _attr: { "r:id": id } } }] }] } as IXmlableObject,
                     contextOf(file),
                 );
-                return content.sections[0].headers.default!.map((block) => block.unsupported);
+                return content.sections[0].headers.default!.map((block) =>
+                    block.type === "paragraph" ? (block.unsupported ?? block.items.map(({ type }) => type)) : block,
+                );
             };
+            // word-vml.docx VM13: placed against the page, as a drawing of the page the body's text goes round
+            const onPage = "position:absolute;margin-top:216pt;width:100pt;height:72pt;mso-position-vertical-relative:page";
+            expect(headerOf(pict(onPage, [SQUARE], UNOUTLINED))).to.deep.equal([["drawing"]]);
+            // Against its paragraph, as it is when it doesn't say, whose place on the page hasn't been seen
             expect(headerOf(pict("position:absolute;width:100pt;height:72pt", [SQUARE], UNOUTLINED))).to.deep.equal([
-                "a VML drawing that text flows around in a header or footer",
+                "a drawing that text flows around in a header or footer, placed against its paragraph or line",
             ]);
             expect(headerOf(pict("width:100pt;height:72pt", [], UNOUTLINED))).to.deep.equal([
                 "a VML drawing in the line of a header, footer or text box",
@@ -3052,6 +3058,101 @@ describe("readDocument", () => {
             expect(markersIn(table.blocks[0].block as TableBlock)).to.deep.equal([[["table"]], [["table"], ["table", ["table"]]]]);
             expect(itemsOf(table, 1)).to.have.length(1);
         });
+
+        describe("contextual spacing at the edges of its cells", () => {
+            const SPACED = { contextualSpacing: true, spacing: { before: 240, after: 240 } };
+            const STYLES = { paragraphStyles: [{ id: "Other", name: "Other", basedOn: "Normal" }] };
+            // Each row's cells, each cell's paragraphs and tables
+            const tableOf = (...rows: readonly (readonly (readonly (Paragraph | Table)[])[])[]): Table =>
+                new Table({
+                    rows: rows.map(
+                        (cells) => new TableRow({ children: cells.map((children) => new TableCell({ children: [...children] })) }),
+                    ),
+                });
+            /** The body's blocks, and of each cell, which of its first's space before and its last's space after Word leaves out */
+            const leftOut = (
+                ...children: readonly (Paragraph | Table)[]
+            ): { readonly unsupported?: string; readonly cells: readonly (readonly string[])[] } => {
+                const content = readWritten({ styles: STYLES, sections: [{ children: [...children] }] });
+                const table = content.blocks.find(({ block }) => block.type === "table")!.block as TableBlock;
+                return {
+                    ...(table.unsupported === undefined ? {} : { unsupported: table.unsupported }),
+                    cells: table.rows.map(({ cells }) =>
+                        cells.map(({ blocks }) => {
+                            const first = blocks[0] as ParagraphBlock;
+                            const last = blocks[blocks.length - 1] as ParagraphBlock;
+                            return `${first.leftOut?.before ? "before" : "-"} ${last.leftOut?.after ? "after" : "-"}`;
+                        }),
+                    ),
+                };
+            };
+            const normal = (text: string): Paragraph => new Paragraph({ text, ...SPACED });
+            const other = (text: string): Paragraph => new Paragraph({ text, style: "Other", ...SPACED });
+
+            it("should leave out the space Word leaves out at a table's first cell and each row's end, as Word compares them in the document's order", () => {
+                // word-stops-text.docx PB6a to PB6d: the first cell's first paragraph is compared with the paragraph before the
+                // table, and each row's last with the end of the row, which is in the default paragraph style
+                const plain = (text: string): Paragraph => new Paragraph(text);
+                expect(leftOut(plain("before"), tableOf([[normal("a"), normal("b"), normal("c")]]), plain("after"))).to.deep.equal({
+                    cells: [["before after"]],
+                });
+                expect(leftOut(new Paragraph({ text: "before", style: "Other" }), tableOf([[normal("a")]]))).to.deep.equal({
+                    cells: [["- after"]],
+                });
+                expect(leftOut(plain("before"), tableOf([[other("a"), other("b")]]), plain("after"))).to.deep.equal({ cells: [["- -"]] });
+                // Without contextual spacing, or space to leave out, nothing is
+                expect(
+                    leftOut(plain("before"), tableOf([[new Paragraph({ text: "a", spacing: { before: 240, after: 240 } })]])),
+                ).to.deep.equal({
+                    cells: [["- -"]],
+                });
+                expect(leftOut(plain("before"), tableOf([[new Paragraph({ text: "a", contextualSpacing: true })]]))).to.deep.equal({
+                    cells: [["- -"]],
+                });
+                // A table at the start of the document has nothing before it
+                expect(leftOut(tableOf([[normal("a")]]))).to.deep.equal({ cells: [["- after"]] });
+                // The end of each row, below its last cell
+                expect(leftOut(plain("before"), tableOf([[other("a")], [normal("b")]], [[other("c")], [normal("d")]]))).to.deep.equal({
+                    cells: [
+                        ["- -", "- after"],
+                        ["- -", "- after"],
+                    ],
+                });
+            });
+
+            it("should stop where Word would leave out the space at an edge not yet seen, and guessing, leave it out", () => {
+                const unseen = "contextual spacing at the edge of a table cell beside another cell or row, or a table's paragraphs";
+                const before = new Paragraph({ text: "before", style: "Other" });
+                // Between the cells of a row, and below the end of a row
+                expect(leftOut(before, tableOf([[normal("a")], [normal("b")]]))).to.deep.equal({
+                    unsupported: unseen,
+                    cells: [["- after", "before after"]],
+                });
+                expect(leftOut(before, tableOf([[normal("a")]], [[normal("b")]]))).to.deep.equal({
+                    unsupported: unseen,
+                    cells: [["- after"], ["before after"]],
+                });
+                // Different styles beside each other agree with not comparing them at all
+                expect(leftOut(new Paragraph("before"), tableOf([[other("a")], [normal("b")]]))).to.deep.equal({
+                    cells: [["- -", "- after"]],
+                });
+                // The paragraphs around the table, compared with its first paragraph and the end of its last row
+                expect(leftOut(other("before"), tableOf([[other("a")]]))).to.have.property("unsupported", unseen);
+                expect(leftOut(before, tableOf([[other("a")]]), normal("after"))).to.have.property("unsupported", unseen);
+                expect(leftOut(before, tableOf([[other("a")]]), other("after"))).to.not.have.property("unsupported");
+                // After another table, the end of its last row
+                const tables = readWritten({
+                    styles: STYLES,
+                    sections: [{ children: [tableOf([[other("a")]]), tableOf([[normal("b")]])] }],
+                });
+                expect(tables.blocks.map(({ block }) => block.unsupported)).to.deep.equal([undefined, unseen]);
+                // A table at the start of a cell, and after a paragraph with paragraphs that take no room after it, after what
+                // isn't known
+                expect(leftOut(before, tableOf([[tableOf([[normal("a")]]), new Paragraph("b")]]))).to.have.property("unsupported", unseen);
+                const hidden = new Paragraph({ children: [new TextRun({ text: "hidden", vanish: true })], run: { vanish: true } });
+                expect(leftOut(new Paragraph("before"), hidden, tableOf([[normal("a")]]))).to.have.property("unsupported", unseen);
+            });
+        });
     });
 
     describe("the body", () => {
@@ -3293,23 +3394,14 @@ describe("readDocument", () => {
             expect(read.footers).to.deep.equal({});
         });
 
-        it("should leave out drawings, VML and footnote references in headers, which don't take room in them, and read a header once", () => {
+        /** A header of some elements, and a document whose section refers to it as the default and the even pages' header */
+        const withHeader = (...elements: readonly object[]): DocumentContent => {
             const file = new File({ sections: [{ headers: { default: new Header({ children: [] }) }, children: [] }] });
             const [wrapper] = file.Headers;
-            // A watermark, a picture text would flow around in the body, and a footnote reference, which has no note there
             // eslint-disable-next-line functional/immutable-data
-            wrapper.View.prepForXml = (): IXmlableObject => ({
-                "w:hdr": [
-                    p(
-                        r({ "w:pict": [{ "v:shape": [{ _attr: { style: "position:absolute;width:100pt;height:50pt" } }] }] }),
-                        r({ "w:drawing": [{ "wp:anchor": [{ "wp:wrapSquare": {} }] }] }),
-                        r({ "w:footnoteReference": { _attr: { "w:id": 1 } } }),
-                        r(t("text")),
-                    ),
-                ],
-            });
+            wrapper.View.prepForXml = (): IXmlableObject => ({ "w:hdr": elements });
             const id = `rId${wrapper.View.ReferenceId}`;
-            const content = readDocument(
+            return readDocument(
                 {
                     "w:body": [
                         {
@@ -3322,6 +3414,18 @@ describe("readDocument", () => {
                 } as IXmlableObject,
                 contextOf(file),
             );
+        };
+
+        it("should leave out drawings in front of or behind the text, VML ones and footnote references in headers, and read a header once", () => {
+            // A watermark, a picture behind the text, and a footnote reference, which has no note there
+            const content = withHeader(
+                p(
+                    r({ "w:pict": [{ "v:shape": [{ _attr: { style: "position:absolute;width:100pt;height:50pt" } }] }] }),
+                    r({ "w:drawing": [{ "wp:anchor": [{ "wp:wrapNone": {} }] }] }),
+                    r({ "w:footnoteReference": { _attr: { "w:id": 1 } } }),
+                    r(t("text")),
+                ),
+            );
             const { headers } = content.sections[0];
             expect(headers.default).to.equal(headers.even);
             expect(headers.default).to.deep.equal([
@@ -3333,6 +3437,46 @@ describe("readDocument", () => {
                     markFont: {},
                     style: "Normal",
                 },
+            ]);
+        });
+
+        it("should read a drawing in a header that text flows around, which the body's text goes round, but stop at one placed against its line or paragraph, or in a cell", () => {
+            const anchored = (horizontal: string, vertical: string): object =>
+                r({
+                    "w:drawing": [
+                        {
+                            "wp:anchor": [
+                                { "wp:wrapSquare": {} },
+                                { "wp:positionH": [{ _attr: { relativeFrom: horizontal } }, { "wp:posOffset": ["0"] }] },
+                                { "wp:positionV": [{ _attr: { relativeFrom: vertical } }, { "wp:posOffset": ["0"] }] },
+                            ],
+                        },
+                    ],
+                });
+            const read = (...elements: readonly object[]): readonly unknown[] =>
+                withHeader(...elements).sections[0].headers.default!.map((block) =>
+                    block.type === "paragraph" ? (block.unsupported ?? block.items.map(({ type }) => type)) : block.unsupported,
+                );
+            // word-watertight-pages.docx PG4, word-stops-drawings.docx DH1a to DH1d: placed against the page
+            expect(read(p(anchored("page", "page"), r(t("text"))))).to.deep.equal([["drawing", "text"]]);
+            const ITS_LINE = "a drawing that text flows around in a header or footer, placed against its paragraph or line";
+            expect(read(p(anchored("column", "paragraph")))).to.deep.equal([ITS_LINE]);
+            expect(read(p(anchored("margin", "line")))).to.deep.equal([ITS_LINE]);
+            expect(read(p(anchored("character", "page")))).to.deep.equal([ITS_LINE]);
+            // One whose place can't be read stops as in the body
+            expect(read(p(r({ "w:drawing": [{ "wp:anchor": [{ "wp:wrapSquare": {} }] }] })))).to.deep.equal([
+                "a drawing placed by neither an alignment nor an offset",
+            ]);
+            const inCell = {
+                "w:tbl": [
+                    { "w:tblPr": [] },
+                    { "w:tblGrid": [{ "w:gridCol": { _attr: { "w:w": 2000 } } }] },
+                    { "w:tr": [{ "w:tc": [{ "w:tcPr": [{ "w:tcW": { _attr: { "w:w": 2000 } } }] }, p(anchored("page", "page"))] }] },
+                ],
+            };
+            expect(read(inCell, p())).to.deep.equal([
+                "a drawing that text flows around in a table cell, footnote, endnote or text box",
+                [],
             ]);
         });
     });
