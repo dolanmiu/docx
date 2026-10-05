@@ -222,6 +222,27 @@ describe("layoutLines", () => {
         expect(heightsOf(lines, 100, { format: { lineSpacing: { rule: "atLeast", height: 8 } } })).to.deep.equal([10, 10]);
     });
 
+    it("should space the lines from the one a marker is on as a joined paragraph's, as Word spaces each by the one it ends in", () => {
+        // stops2/word-stops-hidden.ts HD1f, word-breaks-and-tabs.ts HM1h, HM1i: the line the next paragraph's text starts on,
+        // and those after it, are spaced as the next one is
+        const joined = [text("aaaa bbbb "), { type: "marker" as const, name: "joined" }, text("cccc dddd eeee")];
+        const double = { rule: "multiple" as const, multiple: 2 };
+        expect(heightsOf(joined, 100, { format: { lineSpacingFrom: { marker: "joined", lineSpacing: double } } })).to.deep.equal([
+            10, 20, 20,
+        ]);
+        expect(heightsOf(joined, 100, { format: { lineSpacing: double, lineSpacingFrom: { marker: "joined" } } })).to.deep.equal([
+            20, 10, 10,
+        ]);
+        // From the middle of a line, that line
+        const midLine = [text("aaaa "), { type: "marker" as const, name: "joined" }, text("bbbb cccc dddd eeee")];
+        expect(heightsOf(midLine, 100, { format: { lineSpacingFrom: { marker: "joined", lineSpacing: double } } })).to.deep.equal([
+            20, 20, 20,
+        ]);
+        // From the start of a line, that line
+        const atStart = [text("aaaa bbbb "), { type: "marker" as const, name: "joined" }, text("cccccccccc")];
+        expect(heightsOf(atStart, 100, { format: { lineSpacingFrom: { marker: "joined", lineSpacing: double } } })).to.deep.equal([10, 20]);
+    });
+
     it("should keep lines as tall as the font is, unrounded, as Word does, rather than in whole twips as LibreOffice does", () => {
         const twipsOf = (font: { readonly font: string; readonly size: number }, format = {}): number =>
             layoutLines([{ type: "text", text: "Some text", font }], { width: 500, format })[0].height * 20;
@@ -579,23 +600,43 @@ describe("layoutLines", () => {
         expect(line.textWidth).to.equal(170);
     });
 
-    it("should move the tab after a right-aligned number to the first stop at or after its end, and stop where Word hasn't shown which", () => {
+    it("should centre a centred number and its space together around the start of the first line", () => {
+        // stops2/word-stops-lists.ts LI3a: "1." and its space centred at 360 twips start at 246, rather than "1." alone. Here
+        // "1234." and its space of 15 points, 65 together, are centred at 30, so the text after them goes from 62.5 to 162.5
+        const format = { indentLeft: 40, firstLineIndent: -10 };
+        const separator = { listNumber: "separator" as const, size: 15 };
+        const items: readonly InlineItem[] = [text("1234."), { type: "text", text: " ", font: separator }, text("bbbbbbbbbb")];
+        const widthOfSpace = (value: string, font: TextFont): number => [...value].length * (font.size ?? 10);
+        const [line] = layoutLines(items, {
+            width: 200,
+            format,
+            measurer: { ...MEASURER, measureWidth: widthOfSpace },
+            numberAlignment: "center",
+        });
+        expect(line.textWidth).to.equal(132.5);
+    });
+
+    it("should move the tab after a right-aligned number to the first stop past its end, or to the left indent without one", () => {
         const items: readonly InlineItem[] = [text("1234."), { type: "tab", font: { listNumber: "separator" } }, text("b")];
         const laidOut = (format: ParagraphFormat, tabStops: readonly { readonly position: number; readonly alignment: "left" }[] = []) =>
             layoutLines(items, { width: 300, format, tabStops, defaultTabStop: 36, measurer: MEASURER, numberAlignment: "right" })[0];
-        // word-lists.docx LJ6: the number ends at the left indent, on a default stop, and the text starts there
+        // word-lists.docx LJ6, stops2/word-stops-lists.ts LI6b: the number ends at the left indent, on a default stop or not,
+        // and the text starts there
         expect(laidOut({ indentLeft: 72 })).to.deep.include({ textWidth: 10 });
-        expect(laidOut({ indentLeft: 72 }).unsupported).to.equal(undefined);
-        // LJ1, LJ7: with a hanging indent, at its stop past the default one the number ends at
+        expect(laidOut({ indentLeft: 80 })).to.deep.include({ textWidth: 10 });
+        // LJ1, LJ7: with a hanging indent, at its stop past the default one the number ends at, and past a stop of the
+        // paragraph's own there
         expect(laidOut({ indentLeft: 108, firstLineIndent: -36 })).to.deep.include({ textWidth: 46 });
-        expect(laidOut({ indentLeft: 108, firstLineIndent: -36 }).unsupported).to.equal(undefined);
-        // At a left indent off the default stops, or a stop of the paragraph's own or a default one at the end of a number
-        // after a first line indent, Word may move it on, and hasn't shown it
-        const unknown = "a tab after a list number aligned right, which Word hasn't been seen to move";
-        expect(laidOut({ indentLeft: 80 }).unsupported).to.equal(unknown);
-        expect(laidOut({ indentLeft: 108, firstLineIndent: -36 }, [{ position: 72, alignment: "left" }]).unsupported).to.equal(unknown);
-        expect(laidOut({ indentLeft: 36, firstLineIndent: 36 }).unsupported).to.equal(unknown);
-        expect(laidOut({ indentLeft: 36, firstLineIndent: 40 }).unsupported).to.equal(undefined);
+        expect(laidOut({ indentLeft: 108, firstLineIndent: -36 }, [{ position: 72, alignment: "left" }])).to.deep.include({
+            textWidth: 46,
+        });
+        // LI6c: after a first line indent, at the next default stop past the one the number ends at
+        expect(laidOut({ indentLeft: 36, firstLineIndent: 36 })).to.deep.include({ textWidth: 46 });
+        expect(laidOut({ indentLeft: 36, firstLineIndent: 40 })).to.deep.include({ textWidth: 42 });
+        expect([{ indentLeft: 80 }, { indentLeft: 36, firstLineIndent: 36 }].map((format) => laidOut(format).unsupported)).to.deep.equal([
+            undefined,
+            undefined,
+        ]);
         // A number too wide for its line has no stop to go to
         expect(
             layoutLines(items, { width: 60, format: { indentLeft: 72 }, measurer: MEASURER, numberAlignment: "right" })[0].unsupported,
@@ -1321,24 +1362,36 @@ describe("the height of a line with a list number, as Word lays it out", () => {
         expect(heightOf([listNumber(10, "Deep"), tab(10), text("b")]).height).to.be.closeTo(12, 1e-9);
     });
 
-    it("should make a line of only a number as tall as the number, and stop where its mark is of another size or font", () => {
+    it("should make a line of only a number as tall as its mark, with the number's ascent where it is taller (stops2 LI7a, LI7b)", () => {
         expect(heightOf([listNumber(20), tab(20)])).to.deep.include({ height: 24 });
-        expect(heightOf([listNumber(20), tab(20)]).unsupported).to.equal(undefined);
-        expect(heightOf([listNumber(20), tab(20)], { markFont: { size: 10 } }).unsupported).to.equal(
-            "a line of only a list number of another size or font than its paragraph's mark",
+        // A number of 20 points over a mark of 10, its ascent and the mark's descent; and of 10 points over a mark of 20, the
+        // mark's line
+        expect(heightOf([listNumber(20), tab(20)], { markFont: { size: 10 } })).to.deep.include({ height: 22 });
+        expect(heightOf([listNumber(10), tab(10)])).to.deep.include({ height: 24 });
+        // A number of a font deeper below its baseline than the mark's, over a mark of 10 points, is the mark's descent
+        expect(heightOf([listNumber(20, "Deep"), tab(20)], { markFont: { size: 10 } })).to.deep.include({ height: 18 });
+        expect(heightOf([listNumber(20), tab(20)], { markFont: { size: 10 } }).unsupported).to.equal(undefined);
+        // Its emphasis marks take their room over it, a quarter of the line
+        const marked: InlineItem = { type: "text", text: "1.", font: { size: 20, listNumber: "number", emphasis: "above" } };
+        expect(heightOf([marked, tab(20)])).to.deep.include({ height: 30 });
+        // With the paragraph's text on the lines after it, whether the mark counts isn't known where it differs
+        const before = (markSize: number): string | undefined =>
+            heightOf([listNumber(20), tab(20), text("bbbbbbbbb")], { width: 100, markFont: { size: markSize } }).unsupported;
+        expect(before(10)).to.equal(
+            "a line of only a list number of another size or font than its paragraph's mark, before the paragraph's text",
         );
+        expect(before(20)).to.equal(undefined);
     });
 
-    it("should stop at multiple line spacing in a line whose number is taller than its text", () => {
+    it("should add multiple line spacing's share of the text's line below a number taller than the text (stops2 LI5a, LI5b)", () => {
         const spacing = (multiple: number): Partial<LineLayoutOptions> => ({
             format: { lineSpacing: { rule: "multiple", multiple } },
         });
-        expect(heightOf([listNumber(20), tab(20), text("b")], spacing(1.5)).unsupported).to.equal(
-            "a list number taller than its line's text, with multiple line spacing",
-        );
-        expect(heightOf([listNumber(20), tab(20), text("b")], spacing(1)).unsupported).to.equal(undefined);
-        expect(heightOf([listNumber(10), tab(10), text("b")], spacing(1.5)).unsupported).to.equal(undefined);
-        // A line of only a number is as tall as text of its font
+        // The number's ascent, 20, the text's descent, 2, and half of the text's line, 6
+        expect(heightOf([listNumber(20), tab(20), text("b")], spacing(1.5)).height).to.be.closeTo(28, 1e-9);
+        expect(heightOf([listNumber(20), tab(20), text("b")], spacing(2)).height).to.be.closeTo(34, 1e-9);
+        expect(heightOf([listNumber(20), tab(20), text("b")], spacing(1.5)).unsupported).to.equal(undefined);
+        // A line of only a number is as tall as text of its mark's font
         expect(heightOf([listNumber(20), tab(20)], spacing(1.5))).to.deep.include({ height: 36 });
         // A number beside a picture is text beside it, and its line as tall as the number above the baseline and the picture
         expect(heightOf([listNumber(10), tab(10), { type: "box", width: 5, height: 5, font: { size: 10 } }])).to.deep.include({
@@ -1418,6 +1471,13 @@ describe("layoutLines with run formatting, as Word lays it out", () => {
         expect(twipsOf(lineWith({ size: 7, emphasis: "above" }))).to.be.closeTo(335.69, 0.01);
         expect(twipsOf([word("RF6n 1 x"), word(" ", { ...CALIBRI, emphasis: "above" }), word("y")])).to.be.closeTo(335.69, 0.01);
         expect(twipsOf([], { markFont: { ...CALIBRI, emphasis: "above" } })).to.be.closeTo(335.54, 0.5);
+        // On a list's number, before text without them (stops2/word-stops-lists.ts LI4b)
+        const tab: InlineItem = { type: "tab", font: { ...CALIBRI, listNumber: "separator" } };
+        expect(
+            twipsOf([word("1.", { ...CALIBRI, emphasis: "above", listNumber: "number" }), tab, word("LI4b")], {
+                format: { indentLeft: 36, firstLineIndent: -18 },
+            }),
+        ).to.be.closeTo(335.69, 0.01);
         // Exactly 12 points is 12 points still
         expect(twipsOf(lineWith({ emphasis: "above" }), { format: { lineSpacing: { rule: "exact", height: 12 } } })).to.equal(240);
     });

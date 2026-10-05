@@ -166,6 +166,11 @@ export type ParagraphFormat = {
     readonly autoSpaceBefore?: boolean;
     readonly autoSpaceAfter?: boolean;
     readonly lineSpacing?: LineSpacing;
+    /**
+     * The line spacing of its lines from the one with a marker on, in place of `lineSpacing`: those of a paragraph joined
+     * to it by its hidden mark, where they differ, as Word spaces each line by the paragraph its text ends in
+     */
+    readonly lineSpacingFrom?: { readonly marker: string; readonly lineSpacing?: LineSpacing };
     readonly indentLeft?: number;
     readonly indentRight?: number;
     /** How much further in the first line starts than the others. Negative for a hanging indent */

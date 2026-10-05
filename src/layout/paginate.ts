@@ -40,6 +40,7 @@ import {
     type DocumentContent,
     type FloatingDrawing,
     type HeadersOrFooters,
+    JOINED_SPACING_MARKER,
     type LayoutItem,
     type ParagraphBlock,
     type Section,
@@ -1051,9 +1052,9 @@ export const paginate = (
      * The space before or after a paragraph by its own formatting, next to a block on that side. Word's automatic spacing
      * is 14 points (`word-watertight-text.docx` TX6a, TX6b), but none above the first paragraph of the document, a table
      * cell or a header, nor below the last of a cell (TX6c, `word-paragraph-formats.docx` A0, A3), and none between two
-     * paragraphs of the same list, where there is between a bulleted and a numbered one (A1). What Word does between
-     * those of other levels of a list, or of lists made from the same definition, isn't known: guessing, none, as between
-     * those of the same level
+     * paragraphs of the same list, of one level or two (stops2/word-stops-lists.ts LI12), where there is between a bulleted
+     * and a numbered one (A1), and between lists of other definitions (LI12). What Word does between those of lists made
+     * from the same definition isn't known: guessing, none, as in one list
      */
     const ownSpace = (paragraph: ParagraphBlock, side: "before" | "after", next: Block | undefined, inCell: boolean): number => {
         const { format, list } = paragraph;
@@ -1067,8 +1068,8 @@ export const paginate = (
         if (list === undefined || other === undefined || (list.id !== other.id && list.definition !== other.definition)) {
             return AUTOMATIC_SPACE;
         }
-        if (list.id !== other.id || list.level !== other.level) {
-            stopAt("automatic spacing between paragraphs of other levels of a list, or of lists made alike");
+        if (list.id !== other.id) {
+            stopAt("automatic spacing between paragraphs of lists made from the same definition");
         }
         return 0;
     };
@@ -3036,7 +3037,7 @@ export const paginate = (
         // The marker at the reference of a footnote numbered afresh on each page is placed too, as its page numbers it
         const placed = names.flatMap((marker) => [
             ...(footnotesOnEachPage.has(marker) ? [marker] : []),
-            ...(inNotes.get(marker) ?? (isDrawingMarker(marker) ? [] : [marker])),
+            ...(inNotes.get(marker) ?? (isDrawingMarker(marker) || marker === JOINED_SPACING_MARKER ? [] : [marker])),
         ]);
         for (const name of placed) {
             if (!places.has(name)) {

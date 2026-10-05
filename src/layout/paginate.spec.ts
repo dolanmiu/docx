@@ -5,17 +5,18 @@ import { type ParagraphFormat, SIMILAR_FONT_MEASURER, type TextFont, type TextMe
 import type { BlockLayout, PageLayout, ParagraphLayout } from "./layout-document";
 import type { FieldFormat } from "./number-format";
 import { type Pagination, paginate } from "./paginate";
-import type {
-    Block,
-    DocumentContent,
-    FloatingDrawing,
-    LayoutItem,
-    ParagraphBlock,
-    Section,
-    TableBlock,
-    TableCell,
-    TableFloat,
-    TableRow,
+import {
+    type Block,
+    type DocumentContent,
+    type FloatingDrawing,
+    JOINED_SPACING_MARKER,
+    type LayoutItem,
+    type ParagraphBlock,
+    type Section,
+    type TableBlock,
+    type TableCell,
+    type TableFloat,
+    type TableRow,
 } from "./read-document";
 
 // Every character is 10 points wide, and a line is as tall as its font's size, 10 points unless it says otherwise, all of it
@@ -691,6 +692,21 @@ describe("paginate", () => {
         });
     });
 
+    it("should space the lines of a paragraph joined to another by its marker, which places no bookmark", () => {
+        // A paragraph of 3 lines, the second and third of the joined paragraph's double spacing, from the line its marker is on
+        const joined: ParagraphBlock = {
+            ...withItems(paragraph("a", 1), [
+                { type: "marker", name: JOINED_SPACING_MARKER },
+                { type: "text", text: " abcdefgh abcdefgh", font: {} },
+            ]),
+            format: { lineSpacingFrom: { marker: JOINED_SPACING_MARKER, lineSpacing: { rule: "multiple", multiple: 2 } } },
+        };
+        const { pages, bookmarks } = paginate(document([joined, paragraph("b", 1)]), { measurer: MEASURER });
+        const [first] = pages[0].body as readonly ParagraphLayout[];
+        expect(first.lines.map(({ height }) => height)).to.deep.equal([10, 20, 20]);
+        expect([...bookmarks.keys()]).to.deep.equal(["a", "b"]);
+    });
+
     describe("automatic spacing", () => {
         it("should put Word's 14 points before and after a paragraph, but none at the top or bottom of a table cell", () => {
             const automatic = { autoSpaceBefore: true, autoSpaceAfter: true, spaceBefore: 30, spaceAfter: 0 };
@@ -725,7 +741,7 @@ describe("paginate", () => {
             expect(first.body.flatMap((block) => (block.type === "paragraph" ? block.lines.map(({ y }) => y) : []))).to.deep.equal([29]);
         });
 
-        it("should put none between paragraphs of the same list, and stop between those of other levels or lists made alike", () => {
+        it("should put none between paragraphs of the same list, of one level or two, and stop between lists made alike", () => {
             const automatic = { autoSpaceBefore: true, autoSpaceAfter: true };
             const definition = {};
             const listed = (name: string, id: string, level = 0, made = definition): ParagraphBlock => ({
@@ -740,9 +756,13 @@ describe("paginate", () => {
             // between a bulleted list and a numbered one
             expect(topsOf([paragraph("x", 1), listed("a", "1"), listed("b", "1"), paragraph("y", 1)])).to.deep.equal([10, 34, 44, 68]);
             expect(topsOf([listed("a", "1"), listed("b", "2", 0, {})])).to.deep.equal([10, 34]);
-            const STOP = "automatic spacing between paragraphs of other levels of a list, or of lists made alike";
-            expect(numbersOf(document([listed("a", "1"), listed("b", "1", 1)])).stoppedAt).to.equal(STOP);
-            expect(numbersOf(document([listed("a", "1"), listed("b", "2")])).stoppedAt).to.equal(STOP);
+            // stops2/word-stops-lists.ts LI12: none between paragraphs of a list's levels 0 and 1, and 14 between lists of
+            // other definitions
+            expect(topsOf([listed("a", "1"), listed("b", "1", 1), listed("c", "1")])).to.deep.equal([10, 20, 30]);
+            expect(numbersOf(document([listed("a", "1"), listed("b", "1", 1)])).stoppedAt).to.equal(undefined);
+            expect(numbersOf(document([listed("a", "1"), listed("b", "2")])).stoppedAt).to.equal(
+                "automatic spacing between paragraphs of lists made from the same definition",
+            );
         });
     });
 
