@@ -2181,9 +2181,12 @@ export const layoutLines = (
                 // with it, from the text before it, to the stop there, where it breaks after the last character that fits:
                 // "afterwards" after a left stop at 8800 twips, in a line of 9026, its "af" at the stop on the next line and the
                 // rest on the line after (stops2/word-stops-text2.ts TA11a), and past the margin, in a paragraph indented past it
-                // (TA11b, stops2/word-stops-tabs.ts TA1c). A picture after a tab, and a word after tabs in a row, that don't
-                // fit haven't been seen, nor text that doesn't fit after the tab that follows a list's number. Guessing, the tab
-                // stays, and they go on to the next line
+                // (TA11b, stops2/word-stops-tabs.ts TA1c). A word with soft hyphens breaks at one after the tab, where its part
+                // and hyphen fit: "eeeee-" after a left stop that puts its hyphen 3.5 to 19 twips before the end of the line
+                // (stops2/word-stops-text2.ts SH16a to SH16i). A picture after a tab, a word after tabs in a row, and a word with
+                // soft hyphens whose first part doesn't fit, haven't been seen, nor text that doesn't fit after the tab that
+                // follows a list's number. Guessing, the tab stays, and they go on to the next line, but for the word with soft
+                // hyphens, which takes the tab with it
                 const after = rest.find((next) => next.type !== "marker");
                 if (
                     !numbered &&
@@ -2194,12 +2197,15 @@ export const layoutLines = (
                     line.tabsOnly !== true &&
                     (after?.type === "word" || after?.type === "box")
                 ) {
+                    const hyphen =
+                        after.type === "word" ? after.hyphens?.find(({ at }) => at > 0 && at < lengthOf(after.pieces)) : undefined;
                     const needs =
                         after.type === "box"
                             ? after.width
                             : roomBetween(line.border, firstBorder(after.pieces)) +
-                              widthOf(after.pieces, measurer) +
-                              (lastBorder(after.pieces)?.room ?? 0);
+                              (hyphen === undefined
+                                  ? widthOf(after.pieces, measurer) + (lastBorder(after.pieces)?.room ?? 0)
+                                  : widthOf(splitPieces(after.pieces, hyphen.at)[0], measurer) + measurer.measureWidth("-", hyphen.font));
                     const nextLine = nextStop(startOf(lines.length + 1, false), stops, defaultTabStop, limitOf(lines.length + 1));
                     const inRow = tokens.slice(0, index).findLast((before) => before.type !== "marker")?.type === "tab";
                     if (startAt(stop).position + needs > endOf(line) + TOLERANCE && nextLine !== undefined) {
@@ -2211,6 +2217,12 @@ export const layoutLines = (
                                     (inRow ? "a word that doesn't fit after tabs in a row" : "a picture that doesn't fit after a tab"),
                             };
                         } else {
+                            if (hyphen !== undefined) {
+                                line = {
+                                    ...line,
+                                    unsupported: line.unsupported ?? "a word with soft hyphens whose first part doesn't fit after a tab",
+                                };
+                            }
                             line = wrap(line);
                             stop = nextLine;
                         }

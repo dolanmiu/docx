@@ -2777,6 +2777,18 @@ describe("tab stops past the end of the line", () => {
             ["aaaaa\t ", undefined],
             ["bbbb", undefined],
         ]);
+        // A word with soft hyphens breaks at one after the tab, where its part and hyphen fit (word-stops-text2.ts SH16a)
+        const hyphened = [text("a"), tab, text("bb"), { type: "softHyphen", font: {} } as const, text("cccc")];
+        expect(lines(hyphened, at("left", 60))).to.deep.equal([
+            ["a\tbb", undefined],
+            ["cccc", undefined],
+        ]);
+        // One whose first part doesn't fit, which Word hasn't been seen with, takes the tab on to the next line, guessing
+        expect(lines(hyphened, at("left", 80))).to.deep.equal([
+            ["a", "a word with soft hyphens whose first part doesn't fit after a tab"],
+            ["\t", "a word with soft hyphens that doesn't fit after a tab that starts its line"],
+            ["bbcccc", undefined],
+        ]);
         // A picture after a tab, a word with soft hyphens after a tab that starts its line, and a word after tabs in a row,
         // haven't been seen
         const picture: InlineItem = { type: "box", width: 40, height: 10 };
