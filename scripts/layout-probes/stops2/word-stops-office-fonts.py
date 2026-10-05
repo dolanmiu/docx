@@ -94,13 +94,13 @@ for name, font, size, how in probe["measured"]:
         continue
     copies = probe["copies"].get(str(size), 10)
     em = size / 1000
-    found = {kind: line_of(name, how, kind) for kind in ("H", "i", "space")}
+    found = {kind: line_of(name, font.replace(" ", "_"), how, kind) for kind in ("H", "i", "space")}
     if any(line is None for line in found.values()):
         print(f"  {name} {font} {size} {how}: not found")
         continue
-    h = (found["H"][2][3][1] - found["H"][2][3][0]) / copies / em
-    i = (found["i"][2][3][1] - found["i"][2][3][0]) / copies / em
-    spaced = found["space"][2][3 : 3 + copies]
+    h = (found["H"][2][4][1] - found["H"][2][4][0]) / copies / em
+    i = (found["i"][2][4][1] - found["i"][2][4][0]) / copies / em
+    spaced = found["space"][2][4 : 4 + copies]
     space = ((spaced[-1][0] - spaced[0][0]) - (copies - 1) * (spaced[0][1] - spaced[0][0])) / (copies - 1) / em
     widths[(name, font, how)] = (h, i, space)
     if how == "regular" and (name, font, "bold") in widths:

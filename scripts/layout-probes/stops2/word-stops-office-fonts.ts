@@ -7,8 +7,8 @@
  *   word-stops-font-widths showed each character of Calibri Light, Franklin Gothic Book and Impact 18 thousandths of an em
  *   wider in bold, at 10 points, and the spaces as wide. Here at 8, 9, 11, 12, 14, 16, 20, 28, 36, 48, 72 and 10 points
  *   (a to l), in Calibri Light, Franklin Gothic Book and Impact: a word of ten H's, of ten i's, and "H H H H H H H H H H",
- *   each on a line of its own, with four of each from 28 points, bold and not, so whether the 18 is of an em or of a point
- *   shows
+ *   each on a line of its own that names the font, with four of each from 28 points and three from 48, bold and not, so
+ *   whether the 18 is of an em or of a point shows
  * MB2a to MB2c: the same text kerned from 1 point with standard and contextual ligatures, as Word's Normal template has
  *   it, in each font's made bold at 11 points: "To Wyatt AVATAR office", for whether Word kerns it and joins its letters
  *   as the regular face
@@ -47,15 +47,17 @@ import { type Child, PAGE, group, line, marker, newPage, picture, prose, replace
 const letters = "abcdefghijklmnopqrstuvwxyz";
 const MADE_BOLD = ["Calibri Light", "Franklin Gothic Book", "Impact"] as const;
 const SIZES = [8, 9, 11, 12, 14, 16, 20, 28, 36, 48, 72, 10] as const;
-// What is measured, each on a line of its own: a word of H's, one of i's, and H's apart, fewer of them at larger sizes
-const copiesAt = (size: number): number => (size >= 28 ? 4 : 10);
+// What is measured, each on a line of its own: a word of H's, one of i's, and H's apart, fewer of them at larger sizes, so
+// each fits on its line beside its label
+const copiesAt = (size: number): number => (size >= 48 ? 3 : size >= 28 ? 4 : 10);
 const MEASURES = {
     H: (copies: number): string => "H".repeat(copies),
     i: (copies: number): string => "i".repeat(copies),
     space: (copies: number): string => Array.from({ length: copies }, () => "H").join(" "),
 } as const;
 
-// The measured lines of MB1, MB4 and KL, as the reader reads them: the probe, the font, its size, and how it is written
+// The measured lines of MB1, MB4 and KL, as the reader reads them: the probe, the font, its size, and how it is written.
+// Each line of MB1 and MB4 names its font, with underscores for its spaces, as each font's MB1 has the same names
 const measured: (readonly [probe: string, font: string, size: number, how: string])[] = [];
 const measuredLines = (probe: string, font: string, size: number, how: string, run: object = {}): Paragraph[] => {
     measured.push([probe, font, size, how]);
@@ -63,7 +65,7 @@ const measuredLines = (probe: string, font: string, size: number, how: string, r
         ([kind, text]) =>
             new Paragraph({
                 children: [
-                    new TextRun(`${probe} ${how} ${kind} `),
+                    new TextRun(`${probe} ${font.replace(/ /g, "_")} ${how} ${kind} `),
                     new TextRun({ text: text(copiesAt(size)), font, size: size * 2, ...run }),
                     new TextRun(" end"),
                 ],
