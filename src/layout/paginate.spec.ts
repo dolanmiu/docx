@@ -6540,6 +6540,9 @@ describe("paginate", () => {
                 gapped({ width, height: 10, horizontal: { from: "margin", offset: 20 } }, { firstLineIndent: 25 });
             expect(stopOf([besideFirst(100)], older)).to.equal(reason);
             expect(stopOf([besideFirst(70)], older)).to.equal(undefined);
+            // When the first gap takes the first line, a gap of 60 after it takes the second, with all of its room
+            const firstTaken = gapped({ width: 40, height: 10, horizontal: { from: "margin", offset: 80 } }, { firstLineIndent: 25 });
+            expect(stopOf([firstTaken], older)).to.equal(undefined);
         });
 
         it("should stop at a line beside a drawing on a grid that snaps to characters in columns of different widths", () => {
