@@ -104,7 +104,8 @@ const downBase = (from: string, { section, oddPage, paragraph, line }: DrawingFr
 /**
  * Where a drawing of a size, with the room its effects take before and after it, starts across or down what it is placed
  * against: at a distance or share of it from its start, or lined up with its start, middle or end, with its effects, as
- * Word lines it up (`word-floats.docx` F38b, F38c). Inside is the start on odd pages, and outside the end
+ * Word lines it up (`word-floats.docx` F38b, F38c). Inside is the start on odd pages, and outside the end, and lined up
+ * inside or outside, it is `inset` from the start or the end
  */
 const startOf = (
     position: DrawingPosition,
@@ -113,21 +114,23 @@ const startOf = (
     before: number,
     after: number,
     oddPage: boolean,
+    inset: { readonly start: number; readonly end: number } = { start: 0, end: 0 },
 ): number | undefined => {
     const { align, offset, share } = position;
     if (align === undefined) {
         return base.start + (offset ?? (share ?? 0) * base.length);
     }
+    const insideOrOutside = align === "inside" || align === "outside";
     const lined = align === "inside" ? (oddPage ? "left" : "right") : align === "outside" ? (oddPage ? "right" : "left") : align;
     switch (lined) {
         case "left":
         case "top":
-            return base.start + before;
+            return base.start + before + (insideOrOutside ? inset.start : 0);
         case "center":
             return base.start + (base.length - size - before - after) / 2 + before;
         case "right":
         case "bottom":
-            return base.start + base.length - size - after;
+            return base.start + base.length - size - after - (insideOrOutside ? inset.end : 0);
         default:
             return undefined;
     }
@@ -184,18 +187,31 @@ export const placeDrawing = (drawing: FloatingDrawing, frame: DrawingFrame): Box
     if (inColumns !== undefined && frame.section.columns.length > 1) {
         return inColumns;
     }
-    // Lined up inside or outside down the page, Word puts it lower than the top of the page, by an amount not yet explained
-    // (`word-stops-drawings.docx` DR6a, DR6b), and against what else but the margins it hasn't been seen (F21, F22, DR6c, DR6d)
+    // Lined up inside or outside, Word has been seen lining a drawing up with the margins (`word-floats.docx` F21, F22,
+    // `word-stops-drawings.docx` DR6c, DR6d), and down the page (DR6a, DR6b, `word-stops-floats2.docx` PV1b to PV1h): at
+    // the top of the page, inside on odd pages and outside on even ones, half the header's distance from the page's top
+    // below it, and at the bottom otherwise, half the footer's distance above it. Against what else it hasn't been seen
+    const linedUp = ({ align }: DrawingPosition): boolean => align === "inside" || align === "outside";
     if (
-        [drawing.horizontal, drawing.vertical].some(({ from, align }) => (align === "inside" || align === "outside") && from !== "margin")
+        (linedUp(drawing.horizontal) && drawing.horizontal.from !== "margin") ||
+        (linedUp(drawing.vertical) && drawing.vertical.from !== "margin" && drawing.vertical.from !== "page")
     ) {
-        return "a drawing lined up inside or outside, not against the margins";
+        return "a drawing lined up inside or outside, not against the margins or down the page";
     }
     const { effects } = drawing;
-    const left = startOf(drawing.horizontal, across, size.width, effects.left, effects.right, frame.oddPage);
-    const top = startOf(drawing.vertical, down, size.height, effects.top, effects.bottom, frame.oddPage);
-    return left === undefined || top === undefined
-        ? "a drawing lined up in a way not yet followed"
+    const { header, footer, pageWidth, pageHeight } = frame.section;
+    const pageInset = drawing.vertical.from === "page" ? { start: header / 2, end: footer / 2 } : undefined;
+    const placedLeft = startOf(drawing.horizontal, across, size.width, effects.left, effects.right, frame.oddPage);
+    const top = startOf(drawing.vertical, down, size.height, effects.top, effects.bottom, frame.oddPage, pageInset);
+    if (placedLeft === undefined || top === undefined) {
+        return "a drawing lined up in a way not yet followed";
+    }
+    // Word moves a VML drawing that would go past the right edge of the page back onto it (`word-stops-vml-shapes.docx`
+    // VM28a, VM28b). Past the page's other edges it hasn't been seen
+    const left = drawing.keptOnPage === true ? Math.min(placedLeft, pageWidth - size.width) : placedLeft;
+    const pastAnEdge = left < -TOLERANCE || top < -TOLERANCE || top + size.height > pageHeight + TOLERANCE;
+    return drawing.keptOnPage === true && pastAnEdge
+        ? "a VML drawing past an edge of the page other than its right edge"
         : { left, right: left + size.width, top, bottom: top + size.height };
 };
 
@@ -225,7 +241,7 @@ export const roomBeside = (
     top: number,
     height: number,
     within: Span,
-): { readonly spans: readonly Span[] } | { readonly below: number } | { readonly narrow: true } => {
+): { readonly spans: readonly Span[] } | { readonly below: number } => {
     // A drawing beside the line, and across the room it is in: one in a margin, even with text above and below it, leaves
     // the line as it is (`word-floats.docx` F7, F8)
     const beside = drawings.filter(
@@ -248,15 +264,11 @@ export const roomBeside = (
         },
         [within],
     );
-    // A room narrower than 18 points takes no text where there is a wider one, as Word leaves one of 16.8 points empty
-    // beside a table that text flows around, where a word fits in it (`word-stops-floats.docx` FT1d), and puts a word in
-    // one of 18 (`word-floats.docx` F13, F14). Where all the room a line has is that narrow, Word's way isn't known. A
-    // sliver left by edges worked out in different ways is no room at all
-    const rooms = spans.filter(({ start, end }) => end - start > TOLERANCE);
-    const wide = rooms.filter(({ start, end }) => end - start >= LEAST_ROOM - TOLERANCE);
-    if (rooms.length > 0 && wide.length === 0) {
-        return { narrow: true };
-    }
+    // A room narrower than 18 points takes no text, as Word leaves one of 16.8 points empty beside a table that text flows
+    // around, where a word fits in it (`word-stops-floats.docx` FT1d), and ones of 17 and 17.5 points as a line's only
+    // room, where a word fits too, so the line goes below the drawing (`word-stops-floats2.docx` NR2a to NR2c), and puts a
+    // word in one of 18 (`word-floats.docx` F13, F14). A sliver left by edges worked out in different ways is no room at all
+    const wide = spans.filter(({ start, end }) => end - start >= LEAST_ROOM - TOLERANCE);
     return wide.length > 0 ? { spans: wide } : { below: Math.min(...beside.map(({ keepOut }) => keepOut.bottom)) };
 };
 

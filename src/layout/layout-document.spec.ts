@@ -145,9 +145,22 @@ describe("layoutDocument", () => {
                                     anchor: { horizontal: FrameAnchorType.PAGE, vertical: FrameAnchorType.PAGE },
                                     space: { horizontal: 100, vertical: 0 },
                                 },
-                                // With a border beside it and a distance from the text, which take room in a way not yet followed
+                                // With a border beside it, where the frame's next paragraph has another, which take room in a way
+                                // not yet followed
                                 border: { left: { style: BorderStyle.SINGLE, size: 6, space: 1, color: "auto" } },
                                 text: "In a frame",
+                            }),
+                            new Paragraph({
+                                frame: {
+                                    type: "absolute",
+                                    position: { x: 1000, y: 1000 },
+                                    width: 2000,
+                                    height: 1000,
+                                    anchor: { horizontal: FrameAnchorType.PAGE, vertical: FrameAnchorType.PAGE },
+                                    space: { horizontal: 100, vertical: 0 },
+                                },
+                                border: { right: { style: BorderStyle.SINGLE, size: 6, space: 1, color: "auto" } },
+                                text: "Also in the frame",
                             }),
                             new Paragraph("After the frame"),
                         ],
@@ -155,7 +168,7 @@ describe("layoutDocument", () => {
                 ],
             }),
         );
-        expect(stoppedAt).to.equal("a text frame with borders at its sides and a distance from the text");
+        expect(stoppedAt).to.equal("a text frame of paragraphs with other borders at their sides");
         expect(pages.map(({ body }) => textsOf(body))).to.deep.equal([["Before the frame"]]);
     });
 

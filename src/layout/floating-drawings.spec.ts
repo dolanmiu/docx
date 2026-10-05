@@ -156,19 +156,63 @@ describe("placeDrawing", () => {
         expect(placeDrawing(drawingOf({ relativeHeight: { from: "bogus", share: 1 } }), FRAME)).to.equal(
             "a drawing sized by a share of what isn't followed yet",
         );
-        // Lined up inside or outside against what isn't the margins, as Word puts one against the page lower than its top
-        // (`word-stops-drawings.docx` DR6a, DR6b)
-        expect(placeDrawing(drawingOf({ vertical: { from: "page", align: "inside" } }), FRAME)).to.equal(
-            "a drawing lined up inside or outside, not against the margins",
+        // Lined up inside or outside against what isn't the margins, or the page down it
+        expect(placeDrawing(drawingOf({ horizontal: { from: "page", align: "inside" } }), FRAME)).to.equal(
+            "a drawing lined up inside or outside, not against the margins or down the page",
         );
         expect(placeDrawing(drawingOf({ horizontal: { from: "column", align: "outside" } }), FRAME)).to.equal(
-            "a drawing lined up inside or outside, not against the margins",
+            "a drawing lined up inside or outside, not against the margins or down the page",
         );
-        // One that doesn't say what it is placed against across the page, in a section of more than one column
-        // (`word-stops-floats.docx` FR6a, FT7a), and the same in one column
+        expect(placeDrawing(drawingOf({ vertical: { from: "paragraph", align: "inside" } }), FRAME)).to.equal(
+            "a drawing lined up inside or outside, not against the margins or down the page",
+        );
+        // One that doesn't say what it is placed against across the page, in a section of more than one column, and the
+        // same in one column
         const unsaid = drawingOf({ horizontal: { from: "margin", offset: 0, inColumns: "why it can't" } });
         expect(placeDrawing(unsaid, { ...FRAME, section: { ...FRAME.section, columns: [200, 200] } })).to.equal("why it can't");
         expect(placeDrawing(unsaid, FRAME)).to.deep.include({ left: 72 });
+    });
+
+    it("should line a drawing up inside or outside down the page half the header's or footer's distance from its top or bottom (DR6, PV1)", () => {
+        // `word-stops-drawings.docx` DR6a, DR6b, `word-stops-floats2.docx` PV1b to PV1h: at the top of the page inside on odd
+        // pages and outside on even ones, half the header's distance below it, and at the bottom otherwise, half the footer's
+        // distance above it: 354 twips with the distances of 708, 600 with a header's of 1200
+        const { header, footer, pageHeight } = SECTION;
+        const top = { left: 72, right: 172, top: header / 2, bottom: header / 2 + 50 };
+        const bottom = { left: 72, right: 172, top: pageHeight - footer / 2 - 50, bottom: pageHeight - footer / 2 };
+        const even = { ...FRAME, oddPage: false };
+        expect(placeDrawing(drawingOf({ vertical: { from: "page", align: "inside" } }), FRAME)).to.deep.equal(top);
+        expect(placeDrawing(drawingOf({ vertical: { from: "page", align: "outside" } }), even)).to.deep.equal(top);
+        expect(placeDrawing(drawingOf({ vertical: { from: "page", align: "inside" } }), even)).to.deep.equal(bottom);
+        expect(placeDrawing(drawingOf({ vertical: { from: "page", align: "outside" } }), FRAME)).to.deep.equal(bottom);
+        const tall = { ...FRAME, section: { ...SECTION, header: 60 } };
+        expect(placeDrawing(drawingOf({ vertical: { from: "page", align: "inside" } }), tall)).to.deep.include({ top: 30 });
+        // Against the margins, at their top and bottom (DR6c, DR6d), and lined up top or bottom against the page, at its edges
+        expect(placeDrawing(drawingOf({ vertical: { from: "margin", align: "inside" } }), FRAME)).to.deep.include({
+            top: SECTION.marginTop,
+        });
+        expect(placeDrawing(drawingOf({ vertical: { from: "page", align: "top" } }), FRAME)).to.deep.include({ top: 0 });
+        expect(placeDrawing(drawingOf({ vertical: { from: "page", align: "bottom" } }), FRAME)).to.deep.include({ bottom: pageHeight });
+    });
+
+    it("should move a VML drawing that would go past the right edge of the page back onto it, and stop at one past its other edges (VM28a, VM28b)", () => {
+        const { pageWidth, pageHeight } = SECTION;
+        const kept = drawingOf({ keptOnPage: true, horizontal: { from: "insideMargin", offset: 144 } });
+        // Inside is the left margin on an odd page, and the right one, where it goes past the page's edge, on an even page
+        expect(placeDrawing(kept, FRAME)).to.deep.include({ left: 144, right: 244 });
+        expect(placeDrawing(kept, { ...FRAME, oddPage: false })).to.deep.include({ left: pageWidth - 100, right: pageWidth });
+        // A DrawingML drawing isn't moved
+        expect(
+            placeDrawing(drawingOf({ horizontal: { from: "insideMargin", offset: 144 } }), { ...FRAME, oddPage: false }),
+        ).to.deep.include({
+            left: pageWidth - SECTION.marginRight + 144,
+        });
+        expect(placeDrawing(drawingOf({ keptOnPage: true, horizontal: { from: "page", offset: -10 } }), FRAME)).to.equal(
+            "a VML drawing past an edge of the page other than its right edge",
+        );
+        expect(placeDrawing(drawingOf({ keptOnPage: true, vertical: { from: "page", offset: pageHeight - 10 } }), FRAME)).to.equal(
+            "a VML drawing past an edge of the page other than its right edge",
+        );
     });
 });
 
@@ -226,10 +270,12 @@ describe("roomBeside", () => {
         expect(roomBeside([at(200, { wrap: "topAndBottom" })], 110, 14, within)).to.deep.equal({ below: 150 });
     });
 
-    it("should leave a room narrower than 18 points empty, and say when a line has no other (FT1d, F13, F14)", () => {
+    it("should leave a room narrower than 18 points empty, and move a line with no other below the drawing (FT1d, F13, F14, NR2)", () => {
         // 16.8 points left of the drawing, and 18 right of it
         expect(roomBeside([at(88.8, { width: 416.5 })], 100, 14, within)).to.deep.equal({ spans: [{ start: 505.3, end: 523.3 }] });
-        expect(roomBeside([at(88.8, { width: 425.5 })], 100, 14, within)).to.deep.equal({ narrow: true });
+        // 16.8 and 9 points: no room, so the line goes below, as Word moves one with 17 and 17.5 points (`word-stops-floats2.docx`
+        // NR2a to NR2c)
+        expect(roomBeside([at(88.8, { width: 425.5 })], 100, 14, within)).to.deep.equal({ below: 150 });
         // A sliver left by lengths that differ only in their arithmetic is no room, and the line goes below the drawing
         expect(roomBeside([at(72.001, { width: 451.299 })], 100, 14, within)).to.deep.equal({ below: 150 });
     });
