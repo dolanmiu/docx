@@ -225,15 +225,16 @@ describe("readDocument", () => {
             expect(paragraphOf(readBody([p(pPr(rPr(bdr("single"))))])).markFont.border?.room).to.equal(4.5);
         });
 
-        it("should stop at a run's formatting whose room Word hasn't shown, and at tabs and pictures in a box", () => {
+        it("should stop at a run's formatting whose room Word hasn't shown, and at pictures in a box", () => {
             const bdr = (style: string): object => ({ "w:bdr": { _attr: { "w:val": style, "w:sz": 4, "w:space": 0 } } });
             const stopsAt = (...children: readonly unknown[]): string | undefined => paragraphOf(readBody([p(...children)])).unsupported;
-            expect(stopsAt(r(rPr(bdr("apples")), t("a")))).to.equal("a run border of a style, width or space not yet followed");
-            expect(stopsAt(r(rPr(bdr("single")), { "w:tab": {} }))).to.equal("a tab in text with a border");
-            expect(stopsAt(r(rPr(bdr("single")), t("a\tb")))).to.equal("a tab in text with a border");
-            expect(stopsAt(r(rPr({ "w:vanish": {} }, bdr("single")), t("a\tb")))).to.equal(undefined);
+            expect(stopsAt(r(rPr(bdr("custom")), t("a")))).to.equal("a run border of a style, width or space not yet followed");
+            // A tab in a box, which goes on round it (word-stops-tabs.ts TA7a)
+            expect(stopsAt(r(rPr(bdr("single")), { "w:tab": {} }))).to.equal(undefined);
+            expect(stopsAt(r(rPr(bdr("single")), t("a\tb")))).to.equal(undefined);
             expect(stopsAt(r(rPr(bdr("single")), { "w:drawing": [{ "wp:inline": [] }] }))).to.equal("a picture in text with a border");
-            expect(stopsAt(r(rPr(value("w:position", "-2.5pt")), t("a")))).to.equal("a lowered position of a fraction of its unit");
+            // A position whose minus sign is its whole number's only: "-2.5pt" lowers text 1.5 points (word-stops-text.ts RF26a)
+            expect(stopsAt(r(rPr(value("w:position", "-2.5pt")), t("a")))).to.equal(undefined);
             // Hidden text takes no room, whatever its formatting
             expect(stopsAt(r(rPr({ "w:vanish": {} }, bdr("wave")), t("a")))).to.equal(undefined);
         });
@@ -386,20 +387,28 @@ describe("readDocument", () => {
             expect(indented({ "w:left": 720, "w:leftChars": 0 }, 22, big).format).to.deep.include({ indentLeft: 36 });
             expect(indented({ "w:firstLine": 720, "w:firstLineChars": 0 }, 22, big).format).to.deep.include({ firstLineIndent: 36 });
             expect(indented({ "w:startChars": 400 }, 22, big).format).to.deep.include({ indentLeft: 44 });
-            // Where Word's sizes aren't known
+            // A left indent in its style's size, though its mark is another (word-stops-text.ts PB5b), and a right indent in its
+            // mark's, though its text is another (PB5c)
             expect(indented({ "w:leftChars": 400 }, 22, big).unsupported).to.equal(undefined);
-            expect(indented({ "w:leftChars": 400 }, 40, big).unsupported).to.equal(
-                "an indent in characters left or right of a paragraph whose mark is another size than its style",
+            const markedLarger = indented({ "w:leftChars": 400 }, 40, big);
+            expect([markedLarger.unsupported, markedLarger.format.indentLeft]).to.deep.equal([undefined, 44]);
+            const rightOfLarger = indented({ "w:rightChars": 400 }, 22, big);
+            expect([rightOfLarger.unsupported, rightOfLarger.format.indentRight]).to.deep.equal([undefined, 44]);
+            // A first line indent in twips from a left indent in characters (PB5e)
+            expect(indented({ "w:leftChars": 400, "w:firstLine": 720 }, 22, big).format).to.deep.include({
+                indentLeft: 44,
+                firstLineIndent: 36,
+            });
+            // Where Word's sizes aren't known
+            expect(indented({ "w:rightChars": 400 }, 40, big).unsupported).to.equal(
+                "an indent in characters right of a paragraph whose mark is another size than its style",
             );
-            expect(indented({ "w:rightChars": 400 }, 22, big).unsupported).to.equal(
-                "an indent in characters right of text of another size than its mark",
+            expect(indented({ "w:leftChars": 400, "w:hanging": 720 }, 22, big).unsupported).to.equal(
+                "an indent in characters left of a hanging indent in twips",
             );
             expect(indented({ "w:leftChars": 0, "w:hangingChars": 200 }, 22, sized(22)).format).to.deep.include({ indentLeft: 22 });
             expect(indented({ "w:leftChars": 0, "w:left": 720, "w:hangingChars": 200 }, 22, big).unsupported).to.equal(
                 "an indent in characters hanging from a left indent in twips",
-            );
-            expect(indented({ "w:leftChars": 400, "w:firstLine": 360 }, 22, big).unsupported).to.equal(
-                "an indent in characters left of a first line indent in twips",
             );
             // Page numbers are the paragraph's text too, and text without a size is Word's default 10 points
             const fields = [
@@ -635,8 +644,25 @@ describe("readDocument", () => {
             expect(unsupportedOf(r(ruby))).to.equal("text with a phonetic guide");
             expect(unsupportedOf(r({ "w:contentPart": { _attr: { "r:id": "rId9" } } }))).to.equal("a content part, such as ink");
             expect(unsupportedOf(r(rPr({ "w:fitText": { _attr: { "w:val": 2000 } } }), t("fitted")))).to.equal("text fitted to a width");
-            const layout = (attributes: object): object => r(rPr({ "w:eastAsianLayout": { _attr: attributes } }), t("ab"));
-            expect(unsupportedOf(layout({ "w:combine": 1 }))).to.equal("two lines in one");
+            const layout = (attributes: object, text = "ab", size = 22): object =>
+                r(rPr({ "w:eastAsianLayout": { _attr: attributes } }, value("w:sz", size)), t(text));
+            // Two lines in one of text, without brackets, at a size that halves to whole half-points is drawn at half its
+            // size (word-stops-text.ts RF30)
+            const twoInOne = readBody([p(layout({ "w:combine": 1 }))]);
+            expect([paragraphOf(twoInOne).unsupported, itemsOf(twoInOne)[0]]).to.deep.equal([
+                undefined,
+                { type: "text", text: "ab", font: { size: 5.5 } },
+            ]);
+            // A run's attributes, such as Word's revision ids, aren't text in it
+            const withIds = r({ _attr: { "w:rsidR": "00A1" } }, rPr({ "w:eastAsianLayout": { _attr: { "w:combine": 1 } } }), t("ab"));
+            expect(unsupportedOf(withIds)).to.equal(undefined);
+            expect(unsupportedOf(layout({ "w:combine": 1, "w:combineBrackets": "round" }))).to.equal("two lines in one");
+            expect(unsupportedOf(layout({ "w:combine": 1, "w:combineBrackets": "none" }))).to.equal(undefined);
+            expect(unsupportedOf(layout({ "w:combine": 1 }, "漢字"))).to.equal("two lines in one");
+            expect(unsupportedOf(layout({ "w:combine": 1 }, "ab", 23))).to.equal("two lines in one");
+            expect(unsupportedOf(r(rPr({ "w:eastAsianLayout": { _attr: { "w:combine": 1 } } }), t("a"), { "w:tab": {} }))).to.equal(
+                "two lines in one",
+            );
             expect(unsupportedOf(layout({ "w:vert": "true" }))).to.equal("text across in vertical text");
             // With neither on, the run is laid out as it is
             expect(unsupportedOf(layout({ "w:id": 1, "w:combine": "off" }))).to.equal(undefined);
@@ -4491,20 +4517,23 @@ describe("readDocument", () => {
             expect(paragraphOf(withUnits).format).to.deep.include({ indentLeft: 36, indentRight: 18, firstLineIndent: -18 });
         });
 
-        it("should stop at a size in a unit other than points, and a negative fraction of a centimeter or millimeter, wherever it is", () => {
+        it("should stop at a size in a unit other than points wherever it is, and read a negative fraction as Word does", () => {
             const SIZE = "a size given in a unit other than points";
-            const NEGATIVE = "a negative length of a fraction of a centimeter or millimeter";
             const ind = (left: string): object => pPr({ "w:ind": { _attr: { "w:left": left } } });
-            // Word ignores a size in centimeters where no style gives one, so it may take another style's
+            // Word ignores a size in centimeters where no style gives one, and draws one of whole half-points where a style
+            // does, so which decides isn't known
             expect(paragraphOf(readBody([p(r(rPr(value("w:sz", "1cm")), t("Text")))])).unsupported).to.equal(SIZE);
-            expect(paragraphOf(readBody([p(ind("-1.5cm"), r(t("Text")))])).unsupported).to.equal(NEGATIVE);
-            expect(paragraphOf(readBody([p(ind("-1cm"), r(rPr(value("w:sz", "11.5pt")), t("Text")))])).unsupported).to.equal(undefined);
+            // The minus sign of a negative length is its whole number's only (word-stops-text.ts RF26, RF28)
+            const negative = paragraphOf(readBody([p(ind("-1.5cm"), r(t("Text")))]));
+            expect([negative.unsupported, negative.format.indentLeft]).to.deep.equal([
+                undefined,
+                Math.round((-1 + 0.5) * (1440 / 2.54)) / 20,
+            ]);
             const table = (properties: object): DocumentContent =>
                 readBody([{ "w:tbl": [{ "w:tblPr": [properties] }, { "w:tr": [{ "w:tc": [p(r(t("Cell")))] }] }] }]);
-            expect(table({ "w:tblInd": { _attr: { "w:w": "-0.5mm", "w:type": "dxa" } } }).blocks[0].block.unsupported).to.equal(NEGATIVE);
-            expect(table({ "w:tblInd": { _attr: { "w:w": "-1mm", "w:type": "dxa" } } }).blocks[0].block.unsupported).to.equal(undefined);
+            expect(table({ "w:tblInd": { _attr: { "w:w": "-0.5mm", "w:type": "dxa" } } }).blocks[0].block.unsupported).to.equal(undefined);
             const section = readBody([{ "w:sectPr": [{ "w:pgMar": { _attr: { "w:top": "-2.5cm" } } }] }]).sections[0];
-            expect(section.unsupported).to.equal(NEGATIVE);
+            expect(section.unsupported).to.equal(undefined);
             // In the styles, lists and settings, it stops the document
             expect(readBody([], { styles: { default: { document: { run: { size: "0.2in" } } } } }).unsupported).to.equal(SIZE);
             expect(
@@ -4512,7 +4541,7 @@ describe("readDocument", () => {
                     numbering: { config: [{ reference: "list", levels: [{ level: 0, text: "%1.", style: { run: { size: "1pc" } } }] }] },
                 }).unsupported,
             ).to.equal(SIZE);
-            expect(readBody([], { defaultTabStop: "-1.5cm" as unknown as number }).unsupported).to.equal(NEGATIVE);
+            expect(readBody([], { defaultTabStop: "-1.5cm" as unknown as number }).unsupported).to.equal(undefined);
             expect(readBody([]).unsupported).to.equal(undefined);
         });
     });
@@ -5269,10 +5298,13 @@ describe("readDocument", () => {
         });
 
         it("should mark a soft hyphen whose breaking Word hasn't been seen with as unsupported", () => {
+            // One in text with a border breaks as any other (word-stops-tabs.ts SH11)
             const bordered = rPr({ "w:bdr": { _attr: { "w:val": "single", "w:sz": 4, "w:space": 4 } } });
-            expect(paragraphOf(readBody([p(r(bordered, t("a"), { "w:softHyphen": {} }, t("b")))])).unsupported).to.equal(
-                "a soft hyphen in text with a border",
-            );
+            const boxed = readBody([p(r(bordered, t("a"), { "w:softHyphen": {} }, t("b")))]);
+            expect([paragraphOf(boxed).unsupported, itemsOf(boxed).map(({ type }) => type)]).to.deep.equal([
+                undefined,
+                ["text", "softHyphen", "text"],
+            ]);
             // In a table whose columns Word sizes to their text, whose narrowest may be a word's widest part
             expect(readBody([tableOf(cellOf(p(r(t("a"), { "w:softHyphen": {} }, t("b")))))]).blocks[0].block.unsupported).to.equal(
                 "a soft hyphen in a table whose columns Word sizes to their text",
@@ -5702,9 +5734,9 @@ describe("readDocument", () => {
                 { footnotes: { 1: { children: [new Paragraph("One")] } } },
             );
             expect(content.blocks.map(({ block }) => block.unsupported)).to.deep.equal([
-                "a tab in text with a border",
-                "a tab in text with a border",
-                "a soft hyphen in text with a border",
+                undefined,
+                undefined,
+                undefined,
                 "a picture in text with a border",
                 "text with a phonetic guide",
                 "a footnote or endnote with a mark of its own",

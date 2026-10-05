@@ -568,10 +568,19 @@ describe("paginate", () => {
             expect(pagesOf(document([paragraph("a", 5), bordered("b", 1, {}, { ...BORDERS, top: 0 })]))).to.deep.equal({ a: "1", b: "1" });
         });
 
-        it("should stop at paragraphs with the same borders but for a between border, which Word joins in a way not yet followed", () => {
+        it("should join paragraphs whose borders differ only by a between border in one box, with the first's between border", () => {
+            // word-stops-text.ts PB1a to PB1c: the first's between border and its space below it, and the second's space
+            // above it: 1 between them when only the second has one, 4 when only the first has one
             const between = { ...BORDERS, between: 4, betweenSpace: 1, box: "between" };
-            expect(numbersOf(document([bordered("a", 1), bordered("b", 1, {}, between)])).stoppedAt).to.equal(
-                "paragraphs with the same borders but for a between border",
+            expect(topsOf(document([bordered("a", 1), bordered("b", 1, {}, between)]))).to.deep.equal([[15, 26]]);
+            expect(topsOf(document([bordered("a", 1, {}, between), bordered("b", 1)]))).to.deep.equal([[15, 29]]);
+            // Which of them Word draws above the second at the top of a page hasn't been seen
+            expect(numbersOf(document([paragraph("x", 5), bordered("a", 1), bordered("b", 1, {}, between)])).stoppedAt).to.equal(
+                "a paragraph at the top of a page in one box with the one before, whose between border is another",
+            );
+            const inRow = document([table([row([[paragraph("x", 5), bordered("a", 1), bordered("b", 1, {}, between)]])])]);
+            expect(numbersOf(inRow).stoppedAt).to.equal(
+                "a paragraph at the top of a page in one box with the one before, whose between border is another",
             );
         });
 
@@ -602,36 +611,83 @@ describe("paginate", () => {
             expect(pagesOf(below)).to.deep.equal({ c: "1", a: "2", b: "2" });
         });
 
-        it("should stop at borders where Word's box of them isn't known: across a section or page break, and on the paragraph that ends a section", () => {
+        it("should end a box of borders before a page break, and stop at one across a section break, as Word does", () => {
+            // word-stops-text.ts PB3b: the second paragraph has a box of its own, with its top border, on the next page
+            expect(topsOf(document([bordered("a", 1), bordered("b", 1, { pageBreakBefore: true })]))).to.deep.equal([[15], [15]]);
             const SECOND = { sections: [SECTION, SECTION] };
             expect(numbersOf(document([bordered("a", 1), [bordered("b", 1), 1]], SECOND)).stoppedAt).to.equal(
-                "paragraphs with the same borders either side of a section or page break",
-            );
-            expect(numbersOf(document([bordered("a", 1), bordered("b", 1, { pageBreakBefore: true })])).stoppedAt).to.equal(
-                "paragraphs with the same borders either side of a section or page break",
+                "paragraphs with the same borders either side of a section break",
             );
             // Paragraphs with other borders are boxes of their own
             expect(
                 numbersOf(document([bordered("a", 1), [bordered("b", 1, {}, { ...BORDERS, box: "other", outline: "other" }), 1]], SECOND))
                     .stoppedAt,
             ).to.equal(undefined);
-            const ending: ParagraphBlock = { ...bordered("end", 0), items: [], sectionBreak: true };
-            expect(numbersOf(document([paragraph("a", 1), ending, [paragraph("b", 1), 1]], SECOND)).stoppedAt).to.equal(
-                "borders or automatic spacing on the empty paragraph that ends a section",
-            );
-            const automatic: ParagraphBlock = { ...paragraph("end", 0, { autoSpaceAfter: true }), items: [], sectionBreak: true };
-            expect(numbersOf(document([paragraph("a", 1), automatic, [paragraph("b", 1), 1]], SECOND)).stoppedAt).to.equal(
-                "borders or automatic spacing on the empty paragraph that ends a section",
-            );
         });
 
-        it("should stop at borders and automatic spacing in a footnote", () => {
+        it("should give the empty paragraph that ends a section no room for its borders or automatic spacing, and stop where a box could go on through it, as Word does", () => {
+            // word-stops-text.ts PB2a, PB2b
+            const SECOND = { sections: [SECTION, { ...SECTION, start: "continuous" as const }] };
+            const ending: ParagraphBlock = { ...bordered("end", 0), items: [], sectionBreak: true };
+            expect(topsOf(document([paragraph("a", 1), ending, [paragraph("b", 1), 1]], SECOND))).to.deep.equal([[10, 20]]);
+            // word-stops-text.ts PB3a: paragraphs with the same borders either side of one without them are boxes of their
+            // own, each with its top and bottom borders
+            const plainEnding: ParagraphBlock = { ...paragraph("end", 0), items: [], sectionBreak: true };
+            expect(topsOf(document([bordered("a", 1), plainEnding, [bordered("b", 1), 1]], SECOND))).to.deep.equal([[15, 33]]);
+            // Whether a box of its borders before or after it goes on through it hasn't been seen
+            const through = "the empty paragraph that ends a section with the same borders as the paragraph before or after it";
+            expect(numbersOf(document([bordered("a", 1), ending, [paragraph("b", 1), 1]], SECOND)).stoppedAt).to.equal(through);
+            expect(numbersOf(document([paragraph("a", 1), ending, [bordered("b", 1), 1]], SECOND)).stoppedAt).to.equal(through);
+            const automatic: ParagraphBlock = {
+                ...paragraph("end", 0, { autoSpaceBefore: true, autoSpaceAfter: true }),
+                items: [],
+                sectionBreak: true,
+            };
+            expect(topsOf(document([paragraph("a", 1), automatic, [paragraph("b", 1), 1]], SECOND))).to.deep.equal([[10, 20]]);
+            // Whether its automatic space after leaves out some of the next paragraph's space before hasn't been seen
+            expect(
+                numbersOf(document([paragraph("a", 1), automatic, [paragraph("b", 1, { spaceBefore: 5 }), 1]], SECOND)).stoppedAt,
+            ).to.equal("automatic spacing after the empty paragraph that ends a section, before space of the next section's");
+        });
+
+        it("should give borders and automatic spacing room in a footnote, as in the text", () => {
+            // word-stops-notes.ts NT13a to NT13c: a box's borders, 14 points of automatic spacing below the separator and
+            // between paragraphs, and the last's automatic space after at the foot of the page
             const noted = withItems(paragraph("a", 1), [{ type: "marker", name: "n" }]);
-            const notes = (block: ParagraphBlock): Partial<DocumentContent> => ({ footnotes: new Map([["n", [block]]]) });
-            expect(numbersOf(document([noted], notes(bordered("note", 1)))).stoppedAt).to.equal("a paragraph border in a footnote");
-            expect(numbersOf(document([noted], notes(paragraph("note", 1, { autoSpaceBefore: true })))).stoppedAt).to.equal(
-                "automatic spacing in a footnote",
-            );
+            const notesOf = (...blocks: readonly ParagraphBlock[]): Partial<DocumentContent> => ({
+                footnotes: new Map([["n", [...blocks]]]),
+            });
+            const noteTops = (content: DocumentContent): readonly number[] =>
+                paginate(content, { measurer: MEASURER }).pages[0].footnotes.flatMap(({ content: blocks }) =>
+                    blocks.flatMap((block) => (block.type === "paragraph" ? block.lines.map(({ y }) => y) : [])),
+                );
+            const plain = noteTops(document([noted], notesOf(paragraph("note", 1), paragraph("more", 1))));
+            expect(noteTops(document([noted], notesOf(bordered("note", 1), bordered("more", 1))))).to.deep.equal([
+                plain[0] - 3,
+                plain[1] - 3,
+            ]);
+            const automatic = { autoSpaceBefore: true, autoSpaceAfter: true };
+            expect(noteTops(document([noted], notesOf(paragraph("note", 1, automatic), paragraph("more", 1, automatic))))).to.deep.equal([
+                plain[0] - 14 - 14,
+                plain[1] - 14,
+            ]);
+            // Across pages, in columns, and in one box across two footnotes, Word's way with them hasn't been seen
+            const long = document([paragraph("x", 5), noted], notesOf(bordered("note", 6)));
+            expect(numbersOf(long).stoppedAt).to.equal("a paragraph border or automatic spacing in a footnote across pages or in columns");
+            // One taller than a page kept together, which starts on the page after its reference's and goes on across pages
+            const tall = document([noted], notesOf(bordered("note", 8, { keepLines: true })));
+            expect(numbersOf(tall).stoppedAt).to.equal("a paragraph border or automatic spacing in a footnote across pages or in columns");
+            const twoNotes = withItems(paragraph("a", 1), [
+                { type: "marker", name: "n" },
+                { type: "marker", name: "m" },
+            ]);
+            const both = document([twoNotes], {
+                footnotes: new Map([
+                    ["n", [bordered("note", 1)]],
+                    ["m", [bordered("more", 1)]],
+                ]),
+            });
+            expect(numbersOf(both).stoppedAt).to.equal("footnotes next to each other with the same borders");
         });
     });
 
@@ -905,12 +961,12 @@ describe("paginate", () => {
         });
 
         it("should stop at a line whose height Word hasn't shown, with or without fields", () => {
-            // A picture alone in its line, shorter than the paragraph's mark, which is larger than its run's font
+            // A picture alone in its line, in a paragraph at multiple spacing whose mark is larger than its run's font
             const picture: ParagraphBlock = {
-                ...paragraph("picture", 0),
+                ...paragraph("picture", 0, { lineSpacing: { rule: "multiple", multiple: 1.5 } }),
                 items: [{ type: "box", width: 10, height: 5, font: { size: 4 } }],
             };
-            const reason = "a picture alone in a line of a paragraph whose mark is larger";
+            const reason = "a picture alone in a line of a paragraph whose mark is larger, with multiple line spacing";
             expect(paginate(document([paragraph("a", 1), picture]), { measurer: MEASURER }).stoppedAt).to.equal(reason);
             const withField = withItems(picture, [{ type: "pageCount", scope: "document", font: {} }]);
             expect(paginate(document([paragraph("a", 1), withField]), { measurer: MEASURER }).stoppedAt).to.equal(reason);
@@ -2733,14 +2789,14 @@ describe("paginate", () => {
                 expect(pagesOf(balanced(lines("a", 1), COLUMNS, 5))).to.include({ b: "1", c: "1" });
             });
 
-            it("should stop at lines whose multiple spacing would go below the columns, which Word hasn't shown", () => {
+            it("should let the room multiple spacing leaves below the last line of a column go below the columns, as Word does", () => {
+                // word-stops-text.ts PB7b: the columns are as short as their lines without the room below the last
                 const spaced = lines("a", 5).map((block) => ({
                     ...block,
                     format: { lineSpacing: { rule: "multiple" as const, multiple: 1.5 } },
                 }));
-                expect(paginate(balanced(spaced), { measurer: MEASURER }).stoppedAt).to.equal(
-                    "columns evened out above a line whose room below its text goes below them",
-                );
+                const laid = paginate(balanced(spaced), { measurer: MEASURER });
+                expect(laid.stoppedAt).to.equal(undefined);
             });
 
             it("should keep a paragraph's lines together as widow control and keepLines do", () => {
@@ -4622,6 +4678,16 @@ describe("paginate", () => {
                 // The same where the first column starts with a paragraph from the page before, which is laid out again
                 const fromBefore = inSections([paragraph("a", 21), noted(paragraph("b", 1), "footnote 1"), ...lines("c", 3)], ONE_LINE);
                 expect(pagesOf(fromBefore)).to.include({ a: "1", b: "2", c2: "2", c3: "3" });
+            });
+
+            it("should stop at a footnote with borders or automatic spacing laid out in the columns, which Word hasn't been seen with", () => {
+                const borders = { top: 1, bottom: 1, between: 0, betweenSpace: 0, box: "box", outline: "box" };
+                const boxed = inSections([noted(paragraph("a", 1), "footnote 1"), ...lines("b", 2)], {
+                    "footnote 1": [{ ...paragraph("note", 1), borders }],
+                });
+                expect(numbersOf(boxed).stoppedAt).to.equal(
+                    "a paragraph border or automatic spacing in a footnote across pages or in columns",
+                );
             });
 
             it("should lay the footnotes out in the columns, one after the other from the first, evened out, as Word does", () => {
@@ -7078,7 +7144,7 @@ describe("paginate with automatic hyphenation", () => {
             // As is an empty paragraph whose mark is in it, and a line whose breaking Word hasn't shown keeps its own reason
             const mark: ParagraphBlock = { ...paragraph("mark", 0), markFont: { font: "Unknown" } };
             const picture: ParagraphBlock = {
-                ...paragraph("picture", 0),
+                ...paragraph("picture", 0, { lineSpacing: { rule: "multiple", multiple: 1.5 } }),
                 items: [
                     { type: "text", text: "x", font: { font: "Unknown" } },
                     { type: "break", kind: "line", font: { size: 4 } },
@@ -7086,7 +7152,10 @@ describe("paginate with automatic hyphenation", () => {
                 ],
             };
             expect(guessed(document([mark, picture]), CHOOSY).guesses).to.deep.equal([
-                ["a font not in the width tables", "a picture alone in a line of a paragraph whose mark is larger"],
+                [
+                    "a font not in the width tables",
+                    "a picture alone in a line of a paragraph whose mark is larger, with multiple line spacing",
+                ],
             ]);
         });
 

@@ -254,11 +254,12 @@ const sizeOf = (value: unknown): number | undefined => {
 };
 
 /**
- * Why how Word reads a length in formatted XML isn't known, when it isn't: a size in picas, which Word's PDFs didn't
- * tell from one it ignores, or in another unit but points, which they showed it ignores only with no style giving a
- * size, a negative length of a fraction of a centimeter or millimeter, and a lowered position (`w:position`) of a
- * fraction of its unit, whose minus sign and rounding together they didn't show. Undefined when every length's reading
- * is known.
+ * Why how Word reads a length in formatted XML isn't known, when it isn't: a size in a unit other than points, which Word's
+ * PDFs showed it ignores in sizes that aren't whole half-points with no style giving a size (word-units2.ts V3), and
+ * draws at its length in whole half-points in a run whose style gives one (scripts/layout-probes/stops2/word-stops-text.ts
+ * RF27a to RF27c), which leaves which of the two decides unknown. Its minus sign is the whole number's only, as for every
+ * length: "-2.5pt" lowers text by 1.5 points, "-0.5pt" and "-0.3cm" raise it, and "-0.5mm" spaces letters further apart
+ * (RF26a, RF26b, RF28a, RF28b). Undefined when every length's reading is known.
  */
 export const unknownLengthIn = (element: unknown, name = ""): string | undefined => {
     if (Array.isArray(element)) {
@@ -276,14 +277,8 @@ export const unknownLengthIn = (element: unknown, name = ""): string | undefined
             if (reason !== undefined || !measure) {
                 return reason;
             }
-            const [, minus, , fraction, unit] = measure;
-            if ((name === "w:sz" || name === "w:szCs") && unit !== "pt") {
-                return "a size given in a unit other than points";
-            }
-            if (name === "w:position" && minus && fraction) {
-                return "a lowered position of a fraction of its unit";
-            }
-            return minus && fraction && METRIC.has(unit) ? "a negative length of a fraction of a centimeter or millimeter" : undefined;
+            const [, , , , unit] = measure;
+            return (name === "w:sz" || name === "w:szCs") && unit !== "pt" ? "a size given in a unit other than points" : undefined;
         }, undefined);
     }, undefined);
 };
@@ -728,31 +723,50 @@ export const NARROWEST_BORDER = 2;
 export const WIDEST_BORDER = 96;
 export const FURTHEST_BORDER = 31;
 
+// The schema's borders of lines (`ST_Border`); the rest of its borders are art borders, but for "custom"
+const LINE_BORDERS = new Set(["nil", "none", ...Object.keys(BORDER_WIDTHS), "custom"]);
+// Widths of a run's border, in eighths of a point, seen at one size only past those of its style Word drew beside a table's
+// cells: thickThinLargeGap of 4.5 points 6.75 wide, as those make it (scripts/layout-probes/stops2/word-stops-text.ts
+// RF25b). Word drew thinThickThinMediumGap of 3 points 9 points wide in a run, as beside a table's cells too (RF25a)
+const SEEN_RUN_BORDERS: Readonly<Record<string, Readonly<Record<number, number>>>> = {
+    thickThinLargeGap: { 36: 54 },
+};
+// The widest art border, in points
+const WIDEST_ART_BORDER = 31;
+
 /**
  * How wide a run's border is as Word draws it, in eighths of a point: as a paragraph's of its style. A border of no style
- * ("none") takes its space still, but no width (scripts/layout-probes/word-run-formatting.ts RF7h). Undefined when Word
- * hasn't been seen to draw it.
+ * ("none") takes its space still, but no width (scripts/layout-probes/word-run-formatting.ts RF7h). An art border's size
+ * is in points, so apples of 12 take 12 points (scripts/layout-probes/stops2/word-stops-text.ts RF25c), and Word draws a
+ * single border of an eighth of a point, and a double one of none, as given (RF25f, RF25e). Undefined when Word hasn't been
+ * seen to draw it.
  */
-const runBorderWidth = ({ style, size, space, shadow, frame }: ParagraphBorder): number | undefined => {
-    if (shadow || frame || space > FURTHEST_BORDER) {
-        return undefined;
+const runBorderWidth = ({ style, size, shadow, frame }: ParagraphBorder): number | undefined => {
+    if (shadow || frame || size === undefined) {
+        return style === "none" && !shadow && !frame ? 0 : undefined;
     }
-    return style === "none" || size === undefined || size < NARROWEST_BORDER || size > WIDEST_BORDER
-        ? style === "none"
-            ? 0
-            : undefined
-        : BORDER_WIDTHS[style]?.(size);
+    if (!LINE_BORDERS.has(style)) {
+        return size >= 1 && size <= WIDEST_ART_BORDER ? size * EIGHTHS_PER_POINT : undefined;
+    }
+    if ((style === "single" && size === 1) || (style === "double" && size === 0)) {
+        return BORDER_WIDTHS[style](size);
+    }
+    return style === "none"
+        ? 0
+        : size < NARROWEST_BORDER || size > WIDEST_BORDER
+          ? undefined
+          : (BORDER_WIDTHS[style]?.(size) ?? SEEN_RUN_BORDERS[style]?.[size]);
 };
 
 /**
  * The room a run's border takes, beside the run and above and below it: its space and its width, as Word gives it room (a
- * single border of half a point 4 points away takes 90 twips on each side and above and below, RF7a). Undefined when it
- * takes none, as one of "nil" takes none at all (word-run-formatting2.ts RF12), and when how much isn't known: see
- * {@link unknownRunFormatting}.
+ * single border of half a point 4 points away takes 90 twips on each side and above and below, RF7a). Word keeps a space
+ * in five bits, so one of 40 points is 8 (RF25d). Undefined when it takes none, as one of "nil" takes none at all
+ * (word-run-formatting2.ts RF12), and when how much isn't known: see {@link unknownRunFormatting}.
  */
 const textBorderOf = (border: ParagraphBorder | undefined): TextBorder | undefined => {
     const width = border === undefined || border.style === "nil" ? undefined : runBorderWidth(border);
-    const room = width === undefined ? 0 : width / EIGHTHS_PER_POINT + border!.space;
+    const room = width === undefined ? 0 : width / EIGHTHS_PER_POINT + (border!.space % (FURTHEST_BORDER + 1));
     return room > 0 ? { room, key: border!.key } : undefined;
 };
 
@@ -791,12 +805,23 @@ const plainFontOf = ({
         snapToGrid: snapToGrid === false ? false : undefined,
     });
 
+// The number forms and spacing that are as wide as a font's own figures, in its regular face: lining tabular figures in
+// Calibri and Cambria, and old-style tabular ones in Calibri (scripts/layout-probes/stops2/word-stops-kerning.ts KE7b, KE7d,
+// KE7f). Their proportional figures, and Cambria's old-style tabular ones, are narrower (KE7a, KE7c, KE7e, KE7g, KE7h)
+const DEFAULT_FIGURES: Readonly<Record<string, readonly string[]>> = {
+    calibri: ["lining tabular", "oldStyle tabular"],
+    cambria: ["lining tabular"],
+};
+
 /**
  * Why a run's formatting can't be laid out as Word lays it out, when it can't: OpenType features other than ligatures,
  * whose widths the width tables don't have, a border of a style, width or space Word hasn't been seen to draw, or with a
  * shadow or drawn as a frame, and emphasis marks of a kind the schema doesn't have.
  */
 export const unknownRunFormatting = ({
+    font,
+    bold,
+    italic,
     border,
     emphasisMark,
     numberForm,
@@ -804,7 +829,11 @@ export const unknownRunFormatting = ({
     stylisticSets,
     contextualAlternates,
 }: RunFormat): string | undefined => {
-    if ((numberForm ?? "default") !== "default" || (numberSpacing ?? "default") !== "default") {
+    const forms = `${numberForm ?? "default"} ${numberSpacing ?? "default"}`;
+    if (
+        forms !== "default default" &&
+        (bold === true || italic === true || !DEFAULT_FIGURES[(font ?? "").toLowerCase()]?.includes(forms))
+    ) {
         return "OpenType number forms or spacing";
     }
     if (stylisticSets === true || contextualAlternates === true) {

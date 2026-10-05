@@ -681,8 +681,6 @@ const SIZED_REMOVAL = "a deleted picture, tab, break or note reference in a tabl
 const PARTLY_DELETED_FIELD = "a field partly deleted in a tracked change";
 // A mark of its own in place of a note's number, which Word may not count in the numbers of the others
 const OWN_NOTE_MARK = "a footnote or endnote with a mark of its own";
-// Whether a box of borders around text goes on round a tab in it isn't known
-const TAB_IN_BORDER = "a tab in text with a border";
 
 // The start of the name of a marker that stands in a paragraph's items for what the reader guessed at, read to be laid
 // out with a guess, with why after it. The paragraph takes the first as why it can't be laid out as Word does, and leaves
@@ -1278,17 +1276,32 @@ const readFieldCharacter = (element: XmlObject, format: RunFormat, reader: Reade
     return [];
 };
 
+/** Whether a run's text is drawn as two lines in one (`w:combine`), which Word draws at half its size */
+const isTwoInOne = (properties: readonly XmlObject[]): boolean => isOn(attributesOf(find(properties, "w:eastAsianLayout"))["w:combine"]);
+
 /**
  * Why a run's own formatting changes the room its text takes in a way not yet followed, when it does: text fitted to a
- * width (`w:fitText`), and two lines in one or text across in vertical text (`w:eastAsianLayout`).
+ * width (`w:fitText`), text across in vertical text (`w:eastAsianLayout`), and two lines in one of other than text
+ * without Chinese, Japanese or Korean characters, without brackets and at a size that halves to whole half-points. Word drew
+ * "twolines" in two lines in one in a line of Calibri 11 at 5.5 points, on one row, its width the text's at that size, in
+ * a line no taller (scripts/layout-probes/stops2/word-stops-text.ts RF30).
  */
-const unsupportedFormatOf = (properties: readonly XmlObject[]): string | undefined => {
-    const { "w:combine": combined, "w:vert": across } = attributesOf(find(properties, "w:eastAsianLayout"));
+const unsupportedFormatOf = (properties: readonly XmlObject[], children: readonly XmlObject[], size: number): string | undefined => {
+    const { "w:combineBrackets": brackets, "w:vert": across } = attributesOf(find(properties, "w:eastAsianLayout"));
     if (find(properties, "w:fitText") !== undefined) {
         return "text fitted to a width";
     }
-    if (isOn(combined)) {
-        return "two lines in one";
+    if (isTwoInOne(properties)) {
+        const text = children
+            .filter((child) => nameOf(child) === "w:t")
+            .flatMap((child) => contentOf(child).filter((part) => typeof part === "string"));
+        const shown = children.filter((child) => nameOf(child) !== "w:rPr" && nameOf(child) !== "_attr");
+        return (brackets !== undefined && brackets !== "none") ||
+            shown.some((child) => nameOf(child) !== "w:t") ||
+            [...text.join("")].some(isEastAsian) ||
+            !Number.isInteger(size)
+            ? "two lines in one"
+            : undefined;
     }
     return isOn(across) ? "text across in vertical text" : undefined;
 };
@@ -1302,13 +1315,17 @@ const readRun = (element: XmlObject, paragraphRun: RunFormat, reader: Reader, re
     const children = contentOf(element).filter(isObject);
     const properties = find(children, "w:rPr");
     const characterStyle = valueOf(childrenOf(properties), "w:rStyle") ?? styles.defaultCharacterStyle;
-    const format = combine([
+    const formatted = combine([
         paragraphRun,
         ...styleChain(styles, characterStyle, "character").map(({ run }) => run),
         readRunFormat(properties, styles.themeFonts),
     ]);
+    const size = formatted.size ?? DEFAULT_FONT_SIZE;
+    // Two lines in one are drawn at half the size (RF30)
+    const format = isTwoInOne(childrenOf(properties)) ? { ...formatted, size: size / 2 } : formatted;
     const font = fontOf(format);
-    const unsupportedFormat = unsupportedFormatOf(childrenOf(properties)) ?? (format.hidden ? undefined : unknownRunFormatting(format));
+    const unsupportedFormat =
+        unsupportedFormatOf(childrenOf(properties), children, size) ?? (format.hidden ? undefined : unknownRunFormatting(format));
     // Whether what is shown of the run is read past its formatting, with a guess
     let formatGuessed = false;
     const items: readonly (readonly LayoutItem[] | string)[] = children.map((child): readonly LayoutItem[] | string => {
@@ -1350,29 +1367,23 @@ const readRun = (element: XmlObject, paragraphRun: RunFormat, reader: Reader, re
                 const content = contentOf(child)
                     .filter((part) => typeof part === "string")
                     .join("");
-                const read = (): readonly LayoutItem[] =>
-                    content.split("\t").flatMap((part, index): readonly LayoutItem[] => [
-                        ...(index > 0 && !format.hidden ? [{ type: "tab" as const, font }] : []),
-                        ...(part.length === 0 ? [] : spansOf(part, format)).map(({ text, ...spanFont }) => ({
-                            type: "text" as const,
-                            text,
-                            font: spanFont,
-                            // Where its lines break depends on its language, and whether its run is East Asian
-                            ...(format.eastAsianLanguage === undefined ? {} : { language: format.eastAsianLanguage }),
-                            ...(isEastAsianRun(format) ? { eastAsian: true } : {}),
-                            ...hyphenationOf(format),
-                        })),
-                    ]);
-                // Whether a box goes on round a tab, or ends before it, isn't known. Guessing, it goes on
-                return font.border && !format.hidden && content.includes("\t") ? guessedOr(reader, TAB_IN_BORDER, read) : read();
+                // A box of borders goes on round a tab in it (scripts/layout-probes/stops2/word-stops-tabs.ts TA7a)
+                return content.split("\t").flatMap((part, index): readonly LayoutItem[] => [
+                    ...(index > 0 && !format.hidden ? [{ type: "tab" as const, font }] : []),
+                    ...(part.length === 0 ? [] : spansOf(part, format)).map(({ text, ...spanFont }) => ({
+                        type: "text" as const,
+                        text,
+                        font: spanFont,
+                        // Where its lines break depends on its language, and whether its run is East Asian
+                        ...(format.eastAsianLanguage === undefined ? {} : { language: format.eastAsianLanguage }),
+                        ...(isEastAsianRun(format) ? { eastAsian: true } : {}),
+                        ...hyphenationOf(format),
+                    })),
+                ]);
             }
             case "w:tab":
             case "w:ptab":
-                return format.hidden
-                    ? []
-                    : font.border
-                      ? guessedOr(reader, TAB_IN_BORDER, () => [{ type: "tab", font }])
-                      : [{ type: "tab", font }];
+                return format.hidden ? [] : [{ type: "tab", font }];
             case "w:br": {
                 // A page break in hidden text breaks nothing (`word-hidden-paragraphs.docx` HP4a, HP4b)
                 const kind = attributesOf(child["w:br"])["w:type"];
@@ -1383,18 +1394,16 @@ const readRun = (element: XmlObject, paragraphRun: RunFormat, reader: Reader, re
             case "w:noBreakHyphen":
                 return format.hidden ? [] : [{ type: "text", text: "\u2011", font }];
             case "w:softHyphen":
-                // Where a word may break, with a hyphen drawn there (`word-watertight-text.docx` TX10a). Whether a box goes
-                // on round its hyphen, and whether Word sizes a table's columns by the parts of a word between them, hasn't
-                // been seen
+                // Where a word may break, with a hyphen drawn there (`word-watertight-text.docx` TX10a), in text with a border
+                // too (scripts/layout-probes/stops2/word-stops-tabs.ts SH11). Whether Word sizes a table's columns by the parts
+                // of a word between them hasn't been seen
                 return format.hidden
                     ? []
-                    : font.border
-                      ? guessedOr(reader, "a soft hyphen in text with a border", () => [{ type: "softHyphen", font }])
-                      : reader.inSizedTable
-                        ? guessedOr(reader, "a soft hyphen in a table whose columns Word sizes to their text", () => [
-                              { type: "softHyphen", font },
-                          ])
-                        : [{ type: "softHyphen", font }];
+                    : reader.inSizedTable
+                      ? guessedOr(reader, "a soft hyphen in a table whose columns Word sizes to their text", () => [
+                            { type: "softHyphen", font },
+                        ])
+                      : [{ type: "softHyphen", font }];
             case "w:sym": {
                 // A symbol is a character of its own font: most often a symbol font's own, such as Wingdings' tick, F0FC,
                 // whose width isn't known, so the layout stops there, as it does at other characters it can't measure. Its
@@ -1904,8 +1913,9 @@ const unitsOf = ({ linePitch, characterSpace = 0, characterPitch }: TextGrid = {
  * A paragraph's formatting with its space in lines and its indents in characters in points, as Word takes them in place
  * of those in points when they aren't 0 (`word-paragraph-formats.docx` C7, C10, L2). A character is as wide as text is
  * tall: a first line or hanging indent's as the paragraph's first character, 2 of them 440 twips at 11 points and 800 at
- * 20, whatever the size of its mark or its other text (`word-watertight-text.docx` TX7a, TX7b, C5, C6, C12), and a left
- * indent's as its mark, 4 of them 880 beside 20-point text (C11). A hanging indent in characters puts the first line at
+ * 20, whatever the size of its mark or its other text (`word-watertight-text.docx` TX7a, TX7b, C5, C6, C12), a left
+ * indent's as its paragraph's style, 4 of them 880 beside 20-point text (C11) and beside a 16-point mark
+ * (scripts/layout-probes/stops2/word-stops-text.ts PB5b), and a right indent's as its mark (PB5c). A hanging indent in characters puts the first line at
  * the left indent and the other lines that much further in, and the left indent is in characters then, 0 when it isn't
  * given: 2 characters hanging put the first line at 0 and the others at 440, with a left indent of 1440 twips or none
  * (TX7c, C3, C9). It says why when Word's way with them isn't known.
@@ -1934,19 +1944,19 @@ const inPoints = (
         from.flatMap((item) =>
             (item.type === "text" && item.text.length > 0) || item.type === "pageReference" || item.type === "pageCount" ? [item.font] : [],
         );
-    // The first character's size, which first line and hanging indents are in, and the mark's, which left and right
-    // indents are in. Which of the mark's and its style's it is, and which the first character is of a list's number and
-    // its text, isn't known where they differ, nor whether a right indent is in the mark's or the text's
+    // The first character's size, which first line and hanging indents are in, the paragraph style's, which a left indent
+    // is in, 4 characters of 11 points beside a mark of 16 (scripts/layout-probes/stops2/word-stops-text.ts PB5b), and the
+    // mark's, which a right indent is in, 4 characters of 11 points beside text of 16 (PB5c). Which of the mark's and its
+    // style's a right indent is in where they differ, and which the first character is of a list's number and its text,
+    // isn't known
     const first = sizeOf(textOf(items)[0] ?? markFont);
     const mark = sizeOf(markFont);
+    const style = sizeOf(styleFont);
     if (firstLineChars !== 0 && textOf(listNumber).some((font) => sizeOf(font) !== first)) {
         return "an indent in characters in a list whose number is another size than its text";
     }
-    if ((leftChars !== 0 || indentRightChars !== 0) && mark !== sizeOf(styleFont)) {
-        return "an indent in characters left or right of a paragraph whose mark is another size than its style";
-    }
-    if (indentRightChars !== 0 && first !== mark) {
-        return "an indent in characters right of text of another size than its mark";
+    if (indentRightChars !== 0 && mark !== style) {
+        return "an indent in characters right of a paragraph whose mark is another size than its style";
     }
     const characters = (count: number, size: number): number => (count / HUNDREDTHS) * (characterPitch ?? size + characterSpace);
     const right = indentRightChars === 0 ? {} : { indentRight: characters(indentRightChars, mark) };
@@ -1957,17 +1967,20 @@ const inPoints = (
         return {
             ...spaced,
             ...right,
-            indentLeft: characters(leftChars, mark) - characters(firstLineChars, first),
+            indentLeft: characters(leftChars, style) - characters(firstLineChars, first),
             firstLineIndent: characters(firstLineChars, first),
         };
     }
-    if (leftChars !== 0 && firstLineChars === 0 && (format.firstLineIndent ?? 0) !== 0) {
-        return "an indent in characters left of a first line indent in twips";
+    // A first line indent in twips starts the first line that much further in from a left indent in characters, 720 twips
+    // from 4 characters of 11 points (PB5e). Whether a hanging indent in twips takes the first line out from one hasn't been
+    // seen
+    if (leftChars !== 0 && firstLineChars === 0 && (format.firstLineIndent ?? 0) < 0) {
+        return "an indent in characters left of a hanging indent in twips";
     }
     return {
         ...spaced,
         ...right,
-        ...(leftChars === 0 ? {} : { indentLeft: characters(leftChars, mark) }),
+        ...(leftChars === 0 ? {} : { indentLeft: characters(leftChars, style) }),
         ...(firstLineChars === 0 ? {} : { firstLineIndent: characters(firstLineChars, first) }),
     };
 };

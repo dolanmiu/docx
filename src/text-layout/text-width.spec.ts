@@ -544,6 +544,8 @@ describe("kerning and ligatures", () => {
         expect(unknownShaping("office", { font: "Cambria", ligatures: "standard" })).to.equal("ligatures of a setting not yet followed");
         expect(unknownShaping("1", { font: "Cambria", ligatures: "standard" })).to.equal(undefined);
         expect(unknownShaping("fΩ", calibri({ ligatures: "standard" }))).to.equal("ligatures beside a character not yet followed");
+        // but for a Latin letter, which Word joins them beside (word-stops-kerning.ts KE3)
+        expect(unknownShaping("fiā", calibri({ ligatures: "standard" }))).to.equal(undefined);
         // Characters that take no room, such as a zero-width space or a combining acute accent, which aren't kerned or
         // joined across
         const ZERO_WIDTH = String.fromCharCode(0x200b);
