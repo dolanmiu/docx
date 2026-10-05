@@ -4556,7 +4556,7 @@ export const paginate = (
         height: number,
         breakBorder: number,
         startTablePage: (continuing: boolean) => void,
-        table: { readonly kept: boolean; readonly spacedLast: boolean },
+        table: { readonly kept: boolean },
     ): void => {
         // The cells that start a merge are laid out with the rows they are merged down
         const own = row.cells.filter((cell) => !startsMerge(cell));
@@ -4712,12 +4712,6 @@ export const paginate = (
             // Where Word's breaking of the row isn't known, guessing, it breaks as other rows do
             if (placesLines && !isLastPart) {
                 filled.forEach((part) => stopAtRead(part));
-                if (table.spacedLast) {
-                    // Word breaks the rows of a table with space between its cells with the space below their cells and the
-                    // table's bottom border on the page (word-stops-table-borders.docx TB7c), but its last row, which has the
-                    // table's space below it too, hasn't been seen breaking
-                    stopAt("the last row of a table with space between its cells across pages");
-                }
             }
             // A row at the top of a page that doesn't fit there whole is taller than a page, unless the end of a footnote
             // continued from the page before takes room on it, which leaves the next page for it. It breaks there, as Word
@@ -4919,14 +4913,16 @@ export const paginate = (
                 position += repeated;
             }
             // A table with space between its cells has its top border above the rest of it on the next page, and the space
-            // above its row, where the row or the one before it breaks (word-stops-table-borders.docx TB7a to TB7c). With
-            // header rows repeated above them, what Word draws there hasn't been seen
+            // above its row, where the row or the one before it breaks (word-stops-table-borders.docx TB7a to TB7c). Below
+            // its header rows repeated there, which have the table's top border above them, the row is as far below them as
+            // on the page before (word-stops-table-borders2.docx BT4c). The part of a row that breaks there hasn't been seen
             const { breakTop = 0 } = table.rows[index];
+            const belowHeaders = headerRows > 0 && index >= headerRows;
             if (breakTop > 0 && (index > 0 || continuing)) {
-                if (headerRows > 0) {
-                    stopAt("a table with space between its cells, borders and header rows across pages");
+                if (belowHeaders && continuing) {
+                    stopAt("a table row with space between its cells that breaks across pages below header rows");
                 }
-                position += breakTop;
+                position += belowHeaders ? 0 : breakTop;
             }
         };
         /** Whether a row fits on the page, with its footnotes */
@@ -5080,7 +5076,6 @@ export const paginate = (
             // U5b), as LibreOffice breaks them
             if (tooTall || (!rowFits(roomNeeded, notes) && !keptWhole)) {
                 splitRow(row, index, height, breakBorder, (continuing) => startTablePage(index, firstColumns, continuing), {
-                    spacedLast: table.cellSpacing !== undefined && index === table.rows.length - 1,
                     // Rows kept with the next that are too tall for a page break where the page ends (KR5)
                     kept: index > brokenUntil && index > 0 && keptWithNext(table.rows[index - 1]),
                 });

@@ -1813,13 +1813,30 @@ describe("paginate", () => {
                     [1, 35],
                 ],
             ]);
-            // Its last row, which has the table's space below it too, hasn't been seen breaking
-            expect(numbersOf(document([paragraph("a", 4), spaced(1, { breakBorder: 5, breakTop: 5 }, 4)])).stoppedAt).to.equal(
-                "the last row of a table with space between its cells across pages",
-            );
-            // With header rows repeated above them, what Word draws hasn't been seen
-            expect(numbersOf(document([paragraph("a", 3), spaced(6, { breakBorder: 5, breakTop: 5 }, 1, 1)])).stoppedAt).to.equal(
-                "a table with space between its cells, borders and header rows across pages",
+            // Its last row, which has the table's space below it too, breaks as the others do (word-stops-table-borders2.docx
+            // BT4a, BT4b)
+            const last = document([paragraph("a", 4), spaced(1, { breakBorder: 5, breakTop: 5 }, 4)]);
+            expect(numbersOf(last).stoppedAt).to.equal(undefined);
+            expect(rowsOf(last)).to.deep.equal([[[0, 50]], [[0, 15]]]);
+            // Below its header rows repeated on the next page, which have its top border above them, a row has none (BT4c)
+            const headed = document([paragraph("a", 3), spaced(6, { breakBorder: 5, breakTop: 5 }, 1, 1)]);
+            expect(numbersOf(headed).stoppedAt).to.equal(undefined);
+            expect(rowsOf(headed)).to.deep.equal([
+                [
+                    [0, 40],
+                    [1, 50],
+                    [2, 60],
+                ],
+                [
+                    [0, 10],
+                    [3, 20],
+                    [4, 30],
+                    [5, 40],
+                ],
+            ]);
+            // The part of a row that breaks below them hasn't been seen
+            expect(numbersOf(document([paragraph("a", 1), spaced(2, { breakBorder: 5, breakTop: 5 }, 4, 1)])).stoppedAt).to.equal(
+                "a table row with space between its cells that breaks across pages below header rows",
             );
         });
 

@@ -568,11 +568,20 @@ describe("readDocument", () => {
             ]);
             expect(roomOf("thinThickThinLargeGap", 24)).to.equal(9);
             expect(roomOf("single", 6, { "w:shadow": "1" })).to.equal(1.5);
+            // An art border is as wide as its size in points (word-stops-table-borders2.docx BT2f, BT2g), and a line of no width
+            // whose width is a multiple of its size takes none (BT3a to BT3c)
+            const spaced = (style: string, size: number, space: number): number | undefined =>
+                bordered({ "w:top": border(style, size, space) }).borders?.top;
+            expect([roomOf("apples", 6), roomOf("triangles", 31), spaced("single", 0, 12), spaced("double", 0, 12)]).to.deep.equal([
+                6, 31, 12, 12,
+            ]);
+            // Word keeps the space in five bits (BT3d to BT3f)
+            expect([spaced("single", 4, 32), spaced("single", 4, 50), spaced("single", 4, 63)]).to.deep.equal([0.5, 18.5, 31.5]);
             // Those Word hasn't been seen to draw
             for (const side of [
                 border("double", 6, 1, { "w:shadow": "1" }),
                 border("single", 6, 1, { "w:frame": "on" }),
-                border("apples", 6),
+                border("custom", 6),
             ]) {
                 expect(bordered({ "w:bottom": side }).unsupported).to.equal("a paragraph border of a style not yet followed");
             }
@@ -580,11 +589,12 @@ describe("readDocument", () => {
                 border("single"),
                 border("single", 1),
                 border("single", 97),
-                border("single", 6, 32),
                 border("thinThickSmallGap", 2),
                 border("threeDEmboss", 19),
+                border("wave", 0),
+                border("apples", 32),
             ]) {
-                expect(bordered({ "w:top": side }).unsupported).to.equal("a paragraph border of a width or space not yet followed");
+                expect(bordered({ "w:top": side }).unsupported).to.equal("a paragraph border of a width not yet followed");
             }
         });
 
@@ -1716,8 +1726,10 @@ describe("readDocument", () => {
             expect(unknownOf(page, { "w:pBdr": [{ "w:left": side("single") }] }, { "w:pBdr": [{ "w:right": side("single") }] })).to.equal(
                 "a text frame of paragraphs with other borders at their sides",
             );
-            expect(unknownOf(page, { "w:pBdr": [{ "w:left": side("bogus") }] })).to.equal("a paragraph border of a style not yet followed");
-            expect(unknownOf(page, { "w:pBdr": [{ "w:right": side("bogus") }] })).to.equal(
+            expect(unknownOf(page, { "w:pBdr": [{ "w:left": side("custom") }] })).to.equal(
+                "a paragraph border of a style not yet followed",
+            );
+            expect(unknownOf(page, { "w:pBdr": [{ "w:right": side("custom") }] })).to.equal(
                 "a paragraph border of a style not yet followed",
             );
             expect(paragraphOf(readBody([framed({ "w:hAnchor": "cell" }, r(t("a"))), p(r(t("b")))])).unsupported).to.equal(
@@ -3658,8 +3670,8 @@ describe("readDocument", () => {
                     [[{ "w:tcBorders": [border("bottom", 4)] }], [{ "w:tcBorders": [border("top", 12, "dotted")] }]],
                 );
                 expect([meeting.unsupported, meeting.rows[1].borderTop]).to.deep.equal([undefined, 1.5]);
-                // Beside text with no margin, which of the two Word keeps the text from hasn't been seen where it draws the
-                // narrower
+                // Beside text with no margin, each cell's text is kept from half its own border, whichever Word draws
+                // (word-stops-table-borders2.docx BT1a to BT1d)
                 const noMargin = { _attr: { "w:w": 0, "w:type": "dxa" } };
                 const beside = readBody([
                     {
@@ -3675,7 +3687,11 @@ describe("readDocument", () => {
                         ],
                     },
                 ]).blocks[0].block as TableBlock;
-                expect(beside.unsupported).to.equal("table cell borders of different styles that meet, wider than twice a cell's margin");
+                expect(beside.unsupported).to.equal(undefined);
+                expect(beside.rows[0].cells.map(({ marginLeft, marginRight, width }) => [marginLeft, marginRight, width])).to.deep.equal([
+                    [0, 0.25, 99.75],
+                    [1.5, 0, 98.5],
+                ]);
             });
 
             it("should put space between cells around each cell, and inside the table's edges, as Word does", () => {
@@ -3757,25 +3773,51 @@ describe("readDocument", () => {
 
             it("should stop at space between cells that Word's PDFs haven't shown: another type, a row's share, rows that differ", () => {
                 const spacing = (attributes: object): object => ({ "w:tblCellSpacing": { _attr: attributes } });
+                const tableWith = (
+                    properties: readonly unknown[],
+                    cellWidth: readonly unknown[],
+                    ...rows: readonly (readonly unknown[])[]
+                ) =>
+                    readBody([
+                        {
+                            "w:tbl": [
+                                { "w:tblPr": properties },
+                                { "w:tblGrid": [{ "w:gridCol": { _attr: { "w:w": 2000 } } }] },
+                                ...rows.map((row) => ({ "w:tr": [{ "w:trPr": row }, cell(cellWidth, p())] })),
+                            ],
+                        },
+                    ]).blocks[0].block as TableBlock;
                 const unsupportedOf = (properties: readonly unknown[], ...rows: readonly (readonly unknown[])[]): string | undefined =>
-                    (
-                        readBody([
-                            {
-                                "w:tbl": [
-                                    { "w:tblPr": properties },
-                                    { "w:tblGrid": [{ "w:gridCol": { _attr: { "w:w": 2000 } } }] },
-                                    ...rows.map((row) => ({ "w:tr": [{ "w:trPr": row }, cell([], p())] })),
-                                ],
-                            },
-                        ]).blocks[0].block as TableBlock
-                    ).unsupported;
-                expect(unsupportedOf([spacing({ "w:w": 100, "w:type": "auto" })], [])).to.equal(
+                    tableWith(properties, [], ...rows).unsupported;
+                expect(unsupportedOf([spacing({ "w:w": 100, "w:type": "other" })], [])).to.equal(
                     "space between table cells of a width that isn't in twips",
                 );
                 expect(unsupportedOf([], [spacing({ "w:w": 100, "w:type": "pct" })])).to.equal(
                     "space between a table row's cells as a share of the table's width",
                 );
-                expect(unsupportedOf([], [spacing({ "w:w": 100 })], [])).to.equal("table rows with different space between their cells");
+                // Space of the type auto is none (word-stops-table-borders2.docx BT5d, BT5e)
+                const auto = tableWith([spacing({ "w:w": 100, "w:type": "auto" })], [], []);
+                expect([auto.unsupported, auto.cellSpacing]).to.deep.equal([undefined, undefined]);
+                // Rows of different space are followed in a table whose cells have widths, of a width of its own (BT5a, BT5b),
+                // each row's own around its cells and the table's columns as wide as with the first row's
+                const width = [{ "w:tblW": { _attr: { "w:w": 2000, "w:type": "dxa" } } }];
+                const cellWidth = [{ "w:tcW": { _attr: { "w:w": 2000, "w:type": "dxa" } } }];
+                const differing = tableWith(width, cellWidth, [spacing({ "w:w": 40 })], [spacing({ "w:w": 100 })]);
+                expect(differing.unsupported).to.equal(undefined);
+                expect(differing.rows.map(({ borderTop, cells }) => [borderTop, cells[0].marginLeft, cells[0].ownWidth])).to.deep.equal([
+                    [4, 9.4, 108],
+                    [5, 15.4, 108],
+                ]);
+                expect(tableWith([], cellWidth, [spacing({ "w:w": 40 })], [spacing({ "w:w": 100 })]).unsupported).to.equal(
+                    "table rows with different space between their cells, in a table sized to its text or with no width of its own",
+                );
+                expect(unsupportedOf(width, [spacing({ "w:w": 40 })], [spacing({ "w:w": 100 })])).to.equal(
+                    "table rows with different space between their cells, in a table sized to its text or with no width of its own",
+                );
+                // Nor a row with none beside rows with some
+                expect(unsupportedOf([], [spacing({ "w:w": 100 })], [])).to.equal(
+                    "table rows with space between their cells beside rows without",
+                );
                 // A deleted row's space doesn't count, as it takes no room (word-tracked-tables.docx MK14h)
                 const deleted = { "w:del": { _attr: { "w:id": 1 } } };
                 expect(unsupportedOf([spacing({ "w:w": 100 })], [], [deleted, spacing({ "w:w": 0 })])).to.equal(undefined);
@@ -4016,7 +4058,8 @@ describe("readDocument", () => {
                 ]).blocks[0].block as TableBlock;
                 expect(indented.unsupported).to.equal("a table row with table properties of its own");
                 // With space between its cells, the table's borders go around the space (word-stops-table-borders.docx TB5),
-                // and where a row's own go hasn't been seen, but its margins are its cells'
+                // and a row's own are its cells', as its margins are (word-stops-table-borders2.docx BT6b: an inside border of a
+                // double line of 0.75 points between them keeps the second cell's text 2.25 points further in)
                 const spaced = (exception: object): TableBlock =>
                     readBody([
                         {
@@ -4027,9 +4070,12 @@ describe("readDocument", () => {
                             ],
                         },
                     ]).blocks[0].block as TableBlock;
-                expect(spaced({ "w:tblBorders": [border("insideV", 12)] }).unsupported).to.equal(
-                    "a table row with borders of its own in a table with space between its cells",
-                );
+                const inside = spaced({ "w:tblBorders": [border("insideV", 6, "double")] });
+                expect(inside.unsupported).to.equal(undefined);
+                expect(inside.rows[0].cells.map(({ marginLeft, marginRight }) => [marginLeft, marginRight])).to.deep.equal([
+                    [5.4 + 4, 5.4 + 2 + 2.25],
+                    [5.4 + 2 + 2.25, 5.4 + 4],
+                ]);
                 expect(spaced({ "w:tblCellMar": [margin("left")] }).unsupported).to.equal(undefined);
             });
 
@@ -5898,7 +5944,7 @@ describe("readDocument", () => {
                 // At the top, its own borders, which aren't the table's top border, none
                 expect(tableWith([], [1], ownBorders(border("w:top"), border("w:bottom"))).unsupported).to.equal(reason);
                 // Its own border in a style not yet followed
-                expect(tableWith([], [3], ownBorders(border("w:top", 8, "apples"))).unsupported).to.equal(
+                expect(tableWith([], [3], ownBorders(border("w:top", 10, "wave"))).unsupported).to.equal(
                     "a table border in a style not yet followed",
                 );
             });
