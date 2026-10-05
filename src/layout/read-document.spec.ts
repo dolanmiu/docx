@@ -2260,6 +2260,18 @@ describe("readDocument", () => {
             expect(headerOf(floatingBox)).to.deep.equal([
                 "a text box that text flows around in a header or footer, placed against its paragraph or line",
             ]);
+            const boxAt = (style: string): object =>
+                pict(
+                    `position:absolute;width:100pt;height:72pt;${style}`,
+                    [SQUARE, { "v:textbox": [{ _attr: { style: "mso-fit-shape-to-text:t" } }, { "w:txbxContent": line }] }],
+                    {},
+                    "v:shape",
+                );
+            expect(headerOf(boxAt("mso-position-vertical-relative:line"))).to.deep.equal([
+                "a text box that text flows around in a header or footer, placed against its paragraph or line",
+            ]);
+            // Against the page, as a picture there
+            expect(headerOf(boxAt("margin-top:216pt;mso-position-vertical-relative:page"))).to.deep.equal([["drawing"]]);
         });
     });
 
