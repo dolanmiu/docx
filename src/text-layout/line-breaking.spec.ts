@@ -1582,6 +1582,8 @@ describe("layoutLines with run formatting, as Word lays it out", () => {
         expect([lineAt("right", [box("aa")]).textWidth, lineAt("right", [box("aa")]).unsupported]).to.deep.equal([85, undefined]);
         expect(lineAt("center", [box("aa")]).textWidth).to.equal(100);
         expect(lineAt("decimal", [box("1.5")]).textWidth).to.equal(110);
+        // With nothing but a picture after the tab, it lines up as without a border
+        expect(lineAt("right", [{ type: "box", width: 20, height: 10 }]).textWidth).to.equal(90);
         // TA7a: a tab in the box, with its border, keeps the box open, so the text after it starts at its stop
         const tabbed = layoutLines([box("aa"), { type: "tab", font: boxed(5) }, box("bb")], {
             width: 200,
@@ -2286,6 +2288,11 @@ describe("decimal tab stops", () => {
         expect(lineOf([text("a"), tab, { type: "box", width: 10, height: 10 }, text("1.5")]).unsupported).to.equal(
             "text at a decimal tab stop that Word hasn't been seen lining up",
         );
+        // In the widths of a table's columns, it is as wide as at a right stop
+        expect(
+            measureContentWidths([text("a"), tab, { type: "box", width: 10, height: 10 }, text("1.5")], { measurer: MEASURER, ...decimal })
+                .max,
+        ).to.equal(60);
     });
 
     it("should line up text with a decimal stop where Word lined up the probes' text", () => {

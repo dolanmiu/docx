@@ -4669,6 +4669,16 @@ describe("paginate", () => {
                 expect(pagesOf(fromBefore)).to.include({ a: "1", b: "2", c2: "2", c3: "3" });
             });
 
+            it("should stop at a footnote with borders or automatic spacing laid out in the columns, which Word hasn't been seen with", () => {
+                const borders = { top: 1, bottom: 1, between: 0, betweenSpace: 0, box: "box", outline: "box" };
+                const boxed = inSections([noted(paragraph("a", 1), "footnote 1"), ...lines("b", 2)], {
+                    "footnote 1": [{ ...paragraph("note", 1), borders }],
+                });
+                expect(numbersOf(boxed).stoppedAt).to.equal(
+                    "a paragraph border or automatic spacing in a footnote across pages or in columns",
+                );
+            });
+
             it("should lay the footnotes out in the columns, one after the other from the first, evened out, as Word does", () => {
                 // Two referred to from the first column go one in each, so each column ends 2 lines up (N4)
                 const two = inSections(
