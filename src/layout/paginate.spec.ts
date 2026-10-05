@@ -4224,6 +4224,17 @@ describe("paginate", () => {
             expect(paginate(content(12, { ...SECTION, start: "continuous", footers: footer }), { measurer: MEASURER }).stoppedAt).to.equal(
                 "a footnote continued across a continuous section break onto a page of its own",
             );
+            // Guessing, the guess is on the first of the pages of the footnote, rather than the page of its reference
+            const guessedFooters = paginate(content(12, { ...SECTION, start: "continuous", footers: footer }), {
+                measurer: MEASURER,
+                guess: true,
+            });
+            expect(guessedFooters.pages.map(({ guesses = [] }) => guesses)).to.deep.equal([
+                [],
+                ["a footnote continued across a continuous section break onto a page of its own"],
+                [],
+                [],
+            ]);
             const same = {
                 ...withNotes(
                     [

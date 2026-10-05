@@ -1939,7 +1939,8 @@ export const paginate = (
             // section's, which leaves out its pages of the footnote, isn't followed, so it isn't known, nor which section's
             // headers and footers the pages have where they differ, which would change how much of the footnote goes on them
             if (!sameHeadersAndFooters(previous, current)) {
-                stopAt("a footnote continued across a continuous section break onto a page of its own");
+                // Guessing, on the first of those pages, which the page after this starts
+                stopAt("a footnote continued across a continuous section break onto a page of its own", pageCount + 1);
             }
             // eslint-disable-next-line functional/immutable-data
             sharingPages.add(sectionIndex);
