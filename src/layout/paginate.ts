@@ -1087,10 +1087,17 @@ export const paginate = (
      * Whether a paragraph is in one box of borders with a block next to it: a paragraph with the same borders and indents,
      * whatever their between borders (`word-paragraph-formats.docx` B5f, scripts/layout-probes/stops2/word-stops-text.ts
      * PB1a to PB1c), unless a page break comes between them, where Word ends the box at the foot of one page and starts
-     * another, with its top border, on the next (PB3b)
+     * another, with its top border, on the next (PB3b). The empty paragraph that ends a section is in a box of its own, after
+     * a table too, where it takes a line, so the boxes either side of it end there (stops2/word-stops-text2.ts PB3c to PB3e)
      */
     const sharesBorders = (one: ParagraphBlock, other: Block | undefined, side: "before" | "after"): boolean => {
-        if (one.borders === undefined || other?.type !== "paragraph" || other.sectionBreak || other.borders === undefined) {
+        if (
+            one.borders === undefined ||
+            one.sectionBreak ||
+            other?.type !== "paragraph" ||
+            other.sectionBreak ||
+            other.borders === undefined
+        ) {
             return false;
         }
         return other.borders.outline === one.borders.outline && !(side === "before" ? one : other).format.pageBreakBefore;

@@ -640,6 +640,13 @@ describe("paginate", () => {
             expect(topsOf(document([bordered("a", 1), ending, [bordered("b", 1), 1]], SECOND))).to.deep.equal([[15, 33]]);
             expect(topsOf(document([bordered("a", 1), ending, [paragraph("b", 1), 1]], SECOND))).to.deep.equal([[15, 28]]);
             expect(topsOf(document([paragraph("a", 1), ending, [bordered("b", 1), 1]], SECOND))).to.deep.equal([[10, 25]]);
+            // After a table, where it takes a line, the box of its borders ends at it too, with its bottom border below its
+            // line, and the next section's paragraph starts a box of its own
+            const afterTable = document(
+                [table([row([[paragraph("t", 1)]])]), { ...bordered("end", 1), sectionBreak: true }, [bordered("b", 1), 1]],
+                SECOND,
+            );
+            expect(topsOf(afterTable)).to.deep.equal([[25, 43]]);
             const automatic: ParagraphBlock = {
                 ...paragraph("end", 0, { autoSpaceBefore: true, autoSpaceAfter: true }),
                 items: [],
