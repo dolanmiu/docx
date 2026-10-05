@@ -4000,13 +4000,10 @@ export const paginate = (
             ];
             used += height;
             if (rows.some((rest) => rest.length > 0)) {
-                // The row breaks, with the border below it where the table breaks (N2). Whether Word breaks text that runs
-                // up or down one of its cells isn't known
-                const unsupported =
-                    parts.find((part) => part.unsupported !== undefined)?.unsupported ??
-                    (row.cells.some(({ vertical }) => vertical) ? "text that runs up or down a table cell across pages" : undefined);
+                // The row breaks, with the border below it where the table breaks (N2), as a row in the text breaks, the text
+                // that runs up or down one of its cells on the page of its first part
                 used += breakBorder;
-                return breaksAt(index, rows, unsupported);
+                return breaksAt(index, rows, parts.find((part) => part.unsupported !== undefined)?.unsupported);
             }
         }
         return { height: used, lines: placed, rest: [], fits: placed.length };
@@ -4284,10 +4281,6 @@ export const paginate = (
             // Where Word's breaking of the row isn't known, guessing, it breaks as other rows do
             if (placesLines && !isLastPart) {
                 filled.forEach((part) => stopAtRead(part));
-                if (row.cells.some(({ vertical }) => vertical)) {
-                    // Whether Word breaks text that runs up or down a cell with the row isn't known
-                    stopAt("text that runs up or down a table cell across pages");
-                }
                 if (table.spacedLast) {
                     // Word breaks the rows of a table with space between its cells with the space below their cells and the
                     // table's bottom border on the page (word-stops-table-borders.docx TB7c), but its last row, which has the

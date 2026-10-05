@@ -9,7 +9,7 @@ import type { IContext } from "docx";
 
 import { type ContentWidths, DEFAULT_MEASURER, type InlineItem, type TextMeasurer, measureContentWidths } from "../text-layout";
 import { fitColumns, tableWidths } from "./column-widths";
-import { type Block, type TableBlock, readDocument } from "./read-document";
+import { type Block, type ParagraphBlock, type TableBlock, readDocument } from "./read-document";
 
 // Every character is 10 points wide
 const MEASURER: TextMeasurer = {
@@ -252,12 +252,56 @@ describe("fitColumns", () => {
         expect(widthsOf(fitColumns(wider, 500, measure))).to.deep.equal([125.2, 239.8]);
     });
 
-    it("should stop at text that runs up or down a cell, in a table sized to its text, or with a word longer than its cell", () => {
-        expect(fitColumns(table([[{ ...cell(0, "a"), vertical: true }]]), 300, measure).unsupported).to.equal(
-            "text that runs up or down a cell of a table sized to its text",
-        );
-        const given = { ...table([[{ ...cell(0, "aaaaaa", 30), vertical: true }]]), fit: undefined, widen: {} };
-        expect(fitColumns(given, 300, measure).unsupported).to.equal("a long word in text that runs up or down a table cell");
+    it("should size a column of text that runs up or down to about a line of each of its paragraphs, however long", () => {
+        // word-stops-vertical-cells.docx TV1a, TV1f: a line up beside a cell of text: a line of 10-point text, 12.5 points,
+        // however long its text
+        const up = (blocks: Cell["blocks"]): Cell => ({ ...cell(0, ""), blocks, vertical: true });
+        const text = (size: number, more: object = {}): ParagraphBlock => ({
+            type: "paragraph",
+            items: [{ type: "text", text: "a", font: { size } }],
+            format: more,
+            tabStops: [],
+            markFont: {},
+        });
+        expect(widthsOf(fitColumns(table([[up(cell(0, LONG).blocks), cell(1, "aaaa")]]), 300, measure))).to.deep.equal([12.5, 40]);
+        // TV1c, TV5a: a line of each paragraph, of its text's size, with its space before and after. An empty one's is its
+        // mark's
+        const empty: Block = { type: "paragraph", items: [], format: {}, tabStops: [], markFont: { size: 16 } };
+        expect(widthsOf(fitColumns(table([[up([text(20, { spaceBefore: 3, spaceAfter: 2 }), empty])]]), 300, measure))).to.deep.equal([
+            25 + 5 + 20,
+        ]);
+        expect(widthsOf(fitColumns(table([[up([{ ...empty, markFont: {} }])]]), 300, measure))).to.deep.equal([12.5]);
+        // TV5c: a picture, with the text's descent below it
+        const picture: Block = { ...text(10), items: [...text(10).items, { type: "box", width: 30, height: 30 }] };
+        expect(widthsOf(fitColumns(table([[up([picture])]]), 300, measure))).to.deep.equal([32.5]);
+    });
+
+    it("should stop where other columns' widths depend on how wide Word makes text that runs up or down", () => {
+        const up: Cell = { ...cell(0, "a"), vertical: true };
+        const reason = "text that runs up or down a cell of a table sized to its text, narrowed or fitted to its width";
+        // TV1g: narrowed to the room
+        expect(fitColumns(table([[up, cell(1, LONG)]]), 200, measure).unsupported).to.equal(reason);
+        // Fitted to its width
+        expect(fitColumns(table([[up, cell(1, "aaaa")]], { width: 200 }), 300, measure).unsupported).to.equal(reason);
+        // Where it fits, however wide it is
+        expect(fitColumns(table([[up, cell(1, "aaaa")]]), 300, measure).unsupported).to.equal(undefined);
+    });
+
+    it("should keep the width a cell gives text that runs up or down, but stop where it is about a line of it or less", () => {
+        // TV2a, TV2b: a word of 30 or 80 letters running up a cell of 600 twips widens nothing
+        const given = (width: number): TableBlock => ({
+            ...table([[{ ...cell(0, "aaaaaaaaaaaaaaaaaaaa", width), vertical: true }, cell(1, "aaaa", 50)]]),
+            fit: undefined,
+            widen: {},
+        });
+        const wide = given(30);
+        expect(fitColumns(wide, 300, measure)).to.equal(wide);
+        // A line of it is 12.5 points, and its margins 10
+        const reason = "a table cell given less width than a line of its text that runs up or down";
+        expect(fitColumns(given(20), 300, measure).unsupported).to.equal(reason);
+        expect(fitColumns(given(24), 300, measure).unsupported).to.equal(reason);
+        // Laid out fixed, it keeps it whatever is in it
+        expect(fitColumns({ ...given(20), widen: { fixed: true, width: 70 } }, 300, measure).unsupported).to.equal(undefined);
     });
 
     it("should keep the width a cell gives text fitted to it, however long, as Word squeezes the text", () => {

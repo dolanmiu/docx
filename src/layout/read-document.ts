@@ -2326,23 +2326,33 @@ const unsupportedCellOf = (properties: readonly XmlObject[]): string | undefined
 
 /**
  * Why text that runs up or down a cell makes its row taller in a way not yet followed, when it does. Word makes the row
- * as tall as a line of the cell's paragraph marks, whatever the text's size and the space around its paragraphs
- * (`word-table-formats.docx` VT1, VT2, `word-table-formats2.docx` VT5 to VT7). Which line, for marks of different fonts or
- * sizes, isn't known, nor what a picture or a table in it does.
+ * as tall as a line of the cell's paragraph marks, whatever the text's size and the space around its paragraphs, and with
+ * a picture in it (`word-table-formats.docx` VT1, VT2, `word-table-formats2.docx` VT5 to VT7,
+ * `word-stops-vertical-cells.docx` TV5c). Not with a mark larger than its text: a mark of 20 points with text of 11 made
+ * the row no taller than a line of 11 (TV5b), so which line Word makes it then isn't known, nor for marks of different
+ * fonts or sizes, nor what a table in it does, which Word lays across the cell (TV5d).
  */
 const unsupportedVerticalOf = (blocks: readonly Block[]): string | undefined => {
     const paragraphs = blocks.filter((block): block is ParagraphBlock => block.type === "paragraph");
+    if (paragraphs.length < blocks.length) {
+        return "text running up or down a table cell with a table in it";
+    }
     const marks = new Set(paragraphs.map(({ markFont: { font, size } }) => `${font} ${size}`));
-    const other = paragraphs.length < blocks.length || paragraphs.some(({ items }) => items.some(({ type }) => type === "box"));
-    return marks.size > 1 || other ? "text running up or down a table cell with marks of different sizes, a picture or a table" : undefined;
+    // A superscript or subscript, such as a note's reference, is as large as its text for its line (TV4)
+    const sizeOf = ({ size = DEFAULT_FONT_SIZE, lineSize = size }: TextFont): number => lineSize;
+    const smaller = paragraphs.some(({ items, markFont }) =>
+        items.some((item) => item.type === "text" && sizeOf(item.font) < sizeOf(markFont)),
+    );
+    return marks.size > 1 || smaller
+        ? "text running up or down a table cell with marks of different sizes, or larger than its text"
+        : undefined;
 };
 
-// The directions of text in a cell (`w:textDirection`) across it, as transitional and strict documents write them, and
-// those that run up and down it
-const HORIZONTAL = new Set(["lrTb", "tb"]);
-// The directions of a section's text that run across the page, as the section's text does without one: from the left,
-// and from the left with East Asian characters on their side (scripts/layout-probes/word-vertical.ts V9, V12)
-const HORIZONTAL_PAGES = new Set(["lrTb", "tb", "lrTbV", "tbV"]);
+// The directions of a section's or a cell's text (`w:textDirection`) that run across it, as transitional and strict
+// documents write them, as text does without one: from the left, and from the left with East Asian characters on their
+// side, which Word lays out as text from the left, on a page (scripts/layout-probes/word-vertical.ts V9, V12) and in a
+// cell (`word-stops-vertical-cells.docx` TV6b)
+const HORIZONTAL = new Set(["lrTb", "tb", "lrTbV", "tbV"]);
 // Those that run down it, with its lines across it from the right, as Word lays out `tbRl` and `btLr`, and from the left,
 // as it lays out `tbRlV` and `tbLrV` (V1, V8, V10, V11), as transitional and strict documents write them
 const DOWN_FROM_RIGHT = new Set(["tbRl", "btLr", "rl", "lr"]);
@@ -2353,7 +2363,9 @@ const downOf = (properties: readonly XmlObject[]): "fromRight" | "fromLeft" | un
     const direction = valueOf(properties, "w:textDirection") ?? "";
     return DOWN_FROM_RIGHT.has(direction) ? "fromRight" : DOWN_FROM_LEFT.has(direction) ? "fromLeft" : undefined;
 };
-const VERTICAL = new Set(["btLr", "tbRl", "lr", "rl"]);
+// The directions of text in a cell that run up or down it, which takes no room in its row: up, down, and down with East
+// Asian characters upright (TV6a, TV6c)
+const VERTICAL = new Set([...DOWN_FROM_RIGHT, ...DOWN_FROM_LEFT]);
 
 /** A share of a width, as a fraction, from fiftieths of a percent or a percentage written with a % */
 const shareOf = (value: unknown): number | undefined => {
@@ -3047,6 +3059,13 @@ const readTable = (element: XmlObject, reader: Reader): TableBlock | undefined =
     // one in a table cell, indented or as a share of the width hasn't been seen
     const older = reader.compatibilityMode !== undefined;
     const marginsBeside = older && sized && givenWidth.width === undefined;
+    // How wide Word makes a column of text that runs up or down is known only of Calibri, so how wide a table sized to its
+    // text with one is isn't known, where the text beside it, or the columns of a table sized to its text it is in, depend
+    // on it
+    const verticalUnsupported =
+        fits && (float !== undefined || reader.inSizedTable === true) && tableCells.some(({ vertical }) => vertical)
+            ? "text that runs up or down a cell of a table sized to its text, in a table cell or that text flows around"
+            : undefined;
     const unsupported =
         withoutGuess?.unsupported ??
         (reader.down === true ? "a table on text that runs down the page" : undefined) ??
@@ -3069,6 +3088,7 @@ const readTable = (element: XmlObject, reader: Reader): TableBlock | undefined =
             ? "a table cell whose text doesn't wrap, in a table sized to its text"
             : undefined) ??
         (fits && tableCells.some(({ fitText }) => fitText) ? "text fitted to its table cell, in a table sized to its text" : undefined) ??
+        verticalUnsupported ??
         spacingUnsupported ??
         (typeof geometry === "string" ? geometry : undefined) ??
         (indent === undefined ? "a table indented by a share of the width" : undefined) ??
@@ -4025,7 +4045,7 @@ const readSection = (
             ? grid
             : formatPageNumber(1, format) === undefined
               ? "page numbers in a format not yet written"
-              : direction !== undefined && !HORIZONTAL_PAGES.has(direction) && down === undefined
+              : direction !== undefined && !HORIZONTAL.has(direction) && down === undefined
                 ? "text in a direction not yet followed"
                 : down !== undefined && (gutter !== 0 || mirrorMargins || columns.length > 1 || Math.min(marginTop, marginBottom) < 0)
                   ? "text that runs down the page with a gutter, mirrored margins, columns or a negative margin"

@@ -1712,16 +1712,26 @@ describe("paginate", () => {
             expect(pagesOf(document([paragraph("a", 6), fitted(true)]))).to.deep.include({ fitted: "1", second: "2" });
         });
 
-        it("should move rows with text running up or down, or an empty paragraph whose mark takes no room, whole, and stop at one breaking across pages", () => {
+        it("should move rows with text running up or down, or an empty paragraph whose mark takes no room, whole, or break them as other rows", () => {
             const vertical = (lines: number): TableRow => {
                 const laid = row([[paragraph("up", 3)], [paragraph("beside", lines)]]);
                 return { ...laid, cells: [{ ...laid.cells[0], vertical: true }, laid.cells[1]] };
             };
             // A row that moves to the next page whole has its bookmarks there, those in text running up or down too
             expect(pagesOf(document([paragraph("a", 6), table([vertical(2)])]))).to.deep.equal({ a: "1", up: "2", beside: "2" });
-            expect(paginate(document([paragraph("a", 5), table([vertical(4)])]), { measurer: MEASURER }).stoppedAt).to.equal(
-                "text that runs up or down a table cell across pages",
-            );
+            // word-stops-vertical-cells.docx TV3a, TV3b: a row that breaks across pages breaks by its other cells, and its text
+            // running up or down is on the page of its first part
+            const broken = document([paragraph("a", 5), table([vertical(4)])]);
+            expect(paginate(broken, { measurer: MEASURER }).stoppedAt).to.equal(undefined);
+            expect(pagesOf(broken)).to.deep.equal({ a: "1", up: "1", beside: "1" });
+            expect(numbersOf(broken).pageCount).to.equal(2);
+            // A table in it, which stops the layout as it is read, makes it, guessing, as tall as a line of its paragraph's
+            // mark (word-stops-vertical-cells.docx TV5d)
+            const withTable = row([[table([row([[paragraph("inner", 3)]])]), paragraph("up", 1)], [paragraph("beside", 1)]]);
+            const nested = table([{ ...withTable, cells: [{ ...withTable.cells[0], vertical: true }, withTable.cells[1]] }]);
+            expect(paginate(document([nested]), { measurer: MEASURER }).pages[0].body[0]).to.deep.include({
+                rows: [{ index: 0, y: 10, height: 10 }],
+            });
             const { cells, ...properties } = row([
                 [{ ...paragraph("hidden", 0), items: [{ type: "marker", name: "hidden" }] }],
                 [paragraph("beside", 4)],
@@ -2115,10 +2125,14 @@ describe("paginate", () => {
                 expect(stoppedAt(inCell(3, { ...oneLineRows("r", 6), cellSpacing: 1 }))).to.equal(
                     "a table with space between its cells in a table cell across pages",
                 );
+                // Text that runs up or down a cell of it breaks as in the text (word-stops-vertical-cells.docx TV3a)
                 const vertical = row([[paragraph("up", 2)], [paragraph("inner", 4)]]);
-                expect(
-                    stoppedAt(inCell(4, table([{ ...vertical, cells: [{ ...vertical.cells[0], vertical: true }, vertical.cells[1]] }]))),
-                ).to.equal("text that runs up or down a table cell across pages");
+                const nestedVertical = inCell(
+                    4,
+                    table([{ ...vertical, cells: [{ ...vertical.cells[0], vertical: true }, vertical.cells[1]] }]),
+                );
+                expect(stoppedAt(nestedVertical)).to.equal(undefined);
+                expect(pagesOf(nestedVertical)).to.deep.include({ up: "1", inner: "1" });
             });
 
             it("should break a row with a table in a cell beside a footnote, and a table in a cell merged down rows, as Word does", () => {
