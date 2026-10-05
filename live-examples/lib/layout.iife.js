@@ -7075,6 +7075,7 @@ var docxLayout = (function(exports) {
 	var TOLERANCE$1 = .01;
 	var HYPHEN_ROOM = 22.6 / 20;
 	var NO_HYPHEN_ROOM = 2.7 / 20;
+	var OLDER_PAGE_BREAK = "a page break at the end of a paragraph in a document in compatibility mode";
 	var STRETCH_TO_SQUEEZE = 2.04;
 	var MOST_SQUEEZE = .25;
 	var MAY_HYPHENATE = "a word Word may hyphenate, whose parts the layout can't know";
@@ -7736,7 +7737,7 @@ var docxLayout = (function(exports) {
 	*
 	* @param items - The paragraph's content, in order
 	*/
-	var layoutLines = (items, { width, format = {}, tabStops = [], defaultTabStop = DEFAULT_TAB_STOP, markFont = {}, measurer = DEFAULT_MEASURER, breakRules, numberAlignment, hyphenation, grid = {} }) => {
+	var layoutLines = (items, { width, format = {}, tabStops = [], defaultTabStop = DEFAULT_TAB_STOP, markFont = {}, measurer = DEFAULT_MEASURER, breakRules, numberAlignment, hyphenation, grid = {}, compatibilityMode }) => {
 		var _spaced$items, _spaced$unsupported, _content$;
 		const { indentLeft = 0, indentRight = 0, firstLineIndent = 0, lineSpacing, alignment } = format;
 		const { linePitch, characterSpace, characterPitch: cell } = grid;
@@ -7820,10 +7821,12 @@ var docxLayout = (function(exports) {
 			return token.type === "tab" ? withFont(heights, token.font, measurer) : token.pieces.reduce((all, { font }) => withFont(all, font, measurer), heights);
 		};
 		const squeezes = alignment === "justified" || alignment === "distributed" || alignment === "thaiDistributed" || alignment === "lowKashida";
+		const older = compatibilityMode !== void 0;
 		const { stops, firstLineStops } = stopsOf(tabStops, format);
 		const parts = segmentsOf(content, rulesOf(format, breakRules));
 		const [previous, last] = parts.slice(-2);
-		const segments = parts.length > 1 && previous.end.kind === "page" && last.tokens.every((token) => token.type === "marker") ? [...parts.slice(0, -2), {
+		const endsWithBreak = parts.length > 1 && previous.end.kind === "page" && last.tokens.every((token) => token.type === "marker");
+		const segments = endsWithBreak ? [...parts.slice(0, -2), {
 			tokens: [...previous.tokens, ...last.tokens],
 			end: previous.end
 		}] : parts;
@@ -7862,7 +7865,7 @@ var docxLayout = (function(exports) {
 		* is squeezed as justified text is (K08, K09)
 		*/
 		const squeezesIn = (state, tokenWidth) => {
-			if (!squeezes || state.spaces <= 0) return false;
+			if (!squeezes || older || state.spaces <= 0) return false;
 			const over = state.position + tokenWidth - limitOf();
 			const slack = limitOf() - state.end;
 			if (over / state.spaces > MOST_SQUEEZE) return false;
@@ -7894,7 +7897,7 @@ var docxLayout = (function(exports) {
 		* Whether a word or picture past the end of a justified line could be squeezed in, were the spaces Word hasn't been
 		* seen squeezing among its spaces squeezed as the others are
 		*/
-		const unsure = (state, tokenWidth) => squeezes && state.otherSpaces > 0 && state.position + tokenWidth - limitOf() <= MOST_SQUEEZE * state.spaces;
+		const unsure = (state, tokenWidth) => squeezes && !older && state.otherSpaces > 0 && state.position + tokenWidth - limitOf() <= MOST_SQUEEZE * state.spaces;
 		/**
 		* Why where Word puts the text after a tab to one of the paragraph's own stops past the end of the line isn't known,
 		* when it isn't: its probes had no first line or hanging indent, no right indent past the margin, indents only with a
@@ -8157,7 +8160,7 @@ var docxLayout = (function(exports) {
 					unsupported: "a tab or picture on a grid that snaps to characters"
 				});
 				if (token.type === "tab") {
-					var _nextStop, _line$unsupported12;
+					var _nextStop, _line$unsupported13;
 					const numbered = numberTab ? numberTabStop(line.position, firstLineStops, format, defaultTabStop, limitOf()) : void 0;
 					numberTab = false;
 					if ((numbered === null || numbered === void 0 ? void 0 : numbered.unsupported) !== void 0) line = _objectSpread2(_objectSpread2({}, line), {}, { unsupported: numbered.unsupported });
@@ -8171,6 +8174,10 @@ var docxLayout = (function(exports) {
 					if (unknown !== void 0) {
 						var _line$unsupported11;
 						line = _objectSpread2(_objectSpread2({}, line), {}, { unsupported: (_line$unsupported11 = line.unsupported) !== null && _line$unsupported11 !== void 0 ? _line$unsupported11 : unknown });
+					}
+					if (older && !numbered && next.position > limitOf() + TOLERANCE$1) {
+						var _line$unsupported12;
+						line = _objectSpread2(_objectSpread2({}, line), {}, { unsupported: (_line$unsupported12 = line.unsupported) !== null && _line$unsupported12 !== void 0 ? _line$unsupported12 : "a tab past the end of the line in a document in compatibility mode" });
 					}
 					if ((pastEnd === null || pastEnd === void 0 ? void 0 : pastEnd.alignment) === "left" && unknown === void 0) {
 						const below = line.started ? wrap(line) : line;
@@ -8212,7 +8219,7 @@ var docxLayout = (function(exports) {
 						letters: 0,
 						otherSpaces: 0,
 						started: true
-					}, misaligned === void 0 ? {} : { unsupported: (_line$unsupported12 = line.unsupported) !== null && _line$unsupported12 !== void 0 ? _line$unsupported12 : misaligned });
+					}, misaligned === void 0 ? {} : { unsupported: (_line$unsupported13 = line.unsupported) !== null && _line$unsupported13 !== void 0 ? _line$unsupported13 : misaligned });
 					continue;
 				}
 				placeWord(token, kerning[index]);
@@ -8227,7 +8234,7 @@ var docxLayout = (function(exports) {
 			}
 			first = false;
 		}
-		return lines;
+		return older && endsWithBreak ? lines.map((line, index) => index === lines.length - 1 ? _objectSpread2(_objectSpread2({}, line), {}, { unsupported: OLDER_PAGE_BREAK }) : line) : lines;
 	};
 	//#endregion
 	//#region src/text-layout/font-file.ts
@@ -8877,6 +8884,11 @@ var docxLayout = (function(exports) {
 			unsettled: []
 		});
 	};
+	/** The left margin of a table's first cell and the right margin of its last, in its first row */
+	var outerMargins = (table) => {
+		const [{ cells }] = sizingRows(table);
+		return cells[0].marginLeft + cells[cells.length - 1].marginRight;
+	};
 	/** The width a cell of a table whose cells all have widths gives itself, with its margins: its own, or the grid's */
 	var givenWidthOf = (cell) => {
 		var _cell$ownWidth;
@@ -8968,12 +8980,14 @@ var docxLayout = (function(exports) {
 			if (tooLong.length > 0 && spaced) return _objectSpread2(_objectSpread2({}, table), {}, { unsupported: "a long word in a table with space between its cells" });
 			if (tooLong.some(({ vertical }) => vertical)) return _objectSpread2(_objectSpread2({}, table), {}, { unsupported: "a long word in text that runs up or down a table cell" });
 			if (tooLong.some((cell) => content.get(cell).hyphenated)) return _objectSpread2(_objectSpread2({}, table), {}, { unsupported: "a word Word may hyphenate, longer than its cell" });
+			if (table.marginsBeside === true) return _objectSpread2(_objectSpread2({}, table), {}, { unsupported: "a table widened for a long word, or its rows evened out, in a document in compatibility mode" });
 		}
 		const { columns, unsettled } = widen ? sizeGivenColumns(table, content) : sizeColumns(table, content);
 		const total = sum$1(columns.map(({ width }) => width));
 		const tableWidth = fit !== null && fit !== void 0 ? fit : widen;
 		const target = (_tableWidth$width = tableWidth.width) !== null && _tableWidth$width !== void 0 ? _tableWidth$width : tableWidth.share === void 0 ? void 0 : tableWidth.share * available;
-		const room = target !== null && target !== void 0 ? target : (widen === null || widen === void 0 ? void 0 : widen.fixed) ? Number.POSITIVE_INFINITY : available - indent;
+		const beside = table.marginsBeside === true ? outerMargins(table) : 0;
+		const room = target !== null && target !== void 0 ? target : (widen === null || widen === void 0 ? void 0 : widen.fixed) ? Number.POSITIVE_INFINITY : available - indent + beside;
 		const sizingCells = sizingRows(table).flatMap((row) => row.cells);
 		if (fit && sizingCells.some((cell) => content.get(cell).hyphenated) && (total > room || sizingCells.some((cell) => cell.ownWidth !== void 0 && content.get(cell).min > cell.ownWidth))) return _objectSpread2(_objectSpread2({}, table), {}, { unsupported: "a table sized to its text whose columns' widths depend on words Word may hyphenate" });
 		const unsupported = sum$1(columns.map(({ min }) => min)) > room && tableWidth.width === void 0 ? "a word longer than its table can make room for" : widen && spaced && target !== void 0 && total < target ? "space between the cells of a table wider than its cells" : unsettled.includes("always") || unsettled.length > 0 && total > room ? "a long word in cells merged across columns" : void 0;
@@ -11225,6 +11239,9 @@ var docxLayout = (function(exports) {
 		const floating = readFloating(drawing["wp:anchor"]);
 		return typeof floating === "string" ? floating : floatingItem(floating, reader);
 	};
+	var OLDER_VML = "a VML drawing in a document in compatibility mode 12 or 11";
+	/** Whether the document is in Word 2007's or 2003's compatibility mode, where VML drawings aren't laid out as Word does */
+	var olderVml = ({ compatibilityMode }) => compatibilityMode !== void 0 && compatibilityMode < 14;
 	/**
 	* Reads a VML drawing (`w:pict`), as Word lays it out (scripts/layout-probes/word-vml.ts). A shape in the line is a box of
 	* its size, with its run's font, standing on the baseline, as a picture is (VM7), and a text box in it is a box sized to
@@ -11250,7 +11267,7 @@ var docxLayout = (function(exports) {
 		if (style.get("position") === "absolute") {
 			const wrap = find(children, "w10:wrap");
 			if (wrap === void 0 || attributesOf(wrap).type === "none") return [];
-			const reason = reader.inCell || reader.inNote || reader.inTextBox ? IN_CELL_OR_NOTE : shape.text !== void 0 ? "a text box that text flows around" : find(children, "v:imagedata") !== void 0 ? "a VML picture" : outlined ? "a VML drawing with an outline that text flows around" : typeof width !== "number" || typeof height !== "number" ? unsized() : void 0;
+			const reason = olderVml(reader) ? OLDER_VML : reader.inCell || reader.inNote || reader.inTextBox ? IN_CELL_OR_NOTE : shape.text !== void 0 ? "a text box that text flows around" : find(children, "v:imagedata") !== void 0 ? "a VML picture" : outlined ? "a VML drawing with an outline that text flows around" : typeof width !== "number" || typeof height !== "number" ? unsized() : void 0;
 			if (reason !== void 0) return reason;
 			const floating = readVmlFloating(shape, wrap, width, height);
 			return typeof floating === "string" ? floating : floatingItem(floating, reader);
@@ -11261,6 +11278,7 @@ var docxLayout = (function(exports) {
 			height,
 			font
 		}]) : reason;
+		if (olderVml(reader)) return OLDER_VML;
 		if (reader.inHeader || reader.inTextBox) return sized("a VML drawing in the line of a header, footer or text box");
 		if (shape.text !== void 0) return readTextBox(shape, width, font, outlined, reader);
 		if (find(children, "v:imagedata") !== void 0) return sized("a VML picture");
@@ -11820,6 +11838,27 @@ var docxLayout = (function(exports) {
 		return current;
 	};
 	var THAI_OR_ARABIC = new RegExp("[\\p{Script=Thai}\\p{Script=Arabic}]", "u");
+	var SQUEEZED_ALIGNMENTS = /* @__PURE__ */ new Set([
+		"distributed",
+		"thaiDistributed",
+		"lowKashida"
+	]);
+	/**
+	* Why a paragraph can't be laid out as Word lays it out in the document's compatibility mode, or with Word 2003's layout
+	* of East Asian text (`useFELayout`), when it can't. Word 2010 and before don't squeeze the spaces of a justified line
+	* (`word-stops-compat-14.docx` CM1), and whether they squeeze a distributed one, or one justified for Thai or with a low
+	* kashida, as Word 2013 does, hasn't been seen. Word 2007 and 2003 broke East Asian text otherwise than Word 2010 and
+	* 2013 (CM18), and so does Word 2003's East Asian layout (`word-stops-fe-layout.docx` FE1a, FE1b), in ways not yet
+	* followed. Paragraphs without East Asian text it lays out as they are without it (FE1c to FE1f).
+	*/
+	var unknownInOlderLayout = (items, alignment, reader) => {
+		const { compatibilityMode } = reader;
+		if (compatibilityMode !== void 0 && SQUEEZED_ALIGNMENTS.has(alignment)) return "a paragraph distributed, or justified for Thai or with a low kashida, in a document in compatibility mode";
+		if (compatibilityMode !== void 0 && reader.openTypeFeatures !== true && items.some((item) => item.type === "text" && item.font.ligatures !== void 0)) return "ligatures in a document in compatibility mode that doesn't turn on OpenType features";
+		const older = compatibilityMode !== void 0 && compatibilityMode < 14;
+		if (!older && reader.feLayout !== true || !items.some((item) => item.type === "text" && [...item.text].some(isEastAsian))) return;
+		return older ? "East Asian text in a document in compatibility mode 12 or 11" : "East Asian text in a document that lays it out as Word 2003 did (useFELayout)";
+	};
 	var POINTS_PER_LINE = 12;
 	var HUNDREDTHS = 100;
 	/**
@@ -11967,7 +12006,7 @@ var docxLayout = (function(exports) {
 	* Reads a paragraph (`w:p`), in the formatting of its styles, and of its table's style when it is in a table.
 	*/
 	var readParagraph = (element, reader, tableFormats = []) => {
-		var _valueOf3, _exec2, _styleChain$slice$0$n, _styleChain$slice$, _ref4, _ref5, _ref6, _list$unsupported, _ref7, _unknownLengthIn;
+		var _valueOf3, _exec2, _styleChain$slice$0$n, _styleChain$slice$, _ref4, _ref5, _ref6, _list$unsupported, _ref7, _ref8, _unknownInOlderLayout;
 		const { styles } = reader;
 		const children = contentOf$3(element);
 		const properties = childrenOf(find(children.filter(isObject), "w:pPr"));
@@ -12012,7 +12051,7 @@ var docxLayout = (function(exports) {
 			return item.type === "text" && ((_item$font$characterS = item.font.characterSpacing) !== null && _item$font$characterS !== void 0 ? _item$font$characterS : 0) !== 0 && item.font.snapToGrid !== false;
 		}) ? "text spaced out by its run on a grid that snaps to characters" : void 0;
 		const frame = readFrameOf(element, properties, styleChain(styles, style, "paragraph"), reader);
-		const unsupported = (_ref4 = (_ref5 = (_ref6 = (_list$unsupported = list.unsupported) !== null && _list$unsupported !== void 0 ? _list$unsupported : unknownOnGrid) !== null && _ref6 !== void 0 ? _ref6 : reader.down === true && reader.inNote === true ? "a footnote or endnote on text that runs down the page" : void 0) !== null && _ref5 !== void 0 ? _ref5 : reader.down === true ? unknownDownOf(own, combined, borders) : void 0) !== null && _ref4 !== void 0 ? _ref4 : typeof frame === "string" ? frame : otherDecimalSymbol ? "a decimal tab stop in a document whose decimal symbol isn't a full stop" : find(properties, "w:divId") !== void 0 ? "a paragraph in an HTML division" : combined.alignment === "mediumKashida" || combined.alignment === "highKashida" ? "a paragraph justified for Arabic with a medium or high kashida" : forThaiOrArabic && typeof items !== "string" && items.some((item) => item.type === "text" && THAI_OR_ARABIC.test(item.text)) ? "Thai or Arabic text justified for it" : (_ref7 = (_unknownLengthIn = unknownLengthIn(element)) !== null && _unknownLengthIn !== void 0 ? _unknownLengthIn : typeof format === "string" ? format : void 0) !== null && _ref7 !== void 0 ? _ref7 : typeof borders === "string" ? borders : void 0;
+		const unsupported = (_ref4 = (_ref5 = (_ref6 = (_list$unsupported = list.unsupported) !== null && _list$unsupported !== void 0 ? _list$unsupported : unknownOnGrid) !== null && _ref6 !== void 0 ? _ref6 : reader.down === true && reader.inNote === true ? "a footnote or endnote on text that runs down the page" : void 0) !== null && _ref5 !== void 0 ? _ref5 : reader.down === true ? unknownDownOf(own, combined, borders) : void 0) !== null && _ref4 !== void 0 ? _ref4 : typeof frame === "string" ? frame : otherDecimalSymbol ? "a decimal tab stop in a document whose decimal symbol isn't a full stop" : find(properties, "w:divId") !== void 0 ? "a paragraph in an HTML division" : combined.alignment === "mediumKashida" || combined.alignment === "highKashida" ? "a paragraph justified for Arabic with a medium or high kashida" : forThaiOrArabic && typeof items !== "string" && items.some((item) => item.type === "text" && THAI_OR_ARABIC.test(item.text)) ? "Thai or Arabic text justified for it" : (_ref7 = (_ref8 = (_unknownInOlderLayout = unknownInOlderLayout(content, combined.alignment, reader)) !== null && _unknownInOlderLayout !== void 0 ? _unknownInOlderLayout : unknownLengthIn(element)) !== null && _ref8 !== void 0 ? _ref8 : typeof format === "string" ? format : void 0) !== null && _ref7 !== void 0 ? _ref7 : typeof borders === "string" ? borders : void 0;
 		return _objectSpread2(_objectSpread2(_objectSpread2(_objectSpread2(_objectSpread2(_objectSpread2(_objectSpread2(_objectSpread2({
 			type: "paragraph",
 			items: content,
@@ -12181,7 +12220,7 @@ var docxLayout = (function(exports) {
 	* bands by each row's place among all the rows, the deleted ones too (MK14j to MK14l).
 	*/
 	var readTable = (element, reader) => {
-		var _twips, _reader$grid, _readTableLook, _ref12, _ref13, _ref14, _ref15, _ref16, _ref17, _ref18, _ref19, _ref20, _ref21, _ref22, _ref23, _withoutGuess$unsuppo, _read$find2, _blocks$find, _read$0$cells, _read$, _roomOf, _roomOf2;
+		var _twips, _reader$grid, _readTableLook, _ref13, _ref14, _ref15, _ref16, _ref17, _ref18, _ref19, _ref20, _ref21, _ref22, _ref23, _ref24, _ref25, _ref26, _withoutGuess$unsuppo, _read$find2, _blocks$find, _read$0$cells, _read$, _roomOf, _roomOf2;
 		const children = contentOf$3(element).filter(isObject);
 		const properties = childrenOf(find(children, "w:tblPr"));
 		const style = valueOf(properties, "w:tblStyle");
@@ -12282,7 +12321,7 @@ var docxLayout = (function(exports) {
 				return typesAt(rowIndex, rows.length, headerRows) !== typesAt(rowIndex - deletedBefore, rows.length - deletedHeaderRows, headerRows - deletedHeaderRows);
 			});
 			const { cells, edges, column: end, unsupported: cellsUnsupported } = rowCells.reduce(({ column, cells: done, edges: before, unsupported: unsupportedBefore }, { element: cell }, cellIndex) => {
-				var _numberOf5, _twips3, _shareOf, _ref8, _ref9;
+				var _numberOf5, _twips3, _shareOf, _ref9, _ref10;
 				const cellChildren = contentOf$3(cell).filter(isObject);
 				const cellProperties = childrenOf(find(cellChildren, "w:tcPr"));
 				const span = (_numberOf5 = numberOf(attributesOf(find(cellProperties, "w:gridSpan"))["w:val"])) !== null && _numberOf5 !== void 0 ? _numberOf5 : 1;
@@ -12307,7 +12346,7 @@ var docxLayout = (function(exports) {
 				return _objectSpread2(_objectSpread2({
 					column: column + span,
 					edges: new Map([...before, [column + span, before.get(column) + width]])
-				}, withoutUndefined({ unsupported: (_ref8 = (_ref9 = unsupportedBefore !== null && unsupportedBefore !== void 0 ? unsupportedBefore : unsupportedCellOf(cellProperties)) !== null && _ref9 !== void 0 ? _ref9 : formatted.unsupported) !== null && _ref8 !== void 0 ? _ref8 : vertical ? unsupportedVerticalOf(cellBlocks) : void 0 })), {}, { cells: [...done, _objectSpread2(_objectSpread2(_objectSpread2(_objectSpread2(_objectSpread2(_objectSpread2(_objectSpread2({ column }, span > 1 ? { span } : {}), {}, { width: width - margins.left - margins.right }, hasWidth ? { ownWidth: width } : {}), {}, {
+				}, withoutUndefined({ unsupported: (_ref9 = (_ref10 = unsupportedBefore !== null && unsupportedBefore !== void 0 ? unsupportedBefore : unsupportedCellOf(cellProperties)) !== null && _ref10 !== void 0 ? _ref10 : formatted.unsupported) !== null && _ref9 !== void 0 ? _ref9 : vertical ? unsupportedVerticalOf(cellBlocks) : void 0 })), {}, { cells: [...done, _objectSpread2(_objectSpread2(_objectSpread2(_objectSpread2(_objectSpread2(_objectSpread2(_objectSpread2({ column }, span > 1 ? { span } : {}), {}, { width: width - margins.left - margins.right }, hasWidth ? { ownWidth: width } : {}), {}, {
 					blocks: cellBlocks,
 					marginTop: margins.top,
 					marginBottom: margins.bottom,
@@ -12323,7 +12362,7 @@ var docxLayout = (function(exports) {
 				cells: [],
 				edges: /* @__PURE__ */ new Map([[skipped, gridWidth(0, skipped)]])
 			});
-			const rowUnsupported = find(rowProperties, "w:divId") !== void 0 ? "a table row in an HTML division" : rowParts.some((part) => "w:sdt" in part) ? BOUND_CONTROL : changesLines(childrenOf(find(rowChildren, "w:tblPrEx"))) ? "a table row with table properties of its own" : deleted && (hasAnyOf(rowChildren, REMOVED_NOTES) || JSON.stringify([...rowReader.counters]) !== counts) ? "a list or a note in a deleted table row" : unseenHeaderCount ? "a deleted row in a table's header of several rows, whose style formats some of its rows" : cellsUnsupported;
+			const rowUnsupported = rowParts.some((part) => "w:sdt" in part) ? BOUND_CONTROL : changesLines(childrenOf(find(rowChildren, "w:tblPrEx"))) ? "a table row with table properties of its own" : deleted && (hasAnyOf(rowChildren, REMOVED_NOTES) || JSON.stringify([...rowReader.counters]) !== counts) ? "a list or a note in a deleted table row" : unseenHeaderCount ? "a deleted row in a table's header of several rows, whose style formats some of its rows" : cellsUnsupported;
 			return _objectSpread2(_objectSpread2({
 				cells,
 				deleted,
@@ -12387,9 +12426,9 @@ var docxLayout = (function(exports) {
 			tableRows.push(_objectSpread2(_objectSpread2(_objectSpread2({}, row), {}, {
 				borderTop: (_placed$borderTop = placed === null || placed === void 0 ? void 0 : placed.borderTop) !== null && _placed$borderTop !== void 0 ? _placed$borderTop : 0,
 				borderBottom: (_placed$borderBottom = placed === null || placed === void 0 ? void 0 : placed.borderBottom) !== null && _placed$borderBottom !== void 0 ? _placed$borderBottom : 0
-			}, withoutUndefined({ breakBorder: placed === null || placed === void 0 ? void 0 : placed.breakBorder })), {}, { cells: cells.map((_ref10, cellIndex) => {
+			}, withoutUndefined({ breakBorder: placed === null || placed === void 0 ? void 0 : placed.breakBorder })), {}, { cells: cells.map((_ref11, cellIndex) => {
 				var _read, _above$cells$find, _unmerged;
-				let { borders: _, margins, gridWidth: __ } = _ref10, cell = _objectWithoutProperties(_ref10, _excluded2);
+				let { borders: _, margins, gridWidth: __ } = _ref11, cell = _objectWithoutProperties(_ref11, _excluded2);
 				const pending = [...carried, ...cellBookmarks[cellIndex]];
 				const marked = pending.length === 0 ? void 0 : startingAtFirst(cell.blocks, pending);
 				carried = marked === void 0 ? pending : [];
@@ -12414,9 +12453,9 @@ var docxLayout = (function(exports) {
 		const deletedRows = sized ? read.filter(({ deleted }) => deleted).map(({ row, cells }) => _objectSpread2(_objectSpread2({}, row), {}, {
 			borderTop: 0,
 			borderBottom: 0,
-			cells: cells.map((_ref11) => {
-				let { borders: _, margins: __, gridWidth: ___ } = _ref11;
-				return _objectWithoutProperties(_ref11, _excluded3);
+			cells: cells.map((_ref12) => {
+				let { borders: _, margins: __, gridWidth: ___ } = _ref12;
+				return _objectWithoutProperties(_ref12, _excluded3);
 			})
 		})) : [];
 		const blocks = [...tableRows.flatMap(({ cells }) => cells.flatMap((cell) => {
@@ -12441,19 +12480,21 @@ var docxLayout = (function(exports) {
 		const withoutGuess = blocks.find((block) => block.noGuess === true);
 		const floatElement = find(properties, "w:tblpPr");
 		const float = floatElement === void 0 ? void 0 : readTableFloat(floatElement, find(properties, "w:tblOverlap"));
-		const unsupported = (_ref12 = (_ref13 = (_ref14 = (_ref15 = (_ref16 = (_ref17 = (_ref18 = (_ref19 = (_ref20 = (_ref21 = (_ref22 = (_ref23 = (_withoutGuess$unsuppo = withoutGuess === null || withoutGuess === void 0 ? void 0 : withoutGuess.unsupported) !== null && _withoutGuess$unsuppo !== void 0 ? _withoutGuess$unsuppo : reader.down === true ? "a table on text that runs down the page" : void 0) !== null && _ref23 !== void 0 ? _ref23 : float !== void 0 && (reader.inCell || reader.inNote || reader.inHeader) ? "a table that text flows around in a table cell, header, footer or note" : void 0) !== null && _ref22 !== void 0 ? _ref22 : typeof float === "string" ? float : void 0) !== null && _ref21 !== void 0 ? _ref21 : parts.some((part) => "w:sdt" in part) ? BOUND_CONTROL : void 0) !== null && _ref20 !== void 0 ? _ref20 : (_read$find2 = read.find((row) => row.unsupported !== void 0)) === null || _read$find2 === void 0 ? void 0 : _read$find2.unsupported) !== null && _ref19 !== void 0 ? _ref19 : unmerged) !== null && _ref18 !== void 0 ? _ref18 : fits ? unfitted : unequal && !evened ? "a table whose rows give a column different widths" : void 0) !== null && _ref17 !== void 0 ? _ref17 : spacingUnsupported) !== null && _ref16 !== void 0 ? _ref16 : typeof geometry === "string" ? geometry : void 0) !== null && _ref15 !== void 0 ? _ref15 : indent === void 0 ? "a table indented by a share of the width" : void 0) !== null && _ref14 !== void 0 ? _ref14 : styleUnsupported) !== null && _ref13 !== void 0 ? _ref13 : lengths) !== null && _ref12 !== void 0 ? _ref12 : (_blocks$find = blocks.find((block) => block.unsupported !== void 0)) === null || _blocks$find === void 0 ? void 0 : _blocks$find.unsupported;
+		const older = reader.compatibilityMode !== void 0;
+		const marginsBeside = older && sized && givenWidth.width === void 0;
+		const unsupported = (_ref13 = (_ref14 = (_ref15 = (_ref16 = (_ref17 = (_ref18 = (_ref19 = (_ref20 = (_ref21 = (_ref22 = (_ref23 = (_ref24 = (_ref25 = (_ref26 = (_withoutGuess$unsuppo = withoutGuess === null || withoutGuess === void 0 ? void 0 : withoutGuess.unsupported) !== null && _withoutGuess$unsuppo !== void 0 ? _withoutGuess$unsuppo : reader.down === true ? "a table on text that runs down the page" : void 0) !== null && _ref26 !== void 0 ? _ref26 : float !== void 0 && (reader.inCell || reader.inNote || reader.inHeader) ? "a table that text flows around in a table cell, header, footer or note" : void 0) !== null && _ref25 !== void 0 ? _ref25 : float !== void 0 && older ? "a table that text flows around in a document in compatibility mode" : void 0) !== null && _ref24 !== void 0 ? _ref24 : marginsBeside && fits && (reader.inCell === true || indent !== 0 || givenWidth.share !== void 0) ? "a table sized to its text in a table cell, indented or as a share of the width, in a document in compatibility mode" : void 0) !== null && _ref23 !== void 0 ? _ref23 : typeof float === "string" ? float : void 0) !== null && _ref22 !== void 0 ? _ref22 : parts.some((part) => "w:sdt" in part) ? BOUND_CONTROL : void 0) !== null && _ref21 !== void 0 ? _ref21 : (_read$find2 = read.find((row) => row.unsupported !== void 0)) === null || _read$find2 === void 0 ? void 0 : _read$find2.unsupported) !== null && _ref20 !== void 0 ? _ref20 : unmerged) !== null && _ref19 !== void 0 ? _ref19 : fits ? unfitted : unequal && !evened ? "a table whose rows give a column different widths" : void 0) !== null && _ref18 !== void 0 ? _ref18 : spacingUnsupported) !== null && _ref17 !== void 0 ? _ref17 : typeof geometry === "string" ? geometry : void 0) !== null && _ref16 !== void 0 ? _ref16 : indent === void 0 ? "a table indented by a share of the width" : void 0) !== null && _ref15 !== void 0 ? _ref15 : styleUnsupported) !== null && _ref14 !== void 0 ? _ref14 : lengths) !== null && _ref13 !== void 0 ? _ref13 : (_blocks$find = blocks.find((block) => block.unsupported !== void 0)) === null || _blocks$find === void 0 ? void 0 : _blocks$find.unsupported;
 		const rowWidth = ((_read$0$cells = (_read$ = read[0]) === null || _read$ === void 0 ? void 0 : _read$.cells) !== null && _read$0$cells !== void 0 ? _read$0$cells : []).reduce((total, cell) => {
 			var _cell$ownWidth;
 			return total + ((_cell$ownWidth = cell.ownWidth) !== null && _cell$ownWidth !== void 0 ? _cell$ownWidth : 0);
 		}, 0);
 		const tableWidth = spaced && givenWidth.width === void 0 && givenWidth.share === void 0 ? { width: rowWidth } : givenWidth;
-		return _objectSpread2(_objectSpread2(_objectSpread2(_objectSpread2(_objectSpread2(_objectSpread2(_objectSpread2(_objectSpread2({
+		return _objectSpread2(_objectSpread2(_objectSpread2(_objectSpread2(_objectSpread2(_objectSpread2(_objectSpread2(_objectSpread2(_objectSpread2({
 			type: "table",
 			rows: tableRows
 		}, fits ? { fit: givenWidth } : {}), !fits && (!fixed || spaced || fixedFit) ? { widen: _objectSpread2(_objectSpread2(_objectSpread2({}, tableWidth), evened ? { uneven: true } : {}), fixed && !spaced ? { fixed: true } : {}) } : {}), {}, {
 			borderLeft: (_roomOf = roomOf(tableBorders.left)) !== null && _roomOf !== void 0 ? _roomOf : 0,
 			borderRight: (_roomOf2 = roomOf(tableBorders.right)) !== null && _roomOf2 !== void 0 ? _roomOf2 : 0
-		}, indent ? { indent } : {}), spaced ? { cellSpacing: followedSpacing } : {}), deletedRows.length > 0 ? { deletedRows } : {}), typeof float === "object" ? { float } : {}), unsupported ? { unsupported } : {}), withoutGuess ? { noGuess: true } : {});
+		}, indent ? { indent } : {}), spaced ? { cellSpacing: followedSpacing } : {}), deletedRows.length > 0 ? { deletedRows } : {}), typeof float === "object" ? { float } : {}), marginsBeside ? { marginsBeside } : {}), unsupported ? { unsupported } : {}), withoutGuess ? { noGuess: true } : {});
 	};
 	var TABLE_AXES = {
 		horzAnchor: {
@@ -13132,7 +13173,7 @@ var docxLayout = (function(exports) {
 		const down = downOf(properties);
 		const sectionStart = start !== void 0 && START_TYPES.has(start) ? start : "nextPage";
 		const marginBottom = (_twips13 = twips(margins["w:bottom"])) !== null && _twips13 !== void 0 ? _twips13 : DEFAULT_SECTION.marginBottom;
-		const unsupported = typeof grid === "string" ? grid : formatPageNumber(1, format) === void 0 ? "page numbers in a format not yet written" : direction !== void 0 && !HORIZONTAL_PAGES.has(direction) && down === void 0 ? "text in a direction not yet followed" : down !== void 0 && (gutter !== 0 || mirrorMargins || columns.length > 1 || Math.min(marginTop, marginBottom) < 0) ? "text that runs down the page with a gutter, mirrored margins, columns or a negative margin" : (previous === null || previous === void 0 ? void 0 : previous.textRunsDown) !== void 0 && (sectionStart === "continuous" || sectionStart === "nextColumn") ? "a continuous section break after text that runs down the page" : down !== void 0 && typeof grid === "object" && grid.characterPitch !== void 0 ? "a document grid that snaps to characters on text that runs down the page" : find(properties, "w15:footnoteColumns") !== void 0 ? "footnotes in columns of their own" : gutterAtTop && gutter !== 0 && (mirrorMargins || marginTop < 0) ? "a gutter at the top with mirrored margins or a negative top margin" : unknownLengthIn(element);
+		const unsupported = typeof grid === "string" ? grid : formatPageNumber(1, format) === void 0 ? "page numbers in a format not yet written" : direction !== void 0 && !HORIZONTAL_PAGES.has(direction) && down === void 0 ? "text in a direction not yet followed" : down !== void 0 && (gutter !== 0 || mirrorMargins || columns.length > 1 || Math.min(marginTop, marginBottom) < 0) ? "text that runs down the page with a gutter, mirrored margins, columns or a negative margin" : (previous === null || previous === void 0 ? void 0 : previous.textRunsDown) !== void 0 && (sectionStart === "continuous" || sectionStart === "nextColumn") ? "a continuous section break after text that runs down the page" : down !== void 0 && typeof grid === "object" && grid.characterPitch !== void 0 ? "a document grid that snaps to characters on text that runs down the page" : find(properties, "w15:footnoteColumns") !== void 0 ? "footnotes in columns of their own" : unknownLengthIn(element);
 		const headers = readReferences(properties, "w:headerReference", readPart);
 		const footers = readReferences(properties, "w:footerReference", readPart);
 		const section = _objectSpread2(_objectSpread2(_objectSpread2({
@@ -13312,8 +13353,18 @@ var docxLayout = (function(exports) {
 		})]) }, withoutUndefined({ unsupported: unknownLengthIn(xml) }));
 	};
 	var CURRENT_COMPATIBILITY_MODE = 15;
+	var OLDER_COMPATIBILITY_MODES = /* @__PURE__ */ new Set([
+		11,
+		12,
+		14
+	]);
+	var WORD_2007_MODE = 12;
 	var WORD_SETTINGS = "http://schemas.microsoft.com/office/word";
-	var FOLLOWED_COMPATIBILITY = /* @__PURE__ */ new Set(["w:doNotUseHTMLParagraphAutoSpacing"]);
+	var FOLLOWED_COMPATIBILITY = /* @__PURE__ */ new Set([
+		"w:doNotUseHTMLParagraphAutoSpacing",
+		"w:suppressTopSpacing",
+		"w:useFELayout"
+	]);
 	var COMPATIBILITY_LINES_ALIKE = new Set([
 		"noLeading",
 		"noExtraLineSpacing",
@@ -13378,6 +13429,18 @@ var docxLayout = (function(exports) {
 		"selectFldWithFirstOrLastChar",
 		"doNotVertAlignInTxbx"
 	].map((name) => `w:${name}`));
+	var EAST_ASIAN_COMPATIBILITY = [
+		"balanceSingleByteDoubleByteWidth",
+		"doNotLeaveBackslashAlone",
+		"displayHangulFixedWidth",
+		"autoSpaceLikeWord95",
+		"lineWrapLikeWord6",
+		"useWord97LineBreakRules",
+		"applyBreakingRules",
+		"doNotWrapTextWithPunct",
+		"doNotUseEastAsianBreakRules",
+		"useAltKinsokuLineBreakRules"
+	].map((name) => `w:${name}`);
 	var WORD_SETTINGS_LINES_ALIKE = /* @__PURE__ */ new Set([
 		"compatibilityMode",
 		"overrideTableStyleFontSizeAndJustification",
@@ -13394,14 +13457,29 @@ var docxLayout = (function(exports) {
 	*/
 	var wordSettingsOf = (compatibility) => compatibility.filter((child) => "w:compatSetting" in child).map((child) => attributesOf(child["w:compatSetting"])).filter(({ "w:uri": uri = WORD_SETTINGS }) => uri === WORD_SETTINGS);
 	/**
-	* Whether a document's compatibility settings (`w:compat`) ask Word to lay it out in a way not yet followed: a setting of
-	* the schema that is on, other than `w:doNotUseHTMLParagraphAutoSpacing`, which is followed, and those known to leave its
-	* lines as they are, or one of Word's own (`w:compatSetting`) other than those known to leave its lines as they are, on
-	* or off. Each changes how Word lays out lines, or may, in ways not yet followed.
+	* The compatibility mode of a document's settings (`compatibilityMode`): the version of Word whose layout it asks for,
+	* 15 for Word 2013 and later. Word's own setting, as another application's may have the same name
 	*/
-	var asksForUnfollowedCompatibility = (compatibility) => compatibility.some((child) => {
+	var compatibilityModeOf = (settings) => {
+		var _numberOf11, _wordSettingsOf$find;
+		return (_numberOf11 = numberOf((_wordSettingsOf$find = wordSettingsOf(childrenOf(find(settings, "w:compat"))).find(({ "w:name": setting }) => setting === "compatibilityMode")) === null || _wordSettingsOf$find === void 0 ? void 0 : _wordSettingsOf$find["w:val"])) !== null && _numberOf11 !== void 0 ? _numberOf11 : WORD_2007_MODE;
+	};
+	/** The compatibility mode a document is laid out in, when it is one of Word 2010's, 2007's or 2003's */
+	var olderModeOf = (settings) => {
+		const mode = compatibilityModeOf(settings);
+		return OLDER_COMPATIBILITY_MODES.has(mode) ? mode : void 0;
+	};
+	/**
+	* Whether a document's compatibility settings (`w:compat`) ask Word to lay it out in a way not yet followed: a setting of
+	* the schema that is on, other than those that are followed and those known to leave its lines as they are, or one of
+	* Word's own (`w:compatSetting`) other than those known to leave its lines as they are, on or off. Each changes how Word
+	* lays out lines, or may, in ways not yet followed. Those of the schema were seen leaving lines alone, or followed, only
+	* in Word 2013's mode, where Word leaves most of them out, so in an older one each that is on but automatic spacing as
+	* HTML has it (`older`) is one not yet followed.
+	*/
+	var asksForUnfollowedCompatibility = (compatibility, older) => onOff(compatibility, "w:useFELayout") === true && EAST_ASIAN_COMPATIBILITY.some((name) => onOff(compatibility, name) === true) || compatibility.some((child) => {
 		const name = nameOf$1(child);
-		return name !== "w:compatSetting" && !FOLLOWED_COMPATIBILITY.has(name) && !COMPATIBILITY_LINES_ALIKE.has(name) && onOff([child], name) === true;
+		return name !== "w:compatSetting" && (older ? name !== "w:doNotUseHTMLParagraphAutoSpacing" : !FOLLOWED_COMPATIBILITY.has(name) && !COMPATIBILITY_LINES_ALIKE.has(name)) && onOff([child], name) === true;
 	}) || wordSettingsOf(compatibility).some(({ "w:name": setting }) => !WORD_SETTINGS_LINES_ALIKE.has(String(setting)));
 	/**
 	* The document's own lists of the characters that can't start a line (`w:noLineBreaksBefore`) and can't end one
@@ -13450,34 +13528,34 @@ var docxLayout = (function(exports) {
 			"m:preSp",
 			"m:postSp"
 		].some((name) => {
-			var _numberOf11;
-			return ((_numberOf11 = numberOf(valueIn(name))) !== null && _numberOf11 !== void 0 ? _numberOf11 : 0) !== 0;
+			var _numberOf12;
+			return ((_numberOf12 = numberOf(valueIn(name))) !== null && _numberOf12 !== void 0 ? _numberOf12 : 0) !== 0;
 		}) ? "an equation in a document whose maths settings give equations on lines of their own margins or space around them" : void 0;
 	};
 	/**
 	* Reads the parts of the document's settings (`w:settings`) that change how it is laid out.
 	*/
 	var readSettings = (xml) => {
-		var _wordSettingsOf$find, _find$, _find4, _twips17;
+		var _find$, _find4, _twips17;
 		const settings = childrenOf(xml === null || xml === void 0 ? void 0 : xml["w:settings"]);
 		const compatibility = childrenOf(find(settings, "w:compat"));
 		const lists = readKinsokuLists(settings);
 		const spacingControl = valueOf(settings, "w:characterSpacingControl");
-		const mode = numberOf((_wordSettingsOf$find = wordSettingsOf(compatibility).find(({ "w:name": setting }) => setting === "compatibilityMode")) === null || _wordSettingsOf$find === void 0 ? void 0 : _wordSettingsOf$find["w:val"]);
+		const mode = compatibilityModeOf(settings);
+		const olderMode = olderModeOf(settings);
 		const unsupported = (_find$ = (_find4 = [
 			[onOff(settings, "w:strictFirstAndLastChars"), "the strict rules for the characters that can't start a line"],
 			[spacingControl !== void 0 && spacingControl !== "doNotCompress", "punctuation compressed"],
-			[mode === void 0 || mode < CURRENT_COMPATIBILITY_MODE, "a document in compatibility mode"],
-			[asksForUnfollowedCompatibility(compatibility), "a compatibility setting not yet followed"],
+			[mode < CURRENT_COMPATIBILITY_MODE && olderMode === void 0, "a document in a compatibility mode Word hasn't been seen laying out"],
+			[asksForUnfollowedCompatibility(compatibility, olderMode !== void 0), "a compatibility setting not yet followed"],
 			[onOff(settings, "w:bookFoldPrinting") || onOff(settings, "w:bookFoldRevPrinting"), "pages printed as a folded booklet"],
-			[onOff(settings, "w:printTwoOnOne"), "two pages printed on each sheet"],
 			[onOff(settings, "w:linkStyles"), "styles updated from the document's template when Word opens it"]
 		].find(([applies]) => applies === true)) === null || _find4 === void 0 ? void 0 : _find4[1]) !== null && _find$ !== void 0 ? _find$ : unknownLengthIn(settings);
-		return _objectSpread2(_objectSpread2(_objectSpread2({
+		return _objectSpread2(_objectSpread2(_objectSpread2(_objectSpread2(_objectSpread2({
 			defaultTabStop: (_twips17 = twips(attributesOf(find(settings, "w:defaultTabStop"))["w:val"])) !== null && _twips17 !== void 0 ? _twips17 : 36,
 			evenAndOddHeaders: onOff(settings, "w:evenAndOddHeaders") === true,
 			addsParagraphSpacing: onOff(compatibility, "w:doNotUseHTMLParagraphAutoSpacing") === true
-		}, Object.keys(lists).length > 0 ? { breakRules: { lists } } : {}), onOff(settings, "w:autoHyphenation") === true ? { hyphenation: readHyphenation(settings) } : {}), unsupported ? { unsupported } : {});
+		}, Object.keys(lists).length > 0 ? { breakRules: { lists } } : {}), onOff(settings, "w:autoHyphenation") === true ? { hyphenation: readHyphenation(settings) } : {}), olderMode === void 0 ? {} : { compatibilityMode: olderMode }), onOff(compatibility, "w:suppressTopSpacing") === true ? { suppressesTopSpacing: true } : {}), unsupported ? { unsupported } : {});
 	};
 	/**
 	* The faces of the fonts a document embeds, which Word draws text in those fonts in. Each is the face of the font the
@@ -13568,7 +13646,7 @@ var docxLayout = (function(exports) {
 	* Reads a document's body (`w:body`), with the other parts of the document.
 	*/
 	var readContent = (writtenBody, writtenParts, { guess = false } = {}) => {
-		var _writtenParts$dataSto, _parts$otherListIds, _parts$otherListIds2, _parts$settings, _fontOf$size2, _ref24, _ref25, _ref26, _ref27, _ref28, _ref29, _documentContent$unsu;
+		var _writtenParts$dataSto, _parts$otherListIds, _parts$otherListIds2, _parts$settings, _fontOf$size2, _ref27, _ref28, _ref29, _ref30, _ref31, _ref32, _documentContent$unsu;
 		const stores = (_writtenParts$dataSto = writtenParts.dataStores) !== null && _writtenParts$dataSto !== void 0 ? _writtenParts$dataSto : /* @__PURE__ */ new Map();
 		const body = withBoundTextWritten(writtenBody, stores);
 		const parts = _objectSpread2(_objectSpread2({}, writtenParts), {}, {
@@ -13586,7 +13664,10 @@ var docxLayout = (function(exports) {
 		const settings = childrenOf((_parts$settings = parts.settings) === null || _parts$settings === void 0 ? void 0 : _parts$settings["w:settings"]);
 		const decimalSymbol = valueOf(settings, "w:decimalSymbol");
 		const maths = readMathsSettings(settings);
-		const readerOf = (inHeader) => _objectSpread2(_objectSpread2(_objectSpread2({
+		const compatibilityMode = olderModeOf(settings);
+		const feLayout = onOff(childrenOf(find(settings, "w:compat")), "w:useFELayout") === true;
+		const openTypeFeatures = wordSettingsOf(childrenOf(find(settings, "w:compat"))).some(({ "w:name": name, "w:val": value }) => name === "enableOpenTypeFeatures" && isOn(value));
+		const readerOf = (inHeader) => _objectSpread2(_objectSpread2(_objectSpread2(_objectSpread2(_objectSpread2(_objectSpread2({
 			styles,
 			numbering,
 			listIds,
@@ -13594,7 +13675,7 @@ var docxLayout = (function(exports) {
 			markers,
 			fields: [],
 			counters: /* @__PURE__ */ new Map()
-		}, decimalSymbol === void 0 ? {} : { decimalSymbol }), maths === void 0 ? {} : { maths }), guess ? { guess } : {});
+		}, decimalSymbol === void 0 ? {} : { decimalSymbol }), maths === void 0 ? {} : { maths }), guess ? { guess } : {}), compatibilityMode === void 0 ? {} : { compatibilityMode }), feLayout ? { feLayout } : {}), openTypeFeatures ? { openTypeFeatures } : {});
 		const elements = unwrap(joinRemovedMarks(contentOf$3(body), styles, {
 			nested: false,
 			sized: false,
@@ -13824,7 +13905,7 @@ var docxLayout = (function(exports) {
 			relativeReferences: markers.relative,
 			endnoteReferences
 		}, parts.fonts !== void 0 && parts.fonts.length > 0 ? { fonts: parts.fonts } : {}), readSettings(parts.settings));
-		return _objectSpread2(_objectSpread2({}, documentContent), withoutUndefined({ unsupported: (_ref24 = (_ref25 = (_ref26 = (_ref27 = (_ref28 = (_ref29 = (_documentContent$unsu = documentContent.unsupported) !== null && _documentContent$unsu !== void 0 ? _documentContent$unsu : styles.unsupported) !== null && _ref29 !== void 0 ? _ref29 : inNumbering) !== null && _ref28 !== void 0 ? _ref28 : footnotes.size > 0 ? notesUnsupported("footnote") : void 0) !== null && _ref27 !== void 0 ? _ref27 : endnotes.length > 0 ? notesUnsupported("endnote") : void 0) !== null && _ref26 !== void 0 ? _ref26 : [...endnoteSections, sections.length - 1].some((section) => sections[section].textRunsDown !== void 0) && endnotes.length > 0 ? "endnotes on text that runs down the page" : void 0) !== null && _ref25 !== void 0 ? _ref25 : endnoteSections.some((section) => !sameGrid(gridOf(section), gridOf(sections.length - 1))) ? "endnotes from a section on another document grid than the last" : void 0) !== null && _ref24 !== void 0 ? _ref24 : unwrittenNumber ? "notes numbered in a format not yet written" : void 0 }));
+		return _objectSpread2(_objectSpread2({}, documentContent), withoutUndefined({ unsupported: (_ref27 = (_ref28 = (_ref29 = (_ref30 = (_ref31 = (_ref32 = (_documentContent$unsu = documentContent.unsupported) !== null && _documentContent$unsu !== void 0 ? _documentContent$unsu : styles.unsupported) !== null && _ref32 !== void 0 ? _ref32 : inNumbering) !== null && _ref31 !== void 0 ? _ref31 : footnotes.size > 0 ? notesUnsupported("footnote") : void 0) !== null && _ref30 !== void 0 ? _ref30 : endnotes.length > 0 ? notesUnsupported("endnote") : void 0) !== null && _ref29 !== void 0 ? _ref29 : [...endnoteSections, sections.length - 1].some((section) => sections[section].textRunsDown !== void 0) && endnotes.length > 0 ? "endnotes on text that runs down the page" : void 0) !== null && _ref28 !== void 0 ? _ref28 : endnoteSections.some((section) => !sameGrid(gridOf(section), gridOf(sections.length - 1))) ? "endnotes from a section on another document grid than the last" : void 0) !== null && _ref27 !== void 0 ? _ref27 : unwrittenNumber ? "notes numbered in a format not yet written" : void 0 }));
 	};
 	//#endregion
 	//#region src/layout/paginate.ts
@@ -13857,6 +13938,16 @@ var docxLayout = (function(exports) {
 	};
 	var TOLERANCE = .01;
 	var TEXT_BOX_DOUBT = .72;
+	var EXACT_ABOVE_BASELINE = .8;
+	var TOP_SPACE_KEPT = 9.6;
+	var TOP_SPACING_UNKNOWN = "the first line of a page or column, at line spacing Word hasn't shown, in a document that suppresses the space above it";
+	/** Whether line spacing is single: none given, or a multiple of 1 */
+	var isSingle = (spacing) => spacing === void 0 || spacing.rule === "multiple" && spacing.multiple === 1;
+	/** Whether a block has a paragraph whose lines aren't of single spacing, in it or in its table's cells */
+	var spacedIn = (block) => block.type === "paragraph" ? !isSingle(block.format.lineSpacing) : block.rows.some(({ cells }) => cells.some((cell) => cell.blocks.some(spacedIn)));
+	var OLDER_LEAST_GAP = 135;
+	/** Whether a line's room beside drawings is a gap they cut narrower than Word 2010 and before were seen putting text in */
+	var narrowGap = (span, within) => span.end - span.start < OLDER_LEAST_GAP && (span.start > within.start + TOLERANCE || span.end < within.end - TOLERANCE);
 	var AUTOMATIC_SPACE = 14;
 	/**
 	* The lines of paragraphs without page references, by the measurer and widths they were laid out with. They are the same
@@ -14099,7 +14190,7 @@ var docxLayout = (function(exports) {
 	*/
 	var paginate = (content, { pageNumbers = /* @__PURE__ */ new Map(), places: givenPlaces = /* @__PURE__ */ new Map(), earlierPlaces = /* @__PURE__ */ new Map(), pageCount: givenPageCount, sectionPageCounts: givenSectionPageCounts = [], measurer = DEFAULT_MEASURER, guess = false } = {}) => {
 		var _laidOutLines$get;
-		const { sections, defaultTabStop, evenAndOddHeaders, addsParagraphSpacing, footnotes, footnoteSeparator, footnoteContinuationSeparator, endnotes, endnoteContinuationSeparator, breakRules, hyphenation, footnoteNumbers, endnoteNumbers } = content;
+		const { sections, defaultTabStop, evenAndOddHeaders, addsParagraphSpacing, footnotes, footnoteSeparator, footnoteContinuationSeparator, endnotes, endnoteContinuationSeparator, breakRules, hyphenation, footnoteNumbers, endnoteNumbers, compatibilityMode, suppressesTopSpacing } = content;
 		const blocks = [...content.blocks, ...endnotes.map((block) => ({
 			block: block.type === "paragraph" && !endnoteNumbers.has(block) ? _objectSpread2(_objectSpread2({}, block), {}, { format: _objectSpread2(_objectSpread2({}, block.format), {}, { keepNext: true }) }) : block,
 			section: sections.length - 1
@@ -14261,7 +14352,8 @@ var docxLayout = (function(exports) {
 					breakRules,
 					numberAlignment: paragraph.numberAlignment,
 					hyphenation,
-					grid: paragraph.grid
+					grid: paragraph.grid,
+					compatibilityMode
 				});
 				return guessed === void 0 ? laidOut : laidOut.map((line) => line.unsupported === void 0 ? _objectSpread2(_objectSpread2({}, line), {}, { unsupported: guessed }) : line);
 			};
@@ -14748,7 +14840,7 @@ var docxLayout = (function(exports) {
 					height: down === void 0 ? current.pageHeight : current.pageWidth
 				}, down === void 0 ? {} : { textRunsDown: down }), header ? { header } : {}), footer ? { footer } : {})
 			});
-			top = down !== void 0 ? current.marginTop : current.marginTop < 0 ? -current.marginTop : Math.max(current.marginTop + current.topGutter, headerBottom);
+			top = down !== void 0 ? current.marginTop : current.marginTop < 0 ? -current.marginTop + current.topGutter : Math.max(current.marginTop + current.topGutter, headerBottom);
 			const endnotesOn = endnotesGoOn();
 			if (endnotesOn && current.columns.length > 1) stopAt(ENDNOTES_IN_COLUMNS);
 			const continuation = endnotesOn ? continuationHeight() : 0;
@@ -16004,6 +16096,7 @@ var docxLayout = (function(exports) {
 			const roomOfRow = (around, y, height, line) => {
 				const room = roomBeside(around, y, height, within);
 				if ("below" in room) return room;
+				if (compatibilityMode !== void 0 && room.spans.some((span) => narrowGap(span, within))) stopAt("a line beside a drawing or frame in a gap narrower than 135 points, in a document in compatibility mode");
 				const spans = room.spans.map((span, offset) => ({
 					start: Math.max(span.start - left, indentLeft) + (line + offset === 0 ? firstLineIndent : 0),
 					end: Math.min(span.end - left, within.end - left - indentRight)
@@ -16083,6 +16176,28 @@ var docxLayout = (function(exports) {
 			})]);
 		};
 		/**
+		* What is left out above a paragraph's line at the top of a page or column, in a document that suppresses the space
+		* above it (`suppressTopSpacing`), in points. Word leaves out the space above the text of a paragraph's first line
+		* there: at exact spacing, all but 9.6 points of the 80% of the line above its baseline, and at least a height, all
+		* but 9.6 points of the line, which then ends 9.6 points down, its text's descent at its bottom. So it did at the top
+		* of a page after a page break, with the space before the paragraph, which is left out there, at the top of a column,
+		* and of a section on a new page, in Calibri 11, Times New Roman 12, Courier New 11 and Calibri 24 alike
+		* (`word-stops-top-spacing.docx` ST1 to ST5), and it left a line of single spacing as it is (ST4b). Multiple spacing,
+		* at least a height less than the line's own (ST2a), a line on a document grid, the space before a section's first
+		* paragraph or a border above it, and a paragraph's later line, haven't been seen. Guessing, nothing is left out
+		*/
+		const cutAbove = (block, line, isFirstLine, above) => {
+			var _block$grid;
+			const spacing = block.format.lineSpacing;
+			if (spacing === void 0 || isSingle(spacing)) return 0;
+			const cut = spacing.rule === "exact" ? Math.max(0, EXACT_ABOVE_BASELINE * spacing.height - TOP_SPACE_KEPT) : spacing.rule === "atLeast" && line.height <= spacing.height + TOLERANCE ? Math.max(0, line.height - TOP_SPACE_KEPT) : void 0;
+			if (cut === void 0 || cut > 0 && (!isFirstLine || above > 0 || ((_block$grid = block.grid) === null || _block$grid === void 0 ? void 0 : _block$grid.linePitch) !== void 0)) {
+				stopAt(TOP_SPACING_UNKNOWN);
+				return 0;
+			}
+			return cut;
+		};
+		/**
 		* Places a paragraph's lines, breaking pages and columns between them where they don't fit, and at its page and
 		* column breaks. Its lines are broken at the width of the column each goes in, so the part of it that goes on into a
 		* column of another width is broken again there, as Word breaks it (`word-rules2.docx` Q7). A paragraph's first or
@@ -16100,7 +16215,6 @@ var docxLayout = (function(exports) {
 			const keptTall = taller.length > 0 && taller.every((tall) => tall);
 			if (keptTall && !atTopOfPage()) startPage();
 			const movesOn = !keptTall && taller.some((tall) => tall);
-			if (movesOn && columns.length > 2) stopAt("a paragraph kept together taller than some of 3 or more columns of different widths");
 			const firstColumnsOnly = keptTall ? linesToBreak(linesOf(block, columns[0]), 0).length : 0;
 			/**
 			* The space above the paragraph's first line: at the top of a page, or of the column its section starts in, only
@@ -16120,11 +16234,12 @@ var docxLayout = (function(exports) {
 					nextColumn();
 					continue;
 				}
-				const space = isFirstLine ? spaceAbove() + paragraph.borderAbove : 0;
+				const above = isFirstLine ? spaceAbove() + paragraph.borderAbove : 0;
+				const space = above - (suppressesTopSpacing === true && !placedInColumn ? cutAbove(block, linesOf(block, widths, rooms)[index], isFirstLine, above) : 0);
 				const theirs = Math.min(spaceAfter, isFirstLine ? spaceAbove() : 0);
 				const laid = rowsOf(block, widths, rooms, index, position + space, {
 					top: position + theirs,
-					own: space - theirs
+					own: above - theirs
 				}, excluded);
 				const { lines, rows } = laid;
 				const remaining = rows.map(({ line }) => line);
@@ -16650,6 +16765,8 @@ var docxLayout = (function(exports) {
 		};
 		const layOutTable = (block, onNextPage) => {
 			var _table$rows$borderBot, _table$rows;
+			const topSpacingUnknown = suppressesTopSpacing === true && spacedIn(block);
+			if (topSpacingUnknown && !placedInColumn) stopAt(TOP_SPACING_UNKNOWN);
 			const width = columnsSection().columns[column];
 			const table = sizedToPlace(block, width);
 			const merges = mergesOf(table);
@@ -16673,6 +16790,7 @@ var docxLayout = (function(exports) {
 					guesses.forEach((reason) => stopAt(reason));
 					throw new HeaderRowsAlone(guesses);
 				}
+				if (topSpacingUnknown) stopAt(TOP_SPACING_UNKNOWN);
 				const page = pageCount;
 				nextColumn();
 				while (newPage && pageCount === page) nextColumn();
@@ -16999,9 +17117,7 @@ var docxLayout = (function(exports) {
 				const keptWithPrevious = (previous === null || previous === void 0 ? void 0 : previous.section) === blocks[index].section && previous.block.type === "paragraph" && previous.block.format.keepNext === true;
 				const anchor = blocks[index + keptChain(index)].block;
 				const anchorTaller = anchor.type === "paragraph" ? columnsTallerThan(anchor) : [];
-				const tallAnchor = anchorTaller.length > 0 && anchorTaller.every((tall) => tall);
-				if (!tallAnchor && anchorTaller.some((tall) => tall)) stopAt("a paragraph kept with the next before one kept together taller than some of the columns but not others");
-				if (tallAnchor) {
+				if (anchorTaller.length > 0 && anchorTaller.every((tall) => tall)) {
 					if (!keptWithPrevious && !atTopOfPage()) startPage();
 				} else if (placedInColumn) {
 					const here = keptHere();
