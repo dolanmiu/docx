@@ -57,7 +57,7 @@ describe("layOutPasses", () => {
             new Paragraph({
                 spacing: line,
                 children: [
-                    new Bookmark({ id: "start", children: [new TextRun({ text: "On page", font: "Aptos" })] }),
+                    new Bookmark({ id: "start", children: [new TextRun({ text: "On page", font: "Roboto" })] }),
                     new PageReference("target"),
                 ],
             }),

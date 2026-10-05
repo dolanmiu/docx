@@ -20,7 +20,13 @@ import re
 import sys
 
 base = sys.argv[1]
-probe = json.load(open(os.path.join(os.path.dirname(os.path.abspath(__file__)), os.path.basename(base) + ".json"), encoding="utf8"))
+# The probe's .json is beside this reader, or in stops2 beside it for the documents of lay-stops2's batch, such as
+# word-stops-font-kerning
+HERE = os.path.dirname(os.path.abspath(__file__))
+SIDECAR = os.path.join(HERE, os.path.basename(base) + ".json")
+if not os.path.exists(SIDECAR):
+    SIDECAR = os.path.join(HERE, "stops2", os.path.basename(base) + ".json")
+probe = json.load(open(SIDECAR, encoding="utf8"))
 SIZE = probe["size"]
 COPIES = probe["copies"]
 FACES = probe["faces"]

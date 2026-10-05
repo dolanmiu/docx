@@ -1,6 +1,6 @@
 # The stops batch (lay-stops2)
 
-<!-- cspell:ignore pdftocairo Poppler poppler -->
+<!-- cspell:ignore pdftocairo Poppler poppler hhea GPOS -->
 
 Probe documents for the stops of docx/layout that no Word PDF saved before 2026-10-04 settled, made in one batch from
 docx at `master` a871df8a25 and saved from Word 16 for Mac on 2026-10-04 and 2026-10-05 (Save As, PDF, Best for
@@ -15,10 +15,17 @@ committed here are the ones a change to docx/layout has followed, with Word's PD
 | `word-stops-tabs.ts`           | TA1 to TA8, SH10 to SH15, JU1 to JU3 | TA8a to TA8h: a left tab stop past the end of the line takes a line of its own, and the text after it goes on the next                                                                                                              |
 | `word-stops-vertical-cells.ts` | TV1 to TV6                           | TV5d: a table in a cell whose text runs up, which stops the layout, and which a layout that guesses lays out                                                                                                                        |
 | `word-stops-equations.ts`      | EQ10 to EQ28                         | EQ27a to EQ27k: Word draws each character of an equation that Cambria Math has as wide as the font has it, the Greek variants as italic letters, but for the integrals, which it draws wider, and ◇, which it draws in another font |
+| `word-stops-font-widths.ts`    | W, S, B, H                           | W, S: each of Office's 16 other fonts as wide as Word's own file of it; an italic Word slants as wide as upright. `STOPS_ITALIC=1` writes the italics. Read with `../word-character-widths.py`                                      |
+| `word-stops-font-kerning.ts`   | I, K, L, P, R, SP                    | K, L, P: kerned as each font's file kerns it; with ligatures, only where its GPOS table kerns Latin. `STOPS_SET=2` writes the second half. Read with `../word-kerning.py`                                                           |
+| `word-stops-kerning.ts`        | KE1 to KE8, FH1 to FH16              | FH1 to FH16 (`word-stops-font-heights`): each of the 16 fonts' lines as tall as its file's hhea table makes it. Read with `word-font-heights.py`                                                                                    |
 
 `word-stops-edges.ts` has the cases around those, where docx/layout still stops (DH2, PB9, HR2 and TA9), for the next
 batch Word saves: it has no PDF from Word yet. `word-equation-characters.py` reads EQ27's widths from Word's PDF, for
 `scripts/generate-equation-widths.ts`.
+
+`word-stops-office-fonts.ts` has what the font probes left stopping (MB, FB, KL and DS), for the next batch too: the bold
+Word makes itself at other sizes, the font Word draws a character a font lacks in, kerning with other ligature settings in
+fonts kerned by their kern table alone, and descents. Read Word's PDF of it with `word-stops-office-fonts.py`.
 
 `kit.ts` is what the scripts share: the page (A4, inch margins, Calibri 11 single spaced, 51 lines a page), labelled
 lines, and the injections that write what docx can't, such as hidden or deleted paragraph marks, in the schema's order.

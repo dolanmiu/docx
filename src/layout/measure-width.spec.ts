@@ -108,7 +108,7 @@ describe("measurerOf", () => {
         const measurer = measurerOf(() => 0);
         expect(measurer.unknownFont!({ font: "Calibri" }, "a")).to.equal(false);
         expect(measurer.unknownFont!({ font: "Carlito" })).to.equal(false);
-        expect(measurer.unknownFont!({ font: "Aptos" }, "a")).to.equal(true);
+        expect(measurer.unknownFont!({ font: "Roboto" }, "a")).to.equal(true);
         // An East Asian font's lines are as tall as the table says, and the function measures its Latin letters
         expect(measurer.unknownFont!({ font: "Yu Gothic" }, "a")).to.equal(false);
     });

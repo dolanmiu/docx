@@ -1,4 +1,4 @@
-// cspell:ignore Caladea Aptos Carlito Yvonne Ωmega
+// cspell:ignore Caladea Aptos Carlito Yvonne Ωmega hhea AVANT GPOS Façade
 import { describe, expect, it } from "vitest";
 
 import {
@@ -54,7 +54,7 @@ describe("measureTextWidth", () => {
             expect(width({ bold: true, italic: true })).to.be.closeTo(boldItalic, 3);
         }
         // Fonts that aren't in the tables are measured in the italics of the one most like them
-        expect(measureTextWidth(alphabet, { font: "Georgia", italic: true })).to.equal(
+        expect(measureTextWidth(alphabet, { font: "Garamond", italic: true })).to.equal(
             measureTextWidth(alphabet, { font: "Times New Roman", italic: true }),
         );
     });
@@ -77,11 +77,11 @@ describe("measureTextWidth", () => {
         expect(width("Carlito")).to.equal(width("Calibri"));
         expect(width("Segoe UI")).to.equal(width("Calibri"));
         expect(width("Caladea")).to.equal(width("Cambria"));
-        expect(width("Consolas")).to.equal(width("Courier New"));
-        expect(width("Georgia")).to.equal(width("Times New Roman"));
+        expect(width("Fira Mono")).to.equal(width("Courier New"));
+        expect(width("Garamond")).to.equal(width("Times New Roman"));
         expect(width("Noto Serif")).to.equal(width("Times New Roman"));
         expect(width("Noto Sans Serif")).to.equal(width("Arial"));
-        expect(width("Aptos")).to.equal(width("Arial"));
+        expect(width("Roboto")).to.equal(width("Arial"));
         expect(width("Helvetica")).to.equal(width("Arial"));
     });
 
@@ -195,16 +195,31 @@ describe("unknownFont", () => {
     const PANGRAM = "Thequickbrownfoxjumpsoverthelazydog";
 
     it("should find the fonts the tables don't have, which Word draws in themselves, or in Cambria when it doesn't have them", () => {
-        // In TX18, Word drew the pangram in Cambria, 3820.8 twips wide, for the two fonts it didn't have, and Aptos 3781.2,
-        // Segoe UI 3616.5, Garamond 3457.5, Georgia 3905.6, Verdana 4384.2, Tahoma 3839.4 and Calibri Light 3540.2 in
-        // themselves, where the tables measure them as Arial (3863.6), Times New Roman (3580.5) or Calibri (3589.3)
-        expect(twips(PANGRAM, "Aptos", 11)).to.be.closeTo(3863.6, 0.1);
-        expect(twips(PANGRAM, "Georgia", 11)).to.be.closeTo(3580.5, 0.1);
-        expect(twips(PANGRAM, "Calibri Light", 11)).to.be.closeTo(3589.3, 0.1);
-        const fonts = ["Watertight Missing Sans", "Watertight Missing Serif", "Aptos", "Segoe UI", "Garamond", "Georgia", "Verdana"];
-        for (const font of [...fonts, "Tahoma", "Calibri Light"]) {
+        // In TX18, Word drew the pangram in Cambria, 3820.8 twips wide, for the two fonts it didn't have, and Segoe UI
+        // 3616.5 and Garamond 3457.5 in themselves, where the tables measure them as Calibri (3589.3) and Times New Roman
+        // (3580.5)
+        expect(twips(PANGRAM, "Segoe UI", 11)).to.be.closeTo(3589.3, 0.1);
+        expect(twips(PANGRAM, "Garamond", 11)).to.be.closeTo(3580.5, 0.1);
+        for (const font of ["Watertight Missing Sans", "Watertight Missing Serif", "Segoe UI", "Garamond", "Roboto"]) {
             expect(unknownFont({ font }), font).to.equal(true);
             expect(unknownFont({ font }, "a"), font).to.equal(true);
+        }
+    });
+
+    it("should measure Office's fonts that Word installs with Word's widths (word-watertight-text.docx TX18)", () => {
+        // Word drew the pangram 3781.2 twips wide in Aptos, 3905.6 in Georgia, 4384.2 in Verdana, 3839.4 in Tahoma and
+        // 3540.2 in Calibri Light, to within the 3 twips or so Word's PDFs put text to
+        const drawn = [
+            ["Aptos", 3781.2],
+            ["Georgia", 3905.6],
+            ["Verdana", 4384.2],
+            ["Tahoma", 3839.4],
+            ["Calibri Light", 3540.2],
+        ] as const;
+        for (const [font, width] of drawn) {
+            expect(twips(PANGRAM, font, 11), font).to.be.closeTo(width, 1.6);
+            expect(unknownFont({ font }), font).to.equal(false);
+            expect(unknownFont({ font, italic: true }, "a"), font).to.equal(false);
         }
     });
 
@@ -291,7 +306,7 @@ describe("East Asian fonts", () => {
     it("should measure East Asian fonts that aren't in the table as MS Mincho or MS Gothic, and not Latin fonts that look like them", () => {
         expect(measureLineHeight({ font: "Hiragino Mincho ProN", size: 10 })).to.be.closeTo(12.97, 0.0001);
         expect(measureTextWidth("ab", { font: "ヒラギノ角ゴシック", size: 10 })).to.equal(10);
-        expect(measureLineHeight({ font: "Century Gothic", size: 10 })).to.equal(measureLineHeight({ font: "Arial", size: 10 }));
+        expect(measureLineHeight({ font: "Franklin Gothic Medium", size: 10 })).to.equal(measureLineHeight({ font: "Arial", size: 10 }));
     });
 
     it("should make the Latin letters of monospaced ones half an em, and their ideographs and symbols an em", () => {
@@ -553,5 +568,164 @@ describe("kerning and ligatures", () => {
             "kerning of a pair of characters not yet followed",
         );
         expect(unknownShaping("f\t\u03a9", calibri({ ligatures: "standard" }))).to.equal(undefined);
+    });
+});
+
+describe("Office's fonts that Word installs", () => {
+    // Word's PDFs of scripts/layout-probes/stops2: word-stops-font-widths, word-stops-font-italic-widths,
+    // word-stops-font-heights and word-stops-font-kerning, saved from Word 16 for Mac
+    const OFFICE_FONTS = [
+        "Calibri Light",
+        "Aptos",
+        "Aptos Narrow",
+        "Trebuchet MS",
+        "Georgia",
+        "Verdana",
+        "Tahoma",
+        "Century Gothic",
+        "Consolas",
+        "Candara",
+        "Corbel",
+        "Constantia",
+        "Book Antiqua",
+        "Franklin Gothic Book",
+        "Gill Sans MT",
+        "Impact",
+    ];
+
+    it("should know each of them, plain, bold, italic and bold italic, but for the bold Word makes itself", () => {
+        for (const font of OFFICE_FONTS) {
+            expect(unknownFont({ font, size: 11 }, "a"), font).to.equal(false);
+            expect(unknownFont({ font, italic: true }, "a"), font).to.equal(false);
+        }
+        // Calibri Light, Franklin Gothic Book and Impact have no bold face, which Word makes itself, each character 18
+        // thousandths of an em wider at 10 points (W), which other sizes haven't shown
+        for (const font of ["Calibri Light", "Franklin Gothic Book", "Impact"]) {
+            expect(unknownFont({ font, bold: true }, "a"), font).to.equal(true);
+            expect(unknownFont({ font, bold: true, italic: true }, "a"), font).to.equal(true);
+            // Guessing, it is measured as the face Word makes it from
+            expect(measureTextWidth("Bold", { font, bold: true, italic: true })).to.equal(measureTextWidth("Bold", { font, italic: true }));
+        }
+        expect(unknownFont({ font: "Trebuchet MS", bold: true, italic: true }, "a")).to.equal(false);
+        expect(unknownFont({ font: "Tahoma", bold: true, italic: true }, "a")).to.equal(false);
+    });
+
+    it("should measure an italic Word slants from the upright face as wide as it, as Word draws it", () => {
+        // Tahoma and Impact have no italic face, and Word draws Trebuchet MS bold italic as its bold, slanted
+        for (const [font, bold] of [
+            ["Tahoma", false],
+            ["Tahoma", true],
+            ["Impact", false],
+            ["Trebuchet MS", true],
+        ] as const) {
+            expect(measureTextWidth("Slanted", { font, bold, italic: true })).to.equal(measureTextWidth("Slanted", { font, bold }));
+        }
+        // A font with an italic face has its own widths: Georgia's italic a is 573 thousandths of an em, the upright 504
+        expect(measureTextWidth("a", { font: "Georgia", italic: true, size: 1000 })).to.equal(573);
+        expect(measureTextWidth("a", { font: "Georgia", size: 1000 })).to.equal(504);
+    });
+
+    it("should measure the pangram as Word drew it in Aptos, Georgia, Verdana, Tahoma and Calibri Light (word-watertight-text.docx TX18)", () => {
+        const pangram = "Thequickbrownfoxjumpsoverthelazydog";
+        for (const [font, width] of [
+            ["Aptos", 3781.2],
+            ["Georgia", 3905.6],
+            ["Verdana", 4384.2],
+            ["Tahoma", 3839.4],
+            ["Calibri Light", 3540.2],
+        ] as const) {
+            expect(twips(pangram, font, 11), font).to.be.closeTo(width, 1.6);
+        }
+    });
+
+    it("should measure the spaces as Word works them out, and not know the characters a font doesn't have", () => {
+        // S: Word works out the em and three-per-em spaces itself, where Calibri Light's and Tahoma's files have 1000 and
+        // 333, and Tahoma's en space is as wide as its digits
+        const width = (text: string, font: string): number => measureTextWidth(text, { font, size: 1000 });
+        expect(width(" ", "Calibri Light")).to.equal(905);
+        expect(width(" ", "Tahoma")).to.equal(909);
+        expect(width(" ", "Tahoma")).to.equal(303);
+        expect(width(" ", "Tahoma")).to.equal(546);
+        // Word draws a character a font doesn't have in another font: Trebuchet MS's ∀ in Cambria Math, Gill Sans MT's
+        // Cyrillic in Calibri, and Georgia's en space in Times New Roman
+        expect(unknownCharacter("for ∀", { font: "Trebuchet MS" })).to.equal("∀");
+        expect(unknownCharacter("Дом", { font: "Gill Sans MT" })).to.equal("Д");
+        expect(unknownCharacter("a b", { font: "Georgia" })).to.equal(" ");
+        expect(unknownCharacter("Дом", { font: "Verdana" })).to.equal(undefined);
+    });
+
+    it("should make their lines as tall as Word does, from each font's hhea table (word-stops-font-heights.docx FH1 to FH16)", () => {
+        // In points at 11 points, over 30 lines of each: Corbel's and Book Antiqua's are shorter than their ascent and
+        // descent for Windows make them, 13.43 and 13.67 points
+        for (const [font, height] of [
+            ["Calibri Light", 13.4234],
+            ["Georgia", 12.4966],
+            ["Corbel", 13.2828],
+            ["Book Antiqua", 13.2579],
+            ["Franklin Gothic Book", 12.4717],
+            ["Impact", 13.4152],
+        ] as const) {
+            expect(measureLineHeight({ font, size: 11 }), font).to.be.closeTo(height, 0.01);
+        }
+        expect(measureDescent({ font: "Corbel", size: 2048 })).to.be.closeTo(525, 1e-9);
+    });
+
+    it("should kern and join letters as Word does with Normal's settings, and put each word where Word does", () => {
+        // P: the first line of prose in each font, 10 points, kerned from 1 point with standard and contextual ligatures,
+        // and where Word put its last word, in points from its start: to within the half point Word's PDF puts a word to
+        // across lines of 1,100 to 1,400 points, where without kerning it is up to 36 points off
+        const prose =
+            "“To Wyatt’s office,” Avery wrote — fifty-five affluent officials flew to Tyrone’s fjord at 7:45; Yvonne’s staff offered “efficient” coffee, attitude & difficult afflictions (Vol. VII, p. 14). L’Atelier’s AVANT-GARDE “Façade” kept 98.6% of the WAVY yellow awnings; Tom’s P.T.A. took Ty, Wa and Yo to the “Fjord-Café” for 3½ hours. “To Wyatt’s";
+        const lines = [
+            ["Calibri Light", 341, 1275.98],
+            ["Aptos", 315, 1222.14],
+            ["Aptos Narrow", 315, 1124.96],
+            ["Georgia", 329, 1392.33],
+            ["Trebuchet MS", 315, 1353.84],
+            ["Century Gothic", 315, 1397.16],
+            ["Consolas", 224, 1187.58],
+            ["Candara", 341, 1358.06],
+            ["Corbel", 341, 1312.62],
+            ["Constantia", 315, 1241.02],
+            ["Book Antiqua", 329, 1416.2],
+            ["Gill Sans MT", 315, 1216.13],
+            ["Franklin Gothic Book", 315, 1215.73],
+            ["Tahoma", 315, 1307.45],
+            ["Impact", 315, 1149.44],
+        ] as const;
+        for (const [font, length, last] of lines) {
+            const line = [...prose].slice(0, length).join("");
+            const normal = { font, size: 10, kerning: 1, ligatures: "standardContextual" } as const;
+            expect(unknownShaping(line, normal), font).to.equal(undefined);
+            // Where the last word starts: the text before it, and its first character, less that character's width
+            const at = line.lastIndexOf(" ") + 1;
+            const start = measureTextWidthAsDrawn(line.slice(0, at + 1), normal) - measureTextWidthAsDrawn(line[at], normal);
+            expect(start, font).to.be.closeTo(last, 0.45);
+        }
+    });
+
+    it("should leave text with ligatures without kerning in a face whose kerning is only in its file's kern table, as Word does", () => {
+        // K and P: Word kerns Trebuchet MS's To, 125 thousandths of an em nearer, without ligatures, and not with them
+        const font = { font: "Trebuchet MS", size: 1000 };
+        const plain = measureTextWidth("To", font);
+        expect(measureTextWidthAsDrawn("To", { ...font, kerning: 1 })).to.equal(plain - 125);
+        expect(measureTextWidthAsDrawn("To", { ...font, kerning: 1, ligatures: "standardContextual" })).to.equal(plain);
+        // Word's PDFs showed only Normal's ligatures with it
+        expect(unknownShaping("To", { ...font, kerning: 1, ligatures: "all" })).to.equal("ligatures of a setting not yet followed");
+        expect(unknownShaping("To", { ...font, ligatures: "all" })).to.equal(undefined);
+        // Calibri Light's kerning is in its GPOS table too, so Word kerns it with ligatures, as Calibri's
+        const light = { font: "Calibri Light", size: 1000, kerning: 1 };
+        expect(measureTextWidthAsDrawn("To", { ...light, ligatures: "standardContextual" })).to.equal(measureTextWidthAsDrawn("To", light));
+        expect(measureTextWidthAsDrawn("To", light)).to.be.lessThan(measureTextWidth("To", light));
+    });
+
+    it("should kern an italic Word slants as the upright face, and not know the kerning of a bold Word makes", () => {
+        const kerned = (font: string, bold: boolean, italic: boolean): number =>
+            measureTextWidthAsDrawn("To", { font, bold, italic, size: 1000, kerning: 1 });
+        expect(kerned("Tahoma", false, true)).to.equal(kerned("Tahoma", false, false));
+        expect(kerned("Trebuchet MS", true, true)).to.equal(kerned("Trebuchet MS", true, false));
+        expect(unknownShaping("To", { font: "Calibri Light", bold: true, kerning: 1 })).to.equal(
+            "kerned text in a font whose kerning isn't known",
+        );
     });
 });

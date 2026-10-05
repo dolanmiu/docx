@@ -26,6 +26,7 @@ import {
 } from "docx";
 import { buildTestFont } from "tests/font-file";
 
+import { layOutPasses } from "./layout-passes";
 import { type DocumentContent, type ParagraphBlock, readDocument } from "./read-document";
 import { readDocx } from "./read-docx";
 
@@ -230,6 +231,59 @@ describe("readDocx", () => {
         const [item] = (content.blocks[0].block as ParagraphBlock).items;
         expect(item).to.deep.include({ type: "text", text: "Office" });
         expect(item.type === "text" && item.font).to.deep.equal({ font: "Calibri", kerning: 1, ligatures: "standardContextual" });
+    });
+
+    it("should lay out the headings of Word 2013 to 2019's Normal template in Calibri Light, kerned and with its ligatures", () => {
+        // The theme's heading font, Calibri Light, kerned from 1 point with standard and contextual ligatures, as Word's own
+        // templates have it, which the layout stopped at until the width tables had it
+        // (scripts/layout-probes/stops2/word-stops-font-kerning.ts)
+        const W14 = 'xmlns:w14="http://schemas.microsoft.com/office/word/2010/wordml"';
+        const A = 'xmlns:a="http://schemas.openxmlformats.org/drawingml/2006/main"';
+        const content = readDocx(
+            new Map([
+                [
+                    "_rels/.rels",
+                    relationships(`<Relationship Id="rId1" Type="${TRANSITIONAL}/officeDocument" Target="word/document.xml"/>`),
+                ],
+                [
+                    "word/_rels/document.xml.rels",
+                    relationships(
+                        `<Relationship Id="rId1" Type="${TRANSITIONAL}/styles" Target="styles.xml"/>`,
+                        `<Relationship Id="rId2" Type="${TRANSITIONAL}/settings" Target="settings.xml"/>`,
+                        `<Relationship Id="rId3" Type="${TRANSITIONAL}/theme" Target="theme/theme1.xml"/>`,
+                    ),
+                ],
+                [
+                    "word/theme/theme1.xml",
+                    parse(
+                        `<a:theme ${A}><a:themeElements><a:fontScheme name="Office"><a:majorFont><a:latin typeface="Calibri Light"/></a:majorFont><a:minorFont><a:latin typeface="Calibri"/></a:minorFont></a:fontScheme></a:themeElements></a:theme>`,
+                    ),
+                ],
+                [
+                    "word/styles.xml",
+                    parse(
+                        `<w:styles ${W} ${W14}><w:docDefaults><w:rPrDefault><w:rPr><w:rFonts w:asciiTheme="minorHAnsi" w:hAnsiTheme="minorHAnsi"/><w:kern w:val="2"/><w:sz w:val="22"/><w14:ligatures w14:val="standardContextual"/></w:rPr></w:rPrDefault></w:docDefaults><w:style w:type="paragraph" w:styleId="Heading1"><w:name w:val="heading 1"/><w:rPr><w:rFonts w:asciiTheme="majorHAnsi" w:hAnsiTheme="majorHAnsi"/><w:sz w:val="32"/></w:rPr></w:style></w:styles>`,
+                    ),
+                ],
+                ["word/settings.xml", parse(COMPATIBLE)],
+                [
+                    "word/document.xml",
+                    documentOf(
+                        `<w:p><w:pPr><w:pStyle w:val="Heading1"/></w:pPr><w:r><w:t>To Wyatt’s affluent office</w:t></w:r></w:p><w:p><w:r><w:t>Text</w:t></w:r></w:p>`,
+                    ),
+                ],
+            ]),
+        );
+        const [item] = (content.blocks[0].block as ParagraphBlock).items;
+        expect(item.type === "text" && item.font).to.deep.include({
+            font: "Calibri Light",
+            size: 16,
+            kerning: 1,
+            ligatures: "standardContextual",
+        });
+        const { stoppedAt, pageCount } = layOutPasses(content);
+        expect(stoppedAt).to.equal(undefined);
+        expect(pageCount).to.equal(1);
     });
 
     it("should read a .docx without settings as one in compatibility mode, as Word lays it out", () => {
