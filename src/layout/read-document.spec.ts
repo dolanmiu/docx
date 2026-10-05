@@ -601,31 +601,30 @@ describe("readDocument", () => {
             expect((both as { readonly width: number }).width).to.be.greaterThan((x as { readonly width: number }).width);
         });
 
-        it("should lay out an equation displayed beside text, and one alone after its list's number, in the line, and stop where Word builds them up", () => {
+        it("should lay out an equation displayed beside text, and one alone after its list's number, in the line, built up as in a line of text", () => {
             const run = (characters: string): object => ({ "m:r": [{ "m:t": [characters] }] });
             const math = (characters: string): object => ({ "m:oMath": [run(characters)] });
             const fraction = { "m:oMath": [{ "m:f": [{ "m:num": [run("a")] }, { "m:den": [run("b")] }] }] };
             const displayed = { "m:oMathPara": [{ "m:oMathParaPr": [{ "m:jc": { _attr: { "m:val": "right" } } }] }, math("x")] };
             const reasonOf = (content: DocumentContent): string | undefined => paragraphOf(content).unsupported;
-            // Word lays one in `m:oMathPara` out in the line beside text in its paragraph or in a hyperlink there, but how it
-            // builds one up there, as in a line of text or displayed, hasn't been seen (`word-stops-equations.docx` EQ25a,
-            // EQ25b)
+            // Word lays one in `m:oMathPara` out in the line beside text in its paragraph or in a hyperlink there, and builds
+            // one up there as in a line of text, its fraction's numerator and denominator in a script's size
+            // (`word-stops-equations.docx` EQ25a, EQ25b, `word-stops-equations2.docx` EQ38a, EQ38b)
             expect(reasonOf(readBody([p(r(t("a")), displayed)]))).to.equal(undefined);
             const link = { "w:hyperlink": [{ _attr: { "w:anchor": "a" } }, displayed] };
             expect(reasonOf(readBody([p(link, r(t("a")))]))).to.equal(undefined);
             const builtUp = { "m:oMathPara": [fraction] };
             const eleven = { styles: { default: { document: { run: { size: 22 } } } } };
-            expect(reasonOf(readBody([p(r(t("a")), builtUp)], eleven))).to.equal(
-                "an equation Word builds up, displayed (`m:oMathPara`) beside text in its paragraph",
-            );
-            // Two alone in a paragraph, and one Word builds up alone after its list's number (EQ25d)
+            const [, beside] = itemsOf(readBody([p(r(t("a")), builtUp)], eleven));
+            expect((beside as { readonly width: number }).width).to.be.closeTo(5.2, 0.03);
+            // Two alone in a paragraph, and one Word builds up alone after its list's number, as in a line of text (EQ25d,
+            // EQ38c, EQ38d)
             expect(reasonOf(readBody([p(math("x"), math("y"))]))).to.equal("equations alone in their paragraph beside each other");
             const numbering = { config: [{ reference: "list", levels: [{ level: 0, format: LevelFormat.DECIMAL, text: "%1." }] }] };
             const numbered = pPr({ "w:numPr": [value("w:ilvl", 0), value("w:numId", 1)] });
             expect(reasonOf(readBody([p(numbered, math("x"))], { numbering }))).to.equal(undefined);
-            expect(reasonOf(readBody([p(numbered, fraction)], { numbering, ...eleven }))).to.equal(
-                "an equation Word builds up alone in its paragraph after its list's number",
-            );
+            const after = itemsOf(readBody([p(numbered, fraction)], { numbering, ...eleven })).filter(({ type }) => type === "box");
+            expect((after[0] as { readonly width: number }).width).to.be.closeTo(5.2, 0.03);
             // One alone in its paragraph, its justification its own, and one in a line of text, numbered or not, are laid out
             expect(reasonOf(readBody([p(displayed)]))).to.equal(undefined);
             expect(reasonOf(readBody([p(numbered, r(t("a ")), math("x"))], { numbering }))).to.equal(undefined);
@@ -638,7 +637,7 @@ describe("readDocument", () => {
             expect(reasonOf(readBody([p(r(t("a")), r(t("b")), { "w:del": [displayed] })]))).to.equal(undefined);
         });
 
-        it("should stop at equations in a maths font other than Cambria Math, or with limits, displayed equations or fractions put otherwise, displayed ones with margins, and ones side by side with space between them, in a document's maths settings", () => {
+        it("should stop at equations in a maths font other than Cambria Math, or with small fractions, and displayed ones with margins, in a document's maths settings, and put limits where they say", () => {
             const equation = p(r(t("a ")), { "m:oMath": [{ "m:r": [{ "m:t": ["x"] }] }] });
             const setting = (name: string, val: string): object => ({ [name]: { _attr: { "m:val": val } } });
             const reasonWith = (...settings: readonly object[]): string | undefined =>
@@ -670,32 +669,50 @@ describe("readDocument", () => {
                 );
             }
             expect(displayedWith(...word)).to.equal(undefined);
-            // Space between equations, which Word was seen to leave out of one alone in its paragraph of equations, with two
-            // side by side in one, which Word puts in a line with nothing between them without it (EQ25c)
+            // Space between equations, which Word leaves out, even between two side by side in one paragraph of them, which it
+            // puts in a line with nothing between them (EQ25c, `word-stops-equation-spacing.docx` EQ44)
             const x = { "m:oMath": [{ "m:r": [{ "m:t": ["x"] }] }] };
             const pair = p({ "m:oMathPara": [x, { "m:oMath": [{ "m:r": [{ "m:t": ["y"] }] }] }] });
-            const pairWith = (...settings: readonly object[]): string | undefined =>
-                paragraphOf(readWithSettings([pair], [{ "m:mathPr": settings }])).unsupported;
-            expect(pairWith(setting("m:interSp", "240"))).to.equal(
-                "equations side by side in a paragraph of them (`m:oMathPara`) in a document whose maths settings put space between equations",
-            );
-            expect(pairWith(...word)).to.equal(undefined);
-            expect(pairWith(setting("m:interSp", "0"))).to.equal(undefined);
-            expect(displayedWith(setting("m:interSp", "240"))).to.equal(undefined);
-            // Limits put elsewhere, displayed equations not displayed, and small fractions displayed, which haven't been seen
-            const otherwise = "an equation in a document whose maths settings put limits, displayed equations or fractions otherwise";
-            for (const given of [
-                setting("m:naryLim", "subSup"),
-                setting("m:intLim", "undOvr"),
-                setting("m:dispDef", "0"),
-                setting("m:smallFrac", "1"),
-            ]) {
-                expect(reasonWith(...word, given)).to.equal(otherwise);
-            }
-            expect(reasonWith(...word, setting("m:naryLim", "undOvr"), setting("m:intLim", "subSup"), setting("m:dispDef", "1"))).to.equal(
-                undefined,
-            );
-            expect(reasonWith(...word, { "m:smallFrac": {} })).to.equal(otherwise);
+            const pairWith = (...settings: readonly object[]): readonly LayoutItem[] =>
+                itemsOf(readWithSettings([pair], [{ "m:mathPr": settings }]));
+            expect(pairWith(setting("m:interSp", "240"))).to.deep.equal(pairWith(...word));
+            // Displayed equations' own defaults off, and small fractions with them, which Word lays out alike, but small
+            // fractions with them on, which haven't been seen (`word-stops-equation-small.docx` EQ43)
+            const small = "an equation in a document whose maths settings make fractions small";
+            expect(reasonWith(...word, setting("m:dispDef", "0"))).to.equal(undefined);
+            expect(reasonWith(...word, setting("m:dispDef", "0"), setting("m:smallFrac", "1"))).to.equal(undefined);
+            expect(reasonWith(...word, setting("m:smallFrac", "1"))).to.equal(small);
+            expect(reasonWith(...word, setting("m:dispDef", "1"), { "m:smallFrac": {} })).to.equal(small);
+            // A displayed sum's limits, and an integral's, under and over it or beside it as the settings say, unless its own
+            // properties say otherwise (`word-stops-equation-limits.docx` EQ42)
+            const run = (characters: string): object => ({ "m:r": [{ "m:t": [characters] }] });
+            const nary = (character: string, ...properties: readonly object[]): object =>
+                p({
+                    "m:oMathPara": [
+                        {
+                            "m:oMath": [
+                                {
+                                    "m:nary": [
+                                        { "m:naryPr": [setting("m:chr", character), ...properties] },
+                                        { "m:sub": [run("i")] },
+                                        { "m:sup": [run("n")] },
+                                        { "m:e": [run("a")] },
+                                    ],
+                                },
+                            ],
+                        },
+                    ],
+                });
+            const heightWith = (displayed: object, ...settings: readonly object[]): number => {
+                const [box] = itemsOf(readWithSettings([displayed], [{ "m:mathPr": settings }]));
+                const { height, descent } = box as { readonly height: number; readonly descent: number };
+                return height + descent;
+            };
+            const sum = nary("\u2211");
+            const integral = nary("\u222b");
+            expect(heightWith(sum, setting("m:naryLim", "subSup"))).to.be.lessThan(heightWith(sum));
+            expect(heightWith(integral, setting("m:intLim", "undOvr"))).to.be.greaterThan(heightWith(integral));
+            expect(heightWith(nary("\u2211", setting("m:limLoc", "undOvr")), setting("m:naryLim", "subSup"))).to.equal(heightWith(sum));
             // Text without equations is laid out as it is
             expect(
                 paragraphOf(readWithSettings([p(r(t("a")))], [{ "m:mathPr": [setting("m:mathFont", "STIX Two Math")] }])).unsupported,
@@ -6302,20 +6319,16 @@ describe("readDocument", () => {
             expect(itemsOf(content).map(({ type }) => type)).to.deep.equal(["text", "tab", "text"]);
         });
 
-        it("should read an equation Word builds up, displayed beside text, as one in the line", () => {
+        it("should read an equation that can't be laid out in the line, but can displayed, as displayed", () => {
             const run = (characters: string): object => ({ "m:r": [{ "m:t": [characters] }] });
-            const fraction = { "m:f": [{ "m:num": [run("a")] }, { "m:den": [run("b")] }] };
-            const displayed = { "m:oMathPara": [{ "m:oMath": [fraction] }] };
             const eleven = { styles: { default: { document: { run: { size: 22 } } } } };
-            const content = guessed([p(r(t("a ")), displayed)], eleven);
-            expect(read(content)).to.deep.equal([
-                ["an equation Word builds up, displayed (`m:oMathPara`) beside text in its paragraph", "a "],
-            ]);
-            expect(itemsOf(content).map(({ type }) => type)).to.deep.equal(["text", "box"]);
-            // One Word can't be laid out in the line, but can displayed, is laid out displayed: a sum in a fraction's
-            // numerator, which in a line of text is in a script's style
+            // A sum in a superscript of a fraction's numerator, which in a line of text is in a script's script's style
             const sum = { "m:nary": [{ "m:naryPr": [] }, { "m:sub": [run("i")] }, { "m:sup": [run("n")] }, { "m:e": [run("a")] }] };
-            const either = guessed([p(r(t("a ")), { "m:oMath": [{ "m:f": [{ "m:num": [sum] }, { "m:den": [run("b")] }] }] })], eleven);
+            const numerator = { "m:sSup": [{ "m:e": [run("x")] }, { "m:sup": [sum] }] };
+            const either = guessed(
+                [p(r(t("a ")), { "m:oMath": [{ "m:f": [{ "m:num": [numerator] }, { "m:den": [run("b")] }] }] })],
+                eleven,
+            );
             expect(read(either)[0][0]).to.equal("an equation with a part Word builds up in a way not yet followed");
             expect(itemsOf(either).map(({ type }) => type)).to.deep.equal(["text", "box"]);
         });
