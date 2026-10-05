@@ -8789,7 +8789,10 @@ var docxLayout = (function(exports) {
 	*/
 	var measureCells = (table, measure) => new Map(sizingRows(table).flatMap(({ cells }) => cells.map((cell) => {
 		var _cell$sizing;
-		const text = measure((_cell$sizing = cell.sizing) !== null && _cell$sizing !== void 0 ? _cell$sizing : cell.blocks);
+		const text = cell.fitText ? {
+			min: 0,
+			max: 0
+		} : measure((_cell$sizing = cell.sizing) !== null && _cell$sizing !== void 0 ? _cell$sizing : cell.blocks);
 		const margins = cell.marginLeft + cell.marginRight;
 		return [cell, _objectSpread2(_objectSpread2({}, text), {}, {
 			min: text.min + margins,
@@ -10504,12 +10507,13 @@ var docxLayout = (function(exports) {
 	* (`word-table-formats.docx` CF1 to CF6). Word applies bands only of a style that gives their size, and counts them from
 	* the first row and column that aren't the first row or column it applies. It doesn't apply `wholeTable`.
 	*
-	* A table's header of several rows is its first row, all of it, and its bands of rows start below it. With its first row
-	* turned off, all of the header is in the band before the first, the second band (`word-compat-off.docx` CS2a to CS2f).
-	* A header of one row is a row like the others (CS2c).
+	* A table's header of several rows is its first row, all of it, with its corner cells in each of its rows
+	* (`word-stops-tables.docx` TS2), and its bands of rows start below it. With its first row turned off, all of a header of
+	* two rows is in the band before the first, the second band (`word-compat-off.docx` CS2a to CS2f), but the bands of one of
+	* three start at its first row, as though it weren't a header (TS3). A header of one row is a row like the others (CS2c).
 	*/
 	var conditionalTypesOf = ({ row, rows, cell, cells, headerRows = 0 }, look, bands) => {
-		const header = headerRows > 1 ? headerRows : 0;
+		const header = headerRows > 1 && (look.firstRow || headerRows < 3) ? headerRows : 0;
 		const inHeader = row < header;
 		const firstRow = look.firstRow && (header > 0 ? inHeader : row === 0);
 		const lastRow = look.lastRow && row === rows - 1;
@@ -10908,12 +10912,14 @@ var docxLayout = (function(exports) {
 	var _excluded2 = [
 		"borders",
 		"margins",
-		"gridWidth"
+		"gridWidth",
+		"noWrap"
 	];
 	var _excluded3 = [
 		"borders",
 		"margins",
-		"gridWidth"
+		"gridWidth",
+		"noWrap"
 	];
 	var DEFAULT_SECTION = {
 		pageWidth: 612,
@@ -12060,16 +12066,8 @@ var docxLayout = (function(exports) {
 			markFont
 		}, unsupported === void 0 && typeof items !== "string" && children.some((child) => isObject(child) && LEFT_OUT in child) ? { hidden: true } : {}), list.list ? { list: list.list } : {}), list.alignment ? { numberAlignment: list.alignment } : {}), typeof borders === "object" ? { borders } : {}), paragraphGrid !== void 0 && Object.keys(paragraphGrid).length > 0 ? { grid: paragraphGrid } : {}), typeof frame === "object" ? { frame } : {}), {}, { style }, headingLevel === void 0 ? {} : { heading: _objectSpread2({ level: Number(headingLevel) }, withoutUndefined({ chapter: list.from === "style" ? list.chapter : void 0 })) }), typeof items === "string" || guessed || unsupported ? { unsupported: typeof items === "string" ? items : guessed !== null && guessed !== void 0 ? guessed : unsupported } : {});
 	};
-	/**
-	* Why a cell's properties (`w:tcPr`) change how its text is laid out in a way not yet followed, when they do: cells merged
-	* across columns as the oldest versions of Word wrote them (`w:hMerge`), text that doesn't wrap (`w:noWrap`), text
-	* fitted to the cell (`w:tcFitText`), and text that runs down the cell with its East Asian characters upright, or across
-	* with them on their side (`w:textDirection` tbLrV, tbRlV and lrTbV).
-	*/
+	/** Why a cell's text direction (`w:textDirection`) isn't followed, when it is one the schema doesn't have */
 	var unsupportedCellOf = (properties) => {
-		if (find(properties, "w:hMerge") !== void 0) return "cells merged across columns as old versions of Word wrote them";
-		if (onOff(properties, "w:noWrap") === true) return "a table cell whose text doesn't wrap";
-		if (onOff(properties, "w:tcFitText") === true) return "text fitted to its table cell";
 		const direction = valueOf(properties, "w:textDirection");
 		return direction === void 0 || HORIZONTAL.has(direction) || VERTICAL.has(direction) ? void 0 : "text in a table cell in a direction not yet followed";
 	};
@@ -12150,6 +12148,17 @@ var docxLayout = (function(exports) {
 	/** Whether table, row or cell properties change how its text is laid out, beyond those that don't or are read */
 	var changesLines = (properties, read = /* @__PURE__ */ new Set()) => properties.some((property) => !LAID_OUT_ALIKE.has(nameOf$1(property)) && !read.has(nameOf$1(property)));
 	var FOLLOWED_CELL_PROPERTIES = /* @__PURE__ */ new Set(["w:tcBorders", "w:tcMar"]);
+	var ROW_PARTS = /* @__PURE__ */ new Set([
+		"firstRow",
+		"lastRow",
+		"band1Horz",
+		"band2Horz"
+	]);
+	var FOLLOWED_PART_ROW_PROPERTIES = /* @__PURE__ */ new Set(["w:trHeight"]);
+	var IGNORED_PART_TABLE_PROPERTIES = /* @__PURE__ */ new Set(["w:tblCellSpacing"]);
+	var IGNORED_STYLE_ROW_PROPERTIES = /* @__PURE__ */ new Set(["w:trHeight"]);
+	var FOLLOWED_STYLE_CELL_PROPERTIES = /* @__PURE__ */ new Set(["w:tcMar"]);
+	var FOLLOWED_ROW_TABLE_PROPERTIES = /* @__PURE__ */ new Set(["w:tblBorders", "w:tblCellMar"]);
 	/** The last of a property given among properties, each over those before: those of a table's styles, then its own */
 	var lastOf = (properties, name) => properties.reduce((found, given) => {
 		var _find3;
@@ -12163,6 +12172,27 @@ var docxLayout = (function(exports) {
 		rowBands: true,
 		columnBands: false
 	};
+	var MERGED_CONTENT = /* @__PURE__ */ new Set([
+		"w:tab",
+		"w:br",
+		"w:sym",
+		"w:drawing",
+		"w:pict",
+		"w:object",
+		"w:tbl",
+		"m:oMath"
+	]);
+	/** Whether an element has anything in it Word lays out: text that isn't empty, or what `MERGED_CONTENT` names */
+	var hasMergedContent = (element) => Array.isArray(element) ? element.some(hasMergedContent) : isObject(element) && Object.entries(element).some(([name, value]) => name === "w:t" ? textIn(value) !== "" : MERGED_CONTENT.has(name) || name !== "_attr" && hasMergedContent(value));
+	/**
+	* A row's cells, with those merged across columns as old versions of Word wrote them (`w:hMerge`) together: each cell that
+	* goes on from the one before it is in its group, which Word lays out as one cell across their columns
+	* (`word-stops-tables.docx` TS6)
+	*/
+	var mergedAcross = (cells) => cells.reduce((groups, cell) => {
+		const merge = find(childrenOf(find(contentOf$3(cell.element).filter(isObject), "w:tcPr")), "w:hMerge");
+		return merge !== void 0 && attributesOf(merge)["w:val"] !== "restart" && groups.length > 0 ? [...groups.slice(0, -1), [...groups[groups.length - 1], cell]] : [...groups, [cell]];
+	}, []);
 	/** Whether an element has any of these elements in it, at any depth */
 	var hasAnyOf = (element, names) => Array.isArray(element) ? element.some((child) => hasAnyOf(child, names)) : isObject(element) && Object.entries(element).some(([name, value]) => names.has(name) || name !== "_attr" && hasAnyOf(value, names));
 	/**
@@ -12220,7 +12250,7 @@ var docxLayout = (function(exports) {
 	* bands by each row's place among all the rows, the deleted ones too (MK14j to MK14l).
 	*/
 	var readTable = (element, reader) => {
-		var _twips, _reader$grid, _readTableLook, _ref13, _ref14, _ref15, _ref16, _ref17, _ref18, _ref19, _ref20, _ref21, _ref22, _ref23, _ref24, _ref25, _ref26, _withoutGuess$unsuppo, _read$find2, _blocks$find, _read$0$cells, _read$, _roomOf, _roomOf2;
+		var _twips, _reader$grid, _readTableLook, _ref14, _ref15, _ref16, _ref17, _ref18, _ref19, _ref20, _ref21, _ref22, _ref23, _ref24, _ref25, _ref26, _ref27, _ref28, _ref29, _withoutGuess$unsuppo, _read$find2, _blocks$find, _read$0$cells, _read$, _roomOf, _roomOf2;
 		const children = contentOf$3(element).filter(isObject);
 		const properties = childrenOf(find(children, "w:tblPr"));
 		const style = valueOf(properties, "w:tblStyle");
@@ -12233,6 +12263,7 @@ var docxLayout = (function(exports) {
 			left: 0,
 			right: 0
 		}, Object.assign({}, ...tableStyles.map(({ cellMargins }) => cellMargins))), readCellMargins(find(properties, "w:tblCellMar")));
+		const styleCellMargins = Object.assign({}, ...tableStyles.map(({ cellProperties = [] }) => readCellMargins(find(cellProperties, "w:tcMar"))));
 		const tableBorders = Object.assign({}, ...allProperties.map((given) => readBorderSet(find(given, "w:tblBorders"))));
 		const tableSpacing = readCellSpacing(lastOf(allProperties, "w:tblCellSpacing"));
 		const { "w:w": indentValue, "w:type": indentType = "dxa" } = attributesOf(lastOf(allProperties, "w:tblInd"));
@@ -12270,12 +12301,19 @@ var docxLayout = (function(exports) {
 		const formatsOf = (position) => {
 			if (conditional.length === 0) return UNFORMATTED;
 			const applying = conditionalTypesOf(position, look, bands).flatMap((type) => conditional.filter(([given]) => given === type));
-			const unfollowed = applying.some(([, format]) => changesLines([...format.tableProperties, ...format.rowProperties]) || changesLines(format.cellProperties, FOLLOWED_CELL_PROPERTIES));
+			const unfollowed = applying.some(([type, format]) => changesLines(format.tableProperties, IGNORED_PART_TABLE_PROPERTIES) || changesLines(format.rowProperties, ROW_PARTS.has(type) ? FOLLOWED_PART_ROW_PROPERTIES : void 0) || changesLines(format.cellProperties, FOLLOWED_CELL_PROPERTIES));
+			const heights = applying.flatMap(([, { rowProperties }]) => {
+				const height = find(rowProperties, "w:trHeight");
+				return height === void 0 ? [] : [attributesOf(height)];
+			});
 			return _objectSpread2({
 				formats: [...ownStyles, ...applying.map(([, format]) => format)],
 				borders: Object.assign({}, ...applying.map(([, { cellProperties }]) => readBorderSet(find(cellProperties, "w:tcBorders")))),
 				margins: Object.assign({}, ...applying.map(([, { cellProperties }]) => readCellMargins(find(cellProperties, "w:tcMar"))))
-			}, withoutUndefined({ unsupported: unfollowed ? "a table style's formatting for some of its cells" : unseenInHeaderOf(position, applying) }));
+			}, withoutUndefined({
+				height: heights[heights.length - 1],
+				unsupported: unfollowed ? "a table style's formatting for some of its cells" : unseenInHeaderOf(position, applying)
+			}));
 		};
 		const UNFORMATTED = {
 			formats: ownStyles,
@@ -12284,23 +12322,33 @@ var docxLayout = (function(exports) {
 		};
 		/**
 		* Why the parts of the table's style for a cell in a header of several rows apply in a way Word hasn't been seen to
-		* apply them, when they do: its corners in the header's rows after the first, and its bands in a header of three rows
-		* or more with its first row turned off. Word made all of a header of two or three rows its first row, and put one of
-		* two in the second band (`word-compat-off.docx` CS2a, CS2b and CS2f)
+		* apply them, when they do: its bands in a header of four rows or more with its first row turned off. Word made all
+		* of a header of two or three rows its first row, with its corner cells in each of them (`word-stops-tables.docx`
+		* TS2), and put one of two in the second band (`word-compat-off.docx` CS2a, CS2b and CS2f), but banded one of three
+		* from its first row, as though it weren't a header (TS3)
 		*/
 		const unseenInHeaderOf = ({ row, headerRows: header = 0 }, applying) => {
 			const types = new Set(applying.map(([type]) => type));
-			if (row > 0 && row < header && (types.has("nwCell") || types.has("neCell"))) return "a table style's corner cells in a header of several rows";
-			return row < header && header > 2 && (types.has("band1Horz") || types.has("band2Horz")) ? "a table style's bands of rows in a header of three rows or more" : void 0;
+			return row < header && header > 3 && (types.has("band1Horz") || types.has("band2Horz")) ? "a table style's bands of rows in a header of four rows or more" : void 0;
 		};
 		const gridWidth = (from, to) => grid.slice(from, to).reduce((total, value) => total + value, 0);
 		const read = rows.map(({ element: row, bookmarks: rowBookmarks }, rowIndex) => {
-			var _numberOf4;
+			var _formatsOf$height, _numberOf4;
 			const rowChildren = contentOf$3(row).filter(isObject);
 			const rowProperties = childrenOf(find(rowChildren, "w:trPr"));
 			const rowParts = unwrap(rowChildren);
-			const rowCells = withBookmarks(rowParts, "w:tc");
-			const heightAttributes = attributesOf(find(rowProperties, "w:trHeight"));
+			const rowCells = mergedAcross(withBookmarks(rowParts, "w:tc"));
+			const exceptions = childrenOf(find(rowChildren, "w:tblPrEx"));
+			const rowBorderSet = exceptions.length > 0 ? readBorderSet(find(exceptions, "w:tblBorders")) : {};
+			const rowMargins = exceptions.length > 0 ? readCellMargins(find(exceptions, "w:tblCellMar")) : {};
+			const ownHeight = find(rowProperties, "w:trHeight");
+			const heightAttributes = ownHeight === void 0 ? (_formatsOf$height = formatsOf({
+				row: rowIndex,
+				rows: rows.length,
+				cell: 0,
+				cells: rowCells.length,
+				headerRows
+			}).height) !== null && _formatsOf$height !== void 0 ? _formatsOf$height : {} : attributesOf(ownHeight);
 			const height = twips(heightAttributes["w:val"]);
 			const { "w:hRule": rule } = heightAttributes;
 			const skipped = (_numberOf4 = numberOf(attributesOf(find(rowProperties, "w:gridBefore"))["w:val"])) !== null && _numberOf4 !== void 0 ? _numberOf4 : 0;
@@ -12320,11 +12368,16 @@ var docxLayout = (function(exports) {
 				const deletedBefore = deletedFlags.slice(0, Math.min(rowIndex, headerRows)).filter((flag) => flag).length;
 				return typesAt(rowIndex, rows.length, headerRows) !== typesAt(rowIndex - deletedBefore, rows.length - deletedHeaderRows, headerRows - deletedHeaderRows);
 			});
-			const { cells, edges, column: end, unsupported: cellsUnsupported } = rowCells.reduce(({ column, cells: done, edges: before, unsupported: unsupportedBefore }, { element: cell }, cellIndex) => {
-				var _numberOf5, _twips3, _shareOf, _ref9, _ref10;
+			const { cells, edges, column: end, unsupported: cellsUnsupported } = rowCells.reduce(({ column, cells: done, edges: before, unsupported: unsupportedBefore }, [{ element: cell }, ...across], cellIndex) => {
+				var _ref9, _ref10, _ref11;
 				const cellChildren = contentOf$3(cell).filter(isObject);
 				const cellProperties = childrenOf(find(cellChildren, "w:tcPr"));
-				const span = (_numberOf5 = numberOf(attributesOf(find(cellProperties, "w:gridSpan"))["w:val"])) !== null && _numberOf5 !== void 0 ? _numberOf5 : 1;
+				const spanOf = (given) => {
+					var _numberOf5;
+					return (_numberOf5 = numberOf(attributesOf(find(given, "w:gridSpan"))["w:val"])) !== null && _numberOf5 !== void 0 ? _numberOf5 : 1;
+				};
+				const acrossProperties = across.map((merged) => childrenOf(find(contentOf$3(merged.element).filter(isObject), "w:tcPr")));
+				const span = [cellProperties, ...acrossProperties].reduce((total, given) => total + spanOf(given), 0);
 				const mergeElement = find(cellProperties, "w:vMerge");
 				const merge = mergeElement === void 0 ? void 0 : attributesOf(mergeElement)["w:val"] === "restart" ? "restart" : "continue";
 				const formatted = formatsOf({
@@ -12334,11 +12387,26 @@ var docxLayout = (function(exports) {
 					cells: rowCells.length,
 					headerRows
 				});
-				const margins = _objectSpread2(_objectSpread2(_objectSpread2({}, tableMargins), formatted.margins), readCellMargins(find(cellProperties, "w:tcMar")));
-				const { "w:w": ownWidth, "w:type": widthType = "dxa" } = attributesOf(find(cellProperties, "w:tcW"));
-				const inTwips = widthType === "dxa" ? (_twips3 = twips(ownWidth)) !== null && _twips3 !== void 0 ? _twips3 : 0 : 0;
-				const hasWidth = inTwips > 0 || widthType === "pct" && ((_shareOf = shareOf(ownWidth)) !== null && _shareOf !== void 0 ? _shareOf : 0) > 0;
-				const width = inTwips > 0 ? inTwips : gridWidth(column, column + span);
+				const margins = _objectSpread2(_objectSpread2(_objectSpread2(_objectSpread2(_objectSpread2({}, tableMargins), rowMargins), styleCellMargins), formatted.margins), readCellMargins(find(cellProperties, "w:tcMar")));
+				const last = cellIndex === rowCells.length - 1;
+				const rowSides = exceptions.length > 0 ? withoutUndefined({
+					left: cellIndex === 0 ? rowBorderSet.left : rowBorderSet.insideV,
+					right: last ? rowBorderSet.right : rowBorderSet.insideV,
+					top: rowIndex === 0 ? rowBorderSet.top : rowBorderSet.insideH,
+					bottom: rowIndex === rows.length - 1 ? rowBorderSet.bottom : rowBorderSet.insideH
+				}) : {};
+				const widthOf = (given) => {
+					var _twips3, _shareOf;
+					const { "w:w": ownWidth, "w:type": widthType = "dxa" } = attributesOf(find(given, "w:tcW"));
+					const inTwips = widthType === "dxa" ? (_twips3 = twips(ownWidth)) !== null && _twips3 !== void 0 ? _twips3 : 0 : 0;
+					return {
+						twips: inTwips,
+						given: inTwips > 0 || widthType === "pct" && ((_shareOf = shareOf(ownWidth)) !== null && _shareOf !== void 0 ? _shareOf : 0) > 0
+					};
+				};
+				const widths = [cellProperties, ...acrossProperties].map(widthOf);
+				const hasWidth = widths.some(({ given }) => given);
+				const width = widths.every(({ twips: inTwips }) => inTwips > 0) ? widths.reduce((total, { twips: inTwips }) => total + inTwips, 0) : gridWidth(column, column + span);
 				const direction = valueOf(cellProperties, "w:textDirection");
 				const sizing = sized && !deleted && hasAnyOf(cellChildren, REMOVALS) ? readBlocks(cellChildren, sizingReaderOf(rowReader), formatted.formats) : void 0;
 				const cellBlocks = readBlocks(cellChildren, rowReader, formatted.formats);
@@ -12346,14 +12414,14 @@ var docxLayout = (function(exports) {
 				return _objectSpread2(_objectSpread2({
 					column: column + span,
 					edges: new Map([...before, [column + span, before.get(column) + width]])
-				}, withoutUndefined({ unsupported: (_ref9 = (_ref10 = unsupportedBefore !== null && unsupportedBefore !== void 0 ? unsupportedBefore : unsupportedCellOf(cellProperties)) !== null && _ref10 !== void 0 ? _ref10 : formatted.unsupported) !== null && _ref9 !== void 0 ? _ref9 : vertical ? unsupportedVerticalOf(cellBlocks) : void 0 })), {}, { cells: [...done, _objectSpread2(_objectSpread2(_objectSpread2(_objectSpread2(_objectSpread2(_objectSpread2(_objectSpread2({ column }, span > 1 ? { span } : {}), {}, { width: width - margins.left - margins.right }, hasWidth ? { ownWidth: width } : {}), {}, {
+				}, withoutUndefined({ unsupported: (_ref9 = (_ref10 = (_ref11 = unsupportedBefore !== null && unsupportedBefore !== void 0 ? unsupportedBefore : across.some((merged) => hasMergedContent(merged.element)) ? "cells merged across columns as old versions of Word wrote them, with text after the first" : void 0) !== null && _ref11 !== void 0 ? _ref11 : unsupportedCellOf(cellProperties)) !== null && _ref10 !== void 0 ? _ref10 : formatted.unsupported) !== null && _ref9 !== void 0 ? _ref9 : vertical ? unsupportedVerticalOf(cellBlocks) : void 0 })), {}, { cells: [...done, _objectSpread2(_objectSpread2(_objectSpread2(_objectSpread2(_objectSpread2(_objectSpread2(_objectSpread2(_objectSpread2(_objectSpread2({ column }, span > 1 ? { span } : {}), {}, { width: width - margins.left - margins.right }, hasWidth ? { ownWidth: width } : {}), {}, {
 					blocks: cellBlocks,
 					marginTop: margins.top,
 					marginBottom: margins.bottom,
 					marginLeft: margins.left,
 					marginRight: margins.right
-				}, merge ? { verticalMerge: merge } : {}), vertical ? { vertical: true } : {}), onOff(cellProperties, "w:hideMark") === true ? { hideMark: true } : {}), sizing ? { sizing } : {}), {}, {
-					borders: formatted === UNFORMATTED ? readBorderSet(find(cellProperties, "w:tcBorders")) : _objectSpread2(_objectSpread2({}, formatted.borders), readBorderSet(find(cellProperties, "w:tcBorders"))),
+				}, merge ? { verticalMerge: merge } : {}), vertical ? { vertical: true } : {}), onOff(cellProperties, "w:hideMark") === true ? { hideMark: true } : {}), onOff(cellProperties, "w:tcFitText") === true ? { fitText: true } : {}), onOff(cellProperties, "w:noWrap") === true ? { noWrap: true } : {}), sizing ? { sizing } : {}), {}, {
+					borders: _objectSpread2(_objectSpread2(_objectSpread2({}, rowSides), formatted.borders), readBorderSet(find(cellProperties, "w:tcBorders"))),
 					margins,
 					gridWidth: width
 				})] });
@@ -12362,7 +12430,7 @@ var docxLayout = (function(exports) {
 				cells: [],
 				edges: /* @__PURE__ */ new Map([[skipped, gridWidth(0, skipped)]])
 			});
-			const rowUnsupported = rowParts.some((part) => "w:sdt" in part) ? BOUND_CONTROL : changesLines(childrenOf(find(rowChildren, "w:tblPrEx"))) ? "a table row with table properties of its own" : deleted && (hasAnyOf(rowChildren, REMOVED_NOTES) || JSON.stringify([...rowReader.counters]) !== counts) ? "a list or a note in a deleted table row" : unseenHeaderCount ? "a deleted row in a table's header of several rows, whose style formats some of its rows" : cellsUnsupported;
+			const rowUnsupported = rowParts.some((part) => "w:sdt" in part) ? BOUND_CONTROL : changesLines(exceptions, FOLLOWED_ROW_TABLE_PROPERTIES) ? "a table row with table properties of its own" : deleted && (hasAnyOf(rowChildren, REMOVED_NOTES) || JSON.stringify([...rowReader.counters]) !== counts) ? "a list or a note in a deleted table row" : unseenHeaderCount ? "a deleted row in a table's header of several rows, whose style formats some of its rows" : cellsUnsupported;
 			return _objectSpread2(_objectSpread2({
 				cells,
 				deleted,
@@ -12371,7 +12439,7 @@ var docxLayout = (function(exports) {
 				spacing
 			}, withoutUndefined({ unsupported: rowUnsupported })), {}, {
 				bookmarks: rowBookmarks,
-				cellBookmarks: rowCells.map(({ bookmarks }) => bookmarks),
+				cellBookmarks: rowCells.map((group) => group.flatMap(({ bookmarks }) => bookmarks)),
 				row: _objectSpread2(_objectSpread2({}, height !== void 0 && rule !== "auto" ? { height: {
 					value: height,
 					rule: rule === "exact" ? "exact" : "atLeast"
@@ -12426,9 +12494,9 @@ var docxLayout = (function(exports) {
 			tableRows.push(_objectSpread2(_objectSpread2(_objectSpread2({}, row), {}, {
 				borderTop: (_placed$borderTop = placed === null || placed === void 0 ? void 0 : placed.borderTop) !== null && _placed$borderTop !== void 0 ? _placed$borderTop : 0,
 				borderBottom: (_placed$borderBottom = placed === null || placed === void 0 ? void 0 : placed.borderBottom) !== null && _placed$borderBottom !== void 0 ? _placed$borderBottom : 0
-			}, withoutUndefined({ breakBorder: placed === null || placed === void 0 ? void 0 : placed.breakBorder })), {}, { cells: cells.map((_ref11, cellIndex) => {
+			}, withoutUndefined({ breakBorder: placed === null || placed === void 0 ? void 0 : placed.breakBorder })), {}, { cells: cells.map((_ref12, cellIndex) => {
 				var _read, _above$cells$find, _unmerged;
-				let { borders: _, margins, gridWidth: __ } = _ref11, cell = _objectWithoutProperties(_ref11, _excluded2);
+				let { borders: _, margins, gridWidth: __, noWrap: ___ } = _ref12, cell = _objectWithoutProperties(_ref12, _excluded2);
 				const pending = [...carried, ...cellBookmarks[cellIndex]];
 				const marked = pending.length === 0 ? void 0 : startingAtFirst(cell.blocks, pending);
 				carried = marked === void 0 ? pending : [];
@@ -12453,9 +12521,9 @@ var docxLayout = (function(exports) {
 		const deletedRows = sized ? read.filter(({ deleted }) => deleted).map(({ row, cells }) => _objectSpread2(_objectSpread2({}, row), {}, {
 			borderTop: 0,
 			borderBottom: 0,
-			cells: cells.map((_ref12) => {
-				let { borders: _, margins: __, gridWidth: ___ } = _ref12;
-				return _objectWithoutProperties(_ref12, _excluded3);
+			cells: cells.map((_ref13) => {
+				let { borders: _, margins: __, gridWidth: ___, noWrap: ____ } = _ref13;
+				return _objectWithoutProperties(_ref13, _excluded3);
 			})
 		})) : [];
 		const blocks = [...tableRows.flatMap(({ cells }) => cells.flatMap((cell) => {
@@ -12471,7 +12539,7 @@ var docxLayout = (function(exports) {
 				return [find(rowChildren, "w:trPr"), ...unwrap(rowChildren).filter((part) => "w:tc" in part).map((cell) => find(contentOf$3(cell).filter(isObject), "w:tcPr"))];
 			})
 		]);
-		const styleUnsupported = tableStyles.some(({ rowProperties = [], cellProperties = [] }) => changesLines([...rowProperties, ...cellProperties])) ? "a table style with formatting of its rows or cells" : void 0;
+		const styleUnsupported = tableStyles.some(({ rowProperties = [], cellProperties = [] }) => changesLines(rowProperties, IGNORED_STYLE_ROW_PROPERTIES) || changesLines(cellProperties, FOLLOWED_STYLE_CELL_PROPERTIES)) ? "a table style with formatting of its rows or cells" : void 0;
 		const givenWidth = readTableWidth(properties);
 		const evenable = !spaced && givenWidth.share === void 0 && read.every(({ edges }) => edges.has(0));
 		const evened = unequal && evenable;
@@ -12482,7 +12550,7 @@ var docxLayout = (function(exports) {
 		const float = floatElement === void 0 ? void 0 : readTableFloat(floatElement, find(properties, "w:tblOverlap"));
 		const older = reader.compatibilityMode !== void 0;
 		const marginsBeside = older && sized && givenWidth.width === void 0;
-		const unsupported = (_ref13 = (_ref14 = (_ref15 = (_ref16 = (_ref17 = (_ref18 = (_ref19 = (_ref20 = (_ref21 = (_ref22 = (_ref23 = (_ref24 = (_ref25 = (_ref26 = (_withoutGuess$unsuppo = withoutGuess === null || withoutGuess === void 0 ? void 0 : withoutGuess.unsupported) !== null && _withoutGuess$unsuppo !== void 0 ? _withoutGuess$unsuppo : reader.down === true ? "a table on text that runs down the page" : void 0) !== null && _ref26 !== void 0 ? _ref26 : float !== void 0 && (reader.inCell || reader.inNote || reader.inHeader) ? "a table that text flows around in a table cell, header, footer or note" : void 0) !== null && _ref25 !== void 0 ? _ref25 : float !== void 0 && older ? "a table that text flows around in a document in compatibility mode" : void 0) !== null && _ref24 !== void 0 ? _ref24 : marginsBeside && fits && (reader.inCell === true || indent !== 0 || givenWidth.share !== void 0) ? "a table sized to its text in a table cell, indented or as a share of the width, in a document in compatibility mode" : void 0) !== null && _ref23 !== void 0 ? _ref23 : typeof float === "string" ? float : void 0) !== null && _ref22 !== void 0 ? _ref22 : parts.some((part) => "w:sdt" in part) ? BOUND_CONTROL : void 0) !== null && _ref21 !== void 0 ? _ref21 : (_read$find2 = read.find((row) => row.unsupported !== void 0)) === null || _read$find2 === void 0 ? void 0 : _read$find2.unsupported) !== null && _ref20 !== void 0 ? _ref20 : unmerged) !== null && _ref19 !== void 0 ? _ref19 : fits ? unfitted : unequal && !evened ? "a table whose rows give a column different widths" : void 0) !== null && _ref18 !== void 0 ? _ref18 : spacingUnsupported) !== null && _ref17 !== void 0 ? _ref17 : typeof geometry === "string" ? geometry : void 0) !== null && _ref16 !== void 0 ? _ref16 : indent === void 0 ? "a table indented by a share of the width" : void 0) !== null && _ref15 !== void 0 ? _ref15 : styleUnsupported) !== null && _ref14 !== void 0 ? _ref14 : lengths) !== null && _ref13 !== void 0 ? _ref13 : (_blocks$find = blocks.find((block) => block.unsupported !== void 0)) === null || _blocks$find === void 0 ? void 0 : _blocks$find.unsupported;
+		const unsupported = (_ref14 = (_ref15 = (_ref16 = (_ref17 = (_ref18 = (_ref19 = (_ref20 = (_ref21 = (_ref22 = (_ref23 = (_ref24 = (_ref25 = (_ref26 = (_ref27 = (_ref28 = (_ref29 = (_withoutGuess$unsuppo = withoutGuess === null || withoutGuess === void 0 ? void 0 : withoutGuess.unsupported) !== null && _withoutGuess$unsuppo !== void 0 ? _withoutGuess$unsuppo : reader.down === true ? "a table on text that runs down the page" : void 0) !== null && _ref29 !== void 0 ? _ref29 : float !== void 0 && (reader.inCell || reader.inNote || reader.inHeader) ? "a table that text flows around in a table cell, header, footer or note" : void 0) !== null && _ref28 !== void 0 ? _ref28 : float !== void 0 && older ? "a table that text flows around in a document in compatibility mode" : void 0) !== null && _ref27 !== void 0 ? _ref27 : marginsBeside && fits && (reader.inCell === true || indent !== 0 || givenWidth.share !== void 0) ? "a table sized to its text in a table cell, indented or as a share of the width, in a document in compatibility mode" : void 0) !== null && _ref26 !== void 0 ? _ref26 : typeof float === "string" ? float : void 0) !== null && _ref25 !== void 0 ? _ref25 : parts.some((part) => "w:sdt" in part) ? BOUND_CONTROL : void 0) !== null && _ref24 !== void 0 ? _ref24 : (_read$find2 = read.find((row) => row.unsupported !== void 0)) === null || _read$find2 === void 0 ? void 0 : _read$find2.unsupported) !== null && _ref23 !== void 0 ? _ref23 : unmerged) !== null && _ref22 !== void 0 ? _ref22 : fits ? unfitted : unequal && !evened ? "a table whose rows give a column different widths" : void 0) !== null && _ref21 !== void 0 ? _ref21 : fits && tableCells.some(({ noWrap }) => noWrap) ? "a table cell whose text doesn't wrap, in a table sized to its text" : void 0) !== null && _ref20 !== void 0 ? _ref20 : fits && tableCells.some(({ fitText }) => fitText) ? "text fitted to its table cell, in a table sized to its text" : void 0) !== null && _ref19 !== void 0 ? _ref19 : spacingUnsupported) !== null && _ref18 !== void 0 ? _ref18 : typeof geometry === "string" ? geometry : void 0) !== null && _ref17 !== void 0 ? _ref17 : indent === void 0 ? "a table indented by a share of the width" : void 0) !== null && _ref16 !== void 0 ? _ref16 : styleUnsupported) !== null && _ref15 !== void 0 ? _ref15 : lengths) !== null && _ref14 !== void 0 ? _ref14 : (_blocks$find = blocks.find((block) => block.unsupported !== void 0)) === null || _blocks$find === void 0 ? void 0 : _blocks$find.unsupported;
 		const rowWidth = ((_read$0$cells = (_read$ = read[0]) === null || _read$ === void 0 ? void 0 : _read$.cells) !== null && _read$0$cells !== void 0 ? _read$0$cells : []).reduce((total, cell) => {
 			var _cell$ownWidth;
 			return total + ((_cell$ownWidth = cell.ownWidth) !== null && _cell$ownWidth !== void 0 ? _cell$ownWidth : 0);
@@ -13646,7 +13714,7 @@ var docxLayout = (function(exports) {
 	* Reads a document's body (`w:body`), with the other parts of the document.
 	*/
 	var readContent = (writtenBody, writtenParts, { guess = false } = {}) => {
-		var _writtenParts$dataSto, _parts$otherListIds, _parts$otherListIds2, _parts$settings, _fontOf$size2, _ref27, _ref28, _ref29, _ref30, _ref31, _ref32, _documentContent$unsu;
+		var _writtenParts$dataSto, _parts$otherListIds, _parts$otherListIds2, _parts$settings, _fontOf$size2, _ref30, _ref31, _ref32, _ref33, _ref34, _ref35, _documentContent$unsu;
 		const stores = (_writtenParts$dataSto = writtenParts.dataStores) !== null && _writtenParts$dataSto !== void 0 ? _writtenParts$dataSto : /* @__PURE__ */ new Map();
 		const body = withBoundTextWritten(writtenBody, stores);
 		const parts = _objectSpread2(_objectSpread2({}, writtenParts), {}, {
@@ -13905,7 +13973,7 @@ var docxLayout = (function(exports) {
 			relativeReferences: markers.relative,
 			endnoteReferences
 		}, parts.fonts !== void 0 && parts.fonts.length > 0 ? { fonts: parts.fonts } : {}), readSettings(parts.settings));
-		return _objectSpread2(_objectSpread2({}, documentContent), withoutUndefined({ unsupported: (_ref27 = (_ref28 = (_ref29 = (_ref30 = (_ref31 = (_ref32 = (_documentContent$unsu = documentContent.unsupported) !== null && _documentContent$unsu !== void 0 ? _documentContent$unsu : styles.unsupported) !== null && _ref32 !== void 0 ? _ref32 : inNumbering) !== null && _ref31 !== void 0 ? _ref31 : footnotes.size > 0 ? notesUnsupported("footnote") : void 0) !== null && _ref30 !== void 0 ? _ref30 : endnotes.length > 0 ? notesUnsupported("endnote") : void 0) !== null && _ref29 !== void 0 ? _ref29 : [...endnoteSections, sections.length - 1].some((section) => sections[section].textRunsDown !== void 0) && endnotes.length > 0 ? "endnotes on text that runs down the page" : void 0) !== null && _ref28 !== void 0 ? _ref28 : endnoteSections.some((section) => !sameGrid(gridOf(section), gridOf(sections.length - 1))) ? "endnotes from a section on another document grid than the last" : void 0) !== null && _ref27 !== void 0 ? _ref27 : unwrittenNumber ? "notes numbered in a format not yet written" : void 0 }));
+		return _objectSpread2(_objectSpread2({}, documentContent), withoutUndefined({ unsupported: (_ref30 = (_ref31 = (_ref32 = (_ref33 = (_ref34 = (_ref35 = (_documentContent$unsu = documentContent.unsupported) !== null && _documentContent$unsu !== void 0 ? _documentContent$unsu : styles.unsupported) !== null && _ref35 !== void 0 ? _ref35 : inNumbering) !== null && _ref34 !== void 0 ? _ref34 : footnotes.size > 0 ? notesUnsupported("footnote") : void 0) !== null && _ref33 !== void 0 ? _ref33 : endnotes.length > 0 ? notesUnsupported("endnote") : void 0) !== null && _ref32 !== void 0 ? _ref32 : [...endnoteSections, sections.length - 1].some((section) => sections[section].textRunsDown !== void 0) && endnotes.length > 0 ? "endnotes on text that runs down the page" : void 0) !== null && _ref31 !== void 0 ? _ref31 : endnoteSections.some((section) => !sameGrid(gridOf(section), gridOf(sections.length - 1))) ? "endnotes from a section on another document grid than the last" : void 0) !== null && _ref30 !== void 0 ? _ref30 : unwrittenNumber ? "notes numbered in a format not yet written" : void 0 }));
 	};
 	//#endregion
 	//#region src/layout/paginate.ts
@@ -14513,13 +14581,18 @@ var docxLayout = (function(exports) {
 			return (last === null || last === void 0 ? void 0 : last.type) === "paragraph" && last.items.every(({ type }) => type === "marker") && (hideMark || ((_stack = stack[stack.length - 2]) === null || _stack === void 0 ? void 0 : _stack.type) === "table") ? stack.slice(0, -1) : stack;
 		};
 		/**
+		* The width a cell's text is laid out in: its own, or for text fitted to the cell, as wide as each paragraph's longest
+		* line, as Word squeezes it onto one line (`word-stops-tables.docx` TS8)
+		*/
+		const textWidthOf = (cell) => cell.fitText ? Math.max(cell.width, contentWidths(cell.blocks).max) : cell.width;
+		/**
 		* How tall a cell's text makes its row. Text that runs up or down a cell makes it as tall as a line of its paragraph
 		* mark, whatever its size, as Word breaks the text into lines as long as the row is tall (`word-watertight-tables.docx`
 		* TB6, `word-table-formats.docx` VT1, `word-table-formats2.docx` VT5 to VT7). Guessing, one with a table in it is as
 		* tall as a line of its first paragraph's mark, as a cell ends with a paragraph
 		*/
 		const contentHeight = (cell) => {
-			if (!cell.vertical) return stackHeight(blocksWithRoom(cell), cell.width, true);
+			if (!cell.vertical) return stackHeight(blocksWithRoom(cell), textWidthOf(cell), true);
 			const first = cell.blocks.find((block) => block.type === "paragraph");
 			return linesHeight(measureParagraph(_objectSpread2(_objectSpread2({}, first), {}, { items: [] }), cell.width, void 0, void 0, true).lines);
 		};
@@ -15549,11 +15622,11 @@ var docxLayout = (function(exports) {
 			const [first, second] = blocksWithRoom(cell);
 			if (first === void 0) return 0;
 			if (first.type === "table") {
-				const sized = sizedToPlace(first, cell.width);
+				const sized = sizedToPlace(first, textWidthOf(cell));
 				const [firstRow] = sized.rows;
 				return firstRow === void 0 ? 0 : canSplit(firstRow) ? leastPartOf(firstRow) : rowHeights(sized)[0];
 			}
-			const { lines, spaceBefore, spaceAfter: after, keepLines, widowControl } = measureParagraph(first, cell.width, void 0, second, true);
+			const { lines, spaceBefore, spaceAfter: after, keepLines, widowControl } = measureParagraph(first, textWidthOf(cell), void 0, second, true);
 			const count = keepLines || widowControl && lines.length <= 3 ? lines.length : widowControl ? 2 : 1;
 			return spaceBefore + linesHeight(lines.slice(0, count)) + (count >= lines.length ? after : 0);
 		}));
@@ -15563,7 +15636,7 @@ var docxLayout = (function(exports) {
 		*/
 		const canSplit = (row) => {
 			var _row$height;
-			return !row.cantSplit && ((_row$height = row.height) === null || _row$height === void 0 ? void 0 : _row$height.rule) !== "exact" && row.cells.some(({ blocks: stack, width }) => stack.length > 1 || stack.some((block) => block.type === "table" || linesOf(block, width).length > 1));
+			return !row.cantSplit && ((_row$height = row.height) === null || _row$height === void 0 ? void 0 : _row$height.rule) !== "exact" && row.cells.some((cell) => cell.blocks.length > 1 || cell.blocks.some((block) => block.type === "table" || linesOf(block, textWidthOf(cell)).length > 1));
 		};
 		/**
 		* Whether widow control and keepLines keep all of a table row's lines on one page: those of a row whose cells each
@@ -15574,7 +15647,7 @@ var docxLayout = (function(exports) {
 			const [first, ...rest] = blocksWithRoom(cell);
 			if (cell.vertical || first === void 0) return true;
 			if (rest.length > 0 || first.type === "table") return false;
-			const { lines, keepLines, widowControl } = measureParagraph(first, cell.width, void 0, void 0, true);
+			const { lines, keepLines, widowControl } = measureParagraph(first, textWidthOf(cell), void 0, void 0, true);
 			return keepLines || lines.length === 1 || widowControl && lines.length <= 3;
 		});
 		/**
@@ -16498,10 +16571,10 @@ var docxLayout = (function(exports) {
 		*/
 		const cellParagraphs = (cell) => (cell.vertical ? [] : blocksWithRoom(cell)).map((block, index, stack) => {
 			if (block.type === "paragraph") return {
-				paragraph: measureParagraph(block, cell.width, stack[index - 1], stack[index + 1], true),
+				paragraph: measureParagraph(block, textWidthOf(cell), stack[index - 1], stack[index + 1], true),
 				from: 0
 			};
-			const table = sizedToPlace(block, cell.width);
+			const table = sizedToPlace(block, textWidthOf(cell));
 			return {
 				table,
 				heights: rowHeights(table),
