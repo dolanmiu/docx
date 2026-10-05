@@ -88,8 +88,8 @@ lined up otherwise (EQ54), boxes with a side hidden, phantoms that take less roo
 `word-stops-tables3.ts` has what the round-25 table probes left open, for the next batch too: long words across cells
 merged across columns of a table narrowed to the page (LW9), the text of the cell before two borders of different styles
 that meet (BT7), thick outer borders of a table sized to its text (BT8), the border above a row of an exact height with
-space between cells and a thick border (TS16), and the text of a cell merged down rows where the page breaks between them
-with room for more than a line of it (RW21).
+space between cells, a thick border, or both (TS16), and the text of a cell merged down rows where the page breaks between
+them with room for more than a line of it (RW21).
 
 `word-stops-east-asian2.ts` has what `word-stops-east-asian.ts` left stopping, for the next batch too: indents of part of a
 character on a grid that snaps to characters (GR14), the cases around GR3, GR5, GR7, GR8 and GR10 on grids (GR16), which

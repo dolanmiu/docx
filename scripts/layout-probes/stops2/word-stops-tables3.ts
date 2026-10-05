@@ -11,7 +11,7 @@
  * - Half of each of a table's outer borders inside the room a table sized to its text fills, seen with borders of half a
  *   point only (BT8).
  * - The border above a row of an exact height inside it, seen in TS15, without space between the cells, and with a border
- *   of half a point only (TS16).
+ *   of half a point only (TS16): with space between the cells, with a thick border, and with both.
  * - The text of a cell merged down rows where the page breaks between them and more than a line of it fits before the
  *   break: RW14a and RW14b had a line, which widow control kept off the page (RW21).
  *
@@ -26,7 +26,7 @@
  * BT8a, BT8b: a table given no widths of S1000 | W9000, with left and right borders of single 24 (a) and 48 (b), narrowed
  *   to the page
  * TS16a: a row of exactly 600 twips and a row of a line, single 4 borders and space between cells of 40; TS16b: the same
- *   without the space, the border above the first row single 24
+ *   without the space, the border above the first row single 24; TS16c: with both, the space and the border of 24
  * RW21: after 40 lines, two rows: a cell of 10 lines merged down both, beside 6 lines in the first and 8 in the second,
  *   which can't split, so the page breaks between them with 6 lines of the merged cell's room on the page
  *
@@ -118,11 +118,11 @@ const outer = (probe: string, size: number): Table =>
         rows: [new TableRow({ children: [cell(word(`${probe}s`, 1000)), cell(word(probe, 9000))] })],
     });
 
-const exact = (probe: string, spacing: boolean): Table =>
+const exact = (probe: string, [spacing, thick]: readonly [boolean, boolean]): Table =>
     new Table({
         width: { size: TEXT_WIDTH, type: WidthType.DXA },
         columnWidths: [TEXT_WIDTH],
-        borders: spacing ? ALL_BORDERS : { ...ALL_BORDERS, top: side("single", 24) },
+        borders: thick ? { ...ALL_BORDERS, top: side("single", 24) } : ALL_BORDERS,
         ...(spacing ? { cellSpacing: { value: 40, type: WidthType.DXA } } : {}),
         rows: [
             new TableRow({ height: { value: 600, rule: HeightRule.EXACT }, children: [cell(`${probe} r1`)] }),
@@ -151,7 +151,13 @@ const children: Child[] = [
     newPage(),
     ...BT7.flatMap((pair, index) => group(name("BT7", index), [meeting(name("BT7", index), pair)])),
     ...[24, 48].flatMap((size, index) => group(name("BT8", index), [outer(name("BT8", index), size)])),
-    ...[true, false].flatMap((spacing, index) => group(name("TS16", index), [exact(name("TS16", index), spacing)])),
+    ...(
+        [
+            [true, false],
+            [false, true],
+            [true, true],
+        ] as const
+    ).flatMap((options, index) => group(name("TS16", index), [exact(name("TS16", index), options)])),
     ...probe("RW21", [...fill("RW21", 40), RW21]),
 ];
 
