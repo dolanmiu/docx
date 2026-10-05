@@ -862,6 +862,8 @@ type LineState = {
     readonly first: boolean;
     /** Whether it has a tab to one of the paragraph's stops past its right indent, after which it ends at the margin */
     readonly pastIndent?: boolean;
+    /** Whether it has only tabs on it yet, which the word after them goes on the line with however long it is */
+    readonly tabsOnly?: boolean;
     /**
      * On a grid that snaps to characters, where the text that isn't Chinese, Japanese or Korean at the end of the line
      * started, and how wide it is, which takes as many of the grid's cells as it needs
@@ -1592,22 +1594,24 @@ export const layoutLines = (
     };
     /**
      * Why where Word puts the text after a tab to one of the paragraph's own stops past the end of the line isn't known,
-     * when it isn't: its probes had no right indent past the margin, indents, first line and hanging ones too
-     * (scripts/layout-probes/stops2/word-stops-tabs.ts TA1a, TA1b), only with a left stop after text, a left indent with a
-     * right stop at the start of a line (TA3d), a right indent only with a right stop after text, and centred and decimal
-     * stops in a paragraph without indents, after text and at the start of a line (TA3a to TA3c)
+     * when it isn't. Its probes had no right indent past the margin; a left stop only after text, with first line and
+     * hanging indents too (scripts/layout-probes/stops2/word-stops-tabs.ts TA1a, TA1b); and a right indent only with a right
+     * stop after text. Right, centred and decimal stops line their text up with the end of the line whatever the left,
+     * first line and hanging indents, at the start of a line and after text (TA3a to TA3d, stops2/word-stops-text2.ts TA10a
+     * to TA10f, TA10h, TA10i)
      */
     const pastEndUnknown = ({ alignment: kind }: TabStop, started: boolean): string | undefined => {
-        if (indentRight < 0 || (firstLineIndent !== 0 && (kind !== "left" || !started))) {
-            return "a tab stop past the end of the line in a paragraph with a first line or hanging indent, or indented past the margin";
+        if (indentRight < 0) {
+            return "a tab stop past the end of the line in a paragraph indented past the margin";
         }
         if (kind === "left") {
-            return !started && (indentLeft !== 0 || indentRight !== 0)
+            return !started && (indentLeft !== 0 || indentRight !== 0 || firstLineIndent !== 0)
                 ? "a left tab stop past the end of the line at the start of a line in an indented paragraph"
                 : undefined;
         }
-        const known = (indentLeft === 0 && indentRight === 0) || (kind === "right" && (started ? indentLeft === 0 : indentRight === 0));
-        return known ? undefined : "a right, centred or decimal tab stop past the end of the line in an indented paragraph";
+        return indentRight === 0 || (kind === "right" && started)
+            ? undefined
+            : "a centred or decimal tab stop past the end of the line in a paragraph indented on the right, or a right one at the start of a line there";
     };
     // A list number that isn't left-aligned starts before its line does, which its text is measured from
     const beforeStart = numberShift(content, numberAlignment, measurer);
@@ -1756,6 +1760,14 @@ export const layoutLines = (
                     placeWord(rest);
                     return;
                 }
+                if (line.tabsOnly === true) {
+                    // Where Word breaks one that doesn't fit after a tab that starts its line, which goes on to the next line with
+                    // it from text before, hasn't been seen. Guessing, it goes on to the next line
+                    line = {
+                        ...line,
+                        unsupported: line.unsupported ?? "a word with soft hyphens that doesn't fit after a tab that starts its line",
+                    };
+                }
                 if (line.started) {
                     // No part of it fits with a hyphen: it goes on to the next line, where it may break again
                     line = wrap(line);
@@ -1767,8 +1779,15 @@ export const layoutLines = (
                 // SH12: its part of 12000 twips broken across two lines, and the rest of it, with the part after its soft
                 // hyphen, whole on the second)
             }
-            const overflows = line.started && line.position + needs > endOf(line) + TOLERANCE;
-            if (token.type === "box" && token.unbroken !== undefined && line.position + needs > endOf(line) + TOLERANCE) {
+            // A word after only tabs, which went on to the line with it, goes on it, and a word longer than the room left breaks
+            // after the last character that fits (scripts/layout-probes/stops2/word-stops-text2.ts TA11a, TA11b). A picture
+            // there hasn't been seen. Guessing, it goes on to the next line
+            const beyond = line.position + needs > endOf(line) + TOLERANCE;
+            if (beyond && line.tabsOnly === true && token.type === "box") {
+                line = { ...line, unsupported: line.unsupported ?? "a picture that doesn't fit after a tab that starts its line" };
+            }
+            const overflows = line.started && beyond && (line.tabsOnly !== true || token.type === "box");
+            if (token.type === "box" && token.unbroken !== undefined && beyond) {
                 line = { ...line, unsupported: line.unsupported ?? token.unbroken };
             }
             // On a grid that snaps to characters Word doesn't squeeze a justified line, nor stretch its spaces: "was" ends the
@@ -1873,6 +1892,7 @@ export const layoutLines = (
                 heights: withToken(line.heights, token),
                 started: true,
                 border: token.type === "word" ? lastBorder(token.pieces) : undefined,
+                tabsOnly: false,
             };
         };
         /**
@@ -2012,25 +2032,17 @@ export const layoutLines = (
                 // TA8g), with a first line or hanging indent too (TA1a, TA1b). Past the last of the default stops before the end of
                 // the line, the tab goes on to the next line, as below (TX12b)
                 const pastEnd = own && next.position > Math.max(limitOf(), marginOf()) + TOLERANCE ? next : undefined;
-                // A left one past the margin in a paragraph indented past it, with text after it that doesn't fit: Word put the
-                // tab on the next line, at its stop, and broke the text after it there as a word longer than its line
-                // (word-stops-tabs.ts TA1c), which a word after a tab elsewhere isn't
-                const pastMargin =
-                    own &&
-                    indentRight < 0 &&
-                    next.alignment === "left" &&
-                    next.position > marginOf() + TOLERANCE &&
-                    next.position + widthAfterTab(rest, measurer) > limitOf() + TOLERANCE;
+                // Past the right indent in a justified line too, the text after a right stop whose text is longer than the room
+                // before it starts where the tab is, and the line goes on to the margin, its spaces stretched to it
+                // (stops2/word-stops-text2.ts TA10g). A distributed line there hasn't been seen
                 const unknown =
-                    pastIndent && squeezes
-                        ? "a tab stop past the paragraph's right indent in a justified line"
+                    pastIndent && squeezes && alignment !== "justified"
+                        ? "a tab stop past the paragraph's right indent in a distributed line"
                         : pastIndent && next.alignment === "left" && next.position + widthAfterTab(rest, measurer) > marginOf() + TOLERANCE
                           ? "text after a tab stop past the paragraph's right indent that goes past the margin"
-                          : pastMargin && pastEnd === undefined
-                            ? "text after a left tab stop past the margin, in a paragraph indented past it, that goes past the end of the line"
-                            : pastEnd === undefined
-                              ? undefined
-                              : pastEndUnknown(pastEnd, line.started);
+                          : pastEnd === undefined
+                            ? undefined
+                            : pastEndUnknown(pastEnd, line.started);
                 if (unknown !== undefined) {
                     line = { ...line, unsupported: line.unsupported ?? unknown };
                 }
@@ -2054,16 +2066,19 @@ export const layoutLines = (
                     // up with its end
                     line = wrap(line);
                 }
-                const stop = numbered
-                    ? numbered.stop
-                    : aligned
-                      ? { position: limitOf(), alignment: "right" as const }
-                      : pastIndent
-                        ? next
-                        : (nextStop(line.position, given, defaultTabStop, limitOf()) ??
-                          (line.started
-                              ? nextStop(startOf(lines.length + 1, false), stops, defaultTabStop, limitOf(lines.length + 1))
-                              : undefined));
+                /** The stop the tab moves to from where the line is, or from the start of the next when none is left on it */
+                const stopOn = (): ReturnType<typeof nextStop> =>
+                    numbered
+                        ? numbered.stop
+                        : aligned
+                          ? { position: limitOf(), alignment: "right" as const }
+                          : pastIndent
+                            ? next
+                            : (nextStop(line.position, line.first ? firstLineStops : stops, defaultTabStop, limitOf()) ??
+                              (line.started
+                                  ? nextStop(startOf(lines.length + 1, false), stops, defaultTabStop, limitOf(lines.length + 1))
+                                  : undefined));
+                let stop = stopOn();
                 if (stop === undefined) {
                     // No stop before the end of the line: the text after the tab starts where it is, which on a grid that snaps
                     // to characters hasn't been seen
@@ -2081,16 +2096,60 @@ export const layoutLines = (
                     // The tab moves to a stop on the next line
                     line = wrap(line);
                 }
+                /**
+                 * Where the text after the tab starts at a stop, however much the spaces before it are squeezed. On a grid that
+                 * snaps to characters, Chinese, Japanese or Korean text after a left stop starts at the next of the grid's
+                 * cells: after a stop at 3000 twips, on a grid of cells of 225.65, at 3159, the 14th (stops2/word-stops-east-asian.ts
+                 * GR10a). Other text after one, and text at a stop of another alignment, haven't been seen there
+                 */
+                const startAt = (at: NonNullable<typeof stop>): { readonly shift?: number; readonly position: number } => {
+                    const shift = shiftAt(at.alignment, rest, measurer, line.border);
+                    const stopped = Math.max(line.position, at.position - (shift ?? widthAfterTab(rest, measurer)));
+                    const cell = cellOn(lines.length);
+                    return { shift, position: cell === undefined ? stopped : Math.ceil(stopped / cell - GRID_ROUNDING) * cell };
+                };
+                // A word after a tab goes with it: one that doesn't fit after the tab's stop takes the tab on to the next line
+                // with it, from the text before it, to the stop there, where it breaks after the last character that fits:
+                // "afterwards" after a left stop at 8800 twips, in a line of 9026, its "af" at the stop on the next line and the
+                // rest on the line after (stops2/word-stops-text2.ts TA11a), and past the margin, in a paragraph indented past it
+                // (TA11b, stops2/word-stops-tabs.ts TA1c). A picture after a tab, and a word after tabs in a row, that don't
+                // fit haven't been seen, nor text that doesn't fit after the tab that follows a list's number. Guessing, the tab
+                // stays, and they go on to the next line
+                const after = rest.find((next) => next.type !== "marker");
+                if (
+                    !numbered &&
+                    token.font.listNumber !== "separator" &&
+                    !aligned &&
+                    !pastIndent &&
+                    line.started &&
+                    line.tabsOnly !== true &&
+                    (after?.type === "word" || after?.type === "box")
+                ) {
+                    const needs =
+                        after.type === "box"
+                            ? after.width
+                            : roomBetween(line.border, firstBorder(after.pieces)) +
+                              widthOf(after.pieces, measurer) +
+                              (lastBorder(after.pieces)?.room ?? 0);
+                    const nextLine = nextStop(startOf(lines.length + 1, false), stops, defaultTabStop, limitOf(lines.length + 1));
+                    const inRow = tokens.slice(0, index).findLast((before) => before.type !== "marker")?.type === "tab";
+                    if (startAt(stop).position + needs > endOf(line) + TOLERANCE && nextLine !== undefined) {
+                        if (after.type === "box" || inRow) {
+                            line = {
+                                ...line,
+                                unsupported:
+                                    line.unsupported ??
+                                    (inRow ? "a word that doesn't fit after tabs in a row" : "a picture that doesn't fit after a tab"),
+                            };
+                        } else {
+                            line = wrap(line);
+                            stop = nextLine;
+                        }
+                    }
+                }
                 line = { ...place(line), ...(pastIndent ? { pastIndent } : {}) };
-                const shift = shiftAt(stop.alignment, rest, measurer, line.border);
+                const { shift, position } = startAt(stop);
                 const misaligned = shift === undefined ? "text at a decimal tab stop that Word hasn't been seen lining up" : undefined;
-                // The text after it starts at the stop however much the spaces before it are squeezed. On a grid that snaps to
-                // characters, Chinese, Japanese or Korean text after a left stop starts at the next of the grid's cells: after
-                // a stop at 3000 twips, on a grid of cells of 225.65, at 3159, the 14th (stops2/word-stops-east-asian.ts
-                // GR10a). Other text after one, and text at a stop of another alignment, haven't been seen there
-                const stopped = Math.max(line.position, stop.position - (shift ?? widthAfterTab(rest, measurer)));
-                const cell = cellOn(lines.length);
-                const position = cell === undefined ? stopped : Math.ceil(stopped / cell - GRID_ROUNDING) * cell;
                 if (snapping && (stop.alignment !== "left" || !startsWithGridCharacter(rest))) {
                     line = {
                         ...line,
@@ -2109,6 +2168,7 @@ export const layoutLines = (
                     letters: 0,
                     otherSpaces: 0,
                     started: true,
+                    tabsOnly: !line.started || line.tabsOnly === true,
                     ...(misaligned === undefined ? {} : { unsupported: line.unsupported ?? misaligned }),
                 };
                 continue;
