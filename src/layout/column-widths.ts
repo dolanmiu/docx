@@ -147,6 +147,12 @@ const sizeColumns = (table: TableBlock, content: ReadonlyMap<TableCell, ContentW
         );
 };
 
+/** The left margin of a table's first cell and the right margin of its last, in its first row */
+const outerMargins = (table: TableBlock): number => {
+    const [{ cells }] = sizingRows(table);
+    return cells[0].marginLeft + cells[cells.length - 1].marginRight;
+};
+
 /** The width a cell of a table whose cells all have widths gives itself, with its margins: its own, or the grid's */
 const givenWidthOf = (cell: TableCell): number => cell.ownWidth ?? cell.width + cell.marginLeft + cell.marginRight;
 
@@ -255,6 +261,13 @@ export const fitColumns = (table: TableBlock, available: number, measure: Measur
         if (tooLong.some((cell) => content.get(cell)!.hyphenated)) {
             return { ...table, unsupported: "a word Word may hyphenate, longer than its cell" };
         }
+        // How far Word 2010 and before let such a table grow, with its cells' margins beside the room, hasn't been seen
+        if (table.marginsBeside === true) {
+            return {
+                ...table,
+                unsupported: "a table widened for a long word, or its rows evened out, in a document in compatibility mode",
+            };
+        }
     }
     const { columns, unsettled } = widen ? sizeGivenColumns(table, content) : sizeColumns(table, content);
     const total = sum(columns.map(({ width }) => width));
@@ -264,7 +277,10 @@ export const fitColumns = (table: TableBlock, available: number, measure: Measur
     // word, takes its indent from it, as in Word (`word-watertight-tables.docx` TB9, `word-table-formats.docx` TI1, TI3
     // and TI4). One with a width of its own, or a share of the width, keeps it (TI2). One laid out fixed with no width of
     // its own keeps the widths its rows give its columns, past the room (`word-table-widths.docx` TW2)
-    const room = target ?? (widen?.fixed ? Number.POSITIVE_INFINITY : available - indent);
+    // In compatibility mode, its first and last cells' margins are beside the room, as Word 2010 and before line its text
+    // up with the margins (`word-stops-compat-14.docx` CM4)
+    const beside = table.marginsBeside === true ? outerMargins(table) : 0;
+    const room = target ?? (widen?.fixed ? Number.POSITIVE_INFINITY : available - indent + beside);
     // Word sizes columns to the parts of the words it hyphenates, which the layout can't know, where a column's widest word
     // counts: in a table narrowed to the room, and in a column given less than its widest word (`word-hyphenation.docx`
     // HY11)

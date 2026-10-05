@@ -204,6 +204,11 @@ export type LineLayoutOptions = {
     readonly hyphenation?: Hyphenation;
     /** The document grid of the paragraph's section, when it has one */
     readonly grid?: TextGrid;
+    /**
+     * The version of Word whose layout the document asks for, when it is in compatibility mode: Word 2010 (14), 2007 (12)
+     * or 2003 (11). None for Word 2013 and later
+     */
+    readonly compatibilityMode?: number;
 };
 
 /**
@@ -272,6 +277,9 @@ const TOLERANCE = 0.01;
 // rounding of the widths
 const HYPHEN_ROOM = 22.6 / 20;
 const NO_HYPHEN_ROOM = 2.7 / 20;
+// Why the layout stops at a paragraph that ends with a page break in a document in compatibility mode
+const OLDER_PAGE_BREAK = "a page break at the end of a paragraph in a document in compatibility mode";
+
 // Word squeezes one more word onto a justified line when its spaces would otherwise stretch by a share of their width
 // more than twice as large as the share they're squeezed by: 2.06 times as large, and not 2.02 (`word-justify.docx` J01
 // to J09)
@@ -1231,6 +1239,7 @@ export const layoutLines = (
         numberAlignment,
         hyphenation,
         grid = {},
+        compatibilityMode,
     }: LineLayoutOptions,
 ): readonly LaidOutLine[] => {
     const { indentLeft = 0, indentRight = 0, firstLineIndent = 0, lineSpacing, alignment } = format;
@@ -1332,9 +1341,11 @@ export const layoutLines = (
             : token.pieces.reduce((all, { font }) => withFont(all, font, measurer), heights);
     };
     // Word squeezes the spaces of a justified line to fit one more word on it, so it has more words to a line than a
-    // left-aligned one (`word-watertight-text.docx` TX20)
+    // left-aligned one (`word-watertight-text.docx` TX20). Word 2010 and before don't: in their compatibility modes, Word
+    // breaks a justified line where it breaks one aligned left (`word-stops-compat-14.docx` CM1, CM9, CM10, CM14)
     const squeezes =
         alignment === "justified" || alignment === "distributed" || alignment === "thaiDistributed" || alignment === "lowKashida";
+    const older = compatibilityMode !== undefined;
     const { stops, firstLineStops } = stopsOf(tabStops, format);
     const parts = segmentsOf(content, rulesOf(format, breakRules));
     // A page break at the end of a paragraph has the paragraph's mark on its line, as Word lays it out from Word 2013,
@@ -1377,7 +1388,7 @@ export const layoutLines = (
      * is squeezed as justified text is (K08, K09)
      */
     const squeezesIn = (state: LineState, tokenWidth: number): boolean => {
-        if (!squeezes || state.spaces <= 0) {
+        if (!squeezes || older || state.spaces <= 0) {
             return false;
         }
         const over = state.position + tokenWidth - limitOf();
@@ -1418,7 +1429,7 @@ export const layoutLines = (
      * seen squeezing among its spaces squeezed as the others are
      */
     const unsure = (state: LineState, tokenWidth: number): boolean =>
-        squeezes && state.otherSpaces > 0 && state.position + tokenWidth - limitOf() <= MOST_SQUEEZE * state.spaces;
+        squeezes && !older && state.otherSpaces > 0 && state.position + tokenWidth - limitOf() <= MOST_SQUEEZE * state.spaces;
     /**
      * Why where Word puts the text after a tab to one of the paragraph's own stops past the end of the line isn't known,
      * when it isn't: its probes had no first line or hanging indent, no right indent past the margin, indents only with a
@@ -1802,6 +1813,15 @@ export const layoutLines = (
                 if (unknown !== undefined) {
                     line = { ...line, unsupported: line.unsupported ?? unknown };
                 }
+                // Word 2010 and before put the text after a tab to a stop past the end of the line, the paragraph's own or a
+                // default one, past the margin on the line, where Word 2013 moves it to the next (`word-stops-compat-14.docx`
+                // CM12a, CM12d), in ways not yet followed. Guessing, it goes where Word 2013 puts it
+                if (older && !numbered && next.position > limitOf() + TOLERANCE) {
+                    line = {
+                        ...line,
+                        unsupported: line.unsupported ?? "a tab past the end of the line in a document in compatibility mode",
+                    };
+                }
                 if (pastEnd?.alignment === "left" && unknown === undefined) {
                     const below = line.started ? wrap(line) : line;
                     line = wrap(place({ ...below, text: `${below.text}\t`, heights: withToken(below.heights, token), started: true }));
@@ -1876,5 +1896,9 @@ export const layoutLines = (
         }
         first = false;
     }
-    return lines;
+    // Word 2010 and before put the mark of a paragraph that ends with a page break on a line of its own on the next page,
+    // as `splitPgBreakAndParaMark` brings back, in a way not yet followed
+    return older && endsWithBreak
+        ? lines.map((line, index) => (index === lines.length - 1 ? { ...line, unsupported: OLDER_PAGE_BREAK } : line))
+        : lines;
 };

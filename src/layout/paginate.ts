@@ -23,6 +23,7 @@ import {
     type InlineItem,
     type LaidOutLine,
     type LineRoom,
+    type LineSpacing,
     type ParagraphFormat,
     type TextFont,
     type TextMeasurer,
@@ -152,6 +153,35 @@ const TOLERANCE = 0.01;
 
 // How much more or less room than its insets leave a text box's text may have, in points (`word-vml.docx` VM1, VM5)
 const TEXT_BOX_DOUBT = 0.72;
+
+// How much of a line Word puts above its text's baseline at exact spacing (`word-stops-top-spacing.docx` ST4a)
+const EXACT_ABOVE_BASELINE = 0.8;
+// How far down the first line of a page or column ends, or its text's baseline is at exact spacing, when the space above
+// its text is left out (`suppressTopSpacing`), in points, in each font alike (`word-stops-top-spacing.docx` ST1 to ST3)
+const TOP_SPACE_KEPT = 9.6;
+// Why the layout stops where Word's way with the space above the first line of a page or column isn't known
+const TOP_SPACING_UNKNOWN =
+    "the first line of a page or column, at line spacing Word hasn't shown, in a document that suppresses the space above it";
+
+/** Whether line spacing is single: none given, or a multiple of 1 */
+const isSingle = (spacing: LineSpacing | undefined): boolean =>
+    spacing === undefined || (spacing.rule === "multiple" && spacing.multiple === 1);
+
+/** Whether a block has a paragraph whose lines aren't of single spacing, in it or in its table's cells */
+const spacedIn = (block: Block): boolean =>
+    block.type === "paragraph"
+        ? !isSingle(block.format.lineSpacing)
+        : block.rows.some(({ cells }) => cells.some((cell) => cell.blocks.some(spacedIn)));
+
+// The narrowest gap beside a drawing Word 2010 and before were seen putting text in, in points (`word-stops-compat-14.docx`
+// CM9)
+const OLDER_LEAST_GAP = 135;
+
+/** Whether a line's room beside drawings is a gap they cut narrower than Word 2010 and before were seen putting text in */
+const narrowGap = (
+    span: { readonly start: number; readonly end: number },
+    within: { readonly start: number; readonly end: number },
+): boolean => span.end - span.start < OLDER_LEAST_GAP && (span.start > within.start + TOLERANCE || span.end < within.end - TOLERANCE);
 
 // Word's automatic space before and after a paragraph, in points (`word-watertight-text.docx` TX6a, TX6b)
 const AUTOMATIC_SPACE = 14;
@@ -686,6 +716,8 @@ export const paginate = (
         hyphenation,
         footnoteNumbers,
         endnoteNumbers,
+        compatibilityMode,
+        suppressesTopSpacing,
     } = content;
     // The body, and then its endnotes, which Word lays out after it. The separator above them goes on the page of their
     // first line, as Word puts it there when it would be alone at the bottom of a page (`word-watertight-sections2.docx`
@@ -881,6 +913,7 @@ export const paginate = (
                 numberAlignment: paragraph.numberAlignment,
                 hyphenation,
                 grid: paragraph.grid,
+                compatibilityMode,
             });
             // The lines are kept with the guess they are, so a pass that lays them out again notes it too
             return guessed === undefined
@@ -1610,12 +1643,14 @@ export const paginate = (
             },
         });
         // A gutter at the top is below the top margin, and a header taller than both pushes the body below it, as in Word,
-        // where the header stays where it is (`word-watertight-sections.docx` SC3)
+        // where the header stays where it is (`word-watertight-sections.docx` SC3). It is at the top of every page with
+        // mirrored margins too, and below a negative top margin, which the header doesn't push the body below
+        // (`word-stops-pages.docx` GT1a, GT1b)
         top =
             down !== undefined
                 ? current.marginTop
                 : current.marginTop < 0
-                  ? -current.marginTop
+                  ? -current.marginTop + current.topGutter
                   : Math.max(current.marginTop + current.topGutter, headerBottom);
         // On each page after the first the endnotes are on, the continuation separator is above them, whether one of them
         // goes on to it or the next starts there (`word-watertight-pages.docx` PG8, `word-watertight-sections.docx` SC4).
@@ -3226,6 +3261,12 @@ export const paginate = (
             if ("below" in room) {
                 return room;
             }
+            // Word 2010 and before leave a gap beside a frame 1000 twips wide empty, where Word 2013 puts text, and put text in
+            // one beside a picture 2700 wide as it does (`word-stops-compat-14.docx` CM14, CM9). How narrow a gap they leave
+            // empty isn't known
+            if (compatibilityMode !== undefined && room.spans.some((span) => narrowGap(span, within))) {
+                stopAt("a line beside a drawing or frame in a gap narrower than 135 points, in a document in compatibility mode");
+            }
             const spans = room.spans
                 .map((span, offset) => ({
                     start: Math.max(span.start - left, indentLeft) + (line + offset === 0 ? firstLineIndent : 0),
@@ -3342,6 +3383,35 @@ export const paginate = (
     };
 
     /**
+     * What is left out above a paragraph's line at the top of a page or column, in a document that suppresses the space
+     * above it (`suppressTopSpacing`), in points. Word leaves out the space above the text of a paragraph's first line
+     * there: at exact spacing, all but 9.6 points of the 80% of the line above its baseline, and at least a height, all
+     * but 9.6 points of the line, which then ends 9.6 points down, its text's descent at its bottom. So it did at the top
+     * of a page after a page break, with the space before the paragraph, which is left out there, at the top of a column,
+     * and of a section on a new page, in Calibri 11, Times New Roman 12, Courier New 11 and Calibri 24 alike
+     * (`word-stops-top-spacing.docx` ST1 to ST5), and it left a line of single spacing as it is (ST4b). Multiple spacing,
+     * at least a height less than the line's own (ST2a), a line on a document grid, the space before a section's first
+     * paragraph or a border above it, and a paragraph's later line, haven't been seen. Guessing, nothing is left out
+     */
+    const cutAbove = (block: ParagraphBlock, line: LaidOutLine, isFirstLine: boolean, above: number): number => {
+        const spacing = block.format.lineSpacing;
+        if (spacing === undefined || isSingle(spacing)) {
+            return 0;
+        }
+        const cut =
+            spacing.rule === "exact"
+                ? Math.max(0, EXACT_ABOVE_BASELINE * spacing.height - TOP_SPACE_KEPT)
+                : spacing.rule === "atLeast" && line.height <= spacing.height + TOLERANCE
+                  ? Math.max(0, line.height - TOP_SPACE_KEPT)
+                  : undefined;
+        if (cut === undefined || (cut > 0 && (!isFirstLine || above > 0 || block.grid?.linePitch !== undefined))) {
+            stopAt(TOP_SPACING_UNKNOWN);
+            return 0;
+        }
+        return cut;
+    };
+
+    /**
      * Places a paragraph's lines, breaking pages and columns between them where they don't fit, and at its page and
      * column breaks. Its lines are broken at the width of the column each goes in, so the part of it that goes on into a
      * column of another width is broken again there, as Word breaks it (`word-rules2.docx` Q7). A paragraph's first or
@@ -3375,12 +3445,8 @@ export const paginate = (
         // One taller than some of the columns but not others goes in the first, from where it is, that it fits in, as any
         // paragraph kept together does, and moves on from the top of one it is taller than, as Word moves it: from the top
         // of a narrow first column to the wide second, and past a narrow second column to a new page
-        // (`word-column-stops.docx` CS3 to CS6). Where there are more than 2 columns, Word hasn't shown it: guessing, it moves
-        // on in the same way
+        // (`word-column-stops.docx` CS3 to CS6), and in 3 columns as in 2 (`word-stops-pages.docx` CO1a, CO1b)
         const movesOn = !keptTall && taller.some((tall) => tall);
-        if (movesOn && columns.length > 2) {
-            stopAt("a paragraph kept together taller than some of 3 or more columns of different widths");
-        }
         // The lines that go down only the first column of each page: those up to its first break, when it is kept together
         const firstColumnsOnly = keptTall ? linesToBreak(linesOf(block, columns[0]), 0).length : 0;
         /**
@@ -3408,12 +3474,14 @@ export const paginate = (
                 continue;
             }
             // The border above the first line stays at the top of a page, as the space before doesn't
-            const space = isFirstLine ? spaceAbove() + paragraph.borderAbove : 0;
+            const above = isFirstLine ? spaceAbove() + paragraph.borderAbove : 0;
+            const atTop = suppressesTopSpacing === true && !placedInColumn;
+            const space = above - (atTop ? cutAbove(block, linesOf(block, widths, rooms)[index], isFirstLine, above) : 0);
             // Its lines in rows down the column, beside the drawings on the page and its own, placed against its top. The space
             // after the paragraph before is that paragraph's, so its top is below it, and only the rest of the space above it
             // is its own (`word-floats2.docx` G7 to G10)
             const theirs = Math.min(spaceAfter, isFirstLine ? spaceAbove() : 0);
-            const laid = rowsOf(block, widths, rooms, index, position + space, { top: position + theirs, own: space - theirs }, excluded);
+            const laid = rowsOf(block, widths, rooms, index, position + space, { top: position + theirs, own: above - theirs }, excluded);
             const { lines, rows } = laid;
             const remaining = rows.map(({ line }) => line);
             /** How many of its lines are on the rows up to one */
@@ -4218,6 +4286,13 @@ export const paginate = (
     };
 
     const layOutTable = (block: TableBlock, onNextPage: boolean): void => {
+        // Where Word leaves out the space above the first line of a page or column in a table cell, with the document's
+        // `suppressTopSpacing`, hasn't been seen: one of single spacing it leaves as it is (see `cutAbove`), and one below
+        // the top as it is without (`word-stops-top-spacing.docx` ST4c)
+        const topSpacingUnknown = suppressesTopSpacing === true && spacedIn(block);
+        if (topSpacingUnknown && !placedInColumn) {
+            stopAt(TOP_SPACING_UNKNOWN);
+        }
         const width = columnsSection().columns[column];
         const table = sizedToPlace(block, width);
         const merges = mergesOf(table);
@@ -4257,6 +4332,9 @@ export const paginate = (
                 ];
                 guesses.forEach((reason) => stopAt(reason));
                 throw new HeaderRowsAlone(guesses);
+            }
+            if (topSpacingUnknown) {
+                stopAt(TOP_SPACING_UNKNOWN);
             }
             const page = pageCount;
             nextColumn();
@@ -4732,14 +4810,11 @@ export const paginate = (
                 previous?.section === blocks[index].section &&
                 previous.block.type === "paragraph" &&
                 previous.block.format.keepNext === true;
+            // Those kept with one that is taller than some of the columns but not others are kept with it as with any
+            // paragraph (`word-stops-pages.docx` CO2a, CO2b)
             const anchor = blocks[index + keptChain(index)].block;
             const anchorTaller = anchor.type === "paragraph" ? columnsTallerThan(anchor) : [];
             const tallAnchor = anchorTaller.length > 0 && anchorTaller.every((tall) => tall);
-            if (!tallAnchor && anchorTaller.some((tall) => tall)) {
-                // Whether they move with one that is taller than some of the columns but not others isn't known. Guessing,
-                // they are kept with it as with any paragraph
-                stopAt("a paragraph kept with the next before one kept together taller than some of the columns but not others");
-            }
             if (tallAnchor) {
                 // Kept with a paragraph kept together that is taller than a column, they move to a new page with it, unless
                 // they start at the top of this one, and it moves on again to the next, as it isn't at the top of that one:

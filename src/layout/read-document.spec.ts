@@ -2706,7 +2706,7 @@ describe("readDocument", () => {
             expect(content.footnotes.get("footnote 1")![0].unsupported).to.equal(unsupported);
         });
 
-        it("should stop at a row in an HTML division, and cells merged the old way, whose text doesn't wrap or that fit their text to them", () => {
+        it("should stop at cells merged the old way, whose text doesn't wrap or that fit their text to them, but not a row in an HTML division", () => {
             const unsupportedOf = (
                 table: readonly unknown[],
                 row: readonly unknown[],
@@ -2723,7 +2723,8 @@ describe("readDocument", () => {
                     ]).blocks[0].block as TableBlock
                 ).unsupported;
             expect(unsupportedOf([], [], [])).to.equal(undefined);
-            expect(unsupportedOf([], [value("w:divId", 3)], [])).to.equal("a table row in an HTML division");
+            // word-stops-pages.docx DV1b: moved across by the division's margin, as wide and tall as it is without
+            expect(unsupportedOf([], [value("w:divId", 3)], [])).to.equal(undefined);
             expect(unsupportedOf([], [], [value("w:hMerge", "restart")])).to.equal(
                 "cells merged across columns as old versions of Word wrote them",
             );
@@ -3372,17 +3373,15 @@ describe("readDocument", () => {
             expect(gutter(1440, { "w:gutterAtTop": {} }).sections[0]).to.deep.include({ gutter: 0, topGutter: 20, columns: [468] });
             // And less the gutter too where it is beside the text
             expect(gutter(1440).sections[0]).to.deep.include({ gutter: 20, topGutter: 0, columns: [448] });
-            // Where Word puts it with mirrored margins, or below a negative top margin, isn't known
-            const reason = "a gutter at the top with mirrored margins or a negative top margin";
-            expect(gutter(1440, { "w:gutterAtTop": {} }, { "w:mirrorMargins": {} }).sections[0].unsupported).to.equal(reason);
-            expect(gutter(-1440, { "w:gutterAtTop": {} }).sections[0].unsupported).to.equal(reason);
+            // At the top of every page with mirrored margins too, and below a negative top margin (`word-stops-pages.docx` GT1a,
+            // GT1b)
+            const mirrored = gutter(1440, { "w:gutterAtTop": {} }, { "w:mirrorMargins": {} }).sections[0];
+            expect(mirrored).to.deep.include({ topGutter: 20, columns: [468] });
+            expect(mirrored.unsupported).to.equal(undefined);
+            const negative = gutter(-1440, { "w:gutterAtTop": {} }).sections[0];
+            expect(negative).to.deep.include({ marginTop: -72, topGutter: 20 });
+            expect(negative.unsupported).to.equal(undefined);
             expect(gutter(1440, { "w:mirrorMargins": {} }).sections[0].unsupported).to.equal(undefined);
-            expect(
-                readWithSettings(
-                    [{ "w:sectPr": [{ "w:pgMar": { _attr: { "w:top": -1440 } } }] }],
-                    [{ "w:gutterAtTop": {} }, { "w:mirrorMargins": {} }],
-                ).sections[0].unsupported,
-            ).to.equal(undefined);
         });
 
         it("should read the level of the headings that number chapters, and what goes between their numbers and the page's", () => {
@@ -3942,19 +3941,28 @@ describe("readDocument", () => {
             expect(readSettings(value("w:characterSpacingControl", "doNotCompress")).unsupported).to.equal(undefined);
         });
 
-        it("should mark a document printed as a folded booklet or two pages to a sheet, or whose styles Word updates from its template, as unsupported", () => {
+        it("should mark a document printed as a folded booklet, or whose styles Word updates from its template, as unsupported", () => {
             expect(readSettings({ "w:bookFoldPrinting": {} }).unsupported).to.equal("pages printed as a folded booklet");
             expect(readSettings({ "w:bookFoldRevPrinting": {} }).unsupported).to.equal("pages printed as a folded booklet");
-            expect(readSettings({ "w:printTwoOnOne": {} }).unsupported).to.equal("two pages printed on each sheet");
+            // word-stops-two-on-one.docx TO1: Word lays out the section's pages as without it, two to each sheet it prints
+            expect(readSettings({ "w:printTwoOnOne": {} }).unsupported).to.equal(undefined);
             expect(readSettings({ "w:linkStyles": {} }).unsupported).to.equal(
                 "styles updated from the document's template when Word opens it",
             );
             expect(readSettings(value("w:bookFoldPrinting", "false"), value("w:linkStyles", 0)).unsupported).to.equal(undefined);
         });
 
-        it("should mark a document in the compatibility mode of a version of Word before 2013 as unsupported", () => {
-            expect(readBody([], { compatibility: { version: 14 } }).unsupported).to.equal("a document in compatibility mode");
-            expect(readBody([], { compatibility: { version: 15 } }).unsupported).to.equal(undefined);
+        it("should read a document in the compatibility mode of Word 2010, 2007 or 2003, and stop at another before 2013", () => {
+            // word-stops-compat-15.docx, -14, -12 and -11
+            for (const version of [14, 12, 11]) {
+                const content = readBody([], { compatibility: { version } });
+                expect(content.compatibilityMode).to.equal(version);
+                expect(content.unsupported).to.equal(undefined);
+            }
+            expect(readBody([], { compatibility: { version: 15 } }).compatibilityMode).to.equal(undefined);
+            expect(readBody([], { compatibility: { version: 13 } }).unsupported).to.equal(
+                "a document in a compatibility mode Word hasn't been seen laying out",
+            );
         });
 
         const UNFOLLOWED_COMPATIBILITY = "a compatibility setting not yet followed";
@@ -4037,18 +4045,17 @@ describe("readDocument", () => {
             expect(readBody([], { compatibility: { doNotUseHTMLParagraphAutoSpacing: true } }).unsupported).to.equal(undefined);
         });
 
-        it("should mark a document with docx's other compatibility settings on as unsupported", () => {
-            // word-compat-settings2-suppressTopSpacing.docx and -useFELayout: the first line of a page at exactly or at least
-            // 30 points is shorter, and Latin letters next to Japanese are spaced apart
-            const settings: readonly (keyof ICompatibilityOptions)[] = ["suppressTopSpacing", "useFELayout"];
-            for (const setting of settings) {
-                expect(readBody([], { compatibility: { [setting]: true } }).unsupported, setting).to.equal(UNFOLLOWED_COMPATIBILITY);
-                // Off, as docx writes false, Word lays it out as without it
-                expect(readBody([], { compatibility: { [setting]: false } }).unsupported, setting).to.equal(undefined);
-            }
+        it("should follow docx's other compatibility settings, suppressTopSpacing and useFELayout", () => {
+            // word-stops-top-spacing.docx and word-stops-fe-layout.docx
+            const suppressed = readBody([], { compatibility: { suppressTopSpacing: true } });
+            expect(suppressed.suppressesTopSpacing).to.equal(true);
+            expect(suppressed.unsupported).to.equal(undefined);
+            expect(readBody([], { compatibility: { useFELayout: true } }).unsupported).to.equal(undefined);
+            // Off, as docx writes false, Word lays it out as without it
+            expect(readBody([], { compatibility: { suppressTopSpacing: false } }).suppressesTopSpacing).to.equal(undefined);
             // Written as Word writes it, with no value, too
-            expect(readCompatibility({ "w:suppressTopSpacing": {} }).unsupported).to.equal(UNFOLLOWED_COMPATIBILITY);
-            // And one the schema doesn't have
+            expect(readCompatibility({ "w:suppressTopSpacing": {} }).suppressesTopSpacing).to.equal(true);
+            // And one the schema doesn't have stops
             expect(readCompatibility({ "w:someLaterSetting": {} }).unsupported).to.equal(UNFOLLOWED_COMPATIBILITY);
         });
 
@@ -4087,9 +4094,101 @@ describe("readDocument", () => {
         it("should read the compatibility mode of Word's own setting, not another application's of the same name", () => {
             const modes = (...settings: readonly object[]): DocumentContent => readSettings({ "w:compat": settings });
             const other = wordSetting("compatibilityMode", "15", "http://example.com/other");
-            expect(modes(other, wordSetting("compatibilityMode", "14")).unsupported).to.equal("a document in compatibility mode");
-            expect(modes(other).unsupported).to.equal("a document in compatibility mode");
-            expect(modes(other, wordSetting("compatibilityMode", "15", null)).unsupported).to.equal(undefined);
+            expect(modes(other, wordSetting("compatibilityMode", "14")).compatibilityMode).to.equal(14);
+            // Without Word's own, it is in Word 2007's
+            expect(modes(other).compatibilityMode).to.equal(12);
+            expect(modes(other, wordSetting("compatibilityMode", "15", null)).compatibilityMode).to.equal(undefined);
+        });
+    });
+
+    describe("in compatibility mode (scripts/layout-probes/stops2/word-stops-compat-mode.ts)", () => {
+        const in2010 = { compatibility: { version: 14 } };
+        const in2007 = { compatibility: { version: 12 } };
+        const tableOf = (content: DocumentContent): TableBlock => content.blocks[0].block as TableBlock;
+        const tableCell = (...paragraphs: readonly object[]): object => ({ "w:tc": paragraphs });
+
+        it("should stop at paragraphs Word 2010 and before lay out otherwise, or haven't been seen laying out", () => {
+            const reasonOf = (content: DocumentContent): string | undefined => paragraphOf(content).unsupported;
+            // Distributed, whose lines Word 2013 squeezes as it does justified ones, which Word 2010 doesn't
+            const distributed = p(pPr(value("w:jc", "distribute")), r(t("a")));
+            expect(reasonOf(readBody([distributed], in2010))).to.equal(
+                "a paragraph distributed, or justified for Thai or with a low kashida, in a document in compatibility mode",
+            );
+            expect(reasonOf(readBody([distributed]))).to.equal(undefined);
+            // East Asian text, which Word 2007 and 2003 break otherwise (word-stops-compat-12.docx CM18), as Word 2003's East
+            // Asian layout does (word-stops-fe-layout.docx FE1a, FE1b), but not Word 2010 (word-stops-compat-14.docx CM18)
+            const japanese = p(r(t("日本語の文章")));
+            expect(reasonOf(readBody([japanese], in2007))).to.equal("East Asian text in a document in compatibility mode 12 or 11");
+            expect(reasonOf(readBody([japanese], in2010))).to.equal(undefined);
+            expect(reasonOf(readBody([japanese], { compatibility: { useFELayout: true } }))).to.equal(
+                "East Asian text in a document that lays it out as Word 2003 did (useFELayout)",
+            );
+            // And Latin text as it is (FE1c to FE1f)
+            expect(reasonOf(readBody([p(r(t("Latin")))], in2007))).to.equal(undefined);
+            expect(reasonOf(readBody([p(r(t("Latin")))], { compatibility: { useFELayout: true } }))).to.equal(undefined);
+        });
+
+        it("should stop at the schema's compatibility settings, seen only in Word 2013's mode, and ligatures without OpenType features", () => {
+            const word = (name: string, val: string): object => ({
+                "w:compatSetting": { _attr: { "w:name": name, "w:uri": "http://schemas.microsoft.com/office/word", "w:val": val } },
+            });
+            const in2010With = (elements: readonly unknown[], ...compat: readonly object[]): DocumentContent =>
+                readWithSettings(elements, [{ "w:compat": [word("compatibilityMode", "14"), ...compat] }]);
+            // noLeading Word leaves out in its own mode (word-compat-settings-heights.docx), and may follow in an older one
+            expect(in2010With([], { "w:noLeading": {} }).unsupported).to.equal("a compatibility setting not yet followed");
+            expect(in2010With([], { "w:suppressTopSpacing": {} }).unsupported).to.equal("a compatibility setting not yet followed");
+            expect(in2010With([], { "w:doNotUseHTMLParagraphAutoSpacing": {} }).unsupported).to.equal(undefined);
+            // Ligatures, which Word 2010 draws only with OpenType features on, as it writes them
+            const ligatures = p(r(rPr({ "w14:ligatures": { _attr: { "w14:val": "standard" } } }), t("office")));
+            expect(paragraphOf(in2010With([ligatures])).unsupported).to.equal(
+                "ligatures in a document in compatibility mode that doesn't turn on OpenType features",
+            );
+            expect(paragraphOf(in2010With([ligatures], word("enableOpenTypeFeatures", "1"))).unsupported).to.equal(undefined);
+            expect(paragraphOf(in2010With([ligatures], word("enableOpenTypeFeatures", "0"))).unsupported).to.equal(
+                "ligatures in a document in compatibility mode that doesn't turn on OpenType features",
+            );
+            expect(paragraphOf(readBody([ligatures])).unsupported).to.equal(undefined);
+        });
+
+        it("should stop at a VML drawing that takes room in Word 2007's and 2003's modes", () => {
+            // word-stops-compat-12.docx CM14: docx's text box 14 twips higher than in Word 2010's mode and 2013's
+            const shape = (style: string, ...children: readonly object[]): object =>
+                p(r({ "w:pict": [{ "v:rect": [{ _attr: { style, stroked: "f" } }, ...children] }] }));
+            const inLine = shape("width:100pt;height:50pt");
+            const floating = shape("position:absolute;width:100pt;height:50pt", { "w10:wrap": { _attr: { type: "square" } } });
+            const reason = "a VML drawing in a document in compatibility mode 12 or 11";
+            expect(paragraphOf(readBody([inLine], in2007)).unsupported).to.equal(reason);
+            expect(paragraphOf(readBody([floating], in2007)).unsupported).to.equal(reason);
+            expect(itemsOf(readBody([inLine], in2010))).to.deep.equal([{ type: "box", width: 100, height: 50, font: {} }]);
+            // One in front of the text or behind it takes no room
+            expect(itemsOf(readBody([shape("position:absolute;width:100pt;height:50pt")], in2007))).to.deep.equal([]);
+        });
+
+        it("should give a table sized to its text its cells' margins beside the room, and stop where Word hasn't shown its size", () => {
+            const rows = { "w:tr": [tableCell(p(r(t("a"))))] };
+            const tableWith = (...properties: readonly object[]): object => ({ "w:tbl": [{ "w:tblPr": properties }, rows] });
+            // word-stops-compat-14.docx CM4: as wide as the page's text and its first and last cells' margins
+            expect(tableOf(readBody([tableWith()], in2010))).to.deep.include({ fit: {}, marginsBeside: true });
+            expect(tableOf(readBody([tableWith()])).marginsBeside).to.equal(undefined);
+            // One with a width of its own keeps it (CM5), and one laid out fixed keeps its cells'
+            const own = { "w:tblW": { _attr: { "w:w": 4000, "w:type": "dxa" } } };
+            expect(tableOf(readBody([tableWith(own)], in2010)).marginsBeside).to.equal(undefined);
+            const fixed = { "w:tblLayout": { _attr: { "w:type": "fixed" } } };
+            expect(tableOf(readBody([tableWith(fixed)], in2010)).marginsBeside).to.equal(undefined);
+            // Indented, as a share of the width, or in a table cell, it hasn't been seen
+            const reason =
+                "a table sized to its text in a table cell, indented or as a share of the width, in a document in compatibility mode";
+            const indented = { "w:tblInd": { _attr: { "w:w": 200, "w:type": "dxa" } } };
+            expect(tableOf(readBody([tableWith(indented)], in2010)).unsupported).to.equal(reason);
+            const share = { "w:tblW": { _attr: { "w:w": 2500, "w:type": "pct" } } };
+            expect(tableOf(readBody([tableWith(share)], in2010)).unsupported).to.equal(reason);
+            const nested = { "w:tbl": [{ "w:tr": [tableCell(tableWith(), p())] }] };
+            expect(tableOf(readBody([nested], in2010)).unsupported).to.equal(reason);
+            // One that text flows around Word moves too, as its text is at its place (CM10)
+            const floating = { "w:tblpPr": { _attr: { "w:horzAnchor": "margin", "w:vertAnchor": "text", "w:tblpX": 2000 } } };
+            expect(tableOf(readBody([tableWith(own, floating), p()], in2010)).unsupported).to.equal(
+                "a table that text flows around in a document in compatibility mode",
+            );
         });
     });
 
@@ -5504,8 +5603,13 @@ describe("readDocument", () => {
 
         it("should have no guess for a table all of whose rows are deleted, when what Word does with one of them isn't known", () => {
             const deleted = { "w:del": { _attr: { "w:id": 2 } } };
-            const content = guessed([{ "w:tbl": [{ "w:tr": [{ "w:trPr": [deleted, value("w:divId", 1)] }, { "w:tc": [p()] }] }] }]);
-            expect(content.blocks[0].block).to.deep.include({ rows: [], unsupported: "a table row in an HTML division", noGuess: true });
+            const own = { "w:tblPrEx": [{ "w:tblBorders": [{ "w:top": { _attr: { "w:val": "single", "w:sz": 8 } } }] }] };
+            const content = guessed([{ "w:tbl": [{ "w:tr": [{ "w:trPr": [deleted] }, own, { "w:tc": [p()] }] }] }]);
+            expect(content.blocks[0].block).to.deep.include({
+                rows: [],
+                unsupported: "a table row with table properties of its own",
+                noGuess: true,
+            });
         });
 
         it("should read a paragraph whose hidden mark Word hasn't been seen with as it is, apart from the next", () => {

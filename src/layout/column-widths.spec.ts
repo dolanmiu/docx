@@ -168,6 +168,21 @@ describe("fitColumns", () => {
         expect(widthsOf(fitColumns({ ...table(prose, { share: 1 }), indent: 100 }, 300, measure))).to.deep.equal([290]);
     });
 
+    it("should size a table to its text with its first and last cells' margins beside the room in compatibility mode, as Word 2010 does", () => {
+        // word-stops-compat-14.docx CM4: 9242 twips of 9026 and two margins of 108, where Word 2013's mode sizes it to 9026.
+        // The 10 points of margins more take each column an eighth of the way past its widest word, rather than a tenth
+        const older = { ...table([[cell(0, "a"), cell(1, LONG), cell(2, `${LONG} ${LONG}`)]]), marginsBeside: true };
+        expect(widthsOf(fitColumns(older, 200, measure))).to.deep.equal([10, 68.1, 101.9]);
+        // How far Word 2010 lets a table whose cells all have widths grow for a long word, with them, hasn't been seen
+        const widened = { ...table([[cell(0, "aaaaaa", 30), cell(1, LONG, 150)]]), fit: undefined, widen: {}, marginsBeside: true };
+        expect(fitColumns(widened, 300, measure).unsupported).to.equal(
+            "a table widened for a long word, or its rows evened out, in a document in compatibility mode",
+        );
+        // Without one, it keeps its cells' widths
+        const kept = { ...table([[cell(0, "aa", 30), cell(1, "bb", 150)]]), fit: undefined, widen: {}, marginsBeside: true };
+        expect(fitColumns(kept, 300, measure)).to.equal(kept);
+    });
+
     it("should widen a column for a long word in an indented table in the room the indent leaves", () => {
         // word-table-formats.docx TI3: columns of 2000 and 2500 twips and a word 2894 wide, indented 4000 in 9026, came out
         // 2894 and 2132, narrowing the second to fit in 5026

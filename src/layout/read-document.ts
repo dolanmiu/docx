@@ -40,6 +40,7 @@ import {
     find,
     fontOf,
     getTextStyles,
+    isEastAsian,
     isEastAsianRun,
     isMonospacedEastAsianFont,
     isObject,
@@ -355,6 +356,13 @@ export type TableBlock = {
     readonly deletedRows?: readonly TableRow[];
     /** Where it floats, when text flows around it (`w:tblpPr`) */
     readonly float?: TableFloat;
+    /**
+     * Whether the room its columns are sized in has its first cell's left margin and its last cell's right margin beside
+     * it, as Word 2010 and before line a table's text up with the margins, rather than its borders: a table sized to its
+     * text is as wide as the page's text and those margins (`word-stops-compat-14.docx` CM4). Given for a table with no
+     * width of its own in a document in compatibility mode
+     */
+    readonly marginsBeside?: boolean;
     readonly unsupported?: string;
     /** Whether a layout that guesses has no guess for it either, for what is in one of its cells */
     readonly noGuess?: boolean;
@@ -453,6 +461,16 @@ export type DocumentContent = {
     readonly breakRules?: LineBreakRules;
     /** Word's automatic hyphenation of its words, with its settings, when it has it on */
     readonly hyphenation?: Hyphenation;
+    /**
+     * The version of Word whose layout the document asks for, when it is in compatibility mode: Word 2010 (14), 2007 (12)
+     * or 2003 (11). Word laid out the same pages in each as in Word 2013's mode (15), but that it didn't squeeze the spaces
+     * of justified lines (`word-stops-compat-14.docx` CM1), gave a table sized to its text its cells' margins beside the
+     * room (CM4), and moved text beside a frame or after a tab past the margin, and, in 12 and 11, East Asian text and the
+     * line of a VML text box, otherwise (CM12, CM14, CM18). None in Word 2013's mode
+     */
+    readonly compatibilityMode?: number;
+    /** Whether the space above the text of the first line of a page or column is left out (`suppressTopSpacing`) */
+    readonly suppressesTopSpacing?: boolean;
     /** The number each footnote shows, by the name of its marker */
     readonly footnoteNumbers: ReadonlyMap<string, string>;
     /** The number of the endnote each of the endnotes' blocks is in: all but their separator's */
@@ -602,6 +620,12 @@ type Reader = {
     readonly inTextBox?: boolean;
     /** Why its equations can't be laid out as Word does for the document's maths settings, when they can't */
     readonly maths?: string;
+    /** The document's compatibility mode, when it is one of Word 2010's, 2007's or 2003's (see `DocumentContent`) */
+    readonly compatibilityMode?: number;
+    /** Whether the document lays out East Asian text as Word 2003 did (`useFELayout`) */
+    readonly feLayout?: boolean;
+    /** Whether the document turns on OpenType features, such as ligatures, in compatibility mode (`enableOpenTypeFeatures`) */
+    readonly openTypeFeatures?: boolean;
 };
 
 // Word's defaults for a section that doesn't give its page: Letter, with inch margins
@@ -972,6 +996,14 @@ const readDrawing = (element: XmlObject, font: TextFont, reader: Reader): readon
     return typeof floating === "string" ? floating : floatingItem(floating, reader);
 };
 
+// Word 2007 and 2003 put the line of docx's text box (VML) 14 twips higher than Word 2010 and 2013 do
+// (`word-stops-compat-12.docx` CM14), so the layout stops at a VML drawing that takes room in a document in their
+// compatibility modes
+const OLDER_VML = "a VML drawing in a document in compatibility mode 12 or 11";
+
+/** Whether the document is in Word 2007's or 2003's compatibility mode, where VML drawings aren't laid out as Word does */
+const olderVml = ({ compatibilityMode }: Reader): boolean => compatibilityMode !== undefined && compatibilityMode < 14;
+
 /**
  * Reads a VML drawing (`w:pict`), as Word lays it out (scripts/layout-probes/word-vml.ts). A shape in the line is a box of
  * its size, with its run's font, standing on the baseline, as a picture is (VM7), and a text box in it is a box sized to
@@ -1000,18 +1032,19 @@ const readVml = (pict: unknown, font: TextFont, reader: Reader): readonly Layout
         if (wrap === undefined || attributesOf(wrap).type === "none") {
             return [];
         }
-        const reason =
-            reader.inCell || reader.inNote || reader.inTextBox
-                ? IN_CELL_OR_NOTE
-                : shape.text !== undefined
-                  ? "a text box that text flows around"
-                  : find(children, "v:imagedata") !== undefined
-                    ? "a VML picture"
-                    : outlined
-                      ? "a VML drawing with an outline that text flows around"
-                      : typeof width !== "number" || typeof height !== "number"
-                        ? unsized()
-                        : undefined;
+        const reason = olderVml(reader)
+            ? OLDER_VML
+            : reader.inCell || reader.inNote || reader.inTextBox
+              ? IN_CELL_OR_NOTE
+              : shape.text !== undefined
+                ? "a text box that text flows around"
+                : find(children, "v:imagedata") !== undefined
+                  ? "a VML picture"
+                  : outlined
+                    ? "a VML drawing with an outline that text flows around"
+                    : typeof width !== "number" || typeof height !== "number"
+                      ? unsized()
+                      : undefined;
         if (reason !== undefined) {
             return reason;
         }
@@ -1023,6 +1056,9 @@ const readVml = (pict: unknown, font: TextFont, reader: Reader): readonly Layout
         typeof width === "number" && typeof height === "number"
             ? guessedOr(reader, reason, () => [{ type: "box", width, height, font }])
             : reason;
+    if (olderVml(reader)) {
+        return OLDER_VML;
+    }
     if (reader.inHeader || reader.inTextBox) {
         return sized("a VML drawing in the line of a header, footer or text box");
     }
@@ -1790,6 +1826,44 @@ const countIn = (
 // Letters of Thai and Arabic, which their justifications are for
 const THAI_OR_ARABIC = /[\p{Script=Thai}\p{Script=Arabic}]/u;
 
+// The alignments whose lines Word 2013 squeezes as it does a justified line's, other than justified
+const SQUEEZED_ALIGNMENTS = new Set<ParagraphFormat["alignment"]>(["distributed", "thaiDistributed", "lowKashida"]);
+
+/**
+ * Why a paragraph can't be laid out as Word lays it out in the document's compatibility mode, or with Word 2003's layout
+ * of East Asian text (`useFELayout`), when it can't. Word 2010 and before don't squeeze the spaces of a justified line
+ * (`word-stops-compat-14.docx` CM1), and whether they squeeze a distributed one, or one justified for Thai or with a low
+ * kashida, as Word 2013 does, hasn't been seen. Word 2007 and 2003 broke East Asian text otherwise than Word 2010 and
+ * 2013 (CM18), and so does Word 2003's East Asian layout (`word-stops-fe-layout.docx` FE1a, FE1b), in ways not yet
+ * followed. Paragraphs without East Asian text it lays out as they are without it (FE1c to FE1f).
+ */
+const unknownInOlderLayout = (
+    items: readonly LayoutItem[],
+    alignment: ParagraphFormat["alignment"],
+    reader: Reader,
+): string | undefined => {
+    const { compatibilityMode } = reader;
+    if (compatibilityMode !== undefined && SQUEEZED_ALIGNMENTS.has(alignment)) {
+        return "a paragraph distributed, or justified for Thai or with a low kashida, in a document in compatibility mode";
+    }
+    // Word 2007 and 2003 had no OpenType features, which Word 2010's mode has on only with `enableOpenTypeFeatures`, as
+    // Word 2010 writes it: whether Word draws ligatures without it hasn't been seen
+    if (
+        compatibilityMode !== undefined &&
+        reader.openTypeFeatures !== true &&
+        items.some((item) => item.type === "text" && item.font.ligatures !== undefined)
+    ) {
+        return "ligatures in a document in compatibility mode that doesn't turn on OpenType features";
+    }
+    const eastAsian = items.some((item) => item.type === "text" && [...item.text].some(isEastAsian));
+    if (eastAsian && compatibilityMode !== undefined && compatibilityMode < 14) {
+        return "East Asian text in a document in compatibility mode 12 or 11";
+    }
+    return eastAsian && reader.feLayout === true
+        ? "East Asian text in a document that lays it out as Word 2003 did (useFELayout)"
+        : undefined;
+};
+
 // A line of space before or after a paragraph, in `w:beforeLines` and `w:afterLines`, is 12 points whatever the font: 100
 // is 240 twips in Calibri 11, whose lines are 268.55 (`word-watertight-text.docx` TX7d)
 const POINTS_PER_LINE = 12;
@@ -2106,7 +2180,8 @@ const readParagraph = (element: XmlObject, reader: Reader, tableFormats: TableFo
                       typeof items !== "string" &&
                       items.some((item) => item.type === "text" && THAI_OR_ARABIC.test(item.text))
                     ? "Thai or Arabic text justified for it"
-                    : (unknownLengthIn(element) ??
+                    : (unknownInOlderLayout(content, combined.alignment, reader) ??
+                      unknownLengthIn(element) ??
                       (typeof format === "string" ? format : undefined) ??
                       (typeof borders === "string" ? borders : undefined)));
     return {
@@ -2574,20 +2649,19 @@ const readTable = (element: XmlObject, reader: Reader): TableBlock | undefined =
                 },
                 { column: skipped, cells: [], edges: new Map([[skipped, gridWidth(0, skipped)]]) },
             );
-            // A row of a division of a web page (`w:divId`) has the division's margins and borders, and one with table
-            // properties of its own (`w:tblPrEx`) has borders, margins or widths of its own
-            const rowUnsupported =
-                find(rowProperties, "w:divId") !== undefined
-                    ? "a table row in an HTML division"
-                    : rowParts.some((part) => "w:sdt" in part)
-                      ? BOUND_CONTROL
-                      : changesLines(childrenOf(find(rowChildren, "w:tblPrEx")))
-                        ? "a table row with table properties of its own"
-                        : deleted && (hasAnyOf(rowChildren, REMOVED_NOTES) || JSON.stringify([...rowReader.counters]) !== counts)
-                          ? "a list or a note in a deleted table row"
-                          : unseenHeaderCount
-                            ? "a deleted row in a table's header of several rows, whose style formats some of its rows"
-                            : cellsUnsupported;
+            // A row of a division of a web page (`w:divId`) Word moves across by the division's left margin, as wide and
+            // as tall as it is without, with the division's borders beside it but not above or below
+            // (`word-stops-pages.docx` DV1b), so its lines are as they are. One with table properties of its own
+            // (`w:tblPrEx`) has borders, margins or widths of its own
+            const rowUnsupported = rowParts.some((part) => "w:sdt" in part)
+                ? BOUND_CONTROL
+                : changesLines(childrenOf(find(rowChildren, "w:tblPrEx")))
+                  ? "a table row with table properties of its own"
+                  : deleted && (hasAnyOf(rowChildren, REMOVED_NOTES) || JSON.stringify([...rowReader.counters]) !== counts)
+                    ? "a list or a note in a deleted table row"
+                    : unseenHeaderCount
+                      ? "a deleted row in a table's header of several rows, whose style formats some of its rows"
+                      : cellsUnsupported;
             return {
                 cells,
                 deleted,
@@ -2770,11 +2844,21 @@ const readTable = (element: XmlObject, reader: Reader): TableBlock | undefined =
     // note hasn't been seen
     const floatElement = find(properties, "w:tblpPr");
     const float = floatElement === undefined ? undefined : readTableFloat(floatElement, find(properties, "w:tblOverlap"));
+    // In compatibility mode, Word 2010 and before put a table's text, rather than its borders, at its indent, and give one
+    // sized to its text its cells' margins beside the page's text (`word-stops-compat-14.docx` CM4, CM5, CM11, CM16). That
+    // moves one that text flows around (CM10), whose text is laid out round it in a way not yet followed, and how it sizes
+    // one in a table cell, indented or as a share of the width hasn't been seen
+    const older = reader.compatibilityMode !== undefined;
+    const marginsBeside = older && sized && givenWidth.width === undefined;
     const unsupported =
         withoutGuess?.unsupported ??
         (reader.down === true ? "a table on text that runs down the page" : undefined) ??
         (float !== undefined && (reader.inCell || reader.inNote || reader.inHeader)
             ? "a table that text flows around in a table cell, header, footer or note"
+            : undefined) ??
+        (float !== undefined && older ? "a table that text flows around in a document in compatibility mode" : undefined) ??
+        (marginsBeside && fits && (reader.inCell === true || indent !== 0 || givenWidth.share !== undefined)
+            ? "a table sized to its text in a table cell, indented or as a share of the width, in a document in compatibility mode"
             : undefined) ??
         (typeof float === "string" ? float : undefined) ??
         (parts.some((part) => "w:sdt" in part) ? BOUND_CONTROL : undefined) ??
@@ -2810,6 +2894,7 @@ const readTable = (element: XmlObject, reader: Reader): TableBlock | undefined =
         ...(spaced ? { cellSpacing: followedSpacing } : {}),
         ...(deletedRows.length > 0 ? { deletedRows } : {}),
         ...(typeof float === "object" ? { float } : {}),
+        ...(marginsBeside ? { marginsBeside } : {}),
         ...(unsupported ? { unsupported } : {}),
         ...(withoutGuess ? { noGuess: true } : {}),
     };
@@ -3724,8 +3809,6 @@ const readSection = (
     const { pageWidth, left: marginLeft, right: marginRight, gutter } = pageAcross(properties);
     const marginTop = twips(margins["w:top"]) ?? DEFAULT_SECTION.marginTop;
     const columns = readColumns(find(properties, "w:cols"), textWidthOf(properties, gutterAtTop));
-    // Where Word puts a gutter at the top with mirrored margins, which put it on the inside of each page, or below a
-    // negative top margin, which the header doesn't push the text below, isn't known
     const direction = valueOf(properties, "w:textDirection");
     const down = downOf(properties);
     const sectionStart = start !== undefined && START_TYPES.has(start as Section["start"]) ? (start as Section["start"]) : "nextPage";
@@ -3747,9 +3830,7 @@ const readSection = (
                       ? "a document grid that snaps to characters on text that runs down the page"
                       : find(properties, "w15:footnoteColumns") !== undefined
                         ? "footnotes in columns of their own"
-                        : gutterAtTop && gutter !== 0 && (mirrorMargins || marginTop < 0)
-                          ? "a gutter at the top with mirrored margins or a negative top margin"
-                          : unknownLengthIn(element);
+                        : unknownLengthIn(element);
     const headers = readReferences(properties, "w:headerReference", readPart);
     const footers = readReferences(properties, "w:footerReference", readPart);
     const section: Section = {
@@ -3979,11 +4060,23 @@ const readNumbering = (
 // without one, is laid out as that version of Word laid it out
 const CURRENT_COMPATIBILITY_MODE = 15;
 
+// The compatibility modes of Word 2010 (14), 2007 (12) and 2003 (11). Word laid out the same pages alike in each and in
+// mode 15 but for what `compatibilityMode` in `DocumentContent` says (`word-stops-compat-15.docx`, `-14`, `-12`, `-11`
+// CM1 to CM22)
+const OLDER_COMPATIBILITY_MODES = new Set([11, 12, 14]);
+
+// The mode of a document that gives none, as Word 2007 wrote them: Word lays it out as Word 2007 did
+const WORD_2007_MODE = 12;
+
 // The application Word's own compatibility settings (`w:compatSetting`) are for. Those for other applications are theirs
 const WORD_SETTINGS = "http://schemas.microsoft.com/office/word";
 
-// The compatibility settings of the schema (`w:compat`) that are followed: automatic spacing as HTML has it
-const FOLLOWED_COMPATIBILITY = new Set(["w:doNotUseHTMLParagraphAutoSpacing"]);
+// The compatibility settings of the schema (`w:compat`) that are followed in Word 2013's mode: automatic spacing as HTML
+// has it, the space above the first line of a page or column left out (`suppressTopSpacing`, see `paginate.ts`), and
+// Word 2003's layout of East Asian text (`useFELayout`) without the other settings of East Asian text, which left the
+// lines of paragraphs without East Asian text as they are (`word-stops-fe-layout.docx` FE1c to FE1f), and stops at those
+// with it, whose lines it breaks in ways not yet followed (FE1a, FE1b)
+const FOLLOWED_COMPATIBILITY = new Set(["w:doNotUseHTMLParagraphAutoSpacing", "w:suppressTopSpacing", "w:useFELayout"]);
 
 // The schema's compatibility settings Word lays out lines with in compatibility mode 15 as it does without them, though
 // they ask for an older Word's or another application's layout: Word laid out the same probes alike with each group of them
@@ -3992,8 +4085,8 @@ const FOLLOWED_COMPATIBILITY = new Set(["w:doNotUseHTMLParagraphAutoSpacing"]);
 // justified line that ends with a line break not stretched, broken where it was (`-latin`, CP8b), and those of tabs, lists,
 // indents and borders (`-paragraphs`), of tables (`-tables`), of columns and footnotes (`-columns`), and of printing,
 // fields, shapes and text boxes (`-other`) changed nothing. Of the groups that changed lines, the top and foot of pages
-// and East Asian text, each setting but `suppressTopSpacing` and `useFELayout` changed nothing on its own
-// (`word-compat-settings2.docx` and one document for each setting, CP1 to CP20)
+// and East Asian text, each setting but `suppressTopSpacing` and `useFELayout`, which are followed, changed nothing on its
+// own (`word-compat-settings2.docx` and one document for each setting, CP1 to CP20)
 // cspell:ignore Punct conv Txbx
 const COMPATIBILITY_LINES_ALIKE = new Set(
     [
@@ -4070,6 +4163,22 @@ const COMPATIBILITY_LINES_ALIKE = new Set(
     ].map((name) => `w:${name}`),
 );
 
+// The schema's settings of East Asian text, which leave lines as they are each alone and all together, but with Word
+// 2003's layout of East Asian text (`useFELayout`) widened the spaces of Latin text (`word-compat-settings-east-asian.docx`
+// CP9), which `useFELayout` alone leaves as they are (`word-compat-settings2-useFELayout.docx`)
+const EAST_ASIAN_COMPATIBILITY = [
+    "balanceSingleByteDoubleByteWidth",
+    "doNotLeaveBackslashAlone",
+    "displayHangulFixedWidth",
+    "autoSpaceLikeWord95",
+    "lineWrapLikeWord6",
+    "useWord97LineBreakRules",
+    "applyBreakingRules",
+    "doNotWrapTextWithPunct",
+    "doNotUseEastAsianBreakRules",
+    "useAltKinsokuLineBreakRules",
+].map((name) => `w:${name}`);
+
 // Word's own compatibility settings known to leave its lines in compatibility mode 15 as they are, on or off: those Word
 // 16 writes in every document it makes, so in every template and document Word saved. Word laid out the same document
 // alike with them all on and without them (`word-compat-on.docx` and `word-compat-off.docx`): a paragraph's size and
@@ -4105,21 +4214,41 @@ const wordSettingsOf = (compatibility: readonly XmlObject[]): readonly XmlObject
         .filter(({ "w:uri": uri = WORD_SETTINGS }) => uri === WORD_SETTINGS);
 
 /**
- * Whether a document's compatibility settings (`w:compat`) ask Word to lay it out in a way not yet followed: a setting of
- * the schema that is on, other than `w:doNotUseHTMLParagraphAutoSpacing`, which is followed, and those known to leave its
- * lines as they are, or one of Word's own (`w:compatSetting`) other than those known to leave its lines as they are, on
- * or off. Each changes how Word lays out lines, or may, in ways not yet followed.
+ * The compatibility mode of a document's settings (`compatibilityMode`): the version of Word whose layout it asks for,
+ * 15 for Word 2013 and later. Word's own setting, as another application's may have the same name
  */
-const asksForUnfollowedCompatibility = (compatibility: readonly XmlObject[]): boolean =>
+const compatibilityModeOf = (settings: readonly XmlObject[]): number =>
+    numberOf(
+        wordSettingsOf(childrenOf(find(settings, "w:compat"))).find(({ "w:name": setting }) => setting === "compatibilityMode")?.["w:val"],
+    ) ?? WORD_2007_MODE;
+
+/** The compatibility mode a document is laid out in, when it is one of Word 2010's, 2007's or 2003's */
+const olderModeOf = (settings: readonly XmlObject[]): number | undefined => {
+    const mode = compatibilityModeOf(settings);
+    return OLDER_COMPATIBILITY_MODES.has(mode) ? mode : undefined;
+};
+
+/**
+ * Whether a document's compatibility settings (`w:compat`) ask Word to lay it out in a way not yet followed: a setting of
+ * the schema that is on, other than those that are followed and those known to leave its lines as they are, or one of
+ * Word's own (`w:compatSetting`) other than those known to leave its lines as they are, on or off. Each changes how Word
+ * lays out lines, or may, in ways not yet followed. Those of the schema were seen leaving lines alone, or followed, only
+ * in Word 2013's mode, where Word leaves most of them out, so in an older one each that is on but automatic spacing as
+ * HTML has it (`older`) is one not yet followed.
+ */
+const asksForUnfollowedCompatibility = (compatibility: readonly XmlObject[], older: boolean): boolean =>
+    (onOff(compatibility, "w:useFELayout") === true && EAST_ASIAN_COMPATIBILITY.some((name) => onOff(compatibility, name) === true)) ||
     compatibility.some((child) => {
         const name = nameOf(child);
         return (
             name !== "w:compatSetting" &&
-            !FOLLOWED_COMPATIBILITY.has(name) &&
-            !COMPATIBILITY_LINES_ALIKE.has(name) &&
+            (older
+                ? name !== "w:doNotUseHTMLParagraphAutoSpacing"
+                : !FOLLOWED_COMPATIBILITY.has(name) && !COMPATIBILITY_LINES_ALIKE.has(name)) &&
             onOff([child], name) === true
         );
-    }) || wordSettingsOf(compatibility).some(({ "w:name": setting }) => !WORD_SETTINGS_LINES_ALIKE.has(String(setting)));
+    }) ||
+    wordSettingsOf(compatibility).some(({ "w:name": setting }) => !WORD_SETTINGS_LINES_ALIKE.has(String(setting)));
 
 /**
  * The document's own lists of the characters that can't start a line (`w:noLineBreaksBefore`) and can't end one
@@ -4183,26 +4312,37 @@ const readSettings = (
     xml: XmlObject | undefined,
 ): Pick<
     DocumentContent,
-    "defaultTabStop" | "evenAndOddHeaders" | "addsParagraphSpacing" | "breakRules" | "hyphenation" | "unsupported"
+    | "defaultTabStop"
+    | "evenAndOddHeaders"
+    | "addsParagraphSpacing"
+    | "breakRules"
+    | "hyphenation"
+    | "compatibilityMode"
+    | "suppressesTopSpacing"
+    | "unsupported"
 > => {
     const settings = childrenOf(xml?.["w:settings"]);
     const compatibility = childrenOf(find(settings, "w:compat"));
     const lists = readKinsokuLists(settings);
     const spacingControl = valueOf(settings, "w:characterSpacingControl");
-    // Word's own, as another application's may have the same name
-    const mode = numberOf(wordSettingsOf(compatibility).find(({ "w:name": setting }) => setting === "compatibilityMode")?.["w:val"]);
-    // Word's strict rules, and its compression of punctuation, aren't known yet. Pages printed folded as a booklet, or two
-    // to a sheet, are half the paper, and Word updates a document's styles from its template when it opens it, with
-    // `w:linkStyles`
+    const mode = compatibilityModeOf(settings);
+    const olderMode = olderModeOf(settings);
+    // Word's strict rules, and its compression of punctuation, aren't known yet. Pages printed folded as a booklet are half
+    // the paper, in a way Word's PDF hasn't shown (`word-stops-booklet.docx` BK1: its first page left out), and Word updates
+    // a document's styles from its template when it opens it, with `w:linkStyles`. Pages printed two to a sheet
+    // (`w:printTwoOnOne`) Word lays out as the section's pages, as it does without: 51 lines on the first of 62
+    // (`word-stops-two-on-one.docx` TO1)
     const unsupported =
         (
             [
                 [onOff(settings, "w:strictFirstAndLastChars"), "the strict rules for the characters that can't start a line"],
                 [spacingControl !== undefined && spacingControl !== "doNotCompress", "punctuation compressed"],
-                [mode === undefined || mode < CURRENT_COMPATIBILITY_MODE, "a document in compatibility mode"],
-                [asksForUnfollowedCompatibility(compatibility), "a compatibility setting not yet followed"],
+                [
+                    mode < CURRENT_COMPATIBILITY_MODE && olderMode === undefined,
+                    "a document in a compatibility mode Word hasn't been seen laying out",
+                ],
+                [asksForUnfollowedCompatibility(compatibility, olderMode !== undefined), "a compatibility setting not yet followed"],
                 [onOff(settings, "w:bookFoldPrinting") || onOff(settings, "w:bookFoldRevPrinting"), "pages printed as a folded booklet"],
-                [onOff(settings, "w:printTwoOnOne"), "two pages printed on each sheet"],
                 [onOff(settings, "w:linkStyles"), "styles updated from the document's template when Word opens it"],
             ] as const
         ).find(([applies]) => applies === true)?.[1] ?? unknownLengthIn(settings);
@@ -4212,6 +4352,8 @@ const readSettings = (
         addsParagraphSpacing: onOff(compatibility, "w:doNotUseHTMLParagraphAutoSpacing") === true,
         ...(Object.keys(lists).length > 0 ? { breakRules: { lists } } : {}),
         ...(onOff(settings, "w:autoHyphenation") === true ? { hyphenation: readHyphenation(settings) } : {}),
+        ...(olderMode === undefined ? {} : { compatibilityMode: olderMode }),
+        ...(onOff(compatibility, "w:suppressTopSpacing") === true ? { suppressesTopSpacing: true } : {}),
         ...(unsupported ? { unsupported } : {}),
     };
 };
@@ -4373,6 +4515,11 @@ export const readContent = (writtenBody: XmlObject, writtenParts: DocumentParts,
     const settings = childrenOf(parts.settings?.["w:settings"]);
     const decimalSymbol = valueOf(settings, "w:decimalSymbol");
     const maths = readMathsSettings(settings);
+    const compatibilityMode = olderModeOf(settings);
+    const feLayout = onOff(childrenOf(find(settings, "w:compat")), "w:useFELayout") === true;
+    const openTypeFeatures = wordSettingsOf(childrenOf(find(settings, "w:compat"))).some(
+        ({ "w:name": name, "w:val": value }) => name === "enableOpenTypeFeatures" && isOn(value),
+    );
     const readerOf = (inHeader: boolean): Reader => ({
         styles,
         numbering,
@@ -4384,6 +4531,9 @@ export const readContent = (writtenBody: XmlObject, writtenParts: DocumentParts,
         ...(decimalSymbol === undefined ? {} : { decimalSymbol }),
         ...(maths === undefined ? {} : { maths }),
         ...(guess ? { guess } : {}),
+        ...(compatibilityMode === undefined ? {} : { compatibilityMode }),
+        ...(feLayout ? { feLayout } : {}),
+        ...(openTypeFeatures ? { openTypeFeatures } : {}),
     });
     const elements = unwrap(joinRemovedMarks(contentOf(body), styles, { nested: false, sized: false, part: "body" }), guess);
 
