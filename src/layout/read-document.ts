@@ -1855,13 +1855,14 @@ const unknownInOlderLayout = (
     ) {
         return "ligatures in a document in compatibility mode that doesn't turn on OpenType features";
     }
-    const eastAsian = items.some((item) => item.type === "text" && [...item.text].some(isEastAsian));
-    if (eastAsian && compatibilityMode !== undefined && compatibilityMode < 14) {
-        return "East Asian text in a document in compatibility mode 12 or 11";
+    // Its East Asian text is looked for only where it is laid out otherwise, as the text of every paragraph is long
+    const older = compatibilityMode !== undefined && compatibilityMode < 14;
+    if ((!older && reader.feLayout !== true) || !items.some((item) => item.type === "text" && [...item.text].some(isEastAsian))) {
+        return undefined;
     }
-    return eastAsian && reader.feLayout === true
-        ? "East Asian text in a document that lays it out as Word 2003 did (useFELayout)"
-        : undefined;
+    return older
+        ? "East Asian text in a document in compatibility mode 12 or 11"
+        : "East Asian text in a document that lays it out as Word 2003 did (useFELayout)";
 };
 
 // A line of space before or after a paragraph, in `w:beforeLines` and `w:afterLines`, is 12 points whatever the font: 100
