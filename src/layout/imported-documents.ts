@@ -671,11 +671,15 @@ export const withImports = (parts: DocxParts): DocxParts => {
         if (style.unsupported !== undefined) {
             return style.unsupported;
         }
-        // Which font Word gives its East Asian and right-to-left text, where its styles give its Latin text Word's own, hasn't
-        // been seen
+        // Which font Word gives its East Asian and right-to-left text, in its body or its notes, where its styles give its
+        // Latin text Word's own, hasn't been seen
+        const withNotes = [
+            ...content,
+            ...[document.footnotes, document.endnotes].flatMap((part) => (part === undefined ? [] : [part.notes])),
+        ];
         const eastAsianOrComplex =
-            elementsIn(content, (child) => "w:rtl" in child || "w:cs" in child).length > 0 ||
-            elementsIn(content, (child) => "w:t" in child).some((text) => [...contentOf(text).join("")].some(isEastAsian));
+            elementsIn(withNotes, (child) => "w:rtl" in child || "w:cs" in child).length > 0 ||
+            elementsIn(withNotes, (child) => "w:t" in child).some((text) => [...contentOf(text).join("")].some(isEastAsian));
         if (style.ownFont === true && eastAsianOrComplex) {
             return "East Asian or right-to-left text in an imported document whose own styles give no font";
         }

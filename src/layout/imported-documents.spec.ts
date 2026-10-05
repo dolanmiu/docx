@@ -335,6 +335,20 @@ describe("imported documents", () => {
                 unsupported: "East Asian or right-to-left text in an imported document whose own styles give no font",
             });
         }
+        // In its notes too
+        const noted = read(
+            { body: `${imports("rIdImport")}${SECTION}`, styles: defaults(""), imported: IMPORTED },
+            {
+                imported: {
+                    ...imported("").imported,
+                    body: styled("alone", "Alone").replace("</w:p>", '<w:r><w:footnoteReference w:id="1"/></w:r></w:p>'),
+                    footnotes: `<w:footnote w:type="separator" w:id="-1"><w:p/></w:footnote><w:footnote w:id="1">${styled("\u6c38", "Alone")}</w:footnote>`,
+                },
+            },
+        );
+        expect(noted.blocks[0].block).to.deep.include({
+            unsupported: "East Asian or right-to-left text in an imported document whose own styles give no font",
+        });
     });
 
     it("should number an imported document's lists as lists of their own, and its notes with the document's (AC5, AC6)", () => {
