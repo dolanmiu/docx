@@ -343,6 +343,15 @@ describe("run formatting", () => {
             ),
         ).to.deep.equal([40, 40, 40, 40, 70]);
         expect(twips("nil", 4, 4)).to.equal(undefined);
+        // An art border's size in points: apples of 12 a point from the text take 13 points (word-stops-text.ts RF25c); a
+        // space past 31 points kept in five bits, so 40 is 8 (RF25d); a single border of an eighth of a point and a double
+        // of none as given (RF25f, RF25e); and two borders seen at one size (RF25a, RF25b)
+        expect(twips("apples", 12, 1)).to.equal(260);
+        expect(twips("single", 4, 40)).to.equal(170);
+        expect(twips("single", 1, 1)).to.equal(22.5);
+        expect(twips("double", 0, 1)).to.equal(20);
+        expect(twips("thinThickThinMediumGap", 24, 1)).to.equal(200);
+        expect(twips("thickThinLargeGap", 36, 1)).to.equal(155);
     });
 
     it("should stop at a border whose room isn't known, and at emphasis marks of a kind the schema doesn't have", () => {
@@ -352,17 +361,19 @@ describe("run formatting", () => {
         expect(unknownRunFormatting({ border: { ...single, style: "nil", shadow: true } })).to.equal(undefined);
         expect(unknownRunFormatting({ border: { ...single, shadow: true } })).to.equal("a run border with a shadow or drawn as a frame");
         expect(unknownRunFormatting({ border: { ...single, frame: true } })).to.equal("a run border with a shadow or drawn as a frame");
-        // A style Word hasn't been seen to draw, thin and thick lines wider than 2¼ points, and a border without a width,
-        // narrower or wider than Word draws, or further from the text
-        expect(unknownRunFormatting({ border: { ...single, style: "apples" } })).to.equal(unknown);
+        // A style Word hasn't been seen to draw, thin and thick lines wider than 2¼ points, others at sizes not seen, and a
+        // border without a width, narrower or wider than Word draws, or an art border wider than it draws
         expect(unknownRunFormatting({ border: { ...single, style: "thinThickMediumGap", size: 2 } })).to.equal(unknown);
         expect(unknownRunFormatting({ border: { ...single, style: "thinThickSmallGap", size: 24 } })).to.equal(unknown);
+        expect(unknownRunFormatting({ border: { ...single, style: "thickThinLargeGap", size: 30 } })).to.equal(unknown);
         expect(unknownRunFormatting({ border: { ...single, size: undefined } })).to.equal(unknown);
-        expect(unknownRunFormatting({ border: { ...single, size: 1 } })).to.equal(unknown);
+        expect(unknownRunFormatting({ border: { ...single, size: 1, style: "double" } })).to.equal(unknown);
         expect(unknownRunFormatting({ border: { ...single, size: 97 } })).to.equal(unknown);
-        expect(unknownRunFormatting({ border: { ...single, space: 32 } })).to.equal(unknown);
+        expect(unknownRunFormatting({ border: { ...single, style: "apples", size: 32 } })).to.equal(unknown);
+        expect(unknownRunFormatting({ border: { ...single, style: "custom" } })).to.equal(unknown);
+        expect(unknownRunFormatting({ border: { ...single, style: "none", size: undefined } })).to.equal(undefined);
         expect(unknownRunFormatting({ emphasisMark: "star" })).to.equal("emphasis marks of a kind that isn't known");
-        expect(fontOf({ border: { ...single, style: "apples" } })).to.deep.equal({});
+        expect(fontOf({ border: { ...single, style: "custom" } })).to.deep.equal({});
     });
 });
 
@@ -606,22 +617,17 @@ describe("pointsOf", () => {
 });
 
 describe("unknownLengthIn", () => {
-    it("should find a size in a unit other than points, and a negative fraction of a centimeter or millimeter, in any element", () => {
+    it("should find a size in a unit other than points in any element", () => {
         const size = (val: string): object => ({ "w:rPr": [{ "w:sz": { _attr: { "w:val": val } } }] });
         expect(unknownLengthIn([{ "w:p": [{ "w:r": [size("1pc")] }] }])).to.equal("a size given in a unit other than points");
         expect(unknownLengthIn({ "w:szCs": { _attr: { "w:val": "1cm" } } })).to.equal("a size given in a unit other than points");
-        expect(unknownLengthIn({ "w:ind": { _attr: { "w:left": "-1.5cm" } } })).to.equal(
-            "a negative length of a fraction of a centimeter or millimeter",
-        );
+        // A negative length of a fraction, whose minus sign is its whole number's only (word-stops-text.ts RF26, RF28)
+        expect(unknownLengthIn({ "w:ind": { _attr: { "w:left": "-1.5cm" } } })).to.equal(undefined);
         expect(unknownLengthIn([size("11.5pt"), size("23"), { "w:ind": { _attr: { "w:left": "-1cm", "w:right": "-1.5in" } } }])).to.equal(
             undefined,
         );
         expect(unknownLengthIn([{ "w:t": ["-1.5cm"] }, "text"])).to.equal(undefined);
-        // A lowered position of a fraction of its unit, whose minus sign and rounding Word's PDFs didn't show together
-        expect(unknownLengthIn({ "w:position": { _attr: { "w:val": "-2.75pt" } } })).to.equal(
-            "a lowered position of a fraction of its unit",
-        );
-        expect(unknownLengthIn({ "w:position": { _attr: { "w:val": "-6pt" } } })).to.equal(undefined);
+        expect(unknownLengthIn({ "w:position": { _attr: { "w:val": "-2.75pt" } } })).to.equal(undefined);
     });
 
     it("should find one in the styles as they are read", () => {

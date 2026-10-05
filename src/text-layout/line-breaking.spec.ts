@@ -1414,25 +1414,44 @@ describe("layoutLines with run formatting, as Word lays it out", () => {
         expect(twipsOf(lineWith({ emphasis: "below" }), multiple(1.15))).to.be.closeTo(375.97, 0.22);
     });
 
+    it("should give emphasis marks their room beside a picture, over and under one line, and with line spacing, as Word does", () => {
+        // word-stops-text.ts RF21: a quarter of the line with a picture of 20 points, 459.08 and 114.77 twips
+        const pictured = linesOf([word("x", { ...CALIBRI, emphasis: "above" }), { type: "box", width: 20, height: 20, font: CALIBRI }])[0];
+        expect(pictured.height * 20).to.be.closeTo(573.85, 0.01);
+        // RF20a: marks over and under one line, a quarter of it over and another under
+        expect(twipsOf([word("x ", { ...CALIBRI, emphasis: "below" }), word("y", { ...CALIBRI, emphasis: "above" })])).to.be.closeTo(
+            402.83,
+            0.01,
+        );
+        // RF22a, RF22b: below single spacing, the line and its marks both that share: 268.55 at 0.8 lines, 302.12 at 0.9
+        expect(twipsOf(lineWith({ emphasis: "above" }), multiple(0.8))).to.be.closeTo(268.55, 0.01);
+        expect(twipsOf(lineWith({ emphasis: "above" }), multiple(0.9))).to.be.closeTo(302.12, 0.01);
+        // RF22c to RF22e: 1.2 lines add the marks' room to the spacing's, and from 1.25 the spacing holds them
+        expect(twipsOf(lineWith({ emphasis: "above" }), multiple(1.2))).to.be.closeTo(389.4, 0.01);
+        const [rf22d] = linesOf(lineWith({ emphasis: "above" }), multiple(1.25));
+        expect(rf22d.height * 20).to.be.closeTo(335.69, 0.01);
+        expect(rf22d.spacingBelow).to.equal(undefined);
+        expect(twipsOf(lineWith({ emphasis: "above" }), multiple(1.3))).to.be.closeTo(349.12, 0.01);
+        // RF22h: at 1.15 lines over a word raised 6 points, the marks' quarter of 388.55 adds to the spacing's 40.28
+        expect(twipsOf(lineWith({ emphasis: "above", raise: 6 }), multiple(1.15))).to.be.closeTo(525.97, 0.05);
+    });
+
     it("should stop at emphasis marks where how much room Word gives them isn't known", () => {
         const unsupported = (items: readonly InlineItem[], options: Omit<LineLayoutOptions, "width"> = {}): string | undefined =>
             linesOf(items, options)[0].unsupported;
         const spacing = "emphasis marks on a line whose line spacing Word hasn't shown with them";
-        // Less than a line, and between the room Word added below the marks' and the room that held them
-        expect(unsupported(lineWith({ emphasis: "above" }), multiple(0.8))).to.equal(spacing);
-        expect(unsupported(lineWith({ emphasis: "above" }), multiple(1.25))).to.equal(spacing);
-        expect(unsupported(lineWith({ emphasis: "above" }), { format: { lineSpacing: { rule: "atLeast", height: 17 } } })).to.equal(
-            spacing,
-        );
-        // On a line taller than its fonts' own, with spacing, though single spaced it is known
-        expect(unsupported(lineWith({ emphasis: "above", raise: 6 }), multiple(1.5))).to.equal(spacing);
+        // Less than a line on a line taller than its fonts' own, and at least a height there
+        expect(unsupported(lineWith({ emphasis: "above", raise: 6 }), multiple(0.8))).to.equal(spacing);
+        expect(
+            unsupported(lineWith({ emphasis: "above", raise: 6 }), { format: { lineSpacing: { rule: "atLeast", height: 30 } } }),
+        ).to.equal(spacing);
         expect(unsupported(lineWith({ emphasis: "above", raise: 6 }), multiple(1))).to.equal(undefined);
-        expect(unsupported([word("x", { ...CALIBRI, emphasis: "above" }), { type: "box", width: 20, height: 30, font: CALIBRI }])).to.equal(
-            "emphasis marks on a line with a picture",
-        );
-        expect(unsupported([word("x ", { ...CALIBRI, emphasis: "below" }), word("y", { ...CALIBRI, emphasis: "above" })])).to.equal(
-            "emphasis marks over and under text on one line",
-        );
+        // Beside a picture, and over and under one line, with spacing
+        const pictured = [word("x", { ...CALIBRI, emphasis: "above" }), { type: "box", width: 20, height: 30, font: CALIBRI }] as const;
+        expect(unsupported([...pictured], multiple(1.5))).to.equal("emphasis marks on a line with a picture and line spacing");
+        expect(
+            unsupported([word("x ", { ...CALIBRI, emphasis: "below" }), word("y", { ...CALIBRI, emphasis: "above" })], multiple(1.5)),
+        ).to.equal("emphasis marks over and under text on one line with line spacing");
     });
 
     it("should give a border its room above and below the text, and to its own line", () => {
@@ -1501,10 +1520,13 @@ describe("layoutLines with run formatting, as Word lays it out", () => {
         // Before a box, the room it starts with moves its first word on with it: "aaaa " is 50, and the box 5, 40 and 5
         expect(markersOf([{ type: "text", text: "aaaa ", font: {} }, marker("b"), box("bbbb")], 99)).to.deep.equal([[], ["b"]]);
         expect(markersOf([{ type: "text", text: "aaaa ", font: {} }, marker("b"), box("bbbb")], 100)).to.deep.equal([["b"]]);
-        // Nor how a box goes on round a word broken across lines
-        expect(layoutLines([box("aaaaaaaaaaaaaaa")], { width: 100, measurer: MEASURER })[0].unsupported).to.equal(
-            "a word longer than its line with a border",
-        );
+        // A word longer than its line, broken across lines, has room for the box's end on each, and starts it again on the
+        // next (word-stops-text.ts RF23): 5 and 8 letters of 10 on the first, and the box 5 in on the second
+        const broken = layoutLines([box("aaaaaaaaaaaaaaa")], { width: 100, measurer: MEASURER });
+        expect(broken.map(({ text: value, textWidth, unsupported }) => [value, textWidth, unsupported])).to.deep.equal([
+            ["aaaaaaaaa", 95, undefined],
+            ["aaaaaa", 65, undefined],
+        ]);
     });
 
     it("should line text in a border up with a tab stop by its box, and go on round a tab in it, as Word does", () => {

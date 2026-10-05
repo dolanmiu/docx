@@ -233,7 +233,8 @@ describe("readDocument", () => {
             expect(stopsAt(r(rPr(bdr("single")), { "w:tab": {} }))).to.equal(undefined);
             expect(stopsAt(r(rPr(bdr("single")), t("a\tb")))).to.equal(undefined);
             expect(stopsAt(r(rPr(bdr("single")), { "w:drawing": [{ "wp:inline": [] }] }))).to.equal("a picture in text with a border");
-            expect(stopsAt(r(rPr(value("w:position", "-2.5pt")), t("a")))).to.equal("a lowered position of a fraction of its unit");
+            // A position whose minus sign is its whole number's only: "-2.5pt" lowers text 1.5 points (word-stops-text.ts RF26a)
+            expect(stopsAt(r(rPr(value("w:position", "-2.5pt")), t("a")))).to.equal(undefined);
             // Hidden text takes no room, whatever its formatting
             expect(stopsAt(r(rPr({ "w:vanish": {} }, bdr("wave")), t("a")))).to.equal(undefined);
         });
@@ -4499,20 +4500,23 @@ describe("readDocument", () => {
             expect(paragraphOf(withUnits).format).to.deep.include({ indentLeft: 36, indentRight: 18, firstLineIndent: -18 });
         });
 
-        it("should stop at a size in a unit other than points, and a negative fraction of a centimeter or millimeter, wherever it is", () => {
+        it("should stop at a size in a unit other than points wherever it is, and read a negative fraction as Word does", () => {
             const SIZE = "a size given in a unit other than points";
-            const NEGATIVE = "a negative length of a fraction of a centimeter or millimeter";
             const ind = (left: string): object => pPr({ "w:ind": { _attr: { "w:left": left } } });
-            // Word ignores a size in centimeters where no style gives one, so it may take another style's
+            // Word ignores a size in centimeters where no style gives one, and draws one of whole half-points where a style
+            // does, so which decides isn't known
             expect(paragraphOf(readBody([p(r(rPr(value("w:sz", "1cm")), t("Text")))])).unsupported).to.equal(SIZE);
-            expect(paragraphOf(readBody([p(ind("-1.5cm"), r(t("Text")))])).unsupported).to.equal(NEGATIVE);
-            expect(paragraphOf(readBody([p(ind("-1cm"), r(rPr(value("w:sz", "11.5pt")), t("Text")))])).unsupported).to.equal(undefined);
+            // The minus sign of a negative length is its whole number's only (word-stops-text.ts RF26, RF28)
+            const negative = paragraphOf(readBody([p(ind("-1.5cm"), r(t("Text")))]));
+            expect([negative.unsupported, negative.format.indentLeft]).to.deep.equal([
+                undefined,
+                Math.round((-1 + 0.5) * (1440 / 2.54)) / 20,
+            ]);
             const table = (properties: object): DocumentContent =>
                 readBody([{ "w:tbl": [{ "w:tblPr": [properties] }, { "w:tr": [{ "w:tc": [p(r(t("Cell")))] }] }] }]);
-            expect(table({ "w:tblInd": { _attr: { "w:w": "-0.5mm", "w:type": "dxa" } } }).blocks[0].block.unsupported).to.equal(NEGATIVE);
-            expect(table({ "w:tblInd": { _attr: { "w:w": "-1mm", "w:type": "dxa" } } }).blocks[0].block.unsupported).to.equal(undefined);
+            expect(table({ "w:tblInd": { _attr: { "w:w": "-0.5mm", "w:type": "dxa" } } }).blocks[0].block.unsupported).to.equal(undefined);
             const section = readBody([{ "w:sectPr": [{ "w:pgMar": { _attr: { "w:top": "-2.5cm" } } }] }]).sections[0];
-            expect(section.unsupported).to.equal(NEGATIVE);
+            expect(section.unsupported).to.equal(undefined);
             // In the styles, lists and settings, it stops the document
             expect(readBody([], { styles: { default: { document: { run: { size: "0.2in" } } } } }).unsupported).to.equal(SIZE);
             expect(
@@ -4520,7 +4524,7 @@ describe("readDocument", () => {
                     numbering: { config: [{ reference: "list", levels: [{ level: 0, text: "%1.", style: { run: { size: "1pc" } } }] }] },
                 }).unsupported,
             ).to.equal(SIZE);
-            expect(readBody([], { defaultTabStop: "-1.5cm" as unknown as number }).unsupported).to.equal(NEGATIVE);
+            expect(readBody([], { defaultTabStop: "-1.5cm" as unknown as number }).unsupported).to.equal(undefined);
             expect(readBody([]).unsupported).to.equal(undefined);
         });
     });

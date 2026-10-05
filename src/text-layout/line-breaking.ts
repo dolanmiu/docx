@@ -647,22 +647,22 @@ const withFont = (heights: Heights, font: TextFont, measurer: TextMeasurer): Hei
     };
 };
 
-// Line spacing that adds up to 0.19 of a line with emphasis marks leaves the marks' room over it, and from 0.34 of it
-// holds the marks: at 1.08 and 1.15 lines and at least 16 points over Calibri 11 (0.08, 0.15 and 0.19 of its 268.55 twips),
-// the marks add their 67.14 twips, and at 1.5 and 2 lines and at least 18 points (0.34) they don't
-// (scripts/layout-probes/word-run-formatting.ts RF6k, word-run-formatting2.ts RF9). Where between Word turns from one to
-// the other isn't known
-const MARKS_OVER_SPACING = 0.1916;
-const MARKS_IN_SPACING = 0.3405;
-
 /**
  * How tall a line with emphasis marks is: a quarter of the line more, over its text or under it, whatever the font and
  * the size of the text they are on: 67.14 twips in a line of Calibri 11 and 122 of Calibri 20, 57.5 of Times New Roman 10
  * and 63.25 of Arial 11, and 67.14 still for marks on a word of 7 points, or on a space, in a line of Calibri 11
  * (scripts/layout-probes/word-run-formatting.ts RF6, word-watertight-text.ts TX15). A line taller than its fonts' own
- * lines takes a quarter of itself: 616.95 for marks on Courier New 20 in a line of Times New Roman 20, and 485.69 for a
- * line with a word raised 6 points (word-run-formatting2.ts RF10). Line spacing that adds a little room adds it below the
- * marks' room, and spacing that adds enough holds the marks
+ * lines takes a quarter of itself: 616.95 for marks on Courier New 20 in a line of Times New Roman 20, 485.69 for a line
+ * with a word raised 6 points (word-run-formatting2.ts RF10), and 114.77 over a picture of 20 points in a line of Calibri 11
+ * (scripts/layout-probes/stops2/word-stops-text.ts RF21). Marks over the text and under it on one line take a quarter of it
+ * over the text and another under it (RF20a, RF20b).
+ *
+ * Multiple and at-least spacing's room holds the marks when it is as much as theirs, and adds to it when it is less: at
+ * 1.08, 1.15 and 1.2 lines, and at least 14 and 16 points, over Calibri 11, the marks add their 67.14 twips, and at 1.25,
+ * 1.3, 1.5 and 2 lines and at least 18 points they don't (word-run-formatting.ts RF6k, word-run-formatting2.ts RF9,
+ * word-stops-text.ts RF22c to RF22e, RF22g); at 1.15 lines over a word raised 6 points the marks' 97.14 add to the
+ * spacing's 40.28 (RF22h). Below single spacing, the line and its marks' room are both that share of themselves: 268.55
+ * twips at 0.8 lines, and 302.12 at 0.9 (RF22a, RF22b).
  */
 const markedHeightOf = (
     { tallest, picture, marks }: Heights,
@@ -670,31 +670,39 @@ const markedHeightOf = (
     spacing: LineSpacing | undefined,
 ): Pick<LaidOutLine, "height" | "spacingBelow" | "unsupported"> => {
     const room = natural / 4;
-    if (marks!.above && marks!.below) {
-        return { height: natural + room, unsupported: "emphasis marks over and under text on one line" };
+    const both = marks!.above && marks!.below;
+    const marked = natural + (both ? 2 * room : room);
+    if (spacing === undefined || (spacing.rule === "multiple" && spacing.multiple === 1)) {
+        return { height: marked };
     }
-    if (picture > 0) {
-        return { height: natural + room, unsupported: "emphasis marks on a line with a picture" };
+    if (spacing.rule === "exact") {
+        return { height: spacing.height };
     }
-    if (spacing === undefined || spacing.rule === "exact") {
-        return { height: spacing === undefined ? natural + room : spacing.height };
+    if (both || picture > 0) {
+        return {
+            height: marked,
+            unsupported: both
+                ? "emphasis marks over and under text on one line with line spacing"
+                : "emphasis marks on a line with a picture and line spacing",
+        };
+    }
+    const single = Math.abs(natural - tallest) <= TOLERANCE;
+    if (spacing.rule === "multiple" && spacing.multiple < 1) {
+        return single
+            ? { height: marked * spacing.multiple }
+            : { height: marked, unsupported: "emphasis marks on a line whose line spacing Word hasn't shown with them" };
     }
     const extra = spacing.rule === "multiple" ? (spacing.multiple - 1) * tallest : Math.max(0, spacing.height - natural);
-    const share = extra / natural;
-    // Word's probes had multiple spacing of 1.08 to 2 lines over a line as tall as its fonts' own, and at-least spacing over
-    // one less or a little more than that
-    const known =
-        extra >= 0 &&
-        (extra === 0 || Math.abs(natural - tallest) <= TOLERANCE) &&
-        (share <= MARKS_OVER_SPACING || share >= MARKS_IN_SPACING);
-    if (!known) {
-        return { height: natural + room, unsupported: "emphasis marks on a line whose line spacing Word hasn't shown with them" };
+    // Word's probes had at-least spacing over a line as tall as its fonts' own
+    if (spacing.rule === "atLeast" && extra > 0 && !single) {
+        return { height: marked, unsupported: "emphasis marks on a line whose line spacing Word hasn't shown with them" };
     }
     // Multiple spacing's room is below the text, and at-least spacing's above it, where the marks over it go
-    const below = spacing.rule === "multiple" ? (share <= MARKS_OVER_SPACING ? extra : extra - room) : 0;
+    const holds = extra >= room - TOLERANCE;
+    const below = spacing.rule === "multiple" ? (holds ? extra - room : extra) : 0;
     return {
-        height: natural + extra + (share <= MARKS_OVER_SPACING ? room : 0),
-        ...(below > 0 ? { spacingBelow: below } : {}),
+        height: natural + extra + (holds ? 0 : room),
+        ...(below > TOLERANCE ? { spacingBelow: below } : {}),
     };
 };
 
@@ -1651,11 +1659,10 @@ export const layoutLines = (
                 limitOf() - startOf(lines.length, false) > 0
             ) {
                 // A word wider than a line is broken across as many lines as it needs, after the last character that fits
-                // on each, and never between a character and the marks on it or what a zero-width joiner joins to it
+                // on each, and never between a character and the marks on it or what a zero-width joiner joins to it. In a
+                // border, each line has room for the box to end after its last character, and the next starts the box again
+                // (scripts/layout-probes/stops2/word-stops-text.ts RF23)
                 let placed = false;
-                if (token.pieces.some(({ font }) => font.border !== undefined)) {
-                    line = { ...line, unsupported: "a word longer than its line with a border" };
-                }
                 // Word may hyphenate it instead
                 if (mayHyphenate(line, token, 0)) {
                     line = { ...line, unsupported: line.unsupported ?? MAY_HYPHENATE };
@@ -1667,13 +1674,15 @@ export const layoutLines = (
                 }
                 for (const character of charactersOf(token.pieces)) {
                     const characterWidth = widthOf(character, measurer);
+                    const room = lastBorder(character)?.room ?? 0;
                     // Each line is as long as it is, for lines of different widths, and one with no room takes the rest
                     if (
                         placed &&
-                        line.position + characterWidth > endOf(line) + TOLERANCE &&
+                        line.position + characterWidth + room > endOf(line) + TOLERANCE &&
                         limitOf(lines.length + 1) - startOf(lines.length + 1, false) > 0
                     ) {
                         line = wrap({ ...line, heights: withToken(line.heights, token), started: true });
+                        line = { ...line, position: line.position + room };
                     }
                     line = {
                         ...line,
