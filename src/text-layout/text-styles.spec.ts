@@ -415,6 +415,23 @@ describe("OpenType features", () => {
         });
         expect(unknownRunFormatting(format)).to.equal("OpenType number forms or spacing");
         expect(unknownRunFormatting({ numberSpacing: "tabular" })).to.equal("OpenType number forms or spacing");
+        // Figures as wide as the font's own: lining tabular ones in Calibri and Cambria, and old-style tabular ones in
+        // Calibri, in their regular faces (word-stops-kerning.ts KE7b, KE7d, KE7f)
+        expect(unknownRunFormatting({ font: "Calibri", numberForm: "lining", numberSpacing: "tabular" })).to.equal(undefined);
+        expect(unknownRunFormatting({ font: "Calibri", numberForm: "oldStyle", numberSpacing: "tabular" })).to.equal(undefined);
+        expect(unknownRunFormatting({ font: "Cambria", numberForm: "lining", numberSpacing: "tabular" })).to.equal(undefined);
+        expect(unknownRunFormatting({ font: "Cambria", numberForm: "oldStyle", numberSpacing: "tabular" })).to.equal(
+            "OpenType number forms or spacing",
+        );
+        expect(unknownRunFormatting({ font: "Calibri", numberForm: "lining", numberSpacing: "proportional" })).to.equal(
+            "OpenType number forms or spacing",
+        );
+        expect(unknownRunFormatting({ font: "Calibri", bold: true, numberForm: "lining", numberSpacing: "tabular" })).to.equal(
+            "OpenType number forms or spacing",
+        );
+        expect(unknownRunFormatting({ font: "Calibri", italic: true, numberForm: "lining", numberSpacing: "tabular" })).to.equal(
+            "OpenType number forms or spacing",
+        );
         expect(unknownRunFormatting({ stylisticSets: true })).to.equal("OpenType stylistic sets or contextual alternates");
         expect(unknownRunFormatting({ contextualAlternates: true })).to.equal("OpenType stylistic sets or contextual alternates");
         // The font's own forms, no sets and contextual alternates turned off are as without them

@@ -816,12 +816,23 @@ const plainFontOf = ({
         snapToGrid: snapToGrid === false ? false : undefined,
     });
 
+// The number forms and spacing that are as wide as a font's own figures, in its regular face: lining tabular figures in
+// Calibri and Cambria, and old-style tabular ones in Calibri (scripts/layout-probes/stops2/word-stops-kerning.ts KE7b, KE7d,
+// KE7f). Their proportional figures, and Cambria's old-style tabular ones, are narrower (KE7a, KE7c, KE7e, KE7g, KE7h)
+const DEFAULT_FIGURES: Readonly<Record<string, readonly string[]>> = {
+    calibri: ["lining tabular", "oldStyle tabular"],
+    cambria: ["lining tabular"],
+};
+
 /**
  * Why a run's formatting can't be laid out as Word lays it out, when it can't: OpenType features other than ligatures,
  * whose widths the width tables don't have, a border of a style, width or space Word hasn't been seen to draw, or with a
  * shadow or drawn as a frame, and emphasis marks of a kind the schema doesn't have.
  */
 export const unknownRunFormatting = ({
+    font,
+    bold,
+    italic,
     border,
     emphasisMark,
     numberForm,
@@ -829,7 +840,11 @@ export const unknownRunFormatting = ({
     stylisticSets,
     contextualAlternates,
 }: RunFormat): string | undefined => {
-    if ((numberForm ?? "default") !== "default" || (numberSpacing ?? "default") !== "default") {
+    const forms = `${numberForm ?? "default"} ${numberSpacing ?? "default"}`;
+    if (
+        forms !== "default default" &&
+        (bold === true || italic === true || !DEFAULT_FIGURES[(font ?? "").toLowerCase()]?.includes(forms))
+    ) {
         return "OpenType number forms or spacing";
     }
     if (stylisticSets === true || contextualAlternates === true) {
