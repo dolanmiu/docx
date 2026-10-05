@@ -100,9 +100,10 @@ npm run run-ts -- scripts/layout-probes/stops2/layout-stops.ts scripts/layout-pr
 cd build/word-probes && python3 ../../scripts/layout-probes/stops2/word-stops.py <name> [--probe TV1]
 ```
 
-`word-stops-shapes.py <name>.pdf [--text]` prints the images and paths a PDF draws, such as shapes' boxes and tables' borders, in
-twips from the margins, from the PDF's own content, and with `--text` each text's baseline. Word 16 for Mac wouldn't open
-`word-stops-vml-nested.docx`, a text box in a text box, so it has no PDF and isn't committed here.
+`python3 ../../scripts/layout-probes/stops2/word-stops-shapes.py <name>.pdf [--text]`, from the same folder, prints the images and
+paths a PDF draws, such as shapes' boxes and tables' borders, in twips from the margins, from the PDF's own content, and with
+`--text` where each run of text starts and its baseline. Word 16 for Mac wouldn't open `word-stops-vml-nested.docx`, a text
+box in a text box, so it has no PDF and isn't committed here.
 
 `word-stops.py` prints each probe's lines with where each is (twips from the margins), the gap from the line before, and
 the borders and rules drawn near it (from the SVG). With `<name>.layout.json` beside it, which `layout-stops.ts` writes
