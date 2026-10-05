@@ -168,12 +168,20 @@ const measureCells = (table: TableBlock, measure: Measure, vertical: (cell: Tabl
     new Map(
         sizingRows(table).flatMap(({ cells }) =>
             cells.map((cell) => {
-                // Text fitted to its cell takes the width the cell gives it, as Word squeezes it (`word-stops-tables.docx` TS8)
+                // Text fitted to its cell takes the width the cell gives it, as Word squeezes it (`word-stops-tables.docx` TS8),
+                // and in a table sized to its text, its grid column's (`word-stops-tables2.docx` TS13a, TS13b). In one, the text
+                // of a cell that doesn't wrap is as narrow as its lines are wide, as one word, though Word wraps it all the same
+                // (TS12a to TS12c)
+                const measured = (): ContentWidths => {
+                    const widths = measure(cell.sizing ?? cell.blocks);
+                    return table.fit && cell.noWrap ? { ...widths, min: widths.max } : widths;
+                };
+                const fitted = table.fit ? cell.width : 0;
                 const text = cell.fitText
-                    ? { min: 0, max: 0 }
+                    ? { min: fitted, max: fitted }
                     : cell.vertical
                       ? { min: vertical(cell), max: vertical(cell) }
-                      : measure(cell.sizing ?? cell.blocks);
+                      : measured();
                 const margins = cell.marginLeft + cell.marginRight;
                 return [cell, { ...text, min: text.min + margins, max: text.max + margins }];
             }),

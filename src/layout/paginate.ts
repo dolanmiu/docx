@@ -1347,6 +1347,12 @@ export const paginate = (
                     : largest(own.map(({ marginTop }) => marginTop)) +
                       largest((across.length > 0 ? across : own).map(contentHeight)) +
                       largest(own.map(({ marginBottom }) => marginBottom));
+            // A row exactly as tall as it says has its border above it inside that height, where one at least as tall has
+            // it outside, in a table without space between its cells (word-stops-tables2.docx TS15: rows of exactly 400
+            // twips and at least 1000 beside borders of half a point; word-stops-tables.docx TS1a)
+            if (height?.rule === "exact" && table.cellSpacing === undefined) {
+                return Math.max(height.value, borderTop) + borderBottom;
+            }
             const rowHeight = height === undefined ? natural : height.rule === "exact" ? height.value : Math.max(height.value, natural);
             return rowHeight + borderTop + borderBottom;
         });

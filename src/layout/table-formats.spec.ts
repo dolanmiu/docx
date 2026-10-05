@@ -1,6 +1,18 @@
 import { describe, expect, it } from "vitest";
 
-import { BorderStyle, Document, Paragraph, Table, TableBorders, TableCell, TableRow, TextDirection, TextRun, WidthType } from "docx";
+import {
+    BorderStyle,
+    Document,
+    HeightRule,
+    Paragraph,
+    Table,
+    TableBorders,
+    TableCell,
+    TableRow,
+    TextDirection,
+    TextRun,
+    WidthType,
+} from "docx";
 
 import { layoutDocument } from "./layout-document";
 import {
@@ -784,19 +796,34 @@ describe("tables laid out as Word lays them out", () => {
             expect(heights(2, false)).to.deep.equal([10, 10, 14, 10, 14, 10].map(lineOf));
         });
 
-        it("should apply a style's corner cells to each row of a header, and band one of three rows from its first with its first row off", () => {
+        it("should apply a style's corner cells to each row of a header, and band one of three rows or more from its first with its first row off", () => {
             // word-stops-tables.docx TS2: the corner cells' 20 points in both rows of a header of two
             expect(rowHeights(layOut([headed(2, true, 2)], headersStyle(corners)))).to.deep.equal([20, 20, 14, 10, 14, 10].map(lineOf));
             expect(rowHeights(layOut([headed(1, true, 2)], headersStyle(corners)))).to.deep.equal([20, 14, 10, 14, 10, 14].map(lineOf));
-            // TS3: a header of three rows with its first row off is banded from its first row, as though it weren't a header
+            // TS3: a header of three rows with its first row off is banded from its first row, as though it weren't a header,
+            // and so is one of four (word-stops-tables2.docx TS14)
             expect(rowHeights(layOut([headed(3, false)], headersStyle()))).to.deep.equal([14, 10, 14, 10, 14, 10].map(lineOf));
+            expect(rowHeights(layOut([headed(4, false)], headersStyle()))).to.deep.equal([14, 10, 14, 10, 14, 10].map(lineOf));
+            expect(rowHeights(layOut([headed(4, true)], headersStyle()))).to.deep.equal([16, 16, 16, 16, 14, 10].map(lineOf));
         });
+    });
 
-        it("should stop at the bands of rows of a header of four rows or more with its first row off", () => {
-            const stoppedAt = (table: Table): string | undefined => layOut([table], headersStyle()).stoppedAt;
-            expect(stoppedAt(headed(4, false))).to.equal("a table style's bands of rows in a header of four rows or more");
-            expect(stoppedAt(headed(4, true))).to.equal(undefined);
-        });
+    it("should keep the border above a row of an exact height inside it, and below one of an at-least height outside it", () => {
+        // word-stops-tables2.docx TS15: a first row of exactly 400 twips, borders of half a point; word-stops-tables.docx TS1a:
+        // one of at least 1000
+        const single = { style: BorderStyle.SINGLE, size: 4, color: "000000" };
+        const rowsOf = (rule: (typeof HeightRule)[keyof typeof HeightRule], value: number): Table =>
+            new Table({
+                width: { size: WIDTH, type: WidthType.DXA },
+                columnWidths: [WIDTH],
+                borders: { top: single, bottom: single, left: single, right: single, insideHorizontal: single, insideVertical: single },
+                rows: [
+                    new TableRow({ height: { value, rule }, children: [new TableCell({ children: [new Paragraph("r1")] })] }),
+                    new TableRow({ children: [new TableCell({ children: [new Paragraph("r2")] })] }),
+                ],
+            });
+        expect(rowHeights(layOut([rowsOf(HeightRule.EXACT, 400)]))).to.deep.equal([400, Math.round((LINE + 20) * 10) / 10]);
+        expect(rowHeights(layOut([rowsOf(HeightRule.ATLEAST, 1000)]))).to.deep.equal([1010, Math.round((LINE + 20) * 10) / 10]);
     });
 
     it("should apply a table style's first row's size where the table turns it on, and Normal has no size of its own (SP19)", () => {

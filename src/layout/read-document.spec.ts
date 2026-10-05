@@ -3498,7 +3498,7 @@ describe("readDocument", () => {
             expect(inEndnote.float).to.equal(undefined);
         });
 
-        it("should stop at cells whose text doesn't wrap or that fit their text to them in a table sized to its text, but not at a row in an HTML division", () => {
+        it("should read cells whose text doesn't wrap or that fit their text to them, and a row in an HTML division", () => {
             const tableOf = (table: readonly unknown[], row: readonly unknown[], ...cells: readonly (readonly unknown[])[]): TableBlock =>
                 readBody([
                     {
@@ -3518,14 +3518,14 @@ describe("readDocument", () => {
             expect(unsupportedOf([], [], [])).to.equal(undefined);
             // word-stops-pages.docx DV1b: moved across by the division's margin, as wide and tall as it is without
             expect(unsupportedOf([], [value("w:divId", 3)], [])).to.equal(undefined);
-            // word-stops-tables.docx TS7a, TS7b: in a table sized to its text, and not in one whose cells all have widths
-            expect(unsupportedOf([], [], [{ "w:noWrap": {} }])).to.equal(
-                "a table cell whose text doesn't wrap, in a table sized to its text",
-            );
+            // word-stops-tables.docx TS7a, TS7b, word-stops-tables2.docx TS12a to TS12c: in a table sized to its text, and in
+            // one whose cells all have widths, which sizes its columns by it
+            const unwrapped = tableOf([], [], [{ "w:noWrap": {} }]);
+            expect([unwrapped.unsupported, unwrapped.rows[0].cells[0].noWrap]).to.deep.equal([undefined, true]);
             expect(unsupportedOf([], [], [width, { "w:noWrap": {} }])).to.equal(undefined);
-            expect(unsupportedOf([], [], [value("w:noWrap", "false")])).to.equal(undefined);
-            // TS8: text fitted to its cell, a line to each paragraph
-            expect(unsupportedOf([], [], [{ "w:tcFitText": {} }])).to.equal("text fitted to its table cell, in a table sized to its text");
+            expect(tableOf([], [], [value("w:noWrap", "false")]).rows[0].cells[0].noWrap).to.equal(undefined);
+            // TS8, TS13a, TS13b: text fitted to its cell, a line to each paragraph
+            expect(unsupportedOf([], [], [{ "w:tcFitText": {} }])).to.equal(undefined);
             const fitted = tableOf([], [], [width, { "w:tcFitText": {} }]);
             expect([fitted.unsupported, fitted.rows[0].cells[0].fitText]).to.deep.equal([undefined, true]);
         });
@@ -3932,13 +3932,15 @@ describe("readDocument", () => {
                 expect(floating.unsupported).to.equal(reason);
             });
 
-            it("should read a table's indent from its style or itself, and stop at one that is a share of the width", () => {
+            it("should read a table's indent from its style or itself, and lay out one that is a share of the width as none", () => {
                 const indented = tableStyle("Indented", `<w:tblPr><w:tblInd w:w="2000" w:type="dxa"/></w:tblPr>`);
                 expect(tableOf([value("w:tblStyle", "Indented")], [[]], styles(indented)).indent).to.equal(100);
                 expect(tableOf([{ "w:tblInd": { _attr: { "w:w": -500, "w:type": "dxa" } } }], [[]]).indent).to.equal(-25);
                 expect(tableOf([{ "w:tblInd": { _attr: { "w:w": 500, "w:type": "nil" } } }], [[]]).indent).to.equal(undefined);
-                expect(tableOf([{ "w:tblInd": { _attr: { "w:w": 500, "w:type": "pct" } } }], [[]]).unsupported).to.equal(
-                    "a table indented by a share of the width",
+                // word-stops-tables2.docx TS11a, TS11b
+                expect(tableOf([{ "w:tblInd": { _attr: { "w:w": 500, "w:type": "pct" } } }], [[]]).indent).to.equal(undefined);
+                expect(tableOf([{ "w:tblInd": { _attr: { "w:w": 500, "w:type": "auto" } } }], [[]]).unsupported).to.equal(
+                    "a table indent of a type not yet followed",
                 );
             });
 
@@ -4007,7 +4009,11 @@ describe("readDocument", () => {
                         [[], []],
                         styles(tableStyle("Parts", `<w:tblStylePr w:type="firstRow">${properties}</w:tblStylePr>`)),
                     ).unsupported;
-                expect(unsupportedOf(`<w:trPr><w:cantSplit/></w:trPr>`)).to.equal("a table style's formatting for some of its cells");
+                expect(unsupportedOf(`<w:trPr><w:tblCellSpacing w:w="40"/></w:trPr>`)).to.equal(
+                    "a table style's formatting for some of its cells",
+                );
+                // Keeping its first row whole, which Word follows (word-stops-tables2.docx TS10b)
+                expect(unsupportedOf(`<w:trPr><w:cantSplit/></w:trPr>`)).to.equal(undefined);
                 expect(unsupportedOf(`<w:tcPr><w:textDirection w:val="btLr"/></w:tcPr>`)).to.equal(
                     "a table style's formatting for some of its cells",
                 );
@@ -4109,9 +4115,13 @@ describe("readDocument", () => {
                     undefined,
                     10,
                 ]);
-                // Keeping its rows whole, which TS5a's rows of a line didn't show
+                // Keeping its rows whole (word-stops-tables2.docx TS10a)
                 const kept = tableStyle("Kept", `<w:trPr><w:cantSplit/></w:trPr>`);
-                expect(tableOf([value("w:tblStyle", "Kept")], [[]], styles(kept)).unsupported).to.equal(
+                const keptRows = tableOf([value("w:tblStyle", "Kept")], [[], []], styles(kept));
+                expect([keptRows.unsupported, ...keptRows.rows.map(({ cantSplit }) => cantSplit)]).to.deep.equal([undefined, true, true]);
+                // Not its other row properties
+                const justified = tableStyle("Justified", `<w:trPr><w:jc w:val="center"/><w:tblCellSpacing w:w="40"/></w:trPr>`);
+                expect(tableOf([value("w:tblStyle", "Justified")], [[]], styles(justified)).unsupported).to.equal(
                     "a table style with formatting of its rows or cells",
                 );
             });
