@@ -182,7 +182,7 @@ The text is lined up in the line's room as the paragraph's alignment says, so it
 
 On a page whose text runs down it (`textRunsDown`), each line is a line down the page: `x` and `y` are the top left of its room, `width` how far across the page the line is, with the paragraph's line spacing, and `height` how far down the page its room is, between the paragraph's indents. Its text goes `textWidth` down from `y`, and the lines go across the page from the right, or the left, from the margin.
 
-Each row of a table, or the part of a row on the page when it breaks across pages, `RowLayout`, is `{ index, y, height }`: which of the table's rows it is, counted from 0, the top of the row, and its height, with its borders. A table's header rows are repeated at the top of each page it goes on to, and go on to the next page or column with the row after them when none of it fits below them, with the paragraphs kept with the next before the table.
+Each row of a table, or the part of a row on the page when it breaks across pages, `RowLayout`, is `{ index, y, height }`: which of the table's rows it is, counted from 0, the top of the row, and its height, with its borders. A table's header rows are repeated at the top of each page it goes on to, and go on to the next page or column with the row after them when none of it fits below them. The paragraphs kept with the next before the table go on to the next page with them, but not to the next column, nor from the top of a page, where the layout stops (see [What it leaves blank](#what-it-leaves-blank)).
 
 A footnote or endnote, `NoteLayout`, is `{ noteNumber, content }`: its number, as its reference shows it, such as `"1"` or `"iv"`, and its paragraphs and tables on the page.
 
