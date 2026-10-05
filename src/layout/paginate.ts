@@ -437,8 +437,15 @@ class NotesGrew extends Error {
 
 const BESIDE_NOTES = "a drawing that text flows around beside the footnotes at the bottom of its page";
 
-/** Thrown to lay out a table again from the next page or column, when its header rows would be alone at the foot of this one */
-class HeaderRowsAlone extends Error {}
+/**
+ * Thrown to lay out a table again from the next page or column, when its header rows would be alone at the foot of this
+ * one, with what was guessed at in moving them (`guesses`)
+ */
+class HeaderRowsAlone extends Error {
+    public constructor(public readonly guesses: readonly string[]) {
+        super();
+    }
+}
 
 /**
  * Thrown to lay out a page again when a drawing that text flows around is placed beside text that was placed before it
@@ -3950,11 +3957,10 @@ export const paginate = (
             if (!(error instanceof HeaderRowsAlone)) {
                 throw error;
             }
-            // What was guessed at in it is still guessed at, laid out from the next page
-            const guessed = placements.slice(start.placed).flatMap((placement) => (placement.type === "guess" ? [placement] : []));
             unmarkSince(start.marks);
             restore(start);
-            guessed.forEach(({ reason, page }) => stopAt(reason, page));
+            // What was guessed at in moving the header rows is still guessed at, but not what was in laying the table out here
+            error.guesses.forEach((reason) => stopAt(reason));
             placeTable(block, true);
         }
     };
@@ -3989,15 +3995,16 @@ export const paginate = (
         const startTablePage = (index: number): void => {
             if (headersAlone(index)) {
                 const before = blocks[blockIndex - 1];
-                if (before?.section === blocks[blockIndex].section && before.block.type === "paragraph" && before.block.format.keepNext) {
-                    // Whether Word moves it with them hasn't been seen. Guessing, it stays
-                    stopAt("a paragraph kept with the next before a table whose header rows go on to the next page");
-                }
-                if (columnsSection().columns.length > 1) {
+                const guesses = [
+                    // Whether Word moves a paragraph kept with the next with them hasn't been seen. Guessing, it stays
+                    ...(before?.section === blocks[blockIndex].section && before.block.type === "paragraph" && before.block.format.keepNext
+                        ? ["a paragraph kept with the next before a table whose header rows go on to the next page"]
+                        : []),
                     // Whether Word moves them to the next column, as to the next page, hasn't been seen. Guessing, it does
-                    stopAt("a table's header rows alone at the foot of a column");
-                }
-                throw new HeaderRowsAlone();
+                    ...(columnsSection().columns.length > 1 ? ["a table's header rows alone at the foot of a column"] : []),
+                ];
+                guesses.forEach((reason) => stopAt(reason));
+                throw new HeaderRowsAlone(guesses);
             }
             nextColumn();
             if (index >= headerRows) {
@@ -4121,7 +4128,9 @@ export const paginate = (
             const holding = held.length > 0 && heldLines !== undefined && index < heldLines;
             const notes = [...(holding && index === heldLines! - 1 ? held : []), ...notesIn(markers)];
             const keptWhole = holding || row.cantSplit || row.height?.rule === "exact";
-            if (table.cellSpacing !== undefined && row.breakBorder === undefined && !rowFits(roomNeeded, notes)) {
+            // Unless its header rows go on to the next page with it, so it doesn't break here
+            const movesWhole = keptWhole && !rowStays(roomNeeded, notes) && headersAlone(index);
+            if (table.cellSpacing !== undefined && row.breakBorder === undefined && !rowFits(roomNeeded, notes) && !movesWhole) {
                 // What Word draws where a table with space between its cells and borders breaks across pages isn't known.
                 // Guessing, nothing more
                 stopAt("a table with space between its cells and borders across pages");

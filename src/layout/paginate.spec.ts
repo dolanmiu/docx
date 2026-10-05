@@ -986,6 +986,17 @@ describe("paginate", () => {
             expect(guessed.pages[0].guesses).to.deep.equal([
                 "a paragraph kept with the next before a table whose header rows go on to the next page",
             ]);
+            // With space between its cells and borders, the table doesn't break where its header rows go on to the next page
+            // with the row, so nothing is guessed at in laying it out here
+            const spacedRows = (first: TableRow): TableBlock => ({
+                ...table([row([[paragraph("header", 1)]], { header: true }), first, row([[paragraph("next", 1)]])]),
+                cellSpacing: 1,
+            });
+            const spaced = document([paragraph("a", 5), spacedRows(row([[paragraph("first", 2)]], { cantSplit: true }))]);
+            expect(pagesOf(spaced)).to.deep.equal({ a: "1", header: "2", first: "2", next: "2" });
+            expect(paginate(spaced, { measurer: MEASURER, guess: true }).pages.flatMap(({ guesses = [] }) => guesses)).to.deep.equal([]);
+            const broken = document([paragraph("a", 5), spacedRows(row([[paragraph("first", 4)]]))]);
+            expect(paginate(broken, { measurer: MEASURER, guess: true }).pages.flatMap(({ guesses = [] }) => guesses)).to.deep.equal([]);
             // At the foot of a column, which Word may do otherwise
             const narrow = (one: TableRow): TableRow => ({ ...one, cells: one.cells.map((cell) => ({ ...cell, width: 35 })) });
             const inColumns = document(
