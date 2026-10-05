@@ -1502,17 +1502,39 @@ describe("layoutLines with run formatting, as Word lays it out", () => {
         // Before a box, the room it starts with moves its first word on with it: "aaaa " is 50, and the box 5, 40 and 5
         expect(markersOf([{ type: "text", text: "aaaa ", font: {} }, marker("b"), box("bbbb")], 99)).to.deep.equal([[], ["b"]]);
         expect(markersOf([{ type: "text", text: "aaaa ", font: {} }, marker("b"), box("bbbb")], 100)).to.deep.equal([["b"]]);
-        // Nor how a box goes on round a word broken across lines, or round text lined up with a right tab stop
+        // Nor how a box goes on round a word broken across lines
         expect(layoutLines([box("aaaaaaaaaaaaaaa")], { width: 100, measurer: MEASURER })[0].unsupported).to.equal(
             "a word longer than its line with a border",
         );
-        expect(
-            layoutLines([{ type: "tab", font: {} }, box("aa")], {
-                width: 100,
+    });
+
+    it("should line text in a border up with a tab stop by its box, and go on round a tab in it, as Word does", () => {
+        // word-stops-tabs TA7b to TA7d: "aa" in a box of 5 either side ends 5 before a right stop at 90, is centred on a
+        // centred one, and lines up its full stop with a decimal one
+        const box = (value: string): InlineItem => ({ type: "text", text: value, font: boxed(5) });
+        const lineAt = (alignment: "right" | "center" | "decimal", items: readonly InlineItem[]): LaidOutLine =>
+            layoutLines([{ type: "tab", font: {} }, ...items], {
+                width: 200,
                 measurer: MEASURER,
-                tabStops: [{ position: 90, alignment: "right" }],
-            })[0].unsupported,
-        ).to.equal("text with a border lined up with a tab stop");
+                tabStops: [{ position: 90, alignment }],
+            })[0];
+        expect([lineAt("right", [box("aa")]).textWidth, lineAt("right", [box("aa")]).unsupported]).to.deep.equal([85, undefined]);
+        expect(lineAt("center", [box("aa")]).textWidth).to.equal(100);
+        expect(lineAt("decimal", [box("1.5")]).textWidth).to.equal(110);
+        // TA7a: a tab in the box, with its border, keeps the box open, so the text after it starts at its stop
+        const tabbed = layoutLines([box("aa"), { type: "tab", font: boxed(5) }, box("bb")], {
+            width: 200,
+            measurer: MEASURER,
+            defaultTabStop: 50,
+        });
+        expect(tabbed[0].textWidth).to.equal(70);
+        // A tab without the border closes it, and the text after it opens another
+        const closed = layoutLines([box("aa"), { type: "tab", font: {} }, box("bb")], {
+            width: 200,
+            measurer: MEASURER,
+            defaultTabStop: 50,
+        });
+        expect(closed[0].textWidth).to.equal(75);
     });
 });
 
@@ -2187,17 +2209,22 @@ describe("decimal tab stops", () => {
         expect(measureContentWidths([text("a"), tab, text("abc")], { measurer: MEASURER, ...decimal }).max).to.equal(60);
     });
 
-    it("should stop at text at a decimal stop that Word hasn't been seen lining up", () => {
-        for (const value of ["12%", "1, 2.5", "12, 5", "1,"]) {
-            expect(lineOf([text("a"), tab, text(value)]).unsupported).to.equal(
-                "text at a decimal tab stop that Word hasn't been seen lining up",
-            );
-        }
+    it("should line up the end of a number that ends at anything but a full stop, with the commas in it", () => {
+        // word-stops-tabs TA6f, TA6j: Word lines up "12%" at the end of its "12", and "12, 34" at the end of its "12,"
+        const at = (value: string): LaidOutLine => lineOf([text("a"), tab, text(value)], { ...decimal, width: 200 });
+        expect(["12%", "1, 2.5", "12, 5", "1,"].map((value) => [at(value).textWidth, at(value).unsupported])).to.deep.equal([
+            [70, undefined],
+            [100, undefined],
+            [80, undefined],
+            [60, undefined],
+        ]);
+        expect(measureContentWidths([text("a"), tab, text("12%")], { measurer: MEASURER, ...decimal }).max).to.equal(70);
+    });
+
+    it("should stop at a picture before where text at a decimal stop lines up, as Word hasn't been seen lining it up", () => {
         expect(lineOf([text("a"), tab, { type: "box", width: 10, height: 10 }, text("1.5")]).unsupported).to.equal(
             "text at a decimal tab stop that Word hasn't been seen lining up",
         );
-        // In the widths of a table's columns, it lines up its end
-        expect(measureContentWidths([text("a"), tab, text("12%")], { measurer: MEASURER, ...decimal }).max).to.equal(60);
     });
 
     it("should line up text with a decimal stop where Word lined up the probes' text", () => {
@@ -2269,6 +2296,15 @@ describe("tab stops past the end of the line", () => {
     it("should line up the text after a right stop past the end of the line with the end, as Word does", () => {
         // word-watertight-text TX12c: a right stop at 10000 twips puts the text's right edge at the margin at 9026
         expect(linesOf([text("a"), tab, text("bb")], at("right")).map(({ textWidth }) => textWidth)).to.deep.equal([100]);
+        // word-stops-tabs TA3a to TA3d: at the start of a line, after a right, centred or decimal stop, and in a paragraph
+        // indented on the left after a right stop
+        for (const alignment of ["right", "center", "decimal"] as const) {
+            expect(linesOf([tab, text("bb")], at(alignment)).map(({ textWidth, unsupported }) => [textWidth, unsupported])).to.deep.equal([
+                [100, undefined],
+            ]);
+        }
+        const [indented] = linesOf([tab, text("bb")], { ...at("right"), format: { indentLeft: 10 } });
+        expect([indented.textWidth, indented.unsupported]).to.deep.equal([90, undefined]);
     });
 
     it("should put the text after a left stop past the end of the line two lines down, as Word does", () => {
@@ -2328,6 +2364,11 @@ describe("tab stops past the end of the line", () => {
         const indented = { format: { indentRight: 20 } };
         expect(linesOf([text("a"), tab, text("b")], { ...at("left", 85), ...indented })[0]).to.include({ text: "a\tb", textWidth: 95 });
         expect(linesOf([text("a"), tab, text("bb")], { ...at("right", 90), ...indented })[0]).to.include({ text: "a\tbb", textWidth: 90 });
+        // word-stops-tabs TA4a, TA4b: a centred stop at 8000 centres the text on it, and a decimal one lines up its full stop
+        const [centred] = linesOf([text("a"), tab, text("bb")], { ...at("center", 85), ...indented });
+        expect([centred.textWidth, centred.unsupported]).to.deep.equal([95, undefined]);
+        const [decimal] = linesOf([text("a"), tab, text("1.")], { ...at("decimal", 85), ...indented });
+        expect([decimal.textWidth, decimal.unsupported]).to.deep.equal([95, undefined]);
     });
 
     it("should stop at a stop past the end of the line, or the right indent, that Word hasn't been seen with", () => {
@@ -2342,19 +2383,15 @@ describe("tab stops past the end of the line", () => {
         expect(unsupportedOf([tab, text("b")], { ...at("left"), ...indented({ indentLeft: 10 }) })).to.equal(
             "a left tab stop past the end of the line at the start of a line in an indented paragraph",
         );
-        expect(unsupportedOf([tab, text("b")], at("right"))).to.equal(
-            "a tab stop past the end of the line at the start of a line, or in an indented paragraph",
-        );
-        expect(unsupportedOf([text("a"), tab, text("b")], { ...at("right"), ...indented({ indentLeft: 10 }) })).to.equal(
-            "a tab stop past the end of the line at the start of a line, or in an indented paragraph",
-        );
-        expect(unsupportedOf([text("a"), tab, text("b")], { ...at("center"), ...indented({ indentRight: 10 }) })).to.equal(
-            "a tab stop past the end of the line at the start of a line, or in an indented paragraph",
-        );
-        // Past the right indent: centred and decimal stops, a justified line, and text after a left stop past the margin
-        expect(unsupportedOf([text("a"), tab, text("b")], { ...at("center", 85), format: { indentRight: 20 } })).to.equal(
-            "a centred or decimal tab stop past the paragraph's right indent, or one in a justified line",
-        );
+        const indentedStop = "a right, centred or decimal tab stop past the end of the line in an indented paragraph";
+        expect(unsupportedOf([text("a"), tab, text("b")], { ...at("right"), ...indented({ indentLeft: 10 }) })).to.equal(indentedStop);
+        expect(unsupportedOf([tab, text("b")], { ...at("right"), ...indented({ indentRight: 10 }) })).to.equal(indentedStop);
+        expect(unsupportedOf([text("a"), tab, text("b")], { ...at("center"), ...indented({ indentRight: 10 }) })).to.equal(indentedStop);
+        expect(unsupportedOf([tab, text("b")], { ...at("decimal"), ...indented({ indentLeft: 10 }) })).to.equal(indentedStop);
+        // Past the right indent: a justified line, and text after a left stop past the margin
+        expect(
+            unsupportedOf([text("a"), tab, text("b")], { ...at("right", 85), format: { indentRight: 20, alignment: "justified" } }),
+        ).to.equal("a tab stop past the paragraph's right indent in a justified line");
         expect(unsupportedOf([text("a"), tab, text("bbbbb")], { ...at("left", 85), format: { indentRight: 20 } })).to.equal(
             "text after a tab stop past the paragraph's right indent that goes past the margin",
         );

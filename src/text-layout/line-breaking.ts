@@ -858,8 +858,11 @@ const nextStop = (
     return stop.position > limit + TOLERANCE ? undefined : stop;
 };
 
-/** How wide tokens are, one after the other, with the room of the borders between them and the kerning before each */
-const widthOfTokens = (tokens: readonly Token[], measurer: TextMeasurer): number => {
+/**
+ * How wide tokens are, one after the other, with the room of the borders between them and the kerning before each, after
+ * the box of a border that is `open` before them, if one is
+ */
+const widthOfTokens = (tokens: readonly Token[], measurer: TextMeasurer, open?: TextBorder): number => {
     const kerning = kerningBefore(tokens, measurer);
     return tokens.reduce(
         ({ total, border }, token, index) => {
@@ -873,7 +876,7 @@ const widthOfTokens = (tokens: readonly Token[], measurer: TextMeasurer): number
                   }
                 : { total, border };
         },
-        { total: 0, border: undefined as TextBorder | undefined },
+        { total: 0, border: open },
     ).total;
 };
 
@@ -881,10 +884,10 @@ const widthOfTokens = (tokens: readonly Token[], measurer: TextMeasurer): number
  * The width of the text after a tab, up to the next tab or the end of the part: what lines up with a right or centered
  * stop. Spaces at its end aren't counted.
  */
-const widthAfterTab = (tokens: readonly Token[], measurer: TextMeasurer): number => {
+const widthAfterTab = (tokens: readonly Token[], measurer: TextMeasurer, border?: TextBorder): number => {
     const text = textAfterTab(tokens);
     const lastWord = text.findLastIndex((token) => token.type !== "space" && token.type !== "marker");
-    return widthOfTokens(text.slice(0, lastWord + 1), measurer);
+    return widthOfTokens(text.slice(0, lastWord + 1), measurer, border);
 };
 
 /** Pieces of text split after this many characters */
@@ -905,13 +908,13 @@ const splitPieces = (pieces: readonly Piece[], at: number): readonly [readonly P
 
 /**
  * Where text after a decimal stop lines up with it, as the number of its characters before the stop: at its first full
- * stop, unless a number comes first and ends without one, which lines up its end. Word lined up "$1,234.50", "12.5%",
- * "(3.25)", "x 1.5", "1.5 x", "Total 12.50" and ".75" at their full stop, "a.b", "1.2.3" and "e.g. 7" at their first, the end
- * of "abc", "1,5", "7" and "-", and "1 234.5" at the end of its "1" (scripts/layout-probes/word-breaks-and-tabs.ts DT1 to
- * DT15, word-watertight-text.ts TX12a). Undefined for a number that ends at anything but a full stop, a space or the end of
- * the text, such as "12%", or with a comma, as where Word lines those up hasn't been seen.
+ * stop, unless a number, of digits and commas, comes first and ends without one, which lines up its end. Word lined up
+ * "$1,234.50", "12.5%", "(3.25)", "x 1.5", "1.5 x", "Total 12.50" and ".75" at their full stop, "a.b", "1.2.3" and "e.g. 7"
+ * at their first, the end of "abc", "1,5", "7" and "-", "1 234.5" at the end of its "1" (scripts/layout-probes/word-breaks-and-tabs.ts
+ * DT1 to DT15, word-watertight-text.ts TX12a), "12%" at the end of its "12" and "12, 34" at the end of its "12,"
+ * (scripts/layout-probes/stops2/word-stops-tabs.ts TA6f, TA6j)
  */
-const decimalPointOf = (text: string): number | undefined => {
+const decimalPointOf = (text: string): number => {
     const characters = [...text];
     const point = characters.indexOf(".");
     const digit = characters.findIndex((character) => /[0-9]/.test(character));
@@ -919,24 +922,21 @@ const decimalPointOf = (text: string): number | undefined => {
         return point === -1 ? characters.length : point;
     }
     const end = characters.findIndex((character, index) => index > digit && !/[0-9,]/.test(character));
-    if (end === -1) {
-        return characters[characters.length - 1] === "," ? undefined : characters.length;
-    }
-    return characters[end] === "." || (characters[end] === " " && characters[end - 1] !== ",") ? end : undefined;
+    return end === -1 ? characters.length : end;
 };
 
 /**
  * How far the text after a tab goes before a decimal stop: up to where it lines up with it (see {@link decimalPointOf}).
- * Undefined where that isn't known, or a picture comes before it.
+ * Undefined where a picture comes before it, as where Word lines that up hasn't been seen.
  */
-const widthBeforeDecimal = (tokens: readonly Token[], measurer: TextMeasurer): number | undefined => {
+const widthBeforeDecimal = (tokens: readonly Token[], measurer: TextMeasurer, border?: TextBorder): number | undefined => {
     const text = textAfterTab(tokens).filter((token) => token.type !== "marker");
     const written = text
         .map((token) => (token.type === "word" || token.type === "space" ? textOf(token.pieces) : "\uFFFC"))
         .join("")
         .trimEnd();
     const point = decimalPointOf(written);
-    if (point === undefined || [...written].slice(0, point).includes("\uFFFC")) {
+    if ([...written].slice(0, point).includes("\uFFFC")) {
         return undefined;
     }
     // The text before it, and the part of the word or spaces it is in
@@ -951,22 +951,31 @@ const widthBeforeDecimal = (tokens: readonly Token[], measurer: TextMeasurer): n
         // It lines up at a full stop, at a space or at the end, so never in spaces
         return from < point && token.type === "word" ? [{ type: "word", pieces: splitPieces(token.pieces, point - from)[0] }] : [];
     });
-    return widthOfTokens(before, measurer);
+    return widthOfTokens(before, measurer, border);
 };
 
 /**
  * How far before its stop the text after a tab starts: none for a left stop, half its width for a centred one, all of it
- * for a right one, and up to where it lines up for a decimal one. Undefined for text at a decimal stop that lines up
- * where Word hasn't been seen to line it up.
+ * for a right one, and up to where it lines up for a decimal one. Text in a border lines up with its box's room before and
+ * after it: a right stop with the end of the box, a centred one with its middle, and a decimal one with its text
+ * (scripts/layout-probes/stops2/word-stops-tabs.ts TA7b to TA7d). Undefined for text at a decimal stop that lines up where
+ * Word hasn't been seen to line it up.
  */
-const shiftAt = (alignment: TabStop["alignment"], tokens: readonly Token[], measurer: TextMeasurer): number | undefined => {
+const shiftAt = (
+    alignment: TabStop["alignment"],
+    tokens: readonly Token[],
+    measurer: TextMeasurer,
+    border?: TextBorder,
+): number | undefined => {
     if (alignment === "left") {
         return 0;
     }
     if (alignment === "decimal") {
-        return widthBeforeDecimal(tokens, measurer);
+        return widthBeforeDecimal(tokens, measurer, border);
     }
-    const after = widthAfterTab(tokens, measurer);
+    const text = textAfterTab(tokens);
+    const last = text.findLast((token) => token.type === "word" || token.type === "space");
+    const after = widthAfterTab(tokens, measurer, border) + (last === undefined ? 0 : (lastBorder(last.pieces)?.room ?? 0));
     return alignment === "center" ? after / 2 : after;
 };
 
@@ -975,10 +984,6 @@ const textAfterTab = (tokens: readonly Token[]): readonly Token[] => {
     const next = tokens.findIndex((token) => token.type === "tab");
     return next === -1 ? tokens : tokens.slice(0, next);
 };
-
-/** Whether the text after a tab has a border */
-const hasBorder = (tokens: readonly Token[]): boolean =>
-    textAfterTab(tokens).some((token) => (token.type === "word" || token.type === "space") && token.pieces.some(({ font }) => font.border));
 
 /**
  * A paragraph's tab stops in order, and those of its first line, where a hanging indent is a stop too.
@@ -1442,8 +1447,9 @@ export const layoutLines = (
     /**
      * Why where Word puts the text after a tab to one of the paragraph's own stops past the end of the line isn't known,
      * when it isn't: its probes had no first line or hanging indent, no right indent past the margin, indents only with a
-     * left stop after text and a right stop after text, and centred and decimal stops after text in a paragraph without
-     * indents
+     * left stop after text, a left indent with a right stop at the start of a line (scripts/layout-probes/stops2/word-stops-tabs.ts
+     * TA3d), a right indent only with a right stop after text, and centred and decimal stops in a paragraph without indents,
+     * after text and at the start of a line (TA3a to TA3c)
      */
     const pastEndUnknown = ({ alignment: kind }: TabStop, started: boolean): string | undefined => {
         if (firstLineIndent !== 0 || indentRight < 0) {
@@ -1454,9 +1460,8 @@ export const layoutLines = (
                 ? "a left tab stop past the end of the line at the start of a line in an indented paragraph"
                 : undefined;
         }
-        return !started || indentLeft !== 0 || (kind !== "right" && indentRight !== 0)
-            ? "a tab stop past the end of the line at the start of a line, or in an indented paragraph"
-            : undefined;
+        const known = (indentLeft === 0 && indentRight === 0) || (kind === "right" && (started ? indentLeft === 0 : indentRight === 0));
+        return known ? undefined : "a right, centred or decimal tab stop past the end of the line in an indented paragraph";
     };
     // A list number that isn't left-aligned starts before its line does, which its text is measured from
     const beforeStart = numberShift(content, numberAlignment, measurer);
@@ -1782,9 +1787,11 @@ export const layoutLines = (
                 };
                 continue;
             }
-            // A tab or picture after text with a border closes its box
+            // A tab or picture after text with a border closes its box, but for a tab with the same border, which the box goes
+            // on round, as text after it in the box starts at its stop (scripts/layout-probes/stops2/word-stops-tabs.ts TA7a)
             line =
-                token.type === "word"
+                token.type === "word" ||
+                (token.type === "tab" && token.font.border !== undefined && token.font.border.key === line.border?.key)
                     ? line
                     : { ...line, position: line.position + roomBetween(line.border, undefined), border: undefined };
             if (cell !== undefined && token.type !== "word") {
@@ -1801,19 +1808,20 @@ export const layoutLines = (
                 const rest = tokens.slice(index + 1);
                 const own = !numbered && given.includes(next);
                 // One of the paragraph's own stops between its right indent and the margin: Word lines the text after it up
-                // with it on the line, past the indent, as far as the margin (scripts/layout-probes/word-breaks-and-tabs.ts
-                // TP6, TP9)
+                // with it on the line, past the indent, as far as the margin, at a left or right stop (scripts/layout-probes/word-breaks-and-tabs.ts
+                // TP6, TP9) and at a centred or decimal one (scripts/layout-probes/stops2/word-stops-tabs.ts TA4a, TA4b)
                 const pastIndent =
                     own && indentRight > 0 && next.position > limitOf() + TOLERANCE && next.position <= marginOf() + TOLERANCE;
                 // One past the end of the line: the text after a right, centred or decimal one lines up with the end of the line,
-                // or of the next when it doesn't fit (word-watertight-text.ts TX12c, word-breaks-and-tabs.ts TP1, TP2, TP5, TP7);
-                // a left one takes a line of its own, below the text before it, and the text after it goes on to the start of
-                // the next (TX12d, TP3, TP4, word-stops-tabs.docx TA8a to TA8g). Past the last of the default stops before the
-                // end of the line, the tab goes on to the next line, as below (TX12b)
+                // or of the next when it doesn't fit (word-watertight-text.ts TX12c, word-breaks-and-tabs.ts TP1, TP2, TP5, TP7),
+                // at the start of a line too (word-stops-tabs.ts TA3a to TA3d); a left one takes a line of its own, below the text
+                // before it, and the text after it goes on to the start of the next (TX12d, TP3, TP4, word-stops-tabs.docx TA8a to
+                // TA8g). Past the last of the default stops before the end of the line, the tab goes on to the next line, as below
+                // (TX12b)
                 const pastEnd = own && next.position > Math.max(limitOf(), marginOf()) + TOLERANCE ? next : undefined;
                 const unknown =
-                    pastIndent && (next.alignment === "center" || next.alignment === "decimal" || squeezes)
-                        ? "a centred or decimal tab stop past the paragraph's right indent, or one in a justified line"
+                    pastIndent && squeezes
+                        ? "a tab stop past the paragraph's right indent in a justified line"
                         : pastIndent && next.alignment === "left" && next.position + widthAfterTab(rest, measurer) > marginOf() + TOLERANCE
                           ? "text after a tab stop past the paragraph's right indent that goes past the margin"
                           : pastEnd === undefined
@@ -1862,13 +1870,8 @@ export const layoutLines = (
                     line = wrap(line);
                 }
                 line = { ...place(line), ...(pastIndent ? { pastIndent } : {}) };
-                const shift = shiftAt(stop.alignment, rest, measurer);
-                const misaligned =
-                    shift === undefined
-                        ? "text at a decimal tab stop that Word hasn't been seen lining up"
-                        : shift > 0 && hasBorder(rest)
-                          ? "text with a border lined up with a tab stop"
-                          : undefined;
+                const shift = shiftAt(stop.alignment, rest, measurer, line.border);
+                const misaligned = shift === undefined ? "text at a decimal tab stop that Word hasn't been seen lining up" : undefined;
                 // The text after it starts at the stop however much the spaces before it are squeezed
                 const position = Math.max(line.position, stop.position - (shift ?? widthAfterTab(rest, measurer)));
                 line = {

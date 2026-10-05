@@ -681,8 +681,6 @@ const SIZED_REMOVAL = "a deleted picture, tab, break or note reference in a tabl
 const PARTLY_DELETED_FIELD = "a field partly deleted in a tracked change";
 // A mark of its own in place of a note's number, which Word may not count in the numbers of the others
 const OWN_NOTE_MARK = "a footnote or endnote with a mark of its own";
-// Whether a box of borders around text goes on round a tab in it isn't known
-const TAB_IN_BORDER = "a tab in text with a border";
 
 // The start of the name of a marker that stands in a paragraph's items for what the reader guessed at, read to be laid
 // out with a guess, with why after it. The paragraph takes the first as why it can't be laid out as Word does, and leaves
@@ -1350,29 +1348,23 @@ const readRun = (element: XmlObject, paragraphRun: RunFormat, reader: Reader, re
                 const content = contentOf(child)
                     .filter((part) => typeof part === "string")
                     .join("");
-                const read = (): readonly LayoutItem[] =>
-                    content.split("\t").flatMap((part, index): readonly LayoutItem[] => [
-                        ...(index > 0 && !format.hidden ? [{ type: "tab" as const, font }] : []),
-                        ...(part.length === 0 ? [] : spansOf(part, format)).map(({ text, ...spanFont }) => ({
-                            type: "text" as const,
-                            text,
-                            font: spanFont,
-                            // Where its lines break depends on its language, and whether its run is East Asian
-                            ...(format.eastAsianLanguage === undefined ? {} : { language: format.eastAsianLanguage }),
-                            ...(isEastAsianRun(format) ? { eastAsian: true } : {}),
-                            ...hyphenationOf(format),
-                        })),
-                    ]);
-                // Whether a box goes on round a tab, or ends before it, isn't known. Guessing, it goes on
-                return font.border && !format.hidden && content.includes("\t") ? guessedOr(reader, TAB_IN_BORDER, read) : read();
+                // A box of borders goes on round a tab in it (scripts/layout-probes/stops2/word-stops-tabs.ts TA7a)
+                return content.split("\t").flatMap((part, index): readonly LayoutItem[] => [
+                    ...(index > 0 && !format.hidden ? [{ type: "tab" as const, font }] : []),
+                    ...(part.length === 0 ? [] : spansOf(part, format)).map(({ text, ...spanFont }) => ({
+                        type: "text" as const,
+                        text,
+                        font: spanFont,
+                        // Where its lines break depends on its language, and whether its run is East Asian
+                        ...(format.eastAsianLanguage === undefined ? {} : { language: format.eastAsianLanguage }),
+                        ...(isEastAsianRun(format) ? { eastAsian: true } : {}),
+                        ...hyphenationOf(format),
+                    })),
+                ]);
             }
             case "w:tab":
             case "w:ptab":
-                return format.hidden
-                    ? []
-                    : font.border
-                      ? guessedOr(reader, TAB_IN_BORDER, () => [{ type: "tab", font }])
-                      : [{ type: "tab", font }];
+                return format.hidden ? [] : [{ type: "tab", font }];
             case "w:br": {
                 // A page break in hidden text breaks nothing (`word-hidden-paragraphs.docx` HP4a, HP4b)
                 const kind = attributesOf(child["w:br"])["w:type"];

@@ -225,13 +225,13 @@ describe("readDocument", () => {
             expect(paragraphOf(readBody([p(pPr(rPr(bdr("single"))))])).markFont.border?.room).to.equal(4.5);
         });
 
-        it("should stop at a run's formatting whose room Word hasn't shown, and at tabs and pictures in a box", () => {
+        it("should stop at a run's formatting whose room Word hasn't shown, and at pictures in a box", () => {
             const bdr = (style: string): object => ({ "w:bdr": { _attr: { "w:val": style, "w:sz": 4, "w:space": 0 } } });
             const stopsAt = (...children: readonly unknown[]): string | undefined => paragraphOf(readBody([p(...children)])).unsupported;
             expect(stopsAt(r(rPr(bdr("apples")), t("a")))).to.equal("a run border of a style, width or space not yet followed");
-            expect(stopsAt(r(rPr(bdr("single")), { "w:tab": {} }))).to.equal("a tab in text with a border");
-            expect(stopsAt(r(rPr(bdr("single")), t("a\tb")))).to.equal("a tab in text with a border");
-            expect(stopsAt(r(rPr({ "w:vanish": {} }, bdr("single")), t("a\tb")))).to.equal(undefined);
+            // A tab in a box, which goes on round it (word-stops-tabs.ts TA7a)
+            expect(stopsAt(r(rPr(bdr("single")), { "w:tab": {} }))).to.equal(undefined);
+            expect(stopsAt(r(rPr(bdr("single")), t("a\tb")))).to.equal(undefined);
             expect(stopsAt(r(rPr(bdr("single")), { "w:drawing": [{ "wp:inline": [] }] }))).to.equal("a picture in text with a border");
             expect(stopsAt(r(rPr(value("w:position", "-2.5pt")), t("a")))).to.equal("a lowered position of a fraction of its unit");
             // Hidden text takes no room, whatever its formatting
@@ -5705,8 +5705,8 @@ describe("readDocument", () => {
                 { footnotes: { 1: { children: [new Paragraph("One")] } } },
             );
             expect(content.blocks.map(({ block }) => block.unsupported)).to.deep.equal([
-                "a tab in text with a border",
-                "a tab in text with a border",
+                undefined,
+                undefined,
                 undefined,
                 "a picture in text with a border",
                 "text with a phonetic guide",
