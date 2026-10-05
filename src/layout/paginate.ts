@@ -269,7 +269,10 @@ type OpenMerge = {
     /** Where its rows on the page start, and the room of the border above the first of them */
     readonly start?: number;
     readonly startTop?: number;
+    /** Whether some of its text is placed already */
     readonly broken: boolean;
+    /** Whether its rows went on from a page before, with the text not yet placed */
+    readonly moved?: boolean;
     readonly header: boolean;
 };
 
@@ -464,8 +467,6 @@ const NOTE_ROOM_STEP = 1;
 // next page, with the continuation separator at the top of the first column only, the second starting at the top, and
 // evens out the columns they end in (`word-stops-endnotes.docx` NE1). That isn't followed yet
 const ENDNOTES_IN_COLUMNS = "endnotes after text in columns";
-// Why the layout stops at a table row that can't break across pages and is taller than a column
-const KEPT_ROW_IN_COLUMNS = "a table row kept together taller than a column";
 
 /** The measurers the layout measures with, by those it is given, so the lines laid out with each are kept */
 const stoppingMeasurers = new WeakMap<TextMeasurer, TextMeasurer>();
@@ -1470,6 +1471,8 @@ export const paginate = (
     let spaceAfter = 0;
     // The cells merged down rows of the table being placed whose text isn't all on a page yet
     let openMerges: readonly OpenMerge[] = [];
+    // Whether a header row of the table being placed is taller than a page, and cut off at its bottom
+    let cutHeader = false;
     // Until something of the section is placed, the space after the paragraph before it, or 0 at the start of the
     // document. The space before the section's first paragraph isn't left out at the top of a page, or of the column the
     // section starts in, but only as much of it as is more than this goes there
@@ -4359,17 +4362,21 @@ export const paginate = (
         const last = table.rows.length - 1;
         const bottomBorder = table.rows.at(-1)?.borderBottom ?? 0;
         // Word doesn't repeat the header rows of a table in a cell on the next page (`word-stops-tables.docx` RW1), and
-        // breaks one with cells merged down its rows, whose text is all in their first rows, as any other (RW2). How it breaks
-        // the text of a cell merged down its rows that goes on past its first, and what it draws where one with space
-        // between its cells breaks, aren't known
+        // breaks one with cells merged down its rows, whose text is all in their first rows, as any other (RW2), and one
+        // whose text goes on past its first row, where all of its rows are on the page (`word-stops-rows2.docx` RW20). How it
+        // breaks the text of one whose rows go on across the break, and what it draws where one with space between its
+        // cells breaks, aren't known
         const ownHeights = rowHeights(table, []);
-        const unknown = mergesOf(table).some(
+        const goingOn = mergesOf(table).filter(
             ({ first, height }) => table.rows[first].borderTop + height > ownHeights[first] - table.rows[first].borderBottom + TOLERANCE,
-        )
-            ? "a cell merged down the rows of a table in a table cell, whose text goes on past its first row, across pages"
-            : table.cellSpacing === undefined
-              ? undefined
-              : "a table with space between its cells in a table cell across pages";
+        );
+        /** Why where the table breaks at a row (`index`), before it or in it, isn't known */
+        const unknownAt = (index: number): string | undefined =>
+            goingOn.some(({ first, last }) => first <= index && index <= last)
+                ? "a cell merged down the rows of a table in a table cell, whose text goes on past its first row, across pages"
+                : table.cellSpacing === undefined
+                  ? undefined
+                  : "a table with space between its cells in a table cell across pages";
         let used = 0;
         let placed: readonly LaidOutLine[] = [];
         /** The cell's part where the table breaks before a row (`index`), or in it with the paragraphs left in its cells */
@@ -4407,6 +4414,7 @@ export const paginate = (
                 used += whole;
                 continue;
             }
+            const unknown = unknownAt(index);
             if (unknown !== undefined) {
                 return breaksAt(index, brokenCells, unknown);
             }
@@ -4487,64 +4495,99 @@ export const paginate = (
         );
 
     /**
-     * Ends the text of the cells merged down rows that have rows on the page, where the page breaks below them (`end`):
-     * all of it goes in their rows on the page. Which rows Word puts the rest in when it doesn't fit there isn't known
+     * The text of a cell merged down rows left after it filled its rows on a page, which goes on from the top of its rows on
+     * the next page, as a paragraph's lines go on, keeping to widow control: beside the rest of a row that breaks across
+     * three pages (`word-stops-rows2.docx` RW13), and, where none of it goes on the page, as one line of a paragraph of more
+     * would be alone at its foot, all of it in the rows on the next (RW14a, RW14b, RW16a). Undefined when all of it is placed
+     */
+    const goesOn = (merge: OpenMerge, rest: readonly CellParagraph[], placed: boolean): OpenMerge | undefined => {
+        if (rest.length === 0) {
+            return undefined;
+        }
+        if (notesIn(merge.cell.blocks.flatMap(markersOf)).length > 0) {
+            // Its footnotes went with the first of its rows, and stay there guessing
+            stopAt("a footnote in a cell merged down table rows whose text goes on across pages");
+        }
+        if (merge.header) {
+            // Whether Word repeats the part of it in the header rows above the rest of it isn't known: guessing, it doesn't
+            stopAt("a cell merged down from a table's header rows whose text goes on across pages");
+        }
+        if (columnsSection().columns.length > 1) {
+            // Whether it goes on into the next column as onto the next page hasn't been seen: guessing, it does
+            stopAt("a cell merged down table rows whose text goes on across columns");
+        }
+        return { ...merge, rest, start: undefined, startTop: undefined, broken: merge.broken || placed, moved: true };
+    };
+
+    /**
+     * Ends the part of the text of the cells merged down rows that have rows on the page that goes in them, where the page
+     * breaks below them (`end`). The rest goes on in their rows on the next page (`goesOn`)
      */
     const closeMerges = (end: number): void => {
-        for (const { cell, rest, start, broken } of openMerges) {
-            if (start !== undefined) {
-                const { lines, rest: left } = fillCell(rest, end - start - cell.marginTop - cell.marginBottom, !broken);
-                if (left.length > 0) {
-                    throw new Unsupported(
-                        broken
-                            ? "a cell merged down table rows whose text goes on across more than two pages"
-                            : "a cell merged down table rows whose text goes on across a page break between them",
-                    );
-                }
-                mark(lines.flatMap(({ markers }) => markers));
+        openMerges = openMerges.flatMap((merge) => {
+            const { cell, rest, start, broken } = merge;
+            if (start === undefined) {
+                return [merge];
             }
-        }
-        openMerges = openMerges.filter(({ start }) => start === undefined);
+            const { lines, rest: left } = fillCell(rest, end - start - cell.marginTop - cell.marginBottom, !broken);
+            mark(lines.flatMap(({ markers }) => markers));
+            const next = goesOn(merge, left, lines.length > 0);
+            return next === undefined ? [] : [next];
+        });
     };
 
     /**
      * Places a row of a set height taller than the page, at the top of one: it takes the rest of the page, cut off at its
      * bottom, so what follows goes on the next page, as Word lays out one set to exactly or at least 15000 twips, with
-     * 13958 of room (`word-probes.docx` U5c, U5d), as LibreOffice does. A cell merged down from it has its text in it, and
-     * its footnotes go at the bottom of the next page, as Word lays them out (`word-stops-tables.docx` RW5a, RW5c). What
-     * Word does with one in columns, a header row, or with the text of a cell merged down to it from a row above, or of one
-     * merged down from it that doesn't fit in it, isn't known
+     * 13958 of room (`word-probes.docx` U5c, U5d), as LibreOffice does. In columns, it goes in the first column of a page,
+     * and what follows goes on the next page (`word-stops-rows2.docx` RW19b).
+     *
+     * The text of a cell merged down from it or to it from a row above goes in it, in all of its height where that is
+     * exact, past the bottom of the page (`word-stops-tables.docx` RW5a, RW16a, RW16b: 58 lines of 60 in a row of 16000
+     * twips, the last two, kept together by widow control, in the row after it on the next page), and the rest of the text of
+     * one merged down past it goes on in the rows after it on the next page (`goesOn`). What Word does with the text of one
+     * that ends in it and doesn't fit isn't known.
+     *
+     * Its footnotes go at the bottom of the next page, the first starting there as one does that can't go on a page with its
+     * line, and those after it below it (RW5c, RW15a). A header row isn't repeated on the next page, and what comes after the
+     * table goes on the page after the one it ends on (RW5b, RW18)
      */
     const placeCutRow = (row: TableRow, index: number): void => {
-        if (section().columns.length > 1) {
-            // Guessing, it is cut off at the bottom of the column
-            stopAt(KEPT_ROW_IN_COLUMNS);
-        }
-        const markers = row.cells.flatMap((cell) => cell.blocks.flatMap(markersOf));
+        const own = row.cells.filter((cell) => !startsMerge(cell)).flatMap((cell) => cell.blocks.flatMap(markersOf));
+        const markers = [...own, ...row.cells.filter(startsMerge).flatMap(roomlessOf)];
         const height = linesBottom() - position;
-        const fitsIn = ({ first, cell, rest }: OpenMerge): boolean =>
-            first === index &&
-            fillCell(rest, height - row.borderTop - row.borderBottom - cell.marginTop - cell.marginBottom, true).rest.length === 0;
-        if (!openMerges.every(fitsIn)) {
-            throw new Unsupported("a cell merged down into a table row of a set height taller than a page, or out of it past it");
-        }
-        if (row.header) {
-            // Word didn't repeat one on the next page, but put what came after the table on the page after that (RW5b)
-            throw new Unsupported("a header row of a set height taller than a page");
-        }
-        // Its footnote starts at the bottom of the next page, as one does that can't go on a page with its line (RW5c)
-        const notes = notesIn(markers);
-        if (notes.length > 1 || (notes.length > 0 && (carried !== undefined || pageNotes.length > 0))) {
-            throw new Unsupported("footnotes in a table row of a set height taller than a page");
+        const room = row.height?.rule === "exact" ? row.height.value - row.borderTop : height - row.borderTop - row.borderBottom;
+        // Its footnotes, those of its own cells and of the text of cells merged down it that ends in it
+        let notes = notesIn(own);
+        openMerges = openMerges.flatMap((merge) => {
+            const { lines, rest } = fillCell(merge.rest, room - merge.cell.marginTop - merge.cell.marginBottom, !merge.broken);
+            const placed = lines.flatMap(({ markers: lineMarkers }) => lineMarkers);
+            mark(placed);
+            notes = [...notes, ...notesIn(placed)];
+            if (rest.length > 0 && merge.last === index) {
+                throw new Unsupported("the text of a cell merged down into a table row of a set height taller than a page, longer than it");
+            }
+            const next = goesOn(merge, rest, lines.length > 0);
+            return next === undefined ? [{ ...merge, rest: [] }] : [next];
+        });
+        if (notes.length > 0 && (carried !== undefined || pageNotes.length > 0 || deferred !== undefined)) {
+            throw new Unsupported("footnotes in a table row of a set height taller than a page below others");
         }
         mark(markers);
-        openMerges = openMerges.map((merge) => ({ ...merge, rest: [] }));
         placeRow(index, position, height);
         position = linesBottom();
         placedInColumn = true;
         if (notes.length > 0) {
             [deferred] = notes;
             carried = { name: deferred, from: { block: 0, line: 0 } };
+            pending = [...pending, ...notes.slice(1)];
+        }
+        cutHeader ||= row.header;
+        // The other columns of the page are left empty
+        while (column < columnsSection().columns.length - 1) {
+            nextColumn();
+            position = linesBottom();
+            placedInColumn = true;
         }
     };
 
@@ -4570,7 +4613,7 @@ export const paginate = (
         rowIndex: number,
         height: number,
         breakBorder: number,
-        startTablePage: (continuing: boolean) => void,
+        startTablePage: (continuing: boolean, newPage?: boolean) => void,
         table: { readonly kept: boolean },
     ): void => {
         // The cells that start a merge are laid out with the rows they are merged down
@@ -4579,6 +4622,8 @@ export const paginate = (
         let isFirstPart = true;
         // Whether it is a row of an at-least height taller than a page whose text is too, whose parts each fill their page
         let fillsPages = false;
+        // Whether it goes down the first column of each page, as one whose paragraph kept together is taller than a column
+        let firstColumnsOnly = false;
         // The bookmarks of what takes no room start with the row's first part
         const roomless = row.cells.flatMap(roomlessOf);
         if (notesIn(roomless).length > 0) {
@@ -4768,9 +4813,15 @@ export const paginate = (
                     );
                 }
                 if (section().columns.length > 1) {
-                    // Word lays a paragraph kept together that is taller than a column down the first column of each page,
-                    // but what it does with a row isn't known: guessing, it breaks there as on a page
-                    stopAt(KEPT_ROW_IN_COLUMNS);
+                    // Word lays a row whose paragraph kept together is taller than a column down the first column of each
+                    // page, from a new page unless it is at the top of one, as it lays the paragraph out
+                    // (`word-stops-rows2.docx` RW19a)
+                    firstColumnsOnly = true;
+                    if (column > 0) {
+                        closeMerges(position);
+                        startTablePage(!isFirstPart, true);
+                        continue;
+                    }
                 }
                 parts = parts.map((paragraphs) =>
                     paragraphs.map((part, index) =>
@@ -4787,7 +4838,7 @@ export const paginate = (
             if (!placesLines) {
                 // The row goes to the next page whole, so the text of the cells merged down to it from rows above ends in those
                 closeMerges(position);
-                startTablePage(!isFirstPart);
+                startTablePage(!isFirstPart, firstColumnsOnly);
                 continue;
             }
             mark([
@@ -4814,20 +4865,9 @@ export const paginate = (
                 if (index === -1 || !decides(own.length + index)) {
                     return [placed];
                 }
-                const { rest } = filled[own.length + index];
-                if (rest.length === 0) {
-                    return [];
-                }
-                if (notesIn(merge.cell.blocks.flatMap(markersOf)).length > 0) {
-                    // Its footnotes went with the first of its rows, and stay there guessing
-                    stopAt("a footnote in a cell merged down table rows whose text goes on across pages");
-                }
-                if (merge.header) {
-                    // Whether Word repeats the part of it in the header rows above the rest of it isn't known: guessing, it
-                    // doesn't
-                    stopAt("a cell merged down from a table's header rows whose text goes on across pages");
-                }
-                return [{ ...merge, rest, start: undefined, startTop: undefined, broken: true }];
+                const { rest, lines } = filled[own.length + index];
+                const next = goesOn(merge, rest, lines.length > 0);
+                return next === undefined ? [] : [next];
             });
             if (isLastPart) {
                 placedInColumn = true;
@@ -4837,7 +4877,7 @@ export const paginate = (
             closeMerges(position - breakBorder);
             parts = filled.slice(0, own.length).map(({ rest }) => rest);
             isFirstPart = false;
-            startTablePage(true);
+            startTablePage(true, firstColumnsOnly);
         }
     };
 
@@ -4920,7 +4960,8 @@ export const paginate = (
             while (newPage && pageCount === page) {
                 nextColumn();
             }
-            if (index >= headerRows) {
+            // A header row taller than a page isn't repeated (RW5b, RW18)
+            if (index >= headerRows && !cutHeader) {
                 heights.slice(0, Math.max(0, headerRows)).reduce((y, rowHeight, row) => {
                     placeRow(row, y, rowHeight);
                     return y + rowHeight;
@@ -4959,17 +5000,18 @@ export const paginate = (
          */
         const heightAt = (index: number): number => {
             const ending = openMerges.filter(({ last }) => last === index);
-            if (!ending.some(({ broken }) => broken) || table.rows[index].height?.rule === "exact") {
+            if (!ending.some(({ broken, moved }) => broken || moved) || table.rows[index].height?.rule === "exact") {
                 return heights[index];
             }
             return Math.max(
                 ownHeights[index],
                 // Their rows on the page start with the rest of the row that broke on the page before, below the border above
                 // the first of them, and end above the last's border below (`word-stops-tables.docx` RW4a, RW4b)
+                // Those whose text went on from a page before with none of their rows on this one yet start with this one
                 ...ending.map(
-                    ({ cell, rest, start, startTop, broken }) =>
-                        start! +
-                        startTop! +
+                    ({ cell, rest, start = position, startTop = table.rows[index].borderTop, broken }) =>
+                        start +
+                        startTop +
                         cell.marginTop +
                         fillCell(rest, Infinity, !broken).height +
                         cell.marginBottom +
@@ -5033,6 +5075,7 @@ export const paginate = (
         // there too, whether the table breaks between rows or in one (`word-line-heights.docx` T1 and T4)
         const bottomBorder = table.rows[table.rows.length - 1]?.borderBottom ?? 0;
         openMerges = [];
+        cutHeader = false;
         if (onNextPage) {
             startTablePage(0);
         }
@@ -5075,25 +5118,33 @@ export const paginate = (
                 if (notes.length > 0 && position + roomNeeded <= linesBottom() + TOLERANCE) {
                     throw new Unsupported("a table row and its footnote taller than a page");
                 }
-                if (row.height?.rule === "exact") {
-                    placeCutRow(row, index);
-                    continue;
-                }
             }
             // In columns, one taller than a column goes down the first column of each page, from a new page unless it is at
-            // the top of one, as Word lays a paragraph kept together out (`word-stops-tables.docx` RW11)
+            // the top of one, as Word lays a paragraph kept together out (`word-stops-tables.docx` RW11,
+            // `word-stops-rows2.docx` RW19b)
             const firstColumns = tooTall && section().columns.length > 1;
             if (firstColumns && column > 0) {
                 closeMerges(position);
                 startTablePage(index, true);
             }
+            if (tooTall && row.height?.rule === "exact") {
+                placeCutRow(row, index);
+                continue;
+            }
             // One that can't break breaks there as other rows do, as in Word: 60 lines go 51 and 9 (`word-probes.docx` U5a,
             // U5b), as LibreOffice breaks them
             if (tooTall || (!rowFits(roomNeeded, notes) && !keptWhole)) {
-                splitRow(row, index, height, breakBorder, (continuing) => startTablePage(index, firstColumns, continuing), {
-                    // Rows kept with the next that are too tall for a page break where the page ends (KR5)
-                    kept: index > brokenUntil && index > 0 && keptWithNext(table.rows[index - 1]),
-                });
+                splitRow(
+                    row,
+                    index,
+                    height,
+                    breakBorder,
+                    (continuing, newPage) => startTablePage(index, firstColumns || newPage, continuing),
+                    {
+                        // Rows kept with the next that are too tall for a page break where the page ends (KR5)
+                        kept: index > brokenUntil && index > 0 && keptWithNext(table.rows[index - 1]),
+                    },
+                );
                 continue;
             }
             // The text of a cell merged down from the row is placed with the rows it goes down, and its footnotes with it
@@ -5113,6 +5164,16 @@ export const paginate = (
             mark(openMerges.filter(({ last }) => last === index).flatMap(({ rest }) => markersLeft(rest)));
             openMerges = openMerges.filter(({ last }) => last !== index);
             placedInColumn = true;
+        }
+        // What comes after a table whose header row is taller than a page goes on the page after the one it ends on (RW5b,
+        // RW18). After one that ends a section, whether Word leaves a page between them isn't known: guessing, it doesn't
+        const next = blocks[blockIndex + 1];
+        if (cutHeader && next !== undefined) {
+            if (next.section === blocks[blockIndex].section) {
+                startPage();
+            } else {
+                stopAt("a table whose header row is taller than a page, at the end of its section");
+            }
         }
     };
 
