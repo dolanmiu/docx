@@ -732,6 +732,8 @@ export const createFontFileMeasurer = (faces: readonly FontFace[], fallback: Tex
             const face = faceOf(font);
             return face ? face.descent * (font.lineSize ?? font.size ?? DEFAULT_FONT_SIZE) : fallback.measureDescent(font);
         },
+        // A font's file has the glyphs it draws text with, and the layout stops at one it doesn't
+        measureTextHeight: (text, font) => (faceOf(font) ? undefined : fallback.measureTextHeight?.(text, font)),
         unknownCharacter: (text, font) => {
             const face = faceOf(font);
             return face

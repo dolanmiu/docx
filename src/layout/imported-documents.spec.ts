@@ -214,6 +214,69 @@ describe("imported documents", () => {
         expect([margin(2), margin(3)]).to.deep.equal([5.4, 5.4]);
     });
 
+    it("should keep an imported document's own styles where its formatting is kept, but for its table styles, and give its last paragraph no space after (AS7, AS9, IM2a, IM2d)", () => {
+        const content = read(
+            {
+                body: `${paragraph("before")}<w:altChunk r:id="rIdImport"><w:altChunkPr><w:matchSrc/></w:altChunkPr></w:altChunk>${paragraph("after")}${SECTION}`,
+                styles: `${style("Normal", "Normal", size(22))}${style("Heading1", "heading 1", size(32))}<w:style w:type="table" w:default="1" w:styleId="TableNormal"><w:name w:val="Normal Table"/><w:tblPr><w:tblCellMar><w:left w:w="108" w:type="dxa"/></w:tblCellMar></w:tblPr></w:style>`,
+                imported: IMPORTED,
+            },
+            {
+                imported: {
+                    body: `${styled("heading", "Heading1")}${paragraph("one")}<w:tbl><w:tr><w:tc>${paragraph("cell")}</w:tc></w:tr></w:tbl>${paragraph("last")}`,
+                    styles: `${style("Normal", "Normal", `<w:pPr><w:spacing w:after="240"/></w:pPr>${size(28)}`)}${style("Heading1", "heading 1", `<w:basedOn w:val="Normal"/>${size(40)}`)}<w:style w:type="table" w:default="1" w:styleId="TableNormal"><w:name w:val="Normal Table"/><w:tblPr><w:tblCellMar><w:left w:w="0" w:type="dxa"/></w:tblCellMar></w:tblPr></w:style>`,
+                },
+            },
+        );
+        // Its Normal and Heading 1 are its own, not the document's of their names
+        expect(sizeOf(content, "heading")).to.equal(20);
+        expect(sizeOf(content, "one")).to.equal(14);
+        expect(paragraphOf(content, "one").format.spaceAfter).to.equal(12);
+        expect(sizeOf(content, "before")).to.equal(11);
+        // Its Normal Table is the document's
+        const { block } = content.blocks[3];
+        expect(block.type === "table" && block.rows[0].cells[0].marginLeft).to.equal(5.4);
+        // Its last paragraph has no space after
+        expect(paragraphOf(content, "last").format.spaceAfter).to.equal(0);
+    });
+
+    it("should match an imported document's formatting to the document's where its w:matchSrc is turned off", () => {
+        for (const value of ["0", "false", "off"]) {
+            const content = read(
+                {
+                    body: `<w:altChunk r:id="rIdImport"><w:altChunkPr><w:matchSrc w:val="${value}"/></w:altChunkPr></w:altChunk>${SECTION}`,
+                    styles: style("Normal", "Normal", size(22)),
+                    imported: IMPORTED,
+                },
+                { imported: { body: paragraph("one"), styles: style("Normal", "Normal", size(28)) } },
+            );
+            // In the document's Normal, as an import whose formatting isn't kept
+            expect(sizeOf(content, "one")).to.equal(11);
+        }
+    });
+
+    it("should stop at an imported document whose formatting is kept that ends in a paragraph of a content control or custom XML", () => {
+        const kept = (body: string): DocumentContent =>
+            read(
+                {
+                    body: `<w:altChunk r:id="rIdImport"><w:altChunkPr><w:matchSrc/></w:altChunkPr></w:altChunk>${paragraph("after")}${SECTION}`,
+                    imported: IMPORTED,
+                },
+                { imported: { body, styles: style("Normal", "Normal", '<w:pPr><w:spacing w:after="240"/></w:pPr>') } },
+            );
+        const STOP = "an imported document whose formatting is kept that ends in a content control or custom XML";
+        // Which paragraph Word gives none of its space after there hasn't been seen
+        for (const body of [
+            `${paragraph("one")}<w:sdt><w:sdtContent>${paragraph("last")}</w:sdtContent></w:sdt>`,
+            `<w:customXml w:element="part">${paragraph("last")}</w:customXml>`,
+        ]) {
+            expect(kept(body).blocks[0].block).to.deep.include({ unsupported: STOP });
+        }
+        // One that ends in a table in one is ended with a paragraph of its own, which has none
+        const table = kept(`<w:sdt><w:sdtContent><w:tbl><w:tr><w:tc>${paragraph("cell")}</w:tc></w:tr></w:tbl></w:sdtContent></w:sdt>`);
+        expect(table.blocks.map(({ block }) => block.unsupported)).to.not.include(STOP);
+    });
+
     it("should put paragraphs and tables of no style of an imported document in its default styles, where the document's are others (AS5)", () => {
         const content = read(
             {
@@ -235,22 +298,56 @@ describe("imported documents", () => {
         expect(sizeOf(content, "styled")).to.equal(11);
     });
 
-    it("should stop at a style only an imported document has, where its defaults leave out some of the document's", () => {
+    it("should give a style only an imported document has Word's own font and size where its defaults give none, and stop where they leave out more (IM3a, IM3b)", () => {
+        const defaults = (properties: string): string =>
+            `<w:docDefaults><w:rPrDefault><w:rPr><w:rFonts w:ascii="Calibri" w:hAnsi="Calibri"/><w:sz w:val="22"/><w:szCs w:val="22"/></w:rPr></w:rPrDefault><w:pPrDefault><w:pPr>${properties}</w:pPr></w:pPrDefault></w:docDefaults>`;
+        const imported = (body: string, styles = ""): Readonly<Record<string, Parts>> => ({
+            imported: {
+                body,
+                styles: `<w:docDefaults><w:rPrDefault/><w:pPrDefault/></w:docDefaults>${style("Alone", "Alone", "")}${styles}`,
+            },
+        });
         const content = read(
             {
                 body: `${imports("rIdImport")}${SECTION}`,
-                styles: '<w:docDefaults><w:pPrDefault><w:pPr><w:spacing w:before="0" w:after="160"/></w:pPr></w:pPrDefault></w:docDefaults>',
+                styles: defaults('<w:spacing w:before="0" w:after="0" w:line="240"/>'),
                 imported: IMPORTED,
             },
+            imported(styled("alone", "Alone")),
+        );
+        const [first] = paragraphOf(content, "alone").items;
+        expect(first.type === "text" && first.font).to.deep.include({ font: "Times New Roman", size: 10 });
+        // Spacing of other than Word's own, which isn't known
+        const spaced = read(
+            { body: `${imports("rIdImport")}${SECTION}`, styles: defaults('<w:spacing w:before="0" w:after="160"/>'), imported: IMPORTED },
+            imported(styled("alone", "Alone")),
+        );
+        expect(spaced.blocks[0].block).to.deep.include({
+            unsupported: "a style of an imported document's own, where its defaults leave out some of the document's",
+        });
+        // And East Asian or right-to-left text there, whose fonts Word's PDFs haven't shown
+        for (const body of [
+            styled("\u6c38", "Alone"),
+            paragraph("right", '<w:pStyle w:val="Alone"/><w:rPr><w:rtl/></w:rPr>').replace("<w:r>", "<w:r><w:rPr><w:rtl/></w:rPr>"),
+        ]) {
+            const other = read({ body: `${imports("rIdImport")}${SECTION}`, styles: defaults(""), imported: IMPORTED }, imported(body));
+            expect(other.blocks[0].block).to.deep.include({
+                unsupported: "East Asian or right-to-left text in an imported document whose own styles give no font",
+            });
+        }
+        // In its notes too
+        const noted = read(
+            { body: `${imports("rIdImport")}${SECTION}`, styles: defaults(""), imported: IMPORTED },
             {
                 imported: {
-                    body: styled("alone", "Alone"),
-                    styles: `<w:docDefaults><w:pPrDefault><w:pPr><w:spacing w:after="240"/><w:ind w:left="0"/></w:pPr></w:pPrDefault></w:docDefaults>${style("Alone", "Alone", "")}`,
+                    ...imported("").imported,
+                    body: styled("alone", "Alone").replace("</w:p>", '<w:r><w:footnoteReference w:id="1"/></w:r></w:p>'),
+                    footnotes: `<w:footnote w:type="separator" w:id="-1"><w:p/></w:footnote><w:footnote w:id="1">${styled("\u6c38", "Alone")}</w:footnote>`,
                 },
             },
         );
-        expect(content.blocks[0].block).to.deep.include({
-            unsupported: "a style of an imported document's own, where its defaults leave out some of the document's",
+        expect(noted.blocks[0].block).to.deep.include({
+            unsupported: "East Asian or right-to-left text in an imported document whose own styles give no font",
         });
     });
 
@@ -454,13 +551,6 @@ describe("imported documents", () => {
                 undefined,
                 "an imported document of several sections",
             ]);
-        });
-
-        it("should stop at an imported document whose formatting is kept", () => {
-            const keeping = '<w:altChunk r:id="rIdImport"><w:altChunkPr><w:matchSrc/></w:altChunkPr></w:altChunk>';
-            expect(stopOf({ body: paragraph("kept") }, DOCX, "imported.docx", keeping)[1]).to.equal(
-                "an imported document whose formatting is kept",
-            );
         });
 
         it("should stop at a page reference or number of pages in an imported document, whose number docx can't write in it", () => {

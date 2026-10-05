@@ -12,6 +12,7 @@
 // cspell:ignore caladea Aptos
 import { FONT_WIDTHS, FONT_WIDTH_RANGES, type FontWidths } from "./font-widths";
 import { type FaceShaping, type Glyph, hasLigatures, joinLetters, kerningBetween, rulesOf, shapingOf } from "./kerning";
+import { FALLBACK_FONTS, MORE_WIDTHS, MORE_WIDTH_RANGES } from "./more-widths";
 
 /**
  * The font text is measured in.
@@ -262,10 +263,64 @@ const CHARACTER_INDEX: ReadonlyMap<number, number> = new Map(CHARACTERS.map((cod
 
 const AVERAGE_LETTERS = [..."abcdefghijklmnopqrstuvwxyz"].map((letter) => CHARACTER_INDEX.get(letter.codePointAt(0)!)!);
 
+// The characters of the tables of Hebrew, the Arabic-Indic and Devanagari digits, Thai, box drawing, shapes, symbols and
+// dingbats, in their order, and the index of each
+const MORE_CHARACTER_INDEX: ReadonlyMap<number, number> = new Map(
+    MORE_WIDTH_RANGES.flatMap(([first, last]) => Array.from({ length: last - first + 1 }, (_, offset) => first + offset)).map(
+        (code, index) => [code, index],
+    ),
+);
+
+// Arabic, whose letters Word joins into forms of other widths, and Devanagari, whose letters it joins and reorders, which
+// aren't measured, but for their digits and Devanagari's full stops, which it joins to nothing (see `more-widths.ts`)
+const JOINED_SCRIPT = /[\p{Script=Arabic}\p{Script=Devanagari}]/u;
+
 // The digits the tables write widths in, two to a width
 const DIGITS = "0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ+/";
 
 const decoded = new Map<string, readonly (number | undefined)[]>();
+const twoDigitsIn = (encoded: string, at: number): number => DIGITS.indexOf(encoded[at]) * 64 + DIGITS.indexOf(encoded[at + 1]);
+
+/**
+ * Reads what a string of `more-widths.ts` says of each character: tokens of `size` characters, or "!" for none, each with
+ * "*" and two digits repeating it that many more times.
+ */
+const decodeTokens = <T>(encoded: string, size: number, read: (token: string) => T): readonly (T | undefined)[] => {
+    // eslint-disable-next-line functional/prefer-readonly-type
+    const values: (T | undefined)[] = [];
+    let last: T | undefined;
+    for (let at = 0; at < encoded.length;) {
+        if (encoded[at] === "*") {
+            // eslint-disable-next-line functional/immutable-data
+            values.push(...new Array<T | undefined>(twoDigitsIn(encoded, at + 1)).fill(last));
+            at += 3;
+        } else {
+            last = encoded[at] === "!" ? undefined : read(encoded.slice(at, at + size));
+            // eslint-disable-next-line functional/immutable-data
+            values.push(last);
+            at += encoded[at] === "!" ? 1 : size;
+        }
+    }
+    return values;
+};
+
+/** The widths and fonts of a face of {@link MORE_WIDTHS}: each character's width, and the font it is drawn in, if not its own */
+type MoreFace = { readonly widths: readonly (number | undefined)[]; readonly fonts: readonly (number | undefined)[] };
+const decodedMore = new Map<string, MoreFace>();
+const decodeMore = ({ widths, fonts }: { readonly widths: string; readonly fonts: string }): MoreFace => {
+    const known = decodedMore.get(widths + fonts);
+    if (known) {
+        return known;
+    }
+    const face = {
+        // In tenths of a thousandth of an em, three digits each
+        widths: decodeTokens(widths, 3, (token) => (DIGITS.indexOf(token[0]) * 4096 + twoDigitsIn(token, 1)) / 10),
+        fonts: decodeTokens(fonts, 1, (token) => (token === "-" ? undefined : DIGITS.indexOf(token))),
+    };
+    // eslint-disable-next-line functional/immutable-data
+    decodedMore.set(widths + fonts, face);
+    return face;
+};
 
 /**
  * Reads the widths of a font's face, as {@link FontWidths} writes them: the width of each character of the tables, in
@@ -276,7 +331,7 @@ const decodeWidths = (encoded: string): readonly (number | undefined)[] => {
     if (known) {
         return known;
     }
-    const twoDigitsAt = (at: number): number => DIGITS.indexOf(encoded[at]) * 64 + DIGITS.indexOf(encoded[at + 1]);
+    const twoDigitsAt = (at: number): number => twoDigitsIn(encoded, at);
     // eslint-disable-next-line functional/prefer-readonly-type
     const widths: (number | undefined)[] = [];
     let token = 0;
@@ -421,6 +476,17 @@ const faceOf = ({ font, bold = false, italic = false }: TextFont): readonly (num
     return decodeWidths(encodedFaceOf(widths, bold, italic) ?? encodedFaceOf(widths, false, italic)!);
 };
 
+/**
+ * The widths of Hebrew, the Arabic-Indic and Devanagari digits, Thai, box drawing, shapes, symbols and dingbats in the face
+ * text is in, and the fonts Word draws them in: its font's, plain or bold. Undefined in italic, whose widths Word's PDF
+ * doesn't show
+ */
+const moreFaceOf = ({ font, bold, italic }: TextFont): MoreFace | undefined => {
+    const { name } = widthsOf(font);
+    const more = MORE_WIDTHS.find((known) => known.name === name);
+    return italic || more === undefined ? undefined : decodeMore(bold ? more.bold : more.regular);
+};
+
 // Characters as wide as they are tall: Chinese, Japanese and Korean, full-width forms and emoji
 const isWide = (code: number): boolean =>
     (code >= 0x1100 && code <= 0x115f) ||
@@ -448,14 +514,18 @@ export const isGridCharacter = (character: string): boolean => {
 export const takesNoRoom = (character: string): boolean => /[\p{Mn}\p{Me}\p{Cf}]/u.test(character);
 
 /**
- * The width of a character in thousandths of an em. Characters that aren't in the table are as wide as an average
- * lowercase letter, a whole em for wide characters and half an em for half-width ones, and marks take no space. So are
- * those the table has, but whose width in the font isn't known.
+ * The width of a character in thousandths of an em, from the tables, and those of Hebrew, the Arabic-Indic and Devanagari
+ * digits, Thai, box drawing, shapes, symbols and dingbats (`more`), which Word draws in the font, or in another when the
+ * font doesn't have them, such as Calibri's Thai in Tahoma, its Devanagari digits in Mangal and its ★ in Segoe UI Symbol
+ * (scripts/layout-probes/stops2/word-stops-more-widths.ts).
+ * Characters that aren't in them are as wide as an average lowercase letter, a whole em for wide characters and half an
+ * em for half-width ones, and marks take no space. So are those the tables have, but whose width in the font isn't known.
  */
-const characterWidth = (widths: readonly (number | undefined)[], character: string): number => {
+const characterWidth = (widths: readonly (number | undefined)[], more: MoreFace | undefined, character: string): number => {
     const code = character.codePointAt(0)!;
     const index = CHARACTER_INDEX.get(code);
-    const width = index === undefined ? undefined : widths[index];
+    const moreIndex = MORE_CHARACTER_INDEX.get(code);
+    const width = index !== undefined ? widths[index] : moreIndex !== undefined ? more?.widths[moreIndex] : undefined;
     if (width !== undefined) {
         return width;
     }
@@ -498,24 +568,68 @@ const lineSizeOf = (font: TextFont): number => font.lineSize ?? sizeOf(font);
  * are measured as, or all of a monospaced one's as half an em or an em, and other fonts with their own widths, or those of
  * the most similar font in the table
  */
-const measuresOf = (font: TextFont): { readonly widths: readonly (number | undefined)[]; readonly monospaced: boolean } => {
+const measuresOf = (
+    font: TextFont,
+): { readonly widths: readonly (number | undefined)[]; readonly more: MoreFace | undefined; readonly monospaced: boolean } => {
     const eastAsian = eastAsianFontOf(font.font ?? DEFAULT_FONT);
-    return { widths: faceOf({ ...font, font: eastAsian?.latin ?? font.font }), monospaced: eastAsian?.monospaced === true };
+    const measured = { ...font, font: eastAsian?.latin ?? font.font };
+    return { widths: faceOf(measured), more: moreFaceOf(measured), monospaced: eastAsian?.monospaced === true };
 };
 
 /**
  * The first character of text whose width in its font isn't known, so isn't what Word lays out: one of the tables'
- * characters that Word draws in another font when the font doesn't have it, or whose width Word's PDF doesn't show, or a
- * symbol font's own character. Undefined when the widths of all of them are known, or are measured as before: those of
+ * characters that Word draws in another font when the font doesn't have it, or whose width Word's PDF doesn't show, such
+ * as Hebrew and the symbols in italic, Arabic and Devanagari, whose letters Word joins into forms of other widths, the
+ * Devanagari digits of Cambria and Times New Roman, which Word draws in Kohinoor Devanagari, whose lines' height isn't
+ * known, and a symbol font's own character. Undefined when the widths of all of them are known, or are measured as before: those of
  * characters the tables don't have, as an average letter.
  */
 export const unknownCharacter = (text: string, font: TextFont = {}): string | undefined => {
-    const { widths, monospaced } = measuresOf(font);
+    const { widths, more, monospaced } = measuresOf(font);
     return [...text].find((character) => {
         const code = character.codePointAt(0)!;
         const index = CHARACTER_INDEX.get(code);
-        return index === undefined || monospaced ? isPrivate(code) : widths[index] === undefined;
+        const moreIndex = MORE_CHARACTER_INDEX.get(code);
+        if (monospaced || (index === undefined && moreIndex === undefined)) {
+            return isPrivate(code) || (!monospaced && JOINED_SCRIPT.test(character) && !takesNoRoom(character));
+        }
+        return index === undefined ? more?.widths[moreIndex!] === undefined : widths[index] === undefined;
     });
+};
+
+/**
+ * How tall a line of text is, in points, and how far it goes below its baseline, where Word draws some of its characters
+ * in another font, which makes room for them above and below the baseline as far as it goes: the tallest ascent and
+ * deepest descent of the fonts its characters are drawn in. A line of Thai in Calibri 11 is Tahoma's, 265.5 twips, where
+ * Calibri's are 268.55, and spaces take no part (`word-stops-thai.docx` TH1, `word-stops-more-widths.docx`: lines of
+ * Calibri's ★ and the like in Segoe UI Symbol 10 are 266 twips apart, and 269.6 from a line with Calibri's letters on it).
+ * Undefined for text Word draws all in its own font, as in the tables.
+ */
+export const measureTextHeight = (
+    text: string,
+    font: TextFont = {},
+): { readonly lineHeight: number; readonly descent: number } | undefined => {
+    const { more, monospaced } = measuresOf(font);
+    if (more === undefined || monospaced || font.lineSize !== undefined) {
+        return undefined;
+    }
+    const size = sizeOf(font);
+    const own = { ascent: measureLineHeight(font) - measureDescent(font), descent: measureDescent(font) };
+    const heights = [...text]
+        .filter((character) => !/\s/u.test(character) && !takesNoRoom(character))
+        .map((character) => {
+            const moreIndex = MORE_CHARACTER_INDEX.get(character.codePointAt(0)!);
+            const fallback = moreIndex === undefined ? undefined : more.fonts[moreIndex];
+            return fallback === undefined
+                ? own
+                : { ascent: (FALLBACK_FONTS[fallback].ascent * size) / 1000, descent: (FALLBACK_FONTS[fallback].descent * size) / 1000 };
+        });
+    if (heights.every((height) => height === own)) {
+        return undefined;
+    }
+    const ascent = Math.max(...heights.map((height) => height.ascent));
+    const descent = Math.max(...heights.map((height) => height.descent));
+    return { lineHeight: ascent + descent, descent };
 };
 
 /**
@@ -552,8 +666,8 @@ export const unknownFont = (font: TextFont = {}, text?: string): boolean => {
  * @param start - Where the text starts on its line, in points
  */
 export const measureTextWidth = (text: string, font: TextFont = {}, start = 0): number => {
-    const { widths, monospaced } = measuresOf(font);
-    const widthOf = monospaced ? monospacedWidth : (character: string): number => characterWidth(widths, character);
+    const { widths, more, monospaced } = measuresOf(font);
+    const widthOf = monospaced ? monospacedWidth : (character: string): number => characterWidth(widths, more, character);
     const size = sizeOf(font);
     const { characterSpacing = 0, scale = 100 } = font;
     return (
@@ -580,8 +694,8 @@ export const measureTextWidthAsDrawn = (text: string, font: TextFont = {}, start
         return measureTextWidth(text, font, start);
     }
     // The fonts of the tables, whose kerning and ligatures they have, aren't monospaced East Asian fonts
-    const { widths } = measuresOf(font);
-    const widthOf = (character: string): number => characterWidth(widths, character);
+    const { widths, more } = measuresOf(font);
+    const widthOf = (character: string): number => characterWidth(widths, more, character);
     const size = sizeOf(font);
     const { characterSpacing = 0, scale = 100 } = font;
     const kerned = kernedIn(font, shaping);

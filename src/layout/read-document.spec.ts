@@ -764,8 +764,9 @@ describe("readDocument", () => {
             }
             expect(paragraphOf(content, 4).unsupported).to.equal("a paragraph justified for Arabic with a medium or high kashida");
             expect(paragraphOf(content, 5).unsupported).to.equal("a paragraph justified for Arabic with a medium or high kashida");
-            expect(paragraphOf(content, 6).unsupported).to.equal("Thai or Arabic text justified for it");
-            expect(paragraphOf(content, 7).unsupported).to.equal("Thai or Arabic text justified for it");
+            // And Thai text justified for it (stops2/word-stops-thai.ts TH1d, TH1e), but not Arabic
+            expect(paragraphOf(content, 6).unsupported).to.equal(undefined);
+            expect(paragraphOf(content, 7).unsupported).to.equal("Arabic text justified for Thai or with a kashida");
         });
     });
 
@@ -4353,6 +4354,23 @@ describe("readDocument", () => {
             // Across each of columns of the same width: 2 of 216 points, 19 of 11.37 (word-grid3.ts H7b)
             const { grid: columns } = onGrid(SNAPPING, { "w:cols": { _attr: { "w:num": 2 } } }) as { readonly grid: TextGrid };
             expect(columns.characterPitch).to.be.closeTo(216 / 19, 1e-9);
+            // Across each of columns of different widths, each of its own: cells of at least 11 points
+            // (stops2/word-stops-east-asian.ts GR12)
+            const widths = {
+                "w:cols": [
+                    { _attr: { "w:equalWidth": 0 } },
+                    { "w:col": { _attr: { "w:w": 4000 } } },
+                    { "w:col": { _attr: { "w:w": 3000 } } },
+                ],
+            };
+            expect(onGrid(SNAPPING, widths)).to.deep.equal({ grid: { linePitch: 18, characterRoom: 11 } });
+            // Not in a table, a note or with an indent in characters, which haven't been seen
+            const STOP = "a table, note or indent in characters on a grid that snaps to characters in columns of different widths";
+            const indented = p(pPr({ "w:ind": { _attr: { "w:leftChars": 200 } } }), r(t("a")));
+            const inColumns = grid(SNAPPING, widths);
+            expect(paragraphOf(readBody([indented, inColumns])).unsupported).to.equal(STOP);
+            const cell = readBody([{ "w:tbl": [{ "w:tr": [{ "w:tc": [p(r(t("a")))] }] }] }, inColumns]);
+            expect(((cell.blocks[0].block as TableBlock).rows[0].cells[0].blocks[0] as ParagraphBlock).unsupported).to.equal(STOP);
         });
 
         it("should read no grid for a grid of lines without its pitch, a grid of no type, or none (word-grid.ts G13)", () => {
@@ -4366,21 +4384,20 @@ describe("readDocument", () => {
             expect(onGrid({ "w:type": "linesAndChars" }).unsupported).to.equal(
                 "a document grid of characters without the pitch of its lines",
             );
-            const widths = {
-                "w:cols": [
-                    { _attr: { "w:equalWidth": 0 } },
-                    { "w:col": { _attr: { "w:w": 4000 } } },
-                    { "w:col": { _attr: { "w:w": 3000 } } },
-                ],
-            };
-            expect(onGrid(SNAPPING, widths).unsupported).to.equal(
-                "a document grid that snaps to characters in columns of different widths",
-            );
             for (const charSpace of [4096 * 1000, -4096 * 1000]) {
                 expect(onGrid({ ...SNAPPING, "w:charSpace": charSpace }).unsupported).to.equal(
                     "a document grid of characters with no room for one",
                 );
             }
+            // Nor in a column narrower than a cell
+            const narrow = {
+                "w:cols": [
+                    { _attr: { "w:equalWidth": 0 } },
+                    { "w:col": { _attr: { "w:w": 4000 } } },
+                    { "w:col": { _attr: { "w:w": 100 } } },
+                ],
+            };
+            expect(onGrid(SNAPPING, narrow).unsupported).to.equal("a document grid of characters with no room for one");
         });
 
         it("should put a section's paragraphs and notes on its grid, but not the lines of its tables' cells, its headers or notes' separators", () => {
@@ -4451,46 +4468,58 @@ describe("readDocument", () => {
             });
         });
 
-        it("should mark text on a grid that snaps to characters it isn't known how Word lays out as unsupported", () => {
-            const spacedOut = readBody([
-                p(r(rPr(value("w:spacing", 20)), t("a"))),
-                p(r(rPr(value("w:spacing", 20), value("w:snapToGrid", 0)), t("a"))),
-                grid(SNAPPING),
-            ]);
-            expect(paragraphOf(spacedOut).unsupported).to.equal("text spaced out by its run on a grid that snaps to characters");
-            expect(paragraphOf(spacedOut, 1).unsupported).to.equal(undefined);
+        it("should read text spaced out by its run, and footnotes, on a grid that snaps to characters (stops2/word-stops-east-asian.ts GR1, GR2)", () => {
+            const spacedOut = readBody([p(r(rPr(value("w:spacing", 20)), t("a"))), grid(SNAPPING)]);
+            expect(paragraphOf(spacedOut).unsupported).to.equal(undefined);
+            expect(itemsOf(spacedOut)).to.deep.equal([{ type: "text", text: "a", font: { characterSpacing: 1 } }]);
             // A run spaced out on a grid of lines and characters is spaced out by both (word-grid3.ts H9)
             expect(paragraphOf(readBody([p(r(rPr(value("w:spacing", 20)), t("a"))), grid(CHARACTERS)])).unsupported).to.equal(undefined);
-            const footnoted = (type: (typeof DocumentGridType)[keyof typeof DocumentGridType]): string | undefined =>
-                [
-                    ...readWritten({
-                        footnotes: { 1: { children: [new Paragraph("Note")] } },
-                        sections: [
-                            {
-                                properties: { grid: { type, linePitch: 360, charSpace: 4096 } },
-                                children: [new Paragraph({ children: [new TextRun("Text"), new FootnoteReferenceRun(1)] })],
-                            },
-                        ],
-                    }).footnotes.values(),
-                ][0][0].unsupported;
-            expect(footnoted(DocumentGridType.SNAP_TO_CHARS)).to.equal("a footnote on a grid that snaps to characters");
-            expect(footnoted(DocumentGridType.LINES_AND_CHARS)).to.equal(undefined);
+            const [note] = [
+                ...readWritten({
+                    footnotes: { 1: { children: [new Paragraph("Note")] } },
+                    sections: [
+                        {
+                            properties: { grid: { type: DocumentGridType.SNAP_TO_CHARS, linePitch: 360, charSpace: 4096 } },
+                            children: [new Paragraph({ children: [new TextRun("Text"), new FootnoteReferenceRun(1)] })],
+                        },
+                    ],
+                }).footnotes.values(),
+            ][0] as readonly ParagraphBlock[];
+            expect(note.unsupported).to.equal(undefined);
+            // A4 with inch margins, 41 cells of 11 points
+            expect(note.grid!.characterPitch).to.be.closeTo(451.3 / 41, 1e-9);
         });
 
-        it("should mark endnotes from a section on another grid than the last, which they follow, as unsupported", () => {
-            const endnoted = (first?: ISectionOptions["properties"], last?: ISectionOptions["properties"]): string | undefined =>
+        it("should mark endnotes from a section that one on another grid follows as unsupported, as Word ended them with their section (GR13)", () => {
+            const endnoted = (...properties: readonly ISectionOptions["properties"][]): string | undefined =>
                 readWritten({
                     endnotes: { 1: { children: [new Paragraph("Note")] } },
                     sections: [
-                        { properties: first, children: [new Paragraph({ children: [new TextRun("Text"), new EndnoteReferenceRun(1)] })] },
-                        { properties: last, children: [new Paragraph("Last")] },
+                        {
+                            properties: properties[0],
+                            children: [new Paragraph({ children: [new TextRun("Text"), new EndnoteReferenceRun(1)] })],
+                        },
+                        ...properties.slice(1).map((more) => ({ properties: more, children: [new Paragraph("More")] })),
                     ],
                 }).unsupported;
             const LINES_360 = { grid: { type: DocumentGridType.LINES, linePitch: 360 } };
+            const STOP = "endnotes from a section followed by one on another document grid";
             expect(endnoted(LINES_360, LINES_360)).to.equal(undefined);
-            expect(endnoted(undefined, LINES_360)).to.equal("endnotes from a section on another document grid than the last");
-            expect(endnoted(LINES_360)).to.equal("endnotes from a section on another document grid than the last");
-            expect(endnoted()).to.equal(undefined);
+            expect(endnoted(undefined, LINES_360)).to.equal(STOP);
+            expect(endnoted(LINES_360, undefined)).to.equal(STOP);
+            expect(endnoted(undefined, undefined)).to.equal(undefined);
+            // Another grid between theirs and the last too, but not before theirs
+            expect(endnoted(undefined, LINES_360, undefined)).to.equal(STOP);
+            expect(
+                readWritten({
+                    endnotes: { 1: { children: [new Paragraph("Note")] } },
+                    sections: [
+                        { properties: LINES_360, children: [new Paragraph("First")] },
+                        { children: [new Paragraph({ children: [new TextRun("Text"), new EndnoteReferenceRun(1)] })] },
+                        { children: [new Paragraph("Last")] },
+                    ],
+                }).unsupported,
+            ).to.equal(undefined);
         });
     });
 
@@ -4505,6 +4534,21 @@ describe("readDocument", () => {
         });
         const sectionOf = (val: string, ...more: readonly object[]): DocumentContent["sections"][number] =>
             readBody([p(r(t("a"))), direction(val, ...more)]).sections[0];
+        /** A section whose text runs down the page, with these margins */
+        const withMargins = (val: string, margins: object, settings: readonly object[] = []): DocumentContent["sections"][number] =>
+            readWithSettings(
+                [
+                    p(r(t("a"))),
+                    {
+                        "w:sectPr": [
+                            { "w:pgSz": { _attr: { "w:w": 11906, "w:h": 16838 } } },
+                            { "w:pgMar": { _attr: { "w:left": 1200, "w:right": 1300, ...margins } } },
+                            { "w:textDirection": { _attr: { "w:val": val } } },
+                        ],
+                    },
+                ],
+                settings,
+            ).sections[0];
 
         it("should turn a section's page on its side, so its lines run along it from the top margin, across from the right or the left", () => {
             // scripts/layout-probes/word-vertical.ts V1 and V8 from the right, V10 and V11 from the left, as transitional and
@@ -4529,40 +4573,57 @@ describe("readDocument", () => {
             expect(sectionOf("lrTb")).to.not.have.property("textRunsDown");
         });
 
-        it("should start text down the page on a new page after text across one, and stop at a continuous break after it (V13)", () => {
+        it("should start text down the page on a new page after text across one, go on after text down the page the same way, and stop at other continuous breaks after it (V13, VD9)", () => {
             const continuous = { "w:type": { _attr: { "w:val": "continuous" } } };
             const read = readBody([p(r(t("a")), pPr({ "w:sectPr": [] })), p(r(t("b"))), direction("tbRl", continuous)]);
             expect(read.sections[1].start).to.equal("nextPage");
             const downSection = (direction("tbRl") as { readonly "w:sectPr": readonly object[] })["w:sectPr"];
-            const after = readBody([p(pPr({ "w:sectPr": downSection }), r(t("a"))), p(r(t("b"))), { "w:sectPr": [continuous] }]);
-            expect(after.sections[1].unsupported).to.equal("a continuous section break after text that runs down the page");
-            const nextColumn = readBody([
-                p(pPr({ "w:sectPr": downSection }), r(t("a"))),
-                p(r(t("b"))),
-                { "w:sectPr": [{ "w:type": { _attr: { "w:val": "nextColumn" } } }] },
-            ]);
-            expect(nextColumn.sections[1].unsupported).to.equal("a continuous section break after text that runs down the page");
+            const STOP = "a continuous section break after text that runs down the page, into text that doesn't";
+            const after = (...last: readonly object[]): DocumentContent["sections"][number] =>
+                readBody([p(pPr({ "w:sectPr": downSection }), r(t("a"))), p(r(t("b"))), { "w:sectPr": last }]).sections[1];
+            expect(after(continuous).unsupported).to.equal(STOP);
+            expect(after({ "w:type": { _attr: { "w:val": "nextColumn" } } }).unsupported).to.equal(STOP);
+            // Text down the page the same way goes on on the page, and the other way starts a new one
+            const same = after(...(direction("tbRl", continuous) as { readonly "w:sectPr": readonly object[] })["w:sectPr"]);
+            expect(same.start).to.equal("continuous");
+            expect(same.unsupported).to.equal(undefined);
+            const other = after(...(direction("tbRlV", continuous) as { readonly "w:sectPr": readonly object[] })["w:sectPr"]);
+            expect(other.start).to.equal("nextPage");
+            expect(other.unsupported).to.equal(STOP);
+        });
+
+        it("should put a gutter beside the right margin, and a negative top or bottom margin as far from the edge, down the page (VD8a, VD8c)", () => {
+            const gutter = withMargins("tbRl", { "w:top": 1440, "w:bottom": 1000, "w:gutter": 720 });
+            expect(gutter).to.deep.include({ marginTop: 65 + 36, marginBottom: 60, gutter: 0, topGutter: 0, columns: [841.9 - 72 - 50] });
+            expect(gutter.unsupported).to.equal(undefined);
+            const negative = withMargins("tbRl", { "w:top": -1440, "w:bottom": -1000 });
+            expect(negative).to.deep.include({ marginLeft: 72, marginRight: 50, columns: [841.9 - 72 - 50] });
+            expect(negative.unsupported).to.equal(undefined);
+        });
+
+        it("should put a grid's cells along the lines of text that runs down the page (VD10)", () => {
+            const grid = { "w:docGrid": { _attr: { "w:type": "snapToChars", "w:linePitch": 360, "w:charSpace": 4096 } } };
+            const content = readBody([p(r(t("a"))), direction("tbRl", grid)]);
+            expect(content.sections[0].unsupported).to.equal(undefined);
+            // Along lines of 841.9 - 72 - 50 points, 65 cells of 10 points and a point more
+            expect(paragraphOf(content).grid!.characterPitch).to.be.closeTo((841.9 - 72 - 50) / 65, 1e-9);
+            // On Word's Letter page with inch margins, where the section gives neither: along lines of 792 - 144 points, 58 cells
+            const letter = readBody([p(r(t("a"))), { "w:sectPr": [grid, { "w:textDirection": { _attr: { "w:val": "tbRl" } } }] }]);
+            expect(paragraphOf(letter).grid!.characterPitch).to.be.closeTo((792 - 144) / 58, 1e-9);
         });
 
         it("should stop at what Word's PDFs didn't show down the page", () => {
-            const STOP = "text that runs down the page with a gutter, mirrored margins, columns or a negative margin";
+            const STOP =
+                "text that runs down the page with columns, mirrored margins, or a gutter at the top or beside lines from the left";
             expect(sectionOf("tbRl", { "w:cols": { _attr: { "w:num": 2 } } }).unsupported).to.equal(STOP);
-            const gutter = readBody([
-                p(r(t("a"))),
-                { "w:sectPr": [{ "w:pgMar": { _attr: { "w:gutter": 720 } } }, value("w:textDirection", "tbRl")] },
-            ]);
-            expect(gutter.sections[0].unsupported).to.equal(STOP);
-            const negative = readBody([
-                p(r(t("a"))),
-                { "w:sectPr": [{ "w:pgMar": { _attr: { "w:top": -720 } } }, value("w:textDirection", "tbRl")] },
-            ]);
-            expect(negative.sections[0].unsupported).to.equal(STOP);
             expect(readWithSettings([p(r(t("a"))), direction("tbRl")], [{ "w:mirrorMargins": {} }]).sections[0].unsupported).to.equal(STOP);
-            // A grid that snaps to characters, whose cells are across the page, but not one of lines and characters (V3)
-            const gridded = (type: string): string | undefined =>
-                sectionOf("tbRl", { "w:docGrid": { _attr: { "w:type": type, "w:linePitch": 360, "w:charSpace": 4096 } } }).unsupported;
-            expect(gridded("snapToChars")).to.equal("a document grid that snaps to characters on text that runs down the page");
-            expect(gridded("linesAndChars")).to.equal(undefined);
+            expect(withMargins("tbRl", { "w:gutter": 720 }, [{ "w:gutterAtTop": {} }]).unsupported).to.equal(STOP);
+            expect(withMargins("tbRlV", { "w:gutter": 720 }).unsupported).to.equal(STOP);
+            // A grid of lines and characters too (V3)
+            expect(
+                sectionOf("tbRl", { "w:docGrid": { _attr: { "w:type": "linesAndChars", "w:linePitch": 360, "w:charSpace": 4096 } } })
+                    .unsupported,
+            ).to.equal(undefined);
 
             const down = (...paragraphs: readonly object[]): DocumentContent => readBody([...paragraphs, direction("tbRl")]);
             const mincho = (...more: readonly object[]): object =>
@@ -4570,33 +4631,57 @@ describe("readDocument", () => {
             const reasonOf = (...children: readonly unknown[]): string | undefined => paragraphOf(down(p(...children))).unsupported;
             expect(reasonOf(r(mincho(), t("永永")))).to.equal(undefined);
             expect(reasonOf(r(t("Latin")))).to.equal(undefined);
-            expect(reasonOf(r(t("a")), r({ "w:tab": {} }), r(t("b")))).to.equal(
-                "a tab, soft hyphen, picture or drawing in text that runs down the page",
+            // Two lines in one, which Word's PDFs showed only across the page (RF30)
+            expect(reasonOf(r(rPr({ "w:eastAsianLayout": { _attr: { "w:combine": 1 } } }), t("two")))).to.equal("two lines in one");
+            // A tab to a left stop, or a default one, but not another (VD1a)
+            expect(reasonOf(r(t("a")), r({ "w:tab": {} }), r(t("b")))).to.equal(undefined);
+            const rightStop = pPr({ "w:tabs": [{ "w:tab": { _attr: { "w:val": "right", "w:pos": 3000 } } }] });
+            expect(reasonOf(rightStop, r(t("a")), r({ "w:tab": {} }), r(t("b")))).to.equal(
+                "a tab to a stop other than a left one in text that runs down the page",
             );
-            expect(reasonOf(r(rPr({ "w:rFonts": { _attr: { "w:eastAsia": "Yu Mincho" } } }), t("永")))).to.equal(
-                "East Asian text down the page in a font whose characters aren't all an em, or half-width",
+            expect(reasonOf(r(t("a")), r({ "w:softHyphen": {} }), r(t("b")))).to.equal(
+                "a soft hyphen, picture or drawing in text that runs down the page",
             );
+            const NOT_AN_EM = "East Asian text down the page in a font whose characters aren't all an em";
+            expect(reasonOf(r(rPr({ "w:rFonts": { _attr: { "w:eastAsia": "Yu Mincho" } } }), t("永")))).to.equal(NOT_AN_EM);
             // Drawn in MS Mincho, in a run without an East Asian font
             expect(reasonOf(r(t("永")))).to.equal(undefined);
-            expect(reasonOf(r(mincho(), t("\uff71")))).to.equal(
-                "East Asian text down the page in a font whose characters aren't all an em, or half-width",
-            );
-            for (const formatting of [value("w:em", "dot"), value("w:vertAlign", "superscript"), value("w:position", 6)]) {
-                expect(reasonOf(r(mincho(formatting), t("永")))).to.equal(
-                    "run formatting in text that runs down the page that Word hasn't been seen laying out",
-                );
+            // Half-width katakana are half an em on their side (VD2b), but not in a font whose characters aren't all an em
+            expect(reasonOf(r(mincho(), t("\uff71")))).to.equal(undefined);
+            expect(reasonOf(r(rPr({ "w:rFonts": { _attr: { "w:eastAsia": "Yu Mincho" } } }), t("\uff71")))).to.equal(NOT_AN_EM);
+            // Emphasis marks, superscript and borders round text, and round the paragraph (VD3a, VD3b, VD3d, VD4)
+            for (const formatting of [
+                value("w:em", "dot"),
+                value("w:vertAlign", "superscript"),
+                { "w:bdr": { _attr: { "w:val": "single", "w:sz": 4 } } },
+            ]) {
+                expect(reasonOf(r(mincho(formatting), t("永")))).to.equal(undefined);
+            }
+            for (const formatting of [value("w:position", 6), { "w:smallCaps": {} }]) {
+                expect(reasonOf(r(mincho(formatting), t("永")))).to.equal("raised text or small capitals in text that runs down the page");
             }
             const box = { "w:pBdr": [{ "w:top": { _attr: { "w:val": "single", "w:sz": 4 } } }] };
-            expect(paragraphOf(down(p(pPr(box), r(t("a"))))).unsupported).to.equal("a paragraph border on text that runs down the page");
-            expect(paragraphOf(down(p(pPr(value("w:jc", "both")), r(t("a b"))))).unsupported).to.equal(
-                "a justified line with spaces down the page",
-            );
-            expect(paragraphOf(down(p(pPr(value("w:jc", "both")), r(mincho(), t("永永"))))).unsupported).to.equal(undefined);
+            expect(paragraphOf(down(p(pPr(box), r(t("a"))))).unsupported).to.equal(undefined);
+            // A justified line with spaces (VD5)
+            expect(paragraphOf(down(p(pPr(value("w:jc", "both")), r(t("a b"))))).unsupported).to.equal(undefined);
             const table = down({ "w:tbl": [{ "w:tr": [{ "w:tc": [p(r(t("a")))] }] }] });
             expect(table.blocks[0].block.unsupported).to.equal("a table on text that runs down the page");
         });
 
-        it("should stop at footnotes and endnotes of text that runs down the page", () => {
+        it("should set two characters across in text that runs down the page, and stop at more, or compressed to fit its line (VD13)", () => {
+            const across = (text: string, more: object = {}): DocumentContent =>
+                readBody([p(r(rPr({ "w:eastAsianLayout": { _attr: { "w:id": 3, "w:vert": 1, ...more } } }), t(text))), direction("tbRl")]);
+            expect(itemsOf(across("31"))).to.deep.equal([{ type: "text", text: "31", font: {}, across: true }]);
+            expect(paragraphOf(across("2026")).unsupported).to.equal(
+                "text across in vertical text of more than two characters, or Chinese, Japanese or Korean ones",
+            );
+            expect(paragraphOf(across("一二")).unsupported).to.equal(
+                "text across in vertical text of more than two characters, or Chinese, Japanese or Korean ones",
+            );
+            expect(paragraphOf(across("31", { "w:vertCompress": 1 })).unsupported).to.equal("text across in vertical text");
+        });
+
+        it("should read footnotes of text that runs down the page, and stop at its endnotes (VD6)", () => {
             const noted = (kind: "footnotes" | "endnotes"): DocumentContent =>
                 readWritten({
                     [kind]: { 1: { children: [new Paragraph("Note")] } },
@@ -4614,10 +4699,21 @@ describe("readDocument", () => {
                         },
                     ],
                 });
-            expect([...noted("footnotes").footnotes.values()][0][0].unsupported).to.equal(
-                "a footnote or endnote on text that runs down the page",
-            );
-            expect(noted("endnotes").unsupported).to.equal("endnotes on text that runs down the page");
+            const footnoted = noted("footnotes");
+            expect(footnoted.unsupported).to.equal(undefined);
+            expect([...footnoted.footnotes.values()][0][0].unsupported).to.equal(undefined);
+            expect(noted("endnotes").unsupported).to.equal("endnotes on or before text that runs down the page");
+            // And from text across the page that text down it follows
+            const DOWN = { page: { textDirection: PageTextDirectionType.TOP_TO_BOTTOM_RIGHT_TO_LEFT } };
+            const before = readWritten({
+                endnotes: { 1: { children: [new Paragraph("Note")] } },
+                sections: [
+                    { children: [new Paragraph({ children: [new TextRun("Text"), new EndnoteReferenceRun(1)] })] },
+                    { properties: DOWN, children: [new Paragraph("Down")] },
+                    { children: [new Paragraph("Last")] },
+                ],
+            });
+            expect(before.unsupported).to.equal("endnotes on or before text that runs down the page");
         });
     });
 
@@ -4671,12 +4767,24 @@ describe("readDocument", () => {
             expect(readBody([]).breakRules).to.equal(undefined);
         });
 
-        it("should mark a document with Word's strict rules for the first and last characters of lines, or that compresses punctuation, as unsupported", () => {
-            expect(readSettings({ "w:strictFirstAndLastChars": {} }).unsupported).to.equal(
-                "the strict rules for the characters that can't start a line",
+        it("should mark text in an East Asian language as unsupported in a document with Word's strict rules for the first and last characters of lines, or that compresses punctuation", () => {
+            const japanese = p(r(rPr({ "w:lang": { _attr: { "w:eastAsia": "ja-JP" } } }), t("「測量」は")));
+            const inNoLanguage = p(r(t("「測量」は")));
+            const strict = { "w:strictFirstAndLastChars": {} };
+            expect(paragraphOf(readWithSettings([japanese], [strict])).unsupported).to.equal(
+                "the strict rules for the characters that can't start a line, in text in an East Asian language",
             );
-            expect(readSettings(value("w:characterSpacingControl", "compressPunctuation")).unsupported).to.equal("punctuation compressed");
-            expect(readSettings(value("w:characterSpacingControl", "doNotCompress")).unsupported).to.equal(undefined);
+            expect(
+                paragraphOf(readWithSettings([japanese], [value("w:characterSpacingControl", "compressPunctuationAndJapaneseKana")]))
+                    .unsupported,
+            ).to.equal("punctuation compressed in text in an East Asian language");
+            // Word lays out Japanese in no language as it does without them (word-stops-east-asian.ts EA1 to EA3)
+            const content = readWithSettings([inNoLanguage], [strict, value("w:characterSpacingControl", "compressPunctuation")]);
+            expect(content.unsupported).to.equal(undefined);
+            expect(paragraphOf(content).unsupported).to.equal(undefined);
+            expect(paragraphOf(readWithSettings([japanese], [value("w:characterSpacingControl", "doNotCompress")])).unsupported).to.equal(
+                undefined,
+            );
         });
 
         it("should mark a document printed as a folded booklet, or whose styles Word updates from its template, as unsupported", () => {

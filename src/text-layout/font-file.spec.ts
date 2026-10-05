@@ -359,6 +359,11 @@ describe("createFontFileMeasurer", () => {
         // Superscript takes up the line of its run's size (word-run-formatting.ts RF3)
         expect(measurer.measureLineHeight({ font: "Probe Sans", size: 6.5, lineSize: 10 })).to.be.closeTo(12, 1e-9);
         expect(measurer.measureDescent({ font: "Probe Sans", size: 6.5, lineSize: 10 })).to.be.closeTo(3, 1e-9);
+        // Its own glyphs make its lines, and the fallback measures the lines of text in other fonts
+        expect(measurer.measureTextHeight!("\u2605", { font: "Probe Sans", size: 10 })).to.equal(undefined);
+        expect(measurer.measureTextHeight!("\u2605", { font: "Calibri", size: 10 })).to.deep.equal(
+            DEFAULT_MEASURER.measureTextHeight!("\u2605", { font: "Calibri", size: 10 }),
+        );
     });
 
     it("should kern text from the size its kerning starts at", () => {

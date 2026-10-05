@@ -7,6 +7,7 @@ import {
     measureDescent,
     measureLineHeight,
     measureText,
+    measureTextHeight,
     measureTextWidth,
     measureTextWidthAsDrawn,
     unknownCharacter,
@@ -96,7 +97,7 @@ describe("measureTextWidth", () => {
         expect(measureTextWidth("\uff71", { size: 10 })).to.equal(5);
         expect(measureTextWidth("\u0e31\u200b", { size: 10 })).to.equal(0);
         const average = measureTextWidth("abcdefghijklmnopqrstuvwxyz") / 26;
-        expect(measureTextWidth("א")).to.be.closeTo(average, 0.001);
+        expect(measureTextWidth("\u0531")).to.be.closeTo(average, 0.001);
         // As are characters the tables have, but whose widths in the font aren't known: Word draws ∀ in Calibri in Cambria Math
         expect(measureTextWidth("\u2200", { font: "Calibri" })).to.be.closeTo(
             measureTextWidth("abcdefghijklmnopqrstuvwxyz", { font: "Calibri" }) / 26,
@@ -157,6 +158,30 @@ describe("measureTextWidth", () => {
         }
     });
 
+    it("should measure Hebrew, Thai, box drawing, shapes, symbols and dingbats as Word lays them out, in the font or another (stops2/word-stops-more-widths.ts)", () => {
+        const thousandths = (text: string, font: string, bold = false): number => measureTextWidth(text, { font, size: 10, bold }) * 100;
+        // cspell:disable
+        // Calibri's own Hebrew, and its Thai in Tahoma, whose sara am is as wide as its sara aa
+        expect(thousandths("\u05d0", "Calibri")).to.be.closeTo(537, 0.5);
+        expect(thousandths("\u0e01", "Calibri")).to.be.closeTo(595, 0.5);
+        expect(thousandths("\u0e33", "Calibri")).to.equal(thousandths("\u0e32", "Calibri"));
+        // cspell:enable
+        // docx's bullets: Calibri's ● and ○, and its ■ in Arial, and Cambria's ● in Times New Roman
+        expect(thousandths("\u25cf", "Calibri")).to.be.closeTo(604, 0.5);
+        expect(thousandths("\u25cb", "Calibri")).to.be.closeTo(550, 0.5);
+        expect(thousandths("\u25a0", "Calibri")).to.be.closeTo(604.5, 0.5);
+        expect(thousandths("\u25cf", "Cambria")).to.be.closeTo(604.5, 0.5);
+        // Arial's ═ as it is in the font, 1451 of 2048, where the PDF writes 708
+        expect(thousandths("\u2550", "Arial")).to.be.closeTo(708.5, 0.1);
+        // ★ in Segoe UI Symbol, which Word makes bold itself, 20 thousandths wider
+        expect(thousandths("\u2605", "Calibri")).to.be.closeTo(833.5, 0.5);
+        expect(thousandths("\u2605", "Calibri", true) - thousandths("\u2605", "Calibri")).to.be.closeTo(20, 0.5);
+        // The Arabic-Indic digits in the font, and the Devanagari digits of Calibri and Arial in Mangal
+        expect(thousandths("\u0661\u06f1", "Calibri") / 2).to.be.closeTo(507.8, 0.1);
+        expect(thousandths("\u0661", "Times New Roman", true)).to.be.closeTo(561.6, 0.1);
+        expect(thousandths("\u0967", "Arial")).to.be.closeTo(521.4, 0.1);
+    });
+
     it("should move tabs to the next half inch from where the text starts", () => {
         expect(measureTextWidth("\t")).to.equal(36);
         expect(measureTextWidth("\t", {}, 10)).to.equal(26);
@@ -182,10 +207,28 @@ describe("unknownCharacter", () => {
         expect(unknownCharacter("\u2197", { font: "Cambria", italic: true })).to.equal("\u2197");
     });
 
+    it("should find Hebrew, Thai and the symbols in italic, Arabic and Devanagari, whose widths Word's PDF doesn't show", () => {
+        // cspell:disable
+        expect(unknownCharacter("a\u25cf\u0e01\u05d0", { font: "Calibri" })).to.equal(undefined);
+        expect(unknownCharacter("a\u25cf", { font: "Calibri", italic: true })).to.equal("\u25cf");
+        expect(unknownCharacter("a\u05d0", { font: "Times New Roman", italic: true, bold: true })).to.equal("\u05d0");
+        // Arabic and Devanagari, which Word joins into forms of other widths, but for their marks, which take no room
+        expect(unknownCharacter("a\u0628", { font: "Calibri" })).to.equal("\u0628");
+        expect(unknownCharacter("a\u0915", { font: "Arial" })).to.equal("\u0915");
+        expect(unknownCharacter("a\u064e", { font: "Calibri" })).to.equal(undefined);
+        // Their digits, which Word joins to nothing, but for those of Cambria and Times New Roman in Kohinoor Devanagari
+        expect(unknownCharacter("\u0661\u06f2\u0967\u0964", { font: "Calibri" })).to.equal(undefined);
+        expect(unknownCharacter("\u0661\u0967", { font: "Cambria" })).to.equal("\u0967");
+        // Nor in a monospaced East Asian font, whose characters are an em or half an em
+        expect(unknownCharacter("\u0628", { font: "MS Mincho" })).to.equal(undefined);
+        // A character Word's PDF doesn't show in a font, as it drew it in pieces, or with no text: Cambria's bold ┴
+        expect(unknownCharacter("\u2534", { font: "Cambria", bold: true })).to.equal("\u2534");
+        // cspell:enable
+    });
+
     it("should find a symbol font's own character, and leave the characters the tables don't have as they are measured", () => {
         expect(unknownCharacter("\uf0fc", { font: "Wingdings" })).to.equal("\uf0fc");
-        // cspell:disable-next-line
-        expect(unknownCharacter("\u05e9\u05dc\u05d5\u05dd \t\u4e2d\u6587", { font: "Arial" })).to.equal(undefined);
+        expect(unknownCharacter("\u0531\u0532 \t\u4e2d\u6587", { font: "Arial" })).to.equal(undefined);
         expect(unknownCharacter("plain text")).to.equal(undefined);
     });
 });
@@ -270,6 +313,30 @@ describe("measureLineHeight", () => {
         // Calibri's lines are 2500 of its 2048 units: 268.55 twips at 11 points in Word, measured over 50 lines
         expect(measureLineHeight({ font: "Calibri", size: 11 })).to.be.closeTo((2500 / 2048) * 11, 1e-9);
         expect(measureLineHeight({ font: "Times New Roman", size: 10 })).to.be.closeTo((2355 / 2048) * 10, 1e-9);
+    });
+});
+
+describe("measureTextHeight", () => {
+    it("should make room for the fonts Word draws text in that its font doesn't have, as far above and below the baseline as they go", () => {
+        // A line of Thai in Calibri 11 is Tahoma's: 1000 and 207 thousandths of an em (stops2/word-stops-thai.ts TH1)
+        const thai = measureTextHeight("\u0e01\u0e32 \u0e01", { font: "Calibri", size: 11 })!;
+        expect(thai.lineHeight).to.be.closeTo((1207 * 11) / 1000, 1e-9);
+        expect(thai.descent).to.be.closeTo((207 * 11) / 1000, 1e-9);
+        // Calibri's letters and ★ in Segoe UI Symbol: Segoe UI Symbol's ascent, 1079, and Calibri's descent
+        const star = measureTextHeight("a\u2605", { font: "Calibri", size: 10 })!;
+        expect(star.descent).to.be.closeTo(measureDescent({ font: "Calibri", size: 10 }), 1e-9);
+        expect(star.lineHeight).to.be.closeTo(10.79 + measureDescent({ font: "Calibri", size: 10 }), 1e-9);
+        // MS Gothic's lines are as tall as Word makes them: 1008 above the baseline and 289 below
+        expect(measureTextHeight("\u2503", { font: "Calibri", size: 10 })!.lineHeight).to.be.closeTo(12.97, 1e-9);
+        // Calibri's Devanagari digits in Mangal: lines 336 twips apart at 10 points (stops2/word-stops-more-widths.docx)
+        expect(measureTextHeight("\u0967", { font: "Calibri", size: 10 })!.lineHeight * 20).to.be.closeTo(335.8, 1e-9);
+    });
+
+    it("should leave text Word draws in its own font, or whose fonts aren't known, to its font's line", () => {
+        expect(measureTextHeight("abc \u25cf", { font: "Calibri", size: 10 })).to.equal(undefined);
+        expect(measureTextHeight("\u2605", { font: "Calibri", size: 10, italic: true })).to.equal(undefined);
+        expect(measureTextHeight("\u2605", { font: "MS Mincho", size: 10 })).to.equal(undefined);
+        expect(measureTextHeight("\u2605", { font: "Calibri", size: 6.5, lineSize: 10 })).to.equal(undefined);
     });
 });
 

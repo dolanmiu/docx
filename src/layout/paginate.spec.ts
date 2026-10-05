@@ -6314,6 +6314,12 @@ describe("paginate", () => {
             expect(stopOf([prose("a", 12, [floating({ horizontal: { from: "margin", offset: 150 } })])], wide)).to.equal(undefined);
         });
 
+        it("should stop at a line beside a drawing on a grid that snaps to characters in columns of different widths", () => {
+            const gridded: ParagraphBlock = { ...prose("a", 12, [floating()]), grid: { characterRoom: 10 } };
+            expect(stopOf([gridded])).to.equal("a line beside a drawing on a grid that snaps to characters in columns of different widths");
+            expect(stopOf([{ ...prose("a", 12), grid: { characterRoom: 10 } }])).to.equal(undefined);
+        });
+
         it("should narrow the lines beside a drawing, with its distances from the text, as Word does (F1, F3)", () => {
             // From 140 to 190 across and 10 to 40 down: 3 lines beside it, 2 words to each
             expect(roomsOf([prose("a", 12, [floating()])])).to.deep.equal([
