@@ -4,7 +4,7 @@
  *
  * @module
  */
-import { TWIPS_PER_POINT, attributesOf, childrenOf, find, isOff, numberOf, pointsOf } from "../text-layout";
+import { TWIPS_PER_POINT, WIDEST_ART_BORDER, attributesOf, childrenOf, find, isArtBorder, isOff, numberOf, pointsOf } from "../text-layout";
 
 // Border widths are in eighths of a point
 const EIGHTHS_PER_POINT = 8;
@@ -104,97 +104,22 @@ export const isDrawn = (border: Border | undefined): border is Border => border 
 
 /**
  * The room a border takes from what is beside it, in points: its line's room and the space between it and the text,
- * which Word adds to it (BS31). Undefined for a style or width whose room Word's PDFs haven't shown.
+ * which Word adds to it (BS31). An art border's width is in points, where a line's is in eighths of one, and it takes that
+ * many above and below a cell's text (`word-stops-table-borders.docx` TB4w and TB4x, `word-stops-table-borders2.docx`
+ * BT2a to BT2e: apples and triangles of 6, 12, 20 and 31 points, and BT1h, where apples and triangles of 12 meet). Undefined
+ * for a style or width whose room Word's PDFs haven't shown.
  */
 export const roomOf = (border: Border | undefined): number | undefined => {
     if (!isDrawn(border)) {
         return 0;
     }
     const { style, width, space = 0 } = border;
+    if (isArtBorder(style)) {
+        const art = width * EIGHTHS_PER_POINT;
+        return art <= WIDEST_ART_BORDER ? art + space : undefined;
+    }
     const room = ROOMS[style]?.(width) ?? ROOMS_BY_WIDTH[style]?.[width];
     return room === undefined ? undefined : room + space;
-};
-
-// How heavy Word counts a border of each style, by its width in eighths of a point, where two cells' borders meet: dotted
-// and dashed lines weigh 1 whatever their width (MS-OI29500, Part 1, 17.4.66)
-const WEIGHTS: Readonly<Record<string, number>> = {
-    single: 1,
-    thick: 2,
-    double: 3,
-    dotDash: 8,
-    dotDotDash: 9,
-    triple: 10,
-    thinThickSmallGap: 11,
-    thickThinSmallGap: 12,
-    thinThickThinSmallGap: 13,
-    thinThickMediumGap: 14,
-    thickThinMediumGap: 15,
-    thinThickThinMediumGap: 16,
-    thinThickLargeGap: 17,
-    thickThinLargeGap: 18,
-    thinThickThinLargeGap: 19,
-    wave: 20,
-    doubleWave: 21,
-    dashSmallGap: 22,
-    dashDotStroked: 23,
-    threeDEmboss: 24,
-    threeDEngrave: 25,
-    outset: 26,
-    inset: 27,
-};
-const UNWEIGHED = new Set(["dotted", "dashed"]);
-// Of two borders as heavy, Word draws the one later in this list
-const PRECEDENCE = [
-    "single",
-    "thick",
-    "double",
-    "dotted",
-    "dashed",
-    "dotDash",
-    "dotDotDash",
-    "triple",
-    "thinThickSmallGap",
-    "thickThinSmallGap",
-    "thinThickThinSmallGap",
-    "thinThickMediumGap",
-    "thickThinMediumGap",
-    "thinThickThinMediumGap",
-    "thinThickLargeGap",
-    "thickThinLargeGap",
-    "thinThickThinLargeGap",
-    "wave",
-    "doubleWave",
-    "dashSmallGap",
-    "dashDotStroked",
-    "threeDEmboss",
-    "threeDEngrave",
-    "outset",
-    "inset",
-];
-
-/** How heavy Word counts a border where two cells' borders meet, or undefined for a style it doesn't weigh, such as art */
-const weightOf = ({ style, width }: Border): number | undefined =>
-    UNWEIGHED.has(style) ? 1 : WEIGHTS[style] === undefined ? undefined : WEIGHTS[style] * width * EIGHTHS_PER_POINT;
-
-/**
- * The border Word draws where two cells meet: the one there is, when the other is none, and otherwise the heavier, its
- * width in eighths of a point times a number for its style, or of two as heavy, the later of their styles in Word's list
- * (MS-OI29500, Part 1, 17.4.66; `word-stops-table-borders.docx` TB1 and TB2: a double border of half a point over a
- * single one of 1.5 points, and a single one of 1.5 points over a dotted one). Two of the same style and width are the
- * same border. Undefined where Word's choice isn't known: between styles Word doesn't weigh, such as art borders.
- */
-export const borderBetween = (one: Border, other: Border): Border | undefined => {
-    if (!isDrawn(one) || !isDrawn(other)) {
-        return isDrawn(one) ? one : other;
-    }
-    const [weight, otherWeight] = [weightOf(one), weightOf(other)];
-    if (weight === undefined || otherWeight === undefined) {
-        return one.style === other.style ? (one.width >= other.width ? one : other) : undefined;
-    }
-    if (weight !== otherWeight) {
-        return weight > otherWeight ? one : other;
-    }
-    return PRECEDENCE.indexOf(other.style) > PRECEDENCE.indexOf(one.style) ? other : one;
 };
 
 /** A cell's place in its row, and the borders it gives itself, to work out the borders between it and the cells around it */
@@ -228,7 +153,7 @@ const widest = (borders: readonly (Border | undefined)[]): number | string =>
 
 /**
  * The room the borders of a table's rows take, in points. Each cell's side has its own border, or else the table's
- * there. Where two cells meet, Word draws one of their borders (`borderBetween`), but makes room for the wider, whichever
+ * there. Where two cells meet, Word draws one of their borders (see `sideBorders`), but makes room for the wider, whichever
  * it draws (`word-stops-table-borders.docx` TB3d: a dotted border of 1.5 points meeting a single one of half a point
  * takes 1.5 points, below the single one Word draws), so each row is as much taller as the widest of its cells' borders
  * and those of the cells above them (`word-table-formats.docx` BC1, TB1 to TB3). A cell merged down from the row above
@@ -272,50 +197,49 @@ export const rowBorders = (rows: readonly (readonly BorderedCell[])[], table: Bo
     );
 };
 
-/** The room of a border beside a cell's text: the wider of the two that meet there, and the one Word draws there */
-export type SideBorder = { readonly room: number; readonly drawn: number };
-
 /**
- * The room the borders left and right of each cell of a row take, in points: its own, or the table's at the table's
- * edges and between its cells. Where two cells meet, the wider of their borders, and the one Word draws
- * (`borderBetween`), which can be the narrower. Why, where a border's room isn't known.
+ * The room the borders left and right of each cell of a row take beside its text, in points: its own, or the table's at
+ * the table's edges and between its cells. Where two cells meet, Word draws the heavier of their borders, by Word's weights
+ * for their styles (`word-stops-table-borders.docx` TB1 and TB2), but keeps each cell's text from its own border, whichever
+ * it draws and whichever is wider (`word-stops-table-borders2.docx` BT1a to BT1e, with no margins: the second cell's text
+ * 0.5 points in from its dotted and dashed border of 1 point, which Word drew over the first cell's single one of 6, and 3
+ * and 1.5 points in from its single ones of 6 and 3 points, below the first cell's heavier ones of 1 and 0.5 points). Why,
+ * where a border's room isn't known, or where an art border is beside the text, whose room there Word's PDFs haven't
+ * settled: apples of 12 points beside a cell's text kept it only 0.75 points from them, where they took 12 points above
+ * and below a cell's (BT1g).
  */
 export const sideBorders = (
     cells: readonly BorderedCell[],
     table: BorderSet,
-): readonly { readonly left: SideBorder; readonly right: SideBorder }[] | string => {
-    if (cells.length === 0) {
-        return [];
-    }
+): readonly { readonly left: number; readonly right: number }[] | string => {
     const insideV = table.insideV ?? NONE;
     const leftOf = (index: number): Border => cells[index].borders.left ?? (index === 0 ? (table.left ?? NONE) : insideV);
     const rightOf = (index: number): Border => cells[index].borders.right ?? (index === cells.length - 1 ? (table.right ?? NONE) : insideV);
-    const edges = Array.from({ length: cells.length + 1 }, (_, index): readonly Border[] =>
-        index === 0 ? [leftOf(0)] : index === cells.length ? [rightOf(index - 1)] : [rightOf(index - 1), leftOf(index)],
-    );
-    const rooms = edges.map((meeting): SideBorder | string => {
-        const [room, other = 0] = meeting.map(roomOrWhy);
-        if (typeof room === "string" || typeof other === "string") {
-            return typeof room === "string" ? room : (other as string);
-        }
-        const drawn = meeting.length === 1 ? meeting[0] : borderBetween(meeting[0], meeting[1]);
-        return { room: Math.max(room, other), drawn: roomOf(drawn) as number };
+    const sides = cells.map((_, index) => {
+        const [left, right] = [leftOf(index), rightOf(index)];
+        // The borders this cell's meet, of the cells either side of it
+        const meeting = [...(index > 0 ? [rightOf(index - 1)] : []), ...(index < cells.length - 1 ? [leftOf(index + 1)] : [])];
+        const art = [left, right, ...meeting].some((border) => isDrawn(border) && isArtBorder(border.style));
+        return art ? "an art border beside a table cell's text" : { left: roomOrWhy(left), right: roomOrWhy(right) };
     });
-    const unsupported = rooms.find((room): room is string => typeof room === "string");
-    return unsupported ?? cells.map((_, index) => ({ left: rooms[index] as SideBorder, right: rooms[index + 1] as SideBorder }));
+    const unsupported = sides
+        .flatMap((side) => (typeof side === "string" ? [side] : [side.left, side.right]))
+        .find((room): room is string => typeof room === "string");
+    return unsupported ?? (sides as readonly { readonly left: number; readonly right: number }[]);
 };
 
 /**
- * The space between a table's cells (`w:tblCellSpacing`), in points: none when it isn't given, or is `nil`. "share" when
- * it is a share of the table's width, which Word lays out as none for a table (`word-stops-table-borders.docx` TB6a and
- * TB6b: 2% and 5% of its width), and undefined for another type, such as `auto`, which Word's PDFs haven't shown.
+ * The space between a table's cells (`w:tblCellSpacing`), in points: none when it isn't given, or is `nil` or `auto`, which
+ * Word lays out as none, whatever its width (`word-stops-table-borders2.docx` BT5d and BT5e: of 100 twips and of none).
+ * "share" when it is a share of the table's width, which Word lays out as none for a table (`word-stops-table-borders.docx`
+ * TB6a and TB6b: 2% and 5% of its width), and undefined for a type the schema doesn't have.
  */
 export const readCellSpacing = (element: unknown): number | "share" | undefined => {
     if (element === undefined) {
         return 0;
     }
     const { "w:w": value, "w:type": type = "dxa" } = attributesOf(element);
-    if (type === "nil") {
+    if (type === "nil" || type === "auto") {
         return 0;
     }
     if (type === "pct") {
@@ -444,100 +368,78 @@ export type TableGeometry = readonly {
     readonly cells: readonly { readonly left: number; readonly right: number; readonly width: number }[];
 }[];
 
-// Why a cell's text can't be placed: two borders meet beside it where Word draws the narrower and makes room for one of
-// them in a way not yet seen
-const BESIDE_TEXT = "table cell borders of different styles that meet, wider than twice a cell's margin";
-
 /**
  * The room around the text of a table's rows and cells: its borders and its cells' (`rowBorders`, `sideBorders`), and
- * the space between its cells.
+ * the space between the cells of each row.
  *
- * Without space between cells, a cell's text is as far in from its left and right edges as its margin, or half the
+ * Without space between cells, a cell's text is as far in from its left and right edges as its margin, or half its own
  * border there when that is more, as in Word (`word-table-formats.docx` BC7 to BC9, `word-table-formats2.docx` BC10 and
- * BC11). Where two borders of different styles meet and Word draws the narrower, which half border it keeps the text
- * from hasn't been seen, so where that is more than the margin, why.
+ * BC11, `word-stops-table-borders2.docx` BT1).
  *
  * With space between cells, each cell has borders of its own, its own or else the table's: the table's top above the
  * first row, its bottom below the last, its left before the first cell and its right after the last, and its inside
  * borders between them; and the table has its own around them. Each row has its space above and below its cells'
- * borders, and the table its space inside its own borders (CS1 to CS4, CS13). Where the table breaks across pages, the
- * row on the page keeps the space below it, with the table's bottom border below that, and the next page's starts with
- * the table's top border and the space above it (CS12, `word-stops-table-borders.docx` TB7a to TB7c). Across, the space
- * is around each cell and inside the table's edges, as margins are (`word-watertight-tables.docx` TB4,
- * `word-table-formats.docx` CS5 to CS8, `word-table-formats2.docx` CS9, CS10, CS14), and each cell's text is further in
- * by the whole of its own border left and right of it, where the table's borders there take none of its width (TB5a to
- * TB5l: with space of 2, 5 and 10 points, and borders of half a point to 6 points, each cell's text was twice its
- * border narrower than without them).
+ * borders, and inside the table's borders above the first row and below the last too (CS1 to CS4, CS13), its own where it
+ * has space of its own, in place of the table's (`word-stops-table-borders2.docx` BT5a and BT5b: rows of 2 and 5 points
+ * in a table of 2 points and of none). Where the table breaks across pages, the row on the page keeps the space below it,
+ * with the table's bottom border below that, and the next page's starts with the table's top border and the space above
+ * it (CS12, `word-stops-table-borders.docx` TB7a to TB7c). Across, the space is around each cell and inside the table's
+ * edges, as margins are, each row's own (`word-watertight-tables.docx` TB4, `word-table-formats.docx` CS5 to CS8,
+ * `word-table-formats2.docx` CS9, CS10, CS14, BT5a, BT5b), and each cell's text is further in by the whole of its own
+ * border left and right of it, where the table's borders there take none of its width (TB5a to TB5l: with space of 2, 5
+ * and 10 points, and borders of half a point to 6 points, each cell's text was twice its border narrower than without
+ * them; BT6a to BT6c: a row's own borders, `w:tblPrEx`, as its cells' own).
  */
 export const tableGeometry = (
     rows: readonly { readonly cells: readonly PlacedCell[]; readonly spacing: number }[],
-    table: { readonly borders: BorderSet; readonly spacing: number },
+    borders: BorderSet,
 ): TableGeometry | string => {
-    const { borders, spacing } = table;
-    if (spacing === 0) {
+    const across = rows.map(({ cells }) => sideBorders(cells, borders));
+    const beside = across.find((sides): sides is string => typeof sides === "string");
+    const sidesOf = (index: number): Exclude<(typeof across)[number], string> => across[index] as Exclude<(typeof across)[number], string>;
+    if (rows.every(({ spacing }) => spacing === 0)) {
         const vertical = rowBorders(
             rows.map(({ cells }) => cells),
             borders,
         );
-        if (typeof vertical === "string") {
-            return vertical;
+        if (typeof vertical === "string" || beside !== undefined) {
+            return typeof vertical === "string" ? vertical : (beside as string);
         }
-        const across = rows.map(({ cells }) => sideBorders(cells, borders));
-        const unsupported = across.find((sides): sides is string => typeof sides === "string");
-        if (unsupported !== undefined) {
-            return unsupported;
-        }
-        // The room left or right of a cell's text, unless it depends on which border Word keeps the text from
-        const beside = (margin: number, { room, drawn }: SideBorder): number | undefined =>
-            Math.max(margin, room / 2) === Math.max(margin, drawn / 2) ? Math.max(margin, room / 2) : undefined;
-        const geometry = rows.map(({ cells }, index) => ({
+        return rows.map(({ cells }, index) => ({
             borderTop: vertical.tops[index],
             borderBottom: index === rows.length - 1 ? vertical.bottom : 0,
             breakBorder: vertical.breaks[index],
             cells: cells.map(({ margins, gridWidth }, cell) => {
-                const sides = (across[index] as Exclude<(typeof across)[number], string>)[cell];
-                const left = beside(margins.left, sides.left);
-                const right = beside(margins.right, sides.right);
-                return left === undefined || right === undefined ? undefined : { left, right, width: gridWidth - left - right };
+                const sides = sidesOf(index)[cell];
+                const left = Math.max(margins.left, sides.left / 2);
+                const right = Math.max(margins.right, sides.right / 2);
+                return { left, right, width: gridWidth - left - right };
             }),
         }));
-        return geometry.some(({ cells }) => cells.includes(undefined)) ? BESIDE_TEXT : (geometry as unknown as TableGeometry);
     }
     const last = rows.length - 1;
-    const sideRooms = rows.map(({ cells }) =>
-        cells.map((cell, index) => ({
-            left: roomOrWhy(cell.borders.left ?? (index === 0 ? borders.left : borders.insideV)),
-            right: roomOrWhy(cell.borders.right ?? (index === cells.length - 1 ? borders.right : borders.insideV)),
-        })),
-    );
     const rooms = rows.map(({ cells }, index) => ({
         tops: widest(cells.map((cell) => cell.borders.top ?? (index === 0 ? borders.top : borders.insideH) ?? NONE)),
         bottoms: widest(cells.map((cell) => cell.borders.bottom ?? (index === last ? borders.bottom : borders.insideH) ?? NONE)),
     }));
     const [top, bottom] = [widest([borders.top ?? NONE]), widest([borders.bottom ?? NONE])];
-    const unknown = [
-        top,
-        bottom,
-        ...rooms.flatMap(({ tops, bottoms }) => [tops, bottoms]),
-        ...sideRooms.flat().flatMap(({ left, right }) => [left, right]),
-    ].find((room): room is string => typeof room === "string");
+    const unknown = [top, bottom, ...rooms.flatMap(({ tops, bottoms }) => [tops, bottoms]), beside].find(
+        (room): room is string => typeof room === "string",
+    );
     if (unknown !== undefined) {
         return unknown;
     }
     return rows.map(({ cells, spacing: own }, index) => {
         const { tops, bottoms } = rooms[index] as { readonly tops: number; readonly bottoms: number };
         return {
-            borderTop: tops + own + (index === 0 ? spacing + (top as number) : 0),
-            borderBottom: bottoms + own + (index === last ? spacing + (bottom as number) : 0),
+            borderTop: tops + own + (index === 0 ? own + (top as number) : 0),
+            borderBottom: bottoms + own + (index === last ? own + (bottom as number) : 0),
             breakBorder: bottom as number,
             ...((top as number) > 0 ? { breakTop: top as number } : {}),
             cells: cells.map(({ margins, gridWidth }, cell) => {
-                const { left: leftBorder, right: rightBorder } = sideRooms[index][cell] as {
-                    readonly left: number;
-                    readonly right: number;
-                };
-                const left = margins.left + own + (cell === 0 ? spacing : 0) + leftBorder;
-                const right = margins.right + own + (cell === cells.length - 1 ? spacing : 0) + rightBorder;
+                const sides = sidesOf(index)[cell];
+                const left = margins.left + own + (cell === 0 ? own : 0) + sides.left;
+                const right = margins.right + own + (cell === cells.length - 1 ? own : 0) + sides.right;
                 return { left, right, width: gridWidth - left - right };
             }),
         };

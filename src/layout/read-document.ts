@@ -32,6 +32,7 @@ import {
     type TextFont,
     type TextGrid,
     type TextStyles,
+    WIDEST_ART_BORDER,
     WIDEST_BORDER,
     type XmlObject,
     attributesOf,
@@ -40,6 +41,7 @@ import {
     find,
     fontOf,
     getTextStyles,
+    isArtBorder,
     isEastAsian,
     isEastAsianRun,
     isGridCharacter,
@@ -62,7 +64,7 @@ import {
     withoutUndefined,
 } from "../text-layout";
 import { type DataStores, withBoundTextWritten } from "./bound-controls";
-import { lineSizeOf, textLineSizesOf } from "./column-widths";
+import { isVerticalWidthKnown, verticalLineOf } from "./column-widths";
 import { type EquationBox, type LimitPlaces, layOutEquations } from "./equations";
 import {
     type FieldCapitals,
@@ -327,6 +329,11 @@ export type TableCell = {
      */
     readonly fitText?: boolean;
     /**
+     * Whether it says its text doesn't wrap (`w:noWrap`), which Word sizes a table sized to its text by, though it wraps
+     * the text all the same (`word-stops-tables.docx` TS7b, `word-stops-tables2.docx` TS12b)
+     */
+    readonly noWrap?: boolean;
+    /**
      * What is in it as Word sizes its table's columns by it, when that isn't `blocks`: with its deleted text in, which
      * Word counts in the widths of columns it sizes to their text or widens for long words, though it lays out the lines
      * without it (`word-tracked-changes.docx` MK11j)
@@ -341,6 +348,11 @@ export type TableRow = {
     readonly header: boolean;
     /** Whether it moves to the next page whole, rather than breaking across the pages, when it doesn't fit */
     readonly cantSplit: boolean;
+    /**
+     * The width before it, in points, when it starts past the table's first column (`w:gridBefore`) and says how wide in
+     * twips (`w:wBefore`), which Word sizes the columns by as a cell's
+     */
+    readonly before?: number;
     /**
      * The room above the row's cells, in points: the border between it and the row above, or the table's top border, and
      * the space between cells. For the last row, the same below it
@@ -2396,23 +2408,35 @@ const NO_BORDER = new Set(["none", "nil"]);
 
 /**
  * The room a border of a paragraph takes, in points: its width and the space between it and the text, or why it isn't
- * known. A shadow doubles a single line (B6)
+ * known. A shadow doubles a single line (B6). An art border, of pictures, is as wide as its size in points
+ * (`word-stops-text.docx` PB4a, `word-stops-table-borders2.docx` BT2f and BT2g: apples of 6, 12 and 20 points), and a
+ * border of a line of no width, whose width is a multiple of its size, takes only its space (PB4d, BT3a to BT3c: single
+ * and double lines). Word keeps the space in five bits, so one of 32 points is none, as a run's is (BT3d to BT3f: 32, 50
+ * and 63 points took 0, 18 and 31). A line of a width of an eighth of a point hasn't been seen.
  */
 const borderRoom = (border: ParagraphBorder | undefined): number | string => {
     if (border === undefined || NO_BORDER.has(border.style)) {
         return 0;
     }
     const style = BORDER_WIDTHS[border.style];
-    if (style === undefined || border.frame || (border.shadow && border.style !== "single")) {
+    const art = isArtBorder(border.style);
+    if ((style === undefined && !art) || border.frame || (border.shadow && border.style !== "single")) {
         return "a paragraph border of a style not yet followed";
     }
+    const { size } = border;
     const width =
-        border.size === undefined || border.size < NARROWEST_BORDER || border.size > WIDEST_BORDER || border.space > FURTHEST_BORDER
+        size === undefined
             ? undefined
-            : style(border.size);
+            : style === undefined
+              ? size >= 1 && size <= WIDEST_ART_BORDER
+                  ? size * EIGHTHS_PER_POINT
+                  : undefined
+              : (size >= NARROWEST_BORDER && size <= WIDEST_BORDER) || (size === 0 && style(0) === 0)
+                ? style(size)
+                : undefined;
     return width === undefined
-        ? "a paragraph border of a width or space not yet followed"
-        : ((border.shadow ? 2 : 1) * width) / EIGHTHS_PER_POINT + border.space;
+        ? "a paragraph border of a width not yet followed"
+        : ((border.shadow ? 2 : 1) * width) / EIGHTHS_PER_POINT + (border.space % (FURTHEST_BORDER + 1));
 };
 
 /**
@@ -2440,7 +2464,7 @@ const readBorders = (format: ParagraphFormat): ParagraphBorders | string | undef
         top,
         bottom,
         between,
-        betweenSpace: between > 0 ? borderBetween!.space : 0,
+        betweenSpace: between > 0 ? borderBetween!.space % (FURTHEST_BORDER + 1) : 0,
         box: JSON.stringify([...outline, keyOf(borderBetween), ...indents]),
         outline: JSON.stringify([...outline, ...indents]),
     };
@@ -2667,29 +2691,39 @@ const unsupportedCellOf = (properties: readonly XmlObject[]): string | undefined
 };
 
 /**
- * Why text that runs up or down a cell makes its row taller in a way not yet followed, when it does. Word makes the row
- * as tall as a line of the cell's paragraph marks, whatever the text's size and the space around its paragraphs, and with
- * a picture in it (`word-table-formats.docx` VT1, VT2, `word-table-formats2.docx` VT5 to VT7,
- * `word-stops-vertical-cells.docx` TV5c). Not with a mark larger than its text: a mark of 20 points with text of 11 made
- * the row no taller than a line of 11 (TV5b), so which line Word makes it then isn't known, nor for marks of different
- * fonts or sizes, nor what a table in it does, which Word lays across the cell (TV5d), nor a text box in it.
+ * Why text that runs up or down a cell makes its row taller in a way not yet followed, when it does. Word makes a row of
+ * only such cells as tall as a line of the last paragraph's mark, whatever the text's size and the space around its
+ * paragraphs, and with a picture in it (`word-table-formats.docx` VT1, VT2, `word-table-formats2.docx` VT5 to VT7,
+ * `word-stops-vertical-cells.docx` TV5c, `word-stops-vertical-cells2.docx` VC5a to VC5h), and a row with other cells no
+ * taller (TV5b, VC1g, VC1h). What a table in it does, which Word lays across the cell (TV5d), and a text box in it, aren't
+ * known.
  */
 const unsupportedVerticalOf = (blocks: readonly Block[]): string | undefined => {
     const paragraphs = blocks.filter((block): block is ParagraphBlock => block.type === "paragraph");
     if (paragraphs.length < blocks.length) {
         return "text running up or down a table cell with a table in it";
     }
-    if (paragraphs.some(({ items }) => items.some((item) => item.type === "textBox"))) {
-        return "text running up or down a table cell with a text box in it";
-    }
-    const marks = new Set(paragraphs.map(({ markFont: { font, size } }) => `${font} ${size}`));
-    // A superscript or subscript, such as a note's reference, is as large as its text for its line (TV4), and the numbers
-    // of page fields are text as large as theirs
-    const smaller = paragraphs.some(({ items, markFont }) => textLineSizesOf(items).some((size) => size < lineSizeOf(markFont)));
-    return marks.size > 1 || smaller
-        ? "text running up or down a table cell with marks of different sizes, or larger than its text"
+    return paragraphs.some(({ items }) => items.some((item) => item.type === "textBox"))
+        ? "text running up or down a table cell with a text box in it"
         : undefined;
 };
+
+/**
+ * Why a row of only cells of text that runs up or down can't be laid out, when it can't: Word makes it as tall as a line of
+ * each cell's last paragraph's mark, as far apart as it lays out lines of text that runs up or down in its font
+ * (`verticalLineOf`), which Word's PDFs haven't shown of every font
+ */
+const unsupportedVerticalRowOf = (
+    cells: readonly { readonly vertical?: boolean; readonly blocks: readonly Block[] }[],
+): string | undefined =>
+    cells.length > 0 &&
+    cells.every(({ vertical }) => vertical) &&
+    cells.some(({ blocks }) => {
+        const last = blocks.findLast((block): block is ParagraphBlock => block.type === "paragraph");
+        return last !== undefined && verticalLineOf(last.markFont, () => 0) === undefined;
+    })
+        ? "a table row of only text running up or down, whose mark is in a font whose lines Word's PDFs haven't shown"
+        : undefined;
 
 // The directions of a section's or a cell's text (`w:textDirection`) that run across it, as transitional and strict
 // documents write them, as text does without one: from the left, and from the left with East Asian characters on their
@@ -2760,12 +2794,14 @@ const changesLines = (properties: readonly XmlObject[], read: ReadonlySet<string
 const FOLLOWED_CELL_PROPERTIES = new Set(["w:tcBorders", "w:tcMar"]);
 // The parts of a table style for some of its rows, whose height Word gives the row (`word-stops-tables.docx` TS1a)
 const ROW_PARTS = new Set(["firstRow", "lastRow", "band1Horz", "band2Horz"]);
-const FOLLOWED_PART_ROW_PROPERTIES = new Set(["w:trHeight"]);
+// And whether it is kept whole (`word-stops-tables2.docx` TS10b)
+const FOLLOWED_PART_ROW_PROPERTIES = new Set(["w:trHeight", "w:cantSplit"]);
 // The table properties of a part of a table style that Word ignores: its space between cells (TS1c)
 const IGNORED_PART_TABLE_PROPERTIES = new Set(["w:tblCellSpacing"]);
-// A table style's own row properties that Word ignores, its height (TS5a), and its own cell properties it follows, its
-// margins, as a part's (TS5b)
-const IGNORED_STYLE_ROW_PROPERTIES = new Set(["w:trHeight"]);
+// A table style's own row properties that are read: its height, which Word ignores (TS5a), and whether its rows are kept
+// whole, which it follows (`word-stops-tables2.docx` TS10a); and its own cell properties it follows, its margins, as a
+// part's (TS5b)
+const READ_STYLE_ROW_PROPERTIES = new Set(["w:trHeight", "w:cantSplit"]);
 const FOLLOWED_STYLE_CELL_PROPERTIES = new Set(["w:tcMar"]);
 // A row's table properties of its own (`w:tblPrEx`) that are followed: its borders and cell margins, which Word gives its
 // cells as the table's (TS4)
@@ -2784,8 +2820,6 @@ type ReadCell = TableCell & {
     readonly borders: BorderSet;
     readonly margins: Margins;
     readonly gridWidth: number;
-    /** Whether its text doesn't wrap (`w:noWrap`), which Word follows only in a table sized to its text */
-    readonly noWrap?: boolean;
 };
 
 // What in a cell merged across columns as old versions of Word wrote them, after the first, Word hasn't been seen to lay out,
@@ -2923,7 +2957,9 @@ const readTable = (element: XmlObject, reader: Reader): TableBlock | undefined =
     // TB6a, TB6b)
     const tableSpacing = givenSpacing === "share" ? 0 : givenSpacing;
     const { "w:w": indentValue, "w:type": indentType = "dxa" } = attributesOf(lastOf(allProperties, "w:tblInd"));
-    const indent = indentType === "nil" ? 0 : indentType === "dxa" ? (twips(indentValue) ?? 0) : undefined;
+    // Word lays out a table indented by a share of the width as though it weren't indented (word-stops-tables2.docx TS11a,
+    // TS11b: 10% and -5%)
+    const indent = indentType === "nil" || indentType === "pct" ? 0 : indentType === "dxa" ? (twips(indentValue) ?? 0) : undefined;
     const grid = childrenOf(find(children, "w:tblGrid"))
         .filter((child) => "w:gridCol" in child)
         .map((column) => twips(attributesOf(column["w:gridCol"])["w:w"]) ?? 0);
@@ -2971,6 +3007,8 @@ const readTable = (element: XmlObject, reader: Reader): TableBlock | undefined =
         readonly margins: Partial<Margins>;
         /** The height of the parts for the cell's row (`w:trHeight`), as written */
         readonly height?: Record<string, unknown>;
+        /** Whether the parts for the cell's row keep it whole (`w:cantSplit`), when they say */
+        readonly cantSplit?: boolean;
         readonly unsupported?: string;
     } => {
         if (conditional.length === 0) {
@@ -2988,13 +3026,18 @@ const readTable = (element: XmlObject, reader: Reader): TableBlock | undefined =
             const height = find(rowProperties, "w:trHeight");
             return height === undefined ? [] : [attributesOf(height)];
         });
+        const keptWhole = applying.flatMap(([, { rowProperties }]) => {
+            const whole = onOff(rowProperties, "w:cantSplit");
+            return whole === undefined ? [] : [whole];
+        });
         return {
             formats: [...ownStyles, ...applying.map(([, format]) => format)],
             borders: Object.assign({}, ...applying.map(([, { cellProperties }]) => readBorderSet(find(cellProperties, "w:tcBorders")))),
             margins: Object.assign({}, ...applying.map(([, { cellProperties }]) => readCellMargins(find(cellProperties, "w:tcMar")))),
             ...withoutUndefined({
                 height: heights[heights.length - 1],
-                unsupported: unfollowed ? "a table style's formatting for some of its cells" : unseenInHeaderOf(position, applying),
+                cantSplit: keptWhole[keptWhole.length - 1],
+                unsupported: unfollowed ? "a table style's formatting for some of its cells" : undefined,
             }),
         };
     };
@@ -3002,22 +3045,11 @@ const readTable = (element: XmlObject, reader: Reader): TableBlock | undefined =
     // What a style without parts for some cells gives each cell
     const UNFORMATTED = { formats: ownStyles, borders: {}, margins: {} };
 
-    /**
-     * Why the parts of the table's style for a cell in a header of several rows apply in a way Word hasn't been seen to
-     * apply them, when they do: its bands in a header of four rows or more with its first row turned off. Word made all
-     * of a header of two or three rows its first row, with its corner cells in each of them (`word-stops-tables.docx`
-     * TS2), and put one of two in the second band (`word-compat-off.docx` CS2a, CS2b and CS2f), but banded one of three
-     * from its first row, as though it weren't a header (TS3)
-     */
-    const unseenInHeaderOf = (
-        { row, headerRows: header = 0 }: CellPosition,
-        applying: readonly (readonly [string, unknown])[],
-    ): string | undefined => {
-        const types = new Set(applying.map(([type]) => type));
-        return row < header && header > 3 && (types.has("band1Horz") || types.has("band2Horz"))
-            ? "a table style's bands of rows in a header of four rows or more"
-            : undefined;
-    };
+    // Whether the table's style keeps its rows whole (`word-stops-tables2.docx` TS10a), the last of its styles that says
+    const styleKept = tableStyles.reduce<boolean | undefined>(
+        (whole, { rowProperties = [] }) => onOff(rowProperties, "w:cantSplit") ?? whole,
+        undefined,
+    );
 
     const gridWidth = (from: number, to: number): number => grid.slice(from, to).reduce((total, value) => total + value, 0);
 
@@ -3055,6 +3087,10 @@ const readTable = (element: XmlObject, reader: Reader): TableBlock | undefined =
             const height = twips(heightAttributes["w:val"]);
             const { "w:hRule": rule } = heightAttributes;
             const skipped = numberOf(attributesOf(find(rowProperties, "w:gridBefore"))["w:val"]) ?? 0;
+            // The width before a row that starts past the first column (`w:wBefore`), which Word sizes the columns by as a
+            // cell's (word-stops-long-words2.docx LW7a, LW7b), when it is in twips
+            const { "w:w": beforeValue, "w:type": beforeType = "dxa" } = attributesOf(find(rowProperties, "w:wBefore"));
+            const widthBefore = skipped > 0 && beforeType === "dxa" ? twips(beforeValue) : undefined;
             const ownSpacing = find(rowProperties, "w:tblCellSpacing");
             const spacing = ownSpacing === undefined ? tableSpacing : readCellSpacing(ownSpacing);
             // A deleted row is read only as Word sizes the columns by it, with its notes and lists left uncounted, or, where
@@ -3194,27 +3230,24 @@ const readTable = (element: XmlObject, reader: Reader): TableBlock | undefined =
                         ],
                     };
                 },
-                { column: skipped, cells: [], edges: new Map([[skipped, gridWidth(0, skipped)]]) },
+                { column: skipped, cells: [], edges: new Map([[skipped, widthBefore ?? gridWidth(0, skipped)]]) },
             );
             // A row of a division of a web page (`w:divId`) Word moves across by the division's left margin, as wide and
             // as tall as it is without, with the division's borders beside it but not above or below
             // (`word-stops-pages.docx` DV1b), so its lines are as they are. One with table properties of its own
-            // (`w:tblPrEx`) other than borders and cell margins, such as a width, isn't followed, nor are its own borders
-            // where there is space between its cells, whose table borders go around the space (word-stops-table-borders.docx
-            // TB5) and whose own Word hasn't been seen to place
+            // (`w:tblPrEx`) other than borders and cell margins, such as a width, isn't followed. Its own borders are its
+            // cells', with space between them too (word-stops-table-borders2.docx BT6a to BT6c)
             const rowUnsupported = rowParts.some((part) => "w:sdt" in part)
                 ? BOUND_CONTROL
                 : changesLines(exceptions, FOLLOWED_ROW_TABLE_PROPERTIES)
                   ? "a table row with table properties of its own"
-                  : spacing !== 0 && find(exceptions, "w:tblBorders") !== undefined
-                    ? "a table row with borders of its own in a table with space between its cells"
-                    : deleted && JSON.stringify([...rowReader.counters]) !== counts
-                      ? "a list in a deleted table row"
-                      : ownEndnote
-                        ? OWN_NOTE_MARK
-                        : unseenHeaderCount
-                          ? "a deleted row in a table's header of several rows, whose style formats some of its rows"
-                          : cellsUnsupported;
+                  : deleted && JSON.stringify([...rowReader.counters]) !== counts
+                    ? "a list in a deleted table row"
+                    : ownEndnote
+                      ? OWN_NOTE_MARK
+                      : unseenHeaderCount
+                        ? "a deleted row in a table's header of several rows, whose style formats some of its rows"
+                        : (cellsUnsupported ?? unsupportedVerticalRowOf(cells.filter(({ verticalMerge }) => verticalMerge === undefined)));
             return {
                 cells,
                 deleted,
@@ -3230,7 +3263,12 @@ const readTable = (element: XmlObject, reader: Reader): TableBlock | undefined =
                         ? { height: { value: height, rule: rule === "exact" ? "exact" : "atLeast" } }
                         : {}),
                     header: onOff(rowProperties, "w:tblHeader") === true,
-                    cantSplit: onOff(rowProperties, "w:cantSplit") === true,
+                    // Kept whole as the row says, or else the parts of its table's style for it, or else the style
+                    cantSplit:
+                        (onOff(rowProperties, "w:cantSplit") ??
+                            formatsOf({ row: rowIndex, rows: rows.length, cell: 0, cells: rowCells.length, headerRows }).cantSplit ??
+                            styleKept) === true,
+                    ...(widthBefore === undefined ? {} : { before: widthBefore }),
                 },
             };
         },
@@ -3246,26 +3284,36 @@ const readTable = (element: XmlObject, reader: Reader): TableBlock | undefined =
     }
     const tableCells = read.flatMap(({ cells }) => cells);
     const fits = !fixed && tableCells.some(({ ownWidth }) => ownWidth === undefined);
+    const givenWidth = readTableWidth(properties);
     // Rows with space between their cells of their own have it in place of the table's, at the table's edges too, as a
-    // table with that space has it (word-stops-table-borders.docx TB6c, TB6d). Rows with different space, a row's that is a
-    // share of the table's width, and space of another type, such as `auto`, haven't been seen. A deleted row's doesn't
-    // count, as it takes no room, nor does the space around it (word-tracked-tables.docx MK14h)
+    // table with that space has it (word-stops-table-borders.docx TB6c, TB6d), and rows of different space each their own,
+    // the table's columns as wide as they would be without (word-stops-table-borders2.docx BT5a, BT5b: rows of 2, 5 and 2
+    // points in a table of 2 and of none, of columns given widths, in a table of a width of its own). How wide Word makes
+    // the columns of a table sized to its text, or with no width of its own, of rows of different space, hasn't been seen,
+    // nor a row of none among rows with some, which Word lays out with its borders where neither has them (BT5c). Space of
+    // the type `auto` is none (BT5d, BT5e). A row's space as a share of the table's width hasn't been followed (BT5c), and
+    // a deleted row's doesn't count, as it takes no room, nor does the space around it (word-tracked-tables.docx MK14h)
     const rowSpacings = new Set(kept.map(({ spacing }) => spacing));
     const spacingUnsupported =
         tableSpacing === undefined || rowSpacings.has(undefined)
             ? "space between table cells of a width that isn't in twips"
             : rowSpacings.has("share")
               ? "space between a table row's cells as a share of the table's width"
-              : rowSpacings.size > 1
-                ? "table rows with different space between their cells"
-                : undefined;
-    // The room around each row's and cell's text, from the borders and the space between cells, which every row has the
-    // same of when it is followed
-    const followedSpacing = spacingUnsupported === undefined ? ((kept[0]?.spacing as number | undefined) ?? tableSpacing!) : 0;
-    const geometryOf = (laidOut: typeof read): TableGeometry | string =>
+              : rowSpacings.size > 1 && rowSpacings.has(0)
+                ? "table rows with space between their cells beside rows without"
+                : rowSpacings.size > 1 && (fits || givenWidth.width === undefined)
+                  ? "table rows with different space between their cells, in a table sized to its text or with no width of its own"
+                  : undefined;
+    // The space between each row's cells, when it is followed, and the space the table's columns are sized by: its first
+    // row's
+    const spacingOfRow = (spacing: number | "share" | undefined): number =>
+        spacingUnsupported === undefined && typeof spacing === "number" ? spacing : 0;
+    const followedSpacing = spacingOfRow(kept[0]?.spacing ?? tableSpacing);
+    // The room around each row's and cell's text, from the borders and the space between its cells
+    const geometryOf = (laidOut: typeof read, spacing?: number): TableGeometry | string =>
         tableGeometry(
-            laidOut.map(({ cells }) => ({ cells, spacing: followedSpacing })),
-            { borders: tableBorders, spacing: followedSpacing },
+            laidOut.map(({ cells, spacing: own }) => ({ cells, spacing: spacing ?? spacingOfRow(own) })),
+            tableBorders,
         );
     const spaced = followedSpacing > 0;
     const keptGeometry = geometryOf(kept);
@@ -3290,6 +3338,8 @@ const readTable = (element: XmlObject, reader: Reader): TableBlock | undefined =
               : bordered()
                 ? "a deleted row in a table with borders and space between its cells, at its top or bottom or with borders of its own"
                 : keptGeometry;
+    // The room around each cell as the table's columns are sized by it: with its first row's space between cells in each row
+    const sizingGeometry = rowSpacings.size > 1 && typeof geometry !== "string" ? geometryOf(kept, followedSpacing) : geometry;
     // The rows laid out. The bookmarks before each row and cell start where the text after them does: in the cell after
     // them, or in the next with any text when it has none. Those before a deleted row and its cells, and in its cells,
     // start in the next row laid out. Those after the last, as after a table's last row, aren't placed, so a page
@@ -3308,6 +3358,7 @@ const readTable = (element: XmlObject, reader: Reader): TableBlock | undefined =
             return;
         }
         const placed = typeof geometry === "string" ? undefined : geometry[tableRows.length];
+        const sizing = typeof sizingGeometry === "string" ? undefined : sizingGeometry[tableRows.length];
         const above = tableRows[tableRows.length - 1];
         // eslint-disable-next-line functional/immutable-data
         tableRows.push({
@@ -3315,14 +3366,15 @@ const readTable = (element: XmlObject, reader: Reader): TableBlock | undefined =
             borderTop: placed?.borderTop ?? 0,
             borderBottom: placed?.borderBottom ?? 0,
             ...withoutUndefined({ breakBorder: placed?.breakBorder, breakTop: placed?.breakTop }),
-            cells: cells.map(({ borders: _, margins, gridWidth: __, noWrap: ___, ...cell }, cellIndex) => {
+            cells: cells.map(({ borders: _, margins, gridWidth: __, ...cell }, cellIndex) => {
                 const pending = [...carried, ...cellBookmarks[cellIndex]];
                 const marked = pending.length === 0 ? undefined : startingAtFirst(cell.blocks, pending);
                 carried = marked === undefined ? pending : [];
                 const around = placed?.cells[cellIndex];
                 // A cell's width with the space between cells is as wide as Word sizes its column from, as the table's columns
                 // are narrowed to keep its width (word-table-formats2.docx CS9)
-                const spacingRoom = around === undefined ? 0 : around.left - margins.left + around.right - margins.right;
+                const sizingCell = sizing?.cells[cellIndex];
+                const spacingRoom = sizingCell === undefined ? 0 : sizingCell.left - margins.left + sizingCell.right - margins.right;
                 // A cell merged down from a deleted row starts the merge, as Word lays it out when it is empty (MK11c). What
                 // it does with one with something in it hasn't been seen
                 const orphan =
@@ -3360,7 +3412,7 @@ const readTable = (element: XmlObject, reader: Reader): TableBlock | undefined =
                   ...row,
                   borderTop: 0,
                   borderBottom: 0,
-                  cells: cells.map(({ borders: _, margins: __, gridWidth: ___, noWrap: ____, ...cell }) => cell),
+                  cells: cells.map(({ borders: _, margins: __, gridWidth: ___, ...cell }) => cell),
               }))
         : [];
     const blocks = [
@@ -3375,17 +3427,17 @@ const readTable = (element: XmlObject, reader: Reader): TableBlock | undefined =
     // ignores and its cells' margins (TS5a, TS5b)
     const styleUnsupported = tableStyles.some(
         ({ rowProperties = [], cellProperties = [] }) =>
-            changesLines(rowProperties, IGNORED_STYLE_ROW_PROPERTIES) || changesLines(cellProperties, FOLLOWED_STYLE_CELL_PROPERTIES),
+            changesLines(rowProperties, READ_STYLE_ROW_PROPERTIES) || changesLines(cellProperties, FOLLOWED_STYLE_CELL_PROPERTIES),
     )
         ? "a table style with formatting of its rows or cells"
         : undefined;
-    const givenWidth = readTableWidth(properties);
     // Word evens out the rows of a table whose cells all have widths, or of one laid out fixed, that give a column different
-    // widths, with a width of its own in twips or none (`word-watertight-stops.docx` SP14, `word-table-widths.docx` TW1 to
-    // TW6), and with space between its cells, not laid out fixed (`word-stops-long-words.docx` LW5c). With a share of the
-    // width, space between the cells of one laid out fixed, or a row that starts past the first column (`w:gridBefore`),
-    // how isn't known
-    const evenable = !(spaced && fixed) && givenWidth.share === undefined && read.every(({ edges }) => edges.has(0));
+    // widths, with a width of its own in twips, a share of the width, or none (`word-watertight-stops.docx` SP14,
+    // `word-table-widths.docx` TW1 to TW6, `word-stops-long-words2.docx` LW6d to LW6f), with space between its cells, not
+    // laid out fixed (`word-stops-long-words.docx` LW5c), and with a row that starts past the first column, the width before
+    // it as a cell's (`w:gridBefore`, `w:wBefore`: LW7a, LW7b). Space between the cells of one laid out fixed, and a row
+    // that starts past the first column with no width in twips before it, aren't known
+    const evenable = !(spaced && fixed) && read.every(({ edges, row }) => edges.has(0) || row.before !== undefined);
     const evened = unequal && evenable;
     // And fits a table laid out fixed to its own width in twips, when its rows aren't as wide (TW8, TW10)
     const tableTwips = givenWidth.width;
@@ -3410,11 +3462,13 @@ const readTable = (element: XmlObject, reader: Reader): TableBlock | undefined =
     // one in a table cell, indented or as a share of the width hasn't been seen
     const older = reader.compatibilityMode !== undefined;
     const marginsBeside = older && sized && givenWidth.width === undefined;
-    // How wide Word makes a column of text that runs up or down is known only of Calibri, so how wide a table sized to its
-    // text with one is isn't known, where the text beside it, or the columns of a table sized to its text it is in, depend
-    // on it
+    // How wide Word makes a column of text that runs up or down isn't known in every font, so how wide a table sized to its
+    // text with one is isn't known there, where the text beside it, or the columns of a table sized to its text it is in,
+    // depend on it
     const verticalUnsupported =
-        fits && (float !== undefined || reader.inSizedTable === true) && tableCells.some(({ vertical }) => vertical)
+        fits &&
+        (float !== undefined || reader.inSizedTable === true) &&
+        tableCells.some((cell) => cell.vertical && !isVerticalWidthKnown(cell))
             ? "text that runs up or down a cell of a table sized to its text, in a table cell or that text flows around"
             : undefined;
     const unsupported =
@@ -3432,17 +3486,10 @@ const readTable = (element: XmlObject, reader: Reader): TableBlock | undefined =
         read.find((row) => row.unsupported !== undefined)?.unsupported ??
         unmerged ??
         (fits ? unfitted : unequal && !evened ? "a table whose rows give a column different widths" : undefined) ??
-        // Word wraps the text of a cell that says it doesn't as though it didn't, and fits text to its cell a line to each
-        // paragraph, in a table whose cells all have widths (TS7b, TS8), but sizes a table to its text by them in a way
-        // not yet followed (TS7a)
-        (fits && tableCells.some(({ noWrap }) => noWrap)
-            ? "a table cell whose text doesn't wrap, in a table sized to its text"
-            : undefined) ??
-        (fits && tableCells.some(({ fitText }) => fitText) ? "text fitted to its table cell, in a table sized to its text" : undefined) ??
         verticalUnsupported ??
         spacingUnsupported ??
         (typeof geometry === "string" ? geometry : undefined) ??
-        (indent === undefined ? "a table indented by a share of the width" : undefined) ??
+        (indent === undefined ? "a table indent of a type not yet followed" : undefined) ??
         // Word laid out tables of 25 to 50 times the width they are in as wide as it, and one of 40 times narrower, but one of
         // 45 times past the page (`word-stops-long-words.docx` LW1h, LW1i, LW5a, LW5b, LW5f)
         ((givenWidth.share ?? 0) > 1 ? "a table whose width is a share of more than the width it is in" : undefined) ??

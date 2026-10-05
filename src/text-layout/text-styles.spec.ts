@@ -4,10 +4,12 @@ import { File } from "@file/file";
 import type { IContext, IStylesOptions } from "docx";
 
 import {
+    BORDER_WIDTHS,
     WORD_DEFAULT_STYLES,
     fontOf,
     getTextStyles,
     hasDefaultParagraphSpacing,
+    isArtBorder,
     isEastAsianRun,
     pointsOf,
     readCellMargins,
@@ -17,6 +19,8 @@ import {
     styleChain,
     unknownRunFormatting,
 } from "./text-styles";
+// @ts-expect-error -- Vite reads the schema as text, which TypeScript has no type for
+import wmlSchema from "../../ooxml-schemas/ISO-IEC29500-4_2016/wml.xsd?raw";
 
 const contextOf = (file: File): IContext => ({ file, stack: [] }) as unknown as IContext;
 
@@ -731,6 +735,20 @@ describe("isEastAsianRun", () => {
         expect(isEastAsianRun({ eastAsiaFont: "Calibri", eastAsianLanguage: "ko-KR" })).to.equal(true);
         expect(isEastAsianRun({ eastAsiaFont: "Calibri", eastAsianLanguage: "en-US" })).to.equal(false);
         expect(isEastAsianRun({})).to.equal(false);
+    });
+});
+
+describe("isArtBorder", () => {
+    it("should be whether a style of the schema's borders is an art border's, as every one after its lines but custom is", () => {
+        const values = [
+            .../<xsd:simpleType name="ST_Border">([\s\S]*?)<\/xsd:simpleType>/.exec(wmlSchema)![1].matchAll(/value="(\w+)"/g),
+        ].map(([, value]) => value);
+        // The schema lists its lines first, from nil to inset, then its art borders, from apples, and custom last
+        const lines = values.slice(0, values.indexOf("apples"));
+        expect(lines).to.have.length(27);
+        expect(values.filter(isArtBorder)).to.deep.equal(values.filter((value) => !lines.includes(value) && value !== "custom"));
+        // Each of its lines but nil and none has a width
+        expect(Object.keys(BORDER_WIDTHS).sort()).to.deep.equal(lines.filter((value) => value !== "nil" && value !== "none").sort());
     });
 });
 
