@@ -139,6 +139,10 @@ print("\n== KL1: how much nearer than its width each glyph's next is, kerned, wi
 for name, font, size, setting in probe["measured"]:
     if name.startswith("KL1"):
         _, glyphs = line_of(rf"{name} {setting} ")
+        # Each character of the pairs one glyph, as none of these fonts joins them
+        if len(glyphs) < len(probe["pairs"]):
+            print(f"  {name} {font} {setting}: not found")
+            continue
         kerning = [(glyphs[at + 1]["x"] - glyphs[at]["x"]) / size * 1000 - glyphs[at]["width"] for at in range(len(glyphs) - 1)]
         print(
             f"  {name} {font:22} {setting:24} To {kerning[0]:7.1f}, AV {kerning[11]:7.1f}, VA {kerning[12]:7.1f}, Wa {kerning[22]:7.1f}, "
@@ -152,7 +156,14 @@ starts, at = [], 0
 for word in words:
     starts.append(at)
     at += len(word) + 1
-print("  " + " ".join(f"{glyphs[start]['x'] - glyphs[0]['x']:.2f}" for start in starts) + f", its last glyph at {glyphs[-1]['x'] - glyphs[0]['x']:.2f}")
+if len(glyphs) < len(probe["prose"]):
+    print("  not found")
+else:
+    print(
+        "  "
+        + " ".join(f"{glyphs[start]['x'] - glyphs[0]['x']:.2f}" for start in starts)
+        + f", its last glyph at {glyphs[-1]['x'] - glyphs[0]['x']:.2f}"
+    )
 
 print("\n== DS1, DS2: how far apart the baselines of the probe's lines are, in points, from the line above them")
 for name in ("DS1a", "DS2a", "DS1b", "DS2b"):
