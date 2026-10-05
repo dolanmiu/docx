@@ -653,6 +653,9 @@ describe("readDocument", () => {
                 undefined,
                 { type: "text", text: "ab", font: { size: 5.5 } },
             ]);
+            // A run's attributes, such as Word's revision ids, aren't text in it
+            const withIds = r({ _attr: { "w:rsidR": "00A1" } }, rPr({ "w:eastAsianLayout": { _attr: { "w:combine": 1 } } }), t("ab"));
+            expect(unsupportedOf(withIds)).to.equal(undefined);
             expect(unsupportedOf(layout({ "w:combine": 1, "w:combineBrackets": "round" }))).to.equal("two lines in one");
             expect(unsupportedOf(layout({ "w:combine": 1, "w:combineBrackets": "none" }))).to.equal(undefined);
             expect(unsupportedOf(layout({ "w:combine": 1 }, "漢字"))).to.equal("two lines in one");

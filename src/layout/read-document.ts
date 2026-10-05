@@ -1295,7 +1295,7 @@ const unsupportedFormatOf = (properties: readonly XmlObject[], children: readonl
         const text = children
             .filter((child) => nameOf(child) === "w:t")
             .flatMap((child) => contentOf(child).filter((part) => typeof part === "string"));
-        const shown = children.filter((child) => nameOf(child) !== "w:rPr");
+        const shown = children.filter((child) => nameOf(child) !== "w:rPr" && nameOf(child) !== "_attr");
         return (brackets !== undefined && brackets !== "none") ||
             shown.some((child) => nameOf(child) !== "w:t") ||
             [...text.join("")].some(isEastAsian) ||
