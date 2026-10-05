@@ -6530,6 +6530,10 @@ describe("paginate", () => {
             expect(stopOf([gapped({ width: 80 }, justified)], older)).to.equal(undefined);
             expect(stopOf([gapped({ width: 100, ...framed })], older)).to.equal(reason);
             expect(stopOf([gapped({ width: 70, ...framed })], older)).to.equal(undefined);
+            // Only the room the paragraph's indents leave counts: a gap of 40 inside a left indent of 60 takes no text, and
+            // one of 80 that an indent of 40 narrows to 40 is as narrow as that
+            expect(stopOf([gapped({ width: 140 }, { indentLeft: 60 })], older)).to.equal(undefined);
+            expect(stopOf([gapped({ width: 100 }, { indentLeft: 40 })], older)).to.equal(reason);
         });
 
         it("should stop at a line beside a drawing on a grid that snaps to characters in columns of different widths", () => {

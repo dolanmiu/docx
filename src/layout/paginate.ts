@@ -183,9 +183,15 @@ const OLDER_LEAST_GAP_BESIDE_FRAME = 100;
 
 /**
  * Whether a line's room beside drawings is a gap they cut narrower than Word 2010 and before were seen putting text in, of
- * text aligned as it is
+ * text aligned as it is: `width` of it, the room the paragraph's indents leave in it
  */
-const narrowGap = (span: Span, within: Span, around: readonly PlacedDrawing[], alignment: ParagraphFormat["alignment"]): boolean => {
+const narrowGap = (
+    span: Span,
+    width: number,
+    within: Span,
+    around: readonly PlacedDrawing[],
+    alignment: ParagraphFormat["alignment"],
+): boolean => {
     const beside = (edge: number, at: number): boolean => Math.abs(edge - at) <= TOLERANCE;
     const framed = around.some(
         ({ drawing, keepOut }) => drawing.frame !== undefined && (beside(keepOut.left, span.end) || beside(keepOut.right, span.start)),
@@ -195,7 +201,7 @@ const narrowGap = (span: Span, within: Span, around: readonly PlacedDrawing[], a
         : alignment === undefined || alignment === "left"
           ? OLDER_LEAST_GAP
           : OLDER_LEAST_GAP_ALIGNED;
-    return span.end - span.start < least && (span.start > within.start + TOLERANCE || span.end < within.end - TOLERANCE);
+    return width < least && (span.start > within.start + TOLERANCE || span.end < within.end - TOLERANCE);
 };
 
 // Word's automatic space before and after a paragraph, in points (`word-watertight-text.docx` TX6a, TX6b)
@@ -3782,20 +3788,26 @@ export const paginate = (
             if ("below" in room) {
                 return room;
             }
+            // The room in each gap within the paragraph's indents
+            const rooms = room.spans.map((span, offset) => ({
+                span,
+                inIndents: {
+                    start: Math.max(span.start - left, indentLeft) + (line + offset === 0 ? firstLineIndent : 0),
+                    end: Math.min(span.end - left, within.end - left - indentRight),
+                },
+            }));
             // Word 2010 and before leave a gap beside a frame 1000 twips wide empty, of justified text, where Word 2013 puts
             // words, and put text in wider ones as it does (see `OLDER_LEAST_GAP`). How narrow a gap they leave empty isn't
-            // known
-            if (compatibilityMode !== undefined && room.spans.some((span) => narrowGap(span, within, around, block.format.alignment))) {
+            // known. One the paragraph's indents leave no room in takes no text anyway, and one they narrow is as narrow as
+            // the room they leave
+            const narrow = ({ span, inIndents: { start, end } }: (typeof rooms)[number]): boolean =>
+                end > start + TOLERANCE && narrowGap(span, end - start, within, around, block.format.alignment);
+            if (compatibilityMode !== undefined && rooms.some(narrow)) {
                 stopAt(
                     "a line beside a drawing or frame in a gap narrower than Word was seen putting text in, in a document in compatibility mode",
                 );
             }
-            const spans = room.spans
-                .map((span, offset) => ({
-                    start: Math.max(span.start - left, indentLeft) + (line + offset === 0 ? firstLineIndent : 0),
-                    end: Math.min(span.end - left, within.end - left - indentRight),
-                }))
-                .filter((span) => span.end > span.start + TOLERANCE);
+            const spans = rooms.map(({ inIndents }) => inIndents).filter((span) => span.end > span.start + TOLERANCE);
             const ownRoom = within.end - left - indentRight - (indentLeft + (line === 0 ? firstLineIndent : 0)) > TOLERANCE;
             if (spans.length === 0 && ownRoom) {
                 // The room beside the drawings is outside the paragraph's indents, so the line goes below them, as it does
