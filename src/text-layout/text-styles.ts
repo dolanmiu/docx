@@ -469,6 +469,7 @@ export const readParagraphFormat = (element: unknown): ParagraphFormat => {
         widowControl: onOff(children, "w:widowControl"),
         tabs: readTabs(find(children, "w:tabs")),
         kinsoku: onOff(children, "w:kinsoku"),
+        rightToLeft: onOff(children, "w:bidi"),
         wordWrap: onOff(children, "w:wordWrap"),
         suppressAutoHyphens: onOff(children, "w:suppressAutoHyphens"),
         snapToGrid: onOff(children, "w:snapToGrid"),
@@ -864,7 +865,7 @@ const fontOfSlot = (format: RunFormat, slot: FontSlot): TextFont => {
     if (slot === "latin") {
         return scripted(font, format);
     }
-    const { eastAsiaFont, complexScriptFont, complexScriptSize, complexScriptBold, complexScriptItalic } = format;
+    const { eastAsiaFont, complexScriptFont, complexScriptSize, complexScriptBold, complexScriptItalic, rightToLeft } = format;
     return scripted(
         slot === "eastAsian"
             ? { ...font, font: isEastAsianFont(eastAsiaFont) ? eastAsiaFont : FALLBACK_EAST_ASIAN_FONT }
@@ -874,6 +875,7 @@ const fontOfSlot = (format: RunFormat, slot: FontSlot): TextFont => {
                   size: complexScriptSize,
                   bold: complexScriptBold,
                   italic: complexScriptItalic,
+                  rightToLeft: rightToLeft === true ? true : undefined,
               }),
         format,
     );

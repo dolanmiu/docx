@@ -62,8 +62,12 @@ def main(path):
             while index < len(glyphs) and not is_label(glyphs[index]) and not glyphs[index]["text"] == "A":
                 drawn.append(glyphs[index])
                 index += 1
-            # Not the spaces round it, nor the paragraph's mark
-            copies = [glyph for glyph in drawn if abs(glyph["size"] - SIZE) < 0.5 and not glyph["text"].isspace()]
+            # Not the spaces round it, which Courier New's glyphs map to U+FFFD, nor the paragraph's mark
+            copies = [
+                glyph
+                for glyph in drawn
+                if abs(glyph["size"] - SIZE) < 0.5 and not glyph["text"].isspace() and glyph["text"] != "\ufffd"
+            ]
             if not copies or len(copies) % COPIES != 0:
                 continue
             each = len(copies) // COPIES

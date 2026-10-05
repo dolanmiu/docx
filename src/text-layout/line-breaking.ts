@@ -10,7 +10,7 @@
  *
  * @module
  */
-// cspell:ignore Aptos
+// cspell:ignore Aptos Donaudampf schifffahrtsgesellschaftkapitän
 import { hasLigatures } from "./kerning";
 import { type LineBreakRules, extendsCharacter, findLineBreaks, joinsNext } from "./line-break-rules";
 import {
@@ -260,6 +260,11 @@ export type LaidOutLine = {
     readonly text: string;
     /** How far its text goes from where the line starts, in points, without the spaces at its end */
     readonly textWidth: number;
+    /**
+     * Where the line starts, in points from where the paragraph's lines start without indents, when it isn't at its indents:
+     * on a grid that snaps to characters, at the cell an indent of part of one is rounded up to
+     */
+    readonly start?: number;
     /**
      * The space multiple line spacing adds below the line's text, in points, which Word lets go below the bottom of a page:
      * 20 lines of 699.37 twips go on a page of 13958, the last without its 40.28
@@ -809,7 +814,8 @@ const heightOf = (given: Heights, spacing: LineSpacing | undefined): Pick<LaidOu
  * of the page, as multiple spacing's can: a line of Times New Roman 8 that ends 82 twips below it is on the page, and one
  * of Times New Roman 12 that would end there isn't (G1, G14a). Emphasis marks take their room in the line before it is
  * put on the grid (G11d), and with multiple line spacing too: lines of MS Mincho 10.5 with marks at 1.5 lines are 540
- * twips on a grid of 360 (stops2/word-stops-east-asian.ts GR3). With at least a height, they haven't been seen
+ * twips on a grid of 360 (stops2/word-stops-east-asian.ts GR3), and with at least a height, which is that height: 400 twips
+ * at least 20 points (word-stops-east-asian2.ts GR16d)
  */
 const gridHeightOf = (
     given: Heights,
@@ -820,10 +826,7 @@ const gridHeightOf = (
         return heightOf(given, spacing);
     }
     const own = heightOf(given, undefined);
-    const unsupported =
-        given.marks !== undefined && spacing?.rule === "atLeast"
-            ? "emphasis marks on a line with at least a height of line spacing on a document grid"
-            : (own.unsupported ?? heightOf(given, spacing).unsupported);
+    const { unsupported } = heightOf(given, spacing);
     const gridded = Math.max(1, Math.ceil(own.height / pitch - GRID_ROUNDING)) * pitch;
     const height =
         spacing === undefined ? gridded : Math.max(spacing.rule === "multiple" ? spacing.multiple * pitch : spacing.height, gridded);
@@ -1308,13 +1311,19 @@ const spacedOnGrid = (
 };
 
 // Why a tab on a grid that snaps to characters can't be laid out as Word does, where it can't
-const GRID_TAB = "a tab on a grid that snaps to characters, but for a left one before Chinese, Japanese or Korean text";
+const GRID_TAB =
+    "a tab on a grid that snaps to characters, but for a left one before text, or a right or centred one before Chinese, Japanese or Korean text";
 
-/** Whether the text after a tab starts with a Chinese, Japanese or Korean character, which a grid that snaps to characters puts in its cells */
-const startsWithGridCharacter = (tokens: readonly Token[]): boolean => {
+/**
+ * Whether the text after a tab starts with a word, and whether that starts with a Chinese, Japanese or Korean character,
+ * which a grid that snaps to characters puts in its cells
+ */
+const startOfText = (tokens: readonly Token[]): "grid" | "word" | undefined => {
     const next = tokens.find((token) => token.type !== "marker");
-    const first = next?.type === "word" ? [...textOf(next.pieces)][0] : undefined;
-    return first !== undefined && isGridCharacter(first);
+    if (next?.type !== "word") {
+        return undefined;
+    }
+    return isGridCharacter([...textOf(next.pieces)][0]) ? "grid" : "word";
 };
 
 /**
@@ -1336,6 +1345,95 @@ const withAcross = (items: readonly InlineItem[], measurer: TextMeasurer): reado
         };
     });
 
+/** The two tokens after one, by its index, but for markers */
+const nextTwo = (tokens: readonly Token[], index: number): readonly Token[] => {
+    // eslint-disable-next-line functional/prefer-readonly-type
+    const next: Token[] = [];
+    for (let at = index + 1; at < tokens.length && next.length < 2; at++) {
+        if (tokens[at].type !== "marker") {
+            // eslint-disable-next-line functional/immutable-data
+            next.push(tokens[at]);
+        }
+    }
+    return next;
+};
+
+// The letters of the scripts written right to left
+const RIGHT_TO_LEFT = /[\p{Script=Hebrew}\p{Script=Arabic}\p{Script=Syriac}\p{Script=Thaana}\p{Script=Nko}]/u;
+
+/**
+ * Whether pieces of text start, or end, with a right-to-left letter: the first, or last, of their letters is Hebrew's,
+ * Arabic's or another right-to-left script's. Text with no letters is taken as left to right
+ */
+const rightToLeftAt = (pieces: readonly Piece[], edge: "start" | "end"): boolean => {
+    const text = pieces.map(({ text: piece }) => piece).join("");
+    if (!RIGHT_TO_LEFT.test(text)) {
+        return false;
+    }
+    const letters = [...text].filter((character) => /\p{L}/u.test(character));
+    return RIGHT_TO_LEFT.test(edge === "start" ? letters[0] : letters[letters.length - 1]);
+};
+
+/**
+ * What the space between two words is at the end of a line, in a left-to-right paragraph, as Word breaks it: room the
+ * line has for it, when it is in a right-to-left run between right-to-left words, as a word of Arabic that fits only
+ * without it goes on to the next line, where Word puts those that fit with it (stops2/word-stops-arabic.ts AR2e, AR2h,
+ * AR2i), or hanging past the end of the line, as it does between left-to-right words, and between right-to-left and
+ * left-to-right ones, either way, in runs that aren't right to left: Hebrew's last letters, and a label before the
+ * next, end lines a space short of the margin (stops2/word-stops-more-widths.ts W139, W278). Word breaks the lines of a
+ * right-to-left paragraph where it breaks those of a left-to-right one (scripts/layout-probes/word-unicode.ts R2, R8). Where
+ * it hasn't been seen, it is unknown: in a right-to-left run beside left-to-right text, and between right-to-left words
+ * in a run that isn't right to left
+ */
+const spaceAtEnd = (before: readonly Piece[], space: readonly Piece[], after: readonly Piece[]): "room" | "hanging" | "unknown" => {
+    const [end, start] = [rightToLeftAt(before, "end"), rightToLeftAt(after, "start")];
+    if (!end && !start) {
+        return "hanging";
+    }
+    const inRightToLeftRun = space.some(({ font }) => font.rightToLeft === true);
+    return end && start ? (inRightToLeftRun ? "room" : "unknown") : inRightToLeftRun ? "unknown" : "hanging";
+};
+
+/**
+ * A paragraph's indents on a grid that snaps to characters, whose lines start on its cells: the cell an indent of part of
+ * one ends in, as Word rounds it up, and a hanging indent's other lines that many more cells in, rounded up too. On a grid
+ * of cells of 225.65 twips, a paragraph indented 1.2, 1.5 or 1.7 characters, or 300 twips, starts its lines at the 3rd
+ * cell, one with a first line indent of half a character starts its first line at the 2nd and the others at the 1st, and
+ * one indented 2 characters and hanging half a character starts its first line at the 3rd and the others at the 4th, past
+ * its left indent (scripts/layout-probes/stops2/word-stops-east-asian.ts GR6, word-stops-east-asian2.ts GR14a to GR14e). A
+ * right indent of part of a cell leaves the line the cells before it, as the cells that fit do (GR14f). It says why when
+ * Word's way with them isn't known: a first line indent of part of a cell beside a left indent of part of one, which may
+ * be rounded together or apart, and a line that starts before the margin.
+ */
+const indentsOnCells = (
+    format: ParagraphFormat,
+    cell: number | undefined,
+): { readonly format: ParagraphFormat; readonly rounded?: boolean; readonly unsupported?: string } => {
+    const { indentLeft = 0, firstLineIndent = 0 } = format;
+    const whole = (length: number): boolean =>
+        cell === undefined || Math.abs(length / cell - Math.round(length / cell)) <= TOLERANCE / cell;
+    if (cell === undefined || (whole(indentLeft) && whole(firstLineIndent))) {
+        return { format };
+    }
+    const cells = (length: number): number => (whole(length) ? Math.round(length / cell) : Math.ceil(length / cell)) * cell;
+    const first = indentLeft + firstLineIndent;
+    if (Math.min(indentLeft, first) < -TOLERANCE) {
+        return { format, unsupported: "an indent of part of a character before the margin on a grid that snaps to characters" };
+    }
+    if (firstLineIndent < 0) {
+        const hanging = cells(-firstLineIndent);
+        return { format: { ...format, indentLeft: cells(first) + hanging, firstLineIndent: -hanging }, rounded: true };
+    }
+    if (!whole(indentLeft) && !whole(firstLineIndent)) {
+        return {
+            format,
+            unsupported:
+                "a first line indent of part of a character beside a left indent of part of one on a grid that snaps to characters",
+        };
+    }
+    return { format: { ...format, indentLeft: cells(indentLeft), firstLineIndent: cells(first) - cells(indentLeft) }, rounded: true };
+};
+
 /**
  * Breaks a paragraph into lines, as Word breaks it.
  *
@@ -1345,7 +1443,7 @@ export const layoutLines = (
     paragraphItems: readonly InlineItem[],
     {
         width,
-        format = {},
+        format: givenFormat = {},
         tabStops = [],
         defaultTabStop = DEFAULT_TAB_STOP,
         markFont = {},
@@ -1357,7 +1455,6 @@ export const layoutLines = (
         compatibilityMode,
     }: LineLayoutOptions,
 ): readonly LaidOutLine[] => {
-    const { indentLeft = 0, indentRight = 0, firstLineIndent = 0, lineSpacing, lineSpacingFrom, alignment } = format;
     const items = withAcross(paragraphItems, measurer);
     const { linePitch, characterSpace, characterPitch, characterRoom } = grid;
     /**
@@ -1374,6 +1471,10 @@ export const layoutLines = (
         const column = typeof room === "number" ? room : room.end;
         return column / Math.max(1, Math.floor(column / characterRoom + GRID_ROUNDING));
     };
+    // Each line starts on the grid's cells, with its indents rounded up to them
+    const onCells = indentsOnCells(givenFormat, cellOn(0));
+    const { format } = onCells;
+    const { indentLeft = 0, indentRight = 0, firstLineIndent = 0, lineSpacing, lineSpacingFrom, alignment } = format;
     // Whether the paragraph is on a grid that snaps to characters
     const snapping = characterPitch !== undefined || characterRoom !== undefined;
     // A grid of lines and characters adds its space after each character of the text on it, Chinese, Japanese and Korean
@@ -1395,9 +1496,24 @@ export const layoutLines = (
      * twips, and "abc de" between ideographs 3 cells (scripts/layout-probes/word-grid.ts CC1 to CC4, CD1 to CD4). Text in a
      * run that doesn't snap to the grid is as wide as it is (CC5)
      */
-    const snapped = (state: Pick<LineState, "position" | "latin">, pieces: readonly Piece[]): Pick<LineState, "position" | "latin"> => {
+    const snapped = (
+        state: Pick<LineState, "position" | "latin">,
+        pieces: readonly Piece[],
+        kern = 0,
+    ): Pick<LineState, "position" | "latin"> => {
         let { position, latin } = state;
-        for (const { text, font } of pieces) {
+        // The other text is kerned, with the text before it by `kern` and between its letters as elsewhere, and takes the cells
+        // it needs kerned: "GR16e AVATAR Toyota WAVE Yo Te LT kerned text" in Calibri 11, kerned from a point, 20 cells of
+        // 225.65, 4349.8 twips wide kerned, where 21 hold it as it is without (stops2/word-stops-east-asian2.ts GR16e)
+        let lead = kern;
+        // The letter before, which a letter is kerned with across pieces measured together, as `widthOf` measures them
+        let before: string | undefined;
+        let beforeFont: TextFont | undefined;
+        for (const { text, font, apart } of pieces) {
+            if (beforeFont === undefined || apart === true || !sameFont(beforeFont, font)) {
+                before = undefined;
+            }
+            beforeFont = font;
             for (const character of text) {
                 const characterWidth = measurer.measureWidth(character, font);
                 if (font.snapToGrid === false) {
@@ -1407,36 +1523,47 @@ export const layoutLines = (
                     position = (latin ? latin.start + cellsOf(latin.width) : position) + cellsOf(characterWidth);
                     latin = undefined;
                 } else {
-                    latin = { start: latin?.start ?? position, width: (latin?.width ?? 0) + characterWidth };
+                    const kerned =
+                        before !== undefined && isKerned(font)
+                            ? measurer.measureWidth(before + character, font) - measurer.measureWidth(before, font)
+                            : characterWidth;
+                    latin = { start: latin?.start ?? position, width: (latin?.width ?? 0) + lead + kerned };
                     position = latin.start + cellsOf(latin.width);
                 }
+                lead = 0;
+                before = font.snapToGrid === false || isGridCharacter(character) ? undefined : character;
             }
         }
         return { position, latin };
     };
-    // Where each line starts is on the grid's cells, with indents of a whole number of them
-    const firstCell = cellOn(0);
-    const offCells =
-        firstCell !== undefined &&
-        [indentLeft, indentLeft + firstLineIndent].some(
-            (start) => Math.abs(start / firstCell - Math.round(start / firstCell)) > TOLERANCE / firstCell,
-        );
+    /** How far text after a tab, up to the next, goes on a grid that snaps to characters, from the start of one of its cells */
+    const cellsAfterTab = (tokens: readonly Token[]): number =>
+        textAfterTab(tokens).reduce<Pick<LineState, "position" | "latin">>(
+            (state, token) =>
+                token.type === "box"
+                    ? { position: state.position + cellsOf(token.width) }
+                    : token.type === "word" || token.type === "space"
+                      ? snapped(state, token.pieces)
+                      : state,
+            { position: 0 },
+        ).position;
     // Word kerns text on a grid of lines and characters, and adds the grid's space after each character as well: "AVATAR
     // Toyota WAVE" and the like in Calibri 11, kerned from a point, on a grid adding 1 twip, are 4172 twips, as wide as
-    // kerned and 44 twips more (stops2/word-stops-east-asian.ts GR5). Whether it kerns on a grid that snaps to characters,
-    // which measures the other text a cell at a time, and whether it joins letters into ligatures on either, hasn't been
-    // seen
+    // kerned and 44 twips more (stops2/word-stops-east-asian.ts GR5), and on a grid that snaps to characters too (see
+    // `snapped`). Whether it joins letters into ligatures on either hasn't been seen
     const shapedOnGrid = items.some(
         (item) =>
-            item.type === "text" &&
-            item.font.snapToGrid !== false &&
-            ((snapping && shaped(item.font)) || (characterSpace !== undefined && hasLigatures(item.font))),
+            item.type === "text" && item.font.snapToGrid !== false && (snapping || characterSpace !== undefined) && hasLigatures(item.font),
     )
-        ? "ligatures on a document grid of characters, or kerning on one that snaps to characters"
+        ? "ligatures on a document grid of characters"
         : undefined;
-    const unknownOnGrid = offCells
-        ? "an indent of part of a character on a grid that snaps to characters"
-        : (spaced?.unsupported ?? shapedOnGrid);
+    const unknownOnGrid =
+        onCells.unsupported ??
+        (onCells.rounded && items.some((item) => item.type === "tab")
+            ? "a tab in a paragraph indented part of a character on a grid that snaps to characters"
+            : undefined) ??
+        spaced?.unsupported ??
+        shapedOnGrid;
     // How tall a line as tall as the paragraph's mark is, measured only where it counts, as a layout stops at a mark in a
     // font the measurer doesn't know
     let markHeight: number | undefined;
@@ -1711,6 +1838,7 @@ export const layoutLines = (
                 ...(breakAfter ? { breakAfter } : {}),
                 text: state.text,
                 textWidth: Math.max(0, state.end - state.start),
+                ...(onCells.rounded && roomOf(lines.length) === undefined ? { start: state.start } : {}),
                 ...(unsupported === undefined ? {} : { unsupported }),
             });
         };
@@ -1761,7 +1889,10 @@ export const layoutLines = (
          * Puts a word or picture on the line, or on the next, or breaks it across lines. A word is kerned with the text
          * before it on the line by `kern`, unless it starts the next line
          */
-        const placeWord = (token: Extract<Token, { readonly type: "word" | "box" }>, kern = 0): void => {
+        const placeWord = (token: Extract<Token, { readonly type: "word" | "box" }>, kern = 0, after = 0, unsureAfter = false): void => {
+            // On a grid that snaps to characters the kerning with the text before is in the cells the word takes, after the
+            // other text on the line it is kerned with
+            const kernOn = (state: LineState): number => (state.latin === undefined ? 0 : kern);
             /** How wide the token is on the line, which on a grid that snaps to characters depends on the text before it */
             const widthOn = (state: LineState): number =>
                 token.type === "box"
@@ -1770,7 +1901,7 @@ export const layoutLines = (
                         : cellsOf(token.width)
                     : !snapping
                       ? widthOf(token.pieces, measurer)
-                      : snapped(state, token.pieces).position - state.position;
+                      : snapped(state, token.pieces, kernOn(state)).position - state.position;
             let tokenWidth = widthOn(line);
             // A word in a border starts its box, unless it goes on from the text before it, and on the next line it starts
             // it again: a bordered run that goes on to the next line starts it 90 twips in, for a border of half a point 4
@@ -1778,23 +1909,34 @@ export const layoutLines = (
             // last word, whether the box goes on to the next line or not: such a word 70 twips short of the end of the line
             // goes on to the next, and one 110 short stays (word-run-formatting2.ts RF11)
             const leadOf = (state: LineState, wrapped = false): number =>
-                (token.type === "word" ? roomBetween(state.border, firstBorder(token.pieces)) : 0) + (wrapped ? 0 : kern);
+                (token.type === "word" ? roomBetween(state.border, firstBorder(token.pieces)) : 0) + (wrapped || snapping ? 0 : kern);
             const boxEnd = token.type === "word" ? (lastBorder(token.pieces)?.room ?? 0) : 0;
-            const needs = leadOf(line) + tokenWidth + boxEnd;
+            const needs = leadOf(line) + tokenWidth + boxEnd + (unsureAfter ? 0 : after);
+            // A word that fits only without the space after it, where whether Word lets that space hang past the end of the
+            // line isn't known
+            if (
+                unsureAfter &&
+                line.position + needs <= endOf(line) + TOLERANCE &&
+                line.position + needs + after > endOf(line) + TOLERANCE
+            ) {
+                line = {
+                    ...line,
+                    unsupported:
+                        line.unsupported ??
+                        "a word beside right-to-left text that fits on its line only without the space after it, which Word hasn't been seen breaking",
+                };
+            }
             const hyphens = token.type === "word" ? (token.hyphens ?? []).filter(({ at }) => at > 0 && at < lengthOf(token.pieces)) : [];
             const skipped = skipRooms(needs, hyphens.length > 0);
             // A justified line Word can squeeze the word onto takes it whole, as it does a word without soft hyphens: at its
             // spaces 3% to 20% narrower (scripts/layout-probes/word-breaks-and-tabs.ts SH1a to SH1e)
             const squeezedIn = squeezes && line.started && squeezesIn(line, needs);
             if (token.type === "word" && hyphens.length > 0 && !squeezedIn && line.position + needs > endOf(line) + TOLERANCE) {
-                // Where Word breaks a word at a soft hyphen on a grid that snaps to characters hasn't been seen. One that fits its
-                // line it leaves whole there, as elsewhere (stops2/word-stops-east-asian.ts GR7a)
-                if (snapping) {
-                    line = {
-                        ...line,
-                        unsupported: line.unsupported ?? "a soft hyphen at the end of a line on a grid that snaps to characters",
-                    };
-                }
+                // On a grid that snaps to characters too, Word leaves a word with soft hyphens that fits its line whole, and
+                // breaks one that doesn't at its last soft hyphen whose part fits, with the hyphen, in the cells left, and the
+                // rest of it takes as many cells as it needs on the next line, with the text after it: "Donaudampf-" in the 6
+                // cells after 33, and "schifffahrtsgesellschaftkapitän " 12 at the start of the next (stops2/word-stops-east-asian.ts
+                // GR7a, word-stops-east-asian2.ts GR16a)
                 // With automatic hyphenation, Word breaks the word where its dictionary does too, after its last soft hyphen
                 // that fits or before its first (scripts/layout-probes/word-hyphenation.ts HY8a, HY8b)
                 if (line.started && mayHyphenate(line, token, leadOf(line))) {
@@ -1802,7 +1944,7 @@ export const layoutLines = (
                 }
                 const rest = breakAtHyphen(token, hyphens, kern);
                 if (rest !== undefined) {
-                    placeWord(rest);
+                    placeWord(rest, 0, after, unsureAfter);
                     return;
                 }
                 if (line.tabsOnly === true) {
@@ -1816,7 +1958,7 @@ export const layoutLines = (
                 if (line.started) {
                     // No part of it fits with a hyphen: it goes on to the next line, where it may break again
                     line = wrap(line);
-                    placeWord(token);
+                    placeWord(token, 0, after, unsureAfter);
                     return;
                 }
                 // Not even its first part fits on a line of its own: Word breaks it after the last character that fits, as it
@@ -1835,11 +1977,11 @@ export const layoutLines = (
             if (token.type === "box" && token.unbroken !== undefined && beyond) {
                 line = { ...line, unsupported: line.unsupported ?? token.unbroken };
             }
-            // On a grid that snaps to characters Word doesn't squeeze a justified line, nor stretch its spaces: "was" ends the
-            // first line of a justified paragraph of Latin words, with its spaces as wide as they are, and "made", which
-            // fits squeezed, starts the next (stops2/word-stops-east-asian.ts GR8). A distributed line there hasn't been
-            // seen
-            const neverSqueezed = snapping && alignment === "justified";
+            // On a grid that snaps to characters Word doesn't squeeze a justified or distributed line, nor stretch its spaces:
+            // "was" ends the first line of a justified paragraph of Latin words, with its spaces as wide as they are, and
+            // "made", which fits squeezed, starts the next, and "lighthouse" goes on to the last line of a distributed one
+            // it fits on the line before squeezed (stops2/word-stops-east-asian.ts GR8, word-stops-east-asian2.ts GR16b)
+            const neverSqueezed = snapping && (alignment === "justified" || alignment === "distributed");
             if (overflows && !neverSqueezed && unsure(line, needs)) {
                 line = { ...line, unknown: true };
             }
@@ -1847,7 +1989,10 @@ export const layoutLines = (
             // JU2)
             const squeezable = overflows && !line.unknown && !neverSqueezed && squeezesIn(line, needs);
             if (squeezable && snapping) {
-                line = { ...line, unsupported: "a distributed line on a grid that snaps to characters that only fits squeezed" };
+                line = {
+                    ...line,
+                    unsupported: "a line justified for Thai or with a kashida on a grid that snaps to characters that only fits squeezed",
+                };
             }
             const squeezed = squeezable && !snapping;
             // Word squeezes a word onto a justified line rather than hyphenate it (HY4b), but hasn't been seen choosing between
@@ -1928,7 +2073,7 @@ export const layoutLines = (
                 const text = token.type === "word" ? textOf(token.pieces) : (token.text ?? "");
                 line = {
                     ...line,
-                    ...(snapping && token.type === "word" ? { latin: snapped(line, token.pieces).latin } : {}),
+                    ...(snapping && token.type === "word" ? { latin: snapped(line, token.pieces, kernOn(line)).latin } : {}),
                     position: line.position + tokenWidth,
                     end: line.position + tokenWidth,
                     text: line.text + text,
@@ -2038,7 +2183,7 @@ export const layoutLines = (
                     ...line,
                     ...(!snapping
                         ? { position: line.position + roomBetween(line.border, firstBorder(token.pieces)) + kerning[index] + spaces }
-                        : snapped(line, token.pieces)),
+                        : snapped(line, token.pieces, line.latin === undefined ? 0 : kerning[index])),
                     text: line.text + textOf(token.pieces),
                     spaces: line.started ? line.spaces + spaces : 0,
                     spaceCount: line.started ? line.spaceCount + lengthOf(token.pieces) : 0,
@@ -2066,16 +2211,12 @@ export const layoutLines = (
                 (token.type === "tab" && token.font.border !== undefined && token.font.border.key === line.border?.key)
                     ? line
                     : { ...line, position: line.position + roomBetween(line.border, undefined), border: undefined };
-            // On a grid that snaps to characters, a picture in the line after Chinese, Japanese or Korean text, or at the start
-            // of a line, takes as many of the grid's cells as it needs: one 300 twips wide takes 2 of 225.65 (see
-            // `placeWord`). One after other text, whose cells it may share, and an equation, haven't been seen
-            if (snapping && token.type === "box" && (line.latin !== undefined || token.descent !== undefined)) {
-                line = {
-                    ...line,
-                    unsupported:
-                        line.unsupported ??
-                        "an equation, or a picture after text other than Chinese, Japanese or Korean, on a grid that snaps to characters",
-                };
+            // On a grid that snaps to characters, a picture in the line takes as many of the grid's cells as it needs, after
+            // the cells of the text before it: one 300 twips wide takes 2 of 225.65 (see `placeWord`), after ideographs, at
+            // the start of a line, and after Latin text, which takes cells of its own, "GR16f abc" 4 before it
+            // (stops2/word-stops-east-asian.ts GR10b, word-stops-east-asian2.ts GR16f). An equation hasn't been seen
+            if (snapping && token.type === "box" && token.descent !== undefined) {
+                line = { ...line, unsupported: line.unsupported ?? "an equation on a grid that snaps to characters" };
             }
             if (snapping && token.type !== "word") {
                 line = { ...line, latin: undefined };
@@ -2163,20 +2304,32 @@ export const layoutLines = (
                     // The tab moves to a stop on the next line
                     line = wrap(line);
                 }
+                // Whether the text after the tab starts with a word, and that with a Chinese, Japanese or Korean character
+                const starting = startOfText(rest);
+                /** Whether the text at a stop takes its cells on a grid that snaps to characters, wherever they are */
+                const inCells = (at: NonNullable<typeof stop>): boolean =>
+                    snapping && starting === "grid" && (at.alignment === "right" || at.alignment === "center");
                 /**
                  * Where the text after the tab starts at a stop, however much the spaces before it are squeezed. On a grid that
-                 * snaps to characters, Chinese, Japanese or Korean text after a left stop starts at the next of the grid's
-                 * cells: after a stop at 3000 twips, on a grid of cells of 225.65, at 3159, the 14th (stops2/word-stops-east-asian.ts
-                 * GR10a). Other text after one, and text at a stop of another alignment, haven't been seen there
+                 * snaps to characters, text after a left stop starts at the next of the grid's cells: Chinese, Japanese or Korean
+                 * text after a stop at 3000 twips, on a grid of cells of 225.65, at 3159, the 14th, and Latin words too
+                 * (stops2/word-stops-east-asian.ts GR10a, word-stops-east-asian2.ts GR16c). Chinese, Japanese or Korean text after
+                 * a right or centred stop takes its cells, which end at the stop, or are centred on it, wherever that puts them:
+                 * 6 ideographs at a right stop at 6000 start at 4646.1, and at a centred one at 4000 at 3323.1 (GR16c). Other
+                 * text at those, and text at a decimal stop, haven't been seen there
                  */
                 const startAt = (
                     at: NonNullable<typeof stop>,
                     { position: from, border }: LineState,
                 ): { readonly lineUp?: number; readonly position: number } => {
                     const shifted = shiftAt(at.alignment, rest, measurer, border);
-                    const stopped = Math.max(from, at.position - (shifted ?? widthAfterTab(rest, measurer)));
+                    const textWidth = inCells(at) ? cellsAfterTab(rest) : (shifted ?? widthAfterTab(rest, measurer));
+                    const stopped = Math.max(from, at.position - (inCells(at) && at.alignment === "center" ? textWidth / 2 : textWidth));
                     const cell = cellOn(lines.length);
-                    return { lineUp: shifted, position: cell === undefined ? stopped : Math.ceil(stopped / cell - GRID_ROUNDING) * cell };
+                    return {
+                        lineUp: shifted,
+                        position: cell === undefined || inCells(at) ? stopped : Math.ceil(stopped / cell - GRID_ROUNDING) * cell,
+                    };
                 };
                 // A word after a tab goes with it: one that doesn't fit after the tab's stop takes the tab on to the next line
                 // with it, from the text before it, to the stop there, where it breaks after the last character that fits:
@@ -2232,7 +2385,7 @@ export const layoutLines = (
                 line = { ...place(line), ...(pastIndent ? { pastIndent } : {}) };
                 const { lineUp, position } = startAt(stop, line);
                 const misaligned = lineUp === undefined ? "text at a decimal tab stop that Word hasn't been seen lining up" : undefined;
-                if (snapping && (stop.alignment !== "left" || !startsWithGridCharacter(rest))) {
+                if (snapping && !inCells(stop) && (stop.alignment !== "left" || starting === undefined)) {
                     line = {
                         ...line,
                         unsupported: line.unsupported ?? GRID_TAB,
@@ -2255,7 +2408,15 @@ export const layoutLines = (
                 };
                 continue;
             }
-            placeWord(token, kerning[index]);
+            // The space after a word at the end of a line, beside right-to-left text in a left-to-right paragraph: taking
+            // room on the line, when it is between right-to-left words in a right-to-left run, or hanging past its end
+            const [space, nextWord] = token.type === "word" && format.rightToLeft !== true ? nextTwo(tokens, index) : [];
+            const spaceAt =
+                token.type === "word" && space?.type === "space" && nextWord?.type === "word"
+                    ? spaceAtEnd(token.pieces, space.pieces, nextWord.pieces)
+                    : "hanging";
+            const spaceWidth = spaceAt !== "hanging" && space?.type === "space" ? widthOf(space.pieces, measurer) : 0;
+            placeWord(token, kerning[index], spaceWidth, spaceAt === "unknown");
         }
 
         if (!end) {

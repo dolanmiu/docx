@@ -199,6 +199,18 @@ describe("measureTextWidth", () => {
         );
     });
 
+    it("should measure Arabic's letters in the forms Word joins them in, in the fonts whose forms Word's PDF shows (stops2/word-stops-arabic.ts)", () => {
+        const thousandths = (text: string, font: string, bold = false): number => measureTextWidth(text, { font, size: 10, bold }) * 100;
+        // cspell:disable
+        // Beh initial and lam-alef final in Arial, 244.13 and 600.57 thousandths of an em, and as one word with a space
+        expect(thousandths("بلا", "Arial")).to.be.closeTo(244.1 + 600.6, 1e-9);
+        expect(thousandths("بلا بلا", "Arial")).to.be.closeTo(2 * (244.1 + 600.6) + 278, 1e-9);
+        // Courier New's all 600, Cambria's as Times New Roman's
+        expect(thousandths("بببب", "Courier New")).to.be.closeTo(2400.6, 1e-9);
+        expect(thousandths("بب", "Cambria", true)).to.equal(thousandths("بب", "Times New Roman", true));
+        // cspell:enable
+    });
+
     it("should move tabs to the next half inch from where the text starts", () => {
         expect(measureTextWidth("\t")).to.equal(36);
         expect(measureTextWidth("\t", {}, 10)).to.equal(26);
@@ -237,8 +249,16 @@ describe("unknownCharacter", () => {
         // Franklin Gothic Book's Hebrew, which Word draws in Arial, whose line gap could make the line taller than its own,
         // which no Word PDF has shown
         expect(unknownCharacter("a\u05d0", { font: "Franklin Gothic Book" })).to.equal("\u05d0");
-        // Arabic and Devanagari, which Word joins into forms of other widths, but for their marks, which take no room
+        // Arabic and Devanagari, which Word joins into forms of other widths, but for their marks, which take no room, and
+        // Arabic's letters in the fonts whose forms Word's PDF shows, not spaced out, nor in italic
         expect(unknownCharacter("a\u0628", { font: "Calibri" })).to.equal("\u0628");
+        expect(unknownCharacter("a\u0640", { font: "Calibri" })).to.equal("\u0640");
+        expect(unknownCharacter("a\u0628\u0640\u06cc", { font: "Arial" })).to.equal(undefined);
+        expect(unknownCharacter("a\u0628", { font: "Times New Roman", bold: true })).to.equal(undefined);
+        expect(unknownCharacter("a\u0628", { font: "Arial", italic: true })).to.equal("\u0628");
+        expect(unknownCharacter("a\u0628", { font: "Arial", characterSpacing: 1 })).to.equal("\u0628");
+        // An Arabic letter the widths don't have
+        expect(unknownCharacter("\u0671", { font: "Arial" })).to.equal("\u0671");
         expect(unknownCharacter("a\u0915", { font: "Arial" })).to.equal("\u0915");
         expect(unknownCharacter("a\u064e", { font: "Calibri" })).to.equal(undefined);
         // Their digits, which Word joins to nothing, but for those of Cambria and Times New Roman in Kohinoor Devanagari
@@ -613,6 +633,16 @@ describe("kerning and ligatures", () => {
     });
 
     it("should say where Word's kerning or ligatures aren't known, so a layout stops there", () => {
+        // Arabic letters side by side, which Word kerns in Arial, Times New Roman and Cambria however the text asks
+        // (stops2/word-stops-more-widths.ts W), but not in Courier New, nor a letter alone
+        // cspell:disable
+        expect(unknownShaping("بلا", { font: "Arial", size: 10 })).to.equal(
+            "Arabic letters side by side, which Word kerns by pairs not yet known",
+        );
+        expect(unknownShaping("بلا", { font: "Courier New" })).to.equal(undefined);
+        expect(unknownShaping("ب و", { font: "Times New Roman" })).to.equal(undefined);
+        expect(unknownShaping("بلا", { font: "Calibri" })).to.equal(undefined);
+        // cspell:enable
         expect(unknownShaping("To", calibri({ kerning: 1 }))).to.equal(undefined);
         expect(unknownShaping("office", calibri({ ligatures: "standard" }))).to.equal(undefined);
         // Text with no font is in Times New Roman, which Word kerns

@@ -10,6 +10,7 @@
  * @module
  */
 // cspell:ignore caladea Aptos
+import { type ArabicFace, arabicFaceOf, isJoinedLetter, joinedWidthsOf, unknownArabicKerning } from "./arabic-shaping";
 import { FALLBACK_FACES, FONT_WIDTHS, FONT_WIDTH_RANGES, type FontWidths } from "./font-widths";
 import { type FaceShaping, type Glyph, hasLigatures, joinLetters, kerningBetween, rulesOf, shapingOf } from "./kerning";
 import { FALLBACK_FONTS, MORE_WIDTHS, MORE_WIDTH_RANGES } from "./more-widths";
@@ -58,6 +59,8 @@ export type TextFont = {
      * measurer leaves to the layout of its lines
      */
     readonly snapToGrid?: false;
+    /** Whether it is in a right-to-left run (`w:rtl`), which changes where Word breaks a line at a space beside it */
+    readonly rightToLeft?: boolean;
     /**
      * Whether it is a list's number, or the space or tab that follows it, which take up less of their line than text: a
      * number only the room above the baseline, and what follows it none
@@ -202,6 +205,8 @@ export type ParagraphFormat = {
     readonly tabs?: readonly TabStopSetting[];
     /** Whether Word's East Asian rules keep characters from starting or ending its lines (`w:kinsoku`). Default is on */
     readonly kinsoku?: boolean;
+    /** Whether the paragraph is right to left (`w:bidi`) */
+    readonly rightToLeft?: boolean;
     /** Whether its lines break between words (`w:wordWrap`), or, when off, anywhere in the words of East Asian runs */
     readonly wordWrap?: boolean;
     /** Whether Word's automatic hyphenation leaves its words whole (`w:suppressAutoHyphens`) */
@@ -277,7 +282,8 @@ const MORE_CHARACTER_INDEX: ReadonlyMap<number, number> = new Map(
 );
 
 // Arabic, whose letters Word joins into forms of other widths, and Devanagari, whose letters it joins and reorders, which
-// aren't measured, but for their digits and Devanagari's full stops, which it joins to nothing (see `more-widths.ts`)
+// aren't measured, but for their digits and Devanagari's full stops, which it joins to nothing (see `more-widths.ts`), and
+// Arabic's letters in the fonts whose forms' widths Word's PDF has (see `arabic-widths.ts`)
 const JOINED_SCRIPT = /[\p{Script=Arabic}\p{Script=Devanagari}]/u;
 
 // The digits the tables write widths in, two to a width
@@ -606,11 +612,25 @@ const lineSizeOf = (font: TextFont): number => font.lineSize ?? sizeOf(font);
  * are measured as, or all of a monospaced one's as half an em or an em, and other fonts with their own widths, or those of
  * the most similar font in the table
  */
-const measuresOf = (font: TextFont): FaceWidths & { readonly more: MoreFace | undefined; readonly monospaced: boolean } => {
+const measuresOf = (
+    font: TextFont,
+): FaceWidths & { readonly more: MoreFace | undefined; readonly arabic: ArabicFace | undefined; readonly monospaced: boolean } => {
     const eastAsian = eastAsianFontOf(font.font ?? DEFAULT_FONT);
     const measured = { ...font, font: eastAsian?.latin ?? font.font };
-    return { ...faceOf(measured), more: moreFaceOf(measured), monospaced: eastAsian?.monospaced === true };
+    return {
+        ...faceOf(measured),
+        more: moreFaceOf(measured),
+        arabic: eastAsian === undefined ? arabicFaceOf(widthsOf(measured.font).name, font.bold === true, font.italic === true) : undefined,
+        monospaced: eastAsian?.monospaced === true,
+    };
 };
+
+/**
+ * The widths of the letters of text Word joins, Arabic's, by the index of each among its characters, in the forms Word
+ * joins them in, where its face's are known (see `arabic-shaping.ts`)
+ */
+const joinedIn = (characters: readonly string[], arabic: ArabicFace | undefined): ReadonlyMap<number, number> | undefined =>
+    arabic !== undefined && characters.some(isJoinedLetter) ? joinedWidthsOf(characters, arabic) : undefined;
 
 /**
  * The first character of text whose width in its font isn't known, so isn't what Word lays out: one of the tables'
@@ -622,11 +642,16 @@ const measuresOf = (font: TextFont): FaceWidths & { readonly more: MoreFace | un
  * characters the tables don't have, as an average letter.
  */
 export const unknownCharacter = (text: string, font: TextFont = {}): string | undefined => {
-    const { widths, more, monospaced } = measuresOf(font);
+    const { widths, more, arabic, monospaced } = measuresOf(font);
+    // Arabic's letters in its fonts' forms, but spaced out, which Word hasn't been seen doing with joined letters
+    const joined = arabic !== undefined && (font.characterSpacing ?? 0) === 0;
     return [...text].find((character) => {
         const code = character.codePointAt(0)!;
         const index = CHARACTER_INDEX.get(code);
         const moreIndex = MORE_CHARACTER_INDEX.get(code);
+        if (isJoinedLetter(character) && !monospaced) {
+            return !joined;
+        }
         if (monospaced || (index === undefined && moreIndex === undefined)) {
             return isPrivate(code) || (!monospaced && JOINED_SCRIPT.test(character) && !takesNoRoom(character));
         }
@@ -709,16 +734,18 @@ export const unknownFont = (font: TextFont = {}, text?: string): boolean => {
  * @param start - Where the text starts on its line, in points
  */
 export const measureTextWidth = (text: string, font: TextFont = {}, start = 0): number => {
-    const { widths, more, monospaced } = measuresOf(font);
+    const { widths, more, arabic, monospaced } = measuresOf(font);
     const widthOf = monospaced ? monospacedWidth : (character: string): number => characterWidth(widths, more, character);
     const size = sizeOf(font);
     const { characterSpacing = 0, scale = 100 } = font;
+    const characters = [...text];
+    const joined = joinedIn(characters, arabic);
     return (
-        [...text].reduce(
-            (position, character) =>
+        characters.reduce(
+            (position, character, index) =>
                 character === "\t"
                     ? (Math.floor(position / TAB_STOP) + 1) * TAB_STOP
-                    : position + (widthOf(character) * size * scale) / 100000 + characterSpacing,
+                    : position + ((joined?.get(index) ?? widthOf(character)) * size * scale) / 100000 + characterSpacing,
             start,
         ) - start
     );
@@ -800,6 +827,11 @@ const LATIN_LETTER = /^\p{Script=Latin}$/u;
  * and monospaced East Asian fonts, aren't kerned, and nor is text with ligatures in a face Word kerns only without them.
  */
 export const unknownShaping = (text: string, font: TextFont = {}): string | undefined => {
+    // Arabic, which Word kerns whether the text asks for kerning or not (see `arabic-shaping.ts`)
+    const arabic = measuresOf(font).arabic === undefined ? undefined : unknownArabicKerning(text, widthsOf(font.font).name);
+    if (arabic !== undefined) {
+        return arabic;
+    }
     const ligatures = hasLigatures(font);
     if ((!isKerned(font) && !ligatures) || eastAsianFontOf(font.font ?? DEFAULT_FONT)?.monospaced === true) {
         return undefined;

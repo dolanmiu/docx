@@ -58,6 +58,11 @@ export type LineBreakRules = {
     readonly wordWrap?: boolean;
     /** The document's own lists, which take the place of Word's for their language */
     readonly lists?: Partial<Record<KinsokuLanguage, KinsokuList>>;
+    /**
+     * Whether Word's strict rules keep small kana and the prolonged sound mark from starting a line of Japanese too
+     * (`w:strictFirstAndLastChars`). Default is off
+     */
+    readonly strict?: boolean;
 };
 
 /** A piece of text, with what of its run changes where its lines break */
@@ -86,6 +91,12 @@ const WORD_LISTS: Readonly<Record<KinsokuLanguage, Required<KinsokuList>>> = {
     },
     korean: { noLineStart: "", noLineEnd: "" },
 };
+// What Word's strict rules add to its list of the characters that can't start a line of Japanese: the small kana and the
+// prolonged sound mark, as its strict list of them (the specification's for `w:strictFirstAndLastChars`) has them, which its
+// normal list lets start a line (word-unicode2.ts S). Its PDF showed small hiragana kept from the start of a line with them
+// (scripts/layout-probes/stops2/word-stops-east-asian2.ts EA4a). The half-width small katakana that list has too, its normal
+// list, unlike the specification's, lets start a line, so whether its strict list keeps them from it isn't known
+const STRICT_JAPANESE_NO_LINE_START = "ぁぃぅぇぉっゃゅょゎァィゥェォッャュョヮヵヶー";
 /* cspell:enable */
 
 // Chinese, Japanese and Korean characters: Pretext's ranges, with the compatibility forms and enclosed letters and numbers
@@ -142,8 +153,10 @@ type Kinsoku = { readonly noLineStart: ReadonlySet<string>; readonly noLineEnd: 
 
 const NO_KINSOKU: Kinsoku = { noLineStart: new Set(), noLineEnd: new Set() };
 
-const listOf = (language: KinsokuLanguage, { lists = {} }: LineBreakRules): Kinsoku => {
-    const { noLineStart = WORD_LISTS[language].noLineStart, noLineEnd = WORD_LISTS[language].noLineEnd } = lists[language] ?? {};
+const listOf = (language: KinsokuLanguage, { lists = {}, strict = false }: LineBreakRules): Kinsoku => {
+    const words = WORD_LISTS[language];
+    const wordsStart = strict && language === "japanese" ? words.noLineStart + STRICT_JAPANESE_NO_LINE_START : words.noLineStart;
+    const { noLineStart = wordsStart, noLineEnd = words.noLineEnd } = lists[language] ?? {};
     return { noLineStart: new Set(noLineStart), noLineEnd: new Set(noLineEnd) };
 };
 
