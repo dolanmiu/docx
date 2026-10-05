@@ -3361,6 +3361,29 @@ describe("readDocument", () => {
                 expect(upTable(p(pPr(rPr(value("w:sz", 40))), r(rPr(value("w:sz", 22)), t("b")))).unsupported).to.equal(reason);
                 expect(upTable(p(pPr(rPr(value("w:sz", 22))), r(rPr(value("w:sz", 40)), t("b")))).unsupported).to.equal(undefined);
                 expect(upTable({ "w:tbl": [] }, p()).unsupported).to.equal("text running up or down a table cell with a table in it");
+                // A page field's number is text, of its run's size
+                const page = (size: number): readonly object[] =>
+                    [
+                        { "w:fldChar": { _attr: { "w:fldCharType": "begin" } } },
+                        { "w:instrText": [{ _attr: { "xml:space": "preserve" } }, "PAGE"] },
+                        { "w:fldChar": { _attr: { "w:fldCharType": "separate" } } },
+                        t("1"),
+                        { "w:fldChar": { _attr: { "w:fldCharType": "end" } } },
+                    ].map((run) => r(rPr(value("w:sz", size)), run));
+                expect(upTable(p(pPr(rPr(value("w:sz", 40))), ...page(22))).unsupported).to.equal(reason);
+                expect(upTable(p(pPr(rPr(value("w:sz", 22))), ...page(40))).unsupported).to.equal(undefined);
+                // A text box in it, which Word hasn't been seen to lay out there
+                const textBox = r({
+                    "w:pict": [
+                        {
+                            "v:shape": [
+                                { _attr: { style: "width:100pt;height:50pt", stroked: "f" } },
+                                { "v:textbox": [{ _attr: { style: "mso-fit-shape-to-text:t" } }, { "w:txbxContent": [p(r(t("in")))] }] },
+                            ],
+                        },
+                    ],
+                });
+                expect(upTable(p(r(t("a")), textBox)).unsupported).to.equal("text running up or down a table cell with a text box in it");
             });
 
             it("should stop at text running up or down a cell of a table sized to its text in a cell of one, or that text flows around", () => {

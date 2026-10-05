@@ -274,6 +274,11 @@ describe("fitColumns", () => {
         // TV5c: a picture, with the text's descent below it
         const picture: Block = { ...text(10), items: [...text(10).items, { type: "box", width: 30, height: 30 }] };
         expect(widthsOf(fitColumns(table([[up([picture])]]), 300, measure))).to.deep.equal([32.5]);
+        // A superscript's line is its text's (TV4), and a page field's number is text of its run's size
+        const superscript: Block = { ...text(10), items: [{ type: "text", text: "a", font: { size: 6.5, lineSize: 10 } }] };
+        expect(widthsOf(fitColumns(table([[up([superscript])]]), 300, measure))).to.deep.equal([12.5]);
+        const page: Block = { ...empty, items: [{ type: "pageNumber", field: "PAGE", font: { size: 20 } }], markFont: {} };
+        expect(widthsOf(fitColumns(table([[up([page])]]), 300, measure))).to.deep.equal([25]);
     });
 
     it("should stop where other columns' widths depend on how wide Word makes text that runs up or down", () => {

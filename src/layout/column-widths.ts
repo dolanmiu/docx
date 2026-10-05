@@ -5,7 +5,7 @@
  *
  * @module
  */
-import { type ContentWidths, DEFAULT_FONT_SIZE } from "../text-layout";
+import { type ContentWidths, DEFAULT_FONT_SIZE, type TextFont } from "../text-layout";
 import type { Block, ParagraphBlock, TableBlock, TableCell, TableRow } from "./read-document";
 
 const sum = (values: readonly number[]): number => values.reduce((total, value) => total + value, 0);
@@ -38,14 +38,29 @@ const VERTICAL_DESCENT = 0.25;
 // be, in another font than Calibri, as a share of it
 const VERTICAL_RANGE = [0.9, 1.2];
 
+/** The size of a run's line, which a superscript or subscript keeps of its text (`word-stops-vertical-cells.docx` TV4) */
+export const lineSizeOf = ({ size = DEFAULT_FONT_SIZE, lineSize = size }: TextFont): number => lineSize;
+
+/** The line sizes of a paragraph's text and of the numbers its page fields write among it */
+export const textLineSizesOf = (items: ParagraphBlock["items"]): readonly number[] =>
+    items.flatMap((item) =>
+        item.type === "text" ||
+        item.type === "pageNumber" ||
+        item.type === "pageCount" ||
+        item.type === "pageReference" ||
+        item.type === "sectionNumber"
+            ? [lineSizeOf(item.font)]
+            : [],
+    );
+
 /**
  * About how wide Word makes a paragraph of text that runs up or down a cell, across the cell, in points: one line however
- * long its text (`word-stops-vertical-cells.docx` TV1f), as wide as its largest text, not its mark (TV5b), or its
- * picture with the text's descent (TV5c), with the space before and after it.
+ * long its text (`word-stops-vertical-cells.docx` TV1f), as wide as its largest text, its page fields' numbers among it,
+ * not its mark (TV5b), or its picture with the text's descent (TV5c), with the space before and after it.
  */
 const verticalWidthOf = ({ items, markFont, format }: ParagraphBlock): number => {
-    const sizes = items.flatMap((item) => (item.type === "text" ? [item.font.size ?? DEFAULT_FONT_SIZE] : []));
-    const size = largest(sizes.length > 0 ? sizes : [markFont.size ?? DEFAULT_FONT_SIZE]);
+    const sizes = textLineSizesOf(items);
+    const size = largest(sizes.length > 0 ? sizes : [lineSizeOf(markFont)]);
     const pictures = items.flatMap((item) => (item.type === "box" ? [item.height + VERTICAL_DESCENT * size] : []));
     return (format.spaceBefore ?? 0) + largest(pictures, VERTICAL_LINE * size) + (format.spaceAfter ?? 0);
 };

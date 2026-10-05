@@ -62,6 +62,7 @@ import {
     withoutUndefined,
 } from "../text-layout";
 import { type DataStores, withBoundTextWritten } from "./bound-controls";
+import { lineSizeOf, textLineSizesOf } from "./column-widths";
 import { type EquationBox, layOutEquations } from "./equations";
 import {
     type FieldCapitals,
@@ -2330,19 +2331,20 @@ const unsupportedCellOf = (properties: readonly XmlObject[]): string | undefined
  * a picture in it (`word-table-formats.docx` VT1, VT2, `word-table-formats2.docx` VT5 to VT7,
  * `word-stops-vertical-cells.docx` TV5c). Not with a mark larger than its text: a mark of 20 points with text of 11 made
  * the row no taller than a line of 11 (TV5b), so which line Word makes it then isn't known, nor for marks of different
- * fonts or sizes, nor what a table in it does, which Word lays across the cell (TV5d).
+ * fonts or sizes, nor what a table in it does, which Word lays across the cell (TV5d), nor a text box in it.
  */
 const unsupportedVerticalOf = (blocks: readonly Block[]): string | undefined => {
     const paragraphs = blocks.filter((block): block is ParagraphBlock => block.type === "paragraph");
     if (paragraphs.length < blocks.length) {
         return "text running up or down a table cell with a table in it";
     }
+    if (paragraphs.some(({ items }) => items.some((item) => item.type === "textBox"))) {
+        return "text running up or down a table cell with a text box in it";
+    }
     const marks = new Set(paragraphs.map(({ markFont: { font, size } }) => `${font} ${size}`));
-    // A superscript or subscript, such as a note's reference, is as large as its text for its line (TV4)
-    const sizeOf = ({ size = DEFAULT_FONT_SIZE, lineSize = size }: TextFont): number => lineSize;
-    const smaller = paragraphs.some(({ items, markFont }) =>
-        items.some((item) => item.type === "text" && sizeOf(item.font) < sizeOf(markFont)),
-    );
+    // A superscript or subscript, such as a note's reference, is as large as its text for its line (TV4), and the numbers
+    // of page fields are text as large as theirs
+    const smaller = paragraphs.some(({ items, markFont }) => textLineSizesOf(items).some((size) => size < lineSizeOf(markFont)));
     return marks.size > 1 || smaller
         ? "text running up or down a table cell with marks of different sizes, or larger than its text"
         : undefined;
