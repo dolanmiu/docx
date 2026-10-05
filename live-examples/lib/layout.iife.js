@@ -14412,12 +14412,13 @@ var docxLayout = (function(exports) {
 		};
 		/**
 		* The blocks of a cell that take room: all of them, but an empty paragraph that ends a cell whose mark takes none
-		* (`w:hideMark`), as in Word (`word-watertight-tables.docx` TB7)
+		* (`w:hideMark`), as in Word (`word-watertight-tables.docx` TB7), or that ends it right after a table, which Word gives
+		* none either, as a cell's end after a table (`word-probes.docx` U1n to U1p, `word-stops-tables.docx` RW1, RW2, RW12)
 		*/
 		const blocksWithRoom = ({ blocks: stack, hideMark }) => {
+			var _stack;
 			const last = stack[stack.length - 1];
-			const empty = (last === null || last === void 0 ? void 0 : last.type) === "paragraph" && last.items.every(({ type }) => type === "marker");
-			return hideMark && empty ? stack.slice(0, -1) : stack;
+			return (last === null || last === void 0 ? void 0 : last.type) === "paragraph" && last.items.every(({ type }) => type === "marker") && (hideMark || ((_stack = stack[stack.length - 2]) === null || _stack === void 0 ? void 0 : _stack.type) === "table") ? stack.slice(0, -1) : stack;
 		};
 		/**
 		* How tall a cell's text makes its row. Text that runs up or down a cell makes it as tall as a line of its paragraph
@@ -14462,7 +14463,7 @@ var docxLayout = (function(exports) {
 			});
 			return merges.reduce((current, { first, last, height }) => {
 				var _rows$last$height;
-				const missing = height - sum(current.slice(first, last + 1));
+				const missing = rows[first].borderTop + height + rows[last].borderBottom - sum(current.slice(first, last + 1));
 				return missing > 0 && ((_rows$last$height = rows[last].height) === null || _rows$last$height === void 0 ? void 0 : _rows$last$height.rule) !== "exact" ? current.map((value, index) => index === last ? value + missing : value) : current;
 			}, heights);
 		};
@@ -16310,7 +16311,8 @@ var docxLayout = (function(exports) {
 			var _table$rows$at$border, _table$rows$at;
 			const last = table.rows.length - 1;
 			const bottomBorder = (_table$rows$at$border = (_table$rows$at = table.rows.at(-1)) === null || _table$rows$at === void 0 ? void 0 : _table$rows$at.borderBottom) !== null && _table$rows$at$border !== void 0 ? _table$rows$at$border : 0;
-			const unknown = table.rows.some(({ header }) => header) ? "a header row of a table in a table cell across pages" : table.rows.some(({ cells }) => cells.some(({ verticalMerge }) => verticalMerge !== void 0)) ? "a cell merged down the rows of a table in a table cell across pages" : table.cellSpacing === void 0 ? void 0 : "a table with space between its cells in a table cell across pages";
+			const ownHeights = rowHeights(table, []);
+			const unknown = mergesOf(table).some(({ first, height }) => table.rows[first].borderTop + height > ownHeights[first] - table.rows[first].borderBottom + TOLERANCE) ? "a cell merged down the rows of a table in a table cell, whose text goes on past its first row, across pages" : table.cellSpacing === void 0 ? void 0 : "a table with space between its cells in a table cell across pages";
 			let used = 0;
 			let placed = [];
 			/** The cell's part where the table breaks before a row (`index`), or in it with the paragraphs left in its cells */
@@ -16415,17 +16417,35 @@ var docxLayout = (function(exports) {
 		/**
 		* Places a row of a set height taller than the page, at the top of one: it takes the rest of the page, cut off at its
 		* bottom, so what follows goes on the next page, as Word lays out one set to exactly or at least 15000 twips, with
-		* 13958 of room (`word-probes.docx` U5c, U5d), as LibreOffice does. What Word does with one in columns, one with
-		* footnotes or cells merged down, or a header row, isn't known
+		* 13958 of room (`word-probes.docx` U5c, U5d), as LibreOffice does. A cell merged down from it has its text in it, and
+		* its footnotes go at the bottom of the next page, as Word lays them out (`word-stops-tables.docx` RW5a, RW5c). What
+		* Word does with one in columns, a header row, or with the text of a cell merged down to it from a row above, or of one
+		* merged down from it that doesn't fit in it, isn't known
 		*/
 		const placeCutRow = (row, index) => {
 			if (section().columns.length > 1) stopAt(KEPT_ROW_IN_COLUMNS);
 			const markers = row.cells.flatMap((cell) => cell.blocks.flatMap(markersOf));
-			if (notesIn(markers).length > 0 || openMerges.length > 0 || row.header) throw new Unsupported("a footnote, merged cells or a header row in a table row of a set height taller than a page");
+			const height = linesBottom() - position;
+			const fitsIn = ({ first, cell, rest }) => first === index && fillCell(rest, height - row.borderTop - row.borderBottom - cell.marginTop - cell.marginBottom, true).rest.length === 0;
+			if (!openMerges.every(fitsIn)) throw new Unsupported("a cell merged down into a table row of a set height taller than a page, or out of it past it");
+			if (row.header) throw new Unsupported("a header row of a set height taller than a page");
+			const notes = notesIn(markers);
+			if (notes.length > 1 || notes.length > 0 && (carried !== void 0 || pageNotes.length > 0)) throw new Unsupported("footnotes in a table row of a set height taller than a page");
 			mark(markers);
-			placeRow(index, position, linesBottom() - position);
+			openMerges = openMerges.map((merge) => _objectSpread2(_objectSpread2({}, merge), {}, { rest: [] }));
+			placeRow(index, position, height);
 			position = linesBottom();
 			placedInColumn = true;
+			if (notes.length > 0) {
+				[deferred] = notes;
+				carried = {
+					name: deferred,
+					from: {
+						block: 0,
+						line: 0
+					}
+				};
+			}
 		};
 		/**
 		* Places a row that doesn't fit on the page with its footnotes by breaking it across pages between the lines of its
@@ -16447,6 +16467,7 @@ var docxLayout = (function(exports) {
 			const own = row.cells.filter((cell) => !startsMerge(cell));
 			let parts = own.map(cellParagraphs);
 			let isFirstPart = true;
+			let fillsPages = false;
 			const roomless = row.cells.flatMap(roomlessOf);
 			if (notesIn(roomless).length > 0) throw new Unsupported("a footnote in text that runs up or down a table cell");
 			const borders = row.borderTop + row.borderBottom;
@@ -16476,9 +16497,20 @@ var docxLayout = (function(exports) {
 				const whole = fill(roomAbove(0));
 				let cutAt = roomAbove(0);
 				let filled = whole;
+				/**
+				* Just above the bottom of the lowest of the cells' lines, so the part loses a line, even beside a cell without lines
+				* that its margins make taller
+				*/
+				const lowest = (cellParts) => Math.max(...cellParts.map((part, cell) => part.lines.length > 0 ? heightInRow(part, cell) : 0)) - 2 * TOLERANCE;
 				while (placesAny(filled) && !fitsWith(filled, leastNoteRoom(notesOf(filled)))) {
-					cutAt = Math.max(...filled.map((part, cell) => part.lines.length > 0 ? heightInRow(part, cell) : 0)) - 2 * TOLERANCE;
+					cutAt = lowest(filled);
 					filled = fill(cutAt);
+				}
+				const referred = notesOf(filled);
+				for (let at = cutAt, fitting = filled; referred.length > 0 && notesOf(fitting).length === referred.length; at = lowest(fitting), fitting = fill(at)) if (fitsWith(fitting, moreNoteRoom(referred))) {
+					cutAt = at;
+					filled = fitting;
+					break;
 				}
 				const continues = placesAny(filled) && !fitsWith(filled, moreNoteRoom(notesOf(filled)));
 				if (continues) {
@@ -16519,10 +16551,10 @@ var docxLayout = (function(exports) {
 					above: 0,
 					isFirst,
 					counted: true
-				})), ...flowing.map(({ first, cell, rest, start = at, broken }) => ({
+				})), ...flowing.map(({ first, cell, rest, start = at, startTop = row.borderTop, broken }) => ({
 					paragraphs: rest,
 					margins: cell.marginTop + cell.marginBottom,
-					above: at - start + borders,
+					above: at - start + row.borderTop - startTop,
 					isFirst: !broken,
 					counted: first === rowIndex
 				}))];
@@ -16530,11 +16562,8 @@ var docxLayout = (function(exports) {
 				const ends = (cell) => cell < own.length || flowing[cell - own.length].last === rowIndex;
 				const isLastPart = filled.every(({ rest }, cell) => rest.length === 0 || !ends(cell));
 				const decides = (cell) => !isLastPart || ends(cell);
-				const placesLines = (!isFirstPart || (isLastPart ? height - borders : (_row$height$value2 = (_row$height4 = row.height) === null || _row$height4 === void 0 ? void 0 : _row$height4.value) !== null && _row$height$value2 !== void 0 ? _row$height$value2 : 0) <= roomAbove(noteRoom) + TOLERANCE) && filled.some(({ lines }, cell) => decides(cell) && lines.length > 0) && cells.every(({ paragraphs }, cell) => !decides(cell) || paragraphs.length === 0 || filled[cell].lines.length > 0);
+				const placesLines = (!isFirstPart || fillsPages || (isLastPart ? height - borders : (_row$height$value2 = (_row$height4 = row.height) === null || _row$height4 === void 0 ? void 0 : _row$height4.value) !== null && _row$height$value2 !== void 0 ? _row$height$value2 : 0) <= roomAbove(noteRoom) + TOLERANCE) && filled.some(({ lines }, cell) => decides(cell) && lines.length > 0) && cells.every(({ paragraphs }, cell) => !decides(cell) || paragraphs.length === 0 || filled[cell].lines.length > 0);
 				if (placesLines && !isLastPart) {
-					const hasTable = (cell) => cell.blocks.some(({ type }) => type === "table");
-					if (flowing.some(({ cell }) => hasTable(cell))) stopAt("a table in a cell merged down table rows across pages");
-					if (own.some(hasTable) && notesIn(row.cells.flatMap((cell) => cell.blocks.flatMap(markersOf))).length > 0) stopAt("a footnote in a table row with a table in a cell, across pages");
 					filled.forEach((part) => stopAtRead(part));
 					if (row.cells.some(({ vertical }) => vertical)) stopAt("text that runs up or down a table cell across pages");
 					if (table.spaced) stopAt("a table row with space between its cells across pages");
@@ -16550,7 +16579,13 @@ var docxLayout = (function(exports) {
 						placeCutRow(row, rowIndex);
 						return;
 					}
-					if (!parts.some(([first]) => first !== void 0 && "paragraph" in first && first.paragraph.keepLines && first.from === 0)) throw new Unsupported(isFirstPart && row.height !== void 0 && row.height.value > roomAbove(0) + TOLERANCE ? "a table row whose text and set height are both taller than a page" : "a line in a table cell taller than a page");
+					const kept = parts.some(([first]) => first !== void 0 && "paragraph" in first && first.paragraph.keepLines && first.from === 0);
+					const tallerThanPage = isFirstPart && row.height !== void 0 && row.height.value > roomAbove(0) + TOLERANCE;
+					if (tallerThanPage && !fillsPages && notesOf(whole).length === 0 && filled.some(({ lines }) => lines.length > 0)) {
+						fillsPages = true;
+						continue;
+					}
+					if (!kept) throw new Unsupported(tallerThanPage ? "a table row whose text and set height are both taller than a page" : "a line in a table cell taller than a page");
 					if (section().columns.length > 1) stopAt(KEPT_ROW_IN_COLUMNS);
 					parts = parts.map((paragraphs) => paragraphs.map((part, index) => index === 0 && "paragraph" in part ? _objectSpread2(_objectSpread2({}, part), {}, { paragraph: _objectSpread2(_objectSpread2({}, part.paragraph), {}, { keepLines: false }) }) : part));
 					continue;
@@ -16562,23 +16597,26 @@ var docxLayout = (function(exports) {
 					continue;
 				}
 				mark([...filled.flatMap(({ lines }, cell) => decides(cell) ? lines.flatMap(({ markers }) => markers) : []), ...isFirstPart ? roomless : []]);
-				const rowPart = isLastPart ? (isFirstPart ? height - borders : tallestOf(filled)) + borders : tallestOf(filled) + borders + breakBorder;
+				const rowPart = fillsPages ? linesBottom() - position : isLastPart ? (isFirstPart ? height - borders : tallestOf(filled)) + borders : tallestOf(filled) + borders + breakBorder;
 				placeRow(rowIndex, position, rowPart);
 				position += rowPart;
 				placeNotes(notes, isLastPart ? breakBorder : 0);
 				openMerges = openMerges.flatMap((merge) => {
-					var _merge$start;
+					var _merge$start, _merge$startTop;
 					const index = flowing.indexOf(merge);
-					const placed = _objectSpread2(_objectSpread2({}, merge), {}, { start: (_merge$start = merge.start) !== null && _merge$start !== void 0 ? _merge$start : at });
+					const placed = _objectSpread2(_objectSpread2({}, merge), {}, {
+						start: (_merge$start = merge.start) !== null && _merge$start !== void 0 ? _merge$start : at,
+						startTop: (_merge$startTop = merge.startTop) !== null && _merge$startTop !== void 0 ? _merge$startTop : row.borderTop
+					});
 					if (index === -1 || !decides(own.length + index)) return [placed];
 					const { rest } = filled[own.length + index];
 					if (rest.length === 0) return [];
-					if (merge.broken) stopAt("a cell merged down table rows whose text goes on across more than two pages");
 					if (notesIn(merge.cell.blocks.flatMap(markersOf)).length > 0) stopAt("a footnote in a cell merged down table rows whose text goes on across pages");
 					if (merge.header) stopAt("a cell merged down from a table's header rows whose text goes on across pages");
 					return [_objectSpread2(_objectSpread2({}, merge), {}, {
 						rest,
 						start: void 0,
+						startTop: void 0,
 						broken: true
 					})];
 				});
@@ -16628,14 +16666,16 @@ var docxLayout = (function(exports) {
 			} : void 0;
 			/** Whether only the table's header rows are in the column, below what is above them */
 			const headersAlone = (index) => below !== void 0 && index >= headerRows && below.page === pageCount && below.column === column && placements.slice(below.placed).every((placement) => placement.type !== "row" || placement.row.index < headerRows);
-			const startTablePage = (index) => {
+			const startTablePage = (index, newPage = false) => {
 				if (headersAlone(index)) {
 					const before = blocks[blockIndex - 1];
 					const guesses = [...(before === null || before === void 0 ? void 0 : before.section) === blocks[blockIndex].section && before.block.type === "paragraph" && before.block.format.keepNext ? ["a paragraph kept with the next before a table whose header rows go on to the next page"] : [], ...columnsSection().columns.length > 1 ? ["a table's header rows alone at the foot of a column"] : []];
 					guesses.forEach((reason) => stopAt(reason));
 					throw new HeaderRowsAlone(guesses);
 				}
+				const page = pageCount;
 				nextColumn();
+				while (newPage && pageCount === page) nextColumn();
 				if (index >= headerRows) {
 					heights.slice(0, Math.max(0, headerRows)).reduce((y, rowHeight, row) => {
 						placeRow(row, y, rowHeight);
@@ -16662,7 +16702,7 @@ var docxLayout = (function(exports) {
 				var _table$rows$index$hei;
 				const ending = openMerges.filter(({ last }) => last === index);
 				if (!ending.some(({ broken }) => broken) || ((_table$rows$index$hei = table.rows[index].height) === null || _table$rows$index$hei === void 0 ? void 0 : _table$rows$index$hei.rule) === "exact") return heights[index];
-				return Math.max(ownHeights[index], ...ending.map(({ cell, rest, start, broken }) => start + cell.marginTop + fillCell(rest, Infinity, !broken).height + cell.marginBottom - position));
+				return Math.max(ownHeights[index], ...ending.map(({ cell, rest, start, startTop, broken }) => start + startTop + cell.marginTop + fillCell(rest, Infinity, !broken).height + cell.marginBottom + table.rows[index].borderBottom - position));
 			};
 			/**
 			* What the table's last row is kept with when it is kept with the next: the first lines of the paragraph after the
@@ -16740,10 +16780,14 @@ var docxLayout = (function(exports) {
 						placeCutRow(row, index);
 						continue;
 					}
-					if (section().columns.length > 1) stopAt(KEPT_ROW_IN_COLUMNS);
+				}
+				const firstColumns = tooTall && section().columns.length > 1;
+				if (firstColumns && column > 0) {
+					closeMerges(position);
+					startTablePage(index, true);
 				}
 				if (tooTall || !rowFits(roomNeeded, notes) && !keptWhole) {
-					splitRow(row, index, height, breakBorder, () => startTablePage(index), {
+					splitRow(row, index, height, breakBorder, () => startTablePage(index, firstColumns), {
 						spaced: table.cellSpacing !== void 0,
 						kept: index > brokenUntil && index > 0 && keptWithNext(table.rows[index - 1])
 					});
@@ -16751,7 +16795,10 @@ var docxLayout = (function(exports) {
 				}
 				mark(row.cells.flatMap((cell) => startsMerge(cell) ? roomlessOf(cell) : cell.blocks.flatMap(markersOf)));
 				const at = position;
-				openMerges = openMerges.map((merge) => merge.start === void 0 ? _objectSpread2(_objectSpread2({}, merge), {}, { start: at }) : merge);
+				openMerges = openMerges.map((merge) => merge.start === void 0 ? _objectSpread2(_objectSpread2({}, merge), {}, {
+					start: at,
+					startTop: row.borderTop
+				}) : merge);
 				placeRow(index, position, height);
 				position += height;
 				placeNotes(notes, breakBorder);
