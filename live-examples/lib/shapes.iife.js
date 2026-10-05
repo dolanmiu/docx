@@ -4934,8 +4934,9 @@ var docxShapes = (function(exports, docx) {
 		...Object.keys(BORDER_WIDTHS),
 		"custom"
 	]);
+	/** Whether a style of border is an art border's, of pictures, whose size is in points, rather than a line's */
+	var isArtBorder = (style) => !LINE_BORDERS.has(style);
 	var SEEN_RUN_BORDERS = { thickThinLargeGap: { 36: 54 } };
-	var WIDEST_ART_BORDER = 31;
 	/**
 	* How wide a run's border is as Word draws it, in eighths of a point: as a paragraph's of its style. A border of no style
 	* ("none") takes its space still, but no width (scripts/layout-probes/word-run-formatting.ts RF7h). An art border's size
@@ -4949,7 +4950,7 @@ var docxShapes = (function(exports, docx) {
 		var _BORDER_WIDTHS$style, _BORDER_WIDTHS$style2, _SEEN_RUN_BORDERS$sty;
 		if (size === void 0) return style === "none" && !shadow && !frame ? 0 : void 0;
 		if (shadow || frame) return style === "single" && size >= 2 && size <= 96 ? (shadow ? 2 : 1) * size : void 0;
-		if (!LINE_BORDERS.has(style)) return size >= 1 && size <= WIDEST_ART_BORDER ? size * EIGHTHS_PER_POINT : void 0;
+		if (isArtBorder(style)) return size >= 1 && size <= 31 ? size * EIGHTHS_PER_POINT : void 0;
 		if (style === "single" && size === 1 || style === "double" && size === 0) return BORDER_WIDTHS[style](size);
 		return style === "none" ? 0 : size < 2 || size > 96 ? void 0 : (_BORDER_WIDTHS$style = (_BORDER_WIDTHS$style2 = BORDER_WIDTHS[style]) === null || _BORDER_WIDTHS$style2 === void 0 ? void 0 : _BORDER_WIDTHS$style2.call(BORDER_WIDTHS, size)) !== null && _BORDER_WIDTHS$style !== void 0 ? _BORDER_WIDTHS$style : (_SEEN_RUN_BORDERS$sty = SEEN_RUN_BORDERS[style]) === null || _SEEN_RUN_BORDERS$sty === void 0 ? void 0 : _SEEN_RUN_BORDERS$sty[size];
 	};
