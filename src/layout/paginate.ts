@@ -799,7 +799,7 @@ export const paginate = (
      * The number of a footnote numbered afresh on each page, by the marker at its reference: one more than the footnotes
      * of its section whose references were before it on its page in the pass before, from the section's start number, as
      * Word numbered two footnotes on each of three pages 1 and 2 (`word-stops-notes.docx` NT14a). Blank when the pass
-     * before didn't place it
+     * before didn't place it. Where sections share a page, which stops the layout, those of another section aren't counted
      */
     const onPageNumber = (note: string): string => {
         const place = givenPlaces.get(note);
@@ -809,7 +809,7 @@ export const paginate = (
         }
         const before = [...footnotesOnEachPage.keys()].filter((other) => {
             const at = givenPlaces.get(other);
-            return at !== undefined && at.page === place.page && at.order < place.order;
+            return at !== undefined && at.page === place.page && at.section === place.section && at.order < place.order;
         }).length;
         const text = formatNumber(start + before, format);
         if (text === undefined) {

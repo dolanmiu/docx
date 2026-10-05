@@ -3734,6 +3734,15 @@ describe("paginate", () => {
             expect(paginate(unwritten, { measurer: MEASURER, places: first.places }).stoppedAt).to.equal(
                 "notes numbered in a format not yet written",
             );
+            // Footnotes of another section on the page, which stops the layout where it is read, aren't counted
+            const shared: DocumentContent = {
+                ...content,
+                blocks: content.blocks.map((entry, index) => (index === 1 ? { ...entry, section: 1 } : entry)).slice(0, 2),
+                sections: [SECTION, { ...SECTION, start: "continuous" }],
+            };
+            const sharedFirst = paginate(shared, { measurer: MEASURER });
+            const sharedSecond = paginate(shared, { measurer: MEASURER, places: sharedFirst.places });
+            expect(sharedSecond.pages.map(({ footnotes }) => footnotes.map(({ noteNumber }) => noteNumber))).to.deep.equal([["i", "i"]]);
             // Guessing, it is in figures
             const guessed = paginate(unwritten, { measurer: MEASURER, places: first.places, guess: true });
             expect(guessed.pages.map(({ footnotes }) => footnotes.map(({ noteNumber }) => noteNumber))).to.deep.equal([["1", "2"], ["1"]]);
