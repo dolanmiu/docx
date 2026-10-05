@@ -103,6 +103,11 @@ export type LayoutItem =
           readonly font: TextFont;
           readonly format?: FieldFormat;
           readonly relative?: string;
+          /**
+           * Whether it is a page reference with `\p` in a footnote or endnote, which writes "on page" and its bookmark's page
+           * on any page, its bookmark's too (`word-page-fields.docx` PF8f, PF8g)
+           */
+          readonly inNote?: boolean;
       }
     | { readonly type: "pageCount"; readonly scope: "document" | "section"; readonly font: TextFont; readonly format?: FieldFormat }
     | { readonly type: "pageNumber"; readonly field: string; readonly font: TextFont; readonly format?: FieldFormat }
@@ -799,10 +804,9 @@ const numberSwitchesOf = (switches: string): NumberSwitches => {
 // The fields Word writes itself when it opens the document, from the computer's clock
 const DATE_FIELDS = new Set(["DATE", "TIME"]);
 const DATE_UNSUPPORTED = "a date or time, which Word writes when it opens the document";
-const RELATIVE_IN_NOTE = "a page reference that says where its bookmark is, in a footnote or endnote";
 // Why the layout stops at fields whose results Word writes in ways not yet followed, which, guessing, are read as they
 // are written
-const WRITTEN_GUESSES: ReadonlySet<string> = new Set([DATE_UNSUPPORTED, RELATIVE_IN_NOTE]);
+const WRITTEN_GUESSES: ReadonlySet<string> = new Set([DATE_UNSUPPORTED]);
 
 /** A marker at a field whose result depends on where it is placed */
 const fieldMarker = (markers: FieldMarkers): Extract<LayoutItem, { readonly type: "marker" }> => {
@@ -869,7 +873,9 @@ const workedOutResultOf = (instruction: string, font: TextFont, reader: Reader):
             // Where a header's bookmark is from it isn't worked out, so it is read as it is written
             return undefined;
         }
-        return at ? [at, { type: "pageReference", bookmark, font, relative: at.name, ...own }] : RELATIVE_IN_NOTE;
+        return at
+            ? [at, { type: "pageReference", bookmark, font, relative: at.name, ...own }]
+            : [{ type: "pageReference", bookmark, font, inNote: true, ...own }];
     }
     const { format, unsupported } = numberSwitchesOf(field[2]);
     // Guessing, a number in a format not yet written is written as the page or section shows it, or in figures
@@ -4380,15 +4386,40 @@ export const readContent = (body: XmlObject, parts: DocumentParts, { guess = fal
         // (word-grid.ts G9, word-grid3.ts H2, H3)
         const grid = label === undefined ? undefined : gridOf(sections.length);
         const down = label !== undefined && downOf(childrenOf(sectionElements[sections.length])) !== undefined;
-        return note === undefined
-            ? []
-            : readBlocks(contentOf(note), {
-                  ...readerOf(false),
-                  inNote: true,
-                  ...(label === undefined ? {} : { noteNumber: label }),
-                  ...(grid === undefined ? {} : { grid }),
-                  ...(down ? { down } : {}),
-              });
+        const readerOfNote: Reader = {
+            ...readerOf(false),
+            inNote: true,
+            ...(label === undefined ? {} : { noteNumber: label }),
+            ...(grid === undefined ? {} : { grid }),
+            ...(down ? { down } : {}),
+        };
+        const noteBlocks = note === undefined ? [] : readBlocks(contentOf(note), readerOfNote);
+        return label === undefined || noteBlocks[noteBlocks.length - 1]?.type !== "table"
+            ? noteBlocks
+            : [...noteBlocks, paragraphAfterTable(kind, readerOfNote)];
+    };
+    /**
+     * The empty paragraph Word adds after a table that ends a footnote or endnote, as a note ends with a paragraph: a line
+     * below the table (`word-watertight-notes.docx` FN11, FN12, `word-watertight-stops.docx` SP3c). Those notes had the
+     * same formatting in the Normal style and the footnote text style, so it is in Normal where they are formatted alike,
+     * and where they aren't, which of them Word gives it isn't known
+     */
+    const paragraphAfterTable = (kind: NoteKind, readerOfNote: Reader): Block => {
+        const [normal] = readBlocks([{ "w:p": [] }], readerOfNote) as readonly ParagraphBlock[];
+        const textStyle = [...styles.styles].find(
+            ([, { type, name }]) => type === "paragraph" && name?.toLowerCase() === `${kind} text`,
+        )?.[0];
+        const [inStyle] = readBlocks(
+            [{ "w:p": [{ "w:pPr": [{ "w:pStyle": { _attr: { "w:val": textStyle } } }] }] }],
+            readerOfNote,
+        ) as readonly ParagraphBlock[];
+        const alike = JSON.stringify([normal.format, normal.markFont]) === JSON.stringify([inStyle.format, inStyle.markFont]);
+        return alike
+            ? normal
+            : {
+                  ...normal,
+                  unsupported: "a footnote or endnote that ends with a table, in a document whose Normal and note text styles differ",
+              };
     };
     /**
      * A separator above the endnotes as Word lays it out: a line of its paragraph style's text, at single spacing and with

@@ -219,6 +219,29 @@ describe("fillPageNumbers", () => {
         ).to.deep.equal(["?"]);
     });
 
+    it('should write "on page" and the bookmark\'s page into each page reference with \\p in a footnote or endnote', () => {
+        // word-page-fields.docx PF8f, PF8g: Word writes it on the bookmark's page too
+        const file = new File({
+            pageNumbers: () => ({ bookmarks: new Map([["target", "4"]]) }),
+            sections: [{ children: [] }],
+        });
+        new Formatter().format(file.Document.View, { file, viewWrapper: file.Document, stack: [] } as unknown as IContext);
+        const context = { file, viewWrapper: file.Document, stack: [] } as unknown as IContext;
+        const note = (name: string, ...fields: readonly (readonly Run[])[]): IXmlableObject => ({
+            [name]: fields.map((children) => new Formatter().format(new Paragraph({ children }), context)),
+        });
+        for (const part of ["w:footnotes", "w:endnotes"]) {
+            const formatted = note(
+                part,
+                fieldWithResult("PAGEREF target \\p", "?"),
+                fieldWithResult("PAGEREF target \\p \\* Upper", "?"),
+                fieldWithResult("PAGEREF elsewhere \\p", "?"),
+            );
+            fillPartPageNumbers(formatted, context);
+            expect(partParagraphsOf(formatted).map(textOf)).to.deep.equal(["on page 4", "ON PAGE 4", "?"]);
+        }
+    });
+
     it("should write the page numbers of page references in the results of other fields, such as a table of contents", () => {
         const body = bodyWith(
             [

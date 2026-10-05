@@ -187,5 +187,6 @@ export const fillPartPageNumbers = (part: IXmlableObject | undefined, context: I
         return;
     }
     const sectionPageCount = referenceId === undefined ? undefined : written.partPageCounts.get(`rId${referenceId}`);
-    fillPartFields(FORMATTED, part, written.estimate, { blank: false, sectionPageCount });
+    const notes = "w:footnotes" in part || "w:endnotes" in part;
+    fillPartFields(FORMATTED, part, written.estimate, { blank: false, sectionPageCount, notes });
 };

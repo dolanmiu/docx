@@ -152,7 +152,8 @@ type Numbers = UnknownNumbers & {
     readonly sectionPageCount?: number;
     /**
      * What the next page reference with `\p` to a bookmark writes, in the body, whose page references with `\p` are each
-     * counted once, in order. Those of other parts aren't written
+     * counted once, in order, and in footnotes and endnotes, "on page" and the bookmark's page. Those of other parts aren't
+     * written
      */
     readonly relativeTo?: (bookmark: string) => string | undefined;
 };
@@ -369,19 +370,27 @@ export const fillBodyFields = <E>(
 };
 
 /**
- * Writes the estimated page numbers into the fields of a header or footer that show them, with the number of pages its
- * SECTIONPAGES fields show, if it is known.
+ * Writes the estimated page numbers into the fields of a header, footer, footnote or endnote that show them, with the
+ * number of pages its SECTIONPAGES fields show, if it is known. A page reference with `\p` in a footnote or endnote
+ * (`notes`) writes "on page" and its bookmark's page, whatever page it is on, as Word writes it
+ * (`word-page-fields.docx` PF8f, PF8g)
  */
 export const fillPartFields = <E>(
     tree: ElementTree<E>,
     part: E,
     estimate: EstimatedPageNumbers,
-    { blank, sectionPageCount }: UnknownNumbers & { readonly sectionPageCount?: number },
-): void =>
+    { blank, sectionPageCount, notes = false }: UnknownNumbers & { readonly sectionPageCount?: number; readonly notes?: boolean },
+): void => {
+    const onPage = (bookmark: string): string | undefined => {
+        const page = estimate.bookmarks.get(bookmark);
+        return page === undefined ? undefined : `on page ${page}`;
+    };
     fillFields(tree, [part], [], {
-        resultOf: (instruction, place) => resultFrom(instruction, place, { estimate, sectionPageCount, blank }),
+        resultOf: (instruction, place) =>
+            resultFrom(instruction, place, { estimate, sectionPageCount, blank, ...(notes ? { relativeTo: onPage } : {}) }),
         afterParagraph: () => undefined,
     });
+};
 
 /** How the SEQ fields of a body are numbered, in order */
 export type SequenceFilling<E> = {
