@@ -95,7 +95,8 @@ import { type VmlShape, isVmlFalse, readVmlFloating, vmlLength, vmlShapeOf } fro
  * section it is in, and the number of the page or section it is on, each in its field's own format, if it has one. A page
  * reference with `\p` writes where its bookmark is from it (`relative`, the name of the marker at the field). A page
  * number's field is at a marker (`field`), as is a section number's in a footnote or endnote, as its page and section are
- * where the marker is placed.
+ * where the marker is placed. So is the number of a footnote numbered afresh on each page, at its reference and its mark
+ * (`noteNumber`), which is that of the marker at its reference (`note`) among the page's footnotes.
  */
 export type LayoutItem =
     | InlineItem
@@ -114,6 +115,7 @@ export type LayoutItem =
     | { readonly type: "pageCount"; readonly scope: "document" | "section"; readonly font: TextFont; readonly format?: FieldFormat }
     | { readonly type: "pageNumber"; readonly field: string; readonly font: TextFont; readonly format?: FieldFormat }
     | { readonly type: "sectionNumber"; readonly font: TextFont; readonly format?: FieldFormat; readonly field?: string }
+    | { readonly type: "noteNumber"; readonly note: string; readonly font: TextFont }
     /** A drawing that text flows around, anchored where it is in the paragraph */
     | { readonly type: "drawing"; readonly drawing: FloatingDrawing }
     /**
@@ -430,6 +432,8 @@ export type Section = {
     readonly chapters?: { readonly level: number; readonly separator: string };
     /** The number of its first page, when it doesn't carry on from the section before */
     readonly firstNumber?: number;
+    /** Whether its footnotes go just below the text of their page, rather than at its bottom (`w:pos` beneathText) */
+    readonly footnotesBeneathText?: boolean;
     readonly headers: HeadersOrFooters;
     readonly footers: HeadersOrFooters;
     /**
@@ -481,8 +485,13 @@ export type DocumentContent = {
     readonly compatibilityMode?: number;
     /** Whether the space above the text of the first line of a page or column is left out (`suppressTopSpacing`) */
     readonly suppressesTopSpacing?: boolean;
-    /** The number each footnote shows, by the name of its marker */
+    /** The number each footnote shows, by the name of its marker: empty for those numbered on each page, or with a mark of their own */
     readonly footnoteNumbers: ReadonlyMap<string, string>;
+    /**
+     * The footnotes numbered afresh on each page (`w:numRestart` eachPage), by the names of their markers, with the number
+     * the first on a page has and the format of their numbers
+     */
+    readonly footnotesOnEachPage?: ReadonlyMap<string, NumberedOnPage>;
     /** The number of the endnote each of the endnotes' blocks is in: all but their separator's */
     readonly endnoteNumbers: ReadonlyMap<Block, string>;
     /**
@@ -545,16 +554,22 @@ type NumberingList = {
 
 type NoteKind = "footnote" | "endnote";
 
+/** How the footnotes of a section numbered afresh on each page are numbered: from a number, in a format */
+export type NumberedOnPage = { readonly start: number; readonly format: string };
+
 /**
  * What a reference to a footnote or endnote shows: its number, and the marker its note's bookmarks and fields are placed
- * by, unless it is only numbered to size a table's columns
+ * by, unless it is only numbered to size a table's columns. A footnote numbered afresh on each page has the name of the
+ * marker at its reference (`onPage`), whose page numbers it, in place of its number
  */
-type NoteReference = { readonly label: string; readonly marker?: string };
+type NoteReference = { readonly label: string; readonly marker?: string; readonly onPage?: string };
 
 /** Reads the footnotes and endnotes references in the body refer to, and numbers them */
 type NoteReader = {
     /** Reads the note a reference refers to, and numbers it */
     readonly read: (kind: NoteKind, id: string) => NoteReference;
+    /** Reads a footnote whose reference has a mark of its own in place of its number, which isn't counted in the numbers */
+    readonly readOwn: (id: string) => NoteReference;
     /** Counts a note whose reference is deleted, which Word numbers but doesn't show (`word-tracked-changes.docx` MK10e) */
     readonly skip: (kind: NoteKind) => void;
     /** A reader that numbers notes as this one would from here, without reading them or counting them in this one */
@@ -592,8 +607,12 @@ type FieldMarkers = {
 type Reader = {
     /** Reads the notes the references refer to: the body's. References elsewhere have no notes */
     readonly notes?: NoteReader;
-    /** The number of the footnote or endnote being read, which the mark at its start shows */
-    readonly noteNumber?: string;
+    /**
+     * The number of the footnote or endnote being read, which the mark at its start shows, or the name of the marker at the
+     * reference of a footnote numbered afresh on each page, whose page numbers it, or `null` for a footnote whose reference
+     * has a mark of its own in place of its number
+     */
+    readonly noteNumber?: string | { readonly onPage: string } | null;
     readonly styles: TextStyles;
     /** Each list, by the id its paragraphs refer to it by */
     readonly numbering: ReadonlyMap<string, NumberingList>;
@@ -679,8 +698,9 @@ const REMOVED_ROOM = new Set(["w:tab", "w:ptab", "w:br", "w:cr", "w:drawing", "m
 const REMOVED_NOTES = new Set(["w:footnoteReference", "w:endnoteReference"]);
 const SIZED_REMOVAL = "a deleted picture, tab, break or note reference in a table whose columns Word sizes to their text";
 const PARTLY_DELETED_FIELD = "a field partly deleted in a tracked change";
-// A mark of its own in place of a note's number, which Word may not count in the numbers of the others
-const OWN_NOTE_MARK = "a footnote or endnote with a mark of its own";
+// A mark of its own in place of an endnote's number, which Word may not count in the numbers of the others, as it doesn't
+// a footnote's
+const OWN_NOTE_MARK = "an endnote with a mark of its own";
 
 // The start of the name of a marker that stands in a paragraph's items for what the reader guessed at, read to be laid
 // out with a guess, with why after it. The paragraph takes the first as why it can't be laid out as Word does, and leaves
@@ -777,9 +797,11 @@ const withBookmarks = (
 
 /**
  * The number of a footnote or endnote, at its reference or at the start of the note, in its run's font: in superscript
- * where its style has it, as docx's FootnoteReference and EndnoteReference do.
+ * where its style has it, as docx's FootnoteReference and EndnoteReference do. One numbered afresh on each page is worked
+ * out from the page the marker at its reference is on.
  */
-const noteNumber = (text: string, font: TextFont): LayoutItem => ({ type: "text", text, font });
+const noteNumber = (shown: string | { readonly onPage: string }, font: TextFont): LayoutItem =>
+    typeof shown === "string" ? { type: "text", text: shown, font } : { type: "noteNumber", note: shown.onPage, font };
 
 /** A length in points, from twips or from a universal measure, such as "1in" */
 const twips = (value: unknown): number | undefined => pointsOf(value, TWIPS_PER_POINT);
@@ -795,7 +817,7 @@ const FORMAT_UNSUPPORTED = "a number in a field format not yet written";
  * {@link isFieldNumberFormat} and {@link isFieldPicture} say, such as `\* CardText`, for `\* Caps`, or for two of a kind
  * or a format with a picture.
  */
-const numberSwitchesOf = (switches: string): NumberSwitches => {
+const numberSwitchesOf = (switches: string, decimalSymbol = "."): NumberSwitches => {
     const parts = switches.match(/"[^"]*"|\S+/g) ?? [];
     let numberFormat: string | undefined;
     let picture: string | undefined;
@@ -811,7 +833,10 @@ const numberSwitchesOf = (switches: string): NumberSwitches => {
             relative = true;
         } else if (part.startsWith("\\#")) {
             const value = argument();
-            unsupported ??= picture === undefined && isFieldPicture(value) ? undefined : "a number written with a picture not yet written";
+            // Word wrote a decimal point of a picture as a full stop (NF3a). Whether it reads one where the document's
+            // settings give another decimal symbol, or the computer has another, hasn't been seen
+            const known = isFieldPicture(value) && (decimalSymbol === "." || !value.replace(/'[^']*'/g, "").includes("."));
+            unsupported ??= picture === undefined && known ? undefined : "a number written with a picture not yet written";
             picture ??= value;
         } else if (part.startsWith("\\*")) {
             const name = argument();
@@ -882,7 +907,7 @@ const workedOutResultOf = (instruction: string, font: TextFont, reader: Reader):
             return undefined;
         }
         const [, , bookmark, switches] = reference;
-        const switched = numberSwitchesOf(switches);
+        const switched = numberSwitchesOf(switches, reader.decimalSymbol);
         // Each page reference with \p in the body is counted, whatever it writes, as docx counts them to write them
         const at = switched.relative && !inHeader && !inNote ? fieldMarker(markers) : undefined;
         if (at) {
@@ -910,7 +935,7 @@ const workedOutResultOf = (instruction: string, font: TextFont, reader: Reader):
             ? [at, { type: "pageReference", bookmark, font, relative: at.name, ...own }]
             : [{ type: "pageReference", bookmark, font, inNote: true, ...own }];
     }
-    const { format, unsupported } = numberSwitchesOf(field[2]);
+    const { format, unsupported } = numberSwitchesOf(field[2], reader.decimalSymbol);
     // Guessing, a number in a format not yet written is written as the page or section shows it, or in figures
     const unformatted = (): readonly LayoutItem[] | string => workedOutResultOf(name, font, reader)!;
     if (name === "NUMPAGES" || name === "SECTIONPAGES") {
@@ -1426,31 +1451,41 @@ const readRun = (element: XmlObject, paragraphRun: RunFormat, reader: Reader, re
             }
             case "w:footnoteReference":
             case "w:endnoteReference": {
-                /** The reference, with its note's number, unless a mark of its own follows it in its place */
-                const reference = (numbered: boolean): readonly LayoutItem[] => {
-                    const note = reader.notes?.read(
-                        name === "w:footnoteReference" ? "footnote" : "endnote",
-                        String(attributesOf(child[name])["w:id"]),
-                    );
-                    return note === undefined
+                const id = String(attributesOf(child[name])["w:id"]);
+                /** The marker at the reference, and its note's number, unless a mark of its own follows it in its place */
+                const reference = (note: NoteReference | undefined, numbered: boolean): readonly LayoutItem[] =>
+                    note === undefined
                         ? []
                         : [
                               ...(note.marker ? [{ type: "marker" as const, name: note.marker }] : []),
-                              ...(numbered ? [noteNumber(note.label, font)] : []),
+                              ...(numbered ? [noteNumber(note.onPage === undefined ? note.label : { onPage: note.onPage }, font)] : []),
                           ];
-                };
-                if (hasOwnMark(child)) {
-                    // Guessing, a note with a mark of its own is numbered as the others are, with its mark in its number's
-                    // place, and one in hidden text isn't laid out
-                    return guessedOr(reader, OWN_NOTE_MARK, () => (format.hidden ? [] : reference(false)));
-                }
                 // Word doesn't lay out a note whose reference is hidden (`word-hidden-paragraphs.docx` HP4d, HP4e), but whether
                 // it counts it in the numbers of the notes after it hasn't been seen
-                return format.hidden ? "a footnote or endnote reference in hidden text" : reference(true);
+                const hidden = format.hidden ? "a footnote or endnote reference in hidden text" : undefined;
+                if (hasOwnMark(child) && name === "w:footnoteReference") {
+                    // Word lays out a footnote whose reference has a mark of its own, and doesn't count it in the numbers of
+                    // the others: between footnotes 38 and 39, it numbered none 39 (`word-stops-notes.docx` NT15)
+                    return hidden ?? reference(reader.notes?.readOwn(id), false);
+                }
+                if (hasOwnMark(child)) {
+                    // Whether Word counts an endnote with a mark of its own hasn't been seen. Guessing, it is numbered as the
+                    // others are, with its mark in its number's place, and one in hidden text isn't laid out
+                    return guessedOr(reader, OWN_NOTE_MARK, () =>
+                        format.hidden ? [] : reference(reader.notes?.read("endnote", id), false),
+                    );
+                }
+                return hidden ?? reference(reader.notes?.read(name === "w:footnoteReference" ? "footnote" : "endnote", id), true);
             }
             case "w:footnoteRef":
             case "w:endnoteRef":
-                return reader.noteNumber === undefined ? [] : [noteNumber(reader.noteNumber, font)];
+                // What a footnote with a mark of its own shows at a mark for its number hasn't been seen: Word writes the mark
+                // itself there
+                return reader.noteNumber === null
+                    ? "a note's number in a footnote with a mark of its own"
+                    : reader.noteNumber === undefined
+                      ? []
+                      : [noteNumber(reader.noteNumber, font)];
             case "w:drawing":
                 // A picture in hidden text takes no room (`word-hidden-paragraphs.docx` HP4c)
                 return format.hidden
@@ -1537,7 +1572,8 @@ const itemsOf = (parts: readonly (readonly LayoutItem[] | string)[], reader: Rea
  * Reads what is deleted (`w:del`), or moved to elsewhere (`w:moveFrom`), in a tracked change: nothing, as Word shows it in
  * the markup area beside the page, and breaks the lines without it, pictures, tabs and breaks too (`word-watertight-markup.docx`
  * MK1, `word-tracked-changes.docx` MK10), but for its bookmarks. Word numbers a footnote whose reference is deleted, though
- * it doesn't show it (MK10e). A deleted endnote reference, and a note reference moved, haven't been seen.
+ * it doesn't show it (MK10e), unless it has a mark of its own. A deleted endnote reference, and a note reference moved,
+ * haven't been seen.
  */
 const readRemoved = (elements: readonly unknown[], kind: string, reader: Reader): readonly LayoutItem[] | string =>
     itemsOf(
@@ -1552,10 +1588,8 @@ const readRemoved = (elements: readonly unknown[], kind: string, reader: Reader)
                 if (references.some((reference) => "w:endnoteReference" in reference)) {
                     return "a deleted endnote reference";
                 }
-                if (references.some(hasOwnMark)) {
-                    return OWN_NOTE_MARK;
-                }
-                references.forEach(() => reader.notes?.skip("footnote"));
+                // One with a mark of its own isn't counted, as Word counts no footnote with one (`word-stops-notes.docx` NT15)
+                references.filter((reference) => !hasOwnMark(reference)).forEach(() => reader.notes?.skip("footnote"));
                 // Its field characters, which keep the fields' places, so a field partly deleted is found
                 return itemsOf(
                     children.map((child) => (nameOf(child) === "w:fldChar" ? readFieldCharacter(child, {}, reader, true) : [])),
@@ -4711,21 +4745,30 @@ export const readContent = (writtenBody: XmlObject, writtenParts: DocumentParts,
         }
         return grids.get(section);
     };
-    const readNoteContent = (kind: NoteKind, id: string, label?: string): readonly Block[] => {
-        const note = notesByKind[kind].get(id);
+    /**
+     * The blocks of a note, with the number its mark shows (`shows`, see {@link Reader}), or of a separator, which has
+     * none, read from the content of the note given, or its own
+     */
+    const readNoteContent = (
+        kind: NoteKind,
+        id: string,
+        shows?: Reader["noteNumber"],
+        content = contentOf(notesByKind[kind].get(id) ?? { [`w:${kind}`]: [] }),
+    ): readonly Block[] => {
         // A note's lines are on the grid of the section of its reference, which is being read, but not its separators
         // (word-grid.ts G9, word-grid3.ts H2, H3)
-        const grid = label === undefined ? undefined : gridOf(sections.length);
-        const down = label !== undefined && downOf(childrenOf(sectionElements[sections.length])) !== undefined;
+        const separator = shows === undefined;
+        const grid = separator ? undefined : gridOf(sections.length);
+        const down = !separator && downOf(childrenOf(sectionElements[sections.length])) !== undefined;
         const readerOfNote: Reader = {
             ...readerOf(false),
             inNote: true,
-            ...(label === undefined ? {} : { noteNumber: label }),
+            ...(separator ? {} : { noteNumber: shows }),
             ...(grid === undefined ? {} : { grid }),
             ...(down ? { down } : {}),
         };
-        const noteBlocks = note === undefined ? [] : readBlocks(contentOf(note), readerOfNote);
-        return label === undefined || noteBlocks[noteBlocks.length - 1]?.type !== "table"
+        const noteBlocks = readBlocks(content, readerOfNote);
+        return separator || noteBlocks[noteBlocks.length - 1]?.type !== "table"
             ? noteBlocks
             : [...noteBlocks, paragraphAfterTable(kind, readerOfNote)];
     };
@@ -4753,15 +4796,46 @@ export const readContent = (writtenBody: XmlObject, writtenParts: DocumentParts,
               };
     };
     /**
+     * The elements of an endnote separator Word lays out: Word leaves out what follows the separator in its paragraph, as
+     * it left out text there (`word-stops-endnotes.docx` NE3), but for its bookmarks. Those of one of more than a paragraph,
+     * or whose paragraph has no separator, are as they are
+     */
+    const separatorElements = (type: "separator" | "continuationSeparator"): readonly unknown[] => {
+        const noteContent = contentOf(notesByKind.endnote.get(type) ?? { "w:endnote": [] });
+        const paragraphs = noteContent.filter(
+            (element) => isObject(element) && !["_attr", "w:bookmarkStart", "w:bookmarkEnd"].includes(nameOf(element)),
+        );
+        const [paragraph] = paragraphs;
+        if (paragraphs.length !== 1 || !isObject(paragraph) || nameOf(paragraph) !== "w:p") {
+            return noteContent;
+        }
+        const children = contentOf(paragraph);
+        const mark = children.findIndex(
+            (child) => isObject(child) && nameOf(child) === "w:r" && find(childrenOf(child["w:r"]), `w:${type}`) !== undefined,
+        );
+        return mark < 0
+            ? noteContent
+            : noteContent.map((element) =>
+                  element === paragraph
+                      ? {
+                            "w:p": [
+                                ...children.slice(0, mark + 1),
+                                ...children.slice(mark + 1).filter((child) => isObject(child) && nameOf(child) === "w:bookmarkStart"),
+                            ],
+                        }
+                      : element,
+              );
+    };
+    /**
      * A separator above the endnotes as Word lays it out: a line of its paragraph style's text, at single spacing and with
      * no space before or after, whatever its own formatting. Word left out the space before and after, the line spacing
      * and the size of the text of the separator and the continuation separator alike (`word-continued-endnotes.docx` CE3
-     * to CE5, `word-watertight-endnotes2.docx` EN2, `word-watertight-sections.docx` SC4). Its bookmarks are kept. One with
-     * text in it, or more than a paragraph, stops, as Word hasn't been seen laying one out, and so does one with something
-     * in it that stops the layout anywhere, such as an equation
+     * to CE5, `word-watertight-endnotes2.docx` EN2, `word-watertight-sections.docx` SC4), and the text after the separator
+     * (NE3). Its bookmarks are kept. One with text before the separator, or more than a paragraph, stops, as Word hasn't
+     * been seen laying one out, and so does one with something in it that stops the layout anywhere, such as an equation
      */
     const readEndnoteSeparator = (type: "separator" | "continuationSeparator"): readonly Block[] => {
-        const content = readNoteContent("endnote", type);
+        const content = readNoteContent("endnote", type, undefined, separatorElements(type));
         const [first] = content;
         if (content.length === 0) {
             return [];
@@ -4796,45 +4870,97 @@ export const readContent = (writtenBody: XmlObject, writtenParts: DocumentParts,
         ...readNoteProperties(find(childrenOf(sectionElements[section]), `w:${kind}Pr`)),
     });
     const endnoteReferences = new Map<string, readonly Block[]>();
-    // How many notes of each kind have been read, and the number and section of the last, as a section can number its
-    // own afresh
-    const noteCounts = { footnote: 0, endnote: 0 };
-    const lastNotes = new Map<NoteKind, { readonly value: number; readonly section: number }>();
-    let unwrittenNumber = false;
-    // Footnotes are numbered 1, 2, 3 and endnotes i, ii, iii, as Word numbers them unless the document or the section
-    // they are in says otherwise (`w:footnotePr`, `w:endnotePr`)
+    const footnotesOnEachPage = new Map<string, NumberedOnPage>();
+    // The sections of the footnotes numbered afresh on each page
+    const sectionsNumberingOnPages = new Set<number>();
+    /**
+     * How many notes of a kind have been read, which name their markers, and counted in their numbers, how many of those
+     * were in the section of the last, and whether one was in a section that numbers its own afresh in each section
+     */
+    type NoteCount = {
+        readonly read: number;
+        readonly counted: number;
+        readonly section: number;
+        readonly inSection: number;
+        readonly afresh: boolean;
+    };
     // eslint-disable-next-line functional/prefer-readonly-type
-    type LastNotes = Map<NoteKind, { readonly value: number; readonly section: number }>;
-    /** Numbers the next note of a kind after the last, in the section being read, and gives its number as it is written */
-    const numberNext = (kind: NoteKind, last: LastNotes): string | undefined => {
+    type NoteCounts = Map<NoteKind, NoteCount>;
+    const countOf = (counts: NoteCounts, kind: NoteKind): NoteCount =>
+        counts.get(kind) ?? { read: 0, counted: 0, section: sections.length, inSection: 0, afresh: false };
+    const noteCounts: NoteCounts = new Map();
+    let unwrittenNumber = false;
+    // Why the notes can't be numbered as Word numbers them, when they can't
+    let unseenNumbering: string | undefined;
+    /** Counts a note of a kind read, without counting it in the numbers, and gives the name of the marker at its reference */
+    const markerNext = (kind: NoteKind, counts: NoteCounts): string => {
+        const count = countOf(counts, kind);
+        // eslint-disable-next-line functional/immutable-data
+        counts.set(kind, { ...count, read: count.read + 1 });
+        // A name no bookmark can have, as bookmarks' names have no spaces
+        return `${kind} ${count.read + 1}`;
+    };
+    /**
+     * Numbers the next note of a kind, in the section being read, and gives its number as it is written, or as its page
+     * numbers it, from the name of the marker at its reference (`marker`). Footnotes are numbered 1, 2, 3 and endnotes i,
+     * ii, iii, as Word numbers them unless the document or the section they are in says otherwise (`w:footnotePr`,
+     * `w:endnotePr`). Word numbers a section's notes on from all those counted before them in the document, from its own
+     * start number: after 27 footnotes, the first of a section that starts them from 5 is 32, and the first of the section
+     * after it, from 1, is 31 after 30 (`word-stops-notes.docx` NT14b, NT14c), which counts those of a section numbered
+     * afresh on each page (NT14a). A section numbered afresh in each section starts from its number, and one numbered on
+     * each page, on each page (NT14a). How Word numbers notes on through the document after a section that numbers its own
+     * afresh in each section hasn't been seen
+     */
+    const numberNext = (kind: NoteKind, counts: NoteCounts, marker: string): NoteReference => {
         const section = sections.length;
         const { format, start, restart } = notePropertiesOf(kind, section);
-        const previous = last.get(kind);
-        const value = previous === undefined || (restart === "eachSect" && previous.section !== section) ? start : previous.value + 1;
+        const count = countOf(counts, kind);
+        const inSection = count.section === section ? count.inSection : 0;
         // eslint-disable-next-line functional/immutable-data
-        last.set(kind, { value, section });
-        return formatNumber(value, format);
+        counts.set(kind, {
+            ...count,
+            counted: count.counted + 1,
+            section,
+            inSection: inSection + 1,
+            afresh: count.afresh || restart === "eachSect",
+        });
+        if (restart !== "eachSect" && restart !== "eachPage" && count.afresh) {
+            unseenNumbering ??= "notes numbered on through the document after a section that numbers its own afresh";
+        }
+        if (restart === "eachPage" && kind === "footnote") {
+            unwrittenNumber ||= formatNumber(start, format) === undefined;
+            return { label: "", onPage: marker };
+        }
+        const written = formatNumber(start + (restart === "eachSect" ? inSection : count.counted), format);
+        unwrittenNumber ||= written === undefined;
+        return { label: written ?? "" };
     };
-    /** Numbers notes on from the last ones, without reading them or numbering them in `lastNotes` */
-    const previewFrom = (last: LastNotes): NoteReader => {
-        const next: LastNotes = new Map(last);
+    /** Numbers notes on from the last ones, without reading them or counting them in `noteCounts` */
+    const previewFrom = (counts: NoteCounts): NoteReader => {
+        const next: NoteCounts = new Map(counts);
         return {
-            read: (kind) => ({ label: numberNext(kind, next) ?? "" }),
+            read: (kind) => numberNext(kind, next, markerNext(kind, next)),
+            readOwn: () => {
+                markerNext("footnote", next);
+                return { label: "" };
+            },
             skip: (kind) => {
-                numberNext(kind, next);
+                numberNext(kind, next, markerNext(kind, next));
             },
             preview: () => previewFrom(next),
         };
     };
     const readNote = (kind: NoteKind, id: string): NoteReference => {
-        // eslint-disable-next-line functional/immutable-data
-        noteCounts[kind]++;
-        const written = numberNext(kind, lastNotes);
-        const label = written ?? "";
-        unwrittenNumber ||= written === undefined;
-        const content = readNoteContent(kind, id, label);
-        // A name no bookmark can have, as bookmarks' names have no spaces
-        const marker = `${kind} ${noteCounts[kind]}`;
+        const marker = markerNext(kind, noteCounts);
+        const numbered = numberNext(kind, noteCounts, marker);
+        const { label, onPage } = numbered;
+        const content = readNoteContent(kind, id, onPage === undefined ? label : { onPage });
+        if (onPage !== undefined) {
+            const { start, format } = notePropertiesOf(kind, sections.length);
+            // eslint-disable-next-line functional/immutable-data
+            footnotesOnEachPage.set(marker, { start, format });
+            sectionsNumberingOnPages.add(sections.length);
+        }
         if (kind === "endnote") {
             // eslint-disable-next-line functional/immutable-data
             endnoteSections.push(sections.length);
@@ -4852,18 +4978,28 @@ export const readContent = (writtenBody: XmlObject, writtenParts: DocumentParts,
         footnotes.set(marker, content);
         // eslint-disable-next-line functional/immutable-data
         footnoteNumbers.set(marker, label);
-        return { label, marker };
+        return { ...numbered, marker };
     };
 
     const noteReader: NoteReader = {
         read: readNote,
-        // A note whose reference is deleted is numbered, though it isn't laid out (MK10e)
-        skip: (kind) => {
+        readOwn: (id) => {
+            const marker = markerNext("footnote", noteCounts);
             // eslint-disable-next-line functional/immutable-data
-            noteCounts[kind]++;
-            numberNext(kind, lastNotes);
+            footnotes.set(marker, readNoteContent("footnote", id, null));
+            // eslint-disable-next-line functional/immutable-data
+            footnoteNumbers.set(marker, "");
+            return { label: "", marker };
         },
-        preview: () => previewFrom(lastNotes),
+        // A note whose reference is deleted is numbered, though it isn't laid out (MK10e). Where the page it would be on
+        // numbers it hasn't been seen
+        skip: (kind) => {
+            const { onPage } = numberNext(kind, noteCounts, markerNext(kind, noteCounts));
+            if (onPage !== undefined) {
+                unseenNumbering ??= "a deleted footnote reference in a section that numbers its footnotes afresh on each page";
+            }
+        },
+        preview: () => previewFrom(noteCounts),
     };
     const reader: Reader = { ...readerOf(false), notes: noteReader };
     // eslint-disable-next-line functional/prefer-readonly-type
@@ -4936,23 +5072,44 @@ export const readContent = (writtenBody: XmlObject, writtenParts: DocumentParts,
         addSection(undefined);
     }
 
+    /** Whether a section shares a page with the section before or after it, as one that starts on the page or column of another */
+    const sharesPage = (section: number): boolean =>
+        [sections[section], sections[section + 1]].some(
+            (one, at) => one !== undefined && (at === 1 || section > 0) && (one.start === "continuous" || one.start === "nextColumn"),
+        );
+
     /**
-     * Why the notes of a kind can't be laid out yet, when Word numbers or places them in a way not yet followed: afresh on
-     * each page, from a number of its own in a section after the first though they are numbered on through the document,
-     * footnotes anywhere but at the bottom of the page, and endnotes at the end of each section
+     * Why the notes of a kind can't be laid out yet, when Word numbers or places them in a way not yet followed: endnotes
+     * afresh on each page, footnotes afresh on each page of a section that shares a page with another, footnotes anywhere
+     * but at the bottom of the page or below the text, below the text of columns, and endnotes at the end of each section. Word put the endnotes of sections that say
+     * they go at the end of each section at the end of the document, as its settings say (`word-stops-endnotes.docx` NE2),
+     * so only the settings place them; how Word places them when the settings put them at the end of each section hasn't
+     * been seen
      */
     const notesUnsupported = (kind: NoteKind): string | undefined => {
         const all = sections.map((_, section) => notePropertiesOf(kind, section));
-        return all.some(({ restart }) => restart === "eachPage")
-            ? "notes numbered afresh on each page"
-            : all.some(({ restart, start }) => restart !== "eachSect" && start !== all[0].start)
-              ? "notes numbered on from a number of their own in a later section"
-              : kind === "footnote" && all.some(({ position }) => position !== "pageBottom")
-                ? "footnotes put elsewhere than at the bottom of the page"
-                : kind === "endnote" && all.length > 1 && all.some(({ position }) => position !== "docEnd")
-                  ? "endnotes at the end of each section"
-                  : undefined;
+        const endnotesAt = readNoteProperties(find(settings, "w:endnotePr")).position ?? NOTE_DEFAULTS.endnote.position;
+        return kind === "endnote" && all.some(({ restart }) => restart === "eachPage")
+            ? "endnotes numbered afresh on each page"
+            : kind === "footnote" && [...sectionsNumberingOnPages].some(sharesPage)
+              ? "footnotes numbered afresh on each page of a section that shares a page with another"
+              : kind === "footnote" && all.some(({ position }) => position !== "pageBottom" && position !== "beneathText")
+                ? "footnotes put elsewhere than at the bottom of the page or below the text"
+                : kind === "footnote" &&
+                    all.some(({ position }, section) => position === "beneathText" && sections[section].columns.length > 1)
+                  ? "footnotes below the text of columns"
+                  : kind === "endnote" && endnotesAt !== "docEnd" && endnoteSections.some((section) => section < sections.length - 1)
+                    ? "endnotes at the end of each section"
+                    : undefined;
     };
+    if (footnotes.size > 0) {
+        // Word puts the footnotes of a section that says so just below the text of their page (`word-stops-notes.docx` NT14c)
+        sections.forEach((section, index) => {
+            if (notePropertiesOf("footnote", index).position === "beneathText") {
+                sections[index] = { ...section, footnotesBeneathText: true };
+            }
+        });
+    }
 
     const documentContent: DocumentContent = {
         blocks,
@@ -4963,6 +5120,7 @@ export const readContent = (writtenBody: XmlObject, writtenParts: DocumentParts,
         endnotes: endnotes.length > 0 ? [...readEndnoteSeparator("separator"), ...endnotes] : [],
         endnoteContinuationSeparator: endnotes.length > 0 ? readEndnoteSeparator("continuationSeparator") : [],
         footnoteNumbers,
+        ...(footnotesOnEachPage.size > 0 ? { footnotesOnEachPage } : {}),
         endnoteNumbers,
         relativeReferences: markers.relative,
         endnoteReferences,
@@ -4989,7 +5147,8 @@ export const readContent = (writtenBody: XmlObject, writtenParts: DocumentParts,
                 (endnoteSections.some((section) => !sameGrid(gridOf(section), gridOf(sections.length - 1)))
                     ? "endnotes from a section on another document grid than the last"
                     : undefined) ??
-                (unwrittenNumber ? "notes numbered in a format not yet written" : undefined),
+                (unwrittenNumber ? "notes numbered in a format not yet written" : undefined) ??
+                unseenNumbering,
         }),
     };
 };

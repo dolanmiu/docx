@@ -1,7 +1,7 @@
 // cspell:disable
 import { describe, expect, it } from "vitest";
 
-import { formatFieldNumber, formatNumber, formatPageNumber, isFieldNumberFormat } from "./number-format";
+import { formatFieldNumber, formatNumber, formatPageNumber, isFieldNumberFormat, isFieldPicture, writeFieldNumber } from "./number-format";
 
 // What Word wrote, in PDFs it saved of scripts/layout-probes/word-page-number-formats.ts and word-page-number-formats2.ts
 describe("formatNumber", () => {
@@ -307,10 +307,62 @@ describe("formatFieldNumber", () => {
             undefined,
             undefined,
         ]);
-        expect([formatFieldNumber(4, "CardText"), formatFieldNumber(4, "constructor")]).to.deep.equal([undefined, undefined]);
-        expect([isFieldNumberFormat("ROMAN"), isFieldNumberFormat("arabicdash"), isFieldNumberFormat("Hex")]).to.deep.equal([
+        expect([formatFieldNumber(4, "BahtText"), formatFieldNumber(4, "constructor")]).to.deep.equal([undefined, undefined]);
+        expect([isFieldNumberFormat("ROMAN"), isFieldNumberFormat("arabicdash"), isFieldNumberFormat("DBNUM1")]).to.deep.equal([
             true,
             true,
+            false,
+        ]);
+    });
+
+    it("should write a number in words, as dollars, and in hexadecimal, as Word wrote page 1 in them", () => {
+        // `word-stops-numbers.ts` NF2: "one", "one and 00/100", "first" and "1"
+        expect(["CardText", "DollarText", "OrdText", "Hex"].map((format) => formatFieldNumber(1, format))).to.deep.equal([
+            "one",
+            "one and 00/100",
+            "first",
+            "1",
+        ]);
+        expect(["cardtext", "DOLLARTEXT", "OrdText"].map((format) => formatFieldNumber(121, format))).to.deep.equal([
+            "one hundred twenty-one",
+            "one hundred twenty-one and 00/100",
+            "one hundred twenty-first",
+        ]);
+        // In capitals, as Word's help writes 458 as 1CA. Whether a name in small letters writes small ones hasn't been seen
+        expect([
+            formatFieldNumber(458, "Hex"),
+            formatFieldNumber(458, "HEX"),
+            formatFieldNumber(458, "hex"),
+            formatFieldNumber(9, "hex"),
+        ]).to.deep.equal(["1CA", "1CA", undefined, "9"]);
+        expect([formatFieldNumber(70000, "hex"), formatFieldNumber(70000, "Hex")]).to.deep.equal([undefined, undefined]);
+    });
+});
+
+describe("writeFieldNumber", () => {
+    it("should write a number with a picture as Word does: 0s filled, a space for a # or x with no digit, a decimal point and text", () => {
+        const pictured = (value: number, picture: string): string | undefined => writeFieldNumber(value, { picture });
+        // `word-page-fields.ts` PF5 to PF7, and `word-stops-numbers.ts` NF3
+        expect(
+            ["00", "000", "0", "#", "#,##0", "0.00", "x##", "'p'00", "'page '0' of'"].map((picture) => pictured(1, picture)),
+        ).to.deep.equal(["01", "001", "1", "1", "   1", "1.00", "  1", "p01", "page 1 of"]);
+        expect([pictured(1234, "#,##0"), pictured(12345, "0"), pictured(123, "x###")]).to.deep.equal(["1,234", "12345", " 123"]);
+        // Where x would drop digits, and 0 with no 0 in the picture, which haven't been seen
+        expect([pictured(1234, "x##"), pictured(0, "#")]).to.deep.equal([undefined, undefined]);
+        // A number format with no picture
+        expect(writeFieldNumber(4, { numberFormat: "roman" })).to.equal("iv");
+    });
+
+    it("should know the pictures whose text Word is known to write", () => {
+        expect(["00", "#,##0", "0.00", "x##", "'p'00", "0'end'"].map(isFieldPicture)).to.deep.equal([true, true, true, true, true, true]);
+        // # after a decimal point, x after the first place, text inside the number or out of quotes, sections
+        expect(["0.#", "#x#", "0'-'0", "$0", "0;0", "", "x.00x"].map(isFieldPicture)).to.deep.equal([
+            false,
+            false,
+            false,
+            false,
+            false,
+            false,
             false,
         ]);
     });
