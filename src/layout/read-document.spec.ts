@@ -4430,6 +4430,13 @@ describe("readDocument", () => {
                 const inner = nested.rows[0].cells[0].blocks[0] as TableBlock;
                 expect([nested.unsupported, inner.unsupported]).to.deep.equal([undefined, undefined]);
                 expect((inner.rows[0].cells[0].blocks[0] as ParagraphBlock).leftOut).to.deep.equal({ before: true, after: true });
+                // A Normal paragraph after a table at the end of a cell leaves out its space before, after the table, and its
+                // space after, at the end of the row
+                const afterInner = readWritten({
+                    styles: STYLES,
+                    sections: [{ children: [plain("before"), tableOf([[tableOf([[plain("a")]]), normal("b")]])] }],
+                }).blocks[1].block as TableBlock;
+                expect((afterInner.rows[0].cells[0].blocks[1] as ParagraphBlock).leftOut).to.deep.equal({ before: true, after: true });
             });
 
             it("should stop where Word would leave out the space at an edge not yet seen, and guessing, leave it out", () => {

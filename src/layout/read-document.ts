@@ -4610,7 +4610,8 @@ const withCellEdges = (stack: readonly Block[], reader: Reader): readonly Block[
                         ...(at === 0 && leftOut.before ? { before: true } : {}),
                         ...(at === last && leftOut.after ? { after: true } : {}),
                     };
-                    return one.type === "paragraph" && Object.keys(own).length > 0 ? { ...one, leftOut: own } : one;
+                    // With what the cell's own blocks left out, such as the space before a paragraph after a table in it
+                    return one.type === "paragraph" && Object.keys(own).length > 0 ? { ...one, leftOut: { ...one.leftOut, ...own } } : one;
                 });
                 return { ...cell, blocks };
             }),
