@@ -535,12 +535,17 @@ await write({
 
 // word-stops-page-32768.docx: NF1f, page 32768 in roman numerals, the page after one numbered 32767, the most a section
 // can start from, as Word reads a page number in 16 bits; the batch's NF1f started a section at 32768
-await write({ name: "word-stops-page-32768", sections: [numberedSection("NF1f", "upperRoman", 32767, 1)], injections: [cleanFields] });
+await write({
+    name: "word-stops-page-32768",
+    sections: [numberedSection("NF1f", "upperRoman", 32767, 1)],
+    injections: [onlyReferencedNotes, cleanFields],
+});
 
 const fieldXml = (instruction: string): string =>
     `<w:r><w:fldChar w:fldCharType="begin"/></w:r><w:r><w:instrText xml:space="preserve"> ${instruction} </w:instrText></w:r><w:r><w:fldChar w:fldCharType="separate"/></w:r><w:r><w:t>?</w:t></w:r><w:r><w:fldChar w:fldCharType="end"/></w:r>`;
 
-// word-stops-fields.docx: NF2 to NF4, whose page references Word works out when it opens the document: answer Yes
+// word-stops-fields.docx: NF2 to NF4, whose page references Word works out when it opens the document: answer Yes. The
+// document Word opened, committed beside its PDF, also had NF7's two footnotes, which nothing in it refers to
 const fieldChildren = [
     ...probe("NF2", [
         new Paragraph({ children: [new TextRun("NF2 target"), new Bookmark({ id: "nf2", children: [new TextRun(" here")] })] }),
@@ -564,6 +569,7 @@ await write({
     sections: [{ properties: PAGE, children: fieldChildren }],
     options: { features: { updateFields: true } } as object,
     injections: [
+        onlyReferencedNotes,
         (parts) => {
             const text = parts.get("word/document.xml")!;
             parts.set(
