@@ -3095,6 +3095,18 @@ describe("readDocument", () => {
             ]);
             expect(last.blocks.map(({ block }) => block.type)).to.deep.equal(["paragraph", "table", "paragraph"]);
             expect(paragraphOf(last, 2).items).to.deep.equal([]);
+            // On its section's grid, as the section's other paragraphs are
+            const onGrid = readBody([
+                p(r(t("a"))),
+                {
+                    "w:tbl": [
+                        { "w:tblPr": [{ "w:tblpPr": { _attr: { "w:horzAnchor": "text", "w:vertAnchor": "text" } } }] },
+                        { "w:tr": [cell([], p())] },
+                    ],
+                },
+                { "w:sectPr": [{ "w:docGrid": { _attr: { "w:type": "lines", "w:linePitch": 360 } } }] },
+            ]);
+            expect(paragraphOf(onGrid, 2).grid).to.deep.equal({ linePitch: 18 });
             // Lined up inline against the text, it is at the top of the paragraph after it (FT7c); against the margins or the
             // page, and lined up in a way the schema doesn't have, it isn't followed yet
             expect(floatOf({ "w:horzAnchor": "text", "w:vertAnchor": "text", "w:tblpYSpec": "inline" }).float).to.deep.include({

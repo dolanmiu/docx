@@ -3781,8 +3781,8 @@ const frameDrawing = (frame: FrameProperties, blocks: readonly ParagraphBlock[])
  * where its anchor is, as the frame is on its page (`word-stops-floats.docx` FR5a). The paragraph after a frame can be the
  * empty one that ends its section, which takes a line then, and which the next section's text on the page goes round
  * too, and with a table after it, the frame is anchored at the table's top, as Word places it (FR1a to FR1d). One placed
- * against the paragraph after it before a table, and one with nothing after it in its section, aren't followed yet, so
- * the layout stops there.
+ * against the paragraph after it before a table, and one with nothing after it in its section, at the end of the
+ * document or as its own paragraph ends the section, aren't followed yet, so the layout stops there.
  */
 const anchorFrames = <Entry extends { readonly block: Block; readonly section: number }>(
     entries: readonly Entry[],
@@ -5178,6 +5178,12 @@ export const readContent = (writtenBody: XmlObject, writtenParts: DocumentParts,
             readSection(element, readPart, sections[sections.length - 1], pageSettings, readGrid(element, normalSize, pageSettings)),
         );
     };
+    /** The reader of a section's blocks, on its grid and with its text running down the page when it does */
+    const sectionReader = (section: number): Reader => {
+        const grid = gridOf(section);
+        const down = downOf(childrenOf(sectionElements[section])) !== undefined;
+        return { ...reader, ...(grid === undefined ? {} : { grid }), ...(down ? { down } : {}) };
+    };
     // The body is written with its section's properties at its end, if nothing else
     for (const element of elements) {
         const name = nameOf(element);
@@ -5188,9 +5194,7 @@ export const readContent = (writtenBody: XmlObject, writtenParts: DocumentParts,
             const bookmark = bookmarkOf(element);
             bookmarks = bookmark === undefined ? bookmarks : [...bookmarks, bookmark];
         } else {
-            const grid = gridOf(sections.length);
-            const down = downOf(childrenOf(sectionElements[sections.length])) !== undefined;
-            const block = readBlock(element, { ...reader, ...(grid === undefined ? {} : { grid }), ...(down ? { down } : {}) });
+            const block = readBlock(element, sectionReader(sections.length));
             const sectionProperties = sectionPropertiesOf(element);
             if (block?.type === "paragraph" && block.hidden) {
                 bookmarks = [...bookmarks, ...markersIn([block])];
@@ -5215,10 +5219,13 @@ export const readContent = (writtenBody: XmlObject, writtenParts: DocumentParts,
             }
         }
     }
-    // Word ends a body that ends with a table that text flows around with an empty paragraph of its own, which takes a line,
-    // and in which the table is anchored (`word-stops-floats.docx` FT1e)
+    // Word ends a body that ends with a table that text flows around with an empty paragraph of its own, which takes a line
+    // of its section, and in which the table is anchored (`word-stops-floats.docx` FT1e)
     const lastBlock = blocks[blocks.length - 1];
-    const closing = lastBlock?.block.type === "table" && lastBlock.block.float !== undefined ? readBlock({ "w:p": [] }, reader) : undefined;
+    const closing =
+        lastBlock?.block.type === "table" && lastBlock.block.float !== undefined
+            ? readBlock({ "w:p": [] }, sectionReader(lastBlock.section))
+            : undefined;
     if (closing !== undefined) {
         // eslint-disable-next-line functional/immutable-data
         blocks.push({ block: closing, section: lastBlock!.section });
