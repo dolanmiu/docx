@@ -42,6 +42,7 @@ import {
     getTextStyles,
     isEastAsian,
     isEastAsianRun,
+    isGridCharacter,
     isMonospacedEastAsianFont,
     isObject,
     isOff,
@@ -1330,13 +1331,27 @@ const isTwoInOne = (properties: readonly XmlObject[]): boolean => isOn(attribute
 
 /**
  * Why a run's own formatting changes the room its text takes in a way not yet followed, when it does: text fitted to a
- * width (`w:fitText`), text across in vertical text (`w:eastAsianLayout`), and two lines in one of other than text
- * without Chinese, Japanese or Korean characters, without brackets and at a size that halves to whole half-points. Word drew
- * "twolines" in two lines in one in a line of Calibri 11 at 5.5 points, on one row, its width the text's at that size, in
- * a line no taller (scripts/layout-probes/stops2/word-stops-text.ts RF30).
+ * width (`w:fitText`), text across in vertical text (`w:eastAsianLayout`), but for text set across in text that runs
+ * down the page, as Word sets it there (see {@link acrossOf}), unless it is compressed to fit its line (`w:vertCompress`),
+ * and two lines in one of other than text without Chinese, Japanese or Korean characters, without brackets and at a size
+ * that halves to whole half-points, across the page. Word drew "twolines" in two lines in one in a line of Calibri 11 at
+ * 5.5 points, on one row, its width the text's at that size, in a line no taller (scripts/layout-probes/stops2/word-stops-text.ts
+ * RF30). In text that runs down the page, raised text and small capitals, which Word's PDF showed taking other room than
+ * across it, aren't followed either (stops2/word-stops-east-asian.ts VD3c, VD3e: a line 14 twips wider with text raised 6
+ * points, and small capitals of 10.5 points drawn at 8.4).
  */
-const unsupportedFormatOf = (properties: readonly XmlObject[], children: readonly XmlObject[], size: number): string | undefined => {
-    const { "w:combineBrackets": brackets, "w:vert": across } = attributesOf(find(properties, "w:eastAsianLayout"));
+const unsupportedFormatOf = (
+    properties: readonly XmlObject[],
+    children: readonly XmlObject[],
+    size: number,
+    format: RunFormat,
+    down: boolean,
+): string | undefined => {
+    const {
+        "w:combineBrackets": brackets,
+        "w:vert": across,
+        "w:vertCompress": compressed,
+    } = attributesOf(find(properties, "w:eastAsianLayout"));
     if (find(properties, "w:fitText") !== undefined) {
         return "text fitted to a width";
     }
@@ -1345,14 +1360,39 @@ const unsupportedFormatOf = (properties: readonly XmlObject[], children: readonl
             .filter((child) => nameOf(child) === "w:t")
             .flatMap((child) => contentOf(child).filter((part) => typeof part === "string"));
         const shown = children.filter((child) => nameOf(child) !== "w:rPr" && nameOf(child) !== "_attr");
-        return (brackets !== undefined && brackets !== "none") ||
+        return down ||
+            (brackets !== undefined && brackets !== "none") ||
             shown.some((child) => nameOf(child) !== "w:t") ||
             [...text.join("")].some(isEastAsian) ||
             !Number.isInteger(size)
             ? "two lines in one"
             : undefined;
     }
-    return isOn(across) ? "text across in vertical text" : undefined;
+    if (isOn(across) && (!down || isOn(compressed))) {
+        return "text across in vertical text";
+    }
+    return down && (format.smallCaps === true || (format.position ?? 0) !== 0)
+        ? "raised text or small capitals in text that runs down the page"
+        : undefined;
+};
+
+// The most characters of text across in text that runs down the page Word has been seen setting
+const MOST_ACROSS = 2;
+
+/**
+ * Whether a run's text is set across in text that runs down the page (`w:eastAsianLayout w:vert`), or why it can't be laid
+ * out as Word sets it, when it can't. Word sets two digits of Calibri 10.5 across a line of MS Mincho 10.5, in as much room
+ * along it as a line of them is tall, 257 twips, and the line no wider (stops2/word-stops-east-asian.ts VD13). More of them,
+ * and Chinese, Japanese or Korean characters, haven't been seen.
+ */
+const acrossOf = (properties: readonly XmlObject[], text: string, down: boolean): boolean | string => {
+    if (!down || !isOn(attributesOf(find(properties, "w:eastAsianLayout"))["w:vert"])) {
+        return false;
+    }
+    const characters = [...text];
+    return characters.length > MOST_ACROSS || characters.some(isGridCharacter)
+        ? "text across in vertical text of more than two characters, or Chinese, Japanese or Korean ones"
+        : true;
 };
 
 /**
@@ -1373,8 +1413,10 @@ const readRun = (element: XmlObject, paragraphRun: RunFormat, reader: Reader, re
     // Two lines in one are drawn at half the size (RF30)
     const format = isTwoInOne(childrenOf(properties)) ? { ...formatted, size: size / 2 } : formatted;
     const font = fontOf(format);
+    const down = reader.down === true;
     const unsupportedFormat =
-        unsupportedFormatOf(childrenOf(properties), children, size) ?? (format.hidden ? undefined : unknownRunFormatting(format));
+        unsupportedFormatOf(childrenOf(properties), children, size, format, down) ??
+        (format.hidden ? undefined : unknownRunFormatting(format));
     // Whether what is shown of the run is read past its formatting, with a guess
     let formatGuessed = false;
     const items: readonly (readonly LayoutItem[] | string)[] = children.map((child): readonly LayoutItem[] | string => {
@@ -1416,19 +1458,23 @@ const readRun = (element: XmlObject, paragraphRun: RunFormat, reader: Reader, re
                 const content = contentOf(child)
                     .filter((part) => typeof part === "string")
                     .join("");
+                const across = acrossOf(childrenOf(properties), content, down);
                 // A box of borders goes on round a tab in it (scripts/layout-probes/stops2/word-stops-tabs.ts TA7a)
-                return content.split("\t").flatMap((part, index): readonly LayoutItem[] => [
-                    ...(index > 0 && !format.hidden ? [{ type: "tab" as const, font }] : []),
-                    ...(part.length === 0 ? [] : spansOf(part, format)).map(({ text, ...spanFont }) => ({
-                        type: "text" as const,
-                        text,
-                        font: spanFont,
-                        // Where its lines break depends on its language, and whether its run is East Asian
-                        ...(format.eastAsianLanguage === undefined ? {} : { language: format.eastAsianLanguage }),
-                        ...(isEastAsianRun(format) ? { eastAsian: true } : {}),
-                        ...hyphenationOf(format),
-                    })),
-                ]);
+                const read = (): readonly LayoutItem[] =>
+                    content.split("\t").flatMap((part, index): readonly LayoutItem[] => [
+                        ...(index > 0 && !format.hidden ? [{ type: "tab" as const, font }] : []),
+                        ...(part.length === 0 ? [] : spansOf(part, format)).map(({ text, ...spanFont }) => ({
+                            type: "text" as const,
+                            text,
+                            font: spanFont,
+                            // Where its lines break depends on its language, and whether its run is East Asian
+                            ...(format.eastAsianLanguage === undefined ? {} : { language: format.eastAsianLanguage }),
+                            ...(isEastAsianRun(format) ? { eastAsian: true } : {}),
+                            ...hyphenationOf(format),
+                            ...(across === true ? { across } : {}),
+                        })),
+                    ]);
+                return typeof across === "string" ? guessedOr(reader, across, read) : read();
             }
             case "w:tab":
             case "w:ptab":
@@ -2142,46 +2188,33 @@ const readBorders = (format: ParagraphFormat): ParagraphBorders | string | undef
  */
 type TableFormats = readonly { readonly run: RunFormat; readonly paragraph: ParagraphFormat }[];
 
-// Half-width katakana, Hangul and symbols, which Word may turn or stand up down the page
-const HALF_WIDTH = /[\uff61-\uffdc]/u;
-
 /**
- * Why a paragraph of text that runs down the page can't be laid out yet, when it can't: Word's PDFs showed lines of
+ * Why a paragraph of text that runs down the page can't be laid out yet, when it can't. Word's PDFs showed lines of
  * ideographs, kana and punctuation in fonts whose characters are all an em, each an em down the line, and Latin text on
- * its side, as wide as it is across a page (scripts/layout-probes/word-vertical.ts V1, V4), but not the rest
+ * its side, as wide as it is across a page (scripts/layout-probes/word-vertical.ts V1, V4), and half-width katakana on
+ * their side too, half an em each; a left tab stop, borders round text and round the paragraph, emphasis marks, text in
+ * superscript and a justified line with spaces, each taking the room it takes across the page; and a footnote below the
+ * text, at the left of the page (stops2/word-stops-east-asian.ts VD1a, VD2b, VD3a, VD3b, VD3d, VD4, VD5, VD6a). Text in a
+ * font whose characters aren't all an em, which Word draws in room of their own down the line (VD2a: MS PMincho's kana
+ * 139 to 210 twips at 10.5 points), a picture in the line, which Word puts in the middle of the line (VD1c), a drawing
+ * that text wraps around, which Word places against the page as it is, not turned (VD1d), and a soft hyphen at the end of
+ * a line, aren't followed yet.
  */
-const unknownDownOf = (
-    items: readonly LayoutItem[],
-    format: ParagraphFormat,
-    borders: ParagraphBorders | string | undefined,
-): string | undefined => {
-    const texts = items.flatMap((item) => (item.type === "text" ? [item] : []));
-    if (items.some((item) => item.type === "tab" || item.type === "box" || item.type === "softHyphen" || item.type === "drawing")) {
-        return "a tab, soft hyphen, picture or drawing in text that runs down the page";
+const unknownDownOf = (items: readonly LayoutItem[], tabStops: readonly TabStop[]): string | undefined => {
+    if (items.some((item) => item.type === "box" || item.type === "softHyphen" || item.type === "drawing")) {
+        return "a soft hyphen, picture or drawing in text that runs down the page";
     }
-    if (
-        texts.some(
-            ({ text, font }) =>
-                HALF_WIDTH.test(text) ||
-                (/[\p{Script=Han}\p{Script=Hiragana}\p{Script=Katakana}\p{Script=Hangul}]/u.test(text) &&
-                    !isMonospacedEastAsianFont(font.font)),
-        )
-    ) {
-        return "East Asian text down the page in a font whose characters aren't all an em, or half-width";
+    if (items.some((item) => item.type === "tab") && tabStops.some(({ alignment }) => alignment !== "left")) {
+        return "a tab to a stop other than a left one in text that runs down the page";
     }
-    if (
-        texts.some(
-            ({ font }) =>
-                font.border !== undefined || font.emphasis !== undefined || font.raise !== undefined || font.lineSize !== undefined,
-        )
-    ) {
-        return "run formatting in text that runs down the page that Word hasn't been seen laying out";
-    }
-    if (borders !== undefined) {
-        return "a paragraph border on text that runs down the page";
-    }
-    const spread = format.alignment === "justified" || format.alignment === "distributed";
-    return spread && texts.some(({ text }) => / /.test(text)) ? "a justified line with spaces down the page" : undefined;
+    return items.some(
+        (item) =>
+            item.type === "text" &&
+            /[\p{Script=Han}\p{Script=Hiragana}\p{Script=Katakana}\p{Script=Hangul}]/u.test(item.text) &&
+            !isMonospacedEastAsianFont(item.font.font),
+    )
+        ? "East Asian text down the page in a font whose characters aren't all an em"
+        : undefined;
 };
 
 /**
@@ -2295,8 +2328,7 @@ const readParagraph = (element: XmlObject, reader: Reader, tableFormats: TableFo
         (reader.eastAsianRules !== undefined && own.some((item) => item.type === "text" && kinsokuLanguageOf(item.language) !== undefined)
             ? reader.eastAsianRules
             : undefined) ??
-        (reader.down === true && reader.inNote === true ? "a footnote or endnote on text that runs down the page" : undefined) ??
-        (reader.down === true ? unknownDownOf(own, combined, borders) : undefined) ??
+        (reader.down === true ? unknownDownOf(own, tabStops) : undefined) ??
         (typeof frame === "string"
             ? frame
             : otherDecimalSymbol
@@ -4085,7 +4117,17 @@ const readGrid = (element: unknown, normalSize: number, { gutterAtTop }: PageSet
     if (type === "linesAndChars") {
         return { linePitch, ...(space === 0 ? {} : { characterSpace: space }) };
     }
-    const columns = readColumns(find(properties, "w:cols"), textWidthOf(properties, gutterAtTop));
+    // Down the page, along the lines, which go from the top margin to the bottom one: 63 cells of 221.56 twips on lines of
+    // 13958, at 11 points and 1 twip more (stops2/word-stops-east-asian.ts VD10)
+    const margins = attributesOf(find(properties, "w:pgMar"));
+    const columns =
+        downOf(properties) === undefined
+            ? readColumns(find(properties, "w:cols"), textWidthOf(properties, gutterAtTop))
+            : [
+                  (twips(attributesOf(find(properties, "w:pgSz"))["w:h"]) ?? DEFAULT_SECTION.pageHeight) -
+                      Math.abs(twips(margins["w:top"]) ?? DEFAULT_SECTION.marginTop) -
+                      Math.abs(twips(margins["w:bottom"]) ?? DEFAULT_SECTION.marginBottom),
+              ];
     const room = normalSize + space;
     if (room <= 0 || columns.some((width) => width / room < 1)) {
         return "a document grid of characters with no room for one";
@@ -4131,17 +4173,16 @@ const readSection = (
               ? "page numbers in a format not yet written"
               : direction !== undefined && !HORIZONTAL.has(direction) && down === undefined
                 ? "text in a direction not yet followed"
-                : down !== undefined && (gutter !== 0 || mirrorMargins || columns.length > 1 || Math.min(marginTop, marginBottom) < 0)
-                  ? "text that runs down the page with a gutter, mirrored margins, columns or a negative margin"
-                  : previous?.textRunsDown !== undefined && (sectionStart === "continuous" || sectionStart === "nextColumn")
-                    ? "a continuous section break after text that runs down the page"
-                    : // A grid that snaps to characters measures its cells across the page, where these lines run down it, in a
-                      // way Word's PDFs haven't shown
-                      down !== undefined && typeof grid === "object" && grid.characterPitch !== undefined
-                      ? "a document grid that snaps to characters on text that runs down the page"
-                      : find(properties, "w15:footnoteColumns") !== undefined
-                        ? "footnotes in columns of their own"
-                        : unknownLengthIn(element);
+                : // Whether Word fills columns across the page before the next, where they split the lines' length, and where it
+                  // puts a gutter at the top, with mirrored margins or beside lines from the left, hasn't been seen
+                  down !== undefined && (mirrorMargins || columns.length > 1 || (gutter !== 0 && (gutterAtTop || down === "fromLeft")))
+                  ? "text that runs down the page with columns, mirrored margins, or a gutter at the top or beside lines from the left"
+                  : previous?.textRunsDown !== undefined &&
+                      (sectionStart === "nextColumn" || (sectionStart === "continuous" && down !== previous.textRunsDown))
+                    ? "a continuous section break after text that runs down the page, into text that doesn't"
+                    : find(properties, "w15:footnoteColumns") !== undefined
+                      ? "footnotes in columns of their own"
+                      : unknownLengthIn(element);
     const headers = readReferences(properties, "w:headerReference", readPart);
     const footers = readReferences(properties, "w:footerReference", readPart);
     const section: Section = {
@@ -4156,8 +4197,9 @@ const readSection = (
         gutter: gutterAtTop ? 0 : gutter,
         topGutter: gutterAtTop ? gutter : 0,
         // Text that runs down the page starts a new page after text across one, as a continuous section too
-        // (scripts/layout-probes/word-vertical.ts V13)
-        start: down !== undefined && sectionStart === "continuous" ? "nextPage" : sectionStart,
+        // (scripts/layout-probes/word-vertical.ts V13), and goes on on the page after text that runs down it the same way
+        // (stops2/word-stops-east-asian.ts VD9)
+        start: down !== undefined && sectionStart === "continuous" && previous?.textRunsDown !== down ? "nextPage" : sectionStart,
         titlePage: onOff(properties, "w:titlePg") === true,
         columns,
         numberFormat: format,
@@ -4169,26 +4211,36 @@ const readSection = (
         footers: { ...previous?.footers, ...footers },
         ...(unsupported ? { unsupported } : {}),
     };
-    return down === undefined ? section : turned(section, down);
+    return down === undefined ? section : turned(section, down, gutter);
 };
 
 /**
  * A section whose text runs down the page, with its page turned on its side, so that its lines run along it: from its top
  * margin to its bottom one, as long as the page's text is tall, and across it from the right margin, or the left, each as
  * far from the one before as it is tall, as Word lays them out (scripts/layout-probes/word-vertical.ts V1, V2, V6, V7).
- * Its header and footer stay across the top and bottom of the page, and a header doesn't push its lines down (VH1)
+ * Its header and footer stay across the top and bottom of the page, and a header doesn't push its lines down (VH1). Its
+ * gutter is beside its right margin, where its first line starts, and a negative top or bottom margin is as far from the
+ * edge as it would be positive, as the header and footer don't push the lines anyway: a gutter of 720 twips puts the
+ * first line 720 further from the right edge, and lines with a top margin of -1440 are as long as with 1440
+ * (stops2/word-stops-east-asian.ts VD8a, VD8c)
  */
-const turned = (section: Section, textRunsDown: "fromRight" | "fromLeft"): Section => ({
-    ...section,
-    pageWidth: section.pageHeight,
-    pageHeight: section.pageWidth,
-    marginLeft: section.marginTop,
-    marginRight: section.marginBottom,
-    marginTop: textRunsDown === "fromLeft" ? section.marginLeft : section.marginRight,
-    marginBottom: textRunsDown === "fromLeft" ? section.marginRight : section.marginLeft,
-    columns: [section.pageHeight - section.marginTop - section.marginBottom],
-    textRunsDown,
-});
+const turned = (section: Section, textRunsDown: "fromRight" | "fromLeft", gutter: number): Section => {
+    const marginTop = Math.abs(section.marginTop);
+    const marginBottom = Math.abs(section.marginBottom);
+    return {
+        ...section,
+        pageWidth: section.pageHeight,
+        pageHeight: section.pageWidth,
+        marginLeft: marginTop,
+        marginRight: marginBottom,
+        marginTop: textRunsDown === "fromLeft" ? section.marginLeft : section.marginRight + gutter,
+        marginBottom: textRunsDown === "fromLeft" ? section.marginRight : section.marginLeft,
+        gutter: 0,
+        topGutter: 0,
+        columns: [section.pageHeight - marginTop - marginBottom],
+        textRunsDown,
+    };
+};
 
 // How a list's number lines up at the start of its paragraph's first line (`w:lvlJc`), when not to the left, which is
 // how Word lines it up when the level doesn't say. Word's own lists are aligned to the left, the centre or the right, as

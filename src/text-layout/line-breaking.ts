@@ -107,6 +107,12 @@ export type InlineItem =
            * given, which Word hyphenates in its own
            */
           readonly hyphenation?: "none" | "unknown";
+          /**
+           * Whether it is set across in text that runs down the page (`w:eastAsianLayout w:vert`), which takes as much room
+           * along its line as a line of its font is tall, whole (scripts/layout-probes/stops2/word-stops-east-asian.ts
+           * VD13)
+           */
+          readonly across?: boolean;
       }
     | { readonly type: "tab"; readonly font: TextFont }
     /**
@@ -1272,12 +1278,31 @@ const startsWithGridCharacter = (tokens: readonly Token[]): boolean => {
 };
 
 /**
+ * A paragraph's content with its text set across in text that runs down the page as pieces of room of their own, as long
+ * along the line as a line of their font is tall, and with its ascent and descent across it.
+ */
+const withAcross = (items: readonly InlineItem[], measurer: TextMeasurer): readonly InlineItem[] =>
+    items.map((item) => {
+        if (item.type !== "text" || item.across !== true) {
+            return item;
+        }
+        const descent = measurer.measureDescent(item.font);
+        return {
+            type: "box",
+            width: measurer.measureLineHeight(item.font),
+            height: measurer.measureLineHeight(item.font) - descent,
+            descent,
+            font: item.font,
+        };
+    });
+
+/**
  * Breaks a paragraph into lines, as Word breaks it.
  *
  * @param items - The paragraph's content, in order
  */
 export const layoutLines = (
-    items: readonly InlineItem[],
+    given: readonly InlineItem[],
     {
         width,
         format = {},
@@ -1293,6 +1318,7 @@ export const layoutLines = (
     }: LineLayoutOptions,
 ): readonly LaidOutLine[] => {
     const { indentLeft = 0, indentRight = 0, firstLineIndent = 0, lineSpacing, alignment } = format;
+    const items = withAcross(given, measurer);
     const { linePitch, characterSpace, characterPitch, characterRoom } = grid;
     /**
      * The width of the cells of a grid that snaps to characters on a line, from its index, when the paragraph is on one: the

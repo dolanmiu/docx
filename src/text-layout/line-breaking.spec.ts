@@ -1994,6 +1994,18 @@ describe("layoutLines on a document grid, as Word lays it out (scripts/layout-pr
         });
     });
 
+    it("should set text across in text that runs down the page in as much room as a line of its font is tall, whole (stops2/word-stops-east-asian.ts VD13)", () => {
+        const across: InlineItem = { type: "text", text: "31", font: { font: "Calibri", size: 10.5 }, across: true };
+        const [line] = linesOf([mincho(IDEOGRAPH.repeat(2)), across, mincho(IDEOGRAPH)]);
+        expect(line.text).to.equal(IDEOGRAPH.repeat(3));
+        expect(line.textWidth).to.be.closeTo(3 * 10.5 + measureLineHeight({ font: "Calibri", size: 10.5 }), 1e-9);
+        // It goes on to the next line whole when it doesn't fit
+        expect(linesOf([mincho(IDEOGRAPH.repeat(42)), across], { width: 42 * 10.5 + 5 }).map((laid) => laid.textWidth)).to.deep.equal([
+            42 * 10.5,
+            measureLineHeight({ font: "Calibri", size: 10.5 }),
+        ]);
+    });
+
     it("should kern text on a grid of lines and characters, and stop at text kerned or with ligatures where how Word kerns and joins it hasn't been seen (GR5)", () => {
         const STOP = "ligatures on a document grid of characters, or kerning on one that snaps to characters";
         const kerned = run("To", "Calibri", 10.5, { kerning: 1 });
