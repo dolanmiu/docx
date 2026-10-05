@@ -982,8 +982,10 @@ const shiftAt = (
         return widthBeforeDecimal(tokens, measurer, border);
     }
     const text = textAfterTab(tokens);
-    const last = text.findLast((token) => token.type === "word" || token.type === "space");
-    const after = widthAfterTab(tokens, measurer, border) + (last === undefined ? 0 : (lastBorder(last.pieces)?.room ?? 0));
+    // The box of text that ends it ends after it, where a picture after the text has closed it already
+    const last = text.findLast((token) => token.type === "word" || token.type === "space" || token.type === "box");
+    const after =
+        widthAfterTab(tokens, measurer, border) + (last === undefined || last.type === "box" ? 0 : (lastBorder(last.pieces)?.room ?? 0));
     return alignment === "center" ? after / 2 : after;
 };
 
@@ -1115,8 +1117,11 @@ export const measureContentWidths = (
                     border = lastBorder(token.pieces);
                     continue;
                 }
-                const lead = token.type === "word" ? roomBetween(border, firstBorder(token.pieces)) : roomBetween(border, undefined);
-                border = token.type === "word" ? lastBorder(token.pieces) : undefined;
+                // A tab with the border of the text before it keeps its box open, as when laid out
+                const keepsBox = token.type === "tab" && token.font.border !== undefined && token.font.border.key === border?.key;
+                const lead =
+                    token.type === "word" ? roomBetween(border, firstBorder(token.pieces)) : keepsBox ? 0 : roomBetween(border, undefined);
+                border = token.type === "word" ? lastBorder(token.pieces) : keepsBox ? border : undefined;
                 endBorder = border;
                 if (token.type === "tab") {
                     const stop =
@@ -1124,7 +1129,7 @@ export const measureContentWidths = (
                             ? numberTabStop(position + lead, firstLineStops, format, defaultTabStop, Infinity).stop
                             : undefined) ?? nextStop(position + lead, first ? firstLineStops : stops, defaultTabStop, Infinity)!;
                     const rest = tokens.slice(index + 1);
-                    const shift = shiftAt(stop.alignment, rest, measurer) ?? widthAfterTab(rest, measurer);
+                    const shift = shiftAt(stop.alignment, rest, measurer, border) ?? widthAfterTab(rest, measurer, border);
                     position = Math.max(position + lead, stop.position - shift);
                     end = position;
                     continue;

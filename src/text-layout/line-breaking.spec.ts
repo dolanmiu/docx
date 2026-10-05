@@ -1542,8 +1542,10 @@ describe("layoutLines with run formatting, as Word lays it out", () => {
         expect(widths([box("bb "), plain("c")]).max).to.equal(50);
         // A picture after a box ends it, and starts a line where it is
         expect(widths([box("bb"), { type: "box", width: 30, height: 10 }])).to.deep.equal({ min: 30, max: 60 });
-        // A tab after a box ends it
+        // A tab after a box ends it, but for one with its border, round which the box goes on, as it is laid out
+        // (word-stops-tabs TA7a): "bb" ends at 25, and "cc" goes from the stop at 36 to 56, with the box's end after it
         expect(widths([box("bb"), { type: "tab", font: {} }, plain("c")]).max).to.equal(46);
+        expect(widths([box("bb"), { type: "tab", font: boxed(5, "a") }, box("cc")]).max).to.equal(61);
     });
 
     it("should wrap text in a border with its box's room, and start the box again on the next line", () => {
@@ -1583,8 +1585,10 @@ describe("layoutLines with run formatting, as Word lays it out", () => {
         expect([lineAt("right", [box("aa")]).textWidth, lineAt("right", [box("aa")]).unsupported]).to.deep.equal([85, undefined]);
         expect(lineAt("center", [box("aa")]).textWidth).to.equal(100);
         expect(lineAt("decimal", [box("1.5")]).textWidth).to.equal(110);
-        // With nothing but a picture after the tab, it lines up as without a border
+        // With nothing but a picture after the tab, it lines up as without a border, and a picture after the box, which
+        // closes it, ends at the stop
         expect(lineAt("right", [{ type: "box", width: 20, height: 10 }]).textWidth).to.equal(90);
+        expect(lineAt("right", [box("aa"), { type: "box", width: 20, height: 10 }]).textWidth).to.equal(90);
         // TA7a: a tab in the box, with its border, keeps the box open, so the text after it starts at its stop
         const tabbed = layoutLines([box("aa"), { type: "tab", font: boxed(5) }, box("bb")], {
             width: 200,
