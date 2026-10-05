@@ -336,12 +336,17 @@ export const fitColumns = (table: TableBlock, available: number, measure: Measur
     // to guess past them
     const words = proportionalWords(table, columns);
     const overflowing = sum(columns.map(({ min }) => min)) > room && tableWidth.width === undefined;
+    // Where the cells' margins alone are wider than the room, such as a table in a narrow cell, there is none for the words to
+    // share, and what Word does hasn't been seen
+    const crowded = overflowing && words !== undefined && sum(words.margins) > room;
     const unsupported =
         overflowing && ((tableWidth.share ?? 1) < 1 || words === undefined || unsettled.length > 0)
             ? "a word longer than its table can make room for"
-            : unsettled.includes("always") || (unsettled.length > 0 && total > room)
-              ? "a long word in cells merged across columns"
-              : undefined;
+            : crowded
+              ? "a table whose cells' margins are wider than the room for it"
+              : unsettled.includes("always") || (unsettled.length > 0 && total > room)
+                ? "a long word in cells merged across columns"
+                : undefined;
     const given = columns.filter((column) => column.given);
     const sized = columns.filter((column) => !column.given);
     // The columns given widths are narrowed only as far as those sized to their text, at their widest words, need. Those of
@@ -353,7 +358,7 @@ export const fitColumns = (table: TableBlock, available: number, measure: Measur
     const spacingRooms = columns.map((_, index) => (spaced ? spacingOf(table.cellSpacing!, index, columns.length) : 0));
     const spacing = sum(spacingRooms);
     const widths = columns.map((column, index) => {
-        if (overflowing && words !== undefined) {
+        if (overflowing && words !== undefined && !crowded) {
             return words.margins[index] + ((room - sum(words.margins)) * words.widths[index]) / sum(words.widths);
         }
         // A table wider than its columns has them widened in proportion to fill it, after a column is widened for a long

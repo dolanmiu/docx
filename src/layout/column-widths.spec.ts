@@ -128,6 +128,15 @@ describe("fitColumns", () => {
         expect(fitColumns(table([[across(0, 2, "aa")], [cell(0, "aa"), cell(1, "aaaaaaaaaa")]]), 70, measure).unsupported).to.equal(reason);
         // Sized as one with a width of its own, past the room, for a layout that guesses past it
         expect(widthsOf(fitColumns(margins, 70, measure))).to.deep.equal([20, 100]);
+        // Cells whose margins alone are wider than the room, empty or not, leave no room for words to share: each column is
+        // as wide as its widest word, past the room
+        const crowded = "a table whose cells' margins are wider than the room for it";
+        const empty = fitColumns(table([[cell(0, ""), cell(1, "")]]), 15, measure);
+        expect(empty.unsupported).to.equal(crowded);
+        expect(widthsOf(empty)).to.deep.equal([0, 0]);
+        const words = fitColumns(table([[cell(0, "a"), cell(1, "aaa")]]), 15, measure);
+        expect(words.unsupported).to.equal(crowded);
+        expect(widthsOf(words)).to.deep.equal([10, 30]);
     });
 
     it("should keep the widths cells give their columns when the room is short, and narrow the other columns", () => {
