@@ -126,10 +126,17 @@ const borderedPicture =
     (parts) => {
         const text = parts.get("word/document.xml")!;
         const at = text.indexOf(`@@${name}@@`);
+        if (at < 0) {
+            throw new Error(`No marker ${name} in word/document.xml`);
+        }
         const runStart = text.lastIndexOf("<w:r>", at);
         const runEnd = text.indexOf("</w:r>", at) + "</w:r>".length;
         const withoutMarker = text.slice(0, runStart) + text.slice(runEnd);
         const drawing = withoutMarker.indexOf("<w:r><w:drawing>", runStart);
+        // The picture's run must follow the marker's directly, with no properties of its own yet
+        if (drawing < 0 || withoutMarker.lastIndexOf("</w:p>", drawing) > runStart) {
+            throw new Error(`No picture run after the marker ${name} in its paragraph`);
+        }
         parts.set(
             "word/document.xml",
             `${withoutMarker.slice(0, drawing)}<w:r><w:rPr>${BORDER}/></w:rPr><w:drawing>${withoutMarker.slice(drawing + "<w:r><w:drawing>".length)}`,
