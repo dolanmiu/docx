@@ -52,6 +52,12 @@ whose PDFs Word saved in round 25. Read them with `word-stops-equations.py`, as 
 rounded down to the half point (EQ30), Word's sizes of roots' signs, brackets, accents and braces, and where it puts
 them (EQ31 to EQ37), its spacing of symbols and operators (EQ32, EQ39), bold digits (EQ45), and the maths settings
 followed (EQ42 to EQ44). Equations too long for their line (EQ40) and normal text (EQ41) still stop.
+`word-stops-equations3.ts` has the cases around those, for the next batch: roots, brackets, accents and braces whose
+size Word's PDFs leave between two (EQ46 to EQ49), superscripts in lower limits (EQ50), fractions, sums and functions
+beside brackets (EQ51), symbols not yet seen beside letters (EQ52), a sum in a script's script (EQ53), equation arrays
+lined up otherwise (EQ54), boxes with a side hidden, phantoms that take less room and pre-scripts (EQ55), in
+`word-stops-equations3`, and small fractions with displayed equations' defaults on (EQ56), in
+`word-stops-equation-small2`. They have no PDF from Word yet.
 
 `word-stops-east-asian2.ts` has what `word-stops-east-asian.ts` left stopping, for the next batch too: indents of part of a
 character on a grid that snaps to characters (GR14), the cases around GR3, GR5, GR7, GR8 and GR10 on grids (GR16), which
