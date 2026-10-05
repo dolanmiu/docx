@@ -855,17 +855,16 @@ export const paginate = (
                   ]
                 : [],
         );
-    // Those of the sections after the body's last, as the last section of a document with endnotes has none of the body
-    // only where it is laid out on its own
-    const lastSection = content.blocks.at(-1)?.section ?? -1;
-    const blocks: readonly { readonly block: Block; readonly section: number; readonly endnote?: number; readonly body?: number }[] = [
-        ...content.blocks.flatMap((entry, body) =>
-            content.blocks[body + 1]?.section === entry.section
-                ? [{ ...entry, body }]
-                : [{ ...entry, body }, ...endnoteBlocks(entry.section)],
-        ),
-        ...sections.slice(lastSection + 1).flatMap((_, after) => endnoteBlocks(lastSection + 1 + after)),
-    ];
+    // After a section's last block, its endnotes, and those of the sections up to the next block's, which have no blocks of
+    // their own, or of the last section, which has none of the body only where it is laid out on its own
+    const blocks: readonly { readonly block: Block; readonly section: number; readonly endnote?: number; readonly body?: number }[] =
+        content.blocks.flatMap((entry, body) => {
+            const next = content.blocks[body + 1]?.section ?? sections.length;
+            return [
+                { ...entry, body },
+                ...Array.from({ length: next - entry.section }, (_, after) => entry.section + after).flatMap(endnoteBlocks),
+            ];
+        });
     /** Whether a block is one of the endnotes', or their separator's */
     const isEndnote = (index: number): boolean => blocks[index]?.endnote !== undefined;
     /** The space between two paragraphs: the larger of the space after the first and before the second, or both */

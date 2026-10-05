@@ -6552,6 +6552,28 @@ describe("paginate", () => {
             ]);
         });
 
+        it("should put the endnotes of a section with no blocks of its own after it, between the sections either side", () => {
+            // The second section's paragraphs are all left out, as hidden, so the first's endnote, which goes at its end, is laid
+            // out after the first section, before the third
+            const SEPARATOR: ParagraphBlock = { type: "paragraph", items: [], format: {}, tabStops: [], markFont: {} };
+            const note = paragraph("note", 1);
+            const content = document([paragraph("a", 1), [paragraph("c", 1), 2]], {
+                sections: [SECTION, SECTION, SECTION],
+                endnotes: [SEPARATOR, note],
+                endnotesAfter: [1, 1],
+                endnoteNumbers: new Map<Block, string>([[note, "i"]]),
+            });
+            const { pages, stoppedAt } = paginate(content, { measurer: MEASURER });
+            expect(stoppedAt).to.equal(undefined);
+            expect(
+                pages.map(({ body, endnotes }) => [body.map(({ index }) => index), endnotes.map(({ noteNumber }) => noteNumber)]),
+            ).to.deep.equal([
+                [[0], []],
+                [[], ["i"]],
+                [[1], []],
+            ]);
+        });
+
         it("should keep endnote paragraphs with the next on a page below the continuation separator", () => {
             const SEPARATOR: ParagraphBlock = { type: "paragraph", items: [], format: {}, tabStops: [], markFont: {} };
             const blocks = [paragraph("p", 3), paragraph("kept", 1, { keepNext: true }), paragraph("m", 3)];
