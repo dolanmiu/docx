@@ -625,11 +625,19 @@ describe("paginate", () => {
             ).to.equal(undefined);
         });
 
-        it("should give the empty paragraph that ends a section no room for its borders or automatic spacing, as Word does", () => {
+        it("should give the empty paragraph that ends a section no room for its borders or automatic spacing, and stop where a box could go on through it, as Word does", () => {
             // word-stops-text.ts PB2a, PB2b
             const SECOND = { sections: [SECTION, { ...SECTION, start: "continuous" as const }] };
             const ending: ParagraphBlock = { ...bordered("end", 0), items: [], sectionBreak: true };
             expect(topsOf(document([paragraph("a", 1), ending, [paragraph("b", 1), 1]], SECOND))).to.deep.equal([[10, 20]]);
+            // word-stops-text.ts PB3a: paragraphs with the same borders either side of one without them are boxes of their
+            // own, each with its top and bottom borders
+            const plainEnding: ParagraphBlock = { ...paragraph("end", 0), items: [], sectionBreak: true };
+            expect(topsOf(document([bordered("a", 1), plainEnding, [bordered("b", 1), 1]], SECOND))).to.deep.equal([[15, 33]]);
+            // Whether a box of its borders before or after it goes on through it hasn't been seen
+            const through = "the empty paragraph that ends a section with the same borders as the paragraph before or after it";
+            expect(numbersOf(document([bordered("a", 1), ending, [paragraph("b", 1), 1]], SECOND)).stoppedAt).to.equal(through);
+            expect(numbersOf(document([paragraph("a", 1), ending, [bordered("b", 1), 1]], SECOND)).stoppedAt).to.equal(through);
             const automatic: ParagraphBlock = {
                 ...paragraph("end", 0, { autoSpaceBefore: true, autoSpaceAfter: true }),
                 items: [],

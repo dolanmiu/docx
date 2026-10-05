@@ -19,6 +19,12 @@
  *   spacing, which fits on the page only without its spacing's room below it, in one of them: whether that room can go into
  *   the footnotes (PB7a's paragraph moved whole by widow control)
  *
+ * The empty paragraph that ends a section:
+ * PB3c to PB3e: a box of single borders on the empty paragraph that ends a continuous section, and on the paragraphs
+ *   before and after it (c), before it only (d) and after it only (e): whether the box goes on through it (PB3a's had
+ *   none, and the paragraphs either side were boxes of their own; PB2a's had borders, which took no room, and the
+ *   paragraphs either side none)
+ *
  * Soft hyphens:
  * SH16a to SH16i: a line whose word's soft hyphen has its hyphen end 3.5, 5, 7, 9, 11, 13, 15, 17 and 19 twips before the
  *   margin, after a tab to a left stop that places it (SH13 broke at 19.9, and SH2 didn't at 2.7)
@@ -59,7 +65,7 @@
  * Usage: npm run run-ts -- scripts/layout-probes/stops2/word-stops-text2.ts [folder]
  */
 // cspell:ignore Donaudampf dampf schiff fahrt Donau
-import { AlignmentType, LevelFormat, LineRuleType, Paragraph, TabStopType, TextRun } from "docx";
+import { AlignmentType, type ISectionOptions, LevelFormat, LineRuleType, Paragraph, SectionType, TabStopType, TextRun } from "docx";
 
 import { measureTextWidth } from "../../../src/text-layout/text-width";
 
@@ -79,6 +85,7 @@ import {
     prose,
     replaceMarkerRun,
     softHyphens,
+    withProperty,
     write,
 } from "./kit";
 
@@ -281,6 +288,41 @@ const children: Child[] = [
     ...group("KE9b", [new Paragraph({ children: [new TextRun({ text: `KE9b ${`A${SOFT}V`.repeat(12)} end` })] })]),
 ];
 
+/** A box of single borders of half a point, 4 points from the text, as word-stops-text PB3a's */
+const BOX =
+    '<w:pBdr><w:top w:val="single" w:sz="4" w:space="4" w:color="000000"/><w:left w:val="single" w:sz="4" w:space="4" w:color="000000"/><w:bottom w:val="single" w:sz="4" w:space="4" w:color="000000"/><w:right w:val="single" w:sz="4" w:space="4" w:color="000000"/></w:pBdr>';
+/** A line in the box, `<probe> before the break` or `<probe> after the break` */
+const boxed = (name: string, side: "before" | "after"): Paragraph =>
+    new Paragraph({ children: [new TextRun(`${name} ${side} the break`), marker(`BOXED_${name}_${side}`)] });
+/** A paragraph after which docx writes the empty paragraph that ends the section, to find it by */
+const sectionEnd = (name: string): Paragraph => new Paragraph({ children: [marker(`SECTION_END_${name}`)] });
+/** Takes out the paragraph with the marker, and puts the empty paragraph after it, which ends its section, in the box */
+const boxedSectionEnd =
+    (name: string): Injection =>
+    (parts) => {
+        const text = parts.get("word/document.xml")!;
+        const at = text.indexOf(`@@SECTION_END_${name}@@`);
+        if (at < 0) {
+            throw new Error(`No marker SECTION_END_${name} in word/document.xml`);
+        }
+        const start = text.lastIndexOf("<w:p>", at);
+        const rest = text.slice(0, start) + text.slice(text.indexOf("</w:p>", at) + "</w:p>".length);
+        parts.set("word/document.xml", withProperty(rest, "w:pPr", BOX, start));
+    };
+const CONTINUOUS = { ...PAGE, type: SectionType.CONTINUOUS };
+const sections: ISectionOptions[] = [
+    { properties: PAGE, children: [...children, newPage(), line("PB3c above"), boxed("PB3c", "before"), sectionEnd("PB3c")] },
+    {
+        properties: CONTINUOUS,
+        children: [boxed("PB3c", "after"), line("PB3c below"), line("PB3d above"), boxed("PB3d", "before"), sectionEnd("PB3d")],
+    },
+    {
+        properties: CONTINUOUS,
+        children: [line("PB3d after the break"), line("PB3d below"), line("PB3e above"), line("PB3e before the break"), sectionEnd("PB3e")],
+    },
+    { properties: CONTINUOUS, children: [boxed("PB3e", "after"), line("PB3e below")] },
+];
+
 const injections: Injection[] = [
     replaceMarkerRun("SIZE_d", '<w:r><w:rPr><w:sz w:val="0.25in"/></w:rPr><w:t>quarter</w:t></w:r>'),
     replaceMarkerRun("SIZE_e", '<w:r><w:rPr><w:sz w:val="0.4in"/></w:rPr><w:t>inches</w:t></w:r>'),
@@ -301,11 +343,18 @@ const injections: Injection[] = [
     replaceMarkerRun("RUBY_c", ruby("かんじ", "漢字", "center")),
     replaceMarkerRun("RUBY_d", ruby("かんじ", "漢字", "distributeSpace", 40)),
     softHyphens(),
+    ...[
+        ["PB3c", "before"],
+        ["PB3c", "after"],
+        ["PB3d", "before"],
+        ["PB3e", "after"],
+    ].map(([name, side]) => injectIntoParagraph(`BOXED_${name}_${side}`, { pPr: BOX })),
+    ...["PB3c", "PB3d", "PB3e"].map(boxedSectionEnd),
 ];
 
 await write({
     name: "word-stops-text2",
-    sections: [{ properties: PAGE, children }],
+    sections,
     injections,
     options: {
         styles: { paragraphStyles: [{ id: "Twelve", name: "Twelve", basedOn: "Normal", run: { size: 24 } }] },

@@ -32,7 +32,7 @@ leaving all but 9.6 points above the text of the first line of a page or column 
 
 `word-stops-edges.ts` has the cases around those, where docx/layout still stops (DH2, PB9, HR2 and TA9), for the next
 batch Word saves, and `word-stops-text2.ts` those around what `word-stops-text`, `-tabs` and `-kerning` settled (RF24,
-RF27, RF29, RF31, RF32, PB5, PB7, SH16, SH17, JU4, TA10, TA11 and KE9): they have no PDF from Word yet. Nor has
+RF27, RF29, RF31, RF32, PB3, PB5, PB7, SH16, SH17, JU4, TA10, TA11 and KE9): they have no PDF from Word yet. Nor has
 `word-stops-compat2.ts`, for what the compatibility modes, `suppressTopSpacing`, `useFELayout`, booklets and HTML
 divisions left open (CN1 to CN11, ST6 to ST15, BK2, BK3, DV2 and FE2). `word-equation-characters.py` reads EQ27's widths
 from Word's PDF, for `scripts/generate-equation-widths.ts`.
