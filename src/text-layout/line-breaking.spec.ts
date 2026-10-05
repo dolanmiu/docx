@@ -728,6 +728,32 @@ describe("layoutLines", () => {
             expect([line.text, line.unsupported]).to.deep.equal(["aa aa aa aa aa aa aa aa aa aa bbbb ", undefined]);
         });
 
+        it("should squeeze the lines of Word's probes where Word squeezed them", () => {
+            // word-justify2.docx K07_06 and K07_07, distributed, and K08_11 and K08_12, justified for Thai: Calibri 11 on lines
+            // of 9026 twips less their right indents. Word squeezed "from" onto K07_06's second line, and "coast" onto
+            // K08_11's first, where the spaces would stretch 2.034 and 2.022 times as much as they're squeezed, and not onto
+            // K07_07's and K08_12's, at 1.69 and 1.86
+            const font = { font: "Calibri", size: 11 };
+            const tail =
+                "the survey of the coast was made in the summer by boat and on foot from the lighthouse to the river mouth the survey of the coast was made in";
+            const linesOf = (
+                label: string,
+                first: string,
+                right: number,
+                alignment: "distributed" | "thaiDistributed",
+            ): readonly string[] =>
+                layoutLines([{ type: "text", text: `${label} ${first} ${tail}`, font }], {
+                    width: (9026 - right) / 20,
+                    format: { alignment },
+                }).map(({ text: value }) => value.trim().split(" ").pop()!);
+            const short = "of the by in to and on of the by in to and on of the by in lighthouse";
+            expect(linesOf("K07_06", short, 2503, "distributed").slice(0, 2)).to.deep.equal(["lighthouse", "from"]);
+            expect(linesOf("K07_07", short, 2521, "distributed").slice(0, 2)).to.deep.equal(["lighthouse", "foot"]);
+            const long = "the survey of the coast was made in the summer by boat and on foot from the to coast";
+            expect(linesOf("K08_11", long, 726, "thaiDistributed")[0]).to.equal("coast");
+            expect(linesOf("K08_12", long, 736, "thaiDistributed")[0]).to.equal("to");
+        });
+
         it("should squeeze the spaces by no more than a quarter of their width", () => {
             // Words of 200 and 100 end at 310, with one space between them that could stretch a long way, and "zzzzzzzzzz"
             // after another goes to 420
