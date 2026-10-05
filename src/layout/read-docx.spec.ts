@@ -286,9 +286,10 @@ describe("readDocx", () => {
         expect(pageCount).to.equal(1);
     });
 
-    it("should read a .docx without settings as one in compatibility mode, as Word lays it out", () => {
+    it("should read a .docx without settings as one in Word 2007's compatibility mode, as Word lays it out", () => {
         const content = readDocx(new Map([["word/document.xml", documentOf("<w:p/>")]]));
-        expect(content.unsupported).to.equal("a document in compatibility mode");
+        expect(content.compatibilityMode).to.equal(12);
+        expect(content.unsupported).to.equal(undefined);
     });
 
     it("should read the compatibility settings Word lays out lines alike with, and stop at others that are on", () => {
@@ -315,12 +316,32 @@ describe("readDocx", () => {
         expect(withCompatibility(`\n${written.join("\n")}${word("useWord2013TrackBottomHyphenation", "0")}`).unsupported).to.equal(
             undefined,
         );
-        // Settings Word lays out lines alike with in compatibility mode 15 (word-compat-settings.docx), and one that changes
-        // them (word-compat-settings2-suppressTopSpacing.docx)
+        // Settings Word lays out lines alike with in compatibility mode 15 (word-compat-settings.docx), the two that change
+        // them, which are followed (word-stops-top-spacing.docx, word-stops-fe-layout.docx), and one of Word's own not known
         expect(withCompatibility("<w:noLeading/>").unsupported).to.equal(undefined);
         expect(withCompatibility(word("allowTextAfterFloatingTableBreak", "1")).unsupported).to.equal(undefined);
-        expect(withCompatibility('<w:suppressTopSpacing w:val="0"/>').unsupported).to.equal(undefined);
-        expect(withCompatibility("<w:suppressTopSpacing/>").unsupported).to.equal("a compatibility setting not yet followed");
+        expect(withCompatibility('<w:suppressTopSpacing w:val="0"/>').suppressesTopSpacing).to.equal(undefined);
+        expect(withCompatibility("<w:suppressTopSpacing/>").suppressesTopSpacing).to.equal(true);
+        expect(withCompatibility("<w:suppressTopSpacing/>").unsupported).to.equal(undefined);
+        expect(withCompatibility("<w:useFELayout/>").unsupported).to.equal(undefined);
+        expect(withCompatibility(word("someSettingOfLater", "1")).unsupported).to.equal("a compatibility setting not yet followed");
+    });
+    it("should stop at Word 2003's layout of East Asian text with another setting of East Asian text, which change Latin text together", () => {
+        // word-compat-settings-east-asian.docx CP9: the spaces of Latin text wider, as useFELayout alone leaves them
+        const content = readDocx(
+            new Map([
+                [
+                    "word/_rels/document.xml.rels",
+                    relationships(`<Relationship Id="rId1" Type="${TRANSITIONAL}/settings" Target="settings.xml"/>`),
+                ],
+                [
+                    "word/settings.xml",
+                    parse(COMPATIBLE.replace("</w:compat>", "<w:useFELayout/><w:balanceSingleByteDoubleByteWidth/></w:compat>")),
+                ],
+                ["word/document.xml", documentOf("<w:p/>")],
+            ]),
+        );
+        expect(content.unsupported).to.equal("a compatibility setting not yet followed");
     });
 
     it("should read the fonts it embeds, undoing the mixing of their keys, as the faces its font table says they are", () => {

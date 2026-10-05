@@ -1121,16 +1121,15 @@ describe("estimatePageNumbersWith", () => {
         });
 
         it("should lay out a document whose compatibility settings it doesn't follow as if it didn't have them", () => {
-            // Word laid out 2010's compatibility mode, and suppressTopSpacing, differently: the first line of a page of exact
-            // or at-least line spacing shorter (word-compat-settings2-suppressTopSpacing.docx), which a line of single spacing
-            // here isn't
+            // A compatibility mode Word doesn't have, and useFELayout with another setting of East Asian text, which widened
+            // the spaces of Latin text (word-compat-settings-east-asian.docx CP9), though not of this line
             const set = (compatibility: IPropertiesOptions["compatibility"]): IPropertiesOptions => ({
                 ...around(new TextRun("Text")),
                 compatibility,
             });
             for (const [compatibility, reason] of [
-                [{ version: 14 }, "a document in compatibility mode"],
-                [{ suppressTopSpacing: true }, "a compatibility setting not yet followed"],
+                [{ version: 13 }, "a document in a compatibility mode Word hasn't been seen laying out"],
+                [{ useFELayout: true, balanceSingleByteDoubleByteWidth: true }, "a compatibility setting not yet followed"],
             ] as const) {
                 expect(pageNumbersOf(set(compatibility))).to.deep.equal({});
                 expect(estimateOf(set(compatibility), GUESS)).to.deep.include({

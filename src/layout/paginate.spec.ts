@@ -799,6 +799,64 @@ describe("paginate", () => {
         });
     });
 
+    describe("the space above a page's first line, left out with suppressTopSpacing (scripts/layout-probes/stops2/word-stops-thai-and-compat.ts)", () => {
+        const exact = (height: number): ParagraphFormat => ({ lineSpacing: { rule: "exact", height } });
+        const atLeast = (height: number): ParagraphFormat => ({ lineSpacing: { rule: "atLeast", height } });
+        const suppressed = (blocks: readonly Block[]): DocumentContent => document(blocks, { suppressesTopSpacing: true });
+        /** How far down the page each line of each page is */
+        const topsOf = (content: DocumentContent): readonly (readonly number[])[] =>
+            paginate(content, { measurer: MEASURER }).pages.map(({ body }) =>
+                body.flatMap((block) => (block.type === "paragraph" ? block.lines.map(({ y }) => Math.round(y * 10) / 10) : [])),
+            );
+        const stoppedAt = (content: DocumentContent): string | undefined => paginate(content, { measurer: MEASURER }).stoppedAt;
+        const reason =
+            "the first line of a page or column, at line spacing Word hasn't shown, in a document that suppresses the space above it";
+
+        it("should leave out the space above the text of a page's first line of exact or at-least spacing, as Word does", () => {
+            // word-stops-top-spacing.docx ST1: at exactly 40 points, its baseline 9.6 points down rather than 32, so it goes
+            // from -12.4 to 27.6, and 2 lines fit where 1 does without
+            expect(topsOf(document([paragraph("a", 2, exact(40))]))).to.deep.equal([[10], [10]]);
+            expect(topsOf(suppressed([paragraph("a", 2, exact(40))]))).to.deep.equal([[-12.4, 27.6]]);
+            // ST2c to ST2f: at least a height taller than its text, it ends 9.6 points down
+            expect(topsOf(suppressed([paragraph("a", 2, atLeast(30))]))).to.deep.equal([[-10.4, 19.6]]);
+            // ST1a, ST1b: at exactly 12 points or less, it is as it is, as at single spacing (ST4b), and so are the lines below
+            // the first
+            expect(topsOf(suppressed([paragraph("a", 1, exact(10)), paragraph("b", 1), paragraph("c", 1, exact(40))]))).to.deep.equal([
+                [10, 20, 30],
+            ]);
+            expect(topsOf(suppressed([paragraph("a", 1, { lineSpacing: { rule: "multiple", multiple: 1 } })]))).to.deep.equal([[10]]);
+            // At the top of each page, after a page break too (ST1)
+            expect(topsOf(suppressed([paragraph("a", 1), paragraph("b", 1, { ...exact(40), pageBreakBefore: true })]))).to.deep.equal([
+                [10],
+                [-12.4],
+            ]);
+        });
+
+        it("should stop at the first line of a page at spacing Word hasn't shown with suppressTopSpacing", () => {
+            // Multiple spacing, and at least a height less than its text's (ST2a)
+            expect(stoppedAt(suppressed([paragraph("a", 1, { lineSpacing: { rule: "multiple", multiple: 1.5 } })]))).to.equal(reason);
+            expect(stoppedAt(suppressed([paragraph("a", 1, atLeast(5))]))).to.equal(reason);
+            // A paragraph's third line at the top of the next page, the space before a section's first paragraph, and a line on
+            // a document grid
+            expect(stoppedAt(suppressed([paragraph("a", 3, exact(40))]))).to.equal(reason);
+            expect(stoppedAt(suppressed([paragraph("a", 1, { ...exact(40), spaceBefore: 5 })]))).to.equal(reason);
+            expect(stoppedAt(suppressed([{ ...paragraph("a", 1, exact(40)), grid: { linePitch: 15 } }]))).to.equal(reason);
+            // Below the top of the page, a line of any spacing is as it is
+            expect(stoppedAt(suppressed([paragraph("a", 1), paragraph("b", 1, atLeast(5))]))).to.equal(undefined);
+        });
+
+        it("should stop at a table at the top of a page with lines of other than single spacing in its cells", () => {
+            const spacedRow = row([[paragraph("cell", 1, exact(40))]]);
+            expect(stoppedAt(suppressed([table([spacedRow])]))).to.equal(reason);
+            // Below the top, as Word lays it out (ST4c), but not at the top of the next page it goes on to
+            expect(stoppedAt(suppressed([paragraph("a", 1), table([spacedRow])]))).to.equal(undefined);
+            expect(stoppedAt(suppressed([paragraph("a", 1), table([spacedRow, spacedRow])]))).to.equal(reason);
+            // One of single spacing, in a table in a cell too, is as it is
+            const nested = row([[paragraph("cell", 1), table([row([[paragraph("in", 1)]])])]]);
+            expect(stoppedAt(suppressed([table([nested])]))).to.equal(undefined);
+        });
+    });
+
     describe("multiple line spacing at the bottom of a page", () => {
         // Lines of 15 points at 1.5 lines, 5 of which are the spacing below their text
         const spaced: ParagraphFormat = { lineSpacing: { rule: "multiple", multiple: 1.5 } };
@@ -2412,6 +2470,9 @@ describe("paginate", () => {
             ]);
             // A header that ends below the gutter pushes the body below it, where it would without the gutter (SC3b)
             expect(linesOnPages({ ...gutter, headers: { default: [paragraph("h", 2)] } })[0]).to.deep.equal([25, 5]);
+            // Below a negative top margin, which a header doesn't push the body below, it is below the margin's size
+            // (`word-stops-pages.docx` GT1b)
+            expect(linesOnPages({ ...gutter, marginTop: -10, headers: { default: [paragraph("h", 4)] } })[0]).to.deep.equal([20, 6]);
         });
 
         it("should write page numbers in each format as Word does, and stop at those it doesn't write", () => {
@@ -3352,7 +3413,6 @@ describe("paginate", () => {
             });
             const lines = (prefix: string, count: number): readonly ParagraphBlock[] =>
                 Array.from({ length: count }, (_, index) => words(`${prefix}${index + 1}`, 1));
-            const stoppedAt = (content: DocumentContent): string | undefined => paginate(content, { measurer: MEASURER }).stoppedAt;
 
             it("should break the lines of a paragraph again at the width of each column it goes on into, as Word does", () => {
                 // 7 words on 7 lines in the first column of each page, and 21 on 7 lines in the second
@@ -3425,15 +3485,19 @@ describe("paginate", () => {
                 expect(pagesOf(document([...lines("a", 3), kept], { sections: [WIDE_FIRST] }))).to.include({ a3: "1", kept: "1" });
             });
 
-            it("should stop where Word hasn't shown where a paragraph kept together that is taller than some of the columns goes", () => {
+            it("should move a paragraph kept together that is taller than some of 3 columns, and one kept with it, as in 2, as Word does", () => {
+                // 9 lines in the narrow column, and 3 in the wide ones
                 const kept = words("kept", 9, {}, { keepLines: true });
-                // In 3 columns, and after a heading kept with it
-                expect(stoppedAt(document([kept], { sections: [{ ...SECTION, columns: [40, 120, 120] }] }))).to.equal(
-                    "a paragraph kept together taller than some of 3 or more columns of different widths",
-                );
-                expect(stoppedAt(document([words("heading", 1, {}, { keepNext: true }), kept], { sections: [NARROW_FIRST] }))).to.equal(
-                    "a paragraph kept with the next before one kept together taller than some of the columns but not others",
-                );
+                /** Where the lines of the first page start across it, on a page so wide, with its columns 20 apart */
+                const lefts = (blocks: readonly Block[], pageWidth: number, columns: readonly number[]): readonly number[] =>
+                    paginate(document(blocks, { sections: [{ ...SECTION, pageWidth, columns }] }), {
+                        measurer: MEASURER,
+                    }).pages[0].body.flatMap((block) => (block.type === "paragraph" ? block.lines.map(({ x }) => x) : []));
+                // From the narrow first column of 3 to the second (`word-stops-pages.docx` CO1a, CO1b)
+                expect(lefts([kept], 340, [40, 120, 120])).to.deep.equal([70, 70, 70]);
+                // And a line kept with it below a line with it, to the top of the wide column (CO2a, CO2b)
+                const heading = words("heading", 1, {}, { keepNext: true });
+                expect(lefts([words("a", 1), heading, kept], 200, [40, 120])).to.deep.equal([10, 70, 70, 70, 70]);
             });
 
             it("should count the lines left for the next column as they are broken in this one, for widow control, as Word does", () => {
@@ -5925,6 +5989,18 @@ describe("paginate", () => {
             blocks: readonly (Block | readonly [Block, number])[],
             changes: Partial<DocumentContent> = {},
         ): string | undefined => laidOut(blocks, changes).stoppedAt;
+
+        it("should stop at a line beside a drawing in a gap narrower than 135 points in compatibility mode, as Word 2010 leaves one empty", () => {
+            // word-stops-compat-14.docx CM14: a gap of 1000 twips beside a frame Word 2013 puts text in and 2010 doesn't, and
+            // CM9: one of 2700 beside a picture both do. Here a gap of 130 points, and on a page 400 wide, gaps of 150 and 180
+            const older = { compatibilityMode: 14 };
+            expect(stopOf([prose("a", 12, [floating()])], older)).to.equal(
+                "a line beside a drawing or frame in a gap narrower than 135 points, in a document in compatibility mode",
+            );
+            expect(stopOf([prose("a", 12, [floating()])])).to.equal(undefined);
+            const wide = { ...older, sections: [{ ...PAGE, pageWidth: 400, columns: [380] }] };
+            expect(stopOf([prose("a", 12, [floating({ horizontal: { from: "margin", offset: 150 } })])], wide)).to.equal(undefined);
+        });
 
         it("should narrow the lines beside a drawing, with its distances from the text, as Word does (F1, F3)", () => {
             // From 140 to 190 across and 10 to 40 down: 3 lines beside it, 2 words to each

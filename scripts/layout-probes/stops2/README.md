@@ -19,9 +19,18 @@ committed here are the ones a change to docx/layout has followed, with Word's PD
 | `word-stops-font-widths.ts`    | W, S, B, H                           | W, S: each of Office's 16 other fonts as wide as Word's own file of it; an italic Word slants as wide as upright. `STOPS_ITALIC=1` writes the italics. Read with `../word-character-widths.py`                                      |
 | `word-stops-font-kerning.ts`   | I, K, L, P, R, SP                    | K, L, P: kerned as each font's file kerns it; with ligatures, only where its GPOS table kerns Latin. `STOPS_SET=2` writes the second half. Read with `../word-kerning.py`                                                           |
 | `word-stops-kerning.ts`        | KE1 to KE8, FH1 to FH16              | FH1 to FH16 (`word-stops-font-heights`): each of the 16 fonts' lines as tall as its file's hhea table makes it. Read with `word-font-heights.py`                                                                                    |
+| `word-stops-compat-mode.ts`    | CM1 to CM22, in modes 15 to 11       | Word 2010 and before laid out all but a few alike: justified lines not squeezed (CM1), a table's text at its indent, one sized to its text with its cells' margins beside the room (CM4)                                            |
+| `word-stops-pages.ts`          | CO1, CO2, GT1, DV1, TB10, BK1, TO1   | CO1, CO2: kept paragraphs in 3 columns as in 2; GT1: a gutter at the top below a negative margin; DV1b: a row in a division as tall; TO1: two pages to a sheet as the section's                                                     |
+
+`word-stops-thai-and-compat.ts` writes `word-stops-top-spacing` (ST1 to ST5), whose PDF showed `suppressTopSpacing`
+leaving all but 9.6 points above the text of the first line of a page or column at exact and at-least spacing, and
+`word-stops-fe-layout` (FE1), whose PDF showed `useFELayout` leaving Latin paragraphs as they are, both followed, and
+`word-stops-thai` (TH1 to TH3).
 
 `word-stops-edges.ts` has the cases around those, where docx/layout still stops (DH2, PB9, HR2 and TA9), for the next
-batch Word saves: it has no PDF from Word yet. `word-equation-characters.py` reads EQ27's widths from Word's PDF, for
+batch Word saves: it has no PDF from Word yet. So has `word-stops-compat2.ts`, for what the compatibility modes,
+`suppressTopSpacing`, `useFELayout`, booklets and HTML divisions left open (CN1 to CN11, ST6 to ST15, BK2, BK3, DV2 and
+FE2). `word-equation-characters.py` reads EQ27's widths from Word's PDF, for
 `scripts/generate-equation-widths.ts`.
 
 `word-stops-office-fonts.ts` has what the font probes left stopping (MB, FB, KL and DS), for the next batch too: the bold
