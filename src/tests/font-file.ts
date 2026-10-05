@@ -71,6 +71,8 @@ export type TestSubstitutionLookup =
     | { readonly type: 1 | 5 | 6; readonly format: 1 | 3; readonly covered: string; readonly extension?: boolean };
 
 export type TestGlyphSubstitution = {
+    /** The script its features are for. Default is Latin's */
+    readonly script?: string;
     /** The lookups of each feature, such as `liga`, by their index */
     readonly features: Readonly<Record<string, readonly number[]>>;
     readonly lookups: readonly TestSubstitutionLookup[];
@@ -452,12 +454,15 @@ const substitutionSubtables = (lookup: TestSubstitutionLookup, glyphOf: (name: s
     ];
 };
 
-/** A GSUB table whose Latin script has the features and lookups given */
-const glyphSubstitutionTable = ({ features, lookups }: TestGlyphSubstitution, glyphOf: (name: string) => number): Uint8Array => {
+/** A GSUB table whose script, Latin's unless another is given, has the features and lookups given */
+const glyphSubstitutionTable = (
+    { script = "latn", features, lookups }: TestGlyphSubstitution,
+    glyphOf: (name: string) => number,
+): Uint8Array => {
     const tags = Object.keys(features);
     const language = uint16s([0, 0xffff, tags.length, ...tags.map((_, index) => index)]);
     const scriptTable = withParts(uint16s([0, 0]), [language], () => 0);
-    const scriptList = withParts(uint16s([1, ...tagOf("latn"), 0]), [scriptTable], () => 6);
+    const scriptList = withParts(uint16s([1, ...tagOf(script), 0]), [scriptTable], () => 6);
     const featureTables = tags.map((tag) => uint16s([0, features[tag].length, ...features[tag]]));
     const featureList = withParts(
         uint16s([tags.length, ...tags.flatMap((tag) => [...tagOf(tag), 0])]),

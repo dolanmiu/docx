@@ -32,11 +32,29 @@
  *   and 527 of 2048, aren't their descents for Windows, 550 and 514: the line is as tall as the picture and the descent
  * DS2a, DS2b: Courier New 11 beside Corbel 11, and beside Consolas 11: the line is the taller ascent and the deeper descent
  *
+ * Word's PDF, saved from Word 16 for Mac on 2026-10-05 (round 25), showed:
+ * MB1: the bold Word makes itself draws each glyph 20 thousandths of an em further on than the face it makes it from, at
+ *   every size from 8 to 72 points, in Calibri Light, Franklin Gothic Book and Impact, and the space as wide. The 18 of
+ *   word-stops-font-widths was its reader's: a word of ten is nine glyphs further on and a last one as wide
+ * MB2: Calibri Light's made bold kerned and joined with Normal's ligatures as its regular, tt and ffi joined, each glyph
+ *   20 further on; Franklin Gothic Book's and Impact's not kerned, as their regulars aren't with ligatures
+ * MB3: the made bold's lines as tall as the regular's: 13.43, 12.47 and 13.41 points at 11 points
+ * MB4: Pacifico 20 further on too, but drawn in the copy of Pacifico Office downloads, whose H is 873 thousandths of an
+ *   em, not in the file the document embeds, whose H is 1052
+ * FB1: Д, ƀ, ∀, Ⅳ and ‥ drawn in Calibri, Calibri, Cambria Math, MS Gothic and MS Mincho whatever the run's language or
+ *   East Asian font; Century Gothic's Ω, Book Antiqua's Ж and Georgia's ≤ are the fonts' own
+ * FB2: a line with a character Word draws in Calibri as tall as Calibri's, 13.41 points at 11 where Gill Sans MT's and
+ *   Trebuchet MS's are 12.77, and with one in Cambria Math 12.88: the tallest ascent and deepest descent of the two
+ * KL1: none of the six fonts kerned with standard ligatures, historical and discretional, or all, and each kerned with
+ *   none, as without ligatures. KL2: Verdana's line within 0.11 points of the layout's, not kerned
+ * DS1, DS2: Corbel's and Consolas's lines go their hhea tables' descents below the baseline, beside a picture and beside
+ *   Courier New, to within the 0.24 points Word puts baselines to
+ *
  * Usage: npm run run-ts -- scripts/layout-probes/stops2/word-stops-office-fonts.ts [folder], which writes
  * word-stops-office-fonts.docx and word-stops-office-fonts.json, the text of each line of MB, FB and KL for the reader,
  * word-stops-office-fonts.py
  */
-// cspell:ignore Wyatt AVATAR Pacifico AVAVAVAVAV hhea
+// cspell:ignore Wyatt AVATAR Pacifico AVAVAVAVAV hhea Consolas's
 import { readFileSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 

@@ -67,21 +67,37 @@ describe("readFontFile", () => {
         expect(face.advanceOf("C".codePointAt(0)!)).to.equal(0.6);
     });
 
-    it("should work out the line height as Word does: Windows' ascent and descent, and the gap the hhea table adds", () => {
-        // Times New Roman: Windows' 1825 and 443, and an hhea table of the same with a gap of 87, which Windows adds
+    it("should work out the line height as Word does on the Mac: the hhea table's ascender, descender and line gap", () => {
+        // Times New Roman, as the Mac's file has it: 1825 and 443, and a gap of 87, where Windows' are 1825 and 443
         const times = { unitsPerEm: 2048, windows: { ascent: 1825, descent: 443 }, hhea: { ascender: 1825, descender: -443, lineGap: 87 } };
         expect(faceOf({ advances: LETTERS, ...times }).lineHeight).to.be.closeTo(1.1499, 0.0001);
-        // Calibri: Windows' 1950 and 550 are already taller than the hhea table's 1536, 512 and 452 together
+        expect(faceOf({ advances: LETTERS, ...times }).descent).to.be.closeTo(443 / 2048, 1e-9);
+        // Calibri: 1950 and 550 in both, and its lines go 550 below the baseline, as a picture beside Calibri 11 shows in
+        // Word (word-watertight-text.docx TX8b)
         const calibri = {
             unitsPerEm: 2048,
             windows: { ascent: 1950, descent: 550 },
-            hhea: { ascender: 1536, descender: -512, lineGap: 452 },
+            hhea: { ascender: 1950, descender: -550, lineGap: 0 },
         };
         expect(faceOf({ advances: LETTERS, ...calibri }).lineHeight).to.be.closeTo(1.2207, 0.0001);
-        // Its lines go Windows' descent below the baseline, as a picture beside Calibri 11 shows in Word
-        // (word-watertight-text.docx TX8b), and the hhea table's gap is above the text
         expect(faceOf({ advances: LETTERS, ...calibri }).descent).to.be.closeTo(550 / 2048, 1e-9);
-        expect(faceOf({ advances: LETTERS, ...times }).descent).to.be.closeTo(443 / 2048, 1e-9);
+        // Corbel: 1523, 525 and a gap of 425, where Windows' 1950 and 550 make 1.2207: Word's lines of Corbel 11 are 13.2828
+        // points apart, and go 525 below the baseline beside a picture (word-stops-font-heights.docx FH11,
+        // word-stops-office-fonts.docx DS1a)
+        const corbel = {
+            unitsPerEm: 2048,
+            windows: { ascent: 1950, descent: 550 },
+            hhea: { ascender: 1523, descender: -525, lineGap: 425 },
+        };
+        expect(faceOf({ advances: LETTERS, ...corbel }).lineHeight * 11).to.be.closeTo(13.2828, 0.001);
+        expect(faceOf({ advances: LETTERS, ...corbel }).descent).to.be.closeTo(525 / 2048, 1e-9);
+        // Book Antiqua: 1891 and 578, where Windows' 1967 and 578 make 1.2427 (FH13: 13.2579 points at 11)
+        const antiqua = {
+            unitsPerEm: 2048,
+            windows: { ascent: 1967, descent: 578 },
+            hhea: { ascender: 1891, descender: -578, lineGap: 0 },
+        };
+        expect(faceOf({ advances: LETTERS, ...antiqua }).lineHeight * 11).to.be.closeTo(13.2579, 0.005);
     });
 
     it("should make a line as tall as the typographic ascent, descent and line gap of a font that asks for them, as Aptos does", () => {
@@ -226,11 +242,15 @@ describe("readFontFile", () => {
             expect(kerningOf({ glyphPositioning }, "AV")).to.equal(-0.05);
         });
 
-        it("should use the default script, then the first, and the first language's features when a script has no default", () => {
+        it("should use the default script, and the first language's features when a script has no default", () => {
             const lookups = [{ subtables: [pairs({ AV: -50 })] }];
             expect(kerningOf({ glyphPositioning: { script: "DFLT", lookups } }, "AV")).to.equal(-0.05);
-            expect(kerningOf({ glyphPositioning: { script: "cyrl", lookups } }, "AV")).to.equal(-0.05);
             expect(kerningOf({ glyphPositioning: { defaultLanguage: false, lookups } }, "AV")).to.equal(-0.05);
+            // but not another script's, as Word kerns Tahoma, whose GPOS table kerns Arabic alone, with its kern table
+            // (word-stops-office-fonts.docx KL1l)
+            expect(kerningOf({ glyphPositioning: { script: "arab", lookups }, kerning: { AV: -80 } }, "AV")).to.equal(-0.08);
+            expect(faceOf({ advances: LETTERS, glyphPositioning: { script: "arab", lookups } }).kernsWithLigatures).to.equal(false);
+            expect(faceOf({ advances: LETTERS, glyphPositioning: { script: "latn", lookups } }).kernsWithLigatures).to.equal(true);
         });
 
         it("should kern with the kern table when the GPOS table has no script or no kern lookups", () => {
@@ -347,7 +367,7 @@ describe("createFontFileMeasurer", () => {
     });
 
     it("should measure a line as tall as the font's line height at its size", () => {
-        const measurer = createFontFileMeasurer(fonts({ advances: LETTERS, windows: { ascent: 900, descent: 300 } }));
+        const measurer = createFontFileMeasurer(fonts({ advances: LETTERS, hhea: { ascender: 900, descender: -300, lineGap: 0 } }));
         expect(measurer.measureLineHeight({ font: "Probe Sans", size: 10 })).to.be.closeTo(12, 1e-9);
         expect(measurer.measureLineHeight({ font: "Probe Sans" })).to.be.closeTo(12, 1e-9);
         // And as far below the baseline as its descent, and other fonts as the fallback measures them
@@ -416,7 +436,9 @@ describe("createFontFileMeasurer", () => {
     it("should know the fonts it has a face of, and leave whether it knows other fonts to the fallback", () => {
         const measurer = createFontFileMeasurer(fonts({ advances: LETTERS }));
         expect(measurer.unknownFont!({ font: "Probe Sans" }, "AB")).to.equal(false);
-        // Italic text is measured with the upright face, and bold text with none, as Word makes a bold face itself
+        // Italic text is measured with the upright face, and bold text with none: Word makes a bold face itself, but from a
+        // face of its own, as it drew Pacifico, which a document embedded, in Office's copy of it (word-stops-office-fonts.docx
+        // MB4)
         expect(measurer.unknownFont!({ font: "Probe Sans", italic: true })).to.equal(false);
         expect(measurer.unknownFont!({ font: "Probe Sans", bold: true }, "AB")).to.equal(true);
         expect(measurer.unknownFont!({ font: "Calibri" }, "AB")).to.equal(false);
@@ -460,7 +482,7 @@ describe("createFontFileMeasurer", () => {
         const JOINING: TestFontOptions = {
             advances: { f: 300, i: 200, j: 200, o: 500, T: 600 },
             ligatureAdvances: { ffi: 700, ff: 550, fi: 450, fj: 400 },
-            kerning: { To: -100 },
+            glyphPositioning: { lookups: [{ subtables: [{ format: 1, pairs: { To: -100 } }] }] },
             glyphSubstitution: {
                 features: { liga: [0], clig: [0], dlig: [1] },
                 lookups: [{ ligatures: { ffi: "ffi", ff: "ff", fi: "fi" } }, { ligatures: { fj: "fj" }, extension: true }],
@@ -487,8 +509,33 @@ describe("createFontFileMeasurer", () => {
         it("should kern the glyphs ligatures leave, and join no letters with space between the characters, as Word joins none", () => {
             expect(width("Toffio", { ligatures: "standard", kerning: 1 })).to.be.closeTo(22, 1e-9);
             expect(width("Toffio", { ligatures: "standard" })).to.be.closeTo(23, 1e-9);
+            // A font whose kerning is only in its kern table isn't kerned with ligatures, whichever they are, and is without
+            // them (word-stops-font-kerning.docx P, word-stops-office-fonts.docx KL1)
+            const kernTable = createFontFileMeasurer(fonts({ ...JOINING, glyphPositioning: undefined, kerning: { To: -100 } }));
+            for (const [ligatures, joined] of [
+                ["standard", 23],
+                ["standardContextual", 23],
+                ["historicalDiscretional", 24],
+                ["all", 23],
+            ] as const) {
+                expect(kernTable.measureWidth("Toffio", { font: "Probe Sans", size: 10, ligatures, kerning: 1 }), ligatures).to.be.closeTo(
+                    joined,
+                    1e-9,
+                );
+            }
+            expect(kernTable.measureWidth("Toffio", { font: "Probe Sans", size: 10, ligatures: "none", kerning: 1 })).to.be.closeTo(
+                23,
+                1e-9,
+            );
             // word-kerning.docx SP1 and SP2: the letters' widths and a point after each of the 5
             expect(width("offio", { ligatures: "standard", characterSpacing: 1 })).to.be.closeTo(23, 1e-9);
+        });
+
+        it("should join letters with the ligatures of the first script a font has, when it has none for Latin text or the default", () => {
+            const cyrillic = createFontFileMeasurer(
+                fonts({ ...JOINING, glyphSubstitution: { ...JOINING.glyphSubstitution!, script: "cyrl" } }),
+            );
+            expect(cyrillic.measureWidth("offio", { font: "Probe Sans", size: 10, ligatures: "standard" })).to.be.closeTo(17, 1e-9);
         });
 
         it("should join only the letters on either side of one the font has no glyph for, which the fallback measures", () => {

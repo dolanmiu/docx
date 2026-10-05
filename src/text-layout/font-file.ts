@@ -41,6 +41,12 @@ export type FontFace = {
     /** How much closer, or further apart, kerning puts two glyphs, in ems */
     readonly kerningOfGlyphs: (left: number, right: number) => number;
     /**
+     * Whether Word kerns the face's text with ligatures: when its GPOS table kerns Latin text, as Word kerns text with
+     * ligatures with that alone, and leaves the text of a font whose kerning is only in its kern table, such as Trebuchet
+     * MS, not kerned (scripts/layout-probes/stops2/word-stops-font-kerning.ts P, word-stops-office-fonts.ts KL1)
+     */
+    readonly kernsWithLigatures: boolean;
+    /**
      * The glyphs the font's ligatures of a setting put in place of glyphs, and whether a substitution the setting has that
      * isn't a ligature, such as a contextual one, could change them
      */
@@ -319,14 +325,16 @@ const readPairSubtable = (view: DataView, offset: number): ((left: number, right
 
 /**
  * The lookups of a GPOS or GSUB table's features with these tags, for Latin text: those of the script for Latin text, or
- * the default one, or the first, and of its features for any language, or for the first language it has. In the order
- * of the table's lookups, as they are applied.
+ * the default one, or, with `anyScript`, the first, and of its features for any language, or for the first language it
+ * has. In the order of the table's lookups, as they are applied.
  */
-const lookupsOfFeatures = (view: DataView, table: number, tags: readonly string[]): readonly number[] => {
+const lookupsOfFeatures = (view: DataView, table: number, tags: readonly string[], anyScript: boolean): readonly number[] => {
     const tagAt = (offset: number): string => tagOf(view, offset);
     const scriptList = table + view.getUint16(table + 4);
     const scripts = Array.from({ length: view.getUint16(scriptList) }, (_, index) => scriptList + 2 + index * 6);
-    const script = ["latn", "DFLT"].map((tag) => scripts.find((record) => tagAt(record) === tag)).find(Boolean) ?? scripts[0];
+    const script =
+        ["latn", "DFLT"].map((tag) => scripts.find((record) => tagAt(record) === tag)).find(Boolean) ??
+        (anyScript ? scripts[0] : undefined);
     if (script === undefined) {
         return [];
     }
@@ -368,14 +376,16 @@ const subtablesOf = (
 
 /**
  * The kerning of pairs of glyphs in the font's GPOS table, in font units: the pair adjustments of its `kern` feature for
- * Latin text, as Word kerns with them (word-fonts.docx F2). Undefined when the font has none.
+ * Latin text, or for the default script, as Word kerns with them (word-fonts.docx F2). Undefined when the font has none,
+ * as Tahoma's, whose GPOS table kerns Arabic alone, and which Word kerns with its kern table
+ * (scripts/layout-probes/stops2/word-stops-office-fonts.ts KL1l).
  */
 const readGlyphPositioning = (view: DataView, tables: Tables): Kerning | undefined => {
     const table = tables.get("GPOS");
     if (table === undefined) {
         return undefined;
     }
-    const lookups = lookupsOfFeatures(view, table, ["kern"]);
+    const lookups = lookupsOfFeatures(view, table, ["kern"], false);
     if (lookups.length === 0) {
         return undefined;
     }
@@ -476,7 +486,9 @@ const readGlyphSubstitution = (view: DataView, tables: Tables): ((ligatures: Lig
     if (table === undefined) {
         return undefined;
     }
-    const byFeature = new Map(Object.values(LIGATURE_FEATURES).map((feature) => [feature, lookupsOfFeatures(view, table, [feature])]));
+    const byFeature = new Map(
+        Object.values(LIGATURE_FEATURES).map((feature) => [feature, lookupsOfFeatures(view, table, [feature], true)]),
+    );
     const lookups = new Map(
         [...new Set([...byFeature.values()].flat())].map((index) => [index, readSubstitutionLookup(view, table, index)]),
     );
@@ -549,26 +561,25 @@ const readFace = (view: DataView, offset: number): FontFace => {
     checkInFile(view, hmtx + metricCount * 4);
     const os2 = tables.get("OS/2");
 
-    // Word's single line: the font's ascent and descent for Windows, and the gap between lines its hhea table adds to
-    // them, as Windows works out a font's height and external leading. Calibri's is 1.2207 ems, and Arial's and Times New
-    // Roman's 1.1499, as Word's lines are (word-rules.docx P6). A font without an OS/2 table uses its hhea table's. A font
-    // that asks for its typographic ascent, descent and line gap to be used instead (USE_TYPO_METRICS) has them, as
+    // Word's single line on the Mac: the font's ascender, descender and line gap in its hhea table, as Word's lines of
+    // Office's fonts are, where Corbel's and Book Antiqua's ascent and descent for Windows would make them taller, and its
+    // lines go as far below the baseline as the descender, Corbel's beside a picture and beside Courier New too
+    // (scripts/layout-probes/stops2/word-stops-font-heights.ts FH1 to FH16, word-stops-office-fonts.ts DS1, DS2). Calibri's
+    // are 1.2207 ems and 550 of its 2048 units, as below a picture beside Calibri 11 (word-watertight-text.docx TX8b). A
+    // font that asks for its typographic ascent, descent and line gap to be used instead (USE_TYPO_METRICS) has them, as
     // Aptos does: 1.2207 ems, rather than 1.2847 for Windows (word-fonts.docx F6)
     const fsSelection = os2 === undefined ? 0 : view.getUint16(os2 + 62);
-    const windowsHeight = os2 === undefined ? ascender - descender : view.getUint16(os2 + 74) + view.getUint16(os2 + 76);
-    const externalLeading = Math.max(0, lineGap - (windowsHeight - (ascender - descender)));
     const typographic = hasFlag(fsSelection, 0x80);
     const lineHeight = typographic
         ? view.getInt16(os2! + 68) - view.getInt16(os2! + 70) + view.getInt16(os2! + 72)
-        : windowsHeight + externalLeading;
-    // Word's lines go as far below the baseline as the descent their height is worked out from: Calibri's descent for
-    // Windows, 550 of its 2048 units, below a picture beside Calibri 11 (word-watertight-text.docx TX8b)
-    const descent = typographic ? -view.getInt16(os2! + 70) : os2 === undefined ? -descender : view.getUint16(os2 + 76);
+        : ascender - descender + lineGap;
+    const descent = typographic ? -view.getInt16(os2! + 70) : -descender;
 
     const glyphOf = readCharacterMap(view, tables);
     // Word kerns with the GPOS table, and with the kern table of fonts without one (word-fonts.docx F1 and F2). It is read
     // with the rest, in a few milliseconds, so a damaged table throws here rather than when text is laid out
-    const kerning = readGlyphPositioning(view, tables) ?? readKernTable(view, tables);
+    const glyphPositioning = readGlyphPositioning(view, tables);
+    const kerning = glyphPositioning ?? readKernTable(view, tables);
     // Word joins letters with the ligatures of the GSUB table, as a ligature setting asks (word-kerning.docx A)
     const substitution = readGlyphSubstitution(view, tables);
     const pairs = new Map<number, number>();
@@ -610,6 +621,7 @@ const readFace = (view: DataView, offset: number): FontFace => {
         glyphOf: cachedGlyph,
         advanceOfGlyph,
         kerningOfGlyphs,
+        kernsWithLigatures: glyphPositioning !== undefined,
         join: (sequence, ligatures) => joinGlyphs(sequence, substitution?.(ligatures) ?? []),
     };
 };
@@ -658,8 +670,11 @@ const TAB_STOP = 36;
  * Measures text in the fonts of these faces with their own widths, kerning and line height, and text in other fonts with
  * `fallback`. Text that is bold, or not, is measured with a face that is too, and with one that is italic, or not, as the
  * text is, when there is one. A character a face has no glyph for is one whose width isn't known, as Word draws it in
- * another font, unless it takes no room, such as a soft hyphen. Text in a font without a face as bold as it is in
- * a font whose widths aren't known, unless `fallback` knows them, as Word makes that face itself from another.
+ * another font, unless it takes no room, such as a soft hyphen. Text in a font without a face as bold as it is in a font
+ * whose widths aren't known, unless `fallback` knows them: Word makes that face itself, each glyph 20 thousandths of an em
+ * wider than the face it makes it from, but which face it makes it from isn't known, as it drew Pacifico, which a document
+ * embedded, in Office's own copy of it, whose letters are narrower (scripts/layout-probes/stops2/word-stops-office-fonts.ts
+ * MB4).
  */
 export const createFontFileMeasurer = (faces: readonly FontFace[], fallback: TextMeasurer = DEFAULT_MEASURER): TextMeasurer => {
     // The face of each font, bold or not, and italic or not, as text is measured many times in each
@@ -675,11 +690,13 @@ export const createFontFileMeasurer = (faces: readonly FontFace[], fallback: Tex
     };
     /**
      * How wide text with no tabs is in a face, in points: its glyphs, joined by the ligatures it has and kerned when it is
-     * kerned. A character the face has no glyph for is measured apart, by `fallback`, and parts the glyphs either side
+     * kerned, but for text with ligatures in a face Word kerns only without them. A character the face has no glyph for is
+     * measured apart, by `fallback`, and parts the glyphs either side
      */
     const widthIn = (face: FontFace, text: string, font: TextFont): number => {
         const { size = DEFAULT_FONT_SIZE, characterSpacing = 0, scale = 100 } = font;
         const em = (size * scale) / 100;
+        const kerned = isKerned(font) && (face.kernsWithLigatures || !hasLigatures(font));
         let width = 0;
         // eslint-disable-next-line functional/prefer-readonly-type
         let run: number[] = [];
@@ -687,7 +704,7 @@ export const createFontFileMeasurer = (faces: readonly FontFace[], fallback: Tex
             const { glyphs } = hasLigatures(font) ? face.join(run, font.ligatures!) : { glyphs: run };
             for (const [index, glyph] of glyphs.entries()) {
                 const next = glyphs[index + 1];
-                const kern = isKerned(font) && next !== undefined ? face.kerningOfGlyphs(glyph, next) : 0;
+                const kern = kerned && next !== undefined ? face.kerningOfGlyphs(glyph, next) : 0;
                 width += (face.advanceOfGlyph(glyph) + kern) * em;
             }
             width += characterSpacing * run.length;

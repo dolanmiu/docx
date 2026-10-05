@@ -42,8 +42,10 @@ def objects(data):
         stream = re.search(rb"stream\r?\n(.*?)\r?\nendstream", body, re.S)
         content = body
         if stream:
+            # Word ends some streams with bytes after their compressed data, which zlib.decompress takes as an error, as
+            # it did a page of word-stops-font-widths' in Book Antiqua and in Impact, bold
             try:
-                content = body[: stream.start()] + zlib.decompress(stream.group(1))
+                content = body[: stream.start()] + zlib.decompressobj().decompress(stream.group(1))
             except zlib.error:
                 content = body
         found[int(number)] = content
