@@ -1345,6 +1345,19 @@ const withAcross = (items: readonly InlineItem[], measurer: TextMeasurer): reado
         };
     });
 
+/** The two tokens after one, by its index, but for markers */
+const nextTwo = (tokens: readonly Token[], index: number): readonly Token[] => {
+    // eslint-disable-next-line functional/prefer-readonly-type
+    const next: Token[] = [];
+    for (let at = index + 1; at < tokens.length && next.length < 2; at++) {
+        if (tokens[at].type !== "marker") {
+            // eslint-disable-next-line functional/immutable-data
+            next.push(tokens[at]);
+        }
+    }
+    return next;
+};
+
 // The letters of the scripts written right to left
 const RIGHT_TO_LEFT = /[\p{Script=Hebrew}\p{Script=Arabic}\p{Script=Syriac}\p{Script=Thaana}\p{Script=Nko}]/u;
 
@@ -1353,9 +1366,12 @@ const RIGHT_TO_LEFT = /[\p{Script=Hebrew}\p{Script=Arabic}\p{Script=Syriac}\p{Sc
  * Arabic's or another right-to-left script's. Text with no letters is taken as left to right
  */
 const rightToLeftAt = (pieces: readonly Piece[] | undefined, edge: "start" | "end"): boolean => {
-    const letters = [...(pieces ?? []).map(({ text }) => text).join("")].filter((character) => /\p{L}/u.test(character));
-    const letter = edge === "start" ? letters[0] : letters[letters.length - 1];
-    return letter !== undefined && RIGHT_TO_LEFT.test(letter);
+    const text = (pieces ?? []).map(({ text: piece }) => piece).join("");
+    if (!RIGHT_TO_LEFT.test(text)) {
+        return false;
+    }
+    const letters = [...text].filter((character) => /\p{L}/u.test(character));
+    return RIGHT_TO_LEFT.test(edge === "start" ? letters[0] : letters[letters.length - 1]);
 };
 
 /**
@@ -2371,14 +2387,9 @@ export const layoutLines = (
             // without it goes on to the next line, where Word puts those that fit with it (stops2/word-stops-arabic.ts AR2e,
             // AR2h, AR2i). Word breaks the lines of a right-to-left paragraph where it breaks those of a left-to-right one
             // (scripts/layout-probes/word-unicode.ts R2, R8)
-            const [space, following] = tokens.slice(index + 1).filter((other) => other.type !== "marker");
-            const spaceAfter =
-                token.type === "word" &&
-                format.rightToLeft !== true &&
-                space?.type === "space" &&
-                following?.type === "word" &&
-                rightToLeftAt(token.pieces, "end") &&
-                rightToLeftAt(following.pieces, "start");
+            const [space, following] =
+                token.type === "word" && format.rightToLeft !== true && rightToLeftAt(token.pieces, "end") ? nextTwo(tokens, index) : [];
+            const spaceAfter = space?.type === "space" && following?.type === "word" && rightToLeftAt(following.pieces, "start");
             placeWord(token, kerning[index], spaceAfter ? widthOf(space.pieces, measurer) : 0);
             lastWord = token.type === "word" ? token.pieces : undefined;
         }
