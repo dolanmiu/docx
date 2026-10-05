@@ -870,6 +870,36 @@ describe("readDocument", () => {
             expect(content.unsupported).to.equal(undefined);
         });
 
+        it("should add the empty paragraph Word adds after a table that ends a footnote or endnote, in the Normal style", () => {
+            // word-watertight-notes.docx FN11, FN12, word-watertight-stops.docx SP3c: a line below the table
+            const withTable = (paragraphStyles: NonNullable<IPropertiesOptions["styles"]>["paragraphStyles"] = []): DocumentContent => {
+                const table = new Table({ rows: [new TableRow({ children: [new TableCell({ children: [new Paragraph("Cell")] })] })] });
+                return readWritten({
+                    styles: { paragraphStyles },
+                    footnotes: { 1: { children: [new Paragraph("Note"), table as unknown as Paragraph] } },
+                    endnotes: { 1: { children: [new Paragraph("End"), table as unknown as Paragraph] } },
+                    sections: [{ children: [new Paragraph({ children: [new FootnoteReferenceRun(1), new EndnoteReferenceRun(1)] })] }],
+                });
+            };
+            // docx's note text styles are smaller than Normal, so which Word gives it isn't known
+            const differ = withTable();
+            const [, , after] = [...differ.footnotes.values()][0];
+            expect(after).to.deep.include({
+                type: "paragraph",
+                items: [],
+                unsupported: "a footnote or endnote that ends with a table, in a document whose Normal and note text styles differ",
+            });
+            // Formatted alike, it is Normal's
+            const alike = withTable([
+                { id: "FootnoteText", name: "footnote text", basedOn: "Normal" },
+                { id: "EndnoteText", name: "endnote text", basedOn: "Normal" },
+            ]);
+            const [, , footnoteAfter] = [...alike.footnotes.values()][0];
+            expect(footnoteAfter).to.deep.include({ type: "paragraph", items: [] });
+            expect(footnoteAfter).not.to.have.property("unsupported");
+            expect(alike.endnotes.at(-1)).to.deep.include({ type: "paragraph", items: [] });
+        });
+
         it("should number a note in a table cell with deleted text as it is numbered where it is, to size the columns by", () => {
             // A cell with deleted text is read again as Word sizes the table's columns by it, which numbers its footnote as
             // the cell does, in a format not yet written too
@@ -1708,8 +1738,9 @@ describe("readDocument", () => {
                 "written",
                 "",
             ]);
-            // In a footnote, the page and section are its reference's, which the markers at them are placed with. Where a
-            // bookmark is from a page reference with \p in one is written by Word, but not yet by docx
+            // In a footnote, the page and section are its reference's, which the markers at them are placed with. A page
+            // reference with \p in one writes "on page" and its bookmark's page (`word-page-fields.docx` PF8f, PF8g), and isn't
+            // counted with those of the body
             const note = content.footnotes.get("footnote 1")!;
             expect(note.map((block) => (block as ParagraphBlock).items.filter((item) => item.type !== "text"))).to.deep.equal([
                 [
@@ -1720,13 +1751,13 @@ describe("readDocument", () => {
                     { type: "marker", name: "field 2" },
                     { type: "sectionNumber", field: "field 2", font: {}, format: { numberFormat: "roman" } },
                 ],
-                [],
+                [{ type: "pageReference", bookmark: "a", font: {}, inNote: true }],
                 [
                     { type: "marker", name: "field 3" },
                     { type: "pageNumber", field: "field 3", font: {} },
                 ],
             ]);
-            expect(note[2].unsupported).to.equal("a page reference that says where its bookmark is, in a footnote or endnote");
+            expect(note[2].unsupported).to.equal(undefined);
             expect(content.relativeReferences.size).to.equal(0);
         });
 
@@ -5421,7 +5452,7 @@ describe("readDocument", () => {
             ]);
         });
 
-        it("should read a page reference with \\p in a footnote as it is written", () => {
+        it("should read a page reference with \\p in a footnote as worked out, guessing or not", () => {
             const content = readContent(
                 { "w:body": [p(r({ "w:footnoteReference": { _attr: { "w:id": 1 } } }))] },
                 {
@@ -5442,11 +5473,9 @@ describe("readDocument", () => {
                 { guess: true },
             );
             const note = content.footnotes.get("footnote 1")! as readonly ParagraphBlock[];
-            expect(
-                note.map(({ unsupported, items }) => [unsupported, items.flatMap((item) => (item.type === "text" ? [item.text] : []))]),
-            ).to.deep.equal([
-                ["a page reference that says where its bookmark is, in a footnote or endnote", ["below"]],
-                ["a page reference that says where its bookmark is, in a footnote or endnote", ["above"]],
+            expect(note.map(({ unsupported, items }) => [unsupported, items.map(({ type }) => type)])).to.deep.equal([
+                [undefined, ["pageReference"]],
+                [undefined, ["pageReference"]],
             ]);
         });
 
