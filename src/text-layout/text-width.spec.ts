@@ -176,6 +176,10 @@ describe("measureTextWidth", () => {
         // ★ in Segoe UI Symbol, which Word makes bold itself, 20 thousandths wider
         expect(thousandths("\u2605", "Calibri")).to.be.closeTo(833.5, 0.5);
         expect(thousandths("\u2605", "Calibri", true) - thousandths("\u2605", "Calibri")).to.be.closeTo(20, 0.5);
+        // The Arabic-Indic digits in the font, and the Devanagari digits of Calibri and Arial in Mangal
+        expect(thousandths("\u0661\u06f1", "Calibri") / 2).to.be.closeTo(507.8, 0.1);
+        expect(thousandths("\u0661", "Times New Roman", true)).to.be.closeTo(561.6, 0.1);
+        expect(thousandths("\u0967", "Arial")).to.be.closeTo(521.4, 0.1);
     });
 
     it("should move tabs to the next half inch from where the text starts", () => {
@@ -212,6 +216,9 @@ describe("unknownCharacter", () => {
         expect(unknownCharacter("a\u0628", { font: "Calibri" })).to.equal("\u0628");
         expect(unknownCharacter("a\u0915", { font: "Arial" })).to.equal("\u0915");
         expect(unknownCharacter("a\u064e", { font: "Calibri" })).to.equal(undefined);
+        // Their digits, which Word joins to nothing, but for those of Cambria and Times New Roman in Kohinoor Devanagari
+        expect(unknownCharacter("\u0661\u06f2\u0967\u0964", { font: "Calibri" })).to.equal(undefined);
+        expect(unknownCharacter("\u0661\u0967", { font: "Cambria" })).to.equal("\u0967");
         // Nor in a monospaced East Asian font, whose characters are an em or half an em
         expect(unknownCharacter("\u0628", { font: "MS Mincho" })).to.equal(undefined);
         // A character Word's PDF doesn't show in a font, as it drew it in pieces, or with no text: Cambria's bold ┴
@@ -321,6 +328,8 @@ describe("measureTextHeight", () => {
         expect(star.lineHeight).to.be.closeTo(10.79 + measureDescent({ font: "Calibri", size: 10 }), 1e-9);
         // MS Gothic's lines are as tall as Word makes them: 1008 above the baseline and 289 below
         expect(measureTextHeight("\u2503", { font: "Calibri", size: 10 })!.lineHeight).to.be.closeTo(12.97, 1e-9);
+        // Calibri's Devanagari digits in Mangal: lines 336 twips apart at 10 points (stops2/word-stops-more-widths.docx)
+        expect(measureTextHeight("\u0967", { font: "Calibri", size: 10 })!.lineHeight * 20).to.be.closeTo(335.8, 1e-9);
     });
 
     it("should leave text Word draws in its own font, or whose fonts aren't known, to its font's line", () => {

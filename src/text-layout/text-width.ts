@@ -263,8 +263,8 @@ const CHARACTER_INDEX: ReadonlyMap<number, number> = new Map(CHARACTERS.map((cod
 
 const AVERAGE_LETTERS = [..."abcdefghijklmnopqrstuvwxyz"].map((letter) => CHARACTER_INDEX.get(letter.codePointAt(0)!)!);
 
-// The characters of the tables of Hebrew, Thai, box drawing, shapes, symbols and dingbats, in their order, and the index
-// of each
+// The characters of the tables of Hebrew, the Arabic-Indic and Devanagari digits, Thai, box drawing, shapes, symbols and
+// dingbats, in their order, and the index of each
 const MORE_CHARACTER_INDEX: ReadonlyMap<number, number> = new Map(
     MORE_WIDTH_RANGES.flatMap(([first, last]) => Array.from({ length: last - first + 1 }, (_, offset) => first + offset)).map(
         (code, index) => [code, index],
@@ -272,7 +272,7 @@ const MORE_CHARACTER_INDEX: ReadonlyMap<number, number> = new Map(
 );
 
 // Arabic, whose letters Word joins into forms of other widths, and Devanagari, whose letters it joins and reorders, which
-// aren't measured
+// aren't measured, but for their digits and Devanagari's full stops, which it joins to nothing (see `more-widths.ts`)
 const JOINED_SCRIPT = /[\p{Script=Arabic}\p{Script=Devanagari}]/u;
 
 // The digits the tables write widths in, two to a width
@@ -477,8 +477,9 @@ const faceOf = ({ font, bold = false, italic = false }: TextFont): readonly (num
 };
 
 /**
- * The widths of Hebrew, Thai, box drawing, shapes, symbols and dingbats in the face text is in, and the fonts Word draws
- * them in: its font's, plain or bold. Undefined in italic, whose widths Word's PDF doesn't show
+ * The widths of Hebrew, the Arabic-Indic and Devanagari digits, Thai, box drawing, shapes, symbols and dingbats in the face
+ * text is in, and the fonts Word draws them in: its font's, plain or bold. Undefined in italic, whose widths Word's PDF
+ * doesn't show
  */
 const moreFaceOf = ({ font, bold, italic }: TextFont): MoreFace | undefined => {
     const { name } = widthsOf(font);
@@ -513,9 +514,10 @@ export const isGridCharacter = (character: string): boolean => {
 export const takesNoRoom = (character: string): boolean => /[\p{Mn}\p{Me}\p{Cf}]/u.test(character);
 
 /**
- * The width of a character in thousandths of an em, from the tables, and those of Hebrew, Thai, box drawing, shapes,
- * symbols and dingbats (`more`), which Word draws in the font, or in another when the font doesn't have them, such as
- * Calibri's Thai in Tahoma and its ★ in Segoe UI Symbol (scripts/layout-probes/stops2/word-stops-more-widths.ts).
+ * The width of a character in thousandths of an em, from the tables, and those of Hebrew, the Arabic-Indic and Devanagari
+ * digits, Thai, box drawing, shapes, symbols and dingbats (`more`), which Word draws in the font, or in another when the
+ * font doesn't have them, such as Calibri's Thai in Tahoma, its Devanagari digits in Mangal and its ★ in Segoe UI Symbol
+ * (scripts/layout-probes/stops2/word-stops-more-widths.ts).
  * Characters that aren't in them are as wide as an average lowercase letter, a whole em for wide characters and half an
  * em for half-width ones, and marks take no space. So are those the tables have, but whose width in the font isn't known.
  */
@@ -577,8 +579,9 @@ const measuresOf = (
 /**
  * The first character of text whose width in its font isn't known, so isn't what Word lays out: one of the tables'
  * characters that Word draws in another font when the font doesn't have it, or whose width Word's PDF doesn't show, such
- * as Hebrew and the symbols in italic, Arabic and Devanagari, whose letters Word joins into forms of other widths, and a
- * symbol font's own character. Undefined when the widths of all of them are known, or are measured as before: those of
+ * as Hebrew and the symbols in italic, Arabic and Devanagari, whose letters Word joins into forms of other widths, the
+ * Devanagari digits of Cambria and Times New Roman, which Word draws in Kohinoor Devanagari, whose lines' height isn't
+ * known, and a symbol font's own character. Undefined when the widths of all of them are known, or are measured as before: those of
  * characters the tables don't have, as an average letter.
  */
 export const unknownCharacter = (text: string, font: TextFont = {}): string | undefined => {
