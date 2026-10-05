@@ -1742,6 +1742,10 @@ export const paginate = (
                 stopAt("a footnote continued across a continuous section break onto a page of its own");
             }
             const { name, from } = continued;
+            // As where it first breaks (see `splitLast`), which one that starts on the page after its reference's hasn't been
+            if (footnotes.get(name)!.some(boxedOrSpaced)) {
+                stopAt(BOXED_NOTE);
+            }
             const to = fillNote(name, from, (point) => areaOf([], undefined, { name, from, to: point }) <= bottom - top + TOLERANCE, true);
             if (to.block === from.block && to.line === from.line) {
                 throw new Unsupported("a footnote line taller than a page");

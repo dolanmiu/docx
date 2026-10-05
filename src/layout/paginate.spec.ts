@@ -666,6 +666,9 @@ describe("paginate", () => {
             // Across pages, in columns, and in one box across two footnotes, Word's way with them hasn't been seen
             const long = document([paragraph("x", 5), noted], notesOf(bordered("note", 6)));
             expect(numbersOf(long).stoppedAt).to.equal("a paragraph border or automatic spacing in a footnote across pages or in columns");
+            // One taller than a page kept together, which starts on the page after its reference's and goes on across pages
+            const tall = document([noted], notesOf(bordered("note", 8, { keepLines: true })));
+            expect(numbersOf(tall).stoppedAt).to.equal("a paragraph border or automatic spacing in a footnote across pages or in columns");
             const twoNotes = withItems(paragraph("a", 1), [
                 { type: "marker", name: "n" },
                 { type: "marker", name: "m" },
