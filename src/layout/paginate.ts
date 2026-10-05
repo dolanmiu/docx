@@ -1293,13 +1293,17 @@ export const paginate = (
      * `word-table-formats.docx` VT1, `word-table-formats2.docx` VT5 to VT7, `word-stops-vertical-cells2.docx` VC5a to
      * VC5h: marks of 8 and 20 points beside text of 8, 16 and 20, the last of two paragraphs', and a style's). In a font
      * whose lines Word's PDFs haven't shown, guessing, as tall as a line of it across the page, and one with a table in it
-     * as tall as a line of its last paragraph's mark, as a cell ends with a paragraph
+     * as tall as a line of its last paragraph's mark, as a cell ends with a paragraph. One with no paragraph at all, as a
+     * cell of only a bookmark, needs no room, as a cell of nothing across the page
      */
     const contentHeight = (cell: TableCell): number => {
         if (!cell.vertical) {
             return stackHeight(blocksWithRoom(cell), textWidthOf(cell), true);
         }
-        const last = cell.blocks.findLast((block): block is ParagraphBlock => block.type === "paragraph")!;
+        const last = cell.blocks.findLast((block): block is ParagraphBlock => block.type === "paragraph");
+        if (last === undefined) {
+            return 0;
+        }
         const line = verticalLineOf(last.markFont, measuring.measureLineHeight);
         return line === undefined
             ? linesHeight(measureParagraph({ ...last, items: [] }, cell.width, undefined, undefined, true).lines)

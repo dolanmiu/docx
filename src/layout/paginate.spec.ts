@@ -1757,6 +1757,13 @@ describe("paginate", () => {
                 nested: "1",
                 b: "1",
             });
+            // A row of only one with no paragraph, as a cell of only a bookmark, needs no room, as a cell of nothing across the
+            // page
+            const unmarked = row([[]]);
+            expect(
+                paginate(document([table([{ ...unmarked, cells: [{ ...unmarked.cells[0], vertical: true }] }])]), { measurer: MEASURER })
+                    .pages[0].body,
+            ).to.deep.equal([{ type: "table", index: 0, rows: [{ index: 0, y: 10, height: 0 }] }]);
         });
 
         it("should lay out each paragraph of text fitted to its cell on one line, as Word squeezes it there", () => {
