@@ -1709,18 +1709,18 @@ export const layoutLines = (
             kern: number,
         ): Extract<Token, { readonly type: "word" }> | undefined => {
             const lead = roomBetween(line.border, firstBorder(word.pieces)) + kern;
-            const parts = [...hyphens].reverse().map((hyphen) => {
+            const splits = [...hyphens].reverse().map((hyphen) => {
                 const [before, after] = splitPieces(word.pieces, hyphen.at);
                 const partEnd = line.position + lead + widthOf(before, measurer);
                 const withHyphen = partEnd + measurer.measureWidth("-", hyphen.font);
                 return { hyphen, before, after, withHyphen, room: endOf(line) - withHyphen };
             });
-            for (const [index, { hyphen, before, after, withHyphen, room }] of parts.entries()) {
+            for (const [index, { hyphen, before, after, withHyphen, room }] of splits.entries()) {
                 // On a justified line, a part whose hyphen goes past the end of the line ends it when Word can squeeze it on, as
                 // it would a word: the line's spaces squeezed by 17% to fit "Donau-" (scripts/layout-probes/stops2/word-stops-tabs.ts
                 // SH10d). Where a shorter part fits without squeezing, which of the two Word takes hasn't been seen
                 const squeezed = room <= 0 && line.started && squeezesIn(line, withHyphen - line.position);
-                if (squeezed && parts.slice(index + 1).some((shorter) => shorter.room >= HYPHEN_ROOM)) {
+                if (squeezed && splits.slice(index + 1).some((shorter) => shorter.room >= HYPHEN_ROOM)) {
                     line = {
                         ...line,
                         unsupported:
