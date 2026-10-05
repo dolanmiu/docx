@@ -1276,17 +1276,32 @@ const readFieldCharacter = (element: XmlObject, format: RunFormat, reader: Reade
     return [];
 };
 
+/** Whether a run's text is drawn as two lines in one (`w:combine`), which Word draws at half its size */
+const isTwoInOne = (properties: readonly XmlObject[]): boolean => isOn(attributesOf(find(properties, "w:eastAsianLayout"))["w:combine"]);
+
 /**
  * Why a run's own formatting changes the room its text takes in a way not yet followed, when it does: text fitted to a
- * width (`w:fitText`), and two lines in one or text across in vertical text (`w:eastAsianLayout`).
+ * width (`w:fitText`), text across in vertical text (`w:eastAsianLayout`), and two lines in one of other than text
+ * without Chinese, Japanese or Korean characters, without brackets and at a size that halves to whole half-points. Word drew
+ * "twolines" in two lines in one in a line of Calibri 11 at 5.5 points, on one row, its width the text's at that size, in
+ * a line no taller (scripts/layout-probes/stops2/word-stops-text.ts RF30).
  */
-const unsupportedFormatOf = (properties: readonly XmlObject[]): string | undefined => {
-    const { "w:combine": combined, "w:vert": across } = attributesOf(find(properties, "w:eastAsianLayout"));
+const unsupportedFormatOf = (properties: readonly XmlObject[], children: readonly XmlObject[], size: number): string | undefined => {
+    const { "w:combineBrackets": brackets, "w:vert": across } = attributesOf(find(properties, "w:eastAsianLayout"));
     if (find(properties, "w:fitText") !== undefined) {
         return "text fitted to a width";
     }
-    if (isOn(combined)) {
-        return "two lines in one";
+    if (isTwoInOne(properties)) {
+        const text = children
+            .filter((child) => nameOf(child) === "w:t")
+            .flatMap((child) => contentOf(child).filter((part) => typeof part === "string"));
+        const shown = children.filter((child) => nameOf(child) !== "w:rPr");
+        return (brackets !== undefined && brackets !== "none") ||
+            shown.some((child) => nameOf(child) !== "w:t") ||
+            [...text.join("")].some(isEastAsian) ||
+            !Number.isInteger(size)
+            ? "two lines in one"
+            : undefined;
     }
     return isOn(across) ? "text across in vertical text" : undefined;
 };
@@ -1300,13 +1315,17 @@ const readRun = (element: XmlObject, paragraphRun: RunFormat, reader: Reader, re
     const children = contentOf(element).filter(isObject);
     const properties = find(children, "w:rPr");
     const characterStyle = valueOf(childrenOf(properties), "w:rStyle") ?? styles.defaultCharacterStyle;
-    const format = combine([
+    const formatted = combine([
         paragraphRun,
         ...styleChain(styles, characterStyle, "character").map(({ run }) => run),
         readRunFormat(properties, styles.themeFonts),
     ]);
+    const size = formatted.size ?? DEFAULT_FONT_SIZE;
+    // Two lines in one are drawn at half the size (RF30)
+    const format = isTwoInOne(childrenOf(properties)) ? { ...formatted, size: size / 2 } : formatted;
     const font = fontOf(format);
-    const unsupportedFormat = unsupportedFormatOf(childrenOf(properties)) ?? (format.hidden ? undefined : unknownRunFormatting(format));
+    const unsupportedFormat =
+        unsupportedFormatOf(childrenOf(properties), children, size) ?? (format.hidden ? undefined : unknownRunFormatting(format));
     // Whether what is shown of the run is read past its formatting, with a guess
     let formatGuessed = false;
     const items: readonly (readonly LayoutItem[] | string)[] = children.map((child): readonly LayoutItem[] | string => {

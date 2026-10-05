@@ -644,8 +644,22 @@ describe("readDocument", () => {
             expect(unsupportedOf(r(ruby))).to.equal("text with a phonetic guide");
             expect(unsupportedOf(r({ "w:contentPart": { _attr: { "r:id": "rId9" } } }))).to.equal("a content part, such as ink");
             expect(unsupportedOf(r(rPr({ "w:fitText": { _attr: { "w:val": 2000 } } }), t("fitted")))).to.equal("text fitted to a width");
-            const layout = (attributes: object): object => r(rPr({ "w:eastAsianLayout": { _attr: attributes } }), t("ab"));
-            expect(unsupportedOf(layout({ "w:combine": 1 }))).to.equal("two lines in one");
+            const layout = (attributes: object, text = "ab", size = 22): object =>
+                r(rPr({ "w:eastAsianLayout": { _attr: attributes } }, value("w:sz", size)), t(text));
+            // Two lines in one of text, without brackets, at a size that halves to whole half-points is drawn at half its
+            // size (word-stops-text.ts RF30)
+            const twoInOne = readBody([p(layout({ "w:combine": 1 }))]);
+            expect([paragraphOf(twoInOne).unsupported, itemsOf(twoInOne)[0]]).to.deep.equal([
+                undefined,
+                { type: "text", text: "ab", font: { size: 5.5 } },
+            ]);
+            expect(unsupportedOf(layout({ "w:combine": 1, "w:combineBrackets": "round" }))).to.equal("two lines in one");
+            expect(unsupportedOf(layout({ "w:combine": 1, "w:combineBrackets": "none" }))).to.equal(undefined);
+            expect(unsupportedOf(layout({ "w:combine": 1 }, "漢字"))).to.equal("two lines in one");
+            expect(unsupportedOf(layout({ "w:combine": 1 }, "ab", 23))).to.equal("two lines in one");
+            expect(unsupportedOf(r(rPr({ "w:eastAsianLayout": { _attr: { "w:combine": 1 } } }), t("a"), { "w:tab": {} }))).to.equal(
+                "two lines in one",
+            );
             expect(unsupportedOf(layout({ "w:vert": "true" }))).to.equal("text across in vertical text");
             // With neither on, the run is laid out as it is
             expect(unsupportedOf(layout({ "w:id": 1, "w:combine": "off" }))).to.equal(undefined);

@@ -629,6 +629,8 @@ const glyphsOf = (text: string, font: TextFont, shaping: FaceShaping | undefined
 
 // Two letters next to each other, which a font's ligatures could join
 const LETTERS = /\p{L}\p{L}/u;
+// A letter of the Latin script
+const LATIN_LETTER = /^\p{Script=Latin}$/u;
 
 /**
  * Why the tables don't know how Word kerns text, or joins its letters, when they don't: kerned text in a font whose
@@ -670,13 +672,16 @@ export const unknownShaping = (text: string, font: TextFont = {}): string | unde
     if (ligatures && rules === undefined) {
         return LETTERS.test(text) ? "ligatures of a setting not yet followed" : undefined;
     }
-    // A character a rule starts with, followed by one the ligatures haven't been seen beside
+    // A character a rule starts with, followed by one the ligatures haven't been seen beside, but for a Latin letter, which
+    // Word joins them beside as beside one they have been seen beside: "fi" before "ā" (scripts/layout-probes/stops2/word-stops-kerning.ts
+    // KE3)
     if (
         rules !== undefined &&
         parts.some((part) =>
             part.some(
                 (character, index) =>
-                    rules.has(character) && part.slice(index + 1, index + 3).some((next) => !shaping.characters.has(next)),
+                    rules.has(character) &&
+                    part.slice(index + 1, index + 3).some((next) => !shaping.characters.has(next) && !LATIN_LETTER.test(next)),
             ),
         )
     ) {
