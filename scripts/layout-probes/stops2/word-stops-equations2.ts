@@ -19,7 +19,7 @@
  * - EQ37: what Word builds up that EQ10 to EQ18 didn't have: a fraction beside other parts in a numerator, a fraction in a
  *   displayed script, a sum in a script, pre-scripts (`m:sPre`), an equation array, a phantom, and braces of their own sizes
  * - EQ38: an equation Word builds up displayed (`m:oMathPara`) beside text, before and after it, and alone after its list's
- *   number
+ *   number, as an equation of its own (`m:oMath`, as EQ25d) and displayed (`m:oMathPara`)
  * - EQ39: symbols Word's PDF showed only next to themselves (EQ27), beside letters: arrows, set operators, logic, products,
  *   and two operators at the start
  * - EQ40: equations too long for their line: in a line of text, broken at a relation, with fractions, and in a justified
@@ -180,6 +180,12 @@ const children: Child[] = [
     ...group("EQ38a", [new Paragraph({ children: [new TextRun("EQ38a text before "), new TextRun("@@MATHPARA_a@@")] })]),
     ...group("EQ38b", [new Paragraph({ children: [new TextRun("@@MATHPARA_b@@"), new TextRun(" EQ38b text after")] })]),
     ...group("EQ38c", [new Paragraph({ numbering: { reference: "numbers", level: 0 }, children: [equation("\\frac{a}{b}")] })]),
+    ...group("EQ38d", [
+        new Paragraph({
+            numbering: { reference: "numbers", level: 0 },
+            children: [new TextRun("@@PARA@@"), equation("\\frac{a}{b}")],
+        }),
+    ]),
     newPage(),
     ...group("EQ40a", [new Paragraph({ children: [new TextRun("EQ40a "), equation(atoms(40, "=")), new TextRun(" after")] })]),
     ...group("EQ40b", [new Paragraph({ children: [new TextRun("EQ40b "), equation(fractions(30)), new TextRun(" after")] })]),
