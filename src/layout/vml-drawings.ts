@@ -12,8 +12,9 @@ import type { DrawingPosition, FloatingDrawing } from "./read-document";
 // The elements of VML that draw a shape, rather than define a type of one (`v:shapetype`)
 const SHAPES = new Set(["v:shape", "v:rect", "v:roundrect", "v:oval", "v:line", "v:polyline", "v:arc", "v:curve", "v:image", "v:group"]);
 
-// Points in each unit a VML style gives lengths in, of those whose reading in Word is known
-const POINTS_PER_UNIT: Readonly<Record<string, number>> = { pt: 1, in: 72, cm: 72 / 2.54, mm: 72 / 25.4, pc: 12 };
+// Points in each unit a VML style gives lengths in, of those whose reading in Word is known: CSS's, as VML has them,
+// with 96 pixels to the inch
+const POINTS_PER_UNIT: Readonly<Record<string, number>> = { pt: 1, in: 72, cm: 72 / 2.54, mm: 72 / 25.4, pc: 12, px: 0.75 };
 
 /** Whether a VML true or false value is false: "f", "false", or 0 */
 export const isVmlFalse = (value: unknown): boolean => ["f", "false", "0"].includes(String(value).trim().toLowerCase());
@@ -29,8 +30,8 @@ export const readVmlStyle = (style: unknown): ReadonlyMap<string, string> =>
     );
 
 /**
- * A length of a VML style in points, or why it isn't known: one in pixels, ems or a share of something, or a number with
- * no unit, which isn't 0. Undefined when it isn't given.
+ * A length of a VML style in points, or why it isn't known: one in ems, of a font the style doesn't name, or a share of
+ * something, or a number with no unit, which isn't 0. Undefined when it isn't given.
  */
 export const vmlLength = (value: string | undefined): number | string | undefined => {
     if (value === undefined) {

@@ -8,6 +8,7 @@
 import type { Element } from "xml-js";
 
 import { type XmlObject, attributesOf, childrenOf, find, readTextStyles, readThemeFonts, stringOf, withoutUndefined } from "../text-layout";
+import type { DataStores } from "./bound-controls";
 import { type DocxPackage, type DocxParts, type ImportedPart, type NotesPart, withImports } from "./imported-documents";
 import { type DocumentContent, type DocumentParts, type EmbeddedFont, type ReadOptions, facesOf, readContent } from "./read-document";
 
@@ -200,6 +201,35 @@ const readParts = (docx: DocxPackage): DocxParts => {
     });
 };
 
+// The ids Word gives a package's core and extended properties, as stores of data a content control can be bound to
+// (`w:storeItemID`), as a custom XML part has its own (`ds:itemID`)
+const PROPERTY_STORES: readonly (readonly [string, string])[] = [
+    ["core-properties", "{6C3C8BC8-F283-45AE-878A-BAB7291924A1}"],
+    ["extended-properties", "{6668398D-A668-4E3E-A5EB-62B293D839F1}"],
+];
+
+/**
+ * The stores of data a package's content controls can be bound to, by their ids in capitals: its core and extended
+ * properties, and the custom XML parts of its main document, by the ids their properties' parts give them
+ */
+const dataStoresOf = (parts: ReadonlyMap<string, Element>, documentPath: string): DataStores => {
+    const properties = PROPERTY_STORES.flatMap(([type, id]) => {
+        const path = relationshipsOf(parts, "").find((relationship) => relationship.type === type)?.path;
+        const root = path === undefined ? undefined : rootOf(parts.get(path));
+        return root ? [[id, root] as const] : [];
+    });
+    const custom = relationshipsOf(parts, documentPath)
+        .filter(({ type }) => type === "customXml")
+        .flatMap(({ path }) => {
+            const root = rootOf(parts.get(path));
+            const itemProperties = relationshipsOf(parts, path).find(({ type }) => type === "customXmlProps");
+            const item = itemProperties && rootOf(parts.get(itemProperties.path));
+            const id = Object.entries(attributesOf(item && Object.values(item)[0])).find(([name]) => /(^|:)itemID$/.test(name))?.[1];
+            return root && id !== undefined ? [[String(id).toUpperCase(), root] as const] : [];
+        });
+    return new Map([...properties, ...custom]);
+};
+
 /**
  * Reads a .docx's main document, with the parts it refers to, and the documents it imports (`w:altChunk`) as Word turns
  * them into its own paragraphs and tables when it opens it (see `imported-documents.ts`).
@@ -217,6 +247,7 @@ export const readDocx = (
     importedDocuments: ReadonlyMap<string, DocxPackage> = new Map(),
 ): DocumentContent => {
     const read = withImports(readParts({ parts, binaryParts, importedDocuments }));
+    const documentPath = relationshipsOf(parts, "").find(({ type }) => type === "officeDocument")?.path ?? DEFAULT_DOCUMENT;
     const documentParts: DocumentParts = {
         styles: readTextStyles(read.styles ?? { "w:styles": [] }, read.theme && readThemeFonts(read.theme)),
         numbering: read.numbering,
@@ -225,6 +256,7 @@ export const readDocx = (
         footnotes: read.footnotes?.notes,
         endnotes: read.endnotes?.notes,
         fonts: read.fonts,
+        dataStores: dataStoresOf(parts, documentPath),
     };
     return readContent({ "w:body": read.body.content }, documentParts, options);
 };

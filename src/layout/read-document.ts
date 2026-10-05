@@ -60,6 +60,7 @@ import {
     valueOf,
     withoutUndefined,
 } from "../text-layout";
+import { type DataStores, withBoundTextWritten } from "./bound-controls";
 import { layOutEquation } from "./equations";
 import {
     type FieldCapitals,
@@ -631,8 +632,8 @@ const FIFTIETHS_OF_A_PERCENT = 5000;
 const PLAIN_FORMATS = new Set(["mergeformat", "charformat", "mergeformatinet"]);
 const CASE_FORMATS = new Set(["upper", "lower", "firstcap", "caps"]);
 // Word fills a content control bound to custom XML in from it when it opens the document, so what it shows there may not
-// be what is written
-const BOUND_CONTROL = "a content control filled from custom XML";
+// be what is written. Where it is the XML's text already, the binding is taken out as it is read (see `bound-controls.ts`)
+const BOUND_CONTROL = "a content control Word fills in from custom XML with other text than is written in it";
 // What a deleted run has that takes room, other than its text. Word lays its lines out without it (`word-tracked-changes.docx`
 // MK10), but how it sizes a table's columns by it hasn't been seen, as it has for deleted text (MK11j)
 const REMOVED_ROOM = new Set(["w:tab", "w:ptab", "w:br", "w:cr", "w:drawing", "mc:AlternateContent", "w:pict", "w:object"]);
@@ -1124,8 +1125,12 @@ const drawingPart = (children: readonly XmlObject[], name: string): unknown => {
     return find(children, name) ?? find(childrenOf(choice), name);
 };
 
-/** Where a drawing is across or down the page (`wp:positionH`, `wp:positionV`), or why it can't be followed */
-const readPosition = (element: unknown, share: string): DrawingPosition | string => {
+/**
+ * Where a drawing is across or down the page (`wp:positionH`, `wp:positionV`). The schema requires an alignment or an
+ * offset, so Word and docx write one: one with neither, which isn't a document they write, is read as at the start of
+ * what it is placed against, as an offset of 0 places it
+ */
+const readPosition = (element: unknown, share: string): DrawingPosition => {
     const children = childrenOf(element);
     const from = String(attributesOf(element).relativeFrom ?? "");
     const percentage = numberOf(textIn(drawingPart(children, share)));
@@ -1135,10 +1140,7 @@ const readPosition = (element: unknown, share: string): DrawingPosition | string
     const align = find(children, "wp:align");
     const alternate = find(childrenOf(find(children, "mc:AlternateContent")), "mc:Fallback");
     const offset = numberOf(textIn(find(children, "wp:posOffset") ?? find(childrenOf(alternate), "wp:posOffset")));
-    if (align !== undefined) {
-        return { from, align: textIn(align) };
-    }
-    return offset === undefined ? "a drawing placed by neither an alignment nor an offset" : { from, offset: offset / EMUS_PER_POINT };
+    return align === undefined ? { from, offset: (offset ?? 0) / EMUS_PER_POINT } : { from, align: textIn(align) };
 };
 
 /** A drawing's width or height as a share of what it is sized by (`wp14:sizeRelH`, `wp14:sizeRelV`) */
@@ -1171,9 +1173,6 @@ const readFloating = (element: unknown): FloatingDrawing | string => {
     const points = (value: unknown): number => (numberOf(value) ?? 0) / EMUS_PER_POINT;
     // The distances its wrapping gives, and the anchor's where it gives none
     const distance = (name: string): number => points(wrapAttributes[name] ?? attributes[name]);
-    if (typeof horizontal === "string" || typeof vertical === "string") {
-        return typeof horizontal === "string" ? horizontal : (vertical as string);
-    }
     return {
         wrap: WRAPS[wrapName],
         side: SIDES.has(side) ? (side as FloatingDrawing["side"]) : "bothSides",
@@ -3795,10 +3794,19 @@ const turned = (section: Section, textRunsDown: "fromRight" | "fromLeft"): Secti
 
 // How a list's number lines up at the start of its paragraph's first line (`w:lvlJc`), when not to the left, which is
 // how Word lines it up when the level doesn't say. Word's own lists are aligned to the left, the centre or the right, as
-// docx writes them, and transitional documents may write the start and end of the line for left and right
+// docx writes them, and transitional documents may write the start and end of the line for left and right. The schema's
+// other values are a paragraph's alignments, which a number on its own doesn't have, and Word lines it up to the left
+// with them, as with none
 const NUMBER_ALIGNMENTS: Readonly<Record<string, NumberingLevel["alignment"]>> = {
     left: undefined,
     start: undefined,
+    both: undefined,
+    distribute: undefined,
+    numTab: undefined,
+    lowKashida: undefined,
+    mediumKashida: undefined,
+    highKashida: undefined,
+    thaiDistribute: undefined,
     center: "center",
     right: "right",
     end: "right",
@@ -3806,8 +3814,8 @@ const NUMBER_ALIGNMENTS: Readonly<Record<string, NumberingLevel["alignment"]>> =
 
 /**
  * Reads a level of a list (`w:lvl`), in a definition or in a list's override of it. It says why Word's way with it isn't
- * followed, when it isn't: a number aligned some other way than to the left, the centre or the right, bullets that are
- * pictures (`w:lvlPicBulletId`), and numbers laid out as Word 6 laid them out (`w:legacy`).
+ * followed, when it isn't: a number aligned in a way the schema doesn't have, bullets that are pictures
+ * (`w:lvlPicBulletId`), and numbers laid out as Word 6 laid them out (`w:legacy`).
  */
 const readLevel = (element: unknown, styles: TextStyles): { readonly index: number; readonly level: NumberingLevel } => {
     const children = childrenOf(element);
@@ -3862,16 +3870,47 @@ const readNumbering = (
     otherIds: ReadonlyMap<string, string>,
 ): { readonly lists: ReadonlyMap<string, NumberingList>; readonly unsupported?: string } => {
     const root = childrenOf(xml?.["w:numbering"]);
-    const definitions = new Map(
+    const read = new Map(
         root
             .filter((child) => "w:abstractNum" in child)
             .map((child) => {
                 const children = childrenOf(child["w:abstractNum"]);
                 const levels = byIndex(children.filter((level) => "w:lvl" in level).map((level) => readLevel(level["w:lvl"], styles)));
-                // A definition that takes its levels from a list style (`w:numStyleLink`) has none of its own
-                const unsupported = find(children, "w:numStyleLink") === undefined ? undefined : "a list defined by a list style";
-                return [String(attributesOf(child["w:abstractNum"])["w:abstractNumId"]), { levels, unsupported }] as const;
+                const link = valueOf(children, "w:numStyleLink");
+                return [String(attributesOf(child["w:abstractNum"])["w:abstractNumId"]), { levels, link }] as const;
             }),
+    );
+    /** A list (`w:num`) by its number */
+    const listElement = (id: string | undefined): readonly XmlObject[] | undefined => {
+        const element = root.find((child) => "w:num" in child && String(attributesOf(child["w:num"])["w:numId"]) === id);
+        return element && childrenOf(element["w:num"]);
+    };
+    const definitionIdOf = (list: readonly XmlObject[]): string => String(numberOf(attributesOf(find(list, "w:abstractNumId"))["w:val"]));
+    /**
+     * Each definition by its id, with the id it numbers by. One that takes its levels from a list style (`w:numStyleLink`)
+     * has none of its own: they are those of the definition the style's list is made from, which lists made from either
+     * count together, as the standard has it. It says why where that isn't found, or where the style's list
+     * gives levels of its own, which may be the style's too
+     */
+    const definitions = new Map<string, { readonly id: string; readonly levels: readonly NumberingLevel[]; readonly unsupported?: string }>(
+        [...read].map(([id, { levels, link }]) => {
+            if (link === undefined) {
+                return [id, { id, levels }] as const;
+            }
+            const style = styles.styles.get(link);
+            const list = style?.type === "numbering" ? listElement(style.numbering?.id) : undefined;
+            const linked = list && read.get(definitionIdOf(list));
+            const unsupported =
+                linked === undefined || linked.link !== undefined
+                    ? "a list defined by a list style that isn't found"
+                    : list!.some((child) => "w:lvlOverride" in child)
+                      ? "a list defined by a list style whose own list gives levels of its own"
+                      : undefined;
+            return [
+                id,
+                unsupported === undefined ? { id: definitionIdOf(list!), levels: linked!.levels } : { id, levels, unsupported },
+            ] as const;
+        }),
     );
     // Each list refers to one of the definitions
     const lists = new Map(
@@ -3879,11 +3918,11 @@ const readNumbering = (
             .filter((child) => "w:num" in child)
             .flatMap((child) => {
                 const children = childrenOf(child["w:num"]);
-                const definition = String(numberOf(attributesOf(find(children, "w:abstractNumId"))["w:val"]));
-                const found = definitions.get(definition);
+                const found = definitions.get(definitionIdOf(children));
                 if (!found) {
                     return [];
                 }
+                const definition = found.id;
                 // An override names its level, which the schema requires, so one that doesn't overrides nothing
                 const overrides = children.flatMap((override) => {
                     const index = numberOf(attributesOf(override["w:lvlOverride"])["w:ilvl"]);
@@ -4192,6 +4231,8 @@ export type DocumentParts = {
     readonly endnotes?: XmlObject;
     /** The faces of the fonts it embeds */
     readonly fonts?: readonly FontFace[];
+    /** The stores of data its content controls may be bound to: its custom XML and its properties */
+    readonly dataStores?: DataStores;
 };
 
 /**
@@ -4308,7 +4349,16 @@ const sectionPropertiesOf = (element: XmlObject): unknown => {
 /**
  * Reads a document's body (`w:body`), with the other parts of the document.
  */
-export const readContent = (body: XmlObject, parts: DocumentParts, { guess = false }: ReadOptions = {}): DocumentContent => {
+export const readContent = (writtenBody: XmlObject, writtenParts: DocumentParts, { guess = false }: ReadOptions = {}): DocumentContent => {
+    // The content controls bound to custom XML whose text is already what Word fills them in with show what is written
+    const stores = writtenParts.dataStores ?? new Map<string, XmlObject>();
+    const body = withBoundTextWritten(writtenBody, stores);
+    const parts: DocumentParts = {
+        ...writtenParts,
+        headersAndFooters: new Map([...writtenParts.headersAndFooters].map(([id, content]) => [id, withBoundTextWritten(content, stores)])),
+        footnotes: withBoundTextWritten(writtenParts.footnotes, stores),
+        endnotes: withBoundTextWritten(writtenParts.endnotes, stores),
+    };
     const { styles } = parts;
     const { lists: numbering, unsupported: inNumbering } = readNumbering(parts.numbering, styles, parts.otherListIds ?? new Map());
     const listIds = parts.otherListIds ?? new Map<string, string>();

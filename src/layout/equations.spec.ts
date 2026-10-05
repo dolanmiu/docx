@@ -110,6 +110,26 @@ describe("layOutEquation", () => {
         for (const properties of [[{ "m:nor": {} }], [{ "m:scr": {} }], [style("b")]]) {
             expect(widthOf(run("x", ...properties))).to.equal("an equation in normal text, another alphabet or bold");
         }
-        expect(widthOf("\u2603")).to.equal("a character in an equation whose width isn't known");
+        // A snowman, which Cambria Math hasn't, a diamond, which Word drew in another font, and an integral, which Word drew
+        // wider than the font has it (`word-stops-equations.docx` EQ27k)
+        for (const character of ["\u2603", "\u25c7", "\u222b"]) {
+            expect(widthOf(character)).to.equal("a character in an equation whose width isn't known");
+        }
+    });
+
+    it("should make a character of Cambria Math's own as wide as the font has it, and a Greek variant an italic letter, as Word draws them", () => {
+        // word-stops-equations.docx EQ27: ten of each, as wide as Cambria Math has them, to within a thousandth of an em: ∞
+        // 851.07 thousandths, where Word's PDF has 850.59, ℝ 744.64, and ϑ the italic letter U+1D717, 586.43 wide, with its
+        // italic correction after it, 22.04
+        expect(widthOf("\u221e")).to.equal(187.22);
+        expect(widthOf("\u211d\u211d")).to.equal(327.64);
+        expect(widthOf("\u03d1")).to.equal(133.86);
+        // Plain, it is as it is
+        expect(widthOf(run("\u03d1", style("p")))).to.equal("a character in an equation whose width isn't known");
+        // A symbol Word hasn't been seen to space, beside another atom, where TeX would space it by what it is
+        const unseen = "a symbol in an equation beside another, where Word hasn't been seen to space it";
+        expect(widthOf("a\u2282b")).to.equal(unseen);
+        expect(widthOf("\u2282\u2282")).to.equal(unseen);
+        expect(widthOf("\u2282")).to.be.a("number");
     });
 });

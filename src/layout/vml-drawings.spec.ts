@@ -38,13 +38,14 @@ describe("vmlLength", () => {
         expect(vmlLength("2.54cm")).to.be.closeTo(72, 1e-9);
         expect(vmlLength("25.4mm")).to.be.closeTo(72, 1e-9);
         expect(vmlLength("2pc")).to.equal(24);
+        // CSS's pixels, 96 to the inch
+        expect(vmlLength("100px")).to.equal(75);
         expect(vmlLength("-.5in")).to.equal(-36);
         expect(vmlLength("0")).to.equal(0);
         expect(vmlLength(undefined)).to.equal(undefined);
     });
 
-    it("should say why a length in pixels, ems or a share, a number with no unit, or what isn't a number can't be read", () => {
-        expect(vmlLength("100px")).to.equal("a VML drawing with a length in units not yet followed");
+    it("should say why a length in ems or a share, a number with no unit, or what isn't a number can't be read", () => {
         expect(vmlLength("2em")).to.equal("a VML drawing with a length in units not yet followed");
         expect(vmlLength("50%")).to.equal("a VML drawing with a length in units not yet followed");
         expect(vmlLength("400")).to.equal("a VML drawing with a length in units not yet followed");
@@ -151,7 +152,7 @@ describe("readVmlFloating", () => {
         expect(reasonOf("mso-position-horizontal-relative:cell")).to.equal("a VML drawing placed against what isn't followed yet");
         expect(reasonOf("mso-position-vertical:inline")).to.equal("a VML drawing lined up in a way not yet followed");
         expect(reasonOf("left:10pt")).to.equal("a VML drawing placed by its left or top");
-        expect(reasonOf("margin-top:10px")).to.equal("a VML drawing with a length in units not yet followed");
+        expect(reasonOf("margin-top:10%")).to.equal("a VML drawing with a length in units not yet followed");
         expect(reasonOf("mso-wrap-distance-left:2em")).to.equal("a VML drawing with a length in units not yet followed");
     });
 });
