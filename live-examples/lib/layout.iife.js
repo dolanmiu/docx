@@ -4867,13 +4867,13 @@ var docxLayout = (function(exports) {
 		const unsure = (state, tokenWidth) => squeezes && state.otherSpaces > 0 && state.position + tokenWidth - limitOf() <= MOST_SQUEEZE * state.spaces;
 		/**
 		* Why where Word puts the text after a tab to one of the paragraph's own stops past the end of the line isn't known,
-		* when it isn't: its probes had no first line or hanging indent, no right indent past the margin, a left indent only
-		* with a left stop after text, a right indent only with a right stop after text, and centred and decimal stops after
-		* text in a paragraph without indents
+		* when it isn't: its probes had no first line or hanging indent, no right indent past the margin, indents only with a
+		* left stop after text and a right stop after text, and centred and decimal stops after text in a paragraph without
+		* indents
 		*/
 		const pastEndUnknown = ({ alignment: kind }, started) => {
 			if (firstLineIndent !== 0 || indentRight < 0) return "a tab stop past the end of the line in a paragraph with a first line or hanging indent, or indented past the margin";
-			if (kind === "left") return (started ? indentRight !== 0 : indentLeft !== 0 || indentRight !== 0) ? "a left tab stop past the end of the line in a paragraph indented on the right" : void 0;
+			if (kind === "left") return !started && (indentLeft !== 0 || indentRight !== 0) ? "a left tab stop past the end of the line at the start of a line in an indented paragraph" : void 0;
 			return !started || indentLeft !== 0 || kind !== "right" && indentRight !== 0 ? "a tab stop past the end of the line at the start of a line, or in an indented paragraph" : void 0;
 		};
 		const beforeStart = numberShift(content, numberAlignment, measurer);
@@ -5143,12 +5143,12 @@ var docxLayout = (function(exports) {
 						line = _objectSpread2(_objectSpread2({}, line), {}, { unsupported: (_line$unsupported11 = line.unsupported) !== null && _line$unsupported11 !== void 0 ? _line$unsupported11 : unknown });
 					}
 					if ((pastEnd === null || pastEnd === void 0 ? void 0 : pastEnd.alignment) === "left" && unknown === void 0) {
-						const tab = _objectSpread2(_objectSpread2({}, line), {}, {
-							text: `${line.text}\t`,
-							heights: withToken(line.heights, token),
+						const below = line.started ? wrap(line) : line;
+						line = wrap(place(_objectSpread2(_objectSpread2({}, below), {}, {
+							text: `${below.text}\t`,
+							heights: withToken(below.heights, token),
 							started: true
-						});
-						line = line.started ? wrap(place(tab)) : _objectSpread2(_objectSpread2({}, tab), {}, { end: line.position });
+						})));
 						continue;
 					}
 					const aligned = pastEnd !== void 0 && pastEnd.alignment !== "left" && unknown === void 0;
@@ -8022,6 +8022,21 @@ var docxLayout = (function(exports) {
 	/** Adds the tab stops of a paragraph, or of its style, to those of the styles before */
 	var addTabs = (stops, settings = []) => settings.reduce((all, setting) => [...all.filter((stop) => Math.abs(stop.position - setting.position) > .01), ...setting.alignment === "clear" ? [] : [setting]], stops);
 	var tabStopsOf = (formats) => formats.reduce((stops, { tabs }) => addTabs(stops, tabs), []).filter((stop) => stop.alignment !== "bar" && stop.alignment !== "clear");
+	var IN_CELL_OR_NOTE = "a drawing that text flows around in a table cell, footnote, endnote or text box";
+	/**
+	* A drawing that text flows around, in a header or footer as in the body: one in a header or footer is on each page that
+	* shows it, and the body's text goes round it, as round one of its own (`word-watertight-pages.docx` PG4,
+	* `word-stops-drawings.docx` DH1a to DH1d, `word-vml.docx` VM13). Or why it can't be laid out: one placed against its
+	* paragraph or line in a header or footer, whose place on the page hasn't been seen, nor what the header's own text does
+	* beside it
+	*/
+	var floatingItem = (floating, reader) => {
+		const { horizontal, vertical } = floating;
+		return reader.inHeader && (vertical.from === "paragraph" || vertical.from === "line" || horizontal.from === "character") ? "a drawing that text flows around in a header or footer, placed against its paragraph or line" : [{
+			type: "drawing",
+			drawing: floating
+		}];
+	};
 	/**
 	* Reads a drawing in a run (`w:drawing`): a picture in the line is a box, with its run's font, and one that text doesn't
 	* flow around, such as one behind the text, takes up no room.
@@ -8045,24 +8060,21 @@ var docxLayout = (function(exports) {
 				font
 			}];
 		}
-		if (!!childrenOf(drawing["wp:anchor"]).some((child) => "wp:wrapNone" in child) || reader.inHeader) return [];
-		if (reader.inCell || reader.inNote || reader.inTextBox) return "a drawing that text flows around in a table cell, footnote, endnote or text box";
+		if (!!childrenOf(drawing["wp:anchor"]).some((child) => "wp:wrapNone" in child)) return [];
+		if (reader.inCell || reader.inNote || reader.inTextBox) return IN_CELL_OR_NOTE;
 		const floating = readFloating(drawing["wp:anchor"]);
-		return typeof floating === "string" ? floating : [{
-			type: "drawing",
-			drawing: floating
-		}];
+		return typeof floating === "string" ? floating : floatingItem(floating, reader);
 	};
 	/**
 	* Reads a VML drawing (`w:pict`), as Word lays it out (scripts/layout-probes/word-vml.ts). A shape in the line is a box of
 	* its size, with its run's font, standing on the baseline, as a picture is (VM7), and a text box in it is a box sized to
 	* its text (VM1 to VM5). One placed on the page (`position:absolute`) that text flows around (`w10:wrap`) is a drawing
 	* that text flows around, as a DrawingML one is (VM9 to VM11, VM15), and one with no wrapping is in front of the text or
-	* behind it, and takes no room (VM6), in a header or footer too, as docx's watermarks are. It says why where Word's way
-	* with it isn't known: a picture, which Word drew at a size other than its own (VM8), a shape with an outline, which
-	* takes room around it (VM1), tight or through wrapping, which Word doesn't wrap as square wrapping (VM14), one in a
-	* header or footer that text flows around, which the body's text goes round too (VM13), and one in a header's line, whose
-	* room there doesn't follow the body's (VM12).
+	* behind it, and takes no room (VM6), in a header or footer too, as docx's watermarks are. One in a header or footer that
+	* text flows around is one the body's text goes round (VM13), as a DrawingML one is. It says why where Word's way with it
+	* isn't known: a picture, which Word drew at a size other than its own (VM8), a shape with an outline, which takes room
+	* around it (VM1), tight or through wrapping, which Word doesn't wrap as square wrapping (VM14), and one in a header's
+	* line, whose room there doesn't follow the body's (VM12).
 	*/
 	var readVml = (pict, font, reader) => {
 		var _attributes$stroked;
@@ -8078,13 +8090,10 @@ var docxLayout = (function(exports) {
 		if (style.get("position") === "absolute") {
 			const wrap = find(children, "w10:wrap");
 			if (wrap === void 0 || attributesOf(wrap).type === "none") return [];
-			const reason = reader.inHeader ? "a VML drawing that text flows around in a header or footer" : reader.inCell || reader.inNote || reader.inTextBox ? "a drawing that text flows around in a table cell, footnote, endnote or text box" : shape.text !== void 0 ? "a text box that text flows around" : find(children, "v:imagedata") !== void 0 ? "a VML picture" : outlined ? "a VML drawing with an outline that text flows around" : typeof width !== "number" || typeof height !== "number" ? unsized() : void 0;
+			const reason = reader.inCell || reader.inNote || reader.inTextBox ? IN_CELL_OR_NOTE : shape.text !== void 0 ? "a text box that text flows around" : find(children, "v:imagedata") !== void 0 ? "a VML picture" : outlined ? "a VML drawing with an outline that text flows around" : typeof width !== "number" || typeof height !== "number" ? unsized() : void 0;
 			if (reason !== void 0) return reason;
 			const floating = readVmlFloating(shape, wrap, width, height);
-			return typeof floating === "string" ? floating : [{
-				type: "drawing",
-				drawing: floating
-			}];
+			return typeof floating === "string" ? floating : floatingItem(floating, reader);
 		}
 		const sized = (reason) => typeof width === "number" && typeof height === "number" ? guessedOr(reader, reason, () => [{
 			type: "box",
@@ -9677,7 +9686,7 @@ var docxLayout = (function(exports) {
 				hidden = [];
 			}
 		}
-		return blocks;
+		return withCellEdges(blocks, reader);
 	};
 	/**
 	* How the text goes round a text frame (`w:wrap`), as Word lays it out: beside it on both sides, with no wrapping given,
@@ -9805,6 +9814,65 @@ var docxLayout = (function(exports) {
 		const split = box !== void 0 && (before === null || before === void 0 ? void 0 : before.type) === "paragraph" && ((_before$borders = before.borders) === null || _before$borders === void 0 ? void 0 : _before$borders.box) === box && hidden.some(({ borders }) => (borders === null || borders === void 0 ? void 0 : borders.box) !== box);
 		return _objectSpread2(_objectSpread2({}, block), {}, { hiddenBefore: hidden[hidden.length - 1] }, split && block.unsupported === void 0 ? { unsupported: "a box of borders around a hidden paragraph without them" } : {});
 	};
+	var UNKNOWN_NEXT = Symbol("unknown");
+	var NOTHING_NEXT = Symbol("nothing");
+	/** What is next to the first or last block of some blocks: a paragraph of its style, or what isn't known, for a table */
+	var endOf = (blocks, end) => {
+		const block = end === "first" ? blocks[0] : blocks[blocks.length - 1];
+		return (block === null || block === void 0 ? void 0 : block.type) === "paragraph" ? { style: block.style } : UNKNOWN_NEXT;
+	};
+	var CONTEXTUAL_EDGE = "contextual spacing at the edge of a table cell beside another cell or row, or a table's paragraphs";
+	/**
+	* A stack of blocks with the space Word leaves out at the edges of its tables' cells for contextual spacing. Word compares
+	* a paragraph at a cell's edge with the paragraph next to it in the document's order: the first cell's first paragraph
+	* with the paragraph before the table, and each row's last paragraph with the end of the row, which is a paragraph in the
+	* default paragraph style. So Normal paragraphs with contextual spacing in a cell between Normal paragraphs have neither
+	* the first's space before nor the last's space after, and in a style of their own keep both; between paragraphs of
+	* another style, the first keeps its space before, and the last still leaves out its space after
+	* (`word-stops-text.docx` PB6a to PB6e, `word-compat-settings.docx` CP11). The other edges haven't been seen: the tops of
+	* cells after the first, the bottoms of cells before the last of a row, and the paragraphs around a table, whose space
+	* Word would leave out if it compared them in the document's order too. The layout stops where it would, and guessing,
+	* leaves it out in a cell, and keeps it beside a table
+	*/
+	var withCellEdges = (stack, reader) => stack.map((block, index) => {
+		var _block$rows$0$cells$, _block$rows$, _block$unsupported;
+		if (block.type !== "table") return block;
+		const before = stack[index - 1];
+		const after = stack[index + 1];
+		const rowEnd = { style: reader.styles.defaultParagraphStyle };
+		let unseen = false;
+		/** Whether a paragraph's space on one side is left out, next to what is there, and whether that was seen */
+		const leavesOut = (paragraph, side, next, seen) => {
+			if ((paragraph === null || paragraph === void 0 ? void 0 : paragraph.type) !== "paragraph" || paragraph.format.contextualSpacing !== true || next === NOTHING_NEXT) return false;
+			const { spaceBefore = 0, spaceAfter = 0, autoSpaceBefore, autoSpaceAfter } = paragraph.format;
+			const space = side === "before" ? spaceBefore > 0 || autoSpaceBefore === true : spaceAfter > 0 || autoSpaceAfter === true;
+			const same = next !== UNKNOWN_NEXT && next.style === paragraph.style;
+			unseen || (unseen = space && !seen && (same || next === UNKNOWN_NEXT));
+			return space && same;
+		};
+		const above = before === void 0 ? reader.inCell ? UNKNOWN_NEXT : NOTHING_NEXT : before.type === "table" ? rowEnd : before.hiddenAfter === void 0 ? { style: before.style } : UNKNOWN_NEXT;
+		const rows = block.rows.map((row, rowIndex) => _objectSpread2(_objectSpread2({}, row), {}, { cells: row.cells.map((cell, cellIndex) => {
+			const first = rowIndex === 0 && cellIndex === 0;
+			const end = cellIndex === row.cells.length - 1;
+			const nextAbove = cellIndex > 0 ? endOf(row.cells[cellIndex - 1].blocks, "last") : first ? above : rowEnd;
+			const nextBelow = end ? rowEnd : endOf(row.cells[cellIndex + 1].blocks, "first");
+			const leftOut = {
+				before: leavesOut(cell.blocks[0], "before", nextAbove, first && above !== UNKNOWN_NEXT && (before === null || before === void 0 ? void 0 : before.type) !== "table"),
+				after: leavesOut(cell.blocks[cell.blocks.length - 1], "after", nextBelow, end)
+			};
+			if (!leftOut.before && !leftOut.after) return cell;
+			const last = cell.blocks.length - 1;
+			const blocks = cell.blocks.map((one, at) => {
+				const own = _objectSpread2(_objectSpread2({}, at === 0 && leftOut.before ? { before: true } : {}), at === last && leftOut.after ? { after: true } : {});
+				return one.type === "paragraph" && Object.keys(own).length > 0 ? _objectSpread2(_objectSpread2({}, one), {}, { leftOut: own }) : one;
+			});
+			return _objectSpread2(_objectSpread2({}, cell), {}, { blocks });
+		}) }));
+		leavesOut(before, "after", endOf((_block$rows$0$cells$ = (_block$rows$ = block.rows[0]) === null || _block$rows$ === void 0 || (_block$rows$ = _block$rows$.cells[0]) === null || _block$rows$ === void 0 ? void 0 : _block$rows$.blocks) !== null && _block$rows$0$cells$ !== void 0 ? _block$rows$0$cells$ : [], "first"), false);
+		leavesOut(after, "before", rowEnd, false);
+		const unsupported = (_block$unsupported = block.unsupported) !== null && _block$unsupported !== void 0 ? _block$unsupported : unseen ? CONTEXTUAL_EDGE : void 0;
+		return _objectSpread2(_objectSpread2({}, block), {}, { rows }, withoutUndefined({ unsupported }));
+	});
 	/** The headers or footers a section refers to, by the pages they are on */
 	var readReferences = (properties, name, readPart) => Object.fromEntries(properties.filter((child) => name in child).map((child) => {
 		var _attributes$wType;
@@ -10506,6 +10574,8 @@ var docxLayout = (function(exports) {
 			}
 		}
 		blocks.splice(0, blocks.length, ...anchorFrames(blocks, (entry, block) => _objectSpread2(_objectSpread2({}, entry), {}, { block })));
+		const edged = withCellEdges(blocks.map(({ block }) => block), reader);
+		blocks.splice(0, blocks.length, ...blocks.map((entry, index) => _objectSpread2(_objectSpread2({}, entry), {}, { block: edged[index] })));
 		const final = blocks[blocks.length - 1];
 		const ending = hidden.length > 0 && final !== void 0 ? endingWith(final.block, bookmarks) : void 0;
 		if (ending !== void 0) blocks[blocks.length - 1] = _objectSpread2(_objectSpread2({}, final), {}, { block: ending });
@@ -10680,6 +10750,18 @@ var docxLayout = (function(exports) {
 			this.area = area;
 			this.notes = notes;
 			this.moved = moved;
+		}
+	};
+	var BESIDE_NOTES = "a drawing that text flows around beside the footnotes at the bottom of its page";
+	/**
+	* Thrown to lay out a table again from the next page or column, when its header rows would be alone at the foot of this
+	* one, with what was guessed at in moving them (`guesses`)
+	*/
+	var HeaderRowsAlone = class extends Error {
+		constructor(guesses) {
+			super();
+			_defineProperty(this, "guesses", void 0);
+			this.guesses = guesses;
 		}
 	};
 	/**
@@ -11009,10 +11091,11 @@ var docxLayout = (function(exports) {
 			const contextual = (one, other) => one.format.contextualSpacing === true && (other === null || other === void 0 ? void 0 : other.type) === "paragraph" && other.style === one.style;
 			const spaceBefore = ownSpace(paragraph, "before", before, inCell);
 			const shareBefore = (before === null || before === void 0 ? void 0 : before.type) === "paragraph" && !before.sectionBreak && contextual(before, (_before$hiddenAfter = before.hiddenAfter) !== null && _before$hiddenAfter !== void 0 ? _before$hiddenAfter : paragraph) && !addsParagraphSpacing ? Math.max(0, spaceBefore - ownSpace(before, "after", paragraph, inCell)) : spaceBefore;
+			const { leftOut } = paragraph;
 			return {
 				lines,
-				spaceBefore: contextual(paragraph, (_paragraph$hiddenBefo = paragraph.hiddenBefore) !== null && _paragraph$hiddenBefo !== void 0 ? _paragraph$hiddenBefo : before) ? 0 : shareBefore,
-				spaceAfter: contextual(paragraph, (_paragraph$hiddenAfte = paragraph.hiddenAfter) !== null && _paragraph$hiddenAfte !== void 0 ? _paragraph$hiddenAfte : after) ? 0 : ownSpace(paragraph, "after", after, inCell),
+				spaceBefore: (leftOut === null || leftOut === void 0 ? void 0 : leftOut.before) || contextual(paragraph, (_paragraph$hiddenBefo = paragraph.hiddenBefore) !== null && _paragraph$hiddenBefo !== void 0 ? _paragraph$hiddenBefo : before) ? 0 : shareBefore,
+				spaceAfter: (leftOut === null || leftOut === void 0 ? void 0 : leftOut.after) || contextual(paragraph, (_paragraph$hiddenAfte = paragraph.hiddenAfter) !== null && _paragraph$hiddenAfte !== void 0 ? _paragraph$hiddenAfte : after) ? 0 : ownSpace(paragraph, "after", after, inCell),
 				borderAbove: borders === void 0 ? 0 : sharesBorders(paragraph, before) ? borders.between : borders.top,
 				borderBelow: borders === void 0 ? 0 : sharesBorders(paragraph, after) ? borders.betweenSpace : borders.bottom,
 				keepNext: format.keepNext === true,
@@ -11115,11 +11198,12 @@ var docxLayout = (function(exports) {
 		/**
 		* How tall a cell's text makes its row. Text that runs up or down a cell makes it as tall as a line of its paragraph
 		* mark, whatever its size, as Word breaks the text into lines as long as the row is tall (`word-watertight-tables.docx`
-		* TB6, `word-table-formats.docx` VT1, `word-table-formats2.docx` VT5 to VT7)
+		* TB6, `word-table-formats.docx` VT1, `word-table-formats2.docx` VT5 to VT7). Guessing, one with a table in it is as
+		* tall as a line of its first paragraph's mark, as a cell ends with a paragraph
 		*/
 		const contentHeight = (cell) => {
 			if (!cell.vertical) return stackHeight(blocksWithRoom(cell), cell.width, true);
-			const [first] = cell.blocks;
+			const first = cell.blocks.find((block) => block.type === "paragraph");
 			return linesHeight(measureParagraph(_objectSpread2(_objectSpread2({}, first), {}, { items: [] }), cell.width, void 0, void 0, true).lines);
 		};
 		/** How tall a cell makes its row with its own margins, as a cell merged down rows does */
@@ -11454,13 +11538,23 @@ var docxLayout = (function(exports) {
 			pageNotes = [];
 			notesInColumns = void 0;
 			filledEnd = 0;
-			drawings = withPinned([]);
+			drawings = [...withPinned([]), ...headerDrawings(current, first, {
+				headers: {
+					top: current.header,
+					bottom: headerBottom
+				},
+				footers: {
+					top: current.pageHeight - footerTop,
+					bottom: current.pageHeight - current.footer
+				}
+			})];
 			anchored = [];
 			continued = carried;
 			carried = void 0;
 			if (continued !== void 0 && current.columns.length > 1) notesInColumns = sectionIndex;
 			noteArea = Math.max(areaOf([], void 0, continued), reserved());
 			notesSection = sectionIndex;
+			if (noteArea > 0 && drawings.some(({ keepOut }) => keepOut.bottom > linesBottom() + TOLERANCE)) stopAt(BESIDE_NOTES);
 			if (continued !== void 0 && noteArea > bottom - top + TOLERANCE) {
 				if (first) stopAt("a footnote continued across a continuous section break onto a page of its own");
 				const { name, from } = continued;
@@ -12187,7 +12281,7 @@ var docxLayout = (function(exports) {
 				pending = [...pending, ...notes];
 				return;
 			}
-			if (drawings.some(({ keepOut }) => keepOut.bottom > linesBottom(moreNoteRoom(notes)) + TOLERANCE)) throw new Unsupported("a drawing that text flows around beside the footnotes at the bottom of its page");
+			if (drawings.some(({ keepOut }) => keepOut.bottom > linesBottom(moreNoteRoom(notes)) + TOLERANCE)) throw new Unsupported(BESIDE_NOTES);
 			if (position + below <= linesBottom(moreNoteRoom(notes)) + TOLERANCE) {
 				addNotes(notes);
 				return;
@@ -12244,6 +12338,52 @@ var docxLayout = (function(exports) {
 			const { columns } = columnsSection();
 			return block.format.keepLines !== true || columns.length < 2 ? [] : columns.map((width) => heightToFit(linesToBreak(linesOf(block, width), 0)) > pageBottom - top + TOLERANCE);
 		};
+		/**
+		* The drawings that text flows around in the header and footer a page shows, placed on it, which the body's text goes
+		* round as round its own, as Word has it (`word-watertight-pages.docx` PG4, `word-stops-drawings.docx` DH1a to DH1d,
+		* `word-vml.docx` VM13). Those placed against the column are placed against the text across the page, which a header is
+		* in. It stops where Word's way with them isn't known, and guessing, leaves them out: on a page of text that runs down
+		* it, against a column of a section of several, beside the header's or footer's own text (`textOf`, from its top to
+		* its bottom), which may go round it, and beside a footnote continued from the page before
+		*/
+		const headerDrawings = (current, first, textOf) => ["headers", "footers"].flatMap((parts) => {
+			const kind = kindOf(current[parts], first);
+			return (kind === void 0 ? [] : current[parts][kind]).flatMap((block, index) => block.type === "table" ? [] : block.items.flatMap((item, at) => {
+				if (item.type !== "drawing") return [];
+				const { drawing } = item;
+				const left = columnLeft(current, 0);
+				const where = placeDrawing(drawing, {
+					section: current,
+					oddPage: pageNumber % 2 === 1,
+					column: {
+						start: left,
+						end: left + textWidth(current)
+					},
+					paragraph: 0,
+					line: {
+						top: 0,
+						height: 0
+					},
+					character: 0
+				});
+				const keepOut = typeof where === "string" ? void 0 : keepOutOf(drawing, where);
+				const text = textOf[parts];
+				const reason = typeof where === "string" ? where : current.textRunsDown !== void 0 ? "a drawing that text flows around in a header or footer of text that runs down the page" : drawing.horizontal.from === "column" && current.columns.length > 1 ? "a drawing that text flows around in a header or footer, placed against a column of several" : overlap(keepOut, _objectSpread2({
+					left,
+					right: left + textWidth(current)
+				}, text)) ? "a drawing that text flows around in a header or footer, beside its text" : void 0;
+				if (reason !== void 0 || typeof where === "string") {
+					stopAt(reason);
+					return [];
+				}
+				return [{
+					drawing,
+					box: where,
+					keepOut,
+					anchor: `${parts} ${kind} ${index} ${at}`
+				}];
+			}));
+		});
 		/** The drawings placed from the top of the page and those on it, once each */
 		const withPinned = (onPage) => {
 			var _pinned$get2;
@@ -12410,7 +12550,7 @@ var docxLayout = (function(exports) {
 					top: placement.line.y,
 					bottom: placement.line.y + placement.line.height
 				}) : placement.type === "row" && !floatsAt(placement.block) && placement.row.y + placement.row.height > keepOut.top && placement.row.y < keepOut.bottom)) throw new DrawingAbove(drawing);
-				if (noteArea > 0 && keepOut.bottom > linesBottom() + TOLERANCE) throw new Unsupported("a drawing that text flows around beside the footnotes at the bottom of its page");
+				if (noteArea > 0 && keepOut.bottom > linesBottom() + TOLERANCE) throw new Unsupported(BESIDE_NOTES);
 			}
 			drawings = [...drawings.filter(({ anchor }) => !placed.some(({ drawing }) => drawing.anchor === anchor)), ...placed.map(({ drawing }) => drawing)];
 		};
@@ -13091,7 +13231,25 @@ var docxLayout = (function(exports) {
 				startTablePage();
 			}
 		};
-		const placeTable = (block) => {
+		/**
+		* Places a table, with as much of it on each page as fits there. Word doesn't leave a table's header rows alone at the
+		* foot of a page or column: when none of the row after them goes there, as it is of a set height or kept with the next,
+		* they go on to the next page with it (`word-stops-floats.docx` HR1a, HR1d, and the `tables-across-pages` demo), and
+		* where it can break, as many of its lines as fit go there with them (HR1c, HR1e to HR1g)
+		*/
+		const placeTable = (block, onNextPage = false) => {
+			const start = snapshot(blockIndex);
+			try {
+				layOutTable(block, onNextPage);
+			} catch (error) {
+				if (!(error instanceof HeaderRowsAlone)) throw error;
+				unmarkSince(start.marks);
+				restore(start);
+				error.guesses.forEach((reason) => stopAt(reason));
+				placeTable(block, true);
+			}
+		};
+		const layOutTable = (block, onNextPage) => {
 			var _table$rows$borderBot, _table$rows;
 			const width = columnsSection().columns[column];
 			const table = sizedToPlace(block, width);
@@ -13102,7 +13260,20 @@ var docxLayout = (function(exports) {
 			position += spaceAfter;
 			spaceAfter = 0;
 			placeBesideDrawings(table, heights);
+			const below = !onNextPage && placedInColumn && headerRows > 0 ? {
+				page: pageCount,
+				column,
+				placed: placements.length
+			} : void 0;
+			/** Whether only the table's header rows are in the column, below what is above them */
+			const headersAlone = (index) => below !== void 0 && index >= headerRows && below.page === pageCount && below.column === column && placements.slice(below.placed).every((placement) => placement.type !== "row" || placement.row.index < headerRows);
 			const startTablePage = (index) => {
+				if (headersAlone(index)) {
+					const before = blocks[blockIndex - 1];
+					const guesses = [...(before === null || before === void 0 ? void 0 : before.section) === blocks[blockIndex].section && before.block.type === "paragraph" && before.block.format.keepNext ? ["a paragraph kept with the next before a table whose header rows go on to the next page"] : [], ...columnsSection().columns.length > 1 ? ["a table's header rows alone at the foot of a column"] : []];
+					guesses.forEach((reason) => stopAt(reason));
+					throw new HeaderRowsAlone(guesses);
+				}
 				nextColumn();
 				if (index >= headerRows) {
 					heights.slice(0, Math.max(0, headerRows)).reduce((y, rowHeight, row) => {
@@ -13174,6 +13345,7 @@ var docxLayout = (function(exports) {
 			};
 			const bottomBorder = (_table$rows$borderBot = (_table$rows = table.rows[table.rows.length - 1]) === null || _table$rows === void 0 ? void 0 : _table$rows.borderBottom) !== null && _table$rows$borderBot !== void 0 ? _table$rows$borderBot : 0;
 			openMerges = [];
+			if (onNextPage) startTablePage(0);
 			for (const [index, row] of table.rows.entries()) {
 				var _row$breakBorder2, _row$height5;
 				openMerges = [...openMerges, ...merges.filter(({ first }) => first === index).map(({ first, last, cell }) => ({
@@ -13191,7 +13363,8 @@ var docxLayout = (function(exports) {
 				const holding = held.length > 0 && heldLines !== void 0 && index < heldLines;
 				const notes = [...holding && index === heldLines - 1 ? held : [], ...notesIn(markers)];
 				const keptWhole = holding || row.cantSplit || ((_row$height5 = row.height) === null || _row$height5 === void 0 ? void 0 : _row$height5.rule) === "exact";
-				if (table.cellSpacing !== void 0 && row.breakBorder === void 0 && !rowFits(roomNeeded, notes)) stopAt("a table with space between its cells and borders across pages");
+				const movesWhole = keptWhole && !rowStays(roomNeeded, notes) && headersAlone(index);
+				if (table.cellSpacing !== void 0 && row.breakBorder === void 0 && !rowFits(roomNeeded, notes) && !movesWhole) stopAt("a table with space between its cells and borders across pages");
 				placeKeptRows(index);
 				while (keptWhole && !rowStays(roomNeeded, notes) && (placedInColumn || continued !== void 0)) {
 					closeMerges(position);
@@ -13452,6 +13625,13 @@ var docxLayout = (function(exports) {
 			pageLayouts.set(pageCount, layouts);
 			pinned.set(pageCount, [...((_pinned$get6 = pinned.get(pageCount)) !== null && _pinned$get6 !== void 0 ? _pinned$get6 : []).filter(({ anchor }) => anchor !== drawing.anchor), drawing]);
 		};
+		/** Takes back the bookmarks and fields placed since some were, to place them again as what is after them is laid out again */
+		const unmarkSince = (marks) => {
+			for (const [name, { order }] of places) if (order >= marks) {
+				places.delete(name);
+				bookmarks.delete(name);
+			}
+		};
 		/** Lays out the blocks from one (`from`) to the one before another (`to`), starting their sections */
 		const placeBlocks = (from, to) => {
 			for (let index = from; index < to; index++) {
@@ -13469,10 +13649,7 @@ var docxLayout = (function(exports) {
 						reserves.set(pageCount, error.area);
 						reservedFor.set(pageCount, error.notes);
 						if (error.moved !== void 0) movedOn.set(pageCount, error.moved);
-						for (const [name, { order }] of places) if (order >= columnsStart.marks) {
-							places.delete(name);
-							bookmarks.delete(name);
-						}
+						unmarkSince(columnsStart.marks);
 					}
 					restore(columnsStart);
 					index = columnsStart.index - 1;
