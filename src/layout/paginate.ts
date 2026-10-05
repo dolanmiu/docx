@@ -537,17 +537,20 @@ class DrawingAbove extends Error {
     }
 }
 
+const PUSHED_ON = "a drawing whose paragraph goes on to the next page as the text before it goes round it";
+
 /**
  * Thrown to lay out a page again when the paragraph of a drawing placed from the page's top went on to the next page as
  * the text before it went round the drawing, with the paragraph starting on the next page (`block`), and its drawing with
- * it, as Word lays it out (`word-stops-drawings.docx` DR8)
+ * it, as Word lays it out (`word-stops-drawings.docx` DR8). Where the page isn't laid out again, as it ends other than
+ * in placing a block, the layout stops there
  */
-class PushedOn extends Error {
+class PushedOn extends Unsupported {
     public constructor(
         public readonly block: number,
         public readonly page: number,
     ) {
-        super();
+        super(PUSHED_ON);
     }
 }
 
@@ -3132,7 +3135,7 @@ export const paginate = (
         // its drawings placed from this page's top. It started on this page, as only the text of another block before it
         // on a page has a drawing placed from the page's top, and on the next it is the first, with no text before it
         if (isTableDrawing(away)) {
-            throw new Unsupported("a drawing whose paragraph goes on to the next page as the text before it goes round it");
+            throw new Unsupported(PUSHED_ON);
         }
         throw new PushedOn(Number(away.anchor.split(" ")[0]), pageCount);
     };
@@ -3231,22 +3234,29 @@ export const paginate = (
      * paragraph are in its section, as those that aren't stop the layout
      */
     const floatsBefore = (index: number): readonly number[] => {
-        const first = blocks.slice(0, index).findLastIndex((_, at) => !floatsAt(at)) + 1;
+        let first = index;
+        while (floatsAt(first - 1)) {
+            first--;
+        }
         return Array.from({ length: index - first }, (_, offset) => first + offset);
     };
 
     /** The tables that text flows around from one, one after the other */
     const floatsFrom = (index: number): readonly number[] => {
-        const end = blocks.findIndex((_, at) => at >= index && !floatsAt(at));
-        return Array.from({ length: (end === -1 ? blocks.length : end) - index }, (_, offset) => index + offset);
+        let end = index;
+        while (floatsAt(end)) {
+            end++;
+        }
+        return Array.from({ length: end - index }, (_, offset) => index + offset);
     };
 
     /**
      * Why Word's way with the tables that text flows around from one (`index`) isn't known: with nothing after them in
-     * their section to place them against, before a paragraph kept with the next, with borders between their rows only, or
-     * with a footnote in one before a table. Word places them against the top of what comes after them: a paragraph, the
-     * empty one that ends their section, which takes a line after them, and a table (`word-stops-floats.docx` FT1a to
-     * FT1e), and their footnotes go on the page with them (FT3)
+     * their section to place them against, which a document read doesn't have, as each section ends with a paragraph
+     * and the body with the one Word adds after them, before a paragraph kept with the next, with borders between their
+     * rows only, or with a footnote in one before a table. Word places them against the top of what comes after them: a
+     * paragraph, the empty one that ends their section, which takes a line after them, and a table
+     * (`word-stops-floats.docx` FT1a to FT1e), and their footnotes go on the page with them (FT3)
      */
     const floatsUnknown = (index: number): string | undefined => {
         const run = floatsFrom(index);
