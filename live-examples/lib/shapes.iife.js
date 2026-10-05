@@ -3873,6 +3873,7 @@ var docxShapes = (function(exports, docx) {
 		return [...text].reduce((position, character) => character === "	" ? (Math.floor(position / TAB_STOP) + 1) * TAB_STOP : position + widthOf(character) * size * scale / 1e5 + characterSpacing, start) - start;
 	};
 	new RegExp("\\p{L}\\p{L}", "u");
+	new RegExp("^\\p{Script=Latin}$", "u");
 	/**
 	* How tall a line of single-spaced text is, in points.
 	*/
@@ -4087,11 +4088,12 @@ var docxShapes = (function(exports, docx) {
 		return unit === void 0 || unit === "pt" ? pointsOf(value, 2) : void 0;
 	};
 	/**
-	* Why how Word reads a length in formatted XML isn't known, when it isn't: a size in picas, which Word's PDFs didn't
-	* tell from one it ignores, or in another unit but points, which they showed it ignores only with no style giving a
-	* size, a negative length of a fraction of a centimeter or millimeter, and a lowered position (`w:position`) of a
-	* fraction of its unit, whose minus sign and rounding together they didn't show. Undefined when every length's reading
-	* is known.
+	* Why how Word reads a length in formatted XML isn't known, when it isn't: a size in a unit other than points, which Word's
+	* PDFs showed it ignores in sizes that aren't whole half-points with no style giving a size (word-units2.ts V3), and
+	* draws at its length in whole half-points in a run whose style gives one (scripts/layout-probes/stops2/word-stops-text.ts
+	* RF27a to RF27c), which leaves which of the two decides unknown. Its minus sign is the whole number's only, as for every
+	* length: "-2.5pt" lowers text by 1.5 points, "-0.5pt" and "-0.3cm" raise it, and "-0.5mm" spaces letters further apart
+	* (RF26a, RF26b, RF28a, RF28b). Undefined when every length's reading is known.
 	*/
 	var unknownLengthIn = (element, name = "") => {
 		if (Array.isArray(element)) return element.reduce((found, child) => found !== null && found !== void 0 ? found : unknownLengthIn(child, name), void 0);
@@ -4101,10 +4103,8 @@ var docxShapes = (function(exports, docx) {
 			return Object.values(child).reduce((reason, value) => {
 				const measure = typeof value === "string" ? MEASURE.exec(value) : null;
 				if (reason !== void 0 || !measure) return reason;
-				const [, minus, , fraction, unit] = measure;
-				if ((name === "w:sz" || name === "w:szCs") && unit !== "pt") return "a size given in a unit other than points";
-				if (name === "w:position" && minus && fraction) return "a lowered position of a fraction of its unit";
-				return minus && fraction && METRIC.has(unit) ? "a negative length of a fraction of a centimeter or millimeter" : void 0;
+				const [, , , , unit] = measure;
+				return (name === "w:sz" || name === "w:szCs") && unit !== "pt" ? "a size given in a unit other than points" : void 0;
 			}, void 0);
 		}, void 0);
 	};
@@ -4481,25 +4481,37 @@ var docxShapes = (function(exports, docx) {
 			24
 		]
 	].map(([style, times, more]) => [style, (size) => size >= 4 && size <= 24 ? times * size + more : void 0])));
+	var LINE_BORDERS = /* @__PURE__ */ new Set([
+		"nil",
+		"none",
+		...Object.keys(BORDER_WIDTHS),
+		"custom"
+	]);
+	var SEEN_RUN_BORDERS = { thickThinLargeGap: { 36: 54 } };
+	var WIDEST_ART_BORDER = 31;
 	/**
 	* How wide a run's border is as Word draws it, in eighths of a point: as a paragraph's of its style. A border of no style
-	* ("none") takes its space still, but no width (scripts/layout-probes/word-run-formatting.ts RF7h). Undefined when Word
-	* hasn't been seen to draw it.
+	* ("none") takes its space still, but no width (scripts/layout-probes/word-run-formatting.ts RF7h). An art border's size
+	* is in points, so apples of 12 take 12 points (scripts/layout-probes/stops2/word-stops-text.ts RF25c), and Word draws a
+	* single border of an eighth of a point, and a double one of none, as given (RF25f, RF25e). Undefined when Word hasn't been
+	* seen to draw it.
 	*/
-	var runBorderWidth = ({ style, size, space, shadow, frame }) => {
-		var _BORDER_WIDTHS$style;
-		if (shadow || frame || space > 31) return;
-		return style === "none" || size === void 0 || size < 2 || size > 96 ? style === "none" ? 0 : void 0 : (_BORDER_WIDTHS$style = BORDER_WIDTHS[style]) === null || _BORDER_WIDTHS$style === void 0 ? void 0 : _BORDER_WIDTHS$style.call(BORDER_WIDTHS, size);
+	var runBorderWidth = ({ style, size, shadow, frame }) => {
+		var _BORDER_WIDTHS$style, _BORDER_WIDTHS$style2, _SEEN_RUN_BORDERS$sty;
+		if (shadow || frame || size === void 0) return style === "none" && !shadow && !frame ? 0 : void 0;
+		if (!LINE_BORDERS.has(style)) return size >= 1 && size <= WIDEST_ART_BORDER ? size * EIGHTHS_PER_POINT : void 0;
+		if (style === "single" && size === 1 || style === "double" && size === 0) return BORDER_WIDTHS[style](size);
+		return style === "none" ? 0 : size < 2 || size > 96 ? void 0 : (_BORDER_WIDTHS$style = (_BORDER_WIDTHS$style2 = BORDER_WIDTHS[style]) === null || _BORDER_WIDTHS$style2 === void 0 ? void 0 : _BORDER_WIDTHS$style2.call(BORDER_WIDTHS, size)) !== null && _BORDER_WIDTHS$style !== void 0 ? _BORDER_WIDTHS$style : (_SEEN_RUN_BORDERS$sty = SEEN_RUN_BORDERS[style]) === null || _SEEN_RUN_BORDERS$sty === void 0 ? void 0 : _SEEN_RUN_BORDERS$sty[size];
 	};
 	/**
 	* The room a run's border takes, beside the run and above and below it: its space and its width, as Word gives it room (a
-	* single border of half a point 4 points away takes 90 twips on each side and above and below, RF7a). Undefined when it
-	* takes none, as one of "nil" takes none at all (word-run-formatting2.ts RF12), and when how much isn't known: see
-	* {@link unknownRunFormatting}.
+	* single border of half a point 4 points away takes 90 twips on each side and above and below, RF7a). Word keeps a space
+	* in five bits, so one of 40 points is 8 (RF25d). Undefined when it takes none, as one of "nil" takes none at all
+	* (word-run-formatting2.ts RF12), and when how much isn't known: see {@link unknownRunFormatting}.
 	*/
 	var textBorderOf = (border) => {
 		const width = border === void 0 || border.style === "nil" ? void 0 : runBorderWidth(border);
-		const room = width === void 0 ? 0 : width / EIGHTHS_PER_POINT + border.space;
+		const room = width === void 0 ? 0 : width / EIGHTHS_PER_POINT + border.space % 32;
 		return room > 0 ? {
 			room,
 			key: border.key
