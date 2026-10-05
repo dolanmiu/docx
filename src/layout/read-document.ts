@@ -152,6 +152,11 @@ export type DrawingPosition = {
      * place it (`wp14:pctPosHOffset`, `wp14:pctPosVOffset`), in place of `offset`
      */
     readonly share?: number;
+    /**
+     * Why it can't be placed in a section of more than one column, when it can't: one that doesn't say what it is placed
+     * against across the page, which Word places against the margins or the column, the same in one column
+     */
+    readonly inColumns?: string;
 };
 
 /**
@@ -376,6 +381,11 @@ export type TableBlock = {
      * width of its own in a document in compatibility mode
      */
     readonly marginsBeside?: boolean;
+    /**
+     * The text frames right before it, with no paragraph between, as drawings anchored at its top, where Word places them,
+     * with their bookmarks and notes' references (`word-stops-floats.docx` FR1a, FR1d)
+     */
+    readonly anchored?: readonly LayoutItem[];
     readonly unsupported?: string;
     /** Whether a layout that guesses has no guess for it either, for what is in one of its cells */
     readonly noGuess?: boolean;
@@ -623,6 +633,8 @@ type Reader = {
     readonly inHeader: boolean;
     /** Whether it is a footnote or endnote, whose fields are where its reference is */
     readonly inNote?: boolean;
+    /** Whether it is an endnote */
+    readonly inEndnote?: boolean;
     /** The markers at the fields whose pages are worked out, in the body and its notes */
     readonly markers: FieldMarkers;
     // eslint-disable-next-line functional/prefer-readonly-type
@@ -1235,10 +1247,6 @@ const readRelativeSize = (element: unknown, name: string): { readonly from: stri
 const readFloating = (element: unknown): FloatingDrawing | string => {
     const children = childrenOf(element);
     const attributes = attributesOf(element);
-    if (isOn(attributes.simplePos)) {
-        // Word places it by its offsets, and its simple position is for other applications
-        return "a drawing placed by its simple position";
-    }
     const wrapName = Object.keys(WRAPS).find((name) => find(children, name) !== undefined);
     if (wrapName === undefined) {
         return "a drawing that text flows around in a way not yet followed";
@@ -1246,11 +1254,20 @@ const readFloating = (element: unknown): FloatingDrawing | string => {
     const wrapElement = find(children, wrapName);
     const wrapAttributes = attributesOf(wrapElement);
     const side = String(wrapAttributes.wrapText ?? "bothSides");
-    const horizontal = readPosition(find(children, "wp:positionH"), "wp14:pctPosHOffset");
-    const vertical = readPosition(find(children, "wp:positionV"), "wp14:pctPosVOffset");
     const extent = attributesOf(find(children, "wp:extent"));
     const effect = attributesOf(find(children, "wp:effectExtent"));
     const points = (value: unknown): number => (numberOf(value) ?? 0) / EMUS_PER_POINT;
+    // Placed by its simple position, Word places it from the page's top left corner by that, rather than by its positions
+    // (`word-stops-drawings.docx` DR15)
+    const simple = isOn(attributes.simplePos) ? attributesOf(find(children, "wp:simplePos")) : undefined;
+    const horizontal =
+        simple === undefined
+            ? readPosition(find(children, "wp:positionH"), "wp14:pctPosHOffset")
+            : { from: "page", offset: points(simple.x) };
+    const vertical =
+        simple === undefined
+            ? readPosition(find(children, "wp:positionV"), "wp14:pctPosVOffset")
+            : { from: "page", offset: points(simple.y) };
     // The distances its wrapping gives, and the anchor's where it gives none
     const distance = (name: string): number => points(wrapAttributes[name] ?? attributes[name]);
     return {
@@ -2167,11 +2184,10 @@ const unknownDownOf = (
 
 /**
  * The text frame a paragraph is in (`w:framePr`), its own or its style's, or why it can't be laid out: one in a table
- * cell, a footnote, an endnote, a header or a footer, one given by both the paragraph and its style differently, and one
- * with a note's reference in it, which aren't followed yet. Undefined when it isn't in one.
+ * cell, a footnote, an endnote, a header or a footer, and one given by both the paragraph and its style differently,
+ * which aren't followed yet. Undefined when it isn't in one.
  */
 const readFrameOf = (
-    paragraph: XmlObject,
     properties: readonly XmlObject[],
     paragraphStyles: readonly { readonly frame?: unknown }[],
     reader: Reader,
@@ -2182,21 +2198,26 @@ const readFrameOf = (
     if (element === undefined) {
         return undefined;
     }
+    if (reader.inNote && !reader.inEndnote && !reader.inCell && !reader.inTextBox) {
+        // In a footnote's text, Word lays its paragraph out there, as one not in a frame (`word-stops-floats.docx` FR3b)
+        return undefined;
+    }
     if (reader.inCell || reader.inNote || reader.inHeader || reader.inTextBox) {
-        return "a text frame in a table cell, footnote, endnote, header, footer or text box";
+        return "a text frame in a table cell, endnote, header, footer or text box";
     }
     const frame = readFrameProperties(element);
     if (typeof frame === "string") {
         return frame;
     }
     if (own !== undefined && fromStyle !== undefined) {
-        const styled = readFrameProperties(fromStyle);
-        if (typeof styled === "string" || styled.key !== frame.key) {
+        // The paragraph's own, when it says all its style's does, is the frame, as Word lays it out (`word-stops-floats.docx`
+        // FR4). Whether Word takes the rest from the style's, when it doesn't, isn't known
+        const said = new Set(Object.keys(attributesOf(own)));
+        if (Object.keys(attributesOf(fromStyle)).some((name) => !said.has(name))) {
             return "a text frame given by both a paragraph and its style";
         }
     }
-    const references = elementsIn(contentOf(paragraph), (name) => name === "w:footnoteReference" || name === "w:endnoteReference");
-    return references.length > 0 ? "a footnote or endnote in a text frame" : frame;
+    return frame;
 };
 
 /**
@@ -2263,7 +2284,7 @@ const readParagraph = (element: XmlObject, reader: Reader, tableFormats: TableFo
                 own.some((item) => item.type === "text" && (item.font.characterSpacing ?? 0) !== 0 && item.font.snapToGrid !== false)
               ? "text spaced out by its run on a grid that snaps to characters"
               : undefined;
-    const frame = readFrameOf(element, properties, styleChain(styles, style, "paragraph"), reader);
+    const frame = readFrameOf(properties, styleChain(styles, style, "paragraph"), reader);
     const unsupported =
         list.unsupported ??
         unknownOnGrid ??
@@ -3051,9 +3072,11 @@ const readTable = (element: XmlObject, reader: Reader): TableBlock | undefined =
     // What is in a cell that a layout that guesses has no guess for is why it can't lay out the table either
     const withoutGuess = blocks.find((block) => block.noGuess === true);
     // Word puts the text after a floating table (`w:tblpPr`) beside it (`word-watertight-tables.docx` TB11), as it does
-    // beside a drawing with square wrapping (`word-floats2.docx` G24 to G29). One in a table cell, a header or footer, or a
-    // note hasn't been seen
-    const floatElement = find(properties, "w:tblpPr");
+    // beside a drawing with square wrapping (`word-floats2.docx` G24 to G29). In a footnote's text, Word lays it out there,
+    // as a table that doesn't float (`word-stops-floats.docx` FT6c). One in a table cell, a header or footer, or an
+    // endnote, which Word lays out otherwise (FT6a, FT6b) or hasn't been seen, isn't followed yet
+    const inFootnote = reader.inNote === true && reader.inEndnote !== true && !reader.inCell && reader.inTextBox !== true;
+    const floatElement = inFootnote ? undefined : find(properties, "w:tblpPr");
     const float = floatElement === undefined ? undefined : readTableFloat(floatElement, find(properties, "w:tblOverlap"));
     // In compatibility mode, Word 2010 and before put a table's text, rather than its borders, at its indent, and give one
     // sized to its text its cells' margins beside the page's text (`word-stops-compat-14.docx` CM4, CM5, CM11, CM16). That
@@ -3072,7 +3095,7 @@ const readTable = (element: XmlObject, reader: Reader): TableBlock | undefined =
         withoutGuess?.unsupported ??
         (reader.down === true ? "a table on text that runs down the page" : undefined) ??
         (float !== undefined && (reader.inCell || reader.inNote || reader.inHeader)
-            ? "a table that text flows around in a table cell, header, footer or note"
+            ? "a table that text flows around in a table cell, header, footer or endnote"
             : undefined) ??
         (float !== undefined && older ? "a table that text flows around in a document in compatibility mode" : undefined) ??
         (marginsBeside && fits && (reader.inCell === true || indent !== 0 || givenWidth.share !== undefined)
@@ -3151,22 +3174,35 @@ const TABLE_AXES = {
     },
 };
 
-/** Where a table that text flows around is (`w:tblpPr`), or why it can't be followed */
+/**
+ * Where a table that text flows around is (`w:tblpPr`), or why it can't be followed. One that doesn't say what it is
+ * placed against is placed against the margins, as Word places it: across the page, where the margins and the column are
+ * the same in one column, so it stops in columns, and down the page, from the top margin (`word-stops-floats.docx` FT7a,
+ * FT7b). Lined up inline against the text, it is at the top of the paragraph after it (FT7c)
+ */
 const readTableFloat = (element: unknown, overlap: unknown): TableFloat | string => {
     const attributes = attributesOf(element);
     const position = (anchor: keyof typeof TABLE_AXES, spec: string, at: string): DrawingPosition | string => {
         const { from: anchors, alignments } = TABLE_AXES[anchor];
-        const from = anchors.get(String(attributes[`w:${anchor}`]));
+        const given = attributes[`w:${anchor}`];
+        const from = given === undefined ? "margin" : anchors.get(String(given));
         const align = attributes[`w:${spec}`];
         if (from === undefined) {
-            return "a table that text flows around placed against what isn't given";
+            return "a table that text flows around placed against what isn't followed yet";
+        }
+        const unsaid =
+            given === undefined && anchor === "horzAnchor"
+                ? { inColumns: "a table that text flows around placed against what isn't given, in columns" }
+                : {};
+        if (align === "inline" && from === "paragraph") {
+            return { from, align: "top" };
         }
         if (align !== undefined) {
             return alignments.has(String(align))
-                ? { from, align: String(align) }
+                ? { from, align: String(align), ...unsaid }
                 : "a table that text flows around lined up in a way not yet followed";
         }
-        return { from, offset: twips(attributes[`w:${at}`]) ?? 0 };
+        return { from, offset: twips(attributes[`w:${at}`]) ?? 0, ...unsaid };
     };
     const horizontal = position("horzAnchor", "tblpXSpec", "tblpX");
     const vertical = position("vertAnchor", "tblpYSpec", "tblpY");
@@ -3680,30 +3716,55 @@ const FRAME_WRAPS: Readonly<Record<string, FloatingDrawing["wrap"] | "none">> = 
     none: "none",
 };
 
+// How much further Word keeps the text from a frame's border beside it than the border's width and space, in points
+const FRAME_BORDER_ROOM = 1.5;
+
+/**
+ * The room a text frame's border at its side takes beside it, in points, or why it isn't known: its width, without the
+ * shadow that doubles a paragraph's, its space from the text, and 1.5 points more, as Word keeps the text from it: 65
+ * twips for a border of 15 twips 20 from the text (`word-frames.docx` FM13), and 40 to 660 twips for those of
+ * `word-stops-floats.docx` FR2a to FR2j. The frame's text isn't moved, as its border is drawn outside it
+ */
+const frameBorderRoom = (border: ParagraphBorder | undefined): number | string => {
+    const room = borderRoom(border === undefined ? undefined : { ...border, shadow: false });
+    return typeof room === "string" || room === 0 ? room : room + FRAME_BORDER_ROOM;
+};
+
 /**
  * A text frame as a drawing that text flows around, placed and sized by its properties and its paragraphs, nothing when
- * it is in front of the text, or why it can't be laid out: one with borders, which take room beside it in a way not yet
- * followed (FM13)
+ * it is in front of the text, or why it can't be laid out. Its borders at its sides keep the text further from it, and
+ * those above and below are in it, above and below its text, as a paragraph's are (FR2a to FR2j). Where its paragraphs
+ * have other borders at their sides, and where a frame with borders there has a distance from the text too, Word's way
+ * isn't known
  */
 const frameDrawing = (frame: FrameProperties, blocks: readonly ParagraphBlock[]): FloatingDrawing | undefined | string => {
     const wrap = FRAME_WRAPS[frame.wrap ?? "around"];
     if (wrap === undefined) {
         return "a text frame that text flows around in a way not yet followed";
     }
-    if (blocks.some(({ borders }) => borders !== undefined)) {
-        return "a text frame with borders";
+    const sideKey = (border: ParagraphBorder | undefined): string =>
+        border === undefined || NO_BORDER.has(border.style) ? "" : border.key;
+    if (new Set(blocks.map(({ format }) => `${sideKey(format.borderLeft)} ${sideKey(format.borderRight)}`)).size > 1) {
+        return "a text frame of paragraphs with other borders at their sides";
+    }
+    const [left, right] = [blocks[0].format.borderLeft, blocks[0].format.borderRight].map(frameBorderRoom);
+    if (typeof left === "string" || typeof right === "string") {
+        return typeof left === "string" ? left : (right as string);
+    }
+    const { width = 0, height, heightRule, horizontal, vertical, across, down } = frame;
+    if (left + right > 0 && across > 0) {
+        return "a text frame with borders at its sides and a distance from the text";
     }
     if (wrap === "none") {
         return undefined;
     }
-    const { width = 0, height, heightRule, horizontal, vertical, across, down } = frame;
     return {
         wrap,
         side: "bothSides",
         width,
         height,
         effects: { top: 0, bottom: 0, left: 0, right: 0 },
-        distances: { top: down, bottom: down, left: across, right: across },
+        distances: { top: down, bottom: down, left: across + left, right: across + right },
         horizontal,
         vertical,
         // How Word lays out a frame that overlaps another drawing hasn't been seen, so it stops there as at a drawing that
@@ -3715,9 +3776,13 @@ const frameDrawing = (frame: FrameProperties, blocks: readonly ParagraphBlock[])
 
 /**
  * Takes the paragraphs in text frames out of the body's text, and anchors each frame in the paragraph after it, as a
- * drawing that text flows around, at its start. Frames elsewhere stop the layout as they are read. The paragraphs of a frame are those next to each other with the same frame. The
- * bookmarks and fields in a frame are where its anchor is, as the frame is on its page. A frame with no paragraph after it
- * in its section, such as one before a table, isn't followed yet, so the layout stops there.
+ * drawing that text flows around, at its start. Frames elsewhere stop the layout as they are read. The paragraphs of a
+ * frame are those next to each other with the same frame. The bookmarks, fields and notes' references in a frame are
+ * where its anchor is, as the frame is on its page (`word-stops-floats.docx` FR5a). The paragraph after a frame can be the
+ * empty one that ends its section, which takes a line then, and which the next section's text on the page goes round
+ * too, and with a table after it, the frame is anchored at the table's top, as Word places it (FR1a to FR1d). One placed
+ * against the paragraph after it before a table, and one with nothing after it in its section, at the end of the
+ * document or as its own paragraph ends the section, aren't followed yet, so the layout stops there.
  */
 const anchorFrames = <Entry extends { readonly block: Block; readonly section: number }>(
     entries: readonly Entry[],
@@ -3739,10 +3804,12 @@ const anchorFrames = <Entry extends { readonly block: Block; readonly section: n
             anchored.push(entry);
             continue;
         }
-        if (block.type !== "paragraph" || block.sectionBreak || entry.section !== framed[0].section) {
-            // Its paragraphs stay in the text, the first stopping the layout, or, guessing, laid out where they are
+        if (entry.section !== framed[0].section || (block.type === "table" && block.float !== undefined)) {
+            // Its paragraphs stay in the text, the first stopping the layout, or, guessing, laid out where they are. Before a
+            // table that text flows around, which is anchored in the paragraph after it, where Word puts it isn't known
+            const unknown = entry.section === framed[0].section ? "a text frame before a table that text flows around" : undefined;
             // eslint-disable-next-line functional/immutable-data
-            anchored.push(...unanchored(framed, withBlock), entry);
+            anchored.push(...unanchored(framed, withBlock, unknown), entry);
             framed = [];
             continue;
         }
@@ -3762,12 +3829,19 @@ const anchorFrames = <Entry extends { readonly block: Block; readonly section: n
         const laidOut = drawings.flatMap((drawing) =>
             drawing === undefined || typeof drawing === "string" ? [] : [{ type: "drawing" as const, drawing }],
         );
+        const why =
+            block.unsupported ??
+            unsupported ??
+            (block.type === "table" && laidOut.some(({ drawing }) => drawing.vertical.from === "paragraph")
+                ? "a text frame placed against the paragraph after it, before a table"
+                : undefined);
         // eslint-disable-next-line functional/immutable-data
         anchored.push(
             withBlock(entry, {
-                ...block,
-                items: [...markers, ...laidOut, ...block.items],
-                ...(unsupported !== undefined && block.unsupported === undefined ? { unsupported } : {}),
+                ...(block.type === "table"
+                    ? { ...block, anchored: [...markers, ...laidOut] }
+                    : { ...block, items: [...markers, ...laidOut, ...block.items] }),
+                ...(why === undefined ? {} : { unsupported: why }),
             }),
         );
         framed = [];
@@ -3784,10 +3858,8 @@ const anchorFrames = <Entry extends { readonly block: Block; readonly section: n
 const unanchored = <Entry extends { readonly block: Block }>(
     framed: readonly Entry[],
     withBlock: (entry: Entry, block: Block) => Entry,
-): readonly Entry[] =>
-    framed.map((entry, index) =>
-        index === 0 ? withBlock(entry, { ...entry.block, unsupported: "a text frame with no paragraph after it in its section" }) : entry,
-    );
+    unsupported = "a text frame with no paragraph after it in its section",
+): readonly Entry[] => framed.map((entry, index) => (index === 0 ? withBlock(entry, { ...entry.block, unsupported }) : entry));
 
 const START_TYPES = new Set<Section["start"]>(["nextPage", "continuous", "evenPage", "oddPage", "nextColumn"]);
 
@@ -4853,6 +4925,7 @@ export const readContent = (writtenBody: XmlObject, writtenParts: DocumentParts,
         const readerOfNote: Reader = {
             ...readerOf(false),
             inNote: true,
+            ...(kind === "endnote" ? { inEndnote: true } : {}),
             ...(separator ? {} : { noteNumber: shows }),
             ...(grid === undefined ? {} : { grid }),
             ...(down ? { down } : {}),
@@ -5105,6 +5178,12 @@ export const readContent = (writtenBody: XmlObject, writtenParts: DocumentParts,
             readSection(element, readPart, sections[sections.length - 1], pageSettings, readGrid(element, normalSize, pageSettings)),
         );
     };
+    /** The reader of a section's blocks, on its grid and with its text running down the page when it does */
+    const sectionReader = (section: number): Reader => {
+        const grid = gridOf(section);
+        const down = downOf(childrenOf(sectionElements[section])) !== undefined;
+        return { ...reader, ...(grid === undefined ? {} : { grid }), ...(down ? { down } : {}) };
+    };
     // The body is written with its section's properties at its end, if nothing else
     for (const element of elements) {
         const name = nameOf(element);
@@ -5115,9 +5194,7 @@ export const readContent = (writtenBody: XmlObject, writtenParts: DocumentParts,
             const bookmark = bookmarkOf(element);
             bookmarks = bookmark === undefined ? bookmarks : [...bookmarks, bookmark];
         } else {
-            const grid = gridOf(sections.length);
-            const down = downOf(childrenOf(sectionElements[sections.length])) !== undefined;
-            const block = readBlock(element, { ...reader, ...(grid === undefined ? {} : { grid }), ...(down ? { down } : {}) });
+            const block = readBlock(element, sectionReader(sections.length));
             const sectionProperties = sectionPropertiesOf(element);
             if (block?.type === "paragraph" && block.hidden) {
                 bookmarks = [...bookmarks, ...markersIn([block])];
@@ -5141,6 +5218,17 @@ export const readContent = (writtenBody: XmlObject, writtenParts: DocumentParts,
                 addSection(sectionProperties);
             }
         }
+    }
+    // Word ends a body that ends with a table that text flows around with an empty paragraph of its own, which takes a line
+    // of its section, and in which the table is anchored (`word-stops-floats.docx` FT1e)
+    const lastBlock = blocks[blocks.length - 1];
+    const closing =
+        lastBlock?.block.type === "table" && lastBlock.block.float !== undefined
+            ? readBlock({ "w:p": [] }, sectionReader(lastBlock.section))
+            : undefined;
+    if (closing !== undefined) {
+        // eslint-disable-next-line functional/immutable-data
+        blocks.push({ block: closing, section: lastBlock!.section });
     }
     // eslint-disable-next-line functional/immutable-data
     blocks.splice(0, blocks.length, ...anchorFrames(blocks, (entry, block) => ({ ...entry, block })));

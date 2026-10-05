@@ -369,6 +369,8 @@ const groupedNotes = (
 /** Where the layout was at the start of a block, from which the blocks can be laid out again */
 type Snapshot = {
     readonly index: number;
+    readonly keptOn: KeptOn | undefined;
+    readonly brokenAcross: ReadonlySet<number>;
     readonly pageCount: number;
     readonly pageNumber: number;
     readonly restart: number | undefined;
@@ -404,20 +406,26 @@ type Snapshot = {
 /** A heading of a level, with its number as a chapter number, or why its chapter number isn't known */
 type ChapterHeading = { readonly level: number; readonly chapter?: string; readonly unsupported?: string };
 
-/** The headings in a block: a paragraph's own, and those in a table's cells, whose chapter numbers aren't known yet */
+/** The headings of the text frames anchored in a block, which are before it in the text, whose chapter numbers aren't known yet */
+const framedHeadings = (items: readonly LayoutItem[]): readonly ChapterHeading[] =>
+    items
+        .flatMap((item) => (item.type === "drawing" ? (item.drawing.frame?.blocks ?? []) : []))
+        .flatMap(headingsIn)
+        .map(({ level }) => ({ level, unsupported: "a chapter heading in a text frame" }));
+
+/**
+ * The headings in a block: a paragraph's own, and those in a table's cells and in the text frames anchored in either,
+ * whose chapter numbers aren't known yet
+ */
 const headingsIn = (block: Block): readonly ChapterHeading[] =>
     block.type === "paragraph"
-        ? [
-              // Those of the text frames anchored in it, which are before it in the text
-              ...block.items
-                  .flatMap((item) => (item.type === "drawing" ? (item.drawing.frame?.blocks ?? []) : []))
-                  .flatMap(headingsIn)
-                  .map(({ level }) => ({ level, unsupported: "a chapter heading in a text frame" })),
-              ...(block.heading ? [block.heading] : []),
-          ]
-        : block.rows
-              .flatMap(({ cells }) => cells.flatMap((cell) => cell.blocks.flatMap(headingsIn)))
-              .map(({ level }) => ({ level, unsupported: "a chapter heading in a table" }));
+        ? [...framedHeadings(block.items), ...(block.heading ? [block.heading] : [])]
+        : [
+              ...framedHeadings(block.anchored ?? []),
+              ...block.rows
+                  .flatMap(({ cells }) => cells.flatMap((cell) => cell.blocks.flatMap(headingsIn)))
+                  .map(({ level }) => ({ level, unsupported: "a chapter heading in a table" })),
+          ];
 
 /** Whether a block is a paragraph with Word's automatic space before or after it */
 const hasAutomaticSpace = (block: Block): boolean =>
@@ -529,6 +537,27 @@ class DrawingAbove extends Error {
     }
 }
 
+const PUSHED_ON = "a drawing whose paragraph goes on to the next page as the text before it goes round it";
+
+// Where Word puts the tables that text flows around and the text frames anchored at the top of a table that moves on to the
+// next page isn't known
+const BEFORE_TABLE_MOVING_ON = "a table that text flows around or a text frame before a table that moves on";
+
+/**
+ * Thrown to lay out a page again when the paragraph of a drawing placed from the page's top went on to the next page as
+ * the text before it went round the drawing, with the paragraph starting on the next page (`block`), and its drawing with
+ * it, as Word lays it out (`word-stops-drawings.docx` DR8). Where the page isn't laid out again, as it ends other than
+ * in placing a block, the layout stops there
+ */
+class PushedOn extends Unsupported {
+    public constructor(
+        public readonly block: number,
+        public readonly page: number,
+    ) {
+        super(PUSHED_ON);
+    }
+}
+
 // How many times a page is laid out again for its drawings before the layout stops at them
 const MOST_PAGE_LAYOUTS = 5;
 
@@ -589,11 +618,39 @@ type AnchoredDrawing = {
 /** A table that text flows around, as a drawing of the paragraph after it: its block's index and its rows' heights */
 type FloatingTable = { readonly index: number; readonly heights: readonly number[] };
 
-const KEPT_FLOATING = "a paragraph kept with the next with a table that text flows around";
+const KEPT_FLOATING = "a paragraph kept with the next before a table that text flows around";
+
+/**
+ * Word lays out a paragraph kept with the next beside a drawing, with a drawing of its own or before a table, where it is,
+ * when the next starts on its page (`word-stops-drawings.docx` DR12a, DR12b). How much room Word finds for it otherwise,
+ * where it moves on, hasn't been seen, so it is laid out where it is, and the layout stops where the next starts
+ * elsewhere
+ */
+const KEPT_BESIDE = "a paragraph kept with the next beside a drawing, with a drawing of its own or before a table, apart from the next";
+
+/**
+ * Word lays out a paragraph kept with the next with a table that text flows around anchored in it where it is, when the
+ * next starts on its page (`word-stops-floats.docx` FT4a, FT4b); how Word moves them otherwise hasn't been seen
+ */
+const KEPT_WITH_FLOATING = "a paragraph kept with the next with a table that text flows around, apart from the next";
+
+/**
+ * The block a paragraph kept with the next is kept with, the page and column the paragraph ended in, and why the layout
+ * stops where the block starts elsewhere
+ */
+type KeptOn = { readonly next: number; readonly page: number; readonly column: number; readonly reason: string };
 
 // How much wider than its rows Word makes the room of a table that text flows around without borders left and right, in
 // points (`word-floats3.docx` H1, H8, `word-floats2.docx` G25)
 const BORDERLESS_FLOAT = 0.75;
+
+/** Whether a table has no borders round it: none left or right, above its first row or below its last */
+const borderlessOutside = ({ borderLeft, borderRight, rows }: TableBlock): boolean =>
+    !borderLeft && !borderRight && !rows[0]?.borderTop && !rows.at(-1)?.borderBottom;
+
+/** Whether a table has no borders round it, nor between its rows */
+const borderless = (table: TableBlock): boolean =>
+    borderlessOutside(table) && table.rows.every(({ borderTop, borderBottom }) => !borderTop && !borderBottom);
 
 /** Whether a block is a table that text flows around */
 const isFloating = (block: Block): block is TableBlock & { readonly float: NonNullable<TableBlock["float"]> } =>
@@ -604,9 +661,17 @@ const tableWidthOf = (table: TableBlock): number =>
     Math.max(0, ...table.rows.map(({ cells }) => sum(cells.map((cell) => cell.width + cell.marginLeft + cell.marginRight)))) +
     ((table.borderLeft ?? 0) + (table.borderRight ?? 0)) / 2;
 
-// How many times a paragraph's lines are broken again beside drawings, each time in the room the last left them, before
-// the layout stops at them
+// How many times a paragraph's lines are broken again beside drawings, each time in the room the last left them, with
+// rooms that change, before the layout stops at them
 const MOST_ATTEMPTS = 10;
+
+/** Whether some lines' rooms are those of others, with rooms for more lines */
+const extendsRooms = (more: LineRooms, fewer: LineRooms): boolean =>
+    more.size > fewer.size &&
+    [...fewer].every(([line, { start, end }]) => {
+        const room = more.get(line);
+        return room !== undefined && Math.abs(room.start - start) < TOLERANCE && Math.abs(room.end - end) < TOLERANCE;
+    });
 
 /** Whether two sets of lines' rooms are the same */
 const sameRooms = (one: LineRooms, other: LineRooms): boolean =>
@@ -923,6 +988,8 @@ export const paginate = (
      * Word hasn't shown stops the layout, or guessing, is laid out as it was broken, and so are lines of text in a font or
      * with a character the measurer doesn't know, measured as it measures them
      */
+    // Where each block of the body is, to find the tables that text flows around before a paragraph
+    const blockIndexes = new Map<Block, number>(blocks.map(({ block }, index) => [block, index]));
     const linesOf = (paragraph: ParagraphBlock, widths: number | LineWidths, rooms: LineRooms = new Map()): readonly LaidOutLine[] => {
         const given = typeof widths === "number" ? [{ from: 0, width: widths }] : widths;
         const key = [
@@ -969,7 +1036,11 @@ export const paginate = (
         for (const reason of new Set(lines.flatMap(({ unsupported }) => (unsupported === undefined ? [] : [unsupported])))) {
             stopAt(reason);
         }
-        return lines;
+        // The footnotes of the tables that text flows around before it go on the page with its first line, which they are
+        // anchored in, as Word puts them on the page with the table (`word-stops-floats.docx` FT3)
+        const index = blockIndexes.get(paragraph);
+        const floatNotes = index === undefined ? [] : floatsBefore(index).flatMap((table) => notesIn(markersOf(blocks[table].block)));
+        return floatNotes.length === 0 ? lines : [{ ...lines[0], markers: [...floatNotes, ...lines[0].markers] }, ...lines.slice(1)];
     };
 
     /**
@@ -1397,6 +1468,8 @@ export const paginate = (
     /** Where the layout is at the start of a block, to lay out the blocks from it again */
     const snapshot = (index: number): Snapshot => ({
         index,
+        keptOn,
+        brokenAcross,
         pageCount,
         pageNumber,
         restart,
@@ -1428,6 +1501,19 @@ export const paginate = (
         drawings,
         anchored,
     });
+    // The paragraph kept with the next laid out where it is, which the next must start in the page and column of
+    let keptOn: KeptOn | undefined;
+    // The tables that text flows around broken across pages, whose rows are placed, by their blocks' indexes
+    let brokenAcross: ReadonlySet<number> = new Set();
+    /** Stops where a block a paragraph is kept with (`keptOn`) starts in another page or column than it ended in */
+    const checkKept = (block: number): void => {
+        if (keptOn?.next === block) {
+            if (keptOn.page !== pageCount || keptOn.column !== column) {
+                stopAt(keptOn.reason);
+            }
+            keptOn = undefined;
+        }
+    };
     // Where the block being laid out started, and where the block started whose text the page's columns start with
     let blockStart: Snapshot | undefined;
     let columnsStart: Snapshot | undefined;
@@ -1441,6 +1527,8 @@ export const paginate = (
      */
     const restore = (state: Snapshot): void => {
         ({
+            keptOn,
+            brokenAcross,
             pageCount,
             pageNumber,
             restart,
@@ -2426,6 +2514,7 @@ export const paginate = (
 
     /** Places a row of the table being placed, or the part of it on the page */
     const placeRow = (index: number, y: number, height: number): void => {
+        checkKept(blockIndex);
         // eslint-disable-next-line functional/immutable-data
         placements.push({ type: "row", block: blockIndex, row: { index, y, height } });
     };
@@ -3042,10 +3131,25 @@ export const paginate = (
      * round it, which Word lays out in ways not yet followed
      */
     const checkAnchors = (): void => {
-        if ((pinned.get(pageCount) ?? []).some(({ anchor }) => !anchored.includes(anchor))) {
-            throw new Unsupported("a drawing whose paragraph goes on to the next page as the text before it goes round it");
+        const away = (pinned.get(pageCount) ?? []).find(({ anchor }) => !anchored.includes(anchor));
+        if (away === undefined) {
+            return;
         }
+        // The paragraph of one of its own, rather than of a table that text flows around, starts on the next page, with all
+        // its drawings placed from this page's top. It started on this page, as only the text of another block before it
+        // on a page has a drawing placed from the page's top, and on the next it is the first, with no text before it. A
+        // text frame anchored at a table's top goes on with the table
+        if (isTableDrawing(away)) {
+            throw new Unsupported(PUSHED_ON);
+        }
+        const block = Number(away.anchor.split(" ")[0]);
+        if (blocks[block].block.type === "table") {
+            throw new Unsupported(BEFORE_TABLE_MOVING_ON);
+        }
+        throw new PushedOn(block, pageCount);
     };
+    // The paragraphs that start on the next page after the page they would start on, by that page
+    const startsNextPage = new Map<number, number>();
 
     // The tables that text flows around that are laid out in the text instead, guessing, where Word's way with them isn't
     // known, by their blocks' indexes
@@ -3054,7 +3158,84 @@ export const paginate = (
     /** Whether a block is a table that text flows around, laid out round the paragraph after it */
     const floatsAt = (index: number): boolean => {
         const entry = blocks[index];
-        return entry !== undefined && isFloating(entry.block) && !inlined.has(index);
+        return entry !== undefined && isFloating(entry.block) && !inlined.has(index) && !brokenAcross.has(index);
+    };
+
+    /**
+     * Breaks a table that text flows around that goes past the bottom of the page across pages, as Word breaks it: the rows
+     * that fit stay where it was placed, the rest go at the top of the next pages, where it is across the page, and the
+     * paragraph after it starts at the top of the page its last rows are on, beside them, as beside a drawing there. A page
+     * between holds its rows only (`word-stops-floats.docx` FT5b to FT5d, `word-floats2.docx` G28). Where it has header rows,
+     * footnotes or a distance from the text above or below it, is in columns, and where its first row doesn't fit, a row
+     * that would go on to the next page has more than one line and can split, or a row is taller than a page, Word's way
+     * isn't known, and it isn't broken: whether it is
+     */
+    const breakAcross = ({ drawing, table }: AnchoredDrawing & { readonly table: FloatingTable }): boolean => {
+        const block = blocks[table.index].block as TableBlock;
+        const { distances } = drawing.drawing;
+        const { heights } = table;
+        // The rows on each page, from the first, each page's from the top of its text
+        const first = heights.findIndex((_, at) => drawing.box.top + sum(heights.slice(0, at + 1)) > linesBottom() + TOLERANCE);
+        if (first <= 0) {
+            // All its rows fit, and only its distance from the text below it goes past, or its first doesn't
+            return false;
+        }
+        const room = pageBottom - top;
+        const { parts } = heights
+            .slice(first)
+            .reduce<{ readonly parts: readonly number[]; readonly used: number }>(
+                ({ parts: counts, used }, height) =>
+                    counts.length > 0 && used + height <= room + TOLERANCE
+                        ? { parts: [...counts.slice(0, -1), counts[counts.length - 1] + 1], used: used + height }
+                        : { parts: [...counts, height <= room + TOLERANCE ? 1 : 0], used: height },
+                { parts: [], used: 0 },
+            );
+        // The rows that go at the top of the next pages, which Word moves whole when they are of one line, or can't split, and
+        // which it may split otherwise
+        const starts = parts.map((_, part) => first + sum(parts.slice(0, part)));
+        const whole = starts.every((start) => {
+            const { cantSplit, cells } = block.rows[start];
+            return (
+                cantSplit ||
+                cells.every(
+                    ({ blocks: [only, ...rest], width }) =>
+                        rest.length === 0 && only?.type === "paragraph" && linesOf(only, width).length === 1,
+                )
+            );
+        });
+        if (
+            !whole ||
+            carried !== undefined ||
+            parts.includes(0) ||
+            block.rows.some(({ header }) => header) ||
+            notesIn(markersOf(block)).length > 0 ||
+            distances.top > 0 ||
+            distances.bottom > 0 ||
+            columnsSection().columns.length > 1
+        ) {
+            return false;
+        }
+        /** Places some of its rows from where they go down the page, with their bookmarks and fields on that page */
+        const placeRows = (from: number, count: number, y: number): void => {
+            heights.slice(from, from + count).reduce((rowTop, height, offset) => {
+                mark(block.rows[from + offset].cells.flatMap((cell) => cell.blocks.flatMap(markersOf)));
+                // eslint-disable-next-line functional/immutable-data
+                placements.push({ type: "row", block: table.index, row: { index: from + offset, y: rowTop, height } });
+                return rowTop + height;
+            }, y);
+        };
+        placeRows(0, first, drawing.box.top);
+        let row = first;
+        for (const count of parts) {
+            startPage();
+            placeRows(row, count, position);
+            row += count;
+        }
+        // The last of them, at the top of the page, are beside the paragraph after it
+        const box = { ...drawing.box, top: position, bottom: position + sum(heights.slice(row - parts[parts.length - 1])) };
+        drawings = [...drawings, { ...drawing, box, keepOut: keepOutOf(drawing.drawing, box) }];
+        brokenAcross = new Set([...brokenAcross, table.index]);
+        return true;
     };
 
     /**
@@ -3062,40 +3243,43 @@ export const paginate = (
      * paragraph are in its section, as those that aren't stop the layout
      */
     const floatsBefore = (index: number): readonly number[] => {
-        const first = blocks.slice(0, index).findLastIndex((_, at) => !floatsAt(at)) + 1;
+        let first = index;
+        while (floatsAt(first - 1)) {
+            first--;
+        }
         return Array.from({ length: index - first }, (_, offset) => first + offset);
     };
 
     /** The tables that text flows around from one, one after the other */
     const floatsFrom = (index: number): readonly number[] => {
-        const end = blocks.findIndex((_, at) => at >= index && !floatsAt(at));
-        return Array.from({ length: (end === -1 ? blocks.length : end) - index }, (_, offset) => index + offset);
+        let end = index;
+        while (floatsAt(end)) {
+            end++;
+        }
+        return Array.from({ length: end - index }, (_, offset) => index + offset);
     };
 
     /**
-     * Why Word's way with the tables that text flows around from one (`index`) isn't known: without a paragraph after them
-     * in their section to place them against, before a paragraph kept with the next, or with a footnote in one
+     * Why Word's way with the tables that text flows around from one (`index`) isn't known: with nothing after them in
+     * their section to place them against, which a document read doesn't have, as each section ends with a paragraph
+     * and the body with the one Word adds after them, before a paragraph kept with the next, with borders between their
+     * rows only, or with a footnote in one before a table. Word places them against the top of what comes after them: a
+     * paragraph, the empty one that ends their section, which takes a line after them, and a table
+     * (`word-stops-floats.docx` FT1a to FT1e), and their footnotes go on the page with them (FT3)
      */
     const floatsUnknown = (index: number): string | undefined => {
         const run = floatsFrom(index);
         const after = blocks[index + run.length];
-        if (after?.section !== blocks[index].section || after.block.type !== "paragraph" || after.block.sectionBreak) {
+        if (after?.section !== blocks[index].section) {
             return "a table that text flows around without a paragraph after it";
         }
-        if (after.block.format.keepNext === true) {
-            return KEPT_FLOATING;
+
+        if (run.some((table) => borderlessOutside(blocks[table].block as TableBlock) && !borderless(blocks[table].block as TableBlock))) {
+            // How much room Word gives one with borders between its rows only isn't known
+            return "a table that text flows around with borders between its rows only";
         }
-        if (
-            run.some((table) => {
-                const { borderLeft, borderRight } = blocks[table].block as TableBlock;
-                return !borderLeft !== !borderRight;
-            })
-        ) {
-            // How much room Word gives one with a border on one side only isn't known
-            return "a table that text flows around with a border on one side only";
-        }
-        return run.some((table) => notesIn(markersOf(blocks[table].block)).length > 0)
-            ? "a footnote in a table that text flows around"
+        return after.block.type === "table" && run.some((table) => notesIn(markersOf(blocks[table].block)).length > 0)
+            ? "a footnote in a table that text flows around before a table"
             : undefined;
     };
 
@@ -3114,21 +3298,21 @@ export const paginate = (
     /**
      * A table that text flows around, sized in the column, as a drawing with square wrapping the size of its rows, as Word
      * puts the text beside it (`word-floats2.docx` G24 to G29), with its rows' heights. It is as wide as its rows with the
-     * halves of its borders left and right, from half a point to 3 points, and without borders there, 0.75 points wider, at
-     * the left of the margins and at the right: 3010, 3020, 3060 and 3015 twips for 3000 (`word-floats3.docx` H1 to H5, H8).
-     * Its cells' margins don't change it, and its indent doesn't move it (H6, H7)
+     * halves of its borders left and right, from half a point to 3 points, on both sides or one, and without borders at
+     * all, 0.75 points wider, at the left of the margins and at the right: 3010, 3020, 3060 and 3015 twips for 3000
+     * (`word-floats3.docx` H1 to H5, H8), 3030 with 3 points on one side, and 3000 with a border above or below it only
+     * (`word-stops-floats.docx` FT2a to FT2e). Its cells' margins don't change it, and its indent doesn't move it (H6, H7)
      */
     const floatingTable = (index: number): { readonly drawing: FloatingDrawing; readonly table: FloatingTable } => {
         const block = blocks[index].block as TableBlock;
         const { horizontal, vertical, distances, mayOverlap } = block.float!;
         const table = sizedToPlace(block, columnsSection().columns[column]);
         const heights = rowHeights(table);
-        const borderless = !table.borderLeft && !table.borderRight;
         return {
             drawing: {
                 wrap: "square",
                 side: "bothSides",
-                width: tableWidthOf(table) + (borderless ? BORDERLESS_FLOAT : 0),
+                width: tableWidthOf(table) + (borderless(table) ? BORDERLESS_FLOAT : 0),
                 height: sum(heights),
                 effects: { top: 0, bottom: 0, left: 0, right: 0 },
                 distances,
@@ -3145,11 +3329,11 @@ export const paginate = (
      * 3000 twips beside a drawing on the right or the left, moving it to the right past one on the left
      * (`word-floats2.docx` G14, G15), and moves one that doesn't down below them, as Word moves one as wide as the text
      * (`word-floats.docx` F40). Where it goes across is its indent, which must leave it beside the drawings, or past one on
-     * its left, where an indent would put it isn't known. Its rows are as tall wherever it goes across the column, so only
-     * where it goes down the page counts here. Whether Word sizes a table sized to its text in the room beside a drawing
-     * isn't known.
+     * its left, with its indent from there (`word-stops-drawings.docx` DR11b). Its rows are as tall wherever it goes across
+     * the column, so only where it goes down the page counts here. A table sized to its text that is as wide sized in the
+     * room beside a drawing as in the column goes beside it (DR11a); whether Word sizes one in that room isn't known.
      */
-    const placeBesideDrawings = (table: TableBlock, heights: readonly number[]): void => {
+    const placeBesideDrawings = (table: TableBlock, heights: readonly number[], block: TableBlock): void => {
         const current = columnsSection();
         const columnStart = columnLeft(current, column);
         const within = { start: columnStart, end: columnStart + current.columns[column] };
@@ -3169,17 +3353,23 @@ export const paginate = (
             const spans = "spans" in room ? room.spans : [];
             // At its indent, its left edge is in the room from the column's start, or from one on its left, where it ends
             const left = columnStart + indent;
-            const atIndent = spans.some(
+            const atIndent = spans.find(
                 ({ start, end }) => start <= Math.max(columnStart, left) + TOLERANCE && left + tableWidth <= end + TOLERANCE,
             );
-            const pastLeft = spans.some(
-                ({ start, end }) => start > Math.max(columnStart, left) + TOLERANCE && end - start >= tableWidth - TOLERANCE,
+            // Past one on its left, with its indent from there (DR11b)
+            const pastLeft = spans.find(
+                ({ start, end }) =>
+                    start > Math.max(columnStart, left) + TOLERANCE && end - start >= Math.max(0, indent) + tableWidth - TOLERANCE,
             );
-            if (atIndent || pastLeft) {
-                if (table.fit !== undefined) {
+            const goesIn = atIndent ?? pastLeft;
+            if (goesIn !== undefined) {
+                if (
+                    table.fit !== undefined &&
+                    Math.abs(tableWidthOf(sizedToPlace(block, goesIn.end - goesIn.start)) - tableWidth) > TOLERANCE
+                ) {
                     throw new Unsupported("a table sized to its text beside a drawing that text flows around");
                 }
-                if (!atIndent && indent !== 0) {
+                if (atIndent === undefined && indent < 0) {
                     throw new Unsupported("an indented table moved past a drawing on its left");
                 }
                 return;
@@ -3187,6 +3377,66 @@ export const paginate = (
             // Below the highest of the drawings beside it, where the room beside them changes
             position = Math.min(...beside.map(({ keepOut }) => keepOut.bottom));
         }
+    };
+
+    /**
+     * Places the tables that text flows around right before a table, and the text frames anchored in it, against its top,
+     * where Word places them with no paragraph between (`word-stops-floats.docx` FT1a, FR1a, FR1d): the text after the table
+     * goes round them, and the table goes below those it would go beside, as below a drawing. Where one goes past the bottom
+     * of the page, as the table it is anchored in would move on without it, Word's way isn't known. Whether any were placed
+     */
+    const placeBeforeTable = (table: TableBlock, index: number): boolean => {
+        const frames = table.anchored ?? [];
+        const own = [
+            ...floatsBefore(index).map((one, offset) => ({ ...floatingTable(one), item: -1 - offset })),
+            ...frames.flatMap((item, at) => (item.type === "drawing" ? [{ drawing: item.drawing, item: at, table: undefined }] : [])),
+        ];
+        if (own.length === 0) {
+            return false;
+        }
+        const markers = frames.flatMap((item) => (item.type === "marker" ? [item.name] : []));
+        if (notesIn(markers).length > 0) {
+            throw new Unsupported("a footnote or endnote in a text frame before a table");
+        }
+        mark(markers);
+        const current = columnsSection();
+        const left = columnLeft(current, column);
+        const placed = own.map(({ drawing: unsized, item, table: floating }): AnchoredDrawing => {
+            const drawing = sizedFrame(unsized);
+            const anchor = floating === undefined ? `${index} ${item}` : `${floating.index} table`;
+            const withTable = floating === undefined ? {} : { table: floating };
+            const pin = (pinned.get(pageCount) ?? []).find((one) => one.anchor === anchor);
+            if (pin !== undefined) {
+                return { line: 0, item, drawing: pin, ...withTable };
+            }
+            const box = placeDrawing(drawing, {
+                section: section(),
+                oddPage: pageNumber % 2 === 1,
+                column: { start: left, end: left + current.columns[column] },
+                paragraph: position,
+                line: { top: position, height: 0 },
+                character: 0,
+            });
+            if (typeof box === "string") {
+                throw new Unsupported(box);
+            }
+            const keepOut = keepOutOf(drawing, box);
+            if (keepOut.bottom > linesBottom() + TOLERANCE || box.top - drawing.effects.top < top - TOLERANCE) {
+                throw new Unsupported(
+                    floating === undefined
+                        ? "a text frame before a table going past the top or bottom of the page's text"
+                        : "a table that text flows around before a table going past the top or bottom of the page's text",
+                );
+            }
+            return { line: 0, item, drawing: { drawing, box, keepOut, anchor }, ...withTable };
+        });
+        placeDrawings(placed);
+        for (const { drawing, table: floating } of placed) {
+            if (floating !== undefined) {
+                placeFloatingRows(floating, drawing.box.top);
+            }
+        }
+        return true;
     };
 
     /**
@@ -3201,6 +3451,16 @@ export const paginate = (
         }
         const width = frame.fitsWidth ? contentWidths(frame.blocks).max : drawing.width;
         const ofText = stackHeight(frame.blocks, width, false);
+        const shadowed = frame.blocks.some(({ format }) =>
+            [format.borderTop, format.borderBottom, format.borderBetween].some(
+                (one) => one?.shadow === true && one.style !== "none" && one.style !== "nil",
+            ),
+        );
+        if (shadowed && frame.heightRule !== "exact" && ofText > drawing.height + TOLERANCE) {
+            // Word doesn't double a shadowed border above or below a frame's text, as it does a paragraph's (`word-stops-floats.docx`
+            // FR2i), and how tall that makes one as tall as its text isn't known
+            throw new Unsupported("a text frame with a shadowed border, as tall as its text");
+        }
         const height =
             frame.heightRule === "exact" ? drawing.height : frame.heightRule === "atLeast" ? Math.max(drawing.height, ofText) : ofText;
         return { ...drawing, width, height };
@@ -3208,6 +3468,70 @@ export const paginate = (
 
     /** Whether a drawing that text flows around on the page goes down below where the next line goes */
     const besideDrawing = (): boolean => drawings.some(({ keepOut }) => keepOut.bottom > position + TOLERANCE);
+
+    /** Whether a drawing on the page is a table that text flows around */
+    const isTableDrawing = ({ anchor }: PlacedDrawing): boolean => anchor.endsWith(" table");
+
+    /**
+     * Whether two drawings on the page, of which one may not overlap the other, overlap where Word moves one out of the way:
+     * pictures and shapes by their boxes (`word-stops-drawings.docx` DR2a to DR2e), and tables that text flows around by
+     * the room they keep the text out of (`word-stops-floats.docx` FT8a to FT8c). Others by the room they keep the text
+     * out of, as it isn't known
+     */
+    const clash = (one: PlacedDrawing, other: PlacedDrawing): boolean => {
+        if (one.drawing.mayOverlap && other.drawing.mayOverlap) {
+            return false;
+        }
+        const pictures = [one, other].every((drawing) => !isTableDrawing(drawing) && drawing.drawing.frame === undefined);
+        return pictures ? overlap(one.box, other.box) : overlap(one.keepOut, other.keepOut);
+    };
+
+    /**
+     * The drawings of a paragraph moved out of the way of the drawings on the page, and of those before them, that one of
+     * them may not overlap, as Word moves the later one: across the page, at the height it was placed at, a picture placed at
+     * a distance to the right, until its box is beside the other's (`word-stops-drawings.docx` DR2a to DR2e), and one lined
+     * up at the right to the left (`word-floats2.docx` G3), and a table placed at a distance to the right, until the rooms
+     * they keep the text out of are beside each other (`word-stops-floats.docx` FT8a to FT8c). Where Word moves one that may
+     * overlap out of the way of one that may not, one with effects, one lined up otherwise, one moved past the column, and
+     * a picture out of the way of a table or a text frame, isn't known
+     */
+    const outOfTheWay = (placed: readonly AnchoredDrawing[], within: Span): readonly AnchoredDrawing[] =>
+        placed.reduce<readonly AnchoredDrawing[]>((moved, one) => {
+            const others = [
+                ...drawings.filter(({ anchor }) => !placed.some((item) => item.drawing.anchor === anchor)),
+                ...moved.map((item) => item.drawing),
+            ];
+            /** It moved past the other it may not overlap, and past those it then overlaps, a few times at the most */
+            const away = (drawing: PlacedDrawing, attempts: number): PlacedDrawing => {
+                const other = others.find((placedOne) => clash(drawing, placedOne));
+                if (other === undefined) {
+                    return drawing;
+                }
+                const { drawing: own, box, keepOut } = drawing;
+                const { effects } = own;
+                const table = isTableDrawing(drawing);
+                const kind = table === isTableDrawing(other) && own.frame === undefined && other.drawing.frame === undefined;
+                const still = Math.max(effects.top, effects.bottom, effects.left, effects.right) === 0;
+                const right = own.horizontal.align === undefined;
+                const left = !table && own.horizontal.align === "right";
+                if (own.mayOverlap || !kind || !still || !(right || left) || attempts > others.length) {
+                    throw new Unsupported("drawings that text flows around that may not overlap, overlapping");
+                }
+                // Where its left edge goes: past the other's room, with its own distance from the text, or its box beside the
+                // other's, on its right or its left
+                const to = table
+                    ? other.keepOut.right + (box.left - keepOut.left)
+                    : right
+                      ? other.box.right
+                      : other.box.left - (box.right - box.left);
+                const shifted = { ...box, left: to, right: to + box.right - box.left };
+                if (shifted.left < within.start - TOLERANCE || shifted.right > within.end + TOLERANCE) {
+                    throw new Unsupported("drawings that text flows around that may not overlap, overlapping, with no room beside");
+                }
+                return away({ ...drawing, box: shifted, keepOut: keepOutOf(own, shifted) }, attempts + 1);
+            };
+            return [...moved, { ...one, drawing: away(one.drawing, 0) }];
+        }, []);
 
     /**
      * Puts the drawings of the paragraph being placed on the page, where the text after them goes round them. It stops
@@ -3234,10 +3558,10 @@ export const paginate = (
                     )
                     .map((one) => one.drawing),
             ];
-            const overlapping = others.filter((other) => other.anchor !== drawing.anchor && overlap(other.keepOut, keepOut));
-            if (overlapping.some((other) => !other.drawing.mayOverlap || !drawing.drawing.mayOverlap)) {
-                // Word moves one that may not overlap out of the way (`word-floats2.docx` G3), in ways not yet followed. Those
-                // that may overlap keep the text out of all their room (G1, G2)
+            if (others.some((other) => other.anchor !== drawing.anchor && clash(drawing, other))) {
+                // Word moves one that may not overlap out of the way, as those of a paragraph are moved before it is laid out
+                // beside them, in ways not yet followed for others. Those that may overlap keep the text out of all their room
+                // (`word-floats2.docx` G1, G2)
                 throw new Unsupported("drawings that text flows around that may not overlap, overlapping");
             }
             // Lines before it on the page beside it, and rows of tables beside it down the page, are laid out again with it
@@ -3382,6 +3706,9 @@ export const paginate = (
             line: number,
         ): { readonly below: number } | { readonly spans: readonly LineRoom[] } => {
             const room = roomBeside(around, y, height, within);
+            if ("narrow" in room) {
+                throw new Unsupported("a line beside a drawing with less than 18 points of room beside it");
+            }
             if ("below" in room) {
                 return room;
             }
@@ -3472,20 +3799,31 @@ export const paginate = (
             around: readonly AnchoredDrawing[],
         ): { readonly lines: readonly LaidOutLine[]; readonly rows: readonly Row[]; readonly rooms: LineRooms } => {
             let rooms = earlier;
-            for (let attempt = 0; attempt < MOST_ATTEMPTS; attempt++) {
+            let changes = 0;
+            for (;;) {
                 const lines = linesOf(block, widths, rooms);
                 const laid = walk(lines, around);
                 if (sameRooms(laid.rooms, rooms)) {
                     return { lines, ...laid };
                 }
+                // Rooms given to more of the lines, those given before the same, settle a line or a few at a time, as many times
+                // as it takes: those that change go round, and are tried a few times only
+                if (!extendsRooms(laid.rooms, rooms)) {
+                    changes++;
+                    if (changes >= MOST_ATTEMPTS) {
+                        throw new Unsupported("lines beside a drawing that don't settle");
+                    }
+                }
                 ({ rooms } = laid);
             }
-            throw new Unsupported("lines beside a drawing that don't settle");
         };
         // Those placed against the paragraph or the page first, and those placed against a line where it is beside them
-        const byPage = own
-            .filter(({ drawing }) => drawing.vertical.from !== "line")
-            .map((item) => place(item, anchorLine(firstLines, item.index), rowsTop, 0));
+        const byPage = outOfTheWay(
+            own
+                .filter(({ drawing }) => drawing.vertical.from !== "line")
+                .map((item) => place(item, anchorLine(firstLines, item.index), rowsTop, 0)),
+            within,
+        );
         const byLine = own.filter(({ drawing }) => drawing.vertical.from === "line");
         /** The lines settled beside the drawings, with the line each is anchored in among them */
         const settled = (placed: readonly AnchoredDrawing[]): ReturnType<typeof rowsOf> => {
@@ -3496,14 +3834,19 @@ export const paginate = (
         if (byLine.length === 0) {
             return first;
         }
-        return settled([
-            ...byPage,
-            ...byLine.flatMap((item) => {
-                const line = anchorLine(first.lines, item.index);
-                const row = first.rows.find((one) => line >= one.first && line < one.first + one.count);
-                return row?.top === undefined ? [] : [place(item, line, row.top, row.height)];
-            }),
-        ]);
+        return settled(
+            outOfTheWay(
+                [
+                    ...byPage,
+                    ...byLine.flatMap((item) => {
+                        const line = anchorLine(first.lines, item.index);
+                        const row = first.rows.find((one) => line >= one.first && line < one.first + one.count);
+                        return row?.top === undefined ? [] : [place(item, line, row.top, row.height)];
+                    }),
+                ],
+                within,
+            ),
+        );
     };
 
     /**
@@ -3716,8 +4059,8 @@ export const paginate = (
             }
             // A drawing of its own that moves with the text and would go past the bottom of the page's text moves to the next
             // column or page with the paragraph, as Word moves it, rather than its lines go beside it (`word-floats.docx` F20,
-            // `word-floats2.docx` G17). Where it goes at the top of a column, above footnotes, or when only its distance from
-            // the text below it goes past, isn't known
+            // `word-floats2.docx` G17), above footnotes too (`word-stops-drawings.docx` DR10c). Where it goes at the top of a
+            // column, or when only its distance from the text below it goes past, isn't known
             const onPage = Math.max(placedEnd, index + 1);
             const sinking = laid.placed.filter(
                 ({ line, drawing: { drawing, keepOut } }) =>
@@ -3725,8 +4068,19 @@ export const paginate = (
                     (drawing.vertical.from === "paragraph" || drawing.vertical.from === "line") &&
                     keepOut.bottom > linesBottom() + TOLERANCE,
             );
+            const brokenTable = sinking.find((one): one is AnchoredDrawing & { readonly table: FloatingTable } => one.table !== undefined);
+            if (
+                brokenTable !== undefined &&
+                sinking.length === 1 &&
+                floatsBefore(blockIndex).length === 1 &&
+                laid.placed.length === 1 &&
+                breakAcross(brokenTable)
+            ) {
+                // Broken across the pages, with the paragraph laid out again at the top of the page its last rows are on
+                continue;
+            }
             if (sinking.some(({ table }) => table !== undefined)) {
-                // Word breaks it across pages, with the paragraph after it on the last (`word-floats2.docx` G28), in ways not
+                // Word breaks one with others before the paragraph, or drawings of the paragraph's own, across pages in ways not
                 // yet followed. Guessing, the tables before the paragraph are laid out in the text, and it after them
                 const run = floatsBefore(blockIndex);
                 inlineFloats(run, "a table that text flows around going past the bottom of the page");
@@ -3744,7 +4098,7 @@ export const paginate = (
                 const fitting = sinking.every(
                     ({ drawing: { drawing, box } }) => box.bottom + drawing.effects.bottom > linesBottom() + TOLERANCE,
                 );
-                if (!fitting || !placedInColumn || noteArea > 0) {
+                if (!fitting || !placedInColumn) {
                     throw new Unsupported("a drawing that moves with its paragraph past the bottom of the page's text");
                 }
                 nextColumn();
@@ -3758,6 +4112,7 @@ export const paginate = (
                     }
                 }
                 position += space;
+                checkKept(blockIndex);
                 const current = columnsSection();
                 const placedLines = linesUpTo(count);
                 for (const row of rows.slice(0, count)) {
@@ -4440,7 +4795,7 @@ export const paginate = (
         // The space after the paragraph before the table
         position += spaceAfter;
         spaceAfter = 0;
-        placeBesideDrawings(table, heights);
+        placeBesideDrawings(table, heights, block);
         // Where the table starts: below what is in the column, its header rows can go on to the next column with its first
         // row
         const below = !onNextPage && placedInColumn && headerRows > 0 ? { page: pageCount, column, placed: placements.length } : undefined;
@@ -4769,16 +5124,13 @@ export const paginate = (
      * are kept with, as they are placed, and none of it fitting when a drawing of that paragraph that moves with it would go
      * past the bottom of the page. Word moves a heading kept with the next to the next page with a paragraph that moves
      * there with its drawing (`word-floats2.docx` G11, G12), and keeps one beside a drawing with as many of the next
-     * paragraph's lines, beside it, as widow control keeps together (G13). Where the paragraphs kept with the next have
-     * drawings of their own, or are kept with a table, how much room Word finds for them hasn't been seen.
+     * paragraph's lines, beside it, as widow control keeps together (G13). Those with drawings of their own, or kept with a
+     * table, aren't measured here (see {@link KEPT_BESIDE}).
      */
     const keptBeside = (index: number, width: number): ReturnType<typeof keptHeight> => {
         const chain = keptChain(index);
-        const anchor = blocks[index + chain].block;
+        const anchor = blocks[index + chain].block as ParagraphBlock;
         const kept = blocks.slice(index, index + chain).map(({ block }) => block as ParagraphBlock);
-        if (anchor.type === "table" || kept.some(({ items }) => items.some(({ type }) => type === "drawing"))) {
-            throw new Unsupported("a paragraph kept with the next beside a drawing, with a drawing of its own or before a table");
-        }
         const widths: LineWidths = [{ from: 0, width }];
         let y = position;
         let after = spaceAfter;
@@ -4857,13 +5209,19 @@ export const paginate = (
     };
 
     /**
-     * Whether a block is the empty paragraph that ends a section right after a table. Word gives it a line of its own, as
-     * there is no line of a paragraph before it for its mark to go on (`word-header-columns.docx` H1 to H4, H7 and H8),
-     * where LibreOffice gives it no room
+     * Whether a block is the empty paragraph that ends a section and takes a line. Word gives it a line of its own right
+     * after a table, as there is no line of a paragraph before it for its mark to go on (`word-header-columns.docx` H1 to
+     * H4, H7 and H8), where LibreOffice gives it no room, and with text frames anchored in it, as after a frame
+     * (`word-stops-floats.docx` FR1b)
      */
     const endsAfterTable = (index: number): boolean => {
         const block = blocks[index]?.block;
-        return block?.type === "paragraph" && block.sectionBreak === true && blocks[index - 1]?.block.type === "table";
+        return (
+            block?.type === "paragraph" &&
+            block.sectionBreak === true &&
+            (blocks[index - 1]?.block.type === "table" ||
+                block.items.some((item) => item.type === "drawing" && item.drawing.frame !== undefined))
+        );
     };
 
     const placeBlock = (block: Block, index: number): void => {
@@ -4872,6 +5230,11 @@ export const paginate = (
         if (index === firstEndnote && section().columns.length > 1) {
             // Guessing, they go on in the columns where the text ends, and across the top of each page after
             stopAt(ENDNOTES_IN_COLUMNS);
+        }
+        if (keptOn !== undefined && index > keptOn.next) {
+            // The block it is kept with took no room, as the empty paragraph that ends a section
+            stopAt(keptOn.reason);
+            keptOn = undefined;
         }
         const width = columnsSection().columns[column];
         const previous = blocks[index - 1];
@@ -4936,9 +5299,21 @@ export const paginate = (
             inlineFloats(floatsFrom(index), unknown);
         }
         if (block.type === "table") {
+            if (placeBeforeTable(block, index) && keptOn === undefined) {
+                // Whether Word moves those anchored at the top of a table that starts on the next page with it isn't known
+                keptOn = {
+                    next: index,
+                    page: pageCount,
+                    column,
+                    reason: BEFORE_TABLE_MOVING_ON,
+                };
+            }
             placeTable(block);
             sectionSpaceAfter = undefined;
             return;
+        }
+        if (startsNextPage.get(index) === pageCount) {
+            startPage();
         }
         const paragraph = measureParagraph(block, width, blocks[index - 1]?.block, blocks[index + 1]?.block);
         let holdNotes = false;
@@ -4977,6 +5352,22 @@ export const paginate = (
             const anchor = blocks[index + keptChain(index)].block;
             const anchorTaller = anchor.type === "paragraph" ? columnsTallerThan(anchor) : [];
             const tallAnchor = anchorTaller.length > 0 && anchorTaller.every((tall) => tall);
+            const withFloating = chain.slice(0, -1).some((_, offset) => floatsBefore(index + offset).length > 0);
+            const unmeasured =
+                withFloating ||
+                (beside &&
+                    (anchor.type === "table" ||
+                        chain.slice(0, -1).some((one) => one.type === "paragraph" && one.items.some(({ type }) => type === "drawing"))));
+            const reason = withFloating ? KEPT_WITH_FLOATING : KEPT_BESIDE;
+            if (unmeasured && tallAnchor) {
+                stopAt(reason);
+            } else if (unmeasured) {
+                // Laid out where it is, the next starting in its page and column
+                placeParagraph(block, paragraph, false);
+                keptOn = { next: index + 1, page: pageCount, column, reason };
+                sectionSpaceAfter = undefined;
+                return;
+            }
             if (tallAnchor) {
                 // Kept with a paragraph kept together that is taller than a column, they move to a new page with it, unless
                 // they start at the top of this one, and it moves on again to the next, as it isn't at the top of that one:
@@ -5100,6 +5491,15 @@ export const paginate = (
             } catch (error) {
                 if (error instanceof DrawingAbove) {
                     placeAbove(error.drawing);
+                } else if (error instanceof PushedOn) {
+                    // The page is laid out again without the drawing, its paragraph starting on the next page
+                    // eslint-disable-next-line functional/immutable-data
+                    startsNextPage.set(error.block, error.page);
+                    // eslint-disable-next-line functional/immutable-data
+                    pinned.set(
+                        error.page,
+                        pinned.get(error.page)!.filter(({ anchor }) => Number(anchor.split(" ")[0]) !== error.block),
+                    );
                 } else if (!(error instanceof NotesGrew)) {
                     throw error;
                 } else {

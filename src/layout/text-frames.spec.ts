@@ -69,10 +69,32 @@ describe("readFrameProperties", () => {
         );
     });
 
+    it("should place a frame that doesn't say what it is placed against against the margins, as Word does", () => {
+        // `word-stops-floats.docx` FR6a, FR6b: across the page, the margins and the column are the same in one column only
+        expect(readFrameProperties(framePr({ "w:vAnchor": "page", "w:x": 1000 }))).to.deep.include({
+            horizontal: { from: "margin", offset: 50, inColumns: "a text frame that doesn't say what it is placed against, in columns" },
+        });
+        expect(readFrameProperties(framePr({ "w:hAnchor": "page", "w:y": 3000 }))).to.deep.include({
+            vertical: { from: "margin", offset: 150 },
+        });
+        expect(readFrameProperties(framePr({ "w:hAnchor": "page", "w:xAlign": "center" }))).to.deep.include({
+            horizontal: { from: "page", align: "center" },
+        });
+        expect(readFrameProperties(framePr({ "w:vAnchor": "page", "w:xAlign": "center" }))).to.deep.include({
+            horizontal: {
+                from: "margin",
+                align: "center",
+                inColumns: "a text frame that doesn't say what it is placed against, in columns",
+            },
+        });
+        // Lined up inline down the margins, at their top (FR6c)
+        expect(readFrameProperties(framePr({ "w:hAnchor": "page", "w:vAnchor": "margin", "w:yAlign": "inline" }))).to.deep.include({
+            vertical: { from: "margin", align: "top" },
+        });
+    });
+
     it("should say why a frame placed or sized in a way not yet followed can't be laid out", () => {
         const anchored = { "w:hAnchor": "page", "w:vAnchor": "page" };
-        expect(readFrameProperties(framePr({ "w:vAnchor": "page" }))).to.equal("a text frame that doesn't say what it is placed against");
-        expect(readFrameProperties(framePr({ "w:hAnchor": "page" }))).to.equal("a text frame that doesn't say what it is placed against");
         expect(readFrameProperties(framePr({ ...anchored, "w:hAnchor": "cell" }))).to.equal(
             "a text frame placed against what isn't followed yet",
         );

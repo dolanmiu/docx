@@ -1404,9 +1404,24 @@ describe("readDocument", () => {
                 { "wp:positionH": [{ _attr: { relativeFrom: "page" } }, { "wp:posOffset": ["0"] }] },
                 { "wp:positionV": [{ _attr: { relativeFrom: "page" } }, { "wp:posOffset": ["0"] }] },
             ];
-            expect(reasonOf({ "wp:anchor": [{ _attr: { simplePos: "1" } }, { "wp:wrapSquare": {} }, ...placed] })).to.equal(
-                "a drawing placed by its simple position",
-            );
+            // Placed by its simple position, it is placed from the page's top left corner by that (`word-stops-drawings.docx` DR15)
+            const simple = readBody([
+                p(
+                    drawing({
+                        "wp:anchor": [
+                            { _attr: { simplePos: "1" } },
+                            { "wp:simplePos": { _attr: { x: 38100, y: 25400 } } },
+                            { "wp:wrapSquare": {} },
+                            ...placed,
+                        ],
+                    }),
+                ),
+            ]);
+            expect(itemsOf(simple)[0]).to.deep.include({ type: "drawing" });
+            expect((itemsOf(simple)[0] as { readonly drawing: FloatingDrawing }).drawing).to.deep.include({
+                horizontal: { from: "page", offset: 3 },
+                vertical: { from: "page", offset: 2 },
+            });
             expect(reasonOf({ "wp:anchor": [{ "wp:wrapBogus": {} }, ...placed] })).to.equal(
                 "a drawing that text flows around in a way not yet followed",
             );
@@ -1539,16 +1554,20 @@ describe("readDocument", () => {
             // Its own frame the same as its style's is that frame
             const same = { "w:w": 2000, "w:h": 0, "w:x": 0, "w:y": 0, "w:hAnchor": "margin", "w:vAnchor": "text" };
             expect(drawingsOf(readBody([styled(same), p(r(t("b")))], { styles }))).to.have.length(1);
-            expect(paragraphOf(readBody([styled({ ...same, "w:w": 3000 }), p(r(t("b")))], { styles })).unsupported).to.equal(
+            // Its own that says all its style's does is the frame (`word-stops-floats.docx` FR4), and one that says less, with
+            // the rest from the style's or not, isn't known
+            expect(drawingsOf(readBody([styled({ ...same, "w:w": 3000 }), p(r(t("b")))], { styles }))[0].width).to.equal(150);
+            expect(paragraphOf(readBody([styled({ "w:w": 3000, "w:hAnchor": "margin" }), p(r(t("b")))], { styles })).unsupported).to.equal(
                 "a text frame given by both a paragraph and its style",
             );
             // Its own that can't be laid out stops for its own reason
-            expect(paragraphOf(readBody([styled({ "w:hAnchor": "margin" }), p(r(t("b")))], { styles })).unsupported).to.equal(
-                "a text frame that doesn't say what it is placed against",
+            expect(paragraphOf(readBody([styled({ "w:hAnchor": "cell" }), p(r(t("b")))], { styles })).unsupported).to.equal(
+                "a text frame placed against what isn't followed yet",
             );
         });
 
-        it("should stop at a frame with no paragraph after it in its section, with borders, notes, or where it isn't followed yet", () => {
+        it("should anchor a frame before a table at the table, and one before a section's end in its empty paragraph, as Word does", () => {
+            // `word-stops-floats.docx` FR1a to FR1d
             const table = {
                 "w:tbl": [
                     { "w:tblPr": [] },
@@ -1556,29 +1575,83 @@ describe("readDocument", () => {
                     { "w:tr": [{ "w:tc": [p(r(t("a")))] }] },
                 ],
             };
+            const bookmark = { "w:bookmarkStart": { _attr: { "w:id": 1, "w:name": "inside" } } };
+            const beforeTable = readBody([framed({ "w:vAnchor": "margin" }, bookmark, r(t("a"))), table]).blocks[0].block as TableBlock;
+            expect(beforeTable.unsupported).to.equal(undefined);
+            expect(beforeTable.anchored?.map(({ type }) => type)).to.deep.equal(["marker", "drawing"]);
+            // Placed against the paragraph after it, where Word places it before a table isn't known
             expect(readBody([framed({}, r(t("a"))), table]).blocks[0].block.unsupported).to.equal(
-                "a text frame with no paragraph after it in its section",
+                "a text frame placed against the paragraph after it, before a table",
             );
+            // Before a table that text flows around, which is anchored in the paragraph after it, it isn't followed yet
+            const floating = {
+                "w:tbl": [
+                    { "w:tblPr": [{ "w:tblpPr": { _attr: { "w:horzAnchor": "text", "w:vertAnchor": "text" } } }] },
+                    ...table["w:tbl"].slice(1),
+                ],
+            };
+            const beforeFloating = readBody([framed({ "w:vAnchor": "margin" }, r(t("a"))), floating, p(r(t("b")))]);
+            expect(beforeFloating.blocks.map(({ block }) => block.unsupported)).to.deep.equal([
+                "a text frame before a table that text flows around",
+                undefined,
+                undefined,
+            ]);
+            const sectionEnd = readBody([framed({}, r(t("a"))), p(pPr({ "w:sectPr": [] })), p(r(t("b")))]);
+            expect(sectionEnd.blocks[0].block.unsupported).to.equal(undefined);
+            expect(drawingsOf(sectionEnd)).to.have.length(1);
+            expect(paragraphOf(sectionEnd).sectionBreak).to.equal(true);
+            // Its borders beside it keep the text further from it, by their width and space and 1.5 points more, without a
+            // shadow's (`word-stops-floats.docx` FR2a to FR2j)
+            const sides = {
+                "w:pBdr": [
+                    { "w:left": { _attr: { "w:val": "single", "w:sz": 12, "w:space": 4, "w:shadow": 1 } } },
+                    { "w:right": { _attr: { "w:val": "single", "w:sz": 4, "w:space": 0 } } },
+                ],
+            };
+            const withSides = readBody([
+                p(pPr(sides, { "w:framePr": { _attr: { "w:hAnchor": "page", "w:vAnchor": "page" } } }), r(t("a"))),
+                p(r(t("b"))),
+            ]);
+            expect(drawingsOf(withSides)[0].distances).to.deep.equal({ top: 0, bottom: 0, left: 7, right: 2 });
+            // A note's reference in it is where its anchor is, as its note goes on the frame's page (FR5a)
+            expect(
+                itemsOf(readBody([framed({}, r({ "w:footnoteReference": { _attr: { "w:id": 1 } } })), p(r(t("b")))]))[0],
+            ).to.deep.include({ type: "marker" });
+        });
+
+        it("should stop at a frame with nothing after it in its section, with borders, or where it isn't followed yet", () => {
+            // Ending its section itself
+            const ending = readBody([
+                p(pPr({ "w:framePr": { _attr: { "w:hAnchor": "margin", "w:vAnchor": "margin" } } }, { "w:sectPr": [] }), r(t("a"))),
+                p(r(t("b"))),
+            ]);
+            expect(ending.blocks.map(({ block }) => block.unsupported)).to.deep.equal([
+                "a text frame with no paragraph after it in its section",
+                undefined,
+            ]);
             const atEnd = readBody([p(r(t("before"))), framed({}, r(t("a")))]);
             expect(atEnd.blocks.map(({ block }) => block.unsupported)).to.deep.equal([
                 undefined,
                 "a text frame with no paragraph after it in its section",
             ]);
-            const sectionEnd = readBody([framed({}, r(t("a"))), p(pPr({ "w:sectPr": [] })), p(r(t("b")))]);
-            expect(sectionEnd.blocks[0].block.unsupported).to.equal("a text frame with no paragraph after it in its section");
-            // Borders take room beside it in a way not yet followed (FM13)
-            const bordered = { "w:pBdr": [{ "w:top": { _attr: { "w:val": "single", "w:sz": 4, "w:space": 1 } } }] };
-            expect(
+            // Borders beside it with a distance from the text, or other borders beside its paragraphs, take room in a way not
+            // yet followed
+            const side = (val: string): object => ({ _attr: { "w:val": val, "w:sz": 4, "w:space": 4 } });
+            const unknownOf = (frame: object, ...paragraphs: readonly object[]): string | undefined =>
                 paragraphOf(
-                    readBody([
-                        p(pPr(bordered, { "w:framePr": { _attr: { "w:hAnchor": "page", "w:vAnchor": "page" } } }), r(t("a"))),
-                        p(r(t("b"))),
-                    ]),
-                ).unsupported,
-            ).to.equal("a text frame with borders");
-            expect(
-                paragraphOf(readBody([framed({}, r({ "w:footnoteReference": { _attr: { "w:id": 1 } } })), p(r(t("b")))])).unsupported,
-            ).to.equal("a footnote or endnote in a text frame");
+                    readBody([...paragraphs.map((borders) => p(pPr(borders, { "w:framePr": { _attr: frame } }), r(t("a")))), p(r(t("b")))]),
+                ).unsupported;
+            const page = { "w:hAnchor": "page", "w:vAnchor": "page" };
+            expect(unknownOf({ ...page, "w:hSpace": 100 }, { "w:pBdr": [{ "w:left": side("single") }] })).to.equal(
+                "a text frame with borders at its sides and a distance from the text",
+            );
+            expect(unknownOf(page, { "w:pBdr": [{ "w:left": side("single") }] }, { "w:pBdr": [{ "w:right": side("single") }] })).to.equal(
+                "a text frame of paragraphs with other borders at their sides",
+            );
+            expect(unknownOf(page, { "w:pBdr": [{ "w:left": side("bogus") }] })).to.equal("a paragraph border of a style not yet followed");
+            expect(unknownOf(page, { "w:pBdr": [{ "w:right": side("bogus") }] })).to.equal(
+                "a paragraph border of a style not yet followed",
+            );
             expect(paragraphOf(readBody([framed({ "w:hAnchor": "cell" }, r(t("a"))), p(r(t("b")))])).unsupported).to.equal(
                 "a text frame placed against what isn't followed yet",
             );
@@ -1590,8 +1663,39 @@ describe("readDocument", () => {
                 ],
             };
             expect((readBody([cellTable]).blocks[0].block as TableBlock).rows[0].cells[0].blocks[0].unsupported).to.equal(
-                "a text frame in a table cell, footnote, endnote, header, footer or text box",
+                "a text frame in a table cell, endnote, header, footer or text box",
             );
+            // In a footnote, its paragraph is in the note's text, as one not in a frame (`word-stops-floats.docx` FR3b), and in
+            // an endnote, where Word puts it hasn't been seen
+            const noted = readContent(
+                {
+                    "w:body": [
+                        p(r({ "w:footnoteReference": { _attr: { "w:id": 1 } } }), r({ "w:endnoteReference": { _attr: { "w:id": 1 } } })),
+                    ],
+                },
+                {
+                    styles: WORD_DEFAULT_STYLES,
+                    headersAndFooters: new Map(),
+                    footnotes: { "w:footnotes": [{ "w:footnote": [{ _attr: { "w:id": 1 } }, framed({}, r(t("a"))), p()] }] },
+                    endnotes: { "w:endnotes": [{ "w:endnote": [{ _attr: { "w:id": 1 } }, framed({}, r(t("a"))), p()] }] },
+                },
+            );
+            const inFootnote = noted.footnotes.get("footnote 1")![0] as ParagraphBlock;
+            expect(inFootnote.unsupported).to.equal(undefined);
+            expect(inFootnote.frame).to.equal(undefined);
+            // In a table cell in a footnote, it stops as in any table cell
+            const cellNoted = readContent(
+                { "w:body": [p(r({ "w:footnoteReference": { _attr: { "w:id": 1 } } }))] },
+                {
+                    styles: WORD_DEFAULT_STYLES,
+                    headersAndFooters: new Map(),
+                    footnotes: { "w:footnotes": [{ "w:footnote": [{ _attr: { "w:id": 1 } }, cellTable, p()] }] },
+                },
+            );
+            expect((cellNoted.footnotes.get("footnote 1")![0] as TableBlock).rows[0].cells[0].blocks[0].unsupported).to.equal(
+                "a text frame in a table cell, endnote, header, footer or text box",
+            );
+            expect(noted.endnotes[0].unsupported).to.equal("a text frame in a table cell, endnote, header, footer or text box");
         });
     });
 
@@ -1705,7 +1809,7 @@ describe("readDocument", () => {
             );
             expect(
                 reasonOf(textBox([p(pPr({ "w:framePr": { _attr: { "w:hAnchor": "page", "w:vAnchor": "page" } } }), r(t("a")))])),
-            ).to.equal("a text frame in a table cell, footnote, endnote, header, footer or text box");
+            ).to.equal("a text frame in a table cell, endnote, header, footer or text box");
             const anchor = { "wp:anchor": [{ "wp:wrapSquare": {} }] };
             expect(reasonOf(textBox([p(r({ "w:drawing": [anchor] }))]))).to.equal(
                 "a drawing that text flows around in a table cell, footnote, endnote or text box",
@@ -2964,17 +3068,55 @@ describe("readDocument", () => {
                 vertical: { from: "margin", offset: 0 },
                 mayOverlap: true,
             });
-            // Without what it is placed against, or lined up with the line it would be in, it isn't followed yet
-            expect(floatOf({ "w:vertAnchor": "text" }).unsupported).to.equal(
-                "a table that text flows around placed against what isn't given",
+            // Without what it is placed against, Word places it against the margins, which across the page are the column in
+            // one column only (`word-stops-floats.docx` FT7a, FT7b)
+            expect(floatOf({ "w:vertAnchor": "text", "w:tblpX": 2000 }).float).to.deep.include({
+                horizontal: {
+                    from: "margin",
+                    offset: 100,
+                    inColumns: "a table that text flows around placed against what isn't given, in columns",
+                },
+            });
+            expect(floatOf({ "w:horzAnchor": "text", "w:tblpY": 1500 }).float).to.deep.include({
+                vertical: { from: "margin", offset: 75 },
+            });
+            expect(floatOf({ "w:horzAnchor": "bogus", "w:vertAnchor": "text" }).unsupported).to.equal(
+                "a table that text flows around placed against what isn't followed yet",
             );
-            expect(floatOf({ "w:horzAnchor": "text" }).unsupported).to.equal(
-                "a table that text flows around placed against what isn't given",
-            );
+            // At the end of the body, Word adds an empty paragraph after it, which it is anchored in (FT1e)
+            const last = readBody([
+                p(r(t("a"))),
+                {
+                    "w:tbl": [
+                        { "w:tblPr": [{ "w:tblpPr": { _attr: { "w:horzAnchor": "text", "w:vertAnchor": "text" } } }] },
+                        { "w:tr": [cell([], p())] },
+                    ],
+                },
+            ]);
+            expect(last.blocks.map(({ block }) => block.type)).to.deep.equal(["paragraph", "table", "paragraph"]);
+            expect(paragraphOf(last, 2).items).to.deep.equal([]);
+            // On its section's grid, as the section's other paragraphs are
+            const onGrid = readBody([
+                p(r(t("a"))),
+                {
+                    "w:tbl": [
+                        { "w:tblPr": [{ "w:tblpPr": { _attr: { "w:horzAnchor": "text", "w:vertAnchor": "text" } } }] },
+                        { "w:tr": [cell([], p())] },
+                    ],
+                },
+                { "w:sectPr": [{ "w:docGrid": { _attr: { "w:type": "lines", "w:linePitch": 360 } } }] },
+            ]);
+            expect(paragraphOf(onGrid, 2).grid).to.deep.equal({ linePitch: 18 });
+            // Lined up inline against the text, it is at the top of the paragraph after it (FT7c); against the margins or the
+            // page, and lined up in a way the schema doesn't have, it isn't followed yet
+            expect(floatOf({ "w:horzAnchor": "text", "w:vertAnchor": "text", "w:tblpYSpec": "inline" }).float).to.deep.include({
+                vertical: { from: "paragraph", align: "top" },
+            });
             const lining = "a table that text flows around lined up in a way not yet followed";
-            expect(floatOf({ "w:horzAnchor": "text", "w:vertAnchor": "text", "w:tblpYSpec": "inline" }).unsupported).to.equal(lining);
+            expect(floatOf({ "w:horzAnchor": "text", "w:vertAnchor": "margin", "w:tblpYSpec": "inline" }).unsupported).to.equal(lining);
             expect(floatOf({ "w:horzAnchor": "text", "w:vertAnchor": "text", "w:tblpXSpec": "top" }).unsupported).to.equal(lining);
-            // In a table cell, a header or a footnote, where Word puts it hasn't been seen
+            // In a table cell, a header or an endnote, where Word puts it otherwise or hasn't been seen, it isn't followed yet,
+            // and in a footnote, it is a table that doesn't float (`word-stops-floats.docx` FT6c)
             const floating = {
                 "w:tbl": [
                     { "w:tblPr": [{ "w:tblpPr": { _attr: { "w:horzAnchor": "text", "w:vertAnchor": "text" } } }] },
@@ -2982,7 +3124,7 @@ describe("readDocument", () => {
                 ],
             };
             const inCell = readBody([{ "w:tbl": [{ "w:tr": [cell([], floating, p())] }] }]).blocks[0].block as TableBlock;
-            const unsupported = "a table that text flows around in a table cell, header, footer or note";
+            const unsupported = "a table that text flows around in a table cell, header, footer or endnote";
             expect(inCell.rows[0].cells[0].blocks[0].unsupported).to.equal(unsupported);
             const content = readContent(
                 {
@@ -2995,10 +3137,36 @@ describe("readDocument", () => {
                     styles: WORD_DEFAULT_STYLES,
                     headersAndFooters: new Map([["rId1", [floating, p()]]]),
                     footnotes: { "w:footnotes": [{ "w:footnote": [{ _attr: { "w:id": 1 } }, floating, p()] }] },
+                    endnotes: { "w:endnotes": [{ "w:endnote": [{ _attr: { "w:id": 1 } }, floating, p()] }] },
                 },
             );
             expect(content.sections[0].headers.default![0].unsupported).to.equal(unsupported);
-            expect(content.footnotes.get("footnote 1")![0].unsupported).to.equal(unsupported);
+            const inFootnote = content.footnotes.get("footnote 1")![0] as TableBlock;
+            expect(inFootnote.unsupported).to.equal(undefined);
+            expect(inFootnote.float).to.equal(undefined);
+            // In a table cell in a footnote, it stops as in any table cell
+            const cellNoted = readContent(
+                { "w:body": [p(r({ "w:footnoteReference": { _attr: { "w:id": 1 } } }))] },
+                {
+                    styles: WORD_DEFAULT_STYLES,
+                    headersAndFooters: new Map(),
+                    footnotes: {
+                        "w:footnotes": [
+                            { "w:footnote": [{ _attr: { "w:id": 1 } }, { "w:tbl": [{ "w:tr": [cell([], floating, p())] }] }, p()] },
+                        ],
+                    },
+                },
+            );
+            expect((cellNoted.footnotes.get("footnote 1")![0] as TableBlock).rows[0].cells[0].blocks[0].unsupported).to.equal(unsupported);
+            const endnoted = readContent(
+                { "w:body": [p(r({ "w:endnoteReference": { _attr: { "w:id": 1 } } }))] },
+                {
+                    styles: WORD_DEFAULT_STYLES,
+                    headersAndFooters: new Map(),
+                    endnotes: { "w:endnotes": [{ "w:endnote": [{ _attr: { "w:id": 1 } }, floating, p()] }] },
+                },
+            );
+            expect(endnoted.endnotes[0].unsupported).to.equal(unsupported);
         });
 
         it("should stop at cells whose text doesn't wrap or that fit their text to them in a table sized to its text, but not at a row in an HTML division", () => {
@@ -4115,8 +4283,8 @@ describe("readDocument", () => {
             expect(read(p(anchored("margin", "line")))).to.deep.equal([ITS_LINE]);
             expect(read(p(anchored("character", "page")))).to.deep.equal([ITS_LINE]);
             // One whose place can't be read stops as in the body
-            expect(read(p(r({ "w:drawing": [{ "wp:anchor": [{ _attr: { simplePos: "1" } }, { "wp:wrapSquare": {} }] }] })))).to.deep.equal([
-                "a drawing placed by its simple position",
+            expect(read(p(r({ "w:drawing": [{ "wp:anchor": [{ "wp:wrapBogus": {} }] }] })))).to.deep.equal([
+                "a drawing that text flows around in a way not yet followed",
             ]);
             const inCell = {
                 "w:tbl": [
@@ -5935,9 +6103,13 @@ describe("readDocument", () => {
             expect(unsupportedOf(p(pPr({ "w:keepNext": {} }), r(t("a"))), centred, p(r(t("c"))))).to.equal(
                 "a paragraph kept with the next before a hidden paragraph",
             );
-            expect(unsupportedOf(p(pPr({ "w:keepNext": {} }, { "w:framePr": {} }), r(t("a"))), centred, p(r(t("c"))))).to.equal(
-                "a text frame that doesn't say what it is placed against",
-            );
+            expect(
+                unsupportedOf(
+                    p(pPr({ "w:keepNext": {} }, { "w:framePr": { _attr: { "w:hAnchor": "cell" } } }), r(t("a"))),
+                    centred,
+                    p(r(t("c"))),
+                ),
+            ).to.equal("a text frame placed against what isn't followed yet");
             // Between paragraphs of the same borders, without them
             const bordered = { "w:pBdr": [{ "w:top": { _attr: { "w:val": "single", "w:sz": 4, "w:space": 1 } } }] };
             expect(unsupportedOf(p(pPr(bordered), r(t("a"))), hiddenParagraph(t("b")), p(pPr(bordered), r(t("c"))))).to.equal(
@@ -6257,22 +6429,25 @@ describe("readDocument", () => {
                     { "w:tr": [{ "w:tc": [p(r(t("b")))] }] },
                 ],
             };
-            expect(read(guessed([framed(r(t("a"))), framed(r(t("b"))), table]))).to.deep.equal([
+            expect(read(guessed([p(r(t("x"))), framed(r(t("a"))), framed(r(t("b")))]))).to.deep.equal([
+                [undefined, "x"],
                 ["a text frame with no paragraph after it in its section", "a"],
                 [undefined, "b"],
-                [undefined, "table"],
             ]);
-            // One with borders is left out of the paragraph after it, which keeps its bookmarks
+            // One before a table is anchored at it
+            expect(read(guessed([framed(r(t("a"))), table]))).to.deep.equal([[undefined, "table"]]);
+            // One with borders beside it and a distance from the text is left out of the paragraph after it, which keeps its
+            // bookmarks
             const bordered = p(
                 pPr(
-                    { "w:pBdr": [{ "w:top": { _attr: { "w:val": "single", "w:sz": 4, "w:space": 1 } } }] },
-                    { "w:framePr": { _attr: { "w:hAnchor": "page", "w:vAnchor": "page" } } },
+                    { "w:pBdr": [{ "w:left": { _attr: { "w:val": "single", "w:sz": 4, "w:space": 1 } } }] },
+                    { "w:framePr": { _attr: { "w:hAnchor": "page", "w:vAnchor": "page", "w:hSpace": 100 } } },
                 ),
                 bookmark,
                 r(t("a")),
             );
             const content = guessed([bordered, p(r(t("b")))]);
-            expect(read(content)).to.deep.equal([["a text frame with borders", "b"]]);
+            expect(read(content)).to.deep.equal([["a text frame with borders at its sides and a distance from the text", "b"]]);
             expect(itemsOf(content).map(({ type }) => type)).to.deep.equal(["marker", "text"]);
         });
     });
