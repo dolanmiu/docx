@@ -2934,9 +2934,10 @@ const readTable = (element: XmlObject, reader: Reader): TableBlock | undefined =
     const givenWidth = readTableWidth(properties);
     // Word evens out the rows of a table whose cells all have widths, or of one laid out fixed, that give a column different
     // widths, with a width of its own in twips or none (`word-watertight-stops.docx` SP14, `word-table-widths.docx` TW1 to
-    // TW6). With a share of the width, space between its cells, or a row that starts past the first column (`w:gridBefore`),
+    // TW6), and with space between its cells, not laid out fixed (`word-stops-long-words.docx` LW5c). With a share of the
+    // width, space between the cells of one laid out fixed, or a row that starts past the first column (`w:gridBefore`),
     // how isn't known
-    const evenable = !spaced && givenWidth.share === undefined && read.every(({ edges }) => edges.has(0));
+    const evenable = !(spaced && fixed) && givenWidth.share === undefined && read.every(({ edges }) => edges.has(0));
     const evened = unequal && evenable;
     // And fits a table laid out fixed to its own width in twips, when its rows aren't as wide (TW8, TW10)
     const tableTwips = givenWidth.width;
@@ -2982,6 +2983,9 @@ const readTable = (element: XmlObject, reader: Reader): TableBlock | undefined =
         spacingUnsupported ??
         (typeof geometry === "string" ? geometry : undefined) ??
         (indent === undefined ? "a table indented by a share of the width" : undefined) ??
+        // Word laid out tables of 25 to 50 times the width they are in as wide as it, and one of 40 times narrower, but one of
+        // 45 times past the page (`word-stops-long-words.docx` LW1h, LW1i, LW5a, LW5b, LW5f)
+        ((givenWidth.share ?? 0) > 1 ? "a table whose width is a share of more than the width it is in" : undefined) ??
         styleUnsupported ??
         lengths ??
         blocks.find((block) => block.unsupported !== undefined)?.unsupported;
