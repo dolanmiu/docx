@@ -1994,8 +1994,8 @@ export const layoutLines = (
                     };
                 }
                 // Whether Word kerns the hyphen it draws at the end of the line with the letter before it hasn't been seen
-                const last = before[before.length - 1];
-                if ((fits || squeezed) && isKerned(last.font) && sameFont(last.font, hyphen.font)) {
+                const { font: partFont } = before[before.length - 1];
+                if ((fits || squeezed) && isKerned(partFont) && sameFont(partFont, hyphen.font)) {
                     line = {
                         ...line,
                         unsupported: line.unsupported ?? "a line that breaks at a soft hyphen in kerned text, whose hyphen Word may kern",
@@ -2050,8 +2050,8 @@ export const layoutLines = (
             }
             // A picture in a border beside text in the same border, which Word may draw in one box with it, hasn't been seen
             if (token.type === "box" && token.below !== undefined) {
-                const key = token.font!.border!.key;
-                const following = tokens.slice(index + 1).find((next) => next.type !== "marker");
+                const { key } = token.font!.border!;
+                const following = tokens.slice(index + 1).find((other) => other.type !== "marker");
                 const beside =
                     line.border?.key === key ||
                     ((following?.type === "word" || following?.type === "space") && firstBorder(following.pieces)?.key === key);
@@ -2135,19 +2135,17 @@ export const layoutLines = (
                     // up with its end
                     line = wrap(line);
                 }
-                /** The stop the tab moves to from where the line is, or from the start of the next when none is left on it */
-                const stopOn = (): ReturnType<typeof nextStop> =>
-                    numbered
-                        ? numbered.stop
-                        : aligned
-                          ? { position: limitOf(), alignment: "right" as const }
-                          : pastIndent
-                            ? next
-                            : (nextStop(line.position, line.first ? firstLineStops : stops, defaultTabStop, limitOf()) ??
-                              (line.started
-                                  ? nextStop(startOf(lines.length + 1, false), stops, defaultTabStop, limitOf(lines.length + 1))
-                                  : undefined));
-                let stop = stopOn();
+                // The stop the tab moves to from where the line is, or from the start of the next when none is left on it
+                let stop = numbered
+                    ? numbered.stop
+                    : aligned
+                      ? { position: limitOf(), alignment: "right" as const }
+                      : pastIndent
+                        ? next
+                        : (nextStop(line.position, given, defaultTabStop, limitOf()) ??
+                          (line.started
+                              ? nextStop(startOf(lines.length + 1, false), stops, defaultTabStop, limitOf(lines.length + 1))
+                              : undefined));
                 if (stop === undefined) {
                     // No stop before the end of the line: the text after the tab starts where it is, which on a grid that snaps
                     // to characters hasn't been seen
@@ -2171,11 +2169,14 @@ export const layoutLines = (
                  * cells: after a stop at 3000 twips, on a grid of cells of 225.65, at 3159, the 14th (stops2/word-stops-east-asian.ts
                  * GR10a). Other text after one, and text at a stop of another alignment, haven't been seen there
                  */
-                const startAt = (at: NonNullable<typeof stop>): { readonly shift?: number; readonly position: number } => {
-                    const shift = shiftAt(at.alignment, rest, measurer, line.border);
-                    const stopped = Math.max(line.position, at.position - (shift ?? widthAfterTab(rest, measurer)));
+                const startAt = (
+                    at: NonNullable<typeof stop>,
+                    { position: from, border }: LineState,
+                ): { readonly lineUp?: number; readonly position: number } => {
+                    const shifted = shiftAt(at.alignment, rest, measurer, border);
+                    const stopped = Math.max(from, at.position - (shifted ?? widthAfterTab(rest, measurer)));
                     const cell = cellOn(lines.length);
-                    return { shift, position: cell === undefined ? stopped : Math.ceil(stopped / cell - GRID_ROUNDING) * cell };
+                    return { lineUp: shifted, position: cell === undefined ? stopped : Math.ceil(stopped / cell - GRID_ROUNDING) * cell };
                 };
                 // A word after a tab goes with it: one that doesn't fit after the tab's stop takes the tab on to the next line
                 // with it, from the text before it, to the stop there, where it breaks after the last character that fits:
@@ -2187,7 +2188,7 @@ export const layoutLines = (
                 // soft hyphens whose first part doesn't fit, haven't been seen, nor text that doesn't fit after the tab that
                 // follows a list's number. Guessing, the tab stays, and they go on to the next line, but for the word with soft
                 // hyphens, which takes the tab with it
-                const after = rest.find((next) => next.type !== "marker");
+                const after = rest.find((other) => other.type !== "marker");
                 if (
                     !numbered &&
                     token.font.listNumber !== "separator" &&
@@ -2208,7 +2209,7 @@ export const layoutLines = (
                                   : widthOf(splitPieces(after.pieces, hyphen.at)[0], measurer) + measurer.measureWidth("-", hyphen.font));
                     const nextLine = nextStop(startOf(lines.length + 1, false), stops, defaultTabStop, limitOf(lines.length + 1));
                     const inRow = tokens.slice(0, index).findLast((before) => before.type !== "marker")?.type === "tab";
-                    if (startAt(stop).position + needs > endOf(line) + TOLERANCE && nextLine !== undefined) {
+                    if (startAt(stop, line).position + needs > endOf(line) + TOLERANCE && nextLine !== undefined) {
                         if (after.type === "box" || inRow) {
                             line = {
                                 ...line,
@@ -2229,8 +2230,8 @@ export const layoutLines = (
                     }
                 }
                 line = { ...place(line), ...(pastIndent ? { pastIndent } : {}) };
-                const { shift, position } = startAt(stop);
-                const misaligned = shift === undefined ? "text at a decimal tab stop that Word hasn't been seen lining up" : undefined;
+                const { lineUp, position } = startAt(stop, line);
+                const misaligned = lineUp === undefined ? "text at a decimal tab stop that Word hasn't been seen lining up" : undefined;
                 if (snapping && (stop.alignment !== "left" || !startsWithGridCharacter(rest))) {
                     line = {
                         ...line,

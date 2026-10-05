@@ -150,7 +150,7 @@ describe("layoutLines", () => {
         const kerned = { kerning: 1 };
         const piece = (value: string): InlineItem => ({ type: "text", text: value, font: kerned });
         const softHyphen: InlineItem = { type: "softHyphen", font: kerned };
-        const linesOf = (items: readonly InlineItem[], width: number): readonly (string | number | undefined)[][] =>
+        const linesOf = (items: readonly InlineItem[], width: number): readonly (readonly (string | number | undefined)[])[] =>
             layoutLines(items, { width, measurer: kerning }).map(({ text: value, textWidth, unsupported }) => [
                 value,
                 textWidth,
@@ -553,7 +553,7 @@ describe("layoutLines", () => {
         const lines = (
             items: readonly InlineItem[],
             options: Partial<LineLayoutOptions> = {},
-        ): readonly (number | string | undefined)[][] =>
+        ): readonly (readonly (number | string | undefined)[])[] =>
             layoutLines(items, { width: 100, measurer: descending, ...options }).map(({ height, unsupported }) => [height, unsupported]);
         expect(lines([text("a "), picture, text(" b")])).to.deep.equal([[27, undefined]]);
         // Multiple spacing beside it, which may count its box, and text beside it in the same border, haven't been seen
@@ -571,7 +571,7 @@ describe("layoutLines", () => {
         // word-stops-text2.ts RF29b to RF29d: text fitted to 25, 100 and 150 points takes that much room on its line, and goes
         // on to the next line whole where it doesn't fit
         const fitted = (width: number, size = 10): InlineItem => ({ type: "box", width, height: 0, font: { size }, text: "fitted text" });
-        const lines = (items: readonly InlineItem[], width = 100): readonly (number | string | undefined)[][] =>
+        const lines = (items: readonly InlineItem[], width = 100): readonly (readonly (number | string | undefined)[])[] =>
             layoutLines(items, { width, measurer: MEASURER }).map(({ text: value, textWidth, height, unsupported }) => [
                 value,
                 textWidth,
@@ -2338,7 +2338,10 @@ describe("soft hyphens", () => {
         // can be squeezed by: their 5 to stretch with "b-" are less than twice that, so Word takes "b-" (word-stops-text2.ts
         // SH17: "Do-" with 200 twips to spare rather than "Donau-" 136 past the end)
         const items = [text("a a a a a a a a a b"), softHyphen(), text("bb"), softHyphen(), text("cccc")];
-        const justified = (width: number, alignment: "justified" | "distributed" = "justified"): readonly (string | undefined)[][] =>
+        const justified = (
+            width: number,
+            alignment: "justified" | "distributed" = "justified",
+        ): readonly (readonly (string | undefined)[])[] =>
             linesOf(items, { width, format: { alignment } }).map(({ text: value, unsupported }) => [value, unsupported]);
         expect(justified(205)).to.deep.equal([
             ["a a a a a a a a a b", undefined],
@@ -2751,7 +2754,7 @@ describe("tab stops past the end of the line", () => {
         // word-stops-text2.ts TA11a: "afterwards" after a left stop at 8800 twips doesn't fit before 9026, so the tab goes on to
         // the next line with it, and it breaks there after "af"; TA11b, word-stops-tabs.ts TA1c: past the margin, in a
         // paragraph indented past it
-        const lines = (items: readonly InlineItem[], options: Partial<LineLayoutOptions>): readonly (string | undefined)[][] =>
+        const lines = (items: readonly InlineItem[], options: Partial<LineLayoutOptions>): readonly (readonly (string | undefined)[])[] =>
             linesOf(items, options).map(({ text: value, unsupported }) => [value, unsupported]);
         expect(lines([text("a"), tab, { type: "marker", name: "m" }, text("bbb")], at("left", 80))).to.deep.equal([
             ["a", undefined],

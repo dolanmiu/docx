@@ -1776,9 +1776,11 @@ const readRun = (element: XmlObject, paragraphRun: RunFormat, reader: Reader, re
                 return [];
         }
     });
-    const read = itemsOf(formatGuessed ? [[guessMarker(unsupportedFormat!)], ...items] : items, reader);
+    const runItems = itemsOf(formatGuessed ? [[guessMarker(unsupportedFormat!)], ...items] : items, reader);
     const fitText = find(childrenOf(properties), "w:fitText");
-    return typeof read === "string" || format.hidden || fitText === undefined ? read : fittedOf(read, attributesOf(fitText), reader);
+    return typeof runItems === "string" || format.hidden || fitText === undefined
+        ? runItems
+        : fittedOf(runItems, attributesOf(fitText), reader);
 };
 
 /** The id of the region of text fitted to a width that each box of it is in, when it has one */
