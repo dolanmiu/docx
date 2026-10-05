@@ -5209,13 +5209,10 @@ export const paginate = (
     };
 
     /**
-     * Whether a block is the empty paragraph that ends a section right after a table. Word gives it a line of its own, as
-     * there is no line of a paragraph before it for its mark to go on (`word-header-columns.docx` H1 to H4, H7 and H8),
-     * where LibreOffice gives it no room
-     */
-    /**
-     * Whether a block is the empty paragraph that ends a section and takes a line: after a table, and with text frames
-     * anchored in it, as Word gives it one after a frame (`word-stops-floats.docx` FR1b)
+     * Whether a block is the empty paragraph that ends a section and takes a line. Word gives it a line of its own right
+     * after a table, as there is no line of a paragraph before it for its mark to go on (`word-header-columns.docx` H1 to
+     * H4, H7 and H8), where LibreOffice gives it no room, and with text frames anchored in it, as after a frame
+     * (`word-stops-floats.docx` FR1b)
      */
     const endsAfterTable = (index: number): boolean => {
         const block = blocks[index]?.block;
