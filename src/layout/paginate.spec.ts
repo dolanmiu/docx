@@ -4874,6 +4874,22 @@ describe("paginate", () => {
                 expect(paginate(tabled, { measurer: MEASURER }).stoppedAt).to.equal(
                     "a footnote in columns that moves its reference to the next page",
                 );
+                // a's last line, with widow control the one before, goes in the second column with its footnote, and the first
+                // column is laid out again above it, which moves the reference on. Laid out again without the room, the line
+                // is at the top of the second column, where it would stay, and the page would be laid out again for the
+                // footnote. Guessing, it moves on
+                const reason = "a footnote in columns whose reference moves on to the next page from the top of a column";
+                const top = inSections(
+                    [noted(paragraph("a", 6), "footnote 1"), paragraph("b", 1)],
+                    { "footnote 1": [paragraph("note", 8)] },
+                    [{ ...COLUMNS, pageWidth: 190 }],
+                );
+                expect(paginate(top, { measurer: MEASURER }).stoppedAt).to.equal(reason);
+                const guessed = paginate(top, { measurer: MEASURER, guess: true });
+                expect(
+                    guessed.pages.map(({ body }) => body.flatMap((block) => (block.type === "paragraph" ? block.lines.length : 0))),
+                ).to.deep.equal([[4], [2, 1]]);
+                expect(guessed.pages[0].guesses).to.deep.equal([reason]);
             });
         });
     });

@@ -402,6 +402,8 @@ const UNKNOWN_CHARACTER = "a character whose width in its font isn't known";
 const UNWRITTEN_NUMBER = "a page number its format isn't written for yet";
 // Why the layout stops at a footnote that goes on across pages in columns where Word's way isn't known
 const FOOTNOTE_IN_COLUMNS = "a footnote across pages in columns";
+// Why the layout stops at a footnote whose reference would move on and back as a page in columns is laid out again
+const MOVES_ON_FROM_TOP = "a footnote in columns whose reference moves on to the next page from the top of a column";
 // The room for footnotes that Word's room for a footnote too long for a page's columns is looked for to within, in points
 const NOTE_ROOM_STEP = 1;
 // Why the layout stops at endnotes that go on into the next column or page in a section of columns
@@ -1243,6 +1245,8 @@ export const paginate = (
     const noteSearches = new Map<number, NoteSearch>();
     const reservedFor = new Map<number, readonly string[]>();
     const movedOn = new Map<number, readonly string[]>();
+    // The pages whose lines whose footnotes moved on move on from the top of a later column too, guessing
+    const movingOn = new Set<number>();
     // The rest of a footnote continued from the page before, above the page's own, and of one continued on the next page
     let continued: NoteRest | undefined;
     let carried: NoteRest | undefined;
@@ -2406,14 +2410,23 @@ export const paginate = (
      * Lays out a page again whose columns were laid out again to leave room for footnotes that moved a reference to one
      * of them on to the next page, so the room left is more than the footnotes on the page take: without the room, and
      * with the page ending above the reference, as Word moves the reference on and leaves the page as it is without the
-     * footnote (`word-watertight-notes.docx` FN1). It stops at a page with table rows on it, which isn't known
+     * footnote (`word-watertight-notes.docx` FN1). It stops at a page with table rows on it, which isn't known, and
+     * where a reference moves on again, as its line stayed at the top of a later column, as at the top of any column, so
+     * the page would be laid out again for the footnote, and again without it. Whether Word moves the line on from
+     * there, as from below the top, or what is above it too, isn't known. Guessing, it moves on
      */
     const checkReserve = (): void => {
         if (reserved() > areaOf(pageNotes, undefined, continued) + TOLERANCE) {
             if (placements.slice(placements.findLastIndex(({ type }) => type === "page") + 1).some(({ type }) => type === "row")) {
                 stopOnPage("a footnote in columns that moves its reference to the next page");
             }
-            throw new NotesGrew(0, [], [...movedFromPage(), ...reservedFor.get(pageCount)!.filter((name) => !pageNotes.includes(name))]);
+            const moving = reservedFor.get(pageCount)!.filter((name) => !pageNotes.includes(name));
+            if (moving.some((name) => movedFromPage().includes(name))) {
+                stopAt(MOVES_ON_FROM_TOP);
+                // eslint-disable-next-line functional/immutable-data
+                movingOn.add(pageCount);
+            }
+            throw new NotesGrew(0, [], [...new Set([...movedFromPage(), ...moving])]);
         }
     };
 
@@ -3429,18 +3442,24 @@ export const paginate = (
             // it (`word-watertight-notes.docx` FN1)
             const moved = movedFromPage();
             const movedLine = remaining.findIndex(({ markers }) => markers.some((marker) => moved.includes(marker)));
+            const beforeMoved = movedLine === -1 ? Infinity : linesKept(remaining.length, movedLine, paragraph, isFirstLine);
             // The footnotes held back from the paragraph kept with this one that continue on the next page go below as many
             // of its lines as it is kept with, and take the rest of the page (`word-watertight-stops.docx` SP4)
             let count = Math.min(
                 heldLines !== undefined && heldNotes.length > 0 && !holdNotes ? Math.min(kept, heldLines) : kept,
-                movedLine === -1 ? Infinity : linesKept(remaining.length, movedLine, paragraph, isFirstLine),
+                beforeMoved,
             );
             /** Whether its first line fits without its footnotes, when it doesn't with them */
             const fitsAlone = (): boolean => fits === 0 && linesThatFit(remaining, room, paragraph, isFirstLine, undefined, hangs).fits > 0;
             const lineNotes = notesOf(1);
+            // Guessing, a line whose footnote moved on goes on from the top of a later column too (see `checkReserve`)
+            const referenceMovesOn = movingOn.has(pageCount) && beforeMoved === 0 && column > 0 && !placedInColumn;
+            if (referenceMovesOn) {
+                stopAt(MOVES_ON_FROM_TOP);
+            }
             // Nothing fits on an empty page, so as much as fits goes on it, and at least a line, unless the end of a
             // footnote continued from the page before is on it, which leaves the next page for them
-            if (count === 0 && !placedInColumn && continued === undefined) {
+            if (count === 0 && !placedInColumn && continued === undefined && !referenceMovesOn) {
                 if (fits === 0 && lineNotes.length > 0) {
                     // In columns being balanced, which were laid out at their full height before, it's their height
                     stopIfBalancing();
