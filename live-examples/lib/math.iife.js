@@ -298,7 +298,7 @@ var docxMath = (function(exports, docx) {
 		}
 	};
 	//#endregion
-	//#region \0@oxc-project+runtime@0.150.0/helpers/esm/objectWithoutPropertiesLoose.js
+	//#region \0@oxc-project+runtime@0.152.0/helpers/esm/objectWithoutPropertiesLoose.js
 	function _objectWithoutPropertiesLoose(r, e) {
 		if (null == r) return {};
 		var t = {};
@@ -309,7 +309,7 @@ var docxMath = (function(exports, docx) {
 		return t;
 	}
 	//#endregion
-	//#region \0@oxc-project+runtime@0.150.0/helpers/esm/objectWithoutProperties.js
+	//#region \0@oxc-project+runtime@0.152.0/helpers/esm/objectWithoutProperties.js
 	function _objectWithoutProperties(e, t) {
 		if (null == e) return {};
 		var o, r, i = _objectWithoutPropertiesLoose(e, t);
@@ -611,7 +611,7 @@ var docxMath = (function(exports, docx) {
 		}
 	};
 	//#endregion
-	//#region \0@oxc-project+runtime@0.150.0/helpers/esm/typeof.js
+	//#region \0@oxc-project+runtime@0.152.0/helpers/esm/typeof.js
 	function _typeof(o) {
 		"@babel/helpers - typeof";
 		return _typeof = "function" == typeof Symbol && "symbol" == typeof Symbol.iterator ? function(o) {
@@ -621,7 +621,7 @@ var docxMath = (function(exports, docx) {
 		}, _typeof(o);
 	}
 	//#endregion
-	//#region \0@oxc-project+runtime@0.150.0/helpers/esm/toPrimitive.js
+	//#region \0@oxc-project+runtime@0.152.0/helpers/esm/toPrimitive.js
 	function toPrimitive(t, r) {
 		if ("object" != _typeof(t) || !t) return t;
 		var e = t[Symbol.toPrimitive];
@@ -633,13 +633,13 @@ var docxMath = (function(exports, docx) {
 		return ("string" === r ? String : Number)(t);
 	}
 	//#endregion
-	//#region \0@oxc-project+runtime@0.150.0/helpers/esm/toPropertyKey.js
+	//#region \0@oxc-project+runtime@0.152.0/helpers/esm/toPropertyKey.js
 	function toPropertyKey(t) {
 		var i = toPrimitive(t, "string");
 		return "symbol" == _typeof(i) ? i : i + "";
 	}
 	//#endregion
-	//#region \0@oxc-project+runtime@0.150.0/helpers/esm/defineProperty.js
+	//#region \0@oxc-project+runtime@0.152.0/helpers/esm/defineProperty.js
 	function _defineProperty(e, r, t) {
 		return (r = toPropertyKey(r)) in e ? Object.defineProperty(e, r, {
 			value: t,
@@ -649,7 +649,7 @@ var docxMath = (function(exports, docx) {
 		}) : e[r] = t, e;
 	}
 	//#endregion
-	//#region \0@oxc-project+runtime@0.150.0/helpers/esm/objectSpread2.js
+	//#region \0@oxc-project+runtime@0.152.0/helpers/esm/objectSpread2.js
 	function ownKeys(e, r) {
 		var t = Object.keys(e);
 		if (Object.getOwnPropertySymbols) {
