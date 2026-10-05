@@ -51,7 +51,8 @@ const firstMoved = (pagination: Pagination, before: Pagination): number => {
  * way with a number and the other way without it, none can be written, so it gives the first pass, laid out without them,
  * as not settled. Guessing (`guess`), it lays the pages out past what it can't lay out as Word does yet, and when the
  * numbers still change, it gives the last pass, with the guess noted on the first page they moved on. Text in the fonts
- * the document embeds is measured from their files, and the rest with `measurer`.
+ * the document embeds is measured from their files, but for those Office also offers, which it stops at, or guessing,
+ * measures from the files too, and the rest with `measurer`.
  */
 export const layOutPasses = (
     content: DocumentContent,

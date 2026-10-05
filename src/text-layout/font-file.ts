@@ -7,7 +7,8 @@
 // cspell:ignore hhea hmtx cmap fsSelection ttcf OTTO GPOS DFLT Aptos clig dlig GSUB hlig liga
 import { hasLigatures } from "./kerning";
 import { DEFAULT_MEASURER, type TextMeasurer } from "./line-breaking";
-import { DEFAULT_FONT, DEFAULT_FONT_SIZE, type Ligatures, type TextFont, isKerned, takesNoRoom } from "./text-width";
+import { OFFICE_CLOUD_FONTS } from "./office-cloud-fonts";
+import { DEFAULT_FONT, DEFAULT_FONT_SIZE, type Ligatures, type TextFont, isKerned, takesNoRoom, unknownFont } from "./text-width";
 
 /**
  * A font file's bytes: a TrueType or OpenType font (`.ttf` or `.otf`), or a collection of them (`.ttc`).
@@ -667,6 +668,28 @@ export const readFontFile = (data: FontData): readonly FontFace[] => {
 const TAB_STOP = 36;
 
 /**
+ * Why a layout stops at text in a font from a file that Office offers as a cloud font: Word for Mac draws it in Office's
+ * copy of the font, even where the document embeds a file of its own of it, as it drew Pacifico, which a document
+ * embedded, in Office's copy, whose letters are narrower and whose lines are shorter (`word-stops-office-fonts.docx` MB4)
+ */
+export const OFFICE_COPY = "a font from a file that Office offers a copy of its own of, which Word may draw the text in instead";
+
+// The names of Office's cloud fonts, in lower case, made when a font from a file is first measured
+const cloudFonts = new Set<string>();
+
+/**
+ * Whether Office offers a font as a cloud font, other than one of the width tables, such as Aptos, which are measured as
+ * Word draws them already
+ */
+export const offeredByOffice = (font: string): boolean => {
+    if (cloudFonts.size === 0) {
+        // eslint-disable-next-line functional/immutable-data
+        OFFICE_CLOUD_FONTS.forEach((name) => cloudFonts.add(name.toLowerCase()));
+    }
+    return cloudFonts.has(font.toLowerCase()) && unknownFont({ font });
+};
+
+/**
  * Measures text in the fonts of these faces with their own widths, kerning and line height, and text in other fonts with
  * `fallback`. Text that is bold, or not, is measured with a face that is too, and with one that is italic, or not, as the
  * text is, when there is one. A character a face has no glyph for is one whose width isn't known, as Word draws it in
@@ -674,7 +697,8 @@ const TAB_STOP = 36;
  * whose widths aren't known, unless `fallback` knows them: Word makes that face itself, each glyph 20 thousandths of an em
  * wider than the face it makes it from, but which face it makes it from isn't known, as it drew Pacifico, which a document
  * embedded, in Office's own copy of it, whose letters are narrower (scripts/layout-probes/stops2/word-stops-office-fonts.ts
- * MB4).
+ * MB4). For the same reason, text in a font Office offers as a cloud font, such as Pacifico, is in a font whose widths
+ * aren't known, for {@link OFFICE_COPY}, but for those of the width tables: measured from its file, it is a best guess.
  */
 export const createFontFileMeasurer = (faces: readonly FontFace[], fallback: TextMeasurer = DEFAULT_MEASURER): TextMeasurer => {
     // The face of each font, bold or not, and italic or not, as text is measured many times in each
@@ -760,7 +784,13 @@ export const createFontFileMeasurer = (faces: readonly FontFace[], fallback: Tex
                   )
                 : fallback.unknownCharacter?.(text, font);
         },
-        unknownFont: (font, text) => faceOf(font) === undefined && fallback.unknownFont?.(font, text) === true,
+        unknownFont: (font, text) => {
+            const face = faceOf(font);
+            if (face === undefined) {
+                return fallback.unknownFont?.(font, text) ?? false;
+            }
+            return offeredByOffice(face.name) ? OFFICE_COPY : false;
+        },
         // Word kerns with the font's own pairs (word-fonts.docx F1 and F2), and joins letters with its ligatures, but for
         // substitutions other than ligatures, such as contextual ones, which aren't followed yet
         unknownShaping: (text, font) => {

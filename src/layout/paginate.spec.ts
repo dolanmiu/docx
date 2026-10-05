@@ -7687,6 +7687,16 @@ describe("paginate with automatic hyphenation", () => {
             ]);
         });
 
+        it("should stop at, or guess, text in a font where the measurer says why it doesn't know how Word draws it", () => {
+            const OFFICE: TextMeasurer = { ...MEASURER, unknownFont: ({ font }) => (font === "Offered" ? "Office's copy" : false) };
+            const content = document([
+                withItems(paragraph("a", 1), [{ type: "text", text: " x", font: { font: "Offered" } }]),
+                paragraph("b", 1),
+            ]);
+            expect(numbersOf(content, OFFICE).stoppedAt).to.equal("Office's copy");
+            expect(guessed(content, OFFICE)).to.deep.equal({ guesses: [["Office's copy"]], bookmarks: { a: "1", b: "1" } });
+        });
+
         it("should measure a character whose width the measurer doesn't know as it measures it", () => {
             const CHARACTERS: TextMeasurer = { ...MEASURER, unknownCharacter: (value) => (value.includes("∑") ? "∑" : undefined) };
             const content = document([withItems(paragraph("a", 1), [{ type: "text", text: " ∑", font: {} }]), paragraph("b", 1)]);

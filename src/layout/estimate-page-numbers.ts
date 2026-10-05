@@ -64,7 +64,7 @@ const estimateWith = (content: DocumentContent | undefined, measurer: TextMeasur
  *
  * The pages are laid out with the widths and heights of the fonts Word documents use most, such as Calibri, Cambria,
  * Arial and Times New Roman, and of those made as wide, such as Carlito, and text in the fonts the document embeds is
- * measured from their files. To measure text in other fonts, such as Aptos, from their files, use
+ * measured from their files, but for fonts Office also offers. To measure text in other fonts, such as Aptos, from their files, use
  * {@link estimatePageNumbersWith}. It follows paragraphs' spacing, indents, line spacing, tab stops and keep settings, widow
  * and orphan control, lists, pictures in the line, tables, whose rows break across pages, footnotes and endnotes, page,
  * column and section breaks, and each section's page size, margins, columns, headers, footers and page numbering.
@@ -72,7 +72,8 @@ const estimateWith = (content: DocumentContent | undefined, measurer: TextMeasur
  * It stops at the first thing it can't lay out yet: a drawing or table that text flows around, a text box or frame, an
  * equation, a footnote that continues on the next page, columns evened out before a continuous section break, a line in
  * a table cell that is taller than a page, text in a font that isn't in the width tables and isn't embedded, such as
- * Aptos, a character whose width in its font isn't known, such as a mathematical symbol in Calibri, which Word draws in
+ * Garamond, text in a font the document embeds that Office also offers, such as Pacifico, which Word for Mac draws in
+ * Office's own copy of it, a character whose width in its font isn't known, such as a mathematical symbol in Calibri, which Word draws in
  * Cambria Math, a word Word may hyphenate, in a document that hyphenates its words, as which parts Word breaks it into
  * is in its own dictionaries, or a date in the text, which Word writes when it opens the document. The page references
  * to bookmarks after it are left blank, for Word to fill in when it updates the fields. A document in compatibility
@@ -128,7 +129,9 @@ export type EstimatePageNumbersOptions = {
      * without files is measured as it is without them, and so is bold text, or text that isn't bold, in a font without a
      * file for it, which stops the layout when the font isn't in the width tables. Italic text in a font without an italic
      * file is measured with the upright one. The layout stops at a character a font's file has no glyph for, as Word draws
-     * it in another font. A font the document embeds is measured from the document's own file
+     * it in another font. A font the document embeds is measured from the document's own file. Text in a font Office also
+     * offers, such as Pacifico, stops the layout, as Word for Mac draws it in Office's own copy of the font, but for
+     * Office's fonts of the width tables, such as Aptos
      */
     readonly fonts?: readonly FontFile[];
     /**
@@ -141,7 +144,8 @@ export type EstimatePageNumbersOptions = {
     /**
      * Whether to lay out past what the layout can't lay out as Word does yet with the best guess it has, rather than
      * leave the page numbers after it blank. Text in a font that isn't in the width tables, and isn't given as a file or
-     * embedded, is measured as the most similar font that is, such as Aptos as Arial, and a character whose width isn't
+     * embedded, is measured as the most similar font that is, such as Roboto as Arial, text in a font given as a file or
+     * embedded that Office also offers is measured from the file, and a character whose width isn't
      * known as an average letter of its font. A date is measured as it is written, and a setting or formatting the layout
      * doesn't follow, such as hyphenation or a compatibility setting, is left as if it weren't there. What it can't read,
      * such as a drawing that text flows around or an equation, is left out, and a page laid out as the rule it follows

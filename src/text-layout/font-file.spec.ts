@@ -2,11 +2,11 @@ import { describe, expect, it } from "vitest";
 
 import { type TestFontOptions, buildTestFont, buildTestFontCollection, tableOffset } from "tests/font-file";
 
-import { createFontFileMeasurer, readFontFile } from "./font-file";
+import { OFFICE_COPY, createFontFileMeasurer, offeredByOffice, readFontFile } from "./font-file";
 import { DEFAULT_MEASURER } from "./line-breaking";
 import type { TextFont } from "./text-width";
 
-// cspell:ignore hhea hmtx cmap Aptos aptos GPOS DFLT clig dlig ffjo ffofi GSUB liga offio offjo Toffio
+// cspell:ignore hhea hmtx cmap Aptos aptos Pacifico pacifico Kaiti GPOS DFLT clig dlig ffjo ffofi GSUB liga offio offjo Toffio
 
 // A font of 1000 units to the em, whose letters are as wide as their place in the alphabet, in hundreds of units
 const LETTERS: TestFontOptions["advances"] = Object.fromEntries([
@@ -449,6 +449,37 @@ describe("createFontFileMeasurer", () => {
             measureDescent: () => 0,
         });
         expect(withoutUnknown.unknownFont!({ font: "Roboto" })).to.equal(false);
+    });
+
+    it("should not know how Word draws text in a font Office offers a copy of its own of, as it draws it in that copy", () => {
+        // Word for Mac drew Pacifico, which a document embedded, in Office's copy (word-stops-office-fonts.docx MB4)
+        const measurer = createFontFileMeasurer(fonts({ advances: LETTERS, name: "Pacifico" }));
+        expect(measurer.unknownFont!({ font: "Pacifico" }, "AB")).to.equal(OFFICE_COPY);
+        expect(measurer.unknownFont!({ font: "pacifico", italic: true })).to.equal(OFFICE_COPY);
+        // It is still measured from its file, for a layout that guesses
+        expect(measurer.measureWidth("ABC", { font: "Pacifico", size: 10 })).to.be.closeTo(6, 1e-9);
+        // Bold text without a bold face is measured as the fallback does, which doesn't know the font
+        expect(measurer.unknownFont!({ font: "Pacifico", bold: true }, "AB")).to.equal(true);
+        // Office's fonts of the width tables are measured as Word draws them, given as files or not
+        const aptos = createFontFileMeasurer(fonts({ advances: LETTERS, name: "Aptos" }));
+        expect(aptos.unknownFont!({ font: "Aptos" }, "AB")).to.equal(false);
+        // A measurer that falls back on one with such a font says why it doesn't know it
+        const outer = createFontFileMeasurer(fonts({ advances: LETTERS }), measurer);
+        expect(outer.unknownFont!({ font: "Pacifico" }, "AB")).to.equal(OFFICE_COPY);
+        expect(outer.unknownFont!({ font: "Probe Sans" }, "AB")).to.equal(false);
+    });
+
+    it("should know which fonts Office offers as cloud fonts, other than those of the width tables", () => {
+        expect(offeredByOffice("Pacifico")).to.equal(true);
+        expect(offeredByOffice("ROBOTO")).to.equal(true);
+        // A face's own family name, as documents name it, and a localized name: STKaiti's Chinese name
+        expect(offeredByOffice("Aptos Black")).to.equal(true);
+        expect(offeredByOffice("\u534E\u6587\u6977\u4F53")).to.equal(true);
+        expect(offeredByOffice("Aptos")).to.equal(false);
+        expect(offeredByOffice("Calibri")).to.equal(false);
+        // Yu Gothic's Japanese name, as the tables have it
+        expect(offeredByOffice("\u6E38\u30B4\u30B7\u30C3\u30AF")).to.equal(false);
+        expect(offeredByOffice("Probe Sans")).to.equal(false);
     });
 
     it("should move a tab typed in the text to the next half inch from the start of the text", () => {
