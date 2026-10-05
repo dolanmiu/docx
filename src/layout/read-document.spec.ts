@@ -767,6 +767,7 @@ describe("readDocument", () => {
             const fitted = "text fitted to a width with other than text in it, or to none";
             expect(unsupportedOf(r(rPr({ "w:fitText": { _attr: { "w:val": 2000 } } }), t("a"), { "w:tab": {} }))).to.equal(fitted);
             expect(unsupportedOf(r(rPr({ "w:fitText": { _attr: { "w:val": 0 } } }), t("a")))).to.equal(fitted);
+            expect(unsupportedOf(r(rPr({ "w:fitText": { _attr: { "w:id": 1 } } }), t("a")))).to.equal(fitted);
             const layout = (attributes: object, text = "ab", size = 22): object =>
                 r(rPr({ "w:eastAsianLayout": { _attr: attributes } }, value("w:sz", size)), t(text));
             // Two lines in one of text, without brackets, at a size that halves to whole half-points is drawn at half its
