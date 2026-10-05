@@ -240,6 +240,21 @@ describe("imported documents", () => {
         expect(paragraphOf(content, "last").format.spaceAfter).to.equal(0);
     });
 
+    it("should match an imported document's formatting to the document's where its w:matchSrc is turned off", () => {
+        for (const value of ["0", "false", "off"]) {
+            const content = read(
+                {
+                    body: `<w:altChunk r:id="rIdImport"><w:altChunkPr><w:matchSrc w:val="${value}"/></w:altChunkPr></w:altChunk>${SECTION}`,
+                    styles: style("Normal", "Normal", size(22)),
+                    imported: IMPORTED,
+                },
+                { imported: { body: paragraph("one"), styles: style("Normal", "Normal", size(28)) } },
+            );
+            // In the document's Normal, as an import whose formatting isn't kept
+            expect(sizeOf(content, "one")).to.equal(11);
+        }
+    });
+
     it("should stop at an imported document whose formatting is kept that ends in a paragraph of a content control or custom XML", () => {
         const kept = (body: string): DocumentContent =>
             read(

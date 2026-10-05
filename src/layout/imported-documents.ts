@@ -43,6 +43,7 @@ import {
     find,
     isEastAsian,
     isObject,
+    onOff,
     stringOf,
     withoutUndefined,
 } from "../text-layout";
@@ -658,7 +659,8 @@ export const withImports = (parts: DocxParts): DocxParts => {
         ) {
             return "an imported document of several sections";
         }
-        const keep = find(childrenOf(find(childrenOf(element["w:altChunk"]), "w:altChunkPr")), "w:matchSrc") !== undefined;
+        // An on/off property, which `w:val` of 0, false or off turns off (CT_OnOff)
+        const keep = onOff(childrenOf(find(childrenOf(element["w:altChunk"]), "w:altChunkPr")), "w:matchSrc") === true;
         if (
             hasPageField(content) ||
             [document.footnotes, document.endnotes].some((part) => part !== undefined && hasPageField([part.notes]))
