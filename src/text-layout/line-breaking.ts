@@ -645,9 +645,15 @@ const withFont = (heights: Heights, font: TextFont, measurer: TextMeasurer, text
     if (font.listNumber === "separator") {
         return heights;
     }
+    // Its emphasis marks take their room over the line, as over text: 67.14 twips over a line of Calibri 11
+    // (stops2/word-stops-lists.ts LI4b)
     if (font.listNumber === "number") {
         const own = withFont({ ...NOTHING, ...heights.listNumber }, { ...font, listNumber: undefined }, measurer);
-        return { ...heights, listNumber: { ascent: own.ascent, descent: own.descent, tallest: own.tallest } };
+        return {
+            ...heights,
+            listNumber: { ascent: own.ascent, descent: own.descent, tallest: own.tallest },
+            ...(own.marks === undefined ? {} : { marks: { ...heights.marks, ...own.marks } }),
+        };
     }
     const drawn = text === undefined ? undefined : measurer.measureTextHeight?.(text, font);
     const line = drawn?.lineHeight ?? measurer.measureLineHeight(font);
@@ -739,16 +745,6 @@ const markedHeightOf = (
 const heightOf = (given: Heights, spacing: LineSpacing | undefined): Pick<LaidOutLine, "height" | "spacingBelow" | "unsupported"> => {
     const heights = withNumber(given);
     const { ascent, descent, tallest, picture, marks } = heights;
-    // How much multiple spacing adds to a line whose list number is taller than its text isn't known
-    if (
-        given.listNumber !== undefined &&
-        !onlyNumber(given) &&
-        heights.ascent > given.ascent + TOLERANCE &&
-        spacing?.rule === "multiple" &&
-        spacing.multiple !== 1
-    ) {
-        return { height: 0, unsupported: "a list number taller than its line's text, with multiple line spacing" };
-    }
     // The line is its text's tallest ascent and deepest descent, as Word makes a line of two fonts: Calibri 11 with Courier
     // New 11 is 275.53 twips, Calibri's ascent and Courier New's descent, where each alone is 268.55 and 249.2
     // (scripts/layout-probes/word-watertight-text.ts TX9a). A picture stands on the baseline, so with text it is the
@@ -768,7 +764,9 @@ const heightOf = (given: Heights, spacing: LineSpacing | undefined): Pick<LaidOu
     }
     // Multiple spacing adds its share of the tallest font's own line, below the text, rather than of the line: Calibri 11
     // with Courier New 11 at 1.5 lines is 275.53 and half of Calibri's 268.55, and with a picture, 659.08 and 0.15 of 268.55
-    // at 1.15 lines, also beside Calibri 8 in the picture's run of Calibri 11 (MH1b, TX8c, MH4e)
+    // at 1.15 lines, also beside Calibri 8 in the picture's run of Calibri 11 (MH1b, TX8c, MH4e). A list number taller than
+    // the text adds its ascent alone: a number of Calibri 20 beside Calibri 11 at 1.5 lines is 574.3, its 380.9 above the
+    // baseline, Calibri 11's 59.1 below it, and half of 268.55 (stops2/word-stops-lists.ts LI5a, LI5b)
     const spacingBelow = (spacing.multiple - 1) * tallest;
     return { height: natural + spacingBelow, ...(spacingBelow > 0 ? { spacingBelow } : {}) };
 };
@@ -1038,25 +1036,25 @@ const stopsOf = (
 /**
  * How far before the start of its first line a paragraph's list number starts, when it isn't left-aligned: half its
  * width when it is centred, and all of it when it is right-aligned, with the space after it, when one follows it, so the
- * text after the space starts there (`word-lists.docx` LJ4).
+ * text after the space starts there (`word-lists.docx` LJ4), or a centred number and its space are centred together
+ * there: "1." and its space of 61 twips centred at 360 start at 246 (`stops2/word-stops-lists.docx` LI3a).
  */
 const numberShift = (items: readonly InlineItem[], alignment: LineLayoutOptions["numberAlignment"], measurer: TextMeasurer): number => {
     const [listNumber, separator] = items;
     if (alignment === undefined || listNumber?.type !== "text") {
         return 0;
     }
-    const width = widthOf([listNumber], measurer);
-    if (alignment === "center") {
-        return width / 2;
-    }
-    return width + (separator?.type === "text" && separator.font.listNumber === "separator" ? widthOf([separator], measurer) : 0);
+    const width =
+        widthOf([listNumber], measurer) +
+        (separator?.type === "text" && separator.font.listNumber === "separator" ? widthOf([separator], measurer) : 0);
+    return alignment === "center" ? width / 2 : width;
 };
 
 /**
  * Where the tab after a right-aligned list number moves to, from the number's end at the start of the first line. Word
- * moves it to the first stop at or after the number's end: the hanging indent's (`word-lists.docx` LJ1, LJ7, LJ9), or,
- * without one, the left indent, when it is on a default stop too (LJ6). It says why when Word may move it to the next
- * stop instead, which it hasn't shown: where the number ends at another stop, or at a left indent that isn't one.
+ * moves it to the first stop past the number's end: the hanging indent's (`word-lists.docx` LJ1, LJ7, LJ9), or the next
+ * default stop past a first line indent, where the number ends on one (stops2/word-stops-lists.ts LI6c). Without either
+ * indent, it moves it to the left indent, where the number ends, on a default stop or not (LJ6, LI6b).
  */
 const numberTabStop = (
     position: number,
@@ -1064,18 +1062,12 @@ const numberTabStop = (
     { indentLeft = 0, firstLineIndent = 0 }: ParagraphFormat,
     defaultStop: number,
     limit: number,
-): { readonly stop?: TabStop; readonly unsupported?: string } => {
-    const stop = nextStop(position - 2 * TOLERANCE, stops, defaultStop, limit);
-    // Moved on past the number's end, but to the left indent without a hanging indent
-    const past =
-        firstLineIndent !== 0
-            ? nextStop(position, stops, defaultStop, limit)
-            : indentLeft <= limit + TOLERANCE
-              ? { position: indentLeft, alignment: "left" as const }
-              : undefined;
-    const agree = stop === undefined || past === undefined ? stop === past : Math.abs(stop.position - past.position) <= TOLERANCE;
-    return agree ? { stop } : { stop, unsupported: "a tab after a list number aligned right, which Word hasn't been seen to move" };
-};
+): TabStop | undefined =>
+    firstLineIndent !== 0
+        ? nextStop(position, stops, defaultStop, limit)
+        : indentLeft <= limit + TOLERANCE
+          ? { position: indentLeft, alignment: "left" }
+          : undefined;
 
 /** The rules for where a paragraph's lines break: the document's, with the paragraph's own */
 const rulesOf = ({ kinsoku, wordWrap }: ParagraphFormat, rules: LineBreakRules = {}): LineBreakRules => ({
@@ -1151,7 +1143,7 @@ export const measureContentWidths = (
                 if (token.type === "tab") {
                     const stop =
                         (first && numberTab && tokens.findIndex((other) => other.type === "tab") === index
-                            ? numberTabStop(position + lead, firstLineStops, format, defaultTabStop, Infinity).stop
+                            ? numberTabStop(position + lead, firstLineStops, format, defaultTabStop, Infinity)
                             : undefined) ?? nextStop(position + lead, first ? firstLineStops : stops, defaultTabStop, Infinity)!;
                     const rest = tokens.slice(index + 1);
                     const shift = shiftAt(stop.alignment, rest, measurer, border) ?? widthAfterTab(rest, measurer, border);
@@ -1330,7 +1322,7 @@ export const layoutLines = (
         compatibilityMode,
     }: LineLayoutOptions,
 ): readonly LaidOutLine[] => {
-    const { indentLeft = 0, indentRight = 0, firstLineIndent = 0, lineSpacing, alignment } = format;
+    const { indentLeft = 0, indentRight = 0, firstLineIndent = 0, lineSpacing, lineSpacingFrom, alignment } = format;
     const items = withAcross(paragraphItems, measurer);
     const { linePitch, characterSpace, characterPitch, characterRoom } = grid;
     /**
@@ -1432,15 +1424,30 @@ export const layoutLines = (
         lineSpacing?.rule === "multiple" &&
         lineSpacing.multiple !== 1;
     /**
-     * Whether a line of only a list number is as tall as the number, or as the paragraph's mark, where they differ, which
-     * Word hasn't shown. The number is in the mark's formatting, but for what its list's level gives it
+     * The heights of a line of only a list number, where nothing else is in the paragraph, so its mark is on the line too:
+     * the mark's, with the number's ascent where that is taller, as beside text. A number of Courier New 14 over a mark
+     * of Calibri 11 is 292.2 twips, Courier New's ascent and Calibri's descent, and a number of Calibri 11 over a mark of
+     * 20 is the mark's 488.3 (stops2/word-stops-lists.ts LI7a, LI7b). Where more lines follow it, whether the mark counts
+     * isn't known: it says why where they differ. The number is in the mark's formatting, but for what its list's level
+     * gives it
      */
-    const unlikeMark = (heights: Heights): boolean => {
+    let markHeights: Heights | undefined;
+    const markHeightsOf = (): Heights => (markHeights ??= withFont(NOTHING, emptyLineFont, measurer));
+    const numberOnly = content.every(
+        (item) => item.type === "marker" || ((item.type === "text" || item.type === "tab") && item.font?.listNumber !== undefined),
+    );
+    const withMarkOf = (heights: Heights): Heights | string => {
         if (!onlyNumber(heights)) {
-            return false;
+            return heights;
         }
-        const mark = withFont(NOTHING, { ...markFont, border: undefined }, measurer);
-        return (["ascent", "descent", "tallest"] as const).some((part) => Math.abs(mark[part] - heights.listNumber![part]) > TOLERANCE);
+        if (numberOnly) {
+            return { ...markHeightsOf(), listNumber: heights.listNumber, ...(heights.marks === undefined ? {} : { marks: heights.marks }) };
+        }
+        return (["ascent", "descent", "tallest"] as const).some(
+            (part) => Math.abs(markHeightsOf()[part] - heights.listNumber![part]) > TOLERANCE,
+        )
+            ? "a line of only a list number of another size or font than its paragraph's mark, before the paragraph's text"
+            : heights;
     };
     /** The heights of a line with the text of the token on it too */
     const withToken = (heights: Heights, token: Exclude<Token, { readonly type: "marker" }>): Heights => {
@@ -1622,18 +1629,25 @@ export const layoutLines = (
             ...(unknownOnGrid === undefined ? {} : { unsupported: unknownOnGrid }),
         };
         const finish = (state: LineState, breakAfter?: LaidOutLine["breakAfter"]): void => {
+            // The paragraph's line spacing, or a paragraph's joined to it from the line its marker is on
+            const spacing =
+                lineSpacingFrom !== undefined &&
+                [...lines.flatMap(({ markers }) => markers), ...state.markers, ...state.pending].includes(lineSpacingFrom.marker)
+                    ? lineSpacingFrom.lineSpacing
+                    : lineSpacing;
             // Spaces add nothing to the height of a line with no text on it, which is as tall as its mark, as Word and
             // LibreOffice lay it out
-            const heights = state.started ? state.heights : withFont(NOTHING, emptyLineFont, measurer);
+            const marked = state.started ? withMarkOf(state.heights) : markHeightsOf();
+            const heights = typeof marked === "string" ? state.heights : marked;
             const { unsupported: unknownHeight, ...height } =
-                linePitch === undefined ? heightOf(heights, lineSpacing) : gridHeightOf(heights, lineSpacing, linePitch);
+                linePitch === undefined ? heightOf(heights, spacing) : gridHeightOf(heights, spacing, linePitch);
             const unsupported = state.unknown
                 ? "a justified line that only fits squeezed at a four-per-em space, or at an en, em or ideographic space beside ordinary spaces"
                 : (state.unsupported ??
                   (markMatters(withNumber(heights))
                       ? "a picture alone in a line of a paragraph whose mark is larger, with multiple line spacing"
-                      : unlikeMark(heights)
-                        ? "a line of only a list number of another size or font than its paragraph's mark"
+                      : typeof marked === "string"
+                        ? marked
                         : unknownHeight));
             // eslint-disable-next-line functional/immutable-data
             lines.push({
@@ -1963,11 +1977,10 @@ export const layoutLines = (
                 line = { ...line, latin: undefined };
             }
             if (token.type === "tab") {
-                const numbered = numberTab ? numberTabStop(line.position, firstLineStops, format, defaultTabStop, limitOf()) : undefined;
+                const numbered = numberTab
+                    ? { stop: numberTabStop(line.position, firstLineStops, format, defaultTabStop, limitOf()) }
+                    : undefined;
                 numberTab = false;
-                if (numbered?.unsupported !== undefined) {
-                    line = { ...line, unsupported: numbered.unsupported };
-                }
                 const given = line.first ? firstLineStops : stops;
                 const next = nextStop(line.position, given, defaultTabStop, Infinity)!;
                 const rest = tokens.slice(index + 1);

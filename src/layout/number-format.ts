@@ -385,11 +385,26 @@ const writeIn = (formats: Readonly<Record<string, Format>>, value: number, name:
 };
 
 /**
- * A number in one of Word's number formats as it writes list numbers, such as `"iv"` for 4 in `lowerRoman`, or
+ * A number in one of Word's number formats as it writes list numbers and notes, such as `"iv"` for 4 in `lowerRoman`, or
  * undefined for numbers and formats it doesn't write as Word does: those of formats whose text from Word isn't known,
- * such as Thai and Hindi words, and those past where Word's lists start over.
+ * and those past where Word's lists start over.
  */
 export const formatNumber = (value: number, name = "decimal"): string | undefined => writeIn(FORMATS, value, name);
+
+/**
+ * The formats Word has been seen to write list numbers in, past those of notes too: Thai and Hindi words, from 1 to 5
+ * (`scripts/layout-probes/stops2/word-stops-numbers.ts` NF6)
+ */
+const LIST_FORMATS: Readonly<Record<string, Format>> = {
+    ...FORMATS,
+    // cspell:disable-next-line
+    thaiCounting: format(listed(["หนึ่ง", "สอง", "สาม", "สี่", "ห้า"]), 1, 5),
+    // cspell:disable-next-line
+    hindiCounting: format(listed(["एक", "दो", "तीन", "चार", "पाँच"]), 1, 5),
+};
+
+/** A list's number in one of Word's number formats, as {@link formatNumber}, in those Word has been seen to write lists in too */
+export const formatListNumber = (value: number, name = "decimal"): string | undefined => writeIn(LIST_FORMATS, value, name);
 
 /**
  * A page number in one of Word's number formats, as it writes it in page numbers and page references, or undefined for

@@ -1233,13 +1233,13 @@ describe("readDocument", () => {
             expect((numbered.footnotes.get("footnote 1")![0] as ParagraphBlock).unsupported).to.equal(
                 "a note's number in a footnote with a mark of its own",
             );
-            // Hidden, it isn't laid out, as any hidden reference
+            // Hidden, what Word does with it hasn't been seen
             const hidden = readWithSettings(
                 [p(r(rPr({ "w:vanish": {} }), { "w:footnoteReference": { _attr: { "w:id": 1, "w:customMarkFollows": 1 } } }))],
                 [],
                 NOTES,
             );
-            expect(paragraphOf(hidden).unsupported).to.equal("a footnote or endnote reference in hidden text");
+            expect(paragraphOf(hidden).unsupported).to.equal("a footnote reference with a mark of its own in hidden text");
             // An endnote with one hasn't been seen, which stops at its paragraph
             const endnote = readWithSettings([p(reference("endnote", 1, { "w:customMarkFollows": 1 }))], [], NOTES);
             expect(paragraphOf(endnote).unsupported).to.equal("an endnote with a mark of its own");
@@ -2240,14 +2240,23 @@ describe("readDocument", () => {
             expect(itemsOf(content, 0)[1]).to.deep.equal({ type: "tab", font: { listNumber: "separator" } });
         });
 
-        it("should write nothing for a level without text or suffix, and stop at a format it doesn't write, or a level that doesn't exist", () => {
-            const content = readWritten({ numbering, sections: [{ children: [item(2, "none"), item(3, "counted"), item(4, "missing")] }] });
+        it("should write nothing for a level without text or suffix, Thai words to 5, and leave out a level of one that doesn't exist", () => {
+            const content = readWritten({
+                numbering,
+                sections: [{ children: [item(2, "none"), ...[1, 2, 3, 4, 5, 6].map((count) => item(3, `${count}`)), item(4, "missing")] }],
+            });
             expect(textOf(content, 0)).to.equal("none");
             expect(paragraphOf(content, 0).unsupported).to.equal(undefined);
-            // Word's Thai counting isn't known, so Word's number isn't, where docx/layout wrote "1"
-            expect(paragraphOf(content, 1).unsupported).to.equal("a list number in a format not yet written");
-            expect(paragraphOf(content, 2).unsupported).to.equal("a list number of a level its list doesn't have");
-            expect(textOf(content, 2)).to.equal("1.missing");
+            // stops2/word-stops-lists.ts NF6: Word wrote 1 to 5 in Thai words, and the layout stops past them
+            expect(textOf(content, 1)).to.equal("หนึ่ง1");
+            expect(textOf(content, 5)).to.equal("ห้า5");
+            expect(paragraphOf(content, 5).unsupported).to.equal(undefined);
+            expect(paragraphOf(content, 6).unsupported).to.equal("a list number in a format not yet written");
+            // LI1: Word leaves out a level whose text writes the number of a level the list doesn't have, as though it weren't
+            // there: no number, nor the level's indent
+            expect(textOf(content, 7)).to.equal("missing");
+            expect(paragraphOf(content, 7).unsupported).to.equal(undefined);
+            expect(paragraphOf(content, 7).format).to.not.have.property("indentLeft");
         });
 
         it("should write no number for a list or level that doesn't exist", () => {
@@ -2322,13 +2331,14 @@ describe("readDocument", () => {
             expect(aligned("right").numberAlignment).to.equal("right");
             expect(aligned("end").numberAlignment).to.equal("right");
             expect(aligned("center").numberAlignment).to.equal("center");
-            // The schema's paragraph alignments, which Word lines a number up to the left with, as with none
-            const LEFT = ["left", "start", "both", "distribute", "numTab", "lowKashida", "mediumKashida", "highKashida", "thaiDistribute"];
-            for (const jc of [undefined, ...LEFT]) {
+            for (const jc of [undefined, "left", "start"]) {
                 expect(aligned(jc).numberAlignment).to.equal(undefined);
                 expect(aligned(jc).unsupported).to.equal(undefined);
             }
-            expect(aligned("bogus").unsupported).to.equal("a list number aligned in a way not yet followed");
+            // The schema's other paragraph alignments, but for both, haven't been seen
+            for (const jc of ["distribute", "numTab", "lowKashida", "mediumKashida", "highKashida", "thaiDistribute", "bogus"]) {
+                expect(aligned(jc).unsupported).to.equal("a list number aligned in a way not yet followed");
+            }
             // A level with no number has nothing to align
             const empty = readLists(
                 [abstractNum(0, lvl(0, value("w:numFmt", "bullet"), value("w:lvlText", ""), value("w:lvlJc", "right"))), num(1, 0)],
@@ -2525,7 +2535,7 @@ describe("readDocument", () => {
             expect(fontOfNumber(2)).to.deep.include({ size: 8 });
         });
 
-        it("should stop at a centred number followed by a space, and at a number with a border, emphasis marks, or raised", () => {
+        it("should stop at a number with a border, but not at a centred one followed by a space, or one with emphasis marks or raised", () => {
             const stopsAt = (level: object, mark: readonly object[] = []): string | undefined =>
                 paragraphOf(
                     readLists(
@@ -2533,14 +2543,47 @@ describe("readDocument", () => {
                         [p(pPr({ "w:numPr": [value("w:ilvl", 0), value("w:numId", 1)] }, rPr(...mark)), r(t("item")))],
                     ),
                 ).unsupported;
-            expect(stopsAt(decimal(0, value("w:suff", "space"), value("w:lvlJc", "center")))).to.equal(
-                "a centred list number followed by a space",
-            );
+            // stops2/word-stops-lists.ts LI3a, LI4b, LI4c
+            expect(stopsAt(decimal(0, value("w:suff", "space"), value("w:lvlJc", "center")))).to.equal(undefined);
             expect(stopsAt(decimal(0, value("w:suff", "space"), value("w:lvlJc", "right")))).to.equal(undefined);
-            const numberStop = "a list number with a border or emphasis marks, or raised or lowered";
-            expect(stopsAt(decimal(0), [{ "w:bdr": { _attr: { "w:val": "single", "w:sz": 4, "w:space": 0 } } }])).to.equal(numberStop);
-            expect(stopsAt(decimal(0), [value("w:em", "dot")])).to.equal(numberStop);
-            expect(stopsAt(decimal(0), [value("w:position", 6)])).to.equal(numberStop);
+            expect(stopsAt(decimal(0), [value("w:em", "dot")])).to.equal(undefined);
+            expect(stopsAt(decimal(0), [value("w:position", 6)])).to.equal(undefined);
+            // LI4a: Word put the text right after the number's box, past the hanging indent's stop, which isn't followed
+            expect(stopsAt(decimal(0), [{ "w:bdr": { _attr: { "w:val": "single", "w:sz": 4, "w:space": 0 } } }])).to.equal(
+                "a list number with a border",
+            );
+        });
+
+        it("should leave out a level aligned both, as Word does, and stop at the list's other levels", () => {
+            // stops2/word-stops-list-definitions.docx LI11: no number, nor the level's indent
+            const both = readLists(
+                [abstractNum(0, decimal(0, value("w:lvlJc", "both")), decimal(1)), num(1, 0)],
+                [listItem(1, 0, "item"), listItem(1, 1, "other")],
+            );
+            expect(textOf(both, 0)).to.equal("item");
+            expect(paragraphOf(both, 0).unsupported).to.equal(undefined);
+            expect(paragraphOf(both, 0).format).to.not.have.property("indentLeft");
+            expect(paragraphOf(both, 0)).to.not.have.property("list");
+            expect(paragraphOf(both, 1).unsupported).to.equal("a list number at another level of a list with a level aligned both");
+        });
+
+        it("should write nothing for a level Word leaves out, and stop where one above another may have started it again", () => {
+            // stops2/word-stops-lists.docx LI1: "%1.%3." in a list of 2 levels is left out, and "%1.%2." under it is ".1."
+            const missing = (index: number): object =>
+                lvl(index, value("w:start", 1), value("w:numFmt", "decimal"), value("w:lvlText", "%1.%3."));
+            const definition = [abstractNum(0, missing(0), decimal(1)), num(1, 0)];
+            const content = readLists(definition, [listItem(1, 0, "one"), listItem(1, 1, "one one"), listItem(1, 0, "two")]);
+            expect([0, 1, 2].map((index) => textOf(content, index))).to.deep.equal(["one", ".1.one one", "two"]);
+            expect([0, 1, 2].map((index) => paragraphOf(content, index).unsupported)).to.deep.equal([undefined, undefined, undefined]);
+            // Whether a paragraph of the level left out starts the level below it again isn't known, where it was counted
+            const again = readLists(definition, [listItem(1, 1, "a"), listItem(1, 0, "left out"), listItem(1, 1, "b")]);
+            expect(paragraphOf(again, 2).unsupported).to.equal("a list number after a paragraph at a level Word leaves out above it");
+            // A level counted at or above the one left out starts those below it again, as it does any
+            const restarted = readLists(
+                [abstractNum(0, decimal(0), lvl(1, value("w:lvlText", "%1.%4.")), decimal(2)), num(1, 0)],
+                [listItem(1, 2, "a"), listItem(1, 1, "left out"), listItem(1, 0, "b"), listItem(1, 2, "c")],
+            );
+            expect(paragraphOf(restarted, 3).unsupported).to.equal(undefined);
         });
 
         it("should number a list with the levels it gives in place of its definition's", () => {
@@ -5288,29 +5331,57 @@ describe("readDocument", () => {
             ]);
         });
 
-        it("should mark a deleted section break as unsupported where Word's layout of it hasn't been seen", () => {
-            // Between sections that start differently, and with no paragraph after it
-            expect(
-                readBody([p(pPr(deletedMark, sectPr(value("w:type", "continuous")))), p(r(t("next"))), sectPr()]).blocks[0].block
-                    .unsupported,
-            ).to.equal("a deleted section break between sections that start, number their pages or have headers and footers differently");
+        it("should leave a section whose break is deleted to the next whatever their properties, and stop where Word hasn't shown it", () => {
+            // stops2/word-stops-tracked-edges.docx TR10b: the first section takes the next one's properties, its start too
+            const first = readBody([p(pPr(deletedMark, sectPr(value("w:type", "continuous")))), p(r(t("next"))), sectPr()]);
+            expect(first.blocks[0].block.unsupported).to.equal(undefined);
+            expect(first.sections).to.have.length(1);
+            expect(first.sections[0].start).to.equal("nextPage");
+            // After the first, between sections that start differently, Word hasn't been seen
+            const later = (type: string): string | undefined =>
+                readBody([p(r(t("a"))), p(pPr(sectPr())), p(pPr(deletedMark, sectPr(value("w:type", type)))), p(r(t("next"))), sectPr()])
+                    .blocks[2].block.unsupported;
+            expect(later("continuous")).to.equal("a deleted section break between sections that start differently, after the first");
+            expect(later("nextPage")).to.equal(undefined);
             expect(readBody([p(pPr(deletedMark, sectPr())), tableOf([fixed], row([], cell(p())))]).blocks[0].block.unsupported).to.equal(
-                "a deleted section break with no paragraph after it",
+                "a deleted section break before something that isn't a paragraph",
             );
             // The next section's properties are found past paragraphs that don't end one, as the body's own
             expect(readBody([p(pPr(deletedMark, sectPr())), p(r(t("a"))), p(r(t("b")))]).blocks[0].block.unsupported).to.equal(undefined);
         });
 
-        it("should mark a paragraph mark moved, and a deleted mark at the edge of a content control, as unsupported", () => {
-            expect(
-                readBody([p(pPr(rPr({ "w:moveFrom": { _attr: { "w:id": 3 } } })), r(t("moved"))), p(r(t("next")))]).blocks[0].block
-                    .unsupported,
-            ).to.equal("a paragraph mark moved in a tracked change");
+        it("should keep the document's last paragraph whose mark, which ends a section, is deleted, with a line, as Word does", () => {
+            // stops2/word-stops-tracked-edges.docx TR10a: the paragraph takes a line, where one that only ends a section takes none
+            const content = readBody([p(r(t("a"))), p(pPr(deletedMark, sectPr())), sectPr(value("w:type", "continuous"))]);
+            expect(content.sections).to.have.length(2);
+            expect(content.blocks).to.have.length(2);
+            expect(content.blocks[1].block).to.not.have.property("sectionBreak");
+            expect(content.blocks[1].block.unsupported).to.equal(undefined);
+            const kept = readBody([p(r(t("a"))), p(pPr(sectPr())), sectPr(value("w:type", "continuous"))]);
+            expect(kept.blocks[1].block).to.deep.include({ sectionBreak: true });
+        });
+
+        it("should join a paragraph whose mark is moved as one whose mark is deleted, and stop at the start of a content control", () => {
+            // stops2/word-stops-moves.docx TR7: the paragraph moved, its text and its mark, takes no room
+            const moved = readBody([
+                p(pPr(rPr({ "w:moveFrom": { _attr: { "w:id": 3 } } })), { "w:moveFrom": [r(t("moved"))] }),
+                p(r(t("next"))),
+            ]);
+            expect(moved.blocks.map(({ block }) => texts([block])[0])).to.deep.equal(["next"]);
             const control = (...content: readonly object[]): object => ({ "w:sdt": [{ "w:sdtPr": [] }, { "w:sdtContent": content }] });
             const edge = "a deleted paragraph mark at the edge of a content control";
-            // Before a content control, and at the end of one
+            // Before a content control, and at the end of one with nothing after it, Word hasn't been seen
             expect(readBody([p(pPr(deletedMark), r(t("a"))), control(p(r(t("b"))))]).blocks[0].block.unsupported).to.equal(edge);
-            expect(readBody([control(p(pPr(deletedMark), r(t("a")))), p(r(t("b")))]).blocks[0].block.unsupported).to.equal(edge);
+            expect(readBody([p(r(t("x"))), control(p(pPr(deletedMark), r(t("a"))))]).blocks[1].block.unsupported).to.equal(edge);
+            // At the end of one, before a paragraph, Word joins them as though it weren't there (word-stops-tracked-edges.docx
+            // TR8), in custom XML too
+            const ended = readBody([
+                control(p(r(t("a"))), p(pPr(deletedMark), r(t("b")))),
+                p(r(t("c"))),
+                { "w:customXml": [p(pPr(deletedMark), r(t("d")))] },
+                p(r(t("e"))),
+            ]);
+            expect(ended.blocks.map(({ block }) => texts([block])[0])).to.deep.equal(["a", "bc", "de"]);
             // In custom XML, and in a content control, paragraphs are joined as anywhere else
             const nested = readBody([
                 { "w:customXml": [p(pPr(deletedMark), r(t("a"))), p(r(t("b")))] },
@@ -5418,18 +5489,40 @@ describe("readDocument", () => {
             ).to.equal(reason);
         });
 
-        it("should mark a deleted endnote reference, and a note reference moved, as unsupported", () => {
-            const note = (name: string): object => r({ [name]: { _attr: { "w:id": 1 } } });
-            expect(readBody([p({ "w:del": [note("w:endnoteReference")] })]).blocks[0].block.unsupported).to.equal(
-                "a deleted endnote reference",
+        it("should number a note whose reference is deleted or moved elsewhere without laying it out, as Word does", () => {
+            const reference = (name: string, id: number, more = {}): object => r({ [name]: { _attr: { "w:id": id, ...more } } });
+            // stops2/word-stops-tracked-edges.docx TR3b: a deleted endnote reference is i, and the kept one after it ii
+            const endnotes = readBody([p({ "w:del": [reference("w:endnoteReference", 1)] }, reference("w:endnoteReference", 2))], {
+                endnotes: { 1: { children: [new Paragraph("Deleted")] }, 2: { children: [new Paragraph("Kept")] } },
+            });
+            expect(itemsOf(endnotes)).to.deep.equal([
+                { type: "marker", name: "endnote 2" },
+                { type: "text", text: "ii", font: {} },
+            ]);
+            // Its separator, and the kept one's note alone
+            expect(endnotes.endnotes.map((block) => texts([block])[0])).to.deep.equal(["", "iiKept"]);
+            // stops2/word-stops-moves.docx TR3a: a footnote reference moved is 1 where it was, and 2 where it is, whose note is
+            // laid out
+            const moved = readBody(
+                [
+                    p({ "w:moveFrom": [reference("w:footnoteReference", 1)] }, r(t("middle")), {
+                        "w:moveTo": [reference("w:footnoteReference", 2)],
+                    }),
+                ],
+                { footnotes: { 1: { children: [new Paragraph("From")] }, 2: { children: [new Paragraph("To")] } } },
             );
-            expect(readBody([p({ "w:moveFrom": [note("w:footnoteReference")] })]).blocks[0].block.unsupported).to.equal(
-                "a note reference moved in a tracked change",
-            );
+            expect(itemsOf(moved)).to.deep.equal([
+                { type: "text", text: "middle", font: {} },
+                { type: "marker", name: "footnote 2" },
+                { type: "text", text: "2", font: {} },
+            ]);
+            expect([...moved.footnotes.keys()]).to.deep.equal(["footnote 2"]);
             // A deleted footnote reference with a mark of its own isn't counted, as one that isn't deleted isn't
-            // (`word-stops-notes.docx` NT15)
-            const ownMark = r({ "w:footnoteReference": { _attr: { "w:id": 1, "w:customMarkFollows": 1 } } });
+            // (`word-stops-notes.docx` NT15), and an endnote one isn't followed, as one that isn't deleted isn't
+            const ownMark = reference("w:footnoteReference", 1, { "w:customMarkFollows": 1 });
             expect(readBody([p({ "w:del": [ownMark] })]).blocks[0].block.unsupported).to.equal(undefined);
+            const ownEndnote = reference("w:endnoteReference", 1, { "w:customMarkFollows": 1 });
+            expect(readBody([p({ "w:del": [ownEndnote] })]).blocks[0].block.unsupported).to.equal("an endnote with a mark of its own");
         });
 
         it("should leave out a deleted row, and a table all of whose rows are deleted, with their bookmarks after them, as Word does", () => {
@@ -5577,11 +5670,22 @@ describe("readDocument", () => {
                     [5, 5],
                     [5, 10],
                 ]);
-                // Whether Word keeps the deleted row's borders, or which of the table's the rows around it take, hasn't
-                // been seen
-                const bordered = "a deleted row in a table with borders and space between its cells";
-                expect(tableWith([spacing, allOf(8, 8, 8)], [3]).unsupported).to.equal(bordered);
-                expect(tableWith([spacing], [3], ownBorders(border("w:bottom"))).unsupported).to.equal(bordered);
+                // stops2/word-stops-tracked.docx TR4c: with borders too, the rows around it are as they are without it
+                const bordered = tableWith([spacing, allOf(8, 8, 8)], [3]);
+                expect(bordered.unsupported).to.equal(undefined);
+                expect(roomsOf(bordered)).to.deep.equal([
+                    [12, 6],
+                    [6, 6],
+                    [6, 6],
+                    [6, 12],
+                ]);
+                // Which borders Word gives the rows around a deleted one with borders of its own, or a deleted first or last
+                // row, hasn't been seen
+                const unseen =
+                    "a deleted row in a table with borders and space between its cells, at its top or bottom or with borders of its own";
+                expect(tableWith([spacing], [3], ownBorders(border("w:bottom"))).unsupported).to.equal(unseen);
+                expect(tableWith([spacing, allOf(8, 8, 8)], [1]).unsupported).to.equal(unseen);
+                expect(tableWith([spacing, allOf(8, 8, 8)], [5]).unsupported).to.equal(unseen);
             });
         });
 
@@ -5670,20 +5774,60 @@ describe("readDocument", () => {
             ]);
         });
 
-        it("should mark a deleted row with a list or a note in it as unsupported, as Word may count them", () => {
-            const noted = readBody([
-                tableOf([fixed], row([deletedRow], cell(p(r({ "w:footnoteReference": { _attr: { "w:id": 1 } } })))), row([], cell(p()))),
+        it("should number the notes of a deleted row without laying them out, and stop at a list in one, as Word may count it", () => {
+            // stops2/word-stops-tracked.docx TR4b: the deleted row's footnote is numbered after one before it, as one whose
+            // reference is deleted is, and the one after it is numbered after it, though neither is laid out
+            const reference = (id: number): object => r({ "w:footnoteReference": { _attr: { "w:id": id } } });
+            const notes = {
+                footnotes: {
+                    1: { children: [new Paragraph("One")] },
+                    2: { children: [new Paragraph("Two")] },
+                    3: { children: [new Paragraph("Three")] },
+                },
+            };
+            const noted = readBody(
+                [
+                    tableOf([fixed], row([deletedRow], cell(p(reference(1), { "w:del": [reference(2)] }))), row([], cell(p(r(t("kept")))))),
+                    p(reference(3)),
+                ],
+                notes,
+            );
+            expect(noted.blocks[0].block.unsupported).to.equal(undefined);
+            expect(itemsOf(noted, 1)).to.deep.equal([
+                { type: "marker", name: "footnote 3" },
+                { type: "text", text: "3", font: {} },
             ]);
-            expect(noted.blocks[0].block.unsupported).to.equal("a list or a note in a deleted table row");
-            // A deleted reference in it too, which is numbered on from the notes before it, and not counted
-            const deletedNote = readBody([
+            expect([...noted.footnotes.keys()]).to.deep.equal(["footnote 3"]);
+            // One with a mark of its own isn't counted, and an endnote one isn't followed
+            const own = readBody(
+                [
+                    tableOf(
+                        [fixed],
+                        row([deletedRow], cell(p(r({ "w:footnoteReference": { _attr: { "w:id": 1, "w:customMarkFollows": 1 } } })))),
+                        row([], cell(p())),
+                    ),
+                    p(reference(2)),
+                ],
+                notes,
+            );
+            expect(itemsOf(own, 1)[1]).to.deep.equal({ type: "text", text: "1", font: {} });
+            // An endnote is numbered so too: the one after it is ii
+            const endnotes = readBody(
+                [
+                    tableOf([fixed], row([deletedRow], cell(p(r({ "w:endnoteReference": { _attr: { "w:id": 1 } } })))), row([], cell(p()))),
+                    p(r({ "w:endnoteReference": { _attr: { "w:id": 2 } } })),
+                ],
+                { endnotes: { 1: { children: [new Paragraph("One")] }, 2: { children: [new Paragraph("Two")] } } },
+            );
+            expect(itemsOf(endnotes, 1)[1]).to.deep.equal({ type: "text", text: "ii", font: {} });
+            const endnote = readBody([
                 tableOf(
                     [fixed],
-                    row([deletedRow], cell(p({ "w:del": [r({ "w:footnoteReference": { _attr: { "w:id": 1 } } })] }))),
+                    row([deletedRow], cell(p(r({ "w:endnoteReference": { _attr: { "w:id": 1, "w:customMarkFollows": 1 } } })))),
                     row([], cell(p())),
                 ),
             ]);
-            expect(deletedNote.blocks[0].block.unsupported).to.equal("a list or a note in a deleted table row");
+            expect(endnote.blocks[0].block.unsupported).to.equal("an endnote with a mark of its own");
             // Every row deleted, so the table is only why it stops
             const listed = readWritten({
                 numbering: { config: [{ reference: "list", levels: [{ level: 0, format: LevelFormat.DECIMAL, text: "%1." }] }] },
@@ -5712,7 +5856,7 @@ describe("readDocument", () => {
             expect(listed.blocks[1].block).to.deep.equal({
                 type: "table",
                 rows: [],
-                unsupported: "a list or a note in a deleted table row",
+                unsupported: "a list in a deleted table row",
             });
         });
 
@@ -5782,22 +5926,29 @@ describe("readDocument", () => {
             expect(Object.fromEntries(content.relativeReferences)).to.deep.equal({ a: ["field 1", "field 2", "field 3"] });
         });
 
-        it("should mark what isn't known of how Word sizes a table's columns by tracked changes as unsupported", () => {
-            const sized = (...paragraphs: readonly object[]): string | undefined =>
-                readBody([tableOf([], row([], cell(...paragraphs)))]).blocks[0].block.unsupported;
-            // A deleted picture, tab, break or note reference, whose room Word may count
-            expect(sized(p(r(t("a")), { "w:del": [r({ "w:tab": {} })] }))).to.equal(
-                "a deleted picture, tab, break or note reference in a table whose columns Word sizes to their text",
+        it("should size a table's columns by deleted pictures, tabs, breaks, note references and marks as they are written", () => {
+            const table = (...paragraphs: readonly object[]): TableBlock =>
+                readBody([tableOf([], row([], cell(...paragraphs)))], {
+                    footnotes: { 1: { children: [new Paragraph("Note")] } },
+                }).blocks[0].block as TableBlock;
+            const typesOf = (block: ParagraphBlock | TableBlock): readonly string[] =>
+                block.type === "paragraph" ? block.items.map((item) => (item.type === "text" ? item.text : item.type)) : [];
+            // stops2/word-stops-tracked.docx TR1b to TR1d: a deleted tab, break and footnote reference count in the width, though
+            // the lines are laid out without them
+            const deleted = table(
+                p(r(t("a")), { "w:del": [r({ "w:tab": {} }, { "w:br": {} })] }, r(t("b")), {
+                    "w:del": [r({ "w:footnoteReference": { _attr: { "w:id": 1 } } })],
+                }),
             );
-            expect(sized(p({ "w:del": [r({ "mc:AlternateContent": [{ "mc:Choice": [{ "w:t": ["x"] }] }] })] }))).to.equal(
-                "a deleted picture, tab, break or note reference in a table whose columns Word sizes to their text",
-            );
-            // Paragraphs of text joined by a deleted mark, which Word may size the columns by as they are written
-            expect(sized(p(pPr(deletedMark), r(t("one"))), p(r(t("two"))))).to.equal(
-                "a deleted paragraph mark between paragraphs of text in a table whose columns Word sizes to their text",
-            );
-            // An empty paragraph joined to the next is the next, either way
-            expect(sized(p(pPr(deletedMark), r(rPr())), p(r(t("two"))))).to.equal(undefined);
+            const [own] = deleted.rows[0].cells;
+            expect(typesOf(own.blocks[0])).to.deep.equal(["a", "b"]);
+            expect(own.blocks[0].unsupported).to.equal(undefined);
+            expect(typesOf(own.sizing![0])).to.deep.equal(["a", "tab", "break", "b", "1"]);
+            // TR11: paragraphs joined by a deleted mark are laid out as one, and size the columns as two
+            const joined = table(p(pPr(deletedMark), r(t("one"))), p(r(t("two")))).rows[0].cells[0];
+            expect(joined.blocks.map(typesOf)).to.deep.equal([["one", "two"]]);
+            expect(joined.sizing!.map(typesOf)).to.deep.equal([["one"], ["two"]]);
+            expect(joined.blocks[0].unsupported).to.equal(undefined);
         });
 
         it("should read the deleted rows of tables in tables, and of tables in headers, to size their columns by", () => {
@@ -5980,6 +6131,91 @@ describe("readDocument", () => {
             expect(paragraphOf(noneAfter).format.spaceAfter ?? 0).to.equal(0);
         });
 
+        it("should join paragraphs that differ in their right and first line indents, tab stops and borders in the first one's", () => {
+            // stops2/word-stops-hidden.docx HD1c, HD1d, HD1g, HD1h: the second one's right indent of 2000, first line indent of
+            // 720, tab stop at 3000 and borders, none of which Word lays the joined paragraph out with
+            const content = readBody([
+                p(pPr(hiddenMark), r(t("first"))),
+                p(
+                    pPr(
+                        { "w:ind": { _attr: { "w:right": 2000, "w:firstLine": 720 } } },
+                        { "w:tabs": [{ "w:tab": { _attr: { "w:val": "left", "w:pos": 3000 } } }] },
+                        { "w:pBdr": [{ "w:top": { _attr: { "w:val": "single", "w:sz": 4, "w:space": 1 } } }] },
+                    ),
+                    r(t("second")),
+                ),
+            ]);
+            expect(texts(content)).to.deep.equal(["firstsecond"]);
+            expect(paragraphOf(content).unsupported).to.equal(undefined);
+            expect(paragraphOf(content).format).to.not.have.any.keys("indentRight", "firstLineIndent", "borderTop");
+            expect(paragraphOf(content).tabStops).to.deep.equal([]);
+        });
+
+        it("should space the lines of paragraphs of other line spacing joined by a hidden mark line by line, as Word does", () => {
+            // stops2/word-stops-hidden.docx HD1f, word-breaks-and-tabs.docx HM1h, HM1i: from the line the next one's text starts
+            // on, its line spacing
+            const spaced = (line: number): object => ({ "w:spacing": { _attr: { "w:line": line, "w:lineRule": "auto" } } });
+            const content = readBody([p(pPr(hiddenMark), r(t("first"))), p(pPr(spaced(360)), r(t("second")))]);
+            expect(paragraphOf(content).unsupported).to.equal(undefined);
+            expect(itemsOf(content)).to.deep.equal([
+                { type: "text", text: "first", font: {} },
+                { type: "marker", name: "joined spacing" },
+                { type: "text", text: "second", font: {} },
+            ]);
+            expect(paragraphOf(content).format.lineSpacingFrom).to.deep.equal({
+                marker: "joined spacing",
+                lineSpacing: { rule: "multiple", multiple: 1.5 },
+            });
+            // The other way round, the next one in the style's spacing, which is none
+            const back = readBody([p(pPr(spaced(480), hiddenMark), r(t("first"))), p(r(t("second")))]);
+            expect(paragraphOf(back).format).to.deep.include({
+                lineSpacing: { rule: "multiple", multiple: 2 },
+                lineSpacingFrom: { marker: "joined spacing" },
+            });
+            // The same line spacing is the paragraph's, with no marker
+            const same = readBody([p(pPr(spaced(360), hiddenMark), r(t("first"))), p(pPr(spaced(360)), r(t("second")))]);
+            expect(paragraphOf(same).format).to.not.have.property("lineSpacingFrom");
+        });
+
+        it("should join the last paragraph of a content control by its hidden mark to the paragraph after it, as Word does", () => {
+            // stops2/word-stops-hidden-edges.docx HD3, in custom XML too
+            const control = (...inside: readonly object[]): object => ({ "w:sdt": [{ "w:sdtPr": [] }, { "w:sdtContent": inside }] });
+            const content = readBody([
+                control(p(r(t("a"))), p(pPr(hiddenMark), r(t("b")))),
+                p(r(t("c"))),
+                { "w:customXml": [p(pPr(hiddenMark), r(t("d")))] },
+                p(r(t("e"))),
+            ]);
+            expect(texts(content)).to.deep.equal(["a", "bc", "de"]);
+            expect(content.blocks.map(({ block }) => block.unsupported)).to.deep.equal([undefined, undefined, undefined]);
+            // Not one bound to custom XML, nor one whose last block isn't a paragraph, nor before what isn't a paragraph
+            const bound = {
+                "w:sdt": [
+                    { "w:sdtPr": [{ "w:dataBinding": { _attr: { "w:xpath": "/a" } } }] },
+                    { "w:sdtContent": [p(pPr(hiddenMark), r(t("a")))] },
+                ],
+            };
+            expect(readBody([bound, p(r(t("b")))]).unsupported).to.equal(undefined);
+            const table = tableOf(cellOf(p(r(t("x")))));
+            expect(texts(readBody([control(p(pPr(hiddenMark), r(t("a"))), table), p(r(t("b")))]))).to.deep.equal(["a", "table", "b"]);
+            expect(readBody([control(p(pPr(hiddenMark), r(t("a")))), table]).blocks[0].block.unsupported).to.equal(
+                "a hidden paragraph mark at the edge of a content control",
+            );
+        });
+
+        it("should give a paragraph with nothing shown whose hidden mark ends a section no room before a section alike on its page", () => {
+            // stops2/word-stops-hidden-edges.docx HD10: the second section continuous, and otherwise as the first
+            const content = readBody([
+                p(r(t("first"))),
+                p(pPr({ "w:sectPr": [value("w:pgSz", 1)] }, hiddenMark)),
+                p(r(t("second"))),
+                { "w:sectPr": [value("w:type", "continuous"), value("w:pgSz", 1)] },
+            ]);
+            expect(texts(content)).to.deep.equal(["first", "second"]);
+            expect(content.sections).to.have.length(2);
+            expect(content.blocks.map(({ block }) => block.unsupported)).to.deep.equal([undefined, undefined]);
+        });
+
         it("should count the number of a paragraph of a list joined to the one before by its hidden mark, as Word does", () => {
             // word-breaks-and-tabs.docx HM4: three numbered paragraphs, the first's mark hidden, numbered 1 and 3
             const numbering = { config: [{ reference: "list", levels: [{ level: 0, format: LevelFormat.DECIMAL, text: "%1." }] }] };
@@ -6038,23 +6274,45 @@ describe("readDocument", () => {
                 });
                 return content.unsupported ?? content.blocks.find(({ block }) => block.unsupported)?.block.unsupported;
             };
-            // Paragraphs of different styles, line spacing or right indents, which Word lays out line by line, or hasn't shown
-            const different =
-                "a hidden paragraph mark between paragraphs formatted differently but for their alignment, left indent and space";
+            // Paragraphs of different styles, which Word lays out line by line, or kept with the next, which it hasn't shown
+            const different = "a hidden paragraph mark between paragraphs of other styles, or formatted differently otherwise";
             for (const properties of [
                 [value("w:pStyle", "Big")],
-                [{ "w:spacing": { _attr: { "w:line": 480 } } }],
-                [{ "w:ind": { _attr: { "w:right": 1440 } } }],
+                [{ "w:keepNext": {} }],
+                [{ "w:ind": { _attr: { "w:leftChars": 100 } } }],
             ]) {
                 expect(unsupportedOf(p(pPr(...properties, hiddenMark), r(t("a"))), p(r(t("b"))))).to.equal(different);
             }
+            // Line spacing of its own other than multiple, or three paragraphs of other line spacing
+            const spacing =
+                "a hidden paragraph mark between paragraphs of exact or at least line spacing, or more than two of other line spacing";
+            const spaced = (line: number, rule?: string): object => ({
+                "w:spacing": { _attr: { "w:line": line, ...(rule === undefined ? {} : { "w:lineRule": rule }) } },
+            });
+            expect(unsupportedOf(p(pPr(spaced(300, "exact"), hiddenMark), r(t("a"))), p(r(t("b"))))).to.equal(spacing);
+            expect(unsupportedOf(p(pPr(hiddenMark), r(t("a"))), p(pPr(spaced(300, "atLeast")), r(t("b"))))).to.equal(spacing);
+            expect(
+                unsupportedOf(p(pPr(hiddenMark), r(t("a"))), p(pPr(spaced(480), hiddenMark), r(t("b"))), p(pPr(spaced(360)), r(t("c")))),
+            ).to.equal(spacing);
+            // Before a content control
             expect(unsupportedOf(p(pPr(hiddenMark), r(t("a"))), { "w:sdt": [{ "w:sdtContent": [p(r(t("b")))] }] })).to.equal(
                 "a hidden paragraph mark at the edge of a content control",
             );
-            expect(unsupportedOf({ "w:sdt": [{ "w:sdtContent": [p(pPr(hiddenMark), r(t("a")))] }] }, p(r(t("b"))))).to.equal(
-                "a hidden paragraph mark at the edge of a content control",
-            );
+            // A section break whose paragraph shows something, or before a section that starts on a new page or is formatted
+            // otherwise
             expect(unsupportedOf(p(pPr({ "w:sectPr": [] }, hiddenMark), r(t("a"))), p(r(t("b"))))).to.equal("a hidden section break");
+            const continuous = { "w:sectPr": [value("w:type", "continuous")] };
+            expect(unsupportedOf(p(pPr({ "w:sectPr": [] }, hiddenMark)), p(r(t("b"))), { "w:sectPr": [] })).to.equal(
+                "a hidden section break",
+            );
+            expect(unsupportedOf(p(pPr({ "w:sectPr": [value("w:pgSz", 1)] }, hiddenMark)), p(r(t("b"))), continuous)).to.equal(
+                "a hidden section break",
+            );
+            expect(
+                unsupportedOf(p(pPr({ "w:sectPr": [{ "w:cols": { _attr: { "w:num": 2 } } }] }, hiddenMark)), p(r(t("b"))), {
+                    "w:sectPr": [value("w:type", "continuous"), { "w:cols": { _attr: { "w:num": 2 } } }],
+                }),
+            ).to.equal("a hidden section break");
             // Joined past a paragraph with nothing shown that is in a list, or has a field in it, which would be read out of
             // order, by a hidden or deleted mark
             const numbered = pPr(hiddenMark, { "w:numPr": [value("w:ilvl", 0), value("w:numId", 1)] });
@@ -6071,10 +6329,8 @@ describe("readDocument", () => {
             expect(unsupportedOf(p(deletedMark, r(t("a"))), p(pPr(hiddenMark), ...pageField), p(r(t("b"))))).to.equal(
                 "a deleted paragraph mark before a paragraph with nothing shown and its mark hidden",
             );
-            // In a table whose columns Word sizes to their text, between paragraphs of text
-            expect(unsupportedOf(tableOf(cellOf(p(pPr(hiddenMark), r(t("a"))), p(r(t("b"))))))).to.equal(
-                "a hidden paragraph mark between paragraphs of text in a table whose columns Word sizes to their text",
-            );
+            // In a table whose columns Word sizes to their text, as anywhere else
+            expect(unsupportedOf(tableOf(cellOf(p(pPr(hiddenMark), r(t("a"))), p(r(t("b"))))))).to.equal(undefined);
             expect(unsupportedOf(tableOf(cellOf(p(pPr(hiddenMark)), p(r(t("b"))))))).to.equal(undefined);
         });
 
@@ -6212,22 +6468,17 @@ describe("readDocument", () => {
             expect(texts(content)).to.deep.equal(["1.one", "3.three"]);
         });
 
-        it("should mark a paragraph whose text and mark are all hidden as unsupported where Word hasn't been seen with it", () => {
+        it("should keep a paragraph kept with the next with the one after a hidden one, in one box with the same borders, as Word does", () => {
             const unsupportedOf = (...elements: readonly object[]): string | undefined => {
                 const content = readBody(elements);
                 return content.unsupported ?? content.blocks.find(({ block }) => block.unsupported)?.block.unsupported;
             };
             const hiddenParagraph = (...children: readonly object[]): object => p(pPr(hiddenMark), r(hiddenMark, ...children));
-            // Holding a note reference, whose note Word doesn't lay out (HP4d, HP4e), and the notes after it may not be
-            // numbered as Word numbers them
-            expect(unsupportedOf(hiddenParagraph({ "w:footnoteReference": { _attr: { "w:id": 1 } } }), p(r(t("b"))))).to.equal(
-                "a footnote or endnote reference in hidden text",
-            );
-            // After a paragraph kept with the next
+            // stops2/word-stops-hidden.docx HD7: kept with the paragraph after the hidden one, which takes no room
             const centred = p(pPr(value("w:jc", "center"), hiddenMark), r(hiddenMark, t("b")));
-            expect(unsupportedOf(p(pPr({ "w:keepNext": {} }), r(t("a"))), centred, p(r(t("c"))))).to.equal(
-                "a paragraph kept with the next before a hidden paragraph",
-            );
+            const kept = readBody([p(pPr({ "w:keepNext": {} }), r(t("a"))), centred, p(r(t("c")))]);
+            expect(texts(kept)).to.deep.equal(["a", "c"]);
+            expect(kept.blocks.map(({ block }) => block.unsupported)).to.deep.equal([undefined, undefined]);
             expect(
                 unsupportedOf(
                     p(pPr({ "w:keepNext": {} }, { "w:framePr": { _attr: { "w:hAnchor": "cell" } } }), r(t("a"))),
@@ -6235,23 +6486,34 @@ describe("readDocument", () => {
                     p(r(t("c"))),
                 ),
             ).to.equal("a text frame placed against what isn't followed yet");
-            // Between paragraphs of the same borders, without them
+            // HD8: two paragraphs of the same borders around a hidden one without them
             const bordered = { "w:pBdr": [{ "w:top": { _attr: { "w:val": "single", "w:sz": 4, "w:space": 1 } } }] };
-            expect(unsupportedOf(p(pPr(bordered), r(t("a"))), hiddenParagraph(t("b")), p(pPr(bordered), r(t("c"))))).to.equal(
-                "a box of borders around a hidden paragraph without them",
-            );
-            expect(
-                unsupportedOf(
-                    p(pPr(bordered), r(t("a"))),
-                    p(pPr(bordered, hiddenMark), r(hiddenMark, t("b"))),
-                    p(pPr(bordered), r(t("c"))),
-                ),
-            ).to.equal(undefined);
-            expect(unsupportedOf(p(r(t("a"))), hiddenParagraph(t("b")), p(pPr(bordered), r(t("c"))))).to.equal(undefined);
+            expect(unsupportedOf(p(pPr(bordered), r(t("a"))), hiddenParagraph(t("b")), p(pPr(bordered), r(t("c"))))).to.equal(undefined);
             // Before something that isn't a paragraph or table
             expect(unsupportedOf(hiddenParagraph(t("a")), { "w:altChunk": {} })).to.equal(
                 "a paragraph with nothing shown and its mark hidden before something that isn't a paragraph or table",
             );
+        });
+
+        it("should number the note of a reference in a hidden paragraph and lay it out, as Word does", () => {
+            // stops2/word-stops-hidden-edges.docx HD9a, word-hidden-paragraphs.docx HP4e: the note is laid out, and the next one
+            // numbered after it
+            const hiddenParagraph = (...children: readonly object[]): object => p(pPr(hiddenMark), r(hiddenMark, ...children));
+            const content = readBody(
+                [
+                    hiddenParagraph({ "w:footnoteReference": { _attr: { "w:id": 1 } } }),
+                    p(r(t("b")), r({ "w:footnoteReference": { _attr: { "w:id": 2 } } })),
+                ],
+                { footnotes: { 1: { children: [new Paragraph("One")] }, 2: { children: [new Paragraph("Two")] } } },
+            );
+            expect(content.blocks[0].block.unsupported).to.equal(undefined);
+            expect(itemsOf(content)).to.deep.equal([
+                { type: "marker", name: "footnote 1" },
+                { type: "text", text: "b", font: {} },
+                { type: "marker", name: "footnote 2" },
+                { type: "text", text: "2", font: {} },
+            ]);
+            expect([...content.footnotes.keys()]).to.deep.equal(["footnote 1", "footnote 2"]);
         });
 
         it("should mark a paragraph whose text and mark are all hidden at the end of a header as unsupported", () => {
@@ -6384,14 +6646,28 @@ describe("readDocument", () => {
                 { type: "text", text: "*", font: {} },
             ]);
             expect(content.endnoteReferences.has("endnote 1")).to.equal(true);
-            // One in hidden text isn't laid out, as a hidden reference isn't
+            // One in hidden text is laid out, as a hidden reference's note is (stops2/word-stops-hidden-edges.docx HD9b), and so
+            // is a footnote with a mark of its own in hidden text
             const hidden = guessed(
                 [p(r(rPr({ "w:vanish": {} }), { "w:endnoteReference": { _attr: { "w:id": 1, "w:customMarkFollows": 1 } } }))],
                 {
                     endnotes: { 1: { children: [new Paragraph("One")] } },
                 },
             );
-            expect(paragraphOf(hidden)).to.deep.include({ items: [], unsupported: "an endnote with a mark of its own" });
+            expect(paragraphOf(hidden)).to.deep.include({
+                items: [{ type: "marker", name: "endnote 1" }],
+                unsupported: "an endnote with a mark of its own",
+            });
+            const hiddenFootnote = guessed(
+                [p(r(rPr({ "w:vanish": {} }), { "w:footnoteReference": { _attr: { "w:id": 1, "w:customMarkFollows": 1 } } }))],
+                {
+                    footnotes: { 1: { children: [new Paragraph("One")] } },
+                },
+            );
+            expect(paragraphOf(hiddenFootnote)).to.deep.include({
+                items: [{ type: "marker", name: "footnote 1" }],
+                unsupported: "a footnote reference with a mark of its own in hidden text",
+            });
             // And a soft hyphen in a table whose columns Word sizes to their text
             const table = guessed([{ "w:tbl": [{ "w:tr": [{ "w:tc": [p(r(t("a"), { "w:softHyphen": {} }, t("b")))] }] }] }]);
             expect(table.blocks[0].block.unsupported).to.equal("a soft hyphen in a table whose columns Word sizes to their text");
@@ -6516,7 +6792,7 @@ describe("readDocument", () => {
                 styles: { paragraphStyles: [{ id: "Big", name: "Big", run: { size: 32 } }] },
             });
             expect(read(content)).to.deep.equal([
-                ["a hidden paragraph mark between paragraphs formatted differently but for their alignment, left indent and space", "a"],
+                ["a hidden paragraph mark between paragraphs of other styles, or formatted differently otherwise", "a"],
                 [undefined, "b"],
             ]);
         });
