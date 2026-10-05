@@ -6686,6 +6686,19 @@ describe("paginate", () => {
             // Across more than two pages, whether the first column of the pages after the first goes past the margin, as the
             // endnotes do across the page, isn't known
             expect(columns(40).stoppedAt).to.equal("endnotes in columns across more than two pages");
+            // With no separator above them, as an empty separator note leaves them, which Word hasn't been seen with, and
+            // guessing, laid out all the same, the only endnote the document's last block
+            const alone = paragraph("note", 1);
+            const withoutSeparator = document([paragraph("a", 1)], {
+                sections: [COLUMNS],
+                endnotes: [alone],
+                endnoteNumbers: new Map<Block, string>([[alone, "i"]]),
+            });
+            expect(paginate(withoutSeparator, { measurer: MEASURER }).stoppedAt).to.equal(
+                "endnotes in columns with no separator above them",
+            );
+            const guessed = paginate(withoutSeparator, { measurer: MEASURER, guess: true });
+            expect(guessed.pages.flatMap(({ endnotes }) => endnotes.map(({ noteNumber }) => noteNumber))).to.deep.equal(["i"]);
             // Kept with the first endnote, the separator goes on to the next page with it, below text evened out 6 and 6
             expect(placesOf(columns(2, 12))[1]).to.deep.equal(["10 20", "10 30"]);
         });

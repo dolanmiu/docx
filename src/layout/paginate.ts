@@ -5746,6 +5746,10 @@ export const paginate = (
             blockIndex = index;
             column = 0;
             columnTop = position;
+            if (block.type !== "paragraph" || endnoteNumbers.has(block)) {
+                // Word has been seen with them only below a separator, which an empty separator note leaves out
+                stopAt("endnotes in columns with no separator above them");
+            }
         }
         if (keptOn !== undefined && index > keptOn.next) {
             // The block it is kept with took no room, as the empty paragraph that ends a section
@@ -6142,7 +6146,7 @@ export const paginate = (
         }
         // The columns the endnotes end in are evened out (`word-stops-endnotes.docx` NE1, stops2/word-stops-notes2.ts NE4a
         // to NE4c)
-        if (isEndnote(blocks.length - 1) && section().columns.length > 1 && isEndnote(columnsStart!.index)) {
+        if (isEndnote(blocks.length - 1) && section().columns.length > 1 && columnsStart !== undefined && isEndnote(columnsStart.index)) {
             endColumns(blocks.length);
         }
         checkAnchors();
