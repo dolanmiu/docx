@@ -264,8 +264,11 @@ const listItems: Injection = (parts) => {
     const listId = /<w:numId w:val="(\d+)"\/>/.exec(text)![1];
     const numbered = `<w:pPr><w:numPr><w:ilvl w:val="0"/><w:numId w:val="${listId}"/></w:numPr></w:pPr>`;
     const at = text.indexOf("VM26b box");
-    const start = text.lastIndexOf("<w:txbxContent>", at);
-    const end = text.indexOf("</w:txbxContent>", at);
+    const start = at === -1 ? -1 : text.lastIndexOf("<w:txbxContent>", at);
+    const end = at === -1 ? -1 : text.indexOf("</w:txbxContent>", at);
+    if (start === -1 || end === -1) {
+        throw new Error("No text box VM26b in word/document.xml");
+    }
     const content = `<w:txbxContent><w:p>${numbered}<w:r><w:t>VM26b box</w:t></w:r></w:p><w:p>${numbered}<w:r><w:t>VM26b item 2</w:t></w:r></w:p>`;
     parts.set("word/document.xml", text.slice(0, start) + content + text.slice(end));
 };
