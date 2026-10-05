@@ -8872,7 +8872,7 @@ var docxLayout = (function(exports) {
 			}) : column),
 			unsettled: []
 		};
-		return { unsettled: min > sum$1(covered.map((column) => column.min)) ? [min > widest && sharing ? "always" : "narrowed"] : [] };
+		return { unsettled: min > sum$1(covered.map((column) => column.min)) ? [min > widest && sharing && min >= needed - SAME ? "always" : "narrowed"] : [] };
 	};
 	/**
 	* Sizes the columns of a table to their text, as Word does (`word-probes.docx` U1), before they are fitted to the room. A
@@ -8922,6 +8922,27 @@ var docxLayout = (function(exports) {
 	var outerMargins = (table) => {
 		const [{ cells }] = sizingRows(table);
 		return cells[0].marginLeft + cells[cells.length - 1].marginRight;
+	};
+	/**
+	* The room a table's space between cells takes beside a column, in points: the space either side of its cells, and inside
+	* the table's edge for its first and last, as the cells' margins have it
+	*/
+	var spacingOf = (spacing, index, count) => 2 * spacing + (index === 0 ? spacing : 0) + (index === count - 1 ? spacing : 0);
+	/**
+	* Each column's widest word and margins, in points, which Word shares the room among when the columns' widest words don't
+	* fit in it, whether its cells give it a width or not: in a table none of whose cells is across columns, and whose cells
+	* in each column have the same margins. Undefined otherwise, where how Word shares it isn't known
+	*/
+	var proportionalWords = (table, columns) => {
+		const cells = sizingRows(table).flatMap(({ cells: rowCells }) => rowCells);
+		if (cells.some((cell) => spanOf(cell) > 1)) return;
+		const margins = columns.map((_, index) => [...new Set(cells.filter(({ column }) => column === index).map(({ marginLeft, marginRight }) => marginLeft + marginRight))]);
+		if (margins.some((each) => each.length > 1)) return;
+		const around = margins.map(sum$1);
+		return {
+			widths: columns.map(({ min }, index) => Math.max(0, min - around[index])),
+			margins: around
+		};
 	};
 	/** The width a cell of a table whose cells all have widths gives itself, with its margins: its own, or the grid's */
 	var givenWidthOf = (cell) => {
@@ -8999,7 +9020,7 @@ var docxLayout = (function(exports) {
 	* @param measure - How narrow and how wide the content of a cell can be, in points
 	*/
 	var fitColumns = (table, available, measure) => {
-		var _tableWidth$width;
+		var _tableWidth$width, _tableWidth$share;
 		const { fit, widen, rows, indent = 0 } = table;
 		if (!fit && !widen) return table;
 		if (fit && sizingRows(table).some(({ cells }) => cells.some(({ vertical }) => vertical))) return _objectSpread2(_objectSpread2({}, table), {}, { unsupported: "text that runs up or down a cell of a table sized to its text" });
@@ -9011,7 +9032,6 @@ var docxLayout = (function(exports) {
 		if (widen) {
 			const tooLong = sizingRows(table).flatMap(({ cells }) => cells.filter((cell) => content.get(cell).min > givenWidthOf(cell)));
 			if (tooLong.length === 0 && !spaced && !widen.uneven && widen.width === void 0) return table;
-			if (tooLong.length > 0 && spaced) return _objectSpread2(_objectSpread2({}, table), {}, { unsupported: "a long word in a table with space between its cells" });
 			if (tooLong.some(({ vertical }) => vertical)) return _objectSpread2(_objectSpread2({}, table), {}, { unsupported: "a long word in text that runs up or down a table cell" });
 			if (tooLong.some((cell) => content.get(cell).hyphenated)) return _objectSpread2(_objectSpread2({}, table), {}, { unsupported: "a word Word may hyphenate, longer than its cell" });
 			if (table.marginsBeside === true) return _objectSpread2(_objectSpread2({}, table), {}, { unsupported: "a table widened for a long word, or its rows evened out, in a document in compatibility mode" });
@@ -9024,13 +9044,19 @@ var docxLayout = (function(exports) {
 		const room = target !== null && target !== void 0 ? target : (widen === null || widen === void 0 ? void 0 : widen.fixed) ? Number.POSITIVE_INFINITY : available - indent + beside;
 		const sizingCells = sizingRows(table).flatMap((row) => row.cells);
 		if (fit && sizingCells.some((cell) => content.get(cell).hyphenated) && (total > room || sizingCells.some((cell) => cell.ownWidth !== void 0 && content.get(cell).min > cell.ownWidth))) return _objectSpread2(_objectSpread2({}, table), {}, { unsupported: "a table sized to its text whose columns' widths depend on words Word may hyphenate" });
-		const unsupported = sum$1(columns.map(({ min }) => min)) > room && tableWidth.width === void 0 ? "a word longer than its table can make room for" : widen && spaced && target !== void 0 && total < target ? "space between the cells of a table wider than its cells" : unsettled.includes("always") || unsettled.length > 0 && total > room ? "a long word in cells merged across columns" : void 0;
+		const words = proportionalWords(table, columns);
+		const overflowing = sum$1(columns.map(({ min }) => min)) > room && tableWidth.width === void 0;
+		const crowded = overflowing && words !== void 0 && sum$1(words.margins) > room;
+		const unsupported = overflowing && (((_tableWidth$share = tableWidth.share) !== null && _tableWidth$share !== void 0 ? _tableWidth$share : 1) < 1 || words === void 0 || unsettled.length > 0) ? "a word longer than its table can make room for" : crowded ? "a table whose cells' margins are wider than the room for it" : unsettled.includes("always") || unsettled.length > 0 && total > room ? "a long word in cells merged across columns" : void 0;
 		const given = columns.filter((column) => column.given);
 		const sized = columns.filter((column) => !column.given);
 		const givenWidths = narrowed(given, room - sum$1(sized.map(({ min }) => min)));
 		const sizedWidths = narrowed(sized, room - sum$1(givenWidths));
-		const widths = columns.map((column) => {
-			if (target !== void 0 && total < target && total > 0) return column.width * target / total;
+		const spacingRooms = columns.map((_, index) => spaced ? spacingOf(table.cellSpacing, index, columns.length) : 0);
+		const spacing = sum$1(spacingRooms);
+		const widths = columns.map((column, index) => {
+			if (overflowing && words !== void 0 && !crowded) return words.margins[index] + (room - sum$1(words.margins)) * words.widths[index] / sum$1(words.widths);
+			if (target !== void 0 && total < target && total > spacing) return spacingRooms[index] + (column.width - spacingRooms[index]) * (target - spacing) / (total - spacing);
 			return column.given ? givenWidths[given.indexOf(column)] : sizedWidths[sized.indexOf(column)];
 		});
 		return _objectSpread2(_objectSpread2({}, table), {}, { rows: rows.map((row) => _objectSpread2(_objectSpread2({}, row), {}, { cells: row.cells.map((cell) => {
@@ -12373,7 +12399,7 @@ var docxLayout = (function(exports) {
 	* bands by each row's place among all the rows, the deleted ones too (MK14j to MK14l).
 	*/
 	var readTable = (element, reader) => {
-		var _twips, _reader$grid, _readTableLook, _kept$0$spacing, _kept$, _ref14, _ref15, _ref16, _ref17, _ref18, _ref19, _ref20, _ref21, _ref22, _ref23, _ref24, _ref25, _ref26, _ref27, _ref28, _ref29, _withoutGuess$unsuppo, _read$find2, _blocks$find, _read$0$cells, _read$, _roomOf, _roomOf2;
+		var _twips, _reader$grid, _readTableLook, _kept$0$spacing, _kept$, _ref14, _ref15, _ref16, _ref17, _ref18, _ref19, _ref20, _ref21, _ref22, _ref23, _ref24, _ref25, _ref26, _ref27, _ref28, _ref29, _ref30, _withoutGuess$unsuppo, _read$find2, _givenWidth$share, _blocks$find, _read$0$cells, _read$, _roomOf, _roomOf2;
 		const children = contentOf$3(element).filter(isObject);
 		const properties = childrenOf(find(children, "w:tblPr"));
 		const style = valueOf(properties, "w:tblStyle");
@@ -12669,7 +12695,7 @@ var docxLayout = (function(exports) {
 		]);
 		const styleUnsupported = tableStyles.some(({ rowProperties = [], cellProperties = [] }) => changesLines(rowProperties, IGNORED_STYLE_ROW_PROPERTIES) || changesLines(cellProperties, FOLLOWED_STYLE_CELL_PROPERTIES)) ? "a table style with formatting of its rows or cells" : void 0;
 		const givenWidth = readTableWidth(properties);
-		const evenable = !spaced && givenWidth.share === void 0 && read.every(({ edges }) => edges.has(0));
+		const evenable = !(spaced && fixed) && givenWidth.share === void 0 && read.every(({ edges }) => edges.has(0));
 		const evened = unequal && evenable;
 		const tableTwips = givenWidth.width;
 		const fixedFit = fixed && evenable && (unequal || tableTwips !== void 0 && read.some(({ edges, end }) => Math.abs(edges.get(end) - tableTwips) > WIDTH_TOLERANCE));
@@ -12678,7 +12704,7 @@ var docxLayout = (function(exports) {
 		const float = floatElement === void 0 ? void 0 : readTableFloat(floatElement, find(properties, "w:tblOverlap"));
 		const older = reader.compatibilityMode !== void 0;
 		const marginsBeside = older && sized && givenWidth.width === void 0;
-		const unsupported = (_ref14 = (_ref15 = (_ref16 = (_ref17 = (_ref18 = (_ref19 = (_ref20 = (_ref21 = (_ref22 = (_ref23 = (_ref24 = (_ref25 = (_ref26 = (_ref27 = (_ref28 = (_ref29 = (_withoutGuess$unsuppo = withoutGuess === null || withoutGuess === void 0 ? void 0 : withoutGuess.unsupported) !== null && _withoutGuess$unsuppo !== void 0 ? _withoutGuess$unsuppo : reader.down === true ? "a table on text that runs down the page" : void 0) !== null && _ref29 !== void 0 ? _ref29 : float !== void 0 && (reader.inCell || reader.inNote || reader.inHeader) ? "a table that text flows around in a table cell, header, footer or note" : void 0) !== null && _ref28 !== void 0 ? _ref28 : float !== void 0 && older ? "a table that text flows around in a document in compatibility mode" : void 0) !== null && _ref27 !== void 0 ? _ref27 : marginsBeside && fits && (reader.inCell === true || indent !== 0 || givenWidth.share !== void 0) ? "a table sized to its text in a table cell, indented or as a share of the width, in a document in compatibility mode" : void 0) !== null && _ref26 !== void 0 ? _ref26 : typeof float === "string" ? float : void 0) !== null && _ref25 !== void 0 ? _ref25 : parts.some((part) => "w:sdt" in part) ? BOUND_CONTROL : void 0) !== null && _ref24 !== void 0 ? _ref24 : (_read$find2 = read.find((row) => row.unsupported !== void 0)) === null || _read$find2 === void 0 ? void 0 : _read$find2.unsupported) !== null && _ref23 !== void 0 ? _ref23 : unmerged) !== null && _ref22 !== void 0 ? _ref22 : fits ? unfitted : unequal && !evened ? "a table whose rows give a column different widths" : void 0) !== null && _ref21 !== void 0 ? _ref21 : fits && tableCells.some(({ noWrap }) => noWrap) ? "a table cell whose text doesn't wrap, in a table sized to its text" : void 0) !== null && _ref20 !== void 0 ? _ref20 : fits && tableCells.some(({ fitText }) => fitText) ? "text fitted to its table cell, in a table sized to its text" : void 0) !== null && _ref19 !== void 0 ? _ref19 : spacingUnsupported) !== null && _ref18 !== void 0 ? _ref18 : typeof geometry === "string" ? geometry : void 0) !== null && _ref17 !== void 0 ? _ref17 : indent === void 0 ? "a table indented by a share of the width" : void 0) !== null && _ref16 !== void 0 ? _ref16 : styleUnsupported) !== null && _ref15 !== void 0 ? _ref15 : lengths) !== null && _ref14 !== void 0 ? _ref14 : (_blocks$find = blocks.find((block) => block.unsupported !== void 0)) === null || _blocks$find === void 0 ? void 0 : _blocks$find.unsupported;
+		const unsupported = (_ref14 = (_ref15 = (_ref16 = (_ref17 = (_ref18 = (_ref19 = (_ref20 = (_ref21 = (_ref22 = (_ref23 = (_ref24 = (_ref25 = (_ref26 = (_ref27 = (_ref28 = (_ref29 = (_ref30 = (_withoutGuess$unsuppo = withoutGuess === null || withoutGuess === void 0 ? void 0 : withoutGuess.unsupported) !== null && _withoutGuess$unsuppo !== void 0 ? _withoutGuess$unsuppo : reader.down === true ? "a table on text that runs down the page" : void 0) !== null && _ref30 !== void 0 ? _ref30 : float !== void 0 && (reader.inCell || reader.inNote || reader.inHeader) ? "a table that text flows around in a table cell, header, footer or note" : void 0) !== null && _ref29 !== void 0 ? _ref29 : float !== void 0 && older ? "a table that text flows around in a document in compatibility mode" : void 0) !== null && _ref28 !== void 0 ? _ref28 : marginsBeside && fits && (reader.inCell === true || indent !== 0 || givenWidth.share !== void 0) ? "a table sized to its text in a table cell, indented or as a share of the width, in a document in compatibility mode" : void 0) !== null && _ref27 !== void 0 ? _ref27 : typeof float === "string" ? float : void 0) !== null && _ref26 !== void 0 ? _ref26 : parts.some((part) => "w:sdt" in part) ? BOUND_CONTROL : void 0) !== null && _ref25 !== void 0 ? _ref25 : (_read$find2 = read.find((row) => row.unsupported !== void 0)) === null || _read$find2 === void 0 ? void 0 : _read$find2.unsupported) !== null && _ref24 !== void 0 ? _ref24 : unmerged) !== null && _ref23 !== void 0 ? _ref23 : fits ? unfitted : unequal && !evened ? "a table whose rows give a column different widths" : void 0) !== null && _ref22 !== void 0 ? _ref22 : fits && tableCells.some(({ noWrap }) => noWrap) ? "a table cell whose text doesn't wrap, in a table sized to its text" : void 0) !== null && _ref21 !== void 0 ? _ref21 : fits && tableCells.some(({ fitText }) => fitText) ? "text fitted to its table cell, in a table sized to its text" : void 0) !== null && _ref20 !== void 0 ? _ref20 : spacingUnsupported) !== null && _ref19 !== void 0 ? _ref19 : typeof geometry === "string" ? geometry : void 0) !== null && _ref18 !== void 0 ? _ref18 : indent === void 0 ? "a table indented by a share of the width" : void 0) !== null && _ref17 !== void 0 ? _ref17 : ((_givenWidth$share = givenWidth.share) !== null && _givenWidth$share !== void 0 ? _givenWidth$share : 0) > 1 ? "a table whose width is a share of more than the width it is in" : void 0) !== null && _ref16 !== void 0 ? _ref16 : styleUnsupported) !== null && _ref15 !== void 0 ? _ref15 : lengths) !== null && _ref14 !== void 0 ? _ref14 : (_blocks$find = blocks.find((block) => block.unsupported !== void 0)) === null || _blocks$find === void 0 ? void 0 : _blocks$find.unsupported;
 		const rowWidth = ((_read$0$cells = (_read$ = read[0]) === null || _read$ === void 0 ? void 0 : _read$.cells) !== null && _read$0$cells !== void 0 ? _read$0$cells : []).reduce((total, cell) => {
 			var _cell$ownWidth;
 			return total + ((_cell$ownWidth = cell.ownWidth) !== null && _cell$ownWidth !== void 0 ? _cell$ownWidth : 0);
@@ -13842,7 +13868,7 @@ var docxLayout = (function(exports) {
 	* Reads a document's body (`w:body`), with the other parts of the document.
 	*/
 	var readContent = (writtenBody, writtenParts, { guess = false } = {}) => {
-		var _writtenParts$dataSto, _parts$otherListIds, _parts$otherListIds2, _parts$settings, _fontOf$size2, _ref30, _ref31, _ref32, _ref33, _ref34, _ref35, _documentContent$unsu;
+		var _writtenParts$dataSto, _parts$otherListIds, _parts$otherListIds2, _parts$settings, _fontOf$size2, _ref31, _ref32, _ref33, _ref34, _ref35, _ref36, _documentContent$unsu;
 		const stores = (_writtenParts$dataSto = writtenParts.dataStores) !== null && _writtenParts$dataSto !== void 0 ? _writtenParts$dataSto : /* @__PURE__ */ new Map();
 		const body = withBoundTextWritten(writtenBody, stores);
 		const parts = _objectSpread2(_objectSpread2({}, writtenParts), {}, {
@@ -14101,7 +14127,7 @@ var docxLayout = (function(exports) {
 			relativeReferences: markers.relative,
 			endnoteReferences
 		}, parts.fonts !== void 0 && parts.fonts.length > 0 ? { fonts: parts.fonts } : {}), readSettings(parts.settings));
-		return _objectSpread2(_objectSpread2({}, documentContent), withoutUndefined({ unsupported: (_ref30 = (_ref31 = (_ref32 = (_ref33 = (_ref34 = (_ref35 = (_documentContent$unsu = documentContent.unsupported) !== null && _documentContent$unsu !== void 0 ? _documentContent$unsu : styles.unsupported) !== null && _ref35 !== void 0 ? _ref35 : inNumbering) !== null && _ref34 !== void 0 ? _ref34 : footnotes.size > 0 ? notesUnsupported("footnote") : void 0) !== null && _ref33 !== void 0 ? _ref33 : endnotes.length > 0 ? notesUnsupported("endnote") : void 0) !== null && _ref32 !== void 0 ? _ref32 : [...endnoteSections, sections.length - 1].some((section) => sections[section].textRunsDown !== void 0) && endnotes.length > 0 ? "endnotes on text that runs down the page" : void 0) !== null && _ref31 !== void 0 ? _ref31 : endnoteSections.some((section) => !sameGrid(gridOf(section), gridOf(sections.length - 1))) ? "endnotes from a section on another document grid than the last" : void 0) !== null && _ref30 !== void 0 ? _ref30 : unwrittenNumber ? "notes numbered in a format not yet written" : void 0 }));
+		return _objectSpread2(_objectSpread2({}, documentContent), withoutUndefined({ unsupported: (_ref31 = (_ref32 = (_ref33 = (_ref34 = (_ref35 = (_ref36 = (_documentContent$unsu = documentContent.unsupported) !== null && _documentContent$unsu !== void 0 ? _documentContent$unsu : styles.unsupported) !== null && _ref36 !== void 0 ? _ref36 : inNumbering) !== null && _ref35 !== void 0 ? _ref35 : footnotes.size > 0 ? notesUnsupported("footnote") : void 0) !== null && _ref34 !== void 0 ? _ref34 : endnotes.length > 0 ? notesUnsupported("endnote") : void 0) !== null && _ref33 !== void 0 ? _ref33 : [...endnoteSections, sections.length - 1].some((section) => sections[section].textRunsDown !== void 0) && endnotes.length > 0 ? "endnotes on text that runs down the page" : void 0) !== null && _ref32 !== void 0 ? _ref32 : endnoteSections.some((section) => !sameGrid(gridOf(section), gridOf(sections.length - 1))) ? "endnotes from a section on another document grid than the last" : void 0) !== null && _ref31 !== void 0 ? _ref31 : unwrittenNumber ? "notes numbered in a format not yet written" : void 0 }));
 	};
 	//#endregion
 	//#region src/layout/paginate.ts
