@@ -1124,7 +1124,7 @@ const equationArray = (children: readonly XmlObject[], style: Style): Box => {
             }
             const before = parts.slice(0, at);
             const whole = rowOf([...before, ...parts.slice(at + 1)], style);
-            const left = before.length === 0 ? 0 : (({ width, italic }) => width + italic)(rowOf(before, style));
+            const left = before.length === 0 ? 0 : settled(rowOf(before, style)).width;
             return { left, right: whole.width + whole.italic - left, height: whole.height, depth: whole.depth };
         });
     if (rows.length === 0) {
