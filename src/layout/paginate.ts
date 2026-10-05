@@ -942,14 +942,14 @@ export const paginate = (
 
     /**
      * Why how Word kerns a paragraph's text, or joins its letters into ligatures, isn't known to the measurer, when it
-     * isn't. Text in the same font, kerned or with ligatures, is measured across runs, and so is checked across them.
-     * Whether Word kerns it and joins its letters across a soft hyphen, and kerns the hyphen it draws at the end of a line
-     * with the letter before it, hasn't been seen
+     * isn't. Text in the same font, kerned or with ligatures, is measured across runs, and so is checked across them. Kerned
+     * text isn't kerned across a soft hyphen (see `textMeasuredTogether`), but whether Word joins letters into ligatures
+     * across one hasn't been seen
      */
     const unknownShapingIn = (inline: readonly InlineItem[]): string | undefined => {
         const together = textMeasuredTogether(inline);
         return together.some(({ besideSoftHyphen }) => besideSoftHyphen)
-            ? "kerning or ligatures beside a soft hyphen"
+            ? "ligatures beside a soft hyphen"
             : together.map(({ text, font }) => measurer.unknownShaping?.(text, font)).find(Boolean);
     };
 

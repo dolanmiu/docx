@@ -270,7 +270,18 @@ export type LaidOutLine = {
     readonly unsupported?: string;
 };
 
-type Piece = { readonly text: string; readonly font: TextFont; readonly hyphenation?: TextItem["hyphenation"] };
+type Piece = {
+    readonly text: string;
+    readonly font: TextFont;
+    readonly hyphenation?: TextItem["hyphenation"];
+    /**
+     * Whether it is measured apart from the piece before it in the same font, as text after a soft hyphen is: Word doesn't
+     * kern a pair of letters across one where the line doesn't break there (scripts/layout-probes/stops2/word-stops-text2.ts
+     * KE9a: "A­V" 12 times in Calibri 11 kerned from a point, 3791 twips, as wide as its "V" and "A" kerned and not its "A"
+     * and "V")
+     */
+    readonly apart?: boolean;
+};
 
 /** A soft hyphen in a word: how many characters of the word are before it, and the font its hyphen is drawn in */
 type Hyphen = { readonly at: number; readonly font: TextFont };
@@ -366,6 +377,8 @@ const tokenizeText = (items: readonly (TextItem | SoftHyphenItem)[], rules: Line
     // eslint-disable-next-line functional/prefer-readonly-type
     const tokens: { readonly type: "word" | "space"; readonly pieces: Piece[]; hyphens?: Hyphen[] }[] = [];
     let index = 0;
+    // Whether the last character was a soft hyphen in a word, after which its next is measured apart
+    let afterHyphen = false;
     for (const item of items) {
         if (item.type === "softHyphen") {
             // One after a space, or at the start, is where the line can break anyway
@@ -373,6 +386,7 @@ const tokenizeText = (items: readonly (TextItem | SoftHyphenItem)[], rules: Line
             if (word?.type === "word") {
                 // eslint-disable-next-line functional/immutable-data
                 word.hyphens = [...(word.hyphens ?? []), { at: lengthOf(word.pieces), font: item.font }];
+                afterHyphen = true;
             }
             continue;
         }
@@ -384,12 +398,21 @@ const tokenizeText = (items: readonly (TextItem | SoftHyphenItem)[], rules: Line
             if (last?.type !== type || (type === "word" && breaks.has(index))) {
                 // eslint-disable-next-line functional/immutable-data
                 tokens.push({ type, pieces: [{ text: character, font, ...own }] });
+            } else if (afterHyphen) {
+                // eslint-disable-next-line functional/immutable-data
+                last.pieces.push({ text: character, font, ...own, apart: true });
             } else {
                 const piece = last.pieces[last.pieces.length - 1];
                 const same = piece.font === font && piece.hyphenation === hyphenation;
                 // eslint-disable-next-line functional/immutable-data
-                last.pieces[last.pieces.length - 1 + (same ? 0 : 1)] = { text: same ? piece.text + character : character, font, ...own };
+                last.pieces[last.pieces.length - 1 + (same ? 0 : 1)] = {
+                    text: same ? piece.text + character : character,
+                    font,
+                    ...own,
+                    ...(same && piece.apart === true ? { apart: true } : {}),
+                };
             }
+            afterHyphen = false;
             index++;
         }
     }
@@ -438,12 +461,12 @@ const segmentsOf = (items: readonly InlineItem[], rules: LineBreakRules): readon
  */
 const charactersOf = (pieces: readonly Piece[]): readonly (readonly Piece[])[] =>
     pieces.reduce<readonly (readonly Piece[])[]>(
-        (all, { text, font }) =>
-            [...text].reduce((characters, character) => {
+        (all, { text, font, apart }) =>
+            [...text].reduce((characters, character, at) => {
                 const last = characters[characters.length - 1];
                 const lastPiece = last?.[last.length - 1];
                 if (!lastPiece || !(extendsCharacter(character) || joinsNext([...lastPiece.text].pop()!))) {
-                    return [...characters, [{ text: character, font }]];
+                    return [...characters, [{ text: character, font, ...(at === 0 && apart === true ? { apart } : {}) }]];
                 }
                 const joined =
                     lastPiece.font === font
@@ -510,7 +533,7 @@ const widthOf = (pieces: readonly Piece[], measurer: TextMeasurer): number => {
     let [{ text, font }] = pieces;
     for (const piece of pieces.slice(1)) {
         total += roomBetween(font.border, piece.font.border);
-        if (shaped(font) && sameFont(font, piece.font)) {
+        if (shaped(font) && sameFont(font, piece.font) && piece.apart !== true) {
             text += piece.text;
             continue;
         }
@@ -522,16 +545,16 @@ const widthOf = (pieces: readonly Piece[], measurer: TextMeasurer): number => {
 
 /**
  * A paragraph's text in the pieces it is measured in: text next to text in the same font, kerned or with ligatures, as one,
- * across bookmarks and soft hyphens between them, as its pairs of characters are kerned and its letters joined across
- * runs, and other text on its own. So kerning and ligatures a measurer doesn't know are found across runs too. Text
- * beside a soft hyphen, which Word hasn't been seen with, is marked: text kerned or joined across one, and kerned text
- * before one in its font, with whose last letter the hyphen Word draws at the end of a line may be kerned.
+ * across bookmarks between them, as its pairs of characters are kerned and its letters joined across runs, and other text
+ * on its own. So kerning and ligatures a measurer doesn't know are found across runs too. Kerned text either side of a soft
+ * hyphen is measured apart, as Word doesn't kern across one (scripts/layout-probes/stops2/word-stops-text2.ts KE9a), and
+ * text with ligatures across one, which Word hasn't been seen joining or leaving apart, is marked.
  */
 export const textMeasuredTogether = (items: readonly InlineItem[]): readonly (Piece & { readonly besideSoftHyphen?: boolean })[] => {
     // eslint-disable-next-line functional/prefer-readonly-type
     const pieces: (Piece & { readonly besideSoftHyphen?: boolean })[] = [];
     let joins = false;
-    // Whether a soft hyphen is between the text before and the next
+    // Whether a soft hyphen is between the text before, with ligatures, and the next
     let hyphen = false;
     for (const item of items) {
         if (item.type === "marker") {
@@ -539,13 +562,10 @@ export const textMeasuredTogether = (items: readonly InlineItem[]): readonly (Pi
         }
         const last = pieces[pieces.length - 1];
         if (item.type === "softHyphen") {
-            // Text before it with a letter to kern or join with, which a field's result left empty doesn't have
-            const before = joins && last.text.length > 0;
-            hyphen = before;
-            if (before && isKerned(item.font) && sameFont(last.font, item.font)) {
-                // eslint-disable-next-line functional/immutable-data
-                pieces[pieces.length - 1] = { ...last, besideSoftHyphen: true };
-            }
+            // Text before it with a letter to join with, which a field's result left empty doesn't have, goes on with the text
+            // after it, and kerned text stops
+            hyphen = joins && last.text.length > 0 && hasLigatures(last.font);
+            joins = hyphen;
             continue;
         }
         if (item.type !== "text") {
@@ -926,13 +946,14 @@ const widthAfterTab = (tokens: readonly Token[], measurer: TextMeasurer, border?
 /** Pieces of text split after this many characters */
 const splitPieces = (pieces: readonly Piece[], at: number): readonly [readonly Piece[], readonly Piece[]] => {
     let count = 0;
-    const parts = pieces.map(({ text, font }) => {
+    const parts = pieces.map(({ text, font, apart }) => {
         const characters = [...text];
         const taken = Math.max(0, Math.min(characters.length, at - count));
         count += characters.length;
+        const kept = apart === true ? { apart } : {};
         return [
-            { text: characters.slice(0, taken).join(""), font },
-            { text: characters.slice(taken).join(""), font },
+            { text: characters.slice(0, taken).join(""), font, ...kept },
+            { text: characters.slice(taken).join(""), font, ...kept },
         ] as const;
     });
     const written = (piece: Piece): boolean => piece.text.length > 0;
@@ -1941,6 +1962,14 @@ export const layoutLines = (
                         unsupported:
                             line.unsupported ??
                             "a line that fits a soft hyphen's part squeezed, and a shorter one as it is with twice as much room or more",
+                    };
+                }
+                // Whether Word kerns the hyphen it draws at the end of the line with the letter before it hasn't been seen
+                const last = before[before.length - 1];
+                if ((fits || squeezed) && isKerned(last.font) && sameFont(last.font, hyphen.font)) {
+                    line = {
+                        ...line,
+                        unsupported: line.unsupported ?? "a line that breaks at a soft hyphen in kerned text, whose hyphen Word may kern",
                     };
                 }
                 if (fits || squeezed) {

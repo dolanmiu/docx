@@ -139,6 +139,46 @@ describe("layoutLines", () => {
         ).to.equal(1);
     });
 
+    it("should measure kerned text either side of a soft hyphen apart, as Word doesn't kern across one", () => {
+        // word-stops-text2.ts KE9a: "A-V" 12 times, kerned, as wide as its "V" and "A" kerned and not its "A" and "V". Here
+        // "AV" kerned is 15 points, rather than 20
+        const kerning: TextMeasurer = {
+            measureWidth: (value) => [...value].length * 10 - (value.split("AV").length - 1) * 5,
+            measureLineHeight: () => 10,
+            measureDescent: () => 0,
+        };
+        const kerned = { kerning: 1 };
+        const piece = (value: string): InlineItem => ({ type: "text", text: value, font: kerned });
+        const softHyphen: InlineItem = { type: "softHyphen", font: kerned };
+        const linesOf = (items: readonly InlineItem[], width: number): readonly (string | number | undefined)[][] =>
+            layoutLines(items, { width, measurer: kerning }).map(({ text: value, textWidth, unsupported }) => [
+                value,
+                textWidth,
+                unsupported,
+            ]);
+        // "AVA" and "VAV", 25 each, where "AVAVAV" would be 45
+        expect(linesOf([piece("AVA"), softHyphen, piece("VAV")], 200)).to.deep.equal([["AVAVAV", 50, undefined]]);
+        // A part of the word before a soft hyphen is measured so too: "AVA" and "VAVA" with a hyphen are 70, so it breaks at
+        // the first, whose hyphen Word may kern with the letter before it
+        const broken = "a line that breaks at a soft hyphen in kerned text, whose hyphen Word may kern";
+        expect(linesOf([piece("AVA"), softHyphen, piece("VAVA"), softHyphen, piece("VAV")], 67)).to.deep.equal([
+            ["AVA", 35, broken],
+            ["VAVAVAV", 60, undefined],
+        ]);
+        // And a word longer than its line, broken after the last character that fits: "VA" and "VA", where "VAVAV" would fit
+        expect(linesOf([piece("AVAVAVA"), softHyphen, piece("VAVAVAV")], 40).map(([value]) => value)).to.deep.equal([
+            "AVAVA",
+            "VAVA",
+            "VAVAV",
+        ]);
+        // The hyphen in another font isn't kerned with the text before it
+        const plainHyphen: InlineItem = { type: "softHyphen", font: {} };
+        expect(linesOf([piece("AVA"), plainHyphen, piece("VAVA")], 40).map(([, , unsupported]) => unsupported)).to.deep.equal([
+            undefined,
+            undefined,
+        ]);
+    });
+
     it("should measure the pieces of a word in the same font together when it has ligatures, so letters are joined across runs", () => {
         // "fi" joined is 15 points, rather than 20
         const joining: TextMeasurer = {

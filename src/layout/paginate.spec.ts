@@ -834,7 +834,7 @@ describe("paginate", () => {
             expect(paginate(document([greek, paragraph("b", 1)])).stoppedAt).to.equal("ligatures beside a character not yet followed");
         });
 
-        it("should stop at text kerned or with ligatures beside a soft hyphen, which Word hasn't been seen with", () => {
+        it("should lay out kerned text beside a soft hyphen, and stop at ligatures beside one, which Word hasn't been seen with", () => {
             const hyphenated = (
                 font: TextFont,
                 before: readonly LayoutItem[] = [{ type: "text", text: " ef", font }],
@@ -848,24 +848,21 @@ describe("paginate", () => {
                     ]),
                     paragraph("b", 1),
                 ]);
-            const BESIDE = "kerning or ligatures beside a soft hyphen";
-            expect(paginate(hyphenated({ font: "Calibri", size: 11, kerning: 1 })).stoppedAt).to.equal(BESIDE);
-            expect(paginate(hyphenated({ font: "Calibri", size: 11, ligatures: "standardContextual" })).stoppedAt).to.equal(BESIDE);
-            // Text neither kerned nor with ligatures, or with nothing before the soft hyphen to kern or join with, is laid out
-            expect(paginate(hyphenated({ font: "Calibri", size: 11 })).stoppedAt).to.equal(undefined);
+            // Kerned text isn't kerned across one, so it is measured apart (word-stops-text2.ts KE9a)
             const kerned = { font: "Calibri", size: 11, kerning: 1 };
-            expect(paginate(hyphenated(kerned, [{ type: "tab", font: kerned }])).stoppedAt).to.equal(undefined);
-            // The hyphen at the end of a line in the font of the kerned text before it, which it may be kerned with, though
-            // the text after it is in another font, but not one in another font
-            const plain = { font: "Calibri", size: 11 };
-            expect(paginate(hyphenated(kerned, undefined, { after: plain })).stoppedAt).to.equal(BESIDE);
-            expect(paginate(hyphenated(kerned, undefined, { hyphen: plain, after: plain })).stoppedAt).to.equal(undefined);
-            // Nor after empty text, such as a field's result not yet worked out, with no letter to kern the hyphen with
+            expect(paginate(hyphenated(kerned)).stoppedAt).to.equal(undefined);
+            const BESIDE = "ligatures beside a soft hyphen";
+            const ligatures = { font: "Calibri", size: 11, ligatures: "standardContextual" } as const;
+            expect(paginate(hyphenated(ligatures)).stoppedAt).to.equal(BESIDE);
+            // Text neither kerned nor with ligatures, or with nothing before the soft hyphen to join with, is laid out: a tab, or
+            // empty text, such as a field's result not yet worked out
+            expect(paginate(hyphenated({ font: "Calibri", size: 11 })).stoppedAt).to.equal(undefined);
+            expect(paginate(hyphenated(ligatures, [{ type: "tab", font: ligatures }])).stoppedAt).to.equal(undefined);
             const empty: readonly LayoutItem[] = [
-                { type: "tab", font: kerned },
-                { type: "text", text: "", font: kerned },
+                { type: "tab", font: ligatures },
+                { type: "text", text: "", font: ligatures },
             ];
-            expect(paginate(hyphenated(kerned, empty, { after: plain })).stoppedAt).to.equal(undefined);
+            expect(paginate(hyphenated(ligatures, empty)).stoppedAt).to.equal(undefined);
         });
 
         it("should stop at a character Word draws in another font, measuring with the width tables", () => {
