@@ -21,6 +21,7 @@ import {
     PageTextDirectionType,
     Paragraph,
     Table,
+    TableAnchorType,
     TableBorders,
     TableCell,
     TableOfContents,
@@ -142,9 +143,10 @@ describe("layoutDocument", () => {
                                     width: 2000,
                                     height: 1000,
                                     anchor: { horizontal: FrameAnchorType.PAGE, vertical: FrameAnchorType.PAGE },
+                                    space: { horizontal: 100, vertical: 0 },
                                 },
-                                // With borders, which take room beside it in a way not yet followed
-                                border: { top: { style: BorderStyle.SINGLE, size: 6, space: 1, color: "auto" } },
+                                // With a border beside it and a distance from the text, which take room in a way not yet followed
+                                border: { left: { style: BorderStyle.SINGLE, size: 6, space: 1, color: "auto" } },
                                 text: "In a frame",
                             }),
                             new Paragraph("After the frame"),
@@ -153,8 +155,68 @@ describe("layoutDocument", () => {
                 ],
             }),
         );
-        expect(stoppedAt).to.equal("a text frame with borders");
+        expect(stoppedAt).to.equal("a text frame with borders at its sides and a distance from the text");
         expect(pages.map(({ body }) => textsOf(body))).to.deep.equal([["Before the frame"]]);
+    });
+
+    it("should lay out lines beside two tables that text flows around, leaving room narrower than 18 points empty, as Word does", () => {
+        // `word-stops-floats.docx` FT1d: tables 3000 wide at 2000 and 5500 from the margin, 180 from the text either side,
+        // which leave 130 and 336 twips between and right of them, where Word puts no text
+        const prose = "the in foot mouth made on river was and the coast boat to the by lighthouse of summer the survey the from".split(
+            " ",
+        );
+        const words = (count: number): string => Array.from({ length: count }, (_, index) => prose[index % prose.length]).join(" ");
+        const floating = (name: string, x: number): Table =>
+            new Table({
+                width: { size: 3000, type: WidthType.DXA },
+                columnWidths: [3000],
+                float: {
+                    horizontalAnchor: TableAnchorType.MARGIN,
+                    absoluteHorizontalPosition: x,
+                    verticalAnchor: TableAnchorType.TEXT,
+                    absoluteVerticalPosition: 1500,
+                    leftFromText: 180,
+                    rightFromText: 180,
+                },
+                rows: [1, 2, 3].map(
+                    (row) =>
+                        new TableRow({
+                            children: [
+                                new TableCell({
+                                    width: { size: 3000, type: WidthType.DXA },
+                                    children: [new Paragraph(`${name} row ${row}`)],
+                                }),
+                            ],
+                        }),
+                ),
+            });
+        const { pages, stoppedAt } = layoutDocument(
+            new Document({
+                styles: {
+                    default: {
+                        document: { run: { font: "Calibri", size: 22 }, paragraph: { spacing: { before: 0, after: 0, line: 240 } } },
+                    },
+                },
+                sections: [
+                    {
+                        children: [
+                            new Paragraph({ alignment: AlignmentType.JUSTIFIED, text: `FT1d ${words(30)}` }),
+                            floating("FT1d", 2000),
+                            floating("FT1d second", 5500),
+                            new Paragraph({ alignment: AlignmentType.JUSTIFIED, text: `FT1d after ${words(120)}` }),
+                        ],
+                    },
+                ],
+            }),
+        );
+        expect(stoppedAt).to.equal(undefined);
+        const beside = linesOf(pages[0].body).filter(({ width, text }) => width < TEXT_WIDTH - 1 && text.trim() !== "");
+        expect(beside.map(({ text }) => text.trim())).to.deep.equal([
+            "boat to the by",
+            "lighthouse of",
+            "summer the survey",
+            "the from the in foot",
+        ]);
     });
 
     it("should leave the document as it is written", () => {

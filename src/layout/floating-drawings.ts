@@ -133,20 +133,31 @@ const startOf = (
     }
 };
 
-/** A drawing's size on its section's pages: its own, or a share of what it is sized by */
-const sizeOf = (drawing: FloatingDrawing, section: Section): { readonly width: number; readonly height: number } | undefined => {
+/**
+ * A drawing's size on its section's pages: its own, or a share of what it is sized by. The inside and outside margins are
+ * those it is placed against, by whether the page is odd or even (`word-stops-drawings.docx` DR4a to DR4d)
+ */
+const sizeOf = (
+    drawing: FloatingDrawing,
+    section: Section,
+    oddPage: boolean,
+): { readonly width: number; readonly height: number } | undefined => {
     const { pageWidth, pageHeight, marginLeft, marginRight, marginTop, marginBottom } = section;
     const widths: Readonly<Record<string, number>> = {
         page: pageWidth,
         margin: pageWidth - marginLeft - marginRight,
         leftMargin: marginLeft,
         rightMargin: marginRight,
+        insideMargin: oddPage ? marginLeft : marginRight,
+        outsideMargin: oddPage ? marginRight : marginLeft,
     };
     const heights: Readonly<Record<string, number>> = {
         page: pageHeight,
         margin: pageHeight - marginTop - marginBottom,
         topMargin: marginTop,
         bottomMargin: marginBottom,
+        insideMargin: oddPage ? marginTop : marginBottom,
+        outsideMargin: oddPage ? marginBottom : marginTop,
     };
     const { relativeWidth, relativeHeight } = drawing;
     const width = relativeWidth === undefined ? drawing.width : (widths[relativeWidth.from] ?? Number.NaN) * relativeWidth.share;
@@ -160,7 +171,7 @@ const sizeOf = (drawing: FloatingDrawing, section: Section): { readonly width: n
  * doing yet; lined up, its effects are lined up with it.
  */
 export const placeDrawing = (drawing: FloatingDrawing, frame: DrawingFrame): Box | string => {
-    const size = sizeOf(drawing, frame.section);
+    const size = sizeOf(drawing, frame.section, frame.oddPage);
     const across = acrossBase(drawing.horizontal.from, frame);
     const down = downBase(drawing.vertical.from, frame);
     if (size === undefined) {
@@ -168,6 +179,17 @@ export const placeDrawing = (drawing: FloatingDrawing, frame: DrawingFrame): Box
     }
     if (across === undefined || down === undefined) {
         return "a drawing placed against what isn't followed yet";
+    }
+    const { inColumns } = drawing.horizontal;
+    if (inColumns !== undefined && frame.section.columns.length > 1) {
+        return inColumns;
+    }
+    // Lined up inside or outside down the page, Word puts it lower than the top of the page, by an amount not yet explained
+    // (`word-stops-drawings.docx` DR6a, DR6b), and against what else but the margins it hasn't been seen (F21, F22, DR6c, DR6d)
+    if (
+        [drawing.horizontal, drawing.vertical].some(({ from, align }) => (align === "inside" || align === "outside") && from !== "margin")
+    ) {
+        return "a drawing lined up inside or outside, not against the margins";
     }
     const { effects } = drawing;
     const left = startOf(drawing.horizontal, across, size.width, effects.left, effects.right, frame.oddPage);
@@ -203,12 +225,15 @@ export const roomBeside = (
     top: number,
     height: number,
     within: Span,
-): { readonly spans: readonly Span[] } | { readonly below: number } => {
+): { readonly spans: readonly Span[] } | { readonly below: number } | { readonly narrow: true } => {
     // A drawing beside the line, and across the room it is in: one in a margin, even with text above and below it, leaves
     // the line as it is (`word-floats.docx` F7, F8)
     const beside = drawings.filter(
         ({ keepOut }) => keepOut.top < top + height && top < keepOut.bottom && keepOut.left < within.end && within.start < keepOut.right,
     );
+    if (beside.length === 0) {
+        return { spans: [within] };
+    }
     const spans = beside.reduce<readonly Span[]>(
         (free, { drawing, keepOut }) => {
             const out = keepOutAcross(drawing, keepOut, within);
@@ -223,8 +248,20 @@ export const roomBeside = (
         },
         [within],
     );
-    return spans.length > 0 ? { spans } : { below: Math.min(...beside.map(({ keepOut }) => keepOut.bottom)) };
+    // A room narrower than 18 points takes no text where there is a wider one, as Word leaves one of 16.8 points empty
+    // beside a table that text flows around, where a word fits in it (`word-stops-floats.docx` FT1d), and puts a word in
+    // one of 18 (`word-floats.docx` F13, F14). Where all the room a line has is that narrow, Word's way isn't known
+    const wide = spans.filter(({ start, end }) => end - start >= LEAST_ROOM - TOLERANCE);
+    if (spans.length > 0 && wide.length === 0) {
+        return { narrow: true };
+    }
+    return wide.length > 0 ? { spans: wide } : { below: Math.min(...beside.map(({ keepOut }) => keepOut.bottom)) };
 };
+
+// The narrowest room beside a drawing Word puts text in, in points
+const LEAST_ROOM = 18;
+// How close two lengths in points are to be the same
+const TOLERANCE = 0.01;
 
 /**
  * The room across the page a drawing keeps text out of, in the room a line is in: its own across, and the side of it the

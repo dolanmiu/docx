@@ -124,6 +124,20 @@ describe("placeDrawing", () => {
         expect(box.bottom - box.top).to.equal(36);
         // A place given as neither a distance nor a share is at the start
         expect((placeDrawing(drawingOf({ horizontal: { from: "page" } }), FRAME) as Box).left).to.equal(0);
+        // By a share of the inside or outside margin, the left or right one, and the top or bottom one, by whether the page
+        // is odd or even (`word-stops-drawings.docx` DR4a to DR4d)
+        const uneven = { ...FRAME, section: { ...SECTION, marginLeft: 40, marginRight: 80, marginTop: 20, marginBottom: 60 } };
+        const sized = (from: string, oddPage: boolean): readonly number[] => {
+            const one = placeDrawing(drawingOf({ relativeWidth: { from, share: 0.5 }, relativeHeight: { from, share: 0.5 } }), {
+                ...uneven,
+                oddPage,
+            }) as Box;
+            return [one.right - one.left, one.bottom - one.top];
+        };
+        expect(sized("insideMargin", true)).to.deep.equal([20, 10]);
+        expect(sized("insideMargin", false)).to.deep.equal([40, 30]);
+        expect(sized("outsideMargin", true)).to.deep.equal([40, 30]);
+        expect(sized("outsideMargin", false)).to.deep.equal([20, 10]);
     });
 
     it("should say why it can't place a drawing against or sized by what isn't followed, or lined up in ways Word doesn't have", () => {
@@ -142,6 +156,19 @@ describe("placeDrawing", () => {
         expect(placeDrawing(drawingOf({ relativeHeight: { from: "bogus", share: 1 } }), FRAME)).to.equal(
             "a drawing sized by a share of what isn't followed yet",
         );
+        // Lined up inside or outside against what isn't the margins, as Word puts one against the page lower than its top
+        // (`word-stops-drawings.docx` DR6a, DR6b)
+        expect(placeDrawing(drawingOf({ vertical: { from: "page", align: "inside" } }), FRAME)).to.equal(
+            "a drawing lined up inside or outside, not against the margins",
+        );
+        expect(placeDrawing(drawingOf({ horizontal: { from: "column", align: "outside" } }), FRAME)).to.equal(
+            "a drawing lined up inside or outside, not against the margins",
+        );
+        // One that doesn't say what it is placed against across the page, in a section of more than one column
+        // (`word-stops-floats.docx` FR6a, FT7a), and the same in one column
+        const unsaid = drawingOf({ horizontal: { from: "margin", offset: 0, inColumns: "why it can't" } });
+        expect(placeDrawing(unsaid, { ...FRAME, section: { ...FRAME.section, columns: [200, 200] } })).to.equal("why it can't");
+        expect(placeDrawing(unsaid, FRAME)).to.deep.include({ left: 72 });
     });
 });
 
@@ -197,5 +224,11 @@ describe("roomBeside", () => {
     it("should move a line with no room beside a drawing down below it, and below one text goes above and below", () => {
         expect(roomBeside([at(72, { width: 451.3 })], 110, 14, within)).to.deep.equal({ below: 150 });
         expect(roomBeside([at(200, { wrap: "topAndBottom" })], 110, 14, within)).to.deep.equal({ below: 150 });
+    });
+
+    it("should leave a room narrower than 18 points empty, and say when a line has no other (FT1d, F13, F14)", () => {
+        // 16.8 points left of the drawing, and 18 right of it
+        expect(roomBeside([at(88.8, { width: 416.5 })], 100, 14, within)).to.deep.equal({ spans: [{ start: 505.3, end: 523.3 }] });
+        expect(roomBeside([at(88.8, { width: 425.5 })], 100, 14, within)).to.deep.equal({ narrow: true });
     });
 });
