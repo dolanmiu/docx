@@ -6550,6 +6550,16 @@ describe("paginate", () => {
                 { firstLineIndent: -25, alignment: "center" },
             );
             expect(stopOf([hanging], older)).to.equal(reason);
+            // A frame lower on the page whose edge is where a picture's is leaves the gap beside the picture one of 80
+            const picture = floating({ width: 100, height: 10 });
+            const frameBelow = floating({ width: 100, height: 10, vertical: { from: "paragraph", offset: 100 }, ...framed });
+            expect(stopOf([prose("a", 12, [picture, frameBelow])], older)).to.equal(undefined);
+            // And one above it, with no text beside it
+            const frameAbove = floating({ width: 100, height: 10, wrap: "topAndBottom", ...framed });
+            expect(stopOf([prose("b", 3, [frameAbove]), prose("a", 12, [picture])], older)).to.equal(undefined);
+            // A frame left of a gap of 80 makes it one beside a frame too
+            const frameLeft = floating({ width: 100, height: 10, horizontal: { from: "margin", offset: 0 }, ...framed });
+            expect(stopOf([prose("a", 12, [frameLeft])], older)).to.equal(reason);
         });
 
         it("should stop at a line beside a drawing on a grid that snaps to characters in columns of different widths", () => {

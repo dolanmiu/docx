@@ -183,18 +183,24 @@ const OLDER_LEAST_GAP_BESIDE_FRAME = 100;
 
 /**
  * Whether a line's room beside drawings is a gap they cut narrower than Word 2010 and before were seen putting text in, of
- * text aligned as it is: `width` of it, the room the paragraph's indents leave in it
+ * text aligned as it is: `width` of it, the room the paragraph's indents leave in it, in the line's row from `top` to
+ * `bottom`, where a frame beside the row makes the gap one beside a frame
  */
 const narrowGap = (
     span: Span,
     width: number,
     within: Span,
+    row: { readonly top: number; readonly bottom: number },
     around: readonly PlacedDrawing[],
     alignment: ParagraphFormat["alignment"],
 ): boolean => {
     const beside = (edge: number, at: number): boolean => Math.abs(edge - at) <= TOLERANCE;
     const framed = around.some(
-        ({ drawing, keepOut }) => drawing.frame !== undefined && (beside(keepOut.left, span.end) || beside(keepOut.right, span.start)),
+        ({ drawing, keepOut }) =>
+            drawing.frame !== undefined &&
+            keepOut.top < row.bottom &&
+            row.top < keepOut.bottom &&
+            (beside(keepOut.left, span.end) || beside(keepOut.right, span.start)),
     );
     const least = framed
         ? OLDER_LEAST_GAP_BESIDE_FRAME
@@ -3807,7 +3813,10 @@ export const paginate = (
                 line === 0 ? rooms.findIndex(({ inIndents: { start, end } }, offset) => end - start - indentOf(offset) > TOLERANCE) : -1;
             const narrow = ({ span, inIndents: { start, end } }: (typeof rooms)[number], offset: number): boolean => {
                 const width = end - Math.max(start, span.start - left) - (offset === firstLine ? indentOf(offset) : 0);
-                return end > start + TOLERANCE && narrowGap(span, width, within, around, block.format.alignment);
+                return (
+                    end > start + TOLERANCE &&
+                    narrowGap(span, width, within, { top: y, bottom: y + height }, around, block.format.alignment)
+                );
             };
             if (compatibilityMode !== undefined && rooms.some(narrow)) {
                 stopAt(
