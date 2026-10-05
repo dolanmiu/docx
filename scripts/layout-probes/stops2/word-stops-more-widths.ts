@@ -2,7 +2,10 @@
 // letter without stopping: Hebrew, Arabic, Devanagari, Thai, box drawing, blocks, geometric shapes (docx's bullets ● ○ ■),
 // symbols and dingbats, in the fonts of the tables, plain and bold, and the font Word draws each in. Made from
 // scripts/layout-probes/word-character-widths.ts with its ranges changed, so it writes that one's probes of the spaces too
-// (S, B and H), which its PDF settled. With STOPS_ITALIC=1 it writes the italic and bold italic faces.
+// (S, B and H), which its PDF settled. With STOPS_ITALIC=1 it writes the italic and bold italic faces, as
+// word-stops-more-italic-widths.docx, and with STOPS_FONTS=office Office's other fonts of the width tables, plain and bold,
+// as word-stops-more-widths-office.docx, for Word's next batch: docx/layout stops at these characters in them, as their
+// widths there aren't known, which stops a list of docx's bullets in Aptos at its bullet.
 //
 // W: every character of the ranges that is drawn, ten times over as one word, in 10-point Calibri, Cambria, Arial, Times
 //    New Roman and Courier New, plain and bold, 16 characters to a paragraph, each after its code point, such as u05d0,
@@ -21,8 +24,9 @@
 //    Times New Roman's Devanagari is drawn, whose lines are 300 twips apart where its descriptor makes 280. Ten of an
 //    Arabic or Devanagari letter in a row Word joined into forms of other widths, so their widths aren't shown
 //
-// Usage: npm run run-ts -- scripts/layout-probes/stops2/word-stops-more-widths.ts [folder]; STOPS_ITALIC=1 for italics
-// cspell:ignore bbox Caladea
+// Usage: npm run run-ts -- scripts/layout-probes/stops2/word-stops-more-widths.ts [folder]; STOPS_ITALIC=1 for italics,
+// STOPS_FONTS=office for Office's other fonts
+// cspell:ignore bbox Caladea Aptos
 import { mkdirSync, writeFileSync } from "node:fs";
 
 import { Document, Packer, Paragraph, TextRun } from "docx";
@@ -43,9 +47,29 @@ const RANGES = [
     [0x2700, 0x27bf],
 ] as const;
 
-const FONTS = ["Calibri", "Cambria", "Arial", "Times New Roman", "Courier New"] as const;
+// Office's other fonts of the width tables, which Word installs
+const OFFICE_FONTS = [
+    "Calibri Light",
+    "Aptos",
+    "Aptos Narrow",
+    "Trebuchet MS",
+    "Georgia",
+    "Verdana",
+    "Tahoma",
+    "Century Gothic",
+    "Consolas",
+    "Candara",
+    "Corbel",
+    "Constantia",
+    "Book Antiqua",
+    "Franklin Gothic Book",
+    "Gill Sans MT",
+    "Impact",
+] as const;
+const OFFICE = process.env.STOPS_FONTS === "office";
+const FONTS = OFFICE ? OFFICE_FONTS : (["Calibri", "Cambria", "Arial", "Times New Roman", "Courier New"] as const);
 const ITALIC = process.env.STOPS_ITALIC === "1";
-const NAME = ITALIC ? "word-stops-more-italic-widths" : "word-stops-more-widths";
+const NAME = ITALIC ? "word-stops-more-italic-widths" : OFFICE ? "word-stops-more-widths-office" : "word-stops-more-widths";
 const FACES = FONTS.flatMap((font) => [false, true].map((bold) => (ITALIC ? { font, bold, italic: true } : { font, bold })));
 
 // Points, and how many times each character is written in its word
@@ -195,7 +219,7 @@ const doc = new Document({
     sections: [
         { children: widthParagraphs },
         { children: spaceParagraphs },
-        ...(ITALIC ? [] : [{ children: [...breakParagraphs, ...hangParagraphs] }]),
+        ...(ITALIC || OFFICE ? [] : [{ children: [...breakParagraphs, ...hangParagraphs] }]),
     ],
 });
 
@@ -209,12 +233,12 @@ const main = async (): Promise<void> => {
         faces: FACES,
         paragraphs: PARAGRAPHS,
         spaces: SPACES,
-        breaks: ITALIC ? { codes: [], words: [] } : { codes: BREAKS, words: BREAK_WORDS },
-        hangs: ITALIC ? [] : HANGS.map(({ code, word, end }) => ({ code, word, end })),
+        breaks: ITALIC || OFFICE ? { codes: [], words: [] } : { codes: BREAKS, words: BREAK_WORDS },
+        hangs: ITALIC || OFFICE ? [] : HANGS.map(({ code, word, end }) => ({ code, word, end })),
     };
     writeFileSync(`${OUT}/${NAME}.json`, `${JSON.stringify(sidecar)}\n`);
     console.log(`${DRAWN.length} characters in each of ${FACES.length} faces, in ${widthParagraphs.length} paragraphs`);
-    if (ITALIC) {
+    if (ITALIC || OFFICE) {
         return;
     }
     console.log(

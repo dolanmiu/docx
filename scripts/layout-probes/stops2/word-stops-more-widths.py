@@ -18,7 +18,10 @@ import re
 import sys
 import zlib
 
-probe = json.load(open(os.path.join(os.path.dirname(os.path.abspath(__file__)), "word-stops-more-widths.json"), encoding="utf8"))
+# The probe's .json beside the PDF, such as word-stops-more-widths-office.json, or this one's own beside the reader
+BESIDE = os.path.splitext(sys.argv[1])[0] + ".json" if __name__ == "__main__" and len(sys.argv) > 1 else ""
+OWN = os.path.join(os.path.dirname(os.path.abspath(__file__)), "word-stops-more-widths.json")
+probe = json.load(open(BESIDE if os.path.exists(BESIDE) else OWN, encoding="utf8"))
 SIZE = probe["size"]
 COPIES = probe["copies"]
 FACES = probe["faces"]

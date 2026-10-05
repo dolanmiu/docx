@@ -55,7 +55,10 @@ character on a grid that snaps to characters (GR14), the cases around GR3, GR5, 
 change of grid or direction sends endnotes to the end of their own section (GR15), and the strict rules and compression in
 text in Japanese (EA4). So has `word-stops-arabic.ts`, for the widths of Arabic's letters in each form Word joins them in
 (AR1), which `word-stops-more-widths` and `word-stops-thai` TH3b, ten of each letter in a row, showed joined, and lines of
-Arabic prose to check them by (AR2). Read Word's PDF of it with `word-stops-arabic.py`.
+Arabic prose to check them by (AR2). Read Word's PDF of it with `word-stops-arabic.py`. `word-stops-more-widths.ts` writes
+the same characters as its W in Office's other fonts with `STOPS_FONTS=office` (`word-stops-more-widths-office`), and in
+the five fonts' italics with `STOPS_ITALIC=1` (`word-stops-more-italic-widths`), where docx/layout stops at them, for the
+next batch too, read with `word-stops-more-widths.py` as its own.
 
 `word-stops-office-fonts.ts` has what the font probes left stopping (MB, FB, KL and DS), for the next batch too: the bold
 Word makes itself at other sizes, the font Word draws a character a font lacks in, kerning with other ligature settings in
