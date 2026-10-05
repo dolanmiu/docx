@@ -62,7 +62,7 @@ import {
     withoutUndefined,
 } from "../text-layout";
 import { type DataStores, withBoundTextWritten } from "./bound-controls";
-import { layOutEquation } from "./equations";
+import { type EquationBox, layOutEquations } from "./equations";
 import {
     type FieldCapitals,
     type FieldFormat,
@@ -649,6 +649,10 @@ type Reader = {
     readonly inTextBox?: boolean;
     /** Why its equations can't be laid out as Word does for the document's maths settings, when they can't */
     readonly maths?: string;
+    /** Why its displayed equations can't be laid out as Word does for the document's maths settings, when they can't */
+    readonly displayedMaths?: string;
+    /** Why equations side by side in a paragraph of them can't be laid out as Word does for the document's maths settings */
+    readonly mathsApart?: string;
     /** The document's compatibility mode, when it is one of Word 2010's, 2007's or 2003's (see `DocumentContent`) */
     readonly compatibilityMode?: number;
     /** Whether the document lays out East Asian text as Word 2003 did (`useFELayout`) */
@@ -1610,16 +1614,27 @@ const readRemoved = (elements: readonly unknown[], kind: string, reader: Reader)
     );
 
 // Why the layout stops at an equation that doesn't fit in the room left on its line, which Word breaks after an
-// operator (`word-equations.docx` EQ5), in a way not yet followed
+// operator (`word-equations.docx` EQ5, `word-stops-equations.docx` EQ26), in a way not yet followed
 const EQUATION_BROKEN = "an equation that doesn't fit on its line";
 
 /**
- * Reads an equation (`m:oMath`), or a paragraph of one (`m:oMathPara`), as Word lays out one of text: a box as wide as it
- * is, which takes room above and below the baseline as a line of Cambria Math does, in the size of its paragraph's text,
- * with its bookmarks before it. Word shows one alone in its paragraph on a line of its own, centred, which is as tall
- * (`word-equations.docx` EQ2c, EQ2d). Or why it can't be laid out: one of more than text (see {@link layOutEquation}), a
- * paragraph of more than one equation, and one in a document whose maths settings aren't followed (see
- * {@link readMathsSettings})
+ * An equation read: how Word lays it out in a line of text and displayed, on a line of its own, or why it can't be laid
+ * out so, and whether it is in a paragraph of its own (`m:oMathPara`)
+ */
+type EquationRead = { readonly inline: EquationBox | string; readonly displayed: EquationBox | string; readonly paragraph: boolean };
+
+/** The equations read, by the item that stands for each in its paragraph's items, which its paragraph lays out one way */
+const EQUATIONS = new WeakMap<LayoutItem, EquationRead>();
+
+/** The item for an equation laid out one way, or why it can't be laid out so */
+const equationItem = (box: EquationBox | string): LayoutItem | string =>
+    typeof box === "string" ? box : { type: "box", width: box.width, height: box.ascent, descent: box.descent, unbroken: EQUATION_BROKEN };
+
+/**
+ * Reads an equation (`m:oMath`), or a paragraph of them (`m:oMathPara`), in a row, as Word lays them out (see
+ * {@link layOutEquations}), in the size of its paragraph's text, with its bookmarks before it: an item its paragraph lays
+ * out in its line of text, or displayed (see {@link withEquations}). Or why it can't be laid out: one in a document whose
+ * maths settings aren't followed (see {@link readMathsSettings})
  */
 const readEquation = (element: XmlObject, paragraphRun: RunFormat, reader: Reader): readonly LayoutItem[] | string => {
     if (reader.maths !== undefined) {
@@ -1627,58 +1642,85 @@ const readEquation = (element: XmlObject, paragraphRun: RunFormat, reader: Reade
     }
     const name = nameOf(element);
     const equations = name === "m:oMath" ? [element] : childrenOf(element[name]).filter((child) => "m:oMath" in child);
-    if (equations.length !== 1) {
-        return equations.length === 0 ? [] : "a paragraph of more than one equation";
+    if (equations.length === 0) {
+        return [];
     }
-    const [equation] = equations;
-    const box = layOutEquation(equation["m:oMath"], fontOf(paragraphRun).size ?? DEFAULT_FONT_SIZE);
-    if (typeof box === "string") {
-        return box;
+    if (equations.length > 1 && reader.mathsApart !== undefined) {
+        return reader.mathsApart;
     }
-    const bookmarks = elementsIn(contentOf(equation), (inner) => inner === "w:bookmarkStart").flatMap((bookmark) => markerOf(bookmark));
-    return [...bookmarks, { type: "box", width: box.width, height: box.ascent, descent: box.descent, unbroken: EQUATION_BROKEN }];
+    const size = fontOf(paragraphRun).size ?? DEFAULT_FONT_SIZE;
+    const contents = equations.map((equation) => equation["m:oMath"]);
+    const read: EquationRead = {
+        inline: layOutEquations(contents, size),
+        displayed: layOutEquations(contents, size, true),
+        paragraph: name === "m:oMathPara",
+    };
+    // It stands in its paragraph's items as one of its layouts, which its paragraph puts in its place
+    const shown = [read.inline, read.displayed].find((box): box is EquationBox => typeof box !== "string");
+    const item: LayoutItem = { type: "box", width: shown?.width ?? 0, height: shown?.ascent ?? 0, descent: shown?.descent ?? 0 };
+    EQUATIONS.set(item, read);
+    const bookmarks = equations.flatMap((equation) =>
+        elementsIn(contentOf(equation), (inner) => inner === "w:bookmarkStart").flatMap((bookmark) => markerOf(bookmark)),
+    );
+    return [...bookmarks, item];
 };
 
-/**
- * Whether a paragraph's content has an equation displayed (`m:oMathPara`) that the reader reads: one among it, or in what
- * its text is in, such as a hyperlink, but not one in its runs' text boxes, nor one deleted or moved elsewhere in a tracked
- * change, unless deleted text is read as text (see {@link readInline})
- */
-const isDisplayedIn = (elements: readonly unknown[], reader: Reader): boolean =>
-    elements.filter(isObject).some((element) => {
-        const name = nameOf(element);
-        const read = name !== "w:r" && name !== "_attr" && (reader.showDeleted === true || !REMOVALS.has(name));
-        return name === "m:oMathPara" || (read && isDisplayedIn(contentOf(element), reader));
-    });
+/** Whether an equation is laid out alike in a line of text and displayed, as one of text, or that Word builds up alike, is */
+const isAlike = ({ inline, displayed }: EquationRead): boolean =>
+    typeof inline !== "string" &&
+    typeof displayed !== "string" &&
+    inline.width === displayed.width &&
+    inline.ascent === displayed.ascent &&
+    inline.descent === displayed.descent;
 
 /**
- * A paragraph's content, as read, or why it can't be laid out for the equations in it. Word shows an equation in a line of
- * text in the line, and one alone in its paragraph displayed, on a line of its own (`word-equations.docx` EQ2). One in
- * `m:oMathPara`, which is displayed, beside text in its paragraph, more than one alone in a paragraph, and one alone after
- * its list's number haven't been seen.
+ * A paragraph's content, as read, with each equation in it laid out as Word lays it out there, or why it can't be laid out
+ * for the equations in it. Word shows an equation in a line of text in the line, and one alone in its paragraph displayed,
+ * on a line of its own (`word-equations.docx` EQ2, EQ4), and one displayed (`m:oMathPara`) beside text in its paragraph,
+ * and one alone after its list's number, in the line, at the start of its text (`word-stops-equations.docx` EQ25). How it
+ * builds those two up, which may be as either, more than one equation alone in a paragraph, haven't been seen.
  */
-const withEquations = (
-    elements: readonly unknown[],
-    read: readonly LayoutItem[] | string,
-    numbered: boolean,
-    reader: Reader,
-): readonly LayoutItem[] | string => {
+const withEquations = (read: readonly LayoutItem[] | string, numbered: boolean, reader: Reader): readonly LayoutItem[] | string => {
     if (typeof read === "string") {
         return read;
     }
     const shown = read.filter((item) => item.type !== "marker");
-    // The equations read, which are the boxes that stop where they don't fit on their line
-    const equations = shown.filter((item) => item.type === "box" && item.unbroken === EQUATION_BROKEN).length;
-    if (equations === 0) {
+    const equations = shown.filter((item) => EQUATIONS.has(item));
+    if (equations.length === 0) {
         return read;
     }
-    const reason =
-        shown.length > equations && isDisplayedIn(elements, reader)
-            ? "an equation displayed (`m:oMathPara`) beside text in its paragraph"
-            : shown.length === equations && (equations > 1 || numbered)
-              ? "an equation alone in its paragraph beside another, or after its list's number"
-              : undefined;
-    return reason === undefined ? read : guessedOr(reader, reason, () => read);
+    const alone = shown.length === equations.length;
+    /** The item of an equation laid out as Word lays it out where it is in its paragraph, or why it can't be */
+    const placed = (item: LayoutItem): LayoutItem | string => {
+        const equation = EQUATIONS.get(item)!;
+        if (alone && equations.length > 1) {
+            return "equations alone in their paragraph beside each other";
+        }
+        if (alone && !numbered) {
+            return reader.displayedMaths ?? equationItem(equation.displayed);
+        }
+        const afterNumber = alone && numbered;
+        if ((afterNumber || equation.paragraph) && typeof equation.inline !== "string" && !isAlike(equation)) {
+            return afterNumber
+                ? "an equation Word builds up alone in its paragraph after its list's number"
+                : "an equation Word builds up, displayed (`m:oMathPara`) beside text in its paragraph";
+        }
+        return equationItem(equation.inline);
+    };
+    const items = read.map((item) => (EQUATIONS.has(item) ? placed(item) : item));
+    const reason = items.find((item): item is string => typeof item === "string");
+    // Guessing, an equation is laid out as it can be: as Word puts it, displayed when it is alone in its paragraph and in a
+    // line of text otherwise, or else the other way, and one that can't be either way is left out
+    const display = alone && !numbered && equations.length === 1;
+    const laidOut = (): readonly LayoutItem[] =>
+        read.flatMap((item, index) => {
+            const found = items[index];
+            const { inline, displayed } = EQUATIONS.get(item) ?? { inline: "", displayed: "" };
+            const ways = display ? [displayed, inline] : [inline, displayed];
+            const either = ways.map((box) => equationItem(box)).find((one): one is LayoutItem => typeof one !== "string");
+            return typeof found !== "string" ? [found] : either === undefined ? [] : [either];
+        });
+    return reason === undefined ? (items as readonly LayoutItem[]) : guessedOr(reader, reason, laidOut);
 };
 
 /**
@@ -2178,7 +2220,7 @@ const readParagraph = (element: XmlObject, reader: Reader, tableFormats: TableFo
         ...(list.level ? [list.level.paragraph] : []),
         readParagraphFormat(properties),
     ];
-    const read = withEquations(children, readInline(children, paragraphRun, reader), list.items.length > 0, reader);
+    const read = withEquations(readInline(children, paragraphRun, reader), list.items.length > 0, reader);
     // Read to be laid out with a guess, the first thing the reader guessed at in the paragraph's content is why it can't be
     // laid out as Word does, and the markers of what it guessed at are left out of its items
     const guessed = typeof read === "string" ? undefined : read.map(guessOf).find((reason) => reason !== undefined);
@@ -4455,19 +4497,45 @@ const readHyphenation = (settings: readonly XmlObject[]): Hyphenation =>
 
 /**
  * Why a document's equations can't be laid out as Word does for its maths settings (`m:mathPr`), when they say what isn't
- * followed: a maths font other than Cambria Math, whose widths aren't known, and margins or space around equations shown
- * on lines of their own, which haven't been seen. Word writes Cambria Math and margins of 0. Its other maths settings are
- * of what the layout stops at anyway, such as how an equation is broken or built up, or line an equation up on its line.
+ * followed: a maths font other than Cambria Math, which Word draws equations in when the computer has it, and in Cambria
+ * Math when it doesn't (`word-stops-equation-font.docx` EQS2), so how wide they are depends on the computer; sums' and
+ * integrals' limits put elsewhere than under and over them and beside them, displayed equations not displayed
+ * (`m:dispDef`), and small fractions displayed (`m:smallFrac`), which haven't been seen. And why its displayed equations
+ * can't be: margins (`m:lMargin`, `m:rMargin`), which Word centres an equation that fits as without them, but breaks one
+ * within (`word-stops-equation-settings.docx` EQS1), so one that fits the line but not the room between them would be laid
+ * out on one line where Word breaks it. Space around displayed equations Word was seen to leave out (EQS1), but space
+ * between equations (`m:interSp`) only of one alone in its paragraph of equations: with two side by side in one, which
+ * Word puts in a line with nothing between them without it (`word-stops-equations.docx` EQ25c), it hasn't been seen. The
+ * other settings are of how an equation is broken, or lined up on its line.
  */
-const readMathsSettings = (settings: readonly XmlObject[]): string | undefined => {
+const readMathsSettings = (settings: readonly XmlObject[]): Pick<Reader, "maths" | "displayedMaths" | "mathsApart"> => {
     const maths = childrenOf(find(settings, "m:mathPr"));
     const valueIn = (name: string): string | undefined => stringOf(attributesOf(find(maths, name))["m:val"]);
     if ((valueIn("m:mathFont") ?? "Cambria Math") !== "Cambria Math") {
-        return "an equation in a maths font other than Cambria Math";
+        return { maths: "an equation in a maths font other than Cambria Math" };
     }
-    return ["m:lMargin", "m:rMargin", "m:preSp", "m:postSp"].some((name) => (numberOf(valueIn(name)) ?? 0) !== 0)
-        ? "an equation in a document whose maths settings give equations on lines of their own margins or space around them"
-        : undefined;
+    const off = (name: string): boolean => find(maths, name) !== undefined && isOff(valueIn(name));
+    const on = (name: string): boolean => find(maths, name) !== undefined && !isOff(valueIn(name));
+    if (
+        (valueIn("m:naryLim") ?? "undOvr") !== "undOvr" ||
+        (valueIn("m:intLim") ?? "subSup") !== "subSup" ||
+        off("m:dispDef") ||
+        on("m:smallFrac")
+    ) {
+        return { maths: "an equation in a document whose maths settings put limits, displayed equations or fractions otherwise" };
+    }
+    const given = (name: string): boolean => (numberOf(valueIn(name)) ?? 0) !== 0;
+    return {
+        ...(given("m:lMargin") || given("m:rMargin")
+            ? { displayedMaths: "an equation displayed in a document whose maths settings give displayed equations margins" }
+            : {}),
+        ...(given("m:interSp")
+            ? {
+                  mathsApart:
+                      "equations side by side in a paragraph of them (`m:oMathPara`) in a document whose maths settings put space between equations",
+              }
+            : {}),
+    };
 };
 
 /**
@@ -4679,7 +4747,7 @@ export const readContent = (writtenBody: XmlObject, writtenParts: DocumentParts,
     const markers: FieldMarkers = { count: 0, relative: new Map() };
     const settings = childrenOf(parts.settings?.["w:settings"]);
     const decimalSymbol = valueOf(settings, "w:decimalSymbol");
-    const maths = readMathsSettings(settings);
+    const mathsSettings = readMathsSettings(settings);
     const compatibilityMode = olderModeOf(settings);
     const feLayout = onOff(childrenOf(find(settings, "w:compat")), "w:useFELayout") === true;
     const openTypeFeatures = wordSettingsOf(childrenOf(find(settings, "w:compat"))).some(
@@ -4694,7 +4762,7 @@ export const readContent = (writtenBody: XmlObject, writtenParts: DocumentParts,
         fields: [],
         counters: new Map(),
         ...(decimalSymbol === undefined ? {} : { decimalSymbol }),
-        ...(maths === undefined ? {} : { maths }),
+        ...mathsSettings,
         ...(guess ? { guess } : {}),
         ...(compatibilityMode === undefined ? {} : { compatibilityMode }),
         ...(feLayout ? { feLayout } : {}),

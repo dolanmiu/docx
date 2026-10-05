@@ -38,6 +38,7 @@ import {
     type FloatingDrawing,
     type LayoutItem,
     type ParagraphBlock,
+    type ReadOptions,
     type TableBlock,
     readContent,
     readDocument,
@@ -73,13 +74,14 @@ const readWithSettings = (
     elements: readonly unknown[],
     settings: readonly object[],
     options: Partial<IPropertiesOptions> = {},
+    read: ReadOptions = {},
 ): DocumentContent => {
     const file = new File({ sections: [], ...options });
     const compatibility = { "w:compat": [{ "w:compatSetting": { _attr: { "w:name": "compatibilityMode", "w:val": 15 } } }] };
     const withSettings = Object.create(file, {
         Settings: { value: { prepForXml: () => ({ "w:settings": [...settings, compatibility] }) } },
     }) as File;
-    return readDocument({ "w:body": elements } as IXmlableObject, contextOf(withSettings));
+    return readDocument({ "w:body": elements } as IXmlableObject, contextOf(withSettings), read);
 };
 
 const p = (...children: readonly unknown[]): object => ({ "w:p": children });
@@ -573,33 +575,61 @@ describe("readDocument", () => {
             expect(paragraphOf(readBody([p({ "m:oMathPara": [] })])).items).to.deep.equal([]);
         });
 
-        it("should stop at an equation Word builds up, and at a paragraph of more than one equation", () => {
-            const equation = paragraphOf(readBody([p(r(t("a")), { "m:oMath": [{ "m:f": [] }] })]));
-            expect(equation.unsupported).to.equal("an equation with a fraction, a script, a root or another part Word builds up");
-            expect(equation.items).to.deep.equal([]);
-            expect(paragraphOf(readBody([p({ "m:oMath": [] })])).unsupported).to.equal("an empty equation");
-            const two = { "m:oMathPara": [{ "m:oMath": [{ "m:r": [{ "m:t": ["x"] }] }] }, { "m:oMath": [{ "m:r": [{ "m:t": ["y"] }] }] }] };
-            expect(paragraphOf(readBody([p(two)])).unsupported).to.equal("a paragraph of more than one equation");
+        it("should read an equation Word builds up, and a paragraph of more than one equation in a row, as Word lays them out", () => {
+            const run = (characters: string): object => ({ "m:r": [{ "m:t": [characters] }] });
+            const fraction = { "m:f": [{ "m:num": [run("a")] }, { "m:den": [run("b")] }] };
+            // In a line of text, its numerator and denominator in a script's size, and alone in its paragraph, displayed
+            // (`word-stops-equations.docx` EQ10a, EQ10ad)
+            const [, inline] = itemsOf(
+                readBody([p(pPr(rPr(value("w:sz", 22))), r(rPr(value("w:sz", 22)), t("a ")), { "m:oMath": [fraction] })], {
+                    styles: { default: { document: { run: { size: 22 } } } },
+                }),
+            );
+            expect((inline as { readonly width: number }).width).to.be.closeTo(5.2, 0.03);
+            const [displayed] = itemsOf(
+                readBody([p({ "m:oMath": [fraction] })], { styles: { default: { document: { run: { size: 22 } } } } }),
+            );
+            expect((displayed as { readonly width: number }).width).to.be.closeTo(6.396, 0.03);
+            const incomplete = paragraphOf(readBody([p(r(t("a")), { "m:oMath": [{ "m:f": [] }] })]));
+            expect(incomplete.unsupported).to.equal("a part of an equation with nothing in it");
+            expect(incomplete.items).to.deep.equal([]);
+            expect(paragraphOf(readBody([p({ "m:oMath": [] })])).unsupported).to.equal("an empty equation on a line of its own");
+            // Two in one displayed paragraph are on one line, the second right after the first (EQ25c)
+            const two = { "m:oMathPara": [{ "m:oMath": [run("x")] }, { "m:oMath": [run("y")] }] };
+            const [both] = itemsOf(readBody([p(two)]));
+            const [x] = itemsOf(readBody([p({ "m:oMath": [run("x")] })]));
+            expect((both as { readonly width: number }).width).to.be.greaterThan((x as { readonly width: number }).width);
         });
 
-        it("should stop at an equation displayed beside text, at equations alone in a paragraph together, and at one alone after its list's number", () => {
-            const math = (characters: string): object => ({ "m:oMath": [{ "m:r": [{ "m:t": [characters] }] }] });
+        it("should lay out an equation displayed beside text, and one alone after its list's number, in the line, and stop where Word builds them up", () => {
+            const run = (characters: string): object => ({ "m:r": [{ "m:t": [characters] }] });
+            const math = (characters: string): object => ({ "m:oMath": [run(characters)] });
+            const fraction = { "m:oMath": [{ "m:f": [{ "m:num": [run("a")] }, { "m:den": [run("b")] }] }] };
             const displayed = { "m:oMathPara": [{ "m:oMathParaPr": [{ "m:jc": { _attr: { "m:val": "right" } } }] }, math("x")] };
             const reasonOf = (content: DocumentContent): string | undefined => paragraphOf(content).unsupported;
-            // Word displays one in `m:oMathPara`, beside text in its paragraph or in a hyperlink there
-            const beside = "an equation displayed (`m:oMathPara`) beside text in its paragraph";
-            expect(reasonOf(readBody([p(r(t("a")), displayed)]))).to.equal(beside);
+            // Word lays one in `m:oMathPara` out in the line beside text in its paragraph or in a hyperlink there, but how it
+            // builds one up there, as in a line of text or displayed, hasn't been seen (`word-stops-equations.docx` EQ25a,
+            // EQ25b)
+            expect(reasonOf(readBody([p(r(t("a")), displayed)]))).to.equal(undefined);
             const link = { "w:hyperlink": [{ _attr: { "w:anchor": "a" } }, displayed] };
-            expect(reasonOf(readBody([p(link, r(t("a")))]))).to.equal(beside);
-            // Two alone in a paragraph, and one alone after its list's number
-            const alone = "an equation alone in its paragraph beside another, or after its list's number";
-            expect(reasonOf(readBody([p(math("x"), math("y"))]))).to.equal(alone);
+            expect(reasonOf(readBody([p(link, r(t("a")))]))).to.equal(undefined);
+            const builtUp = { "m:oMathPara": [fraction] };
+            const eleven = { styles: { default: { document: { run: { size: 22 } } } } };
+            expect(reasonOf(readBody([p(r(t("a")), builtUp)], eleven))).to.equal(
+                "an equation Word builds up, displayed (`m:oMathPara`) beside text in its paragraph",
+            );
+            // Two alone in a paragraph, and one Word builds up alone after its list's number (EQ25d)
+            expect(reasonOf(readBody([p(math("x"), math("y"))]))).to.equal("equations alone in their paragraph beside each other");
             const numbering = { config: [{ reference: "list", levels: [{ level: 0, format: LevelFormat.DECIMAL, text: "%1." }] }] };
             const numbered = pPr({ "w:numPr": [value("w:ilvl", 0), value("w:numId", 1)] });
-            expect(reasonOf(readBody([p(numbered, math("x"))], { numbering }))).to.equal(alone);
+            expect(reasonOf(readBody([p(numbered, math("x"))], { numbering }))).to.equal(undefined);
+            expect(reasonOf(readBody([p(numbered, fraction)], { numbering, ...eleven }))).to.equal(
+                "an equation Word builds up alone in its paragraph after its list's number",
+            );
             // One alone in its paragraph, its justification its own, and one in a line of text, numbered or not, are laid out
             expect(reasonOf(readBody([p(displayed)]))).to.equal(undefined);
             expect(reasonOf(readBody([p(numbered, r(t("a ")), math("x"))], { numbering }))).to.equal(undefined);
+            expect(reasonOf(readBody([p(numbered, r(t("a ")), fraction)], { numbering, ...eleven }))).to.equal(undefined);
             expect(reasonOf(readBody([p(r(t("a ")), math("x"), r(t(" b ")), math("y"))]))).to.equal(undefined);
             // Equations deleted, or moved elsewhere, in a tracked change are left out, as their paragraph is laid out without
             // them
@@ -608,7 +638,7 @@ describe("readDocument", () => {
             expect(reasonOf(readBody([p(r(t("a")), r(t("b")), { "w:del": [displayed] })]))).to.equal(undefined);
         });
 
-        it("should stop at equations in a maths font other than Cambria Math, or with margins or space around them, in a document's maths settings", () => {
+        it("should stop at equations in a maths font other than Cambria Math, or with limits, displayed equations or fractions put otherwise, displayed ones with margins, and ones side by side with space between them, in a document's maths settings", () => {
             const equation = p(r(t("a ")), { "m:oMath": [{ "m:r": [{ "m:t": ["x"] }] }] });
             const setting = (name: string, val: string): object => ({ [name]: { _attr: { "m:val": val } } });
             const reasonWith = (...settings: readonly object[]): string | undefined =>
@@ -625,11 +655,47 @@ describe("readDocument", () => {
             expect(reasonWith(...word)).to.equal(undefined);
             expect(paragraphOf(readWithSettings([equation], [])).unsupported).to.equal(undefined);
             expect(reasonWith(setting("m:mathFont", "STIX Two Math"))).to.equal("an equation in a maths font other than Cambria Math");
-            const around =
-                "an equation in a document whose maths settings give equations on lines of their own margins or space around them";
-            for (const name of ["m:lMargin", "m:rMargin", "m:preSp", "m:postSp"]) {
-                expect(reasonWith(...word.filter((given) => !(name in given)), setting(name, "240")), name).to.equal(around);
+            // Space around displayed equations, which Word leaves out, and margins, which don't change an equation in a line
+            // of text (`word-stops-equation-settings.docx` EQS1)
+            for (const name of ["m:lMargin", "m:rMargin", "m:preSp", "m:postSp", "m:interSp", "m:intraSp"]) {
+                expect(reasonWith(...word.filter((given) => !(name in given)), setting(name, "240")), name).to.equal(undefined);
             }
+            // Margins narrow the room Word breaks a displayed equation too long for its line in, which isn't followed
+            const alone = p({ "m:oMathPara": [{ "m:oMath": [{ "m:r": [{ "m:t": ["x"] }] }] }] });
+            const displayedWith = (...settings: readonly object[]): string | undefined =>
+                paragraphOf(readWithSettings([alone], [{ "m:mathPr": settings }])).unsupported;
+            for (const name of ["m:lMargin", "m:rMargin"]) {
+                expect(displayedWith(setting(name, "720")), name).to.equal(
+                    "an equation displayed in a document whose maths settings give displayed equations margins",
+                );
+            }
+            expect(displayedWith(...word)).to.equal(undefined);
+            // Space between equations, which Word was seen to leave out of one alone in its paragraph of equations, with two
+            // side by side in one, which Word puts in a line with nothing between them without it (EQ25c)
+            const x = { "m:oMath": [{ "m:r": [{ "m:t": ["x"] }] }] };
+            const pair = p({ "m:oMathPara": [x, { "m:oMath": [{ "m:r": [{ "m:t": ["y"] }] }] }] });
+            const pairWith = (...settings: readonly object[]): string | undefined =>
+                paragraphOf(readWithSettings([pair], [{ "m:mathPr": settings }])).unsupported;
+            expect(pairWith(setting("m:interSp", "240"))).to.equal(
+                "equations side by side in a paragraph of them (`m:oMathPara`) in a document whose maths settings put space between equations",
+            );
+            expect(pairWith(...word)).to.equal(undefined);
+            expect(pairWith(setting("m:interSp", "0"))).to.equal(undefined);
+            expect(displayedWith(setting("m:interSp", "240"))).to.equal(undefined);
+            // Limits put elsewhere, displayed equations not displayed, and small fractions displayed, which haven't been seen
+            const otherwise = "an equation in a document whose maths settings put limits, displayed equations or fractions otherwise";
+            for (const given of [
+                setting("m:naryLim", "subSup"),
+                setting("m:intLim", "undOvr"),
+                setting("m:dispDef", "0"),
+                setting("m:smallFrac", "1"),
+            ]) {
+                expect(reasonWith(...word, given)).to.equal(otherwise);
+            }
+            expect(reasonWith(...word, setting("m:naryLim", "undOvr"), setting("m:intLim", "subSup"), setting("m:dispDef", "1"))).to.equal(
+                undefined,
+            );
+            expect(reasonWith(...word, { "m:smallFrac": {} })).to.equal(otherwise);
             // Text without equations is laid out as it is
             expect(
                 paragraphOf(readWithSettings([p(r(t("a")))], [{ "m:mathPr": [setting("m:mathFont", "STIX Two Math")] }])).unsupported,
@@ -825,7 +891,7 @@ describe("readDocument", () => {
             expect((bookmarked.endnotes[0] as ParagraphBlock).items).to.deep.equal([{ type: "marker", name: "above" }]);
             // One with an equation in it stops as an equation anywhere does
             expect(withSeparators([p({ "m:oMath": [{ "m:f": [] }] })], []).endnotes[0].unsupported).to.equal(
-                "an equation with a fraction, a script, a root or another part Word builds up",
+                "a part of an equation with nothing in it",
             );
             // Text after the separator is left out, as Word left it out (`word-stops-endnotes.docx` NE3), but for its bookmarks
             const after = withSeparators(
@@ -2852,9 +2918,7 @@ describe("readDocument", () => {
 
         it("should mark a table with something unsupported in a cell as unsupported", () => {
             const content = readBody([{ "w:tbl": [{ "w:tr": [{ "w:tc": [p({ "m:oMath": [{ "m:f": [] }] })] }] }] }]);
-            expect((content.blocks[0].block as TableBlock).unsupported).to.equal(
-                "an equation with a fraction, a script, a root or another part Word builds up",
-            );
+            expect((content.blocks[0].block as TableBlock).unsupported).to.equal("a part of an equation with nothing in it");
             // An equation outside a paragraph too
             const outside = readBody([{ "w:tbl": [{ "w:tr": [{ "w:tc": [{ "m:oMath": [] }] }] }] }]);
             expect((outside.blocks[0].block as TableBlock).unsupported).to.equal("an equation");
@@ -5884,13 +5948,13 @@ describe("readDocument", () => {
                 p(r(t("e")), { "w:subDoc": { _attr: { "r:id": "rId9" } } }, r(t("f"), { "w:pict": [] })),
             ];
             expect(read(readBody(elements))).to.deep.equal([
-                ["an equation with a fraction, a script, a root or another part Word builds up", ""],
+                ["a part of an equation with nothing in it", ""],
                 ["a content part, such as ink", ""],
                 ["a subdocument", ""],
             ]);
             // The first thing guessed at in a paragraph is why
             expect(read(guessed(elements))).to.deep.equal([
-                ["an equation with a fraction, a script, a root or another part Word builds up", "ab"],
+                ["a part of an equation with nothing in it", "ab"],
                 ["a content part, such as ink", "cd"],
                 ["a subdocument", "ef"],
             ]);
@@ -5904,11 +5968,40 @@ describe("readDocument", () => {
             expect(itemsOf(content).map(({ type }) => type)).to.deep.equal(["text", "tab", "text"]);
         });
 
-        it("should read an equation displayed beside text as one in the line", () => {
-            const displayed = { "m:oMathPara": [{ "m:oMath": [{ "m:r": [{ "m:t": ["x"] }] }] }] };
-            const content = guessed([p(r(t("a ")), displayed)]);
-            expect(read(content)).to.deep.equal([["an equation displayed (`m:oMathPara`) beside text in its paragraph", "a "]]);
+        it("should read an equation Word builds up, displayed beside text, as one in the line", () => {
+            const run = (characters: string): object => ({ "m:r": [{ "m:t": [characters] }] });
+            const fraction = { "m:f": [{ "m:num": [run("a")] }, { "m:den": [run("b")] }] };
+            const displayed = { "m:oMathPara": [{ "m:oMath": [fraction] }] };
+            const eleven = { styles: { default: { document: { run: { size: 22 } } } } };
+            const content = guessed([p(r(t("a ")), displayed)], eleven);
+            expect(read(content)).to.deep.equal([
+                ["an equation Word builds up, displayed (`m:oMathPara`) beside text in its paragraph", "a "],
+            ]);
             expect(itemsOf(content).map(({ type }) => type)).to.deep.equal(["text", "box"]);
+            // One Word can't be laid out in the line, but can displayed, is laid out displayed: a sum in a fraction's
+            // numerator, which in a line of text is in a script's style
+            const sum = { "m:nary": [{ "m:naryPr": [] }, { "m:sub": [run("i")] }, { "m:sup": [run("n")] }, { "m:e": [run("a")] }] };
+            const either = guessed([p(r(t("a ")), { "m:oMath": [{ "m:f": [{ "m:num": [sum] }, { "m:den": [run("b")] }] }] })], eleven);
+            expect(read(either)[0][0]).to.equal("an equation with a part Word builds up in a way not yet followed");
+            expect(itemsOf(either).map(({ type }) => type)).to.deep.equal(["text", "box"]);
+        });
+
+        it("should read an equation alone in its paragraph that can't be laid out there as displayed, as Word displays it", () => {
+            const run = (characters: string): object => ({ "m:r": [{ "m:t": [characters] }] });
+            const sum = { "m:nary": [{ "m:naryPr": [] }, { "m:sub": [run("i")] }, { "m:sup": [run("n")] }, { "m:e": [run("a")] }] };
+            const alone = p({ "m:oMathPara": [{ "m:oMath": [sum] }] });
+            const eleven = { styles: { default: { document: { run: { size: 22 } } } } };
+            const [displayed] = itemsOf(readWithSettings([alone], [], eleven));
+            // Margins in the maths settings stop it, but Word displays it all the same: its sum larger, with the limits under
+            // and over it, rather than in a line of text's style
+            const margins = [{ "m:mathPr": [{ "m:lMargin": { _attr: { "m:val": "720" } } }] }];
+            const content = readWithSettings([alone], margins, eleven, { guess: true });
+            expect(paragraphOf(content).unsupported).to.equal(
+                "an equation displayed in a document whose maths settings give displayed equations margins",
+            );
+            expect(itemsOf(content)).to.deep.equal([displayed]);
+            const [, inline] = itemsOf(readWithSettings([p(r(t("a ")), { "m:oMath": [sum] })], [], eleven));
+            expect(inline).to.not.deep.equal(displayed);
         });
 
         it("should read tabs, soft hyphens and pictures in text with a border, a phonetic guide's base, and an endnote with a mark of its own", () => {
