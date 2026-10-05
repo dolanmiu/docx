@@ -5392,14 +5392,18 @@ export const readContent = (writtenBody: XmlObject, writtenParts: DocumentParts,
                 inNumbering ??
                 (footnotes.size > 0 ? notesUnsupported("footnote") : undefined) ??
                 (endnotes.length > 0 ? notesUnsupported("endnote") : undefined) ??
-                // Endnotes follow the last section's text, on its grid, and on the grid of another section in a way Word hasn't
-                // shown
-                ([...endnoteSections, sections.length - 1].some((section) => sections[section].textRunsDown !== undefined) &&
-                endnotes.length > 0
-                    ? "endnotes on text that runs down the page"
+                // Endnotes follow the last section's text, on its grid, where the sections from theirs on are all on one grid
+                // and run across the page. Word ended those of a section on a grid of lines that a section of text running down
+                // the page followed with their own section, and that one's with it too, rather than at the end of the document
+                // (stops2/word-stops-east-asian.ts GR13), which isn't followed, and whether it does so for another grid alone, or
+                // the direction alone, hasn't been seen
+                (sections.slice(Math.min(...endnoteSections)).some(({ textRunsDown }) => textRunsDown !== undefined)
+                    ? "endnotes on or before text that runs down the page"
                     : undefined) ??
-                (endnoteSections.some((section) => !sameGrid(gridOf(section), gridOf(sections.length - 1)))
-                    ? "endnotes from a section on another document grid than the last"
+                (endnoteSections.some((section) =>
+                    sections.slice(section + 1).some((_, after) => !sameGrid(gridOf(section), gridOf(section + 1 + after))),
+                )
+                    ? "endnotes from a section followed by one on another document grid"
                     : undefined) ??
                 (unwrittenNumber ? "notes numbered in a format not yet written" : undefined) ??
                 unseenNumbering,

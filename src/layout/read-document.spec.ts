@@ -4490,20 +4490,36 @@ describe("readDocument", () => {
             expect(note.grid!.characterPitch).to.be.closeTo(451.3 / 41, 1e-9);
         });
 
-        it("should mark endnotes from a section on another grid than the last, which they follow, as unsupported", () => {
-            const endnoted = (first?: ISectionOptions["properties"], last?: ISectionOptions["properties"]): string | undefined =>
+        it("should mark endnotes from a section that one on another grid follows as unsupported, as Word ended them with their section (GR13)", () => {
+            const endnoted = (...properties: readonly ISectionOptions["properties"][]): string | undefined =>
                 readWritten({
                     endnotes: { 1: { children: [new Paragraph("Note")] } },
                     sections: [
-                        { properties: first, children: [new Paragraph({ children: [new TextRun("Text"), new EndnoteReferenceRun(1)] })] },
-                        { properties: last, children: [new Paragraph("Last")] },
+                        {
+                            properties: properties[0],
+                            children: [new Paragraph({ children: [new TextRun("Text"), new EndnoteReferenceRun(1)] })],
+                        },
+                        ...properties.slice(1).map((more) => ({ properties: more, children: [new Paragraph("More")] })),
                     ],
                 }).unsupported;
             const LINES_360 = { grid: { type: DocumentGridType.LINES, linePitch: 360 } };
+            const STOP = "endnotes from a section followed by one on another document grid";
             expect(endnoted(LINES_360, LINES_360)).to.equal(undefined);
-            expect(endnoted(undefined, LINES_360)).to.equal("endnotes from a section on another document grid than the last");
-            expect(endnoted(LINES_360)).to.equal("endnotes from a section on another document grid than the last");
-            expect(endnoted()).to.equal(undefined);
+            expect(endnoted(undefined, LINES_360)).to.equal(STOP);
+            expect(endnoted(LINES_360, undefined)).to.equal(STOP);
+            expect(endnoted(undefined, undefined)).to.equal(undefined);
+            // Another grid between theirs and the last too, but not before theirs
+            expect(endnoted(undefined, LINES_360, undefined)).to.equal(STOP);
+            expect(
+                readWritten({
+                    endnotes: { 1: { children: [new Paragraph("Note")] } },
+                    sections: [
+                        { properties: LINES_360, children: [new Paragraph("First")] },
+                        { children: [new Paragraph({ children: [new TextRun("Text"), new EndnoteReferenceRun(1)] })] },
+                        { children: [new Paragraph("Last")] },
+                    ],
+                }).unsupported,
+            ).to.equal(undefined);
         });
     });
 
@@ -4686,7 +4702,18 @@ describe("readDocument", () => {
             const footnoted = noted("footnotes");
             expect(footnoted.unsupported).to.equal(undefined);
             expect([...footnoted.footnotes.values()][0][0].unsupported).to.equal(undefined);
-            expect(noted("endnotes").unsupported).to.equal("endnotes on text that runs down the page");
+            expect(noted("endnotes").unsupported).to.equal("endnotes on or before text that runs down the page");
+            // And from text across the page that text down it follows
+            const DOWN = { page: { textDirection: PageTextDirectionType.TOP_TO_BOTTOM_RIGHT_TO_LEFT } };
+            const before = readWritten({
+                endnotes: { 1: { children: [new Paragraph("Note")] } },
+                sections: [
+                    { children: [new Paragraph({ children: [new TextRun("Text"), new EndnoteReferenceRun(1)] })] },
+                    { properties: DOWN, children: [new Paragraph("Down")] },
+                    { children: [new Paragraph("Last")] },
+                ],
+            });
+            expect(before.unsupported).to.equal("endnotes on or before text that runs down the page");
         });
     });
 
