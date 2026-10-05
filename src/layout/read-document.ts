@@ -32,6 +32,7 @@ import {
     type TextFont,
     type TextGrid,
     type TextStyles,
+    WIDEST_ART_BORDER,
     WIDEST_BORDER,
     type XmlObject,
     attributesOf,
@@ -40,6 +41,7 @@ import {
     find,
     fontOf,
     getTextStyles,
+    isArtBorder,
     isEastAsian,
     isEastAsianRun,
     isGridCharacter,
@@ -2403,8 +2405,6 @@ const inPoints = (
 
 // The styles of a border that draw none
 const NO_BORDER = new Set(["none", "nil"]);
-// The widest art border, in points
-const WIDEST_ART_BORDER = 31;
 
 /**
  * The room a border of a paragraph takes, in points: its width and the space between it and the text, or why it isn't
@@ -2419,7 +2419,7 @@ const borderRoom = (border: ParagraphBorder | undefined): number | string => {
         return 0;
     }
     const style = BORDER_WIDTHS[border.style];
-    const art = style === undefined && border.style !== "custom";
+    const art = isArtBorder(border.style);
     if ((style === undefined && !art) || border.frame || (border.shadow && border.style !== "single")) {
         return "a paragraph border of a style not yet followed";
     }

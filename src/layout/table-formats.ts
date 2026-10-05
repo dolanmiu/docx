@@ -4,7 +4,7 @@
  *
  * @module
  */
-import { TWIPS_PER_POINT, attributesOf, childrenOf, find, isOff, numberOf, pointsOf } from "../text-layout";
+import { TWIPS_PER_POINT, WIDEST_ART_BORDER, attributesOf, childrenOf, find, isArtBorder, isOff, numberOf, pointsOf } from "../text-layout";
 
 // Border widths are in eighths of a point
 const EIGHTHS_PER_POINT = 8;
@@ -102,14 +102,6 @@ export const readBorderSet = (element: unknown): BorderSet => {
 /** Whether a border is drawn */
 export const isDrawn = (border: Border | undefined): border is Border => border !== undefined && border.style !== "none";
 
-// The widest art border, in points
-const WIDEST_ART_BORDER = 31;
-// The schema's styles of borders of lines (`ST_Border`); the rest are art borders, of pictures, but for "custom"
-const LINE_STYLES = new Set([...Object.keys(ROOMS), ...Object.keys(ROOMS_BY_WIDTH), "custom"]);
-
-/** Whether a border is an art border, of pictures, rather than of lines */
-const isArt = ({ style }: Border): boolean => !LINE_STYLES.has(style);
-
 /**
  * The room a border takes from what is beside it, in points: its line's room and the space between it and the text,
  * which Word adds to it (BS31). An art border's width is in points, where a line's is in eighths of one, and it takes that
@@ -122,8 +114,11 @@ export const roomOf = (border: Border | undefined): number | undefined => {
         return 0;
     }
     const { style, width, space = 0 } = border;
-    const art = width * EIGHTHS_PER_POINT;
-    const room = isArt(border) ? (art <= WIDEST_ART_BORDER ? art : undefined) : (ROOMS[style]?.(width) ?? ROOMS_BY_WIDTH[style]?.[width]);
+    if (isArtBorder(style)) {
+        const art = width * EIGHTHS_PER_POINT;
+        return art <= WIDEST_ART_BORDER ? art + space : undefined;
+    }
+    const room = ROOMS[style]?.(width) ?? ROOMS_BY_WIDTH[style]?.[width];
     return room === undefined ? undefined : room + space;
 };
 
@@ -224,7 +219,7 @@ export const sideBorders = (
         const [left, right] = [leftOf(index), rightOf(index)];
         // The borders this cell's meet, of the cells either side of it
         const meeting = [...(index > 0 ? [rightOf(index - 1)] : []), ...(index < cells.length - 1 ? [leftOf(index + 1)] : [])];
-        const art = [left, right, ...meeting].some((border) => isDrawn(border) && isArt(border));
+        const art = [left, right, ...meeting].some((border) => isDrawn(border) && isArtBorder(border.style));
         return art ? "an art border beside a table cell's text" : { left: roomOrWhy(left), right: roomOrWhy(right) };
     });
     const unsupported = sides

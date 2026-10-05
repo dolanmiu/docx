@@ -14,6 +14,7 @@ import {
     WidthType,
 } from "docx";
 
+import { BORDER_WIDTHS } from "../text-layout";
 import { layoutDocument } from "./layout-document";
 import {
     type BorderedCell,
@@ -88,6 +89,8 @@ describe("roomOf", () => {
         expect(offered("threeDEmboss")).to.deep.equal([1.75, 2.25, 2.5, 3.75, 7.5, 9]);
         expect(offered("threeDEngrave")).to.deep.equal([1.75, 2.25, 2.5, 3.75, 7.5, 9]);
         expect(offered("doubleWave")).to.deep.equal([5.25, 5.25, 5.25, 5.25, 5.25, 5.25]);
+        // Every style of line of the schema's takes room at half a point
+        expect(Object.keys(BORDER_WIDTHS).filter((style) => roomOf({ style, width: 0.5 }) === undefined)).to.deep.equal([]);
         // The space between a border and the text adds to it (BS31)
         expect(roomOf({ style: "single", width: 1.5, space: 10 })).to.equal(11.5);
         expect(roomOf(NONE)).to.equal(0);
@@ -105,6 +108,8 @@ describe("roomOf", () => {
         expect(roomOf({ style: "wave", width: 1.25 })).to.equal(undefined);
         // Wider than the widest art border Word draws
         expect(roomOf({ style: "apples", width: 32 / 8 })).to.equal(undefined);
+        // A custom border, of lines of no style of the schema's
+        expect(roomOf({ style: "custom", width: 0.5 })).to.equal(undefined);
     });
 });
 

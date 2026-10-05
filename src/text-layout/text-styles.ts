@@ -692,16 +692,20 @@ export const NARROWEST_BORDER = 2;
 export const WIDEST_BORDER = 96;
 export const FURTHEST_BORDER = 31;
 
-// The schema's borders of lines (`ST_Border`); the rest of its borders are art borders, but for "custom"
+// The schema's borders of lines (`ST_Border`), each with its width above; the rest of its borders are art borders, but for
+// "custom"
 const LINE_BORDERS = new Set(["nil", "none", ...Object.keys(BORDER_WIDTHS), "custom"]);
+// The widest art border, in points
+export const WIDEST_ART_BORDER = 31;
+
+/** Whether a style of border is an art border's, of pictures, whose size is in points, rather than a line's */
+export const isArtBorder = (style: string): boolean => !LINE_BORDERS.has(style);
 // Widths of a run's border, in eighths of a point, seen at one size only past those of its style Word drew beside a table's
 // cells: thickThinLargeGap of 4.5 points 6.75 wide, as those make it (scripts/layout-probes/stops2/word-stops-text.ts
 // RF25b). Word drew thinThickThinMediumGap of 3 points 9 points wide in a run, as beside a table's cells too (RF25a)
 const SEEN_RUN_BORDERS: Readonly<Record<string, Readonly<Record<number, number>>>> = {
     thickThinLargeGap: { 36: 54 },
 };
-// The widest art border, in points
-const WIDEST_ART_BORDER = 31;
 
 /**
  * How wide a run's border is as Word draws it, in eighths of a point: as a paragraph's of its style. A border of no style
@@ -719,7 +723,7 @@ const runBorderWidth = ({ style, size, shadow, frame }: ParagraphBorder): number
     if (shadow || frame) {
         return style === "single" && size >= NARROWEST_BORDER && size <= WIDEST_BORDER ? (shadow ? 2 : 1) * size : undefined;
     }
-    if (!LINE_BORDERS.has(style)) {
+    if (isArtBorder(style)) {
         return size >= 1 && size <= WIDEST_ART_BORDER ? size * EIGHTHS_PER_POINT : undefined;
     }
     if ((style === "single" && size === 1) || (style === "double" && size === 0)) {
