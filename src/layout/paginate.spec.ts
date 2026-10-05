@@ -3698,6 +3698,95 @@ describe("paginate", () => {
                 footnoteContinuationSeparator: [SEPARATOR],
             });
 
+        it("should number footnotes afresh on each page from where the pass before placed their references, as Word does", () => {
+            // Two footnotes on the first page and one on the second, numbered i and ii, and i (`word-stops-notes.docx` NT14a)
+            const short = (name: string, note?: string, format: ParagraphFormat = {}): ParagraphBlock => ({
+                ...paragraph(name, 1, format),
+                items: [
+                    { type: "marker", name },
+                    { type: "text", text: "word ", font: {} },
+                    ...(note === undefined
+                        ? []
+                        : [{ type: "marker", name: note } as const, { type: "noteNumber", note, font: {} } as const]),
+                ],
+            });
+            const onPage = (format: string): DocumentContent => ({
+                ...withNotes([short("a", "footnote 1"), short("b", "footnote 2"), short("c", "footnote 3", { pageBreakBefore: true })], {
+                    "footnote 1": [paragraph("one", 1)],
+                    "footnote 2": [paragraph("two", 1)],
+                    "footnote 3": [paragraph("three", 1)],
+                }),
+                footnotesOnEachPage: new Map(["footnote 1", "footnote 2", "footnote 3"].map((note) => [note, { start: 1, format }])),
+            });
+            const content = onPage("lowerRoman");
+            // The first pass doesn't know their pages, and the next numbers them from where it placed them
+            const first = paginate(content, { measurer: MEASURER });
+            expect(first.pages.map(({ footnotes }) => footnotes.map(({ noteNumber }) => noteNumber))).to.deep.equal([["", ""], [""]]);
+            const second = paginate(content, { measurer: MEASURER, places: first.places });
+            expect(second.pages.map(({ footnotes }) => footnotes.map(({ noteNumber }) => noteNumber))).to.deep.equal([["i", "ii"], ["i"]]);
+            expect(
+                second.pages.map(({ body }) => body.map((block) => (block.type === "paragraph" ? block.lines[0].text : ""))),
+            ).to.deep.equal([["word i", "word ii"], ["word i"]]);
+            // Their markers are placed, but they aren't bookmarks
+            expect([second.places.has("footnote 1"), second.bookmarks.has("footnote 1")]).to.deep.equal([true, false]);
+            // In a format not yet written, the layout stops
+            const unwritten = onPage("bogus");
+            expect(paginate(unwritten, { measurer: MEASURER, places: first.places }).stoppedAt).to.equal(
+                "notes numbered in a format not yet written",
+            );
+            // Guessing, it is in figures
+            const guessed = paginate(unwritten, { measurer: MEASURER, places: first.places, guess: true });
+            expect(guessed.pages.map(({ footnotes }) => footnotes.map(({ noteNumber }) => noteNumber))).to.deep.equal([["1", "2"], ["1"]]);
+        });
+
+        it("should put the footnotes of a section that says so just below the text of their page, as Word does", () => {
+            // The separator and the footnote below the second line, rather than at the bottom of the page
+            // (`word-stops-notes.docx` NT14c)
+            const content = (format: ParagraphFormat = {}, noteLines = 1): DocumentContent => ({
+                ...withNotes([paragraph("a", 1), noted(paragraph("b", 1, format), "footnote 1")], {
+                    "footnote 1": [paragraph("note", noteLines)],
+                }),
+                sections: [{ ...SECTION, footnotesBeneathText: true }],
+            });
+            const below = paginate(content(), { measurer: MEASURER });
+            const note = below.pages[0].footnotes[0].content[0];
+            expect(note.type === "paragraph" ? note.lines.map(({ y }) => y) : []).to.deep.equal([40]);
+            // Below the space after the page's last paragraph, and continued on the next page, they haven't been seen
+            expect(paginate(content({ spaceAfter: 5 }), { measurer: MEASURER }).stoppedAt).to.equal(
+                "footnotes below the text after space below its last paragraph",
+            );
+            expect(paginate(content({}, 8), { measurer: MEASURER }).stoppedAt).to.equal(
+                "a footnote below the text that goes on across pages",
+            );
+            // And so does the space around the empty paragraph that ends a section
+            const end: ParagraphBlock = { ...paragraph("end", 1), items: [], sectionBreak: true };
+            const ended = withNotes(
+                [
+                    [paragraph("a", 1), 0],
+                    [noted(paragraph("b", 1, { spaceAfter: 5 }), "footnote 1"), 0],
+                    [end, 0],
+                    [paragraph("c", 1), 1],
+                ],
+                { "footnote 1": [paragraph("note", 1)] },
+            );
+            expect(
+                paginate({ ...ended, sections: [{ ...SECTION, footnotesBeneathText: true }, SECTION] }, { measurer: MEASURER }).stoppedAt,
+            ).to.equal("footnotes below the text after space below its last paragraph");
+            // A full page's are at its bottom
+            const full = paginate(
+                {
+                    ...content(),
+                    blocks: [
+                        { block: paragraph("a", 4), section: 0 },
+                        { block: noted(paragraph("b", 1), "footnote 1"), section: 0 },
+                    ],
+                },
+                { measurer: MEASURER },
+            );
+            const last = full.pages[0].footnotes[0].content[0];
+            expect(last.type === "paragraph" ? last.lines.map(({ y }) => y) : []).to.deep.equal([80 - 10]);
+        });
+
         it("should leave room at the bottom of a page for the footnotes of its lines, below their separator", () => {
             const content = withNotes([paragraph("a", 4), noted(paragraph("b", 1), "footnote 1"), paragraph("c", 1)], {
                 "footnote 1": [paragraph("note", 1)],
@@ -3967,11 +4056,37 @@ describe("paginate", () => {
                 "footnote 1": [paragraph("note", 6)],
             });
             expect(pagesOf(tabled)).to.deep.equal({ heading: "1", cell: "1", second: "2" });
-            // Kept with a paragraph with a page break before it, how much of that Word puts above the footnote isn't known
-            const broken = withNotes([heading, paragraph("next", 1, { pageBreakBefore: true })], { "footnote 1": [paragraph("note", 6)] });
-            expect(paginate(broken, { measurer: MEASURER }).stoppedAt).to.equal(
-                "a footnote continued below a paragraph kept with the next",
-            );
+        });
+
+        it("should put the rest of a footnote on a page of its own before a paragraph with a page break before it, as Word does", () => {
+            // Kept with the next or not, the paragraph keeps as much of the footnote below it as fits, 4 of its 6 lines as
+            // widow control leaves 2, and the rest goes on a page of its own before the next paragraph's
+            // (`word-stops-notes.docx` NT10b)
+            for (const keepNext of [true, false]) {
+                const heading = noted(paragraph("heading", 1, { keepNext }), "footnote 1");
+                const broken = withNotes([heading, paragraph("next", 1, { pageBreakBefore: true })], {
+                    "footnote 1": [paragraph("note", 6)],
+                });
+                const { bookmarks, pages } = paginate(broken, { measurer: MEASURER });
+                expect(Object.fromEntries(inBody(broken, bookmarks))).to.deep.equal({ heading: "1", next: "3" });
+                expect(
+                    pages.map(({ body, footnotes }) => [
+                        body.length,
+                        footnotes.flatMap(({ content }) => content.flatMap((block) => (block.type === "paragraph" ? block.lines : [])))
+                            .length,
+                    ]),
+                ).to.deep.equal([
+                    [1, 4],
+                    [0, 2],
+                    [1, 0],
+                ]);
+            }
+            // In columns, the next paragraph goes on the next page, above the rest, as before
+            const columns = withNotes([noted(paragraph("heading", 1), "footnote 1"), paragraph("next", 1, { pageBreakBefore: true })], {
+                "footnote 1": [paragraph("note", 6)],
+            });
+            const inColumns = paginate({ ...columns, sections: [{ ...SECTION, columns: [80, 80] }] }, { measurer: MEASURER });
+            expect(Object.fromEntries(inBody(columns, inColumns.bookmarks))).to.deep.equal({ heading: "1", next: "2" });
         });
 
         it("should move a line to the next page when one of its footnotes before the last would have to continue, as Word does", () => {
@@ -4080,7 +4195,9 @@ describe("paginate", () => {
             expect(pagesOf(content(5, { ...SECTION, start: "oddPage" }))).to.deep.equal({ a: "1", b: "1", c: "3" });
             // Before a continuous section in columns, after it too
             expect(pagesOf(content(5, { ...SECTION, start: "continuous", columns: [35, 35] }))).to.deep.equal({ a: "1", b: "1", c: "3" });
-            // And before a continuous section, which starts on a new page after them, as its own (FN5)
+            // And before a continuous section, which starts on a new page after them, as its own (FN5). Word numbered each of
+            // the pages with the section's first number, and each section's number of pages 1, which isn't followed, so they
+            // aren't known (`word-stops-notes.docx` NT2b)
             expect(numbersOf(content(12, { ...SECTION, start: "continuous" }))).to.deep.equal({
                 bookmarks: new Map([
                     ["a", "1"],
@@ -4088,8 +4205,36 @@ describe("paginate", () => {
                     ["c", "4"],
                 ]),
                 pageCount: 4,
-                sectionPageCounts: [3, 1],
+                sectionPageCounts: [undefined, undefined],
             });
+            const afresh = paginate(content(12, { ...SECTION, start: "continuous", firstNumber: 1 }), { measurer: MEASURER });
+            expect(afresh.pages.map(({ pageNumber }) => pageNumber)).to.deep.equal(["1", "1", "1", "1"]);
+            // Where the sections' headers or footers differ, how much of the footnote Word puts on the pages isn't known
+            const footer = { default: [paragraph("footer", 1)] };
+            expect(paginate(content(12, { ...SECTION, start: "continuous", footers: footer }), { measurer: MEASURER }).stoppedAt).to.equal(
+                "a footnote continued across a continuous section break onto a page of its own",
+            );
+            const same = {
+                ...withNotes(
+                    [
+                        [paragraph("a", 3), 0],
+                        [noted(paragraph("b", 1), "footnote 1"), 0],
+                        [paragraph("c", 1), 1],
+                    ],
+                    { "footnote 1": [paragraph("note", 12)] },
+                ),
+            };
+            const sameFooters = paginate(
+                {
+                    ...same,
+                    sections: [
+                        { ...SECTION, footers: { default: [paragraph("footer", 1)] } },
+                        { ...SECTION, start: "continuous", footers: { default: [paragraph("footer", 1)] } },
+                    ],
+                },
+                { measurer: MEASURER },
+            );
+            expect(sameFooters.stoppedAt).to.equal(undefined);
         });
 
         it("should move a reference to the next page with its footnote when the paragraph it starts with is kept together or with the next and doesn't fit, as Word does", () => {
@@ -4581,6 +4726,18 @@ describe("paginate", () => {
             // left's 3
             const continuing = markedLines("right", 6, { 2: ["footnote 1"] });
             expect(stoppedAt(paragraph("left", 3), continuing, 1, { "footnote 1": [paragraph("note", 5)] })).to.equal(reason);
+            // A cell kept together that doesn't fit beside the row's other lines without the footnote either keeps its lines as
+            // the row is cut: Word moved a row whose second cell of 6 lines kept together didn't fit in the 4 lines left to
+            // the next page (`word-stops-notes.docx` NT7)
+            const third = markedLines("right", 4, { 3: ["footnote 1"] });
+            expect(stoppedAt(paragraph("left", 5, { keepLines: true }), third, 3)).to.equal(undefined);
+            expect(
+                pagesOf(withNotes([paragraph("a", 3), table([row([[paragraph("left", 5, { keepLines: true })], [third]])])], one)),
+            ).to.deep.equal({
+                a: "1",
+                left: "2",
+                right: "2",
+            });
             // A cell that its own footnote holds back is laid out, as in the text
             const own = markedLines("right", 4, { 1: ["footnote 1"], 3: ["third"] });
             expect(pagesOf(withNotes([paragraph("a", 2), table([row([[paragraph("left", 1)], [own]])])], one))).to.deep.equal({
@@ -5839,7 +5996,7 @@ describe("paginate", () => {
             ]);
         });
 
-        it("should stop at endnotes that go on into the next column or page in a section of columns", () => {
+        it("should stop at endnotes after text in columns, which Word evens out above them", () => {
             const SEPARATOR: ParagraphBlock = { type: "paragraph", items: [], format: {}, tabStops: [], markFont: {} };
             const note = paragraph("note", 10);
             const columns = (body: number): ReturnType<typeof paginate> =>
@@ -5852,10 +6009,18 @@ describe("paginate", () => {
                     }),
                     { measurer: MEASURER },
                 );
-            // Whether Word puts the continuation separator at the top of a column isn't known
-            expect(columns(1).stoppedAt).to.equal("endnotes continued in columns");
-            // Nor of a page, after the last column
-            expect(columns(7).stoppedAt).to.equal("endnotes continued in columns");
+            // Word evens out the columns before them, which isn't followed (`word-stops-endnotes.docx` NE1), when they fit too
+            expect(columns(1).stoppedAt).to.equal("endnotes after text in columns");
+            expect(columns(7).stoppedAt).to.equal("endnotes after text in columns");
+            const fitting = paginate(
+                document([paragraph("a", 1)], {
+                    sections: [{ ...SECTION, columns: [80, 80] }],
+                    endnotes: [SEPARATOR, paragraph("short", 1)],
+                    endnoteNumbers: new Map<Block, string>([[note, "i"]]),
+                }),
+                { measurer: MEASURER },
+            );
+            expect(fitting.stoppedAt).to.equal("endnotes after text in columns");
         });
 
         it("should say which header and footer each page shows, and give the blank page before an odd page section neither, as Word does", () => {

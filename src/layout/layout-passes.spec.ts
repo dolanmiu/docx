@@ -94,12 +94,12 @@ describe("layOutPasses", () => {
     });
 
     it("should stop each pass at a field whose number its format doesn't write, once a pass has placed it, so the passes settle", () => {
-        // Page 1 with a picture of 3 digits only where the number has them, which Word writes with spaces, not yet seen.
-        // The first pass doesn't know the page, the second stops at the reference, and so does the third, which hasn't
-        // placed the bookmark
+        // Page 10 with a picture whose x drops the digits before it, which Word hasn't been seen to. The first pass doesn't
+        // know the page, the second stops at the reference, and so does the third, which hasn't placed the bookmark
         const pictured = contentOf([
-            new Paragraph({ children: [new SimpleField('PAGEREF target \\# "###"', "?")] }),
-            new Paragraph({ children: [new Bookmark({ id: "target", children: [new TextRun("Target")] })] }),
+            new Paragraph({ spacing: line, children: [new SimpleField('PAGEREF target \\# "x"', "?")] }),
+            ...Array.from({ length: 18 }, () => new Paragraph({ spacing: line, children: [new TextRun("Line")] })),
+            new Paragraph({ spacing: line, children: [new Bookmark({ id: "target", children: [new TextRun("Target")] })] }),
         ]);
         const passes = layOutPasses(
             pictured,

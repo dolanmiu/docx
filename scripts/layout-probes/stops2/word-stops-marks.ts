@@ -72,7 +72,22 @@ import {
     WidthType,
 } from "docx";
 
-import { ALL_BORDERS, PAGE, cell, fill, footnote, injectIntoParagraph, line, marker, picture, probe, prose, replaceMarkerRun, withProperty, write } from "./kit";
+import {
+    ALL_BORDERS,
+    PAGE,
+    cell,
+    fill,
+    footnote,
+    injectIntoParagraph,
+    line,
+    marker,
+    picture,
+    probe,
+    prose,
+    replaceMarkerRun,
+    withProperty,
+    write,
+} from "./kit";
 
 const DATE = 'w:author="probe" w:date="2026-10-04T00:00:00Z"';
 const HIDDEN_MARK = { rPr: "<w:vanish/>" };
@@ -80,7 +95,9 @@ const HIDDEN_MARK = { rPr: "<w:vanish/>" };
 let changeId = 9000;
 const nextId = (): number => ++changeId;
 const deletedMark = () => ({ rPr: `<w:del w:id="${nextId()}" ${DATE}/>` });
-const boxed = Object.fromEntries(["top", "bottom", "left", "right"].map((side) => [side, { style: "single", size: 4, space: 4, color: "000000" }]));
+const boxed = Object.fromEntries(
+    ["top", "bottom", "left", "right"].map((side) => [side, { style: "single", size: 4, space: 4, color: "000000" }]),
+);
 
 const hdCases = [
     { name: "HD1a", second: { run: { size: 32 } } },
@@ -95,7 +112,10 @@ const hdCases = [
 
 const joined = (name: string, second: { readonly run?: object; readonly paragraph?: object }, inject = "HID"): Paragraph[] => [
     new Paragraph({ children: [new TextRun(`${name} first ${prose(20)}`), marker(`${inject}_${name}`)] }),
-    new Paragraph({ ...(second.paragraph ?? {}), children: [new TextRun({ text: `${name} second\t${prose(30)}`, ...(second.run ?? {}) })] }),
+    new Paragraph({
+        ...(second.paragraph ?? {}),
+        children: [new TextRun({ text: `${name} second\t${prose(30)}`, ...(second.run ?? {}) })],
+    }),
 ];
 
 /** Takes out of the footnotes part those no reference in the body refers to, which the kit writes for every document */
@@ -104,7 +124,9 @@ const onlyReferencedNotes = (parts: Map<string, string>): void => {
     if (notes === undefined) {
         return;
     }
-    const referenced = new Set([...parts.get("word/document.xml")!.matchAll(/<w:footnoteReference [^>]*w:id="(-?\d+)"/g)].map(([, id]) => id));
+    const referenced = new Set(
+        [...parts.get("word/document.xml")!.matchAll(/<w:footnoteReference [^>]*w:id="(-?\d+)"/g)].map(([, id]) => id),
+    );
     parts.set(
         "word/footnotes.xml",
         notes.replace(/<w:footnote w:id="(\d+)">.*?<\/w:footnote>/gs, (note, id: string) => (referenced.has(id) ? note : "")),
@@ -164,7 +186,14 @@ const deletedRows =
 const PROBE_TABLE_STYLE =
     '<w:style w:type="table" w:styleId="ProbeTable"><w:name w:val="Probe Table"/><w:tblPr><w:tblBorders><w:top w:val="single" w:sz="4" w:space="0" w:color="000000"/><w:bottom w:val="single" w:sz="4" w:space="0" w:color="000000"/><w:insideH w:val="single" w:sz="4" w:space="0" w:color="000000"/></w:tblBorders></w:tblPr><w:tblStylePr w:type="firstRow"><w:rPr><w:b/><w:sz w:val="28"/></w:rPr><w:tcPr><w:tcBorders><w:bottom w:val="single" w:sz="18" w:space="0" w:color="000000"/></w:tcBorders></w:tcPr></w:tblStylePr></w:style>';
 
-const NUMBERS = { config: [{ reference: "numbers", levels: [{ level: 0, format: LevelFormat.DECIMAL, text: "%1.", style: { paragraph: { indent: { left: 720, hanging: 360 } } } }] }] };
+const NUMBERS = {
+    config: [
+        {
+            reference: "numbers",
+            levels: [{ level: 0, format: LevelFormat.DECIMAL, text: "%1.", style: { paragraph: { indent: { left: 720, hanging: 360 } } } }],
+        },
+    ],
+};
 
 // Each document's sections are made when it is written, so a footnote's paragraph is marked once, by its own document
 
@@ -179,12 +208,34 @@ await write({
                 ...probe("HD2", [
                     new Table({
                         borders: ALL_BORDERS,
-                        rows: [new TableRow({ children: [cell([new Paragraph({ children: [new TextRun("HD2 alpha beta"), marker("HID_HD2")] }), line("HD2 gamma delta epsilon zeta")]), cell("HD2 other")] })],
+                        rows: [
+                            new TableRow({
+                                children: [
+                                    cell([
+                                        new Paragraph({ children: [new TextRun("HD2 alpha beta"), marker("HID_HD2")] }),
+                                        line("HD2 gamma delta epsilon zeta"),
+                                    ]),
+                                    cell("HD2 other"),
+                                ],
+                            }),
+                        ],
                     }),
                 ]),
-                ...probe("HD5", [new Paragraph({ children: [marker("HID_HD5")] }), new Table({ borders: ALL_BORDERS, rows: [new TableRow({ children: [cell("HD5 table")] })] })]),
-                ...probe("HD6", [new Paragraph({ children: [new TextRun("HD6 first"), marker("HID_HD6")] }), new Paragraph({ children: [marker("HID_HD6b")] }), line(`HD6 last ${prose(20)}`)]),
-                ...probe("HD7", [...fill("HD7", 47), line("HD7 kept", { keepNext: true }), new Paragraph({ children: [marker("HID_HD7")] }), line(`HD7 after ${prose(40)}`)]),
+                ...probe("HD5", [
+                    new Paragraph({ children: [marker("HID_HD5")] }),
+                    new Table({ borders: ALL_BORDERS, rows: [new TableRow({ children: [cell("HD5 table")] })] }),
+                ]),
+                ...probe("HD6", [
+                    new Paragraph({ children: [new TextRun("HD6 first"), marker("HID_HD6")] }),
+                    new Paragraph({ children: [marker("HID_HD6b")] }),
+                    line(`HD6 last ${prose(20)}`),
+                ]),
+                ...probe("HD7", [
+                    ...fill("HD7", 47),
+                    line("HD7 kept", { keepNext: true }),
+                    new Paragraph({ children: [marker("HID_HD7")] }),
+                    line(`HD7 after ${prose(40)}`),
+                ]),
                 ...probe("HD8", [
                     new Paragraph({ border: boxed, children: [new TextRun("HD8 boxed 1")] }),
                     new Paragraph({ children: [marker("HID_HD8")] }),
@@ -193,7 +244,12 @@ await write({
             ],
         },
     ],
-    injections: [onlyReferencedNotes, ...[...hdCases.map(({ name }) => name), "HD2", "HD5", "HD6", "HD6b", "HD7", "HD8"].map((name) => injectIntoParagraph(`HID_${name}`, HIDDEN_MARK))],
+    injections: [
+        onlyReferencedNotes,
+        ...[...hdCases.map(({ name }) => name), "HD2", "HD5", "HD6", "HD6b", "HD7", "HD8"].map((name) =>
+            injectIntoParagraph(`HID_${name}`, HIDDEN_MARK),
+        ),
+    ],
 });
 
 // word-stops-hidden-edges.docx: hidden marks in a content control, a header and a footnote, hidden note references, and
@@ -206,13 +262,23 @@ await write({
             properties: PAGE,
             children: [
                 ...probe("HD3", [new Paragraph({ children: [marker("SDT_HD3")] }), line(`HD3 after ${prose(20)}`)]),
-                ...probe("HD4b", [new Paragraph({ children: [new TextRun("HD4b reference"), footnote(line("HD4b note"), new Paragraph({ children: [marker("HID_HD4b")] }))] })]),
+                ...probe("HD4b", [
+                    new Paragraph({
+                        children: [
+                            new TextRun("HD4b reference"),
+                            footnote(line("HD4b note"), new Paragraph({ children: [marker("HID_HD4b")] })),
+                        ],
+                    }),
+                ]),
                 ...probe("HD9a", [
                     new Paragraph({ children: [new TextRun("HD9a one"), footnote(line("HD9a note one"))] }),
                     new Paragraph({ children: [new TextRun("HD9a hidden"), marker("HIDREF_HD9a")] }),
                     new Paragraph({ children: [new TextRun("HD9a three"), footnote(line("HD9a note three"))] }),
                 ]),
-                ...probe("HD9b", [new Paragraph({ children: [new TextRun("HD9b hidden"), new EndnoteReferenceRun(1), marker("HIDE_LAST_HD9b")] }), new Paragraph({ children: [new TextRun("HD9b two"), new EndnoteReferenceRun(2)] })]),
+                ...probe("HD9b", [
+                    new Paragraph({ children: [new TextRun("HD9b hidden"), new EndnoteReferenceRun(1), marker("HIDE_LAST_HD9b")] }),
+                    new Paragraph({ children: [new TextRun("HD9b two"), new EndnoteReferenceRun(2)] }),
+                ]),
                 ...probe("HD10", [line("HD10 first section"), new Paragraph({ children: [marker("HIDSECT_HD10")] })], { below: false }),
             ],
         },
@@ -228,13 +294,18 @@ await write({
         onlyReferencedNotes,
         injectIntoParagraph("HID_HD4b", HIDDEN_MARK, "word/footnotes.xml"),
         (parts) => {
-            const header = [...parts.keys()].find((path) => /word\/header\d*\.xml$/.test(path) && parts.get(path)!.includes("@@HID_HD4a@@"))!;
+            const header = [...parts.keys()].find(
+                (path) => /word\/header\d*\.xml$/.test(path) && parts.get(path)!.includes("@@HID_HD4a@@"),
+            )!;
             injectIntoParagraph("HID_HD4a", HIDDEN_MARK, header)(parts);
         },
         sectionMark("HIDSECT_HD10", "<w:vanish/>"),
         inControl("SDT_HD3", "<w:vanish/>", 907),
         // HD9a: a footnote reference in hidden text
-        replaceMarkerRun("HIDREF_HD9a", '<w:r><w:rPr><w:rStyle w:val="FootnoteReference"/><w:vanish/></w:rPr><w:footnoteReference w:id="9100"/></w:r>'),
+        replaceMarkerRun(
+            "HIDREF_HD9a",
+            '<w:r><w:rPr><w:rStyle w:val="FootnoteReference"/><w:vanish/></w:rPr><w:footnoteReference w:id="9100"/></w:r>',
+        ),
         addNotes({ 9100: "HD9a hidden note" }),
         // HD9b: the endnote reference before the marker is hidden
         (parts) => {
@@ -255,17 +326,94 @@ await write({
         {
             properties: PAGE,
             children: [
-                ...probe("TR1a", [new Table({ borders: ALL_BORDERS, rows: [new TableRow({ children: [cell([new Paragraph({ children: [new TextRun("TR1a word "), marker("DELPIC_TR1a"), picture(144, 20)] })]), cell("TR1a other")] })] })]),
-                ...probe("TR1b", [new Table({ borders: ALL_BORDERS, rows: [new TableRow({ children: [cell([new Paragraph({ children: [new TextRun("TR1b word"), marker("DELTAB_TR1b"), new TextRun("after")] })]), cell("TR1b other")] })] })]),
-                ...probe("TR1c", [new Table({ borders: ALL_BORDERS, rows: [new TableRow({ children: [cell([new Paragraph({ children: [new TextRun("TR1c alphabetical"), marker("DELBR_TR1c"), new TextRun("ab")] })]), cell("TR1c other")] })] })]),
-                ...probe("TR1d", [new Table({ borders: ALL_BORDERS, rows: [new TableRow({ children: [cell([new Paragraph({ children: [new TextRun("TR1d word"), marker("DELNOTE_TR1d")] })]), cell("TR1d other")] })] })]),
-                ...probe("TR2", [new Paragraph({ children: [new TextRun("TR2 page "), marker("FIELD_TR2"), new TextRun(` ${prose(20)}`)] })]),
+                ...probe("TR1a", [
+                    new Table({
+                        borders: ALL_BORDERS,
+                        rows: [
+                            new TableRow({
+                                children: [
+                                    cell([
+                                        new Paragraph({ children: [new TextRun("TR1a word "), marker("DELPIC_TR1a"), picture(144, 20)] }),
+                                    ]),
+                                    cell("TR1a other"),
+                                ],
+                            }),
+                        ],
+                    }),
+                ]),
+                ...probe("TR1b", [
+                    new Table({
+                        borders: ALL_BORDERS,
+                        rows: [
+                            new TableRow({
+                                children: [
+                                    cell([
+                                        new Paragraph({
+                                            children: [new TextRun("TR1b word"), marker("DELTAB_TR1b"), new TextRun("after")],
+                                        }),
+                                    ]),
+                                    cell("TR1b other"),
+                                ],
+                            }),
+                        ],
+                    }),
+                ]),
+                ...probe("TR1c", [
+                    new Table({
+                        borders: ALL_BORDERS,
+                        rows: [
+                            new TableRow({
+                                children: [
+                                    cell([
+                                        new Paragraph({
+                                            children: [new TextRun("TR1c alphabetical"), marker("DELBR_TR1c"), new TextRun("ab")],
+                                        }),
+                                    ]),
+                                    cell("TR1c other"),
+                                ],
+                            }),
+                        ],
+                    }),
+                ]),
+                ...probe("TR1d", [
+                    new Table({
+                        borders: ALL_BORDERS,
+                        rows: [
+                            new TableRow({
+                                children: [
+                                    cell([new Paragraph({ children: [new TextRun("TR1d word"), marker("DELNOTE_TR1d")] })]),
+                                    cell("TR1d other"),
+                                ],
+                            }),
+                        ],
+                    }),
+                ]),
+                ...probe("TR2", [
+                    new Paragraph({ children: [new TextRun("TR2 page "), marker("FIELD_TR2"), new TextRun(` ${prose(20)}`)] }),
+                ]),
                 ...probe("TR4a", [
                     new Table({
                         width: { size: 9026, type: WidthType.DXA },
                         columnWidths: [9026],
                         borders: ALL_BORDERS,
-                        rows: [1, 2, 3].map((row) => new TableRow({ children: [cell(`TR4a row ${row}${row === 2 ? " deleted" : ""}`, row === 2 ? { borders: { top: { style: "single", size: 24, color: "000000" }, bottom: { style: "single", size: 24, color: "000000" } } } : {})] })),
+                        rows: [1, 2, 3].map(
+                            (row) =>
+                                new TableRow({
+                                    children: [
+                                        cell(
+                                            `TR4a row ${row}${row === 2 ? " deleted" : ""}`,
+                                            row === 2
+                                                ? {
+                                                      borders: {
+                                                          top: { style: "single", size: 24, color: "000000" },
+                                                          bottom: { style: "single", size: 24, color: "000000" },
+                                                      },
+                                                  }
+                                                : {},
+                                        ),
+                                    ],
+                                }),
+                        ),
                     }),
                 ]),
                 ...probe("TR4b", [
@@ -277,7 +425,16 @@ await write({
                             (row) =>
                                 new TableRow({
                                     children: [
-                                        cell(row === 2 ? [new Paragraph({ numbering: { reference: "numbers", level: 0 }, children: [new TextRun("TR4b row 2 deleted"), footnote(line("TR4b note"))] })] : `TR4b row ${row}`),
+                                        cell(
+                                            row === 2
+                                                ? [
+                                                      new Paragraph({
+                                                          numbering: { reference: "numbers", level: 0 },
+                                                          children: [new TextRun("TR4b row 2 deleted"), footnote(line("TR4b note"))],
+                                                      }),
+                                                  ]
+                                                : `TR4b row ${row}`,
+                                        ),
                                     ],
                                 }),
                         ),
@@ -297,7 +454,10 @@ await write({
                         style: "ProbeTable",
                         width: { size: 9026, type: WidthType.DXA },
                         columnWidths: [9026],
-                        rows: [1, 2, 3, 4].map((row) => new TableRow({ tableHeader: row <= 2, children: [cell(`TR5 row ${row}${row === 2 ? " deleted" : ""}`)] })),
+                        rows: [1, 2, 3, 4].map(
+                            (row) =>
+                                new TableRow({ tableHeader: row <= 2, children: [cell(`TR5 row ${row}${row === 2 ? " deleted" : ""}`)] }),
+                        ),
                     }),
                 ]),
                 ...probe("TR6", [
@@ -309,7 +469,11 @@ await write({
                             (row) =>
                                 new TableRow({
                                     children: [
-                                        row === 1 ? cell("TR6 merged from the deleted row\nTR6 merged line 2", { verticalMerge: VerticalMergeType.RESTART }) : cell("", { verticalMerge: VerticalMergeType.CONTINUE }),
+                                        row === 1
+                                            ? cell("TR6 merged from the deleted row\nTR6 merged line 2", {
+                                                  verticalMerge: VerticalMergeType.RESTART,
+                                              })
+                                            : cell("", { verticalMerge: VerticalMergeType.CONTINUE }),
                                         cell(`TR6 row ${row}${row === 1 ? " deleted" : ""}`),
                                     ],
                                 }),
@@ -319,7 +483,17 @@ await write({
                 ...probe("TR11", [
                     new Table({
                         borders: ALL_BORDERS,
-                        rows: [new TableRow({ children: [cell([new Paragraph({ children: [new TextRun("TR11 alpha beta"), marker("DEL_TR11")] }), line("TR11 gamma delta epsilon zeta")]), cell("TR11 other")] })],
+                        rows: [
+                            new TableRow({
+                                children: [
+                                    cell([
+                                        new Paragraph({ children: [new TextRun("TR11 alpha beta"), marker("DEL_TR11")] }),
+                                        line("TR11 gamma delta epsilon zeta"),
+                                    ]),
+                                    cell("TR11 other"),
+                                ],
+                            }),
+                        ],
                     }),
                 ]),
             ],
@@ -332,7 +506,15 @@ await write({
             parts.set("word/styles.xml", styles.replace("</w:styles>", `${PROBE_TABLE_STYLE}</w:styles>`));
             const text = parts.get("word/document.xml")!;
             const at = text.indexOf("TR5 row 1");
-            parts.set("word/document.xml", withProperty(text, "w:tblPr", '<w:tblLook w:firstRow="1" w:lastRow="0" w:firstColumn="0" w:lastColumn="0" w:noHBand="1" w:noVBand="1"/>', text.lastIndexOf("<w:tbl>", at)));
+            parts.set(
+                "word/document.xml",
+                withProperty(
+                    text,
+                    "w:tblPr",
+                    '<w:tblLook w:firstRow="1" w:lastRow="0" w:firstColumn="0" w:lastColumn="0" w:noHBand="1" w:noVBand="1"/>',
+                    text.lastIndexOf("<w:tbl>", at),
+                ),
+            );
         },
         injectIntoParagraph("DEL_TR11", deletedMark()),
         // TR1: deleted picture, tab, break and footnote reference in a cell
@@ -341,12 +523,18 @@ await write({
             const at = text.indexOf("@@DELPIC_TR1a@@");
             const start = text.indexOf("<w:r>", at);
             const end = text.indexOf("</w:r>", start) + 6;
-            parts.set("word/document.xml", text.slice(0, start) + `<w:del w:id="${nextId()}" ${DATE}>${text.slice(start, end)}</w:del>` + text.slice(end));
+            parts.set(
+                "word/document.xml",
+                text.slice(0, start) + `<w:del w:id="${nextId()}" ${DATE}>${text.slice(start, end)}</w:del>` + text.slice(end),
+            );
             replaceMarkerRun("DELPIC_TR1a", "")(parts);
         },
         replaceMarkerRun("DELTAB_TR1b", `<w:del w:id="${nextId()}" ${DATE}><w:r><w:tab/></w:r></w:del>`),
         replaceMarkerRun("DELBR_TR1c", `<w:del w:id="${nextId()}" ${DATE}><w:r><w:br/></w:r></w:del>`),
-        replaceMarkerRun("DELNOTE_TR1d", `<w:del w:id="${nextId()}" ${DATE}><w:r><w:rPr><w:rStyle w:val="FootnoteReference"/></w:rPr><w:footnoteReference w:id="9101"/></w:r></w:del>`),
+        replaceMarkerRun(
+            "DELNOTE_TR1d",
+            `<w:del w:id="${nextId()}" ${DATE}><w:r><w:rPr><w:rStyle w:val="FootnoteReference"/></w:rPr><w:footnoteReference w:id="9101"/></w:r></w:del>`,
+        ),
         addNotes({ 9101: "TR1d deleted note" }),
         replaceMarkerRun(
             "FIELD_TR2",
@@ -366,25 +554,52 @@ await write({
         {
             properties: PAGE,
             children: [
-                ...probe("TR3b", [new Paragraph({ children: [new TextRun("TR3b deleted endnote"), marker("DELEND_TR3b"), new TextRun(" and kept"), new EndnoteReferenceRun(1)] })]),
+                ...probe("TR3b", [
+                    new Paragraph({
+                        children: [
+                            new TextRun("TR3b deleted endnote"),
+                            marker("DELEND_TR3b"),
+                            new TextRun(" and kept"),
+                            new EndnoteReferenceRun(1),
+                        ],
+                    }),
+                ]),
                 ...probe("TR8", [new Paragraph({ children: [marker("SDTDEL_TR8")] }), line(`TR8 after ${prose(20)}`)]),
-                ...probe("TR9", [new Paragraph({ children: [new TextRun("TR9 first"), marker("DEL_TR9")] }), new Paragraph({ children: [marker("HID_TR9")] }), line(`TR9 last ${prose(20)}`)]),
+                ...probe("TR9", [
+                    new Paragraph({ children: [new TextRun("TR9 first"), marker("DEL_TR9")] }),
+                    new Paragraph({ children: [marker("HID_TR9")] }),
+                    line(`TR9 last ${prose(20)}`),
+                ]),
                 ...probe("TR10b", [line("TR10b first section"), new Paragraph({ children: [marker("DELSECT_TR10b")] })], { below: false }),
             ],
         },
         {
             properties: { page: { ...PAGE.page, pageNumbers: { start: 7 } }, type: SectionType.ODD_PAGE },
-            headers: { default: new Header({ children: [new Paragraph({ children: [new TextRun("TR10b header "), new TextRun({ children: [PageNumber.CURRENT] })] })] }) },
+            headers: {
+                default: new Header({
+                    children: [
+                        new Paragraph({ children: [new TextRun("TR10b header "), new TextRun({ children: [PageNumber.CURRENT] })] }),
+                    ],
+                }),
+            },
             children: [line("TR10b second section"), line("TR10b below")],
         },
         // TR10a: a section the same as the last, whose break is deleted, with no paragraph after it in the document
-        { properties: { ...PAGE, type: SectionType.NEXT_PAGE }, children: [...probe("TR10a", [line(`TR10a ${prose(20)}`), new Paragraph({ children: [marker("DELSECT_TR10a")] })], { below: false })] },
+        {
+            properties: { ...PAGE, type: SectionType.NEXT_PAGE },
+            children: [
+                ...probe("TR10a", [line(`TR10a ${prose(20)}`), new Paragraph({ children: [marker("DELSECT_TR10a")] })], { below: false }),
+            ],
+        },
         { properties: { ...PAGE, type: SectionType.CONTINUOUS }, children: [] },
     ],
     injections: [
         onlyReferencedNotes,
         // The deleted endnote is the second, after the kept one the reference after it refers to
-        replaceMarkerRun("DELEND_TR3b", `<w:del w:id="${nextId()}" ${DATE}><w:r><w:rPr><w:rStyle w:val="EndnoteReference"/></w:rPr><w:endnoteReference w:id="2"/></w:r></w:del>`),
+        replaceMarkerRun(
+            "DELEND_TR3b",
+            `<w:del w:id="${nextId()}" ${DATE}><w:r><w:rPr><w:rStyle w:val="EndnoteReference"/></w:rPr><w:endnoteReference w:id="2"/></w:r></w:del>`,
+        ),
         inControl("SDTDEL_TR8", `<w:del w:id="${nextId()}" ${DATE}/>`, 910),
         injectIntoParagraph("DEL_TR9", deletedMark()),
         injectIntoParagraph("HID_TR9", HIDDEN_MARK),
@@ -407,15 +622,44 @@ await write({
         {
             properties: PAGE,
             children: [
-                ...probe("TR3a", [new Paragraph({ children: [new TextRun("TR3a from"), marker("MOVEFROM_TR3a"), new TextRun(" middle "), marker("MOVETO_TR3a"), new TextRun(" to")] })]),
-                ...probe("TR7", [new Paragraph({ children: [marker("MOVEDFROM_TR7")] }), line(`TR7 second ${prose(10)}`), new Paragraph({ children: [marker("MOVEDTO_TR7")] }), line(`TR7 third ${prose(10)}`)]),
+                ...probe("TR3a", [
+                    new Paragraph({
+                        children: [
+                            new TextRun("TR3a from"),
+                            marker("MOVEFROM_TR3a"),
+                            new TextRun(" middle "),
+                            marker("MOVETO_TR3a"),
+                            new TextRun(" to"),
+                        ],
+                    }),
+                ]),
+                ...probe("TR7", [
+                    new Paragraph({ children: [marker("MOVEDFROM_TR7")] }),
+                    line(`TR7 second ${prose(10)}`),
+                    new Paragraph({ children: [marker("MOVEDTO_TR7")] }),
+                    line(`TR7 third ${prose(10)}`),
+                ]),
             ],
         },
     ],
     injections: [
         onlyReferencedNotes,
-        replaceMarkerRun("MOVEFROM_TR3a", moveRange("moveFrom", "probeMove1", `<w:moveFrom w:id="${nextId()}" ${DATE}><w:r><w:rPr><w:rStyle w:val="FootnoteReference"/></w:rPr><w:footnoteReference w:id="9102"/></w:r></w:moveFrom>`)),
-        replaceMarkerRun("MOVETO_TR3a", moveRange("moveTo", "probeMove1", `<w:moveTo w:id="${nextId()}" ${DATE}><w:r><w:rPr><w:rStyle w:val="FootnoteReference"/></w:rPr><w:footnoteReference w:id="9103"/></w:r></w:moveTo>`)),
+        replaceMarkerRun(
+            "MOVEFROM_TR3a",
+            moveRange(
+                "moveFrom",
+                "probeMove1",
+                `<w:moveFrom w:id="${nextId()}" ${DATE}><w:r><w:rPr><w:rStyle w:val="FootnoteReference"/></w:rPr><w:footnoteReference w:id="9102"/></w:r></w:moveFrom>`,
+            ),
+        ),
+        replaceMarkerRun(
+            "MOVETO_TR3a",
+            moveRange(
+                "moveTo",
+                "probeMove1",
+                `<w:moveTo w:id="${nextId()}" ${DATE}><w:r><w:rPr><w:rStyle w:val="FootnoteReference"/></w:rPr><w:footnoteReference w:id="9103"/></w:r></w:moveTo>`,
+            ),
+        ),
         addNotes({ 9102: "TR3a moved note", 9103: "TR3a moved note" }),
         // TR7: the first paragraph, its text and its mark, moved to after the second
         (parts) => {

@@ -403,7 +403,11 @@ const LARGEST_FIELD_LETTERS = 780;
 /**
  * The number formats of a field's `\*` switch, by their names in small letters, as Word writes a SEQ field's number in
  * them (`scripts/layout-probes/word-seq.ts`) and a page reference's and a number of pages' (`word-watertight-fields.ts`
- * FD3), as `field-number-formats.ts` in docx writes them, and whether the capitals of their names say those of the number
+ * FD3), as `field-number-formats.ts` in docx writes them, and whether the capitals of their names say those of the number.
+ * Word wrote page 1 as "one", "one and 00/100", "first" and "1" in CardText, DollarText, OrdText and Hex
+ * (`scripts/layout-probes/stops2/word-stops-numbers.ts` NF2), in the words it writes page numbers in, without a capital.
+ * It writes hexadecimal numbers in capitals ("1CA" for 458, its help says, as its page numbers are), and whether a name
+ * in small letters, `hex`, writes them in small letters hasn't been seen
  */
 const FIELD_FORMATS: ReadonlyMap<string, { readonly written: Format; readonly inCase: boolean }> = new Map([
     ["arabic", { written: format(String, 0, Infinity), inCase: false }],
@@ -411,6 +415,10 @@ const FIELD_FORMATS: ReadonlyMap<string, { readonly written: Format; readonly in
     ["alphabetic", { written: format(orNothing(repeated(LOWER_LETTERS)), 0, LARGEST_FIELD_LETTERS), inCase: true }],
     ["ordinal", { written: format((value) => `${value}${ordinalSuffix(value)}`, 1, Infinity), inCase: false }],
     ["arabicdash", { written: format((value) => `- ${value} -`, 0, Infinity), inCase: false }],
+    ["cardtext", { written: PAGE_FORMATS.cardinalText, inCase: false }],
+    ["ordtext", { written: PAGE_FORMATS.ordinalText, inCase: false }],
+    ["dollartext", { written: format((value) => `${words(value)} and 00/100`), inCase: false }],
+    ["hex", { written: PAGE_FORMATS.hex, inCase: false }],
 ]);
 
 /** Whether a field's `\*` switch is one of the number formats {@link formatFieldNumber} writes, in any capitals */
@@ -428,7 +436,11 @@ export const formatFieldNumber = (value: number, name: string): string | undefin
     }
     const [write, smallest, largest] = found.written;
     const written = Number.isInteger(value) && value >= smallest && value <= largest ? write(value) : undefined;
-    return found.inCase && name.charAt(0) === name.charAt(0).toUpperCase() ? written?.toUpperCase() : written;
+    const inCapitals = name.charAt(0) === name.charAt(0).toUpperCase();
+    if (name.toLowerCase() === "hex") {
+        return inCapitals || !/[A-F]/.test(written ?? "") ? written : undefined;
+    }
+    return found.inCase && inCapitals ? written?.toUpperCase() : written;
 };
 
 /** The capitals a field's `\*` switch writes its text in: all capitals, all small letters, or a capital first */
@@ -441,25 +453,35 @@ export type FieldCapitals = "upper" | "lower" | "firstcap";
 export type FieldFormat = { readonly numberFormat?: string; readonly picture?: string; readonly capitals?: FieldCapitals };
 
 /**
- * Whether Word's text for a picture of a field's `\#` switch is known: one of digits (`0`), digits only where the number
- * has them (`#`) and commas between thousands, as Word wrote `00`, `000`, `0`, `#` and `#,##0`
- * (`scripts/layout-probes/word-page-fields.ts` PF5 to PF7)
+ * A picture of a field's `\#` switch whose text Word is known to write: text in single quotes before and after the
+ * number; the number's places, of digits (`0`), digits only where the number has them (`#`), first a place that drops
+ * the number's digits before it (`x`), and commas between thousands; and a decimal point, with places of digits after
+ * it (`0`). Word wrote `00`, `000`, `0`, `#` and `#,##0` (`scripts/layout-probes/word-page-fields.ts` PF5 to PF7), and
+ * `0.00`, `x##` and `'p'00` (`scripts/layout-probes/stops2/word-stops-numbers.ts` NF3)
  */
-export const isFieldPicture = (picture: string): boolean => /^[#0,]*[#0][#0,]*$/.test(picture);
+const PICTURE = /^((?:'[^']*')*)(x[#0,]*|[#0,]*[#0][#0,]*)(?:\.(0+))?((?:'[^']*')*)$/;
+
+/** Whether Word's text for a picture of a field's `\#` switch is known (see {@link PICTURE}) */
+export const isFieldPicture = (picture: string): boolean => PICTURE.test(picture);
 
 /**
- * A number with a picture: with as many digits as it has `0`s at least, which Word fills with 0s (5 is 05 with `00`), and
- * its thousands between commas when it has one (1234 is 1,234 with `#,##0`). Undefined where a `#` has no digit of the
- * number, which Word writes as a space, not yet seen
+ * A number with a picture: with as many digits as it has `0`s at least, which Word fills with 0s (5 is 05 with `00`), a
+ * space for each `#` or `x` the number has no digit for (1 is three spaces and 1 with `#,##0`, and two spaces and 1 with
+ * `x##`), its thousands between commas when it has one (1234 is 1,234 with `#,##0`), 0s after its decimal point (1.00
+ * with `0.00`), and the text in quotes before and after it (p01 with `'p'00`), as Word wrote them (NF3). Undefined where
+ * `x` would drop digits, and for 0 with no `0` in the picture, which haven't been seen
  */
 const inPicture = (value: number, picture: string): string | undefined => {
-    const zeros = [...picture].filter((character) => character === "0").length;
-    const places = zeros + [...picture].filter((character) => character === "#").length;
+    const [, before, whole, fraction = "", after] = PICTURE.exec(picture)!;
+    const zeros = [...whole].filter((character) => character === "0").length;
+    const places = [...whole].filter((character) => character !== ",").length;
     const figures = String(value).padStart(zeros, "0");
-    if (figures.length < places || (zeros === 0 && value === 0)) {
+    if ((whole.startsWith("x") && figures.length > places) || (zeros === 0 && value === 0)) {
         return undefined;
     }
-    return picture.includes(",") ? figures.replace(/\B(?=(\d{3})+$)/g, ",") : figures;
+    const grouped = whole.includes(",") ? figures.replace(/\B(?=(\d{3})+$)/g, ",") : figures;
+    const unquoted = (text: string): string => text.replace(/'([^']*)'/g, "$1");
+    return `${unquoted(before)}${" ".repeat(Math.max(0, places - figures.length))}${grouped}${fraction === "" ? "" : `.${fraction}`}${unquoted(after)}`;
 };
 
 /** Whether a field's format writes its number, rather than only giving its text capitals */

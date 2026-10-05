@@ -85,23 +85,116 @@ const numbered = (reference: string, level: number, text: string, options: objec
 const indent = (left: number, hanging = 360) => ({ paragraph: { indent: { left, hanging } } });
 
 const LISTS = [
-    { reference: "li1", levels: [{ level: 0, format: LevelFormat.DECIMAL, text: "%1.%3.", style: indent(720) }, { level: 1, format: LevelFormat.DECIMAL, text: "%1.%2.", style: indent(1440) }] },
-    { reference: "li2", levels: [{ level: 0, format: LevelFormat.DECIMAL, text: "%1.", style: indent(720) }, { level: 1, format: LevelFormat.DECIMAL, text: "%1.%2.", start: 5, style: indent(1440) }] },
-    { reference: "li3a", levels: [{ level: 0, format: LevelFormat.DECIMAL, text: "%1.", alignment: AlignmentType.CENTER, suffix: LevelSuffix.SPACE, style: indent(720) }] },
-    { reference: "li3b", levels: [{ level: 0, format: LevelFormat.DECIMAL, text: "%1.", alignment: AlignmentType.CENTER, suffix: LevelSuffix.NOTHING, style: indent(720) }] },
-    { reference: "li4a", levels: [{ level: 0, format: LevelFormat.DECIMAL, text: "%1.", style: { ...indent(720), run: { border: { style: BorderStyle.SINGLE, size: 12, color: "000000", space: 4 } } } }] },
-    { reference: "li4b", levels: [{ level: 0, format: LevelFormat.DECIMAL, text: "%1.", style: { ...indent(720), run: { emphasisMark: { type: EmphasisMarkType.DOT } } } }] },
-    { reference: "li4c", levels: [{ level: 0, format: LevelFormat.DECIMAL, text: "%1.", style: { ...indent(720), run: { position: "6pt" } } }] },
+    {
+        reference: "li1",
+        levels: [
+            { level: 0, format: LevelFormat.DECIMAL, text: "%1.%3.", style: indent(720) },
+            { level: 1, format: LevelFormat.DECIMAL, text: "%1.%2.", style: indent(1440) },
+        ],
+    },
+    {
+        reference: "li2",
+        levels: [
+            { level: 0, format: LevelFormat.DECIMAL, text: "%1.", style: indent(720) },
+            { level: 1, format: LevelFormat.DECIMAL, text: "%1.%2.", start: 5, style: indent(1440) },
+        ],
+    },
+    {
+        reference: "li3a",
+        levels: [
+            {
+                level: 0,
+                format: LevelFormat.DECIMAL,
+                text: "%1.",
+                alignment: AlignmentType.CENTER,
+                suffix: LevelSuffix.SPACE,
+                style: indent(720),
+            },
+        ],
+    },
+    {
+        reference: "li3b",
+        levels: [
+            {
+                level: 0,
+                format: LevelFormat.DECIMAL,
+                text: "%1.",
+                alignment: AlignmentType.CENTER,
+                suffix: LevelSuffix.NOTHING,
+                style: indent(720),
+            },
+        ],
+    },
+    {
+        reference: "li4a",
+        levels: [
+            {
+                level: 0,
+                format: LevelFormat.DECIMAL,
+                text: "%1.",
+                style: { ...indent(720), run: { border: { style: BorderStyle.SINGLE, size: 12, color: "000000", space: 4 } } },
+            },
+        ],
+    },
+    {
+        reference: "li4b",
+        levels: [
+            {
+                level: 0,
+                format: LevelFormat.DECIMAL,
+                text: "%1.",
+                style: { ...indent(720), run: { emphasisMark: { type: EmphasisMarkType.DOT } } },
+            },
+        ],
+    },
+    {
+        reference: "li4c",
+        levels: [{ level: 0, format: LevelFormat.DECIMAL, text: "%1.", style: { ...indent(720), run: { position: "6pt" } } }],
+    },
     { reference: "li5", levels: [{ level: 0, format: LevelFormat.DECIMAL, text: "%1.", style: { ...indent(720), run: { size: 40 } } }] },
-    { reference: "li6a", levels: [{ level: 0, format: LevelFormat.DECIMAL, text: "%1.", alignment: AlignmentType.RIGHT, style: indent(1000, 500) }] },
-    { reference: "li6b", levels: [{ level: 0, format: LevelFormat.DECIMAL, text: "%1.", alignment: AlignmentType.RIGHT, style: { paragraph: { indent: { left: 1000 } } } }] },
-    { reference: "li6c", levels: [{ level: 0, format: LevelFormat.DECIMAL, text: "%1.", alignment: AlignmentType.RIGHT, style: { paragraph: { indent: { left: 0, firstLine: 720 } } } }] },
-    { reference: "li7a", levels: [{ level: 0, format: LevelFormat.DECIMAL, text: "%1.", style: { ...indent(720), run: { font: "Courier New", size: 28 } } }] },
+    {
+        reference: "li6a",
+        levels: [{ level: 0, format: LevelFormat.DECIMAL, text: "%1.", alignment: AlignmentType.RIGHT, style: indent(1000, 500) }],
+    },
+    {
+        reference: "li6b",
+        levels: [
+            {
+                level: 0,
+                format: LevelFormat.DECIMAL,
+                text: "%1.",
+                alignment: AlignmentType.RIGHT,
+                style: { paragraph: { indent: { left: 1000 } } },
+            },
+        ],
+    },
+    {
+        reference: "li6c",
+        levels: [
+            {
+                level: 0,
+                format: LevelFormat.DECIMAL,
+                text: "%1.",
+                alignment: AlignmentType.RIGHT,
+                style: { paragraph: { indent: { left: 0, firstLine: 720 } } },
+            },
+        ],
+    },
+    {
+        reference: "li7a",
+        levels: [{ level: 0, format: LevelFormat.DECIMAL, text: "%1.", style: { ...indent(720), run: { font: "Courier New", size: 28 } } }],
+    },
     { reference: "li7b", levels: [{ level: 0, format: LevelFormat.DECIMAL, text: "%1.", style: { ...indent(720), run: { size: 22 } } }] },
     { reference: "li8", levels: [{ level: 0, format: LevelFormat.BULLET, text: "•", style: indent(720) }] },
     { reference: "li9", levels: [{ level: 0, format: LevelFormat.DECIMAL, text: "%1.", style: indent(720) }] },
     { reference: "li11", levels: [{ level: 0, format: LevelFormat.DECIMAL, text: "%1.", style: indent(720) }] },
-    { reference: "li12", levels: [{ level: 0, format: LevelFormat.DECIMAL, text: "%1.", style: indent(720) }, { level: 1, format: LevelFormat.DECIMAL, text: "%1.%2.", style: indent(1440) }] },
+    {
+        reference: "li12",
+        levels: [
+            { level: 0, format: LevelFormat.DECIMAL, text: "%1.", style: indent(720) },
+            { level: 1, format: LevelFormat.DECIMAL, text: "%1.%2.", style: indent(1440) },
+        ],
+    },
     { reference: "nf6a", levels: [{ level: 0, format: "thaiCounting" as never, text: "%1.", style: indent(1440, 1080) }] },
     { reference: "nf6b", levels: [{ level: 0, format: "hindiCounting" as never, text: "%1.", style: indent(1440, 1080) }] },
     { reference: "headings", levels: [{ level: 0, format: LevelFormat.DECIMAL, text: "%1", style: indent(432, 432) }] },
@@ -110,7 +203,9 @@ const LISTS = [
 const auto = { spacing: { beforeAutoSpacing: true, afterAutoSpacing: true } } as object;
 
 const pageField = (name: string, instruction: string): Paragraph =>
-    new Paragraph({ children: [new TextRun(`${name} `), new TextRun("@@FIELD_" + Buffer.from(instruction).toString("hex") + "@@"), new TextRun(" end")] });
+    new Paragraph({
+        children: [new TextRun(`${name} `), new TextRun("@@FIELD_" + Buffer.from(instruction).toString("hex") + "@@"), new TextRun(" end")],
+    });
 
 const listsOf = (...references: readonly string[]) => LISTS.filter(({ reference }) => references.includes(reference));
 
@@ -118,7 +213,12 @@ const listsOf = (...references: readonly string[]) => LISTS.filter(({ reference 
  * Changes the levels of a list in the numbering part: the abstract definitions are written in the order of the config,
  * after docx's own
  */
-const changeList = (numbering: string, config: readonly { readonly reference: string }[], reference: string, change: (xml: string) => string): string => {
+const changeList = (
+    numbering: string,
+    config: readonly { readonly reference: string }[],
+    reference: string,
+    change: (xml: string) => string,
+): string => {
     const index = config.findIndex((list) => list.reference === reference);
     const abstracts = [...numbering.matchAll(/<w:abstractNum [^>]*>.*?<\/w:abstractNum>/gs)];
     const abstract = abstracts[abstracts.length - config.length + index];
@@ -131,7 +231,9 @@ const onlyReferencedNotes = (parts: Map<string, string>): void => {
     if (notes === undefined) {
         return;
     }
-    const referenced = new Set([...parts.get("word/document.xml")!.matchAll(/<w:footnoteReference [^>]*w:id="(-?\d+)"/g)].map(([, id]) => id));
+    const referenced = new Set(
+        [...parts.get("word/document.xml")!.matchAll(/<w:footnoteReference [^>]*w:id="(-?\d+)"/g)].map(([, id]) => id),
+    );
     parts.set(
         "word/footnotes.xml",
         notes.replace(/<w:footnote w:id="(\d+)">.*?<\/w:footnote>/gs, (note, id: string) => (referenced.has(id) ? note : "")),
@@ -158,7 +260,11 @@ const NUMBER_FORMATS: readonly (readonly [string, string, number])[] = [
 /** A section of its own whose pages are numbered from a number in a format, with a bookmark on its page and a reference to it */
 const numberedSection = (name: string, format: string, start: number, pagesBefore = 0): ISectionOptions => ({
     properties: { page: { ...PAGE.page, pageNumbers: { start, formatType: format as never } }, type: SectionType.NEXT_PAGE },
-    footers: { default: new Footer({ children: [new Paragraph({ children: [new TextRun(`${name} page `), new TextRun({ children: [PageNumber.CURRENT] })] })] }) },
+    footers: {
+        default: new Footer({
+            children: [new Paragraph({ children: [new TextRun(`${name} page `), new TextRun({ children: [PageNumber.CURRENT] })] })],
+        }),
+    },
     children: [
         line(`${name} above`),
         ...Array.from({ length: pagesBefore }, (_, index) => line(`${name} page before ${index + 1}`)),
@@ -174,7 +280,24 @@ const numberedSection = (name: string, format: string, start: number, pagesBefor
 // Each document's sections are made when it is written, so a footnote's paragraph is marked once, by its own document
 
 // word-stops-lists.docx: LI1 to LI7, LI12 and NF6, lists docx writes itself
-const LISTS_CONFIG = listsOf("li1", "li2", "li3a", "li3b", "li4a", "li4b", "li4c", "li5", "li6a", "li6b", "li6c", "li7a", "li7b", "li12", "nf6a", "nf6b");
+const LISTS_CONFIG = listsOf(
+    "li1",
+    "li2",
+    "li3a",
+    "li3b",
+    "li4a",
+    "li4b",
+    "li4c",
+    "li5",
+    "li6a",
+    "li6b",
+    "li6c",
+    "li7a",
+    "li7b",
+    "li12",
+    "nf6a",
+    "nf6b",
+);
 await write({
     name: "word-stops-lists",
     options: { numbering: { config: LISTS_CONFIG } } as object,
@@ -183,18 +306,50 @@ await write({
             properties: PAGE,
             children: [
                 ...probe("LI1", [numbered("li1", 0, "LI1 one"), numbered("li1", 1, "LI1 one one"), numbered("li1", 0, "LI1 two")]),
-                ...probe("LI2", [numbered("li2", 1, "LI2 level 1 first"), numbered("li2", 1, "LI2 level 1 second"), numbered("li2", 0, "LI2 level 0")]),
+                ...probe("LI2", [
+                    numbered("li2", 1, "LI2 level 1 first"),
+                    numbered("li2", 1, "LI2 level 1 second"),
+                    numbered("li2", 0, "LI2 level 0"),
+                ]),
                 ...probe("LI3a", [numbered("li3a", 0, `LI3a ${prose(30)}`), numbered("li3a", 0, `LI3a ${prose(30)}`)]),
                 ...probe("LI3b", [numbered("li3b", 0, `LI3b ${prose(30)}`), numbered("li3b", 0, `LI3b ${prose(30)}`)]),
-                ...["a", "b", "c"].flatMap((letter) => probe(`LI4${letter}`, [numbered(`li4${letter}`, 0, `LI4${letter} ${prose(30)}`), numbered(`li4${letter}`, 0, `LI4${letter} ${prose(30)}`)])),
-                ...probe("LI5a", [numbered("li5", 0, `LI5a ${prose(40)}`, { spacing: { line: 360, lineRule: LineRuleType.AUTO } }), line("LI5a next")]),
-                ...probe("LI5b", [numbered("li5", 0, `LI5b ${prose(40)}`, { spacing: { line: 480, lineRule: LineRuleType.AUTO } }), line("LI5b next")]),
-                ...probe("LI6a", Array.from({ length: 12 }, (_, index) => numbered("li6a", 0, `LI6a item ${index + 1}`, { tabStops: [{ type: TabStopType.LEFT, position: 1200 }] }))),
-                ...probe("LI6b", Array.from({ length: 12 }, (_, index) => numbered("li6b", 0, `LI6b item ${index + 1}`))),
-                ...probe("LI6c", Array.from({ length: 12 }, (_, index) => numbered("li6c", 0, `LI6c item ${index + 1}`))),
+                ...["a", "b", "c"].flatMap((letter) =>
+                    probe(`LI4${letter}`, [
+                        numbered(`li4${letter}`, 0, `LI4${letter} ${prose(30)}`),
+                        numbered(`li4${letter}`, 0, `LI4${letter} ${prose(30)}`),
+                    ]),
+                ),
+                ...probe("LI5a", [
+                    numbered("li5", 0, `LI5a ${prose(40)}`, { spacing: { line: 360, lineRule: LineRuleType.AUTO } }),
+                    line("LI5a next"),
+                ]),
+                ...probe("LI5b", [
+                    numbered("li5", 0, `LI5b ${prose(40)}`, { spacing: { line: 480, lineRule: LineRuleType.AUTO } }),
+                    line("LI5b next"),
+                ]),
+                ...probe(
+                    "LI6a",
+                    Array.from({ length: 12 }, (_, index) =>
+                        numbered("li6a", 0, `LI6a item ${index + 1}`, { tabStops: [{ type: TabStopType.LEFT, position: 1200 }] }),
+                    ),
+                ),
+                ...probe(
+                    "LI6b",
+                    Array.from({ length: 12 }, (_, index) => numbered("li6b", 0, `LI6b item ${index + 1}`)),
+                ),
+                ...probe(
+                    "LI6c",
+                    Array.from({ length: 12 }, (_, index) => numbered("li6c", 0, `LI6c item ${index + 1}`)),
+                ),
                 ...probe("LI7a", [numbered("li7a", 0, ""), line("LI7a next")]),
                 ...probe("LI7b", [numbered("li7b", 0, "", { run: { size: 40 } }), line("LI7b next")]),
-                ...probe("LI12", [numbered("li12", 0, "LI12 one", auto), numbered("li12", 1, "LI12 one one", auto), numbered("li12", 0, "LI12 two", auto), numbered("li3a", 0, "LI12 other list", auto), line("LI12 after", auto)]),
+                ...probe("LI12", [
+                    numbered("li12", 0, "LI12 one", auto),
+                    numbered("li12", 1, "LI12 one one", auto),
+                    numbered("li12", 0, "LI12 two", auto),
+                    numbered("li3a", 0, "LI12 other list", auto),
+                    line("LI12 after", auto),
+                ]),
                 ...probe("NF6", [
                     ...[1, 2, 3, 4, 5].map((index) => numbered("nf6a", 0, `NF6 thai ${index}`)),
                     ...[1, 2, 3, 4, 5].map((index) => numbered("nf6b", 0, `NF6 hindi ${index}`)),
@@ -215,7 +370,10 @@ await write({
             properties: PAGE,
             children: [
                 ...probe("LI9", [numbered("li9", 0, `LI9 ${prose(30)}`), numbered("li9", 0, `LI9 ${prose(30)}`)]),
-                ...probe("LI10", [new Paragraph({ children: [new TextRun("@@LI10@@"), new TextRun(`LI10 ${prose(30)}`)] }), new Paragraph({ children: [new TextRun("@@LI10b@@"), new TextRun(`LI10 ${prose(30)}`)] })]),
+                ...probe("LI10", [
+                    new Paragraph({ children: [new TextRun("@@LI10@@"), new TextRun(`LI10 ${prose(30)}`)] }),
+                    new Paragraph({ children: [new TextRun("@@LI10b@@"), new TextRun(`LI10 ${prose(30)}`)] }),
+                ]),
                 ...probe("LI11", [numbered("li11", 0, `LI11 ${prose(30)}`), numbered("li11", 0, `LI11 ${prose(30)}`)]),
             ],
         },
@@ -229,12 +387,20 @@ await write({
             text = text.replace(/<w:r><w:t xml:space="preserve">@@LI10b?@@<\/w:t><\/w:r>/g, "");
             for (const at of [...text.matchAll(/LI10 the/g)].map(({ index }) => index).reverse()) {
                 const paragraphStart = text.lastIndexOf("<w:p>", at);
-                text = text.slice(0, paragraphStart) + text.slice(paragraphStart).replace("<w:p>", '<w:p><w:pPr><w:numPr><w:ilvl w:val="0"/><w:numId w:val="9301"/></w:numPr></w:pPr>');
+                text =
+                    text.slice(0, paragraphStart) +
+                    text
+                        .slice(paragraphStart)
+                        .replace("<w:p>", '<w:p><w:pPr><w:numPr><w:ilvl w:val="0"/><w:numId w:val="9301"/></w:numPr></w:pPr>');
             }
             parts.set("word/document.xml", text);
             let numbering = parts.get("word/numbering.xml")!;
-            numbering = changeList(numbering, DEFINITIONS_CONFIG, "li9", (xml) => xml.replace(/<w:lvlJc /, '<w:legacy w:legacy="1" w:legacySpace="120" w:legacyIndent="360"/><w:lvlJc '));
-            numbering = changeList(numbering, DEFINITIONS_CONFIG, "li11", (xml) => xml.replace(/<w:lvlJc w:val="[^"]*"\/>/, '<w:lvlJc w:val="both"/>'));
+            numbering = changeList(numbering, DEFINITIONS_CONFIG, "li9", (xml) =>
+                xml.replace(/<w:lvlJc /, '<w:legacy w:legacy="1" w:legacySpace="120" w:legacyIndent="360"/><w:lvlJc '),
+            );
+            numbering = changeList(numbering, DEFINITIONS_CONFIG, "li11", (xml) =>
+                xml.replace(/<w:lvlJc w:val="[^"]*"\/>/, '<w:lvlJc w:val="both"/>'),
+            );
             const levels = Array.from(
                 { length: 9 },
                 (_, level) =>
@@ -244,7 +410,10 @@ await write({
                 "<w:num ",
                 `<w:abstractNum w:abstractNumId="9300"><w:multiLevelType w:val="multilevel"/><w:styleLink w:val="ProbeListStyle"/>${levels}</w:abstractNum><w:abstractNum w:abstractNumId="9301"><w:multiLevelType w:val="multilevel"/><w:numStyleLink w:val="ProbeListStyle"/></w:abstractNum><w:num `,
             );
-            numbering = numbering.replace("</w:numbering>", '<w:num w:numId="9300"><w:abstractNumId w:val="9300"/></w:num><w:num w:numId="9301"><w:abstractNumId w:val="9301"/></w:num></w:numbering>');
+            numbering = numbering.replace(
+                "</w:numbering>",
+                '<w:num w:numId="9300"><w:abstractNumId w:val="9300"/></w:num><w:num w:numId="9301"><w:abstractNumId w:val="9301"/></w:num></w:numbering>',
+            );
             parts.set("word/numbering.xml", numbering);
             const styles = parts.get("word/styles.xml")!;
             parts.set(
@@ -263,19 +432,31 @@ const PICTURE_CONFIG = listsOf("li8");
 await write({
     name: "word-stops-picture-bullets",
     options: { numbering: { config: PICTURE_CONFIG } } as object,
-    sections: [{ properties: PAGE, children: [...probe("LI8", [numbered("li8", 0, `LI8 ${prose(30)}`), numbered("li8", 0, `LI8 ${prose(30)}`)])] }],
+    sections: [
+        { properties: PAGE, children: [...probe("LI8", [numbered("li8", 0, `LI8 ${prose(30)}`), numbered("li8", 0, `LI8 ${prose(30)}`)])] },
+    ],
     injections: [
         onlyReferencedNotes,
         (parts) => {
             let numbering = parts.get("word/numbering.xml")!;
-            numbering = changeList(numbering, PICTURE_CONFIG, "li8", (xml) => xml.replace(/<w:lvlText [^>]*\/>/, '<w:lvlText w:val=""/><w:lvlPicBulletId w:val="0"/>'));
+            numbering = changeList(numbering, PICTURE_CONFIG, "li8", (xml) =>
+                xml.replace(/<w:lvlText [^>]*\/>/, '<w:lvlText w:val=""/><w:lvlPicBulletId w:val="0"/>'),
+            );
             numbering = numbering.replace(
                 "<w:abstractNum ",
                 '<w:numPicBullet w:numPicBulletId="0"><w:pict><v:shape xmlns:v="urn:schemas-microsoft-com:vml" xmlns:o="urn:schemas-microsoft-com:office:office" id="_x0000_i1025" style="width:9pt;height:9pt" o:bullet="t"><v:imagedata xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships" r:id="rIdStopsImage" o:title=""/></v:shape></w:pict></w:numPicBullet><w:abstractNum ',
             );
             parts.set("word/numbering.xml", numbering);
-            const rels = parts.get("word/_rels/numbering.xml.rels") ?? '<?xml version="1.0" encoding="UTF-8" standalone="yes"?><Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships"></Relationships>';
-            parts.set("word/_rels/numbering.xml.rels", rels.replace("</Relationships>", '<Relationship Id="rIdStopsImage" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/image" Target="media/stops.png"/></Relationships>'));
+            const rels =
+                parts.get("word/_rels/numbering.xml.rels") ??
+                '<?xml version="1.0" encoding="UTF-8" standalone="yes"?><Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships"></Relationships>';
+            parts.set(
+                "word/_rels/numbering.xml.rels",
+                rels.replace(
+                    "</Relationships>",
+                    '<Relationship Id="rIdStopsImage" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/image" Target="media/stops.png"/></Relationships>',
+                ),
+            );
             const types = parts.get("[Content_Types].xml")!;
             if (!types.includes('Extension="png"')) {
                 parts.set("[Content_Types].xml", types.replace("</Types>", '<Default Extension="png" ContentType="image/png"/></Types>'));
@@ -293,16 +474,41 @@ await write({
         {
             properties: PAGE,
             children: [
-                ...probe("NF7", [new Paragraph({ children: [new TextRun("NF7 one"), footnote(line("NF7 note one"))] }), new Paragraph({ children: [new TextRun("NF7 two"), footnote(line("NF7 note two"))] })]),
+                ...probe("NF7", [
+                    new Paragraph({ children: [new TextRun("NF7 one"), footnote(line("NF7 note one"))] }),
+                    new Paragraph({ children: [new TextRun("NF7 two"), footnote(line("NF7 note two"))] }),
+                ]),
             ],
         },
         ...NUMBER_FORMATS.map(([name, format, start]) => numberedSection(name, format, start)),
         {
-            properties: { page: { ...PAGE.page, pageNumbers: { start: 1, chapterHeadingLevel: 1, separator: "hyphen" as never } }, type: SectionType.NEXT_PAGE },
-            footers: { default: new Footer({ children: [new Paragraph({ children: [new TextRun("NF5 page "), new TextRun({ children: [PageNumber.CURRENT] })] })] }) },
+            properties: {
+                page: { ...PAGE.page, pageNumbers: { start: 1, chapterHeadingLevel: 1, separator: "hyphen" as never } },
+                type: SectionType.NEXT_PAGE,
+            },
+            footers: {
+                default: new Footer({
+                    children: [new Paragraph({ children: [new TextRun("NF5 page "), new TextRun({ children: [PageNumber.CURRENT] })] })],
+                }),
+            },
             children: [
                 line("NF5 above"),
-                new Table({ borders: ALL_BORDERS, rows: [new TableRow({ children: [cell([new Paragraph({ heading: HeadingLevel.HEADING_1, numbering: { reference: "headings", level: 0 }, children: [new TextRun("NF5 heading in a cell")] })])] })] }),
+                new Table({
+                    borders: ALL_BORDERS,
+                    rows: [
+                        new TableRow({
+                            children: [
+                                cell([
+                                    new Paragraph({
+                                        heading: HeadingLevel.HEADING_1,
+                                        numbering: { reference: "headings", level: 0 },
+                                        children: [new TextRun("NF5 heading in a cell")],
+                                    }),
+                                ]),
+                            ],
+                        }),
+                    ],
+                }),
                 ...fill("NF5", 3),
                 line("NF5 below"),
             ],
@@ -314,7 +520,15 @@ await write({
         // NF7: the footnotes' format, in the first section's properties
         (parts) => {
             const text = parts.get("word/document.xml")!;
-            parts.set("word/document.xml", withProperty(text, "w:sectPr", '<w:footnotePr><w:numFmt w:val="ideographDigital"/></w:footnotePr>', text.indexOf("<w:sectPr")));
+            parts.set(
+                "word/document.xml",
+                withProperty(
+                    text,
+                    "w:sectPr",
+                    '<w:footnotePr><w:numFmt w:val="ideographDigital"/></w:footnotePr>',
+                    text.indexOf("<w:sectPr"),
+                ),
+            );
         },
     ],
 });
@@ -329,21 +543,21 @@ const fieldXml = (instruction: string): string =>
 // word-stops-fields.docx: NF2 to NF4, whose page references Word works out when it opens the document: answer Yes
 const fieldChildren = [
     ...probe("NF2", [
-                new Paragraph({ children: [new TextRun("NF2 target"), new Bookmark({ id: "nf2", children: [new TextRun(" here")] })] }),
-                pageField("NF2a", "PAGEREF nf2 \\* CardText"),
-                pageField("NF2b", "PAGEREF nf2 \\* DollarText"),
-                pageField("NF2c", "PAGEREF nf2 \\* OrdText"),
-                pageField("NF2d", "PAGEREF nf2 \\* Hex"),
-                pageField("NF3a", 'PAGEREF nf2 \\# "0.00"'),
-                pageField("NF3b", 'PAGEREF nf2 \\# "#,##0"'),
-                pageField("NF3c", 'PAGEREF nf2 \\# "x##"'),
-                pageField("NF3d", "PAGEREF nf2 \\# \"'p'00\""),
-            ]),
+        new Paragraph({ children: [new TextRun("NF2 target"), new Bookmark({ id: "nf2", children: [new TextRun(" here")] })] }),
+        pageField("NF2a", "PAGEREF nf2 \\* CardText"),
+        pageField("NF2b", "PAGEREF nf2 \\* DollarText"),
+        pageField("NF2c", "PAGEREF nf2 \\* OrdText"),
+        pageField("NF2d", "PAGEREF nf2 \\* Hex"),
+        pageField("NF3a", 'PAGEREF nf2 \\# "0.00"'),
+        pageField("NF3b", 'PAGEREF nf2 \\# "#,##0"'),
+        pageField("NF3c", 'PAGEREF nf2 \\# "x##"'),
+        pageField("NF3d", "PAGEREF nf2 \\# \"'p'00\""),
+    ]),
     ...probe("NF4", [
-                new Paragraph({ children: [new TextRun("NF4 target"), new Bookmark({ id: "nf4text", children: [new TextRun(" here")] })] }),
-                ...fill("NF4", 3),
-                new Paragraph({ children: [new TextRun("NF4 reference"), footnote(pageField("NF4a note", "PAGEREF nf4text \\p"))] }),
-            ]),
+        new Paragraph({ children: [new TextRun("NF4 target"), new Bookmark({ id: "nf4text", children: [new TextRun(" here")] })] }),
+        ...fill("NF4", 3),
+        new Paragraph({ children: [new TextRun("NF4 reference"), footnote(pageField("NF4a note", "PAGEREF nf4text \\p"))] }),
+    ]),
 ];
 await write({
     name: "word-stops-fields",
@@ -352,9 +566,19 @@ await write({
     injections: [
         (parts) => {
             const text = parts.get("word/document.xml")!;
-            parts.set("word/document.xml", text.replace(/<w:r><w:t xml:space="preserve">@@FIELD_([0-9a-f]+)@@<\/w:t><\/w:r>/g, (_, hex: string) => fieldXml(Buffer.from(hex, "hex").toString())));
+            parts.set(
+                "word/document.xml",
+                text.replace(/<w:r><w:t xml:space="preserve">@@FIELD_([0-9a-f]+)@@<\/w:t><\/w:r>/g, (_, hex: string) =>
+                    fieldXml(Buffer.from(hex, "hex").toString()),
+                ),
+            );
             const notes = parts.get("word/footnotes.xml")!;
-            parts.set("word/footnotes.xml", notes.replace(/<w:r><w:t xml:space="preserve">@@FIELD_([0-9a-f]+)@@<\/w:t><\/w:r>/g, (_, hex: string) => fieldXml(Buffer.from(hex, "hex").toString())));
+            parts.set(
+                "word/footnotes.xml",
+                notes.replace(/<w:r><w:t xml:space="preserve">@@FIELD_([0-9a-f]+)@@<\/w:t><\/w:r>/g, (_, hex: string) =>
+                    fieldXml(Buffer.from(hex, "hex").toString()),
+                ),
+            );
         },
     ],
 });
