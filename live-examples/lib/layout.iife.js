@@ -9741,7 +9741,11 @@ var docxLayout = (function(exports) {
 	/**
 	* The number formats of a field's `\*` switch, by their names in small letters, as Word writes a SEQ field's number in
 	* them (`scripts/layout-probes/word-seq.ts`) and a page reference's and a number of pages' (`word-watertight-fields.ts`
-	* FD3), as `field-number-formats.ts` in docx writes them, and whether the capitals of their names say those of the number
+	* FD3), as `field-number-formats.ts` in docx writes them, and whether the capitals of their names say those of the number.
+	* Word wrote page 1 as "one", "one and 00/100", "first" and "1" in CardText, DollarText, OrdText and Hex
+	* (`scripts/layout-probes/stops2/word-stops-numbers.ts` NF2), in the words it writes page numbers in, without a capital.
+	* It writes hexadecimal numbers in capitals ("1CA" for 458, its help says, as its page numbers are), and whether a name
+	* in small letters, `hex`, writes them in small letters hasn't been seen
 	*/
 	var FIELD_FORMATS = /* @__PURE__ */ new Map([
 		["arabic", {
@@ -9763,6 +9767,22 @@ var docxLayout = (function(exports) {
 		["arabicdash", {
 			written: format((value) => `- ${value} -`, 0, Infinity),
 			inCase: false
+		}],
+		["cardtext", {
+			written: PAGE_FORMATS.cardinalText,
+			inCase: false
+		}],
+		["ordtext", {
+			written: PAGE_FORMATS.ordinalText,
+			inCase: false
+		}],
+		["dollartext", {
+			written: format((value) => `${words(value)} and 00/100`),
+			inCase: false
+		}],
+		["hex", {
+			written: PAGE_FORMATS.hex,
+			inCase: false
 		}]
 	]);
 	/** Whether a field's `\*` switch is one of the number formats {@link formatFieldNumber} writes, in any capitals */
@@ -9777,25 +9797,36 @@ var docxLayout = (function(exports) {
 		if (!found) return;
 		const [write, smallest, largest] = found.written;
 		const written = Number.isInteger(value) && value >= smallest && value <= largest ? write(value) : void 0;
-		return found.inCase && name.charAt(0) === name.charAt(0).toUpperCase() ? written === null || written === void 0 ? void 0 : written.toUpperCase() : written;
+		const inCapitals = name.charAt(0) === name.charAt(0).toUpperCase();
+		if (name.toLowerCase() === "hex") return inCapitals || !/[A-F]/.test(written !== null && written !== void 0 ? written : "") ? written : void 0;
+		return found.inCase && inCapitals ? written === null || written === void 0 ? void 0 : written.toUpperCase() : written;
 	};
 	/**
-	* Whether Word's text for a picture of a field's `\#` switch is known: one of digits (`0`), digits only where the number
-	* has them (`#`) and commas between thousands, as Word wrote `00`, `000`, `0`, `#` and `#,##0`
-	* (`scripts/layout-probes/word-page-fields.ts` PF5 to PF7)
+	* A picture of a field's `\#` switch whose text Word is known to write: text in single quotes before and after the
+	* number; the number's places, of digits (`0`), digits only where the number has them (`#`), first a place that drops
+	* the number's digits before it (`x`), and commas between thousands; and a decimal point, with places of digits after
+	* it (`0`). Word wrote `00`, `000`, `0`, `#` and `#,##0` (`scripts/layout-probes/word-page-fields.ts` PF5 to PF7), and
+	* `0.00`, `x##` and `'p'00` (`scripts/layout-probes/stops2/word-stops-numbers.ts` NF3)
 	*/
-	var isFieldPicture = (picture) => /^[#0,]*[#0][#0,]*$/.test(picture);
+	var PICTURE = /^((?:'[^']*')*)(x[#0,]*|[#0,]*[#0][#0,]*)(?:\.(0+))?((?:'[^']*')*)$/;
+	/** Whether Word's text for a picture of a field's `\#` switch is known (see {@link PICTURE}) */
+	var isFieldPicture = (picture) => PICTURE.test(picture);
 	/**
-	* A number with a picture: with as many digits as it has `0`s at least, which Word fills with 0s (5 is 05 with `00`), and
-	* its thousands between commas when it has one (1234 is 1,234 with `#,##0`). Undefined where a `#` has no digit of the
-	* number, which Word writes as a space, not yet seen
+	* A number with a picture: with as many digits as it has `0`s at least, which Word fills with 0s (5 is 05 with `00`), a
+	* space for each `#` or `x` the number has no digit for (1 is three spaces and 1 with `#,##0`, and two spaces and 1 with
+	* `x##`), its thousands between commas when it has one (1234 is 1,234 with `#,##0`), 0s after its decimal point (1.00
+	* with `0.00`), and the text in quotes before and after it (p01 with `'p'00`), as Word wrote them (NF3). Undefined where
+	* `x` would drop digits, and for 0 with no `0` in the picture, which haven't been seen
 	*/
 	var inPicture = (value, picture) => {
-		const zeros = [...picture].filter((character) => character === "0").length;
-		const places = zeros + [...picture].filter((character) => character === "#").length;
+		const [, before, whole, fraction = "", after] = PICTURE.exec(picture);
+		const zeros = [...whole].filter((character) => character === "0").length;
+		const places = [...whole].filter((character) => character !== ",").length;
 		const figures = String(value).padStart(zeros, "0");
-		if (figures.length < places || zeros === 0 && value === 0) return;
-		return picture.includes(",") ? figures.replace(/\B(?=(\d{3})+$)/g, ",") : figures;
+		if (whole.startsWith("x") && figures.length > places || zeros === 0 && value === 0) return;
+		const grouped = whole.includes(",") ? figures.replace(/\B(?=(\d{3})+$)/g, ",") : figures;
+		const unquoted = (text) => text.replace(/'([^']*)'/g, "$1");
+		return `${unquoted(before)}${" ".repeat(Math.max(0, places - figures.length))}${grouped}${fraction === "" ? "" : `.${fraction}`}${unquoted(after)}`;
 	};
 	/** Whether a field's format writes its number, rather than only giving its text capitals */
 	var writesNumber = ({ numberFormat, picture } = {}) => numberFormat !== void 0 || picture !== void 0;
@@ -11177,7 +11208,7 @@ var docxLayout = (function(exports) {
 	var REMOVED_NOTES = /* @__PURE__ */ new Set(["w:footnoteReference", "w:endnoteReference"]);
 	var SIZED_REMOVAL = "a deleted picture, tab, break or note reference in a table whose columns Word sizes to their text";
 	var PARTLY_DELETED_FIELD = "a field partly deleted in a tracked change";
-	var OWN_NOTE_MARK = "a footnote or endnote with a mark of its own";
+	var OWN_NOTE_MARK = "an endnote with a mark of its own";
 	var GUESS = "docx-layout:guess ";
 	/** A marker that stands in a paragraph's items for what the reader guessed at, for why */
 	var guessMarker = (reason) => ({
@@ -11250,13 +11281,18 @@ var docxLayout = (function(exports) {
 	};
 	/**
 	* The number of a footnote or endnote, at its reference or at the start of the note, in its run's font: in superscript
-	* where its style has it, as docx's FootnoteReference and EndnoteReference do.
+	* where its style has it, as docx's FootnoteReference and EndnoteReference do. One numbered afresh on each page is worked
+	* out from the page the marker at its reference is on.
 	*/
-	var noteNumber = (text, font) => ({
+	var noteNumber = (shown, font) => typeof shown === "string" ? {
 		type: "text",
-		text,
+		text: shown,
 		font
-	});
+	} : {
+		type: "noteNumber",
+		note: shown.onPage,
+		font
+	};
 	/** A length in points, from twips or from a universal measure, such as "1in" */
 	var twips = (value) => pointsOf(value, 20);
 	var FORMAT_UNSUPPORTED = "a number in a field format not yet written";
@@ -11266,7 +11302,7 @@ var docxLayout = (function(exports) {
 	* {@link isFieldNumberFormat} and {@link isFieldPicture} say, such as `\* CardText`, for `\* Caps`, or for two of a kind
 	* or a format with a picture.
 	*/
-	var numberSwitchesOf = (switches) => {
+	var numberSwitchesOf = (switches, decimalSymbol = ".") => {
 		var _switches$match, _unsupported3;
 		const parts = (_switches$match = switches.match(/"[^"]*"|\S+/g)) !== null && _switches$match !== void 0 ? _switches$match : [];
 		let numberFormat;
@@ -11284,7 +11320,8 @@ var docxLayout = (function(exports) {
 			else if (part.startsWith("\\#")) {
 				var _unsupported, _picture;
 				const value = argument();
-				(_unsupported = unsupported) !== null && _unsupported !== void 0 || (unsupported = picture === void 0 && isFieldPicture(value) ? void 0 : "a number written with a picture not yet written");
+				const known = isFieldPicture(value) && (decimalSymbol === "." || !value.replace(/'[^']*'/g, "").includes("."));
+				(_unsupported = unsupported) !== null && _unsupported !== void 0 || (unsupported = picture === void 0 && known ? void 0 : "a number written with a picture not yet written");
 				(_picture = picture) !== null && _picture !== void 0 || (picture = value);
 			} else if (part.startsWith("\\*")) {
 				const name = argument();
@@ -11345,7 +11382,7 @@ var docxLayout = (function(exports) {
 			const reference = new RegExp("^\\s*(\"?)([^\\s\"\\\\]+)\\1(.*)$", "s").exec(field[2]);
 			if (!reference) return;
 			const [, , bookmark, switches] = reference;
-			const switched = numberSwitchesOf(switches);
+			const switched = numberSwitchesOf(switches, reader.decimalSymbol);
 			const at = switched.relative && !inHeader && !inNote ? fieldMarker(markers) : void 0;
 			if (at) {
 				var _markers$relative$get;
@@ -11373,7 +11410,7 @@ var docxLayout = (function(exports) {
 				inNote: true
 			}, own)];
 		}
-		const { format, unsupported } = numberSwitchesOf(field[2]);
+		const { format, unsupported } = numberSwitchesOf(field[2], reader.decimalSymbol);
 		const unformatted = () => workedOutResultOf(name, font, reader);
 		if (name === "NUMPAGES" || name === "SECTIONPAGES") return unsupported === void 0 ? [_objectSpread2({
 			type: "pageCount",
@@ -11775,20 +11812,26 @@ var docxLayout = (function(exports) {
 				}
 				case "w:footnoteReference":
 				case "w:endnoteReference": {
-					/** The reference, with its note's number, unless a mark of its own follows it in its place */
-					const reference = (numbered) => {
+					var _reader$notes3;
+					const id = String(attributesOf(child[name])["w:id"]);
+					/** The marker at the reference, and its note's number, unless a mark of its own follows it in its place */
+					const reference = (note, numbered) => note === void 0 ? [] : [...note.marker ? [{
+						type: "marker",
+						name: note.marker
+					}] : [], ...numbered ? [noteNumber(note.onPage === void 0 ? note.label : { onPage: note.onPage }, font)] : []];
+					const hidden = format.hidden ? "a footnote or endnote reference in hidden text" : void 0;
+					if (hasOwnMark(child) && name === "w:footnoteReference") {
 						var _reader$notes;
-						const note = (_reader$notes = reader.notes) === null || _reader$notes === void 0 ? void 0 : _reader$notes.read(name === "w:footnoteReference" ? "footnote" : "endnote", String(attributesOf(child[name])["w:id"]));
-						return note === void 0 ? [] : [...note.marker ? [{
-							type: "marker",
-							name: note.marker
-						}] : [], ...numbered ? [noteNumber(note.label, font)] : []];
-					};
-					if (hasOwnMark(child)) return guessedOr(reader, OWN_NOTE_MARK, () => format.hidden ? [] : reference(false));
-					return format.hidden ? "a footnote or endnote reference in hidden text" : reference(true);
+						return hidden !== null && hidden !== void 0 ? hidden : reference((_reader$notes = reader.notes) === null || _reader$notes === void 0 ? void 0 : _reader$notes.readOwn(id), false);
+					}
+					if (hasOwnMark(child)) return guessedOr(reader, OWN_NOTE_MARK, () => {
+						var _reader$notes2;
+						return format.hidden ? [] : reference((_reader$notes2 = reader.notes) === null || _reader$notes2 === void 0 ? void 0 : _reader$notes2.read("endnote", id), false);
+					});
+					return hidden !== null && hidden !== void 0 ? hidden : reference((_reader$notes3 = reader.notes) === null || _reader$notes3 === void 0 ? void 0 : _reader$notes3.read(name === "w:footnoteReference" ? "footnote" : "endnote", id), true);
 				}
 				case "w:footnoteRef":
-				case "w:endnoteRef": return reader.noteNumber === void 0 ? [] : [noteNumber(reader.noteNumber, font)];
+				case "w:endnoteRef": return reader.noteNumber === null ? "a note's number in a footnote with a mark of its own" : reader.noteNumber === void 0 ? [] : [noteNumber(reader.noteNumber, font)];
 				case "w:drawing": return format.hidden ? [] : font.border ? guessedOr(reader, "a picture in text with a border", () => readDrawing(child, font, reader)) : readDrawing(child, font, reader);
 				case "mc:AlternateContent": {
 					const choice = childrenOf(child["mc:AlternateContent"]).find((option) => "mc:Choice" in option);
@@ -11845,7 +11888,8 @@ var docxLayout = (function(exports) {
 	* Reads what is deleted (`w:del`), or moved to elsewhere (`w:moveFrom`), in a tracked change: nothing, as Word shows it in
 	* the markup area beside the page, and breaks the lines without it, pictures, tabs and breaks too (`word-watertight-markup.docx`
 	* MK1, `word-tracked-changes.docx` MK10), but for its bookmarks. Word numbers a footnote whose reference is deleted, though
-	* it doesn't show it (MK10e). A deleted endnote reference, and a note reference moved, haven't been seen.
+	* it doesn't show it (MK10e), unless it has a mark of its own. A deleted endnote reference, and a note reference moved,
+	* haven't been seen.
 	*/
 	var readRemoved = (elements, kind, reader) => itemsOf(elements.filter(isObject).map((element) => {
 		const name = nameOf$1(element);
@@ -11854,10 +11898,9 @@ var docxLayout = (function(exports) {
 			const references = children.filter((child) => REMOVED_NOTES.has(nameOf$1(child)));
 			if (references.length > 0 && kind === "w:moveFrom") return "a note reference moved in a tracked change";
 			if (references.some((reference) => "w:endnoteReference" in reference)) return "a deleted endnote reference";
-			if (references.some(hasOwnMark)) return OWN_NOTE_MARK;
-			references.forEach(() => {
-				var _reader$notes2;
-				return (_reader$notes2 = reader.notes) === null || _reader$notes2 === void 0 ? void 0 : _reader$notes2.skip("footnote");
+			references.filter((reference) => !hasOwnMark(reference)).forEach(() => {
+				var _reader$notes4;
+				return (_reader$notes4 = reader.notes) === null || _reader$notes4 === void 0 ? void 0 : _reader$notes4.skip("footnote");
 			});
 			return itemsOf(children.map((child) => nameOf$1(child) === "w:fldChar" ? readFieldCharacter(child, {}, reader, true) : []), reader);
 		}
@@ -13921,7 +13964,7 @@ var docxLayout = (function(exports) {
 	* Reads a document's body (`w:body`), with the other parts of the document.
 	*/
 	var readContent = (writtenBody, writtenParts, { guess = false } = {}) => {
-		var _writtenParts$dataSto, _parts$otherListIds, _parts$otherListIds2, _parts$settings, _fontOf$size2, _ref31, _ref32, _ref33, _ref34, _ref35, _ref36, _documentContent$unsu;
+		var _writtenParts$dataSto, _parts$otherListIds, _parts$otherListIds2, _parts$settings, _fontOf$size2, _notesByKind$kind$get, _ref31, _ref32, _ref33, _ref34, _ref35, _ref36, _ref37, _documentContent$unsu;
 		const stores = (_writtenParts$dataSto = writtenParts.dataStores) !== null && _writtenParts$dataSto !== void 0 ? _writtenParts$dataSto : /* @__PURE__ */ new Map();
 		const body = withBoundTextWritten(writtenBody, stores);
 		const parts = _objectSpread2(_objectSpread2({}, writtenParts), {}, {
@@ -13992,14 +14035,18 @@ var docxLayout = (function(exports) {
 			}
 			return grids.get(section);
 		};
-		const readNoteContent = (kind, id, label) => {
+		/**
+		* The blocks of a note, with the number its mark shows (`shows`, see {@link Reader}), or of a separator, which has
+		* none, read from the content of the note given, or its own
+		*/
+		const readNoteContent = (kind, id, shows, content = contentOf$3((_notesByKind$kind$get = notesByKind[kind].get(id)) !== null && _notesByKind$kind$get !== void 0 ? _notesByKind$kind$get : { [`w:${kind}`]: [] })) => {
 			var _noteBlocks;
-			const note = notesByKind[kind].get(id);
-			const grid = label === void 0 ? void 0 : gridOf(sections.length);
-			const down = label !== void 0 && downOf(childrenOf(sectionElements[sections.length])) !== void 0;
-			const readerOfNote = _objectSpread2(_objectSpread2(_objectSpread2(_objectSpread2({}, readerOf(false)), {}, { inNote: true }, label === void 0 ? {} : { noteNumber: label }), grid === void 0 ? {} : { grid }), down ? { down } : {});
-			const noteBlocks = note === void 0 ? [] : readBlocks(contentOf$3(note), readerOfNote);
-			return label === void 0 || ((_noteBlocks = noteBlocks[noteBlocks.length - 1]) === null || _noteBlocks === void 0 ? void 0 : _noteBlocks.type) !== "table" ? noteBlocks : [...noteBlocks, paragraphAfterTable(kind, readerOfNote)];
+			const separator = shows === void 0;
+			const grid = separator ? void 0 : gridOf(sections.length);
+			const down = !separator && downOf(childrenOf(sectionElements[sections.length])) !== void 0;
+			const readerOfNote = _objectSpread2(_objectSpread2(_objectSpread2(_objectSpread2({}, readerOf(false)), {}, { inNote: true }, separator ? {} : { noteNumber: shows }), grid === void 0 ? {} : { grid }), down ? { down } : {});
+			const noteBlocks = readBlocks(content, readerOfNote);
+			return separator || ((_noteBlocks = noteBlocks[noteBlocks.length - 1]) === null || _noteBlocks === void 0 ? void 0 : _noteBlocks.type) !== "table" ? noteBlocks : [...noteBlocks, paragraphAfterTable(kind, readerOfNote)];
 		};
 		/**
 		* The empty paragraph Word adds after a table that ends a footnote or endnote, as a note ends with a paragraph: a line
@@ -14014,15 +14061,34 @@ var docxLayout = (function(exports) {
 			return JSON.stringify([normal.format, normal.markFont]) === JSON.stringify([inStyle.format, inStyle.markFont]) ? normal : _objectSpread2(_objectSpread2({}, normal), {}, { unsupported: "a footnote or endnote that ends with a table, in a document whose Normal and note text styles differ" });
 		};
 		/**
+		* The elements of an endnote separator Word lays out: Word leaves out what follows the separator in its paragraph, as
+		* it left out text there (`word-stops-endnotes.docx` NE3), but for its bookmarks. Those of one of more than a paragraph,
+		* or whose paragraph has no separator, are as they are
+		*/
+		const separatorElements = (type) => {
+			var _notesByKind$endnote$;
+			const noteContent = contentOf$3((_notesByKind$endnote$ = notesByKind.endnote.get(type)) !== null && _notesByKind$endnote$ !== void 0 ? _notesByKind$endnote$ : { "w:endnote": [] });
+			const paragraphs = noteContent.filter((element) => isObject(element) && ![
+				"_attr",
+				"w:bookmarkStart",
+				"w:bookmarkEnd"
+			].includes(nameOf$1(element)));
+			const [paragraph] = paragraphs;
+			if (paragraphs.length !== 1 || !isObject(paragraph) || nameOf$1(paragraph) !== "w:p") return noteContent;
+			const children = contentOf$3(paragraph);
+			const mark = children.findIndex((child) => isObject(child) && nameOf$1(child) === "w:r" && find(childrenOf(child["w:r"]), `w:${type}`) !== void 0);
+			return mark < 0 ? noteContent : noteContent.map((element) => element === paragraph ? { "w:p": [...children.slice(0, mark + 1), ...children.slice(mark + 1).filter((child) => isObject(child) && nameOf$1(child) === "w:bookmarkStart")] } : element);
+		};
+		/**
 		* A separator above the endnotes as Word lays it out: a line of its paragraph style's text, at single spacing and with
 		* no space before or after, whatever its own formatting. Word left out the space before and after, the line spacing
 		* and the size of the text of the separator and the continuation separator alike (`word-continued-endnotes.docx` CE3
-		* to CE5, `word-watertight-endnotes2.docx` EN2, `word-watertight-sections.docx` SC4). Its bookmarks are kept. One with
-		* text in it, or more than a paragraph, stops, as Word hasn't been seen laying one out, and so does one with something
-		* in it that stops the layout anywhere, such as an equation
+		* to CE5, `word-watertight-endnotes2.docx` EN2, `word-watertight-sections.docx` SC4), and the text after the separator
+		* (NE3). Its bookmarks are kept. One with text before the separator, or more than a paragraph, stops, as Word hasn't
+		* been seen laying one out, and so does one with something in it that stops the layout anywhere, such as an equation
 		*/
 		const readEndnoteSeparator = (type) => {
-			const content = readNoteContent("endnote", type);
+			const content = readNoteContent("endnote", type, void 0, separatorElements(type));
 			const [first] = content;
 			if (content.length === 0) return [];
 			if (content.length > 1 || first.type !== "paragraph" || first.items.some((item) => item.type !== "marker")) return [_objectSpread2(_objectSpread2({}, first), {}, { unsupported: "an endnote separator with text in it, or of more than a paragraph" })];
@@ -14048,45 +14114,92 @@ var docxLayout = (function(exports) {
 		/** How a section numbers and places its notes of a kind: as it says, or the document does, or as Word does */
 		const notePropertiesOf = (kind, section) => _objectSpread2(_objectSpread2(_objectSpread2({}, NOTE_DEFAULTS[kind]), readNoteProperties(find(settings, `w:${kind}Pr`))), readNoteProperties(find(childrenOf(sectionElements[section]), `w:${kind}Pr`)));
 		const endnoteReferences = /* @__PURE__ */ new Map();
-		const noteCounts = {
-			footnote: 0,
-			endnote: 0
+		const footnotesOnEachPage = /* @__PURE__ */ new Map();
+		const sectionsNumberingOnPages = /* @__PURE__ */ new Set();
+		const countOf = (counts, kind) => {
+			var _counts$get;
+			return (_counts$get = counts.get(kind)) !== null && _counts$get !== void 0 ? _counts$get : {
+				read: 0,
+				counted: 0,
+				section: sections.length,
+				inSection: 0,
+				afresh: false
+			};
 		};
-		const lastNotes = /* @__PURE__ */ new Map();
+		const noteCounts = /* @__PURE__ */ new Map();
 		let unwrittenNumber = false;
-		/** Numbers the next note of a kind after the last, in the section being read, and gives its number as it is written */
-		const numberNext = (kind, last) => {
+		let unseenNumbering;
+		/** Counts a note of a kind read, without counting it in the numbers, and gives the name of the marker at its reference */
+		const markerNext = (kind, counts) => {
+			const count = countOf(counts, kind);
+			counts.set(kind, _objectSpread2(_objectSpread2({}, count), {}, { read: count.read + 1 }));
+			return `${kind} ${count.read + 1}`;
+		};
+		/**
+		* Numbers the next note of a kind, in the section being read, and gives its number as it is written, or as its page
+		* numbers it, from the name of the marker at its reference (`marker`). Footnotes are numbered 1, 2, 3 and endnotes i,
+		* ii, iii, as Word numbers them unless the document or the section they are in says otherwise (`w:footnotePr`,
+		* `w:endnotePr`). Word numbers a section's notes on from all those counted before them in the document, from its own
+		* start number: after 27 footnotes, the first of a section that starts them from 5 is 32, and the first of the section
+		* after it, from 1, is 31 after 30 (`word-stops-notes.docx` NT14b, NT14c), which counts those of a section numbered
+		* afresh on each page (NT14a). A section numbered afresh in each section starts from its number, and one numbered on
+		* each page, on each page (NT14a). How Word numbers notes on through the document after a section that numbers its own
+		* afresh in each section hasn't been seen
+		*/
+		const numberNext = (kind, counts, marker) => {
 			const section = sections.length;
 			const { format, start, restart } = notePropertiesOf(kind, section);
-			const previous = last.get(kind);
-			const value = previous === void 0 || restart === "eachSect" && previous.section !== section ? start : previous.value + 1;
-			last.set(kind, {
-				value,
-				section
-			});
-			return formatNumber(value, format);
+			const count = countOf(counts, kind);
+			const inSection = count.section === section ? count.inSection : 0;
+			counts.set(kind, _objectSpread2(_objectSpread2({}, count), {}, {
+				counted: count.counted + 1,
+				section,
+				inSection: inSection + 1,
+				afresh: count.afresh || restart === "eachSect"
+			}));
+			if (restart !== "eachSect" && restart !== "eachPage" && count.afresh) {
+				var _unseenNumbering;
+				(_unseenNumbering = unseenNumbering) !== null && _unseenNumbering !== void 0 || (unseenNumbering = "notes numbered on through the document after a section that numbers its own afresh");
+			}
+			if (restart === "eachPage" && kind === "footnote") {
+				unwrittenNumber || (unwrittenNumber = formatNumber(start, format) === void 0);
+				return {
+					label: "",
+					onPage: marker
+				};
+			}
+			const written = formatNumber(start + (restart === "eachSect" ? inSection : count.counted), format);
+			unwrittenNumber || (unwrittenNumber = written === void 0);
+			return { label: written !== null && written !== void 0 ? written : "" };
 		};
-		/** Numbers notes on from the last ones, without reading them or numbering them in `lastNotes` */
-		const previewFrom = (last) => {
-			const next = new Map(last);
+		/** Numbers notes on from the last ones, without reading them or counting them in `noteCounts` */
+		const previewFrom = (counts) => {
+			const next = new Map(counts);
 			return {
-				read: (kind) => {
-					var _numberNext;
-					return { label: (_numberNext = numberNext(kind, next)) !== null && _numberNext !== void 0 ? _numberNext : "" };
+				read: (kind) => numberNext(kind, next, markerNext(kind, next)),
+				readOwn: () => {
+					markerNext("footnote", next);
+					return { label: "" };
 				},
 				skip: (kind) => {
-					numberNext(kind, next);
+					numberNext(kind, next, markerNext(kind, next));
 				},
 				preview: () => previewFrom(next)
 			};
 		};
 		const readNote = (kind, id) => {
-			noteCounts[kind]++;
-			const written = numberNext(kind, lastNotes);
-			const label = written !== null && written !== void 0 ? written : "";
-			unwrittenNumber || (unwrittenNumber = written === void 0);
-			const content = readNoteContent(kind, id, label);
-			const marker = `${kind} ${noteCounts[kind]}`;
+			const marker = markerNext(kind, noteCounts);
+			const numbered = numberNext(kind, noteCounts, marker);
+			const { label, onPage } = numbered;
+			const content = readNoteContent(kind, id, onPage === void 0 ? label : { onPage });
+			if (onPage !== void 0) {
+				const { start, format } = notePropertiesOf(kind, sections.length);
+				footnotesOnEachPage.set(marker, {
+					start,
+					format
+				});
+				sectionsNumberingOnPages.add(sections.length);
+			}
 			if (kind === "endnote") {
 				endnoteSections.push(sections.length);
 				endnotes.push(...content);
@@ -14099,18 +14212,27 @@ var docxLayout = (function(exports) {
 			}
 			footnotes.set(marker, content);
 			footnoteNumbers.set(marker, label);
-			return {
-				label,
-				marker
-			};
+			return _objectSpread2(_objectSpread2({}, numbered), {}, { marker });
 		};
 		const noteReader = {
 			read: readNote,
-			skip: (kind) => {
-				noteCounts[kind]++;
-				numberNext(kind, lastNotes);
+			readOwn: (id) => {
+				const marker = markerNext("footnote", noteCounts);
+				footnotes.set(marker, readNoteContent("footnote", id, null));
+				footnoteNumbers.set(marker, "");
+				return {
+					label: "",
+					marker
+				};
 			},
-			preview: () => previewFrom(lastNotes)
+			skip: (kind) => {
+				const { onPage } = numberNext(kind, noteCounts, markerNext(kind, noteCounts));
+				if (onPage !== void 0) {
+					var _unseenNumbering2;
+					(_unseenNumbering2 = unseenNumbering) !== null && _unseenNumbering2 !== void 0 || (unseenNumbering = "a deleted footnote reference in a section that numbers its footnotes afresh on each page");
+				}
+			},
+			preview: () => previewFrom(noteCounts)
 		};
 		const reader = _objectSpread2(_objectSpread2({}, readerOf(false)), {}, { notes: noteReader });
 		const sections = [];
@@ -14158,16 +14280,26 @@ var docxLayout = (function(exports) {
 		const ending = hidden.length > 0 && final !== void 0 ? endingWith(final.block, bookmarks) : void 0;
 		if (ending !== void 0) blocks[blocks.length - 1] = _objectSpread2(_objectSpread2({}, final), {}, { block: ending });
 		if (sections.length === 0 || blocks.some(({ section }) => section >= sections.length)) addSection(void 0);
+		/** Whether a section shares a page with the section before or after it, as one that starts on the page or column of another */
+		const sharesPage = (section) => [sections[section], sections[section + 1]].some((one, at) => one !== void 0 && (at === 1 || section > 0) && (one.start === "continuous" || one.start === "nextColumn"));
 		/**
-		* Why the notes of a kind can't be laid out yet, when Word numbers or places them in a way not yet followed: afresh on
-		* each page, from a number of its own in a section after the first though they are numbered on through the document,
-		* footnotes anywhere but at the bottom of the page, and endnotes at the end of each section
+		* Why the notes of a kind can't be laid out yet, when Word numbers or places them in a way not yet followed: endnotes
+		* afresh on each page, footnotes afresh on each page of a section that shares a page with another, footnotes anywhere
+		* but at the bottom of the page or below the text, below the text of columns, and endnotes at the end of each section. Word put the endnotes of sections that say
+		* they go at the end of each section at the end of the document, as its settings say (`word-stops-endnotes.docx` NE2),
+		* so only the settings place them; how Word places them when the settings put them at the end of each section hasn't
+		* been seen
 		*/
 		const notesUnsupported = (kind) => {
+			var _readNoteProperties$p;
 			const all = sections.map((_, section) => notePropertiesOf(kind, section));
-			return all.some(({ restart }) => restart === "eachPage") ? "notes numbered afresh on each page" : all.some(({ restart, start }) => restart !== "eachSect" && start !== all[0].start) ? "notes numbered on from a number of their own in a later section" : kind === "footnote" && all.some(({ position }) => position !== "pageBottom") ? "footnotes put elsewhere than at the bottom of the page" : kind === "endnote" && all.length > 1 && all.some(({ position }) => position !== "docEnd") ? "endnotes at the end of each section" : void 0;
+			const endnotesAt = (_readNoteProperties$p = readNoteProperties(find(settings, "w:endnotePr")).position) !== null && _readNoteProperties$p !== void 0 ? _readNoteProperties$p : NOTE_DEFAULTS.endnote.position;
+			return kind === "endnote" && all.some(({ restart }) => restart === "eachPage") ? "endnotes numbered afresh on each page" : kind === "footnote" && [...sectionsNumberingOnPages].some(sharesPage) ? "footnotes numbered afresh on each page of a section that shares a page with another" : kind === "footnote" && all.some(({ position }) => position !== "pageBottom" && position !== "beneathText") ? "footnotes put elsewhere than at the bottom of the page or below the text" : kind === "footnote" && all.some(({ position }, section) => position === "beneathText" && sections[section].columns.length > 1) ? "footnotes below the text of columns" : kind === "endnote" && endnotesAt !== "docEnd" && endnoteSections.some((section) => section < sections.length - 1) ? "endnotes at the end of each section" : void 0;
 		};
-		const documentContent = _objectSpread2(_objectSpread2({
+		if (footnotes.size > 0) sections.forEach((section, index) => {
+			if (notePropertiesOf("footnote", index).position === "beneathText") sections[index] = _objectSpread2(_objectSpread2({}, section), {}, { footnotesBeneathText: true });
+		});
+		const documentContent = _objectSpread2(_objectSpread2(_objectSpread2({
 			blocks,
 			sections,
 			footnotes,
@@ -14175,12 +14307,13 @@ var docxLayout = (function(exports) {
 			footnoteContinuationSeparator: footnotes.size > 0 ? readNoteContent("footnote", "continuationSeparator") : [],
 			endnotes: endnotes.length > 0 ? [...readEndnoteSeparator("separator"), ...endnotes] : [],
 			endnoteContinuationSeparator: endnotes.length > 0 ? readEndnoteSeparator("continuationSeparator") : [],
-			footnoteNumbers,
+			footnoteNumbers
+		}, footnotesOnEachPage.size > 0 ? { footnotesOnEachPage } : {}), {}, {
 			endnoteNumbers,
 			relativeReferences: markers.relative,
 			endnoteReferences
 		}, parts.fonts !== void 0 && parts.fonts.length > 0 ? { fonts: parts.fonts } : {}), readSettings(parts.settings));
-		return _objectSpread2(_objectSpread2({}, documentContent), withoutUndefined({ unsupported: (_ref31 = (_ref32 = (_ref33 = (_ref34 = (_ref35 = (_ref36 = (_documentContent$unsu = documentContent.unsupported) !== null && _documentContent$unsu !== void 0 ? _documentContent$unsu : styles.unsupported) !== null && _ref36 !== void 0 ? _ref36 : inNumbering) !== null && _ref35 !== void 0 ? _ref35 : footnotes.size > 0 ? notesUnsupported("footnote") : void 0) !== null && _ref34 !== void 0 ? _ref34 : endnotes.length > 0 ? notesUnsupported("endnote") : void 0) !== null && _ref33 !== void 0 ? _ref33 : [...endnoteSections, sections.length - 1].some((section) => sections[section].textRunsDown !== void 0) && endnotes.length > 0 ? "endnotes on text that runs down the page" : void 0) !== null && _ref32 !== void 0 ? _ref32 : endnoteSections.some((section) => !sameGrid(gridOf(section), gridOf(sections.length - 1))) ? "endnotes from a section on another document grid than the last" : void 0) !== null && _ref31 !== void 0 ? _ref31 : unwrittenNumber ? "notes numbered in a format not yet written" : void 0 }));
+		return _objectSpread2(_objectSpread2({}, documentContent), withoutUndefined({ unsupported: (_ref31 = (_ref32 = (_ref33 = (_ref34 = (_ref35 = (_ref36 = (_ref37 = (_documentContent$unsu = documentContent.unsupported) !== null && _documentContent$unsu !== void 0 ? _documentContent$unsu : styles.unsupported) !== null && _ref37 !== void 0 ? _ref37 : inNumbering) !== null && _ref36 !== void 0 ? _ref36 : footnotes.size > 0 ? notesUnsupported("footnote") : void 0) !== null && _ref35 !== void 0 ? _ref35 : endnotes.length > 0 ? notesUnsupported("endnote") : void 0) !== null && _ref34 !== void 0 ? _ref34 : [...endnoteSections, sections.length - 1].some((section) => sections[section].textRunsDown !== void 0) && endnotes.length > 0 ? "endnotes on text that runs down the page" : void 0) !== null && _ref33 !== void 0 ? _ref33 : endnoteSections.some((section) => !sameGrid(gridOf(section), gridOf(sections.length - 1))) ? "endnotes from a section on another document grid than the last" : void 0) !== null && _ref32 !== void 0 ? _ref32 : unwrittenNumber ? "notes numbered in a format not yet written" : void 0) !== null && _ref31 !== void 0 ? _ref31 : unseenNumbering }));
 	};
 	//#endregion
 	//#region src/layout/paginate.ts
@@ -14257,7 +14390,7 @@ var docxLayout = (function(exports) {
 		}];
 	}, []);
 	/** The blocks of footnotes, in order, by the footnotes they are in, with those of the same footnote together */
-	var groupedNotes = (blocks, numbers) => blocks.reduce((notes, { note, block }) => {
+	var groupedNotes = (blocks, numberOf) => blocks.reduce((notes, { note, block }) => {
 		const last = notes[notes.length - 1];
 		return (last === null || last === void 0 ? void 0 : last.note) === note ? [...notes.slice(0, -1), {
 			note,
@@ -14267,7 +14400,7 @@ var docxLayout = (function(exports) {
 			content: [block]
 		}];
 	}, []).map(({ note, content }) => ({
-		noteNumber: numbers.get(note),
+		noteNumber: numberOf(note),
 		content
 	}));
 	/** The headings in a block: a paragraph's own, and those in a table's cells, whose chapter numbers aren't known yet */
@@ -14296,7 +14429,7 @@ var docxLayout = (function(exports) {
 	var FOOTNOTE_IN_COLUMNS = "a footnote across pages in columns";
 	var MOVES_ON_FROM_TOP = "a footnote in columns whose reference moves on to the next page from the top of a column";
 	var NOTE_ROOM_STEP = 1;
-	var ENDNOTES_IN_COLUMNS = "endnotes continued in columns";
+	var ENDNOTES_IN_COLUMNS = "endnotes after text in columns";
 	var KEPT_ROW_IN_COLUMNS = "a table row kept together taller than a column";
 	/** The measurers the layout measures with, by those it is given, so the lines laid out with each are kept */
 	var stoppingMeasurers = /* @__PURE__ */ new WeakMap();
@@ -14442,7 +14575,8 @@ var docxLayout = (function(exports) {
 		"pageReference",
 		"pageCount",
 		"pageNumber",
-		"sectionNumber"
+		"sectionNumber",
+		"noteNumber"
 	]);
 	/** The name of the marker at a drawing that text flows around, by where it is in its paragraph's items */
 	var drawingMarker = (index) => `drawing ${index}`;
@@ -14468,7 +14602,7 @@ var docxLayout = (function(exports) {
 	*/
 	var paginate = (content, { pageNumbers = /* @__PURE__ */ new Map(), places: givenPlaces = /* @__PURE__ */ new Map(), earlierPlaces = /* @__PURE__ */ new Map(), pageCount: givenPageCount, sectionPageCounts: givenSectionPageCounts = [], measurer = DEFAULT_MEASURER, guess = false } = {}) => {
 		var _laidOutLines$get;
-		const { sections, defaultTabStop, evenAndOddHeaders, addsParagraphSpacing, footnotes, footnoteSeparator, footnoteContinuationSeparator, endnotes, endnoteContinuationSeparator, breakRules, hyphenation, footnoteNumbers, endnoteNumbers, compatibilityMode, suppressesTopSpacing } = content;
+		const { sections, defaultTabStop, evenAndOddHeaders, addsParagraphSpacing, footnotes, footnoteSeparator, footnoteContinuationSeparator, endnotes, endnoteContinuationSeparator, breakRules, hyphenation, footnoteNumbers, footnotesOnEachPage = /* @__PURE__ */ new Map(), endnoteNumbers, compatibilityMode, suppressesTopSpacing } = content;
 		const blocks = [...content.blocks, ...endnotes.map((block) => ({
 			block: block.type === "paragraph" && !endnoteNumbers.has(block) ? _objectSpread2(_objectSpread2({}, block), {}, { format: _objectSpread2(_objectSpread2({}, block.format), {}, { keepNext: true }) }) : block,
 			section: sections.length - 1
@@ -14511,6 +14645,24 @@ var docxLayout = (function(exports) {
 			const text = relative !== void 0 ? relativeText(target, givenPlaces.get(relative), !((_homes$get = homes.get(bookmark)) === null || _homes$get === void 0 ? void 0 : _homes$get.inNote)) : inNote && target !== void 0 ? `on page ${target.text}` : target === null || target === void 0 ? void 0 : target.text;
 			return text === void 0 ? "" : written(target.pageNumber, text, format);
 		};
+		/**
+		* The number of a footnote numbered afresh on each page, by the marker at its reference: one more than the footnotes
+		* of its section whose references were before it on its page in the pass before, from the section's start number, as
+		* Word numbered two footnotes on each of three pages 1 and 2 (`word-stops-notes.docx` NT14a). Blank when the pass
+		* before didn't place it. Where sections share a page, which stops the layout, those of another section aren't counted
+		*/
+		const onPageNumber = (note) => {
+			const place = givenPlaces.get(note);
+			const { start, format } = footnotesOnEachPage.get(note);
+			if (place === void 0) return "";
+			const before = [...footnotesOnEachPage.keys()].filter((other) => {
+				const at = givenPlaces.get(other);
+				return at !== void 0 && at.page === place.page && at.section === place.section && at.order < place.order;
+			}).length;
+			const text = formatNumber(start + before, format);
+			if (text === void 0) stopAt("notes numbered in a format not yet written");
+			return text !== null && text !== void 0 ? text : String(start + before);
+		};
 		/** The text of the result of a field that depends on the pages, from the numbers given and the places of the pass before */
 		const resultText = (item) => {
 			switch (item.type) {
@@ -14523,6 +14675,7 @@ var docxLayout = (function(exports) {
 					const place = placeOf(item.field, item.format);
 					return place === void 0 ? "" : written(place.pageNumber, place.text, item.format);
 				}
+				case "noteNumber": return onPageNumber(item.note);
 				default: {
 					var _givenPlaces$get;
 					const index = item.field === void 0 ? sectionIndex : (_givenPlaces$get = givenPlaces.get(item.field)) === null || _givenPlaces$get === void 0 ? void 0 : _givenPlaces$get.section;
@@ -14861,6 +15014,7 @@ var docxLayout = (function(exports) {
 		let pageCount = 0;
 		let pageNumber = 0;
 		let restart;
+		let restNumber;
 		const firstPages = /* @__PURE__ */ new Map([[0, 1]]);
 		const lastPages = /* @__PURE__ */ new Map();
 		const sharingPages = /* @__PURE__ */ new Set();
@@ -15095,17 +15249,18 @@ var docxLayout = (function(exports) {
 		/** Whether a line or row of the section being laid out is on the page */
 		const sectionOnPage = () => placements.slice(placements.findLastIndex(({ type }) => type === "page")).some((placement) => (placement.type === "line" || placement.type === "row") && blocks[placement.block].section === sectionIndex);
 		const startPage = (isFirstOfSection = false) => {
-			var _restart;
+			var _restNumber, _restart;
 			if (balancing !== void 0 && pageCount >= balancing.page) throw new Overflow();
 			pageColumns = void 0;
 			settleNoteSearch();
 			checkReserve();
 			deferred = void 0;
 			checkAnchors();
+			checkBeneathText();
 			finishPage();
 			const current = section();
 			const first = isFirstOfSection || current.start === "continuous" && firstPages.get(sectionIndex) === pageCount && !sectionOnPage();
-			pageNumber = first && current.firstNumber !== void 0 ? current.firstNumber : ((_restart = restart) !== null && _restart !== void 0 ? _restart : pageNumber) + 1;
+			pageNumber = first && current.firstNumber !== void 0 ? current.firstNumber : (_restNumber = restNumber) !== null && _restNumber !== void 0 ? _restNumber : ((_restart = restart) !== null && _restart !== void 0 ? _restart : pageNumber) + 1;
 			restart = void 0;
 			const down = current.textRunsDown;
 			const across = down === void 0 ? textWidth() : current.pageHeight - current.marginTop - current.marginBottom;
@@ -15126,9 +15281,7 @@ var docxLayout = (function(exports) {
 				}, down === void 0 ? {} : { textRunsDown: down }), header ? { header } : {}), footer ? { footer } : {})
 			});
 			top = down !== void 0 ? current.marginTop : current.marginTop < 0 ? -current.marginTop + current.topGutter : Math.max(current.marginTop + current.topGutter, headerBottom);
-			const endnotesOn = endnotesGoOn();
-			if (endnotesOn && current.columns.length > 1) stopAt(ENDNOTES_IN_COLUMNS);
-			const continuation = endnotesOn ? continuationHeight() : 0;
+			const continuation = endnotesGoOn() ? continuationHeight() : 0;
 			top += continuation;
 			pageBottom = current.pageHeight - (down !== void 0 ? current.marginBottom : current.marginBottom < 0 ? -current.marginBottom : Math.max(current.marginBottom, footerTop)) + continuation;
 			position = top;
@@ -15190,7 +15343,6 @@ var docxLayout = (function(exports) {
 				startPage();
 				return;
 			}
-			if (endnotesGoOn()) stopAt(ENDNOTES_IN_COLUMNS);
 			deepest = Math.max(deepest, position + spaceAfter);
 			filledEnd = Math.max(filledEnd, position);
 			column++;
@@ -15200,6 +15352,8 @@ var docxLayout = (function(exports) {
 		};
 		/** Whether a section starts on the page the section before it ends on: a continuous one, on pages of the same size */
 		const continuesOnPage = (previous, current) => current.start === "continuous" && previous.pageWidth === current.pageWidth && previous.pageHeight === current.pageHeight;
+		/** Whether two sections' pages have the same headers and footers, as far down the page, written alike in parts of their own */
+		const sameHeadersAndFooters = (one, other) => one.header === other.header && one.footer === other.footer && one.titlePage === other.titlePage && JSON.stringify([one.headers, one.footers]) === JSON.stringify([other.headers, other.footers]);
 		/**
 		* Whether a section starts in the next column of the page the section before it ends on, as Word starts one that
 		* starts in the next column when the section before has as many columns, on pages of the same size, and one is left
@@ -15274,7 +15428,15 @@ var docxLayout = (function(exports) {
 			const current = sections[index];
 			const restOnPages = carried !== void 0 && !startsInNextColumn(previous, current) && (deferred === void 0 || !continuesOnPage(previous, current));
 			if (carried !== void 0 && previous.columns.length > 1 && (startsInNextColumn(previous, current) || continuesOnPage(previous, current))) throw new Unsupported("a footnote continued from columns before a section on the same page");
-			if (restOnPages) startPage();
+			if (restOnPages && continuesOnPage(previous, current)) {
+				if (!sameHeadersAndFooters(previous, current)) stopAt("a footnote continued across a continuous section break onto a page of its own", pageCount + 1);
+				sharingPages.add(sectionIndex);
+				restNumber = current.firstNumber;
+			}
+			if (restOnPages) {
+				startPage();
+				restNumber = void 0;
+			}
 			lastPages.set(sectionIndex, pageCount);
 			for (let skipped = sectionIndex + 1; skipped < index; skipped++) sharingPages.add(skipped);
 			stopAtRead(current, continuesOnPage(previous, current) || startsInNextColumn(previous, current) ? pageCount : pageCount + 1);
@@ -15557,7 +15719,7 @@ var docxLayout = (function(exports) {
 			const from = continued && _objectSpread2(_objectSpread2({}, continued), carried !== void 0 && split === void 0 ? { to: carried.from } : {});
 			const columns = noteColumns();
 			const stack = noteStack(split ? pageNotes.slice(0, -1) : pageNotes, split, from, columns, textWidth(current));
-			const notesTop = pageBottom - stack.area;
+			const notesTop = current.footnotesBeneathText ? Math.min(position, pageBottom - stack.area) : pageBottom - stack.area;
 			/** A piece's lines, each at a height, in a column, or its table's rows from a height, in its column's width */
 			const blockAt = (piece, at) => {
 				const { block, start } = piece;
@@ -15609,7 +15771,7 @@ var docxLayout = (function(exports) {
 			return groupedNotes(stack.pieces.flatMap((piece, index) => piece.note === void 0 || placed[index].length === 0 ? [] : [{
 				note: piece.note,
 				block: blockAt(piece, placed[index])
-			}]), footnoteNumbers);
+			}]), (note) => footnotesOnEachPage.has(note) ? onPageNumber(note) : footnoteNumbers.get(note));
 		};
 		/** Places the footnotes at the bottom of the page when it is full, once */
 		const finishPage = () => {
@@ -15808,6 +15970,16 @@ var docxLayout = (function(exports) {
 		const settleNoteSearch = () => {
 			const search = noteSearches.get(pageCount);
 			if (search !== void 0 && !search.found) throw new NotesGrew(nextNoteRoom(search, search.placed), []);
+		};
+		/**
+		* Stops at footnotes below the text of their page that Word hasn't been seen to place: one that goes on from the page
+		* before or on the next page, and below the space after the page's last paragraph, which Word may put above them or not
+		*/
+		const checkBeneathText = () => {
+			if (sections[notesSection].footnotesBeneathText && (pageNotes.length > 0 || continued !== void 0)) {
+				if (continued !== void 0 || carried !== void 0) stopAt("a footnote below the text that goes on across pages");
+				if (spaceAfter > 0) stopAt("footnotes below the text after space below its last paragraph");
+			}
 		};
 		/**
 		* Whether Word keeps a table row with the next: when the first paragraph of its first cell is kept with the next
@@ -16052,10 +16224,11 @@ var docxLayout = (function(exports) {
 			const text = pageText();
 			const search = noteSearches.get(pageCount);
 			if (search !== void 0 && names.includes(search.marker)) noteSearches.set(pageCount, _objectSpread2(_objectSpread2({}, search), {}, { placed: true }));
-			for (const name of names.flatMap((marker) => {
+			const placed = names.flatMap((marker) => {
 				var _inNotes$get2;
-				return (_inNotes$get2 = inNotes.get(marker)) !== null && _inNotes$get2 !== void 0 ? _inNotes$get2 : isDrawingMarker(marker) ? [] : [marker];
-			})) if (!places.has(name)) {
+				return [...footnotesOnEachPage.has(marker) ? [marker] : [], ...(_inNotes$get2 = inNotes.get(marker)) !== null && _inNotes$get2 !== void 0 ? _inNotes$get2 : isDrawingMarker(marker) ? [] : [marker]];
+			});
+			for (const name of placed) if (!places.has(name)) {
 				places.set(name, {
 					page: pageCount,
 					pageNumber,
@@ -16063,7 +16236,7 @@ var docxLayout = (function(exports) {
 					section: sectionIndex,
 					order: places.size
 				});
-				if (!isFieldMarker(name)) bookmarks.set(name, text);
+				if (!isFieldMarker(name) && !footnotesOnEachPage.has(name)) bookmarks.set(name, text);
 			}
 		};
 		/** The lines from one (`from`) up to the next that ends with a page or column break, or to the paragraph's end */
@@ -16501,7 +16674,10 @@ var docxLayout = (function(exports) {
 		* lines of the next paragraph (`holdNotes`).
 		*/
 		const placeParagraph = (block, paragraph, holdNotes) => {
-			if (paragraph.pageBreakBefore && (placedInColumn || column > 0)) startPage();
+			if (paragraph.pageBreakBefore && (placedInColumn || column > 0)) {
+				if (carried !== void 0 && columnsSection().columns.length === 1) startPage();
+				startPage();
+			}
 			const { columns } = columnsSection();
 			const taller = columnsTallerThan(block);
 			const keptTall = taller.length > 0 && taller.every((tall) => tall);
@@ -16940,7 +17116,7 @@ var docxLayout = (function(exports) {
 				if (!fitsWith(whole, moreNoteRoom(notesOf(whole)))) {
 					const referring = whole.flatMap((part, cell) => notesOfPart(part, cell).length > 0 ? [cell] : []);
 					const heldRoom = continues ? tallestOf(filled) : roomAbove(noteRoom);
-					const heldBack = (part, cell) => referring.some((other) => other !== cell) && fillCell(cells[cell].paragraphs, roomOf(cell, heldRoom), cells[cell].isFirst).fits > part.lines.length;
+					const heldBack = (part, cell) => referring.some((other) => other !== cell) && part.lines.length < whole[cell].lines.length && fillCell(cells[cell].paragraphs, roomOf(cell, heldRoom), cells[cell].isFirst).fits > part.lines.length;
 					if (filled.some(heldBack)) stopAt("a footnote in a table row beside a cell whose lines it holds back");
 				}
 				return {
@@ -17366,6 +17542,7 @@ var docxLayout = (function(exports) {
 			var _blocks8, _blocks9;
 			blockIndex = index;
 			stopAtRead(block);
+			if (index === firstEndnote && section().columns.length > 1) stopAt(ENDNOTES_IN_COLUMNS);
 			const width = columnsSection().columns[column];
 			const previous = blocks[index - 1];
 			if (block.type === "paragraph") {
@@ -17378,7 +17555,11 @@ var docxLayout = (function(exports) {
 			if (block.type === "paragraph" && block.sectionBreak && !endsAfterTable(index)) {
 				var _blocks7;
 				const spaceBefore = block.format.autoSpaceBefore === true ? 0 : measureParagraph(block, width, (_blocks7 = blocks[index - 1]) === null || _blocks7 === void 0 ? void 0 : _blocks7.block).spaceBefore;
-				if (placedInColumn) position += between(spaceAfter, spaceBefore);
+				if (placedInColumn) {
+					position += between(spaceAfter, spaceBefore);
+					spaceAfter = between(spaceAfter, spaceBefore);
+					checkBeneathText();
+				}
 				spaceAfter = 0;
 				return;
 			}
@@ -17429,8 +17610,7 @@ var docxLayout = (function(exports) {
 					else if (!fitsHere && fitsBelow(top, leastAreaOf(here.notes, carried, columns.length > 1 ? columns : void 0), columns[0])) startPage();
 				}
 				const { notes, kept, keptWith, keptLines, all, fitsWith } = keptHere();
-				holdNotes = keptWith !== "nothing" && [...held, ...kept].length > 0 && notes.length === kept.length && fitsWith(leastNoteRoom(all)) && !fitsWith(moreNoteRoom(all));
-				if (holdNotes && keptWith === "part" && keptLines === void 0) stopAt("a footnote continued below a paragraph kept with the next");
+				holdNotes = !(keptWith === "part" && keptLines === void 0) && keptWith !== "nothing" && [...held, ...kept].length > 0 && notes.length === kept.length && fitsWith(leastNoteRoom(all)) && !fitsWith(moreNoteRoom(all));
 				heldLines = holdNotes && keptWith === "part" ? keptLines : void 0;
 			}
 			placeParagraph(block, paragraph, holdNotes);
@@ -17564,6 +17744,7 @@ var docxLayout = (function(exports) {
 			}
 			checkAnchors();
 			checkReserve();
+			checkBeneathText();
 			if (carried !== void 0) startPage();
 		} catch (error) {
 			if (!(error instanceof Unsupported)) throw error;
