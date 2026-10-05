@@ -211,6 +211,10 @@ await write({
         (parts) => {
             const text = parts.get("word/document.xml")!;
             const at = text.indexOf("EQ22 </w:t></w:r><m:oMath>");
+            if (at === -1) {
+                // Left out with ONLY, so another equation isn't rewritten in its place
+                throw new Error("EQ22's equation isn't in the document");
+            }
             const start = text.indexOf("<m:oMath>", at);
             const end = text.indexOf("</m:oMath>", start) + "</m:oMath>".length;
             const runs = '<m:r><m:t>a+</m:t></m:r><m:r><w:rPr><w:sz w:val="32"/></w:rPr><m:t>b</m:t></m:r><m:r><m:t>+c</m:t></m:r>';
