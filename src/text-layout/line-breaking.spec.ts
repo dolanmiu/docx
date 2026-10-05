@@ -3010,14 +3010,23 @@ describe("tab stops past the end of the line", () => {
         const unsupportedOf = (items: readonly InlineItem[], options: Partial<LineLayoutOptions>): string | undefined =>
             linesOf(items, options)[0].unsupported;
         const indented = (format: object) => ({ format });
-        // A left one at the start of a line indented, or with a first line indent; and any in a paragraph indented past the
-        // margin
-        const leftStop = "a left tab stop past the end of the line at the start of a line in an indented paragraph";
-        expect(unsupportedOf([tab, text("b")], { ...at("left"), ...indented({ firstLineIndent: 10 }) })).to.equal(leftStop);
-        expect(unsupportedOf([tab, text("b")], { ...at("left"), ...indented({ indentLeft: 10 }) })).to.equal(leftStop);
+        // A left one at the start of a line with a first line indent; and any in a paragraph indented past the margin
+        expect(unsupportedOf([tab, text("b")], { ...at("left"), ...indented({ firstLineIndent: 10 }) })).to.equal(
+            "a left tab stop past the end of the line at the start of a line in a paragraph with a first line or hanging indent",
+        );
         expect(unsupportedOf([text("a"), tab, text("b")], { ...at("left"), ...indented({ indentRight: -10 }) })).to.equal(
             "a tab stop past the end of the line in a paragraph indented past the margin",
         );
+        // word-stops-edges TA9a, TA9b: a left one at the start of a line indented on the left or right takes a line of its
+        // own, and the text after it goes on to the start of the next
+        for (const format of [{ indentLeft: 10 }, { indentRight: 10 }]) {
+            expect(
+                linesOf([tab, text("b")], { ...at("left"), ...indented(format) }).map((line) => [line.text, line.unsupported]),
+            ).to.deep.equal([
+                ["\t", undefined],
+                ["b", undefined],
+            ]);
+        }
         // Centred and decimal ones in a paragraph indented on the right, and a right one at the start of a line there
         const rightStop =
             "a centred or decimal tab stop past the end of the line in a paragraph indented on the right, or a right one at the start of a line there";

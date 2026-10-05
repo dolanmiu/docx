@@ -40,12 +40,19 @@ committed here are the ones a change to docx/layout has followed, with Word's PD
 | `word-stops-arabic.ts`         | AR1, AR2                             | AR1, AR2: Arabic's letters in each form Word joins them in as wide as their glyphs in Arial, Times New Roman, Cambria (drawn in Times New Roman) and Courier New, and a line of right-to-left words with room for the space after its last. Read with `word-stops-arabic.py`                                                                                                                                                                                                                                                                                                                     |
 | `word-stops-office-fonts.ts`   | MB1 to MB4, FB1, FB2, KL1, KL2, DS   | MB1 to MB3: the bold Word makes itself 20 thousandths of an em wider a glyph at any size, kerned as the regular, as tall; FB1, FB2: a letter a font lacks drawn in the same font whatever the language, the line as tall as that font; KL1: text with ligatures not kerned in a font kerned by its kern table alone; DS: hhea descents. Read by `word-stops-office-fonts.py`                                                                                                                                                                                                                     |
 | `word-stops-text2.ts`          | RF24 to KE9                          | RF27d to RF27g: sizes in any unit at whole half-points, rounded down; PB5f, PB5g: a hanging indent in twips from a left indent in characters; PB3c to PB3e, PB7e; SH16, SH17: a part goes on when its hyphen fits, and a shorter part as it is rather than a longer squeezed; JU4; TA10, TA11: stops past the end with any indents, a word taking its tab on; KE9a: no kerning across a soft hyphen; RF24c, RF24d, RF32b: borders' room; RF29b to RF29d: fitted text. Not RF31b to RF31d                                                                                                         |
+| `word-stops-edges.ts`          | DH2a to DH2d, PB9a to PB9f, HR2, TA9 | DH2a to DH2d: a header's picture against its paragraph or line, at the header's top, and against a column of several, from the margin; the header's lines go round it. PB9a, PB9b, PB9d, PB9e: Normal paragraphs leave out contextual space beside cells and rows, and after a table. HR2: header rows go to the next column, and a heading with them. TA9: a left tab past the line in an indented paragraph                                                                                                                                                                                    |
+| `word-stops-notes2.ts`         | NT2c to NT21, NE4 to NE7             | NT2c to NT21: a footnote's rest before a continuous section shows its footer; a line or row whose footnote can't go with it stays or goes on, the footnote on the next page, those after it continued past its end; in columns, after one that continues; NT16: footnotes in columns of their own; NT18, NT19: numbering; NT20: below the text; NE4 to NE7: endnotes in columns, own marks, at sections' ends, separators                                                                                                                                                                        |
 
 `word-stops-thai-and-compat.ts` writes `word-stops-top-spacing` (ST1 to ST5), whose PDF showed `suppressTopSpacing`
 leaving all but 9.6 points above the text of the first line of a page or column at exact and at-least spacing, and
 `word-stops-fe-layout` (FE1), whose PDF showed `useFELayout` leaving Latin paragraphs as they are, both followed, and
 `word-stops-thai` (TH1 to TH3), whose PDF showed Thai justified for it breaking as justified Thai (TH1d, TH1e), and lines
 of Thai in Calibri as tall as Tahoma's, which Word draws them in, also followed.
+
+`word-stops-edges.ts` has the cases around those of the table, where docx/layout stopped (DH2, PB9, HR2 and TA9), saved
+from Word in the batch of 2026-10-05 (round 25). Its sections after DH2d have DH2d's header, with its picture, as they
+have none of their own: PB9c's table, below a paragraph beside the picture, went below it, which leaves contextual spacing
+before a table open, and so did HR2b's, which moved with its heading all the same.
 
 `word-stops-text2.ts` has the cases around what `word-stops-text`, `-tabs` and `-kerning` settled (RF24, RF27, RF29,
 RF31, RF32, PB3, PB5, PB7, SH16, SH17, JU4, TA10, TA11 and KE9), whose PDF, saved from Word in round 25, is followed as
@@ -57,24 +64,26 @@ longer part squeezed against a shorter one with twice the room, kerned before it
 (SH18), en spaces beside ordinary ones within a quarter of theirs (JU5), run borders and pictures in borders (RF24e to
 RF24g, RF32c, RF32d), fitted text wider than its line or of two sizes (RF29e, RF29f), and a grid's room above footnotes
 (PB7h to PB7j); TA12a to TA12c check that a word that doesn't fit after a tab to a default, right or centred stop takes the
-tab on to the next line, as docx/layout lays it out. It has no PDF from Word yet.
+tab on to the next line, as docx/layout lays it out. It has no PDF from Word yet. Nor have `word-stops-compat2.ts`'s
+`word-stops-top-spacing3` (ST13 to ST15) and `word-stops-booklet3` (BK3), which round 25 left out, and
+`word-stops-compat3.ts` has what the compatibility modes, `suppressTopSpacing`, `useFELayout` and HTML divisions still
+leave stopping (CN12 to CN18, ST16, DV3 and FE3), for the next batch too.
 
-`word-stops-edges.ts` has the cases around those of the table, where docx/layout still stops (DH2, PB9, HR2 and TA9),
-for the next batch Word saves: it has no PDF from Word yet. Nor have `word-stops-compat2.ts`'s `word-stops-top-spacing3`
-(ST13 to ST15) and `word-stops-booklet3` (BK3), which round 25 left out, and `word-stops-compat3.ts` has what the
-compatibility modes, `suppressTopSpacing`, `useFELayout` and HTML divisions still leave stopping (CN12 to CN18, ST16, DV3
-and FE3), for the next batch too. `word-stops-equations.py` reads the equations' widths and heights from Word's PDFs, and
-`word-equation-characters.py` EQ27's width of each character, which Cambria Math's own widths in
-`src/layout/cambria-math.ts`, generated by `scripts/generate-cambria-math.ts`, are. `word-stops-notes2.ts`, the cases
-around `word-stops-notes.ts`'s (NT2c to NT21, NE4 to NE7), waits for the next batch too, and `word-stops-numbers.ts` and
-`word-stops-marks.ts` now write their list, number format, hidden mark and tracked change probes in smaller documents,
-as Word couldn't open the batch's. Word saved those of lists, hidden marks and tracked changes in round 25, committed
-here. Word opens `word-stops-page-formats` and `word-stops-page-32768`, but couldn't save either as a PDF, so they have
-none. Word lays the tracked changes out with their markup in balloons beside the page, which it scales down by 0.7422
-(the tables' borders 9026 twips apart) and moves, so lengths read from them with `word-stops.py` are scaled: divide them
-by it. `word-stops-lists2.ts` (`word-stops-lists2`) and `word-stops-marks2.ts` (`word-stops-hidden2`,
-`word-stops-tracked2`) have what those left stopping, for the next batch too: LI13 to LI20, HD11 to HD16 and TR12 to
-TR17.
+`word-stops-equations.py` reads the equations' widths and heights from Word's PDFs, and `word-equation-characters.py`
+EQ27's width of each character, which Cambria Math's own widths in `src/layout/cambria-math.ts`, generated by
+`scripts/generate-cambria-math.ts`, are. `word-stops-notes2.ts`, the cases around `word-stops-notes.ts`'s (NT2c to NT21,
+NE4 to NE7), was saved from Word in the batch of 2026-10-05 (round 25), in `word-stops-notes2`, `word-stops-note-numbers`
+and the `word-stops-endnotes-*` documents. Its sections after NT2c have NT2c's taller footer, as they have none of their
+own, so its pages hold 50 lines: read them with `whole-layout.ts` and `whole-lines.py`, rather than probe by probe.
+NT20d's text in 2 columns stayed in the first, as Word doesn't even out the last section's columns at the end of a
+document, which leaves footnotes below the text of columns open. `word-stops-numbers.ts` and `word-stops-marks.ts` now
+write their list, number format, hidden mark and tracked change probes in smaller documents, as Word couldn't open the
+batch's. Word saved those of lists, hidden marks and tracked changes in round 25, committed here. Word opens
+`word-stops-page-formats` and `word-stops-page-32768`, but couldn't save either as a PDF, so they have none. Word lays the
+tracked changes out with their markup in balloons beside the page, which it scales down by 0.7422 (the tables' borders
+9026 twips apart) and moves, so lengths read from them with `word-stops.py` are scaled: divide them by it.
+`word-stops-lists2.ts` (`word-stops-lists2`) and `word-stops-marks2.ts` (`word-stops-hidden2`, `word-stops-tracked2`)
+have what those left stopping, for the next batch: LI13 to LI20, HD11 to HD16 and TR12 to TR17.
 
 `word-stops-equations2.ts` has the equations' cases Word's PDFs left open (EQ30 to EQ45), in
 `word-stops-equations2`, `word-stops-equation-limits`, `word-stops-equation-small` and `word-stops-equation-spacing`,

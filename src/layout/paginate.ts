@@ -299,9 +299,10 @@ type StackPart = { readonly height: number; readonly before: number; readonly af
 
 /**
  * A point in a footnote: in its blocks (`block`), before a line of a paragraph or a row of a table (`line`), or in a row
- * that breaks across pages, after its first part, its cells' lines that fit in a room for it (`cut`)
+ * that breaks across pages, after its parts on the pages before, each its cells' lines that fit in a room for it, from
+ * where the part before ends (`cut`)
  */
-type NotePoint = { readonly block: number; readonly line: number; readonly cut?: number };
+type NotePoint = { readonly block: number; readonly line: number; readonly cut?: readonly number[] };
 
 /** The rest of a footnote from a point in it, which continues at the bottom of the next page */
 type NoteRest = { readonly name: string; readonly from: NotePoint };
@@ -342,10 +343,13 @@ type NotePiece = {
     readonly index: number;
     readonly start: number;
     readonly end?: number;
-    /** Where a table's first row in the piece is the rest of one broken across pages, the room its first part was cut at */
-    readonly startCut?: number;
-    /** Where a table's last row in the piece breaks across pages, the room its part in the piece is cut at */
-    readonly endCut?: number;
+    /** Where a table's first row in the piece is the rest of one broken across pages, the rooms its parts before were cut at */
+    readonly startCut?: readonly number[];
+    /**
+     * Where a table's last row in the piece breaks across pages, the rooms its parts were cut at, the last its part in the
+     * piece
+     */
+    readonly endCut?: readonly number[];
 };
 
 /**
@@ -478,13 +482,10 @@ const UNWRITTEN_NUMBER = "a page number its format isn't written for yet";
 const FOOTNOTE_IN_COLUMNS = "a footnote across pages in columns";
 // Why the layout stops at a footnote whose reference would move on and back as a page in columns is laid out again
 const MOVES_ON_FROM_TOP = "a footnote in columns whose reference moves on to the next page from the top of a column";
+// The space between footnotes' columns of their own, in points (stops2/word-stops-notes2.ts NT16b to NT16e)
+const NOTE_COLUMN_SPACE = 36;
 // The room for footnotes that Word's room for a footnote too long for a page's columns is looked for to within, in points
 const NOTE_ROOM_STEP = 1;
-// Why the layout stops at endnotes after text in columns: Word evens out the columns of a document's last section before
-// its endnotes, lays them out in the columns below, with the second starting below the separator in the first, and on the
-// next page, with the continuation separator at the top of the first column only, the second starting at the top, and
-// evens out the columns they end in (`word-stops-endnotes.docx` NE1). That isn't followed yet
-const ENDNOTES_IN_COLUMNS = "endnotes after text in columns";
 
 /** The measurers the layout measures with, by those it is given, so the lines laid out with each are kept */
 const stoppingMeasurers = new WeakMap<TextMeasurer, TextMeasurer>();
@@ -547,10 +548,24 @@ const BESIDE_NOTES = "a drawing that text flows around beside the footnotes at t
 
 /**
  * Thrown to lay out a table again from the next page or column, when its header rows would be alone at the foot of this
- * one, with what was guessed at in moving them (`guesses`)
+ * one, with what was guessed at in moving them (`guesses`), or, with the paragraphs kept with the next before it, from the
+ * first of them (`kept`), which go on to the next page with it
  */
 class HeaderRowsAlone extends Error {
-    public constructor(public readonly guesses: readonly string[]) {
+    public constructor(
+        public readonly guesses: readonly string[],
+        public readonly kept?: number,
+    ) {
+        super();
+    }
+}
+
+/** Thrown to lay out the page again with a block (`block`) starting the next page (`page`) */
+class StartsNextPage extends Error {
+    public constructor(
+        public readonly block: number,
+        public readonly page: number,
+    ) {
         super();
     }
 }
@@ -820,21 +835,39 @@ export const paginate = (
         compatibilityMode,
         suppressesTopSpacing,
     } = content;
-    // The body, and then its endnotes, which Word lays out after it. The separator above them goes on the page of their
-    // first line, as Word puts it there when it would be alone at the bottom of a page (`word-watertight-sections2.docx`
-    // SC5), so it is kept with the next
-    const blocks = [
-        ...content.blocks,
-        ...endnotes.map((block) => ({
-            block:
-                block.type === "paragraph" && !endnoteNumbers.has(block)
-                    ? { ...block, format: { ...block.format, keepNext: true } }
-                    : block,
-            section: sections.length - 1,
-        })),
+    // The section at whose end each of the endnotes' blocks goes: the last, or each's where the settings say so
+    const endnoteEnds = endnotes.map((_, index) => content.endnotesAfter?.[index] ?? sections.length - 1);
+    // The body, with the endnotes after the section they go at the end of, which Word lays out after it. The separator
+    // above them goes on the page of their first line, as Word puts it there when it would be alone at the bottom of a
+    // page (`word-watertight-sections2.docx` SC5), so it is kept with the next
+    const endnoteBlocks = (end: number): readonly { readonly block: Block; readonly section: number; readonly endnote: number }[] =>
+        endnotes.flatMap((block, endnote) =>
+            endnoteEnds[endnote] === end
+                ? [
+                      {
+                          block:
+                              block.type === "paragraph" && !endnoteNumbers.has(block)
+                                  ? { ...block, format: { ...block.format, keepNext: true } }
+                                  : block,
+                          section: end,
+                          endnote,
+                      },
+                  ]
+                : [],
+        );
+    // Those of the sections after the body's last, as the last section of a document with endnotes has none of the body
+    // only where it is laid out on its own
+    const lastSection = content.blocks.at(-1)?.section ?? -1;
+    const blocks: readonly { readonly block: Block; readonly section: number; readonly endnote?: number; readonly body?: number }[] = [
+        ...content.blocks.flatMap((entry, body) =>
+            content.blocks[body + 1]?.section === entry.section
+                ? [{ ...entry, body }]
+                : [{ ...entry, body }, ...endnoteBlocks(entry.section)],
+        ),
+        ...sections.slice(lastSection + 1).flatMap((_, after) => endnoteBlocks(lastSection + 1 + after)),
     ];
-    // The first of the endnotes' blocks, the first of their separator's
-    const firstEndnote = content.blocks.length;
+    /** Whether a block is one of the endnotes', or their separator's */
+    const isEndnote = (index: number): boolean => blocks[index]?.endnote !== undefined;
     /** The space between two paragraphs: the larger of the space after the first and before the second, or both */
     const between = (after: number, before: number): number => (addsParagraphSpacing ? after + before : Math.max(after, before));
 
@@ -888,9 +921,10 @@ export const paginate = (
 
     /**
      * The number of a footnote numbered afresh on each page, by the marker at its reference: one more than the footnotes
-     * of its section whose references were before it on its page in the pass before, from the section's start number, as
-     * Word numbered two footnotes on each of three pages 1 and 2 (`word-stops-notes.docx` NT14a). Blank when the pass
-     * before didn't place it. Where sections share a page, which stops the layout, those of another section aren't counted
+     * numbered so whose references were before it on its page in the pass before, from the section's start number, as
+     * Word numbered two footnotes on each of three pages 1 and 2 (`word-stops-notes.docx` NT14a), and those of a section
+     * after two of another numbered so on the page, 3 and 4, but after two numbered on through the document, 1 and 2
+     * (stops2/word-stops-notes2.ts NT19a, NT19b). Blank when the pass before didn't place it
      */
     const onPageNumber = (note: string): string => {
         const place = givenPlaces.get(note);
@@ -900,7 +934,7 @@ export const paginate = (
         }
         const before = [...footnotesOnEachPage.keys()].filter((other) => {
             const at = givenPlaces.get(other);
-            return at !== undefined && at.page === place.page && at.section === place.section && at.order < place.order;
+            return at !== undefined && at.page === place.page && at.order < place.order;
         }).length;
         const text = formatNumber(start + before, format);
         if (text === undefined) {
@@ -1437,6 +1471,9 @@ export const paginate = (
     // The number of each page of the rest of a footnote continued before a continuous section numbered afresh, which Word
     // numbers with the section's first number
     let restNumber: number | undefined;
+    // The section whose header and footer the pages of the rest of a footnote before it show, which starts on the page
+    // after them
+    let restBefore: number | undefined;
     // The first and last page of each section, and the sections whose pages aren't theirs alone
     const firstPages = new Map<number, number>([[0, 1]]);
     const lastPages = new Map<number, number>();
@@ -1719,8 +1756,11 @@ export const paginate = (
      */
     const noteColumns = (): readonly number[] | undefined => {
         const first = pageNotes.length > 0 || continued !== undefined ? notesInColumns : sectionIndex;
-        return first !== undefined && sections[first].columns.length > 1 ? sections[first].columns : undefined;
+        return first === undefined ? undefined : columnsOfNotes(sections[first]);
     };
+    /** The columns a section's footnotes are laid out in: their own, or the section's, when it has several */
+    const columnsOfNotes = (current: Section): readonly number[] | undefined =>
+        current.noteColumns ?? (current.columns.length > 1 ? current.columns : undefined);
     /** The width the page's footnotes are laid out in */
     const noteWidth = (): number => noteColumns()?.[0] ?? textWidth();
     /** The room kept at the bottom of the page for its footnotes, when its columns were laid out again for them */
@@ -1769,6 +1809,12 @@ export const paginate = (
         return true;
     };
 
+    /** The blocks of the header or footer a page shows, or none */
+    const partBlocks = (parts: HeadersOrFooters, isFirst: boolean): readonly Block[] => {
+        const kind = kindOf(parts, isFirst);
+        return kind === undefined ? [] : parts[kind]!;
+    };
+
     const partHeight = (parts: HeadersOrFooters, isFirst: boolean, width = textWidth()): number => {
         const kind = kindOf(parts, isFirst);
         if (!kind) {
@@ -1783,10 +1829,33 @@ export const paginate = (
         return height;
     };
 
+    /** How many pages the endnotes being laid out are on, those after the same section */
+    const endnotePages = (): number => {
+        const pages = new Set<number>();
+        let page = 0;
+        for (const placement of placements) {
+            page += placement.type === "page" ? 1 : 0;
+            if (
+                (placement.type === "line" || placement.type === "row") &&
+                isEndnote(placement.block) &&
+                blocks[placement.block].section === blocks[blockIndex].section
+            ) {
+                // eslint-disable-next-line functional/immutable-data
+                pages.add(page);
+            }
+        }
+        return pages.size;
+    };
+
     /** Whether the endnotes are on the pages before, so they go on below the continuation separator on the next */
     const endnotesGoOn = (): boolean =>
-        blockIndex >= firstEndnote &&
-        placements.some((placement) => (placement.type === "line" || placement.type === "row") && placement.block >= firstEndnote);
+        isEndnote(blockIndex) &&
+        placements.some(
+            (placement) =>
+                (placement.type === "line" || placement.type === "row") &&
+                isEndnote(placement.block) &&
+                blocks[placement.block].section === blocks[blockIndex].section,
+        );
 
     /**
      * The room the endnotes' continuation separator takes above them, which is read as Word lays it out, a line tall
@@ -1838,15 +1907,44 @@ export const paginate = (
         const down = current.textRunsDown;
         const across = down === undefined ? textWidth() : current.pageHeight - current.marginTop - current.marginBottom;
         guessPage = pageCount + 1;
-        const headerBottom = current.header + partHeight(current.headers, first, across);
-        const footerTop = current.footer + partHeight(current.footers, first, across);
+        // The header and footer the page shows: its section's, or before a section, those of the section after the rest of
+        // a footnote on it
+        const shown: Section =
+            restBefore === undefined
+                ? current
+                : {
+                      ...current,
+                      header: sections[restBefore].header,
+                      footer: sections[restBefore].footer,
+                      headers: sections[restBefore].headers,
+                      footers: sections[restBefore].footers,
+                  };
+        // The header's lines go round its drawings and the footer's that are beside them, but a footer's beside its own
+        // lines, which may too, stop the layout
+        const partsDrawn = [...partDrawings(shown, first, "headers"), ...partDrawings(shown, first, "footers")];
+        const plainHeader = partHeight(shown.headers, first, across);
+        const textLeft = columnLeft(current, 0);
+        /** The drawings beside the text of a header or footer, from its top to its bottom, across the text of the page */
+        const besideText = (from: number, to: number): readonly PlacedDrawing[] =>
+            partsDrawn.filter(({ keepOut }) =>
+                overlap(keepOut, { left: textLeft, right: textLeft + textWidth(current), top: from, bottom: to }),
+            );
+        const besideHeader = besideText(shown.header, shown.header + plainHeader);
+        const headerBottom =
+            shown.header +
+            (besideHeader.length > 0 ? headerBeside(partBlocks(shown.headers, first), besideHeader, shown.header, shown) : plainHeader);
+        const footerTop = shown.footer + partHeight(shown.footers, first, across);
+        const besideFooter = besideText(shown.pageHeight - footerTop, shown.pageHeight - shown.footer);
+        if (besideFooter.length > 0) {
+            stopAt("a drawing that text flows around in a header or footer, beside a footer's text");
+        }
         if (down !== undefined && footerTop > current.marginRight + TOLERANCE) {
             stopAt("a footer that goes above the bottom margin of text that runs down the page");
         }
         guessPage = undefined;
         pageCount++;
-        const header = kindOf(current.headers, first);
-        const footer = kindOf(current.footers, first);
+        const header = kindOf(shown.headers, first);
+        const footer = kindOf(shown.footers, first);
         // eslint-disable-next-line functional/immutable-data
         placements.push({
             type: "page",
@@ -1875,6 +1973,13 @@ export const paginate = (
         // In columns, guessing, it is across the top of the page
         const endnotesOn = endnotesGoOn();
         const continuation = endnotesOn ? continuationHeight() : 0;
+        // In columns, the continuation separator is at the top of the first only, and the others start at the top of the
+        // page (`word-stops-endnotes.docx` NE1). Whether the first then goes past the margin, as the endnotes do across the
+        // page, isn't known: they are laid out above it, and where they don't fit on the page that way, the layout stops
+        const endnoteColumns = endnotesOn && current.columns.length > 1;
+        if (endnoteColumns && endnotePages() > 1) {
+            stopAt("endnotes in columns across more than two pages");
+        }
         top += continuation;
         // Below it, Word puts as many lines of endnotes as fit on the page without it, so they can go past the margin by as
         // much as it takes: 48 lines exactly 288 twips tall below one 268.55 tall, where 47 end above the margin, and a line
@@ -1888,10 +1993,10 @@ export const paginate = (
                 : current.marginBottom < 0
                   ? -current.marginBottom
                   : Math.max(current.marginBottom, footerTop)) +
-            continuation;
+            (endnoteColumns ? 0 : continuation);
         position = top;
         column = 0;
-        columnTop = top;
+        columnTop = endnoteColumns ? top - continuation : top;
         bottom = columnsBottom();
         placedInColumn = false;
         deepest = 0;
@@ -1901,17 +2006,11 @@ export const paginate = (
         pageNotes = [];
         notesInColumns = undefined;
         filledEnd = 0;
-        drawings = [
-            ...withPinned([]),
-            ...headerDrawings(current, first, {
-                headers: { top: current.header, bottom: headerBottom },
-                footers: { top: current.pageHeight - footerTop, bottom: current.pageHeight - current.footer },
-            }),
-        ];
+        drawings = [...withPinned([]), ...partsDrawn.filter((drawing) => !besideFooter.includes(drawing))];
         anchored = [];
         continued = carried;
         carried = undefined;
-        if (continued !== undefined && current.columns.length > 1) {
+        if (continued !== undefined && columnsOfNotes(current) !== undefined) {
             // The rest of a footnote goes on at the foot of the next page's columns, as Word continues it (FN2, FN3)
             notesInColumns = sectionIndex;
         }
@@ -1926,11 +2025,14 @@ export const paginate = (
             // The rest of the footnote is longer than the page, so the page is all footnote, as much of it as fits, and the
             // rest continues on the next page. The text goes on above its last part, on the page it ends on
             // (`word-probes.docx` U2o, U2q)
-            if (first) {
+            if (first && current.firstNumber !== undefined) {
                 // Before a section on a new page, its pages are the section before's (`word-watertight-stops.docx` SP2),
-                // but which section Word puts them in after a continuous one, which can change the page numbers, isn't
-                // known. Guessing, the section after's
-                stopAt("a footnote continued across a continuous section break onto a page of its own");
+                // and after a continuous one that starts on the page of a line whose footnote starts on the next page, the
+                // section after's, with its header and footer, as Word numbered them on, and showed the footer both have,
+                // as it shows the header and footer of the section after the rest of one continued (stops2/word-stops-notes2.ts
+                // NT2c, NT2d). How Word numbers them before one numbered afresh, as each of those pages has its first number
+                // where the rest of a footnote continued goes before it (NT2b), isn't known. Guessing, from its first number
+                stopAt("a footnote that starts on the page after its reference's, before a continuous section numbered afresh");
             }
             const { name, from } = continued;
             // As where it first breaks (see `splitLast`), which one that starts on the page after its reference's hasn't been
@@ -1938,7 +2040,7 @@ export const paginate = (
                 stopAt(BOXED_NOTE);
             }
             const to = fillNote(name, from, (point) => areaOf([], undefined, { name, from, to: point }) <= bottom - top + TOLERANCE, true);
-            if (to.block === from.block && to.line === from.line) {
+            if (to.block === from.block && to.line === from.line && to.cut?.length === from.cut?.length) {
                 throw new Unsupported("a footnote line taller than a page");
             }
             carried = { name, from: to };
@@ -1947,13 +2049,20 @@ export const paginate = (
         }
         if (pending.length > 0) {
             // The footnotes referred to after one that started on the page after its reference's go below its end, on the
-            // page it ends on, though they would fit on their references' page (`word-watertight-notes.docx` FN8)
+            // page it ends on, though they would fit on their references' page (`word-watertight-notes.docx` FN8), and the
+            // last of them goes on to the next page as far as it doesn't fit there: 3 lines of one of 10 below the end of
+            // one of 95, and 7 on the next (stops2/word-stops-notes2.ts NT3b)
             pageNotes = pending;
             pending = [];
             noteArea = Math.max(areaOf(pageNotes, undefined, continued), reserved());
             if (noteArea > bottom - top + TOLERANCE) {
-                // Whether Word continues one of them on the next page too isn't known
-                throw new Unsupported("footnotes after one that starts on the next page that don't fit below its end");
+                if (leastAreaOf(pageNotes, continued) > bottom - top + TOLERANCE) {
+                    // Where none of the last fits below its end, whether Word moves it on whole isn't known
+                    throw new Unsupported(
+                        "footnotes after one that starts on the next page, the last of which doesn't start below its end",
+                    );
+                }
+                splitLast(pageNotes.slice(0, -1), pageNotes[pageNotes.length - 1], bottom - top);
             }
         }
     };
@@ -1976,12 +2085,14 @@ export const paginate = (
     const continuesOnPage = (previous: Section, current: Section): boolean =>
         current.start === "continuous" && previous.pageWidth === current.pageWidth && previous.pageHeight === current.pageHeight;
 
-    /** Whether two sections' pages have the same headers and footers, as far down the page, written alike in parts of their own */
-    const sameHeadersAndFooters = (one: Section, other: Section): boolean =>
-        one.header === other.header &&
-        one.footer === other.footer &&
-        one.titlePage === other.titlePage &&
-        JSON.stringify([one.headers, one.footers]) === JSON.stringify([other.headers, other.footers]);
+    /** Whether two sections' pages have the same margins */
+    const sameMargins = (one: Section, other: Section): boolean =>
+        one.marginTop === other.marginTop &&
+        one.marginBottom === other.marginBottom &&
+        one.marginLeft === other.marginLeft &&
+        one.marginRight === other.marginRight &&
+        one.gutter === other.gutter &&
+        one.topGutter === other.topGutter;
 
     /**
      * Whether a section starts in the next column of the page the section before it ends on, as Word starts one that
@@ -2082,14 +2193,12 @@ export const paginate = (
             carried !== undefined &&
             !startsInNextColumn(previous, current) &&
             (deferred === undefined || !continuesOnPage(previous, current));
-        if (
-            carried !== undefined &&
-            previous.columns.length > 1 &&
-            (startsInNextColumn(previous, current) || continuesOnPage(previous, current))
-        ) {
+        if (carried !== undefined && previous.columns.length > 1 && startsInNextColumn(previous, current)) {
             // In columns, the text goes on above a footnote that continues, and whether Word puts a section that starts in
-            // the next column or below the columns there isn't known
-            throw new Unsupported("a footnote continued from columns before a section on the same page");
+            // the next column there isn't known. Before a continuous one, the rest goes on pages of its own, in the columns,
+            // evened out on the last, and the section starts on the next, as across the page (stops2/word-stops-notes2.ts
+            // NT4b)
+            throw new Unsupported("a footnote continued from columns before a section in the next column");
         }
         if (restOnPages && continuesOnPage(previous, current)) {
             // Before a continuous section, Word numbers each of those pages with the section's first number, when it has one,
@@ -2099,17 +2208,28 @@ export const paginate = (
             // counted it after a footnote's rest on pages numbered on too (`word-watertight-notes.docx` FN5), but the first
             // section's, which leaves out its pages of the footnote, isn't followed, so it isn't known, nor which section's
             // headers and footers the pages have where they differ, which would change how much of the footnote goes on them
-            if (!sameHeadersAndFooters(previous, current)) {
-                // Guessing, on the first of those pages, which the page after this starts
-                stopAt("a footnote continued across a continuous section break onto a page of its own", pageCount + 1);
-            }
             // eslint-disable-next-line functional/immutable-data
             sharingPages.add(sectionIndex);
             restNumber = current.firstNumber;
+            // They show the next section's header and footer, as Word showed a taller footer of its own, which leaves room
+            // for fewer lines of the footnote (stops2/word-stops-notes2.ts NT2c). With a first page of its own, or other
+            // margins, which the pages may have too, they haven't been seen
+            restBefore = index;
+            if (current.titlePage || !sameMargins(previous, current)) {
+                // Guessing, on the first of those pages, which the page after this starts
+                stopAt(
+                    "a footnote continued across a continuous section break onto pages of its own, before a section with a first page or margins of its own",
+                    pageCount + 1,
+                );
+            }
         }
         if (restOnPages) {
-            startPage();
+            // As many pages as the rest takes, with that of a footnote after it that goes on past its end (NT3b)
+            do {
+                startPage();
+            } while (carried !== undefined);
             restNumber = undefined;
+            restBefore = undefined;
         }
         // eslint-disable-next-line functional/immutable-data
         lastPages.set(sectionIndex, pageCount);
@@ -2272,11 +2392,17 @@ export const paginate = (
         );
 
     /**
-     * Each cell's part of a table row in a footnote that breaks across pages, in a room for the row's (`cut`), with the
-     * row's margins around it, as a row of the text breaks (see `splitRow`)
+     * Each cell's part of a table row in a footnote that breaks across pages, in the room for the row's last part, after
+     * its parts in the rooms before (`cuts`), with the row's margins around it, as a row of the text breaks (see `splitRow`)
      */
-    const notePartsOf = (row: TableRow, cut: number): readonly CellPart[] =>
-        row.cells.map((cell) => fillCell(cellParagraphs(cell), cut - rowMarginsOf(row), true));
+    const notePartsOf = (row: TableRow, cuts: readonly number[]): readonly CellPart[] =>
+        cuts.reduce<readonly CellPart[]>(
+            (parts, cut, at) =>
+                row.cells.map((cell, index) =>
+                    fillCell(at === 0 ? cellParagraphs(cell) : parts[index].rest, cut - rowMarginsOf(row), at === 0),
+                ),
+            [],
+        );
 
     /**
      * Why Word's breaking of a table row in a footnote isn't known, when it isn't: one with cells merged down rows, a table
@@ -2292,17 +2418,22 @@ export const paginate = (
             : undefined;
 
     /**
-     * The room a table row in a footnote that breaks across pages is cut at, as low as it fits (`fits`), as a row of the text
-     * is: each time the part doesn't fit, just above the bottom of the lowest of its cells' lines, which a cell can have
-     * none of, as widow control holds them back. Undefined where none of the cells would have any, and the row moves to
-     * the next page whole
+     * The room a table row in a footnote that breaks across pages is cut at, after its parts cut before (`before`), as low as
+     * it fits (`fits`), as a row of the text is: each time the part doesn't fit, just above the bottom of the lowest of its
+     * cells' lines. Undefined where a cell with lines left would have none of them, as widow control holds them back, and
+     * the row moves to the next page whole, as Word moved a row whose cell of 3 lines couldn't go beside 2 of the other's 6
+     * (`word-notes-across-pages.docx` NP3), as a row of the text does
      */
-    const noteRowCut = (row: TableRow, fits: (cut: number) => boolean): number | undefined => {
+    const noteRowCut = (row: TableRow, fits: (cut: number) => boolean, before: readonly number[] = []): number | undefined => {
         const margins = rowMarginsOf(row);
+        const withLines =
+            before.length === 0
+                ? row.cells.map((cell) => cellParagraphs(cell).length > 0)
+                : notePartsOf(row, before).map(({ rest }) => rest.length > 0);
         let cut = Infinity;
         for (;;) {
-            const parts = notePartsOf(row, cut);
-            if (parts.every(({ lines }) => lines.length === 0)) {
+            const parts = notePartsOf(row, [...before, cut]);
+            if (parts.some(({ lines }, cell) => withLines[cell] && lines.length === 0)) {
                 return undefined;
             }
             if (fits(cut)) {
@@ -2329,13 +2460,12 @@ export const paginate = (
                 const row = table.rows[index];
                 const tallest = (parts: readonly CellPart[]): number =>
                     rowMarginsOf(row) + Math.max(0, ...parts.map((part) => part.height)) + row.borderTop + row.borderBottom;
-                if (index === start && startCut !== undefined) {
-                    return tallest(notePartsOf(row, startCut).map(({ rest }) => fillCell(rest, Infinity, false)));
-                }
                 if (index === end - 1 && endCut !== undefined) {
                     return tallest(notePartsOf(row, endCut)) + (index < table.rows.length - 1 ? (row.breakBorder ?? bottomBorder) : 0);
                 }
-                return height;
+                return index === start && startCut !== undefined
+                    ? tallest(notePartsOf(row, startCut).map(({ rest }) => fillCell(rest, Infinity, false)))
+                    : height;
             });
     };
 
@@ -2538,13 +2668,20 @@ export const paginate = (
             const noteSection = sections[notesInColumns!];
             stack.fillColumns((paragraph, line, noteColumn, offset, laidOut) => {
                 const { start } = stack.pieces[stack.separatorCount + paragraph];
+                const noteWidths = columnsOfNotes(noteSection)!;
                 // eslint-disable-next-line functional/immutable-data
                 placed[stack.separatorCount + paragraph].push({
                     line: laidOut,
                     isFirst: start + line === 0,
-                    left: columnLeft(noteSection, noteColumn),
+                    left:
+                        noteSection.noteColumns === undefined
+                            ? columnLeft(noteSection, noteColumn)
+                            : noteSection.marginLeft +
+                              noteSection.gutter +
+                              sum(noteWidths.slice(0, noteColumn)) +
+                              noteColumn * NOTE_COLUMN_SPACE,
                     y: notesTop + offset,
-                    width: noteSection.columns[noteColumn],
+                    width: noteWidths[noteColumn],
                 });
             });
         } else {
@@ -2613,23 +2750,15 @@ export const paginate = (
      * columns (`word-watertight-stops.docx` SP6, `word-watertight-notes.docx` FN14 and FN15). Those referred to after a
      * footnote that starts on the next page take none, as they go after it
      */
-    const moreNoteRoom = (notes: readonly string[]): number => {
-        if (notes.length === 0 || deferred !== undefined) {
-            return 0;
-        }
-        stopBelowContinued();
-        return pageArea([...pageNotes, ...notes]) - noteArea;
-    };
+    const moreNoteRoom = (notes: readonly string[]): number =>
+        notes.length === 0 || deferred !== undefined ? 0 : pageArea([...pageNotes, ...notes]) - noteArea;
 
     /**
-     * Stops at footnotes referred to below one that continues on the next page in columns, where the text goes on above
-     * it: whether Word puts them on the page or after the rest of that one isn't known
+     * Whether footnotes referred to below one that continues on the next page in columns, where the text goes on above it,
+     * have no room on the page: Word put the line referring to one on the next page, below the rest of the one that
+     * continues, though the second column had room for it at its top (stops2/word-stops-notes2.ts NT5b)
      */
-    const stopBelowContinued = (): void => {
-        if (carried !== undefined && columnsSection().columns.length > 1) {
-            stopOnPage("a footnote below one that continues on the next page in columns");
-        }
-    };
+    const belowContinued = (): boolean => carried !== undefined && columnsSection().columns.length > 1;
 
     /**
      * Puts footnotes at the bottom of the page. Every column of the page ends above them, whichever it is they are
@@ -2658,7 +2787,7 @@ export const paginate = (
 
     /** Lays the page's footnotes out in the section's columns, when it is in columns and they are its first */
     const startNoteColumns = (): void => {
-        if (pageNotes.length === 0 && continued === undefined && section().columns.length > 1) {
+        if (pageNotes.length === 0 && continued === undefined && columnsOfNotes(section()) !== undefined) {
             notesInColumns = sectionIndex;
         }
     };
@@ -2702,7 +2831,7 @@ export const paginate = (
             stopOnPage(FOOTNOTE_IN_COLUMNS);
         }
         pageNotes = [...whole, name];
-        noteArea = columns === undefined ? room : areaOf(whole, { name, to }, continued);
+        noteArea = columns === undefined || columnsSection().columns.length === 1 ? room : areaOf(whole, { name, to }, continued);
         notesSection = sectionIndex;
         carried = { name, from: to };
     };
@@ -2714,16 +2843,13 @@ export const paginate = (
      * Lays out a page again whose columns were laid out again to leave room for footnotes that moved a reference to one
      * of them on to the next page, so the room left is more than the footnotes on the page take: without the room, and
      * with the page ending above the reference, as Word moves the reference on and leaves the page as it is without the
-     * footnote (`word-watertight-notes.docx` FN1). It stops at a page with table rows on it, which isn't known, and
+     * footnote (`word-watertight-notes.docx` FN1), with table rows on it too (stops2/word-stops-notes2.ts NT6b). It stops
      * where a reference moves on again, as its line stayed at the top of a later column, as at the top of any column, so
      * the page would be laid out again for the footnote, and again without it. Whether Word moves the line on from
      * there, as from below the top, or what is above it too, isn't known. Guessing, it moves on
      */
     const checkReserve = (): void => {
         if (reserved() > areaOf(pageNotes, undefined, continued) + TOLERANCE) {
-            if (placements.slice(placements.findLastIndex(({ type }) => type === "page") + 1).some(({ type }) => type === "row")) {
-                stopOnPage("a footnote in columns that moves its reference to the next page");
-            }
             const moving = reservedFor.get(pageCount)!.filter((name) => !pageNotes.includes(name));
             if (moving.some((name) => movedFromPage().includes(name))) {
                 stopAt(MOVES_ON_FROM_TOP);
@@ -2781,17 +2907,14 @@ export const paginate = (
     };
 
     /**
-     * Stops at footnotes below the text of their page that Word hasn't been seen to place: one that goes on from the page
-     * before or on the next page, and below the space after the page's last paragraph, which Word may put above them or not
+     * Stops at footnotes below the text of their page that Word hasn't been seen to place: below the space after the last
+     * paragraph of a page whose text goes on to the next, or of the document, which Word may put above them or not. Word
+     * put them below the space after the last paragraph of a section (stops2/word-stops-notes2.ts NT20a), and the rest of
+     * one that went on across pages below the text of the next page, as a page's own (NT20b)
      */
     const checkBeneathText = (): void => {
-        if (sections[notesSection].footnotesBeneathText && (pageNotes.length > 0 || continued !== undefined)) {
-            if (continued !== undefined || carried !== undefined) {
-                stopAt("a footnote below the text that goes on across pages");
-            }
-            if (spaceAfter > 0) {
-                stopAt("footnotes below the text after space below its last paragraph");
-            }
+        if (sections[notesSection].footnotesBeneathText && (pageNotes.length > 0 || continued !== undefined) && spaceAfter > 0) {
+            stopAt("footnotes below the text after space below the last paragraph of a page or of the document");
         }
     };
 
@@ -2939,8 +3062,13 @@ export const paginate = (
      */
     const leastAreaOf = (notes: readonly string[], from: NotePart | undefined, columns = noteColumns()): number => {
         const name = notes[notes.length - 1];
-        // But for the footnote too long for the columns whose room is being looked for, which continues below them
-        const continues = columns === undefined || (name !== undefined && noteSearches.get(pageCount)?.marker === name);
+        // But for the footnote too long for the columns whose room is being looked for, which continues below them, and in
+        // footnotes' columns of their own below text in one column, where one continues as across the page
+        // (stops2/word-stops-notes2.ts NT16e)
+        const continues =
+            columns === undefined ||
+            columnsSection().columns.length === 1 ||
+            (name !== undefined && noteSearches.get(pageCount)?.marker === name);
         const to = name === undefined || !continues ? undefined : leastPart(name);
         return to === undefined ? areaOf(notes, undefined, from, columns) : areaOf(notes.slice(0, -1), { name, to }, from, columns);
     };
@@ -2949,6 +3077,17 @@ export const paginate = (
      * Whether a footnote can't go on a page with its reference: the least of it that has to go there, with the separator,
      * is taller than the page, as a paragraph kept together of 55 lines is (`word-watertight-stops.docx` SP5)
      */
+    /**
+     * Whether the least part of a footnote, which goes on the page with its reference, is taller than a page in the page's
+     * columns, as one kept together that is
+     */
+    const leastTallerThanPage = (name: string): boolean => {
+        const to = leastPart(name);
+        return (
+            (to === undefined ? areaOf([name], undefined, undefined) : areaOf([], { name, to }, undefined)) > pageBottom - top + TOLERANCE
+        );
+    };
+
     const startsOnNextPage = (name: string): boolean => leastAreaOf([name], undefined, undefined) > pageBottom - top + TOLERANCE;
 
     /**
@@ -2959,8 +3098,7 @@ export const paginate = (
         if (notes.length === 0 || deferred !== undefined) {
             return 0;
         }
-        stopBelowContinued();
-        return Math.max(reserved(), leastAreaOf([...pageNotes, ...notes], continued)) - noteArea;
+        return belowContinued() ? Infinity : Math.max(reserved(), leastAreaOf([...pageNotes, ...notes], continued)) - noteArea;
     };
 
     /**
@@ -3017,13 +3155,21 @@ export const paginate = (
                 if (unknown !== undefined) {
                     stopAt(unknown);
                 } else if (from.cut !== undefined && index === from.block && line === from.line) {
-                    // Guessing, the rest of it goes on the page whole
-                    stopAt("a table row in a footnote across more than two pages");
+                    // The rest of it breaks again, as Word broke a row of 120 lines in a footnote 38, 50 and 32 across three
+                    // pages (`word-notes-across-pages.docx` NP1)
+                    const before = from.cut;
+                    const cut = noteRowCut(row, (at) => fits({ block: index, line, cut: [...before, at] }), before);
+                    if (cut !== undefined) {
+                        return { block: index, line, cut: [...before, cut] };
+                    }
+                    // Where a cell of it would have none of its lines, which hasn't been seen. Guessing, the rest goes on the page
+                    // whole
+                    stopAt("the rest of a table row in a footnote across pages, a cell of which would have none of its lines on the page");
                     return { block: index, line: line + 1 };
                 } else {
-                    const cut = noteRowCut(row, (at) => fits({ block: index, line, cut: at }));
+                    const cut = noteRowCut(row, (at) => fits({ block: index, line, cut: [at] }));
                     if (cut !== undefined) {
-                        return { block: index, line, cut };
+                        return { block: index, line, cut: [cut] };
                     }
                 }
             }
@@ -3053,7 +3199,7 @@ export const paginate = (
         }
         if (deferred !== undefined) {
             // A footnote referred to below one that starts on the next page goes after it (`word-watertight-notes.docx` FN8)
-            pending = [...pending, ...notes];
+            pending = [...pending, ...notes.filter((name) => name !== deferred)];
             return;
         }
         if (position + below <= linesBottom(moreNoteRoom(notes)) + TOLERANCE) {
@@ -3137,58 +3283,117 @@ export const paginate = (
     };
 
     /**
-     * The drawings that text flows around in the header and footer a page shows, placed on it, which the body's text goes
+     * The drawings that text flows around in the header or footer a page shows, placed on it, which the body's text goes
      * round as round its own, as Word has it (`word-watertight-pages.docx` PG4, `word-stops-drawings.docx` DH1a to DH1d,
      * `word-vml.docx` VM13). Those placed against the column are placed against the text across the page, which a header is
-     * in. It stops where Word's way with them isn't known, and guessing, leaves them out: on a page of text that runs down
-     * it, against a column of a section of several, beside the header's or footer's own text (`textOf`, from its top to
-     * its bottom), which may go round it, and beside a footnote continued from the page before
+     * in, as Word placed one 1 inch from the column's left in a section of 2 columns 1 inch from the margin
+     * (`word-stops-edges.docx` DH2d). Word placed one against its paragraph or line, in the first line of a header's first
+     * paragraph, against the top of that line, where the header starts (DH2a, DH2b). It stops where Word's way with them
+     * isn't known, and guessing, leaves them out: on a page of text that runs down it, lined up with a column of a section
+     * of several, which may be the first or the text across the page, placed against its paragraph or line in a footer, or
+     * in a header but in the first line of its first paragraph, and beside a footnote continued from the page before (see
+     * `startPage`)
      */
-    const headerDrawings = (
-        current: Section,
-        first: boolean,
-        textOf: Readonly<Record<"headers" | "footers", { readonly top: number; readonly bottom: number }>>,
-    ): readonly PlacedDrawing[] =>
-        (["headers", "footers"] as const).flatMap((parts) => {
-            const kind = kindOf(current[parts], first);
-            const part = kind === undefined ? [] : current[parts][kind]!;
-            return part.flatMap((block, index) =>
-                block.type === "table"
-                    ? []
-                    : block.items.flatMap((item, at): readonly PlacedDrawing[] => {
-                          if (item.type !== "drawing") {
-                              return [];
-                          }
-                          const { drawing } = item;
-                          const left = columnLeft(current, 0);
-                          const where = placeDrawing(drawing, {
-                              section: current,
-                              oddPage: pageNumber % 2 === 1,
-                              column: { start: left, end: left + textWidth(current) },
-                              paragraph: 0,
-                              line: { top: 0, height: 0 },
-                              character: 0,
-                          });
-                          const keepOut = typeof where === "string" ? undefined : keepOutOf(drawing, where);
-                          const text = textOf[parts];
-                          const reason =
-                              typeof where === "string"
-                                  ? where
-                                  : current.textRunsDown !== undefined
-                                    ? "a drawing that text flows around in a header or footer of text that runs down the page"
-                                    : drawing.horizontal.from === "column" && current.columns.length > 1
-                                      ? "a drawing that text flows around in a header or footer, placed against a column of several"
-                                      : overlap(keepOut!, { left, right: left + textWidth(current), ...text })
-                                        ? "a drawing that text flows around in a header or footer, beside its text"
-                                        : undefined;
-                          if (reason !== undefined || typeof where === "string") {
-                              stopAt(reason!);
-                              return [];
-                          }
-                          return [{ drawing, box: where, keepOut: keepOut!, anchor: `${parts} ${kind} ${index} ${at}` }];
-                      }),
-            );
+    const partDrawings = (current: Section, first: boolean, parts: "headers" | "footers"): readonly PlacedDrawing[] => {
+        const kind = kindOf(current[parts], first);
+        const part = partBlocks(current[parts], first);
+        const width = textWidth(current);
+        const left = columnLeft(current, 0);
+        return part.flatMap((block, index) =>
+            block.type === "table"
+                ? []
+                : block.items.flatMap((item, at): readonly PlacedDrawing[] => {
+                      if (item.type !== "drawing") {
+                          return [];
+                      }
+                      const { drawing } = item;
+                      const { horizontal, vertical } = drawing;
+                      const againstText = vertical.from === "paragraph" || vertical.from === "line";
+                      const measured = againstText ? measureParagraph(block, width, undefined, part[index + 1]) : undefined;
+                      const firstLine = measured?.lines[0];
+                      const where = placeDrawing(drawing, {
+                          section: current,
+                          oddPage: pageNumber % 2 === 1,
+                          column: { start: left, end: left + width },
+                          paragraph: current.header,
+                          line: { top: current.header, height: firstLine?.height ?? 0 },
+                          character: 0,
+                      });
+                      const reason =
+                          typeof where === "string"
+                              ? where
+                              : current.textRunsDown !== undefined
+                                ? "a drawing that text flows around in a header or footer of text that runs down the page"
+                                : horizontal.from === "column" &&
+                                    current.columns.length > 1 &&
+                                    (horizontal.align !== undefined || horizontal.share !== undefined)
+                                  ? "a drawing that text flows around in a header or footer, lined up with a column of several"
+                                  : measured !== undefined &&
+                                      (parts === "footers" ||
+                                          index > 0 ||
+                                          measured.spaceBefore + measured.borderAbove > 0 ||
+                                          !firstLine!.markers.includes(drawingMarker(at)))
+                                    ? "a drawing that text flows around, placed against its paragraph or line in a footer, or below a header's first line"
+                                    : undefined;
+                      if (reason !== undefined || typeof where === "string") {
+                          stopAt(reason!);
+                          return [];
+                      }
+                      return [{ drawing, box: where, keepOut: keepOutOf(drawing, where), anchor: `${parts} ${kind} ${index} ${at}` }];
+                  }),
+        );
+    };
+
+    /**
+     * How tall a header is, from its top (`from`), with its lines beside the drawings that text flows around placed on the
+     * page from it and its footer, as Word lays them out beside them, as the body's: a header of 3 lines in the room right
+     * of a picture placed against the page beside them was 4 lines, its first narrowed too (`word-stops-edges.docx` DH2c).
+     * It stops where Word's way isn't known: a line with room either side of a drawing, or below it, and a table beside one.
+     * Guessing, the line is laid out as without it
+     */
+    const headerBeside = (part: readonly Block[], placed: readonly PlacedDrawing[], from: number, current: Section): number => {
+        const width = textWidth(current);
+        const left = columnLeft(current, 0);
+        const within: Span = { start: left, end: left + width };
+        const stacked = stackParts(part, width, false);
+        let y = from + (stacked[0]?.before ?? 0);
+        part.forEach((block, index) => {
+            y += index === 0 ? 0 : between(stacked[index - 1].after, stacked[index].before);
+            const besideIt = (height: number): boolean =>
+                placed.some(({ keepOut }) => overlap(keepOut, { left: within.start, right: within.end, top: y, bottom: y + height }));
+            if (block.type === "table") {
+                if (besideIt(stacked[index].height)) {
+                    stopAt("a table in a header beside a drawing that text flows around");
+                }
+                y += stacked[index].height;
+                return;
+            }
+            const { borderAbove, borderBelow } = measureParagraph(block, width, part[index - 1], part[index + 1]);
+            const { indentLeft = 0, indentRight = 0, firstLineIndent = 0 } = block.format;
+            // Each line in the room beside the drawings where it is, from the first, as those before it don't change with it
+            const rooms = new Map<number, LineRoom>();
+            let lines = linesOf(block, width);
+            for (let line = 0, lineTop = y + borderAbove; line < lines.length; lineTop += lines[line].height, line++) {
+                const room = roomBeside(placed, lineTop, lines[line].height, within);
+                if (!("spans" in room) || room.spans.length > 1) {
+                    stopAt("a line of a header with room either side of a drawing that text flows around, or none");
+                } else if (room.spans[0].start > within.start + TOLERANCE || room.spans[0].end < within.end - TOLERANCE) {
+                    const [span] = room.spans;
+                    const start = Math.max(span.start - left, indentLeft) + (line === 0 ? firstLineIndent : 0);
+                    const end = Math.min(span.end - left, width - indentRight);
+                    if (end <= start + TOLERANCE) {
+                        stopAt("a line of a header with room either side of a drawing that text flows around, or none");
+                        continue;
+                    }
+                    // eslint-disable-next-line functional/immutable-data
+                    rooms.set(line, { start, end });
+                    lines = linesOf(block, width, new Map(rooms));
+                }
+            }
+            y += borderAbove + linesHeight(lines) + borderBelow;
         });
+        return y + (stacked[stacked.length - 1]?.after ?? 0) - from;
+    };
 
     /** The drawings placed from the top of the page and those on it, once each */
     const withPinned = (onPage: readonly PlacedDrawing[]): readonly PlacedDrawing[] =>
@@ -4067,6 +4272,8 @@ export const paginate = (
         let index = 0;
         let excluded: ReadonlySet<number> = new Set();
         let excludedAt = "";
+        // The footnote of the line being placed that starts on the next page, after its others go on this one
+        let startsAfter: string | undefined;
         for (;;) {
             // Those left for the next page or column are left only where they were found to be
             if (excludedAt !== `${pageCount} ${column} ${index}`) {
@@ -4076,6 +4283,18 @@ export const paginate = (
             const isFirstLine = index === 0;
             if (movesOn && isFirstLine && !placedInColumn && taller[column]) {
                 nextColumn();
+                continue;
+            }
+            // A first line of only a page break at the top of a page whose footnote goes on from the page before, as the rest
+            // of the page before took the room it would have had, takes no room there and starts no page of its own: the text
+            // after it goes on that page, as Word put it (stops2/word-stops-notes2.ts NT21)
+            const [first] = isFirstLine && !placedInColumn && continued !== undefined ? linesOf(block, widths) : [];
+            if (first?.breakAfter === "page" && first.textWidth === 0) {
+                mark(first.markers);
+                index = 1;
+                if (index === linesOf(block, widths).length) {
+                    break;
+                }
                 continue;
             }
             // The border above the first line stays at the top of a page, as the space before doesn't. Which of two between
@@ -4148,18 +4367,38 @@ export const paginate = (
             // Nothing fits on an empty page, so as much as fits goes on it, and at least a line, unless the end of a
             // footnote continued from the page before is on it, which leaves the next page for them
             if (count === 0 && !placedInColumn && continued === undefined && !referenceMovesOn) {
+                if (fits === 0 && lineNotes.length > 0 && belowContinued()) {
+                    // Below a footnote that continues on the next page in columns, at the top of a column, it goes on the
+                    // next page with its footnotes (NT5b)
+                    startPage();
+                    continue;
+                }
                 if (fits === 0 && lineNotes.length > 0) {
                     // In columns being balanced, which were laid out at their full height before, it's their height
                     stopIfBalancing();
                     if (!fitsAlone()) {
                         throw new Unsupported("a line and its footnote taller than a page");
                     }
-                    if (columnsSection().columns.length > 1) {
+                    const laterColumn = column > 0 && !(startedInColumn() && column === sectionColumn);
+                    if (columnsSection().columns.length > 1 && lineNotes.length === 1 && leastTallerThanPage(lineNotes[0])) {
+                        // A line whose footnote can't go on a page with it, as its least is taller than a page, goes on the next
+                        // page from the top of a later column, and at the top of the page's columns stays there without it,
+                        // and the footnote starts on the next page, as across the page (SP5): Word put a line at the top of the
+                        // second column whose footnote was 55 lines kept together at the top of the next page, and the footnote
+                        // on the next two (`word-notes-across-pages.docx` NP2)
+                        if (laterColumn) {
+                            startPage();
+                            continue;
+                        }
+                        [deferred] = lineNotes;
+                        carried = { name: deferred, from: { block: 0, line: 0 } };
+                        count = 1;
+                    } else if (columnsSection().columns.length > 1) {
                         // At the top of the page's columns, or of the column a section starts in after the section before's,
                         // a line whose footnotes don't fit stays, and the last of them continues on the next page
                         // (`word-watertight-notes.docx` FN2, FN3). At the top of another column, Word lays out the columns
                         // before it again above as much of the footnote as leaves the line on the page (FN3)
-                        if (column > 0 && !(startedInColumn() && column === sectionColumn)) {
+                        if (laterColumn) {
                             searchNoteRoom(lineNotes[lineNotes.length - 1]);
                         }
                         count = 1;
@@ -4168,6 +4407,16 @@ export const paginate = (
                         // a page, stays there without it, and the footnote starts on the next page (SP5)
                         [deferred] = lineNotes;
                         carried = { name: deferred, from: { block: 0, line: 0 } };
+                        count = 1;
+                    } else if (
+                        lineNotes.length > 1 &&
+                        linesThatFit(remaining, room, paragraph, isFirstLine, () => noteCost(moreNoteRoom(lineNotes.slice(0, -1))), hangs)
+                            .fits > 0
+                    ) {
+                        // At the top of a page, a line whose last footnote doesn't fit below the others stays there with them,
+                        // and that one starts on the next page: the first of two footnotes of 30 lines kept together below the
+                        // line, and the second on the next page (stops2/word-stops-notes2.ts NT9d)
+                        startsAfter = lineNotes[lineNotes.length - 1];
                         count = 1;
                     } else {
                         throw new Unsupported("a line and its footnote taller than a page");
@@ -4286,7 +4535,7 @@ export const paginate = (
                 // The space after the paragraph before is above these lines now, and this one's comes at its end
                 spaceAfter = 0;
                 // That of a line whose footnote starts on the next page isn't placed on this one
-                const startsLater = deferred;
+                const startsLater = deferred ?? startsAfter;
                 const notes = notesOf(count).filter((name) => name !== startsLater);
                 if (holdNotes && index + placedLines === lines.length) {
                     // They go below the lines of the paragraph this one is kept with
@@ -4295,6 +4544,11 @@ export const paginate = (
                     held = [];
                     heldLines = undefined;
                     placeNotes(notes);
+                }
+                if (startsAfter !== undefined) {
+                    deferred = startsAfter;
+                    carried = { name: deferred, from: { block: 0, line: 0 } };
+                    startsAfter = undefined;
                 }
                 placedInColumn = true;
                 index += placedLines;
@@ -4824,8 +5078,16 @@ export const paginate = (
             const atTop = !placedInColumn && continued === undefined;
             if ((!placesLines || !fitsWhole) && atTop) {
                 stopIfBalancing();
+                if (fitsWhole && notesOf(whole).length === 1 && deferred === undefined) {
+                    // Its footnote starts on the next page, and it stays there whole, as a line does (SP5): Word put a row of 5
+                    // lines whose first referred to a footnote of 50 lines kept together there, and the footnote on the next
+                    // two pages (stops2/word-stops-notes2.ts NT8c)
+                    [deferred] = notesOf(whole);
+                    carried = { name: deferred, from: { block: 0, line: 0 } };
+                    continue;
+                }
                 if (fitsWhole && notesOf(whole).length > 0) {
-                    throw new Unsupported("a table row and its footnote taller than a page");
+                    throw new Unsupported("a table row and its footnotes taller than a page");
                 }
             }
             if (!placesLines && atTop) {
@@ -4938,6 +5200,9 @@ export const paginate = (
             if (!(error instanceof HeaderRowsAlone)) {
                 throw error;
             }
+            if (error.kept !== undefined) {
+                throw new StartsNextPage(error.kept, pageCount);
+            }
             unmarkSince(start.marks);
             restore(start);
             // What was guessed at in moving the header rows is still guessed at, but not what was in laying the table out here
@@ -4975,17 +5240,21 @@ export const paginate = (
         // they were (`word-watertight-stops.docx` SP16)
         const startTablePage = (index: number, newPage = false, continuing = false): void => {
             if (headersAlone(index)) {
-                const before = blocks[blockIndex - 1];
-                const guesses = [
-                    // Whether Word moves a paragraph kept with the next with them hasn't been seen. Guessing, it stays
-                    ...(before?.section === blocks[blockIndex].section && before.block.type === "paragraph" && before.block.format.keepNext
-                        ? ["a paragraph kept with the next before a table whose header rows go on to the next page"]
-                        : []),
-                    // Whether Word moves them to the next column, as to the next page, hasn't been seen. Guessing, it does
-                    ...(columnsSection().columns.length > 1 ? ["a table's header rows alone at the foot of a column"] : []),
-                ];
+                // The paragraphs kept with the next before the table go on to the next page with them, as Word moved a
+                // heading kept with the next there with them (`word-stops-edges.docx` HR2b), unless they start the page
+                const kept = keptBefore(blockIndex);
+                const pageStart = placements.findLastIndex(({ type }) => type === "page");
+                const first = placements.slice(pageStart).find((placement) => placement.type === "line" || placement.type === "row");
+                const inColumns = columnsSection().columns.length > 1;
+                const moving = kept < blockIndex && !inColumns && first !== undefined && (first as BlockPlacement).block < kept;
+                // Whether Word moves those kept with the next with them to the next column, or from the top of a page, hasn't
+                // been seen. Guessing, they stay
+                const guesses =
+                    kept < blockIndex && !moving
+                        ? ["a paragraph kept with the next before a table whose header rows go on, at the top of a page or in columns"]
+                        : [];
                 guesses.forEach((reason) => stopAt(reason));
-                throw new HeaderRowsAlone(guesses);
+                throw new HeaderRowsAlone(guesses, moving ? kept : undefined);
             }
             const page = pageCount;
             nextColumn();
@@ -5136,6 +5405,10 @@ export const paginate = (
             const holding = held.length > 0 && heldLines !== undefined && index < heldLines;
             const notes = [...(holding && index === heldLines! - 1 ? held : []), ...notesIn(markers)];
             const keptWhole = holding || row.cantSplit || row.height?.rule === "exact";
+            if (notes.length > 0 && belowContinued()) {
+                // Word put a line referring to one on the next page (NT5b), but a row hasn't been seen
+                stopOnPage("a table row referring to a footnote below one that continues on the next page in columns");
+            }
             placeKeptRows(index);
             // On the next page, the end of a footnote continued from this one can leave too little room for it too, as for
             // a paragraph's lines, so it goes on the page after
@@ -5144,12 +5417,20 @@ export const paginate = (
                 closeMerges(position);
                 startTablePage(index);
             }
-            // A row kept whole that is still too tall for the page is at the top of one, and taller than it
+            // A row kept whole that is still too tall for the page is at the top of one, and taller than it. One that fits
+            // without its footnote stays there whole, and its footnote starts on the next page, as a line's does (SP5): Word
+            // put a row of 45 lines that can't break there, and its footnote of 10 lines kept together on the next page
+            // (stops2/word-stops-notes2.ts NT8b)
+            if (keptWhole && !rowStays(roomNeeded, notes) && notes.length === 1 && position + roomNeeded <= linesBottom() + TOLERANCE) {
+                stopIfBalancing();
+                [deferred] = notes;
+                carried = { name: deferred, from: { block: 0, line: 0 } };
+            }
             const tooTall = keptWhole && !rowStays(roomNeeded, notes);
             if (tooTall) {
                 stopIfBalancing();
                 if (notes.length > 0 && position + roomNeeded <= linesBottom() + TOLERANCE) {
-                    throw new Unsupported("a table row and its footnote taller than a page");
+                    throw new Unsupported("a table row and its footnotes taller than a page");
                 }
             }
             // In columns, one taller than a column goes down the first column of each page, from a new page unless it is at
@@ -5211,6 +5492,20 @@ export const paginate = (
     };
 
     /** How many paragraphs from one (`index`) on are kept with the next block of their section, one after the other */
+    /** The first of the paragraphs kept with the next, in its section, that go before a block, or the block itself */
+    const keptBefore = (index: number): number => {
+        let first = index;
+        while (
+            first > 0 &&
+            blocks[first - 1].section === blocks[index].section &&
+            blocks[first - 1].block.type === "paragraph" &&
+            (blocks[first - 1].block as ParagraphBlock).format.keepNext === true
+        ) {
+            first--;
+        }
+        return first;
+    };
+
     const keptChain = (index: number): number =>
         blocks.slice(index).findIndex(({ block, section: blockSection }, offset) => {
             const following = blocks[index + offset + 1];
@@ -5441,9 +5736,16 @@ export const paginate = (
     const placeBlock = (block: Block, index: number): void => {
         blockIndex = index;
         stopAtRead(block);
-        if (index === firstEndnote && section().columns.length > 1) {
-            // Guessing, they go on in the columns where the text ends, and across the top of each page after
-            stopAt(ENDNOTES_IN_COLUMNS);
+        const endnotesStart = isEndnote(index) && !isEndnote(index - 1) && section().columns.length > 1;
+        if (endnotesStart) {
+            // Word evens out the columns of the text above the endnotes, as before a continuous section, and lays them out
+            // in the columns below, from below their separator in the first, in each column, and evens out the columns they
+            // end in (`word-stops-endnotes.docx` NE1, stops2/word-stops-notes2.ts NE4a to NE4c). Evening the text out lays
+            // its blocks out again, so this one is laid out after them
+            endColumns(index);
+            blockIndex = index;
+            column = 0;
+            columnTop = position;
         }
         if (keptOn !== undefined && index > keptOn.next) {
             // The block it is kept with took no room, as the empty paragraph that ends a section
@@ -5480,10 +5782,9 @@ export const paginate = (
             const spaceBefore =
                 block.format.autoSpaceBefore === true ? 0 : measureParagraph(block, width, blocks[index - 1]?.block).spaceBefore;
             if (placedInColumn) {
+                // Below the text, the page's footnotes go below that space too, as Word put them
+                // (stops2/word-stops-notes2.ts NT20a)
                 position += between(spaceAfter, spaceBefore);
-                // Below the text, the page's footnotes would go below that space too, which Word hasn't been seen to do
-                spaceAfter = between(spaceAfter, spaceBefore);
-                checkBeneathText();
             }
             spaceAfter = 0;
             return;
@@ -5641,6 +5942,12 @@ export const paginate = (
         }
         placeParagraph(block, paragraph, holdNotes);
         sectionSpaceAfter = undefined;
+        if (endnotesStart) {
+            // The columns start below the separator, which is in the first, as they all start at the same height, and so are
+            // evened out from the next block
+            columnTop = position;
+            columnsStart = undefined;
+        }
     };
 
     /**
@@ -5695,6 +6002,9 @@ export const paginate = (
             const { block, section: blockSection } = blocks[index];
             const startsSection = blockSection !== sectionIndex;
             if (startsSection) {
+                // The block being laid out is the section's first, on the page the section starts: one that isn't one of the
+                // endnotes has no continuation separator above it
+                blockIndex = index;
                 startSection(blockSection, index);
             }
             blockStart = snapshot(index);
@@ -5707,6 +6017,11 @@ export const paginate = (
             } catch (error) {
                 if (error instanceof DrawingAbove) {
                     placeAbove(error.drawing);
+                } else if (error instanceof StartsNextPage) {
+                    // eslint-disable-next-line functional/immutable-data
+                    startsNextPage.set(error.block, error.page);
+                    // The bookmarks placed since are placed again, on the next page
+                    unmarkSince(columnsStart!.marks);
                 } else if (error instanceof PushedOn) {
                     // The page is laid out again without the drawing, its paragraph starting on the next page
                     // eslint-disable-next-line functional/immutable-data
@@ -5727,12 +6042,22 @@ export const paginate = (
         }
     };
 
-    /** The number and index of the endnote each of the endnotes' blocks is in, or nothing for those of their separator */
+    // The endnote each of the endnotes' blocks is in, by the marker at its reference, which tells those with marks of their
+    // own apart, as they have no number
+    const endnoteOf = new Map(
+        [...content.endnoteReferences].flatMap(([marker, noteBlocks]) => noteBlocks.map((block) => [block, marker] as const)),
+    );
+    /** The note, number and index of the endnote each of the endnotes' blocks is in, or nothing for those of their separator */
     const endnoteParts = endnotes.map((block, index) => {
         const noteNumber = endnoteNumbers.get(block);
+        const note = endnoteOf.get(block) ?? noteNumber;
         return noteNumber === undefined
             ? undefined
-            : { noteNumber, index: endnotes.slice(0, index).filter((other) => endnoteNumbers.get(other) === noteNumber).length };
+            : {
+                  note,
+                  noteNumber,
+                  index: endnotes.slice(0, index).filter((other) => (endnoteOf.get(other) ?? endnoteNumbers.get(other)) === note).length,
+              };
     });
 
     /**
@@ -5751,21 +6076,26 @@ export const paginate = (
             const placed = page + 1 === stoppedOnPage ? [] : placements.slice(start + 1, starts[page + 1]);
             const pieces = placed.filter((placement): placement is BlockPlacement => placement.type === "line" || placement.type === "row");
             const endnotePieces = pieces.flatMap((piece) => {
-                const note = endnoteParts[piece.block - content.blocks.length];
+                const { endnote } = blocks[piece.block];
+                const note = endnote === undefined ? undefined : endnoteParts[endnote];
                 return note === undefined ? [] : [{ ...note, piece }];
             });
-            const notes = endnotePieces.reduce<readonly { readonly noteNumber: string; readonly pieces: readonly BlockPiece[] }[]>(
-                (all, { noteNumber, index, piece }) => {
-                    const last = all[all.length - 1];
-                    return last?.noteNumber === noteNumber
-                        ? [...all.slice(0, -1), { noteNumber, pieces: [...last.pieces, { index, piece }] }]
-                        : [...all, { noteNumber, pieces: [{ index, piece }] }];
-                },
-                [],
-            );
+            const notes = endnotePieces.reduce<
+                readonly { readonly note?: string; readonly noteNumber: string; readonly pieces: readonly BlockPiece[] }[]
+            >((all, { note, noteNumber, index, piece }) => {
+                const last = all[all.length - 1];
+                return last?.note === note
+                    ? [...all.slice(0, -1), { note, noteNumber, pieces: [...last.pieces, { index, piece }] }]
+                    : [...all, { note, noteNumber, pieces: [{ index, piece }] }];
+            }, []);
             return {
                 ...(placements[start] as Extract<Placement, { readonly type: "page" }>).page,
-                body: blocksOf(pieces.filter(({ block }) => block < content.blocks.length).map((piece) => ({ index: piece.block, piece }))),
+                body: blocksOf(
+                    pieces.flatMap((piece) => {
+                        const { body } = blocks[piece.block];
+                        return body === undefined ? [] : [{ index: body, piece }];
+                    }),
+                ),
                 footnotes: placed.flatMap((placement) => (placement.type === "footnotes" ? placement.notes : [])),
                 endnotes: notes.map(({ noteNumber, pieces: notePieces }) => ({ noteNumber, content: blocksOf(notePieces) })),
                 ...(guesses.length > 0 ? { guesses } : {}),
@@ -5810,11 +6140,17 @@ export const paginate = (
             restore(columnsStart!);
             placeBlocks(columnsStart!.index, blocks.length);
         }
+        // The columns the endnotes end in are evened out (`word-stops-endnotes.docx` NE1, stops2/word-stops-notes2.ts NE4a
+        // to NE4c)
+        if (isEndnote(blocks.length - 1) && section().columns.length > 1 && isEndnote(columnsStart!.index)) {
+            endColumns(blocks.length);
+        }
         checkAnchors();
         checkReserve();
         checkBeneathText();
-        if (carried !== undefined) {
-            // The rest of a footnote continued from the last page goes on a page of its own
+        // The rest of a footnote continued from the last page goes on pages of its own, as many as it takes, with that of a
+        // footnote after it that goes on past its end (NT3b)
+        while (carried !== undefined) {
             startPage();
         }
     } catch (error) {
