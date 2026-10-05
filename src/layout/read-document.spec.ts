@@ -6903,6 +6903,7 @@ describe("readDocument", () => {
                     p(r(border, { "w:drawing": [{ "wp:inline": [{ "wp:extent": { _attr: { cx: 127000, cy: 127000 } } }] }] })),
                     p(r({ "w:ruby": [{ "w:rubyPr": [] }, { "w:rt": [r(t("guide"))] }, { "w:rubyBase": [r(t("base"))] }] })),
                     p(r({ "w:endnoteReference": { _attr: { "w:id": 1, "w:customMarkFollows": 1 } } }), r(t("*"))),
+                    p(r(border, { "w:drawing": [{ "wp:anchor": [{ "wp:wrapNone": {} }] }] }), r(t("behind"))),
                 ],
                 { endnotes: { 1: { children: [new Paragraph("One")] } } },
             );
@@ -6913,7 +6914,10 @@ describe("readDocument", () => {
                 undefined,
                 "text with a phonetic guide",
                 "an endnote with a mark of its own",
+                "a drawing placed on the page in text with a border",
             ]);
+            // Guessing, a drawing behind the text in text with a border takes no room, as elsewhere
+            expect(textOf(content, 6)).to.equal("behind");
             expect([0, 1, 2, 3].map((index) => itemsOf(content, index).map(({ type }) => type))).to.deep.equal([
                 ["tab"],
                 ["text", "tab", "text"],
