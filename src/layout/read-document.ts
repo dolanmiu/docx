@@ -1466,8 +1466,8 @@ const readFieldCharacter = (element: XmlObject, format: RunFormat, reader: Reade
 const isTwoInOne = (properties: readonly XmlObject[]): boolean => isOn(attributesOf(find(properties, "w:eastAsianLayout"))["w:combine"]);
 
 /**
- * Why a run's own formatting changes the room its text takes in a way not yet followed, when it does: text fitted to a
- * width (`w:fitText`), text across in vertical text (`w:eastAsianLayout`), but for text set across in text that runs
+ * Why a run's own formatting changes the room its text takes in a way not yet followed, when it does: text across in
+ * vertical text (`w:eastAsianLayout`), but for text set across in text that runs
  * down the page, as Word sets it there (see {@link acrossOf}), unless it is compressed to fit its line (`w:vertCompress`),
  * and two lines in one of other than text without Chinese, Japanese or Korean characters, without brackets and at a size
  * that halves to whole half-points, across the page. Word drew "twolines" in two lines in one in a line of Calibri 11 at
@@ -1488,9 +1488,6 @@ const unsupportedFormatOf = (
         "w:vert": across,
         "w:vertCompress": compressed,
     } = attributesOf(find(properties, "w:eastAsianLayout"));
-    if (find(properties, "w:fitText") !== undefined) {
-        return "text fitted to a width";
-    }
     if (isTwoInOne(properties)) {
         const text = children
             .filter((child) => nameOf(child) === "w:t")
@@ -1774,7 +1771,74 @@ const readRun = (element: XmlObject, paragraphRun: RunFormat, reader: Reader, re
                 return [];
         }
     });
-    return itemsOf(formatGuessed ? [[guessMarker(unsupportedFormat!)], ...items] : items, reader);
+    const read = itemsOf(formatGuessed ? [[guessMarker(unsupportedFormat!)], ...items] : items, reader);
+    const fitText = find(childrenOf(properties), "w:fitText");
+    return typeof read === "string" || format.hidden || fitText === undefined ? read : fittedOf(read, attributesOf(fitText), reader);
+};
+
+/** The id of the region of text fitted to a width that each box of it is in, when it has one */
+const FITTED = new WeakMap<LayoutItem, { readonly id?: string }>();
+
+/**
+ * A run's text fitted to a width (`w:fitText`), as a box of that width as tall as its text, which a line doesn't break:
+ * Word drew "fitted text" fitted to 500 twips 500 wide, and fitted to 3000 at the end of a line it didn't fit in, whole on
+ * the next (scripts/layout-probes/stops2/word-stops-text2.ts RF29b, RF29d). Or why it can't be laid out: fitted text with
+ * other than text in it, or to no width, which haven't been seen. Guessing, it is read as if it weren't fitted
+ */
+const fittedOf = (
+    items: readonly LayoutItem[],
+    { "w:val": width, "w:id": id }: XmlObject,
+    reader: Reader,
+): readonly LayoutItem[] | string => {
+    const texts = items.filter((item): item is Extract<LayoutItem, { readonly type: "text" }> => item.type === "text");
+    const points = twips(width) ?? 0;
+    if (items.some((item) => item.type !== "text" && item.type !== "marker") || points <= 0) {
+        return guessedOr(reader, "text fitted to a width with other than text in it, or to none", () => items);
+    }
+    if (texts.length === 0) {
+        return items;
+    }
+    const box: LayoutItem = { type: "box", width: points, height: 0, font: texts[0].font, text: texts.map(({ text }) => text).join("") };
+    FITTED.set(box, id === undefined ? {} : { id: String(id) });
+    return [...items.filter((item) => item.type === "marker"), box];
+};
+
+/**
+ * A paragraph's items with the text of runs fitted to a width with the same id (`w:id`), one after the other, in one box,
+ * as Word fits them to their width together: "fitted " and a bold "text", fitted to 2000 twips, are 2000 wide
+ * (scripts/layout-probes/stops2/word-stops-text2.ts RF29c). Or why they can't be laid out: ones of other sizes or fonts,
+ * whose line Word hasn't been seen to size. Guessing, those are fitted apart
+ */
+const withFitted = (read: readonly LayoutItem[] | string, reader: Reader): readonly LayoutItem[] | string => {
+    if (typeof read === "string") {
+        return read;
+    }
+    // eslint-disable-next-line functional/prefer-readonly-type
+    const all: LayoutItem[] = [];
+    for (const item of read) {
+        const id = FITTED.get(item)?.id;
+        const at = all.findLastIndex((other) => other.type !== "marker");
+        if (id === undefined || at === -1 || FITTED.get(all[at])?.id !== id) {
+            // eslint-disable-next-line functional/immutable-data
+            all.push(item);
+            continue;
+        }
+        const [before, after] = [all[at], item] as readonly Extract<LayoutItem, { readonly type: "box" }>[];
+        if (before.font!.font !== after.font!.font || before.font!.size !== after.font!.size) {
+            const reason = "text fitted to a width in runs of other sizes or fonts";
+            if (!reader.guess) {
+                return reason;
+            }
+            // eslint-disable-next-line functional/immutable-data
+            all.push(guessMarker(reason), item);
+            continue;
+        }
+        const joined: LayoutItem = { ...before, text: `${before.text}${after.text}` };
+        FITTED.set(joined, { id });
+        // eslint-disable-next-line functional/immutable-data
+        all[at] = joined;
+    }
+    return all;
 };
 
 // Elements in a paragraph that hold runs and are read through
@@ -2471,7 +2535,7 @@ const readParagraph = (element: XmlObject, reader: Reader, tableFormats: TableFo
         ...(list.level ? [list.level.paragraph] : []),
         readParagraphFormat(properties),
     ];
-    const read = withEquations(readInline(children, paragraphRun, reader), list.items.length > 0, reader);
+    const read = withEquations(withFitted(readInline(children, paragraphRun, reader), reader), list.items.length > 0, reader);
     // Read to be laid out with a guess, the first thing the reader guessed at in the paragraph's content is why it can't be
     // laid out as Word does, and the markers of what it guessed at are left out of its items
     const guessed = typeof read === "string" ? undefined : read.map(guessOf).find((reason) => reason !== undefined);
@@ -4983,18 +5047,17 @@ const readSettings = (
     // its first page left out), and Word updates a document's styles from its template when it opens it, with
     // `w:linkStyles`. Pages printed two to a sheet (`w:printTwoOnOne`) Word lays out as the section's pages, as it does
     // without: 51 lines on the first of 62 (`word-stops-two-on-one.docx` TO1)
-    const unsupported =
-        (
+    const unsupported = (
+        [
             [
-                [
-                    mode < CURRENT_COMPATIBILITY_MODE && olderMode === undefined,
-                    "a document in a compatibility mode Word hasn't been seen laying out",
-                ],
-                [asksForUnfollowedCompatibility(compatibility, olderMode !== undefined), "a compatibility setting not yet followed"],
-                [onOff(settings, "w:bookFoldPrinting") || onOff(settings, "w:bookFoldRevPrinting"), "pages printed as a folded booklet"],
-                [onOff(settings, "w:linkStyles"), "styles updated from the document's template when Word opens it"],
-            ] as const
-        ).find(([applies]) => applies === true)?.[1];
+                mode < CURRENT_COMPATIBILITY_MODE && olderMode === undefined,
+                "a document in a compatibility mode Word hasn't been seen laying out",
+            ],
+            [asksForUnfollowedCompatibility(compatibility, olderMode !== undefined), "a compatibility setting not yet followed"],
+            [onOff(settings, "w:bookFoldPrinting") || onOff(settings, "w:bookFoldRevPrinting"), "pages printed as a folded booklet"],
+            [onOff(settings, "w:linkStyles"), "styles updated from the document's template when Word opens it"],
+        ] as const
+    ).find(([applies]) => applies === true)?.[1];
     return {
         defaultTabStop: twips(attributesOf(find(settings, "w:defaultTabStop"))["w:val"]) ?? 36,
         evenAndOddHeaders: onOff(settings, "w:evenAndOddHeaders") === true,

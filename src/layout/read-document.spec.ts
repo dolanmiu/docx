@@ -757,14 +757,16 @@ describe("readDocument", () => {
             ).to.equal(undefined);
         });
 
-        it("should stop at text with a phonetic guide, a content part, text fitted to a width, two lines in one, text across in vertical text, a subdocument and a paragraph in an HTML division", () => {
+        it("should stop at text with a phonetic guide, a content part, text fitted to a width with other than text in it, two lines in one, text across in vertical text, a subdocument and a paragraph in an HTML division", () => {
             const unsupportedOf = (...children: readonly unknown[]): string | undefined =>
                 paragraphOf(readBody([p(...children)])).unsupported;
             // Its text would be lost, as it is in the guide and its base
             const ruby = { "w:ruby": [{ "w:rubyPr": [] }, { "w:rt": [r(t("guide"))] }, { "w:rubyBase": [r(t("base"))] }] };
             expect(unsupportedOf(r(ruby))).to.equal("text with a phonetic guide");
             expect(unsupportedOf(r({ "w:contentPart": { _attr: { "r:id": "rId9" } } }))).to.equal("a content part, such as ink");
-            expect(unsupportedOf(r(rPr({ "w:fitText": { _attr: { "w:val": 2000 } } }), t("fitted")))).to.equal("text fitted to a width");
+            const fitted = "text fitted to a width with other than text in it, or to none";
+            expect(unsupportedOf(r(rPr({ "w:fitText": { _attr: { "w:val": 2000 } } }), t("a"), { "w:tab": {} }))).to.equal(fitted);
+            expect(unsupportedOf(r(rPr({ "w:fitText": { _attr: { "w:val": 0 } } }), t("a")))).to.equal(fitted);
             const layout = (attributes: object, text = "ab", size = 22): object =>
                 r(rPr({ "w:eastAsianLayout": { _attr: attributes } }, value("w:sz", size)), t(text));
             // Two lines in one of text, without brackets, at a size that halves to whole half-points is drawn at half its
@@ -6816,10 +6818,48 @@ describe("readDocument", () => {
         });
 
         it("should read a run past formatting it can't follow, as if it weren't so", () => {
-            const fitted = p(r(rPr({ "w:fitText": { _attr: { "w:val": 2000 } } }), t("fitted"), { "w:tab": {} }, t("more")));
-            const content = guessed([fitted]);
-            expect(read(content)).to.deep.equal([["text fitted to a width", "fittedmore"]]);
+            const across = p(r(rPr({ "w:eastAsianLayout": { _attr: { "w:vert": "true" } } }), t("text"), { "w:tab": {} }, t("more")));
+            const content = guessed([across]);
+            expect(read(content)).to.deep.equal([["text across in vertical text", "textmore"]]);
             expect(itemsOf(content).map(({ type }) => type)).to.deep.equal(["text", "tab", "text"]);
+            // And text fitted to a width with a tab in it, as if it weren't fitted
+            const fitted = guessed([p(r(rPr({ "w:fitText": { _attr: { "w:val": 2000 } } }), t("fitted"), { "w:tab": {} }, t("more")))]);
+            expect(read(fitted)).to.deep.equal([["text fitted to a width with other than text in it, or to none", "fittedmore"]]);
+        });
+
+        it("should read text fitted to a width as a box of that width, and runs of the same region in one, as Word does", () => {
+            const fit = (width: number, id?: number, ...more: readonly object[]): object =>
+                rPr({ "w:fitText": { _attr: { "w:val": width, ...(id === undefined ? {} : { "w:id": id }) } } }, ...more);
+            // word-stops-text2.ts RF29b: "fitted text" fitted to 500 twips
+            expect(itemsOf(readBody([p(r(fit(500, 3), t("fitted text")))]))).to.deep.equal([
+                { type: "box", width: 25, height: 0, font: {}, text: "fitted text" },
+            ]);
+            // RF29c: "fitted " and a bold "text" with one id, across a bookmark, fitted to 2000 together
+            const together = readBody([
+                p(
+                    r(fit(2000, 4), t("fitted ")),
+                    { "w:bookmarkStart": { _attr: { "w:name": "m", "w:id": 1 } } },
+                    r(fit(2000, 4, { "w:b": {} }), t("text")),
+                ),
+            ]);
+            expect(itemsOf(together)).to.deep.equal([
+                { type: "box", width: 100, height: 0, font: {}, text: "fitted text" },
+                { type: "marker", name: "m" },
+            ]);
+            // Runs without an id, or with others, or with text between them, each fitted on its own
+            const apart = (...runs: readonly object[]): readonly unknown[] => itemsOf(readBody([p(...runs)])).map(({ type }) => type);
+            expect(apart(r(fit(500), t("a")), r(fit(500), t("b")))).to.deep.equal(["box", "box"]);
+            expect(apart(r(fit(500, 1), t("a")), r(fit(500, 2), t("b")))).to.deep.equal(["box", "box"]);
+            expect(apart(r(fit(500, 1), t("a")), r(t("x")), r(fit(500, 1), t("b")))).to.deep.equal(["box", "text", "box"]);
+            expect(apart(r(t("x")), r(fit(500, 1), t("a")))).to.deep.equal(["text", "box"]);
+            // A run with nothing in it, or hidden, has nothing to fit
+            expect(apart(r(fit(500, 1)), r(fit(500, 1), t("a")))).to.deep.equal(["box"]);
+            expect(apart(r(fit(500, 1, { "w:vanish": {} }), t("a")))).to.deep.equal([]);
+            // Runs of other sizes in one region haven't been seen. Guessing, each is fitted on its own
+            const sized = [p(r(fit(500, 1), t("a")), r(fit(500, 1, value("w:sz", 30)), t("b")))];
+            const reason = "text fitted to a width in runs of other sizes or fonts";
+            expect(paragraphOf(readBody(sized)).unsupported).to.equal(reason);
+            expect([read(guessed(sized)), itemsOf(guessed(sized)).map(({ type }) => type)]).to.deep.equal([[[reason, ""]], ["box", "box"]]);
         });
 
         it("should read an equation that can't be laid out in the line, but can displayed, as displayed", () => {
