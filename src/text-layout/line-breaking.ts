@@ -1668,7 +1668,7 @@ export const layoutLines = (
                     line = { ...line, unsupported: line.unsupported ?? MAY_HYPHENATE };
                 }
                 // Its characters on each line are measured together, kerned as Word kerns them, so more of them fit on a line
-                // than measured each on its own: 76 letters of "AVAV" in Calibri 11 kerned from 1 point (scripts/layout-probes/stops2/word-stops-kerning.ts
+                // than measured each on its own: 76 letters of "AV" again and again in Calibri 11 kerned from 1 point (scripts/layout-probes/stops2/word-stops-kerning.ts
                 // KE6a). Where Word breaks one whose letters it joins into ligatures, which may be inside a ligature, hasn't
                 // been seen
                 if (token.pieces.some(({ font }) => hasLigatures(font))) {

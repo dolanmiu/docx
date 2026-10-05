@@ -163,6 +163,7 @@ describe("layoutLines", () => {
         // Across runs of the same font, and a bookmark between them, but not runs of other fonts
         expect(widths([piece("AAA"), piece(" "), { type: "marker", name: "here" }, piece("AAA")])).to.deep.equal([60]);
         expect(widths([piece("AAA"), piece(" ", { ...kerned, bold: true }), piece("AAA")])).to.deep.equal([70]);
+        // cspell:ignore AVAV
         // A word longer than its line, kerned, is broken where its characters on each line, kerned together, fit
         // (word-stops-kerning.ts KE6a): with an A and a V 2 points nearer, 6 letters of "AVAV" fit in 50, where 5 would
         // measured each on its own
@@ -745,7 +746,7 @@ describe("layoutLines", () => {
                 layoutLines([{ type: "text", text: `${label} ${first} ${tail}`, font }], {
                     width: (9026 - right) / 20,
                     format: { alignment },
-                }).map(({ text: value }) => value.trim().split(" ").pop()!);
+                }).map(({ text: value }) => value.trim().split(" ").at(-1)!);
             const short = "of the by in to and on of the by in to and on of the by in lighthouse";
             expect(linesOf("K07_06", short, 2503, "distributed").slice(0, 2)).to.deep.equal(["lighthouse", "from"]);
             expect(linesOf("K07_07", short, 2521, "distributed").slice(0, 2)).to.deep.equal(["lighthouse", "foot"]);
@@ -1983,7 +1984,7 @@ describe("measureContentWidths", () => {
 });
 
 describe("soft hyphens", () => {
-    // cspell:ignore abbcc abbccddd bbbccc bbccddd dampf Donaudampf Donaudampfschiff Donaudampfschifffahrts fahrts narily ordi schiff
+    // cspell:ignore abbcc abbccddd bbbccc bbccddd bbcccc dampf Donaudampf Donaudampfschiff Donaudampfschifffahrts fahrts narily ordi schiff
     // cspell:ignore Donaudampfschifffahrtsgesellschaft Donaudampfschifffahrt dampfschifffahrt ccddd haftDonaudampfschiff
     // cspell:ignore rtsgesellschaftDonau hrtsgesellschaft gesellschaft
     const softHyphen = (font: TextFont = {}): InlineItem => ({ type: "softHyphen", font });
