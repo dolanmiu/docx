@@ -140,6 +140,7 @@ describe("layoutLines", () => {
     });
 
     it("should measure kerned text either side of a soft hyphen apart, as Word doesn't kern across one", () => {
+        // cspell:ignore VAVA VAVAV VAVAVAV AVAVA AVAVAVA
         // word-stops-text2.ts KE9a: "A-V" 12 times, kerned, as wide as its "V" and "A" kerned and not its "A" and "V". Here
         // "AV" kerned is 15 points, rather than 20
         const kerning: TextMeasurer = {
