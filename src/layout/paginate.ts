@@ -31,7 +31,7 @@ import {
     measureContentWidths,
     textMeasuredTogether,
 } from "../text-layout";
-import { fitColumns, tableWidths } from "./column-widths";
+import { fitColumns, tableWidths, verticalLineOf, verticalSpacing } from "./column-widths";
 import {
     type Box,
     type DrawingFrame,
@@ -1195,7 +1195,7 @@ export const paginate = (
             (widths, block) => {
                 const own =
                     block.type === "table"
-                        ? tableWidths(block, contentWidths)
+                        ? tableWidths(block, contentWidths, measuring.measureLineHeight)
                         : measureContentWidths(measurable(block.items), {
                               format: block.format,
                               tabStops: block.tabStops,
@@ -1226,7 +1226,7 @@ export const paginate = (
         const byWidth = fittedTables.get(table) ?? new Map<number, TableBlock>();
         // eslint-disable-next-line functional/immutable-data
         fittedTables.set(table, byWidth);
-        const sized = byWidth.get(width) ?? fitColumns(table, width, contentWidths);
+        const sized = byWidth.get(width) ?? fitColumns(table, width, contentWidths, measuring.measureLineHeight);
         // eslint-disable-next-line functional/immutable-data
         byWidth.set(width, sized);
         return sized;
@@ -1286,17 +1286,23 @@ export const paginate = (
     const textWidthOf = (cell: TableCell): number => (cell.fitText ? Math.max(cell.width, contentWidths(cell.blocks).max) : cell.width);
 
     /**
-     * How tall a cell's text makes its row. Text that runs up or down a cell makes it as tall as a line of its paragraph
-     * mark, whatever its size, as Word breaks the text into lines as long as the row is tall (`word-watertight-tables.docx`
-     * TB6, `word-table-formats.docx` VT1, `word-table-formats2.docx` VT5 to VT7). Guessing, one with a table in it is as
-     * tall as a line of its first paragraph's mark, as a cell ends with a paragraph
+     * How tall a cell's text makes its row. Text that runs up or down a cell makes it as tall as a line of its last
+     * paragraph's mark, as far apart as Word lays out its lines (`verticalLineOf`), at its line spacing, whatever its text's
+     * size, as Word breaks the text into lines as long as the row is tall (`word-watertight-tables.docx` TB6,
+     * `word-table-formats.docx` VT1, `word-table-formats2.docx` VT5 to VT7, `word-stops-vertical-cells2.docx` VC5a to
+     * VC5h: marks of 8 and 20 points beside text of 8, 16 and 20, the last of two paragraphs', and a style's). In a font
+     * whose lines Word's PDFs haven't shown, guessing, as tall as a line of it across the page, and one with a table in it
+     * as tall as a line of its last paragraph's mark, as a cell ends with a paragraph
      */
     const contentHeight = (cell: TableCell): number => {
         if (!cell.vertical) {
             return stackHeight(blocksWithRoom(cell), textWidthOf(cell), true);
         }
-        const first = cell.blocks.find((block): block is ParagraphBlock => block.type === "paragraph")!;
-        return linesHeight(measureParagraph({ ...first, items: [] }, cell.width, undefined, undefined, true).lines);
+        const last = cell.blocks.findLast((block): block is ParagraphBlock => block.type === "paragraph")!;
+        const line = verticalLineOf(last.markFont, measuring.measureLineHeight);
+        return line === undefined
+            ? linesHeight(measureParagraph({ ...last, items: [] }, cell.width, undefined, undefined, true).lines)
+            : verticalSpacing(line, last.format.lineSpacing);
     };
 
     /** How tall a cell makes its row with its own margins, as a cell merged down rows does */
@@ -1330,13 +1336,16 @@ export const paginate = (
         const heights = rows.map(({ cells, height, borderTop, borderBottom }) => {
             const own = cells.filter(({ verticalMerge }) => verticalMerge === undefined);
             const largest = (lengths: readonly number[]): number => Math.max(0, ...lengths);
+            // Text that runs up or down a cell makes no row taller that has cells of text across it: a mark of 20 points
+            // beside a line of 11 doesn't (word-stops-vertical-cells.docx TV5b, word-stops-vertical-cells2.docx VC1g, VC1h)
+            const across = own.filter(({ vertical }) => !vertical);
             // The tallest cell's text, and the largest margins above and below of the row's cells, which needn't be its
             // (word-table-formats2.docx MG1 to MG4)
             const natural =
                 own.length === 0
                     ? 0
                     : largest(own.map(({ marginTop }) => marginTop)) +
-                      largest(own.map(contentHeight)) +
+                      largest((across.length > 0 ? across : own).map(contentHeight)) +
                       largest(own.map(({ marginBottom }) => marginBottom));
             const rowHeight = height === undefined ? natural : height.rule === "exact" ? height.value : Math.max(height.value, natural);
             return rowHeight + borderTop + borderBottom;

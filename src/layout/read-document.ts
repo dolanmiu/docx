@@ -62,7 +62,7 @@ import {
     withoutUndefined,
 } from "../text-layout";
 import { type DataStores, withBoundTextWritten } from "./bound-controls";
-import { lineSizeOf, textLineSizesOf } from "./column-widths";
+import { isVerticalWidthKnown, verticalLineOf } from "./column-widths";
 import { type EquationBox, type LimitPlaces, layOutEquations } from "./equations";
 import {
     type FieldCapitals,
@@ -2681,29 +2681,39 @@ const unsupportedCellOf = (properties: readonly XmlObject[]): string | undefined
 };
 
 /**
- * Why text that runs up or down a cell makes its row taller in a way not yet followed, when it does. Word makes the row
- * as tall as a line of the cell's paragraph marks, whatever the text's size and the space around its paragraphs, and with
- * a picture in it (`word-table-formats.docx` VT1, VT2, `word-table-formats2.docx` VT5 to VT7,
- * `word-stops-vertical-cells.docx` TV5c). Not with a mark larger than its text: a mark of 20 points with text of 11 made
- * the row no taller than a line of 11 (TV5b), so which line Word makes it then isn't known, nor for marks of different
- * fonts or sizes, nor what a table in it does, which Word lays across the cell (TV5d), nor a text box in it.
+ * Why text that runs up or down a cell makes its row taller in a way not yet followed, when it does. Word makes a row of
+ * only such cells as tall as a line of the last paragraph's mark, whatever the text's size and the space around its
+ * paragraphs, and with a picture in it (`word-table-formats.docx` VT1, VT2, `word-table-formats2.docx` VT5 to VT7,
+ * `word-stops-vertical-cells.docx` TV5c, `word-stops-vertical-cells2.docx` VC5a to VC5h), and a row with other cells no
+ * taller (TV5b, VC1g, VC1h). What a table in it does, which Word lays across the cell (TV5d), and a text box in it, aren't
+ * known.
  */
 const unsupportedVerticalOf = (blocks: readonly Block[]): string | undefined => {
     const paragraphs = blocks.filter((block): block is ParagraphBlock => block.type === "paragraph");
     if (paragraphs.length < blocks.length) {
         return "text running up or down a table cell with a table in it";
     }
-    if (paragraphs.some(({ items }) => items.some((item) => item.type === "textBox"))) {
-        return "text running up or down a table cell with a text box in it";
-    }
-    const marks = new Set(paragraphs.map(({ markFont: { font, size } }) => `${font} ${size}`));
-    // A superscript or subscript, such as a note's reference, is as large as its text for its line (TV4), and the numbers
-    // of page fields are text as large as theirs
-    const smaller = paragraphs.some(({ items, markFont }) => textLineSizesOf(items).some((size) => size < lineSizeOf(markFont)));
-    return marks.size > 1 || smaller
-        ? "text running up or down a table cell with marks of different sizes, or larger than its text"
+    return paragraphs.some(({ items }) => items.some((item) => item.type === "textBox"))
+        ? "text running up or down a table cell with a text box in it"
         : undefined;
 };
+
+/**
+ * Why a row of only cells of text that runs up or down can't be laid out, when it can't: Word makes it as tall as a line of
+ * each cell's last paragraph's mark, as far apart as it lays out lines of text that runs up or down in its font
+ * (`verticalLineOf`), which Word's PDFs haven't shown of every font
+ */
+const unsupportedVerticalRowOf = (
+    cells: readonly { readonly vertical?: boolean; readonly blocks: readonly Block[] }[],
+): string | undefined =>
+    cells.length > 0 &&
+    cells.every(({ vertical }) => vertical) &&
+    cells.some(({ blocks }) => {
+        const last = blocks.findLast((block): block is ParagraphBlock => block.type === "paragraph");
+        return last !== undefined && verticalLineOf(last.markFont, () => 0) === undefined;
+    })
+        ? "a table row of only text running up or down, whose mark is in a font whose lines Word's PDFs haven't shown"
+        : undefined;
 
 // The directions of a section's or a cell's text (`w:textDirection`) that run across it, as transitional and strict
 // documents write them, as text does without one: from the left, and from the left with East Asian characters on their
@@ -3225,7 +3235,7 @@ const readTable = (element: XmlObject, reader: Reader): TableBlock | undefined =
                       ? OWN_NOTE_MARK
                       : unseenHeaderCount
                         ? "a deleted row in a table's header of several rows, whose style formats some of its rows"
-                        : cellsUnsupported;
+                        : (cellsUnsupported ?? unsupportedVerticalRowOf(cells.filter(({ verticalMerge }) => verticalMerge === undefined)));
             return {
                 cells,
                 deleted,
@@ -3434,11 +3444,13 @@ const readTable = (element: XmlObject, reader: Reader): TableBlock | undefined =
     // one in a table cell, indented or as a share of the width hasn't been seen
     const older = reader.compatibilityMode !== undefined;
     const marginsBeside = older && sized && givenWidth.width === undefined;
-    // How wide Word makes a column of text that runs up or down is known only of Calibri, so how wide a table sized to its
-    // text with one is isn't known, where the text beside it, or the columns of a table sized to its text it is in, depend
-    // on it
+    // How wide Word makes a column of text that runs up or down isn't known in every font, so how wide a table sized to its
+    // text with one is isn't known there, where the text beside it, or the columns of a table sized to its text it is in,
+    // depend on it
     const verticalUnsupported =
-        fits && (float !== undefined || reader.inSizedTable === true) && tableCells.some(({ vertical }) => vertical)
+        fits &&
+        (float !== undefined || reader.inSizedTable === true) &&
+        tableCells.some((cell) => cell.vertical && !isVerticalWidthKnown(cell))
             ? "text that runs up or down a cell of a table sized to its text, in a table cell or that text flows around"
             : undefined;
     const unsupported =

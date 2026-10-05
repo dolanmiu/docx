@@ -3869,23 +3869,16 @@ describe("readDocument", () => {
                     upTable(p(r(t("a")), r({ "w:drawing": [{ "wp:inline": [{ "wp:extent": { _attr: { cx: 9525, cy: 9525 } } }] }] })))
                         .unsupported,
                 ).to.equal(undefined);
-                // Marks of different sizes, a mark larger than its text (TV5b), or a table in it (TV5d)
-                const reason = "text running up or down a table cell with marks of different sizes, or larger than its text";
-                expect(upTable(p(r(t("a"))), p(pPr(rPr(value("w:sz", 40))), r(t("b")))).unsupported).to.equal(reason);
-                expect(upTable(p(pPr(rPr(value("w:sz", 40))), r(rPr(value("w:sz", 22)), t("b")))).unsupported).to.equal(reason);
-                expect(upTable(p(pPr(rPr(value("w:sz", 22))), r(rPr(value("w:sz", 40)), t("b")))).unsupported).to.equal(undefined);
+                // Marks of different sizes, and a mark larger than its text, as a row of only such cells is as tall as a line of
+                // its last (word-stops-vertical-cells2.docx VC5a to VC5h), but not a table in it (TV5d)
+                expect(upTable(p(r(t("a"))), p(pPr(rPr(value("w:sz", 40))), r(t("b")))).unsupported).to.equal(undefined);
+                expect(upTable(p(pPr(rPr(value("w:sz", 40))), r(rPr(value("w:sz", 22)), t("b")))).unsupported).to.equal(undefined);
                 expect(upTable({ "w:tbl": [] }, p()).unsupported).to.equal("text running up or down a table cell with a table in it");
-                // A page field's number is text, of its run's size
-                const page = (size: number): readonly object[] =>
-                    [
-                        { "w:fldChar": { _attr: { "w:fldCharType": "begin" } } },
-                        { "w:instrText": [{ _attr: { "xml:space": "preserve" } }, "PAGE"] },
-                        { "w:fldChar": { _attr: { "w:fldCharType": "separate" } } },
-                        t("1"),
-                        { "w:fldChar": { _attr: { "w:fldCharType": "end" } } },
-                    ].map((run) => r(rPr(value("w:sz", size)), run));
-                expect(upTable(p(pPr(rPr(value("w:sz", 40))), ...page(22))).unsupported).to.equal(reason);
-                expect(upTable(p(pPr(rPr(value("w:sz", 22))), ...page(40))).unsupported).to.equal(undefined);
+                // Nor, in a row of only such cells, a last mark in a font whose lines running up Word's PDFs haven't shown
+                const aptos = rPr({ "w:rFonts": { _attr: { "w:ascii": "Aptos", "w:hAnsi": "Aptos" } } });
+                const reason = "a table row of only text running up or down, whose mark is in a font whose lines Word's PDFs haven't shown";
+                expect(upTable(p(r(t("a"))), p(pPr(aptos), r(t("b")))).unsupported).to.equal(reason);
+                expect(upTable(p(pPr(aptos), r(t("a"))), p(r(t("b")))).unsupported).to.equal(undefined);
                 // A text box in it, which Word hasn't been seen to lay out there
                 const textBox = r({
                     "w:pict": [
@@ -3902,10 +3895,16 @@ describe("readDocument", () => {
 
             it("should stop at text running up or down a cell of a table sized to its text in a cell of one, or that text flows around", () => {
                 const reason = "text that runs up or down a cell of a table sized to its text, in a table cell or that text flows around";
-                const up = { "w:tbl": [{ "w:tr": [cell([value("w:textDirection", "btLr")], p(r(t("a"))))] }] };
+                // In a font whose lines running up Word's PDFs haven't shown, so how wide Word makes it isn't known
+                const aptos = rPr({ "w:rFonts": { _attr: { "w:ascii": "Aptos", "w:hAnsi": "Aptos" } } });
+                const up = { "w:tbl": [{ "w:tr": [cell([value("w:textDirection", "btLr")], p(r(aptos, t("a"))))] }] };
                 const outer = (inner: object, properties: readonly object[] = []): TableBlock =>
                     readBody([{ "w:tbl": [{ "w:tblPr": properties }, { "w:tr": [cell([], inner, p())] }] }]).blocks[0].block as TableBlock;
                 expect(outer(up).unsupported).to.equal(reason);
+                // In Times New Roman, the font when none is given, it is known (word-stops-vertical-cells2.docx VC1b)
+                expect(outer({ "w:tbl": [{ "w:tr": [cell([value("w:textDirection", "btLr")], p(r(t("a"))))] }] }).unsupported).to.equal(
+                    undefined,
+                );
                 // In a table laid out fixed, which its width doesn't change
                 expect(outer(up, [{ "w:tblLayout": { _attr: { "w:type": "fixed" } } }]).unsupported).to.equal(undefined);
                 const floating = readBody([

@@ -701,7 +701,7 @@ describe("tables laid out as Word lays them out", () => {
         expect(rowHeights(layOut([table]))).to.deep.equal([Math.round((12 * LINE + 400) * 10) / 10]);
     });
 
-    it("should make a row of only text running up a cell as tall as a line of its mark, whatever the text's size (VT1, VT5)", () => {
+    it("should make a row of only text running up a cell as tall as a line of its mark running up, whatever the text's size (VT1, VT5)", () => {
         const table = new Table({
             width: { size: 2000, type: WidthType.DXA },
             columnWidths: [2000],
@@ -724,7 +724,9 @@ describe("tables laid out as Word lays them out", () => {
                 }),
             ],
         });
-        expect(rowHeights(layOut([table]))).to.deep.equal([Math.round(LINE * 10) / 10]);
+        // Calibri's lines running up are a quarter of their size further apart than their size, 275 twips at 11 points
+        // (word-stops-vertical-cells2.docx VC5f)
+        expect(rowHeights(layOut([table]))).to.deep.equal([275]);
     });
 
     it("should apply the parts of a table style for its first row and its bands of rows, as Word applies them (CF11, CF14)", () => {

@@ -5,7 +5,7 @@
  *
  * @module
  */
-import { type ContentWidths, DEFAULT_FONT_SIZE, type TextFont } from "../text-layout";
+import { type ContentWidths, DEFAULT_FONT, DEFAULT_FONT_SIZE, type LineSpacing, type TextFont } from "../text-layout";
 import type { Block, ParagraphBlock, TableBlock, TableCell, TableRow } from "./read-document";
 
 const sum = (values: readonly number[]): number => values.reduce((total, value) => total + value, 0);
@@ -16,6 +16,9 @@ const largest = (values: readonly number[], least = 0): number => values.reduce(
 type Column = { readonly min: number; readonly width: number; readonly given: boolean };
 
 type Measure = (blocks: readonly Block[]) => ContentWidths;
+
+/** How tall a line of text in a font is across the page, in points */
+type LineHeight = (font: TextFont) => number;
 
 /**
  * The columns of a table sized to its text, and, for each cell across several columns with a word wider than their widest
@@ -29,57 +32,147 @@ type Sizing = { readonly columns: readonly Column[]; readonly unsettled: readonl
  */
 const sizingRows = ({ rows, deletedRows = [] }: TableBlock): readonly TableRow[] => [...rows, ...deletedRows];
 
-// How far across a line of text that runs up or down a cell takes, as a share of its size, as Word laid out Calibri
-// (`word-stops-vertical-cells.docx` TV1: lines 275 twips apart at 11 points, 500 at 20 and 200 at 8)
-const VERTICAL_LINE = 1.25;
+// How far apart Word lays out the lines of text that runs up or down a cell in Calibri, as a share of their size, which is
+// further apart than across the page (`word-stops-vertical-cells.docx` TV1: 275 twips at 11 points, 500 at 20 and 200 at
+// 8; `word-stops-vertical-cells2.docx` VC1a, VC1h, VC5a, VC5c)
+const CALIBRI_VERTICAL_LINE = 1.25;
+// The fonts whose lines of text running up or down a cell Word lays out as far apart as across the page: Times New Roman
+// at 10, 11, 12 and 20 points, Arial, Cambria and Courier New (VC1b to VC1g, VC5g)
+const AS_ACROSS = new Set(["times new roman", "arial", "cambria", "courier new"]);
+// How much wider than its lines, and the space around its paragraphs, Word makes the text of a cell that runs up or down,
+// in points: about 7 twips, with borders and without, and with margins and without (VC1 to VC5: 4.6 to 10 twips, which
+// Word's PDFs give each to within 2.4)
+const VERTICAL_EXTRA = 0.35;
 // How far below its text's baseline a picture in a line of it is, as a share of the text's size (TV5c)
 const VERTICAL_DESCENT = 0.25;
 // How much narrower and wider than the layout's estimate Word's width of a line of text that runs up or down a cell could
-// be, in another font than Calibri, as a share of it
+// be, in a font whose lines Word's PDFs haven't shown, as a share of it
 const VERTICAL_RANGE = [0.9, 1.2];
 
 /** The size of a run's line, which a superscript or subscript keeps of its text (`word-stops-vertical-cells.docx` TV4) */
 export const lineSizeOf = ({ size = DEFAULT_FONT_SIZE, lineSize = size }: TextFont): number => lineSize;
 
-/** The line sizes of a paragraph's text and of the numbers its page fields write among it */
-export const textLineSizesOf = (items: ParagraphBlock["items"]): readonly number[] =>
+/** The fonts of a paragraph's text and of the numbers its page fields write among it */
+const textFontsOf = (items: ParagraphBlock["items"]): readonly TextFont[] =>
     items.flatMap((item) =>
         item.type === "text" ||
         item.type === "pageNumber" ||
         item.type === "pageCount" ||
         item.type === "pageReference" ||
         item.type === "sectionNumber"
-            ? [lineSizeOf(item.font)]
+            ? [item.font]
             : [],
     );
 
+/** The line sizes of a paragraph's text and of the numbers its page fields write among it */
+export const textLineSizesOf = (items: ParagraphBlock["items"]): readonly number[] => textFontsOf(items).map(lineSizeOf);
+
 /**
- * About how wide Word makes a paragraph of text that runs up or down a cell, across the cell, in points: one line however
- * long its text (`word-stops-vertical-cells.docx` TV1f), as wide as its largest text, its page fields' numbers among it,
- * not its mark (TV5b), or its picture with the text's descent (TV5c), with the space before and after it.
+ * How far apart Word lays out the lines of text that runs up or down a table cell in a font, in points: in Calibri a
+ * quarter of its size further than its size, further than across the page, and in Times New Roman, Arial, Cambria and
+ * Courier New as far as across the page. Undefined in a font whose lines Word's PDFs haven't shown
  */
-const verticalWidthOf = ({ items, markFont, format }: ParagraphBlock): number => {
+export const verticalLineOf = (font: TextFont, lineHeight: LineHeight): number | undefined => {
+    const name = (font.font ?? DEFAULT_FONT).toLowerCase();
+    return name === "calibri" ? CALIBRI_VERTICAL_LINE * lineSizeOf(font) : AS_ACROSS.has(name) ? lineHeight(font) : undefined;
+};
+
+/**
+ * A line of text that runs up or down a cell at its paragraph's line spacing, in points: its multiple of the line, or the
+ * exact height, or the height at least (`word-stops-vertical-cells2.docx` VC3e to VC3g: 1.5 lines, exactly 20 points and
+ * at least 20 points)
+ */
+export const verticalSpacing = (line: number, spacing: LineSpacing | undefined): number =>
+    spacing === undefined
+        ? line
+        : spacing.rule === "multiple"
+          ? spacing.multiple * line
+          : spacing.rule === "exact"
+            ? spacing.height
+            : Math.max(spacing.height, line);
+
+/**
+ * How wide Word makes a paragraph of text that runs up or down a cell, across the cell, in points: one line however long
+ * its text (`word-stops-vertical-cells.docx` TV1f), as far across as the lines of its largest text and its page fields'
+ * numbers among it are apart (`verticalLineOf`), at its line spacing, not its mark (TV5b, `word-stops-vertical-cells2.docx`
+ * VC5b, VC5h), or its picture with the text's descent (TV5c), with the space before and after it (VC3c, VC3d). An empty
+ * paragraph takes none (VC3a, VC3b, VC3h, VC5d). Undefined where Word's width isn't known: in a font whose lines Word's
+ * PDFs haven't shown, of an empty paragraph with space before or after it, and with space before or after it as a web page
+ * spaces paragraphs
+ */
+const verticalWidthOf = ({ items, markFont, format }: ParagraphBlock, lineHeight: LineHeight): number | undefined => {
+    const fonts = textFontsOf(items);
+    const pictures = items.flatMap((item) => (item.type === "box" ? [item.height] : []));
+    const around = (format.spaceBefore ?? 0) + (format.spaceAfter ?? 0);
+    if (format.autoSpaceBefore === true || format.autoSpaceAfter === true) {
+        return undefined;
+    }
+    if (fonts.length === 0 && pictures.length === 0) {
+        return around === 0 ? 0 : undefined;
+    }
+    const lineFonts = fonts.length > 0 ? fonts : [markFont];
+    const lines = lineFonts.map((font) => verticalLineOf(font, lineHeight));
+    if (lines.includes(undefined)) {
+        return undefined;
+    }
+    const size = largest(lineFonts.map(lineSizeOf));
+    const line = verticalSpacing(largest(lines as readonly number[]), format.lineSpacing);
+    return (
+        around +
+        largest(
+            pictures.map((height) => height + VERTICAL_DESCENT * size),
+            line,
+        )
+    );
+};
+
+/**
+ * About how wide a paragraph of text that runs up or down a cell is, where how wide Word makes it isn't known: its largest
+ * text's lines a quarter of their size further apart than their size, as Calibri's are
+ */
+const verticalEstimateOf = ({ items, markFont, format }: ParagraphBlock): number => {
     const sizes = textLineSizesOf(items);
     const size = largest(sizes.length > 0 ? sizes : [lineSizeOf(markFont)]);
     const pictures = items.flatMap((item) => (item.type === "box" ? [item.height + VERTICAL_DESCENT * size] : []));
-    return (format.spaceBefore ?? 0) + largest(pictures, VERTICAL_LINE * size) + (format.spaceAfter ?? 0);
+    return (format.spaceBefore ?? 0) + largest(pictures, CALIBRI_VERTICAL_LINE * size) + (format.spaceAfter ?? 0);
 };
+
+/**
+ * How wide Word makes the text of a cell that runs up or down, across the cell, in points: as wide as each of its
+ * paragraphs (`verticalWidthOf`), and a little more. Undefined where it isn't known
+ */
+const verticalCellWidthOf = ({ blocks }: Pick<TableCell, "blocks">, lineHeight: LineHeight): number | undefined => {
+    const widths = blocks.map((block) => (block.type === "paragraph" ? verticalWidthOf(block, lineHeight) : 0));
+    return widths.includes(undefined) ? undefined : sum(widths as readonly number[]) + VERTICAL_EXTRA;
+};
+
+/** Whether how wide Word makes the text of a cell that runs up or down is known (`verticalCellWidthOf`) */
+export const isVerticalWidthKnown = (cell: Pick<TableCell, "blocks">): boolean => verticalCellWidthOf(cell, () => 0) !== undefined;
+
+/**
+ * How wide the text of a cell that runs up or down is, across the cell, in points, as `verticalCellWidthOf` says, or where
+ * that isn't known, about as wide, times `across`
+ */
+const verticalWidths =
+    (lineHeight: LineHeight, across: number) =>
+    (cell: TableCell): number =>
+        verticalCellWidthOf(cell, lineHeight) ??
+        across * (sum(cell.blocks.map((block) => (block.type === "paragraph" ? verticalEstimateOf(block) : 0))) + VERTICAL_EXTRA);
 
 /**
  * How narrow and how wide the content of each cell of a table can be, with the cell's margins, as Word sizes the columns
  * by it: with its deleted text in (MK11j). Text that runs up or down a cell is as wide as a line of each of its paragraphs
- * (TV1), times `across`.
+ * (TV1), as `vertical` says.
  */
-const measureCells = (table: TableBlock, measure: Measure, across: number): ReadonlyMap<TableCell, ContentWidths> =>
+const measureCells = (table: TableBlock, measure: Measure, vertical: (cell: TableCell) => number): ReadonlyMap<TableCell, ContentWidths> =>
     new Map(
         sizingRows(table).flatMap(({ cells }) =>
             cells.map((cell) => {
                 // Text fitted to its cell takes the width the cell gives it, as Word squeezes it (`word-stops-tables.docx` TS8)
-                const vertical = across * sum(cell.blocks.map((block) => (block.type === "paragraph" ? verticalWidthOf(block) : 0)));
                 const text = cell.fitText
                     ? { min: 0, max: 0 }
                     : cell.vertical
-                      ? { min: vertical, max: vertical }
+                      ? { min: vertical(cell), max: vertical(cell) }
                       : measure(cell.sizing ?? cell.blocks);
                 const margins = cell.marginLeft + cell.marginRight;
                 return [cell, { ...text, min: text.min + margins, max: text.max + margins }];
@@ -307,31 +400,44 @@ const narrowed = (columns: readonly Column[], room: number): readonly number[] =
  * the table wider than its width and the page (SP15a). Word evens out the rows of a table laid out fixed in the same
  * way (SP14b), but widens no column of it for a long word.
  *
- * Text that runs up or down a cell makes its column about as wide as a line of each of its paragraphs, however long
- * (`word-stops-vertical-cells.docx` TV1), and a long word in it widens nothing (TV2). How wide exactly Word makes it has
- * been seen only of Calibri, so the layout stops where the other cells' widths depend on it: where the columns are
- * narrowed to the room or fitted to the table's width, and where a cell gives it less than a line of its text.
+ * Text that runs up or down a cell makes its column as wide as a line of each of its paragraphs, however long
+ * (`word-stops-vertical-cells.docx` TV1, `verticalCellWidthOf`), and a long word in it widens nothing (TV2). Its columns
+ * are then sized as others are, narrowed to the room around it or widened to the table's width in proportion
+ * (`word-stops-vertical-cells2.docx` VC4a, VC4b). How wide Word makes it in a font whose lines Word's PDFs haven't shown
+ * isn't known, so there the layout stops where the other cells' widths depend on it: where the columns are narrowed to
+ * the room or fitted to the table's width, and where a cell gives it less than a line of its text.
  *
  * @param available - The width the table is in, in points: the page's text, a column's, or a table cell's
  * @param measure - How narrow and how wide the content of a cell can be, in points
+ * @param lineHeight - How tall a line of text in a font is across the page, in points
  */
-export const fitColumns = (table: TableBlock, available: number, measure: Measure): TableBlock => {
+export const fitColumns = (table: TableBlock, available: number, measure: Measure, lineHeight: LineHeight): TableBlock => {
     const { fit, widen } = table;
     if (!fit && !widen) {
         return table;
     }
     // The cells of a table laid out fixed are measured as empty, as Word sizes it by their widths alone (TW2 to TW10, L8)
     const fitAt = (across: number): TableBlock =>
-        fitTo(table, available, widen?.fixed ? measureCells(table, () => ({ min: 0, max: 0 }), 0) : measureCells(table, measure, across));
+        fitTo(
+            table,
+            available,
+            widen?.fixed
+                ? measureCells(
+                      table,
+                      () => ({ min: 0, max: 0 }),
+                      () => 0,
+                  )
+                : measureCells(table, measure, verticalWidths(lineHeight, across)),
+        );
     const laidOut = fitAt(1);
     if (
         laidOut.unsupported !== undefined ||
         widen?.fixed ||
-        !sizingRows(table).some(({ cells }) => cells.some(({ vertical }) => vertical))
+        !sizingRows(table).some(({ cells }) => cells.some((cell) => cell.vertical && verticalCellWidthOf(cell, lineHeight) === undefined))
     ) {
         return laidOut;
     }
-    // How wide Word makes a column of text that runs up or down is known only of Calibri, so where the other cells' widths
+    // How wide Word makes a column of text that runs up or down isn't known in every font, so where the other cells' widths
     // depend on it, in a table narrowed to the room or fitted to its width, or with a column given less, the layout stops
     const widthsOf = ({ rows, unsupported }: TableBlock): string =>
         JSON.stringify([unsupported, rows.map(({ cells }) => cells.filter(({ vertical }) => !vertical).map(({ width }) => width))]);
@@ -462,15 +568,18 @@ const fitTo = (table: TableBlock, available: number, content: ReadonlyMap<TableC
  * its columns.
  *
  * @param measure - How narrow and how wide the content of a cell can be, in points
+ * @param lineHeight - How tall a line of text in a font is across the page, in points
  */
-export const tableWidths = (table: TableBlock, measure: Measure): ContentWidths => {
+export const tableWidths = (table: TableBlock, measure: Measure, lineHeight: LineHeight): ContentWidths => {
     const { fit, widen, borderLeft = 0, borderRight = 0 } = table;
     const laidOut =
-        widen === undefined || widen.share !== undefined ? table : fitColumns(table, widen.width ?? Number.POSITIVE_INFINITY, measure);
+        widen === undefined || widen.share !== undefined
+            ? table
+            : fitColumns(table, widen.width ?? Number.POSITIVE_INFINITY, measure, lineHeight);
     const rows = laidOut === table || laidOut.unsupported !== undefined ? sizingRows(table) : laidOut.rows;
     const borders = (borderLeft + borderRight) / 2;
     if (fit !== undefined && fit.width === undefined) {
-        const content = measureCells(table, measure, 1);
+        const content = measureCells(table, measure, verticalWidths(lineHeight, 1));
         const { columns } = sizeColumns(table, content);
         return {
             min: sum(columns.map(({ min }) => min)) + borders,
