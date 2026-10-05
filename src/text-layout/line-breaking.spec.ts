@@ -163,11 +163,25 @@ describe("layoutLines", () => {
         // Across runs of the same font, and a bookmark between them, but not runs of other fonts
         expect(widths([piece("AAA"), piece(" "), { type: "marker", name: "here" }, piece("AAA")])).to.deep.equal([60]);
         expect(widths([piece("AAA"), piece(" ", { ...kerned, bold: true }), piece("AAA")])).to.deep.equal([70]);
-        // A word longer than its line, kerned, which its characters' own widths don't add up to, stops the layout
+        // A word longer than its line, kerned, is broken where its characters on each line, kerned together, fit
+        // (word-stops-kerning.ts KE6a): with an A and a V 2 points nearer, 6 letters of "AVAV" fit in 50, where 5 would
+        // measured each on its own
+        const avKerning: TextMeasurer = {
+            measureWidth: (value, font) =>
+                [...value].length * 10 - (font.kerning === undefined ? 0 : (value.match(/(?=AV|VA)/g) ?? []).length * 2),
+            measureLineHeight: () => 10,
+            measureDescent: () => 0,
+        };
+        const broken = layoutLines([piece("AVAVAVAVAVAV")], { width: 52, measurer: avKerning });
+        expect(broken.map(({ text: value, textWidth }) => [value, textWidth])).to.deep.equal([
+            ["AVAVAV", 50],
+            ["AVAVAV", 50],
+        ]);
+        // With ligatures, which Word may break inside, it stops the layout
         const longWord = (font: TextFont): string | undefined =>
             layoutLines([piece("AAAAAAAAAAAA", font)], { width: 50, measurer: kerning })[0].unsupported;
-        expect(longWord(kerned)).to.equal("a word longer than its line, kerned or with ligatures");
-        expect(longWord({ ligatures: "standard" })).to.equal("a word longer than its line, kerned or with ligatures");
+        expect(longWord(kerned)).to.equal(undefined);
+        expect(longWord({ ligatures: "standard" })).to.equal("a word longer than its line with ligatures");
         expect(longWord({})).to.equal(undefined);
         // A word broken at a soft hyphen is kerned with the space before it: "AAA A" and the hyphen end at 50 kerned, with
         // room for Word to break there on a line of 52, and at 55 not

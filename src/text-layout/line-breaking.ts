@@ -1667,27 +1667,35 @@ export const layoutLines = (
                 if (mayHyphenate(line, token, 0)) {
                     line = { ...line, unsupported: line.unsupported ?? MAY_HYPHENATE };
                 }
-                // Its characters are measured each on its own, which kerned letters, or those joined into ligatures, don't
-                // add up to, and where Word breaks such a word hasn't been seen
-                if (token.pieces.some(({ font }) => shaped(font))) {
-                    line = { ...line, unsupported: line.unsupported ?? "a word longer than its line, kerned or with ligatures" };
+                // Its characters on each line are measured together, kerned as Word kerns them, so more of them fit on a line
+                // than measured each on its own: 76 letters of "AVAV" in Calibri 11 kerned from 1 point (scripts/layout-probes/stops2/word-stops-kerning.ts
+                // KE6a). Where Word breaks one whose letters it joins into ligatures, which may be inside a ligature, hasn't
+                // been seen
+                if (token.pieces.some(({ font }) => hasLigatures(font))) {
+                    line = { ...line, unsupported: line.unsupported ?? "a word longer than its line with ligatures" };
                 }
+                // eslint-disable-next-line functional/prefer-readonly-type
+                let onLine: Piece[] = [];
+                let from = line.position;
                 for (const character of charactersOf(token.pieces)) {
-                    const characterWidth = widthOf(character, measurer);
                     const room = lastBorder(character)?.room ?? 0;
                     // Each line is as long as it is, for lines of different widths, and one with no room takes the rest
                     if (
                         placed &&
-                        line.position + characterWidth + room > endOf(line) + TOLERANCE &&
+                        from + widthOf([...onLine, ...character], measurer) + room > endOf(line) + TOLERANCE &&
                         limitOf(lines.length + 1) - startOf(lines.length + 1, false) > 0
                     ) {
                         line = wrap({ ...line, heights: withToken(line.heights, token), started: true });
                         line = { ...line, position: line.position + room };
+                        onLine = [];
+                        from = line.position;
                     }
+                    onLine = [...onLine, ...character];
+                    const reached = from + widthOf(onLine, measurer);
                     line = {
                         ...line,
-                        position: line.position + characterWidth,
-                        end: line.position + characterWidth,
+                        position: reached,
+                        end: reached,
                         text: line.text + textOf(character),
                         letters: line.letters + lengthOf(character),
                     };
