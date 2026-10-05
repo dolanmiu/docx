@@ -22,12 +22,12 @@
  * Soft hyphens:
  * SH16a to SH16i: a line whose word's soft hyphen has its hyphen end 3.5, 5, 7, 9, 11, 13, 15, 17 and 19 twips before the
  *   margin, after a tab to a left stop that places it (SH13 broke at 19.9, and SH2 didn't at 2.7)
- * SH16j to SH16l: justified lines of 13 spaces whose hyphen ends 0.5, 1.5 and 2.5 twips before the end of the line: whether
+ * SH16j to SH16l: justified lines of 15 spaces whose hyphen ends 0.5, 1.5 and 2.5 twips before the end of the line: whether
  *   Word squeezes one Word wouldn't break at on a line that isn't justified
  * SH17: a justified line where "Do-" fits with 200 twips to spare and "Donau-" only squeezed: which Word takes
  *
  * Justified lines:
- * JU4a, JU4b: justified lines of 10 ordinary spaces and 5 en spaces whose last word is past the end by 27% and 35% of the
+ * JU4a, JU4b: justified lines of 10 ordinary spaces and 6 en spaces whose last word is past the end by 27% and 35% of the
  *   ordinary spaces' width, under a quarter of all the spaces' width: whether the en spaces count in the squeeze (JU1 had
  *   only en, em or ideographic spaces, which Word didn't squeeze)
  *
@@ -109,7 +109,7 @@ const justifiedGap = (name: string, gap: number): Paragraph => {
     });
 };
 
-/** JU4: a justified line of 10 ordinary and 5 en spaces whose last word is past its end by a share of the ordinary spaces */
+/** JU4: a justified line of 10 ordinary and 6 en spaces whose last word is past its end by a share of the ordinary spaces */
 const enSpaces = (name: string, share: number): Paragraph => {
     const words = ["of", "the", "by", "in", "to", "and", "on", "of", "the", "by", "in", "to", "and", "on", "of"];
     const first = `${name} ${words.slice(0, 9).join(" ")}${EN_SPACE}${words.slice(9).join(EN_SPACE)} lighthouse`;
