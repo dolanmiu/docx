@@ -226,6 +226,12 @@ describe("fitColumns", () => {
         expect(fitColumns(given, 300, measure).unsupported).to.equal("a long word in text that runs up or down a table cell");
     });
 
+    it("should keep the width a cell gives text fitted to it, however long, as Word squeezes the text", () => {
+        // word-stops-tables.docx TS8
+        const fitted = { ...table([[{ ...cell(0, "aaaaaaaaaa", 30), fitText: true }, cell(1, "aaaa", 50)]]), fit: undefined, widen: {} };
+        expect(fitColumns(fitted, 300, measure)).to.equal(fitted);
+    });
+
     describe("in a table whose cells all have widths", () => {
         /** A table of rows of cells that all have widths */
         const given = (rows: readonly (readonly Cell[])[], widen: TableBlock["widen"] = {}): TableBlock => ({

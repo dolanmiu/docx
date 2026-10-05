@@ -295,16 +295,17 @@ export type CellPosition = {
  * (`word-table-formats.docx` CF1 to CF6). Word applies bands only of a style that gives their size, and counts them from
  * the first row and column that aren't the first row or column it applies. It doesn't apply `wholeTable`.
  *
- * A table's header of several rows is its first row, all of it, and its bands of rows start below it. With its first row
- * turned off, all of the header is in the band before the first, the second band (`word-compat-off.docx` CS2a to CS2f).
- * A header of one row is a row like the others (CS2c).
+ * A table's header of several rows is its first row, all of it, with its corner cells in each of its rows
+ * (`word-stops-tables.docx` TS2), and its bands of rows start below it. With its first row turned off, all of a header of
+ * two rows is in the band before the first, the second band (`word-compat-off.docx` CS2a to CS2f), but the bands of one of
+ * three start at its first row, as though it weren't a header (TS3). A header of one row is a row like the others (CS2c).
  */
 export const conditionalTypesOf = (
     { row, rows, cell, cells, headerRows = 0 }: CellPosition,
     look: TableLook,
     bands: { readonly rows?: number; readonly columns?: number },
 ): readonly string[] => {
-    const header = headerRows > 1 ? headerRows : 0;
+    const header = headerRows > 1 && (look.firstRow || headerRows < 3) ? headerRows : 0;
     const inHeader = row < header;
     const firstRow = look.firstRow && (header > 0 ? inHeader : row === 0);
     const lastRow = look.lastRow && row === rows - 1;

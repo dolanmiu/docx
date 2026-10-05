@@ -37,7 +37,8 @@ const measureCells = (table: TableBlock, measure: Measure): ReadonlyMap<TableCel
     new Map(
         sizingRows(table).flatMap(({ cells }) =>
             cells.map((cell) => {
-                const text = measure(cell.sizing ?? cell.blocks);
+                // Text fitted to its cell takes the width the cell gives it, as Word squeezes it (`word-stops-tables.docx` TS8)
+                const text = cell.fitText ? { min: 0, max: 0 } : measure(cell.sizing ?? cell.blocks);
                 const margins = cell.marginLeft + cell.marginRight;
                 return [cell, { ...text, min: text.min + margins, max: text.max + margins }];
             }),
