@@ -295,12 +295,17 @@ describe("layOutEquation", () => {
         expect((layOutEquation(equation(run("F", style("b"))), 11) as EquationBox).width).to.be.closeTo(6.229, 0.03);
         expect((layOutEquation(equation(run("\u03b1", style("bi"))), 11) as EquationBox).width).to.be.closeTo(7.385, 0.03);
         expect((layOutEquation(equation(run("d", style("p")), "x"), 11) as EquationBox).width).to.be.closeTo(12.296, 0.03);
-        // A bold digit, an italic Greek letter in the italic style, a script letter in the letterlike symbols, and a Greek
-        // symbol Word draws in italic
-        expect(widthOf(run("1", style("b")))).to.be.a("number");
+        // An italic Greek letter in the italic style, a script letter in the letterlike symbols, and a Greek symbol Word draws
+        // in italic
         expect(widthOf(run("\u03b1", style("i")))).to.equal(widthOf("\u03b1"));
         expect(widthOf(run("B", alphabet("script")))).to.be.a("number");
         expect(widthOf("\u03d5")).to.be.a("number");
+        // Digits are upright, as they are, in an italic or plain run, but a bold digit, which Unicode has as it has bold letters,
+        // or one in another alphabet, Word hasn't been seen drawing
+        expect(widthOf(run("1", style("i")))).to.equal(widthOf(run("1", style("p"))));
+        for (const properties of [[style("b")], [style("bi")], [alphabet("double-struck"), style("p")]]) {
+            expect(widthOf(run("1", ...properties))).to.equal("an equation in an alphabet or style Word hasn't been seen drawing");
+        }
         // Bold and the spacing of its characters, which Word leaves as they are (EQ28)
         const bold = { "m:r": [{ "w:rPr": [{ "w:b": {} }, { "w:spacing": { _attr: { "w:val": 40 } } }] }, { "m:t": ["a+b=c"] }] };
         expect(widthOf(bold)).to.equal(widthOf("a+b=c"));

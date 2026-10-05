@@ -201,16 +201,16 @@ const LARGE_OPERATORS = new Set([..."\u2211\u220f\u2210\u222b\u222c\u222d\u222e\
 const SPACES = new Set([..." \u2000\u2001\u2002\u2003\u2004\u2005\u2006\u2007\u2008\u2009\u200a\u205f"]);
 
 // The alphabets of Unicode's mathematical alphanumerics Word draws a run's letters in, by the run's alphabet (`m:scr`) and
-// style (`m:sty`): the first capital, small letter and digit of each. A letter an alphabet doesn't have is in Unicode's
+// style (`m:sty`): the first capital and small letter of each. A letter an alphabet doesn't have is in Unicode's
 // letterlike symbols (`word-stops-equations.docx` EQ19)
-type Alphabet = { readonly capital: number; readonly small?: number; readonly greek?: readonly [number, number]; readonly digit?: number };
+type Alphabet = { readonly capital: number; readonly small?: number; readonly greek?: readonly [number, number] };
 const ALPHABETS: ReadonlyMap<string, Alphabet> = new Map([
-    ["roman b", { capital: 0x1d400, small: 0x1d41a, greek: [0x1d6a8, 0x1d6c2], digit: 0x1d7ce }],
+    ["roman b", { capital: 0x1d400, small: 0x1d41a, greek: [0x1d6a8, 0x1d6c2] }],
     ["roman i", { capital: 0x1d434, small: 0x1d44e, greek: [0x1d6e2, 0x1d6fc] }],
     ["roman bi", { capital: 0x1d468, small: 0x1d482, greek: [0x1d71c, 0x1d736] }],
     ["script p", { capital: 0x1d49c, small: 0x1d4b6 }],
     ["fraktur p", { capital: 0x1d504, small: 0x1d51e }],
-    ["double-struck p", { capital: 0x1d538, small: 0x1d552, digit: 0x1d7d8 }],
+    ["double-struck p", { capital: 0x1d538, small: 0x1d552 }],
 ]);
 // The letters Unicode puts among its letterlike symbols rather than the mathematical alphabets
 const LETTERLIKE: ReadonlyMap<number, number> = new Map([
@@ -272,7 +272,9 @@ const drawnAs = (character: string, alphabet: string, style: string | undefined)
         if (alphabet === "roman" && (style === undefined || style === "i") && ITALIC_SYMBOLS.has(character)) {
             return String.fromCodePoint(ITALIC_SYMBOLS.get(character)!);
         }
-        return /^\d$/.test(character) && alphabet !== "roman"
+        // A digit is upright, as it is, in an italic run, but bold, or in another alphabet, as Unicode has some, hasn't been
+        // seen
+        return /^\d$/.test(character) && (alphabet !== "roman" || style === "b" || style === "bi")
             ? stop("an equation in an alphabet or style Word hasn't been seen drawing")
             : (DRAWN_AS.get(character) ?? character);
     }

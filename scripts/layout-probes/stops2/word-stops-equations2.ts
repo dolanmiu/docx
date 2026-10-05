@@ -25,6 +25,8 @@
  * - EQ40: equations too long for their line: in a line of text, broken at a relation, with fractions, and in a justified
  *   paragraph; displayed, with fractions and at relations
  * - EQ41: normal text (`m:nor`) in a fraction, a script, and displayed, and in a run of its own font
+ * - EQ45: digits in bold, bold italic and double-struck runs, which Unicode has in its mathematical alphabets as it has
+ *   letters ("an equation in an alphabet or style Word hasn't been seen drawing")
  *
  * word-stops-equation-limits.docx and word-stops-equation-small.docx: the same sums, integrals and fractions with the
  * document's maths settings putting sums' limits beside them and integrals' under and over them (EQ42), and displayed
@@ -156,6 +158,7 @@ const CASES: readonly (readonly [string, readonly string[], boolean])[] = [
         false,
     ],
     ["EQ41", ["\\frac{\\text{ab}}{c}", "x^{\\text{ab}}", "x\\text{ if }y"], true],
+    ["EQ45", ["\\mathbf{12}", "\\boldsymbol{12}", "\\mathbb{1}", "\\mathbf{2x}", "x^{\\mathbf{2}}"], false],
 ];
 
 const atoms = (count: number, operator = "+"): string =>
