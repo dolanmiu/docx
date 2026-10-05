@@ -626,7 +626,7 @@ describe("paginate", () => {
             ).to.equal(undefined);
         });
 
-        it("should give the empty paragraph that ends a section no room for its borders or automatic spacing, and stop where a box could go on through it, as Word does", () => {
+        it("should give the empty paragraph that ends a section no room for its borders or automatic spacing, and end a box of borders at it, as Word does", () => {
             // word-stops-text.ts PB2a, PB2b
             const SECOND = { sections: [SECTION, { ...SECTION, start: "continuous" as const }] };
             const ending: ParagraphBlock = { ...bordered("end", 0), items: [], sectionBreak: true };
@@ -635,10 +635,11 @@ describe("paginate", () => {
             // own, each with its top and bottom borders
             const plainEnding: ParagraphBlock = { ...paragraph("end", 0), items: [], sectionBreak: true };
             expect(topsOf(document([bordered("a", 1), plainEnding, [bordered("b", 1), 1]], SECOND))).to.deep.equal([[15, 33]]);
-            // Whether a box of its borders before or after it goes on through it hasn't been seen
-            const through = "the empty paragraph that ends a section with the same borders as the paragraph before or after it";
-            expect(numbersOf(document([bordered("a", 1), ending, [paragraph("b", 1), 1]], SECOND)).stoppedAt).to.equal(through);
-            expect(numbersOf(document([paragraph("a", 1), ending, [bordered("b", 1), 1]], SECOND)).stoppedAt).to.equal(through);
+            // With the same borders as the paragraph before or after it, or both, a box of them ends at it, and its borders
+            // take no room: each is a box of its own, as with none on it (word-stops-text2.ts PB3c to PB3e)
+            expect(topsOf(document([bordered("a", 1), ending, [bordered("b", 1), 1]], SECOND))).to.deep.equal([[15, 33]]);
+            expect(topsOf(document([bordered("a", 1), ending, [paragraph("b", 1), 1]], SECOND))).to.deep.equal([[15, 28]]);
+            expect(topsOf(document([paragraph("a", 1), ending, [bordered("b", 1), 1]], SECOND))).to.deep.equal([[10, 25]]);
             const automatic: ParagraphBlock = {
                 ...paragraph("end", 0, { autoSpaceBefore: true, autoSpaceAfter: true }),
                 items: [],

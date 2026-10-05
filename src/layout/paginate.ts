@@ -5339,16 +5339,6 @@ export const paginate = (
                 // Whether Word's box of borders goes on across a section break isn't known. Guessing, it goes on
                 stopAt("paragraphs with the same borders either side of a section break");
             }
-            if (
-                block.sectionBreak &&
-                [previous?.block, next].some((other, at) => sharesBorders(block, other, at === 0 ? "before" : "after"))
-            ) {
-                // Paragraphs with the same borders either side of the empty paragraph that ends a section, which has none, are
-                // boxes of their own (word-stops-text.ts PB3a), and its borders take no room beside paragraphs without them
-                // (PB2a), but whether a box of its borders before or after it goes on through it isn't known. Guessing, the
-                // box ends there
-                stopAt("the empty paragraph that ends a section with the same borders as the paragraph before or after it");
-            }
         }
         if (block.type === "paragraph" && block.sectionBreak && !endsAfterTable(index)) {
             // The empty paragraph that ends a section after a paragraph takes no room, in Word and LibreOffice. In Word, the
