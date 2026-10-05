@@ -2,8 +2,8 @@
  * Generates src/layout/cambria-math.ts: what of Cambria Math, the font Word lays out equations in, Word's maths layout
  * needs. From the font's own file, which Word installs: each glyph's width and the bottom and top of its ink, the glyphs
  * of each character, and of its OpenType MATH table, the constants Word builds equations up by, each glyph's italic
- * correction, its kerning beside scripts, the smaller glyphs of scripts (`ssty`), and the
- * taller and wider glyphs of brackets, roots, sums and braces. Word's PDFs of scripts/layout-probes/word-stops-equations.ts
+ * correction, its kerning beside scripts, the smaller glyphs of scripts (`ssty`), the flatter accents of tall parts
+ * (`flac`), and the taller and wider glyphs of brackets, roots, sums and braces. Word's PDFs of scripts/layout-probes/word-stops-equations.ts
  * show it uses them: each glyph Word drew is one of the font's, and where it drew them is where these put them.
  *
  * Only the characters of the blocks equations are written in are kept: Latin, Greek, the accents, punctuation, letterlike
@@ -13,7 +13,7 @@
  * Usage:
  *   npm run run-ts -- scripts/generate-cambria-math.ts ["/Applications/Microsoft Word.app/Contents/Resources/DFonts/Cambria.ttc"]
  */
-// cspell:ignore ssty ttcf hmtx hhea maxp loca glyf cmap DFonts GSUB gsub
+// cspell:ignore ssty flac ttcf hmtx hhea maxp loca glyf cmap DFonts GSUB gsub
 import { readFileSync, writeFileSync } from "node:fs";
 
 const OUTPUT = "src/layout/cambria-math.ts";
@@ -253,29 +253,38 @@ const constructions = (
 const vertical = constructions(true);
 const horizontal = constructions(false);
 
-// The smaller glyphs of scripts: the alternates of the GSUB table's ssty feature
-const scripts = new Map<number, readonly number[]>();
-{
+/**
+ * The glyphs a feature of the GSUB table puts in place of each glyph, as its single substitutions (type 1) and alternate
+ * sets (type 3), with those of its extensions (type 7)
+ */
+const substitutions = (feature: string): ReadonlyMap<number, readonly number[]> => {
+    const found = new Map<number, readonly number[]>();
     const gsub = table("GSUB");
     const features = gsub + u16(gsub + 6);
     const lookups = gsub + u16(gsub + 8);
     for (let index = 0; index < u16(features); index++) {
         const record = features + 2 + index * 6;
-        if (tag(record) !== "ssty") {
+        if (tag(record) !== feature) {
             continue;
         }
-        const feature = features + u16(record + 4);
-        for (let at = 0; at < u16(feature + 2); at++) {
-            const lookup = lookups + u16(lookups + 2 + u16(feature + 4 + at * 2) * 2);
+        const at = features + u16(record + 4);
+        for (let which = 0; which < u16(at + 2); which++) {
+            const lookup = lookups + u16(lookups + 2 + u16(at + 4 + which * 2) * 2);
             for (let sub = 0; sub < u16(lookup + 4); sub++) {
                 let subtable = lookup + u16(lookup + 6 + sub * 2);
-                if (u16(lookup) === 7) {
+                let type = u16(lookup);
+                if (type === 7) {
+                    type = u16(subtable + 2);
                     subtable += u32(subtable + 4);
                 }
                 const glyphs = coverage(subtable + u16(subtable + 2));
-                glyphs.forEach((glyph, which) => {
-                    const set = subtable + u16(subtable + 6 + which * 2);
-                    scripts.set(
+                glyphs.forEach((glyph, covered) => {
+                    if (type === 1) {
+                        found.set(glyph, [u16(subtable) === 1 ? (glyph + i16(subtable + 4)) & 0xffff : u16(subtable + 6 + covered * 2)]);
+                        return;
+                    }
+                    const set = subtable + u16(subtable + 6 + covered * 2);
+                    found.set(
                         glyph,
                         Array.from({ length: u16(set) }, (_, alternate) => u16(set + 2 + alternate * 2)),
                     );
@@ -283,7 +292,11 @@ const scripts = new Map<number, readonly number[]>();
             }
         }
     }
-}
+    return found;
+};
+// The smaller glyphs of scripts (the ssty feature's alternates), and the flatter accents Word draws over a tall part (flac)
+const scripts = substitutions("ssty");
+const flattened = new Map([...substitutions("flac")].map(([glyph, [flatter]]) => [glyph, flatter] as const));
 
 // The characters kept, and the glyphs they lead to
 const kept = [...characters]
@@ -303,6 +316,11 @@ for (const glyph of [...glyphs]) {
         for (const [part] of found?.parts ?? []) {
             glyphs.add(part);
         }
+    }
+}
+for (const glyph of [...glyphs]) {
+    if (flattened.has(glyph)) {
+        glyphs.add(flattened.get(glyph)!);
     }
 }
 const ordered = [...glyphs].sort((one, other) => one - other);
@@ -331,8 +349,8 @@ const output = `/**
  * What of Cambria Math, the font Word lays out equations in, Word's maths layout needs, in the font's units, 2048 to the
  * em: each glyph's width and the bottom and top of its ink, the glyph of each character, and of the font's OpenType MATH
  * table, the constants Word builds equations up by, each glyph's italic correction, its kerning beside scripts, the
- * smaller glyphs of scripts, and the taller and wider glyphs of brackets, roots, sums and braces. Glyphs are by their
- * number in the font.
+ * smaller glyphs of scripts, the flatter accents of tall parts, and the taller and wider glyphs of brackets, roots, sums
+ * and braces. Glyphs are by their number in the font.
  *
  * Generated by scripts/generate-cambria-math.ts from Word's own copy of the font. Do not edit by hand.
  *
@@ -383,6 +401,11 @@ ${lines(
 /** The smaller glyphs a glyph is drawn as in a script, and in a script's script */
 export const SCRIPT_GLYPHS: ReadonlyMap<number, readonly number[]> = new Map([
 ${lines(keptOnly(scripts).map(([glyph, alternates]) => list([glyph, alternates])))}
+]);
+
+/** The flatter glyph Word draws an accent as over a part taller than the MATH table's flattenedAccentBaseHeight */
+export const FLATTENED_ACCENTS: ReadonlyMap<number, number> = new Map([
+${lines(keptOnly(flattened).map((entry) => list(entry)))}
 ]);
 
 /** The taller glyphs of a glyph, smallest first: [glyph, how tall] */

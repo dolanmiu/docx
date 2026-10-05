@@ -48,7 +48,10 @@ change probes in smaller documents, as Word couldn't open the batch's: those hav
 
 `word-stops-equations2.ts` has the equations' cases Word's PDFs left open (EQ30 to EQ45), in
 `word-stops-equations2`, `word-stops-equation-limits`, `word-stops-equation-small` and `word-stops-equation-spacing`,
-for the next batch too.
+whose PDFs Word saved in round 25. Read them with `word-stops-equations.py`, as its own: they showed scripts' sizes
+rounded down to the half point (EQ30), Word's sizes of roots' signs, brackets, accents and braces, and where it puts
+them (EQ31 to EQ37), its spacing of symbols and operators (EQ32, EQ39), bold digits (EQ45), and the maths settings
+followed (EQ42 to EQ44). Equations too long for their line (EQ40) and normal text (EQ41) still stop.
 
 `word-stops-east-asian2.ts` has what `word-stops-east-asian.ts` left stopping, for the next batch too: indents of part of a
 character on a grid that snaps to characters (GR14), the cases around GR3, GR5, GR7, GR8 and GR10 on grids (GR16), which

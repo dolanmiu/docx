@@ -21,8 +21,6 @@ MARGIN = 300
 # Calibri 11's line, as Word lays it out: its ascent and descent, in units
 ASCENT = 1950 / 2048 * 11 / UNIT
 DESCENT = 550 / 2048 * 11 / UNIT
-# Calibri 11's size in units, which Word draws at 46 (11.04 points) but lays out at 11 points
-SIZE = 11 / UNIT
 
 
 def objects(data):
@@ -285,7 +283,10 @@ def read(path):
             before = [glyph for glyph in probe["line"] if glyph[0] < first]
             after = [glyph for glyph in probe["line"] if glyph[0] > first]
             if before and after:
-                end = before[-1][0] + before[-1][5] / 1000 * SIZE
+                # The text before it is in its paragraph's size, which Word draws at the nearest 1/300 inch: 11.04 points
+                # for 11, 9.12 for 9 (word-stops-equations2.docx EQ30)
+                size = round(before[-1][4] * UNIT * 2) / 2 / UNIT
+                end = before[-1][0] + before[-1][5] / 1000 * size
                 entry["width"] = round((after[0][0] - end) * UNIT, 3)
         out[name] = entry
     return out, probes

@@ -2,9 +2,10 @@
  * Lays out equations (`m:oMath`) as Word does, in Cambria Math, by the rules of the font's OpenType MATH table, which
  * Word's maths layout follows: letters in italic, digits and operators upright, each as wide as Cambria Math draws it,
  * with its italic correction after it and the spaces TeX puts between atoms; and fractions, scripts, roots, sums,
- * brackets, matrices, accents, bars, functions, limits and braces built up by the table's constants, each part as tall as
- * its ink. Word's PDFs of scripts/layout-probes/word-equations.ts, word-equations2.ts and word-stops-equations.ts showed
- * where Word draws each glyph, to within its grid of 1/300 inch, and how tall it makes the line: as tall as the ink of the
+ * brackets, matrices, accents, bars, functions, limits, braces, boxes, equation arrays and phantoms built up by the
+ * table's constants, each part as tall as its ink. Word's PDFs of scripts/layout-probes/word-equations.ts,
+ * word-equations2.ts, word-stops-equations.ts and word-stops-equations2.ts showed where Word draws each glyph, to within
+ * its grid of 1/300 inch, and how tall it makes the line: as tall as the ink of the
  * equation, with Cambria Math's line gap (300 of its 2048 units) above it, or as a line of Cambria Math, whichever is the
  * taller.
  *
@@ -13,11 +14,13 @@
  * @module
  */
 // cspell:ignore oMath fName funcPr nabla limLoc subHide supHide degHide begChr endChr sepChr mcJc baseJc plcHide noBar ssty
-// cspell:ignore limLow limUpp groupChr borderBox eqArr sPre undOvr subSup mcPr mPr dPr naryPr accPr barPr radPr fPr
+// cspell:ignore limLow limUpp groupChr borderBox eqArr sPre undOvr subSup mcPr mPr dPr naryPr accPr barPr radPr fPr strikeBLTR strikeTLBR
+// cspell:ignore phant transp aln
 import { type XmlObject, attributesOf, childrenOf, find, isOff, pointsOf } from "../text-layout";
 import {
     CHARACTER_RUNS,
     EXTENDED_SHAPES,
+    FLATTENED_ACCENTS,
     GLYPH_METRICS,
     HORIZONTAL_ASSEMBLIES,
     HORIZONTAL_VARIANTS,
@@ -31,6 +34,13 @@ import {
 
 /** An equation laid out in its line: how wide it is, and how far it goes above its baseline and below it, in points */
 export type EquationBox = { readonly width: number; readonly ascent: number; readonly descent: number };
+
+/**
+ * Where a displayed sum's and integral's limits go, under and over it (`undOvr`) or beside it (`subSup`), when its own
+ * properties don't say (`m:limLoc`): as the document's maths settings say (`m:naryLim`, `m:intLim`), sums' under and over
+ * them and integrals' beside them unless they say otherwise
+ */
+export type LimitPlaces = { readonly sums: "undOvr" | "subSup"; readonly integrals: "undOvr" | "subSup" };
 
 // Cambria Math's units to the em
 const UNITS = 2048;
@@ -83,21 +93,26 @@ const kernAt = (glyph: number, corner: number, height: number): number => {
 /**
  * How a part of an equation is laid out, as TeX's styles are: its level, 0 for a displayed equation, 1 for one in a line
  * of text, 2 for a script and 3 for a script's script; whether it is cramped, as a denominator is, with its superscripts
- * lower; whether the equation is displayed; and the equation's size, in points
+ * lower; whether it is in a lower limit, which TeX cramps but Word hasn't been seen to; whether the equation is
+ * displayed; and the equation's size, in points
  */
-type Style = { readonly level: 0 | 1 | 2 | 3; readonly cramped: boolean; readonly display: boolean; readonly size: number };
+type Style = {
+    readonly level: 0 | 1 | 2 | 3;
+    readonly cramped: boolean;
+    readonly lower?: boolean;
+    readonly display: boolean;
+    readonly size: number;
+    /** Where the document puts the limits of sums and integrals that don't say where theirs go */
+    readonly limits: LimitPlaces;
+};
 
 /**
- * The size of a script, or a script's script, in points: 73% and 60% of the equation's, to the nearest half point, as
- * Word draws them: 8 and 6.5 points at 11 (`word-stops-equations.docx` EQ10, EQ11, where where Word puts each glyph shows
- * the size it lays it out in). Whether Word rounds it to the nearest half point, or down, or to a quarter, the probes'
- * size doesn't tell, so a size where those differ stops the layout
+ * The size of a script, or a script's script, in points: 73% and 60% of the equation's, rounded down to the half point,
+ * as Word draws them: 8 and 6.5 points at 11, 6.5 and 5 at 9, 7.5 and 6 at 10.5, and 8.5 and 7 at 12
+ * (`word-stops-equations.docx` EQ10, EQ11, `word-stops-equations2.docx` EQ30, where where Word puts each glyph shows the
+ * size it lays it out in)
  */
-const scriptSize = (size: number, percent: number): number => {
-    const exact = (size * percent) / 100;
-    const sizes = new Set([Math.round(exact * 2) / 2, Math.floor(exact * 2) / 2, Math.round(exact * 4) / 4]);
-    return sizes.size === 1 ? [...sizes][0] : stop("an equation Word builds up in a size whose scripts' size Word hasn't shown");
-};
+const scriptSize = (size: number, percent: number): number => Math.floor((size * percent) / 50) / 2;
 
 const sizeOf = (style: Style): number =>
     style.level < 2
@@ -110,11 +125,14 @@ const inPoints = (units: number, style: Style): number => (units * sizeOf(style)
 /** A constant of the MATH table in points at a style's size */
 const constantOf = (name: keyof typeof MATH_CONSTANTS, style: Style): number => inPoints(MATH_CONSTANTS[name], style);
 
-/** The style of a script: a script's, or a script's script's, cramped when its base is, or when it is a subscript */
-const scriptStyle = (style: Style, cramped: boolean): Style => ({
+/**
+ * The style of a script: a script's, or a script's script's, cramped when its base is, but not for being a subscript, as
+ * TeX's are (`word-stops-equations2.docx` EQ31c), and in a lower limit when it is one
+ */
+const scriptStyle = (style: Style, lower = false): Style => ({
     ...style,
     level: style.level < 2 ? 2 : 3,
-    cramped: style.cramped || cramped,
+    ...(style.lower || lower ? { lower: true } : {}),
 });
 
 const cramp = (style: Style): Style => ({ ...style, cramped: true });
@@ -176,11 +194,12 @@ const glyphBox = (glyph: number, size: number): Box => {
 
 // ---- Characters
 
-// The binary operators, relations, brackets, punctuation, bars and slashes Word has been seen to space
-// (`word-equations2.docx` EQ7, `word-stops-equations.docx` EQ20)
+// The binary operators, relations, brackets, punctuation, bars and slashes Word has been seen to space, set operators,
+// logic and arrows among them (`word-equations2.docx` EQ7, `word-stops-equations.docx` EQ20, `word-stops-equations2.docx`
+// EQ39)
 const CLASSES: ReadonlyMap<string, AtomClass> = new Map([
-    ...[..."+−±∓×÷⋅∗∘"].map((character) => [character, "binary"] as const),
-    ...[..."=<>≤≥≠≈≡∼→←"].map((character) => [character, "relation"] as const),
+    ...[..."+−±∓×÷⋅∗∘∪∩∧⊕"].map((character) => [character, "binary"] as const),
+    ...[..."=<>≤≥≠≈≡∼→←⇒∈⊂↦"].map((character) => [character, "relation"] as const),
     ...[..."([{"].map((character) => [character, "open"] as const),
     ...[...")]}"].map((character) => [character, "close"] as const),
     ...[...",;:!?."].map((character) => [character, "punctuation"] as const),
@@ -188,9 +207,9 @@ const CLASSES: ReadonlyMap<string, AtomClass> = new Map([
 ]);
 
 // The signs Word's PDFs showed as ordinary atoms beside letters and operators: the prime, infinity, the partial
-// differential sign and nabla, and the zero-width space LaTeX's empty base is written as (`word-equations2.docx` EQ7,
-// `word-stops-equations.docx` EQ11e)
-const SIGNS = new Set([..."'\u2032\u221e\u2202\u2207\u200b"]);
+// differential sign and nabla, the zero-width space LaTeX's empty base is written as, and "for all" and "not"
+// (`word-equations2.docx` EQ7, `word-stops-equations.docx` EQ11e, `word-stops-equations2.docx` EQ39h, EQ39o)
+const SIGNS = new Set([..."'\u2032\u221e\u2202\u2207\u200b\u2200\u00ac"]);
 
 // Large operators written as text rather than as n-ary operators (`m:nary`), which Word's PDFs showed only next to
 // themselves, with no space between them and an integral's italic correction after it (`word-stops-equations.docx` EQ27k)
@@ -211,6 +230,15 @@ const ALPHABETS: ReadonlyMap<string, Alphabet> = new Map([
     ["script p", { capital: 0x1d49c, small: 0x1d4b6 }],
     ["fraktur p", { capital: 0x1d504, small: 0x1d51e }],
     ["double-struck p", { capital: 0x1d538, small: 0x1d552 }],
+]);
+// The digits Word draws a run's digits as, by its alphabet and style: as they are, upright, in a plain or italic run, and
+// Unicode's mathematical bold digits in a bold or bold italic one, and its double-struck ones (`word-stops-equations2.docx`
+// EQ45): the first of each. Digits in other alphabets haven't been seen
+const DIGITS: ReadonlyMap<string, number> = new Map([
+    ["roman i", 0x30],
+    ["roman b", 0x1d7ce],
+    ["roman bi", 0x1d7ce],
+    ["double-struck p", 0x1d7d8],
 ]);
 // The letters Unicode puts among its letterlike symbols rather than the mathematical alphabets
 const LETTERLIKE: ReadonlyMap<number, number> = new Map([
@@ -272,11 +300,13 @@ const drawnAs = (character: string, alphabet: string, style: string | undefined)
         if (alphabet === "roman" && (style === undefined || style === "i") && ITALIC_SYMBOLS.has(character)) {
             return String.fromCodePoint(ITALIC_SYMBOLS.get(character)!);
         }
-        // A digit is upright, as it is, in an italic run, but bold, or in another alphabet, as Unicode has some, hasn't been
-        // seen
-        return /^\d$/.test(character) && (alphabet !== "roman" || style === "b" || style === "bi")
-            ? stop("an equation in an alphabet or style Word hasn't been seen drawing")
-            : (DRAWN_AS.get(character) ?? character);
+        if (/^\d$/.test(character)) {
+            const digits = DIGITS.get(`${alphabet} ${style ?? (alphabet === "roman" ? "i" : "p")}`);
+            return digits === undefined
+                ? stop("an equation in an alphabet or style Word hasn't been seen drawing")
+                : String.fromCodePoint(digits + code - 0x30);
+        }
+        return DRAWN_AS.get(character) ?? character;
     }
     const found = ALPHABETS.get(`${alphabet} ${style ?? (alphabet === "roman" ? "i" : "p")}`);
     if (found === undefined || (greek && found.greek === undefined)) {
@@ -376,11 +406,23 @@ const texSpace = (before: AtomClass, after: AtomClass, style: Style): number => 
     return space < 0 ? (style.level > 1 ? 0 : -space) : space;
 };
 
+// The pairs of atoms Word has been seen to space as TeX does where that isn't as it spaces ordinary atoms: a fraction
+// beside a letter, a digit, punctuation or another fraction, and a letter or digit before a sum or a function
+// (`word-stops-equations2.docx` EQ32)
+const SPACED_AS_TEX = new Set([
+    "ordinary inner",
+    "inner ordinary",
+    "inner inner",
+    "punctuation inner",
+    "inner punctuation",
+    "ordinary operator",
+]);
+
 /**
  * The space between two parts of a row, in eighteenths of an em: TeX's, but none between an operator that isn't binary
- * and a relation after it (`word-stops-equations.docx` EQ20a). Or why it can't be laid out: where TeX puts a thin space
- * beside a fraction, brackets, a sum or a function that it wouldn't beside an ordinary atom, which Word hasn't been seen
- * to do or not
+ * and a relation after it (`word-stops-equations.docx` EQ20a). Or why it can't be laid out: where TeX spaces a fraction, a
+ * sum or a function otherwise than an ordinary atom beside an atom Word hasn't been seen to space it beside, such as a
+ * bracket
  */
 const spaceBetween = (previous: Part, next: Part, style: Style): number => {
     const before = previous.unary ? "ordinary" : (previous.after ?? previous.kind);
@@ -389,10 +431,8 @@ const spaceBetween = (previous: Part, next: Part, style: Style): number => {
     }
     const space = texSpace(before, next.kind, style);
     const plain = (kind: AtomClass): AtomClass => (kind === "inner" || kind === "operator" ? "ordinary" : kind);
-    if (space !== texSpace(plain(before), plain(next.kind), style)) {
-        stop(
-            "an equation with a fraction, brackets, a sum or a function beside a letter or digit, which Word spaces in a way not yet followed",
-        );
+    if (space !== texSpace(plain(before), plain(next.kind), style) && !SPACED_AS_TEX.has(`${before} ${next.kind}`)) {
+        stop("an equation with a fraction, a sum or a function beside a bracket or bar, which Word spaces in a way not yet followed");
     }
     return space;
 };
@@ -404,11 +444,11 @@ const OPERANDS = new Set<AtomClass>(["ordinary", "close", "fence", "inner"]);
 const ENDS = new Set<AtomClass | undefined>(["relation", "close", "punctuation", undefined]);
 
 /**
- * The classes of a row's atoms, past its spaces, as Word spaces them: a binary operator between operands is binary, and
- * one at the start, or after another operator, a relation, an opening bracket or punctuation, or before a relation,
- * bracket, punctuation or the end, is unary, an ordinary atom with no space either side (`word-equations.docx` EQ1n,
- * `word-equations2.docx` EQ8c, `word-stops-equations.docx` EQ20, EQ27). One after an operator that isn't binary but
- * before an operand hasn't been seen
+ * The classes of a row's atoms, past its spaces, as Word spaces them: a binary operator between operands, an operator
+ * that isn't binary among them, is binary, and one at the start, or after another operator, a relation, an opening
+ * bracket or punctuation, or before a relation, bracket, punctuation or the end, is unary, an ordinary atom with no space
+ * either side (`word-equations.docx` EQ1n, `word-equations2.docx` EQ8c, `word-stops-equations.docx` EQ20, EQ27,
+ * `word-stops-equations2.docx` EQ39j, EQ39k)
  */
 const classesOf = (parts: readonly Part[]): readonly Part[] =>
     parts.reduce<readonly Part[]>((resolved, part, index) => {
@@ -417,10 +457,8 @@ const classesOf = (parts: readonly Part[]): readonly Part[] =>
         }
         const previous = resolved.at(-1);
         const next = parts[index + 1]?.kind;
-        const binary = previous !== undefined && !previous.unary && OPERANDS.has(previous.after ?? previous.kind) && !ENDS.has(next);
-        if (!binary && previous?.unary === true && !ENDS.has(next) && next !== "binary") {
-            stop("an equation with operators next to each other, which Word spaces in a way not yet followed");
-        }
+        const binary =
+            previous !== undefined && (previous.unary === true || OPERANDS.has(previous.after ?? previous.kind)) && !ENDS.has(next);
         return [...resolved, binary ? part : { ...part, kind: "ordinary", unary: true }];
     }, []);
 
@@ -518,6 +556,9 @@ const PROPERTIES = new Set([
     "m:limLowPr",
     "m:limUppPr",
     "m:groupChrPr",
+    "m:borderBoxPr",
+    "m:eqArrPr",
+    "m:phantPr",
 ]);
 
 /** The parts of an argument, such as a fraction's numerator (`m:num`), in turn */
@@ -565,7 +606,9 @@ const built = (name: string, element: unknown, style: Style): Part => {
         case "m:nary":
             return { box: nary(children, style), kind: "operator", after: "ordinary" };
         case "m:d":
-            return { box: delimited(children, style), kind: "inner" };
+            // Brackets are spaced as the brackets they are, as an ordinary atom, rather than as TeX's inner atom
+            // (`word-stops-equations2.docx` EQ32c to EQ32e)
+            return { box: delimited(children, style), kind: "ordinary" };
         case "m:m":
             return { box: matrix(children, style), kind: "ordinary" };
         case "m:acc":
@@ -579,6 +622,12 @@ const built = (name: string, element: unknown, style: Style): Part => {
             return { box: limit(children, style, name === "m:limUpp"), kind: "ordinary" };
         case "m:groupChr":
             return { box: grouped(children, style), kind: "ordinary" };
+        case "m:borderBox":
+            return { box: bordered(children, style), kind: "ordinary" };
+        case "m:eqArr":
+            return { box: equationArray(children, style), kind: "ordinary" };
+        case "m:phant":
+            return { box: phantom(children, style), kind: "ordinary" };
         default:
             return stop(BUILT_UP);
     }
@@ -588,29 +637,25 @@ const built = (name: string, element: unknown, style: Style): Part => {
  * A fraction (`m:f`): its numerator above its denominator, each centred on a rule on the maths axis, by the MATH table's
  * shifts and gaps, as Word builds it up (`word-stops-equations.docx` EQ10). In a line of text, its numerator and
  * denominator are in a script's size, and their own fractions in a script's script's; displayed, they and their own are
- * in the equation's size, and only the outer fraction is spaced as a displayed one. One whose numerator or denominator is
- * itself a fraction is a fifth of an em wider, half each side. One without a rule (`noBar`) is a stack, as for a binomial
- * (EQ10e). Skewed and linear fractions haven't been seen
+ * in the fraction's size, the equation's or a script's (`word-stops-equations2.docx` EQ37b), and only the outer fraction
+ * is spaced as a displayed one. One whose numerator or denominator is a fraction alone is a fifth of an em wider, half
+ * each side. One without a rule (`noBar`) is a stack, as for a binomial (EQ10e). Skewed and linear fractions haven't been
+ * seen
  */
 const fraction = (children: readonly XmlObject[], style: Style): Box => {
     const type = propertyOf(childrenOf(find(children, "m:fPr")), "m:type") ?? "bar";
     if (type !== "bar" && type !== "noBar") {
         stop("a skewed or linear fraction");
     }
-    if (style.display && style.level > 1) {
-        stop("a fraction in a script of a displayed equation");
-    }
-    const inner: Style["level"] = style.display && style.level < 2 ? 1 : style.level < 2 ? 2 : 3;
+    const inner: Style["level"] = style.display ? (style.level < 2 ? 1 : style.level) : style.level < 2 ? 2 : 3;
     const numerator = settled(argument(find(children, "m:num"), { ...style, level: inner }));
     const denominator = settled(argument(find(children, "m:den"), { ...style, level: inner, cramped: true }));
     const nested = ["m:num", "m:den"].map((part) =>
         childrenOf(find(children, part)).filter((child) => !IGNORED.has(Object.keys(child)[0])),
     );
-    if (nested.some((parts) => parts.length > 1 && parts.some((child) => "m:f" in child))) {
-        stop("a fraction beside other parts in a fraction's numerator or denominator");
-    }
-    // A fraction of fractions is wider (`word-stops-equations.docx` EQ10c, EQ10d, EQ10cd, EQ10dd)
-    const padding = nested.some((parts) => parts.some((child) => "m:f" in child)) ? inPoints(UNITS, { ...style, level: 1 }) / 5 : 0;
+    // A fraction of fractions is wider, but not one with a fraction beside other parts (`word-stops-equations.docx` EQ10c,
+    // EQ10d, EQ10cd, EQ10dd, `word-stops-equations2.docx` EQ37a)
+    const padding = nested.some((parts) => parts.length === 1 && "m:f" in parts[0]) ? inPoints(UNITS, { ...style, level: 1 }) / 5 : 0;
     const width = Math.max(numerator.width, denominator.width) + padding;
     const axis = constantOf("axisHeight", style);
     const shown = style.level === 0;
@@ -678,8 +723,9 @@ const kerningOf = (base: Box, script: Box, shift: number, superscript: boolean):
  * both moved apart, half each, to leave the table's gap between them, as Word does (`word-stops-equations.docx` EQ11,
  * EQ13). The superscript goes after its base's italic correction, both are kerned with their base by the MATH table, and
  * Word puts the table's space after them. Beside a sum or integral (`operator`), they aren't kerned, and an integral's
- * subscript goes back by its italic correction (EQ13b, EQ13d). A cramped superscript, as in a denominator, hasn't been
- * seen
+ * subscript goes back by its italic correction (EQ13b, EQ13d). A superscript in a cramped part, such as a denominator, a
+ * radicand or what is under a bar or an accent, is raised by the table's shift for cramped ones
+ * (`word-stops-equations2.docx` EQ31); one in a lower limit, which TeX cramps, hasn't been seen
  */
 const attachScripts = (
     base: Box,
@@ -692,10 +738,10 @@ const attachScripts = (
     let up = 0;
     let down = 0;
     if (superscript !== undefined) {
-        if (style.cramped) {
-            stop("a superscript in a cramped part of an equation, such as a denominator or a root");
+        if (style.lower && !style.cramped) {
+            stop("a superscript in a lower limit, which Word hasn't been seen to cramp or not");
         }
-        up = constantOf("superscriptShiftUp", style);
+        up = constantOf(style.cramped ? "superscriptShiftUpCramped" : "superscriptShiftUp", style);
         if (boxed) {
             up = Math.max(up, base.height - constantOf("superscriptBaselineDropMax", style));
         }
@@ -735,8 +781,8 @@ const attachScripts = (
 const scripts = (children: readonly XmlObject[], style: Style): Part => {
     const baseParts = partsOf(childrenOf(find(children, "m:e")), style);
     const base = baseParts.length === 0 ? stop("a part of an equation with nothing in it") : rowOf(baseParts, style);
-    const subscript = find(children, "m:sub") === undefined ? undefined : argument(find(children, "m:sub"), scriptStyle(style, true));
-    const superscript = find(children, "m:sup") === undefined ? undefined : argument(find(children, "m:sup"), scriptStyle(style, false));
+    const subscript = find(children, "m:sub") === undefined ? undefined : argument(find(children, "m:sub"), scriptStyle(style));
+    const superscript = find(children, "m:sup") === undefined ? undefined : argument(find(children, "m:sup"), scriptStyle(style));
     const real = baseParts.filter((part) => !part.space);
     return {
         box: attachScripts(base, subscript, superscript, style),
@@ -744,39 +790,52 @@ const scripts = (children: readonly XmlObject[], style: Style): Part => {
     };
 };
 
+// The least height Word takes a radicand to have, in Cambria Math's units, choosing the size of its sign: 1250, which
+// Word's PDFs put above 1241 and no higher than 1261, as `word-stops-equations2.docx` EQ35b and EQ35c show (√A's smallest
+// sign, √𝑥ᵢ's next), and EQ35d (√𝑎ᵢⱼ's next in a line of text, though its sign goes as far below its baseline as the
+// radicand), so a radicand whose sign would be another size between 1242 and 1260 stops the layout
+const ROOT_LEAST = [1242, 1250, 1260];
+// How far above the radicand's ink, in Cambria Math's units, Word centres the root's sign over it: 250, which Word's PDFs
+// put between 240 and 260 (`word-stops-equations2.docx` EQ35)
+const ROOT_ABOVE = 250;
+
 /**
- * A root (`m:rad`): Cambria Math's root sign, the first of its sizes as tall as the radicand's ink, the gap above it (the
- * MATH table's displayed gap, but for a script's), the rule and the space reserved above the rule; drawn the rule's
- * thickness below where it sits, unless that is too high to reach below the radicand, or too low to leave the gap above
- * it; with the rule over the radicand, and its degree, in a script's script's size, raised and kerned by the table
- * (`word-stops-equations.docx` EQ12, EQ10f). Its ink, and the room reserved above its rule, are its height
+ * A root (`m:rad`): Cambria Math's root sign, the first of its sizes whose ink is as tall as the radicand's, taken as at
+ * least 1250 units tall (see {@link ROOT_LEAST}), with the MATH table's gap and rule above it (the displayed gap only when
+ * the equation is displayed); centred on the radicand's ink, as tall, with 250 units above it (see {@link ROOT_ABOVE}),
+ * unless that leaves less than the gap above the radicand, with the rule over the radicand, and its degree, in a script's
+ * script's size, raised and kerned by the table (`word-stops-equations.docx` EQ12, EQ10f, `word-stops-equations2.docx`
+ * EQ35). Its ink, and the room reserved above its rule, are its height. Or why it can't be laid out: a radicand whose
+ * sign's size Word's PDFs leave between two, as within the range they leave its least height
  */
 const radical = (children: readonly XmlObject[], style: Style): Box => {
     const properties = childrenOf(find(children, "m:radPr"));
     const content = settled(argument(find(children, "m:e"), cramp(style)));
     const rule = constantOf("radicalRuleThickness", style);
     const extra = constantOf("radicalExtraAscender", style);
-    const gap = constantOf(style.level > 1 ? "radicalVerticalGap" : "radicalDisplayStyleVerticalGap", style);
-    const sign = grownGlyph(
-        glyphOf("√"),
-        content.height + content.depth + gap + rule + extra,
-        style,
-        "a root taller than Cambria Math's tallest root sign",
+    const gap = constantOf(style.level > 0 ? "radicalVerticalGap" : "radicalDisplayStyleVerticalGap", style);
+    const tall = (least: number): number => Math.max(content.height, inPoints(least, style));
+    const [lower, height, higher] = ROOT_LEAST.map((least) =>
+        grownGlyph(glyphOf("√"), tall(least) + content.depth + gap + rule, style, "a root taller than Cambria Math's tallest root sign"),
     );
-    const box = glyphBox(sign, sizeOf(style));
-    const shift = Math.max(Math.min(-rule, box.depth - content.depth), content.height + gap + rule - box.height);
-    const top = box.height + shift;
+    if (lower !== higher) {
+        stop("a root whose sign's size Word's PDFs leave between two");
+    }
+    const box = glyphBox(height, sizeOf(style));
+    const centred = (tall(ROOT_LEAST[1]) - content.depth + inPoints(ROOT_ABOVE, style) + box.height + box.depth) / 2;
+    const top = Math.max(centred, content.height + gap + rule);
+    const shift = top - box.height;
     let x = 0;
-    let height = top + extra;
+    let reach = top + extra;
     if (!isOn(properties, "m:degHide")) {
         const degree = settled(argument(find(children, "m:deg"), { ...style, level: 3, cramped: false }));
         const raise = ((box.height + box.depth) * MATH_CONSTANTS.radicalDegreeBottomRaisePercent) / 100 - box.depth + shift + degree.depth;
         x = Math.max(0, constantOf("radicalKernBeforeDegree", style) + degree.width + constantOf("radicalKernAfterDegree", style));
-        height = Math.max(height, raise + degree.height);
+        reach = Math.max(reach, raise + degree.height);
     }
     return {
         width: x + box.width + content.width,
-        height,
+        height: reach,
         depth: Math.max(content.depth, box.depth - shift),
         italic: 0,
         characters: false,
@@ -804,15 +863,16 @@ const INTEGRALS = new Set([..."∫∬∭∮∯∰∱∲∳"]);
  * axis, in a line of text Cambria Math's glyph and displayed its third size, as Word draws ∑, ∏, ∫ and ∮
  * (`word-stops-equations.docx` EQ13); its limits under and over it when displayed (`m:limLoc` "undOvr", a sum's unless
  * told otherwise), and beside it as scripts otherwise, with no kerning, an integral's subscript back by its italic correction,
- * and with no space after them; and a thin space before its argument, but after limits beside it when displayed. One that
- * grows with its argument (`m:grow`), or in a script, hasn't been seen
+ * and with no space after them; and a thin space before its argument, but after limits beside it when displayed. In a
+ * script, it is as in a line of text, in the script's size (`word-stops-equations2.docx` EQ37c). One that grows with its
+ * argument (`m:grow`), or in a script's script, hasn't been seen
  */
 const nary = (children: readonly XmlObject[], style: Style): Box => {
     const properties = childrenOf(find(children, "m:naryPr"));
     const character = propertyOf(properties, "m:chr") ?? "∫";
     const integral = INTEGRALS.has(character);
-    const location = propertyOf(properties, "m:limLoc") ?? (integral ? "subSup" : "undOvr");
-    if (isOn(properties, "m:grow") || style.level > 1 || (location !== "subSup" && location !== "undOvr")) {
+    const location = propertyOf(properties, "m:limLoc") ?? (integral ? style.limits.integrals : style.limits.sums);
+    if (isOn(properties, "m:grow") || style.level > 2 || (location !== "subSup" && location !== "undOvr")) {
         stop(BUILT_UP);
     }
     const plain = glyphOf(character);
@@ -822,7 +882,7 @@ const nary = (children: readonly XmlObject[], style: Style): Box => {
     const shift = constantOf("axisHeight", style) - (own.height - own.depth) / 2;
     const operator: Box = { ...own, height: own.height + shift, depth: own.depth - shift, last: undefined, first: undefined };
     const subscript = isOn(properties, "m:subHide") ? undefined : argument(find(children, "m:sub"), scriptStyle(style, true));
-    const superscript = isOn(properties, "m:supHide") ? undefined : argument(find(children, "m:sup"), scriptStyle(style, false));
+    const superscript = isOn(properties, "m:supHide") ? undefined : argument(find(children, "m:sup"), scriptStyle(style));
     let limits: Box;
     if (location === "undOvr" && style.level === 0) {
         limits = limitsOf(operator, subscript, superscript, style);
@@ -867,9 +927,9 @@ const BRACKETS: ReadonlyMap<string, string> = new Map([
     ["⟩", "〉"],
 ]);
 // How tall Word makes a bracket around a part, as a share of twice the part's ink's furthest reach from the maths axis:
-// its PDFs show a share of 0.78 to 0.84 (`word-stops-equations.docx` EQ10e, EQ14, EQ15), so a part whose bracket would be
-// another size between them stops the layout
-const BRACKET_SHARES = [0.78, 0.84];
+// its PDFs show a share of 0.816 to 0.840 (`word-stops-equations.docx` EQ10e, EQ14, EQ15, `word-stops-equations2.docx`
+// EQ33, EQ34), so a part whose bracket would be another size between them stops the layout
+const BRACKET_SHARES = [0.816, 0.84];
 
 /**
  * Brackets around parts (`m:d`), with separators between them (`m:sepChr`): each bracket the first of its sizes as tall
@@ -918,15 +978,16 @@ const delimited = (children: readonly XmlObject[], style: Style): Box => {
     };
 };
 
-// The least gap Word's PDFs leave between the rows of a matrix too tall for a line of Cambria Math each: between 613 and
-// 697 of its units (`word-stops-equations.docx` EQ15b)
-const ROW_GAP = 613;
+// The least gap Word leaves between the ink of a matrix's rows, in Cambria Math's units: 653, which its PDFs put between
+// 636 and 670 (`word-stops-equations.docx` EQ15b, `word-stops-equations2.docx` EQ33)
+const ROW_GAP = 653;
 
 /**
- * A matrix (`m:m`): its rows a line of Cambria Math apart, as single spaced, its columns an em apart, each as wide as its
- * widest cell, with its cells lined up in them as its columns' properties say (`m:mcJc`), centred unless they say
- * otherwise, and the whole centred on the maths axis (`word-stops-equations.docx` EQ15). Rows too tall to be a line apart,
- * whose gap Word's PDFs leave between two, empty cells, and other spacing and lining up haven't been seen
+ * A matrix (`m:m`): each row a line of Cambria Math below the one before, as single spaced, or further, where its ink
+ * would come nearer the row before's than a gap (see {@link ROW_GAP}), its columns an em apart, each as wide as its widest
+ * cell, with its cells lined up in them as its columns' properties say (`m:mcJc`), centred unless they say otherwise, and
+ * the whole centred on the maths axis (`word-stops-equations.docx` EQ15, `word-stops-equations2.docx` EQ33). Empty
+ * cells, and other spacing and lining up, haven't been seen
  */
 const matrix = (children: readonly XmlObject[], style: Style): Box => {
     const properties = childrenOf(find(children, "m:mPr"));
@@ -948,32 +1009,40 @@ const matrix = (children: readonly XmlObject[], style: Style): Box => {
     }
     const columns = Math.max(...rows.map((row) => row.length));
     const widths = Array.from({ length: columns }, (_, column) => Math.max(0, ...rows.map((row) => row[column]?.width ?? 0)));
-    const single = inPoints(ASCENT + DESCENT, style);
-    const heights = rows.map((row) => Math.max(...row.map((cell) => cell.height)));
-    const depths = rows.map((row) => Math.max(...row.map((cell) => cell.depth)));
-    // Each row a line below the one before, unless its ink and the row before's would come nearer than the gap
-    if (heights.some((height, index) => index > 0 && depths[index - 1] + height + inPoints(ROW_GAP, style) > single)) {
-        stop("a matrix whose rows are too tall to be single spaced");
-    }
-    const [top] = heights;
-    const bottom = depths.at(-1)! + single * (rows.length - 1);
-    const shift = constantOf("axisHeight", style) - (top - bottom) / 2;
     return {
+        ...rowsBox(
+            rows.map((row) => Math.max(...row.map((cell) => cell.height))),
+            rows.map((row) => Math.max(...row.map((cell) => cell.depth))),
+            style,
+        ),
         width: widths.reduce((total, width) => total + width, 0) + inPoints(UNITS, style) * (columns - 1),
-        height: top + shift,
-        depth: bottom - shift,
-        italic: 0,
-        characters: false,
     };
 };
 
-// How wide an accent may be, at most, as a share of its base: Word's PDFs show a share of 0.72 to 0.77 (`word-stops-equations.docx` EQ16)
-const ACCENT_SHARE = 0.75;
+/**
+ * Rows of a matrix or an equation array, by how far each one's ink goes above and below its baseline: each row a line of
+ * Cambria Math below the one before, or further, where their ink would come nearer than a gap (see {@link ROW_GAP}), and
+ * the whole centred on the maths axis. Its width is left to its caller
+ */
+const rowsBox = (heights: readonly number[], depths: readonly number[], style: Style): Box => {
+    const single = inPoints(ASCENT + DESCENT, style);
+    const drops = heights.slice(1).map((height, index) => Math.max(single, depths[index] + height + inPoints(ROW_GAP, style)));
+    const [top] = heights;
+    const bottom = drops.reduce((total, drop) => total + drop, 0) + depths.at(-1)!;
+    const shift = constantOf("axisHeight", style) - (top - bottom) / 2;
+    return { width: 0, height: top + shift, depth: bottom - shift, italic: 0, characters: false };
+};
+
+// How wide an accent may be, at most, as a share of its base: Word's PDFs show a share of 0.901 to 0.959
+// (`word-stops-equations.docx` EQ16f, `word-stops-equations2.docx` EQ31e), so a base whose accent would be another size
+// between them stops the layout
+const ACCENT_SHARES = [0.901, 0.959];
 
 /**
- * An accent over a part (`m:acc`): the widest of its sizes no wider than three quarters of the part, raised by as far as
- * the part's ink goes above the MATH table's base height for accents (`word-stops-equations.docx` EQ16). It takes the
- * part's width, with its italic correction
+ * An accent over a part (`m:acc`): the widest of its sizes no wider than its share of the part (see {@link ACCENT_SHARES}),
+ * raised by as far as the part's ink goes above the MATH table's base height for accents, and drawn flatter over a part
+ * taller than its height for flatter accents (`word-stops-equations.docx` EQ16, `word-stops-equations2.docx` EQ31e). It
+ * takes the part's width, with its italic correction
  */
 const accented = (children: readonly XmlObject[], style: Style): Box => {
     const character = propertyOf(childrenOf(find(children, "m:accPr")), "m:chr") ?? "\u0302";
@@ -981,8 +1050,14 @@ const accented = (children: readonly XmlObject[], style: Style): Box => {
     const width = base.width + base.italic;
     const plain = glyphOf(character);
     const variants = HORIZONTAL_VARIANTS.get(plain) ?? [[plain, 0] as const];
-    const fitting = variants.filter(([, wide], index) => index === 0 || inPoints(wide, style) <= width * ACCENT_SHARE);
-    const accent = glyphBox(fitting.at(-1)![0], sizeOf(style));
+    const [narrower, wider] = ACCENT_SHARES.map(
+        (share) => variants.filter(([, wide], index) => index === 0 || inPoints(wide, style) <= width * share).at(-1)![0],
+    );
+    if (narrower !== wider) {
+        stop("an accent whose size Word's PDFs leave between two");
+    }
+    const flat = base.height > constantOf("flattenedAccentBaseHeight", style) ? FLATTENED_ACCENTS.get(narrower) : undefined;
+    const accent = glyphBox(flat ?? narrower, sizeOf(style));
     const raise = Math.max(0, base.height - constantOf("accentBaseHeight", style));
     return { width, height: Math.max(base.height, raise + accent.height), depth: base.depth, italic: 0, characters: false };
 };
@@ -1000,6 +1075,81 @@ const barred = (children: readonly XmlObject[], style: Style): Box => {
     }
     const bottom = base.depth + constantOf("underbarVerticalGap", style) + constantOf("underbarRuleThickness", style);
     return { ...base, depth: bottom + constantOf("underbarExtraDescender", style), characters: false };
+};
+
+// The properties of a box (`m:borderBoxPr`) that hide its sides or strike through it, which Word's PDFs haven't shown
+const BOX_SIDES = ["m:hideTop", "m:hideBot", "m:hideLeft", "m:hideRight", "m:strikeH", "m:strikeV", "m:strikeBLTR", "m:strikeTLBR"];
+
+/**
+ * A box around a part (`m:borderBox`): its border as far from the part's ink on every side as a bar over or under it,
+ * the MATH table's gap and rule (`word-stops-equations.docx` EQ18c, `word-stops-equations2.docx` EQ36). One with a side
+ * hidden or struck through hasn't been seen
+ */
+const bordered = (children: readonly XmlObject[], style: Style): Box => {
+    const properties = childrenOf(find(children, "m:borderBoxPr"));
+    if (BOX_SIDES.some((name) => isOn(properties, name))) {
+        stop("a box with a side hidden or struck through");
+    }
+    const base = settled(argument(find(children, "m:e"), style));
+    const room = constantOf("overbarVerticalGap", style) + constantOf("overbarRuleThickness", style);
+    return { width: base.width + 2 * room, height: base.height + room, depth: base.depth + room, italic: 0, characters: false };
+};
+
+/**
+ * An equation array (`m:eqArr`): its rows spaced as a matrix's (see {@link matrix}), each lined up at the ampersand in it,
+ * which isn't drawn, what is before it right-aligned and what is after it left-aligned, with the space between the atoms
+ * either side of it after it, and the whole centred on the maths axis (`word-stops-equations2.docx` EQ37d). Rows lined up
+ * otherwise, with more than one ampersand or none, or at an alignment mark (`m:aln`), rows spaced otherwise, and arrays
+ * lined up otherwise with the line, haven't been seen
+ */
+const equationArray = (children: readonly XmlObject[], style: Style): Box => {
+    const properties = childrenOf(find(children, "m:eqArrPr"));
+    const unseen =
+        ["m:maxDist", "m:objDist"].some((name) => isOn(properties, name)) ||
+        ["m:rSp", "m:rSpRule"].some((name) => (Number(propertyOf(properties, name) ?? 0) || 0) !== 0);
+    if (unseen || (propertyOf(properties, "m:baseJc") ?? "center") !== "center") {
+        stop("an equation array spaced or lined up in a way not yet followed");
+    }
+    const rows = children
+        .filter((child) => "m:e" in child)
+        .map((row) => {
+            const elements = childrenOf(row["m:e"]);
+            const parts = partsOf(elements, style);
+            const at = parts.findIndex((part) => part.character === "&");
+            const marked = elements.some(
+                (element) => "m:r" in element && find(childrenOf(find(childrenOf(element["m:r"]), "m:rPr")), "m:aln"),
+            );
+            if (at === -1 || marked || parts.some((part, index) => index !== at && part.character === "&")) {
+                stop("an equation array lined up in a way not yet followed");
+            }
+            const before = parts.slice(0, at);
+            const whole = rowOf([...before, ...parts.slice(at + 1)], style);
+            const left = before.length === 0 ? 0 : (({ width, italic }) => width + italic)(rowOf(before, style));
+            return { left, right: whole.width + whole.italic - left, height: whole.height, depth: whole.depth };
+        });
+    if (rows.length === 0) {
+        stop("a part of an equation with nothing in it");
+    }
+    return {
+        ...rowsBox(
+            rows.map(({ height }) => height),
+            rows.map(({ depth }) => depth),
+            style,
+        ),
+        width: Math.max(...rows.map(({ left }) => left)) + Math.max(...rows.map(({ right }) => right)),
+    };
+};
+
+/**
+ * A phantom (`m:phant`): its part, shown or not, taking its room (`word-stops-equations2.docx` EQ37e). One that takes
+ * none of its width, height or depth, or that the spacing around it sees through, hasn't been seen
+ */
+const phantom = (children: readonly XmlObject[], style: Style): Box => {
+    const properties = childrenOf(find(children, "m:phantPr"));
+    if (["m:zeroWid", "m:zeroAsc", "m:zeroDesc", "m:transp"].some((name) => isOn(properties, name))) {
+        stop("a phantom that takes less than its part's room");
+    }
+    return { ...settled(argument(find(children, "m:e"), style)), characters: false };
 };
 
 /**
@@ -1026,9 +1176,38 @@ const limit = (children: readonly XmlObject[], style: Style, upper: boolean): Bo
 };
 
 /**
- * A brace or other character grown over or under a part (`m:groupChr`): Cambria Math's character made of its parts as wide
- * as the part, where it stays unless it would be nearer the part's ink than the MATH table's gap (`word-stops-equations.docx`
- * EQ18a, EQ18b). One of the character's own sizes, for a narrower part, hasn't been seen
+ * The glyphs of a character made of its parts as wide as a part, in points: those that aren't repeated, joined by no less
+ * than the least overlap, as Word drew a brace without repeats (`word-stops-equations.docx` EQ18a), and the repeated ones
+ * too, where those are too narrow (`word-stops-equations2.docx` EQ37h). Or why it can't be laid out: a part narrower than
+ * the parts not repeated can be joined to, each to the next by as much as both can, hasn't been seen
+ */
+const assembly = (
+    parts: readonly (readonly [number, number, number, number, boolean])[],
+    width: number,
+    style: Style,
+): readonly number[] => {
+    const fixed = parts.filter(([, , , , repeated]) => !repeated);
+    const total = fixed.reduce((sum, [, , , wide]) => sum + wide, 0);
+    const joins = fixed.slice(1).reduce((sum, [, start], index) => sum + Math.min(fixed[index][2], start), 0);
+    if (inPoints(total - joins, style) > width) {
+        stop("a character grown over or under a part narrower than the character made of its parts");
+    }
+    const longest = total - MIN_CONNECTOR_OVERLAP * (fixed.length - 1);
+    return (inPoints(longest, style) < width ? parts : fixed).map(([glyph]) => glyph);
+};
+
+// How wide a brace of one of its own sizes may be, at most, as a share of its part: Word's PDFs show a share of 0.921 to
+// 1.086 (`word-stops-equations2.docx` EQ37f, EQ37g), so a part whose brace would be another size between them stops the
+// layout
+const BRACE_SHARES = [0.921, 1.086];
+
+/**
+ * A brace or other character grown over or under a part (`m:groupChr`): the widest of the character's sizes no wider
+ * than its share of the part (see {@link BRACE_SHARES}), or its smallest, centred on the part; or, for a part wider than
+ * its widest size, Cambria Math's character made of its parts as wide as the part, with as many of its repeated parts as
+ * it needs; where it stays unless it would be nearer the part's ink than the MATH table's gap (`word-stops-equations.docx`
+ * EQ18a, EQ18b, `word-stops-equations2.docx` EQ37f to EQ37h). Or why it can't be laid out: a part narrower than the
+ * character made of its parts, but wider than its widest size, hasn't been seen
  */
 const grouped = (children: readonly XmlObject[], style: Style): Box => {
     const properties = childrenOf(find(children, "m:groupChrPr"));
@@ -1036,24 +1215,23 @@ const grouped = (children: readonly XmlObject[], style: Style): Box => {
     const over = (propertyOf(properties, "m:pos") ?? "bot") === "top";
     const base = settled(argument(find(children, "m:e"), style));
     const plain = glyphOf(character);
+    const variants = HORIZONTAL_VARIANTS.get(plain) ?? stop("a character grown over or under a part that Cambria Math has no sizes of");
     const parts = HORIZONTAL_ASSEMBLIES.get(plain);
-    const widest = HORIZONTAL_VARIANTS.get(plain)?.at(-1)?.[1] ?? 0;
-    if (parts === undefined || inPoints(widest, style) >= base.width) {
-        return stop("a brace grown over or under a part as one of its own sizes");
+    const assembled = parts !== undefined && inPoints(variants.at(-1)![1], style) < base.width;
+    const [lower, higher] = BRACE_SHARES.map(
+        (share) => variants.filter(([, wide], index) => index === 0 || inPoints(wide, style) <= base.width * share).at(-1)![0],
+    );
+    if (!assembled && lower !== higher) {
+        stop("a brace whose size Word's PDFs leave between two");
     }
-    // Its parts but those repeated to make it wider, joined by no less than the least overlap, which Word drew a brace of
-    // without repeats as (EQ18a)
-    const fixed = parts.filter(([, , , , repeated]) => !repeated);
-    const longest = fixed.reduce((total, [, , , width]) => total + width, 0) - MIN_CONNECTOR_OVERLAP * (fixed.length - 1);
-    if (inPoints(longest, style) < base.width) {
-        stop("a brace grown over or under a part too wide for it without its repeated parts");
-    }
-    const bottom = Math.min(...fixed.map(([glyph]) => inPoints(metricsOf(glyph)[1], style)));
-    const top = Math.max(...fixed.map(([glyph]) => inPoints(metricsOf(glyph)[2], style)));
+    const glyphs = assembled ? assembly(parts, base.width, style) : [lower];
+    const width = assembled ? base.width : Math.max(base.width, inPoints(metricsOf(lower)[0], style));
+    const bottom = Math.min(...glyphs.map((glyph) => inPoints(metricsOf(glyph)[1], style)));
+    const top = Math.max(...glyphs.map((glyph) => inPoints(metricsOf(glyph)[2], style)));
     const gap = constantOf(over ? "stretchStackGapAboveMin" : "stretchStackGapBelowMin", style);
     const shift = over ? Math.max(0, base.height + gap - bottom) : Math.min(0, -base.depth - gap - top);
     return {
-        width: base.width,
+        width,
         height: Math.max(base.height, top + shift),
         depth: Math.max(base.depth, -(bottom + shift)),
         italic: 0,
@@ -1066,14 +1244,20 @@ const grouped = (children: readonly XmlObject[], style: Style): Box => {
  * (`word-stops-equations.docx` EQ25c), at a size, in points, or the size all their runs give: how wide they are, and how
  * far their line goes above and below its baseline: as far as their ink, with Cambria Math's line gap above it, or as a
  * line of Cambria Math, whichever is further (`word-equations.docx` EQ2, `word-equations2.docx` EQ9,
- * `word-stops-equations.docx` EQ10 to EQ18, EQ22). Or why they can't be laid out
+ * `word-stops-equations.docx` EQ10 to EQ18, EQ22), with the limits of sums and integrals that don't say where theirs go
+ * where the document's maths settings put them (see {@link LimitPlaces}). Or why they can't be laid out
  */
-export const layOutEquations = (equations: readonly unknown[], size: number, display = false): EquationBox | string => {
+export const layOutEquations = (
+    equations: readonly unknown[],
+    size: number,
+    display = false,
+    limits: LimitPlaces = { sums: "undOvr", integrals: "subSup" },
+): EquationBox | string => {
     const elements = equations.flatMap((equation) => childrenOf(equation));
     const sizes = elements.filter((element) => "m:r" in element).map((run) => runSizeOf(run["m:r"]));
     // An equation is in the size its runs give, when they all give one (`word-equations2.docx` EQ9e)
     const own = sizes.length > 0 && sizes.every((given) => given !== undefined && given === sizes[0]) ? sizes[0]! : size;
-    const style: Style = { level: display ? 0 : 1, cramped: false, display, size: own };
+    const style: Style = { level: display ? 0 : 1, cramped: false, display, size: own, limits };
     try {
         const parts = partsOf(elements, style);
         if (parts.length === 0) {

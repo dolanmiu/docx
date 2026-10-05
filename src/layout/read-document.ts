@@ -64,7 +64,7 @@ import {
 } from "../text-layout";
 import { type DataStores, withBoundTextWritten } from "./bound-controls";
 import { lineSizeOf, textLineSizesOf } from "./column-widths";
-import { type EquationBox, layOutEquations } from "./equations";
+import { type EquationBox, type LimitPlaces, layOutEquations } from "./equations";
 import {
     type FieldCapitals,
     type FieldFormat,
@@ -665,8 +665,8 @@ type Reader = {
     readonly maths?: string;
     /** Why its displayed equations can't be laid out as Word does for the document's maths settings, when they can't */
     readonly displayedMaths?: string;
-    /** Why equations side by side in a paragraph of them can't be laid out as Word does for the document's maths settings */
-    readonly mathsApart?: string;
+    /** Where the document's maths settings put the limits of sums and integrals that don't say where theirs go */
+    readonly limits?: LimitPlaces;
     /** The document's compatibility mode, when it is one of Word 2010's, 2007's or 2003's (see `DocumentContent`) */
     readonly compatibilityMode?: number;
     /** Whether the document lays out East Asian text as Word 2003 did (`useFELayout`) */
@@ -1683,11 +1683,8 @@ const readRemoved = (elements: readonly unknown[], kind: string, reader: Reader)
 // operator (`word-equations.docx` EQ5, `word-stops-equations.docx` EQ26), in a way not yet followed
 const EQUATION_BROKEN = "an equation that doesn't fit on its line";
 
-/**
- * An equation read: how Word lays it out in a line of text and displayed, on a line of its own, or why it can't be laid
- * out so, and whether it is in a paragraph of its own (`m:oMathPara`)
- */
-type EquationRead = { readonly inline: EquationBox | string; readonly displayed: EquationBox | string; readonly paragraph: boolean };
+/** An equation read: how Word lays it out in a line of text and displayed, on a line of its own, or why it can't be laid out so */
+type EquationRead = { readonly inline: EquationBox | string; readonly displayed: EquationBox | string };
 
 /** The equations read, by the item that stands for each in its paragraph's items, which its paragraph lays out one way */
 const EQUATIONS = new WeakMap<LayoutItem, EquationRead>();
@@ -1711,15 +1708,11 @@ const readEquation = (element: XmlObject, paragraphRun: RunFormat, reader: Reade
     if (equations.length === 0) {
         return [];
     }
-    if (equations.length > 1 && reader.mathsApart !== undefined) {
-        return reader.mathsApart;
-    }
     const size = fontOf(paragraphRun).size ?? DEFAULT_FONT_SIZE;
     const contents = equations.map((equation) => equation["m:oMath"]);
     const read: EquationRead = {
-        inline: layOutEquations(contents, size),
-        displayed: layOutEquations(contents, size, true),
-        paragraph: name === "m:oMathPara",
+        inline: layOutEquations(contents, size, false, reader.limits),
+        displayed: layOutEquations(contents, size, true, reader.limits),
     };
     // It stands in its paragraph's items as one of its layouts, which its paragraph puts in its place
     const shown = [read.inline, read.displayed].find((box): box is EquationBox => typeof box !== "string");
@@ -1731,20 +1724,13 @@ const readEquation = (element: XmlObject, paragraphRun: RunFormat, reader: Reade
     return [...bookmarks, item];
 };
 
-/** Whether an equation is laid out alike in a line of text and displayed, as one of text, or that Word builds up alike, is */
-const isAlike = ({ inline, displayed }: EquationRead): boolean =>
-    typeof inline !== "string" &&
-    typeof displayed !== "string" &&
-    inline.width === displayed.width &&
-    inline.ascent === displayed.ascent &&
-    inline.descent === displayed.descent;
-
 /**
  * A paragraph's content, as read, with each equation in it laid out as Word lays it out there, or why it can't be laid out
  * for the equations in it. Word shows an equation in a line of text in the line, and one alone in its paragraph displayed,
  * on a line of its own (`word-equations.docx` EQ2, EQ4), and one displayed (`m:oMathPara`) beside text in its paragraph,
- * and one alone after its list's number, in the line, at the start of its text (`word-stops-equations.docx` EQ25). How it
- * builds those two up, which may be as either, more than one equation alone in a paragraph, haven't been seen.
+ * and one alone after its list's number, in the line, at the start of its text, built up as in a line of text
+ * (`word-stops-equations.docx` EQ25, `word-stops-equations2.docx` EQ38). More than one equation alone in a paragraph
+ * hasn't been seen.
  */
 const withEquations = (read: readonly LayoutItem[] | string, numbered: boolean, reader: Reader): readonly LayoutItem[] | string => {
     if (typeof read === "string") {
@@ -1762,16 +1748,7 @@ const withEquations = (read: readonly LayoutItem[] | string, numbered: boolean, 
         if (alone && equations.length > 1) {
             return "equations alone in their paragraph beside each other";
         }
-        if (alone && !numbered) {
-            return reader.displayedMaths ?? equationItem(equation.displayed);
-        }
-        const afterNumber = alone && numbered;
-        if ((afterNumber || equation.paragraph) && typeof equation.inline !== "string" && !isAlike(equation)) {
-            return afterNumber
-                ? "an equation Word builds up alone in its paragraph after its list's number"
-                : "an equation Word builds up, displayed (`m:oMathPara`) beside text in its paragraph";
-        }
-        return equationItem(equation.inline);
+        return alone && !numbered ? (reader.displayedMaths ?? equationItem(equation.displayed)) : equationItem(equation.inline);
     };
     const items = read.map((item) => (EQUATIONS.has(item) ? placed(item) : item));
     const reason = items.find((item): item is string => typeof item === "string");
@@ -4651,18 +4628,20 @@ const readHyphenation = (settings: readonly XmlObject[]): Hyphenation =>
 
 /**
  * Why a document's equations can't be laid out as Word does for its maths settings (`m:mathPr`), when they say what isn't
- * followed: a maths font other than Cambria Math, which Word draws equations in when the computer has it, and in Cambria
- * Math when it doesn't (`word-stops-equation-font.docx` EQS2), so how wide they are depends on the computer; sums' and
- * integrals' limits put elsewhere than under and over them and beside them, displayed equations not displayed
- * (`m:dispDef`), and small fractions displayed (`m:smallFrac`), which haven't been seen. And why its displayed equations
- * can't be: margins (`m:lMargin`, `m:rMargin`), which Word centres an equation that fits as without them, but breaks one
- * within (`word-stops-equation-settings.docx` EQS1), so one that fits the line but not the room between them would be laid
- * out on one line where Word breaks it. Space around displayed equations Word was seen to leave out (EQS1), but space
- * between equations (`m:interSp`) only of one alone in its paragraph of equations: with two side by side in one, which
- * Word puts in a line with nothing between them without it (`word-stops-equations.docx` EQ25c), it hasn't been seen. The
- * other settings are of how an equation is broken, or lined up on its line.
+ * followed, and where they put the limits of sums and integrals. Word draws equations in a maths font other than Cambria
+ * Math when the computer has it, and in Cambria Math when it doesn't (`word-stops-equation-font.docx` EQS2), so how wide
+ * they are depends on the computer. It puts the limits of a displayed sum or integral that doesn't say where its own go
+ * where the settings say (`m:naryLim`, `m:intLim`), and leaves those in a line of text beside it
+ * (`word-stops-equation-limits.docx` EQ42). It lays equations out alike with displayed equations' own defaults off
+ * (`m:dispDef`), and with small fractions on (`m:smallFrac`) too (`word-stops-equation-small.docx` EQ43), but small
+ * fractions with those defaults on haven't been seen. Margins of displayed equations (`m:lMargin`, `m:rMargin`) Word
+ * centres an equation that fits as without, but breaks one within (`word-stops-equation-settings.docx` EQS1), so one that
+ * fits the line but not the room between them would be laid out on one line where Word breaks it. Space around displayed
+ * equations, and between equations (`m:interSp`), Word leaves out, even between equations side by side in one paragraph of
+ * them (EQS1, `word-stops-equation-spacing.docx` EQ44). The other settings are of how an equation is broken, or lined up
+ * on its line.
  */
-const readMathsSettings = (settings: readonly XmlObject[]): Pick<Reader, "maths" | "displayedMaths" | "mathsApart"> => {
+const readMathsSettings = (settings: readonly XmlObject[]): Pick<Reader, "maths" | "displayedMaths" | "limits"> => {
     const maths = childrenOf(find(settings, "m:mathPr"));
     const valueIn = (name: string): string | undefined => stringOf(attributesOf(find(maths, name))["m:val"]);
     if ((valueIn("m:mathFont") ?? "Cambria Math") !== "Cambria Math") {
@@ -4670,25 +4649,18 @@ const readMathsSettings = (settings: readonly XmlObject[]): Pick<Reader, "maths"
     }
     const off = (name: string): boolean => find(maths, name) !== undefined && isOff(valueIn(name));
     const on = (name: string): boolean => find(maths, name) !== undefined && !isOff(valueIn(name));
-    if (
-        (valueIn("m:naryLim") ?? "undOvr") !== "undOvr" ||
-        (valueIn("m:intLim") ?? "subSup") !== "subSup" ||
-        off("m:dispDef") ||
-        on("m:smallFrac")
-    ) {
-        return { maths: "an equation in a document whose maths settings put limits, displayed equations or fractions otherwise" };
+    if (on("m:smallFrac") && !off("m:dispDef")) {
+        return { maths: "an equation in a document whose maths settings make fractions small" };
     }
     const given = (name: string): boolean => (numberOf(valueIn(name)) ?? 0) !== 0;
     return {
         ...(given("m:lMargin") || given("m:rMargin")
             ? { displayedMaths: "an equation displayed in a document whose maths settings give displayed equations margins" }
             : {}),
-        ...(given("m:interSp")
-            ? {
-                  mathsApart:
-                      "equations side by side in a paragraph of them (`m:oMathPara`) in a document whose maths settings put space between equations",
-              }
-            : {}),
+        limits: {
+            sums: valueIn("m:naryLim") === "subSup" ? "subSup" : "undOvr",
+            integrals: valueIn("m:intLim") === "undOvr" ? "undOvr" : "subSup",
+        },
     };
 };
 
