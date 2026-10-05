@@ -3989,15 +3989,16 @@ export const paginate = (
      *
      * @param breakBorder - The border below the row on a page where the table breaks: the table's bottom border, which the
      * last row has counted already
-     * @param table - Whether the table has space between its cells, and whether the row before is kept with this one
+     * @param table - Whether the row before is kept with this one, and whether the row is the last of a table with space
+     * between its cells
      */
     const splitRow = (
         row: TableRow,
         rowIndex: number,
         height: number,
         breakBorder: number,
-        startTablePage: () => void,
-        table: { readonly spaced: boolean; readonly kept: boolean },
+        startTablePage: (continuing: boolean) => void,
+        table: { readonly kept: boolean; readonly spacedLast: boolean },
     ): void => {
         // The cells that start a merge are laid out with the rows they are merged down
         const own = row.cells.filter((cell) => !startsMerge(cell));
@@ -4153,8 +4154,11 @@ export const paginate = (
                     // Whether Word breaks text that runs up or down a cell with the row isn't known
                     stopAt("text that runs up or down a table cell across pages");
                 }
-                if (table.spaced) {
-                    stopAt("a table row with space between its cells across pages");
+                if (table.spacedLast) {
+                    // Word breaks the rows of a table with space between its cells with the space below their cells and the
+                    // table's bottom border on the page (word-stops-table-borders.docx TB7c), but its last row, which has the
+                    // table's space below it too, hasn't been seen breaking
+                    stopAt("the last row of a table with space between its cells across pages");
                 }
             }
             // A row at the top of a page that doesn't fit there whole is taller than a page, unless the end of a footnote
@@ -4216,7 +4220,7 @@ export const paginate = (
             if (!placesLines) {
                 // The row goes to the next page whole, so the text of the cells merged down to it from rows above ends in those
                 closeMerges(position);
-                startTablePage();
+                startTablePage(!isFirstPart);
                 continue;
             }
             mark([
@@ -4266,7 +4270,7 @@ export const paginate = (
             closeMerges(position - breakBorder);
             parts = filled.slice(0, own.length).map(({ rest }) => rest);
             isFirstPart = false;
-            startTablePage();
+            startTablePage(true);
         }
     };
 
@@ -4326,7 +4330,7 @@ export const paginate = (
         // into, as in Word: in a wider one, where LibreOffice sizes one of a share of the width again
         // (`word-column-widths.docx` R5 and R6), and in a narrower one, past whose edge it goes, with its rows as tall as
         // they were (`word-watertight-stops.docx` SP16)
-        const startTablePage = (index: number, newPage = false): void => {
+        const startTablePage = (index: number, newPage = false, continuing = false): void => {
             if (headersAlone(index)) {
                 const before = blocks[blockIndex - 1];
                 const guesses = [
@@ -4355,6 +4359,16 @@ export const paginate = (
                     return y + rowHeight;
                 }, position);
                 position += repeated;
+            }
+            // A table with space between its cells has its top border above the rest of it on the next page, and the space
+            // above its row, where the row or the one before it breaks (word-stops-table-borders.docx TB7a to TB7c). With
+            // header rows repeated above them, what Word draws there hasn't been seen
+            const { breakTop = 0 } = table.rows[index];
+            if (breakTop > 0 && (index > 0 || continuing)) {
+                if (headerRows > 0) {
+                    stopAt("a table with space between its cells, borders and header rows across pages");
+                }
+                position += breakTop;
             }
         };
         /** Whether a row fits on the page, with its footnotes */
@@ -4477,13 +4491,6 @@ export const paginate = (
             const holding = held.length > 0 && heldLines !== undefined && index < heldLines;
             const notes = [...(holding && index === heldLines! - 1 ? held : []), ...notesIn(markers)];
             const keptWhole = holding || row.cantSplit || row.height?.rule === "exact";
-            // Unless its header rows go on to the next page with it, so it doesn't break here
-            const movesWhole = keptWhole && !rowStays(roomNeeded, notes) && headersAlone(index);
-            if (table.cellSpacing !== undefined && row.breakBorder === undefined && !rowFits(roomNeeded, notes) && !movesWhole) {
-                // What Word draws where a table with space between its cells and borders breaks across pages isn't known.
-                // Guessing, nothing more
-                stopAt("a table with space between its cells and borders across pages");
-            }
             placeKeptRows(index);
             // On the next page, the end of a footnote continued from this one can leave too little room for it too, as for
             // a paragraph's lines, so it goes on the page after
@@ -4514,8 +4521,8 @@ export const paginate = (
             // One that can't break breaks there as other rows do, as in Word: 60 lines go 51 and 9 (`word-probes.docx` U5a,
             // U5b), as LibreOffice breaks them
             if (tooTall || (!rowFits(roomNeeded, notes) && !keptWhole)) {
-                splitRow(row, index, height, breakBorder, () => startTablePage(index, firstColumns), {
-                    spaced: table.cellSpacing !== undefined,
+                splitRow(row, index, height, breakBorder, (continuing) => startTablePage(index, firstColumns, continuing), {
+                    spacedLast: table.cellSpacing !== undefined && index === table.rows.length - 1,
                     // Rows kept with the next that are too tall for a page break where the page ends (KR5)
                     kept: index > brokenUntil && index > 0 && keptWithNext(table.rows[index - 1]),
                 });

@@ -354,14 +354,15 @@ describe("run formatting", () => {
         expect(unknownRunFormatting({ border: { ...single, frame: true } })).to.equal("a run border with a shadow or drawn as a frame");
         // A style Word hasn't been seen to draw, thin and thick lines wider than 2¼ points, and a border without a width,
         // narrower or wider than Word draws, or further from the text
-        expect(unknownRunFormatting({ border: { ...single, style: "thinThickMediumGap" } })).to.equal(unknown);
+        expect(unknownRunFormatting({ border: { ...single, style: "apples" } })).to.equal(unknown);
+        expect(unknownRunFormatting({ border: { ...single, style: "thinThickMediumGap", size: 2 } })).to.equal(unknown);
         expect(unknownRunFormatting({ border: { ...single, style: "thinThickSmallGap", size: 24 } })).to.equal(unknown);
         expect(unknownRunFormatting({ border: { ...single, size: undefined } })).to.equal(unknown);
         expect(unknownRunFormatting({ border: { ...single, size: 1 } })).to.equal(unknown);
         expect(unknownRunFormatting({ border: { ...single, size: 97 } })).to.equal(unknown);
         expect(unknownRunFormatting({ border: { ...single, space: 32 } })).to.equal(unknown);
         expect(unknownRunFormatting({ emphasisMark: "star" })).to.equal("emphasis marks of a kind that isn't known");
-        expect(fontOf({ border: { ...single, style: "thinThickMediumGap" } })).to.deep.equal({});
+        expect(fontOf({ border: { ...single, style: "apples" } })).to.deep.equal({});
     });
 });
 

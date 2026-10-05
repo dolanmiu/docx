@@ -22,6 +22,7 @@ const border = (style: string, size?: number, space?: number): object => ({
 });
 const single = (width: number): { readonly style: string; readonly width: number } => ({ style: "single", width });
 const NONE = { style: "none", width: 0 };
+const of = (style: string, width: number): { readonly style: string; readonly width: number } => ({ style, width });
 
 describe("readBorderSet", () => {
     it("should read each side a table or cell gives, with its width and space in points, and none for nil, none or no width", () => {
@@ -69,6 +70,13 @@ describe("roomOf", () => {
         expect(rooms("dashDotStroked")).to.deep.equal([3, 3, 3]);
         expect(rooms("wave")).to.deep.equal([3, 3.75, 3]);
         expect(rooms("threeDEngrave")).to.deep.equal([2, 3, 6]);
+        // word-stops-table-borders.docx TB4: the other widths Word offers
+        const offered = (style: string): readonly (number | undefined)[] =>
+            [0.25, 0.75, 1, 2.25, 4.5, 6].map((width) => roomOf({ style, width }));
+        expect(offered("wave")).to.deep.equal([3, 3, 3, 3, 3, 3]);
+        expect(offered("threeDEmboss")).to.deep.equal([1.75, 2.25, 2.5, 3.75, 7.5, 9]);
+        expect(offered("threeDEngrave")).to.deep.equal([1.75, 2.25, 2.5, 3.75, 7.5, 9]);
+        expect(offered("doubleWave")).to.deep.equal([5.25, 5.25, 5.25, 5.25, 5.25, 5.25]);
         // The space between a border and the text adds to it (BS31)
         expect(roomOf({ style: "single", width: 1.5, space: 10 })).to.equal(11.5);
         expect(roomOf(NONE)).to.equal(0);
@@ -76,8 +84,8 @@ describe("roomOf", () => {
     });
 
     it("should give nothing for a style or width whose room Word's PDFs haven't shown", () => {
-        expect(roomOf({ style: "wave", width: 1 })).to.equal(undefined);
-        expect(roomOf({ style: "apples", width: 1 })).to.equal(undefined);
+        expect(roomOf({ style: "wave", width: 1.25 })).to.equal(undefined);
+        expect(roomOf({ style: "apples", width: 1.5 })).to.equal(undefined);
     });
 });
 
@@ -89,8 +97,24 @@ describe("borderBetween", () => {
         expect(borderBetween(single(3), single(1))).to.deep.equal(single(3));
     });
 
-    it("should give nothing where borders of different styles meet, which Word settles in a way not yet followed", () => {
-        expect(borderBetween({ style: "double", width: 1 }, single(1))).to.equal(undefined);
+    it("should draw the heavier of two of different styles, by Word's weights, and of two as heavy the later style", () => {
+        // word-stops-table-borders.docx TB1b: a stroked dash-dot line of 3 points over a single line of half a point
+        expect(borderBetween(single(0.5), of("dashDotStroked", 3))).to.deep.equal(of("dashDotStroked", 3));
+        // TB1h, TB1e: a single line of 2.25 points over a double one of half a point, which is over one of half a point
+        expect(borderBetween(of("double", 0.5), single(2.25))).to.deep.equal(single(2.25));
+        expect(borderBetween(of("double", 0.5), single(0.5))).to.deep.equal(of("double", 0.5));
+        // TB1g, TB1j: as heavy, the double line, which is later in Word's list
+        expect(borderBetween(of("double", 0.5), single(1.5))).to.deep.equal(of("double", 0.5));
+        expect(borderBetween(single(1.5), of("double", 0.5))).to.deep.equal(of("double", 0.5));
+        // TB1k, TB1m, TB3d: dotted and dashed lines weigh 1 whatever their width
+        expect(borderBetween(of("dotted", 1.5), single(0.5))).to.deep.equal(single(0.5));
+        expect(borderBetween(of("dotted", 1), of("dashed", 1))).to.deep.equal(of("dashed", 1));
+    });
+
+    it("should give nothing where a border of a style Word doesn't weigh meets another, but the wider of two the same", () => {
+        expect(borderBetween(of("apples", 1), single(1))).to.equal(undefined);
+        expect(borderBetween(of("apples", 1), of("apples", 2))).to.deep.equal(of("apples", 2));
+        expect(borderBetween(of("apples", 2), of("apples", 1))).to.deep.equal(of("apples", 2));
     });
 });
 
@@ -122,14 +146,20 @@ describe("rowBorders", () => {
         expect(borders).to.deep.equal({ tops: [0, 3], bottom: 0.5, breaks: [3, 0.5] });
     });
 
+    it("should make room for the wider of two borders of different styles that meet, though Word draws the narrower", () => {
+        // word-stops-table-borders.docx TB3d: a single border of half a point, which Word draws, and a dotted one of 1.5
+        // points take 1.5 points
+        expect(rowBorders([[cell(0, { bottom: single(0.5) })], [cell(0, { top: of("dotted", 1.5) })]], {})).to.deep.equal({
+            tops: [0, 1.5],
+            bottom: 0,
+            breaks: [0.5, 0],
+        });
+    });
+
     it("should say why where it can't tell the room the borders take", () => {
-        expect(rowBorders([[cell(0)]], { top: { style: "wave", width: 1 } })).to.equal("a table border in a style not yet followed");
-        expect(rowBorders([[cell(0, { top: { style: "wave", width: 1 } }), cell(1)]], {})).to.equal(
-            "a table border in a style not yet followed",
-        );
-        expect(rowBorders([[cell(0, { bottom: single(3) })], [cell(0, { top: { style: "dotted", width: 3 } })]], {})).to.equal(
-            "table cell borders of different styles that meet",
-        );
+        expect(rowBorders([[cell(0)]], { top: of("wave", 1.25) })).to.equal("a table border in a style not yet followed");
+        expect(rowBorders([[cell(0, { top: of("wave", 1.25) }), cell(1)]], {})).to.equal("a table border in a style not yet followed");
+        expect(rowBorders([[cell(0, { bottom: of("wave", 1.25) })], [cell(0)]], {})).to.equal("a table border in a style not yet followed");
     });
 });
 
@@ -140,13 +170,22 @@ describe("sideBorders", () => {
             { column: 1, borders: { left: single(3) } },
             { column: 2, borders: { right: NONE } },
         ];
+        const side = (room: number, drawn = room): object => ({ room, drawn });
         expect(sideBorders(cells, { left: single(1), insideV: single(0.5), right: single(2) })).to.deep.equal([
-            { left: 1, right: 3 },
-            { left: 3, right: 0.5 },
-            { left: 0.5, right: 0 },
+            { left: side(1), right: side(3) },
+            { left: side(3), right: side(0.5) },
+            { left: side(0.5), right: side(0) },
+        ]);
+        // Where Word draws the narrower of two borders, the room of each (word-stops-table-borders.docx TB2d)
+        expect(sideBorders([cells[0], { column: 1, borders: { left: of("dotted", 3) } }], { insideV: single(0.5) })).to.deep.equal([
+            { left: side(0), right: side(3, 0.5) },
+            { left: side(3, 0.5), right: side(0) },
         ]);
         expect(sideBorders([], {})).to.deep.equal([]);
-        expect(sideBorders([{ column: 0, borders: { left: { style: "wave", width: 1 } } }], {})).to.equal(
+        expect(sideBorders([{ column: 0, borders: { left: of("wave", 1.25) } }], {})).to.equal(
+            "a table border in a style not yet followed",
+        );
+        expect(sideBorders([cells[0], { column: 1, borders: { left: of("wave", 1.25) } }], {})).to.equal(
             "a table border in a style not yet followed",
         );
     });
@@ -203,6 +242,8 @@ describe("tableGeometry", () => {
             {
                 borderTop: 3 + 5 + 5 + 3,
                 borderBottom: 0.5 + 5,
+                breakBorder: 1,
+                breakTop: 3,
                 cells: [
                     [10, 5, 85],
                     [5, 10, 85],
@@ -211,45 +252,104 @@ describe("tableGeometry", () => {
             {
                 borderTop: 2 + 5,
                 borderBottom: 1 + 5 + 5 + 1,
+                breakBorder: 1,
+                breakTop: 3,
                 cells: [
                     [10, 5, 85],
                     [5, 10, 85],
                 ],
             },
         ]);
-        // Without borders, the row on a page where the table breaks has only the space below it (CS12)
+        // Where the table breaks across pages, the row on the page has the table's bottom border below the space below it,
+        // and the next page's the table's top border above the space above it (word-stops-table-borders.docx TB7a to TB7c)
+        // Without borders, only the space below it (CS12)
         const withoutBorders = tableGeometry([{ cells: [placed()], spacing: 5 }], { borders: {}, spacing: 5 });
-        expect(typeof withoutBorders === "string" ? withoutBorders : withoutBorders[0].breakBorder).to.equal(0);
+        expect(
+            typeof withoutBorders === "string" ? withoutBorders : [withoutBorders[0].breakBorder, withoutBorders[0].breakTop],
+        ).to.deep.equal([0, undefined]);
     });
 
-    it("should stop at space between cells beside borders left or right of them, and at borders whose room isn't known", () => {
-        expect(tableGeometry([{ cells: [placed({ left: single(1) })], spacing: 5 }], { borders: {}, spacing: 5 })).to.equal(
-            "space between table cells beside borders left or right of them",
-        );
-        expect(tableGeometry([{ cells: [placed()], spacing: 5 }], { borders: { top: { style: "wave", width: 1 } }, spacing: 5 })).to.equal(
+    it("should keep a cell's text in from the whole of its borders left and right, with space between cells", () => {
+        // word-stops-table-borders.docx TB5a to TB5l: each cell's own borders, or the table's at its edges and between its
+        // cells, take their width from the cell's text, and the table's borders none
+        const cells = [placed(), { ...placed({ right: single(3) }), column: 1 }];
+        const geometry = tableGeometry([{ cells, spacing: 2 }], {
+            borders: { left: single(1), insideV: single(0.5), right: single(2) },
+            spacing: 2,
+        });
+        expect(rounded(geometry)).to.deep.equal([
+            {
+                borderTop: 4,
+                borderBottom: 4,
+                breakBorder: 0,
+                cells: [
+                    [2 + 2 + 1, 2 + 0.5, 92.5],
+                    [2 + 0.5, 2 + 2 + 3, 90.5],
+                ],
+            },
+        ]);
+    });
+
+    it("should stop where borders of different styles meet beside text nearer than half the wider, and Word draws the narrower", () => {
+        const meeting = (left: { readonly style: string; readonly width: number }, margin: number): ReturnType<typeof tableGeometry> =>
+            tableGeometry(
+                [
+                    {
+                        cells: [
+                            placed({ right: single(0.5) }, { top: 0, bottom: 0, left: margin, right: margin }),
+                            { ...placed({ left }, { top: 0, bottom: 0, left: margin, right: margin }), column: 1 },
+                        ],
+                        spacing: 0,
+                    },
+                ],
+                { borders: {}, spacing: 0 },
+            );
+        // Word draws the single line, and the dotted one is wider
+        expect(meeting(of("dotted", 3), 1)).to.equal("table cell borders of different styles that meet, wider than twice a cell's margin");
+        // Not where the margin is wider than half of it, nor where Word draws the wider
+        expect(rounded(meeting(of("dotted", 3), 2))).to.deep.equal([
+            {
+                borderTop: 0,
+                borderBottom: 0,
+                breakBorder: 0,
+                cells: [
+                    [2, 2, 96],
+                    [2, 2, 96],
+                ],
+            },
+        ]);
+        expect(typeof meeting(of("double", 3), 1)).to.equal("object");
+    });
+
+    it("should stop at borders whose room isn't known", () => {
+        expect(tableGeometry([{ cells: [placed()], spacing: 5 }], { borders: { top: of("wave", 1.25) }, spacing: 5 })).to.equal(
             "a table border in a style not yet followed",
         );
-        expect(
-            tableGeometry([{ cells: [placed({ top: { style: "wave", width: 1 } })], spacing: 5 }], { borders: {}, spacing: 5 }),
-        ).to.equal("a table border in a style not yet followed");
-        expect(tableGeometry([{ cells: [placed()], spacing: 0 }], { borders: { left: { style: "wave", width: 1 } }, spacing: 0 })).to.equal(
+        expect(tableGeometry([{ cells: [placed({ top: of("wave", 1.25) })], spacing: 5 }], { borders: {}, spacing: 5 })).to.equal(
             "a table border in a style not yet followed",
         );
-        expect(tableGeometry([{ cells: [placed()], spacing: 0 }], { borders: { top: { style: "wave", width: 1 } }, spacing: 0 })).to.equal(
+        expect(tableGeometry([{ cells: [placed({ left: of("wave", 1.25) })], spacing: 5 }], { borders: {}, spacing: 5 })).to.equal(
+            "a table border in a style not yet followed",
+        );
+        expect(tableGeometry([{ cells: [placed()], spacing: 0 }], { borders: { left: of("wave", 1.25) }, spacing: 0 })).to.equal(
+            "a table border in a style not yet followed",
+        );
+        expect(tableGeometry([{ cells: [placed()], spacing: 0 }], { borders: { top: of("wave", 1.25) }, spacing: 0 })).to.equal(
             "a table border in a style not yet followed",
         );
     });
 });
 
 describe("readCellSpacing", () => {
-    it("should read the space between cells in points, none when it isn't given or is nil, and nothing for a share", () => {
+    it("should read the space between cells in points, none when it isn't given or is nil, a share, and nothing for another type", () => {
         expect(readCellSpacing({ _attr: { "w:w": 100, "w:type": "dxa" } })).to.equal(5);
         expect(readCellSpacing({ _attr: { "w:w": "0.1in" } })).to.equal(7.2);
         expect(readCellSpacing({ _attr: { "w:w": -100 } })).to.equal(0);
         expect(readCellSpacing({ _attr: {} })).to.equal(0);
         expect(readCellSpacing({ _attr: { "w:w": 100, "w:type": "nil" } })).to.equal(0);
         expect(readCellSpacing(undefined)).to.equal(0);
-        expect(readCellSpacing({ _attr: { "w:w": 100, "w:type": "pct" } })).to.equal(undefined);
+        expect(readCellSpacing({ _attr: { "w:w": 100, "w:type": "pct" } })).to.equal("share");
+        expect(readCellSpacing({ _attr: { "w:w": 100, "w:type": "auto" } })).to.equal(undefined);
     });
 });
 

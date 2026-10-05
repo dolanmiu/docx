@@ -1684,23 +1684,51 @@ describe("paginate", () => {
             expect(paginate(withNote, { measurer: MEASURER }).stoppedAt).to.equal("a footnote in text that runs up or down a table cell");
         });
 
-        it("should break a table with space between its cells between rows, and stop where it has borders too or a row breaks", () => {
-            const spaced = (count: number, breakBorder?: number, lines = 1): TableBlock => ({
+        it("should break a table with space between its cells between rows and in them, with its borders at the break", () => {
+            const spaced = (count: number, borders: Partial<TableRow>, lines = 1, headers = 0): TableBlock => ({
                 ...table(
                     Array.from({ length: count }, (_, index) =>
-                        row([[paragraph(`r${index}`, lines)]], breakBorder === undefined ? {} : { breakBorder }),
+                        row([[paragraph(`r${index}`, lines)]], { ...borders, ...(index < headers ? { header: true } : {}) }),
                     ),
                 ),
                 cellSpacing: 1,
             });
             // word-table-formats2.docx CS12: the table breaks between rows, each with the space below it
-            expect(numbersOf(document([paragraph("a", 5), spaced(3, 0)])).stoppedAt).to.equal(undefined);
-            expect(pagesOf(document([paragraph("a", 5), spaced(3, 0)]))).to.deep.include({ r0: "1", r1: "1", r2: "2" });
-            expect(numbersOf(document([paragraph("a", 5), spaced(3)])).stoppedAt).to.equal(
-                "a table with space between its cells and borders across pages",
+            const plain = document([paragraph("a", 5), spaced(3, { breakBorder: 0 })]);
+            expect(numbersOf(plain).stoppedAt).to.equal(undefined);
+            expect(pagesOf(plain)).to.deep.include({ r0: "1", r1: "1", r2: "2" });
+            // word-stops-table-borders.docx TB7a: with borders, the table's bottom border below the last row on the page, and
+            // its top border above the first on the next
+            const rowsOf = (content: DocumentContent): readonly (readonly (readonly [number, number])[])[] =>
+                paginate(content, { measurer: MEASURER }).pages.map(({ body }) =>
+                    body.flatMap((block) => (block.type === "table" ? block.rows.map(({ index, y }) => [index, y] as const) : [])),
+                );
+            const bordered = document([paragraph("a", 5), spaced(3, { breakBorder: 5, breakTop: 5 })]);
+            expect(rowsOf(bordered)).to.deep.equal([
+                [[0, 60]],
+                [
+                    [1, 15],
+                    [2, 25],
+                ],
+            ]);
+            // TB7c: a row that breaks across the page, its lines on the page above the table's bottom border, and the rest
+            // below its top border on the next: two lines of four, for widow control
+            const broken = document([paragraph("a", 3), spaced(2, { breakBorder: 5, breakTop: 5 }, 4)]);
+            expect(numbersOf(broken).stoppedAt).to.equal(undefined);
+            expect(rowsOf(broken)).to.deep.equal([
+                [[0, 40]],
+                [
+                    [0, 15],
+                    [1, 35],
+                ],
+            ]);
+            // Its last row, which has the table's space below it too, hasn't been seen breaking
+            expect(numbersOf(document([paragraph("a", 4), spaced(1, { breakBorder: 5, breakTop: 5 }, 4)])).stoppedAt).to.equal(
+                "the last row of a table with space between its cells across pages",
             );
-            expect(numbersOf(document([paragraph("a", 5), spaced(1, 0, 4)])).stoppedAt).to.equal(
-                "a table row with space between its cells across pages",
+            // With header rows repeated above them, what Word draws hasn't been seen
+            expect(numbersOf(document([paragraph("a", 3), spaced(6, { breakBorder: 5, breakTop: 5 }, 1, 1)])).stoppedAt).to.equal(
+                "a table with space between its cells, borders and header rows across pages",
             );
         });
 
