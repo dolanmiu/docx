@@ -463,6 +463,11 @@ describe("createFontFileMeasurer", () => {
         // Office's fonts of the width tables are measured as Word draws them, given as files or not
         const aptos = createFontFileMeasurer(fonts({ advances: LETTERS, name: "Aptos" }));
         expect(aptos.unknownFont!({ font: "Aptos" }, "AB")).to.equal(false);
+        // Microsoft YaHei's East Asian characters are in the width tables, but not its Latin letters
+        const yaHei = createFontFileMeasurer(fonts({ advances: LETTERS, name: "Microsoft YaHei" }));
+        expect(yaHei.unknownFont!({ font: "Microsoft YaHei" }, "AB")).to.equal(OFFICE_COPY);
+        expect(yaHei.unknownFont!({ font: "Microsoft YaHei" }, "\u4E2D\u6587")).to.equal(false);
+        expect(yaHei.unknownFont!({ font: "Microsoft YaHei" })).to.equal(false);
         // A measurer that falls back on one with such a font says why it doesn't know it
         const outer = createFontFileMeasurer(fonts({ advances: LETTERS }), measurer);
         expect(outer.unknownFont!({ font: "Pacifico" }, "AB")).to.equal(OFFICE_COPY);
@@ -480,6 +485,9 @@ describe("createFontFileMeasurer", () => {
         // Yu Gothic's Japanese name, as the tables have it
         expect(offeredByOffice("\u6E38\u30B4\u30B7\u30C3\u30AF")).to.equal(false);
         expect(offeredByOffice("Probe Sans")).to.equal(false);
+        // An East Asian font of the tables, for the Latin letters the tables don't have
+        expect(offeredByOffice("Microsoft YaHei")).to.equal(false);
+        expect(offeredByOffice("Microsoft YaHei", "AB")).to.equal(true);
     });
 
     it("should move a tab typed in the text to the next half inch from the start of the text", () => {

@@ -679,14 +679,15 @@ const cloudFonts = new Set<string>();
 
 /**
  * Whether Office offers a font as a cloud font, other than one of the width tables, such as Aptos, which are measured as
- * Word draws them already
+ * Word draws them already, or this text in it: the Latin letters of an East Asian font of the tables that isn't
+ * monospaced, such as Microsoft YaHei, aren't in them
  */
-export const offeredByOffice = (font: string): boolean => {
+export const offeredByOffice = (font: string, text?: string): boolean => {
     if (cloudFonts.size === 0) {
         // eslint-disable-next-line functional/immutable-data
         OFFICE_CLOUD_FONTS.forEach((name) => cloudFonts.add(name.toLowerCase()));
     }
-    return cloudFonts.has(font.toLowerCase()) && unknownFont({ font });
+    return cloudFonts.has(font.toLowerCase()) && unknownFont({ font }, text);
 };
 
 /**
@@ -789,7 +790,7 @@ export const createFontFileMeasurer = (faces: readonly FontFace[], fallback: Tex
             if (face === undefined) {
                 return fallback.unknownFont?.(font, text) ?? false;
             }
-            return offeredByOffice(face.name) ? OFFICE_COPY : false;
+            return offeredByOffice(face.name, text) ? OFFICE_COPY : false;
         },
         // Word kerns with the font's own pairs (word-fonts.docx F1 and F2), and joins letters with its ligatures, but for
         // substitutions other than ligatures, such as contextual ones, which aren't followed yet
