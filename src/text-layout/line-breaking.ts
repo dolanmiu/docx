@@ -2404,13 +2404,13 @@ export const layoutLines = (
             }
             // The space after a word at the end of a line, beside right-to-left text in a left-to-right paragraph: taking
             // room on the line, when it is between right-to-left words in a right-to-left run, or hanging past its end
-            const [space, following] = token.type === "word" && format.rightToLeft !== true ? nextTwo(tokens, index) : [];
-            const at =
-                token.type === "word" && space?.type === "space" && following?.type === "word"
-                    ? spaceAtEnd(token.pieces, space.pieces, following.pieces)
+            const [space, nextWord] = token.type === "word" && format.rightToLeft !== true ? nextTwo(tokens, index) : [];
+            const spaceAt =
+                token.type === "word" && space?.type === "space" && nextWord?.type === "word"
+                    ? spaceAtEnd(token.pieces, space.pieces, nextWord.pieces)
                     : "hanging";
-            const spaceWidth = at !== "hanging" && space?.type === "space" ? widthOf(space.pieces, measurer) : 0;
-            placeWord(token, kerning[index], spaceWidth, at === "unknown");
+            const spaceWidth = spaceAt !== "hanging" && space?.type === "space" ? widthOf(space.pieces, measurer) : 0;
+            placeWord(token, kerning[index], spaceWidth, spaceAt === "unknown");
         }
 
         if (!end) {
