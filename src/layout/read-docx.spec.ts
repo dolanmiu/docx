@@ -321,6 +321,65 @@ describe("readDocx", () => {
         expect(readDocx(new Map([...parts].filter(([path]) => path !== "word/fontTable.xml")), binaryParts).fonts).to.equal(undefined);
     });
 
+    it("should lay out a content control bound to custom XML or the document's properties as written, where that is what Word fills it in with", () => {
+        // A control bound to the core properties' title, as Word's cover pages are, and one to a custom XML part's
+        const control = (xpath: string, store: string, mappings: string, text: string): string =>
+            `<w:sdt><w:sdtPr><w:dataBinding w:prefixMappings="${mappings}" w:xpath="${xpath}" w:storeItemID="${store}"/></w:sdtPr>` +
+            `<w:sdtContent><w:p><w:r><w:t>${text}</w:t></w:r></w:p></w:sdtContent></w:sdt>`;
+        const CORE = "{6C3C8BC8-F283-45AE-878A-BAB7291924A1}";
+        const DC = "http://purl.org/dc/elements/1.1/";
+        const CP = "http://schemas.openxmlformats.org/package/2006/metadata/core-properties";
+        const packageOf = (title: string, shown: string): ReadonlyMap<string, Element> =>
+            new Map([
+                [
+                    "_rels/.rels",
+                    relationships(
+                        `<Relationship Id="rId1" Type="${TRANSITIONAL}/officeDocument" Target="word/document.xml"/>`,
+                        `<Relationship Id="rId2" Type="http://schemas.openxmlformats.org/package/2006/relationships/metadata/core-properties" Target="docProps/core.xml"/>`,
+                    ),
+                ],
+                [
+                    "docProps/core.xml",
+                    parse(`<cp:coreProperties xmlns:cp="${CP}" xmlns:dc="${DC}"><dc:title>${title}</dc:title></cp:coreProperties>`),
+                ],
+                [
+                    "word/_rels/document.xml.rels",
+                    relationships(
+                        `<Relationship Id="rId1" Type="${TRANSITIONAL}/customXml" Target="../customXml/item1.xml"/>`,
+                        // A part without the properties that give its id, which can't be found
+                        `<Relationship Id="rId2" Type="${TRANSITIONAL}/customXml" Target="../customXml/item2.xml"/>`,
+                    ),
+                ],
+                ["customXml/item1.xml", parse(`<data xmlns="urn:probe"><name>Ann</name></data>`)],
+                ["customXml/item2.xml", parse(`<other/>`)],
+                [
+                    "customXml/_rels/item1.xml.rels",
+                    relationships(`<Relationship Id="rId1" Type="${TRANSITIONAL}/customXmlProps" Target="itemProps1.xml"/>`),
+                ],
+                [
+                    "customXml/itemProps1.xml",
+                    parse(
+                        `<ds:datastoreItem ds:itemID="{a1b2}" xmlns:ds="http://schemas.openxmlformats.org/officeDocument/2006/customXml"/>`,
+                    ),
+                ],
+                ["word/settings.xml", parse(COMPATIBLE)],
+                [
+                    "word/document.xml",
+                    documentOf(
+                        control("/ns1:coreProperties[1]/ns0:title[1]", CORE, `xmlns:ns0='${DC}' xmlns:ns1='${CP}'`, shown) +
+                            control("/ns0:data[1]/ns0:name[1]", "{A1B2}", "xmlns:ns0='urn:probe'", "Ann"),
+                    ),
+                ],
+            ]);
+        const written = readDocx(packageOf("Report", "Report"));
+        expect(written.blocks.map(({ block }) => block.unsupported)).to.deep.equal([undefined, undefined]);
+        expect(textOf(written)).to.equal("Report");
+        // Word fills one with other text in, as it opens the document
+        expect(readDocx(packageOf("Annual report", "Report")).blocks[0].block.unsupported).to.equal(
+            "a content control Word fills in from custom XML with other text than is written in it",
+        );
+    });
+
     it("should read an empty body from a package without its main document", () => {
         expect(readDocx(new Map()).blocks).to.deep.equal([]);
         expect(readDocx(new Map([["word/document.xml", parse(`<w:document ${W}/>`)]])).blocks).to.deep.equal([]);

@@ -8,7 +8,7 @@
  */
 // cspell:ignore oMath fName funcPr nabla
 import { type XmlObject, attributesOf, childrenOf, find, isObject, pointsOf } from "../text-layout";
-import { EQUATION_WIDTHS } from "./equation-widths";
+import { CAMBRIA_MATH_WIDTHS, EQUATION_WIDTHS } from "./equation-widths";
 
 /** An equation laid out in its line: how wide it is, and how far it goes above its baseline and below it, in points */
 export type EquationBox = { readonly width: number; readonly ascent: number; readonly descent: number };
@@ -20,9 +20,11 @@ const DESCENT = 455 / 2048;
 
 /**
  * What an atom of an equation is to the spaces between it and the ones next to it, as TeX names them, and the bars and
- * slashes, which Word puts no space beside, but adds an italic letter's italic correction before
+ * slashes, which Word puts no space beside, but adds an italic letter's italic correction before. A symbol Word hasn't
+ * been seen to space, such as an arrow, a set operator or a sign of logic, is unseen: TeX spaces them by what they are,
+ * which Word may not
  */
-type AtomClass = "ordinary" | "binary" | "relation" | "open" | "close" | "punctuation" | "fence";
+type AtomClass = "ordinary" | "binary" | "relation" | "open" | "close" | "punctuation" | "fence" | "unseen";
 
 // The binary operators, relations, brackets, punctuation, bars and slashes Word has been seen to space
 // (`word-equations2.docx` EQ7)
@@ -92,6 +94,31 @@ const DRAWN_AS: ReadonlyMap<string, string> = new Map([
     ["∇", "\u{1d6fb}"],
 ]);
 const ITALIC_SIGNS = new Set(["∂", "∇"]);
+// The Greek variants, and the italic letters Word draws for them (`word-stops-equations.docx` EQ27j)
+const GREEK_VARIANTS: ReadonlyMap<string, number> = new Map([
+    ["ϵ", 0x1d716],
+    ["ϑ", 0x1d717],
+    ["ϰ", 0x1d718],
+    ["ϕ", 0x1d719],
+    ["ϱ", 0x1d71a],
+    ["ϖ", 0x1d71b],
+]);
+
+// Cambria Math's own widths, by character, in thousandths of an em, read from CAMBRIA_MATH_WIDTHS the first time one is
+// needed
+let cambriaMath: ReadonlyMap<string, number> | undefined;
+/** How wide Cambria Math has a character Word draws as it is, in thousandths of an em, when it has it */
+const cambriaMathWidth = (character: string): number | undefined => {
+    cambriaMath ??= new Map(
+        CAMBRIA_MATH_WIDTHS.split(";").flatMap((run) => {
+            const [first, widths] = run.split(":");
+            return widths
+                .split(",")
+                .map((width, offset) => [String.fromCodePoint(parseInt(first, 36) + offset), (parseInt(width, 36) / 2048) * 1000] as const);
+        }),
+    );
+    return cambriaMath.get(character);
+};
 
 /** The character Word draws for one of an equation's text, and whether it is an italic letter, in italic unless plain */
 const drawnAs = (character: string, plain: boolean): { readonly drawn: string; readonly italic: boolean } => {
@@ -109,6 +136,9 @@ const drawnAs = (character: string, plain: boolean): { readonly drawn: string; r
     }
     if (code >= 0x3b1 && code <= 0x3c9) {
         return letter(ITALIC_GREEK_SMALL, code - 0x3b1);
+    }
+    if (GREEK_VARIANTS.has(character)) {
+        return letter(GREEK_VARIANTS.get(character)!, 0);
     }
     return code >= 0x391 && code <= 0x3a9
         ? letter(ITALIC_GREEK_CAPITAL, code - 0x391)
@@ -143,19 +173,27 @@ const atomsOfRun = (run: unknown): readonly Atom[] | string => {
         .map((child) => textOf(child["m:t"]))
         .join("");
     const drawn = [...text].map((character) => ({ character, ...drawnAs(character, style === "p") }));
-    if (drawn.some(({ drawn: shown }) => !EQUATION_WIDTHS.has(shown))) {
+    // Those Word's PDFs measured, and the others Cambria Math has that Word draws as they are, as wide as it has them, with
+    // no italic correction (`word-stops-equations.docx` EQ27)
+    const widthOf = (shown: string): readonly [number, number] | undefined => {
+        const own = cambriaMathWidth(shown);
+        return EQUATION_WIDTHS.get(shown) ?? (own === undefined ? undefined : [own, 0]);
+    };
+    if (drawn.some(({ drawn: shown }) => widthOf(shown) === undefined)) {
         return "a character in an equation whose width isn't known";
     }
     // Its size, in half-points, as a run's text is, which Word draws its equation in (EQ9e)
     const size = pointsOf(attributesOf(find(formatting, "w:sz"))["w:val"], 2);
     return drawn.map(({ character, drawn: shown, italic }) => {
-        const [width, italicCorrection] = EQUATION_WIDTHS.get(shown)!;
+        const [width, italicCorrection] = widthOf(shown)!;
+        // A symbol of Cambria Math's own that isn't a letter or digit, which Word hasn't been seen to space
+        const unseen = !EQUATION_WIDTHS.has(shown) && !/^[\p{L}\p{N}]$/u.test(shown);
         return {
             character,
             width: width / 1000,
             italicCorrection: italicCorrection / 1000,
             italic,
-            kind: CLASSES.get(character) ?? "ordinary",
+            kind: CLASSES.get(character) ?? (unseen ? "unseen" : "ordinary"),
             ...(character === " " ? { space: true } : {}),
             ...(ITALIC_SIGNS.has(character) ? { unknownCorrection: true } : {}),
             ...(size === undefined ? {} : { size }),
@@ -246,6 +284,9 @@ export const layOutEquation = (equation: unknown, size: number): EquationBox | s
     const sizes = new Set(all.flatMap((atom) => (typeof atom === "number" ? [] : [atom.size ?? size])));
     if (sizes.size > 1) {
         return "an equation whose runs are of different sizes";
+    }
+    if (atoms.length > 1 && atoms.some(({ kind }) => kind === "unseen")) {
+        return "a symbol in an equation beside another, where Word hasn't been seen to space it";
     }
     const classes = classesOf(atoms);
     if (typeof classes === "string") {

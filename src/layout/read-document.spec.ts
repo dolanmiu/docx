@@ -32,7 +32,7 @@ import {
     VerticalPositionRelativeFrom,
 } from "docx";
 
-import { type TextGrid, WORD_DEFAULT_STYLES } from "../text-layout";
+import { type TextGrid, WORD_DEFAULT_STYLES, readTextStyles } from "../text-layout";
 import {
     type DocumentContent,
     type FloatingDrawing,
@@ -1108,12 +1108,11 @@ describe("readDocument", () => {
             expect(reasonOf({ "wp:anchor": [{ "wp:wrapBogus": {} }, ...placed] })).to.equal(
                 "a drawing that text flows around in a way not yet followed",
             );
-            expect(reasonOf({ "wp:anchor": [{ "wp:wrapSquare": {} }, placed[1], { "wp:positionH": [] }] })).to.equal(
-                "a drawing placed by neither an alignment nor an offset",
-            );
-            expect(reasonOf({ "wp:anchor": [{ "wp:wrapSquare": {} }, placed[0], { "wp:positionV": [] }] })).to.equal(
-                "a drawing placed by neither an alignment nor an offset",
-            );
+            // One placed by neither an alignment nor an offset, which the schema doesn't allow, is at the start of what it is
+            // placed against
+            expect(reasonOf({ "wp:anchor": [{ "wp:wrapSquare": {} }, placed[1], { "wp:positionH": [] }] })).to.equal(undefined);
+            const unplaced = itemsOf(readBody([p(drawing({ "wp:anchor": [{ "wp:wrapSquare": {} }, placed[0], { "wp:positionV": [] }] }))]));
+            expect((unplaced[0] as { readonly drawing: FloatingDrawing }).drawing.vertical).to.deep.equal({ from: "", offset: 0 });
             const floating = drawing({ "wp:anchor": [{ "wp:wrapSquare": {} }, ...placed] });
             const table = {
                 "w:tbl": [
@@ -1313,11 +1312,14 @@ describe("readDocument", () => {
             // Word drew a picture at a size other than its own (VM8), and an outline takes room around the shape (VM1)
             expect(reasonOf(pict("width:72pt;height:36pt", [{ "v:imagedata": {} }], UNOUTLINED, "v:shape"))).to.equal("a VML picture");
             expect(reasonOf(pict("width:72pt;height:36pt"))).to.equal("a VML shape with an outline in the line");
-            expect(reasonOf(pict("width:72px;height:36pt", [], UNOUTLINED))).to.equal(
-                "a VML drawing with a length in units not yet followed",
-            );
+            expect(itemsOf(readBody([p(pict("width:96px;height:36pt", [], UNOUTLINED))]))).to.deep.equal([
+                { type: "box", width: 72, height: 36, font: {} },
+            ]);
             expect(reasonOf(pict("width:72pt", [], UNOUTLINED))).to.equal("a VML drawing with no size");
             expect(reasonOf(pict("width:72pt;height:2em", [], UNOUTLINED))).to.equal(
+                "a VML drawing with a length in units not yet followed",
+            );
+            expect(reasonOf(pict("width:2em;height:36pt", [], UNOUTLINED))).to.equal(
                 "a VML drawing with a length in units not yet followed",
             );
             expect(reasonOf(r({ "w:pict": [{ "v:shapetype": [] }] }))).to.equal("a VML drawing with no shape");
@@ -1880,11 +1882,13 @@ describe("readDocument", () => {
             expect(aligned("right").numberAlignment).to.equal("right");
             expect(aligned("end").numberAlignment).to.equal("right");
             expect(aligned("center").numberAlignment).to.equal("center");
-            for (const jc of [undefined, "left", "start"]) {
+            // The schema's paragraph alignments, which Word lines a number up to the left with, as with none
+            const LEFT = ["left", "start", "both", "distribute", "numTab", "lowKashida", "mediumKashida", "highKashida", "thaiDistribute"];
+            for (const jc of [undefined, ...LEFT]) {
                 expect(aligned(jc).numberAlignment).to.equal(undefined);
                 expect(aligned(jc).unsupported).to.equal(undefined);
             }
-            expect(aligned("both").unsupported).to.equal("a list number aligned in a way not yet followed");
+            expect(aligned("bogus").unsupported).to.equal("a list number aligned in a way not yet followed");
             // A level with no number has nothing to align
             const empty = readLists(
                 [abstractNum(0, lvl(0, value("w:numFmt", "bullet"), value("w:lvlText", ""), value("w:lvlJc", "right"))), num(1, 0)],
@@ -1901,7 +1905,46 @@ describe("readDocument", () => {
                 "a list numbered as Word 6 numbered lists",
             );
             expect(stopsAt(decimal(0, { "w:legacy": { _attr: { "w:legacy": 0 } } }))).to.equal(undefined);
-            expect(stopsAt(value("w:numStyleLink", "OutlineList"))).to.equal("a list defined by a list style");
+        });
+
+        it("should number a list defined by a list style with the levels of the definition the style's list is made from, as the standard has it", () => {
+            // word-stops-numbers.docx LI10: definition 1 takes its levels from the list style ListStyle (w:numStyleLink), whose
+            // list, 2, is made from definition 2, which names the style (w:styleLink) and has the levels
+            const listStyle = (...more: readonly object[]): object => ({
+                "w:style": [
+                    { _attr: { "w:type": "numbering", "w:styleId": "ListStyle" } },
+                    { "w:pPr": [{ "w:numPr": [value("w:numId", 2)] }] },
+                    ...more,
+                ],
+            });
+            const letters = lvl(0, value("w:start", 1), value("w:numFmt", "upperLetter"), value("w:lvlText", "%1)"));
+            const linked = (style: object | undefined, ...ownList: readonly object[]): DocumentContent =>
+                readContent(
+                    { "w:body": [listItem(1, 0, "one"), listItem(1, 0, "two"), listItem(2, 0, "three")] },
+                    {
+                        styles: { ...WORD_DEFAULT_STYLES, styles: readTextStyles({ "w:styles": style ? [style] : [] }).styles },
+                        headersAndFooters: new Map(),
+                        numbering: {
+                            "w:numbering": [
+                                abstractNum(1, value("w:numStyleLink", "ListStyle")),
+                                abstractNum(2, value("w:styleLink", "ListStyle"), letters),
+                                num(1, 1),
+                                num(2, 2, ...ownList),
+                            ],
+                        },
+                    },
+                );
+            // Its lists count together with the style's own
+            expect(numbersOf(linked(listStyle()))).to.deep.equal(["A)", "B)", "C)"]);
+            // A style that isn't found, or isn't a list style, and a list of the style's that gives levels of its own
+            const reasonOf = (content: DocumentContent): string | undefined => paragraphOf(content).unsupported;
+            expect(reasonOf(linked(undefined))).to.equal("a list defined by a list style that isn't found");
+            expect(reasonOf(linked({ "w:style": [{ _attr: { "w:type": "paragraph", "w:styleId": "ListStyle" } }] }))).to.equal(
+                "a list defined by a list style that isn't found",
+            );
+            expect(reasonOf(linked(listStyle(), lvlOverride(0, value("w:startOverride", 3))))).to.equal(
+                "a list defined by a list style whose own list gives levels of its own",
+            );
         });
 
         it("should start a level again after the level it gives, or never, as the schema has it (w:lvlRestart)", () => {
@@ -3165,14 +3208,22 @@ describe("readDocument", () => {
             });
             const unsupportedOf = (element: unknown): string | undefined => readBody([element]).blocks[0].block.unsupported;
             expect(unsupportedOf({ "m:oMathPara": [] })).to.equal("an equation");
-            expect(unsupportedOf(bound(p(r(t("Title")))))).to.equal("a content control filled from custom XML");
-            expect(unsupportedOf(p(bound(r(t("Title")))))).to.equal("a content control filled from custom XML");
+            expect(unsupportedOf(bound(p(r(t("Title")))))).to.equal(
+                "a content control Word fills in from custom XML with other text than is written in it",
+            );
+            expect(unsupportedOf(p(bound(r(t("Title")))))).to.equal(
+                "a content control Word fills in from custom XML with other text than is written in it",
+            );
             const cell = { "w:tc": [p()] };
             expect(unsupportedOf({ "w:tbl": [{ "w:tr": [{ "w:tc": [bound(p())] }] }] })).to.equal(
-                "a content control filled from custom XML",
+                "a content control Word fills in from custom XML with other text than is written in it",
             );
-            expect(unsupportedOf({ "w:tbl": [bound({ "w:tr": [cell] })] })).to.equal("a content control filled from custom XML");
-            expect(unsupportedOf({ "w:tbl": [{ "w:tr": [cell, bound(cell)] }] })).to.equal("a content control filled from custom XML");
+            expect(unsupportedOf({ "w:tbl": [bound({ "w:tr": [cell] })] })).to.equal(
+                "a content control Word fills in from custom XML with other text than is written in it",
+            );
+            expect(unsupportedOf({ "w:tbl": [{ "w:tr": [cell, bound(cell)] }] })).to.equal(
+                "a content control Word fills in from custom XML with other text than is written in it",
+            );
             expect(unsupportedOf({ "w:sdt": [{ "w:sdtPr": [] }, { "w:sdtContent": [p(r(t("Title")))] }] })).to.equal(undefined);
         });
 
@@ -3464,8 +3515,8 @@ describe("readDocument", () => {
             expect(read(p(anchored("margin", "line")))).to.deep.equal([ITS_LINE]);
             expect(read(p(anchored("character", "page")))).to.deep.equal([ITS_LINE]);
             // One whose place can't be read stops as in the body
-            expect(read(p(r({ "w:drawing": [{ "wp:anchor": [{ "wp:wrapSquare": {} }] }] })))).to.deep.equal([
-                "a drawing placed by neither an alignment nor an offset",
+            expect(read(p(r({ "w:drawing": [{ "wp:anchor": [{ _attr: { simplePos: "1" } }, { "wp:wrapSquare": {} }] }] })))).to.deep.equal([
+                "a drawing placed by its simple position",
             ]);
             const inCell = {
                 "w:tbl": [
@@ -5400,7 +5451,7 @@ describe("readDocument", () => {
         });
 
         it("should read what is written in a content control bound to custom XML, unless it starts with a table", () => {
-            const control = "a content control filled from custom XML";
+            const control = "a content control Word fills in from custom XML with other text than is written in it";
             const content = guessed([bound(p(r(t("Title"))), p(r(t("Subtitle")))), p(bound(r(t("Inline")))), bound({ "w:tbl": [] })]);
             expect(read(content)).to.deep.equal([
                 [control, "Title"],
