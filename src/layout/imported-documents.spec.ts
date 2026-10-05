@@ -240,6 +240,28 @@ describe("imported documents", () => {
         expect(paragraphOf(content, "last").format.spaceAfter).to.equal(0);
     });
 
+    it("should stop at an imported document whose formatting is kept that ends in a paragraph of a content control or custom XML", () => {
+        const kept = (body: string): DocumentContent =>
+            read(
+                {
+                    body: `<w:altChunk r:id="rIdImport"><w:altChunkPr><w:matchSrc/></w:altChunkPr></w:altChunk>${paragraph("after")}${SECTION}`,
+                    imported: IMPORTED,
+                },
+                { imported: { body, styles: style("Normal", "Normal", '<w:pPr><w:spacing w:after="240"/></w:pPr>') } },
+            );
+        const STOP = "an imported document whose formatting is kept that ends in a content control or custom XML";
+        // Which paragraph Word gives none of its space after there hasn't been seen
+        for (const body of [
+            `${paragraph("one")}<w:sdt><w:sdtContent>${paragraph("last")}</w:sdtContent></w:sdt>`,
+            `<w:customXml w:element="part">${paragraph("last")}</w:customXml>`,
+        ]) {
+            expect(kept(body).blocks[0].block).to.deep.include({ unsupported: STOP });
+        }
+        // One that ends in a table in one is ended with a paragraph of its own, which has none
+        const table = kept(`<w:sdt><w:sdtContent><w:tbl><w:tr><w:tc>${paragraph("cell")}</w:tc></w:tr></w:tbl></w:sdtContent></w:sdt>`);
+        expect(table.blocks.map(({ block }) => block.unsupported)).to.not.include(STOP);
+    });
+
     it("should put paragraphs and tables of no style of an imported document in its default styles, where the document's are others (AS5)", () => {
         const content = read(
             {

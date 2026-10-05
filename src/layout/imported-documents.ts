@@ -27,8 +27,9 @@
  * Those that aren't followed are left for the layout to stop at, with why: a document in another format, such as HTML or
  * plain text, which Word converts its own way (AC8); one with a style of its own whose defaults leave out some of the
  * document's other than its font and size, or its spacing and indents where they are Word's own, and East Asian or
- * right-to-left text in one whose styles give no font, which Word's PDFs haven't shown; and one with a page reference or
- * number of pages, whose number docx can't write in it.
+ * right-to-left text in one whose styles give no font, and one whose formatting is kept that ends in a paragraph of a
+ * content control or custom XML, which Word's PDFs haven't shown; and one with a page reference or number of pages, whose
+ * number docx can't write in it.
  *
  * @module
  */
@@ -676,6 +677,13 @@ export const withImports = (parts: DocxParts): DocxParts => {
         if (style.ownFont === true && eastAsianOrComplex) {
             return "East Asian or right-to-left text in an imported document whose own styles give no font";
         }
+        const blocks = content.filter((child) => !isObject(child) || !("w:sectPr" in child));
+        const last = lastBlockOf(blocks);
+        // With its formatting kept, which paragraph Word gives none of its space after, where its last is in a content control
+        // or custom XML, hasn't been seen
+        if (keep && last !== undefined && nameOf(last) === "w:p" && !blocks.includes(last)) {
+            return "an imported document whose formatting is kept that ends in a content control or custom XML";
+        }
         const list = mergeLists(numbering, document.numbering);
         const withIds = (notes: { readonly footnotes?: Ids; readonly endnotes?: Ids }): Renames => ({
             styles: style.ids,
@@ -693,8 +701,6 @@ export const withImports = (parts: DocxParts): DocxParts => {
         numbering = withAdded(numbering ?? { "w:numbering": [] }, renamed(list.added, renames) as readonly XmlObject[]);
         // Its body, without its section's properties, and ending with a paragraph, as Word gives every document (AC2b, AC2c).
         // With its formatting kept, Word gives its last paragraph none of its space after (AS9, IM2a, IM2b)
-        const blocks = content.filter((child) => !isObject(child) || !("w:sectPr" in child));
-        const last = lastBlockOf(blocks);
         const ended = last !== undefined && nameOf(last) === "w:p" ? blocks : [...blocks, { "w:p": [] }];
         const own = withDefaultStyles(renamed(ended, renames), style.defaults);
         return withoutBookmarks(keep ? withNoSpaceAfter(own) : own, leftOut);
