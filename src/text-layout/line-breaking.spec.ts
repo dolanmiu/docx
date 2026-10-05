@@ -1937,6 +1937,13 @@ describe("layoutLines on a document grid, as Word lays it out (scripts/layout-pr
             const atLeast = linesOf(marked, { ...LINES, format: { lineSpacing: { rule: "atLeast", height: 20 } } })[0];
             expect(atLeast.height).to.equal(20);
             expect(atLeast.unsupported).to.equal(undefined);
+            // But not marks over and under text on one line, with line spacing, as without the grid
+            expect(
+                unsupportedOf([...marked, mincho(IDEOGRAPH, 10.5, { emphasis: "below" })], {
+                    ...LINES,
+                    format: { lineSpacing: { rule: "atLeast", height: 20 } },
+                }),
+            ).to.equal("emphasis marks over and under text on one line with line spacing");
         });
     });
 
