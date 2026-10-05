@@ -6614,10 +6614,13 @@ describe("paginate", () => {
                     sections: [first],
                 });
                 expect(firstOnly.map((page) => page.filter(([, y]) => y === 40).length)).to.deep.equal([2, 1]);
-                // Placed against the column, it is against the text across the page
+                // Placed against the column, it is against the text across the page: 70 from its left at 10, where the line
+                // beside it goes either side
                 const column = floating({ width: 30, horizontal: { from: "column", offset: 70 }, vertical: { from: "page", offset: 40 } });
-                expect(roomsOf([prose("a", 9)], { sections: [{ ...PARTS, headers: { default: withPart(column) } }] })[0][2]).to.deep.equal([
-                    10, 30, 180,
+                const besideColumn = roomsOf([prose("a", 30)], { sections: [{ ...PARTS, headers: { default: withPart(column) } }] });
+                expect(besideColumn[0].filter(([, y]) => y === 40)).to.deep.equal([
+                    [10, 40, 70],
+                    [110, 40, 80],
                 ]);
             });
 
