@@ -329,6 +329,11 @@ export type TableRow = {
     readonly borderBottom: number;
     /** The room of the border below the row where the table breaks across pages after it, in points */
     readonly breakBorder?: number;
+    /**
+     * The room of the border above the row, more than `borderTop`, where the table breaks across pages before it, in
+     * points: the table's top border, in a table with space between its cells
+     */
+    readonly breakTop?: number;
 };
 
 export type TableBlock = {
@@ -2469,7 +2474,10 @@ const readTable = (element: XmlObject, reader: Reader): TableBlock | undefined =
     );
     // Each of the table's borders from the last that gives it: its styles', then its own (word-table-formats.docx BC6)
     const tableBorders: BorderSet = Object.assign({}, ...allProperties.map((given) => readBorderSet(find(given, "w:tblBorders"))));
-    const tableSpacing = readCellSpacing(lastOf(allProperties, "w:tblCellSpacing"));
+    const givenSpacing = readCellSpacing(lastOf(allProperties, "w:tblCellSpacing"));
+    // Word lays out a table whose space between cells is a share of its width without any (word-stops-table-borders.docx
+    // TB6a, TB6b)
+    const tableSpacing = givenSpacing === "share" ? 0 : givenSpacing;
     const { "w:w": indentValue, "w:type": indentType = "dxa" } = attributesOf(lastOf(allProperties, "w:tblInd"));
     const indent = indentType === "nil" ? 0 : indentType === "dxa" ? (twips(indentValue) ?? 0) : undefined;
     const grid = childrenOf(find(children, "w:tblGrid"))
@@ -2577,7 +2585,7 @@ const readTable = (element: XmlObject, reader: Reader): TableBlock | undefined =
             readonly cells: readonly ReadCell[];
             readonly deleted: boolean;
             readonly row: Omit<TableRow, "cells" | "borderTop" | "borderBottom">;
-            readonly spacing: number | undefined;
+            readonly spacing: number | "share" | undefined;
             readonly edges: ReadonlyMap<number, number>;
             readonly end: number;
             readonly unsupported?: string;
@@ -2739,16 +2747,20 @@ const readTable = (element: XmlObject, reader: Reader): TableBlock | undefined =
             // A row of a division of a web page (`w:divId`) Word moves across by the division's left margin, as wide and
             // as tall as it is without, with the division's borders beside it but not above or below
             // (`word-stops-pages.docx` DV1b), so its lines are as they are. One with table properties of its own
-            // (`w:tblPrEx`) other than borders and cell margins, such as a width, isn't followed
+            // (`w:tblPrEx`) other than borders and cell margins, such as a width, isn't followed, nor are its own borders
+            // where there is space between its cells, whose table borders go around the space (word-stops-table-borders.docx
+            // TB5) and whose own Word hasn't been seen to place
             const rowUnsupported = rowParts.some((part) => "w:sdt" in part)
                 ? BOUND_CONTROL
                 : changesLines(exceptions, FOLLOWED_ROW_TABLE_PROPERTIES)
                   ? "a table row with table properties of its own"
-                  : deleted && (hasAnyOf(rowChildren, REMOVED_NOTES) || JSON.stringify([...rowReader.counters]) !== counts)
-                    ? "a list or a note in a deleted table row"
-                    : unseenHeaderCount
-                      ? "a deleted row in a table's header of several rows, whose style formats some of its rows"
-                      : cellsUnsupported;
+                  : spacing !== 0 && find(exceptions, "w:tblBorders") !== undefined
+                    ? "a table row with borders of its own in a table with space between its cells"
+                    : deleted && (hasAnyOf(rowChildren, REMOVED_NOTES) || JSON.stringify([...rowReader.counters]) !== counts)
+                      ? "a list or a note in a deleted table row"
+                      : unseenHeaderCount
+                        ? "a deleted row in a table's header of several rows, whose style formats some of its rows"
+                        : cellsUnsupported;
             return {
                 cells,
                 deleted,
@@ -2780,16 +2792,22 @@ const readTable = (element: XmlObject, reader: Reader): TableBlock | undefined =
     }
     const tableCells = read.flatMap(({ cells }) => cells);
     const fits = !fixed && tableCells.some(({ ownWidth }) => ownWidth === undefined);
-    // Space between cells that is a share of the table's width, or that a row has of its own, isn't known yet
+    // Rows with space between their cells of their own have it in place of the table's, at the table's edges too, as a
+    // table with that space has it (word-stops-table-borders.docx TB6c, TB6d). Rows with different space, a row's that is a
+    // share of the table's width, and space of another type, such as `auto`, haven't been seen. A deleted row's doesn't
+    // count, as it takes no room, nor does the space around it (word-tracked-tables.docx MK14h)
+    const rowSpacings = new Set(kept.map(({ spacing }) => spacing));
     const spacingUnsupported =
-        tableSpacing === undefined || read.some(({ spacing }) => spacing === undefined)
-            ? "space between table cells as a share of the table's width"
-            : read.some(({ spacing }) => spacing !== tableSpacing)
-              ? "a table row with space between its cells of its own"
-              : undefined;
+        tableSpacing === undefined || rowSpacings.has(undefined)
+            ? "space between table cells of a width that isn't in twips"
+            : rowSpacings.has("share")
+              ? "space between a table row's cells as a share of the table's width"
+              : rowSpacings.size > 1
+                ? "table rows with different space between their cells"
+                : undefined;
     // The room around each row's and cell's text, from the borders and the space between cells, which every row has the
     // same of when it is followed
-    const followedSpacing = spacingUnsupported === undefined ? tableSpacing! : 0;
+    const followedSpacing = spacingUnsupported === undefined ? ((kept[0]?.spacing as number | undefined) ?? tableSpacing!) : 0;
     const geometryOf = (laidOut: typeof read): TableGeometry | string =>
         tableGeometry(
             laidOut.map(({ cells }) => ({ cells, spacing: followedSpacing })),
@@ -2834,7 +2852,7 @@ const readTable = (element: XmlObject, reader: Reader): TableBlock | undefined =
             ...row,
             borderTop: placed?.borderTop ?? 0,
             borderBottom: placed?.borderBottom ?? 0,
-            ...withoutUndefined({ breakBorder: placed?.breakBorder }),
+            ...withoutUndefined({ breakBorder: placed?.breakBorder, breakTop: placed?.breakTop }),
             cells: cells.map(({ borders: _, margins, gridWidth: __, noWrap: ___, ...cell }, cellIndex) => {
                 const pending = [...carried, ...cellBookmarks[cellIndex]];
                 const marked = pending.length === 0 ? undefined : startingAtFirst(cell.blocks, pending);

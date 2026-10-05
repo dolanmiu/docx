@@ -683,8 +683,10 @@ const scripted = (font: TextFont, { verticalAlign }: RunFormat): TextFont => {
 // The room each style of border takes as Word draws it, in eighths of a point, from the width it is given, at 6 and 18
 // eighths (`word-paragraph-formats.docx` B6), and round a run at 4 eighths, and 6 for waves
 // (scripts/layout-probes/word-run-formatting2.ts RF12). Lines of one stroke are as wide as they are given, a double line
-// 3 times and a triple 5, waves and dash-dot strokes are as wide whatever they are given, and lines thin and thick 12 or
-// 24 eighths more, which Word was seen to draw only from 4 eighths to 18
+// 3 times and a triple 5, waves and dash-dot strokes are as wide whatever they are given, and lines thin and thick with a
+// small gap 12 or 24 eighths more, which Word was seen to draw only from 4 eighths to 18. Those with a medium or large gap
+// take what they take beside a table's cells, where Word drew them from 4 eighths to 24 (`word-table-formats.docx` BS),
+// as it did a thin, thick and thin line with a large gap around a paragraph at 24 (`word-stops-text.docx` PB4b)
 export const BORDER_WIDTHS: Readonly<Record<string, (size: number) => number | undefined>> = {
     ...Object.fromEntries(
         ["single", "thick", "dotted", "dashed", "dotDash", "dotDotDash", "dashSmallGap", "inset", "outset"].map((style) => [
@@ -707,6 +709,18 @@ export const BORDER_WIDTHS: Readonly<Record<string, (size: number) => number | u
                 ["thinThickThinSmallGap", 24],
             ] as const
         ).map(([style, more]) => [style, (size: number) => (size >= 4 && size <= 18 ? size + more : undefined)]),
+    ),
+    ...Object.fromEntries(
+        (
+            [
+                ["thinThickMediumGap", 2, 0],
+                ["thickThinMediumGap", 2, 0],
+                ["thinThickThinMediumGap", 3, 0],
+                ["thinThickLargeGap", 1, 18],
+                ["thickThinLargeGap", 1, 18],
+                ["thinThickThinLargeGap", 2, 24],
+            ] as const
+        ).map(([style, times, more]) => [style, (size: number) => (size >= 4 && size <= 24 ? times * size + more : undefined)]),
     ),
 };
 // The narrowest and widest borders Word draws, in eighths of a point, and the furthest from the text, in points
