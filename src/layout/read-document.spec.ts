@@ -3330,26 +3330,80 @@ describe("readDocument", () => {
                 ]);
                 // A row of only text running up or down is as tall as a line of its mark (word-table-formats.docx VT1)
                 expect(unsupported).to.equal(undefined);
-                // East Asian characters upright, or on their side
-                expect(tableOf([], [[value("w:textDirection", "tbRlV")]]).unsupported).to.equal(
+                // word-stops-vertical-cells.docx TV6a to TV6c: down with East Asian characters upright, as text running down,
+                // and across with them on their side, as text across
+                const directions = tableOf(
+                    [],
+                    ["tbRlV", "tbLrV", "lrTbV", "rlV", "tbV"].map((direction) => [value("w:textDirection", direction)]),
+                );
+                expect([directions.unsupported, ...directions.rows.map(({ cells }) => cells[0].vertical)]).to.deep.equal([
+                    undefined,
+                    true,
+                    true,
+                    undefined,
+                    true,
+                    undefined,
+                ]);
+                expect(tableOf([], [[value("w:textDirection", "sideways")]]).unsupported).to.equal(
                     "text in a table cell in a direction not yet followed",
                 );
-                // Marks of different sizes, a picture or a table in it
-                const marks = readBody([
+                const upTable = (...blocks: readonly object[]): TableBlock =>
+                    readBody([{ "w:tbl": [{ "w:tr": [cell([value("w:textDirection", "btLr")], ...blocks)] }] }]).blocks[0]
+                        .block as TableBlock;
+                // A picture in it, as text (TV5c)
+                expect(
+                    upTable(p(r(t("a")), r({ "w:drawing": [{ "wp:inline": [{ "wp:extent": { _attr: { cx: 9525, cy: 9525 } } }] }] })))
+                        .unsupported,
+                ).to.equal(undefined);
+                // Marks of different sizes, a mark larger than its text (TV5b), or a table in it (TV5d)
+                const reason = "text running up or down a table cell with marks of different sizes, or larger than its text";
+                expect(upTable(p(r(t("a"))), p(pPr(rPr(value("w:sz", 40))), r(t("b")))).unsupported).to.equal(reason);
+                expect(upTable(p(pPr(rPr(value("w:sz", 40))), r(rPr(value("w:sz", 22)), t("b")))).unsupported).to.equal(reason);
+                expect(upTable(p(pPr(rPr(value("w:sz", 22))), r(rPr(value("w:sz", 40)), t("b")))).unsupported).to.equal(undefined);
+                expect(upTable({ "w:tbl": [] }, p()).unsupported).to.equal("text running up or down a table cell with a table in it");
+                // A page field's number is text, of its run's size
+                const page = (size: number): readonly object[] =>
+                    [
+                        { "w:fldChar": { _attr: { "w:fldCharType": "begin" } } },
+                        { "w:instrText": [{ _attr: { "xml:space": "preserve" } }, "PAGE"] },
+                        { "w:fldChar": { _attr: { "w:fldCharType": "separate" } } },
+                        t("1"),
+                        { "w:fldChar": { _attr: { "w:fldCharType": "end" } } },
+                    ].map((run) => r(rPr(value("w:sz", size)), run));
+                expect(upTable(p(pPr(rPr(value("w:sz", 40))), ...page(22))).unsupported).to.equal(reason);
+                expect(upTable(p(pPr(rPr(value("w:sz", 22))), ...page(40))).unsupported).to.equal(undefined);
+                // A text box in it, which Word hasn't been seen to lay out there
+                const textBox = r({
+                    "w:pict": [
+                        {
+                            "v:shape": [
+                                { _attr: { style: "width:100pt;height:50pt", stroked: "f" } },
+                                { "v:textbox": [{ _attr: { style: "mso-fit-shape-to-text:t" } }, { "w:txbxContent": [p(r(t("in")))] }] },
+                            ],
+                        },
+                    ],
+                });
+                expect(upTable(p(r(t("a")), textBox)).unsupported).to.equal("text running up or down a table cell with a text box in it");
+            });
+
+            it("should stop at text running up or down a cell of a table sized to its text in a cell of one, or that text flows around", () => {
+                const reason = "text that runs up or down a cell of a table sized to its text, in a table cell or that text flows around";
+                const up = { "w:tbl": [{ "w:tr": [cell([value("w:textDirection", "btLr")], p(r(t("a"))))] }] };
+                const outer = (inner: object, properties: readonly object[] = []): TableBlock =>
+                    readBody([{ "w:tbl": [{ "w:tblPr": properties }, { "w:tr": [cell([], inner, p())] }] }]).blocks[0].block as TableBlock;
+                expect(outer(up).unsupported).to.equal(reason);
+                // In a table laid out fixed, which its width doesn't change
+                expect(outer(up, [{ "w:tblLayout": { _attr: { "w:type": "fixed" } } }]).unsupported).to.equal(undefined);
+                const floating = readBody([
                     {
                         "w:tbl": [
-                            { "w:tr": [cell([value("w:textDirection", "btLr")], p(r(t("a"))), p(pPr(rPr(value("w:sz", 40))), r(t("b"))))] },
+                            { "w:tblPr": [{ "w:tblpPr": { _attr: { "w:horzAnchor": "page", "w:vertAnchor": "page" } } }] },
+                            ...up["w:tbl"],
                         ],
                     },
+                    p(),
                 ]).blocks[0].block as TableBlock;
-                expect(marks.unsupported).to.equal(
-                    "text running up or down a table cell with marks of different sizes, a picture or a table",
-                );
-                const nested = readBody([{ "w:tbl": [{ "w:tr": [cell([value("w:textDirection", "btLr")], { "w:tbl": [] }, p())] }] }])
-                    .blocks[0].block as TableBlock;
-                expect(nested.unsupported).to.equal(
-                    "text running up or down a table cell with marks of different sizes, a picture or a table",
-                );
+                expect(floating.unsupported).to.equal(reason);
             });
 
             it("should read a table's indent from its style or itself, and stop at one that is a share of the width", () => {
