@@ -3176,7 +3176,7 @@ describe("readDocument", () => {
             );
             // And with a row that starts past the first column, its width before it as a cell's (LW7a, LW7b), but not where it
             // doesn't say how wide in twips
-            const skipping = (before: readonly object[]): TableBlock =>
+            const skipping = (properties: readonly object[]): TableBlock =>
                 readBody([
                     {
                         "w:tbl": [
@@ -3190,7 +3190,7 @@ describe("readDocument", () => {
                             },
                             {
                                 "w:tr": [
-                                    { "w:trPr": [value("w:gridBefore", 1), ...before] },
+                                    { "w:trPr": [value("w:gridBefore", 1), ...properties] },
                                     cell([{ "w:tcW": { _attr: { "w:w": 3000 } } }], p()),
                                 ],
                             },
@@ -3788,15 +3788,15 @@ describe("readDocument", () => {
                 const spacing = (attributes: object): object => ({ "w:tblCellSpacing": { _attr: attributes } });
                 const tableWith = (
                     properties: readonly unknown[],
-                    cellWidth: readonly unknown[],
+                    cellProperties: readonly unknown[],
                     ...rows: readonly (readonly unknown[])[]
-                ) =>
+                ): TableBlock =>
                     readBody([
                         {
                             "w:tbl": [
                                 { "w:tblPr": properties },
                                 { "w:tblGrid": [{ "w:gridCol": { _attr: { "w:w": 2000 } } }] },
-                                ...rows.map((row) => ({ "w:tr": [{ "w:trPr": row }, cell(cellWidth, p())] })),
+                                ...rows.map((row) => ({ "w:tr": [{ "w:trPr": row }, cell(cellProperties, p())] })),
                             ],
                         },
                     ]).blocks[0].block as TableBlock;

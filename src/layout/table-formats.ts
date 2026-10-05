@@ -206,11 +206,12 @@ export const rowBorders = (rows: readonly (readonly BorderedCell[])[], table: Bo
  * The room the borders left and right of each cell of a row take beside its text, in points: its own, or the table's at
  * the table's edges and between its cells. Where two cells meet, Word draws the heavier of their borders, by Word's weights
  * for their styles (`word-stops-table-borders.docx` TB1 and TB2), but keeps each cell's text from its own border, whichever
- * it draws and whichever is wider (`word-stops-table-borders2.docx` BT1a to BT1e: with no margins, the second cell's text
- * half its own left border in, of 0.5 points beside a single border of 6 points on the left, and of 1.5 and 3 points beside
- * borders of 1 and 2 points Word drew over them). Why, where a border's room isn't known, or where an art border is beside
- * the text, whose room there Word's PDFs haven't settled: apples of 12 points beside a cell's text kept it only 0.75 points
- * from them, where they took 12 points above and below a cell's (BT1g).
+ * it draws and whichever is wider (`word-stops-table-borders2.docx` BT1a to BT1e, with no margins: the second cell's text
+ * 0.5 points in from its dotted and dashed border of 1 point, which Word drew over the first cell's single one of 6, and 3
+ * and 1.5 points in from its single ones of 6 and 3 points, below the first cell's heavier ones of 1 and 0.5 points). Why,
+ * where a border's room isn't known, or where an art border is beside the text, whose room there Word's PDFs haven't
+ * settled: apples of 12 points beside a cell's text kept it only 0.75 points from them, where they took 12 points above
+ * and below a cell's (BT1g).
  */
 export const sideBorders = (
     cells: readonly BorderedCell[],

@@ -154,7 +154,7 @@ export const isVerticalWidthKnown = (cell: Pick<TableCell, "blocks">): boolean =
  * that isn't known, about as wide, times `across`
  */
 const verticalWidths =
-    (lineHeight: LineHeight, across: number) =>
+    (lineHeight: LineHeight, across: number): ((cell: TableCell) => number) =>
     (cell: TableCell): number =>
         verticalCellWidthOf(cell, lineHeight) ??
         across * (sum(cell.blocks.map((block) => (block.type === "paragraph" ? verticalEstimateOf(block) : 0))) + VERTICAL_EXTRA);

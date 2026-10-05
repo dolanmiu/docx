@@ -2798,9 +2798,10 @@ const ROW_PARTS = new Set(["firstRow", "lastRow", "band1Horz", "band2Horz"]);
 const FOLLOWED_PART_ROW_PROPERTIES = new Set(["w:trHeight", "w:cantSplit"]);
 // The table properties of a part of a table style that Word ignores: its space between cells (TS1c)
 const IGNORED_PART_TABLE_PROPERTIES = new Set(["w:tblCellSpacing"]);
-// A table style's own row properties that Word ignores, its height (TS5a), or follows, whether its rows are kept whole
-// (`word-stops-tables2.docx` TS10a), and its own cell properties it follows, its margins, as a part's (TS5b)
-const IGNORED_STYLE_ROW_PROPERTIES = new Set(["w:trHeight", "w:cantSplit"]);
+// A table style's own row properties that are read: its height, which Word ignores (TS5a), and whether its rows are kept
+// whole, which it follows (`word-stops-tables2.docx` TS10a); and its own cell properties it follows, its margins, as a
+// part's (TS5b)
+const READ_STYLE_ROW_PROPERTIES = new Set(["w:trHeight", "w:cantSplit"]);
 const FOLLOWED_STYLE_CELL_PROPERTIES = new Set(["w:tcMar"]);
 // A row's table properties of its own (`w:tblPrEx`) that are followed: its borders and cell margins, which Word gives its
 // cells as the table's (TS4)
@@ -3025,7 +3026,7 @@ const readTable = (element: XmlObject, reader: Reader): TableBlock | undefined =
             const height = find(rowProperties, "w:trHeight");
             return height === undefined ? [] : [attributesOf(height)];
         });
-        const kept = applying.flatMap(([, { rowProperties }]) => {
+        const keptWhole = applying.flatMap(([, { rowProperties }]) => {
             const whole = onOff(rowProperties, "w:cantSplit");
             return whole === undefined ? [] : [whole];
         });
@@ -3035,7 +3036,7 @@ const readTable = (element: XmlObject, reader: Reader): TableBlock | undefined =
             margins: Object.assign({}, ...applying.map(([, { cellProperties }]) => readCellMargins(find(cellProperties, "w:tcMar")))),
             ...withoutUndefined({
                 height: heights[heights.length - 1],
-                cantSplit: kept[kept.length - 1],
+                cantSplit: keptWhole[keptWhole.length - 1],
                 unsupported: unfollowed ? "a table style's formatting for some of its cells" : undefined,
             }),
         };
@@ -3046,7 +3047,7 @@ const readTable = (element: XmlObject, reader: Reader): TableBlock | undefined =
 
     // Whether the table's style keeps its rows whole (`word-stops-tables2.docx` TS10a), the last of its styles that says
     const styleKept = tableStyles.reduce<boolean | undefined>(
-        (kept, { rowProperties = [] }) => onOff(rowProperties, "w:cantSplit") ?? kept,
+        (whole, { rowProperties = [] }) => onOff(rowProperties, "w:cantSplit") ?? whole,
         undefined,
     );
 
@@ -3089,7 +3090,7 @@ const readTable = (element: XmlObject, reader: Reader): TableBlock | undefined =
             // The width before a row that starts past the first column (`w:wBefore`), which Word sizes the columns by as a
             // cell's (word-stops-long-words2.docx LW7a, LW7b), when it is in twips
             const { "w:w": beforeValue, "w:type": beforeType = "dxa" } = attributesOf(find(rowProperties, "w:wBefore"));
-            const before = skipped > 0 && beforeType === "dxa" ? twips(beforeValue) : undefined;
+            const widthBefore = skipped > 0 && beforeType === "dxa" ? twips(beforeValue) : undefined;
             const ownSpacing = find(rowProperties, "w:tblCellSpacing");
             const spacing = ownSpacing === undefined ? tableSpacing : readCellSpacing(ownSpacing);
             // A deleted row is read only as Word sizes the columns by it, with its notes and lists left uncounted, or, where
@@ -3229,7 +3230,7 @@ const readTable = (element: XmlObject, reader: Reader): TableBlock | undefined =
                         ],
                     };
                 },
-                { column: skipped, cells: [], edges: new Map([[skipped, before ?? gridWidth(0, skipped)]]) },
+                { column: skipped, cells: [], edges: new Map([[skipped, widthBefore ?? gridWidth(0, skipped)]]) },
             );
             // A row of a division of a web page (`w:divId`) Word moves across by the division's left margin, as wide and
             // as tall as it is without, with the division's borders beside it but not above or below
@@ -3267,7 +3268,7 @@ const readTable = (element: XmlObject, reader: Reader): TableBlock | undefined =
                         (onOff(rowProperties, "w:cantSplit") ??
                             formatsOf({ row: rowIndex, rows: rows.length, cell: 0, cells: rowCells.length, headerRows }).cantSplit ??
                             styleKept) === true,
-                    ...(before === undefined ? {} : { before }),
+                    ...(widthBefore === undefined ? {} : { before: widthBefore }),
                 },
             };
         },
@@ -3426,7 +3427,7 @@ const readTable = (element: XmlObject, reader: Reader): TableBlock | undefined =
     // ignores and its cells' margins (TS5a, TS5b)
     const styleUnsupported = tableStyles.some(
         ({ rowProperties = [], cellProperties = [] }) =>
-            changesLines(rowProperties, IGNORED_STYLE_ROW_PROPERTIES) || changesLines(cellProperties, FOLLOWED_STYLE_CELL_PROPERTIES),
+            changesLines(rowProperties, READ_STYLE_ROW_PROPERTIES) || changesLines(cellProperties, FOLLOWED_STYLE_CELL_PROPERTIES),
     )
         ? "a table style with formatting of its rows or cells"
         : undefined;

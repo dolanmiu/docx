@@ -1,3 +1,4 @@
+// cspell:ignore Aptos
 import { describe, expect, it } from "vitest";
 
 import { Formatter } from "@export/formatter";
@@ -20,9 +21,9 @@ const MEASURER: TextMeasurer = {
 
 /** The columns of a table sized, and how wide a table is, with lines as tall as the measurer's */
 type Measure = (blocks: readonly Block[]) => ContentWidths;
-const fitColumns = (table: TableBlock, available: number, measure: Measure): TableBlock =>
-    fitColumnsOf(table, available, measure, MEASURER.measureLineHeight);
-const tableWidths = (table: TableBlock, measure: Measure): ContentWidths => tableWidthsOf(table, measure, MEASURER.measureLineHeight);
+const fitColumns = (block: TableBlock, available: number, measuring: Measure): TableBlock =>
+    fitColumnsOf(block, available, measuring, MEASURER.measureLineHeight);
+const tableWidths = (block: TableBlock, measuring: Measure): ContentWidths => tableWidthsOf(block, measuring, MEASURER.measureLineHeight);
 
 /** How narrow and how wide the paragraphs and tables of a cell can be, as the layout measures them */
 const measureWith =
@@ -329,10 +330,17 @@ describe("fitColumns", () => {
             ...up,
             blocks: [{ ...(up.blocks[0] as ParagraphBlock), ...paragraph }],
         });
-        const aptos = unknown({ items: [{ type: "text", text: "a", font: { font: "Aptos" } }] });
+        const aptos = unknown({
+            items: [
+                { type: "text", text: "a", font: { font: "Aptos" } },
+                { type: "box", width: 5, height: 5 },
+            ],
+        });
         const spaced = unknown({ items: [], format: { spaceAfter: 5 } });
         const web = unknown({ format: { autoSpaceAfter: true } });
-        for (const vertical of [aptos, spaced, web]) {
+        // A table in it, which takes no room across it here, and stops the layout where the cell is read
+        const tabled = { ...aptos, blocks: [...aptos.blocks, table([[cell(0, "a")]])] };
+        for (const vertical of [aptos, spaced, web, tabled]) {
             expect(fitColumns(table([[vertical, cell(1, LONG)]]), 200, measure).unsupported).to.equal(reason);
             expect(fitColumns(table([[vertical, cell(1, "aaaa")]], { width: 200 }), 300, measure).unsupported).to.equal(reason);
             // Not where it fits, however wide it is
@@ -380,6 +388,21 @@ describe("fitColumns", () => {
         // word-stops-tables.docx TS8
         const fitted = { ...table([[{ ...cell(0, "aaaaaaaaaa", 30), fitText: true }, cell(1, "aaaa", 50)]]), fit: undefined, widen: {} };
         expect(fitColumns(fitted, 300, measure)).to.equal(fitted);
+        // word-stops-tables2.docx TS13a, TS13b: in a table sized to its text, as wide as its column of the table's grid, as
+        // read, whatever its text
+        const sized = table([[{ ...cell(0, "aaaaaaaaaa"), width: 40, fitText: true }, cell(1, LONG)]]);
+        expect(widthsOf(fitColumns(sized, 200, measure))).to.deep.equal([40, 140]);
+    });
+
+    it("should size the column of a cell whose text doesn't wrap to its lines, in a table sized to its text", () => {
+        // word-stops-tables2.docx TS12a to TS12c: its widest line its widest word, beside a cell of prose narrowed to the room
+        const unwrapped = (text: string): Cell => ({ ...cell(0, text), noWrap: true });
+        expect(widthsOf(fitColumns(table([[unwrapped("aa bb cc"), cell(1, LONG)]]), 200, measure))).to.deep.equal([80, 100]);
+        // And sharing the room in proportion to it where it doesn't fit (TS12b)
+        expect(widthsOf(fitColumns(table([[unwrapped("aa bb cc dd ee ff"), cell(1, "aaaa")]]), 150, measure))).to.deep.equal([105.2, 24.8]);
+        // Not in a table whose cells all have widths, as Word wraps it all the same (word-stops-tables.docx TS7b)
+        const given = { ...table([[{ ...unwrapped("aa bb cc"), ownWidth: 50 }, cell(1, "aaaa", 50)]]), fit: undefined, widen: {} };
+        expect(fitColumns(given, 300, measure)).to.equal(given);
     });
 
     describe("in a table whose cells all have widths", () => {

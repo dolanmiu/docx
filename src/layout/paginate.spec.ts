@@ -1306,6 +1306,20 @@ describe("paginate", () => {
             ]);
             // 20 + 20 + 5 + 10 leaves 15 points: room for b
             expect(pagesOf(content)).to.deep.equal({ margins: "1", atLeast: "1", exact: "1", last: "1", b: "1" });
+            // The border above a row of an exact height is inside that height (word-stops-tables2.docx TS15), but in a table
+            // with space between its cells, outside it, as Word's PDFs haven't shown that
+            const exact = (borderTop: number, spacing?: number): readonly BlockLayout[] =>
+                paginate(
+                    document([
+                        {
+                            ...table([{ ...row([cell("exact")]), height: { value: 15, rule: "exact" }, borderTop }]),
+                            ...(spacing === undefined ? {} : { cellSpacing: spacing }),
+                        },
+                    ]),
+                    { measurer: MEASURER },
+                ).pages[0].body;
+            expect(exact(5)).to.deep.equal([{ type: "table", index: 0, rows: [{ index: 0, y: 10, height: 15 }] }]);
+            expect(exact(5, 1)).to.deep.equal([{ type: "table", index: 0, rows: [{ index: 0, y: 10, height: 20 }] }]);
             const margined = document([
                 {
                     type: "table",
@@ -1700,6 +1714,20 @@ describe("paginate", () => {
                 pagesOf(document([paragraph("a", 4), table([rowOf(first)]), paragraph("b", 2)]));
             // word-watertight-tables.docx TB6: a cell of text running up beside a cell of a line is as tall as the line
             expect(laidOut(cellOf([paragraph("vertical", 5)], { vertical: true }))).to.deep.include({ beside: "1", vertical: "1", b: "1" });
+            // A row of only such a cell is as tall as a line of its last paragraph's mark, and in a font whose lines running up
+            // Word's PDFs haven't shown, which the reader stops at, guessing, as across the page (word-stops-vertical-cells2.docx
+            // VC5f)
+            const marked = (font?: string): ParagraphBlock => ({
+                ...paragraph("up", 1),
+                markFont: { size: 30, ...(font ? { font } : {}) },
+            });
+            const onlyUp = (font?: string): readonly BlockLayout[] => {
+                const up = row([[paragraph("first", 1), marked(font)]]);
+                return paginate(document([table([{ ...up, cells: [{ ...up.cells[0], vertical: true }] }])]), { measurer: MEASURER })
+                    .pages[0].body;
+            };
+            expect(onlyUp()).to.deep.equal([{ type: "table", index: 0, rows: [{ index: 0, y: 10, height: 30 }] }]);
+            expect(onlyUp("Aptos")).to.deep.equal([{ type: "table", index: 0, rows: [{ index: 0, y: 10, height: 30 }] }]);
             // TB7: an empty cell with a 28-point mark and hideMark beside a line is as tall as the line, and 28 points without
             expect(laidOut(cellOf([tallMark], { hideMark: true }))).to.deep.include({ beside: "1", mark: "1", b: "1" });
             expect(laidOut(cellOf([tallMark], {}))).to.deep.include({ beside: "1", mark: "1", b: "2" });
@@ -2010,6 +2038,15 @@ describe("paginate", () => {
                 ]);
                 expect(numbersOf(header).stoppedAt).to.equal(undefined);
                 expect(pagesOf(header)).to.deep.equal({ a: "1", head: "2", body: "3", below: "4" });
+                // Whether Word leaves a page after one that ends its section isn't known
+                const ending = document(
+                    [
+                        [table([row([[paragraph("head", 1)]], { ...set, header: true }), row([[paragraph("body", 1)]])]), 0],
+                        [paragraph("next", 1), 1],
+                    ],
+                    { sections: [SECTION, SECTION] },
+                );
+                expect(numbersOf(ending).stoppedAt).to.equal("a table whose header row is taller than a page, at the end of its section");
                 // Two footnotes, both at the bottom of the next page (RW15a)
                 const noted = (name: string): ParagraphBlock => withItems(paragraph(name, 1), [{ type: "marker", name }]);
                 const notes = new Map([

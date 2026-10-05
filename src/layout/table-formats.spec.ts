@@ -811,12 +811,12 @@ describe("tables laid out as Word lays them out", () => {
     it("should keep the border above a row of an exact height inside it, and below one of an at-least height outside it", () => {
         // word-stops-tables2.docx TS15: a first row of exactly 400 twips, borders of half a point; word-stops-tables.docx TS1a:
         // one of at least 1000
-        const single = { style: BorderStyle.SINGLE, size: 4, color: "000000" };
+        const line = { style: BorderStyle.SINGLE, size: 4, color: "000000" };
         const rowsOf = (rule: (typeof HeightRule)[keyof typeof HeightRule], value: number): Table =>
             new Table({
                 width: { size: WIDTH, type: WidthType.DXA },
                 columnWidths: [WIDTH],
-                borders: { top: single, bottom: single, left: single, right: single, insideHorizontal: single, insideVertical: single },
+                borders: { top: line, bottom: line, left: line, right: line, insideHorizontal: line, insideVertical: line },
                 rows: [
                     new TableRow({ height: { value, rule }, children: [new TableCell({ children: [new Paragraph("r1")] })] }),
                     new TableRow({ children: [new TableCell({ children: [new Paragraph("r2")] })] }),

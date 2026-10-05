@@ -4372,7 +4372,7 @@ export const paginate = (
         );
         /** Why where the table breaks at a row (`index`), before it or in it, isn't known */
         const unknownAt = (index: number): string | undefined =>
-            goingOn.some(({ first, last }) => first <= index && index <= last)
+            goingOn.some(({ first, last: end }) => first <= index && index <= end)
                 ? "a cell merged down the rows of a table in a table cell, whose text goes on past its first row, across pages"
                 : table.cellSpacing === undefined
                   ? undefined
@@ -4557,7 +4557,8 @@ export const paginate = (
         const markers = [...own, ...row.cells.filter(startsMerge).flatMap(roomlessOf)];
         const height = linesBottom() - position;
         const room = row.height?.rule === "exact" ? row.height.value - row.borderTop : height - row.borderTop - row.borderBottom;
-        // Its footnotes, those of its own cells and of the text of cells merged down it that ends in it
+        // Its footnotes, those of its own cells and of the text of cells merged down it that ends in it. Nothing else is on
+        // the page, at whose top it is
         let notes = notesIn(own);
         openMerges = openMerges.flatMap((merge) => {
             const { lines, rest } = fillCell(merge.rest, room - merge.cell.marginTop - merge.cell.marginBottom, !merge.broken);
@@ -4570,9 +4571,6 @@ export const paginate = (
             const next = goesOn(merge, rest, lines.length > 0);
             return next === undefined ? [{ ...merge, rest: [] }] : [next];
         });
-        if (notes.length > 0 && (carried !== undefined || pageNotes.length > 0 || deferred !== undefined)) {
-            throw new Unsupported("footnotes in a table row of a set height taller than a page below others");
-        }
         mark(markers);
         placeRow(index, position, height);
         position = linesBottom();
@@ -5167,9 +5165,9 @@ export const paginate = (
         }
         // What comes after a table whose header row is taller than a page goes on the page after the one it ends on (RW5b,
         // RW18). After one that ends a section, whether Word leaves a page between them isn't known: guessing, it doesn't
-        const next = blocks[blockIndex + 1];
-        if (cutHeader && next !== undefined) {
-            if (next.section === blocks[blockIndex].section) {
+        const after = blocks[blockIndex + 1];
+        if (cutHeader && after !== undefined) {
+            if (after.section === blocks[blockIndex].section) {
                 startPage();
             } else {
                 stopAt("a table whose header row is taller than a page, at the end of its section");
