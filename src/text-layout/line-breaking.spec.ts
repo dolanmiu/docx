@@ -858,8 +858,10 @@ describe("layoutLines", () => {
                 "a justified line that only fits squeezed at a four-per-em space, or at an en, em or ideographic space beside ordinary spaces";
             expect(reasonsOf(325, justified)).to.deep.equal([beside, undefined]);
             expect(reasonsOf(325, { alignment: "distributed" })[0]).to.equal(beside);
-            // 40 past the end of a line of 300, more than a quarter of all its spaces, it goes on the next line in any case
+            // 40 past the end of a line of 300, more than a quarter of all its spaces, it goes on the next line in any case, and
+            // 24 past one of 316, more than a quarter of its ordinary spaces' 90 but not of all of them (word-stops-text2.ts JU4)
             expect(reasonsOf(300, justified)).to.deep.equal([undefined, undefined]);
+            expect(reasonsOf(316, justified)).to.deep.equal([undefined, undefined]);
             // A left-aligned line isn't squeezed
             expect(reasonsOf(325, {})).to.deep.equal([undefined, undefined]);
             // Nor is an en space at the start of a line, before its first word

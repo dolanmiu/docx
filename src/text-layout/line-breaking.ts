@@ -1542,7 +1542,7 @@ export const layoutLines = (
         }
         const over = state.position + tokenWidth - limitOf();
         const slack = limitOf() - state.end;
-        if (over / state.spaces > MOST_SQUEEZE) {
+        if (over / (state.spaces - state.otherSpaces) > MOST_SQUEEZE) {
             return false;
         }
         if (alignment === "distributed") {
@@ -1574,16 +1574,22 @@ export const layoutLines = (
         return state.position + lead + widthOf([...part, hyphen], measurer) <= limitOf() + TOLERANCE;
     };
     /**
-     * Whether a word or picture past the end of a justified line could be squeezed in, were the spaces Word doesn't
-     * squeeze among its spaces squeezed as the others are, beside ordinary spaces it does, or at a four-per-em space,
-     * which Word hasn't been seen with
+     * Whether a word or picture past the end of a justified line could be squeezed in at a four-per-em space, which Word
+     * hasn't been seen with, or at the ordinary spaces beside en, em or ideographic spaces, which Word doesn't squeeze, and
+     * how it weighs them then hasn't been seen. Past the end by more than a quarter of the ordinary spaces' width, it isn't
+     * squeezed in, though they and the others are four times as wide (scripts/layout-probes/stops2/word-stops-text2.ts JU4a,
+     * JU4b: 10 spaces and 6 en spaces, and "lighthouse" past the end by 27% and 35% of the spaces' width)
      */
-    const unsure = (state: LineState, tokenWidth: number): boolean =>
-        squeezes &&
-        !older &&
-        state.otherSpaces > 0 &&
-        (state.spaces - state.otherSpaces > TOLERANCE || state.text.includes("\u2005")) &&
-        state.position + tokenWidth - limitOf() <= MOST_SQUEEZE * state.spaces;
+    const unsure = (state: LineState, tokenWidth: number): boolean => {
+        if (!squeezes || older || state.otherSpaces === 0) {
+            return false;
+        }
+        const over = state.position + tokenWidth - limitOf();
+        const ordinary = state.spaces - state.otherSpaces;
+        return state.text.includes("\u2005")
+            ? over <= MOST_SQUEEZE * state.spaces
+            : ordinary > TOLERANCE && over <= MOST_SQUEEZE * ordinary;
+    };
     /**
      * Why where Word puts the text after a tab to one of the paragraph's own stops past the end of the line isn't known,
      * when it isn't: its probes had no right indent past the margin, indents, first line and hanging ones too
