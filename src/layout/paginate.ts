@@ -1133,6 +1133,12 @@ export const paginate = (
     };
 
     /**
+     * The width a cell's text is laid out in: its own, or for text fitted to the cell, as wide as each paragraph's longest
+     * line, as Word squeezes it onto one line (`word-stops-tables.docx` TS8)
+     */
+    const textWidthOf = (cell: TableCell): number => (cell.fitText ? Math.max(cell.width, contentWidths(cell.blocks).max) : cell.width);
+
+    /**
      * How tall a cell's text makes its row. Text that runs up or down a cell makes it as tall as a line of its paragraph
      * mark, whatever its size, as Word breaks the text into lines as long as the row is tall (`word-watertight-tables.docx`
      * TB6, `word-table-formats.docx` VT1, `word-table-formats2.docx` VT5 to VT7). Guessing, one with a table in it is as
@@ -1140,7 +1146,7 @@ export const paginate = (
      */
     const contentHeight = (cell: TableCell): number => {
         if (!cell.vertical) {
-            return stackHeight(blocksWithRoom(cell), cell.width, true);
+            return stackHeight(blocksWithRoom(cell), textWidthOf(cell), true);
         }
         const first = cell.blocks.find((block): block is ParagraphBlock => block.type === "paragraph")!;
         return linesHeight(measureParagraph({ ...first, items: [] }, cell.width, undefined, undefined, true).lines);
@@ -2562,7 +2568,7 @@ export const paginate = (
                     }
                     if (first.type === "table") {
                         // A table first in the cell breaks as its rows do, so the least of it is its first row's
-                        const sized = sizedToPlace(first, cell.width);
+                        const sized = sizedToPlace(first, textWidthOf(cell));
                         const [firstRow] = sized.rows;
                         return firstRow === undefined ? 0 : canSplit(firstRow) ? leastPartOf(firstRow) : rowHeights(sized)[0];
                     }
@@ -2572,7 +2578,7 @@ export const paginate = (
                         spaceAfter: after,
                         keepLines,
                         widowControl,
-                    } = measureParagraph(first, cell.width, undefined, second, true);
+                    } = measureParagraph(first, textWidthOf(cell), undefined, second, true);
                     const count = keepLines || (widowControl && lines.length <= 3) ? lines.length : widowControl ? 2 : 1;
                     return spaceBefore + linesHeight(lines.slice(0, count)) + (count >= lines.length ? after : 0);
                 }),
@@ -2586,8 +2592,9 @@ export const paginate = (
         !row.cantSplit &&
         row.height?.rule !== "exact" &&
         row.cells.some(
-            ({ blocks: stack, width }) =>
-                stack.length > 1 || stack.some((block) => block.type === "table" || linesOf(block, width).length > 1),
+            (cell) =>
+                cell.blocks.length > 1 ||
+                cell.blocks.some((block) => block.type === "table" || linesOf(block, textWidthOf(cell)).length > 1),
         );
 
     /**
@@ -2604,7 +2611,7 @@ export const paginate = (
             if (rest.length > 0 || first.type === "table") {
                 return false;
             }
-            const { lines, keepLines, widowControl } = measureParagraph(first, cell.width, undefined, undefined, true);
+            const { lines, keepLines, widowControl } = measureParagraph(first, textWidthOf(cell), undefined, undefined, true);
             return keepLines || lines.length === 1 || (widowControl && lines.length <= 3);
         });
 
@@ -3882,9 +3889,9 @@ export const paginate = (
     const cellParagraphs = (cell: TableCell): readonly CellParagraph[] =>
         (cell.vertical ? [] : blocksWithRoom(cell)).map((block, index, stack): CellParagraph => {
             if (block.type === "paragraph") {
-                return { paragraph: measureParagraph(block, cell.width, stack[index - 1], stack[index + 1], true), from: 0 };
+                return { paragraph: measureParagraph(block, textWidthOf(cell), stack[index - 1], stack[index + 1], true), from: 0 };
             }
-            const table = sizedToPlace(block, cell.width);
+            const table = sizedToPlace(block, textWidthOf(cell));
             return { table, heights: rowHeights(table), from: 0 };
         });
 

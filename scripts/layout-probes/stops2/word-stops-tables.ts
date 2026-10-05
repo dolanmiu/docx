@@ -390,28 +390,35 @@ await write({
             const styles = parts.get("word/styles.xml")!;
             parts.set("word/styles.xml", styles.replace("</w:styles>", `${STYLES.join("")}</w:styles>`));
             let text = parts.get("word/document.xml")!;
+            // Each step only where its probe is, as ONLY leaves the others out
             // TS3: the first row turned off in the table's look
             const ts3 = text.indexOf("@@TS3LOOK@@");
-            text = withProperty(
-                text,
-                "w:tblPr",
-                '<w:tblLook w:firstRow="0" w:lastRow="0" w:firstColumn="0" w:lastColumn="0" w:noHBand="0" w:noVBand="1"/>',
-                text.lastIndexOf("<w:tbl>", ts3),
-            );
-            text = text.replace(" @@TS3LOOK@@", "");
+            if (ts3 >= 0) {
+                text = withProperty(
+                    text,
+                    "w:tblPr",
+                    '<w:tblLook w:firstRow="0" w:lastRow="0" w:firstColumn="0" w:lastColumn="0" w:noHBand="0" w:noVBand="1"/>',
+                    text.lastIndexOf("<w:tbl>", ts3),
+                );
+                text = text.replace(" @@TS3LOOK@@", "");
+            }
             // TS4: the second row's own table properties
             const ts4 = text.indexOf(">TS4 r2 own<");
-            const row = text.lastIndexOf("<w:tr>", ts4) + "<w:tr>".length;
-            text =
-                text.slice(0, row) +
-                '<w:tblPrEx><w:tblBorders><w:top w:val="single" w:sz="12" w:space="0" w:color="000000"/><w:bottom w:val="single" w:sz="12" w:space="0" w:color="000000"/><w:insideV w:val="single" w:sz="12" w:space="0" w:color="000000"/></w:tblBorders><w:tblCellMar><w:left w:w="300" w:type="dxa"/><w:right w:w="300" w:type="dxa"/></w:tblCellMar></w:tblPrEx>' +
-                text.slice(row);
+            if (ts4 >= 0) {
+                const row = text.lastIndexOf("<w:tr>", ts4) + "<w:tr>".length;
+                text =
+                    text.slice(0, row) +
+                    '<w:tblPrEx><w:tblBorders><w:top w:val="single" w:sz="12" w:space="0" w:color="000000"/><w:bottom w:val="single" w:sz="12" w:space="0" w:color="000000"/><w:insideV w:val="single" w:sz="12" w:space="0" w:color="000000"/></w:tblBorders><w:tblCellMar><w:left w:w="300" w:type="dxa"/><w:right w:w="300" w:type="dxa"/></w:tblCellMar></w:tblPrEx>' +
+                    text.slice(row);
+            }
             // TS6: the first two cells merged as old versions of Word wrote it
             const ts6 = text.indexOf(">TS6 merged across two<");
-            const firstCell = text.lastIndexOf("<w:tc>", ts6);
-            text = withProperty(text, "w:tcPr", '<w:hMerge w:val="restart"/>', firstCell + 6, text.indexOf("<w:p", firstCell));
-            const secondCell = text.indexOf("<w:tc>", text.indexOf(">TS6 merged across two<"));
-            text = withProperty(text, "w:tcPr", '<w:hMerge w:val="continue"/>', secondCell + 6, text.indexOf("<w:p", secondCell));
+            if (ts6 >= 0) {
+                const firstCell = text.lastIndexOf("<w:tc>", ts6);
+                text = withProperty(text, "w:tcPr", '<w:hMerge w:val="restart"/>', firstCell + 6, text.indexOf("<w:p", firstCell));
+                const secondCell = text.indexOf("<w:tc>", text.indexOf(">TS6 merged across two<"));
+                text = withProperty(text, "w:tcPr", '<w:hMerge w:val="continue"/>', secondCell + 6, text.indexOf("<w:p", secondCell));
+            }
             // TS7, TS8
             for (const [name, xml] of [
                 ["TS7a nowrap", "<w:noWrap/>"],
@@ -419,8 +426,10 @@ await write({
                 ["TS8 fitted", "<w:tcFitText/>"],
             ] as const) {
                 const at = text.indexOf(`>${name}`);
-                const tc = text.lastIndexOf("<w:tc>", at);
-                text = withProperty(text, "w:tcPr", xml, tc + 6, text.indexOf("<w:p", tc));
+                if (at >= 0) {
+                    const tc = text.lastIndexOf("<w:tc>", at);
+                    text = withProperty(text, "w:tcPr", xml, tc + 6, text.indexOf("<w:p", tc));
+                }
             }
             parts.set("word/document.xml", text);
         },

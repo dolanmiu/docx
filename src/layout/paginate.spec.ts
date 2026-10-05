@@ -1643,6 +1643,19 @@ describe("paginate", () => {
             });
         });
 
+        it("should lay out each paragraph of text fitted to its cell on one line, as Word squeezes it there", () => {
+            // word-stops-tables.docx TS8: text longer than its cell of 2000 twips on one line, and the row a line tall
+            const fitted = (fitText: boolean): TableBlock => {
+                const laid = row([[paragraph("fitted", 3), paragraph("second", 1)], [paragraph("beside", 1)]]);
+                return table([{ ...laid, cells: [{ ...laid.cells[0], ...(fitText ? { fitText } : {}) }, laid.cells[1]] }]);
+            };
+            const heightOf = (fitText: boolean): unknown => paginate(document([fitted(fitText)]), { measurer: MEASURER }).pages[0].body[0];
+            expect(heightOf(true)).to.deep.include({ rows: [{ index: 0, y: 10, height: 20 }] });
+            expect(heightOf(false)).to.deep.include({ rows: [{ index: 0, y: 10, height: 40 }] });
+            // It breaks across pages between its paragraphs
+            expect(pagesOf(document([paragraph("a", 6), fitted(true)]))).to.deep.include({ fitted: "1", second: "2" });
+        });
+
         it("should move rows with text running up or down, or an empty paragraph whose mark takes no room, whole, and stop at one breaking across pages", () => {
             const vertical = (lines: number): TableRow => {
                 const laid = row([[paragraph("up", 3)], [paragraph("beside", lines)]]);

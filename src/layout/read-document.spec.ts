@@ -2583,15 +2583,20 @@ describe("readDocument", () => {
             expect(tableOf([], [cell([width], p(r(t("a")))), cell([width], p(r(t("b"))))]).widen).to.deep.equal({});
         });
 
-        it("should stop at a table given no widths of more columns than Word's 63, rather than count each of them", () => {
-            const across = (span: number): TableBlock =>
-                readBody([{ "w:tbl": [{ "w:tr": [cell([value("w:gridSpan", span)], p(r(t("a"))))] }] }]).blocks[0].block as TableBlock;
-            expect(across(63).unsupported).to.equal(undefined);
-            expect(across(2 ** 32).unsupported).to.equal("a table given no widths of more than 63 columns");
-            // Counted row by row, so a table of more rows than a function takes arguments is read
-            const tall = readBody([{ "w:tbl": Array.from({ length: 40000 }, () => ({ "w:tr": [cell([]), cell([]), cell([])] })) }]);
-            expect((tall.blocks[0].block as TableBlock).rows).to.have.length(40000);
-        });
+        // Reading 40000 rows takes about 4.5 seconds on CI's runners, near the 5 a test is given
+        it(
+            "should stop at a table given no widths of more columns than Word's 63, rather than count each of them",
+            { timeout: 30_000 },
+            () => {
+                const across = (span: number): TableBlock =>
+                    readBody([{ "w:tbl": [{ "w:tr": [cell([value("w:gridSpan", span)], p(r(t("a"))))] }] }]).blocks[0].block as TableBlock;
+                expect(across(63).unsupported).to.equal(undefined);
+                expect(across(2 ** 32).unsupported).to.equal("a table given no widths of more than 63 columns");
+                // Counted row by row, so a table of more rows than a function takes arguments is read
+                const tall = readBody([{ "w:tbl": Array.from({ length: 40000 }, () => ({ "w:tr": [cell([]), cell([]), cell([])] })) }]);
+                expect((tall.blocks[0].block as TableBlock).rows).to.have.length(40000);
+            },
+        );
 
         it("should read the paragraphs in content controls and custom XML in a cell", () => {
             const content = readBody([
@@ -2706,33 +2711,76 @@ describe("readDocument", () => {
             expect(content.footnotes.get("footnote 1")![0].unsupported).to.equal(unsupported);
         });
 
-        it("should stop at cells merged the old way, whose text doesn't wrap or that fit their text to them, but not a row in an HTML division", () => {
+        it("should stop at cells whose text doesn't wrap or that fit their text to them in a table sized to its text, but not at a row in an HTML division", () => {
+            const tableOf = (table: readonly unknown[], row: readonly unknown[], ...cells: readonly (readonly unknown[])[]): TableBlock =>
+                readBody([
+                    {
+                        "w:tbl": [
+                            { "w:tblPr": table },
+                            { "w:tblGrid": [2000, 2000, 2000].map((twips) => ({ "w:gridCol": { _attr: { "w:w": twips } } })) },
+                            { "w:tr": [{ "w:trPr": row }, ...cells.map((properties) => cell(properties, p()))] },
+                        ],
+                    },
+                ]).blocks[0].block as TableBlock;
             const unsupportedOf = (
                 table: readonly unknown[],
                 row: readonly unknown[],
                 ...cells: readonly (readonly unknown[])[]
-            ): unknown =>
-                (
-                    readBody([
-                        {
-                            "w:tbl": [
-                                { "w:tblPr": table },
-                                { "w:tr": [{ "w:trPr": row }, ...cells.map((properties) => cell(properties, p()))] },
-                            ],
-                        },
-                    ]).blocks[0].block as TableBlock
-                ).unsupported;
+            ): unknown => tableOf(table, row, ...cells).unsupported;
+            const width = { "w:tcW": { _attr: { "w:w": 2000, "w:type": "dxa" } } };
             expect(unsupportedOf([], [], [])).to.equal(undefined);
             // word-stops-pages.docx DV1b: moved across by the division's margin, as wide and tall as it is without
             expect(unsupportedOf([], [value("w:divId", 3)], [])).to.equal(undefined);
-            expect(unsupportedOf([], [], [value("w:hMerge", "restart")])).to.equal(
-                "cells merged across columns as old versions of Word wrote them",
+            // word-stops-tables.docx TS7a, TS7b: in a table sized to its text, and not in one whose cells all have widths
+            expect(unsupportedOf([], [], [{ "w:noWrap": {} }])).to.equal(
+                "a table cell whose text doesn't wrap, in a table sized to its text",
             );
-            expect(unsupportedOf([], [], [{ "w:noWrap": {} }])).to.equal("a table cell whose text doesn't wrap");
+            expect(unsupportedOf([], [], [width, { "w:noWrap": {} }])).to.equal(undefined);
             expect(unsupportedOf([], [], [value("w:noWrap", "false")])).to.equal(undefined);
-            expect(unsupportedOf([], [], [{ "w:tcFitText": {} }])).to.equal("text fitted to its table cell");
-            // The first of them in the row
-            expect(unsupportedOf([], [], [], [{ "w:tcFitText": {} }], [{ "w:noWrap": {} }])).to.equal("text fitted to its table cell");
+            // TS8: text fitted to its cell, a line to each paragraph
+            expect(unsupportedOf([], [], [{ "w:tcFitText": {} }])).to.equal("text fitted to its table cell, in a table sized to its text");
+            const fitted = tableOf([], [], [width, { "w:tcFitText": {} }]);
+            expect([fitted.unsupported, fitted.rows[0].cells[0].fitText]).to.deep.equal([undefined, true]);
+        });
+
+        it("should read cells merged across columns as old versions of Word wrote them as one cell across them, as Word does", () => {
+            // word-stops-tables.docx TS6: a cell that goes on from the one before it (w:hMerge) adds its columns and width
+            const width = (twips: number): object => ({ "w:tcW": { _attr: { "w:w": twips, "w:type": "dxa" } } });
+            const merged = readBody([
+                {
+                    "w:tbl": [
+                        { "w:tblGrid": [1000, 2000, 3000].map((twips) => ({ "w:gridCol": { _attr: { "w:w": twips } } })) },
+                        {
+                            "w:tr": [
+                                { "w:bookmarkStart": { _attr: { "w:id": 1, "w:name": "before" } } },
+                                cell([width(1000), value("w:hMerge", "restart")], p(r(t("a")))),
+                                { "w:bookmarkStart": { _attr: { "w:id": 2, "w:name": "across" } } },
+                                cell([width(2000), { "w:hMerge": {} }], p()),
+                                cell([width(3000)], p(r(t("b")))),
+                            ],
+                        },
+                    ],
+                },
+            ]).blocks[0].block as TableBlock;
+            expect(merged.unsupported).to.equal(undefined);
+            expect(merged.rows[0].cells.map(({ column, span, ownWidth }) => [column, span, ownWidth])).to.deep.equal([
+                [0, 2, 150],
+                [2, undefined, 150],
+            ]);
+            // The bookmarks before the cell it goes on from start in the first
+            const names = merged.rows[0].cells[0].blocks.flatMap((block) =>
+                block.type === "paragraph" ? block.items.flatMap((item) => (item.type === "marker" ? [item.name] : [])) : [],
+            );
+            expect(names).to.deep.equal(["before", "across"]);
+            // One with text of its own
+            const withText = readBody([
+                {
+                    "w:tbl": [{ "w:tr": [cell([value("w:hMerge", "restart")], p()), cell([value("w:hMerge", "continue")], p(r(t("b"))))] }],
+                },
+            ]).blocks[0].block as TableBlock;
+            expect(withText.unsupported).to.equal(
+                "cells merged across columns as old versions of Word wrote them, with text after the first",
+            );
         });
 
         describe("formatting", () => {
@@ -3043,24 +3091,133 @@ describe("readDocument", () => {
                 expect(unsupportedOf(`<w:tcPr><w:vAlign w:val="center"/></w:tcPr>`)).to.equal(undefined);
             });
 
-            it("should stop at a row with table properties of its own, and a table style with formatting of its rows or cells", () => {
+            it("should give a row's cells its own table borders and margins, as Word does, and stop at its other table properties", () => {
+                // word-stops-tables.docx TS4: a middle row's own top, bottom and inside borders of 1.5 points and margins
+                // of 300 twips: its inside border between its cells, and its margins
+                const margin = (side: string): object => ({ [`w:${side}`]: { _attr: { "w:w": 300, "w:type": "dxa" } } });
                 const exceptions = readBody([
                     {
                         "w:tbl": [
-                            { "w:tr": [{ "w:tblPrEx": [{ "w:tblBorders": [border("top", 8)] }] }, cell([], p())] },
-                            { "w:tr": [{ "w:tblPrEx": [{ "w:shd": {} }] }, cell([], p())] },
+                            { "w:tblPr": [{ "w:tblBorders": [border("insideH", 4), border("insideV", 4)] }] },
+                            { "w:tblGrid": [2000, 2000].map((width) => ({ "w:gridCol": { _attr: { "w:w": width } } })) },
+                            { "w:tr": [cell([], p()), cell([], p())] },
+                            {
+                                "w:tr": [
+                                    {
+                                        "w:tblPrEx": [
+                                            { "w:tblBorders": [border("top", 12), border("bottom", 12), border("insideV", 12)] },
+                                            { "w:tblCellMar": [margin("left"), margin("right")] },
+                                        ],
+                                    },
+                                    cell([], p()),
+                                    cell([], p()),
+                                ],
+                            },
+                            { "w:tr": [cell([], p()), cell([], p())] },
                         ],
                     },
                 ]).blocks[0].block as TableBlock;
-                expect(exceptions.unsupported).to.equal("a table row with table properties of its own");
+                expect(exceptions.unsupported).to.equal(undefined);
+                expect(bordersOf(exceptions)).to.deep.equal([
+                    [0, 0],
+                    [0.5, 0],
+                    [0.5, 0],
+                ]);
+                expect(exceptions.rows[1].cells.map(({ marginLeft, marginRight }) => [marginLeft, marginRight])).to.deep.equal([
+                    [15, 15],
+                    [15, 15],
+                ]);
+                // Without margins, its inside border is half of it in from its cells' text
+                const noMargins = readBody([
+                    {
+                        "w:tbl": [
+                            { "w:tblPr": [{ "w:tblCellMar": [{ "w:left": { _attr: { "w:w": 0, "w:type": "dxa" } } }] }] },
+                            { "w:tblGrid": [2000, 2000].map((width) => ({ "w:gridCol": { _attr: { "w:w": width } } })) },
+                            { "w:tr": [{ "w:tblPrEx": [{ "w:tblBorders": [border("insideV", 48)] }] }, cell([], p()), cell([], p())] },
+                        ],
+                    },
+                ]).blocks[0].block as TableBlock;
+                expect(noMargins.rows[0].cells.map(({ marginLeft }) => marginLeft)).to.deep.equal([0, 3]);
+                const indented = readBody([
+                    {
+                        "w:tbl": [
+                            { "w:tr": [{ "w:tblPrEx": [{ "w:tblInd": { _attr: { "w:w": 100, "w:type": "dxa" } } }] }, cell([], p())] },
+                        ],
+                    },
+                ]).blocks[0].block as TableBlock;
+                expect(indented.unsupported).to.equal("a table row with table properties of its own");
+            });
+
+            it("should follow a table style's cell margins and ignore its row height, as Word does, and stop at its other row and cell formatting", () => {
                 const shaded = tableStyle(
                     "Shaded",
                     `<w:trPr><w:jc w:val="center"/></w:trPr><w:tcPr><w:shd w:val="clear" w:fill="EEEEEE"/></w:tcPr>`,
                 );
                 expect(tableOf([value("w:tblStyle", "Shaded")], [[]], styles(shaded)).unsupported).to.equal(undefined);
+                // word-stops-tables.docx TS5a, TS5b: a height of at least 800 twips for its rows, which Word ignores, and
+                // cell margins of 200 above and below, which it follows
+                const rows = tableStyle(
+                    "Rows",
+                    `<w:trPr><w:trHeight w:val="800" w:hRule="atLeast"/></w:trPr><w:tcPr><w:tcMar><w:top w:w="200" w:type="dxa"/></w:tcMar></w:tcPr>`,
+                );
+                const styled = tableOf([value("w:tblStyle", "Rows")], [[]], styles(rows));
+                expect([styled.unsupported, styled.rows[0].height, styled.rows[0].cells[0].marginTop]).to.deep.equal([
+                    undefined,
+                    undefined,
+                    10,
+                ]);
+                // Keeping its rows whole, which TS5a's rows of a line didn't show
                 const kept = tableStyle("Kept", `<w:trPr><w:cantSplit/></w:trPr>`);
                 expect(tableOf([value("w:tblStyle", "Kept")], [[]], styles(kept)).unsupported).to.equal(
                     "a table style with formatting of its rows or cells",
+                );
+            });
+
+            it("should give a row the height of a part of its table style for it, and ignore the part's space between cells, as Word does", () => {
+                // word-stops-tables.docx TS1a: a first row of at least 1000 twips
+                const tall = tableStyle(
+                    "Tall",
+                    `<w:tblStylePr w:type="firstRow"><w:trPr><w:trHeight w:val="1000" w:hRule="atLeast"/></w:trPr></w:tblStylePr>`,
+                );
+                const styled = tableOf([value("w:tblStyle", "Tall")], [[], []], styles(tall));
+                expect([styled.unsupported, styled.rows[0].height, styled.rows[1].height]).to.deep.equal([
+                    undefined,
+                    { value: 50, rule: "atLeast" },
+                    undefined,
+                ]);
+                // Its own over the part's
+                const own = readBody(
+                    [
+                        {
+                            "w:tbl": [
+                                { "w:tblPr": [value("w:tblStyle", "Tall")] },
+                                {
+                                    "w:tr": [
+                                        { "w:trPr": [{ "w:trHeight": { _attr: { "w:val": 400, "w:hRule": "exact" } } }] },
+                                        cell([], p()),
+                                    ],
+                                },
+                            ],
+                        },
+                    ],
+                    styles(tall),
+                ).blocks[0].block as TableBlock;
+                expect(own.rows[0].height).to.deep.equal({ value: 20, rule: "exact" });
+                // TS1c: the first row's space between cells, which Word ignores
+                const spaced = tableStyle(
+                    "Spaced",
+                    `<w:tblStylePr w:type="firstRow"><w:tblPr><w:tblCellSpacing w:w="60" w:type="dxa"/></w:tblPr></w:tblStylePr>`,
+                );
+                const ignored = tableOf([value("w:tblStyle", "Spaced")], [[]], styles(spaced));
+                expect([ignored.unsupported, ignored.cellSpacing]).to.deep.equal([undefined, undefined]);
+                // A height in a part for a column, and a part's row kept whole, which Word hasn't been seen to follow
+                const column = tableStyle(
+                    "Column",
+                    `<w:tblStylePr w:type="firstCol"><w:trPr><w:trHeight w:val="1000"/></w:trPr></w:tblStylePr>`,
+                );
+                const look = { "w:tblLook": { _attr: { "w:firstColumn": 1 } } };
+                expect(tableOf([value("w:tblStyle", "Column"), look], [[]], styles(column)).unsupported).to.equal(
+                    "a table style's formatting for some of its cells",
                 );
             });
         });
@@ -5603,7 +5760,8 @@ describe("readDocument", () => {
 
         it("should have no guess for a table all of whose rows are deleted, when what Word does with one of them isn't known", () => {
             const deleted = { "w:del": { _attr: { "w:id": 2 } } };
-            const own = { "w:tblPrEx": [{ "w:tblBorders": [{ "w:top": { _attr: { "w:val": "single", "w:sz": 8 } } }] }] };
+            // A width of its own, which isn't followed, as its borders are
+            const own = { "w:tblPrEx": [{ "w:tblW": { _attr: { "w:w": 5000, "w:type": "dxa" } } }] };
             const content = guessed([{ "w:tbl": [{ "w:tr": [{ "w:trPr": [deleted] }, own, { "w:tc": [p()] }] }] }]);
             expect(content.blocks[0].block).to.deep.include({
                 rows: [],

@@ -302,6 +302,11 @@ export type TableCell = {
     /** Whether the mark that ends it takes no room when its last paragraph is empty (`w:hideMark`), as in Word (TB7) */
     readonly hideMark?: boolean;
     /**
+     * Whether its text is fitted to it (`w:tcFitText`), each paragraph on one line, as Word squeezes or spreads its text
+     * to fit (`word-stops-tables.docx` TS8)
+     */
+    readonly fitText?: boolean;
+    /**
      * What is in it as Word sizes its table's columns by it, when that isn't `blocks`: with its deleted text in, which
      * Word counts in the widths of columns it sizes to their text or widens for long words, though it lays out the lines
      * without it (`word-tracked-changes.docx` MK11j)
@@ -2217,22 +2222,8 @@ const readParagraph = (element: XmlObject, reader: Reader, tableFormats: TableFo
     };
 };
 
-/**
- * Why a cell's properties (`w:tcPr`) change how its text is laid out in a way not yet followed, when they do: cells merged
- * across columns as the oldest versions of Word wrote them (`w:hMerge`), text that doesn't wrap (`w:noWrap`), text
- * fitted to the cell (`w:tcFitText`), and text that runs down the cell with its East Asian characters upright, or across
- * with them on their side (`w:textDirection` tbLrV, tbRlV and lrTbV).
- */
+/** Why a cell's text direction (`w:textDirection`) isn't followed, when it is one the schema doesn't have */
 const unsupportedCellOf = (properties: readonly XmlObject[]): string | undefined => {
-    if (find(properties, "w:hMerge") !== undefined) {
-        return "cells merged across columns as old versions of Word wrote them";
-    }
-    if (onOff(properties, "w:noWrap") === true) {
-        return "a table cell whose text doesn't wrap";
-    }
-    if (onOff(properties, "w:tcFitText") === true) {
-        return "text fitted to its table cell";
-    }
     const direction = valueOf(properties, "w:textDirection");
     return direction === undefined || HORIZONTAL.has(direction) || VERTICAL.has(direction)
         ? undefined
@@ -2318,6 +2309,18 @@ const changesLines = (properties: readonly XmlObject[], read: ReadonlySet<string
 // The cell properties of a part of a table style for some of its cells that are followed: its borders and margins, which
 // Word applies as the cell's own (word-table-formats.docx CF8, CF9)
 const FOLLOWED_CELL_PROPERTIES = new Set(["w:tcBorders", "w:tcMar"]);
+// The parts of a table style for some of its rows, whose height Word gives the row (`word-stops-tables.docx` TS1a)
+const ROW_PARTS = new Set(["firstRow", "lastRow", "band1Horz", "band2Horz"]);
+const FOLLOWED_PART_ROW_PROPERTIES = new Set(["w:trHeight"]);
+// The table properties of a part of a table style that Word ignores: its space between cells (TS1c)
+const IGNORED_PART_TABLE_PROPERTIES = new Set(["w:tblCellSpacing"]);
+// A table style's own row properties that Word ignores, its height (TS5a), and its own cell properties it follows, its
+// margins, as a part's (TS5b)
+const IGNORED_STYLE_ROW_PROPERTIES = new Set(["w:trHeight"]);
+const FOLLOWED_STYLE_CELL_PROPERTIES = new Set(["w:tcMar"]);
+// A row's table properties of its own (`w:tblPrEx`) that are followed: its borders and cell margins, which Word gives its
+// cells as the table's (TS4)
+const FOLLOWED_ROW_TABLE_PROPERTIES = new Set(["w:tblBorders", "w:tblCellMar"]);
 
 /** The last of a property given among properties, each over those before: those of a table's styles, then its own */
 const lastOf = (properties: readonly (readonly XmlObject[])[], name: string): unknown =>
@@ -2328,7 +2331,38 @@ const lastOf = (properties: readonly (readonly XmlObject[])[], name: string): un
 const UNSAID_LOOK: TableLook = { firstRow: true, lastRow: false, firstColumn: true, lastColumn: false, rowBands: true, columnBands: false };
 
 /** A cell as it is read, before the room around its text, from its borders and the space between cells, is worked out */
-type ReadCell = TableCell & { readonly borders: BorderSet; readonly margins: Margins; readonly gridWidth: number };
+type ReadCell = TableCell & {
+    readonly borders: BorderSet;
+    readonly margins: Margins;
+    readonly gridWidth: number;
+    /** Whether its text doesn't wrap (`w:noWrap`), which Word follows only in a table sized to its text */
+    readonly noWrap?: boolean;
+};
+
+// What in a cell merged across columns as old versions of Word wrote them, after the first, Word hasn't been seen to lay out,
+// with text that isn't empty
+const MERGED_CONTENT = new Set(["w:tab", "w:br", "w:sym", "w:drawing", "w:pict", "w:object", "w:tbl", "m:oMath"]);
+
+/** Whether an element has anything in it Word lays out: text that isn't empty, or what `MERGED_CONTENT` names */
+const hasMergedContent = (element: unknown): boolean =>
+    Array.isArray(element)
+        ? element.some(hasMergedContent)
+        : isObject(element) &&
+          Object.entries(element).some(([name, value]) =>
+              name === "w:t" ? textIn(value) !== "" : MERGED_CONTENT.has(name) || (name !== "_attr" && hasMergedContent(value)),
+          );
+
+/**
+ * A row's cells, with those merged across columns as old versions of Word wrote them (`w:hMerge`) together: each cell that
+ * goes on from the one before it is in its group, which Word lays out as one cell across their columns
+ * (`word-stops-tables.docx` TS6)
+ */
+const mergedAcross = <Cell extends { readonly element: XmlObject }>(cells: readonly Cell[]): readonly (readonly Cell[])[] =>
+    cells.reduce<readonly (readonly Cell[])[]>((groups, cell) => {
+        const merge = find(childrenOf(find(contentOf(cell.element).filter(isObject), "w:tcPr")), "w:hMerge");
+        const goesOn = merge !== undefined && attributesOf(merge)["w:val"] !== "restart";
+        return goesOn && groups.length > 0 ? [...groups.slice(0, -1), [...groups[groups.length - 1], cell]] : [...groups, [cell]];
+    }, []);
 
 /** Whether an element has any of these elements in it, at any depth */
 const hasAnyOf = (element: unknown, names: ReadonlySet<string>): boolean =>
@@ -2428,6 +2462,11 @@ const readTable = (element: XmlObject, reader: Reader): TableBlock | undefined =
         ...Object.assign({}, ...tableStyles.map(({ cellMargins }) => cellMargins)),
         ...readCellMargins(find(properties, "w:tblCellMar")),
     };
+    // The margins a table's style gives its cells as theirs (`w:tcPr`), over the table's, as Word gives them (TS5b)
+    const styleCellMargins: Partial<Margins> = Object.assign(
+        {},
+        ...tableStyles.map(({ cellProperties = [] }) => readCellMargins(find(cellProperties, "w:tcMar"))),
+    );
     // Each of the table's borders from the last that gives it: its styles', then its own (word-table-formats.docx BC6)
     const tableBorders: BorderSet = Object.assign({}, ...allProperties.map((given) => readBorderSet(find(given, "w:tblBorders"))));
     const tableSpacing = readCellSpacing(lastOf(allProperties, "w:tblCellSpacing"));
@@ -2478,22 +2517,31 @@ const readTable = (element: XmlObject, reader: Reader): TableBlock | undefined =
         readonly formats: TableFormats;
         readonly borders: BorderSet;
         readonly margins: Partial<Margins>;
+        /** The height of the parts for the cell's row (`w:trHeight`), as written */
+        readonly height?: Record<string, unknown>;
         readonly unsupported?: string;
     } => {
         if (conditional.length === 0) {
             return UNFORMATTED;
         }
         const applying = conditionalTypesOf(position, look, bands).flatMap((type) => conditional.filter(([given]) => given === type));
+        // A height of a part for rows is followed, and space between cells of a part ignored, as Word does
         const unfollowed = applying.some(
-            ([, format]) =>
-                changesLines([...format.tableProperties, ...format.rowProperties]) ||
+            ([type, format]) =>
+                changesLines(format.tableProperties, IGNORED_PART_TABLE_PROPERTIES) ||
+                changesLines(format.rowProperties, ROW_PARTS.has(type) ? FOLLOWED_PART_ROW_PROPERTIES : undefined) ||
                 changesLines(format.cellProperties, FOLLOWED_CELL_PROPERTIES),
         );
+        const heights = applying.flatMap(([, { rowProperties }]) => {
+            const height = find(rowProperties, "w:trHeight");
+            return height === undefined ? [] : [attributesOf(height)];
+        });
         return {
             formats: [...ownStyles, ...applying.map(([, format]) => format)],
             borders: Object.assign({}, ...applying.map(([, { cellProperties }]) => readBorderSet(find(cellProperties, "w:tcBorders")))),
             margins: Object.assign({}, ...applying.map(([, { cellProperties }]) => readCellMargins(find(cellProperties, "w:tcMar")))),
             ...withoutUndefined({
+                height: heights[heights.length - 1],
                 unsupported: unfollowed ? "a table style's formatting for some of its cells" : unseenInHeaderOf(position, applying),
             }),
         };
@@ -2504,20 +2552,18 @@ const readTable = (element: XmlObject, reader: Reader): TableBlock | undefined =
 
     /**
      * Why the parts of the table's style for a cell in a header of several rows apply in a way Word hasn't been seen to
-     * apply them, when they do: its corners in the header's rows after the first, and its bands in a header of three rows
-     * or more with its first row turned off. Word made all of a header of two or three rows its first row, and put one of
-     * two in the second band (`word-compat-off.docx` CS2a, CS2b and CS2f)
+     * apply them, when they do: its bands in a header of four rows or more with its first row turned off. Word made all
+     * of a header of two or three rows its first row, with its corner cells in each of them (`word-stops-tables.docx`
+     * TS2), and put one of two in the second band (`word-compat-off.docx` CS2a, CS2b and CS2f), but banded one of three
+     * from its first row, as though it weren't a header (TS3)
      */
     const unseenInHeaderOf = (
         { row, headerRows: header = 0 }: CellPosition,
         applying: readonly (readonly [string, unknown])[],
     ): string | undefined => {
         const types = new Set(applying.map(([type]) => type));
-        if (row > 0 && row < header && (types.has("nwCell") || types.has("neCell"))) {
-            return "a table style's corner cells in a header of several rows";
-        }
-        return row < header && header > 2 && (types.has("band1Horz") || types.has("band2Horz"))
-            ? "a table style's bands of rows in a header of three rows or more"
+        return row < header && header > 3 && (types.has("band1Horz") || types.has("band2Horz"))
+            ? "a table style's bands of rows in a header of four rows or more"
             : undefined;
     };
 
@@ -2542,8 +2588,18 @@ const readTable = (element: XmlObject, reader: Reader): TableBlock | undefined =
             const rowChildren = contentOf(row).filter(isObject);
             const rowProperties = childrenOf(find(rowChildren, "w:trPr"));
             const rowParts = unwrap(rowChildren);
-            const rowCells = withBookmarks(rowParts, "w:tc");
-            const heightAttributes = attributesOf(find(rowProperties, "w:trHeight"));
+            const rowCells = mergedAcross(withBookmarks(rowParts, "w:tc"));
+            // The row's table properties of its own (`w:tblPrEx`): its borders and cell margins, which its cells have as the
+            // table's (TS4). Most rows have none, so nothing is read for them
+            const exceptions = childrenOf(find(rowChildren, "w:tblPrEx"));
+            const rowBorderSet = exceptions.length > 0 ? readBorderSet(find(exceptions, "w:tblBorders")) : {};
+            const rowMargins = exceptions.length > 0 ? readCellMargins(find(exceptions, "w:tblCellMar")) : {};
+            // A row is as tall as the parts of its table's style for it say, when it doesn't say itself (TS1a)
+            const ownHeight = find(rowProperties, "w:trHeight");
+            const heightAttributes =
+                ownHeight === undefined
+                    ? (formatsOf({ row: rowIndex, rows: rows.length, cell: 0, cells: rowCells.length, headerRows }).height ?? {})
+                    : attributesOf(ownHeight);
             const height = twips(heightAttributes["w:val"]);
             const { "w:hRule": rule } = heightAttributes;
             const skipped = numberOf(attributesOf(find(rowProperties, "w:gridBefore"))["w:val"]) ?? 0;
@@ -2588,21 +2644,49 @@ const readTable = (element: XmlObject, reader: Reader): TableBlock | undefined =
                 readonly edges: ReadonlyMap<number, number>;
                 readonly unsupported?: string;
             }>(
-                ({ column, cells: done, edges: before, unsupported: unsupportedBefore }, { element: cell }, cellIndex) => {
+                ({ column, cells: done, edges: before, unsupported: unsupportedBefore }, [{ element: cell }, ...across], cellIndex) => {
                     const cellChildren = contentOf(cell).filter(isObject);
                     const cellProperties = childrenOf(find(cellChildren, "w:tcPr"));
-                    const span = numberOf(attributesOf(find(cellProperties, "w:gridSpan"))["w:val"]) ?? 1;
+                    const spanOf = (given: readonly XmlObject[]): number => numberOf(attributesOf(find(given, "w:gridSpan"))["w:val"]) ?? 1;
+                    // The cells merged with it across columns as old versions of Word wrote them, which add their columns,
+                    // and their widths, to its own (TS6)
+                    const acrossProperties = across.map((merged) => childrenOf(find(contentOf(merged.element).filter(isObject), "w:tcPr")));
+                    const span = [cellProperties, ...acrossProperties].reduce((total, given) => total + spanOf(given), 0);
                     const mergeElement = find(cellProperties, "w:vMerge");
                     const merge =
                         mergeElement === undefined ? undefined : attributesOf(mergeElement)["w:val"] === "restart" ? "restart" : "continue";
                     const formatted = formatsOf({ row: rowIndex, rows: rows.length, cell: cellIndex, cells: rowCells.length, headerRows });
-                    const margins = { ...tableMargins, ...formatted.margins, ...readCellMargins(find(cellProperties, "w:tcMar")) };
+                    const margins = {
+                        ...tableMargins,
+                        ...rowMargins,
+                        ...styleCellMargins,
+                        ...formatted.margins,
+                        ...readCellMargins(find(cellProperties, "w:tcMar")),
+                    };
+                    // The row's own table borders, where the cell is: its left and right at the row's ends, its inside ones
+                    // between its cells, its top and bottom on the table's first and last rows, and its inside ones between
+                    const last = cellIndex === rowCells.length - 1;
+                    const rowSides =
+                        exceptions.length > 0
+                            ? withoutUndefined({
+                                  left: cellIndex === 0 ? rowBorderSet.left : rowBorderSet.insideV,
+                                  right: last ? rowBorderSet.right : rowBorderSet.insideV,
+                                  top: rowIndex === 0 ? rowBorderSet.top : rowBorderSet.insideH,
+                                  bottom: rowIndex === rows.length - 1 ? rowBorderSet.bottom : rowBorderSet.insideH,
+                              })
+                            : {};
                     // Word lays a cell out at its own width in twips, when it has one, rather than the grid's. A share of the
                     // table's width is the grid's
-                    const { "w:w": ownWidth, "w:type": widthType = "dxa" } = attributesOf(find(cellProperties, "w:tcW"));
-                    const inTwips = widthType === "dxa" ? (twips(ownWidth) ?? 0) : 0;
-                    const hasWidth = inTwips > 0 || (widthType === "pct" && (shareOf(ownWidth) ?? 0) > 0);
-                    const width = inTwips > 0 ? inTwips : gridWidth(column, column + span);
+                    const widthOf = (given: readonly XmlObject[]): { readonly twips: number; readonly given: boolean } => {
+                        const { "w:w": ownWidth, "w:type": widthType = "dxa" } = attributesOf(find(given, "w:tcW"));
+                        const inTwips = widthType === "dxa" ? (twips(ownWidth) ?? 0) : 0;
+                        return { twips: inTwips, given: inTwips > 0 || (widthType === "pct" && (shareOf(ownWidth) ?? 0) > 0) };
+                    };
+                    const widths = [cellProperties, ...acrossProperties].map(widthOf);
+                    const hasWidth = widths.some(({ given }) => given);
+                    const width = widths.every(({ twips: inTwips }) => inTwips > 0)
+                        ? widths.reduce((total, { twips: inTwips }) => total + inTwips, 0)
+                        : gridWidth(column, column + span);
                     const direction = valueOf(cellProperties, "w:textDirection");
                     // What Word sizes the columns by, with the cell's deleted text in, read before the cell is, so its lists
                     // are at the same numbers
@@ -2618,6 +2702,9 @@ const readTable = (element: XmlObject, reader: Reader): TableBlock | undefined =
                         ...withoutUndefined({
                             unsupported:
                                 unsupportedBefore ??
+                                (across.some((merged) => hasMergedContent(merged.element))
+                                    ? "cells merged across columns as old versions of Word wrote them, with text after the first"
+                                    : undefined) ??
                                 unsupportedCellOf(cellProperties) ??
                                 formatted.unsupported ??
                                 (vertical ? unsupportedVerticalOf(cellBlocks) : undefined),
@@ -2637,11 +2724,10 @@ const readTable = (element: XmlObject, reader: Reader): TableBlock | undefined =
                                 ...(merge ? { verticalMerge: merge } : {}),
                                 ...(vertical ? { vertical: true } : {}),
                                 ...(onOff(cellProperties, "w:hideMark") === true ? { hideMark: true } : {}),
+                                ...(onOff(cellProperties, "w:tcFitText") === true ? { fitText: true } : {}),
+                                ...(onOff(cellProperties, "w:noWrap") === true ? { noWrap: true } : {}),
                                 ...(sizing ? { sizing } : {}),
-                                borders:
-                                    formatted === UNFORMATTED
-                                        ? readBorderSet(find(cellProperties, "w:tcBorders"))
-                                        : { ...formatted.borders, ...readBorderSet(find(cellProperties, "w:tcBorders")) },
+                                borders: { ...rowSides, ...formatted.borders, ...readBorderSet(find(cellProperties, "w:tcBorders")) },
                                 margins,
                                 gridWidth: width,
                             },
@@ -2653,10 +2739,10 @@ const readTable = (element: XmlObject, reader: Reader): TableBlock | undefined =
             // A row of a division of a web page (`w:divId`) Word moves across by the division's left margin, as wide and
             // as tall as it is without, with the division's borders beside it but not above or below
             // (`word-stops-pages.docx` DV1b), so its lines are as they are. One with table properties of its own
-            // (`w:tblPrEx`) has borders, margins or widths of its own
+            // (`w:tblPrEx`) other than borders and cell margins, such as a width, isn't followed
             const rowUnsupported = rowParts.some((part) => "w:sdt" in part)
                 ? BOUND_CONTROL
-                : changesLines(childrenOf(find(rowChildren, "w:tblPrEx")))
+                : changesLines(exceptions, FOLLOWED_ROW_TABLE_PROPERTIES)
                   ? "a table row with table properties of its own"
                   : deleted && (hasAnyOf(rowChildren, REMOVED_NOTES) || JSON.stringify([...rowReader.counters]) !== counts)
                     ? "a list or a note in a deleted table row"
@@ -2671,7 +2757,7 @@ const readTable = (element: XmlObject, reader: Reader): TableBlock | undefined =
                 spacing,
                 ...withoutUndefined({ unsupported: rowUnsupported }),
                 bookmarks: rowBookmarks,
-                cellBookmarks: rowCells.map(({ bookmarks }) => bookmarks),
+                cellBookmarks: rowCells.map((group) => group.flatMap(({ bookmarks }) => bookmarks)),
                 row: {
                     // A height without a rule is the least the row can be, as Word writes it
                     ...(height !== undefined && rule !== "auto"
@@ -2749,7 +2835,7 @@ const readTable = (element: XmlObject, reader: Reader): TableBlock | undefined =
             borderTop: placed?.borderTop ?? 0,
             borderBottom: placed?.borderBottom ?? 0,
             ...withoutUndefined({ breakBorder: placed?.breakBorder }),
-            cells: cells.map(({ borders: _, margins, gridWidth: __, ...cell }, cellIndex) => {
+            cells: cells.map(({ borders: _, margins, gridWidth: __, noWrap: ___, ...cell }, cellIndex) => {
                 const pending = [...carried, ...cellBookmarks[cellIndex]];
                 const marked = pending.length === 0 ? undefined : startingAtFirst(cell.blocks, pending);
                 carried = marked === undefined ? pending : [];
@@ -2794,7 +2880,7 @@ const readTable = (element: XmlObject, reader: Reader): TableBlock | undefined =
                   ...row,
                   borderTop: 0,
                   borderBottom: 0,
-                  cells: cells.map(({ borders: _, margins: __, gridWidth: ___, ...cell }) => cell),
+                  cells: cells.map(({ borders: _, margins: __, gridWidth: ___, noWrap: ____, ...cell }) => cell),
               }))
         : [];
     const blocks = [
@@ -2819,9 +2905,11 @@ const readTable = (element: XmlObject, reader: Reader): TableBlock | undefined =
             ];
         }),
     ]);
-    // A table style's own row and cell properties apply to every row and cell, in a way not yet followed
-    const styleUnsupported = tableStyles.some(({ rowProperties = [], cellProperties = [] }) =>
-        changesLines([...rowProperties, ...cellProperties]),
+    // A table style's own row and cell properties apply to every row and cell, in a way not yet followed but for those Word
+    // ignores and its cells' margins (TS5a, TS5b)
+    const styleUnsupported = tableStyles.some(
+        ({ rowProperties = [], cellProperties = [] }) =>
+            changesLines(rowProperties, IGNORED_STYLE_ROW_PROPERTIES) || changesLines(cellProperties, FOLLOWED_STYLE_CELL_PROPERTIES),
     )
         ? "a table style with formatting of its rows or cells"
         : undefined;
@@ -2866,6 +2954,13 @@ const readTable = (element: XmlObject, reader: Reader): TableBlock | undefined =
         read.find((row) => row.unsupported !== undefined)?.unsupported ??
         unmerged ??
         (fits ? unfitted : unequal && !evened ? "a table whose rows give a column different widths" : undefined) ??
+        // Word wraps the text of a cell that says it doesn't as though it didn't, and fits text to its cell a line to each
+        // paragraph, in a table whose cells all have widths (TS7b, TS8), but sizes a table to its text by them in a way
+        // not yet followed (TS7a)
+        (fits && tableCells.some(({ noWrap }) => noWrap)
+            ? "a table cell whose text doesn't wrap, in a table sized to its text"
+            : undefined) ??
+        (fits && tableCells.some(({ fitText }) => fitText) ? "text fitted to its table cell, in a table sized to its text" : undefined) ??
         spacingUnsupported ??
         (typeof geometry === "string" ? geometry : undefined) ??
         (indent === undefined ? "a table indented by a share of the width" : undefined) ??

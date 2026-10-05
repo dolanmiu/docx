@@ -638,12 +638,18 @@ describe("tables laid out as Word lays them out", () => {
             expect(heights(2, false)).to.deep.equal([10, 10, 14, 10, 14, 10].map(lineOf));
         });
 
-        it("should stop at a style's corner cells after its first row, and its bands of rows in a header of three rows with its first row off", () => {
-            const stoppedAt = (table: Table, more = ""): string | undefined => layOut([table], headersStyle(more)).stoppedAt;
-            expect(stoppedAt(headed(2, true, 2), corners)).to.equal("a table style's corner cells in a header of several rows");
-            expect(stoppedAt(headed(1, true, 2), corners)).to.equal(undefined);
-            expect(stoppedAt(headed(3, false))).to.equal("a table style's bands of rows in a header of three rows or more");
-            expect(stoppedAt(headed(3, true))).to.equal(undefined);
+        it("should apply a style's corner cells to each row of a header, and band one of three rows from its first with its first row off", () => {
+            // word-stops-tables.docx TS2: the corner cells' 20 points in both rows of a header of two
+            expect(rowHeights(layOut([headed(2, true, 2)], headersStyle(corners)))).to.deep.equal([20, 20, 14, 10, 14, 10].map(lineOf));
+            expect(rowHeights(layOut([headed(1, true, 2)], headersStyle(corners)))).to.deep.equal([20, 14, 10, 14, 10, 14].map(lineOf));
+            // TS3: a header of three rows with its first row off is banded from its first row, as though it weren't a header
+            expect(rowHeights(layOut([headed(3, false)], headersStyle()))).to.deep.equal([14, 10, 14, 10, 14, 10].map(lineOf));
+        });
+
+        it("should stop at the bands of rows of a header of four rows or more with its first row off", () => {
+            const stoppedAt = (table: Table): string | undefined => layOut([table], headersStyle()).stoppedAt;
+            expect(stoppedAt(headed(4, false))).to.equal("a table style's bands of rows in a header of four rows or more");
+            expect(stoppedAt(headed(4, true))).to.equal(undefined);
         });
     });
 
