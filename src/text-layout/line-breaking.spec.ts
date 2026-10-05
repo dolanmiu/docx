@@ -685,6 +685,13 @@ describe("layoutLines", () => {
             expect(countOf(items, 325)).to.equal(2);
             // On a line of 320 they'd be squeezed by 20%, against 33%
             expect(countOf(items, 320)).to.equal(3);
+            // Word squeezes them when they'd stretch 2.022 times as much, and not 2.008: on a line of 322.3, 17.7 squeezed
+            // against 32.3 stretched is 2.028 times, and on one of 322.1, 1.998
+            expect(countOf(items, 322.3)).to.equal(2);
+            expect(countOf(items, 322.1)).to.equal(3);
+            // Lines justified for Thai or with a kashida are squeezed as justified ones are
+            expect(countOf(items, 322.3, { alignment: "thaiDistributed" })).to.equal(2);
+            expect(countOf(items, 322.1, { alignment: "lowKashida" })).to.equal(3);
             // A left-aligned, centred or right-aligned line isn't squeezed
             expect(countOf(items, 325, {})).to.equal(3);
             expect(countOf(items, 325, { alignment: "center" })).to.equal(3);
@@ -696,15 +703,15 @@ describe("layoutLines", () => {
             expect(countOf(items, 330, {})).to.equal(3);
             // A picture is squeezed in as a word is
             expect(countOf([text("aa aa aa aa aa aa aa aa aa aa "), { type: "box", width: 40, height: 10 }], 325)).to.equal(1);
-            // Whether Word squeezes a line with text in a border isn't known, whether the border is on the word squeezed in or
-            // on a word before it
+            // So is a line with text in a border, whether the border is on the word squeezed in or on a word before it
             const box = (value: string): InlineItem => ({ type: "text", text: value, font: { border: { room: 1, key: "a" } } });
-            const unsupported = (boxed: readonly InlineItem[]): string | undefined =>
-                layoutLines(boxed, { width: 330, measurer: MEASURER, format: justified })[0].unsupported;
-            const squeezed = "a justified line with text in a border that only fits squeezed";
-            expect(unsupported([text("aa aa aa aa aa aa aa aa aa aa "), box("bbbb"), text(` ${"c".repeat(30)}`)])).to.equal(squeezed);
-            expect(unsupported([box("aa"), text(" aa aa aa aa aa aa aa aa aa bbbb"), text(` ${"c".repeat(30)}`)])).to.equal(squeezed);
-            expect(unsupported([box("aa"), text(" aa aa aa aa aa aa aa aa aa"), text(` ${"c".repeat(30)}`)])).to.equal(undefined);
+            const linesWith = (boxed: readonly InlineItem[]): readonly LaidOutLine[] =>
+                layoutLines(boxed, { width: 330, measurer: MEASURER, format: justified });
+            expect(
+                linesWith([text("aa aa aa aa aa aa aa aa aa aa "), box("bbbb"), text(` ${"c".repeat(30)}`)]).map(({ text: one }) => one),
+            ).to.deep.equal(["aa aa aa aa aa aa aa aa aa aa bbbb ", "c".repeat(30)]);
+            const [line] = linesWith([box("aa"), text(" aa aa aa aa aa aa aa aa aa bbbb"), text(` ${"c".repeat(30)}`)]);
+            expect([line.text, line.unsupported]).to.deep.equal(["aa aa aa aa aa aa aa aa aa aa bbbb ", undefined]);
         });
 
         it("should squeeze the spaces by no more than a quarter of their width", () => {
@@ -733,18 +740,33 @@ describe("layoutLines", () => {
             expect(layoutLines(tabbed, { width: 255, measurer: MEASURER, format: justified, defaultTabStop: 100 })).to.have.length(2);
         });
 
-        it("should mark a line that only fits squeezed at an en, em or ideographic space, which Word hasn't been seen squeezing", () => {
-            // As above, with the 5th space an en space: "bbbb" is 15 past the end of a line of 325, which its spaces could take
+        it("should not squeeze en, em or ideographic spaces, and mark a line that only fits squeezed beside them", () => {
+            // "bbbb" is 15 past the end of a line of 325, which its spaces could take, were they ordinary spaces: Word doesn't
+            // squeeze a line whose spaces are all en, em or ideographic spaces (word-stops-tabs.ts JU1a to JU1c)
+            const only = (space: number): readonly string[] =>
+                layoutLines(
+                    [text(["aa", "aa", "aa", "aa", "aa", "aa", "aa", "aa", "aa", "aa", "bbbb"].join(String.fromCodePoint(space)))],
+                    {
+                        width: 325,
+                        measurer: MEASURER,
+                        format: justified,
+                    },
+                ).map(({ text: one, unsupported }) => `${one.length} ${unsupported}`);
+            expect(only(0x2002)).to.deep.equal(["30 undefined", "4 undefined"]);
+            expect(only(0x2003)).to.deep.equal(["30 undefined", "4 undefined"]);
+            expect(only(0x3000)).to.deep.equal(["30 undefined", "4 undefined"]);
+            // Nor a four-per-em space, which Word hasn't been seen with
+            expect(only(0x2005)[0]).to.equal(
+                "30 a justified line that only fits squeezed at a four-per-em space, or at an en, em or ideographic space beside ordinary spaces",
+            );
+            // With the 5th space an en space, beside ordinary ones, whether Word squeezes them isn't known
             const items = [text(`aa aa aa aa aa${String.fromCodePoint(0x2002)}aa aa aa aa aa bbbb`)];
             const reasonsOf = (width: number, format: ParagraphFormat): readonly (string | undefined)[] =>
                 layoutLines(items, { width, measurer: MEASURER, format }).map(({ unsupported }) => unsupported);
-            expect(reasonsOf(325, justified)).to.deep.equal([
-                "a justified line that only fits squeezed at an en, em or ideographic space",
-                undefined,
-            ]);
-            expect(reasonsOf(325, { alignment: "distributed" })[0]).to.equal(
-                "a justified line that only fits squeezed at an en, em or ideographic space",
-            );
+            const beside =
+                "a justified line that only fits squeezed at a four-per-em space, or at an en, em or ideographic space beside ordinary spaces";
+            expect(reasonsOf(325, justified)).to.deep.equal([beside, undefined]);
+            expect(reasonsOf(325, { alignment: "distributed" })[0]).to.equal(beside);
             // 40 past the end of a line of 300, more than a quarter of all its spaces, it goes on the next line in any case
             expect(reasonsOf(300, justified)).to.deep.equal([undefined, undefined]);
             // A left-aligned line isn't squeezed
@@ -1945,10 +1967,27 @@ describe("soft hyphens", () => {
         expect(linesOf([text("aaaa bbb"), softHyphen({ size: 20 }), text("ccc")]).map(({ height }) => height)).to.deep.equal([20, 10]);
     });
 
+    it("should break a justified line at a soft hyphen whose part fits squeezed, as Word does", () => {
+        // "a a a a a a a a a " is 180 points with 9 spaces. "bbcccc" doesn't fit squeezed onto a line of 200, but "bb" and its
+        // hyphen do, 10 past its end, as "Donau-" did in word-stops-tabs.ts SH10d
+        const justified = { width: 200, format: { alignment: "justified" as const } };
+        const squeezed = linesOf([text("a a a a a a a a a bb"), softHyphen(), text("cccc")], justified);
+        expect(squeezed.map(({ text: value, unsupported }) => [value, unsupported])).to.deep.equal([
+            ["a a a a a a a a a bb", undefined],
+            ["cccc", undefined],
+        ]);
+        // No part fits even squeezed: the word goes on to the next line, as on a line that isn't justified
+        const moved = linesOf([text("a a a a a a a a a bbbb"), softHyphen(), text("cc")], justified);
+        expect(moved.map(({ text: value, unsupported }) => [value, unsupported])).to.deep.equal([
+            ["a a a a a a a a a ", undefined],
+            ["bbbbcc", undefined],
+        ]);
+    });
+
     it("should stop where Word's breaking at a soft hyphen hasn't been seen", () => {
         const unsupportedOf = (items: readonly InlineItem[], options: Partial<LineLayoutOptions> = {}): readonly (string | undefined)[] =>
             linesOf(items, options).map(({ unsupported }) => unsupported);
-        // A hyphen that ends between 0.135 and 1.135 points before the end of the line: it breaks at the soft hyphen before
+        // A hyphen that ends between 0.135 and 0.99 points before the end of the line: it breaks at the soft hyphen before
         const close = linesOf([text("x a"), softHyphen(), text("bb"), softHyphen(), text("cc"), softHyphen(), text("ddd")], {
             width: 80.5,
         });
@@ -1956,22 +1995,41 @@ describe("soft hyphens", () => {
             ["x abb", "a soft hyphen whose hyphen ends this close to the end of the line"],
             ["ccddd", undefined],
         ]);
-        // A justified line that the word doesn't fit squeezed onto, which Word may break it on or not
+        // On a justified line, one that ends 0.135 points or less before it, which Word may squeeze in or not
         expect(
-            unsupportedOf([text("a a a a a a a a a bbbb"), softHyphen(), text("cc")], {
-                width: 200,
+            unsupportedOf([text("a a a a a a a a a b"), softHyphen(), text("cccc")], {
+                width: 200.1,
                 format: { alignment: "justified" },
             })[0],
-        ).to.equal("a soft hyphen in a justified line that doesn't fit squeezed");
-        // A word whose first part is longer than its line: it breaks after the last letter that fits, as a word without them
+        ).to.equal("a soft hyphen whose hyphen ends this close to the end of the line");
+        // A part that fits squeezed after one that fits as it is: Word may take either
+        const either = linesOf([text("a a a a a a a a a b"), softHyphen(), text("bb"), softHyphen(), text("cccc")], {
+            width: 205,
+            format: { alignment: "justified" },
+        });
+        expect(either.map(({ text: value, unsupported }) => [value, unsupported])).to.deep.equal([
+            ["a a a a a a a a a bbb", "a justified line that fits a soft hyphen's part squeezed, and a shorter one as it is"],
+            ["cccc", undefined],
+        ]);
+    });
+
+    it("should break a word with soft hyphens whose first part is longer than its line as a word without them", () => {
+        // After the last letter that fits, as Word broke it (word-stops-tabs.ts SH12)
         const long = linesOf([text("aaaaaaaaaaaa"), softHyphen(), text("b")]);
         expect(long.map(({ text: value, unsupported }) => [value, unsupported])).to.deep.equal([
-            ["aaaaaaaaaa", "a word whose part before a soft hyphen is longer than its line"],
+            ["aaaaaaaaaa", undefined],
             ["aab", undefined],
         ]);
-        // A word with a border
+    });
+
+    it("should break a word with a border at a soft hyphen, as Word does", () => {
+        // word-stops-tabs.ts SH11
         const boxed = { type: "text", text: "bbb", font: { border: { room: 1, key: "a" } } } as const;
-        expect(unsupportedOf([text("aaaa "), boxed, softHyphen(), text("ccc")])[0]).to.equal("a soft hyphen in a word with a border");
+        const lines = linesOf([text("aaaa "), boxed, softHyphen(), text("cccc")]);
+        expect(lines.map(({ text: value, unsupported }) => [value, unsupported])).to.deep.equal([
+            ["aaaa bbb", undefined],
+            ["cccc", undefined],
+        ]);
     });
 
     it("should break lines at soft hyphens where Word broke the probes' lines", () => {

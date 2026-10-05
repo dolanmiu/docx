@@ -1383,18 +1383,16 @@ const readRun = (element: XmlObject, paragraphRun: RunFormat, reader: Reader, re
             case "w:noBreakHyphen":
                 return format.hidden ? [] : [{ type: "text", text: "\u2011", font }];
             case "w:softHyphen":
-                // Where a word may break, with a hyphen drawn there (`word-watertight-text.docx` TX10a). Whether a box goes
-                // on round its hyphen, and whether Word sizes a table's columns by the parts of a word between them, hasn't
-                // been seen
+                // Where a word may break, with a hyphen drawn there (`word-watertight-text.docx` TX10a), in text with a border
+                // too (scripts/layout-probes/stops2/word-stops-tabs.ts SH11). Whether Word sizes a table's columns by the parts
+                // of a word between them hasn't been seen
                 return format.hidden
                     ? []
-                    : font.border
-                      ? guessedOr(reader, "a soft hyphen in text with a border", () => [{ type: "softHyphen", font }])
-                      : reader.inSizedTable
-                        ? guessedOr(reader, "a soft hyphen in a table whose columns Word sizes to their text", () => [
-                              { type: "softHyphen", font },
-                          ])
-                        : [{ type: "softHyphen", font }];
+                    : reader.inSizedTable
+                      ? guessedOr(reader, "a soft hyphen in a table whose columns Word sizes to their text", () => [
+                            { type: "softHyphen", font },
+                        ])
+                      : [{ type: "softHyphen", font }];
             case "w:sym": {
                 // A symbol is a character of its own font: most often a symbol font's own, such as Wingdings' tick, F0FC,
                 // whose width isn't known, so the layout stops there, as it does at other characters it can't measure. Its

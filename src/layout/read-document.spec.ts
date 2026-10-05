@@ -5269,10 +5269,13 @@ describe("readDocument", () => {
         });
 
         it("should mark a soft hyphen whose breaking Word hasn't been seen with as unsupported", () => {
+            // One in text with a border breaks as any other (word-stops-tabs.ts SH11)
             const bordered = rPr({ "w:bdr": { _attr: { "w:val": "single", "w:sz": 4, "w:space": 4 } } });
-            expect(paragraphOf(readBody([p(r(bordered, t("a"), { "w:softHyphen": {} }, t("b")))])).unsupported).to.equal(
-                "a soft hyphen in text with a border",
-            );
+            const boxed = readBody([p(r(bordered, t("a"), { "w:softHyphen": {} }, t("b")))]);
+            expect([paragraphOf(boxed).unsupported, itemsOf(boxed).map(({ type }) => type)]).to.deep.equal([
+                undefined,
+                ["text", "softHyphen", "text"],
+            ]);
             // In a table whose columns Word sizes to their text, whose narrowest may be a word's widest part
             expect(readBody([tableOf(cellOf(p(r(t("a"), { "w:softHyphen": {} }, t("b")))))]).blocks[0].block.unsupported).to.equal(
                 "a soft hyphen in a table whose columns Word sizes to their text",
@@ -5704,7 +5707,7 @@ describe("readDocument", () => {
             expect(content.blocks.map(({ block }) => block.unsupported)).to.deep.equal([
                 "a tab in text with a border",
                 "a tab in text with a border",
-                "a soft hyphen in text with a border",
+                undefined,
                 "a picture in text with a border",
                 "text with a phonetic guide",
                 "a footnote or endnote with a mark of its own",
