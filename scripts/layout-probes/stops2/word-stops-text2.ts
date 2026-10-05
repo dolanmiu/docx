@@ -41,11 +41,16 @@
  *   (d)
  *
  * Tabs:
- * TA9a to TA9c: a right, centred and decimal stop at 9500, past the end of the line, after text in a paragraph with a first
- *   line indent of 720; TA9d to TA9f: the same with a hanging indent of 720
- * TA9g: a right stop at 8500, past the right indent, in a justified paragraph indented 1000 on the right
- * TA9h: a centred stop at 9500 at the start of a line in a paragraph indented 1000 on the left (TA3d was a right one)
- * TA9i: a right stop at 9500 after text in a paragraph indented 1000 on the left
+ * TA10a to TA10c: a right, centred and decimal stop at 9500, past the end of the line, after text in a paragraph with a first
+ *   line indent of 720; TA10d to TA10f: the same with a hanging indent of 720
+ * TA10g: a right stop at 8500, past the right indent, in a justified paragraph indented 1000 on the right
+ * TA10h: a centred stop at 9500 at the start of a line in a paragraph indented 1000 on the left (TA3d was a right one)
+ * TA10i: a right stop at 9500 after text in a paragraph indented 1000 on the left
+ * TA11a: a left stop at 8800 after text in a paragraph without indents, with "afterwards" after it, which doesn't fit before
+ *   the margin: whether Word puts the tab on the next line and breaks the word there, as word-stops-tabs TA1c did past the
+ *   margin, or the word alone on the next line, as docx/layout does
+ * TA11b: TA1c's left stop at 9500 in a paragraph indented 720 past the margin on the right, with "afterwards and more"
+ *   after it: where the words after the one Word breaks go
  *
  * Kerning:
  * KE9a, KE9b: "A-VA-VA-V..." with a soft hyphen in each "A-V", kerned from 1 point (a) and not kerned (b), on one line:
@@ -230,36 +235,46 @@ const children: Child[] = [
     ]),
     ...(
         [
-            ["TA9a", TabStopType.RIGHT, { firstLine: 720 }],
-            ["TA9b", TabStopType.CENTER, { firstLine: 720 }],
-            ["TA9c", TabStopType.DECIMAL, { firstLine: 720 }],
-            ["TA9d", TabStopType.RIGHT, { left: 720, hanging: 720 }],
-            ["TA9e", TabStopType.CENTER, { left: 720, hanging: 720 }],
-            ["TA9f", TabStopType.DECIMAL, { left: 720, hanging: 720 }],
+            ["TA10a", TabStopType.RIGHT, { firstLine: 720 }],
+            ["TA10b", TabStopType.CENTER, { firstLine: 720 }],
+            ["TA10c", TabStopType.DECIMAL, { firstLine: 720 }],
+            ["TA10d", TabStopType.RIGHT, { left: 720, hanging: 720 }],
+            ["TA10e", TabStopType.CENTER, { left: 720, hanging: 720 }],
+            ["TA10f", TabStopType.DECIMAL, { left: 720, hanging: 720 }],
         ] as const
     ).flatMap(([name, type, indent]) =>
         group(name, [new Paragraph({ indent, tabStops: [{ type, position: 9500 }], children: [new TextRun(`${name} text\t12.5 after`)] })]),
     ),
-    ...group("TA9g", [
+    ...group("TA10g", [
         new Paragraph({
             alignment: AlignmentType.JUSTIFIED,
             indent: { right: 1000 },
             tabStops: [{ type: TabStopType.RIGHT, position: 8500 }],
-            children: [new TextRun(`TA9g ${prose(8)}\tright ${prose(30)}`)],
+            children: [new TextRun(`TA10g ${prose(8)}\tright ${prose(30)}`)],
         }),
     ]),
-    ...group("TA9h", [
+    ...group("TA10h", [
         new Paragraph({
             indent: { left: 1000 },
             tabStops: [{ type: TabStopType.CENTER, position: 9500 }],
-            children: [new TextRun("\tTA9h after")],
+            children: [new TextRun("\tTA10h after")],
         }),
     ]),
-    ...group("TA9i", [
+    ...group("TA10i", [
         new Paragraph({
             indent: { left: 1000 },
             tabStops: [{ type: TabStopType.RIGHT, position: 9500 }],
-            children: [new TextRun("TA9i text\tafter")],
+            children: [new TextRun("TA10i text\tafter")],
+        }),
+    ]),
+    ...group("TA11a", [
+        new Paragraph({ tabStops: [{ type: TabStopType.LEFT, position: 8800 }], children: [new TextRun("TA11a text\tafterwards")] }),
+    ]),
+    ...group("TA11b", [
+        new Paragraph({
+            indent: { right: -720 },
+            tabStops: [{ type: TabStopType.LEFT, position: 9500 }],
+            children: [new TextRun("TA11b text\tafterwards and more")],
         }),
     ]),
     ...group("KE9a", [new Paragraph({ children: [new TextRun({ text: `KE9a ${`A${SOFT}V`.repeat(12)} end`, kern: 2 })] })]),
