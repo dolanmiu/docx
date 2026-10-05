@@ -764,8 +764,9 @@ describe("readDocument", () => {
             }
             expect(paragraphOf(content, 4).unsupported).to.equal("a paragraph justified for Arabic with a medium or high kashida");
             expect(paragraphOf(content, 5).unsupported).to.equal("a paragraph justified for Arabic with a medium or high kashida");
-            expect(paragraphOf(content, 6).unsupported).to.equal("Thai or Arabic text justified for it");
-            expect(paragraphOf(content, 7).unsupported).to.equal("Thai or Arabic text justified for it");
+            // And Thai text justified for it (stops2/word-stops-thai.ts TH1d, TH1e), but not Arabic
+            expect(paragraphOf(content, 6).unsupported).to.equal(undefined);
+            expect(paragraphOf(content, 7).unsupported).to.equal("Arabic text justified for Thai or with a kashida");
         });
     });
 
@@ -4652,8 +4653,8 @@ describe("readDocument", () => {
         });
 
         it("should set two characters across in text that runs down the page, and stop at more, or compressed to fit its line (VD13)", () => {
-            const across = (value: string, more: object = {}): DocumentContent =>
-                readBody([p(r(rPr({ "w:eastAsianLayout": { _attr: { "w:id": 3, "w:vert": 1, ...more } } }), t(value))), direction("tbRl")]);
+            const across = (text: string, more: object = {}): DocumentContent =>
+                readBody([p(r(rPr({ "w:eastAsianLayout": { _attr: { "w:id": 3, "w:vert": 1, ...more } } }), t(text))), direction("tbRl")]);
             expect(itemsOf(across("31"))).to.deep.equal([{ type: "text", text: "31", font: {}, across: true }]);
             expect(paragraphOf(across("2026")).unsupported).to.equal(
                 "text across in vertical text of more than two characters, or Chinese, Japanese or Korean ones",

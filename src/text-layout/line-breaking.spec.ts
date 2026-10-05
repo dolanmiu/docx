@@ -11,7 +11,7 @@ import {
     layoutLines,
     measureContentWidths,
 } from "./line-breaking";
-import { type ParagraphFormat, type TextFont, measureLineHeight, measureTextWidth } from "./text-width";
+import { type ParagraphFormat, type TextFont, measureDescent, measureLineHeight, measureTextWidth } from "./text-width";
 
 // Every character is 10 points wide, and a line is as tall as its font's size, all of it above the baseline
 const MEASURER: TextMeasurer = {
@@ -82,8 +82,17 @@ describe("layoutLines", () => {
         expect(heightsOf([text(" ", 8)], 100, { markFont: { size: 12 } })).to.deep.equal([12]);
         // Spaces before a break are as tall as the break's text
         expect(heightsOf([text("  ", 16), { type: "break", kind: "line", font: {} }, text("bb")])).to.deep.equal([10, 10]);
-        // With text on the line, its spaces count
-        expect(heightsOf([text("aa"), text(" ", 16), text("bb")])).to.deep.equal([16]);
+        // With text on the line, its spaces take no part in its height either (stops2/word-stops-thai.ts TH1a)
+        expect(heightsOf([text("aa"), text(" ", 16), text("bb")])).to.deep.equal([10]);
+    });
+
+    it("should make a line as tall as the fonts Word draws its characters in, without its spaces (stops2/word-stops-thai.ts TH1)", () => {
+        const heightOf = (value: string): number =>
+            layoutLines([{ type: "text", text: value, font: { font: "Calibri", size: 11 } }], { width: 400 })[0].height;
+        // Thai in Tahoma, 1207 thousandths of an em, where Calibri's lines are 1220.7, its spaces of Calibri and all
+        expect(heightOf("\u0e01\u0e32 \u0e01\u0e32")).to.be.closeTo((1207 * 11) / 1000, 1e-9);
+        expect(heightOf("\u0e01 a")).to.be.closeTo(220 / 20 + measureDescent({ font: "Calibri", size: 11 }), 1e-9);
+        expect(heightOf("ab")).to.be.closeTo(measureLineHeight({ font: "Calibri", size: 11 }), 1e-9);
     });
 
     it("should measure the pieces of a word in the same font together when it is kerned, so they are kerned across runs as Word kerns them", () => {

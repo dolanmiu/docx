@@ -1984,8 +1984,8 @@ const countIn = (
     return current;
 };
 
-// Letters of Thai and Arabic, which their justifications are for
-const THAI_OR_ARABIC = /[\p{Script=Thai}\p{Script=Arabic}]/u;
+// Letters of Arabic, which justification with a kashida is for
+const ARABIC = /\p{Script=Arabic}/u;
 
 // The alignments whose lines Word 2013 squeezes as it does a justified line's, other than justified
 const SQUEEZED_ALIGNMENTS = new Set<ParagraphFormat["alignment"]>(["distributed", "thaiDistributed", "lowKashida"]);
@@ -2313,8 +2313,8 @@ const readParagraph = (element: XmlObject, reader: Reader, tableFormats: TableFo
     const borders = readBorders(typeof format === "string" ? combined : format);
     // A division of a web page (`w:divId`) has margins and borders of its own, in the document's web settings. Word breaks
     // the lines of Latin text justified for Thai or with a low kashida as justified ones, and those with a medium or high
-    // kashida otherwise (`word-justify.docx` J14, `word-justify2.docx` K08, K09). Thai or Arabic text in them hasn't been
-    // seen
+    // kashida otherwise (`word-justify.docx` J14, `word-justify2.docx` K08, K09), and of Thai text justified for it too
+    // (stops2/word-stops-thai.ts TH1d, TH1e). Arabic text in them hasn't been seen
     const forThaiOrArabic = combined.alignment === "thaiDistributed" || combined.alignment === "lowKashida";
     const tabStops = tabStopsOf(formats);
     // Word lined up the full stop of numbers at decimal stops (`word-watertight-text.docx` TX12a). Whether it lines up the
@@ -2337,10 +2337,8 @@ const readParagraph = (element: XmlObject, reader: Reader, tableFormats: TableFo
                 ? "a paragraph in an HTML division"
                 : combined.alignment === "mediumKashida" || combined.alignment === "highKashida"
                   ? "a paragraph justified for Arabic with a medium or high kashida"
-                  : forThaiOrArabic &&
-                      typeof items !== "string" &&
-                      items.some((item) => item.type === "text" && THAI_OR_ARABIC.test(item.text))
-                    ? "Thai or Arabic text justified for it"
+                  : forThaiOrArabic && typeof items !== "string" && items.some((item) => item.type === "text" && ARABIC.test(item.text))
+                    ? "Arabic text justified for Thai or with a kashida"
                     : (unknownInOlderLayout(content, combined.alignment, reader) ??
                       unknownLengthIn(element) ??
                       (typeof format === "string" ? format : undefined) ??
