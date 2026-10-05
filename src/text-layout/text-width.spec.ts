@@ -1,4 +1,4 @@
-// cspell:ignore Caladea Aptos Carlito Yvonne Ωmega hhea AVANT GPOS Façade
+// cspell:ignore Caladea Aptos Carlito Yvonne Ωmega hhea AVANT GPOS Façade Hiii
 import { describe, expect, it } from "vitest";
 
 import {
@@ -182,6 +182,23 @@ describe("measureTextWidth", () => {
         expect(thousandths("\u0967", "Arial")).to.be.closeTo(521.4, 0.1);
     });
 
+    it("should measure them as Word lays them out in Office's other fonts and in the five fonts' italics (word-stops-more-widths-office.docx, word-stops-more-italic-widths.docx)", () => {
+        const thousandths = (text: string, font: object): number => measureTextWidth(text, { size: 10, ...font }) * 100;
+        // docx's bullet ● in Aptos, Word 365's own font, 749.04 thousandths of an em, and its Hebrew in Arial, 562.97
+        expect(thousandths("\u25cf", { font: "Aptos" })).to.be.closeTo(749.04, 0.1);
+        expect(thousandths("\u05d0", { font: "Aptos" })).to.be.closeTo(562.97, 0.1);
+        // Calibri Light's own Hebrew, and in the bold Word makes of it, 20 wider
+        expect(thousandths("\u05d0", { font: "Calibri Light" })).to.be.closeTo(529.8, 0.1);
+        expect(thousandths("\u05d0", { font: "Calibri Light", bold: true })).to.be.closeTo(549.76, 0.1);
+        // Calibri's italic ●, Times New Roman's bold italic א, and Calibri's italic ★ in Segoe UI Symbol
+        expect(thousandths("\u25cf", { font: "Calibri", italic: true })).to.be.closeTo(603.99, 0.1);
+        expect(thousandths("\u05d0", { font: "Times New Roman", bold: true, italic: true })).to.be.closeTo(517.61, 0.1);
+        expect(thousandths("\u2605", { font: "Calibri", italic: true })).to.be.closeTo(833.01, 0.1);
+        expect(measureTextHeight("\u2605", { font: "Calibri", size: 10, italic: true })!.lineHeight).to.equal(
+            measureTextHeight("\u2605", { font: "Calibri", size: 10 })!.lineHeight,
+        );
+    });
+
     it("should move tabs to the next half inch from where the text starts", () => {
         expect(measureTextWidth("\t")).to.equal(36);
         expect(measureTextWidth("\t", {}, 10)).to.equal(26);
@@ -207,11 +224,19 @@ describe("unknownCharacter", () => {
         expect(unknownCharacter("\u2197", { font: "Cambria", italic: true })).to.equal("\u2197");
     });
 
-    it("should find Hebrew, Thai and the symbols in italic, Arabic and Devanagari, whose widths Word's PDF doesn't show", () => {
+    it("should find Hebrew, Thai and the symbols in the italics of Office's other fonts, Arabic and Devanagari, whose widths Word's PDFs don't show", () => {
         // cspell:disable
         expect(unknownCharacter("a\u25cf\u0e01\u05d0", { font: "Calibri" })).to.equal(undefined);
-        expect(unknownCharacter("a\u25cf", { font: "Calibri", italic: true })).to.equal("\u25cf");
-        expect(unknownCharacter("a\u05d0", { font: "Times New Roman", italic: true, bold: true })).to.equal("\u05d0");
+        // The five fonts' italics, and Office's other fonts, plain and bold, Word's PDFs show
+        // (word-stops-more-italic-widths.docx, word-stops-more-widths-office.docx)
+        expect(unknownCharacter("a\u25cf", { font: "Calibri", italic: true })).to.equal(undefined);
+        expect(unknownCharacter("a\u05d0", { font: "Times New Roman", italic: true, bold: true })).to.equal(undefined);
+        expect(unknownCharacter("a\u25cf\u05d0", { font: "Aptos" })).to.equal(undefined);
+        expect(unknownCharacter("a\u25cf\u05d0", { font: "Calibri Light", bold: true })).to.equal(undefined);
+        expect(unknownCharacter("a\u25cf", { font: "Aptos", italic: true })).to.equal("\u25cf");
+        // Franklin Gothic Book's Hebrew, which Word draws in Arial, whose line gap could make the line taller than its own,
+        // which no Word PDF has shown
+        expect(unknownCharacter("a\u05d0", { font: "Franklin Gothic Book" })).to.equal("\u05d0");
         // Arabic and Devanagari, which Word joins into forms of other widths, but for their marks, which take no room
         expect(unknownCharacter("a\u0628", { font: "Calibri" })).to.equal("\u0628");
         expect(unknownCharacter("a\u0915", { font: "Arial" })).to.equal("\u0915");
@@ -334,7 +359,7 @@ describe("measureTextHeight", () => {
 
     it("should leave text Word draws in its own font, or whose fonts aren't known, to its font's line", () => {
         expect(measureTextHeight("abc \u25cf", { font: "Calibri", size: 10 })).to.equal(undefined);
-        expect(measureTextHeight("\u2605", { font: "Calibri", size: 10, italic: true })).to.equal(undefined);
+        expect(measureTextHeight("\u2605", { font: "Aptos", size: 10, italic: true })).to.equal(undefined);
         expect(measureTextHeight("\u2605", { font: "MS Mincho", size: 10 })).to.equal(undefined);
         expect(measureTextHeight("\u2605", { font: "Calibri", size: 6.5, lineSize: 10 })).to.equal(undefined);
     });
@@ -662,21 +687,56 @@ describe("Office's fonts that Word installs", () => {
         "Impact",
     ];
 
-    it("should know each of them, plain, bold, italic and bold italic, but for the bold Word makes itself", () => {
+    it("should know each of them, plain, bold, italic and bold italic, with the bold Word makes itself", () => {
         for (const font of OFFICE_FONTS) {
-            expect(unknownFont({ font, size: 11 }, "a"), font).to.equal(false);
-            expect(unknownFont({ font, italic: true }, "a"), font).to.equal(false);
+            for (const [bold, italic] of [
+                [false, false],
+                [true, false],
+                [false, true],
+                [true, true],
+            ]) {
+                expect(unknownFont({ font, bold, italic, size: 11 }, "a"), font).to.equal(false);
+            }
         }
-        // Calibri Light, Franklin Gothic Book and Impact have no bold face, which Word makes itself, each character 18
-        // thousandths of an em wider at 10 points (W), which other sizes haven't shown
+    });
+
+    it("should measure the bold Word makes itself each character 20 thousandths of an em wider at any size, but the spaces (word-stops-office-fonts.docx MB1)", () => {
+        // MB1: ten H's and ten i's in a row at 8 to 72 points, each 20 thousandths of an em further on than in the face Word
+        // makes the bold from, in Calibri Light, Franklin Gothic Book and Impact, and the space between H's as wide
         for (const font of ["Calibri Light", "Franklin Gothic Book", "Impact"]) {
-            expect(unknownFont({ font, bold: true }, "a"), font).to.equal(true);
-            expect(unknownFont({ font, bold: true, italic: true }, "a"), font).to.equal(true);
-            // Guessing, it is measured as the face Word makes it from
-            expect(measureTextWidth("Bold", { font, bold: true, italic: true })).to.equal(measureTextWidth("Bold", { font, italic: true }));
+            for (const size of [8, 10, 11, 20, 36, 72]) {
+                const regular = { font, size };
+                const bold = { font, size, bold: true };
+                expect(measureTextWidth("HHHiii", bold) - measureTextWidth("HHHiii", regular), `${font} ${size}`).to.be.closeTo(
+                    (6 * 20 * size) / 1000,
+                    1e-9,
+                );
+                expect(measureTextWidth(" ", bold)).to.equal(measureTextWidth(" ", regular));
+            }
         }
-        expect(unknownFont({ font: "Trebuchet MS", bold: true, italic: true }, "a")).to.equal(false);
-        expect(unknownFont({ font: "Tahoma", bold: true, italic: true }, "a")).to.equal(false);
+        // As far apart as Word's PDF draws them: Calibri Light's H 639.2 thousandths of an em apart in the bold, Franklin
+        // Gothic Book's 662.6 and Impact's i 293.9
+        const thousandths = (text: string, font: string): number => measureTextWidth(text, { font, bold: true, size: 1000 });
+        expect(thousandths("H", "Calibri Light")).to.be.closeTo(639.2, 0.5);
+        expect(thousandths("H", "Franklin Gothic Book")).to.be.closeTo(662.6, 0.5);
+        expect(thousandths("i", "Impact")).to.be.closeTo(293.9, 0.5);
+        // Calibri Light's en and em spaces, which Word works out itself, are wider too, and its three-per-em space a third
+        // of that (word-stops-font-widths.docx S: 518.1, 925.3 and 308.6)
+        expect(thousandths(String.fromCharCode(0x2002), "Calibri Light")).to.equal(518);
+        expect(thousandths(String.fromCharCode(0x2003), "Calibri Light")).to.equal(925);
+        expect(thousandths(String.fromCharCode(0x2004), "Calibri Light")).to.equal(309);
+        // Its bold italic is made from its italic face, and Impact's, which has no italic face, is its bold, slanted
+        const light = { font: "Calibri Light", size: 1000 };
+        expect(measureTextWidth("Hi", { ...light, bold: true, italic: true })).to.equal(
+            measureTextWidth("Hi", { ...light, italic: true }) + 40,
+        );
+        expect(measureTextWidth("Hi", { font: "Impact", bold: true, italic: true })).to.equal(
+            measureTextWidth("Hi", { font: "Impact", bold: true }),
+        );
+        // Lines as tall as the regular face's (MB3: 13.43, 12.47 and 13.41 points at 11 points)
+        for (const font of ["Calibri Light", "Franklin Gothic Book", "Impact"]) {
+            expect(measureLineHeight({ font, bold: true, size: 11 })).to.equal(measureLineHeight({ font, size: 11 }));
+        }
     });
 
     it("should measure an italic Word slants from the upright face as wide as it, as Word draws it", () => {
@@ -707,20 +767,52 @@ describe("Office's fonts that Word installs", () => {
         }
     });
 
-    it("should measure the spaces as Word works them out, and not know the characters a font doesn't have", () => {
+    it("should measure the spaces as Word works them out", () => {
         // S: Word works out the em and three-per-em spaces itself, where Calibri Light's and Tahoma's files have 1000 and
-        // 333, and Tahoma's en space is as wide as its digits
-        const width = (text: string, font: string): number => measureTextWidth(text, { font, size: 1000 });
-        expect(width(" ", "Calibri Light")).to.equal(905);
-        expect(width(" ", "Tahoma")).to.equal(909);
-        expect(width(" ", "Tahoma")).to.equal(303);
-        expect(width(" ", "Tahoma")).to.equal(546);
-        // Word draws a character a font doesn't have in another font: Trebuchet MS's ∀ in Cambria Math, Gill Sans MT's
-        // Cyrillic in Calibri, and Georgia's en space in Times New Roman
+        // 333, and Tahoma's en space is as wide as its digits, and Georgia's en space, which Georgia doesn't have
+        const width = (code: number, font: string): number => measureTextWidth(String.fromCharCode(code), { font, size: 1000 });
+        expect(width(0x2003, "Calibri Light")).to.equal(905);
+        expect(width(0x2003, "Tahoma")).to.equal(909);
+        expect(width(0x2004, "Tahoma")).to.equal(303);
+        expect(width(0x2002, "Tahoma")).to.equal(546);
+        expect(width(0x2002, "Georgia")).to.equal(500);
+        expect(unknownCharacter(`a${String.fromCharCode(0x2002)}b`, { font: "Georgia" })).to.equal(undefined);
+    });
+
+    it("should measure a character a font doesn't have as the face of the tables Word draws it in (word-stops-office-fonts.docx FB1)", () => {
+        // FB1: ten Д in Gill Sans MT, which Word draws in Calibri 644.01 thousandths of an em apart, and ƀ in Trebuchet MS,
+        // 551.78, whatever the run's language or East Asian font
+        const thousandths = (text: string, font: object): number => measureTextWidth(text, { size: 1000, ...font });
+        expect(unknownCharacter("Дом", { font: "Gill Sans MT" })).to.equal(undefined);
+        expect(thousandths("Д", { font: "Gill Sans MT" })).to.equal(thousandths("Д", { font: "Calibri" }));
+        expect(thousandths("Д", { font: "Gill Sans MT" })).to.be.closeTo(644.01, 0.5);
+        expect(thousandths("ƀ", { font: "Trebuchet MS" })).to.be.closeTo(551.78, 0.5);
+        // In the face as bold and italic as the text, and in its bold where Word makes the bold itself
+        expect(thousandths("Д", { font: "Gill Sans MT", bold: true, italic: true })).to.equal(
+            thousandths("Д", { font: "Calibri", bold: true, italic: true }),
+        );
+        expect(thousandths("Ə", { font: "Franklin Gothic Book", bold: true })).to.equal(thousandths("Ə", { font: "Calibri", bold: true }));
+        // Book Antiqua's ƀ is Cambria's, Courier New's ẞ Calibri's and Gill Sans MT's ā Calibri's
+        expect(thousandths("ƀ", { font: "Book Antiqua" })).to.equal(thousandths("ƀ", { font: "Cambria" }));
+        expect(thousandths("ẞ", { font: "Courier New" })).to.equal(thousandths("ẞ", { font: "Calibri" }));
+        expect(thousandths("ā", { font: "Gill Sans MT" })).to.equal(thousandths("ā", { font: "Calibri" }));
+        // Word draws Trebuchet MS's ∀ in Cambria Math, whose widths aren't in the tables, and Gill Sans MT's ə in Arial,
+        // whose line gap may make the line taller than Gill Sans MT's, which hasn't been seen
         expect(unknownCharacter("for ∀", { font: "Trebuchet MS" })).to.equal("∀");
-        expect(unknownCharacter("Дом", { font: "Gill Sans MT" })).to.equal("Д");
-        expect(unknownCharacter("a b", { font: "Georgia" })).to.equal(" ");
-        expect(unknownCharacter("Дом", { font: "Verdana" })).to.equal(undefined);
+        expect(unknownCharacter("ə", { font: "Gill Sans MT" })).to.equal("ə");
+    });
+
+    it("should make a line as tall as the face of the tables Word draws a character in that its font doesn't have (word-stops-office-fonts.docx FB2)", () => {
+        // FB2a, FB2c: lines of Gill Sans MT 11 and Trebuchet MS 11 with a Д or ƀ in them, which Word draws in Calibri, 13.41
+        // points apart, Calibri's lines, where those without are 12.77
+        for (const [font, text] of [
+            ["Gill Sans MT", "line 1 with Д"],
+            ["Trebuchet MS", "line 1 with ƀ"],
+        ] as const) {
+            expect(measureTextHeight(text, { font, size: 11 })!.lineHeight, font).to.be.closeTo(13.41, 0.03);
+            expect(measureTextHeight(text, { font, size: 11 })!.descent).to.equal(measureDescent({ font: "Calibri", size: 11 }));
+            expect(measureTextHeight("line 1 without", { font, size: 11 })).to.equal(undefined);
+        }
     });
 
     it("should make their lines as tall as Word does, from each font's hhea table (word-stops-font-heights.docx FH1 to FH16)", () => {
@@ -779,22 +871,50 @@ describe("Office's fonts that Word installs", () => {
         const plain = measureTextWidth("To", font);
         expect(measureTextWidthAsDrawn("To", { ...font, kerning: 1 })).to.equal(plain - 125);
         expect(measureTextWidthAsDrawn("To", { ...font, kerning: 1, ligatures: "standardContextual" })).to.equal(plain);
-        // Word's PDFs showed only Normal's ligatures with it
-        expect(unknownShaping("To", { ...font, kerning: 1, ligatures: "all" })).to.equal("ligatures of a setting not yet followed");
-        expect(unknownShaping("To", { ...font, ligatures: "all" })).to.equal(undefined);
+        // KL1: nor with the other settings of Word's Font dialog, in each of the six fonts whose kerning is only in their kern
+        // table, and kerned with none. Which letters Tahoma joins with standard ligatures, or historical and discretional,
+        // hasn't been seen, as it joins ff, fi, fl, ft and st with all of them, so those stop at its letters
+        const PAIRS = "ToToToToTo AVAVAVAVAV WaWaWaWaWa";
+        for (const name of ["Trebuchet MS", "Verdana", "Tahoma", "Impact", "Gill Sans MT", "Franklin Gothic Book"]) {
+            const face = { font: name, size: 10, kerning: 1 };
+            for (const ligatures of ["standard", "historicalDiscretional", "all"] as const) {
+                expect(unknownShaping(PAIRS, { ...face, ligatures }), `${name} ${ligatures}`).to.equal(
+                    name === "Tahoma" && ligatures !== "all" ? "ligatures of a setting not yet followed" : undefined,
+                );
+                expect(measureTextWidthAsDrawn(PAIRS, { ...face, ligatures }), `${name} ${ligatures}`).to.equal(
+                    measureTextWidth(PAIRS, face),
+                );
+            }
+            expect(measureTextWidthAsDrawn(PAIRS, { ...face, ligatures: "none" }), name).to.equal(measureTextWidthAsDrawn(PAIRS, face));
+            expect(measureTextWidthAsDrawn(PAIRS, face), name).to.be.lessThan(measureTextWidth(PAIRS, face));
+        }
         // Calibri Light's kerning is in its GPOS table too, so Word kerns it with ligatures, as Calibri's
         const light = { font: "Calibri Light", size: 1000, kerning: 1 };
         expect(measureTextWidthAsDrawn("To", { ...light, ligatures: "standardContextual" })).to.equal(measureTextWidthAsDrawn("To", light));
         expect(measureTextWidthAsDrawn("To", light)).to.be.lessThan(measureTextWidth("To", light));
     });
 
-    it("should kern an italic Word slants as the upright face, and not know the kerning of a bold Word makes", () => {
+    it("should kern an italic Word slants as the upright face, and a bold Word makes as the face it makes it from (word-stops-office-fonts.docx MB2)", () => {
         const kerned = (font: string, bold: boolean, italic: boolean): number =>
             measureTextWidthAsDrawn("To", { font, bold, italic, size: 1000, kerning: 1 });
         expect(kerned("Tahoma", false, true)).to.equal(kerned("Tahoma", false, false));
         expect(kerned("Trebuchet MS", true, true)).to.equal(kerned("Trebuchet MS", true, false));
-        expect(unknownShaping("To", { font: "Calibri Light", bold: true, kerning: 1 })).to.equal(
-            "kerned text in a font whose kerning isn't known",
+        // MB2a: Calibri Light kerned from 1 point with Normal's ligatures, standard and contextual, which join its tt and ffi:
+        // in the bold Word makes, each of the 16 glyphs but the spaces 20 thousandths of an em further on than in the
+        // regular, kerned and joined as it
+        const text = "To Wyatt AVATAR office";
+        const normal = { font: "Calibri Light", size: 1000, kerning: 1, ligatures: "standardContextual" } as const;
+        expect(unknownShaping(text, { ...normal, bold: true })).to.equal(undefined);
+        expect(measureTextWidthAsDrawn(text, { ...normal, bold: true }) - measureTextWidthAsDrawn(text, normal)).to.be.closeTo(
+            16 * 20,
+            1e-9,
         );
+        expect(measureTextWidthAsDrawn(text, normal)).to.be.lessThan(measureTextWidth(text, normal));
+        // MB2b, MB2c: Franklin Gothic Book's and Impact's, which Word kerns only without ligatures, not kerned
+        for (const font of ["Franklin Gothic Book", "Impact"]) {
+            expect(measureTextWidthAsDrawn(text, { ...normal, font, bold: true }), font).to.equal(
+                measureTextWidth(text, { font, bold: true, size: 1000 }),
+            );
+        }
     });
 });

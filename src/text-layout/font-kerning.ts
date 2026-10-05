@@ -59,8 +59,8 @@ export type FontKerning = {
     readonly name: string;
     readonly regular: FaceKerning;
     /**
-     * None for a font without a bold face, such as Calibri Light, whose bold Word makes itself, and whose kerning hasn't
-     * been seen
+     * None for a font without a bold face, such as Calibri Light, whose bold Word makes itself, and kerns and joins as the
+     * face it makes it from
      */
     readonly bold?: FaceKerning;
     /**

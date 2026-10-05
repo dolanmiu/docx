@@ -944,6 +944,7 @@ describe("estimatePageNumbersWith", () => {
             name: "Probe Wide",
             advances: Object.fromEntries([..." abcdefghijklmnopqrstuvwxyz"].map((letter) => [letter, 1000])),
             windows: { ascent: 1000, descent: 1000 },
+            hhea: { ascender: 1000, descender: -1000, lineGap: 0 },
         });
         // A page of 9-point text in it: 100 words of 4 letters and a space, 500 ems, take 10 lines of 18 points
         const words = "abcd ".repeat(100).trim();
@@ -993,7 +994,12 @@ describe("estimatePageNumbersWith", () => {
             view.setUint16(characterMap + 16 + (view.getUint16(characterMap + 6) / 2) * 6 + 2, 0xfffe);
             expect(pageNumbersOf(embedded("Probe Wide", damaged))).to.deep.equal({ first: "1" });
             // The fonts the caller gives are measured too, after those the document embeds
-            const narrow = buildTestFont({ name: "Probe Wide", advances: { a: 1 }, windows: { ascent: 1000, descent: 1000 } });
+            const narrow = buildTestFont({
+                name: "Probe Wide",
+                advances: { a: 1 },
+                windows: { ascent: 1000, descent: 1000 },
+                hhea: { ascender: 1000, descender: -1000, lineGap: 0 },
+            });
             expect(pageNumbersOf(embedded("Probe Wide", WIDE), estimatePageNumbersWith({ fonts: [{ data: narrow }] }))).to.deep.include({
                 last: "8",
             });

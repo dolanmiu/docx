@@ -10,7 +10,7 @@
  * @module
  */
 // cspell:ignore caladea Aptos
-import { FONT_WIDTHS, FONT_WIDTH_RANGES, type FontWidths } from "./font-widths";
+import { FALLBACK_FACES, FONT_WIDTHS, FONT_WIDTH_RANGES, type FontWidths } from "./font-widths";
 import { type FaceShaping, type Glyph, hasLigatures, joinLetters, kerningBetween, rulesOf, shapingOf } from "./kerning";
 import { FALLBACK_FONTS, MORE_WIDTHS, MORE_WIDTH_RANGES } from "./more-widths";
 
@@ -278,7 +278,8 @@ const JOINED_SCRIPT = /[\p{Script=Arabic}\p{Script=Devanagari}]/u;
 // The digits the tables write widths in, two to a width
 const DIGITS = "0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ+/";
 
-const decoded = new Map<string, readonly (number | undefined)[]>();
+const decoded = new Map<string, FaceWidths>();
+const decodedOwn = new Map<string, FaceWidths>();
 const twoDigitsIn = (encoded: string, at: number): number => DIGITS.indexOf(encoded[at]) * 64 + DIGITS.indexOf(encoded[at + 1]);
 
 /**
@@ -323,17 +324,26 @@ const decodeMore = ({ widths, fonts }: { readonly widths: string; readonly fonts
 };
 
 /**
- * Reads the widths of a font's face, as {@link FontWidths} writes them: the width of each character of the tables, in
- * thousandths of an em, or undefined where its width in Word isn't known.
+ * The widths of a font's face: the width of each character of the tables, in thousandths of an em, or undefined where
+ * its width in Word isn't known, and for each character the face doesn't have, which Word draws in another face of the
+ * tables, the index of that face in {@link FALLBACK_FACES}.
  */
-const decodeWidths = (encoded: string): readonly (number | undefined)[] => {
-    const known = decoded.get(encoded);
+type FaceWidths = { readonly widths: readonly (number | undefined)[]; readonly fallbacks: readonly (number | undefined)[] };
+
+/**
+ * Reads the widths of a font's face, as {@link FontWidths} writes them, but for the characters Word draws in another face
+ * of the tables, which are undefined.
+ */
+const decodeOwnWidths = (encoded: string): FaceWidths => {
+    const known = decodedOwn.get(encoded);
     if (known) {
         return known;
     }
     const twoDigitsAt = (at: number): number => twoDigitsIn(encoded, at);
     // eslint-disable-next-line functional/prefer-readonly-type
     const widths: (number | undefined)[] = [];
+    // eslint-disable-next-line functional/prefer-readonly-type
+    const fallbacks: (number | undefined)[] = [];
     let token = 0;
     for (let at = 0; at < encoded.length;) {
         let count = 1;
@@ -348,7 +358,7 @@ const decodeWidths = (encoded: string): readonly (number | undefined)[] => {
         for (let repeat = 0; repeat < count; repeat++) {
             const code = CHARACTERS[widths.length];
             const width =
-                encoded[token] === "!"
+                encoded[token] === "!" || encoded[token] === "~"
                     ? undefined
                     : encoded[token] === "="
                       ? // As wide as the letter it is made from, which comes before it
@@ -356,11 +366,40 @@ const decodeWidths = (encoded: string): readonly (number | undefined)[] => {
                       : twoDigitsAt(token);
             // eslint-disable-next-line functional/immutable-data
             widths.push(width);
+            // eslint-disable-next-line functional/immutable-data
+            fallbacks.push(encoded[token] === "~" ? DIGITS.indexOf(encoded[token + 1]) : undefined);
         }
     }
+    const face = { widths, fallbacks };
     // eslint-disable-next-line functional/immutable-data
-    decoded.set(encoded, widths);
-    return widths;
+    decodedOwn.set(encoded, face);
+    return face;
+};
+
+/**
+ * Reads the widths of a font's face, as {@link FontWidths} writes them. A character Word draws in another face of the
+ * tables is as wide as it is there, where the face has it itself.
+ */
+const decodeWidths = (encoded: string): FaceWidths => {
+    const known = decoded.get(encoded);
+    if (known) {
+        return known;
+    }
+    const { widths, fallbacks } = decodeOwnWidths(encoded);
+    const face = {
+        widths: widths.map((width, index) => {
+            const fallback = fallbacks[index];
+            if (fallback === undefined) {
+                return width;
+            }
+            const { font, bold, italic } = FALLBACK_FACES[fallback];
+            return decodeOwnWidths(encodedFaceOf(widthsOf(font), bold, italic)).widths[index];
+        }),
+        fallbacks,
+    };
+    // eslint-disable-next-line functional/immutable-data
+    decoded.set(encoded, face);
+    return face;
 };
 
 /**
@@ -458,33 +497,27 @@ const widthsOf = (font = DEFAULT_FONT): FontWidths => {
 };
 
 /**
- * The widths of a font's face, as the table writes them, or undefined for bold in a font without a bold face, such as
- * Calibri Light, which Word makes itself, drawing each character 18 thousandths of an em wider than the face it makes it
- * from at 10 points (`word-stops-font-widths.docx`). Italic in a font without an italic face, such as Tahoma, is the
- * upright face's, as Word slants it, as wide (`word-stops-font-italic-widths.docx`), and so is Trebuchet MS's bold italic,
- * which Word draws as its bold, slanted
+ * The widths of a font's face, as the table writes them. Bold in a font without a bold face, such as Calibri Light, is
+ * the bold Word makes itself (`word-stops-office-fonts.docx` MB1). Italic in a font without an italic face, such as
+ * Tahoma, is the upright face's, as Word slants it, as wide (`word-stops-font-italic-widths.docx`), and so is Trebuchet
+ * MS's bold italic, which Word draws as its bold, slanted, and Impact's, its bold made from its regular face
  */
-const encodedFaceOf = (widths: FontWidths, bold: boolean, italic: boolean): string | undefined =>
+const encodedFaceOf = (widths: FontWidths, bold: boolean, italic: boolean): string =>
     bold ? (italic ? (widths.boldItalic ?? widths.bold) : widths.bold) : italic ? (widths.italic ?? widths.regular) : widths.regular;
 
-/**
- * The widths of the face text is in: its font's, bold, italic, both or neither. Bold that Word makes itself, which
- * {@link unknownFont} says, is measured as the face Word makes it from
- */
-const faceOf = ({ font, bold = false, italic = false }: TextFont): readonly (number | undefined)[] => {
-    const widths = widthsOf(font);
-    return decodeWidths(encodedFaceOf(widths, bold, italic) ?? encodedFaceOf(widths, false, italic)!);
-};
+/** The widths of the face text is in: its font's, bold, italic, both or neither */
+const faceOf = ({ font, bold = false, italic = false }: TextFont): FaceWidths => decodeWidths(encodedFaceOf(widthsOf(font), bold, italic));
 
 /**
  * The widths of Hebrew, the Arabic-Indic and Devanagari digits, Thai, box drawing, shapes, symbols and dingbats in the face
- * text is in, and the fonts Word draws them in: its font's, plain or bold. Undefined in italic, whose widths Word's PDF
- * doesn't show
+ * text is in, and the fonts Word draws them in, which every font of the width tables has. Undefined in the italics of
+ * Office's other fonts, whose widths Word's PDFs don't show
  */
-const moreFaceOf = ({ font, bold, italic }: TextFont): MoreFace | undefined => {
+const moreFaceOf = ({ font, bold = false, italic = false }: TextFont): MoreFace | undefined => {
     const { name } = widthsOf(font);
-    const more = MORE_WIDTHS.find((known) => known.name === name);
-    return italic || more === undefined ? undefined : decodeMore(bold ? more.bold : more.regular);
+    const more = MORE_WIDTHS.find((known) => known.name === name)!;
+    const face = italic ? (bold ? more.boldItalic : more.italic) : bold ? more.bold : more.regular;
+    return face === undefined ? undefined : decodeMore(face);
 };
 
 // Characters as wide as they are tall: Chinese, Japanese and Korean, full-width forms and emoji
@@ -568,20 +601,19 @@ const lineSizeOf = (font: TextFont): number => font.lineSize ?? sizeOf(font);
  * are measured as, or all of a monospaced one's as half an em or an em, and other fonts with their own widths, or those of
  * the most similar font in the table
  */
-const measuresOf = (
-    font: TextFont,
-): { readonly widths: readonly (number | undefined)[]; readonly more: MoreFace | undefined; readonly monospaced: boolean } => {
+const measuresOf = (font: TextFont): FaceWidths & { readonly more: MoreFace | undefined; readonly monospaced: boolean } => {
     const eastAsian = eastAsianFontOf(font.font ?? DEFAULT_FONT);
     const measured = { ...font, font: eastAsian?.latin ?? font.font };
-    return { widths: faceOf(measured), more: moreFaceOf(measured), monospaced: eastAsian?.monospaced === true };
+    return { ...faceOf(measured), more: moreFaceOf(measured), monospaced: eastAsian?.monospaced === true };
 };
 
 /**
  * The first character of text whose width in its font isn't known, so isn't what Word lays out: one of the tables'
- * characters that Word draws in another font when the font doesn't have it, or whose width Word's PDF doesn't show, such
- * as Hebrew and the symbols in italic, Arabic and Devanagari, whose letters Word joins into forms of other widths, the
- * Devanagari digits of Cambria and Times New Roman, which Word draws in Kohinoor Devanagari, whose lines' height isn't
- * known, and a symbol font's own character. Undefined when the widths of all of them are known, or are measured as before: those of
+ * characters that Word draws in a font whose widths the tables don't have when the font doesn't have it, such as Cambria
+ * Math, or in one whose line gap could make the line taller, such as Arial, or whose width Word's PDFs don't show, such as
+ * Hebrew and the symbols in the italics of Office's other fonts, Arabic and Devanagari, whose letters Word joins into
+ * forms of other widths, the Devanagari digits of Cambria and Times New Roman, which Word draws in Kohinoor Devanagari,
+ * whose lines' height isn't known, and a symbol font's own character. Undefined when the widths of all of them are known, or are measured as before: those of
  * characters the tables don't have, as an average letter.
  */
 export const unknownCharacter = (text: string, font: TextFont = {}): string | undefined => {
@@ -603,14 +635,15 @@ export const unknownCharacter = (text: string, font: TextFont = {}): string | un
  * deepest descent of the fonts its characters are drawn in. A line of Thai in Calibri 11 is Tahoma's, 265.5 twips, where
  * Calibri's are 268.55, and spaces take no part (`word-stops-thai.docx` TH1, `word-stops-more-widths.docx`: lines of
  * Calibri's ★ and the like in Segoe UI Symbol 10 are 266 twips apart, and 269.6 from a line with Calibri's letters on it).
- * Undefined for text Word draws all in its own font, as in the tables.
+ * A line of Gill Sans MT 11 with a Д, which Word draws in Calibri, is as tall as Calibri's, 268.3 twips where Gill Sans
+ * MT's are 255.5 (`word-stops-office-fonts.docx` FB2a). Undefined for text Word draws all in its own font, as in the tables.
  */
 export const measureTextHeight = (
     text: string,
     font: TextFont = {},
 ): { readonly lineHeight: number; readonly descent: number } | undefined => {
-    const { more, monospaced } = measuresOf(font);
-    if (more === undefined || monospaced || font.lineSize !== undefined) {
+    const { fallbacks, more, monospaced } = measuresOf(font);
+    if (monospaced || font.lineSize !== undefined) {
         return undefined;
     }
     const size = sizeOf(font);
@@ -618,11 +651,19 @@ export const measureTextHeight = (
     const heights = [...text]
         .filter((character) => !/\s/u.test(character) && !takesNoRoom(character))
         .map((character) => {
-            const moreIndex = MORE_CHARACTER_INDEX.get(character.codePointAt(0)!);
-            const fallback = moreIndex === undefined ? undefined : more.fonts[moreIndex];
-            return fallback === undefined
+            const code = character.codePointAt(0)!;
+            const index = CHARACTER_INDEX.get(code);
+            const fallback = index === undefined ? undefined : fallbacks[index];
+            if (fallback !== undefined) {
+                // A face of the tables, whose line is above the baseline but for its descent
+                const face = widthsOf(FALLBACK_FACES[fallback].font);
+                return { ascent: ((face.lineHeight - face.descent) * size) / 1000, descent: (face.descent * size) / 1000 };
+            }
+            const moreIndex = MORE_CHARACTER_INDEX.get(code);
+            const other = moreIndex === undefined ? undefined : more?.fonts[moreIndex];
+            return other === undefined
                 ? own
-                : { ascent: (FALLBACK_FONTS[fallback].ascent * size) / 1000, descent: (FALLBACK_FONTS[fallback].descent * size) / 1000 };
+                : { ascent: (FALLBACK_FONTS[other].ascent * size) / 1000, descent: (FALLBACK_FONTS[other].descent * size) / 1000 };
         });
     if (heights.every((height) => height === own)) {
         return undefined;
@@ -636,19 +677,16 @@ export const measureTextHeight = (
  * Whether the tables measure text in a font as another font, as they don't have the font's own widths: a font that isn't
  * in them and isn't made with the same widths as one that is, such as Roboto, which they measure as the most similar
  * font that is. Word draws it with its own widths when it has it, and in another font when it doesn't, such as Cambria
- * on the Mac (`word-watertight-text.docx` TX18), so a layout stops there rather than guessing. Bold in a font of the
- * tables without a bold face, such as Calibri Light, Franklin Gothic Book and Impact, is one too: Word makes it itself,
- * each character wider than the face it makes it from, by 18 thousandths of an em at 10 points
- * (`word-stops-font-widths.docx`), which other sizes haven't shown. The East Asian fonts of the tables are measured as
- * themselves, but for the other characters of those that aren't monospaced, such as Latin letters in Yu Gothic, which
- * are measured as Times New Roman or Arial. Without text, whether the height of a line in the font is another font's.
+ * on the Mac (`word-watertight-text.docx` TX18), so a layout stops there rather than guessing. The East Asian fonts of
+ * the tables are measured as themselves, but for the other characters of those that aren't monospaced, such as Latin
+ * letters in Yu Gothic, which are measured as Times New Roman or Arial. Without text, whether the height of a line in the
+ * font is another font's.
  */
 export const unknownFont = (font: TextFont = {}, text?: string): boolean => {
     const name = font.font ?? DEFAULT_FONT;
     const eastAsian = knownEastAsianFontOf(name);
     if (eastAsian === undefined) {
-        const widths = exactWidthsOf(name);
-        return widths === undefined || encodedFaceOf(widths, font.bold === true, font.italic === true) === undefined;
+        return exactWidthsOf(name) === undefined;
     }
     return (
         !eastAsian.monospaced &&
@@ -729,8 +767,9 @@ const shapingFor = (font: TextFont): FaceShaping | undefined =>
 
 /**
  * Whether Word kerns text: when it asks for kerning, but for text with ligatures in a face whose kerning is only in its
- * font's kern table, such as Trebuchet MS's, which Word kerns without ligatures and not with them
- * (scripts/layout-probes/stops2/word-stops-font-kerning.ts K and P)
+ * font's kern table, such as Trebuchet MS's, which Word kerns without ligatures and not with them, whichever of them it
+ * has (scripts/layout-probes/stops2/word-stops-font-kerning.ts K and P, and word-stops-office-fonts.ts KL1: standard,
+ * standard and contextual, historical and discretional, and all, in six such fonts, and kerned with none)
  */
 const kernedIn = (font: TextFont, shaping: FaceShaping): boolean =>
     isKerned(font) && !(hasLigatures(font) && shaping.notKernedWithLigatures);
@@ -753,8 +792,7 @@ const LATIN_LETTER = /^\p{Script=Latin}$/u;
  * the characters of Windows-1252, and its ligatures of Word's settings, in the fonts of the tables, but for those of East
  * Asian fonts (scripts/layout-probes/word-kerning.ts), and in Office's other fonts in the tables
  * (scripts/layout-probes/stops2/word-stops-font-kerning.ts). Courier New, of which Word kerned no pair of printable ASCII,
- * and monospaced East Asian fonts, aren't kerned, and nor is text with ligatures in a face Word kerns only without them,
- * which Word's PDF showed with Normal's ligatures, standard and contextual, and no others.
+ * and monospaced East Asian fonts, aren't kerned, and nor is text with ligatures in a face Word kerns only without them.
  */
 export const unknownShaping = (text: string, font: TextFont = {}): string | undefined => {
     const ligatures = hasLigatures(font);
@@ -762,9 +800,6 @@ export const unknownShaping = (text: string, font: TextFont = {}): string | unde
         return undefined;
     }
     const shaping = shapingFor(font);
-    if (isKerned(font) && ligatures && shaping?.notKernedWithLigatures === true && font.ligatures !== "standardContextual") {
-        return "ligatures of a setting not yet followed";
-    }
     const kerned = shaping === undefined ? isKerned(font) : kernedIn(font, shaping);
     // The parts between tabs, which are measured apart, so nothing is kerned or joined across a tab. Characters that take
     // no room, such as a zero-width space or a combining mark, are measured as characters of their own, whose kerning,

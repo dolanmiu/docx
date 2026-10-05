@@ -24,6 +24,13 @@
 //    Times New Roman's Devanagari is drawn, whose lines are 300 twips apart where its descriptor makes 280. Ten of an
 //    Arabic or Devanagari letter in a row Word joined into forms of other widths, so their widths aren't shown
 //
+// Word's PDFs of word-stops-more-widths-office and word-stops-more-italic-widths, saved from Word 16 for Mac on
+// 2026-10-05 (round 25), showed the same in Office's other fonts, plain and bold, and in the five's italics: each
+// character as wide as the font Word draws it in has it, its own or another, such as Aptos's ● in Aptos and its Hebrew in
+// Arial, and the italics' in the italic of the font, or another's, such as Calibri's italic ★ in Segoe UI Symbol. The
+// bold Word makes itself of Calibri Light, Franklin Gothic Book and Impact draws them 20 thousandths of an em wider, as
+// it does their letters (word-stops-office-fonts.ts MB1)
+//
 // Usage: npm run run-ts -- scripts/layout-probes/stops2/word-stops-more-widths.ts [folder]; STOPS_ITALIC=1 for italics,
 // STOPS_FONTS=office for Office's other fonts
 // cspell:ignore bbox Caladea Aptos

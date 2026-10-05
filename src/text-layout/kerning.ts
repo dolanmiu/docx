@@ -171,21 +171,45 @@ export const joinLetters = (characters: readonly string[], rules: RuleIndex, gly
 };
 
 /**
+ * How much further on Word draws each glyph of a bold it makes itself, for a font without a bold face, than in the face
+ * it makes it from, in thousandths of an em: at 8 to 72 points in Calibri Light, Franklin Gothic Book and Impact, and in
+ * Pacifico at 10 and 20, but for the spaces, which are as wide as they were
+ * (scripts/layout-probes/stops2/word-stops-office-fonts.ts MB1, MB4)
+ */
+export const MADE_BOLD = 20;
+
+const madeBold = new Map<FaceShaping, FaceShaping>();
+
+/** A face's kerning and ligatures in the bold Word makes of it: its own, with each glyph its ligatures join wider */
+const madeBoldOf = (shaping: FaceShaping): FaceShaping => {
+    const made = madeBold.get(shaping) ?? {
+        ...shaping,
+        glyphs: shaping.glyphs.map(([letters, width, first, second]) => [letters, width + MADE_BOLD, first, second] as const),
+    };
+    // eslint-disable-next-line functional/immutable-data
+    madeBold.set(shaping, made);
+    return made;
+};
+
+/**
  * The font's kerning and ligatures in the tables, by its name and face, when they have them. An italic face a font
  * doesn't have, which Word slants from the upright one, is kerned and joined as the upright one, as Word kerns Trebuchet
  * MS's bold italic, which it draws as its bold (scripts/layout-probes/stops2/word-stops-font-kerning.ts K18). A bold
- * face it doesn't have, which Word makes itself, such as Calibri Light's, isn't known
+ * face it doesn't have, which Word makes itself, such as Calibri Light's, is kerned and joined as the face it makes it
+ * from, each of its glyphs {@link MADE_BOLD} wider (word-stops-office-fonts.ts MB2: Calibri Light kerned with Normal's
+ * ligatures, and Franklin Gothic Book and Impact, not kerned with them)
  */
 export const shapingOf = (font: string, bold: boolean, italic: boolean): FaceShaping | undefined => {
     const faces = FONT_KERNING.find(({ name }) => name === font);
-    const face = bold
-        ? italic
-            ? (faces?.boldItalic ?? faces?.bold)
-            : faces?.bold
-        : italic
-          ? (faces?.italic ?? faces?.regular)
-          : faces?.regular;
-    return face === undefined ? undefined : decodeFace(face);
+    if (faces === undefined) {
+        return undefined;
+    }
+    const upright = italic ? (faces.italic ?? faces.regular) : faces.regular;
+    if (!bold) {
+        return decodeFace(upright);
+    }
+    const face = italic ? (faces.boldItalic ?? faces.bold) : faces.bold;
+    return face === undefined ? madeBoldOf(decodeFace(upright)) : decodeFace(face);
 };
 
 /** A glyph's kerning classes: a ligature's own, or a character's */
