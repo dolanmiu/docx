@@ -250,9 +250,11 @@ export const roomBeside = (
     );
     // A room narrower than 18 points takes no text where there is a wider one, as Word leaves one of 16.8 points empty
     // beside a table that text flows around, where a word fits in it (`word-stops-floats.docx` FT1d), and puts a word in
-    // one of 18 (`word-floats.docx` F13, F14). Where all the room a line has is that narrow, Word's way isn't known
-    const wide = spans.filter(({ start, end }) => end - start >= LEAST_ROOM - TOLERANCE);
-    if (spans.length > 0 && wide.length === 0) {
+    // one of 18 (`word-floats.docx` F13, F14). Where all the room a line has is that narrow, Word's way isn't known. A
+    // sliver left by edges worked out in different ways is no room at all
+    const rooms = spans.filter(({ start, end }) => end - start > TOLERANCE);
+    const wide = rooms.filter(({ start, end }) => end - start >= LEAST_ROOM - TOLERANCE);
+    if (rooms.length > 0 && wide.length === 0) {
         return { narrow: true };
     }
     return wide.length > 0 ? { spans: wide } : { below: Math.min(...beside.map(({ keepOut }) => keepOut.bottom)) };

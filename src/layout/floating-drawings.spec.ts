@@ -230,5 +230,7 @@ describe("roomBeside", () => {
         // 16.8 points left of the drawing, and 18 right of it
         expect(roomBeside([at(88.8, { width: 416.5 })], 100, 14, within)).to.deep.equal({ spans: [{ start: 505.3, end: 523.3 }] });
         expect(roomBeside([at(88.8, { width: 425.5 })], 100, 14, within)).to.deep.equal({ narrow: true });
+        // A sliver left by lengths that differ only in their arithmetic is no room, and the line goes below the drawing
+        expect(roomBeside([at(72.001, { width: 451.299 })], 100, 14, within)).to.deep.equal({ below: 150 });
     });
 });
