@@ -856,15 +856,16 @@ export const paginate = (
                 : [],
         );
     // After a section's last block, its endnotes, and those of the sections up to the next block's, which have no blocks of
-    // their own, or of the last section, which has none of the body only where it is laid out on its own
-    const blocks: readonly { readonly block: Block; readonly section: number; readonly endnote?: number; readonly body?: number }[] =
-        content.blocks.flatMap((entry, body) => {
-            const next = content.blocks[body + 1]?.section ?? sections.length;
-            return [
-                { ...entry, body },
-                ...Array.from({ length: next - entry.section }, (_, after) => entry.section + after).flatMap(endnoteBlocks),
-            ];
-        });
+    // their own, or of the last section, which has none of the body only where it is laid out on its own. Those of the
+    // sections before the first block's, which have none either, go before it, and all go alone where the body has none
+    const sectionsUpTo = (from: number, to: number): readonly number[] => Array.from({ length: to - from }, (_, after) => from + after);
+    const blocks: readonly { readonly block: Block; readonly section: number; readonly endnote?: number; readonly body?: number }[] = [
+        ...sectionsUpTo(0, content.blocks[0]?.section ?? sections.length).flatMap(endnoteBlocks),
+        ...content.blocks.flatMap((entry, body) => [
+            { ...entry, body },
+            ...sectionsUpTo(entry.section, content.blocks[body + 1]?.section ?? sections.length).flatMap(endnoteBlocks),
+        ]),
+    ];
     /** Whether a block is one of the endnotes', or their separator's */
     const isEndnote = (index: number): boolean => blocks[index]?.endnote !== undefined;
     /** The space between two paragraphs: the larger of the space after the first and before the second, or both */
