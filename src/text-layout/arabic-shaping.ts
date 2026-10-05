@@ -4,7 +4,7 @@
  *
  * @module
  */
-// cspell:ignore tatweel
+// cspell:ignore tatweel tatweels keheh
 import { ARABIC_LETTERS, ARABIC_WIDTHS, LAM_ALEFS } from "./arabic-widths";
 
 /**
@@ -94,6 +94,28 @@ const decodeFace = (encoded: string, drawnIn: string | undefined): ArabicFace =>
 export const arabicFaceOf = (name: string, bold: boolean, italic: boolean): ArabicFace | undefined => {
     const font = ARABIC_WIDTHS.find((known) => known.name === name);
     return font === undefined || italic ? undefined : decodeFace(bold ? font.bold : font.regular, font.drawnIn);
+};
+
+// The fonts whose Arabic Word kerns by pairs of letters, whether the text asks for kerning or not: it draws ten copies of a
+// letter joined in a word as much as 23 thousandths of an em a letter wider or narrower than their forms, keheh's wider
+// and ain's narrower, and beh's 6 wider, where the same forms with tatweels or a zero-width non-joiner between them are as
+// wide as they are (scripts/layout-probes/stops2/word-stops-more-widths.ts W, word-stops-arabic.ts AR1). Courier New's
+// copies are as wide as their forms, to a tenth of a thousandth
+const KERNED = new Set(["Arial", "Times New Roman", "Cambria"]);
+
+/**
+ * Why Word's widths of Arabic text in a font of the tables aren't known, when they aren't: letters side by side, with
+ * nothing but marks between them, which Word kerns by pairs the widths don't have, in a font it kerns them in
+ */
+export const unknownArabicKerning = (text: string, name: string): string | undefined => {
+    if (!KERNED.has(name)) {
+        return undefined;
+    }
+    const letters = [...text].filter((character) => joiningOf(character) !== "T");
+    const kerned = letters.some(
+        (character, index) => index > 0 && ARABIC_LETTERS.includes(character) && ARABIC_LETTERS.includes(letters[index - 1]),
+    );
+    return kerned ? "Arabic letters side by side, which Word kerns by pairs not yet known" : undefined;
 };
 
 /** Whether a character is one of Arabic's letters the widths have, or the tatweel */

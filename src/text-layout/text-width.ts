@@ -10,7 +10,7 @@
  * @module
  */
 // cspell:ignore caladea Aptos
-import { type ArabicFace, arabicFaceOf, isJoinedLetter, joinedWidthsOf } from "./arabic-shaping";
+import { type ArabicFace, arabicFaceOf, isJoinedLetter, joinedWidthsOf, unknownArabicKerning } from "./arabic-shaping";
 import { FALLBACK_FACES, FONT_WIDTHS, FONT_WIDTH_RANGES, type FontWidths } from "./font-widths";
 import { type FaceShaping, type Glyph, hasLigatures, joinLetters, kerningBetween, rulesOf, shapingOf } from "./kerning";
 import { FALLBACK_FONTS, MORE_WIDTHS, MORE_WIDTH_RANGES } from "./more-widths";
@@ -59,6 +59,8 @@ export type TextFont = {
      * measurer leaves to the layout of its lines
      */
     readonly snapToGrid?: false;
+    /** Whether it is in a right-to-left run (`w:rtl`), which changes where Word breaks a line at a space beside it */
+    readonly rightToLeft?: boolean;
     /**
      * Whether it is a list's number, or the space or tab that follows it, which take up less of their line than text: a
      * number only the room above the baseline, and what follows it none
@@ -825,6 +827,11 @@ const LATIN_LETTER = /^\p{Script=Latin}$/u;
  * and monospaced East Asian fonts, aren't kerned, and nor is text with ligatures in a face Word kerns only without them.
  */
 export const unknownShaping = (text: string, font: TextFont = {}): string | undefined => {
+    // Arabic, which Word kerns whether the text asks for kerning or not (see `arabic-shaping.ts`)
+    const arabic = measuresOf(font).arabic === undefined ? undefined : unknownArabicKerning(text, widthsOf(font.font).name);
+    if (arabic !== undefined) {
+        return arabic;
+    }
     const ligatures = hasLigatures(font);
     if ((!isKerned(font) && !ligatures) || eastAsianFontOf(font.font ?? DEFAULT_FONT)?.monospaced === true) {
         return undefined;

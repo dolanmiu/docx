@@ -633,6 +633,16 @@ describe("kerning and ligatures", () => {
     });
 
     it("should say where Word's kerning or ligatures aren't known, so a layout stops there", () => {
+        // Arabic letters side by side, which Word kerns in Arial, Times New Roman and Cambria however the text asks
+        // (stops2/word-stops-more-widths.ts W), but not in Courier New, nor a letter alone
+        // cspell:disable
+        expect(unknownShaping("بلا", { font: "Arial", size: 10 })).to.equal(
+            "Arabic letters side by side, which Word kerns by pairs not yet known",
+        );
+        expect(unknownShaping("بلا", { font: "Courier New" })).to.equal(undefined);
+        expect(unknownShaping("ب و", { font: "Times New Roman" })).to.equal(undefined);
+        expect(unknownShaping("بلا", { font: "Calibri" })).to.equal(undefined);
+        // cspell:enable
         expect(unknownShaping("To", calibri({ kerning: 1 }))).to.equal(undefined);
         expect(unknownShaping("office", calibri({ ligatures: "standard" }))).to.equal(undefined);
         // Text with no font is in Times New Roman, which Word kerns

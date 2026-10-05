@@ -774,7 +774,10 @@ describe("spansOf", () => {
 
     it("should put all of a right-to-left run in the font, size, boldness and italics of complex scripts, and Hebrew in other runs in the run's", () => {
         const format = { font: "Calibri", size: 11, bold: true, italic: true, complexScriptFont: "Arial", complexScriptSize: 14 };
-        expect(spansOf("ab שלום", { ...format, rightToLeft: true })).to.deep.equal([{ font: "Arial", size: 14, text: "ab שלום" }]);
+        // Marked as right to left, for where its lines break
+        expect(spansOf("ab שלום", { ...format, rightToLeft: true })).to.deep.equal([
+            { font: "Arial", size: 14, rightToLeft: true, text: "ab שלום" },
+        ]);
         expect(spansOf("ab", { ...format, complexScript: true, complexScriptBold: true, complexScriptItalic: true })).to.deep.equal([
             { font: "Arial", size: 14, bold: true, italic: true, text: "ab" },
         ]);

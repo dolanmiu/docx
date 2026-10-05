@@ -104,8 +104,10 @@ other fonts and languages (EA6), indents of part of a character Word's PDFs didn
 right-to-left and left-to-right text, in Hebrew and in a right-to-left paragraph (AR3), and endnotes after text that runs
 down the page (GR15d, GR15e). `word-stops-arabic.ts` has the widths of
 Arabic's letters in each form Word joins them in (AR1), which `word-stops-more-widths` and `word-stops-thai` TH3b, ten of
-each letter in a row, showed joined, and lines of Arabic prose to check them by (AR2), and Word drew Calibri's Arabic
-narrower than its glyphs in places, which isn't followed yet. Read Word's PDF of it with `word-stops-arabic.py`, which
+each letter in a row, showed joined, and lines of Arabic prose to check them by (AR2). Word kerns Arabic's letters side
+by side, by pairs, in Arial and Times New Roman (as ten joined copies of a letter in `word-stops-more-widths` show) and in
+Calibri, which isn't followed yet: `word-stops-arabic2.ts` writes every pair of the letters, for a later batch
+(`word-stops-arabic-kerning`, AR4). Read Word's PDF of it with `word-stops-arabic.py`, which
 reads `word-stops-arabic.json`, and `scripts/generate-arabic-widths.ts` writes `src/text-layout/arabic-widths.ts` from
 what it reads. `word-stops-more-widths.ts` writes
 the same characters as its W in Office's other fonts with `STOPS_FONTS=office` (`word-stops-more-widths-office`), and in

@@ -21,10 +21,12 @@
  *   GR17e: indented 1.2 characters, with a left tab stop at 2000 twips before ideographs
  * word-stops-rtl-ends.docx: where Word breaks lines of right-to-left text in a left-to-right paragraph, each line made, with
  *   docx/layout's widths of the words, so that its last word fits only without the space after it (AR3):
- *   AR3a: Arabic words, then a Latin word after that space
- *   AR3b: Latin words, then an Arabic word after it
+ *   AR3a: Arabic words, then a Latin word after that space, which is in the Arabic's right-to-left run
+ *   AR3b: Latin words, then an Arabic word after it, the space between them in the Arabic's right-to-left run
  *   AR3c: Hebrew words, then more of them (AR2 showed Arabic's going on to the next line)
  *   AR3d: Arabic words, then more of them, in a right-to-left paragraph (word-unicode.ts R8's Hebrew broke as left to right)
+ *   AR3e: Arabic words, then more of them, in a run that isn't right to left
+ *   The Arabic is in Courier New, which Word doesn't kern, so its widths are known; the Hebrew in Arial
  * word-stops-endnotes-down2.docx (GR15d): an endnote from a document whose one section runs down the page
  * word-stops-endnotes-down3.docx (GR15e): an endnote from a section running down the page, followed by one across it and
  *   one down it again: whether Word ends it with its own section, at the change, or after the last, which runs down too
@@ -154,7 +156,9 @@ await write({
 });
 
 // AR3: lines whose last right-to-left word fits only without the space after it
-const ARABIC = { font: "Arial", size: 20, rightToLeft: true } as const;
+const ARABIC = { font: "Courier New", size: 20, rightToLeft: true } as const;
+const HEBREW = { font: "Arial", size: 20, rightToLeft: true } as const;
+const ARABIC_LEFT_TO_RIGHT = { font: "Courier New", size: 20 } as const;
 const LATIN = { font: "Arial", size: 20 } as const;
 const ARABIC_WORD = "بالقارب";
 // cspell:disable-next-line
@@ -184,16 +188,18 @@ const filled = (name: string, word: string, run: { readonly font: string; readon
 const rightToLeftEnd = (
     name: string,
     word: string,
-    run: typeof ARABIC | typeof LATIN,
+    run: typeof ARABIC | typeof HEBREW | typeof LATIN | typeof ARABIC_LEFT_TO_RIGHT,
     next: readonly TextRun[],
     options: object = {},
+    // Whether the space after the last word is the next run's, as it starts with one, rather than its own run's
+    spaceInNext = false,
 ): Paragraph => {
     const { label, words } = filled(name, word, run);
     return new Paragraph({
         ...options,
         children: [
             new TextRun({ text: label, font: "Calibri", size: 20 }),
-            new TextRun({ text: `${Array.from({ length: words }, () => word).join(" ")} `, ...run }),
+            new TextRun({ text: `${Array.from({ length: words }, () => word).join(" ")}${spaceInNext ? "" : " "}`, ...run }),
             ...next,
         ],
     });
@@ -204,13 +210,17 @@ await write({
         line("AR3a above"),
         rightToLeftEnd("AR3a", ARABIC_WORD, ARABIC, [new TextRun({ text: `${LATIN_WORD} ${LATIN_WORD}`, ...LATIN })]),
         line("AR3b above"),
-        rightToLeftEnd("AR3b", LATIN_WORD, LATIN, [new TextRun({ text: `${ARABIC_WORD} ${ARABIC_WORD}`, ...ARABIC })]),
+        rightToLeftEnd("AR3b", LATIN_WORD, LATIN, [new TextRun({ text: ` ${ARABIC_WORD} ${ARABIC_WORD}`, ...ARABIC })], {}, true),
         line("AR3c above"),
-        rightToLeftEnd("AR3c", HEBREW_WORD, ARABIC, [new TextRun({ text: `${HEBREW_WORD} ${HEBREW_WORD}`, ...ARABIC })]),
+        rightToLeftEnd("AR3c", HEBREW_WORD, HEBREW, [new TextRun({ text: `${HEBREW_WORD} ${HEBREW_WORD}`, ...HEBREW })]),
         line("AR3d above"),
         rightToLeftEnd("AR3d", ARABIC_WORD, ARABIC, [new TextRun({ text: `${ARABIC_WORD} ${ARABIC_WORD}`, ...ARABIC })], {
             bidirectional: true,
         }),
+        line("AR3e above"),
+        rightToLeftEnd("AR3e", ARABIC_WORD, ARABIC_LEFT_TO_RIGHT, [
+            new TextRun({ text: `${ARABIC_WORD} ${ARABIC_WORD}`, ...ARABIC_LEFT_TO_RIGHT }),
+        ]),
         line("AR3 below"),
     ],
 });

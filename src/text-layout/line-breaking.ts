@@ -1365,13 +1365,33 @@ const RIGHT_TO_LEFT = /[\p{Script=Hebrew}\p{Script=Arabic}\p{Script=Syriac}\p{Sc
  * Whether pieces of text start, or end, with a right-to-left letter: the first, or last, of their letters is Hebrew's,
  * Arabic's or another right-to-left script's. Text with no letters is taken as left to right
  */
-const rightToLeftAt = (pieces: readonly Piece[] | undefined, edge: "start" | "end"): boolean => {
-    const text = (pieces ?? []).map(({ text: piece }) => piece).join("");
+const rightToLeftAt = (pieces: readonly Piece[], edge: "start" | "end"): boolean => {
+    const text = pieces.map(({ text: piece }) => piece).join("");
     if (!RIGHT_TO_LEFT.test(text)) {
         return false;
     }
     const letters = [...text].filter((character) => /\p{L}/u.test(character));
     return RIGHT_TO_LEFT.test(edge === "start" ? letters[0] : letters[letters.length - 1]);
+};
+
+/**
+ * What the space between two words is at the end of a line, in a left-to-right paragraph, as Word breaks it: room the
+ * line has for it, when it is in a right-to-left run between right-to-left words, as a word of Arabic that fits only
+ * without it goes on to the next line, where Word puts those that fit with it (stops2/word-stops-arabic.ts AR2e, AR2h,
+ * AR2i), or hanging past the end of the line, as it does between left-to-right words, and between right-to-left and
+ * left-to-right ones, either way, in runs that aren't right to left: Hebrew's last letters, and a label before the
+ * next, end lines a space short of the margin (stops2/word-stops-more-widths.ts W139, W278). Word breaks the lines of a
+ * right-to-left paragraph where it breaks those of a left-to-right one (scripts/layout-probes/word-unicode.ts R2, R8). Where
+ * it hasn't been seen, it is unknown: in a right-to-left run beside left-to-right text, and between right-to-left words
+ * in a run that isn't right to left
+ */
+const spaceAtEnd = (before: readonly Piece[], space: readonly Piece[], after: readonly Piece[]): "room" | "hanging" | "unknown" => {
+    const [end, start] = [rightToLeftAt(before, "end"), rightToLeftAt(after, "start")];
+    if (!end && !start) {
+        return "hanging";
+    }
+    const inRightToLeftRun = space.some(({ font }) => font.rightToLeft === true);
+    return end && start ? (inRightToLeftRun ? "room" : "unknown") : inRightToLeftRun ? "unknown" : "hanging";
 };
 
 /**
@@ -1767,8 +1787,6 @@ export const layoutLines = (
     for (const [segmentIndex, { tokens, end }] of segments.entries()) {
         const isLast = segmentIndex === segments.length - 1;
         const start = startOf(lines.length, first);
-        // The pieces of the word before, for the direction of its text
-        let lastWord: readonly Piece[] | undefined;
         let line: LineState = {
             position: first ? start - beforeStart : start,
             start,
@@ -1865,7 +1883,7 @@ export const layoutLines = (
          * Puts a word or picture on the line, or on the next, or breaks it across lines. A word is kerned with the text
          * before it on the line by `kern`, unless it starts the next line
          */
-        const placeWord = (token: Extract<Token, { readonly type: "word" | "box" }>, kern = 0, after = 0): void => {
+        const placeWord = (token: Extract<Token, { readonly type: "word" | "box" }>, kern = 0, after = 0, unsureAfter = false): void => {
             // On a grid that snaps to characters the kerning with the text before is in the cells the word takes, after the
             // other text on the line it is kerned with
             const kernOn = (state: LineState): number => (state.latin === undefined ? 0 : kern);
@@ -1887,7 +1905,21 @@ export const layoutLines = (
             const leadOf = (state: LineState, wrapped = false): number =>
                 (token.type === "word" ? roomBetween(state.border, firstBorder(token.pieces)) : 0) + (wrapped || snapping ? 0 : kern);
             const boxEnd = token.type === "word" ? (lastBorder(token.pieces)?.room ?? 0) : 0;
-            const needs = leadOf(line) + tokenWidth + boxEnd + after;
+            const needs = leadOf(line) + tokenWidth + boxEnd + (unsureAfter ? 0 : after);
+            // A word that fits only without the space after it, where whether Word lets that space hang past the end of the
+            // line isn't known
+            if (
+                unsureAfter &&
+                line.position + needs <= endOf(line) + TOLERANCE &&
+                line.position + needs + after > endOf(line) + TOLERANCE
+            ) {
+                line = {
+                    ...line,
+                    unsupported:
+                        line.unsupported ??
+                        "a word beside right-to-left text that fits on its line only without the space after it, which Word hasn't been seen breaking",
+                };
+            }
             const hyphens = token.type === "word" ? (token.hyphens ?? []).filter(({ at }) => at > 0 && at < lengthOf(token.pieces)) : [];
             const skipped = skipRooms(needs, hyphens.length > 0);
             // A justified line Word can squeeze the word onto takes it whole, as it does a word without soft hyphens: at its
@@ -1906,7 +1938,7 @@ export const layoutLines = (
                 }
                 const rest = breakAtHyphen(token, hyphens, kern);
                 if (rest !== undefined) {
-                    placeWord(rest, 0, after);
+                    placeWord(rest, 0, after, unsureAfter);
                     return;
                 }
                 if (line.tabsOnly === true) {
@@ -1920,7 +1952,7 @@ export const layoutLines = (
                 if (line.started) {
                     // No part of it fits with a hyphen: it goes on to the next line, where it may break again
                     line = wrap(line);
-                    placeWord(token, 0, after);
+                    placeWord(token, 0, after, unsureAfter);
                     return;
                 }
                 // Not even its first part fits on a line of its own: Word breaks it after the last character that fits, as it
@@ -1963,18 +1995,6 @@ export const layoutLines = (
                 line = { ...line, unsupported: line.unsupported ?? MAY_HYPHENATE };
             }
             if (overflows && !squeezed) {
-                // Where Word breaks a line between right-to-left and left-to-right text in a left-to-right paragraph, whose
-                // space between them may take room on it or not, hasn't been seen
-                if (
-                    format.rightToLeft !== true &&
-                    token.type === "word" &&
-                    rightToLeftAt(lastWord, "end") !== rightToLeftAt(token.pieces, "start")
-                ) {
-                    line = {
-                        ...line,
-                        unsupported: line.unsupported ?? "a line that ends between right-to-left and left-to-right text",
-                    };
-                }
                 line = wrap(line);
                 skipRooms(needs, hyphens.length > 0);
                 tokenWidth = widthOn(line);
@@ -2382,16 +2402,15 @@ export const layoutLines = (
                 };
                 continue;
             }
-            // In a left-to-right paragraph, a line of right-to-left words has room for the space after its last word when a
-            // right-to-left word follows it, as that space is between them, in the line: a word of Arabic that fits only
-            // without it goes on to the next line, where Word puts those that fit with it (stops2/word-stops-arabic.ts AR2e,
-            // AR2h, AR2i). Word breaks the lines of a right-to-left paragraph where it breaks those of a left-to-right one
-            // (scripts/layout-probes/word-unicode.ts R2, R8)
-            const [space, following] =
-                token.type === "word" && format.rightToLeft !== true && rightToLeftAt(token.pieces, "end") ? nextTwo(tokens, index) : [];
-            const spaceAfter = space?.type === "space" && following?.type === "word" && rightToLeftAt(following.pieces, "start");
-            placeWord(token, kerning[index], spaceAfter ? widthOf(space.pieces, measurer) : 0);
-            lastWord = token.type === "word" ? token.pieces : undefined;
+            // The space after a word at the end of a line, beside right-to-left text in a left-to-right paragraph: taking
+            // room on the line, when it is between right-to-left words in a right-to-left run, or hanging past its end
+            const [space, following] = token.type === "word" && format.rightToLeft !== true ? nextTwo(tokens, index) : [];
+            const at =
+                token.type === "word" && space?.type === "space" && following?.type === "word"
+                    ? spaceAtEnd(token.pieces, space.pieces, following.pieces)
+                    : "hanging";
+            const spaceWidth = at !== "hanging" && space?.type === "space" ? widthOf(space.pieces, measurer) : 0;
+            placeWord(token, kerning[index], spaceWidth, at === "unknown");
         }
 
         if (!end) {

@@ -7,9 +7,9 @@
  * each letter in each form, parted by zero-width non-joiners, and the form joined to tatweels: a form's width is how far
  * apart Word puts its copies, less the tatweels'. In Arial, Times New Roman, which Word draws Cambria's Arabic in, and
  * Courier New, that is the width of the glyph Word draws for the form, as the font has it, and a line of Arabic prose is
- * as wide as its glyphs, to within 0.25 points (AR2). Calibri's Word draws narrower than its glyphs in places, an alef
- * before a zero-width non-joiner 34 thousandths of an em narrower, in a way not yet followed, so it isn't in them. Italic
- * isn't in the PDF.
+ * as wide as its glyphs, to within 0.25 points (AR2). Word kerns the letters side by side, by pairs these widths don't
+ * have, in all but Courier New (see `src/text-layout/arabic-shaping.ts`), and Calibri's too: an alef before a zero-width
+ * non-joiner and an alef 34 thousandths of an em narrower, so Calibri isn't in them. Italic isn't in the PDF.
  *
  * Usage:
  *   python3 scripts/layout-probes/stops2/word-stops-arabic.py scripts/layout-probes/stops2/word-stops-arabic.pdf --json \

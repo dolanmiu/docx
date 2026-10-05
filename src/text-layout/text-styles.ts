@@ -865,7 +865,7 @@ const fontOfSlot = (format: RunFormat, slot: FontSlot): TextFont => {
     if (slot === "latin") {
         return scripted(font, format);
     }
-    const { eastAsiaFont, complexScriptFont, complexScriptSize, complexScriptBold, complexScriptItalic } = format;
+    const { eastAsiaFont, complexScriptFont, complexScriptSize, complexScriptBold, complexScriptItalic, rightToLeft } = format;
     return scripted(
         slot === "eastAsian"
             ? { ...font, font: isEastAsianFont(eastAsiaFont) ? eastAsiaFont : FALLBACK_EAST_ASIAN_FONT }
@@ -875,6 +875,7 @@ const fontOfSlot = (format: RunFormat, slot: FontSlot): TextFont => {
                   size: complexScriptSize,
                   bold: complexScriptBold,
                   italic: complexScriptItalic,
+                  rightToLeft: rightToLeft === true ? true : undefined,
               }),
         format,
     );

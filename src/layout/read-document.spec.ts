@@ -152,7 +152,7 @@ describe("readDocument", () => {
             expect(itemsOf(content)).to.deep.equal([
                 { type: "text", text: "a", font: { font: "Arial" }, language: "zh-CN", eastAsian: true },
                 { type: "text", text: "永", font: { font: "SimSun" }, language: "zh-CN", eastAsian: true },
-                { type: "text", text: "b", font: { font: "Times New Roman", size: 14 }, eastAsian: true },
+                { type: "text", text: "b", font: { font: "Times New Roman", size: 14, rightToLeft: true }, eastAsian: true },
             ]);
         });
 
@@ -5593,8 +5593,8 @@ describe("readDocument", () => {
         });
         expect(itemsOf(content)).to.deep.equal([{ type: "text", text: "Heading", font: { italic: true } }]);
         expect(itemsOf(content, 1)).to.deep.equal([
-            { type: "text", text: "a", font: { italic: true } },
-            { type: "text", text: "b", font: {} },
+            { type: "text", text: "a", font: { italic: true, rightToLeft: true } },
+            { type: "text", text: "b", font: { rightToLeft: true } },
         ]);
     });
 

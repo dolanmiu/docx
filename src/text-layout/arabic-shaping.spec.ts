@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import { arabicFaceOf, isJoinedLetter, joinedWidthsOf, joinsAcross } from "./arabic-shaping";
+import { arabicFaceOf, isJoinedLetter, joinedWidthsOf, joinsAcross, unknownArabicKerning } from "./arabic-shaping";
 
 // cspell:disable
 
@@ -72,6 +72,19 @@ describe("isJoinedLetter", () => {
         expect(isJoinedLetter("١")).to.equal(false);
         expect(isJoinedLetter("ٱ")).to.equal(false);
         expect(isJoinedLetter("a")).to.equal(false);
+    });
+});
+
+describe("unknownArabicKerning", () => {
+    it("should find Arabic letters side by side in the fonts Word kerns them in, but not across a space, tatweel or zero-width non-joiner", () => {
+        const KERNED = "Arabic letters side by side, which Word kerns by pairs not yet known";
+        expect(unknownArabicKerning("بلا", "Arial")).to.equal(KERNED);
+        expect(unknownArabicKerning("ب\u064eب", "Times New Roman")).to.equal(KERNED);
+        expect(unknownArabicKerning("ب ب", "Cambria")).to.equal(undefined);
+        expect(unknownArabicKerning("بـب", "Arial")).to.equal(undefined);
+        expect(unknownArabicKerning("ب\u200cب", "Arial")).to.equal(undefined);
+        // Nor in Courier New, which Word doesn't kern
+        expect(unknownArabicKerning("بلا", "Courier New")).to.equal(undefined);
     });
 });
 
