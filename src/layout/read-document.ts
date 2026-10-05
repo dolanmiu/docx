@@ -1046,7 +1046,10 @@ const floatingItem = (floating: FloatingDrawing, reader: Reader): readonly Layou
 
 /**
  * Reads a drawing in a run (`w:drawing`): a picture in the line is a box, with its run's font, and one that text doesn't
- * flow around, such as one behind the text, takes up no room.
+ * flow around, such as one behind the text, takes up no room. A picture in the line in a border of its run has its border's
+ * room around it, beside it and above and below it: one of 20 points with a border of 1.5 points 2 points away takes 400
+ * and 70 twips each side across the line, 470 above the baseline and 70 below it (scripts/layout-probes/stops2/word-stops-text2.ts
+ * RF32b).
  */
 const readDrawing = (element: XmlObject, font: TextFont, reader: Reader): readonly LayoutItem[] | string => {
     const [drawing] = childrenOf(element["w:drawing"]);
@@ -1057,12 +1060,14 @@ const readDrawing = (element: XmlObject, font: TextFont, reader: Reader): readon
         const effect = attributesOf(find(children, "wp:effectExtent"));
         const around = attributesOf(inline);
         const emus = (...values: readonly unknown[]): number => values.reduce<number>((total, value) => total + (numberOf(value) ?? 0), 0);
+        const room = font.border?.room ?? 0;
         return [
             {
                 type: "box",
-                width: emus(extent.cx, effect.l, effect.r, around.distL, around.distR) / EMUS_PER_POINT,
-                height: emus(extent.cy, effect.t, effect.b, around.distT, around.distB) / EMUS_PER_POINT,
+                width: emus(extent.cx, effect.l, effect.r, around.distL, around.distR) / EMUS_PER_POINT + 2 * room,
+                height: emus(extent.cy, effect.t, effect.b, around.distT, around.distB) / EMUS_PER_POINT + room,
                 font,
+                ...(room > 0 ? { below: room } : {}),
             },
         ];
     }
@@ -1700,11 +1705,12 @@ const readRun = (element: XmlObject, paragraphRun: RunFormat, reader: Reader, re
                       ? []
                       : [noteNumber(reader.noteNumber, font)];
             case "w:drawing":
-                // A picture in hidden text takes no room (`word-hidden-paragraphs.docx` HP4c)
+                // A picture in hidden text takes no room (`word-hidden-paragraphs.docx` HP4c). One placed on the page in text
+                // with a border, which Word may give a box of its own in the line, hasn't been seen
                 return format.hidden
                     ? []
-                    : font.border
-                      ? guessedOr(reader, "a picture in text with a border", () => readDrawing(child, font, reader))
+                    : font.border && !("wp:inline" in childrenOf(child["w:drawing"])[0])
+                      ? guessedOr(reader, "a drawing placed on the page in text with a border", () => readDrawing(child, font, reader))
                       : readDrawing(child, font, reader);
             case "mc:AlternateContent": {
                 // The drawing Word reads, rather than the one for older versions
@@ -1717,7 +1723,7 @@ const readRun = (element: XmlObject, paragraphRun: RunFormat, reader: Reader, re
                 return format.hidden
                     ? []
                     : font.border
-                      ? guessedOr(reader, "a picture in text with a border", () => readVml(child["w:pict"], font, reader))
+                      ? guessedOr(reader, "a VML drawing in text with a border", () => readVml(child["w:pict"], font, reader))
                       : readVml(child["w:pict"], font, reader);
             case "w:object": {
                 // An object embedded in the document, such as a spreadsheet or an old equation, whose picture Word draws at the

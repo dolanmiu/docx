@@ -137,7 +137,8 @@ export type InlineItem =
      * tall as. One that takes room in its line as text does, such as an equation, goes `descent` below the baseline, and
      * its height is the room it takes above it, with the line gap, rather than standing on the baseline as a picture does.
      * Where Word may break one in a way not yet followed when it doesn't fit in the room left on its line, the layout stops
-     * there, for why (`unbroken`)
+     * there, for why (`unbroken`). A picture in a border of its run has its border's room around it, and below the baseline
+     * (`below`), and text fitted to a width is a box of that width, as tall as its `text` in its font
      */
     | {
           readonly type: "box";
@@ -146,6 +147,8 @@ export type InlineItem =
           readonly font?: TextFont;
           readonly descent?: number;
           readonly unbroken?: string;
+          readonly below?: number;
+          readonly text?: string;
       }
     /**
      * Where a bookmark starts, which is on the line of the word, picture or tab after it, or, for one that goes with the text
@@ -645,6 +648,8 @@ type Heights = {
     readonly marks?: { readonly above?: boolean; readonly below?: boolean };
     /** Those of its list number, as it would be were it text, when it has one */
     readonly listNumber?: Pick<Heights, "ascent" | "descent" | "tallest">;
+    /** Whether it has a picture in a border, whose box goes below the baseline */
+    readonly borderedPicture?: boolean;
 };
 
 const NOTHING: Heights = { ascent: 0, descent: 0, tallest: 0, picture: 0 };
@@ -784,7 +789,14 @@ const heightOf = (given: Heights, spacing: LineSpacing | undefined): Pick<LaidOu
     // the text adds its ascent alone: a number of Calibri 20 beside Calibri 11 at 1.5 lines is 574.3, its 380.9 above the
     // baseline, Calibri 11's 59.1 below it, and half of 268.55 (stops2/word-stops-lists.ts LI5a, LI5b)
     const spacingBelow = (spacing.multiple - 1) * tallest;
-    return { height: natural + spacingBelow, ...(spacingBelow > 0 ? { spacingBelow } : {}) };
+    return {
+        height: natural + spacingBelow,
+        ...(spacingBelow > 0 ? { spacingBelow } : {}),
+        // How much of a line with a picture in a border multiple spacing adds, whose box the line may count, hasn't been seen
+        ...(heights.borderedPicture === true && spacing.multiple !== 1
+            ? { unsupported: "a picture in a border in a line with multiple line spacing" }
+            : {}),
+    };
 };
 
 /**
@@ -1474,11 +1486,23 @@ export const layoutLines = (
     };
     /** The heights of a line with the text of the token on it too */
     const withToken = (heights: Heights, token: Exclude<Token, { readonly type: "marker" }>): Heights => {
+        // Text fitted to a width is as tall as it is
+        if (token.type === "box" && token.text !== undefined) {
+            return withFont(heights, token.font!, measurer, token.text);
+        }
         if (token.type === "box") {
             const tallest = token.font ? Math.max(heights.tallest, measurer.measureLineHeight(token.font)) : heights.tallest;
-            // One that takes room as text does has an ascent and descent of its own
+            // A picture in a border stands on the baseline with its box's room below it too: one of 20 points with a border
+            // of 1.5 points 2 points away makes a line of Calibri 11 538 twips, 470 of them above the baseline
+            // (scripts/layout-probes/stops2/word-stops-text2.ts RF32b). One that takes room as text does has an ascent and
+            // descent of its own
             return token.descent === undefined
-                ? { ...heights, picture: Math.max(heights.picture, token.height), tallest }
+                ? {
+                      ...heights,
+                      picture: Math.max(heights.picture, token.height),
+                      tallest,
+                      ...(token.below === undefined ? {} : { descent: Math.max(heights.descent, token.below), borderedPicture: true }),
+                  }
                 : {
                       ...heights,
                       ascent: Math.max(heights.ascent, token.height),
@@ -1807,6 +1831,11 @@ export const layoutLines = (
             if (beyond && line.tabsOnly === true && token.type === "box") {
                 line = { ...line, unsupported: line.unsupported ?? "a picture that doesn't fit after a tab that starts its line" };
             }
+            // Text fitted to a width goes on to the next line whole where it doesn't fit (stops2/word-stops-text2.ts RF29d), but
+            // one wider than its line hasn't been seen
+            if (beyond && token.type === "box" && token.text !== undefined && !line.started) {
+                line = { ...line, unsupported: line.unsupported ?? "text fitted to a width wider than its line" };
+            }
             const overflows = line.started && beyond && (line.tabsOnly !== true || token.type === "box");
             if (token.type === "box" && token.unbroken !== undefined && beyond) {
                 line = { ...line, unsupported: line.unsupported ?? token.unbroken };
@@ -1896,7 +1925,7 @@ export const layoutLines = (
                     line = { ...line, latin, position: latin.start + cellsOf(latin.width), end: latin.start + cellsOf(latin.width) };
                 }
             } else {
-                const text = token.type === "word" ? textOf(token.pieces) : "";
+                const text = token.type === "word" ? textOf(token.pieces) : (token.text ?? "");
                 line = {
                     ...line,
                     ...(snapping && token.type === "word" ? { latin: snapped(line, token.pieces).latin } : {}),
@@ -2018,6 +2047,17 @@ export const layoutLines = (
                     border: lastBorder(token.pieces),
                 };
                 continue;
+            }
+            // A picture in a border beside text in the same border, which Word may draw in one box with it, hasn't been seen
+            if (token.type === "box" && token.below !== undefined) {
+                const key = token.font!.border!.key;
+                const following = tokens.slice(index + 1).find((next) => next.type !== "marker");
+                const beside =
+                    line.border?.key === key ||
+                    ((following?.type === "word" || following?.type === "space") && firstBorder(following.pieces)?.key === key);
+                if (beside) {
+                    line = { ...line, unsupported: line.unsupported ?? "a picture in a border beside text in the same border" };
+                }
             }
             // A tab or picture after text with a border closes its box, but for a tab with the same border, which the box goes
             // on round, as text after it in the box starts at its stop (scripts/layout-probes/stops2/word-stops-tabs.ts TA7a)

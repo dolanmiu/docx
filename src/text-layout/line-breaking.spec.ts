@@ -544,6 +544,49 @@ describe("layoutLines", () => {
         expect(heightsOf([text("aaaaaaaa "), { type: "box", width: 30, height: 50 }])).to.deep.equal([10, 50]);
     });
 
+    it("should give a picture in a border the room of its box below the baseline, as Word does", () => {
+        // word-stops-text2.ts RF32b: a picture of 20 points in a border of 1.5 points 2 points away stands on the baseline,
+        // 23.5 points with the room above it, and the room below it, 3.5, is deeper than the text's descent of 2
+        const descending: TextMeasurer = { ...MEASURER, measureDescent: () => 2 };
+        const border = { room: 3.5, key: "picture" };
+        const picture: InlineItem = { type: "box", width: 27, height: 23.5, below: 3.5, font: { border } };
+        const lines = (
+            items: readonly InlineItem[],
+            options: Partial<LineLayoutOptions> = {},
+        ): readonly (number | string | undefined)[][] =>
+            layoutLines(items, { width: 100, measurer: descending, ...options }).map(({ height, unsupported }) => [height, unsupported]);
+        expect(lines([text("a "), picture, text(" b")])).to.deep.equal([[27, undefined]]);
+        // Multiple spacing beside it, which may count its box, and text beside it in the same border, haven't been seen
+        expect(lines([text("a "), picture], { format: { lineSpacing: { rule: "multiple", multiple: 1.5 } } })[0][1]).to.equal(
+            "a picture in a border in a line with multiple line spacing",
+        );
+        const sameBorder = (value: string): InlineItem => ({ type: "text", text: value, font: { border } });
+        const beside = "a picture in a border beside text in the same border";
+        expect(lines([sameBorder("a"), picture])[0][1]).to.equal(beside);
+        expect(lines([picture, { type: "marker", name: "m" }, sameBorder("b")])[0][1]).to.equal(beside);
+        expect(lines([picture, { type: "text", text: "b", font: { border: { room: 3.5, key: "other" } } }])[0][1]).to.equal(undefined);
+    });
+
+    it("should lay out text fitted to a width as a box of that width, as tall as its text, and move it on whole", () => {
+        // word-stops-text2.ts RF29b to RF29d: text fitted to 25, 100 and 150 points takes that much room on its line, and goes
+        // on to the next line whole where it doesn't fit
+        const fitted = (width: number, size = 10): InlineItem => ({ type: "box", width, height: 0, font: { size }, text: "fitted text" });
+        const lines = (items: readonly InlineItem[], width = 100): readonly (number | string | undefined)[][] =>
+            layoutLines(items, { width, measurer: MEASURER }).map(({ text: value, textWidth, height, unsupported }) => [
+                value,
+                textWidth,
+                height,
+                unsupported,
+            ]);
+        expect(lines([text("aa "), fitted(25, 20)])).to.deep.equal([["aa fitted text", 55, 20, undefined]]);
+        expect(lines([text("aaaa "), fitted(60), text(" b")])).to.deep.equal([
+            ["aaaa ", 40, 10, undefined],
+            ["fitted text b", 80, 10, undefined],
+        ]);
+        // One wider than its line hasn't been seen
+        expect(lines([fitted(120)])[0][3]).to.equal("text fitted to a width wider than its line");
+    });
+
     it("should move tabs to the default tab stops", () => {
         // Stops every 36 points: aaa ends at 30, the tab moves to 36, and "bbbbbbb" doesn't fit after it in 100, so the tab
         // goes on to the next line with it, which breaks there after "bbbbbb" (word-stops-text2.ts TA11a)

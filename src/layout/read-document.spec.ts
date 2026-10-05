@@ -234,7 +234,12 @@ describe("readDocument", () => {
             // A tab in a box, which goes on round it (word-stops-tabs.ts TA7a)
             expect(stopsAt(r(rPr(bdr("single")), { "w:tab": {} }))).to.equal(undefined);
             expect(stopsAt(r(rPr(bdr("single")), t("a\tb")))).to.equal(undefined);
-            expect(stopsAt(r(rPr(bdr("single")), { "w:drawing": [{ "wp:inline": [] }] }))).to.equal("a picture in text with a border");
+            // A picture in the line in a box of its own, with the border's room around it (word-stops-text2.ts RF32b), but not
+            // one placed on the page
+            expect(stopsAt(r(rPr(bdr("single")), { "w:drawing": [{ "wp:inline": [] }] }))).to.equal(undefined);
+            expect(stopsAt(r(rPr(bdr("single")), { "w:drawing": [{ "wp:anchor": [] }] }))).to.equal(
+                "a drawing placed on the page in text with a border",
+            );
             // A position whose minus sign is its whole number's only: "-2.5pt" lowers text 1.5 points (word-stops-text.ts RF26a)
             expect(stopsAt(r(rPr(value("w:position", "-2.5pt")), t("a")))).to.equal(undefined);
             // Hidden text takes no room, whatever its formatting
@@ -1845,10 +1850,10 @@ describe("readDocument", () => {
             expect(reasonOf(pict("width:2em;height:36pt", [{ "v:imagedata": {} }], UNOUTLINED, "v:shape"))).to.equal("a VML picture");
             // A drawing with no shape, such as a shape type alone, draws nothing (`word-stops-vml-shape-type.docx` VM29e)
             expect(itemsOf(readBody([p(r({ "w:pict": [{ "v:shapetype": [] }] }))]))).to.deep.equal([]);
-            // In hidden text, it takes no room, and in text with a border, it stops as a picture does
+            // In hidden text, it takes no room, and in text with a border, which Word hasn't been seen with, it stops
             expect(itemsOf(readBody([p(r(rPr({ "w:vanish": {} }), { "w:pict": [] }))]))).to.deep.equal([]);
             const bordered = rPr({ "w:bdr": { _attr: { "w:val": "single", "w:sz": 4, "w:space": 0 } } });
-            expect(reasonOf(r(bordered, { "w:pict": [] }))).to.equal("a picture in text with a border");
+            expect(reasonOf(r(bordered, { "w:pict": [] }))).to.equal("a VML drawing in text with a border");
         });
 
         it("should read a group of shapes in the line as a box of its size, and stop at one with an outline or that text flows around (VM29f)", () => {
@@ -6865,7 +6870,7 @@ describe("readDocument", () => {
                 undefined,
                 undefined,
                 undefined,
-                "a picture in text with a border",
+                undefined,
                 "text with a phonetic guide",
                 "an endnote with a mark of its own",
             ]);
@@ -6875,6 +6880,8 @@ describe("readDocument", () => {
                 ["text", "softHyphen", "text"],
                 ["box"],
             ]);
+            // A picture of 10 points in a border of half a point, with its room around it (word-stops-text2.ts RF32b)
+            expect(itemsOf(content, 3)[0]).to.deep.include({ width: 11, height: 10.5, below: 0.5 });
             expect(textOf(content, 4)).to.equal("base");
             // Its note is laid out with it, with its mark after it in place of its number
             expect(itemsOf(content, 5)).to.deep.equal([
