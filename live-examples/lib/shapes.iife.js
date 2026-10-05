@@ -4427,7 +4427,7 @@ var docxShapes = (function(exports, docx) {
 			lineSize: size
 		});
 	};
-	var BORDER_WIDTHS = _objectSpread2(_objectSpread2({}, Object.fromEntries([
+	var BORDER_WIDTHS = _objectSpread2(_objectSpread2(_objectSpread2({}, Object.fromEntries([
 		"single",
 		"thick",
 		"dotted",
@@ -4449,7 +4449,38 @@ var docxShapes = (function(exports, docx) {
 		["threeDEmboss", 12],
 		["threeDEngrave", 12],
 		["thinThickThinSmallGap", 24]
-	].map(([style, more]) => [style, (size) => size >= 4 && size <= 18 ? size + more : void 0])));
+	].map(([style, more]) => [style, (size) => size >= 4 && size <= 18 ? size + more : void 0]))), Object.fromEntries([
+		[
+			"thinThickMediumGap",
+			2,
+			0
+		],
+		[
+			"thickThinMediumGap",
+			2,
+			0
+		],
+		[
+			"thinThickThinMediumGap",
+			3,
+			0
+		],
+		[
+			"thinThickLargeGap",
+			1,
+			18
+		],
+		[
+			"thickThinLargeGap",
+			1,
+			18
+		],
+		[
+			"thinThickThinLargeGap",
+			2,
+			24
+		]
+	].map(([style, times, more]) => [style, (size) => size >= 4 && size <= 24 ? times * size + more : void 0])));
 	/**
 	* How wide a run's border is as Word draws it, in eighths of a point: as a paragraph's of its style. A border of no style
 	* ("none") takes its space still, but no width (scripts/layout-probes/word-run-formatting.ts RF7h). Undefined when Word

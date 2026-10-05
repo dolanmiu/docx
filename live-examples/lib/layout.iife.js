@@ -6874,7 +6874,7 @@ var docxLayout = (function(exports) {
 			lineSize: size
 		});
 	};
-	var BORDER_WIDTHS = _objectSpread2(_objectSpread2({}, Object.fromEntries([
+	var BORDER_WIDTHS = _objectSpread2(_objectSpread2(_objectSpread2({}, Object.fromEntries([
 		"single",
 		"thick",
 		"dotted",
@@ -6896,7 +6896,38 @@ var docxLayout = (function(exports) {
 		["threeDEmboss", 12],
 		["threeDEngrave", 12],
 		["thinThickThinSmallGap", 24]
-	].map(([style, more]) => [style, (size) => size >= 4 && size <= 18 ? size + more : void 0])));
+	].map(([style, more]) => [style, (size) => size >= 4 && size <= 18 ? size + more : void 0]))), Object.fromEntries([
+		[
+			"thinThickMediumGap",
+			2,
+			0
+		],
+		[
+			"thickThinMediumGap",
+			2,
+			0
+		],
+		[
+			"thinThickThinMediumGap",
+			3,
+			0
+		],
+		[
+			"thinThickLargeGap",
+			1,
+			18
+		],
+		[
+			"thickThinLargeGap",
+			1,
+			18
+		],
+		[
+			"thinThickThinLargeGap",
+			2,
+			24
+		]
+	].map(([style, times, more]) => [style, (size) => size >= 4 && size <= 24 ? times * size + more : void 0])));
 	/**
 	* How wide a run's border is as Word draws it, in eighths of a point: as a paragraph's of its style. A border of no style
 	* ("none") takes its space still, but no width (scripts/layout-probes/word-run-formatting.ts RF7h). Undefined when Word
@@ -10308,25 +10339,40 @@ var docxLayout = (function(exports) {
 		dashDotStroked: () => 3
 	});
 	/**
+	* The room 3D borders take, in points, by their width, at the widths Word offers: their width and 1.5 points up to 2.25
+	* points wide, and their width and 3 points from 3 points (`word-table-formats.docx` BS, `word-stops-table-borders.docx`
+	* TB4g to TB4r)
+	*/
+	var THREE_D_ROOMS = {
+		.25: 1.75,
+		.5: 2,
+		.75: 2.25,
+		1: 2.5,
+		1.5: 3,
+		2.25: 3.75,
+		3: 6,
+		4.5: 7.5,
+		6: 9
+	};
+	/**
 	* The room borders of the styles whose room doesn't follow from their width take, in points, by their width: only at
-	* the widths Word's PDFs have shown them at
+	* the widths Word's PDFs have shown them at. A wave takes 3 points at each width Word offers, but 3.75 at 1.5 points
+	* (BS, TB4a to TB4f)
 	*/
 	var ROOMS_BY_WIDTH = {
 		wave: {
+			.25: 3,
 			.5: 3,
+			.75: 3,
+			1: 3,
 			1.5: 3.75,
-			3: 3
+			2.25: 3,
+			3: 3,
+			4.5: 3,
+			6: 3
 		},
-		threeDEmboss: {
-			.5: 2,
-			1.5: 3,
-			3: 6
-		},
-		threeDEngrave: {
-			.5: 2,
-			1.5: 3,
-			3: 6
-		}
+		threeDEmboss: THREE_D_ROOMS,
+		threeDEngrave: THREE_D_ROOMS
 	};
 	/** Reads a border (`w:top` and the others, in `w:tblBorders` and `w:tcBorders`) */
 	var readBorder = (element) => {
@@ -10372,20 +10418,79 @@ var docxLayout = (function(exports) {
 		const room = (_ROOMS$style = (_ROOMS$style2 = ROOMS[style]) === null || _ROOMS$style2 === void 0 ? void 0 : _ROOMS$style2.call(ROOMS, width)) !== null && _ROOMS$style !== void 0 ? _ROOMS$style : (_ROOMS_BY_WIDTH$style = ROOMS_BY_WIDTH[style]) === null || _ROOMS_BY_WIDTH$style === void 0 ? void 0 : _ROOMS_BY_WIDTH$style[width];
 		return room === void 0 ? void 0 : room + space;
 	};
+	var WEIGHTS = {
+		single: 1,
+		thick: 2,
+		double: 3,
+		dotDash: 8,
+		dotDotDash: 9,
+		triple: 10,
+		thinThickSmallGap: 11,
+		thickThinSmallGap: 12,
+		thinThickThinSmallGap: 13,
+		thinThickMediumGap: 14,
+		thickThinMediumGap: 15,
+		thinThickThinMediumGap: 16,
+		thinThickLargeGap: 17,
+		thickThinLargeGap: 18,
+		thinThickThinLargeGap: 19,
+		wave: 20,
+		doubleWave: 21,
+		dashSmallGap: 22,
+		dashDotStroked: 23,
+		threeDEmboss: 24,
+		threeDEngrave: 25,
+		outset: 26,
+		inset: 27
+	};
+	var UNWEIGHED = /* @__PURE__ */ new Set(["dotted", "dashed"]);
+	var PRECEDENCE = [
+		"single",
+		"thick",
+		"double",
+		"dotted",
+		"dashed",
+		"dotDash",
+		"dotDotDash",
+		"triple",
+		"thinThickSmallGap",
+		"thickThinSmallGap",
+		"thinThickThinSmallGap",
+		"thinThickMediumGap",
+		"thickThinMediumGap",
+		"thinThickThinMediumGap",
+		"thinThickLargeGap",
+		"thickThinLargeGap",
+		"thinThickThinLargeGap",
+		"wave",
+		"doubleWave",
+		"dashSmallGap",
+		"dashDotStroked",
+		"threeDEmboss",
+		"threeDEngrave",
+		"outset",
+		"inset"
+	];
+	/** How heavy Word counts a border where two cells' borders meet, or undefined for a style it doesn't weigh, such as art */
+	var weightOf = ({ style, width }) => UNWEIGHED.has(style) ? 1 : WEIGHTS[style] === void 0 ? void 0 : WEIGHTS[style] * width * EIGHTHS_PER_POINT$1;
 	/**
-	* The border Word draws where two cells meet: the one there is, when the other is none, and the wider of two of the same
-	* style, as in Word (`word-table-formats.docx` BC2 to BC5). Undefined where Word's choice isn't known: between two of
-	* different styles.
+	* The border Word draws where two cells meet: the one there is, when the other is none, and otherwise the heavier, its
+	* width in eighths of a point times a number for its style, or of two as heavy, the later of their styles in Word's list
+	* (MS-OI29500, Part 1, 17.4.66; `word-stops-table-borders.docx` TB1 and TB2: a double border of half a point over a
+	* single one of 1.5 points, and a single one of 1.5 points over a dotted one). Two of the same style and width are the
+	* same border. Undefined where Word's choice isn't known: between styles Word doesn't weigh, such as art borders.
 	*/
 	var borderBetween = (one, other) => {
 		if (!isDrawn(one) || !isDrawn(other)) return isDrawn(one) ? one : other;
-		if (one.style !== other.style) return;
-		return one.width >= other.width ? one : other;
+		const [weight, otherWeight] = [weightOf(one), weightOf(other)];
+		if (weight === void 0 || otherWeight === void 0) return one.style === other.style ? one.width >= other.width ? one : other : void 0;
+		if (weight !== otherWeight) return weight > otherWeight ? one : other;
+		return PRECEDENCE.indexOf(other.style) > PRECEDENCE.indexOf(one.style) ? other : one;
 	};
-	/** The room a border takes, or why it isn't known: one Word's choice of isn't known is undefined */
+	/** The room a border takes, or why it isn't known */
 	var roomOrWhy = (border) => {
 		var _roomOf;
-		return border === void 0 ? "table cell borders of different styles that meet" : (_roomOf = roomOf(border)) !== null && _roomOf !== void 0 ? _roomOf : "a table border in a style not yet followed";
+		return (_roomOf = roomOf(border)) !== null && _roomOf !== void 0 ? _roomOf : "a table border in a style not yet followed";
 	};
 	/** The wider of two borders' rooms, or why one isn't known */
 	var wider = (one, other) => typeof one === "string" ? one : typeof other === "string" ? other : Math.max(one, other);
@@ -10393,10 +10498,12 @@ var docxLayout = (function(exports) {
 	var widest = (borders) => borders.reduce((room, border) => wider(room, roomOrWhy(border)), 0);
 	/**
 	* The room the borders of a table's rows take, in points. Each cell's side has its own border, or else the table's
-	* there, and where two cells meet Word draws one of their borders (`borderBetween`). Each row is as much taller as the
-	* widest of its cells' borders (`word-table-formats.docx` BC1). A cell merged down from the row above has none between
-	* them. Where a table breaks across pages, Word draws below the last row on the page its cells' bottom borders, or the
-	* table's (BB1 and BB2, `word-line-heights.docx` T1). Why, where Word's choice or a border's room isn't known.
+	* there. Where two cells meet, Word draws one of their borders (`borderBetween`), but makes room for the wider, whichever
+	* it draws (`word-stops-table-borders.docx` TB3d: a dotted border of 1.5 points meeting a single one of half a point
+	* takes 1.5 points, below the single one Word draws), so each row is as much taller as the widest of its cells' borders
+	* and those of the cells above them (`word-table-formats.docx` BC1, TB1 to TB3). A cell merged down from the row above
+	* has none between them. Where a table breaks across pages, Word draws below the last row on the page its cells' bottom
+	* borders, or the table's (BB1 and BB2, `word-line-heights.docx` T1). Why, where a border's room isn't known.
 	*/
 	var rowBorders = (rows, table) => {
 		var _table$insideH, _all$find;
@@ -10420,7 +10527,7 @@ var docxLayout = (function(exports) {
 			const fromBelow = below.reduce((room, cell) => {
 				if (cell.verticalMerge === "continue") return room;
 				const over = covering(above, cell.column);
-				return wider(room, roomOrWhy(over === void 0 ? topOf(cell) : borderBetween(bottomOf(over), topOf(cell))));
+				return wider(wider(room, roomOrWhy(topOf(cell))), over === void 0 ? 0 : roomOrWhy(bottomOf(over)));
 			}, 0);
 			return above.reduce((room, cell) => covering(below, cell.column) === void 0 ? wider(room, roomOrWhy(bottomOf(cell))) : room, fromBelow);
 		};
@@ -10438,8 +10545,8 @@ var docxLayout = (function(exports) {
 	};
 	/**
 	* The room the borders left and right of each cell of a row take, in points: its own, or the table's at the table's
-	* edges and between its cells, and where two cells meet the one Word draws (`borderBetween`). Why, where Word's choice
-	* or a border's room isn't known.
+	* edges and between its cells. Where two cells meet, the wider of their borders, and the one Word draws
+	* (`borderBetween`), which can be the narrower. Why, where a border's room isn't known.
 	*/
 	var sideBorders = (cells, table) => {
 		var _table$insideV;
@@ -10453,7 +10560,15 @@ var docxLayout = (function(exports) {
 			var _cells$index$borders$2, _table$right;
 			return (_cells$index$borders$2 = cells[index].borders.right) !== null && _cells$index$borders$2 !== void 0 ? _cells$index$borders$2 : index === cells.length - 1 ? (_table$right = table.right) !== null && _table$right !== void 0 ? _table$right : NONE : insideV;
 		};
-		const rooms = Array.from({ length: cells.length + 1 }, (_, index) => index === 0 ? leftOf(0) : index === cells.length ? rightOf(index - 1) : borderBetween(rightOf(index - 1), leftOf(index))).map(roomOrWhy);
+		const rooms = Array.from({ length: cells.length + 1 }, (_, index) => index === 0 ? [leftOf(0)] : index === cells.length ? [rightOf(index - 1)] : [rightOf(index - 1), leftOf(index)]).map((meeting) => {
+			const [room, other = 0] = meeting.map(roomOrWhy);
+			if (typeof room === "string" || typeof other === "string") return typeof room === "string" ? room : other;
+			const drawn = meeting.length === 1 ? meeting[0] : borderBetween(meeting[0], meeting[1]);
+			return {
+				room: Math.max(room, other),
+				drawn: roomOf(drawn)
+			};
+		});
 		const unsupported = rooms.find((room) => typeof room === "string");
 		return unsupported !== null && unsupported !== void 0 ? unsupported : cells.map((_, index) => ({
 			left: rooms[index],
@@ -10461,14 +10576,16 @@ var docxLayout = (function(exports) {
 		}));
 	};
 	/**
-	* The space between a table's cells (`w:tblCellSpacing`), in points: none when it isn't given, or is `nil`. Undefined
-	* when it is a share of the table's width, which Word's PDFs haven't shown.
+	* The space between a table's cells (`w:tblCellSpacing`), in points: none when it isn't given, or is `nil`. "share" when
+	* it is a share of the table's width, which Word lays out as none for a table (`word-stops-table-borders.docx` TB6a and
+	* TB6b: 2% and 5% of its width), and undefined for another type, such as `auto`, which Word's PDFs haven't shown.
 	*/
 	var readCellSpacing = (element) => {
 		var _pointsOf;
 		if (element === void 0) return 0;
 		const { "w:w": value, "w:type": type = "dxa" } = attributesOf(element);
 		if (type === "nil") return 0;
+		if (type === "pct") return "share";
 		return type === "dxa" ? Math.max(0, (_pointsOf = pointsOf(value, 20)) !== null && _pointsOf !== void 0 ? _pointsOf : 0) : void 0;
 	};
 	var LOOK_BITS = {
@@ -10536,20 +10653,27 @@ var docxLayout = (function(exports) {
 			...lastRow && firstColumn ? ["swCell"] : []
 		];
 	};
+	var BESIDE_TEXT = "table cell borders of different styles that meet, wider than twice a cell's margin";
 	/**
 	* The room around the text of a table's rows and cells: its borders and its cells' (`rowBorders`, `sideBorders`), and
 	* the space between its cells.
 	*
 	* Without space between cells, a cell's text is as far in from its left and right edges as its margin, or half the
 	* border there when that is more, as in Word (`word-table-formats.docx` BC7 to BC9, `word-table-formats2.docx` BC10 and
-	* BC11).
+	* BC11). Where two borders of different styles meet and Word draws the narrower, which half border it keeps the text
+	* from hasn't been seen, so where that is more than the margin, why.
 	*
 	* With space between cells, each cell has borders of its own, its own or else the table's: the table's top above the
-	* first row, its bottom below the last, and its inside borders between them; and the table has its own around them. Each
-	* row has its space above and below its cells' borders, and the table its space inside its own borders (CS1 to CS4,
-	* CS13). Where the table breaks across pages, the row on the page keeps the space below it, and the next page's starts
-	* with the space above it (CS12). Across, the space is around each cell and inside the table's edges, as margins are
-	* (`word-watertight-tables.docx` TB4, `word-table-formats.docx` CS5 to CS8, `word-table-formats2.docx` CS9, CS10, CS14).
+	* first row, its bottom below the last, its left before the first cell and its right after the last, and its inside
+	* borders between them; and the table has its own around them. Each row has its space above and below its cells'
+	* borders, and the table its space inside its own borders (CS1 to CS4, CS13). Where the table breaks across pages, the
+	* row on the page keeps the space below it, with the table's bottom border below that, and the next page's starts with
+	* the table's top border and the space above it (CS12, `word-stops-table-borders.docx` TB7a to TB7c). Across, the space
+	* is around each cell and inside the table's edges, as margins are (`word-watertight-tables.docx` TB4,
+	* `word-table-formats.docx` CS5 to CS8, `word-table-formats2.docx` CS9, CS10, CS14), and each cell's text is further in
+	* by the whole of its own border left and right of it, where the table's borders there take none of its width (TB5a to
+	* TB5l: with space of 2, 5 and 10 points, and borders of half a point to 6 points, each cell's text was twice its
+	* border narrower than without them).
 	*/
 	var tableGeometry = (rows, table) => {
 		var _borders$top, _borders$bottom;
@@ -10560,30 +10684,32 @@ var docxLayout = (function(exports) {
 			const across = rows.map(({ cells }) => sideBorders(cells, borders));
 			const unsupported = across.find((sides) => typeof sides === "string");
 			if (unsupported !== void 0) return unsupported;
-			return rows.map(({ cells }, index) => ({
+			const beside = (margin, { room, drawn }) => Math.max(margin, room / 2) === Math.max(margin, drawn / 2) ? Math.max(margin, room / 2) : void 0;
+			const geometry = rows.map(({ cells }, index) => ({
 				borderTop: vertical.tops[index],
 				borderBottom: index === rows.length - 1 ? vertical.bottom : 0,
 				breakBorder: vertical.breaks[index],
 				cells: cells.map(({ margins, gridWidth }, cell) => {
 					const sides = across[index][cell];
-					const left = Math.max(margins.left, sides.left / 2);
-					const right = Math.max(margins.right, sides.right / 2);
-					return {
+					const left = beside(margins.left, sides.left);
+					const right = beside(margins.right, sides.right);
+					return left === void 0 || right === void 0 ? void 0 : {
 						left,
 						right,
 						width: gridWidth - left - right
 					};
 				})
 			}));
+			return geometry.some(({ cells }) => cells.includes(void 0)) ? BESIDE_TEXT : geometry;
 		}
-		const cellBorders = rows.flatMap(({ cells }) => cells.map((cell) => cell.borders));
-		if ([
-			borders.left,
-			borders.right,
-			borders.insideV,
-			...cellBorders.flatMap((set) => [set.left, set.right])
-		].some(isDrawn)) return "space between table cells beside borders left or right of them";
 		const last = rows.length - 1;
+		const sideRooms = rows.map(({ cells }) => cells.map((cell, index) => {
+			var _cell$borders$left, _cell$borders$right;
+			return {
+				left: roomOrWhy((_cell$borders$left = cell.borders.left) !== null && _cell$borders$left !== void 0 ? _cell$borders$left : index === 0 ? borders.left : borders.insideV),
+				right: roomOrWhy((_cell$borders$right = cell.borders.right) !== null && _cell$borders$right !== void 0 ? _cell$borders$right : index === cells.length - 1 ? borders.right : borders.insideV)
+			};
+		}));
 		const rooms = rows.map(({ cells }, index) => ({
 			tops: widest(cells.map((cell) => {
 				var _ref2, _cell$borders$top2;
@@ -10598,23 +10724,20 @@ var docxLayout = (function(exports) {
 		const unknown = [
 			top,
 			bottom,
-			...rooms.flatMap(({ tops, bottoms }) => [tops, bottoms])
+			...rooms.flatMap(({ tops, bottoms }) => [tops, bottoms]),
+			...sideRooms.flat().flatMap(({ left, right }) => [left, right])
 		].find((room) => typeof room === "string");
 		if (unknown !== void 0) return unknown;
-		const bordered = [
-			borders.top,
-			borders.bottom,
-			borders.insideH,
-			...cellBorders.flatMap((set) => [set.top, set.bottom])
-		].some(isDrawn);
 		return rows.map(({ cells, spacing: own }, index) => {
 			const { tops, bottoms } = rooms[index];
 			return _objectSpread2(_objectSpread2({
 				borderTop: tops + own + (index === 0 ? spacing + top : 0),
-				borderBottom: bottoms + own + (index === last ? spacing + bottom : 0)
-			}, bordered ? {} : { breakBorder: 0 }), {}, { cells: cells.map(({ margins, gridWidth }, cell) => {
-				const left = margins.left + own + (cell === 0 ? spacing : 0);
-				const right = margins.right + own + (cell === cells.length - 1 ? spacing : 0);
+				borderBottom: bottoms + own + (index === last ? spacing + bottom : 0),
+				breakBorder: bottom
+			}, top > 0 ? { breakTop: top } : {}), {}, { cells: cells.map(({ margins, gridWidth }, cell) => {
+				const { left: leftBorder, right: rightBorder } = sideRooms[index][cell];
+				const left = margins.left + own + (cell === 0 ? spacing : 0) + leftBorder;
+				const right = margins.right + own + (cell === cells.length - 1 ? spacing : 0) + rightBorder;
 				return {
 					left,
 					right,
@@ -12250,7 +12373,7 @@ var docxLayout = (function(exports) {
 	* bands by each row's place among all the rows, the deleted ones too (MK14j to MK14l).
 	*/
 	var readTable = (element, reader) => {
-		var _twips, _reader$grid, _readTableLook, _ref14, _ref15, _ref16, _ref17, _ref18, _ref19, _ref20, _ref21, _ref22, _ref23, _ref24, _ref25, _ref26, _ref27, _ref28, _ref29, _withoutGuess$unsuppo, _read$find2, _blocks$find, _read$0$cells, _read$, _roomOf, _roomOf2;
+		var _twips, _reader$grid, _readTableLook, _kept$0$spacing, _kept$, _ref14, _ref15, _ref16, _ref17, _ref18, _ref19, _ref20, _ref21, _ref22, _ref23, _ref24, _ref25, _ref26, _ref27, _ref28, _ref29, _withoutGuess$unsuppo, _read$find2, _blocks$find, _read$0$cells, _read$, _roomOf, _roomOf2;
 		const children = contentOf$3(element).filter(isObject);
 		const properties = childrenOf(find(children, "w:tblPr"));
 		const style = valueOf(properties, "w:tblStyle");
@@ -12265,7 +12388,8 @@ var docxLayout = (function(exports) {
 		}, Object.assign({}, ...tableStyles.map(({ cellMargins }) => cellMargins))), readCellMargins(find(properties, "w:tblCellMar")));
 		const styleCellMargins = Object.assign({}, ...tableStyles.map(({ cellProperties = [] }) => readCellMargins(find(cellProperties, "w:tcMar"))));
 		const tableBorders = Object.assign({}, ...allProperties.map((given) => readBorderSet(find(given, "w:tblBorders"))));
-		const tableSpacing = readCellSpacing(lastOf(allProperties, "w:tblCellSpacing"));
+		const givenSpacing = readCellSpacing(lastOf(allProperties, "w:tblCellSpacing"));
+		const tableSpacing = givenSpacing === "share" ? 0 : givenSpacing;
 		const { "w:w": indentValue, "w:type": indentType = "dxa" } = attributesOf(lastOf(allProperties, "w:tblInd"));
 		const indent = indentType === "nil" ? 0 : indentType === "dxa" ? (_twips = twips(indentValue)) !== null && _twips !== void 0 ? _twips : 0 : void 0;
 		const grid = childrenOf(find(children, "w:tblGrid")).filter((child) => "w:gridCol" in child).map((column) => {
@@ -12430,7 +12554,7 @@ var docxLayout = (function(exports) {
 				cells: [],
 				edges: /* @__PURE__ */ new Map([[skipped, gridWidth(0, skipped)]])
 			});
-			const rowUnsupported = rowParts.some((part) => "w:sdt" in part) ? BOUND_CONTROL : changesLines(exceptions, FOLLOWED_ROW_TABLE_PROPERTIES) ? "a table row with table properties of its own" : deleted && (hasAnyOf(rowChildren, REMOVED_NOTES) || JSON.stringify([...rowReader.counters]) !== counts) ? "a list or a note in a deleted table row" : unseenHeaderCount ? "a deleted row in a table's header of several rows, whose style formats some of its rows" : cellsUnsupported;
+			const rowUnsupported = rowParts.some((part) => "w:sdt" in part) ? BOUND_CONTROL : changesLines(exceptions, FOLLOWED_ROW_TABLE_PROPERTIES) ? "a table row with table properties of its own" : spacing !== 0 && find(exceptions, "w:tblBorders") !== void 0 ? "a table row with borders of its own in a table with space between its cells" : deleted && (hasAnyOf(rowChildren, REMOVED_NOTES) || JSON.stringify([...rowReader.counters]) !== counts) ? "a list or a note in a deleted table row" : unseenHeaderCount ? "a deleted row in a table's header of several rows, whose style formats some of its rows" : cellsUnsupported;
 			return _objectSpread2(_objectSpread2({
 				cells,
 				deleted,
@@ -12461,8 +12585,9 @@ var docxLayout = (function(exports) {
 		}
 		const tableCells = read.flatMap(({ cells }) => cells);
 		const fits = !fixed && tableCells.some(({ ownWidth }) => ownWidth === void 0);
-		const spacingUnsupported = tableSpacing === void 0 || read.some(({ spacing }) => spacing === void 0) ? "space between table cells as a share of the table's width" : read.some(({ spacing }) => spacing !== tableSpacing) ? "a table row with space between its cells of its own" : void 0;
-		const followedSpacing = spacingUnsupported === void 0 ? tableSpacing : 0;
+		const rowSpacings = new Set(kept.map(({ spacing }) => spacing));
+		const spacingUnsupported = tableSpacing === void 0 || rowSpacings.has(void 0) ? "space between table cells of a width that isn't in twips" : rowSpacings.has("share") ? "space between a table row's cells as a share of the table's width" : rowSpacings.size > 1 ? "table rows with different space between their cells" : void 0;
+		const followedSpacing = spacingUnsupported === void 0 ? (_kept$0$spacing = (_kept$ = kept[0]) === null || _kept$ === void 0 ? void 0 : _kept$.spacing) !== null && _kept$0$spacing !== void 0 ? _kept$0$spacing : tableSpacing : 0;
 		const geometryOf = (laidOut) => tableGeometry(laidOut.map(({ cells }) => ({
 			cells,
 			spacing: followedSpacing
@@ -12494,7 +12619,10 @@ var docxLayout = (function(exports) {
 			tableRows.push(_objectSpread2(_objectSpread2(_objectSpread2({}, row), {}, {
 				borderTop: (_placed$borderTop = placed === null || placed === void 0 ? void 0 : placed.borderTop) !== null && _placed$borderTop !== void 0 ? _placed$borderTop : 0,
 				borderBottom: (_placed$borderBottom = placed === null || placed === void 0 ? void 0 : placed.borderBottom) !== null && _placed$borderBottom !== void 0 ? _placed$borderBottom : 0
-			}, withoutUndefined({ breakBorder: placed === null || placed === void 0 ? void 0 : placed.breakBorder })), {}, { cells: cells.map((_ref12, cellIndex) => {
+			}, withoutUndefined({
+				breakBorder: placed === null || placed === void 0 ? void 0 : placed.breakBorder,
+				breakTop: placed === null || placed === void 0 ? void 0 : placed.breakTop
+			})), {}, { cells: cells.map((_ref12, cellIndex) => {
 				var _read, _above$cells$find, _unmerged;
 				let { borders: _, margins, gridWidth: __, noWrap: ___ } = _ref12, cell = _objectWithoutProperties(_ref12, _excluded2);
 				const pending = [...carried, ...cellBookmarks[cellIndex]];
@@ -16649,7 +16777,8 @@ var docxLayout = (function(exports) {
 		*
 		* @param breakBorder - The border below the row on a page where the table breaks: the table's bottom border, which the
 		* last row has counted already
-		* @param table - Whether the table has space between its cells, and whether the row before is kept with this one
+		* @param table - Whether the row before is kept with this one, and whether the row is the last of a table with space
+		* between its cells
 		*/
 		const splitRow = (row, rowIndex, height, breakBorder, startTablePage, table) => {
 			const own = row.cells.filter((cell) => !startsMerge(cell));
@@ -16754,7 +16883,7 @@ var docxLayout = (function(exports) {
 				if (placesLines && !isLastPart) {
 					filled.forEach((part) => stopAtRead(part));
 					if (row.cells.some(({ vertical }) => vertical)) stopAt("text that runs up or down a table cell across pages");
-					if (table.spaced) stopAt("a table row with space between its cells across pages");
+					if (table.spacedLast) stopAt("the last row of a table with space between its cells across pages");
 				}
 				const fitsWhole = !isFirstPart || position + height + breakBorder <= linesBottom() + TOLERANCE;
 				const atTop = !placedInColumn && continued === void 0;
@@ -16781,7 +16910,7 @@ var docxLayout = (function(exports) {
 				if (!placesLines && isFirstPart && table.kept) stopAt("a table row kept with the next before a row that moves to the next page");
 				if (!placesLines) {
 					closeMerges(position);
-					startTablePage();
+					startTablePage(!isFirstPart);
 					continue;
 				}
 				mark([...filled.flatMap(({ lines }, cell) => decides(cell) ? lines.flatMap(({ markers }) => markers) : []), ...isFirstPart ? roomless : []]);
@@ -16815,7 +16944,7 @@ var docxLayout = (function(exports) {
 				closeMerges(position - breakBorder);
 				parts = filled.slice(0, own.length).map(({ rest }) => rest);
 				isFirstPart = false;
-				startTablePage();
+				startTablePage(true);
 			}
 		};
 		/**
@@ -16856,7 +16985,7 @@ var docxLayout = (function(exports) {
 			} : void 0;
 			/** Whether only the table's header rows are in the column, below what is above them */
 			const headersAlone = (index) => below !== void 0 && index >= headerRows && below.page === pageCount && below.column === column && placements.slice(below.placed).every((placement) => placement.type !== "row" || placement.row.index < headerRows);
-			const startTablePage = (index, newPage = false) => {
+			const startTablePage = (index, newPage = false, continuing = false) => {
 				if (headersAlone(index)) {
 					const before = blocks[blockIndex - 1];
 					const guesses = [...(before === null || before === void 0 ? void 0 : before.section) === blocks[blockIndex].section && before.block.type === "paragraph" && before.block.format.keepNext ? ["a paragraph kept with the next before a table whose header rows go on to the next page"] : [], ...columnsSection().columns.length > 1 ? ["a table's header rows alone at the foot of a column"] : []];
@@ -16873,6 +17002,11 @@ var docxLayout = (function(exports) {
 						return y + rowHeight;
 					}, position);
 					position += repeated;
+				}
+				const { breakTop = 0 } = table.rows[index];
+				if (breakTop > 0 && (index > 0 || continuing)) {
+					if (headerRows > 0) stopAt("a table with space between its cells, borders and header rows across pages");
+					position += breakTop;
 				}
 			};
 			/** Whether a row fits on the page, with its footnotes */
@@ -16955,8 +17089,6 @@ var docxLayout = (function(exports) {
 				const holding = held.length > 0 && heldLines !== void 0 && index < heldLines;
 				const notes = [...holding && index === heldLines - 1 ? held : [], ...notesIn(markers)];
 				const keptWhole = holding || row.cantSplit || ((_row$height5 = row.height) === null || _row$height5 === void 0 ? void 0 : _row$height5.rule) === "exact";
-				const movesWhole = keptWhole && !rowStays(roomNeeded, notes) && headersAlone(index);
-				if (table.cellSpacing !== void 0 && row.breakBorder === void 0 && !rowFits(roomNeeded, notes) && !movesWhole) stopAt("a table with space between its cells and borders across pages");
 				placeKeptRows(index);
 				while (keptWhole && !rowStays(roomNeeded, notes) && (placedInColumn || continued !== void 0)) {
 					closeMerges(position);
@@ -16978,8 +17110,8 @@ var docxLayout = (function(exports) {
 					startTablePage(index, true);
 				}
 				if (tooTall || !rowFits(roomNeeded, notes) && !keptWhole) {
-					splitRow(row, index, height, breakBorder, () => startTablePage(index, firstColumns), {
-						spaced: table.cellSpacing !== void 0,
+					splitRow(row, index, height, breakBorder, (continuing) => startTablePage(index, firstColumns, continuing), {
+						spacedLast: table.cellSpacing !== void 0 && index === table.rows.length - 1,
 						kept: index > brokenUntil && index > 0 && keptWithNext(table.rows[index - 1])
 					});
 					continue;
