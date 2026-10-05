@@ -2246,7 +2246,8 @@ const unitsOf = ({ linePitch, characterSpace = 0, characterPitch }: TextGrid = {
  * (scripts/layout-probes/stops2/word-stops-text.ts PB5b), and a right indent's as its mark (PB5c). A hanging indent in characters puts the first line at
  * the left indent and the other lines that much further in, and the left indent is in characters then, 0 when it isn't
  * given: 2 characters hanging put the first line at 0 and the others at 440, with a left indent of 1440 twips or none
- * (TX7c, C3, C9). It says why when Word's way with them isn't known.
+ * (TX7c, C3, C9), as a hanging indent in twips from a left indent in characters does (word-stops-text2.ts PB5f). It says why
+ * when Word's way with them isn't known.
  */
 const inPoints = (
     format: ParagraphFormat,
@@ -2300,15 +2301,15 @@ const inPoints = (
         };
     }
     // A first line indent in twips starts the first line that much further in from a left indent in characters, 720 twips
-    // from 4 characters of 11 points (PB5e). Whether a hanging indent in twips takes the first line out from one hasn't been
-    // seen
-    if (leftChars !== 0 && firstLineChars === 0 && (format.firstLineIndent ?? 0) < 0) {
-        return "an indent in characters left of a hanging indent in twips";
-    }
+    // from 4 characters of 11 points (PB5e), and a hanging indent in twips leaves the first line at it and puts the other
+    // lines that much further in, as one in characters does: 4 characters of 11 points and 360 twips hanging put the first
+    // line at 880 and the others at 1240, in a list too, whose number is at 880 whatever its size (word-stops-text.ts PB5a,
+    // word-stops-text2.ts PB5f, PB5g)
+    const hanging = leftChars !== 0 && firstLineChars === 0 ? Math.max(0, -(format.firstLineIndent ?? 0)) : 0;
     return {
         ...spaced,
         ...right,
-        ...(leftChars === 0 ? {} : { indentLeft: characters(leftChars, style) }),
+        ...(leftChars === 0 ? {} : { indentLeft: characters(leftChars, style) + hanging }),
         ...(firstLineChars === 0 ? {} : { firstLineIndent: characters(firstLineChars, first) }),
     };
 };

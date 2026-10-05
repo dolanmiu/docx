@@ -401,12 +401,13 @@ describe("readDocument", () => {
                 indentLeft: 44,
                 firstLineIndent: 36,
             });
+            // A hanging indent in twips from a left indent in characters leaves the first line at it and puts the others that
+            // much further in (word-stops-text2.ts PB5f)
+            const hanging = indented({ "w:leftChars": 400, "w:left": 880, "w:hanging": 360 }, 22, sized(22));
+            expect([hanging.unsupported, hanging.format.indentLeft, hanging.format.firstLineIndent]).to.deep.equal([undefined, 62, -18]);
             // Where Word's sizes aren't known
             expect(indented({ "w:rightChars": 400 }, 40, big).unsupported).to.equal(
                 "an indent in characters right of a paragraph whose mark is another size than its style",
-            );
-            expect(indented({ "w:leftChars": 400, "w:hanging": 720 }, 22, big).unsupported).to.equal(
-                "an indent in characters left of a hanging indent in twips",
             );
             expect(indented({ "w:leftChars": 0, "w:hangingChars": 200 }, 22, sized(22)).format).to.deep.include({ indentLeft: 22 });
             expect(indented({ "w:leftChars": 0, "w:left": 720, "w:hangingChars": 200 }, 22, big).unsupported).to.equal(
@@ -449,6 +450,38 @@ describe("readDocument", () => {
             expect(paragraphOf(content, 0).unsupported).to.equal(
                 "an indent in characters in a list whose number is another size than its text",
             );
+            // A left indent in characters with a hanging indent in twips puts the number at the left indent whatever its size,
+            // and the other lines that much further in: the number of 16 points at 880, and the text at 1240
+            // (word-stops-text.ts PB5a)
+            const numbering = {
+                config: [
+                    {
+                        reference: "list",
+                        levels: [
+                            {
+                                level: 0,
+                                format: LevelFormat.DECIMAL,
+                                text: "%1.",
+                                style: { run: { size: 32 }, paragraph: { indent: { left: 880, hanging: 360 } } },
+                            },
+                        ],
+                    },
+                ],
+            };
+            const hanging = readBody(
+                [
+                    p(
+                        pPr(
+                            { "w:numPr": [value("w:ilvl", 0), value("w:numId", 1)] },
+                            { "w:ind": { _attr: { "w:leftChars": 400, "w:left": 880, "w:hanging": 360 } } },
+                        ),
+                        r(t("a")),
+                    ),
+                ],
+                { numbering, styles: { default: { document: { run: { size: 22 } } } } },
+            );
+            const numbered = paragraphOf(hanging, 0);
+            expect([numbered.unsupported, numbered.format.indentLeft, numbered.format.firstLineIndent]).to.deep.equal([undefined, 62, -18]);
             expect(paragraphOf(content, 1).list).to.deep.include({ level: 0 });
             expect(paragraphOf(content, 1).list!.id).to.equal(paragraphOf(content, 0).list!.id);
             expect(paragraphOf(content, 1).unsupported).to.equal(undefined);
