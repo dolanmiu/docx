@@ -4545,34 +4545,15 @@ var docxShapes = (function(exports, docx) {
 		return (METRIC.has(unit) ? Math.round(inUnits) : Math.floor(inUnits + ROUNDING)) / perPoint;
 	};
 	/**
-	* A run's size (`w:sz`, or `w:szCs` for complex scripts) in points, from half-points, or from points, which Word rounds down to a half-point:
-	* "11.75pt" is 11.5. Word ignores a size in inches, centimeters or millimeters, as if it had none (word-units2).
+	* A run's size (`w:sz`, or `w:szCs` for complex scripts) in points, from half-points, or from a length in any unit, which
+	* Word rounds down to a half-point, with or without a style that gives a size: "11.75pt" is 11.5, "0.4in" 28.5, "1cm" and
+	* "10mm" 28, and "0.3cm" 8.5, as it reads centimeters and millimeters to the nearest twip first (word-units2.ts V3,
+	* scripts/layout-probes/stops2/word-stops-text.ts RF27a to RF27c, word-stops-text2.ts RF27d to RF27g)
 	*/
 	var sizeOf = (value) => {
 		var _MEASURE$exec;
 		const unit = typeof value === "string" ? (_MEASURE$exec = MEASURE.exec(value)) === null || _MEASURE$exec === void 0 ? void 0 : _MEASURE$exec[4] : void 0;
-		return unit === void 0 || unit === "pt" ? pointsOf(value, 2) : void 0;
-	};
-	/**
-	* Why how Word reads a length in formatted XML isn't known, when it isn't: a size in a unit other than points, which Word's
-	* PDFs showed it ignores in sizes that aren't whole half-points with no style giving a size (word-units2.ts V3), and
-	* draws at its length in whole half-points in a run whose style gives one (scripts/layout-probes/stops2/word-stops-text.ts
-	* RF27a to RF27c), which leaves which of the two decides unknown. Its minus sign is the whole number's only, as for every
-	* length: "-2.5pt" lowers text by 1.5 points, "-0.5pt" and "-0.3cm" raise it, and "-0.5mm" spaces letters further apart
-	* (RF26a, RF26b, RF28a, RF28b). Undefined when every length's reading is known.
-	*/
-	var unknownLengthIn = (element, name = "") => {
-		if (Array.isArray(element)) return element.reduce((found, child) => found !== null && found !== void 0 ? found : unknownLengthIn(child, name), void 0);
-		if (!isObject(element)) return;
-		return Object.entries(element).reduce((found, [key, child]) => {
-			if (found !== void 0 || key !== "_attr") return found !== null && found !== void 0 ? found : unknownLengthIn(child, key);
-			return Object.values(child).reduce((reason, value) => {
-				const measure = typeof value === "string" ? MEASURE.exec(value) : null;
-				if (reason !== void 0 || !measure) return reason;
-				const [, , , , unit] = measure;
-				return (name === "w:sz" || name === "w:szCs") && unit !== "pt" ? "a size given in a unit other than points" : void 0;
-			}, void 0);
-		}, void 0);
+		return unit === void 0 || !METRIC.has(unit) ? pointsOf(value, 2) : Math.floor(pointsOf(value, 20) * 2 + ROUNDING) / 2;
 	};
 	var isOff = (value) => value === false || value === 0 || value === "false" || value === "0" || value === "off";
 	/**
@@ -4827,7 +4808,7 @@ var docxShapes = (function(exports, docx) {
 			return (_styles$find = styles.find((style) => style.isDefault && style.definition.type === type)) === null || _styles$find === void 0 ? void 0 : _styles$find.id;
 		};
 		const byId = new Map(styles.map((style) => [style.id, style.definition]));
-		return _objectSpread2({
+		return {
 			run: combine(defaults.map((children) => readRunFormat(find(childrenOf(find(children, "w:rPrDefault")), "w:rPr"), themeFonts))),
 			paragraph: combine(defaults.map((children) => readParagraphFormat(find(childrenOf(find(children, "w:pPrDefault")), "w:pPr")))),
 			styles: byId,
@@ -4835,7 +4816,7 @@ var docxShapes = (function(exports, docx) {
 			defaultCharacterStyle: defaultStyle("character"),
 			defaultTableStyle: defaultStyle("table"),
 			themeFonts
-		}, withoutUndefined({ unsupported: unknownLengthIn(xml) }));
+		};
 	};
 	/**
 	* Reads the margins of a table's cells (`w:tblCellMar`), or of one cell (`w:tcMar`), in points.
@@ -4959,12 +4940,15 @@ var docxShapes = (function(exports, docx) {
 	* How wide a run's border is as Word draws it, in eighths of a point: as a paragraph's of its style. A border of no style
 	* ("none") takes its space still, but no width (scripts/layout-probes/word-run-formatting.ts RF7h). An art border's size
 	* is in points, so apples of 12 take 12 points (scripts/layout-probes/stops2/word-stops-text.ts RF25c), and Word draws a
-	* single border of an eighth of a point, and a double one of none, as given (RF25f, RF25e). Undefined when Word hasn't been
-	* seen to draw it.
+	* single border of an eighth of a point, and a double one of none, as given (RF25f, RF25e). A shadow doubles a single
+	* line, as a paragraph's (`word-paragraph-formats.docx` B6), and one drawn as a frame is as wide: one of 1.5 points 2
+	* points from the text takes 100 twips beside and above and below it with a shadow, and 70 as a frame
+	* (scripts/layout-probes/stops2/word-stops-text2.ts RF24c, RF24d). Undefined when Word hasn't been seen to draw it.
 	*/
 	var runBorderWidth = ({ style, size, shadow, frame }) => {
 		var _BORDER_WIDTHS$style, _BORDER_WIDTHS$style2, _SEEN_RUN_BORDERS$sty;
-		if (shadow || frame || size === void 0) return style === "none" && !shadow && !frame ? 0 : void 0;
+		if (size === void 0) return style === "none" && !shadow && !frame ? 0 : void 0;
+		if (shadow || frame) return style === "single" && size >= 2 && size <= 96 ? (shadow ? 2 : 1) * size : void 0;
 		if (!LINE_BORDERS.has(style)) return size >= 1 && size <= WIDEST_ART_BORDER ? size * EIGHTHS_PER_POINT : void 0;
 		if (style === "single" && size === 1 || style === "double" && size === 0) return BORDER_WIDTHS[style](size);
 		return style === "none" ? 0 : size < 2 || size > 96 ? void 0 : (_BORDER_WIDTHS$style = (_BORDER_WIDTHS$style2 = BORDER_WIDTHS[style]) === null || _BORDER_WIDTHS$style2 === void 0 ? void 0 : _BORDER_WIDTHS$style2.call(BORDER_WIDTHS, size)) !== null && _BORDER_WIDTHS$style !== void 0 ? _BORDER_WIDTHS$style : (_SEEN_RUN_BORDERS$sty = SEEN_RUN_BORDERS[style]) === null || _SEEN_RUN_BORDERS$sty === void 0 ? void 0 : _SEEN_RUN_BORDERS$sty[size];
