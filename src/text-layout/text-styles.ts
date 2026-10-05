@@ -707,12 +707,17 @@ const WIDEST_ART_BORDER = 31;
  * How wide a run's border is as Word draws it, in eighths of a point: as a paragraph's of its style. A border of no style
  * ("none") takes its space still, but no width (scripts/layout-probes/word-run-formatting.ts RF7h). An art border's size
  * is in points, so apples of 12 take 12 points (scripts/layout-probes/stops2/word-stops-text.ts RF25c), and Word draws a
- * single border of an eighth of a point, and a double one of none, as given (RF25f, RF25e). Undefined when Word hasn't been
- * seen to draw it.
+ * single border of an eighth of a point, and a double one of none, as given (RF25f, RF25e). A shadow doubles a single
+ * line, as a paragraph's (`word-paragraph-formats.docx` B6), and one drawn as a frame is as wide: one of 1.5 points 2
+ * points from the text takes 100 twips beside and above and below it with a shadow, and 70 as a frame
+ * (scripts/layout-probes/stops2/word-stops-text2.ts RF24c, RF24d). Undefined when Word hasn't been seen to draw it.
  */
 const runBorderWidth = ({ style, size, shadow, frame }: ParagraphBorder): number | undefined => {
-    if (shadow || frame || size === undefined) {
+    if (size === undefined) {
         return style === "none" && !shadow && !frame ? 0 : undefined;
+    }
+    if (shadow || frame) {
+        return style === "single" && size >= NARROWEST_BORDER && size <= WIDEST_BORDER ? (shadow ? 2 : 1) * size : undefined;
     }
     if (!LINE_BORDERS.has(style)) {
         return size >= 1 && size <= WIDEST_ART_BORDER ? size * EIGHTHS_PER_POINT : undefined;
@@ -784,8 +789,8 @@ const DEFAULT_FIGURES: Readonly<Record<string, readonly string[]>> = {
 
 /**
  * Why a run's formatting can't be laid out as Word lays it out, when it can't: OpenType features other than ligatures,
- * whose widths the width tables don't have, a border of a style, width or space Word hasn't been seen to draw, or with a
- * shadow or drawn as a frame, and emphasis marks of a kind the schema doesn't have.
+ * whose widths the width tables don't have, a border of a style, width or space Word hasn't been seen to draw, or of a style
+ * other than single with a shadow or drawn as a frame, and emphasis marks of a kind the schema doesn't have.
  */
 export const unknownRunFormatting = ({
     font,
@@ -808,8 +813,8 @@ export const unknownRunFormatting = ({
     if (stylisticSets === true || contextualAlternates === true) {
         return "OpenType stylistic sets or contextual alternates";
     }
-    if (border !== undefined && border.style !== "nil" && (border.shadow || border.frame)) {
-        return "a run border with a shadow or drawn as a frame";
+    if (border !== undefined && border.style !== "nil" && border.style !== "single" && (border.shadow || border.frame)) {
+        return "a run border of a style other than single with a shadow or drawn as a frame";
     }
     if (border !== undefined && border.style !== "nil" && runBorderWidth(border) === undefined) {
         return "a run border of a style, width or space not yet followed";

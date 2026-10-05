@@ -232,7 +232,8 @@ describe("readRunFormat", () => {
         // Word rounds a size down to a half-point in any unit, reading centimeters and millimeters to the nearest twip
         // first (word-units2 V3, stops2/word-stops-text.ts RF27a to RF27c, word-stops-text2.ts RF27d to RF27g)
         const sizes = ["11.75pt", "0.4in", "0.25in", "2pc", "0.95pi", "1cm", "10mm", "0.3cm"].map(
-            (size) => readRunFormat([{ "w:sz": { _attr: { "w:val": size } } }, { "w:kern": { _attr: { "w:val": size } } }], themeFonts).size,
+            (size) =>
+                readRunFormat([{ "w:sz": { _attr: { "w:val": size } } }, { "w:kern": { _attr: { "w:val": size } } }], themeFonts).size,
         );
         expect(sizes).to.deep.equal([11.5, 28.5, 18, 24, 11, 28, 28, 8.5]);
         // 0.35277cm is 199.9986 twips, which rounds to 200 before it is 20 half-points
@@ -358,6 +359,12 @@ describe("run formatting", () => {
         expect(twips("double", 0, 1)).to.equal(20);
         expect(twips("thinThickThinMediumGap", 24, 1)).to.equal(200);
         expect(twips("thickThinLargeGap", 36, 1)).to.equal(155);
+        // A single border of 1.5 points 2 points from the text takes 100 twips with a shadow, which doubles its width, and 70
+        // drawn as a frame (word-stops-text2.ts RF24c, RF24d), and with both, 100
+        const drawn = (more: object): number | undefined =>
+            (fontOf({ border: { style: "single", size: 12, space: 2, shadow: false, frame: false, key: "drawn", ...more } }).border?.room ??
+                0) * 20;
+        expect([drawn({ shadow: true }), drawn({ frame: true }), drawn({ shadow: true, frame: true })]).to.deep.equal([100, 70, 100]);
     });
 
     it("should stop at a border whose room isn't known, and at emphasis marks of a kind the schema doesn't have", () => {
@@ -365,8 +372,14 @@ describe("run formatting", () => {
         const unknown = "a run border of a style, width or space not yet followed";
         expect(unknownRunFormatting({ border: single, emphasisMark: "circle" })).to.equal(undefined);
         expect(unknownRunFormatting({ border: { ...single, style: "nil", shadow: true } })).to.equal(undefined);
-        expect(unknownRunFormatting({ border: { ...single, shadow: true } })).to.equal("a run border with a shadow or drawn as a frame");
-        expect(unknownRunFormatting({ border: { ...single, frame: true } })).to.equal("a run border with a shadow or drawn as a frame");
+        expect(unknownRunFormatting({ border: { ...single, shadow: true } })).to.equal(undefined);
+        expect(unknownRunFormatting({ border: { ...single, frame: true } })).to.equal(undefined);
+        // Another style with a shadow or drawn as a frame hasn't been seen, nor a single one wider than Word draws
+        const drawn = "a run border of a style other than single with a shadow or drawn as a frame";
+        expect(unknownRunFormatting({ border: { ...single, style: "double", shadow: true } })).to.equal(drawn);
+        expect(unknownRunFormatting({ border: { ...single, style: "dotted", frame: true } })).to.equal(drawn);
+        expect(unknownRunFormatting({ border: { ...single, size: 97, shadow: true } })).to.equal(unknown);
+        expect(unknownRunFormatting({ border: { ...single, size: undefined, frame: true } })).to.equal(unknown);
         // A style Word hasn't been seen to draw, thin and thick lines wider than 2¼ points, others at sizes not seen, and a
         // border without a width, narrower or wider than Word draws, or an art border wider than it draws
         expect(unknownRunFormatting({ border: { ...single, style: "thinThickMediumGap", size: 2 } })).to.equal(unknown);
