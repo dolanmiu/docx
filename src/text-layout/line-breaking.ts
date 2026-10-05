@@ -295,13 +295,6 @@ type Segment = {
 const DEFAULT_TAB_STOP = 36;
 // How far past its end a line may go before it wraps, for the rounding of the widths
 const TOLERANCE = 0.01;
-// Word breaks a word at a soft hyphen when its hyphen ends 19.9 twips before the end of the line, and doesn't when it ends
-// 2.7 twips or less before it, or past it: of Calibri 11's hyphen of 67.3 twips, after a part that ends 90 twips short of the
-// end, and not 70, 50, 30 or 10 (scripts/layout-probes/word-breaks-and-tabs.ts SH2), and with the hyphen 19.9 to 129.4 twips
-// short of the end (scripts/layout-probes/stops2/word-stops-tabs.ts SH13a to SH13h). A little less than 19.9 allows for the
-// rounding of the widths
-const HYPHEN_ROOM = 19.8 / 20;
-const NO_HYPHEN_ROOM = 2.7 / 20;
 // Why the layout stops at a paragraph that ends with a page break in a document in compatibility mode
 const OLDER_PAGE_BREAK = "a page break at the end of a paragraph in a document in compatibility mode";
 
@@ -1881,7 +1874,11 @@ export const layoutLines = (
          * font, on the line, as Word breaks it (scripts/layout-probes/word-watertight-text.ts TX10a: 12 lines, 8 of them
          * ending in a hyphen, each where docx/layout's widths of Calibri end them), and a word longer than its line again on
          * each line (word-breaks-and-tabs.ts SH4), after the text before it on the line, which it is kerned with by `kern`.
-         * The rest of the word, which goes on to the next line, or undefined when no part of it fits
+         * The part goes on the line when its hyphen fits, as a word does: with the hyphen 3.5 to 129.4 twips short of the end
+         * of the line, and on a justified line 0.5 to 2.5 short of it (stops2/word-stops-tabs.ts SH13a to SH13h,
+         * stops2/word-stops-text2.ts SH16a to SH16l), and not a twip past it (word-breaks-and-tabs.ts SH2's line of 70, which
+         * its character spacing of whole twips put there). The rest of the word, which goes on to the next line, or undefined
+         * when no part of it fits
          */
         const breakAtHyphen = (
             word: Extract<Token, { readonly type: "word" }>,
@@ -1893,21 +1890,34 @@ export const layoutLines = (
                 const [before, after] = splitPieces(word.pieces, hyphen.at);
                 const partEnd = line.position + lead + widthOf(before, measurer);
                 const withHyphen = partEnd + measurer.measureWidth("-", hyphen.font);
-                return { hyphen, before, after, withHyphen, room: endOf(line) - withHyphen };
+                return { hyphen, before, after, withHyphen, fits: withHyphen <= endOf(line) + TOLERANCE };
             });
-            for (const [index, { hyphen, before, after, withHyphen, room }] of splits.entries()) {
+            for (const [index, { hyphen, before, after, withHyphen, fits }] of splits.entries()) {
                 // On a justified line, a part whose hyphen goes past the end of the line ends it when Word can squeeze it on, as
                 // it would a word: the line's spaces squeezed by 17% to fit "Donau-" (scripts/layout-probes/stops2/word-stops-tabs.ts
-                // SH10d). Where a shorter part fits without squeezing, which of the two Word takes hasn't been seen
-                const squeezed = room <= 0 && line.started && squeezesIn(line, withHyphen - line.position);
-                if (squeezed && splits.slice(index + 1).some((shorter) => shorter.room >= HYPHEN_ROOM)) {
+                // SH10d). Where a shorter part fits as it is, Word weighs how far the line's spaces would stretch with it against
+                // how far they'd be squeezed for this one, as it weighs a word against leaving it to the next line: "Do-" with 200
+                // twips to spare rather than "Donau-" 136 past the end (stops2/word-stops-text2.ts SH17). Whether it squeezes
+                // the longer one when the shorter would leave twice as much room or more, as it would squeeze a word, and how it
+                // weighs a distributed line's letters for it, haven't been seen. Guessing, it squeezes it
+                const squeezed = !fits && line.started && squeezesIn(line, withHyphen - line.position);
+                const shorter = squeezed ? splits.slice(index + 1).find((other) => other.fits) : undefined;
+                if (
+                    shorter !== undefined &&
+                    alignment === "justified" &&
+                    limitOf() - shorter.withHyphen < STRETCH_TO_SQUEEZE * (withHyphen - limitOf())
+                ) {
+                    continue;
+                }
+                if (shorter !== undefined) {
                     line = {
                         ...line,
                         unsupported:
-                            line.unsupported ?? "a justified line that fits a soft hyphen's part squeezed, and a shorter one as it is",
+                            line.unsupported ??
+                            "a line that fits a soft hyphen's part squeezed, and a shorter one as it is with twice as much room or more",
                     };
                 }
-                if (room >= HYPHEN_ROOM || squeezed) {
+                if (fits || squeezed) {
                     const placed = place(line);
                     line = wrap({
                         ...placed,
@@ -1923,14 +1933,6 @@ export const layoutLines = (
                         type: "word",
                         pieces: after,
                         hyphens: hyphens.filter(({ at }) => at > hyphen.at).map((later) => ({ ...later, at: later.at - hyphen.at })),
-                    };
-                }
-                if (room > NO_HYPHEN_ROOM || (squeezes && room > 0)) {
-                    // Where between the two Word turns from one to the other hasn't been seen, nor whether it squeezes a
-                    // justified line to fit a hyphen that ends too close to the end of the line for a line it doesn't
-                    line = {
-                        ...line,
-                        unsupported: line.unsupported ?? "a soft hyphen whose hyphen ends this close to the end of the line",
                     };
                 }
             }

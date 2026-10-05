@@ -2175,18 +2175,22 @@ describe("soft hyphens", () => {
         expect(linesOf([softHyphen(), text("aa")]).map(({ text: value }) => value)).to.deep.equal(["aa"]);
     });
 
-    it("should break at the last soft hyphen whose part fits with room for its hyphen, and again on the next line", () => {
+    it("should break at the last soft hyphen whose part fits with its hyphen, and again on the next line", () => {
         const word = [text("a"), softHyphen(), text("bb"), softHyphen(), text("cc"), softHyphen(), text("ddd")];
-        // "x abbcc-" is 80 points, and leaves 2 of a line of 82, more than the 1.135 Word leaves
-        expect(linesOf([text("x "), ...word], { width: 82 }).map(({ text: value }) => value)).to.deep.equal(["x abbcc", "ddd"]);
-        expect(linesOf([text("xxxxx "), ...word], { width: 82 }).map(({ text: value }) => value)).to.deep.equal(["xxxxx a", "bbccddd"]);
-        // A hyphen that ends at the end of the line, or just before it, doesn't fit, so it breaks at the soft hyphen before
-        for (const width of [80, 80.1]) {
+        // "x abbcc-" is 80 points, and fits a line of 82, and of 80, as a word that ends at the end of the line does
+        // (word-stops-text2.ts SH16a to SH16l)
+        for (const width of [82, 80]) {
             expect(linesOf([text("x "), ...word], { width }).map(({ text: value, unsupported }) => [value, unsupported])).to.deep.equal([
-                ["x abb", undefined],
-                ["ccddd", undefined],
+                ["x abbcc", undefined],
+                ["ddd", undefined],
             ]);
         }
+        expect(linesOf([text("xxxxx "), ...word], { width: 82 }).map(({ text: value }) => value)).to.deep.equal(["xxxxx a", "bbccddd"]);
+        // A hyphen that ends past the end of the line doesn't fit, so it breaks at the soft hyphen before
+        expect(linesOf([text("x "), ...word], { width: 79.9 }).map(({ text: value, unsupported }) => [value, unsupported])).to.deep.equal([
+            ["x abb", undefined],
+            ["ccddd", undefined],
+        ]);
         // No part fits: the word goes on to the next line, where it fits whole
         expect(linesOf([text("xxxxxxx "), ...word], { width: 90 }).map(({ text: value }) => value)).to.deep.equal(["xxxxxxx ", "abbccddd"]);
         // The part before it fits, but not with its hyphen: it goes on to the next line whole
@@ -2240,33 +2244,24 @@ describe("soft hyphens", () => {
         ]);
     });
 
-    it("should stop where Word's breaking at a soft hyphen hasn't been seen", () => {
-        const unsupportedOf = (items: readonly InlineItem[], options: Partial<LineLayoutOptions> = {}): readonly (string | undefined)[] =>
-            linesOf(items, options).map(({ unsupported }) => unsupported);
-        // A hyphen that ends between 0.135 and 0.99 points before the end of the line: it breaks at the soft hyphen before
-        const close = linesOf([text("x a"), softHyphen(), text("bb"), softHyphen(), text("cc"), softHyphen(), text("ddd")], {
-            width: 80.5,
-        });
-        expect(close.map(({ text: value, unsupported }) => [value, unsupported])).to.deep.equal([
-            ["x abb", "a soft hyphen whose hyphen ends this close to the end of the line"],
-            ["ccddd", undefined],
+    it("should take a shorter part as it is rather than squeeze a longer one, unless it leaves twice as much room, as Word does", () => {
+        // "a a a a a a a a a b-" ends at 200, and "a a a a a a a a a bbb-" 220, 15 past a line of 205, which its spaces of 90
+        // can be squeezed by: their 5 to stretch with "b-" are less than twice that, so Word takes "b-" (word-stops-text2.ts
+        // SH17: "Do-" with 200 twips to spare rather than "Donau-" 136 past the end)
+        const items = [text("a a a a a a a a a b"), softHyphen(), text("bb"), softHyphen(), text("cccc")];
+        const justified = (width: number, alignment: "justified" | "distributed" = "justified"): readonly (string | undefined)[][] =>
+            linesOf(items, { width, format: { alignment } }).map(({ text: value, unsupported }) => [value, unsupported]);
+        expect(justified(205)).to.deep.equal([
+            ["a a a a a a a a a b", undefined],
+            ["bbcccc", undefined],
         ]);
-        // On a justified line, one that ends 0.135 points or less before it, which Word may squeeze in or not
-        expect(
-            unsupportedOf([text("a a a a a a a a a b"), softHyphen(), text("cccc")], {
-                width: 200.1,
-                format: { alignment: "justified" },
-            })[0],
-        ).to.equal("a soft hyphen whose hyphen ends this close to the end of the line");
-        // A part that fits squeezed after one that fits as it is: Word may take either
-        const either = linesOf([text("a a a a a a a a a b"), softHyphen(), text("bb"), softHyphen(), text("cccc")], {
-            width: 205,
-            format: { alignment: "justified" },
-        });
-        expect(either.map(({ text: value, unsupported }) => [value, unsupported])).to.deep.equal([
-            ["a a a a a a a a a bbb", "a justified line that fits a soft hyphen's part squeezed, and a shorter one as it is"],
+        // With 15 to stretch and 5 to squeeze, which Word hasn't been seen with, nor a distributed line, it squeezes it
+        const reason = "a line that fits a soft hyphen's part squeezed, and a shorter one as it is with twice as much room or more";
+        expect(justified(215)).to.deep.equal([
+            ["a a a a a a a a a bbb", reason],
             ["cccc", undefined],
         ]);
+        expect(justified(205, "distributed")[0][1]).to.equal(reason);
     });
 
     it("should break a word with soft hyphens whose first part is longer than its line as a word without them", () => {
@@ -2290,8 +2285,9 @@ describe("soft hyphens", () => {
 
     it("should break lines at soft hyphens where Word broke the probes' lines", () => {
         // word-breaks-and-tabs SH2: in Calibri 11, a line of 9026 twips whose last word's first part ends this many twips
-        // short of its end: Word moves the word on to the next line for 10 to 70, and breaks it after "Donau" for 90, its
-        // hyphen ending at 9002.9
+        // short of its end, as the probe's character spacing of whole twips put it, rather than the 10 to 90 it meant: Word
+        // moves the word on to the next line for 6.3 to 66.3, whose hyphen of 67.3 goes past the end, and breaks it after
+        // "Donau" for 90.4, its hyphen ending at 9002.9
         const font = { font: "Calibri", size: 11 };
         const donau = measureTextWidth(" Donau", font);
         const lineFor = (twips: number): readonly LaidOutLine[] =>
@@ -2304,18 +2300,48 @@ describe("soft hyphens", () => {
                 ],
                 { width: 9026 / 20 },
             );
-        for (const twips of [10, 30, 50, 70]) {
+        for (const twips of [6.3, 30.4, 48.3, 66.3]) {
             expect(lineFor(twips).map(({ text: value, unsupported }) => [value, unsupported])).to.deep.equal([
                 [" ", undefined],
                 ["Donaudampfschifffahrt", undefined],
             ]);
         }
-        const broken = lineFor(90);
+        const broken = lineFor(90.4);
         expect(broken.map(({ text: value, unsupported }) => [value, unsupported])).to.deep.equal([
             [" Donau", undefined],
             ["dampfschifffahrt", undefined],
         ]);
         expect(broken[0].textWidth * 20).to.be.closeTo(9002.9, 5);
+        // word-stops-text2.ts SH16a: the hyphen of "eeeee-" ending 3.5 twips short of the end, which Word breaks at
+        const eeeee = measureTextWidth("eeeee-", font);
+        const close = layoutLines(
+            [
+                { type: "box", width: 9026 / 20 - 3.5 / 20 - eeeee, height: 1, font },
+                { type: "text", text: "eeeee", font },
+                softHyphen(font),
+                { type: "text", text: "continuation and more", font },
+            ],
+            { width: 9026 / 20 },
+        );
+        expect(close.map(({ text: value, unsupported }) => [value, unsupported])).to.deep.equal([
+            ["eeeee", undefined],
+            ["continuation and more", undefined],
+        ]);
+        // SH17: a justified line where "Do-" fits with 200 twips to spare, and "Donau-" only squeezed: Word takes "Do-"
+        const before = "SH17 of the by in to and on of the by in to and on of the by in Do";
+        const [first] = layoutLines(
+            [
+                { type: "text", text: before, font },
+                softHyphen(font),
+                { type: "text", text: "nau", font },
+                softHyphen(font),
+                { type: "text", text: "dampf", font },
+                softHyphen(font),
+                { type: "text", text: "schiff the in foot mouth made on river", font },
+            ],
+            { width: Math.round(measureTextWidth(`${before}-`, font) * 20 + 200) / 20, format: { alignment: "justified" } },
+        );
+        expect([first.text, first.unsupported]).to.deep.equal([before, undefined]);
         // SH1a to SH1e: a justified line whose last word, with soft hyphens in it, fits only with its spaces 3% to 20%
         // narrower, which Word squeezes onto it whole
         const filler = Array.from({ length: 12 }, () => " the").join("");
