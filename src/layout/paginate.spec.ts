@@ -3844,15 +3844,14 @@ describe("paginate", () => {
             expect(pagesOf(content)).to.deep.equal({ a: "1", b: "1", c: "2" });
         });
 
-        it("should stop at a line whose multiple spacing would go below its page's text into the footnotes", () => {
-            // c ends at 55, 5 past the footnotes' separator, which only the spacing below its text does
+        it("should move a line whose multiple spacing would go below its page's text into the footnotes to the next page, as Word does", () => {
+            // c ends at 55, 5 past the footnotes' separator, which only the spacing below its text does, so it goes on to the
+            // next page (stops2/word-stops-text2.ts PB7e)
             const spaced: ParagraphFormat = { lineSpacing: { rule: "multiple", multiple: 1.5 } };
             const content = withNotes([paragraph("a", 3), noted(paragraph("b", 1), "footnote 1"), paragraph("c", 1, spaced)], {
                 "footnote 1": [paragraph("note", 1)],
             });
-            expect(paginate(content, { measurer: MEASURER }).stoppedAt).to.equal(
-                "a line whose room below its text goes below it into the footnotes",
-            );
+            expect(pagesOf(content)).to.deep.equal({ a: "1", b: "1", c: "2" });
             // So does what is kept with the next: c and d end at 55
             const kept = withNotes(
                 [
@@ -3863,9 +3862,26 @@ describe("paginate", () => {
                 ],
                 { "footnote 1": [paragraph("note", 1)] },
             );
-            expect(paginate(kept, { measurer: MEASURER }).stoppedAt).to.equal(
-                "a line whose room below its text goes below it into the footnotes",
+            expect(pagesOf(kept)).to.deep.equal({ a: "1", b: "1", c: "2", d: "2" });
+            // The room a document grid leaves below a line's text hasn't been seen above footnotes: c's line of 20 on a grid
+            // of 20 ends its text at 50, and its room at 55
+            const gridded = (block: ParagraphBlock): ParagraphBlock => ({ ...block, grid: { linePitch: 20 } });
+            const onGrid = withNotes(
+                [paragraph("a", 2), noted(paragraph("b", 1), "footnote 1"), gridded(paragraph("c", 1, { spaceBefore: 5 }))],
+                { "footnote 1": [paragraph("note", 1)] },
             );
+            const reason = "a line whose room a document grid leaves below its text goes below it into the footnotes";
+            expect(paginate(onGrid, { measurer: MEASURER }).stoppedAt).to.equal(reason);
+            const keptOnGrid = withNotes(
+                [
+                    paragraph("a", 1),
+                    noted(paragraph("b", 1), "footnote 1"),
+                    paragraph("c", 1, { keepNext: true }),
+                    gridded(paragraph("d", 1, { spaceBefore: 5 })),
+                ],
+                { "footnote 1": [paragraph("note", 1)] },
+            );
+            expect(paginate(keptOnGrid, { measurer: MEASURER }).stoppedAt).to.equal(reason);
         });
 
         it("should move a line to the next page with its footnote when they don't both fit", () => {

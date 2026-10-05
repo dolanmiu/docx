@@ -264,6 +264,8 @@ export type LaidOutLine = {
      * (word-mixed-heights.ts MH1c)
      */
     readonly spacingBelow?: number;
+    /** Whether its `spacingBelow` is the room a document grid leaves below its text, rather than multiple spacing's */
+    readonly belowOnGrid?: boolean;
     /** Why Word's breaking of the line, or how tall it is, isn't known, when it isn't */
     readonly unsupported?: string;
 };
@@ -788,7 +790,7 @@ const gridHeightOf = (
     given: Heights,
     spacing: LineSpacing | undefined,
     pitch: number,
-): Pick<LaidOutLine, "height" | "spacingBelow" | "unsupported"> => {
+): Pick<LaidOutLine, "height" | "spacingBelow" | "belowOnGrid" | "unsupported"> => {
     if (spacing?.rule === "exact") {
         return heightOf(given, spacing);
     }
@@ -801,7 +803,11 @@ const gridHeightOf = (
     const height =
         spacing === undefined ? gridded : Math.max(spacing.rule === "multiple" ? spacing.multiple * pitch : spacing.height, gridded);
     const below = ((spacing?.rule === "atLeast" ? gridded : height) - own.height) / 2;
-    return { height, ...(below > 0 ? { spacingBelow: below } : {}), ...(unsupported === undefined ? {} : { unsupported }) };
+    return {
+        height,
+        ...(below > 0 ? { spacingBelow: below, belowOnGrid: true } : {}),
+        ...(unsupported === undefined ? {} : { unsupported }),
+    };
 };
 
 // How far short of a whole number of a grid's lines a line's height can be and take only that many, for the rounding of

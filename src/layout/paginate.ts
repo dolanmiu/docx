@@ -594,7 +594,7 @@ type Row = {
 const rowOf = (lines: readonly LaidOutLine[], first: number, skip = 0, top?: number): Row => {
     const height = Math.max(...lines.map((line) => line.height));
     const { breakAfter } = lines[lines.length - 1];
-    const { spacingBelow } = lines.find((line) => line.height === height)!;
+    const { spacingBelow, belowOnGrid } = lines.find((line) => line.height === height)!;
     return {
         first,
         count: lines.length,
@@ -608,6 +608,7 @@ const rowOf = (lines: readonly LaidOutLine[], first: number, skip = 0, top?: num
             textWidth: sum(lines.map(({ textWidth }) => textWidth)),
             ...(breakAfter === undefined ? {} : { breakAfter }),
             ...(spacingBelow === undefined ? {} : { spacingBelow }),
+            ...(belowOnGrid === undefined ? {} : { belowOnGrid }),
         },
     };
 };
@@ -1158,6 +1159,11 @@ export const paginate = (
     };
 
     const linesHeight = (lines: readonly LaidOutLine[]): number => sum(lines.map(({ height }) => height));
+    /** The space below the text of the last line of what is kept together, which may go below the page, and whether a grid leaves it */
+    const belowOf = (last: LaidOutLine | undefined): { readonly spacingBelow: number; readonly belowOnGrid: boolean } => ({
+        spacingBelow: last?.spacingBelow ?? 0,
+        belowOnGrid: last?.belowOnGrid === true,
+    });
     /** How tall lines are on a page, at the bottom of which the multiple spacing of their last can go below it */
     const heightToFit = (lines: readonly LaidOutLine[]): number => linesHeight(lines) - (lines.at(-1)?.spacingBelow ?? 0);
     /**
@@ -1166,10 +1172,12 @@ export const paginate = (
      */
     const fitsAbove = (
         from: number,
-        { height, spacingBelow }: { readonly height: number; readonly spacingBelow: number },
+        { height, spacingBelow, belowOnGrid }: { readonly height: number; readonly spacingBelow: number; readonly belowOnGrid?: boolean },
         end: number,
         aboveNotes: boolean,
-    ): boolean => from + height <= end + TOLERANCE || (from + height - spacingBelow <= end + TOLERANCE && hangsBelow(aboveNotes));
+    ): boolean =>
+        from + height <= end + TOLERANCE ||
+        (from + height - spacingBelow <= end + TOLERANCE && hangsBelow(aboveNotes, false, belowOnGrid === true));
 
     /**
      * How narrow and how wide the paragraphs and tables in a table cell can be, and whether Word may hyphenate a word as
@@ -1692,16 +1700,21 @@ export const paginate = (
     };
 
     /**
-     * Whether the space a line's multiple spacing adds below its text, or a document grid leaves below it, can go below the
-     * bottom of the page, as Word lets it (`word-mixed-heights.docx` MH1c, `word-grid.docx` G1), for a line that fits only
-     * without it, and below the bottom of columns evened out by a continuous section break (scripts/layout-probes/stops2/word-stops-text.ts
+     * Whether the space a line's multiple spacing adds below its text, or a document grid leaves below it (`onGrid`), can go
+     * below the bottom of the page, as Word lets it (`word-mixed-heights.docx` MH1c, `word-grid.docx` G1), for a line that
+     * fits only without it, and below the bottom of columns evened out by a continuous section break (scripts/layout-probes/stops2/word-stops-text.ts
      * PB7b: the last of four lines at double spacing at the foot of the second column, as it would be without its space
-     * below counted). Stops where Word hasn't shown it: above footnotes, which it would go into, and above a paragraph's
-     * border below. Guessing, it goes there too
+     * below counted). Above footnotes, multiple spacing's can't go into them: a line at double spacing that fits above the
+     * page's footnote only without its space below goes on to the next page (stops2/word-stops-text2.ts PB7e). Stops where
+     * Word hasn't shown it: a grid's room above footnotes, and room above a paragraph's border below. Guessing, it goes
+     * there
      */
-    const hangsBelow = (aboveNotes: boolean, aboveBorder = false): boolean => {
+    const hangsBelow = (aboveNotes: boolean, aboveBorder = false, onGrid = false): boolean => {
+        if (aboveNotes && !onGrid) {
+            return false;
+        }
         if (aboveNotes) {
-            stopAt("a line whose room below its text goes below it into the footnotes");
+            stopAt("a line whose room a document grid leaves below its text goes below it into the footnotes");
         }
         if (aboveBorder) {
             stopAt("a line whose room below its text goes below the page, above its paragraph's border");
@@ -4030,7 +4043,11 @@ export const paginate = (
             const ends = index + linesUpTo(rows.length) === lines.length;
             const notesOnPage = noteArea > 0 || reserved() > 0;
             const hangs = (upTo: number): boolean =>
-                hangsBelow(notesOnPage || notesOf(upTo).length > 0, ends && upTo === remaining.length && paragraph.borderBelow > 0);
+                hangsBelow(
+                    notesOnPage || notesOf(upTo).length > 0,
+                    ends && upTo === remaining.length && paragraph.borderBelow > 0,
+                    remaining[upTo - 1].belowOnGrid === true,
+                );
             const { fits, count: kept } = linesThatFit(
                 remaining,
                 room,
@@ -5102,6 +5119,8 @@ export const paginate = (
         readonly height: number;
         /** The space the multiple spacing of its last line adds below the line's text */
         readonly spacingBelow: number;
+        /** Whether that space is what a document grid leaves below the line's text */
+        readonly belowOnGrid?: boolean;
         readonly notes: readonly string[];
         readonly kept: readonly string[];
         readonly keptWith: "nothing" | "whole" | "part";
@@ -5128,7 +5147,7 @@ export const paginate = (
             // The paragraph that ends the section takes no room, so they are kept with nothing
             return {
                 height: keptLines,
-                spacingBelow: kept[kept.length - 1]?.lines.at(-1)?.spacingBelow ?? 0,
+                ...belowOf(kept[kept.length - 1]?.lines.at(-1)),
                 notes: keptNotes,
                 kept: keptNotes,
                 keptWith: "nothing",
@@ -5162,7 +5181,7 @@ export const paginate = (
                 linesHeight(nextLines) +
                 (nextLines.length === next.lines.length ? next.borderBelow : 0),
             // Below a border, the spacing of the last line isn't known to go below the bottom of the page
-            spacingBelow: nextLines.length === next.lines.length && next.borderBelow > 0 ? 0 : (nextLines.at(-1)?.spacingBelow ?? 0),
+            ...belowOf(nextLines.length === next.lines.length && next.borderBelow > 0 ? undefined : nextLines.at(-1)),
             notes: [...keptNotes, ...notesIn(nextLines.flatMap(({ markers }) => markers))],
             kept: keptNotes,
             keptWith: chain === 0 ? "nothing" : firstLines === next.lines.length && !next.pageBreakBefore ? "whole" : "part",
@@ -5224,7 +5243,7 @@ export const paginate = (
         if (anchor.type === "paragraph" && anchor.sectionBreak) {
             return {
                 height: keptHeightSoFar,
-                spacingBelow: keptLines.at(-1)?.spacingBelow ?? 0,
+                ...belowOf(keptLines.at(-1)),
                 notes: keptNotes,
                 kept: keptNotes,
                 keptWith: "nothing",
@@ -5252,7 +5271,7 @@ export const paginate = (
                   nextSpace +
                   sum(nextRows.map(({ line }) => line.height)) +
                   (nextRows.length === rows.length ? next.borderBelow : 0),
-            spacingBelow: nextRows.length === rows.length && next.borderBelow > 0 ? 0 : (lastRow?.spacingBelow ?? 0),
+            ...belowOf(nextRows.length === rows.length && next.borderBelow > 0 ? undefined : lastRow),
             notes: [...keptNotes, ...notesIn(nextRows.flatMap(({ line }) => line.markers))],
             kept: keptNotes,
             keptWith: chain === 0 ? "nothing" : firstRows === rows.length && !next.pageBreakBefore ? "whole" : "part",
