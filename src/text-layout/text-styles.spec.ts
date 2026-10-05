@@ -15,7 +15,6 @@ import {
     readRunFormat,
     spansOf,
     styleChain,
-    unknownLengthIn,
     unknownRunFormatting,
 } from "./text-styles";
 
@@ -230,9 +229,15 @@ describe("readRunFormat", () => {
         expect(
             readRunFormat([{ "w:sz": { _attr: { "w:val": "12pt" } } }, { "w:spacing": { _attr: { "w:val": "-1pt" } } }], themeFonts),
         ).to.deep.equal({ size: 12, characterSpacing: -1 });
-        // Word rounds a size in points down to a half-point, and ignores one in another unit (word-units2 V3)
-        expect(readRunFormat([{ "w:sz": { _attr: { "w:val": "11.75pt" } } }], themeFonts)).to.deep.equal({ size: 11.5 });
-        expect(readRunFormat([{ "w:sz": { _attr: { "w:val": "1cm" } } }], themeFonts)).to.deep.equal({});
+        // Word rounds a size down to a half-point in any unit, reading centimeters and millimeters to the nearest twip
+        // first (word-units2 V3, stops2/word-stops-text.ts RF27a to RF27c, word-stops-text2.ts RF27d to RF27g)
+        const sizes = ["11.75pt", "0.4in", "0.25in", "2pc", "0.95pi", "1cm", "10mm", "0.3cm"].map(
+            (size) => readRunFormat([{ "w:sz": { _attr: { "w:val": size } } }, { "w:kern": { _attr: { "w:val": size } } }], themeFonts).size,
+        );
+        expect(sizes).to.deep.equal([11.5, 28.5, 18, 24, 11, 28, 28, 8.5]);
+        // 0.35277cm is 199.9986 twips, which rounds to 200 before it is 20 half-points
+        expect(readRunFormat([{ "w:szCs": { _attr: { "w:val": "0.35277cm" } } }], themeFonts)).to.deep.equal({ complexScriptSize: 10 });
+        expect(readRunFormat([{ "w:kern": { _attr: { "w:val": "1cm" } } }], themeFonts)).to.deep.equal({ kerning: 28 });
     });
 });
 
@@ -631,27 +636,6 @@ describe("pointsOf", () => {
     it("should read nothing from a unit without a number", () => {
         expect(pointsOf("xpt", 20)).to.equal(undefined);
         expect(pointsOf("in", 20)).to.equal(undefined);
-    });
-});
-
-describe("unknownLengthIn", () => {
-    it("should find a size in a unit other than points in any element", () => {
-        const size = (val: string): object => ({ "w:rPr": [{ "w:sz": { _attr: { "w:val": val } } }] });
-        expect(unknownLengthIn([{ "w:p": [{ "w:r": [size("1pc")] }] }])).to.equal("a size given in a unit other than points");
-        expect(unknownLengthIn({ "w:szCs": { _attr: { "w:val": "1cm" } } })).to.equal("a size given in a unit other than points");
-        // A negative length of a fraction, whose minus sign is its whole number's only (word-stops-text.ts RF26, RF28)
-        expect(unknownLengthIn({ "w:ind": { _attr: { "w:left": "-1.5cm" } } })).to.equal(undefined);
-        expect(unknownLengthIn([size("11.5pt"), size("23"), { "w:ind": { _attr: { "w:left": "-1cm", "w:right": "-1.5in" } } }])).to.equal(
-            undefined,
-        );
-        expect(unknownLengthIn([{ "w:t": ["-1.5cm"] }, "text"])).to.equal(undefined);
-        expect(unknownLengthIn({ "w:position": { _attr: { "w:val": "-2.75pt" } } })).to.equal(undefined);
-    });
-
-    it("should find one in the styles as they are read", () => {
-        const styles = stylesOf({ paragraphStyles: [{ id: "Small", name: "Small", run: { size: "0.1in" } }] });
-        expect(styles.unsupported).to.equal("a size given in a unit other than points");
-        expect(stylesOf({}).unsupported).to.equal(undefined);
     });
 });
 

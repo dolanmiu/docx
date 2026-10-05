@@ -57,7 +57,6 @@ import {
     spansOf,
     stringOf,
     styleChain,
-    unknownLengthIn,
     unknownRunFormatting,
     valueOf,
     withoutUndefined,
@@ -2542,7 +2541,6 @@ const readParagraph = (element: XmlObject, reader: Reader, tableFormats: TableFo
                     ? "Arabic text justified for Thai or with a kashida"
                     : (unknownInOlderLayout(content, combined.alignment, reader) ??
                       unjoinedSpacing ??
-                      unknownLengthIn(element) ??
                       (typeof format === "string" ? format : undefined) ??
                       (typeof borders === "string" ? borders : undefined)));
     return {
@@ -3295,20 +3293,6 @@ const readTable = (element: XmlObject, reader: Reader): TableBlock | undefined =
     // column for each it says it has, however many
     const columns = read.reduce((most, { end }) => Math.max(most, end), 0);
     const unfitted = columns > MOST_COLUMNS ? `a table given no widths of more than ${MOST_COLUMNS} columns` : undefined;
-    // The lengths of the table, its rows and its cells, whose paragraphs have their own
-    const lengths = unknownLengthIn([
-        find(children, "w:tblPr"),
-        find(children, "w:tblGrid"),
-        ...rows.flatMap(({ element: row }) => {
-            const rowChildren = contentOf(row).filter(isObject);
-            return [
-                find(rowChildren, "w:trPr"),
-                ...unwrap(rowChildren)
-                    .filter((part) => "w:tc" in part)
-                    .map((cell) => find(contentOf(cell).filter(isObject), "w:tcPr")),
-            ];
-        }),
-    ]);
     // A table style's own row and cell properties apply to every row and cell, in a way not yet followed but for those Word
     // ignores and its cells' margins (TS5a, TS5b)
     const styleUnsupported = tableStyles.some(
@@ -3385,7 +3369,6 @@ const readTable = (element: XmlObject, reader: Reader): TableBlock | undefined =
         // 45 times past the page (`word-stops-long-words.docx` LW1h, LW1i, LW5a, LW5b, LW5f)
         ((givenWidth.share ?? 0) > 1 ? "a table whose width is a share of more than the width it is in" : undefined) ??
         styleUnsupported ??
-        lengths ??
         blocks.find((block) => block.unsupported !== undefined)?.unsupported;
     // With space between cells, Word keeps a table's width, its own or its first row's cells', laid out fixed or not, and
     // narrows its columns for the space (word-table-formats2.docx CS9, CS10, CS14)
@@ -4445,7 +4428,7 @@ const readSection = (
                     ? "a continuous section break after text that runs down the page, into text that doesn't"
                     : find(properties, "w15:footnoteColumns") !== undefined
                       ? "footnotes in columns of their own"
-                      : unknownLengthIn(element);
+                      : undefined;
     const headers = readReferences(properties, "w:headerReference", readPart);
     const footers = readReferences(properties, "w:footerReference", readPart);
     const section: Section = {
@@ -4580,7 +4563,7 @@ const readNumbering = (
     xml: XmlObject | undefined,
     styles: TextStyles,
     otherIds: ReadonlyMap<string, string>,
-): { readonly lists: ReadonlyMap<string, NumberingList>; readonly unsupported?: string } => {
+): { readonly lists: ReadonlyMap<string, NumberingList> } => {
     const root = childrenOf(xml?.["w:numbering"]);
     const read = new Map(
         root
@@ -4677,7 +4660,6 @@ const readNumbering = (
                 return list ? [[other, list] as const] : [];
             }),
         ]),
-        ...withoutUndefined({ unsupported: unknownLengthIn(xml) }),
     };
 };
 
@@ -5005,7 +4987,7 @@ const readSettings = (
                 [onOff(settings, "w:bookFoldPrinting") || onOff(settings, "w:bookFoldRevPrinting"), "pages printed as a folded booklet"],
                 [onOff(settings, "w:linkStyles"), "styles updated from the document's template when Word opens it"],
             ] as const
-        ).find(([applies]) => applies === true)?.[1] ?? unknownLengthIn(settings);
+        ).find(([applies]) => applies === true)?.[1];
     return {
         defaultTabStop: twips(attributesOf(find(settings, "w:defaultTabStop"))["w:val"]) ?? 36,
         evenAndOddHeaders: onOff(settings, "w:evenAndOddHeaders") === true,
@@ -5168,7 +5150,7 @@ export const readContent = (writtenBody: XmlObject, writtenParts: DocumentParts,
         endnotes: withBoundTextWritten(writtenParts.endnotes, stores),
     };
     const { styles } = parts;
-    const { lists: numbering, unsupported: inNumbering } = readNumbering(parts.numbering, styles, parts.otherListIds ?? new Map());
+    const { lists: numbering } = readNumbering(parts.numbering, styles, parts.otherListIds ?? new Map());
     const listIds = parts.otherListIds ?? new Map<string, string>();
     // The markers at fields, numbered across the body and its notes
     const markers: FieldMarkers = { count: 0, relative: new Map() };
@@ -5645,15 +5627,13 @@ export const readContent = (writtenBody: XmlObject, writtenParts: DocumentParts,
         ...(parts.fonts !== undefined && parts.fonts.length > 0 ? { fonts: parts.fonts } : {}),
         ...readSettings(parts.settings),
     };
-    // A length in the styles or lists stops the layout before anything, as any paragraph may be in them, and so do notes
-    // numbered or placed in a way not yet followed, as any paragraph may refer to them
+    // Notes numbered or placed in a way not yet followed stop the layout before anything, as any paragraph may refer to
+    // them
     return {
         ...documentContent,
         ...withoutUndefined({
             unsupported:
                 documentContent.unsupported ??
-                styles.unsupported ??
-                inNumbering ??
                 (footnotes.size > 0 ? notesUnsupported("footnote") : undefined) ??
                 (endnotes.length > 0 ? notesUnsupported("endnote") : undefined) ??
                 // Endnotes follow the last section's text, on its grid, where the sections from theirs on are all on one grid

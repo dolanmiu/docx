@@ -5366,12 +5366,12 @@ describe("readDocument", () => {
             expect(paragraphOf(withUnits).format).to.deep.include({ indentLeft: 36, indentRight: 18, firstLineIndent: -18 });
         });
 
-        it("should stop at a size in a unit other than points wherever it is, and read a negative fraction as Word does", () => {
-            const SIZE = "a size given in a unit other than points";
+        it("should read a size in any unit wherever it is, and a negative fraction, as Word does", () => {
             const ind = (left: string): object => pPr({ "w:ind": { _attr: { "w:left": left } } });
-            // Word ignores a size in centimeters where no style gives one, and draws one of whole half-points where a style
-            // does, so which decides isn't known
-            expect(paragraphOf(readBody([p(r(rPr(value("w:sz", "1cm")), t("Text")))])).unsupported).to.equal(SIZE);
+            // Word draws a size in centimeters at whole half-points, rounded down, with or without a style that gives a size
+            // (stops2/word-stops-text2.ts RF27f, RF27g)
+            const sized = paragraphOf(readBody([p(r(rPr(value("w:sz", "1cm")), t("Text")))]));
+            expect([sized.unsupported, sized.items]).to.deep.equal([undefined, [{ type: "text", text: "Text", font: { size: 28 } }]]);
             // The minus sign of a negative length is its whole number's only (word-stops-text.ts RF26, RF28)
             const negative = paragraphOf(readBody([p(ind("-1.5cm"), r(t("Text")))]));
             expect([negative.unsupported, negative.format.indentLeft]).to.deep.equal([
@@ -5383,15 +5383,14 @@ describe("readDocument", () => {
             expect(table({ "w:tblInd": { _attr: { "w:w": "-0.5mm", "w:type": "dxa" } } }).blocks[0].block.unsupported).to.equal(undefined);
             const section = readBody([{ "w:sectPr": [{ "w:pgMar": { _attr: { "w:top": "-2.5cm" } } }] }]).sections[0];
             expect(section.unsupported).to.equal(undefined);
-            // In the styles, lists and settings, it stops the document
-            expect(readBody([], { styles: { default: { document: { run: { size: "0.2in" } } } } }).unsupported).to.equal(SIZE);
+            // In the styles and lists too
+            expect(readBody([], { styles: { default: { document: { run: { size: "0.2in" } } } } }).unsupported).to.equal(undefined);
             expect(
                 readBody([], {
                     numbering: { config: [{ reference: "list", levels: [{ level: 0, text: "%1.", style: { run: { size: "1pc" } } }] }] },
                 }).unsupported,
-            ).to.equal(SIZE);
+            ).to.equal(undefined);
             expect(readBody([], { defaultTabStop: "-1.5cm" as unknown as number }).unsupported).to.equal(undefined);
-            expect(readBody([]).unsupported).to.equal(undefined);
         });
     });
 
