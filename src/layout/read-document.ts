@@ -1699,8 +1699,9 @@ const withEquations = (read: readonly LayoutItem[] | string, numbered: boolean, 
         if (alone && !numbered) {
             return reader.displayedMaths ?? equationItem(equation.displayed);
         }
-        if ((numbered || equation.paragraph) && typeof equation.inline !== "string" && !isAlike(equation)) {
-            return numbered
+        const afterNumber = alone && numbered;
+        if ((afterNumber || equation.paragraph) && typeof equation.inline !== "string" && !isAlike(equation)) {
+            return afterNumber
                 ? "an equation Word builds up alone in its paragraph after its list's number"
                 : "an equation Word builds up, displayed (`m:oMathPara`) beside text in its paragraph";
         }
