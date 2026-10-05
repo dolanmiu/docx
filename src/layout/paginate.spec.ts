@@ -6543,6 +6543,13 @@ describe("paginate", () => {
             // When the first gap takes the first line, a gap of 60 after it takes the second, with all of its room
             const firstTaken = gapped({ width: 40, height: 10, horizontal: { from: "margin", offset: 80 } }, { firstLineIndent: 25 });
             expect(stopOf([firstTaken], older)).to.equal(undefined);
+            // A hanging indent widens no gap: one of 80 right of a drawing, of centred text, is narrower than 94 however far
+            // the first line hangs
+            const hanging = gapped(
+                { width: 100, height: 10, horizontal: { from: "margin", offset: 0 } },
+                { firstLineIndent: -25, alignment: "center" },
+            );
+            expect(stopOf([hanging], older)).to.equal(reason);
         });
 
         it("should stop at a line beside a drawing on a grid that snaps to characters in columns of different widths", () => {

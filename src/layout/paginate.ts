@@ -3800,13 +3800,15 @@ export const paginate = (
             // words, and put text in wider ones as it does (see `OLDER_LEAST_GAP`). How narrow a gap they leave empty isn't
             // known. One the paragraph's indents leave no room in takes no text anyway, and one they narrow is as narrow as
             // the room they leave. The paragraph's first line goes in the first gap of its row its first line indent leaves
-            // room in, which is measured with the indent
+            // room in, which is measured with the indent, and a hanging indent widens no gap: where Word starts a first line
+            // that hangs past a drawing's edge hasn't been seen
             const indentOf = (offset: number): number => (offset > 0 ? Math.max(0, firstLineIndent) : 0);
             const firstLine =
                 line === 0 ? rooms.findIndex(({ inIndents: { start, end } }, offset) => end - start - indentOf(offset) > TOLERANCE) : -1;
-            const narrow = ({ span, inIndents: { start, end } }: (typeof rooms)[number], offset: number): boolean =>
-                end > start + TOLERANCE &&
-                narrowGap(span, end - start - (offset === firstLine ? indentOf(offset) : 0), within, around, block.format.alignment);
+            const narrow = ({ span, inIndents: { start, end } }: (typeof rooms)[number], offset: number): boolean => {
+                const width = end - Math.max(start, span.start - left) - (offset === firstLine ? indentOf(offset) : 0);
+                return end > start + TOLERANCE && narrowGap(span, width, within, around, block.format.alignment);
+            };
             if (compatibilityMode !== undefined && rooms.some(narrow)) {
                 stopAt(
                     "a line beside a drawing or frame in a gap narrower than Word was seen putting text in, in a document in compatibility mode",
