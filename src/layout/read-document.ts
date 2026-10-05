@@ -1894,8 +1894,9 @@ const unitsOf = ({ linePitch, characterSpace = 0, characterPitch }: TextGrid = {
  * A paragraph's formatting with its space in lines and its indents in characters in points, as Word takes them in place
  * of those in points when they aren't 0 (`word-paragraph-formats.docx` C7, C10, L2). A character is as wide as text is
  * tall: a first line or hanging indent's as the paragraph's first character, 2 of them 440 twips at 11 points and 800 at
- * 20, whatever the size of its mark or its other text (`word-watertight-text.docx` TX7a, TX7b, C5, C6, C12), and a left
- * indent's as its mark, 4 of them 880 beside 20-point text (C11). A hanging indent in characters puts the first line at
+ * 20, whatever the size of its mark or its other text (`word-watertight-text.docx` TX7a, TX7b, C5, C6, C12), a left
+ * indent's as its paragraph's style, 4 of them 880 beside 20-point text (C11) and beside a 16-point mark
+ * (scripts/layout-probes/stops2/word-stops-text.ts PB5b), and a right indent's as its mark (PB5c). A hanging indent in characters puts the first line at
  * the left indent and the other lines that much further in, and the left indent is in characters then, 0 when it isn't
  * given: 2 characters hanging put the first line at 0 and the others at 440, with a left indent of 1440 twips or none
  * (TX7c, C3, C9). It says why when Word's way with them isn't known.
@@ -1924,19 +1925,19 @@ const inPoints = (
         from.flatMap((item) =>
             (item.type === "text" && item.text.length > 0) || item.type === "pageReference" || item.type === "pageCount" ? [item.font] : [],
         );
-    // The first character's size, which first line and hanging indents are in, and the mark's, which left and right
-    // indents are in. Which of the mark's and its style's it is, and which the first character is of a list's number and
-    // its text, isn't known where they differ, nor whether a right indent is in the mark's or the text's
+    // The first character's size, which first line and hanging indents are in, the paragraph style's, which a left indent
+    // is in, 4 characters of 11 points beside a mark of 16 (scripts/layout-probes/stops2/word-stops-text.ts PB5b), and the
+    // mark's, which a right indent is in, 4 characters of 11 points beside text of 16 (PB5c). Which of the mark's and its
+    // style's a right indent is in where they differ, and which the first character is of a list's number and its text,
+    // isn't known
     const first = sizeOf(textOf(items)[0] ?? markFont);
     const mark = sizeOf(markFont);
+    const style = sizeOf(styleFont);
     if (firstLineChars !== 0 && textOf(listNumber).some((font) => sizeOf(font) !== first)) {
         return "an indent in characters in a list whose number is another size than its text";
     }
-    if ((leftChars !== 0 || indentRightChars !== 0) && mark !== sizeOf(styleFont)) {
-        return "an indent in characters left or right of a paragraph whose mark is another size than its style";
-    }
-    if (indentRightChars !== 0 && first !== mark) {
-        return "an indent in characters right of text of another size than its mark";
+    if (indentRightChars !== 0 && mark !== style) {
+        return "an indent in characters right of a paragraph whose mark is another size than its style";
     }
     const characters = (count: number, size: number): number => (count / HUNDREDTHS) * (characterPitch ?? size + characterSpace);
     const right = indentRightChars === 0 ? {} : { indentRight: characters(indentRightChars, mark) };
@@ -1947,17 +1948,20 @@ const inPoints = (
         return {
             ...spaced,
             ...right,
-            indentLeft: characters(leftChars, mark) - characters(firstLineChars, first),
+            indentLeft: characters(leftChars, style) - characters(firstLineChars, first),
             firstLineIndent: characters(firstLineChars, first),
         };
     }
-    if (leftChars !== 0 && firstLineChars === 0 && (format.firstLineIndent ?? 0) !== 0) {
-        return "an indent in characters left of a first line indent in twips";
+    // A first line indent in twips starts the first line that much further in from a left indent in characters, 720 twips
+    // from 4 characters of 11 points (PB5e). Whether a hanging indent in twips takes the first line out from one hasn't been
+    // seen
+    if (leftChars !== 0 && firstLineChars === 0 && (format.firstLineIndent ?? 0) < 0) {
+        return "an indent in characters left of a hanging indent in twips";
     }
     return {
         ...spaced,
         ...right,
-        ...(leftChars === 0 ? {} : { indentLeft: characters(leftChars, mark) }),
+        ...(leftChars === 0 ? {} : { indentLeft: characters(leftChars, style) }),
         ...(firstLineChars === 0 ? {} : { firstLineIndent: characters(firstLineChars, first) }),
     };
 };

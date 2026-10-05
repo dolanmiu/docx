@@ -1233,15 +1233,14 @@ describe("the height of a line of fonts and pictures of different heights", () =
         expect(twipsOf([word("a"), { type: "break", kind: "line", font: courier }, word("b")])[0]).to.be.closeTo(275.54, 0.02);
     });
 
-    it("should stop at a line of only pictures in a paragraph whose mark is larger than the pictures' runs, which Word hasn't shown", () => {
+    it("should not count a larger mark in a line of only pictures, single spaced, and stop at one with multiple spacing", () => {
         const larger = { font: "Calibri", size: 16 };
-        // The mark's line or the picture's
-        expect(linesOf([picture(12)], { markFont: larger })[0].unsupported).to.equal(
-            "a picture alone in a line of a paragraph whose mark is larger",
-        );
-        // The share of the mark's line or of the run's that the spacing adds
+        // As tall as the picture's run, not the mark (word-stops-text.ts PB8)
+        const [single] = linesOf([picture(12)], { markFont: larger });
+        expect([single.unsupported, single.height]).to.deep.equal([undefined, linesOf([picture(12)])[0].height]);
+        // The share of the mark's line or of the run's that the spacing adds hasn't been seen
         expect(linesOf([picture(30)], { ...multiple(1.5), markFont: larger })[0].unsupported).to.equal(
-            "a picture alone in a line of a paragraph whose mark is larger",
+            "a picture alone in a line of a paragraph whose mark is larger, with multiple line spacing",
         );
         // A picture taller than the mark's line, single spaced, is itself either way, and beside text the mark doesn't count
         expect(linesOf([picture(30)], { markFont: larger })[0].unsupported).to.equal(undefined);

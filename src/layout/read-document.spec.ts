@@ -386,20 +386,28 @@ describe("readDocument", () => {
             expect(indented({ "w:left": 720, "w:leftChars": 0 }, 22, big).format).to.deep.include({ indentLeft: 36 });
             expect(indented({ "w:firstLine": 720, "w:firstLineChars": 0 }, 22, big).format).to.deep.include({ firstLineIndent: 36 });
             expect(indented({ "w:startChars": 400 }, 22, big).format).to.deep.include({ indentLeft: 44 });
-            // Where Word's sizes aren't known
+            // A left indent in its style's size, though its mark is another (word-stops-text.ts PB5b), and a right indent in its
+            // mark's, though its text is another (PB5c)
             expect(indented({ "w:leftChars": 400 }, 22, big).unsupported).to.equal(undefined);
-            expect(indented({ "w:leftChars": 400 }, 40, big).unsupported).to.equal(
-                "an indent in characters left or right of a paragraph whose mark is another size than its style",
+            const markedLarger = indented({ "w:leftChars": 400 }, 40, big);
+            expect([markedLarger.unsupported, markedLarger.format.indentLeft]).to.deep.equal([undefined, 44]);
+            const rightOfLarger = indented({ "w:rightChars": 400 }, 22, big);
+            expect([rightOfLarger.unsupported, rightOfLarger.format.indentRight]).to.deep.equal([undefined, 44]);
+            // A first line indent in twips from a left indent in characters (PB5e)
+            expect(indented({ "w:leftChars": 400, "w:firstLine": 720 }, 22, big).format).to.deep.include({
+                indentLeft: 44,
+                firstLineIndent: 36,
+            });
+            // Where Word's sizes aren't known
+            expect(indented({ "w:rightChars": 400 }, 40, big).unsupported).to.equal(
+                "an indent in characters right of a paragraph whose mark is another size than its style",
             );
-            expect(indented({ "w:rightChars": 400 }, 22, big).unsupported).to.equal(
-                "an indent in characters right of text of another size than its mark",
+            expect(indented({ "w:leftChars": 400, "w:hanging": 720 }, 22, big).unsupported).to.equal(
+                "an indent in characters left of a hanging indent in twips",
             );
             expect(indented({ "w:leftChars": 0, "w:hangingChars": 200 }, 22, sized(22)).format).to.deep.include({ indentLeft: 22 });
             expect(indented({ "w:leftChars": 0, "w:left": 720, "w:hangingChars": 200 }, 22, big).unsupported).to.equal(
                 "an indent in characters hanging from a left indent in twips",
-            );
-            expect(indented({ "w:leftChars": 400, "w:firstLine": 360 }, 22, big).unsupported).to.equal(
-                "an indent in characters left of a first line indent in twips",
             );
             // Page numbers are the paragraph's text too, and text without a size is Word's default 10 points
             const fields = [

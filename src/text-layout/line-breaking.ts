@@ -1309,16 +1309,19 @@ export const layoutLines = (
     // (scripts/layout-probes/word-run-formatting.ts RF8d)
     const emptyLineFont: TextFont = { ...markFont, border: undefined };
     /**
-     * Whether a line of only pictures is in a paragraph whose mark has a taller line than the pictures' runs, so that how
-     * tall the line is depends on whether the mark counts. Word hasn't shown that: in its probes the pictures' runs were as
-     * large as the mark or larger (scripts/layout-probes/word-mixed-heights.ts MH3d, MH7), and beside text the mark doesn't
-     * count
+     * Whether a line of only pictures, with multiple line spacing, is in a paragraph whose mark has a taller line than the
+     * pictures' runs, so that how tall the line is depends on whether the mark counts. With single spacing it doesn't: a
+     * picture of 10 points in a run of 11 points makes a line of 13.45 points, as the run does, in a paragraph whose mark
+     * is 20 points (scripts/layout-probes/stops2/word-stops-text.ts PB8), and beside text it doesn't count either. With
+     * multiple spacing Word's probes had the pictures' runs as large as the mark or larger (scripts/layout-probes/word-mixed-heights.ts
+     * MH3d, MH7)
      */
     const markMatters = ({ ascent, tallest, picture }: Heights): boolean =>
         picture > 0 &&
         ascent === 0 &&
         markLineHeight() > tallest + TOLERANCE &&
-        (picture < markLineHeight() - TOLERANCE || (lineSpacing?.rule === "multiple" && lineSpacing.multiple !== 1));
+        lineSpacing?.rule === "multiple" &&
+        lineSpacing.multiple !== 1;
     /**
      * Whether a line of only a list number is as tall as the number, or as the paragraph's mark, where they differ, which
      * Word hasn't shown. The number is in the mark's formatting, but for what its list's level gives it
@@ -1498,7 +1501,7 @@ export const layoutLines = (
                 ? "a justified line that only fits squeezed at a four-per-em space, or at an en, em or ideographic space beside ordinary spaces"
                 : (state.unsupported ??
                   (markMatters(withNumber(heights))
-                      ? "a picture alone in a line of a paragraph whose mark is larger"
+                      ? "a picture alone in a line of a paragraph whose mark is larger, with multiple line spacing"
                       : unlikeMark(heights)
                         ? "a line of only a list number of another size or font than its paragraph's mark"
                         : unknownHeight));
