@@ -55,7 +55,8 @@
  * DV2d: a paragraph in a division in a division (w:divsChild)
  *
  * word-stops-fe-layout2.docx, with useFELayout on: Japanese prose with no Latin in it (FE2a), Japanese with Latin words in
- *   a paragraph with a right indent of 1000 (FE2b), and Chinese (FE2c), whose lines Word breaks otherwise than without it
+ *   a paragraph with a right indent of 1000 (FE2b), Chinese (FE2c), and FE1's Japanese with Latin words with both
+ *   autoSpaceDE and autoSpaceDN off (FE2d; FE1b had only autoSpaceDN off), whose lines Word breaks otherwise than without it
  *
  * Usage: npm run run-ts -- scripts/layout-probes/stops2/word-stops-compat2.ts [folder]
  */
@@ -453,6 +454,7 @@ await write({
 await write({
     name: "word-stops-fe-layout2",
     options: { compatibility: { useFELayout: true } },
+    injections: [injectIntoParagraph("FE2d", { pPr: '<w:autoSpaceDE w:val="0"/><w:autoSpaceDN w:val="0"/>' })],
     sections: [
         {
             properties: PAGE,
@@ -462,6 +464,18 @@ await write({
                     line(`FE2b ${"日本語の文章にLatin wordsと数字123を含む。".repeat(8)}`, { indent: { right: 1000 } }, MINCHO),
                 ]),
                 ...probe("FE2c", [line(`FE2c ${CHINESE.repeat(8)}`, {}, { font: { eastAsia: "SimSun", ascii: "SimSun" }, size: 21 })]),
+                // Both of the paragraph's East Asian auto spacings off, written in its properties in the schema's order
+                ...probe("FE2d", [
+                    new Paragraph({
+                        children: [
+                            new TextRun({
+                                text: `FE2d ${"日本語の文章にLatin wordsと数字123を含む。測量は夏に行われた。".repeat(6)}`,
+                                ...MINCHO,
+                            }),
+                            marker("FE2d"),
+                        ],
+                    }),
+                ]),
             ],
         },
     ],

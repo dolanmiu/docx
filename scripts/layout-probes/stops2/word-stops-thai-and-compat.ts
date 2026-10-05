@@ -30,7 +30,8 @@
  * word-stops-fe-layout.docx: `useFELayout` on. CP19b showed it spaces Latin letters apart from Japanese, and with its
  * group of East Asian settings (CP9) Latin lines changed too.
  *   FE1a to FE1f: Japanese prose in MS Mincho 10.5 with Latin words, numbers, and a word in Calibri between ideographs;
- *     with autoSpaceDE and autoSpaceDN off (b), and in a paragraph of Latin text only (c, Calibri 11 prose; d, Times New
+ *     with autoSpaceDN off (b: docx's `autoSpaceEastAsianText` writes only that, so autoSpaceDE is on, as Word saved it;
+ *     word-stops-compat2.ts FE2d has both off), and in a paragraph of Latin text only (c, Calibri 11 prose; d, Times New
  *     Roman 12; e, justified Calibri prose; f, Calibri prose with a tab)
  *
  * Usage: npm run run-ts -- scripts/layout-probes/stops2/word-stops-thai-and-compat.ts [folder]
