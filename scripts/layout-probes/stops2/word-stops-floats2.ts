@@ -433,15 +433,24 @@ await write({
     name: "word-stops-floats2",
     sections,
     injections: [
-        // CO1a: no w:horzAnchor; CO1b: no w:hAnchor
+        // CO1a: no w:horzAnchor
         (parts) => {
-            let text = parts.get("word/document.xml")!;
-            const tables = text.split("<w:tbl>");
+            const tables = parts.get("word/document.xml")!.split("<w:tbl>");
             const index = tables.findIndex((part) => part.includes(">CO1a row 1<"));
+            if (index === -1) {
+                throw new Error("CO1a's table isn't in the document");
+            }
             tables[index] = tables[index].replace(/ w:horzAnchor="[^"]*"/, "");
-            text = tables.join("<w:tbl>");
+            parts.set("word/document.xml", tables.join("<w:tbl>"));
+        },
+        // CO1b: no w:hAnchor
+        (parts) => {
+            const text = parts.get("word/document.xml")!;
             const at = text.indexOf(">CO1b frame<");
-            const start = text.lastIndexOf("<w:framePr", at);
+            const start = at === -1 ? -1 : text.lastIndexOf("<w:framePr", at);
+            if (start === -1) {
+                throw new Error("CO1b's frame isn't in the document");
+            }
             const end = text.indexOf("/>", start) + 2;
             parts.set(
                 "word/document.xml",
