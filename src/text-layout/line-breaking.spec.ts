@@ -2309,6 +2309,12 @@ describe("layoutLines on a document grid, as Word lays it out (scripts/layout-pr
         // Kerned across the words, between the space and the letter after it too
         const words = GR16e.split(/(?<= )/u).map((word): InlineItem => run(word, "Calibri", 11, { kerning: 1 }));
         expect(linesOf(words, { grid: { linePitch: 18, characterPitch: cell } })[0].textWidth / cell).to.be.closeTo(20, 1e-9);
+        // Across runs in the same font too, as when measured apart from the grid, but not after a soft hyphen's break
+        const fine = { grid: { linePitch: 18, characterPitch: 0.01 } };
+        const together = linesOf([run("AVAV", "Calibri", 11, { kerning: 1 })], fine)[0].textWidth;
+        const split = linesOf([run("AV", "Calibri", 11, { kerning: 1 }), run("AV", "Calibri", 11, { kerning: 1 })], fine)[0].textWidth;
+        expect(split).to.be.closeTo(together, 0.011);
+        expect(together).to.be.lessThan(linesOf([run("AVAV", "Calibri", 11)], fine)[0].textWidth - 0.1);
         // A space after an ideograph isn't kerned with it
         expect(
             linesOf([run("永 To", "Calibri", 11, { kerning: 1 })], { grid: { linePitch: 18, characterPitch: cell } })[0].unsupported,

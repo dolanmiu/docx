@@ -1506,8 +1506,14 @@ export const layoutLines = (
         // it needs kerned: "GR16e AVATAR Toyota WAVE Yo Te LT kerned text" in Calibri 11, kerned from a point, 20 cells of
         // 225.65, 4349.8 twips wide kerned, where 21 hold it as it is without (stops2/word-stops-east-asian2.ts GR16e)
         let lead = kern;
-        for (const { text, font } of pieces) {
-            let before: string | undefined;
+        // The letter before, which a letter is kerned with across pieces measured together, as `widthOf` measures them
+        let before: string | undefined;
+        let beforeFont: TextFont | undefined;
+        for (const { text, font, apart } of pieces) {
+            if (beforeFont === undefined || apart === true || !sameFont(beforeFont, font)) {
+                before = undefined;
+            }
+            beforeFont = font;
             for (const character of text) {
                 const characterWidth = measurer.measureWidth(character, font);
                 if (font.snapToGrid === false) {
