@@ -99,13 +99,35 @@ describe("fitColumns", () => {
         const sized = fitColumns(table([[cell(0, "a"), cell(1, LONG), cell(2, `${LONG} ${LONG}`)]]), 200, measure);
         expect(widthsOf(sized)).to.deep.equal([10, 65, 95]);
         // Columns can't be narrower than their widest words. With a width of its own in twips, the table then goes past it
-        // and the room (word-table-widths.docx TW14). Without, Word breaks a word in a way not yet followed (TW13)
+        // and the room (word-table-widths.docx TW14)
         expect(widthsOf(fitColumns(table([[cell(0, "aaaa"), cell(1, LONG)]], { width: 50 }), 50, measure))).to.deep.equal([40, 40]);
-        expect(fitColumns(table([[cell(0, "aaaa"), cell(1, LONG)]]), 50, measure).unsupported).to.equal(
-            "a word longer than its table can make room for",
-        );
+    });
+
+    it("should share the room among columns whose widest words don't fit in it, in proportion to their widest words, as Word does", () => {
+        // word-stops-long-words.docx LW1a to LW1l: words of 20 and 100 points, with margins of 10, in 70: their text has 50
+        const words = table([[cell(0, "aa"), cell(1, "aaaaaaaaaa")]]);
+        expect(widthsOf(fitColumns(words, 70, measure))).to.deep.equal([8.3, 41.7]);
+        // LW1j: a column's widest word counts, not its widest line
+        expect(widthsOf(fitColumns(table([[cell(0, "aa a a"), cell(1, "aaaaaaaaaa")]]), 70, measure))).to.deep.equal([8.3, 41.7]);
+        // word-table-widths.docx TW12: whatever widths the cells give the columns, and in a table of all the width
+        const given = { ...table([[cell(0, "aa", 60), cell(1, "aaaaaaaaaa", 60)]], { share: 1 }), fit: undefined, widen: { share: 1 } };
+        expect(widthsOf(fitColumns(given, 70, measure))).to.deep.equal([8.3, 41.7]);
+    });
+
+    it("should stop at words that don't fit in the room where how Word shares it isn't known", () => {
+        const reason = "a word longer than its table can make room for";
+        // A share of less than the width
+        expect(fitColumns(table([[cell(0, "aa"), cell(1, "aaaaaaaaaa")]], { share: 0.5 }), 140, measure).unsupported).to.equal(reason);
+        // A column's cells of different margins
+        const margins = table([
+            [cell(0, "aa"), cell(1, "aaaaaaaaaa")],
+            [{ ...cell(0, "a"), marginLeft: 0 }, cell(1, "a")],
+        ]);
+        expect(fitColumns(margins, 70, measure).unsupported).to.equal(reason);
+        // A cell across columns
+        expect(fitColumns(table([[across(0, 2, "aa")], [cell(0, "aa"), cell(1, "aaaaaaaaaa")]]), 70, measure).unsupported).to.equal(reason);
         // Sized as one with a width of its own, past the room, for a layout that guesses past it
-        expect(widthsOf(fitColumns(table([[cell(0, "aaaa"), cell(1, LONG)]]), 50, measure))).to.deep.equal([40, 40]);
+        expect(widthsOf(fitColumns(margins, 70, measure))).to.deep.equal([20, 100]);
     });
 
     it("should keep the widths cells give their columns when the room is short, and narrow the other columns", () => {
@@ -196,7 +218,7 @@ describe("fitColumns", () => {
         expect(widthsOf(fitColumns(long(0), 300, measure))).to.deep.equal([60, 140]);
     });
 
-    it("should narrow the columns of a table with space between its cells to keep its width, and stop at a long word in one", () => {
+    it("should narrow the columns of a table with space between its cells to keep its width, or widen them to it, for a long word too", () => {
         // word-table-formats2.docx CS9: each column's room for the space around it, as margins, is taken from the columns
         // toward their widest words, each by its share of what they give up
         const spaced = (first: string): TableBlock => ({
@@ -211,11 +233,14 @@ describe("fitColumns", () => {
             cellSpacing: 5,
         });
         expect(widthsOf(fitColumns(spaced("aaaa bb"), 300, measure))).to.deep.equal([84.6, 160.4]);
-        expect(fitColumns(spaced("aaaaaaaaaa"), 300, measure).unsupported).to.equal("a long word in a table with space between its cells");
+        // word-stops-long-words.docx LW3c, LW3d, LW3f, LW4a to LW4c: a column widened for a long word, and the other narrowed
+        // toward its widest word to keep the table's width
+        expect(widthsOf(fitColumns(spaced("aaaaaaaaaa"), 300, measure))).to.deep.equal([100, 145]);
+        // LW3a to LW3f: a table wider than its columns has them widened in proportion to fill it, their space between
+        // cells, 15 points beside each of these, aside
         const wider: TableBlock = { ...spaced("aaaa"), widen: { width: 400 } };
-        expect(fitColumns(wider, 500, measure).unsupported).to.equal("space between the cells of a table wider than its cells");
-        // Widened to the table's width as one without space between its cells, for a layout that guesses past it
-        expect(widthsOf(fitColumns(wider, 500, measure))).to.deep.equal([126.7, 238.3]);
+        expect(fitColumns(wider, 500, measure).unsupported).to.equal(undefined);
+        expect(widthsOf(fitColumns(wider, 500, measure))).to.deep.equal([125.2, 239.8]);
     });
 
     it("should stop at text that runs up or down a cell, in a table sized to its text, or with a word longer than its cell", () => {
@@ -290,19 +315,18 @@ describe("fitColumns", () => {
             expect(widthsOf(fitColumns(given(cells, { share: 0.5 }), 260, measure))).to.deep.equal([60, 50]);
         });
 
-        it("should keep columns as wide as their widest words past a table's own width and the room, and stop without one", () => {
+        it("should keep columns as wide as their widest words past a table's own width and the room, and share the room without one", () => {
             // Word's SP15a in word-watertight-stops.docx: in a table 9026 twips wide of cells of 3000 and 6026, a word of
             // 11950 kept the first column as wide as it, and the table went past the page. Here, a word of 70 points with its
             // margins, beside a column whose widest word is 30, in a table and a room of 90
             const cells = [[cell(0, "aaaaaa", 30), cell(1, "bb cc", 100)]];
             expect(widthsOf(fitColumns(given(cells, { width: 90 }), 90, measure))).to.deep.equal([60, 20]);
             // Word's L7 in word-long-words.docx: without a width of its own, a word longer than the page's text was broken
-            // across lines, and the other column narrowed past its widest word, to a width its words don't explain
-            expect(fitColumns(given(cells), 90, measure).unsupported).to.equal("a word longer than its table can make room for");
-            // Nor is it known for a table of a share of the width
-            expect(fitColumns(given(cells, { share: 1 }), 90, measure).unsupported).to.equal(
-                "a word longer than its table can make room for",
-            );
+            // across lines, and the other column narrowed past its widest word: their text has a share of the room in
+            // proportion to their widest words, 8337.6 and 676.8 twips for words of 10539 and 599 in 9014.4
+            expect(widthsOf(fitColumns(given(cells), 90, measure))).to.deep.equal([52.5, 17.5]);
+            // And with all of the width (word-table-widths.docx TW12)
+            expect(widthsOf(fitColumns(given(cells, { share: 1 }), 90, measure))).to.deep.equal([52.5, 17.5]);
         });
 
         it("should widen the columns in proportion to fill a table wider than its cells, after widening one for a long word", () => {
@@ -486,10 +510,17 @@ describe("fitColumns", () => {
                 fitColumns(table([[across(0, 2, "a".repeat(22))], [cell(0, "aaaa"), cell(1, "a a a a a a a a")]]), 400, measure)
                     .unsupported,
             ).to.equal(unsupported);
-            // A word with more text beside it
-            expect(
-                fitColumns(table([[across(0, 2, "aaaaaaaaaa b")], [cell(0, "a"), cell(1, "aa bb")]]), 300, measure).unsupported,
-            ).to.equal(unsupported);
+            // A word with more text beside it, where the columns are narrowed
+            const beside = table([[across(0, 2, "aaaaaaaaaa b")], [cell(0, "a"), cell(1, "aa bb")]]);
+            expect(fitColumns(beside, 100, measure).unsupported).to.equal(unsupported);
+        });
+
+        it("should widen columns for a word with more text beside it across them as for its line, as Word does", () => {
+            // word-stops-long-words.docx LW2a, LW2b: a word of 100 and a word beside it, across columns of 20 and 60: its line
+            // of 130 with its margins widens them in proportion to their widths, and the word fits in it
+            const beside = table([[across(0, 2, "aaaaaaaaaa b")], [cell(0, "a"), cell(1, "aa bb")]]);
+            expect(fitColumns(beside, 300, measure).unsupported).to.equal(undefined);
+            expect(widthsOf(fitColumns(beside, 300, measure), 1)).to.deep.equal([22.5, 87.5]);
         });
     });
 });
@@ -1094,14 +1125,16 @@ describe("the widths Word gave the columns of its probes' tables", () => {
             expect(second).to.be.closeTo(12167, 5);
         });
         // TW12 and TW13: in a table of 100%, or with no width of its own, Word broke the word, and narrowed the first column
-        // past its widest word, to 595, which its words don't explain
+        // past its widest word, to 595, its share of the room in proportion to its widest word (word-stops-long-words.docx)
         const broken = [
             given([long], { width: { size: 100, type: WidthType.PERCENTAGE }, columnWidths: [3000, 6026] }),
             given([long.map(({ text }) => ({ text }))], {}),
         ];
-        broken.forEach((written) =>
-            expect(fitColumns(read(written), ROOM, calibri).unsupported).to.equal("a word longer than its table can make room for"),
-        );
+        broken.forEach((written) => {
+            const sized = fitColumns(read(written), ROOM, calibri);
+            expect(sized.unsupported).to.equal(undefined);
+            expect(columnsOf(sized)[0]).to.be.closeTo(595, 5);
+        });
         // TW20 to TW22: a word across a column and a long line, narrowed to the page, which Word shared in a way not yet
         // followed, as U1m below
         [

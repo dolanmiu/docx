@@ -2457,10 +2457,15 @@ describe("readDocument", () => {
             expect(tableOf([ownWidth, fixed], [[1000], [2000]]).widen).to.deep.equal({ width: 200, fixed: true });
             expect(tableOf([ownWidth, fixed], [[1000], [3000]]).widen).to.equal(undefined);
             expect(tableOf([fixed], [[1000], [2000]]).widen).to.equal(undefined);
-            // With a share of the width, or space between its cells, how isn't known
+            // With space between its cells too (word-stops-long-words.docx LW5c), but not laid out fixed
+            const spacing = { "w:tblCellSpacing": { _attr: { "w:w": 20, "w:type": "dxa" } } };
+            expect(tableOf([ownWidth, spacing], ...uneven).widen).to.deep.equal({ width: 200, uneven: true });
+            expect(tableOf([ownWidth, spacing, fixed], ...uneven).unsupported).to.equal(unsupported);
+            // With a share of the width, how isn't known
             expect(tableOf([{ "w:tblW": { _attr: { "w:w": 5000, "w:type": "pct" } } }], ...uneven).unsupported).to.equal(unsupported);
-            expect(tableOf([ownWidth, { "w:tblCellSpacing": { _attr: { "w:w": 20, "w:type": "dxa" } } }], ...uneven).unsupported).to.equal(
-                unsupported,
+            // Nor a table of a share of more than the width it is in (word-stops-long-words.docx LW1h, LW1i, LW5a, LW5b, LW5f)
+            expect(tableOf([{ "w:tblW": { _attr: { "w:w": 250000, "w:type": "pct" } } }], [[1000], [2000]]).unsupported).to.equal(
+                "a table whose width is a share of more than the width it is in",
             );
             // Nor with a row that starts past the first column
             const skipping = readBody([
