@@ -16699,17 +16699,25 @@ EXTERNAL: "External" };
 		return partPageCountsOf(tree, body, sectionPageCounts);
 	};
 	/**
-	* Writes the estimated page numbers into the fields of a header or footer that show them, with the number of pages its
-	* SECTIONPAGES fields show, if it is known.
+	* Writes the estimated page numbers into the fields of a header, footer, footnote or endnote that show them, with the
+	* number of pages its SECTIONPAGES fields show, if it is known. A page reference with `\p` in a footnote or endnote
+	* (`notes`) writes "on page" and its bookmark's page, whatever page it is on, as Word writes it
+	* (`word-page-fields.docx` PF8f, PF8g)
 	*/
-	var fillPartFields = (tree, part, estimate, { blank, sectionPageCount }) => fillFields(tree, [part], [], {
-		resultOf: (instruction, place) => resultFrom(instruction, place, {
-			estimate,
-			sectionPageCount,
-			blank
-		}),
-		afterParagraph: () => void 0
-	});
+	var fillPartFields = (tree, part, estimate, { blank, sectionPageCount, notes = false }) => {
+		const onPage = (bookmark) => {
+			const page = estimate.bookmarks.get(bookmark);
+			return page === void 0 ? void 0 : `on page ${page}`;
+		};
+		fillFields(tree, [part], [], {
+			resultOf: (instruction, place) => resultFrom(instruction, place, _objectSpread2({
+				estimate,
+				sectionPageCount,
+				blank
+			}, notes ? { relativeTo: onPage } : {})),
+			afterParagraph: () => void 0
+		});
+	};
 	/** Writes the numbers of the SEQ fields of a document's body into them */
 	var fillSequenceFields = (tree, body, { beforeParagraph, resultOf }) => fillFields(tree, [body], [], {
 		resultOf: (instruction, { within }) => resultOf(instruction, within),
@@ -17409,9 +17417,11 @@ EXTERNAL: "External" };
 		const written = context.file && estimates.get(context.file);
 		if (!part || !written) return;
 		const sectionPageCount = referenceId === void 0 ? void 0 : written.partPageCounts.get(`rId${referenceId}`);
+		const notes = "w:footnotes" in part || "w:endnotes" in part;
 		fillPartFields(FORMATTED, part, written.estimate, {
 			blank: false,
-			sectionPageCount
+			sectionPageCount,
+			notes
 		});
 	};
 	//#endregion
