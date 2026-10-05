@@ -435,6 +435,18 @@ class NotesGrew extends Error {
     }
 }
 
+const BESIDE_NOTES = "a drawing that text flows around beside the footnotes at the bottom of its page";
+
+/**
+ * Thrown to lay out a table again from the next page or column, when its header rows would be alone at the foot of this
+ * one, with what was guessed at in moving them (`guesses`)
+ */
+class HeaderRowsAlone extends Error {
+    public constructor(public readonly guesses: readonly string[]) {
+        super();
+    }
+}
+
 /**
  * Thrown to lay out a page again when a drawing that text flows around is placed beside text that was placed before it
  * on the page, with the drawing on the page from its start
@@ -919,10 +931,14 @@ export const paginate = (
             !addsParagraphSpacing
                 ? Math.max(0, spaceBefore - ownSpace(before, "after", paragraph, inCell))
                 : spaceBefore;
+        // At a table cell's edges, it is compared with the paragraph next to it in the document's order, outside the cell,
+        // when it is read (`word-stops-text.docx` PB6)
+        const { leftOut } = paragraph;
         return {
             lines,
-            spaceBefore: contextual(paragraph, paragraph.hiddenBefore ?? before) ? 0 : shareBefore,
-            spaceAfter: contextual(paragraph, paragraph.hiddenAfter ?? after) ? 0 : ownSpace(paragraph, "after", after, inCell),
+            spaceBefore: leftOut?.before || contextual(paragraph, paragraph.hiddenBefore ?? before) ? 0 : shareBefore,
+            spaceAfter:
+                leftOut?.after || contextual(paragraph, paragraph.hiddenAfter ?? after) ? 0 : ownSpace(paragraph, "after", after, inCell),
             // The top border is above the first paragraph of a box, and a between border above each of the others, and
             // they stay above it at the top of a page, where the box goes on with no border otherwise. A between border
             // leaves its space below each paragraph of the box but the last, so 15 twips of it 20 from the text are 55
@@ -1046,13 +1062,14 @@ export const paginate = (
     /**
      * How tall a cell's text makes its row. Text that runs up or down a cell makes it as tall as a line of its paragraph
      * mark, whatever its size, as Word breaks the text into lines as long as the row is tall (`word-watertight-tables.docx`
-     * TB6, `word-table-formats.docx` VT1, `word-table-formats2.docx` VT5 to VT7)
+     * TB6, `word-table-formats.docx` VT1, `word-table-formats2.docx` VT5 to VT7). Guessing, one with a table in it is as
+     * tall as a line of its first paragraph's mark, as a cell ends with a paragraph
      */
     const contentHeight = (cell: TableCell): number => {
         if (!cell.vertical) {
             return stackHeight(blocksWithRoom(cell), cell.width, true);
         }
-        const [first] = cell.blocks as readonly ParagraphBlock[];
+        const first = cell.blocks.find((block): block is ParagraphBlock => block.type === "paragraph")!;
         return linesHeight(measureParagraph({ ...first, items: [] }, cell.width, undefined, undefined, true).lines);
     };
 
@@ -1588,7 +1605,13 @@ export const paginate = (
         pageNotes = [];
         notesInColumns = undefined;
         filledEnd = 0;
-        drawings = withPinned([]);
+        drawings = [
+            ...withPinned([]),
+            ...headerDrawings(current, first, {
+                headers: { top: current.header, bottom: headerBottom },
+                footers: { top: current.pageHeight - footerTop, bottom: current.pageHeight - current.footer },
+            }),
+        ];
         anchored = [];
         continued = carried;
         carried = undefined;
@@ -1598,6 +1621,11 @@ export const paginate = (
         }
         noteArea = Math.max(areaOf([], undefined, continued), reserved());
         notesSection = sectionIndex;
+        if (noteArea > 0 && drawings.some(({ keepOut }) => keepOut.bottom > linesBottom() + TOLERANCE)) {
+            // A header's or footer's drawing beside the rest of a footnote continued from the page before, which Word may lay
+            // out round it. Guessing, as if it were above it
+            stopAt(BESIDE_NOTES);
+        }
         if (continued !== undefined && noteArea > bottom - top + TOLERANCE) {
             // The rest of the footnote is longer than the page, so the page is all footnote, as much of it as fits, and the
             // rest continues on the next page. The text goes on above its last part, on the page it ends on
@@ -2515,7 +2543,7 @@ export const paginate = (
             return;
         }
         if (drawings.some(({ keepOut }) => keepOut.bottom > linesBottom(moreNoteRoom(notes)) + TOLERANCE)) {
-            throw new Unsupported("a drawing that text flows around beside the footnotes at the bottom of its page");
+            throw new Unsupported(BESIDE_NOTES);
         }
         if (position + below <= linesBottom(moreNoteRoom(notes)) + TOLERANCE) {
             addNotes(notes);
@@ -2586,6 +2614,60 @@ export const paginate = (
             ? []
             : columns.map((width) => heightToFit(linesToBreak(linesOf(block, width), 0)) > pageBottom - top + TOLERANCE);
     };
+
+    /**
+     * The drawings that text flows around in the header and footer a page shows, placed on it, which the body's text goes
+     * round as round its own, as Word has it (`word-watertight-pages.docx` PG4, `word-stops-drawings.docx` DH1a to DH1d,
+     * `word-vml.docx` VM13). Those placed against the column are placed against the text across the page, which a header is
+     * in. It stops where Word's way with them isn't known, and guessing, leaves them out: on a page of text that runs down
+     * it, against a column of a section of several, beside the header's or footer's own text (`textOf`, from its top to
+     * its bottom), which may go round it, and beside a footnote continued from the page before
+     */
+    const headerDrawings = (
+        current: Section,
+        first: boolean,
+        textOf: Readonly<Record<"headers" | "footers", { readonly top: number; readonly bottom: number }>>,
+    ): readonly PlacedDrawing[] =>
+        (["headers", "footers"] as const).flatMap((parts) => {
+            const kind = kindOf(current[parts], first);
+            const part = kind === undefined ? [] : current[parts][kind]!;
+            return part.flatMap((block, index) =>
+                block.type === "table"
+                    ? []
+                    : block.items.flatMap((item, at): readonly PlacedDrawing[] => {
+                          if (item.type !== "drawing") {
+                              return [];
+                          }
+                          const { drawing } = item;
+                          const left = columnLeft(current, 0);
+                          const where = placeDrawing(drawing, {
+                              section: current,
+                              oddPage: pageNumber % 2 === 1,
+                              column: { start: left, end: left + textWidth(current) },
+                              paragraph: 0,
+                              line: { top: 0, height: 0 },
+                              character: 0,
+                          });
+                          const keepOut = typeof where === "string" ? undefined : keepOutOf(drawing, where);
+                          const text = textOf[parts];
+                          const reason =
+                              typeof where === "string"
+                                  ? where
+                                  : current.textRunsDown !== undefined
+                                    ? "a drawing that text flows around in a header or footer of text that runs down the page"
+                                    : drawing.horizontal.from === "column" && current.columns.length > 1
+                                      ? "a drawing that text flows around in a header or footer, placed against a column of several"
+                                      : overlap(keepOut!, { left, right: left + textWidth(current), ...text })
+                                        ? "a drawing that text flows around in a header or footer, beside its text"
+                                        : undefined;
+                          if (reason !== undefined || typeof where === "string") {
+                              stopAt(reason!);
+                              return [];
+                          }
+                          return [{ drawing, box: where, keepOut: keepOut!, anchor: `${parts} ${kind} ${index} ${at}` }];
+                      }),
+            );
+        });
 
     /** The drawings placed from the top of the page and those on it, once each */
     const withPinned = (onPage: readonly PlacedDrawing[]): readonly PlacedDrawing[] =>
@@ -2816,7 +2898,7 @@ export const paginate = (
                 throw new DrawingAbove(drawing);
             }
             if (noteArea > 0 && keepOut.bottom > linesBottom() + TOLERANCE) {
-                throw new Unsupported("a drawing that text flows around beside the footnotes at the bottom of its page");
+                throw new Unsupported(BESIDE_NOTES);
             }
         }
         drawings = [
@@ -3861,7 +3943,29 @@ export const paginate = (
         }
     };
 
-    const placeTable = (block: TableBlock): void => {
+    /**
+     * Places a table, with as much of it on each page as fits there. Word doesn't leave a table's header rows alone at the
+     * foot of a page or column: when none of the row after them goes there, as it is of a set height or kept with the next,
+     * they go on to the next page with it (`word-stops-floats.docx` HR1a, HR1d, and the `tables-across-pages` demo), and
+     * where it can break, as many of its lines as fit go there with them (HR1c, HR1e to HR1g)
+     */
+    const placeTable = (block: TableBlock, onNextPage = false): void => {
+        const start = snapshot(blockIndex);
+        try {
+            layOutTable(block, onNextPage);
+        } catch (error) {
+            if (!(error instanceof HeaderRowsAlone)) {
+                throw error;
+            }
+            unmarkSince(start.marks);
+            restore(start);
+            // What was guessed at in moving the header rows is still guessed at, but not what was in laying the table out here
+            error.guesses.forEach((reason) => stopAt(reason));
+            placeTable(block, true);
+        }
+    };
+
+    const layOutTable = (block: TableBlock, onNextPage: boolean): void => {
         const width = columnsSection().columns[column];
         const table = sizedToPlace(block, width);
         const merges = mergesOf(table);
@@ -3872,6 +3976,16 @@ export const paginate = (
         position += spaceAfter;
         spaceAfter = 0;
         placeBesideDrawings(table, heights);
+        // Where the table starts: below what is in the column, its header rows can go on to the next column with its first
+        // row
+        const below = !onNextPage && placedInColumn && headerRows > 0 ? { page: pageCount, column, placed: placements.length } : undefined;
+        /** Whether only the table's header rows are in the column, below what is above them */
+        const headersAlone = (index: number): boolean =>
+            below !== undefined &&
+            index >= headerRows &&
+            below.page === pageCount &&
+            below.column === column &&
+            placements.slice(below.placed).every((placement) => placement.type !== "row" || placement.row.index < headerRows);
         // A new column or page for the table, with its header rows repeated at the top, unless the row going on it is one
         // of them. Word and LibreOffice repeat them at the top of each column, as of each page (`word-rules2.docx` Q4). A
         // table sized to its text keeps the widths it was sized to in the column it starts in, in each column it goes on
@@ -3879,6 +3993,19 @@ export const paginate = (
         // (`word-column-widths.docx` R5 and R6), and in a narrower one, past whose edge it goes, with its rows as tall as
         // they were (`word-watertight-stops.docx` SP16)
         const startTablePage = (index: number): void => {
+            if (headersAlone(index)) {
+                const before = blocks[blockIndex - 1];
+                const guesses = [
+                    // Whether Word moves a paragraph kept with the next with them hasn't been seen. Guessing, it stays
+                    ...(before?.section === blocks[blockIndex].section && before.block.type === "paragraph" && before.block.format.keepNext
+                        ? ["a paragraph kept with the next before a table whose header rows go on to the next page"]
+                        : []),
+                    // Whether Word moves them to the next column, as to the next page, hasn't been seen. Guessing, it does
+                    ...(columnsSection().columns.length > 1 ? ["a table's header rows alone at the foot of a column"] : []),
+                ];
+                guesses.forEach((reason) => stopAt(reason));
+                throw new HeaderRowsAlone(guesses);
+            }
             nextColumn();
             if (index >= headerRows) {
                 heights.slice(0, Math.max(0, headerRows)).reduce((y, rowHeight, row) => {
@@ -3974,6 +4101,9 @@ export const paginate = (
         // there too, whether the table breaks between rows or in one (`word-line-heights.docx` T1 and T4)
         const bottomBorder = table.rows[table.rows.length - 1]?.borderBottom ?? 0;
         openMerges = [];
+        if (onNextPage) {
+            startTablePage(0);
+        }
         for (const [index, row] of table.rows.entries()) {
             openMerges = [
                 ...openMerges,
@@ -3998,7 +4128,9 @@ export const paginate = (
             const holding = held.length > 0 && heldLines !== undefined && index < heldLines;
             const notes = [...(holding && index === heldLines! - 1 ? held : []), ...notesIn(markers)];
             const keptWhole = holding || row.cantSplit || row.height?.rule === "exact";
-            if (table.cellSpacing !== undefined && row.breakBorder === undefined && !rowFits(roomNeeded, notes)) {
+            // Unless its header rows go on to the next page with it, so it doesn't break here
+            const movesWhole = keptWhole && !rowStays(roomNeeded, notes) && headersAlone(index);
+            if (table.cellSpacing !== undefined && row.breakBorder === undefined && !rowFits(roomNeeded, notes) && !movesWhole) {
                 // What Word draws where a table with space between its cells and borders breaks across pages isn't known.
                 // Guessing, nothing more
                 stopAt("a table with space between its cells and borders across pages");
@@ -4418,6 +4550,18 @@ export const paginate = (
         pinned.set(pageCount, [...(pinned.get(pageCount) ?? []).filter(({ anchor }) => anchor !== drawing.anchor), drawing]);
     };
 
+    /** Takes back the bookmarks and fields placed since some were, to place them again as what is after them is laid out again */
+    const unmarkSince = (marks: number): void => {
+        for (const [name, { order }] of places) {
+            if (order >= marks) {
+                // eslint-disable-next-line functional/immutable-data
+                places.delete(name);
+                // eslint-disable-next-line functional/immutable-data
+                bookmarks.delete(name);
+            }
+        }
+    };
+
     /** Lays out the blocks from one (`from`) to the one before another (`to`), starting their sections */
     const placeBlocks = (from: number, to: number): void => {
         for (let index = from; index < to; index++) {
@@ -4449,14 +4593,7 @@ export const paginate = (
                         movedOn.set(pageCount, error.moved);
                     }
                     // The bookmarks placed since are placed again, as a reference can move on to the next page
-                    for (const [name, { order }] of places) {
-                        if (order >= columnsStart!.marks) {
-                            // eslint-disable-next-line functional/immutable-data
-                            places.delete(name);
-                            // eslint-disable-next-line functional/immutable-data
-                            bookmarks.delete(name);
-                        }
-                    }
+                    unmarkSince(columnsStart!.marks);
                 }
                 restore(columnsStart!);
                 index = columnsStart!.index - 1;

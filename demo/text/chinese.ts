@@ -13,12 +13,8 @@ const doc = new Document({
         default: {
             document: {
                 run: {
-                    font: {
-                        ascii: "minorHAnsi",
-                        eastAsia: "minorEastAsia",
-                        cs: "minorBidi",
-                        hAnsi: "minorHAnsi",
-                    },
+                    // The theme's font for body text, in each character set: its minor fonts
+                    font: { theme: "body" },
                 },
             },
         },
@@ -30,12 +26,7 @@ const doc = new Document({
                 next: "Normal",
                 quickFormat: true,
                 run: {
-                    font: {
-                        ascii: "minorHAnsi", // Can also use minorHAnsi
-                        eastAsia: "minorEastAsia", // Can also use minorEastAsia
-                        cs: "minorBidi",
-                        hAnsi: "minorHAnsi",
-                    },
+                    font: { theme: "body" },
                 },
             },
         ],

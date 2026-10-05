@@ -210,6 +210,11 @@ export type ParagraphBlock = {
      */
     readonly hiddenBefore?: ParagraphBlock;
     readonly hiddenAfter?: ParagraphBlock;
+    /**
+     * Its space before, at the top of a table cell, and after, at its bottom, when Word leaves it out for contextual
+     * spacing with the paragraph next to it in the document's order, outside the cell (see `withCellEdges`)
+     */
+    readonly leftOut?: { readonly before?: boolean; readonly after?: boolean };
     readonly style?: string;
     /**
      * When its style is one of Word's headings ("heading 1" to "heading 9"), the heading's level, and its number as the
@@ -910,6 +915,22 @@ const tabStopsOf = (formats: readonly ParagraphFormat[]): readonly TabStop[] =>
         .reduce<readonly TabStopSetting[]>((stops, { tabs }) => addTabs(stops, tabs), [])
         .filter((stop): stop is TabStop => stop.alignment !== "bar" && stop.alignment !== "clear");
 
+const IN_CELL_OR_NOTE = "a drawing that text flows around in a table cell, footnote, endnote or text box";
+
+/**
+ * A drawing that text flows around, in a header or footer as in the body: one in a header or footer is on each page that
+ * shows it, and the body's text goes round it, as round one of its own (`word-watertight-pages.docx` PG4,
+ * `word-stops-drawings.docx` DH1a to DH1d, `word-vml.docx` VM13). Or why it can't be laid out: one placed against its
+ * paragraph or line in a header or footer, whose place on the page hasn't been seen, nor what the header's own text does
+ * beside it
+ */
+const floatingItem = (floating: FloatingDrawing, reader: Reader): readonly LayoutItem[] | string => {
+    const { horizontal, vertical } = floating;
+    return reader.inHeader && (vertical.from === "paragraph" || vertical.from === "line" || horizontal.from === "character")
+        ? "a drawing that text flows around in a header or footer, placed against its paragraph or line"
+        : [{ type: "drawing", drawing: floating }];
+};
+
 /**
  * Reads a drawing in a run (`w:drawing`): a picture in the line is a box, with its run's font, and one that text doesn't
  * flow around, such as one behind the text, takes up no room.
@@ -934,14 +955,14 @@ const readDrawing = (element: XmlObject, font: TextFont, reader: Reader): readon
     }
     const anchor = childrenOf(drawing["wp:anchor"]);
     const flowsAround = !anchor.some((child) => "wp:wrapNone" in child);
-    if (!flowsAround || reader.inHeader) {
+    if (!flowsAround) {
         return [];
     }
     if (reader.inCell || reader.inNote || reader.inTextBox) {
-        return "a drawing that text flows around in a table cell, footnote, endnote or text box";
+        return IN_CELL_OR_NOTE;
     }
     const floating = readFloating(drawing["wp:anchor"]);
-    return typeof floating === "string" ? floating : [{ type: "drawing", drawing: floating }];
+    return typeof floating === "string" ? floating : floatingItem(floating, reader);
 };
 
 /**
@@ -949,11 +970,11 @@ const readDrawing = (element: XmlObject, font: TextFont, reader: Reader): readon
  * its size, with its run's font, standing on the baseline, as a picture is (VM7), and a text box in it is a box sized to
  * its text (VM1 to VM5). One placed on the page (`position:absolute`) that text flows around (`w10:wrap`) is a drawing
  * that text flows around, as a DrawingML one is (VM9 to VM11, VM15), and one with no wrapping is in front of the text or
- * behind it, and takes no room (VM6), in a header or footer too, as docx's watermarks are. It says why where Word's way
- * with it isn't known: a picture, which Word drew at a size other than its own (VM8), a shape with an outline, which
- * takes room around it (VM1), tight or through wrapping, which Word doesn't wrap as square wrapping (VM14), one in a
- * header or footer that text flows around, which the body's text goes round too (VM13), and one in a header's line, whose
- * room there doesn't follow the body's (VM12).
+ * behind it, and takes no room (VM6), in a header or footer too, as docx's watermarks are. One in a header or footer that
+ * text flows around is one the body's text goes round (VM13), as a DrawingML one is. It says why where Word's way with it
+ * isn't known: a picture, which Word drew at a size other than its own (VM8), a shape with an outline, which takes room
+ * around it (VM1), tight or through wrapping, which Word doesn't wrap as square wrapping (VM14), and one in a header's
+ * line, whose room there doesn't follow the body's (VM12).
  */
 const readVml = (pict: unknown, font: TextFont, reader: Reader): readonly LayoutItem[] | string => {
     const shape = vmlShapeOf(pict);
@@ -972,24 +993,23 @@ const readVml = (pict: unknown, font: TextFont, reader: Reader): readonly Layout
         if (wrap === undefined || attributesOf(wrap).type === "none") {
             return [];
         }
-        const reason = reader.inHeader
-            ? "a VML drawing that text flows around in a header or footer"
-            : reader.inCell || reader.inNote || reader.inTextBox
-              ? "a drawing that text flows around in a table cell, footnote, endnote or text box"
-              : shape.text !== undefined
-                ? "a text box that text flows around"
-                : find(children, "v:imagedata") !== undefined
-                  ? "a VML picture"
-                  : outlined
-                    ? "a VML drawing with an outline that text flows around"
-                    : typeof width !== "number" || typeof height !== "number"
-                      ? unsized()
-                      : undefined;
+        const reason =
+            reader.inCell || reader.inNote || reader.inTextBox
+                ? IN_CELL_OR_NOTE
+                : shape.text !== undefined
+                  ? "a text box that text flows around"
+                  : find(children, "v:imagedata") !== undefined
+                    ? "a VML picture"
+                    : outlined
+                      ? "a VML drawing with an outline that text flows around"
+                      : typeof width !== "number" || typeof height !== "number"
+                        ? unsized()
+                        : undefined;
         if (reason !== undefined) {
             return reason;
         }
         const floating = readVmlFloating(shape, wrap as XmlObject, width as number, height as number);
-        return typeof floating === "string" ? floating : [{ type: "drawing", drawing: floating }];
+        return typeof floating === "string" ? floating : floatingItem(floating, reader);
     }
     // Guessing, a shape in the line of a size Word's way with isn't known takes that size
     const sized = (reason: string): readonly LayoutItem[] | string =>
@@ -3324,7 +3344,7 @@ const readBlocks = (elements: readonly unknown[], reader: Reader, tableFormats?:
             hidden = [];
         }
     }
-    return blocks;
+    return withCellEdges(blocks, reader);
 };
 
 /**
@@ -3487,6 +3507,97 @@ const afterHidden = (block: Block, hidden: readonly ParagraphBlock[], before: Bl
         ...(split && block.unsupported === undefined ? { unsupported: "a box of borders around a hidden paragraph without them" } : {}),
     };
 };
+
+// What is next to a paragraph at a table cell's edge in the document's order, when that isn't known
+const UNKNOWN_NEXT = Symbol("unknown");
+// Nothing next to it, at the start of the document, a header or a note
+const NOTHING_NEXT = Symbol("nothing");
+type NextToCell = { readonly style?: string } | typeof UNKNOWN_NEXT | typeof NOTHING_NEXT;
+
+/** What is next to the first or last block of some blocks: a paragraph of its style, or what isn't known, for a table */
+const endOf = (blocks: readonly Block[], end: "first" | "last"): NextToCell => {
+    const block = end === "first" ? blocks[0] : blocks[blocks.length - 1];
+    return block?.type === "paragraph" ? { style: block.style } : UNKNOWN_NEXT;
+};
+
+const CONTEXTUAL_EDGE = "contextual spacing at the edge of a table cell beside another cell or row, or a table's paragraphs";
+
+/**
+ * A stack of blocks with the space Word leaves out at the edges of its tables' cells for contextual spacing. Word compares
+ * a paragraph at a cell's edge with the paragraph next to it in the document's order: the first cell's first paragraph
+ * with the paragraph before the table, and each row's last paragraph with the end of the row, which is a paragraph in the
+ * default paragraph style. So Normal paragraphs with contextual spacing in a cell between Normal paragraphs have neither
+ * the first's space before nor the last's space after, and in a style of their own keep both; between paragraphs of
+ * another style, the first keeps its space before, and the last still leaves out its space after
+ * (`word-stops-text.docx` PB6a to PB6e, `word-compat-settings.docx` CP11). The other edges haven't been seen: the tops of
+ * cells after the first, the bottoms of cells before the last of a row, and the paragraphs around a table, whose space
+ * Word would leave out if it compared them in the document's order too. The layout stops where it would, and guessing,
+ * leaves it out in a cell, and keeps it beside a table
+ */
+const withCellEdges = (stack: readonly Block[], reader: Reader): readonly Block[] =>
+    stack.map((block, index) => {
+        if (block.type !== "table") {
+            return block;
+        }
+        const before = stack[index - 1];
+        const after = stack[index + 1];
+        const rowEnd = { style: reader.styles.defaultParagraphStyle };
+        let unseen = false;
+        /** Whether a paragraph's space on one side is left out, next to what is there, and whether that was seen */
+        const leavesOut = (paragraph: Block | undefined, side: "before" | "after", next: NextToCell, seen: boolean): boolean => {
+            if (paragraph?.type !== "paragraph" || paragraph.format.contextualSpacing !== true || next === NOTHING_NEXT) {
+                return false;
+            }
+            const { spaceBefore = 0, spaceAfter = 0, autoSpaceBefore, autoSpaceAfter } = paragraph.format;
+            const space = side === "before" ? spaceBefore > 0 || autoSpaceBefore === true : spaceAfter > 0 || autoSpaceAfter === true;
+            const same = next !== UNKNOWN_NEXT && next.style === paragraph.style;
+            unseen ||= space && !seen && (same || next === UNKNOWN_NEXT);
+            return space && same;
+        };
+        // Above the first cell, the paragraph before the table, or, after another table, the end of its last row. Nothing
+        // is above one at the start of the document, a header or a note, but what is above one at the start of a cell isn't
+        // known, nor which of the paragraphs left out before it, which take no room, Word compares it with
+        const above: NextToCell =
+            before === undefined
+                ? reader.inCell
+                    ? UNKNOWN_NEXT
+                    : NOTHING_NEXT
+                : before.type === "table"
+                  ? rowEnd
+                  : before.hiddenAfter === undefined
+                    ? { style: before.style }
+                    : UNKNOWN_NEXT;
+        const rows = block.rows.map((row, rowIndex) => ({
+            ...row,
+            cells: row.cells.map((cell, cellIndex) => {
+                const first = rowIndex === 0 && cellIndex === 0;
+                const end = cellIndex === row.cells.length - 1;
+                const nextAbove = cellIndex > 0 ? endOf(row.cells[cellIndex - 1].blocks, "last") : first ? above : rowEnd;
+                const nextBelow = end ? rowEnd : endOf(row.cells[cellIndex + 1].blocks, "first");
+                const leftOut = {
+                    before: leavesOut(cell.blocks[0], "before", nextAbove, first && above !== UNKNOWN_NEXT && before?.type !== "table"),
+                    after: leavesOut(cell.blocks[cell.blocks.length - 1], "after", nextBelow, end),
+                };
+                if (!leftOut.before && !leftOut.after) {
+                    return cell;
+                }
+                const last = cell.blocks.length - 1;
+                const blocks = cell.blocks.map((one, at) => {
+                    const own = {
+                        ...(at === 0 && leftOut.before ? { before: true } : {}),
+                        ...(at === last && leftOut.after ? { after: true } : {}),
+                    };
+                    return one.type === "paragraph" && Object.keys(own).length > 0 ? { ...one, leftOut: own } : one;
+                });
+                return { ...cell, blocks };
+            }),
+        }));
+        // The paragraphs around the table, which Word may compare with its first paragraph and the end of its last row
+        leavesOut(before, "after", endOf(block.rows[0]?.cells[0]?.blocks ?? [], "first"), false);
+        leavesOut(after, "before", rowEnd, false);
+        const unsupported = block.unsupported ?? (unseen ? CONTEXTUAL_EDGE : undefined);
+        return { ...block, rows, ...withoutUndefined({ unsupported }) };
+    });
 
 /** The headers or footers a section refers to, by the pages they are on */
 const readReferences = (
@@ -4445,6 +4556,12 @@ export const readContent = (body: XmlObject, parts: DocumentParts, { guess = fal
     }
     // eslint-disable-next-line functional/immutable-data
     blocks.splice(0, blocks.length, ...anchorFrames(blocks, (entry, block) => ({ ...entry, block })));
+    const edged = withCellEdges(
+        blocks.map(({ block }) => block),
+        reader,
+    );
+    // eslint-disable-next-line functional/immutable-data
+    blocks.splice(0, blocks.length, ...blocks.map((entry, index) => ({ ...entry, block: edged[index] })));
     // The bookmarks of paragraphs left out at the end of the document, which take no room after its last line
     // (`word-hidden-paragraphs.docx` HP8), start where its text ends
     const final = blocks[blocks.length - 1];
