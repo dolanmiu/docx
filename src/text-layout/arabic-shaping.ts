@@ -109,7 +109,7 @@ export const isJoinedLetter = (character: string): boolean => character === TATW
 export const joinedWidthsOf = (characters: readonly string[], face: ArabicFace): ReadonlyMap<number, number> => {
     const joinings = characters.map(joiningOf);
     /** The next character's index from one, either way, that isn't a mark */
-    const neighbour = (index: number, step: 1 | -1): number => {
+    const nextLetter = (index: number, step: 1 | -1): number => {
         let at = index + step;
         while (joinings[at] === "T") {
             at += step;
@@ -127,8 +127,8 @@ export const joinedWidthsOf = (characters: readonly string[], face: ArabicFace):
             continue;
         }
         const joining = joinings[index];
-        const before = joinings[neighbour(index, -1)];
-        const after = neighbour(index, 1);
+        const before = joinings[nextLetter(index, -1)];
+        const after = nextLetter(index, 1);
         const joinsBefore = (joining === "D" || joining === "R") && (before === "D" || before === "C");
         const next = characters[after];
         const alef = next === undefined ? -1 : LAM_ALEFS.indexOf(next);

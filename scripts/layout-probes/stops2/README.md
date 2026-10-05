@@ -98,8 +98,11 @@ that snaps to characters (GR14), the cases around GR3, GR5, GR7, GR8 and GR10 on
 direction sends endnotes to the end of their own section (GR15), and the strict rules and compression in text in Japanese
 (EA4). Its PDFs, from the final batch, round 25, showed what the table says, and that a change of direction, but not of
 grid, ends endnotes with their own section (GR15b), which isn't followed yet. `word-stops-east-asian3.ts` has what they
-left open, for a later batch: each character the strict rules may keep from the start of a line, in Japanese, Chinese and
-Korean (EA5), and compressed punctuation justified and in other fonts (EA6). `word-stops-arabic.ts` has the widths of
+and `word-stops-arabic.ts` left open, for a later batch: each character the strict rules may keep from the start of a
+line, in Japanese, Chinese and Korean, and with the document's own list (EA5), compressed punctuation justified and in
+other fonts and languages (EA6), indents of part of a character Word's PDFs didn't round (GR17), lines that end between
+right-to-left and left-to-right text, in Hebrew and in a right-to-left paragraph (AR3), and endnotes after text that runs
+down the page (GR15d, GR15e). `word-stops-arabic.ts` has the widths of
 Arabic's letters in each form Word joins them in (AR1), which `word-stops-more-widths` and `word-stops-thai` TH3b, ten of
 each letter in a row, showed joined, and lines of Arabic prose to check them by (AR2), and Word drew Calibri's Arabic
 narrower than its glyphs in places, which isn't followed yet. Read Word's PDF of it with `word-stops-arabic.py`, which

@@ -8,8 +8,9 @@
  *
  * @module
  */
-// cspell:ignore tatweel
+// cspell:ignore tatweel tcheh keheh
 
+/* cspell:disable */
 /**
  * The letters the widths are for, in their order: Arabic's (U+0621 to U+063A and U+0641 to U+064A), and Persian's peh,
  * tcheh, jeh, keheh, gaf and farsi yeh
@@ -18,6 +19,7 @@ export const ARABIC_LETTERS: string = "ءآأؤإئابةتثجحخدذرزسش�
 
 /** The alefs lam joins with into a ligature, in the order of their widths */
 export const LAM_ALEFS: string = "آأإا";
+/* cspell:enable */
 
 /**
  * How wide Word draws Arabic in a font, plain and bold, in tenths of a thousandth of an em, three digits each, of the 64

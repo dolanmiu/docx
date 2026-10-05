@@ -10,7 +10,7 @@
  *
  * @module
  */
-// cspell:ignore Aptos
+// cspell:ignore Aptos Donaudampf schifffahrtsgesellschaftkapitän
 import { hasLigatures } from "./kerning";
 import { type LineBreakRules, extendsCharacter, findLineBreaks, joinsNext } from "./line-break-rules";
 import {
@@ -826,7 +826,7 @@ const gridHeightOf = (
         return heightOf(given, spacing);
     }
     const own = heightOf(given, undefined);
-    const { unsupported } = own.unsupported === undefined ? heightOf(given, spacing) : own;
+    const { unsupported } = heightOf(given, spacing);
     const gridded = Math.max(1, Math.ceil(own.height / pitch - GRID_ROUNDING)) * pitch;
     const height =
         spacing === undefined ? gridded : Math.max(spacing.rule === "multiple" ? spacing.multiple * pitch : spacing.height, gridded);

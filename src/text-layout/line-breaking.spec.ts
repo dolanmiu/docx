@@ -2159,6 +2159,13 @@ describe("layoutLines on a document grid, as Word lays it out (scripts/layout-pr
             });
             expect(left.unsupported).to.equal(undefined);
             expect(left.textWidth).to.be.closeTo(19 * cell, 1e-9);
+            // With a space between them, and a bookmark before them
+            const spaced = linesOf([run("a", "Calibri"), { type: "tab", font: {} }, { type: "marker", name: "b" }, mincho("日本 語")], {
+                ...GR16,
+                tabStops: [{ position: 300, alignment: "right" }],
+            })[0];
+            expect(spaced.unsupported).to.equal(undefined);
+            expect(spaced.textWidth).to.be.closeTo(300, 1e-9);
             // And a picture after it
             expect(
                 linesOf([run("a", "Calibri"), { type: "tab", font: {} }, mincho(IDEOGRAPH), { type: "box", width: 15, height: 10 }], {
@@ -2196,6 +2203,7 @@ describe("layoutLines on a document grid, as Word lays it out (scripts/layout-pr
             expect(lines[1].textWidth).to.be.closeTo((rest + 1) * cell, 1e-9);
         });
 
+        // cspell:ignore gesell kapitän schifffahrtsgesellschaftkapitän
         it("should leave a word with a soft hyphen that fits whole, and break one that doesn't at its last soft hyphen whose part fits in the cells left (GR7a, GR16a)", () => {
             const softened = (before: string): readonly InlineItem[] => [
                 run(before, "Times New Roman"),
@@ -2294,6 +2302,10 @@ describe("layoutLines on a document grid, as Word lays it out (scripts/layout-pr
         // Kerned across the words, between the space and the letter after it too
         const words = GR16e.split(/(?<= )/u).map((word): InlineItem => run(word, "Calibri", 11, { kerning: 1 }));
         expect(linesOf(words, { grid: { linePitch: 18, characterPitch: cell } })[0].textWidth / cell).to.be.closeTo(20, 1e-9);
+        // A space after an ideograph isn't kerned with it
+        expect(
+            linesOf([run("永 To", "Calibri", 11, { kerning: 1 })], { grid: { linePitch: 18, characterPitch: cell } })[0].unsupported,
+        ).to.equal(undefined);
         // Kerned on a grid of lines and characters, with the grid's space after each character
         const [line] = linesOf([kerned], { grid: { linePitch: 18, characterSpace: 1 } });
         expect(line.unsupported).to.equal(undefined);
