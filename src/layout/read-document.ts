@@ -672,6 +672,8 @@ type Reader = {
     readonly feLayout?: boolean;
     /** Whether the document turns on OpenType features, such as ligatures, in compatibility mode (`enableOpenTypeFeatures`) */
     readonly openTypeFeatures?: boolean;
+    /** Why its text in an East Asian language can't be laid out as Word does for the document's settings, when it can't */
+    readonly eastAsianRules?: string;
 };
 
 // Word's defaults for a section that doesn't give its page: Letter, with inch margins
@@ -2253,7 +2255,8 @@ const readParagraph = (element: XmlObject, reader: Reader, tableFormats: TableFo
     const markFont = fontOf(markRun);
     // A paragraph's lines are on its section's grid unless it turns that off (`w:snapToGrid`), or is in a table cell, and
     // its characters on a grid of characters either way (scripts/layout-probes/word-grid.ts G7, G8, CA11, CC11,
-    // word-grid3.ts H6)
+    // word-grid3.ts H6). A footnote's are on a grid that snaps to characters as the body's are, and text spaced out by
+    // its run takes as many cells as it needs spaced out (stops2/word-stops-east-asian.ts GR1, GR2)
     const { grid, cellGrid } = reader;
     const sectionGrid = grid ?? cellGrid;
     const paragraphGrid =
@@ -2262,7 +2265,17 @@ const readParagraph = (element: XmlObject, reader: Reader, tableFormats: TableFo
             linePitch: grid !== undefined && combined.snapToGrid !== false ? grid.linePitch : undefined,
             characterSpace: sectionGrid.characterSpace,
             characterPitch: sectionGrid.characterPitch,
+            characterRoom: sectionGrid.characterRoom,
         });
+    // Which cells a table's paragraphs, or a footnote's, are on in columns of different widths, and how wide a character of
+    // an indent is there, haven't been seen
+    const ownCells =
+        sectionGrid?.characterRoom !== undefined &&
+        (grid === undefined ||
+            reader.inNote === true ||
+            [combined.indentLeftChars, combined.indentRightChars, combined.firstLineChars].some((count) => (count ?? 0) !== 0))
+            ? "a table, note or indent in characters on a grid that snaps to characters in columns of different widths"
+            : undefined;
     const format = inPoints(combined, { listNumber: list.items, items: own }, markFont, fontOf(paragraphRun), unitsOf(sectionGrid));
     const borders = readBorders(typeof format === "string" ? combined : format);
     // A division of a web page (`w:divId`) has margins and borders of its own, in the document's web settings. Word breaks
@@ -2275,19 +2288,13 @@ const readParagraph = (element: XmlObject, reader: Reader, tableFormats: TableFo
     // decimal symbol a document's settings give instead, or the computer's, hasn't been seen
     const otherDecimalSymbol =
         reader.decimalSymbol !== undefined && reader.decimalSymbol !== "." && tabStops.some(({ alignment }) => alignment === "decimal");
-    // How Word lays out a grid that snaps to characters in footnotes, and over text spaced out by its run, isn't known
-    const snapping = sectionGrid?.characterPitch !== undefined;
-    const unknownOnGrid =
-        snapping && reader.inNote === true
-            ? "a footnote on a grid that snaps to characters"
-            : snapping &&
-                own.some((item) => item.type === "text" && (item.font.characterSpacing ?? 0) !== 0 && item.font.snapToGrid !== false)
-              ? "text spaced out by its run on a grid that snaps to characters"
-              : undefined;
     const frame = readFrameOf(properties, styleChain(styles, style, "paragraph"), reader);
     const unsupported =
         list.unsupported ??
-        unknownOnGrid ??
+        ownCells ??
+        (reader.eastAsianRules !== undefined && own.some((item) => item.type === "text" && kinsokuLanguageOf(item.language) !== undefined)
+            ? reader.eastAsianRules
+            : undefined) ??
         (reader.down === true && reader.inNote === true ? "a footnote or endnote on text that runs down the page" : undefined) ??
         (reader.down === true ? unknownDownOf(own, combined, borders) : undefined) ??
         (typeof frame === "string"
@@ -4079,11 +4086,14 @@ const readGrid = (element: unknown, normalSize: number, { gutterAtTop }: PageSet
         return { linePitch, ...(space === 0 ? {} : { characterSpace: space }) };
     }
     const columns = readColumns(find(properties, "w:cols"), textWidthOf(properties, gutterAtTop));
-    if (columns.some((width) => width !== columns[0])) {
-        return "a document grid that snaps to characters in columns of different widths";
+    const room = normalSize + space;
+    if (room <= 0 || columns.some((width) => width / room < 1)) {
+        return "a document grid of characters with no room for one";
     }
-    const cells = normalSize + space > 0 ? Math.floor(columns[0] / (normalSize + space)) : 0;
-    return cells < 1 ? "a document grid of characters with no room for one" : { linePitch, characterPitch: columns[0] / cells };
+    // In columns of different widths, each has cells of its own (stops2/word-stops-east-asian.ts GR12)
+    return columns.some((width) => width !== columns[0])
+        ? { linePitch, characterRoom: room }
+        : { linePitch, characterPitch: columns[0] / Math.floor(columns[0] / room) };
 };
 
 /**
@@ -4633,6 +4643,24 @@ const readMathsSettings = (settings: readonly XmlObject[]): Pick<Reader, "maths"
 };
 
 /**
+ * Why text in Japanese, Chinese or Korean can't be laid out as Word does for the document's settings, when it can't: with
+ * Word's strict rules for the characters that can't start a line (`w:strictFirstAndLastChars`), or its punctuation, or
+ * its punctuation and kana, compressed (`w:characterSpacingControl`). Word left the lines of Japanese text in no language
+ * as they are without them, as it leaves out its rules for the characters that can't start or end a line there
+ * (scripts/layout-probes/stops2/word-stops-east-asian.ts EA1 to EA3: small kana, iteration marks and closing brackets
+ * started lines, and opening brackets ended them, at 42 ideographs a line). In text in one of those languages, they
+ * haven't been seen.
+ */
+const readEastAsianRules = (settings: readonly XmlObject[]): string | undefined => {
+    const spacingControl = valueOf(settings, "w:characterSpacingControl");
+    return onOff(settings, "w:strictFirstAndLastChars") === true
+        ? "the strict rules for the characters that can't start a line, in text in an East Asian language"
+        : spacingControl !== undefined && spacingControl !== "doNotCompress"
+          ? "punctuation compressed in text in an East Asian language"
+          : undefined;
+};
+
+/**
  * Reads the parts of the document's settings (`w:settings`) that change how it is laid out.
  */
 const readSettings = (
@@ -4651,19 +4679,15 @@ const readSettings = (
     const settings = childrenOf(xml?.["w:settings"]);
     const compatibility = childrenOf(find(settings, "w:compat"));
     const lists = readKinsokuLists(settings);
-    const spacingControl = valueOf(settings, "w:characterSpacingControl");
     const mode = compatibilityModeOf(settings);
     const olderMode = olderModeOf(settings);
-    // Word's strict rules, and its compression of punctuation, aren't known yet. Pages printed folded as a booklet are half
-    // the paper, in a way Word's PDF hasn't shown (`word-stops-booklet.docx` BK1: its first page left out), and Word updates
-    // a document's styles from its template when it opens it, with `w:linkStyles`. Pages printed two to a sheet
-    // (`w:printTwoOnOne`) Word lays out as the section's pages, as it does without: 51 lines on the first of 62
-    // (`word-stops-two-on-one.docx` TO1)
+    // Pages printed folded as a booklet are half the paper, in a way Word's PDF hasn't shown (`word-stops-booklet.docx` BK1:
+    // its first page left out), and Word updates a document's styles from its template when it opens it, with
+    // `w:linkStyles`. Pages printed two to a sheet (`w:printTwoOnOne`) Word lays out as the section's pages, as it does
+    // without: 51 lines on the first of 62 (`word-stops-two-on-one.docx` TO1)
     const unsupported =
         (
             [
-                [onOff(settings, "w:strictFirstAndLastChars"), "the strict rules for the characters that can't start a line"],
-                [spacingControl !== undefined && spacingControl !== "doNotCompress", "punctuation compressed"],
                 [
                     mode < CURRENT_COMPATIBILITY_MODE && olderMode === undefined,
                     "a document in a compatibility mode Word hasn't been seen laying out",
@@ -4847,6 +4871,7 @@ export const readContent = (writtenBody: XmlObject, writtenParts: DocumentParts,
     const openTypeFeatures = wordSettingsOf(childrenOf(find(settings, "w:compat"))).some(
         ({ "w:name": name, "w:val": value }) => name === "enableOpenTypeFeatures" && isOn(value),
     );
+    const eastAsianRules = readEastAsianRules(settings);
     const readerOf = (inHeader: boolean): Reader => ({
         styles,
         numbering,
@@ -4857,6 +4882,7 @@ export const readContent = (writtenBody: XmlObject, writtenParts: DocumentParts,
         counters: new Map(),
         ...(decimalSymbol === undefined ? {} : { decimalSymbol }),
         ...mathsSettings,
+        ...(eastAsianRules === undefined ? {} : { eastAsianRules }),
         ...(guess ? { guess } : {}),
         ...(compatibilityMode === undefined ? {} : { compatibilityMode }),
         ...(feLayout ? { feLayout } : {}),

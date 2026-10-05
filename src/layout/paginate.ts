@@ -1031,7 +1031,11 @@ export const paginate = (
             byWidths.set(key, laidOut);
             return laidOut;
         };
-        // Those of a paragraph with a page reference or page number change with the numbers, so aren't kept
+        // Those of a paragraph with a page reference or page number change with the numbers, so aren't kept. Which cells a
+        // line beside a drawing is on, on a grid that snaps to characters in columns of different widths, hasn't been seen
+        if (paragraph.grid?.characterRoom !== undefined && rooms.size > 0) {
+            stopAt("a line beside a drawing on a grid that snaps to characters in columns of different widths");
+        }
         const lines = paragraph.items.some(isPageField) ? layOut() : kept();
         for (const reason of new Set(lines.flatMap(({ unsupported }) => (unsupported === undefined ? [] : [unsupported])))) {
             stopAt(reason);

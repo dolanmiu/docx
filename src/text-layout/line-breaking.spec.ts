@@ -1762,12 +1762,16 @@ describe("layoutLines on a document grid, as Word lays it out (scripts/layout-pr
             expect(full).to.not.have.property("spacingBelow");
         });
 
-        it("should put emphasis marks' room in a line before it is put on the grid, and stop at them with line spacing (G11d)", () => {
+        it("should put emphasis marks' room in a line before it is put on the grid, with multiple line spacing too, and stop at them with at least a height (G11d, GR3)", () => {
             const marked = [mincho("ab"), mincho(IDEOGRAPH.repeat(4), 10.5, { emphasis: "above" })];
             expect(linesOf(marked, LINES)[0].height).to.equal(18);
             expect(linesOf(marked, { ...LINES, format: { lineSpacing: { rule: "multiple", multiple: 1 } } })[0].height).to.equal(18);
-            expect(unsupportedOf(marked, { ...LINES, format: { lineSpacing: { rule: "multiple", multiple: 1.5 } } })).to.equal(
-                "emphasis marks on a line with line spacing on a document grid",
+            // 1.5 lines are 540 twips, as without marks (stops2/word-stops-east-asian.ts GR3)
+            const spaced = linesOf(marked, { ...LINES, format: { lineSpacing: { rule: "multiple", multiple: 1.5 } } })[0];
+            expect(spaced.height).to.equal(27);
+            expect(spaced.unsupported).to.equal(undefined);
+            expect(unsupportedOf(marked, { ...LINES, format: { lineSpacing: { rule: "atLeast", height: 20 } } })).to.equal(
+                "emphasis marks on a line with at least a height of line spacing on a document grid",
             );
         });
     });
@@ -1809,8 +1813,9 @@ describe("layoutLines on a document grid, as Word lays it out (scripts/layout-pr
             expect(countsOf(runs, ONE)).to.deep.equal([44, 44, 12]);
         });
 
-        it("should stop at numbers, punctuation and text of another size next to East Asian characters, but not spaces", () => {
-            const UNKNOWN = "a number, punctuation or text of another size next to an East Asian character on a grid of characters";
+        it("should stop at numbers, punctuation and text of another size in an East Asian font next to East Asian characters, but not spaces", () => {
+            const UNKNOWN =
+                "a number, punctuation or text of another size in an East Asian font next to an East Asian character on a grid of characters";
             for (const value of [`${IDEOGRAPH}1`, `1${IDEOGRAPH}`, `${IDEOGRAPH}.`]) {
                 expect(unsupportedOf([mincho(value)], ONE)).to.equal(UNKNOWN);
             }
@@ -1825,6 +1830,22 @@ describe("layoutLines on a document grid, as Word lays it out (scripts/layout-pr
                 undefined,
             );
             expect(unsupportedOf([mincho(IDEOGRAPH), { type: "tab", font: {} }, mincho("1")], ONE)).to.equal(undefined);
+        });
+
+        it("should add nothing between East Asian characters and text in another font, of any kind or size (GR4a, GR4c)", () => {
+            const between = (value: string, size: number): readonly InlineItem[] => [
+                mincho(IDEOGRAPH),
+                run(value, "Calibri", size),
+                mincho(IDEOGRAPH),
+            ];
+            for (const items of [between("12", 10.5), between("Latin words", 16)]) {
+                const [line] = linesOf(items, ONE);
+                expect(line.unsupported).to.equal(undefined);
+                const [, other] = items as readonly Extract<InlineItem, { readonly type: "text" }>[];
+                // Each character a point wider, and no more
+                const width = measureTextWidth(other.text, other.font) + [...other.text].length;
+                expect(line.textWidth).to.be.closeTo(2 * 11.5 + width, 1e-9);
+            }
         });
     });
 
@@ -1876,50 +1897,114 @@ describe("layoutLines on a document grid, as Word lays it out (scripts/layout-pr
             );
         });
 
-        it("should stop at tabs, pictures, words longer than their line and lines that only fit squeezed", () => {
-            expect(unsupportedOf([mincho(IDEOGRAPH), { type: "tab", font: {} }, mincho(IDEOGRAPH)], CC)).to.equal(
-                "a tab or picture on a grid that snaps to characters",
-            );
-            expect(unsupportedOf([mincho(IDEOGRAPH), { type: "box", width: 20, height: 10 }], CC)).to.equal(
-                "a tab or picture on a grid that snaps to characters",
-            );
-            expect(unsupportedOf([run("a".repeat(200), "Times New Roman")], CC)).to.equal(
-                "a word longer than its line on a grid that snaps to characters",
-            );
-            const softened: readonly InlineItem[] = [
-                run("ab", "Times New Roman"),
+        it("should start Chinese, Japanese or Korean text after a left tab at the next of the grid's cells, and stop at other tabs and text (GR10a)", () => {
+            const cell = WIDTH / 39;
+            // A default stop at 36 points, after one cell: the next character in the fourth, after 3 cells
+            const [line] = linesOf([mincho(IDEOGRAPH), { type: "tab", font: {} }, mincho(IDEOGRAPH)], CC);
+            expect(line.unsupported).to.equal(undefined);
+            expect(line.textWidth).to.be.closeTo(5 * cell, 1e-9);
+            const STOP = "a tab on a grid that snaps to characters, but for a left one before Chinese, Japanese or Korean text";
+            expect(unsupportedOf([mincho(IDEOGRAPH), { type: "tab", font: {} }, run("a", "Times New Roman")], CC)).to.equal(STOP);
+            expect(unsupportedOf([mincho(IDEOGRAPH), { type: "tab", font: {} }], CC)).to.equal(STOP);
+            expect(
+                unsupportedOf([mincho(IDEOGRAPH), { type: "tab", font: {} }, mincho(IDEOGRAPH)], {
+                    ...CC,
+                    tabStops: [{ position: 200, alignment: "right" }],
+                }),
+            ).to.equal(STOP);
+            // And one with no stop before the end of the line
+            expect(
+                unsupportedOf([mincho(IDEOGRAPH), { type: "tab", font: {} }, mincho(IDEOGRAPH)], { ...CC, width: 30, defaultTabStop: 36 }),
+            ).to.equal(STOP);
+        });
+
+        it("should put a picture in as many of the grid's cells as it needs, and stop at one after other text, and at an equation (GR10b)", () => {
+            const cell = WIDTH / 39;
+            // 15 points in 2 cells of 11.57
+            const [line] = linesOf([mincho(IDEOGRAPH), { type: "box", width: 15, height: 10 }, mincho(IDEOGRAPH)], CC);
+            expect(line.unsupported).to.equal(undefined);
+            expect(line.textWidth).to.be.closeTo(4 * cell, 1e-9);
+            const STOP = "an equation, or a picture after text other than Chinese, Japanese or Korean, on a grid that snaps to characters";
+            expect(unsupportedOf([run("a", "Times New Roman"), { type: "box", width: 15, height: 10 }], CC)).to.equal(STOP);
+            expect(unsupportedOf([mincho(IDEOGRAPH), { type: "box", width: 15, height: 10, descent: 2 }], CC)).to.equal(STOP);
+        });
+
+        it("should break a word longer than its line after the last character that fits, and put the rest with the text after it in as many cells as they need (GR9)", () => {
+            const cell = WIDTH / 39;
+            const letter = measureTextWidth("a", { font: "Times New Roman", size: 10.5 });
+            const first = Math.floor(WIDTH / letter);
+            const lines = linesOf([run(`${"a".repeat(first + 20)} `, "Times New Roman"), mincho(IDEOGRAPH)], CC);
+            expect(lines.map((line) => line.unsupported)).to.deep.equal([undefined, undefined]);
+            expect(countsOf([run("a".repeat(first + 20), "Times New Roman")], CC)).to.deep.equal([first, 20]);
+            // The 20 letters and the space take as many cells as they need, and the ideograph one more
+            const rest = Math.ceil((20 * letter + measureTextWidth(" ", { font: "Times New Roman", size: 10.5 })) / cell);
+            expect(lines[1].textWidth).to.be.closeTo((rest + 1) * cell, 1e-9);
+        });
+
+        it("should leave a word with a soft hyphen that fits whole, and stop at one that doesn't fit (GR7a)", () => {
+            const softened = (before: string): readonly InlineItem[] => [
+                run(before, "Times New Roman"),
                 { type: "softHyphen", font: {} },
                 run("cd", "Times New Roman"),
             ];
-            expect(unsupportedOf(softened, CC)).to.equal("a soft hyphen, or a line beside a drawing, on a grid that snaps to characters");
-            // A line in a room of its own beside a drawing
-            expect(unsupportedOf([mincho(IDEOGRAPH)], { ...CC, width: () => ({ start: 30, end: WIDTH }) })).to.equal(
-                "a soft hyphen, or a line beside a drawing, on a grid that snaps to characters",
+            expect(unsupportedOf(softened("ab"), CC)).to.equal(undefined);
+            expect(unsupportedOf(softened(`ab ${"a".repeat(100)}`), CC)).to.equal(
+                "a soft hyphen at the end of a line on a grid that snaps to characters",
             );
             // After another reason, which it is the first of
-            expect(unsupportedOf(softened, { ...CC, format: { indentLeft: 1 } })).to.equal(
+            expect(unsupportedOf(softened("ab"), { ...CC, format: { indentLeft: 1 } })).to.equal(
                 "an indent of part of a character on a grid that snaps to characters",
             );
+        });
+
+        it("should start a line beside a drawing at the next of the grid's cells (GR7b)", () => {
+            const [line] = linesOf([mincho(IDEOGRAPH.repeat(50))], { ...CC, width: () => ({ start: 30, end: WIDTH }) });
+            expect(line.unsupported).to.equal(undefined);
+            // From the third cell's end, at 34.7 points
+            expect([...line.text].length).to.equal(36);
+        });
+
+        it("should not squeeze a justified line, and stop at a distributed one that only fits squeezed (GR8)", () => {
             // 21 words of 3 letters, which end a cell short of the line: a word of one more, with its space, fits only
             // squeezed
             const squeezed = `${Array.from({ length: 33 }, () => "abc").join(" ")} abcd`;
-            expect(
-                unsupportedOf([run(squeezed, "Times New Roman", 10)], {
-                    grid: { characterPitch: 10 },
-                    width: 167,
-                    format: { alignment: "justified" },
-                }),
-            ).to.equal("a justified line on a grid that snaps to characters that only fits squeezed");
+            const options = (alignment: "justified" | "distributed"): Partial<LineLayoutOptions> => ({
+                grid: { characterPitch: 10 },
+                width: 167,
+                format: { alignment },
+            });
+            const justified = linesOf([run(squeezed, "Times New Roman", 10)], options("justified"));
+            expect(justified.map((line) => line.unsupported)).to.deep.equal(justified.map(() => undefined));
+            expect(justified[0].text.endsWith("abc ")).to.equal(true);
+            expect(unsupportedOf([run(squeezed, "Times New Roman", 10)], options("distributed"))).to.equal(
+                "a distributed line on a grid that snaps to characters that only fits squeezed",
+            );
+        });
+
+        it("should put each column of a grid in columns of different widths in cells of its own (GR12)", () => {
+            // Cells of at least 221 twips: 9 of 222.2 in a column of 2000, and 29 of 225 in one of 6526
+            const options: Partial<LineLayoutOptions> = {
+                grid: { linePitch: 18, characterRoom: 11.05 },
+                width: (line) => (line < 2 ? 100 : 326.3),
+            };
+            expect(countsOf([mincho(IDEOGRAPH.repeat(60))], options)).to.deep.equal([9, 9, 29, 13]);
+            expect(linesOf([mincho(IDEOGRAPH.repeat(9))], { ...options, width: 100 })[0].textWidth).to.be.closeTo(100, 1e-9);
+            // A line beside a drawing is in the cells of the room's end
+            expect(countsOf([mincho(IDEOGRAPH.repeat(9))], { ...options, width: () => ({ start: 0, end: 100 }) })).to.deep.equal([9]);
         });
     });
 
-    it("should stop at text kerned or with ligatures on a grid of characters, as how Word kerns and joins it there hasn't been seen", () => {
-        const STOP = "kerning or ligatures on a document grid of characters";
+    it("should kern text on a grid of lines and characters, and stop at text kerned or with ligatures where how Word kerns and joins it hasn't been seen (GR5)", () => {
+        const STOP = "ligatures on a document grid of characters, or kerning on one that snaps to characters";
         const kerned = run("To", "Calibri", 10.5, { kerning: 1 });
         expect(unsupportedOf([kerned], { grid: { characterPitch: 10 } })).to.equal(STOP);
         expect(
             unsupportedOf([run("office", "Calibri", 10.5, { ligatures: "standard" })], { grid: { linePitch: 18, characterSpace: 2 } }),
         ).to.equal(STOP);
+        // Kerned on a grid of lines and characters, with the grid's space after each character
+        const [line] = linesOf([kerned], { grid: { linePitch: 18, characterSpace: 1 } });
+        expect(line.unsupported).to.equal(undefined);
+        expect(line.textWidth).to.be.lessThan(measureTextWidth("To", kerned.type === "text" ? kerned.font : {}) + 2);
         // But not text in a run that doesn't snap to the grid, which is as it is without one, nor on a grid of lines only
         expect(unsupportedOf([run("To", "Calibri", 10.5, { kerning: 1, snapToGrid: false })], { grid: { characterPitch: 10 } })).to.equal(
             undefined,

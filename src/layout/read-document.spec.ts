@@ -4353,6 +4353,23 @@ describe("readDocument", () => {
             // Across each of columns of the same width: 2 of 216 points, 19 of 11.37 (word-grid3.ts H7b)
             const { grid: columns } = onGrid(SNAPPING, { "w:cols": { _attr: { "w:num": 2 } } }) as { readonly grid: TextGrid };
             expect(columns.characterPitch).to.be.closeTo(216 / 19, 1e-9);
+            // Across each of columns of different widths, each of its own: cells of at least 11 points
+            // (stops2/word-stops-east-asian.ts GR12)
+            const widths = {
+                "w:cols": [
+                    { _attr: { "w:equalWidth": 0 } },
+                    { "w:col": { _attr: { "w:w": 4000 } } },
+                    { "w:col": { _attr: { "w:w": 3000 } } },
+                ],
+            };
+            expect(onGrid(SNAPPING, widths)).to.deep.equal({ grid: { linePitch: 18, characterRoom: 11 } });
+            // Not in a table, a note or with an indent in characters, which haven't been seen
+            const STOP = "a table, note or indent in characters on a grid that snaps to characters in columns of different widths";
+            const indented = p(pPr({ "w:ind": { _attr: { "w:leftChars": 200 } } }), r(t("a")));
+            const inColumns = grid(SNAPPING, widths);
+            expect(paragraphOf(readBody([indented, inColumns])).unsupported).to.equal(STOP);
+            const cell = readBody([{ "w:tbl": [{ "w:tr": [{ "w:tc": [p(r(t("a")))] }] }] }, inColumns]);
+            expect(((cell.blocks[0].block as TableBlock).rows[0].cells[0].blocks[0] as ParagraphBlock).unsupported).to.equal(STOP);
         });
 
         it("should read no grid for a grid of lines without its pitch, a grid of no type, or none (word-grid.ts G13)", () => {
@@ -4373,9 +4390,6 @@ describe("readDocument", () => {
                     { "w:col": { _attr: { "w:w": 3000 } } },
                 ],
             };
-            expect(onGrid(SNAPPING, widths).unsupported).to.equal(
-                "a document grid that snaps to characters in columns of different widths",
-            );
             for (const charSpace of [4096 * 1000, -4096 * 1000]) {
                 expect(onGrid({ ...SNAPPING, "w:charSpace": charSpace }).unsupported).to.equal(
                     "a document grid of characters with no room for one",
@@ -4451,30 +4465,26 @@ describe("readDocument", () => {
             });
         });
 
-        it("should mark text on a grid that snaps to characters it isn't known how Word lays out as unsupported", () => {
-            const spacedOut = readBody([
-                p(r(rPr(value("w:spacing", 20)), t("a"))),
-                p(r(rPr(value("w:spacing", 20), value("w:snapToGrid", 0)), t("a"))),
-                grid(SNAPPING),
-            ]);
-            expect(paragraphOf(spacedOut).unsupported).to.equal("text spaced out by its run on a grid that snaps to characters");
-            expect(paragraphOf(spacedOut, 1).unsupported).to.equal(undefined);
+        it("should read text spaced out by its run, and footnotes, on a grid that snaps to characters (stops2/word-stops-east-asian.ts GR1, GR2)", () => {
+            const spacedOut = readBody([p(r(rPr(value("w:spacing", 20)), t("a"))), grid(SNAPPING)]);
+            expect(paragraphOf(spacedOut).unsupported).to.equal(undefined);
+            expect(itemsOf(spacedOut)).to.deep.equal([{ type: "text", text: "a", font: { characterSpacing: 1 } }]);
             // A run spaced out on a grid of lines and characters is spaced out by both (word-grid3.ts H9)
             expect(paragraphOf(readBody([p(r(rPr(value("w:spacing", 20)), t("a"))), grid(CHARACTERS)])).unsupported).to.equal(undefined);
-            const footnoted = (type: (typeof DocumentGridType)[keyof typeof DocumentGridType]): string | undefined =>
-                [
-                    ...readWritten({
-                        footnotes: { 1: { children: [new Paragraph("Note")] } },
-                        sections: [
-                            {
-                                properties: { grid: { type, linePitch: 360, charSpace: 4096 } },
-                                children: [new Paragraph({ children: [new TextRun("Text"), new FootnoteReferenceRun(1)] })],
-                            },
-                        ],
-                    }).footnotes.values(),
-                ][0][0].unsupported;
-            expect(footnoted(DocumentGridType.SNAP_TO_CHARS)).to.equal("a footnote on a grid that snaps to characters");
-            expect(footnoted(DocumentGridType.LINES_AND_CHARS)).to.equal(undefined);
+            const [note] = [
+                ...readWritten({
+                    footnotes: { 1: { children: [new Paragraph("Note")] } },
+                    sections: [
+                        {
+                            properties: { grid: { type: DocumentGridType.SNAP_TO_CHARS, linePitch: 360, charSpace: 4096 } },
+                            children: [new Paragraph({ children: [new TextRun("Text"), new FootnoteReferenceRun(1)] })],
+                        },
+                    ],
+                }).footnotes.values(),
+            ][0] as readonly ParagraphBlock[];
+            expect(note.unsupported).to.equal(undefined);
+            // A4 with inch margins, 41 cells of 11 points
+            expect(note.grid!.characterPitch).to.be.closeTo(451.3 / 41, 1e-9);
         });
 
         it("should mark endnotes from a section on another grid than the last, which they follow, as unsupported", () => {
@@ -4671,12 +4681,24 @@ describe("readDocument", () => {
             expect(readBody([]).breakRules).to.equal(undefined);
         });
 
-        it("should mark a document with Word's strict rules for the first and last characters of lines, or that compresses punctuation, as unsupported", () => {
-            expect(readSettings({ "w:strictFirstAndLastChars": {} }).unsupported).to.equal(
-                "the strict rules for the characters that can't start a line",
+        it("should mark text in an East Asian language as unsupported in a document with Word's strict rules for the first and last characters of lines, or that compresses punctuation", () => {
+            const japanese = p(r(rPr({ "w:lang": { _attr: { "w:eastAsia": "ja-JP" } } }), t("「測量」は")));
+            const inNoLanguage = p(r(t("「測量」は")));
+            const strict = { "w:strictFirstAndLastChars": {} };
+            expect(paragraphOf(readWithSettings([japanese], [strict])).unsupported).to.equal(
+                "the strict rules for the characters that can't start a line, in text in an East Asian language",
             );
-            expect(readSettings(value("w:characterSpacingControl", "compressPunctuation")).unsupported).to.equal("punctuation compressed");
-            expect(readSettings(value("w:characterSpacingControl", "doNotCompress")).unsupported).to.equal(undefined);
+            expect(
+                paragraphOf(readWithSettings([japanese], [value("w:characterSpacingControl", "compressPunctuationAndJapaneseKana")]))
+                    .unsupported,
+            ).to.equal("punctuation compressed in text in an East Asian language");
+            // Word lays out Japanese in no language as it does without them (word-stops-east-asian.ts EA1 to EA3)
+            const content = readWithSettings([inNoLanguage], [strict, value("w:characterSpacingControl", "compressPunctuation")]);
+            expect(content.unsupported).to.equal(undefined);
+            expect(paragraphOf(content).unsupported).to.equal(undefined);
+            expect(paragraphOf(readWithSettings([japanese], [value("w:characterSpacingControl", "doNotCompress")])).unsupported).to.equal(
+                undefined,
+            );
         });
 
         it("should mark a document printed as a folded booklet, or whose styles Word updates from its template, as unsupported", () => {
