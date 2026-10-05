@@ -3018,6 +3018,10 @@ describe("readDocument", () => {
                     "space between a table row's cells as a share of the table's width",
                 );
                 expect(unsupportedOf([], [spacing({ "w:w": 100 })], [])).to.equal("table rows with different space between their cells");
+                // A deleted row's space doesn't count, as it takes no room (word-tracked-tables.docx MK14h)
+                const deleted = { "w:del": { _attr: { "w:id": 1 } } };
+                expect(unsupportedOf([spacing({ "w:w": 100 })], [], [deleted, spacing({ "w:w": 0 })])).to.equal(undefined);
+                expect(unsupportedOf([], [deleted, spacing({ "w:w": 100 })], [spacing({ "w:w": 40 })])).to.equal(undefined);
                 // Borders above and below, and a table sized to its text, are followed (CS1 to CS3, CS5, CS6)
                 expect(unsupportedOf([spacing({ "w:w": 100 }), { "w:tblBorders": [border("top", 4), border("insideH", 4)] }], [])).to.equal(
                     undefined,

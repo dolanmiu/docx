@@ -2790,8 +2790,9 @@ const readTable = (element: XmlObject, reader: Reader): TableBlock | undefined =
     const fits = !fixed && tableCells.some(({ ownWidth }) => ownWidth === undefined);
     // Rows with space between their cells of their own have it in place of the table's, at the table's edges too, as a
     // table with that space has it (word-stops-table-borders.docx TB6c, TB6d). Rows with different space, a row's that is a
-    // share of the table's width, and space of another type, such as `auto`, haven't been seen
-    const rowSpacings = new Set(read.map(({ spacing }) => spacing));
+    // share of the table's width, and space of another type, such as `auto`, haven't been seen. A deleted row's doesn't
+    // count, as it takes no room, nor does the space around it (word-tracked-tables.docx MK14h)
+    const rowSpacings = new Set(kept.map(({ spacing }) => spacing));
     const spacingUnsupported =
         tableSpacing === undefined || rowSpacings.has(undefined)
             ? "space between table cells of a width that isn't in twips"
@@ -2802,7 +2803,7 @@ const readTable = (element: XmlObject, reader: Reader): TableBlock | undefined =
                 : undefined;
     // The room around each row's and cell's text, from the borders and the space between cells, which every row has the
     // same of when it is followed
-    const followedSpacing = spacingUnsupported === undefined ? ((read[0]?.spacing as number | undefined) ?? tableSpacing!) : 0;
+    const followedSpacing = spacingUnsupported === undefined ? ((kept[0]?.spacing as number | undefined) ?? tableSpacing!) : 0;
     const geometryOf = (laidOut: typeof read): TableGeometry | string =>
         tableGeometry(
             laidOut.map(({ cells }) => ({ cells, spacing: followedSpacing })),
