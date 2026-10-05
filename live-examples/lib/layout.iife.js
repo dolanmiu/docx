@@ -9962,17 +9962,22 @@ var docxLayout = (function(exports) {
 	/**
 	* Where a drawing of a size, with the room its effects take before and after it, starts across or down what it is placed
 	* against: at a distance or share of it from its start, or lined up with its start, middle or end, with its effects, as
-	* Word lines it up (`word-floats.docx` F38b, F38c). Inside is the start on odd pages, and outside the end
+	* Word lines it up (`word-floats.docx` F38b, F38c). Inside is the start on odd pages, and outside the end, and lined up
+	* inside or outside, it is `inset` from the start or the end
 	*/
-	var startOf = (position, base, size, before, after, oddPage) => {
+	var startOf = (position, base, size, before, after, oddPage, inset = {
+		start: 0,
+		end: 0
+	}) => {
 		const { align, offset, share } = position;
 		if (align === void 0) return base.start + (offset !== null && offset !== void 0 ? offset : (share !== null && share !== void 0 ? share : 0) * base.length);
+		const insideOrOutside = align === "inside" || align === "outside";
 		switch (align === "inside" ? oddPage ? "left" : "right" : align === "outside" ? oddPage ? "right" : "left" : align) {
 			case "left":
-			case "top": return base.start + before;
+			case "top": return base.start + before + (insideOrOutside ? inset.start : 0);
 			case "center": return base.start + (base.length - size - before - after) / 2 + before;
 			case "right":
-			case "bottom": return base.start + base.length - size - after;
+			case "bottom": return base.start + base.length - size - after - (insideOrOutside ? inset.end : 0);
 			default: return;
 		}
 	};
@@ -10020,11 +10025,20 @@ var docxLayout = (function(exports) {
 		if (across === void 0 || down === void 0) return "a drawing placed against what isn't followed yet";
 		const { inColumns } = drawing.horizontal;
 		if (inColumns !== void 0 && frame.section.columns.length > 1) return inColumns;
-		if ([drawing.horizontal, drawing.vertical].some(({ from, align }) => (align === "inside" || align === "outside") && from !== "margin")) return "a drawing lined up inside or outside, not against the margins";
+		const linedUp = ({ align }) => align === "inside" || align === "outside";
+		if (linedUp(drawing.horizontal) && drawing.horizontal.from !== "margin" || linedUp(drawing.vertical) && drawing.vertical.from !== "margin" && drawing.vertical.from !== "page") return "a drawing lined up inside or outside, not against the margins or down the page";
 		const { effects } = drawing;
-		const left = startOf(drawing.horizontal, across, size.width, effects.left, effects.right, frame.oddPage);
-		const top = startOf(drawing.vertical, down, size.height, effects.top, effects.bottom, frame.oddPage);
-		return left === void 0 || top === void 0 ? "a drawing lined up in a way not yet followed" : {
+		const { header, footer, pageWidth, pageHeight } = frame.section;
+		const pageInset = drawing.vertical.from === "page" ? {
+			start: header / 2,
+			end: footer / 2
+		} : void 0;
+		const placedLeft = startOf(drawing.horizontal, across, size.width, effects.left, effects.right, frame.oddPage);
+		const top = startOf(drawing.vertical, down, size.height, effects.top, effects.bottom, frame.oddPage, pageInset);
+		if (placedLeft === void 0 || top === void 0) return "a drawing lined up in a way not yet followed";
+		const left = drawing.keptOnPage === true ? Math.min(placedLeft, pageWidth - size.width) : placedLeft;
+		const pastAnEdge = left < -TOLERANCE$1 || top < -TOLERANCE$1 || top + size.height > pageHeight + TOLERANCE$1;
+		return drawing.keptOnPage === true && pastAnEdge ? "a VML drawing past an edge of the page other than its right edge" : {
 			left,
 			right: left + size.width,
 			top,
@@ -10052,7 +10066,7 @@ var docxLayout = (function(exports) {
 	var roomBeside = (drawings, top, height, within) => {
 		const beside = drawings.filter(({ keepOut }) => keepOut.top < top + height && top < keepOut.bottom && keepOut.left < within.end && within.start < keepOut.right);
 		if (beside.length === 0) return { spans: [within] };
-		const rooms = beside.reduce((free, { drawing, keepOut }) => {
+		const wide = beside.reduce((free, { drawing, keepOut }) => {
 			const out = keepOutAcross(drawing, keepOut, within);
 			return free.flatMap((span) => out.end <= span.start || out.start >= span.end ? [span] : [...out.start > span.start ? [{
 				start: span.start,
@@ -10061,9 +10075,7 @@ var docxLayout = (function(exports) {
 				start: out.end,
 				end: span.end
 			}] : []]);
-		}, [within]).filter(({ start, end }) => end - start > TOLERANCE$1);
-		const wide = rooms.filter(({ start, end }) => end - start >= LEAST_ROOM - TOLERANCE$1);
-		if (rooms.length > 0 && wide.length === 0) return { narrow: true };
+		}, [within]).filter(({ start, end }) => end - start >= LEAST_ROOM - TOLERANCE$1);
 		return wide.length > 0 ? { spans: wide } : { below: Math.min(...beside.map(({ keepOut }) => keepOut.bottom)) };
 	};
 	var LEAST_ROOM = 18;
@@ -32957,31 +32969,28 @@ var docxLayout = (function(exports) {
 		"exact"
 	]);
 	var twips$1 = (value) => pointsOf(value, 20);
-	var UNSAID_ACROSS = "a text frame that doesn't say what it is placed against, in columns";
 	/**
 	* Where a frame is across or down the page: what it is placed against, lined up with it or at a distance from it, or why
-	* it isn't known. One that doesn't say is placed against the margins, as Word places it: across the page, where the
-	* margins and the column are the same in one column, so it stops in columns, and down the page, from the top margin
-	* rather than the page, as the standard has it (`word-stops-floats.docx` FR6a, FR6b). Lined up inline down the margins,
-	* it is at their top (FR6c)
+	* it isn't known. One that doesn't say is placed against the column across the page, as the standard has it, and down
+	* the page from the top margin rather than the page, as Word places it (`word-stops-floats.docx` FR6a, FR6b,
+	* `word-stops-floats2.docx` CO1b). Lined up inline down the margins, it is at their top (FR6c)
 	*/
 	var positionOf$1 = (anchor, align, offset, names, aligns) => {
 		var _twips;
-		const from = anchor === void 0 ? "margin" : names[String(anchor)];
+		const from = anchor === void 0 ? names === ACROSS$1 ? "column" : "margin" : names[String(anchor)];
 		if (from === void 0) return "a text frame placed against what isn't followed yet";
-		const unsaid = anchor === void 0 && names === ACROSS$1 ? { inColumns: UNSAID_ACROSS } : {};
 		if (align === "inline" && aligns === DOWN_ALIGNS$1 && from === "margin") return {
 			from,
 			align: "top"
 		};
-		if (align !== void 0) return aligns.has(String(align)) ? _objectSpread2({
+		if (align !== void 0) return aligns.has(String(align)) ? {
 			from,
 			align: String(align)
-		}, unsaid) : "a text frame lined up in a way not yet followed";
-		return _objectSpread2({
+		} : "a text frame lined up in a way not yet followed";
+		return {
 			from,
 			offset: (_twips = twips$1(offset)) !== null && _twips !== void 0 ? _twips : 0
-		}, unsaid);
+		};
 	};
 	/** Reads a paragraph's frame properties (`w:framePr`), or why the frame can't be laid out */
 	var readFrameProperties = (element) => {
@@ -33032,6 +33041,8 @@ var docxLayout = (function(exports) {
 		pc: 12,
 		px: .75
 	};
+	/** The weight of a VML shape's outline when it has one and doesn't say, in points: Word draws it 0.72 points wide */
+	var DEFAULT_OUTLINE = .72;
 	/** Whether a VML true or false value is false: "f", "false", or 0 */
 	var isVmlFalse = (value) => [
 		"f",
@@ -33042,25 +33053,66 @@ var docxLayout = (function(exports) {
 	var readVmlStyle = (style) => new Map(String(style !== null && style !== void 0 ? style : "").split(";").map((declaration) => declaration.split(":")).filter((parts) => parts.length === 2 && parts[0].trim() !== "").map(([name, value]) => [name.trim().toLowerCase(), value.trim()]));
 	/**
 	* A length of a VML style in points, or why it isn't known: one in ems, of a font the style doesn't name, or a share of
-	* something, or a number with no unit, which isn't 0. Undefined when it isn't given.
+	* something. Undefined when it isn't given.
 	*/
 	var vmlLength = (value) => {
-		var _length$2$toLowerCase;
 		if (value === void 0) return;
 		const length = /^(-?\d*\.?\d+)([a-z%]*)$/i.exec(value.trim());
 		const amount = Number(length === null || length === void 0 ? void 0 : length[1]);
-		const unit = (_length$2$toLowerCase = length === null || length === void 0 ? void 0 : length[2].toLowerCase()) !== null && _length$2$toLowerCase !== void 0 ? _length$2$toLowerCase : "";
+		const unit = (length === null || length === void 0 ? void 0 : length[2].toLowerCase()) || "px";
 		if (length === null || Number.isNaN(amount)) return "a VML drawing with a length that isn't a number";
-		if (unit === "" && amount === 0) return 0;
 		return unit in POINTS_PER_UNIT ? amount * POINTS_PER_UNIT[unit] : "a VML drawing with a length in units not yet followed";
 	};
 	/**
+	* The outline of a VML shape: whether it has one (`stroked`), which it has unless it says not, its weight in points
+	* (`strokeweight`), 0.72 when it doesn't say, and whether it is drawn, which a hidden shape's isn't. Or why its weight
+	* isn't known
+	*/
+	var vmlOutline = (attributes, style) => {
+		var _attributes$stroked, _vmlLength;
+		const stroked = !isVmlFalse((_attributes$stroked = attributes.stroked) !== null && _attributes$stroked !== void 0 ? _attributes$stroked : "t");
+		const weight = stroked ? (_vmlLength = vmlLength(attributes.strokeweight === void 0 ? void 0 : String(attributes.strokeweight))) !== null && _vmlLength !== void 0 ? _vmlLength : DEFAULT_OUTLINE : 0;
+		return typeof weight === "string" ? weight : {
+			weight,
+			drawn: stroked && style.get("visibility") !== "hidden"
+		};
+	};
+	/**
+	* The room an outline of a weight takes beyond a VML shape that text flows around, on each side, in points: half of it,
+	* which Word takes in whole points, down on the left and up on the right, so 0.72 and 1 point take none on the left and
+	* one on the right, and 3 points take one and two (`word-stops-vml-shapes.docx` VM24a, VM24b, `word-stops-vml-text-boxes.docx`
+	* VM24c). Above and below, half of it, as the line 1.3 twips below a text box's outline of 0.72 points isn't beside it
+	* (VM24c)
+	*/
+	var outlineEffects = (weight) => weight === 0 ? {
+		top: 0,
+		bottom: 0,
+		left: 0,
+		right: 0
+	} : {
+		top: weight / 2,
+		bottom: weight / 2,
+		left: Math.floor(weight / 2),
+		right: Math.ceil(weight / 2)
+	};
+	/**
+	* Whether any shape of a VML group (`v:group`) has an outline that is drawn, or one whose weight isn't known. A group
+	* draws no outline of its own (`word-stops-vml-shapes.docx` VM29f)
+	*/
+	var groupOutlined = (group) => childrenOf(group[Object.keys(group)[0]]).filter((child) => SHAPES.has(Object.keys(child)[0])).some((child) => {
+		const [name] = Object.keys(child);
+		if (name === "v:group") return groupOutlined(child);
+		const outline = vmlOutline(attributesOf(child[name]), readVmlStyle(attributesOf(child[name]).style));
+		return typeof outline === "string" || outline.drawn;
+	});
+	/**
 	* The shape a VML drawing (`w:pict`) draws, past the types of shapes it defines (`v:shapetype`), or why it can't be laid
-	* out: none, or more than one
+	* out: more than one. One of no shape, such as a `w:pict` of a shape type alone, draws nothing (`word-stops-vml-shape-type.docx`
+	* VM29e)
 	*/
 	var vmlShapeOf = (pict) => {
 		const shapes = childrenOf(pict).filter((child) => SHAPES.has(Object.keys(child)[0]));
-		if (shapes.length !== 1) return shapes.length === 0 ? "a VML drawing with no shape" : "a VML drawing of more than one shape";
+		if (shapes.length !== 1) return shapes.length === 0 ? void 0 : "a VML drawing of more than one shape";
 		const [element] = shapes;
 		const [name] = Object.keys(element);
 		const textbox = find(childrenOf(element[name]), "v:textbox");
@@ -33111,14 +33163,17 @@ var docxLayout = (function(exports) {
 		"outside"
 	]);
 	/**
-	* The wrapping of the text round a VML shape (`w10:wrap`'s type), as DrawingML names it, of those Word has been seen to lay
-	* out as DrawingML's: square, and above and below only. Word wraps tightly round a rectangle closer than square wrapping
-	* does, in a way not yet followed (`word-vml.docx` VM14)
+	* The wrapping of the text round a VML shape (`w10:wrap`'s type), as DrawingML names it. Word wraps the text tightly
+	* round a rectangle, and through it, as it wraps it square, but one point nearer on the right: 160 twips from a shape
+	* with a distance of 180 (`word-vml.docx` VM14, `word-stops-vml-shapes.docx` VM27a, VM27b)
 	*/
 	var WRAPS$1 = {
 		square: "square",
+		tight: "square",
+		through: "square",
 		topAndBottom: "topAndBottom"
 	};
+	var TIGHTER_RIGHT = 1;
 	/** The sides of a VML shape the text goes on (`w10:wrap`'s side), as DrawingML names them */
 	var SIDES$1 = {
 		both: "bothSides",
@@ -33126,13 +33181,14 @@ var docxLayout = (function(exports) {
 		right: "right",
 		largest: "largest"
 	};
+	var TENTHS_OF_A_PERCENT = 1e3;
 	/**
 	* Where a VML shape is across or down the page, from its style: what it is placed against, which is the column and the
-	* paragraph when it doesn't say, lined up with it, or at a distance from it, its margin-left or margin-top. Or why it
-	* isn't known
+	* paragraph when it doesn't say, lined up with it, or at a distance from it, its margin-left or margin-top, or its left
+	* or top, which Word reads as those (`word-stops-vml-shapes.docx` VM27f). Or why it isn't known
 	*/
 	var positionOf = (style, direction, anchor) => {
-		var _ref, _style$get, _style$get2, _style$get3;
+		var _ref, _style$get, _style$get2, _ref2, _style$get3;
 		const names = direction === "horizontal" ? ACROSS : DOWN;
 		const relative = (_ref = (_style$get = style.get(`mso-position-${direction}-relative`)) !== null && _style$get !== void 0 ? _style$get : anchor) !== null && _ref !== void 0 ? _ref : "text";
 		const from = names.get(relative);
@@ -33143,32 +33199,52 @@ var docxLayout = (function(exports) {
 			align
 		} : "a VML drawing lined up in a way not yet followed";
 		const side = direction === "horizontal" ? "left" : "top";
-		if (style.has(side)) return "a VML drawing placed by its left or top";
-		const offset = vmlLength((_style$get3 = style.get(`margin-${side}`)) !== null && _style$get3 !== void 0 ? _style$get3 : "0");
+		if (style.has(side) && style.has(`margin-${side}`)) return "a VML drawing placed by its left or top and its margins";
+		const offset = vmlLength((_ref2 = (_style$get3 = style.get(`margin-${side}`)) !== null && _style$get3 !== void 0 ? _style$get3 : style.get(side)) !== null && _ref2 !== void 0 ? _ref2 : "0");
 		return typeof offset === "string" ? offset : {
 			from,
 			offset
 		};
 	};
 	/**
-	* Reads a VML shape that text flows around, from its style and its wrapping (`w10:wrap`), or why it can't be followed:
-	* one turned, sized by a share of something, or placed or wrapped in a way not yet followed. The text keeps 9 points from
-	* it on the left and right, and none above and below, as VML has it, where its style doesn't say (`word-vml.docx` VM9).
+	* A VML shape's width or height as a share of what it is sized by (`mso-width-percent`, `mso-width-relative`), or why
+	* that isn't known: Word has been seen sizing one by a share of the margins only (`word-stops-vml-shapes.docx` VM27e)
 	*/
-	var readVmlFloating = (shape, wrap, width, height) => {
-		var _attributes$side, _style$get4, _attributesOf$oAllow;
+	var shareOf$1 = (style, dimension) => {
+		var _style$get4;
+		const percent = style.get(`mso-${dimension}-percent`);
+		if (percent === void 0) return;
+		const share = Number(percent) / TENTHS_OF_A_PERCENT;
+		const relative = (_style$get4 = style.get(`mso-${dimension}-relative`)) !== null && _style$get4 !== void 0 ? _style$get4 : "margin";
+		return Number.isNaN(share) ? "a VML drawing with a length that isn't a number" : relative === "margin" ? {
+			from: "margin",
+			share
+		} : "a VML drawing sized by a share of what it is placed against, other than the margins";
+	};
+	/**
+	* Reads a VML shape that text flows around, from its style, its wrapping (`w10:wrap`) and its outline, whose weight is
+	* `outline`, or why it can't be followed: one turned, one wrapped tightly round a polygon of its own (`wrapcoords`), or
+	* placed or wrapped in a way not yet followed. The text keeps 9 points from it on the left and right, and none above and
+	* below, as VML has it, where its style doesn't say (`word-vml.docx` VM9). Word moves one that would go past the right edge
+	* of the page back onto it (`word-stops-vml-shapes.docx` VM28a, VM28b)
+	*/
+	var readVmlFloating = (shape, wrap, width, height, outline = 0) => {
+		var _attributes$side, _style$get5, _shapeAttributes$oAl;
 		const { style } = shape;
 		const attributes = attributesOf(wrap);
-		const type = WRAPS$1[String(attributes.type)];
+		const shapeAttributes = attributesOf(shape.element[Object.keys(shape.element)[0]]);
+		const wrapType = String(attributes.type);
+		const type = WRAPS$1[wrapType];
 		const side = SIDES$1[String((_attributes$side = attributes.side) !== null && _attributes$side !== void 0 ? _attributes$side : "both")];
 		if (type === void 0 || side === void 0) return "a VML drawing that text flows around in a way not yet followed";
-		if (Number((_style$get4 = style.get("rotation")) !== null && _style$get4 !== void 0 ? _style$get4 : 0) !== 0) return "a turned VML drawing that text flows around";
-		if (style.has("mso-width-percent") || style.has("mso-height-percent")) return "a VML drawing sized by a share of what it is placed against";
+		const tighter = wrapType === "tight" || wrapType === "through";
+		if (tighter && shapeAttributes.wrapcoords !== void 0) return "a VML drawing wrapped tightly round a polygon of its own";
+		if (Number((_style$get5 = style.get("rotation")) !== null && _style$get5 !== void 0 ? _style$get5 : 0) !== 0) return "a turned VML drawing that text flows around";
 		const horizontal = positionOf(style, "horizontal", attributes.anchorx === void 0 ? void 0 : String(attributes.anchorx));
 		const vertical = positionOf(style, "vertical", attributes.anchory === void 0 ? void 0 : String(attributes.anchory));
 		const distance = (name, otherwise) => {
-			var _vmlLength;
-			return (_vmlLength = vmlLength(style.get(`mso-wrap-distance-${name}`))) !== null && _vmlLength !== void 0 ? _vmlLength : otherwise;
+			var _vmlLength2;
+			return (_vmlLength2 = vmlLength(style.get(`mso-wrap-distance-${name}`))) !== null && _vmlLength2 !== void 0 ? _vmlLength2 : otherwise;
 		};
 		const distances = [
 			distance("top", 0),
@@ -33176,34 +33252,34 @@ var docxLayout = (function(exports) {
 			distance("left", 9),
 			distance("right", 9)
 		];
+		const shares = [shareOf$1(style, "width"), shareOf$1(style, "height")];
 		const unknown = [
 			horizontal,
 			vertical,
-			...distances
+			...distances,
+			...shares
 		].find((value) => typeof value === "string");
 		if (unknown !== void 0) return unknown;
 		const [top, bottom, left, right] = distances;
-		return {
+		const [relativeWidth, relativeHeight] = shares;
+		return _objectSpread2(_objectSpread2(_objectSpread2({
 			wrap: type,
 			side,
 			width,
-			height,
-			effects: {
-				top: 0,
-				bottom: 0,
-				left: 0,
-				right: 0
-			},
+			height
+		}, relativeWidth === void 0 ? {} : { relativeWidth }), relativeHeight === void 0 ? {} : { relativeHeight }), {}, {
+			effects: outlineEffects(outline),
 			distances: {
 				top,
 				bottom,
 				left,
-				right
+				right: tighter ? Math.max(0, right - TIGHTER_RIGHT) : right
 			},
 			horizontal,
 			vertical,
-			mayOverlap: !isVmlFalse((_attributesOf$oAllow = attributesOf(shape.element[Object.keys(shape.element)[0]])["o:allowoverlap"]) !== null && _attributesOf$oAllow !== void 0 ? _attributesOf$oAllow : "t")
-		};
+			mayOverlap: !isVmlFalse((_shapeAttributes$oAl = shapeAttributes["o:allowoverlap"]) !== null && _shapeAttributes$oAl !== void 0 ? _shapeAttributes$oAl : "t"),
+			keptOnPage: true
+		});
 	};
 	//#endregion
 	//#region src/layout/read-document.ts
@@ -33544,36 +33620,54 @@ var docxLayout = (function(exports) {
 		return typeof floating === "string" ? floating : floatingItem(floating, reader);
 	};
 	var OLDER_VML = "a VML drawing in a document in compatibility mode 12 or 11";
+	var DEFAULT_VML_SIZE = 50;
+	var VML_PICTURE = "a VML picture";
 	/** Whether the document is in Word 2007's or 2003's compatibility mode, where VML drawings aren't laid out as Word does */
 	var olderVml = ({ compatibilityMode }) => compatibilityMode !== void 0 && compatibilityMode < 14;
 	/**
-	* Reads a VML drawing (`w:pict`), as Word lays it out (scripts/layout-probes/word-vml.ts). A shape in the line is a box of
-	* its size, with its run's font, standing on the baseline, as a picture is (VM7), and a text box in it is a box sized to
-	* its text (VM1 to VM5). One placed on the page (`position:absolute`) that text flows around (`w10:wrap`) is a drawing
-	* that text flows around, as a DrawingML one is (VM9 to VM11, VM15), and one with no wrapping is in front of the text or
-	* behind it, and takes no room (VM6), in a header or footer too, as docx's watermarks are. One in a header or footer that
-	* text flows around is one the body's text goes round (VM13), as a DrawingML one is. It says why where Word's way with it
-	* isn't known: a picture, which Word drew at a size other than its own (VM8), a shape with an outline, which takes room
-	* around it (VM1), tight or through wrapping, which Word doesn't wrap as square wrapping (VM14), and one in a header's
-	* line, whose room there doesn't follow the body's (VM12).
+	* Reads a VML drawing (`w:pict`), as Word lays it out (scripts/layout-probes/word-vml.ts and
+	* scripts/layout-probes/stops2/word-stops-vml.ts). A shape in the line is a box of its size, with its run's font, standing
+	* on the baseline, as a picture is (VM7), and its outline takes its weight more across and down (VM23a, VM23b); a group of
+	* shapes is a box of its size (VM29f). A text box in it is a box sized to its text (VM1 to VM5, VM25a to VM25e). One placed
+	* on the page (`position:absolute`) that text flows around (`w10:wrap`) is a drawing that text flows around, as a
+	* DrawingML one is (VM9 to VM11, VM15, VM24a to VM24c), and one with no wrapping is in front of the text or behind it, and
+	* takes no room (VM6), in a header or footer too, as docx's watermarks are. One in a header or footer that text flows
+	* around is one the body's text goes round (VM13), as a DrawingML one is, and one in the line of a header or footer takes
+	* the room it takes in the body (VM22a to VM22c). It says why where Word's way with it isn't known: a picture, which Word
+	* drew at a size other than its own (VM8, VM20), one in the line of a text box, which Word wouldn't open, and a group with a
+	* shape with an outline, or that text flows around
 	*/
 	var readVml = (pict, font, reader) => {
-		var _attributes$stroked;
 		const shape = vmlShapeOf(pict);
-		if (typeof shape === "string") return shape;
+		if (shape === void 0 || typeof shape === "string") return shape !== null && shape !== void 0 ? shape : [];
 		const { style, element } = shape;
-		const children = childrenOf(element[nameOf$1(element)]);
-		const attributes = attributesOf(element[nameOf$1(element)]);
-		const width = vmlLength(style.get("width"));
-		const height = vmlLength(style.get("height"));
-		const outlined = !isVmlFalse((_attributes$stroked = attributes.stroked) !== null && _attributes$stroked !== void 0 ? _attributes$stroked : "t") && style.get("visibility") !== "hidden";
-		const unsized = () => typeof width === "string" ? width : typeof height === "string" ? height : "a VML drawing with no size";
+		const name = nameOf$1(element);
+		const children = childrenOf(element[name]);
+		const attributes = attributesOf(element[name]);
+		const given = {
+			width: vmlLength(style.get("width")),
+			height: vmlLength(style.get("height"))
+		};
+		const { width, height } = given.width === void 0 && given.height === void 0 ? {
+			width: DEFAULT_VML_SIZE,
+			height: DEFAULT_VML_SIZE
+		} : given;
+		const unsized = () => typeof width === "string" ? width : typeof height === "string" ? height : "a VML drawing with a width but no height, or a height but no width";
+		const group = name === "v:group";
+		if (group && groupOutlined(element)) return "a VML group of shapes with an outline";
+		const outline = group ? {
+			weight: 0,
+			drawn: false
+		} : vmlOutline(attributes, style);
+		if (typeof outline === "string") return outline;
+		const picture = find(children, "v:imagedata") !== void 0 && attributes["o:ole"] === void 0;
 		if (style.get("position") === "absolute") {
 			const wrap = find(children, "w10:wrap");
 			if (wrap === void 0 || attributesOf(wrap).type === "none") return [];
-			const reason = olderVml(reader) ? OLDER_VML : reader.inCell || reader.inNote || reader.inTextBox ? IN_CELL_OR_NOTE : shape.text !== void 0 ? "a text box that text flows around" : find(children, "v:imagedata") !== void 0 ? "a VML picture" : outlined ? "a VML drawing with an outline that text flows around" : typeof width !== "number" || typeof height !== "number" ? unsized() : void 0;
+			const reason = olderVml(reader) ? OLDER_VML : reader.inCell || reader.inNote || reader.inTextBox ? IN_CELL_OR_NOTE : group ? "a VML group of shapes that text flows around" : picture ? VML_PICTURE : typeof width !== "number" || typeof height !== "number" ? unsized() : void 0;
 			if (reason !== void 0) return reason;
-			const floating = readVmlFloating(shape, wrap, width, height);
+			if (shape.text !== void 0) return readFloatingTextBox(shape, wrap, width, height, outline, reader);
+			const floating = readVmlFloating(shape, wrap, width, height, outline.drawn ? outline.weight : 0);
 			return typeof floating === "string" ? floating : floatingItem(floating, reader);
 		}
 		const sized = (reason) => typeof width === "number" && typeof height === "number" ? guessedOr(reader, reason, () => [{
@@ -33583,14 +33677,15 @@ var docxLayout = (function(exports) {
 			font
 		}]) : reason;
 		if (olderVml(reader)) return OLDER_VML;
-		if (reader.inHeader || reader.inTextBox) return sized("a VML drawing in the line of a header, footer or text box");
-		if (shape.text !== void 0) return readTextBox(shape, width, font, outlined, reader);
-		if (find(children, "v:imagedata") !== void 0) return sized("a VML picture");
-		if (outlined) return sized("a VML shape with an outline in the line");
-		return typeof width !== "number" || typeof height !== "number" ? unsized() : [{
+		if (reader.inTextBox) return sized("a VML drawing in the line of a text box");
+		if (shape.text !== void 0) return readTextBox(shape, width, height, outline, font, reader);
+		if (picture) return sized(VML_PICTURE);
+		if (typeof width !== "number" || typeof height !== "number") return unsized();
+		const room = outline.drawn ? outline.weight : 0;
+		return [{
 			type: "box",
-			width,
-			height,
+			width: width + room,
+			height: height + room,
 			font
 		}];
 	};
@@ -33600,38 +33695,127 @@ var docxLayout = (function(exports) {
 		right: 7.2,
 		bottom: 3.6
 	};
-	var TEXT_BOX_FIT = .72;
-	var TEXT_BOX_OUTLINE = .72;
+	var TEXT_BOX_EXTRA = .5;
+	/**
+	* The room between a text box's edges and its text (`v:textbox`'s inset, "left,top,right,bottom", each as Word has it when
+	* it isn't given: `word-stops-vml-text-boxes.docx` VM25b, VM25c), or why it isn't known
+	*/
+	var textBoxInsets = (textbox) => {
+		var _attributesOf$inset;
+		const given = String((_attributesOf$inset = attributesOf(textbox).inset) !== null && _attributesOf$inset !== void 0 ? _attributesOf$inset : "").split(",").map((value) => value.trim());
+		const [left, top, right, bottom] = [
+			"left",
+			"top",
+			"right",
+			"bottom"
+		].map((side, index) => given[index] ? vmlLength(given[index]) : TEXT_BOX_INSETS[side]);
+		const unknown = [
+			left,
+			top,
+			right,
+			bottom
+		].find((value) => typeof value === "string");
+		return unknown !== null && unknown !== void 0 ? unknown : {
+			left,
+			top,
+			right,
+			bottom
+		};
+	};
+	/**
+	* The paragraphs of a text box, read with the lists in them counted apart from the text's, as Word numbers them: a list
+	* in a text box starts at 1, and the text's paragraphs of the same list after it don't count the box's
+	* (`word-stops-vml-text-boxes.docx` VM26b). Or why they can't be laid out: a paragraph that can't be, or a list with
+	* paragraphs before the box, in the text or in another box, which Word may number on from or not
+	*/
+	var textBoxBlocks = (shape, reader) => {
+		const counters = /* @__PURE__ */ new Map();
+		const blocks = readBlocks(shape.text, _objectSpread2(_objectSpread2({}, reader), {}, {
+			inTextBox: true,
+			counters
+		}));
+		const unsupported = blocks.map(({ unsupported: why }) => why).find((why) => why !== void 0);
+		if (unsupported !== void 0) return unsupported;
+		for (const definition of counters.keys()) {
+			if (reader.counters.has(definition)) return "a list in a text box with paragraphs of its list before it";
+			reader.counters.set(definition, {
+				numbers: [],
+				started: []
+			});
+		}
+		return blocks;
+	};
 	/**
 	* Reads a text box in the line (docx's `Textbox`): its paragraphs, and the box they are in, which Word sizes to them, as
-	* docx writes it to be (`mso-fit-shape-to-text`), whatever height it gives (`word-vml.docx` VM3). The bookmarks and fields
-	* in it are where it is, in the paragraph it is in. Or why it can't be laid out: one Word doesn't size to its text, one
-	* with insets of its own or an outline of another weight, which Word hasn't been seen with, and one with notes or lists
-	* in it, which Word may number in an order not yet followed
+	* docx writes it to be (`mso-fit-shape-to-text`), whatever height it gives (`word-vml.docx` VM3), or which is as tall as
+	* it says otherwise, its text at its top (`word-stops-vml-text-boxes.docx` VM25a). Its text is laid out in its width less
+	* its insets and its outline (`word-stops-floats2.docx` TX1a to TX1k), and the box is as tall as its lines, its insets and
+	* its outline, which takes its weight more in the line, or none when it is hidden (VM25b to VM25e). The bookmarks and
+	* fields in it are where it is, in the paragraph it is in, and a footnote referred to in it is left out, reference and
+	* note, as Word leaves it (`word-stops-vml-note.docx` VM26a). Or why it can't be laid out
 	*/
-	var readTextBox = (shape, width, font, outlined, reader) => {
-		var _shape$textStyle, _blocks$map$find;
-		const attributes = attributesOf(shape.element[nameOf$1(shape.element)]);
-		const textbox = find(childrenOf(shape.element[nameOf$1(shape.element)]), "v:textbox");
-		const references = elementsIn$1(shape.text, (name) => name === "w:footnoteReference" || name === "w:endnoteReference");
-		const reason = typeof width !== "number" ? width !== null && width !== void 0 ? width : "a VML drawing with no size" : ((_shape$textStyle = shape.textStyle) === null || _shape$textStyle === void 0 ? void 0 : _shape$textStyle.get("mso-fit-shape-to-text")) !== "t" ? "a text box not sized to its text" : attributesOf(textbox).inset !== void 0 ? "a text box with insets of its own" : attributes.strokeweight !== void 0 ? "a text box with an outline of its own" : references.length > 0 ? "a footnote or endnote in a text box" : void 0;
-		if (reason !== void 0) return reason;
-		const blocks = readBlocks(shape.text, _objectSpread2(_objectSpread2({}, reader), {}, { inTextBox: true }));
-		const unsupported = (_blocks$map$find = blocks.map(({ unsupported: why }) => why).find((why) => why !== void 0)) !== null && _blocks$map$find !== void 0 ? _blocks$map$find : blocks.some((block) => block.type === "paragraph" && block.list !== void 0) ? "a list in a text box" : void 0;
-		if (unsupported !== void 0) return unsupported;
-		const outline = outlined ? TEXT_BOX_OUTLINE : 0;
-		const { left, right, top, bottom } = TEXT_BOX_INSETS;
+	var readTextBox = (shape, width, height, outline, font, reader) => {
+		var _shape$textStyle;
+		const insets = textBoxInsets(find(childrenOf(shape.element[nameOf$1(shape.element)]), "v:textbox"));
+		const fits = ((_shape$textStyle = shape.textStyle) === null || _shape$textStyle === void 0 ? void 0 : _shape$textStyle.get("mso-fit-shape-to-text")) === "t";
+		if (typeof width !== "number") return width !== null && width !== void 0 ? width : "a VML drawing with no size";
+		if (typeof insets === "string") return insets;
+		if (!fits && typeof height !== "number") return height !== null && height !== void 0 ? height : "a VML drawing with no size";
+		const blocks = textBoxBlocks(shape, reader);
+		if (typeof blocks === "string") return blocks;
+		const { weight, drawn } = outline;
+		const { left, right, top, bottom } = insets;
+		const outside = drawn ? weight : 0;
+		const extra = fits && weight === .72 ? 0 : TEXT_BOX_EXTRA;
 		return [...markersIn(blocks).map((name) => ({
 			type: "marker",
 			name
-		})), {
+		})), _objectSpread2({
 			type: "textBox",
-			width: width + outline,
-			textWidth: width - left - right,
-			room: top + bottom + TEXT_BOX_FIT + outline,
+			width: width + outside,
+			textWidth: width - left - right - weight,
+			room: top + bottom + weight + outside + extra,
 			blocks,
 			font
-		}];
+		}, fits ? {} : { fixed: {
+			height: height + outside + extra,
+			inner: height - top - bottom - weight
+		} })];
+	};
+	/**
+	* Reads a text box placed on the page that text flows around (`position:absolute` with `w10:wrap`), as Word lays it out:
+	* a drawing that text flows around, sized to its text as a text box in the line is, with its outline's room beside it
+	* (`word-stops-vml-text-boxes.docx` VM24c). The bookmarks and fields in it are on its anchor's page. One Word doesn't size
+	* to its text, and one with a table in it, haven't been seen
+	*/
+	var readFloatingTextBox = (shape, wrap, width, height, outline, reader) => {
+		var _shape$textStyle2;
+		const insets = textBoxInsets(find(childrenOf(shape.element[nameOf$1(shape.element)]), "v:textbox"));
+		if (typeof insets === "string") return insets;
+		if (((_shape$textStyle2 = shape.textStyle) === null || _shape$textStyle2 === void 0 ? void 0 : _shape$textStyle2.get("mso-fit-shape-to-text")) !== "t") return "a text box that text flows around not sized to its text";
+		const blocks = textBoxBlocks(shape, reader);
+		if (typeof blocks === "string") return blocks;
+		const paragraphs = blocks.filter((block) => block.type === "paragraph");
+		if (paragraphs.length !== blocks.length) return "a table in a text box that text flows around";
+		const floating = readVmlFloating(shape, wrap, width, height, outline.drawn ? outline.weight : 0);
+		if (typeof floating === "string") return floating;
+		const half = outline.weight / 2;
+		const inset = {
+			left: insets.left + half,
+			right: insets.right + half,
+			top: insets.top + half,
+			bottom: insets.bottom + half
+		};
+		const items = floatingItem(_objectSpread2(_objectSpread2({}, floating), {}, { frame: {
+			blocks: paragraphs,
+			heightRule: "auto",
+			fitsWidth: false,
+			inset
+		} }), reader);
+		return typeof items === "string" ? items : [...markersIn(blocks).map((name) => ({
+			type: "marker",
+			name
+		})), ...items];
 	};
 	var WRAPS = {
 		"wp:wrapSquare": "square",
@@ -33904,6 +34088,12 @@ var docxLayout = (function(exports) {
 				case "w:endnoteReference": {
 					var _reader$notes3;
 					const id = String(attributesOf(child[name])["w:id"]);
+					if (reader.inTextBox) {
+						if (name === "w:endnoteReference") return "an endnote in a text box";
+						reader.notesInTextBoxes.add(id);
+						return [];
+					}
+					if (name === "w:footnoteReference" && reader.notesInTextBoxes.size > 0) return "a footnote after one in a text box";
 					/** The marker at the reference, and its note's number, unless a mark of its own follows it in its place */
 					const reference = (note, numbered) => note === void 0 ? [] : [...note.marker ? [{
 						type: "marker",
@@ -33930,7 +34120,20 @@ var docxLayout = (function(exports) {
 					return choice && !format.hidden ? readRun({ "w:r": [...childrenOf(choice["mc:Choice"])] }, paragraphRun, reader, removed) : [];
 				}
 				case "w:pict": return format.hidden ? [] : font.border ? guessedOr(reader, "a picture in text with a border", () => readVml(child["w:pict"], font, reader)) : readVml(child["w:pict"], font, reader);
-				case "w:object": return format.hidden ? [] : "an embedded object";
+				case "w:object": {
+					if (format.hidden) return [];
+					if (olderVml(reader)) return OLDER_VML;
+					const object = vmlShapeOf(child["w:object"]);
+					if (object === void 0 || typeof object === "string") return "an embedded object without a shape of its own";
+					const width = vmlLength(object.style.get("width"));
+					const height = vmlLength(object.style.get("height"));
+					return typeof width === "number" && typeof height === "number" ? [{
+						type: "box",
+						width,
+						height,
+						font
+					}] : "an embedded object with no size";
+				}
 				case "w:dayShort":
 				case "w:dayLong":
 				case "w:monthShort":
@@ -34401,8 +34604,8 @@ var docxLayout = (function(exports) {
 		const fromStyle = (_paragraphStyles$find = paragraphStyles.findLast((style) => style.frame !== void 0)) === null || _paragraphStyles$find === void 0 ? void 0 : _paragraphStyles$find.frame;
 		const element = own !== null && own !== void 0 ? own : fromStyle;
 		if (element === void 0) return;
-		if (reader.inNote && !reader.inEndnote && !reader.inCell && !reader.inTextBox) return;
-		if (reader.inCell || reader.inNote || reader.inHeader || reader.inTextBox) return "a text frame in a table cell, endnote, header, footer or text box";
+		if (reader.inNote && !reader.inCell && !reader.inTextBox) return;
+		if (reader.inCell || reader.inHeader || reader.inTextBox) return "a text frame in a table cell, header, footer or text box";
 		const frame = readFrameProperties(element);
 		if (typeof frame === "string") return frame;
 		if (own !== void 0 && fromStyle !== void 0) {
@@ -34970,12 +35173,12 @@ var docxLayout = (function(exports) {
 		const tableTwips = givenWidth.width;
 		const fixedFit = fixed && evenable && (unequal || tableTwips !== void 0 && read.some(({ edges, end }) => Math.abs(edges.get(end) - tableTwips) > WIDTH_TOLERANCE));
 		const withoutGuess = blocks.find((block) => block.noGuess === true);
-		const floatElement = reader.inNote === true && reader.inEndnote !== true && !reader.inCell && reader.inTextBox !== true ? void 0 : find(properties, "w:tblpPr");
+		const floatElement = reader.inNote === true && !reader.inCell && reader.inTextBox !== true ? void 0 : find(properties, "w:tblpPr");
 		const float = floatElement === void 0 ? void 0 : readTableFloat(floatElement, find(properties, "w:tblOverlap"));
 		const older = reader.compatibilityMode !== void 0;
 		const marginsBeside = older && sized && givenWidth.width === void 0;
 		const verticalUnsupported = fits && (float !== void 0 || reader.inSizedTable === true) && tableCells.some(({ vertical }) => vertical) ? "text that runs up or down a cell of a table sized to its text, in a table cell or that text flows around" : void 0;
-		const unsupported = (_ref15 = (_ref16 = (_ref17 = (_ref18 = (_ref19 = (_ref20 = (_ref21 = (_ref22 = (_ref23 = (_ref24 = (_ref25 = (_ref26 = (_ref27 = (_ref28 = (_ref29 = (_ref30 = (_ref31 = (_ref32 = (_withoutGuess$unsuppo = withoutGuess === null || withoutGuess === void 0 ? void 0 : withoutGuess.unsupported) !== null && _withoutGuess$unsuppo !== void 0 ? _withoutGuess$unsuppo : reader.down === true ? "a table on text that runs down the page" : void 0) !== null && _ref32 !== void 0 ? _ref32 : float !== void 0 && (reader.inCell || reader.inNote || reader.inHeader) ? "a table that text flows around in a table cell, header, footer or endnote" : void 0) !== null && _ref31 !== void 0 ? _ref31 : float !== void 0 && older ? "a table that text flows around in a document in compatibility mode" : void 0) !== null && _ref30 !== void 0 ? _ref30 : marginsBeside && fits && (reader.inCell === true || indent !== 0 || givenWidth.share !== void 0) ? "a table sized to its text in a table cell, indented or as a share of the width, in a document in compatibility mode" : void 0) !== null && _ref29 !== void 0 ? _ref29 : typeof float === "string" ? float : void 0) !== null && _ref28 !== void 0 ? _ref28 : parts.some((part) => "w:sdt" in part) ? BOUND_CONTROL : void 0) !== null && _ref27 !== void 0 ? _ref27 : (_read$find2 = read.find((row) => row.unsupported !== void 0)) === null || _read$find2 === void 0 ? void 0 : _read$find2.unsupported) !== null && _ref26 !== void 0 ? _ref26 : unmerged) !== null && _ref25 !== void 0 ? _ref25 : fits ? unfitted : unequal && !evened ? "a table whose rows give a column different widths" : void 0) !== null && _ref24 !== void 0 ? _ref24 : fits && tableCells.some(({ noWrap }) => noWrap) ? "a table cell whose text doesn't wrap, in a table sized to its text" : void 0) !== null && _ref23 !== void 0 ? _ref23 : fits && tableCells.some(({ fitText }) => fitText) ? "text fitted to its table cell, in a table sized to its text" : void 0) !== null && _ref22 !== void 0 ? _ref22 : verticalUnsupported) !== null && _ref21 !== void 0 ? _ref21 : spacingUnsupported) !== null && _ref20 !== void 0 ? _ref20 : typeof geometry === "string" ? geometry : void 0) !== null && _ref19 !== void 0 ? _ref19 : indent === void 0 ? "a table indented by a share of the width" : void 0) !== null && _ref18 !== void 0 ? _ref18 : ((_givenWidth$share = givenWidth.share) !== null && _givenWidth$share !== void 0 ? _givenWidth$share : 0) > 1 ? "a table whose width is a share of more than the width it is in" : void 0) !== null && _ref17 !== void 0 ? _ref17 : styleUnsupported) !== null && _ref16 !== void 0 ? _ref16 : lengths) !== null && _ref15 !== void 0 ? _ref15 : (_blocks$find = blocks.find((block) => block.unsupported !== void 0)) === null || _blocks$find === void 0 ? void 0 : _blocks$find.unsupported;
+		const unsupported = (_ref15 = (_ref16 = (_ref17 = (_ref18 = (_ref19 = (_ref20 = (_ref21 = (_ref22 = (_ref23 = (_ref24 = (_ref25 = (_ref26 = (_ref27 = (_ref28 = (_ref29 = (_ref30 = (_ref31 = (_ref32 = (_withoutGuess$unsuppo = withoutGuess === null || withoutGuess === void 0 ? void 0 : withoutGuess.unsupported) !== null && _withoutGuess$unsuppo !== void 0 ? _withoutGuess$unsuppo : reader.down === true ? "a table on text that runs down the page" : void 0) !== null && _ref32 !== void 0 ? _ref32 : float !== void 0 && (reader.inCell || reader.inHeader) ? "a table that text flows around in a table cell, header or footer" : void 0) !== null && _ref31 !== void 0 ? _ref31 : float !== void 0 && older ? "a table that text flows around in a document in compatibility mode" : void 0) !== null && _ref30 !== void 0 ? _ref30 : marginsBeside && fits && (reader.inCell === true || indent !== 0 || givenWidth.share !== void 0) ? "a table sized to its text in a table cell, indented or as a share of the width, in a document in compatibility mode" : void 0) !== null && _ref29 !== void 0 ? _ref29 : typeof float === "string" ? float : void 0) !== null && _ref28 !== void 0 ? _ref28 : parts.some((part) => "w:sdt" in part) ? BOUND_CONTROL : void 0) !== null && _ref27 !== void 0 ? _ref27 : (_read$find2 = read.find((row) => row.unsupported !== void 0)) === null || _read$find2 === void 0 ? void 0 : _read$find2.unsupported) !== null && _ref26 !== void 0 ? _ref26 : unmerged) !== null && _ref25 !== void 0 ? _ref25 : fits ? unfitted : unequal && !evened ? "a table whose rows give a column different widths" : void 0) !== null && _ref24 !== void 0 ? _ref24 : fits && tableCells.some(({ noWrap }) => noWrap) ? "a table cell whose text doesn't wrap, in a table sized to its text" : void 0) !== null && _ref23 !== void 0 ? _ref23 : fits && tableCells.some(({ fitText }) => fitText) ? "text fitted to its table cell, in a table sized to its text" : void 0) !== null && _ref22 !== void 0 ? _ref22 : verticalUnsupported) !== null && _ref21 !== void 0 ? _ref21 : spacingUnsupported) !== null && _ref20 !== void 0 ? _ref20 : typeof geometry === "string" ? geometry : void 0) !== null && _ref19 !== void 0 ? _ref19 : indent === void 0 ? "a table indented by a share of the width" : void 0) !== null && _ref18 !== void 0 ? _ref18 : ((_givenWidth$share = givenWidth.share) !== null && _givenWidth$share !== void 0 ? _givenWidth$share : 0) > 1 ? "a table whose width is a share of more than the width it is in" : void 0) !== null && _ref17 !== void 0 ? _ref17 : styleUnsupported) !== null && _ref16 !== void 0 ? _ref16 : lengths) !== null && _ref15 !== void 0 ? _ref15 : (_blocks$find = blocks.find((block) => block.unsupported !== void 0)) === null || _blocks$find === void 0 ? void 0 : _blocks$find.unsupported;
 		const rowWidth = ((_read$0$cells = (_read$ = read[0]) === null || _read$ === void 0 ? void 0 : _read$.cells) !== null && _read$0$cells !== void 0 ? _read$0$cells : []).reduce((total, cell) => {
 			var _cell$ownWidth;
 			return total + ((_cell$ownWidth = cell.ownWidth) !== null && _cell$ownWidth !== void 0 ? _cell$ownWidth : 0);
@@ -35021,9 +35224,9 @@ var docxLayout = (function(exports) {
 	};
 	/**
 	* Where a table that text flows around is (`w:tblpPr`), or why it can't be followed. One that doesn't say what it is
-	* placed against is placed against the margins, as Word places it: across the page, where the margins and the column are
-	* the same in one column, so it stops in columns, and down the page, from the top margin (`word-stops-floats.docx` FT7a,
-	* FT7b). Lined up inline against the text, it is at the top of the paragraph after it (FT7c)
+	* placed against is placed against the column across the page and the margins down it, as Word places it
+	* (`word-stops-floats.docx` FT7a, FT7b, `word-stops-floats2.docx` CO1a). Lined up inline against the text, it is at the
+	* top of the paragraph after it (FT7c)
 	*/
 	var readTableFloat = (element, overlap) => {
 		const attributes = attributesOf(element);
@@ -35031,22 +35234,21 @@ var docxLayout = (function(exports) {
 			var _twips4;
 			const { from: anchors, alignments } = TABLE_AXES[anchor];
 			const given = attributes[`w:${anchor}`];
-			const from = given === void 0 ? "margin" : anchors.get(String(given));
+			const from = given === void 0 ? anchor === "horzAnchor" ? "column" : "margin" : anchors.get(String(given));
 			const align = attributes[`w:${spec}`];
 			if (from === void 0) return "a table that text flows around placed against what isn't followed yet";
-			const unsaid = given === void 0 && anchor === "horzAnchor" ? { inColumns: "a table that text flows around placed against what isn't given, in columns" } : {};
 			if (align === "inline" && from === "paragraph") return {
 				from,
 				align: "top"
 			};
-			if (align !== void 0) return alignments.has(String(align)) ? _objectSpread2({
+			if (align !== void 0) return alignments.has(String(align)) ? {
 				from,
 				align: String(align)
-			}, unsaid) : "a table that text flows around lined up in a way not yet followed";
-			return _objectSpread2({
+			} : "a table that text flows around lined up in a way not yet followed";
+			return {
 				from,
 				offset: (_twips4 = twips(attributes[`w:${at}`])) !== null && _twips4 !== void 0 ? _twips4 : 0
-			}, unsaid);
+			};
 		};
 		const horizontal = position("horzAnchor", "tblpXSpec", "tblpX");
 		const vertical = position("vertAnchor", "tblpYSpec", "tblpY");
@@ -35482,9 +35684,9 @@ var docxLayout = (function(exports) {
 	/**
 	* A text frame as a drawing that text flows around, placed and sized by its properties and its paragraphs, nothing when
 	* it is in front of the text, or why it can't be laid out. Its borders at its sides keep the text further from it, and
-	* those above and below are in it, above and below its text, as a paragraph's are (FR2a to FR2j). Where its paragraphs
-	* have other borders at their sides, and where a frame with borders there has a distance from the text too, Word's way
-	* isn't known
+	* those above and below are in it, above and below its text, as a paragraph's are (FR2a to FR2j), and its distance from
+	* the text keeps it further again (`word-stops-floats2.docx` FB1a). Where its paragraphs have other borders at their
+	* sides, Word's way isn't known
 	*/
 	var frameDrawing = (frame, blocks) => {
 		var _frame$wrap;
@@ -35495,7 +35697,6 @@ var docxLayout = (function(exports) {
 		const [left, right] = [blocks[0].format.borderLeft, blocks[0].format.borderRight].map(frameBorderRoom);
 		if (typeof left === "string" || typeof right === "string") return typeof left === "string" ? left : right;
 		const { width = 0, height, heightRule, horizontal, vertical, across, down } = frame;
-		if (left + right > 0 && across > 0) return "a text frame with borders at its sides and a distance from the text";
 		if (wrap === "none") return;
 		return {
 			wrap,
@@ -35539,7 +35740,7 @@ var docxLayout = (function(exports) {
 		const anchored = [];
 		let framed = [];
 		for (const entry of entries) {
-			var _ref33, _block$unsupported;
+			var _block$unsupported;
 			const { block } = entry;
 			if (isFramed(block)) {
 				framed = [...framed, entry];
@@ -35566,7 +35767,7 @@ var docxLayout = (function(exports) {
 				type: "drawing",
 				drawing
 			}]);
-			const why = (_ref33 = (_block$unsupported = block.unsupported) !== null && _block$unsupported !== void 0 ? _block$unsupported : unsupported) !== null && _ref33 !== void 0 ? _ref33 : block.type === "table" && laidOut.some(({ drawing }) => drawing.vertical.from === "paragraph") ? "a text frame placed against the paragraph after it, before a table" : void 0;
+			const why = (_block$unsupported = block.unsupported) !== null && _block$unsupported !== void 0 ? _block$unsupported : unsupported;
 			anchored.push(withBlock(entry, _objectSpread2(_objectSpread2({}, block.type === "table" ? _objectSpread2(_objectSpread2({}, block), {}, { anchored: [...markers, ...laidOut] }) : _objectSpread2(_objectSpread2({}, block), {}, { items: [
 				...markers,
 				...laidOut,
@@ -36261,7 +36462,7 @@ var docxLayout = (function(exports) {
 	* Reads a document's body (`w:body`), with the other parts of the document.
 	*/
 	var readContent = (writtenBody, writtenParts, { guess = false } = {}) => {
-		var _writtenParts$dataSto, _parts$otherListIds, _parts$otherListIds2, _parts$settings, _fontOf$size2, _notesByKind$kind$get, _ref34, _ref35, _ref36, _ref37, _ref38, _ref39, _ref40, _documentContent$unsu;
+		var _writtenParts$dataSto, _parts$otherListIds, _parts$otherListIds2, _parts$settings, _fontOf$size2, _notesByKind$kind$get, _ref33, _ref34, _ref35, _ref36, _ref37, _ref38, _ref39, _documentContent$unsu;
 		const stores = (_writtenParts$dataSto = writtenParts.dataStores) !== null && _writtenParts$dataSto !== void 0 ? _writtenParts$dataSto : /* @__PURE__ */ new Map();
 		const body = withBoundTextWritten(writtenBody, stores);
 		const parts = _objectSpread2(_objectSpread2({}, writtenParts), {}, {
@@ -36290,7 +36491,8 @@ var docxLayout = (function(exports) {
 			inHeader,
 			markers,
 			fields: [],
-			counters: /* @__PURE__ */ new Map()
+			counters: /* @__PURE__ */ new Map(),
+			notesInTextBoxes: /* @__PURE__ */ new Set()
 		}, decimalSymbol === void 0 ? {} : { decimalSymbol }), mathsSettings), eastAsianRules === void 0 ? {} : { eastAsianRules }), guess ? { guess } : {}), compatibilityMode === void 0 ? {} : { compatibilityMode }), feLayout ? { feLayout } : {}), openTypeFeatures ? { openTypeFeatures } : {});
 		const elements = unwrap(joinRemovedMarks(contentOf$3(body), styles, {
 			nested: false,
@@ -36620,7 +36822,7 @@ var docxLayout = (function(exports) {
 			relativeReferences: markers.relative,
 			endnoteReferences
 		}, parts.fonts !== void 0 && parts.fonts.length > 0 ? { fonts: parts.fonts } : {}), readSettings(parts.settings));
-		return _objectSpread2(_objectSpread2({}, documentContent), withoutUndefined({ unsupported: (_ref34 = (_ref35 = (_ref36 = (_ref37 = (_ref38 = (_ref39 = (_ref40 = (_documentContent$unsu = documentContent.unsupported) !== null && _documentContent$unsu !== void 0 ? _documentContent$unsu : styles.unsupported) !== null && _ref40 !== void 0 ? _ref40 : inNumbering) !== null && _ref39 !== void 0 ? _ref39 : footnotes.size > 0 ? notesUnsupported("footnote") : void 0) !== null && _ref38 !== void 0 ? _ref38 : endnotes.length > 0 ? notesUnsupported("endnote") : void 0) !== null && _ref37 !== void 0 ? _ref37 : sections.slice(Math.min(...endnoteSections)).some(({ textRunsDown }) => textRunsDown !== void 0) ? "endnotes on or before text that runs down the page" : void 0) !== null && _ref36 !== void 0 ? _ref36 : endnoteSections.some((section) => sections.slice(section + 1).some((_, after) => !sameGrid(gridOf(section), gridOf(section + 1 + after)))) ? "endnotes from a section followed by one on another document grid" : void 0) !== null && _ref35 !== void 0 ? _ref35 : unwrittenNumber ? "notes numbered in a format not yet written" : void 0) !== null && _ref34 !== void 0 ? _ref34 : unseenNumbering }));
+		return _objectSpread2(_objectSpread2({}, documentContent), withoutUndefined({ unsupported: (_ref33 = (_ref34 = (_ref35 = (_ref36 = (_ref37 = (_ref38 = (_ref39 = (_documentContent$unsu = documentContent.unsupported) !== null && _documentContent$unsu !== void 0 ? _documentContent$unsu : styles.unsupported) !== null && _ref39 !== void 0 ? _ref39 : inNumbering) !== null && _ref38 !== void 0 ? _ref38 : footnotes.size > 0 ? notesUnsupported("footnote") : void 0) !== null && _ref37 !== void 0 ? _ref37 : endnotes.length > 0 ? notesUnsupported("endnote") : void 0) !== null && _ref36 !== void 0 ? _ref36 : sections.slice(Math.min(...endnoteSections)).some(({ textRunsDown }) => textRunsDown !== void 0) ? "endnotes on or before text that runs down the page" : void 0) !== null && _ref35 !== void 0 ? _ref35 : endnoteSections.some((section) => sections.slice(section + 1).some((_, after) => !sameGrid(gridOf(section), gridOf(section + 1 + after)))) ? "endnotes from a section followed by one on another document grid" : void 0) !== null && _ref34 !== void 0 ? _ref34 : unwrittenNumber ? "notes numbered in a format not yet written" : void 0) !== null && _ref33 !== void 0 ? _ref33 : unseenNumbering }));
 	};
 	//#endregion
 	//#region src/layout/paginate.ts
@@ -36652,7 +36854,6 @@ var docxLayout = (function(exports) {
 		}];
 	};
 	var TOLERANCE = .01;
-	var TEXT_BOX_DOUBT = .72;
 	var EXACT_ABOVE_BASELINE = .8;
 	var TOP_SPACE_KEPT = 9.6;
 	var TOP_SPACING_UNKNOWN = "the first line of a page or column, at line spacing Word hasn't shown, in a document that suppresses the space above it";
@@ -36817,7 +37018,7 @@ var docxLayout = (function(exports) {
 		}
 	};
 	var PUSHED_ON = "a drawing whose paragraph goes on to the next page as the text before it goes round it";
-	var BEFORE_TABLE_MOVING_ON = "a table that text flows around or a text frame before a table that moves on";
+	var FRAME_BEFORE_TABLE_MOVING_ON = "a text frame before a table that moves on";
 	/**
 	* Thrown to lay out a page again when the paragraph of a drawing placed from the page's top went on to the next page as
 	* the text before it went round the drawing, with the paragraph starting on the next page (`block`), and its drawing with
@@ -36855,16 +37056,13 @@ var docxLayout = (function(exports) {
 	var KEPT_FLOATING = "a paragraph kept with the next before a table that text flows around";
 	/**
 	* Word lays out a paragraph kept with the next beside a drawing, with a drawing of its own or before a table, where it is,
-	* when the next starts on its page (`word-stops-drawings.docx` DR12a, DR12b). How much room Word finds for it otherwise,
+	* when the next starts on its page (`word-stops-drawings.docx` DR12a, DR12b), and moves one with a drawing of its own to
+	* the next page with the next, and the drawing with it, as any kept paragraph (`word-stops-floats2.docx` KP1a). How much
+	* room Word finds for one kept with a table, or with a drawing of its own that the next's text goes above and below,
 	* where it moves on, hasn't been seen, so it is laid out where it is, and the layout stops where the next starts
 	* elsewhere
 	*/
-	var KEPT_BESIDE = "a paragraph kept with the next beside a drawing, with a drawing of its own or before a table, apart from the next";
-	/**
-	* Word lays out a paragraph kept with the next with a table that text flows around anchored in it where it is, when the
-	* next starts on its page (`word-stops-floats.docx` FT4a, FT4b); how Word moves them otherwise hasn't been seen
-	*/
-	var KEPT_WITH_FLOATING = "a paragraph kept with the next with a table that text flows around, apart from the next";
+	var KEPT_BESIDE = "a paragraph kept with the next beside a drawing, kept with a table or with a drawing of its own the text goes above and below, apart from the next";
 	var BORDERLESS_FLOAT = .75;
 	/** Whether a table has no borders round it: none left or right, above its first row or below its last */
 	var borderlessOutside = ({ borderLeft, borderRight, rows }) => {
@@ -37079,16 +37277,16 @@ var docxLayout = (function(exports) {
 			}).find(Boolean);
 		};
 		/**
-		* How tall a text box in the line is: its paragraphs, and the room above and below them. Where its text starts across
-		* the box, Word's PDFs show to within a little less than the room it adds to its height (`word-vml.docx` VM1, VM5), so
-		* it stops where its lines would break differently in that much more or less room, or, guessing, takes them as they
-		* break in the room its insets leave
+		* How tall a text box in the line is: its paragraphs, broken in the room for its text, which is its width less its
+		* insets and its outline (`word-stops-floats2.docx` TX1a to TX1k), and the room above and below them; or its own
+		* height, when Word doesn't size it to its text, which its text must fit in (`word-stops-vml-text-boxes.docx` VM25a)
 		*/
 		const textBoxHeight = (box) => {
-			const { room, textWidth: inside, blocks: inBox } = box;
-			const [narrower, wider] = [inside - TEXT_BOX_DOUBT, inside + TEXT_BOX_DOUBT].map((width) => stackHeight(inBox, width, true));
-			if (Math.abs(narrower - wider) > TOLERANCE) stopAt("a line in a text box that only just fits");
-			return room + stackHeight(inBox, inside, true);
+			const { room, textWidth: inside, blocks: inBox, fixed } = box;
+			const ofText = stackHeight(inBox, inside, true);
+			if (fixed === void 0) return room + ofText;
+			if (ofText > fixed.inner + TOLERANCE) throw new Unsupported("a text box whose text is taller than it");
+			return fixed.height;
 		};
 		/**
 		* A paragraph's content, as it is measured, which stops the layout at a character whose width the measurer doesn't
@@ -38567,7 +38765,6 @@ var docxLayout = (function(exports) {
 				pending = [...pending, ...notes];
 				return;
 			}
-			if (drawings.some(({ keepOut }) => keepOut.bottom > linesBottom(moreNoteRoom(notes)) + TOLERANCE)) throw new Unsupported(BESIDE_NOTES);
 			if (position + below <= linesBottom(moreNoteRoom(notes)) + TOLERANCE) {
 				addNotes(notes);
 				return;
@@ -38688,32 +38885,36 @@ var docxLayout = (function(exports) {
 			if (away === void 0) return;
 			if (isTableDrawing(away)) throw new Unsupported(PUSHED_ON);
 			const block = Number(away.anchor.split(" ")[0]);
-			if (blocks[block].block.type === "table") throw new Unsupported(BEFORE_TABLE_MOVING_ON);
+			if (blocks[block].block.type === "table") throw new Unsupported(FRAME_BEFORE_TABLE_MOVING_ON);
 			throw new PushedOn(block, pageCount);
 		};
 		const startsNextPage = /* @__PURE__ */ new Map();
 		const inlined = /* @__PURE__ */ new Set();
+		const leftBehind = /* @__PURE__ */ new Set();
 		/** Whether a block is a table that text flows around, laid out round the paragraph after it */
 		const floatsAt = (index) => {
 			const entry = blocks[index];
-			return entry !== void 0 && isFloating(entry.block) && !inlined.has(index) && !brokenAcross.has(index);
+			return entry !== void 0 && isFloating(entry.block) && !inlined.has(index) && !brokenAcross.has(index) && !leftBehind.has(index);
 		};
 		/**
 		* Breaks a table that text flows around that goes past the bottom of the page across pages, as Word breaks it: the rows
-		* that fit stay where it was placed, the rest go at the top of the next pages, where it is across the page, and the
-		* paragraph after it starts at the top of the page its last rows are on, beside them, as beside a drawing there. A page
-		* between holds its rows only (`word-stops-floats.docx` FT5b to FT5d, `word-floats2.docx` G28). Where it has header rows,
-		* footnotes or a distance from the text above or below it, is in columns, and where its first row doesn't fit, a row
-		* that would go on to the next page has more than one line and can split, or a row is taller than a page, Word's way
-		* isn't known, and it isn't broken: whether it is
+		* that fit stay where it was placed, the rest go at the top of the next pages, where it is across the page, below its
+		* header rows, which go at the top of each page again, and the paragraph after it starts at the top of the page its
+		* last rows are on, beside them, as beside a drawing there. A page between holds its rows only
+		* (`word-stops-floats.docx` FT5b to FT5d, `word-floats2.docx` G28, `word-stops-floats2.docx` TF2a, TF2b). Where it has
+		* footnotes or a distance from the text above it, is in columns, and where its first row doesn't fit, a row that would
+		* go on to the next page has more than one line and can split, which Word splits as a row of a table it doesn't flow
+		* around (TF2c), or a row is taller than a page, Word's way isn't followed, and it isn't broken: whether it is
 		*/
 		const breakAcross = ({ drawing, table }) => {
 			const block = blocks[table.index].block;
 			const { distances } = drawing.drawing;
 			const { heights } = table;
+			const headerRows = Math.max(0, block.rows.findIndex(({ header }) => !header));
+			const repeated = sum(heights.slice(0, headerRows));
 			const first = heights.findIndex((_, at) => drawing.box.top + sum(heights.slice(0, at + 1)) > linesBottom() + TOLERANCE);
-			if (first <= 0) return false;
-			const room = pageBottom - top;
+			if (first <= headerRows) return false;
+			const room = pageBottom - top - repeated;
 			const { parts } = heights.slice(first).reduce(({ parts: counts, used }, height) => counts.length > 0 && used + height <= room + TOLERANCE ? {
 				parts: [...counts.slice(0, -1), counts[counts.length - 1] + 1],
 				used: used + height
@@ -38727,7 +38928,7 @@ var docxLayout = (function(exports) {
 			if (!parts.map((_, part) => first + sum(parts.slice(0, part))).every((start) => {
 				const { cantSplit, cells } = block.rows[start];
 				return cantSplit || cells.every(({ blocks: [only, ...rest], width }) => rest.length === 0 && (only === null || only === void 0 ? void 0 : only.type) === "paragraph" && linesOf(only, width).length === 1);
-			}) || carried !== void 0 || parts.includes(0) || block.rows.some(({ header }) => header) || notesIn(markersOf(block)).length > 0 || distances.top > 0 || distances.bottom > 0 || columnsSection().columns.length > 1) return false;
+			}) || carried !== void 0 || parts.includes(0) || notesIn(markersOf(block)).length > 0 || distances.top > 0 || columnsSection().columns.length > 1) return false;
 			/** Places some of its rows from where they go down the page, with their bookmarks and fields on that page */
 			const placeRows = (from, count, y) => {
 				heights.slice(from, from + count).reduce((rowTop, height, offset) => {
@@ -38748,12 +38949,13 @@ var docxLayout = (function(exports) {
 			let row = first;
 			for (const count of parts) {
 				startPage();
-				placeRows(row, count, position);
+				placeRows(0, headerRows, position);
+				placeRows(row, count, position + repeated);
 				row += count;
 			}
 			const box = _objectSpread2(_objectSpread2({}, drawing.box), {}, {
 				top: position,
-				bottom: position + sum(heights.slice(row - parts[parts.length - 1]))
+				bottom: position + repeated + sum(heights.slice(row - parts[parts.length - 1]))
 			});
 			drawings = [...drawings, _objectSpread2(_objectSpread2({}, drawing), {}, {
 				box,
@@ -38780,16 +38982,16 @@ var docxLayout = (function(exports) {
 		/**
 		* Why Word's way with the tables that text flows around from one (`index`) isn't known: with nothing after them in
 		* their section to place them against, which a document read doesn't have, as each section ends with a paragraph
-		* and the body with the one Word adds after them, before a paragraph kept with the next, with borders between their
-		* rows only, or with a footnote in one before a table. Word places them against the top of what comes after them: a
-		* paragraph, the empty one that ends their section, which takes a line after them, and a table
-		* (`word-stops-floats.docx` FT1a to FT1e), and their footnotes go on the page with them (FT3)
+		* and the body with the one Word adds after them, before a paragraph kept with the next, or with a footnote in one
+		* before a table. Word places them against the top of what comes after them: a paragraph, the empty one that ends
+		* their section, which takes a line after them, and a table (`word-stops-floats.docx` FT1a to FT1e), and their
+		* footnotes go on the page with them (FT3). One with borders between its rows only has the room of its rows, as its
+		* borders count as borders (`word-stops-floats2.docx` TF3)
 		*/
 		const floatsUnknown = (index) => {
 			const run = floatsFrom(index);
 			const after = blocks[index + run.length];
 			if ((after === null || after === void 0 ? void 0 : after.section) !== blocks[index].section) return "a table that text flows around without a paragraph after it";
-			if (run.some((table) => borderlessOutside(blocks[table].block) && !borderless(blocks[table].block))) return "a table that text flows around with borders between its rows only";
 			return after.block.type === "table" && run.some((table) => notesIn(markersOf(blocks[table].block)).length > 0) ? "a footnote in a table that text flows around before a table" : void 0;
 		};
 		/**
@@ -38880,6 +39082,12 @@ var docxLayout = (function(exports) {
 		* goes round them, and the table goes below those it would go beside, as below a drawing. Where one goes past the bottom
 		* of the page, as the table it is anchored in would move on without it, Word's way isn't known. Whether any were placed
 		*/
+		/** Where a drawing is drawn on its page, placed against what its positions say, or stops where that isn't known */
+		const placeOrStop = (drawing, frame) => {
+			const box = placeDrawing(drawing, frame);
+			if (typeof box === "string") throw new Unsupported(box);
+			return box;
+		};
 		const placeBeforeTable = (table, index) => {
 			var _table$anchored;
 			const frames = (_table$anchored = table.anchored) !== null && _table$anchored !== void 0 ? _table$anchored : [];
@@ -38905,7 +39113,7 @@ var docxLayout = (function(exports) {
 					item,
 					drawing: pin
 				}, withTable);
-				const box = placeDrawing(drawing, {
+				const box = placeOrStop(drawing, {
 					section: section(),
 					oddPage: pageNumber % 2 === 1,
 					column: {
@@ -38919,7 +39127,6 @@ var docxLayout = (function(exports) {
 					},
 					character: 0
 				});
-				if (typeof box === "string") throw new Unsupported(box);
 				const keepOut = keepOutOf(drawing, box);
 				if (keepOut.bottom > linesBottom() + TOLERANCE || box.top - drawing.effects.top < top - TOLERANCE) throw new Unsupported(floating === void 0 ? "a text frame before a table going past the top or bottom of the page's text" : "a table that text flows around before a table going past the top or bottom of the page's text");
 				return _objectSpread2({
@@ -38945,8 +39152,14 @@ var docxLayout = (function(exports) {
 		const sizedFrame = (drawing) => {
 			const { frame } = drawing;
 			if (frame === void 0) return drawing;
-			const width = frame.fitsWidth ? contentWidths(frame.blocks).max : drawing.width;
-			const ofText = stackHeight(frame.blocks, width, false);
+			const { inset = {
+				top: 0,
+				bottom: 0,
+				left: 0,
+				right: 0
+			} } = frame;
+			const width = frame.fitsWidth ? contentWidths(frame.blocks).max + inset.left + inset.right : drawing.width;
+			const ofText = stackHeight(frame.blocks, width - inset.left - inset.right, false) + inset.top + inset.bottom;
 			if (frame.blocks.some(({ format }) => [
 				format.borderTop,
 				format.borderBottom,
@@ -38992,15 +39205,20 @@ var docxLayout = (function(exports) {
 				const table = isTableDrawing(drawing);
 				const kind = table === isTableDrawing(other) && own.frame === void 0 && other.drawing.frame === void 0;
 				const still = Math.max(effects.top, effects.bottom, effects.left, effects.right) === 0;
-				const right = own.horizontal.align === void 0;
-				const left = !table && own.horizontal.align === "right";
+				const { align } = own.horizontal;
+				const right = align === void 0 || table && align === "left";
+				const left = align === "right";
 				if (own.mayOverlap || !kind || !still || !(right || left) || attempts > others.length) throw new Unsupported("drawings that text flows around that may not overlap, overlapping");
-				const to = table ? other.keepOut.right + (box.left - keepOut.left) : right ? other.box.right : other.box.left - (box.right - box.left);
-				const shifted = _objectSpread2(_objectSpread2({}, box), {}, {
+				const width = box.right - box.left;
+				const fits = (candidate) => candidate.left >= within.start - TOLERANCE && candidate.right <= within.end + TOLERANCE;
+				const shiftedTo = (to) => _objectSpread2(_objectSpread2({}, box), {}, {
 					left: to,
-					right: to + box.right - box.left
+					right: to + width
 				});
-				if (shifted.left < within.start - TOLERANCE || shifted.right > within.end + TOLERANCE) throw new Unsupported("drawings that text flows around that may not overlap, overlapping, with no room beside");
+				const toRight = table ? other.keepOut.right + (box.left - keepOut.left) : other.box.right;
+				const toLeft = table ? other.keepOut.left - (keepOut.right - box.left) : other.box.left - width;
+				const shifted = (table ? right ? [toRight, toLeft] : [toLeft, toRight] : [right ? toRight : toLeft]).map(shiftedTo).find(fits);
+				if (shifted === void 0) throw new Unsupported("drawings that text flows around that may not overlap, overlapping, with no room beside");
 				return away(_objectSpread2(_objectSpread2({}, drawing), {}, {
 					box: shifted,
 					keepOut: keepOutOf(own, shifted)
@@ -39010,8 +39228,9 @@ var docxLayout = (function(exports) {
 		}, []);
 		/**
 		* Puts the drawings of the paragraph being placed on the page, where the text after them goes round them. It stops
-		* where Word's way with them isn't known yet: drawings that overlap, one beside text placed before it on the page,
-		* which Word lays out again, and one that goes below the bottom of the page's text or into its footnotes.
+		* where Word's way with them isn't known yet: drawings that overlap, and one beside text placed before it on the page,
+		* which Word lays out again. One beside the page's footnotes leaves their lines as they are, as Word does
+		* (`word-stops-floats2.docx` FN1).
 		*/
 		const placeDrawings = (placed) => {
 			const before = placements.slice(placements.findLastIndex(({ type }) => type === "page") + 1);
@@ -39028,7 +39247,6 @@ var docxLayout = (function(exports) {
 					top: placement.line.y,
 					bottom: placement.line.y + placement.line.height
 				}) : placement.type === "row" && !floatsAt(placement.block) && placement.row.y + placement.row.height > keepOut.top && placement.row.y < keepOut.bottom)) throw new DrawingAbove(drawing);
-				if (noteArea > 0 && keepOut.bottom > linesBottom() + TOLERANCE) throw new Unsupported(BESIDE_NOTES);
 			}
 			drawings = [...drawings.filter(({ anchor }) => !placed.some(({ drawing }) => drawing.anchor === anchor)), ...placed.map(({ drawing }) => drawing)];
 		};
@@ -39122,7 +39340,6 @@ var docxLayout = (function(exports) {
 			*/
 			const roomOfRow = (around, y, height, line) => {
 				const room = roomBeside(around, y, height, within);
-				if ("narrow" in room) throw new Unsupported("a line beside a drawing with less than 18 points of room beside it");
 				if ("below" in room) return room;
 				if (compatibilityMode !== void 0 && room.spans.some((span) => narrowGap(span, within))) stopAt("a line beside a drawing or frame in a gap narrower than 135 points, in a document in compatibility mode");
 				const spans = room.spans.map((span, offset) => ({
@@ -39139,6 +39356,12 @@ var docxLayout = (function(exports) {
 			/** Whether a row's only room is all of the paragraph's, as a line not beside a drawing has */
 			const isWhole = (spans, line) => spans.length === 1 && spans[0].start <= indentLeft + (line === 0 ? firstLineIndent : 0) + TOLERANCE && spans[0].end >= within.end - left - indentRight - TOLERANCE;
 			/** The rows of the lines broken in some rooms beside some of its own drawings, and the rooms they put the lines in */
+			const jumps = /* @__PURE__ */ new Map();
+			/** The bottom of the nearest of the drawings beside a row from `y`, `height` tall, when there is one */
+			const belowDrawings = (all, y, height) => {
+				const bottoms = all.filter(({ keepOut }) => keepOut.top < y + height && y < keepOut.bottom && keepOut.left < within.end && within.start < keepOut.right).map(({ keepOut }) => keepOut.bottom);
+				return bottoms.length === 0 ? void 0 : Math.min(...bottoms);
+			};
 			const walk = (lines, around) => {
 				const all = [...beside, ...around.map(({ drawing }) => drawing)];
 				const end = from + linesToBreak(lines, from).length;
@@ -39153,6 +39376,8 @@ var docxLayout = (function(exports) {
 						continue;
 					}
 					const rowTop = y;
+					const jump = jumps.get(line);
+					if (jump !== void 0 && jump > y) y = jump;
 					let { height } = lines[line];
 					let spans;
 					for (;;) {
@@ -39163,8 +39388,19 @@ var docxLayout = (function(exports) {
 						}
 						spans = room.spans.slice(0, end - line);
 						const tallest = Math.max(height, ...lines.slice(line, line + spans.length).map((one) => one.height));
-						if (tallest <= height + TOLERANCE) break;
-						height = tallest;
+						if (tallest > height + TOLERANCE) {
+							height = tallest;
+							continue;
+						}
+						const taking = Math.max(1, spans.length);
+						const below = belowDrawings(all, y, height);
+						const emptied = lines.slice(line, line + taking).every(({ text }) => text.trim() === "");
+						if (!isWhole(spans, line) && emptied && line + taking < end && below !== void 0 && !jumps.has(line)) {
+							jumps.set(line, below);
+							y = below;
+							continue;
+						}
+						break;
 					}
 					const onRow = Math.max(1, spans.length);
 					if (spans.length > 0 && !isWhole(spans, line)) for (const [offset, span] of spans.entries()) rooms.set(line + offset, span);
@@ -40096,6 +40332,48 @@ var docxLayout = (function(exports) {
 			}, next.pageBreakBefore ? {} : { keptLines: nextLines });
 		};
 		/**
+		* Places the tables that text flows around anchored in a paragraph kept with the next, which moves on to the next column
+		* or page, on this page, where they would have been with the paragraph, as Word leaves them where it first placed them
+		* (`word-stops-floats2.docx` KP1b), so that the paragraph is laid out without them where it goes
+		*/
+		const leaveFloats = (index, paragraph) => {
+			const current = columnsSection();
+			const left = columnLeft(current, column);
+			const paragraphTop = position + Math.min(spaceAfter, spaceAboveOf(paragraph.spaceBefore));
+			for (const one of floatsBefore(index)) {
+				const { drawing, table } = floatingTable(one);
+				const box = placeOrStop(drawing, {
+					section: section(),
+					oddPage: pageNumber % 2 === 1,
+					column: {
+						start: left,
+						end: left + current.columns[column]
+					},
+					paragraph: paragraphTop,
+					line: {
+						top: paragraphTop,
+						height: 0
+					},
+					character: 0
+				});
+				const keepOut = keepOutOf(drawing, box);
+				if (keepOut.bottom > linesBottom() + TOLERANCE) throw new Unsupported("a table that text flows around going past the bottom of the page");
+				placeDrawings([{
+					line: 0,
+					item: -1,
+					drawing: {
+						drawing,
+						box,
+						keepOut,
+						anchor: `${one} table`
+					},
+					table
+				}]);
+				placeFloatingRows(table, box.top);
+				leftBehind.add(one);
+			}
+		};
+		/**
 		* Whether a block is the empty paragraph that ends a section and takes a line. Word gives it a line of its own right
 		* after a table, as there is no line of a paragraph before it for its mark to go on (`word-header-columns.docx` H1 to
 		* H4, H7 and H8), where LibreOffice gives it no room, and with text frames anchored in it, as after a frame
@@ -40145,11 +40423,13 @@ var docxLayout = (function(exports) {
 				inlineFloats(floatsFrom(index), unknown);
 			}
 			if (block.type === "table") {
-				if (placeBeforeTable(block, index) && keptOn === void 0) keptOn = {
+				var _block$anchored2;
+				const framed = ((_block$anchored2 = block.anchored) !== null && _block$anchored2 !== void 0 ? _block$anchored2 : []).some((item) => item.type === "drawing");
+				if (placeBeforeTable(block, index) && framed && keptOn === void 0) keptOn = {
 					next: index,
 					page: pageCount,
 					column,
-					reason: BEFORE_TABLE_MOVING_ON
+					reason: FRAME_BEFORE_TABLE_MOVING_ON
 				};
 				placeTable(block);
 				sectionSpaceAfter = void 0;
@@ -40161,7 +40441,8 @@ var docxLayout = (function(exports) {
 			if (paragraph.keepNext) {
 				const chain = blocks.slice(index, index + keptChain(index) + 1).map(({ block: one }) => one);
 				if (floatsAt(index + keptChain(index))) inlineFloats(floatsFrom(index + keptChain(index)), KEPT_FLOATING);
-				const beside = besideDrawing() || chain.some((one) => one.type === "paragraph" && one.items.some(({ type }) => type === "drawing"));
+				const withFloating = chain.slice(0, -1).some((_, offset) => floatsBefore(index + offset).length > 0);
+				const beside = besideDrawing() || withFloating || chain.some((one) => one.type === "paragraph" && one.items.some(({ type }) => type === "drawing"));
 				/**
 				* What is kept together, from where the next line goes, broken into lines at the width of the column it goes in,
 				* with the footnotes held back from a paragraph kept with this one, which go below these lines too (`all`), and
@@ -40179,17 +40460,16 @@ var docxLayout = (function(exports) {
 				const anchor = blocks[index + keptChain(index)].block;
 				const anchorTaller = anchor.type === "paragraph" ? columnsTallerThan(anchor) : [];
 				const tallAnchor = anchorTaller.length > 0 && anchorTaller.every((tall) => tall);
-				const withFloating = chain.slice(0, -1).some((_, offset) => floatsBefore(index + offset).length > 0);
-				const unmeasured = withFloating || beside && (anchor.type === "table" || chain.slice(0, -1).some((one) => one.type === "paragraph" && one.items.some(({ type }) => type === "drawing")));
-				const reason = withFloating ? KEPT_WITH_FLOATING : KEPT_BESIDE;
-				if (unmeasured && tallAnchor) stopAt(reason);
+				const ownDrawings = chain.slice(0, -1).flatMap((one) => one.items.flatMap((item) => item.type === "drawing" ? [item.drawing] : []));
+				const unmeasured = beside && (anchor.type === "table" || ownDrawings.some(({ wrap }) => wrap === "topAndBottom"));
+				if (unmeasured && tallAnchor) stopAt(KEPT_BESIDE);
 				else if (unmeasured) {
 					placeParagraph(block, paragraph, false);
 					keptOn = {
 						next: index + 1,
 						page: pageCount,
 						column,
-						reason
+						reason: KEPT_BESIDE
 					};
 					sectionSpaceAfter = void 0;
 					return;
@@ -40201,8 +40481,11 @@ var docxLayout = (function(exports) {
 					const fitsHere = here.fitsWith(leastNoteRoom(here.all));
 					const { columns } = columnsSection();
 					const fitsBelow = (from, area, below) => fitsAbove(from, keptHeight(index, below), Math.min(bottom, pageBottom - area), area > 0 || here.notes.length > 0);
-					if (!fitsHere && column + 1 < columns.length && fitsBelow(columnTop, noteArea + moreNoteRoom(here.notes), columns[column + 1])) nextColumn();
-					else if (!fitsHere && fitsBelow(top, leastAreaOf(here.notes, carried, columns.length > 1 ? columns : void 0), columns[0])) startPage();
+					const toNextColumn = !fitsHere && column + 1 < columns.length && fitsBelow(columnTop, noteArea + moreNoteRoom(here.notes), columns[column + 1]);
+					const toNextPage = !fitsHere && !toNextColumn && fitsBelow(top, leastAreaOf(here.notes, carried, columns.length > 1 ? columns : void 0), columns[0]);
+					if ((toNextColumn || toNextPage) && withFloating) leaveFloats(index, paragraph);
+					if (toNextColumn) nextColumn();
+					else if (toNextPage) startPage();
 				}
 				const { notes, kept, keptWith, keptLines, all, fitsWith } = keptHere();
 				holdNotes = !(keptWith === "part" && keptLines === void 0) && keptWith !== "nothing" && [...held, ...kept].length > 0 && notes.length === kept.length && fitsWith(leastNoteRoom(all)) && !fitsWith(moreNoteRoom(all));
