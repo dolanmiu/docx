@@ -83,6 +83,10 @@ describe("unknownArabicKerning", () => {
         expect(unknownArabicKerning("ب ب", "Cambria")).to.equal(undefined);
         expect(unknownArabicKerning("بـب", "Arial")).to.equal(undefined);
         expect(unknownArabicKerning("ب\u200cب", "Arial")).to.equal(undefined);
+        // Nor lam and an alef, which Word joins into one glyph, but the letter before them
+        expect(unknownArabicKerning("لا", "Arial")).to.equal(undefined);
+        expect(unknownArabicKerning("ل\u064eأ", "Times New Roman")).to.equal(undefined);
+        expect(unknownArabicKerning("بلا", "Arial")).to.equal(KERNED);
         // Nor in Courier New, which Word doesn't kern
         expect(unknownArabicKerning("بلا", "Courier New")).to.equal(undefined);
     });

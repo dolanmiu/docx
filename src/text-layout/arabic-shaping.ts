@@ -105,15 +105,21 @@ const KERNED = new Set(["Arial", "Times New Roman", "Cambria"]);
 
 /**
  * Why Word's widths of Arabic text in a font of the tables aren't known, when they aren't: letters side by side, with
- * nothing but marks between them, which Word kerns by pairs the widths don't have, in a font it kerns them in
+ * nothing but marks between them, which Word kerns by pairs the widths don't have, in a font it kerns them in, but for lam
+ * and an alef, which it joins into one glyph
  */
 export const unknownArabicKerning = (text: string, name: string): string | undefined => {
     if (!KERNED.has(name)) {
         return undefined;
     }
+    // Lam and the alef after it are one glyph, the ligature, whose width is known
     const letters = [...text].filter((character) => joiningOf(character) !== "T");
     const kerned = letters.some(
-        (character, index) => index > 0 && ARABIC_LETTERS.includes(character) && ARABIC_LETTERS.includes(letters[index - 1]),
+        (character, index) =>
+            index > 0 &&
+            ARABIC_LETTERS.includes(character) &&
+            ARABIC_LETTERS.includes(letters[index - 1]) &&
+            !(letters[index - 1] === LAM && LAM_ALEFS.includes(character)),
     );
     return kerned ? "Arabic letters side by side, which Word kerns by pairs not yet known" : undefined;
 };
