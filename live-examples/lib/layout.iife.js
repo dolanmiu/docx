@@ -4066,7 +4066,7 @@ var docxLayout = (function(exports) {
 	*/
 	var dictionaryOf = (pieces, { capitalsWhole }) => {
 		const hyphenated = pieces.filter(({ hyphenation }) => hyphenation !== "none");
-		const letters = [...textOf$1(pieces)].filter((character) => new RegExp("\\p{L}", "u").test(character));
+		const letters = [...textOf$2(pieces)].filter((character) => new RegExp("\\p{L}", "u").test(character));
 		const dictionary = hyphenated.some(({ hyphenation }) => hyphenation === "unknown") ? ANY_DICTIONARY : ENGLISH_DICTIONARY;
 		const capitals = capitalsWhole === true && letters.every((letter) => new RegExp("\\p{Lu}", "u").test(letter)) && pieces.every(({ font }) => font.lineSize === void 0);
 		return hyphenated.length === 0 || letters.length < dictionary.letters || capitals ? void 0 : dictionary;
@@ -4305,7 +4305,7 @@ var docxLayout = (function(exports) {
 			return before === void 0 || !isKerned(after.font) || !sameFont(before.font, after.font) ? 0 : measurer.measureWidth(before.text + after.text, after.font) - measurer.measureWidth(before.text, before.font) - measurer.measureWidth(after.text, after.font);
 		});
 	};
-	var textOf$1 = (pieces) => pieces.length === 1 ? pieces[0].text : pieces.map(({ text }) => text).join("");
+	var textOf$2 = (pieces) => pieces.length === 1 ? pieces[0].text : pieces.map(({ text }) => text).join("");
 	var NOTHING = {
 		ascent: 0,
 		descent: 0,
@@ -4501,7 +4501,7 @@ var docxLayout = (function(exports) {
 	*/
 	var widthBeforeDecimal = (tokens, measurer) => {
 		const text = textAfterTab(tokens).filter((token) => token.type !== "marker");
-		const written = text.map((token) => token.type === "word" || token.type === "space" ? textOf$1(token.pieces) : "￼").join("").trimEnd();
+		const written = text.map((token) => token.type === "word" || token.type === "space" ? textOf$2(token.pieces) : "￼").join("").trimEnd();
 		const point = decimalPointOf(written);
 		if (point === void 0 || [...written].slice(0, point).includes("￼")) return;
 		let count = 0;
@@ -5037,13 +5037,13 @@ var docxLayout = (function(exports) {
 						line = _objectSpread2(_objectSpread2({}, line), {}, {
 							position: line.position + characterWidth,
 							end: line.position + characterWidth,
-							text: line.text + textOf$1(character),
+							text: line.text + textOf$2(character),
 							letters: line.letters + lengthOf(character)
 						});
 						placed = true;
 					}
 				} else {
-					const text = token.type === "word" ? textOf$1(token.pieces) : "";
+					const text = token.type === "word" ? textOf$2(token.pieces) : "";
 					line = _objectSpread2(_objectSpread2(_objectSpread2({}, line), cell !== void 0 && token.type === "word" ? { latin: snapped(line, token.pieces).latin } : {}), {}, {
 						position: line.position + tokenWidth,
 						end: line.position + tokenWidth,
@@ -5078,7 +5078,7 @@ var docxLayout = (function(exports) {
 						line = wrap(_objectSpread2(_objectSpread2({}, placed), {}, {
 							position: withHyphen,
 							end: withHyphen,
-							text: placed.text + textOf$1(before),
+							text: placed.text + textOf$2(before),
 							letters: placed.letters + lengthOf(before),
 							between: placed.spaceCount,
 							heights: withFont(withToken(placed.heights, {
@@ -5109,7 +5109,7 @@ var docxLayout = (function(exports) {
 				if (token.type === "space") {
 					const spaces = widthOf(token.pieces, measurer);
 					line = _objectSpread2(_objectSpread2(_objectSpread2({}, line), cell === void 0 ? { position: line.position + roomBetween(line.border, firstBorder(token.pieces)) + kerning[index] + spaces } : snapped(line, token.pieces)), {}, {
-						text: line.text + textOf$1(token.pieces),
+						text: line.text + textOf$2(token.pieces),
 						spaces: line.started ? line.spaces + spaces : 0,
 						spaceCount: line.started ? line.spaceCount + lengthOf(token.pieces) : 0,
 						otherSpaces: line.started ? line.otherSpaces + widthOf(othersOf(token.pieces), measurer) : 0,
@@ -6661,11 +6661,104 @@ var docxLayout = (function(exports) {
 		}
 	};
 	//#endregion
+	//#region src/layout/bound-controls.ts
+	/**
+	* Content controls bound to custom XML (`w:dataBinding`), which Word fills in from the XML when it opens a document.
+	*
+	* @module
+	*/
+	/** The name of an element, such as `w:sdt` */
+	var nameOf$2 = (element) => Object.keys(element)[0];
+	/** The namespace of a prefix in an element, from its declarations and those of the elements it is in (`scope`) */
+	var withDeclarations = (element, scope) => {
+		const declared = Object.entries(attributesOf(element[nameOf$2(element)])).flatMap(([name, value]) => {
+			var _prefix$;
+			const prefix = /^xmlns(?::(.+))?$/.exec(name);
+			return prefix ? [[(_prefix$ = prefix[1]) !== null && _prefix$ !== void 0 ? _prefix$ : "", String(value)]] : [];
+		});
+		return declared.length === 0 ? scope : new Map([...scope, ...declared]);
+	};
+	/** The text an element has in it, in order */
+	var textOf$1 = (content) => content.map((part) => typeof part === "string" ? part : isObject(part) && !("_attr" in part) ? textOf$1(part[nameOf$2(part)]) : "").join("");
+	var STEP = /^(?:([\w.-]+):)?([\w.-]+)(?:\[(\d+)\])?$/;
+	/**
+	* The text of the element a binding's path (`w:xpath`) leads to in its store, as Word fills the control in with it, or
+	* undefined where that isn't known: a store the package hasn't, or a path other than one of elements from the root, such
+	* as `/ns1:coreProperties[1]/ns0:title[1]`, which Word writes, with the namespaces its prefixes are given
+	* (`w:prefixMappings`)
+	*/
+	var boundText = (binding, stores) => {
+		const { "w:xpath": path, "w:prefixMappings": mappings, "w:storeItemID": id } = binding;
+		const store = id === void 0 ? void 0 : stores.get(String(id).toUpperCase());
+		const written = String(path !== null && path !== void 0 ? path : "");
+		const steps = written.split("/").slice(1).map((step) => STEP.exec(step.trim()));
+		if (store === void 0 || !written.startsWith("/") || steps.some((step) => step === null)) return;
+		const prefixes = new Map([...String(mappings !== null && mappings !== void 0 ? mappings : "").matchAll(/xmlns:([\w.-]+)\s*=\s*(['"])(.*?)\2/g)].map((mapping) => [mapping[1], mapping[3]]));
+		let candidates = [[store, withDeclarations(store, /* @__PURE__ */ new Map())]];
+		let found;
+		for (const step of steps) {
+			const [, prefix, local, index = "1"] = step;
+			const namespace = prefix === void 0 ? "" : prefixes.get(prefix);
+			if (namespace === void 0) return;
+			found = candidates.filter(([candidate, declared]) => {
+				var _declared$get;
+				const [own, ownLocal] = nameOf$2(candidate).includes(":") ? nameOf$2(candidate).split(":") : ["", nameOf$2(candidate)];
+				return ownLocal === local && ((_declared$get = declared.get(own)) !== null && _declared$get !== void 0 ? _declared$get : "") === namespace;
+			})[Number(index) - 1];
+			if (found === void 0) return;
+			const [element, scope] = found;
+			candidates = childrenOf(element[nameOf$2(element)]).filter((child) => !("_attr" in child)).map((child) => [child, withDeclarations(child, scope)]);
+		}
+		return textOf$1(found[0][nameOf$2(found[0])]);
+	};
+	var TEXT_ONLY = /* @__PURE__ */ new Set([
+		"w:r",
+		"w:rPr",
+		"w:t",
+		"w:proofErr",
+		"w:bookmarkStart",
+		"w:bookmarkEnd",
+		"w:p",
+		"w:pPr",
+		"w:lastRenderedPageBreak"
+	]);
+	/** The text written in a control's content, when that is all it shows, as Word fills it in with text */
+	var writtenText = (content) => {
+		const parts = childrenOf(content).filter((part) => !("_attr" in part));
+		if (parts.some((part) => !TEXT_ONLY.has(nameOf$2(part)))) return;
+		const texts = parts.map((part) => nameOf$2(part) === "w:t" ? textOf$1(part["w:t"]) : writtenText(part[nameOf$2(part)]));
+		return texts.some((text) => text === void 0) ? void 0 : texts.join("");
+	};
+	/**
+	* Some XML of a document with the bindings to custom XML taken out of the content controls whose text is already what Word
+	* fills them in with when it opens the document, as it then shows what is written: their binding's text, where the stores
+	* have it, and the control only text. Those whose text Word fills in otherwise keep theirs, so the layout stops at them
+	*/
+	var withBoundTextWritten = (xml, stores) => {
+		if (stores.size === 0) return xml;
+		const visit = (value) => {
+			var _parts$find;
+			if (Array.isArray(value)) return value.map(visit);
+			if (!isObject(value) || "_attr" in value) return value;
+			const name = nameOf$2(value);
+			const content = visit(value[name]);
+			if (name !== "w:sdt") return { [name]: content };
+			const parts = childrenOf(content);
+			const properties = parts.find((part) => "w:sdtPr" in part);
+			const binding = childrenOf(properties === null || properties === void 0 ? void 0 : properties["w:sdtPr"]).find((part) => "w:dataBinding" in part);
+			const written = writtenText((_parts$find = parts.find((part) => "w:sdtContent" in part)) === null || _parts$find === void 0 ? void 0 : _parts$find["w:sdtContent"]);
+			if (binding === void 0 || written === void 0 || boundText(attributesOf(binding["w:dataBinding"]), stores) !== written) return { [name]: content };
+			const unbound = { "w:sdtPr": childrenOf(properties["w:sdtPr"]).filter((part) => part !== binding) };
+			return { [name]: content.map((part) => part === properties ? unbound : part) };
+		};
+		return visit(xml);
+	};
+	//#endregion
 	//#region src/layout/equation-widths.ts
 	/**
 	* How wide each character of an equation of text is in Cambria Math, and the italic correction Word adds after each
 	* italic letter, in thousandths of an em, as Word's PDFs of scripts/layout-probes/word-equations.ts and word-equations2.ts
-	* show them.
+	* show them, and scripts/layout-probes/stops2/word-stops-equations.ts for the italic letters of the Greek variants.
 	*
 	* Generated by scripts/generate-equation-widths.ts. Do not edit by hand.
 	*
@@ -6873,7 +6966,13 @@ var docxLayout = (function(exports) {
 		["𝜒", [581, 9.81]],
 		["𝜓", [704, 14.25]],
 		["𝜔", [726, 21.55]],
-		["𝜕", [556, 0]]
+		["𝜕", [556, 0]],
+		["𝜖", [465.33, 31.78]],
+		["𝜗", [586.43, 22.04]],
+		["𝜘", [576.66, 22]],
+		["𝜙", [683.11, 21.55]],
+		["𝜚", [535.64, 22.05]],
+		["𝜛", [798.83, 22.02]]
 	]);
 	//#endregion
 	//#region src/layout/equations.ts
@@ -6930,6 +7029,24 @@ var docxLayout = (function(exports) {
 		["∇", "𝛻"]
 	]);
 	var ITALIC_SIGNS = /* @__PURE__ */ new Set(["∂", "∇"]);
+	var GREEK_VARIANTS = /* @__PURE__ */ new Map([
+		["ϵ", 120598],
+		["ϑ", 120599],
+		["ϰ", 120600],
+		["ϕ", 120601],
+		["ϱ", 120602],
+		["ϖ", 120603]
+	]);
+	var cambriaMath;
+	/** How wide Cambria Math has a character Word draws as it is, in thousandths of an em, when it has it */
+	var cambriaMathWidth = (character) => {
+		var _cambriaMath;
+		(_cambriaMath = cambriaMath) !== null && _cambriaMath !== void 0 || (cambriaMath = new Map("y:md,z8,ss,1em,134,dh;16:ob;19:iw;1s:1ed;2k:rw;2m:vi,l3,g7;3i:14j;4h:g9,p3,u2,uy,yo,i0,sg,g7,1ce;4r:rr,16i;4u:1ce,g7,ld;4y:n6,n6,g7;52:xg,g2,g7,n6;57:rr,1d8,1em,1d8,o1;jm:vi,vi,vi,vi;k2:f3,f3,fg,fg,fg,fg,g7,g7,g7,g7,g7,g7,a3,k4;kl:ms,ms,ms,ms,ms,kq,kq;kt:n6;kv:j7,h9,dr,dr,g7,fd,pd,pd,ik,am,h7,h7,h7,h7,oy,oy,oy;ou:f0;p0:g7,g7;p3:dw;w2:mn;2tb:vi;69p:g7;69r:g7,g7,g7;6a5:g7,g7,g7;6al:g7,g7,g7;6b1:g7,g7,g7;6bh:g7,g7;6c0:iw,iw,uy,sg,1kw,16o,u3,l3,cl,cl,bo,cl,ld,ld,ki,ld,te,te,p8;6cm:16s;6cw:1zv;6cz:oh,yj;6d5:h8,h8;6d8:tb;6da:kl;6dg:vi,jx,jx;6dz:18l;6e6:f0;6eo:n6;6es:n6,n6,n6,n6,n6,n6,n6,n6,n6,gm,gm;6f4:n6,n6,n6,n6,n6,n6,n6,n6,n6,n6,n6,n6,n6,gm,gm;6g0:11m,vi,vi,vi,vi,1bc,vi,1zb,1ly,1e0,vi,vi,zr,vi,vi,1ub,vi,vi,vi,yu,vi,vi;6gp:tf,wm;6gt:w7;6iq:yd,1fg,10t,1lc;6iv:wc,wh,1dz,106,1h3,13e,19s;6j3:xh,pv,11e,xl,th,1bj,14y,1n3,1ce,18a,13c,17h,15y,177,16d;6jm:12n;6jo:ya,pv,12n,12n,11x,g3,zt,zg,12m,117,1cn,rn,wa,13q,uj,1qs,10n,xy,uy,nq,r3,mm,1fw;6kd:115,wr,198,15n,y7,r7,r7,vw,19y,13h,yu,nd,o2,12g,13a;6kt:1j0,pu;6kz:1gt,1gt,1gt,1gt,1gt,1gt,1gt,1gt,1gt,1gt,1gt,1gt;6mp:qn;6mr:qn,1ge,qn,114,114,114,114,1bo,1bo,1ed,1ed,1h8,rq,1h8,rq,1d7,1d7,1dm,qn,1dm,qn,rr,1au,1au,1ep,1ep,1vr,1i2,wy,w7,w7,w7,w7,104,w6,1a1,1a1,11t,1ff,18h,18h,1bo,1bo,on,om,1bo,1bo,on,on,1bo,18l,1bo,1bo,19f,1bo,19f,1bo,1bo,1dt,1pe,1dt,1d9,xc,1d9,xc,1mw,xc,15l,15l,15l,15l,1el,1el,1jq,1jq,rq,rq,1e6,qn,1e6,qn,1d2,1d2,1cx,xr,1cx,xr,xr,yo,yo,yo,yo,za,1ef,17y,17y,yo,1hs,18l,1d0,1bo,1bo,1i2,1eg,1eg,1ku,1ep,1ep,1oz,zr,tp,v0,xe,yd,zq,xw,xw,zg,10f,vi,zg,zg,vi,18g,1a7,1a7;6qc:16i,t9,vi;6qh:e2;6qj:106,106,13z;6qn:13b,11g,11g,12j,go,lb,qe,uy,xk,xk,12r,12r;6r3:1i1,215,101,zy,10z,wm,wm,hc,xq,154,1h7,186,15u;6rh:15v,19x,133,kt,14i,16i,16i,16i,16i,16i,16i;6rt:15v,16i,15v,16i,16h,16i,16i,16i,16i,16i,16i,1h7,1h7,16i,16i,16i,16i,16i,16i,16i,1bq,16i,16i;6si:16i,16i;6sm:16i,16i,16i,16i,1eo,1eo,r9,16i,16i,16i,16i,16i,16i,16i,16i,16i,16i,16i,16i,16i,15p,15p,15p,15p,15w,15w,15p,15p,16i,16i,16i,16i,16i,16i,16i,16i,16i,16i,yj,yj,yj,16i,16i,16i,16i,14p,14p,1km,1km,1km,1km,1km,1km,1km,1km,1km,1jk,1jk,1jk,1jk,12c,11n,11q,11q,tk,tk,14y,16v,1em,1fh,14y,14y,1ab,1fh,vi,vi,154,154,154,154,1md,1md,1fi,154,n0,xk,xk,xk,13b,13u,11u,11u,17v,17v,pm;6va:tj,wm,1b7,16x,16x,14p,14p,154,xk,xk,14r,14r,179,179,131,10v,16m,16m,1yj,1yj,16q,16q,16m,16m,15q,15p,15p,15p,16i,16i,16i,16i,16i,16i,15w,15w,162,162,16j,16z,ho,1cq,z6,z6,15p,zi,vk,zi,zi,vk,zi,zi,15p,zi,vk,101,vk,15k,uh,ym,1ir,vi,vi,vi,vi,kb,jx,jx,jx,jx,22d,22d,22d,22d,16i,qg,1ii,1ii,152,wt,ri,1qd,1qd,16i,146,zg,11x,11x,11x,11x,1xv,1xv,1ik,1ik,1f8,1f8,1xf,1kr,21a,kg,kg;6y8:tk,r5,12p,12p,1d7,164,1kr,yj,1kr,1kr,1kr,1kr,1kr,1kr,1kr,1kr,1kr,1kr,1kr,1kr,1kr,1kr,1kr,1kr,1kr,1kr,1kr,1kr,1kr,1kr,1kr,1kr,1kr,1kr,1kr,1kr,1kr,1kr,1kr,1kr,yj,1ap,1kr,yj,1kr,1kr,1kr,1kr,1kr,1kr,1ap,yj,yj,1kr,1kr,1kr,14j,1kr,yj,1ap,14h,14h,yj,1kr,1kr,1en,1en,g6,ua,16q,wo,q0,g6,16q,wo,123,1ha,1i5,1hf,l4,164,1kr,1kr,1j5,18n,12w,12e,1bz,108,12k,12k,12k,19y,18q,16i,11g,11g,11g,11g,11g,169,1kr,qu,18v,18v,1ae,1ae,175,175,175,175,175,175,jx,jx,jx,jx,jx,jx,12y,12y,12y,12y,12y,12y,12y,1xv,tw,152,152,2cn,2cn,z1,z1,156,10l,sn,sn,sn,sn,sn,sn,1e4,1e4,1e4,1e4,1e4,1e4,1e4,1e4,1e4,1e4,1e4,1e4,1e4,1e4,1e4,1kr,187,1kr;730:z4,z4,z4,z4,z1;76o:1wb,1wb,1wb,1wb,1wb,1wb,1wb,1wb,1wb,1wb,1wb,1wb,1wb,1wb,1wb,1wb,1wb,1wb,1wb,1wb;7ai:1wb,1we,1we,1we,1we,1we,1we,1we,1we,1we,1we;7b3:1we,115;7b6:115;7bg:115;7bk:115;7bo:115;7bs:115;7bw:115;7c4:115;7cc:12m;7ck:12m;7ep:1c2;7ew:1c2;7f6:1c2;7fk:1c2,11b;7fx:1fj;7g3:156;7gq:uo,y6;7kw:wk,y6;7l2:12v;7sm:1we,1we,1we,1wf,1we,1we,1we,1we,1we,1we;7ur:16i,16i,t3,uh,xk,1ib;7v0:wn;7v4:16a,xk,12r,14m,14m,1m1,1m1,1te,17a,17a,1xk,1us,1fi,1fi,1fi,og,uo,12m,17h,17h,1by,1by,p1,p1,kg,kg,wo,wp,k5,k5,lc;7w0:1jv,1jv,1i7,1i7,1yw,1v3,1v3,1v3,1v3,1v3,1v3,1v3,1v3,1v3,1v3,1v3;83k:1h8,1h8,1d9,1d9,1mw,1h8,1d9,1d9,r6,r6,14t,14t,1e6,1e6,1e6,1e6,1nc,1bo,qm,qm,1d7,1d7,1nc,1nc,1nc,1d7,1d7,1d7,1d7,1e6,1e6,1e6,1e6,16g,16g,110,110,110,110,18c,162,18c,162,13p,13p,162,162,162,162,18c,18c,1c6,1di,1di,w2,w2,n7,n7,19z,19z,19z,19z,11a,11a,17e,17e,1bo,1bo,1bo,1bo,1bo,1bo,1ge,rq,1bo,1bo,s4,s4,1bo,on,1bo,om,1d2,1d2,on,on,1d2,1d2,on,on,1dm,1dm,on,on,1dm,1dm,on,on,1bo,14m,1bo,14m,1bo,1bo,1bo,1bo,1bo,1bo,1bo,1bo,14m,14m,1bo,1bo,1bo,1bo,1bo,1bo,154,1nc,154,17i,1ge,17i,vn,vn,y0,y0,104,ok,l4,n5,n5,p9,p9,n5,n5,lt,lt,jx,jx,jx,jx,jx,jx,l5,l5,16m,16m,16m,16m,m2,m2,g6,gj,11g,14m,14m,12a,120,12j,12a,11g,11g,11g,11g,147,147,11g,11g,11g,11g,151,151,151,151,1km,1km,1km,1km,1km,1qg,1km,1km,1km,1km,1km,1km,1km,1km,1km,1km,1km,1km,1uf,1uf,13r,13r,13r,13r,13r,1li,156,156,156,156,152,1aj,1aj,18s,18s,18s,18s,18s,v5,v5,gt,gt,p5,p5,1ce,1ce,1ce,1xb,13r,154,16i,16i,16i,16i,16i,vg,156,156,17v,uo,1bm,1bm,107,107,107,107,107,107,1bo,t9,t9,t9,19r,19r,16i,16i,nr,n7,16i,16i,1di,1di,1di,163,13l,15n,15n,1je,1je,18o,14b,14b,2iv,xd,xd,xd,xd,xd,xd,xd,xd,xd,xd,1au,xd,xd,xd,xd,xd,1n0,104,kg,1ia,on,16i,16i,16i,16i,16i,18b,16i,16i,16i,16i,16i,1km,1km,14n,14n,14n,14n,14n,1km,1km,1km,1km,1km,1jk,1jk,1jk,16i,16i,h2,163,12r,12r,12r,12r,12r,12r,wd,wd,y0,y0,1f0,1f0,14f,14f,15n,15n,14f,xk,xk,xk,xk,178,178,10g,10g,xk,xk,xk,xk,xk,xk,xk,xk,16i,xk,xk,166,166,16i,16i,16i,16i,15u,15u,16i,16i,16i,15v,16i,16i,16i,16i,1po,1wy,2km,16i,16i,16i,16i,16i,16i,16i,16i,16i,16i,16i,16i,16i,16i,16i,16i,16i,16i,16i,16i,16i,16i,16i,16i,16q,16q,16i,16i,16i,16i,16m,16m,16m,16m,16i,16i,16m,16m,16i,16i,16i,16i,16m,16m,1vm,1hq,27g,16i,16i,16i,16i,16i,16i,16i,16i,16i,16i,16i,16i,16i,16i,16i,16i,16i,16i,16i,16i,16i,1up,1up,16i,16i,16i,16i,16i,16i,16i,16i,16i,16i,16i,16i,16i,16i,16i,16i,1uw,1uw,16i,16i,16i,16i,16i,16i,16i,16i,27i,27i,12r,131,131,12r,12r,qj,11q,11q,11q,14y,16v,14y,1fh,16v,11q,11q,11q,11q,11q,16i,16i,lb,og,og,og,yu,yu,104,176,g6,1jr,1jr,16m,16m,1bf,104,12c,qe,qe;8hw:1qg;8hy:xc,xc;8i4:1qg,xc;8ii:1ga;93r:iw;9hw:jx,jx,pe,pe;x0g:u9,u9;2kg0:12m,11w,xg,14x,xp,w7,11m,15w,kq,k8,13m,w6,1cz,13h,14e,zr,14e,12q,u1,117,13b,10s,1je,z7,z3,x2,va,yh,ri,yt,v1,nq,up,ys,iq,i1,yn,id,1fh,z6,x8,yt,yh,r3,qy,lm,yt,ur,19z,tw,ur,s3;2kiw:11n,155,zp,16p,11b,10c,127,18u,os,nz,17n,w7,1fy,178,15o,133,15o,13n,wa,zh,15c,10x,1jy,13e,104,zz,zc,yj,sq,10m,v9,w2,12i,zy,l4,m5,yt,l2,1gr,10t,wt,zb,ye,uj,sk,nv,10q,y5,18u,wt,y0,te,1er;2kke:y8,15s;2kki:wp;2kkl:z6,1di;2kkp:1j1,11o,15e,111;2kku:wn,126,17p,12q,1nv,1ar,15z,134,10m,163,ra,11i;2kl7:wh;2kl9:15r,qc,ra,14e,th,1mo,16i;2klh:14l,zd,15p,um,uz,165,164,1lj,y4,15j,vp,1hj,15w,110,19n,yk,16i,10e,1l9,tl,128,1gg,106,1vm,1lk,15b,19c,14d,1ax,xz,15c,1b5,148,1pq,1dm,19p,14m,11s,175,sv,12o,u2,yp,120,16t,r6,tz,15b,vw,1ns,17m,12b,16v,123,16i,vz,vi,172,172,1n9,10r,178,y5,14t,180;2knb:19d,11l,11n,16x;2knh:10t,14k,ys,1kx,17s,19s,17n,1ab;2knq:16j,14k,12n,17d,1ja,100,152;2kny:rs,sa,ku,rr,ms,he,sg,sn,fg,ff,j5,fd,18q,u5,rc,t8,s9,ky,nt,hm,uh,rh,173,no,t2,lc,13u,15n;2kor:18n,109,yt,15k;2kow:o3,n3,17i,ya,1fo;2kp2:17h;2kp6:x7,12k,140,12a,1mj,12p,11i;2kpe:xt,10o,tk,114,xc,pb,we,123,l8,kk,10m,kv,1in,12g,z2,117,10o,s7,rd,nu,123,w6,1d3,wu,w7,uj,19z,199,15b,1ag,15b,12x,19e,16h,124,12j,17s,10q,1nx,1aj,1bb,194,1cd,1a8,16j,16c,15o,198,1oz,136,183,147,va,uv,my,ud,p9,jb,v6,uw,ih,ij,kv,if,1cw,yy,u8,w5,uy,om,pg,iz,yg,wa,1a9,sb,wb,nd,wh,xj,tf,10v,sg,rh,y7,116,g9,g9,wq,r7,194,12r,116,v3,116,wi,qx,t6,109,vu,1gd,u9,un,t0,rx,vc,on,vc,si,je,sj,u4,e7,e7,r2,e7,19p,u4,uf,vc,vc,lm,nc,jj,u4,qf,174,py,qf,ow,10n,10g,ux,13j,tu,st,112,13g,ie,ie,zo,sh,1cd,152,13g,y3,13g,zs,t3,uu,12p,za,1js,xl,xs,ue,ux,xv,q4,xv,uz,ll,vp,wu,gk,gk,uv,gk,1cs,wu,wt,xv,xv,nt,oq,l7,wu,t2,1a3,t0,t2,q4,zt,yj,wp,11o,w4,v8,xv,11q,gt,iu,11i,ni,19o,13b,120,xl,120,x0,sp,t5,10q,zl,1k5,139,ux,xr,tl,vq,qo,y8,tb,ov,x6,u4,gp,j3,uy,gt,19p,u4,uz,x0,vm,oa,nc,mj,u4,t0,19s,vl,vl,ro,13u,123,yk,15b,xr,wt,10s,152,k0,ld,14z,pn,1dz,16o,14v,114,14v,10z,ut,v7,13q,12w,1ne,16b,y2,zf,wr,yu,sl,11d,vw,r0,10a,xh,jq,lf,yk,jw,1df,xh,xw,104,yr,r2,os,nz,xh,vp,1cl,yn,y9,tg,y6,y6,y6,y6,y6,y6,y6,y6,y6,y6,y6,y6,y6,y6,y6,y6,y6,y6,y6,y6,y6,y6,y6,y6,y6,y6,y6,y6,y6,y6,y6,y6,y6,y6,y6,y6,y6,y6,y6,y6,y6,y6,y6,y6,y6,y6,y6,y6,y6,y6,y6,y6,i1,kg;2kyw:12m,11w,w7,10t,xp,x2,15w,14z,kq,13m,11m,1cz,13h,wq,14e,15m,zr,14e,ww,117,11g,1ca,z7,1bw,15v,10t,10b,yr,w5,x1,sj,pn,zl,xx,k5,yo,w7,ze,tx,pr,x8,11b,xh,r1,zb,sn,wr,17l,v5,1ad,19r,xd,rn,zw,wl,185,x2,1de;2l0z:12p;2l24:11n,155,105,12h,11b,zz,18u,15y,os,17n,10x,1fy,178,z4,15o,18u,133,15y,107,zh,124,1av,13e,1bo,15q,12h,127,12j,yb,x0,tb,tf,y8,zi,iy,ym,w2,106,w9,td,wt,130,zc,ra,zv,t0,wi,171,11d,188,19i,yl,s9,11b,zg,17g,xg,1dm,10n,10g,sh,10t,tu,ue,13g,13g,ie,zo,10n,1cd,152,w6,13g,131,13g,y3,v6,uu,xs,182,xl,176,15v,10t,zh,yr,th,x1,r9,pn,zl,xx,k5,x5,vw,wu,tx,pr,wt,10i,x4,r1,zb,qr,xw,171,u3,188,19m,xd,r3,yj,w5,185,x2,1de,13u,123,103,12v,xr,zf,152,14v,k0,14z,13u,1dz,16o,110,14v,171,14v,114,zu,v7,y2,19x,16b,18w,198,10t,12v,124,wj,xx,tt,v3,xj,z4,h0,xt,xy,z2,ud,uw,xw,12v,za,tm,121,rq,y8,17y,y9,188,1b1,zo,ue,107,128,191,z3,1fx,w7,qm;2l72:y1,y1,y1,y1,y1,y1,y1,y1,y1,y1,123,qb,vm,vz,za,vx,105,ub,10t,105,vi,vi,vi,vi,vi,vi,vi,vi,vi,vi,yu,yu,yu,yu,yu,yu,yu,yu,yu,yu,y5,y5,y5,y5,y5,y5,y5,y5,y5,y5".split(";").flatMap((run) => {
+			const [first, widths] = run.split(":");
+			return widths.split(",").map((width, offset) => [String.fromCodePoint(parseInt(first, 36) + offset), parseInt(width, 36) / 2048 * 1e3]);
+		})));
+		return cambriaMath.get(character);
+	};
 	/** The character Word draws for one of an equation's text, and whether it is an italic letter, in italic unless plain */
 	var drawnAs = (character, plain) => {
 		var _DRAWN_AS$get;
@@ -6945,6 +7062,7 @@ var docxLayout = (function(exports) {
 		if (/^[a-z]$/.test(character)) return letter(ITALIC_SMALL, code - 97);
 		if (/^[A-Z]$/.test(character)) return letter(ITALIC_CAPITAL, code - 65);
 		if (code >= 945 && code <= 969) return letter(ITALIC_GREEK_SMALL, code - 945);
+		if (GREEK_VARIANTS.has(character)) return letter(GREEK_VARIANTS.get(character), 0);
 		return code >= 913 && code <= 937 ? letter(ITALIC_GREEK_CAPITAL, code - 913) : {
 			drawn: (_DRAWN_AS$get = DRAWN_AS.get(character)) !== null && _DRAWN_AS$get !== void 0 ? _DRAWN_AS$get : character,
 			italic: false
@@ -6962,17 +7080,23 @@ var docxLayout = (function(exports) {
 		if (formatting.some((child) => !RUN_SIZES.has(Object.keys(child)[0]))) return "an equation whose text has formatting of its own";
 		if (find(properties, "m:nor") !== void 0 || find(properties, "m:scr") !== void 0 || style !== void 0 && style !== "p" && style !== "i") return "an equation in normal text, another alphabet or bold";
 		const drawn = [...children.filter((child) => "m:t" in child).map((child) => textOf(child["m:t"])).join("")].map((character) => _objectSpread2({ character }, drawnAs(character, style === "p")));
-		if (drawn.some(({ drawn: shown }) => !EQUATION_WIDTHS.has(shown))) return "a character in an equation whose width isn't known";
+		const widthOf = (shown) => {
+			var _EQUATION_WIDTHS$get;
+			const own = cambriaMathWidth(shown);
+			return (_EQUATION_WIDTHS$get = EQUATION_WIDTHS.get(shown)) !== null && _EQUATION_WIDTHS$get !== void 0 ? _EQUATION_WIDTHS$get : own === void 0 ? void 0 : [own, 0];
+		};
+		if (drawn.some(({ drawn: shown }) => widthOf(shown) === void 0)) return "a character in an equation whose width isn't known";
 		const size = pointsOf(attributesOf(find(formatting, "w:sz"))["w:val"], 2);
 		return drawn.map(({ character, drawn: shown, italic }) => {
 			var _CLASSES$get;
-			const [width, italicCorrection] = EQUATION_WIDTHS.get(shown);
+			const [width, italicCorrection] = widthOf(shown);
+			const unseen = !EQUATION_WIDTHS.has(shown) && !new RegExp("^[\\p{L}\\p{N}]$", "u").test(shown);
 			return _objectSpread2(_objectSpread2(_objectSpread2({
 				character,
 				width: width / 1e3,
 				italicCorrection: italicCorrection / 1e3,
 				italic,
-				kind: (_CLASSES$get = CLASSES.get(character)) !== null && _CLASSES$get !== void 0 ? _CLASSES$get : "ordinary"
+				kind: (_CLASSES$get = CLASSES.get(character)) !== null && _CLASSES$get !== void 0 ? _CLASSES$get : unseen ? "unseen" : "ordinary"
 			}, character === " " ? { space: true } : {}), ITALIC_SIGNS.has(character) ? { unknownCorrection: true } : {}), size === void 0 ? {} : { size });
 		});
 	};
@@ -7057,6 +7181,7 @@ var docxLayout = (function(exports) {
 			return typeof atom === "number" ? [] : [(_atom$size = atom.size) !== null && _atom$size !== void 0 ? _atom$size : size];
 		}));
 		if (sizes.size > 1) return "an equation whose runs are of different sizes";
+		if (atoms.length > 1 && atoms.some(({ kind }) => kind === "unseen")) return "a symbol in an equation beside another, where Word hasn't been seen to space it";
 		const classes = classesOf(atoms);
 		if (typeof classes === "string") return classes;
 		let width = 0;
@@ -7557,7 +7682,8 @@ var docxLayout = (function(exports) {
 		in: 72,
 		cm: 72 / 2.54,
 		mm: 72 / 25.4,
-		pc: 12
+		pc: 12,
+		px: .75
 	};
 	/** Whether a VML true or false value is false: "f", "false", or 0 */
 	var isVmlFalse = (value) => [
@@ -7568,8 +7694,8 @@ var docxLayout = (function(exports) {
 	/** The properties of a VML style, such as `width:100pt;position:absolute`, by their names in lower case */
 	var readVmlStyle = (style) => new Map(String(style !== null && style !== void 0 ? style : "").split(";").map((declaration) => declaration.split(":")).filter((parts) => parts.length === 2 && parts[0].trim() !== "").map(([name, value]) => [name.trim().toLowerCase(), value.trim()]));
 	/**
-	* A length of a VML style in points, or why it isn't known: one in pixels, ems or a share of something, or a number with
-	* no unit, which isn't 0. Undefined when it isn't given.
+	* A length of a VML style in points, or why it isn't known: one in ems, of a font the style doesn't name, or a share of
+	* something, or a number with no unit, which isn't 0. Undefined when it isn't given.
 	*/
 	var vmlLength = (value) => {
 		var _length$2$toLowerCase;
@@ -7786,7 +7912,7 @@ var docxLayout = (function(exports) {
 		"firstcap",
 		"caps"
 	]);
-	var BOUND_CONTROL = "a content control filled from custom XML";
+	var BOUND_CONTROL = "a content control Word fills in from custom XML with other text than is written in it";
 	var REMOVED_ROOM = /* @__PURE__ */ new Set([
 		"w:tab",
 		"w:ptab",
@@ -8175,7 +8301,11 @@ var docxLayout = (function(exports) {
 		const choice = find(childrenOf(find(children, "mc:AlternateContent")), "mc:Choice");
 		return (_find = find(children, name)) !== null && _find !== void 0 ? _find : find(childrenOf(choice), name);
 	};
-	/** Where a drawing is across or down the page (`wp:positionH`, `wp:positionV`), or why it can't be followed */
+	/**
+	* Where a drawing is across or down the page (`wp:positionH`, `wp:positionV`). The schema requires an alignment or an
+	* offset, so Word and docx write one: one with neither, which isn't a document they write, is read as at the start of
+	* what it is placed against, as an offset of 0 places it
+	*/
 	var readPosition = (element, share) => {
 		var _attributesOf$relativ, _find2;
 		const children = childrenOf(element);
@@ -8188,13 +8318,12 @@ var docxLayout = (function(exports) {
 		const align = find(children, "wp:align");
 		const alternate = find(childrenOf(find(children, "mc:AlternateContent")), "mc:Fallback");
 		const offset = numberOf(textIn((_find2 = find(children, "wp:posOffset")) !== null && _find2 !== void 0 ? _find2 : find(childrenOf(alternate), "wp:posOffset")));
-		if (align !== void 0) return {
+		return align === void 0 ? {
+			from,
+			offset: (offset !== null && offset !== void 0 ? offset : 0) / EMUS_PER_POINT
+		} : {
 			from,
 			align: textIn(align)
-		};
-		return offset === void 0 ? "a drawing placed by neither an alignment nor an offset" : {
-			from,
-			offset: offset / EMUS_PER_POINT
 		};
 	};
 	/** A drawing's width or height as a share of what it is sized by (`wp14:sizeRelH`, `wp14:sizeRelV`) */
@@ -8227,7 +8356,6 @@ var docxLayout = (function(exports) {
 			var _wrapAttributes$name;
 			return points((_wrapAttributes$name = wrapAttributes[name]) !== null && _wrapAttributes$name !== void 0 ? _wrapAttributes$name : attributes[name]);
 		};
-		if (typeof horizontal === "string" || typeof vertical === "string") return typeof horizontal === "string" ? horizontal : vertical;
 		return _objectSpread2(_objectSpread2({
 			wrap: WRAPS[wrapName],
 			side: SIDES.has(side) ? side : "bothSides",
@@ -10016,14 +10144,21 @@ var docxLayout = (function(exports) {
 	var NUMBER_ALIGNMENTS = {
 		left: void 0,
 		start: void 0,
+		both: void 0,
+		distribute: void 0,
+		numTab: void 0,
+		lowKashida: void 0,
+		mediumKashida: void 0,
+		highKashida: void 0,
+		thaiDistribute: void 0,
 		center: "center",
 		right: "right",
 		end: "right"
 	};
 	/**
 	* Reads a level of a list (`w:lvl`), in a definition or in a list's override of it. It says why Word's way with it isn't
-	* followed, when it isn't: a number aligned some other way than to the left, the centre or the right, bullets that are
-	* pictures (`w:lvlPicBulletId`), and numbers laid out as Word 6 laid them out (`w:legacy`).
+	* followed, when it isn't: a number aligned in a way the schema doesn't have, bullets that are pictures
+	* (`w:lvlPicBulletId`), and numbers laid out as Word 6 laid them out (`w:legacy`).
 	*/
 	var readLevel = (element, styles) => {
 		var _valueOf8, _numberOf8, _valueOf9, _stringOf3, _valueOf10, _numberOf9;
@@ -10063,20 +10198,51 @@ var docxLayout = (function(exports) {
 	*/
 	var readNumbering = (xml, styles, otherIds) => {
 		const root = childrenOf(xml === null || xml === void 0 ? void 0 : xml["w:numbering"]);
-		const definitions = new Map(root.filter((child) => "w:abstractNum" in child).map((child) => {
+		const read = new Map(root.filter((child) => "w:abstractNum" in child).map((child) => {
 			const children = childrenOf(child["w:abstractNum"]);
 			const levels = byIndex(children.filter((level) => "w:lvl" in level).map((level) => readLevel(level["w:lvl"], styles)));
-			const unsupported = find(children, "w:numStyleLink") === void 0 ? void 0 : "a list defined by a list style";
+			const link = valueOf(children, "w:numStyleLink");
 			return [String(attributesOf(child["w:abstractNum"])["w:abstractNumId"]), {
+				levels,
+				link
+			}];
+		}));
+		/** A list (`w:num`) by its number */
+		const listElement = (id) => {
+			const element = root.find((child) => "w:num" in child && String(attributesOf(child["w:num"])["w:numId"]) === id);
+			return element && childrenOf(element["w:num"]);
+		};
+		const definitionIdOf = (list) => String(numberOf(attributesOf(find(list, "w:abstractNumId"))["w:val"]));
+		/**
+		* Each definition by its id, with the id it numbers by. One that takes its levels from a list style (`w:numStyleLink`)
+		* has none of its own: they are those of the definition the style's list is made from, which lists made from either
+		* count together, as the standard has it. It says why where that isn't found, or where the style's list
+		* gives levels of its own, which may be the style's too
+		*/
+		const definitions = new Map([...read].map(([id, { levels, link }]) => {
+			var _style$numbering;
+			if (link === void 0) return [id, {
+				id,
+				levels
+			}];
+			const style = styles.styles.get(link);
+			const list = (style === null || style === void 0 ? void 0 : style.type) === "numbering" ? listElement((_style$numbering = style.numbering) === null || _style$numbering === void 0 ? void 0 : _style$numbering.id) : void 0;
+			const linked = list && read.get(definitionIdOf(list));
+			const unsupported = linked === void 0 || linked.link !== void 0 ? "a list defined by a list style that isn't found" : list.some((child) => "w:lvlOverride" in child) ? "a list defined by a list style whose own list gives levels of its own" : void 0;
+			return [id, unsupported === void 0 ? {
+				id: definitionIdOf(list),
+				levels: linked.levels
+			} : {
+				id,
 				levels,
 				unsupported
 			}];
 		}));
 		const lists = new Map(root.filter((child) => "w:num" in child).flatMap((child) => {
 			const children = childrenOf(child["w:num"]);
-			const definition = String(numberOf(attributesOf(find(children, "w:abstractNumId"))["w:val"]));
-			const found = definitions.get(definition);
+			const found = definitions.get(definitionIdOf(children));
 			if (!found) return [];
+			const definition = found.id;
 			const overrides = children.flatMap((override) => {
 				const index = numberOf(attributesOf(override["w:lvlOverride"])["w:ilvl"]);
 				return "w:lvlOverride" in override && index !== void 0 ? [{
@@ -10304,8 +10470,8 @@ var docxLayout = (function(exports) {
 		const { file } = context;
 		const styles = getTextStyles(context);
 		for (const style of styles.styles.values()) {
-			var _style$numbering$id, _style$numbering;
-			const placeholder = /^\{(.+)-(\d+)\}$/.exec((_style$numbering$id = (_style$numbering = style.numbering) === null || _style$numbering === void 0 ? void 0 : _style$numbering.id) !== null && _style$numbering$id !== void 0 ? _style$numbering$id : "");
+			var _style$numbering$id, _style$numbering2;
+			const placeholder = /^\{(.+)-(\d+)\}$/.exec((_style$numbering$id = (_style$numbering2 = style.numbering) === null || _style$numbering2 === void 0 ? void 0 : _style$numbering2.id) !== null && _style$numbering$id !== void 0 ? _style$numbering$id : "");
 			if (placeholder) file.Numbering.createConcreteNumberingInstance(placeholder[1], Number(placeholder[2]));
 		}
 		const format = (wrapper) => wrapper.View.prepForXml(_objectSpread2(_objectSpread2({}, context), {}, {
@@ -10367,8 +10533,15 @@ var docxLayout = (function(exports) {
 	/**
 	* Reads a document's body (`w:body`), with the other parts of the document.
 	*/
-	var readContent = (body, parts, { guess = false } = {}) => {
-		var _parts$otherListIds, _parts$otherListIds2, _parts$settings, _fontOf$size2, _ref24, _ref25, _ref26, _ref27, _ref28, _ref29, _documentContent$unsu;
+	var readContent = (writtenBody, writtenParts, { guess = false } = {}) => {
+		var _writtenParts$dataSto, _parts$otherListIds, _parts$otherListIds2, _parts$settings, _fontOf$size2, _ref24, _ref25, _ref26, _ref27, _ref28, _ref29, _documentContent$unsu;
+		const stores = (_writtenParts$dataSto = writtenParts.dataStores) !== null && _writtenParts$dataSto !== void 0 ? _writtenParts$dataSto : /* @__PURE__ */ new Map();
+		const body = withBoundTextWritten(writtenBody, stores);
+		const parts = _objectSpread2(_objectSpread2({}, writtenParts), {}, {
+			headersAndFooters: new Map([...writtenParts.headersAndFooters].map(([id, content]) => [id, withBoundTextWritten(content, stores)])),
+			footnotes: withBoundTextWritten(writtenParts.footnotes, stores),
+			endnotes: withBoundTextWritten(writtenParts.endnotes, stores)
+		});
 		const { styles } = parts;
 		const { lists: numbering, unsupported: inNumbering } = readNumbering(parts.numbering, styles, (_parts$otherListIds = parts.otherListIds) !== null && _parts$otherListIds !== void 0 ? _parts$otherListIds : /* @__PURE__ */ new Map());
 		const listIds = (_parts$otherListIds2 = parts.otherListIds) !== null && _parts$otherListIds2 !== void 0 ? _parts$otherListIds2 : /* @__PURE__ */ new Map();
@@ -14423,6 +14596,28 @@ var docxLayout = (function(exports) {
 			fonts: fontTable === void 0 ? [] : facesOf(embeddedFontsOf(parts, binaryParts, fontTable))
 		});
 	};
+	var PROPERTY_STORES = [["core-properties", "{6C3C8BC8-F283-45AE-878A-BAB7291924A1}"], ["extended-properties", "{6668398D-A668-4E3E-A5EB-62B293D839F1}"]];
+	/**
+	* The stores of data a package's content controls can be bound to, by their ids in capitals: its core and extended
+	* properties, and the custom XML parts of its main document, by the ids their properties' parts give them
+	*/
+	var dataStoresOf = (parts, documentPath) => {
+		const properties = PROPERTY_STORES.flatMap(([type, id]) => {
+			var _relationshipsOf$find3;
+			const path = (_relationshipsOf$find3 = relationshipsOf(parts, "").find((relationship) => relationship.type === type)) === null || _relationshipsOf$find3 === void 0 ? void 0 : _relationshipsOf$find3.path;
+			const root = path === void 0 ? void 0 : rootOf(parts.get(path));
+			return root ? [[id, root]] : [];
+		});
+		const custom = relationshipsOf(parts, documentPath).filter(({ type }) => type === "customXml").flatMap(({ path }) => {
+			var _Object$entries$find;
+			const root = rootOf(parts.get(path));
+			const itemProperties = relationshipsOf(parts, path).find(({ type }) => type === "customXmlProps");
+			const item = itemProperties && rootOf(parts.get(itemProperties.path));
+			const id = (_Object$entries$find = Object.entries(attributesOf(item && Object.values(item)[0])).find(([name]) => /(^|:)itemID$/.test(name))) === null || _Object$entries$find === void 0 ? void 0 : _Object$entries$find[1];
+			return root && id !== void 0 ? [[String(id).toUpperCase(), root]] : [];
+		});
+		return new Map([...properties, ...custom]);
+	};
 	/**
 	* Reads a .docx's main document, with the parts it refers to, and the documents it imports (`w:altChunk`) as Word turns
 	* them into its own paragraphs and tables when it opens it (see `imported-documents.ts`).
@@ -14434,12 +14629,13 @@ var docxLayout = (function(exports) {
 	* @param importedDocuments - The .docx files it imports, by their paths, each read as it is
 	*/
 	var readDocx = (parts, binaryParts = /* @__PURE__ */ new Map(), options = {}, importedDocuments = /* @__PURE__ */ new Map()) => {
-		var _read$styles, _read$footnotes, _read$endnotes;
+		var _relationshipsOf$find4, _relationshipsOf$find5, _read$styles, _read$footnotes, _read$endnotes;
 		const read = withImports(readParts({
 			parts,
 			binaryParts,
 			importedDocuments
 		}));
+		const documentPath = (_relationshipsOf$find4 = (_relationshipsOf$find5 = relationshipsOf(parts, "").find(({ type }) => type === "officeDocument")) === null || _relationshipsOf$find5 === void 0 ? void 0 : _relationshipsOf$find5.path) !== null && _relationshipsOf$find4 !== void 0 ? _relationshipsOf$find4 : DEFAULT_DOCUMENT;
 		const documentParts = {
 			styles: readTextStyles((_read$styles = read.styles) !== null && _read$styles !== void 0 ? _read$styles : { "w:styles": [] }, read.theme && readThemeFonts(read.theme)),
 			numbering: read.numbering,
@@ -14447,7 +14643,8 @@ var docxLayout = (function(exports) {
 			headersAndFooters: new Map([...read.headersAndFooters].map(([id, { content }]) => [id, content])),
 			footnotes: (_read$footnotes = read.footnotes) === null || _read$footnotes === void 0 ? void 0 : _read$footnotes.notes,
 			endnotes: (_read$endnotes = read.endnotes) === null || _read$endnotes === void 0 ? void 0 : _read$endnotes.notes,
-			fonts: read.fonts
+			fonts: read.fonts,
+			dataStores: dataStoresOf(parts, documentPath)
 		};
 		return readContent({ "w:body": read.body.content }, documentParts, options);
 	};
