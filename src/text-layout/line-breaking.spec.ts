@@ -139,6 +139,47 @@ describe("layoutLines", () => {
         ).to.equal(1);
     });
 
+    it("should measure kerned text either side of a soft hyphen apart, as Word doesn't kern across one", () => {
+        // cspell:ignore VAVA VAVAV VAVAVAV AVAVA AVAVAVA
+        // word-stops-text2.ts KE9a: "A-V" 12 times, kerned, as wide as its "V" and "A" kerned and not its "A" and "V". Here
+        // "AV" kerned is 15 points, rather than 20
+        const kerning: TextMeasurer = {
+            measureWidth: (value) => [...value].length * 10 - (value.split("AV").length - 1) * 5,
+            measureLineHeight: () => 10,
+            measureDescent: () => 0,
+        };
+        const kerned = { kerning: 1 };
+        const piece = (value: string): InlineItem => ({ type: "text", text: value, font: kerned });
+        const softHyphen: InlineItem = { type: "softHyphen", font: kerned };
+        const linesOf = (items: readonly InlineItem[], width: number): readonly (readonly (string | number | undefined)[])[] =>
+            layoutLines(items, { width, measurer: kerning }).map(({ text: value, textWidth, unsupported }) => [
+                value,
+                textWidth,
+                unsupported,
+            ]);
+        // "AVA" and "VAV", 25 each, where "AVAVAV" would be 45
+        expect(linesOf([piece("AVA"), softHyphen, piece("VAV")], 200)).to.deep.equal([["AVAVAV", 50, undefined]]);
+        // A part of the word before a soft hyphen is measured so too: "AVA" and "VAVA" with a hyphen are 70, so it breaks at
+        // the first, whose hyphen Word may kern with the letter before it
+        const broken = "a line that breaks at a soft hyphen in kerned text, whose hyphen Word may kern";
+        expect(linesOf([piece("AVA"), softHyphen, piece("VAVA"), softHyphen, piece("VAV")], 67)).to.deep.equal([
+            ["AVA", 35, broken],
+            ["VAVAVAV", 60, undefined],
+        ]);
+        // And a word longer than its line, broken after the last character that fits: "VA" and "VA", where "VAVAV" would fit
+        expect(linesOf([piece("AVAVAVA"), softHyphen, piece("VAVAVAV")], 40).map(([value]) => value)).to.deep.equal([
+            "AVAVA",
+            "VAVA",
+            "VAVAV",
+        ]);
+        // The hyphen in another font isn't kerned with the text before it
+        const plainHyphen: InlineItem = { type: "softHyphen", font: {} };
+        expect(linesOf([piece("AVA"), plainHyphen, piece("VAVA")], 40).map(([, , unsupported]) => unsupported)).to.deep.equal([
+            undefined,
+            undefined,
+        ]);
+    });
+
     it("should measure the pieces of a word in the same font together when it has ligatures, so letters are joined across runs", () => {
         // "fi" joined is 15 points, rather than 20
         const joining: TextMeasurer = {
@@ -504,9 +545,57 @@ describe("layoutLines", () => {
         expect(heightsOf([text("aaaaaaaa "), { type: "box", width: 30, height: 50 }])).to.deep.equal([10, 50]);
     });
 
+    it("should give a picture in a border the room of its box below the baseline, as Word does", () => {
+        // word-stops-text2.ts RF32b: a picture of 20 points in a border of 1.5 points 2 points away stands on the baseline,
+        // 23.5 points with the room above it, and the room below it, 3.5, is deeper than the text's descent of 2
+        const descending: TextMeasurer = { ...MEASURER, measureDescent: () => 2 };
+        const border = { room: 3.5, key: "picture" };
+        const picture: InlineItem = { type: "box", width: 27, height: 23.5, below: 3.5, font: { border } };
+        const lines = (
+            items: readonly InlineItem[],
+            options: Partial<LineLayoutOptions> = {},
+        ): readonly (readonly (number | string | undefined)[])[] =>
+            layoutLines(items, { width: 100, measurer: descending, ...options }).map(({ height, unsupported }) => [height, unsupported]);
+        expect(lines([text("a "), picture, text(" b")])).to.deep.equal([[27, undefined]]);
+        // Multiple spacing beside it, which may count its box, and text beside it in the same border, haven't been seen
+        expect(lines([text("a "), picture], { format: { lineSpacing: { rule: "multiple", multiple: 1.5 } } })[0][1]).to.equal(
+            "a picture in a border in a line with multiple line spacing",
+        );
+        const sameBorder = (value: string): InlineItem => ({ type: "text", text: value, font: { border } });
+        const beside = "a picture in a border beside text in the same border";
+        expect(lines([sameBorder("a"), picture])[0][1]).to.equal(beside);
+        expect(lines([picture, { type: "marker", name: "m" }, sameBorder("b")])[0][1]).to.equal(beside);
+        expect(lines([picture, { type: "text", text: "b", font: { border: { room: 3.5, key: "other" } } }])[0][1]).to.equal(undefined);
+    });
+
+    it("should lay out text fitted to a width as a box of that width, as tall as its text, and move it on whole", () => {
+        // word-stops-text2.ts RF29b to RF29d: text fitted to 25, 100 and 150 points takes that much room on its line, and goes
+        // on to the next line whole where it doesn't fit
+        const fitted = (width: number, size = 10): InlineItem => ({ type: "box", width, height: 0, font: { size }, text: "fitted text" });
+        const lines = (items: readonly InlineItem[], width = 100): readonly (readonly (number | string | undefined)[])[] =>
+            layoutLines(items, { width, measurer: MEASURER }).map(({ text: value, textWidth, height, unsupported }) => [
+                value,
+                textWidth,
+                height,
+                unsupported,
+            ]);
+        expect(lines([text("aa "), fitted(25, 20)])).to.deep.equal([["aa fitted text", 55, 20, undefined]]);
+        expect(lines([text("aaaa "), fitted(60), text(" b")])).to.deep.equal([
+            ["aaaa ", 40, 10, undefined],
+            ["fitted text b", 80, 10, undefined],
+        ]);
+        // One wider than its line hasn't been seen, at its start or after text
+        expect(lines([fitted(120)])[0][3]).to.equal("text fitted to a width wider than its line");
+        expect(lines([text("aa "), fitted(120)]).map((line) => line[3])).to.deep.equal([
+            undefined,
+            "text fitted to a width wider than its line",
+        ]);
+    });
+
     it("should move tabs to the default tab stops", () => {
-        // Stops every 36 points: aaa ends at 30, the tab moves to 36, and the rest doesn't fit in 100
-        expect(heightsOf([text("aaa"), { type: "tab", font: {} }, text("bbbbbbb")])).to.deep.equal([10, 10]);
+        // Stops every 36 points: aaa ends at 30, the tab moves to 36, and "bbbbbbb" doesn't fit after it in 100, so the tab
+        // goes on to the next line with it, which breaks there after "bbbbbb" (word-stops-text2.ts TA11a)
+        expect(heightsOf([text("aaa"), { type: "tab", font: {} }, text("bbbbbbb")])).to.deep.equal([10, 10, 10]);
         expect(heightsOf([text("aaa"), { type: "tab", font: {} }, text("bbbbbb")])).to.deep.equal([10]);
         expect(heightsOf([text("aaa"), { type: "tab", font: {} }, text("bbbbbbb")], 100, { defaultTabStop: 30 })).to.deep.equal([10, 10]);
         expect(heightsOf([text("aa"), { type: "tab", font: {} }, text("bbbbbbb")], 100, { defaultTabStop: 30 })).to.deep.equal([10]);
@@ -514,9 +603,12 @@ describe("layoutLines", () => {
 
     it("should line up the text after a tab with the paragraph's own tab stops", () => {
         const tab: InlineItem = { type: "tab", font: {} };
-        // A left stop at 70 leaves room for three characters
+        // A left stop at 70 leaves room for three characters, and four go on to the next line with the tab, which breaks them
+        // after three there
         expect(heightsOf([text("a"), tab, text("bbb")], 100, { tabStops: [{ position: 70, alignment: "left" }] })).to.deep.equal([10]);
-        expect(heightsOf([text("a"), tab, text("bbbb")], 100, { tabStops: [{ position: 70, alignment: "left" }] })).to.deep.equal([10, 10]);
+        expect(heightsOf([text("a"), tab, text("bbbb")], 100, { tabStops: [{ position: 70, alignment: "left" }] })).to.deep.equal([
+            10, 10, 10,
+        ]);
         // A right stop at the end of the line, as a table of contents has, puts the page number at the end
         expect(heightsOf([text("aaaaaa"), tab, text("12")], 100, { tabStops: [{ position: 100, alignment: "right" }] })).to.deep.equal([
             10,
@@ -563,7 +655,7 @@ describe("layoutLines", () => {
         // The number "1234." is 50 points wide, the first line starts at 30, and the hanging indent's stop is at 40
         // (word-watertight-text.docx TX21)
         const format = { indentLeft: 40, firstLineIndent: -10 };
-        const items: readonly InlineItem[] = [text("1234."), { type: "tab", font: {} }, text("bbbbbbbbbb")];
+        const items: readonly InlineItem[] = [text("1234."), { type: "tab", font: { listNumber: "separator" } }, text("bbbbbbbbbb")];
         const linesOf = (numberAlignment?: "center" | "right"): readonly Pick<LaidOutLine, "text" | "textWidth">[] =>
             layoutLines(items, { width: 200, format, measurer: MEASURER, numberAlignment }).map(({ text: lineText, textWidth }) => ({
                 text: lineText,
@@ -858,8 +950,10 @@ describe("layoutLines", () => {
                 "a justified line that only fits squeezed at a four-per-em space, or at an en, em or ideographic space beside ordinary spaces";
             expect(reasonsOf(325, justified)).to.deep.equal([beside, undefined]);
             expect(reasonsOf(325, { alignment: "distributed" })[0]).to.equal(beside);
-            // 40 past the end of a line of 300, more than a quarter of all its spaces, it goes on the next line in any case
+            // 40 past the end of a line of 300, more than a quarter of all its spaces, it goes on the next line in any case, and
+            // 24 past one of 316, more than a quarter of its ordinary spaces' 90 but not of all of them (word-stops-text2.ts JU4)
             expect(reasonsOf(300, justified)).to.deep.equal([undefined, undefined]);
+            expect(reasonsOf(316, justified)).to.deep.equal([undefined, undefined]);
             // A left-aligned line isn't squeezed
             expect(reasonsOf(325, {})).to.deep.equal([undefined, undefined]);
             // Nor is an en space at the start of a line, before its first word
@@ -2140,7 +2234,7 @@ describe("measureContentWidths", () => {
     it("should measure a list number aligned right or centred from before the start of its first line", () => {
         // As in layoutLines: the number "1234." ends at 30 right-aligned, at 55 centred, and at 80 left-aligned
         const format = { indentLeft: 40, firstLineIndent: -10 };
-        const items: readonly InlineItem[] = [text("1234."), { type: "tab", font: {} }, text("bbbbbbbbbb")];
+        const items: readonly InlineItem[] = [text("1234."), { type: "tab", font: { listNumber: "separator" } }, text("bbbbbbbbbb")];
         expect(widthsOf(items, { format, numberAlignment: "right" })).to.deep.equal({ min: 140, max: 140 });
         expect(widthsOf(items, { format, numberAlignment: "center" })).to.deep.equal({ min: 140, max: 172 });
         expect(widthsOf(items, { format })).to.deep.equal({ min: 140, max: 208 });
@@ -2175,18 +2269,22 @@ describe("soft hyphens", () => {
         expect(linesOf([softHyphen(), text("aa")]).map(({ text: value }) => value)).to.deep.equal(["aa"]);
     });
 
-    it("should break at the last soft hyphen whose part fits with room for its hyphen, and again on the next line", () => {
+    it("should break at the last soft hyphen whose part fits with its hyphen, and again on the next line", () => {
         const word = [text("a"), softHyphen(), text("bb"), softHyphen(), text("cc"), softHyphen(), text("ddd")];
-        // "x abbcc-" is 80 points, and leaves 2 of a line of 82, more than the 1.135 Word leaves
-        expect(linesOf([text("x "), ...word], { width: 82 }).map(({ text: value }) => value)).to.deep.equal(["x abbcc", "ddd"]);
-        expect(linesOf([text("xxxxx "), ...word], { width: 82 }).map(({ text: value }) => value)).to.deep.equal(["xxxxx a", "bbccddd"]);
-        // A hyphen that ends at the end of the line, or just before it, doesn't fit, so it breaks at the soft hyphen before
-        for (const width of [80, 80.1]) {
+        // "x abbcc-" is 80 points, and fits a line of 82, and of 80, as a word that ends at the end of the line does
+        // (word-stops-text2.ts SH16a to SH16l)
+        for (const width of [82, 80]) {
             expect(linesOf([text("x "), ...word], { width }).map(({ text: value, unsupported }) => [value, unsupported])).to.deep.equal([
-                ["x abb", undefined],
-                ["ccddd", undefined],
+                ["x abbcc", undefined],
+                ["ddd", undefined],
             ]);
         }
+        expect(linesOf([text("xxxxx "), ...word], { width: 82 }).map(({ text: value }) => value)).to.deep.equal(["xxxxx a", "bbccddd"]);
+        // A hyphen that ends past the end of the line doesn't fit, so it breaks at the soft hyphen before
+        expect(linesOf([text("x "), ...word], { width: 79.9 }).map(({ text: value, unsupported }) => [value, unsupported])).to.deep.equal([
+            ["x abb", undefined],
+            ["ccddd", undefined],
+        ]);
         // No part fits: the word goes on to the next line, where it fits whole
         expect(linesOf([text("xxxxxxx "), ...word], { width: 90 }).map(({ text: value }) => value)).to.deep.equal(["xxxxxxx ", "abbccddd"]);
         // The part before it fits, but not with its hyphen: it goes on to the next line whole
@@ -2240,33 +2338,27 @@ describe("soft hyphens", () => {
         ]);
     });
 
-    it("should stop where Word's breaking at a soft hyphen hasn't been seen", () => {
-        const unsupportedOf = (items: readonly InlineItem[], options: Partial<LineLayoutOptions> = {}): readonly (string | undefined)[] =>
-            linesOf(items, options).map(({ unsupported }) => unsupported);
-        // A hyphen that ends between 0.135 and 0.99 points before the end of the line: it breaks at the soft hyphen before
-        const close = linesOf([text("x a"), softHyphen(), text("bb"), softHyphen(), text("cc"), softHyphen(), text("ddd")], {
-            width: 80.5,
-        });
-        expect(close.map(({ text: value, unsupported }) => [value, unsupported])).to.deep.equal([
-            ["x abb", "a soft hyphen whose hyphen ends this close to the end of the line"],
-            ["ccddd", undefined],
+    it("should take a shorter part as it is rather than squeeze a longer one, unless it leaves twice as much room, as Word does", () => {
+        // "a a a a a a a a a b-" ends at 200, and "a a a a a a a a a bbb-" 220, 15 past a line of 205, which its spaces of 90
+        // can be squeezed by: their 5 to stretch with "b-" are less than twice that, so Word takes "b-" (word-stops-text2.ts
+        // SH17: "Do-" with 200 twips to spare rather than "Donau-" 136 past the end)
+        const items = [text("a a a a a a a a a b"), softHyphen(), text("bb"), softHyphen(), text("cccc")];
+        const justified = (
+            width: number,
+            alignment: "justified" | "distributed" = "justified",
+        ): readonly (readonly (string | undefined)[])[] =>
+            linesOf(items, { width, format: { alignment } }).map(({ text: value, unsupported }) => [value, unsupported]);
+        expect(justified(205)).to.deep.equal([
+            ["a a a a a a a a a b", undefined],
+            ["bbcccc", undefined],
         ]);
-        // On a justified line, one that ends 0.135 points or less before it, which Word may squeeze in or not
-        expect(
-            unsupportedOf([text("a a a a a a a a a b"), softHyphen(), text("cccc")], {
-                width: 200.1,
-                format: { alignment: "justified" },
-            })[0],
-        ).to.equal("a soft hyphen whose hyphen ends this close to the end of the line");
-        // A part that fits squeezed after one that fits as it is: Word may take either
-        const either = linesOf([text("a a a a a a a a a b"), softHyphen(), text("bb"), softHyphen(), text("cccc")], {
-            width: 205,
-            format: { alignment: "justified" },
-        });
-        expect(either.map(({ text: value, unsupported }) => [value, unsupported])).to.deep.equal([
-            ["a a a a a a a a a bbb", "a justified line that fits a soft hyphen's part squeezed, and a shorter one as it is"],
+        // With 15 to stretch and 5 to squeeze, which Word hasn't been seen with, nor a distributed line, it squeezes it
+        const reason = "a line that fits a soft hyphen's part squeezed, and a shorter one as it is with twice as much room or more";
+        expect(justified(215)).to.deep.equal([
+            ["a a a a a a a a a bbb", reason],
             ["cccc", undefined],
         ]);
+        expect(justified(205, "distributed")[0][1]).to.equal(reason);
     });
 
     it("should break a word with soft hyphens whose first part is longer than its line as a word without them", () => {
@@ -2290,8 +2382,9 @@ describe("soft hyphens", () => {
 
     it("should break lines at soft hyphens where Word broke the probes' lines", () => {
         // word-breaks-and-tabs SH2: in Calibri 11, a line of 9026 twips whose last word's first part ends this many twips
-        // short of its end: Word moves the word on to the next line for 10 to 70, and breaks it after "Donau" for 90, its
-        // hyphen ending at 9002.9
+        // short of its end, as the probe's character spacing of whole twips put it, rather than the 10 to 90 it meant: Word
+        // moves the word on to the next line for 6.3 to 66.3, whose hyphen of 67.3 goes past the end, and breaks it after
+        // "Donau" for 90.4, its hyphen ending at 9002.9
         const font = { font: "Calibri", size: 11 };
         const donau = measureTextWidth(" Donau", font);
         const lineFor = (twips: number): readonly LaidOutLine[] =>
@@ -2304,18 +2397,48 @@ describe("soft hyphens", () => {
                 ],
                 { width: 9026 / 20 },
             );
-        for (const twips of [10, 30, 50, 70]) {
+        for (const twips of [6.3, 30.4, 48.3, 66.3]) {
             expect(lineFor(twips).map(({ text: value, unsupported }) => [value, unsupported])).to.deep.equal([
                 [" ", undefined],
                 ["Donaudampfschifffahrt", undefined],
             ]);
         }
-        const broken = lineFor(90);
+        const broken = lineFor(90.4);
         expect(broken.map(({ text: value, unsupported }) => [value, unsupported])).to.deep.equal([
             [" Donau", undefined],
             ["dampfschifffahrt", undefined],
         ]);
         expect(broken[0].textWidth * 20).to.be.closeTo(9002.9, 5);
+        // word-stops-text2.ts SH16a: the hyphen of "eeeee-" ending 3.5 twips short of the end, which Word breaks at
+        const eeeee = measureTextWidth("eeeee-", font);
+        const close = layoutLines(
+            [
+                { type: "box", width: 9026 / 20 - 3.5 / 20 - eeeee, height: 1, font },
+                { type: "text", text: "eeeee", font },
+                softHyphen(font),
+                { type: "text", text: "continuation and more", font },
+            ],
+            { width: 9026 / 20 },
+        );
+        expect(close.map(({ text: value, unsupported }) => [value, unsupported])).to.deep.equal([
+            ["eeeee", undefined],
+            ["continuation and more", undefined],
+        ]);
+        // SH17: a justified line where "Do-" fits with 200 twips to spare, and "Donau-" only squeezed: Word takes "Do-"
+        const before = "SH17 of the by in to and on of the by in to and on of the by in Do";
+        const [first] = layoutLines(
+            [
+                { type: "text", text: before, font },
+                softHyphen(font),
+                { type: "text", text: "nau", font },
+                softHyphen(font),
+                { type: "text", text: "dampf", font },
+                softHyphen(font),
+                { type: "text", text: "schiff the in foot mouth made on river", font },
+            ],
+            { width: Math.round(measureTextWidth(`${before}-`, font) * 20 + 200) / 20, format: { alignment: "justified" } },
+        );
+        expect([first.text, first.unsupported]).to.deep.equal([before, undefined]);
         // SH1a to SH1e: a justified line whose last word, with soft hyphens in it, fits only with its spaces 3% to 20%
         // narrower, which Word squeezes onto it whole
         const filler = Array.from({ length: 12 }, () => " the").join("");
@@ -2611,45 +2734,118 @@ describe("tab stops past the end of the line", () => {
         expect([decimal.textWidth, decimal.unsupported]).to.deep.equal([95, undefined]);
     });
 
+    it("should line up the text after a right, centred or decimal stop past the end of the line with it whatever the indents, as Word does", () => {
+        // word-stops-text2.ts TA10a to TA10f: after text, with a first line or hanging indent; TA10h, TA10i: at the start of a
+        // line and after text, indented on the left
+        const formats = [
+            { indentLeft: 0, firstLineIndent: 10 },
+            { indentLeft: 10, firstLineIndent: -10 },
+            { indentLeft: 10, firstLineIndent: 0 },
+        ];
+        for (const format of formats) {
+            for (const alignment of ["right", "center", "decimal"] as const) {
+                const [line] = linesOf([text("a"), tab, text("b")], { ...at(alignment), format });
+                const start = format.indentLeft + format.firstLineIndent;
+                expect([alignment, start + line.textWidth, line.unsupported]).to.deep.equal([alignment, 100, undefined]);
+            }
+        }
+        for (const alignment of ["center", "decimal"] as const) {
+            const [line] = linesOf([tab, text("b")], { ...at(alignment), format: { indentLeft: 10 } });
+            expect([10 + line.textWidth, line.unsupported]).to.deep.equal([100, undefined]);
+        }
+    });
+
+    it("should take a tab on to the next line with a word that doesn't fit after it, and break the word there, as Word does", () => {
+        // word-stops-text2.ts TA11a: "afterwards" after a left stop at 8800 twips doesn't fit before 9026, so the tab goes on to
+        // the next line with it, and it breaks there after "af"; TA11b, word-stops-tabs.ts TA1c: past the margin, in a
+        // paragraph indented past it
+        const lines = (items: readonly InlineItem[], options: Partial<LineLayoutOptions>): readonly (readonly (string | undefined)[])[] =>
+            linesOf(items, options).map(({ text: value, unsupported }) => [value, unsupported]);
+        expect(lines([text("a"), tab, { type: "marker", name: "m" }, text("bbb")], at("left", 80))).to.deep.equal([
+            ["a", undefined],
+            ["\tbb", undefined],
+            ["b", undefined],
+        ]);
+        expect(lines([text("a"), tab, text("bbb")], { ...at("left", 105), format: { indentRight: -20 } })).to.deep.equal([
+            ["a", undefined],
+            ["\tb", undefined],
+            ["bb", undefined],
+        ]);
+        // At the start of a line, the word breaks after the tab
+        expect(lines([tab, text("bbb")], at("left", 80))).to.deep.equal([
+            ["\tbb", undefined],
+            ["b", undefined],
+        ]);
+        // A word that fits after the tab on the next line goes there whole, and a word after a space stays with the space
+        expect(lines([text("aaaaa"), tab, text("bbbbb")], {})).to.deep.equal([
+            ["aaaaa", undefined],
+            ["\tbbbbb", undefined],
+        ]);
+        expect(lines([text("aaaaa"), tab, text(" bbbb")], at("left", 70))).to.deep.equal([
+            ["aaaaa\t ", undefined],
+            ["bbbb", undefined],
+        ]);
+        // A word with soft hyphens breaks at one after the tab, where its part and hyphen fit (word-stops-text2.ts SH16a)
+        const hyphened = [text("a"), tab, text("bb"), { type: "softHyphen", font: {} } as const, text("cccc")];
+        expect(lines(hyphened, at("left", 60))).to.deep.equal([
+            ["a\tbb", undefined],
+            ["cccc", undefined],
+        ]);
+        // One whose first part doesn't fit, which Word hasn't been seen with, takes the tab on to the next line, guessing
+        expect(lines(hyphened, at("left", 80))).to.deep.equal([
+            ["a", "a word with soft hyphens whose first part doesn't fit after a tab"],
+            ["\t", "a word with soft hyphens that doesn't fit after a tab that starts its line"],
+            ["bbcccc", undefined],
+        ]);
+        // A picture after a tab, a word with soft hyphens after a tab that starts its line, and a word after tabs in a row,
+        // haven't been seen
+        const picture: InlineItem = { type: "box", width: 40, height: 10 };
+        expect(lines([text("a"), tab, picture], at("left", 70))[0][1]).to.equal("a picture that doesn't fit after a tab");
+        expect(lines([tab, picture], at("left", 70))[0][1]).to.equal("a picture that doesn't fit after a tab that starts its line");
+        expect(
+            lines([text("a"), tab, tab, text("bbb")], {
+                tabStops: [
+                    { position: 60, alignment: "left" },
+                    { position: 80, alignment: "left" },
+                ],
+            })[0][1],
+        ).to.equal("a word that doesn't fit after tabs in a row");
+        expect(lines([tab, text("bb"), { type: "softHyphen", font: {} }, text("bb")], at("left", 80))[0][1]).to.equal(
+            "a word with soft hyphens that doesn't fit after a tab that starts its line",
+        );
+    });
+
     it("should stop at a stop past the end of the line, or the right indent, that Word hasn't been seen with", () => {
         const unsupportedOf = (items: readonly InlineItem[], options: Partial<LineLayoutOptions>): string | undefined =>
             linesOf(items, options)[0].unsupported;
         const indented = (format: object) => ({ format });
-        // With a first line or hanging indent, a right, centred or decimal stop, and a left one at the start of a line indented
-        // further (a hanging indent's line starts before its stop at the indent); and a left one after text in a paragraph
-        // indented past the margin
-        const firstLineStop =
-            "a tab stop past the end of the line in a paragraph with a first line or hanging indent, or indented past the margin";
-        for (const format of [{ firstLineIndent: 10 }, { firstLineIndent: -10, indentLeft: 10 }]) {
-            for (const alignment of ["right", "center", "decimal"] as const) {
-                expect(unsupportedOf([text("a"), tab, text("b")], { ...at(alignment), ...indented(format) })).to.equal(firstLineStop);
-            }
-        }
-        expect(unsupportedOf([tab, text("b")], { ...at("left"), ...indented({ firstLineIndent: 10 }) })).to.equal(firstLineStop);
-        expect(unsupportedOf([text("a"), tab, text("b")], { ...at("left"), ...indented({ indentRight: -10 }) })).to.equal(firstLineStop);
-        expect(unsupportedOf([tab, text("b")], { ...at("left"), ...indented({ indentLeft: 10 }) })).to.equal(
-            "a left tab stop past the end of the line at the start of a line in an indented paragraph",
+        // A left one at the start of a line indented, or with a first line indent; and any in a paragraph indented past the
+        // margin
+        const leftStop = "a left tab stop past the end of the line at the start of a line in an indented paragraph";
+        expect(unsupportedOf([tab, text("b")], { ...at("left"), ...indented({ firstLineIndent: 10 }) })).to.equal(leftStop);
+        expect(unsupportedOf([tab, text("b")], { ...at("left"), ...indented({ indentLeft: 10 }) })).to.equal(leftStop);
+        expect(unsupportedOf([text("a"), tab, text("b")], { ...at("left"), ...indented({ indentRight: -10 }) })).to.equal(
+            "a tab stop past the end of the line in a paragraph indented past the margin",
         );
-        const indentedStop = "a right, centred or decimal tab stop past the end of the line in an indented paragraph";
-        expect(unsupportedOf([text("a"), tab, text("b")], { ...at("right"), ...indented({ indentLeft: 10 }) })).to.equal(indentedStop);
-        expect(unsupportedOf([tab, text("b")], { ...at("right"), ...indented({ indentRight: 10 }) })).to.equal(indentedStop);
-        expect(unsupportedOf([text("a"), tab, text("b")], { ...at("center"), ...indented({ indentRight: 10 }) })).to.equal(indentedStop);
-        expect(unsupportedOf([tab, text("b")], { ...at("decimal"), ...indented({ indentLeft: 10 }) })).to.equal(indentedStop);
-        // Past the right indent: a justified line, and text after a left stop past the margin
+        // Centred and decimal ones in a paragraph indented on the right, and a right one at the start of a line there
+        const rightStop =
+            "a centred or decimal tab stop past the end of the line in a paragraph indented on the right, or a right one at the start of a line there";
+        expect(unsupportedOf([tab, text("b")], { ...at("right"), ...indented({ indentRight: 10 }) })).to.equal(rightStop);
+        expect(unsupportedOf([text("a"), tab, text("b")], { ...at("center"), ...indented({ indentRight: 10 }) })).to.equal(rightStop);
+        // Past the right indent: a distributed line, and text after a left stop past the margin. In a justified line, the text
+        // after a right stop too long for the room before it starts at the tab, and the line goes on to the margin
+        // (word-stops-text2.ts TA10g)
         expect(
-            unsupportedOf([text("a"), tab, text("b")], { ...at("right", 85), format: { indentRight: 20, alignment: "justified" } }),
-        ).to.equal("a tab stop past the paragraph's right indent in a justified line");
+            unsupportedOf([text("a"), tab, text("b")], { ...at("right", 85), format: { indentRight: 20, alignment: "distributed" } }),
+        ).to.equal("a tab stop past the paragraph's right indent in a distributed line");
+        const [justified] = linesOf([text("a"), tab, text("bbbbbbbbb")], {
+            ...at("right", 85),
+            format: { indentRight: 20, alignment: "justified" },
+        });
+        expect([justified.text, justified.textWidth, justified.unsupported]).to.deep.equal(["a\tbbbbbbbbb", 100, undefined]);
         expect(unsupportedOf([text("a"), tab, text("bbbbb")], { ...at("left", 85), format: { indentRight: 20 } })).to.equal(
             "text after a tab stop past the paragraph's right indent that goes past the margin",
         );
-        // word-stops-tabs TA1c: past the margin in a paragraph indented past it, a left stop whose text doesn't fit before the
-        // end of the line, but not one whose text does
-        const pastMargin = { ...at("left", 105), format: { indentRight: -20 } };
-        expect(unsupportedOf([text("a"), tab, text("bbb")], pastMargin)).to.equal(
-            "text after a left tab stop past the margin, in a paragraph indented past it, that goes past the end of the line",
-        );
-        const [fits] = linesOf([text("a"), tab, text("b")], pastMargin);
-        expect([fits.text, fits.textWidth, fits.unsupported]).to.deep.equal(["a\tb", 115, undefined]);
     });
 
     it("should put the text after tabs past the end of the line where Word puts it", () => {
@@ -2703,6 +2899,11 @@ describe("tab stops past the end of the line", () => {
         const pushed = layoutLines(items(`TP7 ${"m".repeat(49)}`, "right"), withStop("right", 10000));
         expect(pushed.map(({ text: value }) => value.slice(-6))).to.deep.equal(["mmmmmm", "\tright"]);
         expect(widthsOf(pushed)[1]).to.equal(9026);
+        // word-stops-text2.ts TA11a: "afterwards" after a left stop at 8800 goes on to the next line with the tab, where "af"
+        // ends at 8973, and "terwards" goes on the line after
+        const moved = layoutLines(items("TA11a text", "afterwards"), withStop("left", 8800));
+        expect(moved.map(({ text: value }) => value)).to.deep.equal(["TA11a text", "\taf", "terwards"]);
+        expect(widthsOf(moved)[1]).to.be.closeTo(8973, 5);
     });
 });
 

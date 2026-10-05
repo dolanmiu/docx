@@ -626,7 +626,7 @@ describe("paginate", () => {
             ).to.equal(undefined);
         });
 
-        it("should give the empty paragraph that ends a section no room for its borders or automatic spacing, and stop where a box could go on through it, as Word does", () => {
+        it("should give the empty paragraph that ends a section no room for its borders or automatic spacing, and end a box of borders at it, as Word does", () => {
             // word-stops-text.ts PB2a, PB2b
             const SECOND = { sections: [SECTION, { ...SECTION, start: "continuous" as const }] };
             const ending: ParagraphBlock = { ...bordered("end", 0), items: [], sectionBreak: true };
@@ -635,10 +635,18 @@ describe("paginate", () => {
             // own, each with its top and bottom borders
             const plainEnding: ParagraphBlock = { ...paragraph("end", 0), items: [], sectionBreak: true };
             expect(topsOf(document([bordered("a", 1), plainEnding, [bordered("b", 1), 1]], SECOND))).to.deep.equal([[15, 33]]);
-            // Whether a box of its borders before or after it goes on through it hasn't been seen
-            const through = "the empty paragraph that ends a section with the same borders as the paragraph before or after it";
-            expect(numbersOf(document([bordered("a", 1), ending, [paragraph("b", 1), 1]], SECOND)).stoppedAt).to.equal(through);
-            expect(numbersOf(document([paragraph("a", 1), ending, [bordered("b", 1), 1]], SECOND)).stoppedAt).to.equal(through);
+            // With the same borders as the paragraph before or after it, or both, a box of them ends at it, and its borders
+            // take no room: each is a box of its own, as with none on it (word-stops-text2.ts PB3c to PB3e)
+            expect(topsOf(document([bordered("a", 1), ending, [bordered("b", 1), 1]], SECOND))).to.deep.equal([[15, 33]]);
+            expect(topsOf(document([bordered("a", 1), ending, [paragraph("b", 1), 1]], SECOND))).to.deep.equal([[15, 28]]);
+            expect(topsOf(document([paragraph("a", 1), ending, [bordered("b", 1), 1]], SECOND))).to.deep.equal([[10, 25]]);
+            // After a table, where it takes a line, the box of its borders ends at it too, with its bottom border below its
+            // line, and the next section's paragraph starts a box of its own
+            const afterTable = document(
+                [table([row([[paragraph("t", 1)]])]), { ...bordered("end", 1), sectionBreak: true }, [bordered("b", 1), 1]],
+                SECOND,
+            );
+            expect(topsOf(afterTable)).to.deep.equal([[25, 43]]);
             const automatic: ParagraphBlock = {
                 ...paragraph("end", 0, { autoSpaceBefore: true, autoSpaceAfter: true }),
                 items: [],
@@ -833,7 +841,7 @@ describe("paginate", () => {
             expect(paginate(document([greek, paragraph("b", 1)])).stoppedAt).to.equal("ligatures beside a character not yet followed");
         });
 
-        it("should stop at text kerned or with ligatures beside a soft hyphen, which Word hasn't been seen with", () => {
+        it("should lay out kerned text beside a soft hyphen, and stop at ligatures beside one, which Word hasn't been seen with", () => {
             const hyphenated = (
                 font: TextFont,
                 before: readonly LayoutItem[] = [{ type: "text", text: " ef", font }],
@@ -847,24 +855,21 @@ describe("paginate", () => {
                     ]),
                     paragraph("b", 1),
                 ]);
-            const BESIDE = "kerning or ligatures beside a soft hyphen";
-            expect(paginate(hyphenated({ font: "Calibri", size: 11, kerning: 1 })).stoppedAt).to.equal(BESIDE);
-            expect(paginate(hyphenated({ font: "Calibri", size: 11, ligatures: "standardContextual" })).stoppedAt).to.equal(BESIDE);
-            // Text neither kerned nor with ligatures, or with nothing before the soft hyphen to kern or join with, is laid out
-            expect(paginate(hyphenated({ font: "Calibri", size: 11 })).stoppedAt).to.equal(undefined);
+            // Kerned text isn't kerned across one, so it is measured apart (word-stops-text2.ts KE9a)
             const kerned = { font: "Calibri", size: 11, kerning: 1 };
-            expect(paginate(hyphenated(kerned, [{ type: "tab", font: kerned }])).stoppedAt).to.equal(undefined);
-            // The hyphen at the end of a line in the font of the kerned text before it, which it may be kerned with, though
-            // the text after it is in another font, but not one in another font
-            const plain = { font: "Calibri", size: 11 };
-            expect(paginate(hyphenated(kerned, undefined, { after: plain })).stoppedAt).to.equal(BESIDE);
-            expect(paginate(hyphenated(kerned, undefined, { hyphen: plain, after: plain })).stoppedAt).to.equal(undefined);
-            // Nor after empty text, such as a field's result not yet worked out, with no letter to kern the hyphen with
+            expect(paginate(hyphenated(kerned)).stoppedAt).to.equal(undefined);
+            const BESIDE = "ligatures beside a soft hyphen";
+            const ligatures = { font: "Calibri", size: 11, ligatures: "standardContextual" } as const;
+            expect(paginate(hyphenated(ligatures)).stoppedAt).to.equal(BESIDE);
+            // Text neither kerned nor with ligatures, or with nothing before the soft hyphen to join with, is laid out: a tab, or
+            // empty text, such as a field's result not yet worked out
+            expect(paginate(hyphenated({ font: "Calibri", size: 11 })).stoppedAt).to.equal(undefined);
+            expect(paginate(hyphenated(ligatures, [{ type: "tab", font: ligatures }])).stoppedAt).to.equal(undefined);
             const empty: readonly LayoutItem[] = [
-                { type: "tab", font: kerned },
-                { type: "text", text: "", font: kerned },
+                { type: "tab", font: ligatures },
+                { type: "text", text: "", font: ligatures },
             ];
-            expect(paginate(hyphenated(kerned, empty, { after: plain })).stoppedAt).to.equal(undefined);
+            expect(paginate(hyphenated(ligatures, empty)).stoppedAt).to.equal(undefined);
         });
 
         it("should stop at a character Word draws in another font, measuring with the width tables", () => {
@@ -3843,15 +3848,14 @@ describe("paginate", () => {
             expect(pagesOf(content)).to.deep.equal({ a: "1", b: "1", c: "2" });
         });
 
-        it("should stop at a line whose multiple spacing would go below its page's text into the footnotes", () => {
-            // c ends at 55, 5 past the footnotes' separator, which only the spacing below its text does
+        it("should move a line whose multiple spacing would go below its page's text into the footnotes to the next page, as Word does", () => {
+            // c ends at 55, 5 past the footnotes' separator, which only the spacing below its text does, so it goes on to the
+            // next page (stops2/word-stops-text2.ts PB7e)
             const spaced: ParagraphFormat = { lineSpacing: { rule: "multiple", multiple: 1.5 } };
             const content = withNotes([paragraph("a", 3), noted(paragraph("b", 1), "footnote 1"), paragraph("c", 1, spaced)], {
                 "footnote 1": [paragraph("note", 1)],
             });
-            expect(paginate(content, { measurer: MEASURER }).stoppedAt).to.equal(
-                "a line whose room below its text goes below it into the footnotes",
-            );
+            expect(pagesOf(content)).to.deep.equal({ a: "1", b: "1", c: "2" });
             // So does what is kept with the next: c and d end at 55
             const kept = withNotes(
                 [
@@ -3862,9 +3866,26 @@ describe("paginate", () => {
                 ],
                 { "footnote 1": [paragraph("note", 1)] },
             );
-            expect(paginate(kept, { measurer: MEASURER }).stoppedAt).to.equal(
-                "a line whose room below its text goes below it into the footnotes",
+            expect(pagesOf(kept)).to.deep.equal({ a: "1", b: "1", c: "2", d: "2" });
+            // The room a document grid leaves below a line's text hasn't been seen above footnotes: c's line of 20 on a grid
+            // of 20 ends its text at 50, and its room at 55
+            const gridded = (block: ParagraphBlock): ParagraphBlock => ({ ...block, grid: { linePitch: 20 } });
+            const onGrid = withNotes(
+                [paragraph("a", 2), noted(paragraph("b", 1), "footnote 1"), gridded(paragraph("c", 1, { spaceBefore: 5 }))],
+                { "footnote 1": [paragraph("note", 1)] },
             );
+            const reason = "a line whose room a document grid leaves below its text goes below it into the footnotes";
+            expect(paginate(onGrid, { measurer: MEASURER }).stoppedAt).to.equal(reason);
+            const keptOnGrid = withNotes(
+                [
+                    paragraph("a", 1),
+                    noted(paragraph("b", 1), "footnote 1"),
+                    paragraph("c", 1, { keepNext: true }),
+                    gridded(paragraph("d", 1, { spaceBefore: 5 })),
+                ],
+                { "footnote 1": [paragraph("note", 1)] },
+            );
+            expect(paginate(keptOnGrid, { measurer: MEASURER }).stoppedAt).to.equal(reason);
         });
 
         it("should move a line to the next page with its footnote when they don't both fit", () => {

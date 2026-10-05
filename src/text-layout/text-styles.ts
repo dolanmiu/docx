@@ -151,8 +151,6 @@ export type TextStyles = {
     readonly defaultTableStyle?: string;
     /** The theme's fonts, for text in them */
     readonly themeFonts: ThemeFonts;
-    /** Why a length in the styles can't be read as Word reads it, when one can't */
-    readonly unsupported?: string;
 };
 
 /**
@@ -245,42 +243,14 @@ export const pointsOf = (value: unknown, perPoint: number): number | undefined =
 };
 
 /**
- * A run's size (`w:sz`, or `w:szCs` for complex scripts) in points, from half-points, or from points, which Word rounds down to a half-point:
- * "11.75pt" is 11.5. Word ignores a size in inches, centimeters or millimeters, as if it had none (word-units2).
+ * A run's size (`w:sz`, or `w:szCs` for complex scripts) in points, from half-points, or from a length in any unit, which
+ * Word rounds down to a half-point, with or without a style that gives a size: "11.75pt" is 11.5, "0.4in" 28.5, "1cm" and
+ * "10mm" 28, and "0.3cm" 8.5, as it reads centimeters and millimeters to the nearest twip first (word-units2.ts V3,
+ * scripts/layout-probes/stops2/word-stops-text.ts RF27a to RF27c, word-stops-text2.ts RF27d to RF27g)
  */
 const sizeOf = (value: unknown): number | undefined => {
     const unit = typeof value === "string" ? MEASURE.exec(value)?.[4] : undefined;
-    return unit === undefined || unit === "pt" ? pointsOf(value, 2) : undefined;
-};
-
-/**
- * Why how Word reads a length in formatted XML isn't known, when it isn't: a size in a unit other than points, which Word's
- * PDFs showed it ignores in sizes that aren't whole half-points with no style giving a size (word-units2.ts V3), and
- * draws at its length in whole half-points in a run whose style gives one (scripts/layout-probes/stops2/word-stops-text.ts
- * RF27a to RF27c), which leaves which of the two decides unknown. Its minus sign is the whole number's only, as for every
- * length: "-2.5pt" lowers text by 1.5 points, "-0.5pt" and "-0.3cm" raise it, and "-0.5mm" spaces letters further apart
- * (RF26a, RF26b, RF28a, RF28b). Undefined when every length's reading is known.
- */
-export const unknownLengthIn = (element: unknown, name = ""): string | undefined => {
-    if (Array.isArray(element)) {
-        return element.reduce<string | undefined>((found, child) => found ?? unknownLengthIn(child, name), undefined);
-    }
-    if (!isObject(element)) {
-        return undefined;
-    }
-    return Object.entries(element).reduce<string | undefined>((found, [key, child]) => {
-        if (found !== undefined || key !== "_attr") {
-            return found ?? unknownLengthIn(child, key);
-        }
-        return Object.values(child as XmlObject).reduce<string | undefined>((reason, value) => {
-            const measure = typeof value === "string" ? MEASURE.exec(value) : null;
-            if (reason !== undefined || !measure) {
-                return reason;
-            }
-            const [, , , , unit] = measure;
-            return (name === "w:sz" || name === "w:szCs") && unit !== "pt" ? "a size given in a unit other than points" : undefined;
-        }, undefined);
-    }, undefined);
+    return unit === undefined || !METRIC.has(unit) ? pointsOf(value, 2) : Math.floor(pointsOf(value, 20)! * 2 + ROUNDING) / 2;
 };
 
 export const isOff = (value: unknown): boolean => value === false || value === 0 || value === "false" || value === "0" || value === "off";
@@ -602,7 +572,6 @@ export const readTextStyles = (xml: XmlObject, themeFonts: ThemeFonts = OFFICE_T
         defaultCharacterStyle: defaultStyle("character"),
         defaultTableStyle: defaultStyle("table"),
         themeFonts,
-        ...withoutUndefined({ unsupported: unknownLengthIn(xml) }),
     };
 };
 
@@ -738,12 +707,17 @@ const WIDEST_ART_BORDER = 31;
  * How wide a run's border is as Word draws it, in eighths of a point: as a paragraph's of its style. A border of no style
  * ("none") takes its space still, but no width (scripts/layout-probes/word-run-formatting.ts RF7h). An art border's size
  * is in points, so apples of 12 take 12 points (scripts/layout-probes/stops2/word-stops-text.ts RF25c), and Word draws a
- * single border of an eighth of a point, and a double one of none, as given (RF25f, RF25e). Undefined when Word hasn't been
- * seen to draw it.
+ * single border of an eighth of a point, and a double one of none, as given (RF25f, RF25e). A shadow doubles a single
+ * line, as a paragraph's (`word-paragraph-formats.docx` B6), and one drawn as a frame is as wide: one of 1.5 points 2
+ * points from the text takes 100 twips beside and above and below it with a shadow, and 70 as a frame
+ * (scripts/layout-probes/stops2/word-stops-text2.ts RF24c, RF24d). Undefined when Word hasn't been seen to draw it.
  */
 const runBorderWidth = ({ style, size, shadow, frame }: ParagraphBorder): number | undefined => {
-    if (shadow || frame || size === undefined) {
+    if (size === undefined) {
         return style === "none" && !shadow && !frame ? 0 : undefined;
+    }
+    if (shadow || frame) {
+        return style === "single" && size >= NARROWEST_BORDER && size <= WIDEST_BORDER ? (shadow ? 2 : 1) * size : undefined;
     }
     if (!LINE_BORDERS.has(style)) {
         return size >= 1 && size <= WIDEST_ART_BORDER ? size * EIGHTHS_PER_POINT : undefined;
@@ -815,8 +789,8 @@ const DEFAULT_FIGURES: Readonly<Record<string, readonly string[]>> = {
 
 /**
  * Why a run's formatting can't be laid out as Word lays it out, when it can't: OpenType features other than ligatures,
- * whose widths the width tables don't have, a border of a style, width or space Word hasn't been seen to draw, or with a
- * shadow or drawn as a frame, and emphasis marks of a kind the schema doesn't have.
+ * whose widths the width tables don't have, a border of a style, width or space Word hasn't been seen to draw, or of a style
+ * other than single with a shadow or drawn as a frame, and emphasis marks of a kind the schema doesn't have.
  */
 export const unknownRunFormatting = ({
     font,
@@ -839,8 +813,8 @@ export const unknownRunFormatting = ({
     if (stylisticSets === true || contextualAlternates === true) {
         return "OpenType stylistic sets or contextual alternates";
     }
-    if (border !== undefined && border.style !== "nil" && (border.shadow || border.frame)) {
-        return "a run border with a shadow or drawn as a frame";
+    if (border !== undefined && border.style !== "nil" && border.style !== "single" && (border.shadow || border.frame)) {
+        return "a run border of a style other than single with a shadow or drawn as a frame";
     }
     if (border !== undefined && border.style !== "nil" && runBorderWidth(border) === undefined) {
         return "a run border of a style, width or space not yet followed";

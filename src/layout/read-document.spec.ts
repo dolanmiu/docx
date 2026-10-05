@@ -234,7 +234,12 @@ describe("readDocument", () => {
             // A tab in a box, which goes on round it (word-stops-tabs.ts TA7a)
             expect(stopsAt(r(rPr(bdr("single")), { "w:tab": {} }))).to.equal(undefined);
             expect(stopsAt(r(rPr(bdr("single")), t("a\tb")))).to.equal(undefined);
-            expect(stopsAt(r(rPr(bdr("single")), { "w:drawing": [{ "wp:inline": [] }] }))).to.equal("a picture in text with a border");
+            // A picture in the line in a box of its own, with the border's room around it (word-stops-text2.ts RF32b), but not
+            // one placed on the page
+            expect(stopsAt(r(rPr(bdr("single")), { "w:drawing": [{ "wp:inline": [] }] }))).to.equal(undefined);
+            expect(stopsAt(r(rPr(bdr("single")), { "w:drawing": [{ "wp:anchor": [] }] }))).to.equal(
+                "a drawing placed on the page in text with a border",
+            );
             // A position whose minus sign is its whole number's only: "-2.5pt" lowers text 1.5 points (word-stops-text.ts RF26a)
             expect(stopsAt(r(rPr(value("w:position", "-2.5pt")), t("a")))).to.equal(undefined);
             // Hidden text takes no room, whatever its formatting
@@ -401,12 +406,13 @@ describe("readDocument", () => {
                 indentLeft: 44,
                 firstLineIndent: 36,
             });
+            // A hanging indent in twips from a left indent in characters leaves the first line at it and puts the others that
+            // much further in (word-stops-text2.ts PB5f)
+            const hanging = indented({ "w:leftChars": 400, "w:left": 880, "w:hanging": 360 }, 22, sized(22));
+            expect([hanging.unsupported, hanging.format.indentLeft, hanging.format.firstLineIndent]).to.deep.equal([undefined, 62, -18]);
             // Where Word's sizes aren't known
             expect(indented({ "w:rightChars": 400 }, 40, big).unsupported).to.equal(
                 "an indent in characters right of a paragraph whose mark is another size than its style",
-            );
-            expect(indented({ "w:leftChars": 400, "w:hanging": 720 }, 22, big).unsupported).to.equal(
-                "an indent in characters left of a hanging indent in twips",
             );
             expect(indented({ "w:leftChars": 0, "w:hangingChars": 200 }, 22, sized(22)).format).to.deep.include({ indentLeft: 22 });
             expect(indented({ "w:leftChars": 0, "w:left": 720, "w:hangingChars": 200 }, 22, big).unsupported).to.equal(
@@ -449,6 +455,38 @@ describe("readDocument", () => {
             expect(paragraphOf(content, 0).unsupported).to.equal(
                 "an indent in characters in a list whose number is another size than its text",
             );
+            // A left indent in characters with a hanging indent in twips puts the number at the left indent whatever its size,
+            // and the other lines that much further in: the number of 16 points at 880, and the text at 1240
+            // (word-stops-text.ts PB5a)
+            const numbering = {
+                config: [
+                    {
+                        reference: "list",
+                        levels: [
+                            {
+                                level: 0,
+                                format: LevelFormat.DECIMAL,
+                                text: "%1.",
+                                style: { run: { size: 32 }, paragraph: { indent: { left: 880, hanging: 360 } } },
+                            },
+                        ],
+                    },
+                ],
+            };
+            const hanging = readBody(
+                [
+                    p(
+                        pPr(
+                            { "w:numPr": [value("w:ilvl", 0), value("w:numId", 1)] },
+                            { "w:ind": { _attr: { "w:leftChars": 400, "w:left": 880, "w:hanging": 360 } } },
+                        ),
+                        r(t("a")),
+                    ),
+                ],
+                { numbering, styles: { default: { document: { run: { size: 22 } } } } },
+            );
+            const numbered = paragraphOf(hanging, 0);
+            expect([numbered.unsupported, numbered.format.indentLeft, numbered.format.firstLineIndent]).to.deep.equal([undefined, 62, -18]);
             expect(paragraphOf(content, 1).list).to.deep.include({ level: 0 });
             expect(paragraphOf(content, 1).list!.id).to.equal(paragraphOf(content, 0).list!.id);
             expect(paragraphOf(content, 1).unsupported).to.equal(undefined);
@@ -719,14 +757,17 @@ describe("readDocument", () => {
             ).to.equal(undefined);
         });
 
-        it("should stop at text with a phonetic guide, a content part, text fitted to a width, two lines in one, text across in vertical text, a subdocument and a paragraph in an HTML division", () => {
+        it("should stop at text with a phonetic guide, a content part, text fitted to a width with other than text in it, two lines in one, text across in vertical text, a subdocument and a paragraph in an HTML division", () => {
             const unsupportedOf = (...children: readonly unknown[]): string | undefined =>
                 paragraphOf(readBody([p(...children)])).unsupported;
             // Its text would be lost, as it is in the guide and its base
             const ruby = { "w:ruby": [{ "w:rubyPr": [] }, { "w:rt": [r(t("guide"))] }, { "w:rubyBase": [r(t("base"))] }] };
             expect(unsupportedOf(r(ruby))).to.equal("text with a phonetic guide");
             expect(unsupportedOf(r({ "w:contentPart": { _attr: { "r:id": "rId9" } } }))).to.equal("a content part, such as ink");
-            expect(unsupportedOf(r(rPr({ "w:fitText": { _attr: { "w:val": 2000 } } }), t("fitted")))).to.equal("text fitted to a width");
+            const fitted = "text fitted to a width with other than text in it, or to none";
+            expect(unsupportedOf(r(rPr({ "w:fitText": { _attr: { "w:val": 2000 } } }), t("a"), { "w:tab": {} }))).to.equal(fitted);
+            expect(unsupportedOf(r(rPr({ "w:fitText": { _attr: { "w:val": 0 } } }), t("a")))).to.equal(fitted);
+            expect(unsupportedOf(r(rPr({ "w:fitText": { _attr: { "w:id": 1 } } }), t("a")))).to.equal(fitted);
             const layout = (attributes: object, text = "ab", size = 22): object =>
                 r(rPr({ "w:eastAsianLayout": { _attr: attributes } }, value("w:sz", size)), t(text));
             // Two lines in one of text, without brackets, at a size that halves to whole half-points is drawn at half its
@@ -1812,10 +1853,10 @@ describe("readDocument", () => {
             expect(reasonOf(pict("width:2em;height:36pt", [{ "v:imagedata": {} }], UNOUTLINED, "v:shape"))).to.equal("a VML picture");
             // A drawing with no shape, such as a shape type alone, draws nothing (`word-stops-vml-shape-type.docx` VM29e)
             expect(itemsOf(readBody([p(r({ "w:pict": [{ "v:shapetype": [] }] }))]))).to.deep.equal([]);
-            // In hidden text, it takes no room, and in text with a border, it stops as a picture does
+            // In hidden text, it takes no room, and in text with a border, which Word hasn't been seen with, it stops
             expect(itemsOf(readBody([p(r(rPr({ "w:vanish": {} }), { "w:pict": [] }))]))).to.deep.equal([]);
             const bordered = rPr({ "w:bdr": { _attr: { "w:val": "single", "w:sz": 4, "w:space": 0 } } });
-            expect(reasonOf(r(bordered, { "w:pict": [] }))).to.equal("a picture in text with a border");
+            expect(reasonOf(r(bordered, { "w:pict": [] }))).to.equal("a VML drawing in text with a border");
         });
 
         it("should read a group of shapes in the line as a box of its size, and stop at one with an outline or that text flows around (VM29f)", () => {
@@ -5366,12 +5407,12 @@ describe("readDocument", () => {
             expect(paragraphOf(withUnits).format).to.deep.include({ indentLeft: 36, indentRight: 18, firstLineIndent: -18 });
         });
 
-        it("should stop at a size in a unit other than points wherever it is, and read a negative fraction as Word does", () => {
-            const SIZE = "a size given in a unit other than points";
+        it("should read a size in any unit wherever it is, and a negative fraction, as Word does", () => {
             const ind = (left: string): object => pPr({ "w:ind": { _attr: { "w:left": left } } });
-            // Word ignores a size in centimeters where no style gives one, and draws one of whole half-points where a style
-            // does, so which decides isn't known
-            expect(paragraphOf(readBody([p(r(rPr(value("w:sz", "1cm")), t("Text")))])).unsupported).to.equal(SIZE);
+            // Word draws a size in centimeters at whole half-points, rounded down, with or without a style that gives a size
+            // (stops2/word-stops-text2.ts RF27f, RF27g)
+            const sized = paragraphOf(readBody([p(r(rPr(value("w:sz", "1cm")), t("Text")))]));
+            expect([sized.unsupported, sized.items]).to.deep.equal([undefined, [{ type: "text", text: "Text", font: { size: 28 } }]]);
             // The minus sign of a negative length is its whole number's only (word-stops-text.ts RF26, RF28)
             const negative = paragraphOf(readBody([p(ind("-1.5cm"), r(t("Text")))]));
             expect([negative.unsupported, negative.format.indentLeft]).to.deep.equal([
@@ -5383,15 +5424,14 @@ describe("readDocument", () => {
             expect(table({ "w:tblInd": { _attr: { "w:w": "-0.5mm", "w:type": "dxa" } } }).blocks[0].block.unsupported).to.equal(undefined);
             const section = readBody([{ "w:sectPr": [{ "w:pgMar": { _attr: { "w:top": "-2.5cm" } } }] }]).sections[0];
             expect(section.unsupported).to.equal(undefined);
-            // In the styles, lists and settings, it stops the document
-            expect(readBody([], { styles: { default: { document: { run: { size: "0.2in" } } } } }).unsupported).to.equal(SIZE);
+            // In the styles and lists too
+            expect(readBody([], { styles: { default: { document: { run: { size: "0.2in" } } } } }).unsupported).to.equal(undefined);
             expect(
                 readBody([], {
                     numbering: { config: [{ reference: "list", levels: [{ level: 0, text: "%1.", style: { run: { size: "1pc" } } }] }] },
                 }).unsupported,
-            ).to.equal(SIZE);
+            ).to.equal(undefined);
             expect(readBody([], { defaultTabStop: "-1.5cm" as unknown as number }).unsupported).to.equal(undefined);
-            expect(readBody([]).unsupported).to.equal(undefined);
         });
     });
 
@@ -6779,10 +6819,48 @@ describe("readDocument", () => {
         });
 
         it("should read a run past formatting it can't follow, as if it weren't so", () => {
-            const fitted = p(r(rPr({ "w:fitText": { _attr: { "w:val": 2000 } } }), t("fitted"), { "w:tab": {} }, t("more")));
-            const content = guessed([fitted]);
-            expect(read(content)).to.deep.equal([["text fitted to a width", "fittedmore"]]);
+            const across = p(r(rPr({ "w:eastAsianLayout": { _attr: { "w:vert": "true" } } }), t("text"), { "w:tab": {} }, t("more")));
+            const content = guessed([across]);
+            expect(read(content)).to.deep.equal([["text across in vertical text", "textmore"]]);
             expect(itemsOf(content).map(({ type }) => type)).to.deep.equal(["text", "tab", "text"]);
+            // And text fitted to a width with a tab in it, as if it weren't fitted
+            const fitted = guessed([p(r(rPr({ "w:fitText": { _attr: { "w:val": 2000 } } }), t("fitted"), { "w:tab": {} }, t("more")))]);
+            expect(read(fitted)).to.deep.equal([["text fitted to a width with other than text in it, or to none", "fittedmore"]]);
+        });
+
+        it("should read text fitted to a width as a box of that width, and runs of the same region in one, as Word does", () => {
+            const fit = (width: number, id?: number, ...more: readonly object[]): object =>
+                rPr({ "w:fitText": { _attr: { "w:val": width, ...(id === undefined ? {} : { "w:id": id }) } } }, ...more);
+            // word-stops-text2.ts RF29b: "fitted text" fitted to 500 twips
+            expect(itemsOf(readBody([p(r(fit(500, 3), t("fitted text")))]))).to.deep.equal([
+                { type: "box", width: 25, height: 0, font: {}, text: "fitted text" },
+            ]);
+            // RF29c: "fitted " and a bold "text" with one id, across a bookmark, fitted to 2000 together
+            const together = readBody([
+                p(
+                    r(fit(2000, 4), t("fitted ")),
+                    { "w:bookmarkStart": { _attr: { "w:name": "m", "w:id": 1 } } },
+                    r(fit(2000, 4, { "w:b": {} }), t("text")),
+                ),
+            ]);
+            expect(itemsOf(together)).to.deep.equal([
+                { type: "box", width: 100, height: 0, font: {}, text: "fitted text" },
+                { type: "marker", name: "m" },
+            ]);
+            // Runs without an id, or with others, or with text between them, each fitted on its own
+            const apart = (...runs: readonly object[]): readonly unknown[] => itemsOf(readBody([p(...runs)])).map(({ type }) => type);
+            expect(apart(r(fit(500), t("a")), r(fit(500), t("b")))).to.deep.equal(["box", "box"]);
+            expect(apart(r(fit(500, 1), t("a")), r(fit(500, 2), t("b")))).to.deep.equal(["box", "box"]);
+            expect(apart(r(fit(500, 1), t("a")), r(t("x")), r(fit(500, 1), t("b")))).to.deep.equal(["box", "text", "box"]);
+            expect(apart(r(t("x")), r(fit(500, 1), t("a")))).to.deep.equal(["text", "box"]);
+            // A run with nothing in it, or hidden, has nothing to fit
+            expect(apart(r(fit(500, 1)), r(fit(500, 1), t("a")))).to.deep.equal(["box"]);
+            expect(apart(r(fit(500, 1, { "w:vanish": {} }), t("a")))).to.deep.equal([]);
+            // Runs of other sizes in one region haven't been seen. Guessing, each is fitted on its own
+            const sized = [p(r(fit(500, 1), t("a")), r(fit(500, 1, value("w:sz", 30)), t("b")))];
+            const reason = "text fitted to a width in runs of other sizes or fonts";
+            expect(paragraphOf(readBody(sized)).unsupported).to.equal(reason);
+            expect([read(guessed(sized)), itemsOf(guessed(sized)).map(({ type }) => type)]).to.deep.equal([[[reason, ""]], ["box", "box"]]);
         });
 
         it("should read an equation that can't be laid out in the line, but can displayed, as displayed", () => {
@@ -6826,6 +6904,7 @@ describe("readDocument", () => {
                     p(r(border, { "w:drawing": [{ "wp:inline": [{ "wp:extent": { _attr: { cx: 127000, cy: 127000 } } }] }] })),
                     p(r({ "w:ruby": [{ "w:rubyPr": [] }, { "w:rt": [r(t("guide"))] }, { "w:rubyBase": [r(t("base"))] }] })),
                     p(r({ "w:endnoteReference": { _attr: { "w:id": 1, "w:customMarkFollows": 1 } } }), r(t("*"))),
+                    p(r(border, { "w:drawing": [{ "wp:anchor": [{ "wp:wrapNone": {} }] }] }), r(t("behind"))),
                 ],
                 { endnotes: { 1: { children: [new Paragraph("One")] } } },
             );
@@ -6833,16 +6912,21 @@ describe("readDocument", () => {
                 undefined,
                 undefined,
                 undefined,
-                "a picture in text with a border",
+                undefined,
                 "text with a phonetic guide",
                 "an endnote with a mark of its own",
+                "a drawing placed on the page in text with a border",
             ]);
+            // Guessing, a drawing behind the text in text with a border takes no room, as elsewhere
+            expect(textOf(content, 6)).to.equal("behind");
             expect([0, 1, 2, 3].map((index) => itemsOf(content, index).map(({ type }) => type))).to.deep.equal([
                 ["tab"],
                 ["text", "tab", "text"],
                 ["text", "softHyphen", "text"],
                 ["box"],
             ]);
+            // A picture of 10 points in a border of half a point, with its room around it (word-stops-text2.ts RF32b)
+            expect(itemsOf(content, 3)[0]).to.deep.include({ width: 11, height: 10.5, below: 0.5 });
             expect(textOf(content, 4)).to.equal("base");
             // Its note is laid out with it, with its mark after it in place of its number
             expect(itemsOf(content, 5)).to.deep.equal([

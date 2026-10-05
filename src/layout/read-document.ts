@@ -57,7 +57,6 @@ import {
     spansOf,
     stringOf,
     styleChain,
-    unknownLengthIn,
     unknownRunFormatting,
     valueOf,
     withoutUndefined,
@@ -1047,7 +1046,10 @@ const floatingItem = (floating: FloatingDrawing, reader: Reader): readonly Layou
 
 /**
  * Reads a drawing in a run (`w:drawing`): a picture in the line is a box, with its run's font, and one that text doesn't
- * flow around, such as one behind the text, takes up no room.
+ * flow around, such as one behind the text, takes up no room. A picture in the line in a border of its run has its border's
+ * room around it, beside it and above and below it: one of 20 points with a border of 1.5 points 2 points away takes 400
+ * and 70 twips each side across the line, 470 above the baseline and 70 below it (scripts/layout-probes/stops2/word-stops-text2.ts
+ * RF32b).
  */
 const readDrawing = (element: XmlObject, font: TextFont, reader: Reader): readonly LayoutItem[] | string => {
     const [drawing] = childrenOf(element["w:drawing"]);
@@ -1058,12 +1060,14 @@ const readDrawing = (element: XmlObject, font: TextFont, reader: Reader): readon
         const effect = attributesOf(find(children, "wp:effectExtent"));
         const around = attributesOf(inline);
         const emus = (...values: readonly unknown[]): number => values.reduce<number>((total, value) => total + (numberOf(value) ?? 0), 0);
+        const room = font.border?.room ?? 0;
         return [
             {
                 type: "box",
-                width: emus(extent.cx, effect.l, effect.r, around.distL, around.distR) / EMUS_PER_POINT,
-                height: emus(extent.cy, effect.t, effect.b, around.distT, around.distB) / EMUS_PER_POINT,
+                width: emus(extent.cx, effect.l, effect.r, around.distL, around.distR) / EMUS_PER_POINT + 2 * room,
+                height: emus(extent.cy, effect.t, effect.b, around.distT, around.distB) / EMUS_PER_POINT + room,
                 font,
+                ...(room > 0 ? { below: room } : {}),
             },
         ];
     }
@@ -1462,8 +1466,8 @@ const readFieldCharacter = (element: XmlObject, format: RunFormat, reader: Reade
 const isTwoInOne = (properties: readonly XmlObject[]): boolean => isOn(attributesOf(find(properties, "w:eastAsianLayout"))["w:combine"]);
 
 /**
- * Why a run's own formatting changes the room its text takes in a way not yet followed, when it does: text fitted to a
- * width (`w:fitText`), text across in vertical text (`w:eastAsianLayout`), but for text set across in text that runs
+ * Why a run's own formatting changes the room its text takes in a way not yet followed, when it does: text across in
+ * vertical text (`w:eastAsianLayout`), but for text set across in text that runs
  * down the page, as Word sets it there (see {@link acrossOf}), unless it is compressed to fit its line (`w:vertCompress`),
  * and two lines in one of other than text without Chinese, Japanese or Korean characters, without brackets and at a size
  * that halves to whole half-points, across the page. Word drew "twolines" in two lines in one in a line of Calibri 11 at
@@ -1484,9 +1488,6 @@ const unsupportedFormatOf = (
         "w:vert": across,
         "w:vertCompress": compressed,
     } = attributesOf(find(properties, "w:eastAsianLayout"));
-    if (find(properties, "w:fitText") !== undefined) {
-        return "text fitted to a width";
-    }
     if (isTwoInOne(properties)) {
         const text = children
             .filter((child) => nameOf(child) === "w:t")
@@ -1701,11 +1702,12 @@ const readRun = (element: XmlObject, paragraphRun: RunFormat, reader: Reader, re
                       ? []
                       : [noteNumber(reader.noteNumber, font)];
             case "w:drawing":
-                // A picture in hidden text takes no room (`word-hidden-paragraphs.docx` HP4c)
+                // A picture in hidden text takes no room (`word-hidden-paragraphs.docx` HP4c). One placed on the page in text
+                // with a border, which Word may give a box of its own in the line, hasn't been seen
                 return format.hidden
                     ? []
-                    : font.border
-                      ? guessedOr(reader, "a picture in text with a border", () => readDrawing(child, font, reader))
+                    : font.border && !("wp:inline" in childrenOf(child["w:drawing"])[0])
+                      ? guessedOr(reader, "a drawing placed on the page in text with a border", () => readDrawing(child, font, reader))
                       : readDrawing(child, font, reader);
             case "mc:AlternateContent": {
                 // The drawing Word reads, rather than the one for older versions
@@ -1718,7 +1720,7 @@ const readRun = (element: XmlObject, paragraphRun: RunFormat, reader: Reader, re
                 return format.hidden
                     ? []
                     : font.border
-                      ? guessedOr(reader, "a picture in text with a border", () => readVml(child["w:pict"], font, reader))
+                      ? guessedOr(reader, "a VML drawing in text with a border", () => readVml(child["w:pict"], font, reader))
                       : readVml(child["w:pict"], font, reader);
             case "w:object": {
                 // An object embedded in the document, such as a spreadsheet or an old equation, whose picture Word draws at the
@@ -1759,7 +1761,12 @@ const readRun = (element: XmlObject, paragraphRun: RunFormat, reader: Reader, re
                 return [marker, { type: "pageNumber", field: marker.name, font }];
             }
             case "w:ruby":
-                // Its text is in its base and in the guide above it, which makes the line taller. Guessing, its base alone
+                // Its text is in its base and in the guide above it, which makes the line taller. Word made it as wide as the
+                // wider of the two, with the narrower spread across it or centred on it as its alignment says: kana of 5.5
+                // points 990 twips wide over two ideographs of 11, spread with half a share of the room at each end, and over
+                // two of 20 points, 800 wide (scripts/layout-probes/stops2/word-stops-text2.ts RF31b to RF31d). How tall it
+                // makes its line doesn't follow from its raise and sizes yet: 20 twips above the guide's top over Calibri 11,
+                // 17 at the top of a page, and 20 above Calibri 20's own line, which the guide is below. Guessing, its base alone
                 return guessedOr(reader, "text with a phonetic guide", () =>
                     readInline(childrenOf(find(childrenOf(child["w:ruby"]), "w:rubyBase")), paragraphRun, reader, removed),
                 );
@@ -1769,7 +1776,76 @@ const readRun = (element: XmlObject, paragraphRun: RunFormat, reader: Reader, re
                 return [];
         }
     });
-    return itemsOf(formatGuessed ? [[guessMarker(unsupportedFormat!)], ...items] : items, reader);
+    const runItems = itemsOf(formatGuessed ? [[guessMarker(unsupportedFormat!)], ...items] : items, reader);
+    const fitText = find(childrenOf(properties), "w:fitText");
+    return typeof runItems === "string" || format.hidden || fitText === undefined
+        ? runItems
+        : fittedOf(runItems, attributesOf(fitText), reader);
+};
+
+/** The id of the region of text fitted to a width that each box of it is in, when it has one */
+const FITTED = new WeakMap<LayoutItem, { readonly id?: string }>();
+
+/**
+ * A run's text fitted to a width (`w:fitText`), as a box of that width as tall as its text, which a line doesn't break:
+ * Word drew "fitted text" fitted to 500 twips 500 wide, and fitted to 3000 at the end of a line it didn't fit in, whole on
+ * the next (scripts/layout-probes/stops2/word-stops-text2.ts RF29b, RF29d). Or why it can't be laid out: fitted text with
+ * other than text in it, or to no width, which haven't been seen. Guessing, it is read as if it weren't fitted
+ */
+const fittedOf = (
+    items: readonly LayoutItem[],
+    { "w:val": width, "w:id": id }: XmlObject,
+    reader: Reader,
+): readonly LayoutItem[] | string => {
+    const texts = items.filter((item): item is Extract<LayoutItem, { readonly type: "text" }> => item.type === "text");
+    const points = twips(width) ?? 0;
+    if (items.some((item) => item.type !== "text" && item.type !== "marker") || points <= 0) {
+        return guessedOr(reader, "text fitted to a width with other than text in it, or to none", () => items);
+    }
+    if (texts.length === 0) {
+        return items;
+    }
+    const box: LayoutItem = { type: "box", width: points, height: 0, font: texts[0].font, text: texts.map(({ text }) => text).join("") };
+    FITTED.set(box, id === undefined ? {} : { id: String(id) });
+    return [...items.filter((item) => item.type === "marker"), box];
+};
+
+/**
+ * A paragraph's items with the text of runs fitted to a width with the same id (`w:id`), one after the other, in one box,
+ * as Word fits them to their width together: "fitted " and a bold "text", fitted to 2000 twips, are 2000 wide
+ * (scripts/layout-probes/stops2/word-stops-text2.ts RF29c). Or why they can't be laid out: ones of other sizes or fonts,
+ * whose line Word hasn't been seen to size. Guessing, those are fitted apart
+ */
+const withFitted = (read: readonly LayoutItem[] | string, reader: Reader): readonly LayoutItem[] | string => {
+    if (typeof read === "string") {
+        return read;
+    }
+    // eslint-disable-next-line functional/prefer-readonly-type
+    const all: LayoutItem[] = [];
+    for (const item of read) {
+        const id = FITTED.get(item)?.id;
+        const at = all.findLastIndex((other) => other.type !== "marker");
+        if (id === undefined || at === -1 || FITTED.get(all[at])?.id !== id) {
+            // eslint-disable-next-line functional/immutable-data
+            all.push(item);
+            continue;
+        }
+        const [before, after] = [all[at], item] as readonly Extract<LayoutItem, { readonly type: "box" }>[];
+        if (before.font!.font !== after.font!.font || before.font!.size !== after.font!.size) {
+            const reason = "text fitted to a width in runs of other sizes or fonts";
+            if (!reader.guess) {
+                return reason;
+            }
+            // eslint-disable-next-line functional/immutable-data
+            all.push(guessMarker(reason), item);
+            continue;
+        }
+        const joined: LayoutItem = { ...before, text: `${before.text}${after.text}` };
+        FITTED.set(joined, { id });
+        // eslint-disable-next-line functional/immutable-data
+        all[at] = joined;
+    }
+    return all;
 };
 
 // Elements in a paragraph that hold runs and are read through
@@ -2247,7 +2323,8 @@ const unitsOf = ({ linePitch, characterSpace = 0, characterPitch }: TextGrid = {
  * (scripts/layout-probes/stops2/word-stops-text.ts PB5b), and a right indent's as its mark (PB5c). A hanging indent in characters puts the first line at
  * the left indent and the other lines that much further in, and the left indent is in characters then, 0 when it isn't
  * given: 2 characters hanging put the first line at 0 and the others at 440, with a left indent of 1440 twips or none
- * (TX7c, C3, C9). It says why when Word's way with them isn't known.
+ * (TX7c, C3, C9), as a hanging indent in twips from a left indent in characters does (word-stops-text2.ts PB5f). It says why
+ * when Word's way with them isn't known.
  */
 const inPoints = (
     format: ParagraphFormat,
@@ -2301,15 +2378,15 @@ const inPoints = (
         };
     }
     // A first line indent in twips starts the first line that much further in from a left indent in characters, 720 twips
-    // from 4 characters of 11 points (PB5e). Whether a hanging indent in twips takes the first line out from one hasn't been
-    // seen
-    if (leftChars !== 0 && firstLineChars === 0 && (format.firstLineIndent ?? 0) < 0) {
-        return "an indent in characters left of a hanging indent in twips";
-    }
+    // from 4 characters of 11 points (PB5e), and a hanging indent in twips leaves the first line at it and puts the other
+    // lines that much further in, as one in characters does: 4 characters of 11 points and 360 twips hanging put the first
+    // line at 880 and the others at 1240, in a list too, whose number is at 880 whatever its size (word-stops-text.ts PB5a,
+    // word-stops-text2.ts PB5f, PB5g)
+    const hanging = leftChars !== 0 && firstLineChars === 0 ? Math.max(0, -(format.firstLineIndent ?? 0)) : 0;
     return {
         ...spaced,
         ...right,
-        ...(leftChars === 0 ? {} : { indentLeft: characters(leftChars, style) }),
+        ...(leftChars === 0 ? {} : { indentLeft: characters(leftChars, style) + hanging }),
         ...(firstLineChars === 0 ? {} : { firstLineIndent: characters(firstLineChars, first) }),
     };
 };
@@ -2465,7 +2542,7 @@ const readParagraph = (element: XmlObject, reader: Reader, tableFormats: TableFo
         ...(list.level ? [list.level.paragraph] : []),
         readParagraphFormat(properties),
     ];
-    const read = withEquations(readInline(children, paragraphRun, reader), list.items.length > 0, reader);
+    const read = withEquations(withFitted(readInline(children, paragraphRun, reader), reader), list.items.length > 0, reader);
     // Read to be laid out with a guess, the first thing the reader guessed at in the paragraph's content is why it can't be
     // laid out as Word does, and the markers of what it guessed at are left out of its items
     const guessed = typeof read === "string" ? undefined : read.map(guessOf).find((reason) => reason !== undefined);
@@ -2542,7 +2619,6 @@ const readParagraph = (element: XmlObject, reader: Reader, tableFormats: TableFo
                     ? "Arabic text justified for Thai or with a kashida"
                     : (unknownInOlderLayout(content, combined.alignment, reader) ??
                       unjoinedSpacing ??
-                      unknownLengthIn(element) ??
                       (typeof format === "string" ? format : undefined) ??
                       (typeof borders === "string" ? borders : undefined)));
     return {
@@ -3295,20 +3371,6 @@ const readTable = (element: XmlObject, reader: Reader): TableBlock | undefined =
     // column for each it says it has, however many
     const columns = read.reduce((most, { end }) => Math.max(most, end), 0);
     const unfitted = columns > MOST_COLUMNS ? `a table given no widths of more than ${MOST_COLUMNS} columns` : undefined;
-    // The lengths of the table, its rows and its cells, whose paragraphs have their own
-    const lengths = unknownLengthIn([
-        find(children, "w:tblPr"),
-        find(children, "w:tblGrid"),
-        ...rows.flatMap(({ element: row }) => {
-            const rowChildren = contentOf(row).filter(isObject);
-            return [
-                find(rowChildren, "w:trPr"),
-                ...unwrap(rowChildren)
-                    .filter((part) => "w:tc" in part)
-                    .map((cell) => find(contentOf(cell).filter(isObject), "w:tcPr")),
-            ];
-        }),
-    ]);
     // A table style's own row and cell properties apply to every row and cell, in a way not yet followed but for those Word
     // ignores and its cells' margins (TS5a, TS5b)
     const styleUnsupported = tableStyles.some(
@@ -3385,7 +3447,6 @@ const readTable = (element: XmlObject, reader: Reader): TableBlock | undefined =
         // 45 times past the page (`word-stops-long-words.docx` LW1h, LW1i, LW5a, LW5b, LW5f)
         ((givenWidth.share ?? 0) > 1 ? "a table whose width is a share of more than the width it is in" : undefined) ??
         styleUnsupported ??
-        lengths ??
         blocks.find((block) => block.unsupported !== undefined)?.unsupported;
     // With space between cells, Word keeps a table's width, its own or its first row's cells', laid out fixed or not, and
     // narrows its columns for the space (word-table-formats2.docx CS9, CS10, CS14)
@@ -4445,7 +4506,7 @@ const readSection = (
                     ? "a continuous section break after text that runs down the page, into text that doesn't"
                     : find(properties, "w15:footnoteColumns") !== undefined
                       ? "footnotes in columns of their own"
-                      : unknownLengthIn(element);
+                      : undefined;
     const headers = readReferences(properties, "w:headerReference", readPart);
     const footers = readReferences(properties, "w:footerReference", readPart);
     const section: Section = {
@@ -4580,7 +4641,7 @@ const readNumbering = (
     xml: XmlObject | undefined,
     styles: TextStyles,
     otherIds: ReadonlyMap<string, string>,
-): { readonly lists: ReadonlyMap<string, NumberingList>; readonly unsupported?: string } => {
+): { readonly lists: ReadonlyMap<string, NumberingList> } => {
     const root = childrenOf(xml?.["w:numbering"]);
     const read = new Map(
         root
@@ -4677,7 +4738,6 @@ const readNumbering = (
                 return list ? [[other, list] as const] : [];
             }),
         ]),
-        ...withoutUndefined({ unsupported: unknownLengthIn(xml) }),
     };
 };
 
@@ -4994,18 +5054,17 @@ const readSettings = (
     // its first page left out), and Word updates a document's styles from its template when it opens it, with
     // `w:linkStyles`. Pages printed two to a sheet (`w:printTwoOnOne`) Word lays out as the section's pages, as it does
     // without: 51 lines on the first of 62 (`word-stops-two-on-one.docx` TO1)
-    const unsupported =
-        (
+    const unsupported = (
+        [
             [
-                [
-                    mode < CURRENT_COMPATIBILITY_MODE && olderMode === undefined,
-                    "a document in a compatibility mode Word hasn't been seen laying out",
-                ],
-                [asksForUnfollowedCompatibility(compatibility, olderMode !== undefined), "a compatibility setting not yet followed"],
-                [onOff(settings, "w:bookFoldPrinting") || onOff(settings, "w:bookFoldRevPrinting"), "pages printed as a folded booklet"],
-                [onOff(settings, "w:linkStyles"), "styles updated from the document's template when Word opens it"],
-            ] as const
-        ).find(([applies]) => applies === true)?.[1] ?? unknownLengthIn(settings);
+                mode < CURRENT_COMPATIBILITY_MODE && olderMode === undefined,
+                "a document in a compatibility mode Word hasn't been seen laying out",
+            ],
+            [asksForUnfollowedCompatibility(compatibility, olderMode !== undefined), "a compatibility setting not yet followed"],
+            [onOff(settings, "w:bookFoldPrinting") || onOff(settings, "w:bookFoldRevPrinting"), "pages printed as a folded booklet"],
+            [onOff(settings, "w:linkStyles"), "styles updated from the document's template when Word opens it"],
+        ] as const
+    ).find(([applies]) => applies === true)?.[1];
     return {
         defaultTabStop: twips(attributesOf(find(settings, "w:defaultTabStop"))["w:val"]) ?? 36,
         evenAndOddHeaders: onOff(settings, "w:evenAndOddHeaders") === true,
@@ -5168,7 +5227,7 @@ export const readContent = (writtenBody: XmlObject, writtenParts: DocumentParts,
         endnotes: withBoundTextWritten(writtenParts.endnotes, stores),
     };
     const { styles } = parts;
-    const { lists: numbering, unsupported: inNumbering } = readNumbering(parts.numbering, styles, parts.otherListIds ?? new Map());
+    const { lists: numbering } = readNumbering(parts.numbering, styles, parts.otherListIds ?? new Map());
     const listIds = parts.otherListIds ?? new Map<string, string>();
     // The markers at fields, numbered across the body and its notes
     const markers: FieldMarkers = { count: 0, relative: new Map() };
@@ -5645,15 +5704,13 @@ export const readContent = (writtenBody: XmlObject, writtenParts: DocumentParts,
         ...(parts.fonts !== undefined && parts.fonts.length > 0 ? { fonts: parts.fonts } : {}),
         ...readSettings(parts.settings),
     };
-    // A length in the styles or lists stops the layout before anything, as any paragraph may be in them, and so do notes
-    // numbered or placed in a way not yet followed, as any paragraph may refer to them
+    // Notes numbered or placed in a way not yet followed stop the layout before anything, as any paragraph may refer to
+    // them
     return {
         ...documentContent,
         ...withoutUndefined({
             unsupported:
                 documentContent.unsupported ??
-                styles.unsupported ??
-                inNumbering ??
                 (footnotes.size > 0 ? notesUnsupported("footnote") : undefined) ??
                 (endnotes.length > 0 ? notesUnsupported("endnote") : undefined) ??
                 // Endnotes follow the last section's text, on its grid, where the sections from theirs on are all on one grid
