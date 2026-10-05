@@ -67,13 +67,13 @@ const catalogued = new Set(
 
 const page = process.argv[3] === undefined ? await (await fetch(PUBLISHED)).text() : readFileSync(process.argv[3], "utf8");
 /**
- * The text of a cell: without its tags, or any angle bracket left, as no font's name has one, and with the entities its
- * names are written with, `&amp;` last, so that what it makes isn't read as another
+ * The text of a cell: the text between its tags, with the entities its names are written with, `&amp;` last, so that
+ * what it makes isn't read as another
  */
-const unescaped = (text: string): string =>
-    text
-        .replace(/<[^>]*>/g, "")
-        .replace(/[<>]/g, "")
+const unescaped = (cell: string): string =>
+    [...`>${cell}<`.matchAll(/>([^<>]*)(?=<)/g)]
+        .map(([, text]) => text)
+        .join("")
         .replace(/&nbsp;/g, " ")
         .replace(/&amp;/g, "&")
         .trim();
