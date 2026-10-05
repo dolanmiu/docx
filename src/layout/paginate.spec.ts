@@ -4205,8 +4205,8 @@ describe("paginate", () => {
             // Before a continuous section in columns, after it too
             expect(pagesOf(content(5, { ...SECTION, start: "continuous", columns: [35, 35] }))).to.deep.equal({ a: "1", b: "1", c: "3" });
             // And before a continuous section, which starts on a new page after them, as its own (FN5). Word numbered each of
-            // the pages with the section's first number, and each section's number of pages 1, which isn't followed, so they
-            // aren't known (`word-stops-notes.docx` NT2b)
+            // the pages with the section's first number, and each section's number of pages 1 (`word-stops-notes.docx`
+            // NT2b). The next section's is its own pages, as in FN5, but the first section's isn't followed, so it isn't known
             expect(numbersOf(content(12, { ...SECTION, start: "continuous" }))).to.deep.equal({
                 bookmarks: new Map([
                     ["a", "1"],
@@ -4214,10 +4214,11 @@ describe("paginate", () => {
                     ["c", "4"],
                 ]),
                 pageCount: 4,
-                sectionPageCounts: [undefined, undefined],
+                sectionPageCounts: [undefined, 1],
             });
             const afresh = paginate(content(12, { ...SECTION, start: "continuous", firstNumber: 1 }), { measurer: MEASURER });
             expect(afresh.pages.map(({ pageNumber }) => pageNumber)).to.deep.equal(["1", "1", "1", "1"]);
+            expect(afresh.sectionPageCounts).to.deep.equal([undefined, 1]);
             // Where the sections' headers or footers differ, how much of the footnote Word puts on the pages isn't known
             const footer = { default: [paragraph("footer", 1)] };
             expect(paginate(content(12, { ...SECTION, start: "continuous", footers: footer }), { measurer: MEASURER }).stoppedAt).to.equal(

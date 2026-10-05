@@ -1934,14 +1934,15 @@ export const paginate = (
             // Before a continuous section, Word numbers each of those pages with the section's first number, when it has one,
             // as it numbers a page the section starts on but none of it is on (SC2a, SC2c): pages of a footnote of 120 lines,
             // before a section numbered from 1, were each page 1, and so was the section's own first page, and each
-            // section's number of pages was 1 (`word-stops-notes.docx` NT2b). Its number of pages isn't followed, so neither
-            // section's is known, nor which section's headers and footers the pages have where they differ, which would
-            // change how much of the footnote goes on them
+            // section's number of pages was 1 (`word-stops-notes.docx` NT2b). The next section's is its own pages, as Word
+            // counted it after a footnote's rest on pages numbered on too (`word-watertight-notes.docx` FN5), but the first
+            // section's, which leaves out its pages of the footnote, isn't followed, so it isn't known, nor which section's
+            // headers and footers the pages have where they differ, which would change how much of the footnote goes on them
             if (!sameHeadersAndFooters(previous, current)) {
                 stopAt("a footnote continued across a continuous section break onto a page of its own");
             }
             // eslint-disable-next-line functional/immutable-data
-            sharingPages.add(sectionIndex).add(index);
+            sharingPages.add(sectionIndex);
             restNumber = current.firstNumber;
         }
         if (restOnPages) {
