@@ -241,8 +241,8 @@ export type ParagraphBlock = {
     readonly hiddenBefore?: ParagraphBlock;
     readonly hiddenAfter?: ParagraphBlock;
     /**
-     * Its space before, at the top of a table cell, and after, at its bottom, when Word leaves it out for contextual
-     * spacing with the paragraph next to it in the document's order, outside the cell (see `withCellEdges`)
+     * Its space before or after when Word leaves it out for contextual spacing at a table cell's edge, with the paragraph
+     * next to it in the document's order, outside the cell, or before a paragraph after a table (see `withCellEdges`)
      */
     readonly leftOut?: { readonly before?: boolean; readonly after?: boolean };
     readonly style?: string;

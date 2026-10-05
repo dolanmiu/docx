@@ -3073,10 +3073,6 @@ export const paginate = (
     };
 
     /**
-     * Whether a footnote can't go on a page with its reference: the least of it that has to go there, with the separator,
-     * is taller than the page, as a paragraph kept together of 55 lines is (`word-watertight-stops.docx` SP5)
-     */
-    /**
      * Whether the least part of a footnote, which goes on the page with its reference, is taller than a page in the page's
      * columns, as one kept together that is
      */
@@ -3087,6 +3083,10 @@ export const paginate = (
         );
     };
 
+    /**
+     * Whether a footnote can't go on a page with its reference: the least of it that has to go there, with the separator,
+     * is taller than the page, as a paragraph kept together of 55 lines is (`word-watertight-stops.docx` SP5)
+     */
     const startsOnNextPage = (name: string): boolean => leastAreaOf([name], undefined, undefined) > pageBottom - top + TOLERANCE;
 
     /**
@@ -5490,7 +5490,6 @@ export const paginate = (
         }
     };
 
-    /** How many paragraphs from one (`index`) on are kept with the next block of their section, one after the other */
     /** The first of the paragraphs kept with the next, in its section, that go before a block, or the block itself */
     const keptBefore = (index: number): number => {
         let first = index;
@@ -5505,6 +5504,7 @@ export const paginate = (
         return first;
     };
 
+    /** How many paragraphs from one (`index`) on are kept with the next block of their section, one after the other */
     const keptChain = (index: number): number =>
         blocks.slice(index).findIndex(({ block, section: blockSection }, offset) => {
             const following = blocks[index + offset + 1];
