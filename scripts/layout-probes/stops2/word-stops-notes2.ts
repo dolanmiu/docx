@@ -101,6 +101,13 @@ const onlyReferencedNotes = (parts: Map<string, string>): void => {
     );
 };
 
+/**
+ * Writes a probe document with only the footnotes it refers to: the kit's `footnote` keeps every document's notes, and
+ * puts them all into each document a script writes after
+ */
+const writeDocument = (document: Parameters<typeof write>[0]): Promise<string> =>
+    write({ ...document, injections: [onlyReferencedNotes, ...(document.injections ?? [])] });
+
 /** Puts properties into the section the marker paragraph is in, after its header and footer references, and takes the marker out */
 const intoSection = (name: string, xml: string) => (parts: Map<string, string>) => {
     let text = parts.get("word/document.xml")!;
@@ -139,7 +146,7 @@ const withW15 = (parts: Map<string, string>): void => {
 };
 
 // word-stops-notes2.docx
-await write({
+await writeDocument({
     name: "word-stops-notes2",
     sections: [
         // NT2c
@@ -262,7 +269,6 @@ await write({
         },
     ],
     injections: [
-        onlyReferencedNotes,
         (parts) => {
             const text = parts.get("word/document.xml")!;
             parts.set(
@@ -278,7 +284,7 @@ const noteSection = (name: string, children: readonly (Paragraph | Table)[], ext
     properties: props(extra),
     children: [line(`${name} above`), marker(name), ...children, ...(below ? [line(`${name} below`)] : [])],
 });
-await write({
+await writeDocument({
     name: "word-stops-note-numbers",
     sections: [
         noteSection("NT16b", [...fill("NT16b", 10), ref("NT16b ref 1", ...note(5, "NT16b a")), ref("NT16b ref 2", ...note(3, "NT16b b"))]),
@@ -350,7 +356,6 @@ await write({
         noteSection("NT20d", [...fill("NT20d", 10), ref("NT20d ref", ...note(2, "NT20d")), ...fill("NT20d after", 10)], TWO),
     ],
     injections: [
-        onlyReferencedNotes,
         withW15,
         ...(
             [
@@ -383,7 +388,7 @@ for (const [name, document, columns, before, noteLines] of [
     ["NE4b", "word-stops-endnotes-columns2", 2, 8, [20, 20]],
     ["NE4c", "word-stops-endnotes-columns3", 3, 28, [6, 6]],
 ] as const) {
-    await write({
+    await writeDocument({
         name: document,
         options: endnotesOf(
             Object.fromEntries(noteLines.map((count, index) => [index + 1, [lines(`${name} note ${index + 1}`, count, {}, "line")]])),
@@ -403,7 +408,7 @@ for (const [name, document, columns, before, noteLines] of [
 }
 
 // NE5: an endnote with a mark of its own, between two numbered ones
-await write({
+await writeDocument({
     name: "word-stops-endnotes-own",
     options: endnotesOf({ 1: [line("NE5 first note")], 2: [line("NE5 third note")] }),
     sections: [
@@ -441,7 +446,7 @@ await write({
 });
 
 // NE6: endnotes at the end of each section, as the settings say, the second section suppressing its own
-await write({
+await writeDocument({
     name: "word-stops-endnotes-sections",
     options: endnotesOf(Object.fromEntries([1, 2, 3, 4, 5, 6].map((id) => [id, [line(`NE6 s${Math.ceil(id / 2)} note ${2 - (id % 2)}`)]]))),
     sections: [1, 2, 3].map((section): ISectionOptions => ({
@@ -477,7 +482,7 @@ await write({
 });
 
 // NE7: an endnote separator of two paragraphs, and a continuation separator with text before its separator
-await write({
+await writeDocument({
     name: "word-stops-endnotes-separator",
     options: endnotesOf({ 1: [lines("NE7 note", 60, {}, "line")] }),
     sections: [{ properties: props(), children: [line("NE7 above"), ...fill("NE7", 20), eref("NE7 ref", 1), line("NE7 below")] }],
