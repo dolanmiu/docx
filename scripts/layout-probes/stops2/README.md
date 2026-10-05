@@ -25,11 +25,15 @@ committed here are the ones a change to docx/layout has followed, with Word's PD
 | `word-stops-numbers.ts`        | NF2 to NF4                           | NF2, NF3: page references in CardText, DollarText, OrdText and Hex, and pictures with a space for each `#` or `x` with no digit, decimals and text in quotes                                                                                                                                                                                                                                                                                                                                                                                                                                     |
 | `word-stops-compat-mode.ts`    | CM1 to CM22, in modes 15 to 11       | Word 2010 and before laid out all but a few alike: justified lines not squeezed (CM1), a table's text at its indent, one sized to its text with its cells' margins beside the room (CM4)                                                                                                                                                                                                                                                                                                                                                                                                         |
 | `word-stops-pages.ts`          | CO1, CO2, GT1, DV1, TB10, BK1, TO1   | CO1, CO2: kept paragraphs in 3 columns as in 2; GT1: a gutter at the top below a negative margin; DV1b: a row in a division as tall; TO1: two pages to a sheet as the section's                                                                                                                                                                                                                                                                                                                                                                                                                  |
+| `word-stops-east-asian.ts`     | GR1 to GR13, VD1 to VD13, EA1 to EA3 | GR1 to GR12: notes, spaced and kerned text, marks, tabs, pictures, long words and columns on grids; VD1 to VD13: text down the page with tabs, borders, notes, gutters, grids; EA1 to EA3: no change in text of no language                                                                                                                                                                                                                                                                                                                                                                      |
+| `word-stops-imported.ts`       | IM1 to IM3                           | IM2a to IM2d: kept formatting keeps its own paragraph and character styles but takes the document's table styles and theme, its last paragraph without space after; IM3: no font or size in its defaults is Times New Roman 10                                                                                                                                                                                                                                                                                                                                                                   |
+| `word-stops-more-widths.ts`    | W                                    | W: Hebrew, Thai, Arabic-Indic and Devanagari digits, box drawing, shapes, symbols and dingbats as wide as the font, or another Word draws them in, whose ascent and descent the line takes. Read by `word-stops-more-widths.py`                                                                                                                                                                                                                                                                                                                                                                  |
 
 `word-stops-thai-and-compat.ts` writes `word-stops-top-spacing` (ST1 to ST5), whose PDF showed `suppressTopSpacing`
 leaving all but 9.6 points above the text of the first line of a page or column at exact and at-least spacing, and
 `word-stops-fe-layout` (FE1), whose PDF showed `useFELayout` leaving Latin paragraphs as they are, both followed, and
-`word-stops-thai` (TH1 to TH3).
+`word-stops-thai` (TH1 to TH3), whose PDF showed Thai justified for it breaking as justified Thai (TH1d, TH1e), and lines
+of Thai in Calibri as tall as Tahoma's, which Word draws them in, also followed.
 
 `word-stops-edges.ts` has the cases around those, where docx/layout still stops (DH2, PB9, HR2 and TA9), for the next
 batch Word saves, and `word-stops-text2.ts` those around what `word-stops-text`, `-tabs` and `-kerning` settled (RF24,
@@ -45,6 +49,13 @@ change probes in smaller documents, as Word couldn't open the batch's: those hav
 `word-stops-equations2.ts` has the equations' cases Word's PDFs left open (EQ30 to EQ45), in
 `word-stops-equations2`, `word-stops-equation-limits`, `word-stops-equation-small` and `word-stops-equation-spacing`,
 for the next batch too.
+
+`word-stops-east-asian2.ts` has what `word-stops-east-asian.ts` left stopping, for the next batch too: indents of part of a
+character on a grid that snaps to characters (GR14), the cases around GR3, GR5, GR7, GR8 and GR10 on grids (GR16), which
+change of grid or direction sends endnotes to the end of their own section (GR15), and the strict rules and compression in
+text in Japanese (EA4). So has `word-stops-arabic.ts`, for the widths of Arabic's letters in each form Word joins them in
+(AR1), which `word-stops-more-widths` and `word-stops-thai` TH3b, ten of each letter in a row, showed joined, and lines of
+Arabic prose to check them by (AR2). Read Word's PDF of it with `word-stops-arabic.py`.
 
 `word-stops-office-fonts.ts` has what the font probes left stopping (MB, FB, KL and DS), for the next batch too: the bold
 Word makes itself at other sizes, the font Word draws a character a font lacks in, kerning with other ligature settings in

@@ -1,56 +1,27 @@
-// lay-stops2: the widths of characters outside the width tables' ranges, which docx/layout measures as an average letter without stopping: Hebrew, Arabic, Devanagari, Thai, box drawing, blocks, geometric shapes (docx's bullets ● ○ ■), symbols and dingbats, in the fonts of the tables, plain and bold, and the font Word draws each in
-// Made from scripts/layout-probes/word-character-widths.ts, with its fonts and ranges changed; read Word's PDF with
-// word-character-widths.py, which reads the .json written beside the document. With STOPS_ITALIC=1 it writes the italic
-// and bold italic faces.
-//
-// Usage: npm run run-ts -- scripts/layout-probes/stops2/word-stops-more-widths.ts [folder]; STOPS_ITALIC=1 for italics
-// Probes of how wide Word draws the characters of the width tables' ranges, in each of the five fonts the tables have,
-// plain and bold, or italic and bold italic, and of how lines break after the spaces other than U+0020. Each paragraph's first word names its probe,
-// so it can be found in a PDF saved from Word with pdftotext. Open the document in Word and save it as a PDF beside it.
-// Read the PDF with word-character-widths.py.
+// lay-stops2: the widths of the characters outside the width tables' ranges, which docx/layout measured as an average
+// letter without stopping: Hebrew, Arabic, Devanagari, Thai, box drawing, blocks, geometric shapes (docx's bullets ● ○ ■),
+// symbols and dingbats, in the fonts of the tables, plain and bold, and the font Word draws each in. Made from
+// scripts/layout-probes/word-character-widths.ts with its ranges changed, so it writes that one's probes of the spaces too
+// (S, B and H), which its PDF settled. With STOPS_ITALIC=1 it writes the italic and bold italic faces.
 //
 // W: every character of the ranges that is drawn, ten times over as one word, in 10-point Calibri, Cambria, Arial, Times
-//    New Roman and Courier New, plain and bold, 16 characters to a paragraph, each after its code point, such as u0391,
+//    New Roman and Courier New, plain and bold, 16 characters to a paragraph, each after its code point, such as u05d0,
 //    in 6-point Calibri. A word's width over ten is the character's, and the font it is drawn in shows whether the font
 //    has it, or Word draws it in another
-// S: each space, and the characters that take no room, ten times between eleven H's, after ten H's in a word of their own,
-//    in each font: the space's width is what the eleven H's and ten spaces take, less eleven H's
-// B: forty words joined by each space, in Calibri 11: whether Word breaks lines after it, so each line ends with a whole word
-// H: a line whose last word ends half the space's width before the margin, with the space after it: whether the word stays
-//    on the line, as it does before a U+0020, which hangs past the margin, or goes to the next line with the space
+// S, B and H: as word-character-widths.ts's
 //
-// The fonts, and the spaces and words of S, B and H, are written in word-character-widths.json, beside the document, for
-// the reader.
+// The fonts, and the spaces and words of S, B and H, are written in word-stops-more-widths.json, beside the document, for
+// the reader, word-stops-more-widths.py.
 //
-// With "italic", it writes word-italic-widths.docx and word-italic-widths.json: W and S in italic and bold italic, in the
-// same paragraphs, numbered the same way. B and H are left out, as where lines break after a space doesn't depend on the face.
+// Word's PDF, saved from Word 16 for Mac on 2026-10-05, showed:
+// W: each face's Hebrew, Thai, Arabic-Indic digits, box drawing, shapes, symbols and dingbats as wide as the font it draws
+//    them in has them: its own, or another where it lacks them, such as Calibri's Thai in Tahoma, its Devanagari digits in
+//    Mangal, its box drawing in MS Gothic and its ★ in Segoe UI Symbol. A line is as tall as the tallest of the fonts on
+//    it, by their ascents and descents, as their descriptors give them, but for Kohinoor Devanagari, in which Cambria and
+//    Times New Roman's Devanagari is drawn, whose lines are 300 twips apart where its descriptor makes 280. Ten of an
+//    Arabic or Devanagari letter in a row Word joined into forms of other widths, so their widths aren't shown
 //
-// Word's PDF, saved from Word 16 for Mac on 2026-10-02, showed:
-// W: the open fonts' widths are Word's, to within a thousandth of an em, for all but a few characters: Calibri's ƒ and ɪ,
-//    Cambria's arrows, primes and some symbols, Arial's and Times New Roman's superscript and subscript digits, and some
-//    of Arial Bold's Cyrillic. Word's Cambria has the Greek, Cyrillic and Latin Extended-B that Caladea lacks. Word draws
-//    most mathematical symbols and letterlike symbols in Cambria Math, and others in Segoe UI Symbol, MS Gothic and other
-//    fonts, when the font lacks them. It drew three lines of Courier New squeezed, with Ž to Ƌ, ˙ to ˝ and Ͻ to Ђ on them
-// S: Calibri's en, em, three-per-em, four-per-em and six-per-em spaces are 498, 905, 301, 226 and 151 thousandths of an
-//    em, where Carlito's are 500, 1000, 335, 250 and 167, and Arial's en space is 556, where Liberation Sans' is 500. The
-//    zero-width characters take no room
-// B and H: lines break after en, em and four-per-em spaces, which Word has as spaces of its own, and ideographic spaces,
-//    and the word before one at the end of a line stays on it, as before a U+0020. Word joins the words around the other
-//    spaces, as it does around a no-break space, but splits a run of words joined by six-per-em spaces that is longer than
-//    a line at one of them
-//
-// Word's PDF of word-italic-widths, saved from Word 16 for Mac on 2026-10-02, showed:
-// W: the open fonts' italics and bold italics are Word's, to within a thousandth of an em, for all but a few characters, as
-//    upright: Calibri's ƒ and ɪ, Cambria's arrows, primes, some symbols and, in bold italic, its accents, Arial's and Times
-//    New Roman's superscript and subscript digits, and a few of Arial's Cyrillic. Calibri's italic т is drawn as an m, 791
-//    thousandths of an em, where the upright one is 387, as Carlito's is. Word draws what the italics lack in other fonts,
-//    as upright, such as the arrows ↖ to ↙ in Apple Color Emoji, whose boxes pdftotext puts off their line. It drew most of
-//    Cambria's italic arrows and mathematical symbols with no text, as it drew Cambria Bold's, so their widths can't be read
-// S: the spaces are as wide as upright, but for Times New Roman italic's em, three-per-em, four-per-em and six-per-em
-//    spaces, which are 889, 297, 222 and 149 thousandths of an em, where the upright ones are 1000, 333, 250 and 167
-//
-// Usage: npm run run-ts -- scripts/layout-probes/word-character-widths.ts [italic], which writes
-// build/word-probes/word-character-widths.docx, or word-italic-widths.docx with "italic"
+// Usage: npm run run-ts -- scripts/layout-probes/stops2/word-stops-more-widths.ts [folder]; STOPS_ITALIC=1 for italics
 // cspell:ignore bbox Caladea
 import { mkdirSync, writeFileSync } from "node:fs";
 
@@ -58,9 +29,8 @@ import { Document, Packer, Paragraph, TextRun } from "docx";
 
 import { measureTextWidth } from "../../../src/text-layout/text-width";
 
-// The ranges of the width tables: printable ASCII; Latin-1, Latin Extended-A and B, IPA and the spacing modifier letters;
-// Greek and Cyrillic; Latin Extended Additional, for Vietnamese; and general punctuation, superscripts and subscripts,
-// currency symbols, letterlike symbols, number forms, arrows and mathematical operators
+// The ranges: Hebrew; Arabic; Devanagari; Thai; and box drawing, block elements, geometric shapes, miscellaneous symbols
+// and dingbats
 const RANGES = [
     [0x590, 0x5ff],
     [0x600, 0x6ff],
