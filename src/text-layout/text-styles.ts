@@ -724,22 +724,11 @@ export const WIDEST_BORDER = 96;
 export const FURTHEST_BORDER = 31;
 
 // The schema's borders of lines (`ST_Border`); the rest of its borders are art borders, but for "custom"
-const LINE_BORDERS = new Set([
-    "nil",
-    "none",
-    ...Object.keys(BORDER_WIDTHS),
-    "thinThickMediumGap",
-    "thickThinMediumGap",
-    "thinThickThinMediumGap",
-    "thinThickLargeGap",
-    "thickThinLargeGap",
-    "thinThickThinLargeGap",
-    "custom",
-]);
-// Widths of a run's border, in eighths of a point, seen at one size only: thinThickThinMediumGap of 3 points 9 points wide,
-// and thickThinLargeGap of 4.5 points 6.75 (scripts/layout-probes/stops2/word-stops-text.ts RF25a, RF25b)
+const LINE_BORDERS = new Set(["nil", "none", ...Object.keys(BORDER_WIDTHS), "custom"]);
+// Widths of a run's border, in eighths of a point, seen at one size only past those of its style Word drew beside a table's
+// cells: thickThinLargeGap of 4.5 points 6.75 wide, as those make it (scripts/layout-probes/stops2/word-stops-text.ts
+// RF25b). Word drew thinThickThinMediumGap of 3 points 9 points wide in a run, as beside a table's cells too (RF25a)
 const SEEN_RUN_BORDERS: Readonly<Record<string, Readonly<Record<number, number>>>> = {
-    thinThickThinMediumGap: { 24: 72 },
     thickThinLargeGap: { 36: 54 },
 };
 // The widest art border, in points

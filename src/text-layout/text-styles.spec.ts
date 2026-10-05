@@ -345,7 +345,8 @@ describe("run formatting", () => {
         expect(twips("nil", 4, 4)).to.equal(undefined);
         // An art border's size in points: apples of 12 a point from the text take 13 points (word-stops-text.ts RF25c); a
         // space past 31 points kept in five bits, so 40 is 8 (RF25d); a single border of an eighth of a point and a double
-        // of none as given (RF25f, RF25e); and two borders seen at one size (RF25a, RF25b)
+        // of none as given (RF25f, RF25e); and thin, thick and thin lines with a medium gap and thick and thin ones with a large
+        // gap as wide as beside a table's cells, past the widths seen there too (RF25a, RF25b)
         expect(twips("apples", 12, 1)).to.equal(260);
         expect(twips("single", 4, 40)).to.equal(170);
         expect(twips("single", 1, 1)).to.equal(22.5);
