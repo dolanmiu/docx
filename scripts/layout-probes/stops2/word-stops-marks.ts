@@ -143,12 +143,24 @@ const addNotes =
         parts.set("word/footnotes.xml", parts.get("word/footnotes.xml")!.replace("</w:footnotes>", `${xml}</w:footnotes>`));
     };
 
+/**
+ * Where text is in a part, as the kit's injections find their markers: an error where it isn't, which `write` skips
+ * when ONLY leaves its probe out, rather than XML written from the start of the part
+ */
+const markerAt = (text: string, find: string): number => {
+    const at = text.indexOf(find);
+    if (at < 0) {
+        throw new Error(`No marker ${find}`);
+    }
+    return at;
+};
+
 /** A section break's mark: docx writes the section's properties in an empty paragraph after its marker's */
 const sectionMark =
     (name: string, mark: string) =>
     (parts: Map<string, string>): void => {
         let text = parts.get("word/document.xml")!;
-        const at = text.indexOf(`@@${name}@@`);
+        const at = markerAt(text, `@@${name}@@`);
         const start = text.lastIndexOf("<w:p>", at);
         const end = text.indexOf("</w:p>", at) + 6;
         text = text.slice(0, start) + text.slice(end);
@@ -161,7 +173,7 @@ const inControl =
     (name: string, mark: string, id: number) =>
     (parts: Map<string, string>): void => {
         const text = parts.get("word/document.xml")!;
-        const at = text.indexOf(`@@${name}@@`);
+        const at = markerAt(text, `@@${name}@@`);
         const start = text.lastIndexOf("<w:p>", at);
         const end = text.indexOf("</w:p>", at) + 6;
         const probeName = name.split("_")[1];
@@ -175,7 +187,7 @@ const deletedRows =
     (parts: Map<string, string>): void => {
         let text = parts.get("word/document.xml")!;
         for (const name of names) {
-            const at = text.indexOf(name);
+            const at = markerAt(text, name);
             const row = text.lastIndexOf("<w:tr>", at);
             text = withProperty(text, "w:trPr", `<w:del w:id="${nextId()}" ${DATE}/>`, row + "<w:tr>".length, text.indexOf("<w:tc>", row));
         }
@@ -310,7 +322,7 @@ await write({
         // HD9b: the endnote reference before the marker is hidden
         (parts) => {
             const text = parts.get("word/document.xml")!;
-            const at = text.indexOf("@@HIDE_LAST_HD9b@@");
+            const at = markerAt(text, "@@HIDE_LAST_HD9b@@");
             const start = text.lastIndexOf("<w:r>", text.lastIndexOf("<w:endnoteReference", at));
             parts.set("word/document.xml", text.slice(0, start) + text.slice(start).replace(/<w:rPr>/, "<w:rPr><w:vanish/>"));
             replaceMarkerRun("HIDE_LAST_HD9b", "")(parts);
@@ -505,7 +517,7 @@ await write({
             const styles = parts.get("word/styles.xml")!;
             parts.set("word/styles.xml", styles.replace("</w:styles>", `${PROBE_TABLE_STYLE}</w:styles>`));
             const text = parts.get("word/document.xml")!;
-            const at = text.indexOf("TR5 row 1");
+            const at = markerAt(text, "TR5 row 1");
             parts.set(
                 "word/document.xml",
                 withProperty(
@@ -520,7 +532,7 @@ await write({
         // TR1: deleted picture, tab, break and footnote reference in a cell
         (parts) => {
             const text = parts.get("word/document.xml")!;
-            const at = text.indexOf("@@DELPIC_TR1a@@");
+            const at = markerAt(text, "@@DELPIC_TR1a@@");
             const start = text.indexOf("<w:r>", at);
             const end = text.indexOf("</w:r>", start) + 6;
             parts.set(
