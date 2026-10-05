@@ -122,7 +122,10 @@ def multiply(one, other):
     return [a * g + b * i, a * h + b * j, c * g + d * i, c * h + d * j, e * g + f * i + k, e * h + f * j + l]
 
 
-TOKENS = re.compile(rb"\[(?:\\.|[^\]\\])*\]|\((?:\\.|[^\\)])*\)|/[^\s/\[\]()<>]+|[-+]?\d*\.?\d+|[A-Za-z'\"*]+")
+# An array's strings may have "]" in them, as Word's of Arabic's glyphs do
+TOKENS = re.compile(
+    rb"\[(?:\((?:\\.|[^\\)])*\)|[^\]\(])*\]|\((?:\\.|[^\\)])*\)|/[^\s/\[\]()<>]+|[-+]?\d*\.?\d+|[A-Za-z'\"*]+"
+)
 ESCAPES = {b"n": b"\n", b"r": b"\r", b"t": b"\t", b"b": b"\b", b"f": b"\f"}
 
 
@@ -157,6 +160,9 @@ def glyphs_of(found, page):
             matrix = multiply(operands[-6:], matrix)
         elif token in (b"BT", b"Tm"):
             text_matrix, along = (operands[-6:] if token == b"Tm" else [1, 0, 0, 1, 0, 0]), 0.0
+        elif token in (b"Td", b"TD"):
+            # A move to the start of the next line, from the start of this one, as Word places Arabic's glyphs in Calibri
+            text_matrix, along = multiply([1, 0, 0, 1, operands[-2], operands[-1]], text_matrix), 0.0
         elif token == b"Tf":
             font, size = fonts.get(operands[-2].decode()[1:]), operands[-1]
         elif token == b"Tc":

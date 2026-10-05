@@ -667,6 +667,13 @@ describe("readParagraphFormat with East Asian typography", () => {
     });
 });
 
+describe("readParagraphFormat with right-to-left text", () => {
+    it("should read whether the paragraph is right to left", () => {
+        expect(readParagraphFormat([{ "w:bidi": {} }])).to.deep.equal({ rightToLeft: true });
+        expect(readParagraphFormat([{ "w:bidi": { _attr: { "w:val": "0" } } }])).to.deep.equal({ rightToLeft: false });
+    });
+});
+
 describe("readParagraphFormat with hyphenation", () => {
     it("should read whether the paragraph's words are left whole by automatic hyphenation", () => {
         expect(readParagraphFormat([{ "w:suppressAutoHyphens": {} }])).to.deep.equal({ suppressAutoHyphens: true });

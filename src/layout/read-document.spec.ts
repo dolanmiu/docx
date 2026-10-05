@@ -5163,6 +5163,24 @@ describe("readDocument", () => {
             expect(readBody([]).breakRules).to.equal(undefined);
         });
 
+        it("should stop at Arabic letters joined across runs, which are measured a run at a time", () => {
+            // cspell:disable
+            const runs = (...texts: readonly string[]): string | undefined =>
+                paragraphOf(
+                    readBody([p(...texts.map((text) => r(rPr({ "w:rtl": {} }, { "w:rFonts": { _attr: { "w:cs": "Arial" } } }), t(text))))]),
+                ).unsupported;
+            expect(runs("كتب", "بلا")).to.equal("Arabic letters joined across runs");
+            expect(runs("كتب ", "بلا")).to.equal(undefined);
+            expect(runs("كتا", "بلا")).to.equal(undefined);
+            expect(runs("كتب", "abc")).to.equal(undefined);
+            // Across a bookmark too
+            expect(
+                paragraphOf(readBody([p(r(t("كتب")), { "w:bookmarkStart": { _attr: { "w:id": 1, "w:name": "b" } } }, r(t("بلا")))]))
+                    .unsupported,
+            ).to.equal("Arabic letters joined across runs");
+            // cspell:enable
+        });
+
         it("should break Japanese by Word's strict rules, and leave its punctuation compressed as it is, aligned left, and stop at the cases Word hasn't been seen with (EA4)", () => {
             const inLanguage = (language: string, text = "「測量」は"): object =>
                 p(r(rPr({ "w:lang": { _attr: { "w:eastAsia": language } } }), t(text)));

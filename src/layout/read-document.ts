@@ -48,6 +48,7 @@ import {
     isMonospacedEastAsianFont,
     isObject,
     isOff,
+    joinsAcross,
     kinsokuLanguageOf,
     numberOf,
     onOff,
@@ -2628,6 +2629,7 @@ const readParagraph = (element: XmlObject, reader: Reader, tableFormats: TableFo
         list.unsupported ??
         ownCells ??
         unknownEastAsianRules(reader.eastAsianRules, own, combined.alignment) ??
+        (joinedAcrossRuns(own) ? "Arabic letters joined across runs" : undefined) ??
         (reader.down === true ? unknownDownOf(own, tabStops) : undefined) ??
         (typeof frame === "string"
             ? frame
@@ -5054,6 +5056,18 @@ const readMathsSettings = (settings: readonly XmlObject[]): Pick<Reader, "maths"
             integrals: valueIn("m:intLim") === "undOvr" ? "undOvr" : "subSup",
         },
     };
+};
+
+/**
+ * Whether a paragraph's runs end and start with Arabic letters Word joins across them, which are measured a run at a time,
+ * so not in the forms Word joins them in. Bookmarks and the like between them leave them joined
+ */
+const joinedAcrossRuns = (items: readonly LayoutItem[]): boolean => {
+    const texts = items.filter((item) => item.type !== "marker");
+    return texts.some((item, index) => {
+        const next = texts[index + 1];
+        return item.type === "text" && next?.type === "text" && joinsAcross(item.text, next.text);
+    });
 };
 
 /**

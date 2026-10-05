@@ -2306,6 +2306,53 @@ describe("layoutLines on a document grid, as Word lays it out (scripts/layout-pr
     });
 });
 
+describe("right-to-left text, as Word lays it out (scripts/layout-probes/stops2/word-stops-arabic.ts)", () => {
+    // cspell:disable
+    const ARABIC = { font: "Arial", size: 10 } as const;
+    const arabic = (value: string, font: TextFont = ARABIC): InlineItem => ({ type: "text", text: value, font });
+    // A word of beh and lam-alef, 8.447 points, and a space, 2.78
+    const WORD = "بلا";
+    const linesOf = (items: readonly InlineItem[], format: ParagraphFormat = {}): readonly LaidOutLine[] =>
+        layoutLines(items, { width: 21, format });
+
+    it("should take the space after the last of a line's right-to-left words into the line, when a right-to-left word follows it (AR2)", () => {
+        // Two words and the space between them, 19.674 points, fit in 21, but not with the space after them
+        expect(linesOf([arabic(`${WORD} ${WORD} ${WORD}`)]).map((line) => line.text)).to.deep.equal([`${WORD} `, `${WORD} ${WORD}`]);
+        // Across runs and bookmarks too
+        expect(
+            linesOf([arabic(`${WORD} `), { type: "marker", name: "b" }, arabic(`${WORD} ${WORD}`)]).map((line) => line.text),
+        ).to.deep.equal([`${WORD} `, `${WORD} ${WORD}`]);
+        // But not in a right-to-left paragraph, whose lines Word breaks as a left-to-right one's (word-unicode.ts R2, R8)
+        expect(linesOf([arabic(`${WORD} ${WORD} ${WORD}`)], { rightToLeft: true }).map((line) => line.text)).to.deep.equal([
+            `${WORD} ${WORD} `,
+            WORD,
+        ]);
+    });
+
+    it("should stop at a line that ends between right-to-left and left-to-right text", () => {
+        const lines = linesOf([arabic(`${WORD} ${WORD} abc`)]);
+        expect(lines.map((line) => line.text)).to.deep.equal([`${WORD} ${WORD} `, "abc"]);
+        expect(lines[0].unsupported).to.equal("a line that ends between right-to-left and left-to-right text");
+        expect(linesOf([arabic(`abc ${WORD} ${WORD}`)])[0].unsupported).to.equal(
+            "a line that ends between right-to-left and left-to-right text",
+        );
+        // And a picture before them
+        expect(
+            linesOf([arabic(`${WORD} `), { type: "box", width: 10, height: 10 }, arabic(` ${WORD}`)]).find((line) => line.unsupported)
+                ?.unsupported,
+        ).to.equal("a line that ends between right-to-left and left-to-right text");
+        // Not left-to-right text, nor in a right-to-left paragraph
+        expect(linesOf([arabic("abc abc abc abc")]).map((line) => line.unsupported)).to.deep.equal([
+            undefined,
+            undefined,
+            undefined,
+            undefined,
+        ]);
+        expect(linesOf([arabic(`${WORD} ${WORD} abc`)], { rightToLeft: true })[0].unsupported).to.equal(undefined);
+    });
+    // cspell:enable
+});
+
 describe("measureContentWidths", () => {
     const widthsOf = (items: readonly InlineItem[], options = {}): { readonly min: number; readonly max: number } =>
         measureContentWidths(items, { measurer: MEASURER, ...options });
