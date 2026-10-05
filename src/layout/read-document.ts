@@ -6047,12 +6047,21 @@ export const readContent = (writtenBody: XmlObject, writtenParts: DocumentParts,
     // doesn't, or of the document (stops2/word-stops-notes2.ts NE6)
     const endnotesAtSectionEnds =
         (readNoteProperties(find(settings, "w:endnotePr")).position ?? NOTE_DEFAULTS.endnote.position) === "sectEnd";
-    /** The section at whose end the endnotes of a section go, where the settings put them at the end of each section */
-    const endnotesEnd = (section: number): number =>
-        section < sections.length - 1 && onOff(childrenOf(sectionElements[section]), "w:noEndnote") === true
-            ? endnotesEnd(section + 1)
-            : section;
-    const endnotesAfter = endnoteBlockSections.map(endnotesEnd);
+    /**
+     * The section at whose end each endnote's block goes, where the settings put them at the end of each section: its own,
+     * or the next that doesn't suppress its own, found once for each section from the last back, however many in a row do
+     */
+    const endnoteEnds = (): readonly number[] => {
+        const ends = sections.map((_, section) => section);
+        for (let section = sections.length - 2; section >= 0; section--) {
+            if (onOff(childrenOf(sectionElements[section]), "w:noEndnote") === true) {
+                // eslint-disable-next-line functional/immutable-data
+                ends[section] = ends[section + 1];
+            }
+        }
+        return endnoteBlockSections.map((section) => ends[section]);
+    };
+    const endnotesAfter = endnotesAtSectionEnds ? endnoteEnds() : [];
 
     /**
      * Why the notes of a kind can't be laid out yet, when Word numbers or places them in a way not yet followed: endnotes

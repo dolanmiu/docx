@@ -1281,6 +1281,18 @@ describe("readDocument", () => {
             // A section that suppresses its own has them at the end of the next
             const suppressed = twoSections([{ "w:noEndnote": {} }], [], [properties("endnote", value("w:pos", "sectEnd"))]);
             expect(suppressed.endnotesAfter).to.deep.equal([1, 1, 1]);
+            // However many in a row do
+            const many = 20000;
+            const manySuppressed = readWithSettings(
+                [
+                    p(reference("endnote", 1)),
+                    ...Array.from({ length: many }, () => p(pPr({ "w:sectPr": [{ "w:noEndnote": {} }] }))),
+                    { "w:sectPr": [] },
+                ],
+                [properties("endnote", value("w:pos", "sectEnd"))],
+                NOTES,
+            );
+            expect(manySuppressed.endnotesAfter).to.deep.equal([many, many]);
             // At the end of the only section is at the end of the document
             const oneSection = readWithSettings(
                 [p(reference("endnote", 1)), { "w:sectPr": [{ "w:noEndnote": {} }] }],
