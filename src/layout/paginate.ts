@@ -3950,8 +3950,11 @@ export const paginate = (
             if (!(error instanceof HeaderRowsAlone)) {
                 throw error;
             }
+            // What was guessed at in it is still guessed at, laid out from the next page
+            const guessed = placements.slice(start.placed).flatMap((placement) => (placement.type === "guess" ? [placement] : []));
             unmarkSince(start.marks);
             restore(start);
+            guessed.forEach(({ reason, page }) => stopAt(reason, page));
             placeTable(block, true);
         }
     };

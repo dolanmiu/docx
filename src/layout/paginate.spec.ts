@@ -982,6 +982,10 @@ describe("paginate", () => {
             );
             const guessed = paginate(afterHeading, { measurer: MEASURER, guess: true });
             expect(Object.fromEntries(inBody(afterHeading, guessed.bookmarks))).to.deep.include({ heading: "1", header: "2", first: "2" });
+            // It says what it guessed at, though the table is laid out again from the next page
+            expect(guessed.pages[0].guesses).to.deep.equal([
+                "a paragraph kept with the next before a table whose header rows go on to the next page",
+            ]);
             // At the foot of a column, which Word may do otherwise
             const narrow = (one: TableRow): TableRow => ({ ...one, cells: one.cells.map((cell) => ({ ...cell, width: 35 })) });
             const inColumns = document(
