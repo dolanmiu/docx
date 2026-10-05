@@ -1,5 +1,5 @@
 /**
- * Probes of imported documents (`w:altChunk`) docx/layout stops at, after `word-imported-documents.docx` (AC1 to AC16)
+ * Probes of imported documents (`w:altChunk`) docx/layout stopped at when they were written, after `word-imported-documents.docx` (AC1 to AC16)
  * and `word-imported-styles.docx` (AS1 to AS9):
  *
  * - "an imported document of several sections" (AC4b: Word's headers and margins for its pages followed no rule found)
@@ -19,6 +19,15 @@
  *   cell margins of 300 (c); and a Heading 1 of its own, 20 points, which the main document's Heading 1 (16) also is (d)
  * IM3a, IM3b: an imported document whose defaults give no size (no w:sz in w:rPrDefault), with a style of its own based
  *   on Normal with 240 before (a), and one based on no style (b)
+ *
+ * Word's PDF, saved from Word 16 for Mac on 2026-10-05, showed:
+ * IM1: the imported document's first header under the main document's on every page, from the first, and its sections
+ *   on the main document's page and margins, which follow no rule docx/layout can take: it still stops there
+ * IM2: its Normal of Times New Roman 14 and Heading 1 of 20 points kept, the main document's Normal Table (cell margins of
+ *   108) and theme, and its last paragraph with none of its space after, which docx/layout follows. It still stops where
+ *   that paragraph is in a content control or custom XML, which the probe doesn't have
+ * IM3: its own styles in Times New Roman 10, Word's own, lines of 230 twips, which docx/layout follows where the defaults
+ *   leave out the font and size, or spacing and indents that are Word's own
  *
  * Usage: npm run run-ts -- scripts/layout-probes/stops2/word-stops-imported.ts [folder]
  */
