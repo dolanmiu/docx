@@ -7418,6 +7418,14 @@ describe("paginate", () => {
                     [10, 20, 130],
                     [10, 30, 130],
                 ]);
+                // Where the text before it then moves the table on to the next page, Word's way isn't known
+                const tallFromTop: TableBlock = {
+                    ...beforeTable,
+                    anchored: [frame([text("ab")], { width: 130, height: 180, vertical: { from: "page", offset: 10 } })],
+                };
+                expect(stopOf([prose("x", 48), tallFromTop, prose("a", 1)])).to.equal(
+                    "a table that text flows around or a text frame before a table that moves on",
+                );
                 // Placed in a way not followed yet
                 const lined: TableBlock = {
                     ...beforeTable,

@@ -539,6 +539,10 @@ class DrawingAbove extends Error {
 
 const PUSHED_ON = "a drawing whose paragraph goes on to the next page as the text before it goes round it";
 
+// Where Word puts the tables that text flows around and the text frames anchored at the top of a table that moves on to the
+// next page isn't known
+const BEFORE_TABLE_MOVING_ON = "a table that text flows around or a text frame before a table that moves on";
+
 /**
  * Thrown to lay out a page again when the paragraph of a drawing placed from the page's top went on to the next page as
  * the text before it went round the drawing, with the paragraph starting on the next page (`block`), and its drawing with
@@ -3133,11 +3137,16 @@ export const paginate = (
         }
         // The paragraph of one of its own, rather than of a table that text flows around, starts on the next page, with all
         // its drawings placed from this page's top. It started on this page, as only the text of another block before it
-        // on a page has a drawing placed from the page's top, and on the next it is the first, with no text before it
+        // on a page has a drawing placed from the page's top, and on the next it is the first, with no text before it. A
+        // text frame anchored at a table's top goes on with the table
         if (isTableDrawing(away)) {
             throw new Unsupported(PUSHED_ON);
         }
-        throw new PushedOn(Number(away.anchor.split(" ")[0]), pageCount);
+        const block = Number(away.anchor.split(" ")[0]);
+        if (blocks[block].block.type === "table") {
+            throw new Unsupported(BEFORE_TABLE_MOVING_ON);
+        }
+        throw new PushedOn(block, pageCount);
     };
     // The paragraphs that start on the next page after the page they would start on, by that page
     const startsNextPage = new Map<number, number>();
@@ -5299,7 +5308,7 @@ export const paginate = (
                     next: index,
                     page: pageCount,
                     column,
-                    reason: "a table that text flows around or a text frame before a table that moves on",
+                    reason: BEFORE_TABLE_MOVING_ON,
                 };
             }
             placeTable(block);
