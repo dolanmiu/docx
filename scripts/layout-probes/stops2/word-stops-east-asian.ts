@@ -17,7 +17,7 @@
  * GR9: a Latin word longer than its line on such a grid
  * GR10a, GR10b: a tab (a) and a picture in the line (b) on such a grid
  * GR11: a grid of lines and characters with no line pitch written
- * GR12: a grid that snaps to characters in columns of 2000 and 6026
+ * GR12: a grid that snaps to characters in columns of 2000 and 6526, 500 apart
  * GR13: endnotes after a last section on another grid: the endnotes' references in a section on a grid of lines, the
  *   last section with none (in word-stops-grid-endnotes.docx, as endnotes go at the end)
  * VD1a to VD1d: in text running down the page (tbRl): a tab (a), a soft hyphen (b), a picture in the line (c), and a
