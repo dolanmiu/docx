@@ -3799,9 +3799,17 @@ export const paginate = (
             // Word 2010 and before leave a gap beside a frame 1000 twips wide empty, of justified text, where Word 2013 puts
             // words, and put text in wider ones as it does (see `OLDER_LEAST_GAP`). How narrow a gap they leave empty isn't
             // known. One the paragraph's indents leave no room in takes no text anyway, and one they narrow is as narrow as
-            // the room they leave
-            const narrow = ({ span, inIndents: { start, end } }: (typeof rooms)[number]): boolean =>
-                end > start + TOLERANCE && narrowGap(span, end - start, within, around, block.format.alignment);
+            // the room they leave. The paragraph's first line may go in a later gap of its row when its first line indent
+            // leaves the first none, so those are measured with the indent too
+            const narrow = ({ span, inIndents: { start, end } }: (typeof rooms)[number], offset: number): boolean =>
+                end > start + TOLERANCE &&
+                narrowGap(
+                    span,
+                    end - start - (line === 0 && offset > 0 ? Math.max(0, firstLineIndent) : 0),
+                    within,
+                    around,
+                    block.format.alignment,
+                );
             if (compatibilityMode !== undefined && rooms.some(narrow)) {
                 stopAt(
                     "a line beside a drawing or frame in a gap narrower than Word was seen putting text in, in a document in compatibility mode",

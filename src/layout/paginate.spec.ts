@@ -6534,6 +6534,12 @@ describe("paginate", () => {
             // one of 80 that an indent of 40 narrows to 40 is as narrow as that
             expect(stopOf([gapped({ width: 140 }, { indentLeft: 60 })], older)).to.equal(undefined);
             expect(stopOf([gapped({ width: 100 }, { indentLeft: 40 })], older)).to.equal(reason);
+            // A first line indent of 25 leaves a gap of 20 left of a drawing a line tall no room, and the first line may go in the
+            // gap of 60 right of it, where the indent would leave 35, which Word hasn't been seen putting text in; in one of 90, 65
+            const besideFirst = (width: number): ParagraphBlock =>
+                gapped({ width, height: 10, horizontal: { from: "margin", offset: 20 } }, { firstLineIndent: 25 });
+            expect(stopOf([besideFirst(100)], older)).to.equal(reason);
+            expect(stopOf([besideFirst(70)], older)).to.equal(undefined);
         });
 
         it("should stop at a line beside a drawing on a grid that snaps to characters in columns of different widths", () => {
