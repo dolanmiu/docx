@@ -1724,6 +1724,38 @@ describe("paginate", () => {
                 expect(pagesOf(rows)).to.deep.equal({ set: "1", next: "2" });
             });
 
+            it("should lay out rows taller than a page with merged cells, a footnote or more text than a page as Word does", () => {
+                const set = { height: { value: 80, rule: "exact" as const } };
+                const numbers = (content: DocumentContent): ReturnType<typeof numbersOf> => numbersOf(content);
+                // word-stops-tables.docx RW5a: a cell merged down from it has its text in it, and the next row is on the next
+                // page
+                const mergedDown = document([
+                    paragraph("a", 1),
+                    table([
+                        mergedRow(merged("restart", [paragraph("merged", 1)]), [[paragraph("r1", 1)]], set),
+                        mergedRow(merged("continue"), [[paragraph("r2", 1)]]),
+                    ]),
+                ]);
+                expect(numbers(mergedDown).stoppedAt).to.equal(undefined);
+                expect(pagesOf(mergedDown)).to.deep.include({ a: "1", merged: "2", r1: "2", r2: "3" });
+                // RW5c: its footnote at the bottom of the next page
+                const noted = withItems(paragraph("set", 1), [{ type: "marker", name: "note" }]);
+                const withNote = { ...tall(2, [[noted]], set), footnotes: new Map([["note", [paragraph("n", 1)]]]) };
+                expect(numbers(withNote).stoppedAt).to.equal(undefined);
+                expect(paginate(withNote, { measurer: MEASURER }).pages.map(({ footnotes }) => footnotes.length)).to.deep.equal([0, 0, 1]);
+                // RW6: a row at least as tall as more than a page, whose text is taller than one too, fills each page it is on
+                const filling = tall(2, [[endMarked("set", 9)]], { height: { value: 80, rule: "atLeast" } });
+                expect(numbers(filling).stoppedAt).to.equal(undefined);
+                expect(pagesOf(filling)).to.deep.equal({ a: "1", set: "2", setEnd: "3", below: "4" });
+                // RW11: in columns, one kept whole that is taller than a column goes down the first column of each page
+                const inColumns = {
+                    ...tall(2, [[endMarked("tall", 9)]], { cantSplit: true }),
+                    sections: [{ ...SECTION, columns: [80, 80] }],
+                };
+                expect(numbers(inColumns).stoppedAt).to.equal(undefined);
+                expect(pagesOf(inColumns)).to.deep.equal({ a: "1", tall: "2", tallEnd: "3", below: "3" });
+            });
+
             it("should stop at a row taller than a page that Word hasn't been seen laying out", () => {
                 const stoppedAt = (content: DocumentContent): string | undefined => paginate(content, { measurer: MEASURER }).stoppedAt;
                 const KEPT = "a table row kept together taller than a column";
@@ -1733,29 +1765,45 @@ describe("paginate", () => {
                     ...tall(2, cells, changes),
                     sections: [{ ...SECTION, columns: [80, 80] }],
                 });
-                expect(stoppedAt(inColumns([[paragraph("tall", 9)]], { cantSplit: true }))).to.equal(KEPT);
                 expect(stoppedAt(inColumns([[kept("tall", 9)]]))).to.equal(KEPT);
                 expect(stoppedAt(inColumns([[paragraph("set", 1)]], { height: { value: 80, rule: "exact" } }))).to.equal(KEPT);
-                // A row of a set height with a footnote, merged cells or as a header row
-                const CUT = "a footnote, merged cells or a header row in a table row of a set height taller than a page";
                 const set = { height: { value: 80, rule: "exact" as const } };
-                const noted = withItems(paragraph("set", 1), [{ type: "marker", name: "note" }]);
-                expect(stoppedAt({ ...tall(2, [[noted]], set), footnotes: new Map([["note", [paragraph("n", 1)]]]) })).to.equal(CUT);
-                expect(stoppedAt(tall(2, [[paragraph("set", 1)]], { ...set, header: true }))).to.equal(CUT);
-                expect(
-                    stoppedAt(
-                        document([
-                            table([
-                                mergedRow(merged("restart", [paragraph("merged", 1)]), [[paragraph("r1", 1)]], set),
-                                mergedRow(merged("continue"), [[paragraph("r2", 1)]]),
-                            ]),
-                        ]),
-                    ),
-                ).to.equal(CUT);
-                // A row whose text is taller than a page too, and one whose first line is
-                expect(stoppedAt(tall(2, [[paragraph("set", 9)]], { height: { value: 80, rule: "atLeast" } }))).to.equal(
+                // A header row, which Word didn't repeat, but put what came after its table a page further on (RW5b)
+                expect(stoppedAt(tall(2, [[paragraph("set", 1)]], { ...set, header: true }))).to.equal(
+                    "a header row of a set height taller than a page",
+                );
+                // Two footnotes, and one with another on the page
+                const noted = (name: string): ParagraphBlock => withItems(paragraph(name, 1), [{ type: "marker", name }]);
+                const notes = new Map([
+                    ["n1", [paragraph("x1", 1)]],
+                    ["n2", [paragraph("x2", 1)]],
+                ]);
+                expect(stoppedAt({ ...tall(2, [[noted("n1"), noted("n2")]], set), footnotes: notes })).to.equal(
+                    "footnotes in a table row of a set height taller than a page",
+                );
+                // A footnote in one set to at least a height taller than a page, whose text is taller than a page too
+                const atLeast = { height: { value: 80, rule: "atLeast" as const } };
+                expect(stoppedAt({ ...tall(2, [[noted("n1"), paragraph("set", 8)]], atLeast), footnotes: notes })).to.equal(
                     "a table row whose text and set height are both taller than a page",
                 );
+                // A cell merged down out of it with more text than it holds
+                const outOf = document([
+                    table([
+                        mergedRow(merged("restart", [paragraph("merged", 9)]), [[paragraph("r1", 1)]], set),
+                        mergedRow(merged("continue"), [[paragraph("r2", 1)]]),
+                    ]),
+                ]);
+                expect(stoppedAt(outOf)).to.equal(
+                    "a cell merged down into a table row of a set height taller than a page, or out of it past it",
+                );
+                // A line taller than a page
+                expect(
+                    stoppedAt(
+                        tall(0, [
+                            [{ ...paragraph("big", 1), markFont: { size: 90 }, items: [{ type: "text", text: "x", font: { size: 90 } }] }],
+                        ]),
+                    ),
+                ).to.equal("a line in a table cell taller than a page");
             });
         });
 
@@ -1891,19 +1939,24 @@ describe("paginate", () => {
                 expect(pagesOf(after(19, withMargins))).to.deep.include({ m2: "1", m3: "2" });
             });
 
-            it("should stop where it breaks with what Word's breaking of isn't known", () => {
+            it("should break one with header rows without repeating them, and stop where Word's breaking of it isn't known", () => {
+                // word-stops-tables.docx RW1: its header rows aren't repeated on the next page
                 const headed = table([row([[paragraph("h", 1)]], { header: true }), ...oneLineRows("r", 6).rows]);
-                expect(stoppedAt(inCell(3, headed))).to.equal("a header row of a table in a table cell across pages");
-                // It goes on the next page whole when none of it is on the page
+                expect(stoppedAt(inCell(3, headed))).to.equal(undefined);
+                expect(pagesOf(inCell(3, headed))).to.deep.include({ before: "1", h: "1", r2: "1", r3: "2" });
                 expect(stoppedAt(inCell(6, headed))).to.equal(undefined);
                 expect(pagesOf(inCell(6, headed))).to.deep.include({ before: "1", h: "2", r6: "2" });
-                // In a table in a cell of it
-                expect(stoppedAt(inCell(3, table([row([[headed]])])))).to.equal("a header row of a table in a table cell across pages");
-                const mergedDown = table([
-                    mergedRow(merged("restart", [paragraph("m", 1)]), [[paragraph("r1", 1)]]),
-                    ...Array.from({ length: 5 }, (_, index) => mergedRow(merged("continue"), [[paragraph(`r${index + 2}`, 1)]])),
-                ]);
-                expect(stoppedAt(inCell(3, mergedDown))).to.equal("a cell merged down the rows of a table in a table cell across pages");
+                // RW2: cells merged down its rows whose text is all in their first rows
+                const mergedDown = (lines: number): TableBlock =>
+                    table([
+                        mergedRow(merged("restart", [paragraph("m", lines)]), [[paragraph("r1", 1)]]),
+                        ...Array.from({ length: 5 }, (_, index) => mergedRow(merged("continue"), [[paragraph(`r${index + 2}`, 1)]])),
+                    ]);
+                expect(stoppedAt(inCell(3, mergedDown(1)))).to.equal(undefined);
+                expect(pagesOf(inCell(3, mergedDown(1)))).to.deep.include({ m: "1", r3: "1", r4: "2" });
+                expect(stoppedAt(inCell(3, mergedDown(2)))).to.equal(
+                    "a cell merged down the rows of a table in a table cell, whose text goes on past its first row, across pages",
+                );
                 expect(stoppedAt(inCell(3, { ...oneLineRows("r", 6), cellSpacing: 1 }))).to.equal(
                     "a table with space between its cells in a table cell across pages",
                 );
@@ -1913,18 +1966,37 @@ describe("paginate", () => {
                 ).to.equal("text that runs up or down a table cell across pages");
             });
 
-            it("should stop at a footnote in a row with a table in a cell that breaks across pages, and at a table in a cell merged down rows", () => {
-                const noted = withItems(paragraph("beside", 6), [{ type: "marker", name: "note" }]);
-                const content = { ...inCell(3, oneLineRows("r", 6), [noted]), footnotes: new Map([["note", [paragraph("n", 1)]]]) };
-                expect(stoppedAt(content)).to.equal("a footnote in a table row with a table in a cell, across pages");
+            it("should break a row with a table in a cell beside a footnote, and a table in a cell merged down rows, as Word does", () => {
+                // word-stops-notes.docx NT11: a table of rows taller than a line, by their borders, beside a line with a footnote
+                // that would continue below 3 of them, breaks where the footnote fits whole below it, rather than after the line,
+                // beside which none of its rows would fit
+                const besideNote = (lines: number): DocumentContent => ({
+                    ...document([
+                        paragraph("a", 1),
+                        table([
+                            row([
+                                [oneLineRows("r", 8, { borderTop: 1 })],
+                                [withItems(paragraph("beside", 1), [{ type: "marker", name: "note" }])],
+                            ]),
+                        ]),
+                        paragraph("b", 1),
+                    ]),
+                    footnotes: new Map([["note", [paragraph("n", lines)]]]),
+                });
+                const notesOnPages = (content: DocumentContent): readonly number[] =>
+                    paginate(content, { measurer: MEASURER }).pages.map(({ footnotes }) => footnotes.length);
+                expect(stoppedAt(besideNote(4))).to.equal(undefined);
+                expect(pagesOf(besideNote(4))).to.deep.include({ r1: "1", beside: "1", r2: "2" });
+                expect(notesOnPages(besideNote(4))).to.deep.equal([1, 0, 0]);
+                expect(pagesOf(besideNote(1))).to.deep.include({ r4: "1", r5: "2" });
                 // The cell's text goes down to the second row, which breaks across pages
                 const inMerge = [
                     mergedRow(merged("restart", [paragraph("merged", 3), table([row([[paragraph("inner", 1)]])])]), [[paragraph("r1", 1)]]),
                     mergedRow(merged("continue"), [[paragraph("r2", 1)]]),
                 ];
-                expect(stoppedAt(document([paragraph("a", 4), table(inMerge)]))).to.equal(
-                    "a table in a cell merged down table rows across pages",
-                );
+                // word-stops-tables.docx RW12: as the rest of the cell's text
+                expect(stoppedAt(document([paragraph("a", 4), table(inMerge)]))).to.equal(undefined);
+                expect(pagesOf(document([paragraph("a", 4), table(inMerge)]))).to.deep.include({ merged: "1", inner: "2" });
                 // A table in a cell of a row that moves to the next page whole is laid out there
                 expect(stoppedAt(document([paragraph("a", 5), table([row([[table([row([[paragraph("inner", 3)]])])]])])]))).to.equal(
                     undefined,
@@ -2102,24 +2174,28 @@ describe("paginate", () => {
             expect(pagesOf(kept({ height: { value: 20, rule: "exact" } }))).to.deep.equal({ a: "1", merged: "2", r1: "2", r2: "2" });
         });
 
-        it("should stop at the text of a cell merged down rows that goes on across more than two pages, or from a table's header rows", () => {
-            // Word has been seen to break it across one page break only
+        it("should lay out the text of a cell merged down rows across pages in its last row, and stop at it otherwise across more than two pages, or from a table's header rows", () => {
             const stoppedAt = (rows: readonly TableRow[]): string | undefined =>
                 paginate(document([paragraph("a", 5), table(rows)]), { measurer: MEASURER }).stoppedAt;
-            const MORE = "a cell merged down table rows whose text goes on across more than two pages";
-            // In the last of its rows, which breaks across 3 pages
-            expect(
-                stoppedAt([
-                    mergedRow(merged("restart", [paragraph("merged", 12)]), [[paragraph("r1", 1)]]),
-                    mergedRow(merged("continue"), [[paragraph("r2", 1)]]),
-                ]),
-            ).to.equal(MORE);
-            // Or beside a row before the last that breaks across 3 pages, where 6 lines of it would fit on the second
+            // word-stops-tables.docx RW4a: in the last of its rows, which breaks across 3 pages, it goes on page by page
+            const across = [
+                mergedRow(merged("restart", [endMarked("merged", 12)]), [[paragraph("r1", 1)]]),
+                mergedRow(merged("continue"), [[paragraph("r2", 1)]]),
+            ];
+            expect(pagesOf(document([paragraph("a", 5), table(across)]))).to.deep.equal({
+                a: "1",
+                merged: "1",
+                mergedEnd: "3",
+                r1: "1",
+                r2: "1",
+            });
+            // Beside a row before the last that breaks across 3 pages, where 6 lines of it would fit on the second, Word has
+            // been seen to break it across one page break only
             const beside = (lines: number): readonly TableRow[] => [
                 mergedRow(merged("restart", [endMarked("merged", lines)]), [[endMarked("r1", 12)]]),
                 mergedRow(merged("continue"), [[paragraph("r2", 1)]]),
             ];
-            expect(stoppedAt(beside(12))).to.equal(MORE);
+            expect(stoppedAt(beside(12))).to.equal("a cell merged down table rows whose text goes on across more than two pages");
             expect(pagesOf(document([paragraph("a", 5), table(beside(8))]))).to.deep.equal({
                 a: "1",
                 merged: "1",
@@ -5668,23 +5744,22 @@ describe("paginate", () => {
         });
 
         it("should leave out what is in columns being evened out when it stops there", () => {
-            // A row of 4 lines beside a table with a header row, which goes in the first of the columns until they are evened
-            // out to 2 lines, when it breaks across them and stops at the table in its first cell
-            const headed = table([
-                row([[paragraph("inner", 1)]], { header: true }),
-                row([[paragraph("r2", 1)]]),
-                row([[paragraph("r3", 1)]]),
-            ]);
+            // A row of 4 lines beside a table with space between its cells, which goes in the first of the columns until they are
+            // evened out to 2 lines, when it breaks across them and stops at the table in its first cell
+            const spaced: TableBlock = {
+                ...table([row([[paragraph("inner", 1)]]), row([[paragraph("r2", 1)]]), row([[paragraph("r3", 1)]])]),
+                cellSpacing: 1,
+            };
             const content = document(
                 [
                     [paragraph("a", 1), 0],
-                    [table([row([[headed], [short("cell", 8)]])]), 1],
+                    [table([row([[spaced], [short("cell", 8)]])]), 1],
                     [paragraph("b", 1), 2],
                 ],
                 { sections: [SECTION, { ...SECTION, start: "continuous", columns: [35, 35] }, { ...SECTION, start: "continuous" }] },
             );
             const { pages, stoppedAt } = paginate(content, { measurer: MEASURER });
-            expect(stoppedAt).to.equal("a header row of a table in a table cell across pages");
+            expect(stoppedAt).to.equal("a table with space between its cells in a table cell across pages");
             expect(pages).to.have.length(1);
             expect(pages[0].body.map(({ type, index }) => [type, index])).to.deep.equal([["paragraph", 0]]);
         });
