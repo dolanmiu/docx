@@ -715,18 +715,26 @@ describe("paginate", () => {
         });
     });
 
-    it("should space the lines of a paragraph joined to another by its marker, which places no bookmark", () => {
-        // A paragraph of 3 lines, the second and third of the joined paragraph's double spacing, from the line its marker is on
+    it("should space the lines of paragraphs joined to another by their markers, which place no bookmark", () => {
+        // A paragraph of 4 lines, the second and third of the paragraph joined to it with double spacing, from the line its
+        // marker is on, and the fourth of a third paragraph's 1.5
         const joined: ParagraphBlock = {
             ...withItems(paragraph("a", 1), [
                 { type: "marker", name: JOINED_SPACING_MARKER },
-                { type: "text", text: " abcdefgh abcdefgh", font: {} },
+                { type: "text", text: " abcdefgh abcdefgh ", font: {} },
+                { type: "marker", name: `${JOINED_SPACING_MARKER} 2` },
+                { type: "text", text: "abcdefgh", font: {} },
             ]),
-            format: { lineSpacingFrom: { marker: JOINED_SPACING_MARKER, lineSpacing: { rule: "multiple", multiple: 2 } } },
+            format: {
+                lineSpacingFrom: [
+                    { marker: JOINED_SPACING_MARKER, lineSpacing: { rule: "multiple", multiple: 2 } },
+                    { marker: `${JOINED_SPACING_MARKER} 2`, lineSpacing: { rule: "multiple", multiple: 1.5 } },
+                ],
+            },
         };
         const { pages, bookmarks } = paginate(document([joined, paragraph("b", 1)]), { measurer: MEASURER });
         const [first] = pages[0].body as readonly ParagraphLayout[];
-        expect(first.lines.map(({ height }) => height)).to.deep.equal([10, 20, 20]);
+        expect(first.lines.map(({ height }) => height)).to.deep.equal([10, 20, 20, 15]);
         expect([...bookmarks.keys()]).to.deep.equal(["a", "b"]);
     });
 
@@ -780,12 +788,11 @@ describe("paginate", () => {
             expect(topsOf([paragraph("x", 1), listed("a", "1"), listed("b", "1"), paragraph("y", 1)])).to.deep.equal([10, 34, 44, 68]);
             expect(topsOf([listed("a", "1"), listed("b", "2", 0, {})])).to.deep.equal([10, 34]);
             // stops2/word-stops-lists.ts LI12: none between paragraphs of a list's levels 0 and 1, and 14 between lists of
-            // other definitions
+            // other definitions, and of the same definition (stops2/word-stops-lists2.ts LI17)
             expect(topsOf([listed("a", "1"), listed("b", "1", 1), listed("c", "1")])).to.deep.equal([10, 20, 30]);
             expect(numbersOf(document([listed("a", "1"), listed("b", "1", 1)])).stoppedAt).to.equal(undefined);
-            expect(numbersOf(document([listed("a", "1"), listed("b", "2")])).stoppedAt).to.equal(
-                "automatic spacing between paragraphs of lists made from the same definition",
-            );
+            expect(topsOf([listed("a", "1"), listed("b", "2"), listed("c", "2")])).to.deep.equal([10, 34, 44]);
+            expect(numbersOf(document([listed("a", "1"), listed("b", "2")])).stoppedAt).to.equal(undefined);
         });
     });
 

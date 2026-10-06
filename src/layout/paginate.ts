@@ -1073,6 +1073,7 @@ export const paginate = (
                     : measuring,
                 breakRules,
                 numberAlignment: paragraph.numberAlignment,
+                legacyNumber: paragraph.numberLegacy,
                 hyphenation,
                 grid: paragraph.grid,
                 compatibilityMode,
@@ -1112,8 +1113,8 @@ export const paginate = (
      * is 14 points (`word-watertight-text.docx` TX6a, TX6b), but none above the first paragraph of the document, a table
      * cell or a header, nor below the last of a cell (TX6c, `word-paragraph-formats.docx` A0, A3), and none between two
      * paragraphs of the same list, of one level or two (stops2/word-stops-lists.ts LI12), where there is between a bulleted
-     * and a numbered one (A1), and between lists of other definitions (LI12). What Word does between those of lists made
-     * from the same definition isn't known: guessing, none, as in one list
+     * and a numbered one (A1), between lists of other definitions (LI12), and between two lists made from the same
+     * definition (`instance`), as between lists of other definitions (stops2/word-stops-lists2.ts LI17)
      */
     const ownSpace = (paragraph: ParagraphBlock, side: "before" | "after", next: Block | undefined, inCell: boolean): number => {
         const { format, list } = paragraph;
@@ -1124,13 +1125,7 @@ export const paginate = (
             return side === "before" || inCell ? 0 : AUTOMATIC_SPACE;
         }
         const other = next.type === "paragraph" ? next.list : undefined;
-        if (list === undefined || other === undefined || (list.id !== other.id && list.definition !== other.definition)) {
-            return AUTOMATIC_SPACE;
-        }
-        if (list.id !== other.id) {
-            stopAt("automatic spacing between paragraphs of lists made from the same definition");
-        }
-        return 0;
+        return list === undefined || other === undefined || list.id !== other.id ? AUTOMATIC_SPACE : 0;
     };
 
     /**
@@ -1248,6 +1243,7 @@ export const paginate = (
                               measurer: measuring,
                               breakRules,
                               numberAlignment: block.numberAlignment,
+                              legacyNumber: block.numberLegacy,
                               hyphenation,
                           });
                 const hyphenated =
@@ -3266,7 +3262,7 @@ export const paginate = (
         // The marker at the reference of a footnote numbered afresh on each page is placed too, as its page numbers it
         const placed = names.flatMap((marker) => [
             ...(footnotesOnEachPage.has(marker) ? [marker] : []),
-            ...(inNotes.get(marker) ?? (isDrawingMarker(marker) || marker === JOINED_SPACING_MARKER ? [] : [marker])),
+            ...(inNotes.get(marker) ?? (isDrawingMarker(marker) || marker.startsWith(JOINED_SPACING_MARKER) ? [] : [marker])),
         ]);
         for (const name of placed) {
             if (!places.has(name)) {

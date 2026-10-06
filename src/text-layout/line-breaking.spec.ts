@@ -267,20 +267,36 @@ describe("layoutLines", () => {
         // and those after it, are spaced as the next one is
         const joined = [text("aaaa bbbb "), { type: "marker" as const, name: "joined" }, text("cccc dddd eeee")];
         const double = { rule: "multiple" as const, multiple: 2 };
-        expect(heightsOf(joined, 100, { format: { lineSpacingFrom: { marker: "joined", lineSpacing: double } } })).to.deep.equal([
+        expect(heightsOf(joined, 100, { format: { lineSpacingFrom: [{ marker: "joined", lineSpacing: double }] } })).to.deep.equal([
             10, 20, 20,
         ]);
-        expect(heightsOf(joined, 100, { format: { lineSpacing: double, lineSpacingFrom: { marker: "joined" } } })).to.deep.equal([
+        expect(heightsOf(joined, 100, { format: { lineSpacing: double, lineSpacingFrom: [{ marker: "joined" }] } })).to.deep.equal([
             20, 10, 10,
         ]);
         // From the middle of a line, that line
         const midLine = [text("aaaa "), { type: "marker" as const, name: "joined" }, text("bbbb cccc dddd eeee")];
-        expect(heightsOf(midLine, 100, { format: { lineSpacingFrom: { marker: "joined", lineSpacing: double } } })).to.deep.equal([
+        expect(heightsOf(midLine, 100, { format: { lineSpacingFrom: [{ marker: "joined", lineSpacing: double }] } })).to.deep.equal([
             20, 20, 20,
         ]);
         // From the start of a line, that line
         const atStart = [text("aaaa bbbb "), { type: "marker" as const, name: "joined" }, text("cccccccccc")];
-        expect(heightsOf(atStart, 100, { format: { lineSpacingFrom: { marker: "joined", lineSpacing: double } } })).to.deep.equal([10, 20]);
+        expect(heightsOf(atStart, 100, { format: { lineSpacingFrom: [{ marker: "joined", lineSpacing: double }] } })).to.deep.equal([
+            10, 20,
+        ]);
+        // stops2/word-stops-hidden2.ts HD16a to HD16c: exact and at-least spacing the same way, and of three paragraphs the
+        // last one whose marker is on the line or one before: single, exactly 8 and at least 15
+        const three = [
+            text("aaaa bbbb "),
+            { type: "marker" as const, name: "second" },
+            text("cccc dddd "),
+            { type: "marker" as const, name: "third" },
+            text("eeee ffff gggg"),
+        ];
+        const spacings = [
+            { marker: "second", lineSpacing: { rule: "exact" as const, height: 8 } },
+            { marker: "third", lineSpacing: { rule: "atLeast" as const, height: 15 } },
+        ];
+        expect(heightsOf(three, 100, { format: { lineSpacingFrom: spacings } })).to.deep.equal([10, 8, 15, 15]);
     });
 
     it("should keep lines as tall as the font is, unrounded, as Word does, rather than in whole twips as LibreOffice does", () => {
@@ -708,15 +724,15 @@ describe("layoutLines", () => {
         // Centred, it ends at 55, past the stop, so the text goes from the next default stop, 72, to 172
         expect(linesOf("center")).to.deep.equal([{ text: "1234.\tbbbbbbbbbb", textWidth: 142 }]);
         // Left-aligned, it ends at 80, and the text from the default stop at 108 doesn't fit, so it breaks there, as after a
-        // tab that starts a line (word-stops-text3.ts TA12h), where Word hasn't been seen with a word that would fit on the
-        // next line
+        // tab that starts a line (word-stops-text3.ts TA12h), though it would fit on the next line (stops2/word-stops-lists2.ts
+        // LI16)
         expect(
             layoutLines(items, { width: 200, format, measurer: MEASURER }).map(({ text: lineText, unsupported }) => [
                 lineText,
                 unsupported,
             ]),
         ).to.deep.equal([
-            ["1234.\tbbbbbbbbb", "a word that doesn't fit after a list number's tab, and would fit on the next line"],
+            ["1234.\tbbbbbbbbb", undefined],
             ["b", undefined],
         ]);
 
@@ -1532,6 +1548,83 @@ describe("the height of a line with a list number, as Word lays it out", () => {
             "a line of only a list number of another size or font than its paragraph's mark, before the paragraph's text",
         );
         expect(before(20)).to.equal(undefined);
+    });
+
+    it("should keep a word that doesn't fit after a list number's tab on the number's line, broken after the last character that fits, as Word does", () => {
+        // stops2/word-stops-lists2.ts LI16: "LI16" and 22 Ws on the number's line, and the other 14 on the next; a number of
+        // several words too (`numberOnly`)
+        const words: InlineItem = { type: "text", text: "Number 1:", font: { size: 10, listNumber: "number" } };
+        const lines = (items: readonly InlineItem[]): readonly LaidOutLine[] =>
+            layoutLines(items, { width: 200, measurer, markFont: { size: 10 }, defaultTabStop: 50 });
+        expect(lines([listNumber(10), tab(10), text("bbbbbbbbbbbbbbbbbbbb")]).map(({ text: line }) => line)).to.deep.equal([
+            "1.\tbbbbbbbbbbbbbbb",
+            "bbbbb",
+        ]);
+        expect(lines([words, tab(10), text("bbbbbbbbbbbbbbbbbbbb")]).map(({ text: line }) => line)).to.deep.equal([
+            "Number 1:\tbbbbbbbbbb",
+            "bbbbbbbbbb",
+        ]);
+        // After a word of the text, the next goes on to the next line, as it does without a number
+        expect(lines([listNumber(10), tab(10), text("aa bbbbbbbbbbbbbbbbbb")]).map(({ text: line }) => line)).to.deep.equal([
+            "1.\taa ",
+            "bbbbbbbbbbbbbbbbbb",
+        ]);
+        // A picture that doesn't fit there goes on to the next line (word-stops-text3.ts TA12g)
+        const picture: InlineItem = { type: "box", width: 190, height: 10 };
+        expect(lines([listNumber(10), tab(10), picture]).map(({ text: line, unsupported }) => [line, unsupported])).to.deep.equal([
+            ["1.\t", undefined],
+            ["", undefined],
+        ]);
+    });
+
+    it("should end the box of a list number's border where its tab or space does, or after the number's room, as Word does", () => {
+        // stops2/word-stops-lists2.ts LI13a to LI13c: the text at the tab's stop, with the box drawn to it, where the number
+        // and its room end before the stop; word-stops-lists.docx LI4a and LI13d: right after the room where they don't,
+        // with a tab and with a space. Here the number is 20 wide, its room 15 a side, and the stop at 50
+        const border = { room: 15, key: "number" };
+        const bordered: InlineItem = { type: "text", text: "1.", font: { size: 10, listNumber: "number", border } };
+        const borderedTab: InlineItem = { type: "tab", font: { size: 10, listNumber: "separator", border } };
+        const borderedSpace: InlineItem = { type: "text", text: " ", font: { size: 10, listNumber: "separator", border } };
+        const options = { width: 200, measurer, markFont: { size: 10 }, defaultTabStop: 50 };
+        const widthOf = (items: readonly InlineItem[], more: Partial<LineLayoutOptions> = {}): number =>
+            layoutLines(items, { ...options, ...more })[0].textWidth;
+        // From 0: the number's room before it, 15, then 20 of number, so the box's end at 50 is the stop: the text from 50
+        expect(widthOf([bordered, borderedTab, text("bbb")])).to.equal(80);
+        // Past the stop, from 10: 10 + 15 + 20 + 15 = 60, then the text, 30, and the box's end from the start of the line
+        expect(widthOf([bordered, borderedTab, text("bbb")], { format: { indentLeft: 10 } })).to.equal(80);
+        // With a space of 10 after the number, the room, 15, is further: the text at 50
+        expect(widthOf([bordered, borderedSpace, text("bbb")])).to.equal(80);
+        // The widths of the paragraph's content the same way, for a table's columns
+        const widths = (items: readonly InlineItem[], format: ParagraphFormat = {}): ContentWidths =>
+            measureContentWidths(items, { measurer, format, defaultTabStop: 50 });
+        expect(widths([bordered, borderedTab, text("bbb")]).max).to.equal(80);
+        expect(widths([bordered, borderedTab, text("bbb")], { indentLeft: 10 }).max).to.equal(90);
+        expect(widths([bordered, borderedSpace, text("bbb")]).max).to.equal(80);
+        // Where the number has no border, the text is at the stop, and after the space
+        const plainSpace: InlineItem = { type: "text", text: " ", font: { size: 10, listNumber: "separator" } };
+        expect(widthOf([listNumber(10), plainSpace, text("bbb")])).to.equal(60);
+    });
+
+    it("should put the text after a number of a level numbered as Word 6 numbered lists at its indent, or after its space, as Word does", () => {
+        // stops2/word-stops-lists2.ts LI19a, LI19b: the text 120 twips after a number wider than its indent, and at the indent
+        // from a number narrower. Here the number is 20 wide, from 10
+        const options = { width: 200, measurer, markFont: { size: 10 }, format: { indentLeft: 10 } };
+        const widthOf = (legacyNumber: LineLayoutOptions["legacyNumber"], item = listNumber(10)): number =>
+            layoutLines([item, tab(10), text("bbb")], { ...options, legacyNumber })[0].textWidth;
+        // From 10: the indent of 50 puts the text at 60, where the space of 5 would put it at 35
+        expect(widthOf({ space: 5, indent: 50 })).to.equal(80);
+        // A number of 70 ends at 80, and the space puts the text at 85
+        const wide: InlineItem = { type: "text", text: "100000.", font: { size: 10, listNumber: "number" } };
+        expect(widthOf({ space: 5, indent: 50 }, wide)).to.equal(105);
+        // The widths of the paragraph's content the same way
+        const widths = (legacyNumber: LineLayoutOptions["legacyNumber"], item = listNumber(10)): ContentWidths =>
+            measureContentWidths([item, tab(10), text("bbb")], { measurer, format: { indentLeft: 10 }, legacyNumber });
+        expect(widths({ space: 5, indent: 50 }).max).to.equal(90);
+        expect(widths({ space: 5, indent: 50 }, wide).max).to.equal(115);
+        // Past the end of the line, Word hasn't been seen
+        expect(
+            layoutLines([listNumber(10), tab(10), text("bbb")], { ...options, legacyNumber: { space: 5, indent: 250 } })[0].unsupported,
+        ).to.equal("a list numbered as Word 6 numbered lists whose number and its room reach past the end of its line");
     });
 
     it("should add multiple line spacing's share of the text's line below a number taller than the text (stops2 LI5a, LI5b)", () => {
@@ -3122,7 +3215,7 @@ describe("tab stops past the end of the line", () => {
             "text at a decimal tab stop that goes past the end of the line",
         );
         // TA12h: a word longer than the room after a list number's tab breaks after the last letter that fits, on the number's
-        // line, as after tabs that start a line; one that would fit on the next line hasn't been seen
+        // line, as after tabs that start a line, and so does one that would fit on the next line (stops2/word-stops-lists2.ts LI16)
         const numbered: InlineItem = { type: "text", text: "1.", font: { listNumber: "number" } };
         const numberTab: InlineItem = { type: "tab", font: { listNumber: "separator" } };
         const listed = { format: { indentLeft: 20, firstLineIndent: -20 } };
@@ -3131,7 +3224,7 @@ describe("tab stops past the end of the line", () => {
             ["bbbbbb", 60, undefined],
         ]);
         expect(lines([numbered, numberTab, text("bbbbbbb")], listed)).to.deep.equal([
-            ["1.\tbbbbbb", 96, "a word that doesn't fit after a list number's tab, and would fit on the next line"],
+            ["1.\tbbbbbb", 96, undefined],
             ["b", 10, undefined],
         ]);
     });

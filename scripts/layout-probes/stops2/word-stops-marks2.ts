@@ -1,6 +1,7 @@
 /**
- * Probes of hidden paragraph marks and tracked changes where docx/layout still stops after `word-stops-hidden.docx`,
- * `-hidden-edges.docx`, `-tracked.docx`, `-tracked-edges.docx` and `-moves.docx` (round 25), for the next batch Word saves.
+ * Probes of hidden paragraph marks and tracked changes where docx/layout still stopped after `word-stops-hidden.docx`,
+ * `-hidden-edges.docx`, `-tracked.docx`, `-tracked-edges.docx` and `-moves.docx` (round 25), saved from Word in round 26
+ * (`word-stops-hidden2.pdf`, `word-stops-tracked2.pdf`): see README.md for what they showed.
  *
  * Hidden (word-stops-hidden2.docx, HD):
  * HD11: a hidden mark before a content control's first paragraph, where HD3 showed one at its last joined ("a hidden

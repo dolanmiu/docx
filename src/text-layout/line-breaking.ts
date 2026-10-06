@@ -235,6 +235,12 @@ export type LineLayoutOptions = {
      * (`word-watertight-text.docx` TX21, `word-lists.docx` LJ1 to LJ9)
      */
     readonly numberAlignment?: "center" | "right";
+    /**
+     * The room Word 6 gave the paragraph's list number, in points, when its level is numbered as Word 6 numbered lists
+     * (`w:legacy`): the least between the number and the text (`space`), and the text's indent from where the number
+     * starts (`indent`). The tab after the number goes to the further of the two (see `legacyStop`)
+     */
+    readonly legacyNumber?: { readonly space: number; readonly indent: number };
     /** The document's automatic hyphenation, when it has it on. A paragraph that suppresses it is laid out without */
     readonly hyphenation?: Hyphenation;
     /** The document grid of the paragraph's section, when it has one */
@@ -899,8 +905,6 @@ type LineState = {
      * line with however long it is
      */
     readonly tabsOnly?: boolean;
-    /** Whether the last thing on it is the tab after its list number, which the word after it stays on the line with */
-    readonly afterNumber?: boolean;
     /**
      * Whether it has a tab to a stop past its end in a document in compatibility mode, after which the rest of the
      * paragraph's text stays on it, past the margin
@@ -1095,6 +1099,26 @@ const numberShift = (items: readonly InlineItem[], alignment: LineLayoutOptions[
 };
 
 /**
+ * Where the text after a list number of a level numbered as Word 6 numbered lists (`w:legacy`) starts, from where the
+ * number starts and ends: at the level's indent from the number's start, or after its space from the number's end, where
+ * that is further. A number of 10000. with a space of 120 twips and an indent of 360 puts the text 120 after the number,
+ * at 1093, and 1. with a space of 120 and an indent of 720 puts it 720 from the number, at 1080, each from a number at
+ * 360 (stops2/word-stops-lists2.ts LI19a, LI19b), where a number of 1. and a space that fit in the indent put it as
+ * other lists do (`word-stops-list-definitions.docx` LI9)
+ */
+const legacyStop = (numberStart: number, numberEnd: number, { space, indent }: NonNullable<LineLayoutOptions["legacyNumber"]>): number =>
+    Math.max(numberStart + indent, numberEnd + space);
+
+/**
+ * Where the box of a list number's border ends: where its tab or space ends, or after the border's room from the number's
+ * end where that is further, and the text after it starts right there. Word puts the text after a bordered number at the
+ * tab's stop, with the border's box drawn to the stop, where the number and its room end before it (stops2/word-stops-lists2.ts
+ * LI13a to LI13c), and right after the room where they don't: 747 twips after a number at 470 in a border of 1.5 points 4
+ * points away, with a tab (`word-stops-lists.docx` LI4a) and with a space (LI13d)
+ */
+const numberBoxEnd = (numberEnd: number, suffixEnd: number, border: TextBorder): number => Math.max(suffixEnd, numberEnd + border.room);
+
+/**
  * Where the tab after a right-aligned list number moves to, from the number's end at the start of the first line. Word
  * moves it to the first stop past the number's end: the hanging indent's (`word-lists.docx` LJ1, LJ7, LJ9), or the next
  * default stop past a first line indent, where the number ends on one (stops2/word-stops-lists.ts LI6c). Without either
@@ -1149,6 +1173,7 @@ export const measureContentWidths = (
         measurer = DEFAULT_MEASURER,
         breakRules,
         numberAlignment,
+        legacyNumber,
         hyphenation,
     }: Omit<LineLayoutOptions, "width" | "markFont">,
 ): ContentWidths => {
@@ -1173,9 +1198,18 @@ export const measureContentWidths = (
                 if (token.type === "marker") {
                     continue;
                 }
+                // The tab or space after a list number, on the first line, whose border's box ends with it, as when laid out
+                const separatorFont = token.type === "tab" ? token.font : token.type === "space" ? token.pieces[0].font : undefined;
+                const separator = first && separatorFont?.listNumber === "separator";
+                const numberBorder = separator && border !== undefined && border.key === separatorFont?.border?.key ? border : undefined;
                 if (token.type === "space") {
+                    const numberEnd = position;
                     position += roomBetween(border, firstBorder(token.pieces)) + kerning[index] + widthOf(token.pieces, measurer);
                     border = lastBorder(token.pieces);
+                    if (numberBorder !== undefined) {
+                        position = numberBoxEnd(numberEnd, position, numberBorder);
+                        border = undefined;
+                    }
                     continue;
                 }
                 // A tab with the border of the text before it keeps its box open, as when laid out, and so does a picture in it
@@ -1184,13 +1218,21 @@ export const measureContentWidths = (
                 border = keepsBox ? border : endBorderOf(token);
                 endBorder = border;
                 if (token.type === "tab") {
+                    const numberEnd = position + lead;
                     const stop =
-                        (first && numberTab && tokens.findIndex((other) => other.type === "tab") === index
-                            ? numberTabStop(position + lead, firstLineStops, format, defaultTabStop, Infinity)
-                            : undefined) ?? nextStop(position + lead, first ? firstLineStops : stops, defaultTabStop, Infinity)!;
+                        separator && legacyNumber !== undefined
+                            ? { position: legacyStop(lineStart + beforeStart, numberEnd, legacyNumber), alignment: "left" as const }
+                            : ((first && numberTab && tokens.findIndex((other) => other.type === "tab") === index
+                                  ? numberTabStop(numberEnd, firstLineStops, format, defaultTabStop, Infinity)
+                                  : undefined) ?? nextStop(numberEnd, first ? firstLineStops : stops, defaultTabStop, Infinity)!);
                     const rest = tokens.slice(index + 1);
                     const shift = shiftAt(stop.alignment, rest, measurer, border) ?? widthAfterTab(rest, measurer, border);
-                    position = Math.max(position + lead, stop.position - shift);
+                    position = Math.max(numberEnd, stop.position - shift);
+                    if (numberBorder !== undefined) {
+                        position = numberBoxEnd(numberEnd, position, numberBorder);
+                        border = undefined;
+                        endBorder = undefined;
+                    }
                     end = position;
                     continue;
                 }
@@ -1466,6 +1508,7 @@ export const layoutLines = (
         measurer = DEFAULT_MEASURER,
         breakRules,
         numberAlignment,
+        legacyNumber,
         hyphenation,
         grid = {},
         compatibilityMode,
@@ -1849,12 +1892,10 @@ export const layoutLines = (
             ...(unknownOnGrid === undefined ? {} : { unsupported: unknownOnGrid }),
         };
         const finish = (state: LineState, breakAfter?: LaidOutLine["breakAfter"]): void => {
-            // The paragraph's line spacing, or a paragraph's joined to it from the line its marker is on
-            const spacing =
-                lineSpacingFrom !== undefined &&
-                [...lines.flatMap(({ markers }) => markers), ...state.markers, ...state.pending].includes(lineSpacingFrom.marker)
-                    ? lineSpacingFrom.lineSpacing
-                    : lineSpacing;
+            // The paragraph's line spacing, or that of the last paragraph joined to it whose marker is on this line or one before
+            const seen = [...lines.flatMap(({ markers }) => markers), ...state.markers, ...state.pending];
+            const joined = lineSpacingFrom?.findLast(({ marker }) => seen.includes(marker));
+            const spacing = joined === undefined ? lineSpacing : joined.lineSpacing;
             // Spaces add nothing to the height of a line with no text on it, which is as tall as its mark, as Word and
             // LibreOffice lay it out
             const marked = state.started ? withMarkOf(state.heights) : markHeightsOf();
@@ -1991,20 +2032,10 @@ export const layoutLines = (
             }
             // A word after only tabs, which went on to the line with it, goes on it, and a word longer than the room left breaks
             // after the last character that fits (scripts/layout-probes/stops2/word-stops-text2.ts TA11a, TA11b), and after a
-            // list number's tab too (stops2/word-stops-text3.ts TA12h). A picture there goes on to the next line, at its start
-            // (TA12d, TA12g). A word after a list number's tab that would fit on the next line hasn't been seen
+            // list number's tab too (stops2/word-stops-text3.ts TA12h), where it would fit on the next line as well: "LI16" and 22
+            // Ws after a number in Courier New 14, to 8995 twips, and the other 14 on the next line (stops2/word-stops-lists2.ts
+            // LI16). A picture there goes on to the next line, at its start (TA12d, TA12g)
             const beyond = line.position + needs > endOf(line) + TOLERANCE;
-            if (
-                beyond &&
-                line.afterNumber === true &&
-                token.type === "word" &&
-                startOf(lines.length + 1, false) + needs <= limitOf(lines.length + 1) + TOLERANCE
-            ) {
-                line = {
-                    ...line,
-                    unsupported: line.unsupported ?? "a word that doesn't fit after a list number's tab, and would fit on the next line",
-                };
-            }
             const overflows = line.started && beyond && (line.tabsOnly !== true || token.type === "box");
             if (token.type === "box" && token.unbroken !== undefined && beyond) {
                 line = { ...line, unsupported: line.unsupported ?? token.unbroken };
@@ -2118,7 +2149,6 @@ export const layoutLines = (
                 started: true,
                 border: endBorderOf(token),
                 tabsOnly: false,
-                afterNumber: false,
             };
         };
         /**
@@ -2203,6 +2233,12 @@ export const layoutLines = (
             }
             if (token.type === "space") {
                 const spaces = widthOf(token.pieces, measurer);
+                // The space after a list number in a border, whose box ends with it (see `numberBoxEnd`)
+                const numberEnd = line.position;
+                const numberBorder =
+                    line.first && token.pieces[0].font.listNumber === "separator" && line.border?.key === firstBorder(token.pieces)?.key
+                        ? line.border
+                        : undefined;
                 line = {
                     ...line,
                     ...(!snapping
@@ -2215,6 +2251,9 @@ export const layoutLines = (
                     heights: withToken(line.heights, token),
                     border: lastBorder(token.pieces),
                 };
+                if (numberBorder !== undefined) {
+                    line = { ...line, position: numberBoxEnd(numberEnd, line.position, numberBorder), border: undefined };
+                }
                 continue;
             }
             // A tab after text with a border closes its box, but for one with the same border, which the box goes on round, as
@@ -2237,9 +2276,22 @@ export const layoutLines = (
                 line = { ...line, latin: undefined };
             }
             if (token.type === "tab") {
+                // The tab after the paragraph's list number, on its first line
+                const separator = line.first && token.font.listNumber === "separator";
+                const legacy = separator && legacyNumber !== undefined ? legacyStop(line.start, line.position, legacyNumber) : undefined;
+                if (legacy !== undefined && legacy > limitOf() + TOLERANCE) {
+                    line = {
+                        ...line,
+                        unsupported:
+                            line.unsupported ??
+                            "a list numbered as Word 6 numbered lists whose number and its room reach past the end of its line",
+                    };
+                }
                 const numbered = numberTab
                     ? { stop: numberTabStop(line.position, firstLineStops, format, defaultTabStop, limitOf()) }
-                    : undefined;
+                    : legacy !== undefined
+                      ? { stop: { position: legacy, alignment: "left" as const } }
+                      : undefined;
                 numberTab = false;
                 const given = line.first ? firstLineStops : stops;
                 const next = nextStop(line.position, given, defaultTabStop, Infinity)!;
@@ -2397,7 +2449,11 @@ export const layoutLines = (
                     }
                 }
                 line = { ...place(line), ...(pastIndent ? { pastIndent } : {}), ...(olderPast ? { unbroken: olderPast } : {}) };
-                const { lineUp, position, unsupported: pastEndAtStop } = startAt(stop, line);
+                const { lineUp, position: atStop, unsupported: pastEndAtStop } = startAt(stop, line);
+                // The box of a list number's border ends with its tab (see `numberBoxEnd`)
+                const numberBorder =
+                    separator && line.border !== undefined && line.border.key === token.font.border?.key ? line.border : undefined;
+                const position = numberBorder === undefined ? atStop : numberBoxEnd(line.position, atStop, numberBorder);
                 const misaligned = lineUp === undefined ? "text at a decimal tab stop that Word hasn't been seen lining up" : pastEndAtStop;
                 if (snapping && !inCells(stop) && (stop.alignment !== "left" || starting === undefined)) {
                     line = {
@@ -2420,8 +2476,8 @@ export const layoutLines = (
                     // The tab after a list number starts the line's text as tabs that start a line do: a word longer than the
                     // room after it breaks after the last character that fits (stops2/word-stops-text3.ts TA12h: 110 letters
                     // after a number's tab, broken across its line and two more)
-                    tabsOnly: !line.started || line.tabsOnly === true || token.font.listNumber === "separator",
-                    ...(token.font.listNumber === "separator" ? { afterNumber: true } : {}),
+                    tabsOnly: !line.started || line.tabsOnly === true || separator,
+                    ...(numberBorder === undefined ? {} : { border: undefined }),
                     ...(misaligned === undefined ? {} : { unsupported: line.unsupported ?? misaligned }),
                 };
                 continue;
