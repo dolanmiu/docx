@@ -2391,36 +2391,38 @@ export const paginate = (
                   ],
         );
 
-    // The parts of the table rows in footnotes filled on the page, by the rooms they were cut at, which the search for a
-    // row's cut and the notes' heights ask for again and again: filled afresh on each page, as its lines may be measured
-    // with its page number
+    // The parts of the table rows in footnotes filled on the page, by the rooms they were cut at, one after the other, which
+    // the search for a row's cut and the notes' heights ask for again and again: filled afresh on each page, as its lines
+    // may be measured with its page number
     // eslint-disable-next-line functional/prefer-readonly-type
-    let filledNoteParts = { page: 0, rows: new WeakMap<TableRow, Map<string, readonly CellPart[]>>() };
+    type FilledParts = { readonly parts: readonly CellPart[]; readonly after: Map<number, FilledParts> };
+    // eslint-disable-next-line functional/prefer-readonly-type
+    let filledNoteParts = { page: 0, rows: new WeakMap<TableRow, Map<number, FilledParts>>() };
 
     /**
      * Each cell's part of a table row in a footnote that breaks across pages, in the room for the row's last part, after
      * its parts in the rooms before (`cuts`), with the row's margins around it, as a row of the text breaks (see `splitRow`)
      */
     const notePartsOf = (row: TableRow, cuts: readonly number[]): readonly CellPart[] => {
-        if (cuts.length === 0) {
-            return [];
-        }
         if (filledNoteParts.page !== pageCount) {
             filledNoteParts = { page: pageCount, rows: new WeakMap() };
         }
-        const key = cuts.join(" ");
-        const filled = filledNoteParts.rows.get(row) ?? new Map<string, readonly CellPart[]>();
-        const known = filled.get(key);
-        if (known !== undefined) {
-            return known;
+        let filled = filledNoteParts.rows.get(row) ?? new Map<number, FilledParts>();
+        filledNoteParts.rows.set(row, filled);
+        let parts: readonly CellPart[] = [];
+        for (const [at, cut] of cuts.entries()) {
+            const before = parts;
+            const known = filled.get(cut) ?? {
+                parts: row.cells.map((cell, index) =>
+                    fillCell(at === 0 ? cellParagraphs(cell) : before[index].rest, cut - rowMarginsOf(row), at === 0),
+                ),
+                after: new Map<number, FilledParts>(),
+            };
+            // eslint-disable-next-line functional/immutable-data
+            filled.set(cut, known);
+            ({ parts } = known);
+            filled = known.after;
         }
-        const before = notePartsOf(row, cuts.slice(0, -1));
-        const at = cuts.length - 1;
-        const parts = row.cells.map((cell, index) =>
-            fillCell(at === 0 ? cellParagraphs(cell) : before[index].rest, cuts[at] - rowMarginsOf(row), at === 0),
-        );
-        // eslint-disable-next-line functional/immutable-data
-        filledNoteParts.rows.set(row, filled.set(key, parts));
         return parts;
     };
 
