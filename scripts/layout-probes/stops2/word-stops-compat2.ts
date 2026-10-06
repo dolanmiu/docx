@@ -58,8 +58,8 @@
  *   a paragraph with a right indent of 1000 (FE2b), Chinese (FE2c), and FE1's Japanese with Latin words with both
  *   autoSpaceDE and autoSpaceDN off (FE2d; FE1b had only autoSpaceDN off), whose lines Word breaks otherwise than without it
  *
- * What Word showed, in the PDFs saved from Word 16 for Mac in round 25 (word-stops-top-spacing3 and word-stops-booklet3
- * weren't saved):
+ * What Word showed, in the PDFs saved from Word 16 for Mac in round 25, and in round 26 for word-stops-top-spacing3 and
+ * word-stops-booklet3:
  *
  * - Modes 14 and 12 laid out CN1a, CN1b, CN2a, CN3, CN6a to CN6d, CN7a, CN7b and CN8c as mode 15 does: the paragraph after a
  *   page break at the top of the next page, gaps of 1000 to 2500 twips beside a picture and 2000 beside a frame filled
@@ -84,7 +84,11 @@
  *   ST7: multiple spacing as it is; ST8: a paragraph's later line at the top of the next page cut as its first; ST9a to
  *   ST9c: a table's cells as they are; ST10: cut below the space before a section's first paragraph; ST11: below a border
  *   above, as it is; ST12: after a page break in the paragraph before, cut
- * - BK2: each page laid out as the section's A4 page, two to a sheet in the booklet's order
+ * - ST13, ST14a, ST14b: in a document of Calibri 20 below a header of 869 twips, exactly 30 and 40 and at least 40 cut as
+ *   in Calibri 11, their baselines 16.3 points down the page, from the header's end; ST15: the header's own first line at
+ *   exactly 30 as it is
+ * - BK2: each page laid out as the section's A4 page, two to a sheet in the booklet's order; BK3: folded the other way
+ *   round, the same pages, each sheet's two the other way round: 1 and 4, then 3 and 2
  * - DV2a, DV2b, DV2d: text indented by the margins, added up for a division in another, with the margin, border and its space
  *   above the division and below it once; DV2c: with space before and after of its own, 240 twips above and below it, and
  *   no border drawn above or below

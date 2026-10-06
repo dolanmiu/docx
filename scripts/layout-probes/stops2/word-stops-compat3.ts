@@ -53,6 +53,39 @@
  * FE3b: with autoSpaceDE off and autoSpaceDN on, numbers among the ideographs
  * FE3c: with autoSpaceDE on and autoSpaceDN off, Latin words among them (FE1b, with a full stop at the start of a line)
  *
+ * What Word showed, in the PDFs saved from Word 16 for Mac in round 26, read with `word-stops.py`, `whole-lines.py` and the
+ * PDFs' content streams (Word draws text at sizes rounded to 1/300 inch, and each run's start is exact):
+ *
+ * - CN12a to CN12c: in modes 14 and 12 a table of a share of the width is that share of the page's text and its first and
+ *   last cells' margins, whatever its indent: 4611 twips between the borders of 50% indented 720 and 6926 of 75%, where
+ *   mode 15's are 4501 and 6754, its text at its indent, and 25% widened for its words as in mode 15, 115 to the left
+ * - CN13: beside a picture, text aligned left in gaps of 500 and 750 (CN13f, CN13g), justified in 1000 (CN13a) and centred
+ *   in 1500 (CN13h), as in mode 15; beside a frame, gaps of 1000 and 1250 left empty (CN13b, CN13c), the lines in the room
+ *   right of it, and text in 1500 and 1750 (CN13d, CN13e)
+ * - CN14: the text after the tab on the line to 31580 twips, 22 inches from the margin, and the word after it starting the
+ *   next line, which breaks as the paragraph's lines do
+ * - CN15a: a floating table sized to its text 115 to the left of mode 15's, its text at 1997 and the text beside it at 3269,
+ *   as CN9's with a width; CN15b: one centred as in mode 15; CN15c, CN15d: as mode 15 with the shift, as the layout had them
+ * - CN16a: the table widened to 9242, the page's text and two margins, its columns 7943, 642 and 647 where mode 15's are
+ *   7737, 632 and 633 of 9002: narrowed in proportion as in mode 15; CN16b: rows evened out as in mode 15, the text at 0
+ * - CN17a, CN17b: in mode 12, Japanese and Chinese in their languages broken as in no language: after the last character
+ *   that fits, a comma at the start of a line too, and in mode 14 as in 15
+ * - CN18a: in mode 12 the rectangle's line 1062 twips from its top rather than 1081 and "after" at 3266 rather than 3285:
+ *   no room for its outline of a point, as the text box's (CN11); CN18b: the floating text box sized to its text (height
+ *   auto) in every mode, the text beside it at 5200 in 15 and 14 and 5179 in 12
+ * - ST16a: 0.8 lines as it is, its text 42 twips above the top as a 0.8 line's is; ST16b: the bordered paragraph's later
+ *   line at the top of the next page as it is, its baseline 480 down the line
+ * - DV3a: at the top of a page, the text 110 twips down, below the border and its space without the margin, the borders
+ *   drawn; DV3b to DV3f, whose paragraphs are in division 1001 after DV3a's: no border above or below, its left and right
+ *   borders beside each line, and 120 above the first and below the last, the larger of 120 and the paragraph's own 60 or
+ *   240 (DV3c, DV3d), of 120 and the 60 after the paragraph before (DV3e), and of 1001's and 1002's margins (DV3b). Word
+ *   draws a division's box once, round the first run of its paragraphs, as in word-stops-divisions.docx (DV2a boxed, DV2c
+ *   not). DV3c's first line fit "lighthouse" and not "of", which the layout fits by 0.6 twips
+ * - FE3a: 52.5 twips after the Japanese before "Latin words" in Calibri 14 and 73.4 after it, and after Calibri 10.5
+ *   (word-stops-fe-layout.docx FE1a) 55.0 after "words" and 54.6 after "123": half the font's average character width
+ *   (OS/2 xAvgCharWidth: 1067 of 2048 for Calibri, 128 of 256 for MS Mincho) at the size of the character before; FE3b: the
+ *   digits spaced and the letters not; FE3c: the letters spaced and the digits not
+ *
  * Usage: npm run run-ts -- scripts/layout-probes/stops2/word-stops-compat3.ts [folder]
  */
 import {

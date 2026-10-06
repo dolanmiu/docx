@@ -2,6 +2,7 @@
 import { describe, expect, it } from "vitest";
 
 import {
+    averageCharacterWidth,
     isGridCharacter,
     isMonospacedEastAsianFont,
     measureDescent,
@@ -561,6 +562,29 @@ describe("isMonospacedEastAsianFont", () => {
         expect(["Yu Mincho", "MS PMincho", "Calibri"].map(isMonospacedEastAsianFont)).to.deep.equal([false, false, false]);
         // Times New Roman, Word's font when none is given, isn't one
         expect(isMonospacedEastAsianFont(undefined)).to.equal(false);
+    });
+});
+
+describe("averageCharacterWidth", () => {
+    it("should give half the average width of each face from the font's own metrics, and none for faces or fonts not known", () => {
+        // Calibri's xAvgCharWidth is 1067 of 2048 regular and italic, 1098 bold and 1099 bold italic; MS Mincho's 128 of 256
+        expect(averageCharacterWidth({ font: "Calibri", size: 10 })).to.be.closeTo(5.21, 0.001);
+        expect(averageCharacterWidth({ font: "Calibri", size: 10, bold: true })).to.be.closeTo(5.361, 0.001);
+        expect(averageCharacterWidth({ font: "calibri", size: 20, italic: true })).to.be.closeTo(10.42, 0.001);
+        expect(averageCharacterWidth({ font: "Calibri", size: 10, bold: true, italic: true })).to.be.closeTo(5.366, 0.001);
+        expect(averageCharacterWidth({ font: "MS Mincho", size: 10.5 })).to.equal(5.25);
+        expect(averageCharacterWidth({ font: "ＭＳ 明朝", size: 10.5 })).to.equal(5.25);
+        expect(averageCharacterWidth({ font: "SimSun", size: 12 })).to.equal(6);
+        // Times New Roman, which a document without a font has, at 10 points
+        expect(averageCharacterWidth({})).to.be.closeTo(4.009, 0.001);
+        // Tahoma has no italics, the East Asian fonts here no bold or italics of their own, and Yu Mincho, Courier New and
+        // fonts measured as others aren't known
+        expect(averageCharacterWidth({ font: "Tahoma", size: 10, italic: true })).to.equal(undefined);
+        expect(averageCharacterWidth({ font: "Tahoma", size: 10, bold: true })).to.be.closeTo(5.059, 0.001);
+        expect(averageCharacterWidth({ font: "MS Mincho", size: 10, bold: true })).to.equal(undefined);
+        expect(averageCharacterWidth({ font: "Yu Mincho", size: 10 })).to.equal(undefined);
+        expect(averageCharacterWidth({ font: "Courier New", size: 10 })).to.equal(undefined);
+        expect(averageCharacterWidth({ font: "Aptos", size: 10 })).to.equal(undefined);
     });
 });
 

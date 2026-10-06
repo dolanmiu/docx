@@ -5685,12 +5685,11 @@ describe("readDocument", () => {
             ).to.equal(undefined);
         });
 
-        it("should mark a document printed as a booklet folded the other way round, or whose styles Word updates from its template, as unsupported", () => {
-            // A folded booklet's pages Word lays out as the section's (word-stops-booklet2.docx BK2)
+        it("should lay out a document printed as a booklet as the section's pages, and mark one whose styles Word updates from its template as unsupported", () => {
+            // A folded booklet's pages Word lays out as the section's (word-stops-booklet2.docx BK2), folded the other way
+            // round too (word-stops-booklet3.docx BK3)
             expect(readSettings({ "w:bookFoldPrinting": {} }).unsupported).to.equal(undefined);
-            expect(readSettings({ "w:bookFoldRevPrinting": {} }).unsupported).to.equal(
-                "pages printed as a booklet folded the other way round, for text that runs right to left",
-            );
+            expect(readSettings({ "w:bookFoldRevPrinting": {} }).unsupported).to.equal(undefined);
             // word-stops-two-on-one.docx TO1: Word lays out the section's pages as without it, two to each sheet it prints
             expect(readSettings({ "w:printTwoOnOne": {} }).unsupported).to.equal(undefined);
             expect(readSettings({ "w:linkStyles": {} }).unsupported).to.equal(
@@ -5867,25 +5866,30 @@ describe("readDocument", () => {
             expect(reasonOf(readBody([japanese], in2007))).to.equal(undefined);
             expect(readBody([japanese], in2007).breakRules).to.deep.equal({ ideographs: false });
             expect(readBody([japanese], in2010).breakRules).to.equal(undefined);
-            // In an East Asian language it hasn't been seen; beside curly quotes, in the run's high ANSI font, it has (CN10c)
-            const older = "East Asian text in an East Asian language, in a document in compatibility mode 12 or 11";
+            // In an East Asian language too, as that of none (word-stops-compat3-12.docx CN17a, CN17b), and beside curly
+            // quotes, in the run's high ANSI font (CN10c)
             const inJapanese = p(r(rPr({ "w:lang": { _attr: { "w:eastAsia": "ja-JP" } } }), t("日本語の文章")));
-            expect(reasonOf(readBody([inJapanese], in2007))).to.equal(older);
+            expect(reasonOf(readBody([inJapanese], in2007))).to.equal(undefined);
+            expect(readBody([inJapanese], in2007).breakRules).to.deep.equal({ ideographs: false });
             expect(reasonOf(readBody([p(r(t("\u201c日本語\u201d")))], in2007))).to.equal(undefined);
             expect(reasonOf(readBody([japanese], in2010))).to.equal(undefined);
             // Word 2003's East Asian layout spaces East Asian text apart from Latin letters and digits beside it, with the
-            // paragraph's automatic spacing of them on (word-stops-fe-layout2.docx FE2b), and lays it out as without it
-            // otherwise (FE2a, FE2c, FE2d)
+            // paragraph's automatic spacing of them on (word-stops-fe-layout2.docx FE2b, word-stops-fe-layout3.docx FE3a to
+            // FE3c), which the lines are laid out with (see line-breaking.spec.ts): the document says it does, and each
+            // paragraph which of its spacings are off
             const feLayout = { compatibility: { useFELayout: true } };
-            const spaced =
-                "East Asian text beside other text, which Word spaces apart, in a document that lays it out as Word 2003 did (useFELayout)";
-            expect(reasonOf(readBody([japanese], feLayout))).to.equal(undefined);
-            expect(reasonOf(readBody([p(r(t("Latin 日本語 123")))], feLayout))).to.equal(undefined);
-            expect(reasonOf(readBody([p(r(t("Latin日本語")))], feLayout))).to.equal(spaced);
-            expect(reasonOf(readBody([p(r(t("日本語")), r(t("123")))], feLayout))).to.equal(spaced);
+            expect(readBody([japanese], feLayout).feLayout).to.equal(true);
+            expect(readBody([japanese], in2007).feLayout).to.equal(undefined);
+            expect(reasonOf(readBody([p(r(t("Latin日本語")), r(t("123")))], feLayout))).to.equal(undefined);
             const off = pPr(value("w:autoSpaceDE", 0), value("w:autoSpaceDN", 0));
-            expect(reasonOf(readBody([p(off, r(t("Latin日本語123")))], feLayout))).to.equal(undefined);
-            expect(reasonOf(readBody([p(pPr(value("w:autoSpaceDE", 0)), r(t("Latin日本語")))], feLayout))).to.equal(spaced);
+            expect(paragraphOf(readBody([p(off, r(t("Latin日本語123")))], feLayout)).format).to.deep.include({
+                autoSpaceDE: false,
+                autoSpaceDN: false,
+            });
+            const { autoSpaceDE, autoSpaceDN } = paragraphOf(
+                readBody([p(pPr(value("w:autoSpaceDN", 0)), r(t("Latin日本語")))], feLayout),
+            ).format;
+            expect([autoSpaceDE, autoSpaceDN]).to.deep.equal([undefined, false]);
             // And Latin text as it is (FE1c to FE1f), past ASCII too
             expect(reasonOf(readBody([p(r(t("Latin \u201cquoted\u201d")))], in2007))).to.equal(undefined);
             expect(reasonOf(readBody([p(r(t("Latin")))], { compatibility: { useFELayout: true } }))).to.equal(undefined);
@@ -5913,15 +5917,21 @@ describe("readDocument", () => {
             expect(fontOf(readBody([ligatures]))).to.deep.include({ ligatures: "standard" });
         });
 
-        it("should lay out a text box in the line in Word 2007's and 2003's modes, its outline taking no room, and stop at other VML drawings", () => {
+        it("should lay out VML text boxes and shapes in Word 2007's and 2003's modes, their outlines taking no room, and stop at other VML drawings", () => {
             // word-stops-compat-12.docx CM14, word-stops-compat2-12.docx CN11a, CN11b: docx's text box 14 twips higher than in Word
-            // 2010's mode and 2013's, as large, and its line as much narrower
+            // 2010's mode and 2013's, as large, and its line as much narrower; word-stops-compat3-12.docx CN18a: a rectangle in
+            // the line with an outline of a point, its line 19 twips shorter and the text after it 19 nearer
             const shape = (style: string, ...children: readonly object[]): object =>
                 p(r({ "w:pict": [{ "v:rect": [{ _attr: { style, stroked: "f" } }, ...children] }] }));
             const inLine = shape("width:100pt;height:50pt");
+            const outlined = p(r({ "w:pict": [{ "v:rect": [{ _attr: { style: "width:100pt;height:50pt", strokeweight: "1pt" } }] }] }));
             const floating = shape("position:absolute;width:100pt;height:50pt", { "w10:wrap": { _attr: { type: "square" } } });
-            const reason = "a VML drawing other than a text box in the line, in a document in compatibility mode 12 or 11";
-            expect(paragraphOf(readBody([inLine], in2007)).unsupported).to.equal(reason);
+            const reason =
+                "a VML shape that text flows around, an embedded object, or a VML drawing in a header, footer or text box, in a document in compatibility mode 12 or 11";
+            expect(paragraphOf(readBody([inLine], in2007)).unsupported).to.equal(undefined);
+            expect(itemsOf(readBody([inLine], in2007))).to.deep.equal([{ type: "box", width: 100, height: 50, font: {} }]);
+            expect(itemsOf(readBody([outlined], in2007))).to.deep.equal([{ type: "box", width: 100, height: 50, font: {} }]);
+            expect(itemsOf(readBody([outlined], in2010))).to.deep.equal([{ type: "box", width: 101, height: 51, font: {} }]);
             expect(paragraphOf(readBody([floating], in2007)).unsupported).to.equal(reason);
             const object = r({ "w:object": [{ "v:shape": [{ _attr: { style: "width:72pt;height:36pt" } }] }] });
             expect(paragraphOf(readBody([p(object)], in2007)).unsupported).to.equal(reason);
@@ -5947,6 +5957,42 @@ describe("readDocument", () => {
             expect(sizeOf(readBody([textBox], in2007))).to.deep.equal([100, 7.92]);
             expect(sizeOf(readBody([textBox], in2010))).to.deep.equal([100.72, 8.64]);
             expect(paragraphOf(readBody([textBox], in2007)).unsupported).to.equal(undefined);
+            // One in a text box hasn't been seen in those modes
+            const nested = p(
+                r({
+                    "w:pict": [
+                        {
+                            "v:shape": [
+                                { _attr: { style: "width:200pt;height:auto" } },
+                                { "v:textbox": [{ _attr: { style: "mso-fit-shape-to-text:t" } }, { "w:txbxContent": [textBox] }] },
+                            ],
+                        },
+                    ],
+                }),
+            );
+            expect(paragraphOf(readBody([nested], in2007)).unsupported).to.equal(reason);
+            expect(paragraphOf(readBody([nested], in2010)).unsupported).to.equal("a VML drawing in the line of a text box");
+            // A text box placed on the page that text flows around is sized to its text whatever height it gives, or none
+            // (word-stops-compat3-15.docx CN18b: height:auto), in every mode, its outline taking no room in Word 2007's
+            const placed = p(
+                r({
+                    "w:pict": [
+                        {
+                            "v:shape": [
+                                { _attr: { style: "position:absolute;width:150pt;height:auto", strokeweight: "1pt" } },
+                                { "v:textbox": [{ _attr: { style: "mso-fit-shape-to-text:t" } }, { "w:txbxContent": [p(r(t("in")))] }] },
+                                { "w10:wrap": { _attr: { type: "square" } } },
+                            ],
+                        },
+                    ],
+                }),
+            );
+            const effectsOf = (content: DocumentContent): readonly unknown[] =>
+                itemsOf(content).map((item) => (item as { readonly drawing?: { readonly effects: unknown } }).drawing?.effects);
+            expect(paragraphOf(readBody([placed])).unsupported).to.equal(undefined);
+            expect(effectsOf(readBody([placed]))).to.deep.equal([{ top: 0.5, bottom: 0.5, left: 0, right: 1 }]);
+            expect(paragraphOf(readBody([placed], in2007)).unsupported).to.equal(undefined);
+            expect(effectsOf(readBody([placed], in2007))).to.deep.equal([{ top: 0, bottom: 0, left: 0, right: 0 }]);
         });
 
         it("should give a table sized to its text its cells' margins beside the room, and stop where Word hasn't shown its size", () => {
@@ -5964,11 +6010,11 @@ describe("readDocument", () => {
             const indented = { "w:tblInd": { _attr: { "w:w": 200, "w:type": "dxa" } } };
             expect(tableOf(readBody([tableWith(indented)], in2010))).to.deep.include({ indent: 10, marginsBeside: true });
             expect(tableOf(readBody([tableWith(indented)], in2010)).unsupported).to.equal(undefined);
-            // As a share of the width it is wider than its share (CN8b), by how much hasn't been seen
+            // As a share of the width it is a share of the room with the margins (CN8b, word-stops-compat3-14.docx CN12a to
+            // CN12c; see column-widths.spec.ts)
             const share = { "w:tblW": { _attr: { "w:w": 2500, "w:type": "pct" } } };
-            expect(tableOf(readBody([tableWith(share)], in2010)).unsupported).to.equal(
-                "a table sized to its text as a share of the width, in a document in compatibility mode",
-            );
+            expect(tableOf(readBody([tableWith(share)], in2010))).to.deep.include({ fit: { share: 0.5 }, marginsBeside: true });
+            expect(tableOf(readBody([tableWith(share)], in2010)).unsupported).to.equal(undefined);
             // In a table cell, as Word 2013 sizes it (CN8d), but indented or as a share of the width
             const nestedIn = (inner: object): DocumentContent => readBody([{ "w:tbl": [{ "w:tr": [tableCell(inner, p())] }] }], in2010);
             const innerOf = (content: DocumentContent): TableBlock => tableOf(content).rows[0].cells[0].blocks[0] as TableBlock;
@@ -5979,8 +6025,8 @@ describe("readDocument", () => {
             expect(tableOf(nestedIn(tableWith(indented))).unsupported).to.equal(inCell);
             expect(tableOf(nestedIn(tableWith(share))).unsupported).to.equal(inCell);
             // One that text flows around Word places with its first cell's text where it is placed (CM10, CN9), the text
-            // half a point from it with no distance given, as in Word 2013's mode (CN9), but for one sized to its text or
-            // lined up across the page
+            // half a point from it with no distance given, as in Word 2013's mode (CN9), one sized to its text too
+            // (word-stops-compat3-14.docx CN15a), and one lined up across the page as Word 2013 does (CN15b)
             const distant = { "w:leftFromText": 180, "w:rightFromText": 180 };
             const floating = {
                 "w:tblpPr": { _attr: { "w:horzAnchor": "margin", "w:vertAnchor": "text", "w:tblpX": 2000, ...distant } },
@@ -5994,9 +6040,15 @@ describe("readDocument", () => {
                 from: "margin",
                 offset: 100,
             });
-            const floatReason =
-                "a table that text flows around, sized to its text or lined up across the page, in a document in compatibility mode";
-            expect(tableOf(readBody([tableWith(floating), p()], in2010)).unsupported).to.equal(floatReason);
+            const sizedFloat = tableOf(readBody([tableWith(floating, borders, margins), p()], in2010));
+            expect([sizedFloat.unsupported, sizedFloat.marginsBeside, sizedFloat.float!.horizontal]).to.deep.equal([
+                undefined,
+                true,
+                { from: "margin", offset: 100 - 5.4 - 0.25 },
+            ]);
+            const centredFloat = { "w:tblpPr": { _attr: { "w:horzAnchor": "margin", "w:tblpXSpec": "center", "w:vertAnchor": "text" } } };
+            const linedUp = tableOf(readBody([tableWith(own, centredFloat), p()], in2010));
+            expect([linedUp.unsupported, linedUp.float!.horizontal]).to.deep.equal([undefined, { from: "margin", align: "center" }]);
             const touching = { "w:tblpPr": { _attr: { "w:horzAnchor": "margin", "w:vertAnchor": "text", "w:tblpX": 2000 } } };
             const touched = tableOf(readBody([tableWith(own, touching), p()], in2010));
             expect([touched.unsupported, touched.float!.distances]).to.deep.equal([
@@ -6020,7 +6072,7 @@ describe("readDocument", () => {
                 "w:tblpPr": { _attr: { "w:horzAnchor": "margin", "w:vertAnchor": "text", "w:tblpXSpec": "center", ...distant } },
             };
             const lined = tableOf(readBody([tableWith(own, centred), p()], in2010));
-            expect([lined.unsupported, lined.float!.horizontal]).to.deep.equal([floatReason, { from: "margin", align: "center" }]);
+            expect([lined.unsupported, lined.float!.horizontal]).to.deep.equal([undefined, { from: "margin", align: "center" }]);
         });
     });
 

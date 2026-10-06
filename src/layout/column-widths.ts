@@ -491,18 +491,16 @@ const fitTo = (table: TableBlock, available: number, content: ReadonlyMap<TableC
     const { columns, unsettled } = widen ? sizeGivenColumns(table, content) : sizeColumns(table, content);
     const total = sum(columns.map(({ width }) => width));
     // Word 2010 and before widen a table for a long word as Word 2013 does, when it fits in the room for it
-    // (`word-stops-compat2-14.docx`, `-12` CN8e). How far they let one grow past it, with its cells' margins beside the
-    // room, and how they even out its rows, or widen one with space between its cells or a share of the width, hasn't
-    // been seen
-    if (
-        widen &&
-        table.marginsBeside === true &&
-        (widen.uneven || spaced || widen.share !== undefined || total > available - indent + SAME)
-    ) {
+    // (`word-stops-compat2-14.docx`, `-12` CN8e), and past it to the room with its cells' margins beside it, its columns
+    // narrowed in proportion to their widest words as in Word 2013's mode: to 9242 twips of 9026, the long word's column
+    // 7943 of them where Word 2013's is 7737 of 9002 (`word-stops-compat3-14.docx`, `-12` CN16a), and they even out its
+    // rows as Word 2013 does, with its text at its indent (CN16b). How they widen one with space between its cells or a
+    // share of the width hasn't been seen
+    if (widen && table.marginsBeside === true && (spaced || widen.share !== undefined)) {
         return {
             ...table,
             unsupported:
-                "a table widened for a long word past the room for it, or with its rows evened out, in a document in compatibility mode",
+                "a table with space between its cells or a share of the width widened for a long word, or with its rows evened out, in a document in compatibility mode",
         };
     }
     const tableWidth = fit ?? widen!;
@@ -511,10 +509,12 @@ const fitTo = (table: TableBlock, available: number, content: ReadonlyMap<TableC
     // `word-stops-long-words2.docx` LW6, LW8: borders of half a point, its columns 10 twips less than the width or its
     // share; `word-stops-tables3.docx` BT8a, BT8b: borders of 3 and 6 points, its columns 60 and 120 less). In
     // compatibility mode, its first and last cells' margins are beside the room, as Word 2010 and before line its
-    // text up with the margins (`word-stops-compat-14.docx` CM4)
+    // text up with the margins (`word-stops-compat-14.docx` CM4), and a share of the width is a share of the room with the
+    // margins beside it, whatever its indent: 4621 twips for half of 9026 and two margins of 108, indented 720 or not, and
+    // 6931 for three quarters (`word-stops-compat2-14.docx` CN8b, `word-stops-compat3-14.docx`, `-12` CN12b, CN12c)
     const borders = table.marginsBeside === true ? 0 : ((table.borderLeft ?? 0) + (table.borderRight ?? 0)) / 2;
     const beside = table.marginsBeside === true ? outerMargins(table) : 0;
-    const target = tableWidth.width ?? (tableWidth.share === undefined ? undefined : tableWidth.share * available - borders);
+    const target = tableWidth.width ?? (tableWidth.share === undefined ? undefined : tableWidth.share * (available + beside) - borders);
     // A table sized to its text in the width it is in, or one whose cells all have widths, which grows up to it for a long
     // word, takes its indent from it, as in Word (`word-watertight-tables.docx` TB9, `word-table-formats.docx` TI1, TI3
     // and TI4). One with a width of its own, or a share of the width, keeps it (TI2). One laid out fixed with no width of

@@ -206,6 +206,12 @@ export type ParagraphFormat = {
     readonly tabs?: readonly TabStopSetting[];
     /** Whether Word's East Asian rules keep characters from starting or ending its lines (`w:kinsoku`). Default is on */
     readonly kinsoku?: boolean;
+    /**
+     * Whether Word's East Asian layout (`useFELayout`) spaces its Chinese, Japanese and Korean text apart from the Latin
+     * letters (`w:autoSpaceDE`) and the digits (`w:autoSpaceDN`) beside it. Default is on
+     */
+    readonly autoSpaceDE?: boolean;
+    readonly autoSpaceDN?: boolean;
     /** Whether the paragraph is right to left (`w:bidi`) */
     readonly rightToLeft?: boolean;
     /** Whether its lines break between words (`w:wordWrap`), or, when off, anywhere in the words of East Asian runs */
@@ -490,6 +496,56 @@ const eastAsianFontOf = (font: string): EastAsianFont | undefined => {
 
 /** Whether a font is one for Chinese, Japanese or Korean text */
 export const isEastAsianFont = (font: string | undefined): boolean => font !== undefined && eastAsianFontOf(font) !== undefined;
+
+/* cspell:disable */
+// The average width of the characters of each face of the fonts in the tables, in thousandths of an em, from the fonts'
+// own OS/2 tables (`xAvgCharWidth`): regular, bold, italic and bold italic. Word 2003's East Asian layout (`useFELayout`)
+// puts half of it between a character and the Latin letter, digit or East Asian character beside it, at the size of the
+// character before: 52.5 twips after MS Mincho 10.5, 54.7 after Calibri 10.5 and 72.9 after Calibri 14 (stops2/
+// word-stops-fe-layout.ts FE1a, word-stops-fe-layout2.ts FE2b, word-stops-compat3.ts FE3a). The East Asian fonts whose
+// average is half an em, so the half is a quarter of an em, are here; those whose average is otherwise, such as Yu Mincho's
+// 969 thousandths, haven't been seen spaced
+const AVERAGE_CHARACTER_WIDTHS: ReadonlyMap<string, readonly [number, number, number, number]> = new Map<
+    string,
+    readonly [number, number, number, number]
+>([
+    ["calibri", [521.0, 536.1, 521.0, 536.6]],
+    ["arial", [441.4, 478.5, 441.4, 478.5]],
+    ["cambria", [615.2, 599.6, 542.5, 585.0]],
+    ["tahoma", [444.3, 505.9, 444.3, 505.9]],
+    ["times new roman", [400.9, 426.8, 401.9, 412.1]],
+    ...[
+        "ms mincho",
+        "ms gothic",
+        "simsun",
+        "nsimsun",
+        "simhei",
+        "kaiti",
+        "fangsong",
+        "pmingliu",
+        "mingliu",
+        "batang",
+        "gulim",
+        "dotum",
+    ].map((name): readonly [string, readonly [number, number, number, number]] => [name, [500, 500, 500, 500]]),
+]);
+/* cspell:enable */
+
+/**
+ * The average width of the characters of a font's face, in points at its size, from the font's own metrics, for the space
+ * Word 2003's East Asian layout puts beside a character of it. Undefined for a font, or a face of it, whose average isn't
+ * known, such as a bold Tahoma, which Tahoma doesn't have, or a font measured as another
+ */
+export const averageCharacterWidth = ({ font = DEFAULT_FONT, size = DEFAULT_FONT_SIZE, bold, italic }: TextFont): number | undefined => {
+    const name = font.toLowerCase();
+    const known = knownEastAsianFontOf(font);
+    const widths = AVERAGE_CHARACTER_WIDTHS.get(known === undefined ? name : known.name.toLowerCase());
+    const face = widths?.[(bold ? 1 : 0) + (italic ? 2 : 0)];
+    // Tahoma has no italics, which Word slants, and the East Asian fonts here no bold or italics of their own
+    return face === undefined || (name === "tahoma" && italic) || (known !== undefined && (bold || italic))
+        ? undefined
+        : (face * size) / 1000;
+};
 
 const named = (name: string): FontWidths | undefined => FONT_WIDTHS.find((known) => known.name.toLowerCase() === name.toLowerCase());
 
