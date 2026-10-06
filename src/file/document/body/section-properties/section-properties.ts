@@ -52,6 +52,12 @@ import { type IColumnsAttributes, createColumns } from "./properties/columns";
 import { type IDocGridAttributesProperties, createDocumentGrid } from "./properties/doc-grid";
 import { HeaderFooterReferenceType, HeaderFooterType, createHeaderFooterReference } from "./properties/header-footer-reference";
 import { type ILineNumberAttributes, createLineNumberType } from "./properties/line-number";
+import {
+    type IEndnotePropertiesOptions,
+    type IFootnotePropertiesOptions,
+    createEndnoteProperties,
+    createFootnoteProperties,
+} from "./properties/note-properties";
 import { type IPageBordersOptions, PageBorders } from "./properties/page-borders";
 import { type IPageMarginAttributes, createPageMargin } from "./properties/page-margin";
 import { type IPageNumberTypeAttributes, createPageNumberType } from "./properties/page-number";
@@ -106,6 +112,10 @@ export type ISectionPropertiesOptionsBase = {
     readonly column?: IColumnsAttributes;
     /** Section break type (next page, continuous, even page, odd page) */
     readonly type?: (typeof SectionType)[keyof typeof SectionType];
+    /** Where the footnotes of the section are placed and how they are numbered */
+    readonly footnoteProperties?: IFootnotePropertiesOptions;
+    /** Where the endnotes of the section are placed and how they are numbered */
+    readonly endnoteProperties?: IEndnotePropertiesOptions;
 };
 
 export type ISectionPropertiesChangeOptions = IChangedAttributesProperties & ISectionPropertiesOptionsBase;
@@ -125,6 +135,8 @@ export type ISectionPropertiesChangeOptions = IChangedAttributesProperties & ISe
  * @property verticalAlign - Vertical alignment of text on page
  * @property column - Column layout settings
  * @property type - Section break type (next page, continuous, etc.)
+ * @property footnoteProperties - Footnote placement and numbering
+ * @property endnoteProperties - Endnote placement and numbering
  *
  * @see {@link SectionProperties}
  */
@@ -269,6 +281,8 @@ export class SectionProperties extends XmlComponent {
         verticalAlign,
         column,
         type,
+        footnoteProperties,
+        endnoteProperties,
         revision,
     }: ISectionPropertiesOptions = {}) {
         super("w:sectPr");
@@ -283,6 +297,14 @@ export class SectionProperties extends XmlComponent {
 
         this.addHeaderFooterGroup(HeaderFooterType.HEADER, headerWrapperGroup);
         this.addHeaderFooterGroup(HeaderFooterType.FOOTER, footerWrapperGroup);
+
+        if (footnoteProperties) {
+            this.root.push(createFootnoteProperties(footnoteProperties));
+        }
+
+        if (endnoteProperties) {
+            this.root.push(createEndnoteProperties(endnoteProperties));
+        }
 
         if (type) {
             this.root.push(createSectionType(type));

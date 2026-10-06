@@ -106,5 +106,5 @@ export const NumberFormat = {
     THAI_COUNTING: "thaiCounting",
     BAHT_TEXT: "bahtText",
     DOLLAR_TEXT: "dollarText",
-    //   <xsd:enumeration value="custom"/>
+    CUSTOM: "custom",
 } as const;

@@ -385,6 +385,50 @@ describe("SectionProperties", () => {
             });
         });
 
+        it("should not write footnote or endnote properties when they are not set", () => {
+            const tree = new Formatter().format(new SectionProperties());
+            const elements = (tree["w:sectPr"] as readonly Record<string, unknown>[]).map((child) => Object.keys(child)[0]);
+
+            expect(elements).not.toContain("w:footnotePr");
+            expect(elements).not.toContain("w:endnotePr");
+        });
+
+        it("should write footnote and endnote properties after the header and footer references and before the section type and page size", () => {
+            const media = new Media();
+            const properties = new SectionProperties({
+                headerWrapperGroup: { default: new HeaderWrapper(media, 100) },
+                footerWrapperGroup: { default: new FooterWrapper(media, 200) },
+                type: SectionType.CONTINUOUS,
+                endnoteProperties: { position: "docEnd", start: 1 },
+                footnoteProperties: {
+                    position: "sectEnd",
+                    numberFormat: { type: NumberFormat.CUSTOM, format: "001" },
+                    restart: "eachSect",
+                },
+            });
+            const tree = new Formatter().format(properties);
+            const elements = (tree["w:sectPr"] as readonly Record<string, unknown>[]).map((child) => Object.keys(child)[0]);
+
+            expect(elements.slice(0, 6)).to.deep.equal([
+                "w:headerReference",
+                "w:footerReference",
+                "w:footnotePr",
+                "w:endnotePr",
+                "w:type",
+                "w:pgSz",
+            ]);
+            expect(tree["w:sectPr"][2]).to.deep.equal({
+                "w:footnotePr": [
+                    { "w:pos": { _attr: { "w:val": "sectEnd" } } },
+                    { "w:numFmt": { _attr: { "w:val": "custom", "w:format": "001" } } },
+                    { "w:numRestart": { _attr: { "w:val": "eachSect" } } },
+                ],
+            });
+            expect(tree["w:sectPr"][3]).to.deep.equal({
+                "w:endnotePr": [{ "w:pos": { _attr: { "w:val": "docEnd" } } }, { "w:numStart": { _attr: { "w:val": 1 } } }],
+            });
+        });
+
         it("should write the previous section properties last, after the document grid, as the schema requires", () => {
             const properties = new SectionProperties({
                 revision: {
