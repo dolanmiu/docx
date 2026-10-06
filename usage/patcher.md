@@ -23,6 +23,38 @@ const doc = await patchDocument({
 fs.writeFileSync("My Patched Document.docx", doc);
 ```
 
+## Discover placeholders before building patches
+
+Use `patchDetector({ data })` to find the placeholder keys in a template before calling `patchDocument`. It returns distinct keys without the `{{` and `}}` delimiters. This is useful when templates differ: an expensive patch, such as downloading images, only needs to be built when its placeholder is present.
+
+This discovery workflow supports only `{{...}}` placeholders. `patchDetector` does not accept the custom `placeholderDelimiters` supported by `patchDocument`.
+
+The following example uses the existing [simple-template.docx](https://github.com/dolanmiu/docx/blob/master/demo/assets/simple-template.docx). Keep patch builders as functions so that discovering placeholders does not run every builder. Reuse the same template data for detection and patching.
+
+```ts live
+import * as fs from "fs";
+import { type IPatch, Paragraph, patchDetector, patchDocument, PatchType, TextRun } from "docx";
+
+const data = fs.readFileSync("./demo/assets/simple-template.docx");
+const builders: Readonly<Record<string, () => Promise<IPatch>>> = {
+    name: async () => ({ type: PatchType.PARAGRAPH, children: [new TextRun("John Doe")] }),
+    paragraph_replace: async () => ({
+        type: PatchType.DOCUMENT,
+        children: [new Paragraph("This content is built only if the template requests it.")],
+    }),
+};
+
+const keys = await patchDetector({ data });
+const entries = await Promise.all(
+    keys.filter((key) => Object.hasOwn(builders, key)).map(async (key) => [key, await builders[key]()] as const),
+);
+const doc = await patchDocument({ outputType: "nodebuffer", data, patches: Object.fromEntries(entries) });
+
+fs.writeFileSync("My Patched Document.docx", doc);
+```
+
+This example patches only keys with a registered builder; other placeholders remain in the document. If every placeholder must be resolved, validate the detected keys against your builders and report unsupported keys before patching. Detection discovers keys; it does not generate replacement content or call `patchDocument` for you.
+
 ## Patches
 
 The patcher takes in a `patches` object, which is a map of `string` to `Patch`:
