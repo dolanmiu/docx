@@ -4743,14 +4743,19 @@ var docxShapes = (function(exports, docx) {
 	};
 	var readVerticalAlign = (value) => value === "superscript" || value === "subscript" ? value : value === void 0 ? void 0 : "baseline";
 	/**
-	* Reads run properties (`w:rPr`). A font of the theme (`w:asciiTheme`) takes the place of the font named beside it.
+	* Reads run properties (`w:rPr`). A font of the theme (`w:asciiTheme`) takes the place of the font named beside it. Each
+	* of a run's fonts is inherited on its own: a run that gives a font for ASCII alone has its style's for high ANSI
+	* (`word-stops-fe-layout2.docx` FE2c, `word-stops-compat2-15.docx` CN10c, whose curly quotes Word drew in Calibri, the
+	* document's, beside SimSun, the runs' font for ASCII).
 	*/
 	var readRunFormat = (element, themeFonts) => {
-		var _ref, _ref2, _themeFontOf, _themeFontOf2, _themeFontOf3;
+		var _themeFontOf, _themeFontOf2, _themeFontOf3, _themeFontOf4;
 		const children = childrenOf(element);
 		const fonts = attributesOf(find(children, "w:rFonts"));
 		return withoutUndefined({
-			font: (_ref = (_ref2 = (_themeFontOf = themeFontOf(fonts["w:asciiTheme"], themeFonts)) !== null && _themeFontOf !== void 0 ? _themeFontOf : stringOf(fonts["w:ascii"])) !== null && _ref2 !== void 0 ? _ref2 : themeFontOf(fonts["w:hAnsiTheme"], themeFonts)) !== null && _ref !== void 0 ? _ref : stringOf(fonts["w:hAnsi"]),
+			font: (_themeFontOf = themeFontOf(fonts["w:asciiTheme"], themeFonts)) !== null && _themeFontOf !== void 0 ? _themeFontOf : stringOf(fonts["w:ascii"]),
+			highAnsiFont: (_themeFontOf2 = themeFontOf(fonts["w:hAnsiTheme"], themeFonts)) !== null && _themeFontOf2 !== void 0 ? _themeFontOf2 : stringOf(fonts["w:hAnsi"]),
+			fontHint: stringOf(fonts["w:hint"]),
 			size: sizeOf(attributesOf(find(children, "w:sz"))["w:val"]),
 			bold: onOff(children, "w:b"),
 			italic: onOff(children, "w:i"),
@@ -4760,8 +4765,8 @@ var docxShapes = (function(exports, docx) {
 			hidden: onOff(children, "w:vanish"),
 			characterSpacing: pointsOf(attributesOf(find(children, "w:spacing"))["w:val"], 20),
 			scale: numberOf(attributesOf(find(children, "w:w"))["w:val"]),
-			eastAsiaFont: (_themeFontOf2 = themeFontOf(fonts["w:eastAsiaTheme"], themeFonts)) !== null && _themeFontOf2 !== void 0 ? _themeFontOf2 : stringOf(fonts["w:eastAsia"]),
-			complexScriptFont: (_themeFontOf3 = themeFontOf(fonts["w:cstheme"], themeFonts)) !== null && _themeFontOf3 !== void 0 ? _themeFontOf3 : stringOf(fonts["w:cs"]),
+			eastAsiaFont: (_themeFontOf3 = themeFontOf(fonts["w:eastAsiaTheme"], themeFonts)) !== null && _themeFontOf3 !== void 0 ? _themeFontOf3 : stringOf(fonts["w:eastAsia"]),
+			complexScriptFont: (_themeFontOf4 = themeFontOf(fonts["w:cstheme"], themeFonts)) !== null && _themeFontOf4 !== void 0 ? _themeFontOf4 : stringOf(fonts["w:cs"]),
 			complexScriptSize: sizeOf(attributesOf(find(children, "w:szCs"))["w:val"]),
 			complexScriptBold: onOff(children, "w:bCs"),
 			complexScriptItalic: onOff(children, "w:iCs"),
@@ -5153,16 +5158,24 @@ var docxShapes = (function(exports, docx) {
 	* scale, superscript and subscript, which draw it smaller, how far it is raised, its border, and its emphasis marks.
 	*/
 	var fontOf = (format) => scripted(plainFontOf(format), format);
+	var HIGH_ANSI = /[\u00a0-\u052f\u1e00-\u27bf\ue000-\uf8ff\ufb00-\ufb1c]/u;
+	/** Whether a run has a high ANSI font other than its font for ASCII, so its characters past ASCII are drawn otherwise */
+	var hasOwnHighAnsiFont = ({ font, highAnsiFont }) => highAnsiFont !== void 0 && highAnsiFont.toLowerCase() !== (font === null || font === void 0 ? void 0 : font.toLowerCase());
+	/** Whether a run is right to left or of a complex script, so all of it is in the font for complex scripts */
+	var isComplexRun = ({ rightToLeft, complexScript }) => rightToLeft === true || complexScript === true;
 	/**
 	* Which of a run's fonts Word draws a character in: the font for complex scripts, in their size, boldness and italics, for
 	* all of a run that is right to left or of a complex script; the East Asian font for Chinese, Japanese and Korean; the
-	* run's font for the rest. Hebrew in a run that isn't right to left is in the run's size, as Word lays it out. A mark is
-	* drawn in the font of the character it is on.
+	* high ANSI font for the characters past ASCII of its blocks, where the run has one other than its font for ASCII, as
+	* Word drew curly quotes in Calibri, the document's, in runs with SimSun for ASCII (`word-stops-fe-layout2.docx` FE2c,
+	* `word-stops-compat2-15.docx` CN10c); the run's font for ASCII for the rest. Hebrew in a run that isn't right to left is
+	* in the run's size, as Word lays it out. A mark is drawn in the font of the character it is on.
 	*/
-	var slotOf = (character, previous, complexRun) => {
-		if (complexRun) return "complex";
+	var slotOf = (character, previous, format) => {
+		if (isComplexRun(format)) return "complex";
 		if (isEastAsian(character)) return "eastAsian";
-		return new RegExp("\\p{M}", "u").test(character) ? previous : "latin";
+		if (new RegExp("\\p{M}", "u").test(character)) return previous;
+		return hasOwnHighAnsiFont(format) && HIGH_ANSI.test(character) ? "highAnsi" : "latin";
 	};
 	var FALLBACK_EAST_ASIAN_FONT = "MS Mincho";
 	/**
@@ -5172,8 +5185,8 @@ var docxShapes = (function(exports, docx) {
 	var fontOfSlot = (format, slot) => {
 		const font = plainFontOf(format);
 		if (slot === "latin") return scripted(font, format);
-		const { eastAsiaFont, complexScriptFont, complexScriptSize, complexScriptBold, complexScriptItalic, rightToLeft } = format;
-		return scripted(slot === "eastAsian" ? _objectSpread2(_objectSpread2({}, font), {}, { font: isEastAsianFont(eastAsiaFont) ? eastAsiaFont : FALLBACK_EAST_ASIAN_FONT }) : withoutUndefined(_objectSpread2(_objectSpread2({}, font), {}, {
+		const { highAnsiFont, eastAsiaFont, complexScriptFont, complexScriptSize, complexScriptBold, complexScriptItalic, rightToLeft } = format;
+		return scripted(slot === "highAnsi" ? _objectSpread2(_objectSpread2({}, font), {}, { font: highAnsiFont }) : slot === "eastAsian" ? _objectSpread2(_objectSpread2({}, font), {}, { font: isEastAsianFont(eastAsiaFont) ? eastAsiaFont : FALLBACK_EAST_ASIAN_FONT }) : withoutUndefined(_objectSpread2(_objectSpread2({}, font), {}, {
 			font: complexScriptFont,
 			size: complexScriptSize,
 			bold: complexScriptBold,
@@ -5186,13 +5199,12 @@ var docxShapes = (function(exports, docx) {
 	* small letters of small caps.
 	*/
 	var spansOf = (text, format) => {
-		const { allCaps, smallCaps, hidden, rightToLeft, complexScript } = format;
+		const { allCaps, smallCaps, hidden } = format;
 		if (hidden) return [];
-		const complexRun = rightToLeft === true || complexScript === true;
 		return [...text].reduce((all, character) => {
 			var _last$slot;
 			const last = all[all.length - 1];
-			const slot = slotOf(character, (_last$slot = last === null || last === void 0 ? void 0 : last.slot) !== null && _last$slot !== void 0 ? _last$slot : "latin", complexRun);
+			const slot = slotOf(character, (_last$slot = last === null || last === void 0 ? void 0 : last.slot) !== null && _last$slot !== void 0 ? _last$slot : "latin", format);
 			return (last === null || last === void 0 ? void 0 : last.slot) === slot ? [...all.slice(0, -1), {
 				slot,
 				text: last.text + character

@@ -7358,14 +7358,19 @@ var docxLayout = (function(exports) {
 	};
 	var readVerticalAlign = (value) => value === "superscript" || value === "subscript" ? value : value === void 0 ? void 0 : "baseline";
 	/**
-	* Reads run properties (`w:rPr`). A font of the theme (`w:asciiTheme`) takes the place of the font named beside it.
+	* Reads run properties (`w:rPr`). A font of the theme (`w:asciiTheme`) takes the place of the font named beside it. Each
+	* of a run's fonts is inherited on its own: a run that gives a font for ASCII alone has its style's for high ANSI
+	* (`word-stops-fe-layout2.docx` FE2c, `word-stops-compat2-15.docx` CN10c, whose curly quotes Word drew in Calibri, the
+	* document's, beside SimSun, the runs' font for ASCII).
 	*/
 	var readRunFormat = (element, themeFonts) => {
-		var _ref, _ref2, _themeFontOf, _themeFontOf2, _themeFontOf3;
+		var _themeFontOf, _themeFontOf2, _themeFontOf3, _themeFontOf4;
 		const children = childrenOf(element);
 		const fonts = attributesOf(find(children, "w:rFonts"));
 		return withoutUndefined({
-			font: (_ref = (_ref2 = (_themeFontOf = themeFontOf(fonts["w:asciiTheme"], themeFonts)) !== null && _themeFontOf !== void 0 ? _themeFontOf : stringOf(fonts["w:ascii"])) !== null && _ref2 !== void 0 ? _ref2 : themeFontOf(fonts["w:hAnsiTheme"], themeFonts)) !== null && _ref !== void 0 ? _ref : stringOf(fonts["w:hAnsi"]),
+			font: (_themeFontOf = themeFontOf(fonts["w:asciiTheme"], themeFonts)) !== null && _themeFontOf !== void 0 ? _themeFontOf : stringOf(fonts["w:ascii"]),
+			highAnsiFont: (_themeFontOf2 = themeFontOf(fonts["w:hAnsiTheme"], themeFonts)) !== null && _themeFontOf2 !== void 0 ? _themeFontOf2 : stringOf(fonts["w:hAnsi"]),
+			fontHint: stringOf(fonts["w:hint"]),
 			size: sizeOf$2(attributesOf(find(children, "w:sz"))["w:val"]),
 			bold: onOff(children, "w:b"),
 			italic: onOff(children, "w:i"),
@@ -7375,8 +7380,8 @@ var docxLayout = (function(exports) {
 			hidden: onOff(children, "w:vanish"),
 			characterSpacing: pointsOf(attributesOf(find(children, "w:spacing"))["w:val"], 20),
 			scale: numberOf(attributesOf(find(children, "w:w"))["w:val"]),
-			eastAsiaFont: (_themeFontOf2 = themeFontOf(fonts["w:eastAsiaTheme"], themeFonts)) !== null && _themeFontOf2 !== void 0 ? _themeFontOf2 : stringOf(fonts["w:eastAsia"]),
-			complexScriptFont: (_themeFontOf3 = themeFontOf(fonts["w:cstheme"], themeFonts)) !== null && _themeFontOf3 !== void 0 ? _themeFontOf3 : stringOf(fonts["w:cs"]),
+			eastAsiaFont: (_themeFontOf3 = themeFontOf(fonts["w:eastAsiaTheme"], themeFonts)) !== null && _themeFontOf3 !== void 0 ? _themeFontOf3 : stringOf(fonts["w:eastAsia"]),
+			complexScriptFont: (_themeFontOf4 = themeFontOf(fonts["w:cstheme"], themeFonts)) !== null && _themeFontOf4 !== void 0 ? _themeFontOf4 : stringOf(fonts["w:cs"]),
 			complexScriptSize: sizeOf$2(attributesOf(find(children, "w:szCs"))["w:val"]),
 			complexScriptBold: onOff(children, "w:bCs"),
 			complexScriptItalic: onOff(children, "w:iCs"),
@@ -7786,16 +7791,60 @@ var docxLayout = (function(exports) {
 	* scale, superscript and subscript, which draw it smaller, how far it is raised, its border, and its emphasis marks.
 	*/
 	var fontOf = (format) => scripted(plainFontOf(format), format);
+	var HIGH_ANSI = /[\u00a0-\u052f\u1e00-\u27bf\ue000-\uf8ff\ufb00-\ufb1c]/u;
+	var ASCII_FONT_PAST_ASCII = /[\u0590-\u07bf\ufb1d-\ufdff\ufe70-\ufefe]/u;
+	var HINTED_EAST_ASIAN = /[\u00a1\u00a4\u00a7\u00a8\u00aa\u00ad\u00af\u00b0-\u00b4\u00b6-\u00ba\u00bc-\u00bf\u00d7\u00f7\u0100-\u04ff\u2000-\u27bf\ue000-\uf8ff\ufb00-\ufb1c]/u;
+	var HINTED_EAST_ASIAN_IN_CHINESE = /[\u00e0\u00e1\u00e8-\u00ea\u00ec\u00ed\u00f2\u00f3\u00f9\u00fa\u00fc\u1e00-\u1eff]/u;
+	var LAST_ASCII = 127;
+	/** Whether a run has a high ANSI font other than its font for ASCII, so its characters past ASCII are drawn otherwise */
+	var hasOwnHighAnsiFont = ({ font, highAnsiFont }) => highAnsiFont !== void 0 && highAnsiFont.toLowerCase() !== (font === null || font === void 0 ? void 0 : font.toLowerCase());
+	/** Whether a run is right to left or of a complex script, so all of it is in the font for complex scripts */
+	var isComplexRun = ({ rightToLeft, complexScript }) => rightToLeft === true || complexScript === true;
 	/**
 	* Which of a run's fonts Word draws a character in: the font for complex scripts, in their size, boldness and italics, for
 	* all of a run that is right to left or of a complex script; the East Asian font for Chinese, Japanese and Korean; the
-	* run's font for the rest. Hebrew in a run that isn't right to left is in the run's size, as Word lays it out. A mark is
-	* drawn in the font of the character it is on.
+	* high ANSI font for the characters past ASCII of its blocks, where the run has one other than its font for ASCII, as
+	* Word drew curly quotes in Calibri, the document's, in runs with SimSun for ASCII (`word-stops-fe-layout2.docx` FE2c,
+	* `word-stops-compat2-15.docx` CN10c); the run's font for ASCII for the rest. Hebrew in a run that isn't right to left is
+	* in the run's size, as Word lays it out. A mark is drawn in the font of the character it is on.
 	*/
-	var slotOf = (character, previous, complexRun) => {
-		if (complexRun) return "complex";
+	var slotOf = (character, previous, format) => {
+		if (isComplexRun(format)) return "complex";
 		if (isEastAsian(character)) return "eastAsian";
-		return new RegExp("\\p{M}", "u").test(character) ? previous : "latin";
+		if (new RegExp("\\p{M}", "u").test(character)) return previous;
+		return hasOwnHighAnsiFont(format) && HIGH_ANSI.test(character) ? "highAnsi" : "latin";
+	};
+	/**
+	* Why text can't be laid out in the fonts Word draws it in: a character Word may draw in the run's East Asian font with
+	* the run's hint for it (`w:hint="eastAsia"`), such as a curly quote, a dash or a degree sign, or Chinese, Japanese or
+	* Korean in a run that is right to left or of a complex script with it, and a character of a script the rules leave out,
+	* such as Thai, in a run with a high ANSI font other than its font for ASCII: which font Word draws those in hasn't been
+	* seen.
+	*/
+	var unknownRunFont = (text, format) => {
+		const characters = [...text];
+		if (format.fontHint === "eastAsia") {
+			var _format$eastAsianLang;
+			const chinese = ((_format$eastAsianLang = format.eastAsianLanguage) !== null && _format$eastAsianLang !== void 0 ? _format$eastAsianLang : "").toLowerCase().startsWith("zh");
+			if (characters.some((character) => HINTED_EAST_ASIAN.test(character) || chinese && HINTED_EAST_ASIAN_IN_CHINESE.test(character))) return "a character Word may draw in the East Asian font of a run with the hint for East Asian text (w:hint), such as a curly quote";
+			if (isComplexRun(format) && characters.some(isEastAsian)) return "East Asian text in a run that is right to left or of a complex script, with the hint for East Asian text (w:hint)";
+		}
+		return hasOwnHighAnsiFont(format) && !isComplexRun(format) && characters.some((character) => character.codePointAt(0) > LAST_ASCII && !isEastAsian(character) && !new RegExp("\\p{M}", "u").test(character) && !HIGH_ANSI.test(character) && !ASCII_FONT_PAST_ASCII.test(character)) ? "a character of a script Word's run-font rules leave out, such as Thai, in a run with a high ANSI font other than its font for ASCII" : void 0;
+	};
+	/**
+	* The one font Word draws a text in, such as a list number, by the slots of its characters: the high ANSI font where
+	* all of its characters but spaces are of the high ANSI blocks, and the run's font otherwise. Undefined where its
+	* characters are in both.
+	*/
+	var singleFontOf = (text, format) => {
+		const font = fontOf(format);
+		if (!hasOwnHighAnsiFont(format) || isComplexRun(format)) return font;
+		const slots = [...text].reduce((all, character) => {
+			var _all;
+			return [...all, slotOf(character, (_all = all[all.length - 1]) !== null && _all !== void 0 ? _all : "latin", format)];
+		}, []);
+		const high = [...text].flatMap((character, at) => /\s/u.test(character) ? [] : [slots[at] === "highAnsi"]);
+		return high.length > 0 && high.every(Boolean) ? _objectSpread2(_objectSpread2({}, font), {}, { font: format.highAnsiFont }) : high.some(Boolean) ? void 0 : font;
 	};
 	var FALLBACK_EAST_ASIAN_FONT = "MS Mincho";
 	/**
@@ -7805,8 +7854,8 @@ var docxLayout = (function(exports) {
 	var fontOfSlot = (format, slot) => {
 		const font = plainFontOf(format);
 		if (slot === "latin") return scripted(font, format);
-		const { eastAsiaFont, complexScriptFont, complexScriptSize, complexScriptBold, complexScriptItalic, rightToLeft } = format;
-		return scripted(slot === "eastAsian" ? _objectSpread2(_objectSpread2({}, font), {}, { font: isEastAsianFont(eastAsiaFont) ? eastAsiaFont : FALLBACK_EAST_ASIAN_FONT }) : withoutUndefined(_objectSpread2(_objectSpread2({}, font), {}, {
+		const { highAnsiFont, eastAsiaFont, complexScriptFont, complexScriptSize, complexScriptBold, complexScriptItalic, rightToLeft } = format;
+		return scripted(slot === "highAnsi" ? _objectSpread2(_objectSpread2({}, font), {}, { font: highAnsiFont }) : slot === "eastAsian" ? _objectSpread2(_objectSpread2({}, font), {}, { font: isEastAsianFont(eastAsiaFont) ? eastAsiaFont : FALLBACK_EAST_ASIAN_FONT }) : withoutUndefined(_objectSpread2(_objectSpread2({}, font), {}, {
 			font: complexScriptFont,
 			size: complexScriptSize,
 			bold: complexScriptBold,
@@ -7819,13 +7868,12 @@ var docxLayout = (function(exports) {
 	* small letters of small caps.
 	*/
 	var spansOf = (text, format) => {
-		const { allCaps, smallCaps, hidden, rightToLeft, complexScript } = format;
+		const { allCaps, smallCaps, hidden } = format;
 		if (hidden) return [];
-		const complexRun = rightToLeft === true || complexScript === true;
 		return [...text].reduce((all, character) => {
 			var _last$slot;
 			const last = all[all.length - 1];
-			const slot = slotOf(character, (_last$slot = last === null || last === void 0 ? void 0 : last.slot) !== null && _last$slot !== void 0 ? _last$slot : "latin", complexRun);
+			const slot = slotOf(character, (_last$slot = last === null || last === void 0 ? void 0 : last.slot) !== null && _last$slot !== void 0 ? _last$slot : "latin", format);
 			return (last === null || last === void 0 ? void 0 : last.slot) === slot ? [...all.slice(0, -1), {
 				slot,
 				text: last.text + character
@@ -35788,6 +35836,7 @@ var docxLayout = (function(exports) {
 				case "w:delText": {
 					const content = contentOf$3(child).filter((part) => typeof part === "string").join("");
 					const across = acrossOf(childrenOf(properties), content, down);
+					const unknownFont = typeof across === "string" ? across : format.hidden ? void 0 : unknownRunFont(content, format);
 					const read = () => content.split("	").flatMap((part, index) => [...index > 0 && !format.hidden ? [{
 						type: "tab",
 						font
@@ -35799,7 +35848,7 @@ var docxLayout = (function(exports) {
 							font: _objectWithoutProperties(_ref, _excluded)
 						}, format.eastAsianLanguage === void 0 ? {} : { language: format.eastAsianLanguage }), isEastAsianRun(format) ? { eastAsian: true } : {}), hyphenationOf(format)), across === true ? { across } : {});
 					})]);
-					return typeof across === "string" ? guessedOr(reader, across, read) : read();
+					return unknownFont === void 0 ? read() : guessedOr(reader, unknownFont, read);
 				}
 				case "w:tab":
 				case "w:ptab": return format.hidden ? [] : [{
@@ -36144,7 +36193,7 @@ var docxLayout = (function(exports) {
 	* number. A paragraph is in the list it gives, or else in its style's. The list's numbers move on.
 	*/
 	var readListNumber = (properties, style, markRun, reader) => {
-		var _valueOf2, _numberOf3, _ref2, _levels$findIndex, _ref3, _before$uncertain, _level$unsupported, _exec, _reader$listIds$get;
+		var _valueOf2, _numberOf3, _ref2, _levels$findIndex, _ref3, _before$uncertain, _ref4, _ref5, _level$unsupported, _exec, _reader$listIds$get;
 		const numbering = childrenOf(find(properties, "w:numPr"));
 		const ownId = (_valueOf2 = valueOf(numbering, "w:numId")) !== null && _valueOf2 !== void 0 ? _valueOf2 : (_numberOf3 = numberOf(attributesOf(find(numbering, "w:numId"))["w:val"])) === null || _numberOf3 === void 0 ? void 0 : _numberOf3.toString();
 		const ownLevel = numberOf(attributesOf(find(numbering, "w:ilvl"))["w:val"]);
@@ -36178,12 +36227,14 @@ var docxLayout = (function(exports) {
 			var _list$starts$get;
 			return current[at] === void 0 && !started.includes(`${id} ${at}`) && ((_list$starts$get = list.starts.get(at)) !== null && _list$starts$get !== void 0 ? _list$starts$get : levels[at].start) !== levels[at].start;
 		};
-		const font = fontOf(withFeaturesOf(combine([markRun, level.run]), reader));
-		const unsupported = (_level$unsupported = level.unsupported) !== null && _level$unsupported !== void 0 ? _level$unsupported : levels.some((other) => (other === null || other === void 0 ? void 0 : other.alignedBoth) === true) ? "a list number at another level of a list with a level aligned both" : restartedByLeftOut ? "a list number after a paragraph at a level Word leaves out above it" : referred.some((at) => numberAt(at) === void 0) ? "a list number in a format not yet written" : referred.some(ownStart) ? "a list number of a level not counted yet, which its list starts at a number of its own" : font.border !== void 0 ? "a list number with a border" : void 0;
+		const numberRun = withFeaturesOf(combine([markRun, level.run]), reader);
 		const text = level.text.replace(/%([1-9])/g, (_, digit) => {
 			var _numberAt;
 			return (_numberAt = numberAt(Number(digit) - 1)) !== null && _numberAt !== void 0 ? _numberAt : "";
 		});
+		const numberFont = singleFontOf(text, numberRun);
+		const font = numberFont !== null && numberFont !== void 0 ? numberFont : fontOf(numberRun);
+		const unsupported = (_ref4 = (_ref5 = (_level$unsupported = level.unsupported) !== null && _level$unsupported !== void 0 ? _level$unsupported : unknownRunFont(text, numberRun)) !== null && _ref5 !== void 0 ? _ref5 : numberFont === void 0 ? "a list number of characters of both the font for ASCII and the high ANSI font of its run" : void 0) !== null && _ref4 !== void 0 ? _ref4 : levels.some((other) => (other === null || other === void 0 ? void 0 : other.alignedBoth) === true) ? "a list number at another level of a list with a level aligned both" : restartedByLeftOut ? "a list number after a paragraph at a level Word leaves out above it" : referred.some((at) => numberAt(at) === void 0) ? "a list number in a format not yet written" : referred.some(ownStart) ? "a list number of a level not counted yet, which its list starts at a number of its own" : font.border !== void 0 ? "a list number with a border" : void 0;
 		const numbers = (_exec = /%[1-9](?:.*%[1-9])?/.exec(level.text)) === null || _exec === void 0 ? void 0 : _exec[0];
 		const separator = _objectSpread2(_objectSpread2({}, font), {}, { listNumber: "separator" });
 		const suffix = level.suffix === "nothing" ? [] : level.suffix === "space" ? [{
@@ -36277,7 +36328,7 @@ var docxLayout = (function(exports) {
 			const beside = characters.some((character, at) => at > 0 && isEastAsian(character) !== isEastAsian(characters[at - 1]) && !/\s/u.test(character + characters[at - 1]));
 			return autoSpaced && beside ? "East Asian text beside other text, which Word spaces apart, in a document that lays it out as Word 2003 did (useFELayout)" : void 0;
 		}
-		return texts.some((item) => kinsokuLanguageOf(item.language) !== void 0 || [...item.text].some((character) => character.codePointAt(0) > LAST_ASCII && !isEastAsian(character))) ? "East Asian text in an East Asian language, or beside characters past ASCII, in a document in compatibility mode 12 or 11" : void 0;
+		return texts.some((item) => kinsokuLanguageOf(item.language) !== void 0) ? "East Asian text in an East Asian language, in a document in compatibility mode 12 or 11" : void 0;
 	};
 	var POINTS_PER_LINE = 12;
 	var HUNDREDTHS = 100;
@@ -36438,7 +36489,7 @@ var docxLayout = (function(exports) {
 	* Reads a paragraph (`w:p`), in the formatting of its styles, and of its table's style when it is in a table.
 	*/
 	var readParagraph = (element, reader, tableFormats = []) => {
-		var _valueOf3, _exec2, _styleChain$slice$0$n, _styleChain$slice$, _ref4, _ref5, _ref6, _ref7, _list$unsupported, _ref8, _ref9, _unknownInOlderLayout;
+		var _valueOf3, _exec2, _styleChain$slice$0$n, _styleChain$slice$, _ref6, _ref7, _ref8, _ref9, _list$unsupported, _ref10, _ref11, _unknownInOlderLayout;
 		const { styles } = reader;
 		const children = contentOf$3(element);
 		const properties = childrenOf(find(children.filter(isObject), "w:pPr"));
@@ -36489,7 +36540,7 @@ var docxLayout = (function(exports) {
 		const tabStops = tabStopsOf(formats);
 		const otherDecimalSymbol = reader.decimalSymbol !== void 0 && reader.decimalSymbol !== "." && tabStops.some(({ alignment }) => alignment === "decimal");
 		const frame = readFrameOf(properties, styleChain(styles, style, "paragraph"), reader);
-		const unsupported = (_ref4 = (_ref5 = (_ref6 = (_ref7 = (_list$unsupported = list.unsupported) !== null && _list$unsupported !== void 0 ? _list$unsupported : ownCells) !== null && _ref7 !== void 0 ? _ref7 : unknownEastAsianRules(reader.eastAsianRules, own, combined.alignment)) !== null && _ref6 !== void 0 ? _ref6 : joinedAcrossRuns(own) ? "Arabic letters joined across runs" : void 0) !== null && _ref5 !== void 0 ? _ref5 : reader.down === true ? unknownDownOf(own, tabStops) : void 0) !== null && _ref4 !== void 0 ? _ref4 : typeof frame === "string" ? frame : otherDecimalSymbol ? "a decimal tab stop in a document whose decimal symbol isn't a full stop" : (division === null || division === void 0 ? void 0 : division.unsupported) !== void 0 ? division.unsupported : combined.alignment === "mediumKashida" || combined.alignment === "highKashida" ? "a paragraph justified for Arabic with a medium or high kashida" : forThaiOrArabic && typeof items !== "string" && items.some((item) => item.type === "text" && ARABIC.test(item.text)) ? "Arabic text justified for Thai or with a kashida" : (_ref8 = (_ref9 = (_unknownInOlderLayout = unknownInOlderLayout(content, reader, onOff(properties, "w:autoSpaceDE") !== false || onOff(properties, "w:autoSpaceDN") !== false)) !== null && _unknownInOlderLayout !== void 0 ? _unknownInOlderLayout : unjoinedSpacing) !== null && _ref9 !== void 0 ? _ref9 : typeof format === "string" ? format : void 0) !== null && _ref8 !== void 0 ? _ref8 : typeof borders === "string" ? borders : void 0;
+		const unsupported = (_ref6 = (_ref7 = (_ref8 = (_ref9 = (_list$unsupported = list.unsupported) !== null && _list$unsupported !== void 0 ? _list$unsupported : ownCells) !== null && _ref9 !== void 0 ? _ref9 : unknownEastAsianRules(reader.eastAsianRules, own, combined.alignment)) !== null && _ref8 !== void 0 ? _ref8 : joinedAcrossRuns(own) ? "Arabic letters joined across runs" : void 0) !== null && _ref7 !== void 0 ? _ref7 : reader.down === true ? unknownDownOf(own, tabStops) : void 0) !== null && _ref6 !== void 0 ? _ref6 : typeof frame === "string" ? frame : otherDecimalSymbol ? "a decimal tab stop in a document whose decimal symbol isn't a full stop" : (division === null || division === void 0 ? void 0 : division.unsupported) !== void 0 ? division.unsupported : combined.alignment === "mediumKashida" || combined.alignment === "highKashida" ? "a paragraph justified for Arabic with a medium or high kashida" : forThaiOrArabic && typeof items !== "string" && items.some((item) => item.type === "text" && ARABIC.test(item.text)) ? "Arabic text justified for Thai or with a kashida" : (_ref10 = (_ref11 = (_unknownInOlderLayout = unknownInOlderLayout(content, reader, onOff(properties, "w:autoSpaceDE") !== false || onOff(properties, "w:autoSpaceDN") !== false)) !== null && _unknownInOlderLayout !== void 0 ? _unknownInOlderLayout : unjoinedSpacing) !== null && _ref11 !== void 0 ? _ref11 : typeof format === "string" ? format : void 0) !== null && _ref10 !== void 0 ? _ref10 : typeof borders === "string" ? borders : void 0;
 		return _objectSpread2(_objectSpread2(_objectSpread2(_objectSpread2(_objectSpread2(_objectSpread2(_objectSpread2(_objectSpread2(_objectSpread2({
 			type: "paragraph",
 			items: content,
@@ -36793,7 +36844,7 @@ var docxLayout = (function(exports) {
 	* bands by each row's place among all the rows, the deleted ones too (MK14j to MK14l).
 	*/
 	var readTable = (element, reader) => {
-		var _twips2, _reader$grid, _readTableLook, _kept$0$spacing, _kept$, _ref16, _ref17, _ref18, _ref19, _ref20, _ref21, _ref22, _ref23, _ref24, _ref25, _ref26, _ref27, _ref28, _ref29, _ref30, _ref31, _withoutGuess$unsuppo, _read$find2, _givenWidth$share, _blocks$find, _read$0$cells, _read$, _roomOf, _roomOf2;
+		var _twips2, _reader$grid, _readTableLook, _kept$0$spacing, _kept$, _ref18, _ref19, _ref20, _ref21, _ref22, _ref23, _ref24, _ref25, _ref26, _ref27, _ref28, _ref29, _ref30, _ref31, _ref32, _ref33, _withoutGuess$unsuppo, _read$find2, _givenWidth$share, _blocks$find, _read$0$cells, _read$, _roomOf, _roomOf2;
 		const children = contentOf$3(element).filter(isObject);
 		const properties = childrenOf(find(children, "w:tblPr"));
 		const style = valueOf(properties, "w:tblStyle");
@@ -36875,7 +36926,7 @@ var docxLayout = (function(exports) {
 		}, void 0);
 		const gridWidth = (from, to) => grid.slice(from, to).reduce((total, value) => total + value, 0);
 		const read = rows.map(({ element: row, bookmarks: rowBookmarks }, rowIndex) => {
-			var _formatsOf$height, _numberOf5, _ref13, _onOff2;
+			var _formatsOf$height, _numberOf5, _ref15, _onOff2;
 			const rowChildren = contentOf$3(row).filter(isObject);
 			const rowProperties = childrenOf(find(rowChildren, "w:trPr"));
 			const rowParts = unwrap(rowChildren);
@@ -36917,7 +36968,7 @@ var docxLayout = (function(exports) {
 				return typesAt(rowIndex, rows.length, headerRows) !== typesAt(rowIndex - deletedBefore, rows.length - deletedHeaderRows, headerRows - deletedHeaderRows);
 			});
 			const { cells, edges, column: end, unsupported: cellsUnsupported } = rowCells.reduce(({ column, cells: done, edges: before, unsupported: unsupportedBefore }, [{ element: cell }, ...across], cellIndex) => {
-				var _ref10, _ref11, _ref12;
+				var _ref12, _ref13, _ref14;
 				const cellChildren = contentOf$3(cell).filter(isObject);
 				const cellProperties = childrenOf(find(cellChildren, "w:tcPr"));
 				const spanOf = (given) => {
@@ -36962,7 +37013,7 @@ var docxLayout = (function(exports) {
 				return _objectSpread2(_objectSpread2({
 					column: column + span,
 					edges: new Map([...before, [column + span, before.get(column) + width]])
-				}, withoutUndefined({ unsupported: (_ref10 = (_ref11 = (_ref12 = unsupportedBefore !== null && unsupportedBefore !== void 0 ? unsupportedBefore : across.some((merged) => hasMergedContent(merged.element)) ? "cells merged across columns as old versions of Word wrote them, with text after the first" : void 0) !== null && _ref12 !== void 0 ? _ref12 : unsupportedCellOf(cellProperties)) !== null && _ref11 !== void 0 ? _ref11 : formatted.unsupported) !== null && _ref10 !== void 0 ? _ref10 : vertical ? unsupportedVerticalOf(cellBlocks) : void 0 })), {}, { cells: [...done, _objectSpread2(_objectSpread2(_objectSpread2(_objectSpread2(_objectSpread2(_objectSpread2(_objectSpread2(_objectSpread2(_objectSpread2({ column }, span > 1 ? { span } : {}), {}, { width: width - margins.left - margins.right }, hasWidth ? { ownWidth: width } : {}), {}, {
+				}, withoutUndefined({ unsupported: (_ref12 = (_ref13 = (_ref14 = unsupportedBefore !== null && unsupportedBefore !== void 0 ? unsupportedBefore : across.some((merged) => hasMergedContent(merged.element)) ? "cells merged across columns as old versions of Word wrote them, with text after the first" : void 0) !== null && _ref14 !== void 0 ? _ref14 : unsupportedCellOf(cellProperties)) !== null && _ref13 !== void 0 ? _ref13 : formatted.unsupported) !== null && _ref12 !== void 0 ? _ref12 : vertical ? unsupportedVerticalOf(cellBlocks) : void 0 })), {}, { cells: [...done, _objectSpread2(_objectSpread2(_objectSpread2(_objectSpread2(_objectSpread2(_objectSpread2(_objectSpread2(_objectSpread2(_objectSpread2({ column }, span > 1 ? { span } : {}), {}, { width: width - margins.left - margins.right }, hasWidth ? { ownWidth: width } : {}), {}, {
 					blocks: cellBlocks,
 					marginTop: margins.top,
 					marginBottom: margins.bottom,
@@ -36993,13 +37044,13 @@ var docxLayout = (function(exports) {
 					rule: rule === "exact" ? "exact" : "atLeast"
 				} } : {}), {}, {
 					header: onOff(rowProperties, "w:tblHeader") === true,
-					cantSplit: ((_ref13 = (_onOff2 = onOff(rowProperties, "w:cantSplit")) !== null && _onOff2 !== void 0 ? _onOff2 : formatsOf({
+					cantSplit: ((_ref15 = (_onOff2 = onOff(rowProperties, "w:cantSplit")) !== null && _onOff2 !== void 0 ? _onOff2 : formatsOf({
 						row: rowIndex,
 						rows: rows.length,
 						cell: 0,
 						cells: rowCells.length,
 						headerRows
-					}).cantSplit) !== null && _ref13 !== void 0 ? _ref13 : styleKept) === true
+					}).cantSplit) !== null && _ref15 !== void 0 ? _ref15 : styleKept) === true
 				}, widthBefore === void 0 ? {} : { before: widthBefore })
 			});
 		});
@@ -37061,9 +37112,9 @@ var docxLayout = (function(exports) {
 			}, withoutUndefined({
 				breakBorder: placed === null || placed === void 0 ? void 0 : placed.breakBorder,
 				breakTop: placed === null || placed === void 0 ? void 0 : placed.breakTop
-			})), {}, { cells: cells.map((_ref14, cellIndex) => {
+			})), {}, { cells: cells.map((_ref16, cellIndex) => {
 				var _read, _above$cells$find, _unmerged;
-				let { borders: _, margins, gridWidth: __ } = _ref14, cell = _objectWithoutProperties(_ref14, _excluded2);
+				let { borders: _, margins, gridWidth: __ } = _ref16, cell = _objectWithoutProperties(_ref16, _excluded2);
 				const pending = [...carried, ...cellBookmarks[cellIndex]];
 				const marked = pending.length === 0 ? void 0 : startingAtFirst(cell.blocks, pending);
 				carried = marked === void 0 ? pending : [];
@@ -37089,9 +37140,9 @@ var docxLayout = (function(exports) {
 		const deletedRows = sized ? read.filter(({ deleted }) => deleted).map(({ row, cells }) => _objectSpread2(_objectSpread2({}, row), {}, {
 			borderTop: 0,
 			borderBottom: 0,
-			cells: cells.map((_ref15) => {
-				let { borders: _, margins: __, gridWidth: ___ } = _ref15;
-				return _objectWithoutProperties(_ref15, _excluded3);
+			cells: cells.map((_ref17) => {
+				let { borders: _, margins: __, gridWidth: ___ } = _ref17;
+				return _objectWithoutProperties(_ref17, _excluded3);
 			})
 		})) : [];
 		const blocks = [...tableRows.flatMap(({ cells }) => cells.flatMap((cell) => {
@@ -37110,7 +37161,7 @@ var docxLayout = (function(exports) {
 		const older = reader.compatibilityMode !== void 0;
 		const marginsBeside = older && sized && givenWidth.width === void 0 && reader.inCell !== true;
 		const verticalUnsupported = fits && (float !== void 0 || reader.inSizedTable === true) && tableCells.some((cell) => cell.vertical && !isVerticalWidthKnown(cell)) ? "text that runs up or down a cell of a table sized to its text, in a table cell or that text flows around" : void 0;
-		const unsupported = (_ref16 = (_ref17 = (_ref18 = (_ref19 = (_ref20 = (_ref21 = (_ref22 = (_ref23 = (_ref24 = (_ref25 = (_ref26 = (_ref27 = (_ref28 = (_ref29 = (_ref30 = (_ref31 = (_withoutGuess$unsuppo = withoutGuess === null || withoutGuess === void 0 ? void 0 : withoutGuess.unsupported) !== null && _withoutGuess$unsuppo !== void 0 ? _withoutGuess$unsuppo : reader.down === true ? "a table on text that runs down the page" : void 0) !== null && _ref31 !== void 0 ? _ref31 : float !== void 0 && (reader.inCell || reader.inHeader) ? "a table that text flows around in a table cell, header or footer" : void 0) !== null && _ref30 !== void 0 ? _ref30 : typeof float === "object" && older && (marginsBeside || float.horizontal.align !== void 0 || float.distances.left === 0 || float.distances.right === 0) ? "a table that text flows around, sized to its text, lined up across the page or with no distance from the text beside it, in a document in compatibility mode" : void 0) !== null && _ref29 !== void 0 ? _ref29 : marginsBeside && fits && givenWidth.share !== void 0 ? "a table sized to its text as a share of the width, in a document in compatibility mode" : void 0) !== null && _ref28 !== void 0 ? _ref28 : older && sized && fits && givenWidth.width === void 0 && reader.inCell === true && (indent !== 0 || givenWidth.share !== void 0) ? "a table sized to its text in a table cell, indented or as a share of the width, in a document in compatibility mode" : void 0) !== null && _ref27 !== void 0 ? _ref27 : typeof float === "string" ? float : void 0) !== null && _ref26 !== void 0 ? _ref26 : parts.some((part) => "w:sdt" in part) ? BOUND_CONTROL : void 0) !== null && _ref25 !== void 0 ? _ref25 : (_read$find2 = read.find((row) => row.unsupported !== void 0)) === null || _read$find2 === void 0 ? void 0 : _read$find2.unsupported) !== null && _ref24 !== void 0 ? _ref24 : unmerged) !== null && _ref23 !== void 0 ? _ref23 : fits ? unfitted : unequal && !evened ? "a table whose rows give a column different widths" : void 0) !== null && _ref22 !== void 0 ? _ref22 : verticalUnsupported) !== null && _ref21 !== void 0 ? _ref21 : spacingUnsupported) !== null && _ref20 !== void 0 ? _ref20 : typeof geometry === "string" ? geometry : void 0) !== null && _ref19 !== void 0 ? _ref19 : indent === void 0 ? "a table indent of a type not yet followed" : void 0) !== null && _ref18 !== void 0 ? _ref18 : ((_givenWidth$share = givenWidth.share) !== null && _givenWidth$share !== void 0 ? _givenWidth$share : 0) > 1 ? "a table whose width is a share of more than the width it is in" : void 0) !== null && _ref17 !== void 0 ? _ref17 : styleUnsupported) !== null && _ref16 !== void 0 ? _ref16 : (_blocks$find = blocks.find((block) => block.unsupported !== void 0)) === null || _blocks$find === void 0 ? void 0 : _blocks$find.unsupported;
+		const unsupported = (_ref18 = (_ref19 = (_ref20 = (_ref21 = (_ref22 = (_ref23 = (_ref24 = (_ref25 = (_ref26 = (_ref27 = (_ref28 = (_ref29 = (_ref30 = (_ref31 = (_ref32 = (_ref33 = (_withoutGuess$unsuppo = withoutGuess === null || withoutGuess === void 0 ? void 0 : withoutGuess.unsupported) !== null && _withoutGuess$unsuppo !== void 0 ? _withoutGuess$unsuppo : reader.down === true ? "a table on text that runs down the page" : void 0) !== null && _ref33 !== void 0 ? _ref33 : float !== void 0 && (reader.inCell || reader.inHeader) ? "a table that text flows around in a table cell, header or footer" : void 0) !== null && _ref32 !== void 0 ? _ref32 : typeof float === "object" && older && (marginsBeside || float.horizontal.align !== void 0) ? "a table that text flows around, sized to its text or lined up across the page, in a document in compatibility mode" : void 0) !== null && _ref31 !== void 0 ? _ref31 : marginsBeside && fits && givenWidth.share !== void 0 ? "a table sized to its text as a share of the width, in a document in compatibility mode" : void 0) !== null && _ref30 !== void 0 ? _ref30 : older && sized && fits && givenWidth.width === void 0 && reader.inCell === true && (indent !== 0 || givenWidth.share !== void 0) ? "a table sized to its text in a table cell, indented or as a share of the width, in a document in compatibility mode" : void 0) !== null && _ref29 !== void 0 ? _ref29 : typeof float === "string" ? float : void 0) !== null && _ref28 !== void 0 ? _ref28 : parts.some((part) => "w:sdt" in part) ? BOUND_CONTROL : void 0) !== null && _ref27 !== void 0 ? _ref27 : (_read$find2 = read.find((row) => row.unsupported !== void 0)) === null || _read$find2 === void 0 ? void 0 : _read$find2.unsupported) !== null && _ref26 !== void 0 ? _ref26 : unmerged) !== null && _ref25 !== void 0 ? _ref25 : fits ? unfitted : unequal && !evened ? "a table whose rows give a column different widths" : void 0) !== null && _ref24 !== void 0 ? _ref24 : verticalUnsupported) !== null && _ref23 !== void 0 ? _ref23 : spacingUnsupported) !== null && _ref22 !== void 0 ? _ref22 : typeof geometry === "string" ? geometry : void 0) !== null && _ref21 !== void 0 ? _ref21 : indent === void 0 ? "a table indent of a type not yet followed" : void 0) !== null && _ref20 !== void 0 ? _ref20 : ((_givenWidth$share = givenWidth.share) !== null && _givenWidth$share !== void 0 ? _givenWidth$share : 0) > 1 ? "a table whose width is a share of more than the width it is in" : void 0) !== null && _ref19 !== void 0 ? _ref19 : styleUnsupported) !== null && _ref18 !== void 0 ? _ref18 : (_blocks$find = blocks.find((block) => block.unsupported !== void 0)) === null || _blocks$find === void 0 ? void 0 : _blocks$find.unsupported;
 		const rowWidth = ((_read$0$cells = (_read$ = read[0]) === null || _read$ === void 0 ? void 0 : _read$.cells) !== null && _read$0$cells !== void 0 ? _read$0$cells : []).reduce((total, cell) => {
 			var _cell$ownWidth;
 			return total + ((_cell$ownWidth = cell.ownWidth) !== null && _cell$ownWidth !== void 0 ? _cell$ownWidth : 0);
@@ -37202,18 +37253,25 @@ var docxLayout = (function(exports) {
 			var _twips6;
 			return (_twips6 = twips(attributes[`w:${name}FromText`])) !== null && _twips6 !== void 0 ? _twips6 : 0;
 		};
+		const beside = (name) => {
+			const given = distance(name);
+			return given === 0 ? HALF_POINT : given < HALF_POINT ? "a table that text flows around less than half a point from the text beside it" : given;
+		};
+		const [left, right] = [beside("left"), beside("right")];
+		if (typeof left === "string" || typeof right === "string") return typeof left === "string" ? left : right;
 		return {
 			horizontal,
 			vertical,
 			distances: {
 				top: distance("top"),
 				bottom: distance("bottom"),
-				left: distance("left"),
-				right: distance("right")
+				left,
+				right
 			},
 			mayOverlap: attributesOf(overlap)["w:val"] !== "never"
 		};
 	};
+	var HALF_POINT = .5;
 	/** A block in place of what can't be laid out, with why */
 	var unsupportedBlock = (unsupported) => ({
 		type: "paragraph",
@@ -38118,7 +38176,6 @@ var docxLayout = (function(exports) {
 	]);
 	var WORD_2007_MODE = 12;
 	var WORD_2010_MODE = 14;
-	var LAST_ASCII = 127;
 	var WORD_SETTINGS = "http://schemas.microsoft.com/office/word";
 	var FOLLOWED_COMPATIBILITY = /* @__PURE__ */ new Set([
 		"w:doNotUseHTMLParagraphAutoSpacing",
@@ -38460,7 +38517,7 @@ var docxLayout = (function(exports) {
 	* Reads a document's body (`w:body`), with the other parts of the document.
 	*/
 	var readContent = (writtenBody, writtenParts, { guess = false } = {}) => {
-		var _writtenParts$dataSto, _parts$otherListIds, _parts$otherListIds2, _parts$settings, _parts$webSettings, _fontOf$size2, _notesByKind$kind$get, _readNoteProperties$p, _ref32, _ref33, _ref34, _ref35, _documentContent$unsu;
+		var _writtenParts$dataSto, _parts$otherListIds, _parts$otherListIds2, _parts$settings, _parts$webSettings, _fontOf$size2, _notesByKind$kind$get, _readNoteProperties$p, _ref34, _ref35, _ref36, _ref37, _documentContent$unsu;
 		const stores = (_writtenParts$dataSto = writtenParts.dataStores) !== null && _writtenParts$dataSto !== void 0 ? _writtenParts$dataSto : /* @__PURE__ */ new Map();
 		const body = withBoundTextWritten(writtenBody, stores);
 		const parts = _objectSpread2(_objectSpread2({}, writtenParts), {}, {
@@ -38852,7 +38909,7 @@ var docxLayout = (function(exports) {
 			relativeReferences: markers.relative,
 			endnoteReferences
 		}, parts.fonts !== void 0 && parts.fonts.length > 0 ? { fonts: parts.fonts } : {}), readSettings(parts.settings));
-		return _objectSpread2(_objectSpread2({}, documentContent), withoutUndefined({ unsupported: (_ref32 = (_ref33 = (_ref34 = (_ref35 = (_documentContent$unsu = documentContent.unsupported) !== null && _documentContent$unsu !== void 0 ? _documentContent$unsu : footnotes.size > 0 ? notesUnsupported("footnote") : void 0) !== null && _ref35 !== void 0 ? _ref35 : endnotes.length > 0 ? notesUnsupported("endnote") : void 0) !== null && _ref34 !== void 0 ? _ref34 : endnoteSections.some((section) => sections.slice(section + 1).some(({ textRunsDown }) => textRunsDown !== sections[section].textRunsDown)) ? "endnotes from a section followed by one whose text runs another way" : endnoteSections.length > 0 && sections[sections.length - 1].textRunsDown !== void 0 ? "endnotes after text that runs down the page" : void 0) !== null && _ref33 !== void 0 ? _ref33 : unwrittenNumber ? "notes numbered in a format not yet written" : void 0) !== null && _ref32 !== void 0 ? _ref32 : unseenNumbering }));
+		return _objectSpread2(_objectSpread2({}, documentContent), withoutUndefined({ unsupported: (_ref34 = (_ref35 = (_ref36 = (_ref37 = (_documentContent$unsu = documentContent.unsupported) !== null && _documentContent$unsu !== void 0 ? _documentContent$unsu : footnotes.size > 0 ? notesUnsupported("footnote") : void 0) !== null && _ref37 !== void 0 ? _ref37 : endnotes.length > 0 ? notesUnsupported("endnote") : void 0) !== null && _ref36 !== void 0 ? _ref36 : endnoteSections.some((section) => sections.slice(section + 1).some(({ textRunsDown }) => textRunsDown !== sections[section].textRunsDown)) ? "endnotes from a section followed by one whose text runs another way" : endnoteSections.length > 0 && sections[sections.length - 1].textRunsDown !== void 0 ? "endnotes after text that runs down the page" : void 0) !== null && _ref35 !== void 0 ? _ref35 : unwrittenNumber ? "notes numbered in a format not yet written" : void 0) !== null && _ref34 !== void 0 ? _ref34 : unseenNumbering }));
 	};
 	//#endregion
 	//#region src/layout/paginate.ts
