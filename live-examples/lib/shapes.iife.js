@@ -5105,18 +5105,21 @@ var docxShapes = (function(exports, docx) {
 	* How wide a run's border is as Word draws it, in eighths of a point: as a paragraph's of its style. A border of no style
 	* ("none") takes its space still, but no width (scripts/layout-probes/word-run-formatting.ts RF7h). An art border's size
 	* is in points, so apples of 12 take 12 points (scripts/layout-probes/stops2/word-stops-text.ts RF25c), and Word draws a
-	* single border of an eighth of a point, and a double one of none, as given (RF25f, RF25e). A shadow doubles a single
-	* line, as a paragraph's (`word-paragraph-formats.docx` B6), and one drawn as a frame is as wide: one of 1.5 points 2
-	* points from the text takes 100 twips beside and above and below it with a shadow, and 70 as a frame
-	* (scripts/layout-probes/stops2/word-stops-text2.ts RF24c, RF24d). Undefined when Word hasn't been seen to draw it.
+	* single border of an eighth of a point, and a double one of none, as given (RF25f, RF25e). A shadow doubles the line as
+	* Word draws it, whatever its style, as a paragraph's (`word-paragraph-formats.docx` B6), and one drawn as a frame is as
+	* wide: a single line of 1.5 points 2 points from the text takes 100 twips beside and above and below it with a shadow, and
+	* 70 as a frame, a double line of half a point, which Word draws 1.5 wide, 100 with a shadow, and a dotted one of 1.5 70 as
+	* a frame (scripts/layout-probes/stops2/word-stops-text2.ts RF24c, RF24d, stops2/word-stops-text3.ts RF24e, RF24f).
+	* Undefined when Word hasn't been seen to draw it, as with a shadow or frame on an art border, a line of no style or one
+	* narrower than Word draws.
 	*/
 	var runBorderWidth = ({ style, size, shadow, frame }) => {
 		var _BORDER_WIDTHS$style, _BORDER_WIDTHS$style2, _SEEN_RUN_BORDERS$sty;
 		if (size === void 0) return style === "none" && !shadow && !frame ? 0 : void 0;
-		if (shadow || frame) return style === "single" && size >= 2 && size <= 96 ? (shadow ? 2 : 1) * size : void 0;
-		if (isArtBorder(style)) return size >= 1 && size <= 31 ? size * EIGHTHS_PER_POINT : void 0;
-		if (style === "single" && size === 1 || style === "double" && size === 0) return BORDER_WIDTHS[style](size);
-		return style === "none" ? 0 : size < 2 || size > 96 ? void 0 : (_BORDER_WIDTHS$style = (_BORDER_WIDTHS$style2 = BORDER_WIDTHS[style]) === null || _BORDER_WIDTHS$style2 === void 0 ? void 0 : _BORDER_WIDTHS$style2.call(BORDER_WIDTHS, size)) !== null && _BORDER_WIDTHS$style !== void 0 ? _BORDER_WIDTHS$style : (_SEEN_RUN_BORDERS$sty = SEEN_RUN_BORDERS[style]) === null || _SEEN_RUN_BORDERS$sty === void 0 ? void 0 : _SEEN_RUN_BORDERS$sty[size];
+		if (isArtBorder(style)) return size >= 1 && size <= 31 && !shadow && !frame ? size * EIGHTHS_PER_POINT : void 0;
+		const drawn = style === "single" && size === 1 || style === "double" && size === 0 ? BORDER_WIDTHS[style](size) : style === "none" ? 0 : size < 2 || size > 96 ? void 0 : (_BORDER_WIDTHS$style = (_BORDER_WIDTHS$style2 = BORDER_WIDTHS[style]) === null || _BORDER_WIDTHS$style2 === void 0 ? void 0 : _BORDER_WIDTHS$style2.call(BORDER_WIDTHS, size)) !== null && _BORDER_WIDTHS$style !== void 0 ? _BORDER_WIDTHS$style : (_SEEN_RUN_BORDERS$sty = SEEN_RUN_BORDERS[style]) === null || _SEEN_RUN_BORDERS$sty === void 0 ? void 0 : _SEEN_RUN_BORDERS$sty[size];
+		if (shadow || frame) return drawn === void 0 || style === "none" || size < 2 ? void 0 : (shadow ? 2 : 1) * drawn;
+		return drawn;
 	};
 	/**
 	* The room a run's border takes, beside the run and above and below it: its space and its width, as Word gives it room (a

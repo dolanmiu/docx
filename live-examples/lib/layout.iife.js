@@ -7720,18 +7720,21 @@ var docxLayout = (function(exports) {
 	* How wide a run's border is as Word draws it, in eighths of a point: as a paragraph's of its style. A border of no style
 	* ("none") takes its space still, but no width (scripts/layout-probes/word-run-formatting.ts RF7h). An art border's size
 	* is in points, so apples of 12 take 12 points (scripts/layout-probes/stops2/word-stops-text.ts RF25c), and Word draws a
-	* single border of an eighth of a point, and a double one of none, as given (RF25f, RF25e). A shadow doubles a single
-	* line, as a paragraph's (`word-paragraph-formats.docx` B6), and one drawn as a frame is as wide: one of 1.5 points 2
-	* points from the text takes 100 twips beside and above and below it with a shadow, and 70 as a frame
-	* (scripts/layout-probes/stops2/word-stops-text2.ts RF24c, RF24d). Undefined when Word hasn't been seen to draw it.
+	* single border of an eighth of a point, and a double one of none, as given (RF25f, RF25e). A shadow doubles the line as
+	* Word draws it, whatever its style, as a paragraph's (`word-paragraph-formats.docx` B6), and one drawn as a frame is as
+	* wide: a single line of 1.5 points 2 points from the text takes 100 twips beside and above and below it with a shadow, and
+	* 70 as a frame, a double line of half a point, which Word draws 1.5 wide, 100 with a shadow, and a dotted one of 1.5 70 as
+	* a frame (scripts/layout-probes/stops2/word-stops-text2.ts RF24c, RF24d, stops2/word-stops-text3.ts RF24e, RF24f).
+	* Undefined when Word hasn't been seen to draw it, as with a shadow or frame on an art border, a line of no style or one
+	* narrower than Word draws.
 	*/
 	var runBorderWidth = ({ style, size, shadow, frame }) => {
 		var _BORDER_WIDTHS$style, _BORDER_WIDTHS$style2, _SEEN_RUN_BORDERS$sty;
 		if (size === void 0) return style === "none" && !shadow && !frame ? 0 : void 0;
-		if (shadow || frame) return style === "single" && size >= 2 && size <= 96 ? (shadow ? 2 : 1) * size : void 0;
-		if (isArtBorder(style)) return size >= 1 && size <= 31 ? size * EIGHTHS_PER_POINT$2 : void 0;
-		if (style === "single" && size === 1 || style === "double" && size === 0) return BORDER_WIDTHS[style](size);
-		return style === "none" ? 0 : size < 2 || size > 96 ? void 0 : (_BORDER_WIDTHS$style = (_BORDER_WIDTHS$style2 = BORDER_WIDTHS[style]) === null || _BORDER_WIDTHS$style2 === void 0 ? void 0 : _BORDER_WIDTHS$style2.call(BORDER_WIDTHS, size)) !== null && _BORDER_WIDTHS$style !== void 0 ? _BORDER_WIDTHS$style : (_SEEN_RUN_BORDERS$sty = SEEN_RUN_BORDERS[style]) === null || _SEEN_RUN_BORDERS$sty === void 0 ? void 0 : _SEEN_RUN_BORDERS$sty[size];
+		if (isArtBorder(style)) return size >= 1 && size <= 31 && !shadow && !frame ? size * EIGHTHS_PER_POINT$2 : void 0;
+		const drawn = style === "single" && size === 1 || style === "double" && size === 0 ? BORDER_WIDTHS[style](size) : style === "none" ? 0 : size < 2 || size > 96 ? void 0 : (_BORDER_WIDTHS$style = (_BORDER_WIDTHS$style2 = BORDER_WIDTHS[style]) === null || _BORDER_WIDTHS$style2 === void 0 ? void 0 : _BORDER_WIDTHS$style2.call(BORDER_WIDTHS, size)) !== null && _BORDER_WIDTHS$style !== void 0 ? _BORDER_WIDTHS$style : (_SEEN_RUN_BORDERS$sty = SEEN_RUN_BORDERS[style]) === null || _SEEN_RUN_BORDERS$sty === void 0 ? void 0 : _SEEN_RUN_BORDERS$sty[size];
+		if (shadow || frame) return drawn === void 0 || style === "none" || size < 2 ? void 0 : (shadow ? 2 : 1) * drawn;
+		return drawn;
 	};
 	/**
 	* The room a run's border takes, beside the run and above and below it: its space and its width, as Word gives it room (a
@@ -7774,15 +7777,14 @@ var docxLayout = (function(exports) {
 	};
 	/**
 	* Why a run's formatting can't be laid out as Word lays it out, when it can't: OpenType features other than ligatures,
-	* whose widths the width tables don't have, a border of a style, width or space Word hasn't been seen to draw, or of a style
-	* other than single with a shadow or drawn as a frame, and emphasis marks of a kind the schema doesn't have.
+	* whose widths the width tables don't have, a border of a style, width or space Word hasn't been seen to draw, and emphasis
+	* marks of a kind the schema doesn't have.
 	*/
 	var unknownRunFormatting = ({ font, bold, italic, border, emphasisMark, numberForm, numberSpacing, stylisticSets, contextualAlternates }) => {
 		var _DEFAULT_FIGURES$toLo;
 		const forms = `${numberForm !== null && numberForm !== void 0 ? numberForm : "default"} ${numberSpacing !== null && numberSpacing !== void 0 ? numberSpacing : "default"}`;
 		if (forms !== "default default" && (bold === true || italic === true || !((_DEFAULT_FIGURES$toLo = DEFAULT_FIGURES[(font !== null && font !== void 0 ? font : "").toLowerCase()]) === null || _DEFAULT_FIGURES$toLo === void 0 ? void 0 : _DEFAULT_FIGURES$toLo.includes(forms)))) return "OpenType number forms or spacing";
 		if (stylisticSets === true || contextualAlternates === true) return "OpenType stylistic sets or contextual alternates";
-		if (border !== void 0 && border.style !== "nil" && border.style !== "single" && (border.shadow || border.frame)) return "a run border of a style other than single with a shadow or drawn as a frame";
 		if (border !== void 0 && border.style !== "nil" && runBorderWidth(border) === void 0) return "a run border of a style, width or space not yet followed";
 		return emphasisMark === void 0 || emphasisMark === "none" || EMPHASIS[emphasisMark] !== void 0 ? void 0 : "emphasis marks of a kind that isn't known";
 	};
@@ -8139,6 +8141,15 @@ var docxLayout = (function(exports) {
 	/** The border of the start or end of pieces of text */
 	var firstBorder = (pieces) => pieces[0].font.border;
 	var lastBorder = (pieces) => pieces[pieces.length - 1].font.border;
+	/** The border of the start or end of a word or spaces, or of a picture in a border of its run, whose box it is in too */
+	var startBorderOf = (token) => {
+		var _token$font;
+		return token.type === "word" || token.type === "space" ? firstBorder(token.pieces) : token.type === "box" ? (_token$font = token.font) === null || _token$font === void 0 ? void 0 : _token$font.border : void 0;
+	};
+	var endBorderOf = (token) => {
+		var _token$font2;
+		return token.type === "word" || token.type === "space" ? lastBorder(token.pieces) : token.type === "box" ? (_token$font2 = token.font) === null || _token$font2 === void 0 ? void 0 : _token$font2.border : void 0;
+	};
 	/** Whether pieces of text in the same font are measured together: when they are kerned, or join letters */
 	var shaped = (font) => isKerned(font) || hasLigatures(font);
 	/**
@@ -8165,27 +8176,22 @@ var docxLayout = (function(exports) {
 	/**
 	* A paragraph's text in the pieces it is measured in: text next to text in the same font, kerned or with ligatures, as one,
 	* across bookmarks between them, as its pairs of characters are kerned and its letters joined across runs, and other text
-	* on its own. So kerning and ligatures a measurer doesn't know are found across runs too. Kerned text either side of a soft
-	* hyphen is measured apart, as Word doesn't kern across one (scripts/layout-probes/stops2/word-stops-text2.ts KE9a), and
-	* text with ligatures across one, which Word hasn't been seen joining or leaving apart, is marked.
+	* on its own. So kerning and ligatures a measurer doesn't know are found across runs too. Text either side of a soft hyphen
+	* is measured apart, as Word neither kerns across one (scripts/layout-probes/stops2/word-stops-text2.ts KE9a) nor joins
+	* letters into a ligature across one: with a soft hyphen between the f's of "office", its "fi" is joined, and with one
+	* between the second f and the i of "efficient", its "ff", where "ffi" is without them (stops2/word-stops-text3.ts SH18e).
 	*/
 	var textMeasuredTogether = (items) => {
 		const pieces = [];
 		let joins = false;
-		let hyphen = false;
 		for (const item of items) {
 			if (item.type === "marker") continue;
 			const last = pieces[pieces.length - 1];
-			if (item.type === "softHyphen") {
-				hyphen = joins && last.text.length > 0 && hasLigatures(last.font);
-				joins = hyphen;
-				continue;
-			}
 			if (item.type !== "text") joins = false;
-			else if (joins && shaped(last.font) && sameFont(last.font, item.font)) pieces[pieces.length - 1] = _objectSpread2({
+			else if (joins && shaped(last.font) && sameFont(last.font, item.font)) pieces[pieces.length - 1] = {
 				text: last.text + item.text,
 				font: last.font
-			}, hyphen || last.besideSoftHyphen === true ? { besideSoftHyphen: true } : {});
+			};
 			else {
 				pieces.push({
 					text: item.text,
@@ -8193,7 +8199,6 @@ var docxLayout = (function(exports) {
 				});
 				joins = true;
 			}
-			hyphen = false;
 		}
 		return pieces;
 	};
@@ -8317,7 +8322,7 @@ var docxLayout = (function(exports) {
 		if (spacing === void 0) return { height: natural };
 		if (spacing.rule !== "multiple") return { height: spacing.rule === "exact" ? spacing.height : Math.max(natural, spacing.height) };
 		const spacingBelow = (spacing.multiple - 1) * tallest;
-		return _objectSpread2(_objectSpread2({ height: natural + spacingBelow }, spacingBelow > 0 ? { spacingBelow } : {}), heights.borderedPicture === true && spacing.multiple !== 1 ? { unsupported: "a picture in a border in a line with multiple line spacing" } : {});
+		return _objectSpread2({ height: natural + spacingBelow }, spacingBelow > 0 ? { spacingBelow } : {});
 	};
 	/**
 	* How tall a line on a document grid's lines is: as many of them as its own height needs, from the first fraction of a
@@ -8377,8 +8382,8 @@ var docxLayout = (function(exports) {
 		const kerning = kerningBefore(tokens, measurer);
 		return tokens.reduce(({ total, border }, token, index) => {
 			if (token.type === "box") return {
-				total: total + roomBetween(border, void 0) + token.width,
-				border: void 0
+				total: total + roomBetween(border, startBorderOf(token)) + token.width,
+				border: endBorderOf(token)
 			};
 			return token.type === "word" || token.type === "space" ? {
 				total: total + roomBetween(border, firstBorder(token.pieces)) + kerning[index] + widthOf(token.pieces, measurer),
@@ -8465,11 +8470,11 @@ var docxLayout = (function(exports) {
 	* Word hasn't been seen to line it up.
 	*/
 	var shiftAt = (alignment, tokens, measurer, border) => {
-		var _lastBorder$room, _lastBorder;
+		var _endBorderOf$room, _endBorderOf;
 		if (alignment === "left") return 0;
 		if (alignment === "decimal") return widthBeforeDecimal(tokens, measurer, border);
 		const last = textAfterTab(tokens).findLast((token) => token.type === "word" || token.type === "space" || token.type === "box");
-		const after = widthAfterTab(tokens, measurer, border) + (last === void 0 || last.type === "box" ? 0 : (_lastBorder$room = (_lastBorder = lastBorder(last.pieces)) === null || _lastBorder === void 0 ? void 0 : _lastBorder.room) !== null && _lastBorder$room !== void 0 ? _lastBorder$room : 0);
+		const after = widthAfterTab(tokens, measurer, border) + (last === void 0 ? 0 : (_endBorderOf$room = (_endBorderOf = endBorderOf(last)) === null || _endBorderOf === void 0 ? void 0 : _endBorderOf.room) !== null && _endBorderOf$room !== void 0 ? _endBorderOf$room : 0);
 		return alignment === "center" ? after / 2 : after;
 	};
 	/** The tokens after a tab, up to the next tab or the end of the part */
@@ -8527,7 +8532,7 @@ var docxLayout = (function(exports) {
 		const beforeStart = numberShift(items, numberAlignment, measurer);
 		const numberTab = numberAlignment === "right" && ((_items$ = items[1]) === null || _items$ === void 0 ? void 0 : _items$.type) === "tab";
 		const hyphenating = hyphenation !== void 0 && format.suppressAutoHyphens !== true ? hyphenation : void 0;
-		const { min, max, whole } = segmentsOf(items, rulesOf(format, breakRules)).reduce((widths, { tokens }, segmentIndex) => {
+		const { min, max, whole } = segmentsOf(measuredBoxes(items, measurer), rulesOf(format, breakRules)).reduce((widths, { tokens }, segmentIndex) => {
 			var _endBorder$room;
 			const first = segmentIndex === 0;
 			const lineStart = first ? indentLeft + firstLineIndent - beforeStart : indentLeft;
@@ -8538,7 +8543,7 @@ var docxLayout = (function(exports) {
 			let endBorder;
 			const kerning = kerningBefore(tokens, measurer);
 			for (const [index, token] of tokens.entries()) {
-				var _border$room2, _firstBorder$room, _firstBorder;
+				var _border$room2, _startBorderOf$room, _startBorderOf;
 				if (token.type === "marker") continue;
 				if (token.type === "space") {
 					position += roomBetween(border, firstBorder(token.pieces)) + kerning[index] + widthOf(token.pieces, measurer);
@@ -8546,8 +8551,8 @@ var docxLayout = (function(exports) {
 					continue;
 				}
 				const keepsBox = token.type === "tab" && token.font.border !== void 0 && token.font.border.key === (border === null || border === void 0 ? void 0 : border.key);
-				const lead = token.type === "word" ? roomBetween(border, firstBorder(token.pieces)) : keepsBox ? 0 : roomBetween(border, void 0);
-				border = token.type === "word" ? lastBorder(token.pieces) : keepsBox ? border : void 0;
+				const lead = keepsBox ? 0 : roomBetween(border, startBorderOf(token));
+				border = keepsBox ? border : endBorderOf(token);
 				endBorder = border;
 				if (token.type === "tab") {
 					var _ref, _shiftAt;
@@ -8560,7 +8565,7 @@ var docxLayout = (function(exports) {
 				}
 				const tokenWidth = token.type === "box" ? token.width : widthOf(token.pieces, measurer);
 				const close = (_border$room2 = border === null || border === void 0 ? void 0 : border.room) !== null && _border$room2 !== void 0 ? _border$room2 : 0;
-				const start = end === lineStart ? position + lead : indentLeft + (token.type === "word" ? (_firstBorder$room = (_firstBorder = firstBorder(token.pieces)) === null || _firstBorder === void 0 ? void 0 : _firstBorder.room) !== null && _firstBorder$room !== void 0 ? _firstBorder$room : 0 : 0);
+				const start = end === lineStart ? position + lead : indentLeft + ((_startBorderOf$room = (_startBorderOf = startBorderOf(token)) === null || _startBorderOf === void 0 ? void 0 : _startBorderOf.room) !== null && _startBorderOf$room !== void 0 ? _startBorderOf$room : 0);
 				narrowest = Math.max(narrowest, start + tokenWidth + close + indentRight);
 				if (token.type === "box" || !hyphenating || !dictionaryOf(token.pieces, hyphenating)) wholeWords = Math.max(wholeWords, start + tokenWidth + close + indentRight);
 				position += lead + kerning[index] + tokenWidth;
@@ -8653,10 +8658,26 @@ var docxLayout = (function(exports) {
 		return isGridCharacter([...textOf$2(next.pieces)][0]) ? "grid" : "word";
 	};
 	/**
-	* A paragraph's content with its text set across in text that runs down the page as pieces of room of their own, as long
-	* along the line as a line of their font is tall, and with its ascent and descent across it.
+	* A paragraph's content with each box as wide as its text measured: the widest of its text and the other text in it, in
+	* their fonts, as text with a phonetic guide over it is as wide as the wider of the two: kana of 5.5 points 990 twips wide
+	* over two ideographs of 11, and two ideographs of 11 under kana of 5.5, 440 wide (scripts/layout-probes/stops2/word-stops-text2.ts
+	* RF31b, stops2/word-stops-text3.ts RF31e).
 	*/
-	var withAcross = (items, measurer) => items.map((item) => {
+	var measuredBoxes = (items, measurer) => items.map((item) => {
+		var _item$text, _item$font, _item$otherText;
+		if (item.type !== "box" || item.asWideAsText !== true) return item;
+		const texts = [{
+			text: (_item$text = item.text) !== null && _item$text !== void 0 ? _item$text : "",
+			font: (_item$font = item.font) !== null && _item$font !== void 0 ? _item$font : {}
+		}, ...(_item$otherText = item.otherText) !== null && _item$otherText !== void 0 ? _item$otherText : []];
+		return _objectSpread2(_objectSpread2({}, item), {}, { width: Math.max(...texts.map(({ text, font }) => measurer.measureWidth(text, font))) });
+	});
+	/**
+	* A paragraph's content with its text set across in text that runs down the page as pieces of room of their own, as long
+	* along the line as a line of their font is tall, and with its ascent and descent across it, and its boxes as wide as their
+	* text measured (see {@link measuredBoxes}).
+	*/
+	var withAcross = (items, measurer) => measuredBoxes(items, measurer).map((item) => {
 		if (item.type !== "text" || item.across !== true) return item;
 		const descent = measurer.measureDescent(item.font);
 		return {
@@ -8850,8 +8871,8 @@ var docxLayout = (function(exports) {
 			return (_markHeights = markHeights) !== null && _markHeights !== void 0 ? _markHeights : markHeights = withFont(NOTHING, emptyLineFont, measurer);
 		};
 		const numberOnly = content.every((item) => {
-			var _item$font;
-			return item.type === "marker" || (item.type === "text" || item.type === "tab") && ((_item$font = item.font) === null || _item$font === void 0 ? void 0 : _item$font.listNumber) !== void 0;
+			var _item$font2;
+			return item.type === "marker" || (item.type === "text" || item.type === "tab") && ((_item$font2 = item.font) === null || _item$font2 === void 0 ? void 0 : _item$font2.listNumber) !== void 0;
 		});
 		const withMarkOf = (heights) => {
 			if (!onlyNumber(heights)) return heights;
@@ -8864,16 +8885,19 @@ var docxLayout = (function(exports) {
 		};
 		/** The heights of a line with the text of the token on it too */
 		const withToken = (heights, token) => {
-			if (token.type === "box" && token.text !== void 0) return withFont(heights, token.font, measurer, token.text);
+			if (token.type === "box" && token.text !== void 0) {
+				var _token$otherText;
+				const own = withFont(heights, token.font, measurer, token.text);
+				return ((_token$otherText = token.otherText) !== null && _token$otherText !== void 0 ? _token$otherText : []).reduce((all, { text, font }) => withFont(all, font, measurer, text), own);
+			}
 			if (token.type === "box") {
-				const tallest = token.font ? Math.max(heights.tallest, measurer.measureLineHeight(token.font)) : heights.tallest;
+				var _token$below;
+				const room = (_token$below = token.below) !== null && _token$below !== void 0 ? _token$below : 0;
+				const tallest = token.font ? Math.max(heights.tallest, measurer.measureLineHeight(token.font) + 2 * room) : heights.tallest;
 				return token.descent === void 0 ? _objectSpread2(_objectSpread2({}, heights), {}, {
 					picture: Math.max(heights.picture, token.height),
 					tallest
-				}, token.below === void 0 ? {} : {
-					descent: Math.max(heights.descent, token.below),
-					borderedPicture: true
-				}) : _objectSpread2(_objectSpread2({}, heights), {}, {
+				}, token.below === void 0 ? {} : { descent: Math.max(heights.descent, token.below) }) : _objectSpread2(_objectSpread2({}, heights), {}, {
 					ascent: Math.max(heights.ascent, token.height),
 					descent: Math.max(heights.descent, token.descent),
 					tallest: Math.max(tallest, token.height + token.descent)
@@ -8942,6 +8966,18 @@ var docxLayout = (function(exports) {
 			const between = state.spaces - (state.position - state.end);
 			return between <= 0 || slack / between >= STRETCH_TO_SQUEEZE * (over / state.spaces);
 		};
+		/**
+		* Whether Word squeezes a line's spaces to fit a longer part of a word before a soft hyphen, whose hyphen ends `longer`
+		* past the end of the line, rather than take a shorter part that fits as it is, with its hyphen: when the spaces, and
+		* on a distributed line the letters, would stretch twice as far with the shorter part as they'd be squeezed for the
+		* longer, as {@link squeezesIn} weighs a word against leaving it to the next line
+		*/
+		const squeezesForPart = (state, shorter, longer) => {
+			const over = longer - limitOf();
+			const slack = limitOf() - shorter.withHyphen;
+			const letters = state.letters + lengthOf(shorter.before) + 1;
+			return alignment === "distributed" ? slack * SPACE_TO_LETTER / (SPACE_TO_LETTER * state.spaceCount + letters) >= STRETCH_TO_SQUEEZE * (over / state.spaceCount) : slack >= STRETCH_TO_SQUEEZE * over;
+		};
 		const hyphenating = hyphenation !== void 0 && format.suppressAutoHyphens !== true ? hyphenation : void 0;
 		/**
 		* Whether Word may hyphenate a word that goes past the end of a line, putting a part of it and a hyphen on the line.
@@ -8964,31 +9000,27 @@ var docxLayout = (function(exports) {
 		};
 		/**
 		* Whether a word or picture past the end of a justified line could be squeezed in at a four-per-em space, which Word
-		* hasn't been seen with, or at the ordinary spaces beside en, em or ideographic spaces, which Word doesn't squeeze, and
-		* how it weighs them then hasn't been seen. Past the end by more than a quarter of the ordinary spaces' width, it isn't
-		* squeezed in, though they and the others are four times as wide (scripts/layout-probes/stops2/word-stops-text2.ts JU4a,
-		* JU4b: 10 spaces and 6 en spaces, and "lighthouse" past the end by 27% and 35% of the spaces' width)
+		* hasn't been seen with. Beside en, em or ideographic spaces, which Word doesn't squeeze, it squeezes the ordinary
+		* spaces as elsewhere, by up to a quarter of their width: "lighthouse" past the end by 12% and 20% of 10 ordinary spaces'
+		* width, beside 6 en spaces, is squeezed in, and past it by 27% and 35% it isn't, though the en spaces are four times as
+		* wide (scripts/layout-probes/stops2/word-stops-text3.ts JU5a, JU5b, stops2/word-stops-text2.ts JU4a, JU4b)
 		*/
-		const unsure = (state, tokenWidth) => {
-			if (!squeezes || older || state.otherSpaces === 0) return false;
-			const over = state.position + tokenWidth - limitOf();
-			const ordinary = state.spaces - state.otherSpaces;
-			return state.text.includes(" ") ? over <= MOST_SQUEEZE * state.spaces : ordinary > TOLERANCE$2 && over <= MOST_SQUEEZE * ordinary;
-		};
+		const unsure = (state, tokenWidth) => squeezes && !older && state.otherSpaces > 0 && state.text.includes(" ") && state.position + tokenWidth - limitOf() <= MOST_SQUEEZE * state.spaces;
 		/**
 		* Why where Word puts the text after a tab to one of the paragraph's own stops past the end of the line isn't
 		* known, when it isn't. Its probes had no right indent past the margin; a left stop after text, with first line and
-		* hanging indents too (scripts/layout-probes/stops2/word-stops-tabs.ts TA1a, TA1b), and at the start of a line in a
-		* paragraph indented on the left or right (stops2/word-stops-edges.ts TA9a, TA9b), but not on the first line of one
-		* with a first line indent, nor on any line of one with a hanging indent; and a right indent only with a right stop
-		* after text. Right, centred and decimal stops line their text up with the end of the line whatever the left, first
-		* line and hanging indents, at the start of a line and after text (TA3a to TA3d, stops2/word-stops-text2.ts TA10a
-		* to TA10f, TA10h, TA10i)
+		* hanging indents too (scripts/layout-probes/stops2/word-stops-tabs.ts TA1a, TA1b), at the start of a line in a
+		* paragraph indented on the left or right (stops2/word-stops-edges.ts TA9a, TA9b), and at the start of the first line
+		* of one with a first line indent (stops2/word-stops-text3.ts TA12k), but not at the start of a line of one with a
+		* hanging indent. Right, centred and decimal stops line their text up with the end of the line whatever the left,
+		* first line and hanging indents, at the start of a line and after text (TA3a to TA3d, stops2/word-stops-text2.ts
+		* TA10a to TA10f, TA10h, TA10i), and in a paragraph indented on the right right and centred ones do too (word-stops-text3.ts
+		* TA12i, TA12j), where a decimal one hasn't been seen
 		*/
-		const pastEndUnknown = ({ alignment: kind }, started, firstLine) => {
+		const pastEndUnknown = ({ alignment: kind }, started) => {
 			if (indentRight < 0) return "a tab stop past the end of the line in a paragraph indented past the margin";
-			if (kind === "left") return !started && (firstLineIndent < 0 || firstLine && firstLineIndent > 0) ? "a left tab stop past the end of the line at the start of a line in a paragraph with a first line or hanging indent" : void 0;
-			return indentRight === 0 || kind === "right" && started ? void 0 : "a centred or decimal tab stop past the end of the line in a paragraph indented on the right, or a right one at the start of a line there";
+			if (kind === "left") return !started && firstLineIndent < 0 ? "a left tab stop past the end of the line at the start of a line in a paragraph with a hanging indent" : void 0;
+			return indentRight === 0 || kind !== "decimal" ? void 0 : "a decimal tab stop past the end of the line in a paragraph indented on the right";
 		};
 		const beforeStart = numberShift(content, numberAlignment, measurer);
 		let numberTab = numberAlignment === "right" && ((_content$ = content[1]) === null || _content$ === void 0 ? void 0 : _content$.type) === "tab";
@@ -9022,7 +9054,7 @@ var docxLayout = (function(exports) {
 				const marked = state.started ? withMarkOf(state.heights) : markHeightsOf();
 				const heights = typeof marked === "string" ? state.heights : marked;
 				const _ref4 = linePitch === void 0 ? heightOf(heights, spacing) : gridHeightOf(heights, spacing, linePitch), { unsupported: unknownHeight } = _ref4, height = _objectWithoutProperties(_ref4, _excluded$1);
-				const unsupported = state.unknown ? "a justified line that only fits squeezed at a four-per-em space, or at an en, em or ideographic space beside ordinary spaces" : (_ref5 = (_state$unsupported = state.unsupported) !== null && _state$unsupported !== void 0 ? _state$unsupported : state.unbroken && state.end > 941.41 ? "text after a tab past the end of the line that goes further past the margin than Word was seen keeping it on the line, in a document in compatibility mode" : void 0) !== null && _ref5 !== void 0 ? _ref5 : markMatters(withNumber(heights)) ? "a picture alone in a line of a paragraph whose mark is larger, with multiple line spacing" : typeof marked === "string" ? marked : unknownHeight;
+				const unsupported = state.unknown ? "a justified line that only fits squeezed at a four-per-em space" : (_ref5 = (_state$unsupported = state.unsupported) !== null && _state$unsupported !== void 0 ? _state$unsupported : state.unbroken && state.end > 941.41 ? "text after a tab past the end of the line that goes further past the margin than Word was seen keeping it on the line, in a document in compatibility mode" : void 0) !== null && _ref5 !== void 0 ? _ref5 : markMatters(withNumber(heights)) ? "a picture alone in a line of a paragraph whose mark is larger, with multiple line spacing" : typeof marked === "string" ? marked : unknownHeight;
 				lines.push(_objectSpread2(_objectSpread2(_objectSpread2(_objectSpread2({}, height), {}, { markers: [...state.markers, ...state.pending] }, breakAfter ? { breakAfter } : {}), {}, {
 					text: state.text,
 					textWidth: Math.max(0, state.end - state.start)
@@ -9078,13 +9110,13 @@ var docxLayout = (function(exports) {
 			* before it on the line by `kern`, unless it starts the next line
 			*/
 			const placeWord = (token, kern = 0, after = 0, unsureAfter = false) => {
-				var _lastBorder$room2, _lastBorder2, _token$hyphens;
+				var _endBorderOf$room2, _endBorderOf2, _token$hyphens;
 				const kernOn = (state) => state.latin === void 0 ? 0 : kern;
 				/** How wide the token is on the line, which on a grid that snaps to characters depends on the text before it */
 				const widthOn = (state) => token.type === "box" ? !snapping ? token.width : cellsOf(token.width) : !snapping ? widthOf(token.pieces, measurer) : snapped(state, token.pieces, kernOn(state)).position - state.position;
 				let tokenWidth = widthOn(line);
-				const leadOf = (state, wrapped = false) => (token.type === "word" ? roomBetween(state.border, firstBorder(token.pieces)) : 0) + (wrapped || snapping ? 0 : kern);
-				const boxEnd = token.type === "word" ? (_lastBorder$room2 = (_lastBorder2 = lastBorder(token.pieces)) === null || _lastBorder2 === void 0 ? void 0 : _lastBorder2.room) !== null && _lastBorder$room2 !== void 0 ? _lastBorder$room2 : 0 : 0;
+				const leadOf = (state, wrapped = false) => roomBetween(state.border, startBorderOf(token)) + (wrapped || snapping ? 0 : kern);
+				const boxEnd = (_endBorderOf$room2 = (_endBorderOf2 = endBorderOf(token)) === null || _endBorderOf2 === void 0 ? void 0 : _endBorderOf2.room) !== null && _endBorderOf$room2 !== void 0 ? _endBorderOf$room2 : 0;
 				const needs = leadOf(line) + tokenWidth + boxEnd + (unsureAfter ? 0 : after);
 				if (unsureAfter && line.position + needs <= endOf(line) + TOLERANCE$2 && line.position + needs + after > endOf(line) + TOLERANCE$2) {
 					var _line$unsupported2;
@@ -9103,25 +9135,21 @@ var docxLayout = (function(exports) {
 						placeWord(rest, 0, after, unsureAfter);
 						return;
 					}
-					if (line.tabsOnly === true) {
-						var _line$unsupported4;
-						line = _objectSpread2(_objectSpread2({}, line), {}, { unsupported: (_line$unsupported4 = line.unsupported) !== null && _line$unsupported4 !== void 0 ? _line$unsupported4 : "a word with soft hyphens that doesn't fit after a tab that starts its line" });
-					}
-					if (line.started) {
+					if (line.started && line.tabsOnly !== true) {
 						line = wrap(line);
 						placeWord(token, 0, after, unsureAfter);
 						return;
 					}
 				}
 				const beyond = line.position + needs > endOf(line) + TOLERANCE$2;
-				if (beyond && line.tabsOnly === true && token.type === "box") {
-					var _line$unsupported5;
-					line = _objectSpread2(_objectSpread2({}, line), {}, { unsupported: (_line$unsupported5 = line.unsupported) !== null && _line$unsupported5 !== void 0 ? _line$unsupported5 : "a picture that doesn't fit after a tab that starts its line" });
+				if (beyond && line.afterNumber === true && token.type === "word" && startOf(lines.length + 1, false) + needs <= limitOf(lines.length + 1) + TOLERANCE$2) {
+					var _line$unsupported4;
+					line = _objectSpread2(_objectSpread2({}, line), {}, { unsupported: (_line$unsupported4 = line.unsupported) !== null && _line$unsupported4 !== void 0 ? _line$unsupported4 : "a word that doesn't fit after a list number's tab, and would fit on the next line" });
 				}
 				const overflows = line.started && beyond && (line.tabsOnly !== true || token.type === "box");
 				if (token.type === "box" && token.unbroken !== void 0 && beyond) {
-					var _line$unsupported6;
-					line = _objectSpread2(_objectSpread2({}, line), {}, { unsupported: (_line$unsupported6 = line.unsupported) !== null && _line$unsupported6 !== void 0 ? _line$unsupported6 : token.unbroken });
+					var _line$unsupported5;
+					line = _objectSpread2(_objectSpread2({}, line), {}, { unsupported: (_line$unsupported5 = line.unsupported) !== null && _line$unsupported5 !== void 0 ? _line$unsupported5 : token.unbroken });
 				}
 				const neverSqueezed = snapping && (alignment === "justified" || alignment === "distributed");
 				if (overflows && !neverSqueezed && unsure(line, needs)) line = _objectSpread2(_objectSpread2({}, line), {}, { unknown: true });
@@ -9129,35 +9157,31 @@ var docxLayout = (function(exports) {
 				if (squeezable && snapping) line = _objectSpread2(_objectSpread2({}, line), {}, { unsupported: "a line justified for Thai or with a kashida on a grid that snaps to characters that only fits squeezed" });
 				const squeezed = squeezable && !snapping;
 				if (overflows && (!squeezed || alignment !== "justified") && token.type === "word" && mayHyphenate(line, token, leadOf(line))) {
-					var _line$unsupported7;
-					line = _objectSpread2(_objectSpread2({}, line), {}, { unsupported: (_line$unsupported7 = line.unsupported) !== null && _line$unsupported7 !== void 0 ? _line$unsupported7 : MAY_HYPHENATE });
+					var _line$unsupported6;
+					line = _objectSpread2(_objectSpread2({}, line), {}, { unsupported: (_line$unsupported6 = line.unsupported) !== null && _line$unsupported6 !== void 0 ? _line$unsupported6 : MAY_HYPHENATE });
 				}
 				if (overflows && !squeezed) {
 					line = wrap(line);
 					skipRooms(needs, hyphens.length > 0);
 					tokenWidth = widthOn(line);
 				}
-				if (token.type === "box" && token.text !== void 0 && !squeezed && line.position + tokenWidth > endOf(line) + TOLERANCE$2) {
-					var _line$unsupported8;
-					line = _objectSpread2(_objectSpread2({}, line), {}, { unsupported: (_line$unsupported8 = line.unsupported) !== null && _line$unsupported8 !== void 0 ? _line$unsupported8 : "text fitted to a width wider than its line" });
-				}
 				line = _objectSpread2(_objectSpread2({}, place(line)), {}, { position: line.position + leadOf(line, skipped || overflows && !squeezed) });
 				if (token.type === "word" && !squeezed && line.position + tokenWidth > endOf(line) + TOLERANCE$2 && limitOf() - startOf(lines.length, false) > 0) {
 					let placed = false;
 					let partStart = line.position;
 					if (mayHyphenate(line, token, 0)) {
-						var _line$unsupported9;
-						line = _objectSpread2(_objectSpread2({}, line), {}, { unsupported: (_line$unsupported9 = line.unsupported) !== null && _line$unsupported9 !== void 0 ? _line$unsupported9 : MAY_HYPHENATE });
+						var _line$unsupported7;
+						line = _objectSpread2(_objectSpread2({}, line), {}, { unsupported: (_line$unsupported7 = line.unsupported) !== null && _line$unsupported7 !== void 0 ? _line$unsupported7 : MAY_HYPHENATE });
 					}
 					if (token.pieces.some(({ font }) => hasLigatures(font))) {
-						var _line$unsupported10;
-						line = _objectSpread2(_objectSpread2({}, line), {}, { unsupported: (_line$unsupported10 = line.unsupported) !== null && _line$unsupported10 !== void 0 ? _line$unsupported10 : "a word longer than its line with ligatures" });
+						var _line$unsupported8;
+						line = _objectSpread2(_objectSpread2({}, line), {}, { unsupported: (_line$unsupported8 = line.unsupported) !== null && _line$unsupported8 !== void 0 ? _line$unsupported8 : "a word longer than its line with ligatures" });
 					}
 					let onLine = [];
 					let from = line.position;
 					for (const character of charactersOf(token.pieces)) {
-						var _lastBorder$room3, _lastBorder3;
-						const room = (_lastBorder$room3 = (_lastBorder3 = lastBorder(character)) === null || _lastBorder3 === void 0 ? void 0 : _lastBorder3.room) !== null && _lastBorder$room3 !== void 0 ? _lastBorder$room3 : 0;
+						var _lastBorder$room, _lastBorder;
+						const room = (_lastBorder$room = (_lastBorder = lastBorder(character)) === null || _lastBorder === void 0 ? void 0 : _lastBorder.room) !== null && _lastBorder$room !== void 0 ? _lastBorder$room : 0;
 						if (placed && from + widthOf([...onLine, ...character], measurer) + room > endOf(line) + TOLERANCE$2 && limitOf(lines.length + 1) - startOf(lines.length + 1, false) > 0) {
 							line = wrap(_objectSpread2(_objectSpread2({}, line), {}, {
 								heights: withToken(line.heights, token),
@@ -9204,8 +9228,9 @@ var docxLayout = (function(exports) {
 					between: line.spaceCount,
 					heights: withToken(line.heights, token),
 					started: true,
-					border: token.type === "word" ? lastBorder(token.pieces) : void 0,
-					tabsOnly: false
+					border: endBorderOf(token),
+					tabsOnly: false,
+					afterNumber: false
 				});
 			};
 			/**
@@ -9235,15 +9260,10 @@ var docxLayout = (function(exports) {
 				for (const [index, { hyphen, before, after, withHyphen, fits }] of splits.entries()) {
 					const squeezed = !fits && line.started && squeezesIn(line, withHyphen - line.position);
 					const shorter = squeezed ? splits.slice(index + 1).find((other) => other.fits) : void 0;
-					if (shorter !== void 0 && alignment === "justified" && limitOf() - shorter.withHyphen < STRETCH_TO_SQUEEZE * (withHyphen - limitOf())) continue;
-					if (shorter !== void 0) {
-						var _line$unsupported11;
-						line = _objectSpread2(_objectSpread2({}, line), {}, { unsupported: (_line$unsupported11 = line.unsupported) !== null && _line$unsupported11 !== void 0 ? _line$unsupported11 : "a line that fits a soft hyphen's part squeezed, and a shorter one as it is with twice as much room or more" });
-					}
-					const { font: partFont } = before[before.length - 1];
-					if ((fits || squeezed) && isKerned(partFont) && sameFont(partFont, hyphen.font)) {
-						var _line$unsupported12;
-						line = _objectSpread2(_objectSpread2({}, line), {}, { unsupported: (_line$unsupported12 = line.unsupported) !== null && _line$unsupported12 !== void 0 ? _line$unsupported12 : "a line that breaks at a soft hyphen in kerned text, whose hyphen Word may kern" });
+					if (shorter !== void 0 && !squeezesForPart(line, shorter, withHyphen)) continue;
+					if (shorter !== void 0 && alignment === "distributed") {
+						var _line$unsupported9;
+						line = _objectSpread2(_objectSpread2({}, line), {}, { unsupported: (_line$unsupported9 = line.unsupported) !== null && _line$unsupported9 !== void 0 ? _line$unsupported9 : "a distributed line that fits a soft hyphen's part squeezed, rather than a shorter one as it is" });
 					}
 					if (fits || squeezed) {
 						const placed = place(line);
@@ -9268,7 +9288,7 @@ var docxLayout = (function(exports) {
 				}
 			};
 			for (const [index, token] of tokens.entries()) {
-				var _line$border2;
+				var _line$border;
 				if (token.type === "marker") {
 					var _tokens;
 					const before = (_tokens = tokens[index - 1]) === null || _tokens === void 0 ? void 0 : _tokens.type;
@@ -9287,26 +9307,17 @@ var docxLayout = (function(exports) {
 					});
 					continue;
 				}
-				if (token.type === "box" && token.below !== void 0) {
-					var _line$border, _firstBorder2;
-					const { key } = token.font.border;
-					const following = tokens.slice(index + 1).find((other) => other.type !== "marker");
-					if (((_line$border = line.border) === null || _line$border === void 0 ? void 0 : _line$border.key) === key || ((following === null || following === void 0 ? void 0 : following.type) === "word" || (following === null || following === void 0 ? void 0 : following.type) === "space") && ((_firstBorder2 = firstBorder(following.pieces)) === null || _firstBorder2 === void 0 ? void 0 : _firstBorder2.key) === key) {
-						var _line$unsupported13;
-						line = _objectSpread2(_objectSpread2({}, line), {}, { unsupported: (_line$unsupported13 = line.unsupported) !== null && _line$unsupported13 !== void 0 ? _line$unsupported13 : "a picture in a border beside text in the same border" });
-					}
-				}
-				line = token.type === "word" || token.type === "tab" && token.font.border !== void 0 && token.font.border.key === ((_line$border2 = line.border) === null || _line$border2 === void 0 ? void 0 : _line$border2.key) ? line : _objectSpread2(_objectSpread2({}, line), {}, {
+				line = token.type === "word" || token.type === "box" || token.type === "tab" && token.font.border !== void 0 && token.font.border.key === ((_line$border = line.border) === null || _line$border === void 0 ? void 0 : _line$border.key) ? line : _objectSpread2(_objectSpread2({}, line), {}, {
 					position: line.position + roomBetween(line.border, void 0),
 					border: void 0
 				});
 				if (snapping && token.type === "box" && token.descent !== void 0) {
-					var _line$unsupported14;
-					line = _objectSpread2(_objectSpread2({}, line), {}, { unsupported: (_line$unsupported14 = line.unsupported) !== null && _line$unsupported14 !== void 0 ? _line$unsupported14 : "an equation on a grid that snaps to characters" });
+					var _line$unsupported10;
+					line = _objectSpread2(_objectSpread2({}, line), {}, { unsupported: (_line$unsupported10 = line.unsupported) !== null && _line$unsupported10 !== void 0 ? _line$unsupported10 : "an equation on a grid that snaps to characters" });
 				}
 				if (snapping && token.type !== "word") line = _objectSpread2(_objectSpread2({}, line), {}, { latin: void 0 });
 				if (token.type === "tab") {
-					var _nextStop, _line$unsupported20;
+					var _nextStop, _line$unsupported14;
 					const numbered = numberTab ? { stop: numberTabStop(line.position, firstLineStops, format, defaultTabStop, limitOf()) } : void 0;
 					numberTab = false;
 					const given = line.first ? firstLineStops : stops;
@@ -9316,10 +9327,10 @@ var docxLayout = (function(exports) {
 					const own = !numbered && !olderPast && given.includes(next);
 					const pastIndent = own && indentRight > 0 && next.position > limitOf() + TOLERANCE$2 && next.position <= marginOf() + TOLERANCE$2;
 					const pastEnd = own && next.position > Math.max(limitOf(), marginOf()) + TOLERANCE$2 ? next : void 0;
-					const unknown = pastIndent && squeezes && alignment !== "justified" ? "a tab stop past the paragraph's right indent in a distributed line" : pastIndent && next.alignment === "left" && next.position + widthAfterTab(rest, measurer) > marginOf() + TOLERANCE$2 ? "text after a tab stop past the paragraph's right indent that goes past the margin" : pastEnd === void 0 ? void 0 : pastEndUnknown(pastEnd, line.started, line.first);
+					const unknown = pastIndent && next.alignment === "left" && next.position + widthAfterTab(rest, measurer) > marginOf() + TOLERANCE$2 ? "text after a tab stop past the paragraph's right indent that goes past the margin" : pastEnd === void 0 ? void 0 : pastEndUnknown(pastEnd, line.started);
 					if (unknown !== void 0) {
-						var _line$unsupported15;
-						line = _objectSpread2(_objectSpread2({}, line), {}, { unsupported: (_line$unsupported15 = line.unsupported) !== null && _line$unsupported15 !== void 0 ? _line$unsupported15 : unknown });
+						var _line$unsupported11;
+						line = _objectSpread2(_objectSpread2({}, line), {}, { unsupported: (_line$unsupported11 = line.unsupported) !== null && _line$unsupported11 !== void 0 ? _line$unsupported11 : unknown });
 					}
 					if ((pastEnd === null || pastEnd === void 0 ? void 0 : pastEnd.alignment) === "left" && unknown === void 0) {
 						const below = line.started ? wrap(line) : line;
@@ -9337,13 +9348,13 @@ var docxLayout = (function(exports) {
 						alignment: "right"
 					} : pastIndent ? next : (_nextStop = nextStop(line.position, given, defaultTabStop, limitOf())) !== null && _nextStop !== void 0 ? _nextStop : line.started ? nextStop(startOf(lines.length + 1, false), stops, defaultTabStop, limitOf(lines.length + 1)) : void 0;
 					if (stop === void 0) {
-						var _line$unsupported16;
+						var _line$unsupported12;
 						line = _objectSpread2(_objectSpread2({}, line), {}, {
 							end: line.position,
 							text: `${line.text}\t`,
 							heights: withToken(line.heights, token),
 							started: true
-						}, !snapping ? {} : { unsupported: (_line$unsupported16 = line.unsupported) !== null && _line$unsupported16 !== void 0 ? _line$unsupported16 : GRID_TAB });
+						}, !snapping ? {} : { unsupported: (_line$unsupported12 = line.unsupported) !== null && _line$unsupported12 !== void 0 ? _line$unsupported12 : GRID_TAB });
 						continue;
 					}
 					if (!numbered && stop.position <= line.position + TOLERANCE$2) line = wrap(line);
@@ -9359,45 +9370,38 @@ var docxLayout = (function(exports) {
 					* 6 ideographs at a right stop at 6000 start at 4646.1, and at a centred one at 4000 at 3323.1 (GR16c). Other
 					* text at those, and text at a decimal stop, haven't been seen there
 					*/
-					const startAt = (at, { position: from, border }) => {
+					const startAt = (at, state) => {
+						const { position: from, border } = state;
 						const shifted = shiftAt(at.alignment, rest, measurer, border);
 						const textWidth = inCells(at) ? cellsAfterTab(rest) : shifted !== null && shifted !== void 0 ? shifted : widthAfterTab(rest, measurer);
-						const stopped = Math.max(from, at.position - (inCells(at) && at.alignment === "center" ? textWidth / 2 : textWidth));
+						const pastEndAt = at.alignment === "center" && !inCells(at) ? endOf(state) - 2 * textWidth : Infinity;
+						const stopped = Math.max(from, Math.min(pastEndAt, at.position - (inCells(at) && at.alignment === "center" ? textWidth / 2 : textWidth)));
 						const cell = cellOn(lines.length);
-						return {
+						const pastEndAtDecimal = at.alignment === "decimal" && shifted !== void 0 && stopped + widthAfterTab(rest, measurer, border) > endOf(state) + TOLERANCE$2;
+						return _objectSpread2({
 							lineUp: shifted,
 							position: cell === void 0 || inCells(at) ? stopped : Math.ceil(stopped / cell - GRID_ROUNDING) * cell
-						};
+						}, pastEndAtDecimal ? { unsupported: "text at a decimal tab stop that goes past the end of the line" } : {});
 					};
 					const after = rest.find((other) => other.type !== "marker");
 					if (!numbered && !olderPast && token.font.listNumber !== "separator" && !aligned && !pastIndent && line.started && line.tabsOnly !== true && ((after === null || after === void 0 ? void 0 : after.type) === "word" || (after === null || after === void 0 ? void 0 : after.type) === "box")) {
-						var _after$hyphens, _lastBorder$room4, _lastBorder4, _tokens$slice$findLas;
+						var _after$hyphens, _endBorderOf$room3, _endBorderOf3, _lastBorder$room2, _lastBorder2;
 						const hyphen = after.type === "word" ? (_after$hyphens = after.hyphens) === null || _after$hyphens === void 0 ? void 0 : _after$hyphens.find(({ at }) => at > 0 && at < lengthOf(after.pieces)) : void 0;
-						const needs = after.type === "box" ? after.width : roomBetween(line.border, firstBorder(after.pieces)) + (hyphen === void 0 ? widthOf(after.pieces, measurer) + ((_lastBorder$room4 = (_lastBorder4 = lastBorder(after.pieces)) === null || _lastBorder4 === void 0 ? void 0 : _lastBorder4.room) !== null && _lastBorder$room4 !== void 0 ? _lastBorder$room4 : 0) : widthOf(splitPieces(after.pieces, hyphen.at)[0], measurer) + measurer.measureWidth("-", hyphen.font));
+						const needs = roomBetween(line.border, startBorderOf(after)) + (after.type === "box" ? after.width + ((_endBorderOf$room3 = (_endBorderOf3 = endBorderOf(after)) === null || _endBorderOf3 === void 0 ? void 0 : _endBorderOf3.room) !== null && _endBorderOf$room3 !== void 0 ? _endBorderOf$room3 : 0) : hyphen === void 0 ? widthOf(after.pieces, measurer) + ((_lastBorder$room2 = (_lastBorder2 = lastBorder(after.pieces)) === null || _lastBorder2 === void 0 ? void 0 : _lastBorder2.room) !== null && _lastBorder$room2 !== void 0 ? _lastBorder$room2 : 0) : widthOf(splitPieces(after.pieces, hyphen.at)[0], measurer) + measurer.measureWidth("-", hyphen.font));
 						const nextLine = nextStop(startOf(lines.length + 1, false), stops, defaultTabStop, limitOf(lines.length + 1));
-						const inRow = ((_tokens$slice$findLas = tokens.slice(0, index).findLast((before) => before.type !== "marker")) === null || _tokens$slice$findLas === void 0 ? void 0 : _tokens$slice$findLas.type) === "tab";
 						if (startAt(stop, line).position + needs > endOf(line) + TOLERANCE$2 && nextLine !== void 0) {
-							if (after.type === "box" || inRow) {
-								var _line$unsupported17;
-								line = _objectSpread2(_objectSpread2({}, line), {}, { unsupported: (_line$unsupported17 = line.unsupported) !== null && _line$unsupported17 !== void 0 ? _line$unsupported17 : inRow ? "a word that doesn't fit after tabs in a row" : "a picture that doesn't fit after a tab" });
-							} else {
-								if (hyphen !== void 0) {
-									var _line$unsupported18;
-									line = _objectSpread2(_objectSpread2({}, line), {}, { unsupported: (_line$unsupported18 = line.unsupported) !== null && _line$unsupported18 !== void 0 ? _line$unsupported18 : "a word with soft hyphens whose first part doesn't fit after a tab" });
-								}
-								line = wrap(line);
-								stop = nextLine;
-							}
+							line = wrap(line);
+							stop = nextLine;
 						}
 					}
 					line = _objectSpread2(_objectSpread2(_objectSpread2({}, place(line)), pastIndent ? { pastIndent } : {}), olderPast ? { unbroken: olderPast } : {});
-					const { lineUp, position } = startAt(stop, line);
-					const misaligned = lineUp === void 0 ? "text at a decimal tab stop that Word hasn't been seen lining up" : void 0;
+					const { lineUp, position, unsupported: pastEndAtStop } = startAt(stop, line);
+					const misaligned = lineUp === void 0 ? "text at a decimal tab stop that Word hasn't been seen lining up" : pastEndAtStop;
 					if (snapping && !inCells(stop) && (stop.alignment !== "left" || starting === void 0)) {
-						var _line$unsupported19;
-						line = _objectSpread2(_objectSpread2({}, line), {}, { unsupported: (_line$unsupported19 = line.unsupported) !== null && _line$unsupported19 !== void 0 ? _line$unsupported19 : GRID_TAB });
+						var _line$unsupported13;
+						line = _objectSpread2(_objectSpread2({}, line), {}, { unsupported: (_line$unsupported13 = line.unsupported) !== null && _line$unsupported13 !== void 0 ? _line$unsupported13 : GRID_TAB });
 					}
-					line = _objectSpread2(_objectSpread2({}, line), {}, {
+					line = _objectSpread2(_objectSpread2(_objectSpread2({}, line), {}, {
 						position,
 						end: position,
 						text: `${line.text}\t`,
@@ -9408,8 +9412,8 @@ var docxLayout = (function(exports) {
 						letters: 0,
 						otherSpaces: 0,
 						started: true,
-						tabsOnly: !line.started || line.tabsOnly === true
-					}, misaligned === void 0 ? {} : { unsupported: (_line$unsupported20 = line.unsupported) !== null && _line$unsupported20 !== void 0 ? _line$unsupported20 : misaligned });
+						tabsOnly: !line.started || line.tabsOnly === true || token.font.listNumber === "separator"
+					}, token.font.listNumber === "separator" ? { afterNumber: true } : {}), misaligned === void 0 ? {} : { unsupported: (_line$unsupported14 = line.unsupported) !== null && _line$unsupported14 !== void 0 ? _line$unsupported14 : misaligned });
 					continue;
 				}
 				const [space, nextWord] = token.type === "word" && format.rightToLeft !== true ? nextTwo(tokens, index) : [];
@@ -35527,9 +35531,10 @@ var docxLayout = (function(exports) {
 	/**
 	* Reads a drawing in a run (`w:drawing`): a picture in the line is a box, with its run's font, and one that text doesn't
 	* flow around, such as one behind the text, takes up no room. A picture in the line in a border of its run has its border's
-	* room around it, beside it and above and below it: one of 20 points with a border of 1.5 points 2 points away takes 400
-	* and 70 twips each side across the line, 470 above the baseline and 70 below it (scripts/layout-probes/stops2/word-stops-text2.ts
-	* RF32b).
+	* room above it and below the baseline, and its box's room each side across the line as a word in the border has, which
+	* goes on round text in the same border beside it: one of 20 points with a border of 1.5 points 2 points away takes 470
+	* twips above the baseline and 70 below it, and 70 each side, or none beside text in the same border
+	* (scripts/layout-probes/stops2/word-stops-text2.ts RF32b, stops2/word-stops-text3.ts RF32d).
 	*/
 	var readDrawing = (element, font, reader) => {
 		const [drawing] = childrenOf(element["w:drawing"]);
@@ -35547,7 +35552,7 @@ var docxLayout = (function(exports) {
 			const room = (_font$border$room = (_font$border = font.border) === null || _font$border === void 0 ? void 0 : _font$border.room) !== null && _font$border$room !== void 0 ? _font$border$room : 0;
 			return [_objectSpread2({
 				type: "box",
-				width: emus(extent.cx, effect.l, effect.r, around.distL, around.distR) / EMUS_PER_POINT + 2 * room,
+				width: emus(extent.cx, effect.l, effect.r, around.distL, around.distR) / EMUS_PER_POINT,
 				height: emus(extent.cy, effect.t, effect.b, around.distT, around.distB) / EMUS_PER_POINT + room,
 				font
 			}, room > 0 ? { below: room } : {})];
@@ -36119,7 +36124,7 @@ var docxLayout = (function(exports) {
 						font
 					}];
 				}
-				case "w:ruby": return guessedOr(reader, "text with a phonetic guide", () => readInline(childrenOf(find(childrenOf(child["w:ruby"]), "w:rubyBase")), paragraphRun, reader, removed));
+				case "w:ruby": return readRuby(child, paragraphRun, reader, removed);
 				case "w:contentPart": return "a content part, such as ink";
 				default: return [];
 			}
@@ -36128,6 +36133,62 @@ var docxLayout = (function(exports) {
 		const fitText = find(childrenOf(properties), "w:fitText");
 		return typeof runItems === "string" || format.hidden || fitText === void 0 ? runItems : fittedOf(runItems, attributesOf(fitText), reader);
 	};
+	/**
+	* Text with a phonetic guide over it (`w:ruby`): its base, with the guide, as a box a line doesn't break. Word makes it as
+	* wide as the wider of the two, with the narrower spread across it or centred on it as its alignment says: kana of 5.5
+	* points 990 twips wide over two ideographs of 11, spread with half a share of the room at each end, over two of 20 points,
+	* 800 wide, and two ideographs of 11 under kana of 5.5, 440 wide, and under kana of 11, 660 (scripts/layout-probes/stops2/word-stops-text2.ts
+	* RF31b to RF31d, stops2/word-stops-text3.ts RF31e, RF31i). Its line is as tall as its base makes it, and as the guide
+	* raised over the base's baseline by its raise (`w:hpsRaise`), as text raised that far: kana of 5.5 points raised 15 make
+	* a line of Calibri 11 475 twips, kana of 8 raised 10 427, kana of 11 raised 10 484, and "guide" in Calibri 5.5 raised 10
+	* 365, and kana of 5.5 raised 0 or 5 make it no taller than their base of MS Mincho 11 does, 283 (RF31e to RF31l). Or why
+	* it can't be laid out: a guide or base with other than text in it, in more than one font, or of another size than the
+	* guide's properties give (`w:hps`, `w:hpsBaseText`), or a guide without a raise, which haven't been seen. Guessing, its
+	* base alone
+	*/
+	var readRuby = (element, paragraphRun, reader, removed) => {
+		var _guideText$font$size, _baseText$font$size, _guideText$font$raise;
+		const children = childrenOf(element["w:ruby"]);
+		const properties = childrenOf(find(children, "w:rubyPr"));
+		const base = readInline(childrenOf(find(children, "w:rubyBase")), paragraphRun, reader, removed);
+		const guide = readInline(childrenOf(find(children, "w:rt")), paragraphRun, reader, removed);
+		if (typeof base === "string" || typeof guide === "string") return typeof base === "string" ? base : guide;
+		/** The text of the guide or its base, in its one font, or why it isn't that */
+		const textOf = (items) => {
+			const texts = items.filter((item) => item.type === "text");
+			if (texts.length === 0 || items.some((item) => item.type !== "text" && item.type !== "marker")) return "a phonetic guide, or its base, with other than text in it";
+			return texts.some(({ font }) => !sameFont(font, texts[0].font)) ? "a phonetic guide, or its base, in more than one font" : {
+				text: texts.map(({ text }) => text).join(""),
+				font: texts[0].font
+			};
+		};
+		const baseText = textOf(base);
+		const guideText = textOf(guide);
+		const baseAlone = () => base;
+		if (typeof baseText === "string") return guessedOr(reader, baseText, baseAlone);
+		if (typeof guideText === "string") return guessedOr(reader, guideText, baseAlone);
+		const sizeOf = (name) => {
+			const halfPoints = numberOf(attributesOf(find(properties, name))["w:val"]);
+			return halfPoints === void 0 ? void 0 : halfPoints / 2;
+		};
+		const raise = sizeOf("w:hpsRaise");
+		if (raise === void 0) return guessedOr(reader, "a phonetic guide without a raise", baseAlone);
+		if ([[sizeOf("w:hps"), (_guideText$font$size = guideText.font.size) !== null && _guideText$font$size !== void 0 ? _guideText$font$size : 10], [sizeOf("w:hpsBaseText"), (_baseText$font$size = baseText.font.size) !== null && _baseText$font$size !== void 0 ? _baseText$font$size : 10]].some(([property, own]) => property !== void 0 && Math.abs(property - own) > SIZE_TOLERANCE)) return guessedOr(reader, "a phonetic guide, or its base, of another size than the guide's properties give", baseAlone);
+		const guideFont = _objectSpread2(_objectSpread2({}, guideText.font), {}, { raise: ((_guideText$font$raise = guideText.font.raise) !== null && _guideText$font$raise !== void 0 ? _guideText$font$raise : 0) + raise });
+		return [...[...base, ...guide].filter((item) => item.type === "marker"), {
+			type: "box",
+			width: 0,
+			height: 0,
+			font: baseText.font,
+			text: baseText.text,
+			otherText: [{
+				text: guideText.text,
+				font: guideFont
+			}],
+			asWideAsText: true
+		}];
+	};
+	var SIZE_TOLERANCE = .01;
 	/** The id of the region of text fitted to a width that each box of it is in, when it has one */
 	var FITTED = /* @__PURE__ */ new WeakMap();
 	/**
@@ -36155,14 +36216,14 @@ var docxLayout = (function(exports) {
 	/**
 	* A paragraph's items with the text of runs fitted to a width with the same id (`w:id`), one after the other, in one box,
 	* as Word fits them to their width together: "fitted " and a bold "text", fitted to 2000 twips, are 2000 wide
-	* (scripts/layout-probes/stops2/word-stops-text2.ts RF29c). Or why they can't be laid out: ones of other sizes or fonts,
-	* whose line Word hasn't been seen to size. Guessing, those are fitted apart
+	* (scripts/layout-probes/stops2/word-stops-text2.ts RF29c), and "fitted " of 11 points and "text" of 16, fitted to 3000,
+	* are 3000 wide, in a line as tall as Calibri 16's (stops2/word-stops-text3.ts RF29f).
 	*/
-	var withFitted = (read, reader) => {
+	var withFitted = (read) => {
 		if (typeof read === "string") return read;
 		const all = [];
 		for (const item of read) {
-			var _FITTED$get, _FITTED$get2;
+			var _FITTED$get, _FITTED$get2, _before$otherText;
 			const id = (_FITTED$get = FITTED.get(item)) === null || _FITTED$get === void 0 ? void 0 : _FITTED$get.id;
 			const at = all.findLastIndex((other) => other.type !== "marker");
 			if (id === void 0 || at === -1 || ((_FITTED$get2 = FITTED.get(all[at])) === null || _FITTED$get2 === void 0 ? void 0 : _FITTED$get2.id) !== id) {
@@ -36170,13 +36231,10 @@ var docxLayout = (function(exports) {
 				continue;
 			}
 			const [before, after] = [all[at], item];
-			if (before.font.font !== after.font.font || before.font.size !== after.font.size) {
-				const reason = "text fitted to a width in runs of other sizes or fonts";
-				if (!reader.guess) return reason;
-				all.push(guessMarker(reason), item);
-				continue;
-			}
-			const joined = _objectSpread2(_objectSpread2({}, before), {}, { text: `${before.text}${after.text}` });
+			const joined = _objectSpread2(_objectSpread2({}, before), {}, { text: `${before.text}${after.text}` }, sameFont(before.font, after.font) ? {} : { otherText: [...(_before$otherText = before.otherText) !== null && _before$otherText !== void 0 ? _before$otherText : [], {
+				text: after.text,
+				font: after.font
+			}] });
 			FITTED.set(joined, { id });
 			all[at] = joined;
 		}
@@ -36674,7 +36732,7 @@ var docxLayout = (function(exports) {
 			...list.level ? [list.level.paragraph] : [],
 			readParagraphFormat(properties)
 		];
-		const read = withEquations(withFitted(readInline(children, paragraphRun, reader), reader), list.items.length > 0, reader);
+		const read = withEquations(withFitted(readInline(children, paragraphRun, reader)), list.items.length > 0, reader);
 		const guessed = typeof read === "string" ? void 0 : read.map(guessOf).find((reason) => reason !== void 0);
 		const items = typeof read === "string" ? read : read.filter((item) => guessOf(item) === void 0);
 		const ownFormat = combine(formats);
@@ -39556,17 +39614,13 @@ var docxLayout = (function(exports) {
 		}) ? UNKNOWN_CHARACTER : void 0;
 		/**
 		* Why how Word kerns a paragraph's text, or joins its letters into ligatures, isn't known to the measurer, when it
-		* isn't. Text in the same font, kerned or with ligatures, is measured across runs, and so is checked across them. Kerned
-		* text isn't kerned across a soft hyphen (see `textMeasuredTogether`), but whether Word joins letters into ligatures
-		* across one hasn't been seen
+		* isn't. Text in the same font, kerned or with ligatures, is measured across runs, and so is checked across them, but
+		* not across a soft hyphen, which Word neither kerns nor joins letters across (see `textMeasuredTogether`)
 		*/
-		const unknownShapingIn = (inline) => {
-			const together = textMeasuredTogether(inline);
-			return together.some(({ besideSoftHyphen }) => besideSoftHyphen) ? "ligatures beside a soft hyphen" : together.map(({ text, font }) => {
-				var _measurer$unknownShap;
-				return (_measurer$unknownShap = measurer.unknownShaping) === null || _measurer$unknownShap === void 0 ? void 0 : _measurer$unknownShap.call(measurer, text, font);
-			}).find(Boolean);
-		};
+		const unknownShapingIn = (inline) => textMeasuredTogether(inline).map(({ text, font }) => {
+			var _measurer$unknownShap;
+			return (_measurer$unknownShap = measurer.unknownShaping) === null || _measurer$unknownShap === void 0 ? void 0 : _measurer$unknownShap.call(measurer, text, font);
+		}).find(Boolean);
 		/**
 		* How tall a text box in the line is: its paragraphs, broken in the room for its text, which is its width less its
 		* insets and its outline (`word-stops-floats2.docx` TX1a to TX1k), and the room above and below them; or its own
@@ -39704,13 +39758,10 @@ var docxLayout = (function(exports) {
 			});
 		};
 		const linesHeight = (lines) => sum(lines.map(({ height }) => height));
-		/** The space below the text of the last line of what is kept together, which may go below the page, and whether a grid leaves it */
+		/** The space below the text of the last line of what is kept together, which may go below the page */
 		const belowOf = (last) => {
 			var _last$spacingBelow;
-			return {
-				spacingBelow: (_last$spacingBelow = last === null || last === void 0 ? void 0 : last.spacingBelow) !== null && _last$spacingBelow !== void 0 ? _last$spacingBelow : 0,
-				belowOnGrid: (last === null || last === void 0 ? void 0 : last.belowOnGrid) === true
-			};
+			return { spacingBelow: (_last$spacingBelow = last === null || last === void 0 ? void 0 : last.spacingBelow) !== null && _last$spacingBelow !== void 0 ? _last$spacingBelow : 0 };
 		};
 		/** How tall lines are on a page, at the bottom of which the multiple spacing of their last can go below it */
 		const heightToFit = (lines) => {
@@ -39721,7 +39772,7 @@ var docxLayout = (function(exports) {
 		* Whether what is kept together, `height` tall from `from`, fits above `end`, with its last line's multiple spacing
 		* below it when that can be (`hangsBelow`)
 		*/
-		const fitsAbove = (from, { height, spacingBelow, belowOnGrid }, end, aboveNotes) => from + height <= end + TOLERANCE || from + height - spacingBelow <= end + TOLERANCE && hangsBelow(aboveNotes, false, belowOnGrid === true);
+		const fitsAbove = (from, { height, spacingBelow }, end, aboveNotes) => from + height <= end + TOLERANCE || from + height - spacingBelow <= end + TOLERANCE && hangsBelow(aboveNotes);
 		/**
 		* How narrow and how wide the paragraphs and tables in a table cell can be, and whether Word may hyphenate a word as
 		* wide as the narrowest of them
@@ -40102,14 +40153,13 @@ var docxLayout = (function(exports) {
 		* below the bottom of the page, as Word lets it (`word-mixed-heights.docx` MH1c, `word-grid.docx` G1), for a line that
 		* fits only without it, and below the bottom of columns evened out by a continuous section break (scripts/layout-probes/stops2/word-stops-text.ts
 		* PB7b: the last of four lines at double spacing at the foot of the second column, as it would be without its space
-		* below counted). Above footnotes, multiple spacing's can't go into them: a line at double spacing that fits above the
-		* page's footnote only without its space below goes on to the next page (stops2/word-stops-text2.ts PB7e). Stops where
-		* Word hasn't shown it: a grid's room above footnotes, and room above a paragraph's border below. Guessing, it goes
-		* there
+		* below counted). Above footnotes, neither can go into them: a line at double spacing that fits above the page's
+		* footnote only without its space below goes on to the next page (stops2/word-stops-text2.ts PB7e), and so does a line
+		* on a grid of 360 twips whose room below its text would go a twip to 41 into them (stops2/word-stops-text3.ts PB7h to
+		* PB7j). Stops where Word hasn't shown it: room above a paragraph's border below. Guessing, it goes there
 		*/
-		const hangsBelow = (aboveNotes, aboveBorder = false, onGrid = false) => {
-			if (aboveNotes && !onGrid) return false;
-			if (aboveNotes) stopAt("a line whose room a document grid leaves below its text goes below it into the footnotes");
+		const hangsBelow = (aboveNotes, aboveBorder = false) => {
+			if (aboveNotes) return false;
 			if (aboveBorder) stopAt("a line whose room below its text goes below the page, above its paragraph's border");
 			return true;
 		};
@@ -42006,7 +42056,7 @@ var docxLayout = (function(exports) {
 				const room = linesBottom() - position - space;
 				const ends = index + linesUpTo(rows.length) === lines.length;
 				const notesOnPage = noteArea > 0 || reserved() > 0;
-				const hangs = (upTo) => hangsBelow(notesOnPage || notesOf(upTo).length > 0, ends && upTo === remaining.length && paragraph.borderBelow > 0, remaining[upTo - 1].belowOnGrid === true);
+				const hangs = (upTo) => hangsBelow(notesOnPage || notesOf(upTo).length > 0, ends && upTo === remaining.length && paragraph.borderBelow > 0);
 				const { fits, count: kept } = linesThatFit(remaining, room, paragraph, isFirstLine, (upTo) => noteCost(leastNoteRoom(notesOf(upTo))) + (ends && upTo === remaining.length ? paragraph.borderBelow : 0), hangs);
 				const moved = movedFromPage();
 				const movedLine = remaining.findIndex(({ markers }) => markers.some((marker) => moved.includes(marker)));
