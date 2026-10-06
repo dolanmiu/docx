@@ -7299,6 +7299,20 @@ describe("readDocument", () => {
             expect(texts(newPage)).to.deep.equal(["first", "second"]);
             expect(newPage.blocks.map(({ block }) => block.unsupported)).to.deep.equal([undefined, undefined]);
             expect(newPage.sections.map(({ start }) => start)).to.deep.equal(["nextPage", "nextPage"]);
+            // A paragraph with a hidden mark joined to the empty paragraph that ends its section, as docx writes one, ends the
+            // section with it
+            const ended = readBody([
+                p(pPr(hiddenMark), r(t("first"))),
+                p(pPr({ "w:sectPr": [value("w:pgSz", 1)] })),
+                p(r(t("second"))),
+                { "w:sectPr": [value("w:pgSz", 2)] },
+            ]);
+            expect(texts(ended)).to.deep.equal(["first", "second"]);
+            expect(ended.blocks.map(({ block, section }) => [block.unsupported, section])).to.deep.equal([
+                [undefined, 0],
+                [undefined, 1],
+            ]);
+            expect(ended.sections).to.have.length(2);
         });
 
         it("should give a paragraph with nothing shown whose hidden mark ends a section no room before a section alike on its page", () => {

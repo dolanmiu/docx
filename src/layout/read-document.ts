@@ -4263,16 +4263,19 @@ const joinedParagraph = (first: XmlObject, between: readonly unknown[], next: Xm
  * HD16b), and of three paragraphs single, 1.5 and double, the line that ends the second's text and starts the third's is
  * double (HD16c). The next one's number, when they are in a list, is counted (HM4). The next one's properties stand where
  * its text starts, for all of that (see {@link JOINED_NEXT}, and `readParagraph`). A section break of the first one's is
- * left out, as the paragraph is joined into the next section, which is as its own (stops2/word-stops-hidden2.ts HD14a)
+ * left out, as the paragraph is joined into the next section, which is as its own (stops2/word-stops-hidden2.ts HD14a),
+ * and one of the next one's, such as the empty paragraph docx ends each section with, ends the section with the joined
+ * paragraph, as the next one's mark is its own
  */
 const joinedToNext = (first: XmlObject, between: readonly unknown[], next: XmlObject): XmlObject => {
     const isHead = (child: unknown): boolean => isObject(child) && (nameOf(child) === "_attr" || nameOf(child) === "w:pPr");
     const own = paragraphPropertiesOf(first).filter((child) => nameOf(child) !== "w:rPr" && nameOf(child) !== "w:sectPr");
+    const nextSection = paragraphPropertiesOf(next).filter((child) => nameOf(child) === "w:sectPr");
     const content = contentOf(first);
     return {
         "w:p": [
             ...content.filter((child) => isObject(child) && nameOf(child) === "_attr"),
-            { "w:pPr": own },
+            { "w:pPr": [...own, ...nextSection] },
             ...content.filter((child) => !isHead(child)),
             ...between,
             { [JOINED_NEXT]: paragraphPropertiesOf(next) },
