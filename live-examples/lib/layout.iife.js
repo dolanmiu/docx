@@ -8508,6 +8508,23 @@ var docxLayout = (function(exports) {
 		return alignment === "center" ? width / 2 : width;
 	};
 	/**
+	* Where the text after a list number of a level numbered as Word 6 numbered lists (`w:legacy`) starts, from where the
+	* number starts and ends: at the level's indent from the number's start, or after its space from the number's end, where
+	* that is further. A number of 10000. with a space of 120 twips and an indent of 360 puts the text 120 after the number,
+	* at 1093, and 1. with a space of 120 and an indent of 720 puts it 720 from the number, at 1080, each from a number at
+	* 360 (stops2/word-stops-lists2.ts LI19a, LI19b), where a number of 1. and a space that fit in the indent put it as
+	* other lists do (`word-stops-list-definitions.docx` LI9)
+	*/
+	var legacyStop = (numberStart, numberEnd, { space, indent }) => Math.max(numberStart + indent, numberEnd + space);
+	/**
+	* Where the box of a list number's border ends: where its tab or space ends, or after the border's room from the number's
+	* end where that is further, and the text after it starts right there. Word puts the text after a bordered number at the
+	* tab's stop, with the border's box drawn to the stop, where the number and its room end before it (stops2/word-stops-lists2.ts
+	* LI13a to LI13c), and right after the room where they don't: 747 twips after a number at 470 in a border of 1.5 points 4
+	* points away, with a tab (`word-stops-lists.docx` LI4a) and with a space (LI13d)
+	*/
+	var numberBoxEnd = (numberEnd, suffixEnd, border) => Math.max(suffixEnd, numberEnd + border.room);
+	/**
 	* Where the tab after a right-aligned list number moves to, from the number's end at the start of the first line. Word
 	* moves it to the first stop past the number's end: the hanging indent's (`word-lists.docx` LJ1, LJ7, LJ9), or the next
 	* default stop past a first line indent, where the number ends on one (stops2/word-stops-lists.ts LI6c). Without either
@@ -8525,7 +8542,7 @@ var docxLayout = (function(exports) {
 	*
 	* @param items - The paragraph's content, in order
 	*/
-	var measureContentWidths = (items, { format = {}, tabStops = [], defaultTabStop = DEFAULT_TAB_STOP, measurer = DEFAULT_MEASURER, breakRules, numberAlignment, hyphenation }) => {
+	var measureContentWidths = (items, { format = {}, tabStops = [], defaultTabStop = DEFAULT_TAB_STOP, measurer = DEFAULT_MEASURER, breakRules, numberAlignment, legacyNumber, hyphenation }) => {
 		var _items$;
 		const { indentLeft = 0, indentRight = 0, firstLineIndent = 0 } = format;
 		const { stops, firstLineStops } = stopsOf(tabStops, format);
@@ -8543,11 +8560,19 @@ var docxLayout = (function(exports) {
 			let endBorder;
 			const kerning = kerningBefore(tokens, measurer);
 			for (const [index, token] of tokens.entries()) {
-				var _border$room2, _startBorderOf$room, _startBorderOf;
+				var _separatorFont$border, _border$room2, _startBorderOf$room, _startBorderOf;
 				if (token.type === "marker") continue;
+				const separatorFont = token.type === "tab" ? token.font : token.type === "space" ? token.pieces[0].font : void 0;
+				const separator = first && (separatorFont === null || separatorFont === void 0 ? void 0 : separatorFont.listNumber) === "separator";
+				const numberBorder = separator && border !== void 0 && border.key === (separatorFont === null || separatorFont === void 0 || (_separatorFont$border = separatorFont.border) === null || _separatorFont$border === void 0 ? void 0 : _separatorFont$border.key) ? border : void 0;
 				if (token.type === "space") {
+					const numberEnd = position;
 					position += roomBetween(border, firstBorder(token.pieces)) + kerning[index] + widthOf(token.pieces, measurer);
 					border = lastBorder(token.pieces);
+					if (numberBorder !== void 0) {
+						position = numberBoxEnd(numberEnd, position, numberBorder);
+						border = void 0;
+					}
 					continue;
 				}
 				const keepsBox = token.type === "tab" && token.font.border !== void 0 && token.font.border.key === (border === null || border === void 0 ? void 0 : border.key);
@@ -8556,10 +8581,19 @@ var docxLayout = (function(exports) {
 				endBorder = border;
 				if (token.type === "tab") {
 					var _ref, _shiftAt;
-					const stop = (_ref = first && numberTab && tokens.findIndex((other) => other.type === "tab") === index ? numberTabStop(position + lead, firstLineStops, format, defaultTabStop, Infinity) : void 0) !== null && _ref !== void 0 ? _ref : nextStop(position + lead, first ? firstLineStops : stops, defaultTabStop, Infinity);
+					const numberEnd = position + lead;
+					const stop = separator && legacyNumber !== void 0 ? {
+						position: legacyStop(lineStart + beforeStart, numberEnd, legacyNumber),
+						alignment: "left"
+					} : (_ref = first && numberTab && tokens.findIndex((other) => other.type === "tab") === index ? numberTabStop(numberEnd, firstLineStops, format, defaultTabStop, Infinity) : void 0) !== null && _ref !== void 0 ? _ref : nextStop(numberEnd, first ? firstLineStops : stops, defaultTabStop, Infinity);
 					const rest = tokens.slice(index + 1);
 					const shift = (_shiftAt = shiftAt(stop.alignment, rest, measurer, border)) !== null && _shiftAt !== void 0 ? _shiftAt : widthAfterTab(rest, measurer, border);
-					position = Math.max(position + lead, stop.position - shift);
+					position = Math.max(numberEnd, stop.position - shift);
+					if (numberBorder !== void 0) {
+						position = numberBoxEnd(numberEnd, position, numberBorder);
+						border = void 0;
+						endBorder = void 0;
+					}
 					end = position;
 					continue;
 				}
@@ -8768,7 +8802,7 @@ var docxLayout = (function(exports) {
 	*
 	* @param items - The paragraph's content, in order
 	*/
-	var layoutLines = (paragraphItems, { width, format: givenFormat = {}, tabStops = [], defaultTabStop = DEFAULT_TAB_STOP, markFont = {}, measurer = DEFAULT_MEASURER, breakRules, numberAlignment, hyphenation, grid = {}, compatibilityMode }) => {
+	var layoutLines = (paragraphItems, { width, format: givenFormat = {}, tabStops = [], defaultTabStop = DEFAULT_TAB_STOP, markFont = {}, measurer = DEFAULT_MEASURER, breakRules, numberAlignment, legacyNumber, hyphenation, grid = {}, compatibilityMode }) => {
 		var _spaced$items, _ref2, _onCells$unsupported, _content$;
 		const items = withAcross(paragraphItems, measurer);
 		const { linePitch, characterSpace, characterPitch, characterRoom } = grid;
@@ -9044,11 +9078,13 @@ var docxLayout = (function(exports) {
 			}, unknownOnGrid === void 0 ? {} : { unsupported: unknownOnGrid });
 			const finish = (state, breakAfter) => {
 				var _ref4, _state$unsupported;
-				const spacing = lineSpacingFrom !== void 0 && [
+				const seen = [
 					...lines.flatMap(({ markers }) => markers),
 					...state.markers,
 					...state.pending
-				].includes(lineSpacingFrom.marker) ? lineSpacingFrom.lineSpacing : lineSpacing;
+				];
+				const joined = lineSpacingFrom === null || lineSpacingFrom === void 0 ? void 0 : lineSpacingFrom.findLast(({ marker }) => seen.includes(marker));
+				const spacing = joined === void 0 ? lineSpacing : joined.lineSpacing;
 				const marked = state.started ? withMarkOf(state.heights) : markHeightsOf();
 				const heights = typeof marked === "string" ? state.heights : marked;
 				const _ref3 = linePitch === void 0 ? heightOf(heights, spacing) : gridHeightOf(heights, spacing, linePitch), { unsupported: unknownHeight } = _ref3, height = _objectWithoutProperties(_ref3, _excluded$1);
@@ -9136,14 +9172,10 @@ var docxLayout = (function(exports) {
 					}
 				}
 				const beyond = line.position + needs > endOf(line) + TOLERANCE$2;
-				if (beyond && line.afterNumber === true && token.type === "word" && startOf(lines.length + 1, false) + needs <= limitOf(lines.length + 1) + TOLERANCE$2) {
-					var _line$unsupported3;
-					line = _objectSpread2(_objectSpread2({}, line), {}, { unsupported: (_line$unsupported3 = line.unsupported) !== null && _line$unsupported3 !== void 0 ? _line$unsupported3 : "a word that doesn't fit after a list number's tab, and would fit on the next line" });
-				}
 				const overflows = line.started && beyond && (line.tabsOnly !== true || token.type === "box");
 				if (token.type === "box" && token.unbroken !== void 0 && beyond) {
-					var _line$unsupported4;
-					line = _objectSpread2(_objectSpread2({}, line), {}, { unsupported: (_line$unsupported4 = line.unsupported) !== null && _line$unsupported4 !== void 0 ? _line$unsupported4 : token.unbroken });
+					var _line$unsupported3;
+					line = _objectSpread2(_objectSpread2({}, line), {}, { unsupported: (_line$unsupported3 = line.unsupported) !== null && _line$unsupported3 !== void 0 ? _line$unsupported3 : token.unbroken });
 				}
 				const neverSqueezed = snapping && (alignment === "justified" || alignment === "distributed");
 				if (overflows && !neverSqueezed && unsure(line, needs)) line = _objectSpread2(_objectSpread2({}, line), {}, { unknown: true });
@@ -9151,8 +9183,8 @@ var docxLayout = (function(exports) {
 				if (squeezable && snapping) line = _objectSpread2(_objectSpread2({}, line), {}, { unsupported: "a line justified for Thai or with a kashida on a grid that snaps to characters that only fits squeezed" });
 				const squeezed = squeezable && !snapping;
 				if (overflows && (!squeezed || alignment !== "justified") && token.type === "word" && mayHyphenate(line, token, leadOf(line))) {
-					var _line$unsupported5;
-					line = _objectSpread2(_objectSpread2({}, line), {}, { unsupported: (_line$unsupported5 = line.unsupported) !== null && _line$unsupported5 !== void 0 ? _line$unsupported5 : MAY_HYPHENATE });
+					var _line$unsupported4;
+					line = _objectSpread2(_objectSpread2({}, line), {}, { unsupported: (_line$unsupported4 = line.unsupported) !== null && _line$unsupported4 !== void 0 ? _line$unsupported4 : MAY_HYPHENATE });
 				}
 				if (overflows && !squeezed) {
 					line = wrap(line);
@@ -9164,12 +9196,12 @@ var docxLayout = (function(exports) {
 					let placed = false;
 					let partStart = line.position;
 					if (mayHyphenate(line, token, 0)) {
-						var _line$unsupported6;
-						line = _objectSpread2(_objectSpread2({}, line), {}, { unsupported: (_line$unsupported6 = line.unsupported) !== null && _line$unsupported6 !== void 0 ? _line$unsupported6 : MAY_HYPHENATE });
+						var _line$unsupported5;
+						line = _objectSpread2(_objectSpread2({}, line), {}, { unsupported: (_line$unsupported5 = line.unsupported) !== null && _line$unsupported5 !== void 0 ? _line$unsupported5 : MAY_HYPHENATE });
 					}
 					if (token.pieces.some(({ font }) => hasLigatures(font))) {
-						var _line$unsupported7;
-						line = _objectSpread2(_objectSpread2({}, line), {}, { unsupported: (_line$unsupported7 = line.unsupported) !== null && _line$unsupported7 !== void 0 ? _line$unsupported7 : "a word longer than its line with ligatures" });
+						var _line$unsupported6;
+						line = _objectSpread2(_objectSpread2({}, line), {}, { unsupported: (_line$unsupported6 = line.unsupported) !== null && _line$unsupported6 !== void 0 ? _line$unsupported6 : "a word longer than its line with ligatures" });
 					}
 					let onLine = [];
 					let from = line.position;
@@ -9223,8 +9255,7 @@ var docxLayout = (function(exports) {
 					heights: withToken(line.heights, token),
 					started: true,
 					border: endBorderOf(token),
-					tabsOnly: false,
-					afterNumber: false
+					tabsOnly: false
 				});
 			};
 			/**
@@ -9256,8 +9287,8 @@ var docxLayout = (function(exports) {
 					const shorter = squeezed ? splits.slice(index + 1).find((other) => other.fits) : void 0;
 					if (shorter !== void 0 && !squeezesForPart(line, shorter, withHyphen)) continue;
 					if (shorter !== void 0 && alignment === "distributed") {
-						var _line$unsupported8;
-						line = _objectSpread2(_objectSpread2({}, line), {}, { unsupported: (_line$unsupported8 = line.unsupported) !== null && _line$unsupported8 !== void 0 ? _line$unsupported8 : "a distributed line that fits a soft hyphen's part squeezed, rather than a shorter one as it is" });
+						var _line$unsupported7;
+						line = _objectSpread2(_objectSpread2({}, line), {}, { unsupported: (_line$unsupported7 = line.unsupported) !== null && _line$unsupported7 !== void 0 ? _line$unsupported7 : "a distributed line that fits a soft hyphen's part squeezed, rather than a shorter one as it is" });
 					}
 					if (fits || squeezed) {
 						const placed = place(line);
@@ -9282,7 +9313,7 @@ var docxLayout = (function(exports) {
 				}
 			};
 			for (const [index, token] of tokens.entries()) {
-				var _line$border;
+				var _line$border2;
 				if (token.type === "marker") {
 					var _tokens;
 					const before = (_tokens = tokens[index - 1]) === null || _tokens === void 0 ? void 0 : _tokens.type;
@@ -9290,7 +9321,10 @@ var docxLayout = (function(exports) {
 					continue;
 				}
 				if (token.type === "space") {
+					var _line$border, _firstBorder;
 					const spaces = widthOf(token.pieces, measurer);
+					const numberEnd = line.position;
+					const numberBorder = line.first && token.pieces[0].font.listNumber === "separator" && ((_line$border = line.border) === null || _line$border === void 0 ? void 0 : _line$border.key) === ((_firstBorder = firstBorder(token.pieces)) === null || _firstBorder === void 0 ? void 0 : _firstBorder.key) ? line.border : void 0;
 					line = _objectSpread2(_objectSpread2(_objectSpread2({}, line), !snapping ? { position: line.position + roomBetween(line.border, firstBorder(token.pieces)) + kerning[index] + spaces } : snapped(line, token.pieces, line.latin === void 0 ? 0 : kerning[index])), {}, {
 						text: line.text + textOf$2(token.pieces),
 						spaces: line.started ? line.spaces + spaces : 0,
@@ -9299,20 +9333,33 @@ var docxLayout = (function(exports) {
 						heights: withToken(line.heights, token),
 						border: lastBorder(token.pieces)
 					});
+					if (numberBorder !== void 0) line = _objectSpread2(_objectSpread2({}, line), {}, {
+						position: numberBoxEnd(numberEnd, line.position, numberBorder),
+						border: void 0
+					});
 					continue;
 				}
-				line = token.type === "word" || token.type === "box" || token.type === "tab" && token.font.border !== void 0 && token.font.border.key === ((_line$border = line.border) === null || _line$border === void 0 ? void 0 : _line$border.key) ? line : _objectSpread2(_objectSpread2({}, line), {}, {
+				line = token.type === "word" || token.type === "box" || token.type === "tab" && token.font.border !== void 0 && token.font.border.key === ((_line$border2 = line.border) === null || _line$border2 === void 0 ? void 0 : _line$border2.key) ? line : _objectSpread2(_objectSpread2({}, line), {}, {
 					position: line.position + roomBetween(line.border, void 0),
 					border: void 0
 				});
 				if (snapping && token.type === "box" && token.descent !== void 0) {
-					var _line$unsupported9;
-					line = _objectSpread2(_objectSpread2({}, line), {}, { unsupported: (_line$unsupported9 = line.unsupported) !== null && _line$unsupported9 !== void 0 ? _line$unsupported9 : "an equation on a grid that snaps to characters" });
+					var _line$unsupported8;
+					line = _objectSpread2(_objectSpread2({}, line), {}, { unsupported: (_line$unsupported8 = line.unsupported) !== null && _line$unsupported8 !== void 0 ? _line$unsupported8 : "an equation on a grid that snaps to characters" });
 				}
 				if (snapping && token.type !== "word") line = _objectSpread2(_objectSpread2({}, line), {}, { latin: void 0 });
 				if (token.type === "tab") {
-					var _nextStop, _line$unsupported13;
-					const numbered = numberTab ? { stop: numberTabStop(line.position, firstLineStops, format, defaultTabStop, limitOf()) } : void 0;
+					var _nextStop, _token$font$border, _line$unsupported13;
+					const separator = line.first && token.font.listNumber === "separator";
+					const legacy = separator && legacyNumber !== void 0 ? legacyStop(line.start, line.position, legacyNumber) : void 0;
+					if (legacy !== void 0 && legacy > limitOf() + TOLERANCE$2) {
+						var _line$unsupported9;
+						line = _objectSpread2(_objectSpread2({}, line), {}, { unsupported: (_line$unsupported9 = line.unsupported) !== null && _line$unsupported9 !== void 0 ? _line$unsupported9 : "a list numbered as Word 6 numbered lists whose number and its room reach past the end of its line" });
+					}
+					const numbered = numberTab ? { stop: numberTabStop(line.position, firstLineStops, format, defaultTabStop, limitOf()) } : legacy !== void 0 ? { stop: {
+						position: legacy,
+						alignment: "left"
+					} } : void 0;
 					numberTab = false;
 					const given = line.first ? firstLineStops : stops;
 					const next = nextStop(line.position, given, defaultTabStop, Infinity);
@@ -9389,7 +9436,9 @@ var docxLayout = (function(exports) {
 						}
 					}
 					line = _objectSpread2(_objectSpread2(_objectSpread2({}, place(line)), pastIndent ? { pastIndent } : {}), olderPast ? { unbroken: olderPast } : {});
-					const { lineUp, position, unsupported: pastEndAtStop } = startAt(stop, line);
+					const { lineUp, position: atStop, unsupported: pastEndAtStop } = startAt(stop, line);
+					const numberBorder = separator && line.border !== void 0 && line.border.key === ((_token$font$border = token.font.border) === null || _token$font$border === void 0 ? void 0 : _token$font$border.key) ? line.border : void 0;
+					const position = numberBorder === void 0 ? atStop : numberBoxEnd(line.position, atStop, numberBorder);
 					const misaligned = lineUp === void 0 ? "text at a decimal tab stop that Word hasn't been seen lining up" : pastEndAtStop;
 					if (snapping && !inCells(stop) && (stop.alignment !== "left" || starting === void 0)) {
 						var _line$unsupported12;
@@ -9406,8 +9455,8 @@ var docxLayout = (function(exports) {
 						letters: 0,
 						otherSpaces: 0,
 						started: true,
-						tabsOnly: !line.started || line.tabsOnly === true || token.font.listNumber === "separator"
-					}, token.font.listNumber === "separator" ? { afterNumber: true } : {}), misaligned === void 0 ? {} : { unsupported: (_line$unsupported13 = line.unsupported) !== null && _line$unsupported13 !== void 0 ? _line$unsupported13 : misaligned });
+						tabsOnly: !line.started || line.tabsOnly === true || separator
+					}, numberBorder === void 0 ? {} : { border: void 0 }), misaligned === void 0 ? {} : { unsupported: (_line$unsupported13 = line.unsupported) !== null && _line$unsupported13 !== void 0 ? _line$unsupported13 : misaligned });
 					continue;
 				}
 				const [space, nextWord] = token.type === "word" && format.rightToLeft !== true ? nextTwo(tokens, index) : [];
@@ -41429,6 +41478,7 @@ var docxLayout = (function(exports) {
 	var BOUND_CONTROL = "a content control Word fills in from custom XML with other text than is written in it";
 	var REMOVED_NOTES = /* @__PURE__ */ new Set(["w:footnoteReference", "w:endnoteReference"]);
 	var PARTLY_DELETED_FIELD = "a field partly deleted in a tracked change";
+	var DELETED_OWN_MARK = "a deleted footnote or endnote reference with a mark of its own";
 	var GUESS = "docx-layout:guess ";
 	/** A marker that stands in a paragraph's items for what the reader guessed at, for why */
 	var guessMarker = (reason) => ({
@@ -42406,9 +42456,8 @@ var docxLayout = (function(exports) {
 	]);
 	var REMOVALS = /* @__PURE__ */ new Set(["w:del", "w:moveFrom"]);
 	var STOP = "docx-layout:unsupported";
-	var COUNTED = "docx-layout:counted";
 	var LEFT_OUT = "docx-layout:left-out";
-	var JOINED_SPACING = "docx-layout:joined-spacing";
+	var JOINED_NEXT = "docx-layout:joined-next";
 	var KEPT_MARK = "docx-layout:kept-mark";
 	/**
 	* The items of the parts of a paragraph, or why it can't be laid out. Read to be laid out with a guess, a part that can't
@@ -42424,7 +42473,9 @@ var docxLayout = (function(exports) {
 	* the markup area beside the page, and breaks the lines without it, pictures, tabs and breaks too (`word-watertight-markup.docx`
 	* MK1, `word-tracked-changes.docx` MK10), but for its bookmarks. Word numbers a note whose reference is deleted, though it
 	* doesn't show it or lay the note out: a footnote (MK10e), and an endnote, the kept one after it ii
-	* (`stops2/word-stops-tracked-edges.docx` TR3b). It numbers a note whose reference is moved elsewhere the same way, at the
+	* (`stops2/word-stops-tracked-edges.docx` TR3b). One whose reference has a mark of its own it lays out all the same, after
+	* the other endnotes, with i at its mark (`word-stops-tracked2.docx` TR17), which isn't followed yet: the layout stops
+	* there. It numbers a note whose reference is moved elsewhere the same way, at the
 	* reference's old place, and lays out the note of its new place: 1 there, and 2 at the new (`word-stops-moves.docx` TR3a).
 	* A footnote or endnote reference with a mark of its own isn't counted, as where it isn't deleted.
 	*/
@@ -42432,10 +42483,12 @@ var docxLayout = (function(exports) {
 		const name = nameOf$1(element);
 		if (name === "w:r") {
 			const children = contentOf$3(element).filter(isObject);
-			children.filter((child) => REMOVED_NOTES.has(nameOf$1(child))).filter((reference) => !hasOwnMark(reference)).forEach((reference) => {
+			const references = children.filter((child) => REMOVED_NOTES.has(nameOf$1(child)));
+			references.filter((reference) => !hasOwnMark(reference)).forEach((reference) => {
 				var _reader$notes3;
 				return (_reader$notes3 = reader.notes) === null || _reader$notes3 === void 0 ? void 0 : _reader$notes3.skip("w:endnoteReference" in reference ? "endnote" : "footnote");
 			});
+			if (references.some(hasOwnMark)) return DELETED_OWN_MARK;
 			return itemsOf(children.map((child) => nameOf$1(child) === "w:fldChar" ? readFieldCharacter(child, {}, reader, true) : []), reader);
 		}
 		if (name === "w:bookmarkStart") return markerOf(element);
@@ -42539,10 +42592,6 @@ var docxLayout = (function(exports) {
 		if (name === "w:bookmarkStart") return markerOf(element);
 		if (name === "w:subDoc") return "a subdocument";
 		if (name === STOP) return String(element[name]);
-		if (name === JOINED_SPACING) return [{
-			type: "marker",
-			name: JOINED_SPACING_MARKER
-		}];
 		return name === "m:oMath" || name === "m:oMathPara" ? readEquation(element, paragraphRun, reader) : [];
 	}), reader);
 	/** The levels a level's text writes the numbers of (`%1` to `%9`), counted from 0 */
@@ -42556,24 +42605,22 @@ var docxLayout = (function(exports) {
 	var isLevelLeftOut = (level, levels) => level.alignedBoth === true || referredLevelsOf(level).some((at) => levels[at] === void 0);
 	/**
 	* Where the lists made from a definition are in their counting after a paragraph at a level Word leaves out: as they
-	* were, as it isn't counted, but for the levels below it that have numbers, which it may start again
+	* were, as it isn't counted, but for the levels below it, which it starts again, as a paragraph at any level does: level
+	* 1's paragraphs either side of one at a left-out level 0 are both 1) (stops2/word-stops-lists2.ts LI14)
 	*/
 	var leftOutIn = (count, index) => {
-		var _count$numbers, _count$uncertain, _count$started;
-		const numbers = (_count$numbers = count === null || count === void 0 ? void 0 : count.numbers) !== null && _count$numbers !== void 0 ? _count$numbers : [];
-		const below = numbers.flatMap((counted, at) => at > index && counted !== void 0 ? [at] : []);
-		const uncertain = [.../* @__PURE__ */ new Set([...(_count$uncertain = count === null || count === void 0 ? void 0 : count.uncertain) !== null && _count$uncertain !== void 0 ? _count$uncertain : [], ...below])];
-		return _objectSpread2({
-			numbers,
+		var _count$numbers, _count$started;
+		return {
+			numbers: ((_count$numbers = count === null || count === void 0 ? void 0 : count.numbers) !== null && _count$numbers !== void 0 ? _count$numbers : []).map((counted, at) => at > index ? void 0 : counted),
 			started: (_count$started = count === null || count === void 0 ? void 0 : count.started) !== null && _count$started !== void 0 ? _count$started : []
-		}, uncertain.length > 0 ? { uncertain } : {});
+		};
 	};
 	/**
 	* The number of a paragraph in a list, and what follows it, as its list's level writes it, and its number as a chapter
 	* number. A paragraph is in the list it gives, or else in its style's. The list's numbers move on.
 	*/
 	var readListNumber = (properties, style, markRun, reader) => {
-		var _valueOf2, _numberOf3, _ref2, _levels$findIndex, _ref3, _before$uncertain, _ref4, _ref5, _level$unsupported, _exec, _reader$listIds$get;
+		var _valueOf2, _numberOf3, _ref2, _levels$findIndex, _ref3, _ref4, _ref5, _level$unsupported, _exec, _reader$listIds$get;
 		const numbering = childrenOf(find(properties, "w:numPr"));
 		const ownId = (_valueOf2 = valueOf(numbering, "w:numId")) !== null && _valueOf2 !== void 0 ? _valueOf2 : (_numberOf3 = numberOf(attributesOf(find(numbering, "w:numId"))["w:val"])) === null || _numberOf3 === void 0 ? void 0 : _numberOf3.toString();
 		const ownLevel = numberOf(attributesOf(find(numbering, "w:ilvl"))["w:val"]);
@@ -42593,8 +42640,6 @@ var docxLayout = (function(exports) {
 			reader.counters.set(list.definition, leftOutIn(reader.counters.get(list.definition), index));
 			return { items: [] };
 		}
-		const before = reader.counters.get(list.definition);
-		const restartedByLeftOut = (before === null || before === void 0 || (_before$uncertain = before.uncertain) === null || _before$uncertain === void 0 ? void 0 : _before$uncertain.includes(index)) === true;
 		const current = countIn(reader.counters, id, list, index);
 		const { started } = reader.counters.get(list.definition);
 		const numberAt = (at) => {
@@ -42614,7 +42659,7 @@ var docxLayout = (function(exports) {
 		});
 		const numberFont = singleFontOf(text, numberRun);
 		const font = numberFont !== null && numberFont !== void 0 ? numberFont : fontOf(numberRun);
-		const unsupported = (_ref4 = (_ref5 = (_level$unsupported = level.unsupported) !== null && _level$unsupported !== void 0 ? _level$unsupported : unknownRunFont(text, numberRun)) !== null && _ref5 !== void 0 ? _ref5 : numberFont === void 0 ? "a list number of characters of both the font for ASCII and the high ANSI font of its run" : void 0) !== null && _ref4 !== void 0 ? _ref4 : levels.some((other) => (other === null || other === void 0 ? void 0 : other.alignedBoth) === true) ? "a list number at another level of a list with a level aligned both" : restartedByLeftOut ? "a list number after a paragraph at a level Word leaves out above it" : referred.some((at) => numberAt(at) === void 0) ? "a list number in a format not yet written" : referred.some(ownStart) ? "a list number of a level not counted yet, which its list starts at a number of its own" : font.border !== void 0 ? "a list number with a border" : void 0;
+		const unsupported = (_ref4 = (_ref5 = (_level$unsupported = level.unsupported) !== null && _level$unsupported !== void 0 ? _level$unsupported : unknownRunFont(text, numberRun)) !== null && _ref5 !== void 0 ? _ref5 : numberFont === void 0 ? "a list number of characters of both the font for ASCII and the high ANSI font of its run" : void 0) !== null && _ref4 !== void 0 ? _ref4 : referred.some((at) => numberAt(at) === void 0) ? "a list number in a format not yet written" : referred.some(ownStart) ? "a list number of a level not counted yet, which its list starts at a number of its own" : void 0;
 		const numbers = (_exec = /%[1-9](?:.*%[1-9])?/.exec(level.text)) === null || _exec === void 0 ? void 0 : _exec[0];
 		const separator = _objectSpread2(_objectSpread2({}, font), {}, { listNumber: "separator" });
 		const suffix = level.suffix === "nothing" ? [] : level.suffix === "space" ? [{
@@ -42644,6 +42689,7 @@ var docxLayout = (function(exports) {
 				return (_numberAt2 = numberAt(Number(digit) - 1)) !== null && _numberAt2 !== void 0 ? _numberAt2 : "";
 			}),
 			alignment: text.length > 0 ? level.alignment : void 0,
+			legacy: level.legacy,
 			unsupported
 		}));
 	};
@@ -42658,7 +42704,7 @@ var docxLayout = (function(exports) {
 	*/
 	var countIn = (counters, id, { levels, starts, definition }, index) => {
 		var _counters$get;
-		const { numbers, started, uncertain = [] } = (_counters$get = counters.get(definition)) !== null && _counters$get !== void 0 ? _counters$get : {
+		const { numbers, started } = (_counters$get = counters.get(definition)) !== null && _counters$get !== void 0 ? _counters$get : {
 			numbers: [],
 			started: []
 		};
@@ -42675,11 +42721,10 @@ var docxLayout = (function(exports) {
 			const restart = (_levels$at = levels[at]) === null || _levels$at === void 0 ? void 0 : _levels$at.restart;
 			return restart !== void 0 && restart <= at && restart <= index ? numbers[at] : void 0;
 		});
-		const stillUncertain = uncertain.filter((at) => at !== index && current[at] !== void 0);
-		counters.set(definition, _objectSpread2({
+		counters.set(definition, {
 			numbers: current,
 			started: starting ? [...started, `${id} ${index}`] : started
-		}, stillUncertain.length > 0 ? { uncertain: stillUncertain } : {}));
+		});
 		return current;
 	};
 	var ARABIC = new RegExp("\\p{Script=Arabic}", "u");
@@ -42866,19 +42911,60 @@ var docxLayout = (function(exports) {
 		return frame;
 	};
 	/**
+	* Reads a paragraph's content, with the content of each paragraph joined to it by a hidden mark in the formatting of its
+	* own style, from the paragraph's properties that stand where its text starts (see {@link joinedToNext}), and a marker
+	* there where the line spacing changes (`marker`)
+	*/
+	var readJoinedInline = (children, paragraphRun, joined, reader) => {
+		const parts = [];
+		let from = 0;
+		let run = paragraphRun;
+		for (const { element, run: nextRun, marker } of joined) {
+			const at = children.indexOf(element);
+			parts.push(readInline(children.slice(from, at), run, reader), marker === void 0 ? [] : [{
+				type: "marker",
+				name: marker
+			}]);
+			from = at + 1;
+			run = nextRun;
+		}
+		parts.push(readInline(children.slice(from), run, reader));
+		return itemsOf(parts, reader);
+	};
+	/**
 	* Reads a paragraph (`w:p`), in the formatting of its styles, and of its table's style when it is in a table.
 	*/
 	var readParagraph = (element, reader, tableFormats = []) => {
-		var _valueOf3, _exec2, _styleChain$slice$0$n, _styleChain$slice$, _ref6, _ref7, _ref8, _ref9, _list$unsupported, _ref10, _ref11, _unknownInOlderLayout;
+		var _valueOf3, _last$markRun, _exec2, _styleChain$slice$0$n, _styleChain$slice$, _ref6, _ref7, _ref8, _ref9, _list$unsupported, _ref10, _unknownInOlderLayout;
 		const { styles } = reader;
 		const children = contentOf$3(element);
 		const properties = childrenOf(find(children.filter(isObject), "w:pPr"));
 		const style = (_valueOf3 = valueOf(properties, "w:pStyle")) !== null && _valueOf3 !== void 0 ? _valueOf3 : styles.defaultParagraphStyle;
 		const paragraphStyles = [...tableFormats, ...styleChain(styles, style, "paragraph")];
 		const paragraphRun = combine([styles.run, ...paragraphStyles.map(({ run }) => run)]);
-		const markRun = combine([paragraphRun, readRunFormat(find(properties, "w:rPr"), styles.themeFonts)]);
+		const joined = children.filter((child) => isObject(child) && JOINED_NEXT in child).map((joinedElement) => {
+			var _valueOf4;
+			const given = childrenOf(joinedElement[JOINED_NEXT]);
+			const joinedStyle = (_valueOf4 = valueOf(given, "w:pStyle")) !== null && _valueOf4 !== void 0 ? _valueOf4 : styles.defaultParagraphStyle;
+			const chain = [...tableFormats, ...styleChain(styles, joinedStyle, "paragraph")];
+			const run = combine([styles.run, ...chain.map((inChain) => inChain.run)]);
+			return {
+				element: joinedElement,
+				given,
+				style: joinedStyle,
+				run,
+				markRun: combine([run, readRunFormat(find(given, "w:rPr"), styles.themeFonts)]),
+				format: combine([
+					styles.paragraph,
+					...chain.map((inChain) => inChain.paragraph),
+					readParagraphFormat(given)
+				])
+			};
+		});
+		const last = joined[joined.length - 1];
+		const markRun = (_last$markRun = last === null || last === void 0 ? void 0 : last.markRun) !== null && _last$markRun !== void 0 ? _last$markRun : combine([paragraphRun, readRunFormat(find(properties, "w:rPr"), styles.themeFonts)]);
 		const list = readListNumber(properties, style, markRun, reader);
-		children.filter((child) => isObject(child) && COUNTED in child).forEach(() => readListNumber(properties, style, markRun, reader));
+		joined.filter(({ given }) => isNumbered({ "w:p": [{ "w:pPr": given }] }, styles)).forEach(({ given, style: joinedStyle, markRun: joinedMarkRun }) => readListNumber(given, joinedStyle, joinedMarkRun, reader));
 		const headingLevel = (_exec2 = /^heading ([1-9])$/i.exec((_styleChain$slice$0$n = (_styleChain$slice$ = styleChain(styles, style, "paragraph").slice(-1)[0]) === null || _styleChain$slice$ === void 0 ? void 0 : _styleChain$slice$.name) !== null && _styleChain$slice$0$n !== void 0 ? _styleChain$slice$0$n : "")) === null || _exec2 === void 0 ? void 0 : _exec2[1];
 		const formats = [
 			styles.paragraph,
@@ -42886,10 +42972,22 @@ var docxLayout = (function(exports) {
 			...list.level ? [list.level.paragraph] : [],
 			readParagraphFormat(properties)
 		];
-		const read = withEquations(withFitted(readInline(children, paragraphRun, reader)), list.items.length > 0, reader);
+		const firstSpacing = combine(formats).lineSpacing;
+		const markerAt = (index) => `${JOINED_SPACING_MARKER}${index === 0 ? "" : ` ${index + 1}`}`;
+		const spacedApart = joined.map(({ format: joinedFormat }, index) => {
+			const before = index === 0 ? firstSpacing : joined[index - 1].format.lineSpacing;
+			return JSON.stringify(joinedFormat.lineSpacing) !== JSON.stringify(before);
+		});
+		const lineSpacingFrom = joined.flatMap(({ format: joinedFormat }, index) => spacedApart[index] ? [_objectSpread2({ marker: markerAt(index) }, withoutUndefined({ lineSpacing: joinedFormat.lineSpacing }))] : []);
+		const read = withEquations(withFitted(readJoinedInline(children, paragraphRun, joined.map((part, index) => _objectSpread2(_objectSpread2({}, part), spacedApart[index] ? { marker: markerAt(index) } : {})), reader)), list.items.length > 0, reader);
 		const guessed = typeof read === "string" ? void 0 : read.map(guessOf).find((reason) => reason !== void 0);
 		const items = typeof read === "string" ? read : read.filter((item) => guessOf(item) === void 0);
-		const ownFormat = combine(formats);
+		const AFTER = /* @__PURE__ */ new Set([
+			"spaceAfter",
+			"spaceAfterLines",
+			"autoSpaceAfter"
+		]);
+		const ownFormat = last === void 0 ? combine(formats) : _objectSpread2(_objectSpread2({}, Object.fromEntries(Object.entries(combine(formats)).filter(([key]) => !AFTER.has(key)))), Object.fromEntries(Object.entries(last.format).filter(([key]) => AFTER.has(key))));
 		const division = readDivision(properties, ownFormat, reader);
 		const combined = division === void 0 ? ownFormat : combine([ownFormat, division.format]);
 		const own = typeof items === "string" ? [] : items;
@@ -42912,22 +43010,19 @@ var docxLayout = (function(exports) {
 			listNumber: list.items,
 			items: own
 		}, markFont, fontOf(paragraphRun), unitsOf(sectionGrid));
-		const joined = children.filter((child) => isObject(child) && JOINED_SPACING in child);
-		const joinedSpacing = joined.length === 0 ? void 0 : combine([...formats.slice(0, -1), readParagraphFormat(childrenOf(joined[0][JOINED_SPACING]))]).lineSpacing;
-		const unjoinedSpacing = joined.length > 1 || joined.length > 0 && [combined.lineSpacing, joinedSpacing].some((spacing) => spacing !== void 0 && spacing.rule !== "multiple") ? "a hidden paragraph mark between paragraphs of exact or at least line spacing, or more than two of other line spacing" : void 0;
 		const borders = readBorders(typeof format === "string" ? combined : format);
 		const forThaiOrArabic = combined.alignment === "thaiDistributed" || combined.alignment === "lowKashida";
 		const tabStops = tabStopsOf(formats);
 		const otherDecimalSymbol = reader.decimalSymbol !== void 0 && reader.decimalSymbol !== "." && tabStops.some(({ alignment }) => alignment === "decimal");
 		const frame = readFrameOf(properties, styleChain(styles, style, "paragraph"), reader);
-		const unsupported = (_ref6 = (_ref7 = (_ref8 = (_ref9 = (_list$unsupported = list.unsupported) !== null && _list$unsupported !== void 0 ? _list$unsupported : ownCells) !== null && _ref9 !== void 0 ? _ref9 : unknownEastAsianRules(reader.eastAsianRules, own, combined.alignment)) !== null && _ref8 !== void 0 ? _ref8 : joinedAcrossRuns(own) ? "Arabic letters joined across runs" : void 0) !== null && _ref7 !== void 0 ? _ref7 : reader.down === true ? unknownDownOf(own, tabStops) : void 0) !== null && _ref6 !== void 0 ? _ref6 : typeof frame === "string" ? frame : otherDecimalSymbol ? "a decimal tab stop in a document whose decimal symbol isn't a full stop" : (division === null || division === void 0 ? void 0 : division.unsupported) !== void 0 ? division.unsupported : combined.alignment === "mediumKashida" || combined.alignment === "highKashida" ? "a paragraph justified for Arabic with a medium or high kashida" : forThaiOrArabic && typeof items !== "string" && items.some((item) => item.type === "text" && ARABIC.test(item.text)) ? "Arabic text justified for Thai or with a kashida" : (_ref10 = (_ref11 = (_unknownInOlderLayout = unknownInOlderLayout(content, reader, onOff(properties, "w:autoSpaceDE") !== false || onOff(properties, "w:autoSpaceDN") !== false)) !== null && _unknownInOlderLayout !== void 0 ? _unknownInOlderLayout : unjoinedSpacing) !== null && _ref11 !== void 0 ? _ref11 : typeof format === "string" ? format : void 0) !== null && _ref10 !== void 0 ? _ref10 : typeof borders === "string" ? borders : void 0;
-		return _objectSpread2(_objectSpread2(_objectSpread2(_objectSpread2(_objectSpread2(_objectSpread2(_objectSpread2(_objectSpread2(_objectSpread2({
+		const unsupported = (_ref6 = (_ref7 = (_ref8 = (_ref9 = (_list$unsupported = list.unsupported) !== null && _list$unsupported !== void 0 ? _list$unsupported : ownCells) !== null && _ref9 !== void 0 ? _ref9 : unknownEastAsianRules(reader.eastAsianRules, own, combined.alignment)) !== null && _ref8 !== void 0 ? _ref8 : joinedAcrossRuns(own) ? "Arabic letters joined across runs" : void 0) !== null && _ref7 !== void 0 ? _ref7 : reader.down === true ? unknownDownOf(own, tabStops) : void 0) !== null && _ref6 !== void 0 ? _ref6 : typeof frame === "string" ? frame : otherDecimalSymbol ? "a decimal tab stop in a document whose decimal symbol isn't a full stop" : (division === null || division === void 0 ? void 0 : division.unsupported) !== void 0 ? division.unsupported : combined.alignment === "mediumKashida" || combined.alignment === "highKashida" ? "a paragraph justified for Arabic with a medium or high kashida" : forThaiOrArabic && typeof items !== "string" && items.some((item) => item.type === "text" && ARABIC.test(item.text)) ? "Arabic text justified for Thai or with a kashida" : (_ref10 = (_unknownInOlderLayout = unknownInOlderLayout(content, reader, onOff(properties, "w:autoSpaceDE") !== false || onOff(properties, "w:autoSpaceDN") !== false)) !== null && _unknownInOlderLayout !== void 0 ? _unknownInOlderLayout : typeof format === "string" ? format : void 0) !== null && _ref10 !== void 0 ? _ref10 : typeof borders === "string" ? borders : void 0;
+		return _objectSpread2(_objectSpread2(_objectSpread2(_objectSpread2(_objectSpread2(_objectSpread2(_objectSpread2(_objectSpread2(_objectSpread2(_objectSpread2({
 			type: "paragraph",
 			items: content,
-			format: _objectSpread2(_objectSpread2({}, typeof format === "string" ? combined : format), joined.length === 0 ? {} : { lineSpacingFrom: _objectSpread2({ marker: JOINED_SPACING_MARKER }, withoutUndefined({ lineSpacing: joinedSpacing })) }),
+			format: _objectSpread2(_objectSpread2({}, typeof format === "string" ? combined : format), lineSpacingFrom.length === 0 ? {} : { lineSpacingFrom }),
 			tabStops,
 			markFont
-		}, unsupported === void 0 && typeof items !== "string" && children.some((child) => isObject(child) && LEFT_OUT in child) ? { hidden: true } : {}), list.list ? { list: list.list } : {}), list.alignment ? { numberAlignment: list.alignment } : {}), typeof borders === "object" ? { borders } : {}), paragraphGrid !== void 0 && Object.keys(paragraphGrid).length > 0 ? { grid: paragraphGrid } : {}), typeof frame === "object" ? { frame } : {}), (division === null || division === void 0 ? void 0 : division.division) === void 0 ? {} : {
+		}, unsupported === void 0 && typeof items !== "string" && children.some((child) => isObject(child) && LEFT_OUT in child) ? { hidden: true } : {}), list.list ? { list: list.list } : {}), list.alignment ? { numberAlignment: list.alignment } : {}), list.legacy ? { numberLegacy: list.legacy } : {}), typeof borders === "object" ? { borders } : {}), paragraphGrid !== void 0 && Object.keys(paragraphGrid).length > 0 ? { grid: paragraphGrid } : {}), typeof frame === "object" ? { frame } : {}), (division === null || division === void 0 ? void 0 : division.division) === void 0 ? {} : {
 			division: division.division,
 			unknownAtTop: "a paragraph in an HTML division at the top of a page or column"
 		}), {}, { style }, headingLevel === void 0 ? {} : { heading: _objectSpread2({ level: Number(headingLevel) }, withoutUndefined({ chapter: list.from === "style" ? list.chapter : void 0 })) }), typeof items === "string" || guessed || unsupported ? { unsupported: typeof items === "string" ? items : guessed !== null && guessed !== void 0 ? guessed : unsupported } : {});
@@ -43083,8 +43178,8 @@ var docxLayout = (function(exports) {
 	]);
 	/** Whether a section's text runs down the page (`w:textDirection`), from the right or the left. Undefined across it */
 	var downOf = (properties) => {
-		var _valueOf4;
-		const direction = (_valueOf4 = valueOf(properties, "w:textDirection")) !== null && _valueOf4 !== void 0 ? _valueOf4 : "";
+		var _valueOf5;
+		const direction = (_valueOf5 = valueOf(properties, "w:textDirection")) !== null && _valueOf5 !== void 0 ? _valueOf5 : "";
 		return DOWN_FROM_RIGHT.has(direction) ? "fromRight" : DOWN_FROM_LEFT.has(direction) ? "fromLeft" : void 0;
 	};
 	var VERTICAL = /* @__PURE__ */ new Set([...DOWN_FROM_RIGHT, ...DOWN_FROM_LEFT]);
@@ -43224,7 +43319,7 @@ var docxLayout = (function(exports) {
 	* bands by each row's place among all the rows, the deleted ones too (MK14j to MK14l).
 	*/
 	var readTable = (element, reader) => {
-		var _twips2, _reader$grid, _readTableLook, _kept$0$spacing, _kept$, _ref18, _ref19, _ref20, _ref21, _ref22, _ref23, _ref24, _ref25, _ref26, _ref27, _ref28, _ref29, _ref30, _ref31, _ref32, _ref33, _withoutGuess$unsuppo, _read$find2, _givenWidth$share, _blocks$find, _read$0$cells, _read$, _roomOf, _roomOf2;
+		var _twips2, _reader$grid, _readTableLook, _kept$0$spacing, _kept$, _ref17, _ref18, _ref19, _ref20, _ref21, _ref22, _ref23, _ref24, _ref25, _ref26, _ref27, _ref28, _ref29, _ref30, _ref31, _ref32, _withoutGuess$unsuppo, _read$find2, _givenWidth$share, _blocks$find, _read$0$cells, _read$, _roomOf, _roomOf2;
 		const children = contentOf$3(element).filter(isObject);
 		const properties = childrenOf(find(children, "w:tblPr"));
 		const style = valueOf(properties, "w:tblStyle");
@@ -43306,7 +43401,7 @@ var docxLayout = (function(exports) {
 		}, void 0);
 		const gridWidth = (from, to) => grid.slice(from, to).reduce((total, value) => total + value, 0);
 		const read = rows.map(({ element: row, bookmarks: rowBookmarks }, rowIndex) => {
-			var _formatsOf$height, _numberOf5, _ref15, _onOff2;
+			var _formatsOf$height, _numberOf5, _ref14, _onOff2;
 			const rowChildren = contentOf$3(row).filter(isObject);
 			const rowProperties = childrenOf(find(rowChildren, "w:trPr"));
 			const rowParts = unwrap(rowChildren);
@@ -43331,8 +43426,8 @@ var docxLayout = (function(exports) {
 			const spacing = ownSpacing === void 0 ? tableSpacing : readCellSpacing(ownSpacing);
 			const deleted = deletedFlags[rowIndex];
 			const rowReader = deleted ? sizingReaderOf(cellReader, sized, true) : cellReader;
-			const counts = deleted ? JSON.stringify([...rowReader.counters]) : "";
-			(deleted ? elementsIn$1(rowChildren, (inner) => REMOVED_NOTES.has(inner)) : []).filter((reference) => !hasOwnMark(reference)).forEach((reference) => {
+			const rowReferences = deleted ? elementsIn$1(rowChildren, (inner) => REMOVED_NOTES.has(inner)) : [];
+			rowReferences.filter((reference) => !hasOwnMark(reference)).forEach((reference) => {
 				var _cellReader$notes;
 				return (_cellReader$notes = cellReader.notes) === null || _cellReader$notes === void 0 ? void 0 : _cellReader$notes.skip("w:endnoteReference" in reference ? "endnote" : "footnote");
 			});
@@ -43348,7 +43443,7 @@ var docxLayout = (function(exports) {
 				return typesAt(rowIndex, rows.length, headerRows) !== typesAt(rowIndex - deletedBefore, rows.length - deletedHeaderRows, headerRows - deletedHeaderRows);
 			});
 			const { cells, edges, column: end, unsupported: cellsUnsupported } = rowCells.reduce(({ column, cells: done, edges: before, unsupported: unsupportedBefore }, [{ element: cell }, ...across], cellIndex) => {
-				var _ref12, _ref13, _ref14;
+				var _ref11, _ref12, _ref13;
 				const cellChildren = contentOf$3(cell).filter(isObject);
 				const cellProperties = childrenOf(find(cellChildren, "w:tcPr"));
 				const spanOf = (given) => {
@@ -43393,7 +43488,7 @@ var docxLayout = (function(exports) {
 				return _objectSpread2(_objectSpread2({
 					column: column + span,
 					edges: new Map([...before, [column + span, before.get(column) + width]])
-				}, withoutUndefined({ unsupported: (_ref12 = (_ref13 = (_ref14 = unsupportedBefore !== null && unsupportedBefore !== void 0 ? unsupportedBefore : across.some((merged) => hasMergedContent(merged.element)) ? "cells merged across columns as old versions of Word wrote them, with text after the first" : void 0) !== null && _ref14 !== void 0 ? _ref14 : unsupportedCellOf(cellProperties)) !== null && _ref13 !== void 0 ? _ref13 : formatted.unsupported) !== null && _ref12 !== void 0 ? _ref12 : vertical ? unsupportedVerticalOf(cellBlocks) : void 0 })), {}, { cells: [...done, _objectSpread2(_objectSpread2(_objectSpread2(_objectSpread2(_objectSpread2(_objectSpread2(_objectSpread2(_objectSpread2(_objectSpread2({ column }, span > 1 ? { span } : {}), {}, { width: width - margins.left - margins.right }, hasWidth ? { ownWidth: width } : {}), {}, {
+				}, withoutUndefined({ unsupported: (_ref11 = (_ref12 = (_ref13 = unsupportedBefore !== null && unsupportedBefore !== void 0 ? unsupportedBefore : across.some((merged) => hasMergedContent(merged.element)) ? "cells merged across columns as old versions of Word wrote them, with text after the first" : void 0) !== null && _ref13 !== void 0 ? _ref13 : unsupportedCellOf(cellProperties)) !== null && _ref12 !== void 0 ? _ref12 : formatted.unsupported) !== null && _ref11 !== void 0 ? _ref11 : vertical ? unsupportedVerticalOf(cellBlocks) : void 0 })), {}, { cells: [...done, _objectSpread2(_objectSpread2(_objectSpread2(_objectSpread2(_objectSpread2(_objectSpread2(_objectSpread2(_objectSpread2(_objectSpread2({ column }, span > 1 ? { span } : {}), {}, { width: width - margins.left - margins.right }, hasWidth ? { ownWidth: width } : {}), {}, {
 					blocks: cellBlocks,
 					marginTop: margins.top,
 					marginBottom: margins.bottom,
@@ -43409,7 +43504,8 @@ var docxLayout = (function(exports) {
 				cells: [],
 				edges: /* @__PURE__ */ new Map([[skipped, widthBefore !== null && widthBefore !== void 0 ? widthBefore : gridWidth(0, skipped)]])
 			});
-			const rowUnsupported = rowParts.some((part) => "w:sdt" in part) ? BOUND_CONTROL : changesLines(exceptions, FOLLOWED_ROW_TABLE_PROPERTIES) ? "a table row with table properties of its own" : deleted && JSON.stringify([...rowReader.counters]) !== counts ? "a list in a deleted table row" : unseenHeaderCount ? "a deleted row in a table's header of several rows, whose style formats some of its rows" : cellsUnsupported !== null && cellsUnsupported !== void 0 ? cellsUnsupported : unsupportedVerticalRowOf(cells.filter(({ verticalMerge }) => verticalMerge === void 0));
+			if (deleted) for (const [definition, count] of rowReader.counters) cellReader.counters.set(definition, count);
+			const rowUnsupported = rowParts.some((part) => "w:sdt" in part) ? BOUND_CONTROL : changesLines(exceptions, FOLLOWED_ROW_TABLE_PROPERTIES) ? "a table row with table properties of its own" : rowReferences.some(hasOwnMark) ? DELETED_OWN_MARK : unseenHeaderCount ? "a deleted row in a table's header of several rows, whose style formats some of its rows" : cellsUnsupported !== null && cellsUnsupported !== void 0 ? cellsUnsupported : unsupportedVerticalRowOf(cells.filter(({ verticalMerge }) => verticalMerge === void 0));
 			return _objectSpread2(_objectSpread2({
 				cells,
 				deleted,
@@ -43424,13 +43520,13 @@ var docxLayout = (function(exports) {
 					rule: rule === "exact" ? "exact" : "atLeast"
 				} } : {}), {}, {
 					header: onOff(rowProperties, "w:tblHeader") === true,
-					cantSplit: ((_ref15 = (_onOff2 = onOff(rowProperties, "w:cantSplit")) !== null && _onOff2 !== void 0 ? _onOff2 : formatsOf({
+					cantSplit: ((_ref14 = (_onOff2 = onOff(rowProperties, "w:cantSplit")) !== null && _onOff2 !== void 0 ? _onOff2 : formatsOf({
 						row: rowIndex,
 						rows: rows.length,
 						cell: 0,
 						cells: rowCells.length,
 						headerRows
-					}).cantSplit) !== null && _ref15 !== void 0 ? _ref15 : styleKept) === true
+					}).cantSplit) !== null && _ref14 !== void 0 ? _ref14 : styleKept) === true
 				}, widthBefore === void 0 ? {} : { before: widthBefore })
 			});
 		});
@@ -43457,20 +43553,7 @@ var docxLayout = (function(exports) {
 		})), tableBorders);
 		const spaced = followedSpacing > 0;
 		const keptGeometry = geometryOf(kept);
-		const bordersOf = (index) => {
-			var _read$index;
-			return JSON.stringify((_read$index = read[index]) === null || _read$index === void 0 ? void 0 : _read$index.cells.map(({ borders }) => borders));
-		};
-		const bordered = () => ([
-			tableBorders.top,
-			tableBorders.bottom,
-			tableBorders.insideH
-		].some(isDrawn) || read.some(({ cells }) => cells.some(({ borders }) => isDrawn(borders.top) || isDrawn(borders.bottom)))) && read.some(({ deleted }, index) => {
-			const above = read.findLastIndex((row, at) => at < index && !row.deleted);
-			const below = read.findIndex((row, at) => at > index && !row.deleted);
-			return deleted && (above < 0 || below < 0 || bordersOf(above) !== bordersOf(index) || bordersOf(below) !== bordersOf(index));
-		});
-		const geometry = kept.length === read.length || typeof keptGeometry === "string" ? keptGeometry : !spaced ? withDeletedBorders(keptGeometry, geometryOf(read), deletedFlags) : bordered() ? "a deleted row in a table with borders and space between its cells, at its top or bottom or with borders of its own" : keptGeometry;
+		const geometry = kept.length === read.length || typeof keptGeometry === "string" || spaced ? keptGeometry : withDeletedBorders(keptGeometry, geometryOf(read), deletedFlags);
 		const sizingGeometry = rowSpacings.size > 1 && typeof geometry !== "string" ? geometryOf(kept, followedSpacing) : geometry;
 		const tableRows = [];
 		let carried = [];
@@ -43494,9 +43577,9 @@ var docxLayout = (function(exports) {
 				breakTop: placed === null || placed === void 0 ? void 0 : placed.breakTop,
 				edgeTop: placed === null || placed === void 0 ? void 0 : placed.edgeTop,
 				edgeBottom: placed === null || placed === void 0 ? void 0 : placed.edgeBottom
-			})), {}, { cells: cells.map((_ref16, cellIndex) => {
+			})), {}, { cells: cells.map((_ref15, cellIndex) => {
 				var _read, _above$cells$find, _unmerged;
-				let { borders: _, margins, gridWidth: __ } = _ref16, cell = _objectWithoutProperties(_ref16, _excluded2);
+				let { borders: _, margins, gridWidth: __ } = _ref15, cell = _objectWithoutProperties(_ref15, _excluded2);
 				const pending = [...carried, ...cellBookmarks[cellIndex]];
 				const marked = pending.length === 0 ? void 0 : startingAtFirst(cell.blocks, pending);
 				carried = marked === void 0 ? pending : [];
@@ -43522,9 +43605,9 @@ var docxLayout = (function(exports) {
 		const deletedRows = sized ? read.filter(({ deleted }) => deleted).map(({ row, cells }) => _objectSpread2(_objectSpread2({}, row), {}, {
 			borderTop: 0,
 			borderBottom: 0,
-			cells: cells.map((_ref17) => {
-				let { borders: _, margins: __, gridWidth: ___ } = _ref17;
-				return _objectWithoutProperties(_ref17, _excluded3);
+			cells: cells.map((_ref16) => {
+				let { borders: _, margins: __, gridWidth: ___ } = _ref16;
+				return _objectWithoutProperties(_ref16, _excluded3);
 			})
 		})) : [];
 		const blocks = [...tableRows.flatMap(({ cells }) => cells.flatMap((cell) => {
@@ -43543,7 +43626,7 @@ var docxLayout = (function(exports) {
 		const older = reader.compatibilityMode !== void 0;
 		const marginsBeside = older && sized && givenWidth.width === void 0 && reader.inCell !== true;
 		const verticalUnsupported = fits && (float !== void 0 || reader.inSizedTable === true) && tableCells.some((cell) => cell.vertical && !isVerticalWidthKnown(cell)) ? "text that runs up or down a cell of a table sized to its text, in a table cell or that text flows around" : void 0;
-		const unsupported = (_ref18 = (_ref19 = (_ref20 = (_ref21 = (_ref22 = (_ref23 = (_ref24 = (_ref25 = (_ref26 = (_ref27 = (_ref28 = (_ref29 = (_ref30 = (_ref31 = (_ref32 = (_ref33 = (_withoutGuess$unsuppo = withoutGuess === null || withoutGuess === void 0 ? void 0 : withoutGuess.unsupported) !== null && _withoutGuess$unsuppo !== void 0 ? _withoutGuess$unsuppo : reader.down === true ? "a table on text that runs down the page" : void 0) !== null && _ref33 !== void 0 ? _ref33 : float !== void 0 && (reader.inCell || reader.inHeader) ? "a table that text flows around in a table cell, header or footer" : void 0) !== null && _ref32 !== void 0 ? _ref32 : typeof float === "object" && older && (marginsBeside || float.horizontal.align !== void 0) ? "a table that text flows around, sized to its text or lined up across the page, in a document in compatibility mode" : void 0) !== null && _ref31 !== void 0 ? _ref31 : marginsBeside && fits && givenWidth.share !== void 0 ? "a table sized to its text as a share of the width, in a document in compatibility mode" : void 0) !== null && _ref30 !== void 0 ? _ref30 : older && sized && fits && givenWidth.width === void 0 && reader.inCell === true && (indent !== 0 || givenWidth.share !== void 0) ? "a table sized to its text in a table cell, indented or as a share of the width, in a document in compatibility mode" : void 0) !== null && _ref29 !== void 0 ? _ref29 : typeof float === "string" ? float : void 0) !== null && _ref28 !== void 0 ? _ref28 : parts.some((part) => "w:sdt" in part) ? BOUND_CONTROL : void 0) !== null && _ref27 !== void 0 ? _ref27 : (_read$find2 = read.find((row) => row.unsupported !== void 0)) === null || _read$find2 === void 0 ? void 0 : _read$find2.unsupported) !== null && _ref26 !== void 0 ? _ref26 : unmerged) !== null && _ref25 !== void 0 ? _ref25 : fits ? unfitted : unequal && !evened ? "a table whose rows give a column different widths" : void 0) !== null && _ref24 !== void 0 ? _ref24 : verticalUnsupported) !== null && _ref23 !== void 0 ? _ref23 : spacingUnsupported) !== null && _ref22 !== void 0 ? _ref22 : typeof geometry === "string" ? geometry : void 0) !== null && _ref21 !== void 0 ? _ref21 : indent === void 0 ? "a table indent of a type not yet followed" : void 0) !== null && _ref20 !== void 0 ? _ref20 : ((_givenWidth$share = givenWidth.share) !== null && _givenWidth$share !== void 0 ? _givenWidth$share : 0) > 1 ? "a table whose width is a share of more than the width it is in" : void 0) !== null && _ref19 !== void 0 ? _ref19 : styleUnsupported) !== null && _ref18 !== void 0 ? _ref18 : (_blocks$find = blocks.find((block) => block.unsupported !== void 0)) === null || _blocks$find === void 0 ? void 0 : _blocks$find.unsupported;
+		const unsupported = (_ref17 = (_ref18 = (_ref19 = (_ref20 = (_ref21 = (_ref22 = (_ref23 = (_ref24 = (_ref25 = (_ref26 = (_ref27 = (_ref28 = (_ref29 = (_ref30 = (_ref31 = (_ref32 = (_withoutGuess$unsuppo = withoutGuess === null || withoutGuess === void 0 ? void 0 : withoutGuess.unsupported) !== null && _withoutGuess$unsuppo !== void 0 ? _withoutGuess$unsuppo : reader.down === true ? "a table on text that runs down the page" : void 0) !== null && _ref32 !== void 0 ? _ref32 : float !== void 0 && (reader.inCell || reader.inHeader) ? "a table that text flows around in a table cell, header or footer" : void 0) !== null && _ref31 !== void 0 ? _ref31 : typeof float === "object" && older && (marginsBeside || float.horizontal.align !== void 0) ? "a table that text flows around, sized to its text or lined up across the page, in a document in compatibility mode" : void 0) !== null && _ref30 !== void 0 ? _ref30 : marginsBeside && fits && givenWidth.share !== void 0 ? "a table sized to its text as a share of the width, in a document in compatibility mode" : void 0) !== null && _ref29 !== void 0 ? _ref29 : older && sized && fits && givenWidth.width === void 0 && reader.inCell === true && (indent !== 0 || givenWidth.share !== void 0) ? "a table sized to its text in a table cell, indented or as a share of the width, in a document in compatibility mode" : void 0) !== null && _ref28 !== void 0 ? _ref28 : typeof float === "string" ? float : void 0) !== null && _ref27 !== void 0 ? _ref27 : parts.some((part) => "w:sdt" in part) ? BOUND_CONTROL : void 0) !== null && _ref26 !== void 0 ? _ref26 : (_read$find2 = read.find((row) => row.unsupported !== void 0)) === null || _read$find2 === void 0 ? void 0 : _read$find2.unsupported) !== null && _ref25 !== void 0 ? _ref25 : unmerged) !== null && _ref24 !== void 0 ? _ref24 : fits ? unfitted : unequal && !evened ? "a table whose rows give a column different widths" : void 0) !== null && _ref23 !== void 0 ? _ref23 : verticalUnsupported) !== null && _ref22 !== void 0 ? _ref22 : spacingUnsupported) !== null && _ref21 !== void 0 ? _ref21 : typeof geometry === "string" ? geometry : void 0) !== null && _ref20 !== void 0 ? _ref20 : indent === void 0 ? "a table indent of a type not yet followed" : void 0) !== null && _ref19 !== void 0 ? _ref19 : ((_givenWidth$share = givenWidth.share) !== null && _givenWidth$share !== void 0 ? _givenWidth$share : 0) > 1 ? "a table whose width is a share of more than the width it is in" : void 0) !== null && _ref18 !== void 0 ? _ref18 : styleUnsupported) !== null && _ref17 !== void 0 ? _ref17 : (_blocks$find = blocks.find((block) => block.unsupported !== void 0)) === null || _blocks$find === void 0 ? void 0 : _blocks$find.unsupported;
 		const rowWidth = ((_read$0$cells = (_read$ = read[0]) === null || _read$ === void 0 ? void 0 : _read$.cells) !== null && _read$0$cells !== void 0 ? _read$0$cells : []).reduce((total, cell) => {
 			var _cell$ownWidth;
 			return total + ((_cell$ownWidth = cell.ownWidth) !== null && _cell$ownWidth !== void 0 ? _cell$ownWidth : 0);
@@ -43739,12 +43822,21 @@ var docxLayout = (function(exports) {
 	var paragraphPropertiesOf = (paragraph) => childrenOf(find(contentOf$3(paragraph).filter(isObject), "w:pPr"));
 	/** How a paragraph's mark is removed in a tracked change, when it is: deleted (`w:del`), or moved elsewhere (`w:moveFrom`) */
 	var removedMarkOf = (paragraph) => childrenOf(find(paragraphPropertiesOf(paragraph), "w:rPr")).map(nameOf$1).find((name) => REMOVALS.has(name));
+	/**
+	* How many footnote references are among elements and in them, but for those in text boxes (`w:txbxContent`), which Word
+	* leaves out, reference and note
+	*/
+	var countFootnoteReferences = (elements) => elements.filter(isObject).reduce((count, element) => {
+		const name = nameOf$1(element);
+		if (name === "w:footnoteReference") return count + 1;
+		return name === "w:txbxContent" || name === "_attr" ? count : count + countFootnoteReferences(contentOf$3(element));
+	}, 0);
 	/** The elements of the names given among elements and in them, in order */
 	var elementsIn$1 = (elements, named) => elements.filter(isObject).flatMap((element) => named(nameOf$1(element)) ? [element] : nameOf$1(element) === "_attr" ? [] : elementsIn$1(contentOf$3(element), named));
 	/** The run formatting a paragraph's styles give its text */
 	var paragraphRunOf = (paragraph, styles) => {
-		var _valueOf5;
-		return combine([styles.run, ...styleChain(styles, (_valueOf5 = valueOf(paragraphPropertiesOf(paragraph), "w:pStyle")) !== null && _valueOf5 !== void 0 ? _valueOf5 : styles.defaultParagraphStyle, "paragraph").map(({ run }) => run)]);
+		var _valueOf6;
+		return combine([styles.run, ...styleChain(styles, (_valueOf6 = valueOf(paragraphPropertiesOf(paragraph), "w:pStyle")) !== null && _valueOf6 !== void 0 ? _valueOf6 : styles.defaultParagraphStyle, "paragraph").map(({ run }) => run)]);
 	};
 	/**
 	* Whether a paragraph's mark is hidden (`w:vanish`), by its own formatting or its style's. `w:specVanish` alone doesn't
@@ -43759,12 +43851,12 @@ var docxLayout = (function(exports) {
 	var showsSomething = (elements, paragraphRun, styles) => elements.filter(isObject).some((element) => {
 		const name = nameOf$1(element);
 		if (name === "w:r") {
-			var _valueOf6;
+			var _valueOf7;
 			const children = contentOf$3(element).filter(isObject);
 			const properties = find(children, "w:rPr");
 			const format = combine([
 				paragraphRun,
-				...styleChain(styles, (_valueOf6 = valueOf(childrenOf(properties), "w:rStyle")) !== null && _valueOf6 !== void 0 ? _valueOf6 : styles.defaultCharacterStyle, "character").map(({ run }) => run),
+				...styleChain(styles, (_valueOf7 = valueOf(childrenOf(properties), "w:rStyle")) !== null && _valueOf7 !== void 0 ? _valueOf7 : styles.defaultCharacterStyle, "character").map(({ run }) => run),
 				readRunFormat(properties, styles.themeFonts)
 			]);
 			return children.some((child) => nameOf$1(child) !== "w:rPr") && format.hidden !== true;
@@ -43773,9 +43865,9 @@ var docxLayout = (function(exports) {
 	});
 	/** Whether a paragraph is in a list, its own or its style's */
 	var isNumbered = (paragraph, styles) => {
-		var _valueOf7;
+		var _valueOf8;
 		const properties = paragraphPropertiesOf(paragraph);
-		const style = (_valueOf7 = valueOf(properties, "w:pStyle")) !== null && _valueOf7 !== void 0 ? _valueOf7 : styles.defaultParagraphStyle;
+		const style = (_valueOf8 = valueOf(properties, "w:pStyle")) !== null && _valueOf8 !== void 0 ? _valueOf8 : styles.defaultParagraphStyle;
 		return find(properties, "w:numPr") !== void 0 || styleChain(styles, style, "paragraph").some(({ numbering }) => (numbering === null || numbering === void 0 ? void 0 : numbering.id) !== void 0);
 	};
 	var JOINED_FORMATTING = {
@@ -43797,19 +43889,45 @@ var docxLayout = (function(exports) {
 		"w:tabs": "all",
 		"w:pBdr": "all"
 	};
+	var JOINED_STYLE_FORMATTING = /* @__PURE__ */ new Set([
+		"alignment",
+		"indentLeft",
+		"indentRight",
+		"firstLineIndent",
+		"spaceBefore",
+		"spaceAfter",
+		"spaceBeforeLines",
+		"spaceAfterLines",
+		"autoSpaceBefore",
+		"autoSpaceAfter",
+		"lineSpacing",
+		"tabs",
+		"borderTop",
+		"borderBottom",
+		"borderLeft",
+		"borderRight",
+		"borderBetween",
+		"borderBar"
+	]);
 	/**
-	* A paragraph's own formatting, but for its mark's, its style when it names the default one, as none does, and the parts
-	* that may differ between paragraphs joined by a hidden mark
+	* A paragraph's formatting, its own and its styles', but for its mark's, its style's name, and the parts that may differ
+	* between paragraphs joined by a hidden mark
 	*/
-	var paragraphFormatOf = (paragraph, styles) => JSON.stringify(paragraphPropertiesOf(paragraph).flatMap((child) => {
-		const name = nameOf$1(child);
-		if (name === "w:rPr" || name === "w:pStyle" && valueOf([child], "w:pStyle") === styles.defaultParagraphStyle) return [];
-		const joined = JOINED_FORMATTING[name];
-		if (joined === "all") return [];
-		if (joined === void 0) return [child];
-		const kept = Object.entries(attributesOf(child[name])).filter(([key]) => !joined.includes(key));
-		return kept.length === 0 ? [] : [{ [name]: Object.fromEntries(kept) }];
-	}));
+	var paragraphFormatOf = (paragraph, styles) => {
+		var _valueOf9;
+		const properties = paragraphPropertiesOf(paragraph);
+		const style = (_valueOf9 = valueOf(properties, "w:pStyle")) !== null && _valueOf9 !== void 0 ? _valueOf9 : styles.defaultParagraphStyle;
+		const fromStyles = combine([styles.paragraph, ...styleChain(styles, style, "paragraph").map((inChain) => inChain.paragraph)]);
+		return JSON.stringify([properties.flatMap((child) => {
+			const name = nameOf$1(child);
+			if (name === "w:rPr" || name === "w:pStyle" || name === "w:sectPr") return [];
+			const joined = JOINED_FORMATTING[name];
+			if (joined === "all") return [];
+			if (joined === void 0) return [child];
+			const kept = Object.entries(attributesOf(child[name])).filter(([key]) => !joined.includes(key));
+			return kept.length === 0 ? [] : [{ [name]: Object.fromEntries(kept) }];
+		}), Object.fromEntries(Object.entries(fromStyles).filter(([key]) => !JOINED_STYLE_FORMATTING.has(key)))]);
+	};
 	/** The properties of the first section that ends among elements: in a paragraph, or the body's own */
 	var nextSectionIn = (elements) => elements.map(sectionPropertiesOf).find((section) => section !== void 0);
 	/** A paragraph the layout stops at, for why */
@@ -43827,37 +43945,32 @@ var docxLayout = (function(exports) {
 	};
 	/**
 	* A paragraph whose mark is hidden, joined to the next, after what is between them: the two paragraphs' text on its lines,
-	* in the first one's formatting but for its space after, which is the next one's, with the next one's mark
-	* (`word-breaks-and-tabs.docx` HM1a to HM1f). Where their line spacing differs, each line is spaced as the paragraph its
+	* in the first one's formatting, its style's too, but for its space after, which is the next one's, with the next one's
+	* mark (`word-breaks-and-tabs.docx` HM1a to HM1f), and each one's text in the formatting of its own style: 16-point text
+	* of the first one's style on a line with 11-point text of the next one's, and the first one's style's space before
+	* (stops2/word-stops-hidden2.ts HD15a, HD15b). Where their line spacing differs, each line is spaced as the paragraph its
 	* text ends in, from the line the next one's text starts on: with the first single and the next one double, or the other
 	* way round, or at 1.5 lines, the line that ends the first one's text and starts the next one's, and those after it, are
-	* the next one's (HM1h, HM1i, `stops2/word-stops-hidden.docx` HD1f). The next one's number, when they are in a list, is
-	* counted (HM4).
+	* the next one's (HM1h, HM1i, `stops2/word-stops-hidden.docx` HD1f), exactly 12 points or at least 20 as much as any (HD16a,
+	* HD16b), and of three paragraphs single, 1.5 and double, the line that ends the second's text and starts the third's is
+	* double (HD16c). The next one's number, when they are in a list, is counted (HM4). The next one's properties stand where
+	* its text starts, for all of that (see {@link JOINED_NEXT}, and `readParagraph`). A section break of the first one's is
+	* left out, as the paragraph is joined into the next section, which is as its own (stops2/word-stops-hidden2.ts HD14a),
+	* and one of the next one's, such as the empty paragraph docx ends each section with, ends the section with the joined
+	* paragraph, as the next one's mark is its own
 	*/
-	var joinedToNext = (first, between, next, styles) => {
+	var joinedToNext = (first, between, next) => {
 		const isHead = (child) => isObject(child) && (nameOf$1(child) === "_attr" || nameOf$1(child) === "w:pPr");
-		const own = paragraphPropertiesOf(first);
-		const nextProperties = paragraphPropertiesOf(next);
-		const lineOf = (given) => Object.fromEntries(Object.entries(attributesOf(find(given, "w:spacing"))).filter(([key]) => key === "w:line" || key === "w:lineRule"));
-		const nextLine = lineOf(nextProperties);
-		const spacedApart = JSON.stringify(lineOf(own)) !== JSON.stringify(nextLine);
-		const { "w:after": after } = attributesOf(find(nextProperties, "w:spacing"));
-		const spacing = _objectSpread2(_objectSpread2({}, Object.fromEntries(Object.entries(attributesOf(find(own, "w:spacing"))).filter(([key]) => key !== "w:after"))), after === void 0 ? {} : { "w:after": after });
-		const mark = nextProperties.filter((child) => nameOf$1(child) === "w:rPr");
-		const properties = [
-			...own.filter((child) => nameOf$1(child) !== "w:spacing" && nameOf$1(child) !== "w:rPr"),
-			...Object.keys(spacing).length === 0 ? [] : [{ "w:spacing": { _attr: spacing } }],
-			...mark
-		];
+		const own = paragraphPropertiesOf(first).filter((child) => nameOf$1(child) !== "w:rPr" && nameOf$1(child) !== "w:sectPr");
+		const nextSection = paragraphPropertiesOf(next).filter((child) => nameOf$1(child) === "w:sectPr");
 		const content = contentOf$3(first);
 		return { "w:p": [
 			...content.filter((child) => isObject(child) && nameOf$1(child) === "_attr"),
-			{ "w:pPr": properties },
+			{ "w:pPr": [...own, ...nextSection] },
 			...content.filter((child) => !isHead(child)),
 			...between,
-			...spacedApart ? [{ [JOINED_SPACING]: [{ "w:spacing": { _attr: nextLine } }] }] : [],
-			...contentOf$3(next).filter((child) => !isHead(child)),
-			...isNumbered(next, styles) ? [{ [COUNTED]: {} }] : []
+			{ [JOINED_NEXT]: paragraphPropertiesOf(next) },
+			...contentOf$3(next).filter((child) => !isHead(child))
 		] };
 	};
 	var READ_IN_PLACE = /* @__PURE__ */ new Set([
@@ -43884,29 +43997,38 @@ var docxLayout = (function(exports) {
 	* sizes to their text, the two are sized as one, as they are laid out: a column as wide as their text on one line
 	* (`word-stops-hidden.docx` HD2, and `word-breaks-and-tabs.docx` HM7, narrowed beside a long cell). Where the
 	* paragraphs differ in their right and first line indents, tab stops and borders, they are in the first one's (HD1c,
-	* HD1d, HD1g, HD1h), and in their line spacing, line by line (see {@link joinedToNext}). Where they differ otherwise,
-	* such as in their style (HM1g), and what Word does with a hidden mark at the start of a content control (see
-	* {@link openedAtEnds}), with another hidden section break, with one of a paragraph showing nothing at the end of a header or
-	* footer, which a header too short to push the body down didn't show (HD4a), or of a note, where Word joins it to the
-	* next note's first paragraph (HD4b), and before one showing nothing whose fields, note references or number would be
-	* read out of order, isn't followed yet.
+	* HD1d, HD1g, HD1h), in their styles, each one's text in its own (`stops2/word-stops-hidden2.docx` HD15a, HD15b), and in
+	* their line spacing, line by line (see {@link joinedToNext}). One whose section ends with it, with text shown, before a
+	* section that starts on its page and is otherwise alike, is joined to the next section's first paragraph (HD14a), and
+	* one with nothing shown before a section on a new page takes no room, as the section starts its page all the same
+	* (HD14b). One with nothing shown at the end of a header takes no room, and the body starts below the header's other
+	* paragraphs (HD12), as does one at the end of the document's last footnote (HD13). Where they differ otherwise, such as
+	* in their indents in characters, and what Word does with a hidden mark at the end of a content control with nothing
+	* after it, or before one bound to custom XML (see {@link openedAtEnds}), with a hidden section break before a continuous
+	* section formatted otherwise or an even or odd page section, or before something that isn't a paragraph, with one of a
+	* paragraph showing nothing at the end of a footer, an endnote or a text box, or of a footnote with a note after it,
+	* where Word joins it to the next note's first paragraph (HD4b), and before one showing nothing whose fields, note
+	* references or number would be read out of order, isn't followed yet.
 	*/
 	var hiddenMarkJoin = (paragraph, next, { styles, edge, part, nextSection }) => {
 		const nextName = next === void 0 ? void 0 : nameOf$1(next);
 		const shown = showsSomething(contentOf$3(paragraph), paragraphRunOf(paragraph, styles), styles);
 		const section = sectionPropertiesOf(paragraph);
-		if (section !== void 0) return !shown && startsOnItsPage(section, nextSection()) ? { leftOut: true } : { reason: "a hidden section break" };
-		if (edge) return { reason: "a hidden paragraph mark at the edge of a content control" };
-		if (next === void 0 || nextName === "w:sectPr") return shown || part === "cell" ? void 0 : part === "body" ? { leftOut: true } : { reason: "a paragraph with nothing shown and its mark hidden at the end of a header, footer or note" };
+		if (section !== void 0 && !shown) return startsOnItsPage(section, nextSection()) || sectionTypeOf(nextSection()) === "nextPage" ? { leftOut: true } : { reason: "a hidden section break of a paragraph with nothing shown, before a continuous section formatted otherwise, or an even or odd page section" };
+		if (section !== void 0 && (nextName !== "w:p" || !startsOnItsPage(section, nextSection()))) return { reason: "a hidden section break of a paragraph with text shown, before something that isn't a paragraph, or a section that doesn't start on its page or is formatted otherwise" };
+		if (edge) return { reason: HIDDEN_AT_EDGE };
+		if (next === void 0 || nextName === "w:sectPr") return shown || part === "cell" ? void 0 : part === "body" || part === "header" || part === "lastFootnote" ? { leftOut: true } : { reason: "a paragraph with nothing shown and its mark hidden at the end of a footer, an endnote, a text box, or a footnote with a note after it" };
 		if (nextName !== "w:p") return shown ? void 0 : nextName === "w:tbl" ? { leftOut: true } : { reason: "a paragraph with nothing shown and its mark hidden before something that isn't a paragraph or table" };
 		if (!shown) return { leftOut: true };
 		if (isLeftOut(next)) return { reason: "a hidden paragraph mark before a paragraph with nothing shown and its mark hidden" };
-		return paragraphFormatOf(paragraph, styles) === paragraphFormatOf(next, styles) ? { joins: true } : { reason: "a hidden paragraph mark between paragraphs of other styles, or formatted differently otherwise" };
+		return paragraphFormatOf(paragraph, styles) === paragraphFormatOf(next, styles) ? { joins: true } : { reason: "a hidden paragraph mark between paragraphs formatted differently otherwise than in their alignment, indents, space, line spacing, tab stops, borders and styles" };
 	};
+	var HIDDEN_AT_EDGE = "a hidden paragraph mark at the end of a content control with nothing after it, or before one bound to custom XML or nested in another";
+	var DELETED_AT_EDGE = "a deleted paragraph mark at the end of a content control with nothing after it, or before one bound to custom XML or nested in another";
 	/** How a section starts (`w:type`): on a new page, unless it says otherwise */
 	var sectionTypeOf = (section) => {
-		var _valueOf8;
-		return (_valueOf8 = valueOf(childrenOf(section), "w:type")) !== null && _valueOf8 !== void 0 ? _valueOf8 : "nextPage";
+		var _valueOf10;
+		return (_valueOf10 = valueOf(childrenOf(section), "w:type")) !== null && _valueOf10 !== void 0 ? _valueOf10 : "nextPage";
 	};
 	/**
 	* Whether the section after a section break starts on the page the break is on, and is otherwise as the section before
@@ -43917,7 +44039,6 @@ var docxLayout = (function(exports) {
 		const rest = (properties) => JSON.stringify(childrenOf(properties).filter((child) => nameOf$1(child) !== "w:type"));
 		return sectionTypeOf(next) === "continuous" && rest(section) === rest(next) && ((_numberOf7 = numberOf(attributesOf(find(childrenOf(section), "w:cols"))["w:num"])) !== null && _numberOf7 !== void 0 ? _numberOf7 : 1) <= 1;
 	};
-	var CONTROL_START = "docx-layout:control-start";
 	/** The content of a content control or custom XML, unless it is bound to custom XML, which is laid out as it is */
 	var openableContentOf = (element) => {
 		const name = nameOf$1(element);
@@ -43926,18 +44047,53 @@ var docxLayout = (function(exports) {
 	};
 	/** Whether a paragraph is joined to the paragraph after it: one whose mark is deleted, or hidden with text shown */
 	var joinsNext = (paragraph, styles, showDeleted) => !showDeleted && removedMarkOf(paragraph) !== void 0 || isMarkHidden(paragraph, styles) && showsSomething(contentOf$3(paragraph), paragraphRunOf(paragraph, styles), styles);
+	/** Whether a block starts with a paragraph: a paragraph, or a content control or custom XML whose first block does */
+	var startsWithParagraph = (element) => {
+		var _openableContentOf;
+		const first = (_openableContentOf = openableContentOf(element)) === null || _openableContentOf === void 0 ? void 0 : _openableContentOf.find((child) => BLOCK_ELEMENTS.has(nameOf$1(child)));
+		return "w:p" in element || first !== void 0 && startsWithParagraph(first);
+	};
 	/**
-	* Elements, with the content of each content control and custom XML whose last paragraph is joined to the paragraph
-	* after it in its place, after a marker of where it started. Word joins it as though the control weren't there, with its
-	* mark hidden or deleted (`stops2/word-stops-hidden-edges.docx` HD3, `word-stops-tracked-edges.docx` TR8). What it does
-	* with a paragraph joined to a control's first one hasn't been seen
+	* Whether a block ends with a paragraph joined to the paragraph after it: such a paragraph, or a content control or custom
+	* XML whose last block does
 	*/
-	var openedAtEnds = (elements, styles, showDeleted) => elements.flatMap((element, index) => {
-		const content = openableContentOf(element);
-		const last = content === null || content === void 0 ? void 0 : content.findLast((child) => BLOCK_ELEMENTS.has(nameOf$1(child)));
-		const following = elements.slice(index + 1).find((other) => BLOCK_ELEMENTS.has(nameOf$1(other)));
-		return last !== void 0 && following !== void 0 && "w:p" in last && "w:p" in following && joinsNext(last, styles, showDeleted) ? [{ [CONTROL_START]: {} }, ...openedAtEnds(content, styles, showDeleted)] : [element];
-	});
+	var endsJoining = (element, styles, showDeleted) => {
+		var _openableContentOf2;
+		const last = (_openableContentOf2 = openableContentOf(element)) === null || _openableContentOf2 === void 0 ? void 0 : _openableContentOf2.findLast((child) => BLOCK_ELEMENTS.has(nameOf$1(child)));
+		return "w:p" in element ? joinsNext(element, styles, showDeleted) : last !== void 0 && endsJoining(last, styles, showDeleted);
+	};
+	/**
+	* Elements, with the content of each content control and custom XML a paragraph is joined across an edge of in its
+	* place: one whose last paragraph is joined to the paragraph after it, and one whose first paragraph the paragraph before
+	* it is joined to. Word joins them as though the control weren't there, with its mark hidden or deleted, at the end of a
+	* control (`stops2/word-stops-hidden-edges.docx` HD3, `word-stops-tracked-edges.docx` TR8) and before one
+	* (`word-stops-hidden2.docx` HD11, `word-stops-tracked2.docx` TR12)
+	*/
+	var openedAtEnds = (elements, styles, showDeleted, { start = false, end = false } = {}) => {
+		const blocks = elements.filter((element) => BLOCK_ELEMENTS.has(nameOf$1(element)));
+		return elements.flatMap((element) => {
+			const content = openableContentOf(element);
+			if (content === void 0) return [element];
+			const at = blocks.indexOf(element);
+			const following = blocks[at + 1];
+			const previous = blocks[at - 1];
+			const joinedAfter = endsJoining(element, styles, showDeleted) && (following === void 0 ? end : startsWithParagraph(following));
+			const joinedBefore = startsWithParagraph(element) && (previous === void 0 ? start : endsJoining(previous, styles, showDeleted));
+			return joinedAfter || joinedBefore ? openedAtEnds(content, styles, showDeleted, {
+				start: joinedBefore,
+				end: joinedAfter
+			}) : [element];
+		});
+	};
+	/**
+	* A block, or the first block of a content control or custom XML that isn't opened (see {@link openedAtEnds}), which a
+	* paragraph before it is before as though the control weren't there, unless it is bound to custom XML
+	*/
+	var lookedThrough = (element) => {
+		var _openableContentOf3;
+		const first = nameOf$1(element) === "w:sdt" && isBound(element) ? void 0 : (_openableContentOf3 = openableContentOf(element)) === null || _openableContentOf3 === void 0 ? void 0 : _openableContentOf3.find((child) => BLOCK_ELEMENTS.has(nameOf$1(child)));
+		return first === void 0 ? element : lookedThrough(first);
+	};
 	/**
 	* Joins each paragraph whose mark is deleted in a tracked change, or moved elsewhere, to the paragraph after it, as Word
 	* lays it out: the next paragraph, with the deleted one's text at its start, all in the next one's formatting, style and
@@ -43948,9 +44104,13 @@ var docxLayout = (function(exports) {
 	* TR10b). A paragraph with no paragraph after it, before a table or at the end of a table cell or of the document, stays
 	* as it is, with its section break at the end of the document (MK8a, MK8b, MK8d, TR10a). Read as Word sizes a table's
 	* columns (`showDeleted`), a paragraph with a deleted mark stays as it is written: a column as wide as the longer of the two
-	* paragraphs, which are laid out joined on two lines (`word-stops-tracked.docx` TR11). What Word does with a deleted mark
-	* at the start of a content control, a deleted section break before a table, or between sections that start differently,
-	* other than the document's first, hasn't been seen, so the layout stops there.
+	* paragraphs, which are laid out joined on two lines (`word-stops-tracked.docx` TR11). A section break deleted between
+	* sections that start differently leaves its section to the next too, the next's start and all: a section on a new page
+	* whose break is deleted before a continuous one goes on on the page before (`word-stops-tracked2.docx` TR13). A deleted
+	* section break of a paragraph with nothing shown before a table takes no room, and leaves its section to the table's
+	* (TR14). What Word does with a deleted mark at the end of a content control with nothing after it, or before one bound to
+	* custom XML, and with a deleted section break of a paragraph with text shown before something that isn't a paragraph,
+	* hasn't been seen, so the layout stops there.
 	*
 	* @param styles - The document's styles, which may hide a paragraph's mark
 	* @param options - Whether the elements are in a content control or custom XML (`nested`), whether deleted marks are read
@@ -43959,7 +44119,7 @@ var docxLayout = (function(exports) {
 	var joinRemovedMarks = (elements, styles, { nested, showDeleted, part }) => {
 		const opened = openedAtEnds(elements.filter(isObject), styles, showDeleted);
 		const after = [];
-		for (const [index, element] of [...opened.entries()].reverse()) {
+		for (const element of [...opened].reverse()) {
 			const name = nameOf$1(element);
 			const mark = name === "w:p" && !showDeleted ? removedMarkOf(element) : void 0;
 			if (name === "w:p" && joinsNext(element, styles, showDeleted)) {
@@ -43971,9 +44131,9 @@ var docxLayout = (function(exports) {
 				}
 			}
 			const at = after.findLastIndex((other) => BLOCK_ELEMENTS.has(nameOf$1(other)));
-			const next = after[at];
+			const next = at < 0 ? void 0 : lookedThrough(after[at]);
 			const nextName = next === void 0 ? void 0 : nameOf$1(next);
-			const edge = nextName === "w:sdt" || nextName === "w:customXml" || next === void 0 && nested || after.slice(at + 1).some((other) => CONTROL_START in other);
+			const edge = nextName === "w:sdt" || next === void 0 && nested;
 			const nextSection = () => nextSectionIn([...after].reverse());
 			const hidden = mark === void 0 && name === "w:p" && isMarkHidden(element, styles) ? hiddenMarkJoin(element, next, {
 				styles,
@@ -43984,14 +44144,16 @@ var docxLayout = (function(exports) {
 			const unjoined = hidden !== void 0 && "reason" in hidden ? hidden.reason : void 0;
 			const joins = (mark !== void 0 || hidden !== void 0 && "joins" in hidden) && nextName === "w:p";
 			const section = mark === void 0 ? void 0 : sectionPropertiesOf(element);
-			const reason = mark === void 0 ? unjoined : edge ? "a deleted paragraph mark at the edge of a content control" : joins && isLeftOut(next) ? "a deleted paragraph mark before a paragraph with nothing shown and its mark hidden" : section !== void 0 && !joins && next !== void 0 && nextName !== "w:sectPr" ? "a deleted section break before something that isn't a paragraph" : section !== void 0 && joins && sectionTypeOf(section) !== sectionTypeOf(nextSection()) && elementsIn$1(opened.slice(0, index), (inner) => inner === "w:sectPr").length > 0 ? "a deleted section break between sections that start differently, after the first" : void 0;
+			const unjoinedSection = section !== void 0 && !joins && next !== void 0 && nextName !== "w:sectPr";
+			const reason = mark === void 0 ? unjoined : edge ? DELETED_AT_EDGE : joins && isLeftOut(next) ? "a deleted paragraph mark before a paragraph with nothing shown and its mark hidden" : unjoinedSection && showsSomething(contentOf$3(element), paragraphRunOf(element, styles), styles) ? "a deleted section break of a paragraph with text shown before something that isn't a paragraph" : void 0;
 			if (reason !== void 0) after.push(stopIn(element, reason));
+			else if (unjoinedSection) after.push(...[...elementsIn$1(contentOf$3(element), (inner) => inner === "w:bookmarkStart")].reverse());
 			else if (section !== void 0 && !joins) after.push({ "w:p": [...contentOf$3(element), { [KEPT_MARK]: {} }] });
 			else if (hidden !== void 0 && "leftOut" in hidden) after.push({ "w:p": [...contentOf$3(element), { [LEFT_OUT]: {} }] });
 			else if (joins) {
 				const [, ...between] = after.splice(at);
 				const inOrder = between.reverse();
-				after.push(hidden !== void 0 && "joins" in hidden ? joinedToNext(element, inOrder, next, styles) : joinedParagraph(element, inOrder, next));
+				after.push(hidden !== void 0 && "joins" in hidden ? joinedToNext(element, inOrder, next) : joinedParagraph(element, inOrder, next));
 			} else if (name === "w:customXml") after.push({ [name]: joinRemovedMarks(contentOf$3(element), styles, {
 				nested: true,
 				showDeleted,
@@ -44012,11 +44174,10 @@ var docxLayout = (function(exports) {
 	* Reads the paragraphs and tables in a part of a document, such as a table cell or a header, and in the content controls
 	* and custom XML in it. A bookmark between them starts with the next.
 	*/
-	var readBlocks = (elements, reader, tableFormats) => {
+	var readBlocks = (elements, reader, tableFormats, part = tableFormats === void 0 ? "other" : "cell") => {
 		const blocks = [];
 		let bookmarks = [];
 		let hidden = [];
-		const part = tableFormats === void 0 ? "other" : "cell";
 		for (const element of unwrap(joinRemovedMarks(elements, reader.styles, {
 			nested: false,
 			showDeleted: reader.showDeleted === true,
@@ -44260,7 +44421,7 @@ var docxLayout = (function(exports) {
 	var readReferences = (properties, name, readPart) => Object.fromEntries(properties.filter((child) => name in child).map((child) => {
 		var _attributes$wType;
 		const attributes = attributesOf(child[name]);
-		return [String((_attributes$wType = attributes["w:type"]) !== null && _attributes$wType !== void 0 ? _attributes$wType : "default"), readPart(String(attributes["r:id"]))];
+		return [String((_attributes$wType = attributes["w:type"]) !== null && _attributes$wType !== void 0 ? _attributes$wType : "default"), readPart(String(attributes["r:id"]), name === "w:headerReference" ? "header" : "footer")];
 	}).filter(([type, blocks]) => blocks !== void 0 && [
 		"default",
 		"first",
@@ -44415,37 +44576,51 @@ var docxLayout = (function(exports) {
 	var NUMBER_ALIGNMENTS = {
 		left: void 0,
 		start: void 0,
+		distribute: void 0,
+		lowKashida: void 0,
 		center: "center",
+		thaiDistribute: "center",
 		right: "right",
-		end: "right"
+		end: "right",
+		numTab: "right"
 	};
 	/**
 	* Reads a level of a list (`w:lvl`), in a definition or in a list's override of it. Word leaves out a level whose number
 	* is aligned both, as a paragraph's text can be: its paragraphs have no number, nor the level's indents
-	* (`stops2/word-stops-list-definitions.docx` LI11). It says why Word's way with it isn't followed, when it isn't: a number
-	* aligned in a way the schema has for paragraphs other than both, bullets that are pictures (`w:lvlPicBulletId`), which
-	* Word didn't draw (`word-stops-picture-bullets.docx` LI8), and numbers laid out as Word 6 laid them out (`w:legacy`),
-	* which Word put where it puts others where the number and its space fit in the indent (LI9), so the two weren't told
-	* apart.
+	* (`stops2/word-stops-list-definitions.docx` LI11). Bullets that are pictures (`w:lvlPicBulletId`) Word draws nothing
+	* for, of 9 points or 20, with their shape type or without: the text at the tab's stop, and the line as tall as its text
+	* (`word-stops-picture-bullets.docx` LI8, stops2/word-stops-lists2.ts LI20a, LI20b). A level numbered as Word 6 numbered
+	* lists (`w:legacy`) puts its text after the room Word 6 gave the number (see {@link LegacyNumbering}), where a tab would
+	* follow the number: a number of 10000. with a space of 120 twips and an indent of 360 puts the text 120 after the number,
+	* and 1. with an indent of 720, 720 from the number (LI9, LI19a, LI19b). It says why Word's way with it isn't followed,
+	* when it isn't: a number aligned with a medium or high kashida, and one numbered as Word 6 numbered lists with a space
+	* or nothing after it, or not aligned to the left.
 	*/
 	var readLevel = (element, styles) => {
-		var _valueOf9, _numberOf11, _valueOf10, _stringOf3, _valueOf11, _numberOf12;
+		var _valueOf11, _valueOf12, _twips22, _twips23, _numberOf11, _valueOf13, _stringOf3, _numberOf12;
 		const children = childrenOf(element);
-		const jc = (_valueOf9 = valueOf(children, "w:lvlJc")) !== null && _valueOf9 !== void 0 ? _valueOf9 : "left";
+		const jc = (_valueOf11 = valueOf(children, "w:lvlJc")) !== null && _valueOf11 !== void 0 ? _valueOf11 : "left";
 		const restart = numberOf(attributesOf(find(children, "w:lvlRestart"))["w:val"]);
-		const unsupported = !(jc in NUMBER_ALIGNMENTS) && jc !== "both" ? "a list number aligned in a way not yet followed" : find(children, "w:lvlPicBulletId") !== void 0 ? "a list whose bullets are pictures" : isOn(attributesOf(find(children, "w:legacy"))["w:legacy"]) ? "a list numbered as Word 6 numbered lists" : void 0;
+		const suffix = (_valueOf12 = valueOf(children, "w:suff")) !== null && _valueOf12 !== void 0 ? _valueOf12 : "tab";
+		const legacyAttributes = attributesOf(find(children, "w:legacy"));
+		const legacy = isOn(legacyAttributes["w:legacy"]) ? {
+			space: (_twips22 = twips(legacyAttributes["w:legacySpace"])) !== null && _twips22 !== void 0 ? _twips22 : 0,
+			indent: (_twips23 = twips(legacyAttributes["w:legacyIndent"])) !== null && _twips23 !== void 0 ? _twips23 : 0
+		} : void 0;
+		const unsupported = !(jc in NUMBER_ALIGNMENTS) && jc !== "both" ? "a list number aligned in a way not yet followed" : legacy !== void 0 && (suffix !== "tab" || NUMBER_ALIGNMENTS[jc] !== void 0) ? "a list numbered as Word 6 numbered lists with a space or nothing after its number, or not aligned to the left" : void 0;
 		return {
 			index: (_numberOf11 = numberOf(attributesOf(element)["w:ilvl"])) !== null && _numberOf11 !== void 0 ? _numberOf11 : 0,
 			level: _objectSpread2(_objectSpread2(_objectSpread2({}, withoutUndefined({ style: valueOf(children, "w:pStyle") })), {}, {
-				format: (_valueOf10 = valueOf(children, "w:numFmt")) !== null && _valueOf10 !== void 0 ? _valueOf10 : "decimal",
+				format: (_valueOf13 = valueOf(children, "w:numFmt")) !== null && _valueOf13 !== void 0 ? _valueOf13 : "decimal",
 				text: (_stringOf3 = stringOf(attributesOf(find(children, "w:lvlText"))["w:val"])) !== null && _stringOf3 !== void 0 ? _stringOf3 : "",
-				suffix: (_valueOf11 = valueOf(children, "w:suff")) !== null && _valueOf11 !== void 0 ? _valueOf11 : "tab",
+				suffix,
 				start: (_numberOf12 = numberOf(attributesOf(find(children, "w:start"))["w:val"])) !== null && _numberOf12 !== void 0 ? _numberOf12 : 0
 			}, withoutUndefined({
 				alignment: NUMBER_ALIGNMENTS[jc],
 				restart,
 				legal: onOff(children, "w:isLgl") === true ? true : void 0,
 				alignedBoth: jc === "both" ? true : void 0,
+				legacy,
 				unsupported
 			})), {}, {
 				paragraph: readParagraphFormat(find(children, "w:pPr")),
@@ -44794,7 +44969,7 @@ var docxLayout = (function(exports) {
 	* Reads the parts of the document's settings (`w:settings`) that change how it is laid out.
 	*/
 	var readSettings = (xml) => {
-		var _find4, _twips22;
+		var _find4, _twips24;
 		const settings = childrenOf(xml === null || xml === void 0 ? void 0 : xml["w:settings"]);
 		const compatibility = childrenOf(find(settings, "w:compat"));
 		const lists = readKinsokuLists(settings);
@@ -44809,7 +44984,7 @@ var docxLayout = (function(exports) {
 			[onOff(settings, "w:linkStyles"), "styles updated from the document's template when Word opens it"]
 		].find(([applies]) => applies === true)) === null || _find4 === void 0 ? void 0 : _find4[1];
 		return _objectSpread2(_objectSpread2(_objectSpread2(_objectSpread2(_objectSpread2({
-			defaultTabStop: (_twips22 = twips(attributesOf(find(settings, "w:defaultTabStop"))["w:val"])) !== null && _twips22 !== void 0 ? _twips22 : 36,
+			defaultTabStop: (_twips24 = twips(attributesOf(find(settings, "w:defaultTabStop"))["w:val"])) !== null && _twips24 !== void 0 ? _twips24 : 36,
 			evenAndOddHeaders: onOff(settings, "w:evenAndOddHeaders") === true,
 			addsParagraphSpacing: onOff(compatibility, "w:doNotUseHTMLParagraphAutoSpacing") === true
 		}, Object.keys(rules).length > 0 ? { breakRules: rules } : {}), onOff(settings, "w:autoHyphenation") === true ? { hyphenation: readHyphenation(settings) } : {}), olderMode === void 0 ? {} : { compatibilityMode: olderMode }), onOff(compatibility, "w:suppressTopSpacing") === true ? { suppressesTopSpacing: true } : {}), unsupported ? { unsupported } : {});
@@ -44903,7 +45078,7 @@ var docxLayout = (function(exports) {
 	* Reads a document's body (`w:body`), with the other parts of the document.
 	*/
 	var readContent = (writtenBody, writtenParts, { guess = false } = {}) => {
-		var _writtenParts$dataSto, _parts$otherListIds, _parts$otherListIds2, _parts$settings, _parts$webSettings, _fontOf$size2, _notesByKind$kind$get, _readNoteProperties$p, _ref34, _ref35, _ref36, _ref37, _documentContent$unsu;
+		var _writtenParts$dataSto, _parts$otherListIds, _parts$otherListIds2, _parts$settings, _parts$webSettings, _fontOf$size2, _notesByKind$kind$get, _readNoteProperties$p, _ref33, _ref34, _ref35, _ref36, _documentContent$unsu;
 		const stores = (_writtenParts$dataSto = writtenParts.dataStores) !== null && _writtenParts$dataSto !== void 0 ? _writtenParts$dataSto : /* @__PURE__ */ new Map();
 		const body = withBoundTextWritten(writtenBody, stores);
 		const parts = _objectSpread2(_objectSpread2({}, writtenParts), {}, {
@@ -44945,11 +45120,11 @@ var docxLayout = (function(exports) {
 			part: "body"
 		}), guess);
 		const headersAndFooters = /* @__PURE__ */ new Map();
-		const readPart = (id) => {
+		const readPart = (id, part) => {
 			if (!headersAndFooters.has(id)) {
 				var _parts$pictures2;
 				const content = parts.headersAndFooters.get(id);
-				headersAndFooters.set(id, content && readBlocks(content, readerOf(true, (_parts$pictures2 = parts.pictures) === null || _parts$pictures2 === void 0 || (_parts$pictures2 = _parts$pictures2.headersAndFooters) === null || _parts$pictures2 === void 0 ? void 0 : _parts$pictures2.get(id))));
+				headersAndFooters.set(id, content && readBlocks(content, readerOf(true, (_parts$pictures2 = parts.pictures) === null || _parts$pictures2 === void 0 || (_parts$pictures2 = _parts$pictures2.headersAndFooters) === null || _parts$pictures2 === void 0 ? void 0 : _parts$pictures2.get(id)), void 0, part));
 			}
 			return headersAndFooters.get(id);
 		};
@@ -44984,14 +45159,14 @@ var docxLayout = (function(exports) {
 		* The blocks of a note, with the number its mark shows (`shows`, see {@link Reader}), or of a separator, which has
 		* none, read from the content of the note given, or its own
 		*/
-		const readNoteContent = (kind, id, shows, content = contentOf$3((_notesByKind$kind$get = notesByKind[kind].get(id)) !== null && _notesByKind$kind$get !== void 0 ? _notesByKind$kind$get : { [`w:${kind}`]: [] })) => {
+		const readNoteContent = (kind, id, shows, content = contentOf$3((_notesByKind$kind$get = notesByKind[kind].get(id)) !== null && _notesByKind$kind$get !== void 0 ? _notesByKind$kind$get : { [`w:${kind}`]: [] }), last = false) => {
 			var _parts$pictures3, _noteBlocks;
 			const separator = shows === void 0;
 			const section = kind === "endnote" ? lastSection : sections.length;
 			const grid = separator ? void 0 : gridOf(section);
 			const down = !separator && downOf(childrenOf(sectionElements[section])) !== void 0;
 			const readerOfNote = _objectSpread2(_objectSpread2(_objectSpread2(_objectSpread2(_objectSpread2({}, readerOf(false, (_parts$pictures3 = parts.pictures) === null || _parts$pictures3 === void 0 ? void 0 : _parts$pictures3[`${kind}s`])), {}, { inNote: true }, kind === "endnote" ? { inEndnote: true } : {}), separator ? {} : { noteNumber: shows }), grid === void 0 ? {} : { grid }), down ? { down } : {});
-			const noteBlocks = readBlocks(content, readerOfNote);
+			const noteBlocks = readBlocks(content, readerOfNote, void 0, kind === "endnote" ? "endnote" : last ? "lastFootnote" : "footnote");
 			return separator || ((_noteBlocks = noteBlocks[noteBlocks.length - 1]) === null || _noteBlocks === void 0 ? void 0 : _noteBlocks.type) !== "table" ? noteBlocks : [...noteBlocks, paragraphAfterTable(kind, readerOfNote, noteBlocks)];
 		};
 		/**
@@ -45131,11 +45306,14 @@ var docxLayout = (function(exports) {
 			footnotes.set(marker, content);
 			footnoteNumbers.set(marker, label);
 		};
+		const footnoteReferences = countFootnoteReferences(contentOf$3(body));
+		/** Whether the footnote whose reference was just read is the document's last */
+		const isLast = (kind) => kind === "footnote" && countOf(noteCounts, kind).read === footnoteReferences;
 		const readNote = (kind, id) => {
 			const marker = markerNext(kind, noteCounts);
 			const numbered = numberNext(kind, noteCounts, marker);
 			const { label, onPage } = numbered;
-			const content = readNoteContent(kind, id, onPage === void 0 ? label : { onPage });
+			const content = readNoteContent(kind, id, onPage === void 0 ? label : { onPage }, void 0, isLast(kind));
 			if (onPage !== void 0) {
 				const { start, format } = notePropertiesOf(kind, sections.length);
 				footnotesOnEachPage.set(marker, {
@@ -45154,7 +45332,7 @@ var docxLayout = (function(exports) {
 			read: readNote,
 			readOwn: (kind, id) => {
 				const marker = markerNext(kind, noteCounts);
-				keepNote(kind, marker, readNoteContent(kind, id, null), "");
+				keepNote(kind, marker, readNoteContent(kind, id, null, void 0, isLast(kind)), "");
 				return {
 					label: "",
 					marker
@@ -45302,7 +45480,7 @@ var docxLayout = (function(exports) {
 			relativeReferences: markers.relative,
 			endnoteReferences
 		}, parts.fonts !== void 0 && parts.fonts.length > 0 ? { fonts: parts.fonts } : {}), readSettings(parts.settings));
-		return _objectSpread2(_objectSpread2({}, documentContent), withoutUndefined({ unsupported: (_ref34 = (_ref35 = (_ref36 = (_ref37 = (_documentContent$unsu = documentContent.unsupported) !== null && _documentContent$unsu !== void 0 ? _documentContent$unsu : footnotes.size > 0 ? notesUnsupported("footnote") : void 0) !== null && _ref37 !== void 0 ? _ref37 : endnotes.length > 0 ? notesUnsupported("endnote") : void 0) !== null && _ref36 !== void 0 ? _ref36 : endnoteEndsUnsupported) !== null && _ref35 !== void 0 ? _ref35 : unwrittenNumber ? "notes numbered in a format not yet written" : void 0) !== null && _ref34 !== void 0 ? _ref34 : unseenNumbering }));
+		return _objectSpread2(_objectSpread2({}, documentContent), withoutUndefined({ unsupported: (_ref33 = (_ref34 = (_ref35 = (_ref36 = (_documentContent$unsu = documentContent.unsupported) !== null && _documentContent$unsu !== void 0 ? _documentContent$unsu : footnotes.size > 0 ? notesUnsupported("footnote") : void 0) !== null && _ref36 !== void 0 ? _ref36 : endnotes.length > 0 ? notesUnsupported("endnote") : void 0) !== null && _ref35 !== void 0 ? _ref35 : endnoteEndsUnsupported) !== null && _ref34 !== void 0 ? _ref34 : unwrittenNumber ? "notes numbered in a format not yet written" : void 0) !== null && _ref33 !== void 0 ? _ref33 : unseenNumbering }));
 	};
 	//#endregion
 	//#region src/layout/paginate.ts
@@ -45848,6 +46026,7 @@ var docxLayout = (function(exports) {
 					}) : measuring,
 					breakRules,
 					numberAlignment: paragraph.numberAlignment,
+					legacyNumber: paragraph.numberLegacy,
 					hyphenation,
 					grid: paragraph.grid,
 					compatibilityMode
@@ -45875,8 +46054,8 @@ var docxLayout = (function(exports) {
 		* is 14 points (`word-watertight-text.docx` TX6a, TX6b), but none above the first paragraph of the document, a table
 		* cell or a header, nor below the last of a cell (TX6c, `word-paragraph-formats.docx` A0, A3), and none between two
 		* paragraphs of the same list, of one level or two (stops2/word-stops-lists.ts LI12), where there is between a bulleted
-		* and a numbered one (A1), and between lists of other definitions (LI12). What Word does between those of lists made
-		* from the same definition isn't known: guessing, none, as in one list
+		* and a numbered one (A1), between lists of other definitions (LI12), and between two lists made from the same
+		* definition (`instance`), as between lists of other definitions (stops2/word-stops-lists2.ts LI17)
 		*/
 		const ownSpace = (paragraph, side, next, inCell) => {
 			const { format, list } = paragraph;
@@ -45886,9 +46065,7 @@ var docxLayout = (function(exports) {
 			}
 			if (next === void 0) return side === "before" || inCell ? 0 : AUTOMATIC_SPACE;
 			const other = next.type === "paragraph" ? next.list : void 0;
-			if (list === void 0 || other === void 0 || list.id !== other.id && list.definition !== other.definition) return AUTOMATIC_SPACE;
-			if (list.id !== other.id) stopAt("automatic spacing between paragraphs of lists made from the same definition");
-			return 0;
+			return list === void 0 || other === void 0 || list.id !== other.id ? AUTOMATIC_SPACE : 0;
 		};
 		/**
 		* Whether a paragraph is in one box of borders with a block next to it: a paragraph with the same borders and indents,
@@ -45950,6 +46127,7 @@ var docxLayout = (function(exports) {
 				measurer: measuring,
 				breakRules,
 				numberAlignment: block.numberAlignment,
+				legacyNumber: block.numberLegacy,
 				hyphenation
 			});
 			const hyphenated = own.min > widths.min ? own.hyphenated : own.min < widths.min ? widths.hyphenated : own.hyphenated || widths.hyphenated;
@@ -47410,7 +47588,7 @@ var docxLayout = (function(exports) {
 			if (search !== void 0 && names.includes(search.marker)) noteSearches.set(pageCount, _objectSpread2(_objectSpread2({}, search), {}, { placed: true }));
 			const placed = names.flatMap((marker) => {
 				var _inNotes$get2;
-				return [...footnotesOnEachPage.has(marker) ? [marker] : [], ...(_inNotes$get2 = inNotes.get(marker)) !== null && _inNotes$get2 !== void 0 ? _inNotes$get2 : isDrawingMarker(marker) || marker === "joined spacing" ? [] : [marker]];
+				return [...footnotesOnEachPage.has(marker) ? [marker] : [], ...(_inNotes$get2 = inNotes.get(marker)) !== null && _inNotes$get2 !== void 0 ? _inNotes$get2 : isDrawingMarker(marker) || marker.startsWith("joined spacing") ? [] : [marker]];
 			});
 			for (const name of placed) if (!places.has(name)) {
 				places.set(name, {
