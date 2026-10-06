@@ -420,26 +420,29 @@ describe("estimatePageNumbers", () => {
         });
         expect(pageNumbersOf(document(AlignmentType.JUSTIFIED))).to.deep.include({ end: "1" });
         expect(pageNumbersOf(document())).to.deep.include({ end: "2" });
-        // With an en space among its spaces, which Word hasn't been seen squeezing, the line stops the layout
-        const enSpace = new Paragraph({
-            alignment: AlignmentType.JUSTIFIED,
-            indent: { right: 709 },
-            children: [
-                new TextRun(
-                    `J10_02 the${String.fromCodePoint(0x2002)}survey of the coast was made in the summer by boat and on foot from the to coast`,
-                ),
-            ],
-        });
-        expect(
+        // With a four-per-em space among its spaces, which Word hasn't been seen squeezing at, the line stops the layout; with
+        // an en space it squeezes the ordinary spaces as elsewhere (stops2/word-stops-text3.ts JU5a, JU5b)
+        const spaced = (space: number): Paragraph =>
+            new Paragraph({
+                alignment: AlignmentType.JUSTIFIED,
+                indent: { right: 709 },
+                children: [
+                    new TextRun(
+                        `J10_02 the${String.fromCodePoint(space)}survey of the coast was made in the summer by boat and on foot from the to coast`,
+                    ),
+                ],
+            });
+        const numbersWith = (space: number): Record<string, string> =>
             pageNumbersOf({
                 styles: {
                     default: {
                         document: { run: { font: "Calibri", size: 22 }, paragraph: { spacing: { before: 0, after: 0, line: 240 } } },
                     },
                 },
-                sections: [{ children: [heading("Before", "before"), enSpace, heading("After", "after")] }],
-            }),
-        ).to.deep.equal({ before: "1" });
+                sections: [{ children: [heading("Before", "before"), spaced(space), heading("After", "after")] }],
+            });
+        expect(numbersWith(0x2005)).to.deep.equal({ before: "1" });
+        expect(numbersWith(0x2002)).to.deep.equal({ before: "1", after: "1" });
     });
 
     it("should work out the page each bookmark starts on", () => {

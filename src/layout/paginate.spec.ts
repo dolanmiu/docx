@@ -856,7 +856,7 @@ describe("paginate", () => {
             expect(paginate(document([greek, paragraph("b", 1)])).stoppedAt).to.equal("ligatures beside a character not yet followed");
         });
 
-        it("should lay out kerned text beside a soft hyphen, and stop at ligatures beside one, which Word hasn't been seen with", () => {
+        it("should lay out kerned text and ligatures beside a soft hyphen, measured apart, as Word does", () => {
             const hyphenated = (
                 font: TextFont,
                 before: readonly LayoutItem[] = [{ type: "text", text: " ef", font }],
@@ -873,9 +873,9 @@ describe("paginate", () => {
             // Kerned text isn't kerned across one, so it is measured apart (word-stops-text2.ts KE9a)
             const kerned = { font: "Calibri", size: 11, kerning: 1 };
             expect(paginate(hyphenated(kerned)).stoppedAt).to.equal(undefined);
-            const BESIDE = "ligatures beside a soft hyphen";
+            // Nor are letters joined into ligatures across one (word-stops-text3.ts SH18e)
             const ligatures = { font: "Calibri", size: 11, ligatures: "standardContextual" } as const;
-            expect(paginate(hyphenated(ligatures)).stoppedAt).to.equal(BESIDE);
+            expect(paginate(hyphenated(ligatures)).stoppedAt).to.equal(undefined);
             // Text neither kerned nor with ligatures, or with nothing before the soft hyphen to join with, is laid out: a tab, or
             // empty text, such as a field's result not yet worked out
             expect(paginate(hyphenated({ font: "Calibri", size: 11 })).stoppedAt).to.equal(undefined);
@@ -4122,15 +4122,15 @@ describe("paginate", () => {
                 { "footnote 1": [paragraph("note", 1)] },
             );
             expect(pagesOf(kept)).to.deep.equal({ a: "1", b: "1", c: "2", d: "2" });
-            // The room a document grid leaves below a line's text hasn't been seen above footnotes: c's line of 20 on a grid
-            // of 20 ends its text at 50, and its room at 55
+            // The room a document grid leaves below a line's text can't go into them either: c's line of 20 on a grid of 20
+            // ends its text at 50, and its room at 55, so it goes on to the next page (word-stops-text3.ts PB7h to PB7j)
             const gridded = (block: ParagraphBlock): ParagraphBlock => ({ ...block, grid: { linePitch: 20 } });
             const onGrid = withNotes(
                 [paragraph("a", 2), noted(paragraph("b", 1), "footnote 1"), gridded(paragraph("c", 1, { spaceBefore: 5 }))],
                 { "footnote 1": [paragraph("note", 1)] },
             );
-            const reason = "a line whose room a document grid leaves below its text goes below it into the footnotes";
-            expect(paginate(onGrid, { measurer: MEASURER }).stoppedAt).to.equal(reason);
+            expect(paginate(onGrid, { measurer: MEASURER }).stoppedAt).to.equal(undefined);
+            expect(pagesOf(onGrid)).to.deep.equal({ a: "1", b: "1", c: "2" });
             const keptOnGrid = withNotes(
                 [
                     paragraph("a", 1),
@@ -4140,7 +4140,8 @@ describe("paginate", () => {
                 ],
                 { "footnote 1": [paragraph("note", 1)] },
             );
-            expect(paginate(keptOnGrid, { measurer: MEASURER }).stoppedAt).to.equal(reason);
+            expect(paginate(keptOnGrid, { measurer: MEASURER }).stoppedAt).to.equal(undefined);
+            expect(pagesOf(keptOnGrid)).to.deep.equal({ a: "1", b: "1", c: "2", d: "2" });
         });
 
         it("should move a line to the next page with its footnote when they don't both fit", () => {

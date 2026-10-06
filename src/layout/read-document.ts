@@ -57,6 +57,7 @@ import {
     readFontFile,
     readParagraphFormat,
     readRunFormat,
+    sameFont,
     singleFontOf,
     spansOf,
     stringOf,
@@ -1104,9 +1105,10 @@ const floatingItem = (floating: FloatingDrawing, reader: Reader): readonly Layou
 /**
  * Reads a drawing in a run (`w:drawing`): a picture in the line is a box, with its run's font, and one that text doesn't
  * flow around, such as one behind the text, takes up no room. A picture in the line in a border of its run has its border's
- * room around it, beside it and above and below it: one of 20 points with a border of 1.5 points 2 points away takes 400
- * and 70 twips each side across the line, 470 above the baseline and 70 below it (scripts/layout-probes/stops2/word-stops-text2.ts
- * RF32b).
+ * room above it and below the baseline, and its box's room each side across the line as a word in the border has, which
+ * goes on round text in the same border beside it: one of 20 points with a border of 1.5 points 2 points away takes 470
+ * twips above the baseline and 70 below it, and 70 each side, or none beside text in the same border
+ * (scripts/layout-probes/stops2/word-stops-text2.ts RF32b, stops2/word-stops-text3.ts RF32d).
  */
 const readDrawing = (element: XmlObject, font: TextFont, reader: Reader): readonly LayoutItem[] | string => {
     const [drawing] = childrenOf(element["w:drawing"]);
@@ -1121,8 +1123,9 @@ const readDrawing = (element: XmlObject, font: TextFont, reader: Reader): readon
         return [
             {
                 type: "box",
-                width: emus(extent.cx, effect.l, effect.r, around.distL, around.distR) / EMUS_PER_POINT + 2 * room,
+                width: emus(extent.cx, effect.l, effect.r, around.distL, around.distR) / EMUS_PER_POINT,
                 height: emus(extent.cy, effect.t, effect.b, around.distT, around.distB) / EMUS_PER_POINT + room,
+
                 font,
                 ...(room > 0 ? { below: room } : {}),
             },
@@ -1861,15 +1864,7 @@ const readRun = (element: XmlObject, paragraphRun: RunFormat, reader: Reader, re
                 return [marker, { type: "pageNumber", field: marker.name, font }];
             }
             case "w:ruby":
-                // Its text is in its base and in the guide above it, which makes the line taller. Word made it as wide as the
-                // wider of the two, with the narrower spread across it or centred on it as its alignment says: kana of 5.5
-                // points 990 twips wide over two ideographs of 11, spread with half a share of the room at each end, and over
-                // two of 20 points, 800 wide (scripts/layout-probes/stops2/word-stops-text2.ts RF31b to RF31d). How tall it
-                // makes its line doesn't follow from its raise and sizes yet: 20 twips above the guide's top over Calibri 11,
-                // 17 at the top of a page, and 20 above Calibri 20's own line, which the guide is below. Guessing, its base alone
-                return guessedOr(reader, "text with a phonetic guide", () =>
-                    readInline(childrenOf(find(childrenOf(child["w:ruby"]), "w:rubyBase")), paragraphRun, reader, removed),
-                );
+                return readRuby(child, paragraphRun, reader, removed);
             case "w:contentPart":
                 return "a content part, such as ink";
             default:
@@ -1882,6 +1877,80 @@ const readRun = (element: XmlObject, paragraphRun: RunFormat, reader: Reader, re
         ? runItems
         : fittedOf(runItems, attributesOf(fitText), reader);
 };
+
+/**
+ * Text with a phonetic guide over it (`w:ruby`): its base, with the guide, as a box a line doesn't break. Word makes it as
+ * wide as the wider of the two, with the narrower spread across it or centred on it as its alignment says: kana of 5.5
+ * points 990 twips wide over two ideographs of 11, spread with half a share of the room at each end, over two of 20 points,
+ * 800 wide, and two ideographs of 11 under kana of 5.5, 440 wide, and under kana of 11, 660 (scripts/layout-probes/stops2/word-stops-text2.ts
+ * RF31b to RF31d, stops2/word-stops-text3.ts RF31e, RF31i). Its line is as tall as its base makes it, and as the guide
+ * raised over the base's baseline by its raise (`w:hpsRaise`), as text raised that far: kana of 5.5 points raised 15 make
+ * a line of Calibri 11 475 twips, kana of 8 raised 10 427, kana of 11 raised 10 484, and "guide" in Calibri 5.5 raised 10
+ * 365, and kana of 5.5 raised 0 or 5 make it no taller than their base of MS Mincho 11 does, 283 (RF31e to RF31l). Or why
+ * it can't be laid out: a guide or base with other than text in it, in more than one font, or of another size than the
+ * guide's properties give (`w:hps`, `w:hpsBaseText`), or a guide without a raise, which haven't been seen. Guessing, its
+ * base alone
+ */
+const readRuby = (element: XmlObject, paragraphRun: RunFormat, reader: Reader, removed: boolean): readonly LayoutItem[] | string => {
+    const children = childrenOf(element["w:ruby"]);
+    const properties = childrenOf(find(children, "w:rubyPr"));
+    const base = readInline(childrenOf(find(children, "w:rubyBase")), paragraphRun, reader, removed);
+    const guide = readInline(childrenOf(find(children, "w:rt")), paragraphRun, reader, removed);
+    if (typeof base === "string" || typeof guide === "string") {
+        return typeof base === "string" ? base : guide;
+    }
+    /** The text of the guide or its base, in its one font, or why it isn't that */
+    const textOf = (items: readonly LayoutItem[]): { readonly text: string; readonly font: TextFont } | string => {
+        const texts = items.filter((item): item is Extract<LayoutItem, { readonly type: "text" }> => item.type === "text");
+        if (texts.length === 0 || items.some((item) => item.type !== "text" && item.type !== "marker")) {
+            return "a phonetic guide, or its base, with other than text in it";
+        }
+        return texts.some(({ font }) => !sameFont(font, texts[0].font))
+            ? "a phonetic guide, or its base, in more than one font"
+            : { text: texts.map(({ text }) => text).join(""), font: texts[0].font };
+    };
+    const baseText = textOf(base);
+    const guideText = textOf(guide);
+    const baseAlone = (): readonly LayoutItem[] => base;
+    if (typeof baseText === "string") {
+        return guessedOr(reader, baseText, baseAlone);
+    }
+    if (typeof guideText === "string") {
+        return guessedOr(reader, guideText, baseAlone);
+    }
+    // The sizes are in half-points, as a run's are
+    const sizeOf = (name: string): number | undefined => {
+        const halfPoints = numberOf(attributesOf(find(properties, name))["w:val"]);
+        return halfPoints === undefined ? undefined : halfPoints / 2;
+    };
+    const raise = sizeOf("w:hpsRaise");
+    if (raise === undefined) {
+        return guessedOr(reader, "a phonetic guide without a raise", baseAlone);
+    }
+    const given = [
+        [sizeOf("w:hps"), guideText.font.size ?? DEFAULT_FONT_SIZE],
+        [sizeOf("w:hpsBaseText"), baseText.font.size ?? DEFAULT_FONT_SIZE],
+    ] as const;
+    if (given.some(([property, own]) => property !== undefined && Math.abs(property - own) > SIZE_TOLERANCE)) {
+        return guessedOr(reader, "a phonetic guide, or its base, of another size than the guide's properties give", baseAlone);
+    }
+    const guideFont: TextFont = { ...guideText.font, raise: (guideText.font.raise ?? 0) + raise };
+    return [
+        ...[...base, ...guide].filter((item) => item.type === "marker"),
+        {
+            type: "box",
+            width: 0,
+            height: 0,
+            font: baseText.font,
+            text: baseText.text,
+            otherText: [{ text: guideText.text, font: guideFont }],
+            asWideAsText: true,
+        },
+    ];
+};
+
+// How far a size given twice may differ and be the same, in points, for the rounding of half-points
+const SIZE_TOLERANCE = 0.01;
 
 /** The id of the region of text fitted to a width that each box of it is in, when it has one */
 const FITTED = new WeakMap<LayoutItem, { readonly id?: string }>();
@@ -1913,10 +1982,10 @@ const fittedOf = (
 /**
  * A paragraph's items with the text of runs fitted to a width with the same id (`w:id`), one after the other, in one box,
  * as Word fits them to their width together: "fitted " and a bold "text", fitted to 2000 twips, are 2000 wide
- * (scripts/layout-probes/stops2/word-stops-text2.ts RF29c). Or why they can't be laid out: ones of other sizes or fonts,
- * whose line Word hasn't been seen to size. Guessing, those are fitted apart
+ * (scripts/layout-probes/stops2/word-stops-text2.ts RF29c), and "fitted " of 11 points and "text" of 16, fitted to 3000,
+ * are 3000 wide, in a line as tall as Calibri 16's (stops2/word-stops-text3.ts RF29f).
  */
-const withFitted = (read: readonly LayoutItem[] | string, reader: Reader): readonly LayoutItem[] | string => {
+const withFitted = (read: readonly LayoutItem[] | string): readonly LayoutItem[] | string => {
     if (typeof read === "string") {
         return read;
     }
@@ -1931,16 +2000,14 @@ const withFitted = (read: readonly LayoutItem[] | string, reader: Reader): reado
             continue;
         }
         const [before, after] = [all[at], item] as readonly Extract<LayoutItem, { readonly type: "box" }>[];
-        if (before.font!.font !== after.font!.font || before.font!.size !== after.font!.size) {
-            const reason = "text fitted to a width in runs of other sizes or fonts";
-            if (!reader.guess) {
-                return reason;
-            }
-            // eslint-disable-next-line functional/immutable-data
-            all.push(guessMarker(reason), item);
-            continue;
-        }
-        const joined: LayoutItem = { ...before, text: `${before.text}${after.text}` };
+        // Text in another font than the first run's makes the box's line as tall as its own too
+        const joined: LayoutItem = {
+            ...before,
+            text: `${before.text}${after.text}`,
+            ...(sameFont(before.font!, after.font!)
+                ? {}
+                : { otherText: [...(before.otherText ?? []), { text: after.text!, font: after.font! }] }),
+        };
         FITTED.set(joined, { id });
         // eslint-disable-next-line functional/immutable-data
         all[at] = joined;
@@ -2673,7 +2740,7 @@ const readParagraph = (element: XmlObject, reader: Reader, tableFormats: TableFo
         ...(list.level ? [list.level.paragraph] : []),
         readParagraphFormat(properties),
     ];
-    const read = withEquations(withFitted(readInline(children, paragraphRun, reader), reader), list.items.length > 0, reader);
+    const read = withEquations(withFitted(readInline(children, paragraphRun, reader)), list.items.length > 0, reader);
     // Read to be laid out with a guess, the first thing the reader guessed at in the paragraph's content is why it can't be
     // laid out as Word does, and the markers of what it guessed at are left out of its items
     const guessed = typeof read === "string" ? undefined : read.map(guessOf).find((reason) => reason !== undefined);

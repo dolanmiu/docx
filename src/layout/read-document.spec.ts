@@ -32,7 +32,7 @@ import {
     VerticalPositionRelativeFrom,
 } from "docx";
 
-import { type TextGrid, WORD_DEFAULT_STYLES, readTextStyles } from "../text-layout";
+import { type TextFont, type TextGrid, WORD_DEFAULT_STYLES, readTextStyles } from "../text-layout";
 import type { ImageSize } from "./image-sizes";
 import {
     type Block,
@@ -815,12 +815,12 @@ describe("readDocument", () => {
             ).to.equal(undefined);
         });
 
-        it("should stop at text with a phonetic guide, a content part, text fitted to a width with other than text in it, two lines in one, text across in vertical text, a subdocument and a paragraph in an HTML division", () => {
+        it("should stop at a phonetic guide without a raise, a content part, text fitted to a width with other than text in it, two lines in one, text across in vertical text, a subdocument and a paragraph in an HTML division", () => {
             const unsupportedOf = (...children: readonly unknown[]): string | undefined =>
                 paragraphOf(readBody([p(...children)])).unsupported;
-            // Its text would be lost, as it is in the guide and its base
+            // A guide without a raise, which the schema requires, hasn't been seen
             const ruby = { "w:ruby": [{ "w:rubyPr": [] }, { "w:rt": [r(t("guide"))] }, { "w:rubyBase": [r(t("base"))] }] };
-            expect(unsupportedOf(r(ruby))).to.equal("text with a phonetic guide");
+            expect(unsupportedOf(r(ruby))).to.equal("a phonetic guide without a raise");
             expect(unsupportedOf(r({ "w:contentPart": { _attr: { "r:id": "rId9" } } }))).to.equal("a content part, such as ink");
             const fitted = "text fitted to a width with other than text in it, or to none";
             expect(unsupportedOf(r(rPr({ "w:fitText": { _attr: { "w:val": 2000 } } }), t("a"), { "w:tab": {} }))).to.equal(fitted);
@@ -2178,7 +2178,7 @@ describe("readDocument", () => {
             expect(reasonOf(textBox([p(r({ "w:drawing": [anchor] }))]))).to.equal(
                 "a drawing that text flows around in a table cell, footnote, endnote or text box",
             );
-            expect(reasonOf(textBox([p(r({ "w:ruby": [] }))]))).to.equal("text with a phonetic guide");
+            expect(reasonOf(textBox([p(r({ "w:ruby": [] }))]))).to.equal("a phonetic guide, or its base, with other than text in it");
         });
 
         it("should leave out a shape placed on the page with no wrapping, and read one that text flows around as a drawing", () => {
@@ -2232,7 +2232,9 @@ describe("readDocument", () => {
                 ],
             };
             expect(reasonOf(floatingBox(true, table))).to.equal("a table in a text box that text flows around");
-            expect(reasonOf(floatingBox(true, p(r({ "w:ruby": [] }))))).to.equal("text with a phonetic guide");
+            expect(reasonOf(floatingBox(true, p(r({ "w:ruby": [] }))))).to.equal(
+                "a phonetic guide, or its base, with other than text in it",
+            );
             const boxWith = (style: string, box: object = {}): object =>
                 pict(
                     `${placed};${style}`,
@@ -7455,7 +7457,7 @@ describe("readDocument", () => {
                 ),
             ]);
             expect(itemsOf(together)).to.deep.equal([
-                { type: "box", width: 100, height: 0, font: {}, text: "fitted text" },
+                { type: "box", width: 100, height: 0, font: {}, text: "fitted text", otherText: [{ text: "text", font: { bold: true } }] },
                 { type: "marker", name: "m" },
             ]);
             // Runs without an id, or with others, or with text between them, each fitted on its own
@@ -7464,14 +7466,102 @@ describe("readDocument", () => {
             expect(apart(r(fit(500, 1), t("a")), r(fit(500, 2), t("b")))).to.deep.equal(["box", "box"]);
             expect(apart(r(fit(500, 1), t("a")), r(t("x")), r(fit(500, 1), t("b")))).to.deep.equal(["box", "text", "box"]);
             expect(apart(r(t("x")), r(fit(500, 1), t("a")))).to.deep.equal(["text", "box"]);
+            // Runs in one font are one box as they are
+            expect(itemsOf(readBody([p(r(fit(500, 1), t("a")), r(fit(500, 1), t("b")))]))).to.deep.equal([
+                { type: "box", width: 25, height: 0, font: {}, text: "ab" },
+            ]);
             // A run with nothing in it, or hidden, has nothing to fit
             expect(apart(r(fit(500, 1)), r(fit(500, 1), t("a")))).to.deep.equal(["box"]);
             expect(apart(r(fit(500, 1, { "w:vanish": {} }), t("a")))).to.deep.equal([]);
-            // Runs of other sizes in one region haven't been seen. Guessing, each is fitted on its own
-            const sized = [p(r(fit(500, 1), t("a")), r(fit(500, 1, value("w:sz", 30)), t("b")))];
-            const reason = "text fitted to a width in runs of other sizes or fonts";
-            expect(paragraphOf(readBody(sized)).unsupported).to.equal(reason);
-            expect([read(guessed(sized)), itemsOf(guessed(sized)).map(({ type }) => type)]).to.deep.equal([[[reason, ""]], ["box", "box"]]);
+            // Runs of other sizes in one region are one box too, as tall as the tallest of them (word-stops-text3.ts RF29f)
+            const sized = readBody([
+                p(r(fit(500, 1), t("a")), r(fit(500, 1, value("w:sz", 30)), t("b")), r(fit(500, 1, value("w:sz", 40)), t("c"))),
+            ]);
+            expect([paragraphOf(sized).unsupported, itemsOf(sized)]).to.deep.equal([
+                undefined,
+                [
+                    {
+                        type: "box",
+                        width: 25,
+                        height: 0,
+                        font: {},
+                        text: "abc",
+                        otherText: [
+                            { text: "b", font: { size: 15 } },
+                            { text: "c", font: { size: 20 } },
+                        ],
+                    },
+                ],
+            ]);
+        });
+
+        it("should read text with a phonetic guide as a box as wide as the wider of the two, as tall as the guide raised, as Word does", () => {
+            // word-stops-text3.ts RF31e to RF31l: the guide's size and raise, and its base's size, are in half-points
+            const properties = [value("w:hps", 11), value("w:hpsRaise", 20), value("w:hpsBaseText", 22)];
+            const ruby = (rt: readonly object[], rubyBase: readonly object[], own: readonly object[] = properties): object => ({
+                "w:ruby": [{ "w:rubyPr": own }, { "w:rt": rt }, { "w:rubyBase": rubyBase }],
+            });
+            const sized = (size: number, text: string, ...more: readonly object[]): object => r(rPr(value("w:sz", size), ...more), t(text));
+            const guide = [sized(11, "かんじ")];
+            const base = [sized(22, "漢字")];
+            expect(itemsOf(readBody([p(r(ruby(guide, base)))]))).to.deep.equal([
+                {
+                    type: "box",
+                    width: 0,
+                    height: 0,
+                    font: { font: "MS Mincho", size: 11 },
+                    text: "漢字",
+                    otherText: [{ text: "かんじ", font: { font: "MS Mincho", size: 5.5, raise: 10 } }],
+                    asWideAsText: true,
+                },
+            ]);
+            // Runs without a size of their own are the document's default, 10 points, which the properties give in half-points
+            const unsized = itemsOf(
+                readBody([
+                    p(r(ruby([r(t("か"))], [r(t("漢"))], [value("w:hps", 20), value("w:hpsRaise", 20), value("w:hpsBaseText", 20)]))),
+                ]),
+            )[0];
+            expect(unsized).to.deep.include({
+                font: { font: "MS Mincho" },
+                otherText: [{ text: "か", font: { font: "MS Mincho", raise: 10 } }],
+            });
+            // A guide raised already is raised further
+            const raised = itemsOf(readBody([p(r(ruby([sized(11, "か", value("w:position", 4))], base)))]))[0];
+            expect(raised.type === "box" ? raised.otherText : raised).to.deep.equal([
+                { text: "か", font: { font: "MS Mincho", size: 5.5, raise: 12 } },
+            ]);
+            // Or why it can't be laid out, with its base alone guessing: other than text in the guide or the base, more than
+            // one font, a size other than the properties give, and no raise
+            const reasons = (...rubies: readonly object[]): readonly (string | undefined)[] =>
+                rubies.map((one) => paragraphOf(readBody([p(r(one))])).unsupported);
+            expect(
+                reasons(
+                    ruby([r({ "w:tab": {} })], base),
+                    ruby([r({ "w:contentPart": { _attr: { "r:id": "rId9" } } })], base),
+                    ruby(guide, [r({ "w:contentPart": { _attr: { "r:id": "rId9" } } })]),
+                    ruby(guide, [sized(22, "漢"), sized(24, "字")]),
+                    ruby([sized(16, "かんじ")], base),
+                    ruby(guide, [sized(20, "漢字")]),
+                    ruby(guide, base, [value("w:hps", 11)]),
+                ),
+            ).to.deep.equal([
+                "a phonetic guide, or its base, with other than text in it",
+                "a content part, such as ink",
+                "a content part, such as ink",
+                "a phonetic guide, or its base, in more than one font",
+
+                "a phonetic guide, or its base, of another size than the guide's properties give",
+                "a phonetic guide, or its base, of another size than the guide's properties give",
+                "a phonetic guide without a raise",
+            ]);
+            // A bookmark in the base comes before the box
+            const marked = [{ "w:bookmarkStart": { _attr: { "w:name": "m", "w:id": 1 } } }, ...base];
+            expect(itemsOf(readBody([p(r(ruby(guide, marked)))])).map(({ type }) => type)).to.deep.equal(["marker", "box"]);
+            const guessedAt = guessed([p(r(ruby(guide, base, [value("w:hps", 11)])))]);
+            expect([read(guessedAt), itemsOf(guessedAt).map(({ type }) => type)]).to.deep.equal([
+                [["a phonetic guide without a raise", "漢字"]],
+                ["text"],
+            ]);
         });
 
         it("should read an equation that can't be laid out in the line, but can displayed, as displayed", () => {
@@ -7520,7 +7610,7 @@ describe("readDocument", () => {
                 undefined,
                 undefined,
                 undefined,
-                "text with a phonetic guide",
+                "a phonetic guide without a raise",
                 "a drawing placed on the page in text with a border",
             ]);
             // Guessing, a drawing behind the text in text with a border takes no room, as elsewhere
@@ -7531,8 +7621,11 @@ describe("readDocument", () => {
                 ["text", "softHyphen", "text"],
                 ["box"],
             ]);
-            // A picture of 10 points in a border of half a point, with its room around it (word-stops-text2.ts RF32b)
-            expect(itemsOf(content, 3)[0]).to.deep.include({ width: 11, height: 10.5, below: 0.5 });
+            // A picture of 10 points in a border of half a point, with its room above and below it, and its border for the room
+            // each side (word-stops-text2.ts RF32b, word-stops-text3.ts RF32d)
+            expect(itemsOf(content, 3)[0]).to.deep.include({ width: 10, height: 10.5, below: 0.5 });
+            expect((itemsOf(content, 3)[0] as { readonly font: TextFont }).font.border?.room).to.equal(0.5);
+
             expect(textOf(content, 4)).to.equal("base");
             // A note with a mark of its own in hidden text is laid out, as a hidden reference's note is
             // (stops2/word-stops-hidden-edges.docx HD9b), an endnote's as a footnote's

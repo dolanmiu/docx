@@ -995,16 +995,13 @@ export const paginate = (
 
     /**
      * Why how Word kerns a paragraph's text, or joins its letters into ligatures, isn't known to the measurer, when it
-     * isn't. Text in the same font, kerned or with ligatures, is measured across runs, and so is checked across them. Kerned
-     * text isn't kerned across a soft hyphen (see `textMeasuredTogether`), but whether Word joins letters into ligatures
-     * across one hasn't been seen
+     * isn't. Text in the same font, kerned or with ligatures, is measured across runs, and so is checked across them, but
+     * not across a soft hyphen, which Word neither kerns nor joins letters across (see `textMeasuredTogether`)
      */
-    const unknownShapingIn = (inline: readonly InlineItem[]): string | undefined => {
-        const together = textMeasuredTogether(inline);
-        return together.some(({ besideSoftHyphen }) => besideSoftHyphen)
-            ? "ligatures beside a soft hyphen"
-            : together.map(({ text, font }) => measurer.unknownShaping?.(text, font)).find(Boolean);
-    };
+    const unknownShapingIn = (inline: readonly InlineItem[]): string | undefined =>
+        textMeasuredTogether(inline)
+            .map(({ text, font }) => measurer.unknownShaping?.(text, font))
+            .find(Boolean);
 
     /**
      * How tall a text box in the line is: its paragraphs, broken in the room for its text, which is its width less its
@@ -1219,11 +1216,8 @@ export const paginate = (
     };
 
     const linesHeight = (lines: readonly LaidOutLine[]): number => sum(lines.map(({ height }) => height));
-    /** The space below the text of the last line of what is kept together, which may go below the page, and whether a grid leaves it */
-    const belowOf = (last: LaidOutLine | undefined): { readonly spacingBelow: number; readonly belowOnGrid: boolean } => ({
-        spacingBelow: last?.spacingBelow ?? 0,
-        belowOnGrid: last?.belowOnGrid === true,
-    });
+    /** The space below the text of the last line of what is kept together, which may go below the page */
+    const belowOf = (last: LaidOutLine | undefined): { readonly spacingBelow: number } => ({ spacingBelow: last?.spacingBelow ?? 0 });
     /** How tall lines are on a page, at the bottom of which the multiple spacing of their last can go below it */
     const heightToFit = (lines: readonly LaidOutLine[]): number => linesHeight(lines) - (lines.at(-1)?.spacingBelow ?? 0);
     /**
@@ -1232,12 +1226,10 @@ export const paginate = (
      */
     const fitsAbove = (
         from: number,
-        { height, spacingBelow, belowOnGrid }: { readonly height: number; readonly spacingBelow: number; readonly belowOnGrid?: boolean },
+        { height, spacingBelow }: { readonly height: number; readonly spacingBelow: number },
         end: number,
         aboveNotes: boolean,
-    ): boolean =>
-        from + height <= end + TOLERANCE ||
-        (from + height - spacingBelow <= end + TOLERANCE && hangsBelow(aboveNotes, false, belowOnGrid === true));
+    ): boolean => from + height <= end + TOLERANCE || (from + height - spacingBelow <= end + TOLERANCE && hangsBelow(aboveNotes));
 
     /**
      * How narrow and how wide the paragraphs and tables in a table cell can be, and whether Word may hyphenate a word as
@@ -1794,17 +1786,14 @@ export const paginate = (
      * below the bottom of the page, as Word lets it (`word-mixed-heights.docx` MH1c, `word-grid.docx` G1), for a line that
      * fits only without it, and below the bottom of columns evened out by a continuous section break (scripts/layout-probes/stops2/word-stops-text.ts
      * PB7b: the last of four lines at double spacing at the foot of the second column, as it would be without its space
-     * below counted). Above footnotes, multiple spacing's can't go into them: a line at double spacing that fits above the
-     * page's footnote only without its space below goes on to the next page (stops2/word-stops-text2.ts PB7e). Stops where
-     * Word hasn't shown it: a grid's room above footnotes, and room above a paragraph's border below. Guessing, it goes
-     * there
+     * below counted). Above footnotes, neither can go into them: a line at double spacing that fits above the page's
+     * footnote only without its space below goes on to the next page (stops2/word-stops-text2.ts PB7e), and so does a line
+     * on a grid of 360 twips whose room below its text would go a twip to 41 into them (stops2/word-stops-text3.ts PB7h to
+     * PB7j). Stops where Word hasn't shown it: room above a paragraph's border below. Guessing, it goes there
      */
-    const hangsBelow = (aboveNotes: boolean, aboveBorder = false, onGrid = false): boolean => {
-        if (aboveNotes && !onGrid) {
-            return false;
-        }
+    const hangsBelow = (aboveNotes: boolean, aboveBorder = false): boolean => {
         if (aboveNotes) {
-            stopAt("a line whose room a document grid leaves below its text goes below it into the footnotes");
+            return false;
         }
         if (aboveBorder) {
             stopAt("a line whose room below its text goes below the page, above its paragraph's border");
@@ -4362,11 +4351,8 @@ export const paginate = (
             const ends = index + linesUpTo(rows.length) === lines.length;
             const notesOnPage = noteArea > 0 || reserved() > 0;
             const hangs = (upTo: number): boolean =>
-                hangsBelow(
-                    notesOnPage || notesOf(upTo).length > 0,
-                    ends && upTo === remaining.length && paragraph.borderBelow > 0,
-                    remaining[upTo - 1].belowOnGrid === true,
-                );
+                hangsBelow(notesOnPage || notesOf(upTo).length > 0, ends && upTo === remaining.length && paragraph.borderBelow > 0);
+
             const { fits, count: kept } = linesThatFit(
                 remaining,
                 room,
@@ -5555,10 +5541,8 @@ export const paginate = (
         width: number,
     ): {
         readonly height: number;
-        /** The space the multiple spacing of its last line adds below the line's text */
+        /** The space the multiple spacing of its last line, or a document grid, leaves below the line's text */
         readonly spacingBelow: number;
-        /** Whether that space is what a document grid leaves below the line's text */
-        readonly belowOnGrid?: boolean;
         readonly notes: readonly string[];
         readonly kept: readonly string[];
         readonly keptWith: "nothing" | "whole" | "part";

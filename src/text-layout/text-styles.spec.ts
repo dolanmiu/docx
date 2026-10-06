@@ -334,6 +334,11 @@ describe("run formatting", () => {
         expect(fontOf({ border: { ...single, style: "double", size: 6, space: 0 } }).border?.room).to.equal(2.25);
         expect(fontOf({ border: { ...single, style: "triple", size: 4, space: 0 } }).border?.room).to.equal(2.5);
         expect(fontOf({ border: { ...single, style: "none", size: 200 } }).border?.room).to.equal(4);
+        // A shadow doubles the line as Word draws it, and a frame leaves it as it is: a double line of half a point, 1.5 wide,
+        // takes twice that and its space with a shadow, and a dotted one of 1.5 as a frame 1.5 (word-stops-text3.ts RF24e, RF24f)
+        expect(fontOf({ border: { ...single, style: "double", size: 4, space: 2, shadow: true } }).border?.room).to.equal(5);
+        expect(fontOf({ border: { ...single, style: "dotted", size: 12, space: 2, frame: true } }).border?.room).to.equal(3.5);
+
         // No room, no raise and no marks
         expect(fontOf({ position: 0, border: { ...single, style: "none", space: 0 }, emphasisMark: "none" })).to.deep.equal({});
         expect(fontOf({ emphasisMark: "underDot" })).to.deep.equal({ emphasis: "below" });
@@ -383,11 +388,15 @@ describe("run formatting", () => {
         expect(unknownRunFormatting({ border: { ...single, style: "nil", shadow: true } })).to.equal(undefined);
         expect(unknownRunFormatting({ border: { ...single, shadow: true } })).to.equal(undefined);
         expect(unknownRunFormatting({ border: { ...single, frame: true } })).to.equal(undefined);
-        // Another style with a shadow or drawn as a frame hasn't been seen, nor a single one wider than Word draws
-        const drawn = "a run border of a style other than single with a shadow or drawn as a frame";
-        expect(unknownRunFormatting({ border: { ...single, style: "double", shadow: true } })).to.equal(drawn);
-        expect(unknownRunFormatting({ border: { ...single, style: "dotted", frame: true } })).to.equal(drawn);
+        // Other styles with a shadow or drawn as a frame are drawn as Word draws them (word-stops-text3.ts RF24e, RF24f), but
+        // not a single one wider than Word draws, an art border or a line of no style with a shadow, or a line narrower than
+        // Word draws as a frame
+        expect(unknownRunFormatting({ border: { ...single, style: "double", shadow: true } })).to.equal(undefined);
+        expect(unknownRunFormatting({ border: { ...single, style: "dotted", frame: true } })).to.equal(undefined);
         expect(unknownRunFormatting({ border: { ...single, size: 97, shadow: true } })).to.equal(unknown);
+        expect(unknownRunFormatting({ border: { ...single, style: "apples", size: 12, shadow: true } })).to.equal(unknown);
+        expect(unknownRunFormatting({ border: { ...single, style: "none", size: 12, shadow: true } })).to.equal(unknown);
+        expect(unknownRunFormatting({ border: { ...single, size: 1, frame: true } })).to.equal(unknown);
         expect(unknownRunFormatting({ border: { ...single, size: undefined, frame: true } })).to.equal(unknown);
         // A style Word hasn't been seen to draw, thin and thick lines wider than 2¼ points, others at sizes not seen, and a
         // border without a width, narrower or wider than Word draws, or an art border wider than it draws
