@@ -137,8 +137,11 @@ export type InlineItem =
      * tall as. One that takes room in its line as text does, such as an equation, goes `descent` below the baseline, and
      * its height is the room it takes above it, with the line gap, rather than standing on the baseline as a picture does.
      * Where Word may break one in a way not yet followed when it doesn't fit in the room left on its line, the layout stops
-     * there, for why (`unbroken`). A picture in a border of its run has its border's room around it, and below the baseline
-     * (`below`), and text fitted to a width is a box of that width, as tall as its `text` in its font
+     * there, for why (`unbroken`). A picture in a border of its run (its `font`'s) has its border's room above it and below
+     * the baseline (`below`), and its box goes on round text in the same border either side of it, as a word's does. Text
+     * fitted to a width is a box of that width, as tall as its `text` in its font and as the text in other fonts in it
+     * (`otherText`), and text with a phonetic guide over it is a box as wide as the wider of the two (`asWideAsText`), as
+     * tall as its base and as the guide raised over it
      */
     | {
           readonly type: "box";
@@ -149,6 +152,13 @@ export type InlineItem =
           readonly unbroken?: string;
           readonly below?: number;
           readonly text?: string;
+          /**
+           * Text in other fonts in the box too, whose lines its line is at least as tall as: the rest of text fitted to a width
+           * in runs of other sizes or fonts, and a phonetic guide over the text (`w:ruby`), as text raised by its raise
+           */
+          readonly otherText?: readonly { readonly text: string; readonly font: TextFont }[];
+          /** Whether it is as wide as the widest of its `text` and `otherText`, measured in their fonts, rather than its `width` */
+          readonly asWideAsText?: boolean;
       }
     /**
      * Where a bookmark starts, which is on the line of the word, picture or tab after it, or, for one that goes with the text
@@ -508,7 +518,7 @@ const withDefaults = (font: TextFont): Readonly<Record<string, unknown>> => ({
 });
 
 /** Whether two pieces of text are in the same font, with the same formatting */
-const sameFont = (one: TextFont, other: TextFont): boolean => {
+export const sameFont = (one: TextFont, other: TextFont): boolean => {
     const [first, second] = [withDefaults(one), withDefaults(other)];
     return Object.keys(first).length === Object.keys(second).length && Object.entries(first).every(([key, value]) => second[key] === value);
 };
@@ -525,6 +535,12 @@ const roomBetween = (before: TextBorder | undefined, after: TextBorder | undefin
 /** The border of the start or end of pieces of text */
 const firstBorder = (pieces: readonly Piece[]): TextBorder | undefined => pieces[0].font.border;
 const lastBorder = (pieces: readonly Piece[]): TextBorder | undefined => pieces[pieces.length - 1].font.border;
+
+/** The border of the start or end of a word or spaces, or of a picture in a border of its run, whose box it is in too */
+const startBorderOf = (token: Token): TextBorder | undefined =>
+    token.type === "word" || token.type === "space" ? firstBorder(token.pieces) : token.type === "box" ? token.font?.border : undefined;
+const endBorderOf = (token: Token): TextBorder | undefined =>
+    token.type === "word" || token.type === "space" ? lastBorder(token.pieces) : token.type === "box" ? token.font?.border : undefined;
 
 /** Whether pieces of text in the same font are measured together: when they are kerned, or join letters */
 const shaped = (font: TextFont): boolean => isKerned(font) || hasLigatures(font);
@@ -556,43 +572,30 @@ const widthOf = (pieces: readonly Piece[], measurer: TextMeasurer): number => {
 /**
  * A paragraph's text in the pieces it is measured in: text next to text in the same font, kerned or with ligatures, as one,
  * across bookmarks between them, as its pairs of characters are kerned and its letters joined across runs, and other text
- * on its own. So kerning and ligatures a measurer doesn't know are found across runs too. Kerned text either side of a soft
- * hyphen is measured apart, as Word doesn't kern across one (scripts/layout-probes/stops2/word-stops-text2.ts KE9a), and
- * text with ligatures across one, which Word hasn't been seen joining or leaving apart, is marked.
+ * on its own. So kerning and ligatures a measurer doesn't know are found across runs too. Text either side of a soft hyphen
+ * is measured apart, as Word neither kerns across one (scripts/layout-probes/stops2/word-stops-text2.ts KE9a) nor joins
+ * letters into a ligature across one: with a soft hyphen between the f's of "office", its "fi" is joined, and with one
+ * between the second f and the i of "efficient", its "ff", where "ffi" is without them (stops2/word-stops-text3.ts SH18e).
  */
-export const textMeasuredTogether = (items: readonly InlineItem[]): readonly (Piece & { readonly besideSoftHyphen?: boolean })[] => {
+export const textMeasuredTogether = (items: readonly InlineItem[]): readonly Piece[] => {
     // eslint-disable-next-line functional/prefer-readonly-type
-    const pieces: (Piece & { readonly besideSoftHyphen?: boolean })[] = [];
+    const pieces: Piece[] = [];
     let joins = false;
-    // Whether a soft hyphen is between the text before, with ligatures, and the next
-    let hyphen = false;
     for (const item of items) {
         if (item.type === "marker") {
             continue;
         }
         const last = pieces[pieces.length - 1];
-        if (item.type === "softHyphen") {
-            // Text before it with a letter to join with, which a field's result left empty doesn't have, goes on with the text
-            // after it, and kerned text stops
-            hyphen = joins && last.text.length > 0 && hasLigatures(last.font);
-            joins = hyphen;
-            continue;
-        }
         if (item.type !== "text") {
             joins = false;
         } else if (joins && shaped(last.font) && sameFont(last.font, item.font)) {
             // eslint-disable-next-line functional/immutable-data
-            pieces[pieces.length - 1] = {
-                text: last.text + item.text,
-                font: last.font,
-                ...(hyphen || last.besideSoftHyphen === true ? { besideSoftHyphen: true } : {}),
-            };
+            pieces[pieces.length - 1] = { text: last.text + item.text, font: last.font };
         } else {
             // eslint-disable-next-line functional/immutable-data
             pieces.push({ text: item.text, font: item.font });
             joins = true;
         }
-        hyphen = false;
     }
     return pieces;
 };
@@ -655,8 +658,6 @@ type Heights = {
     readonly marks?: { readonly above?: boolean; readonly below?: boolean };
     /** Those of its list number, as it would be were it text, when it has one */
     readonly listNumber?: Pick<Heights, "ascent" | "descent" | "tallest">;
-    /** Whether it has a picture in a border, whose box goes below the baseline */
-    readonly borderedPicture?: boolean;
 };
 
 const NOTHING: Heights = { ascent: 0, descent: 0, tallest: 0, picture: 0 };
@@ -794,16 +795,10 @@ const heightOf = (given: Heights, spacing: LineSpacing | undefined): Pick<LaidOu
     // with Courier New 11 at 1.5 lines is 275.53 and half of Calibri's 268.55, and with a picture, 659.08 and 0.15 of 268.55
     // at 1.15 lines, also beside Calibri 8 in the picture's run of Calibri 11 (MH1b, TX8c, MH4e). A list number taller than
     // the text adds its ascent alone: a number of Calibri 20 beside Calibri 11 at 1.5 lines is 574.3, its 380.9 above the
-    // baseline, Calibri 11's 59.1 below it, and half of 268.55 (stops2/word-stops-lists.ts LI5a, LI5b)
+    // baseline, Calibri 11's 59.1 below it, and half of 268.55 (stops2/word-stops-lists.ts LI5a, LI5b). A picture in a
+    // border adds its share of its run's own line with the border's room above and below it (see `withToken`)
     const spacingBelow = (spacing.multiple - 1) * tallest;
-    return {
-        height: natural + spacingBelow,
-        ...(spacingBelow > 0 ? { spacingBelow } : {}),
-        // How much of a line with a picture in a border multiple spacing adds, whose box the line may count, hasn't been seen
-        ...(heights.borderedPicture === true && spacing.multiple !== 1
-            ? { unsupported: "a picture in a border in a line with multiple line spacing" }
-            : {}),
-    };
+    return { height: natural + spacingBelow, ...(spacingBelow > 0 ? { spacingBelow } : {}) };
 };
 
 /**
@@ -899,8 +894,13 @@ type LineState = {
     readonly first: boolean;
     /** Whether it has a tab to one of the paragraph's stops past its right indent, after which it ends at the margin */
     readonly pastIndent?: boolean;
-    /** Whether it has only tabs on it yet, which the word after them goes on the line with however long it is */
+    /**
+     * Whether it has only tabs on it yet, or its list number and the tab after it, which the word after them goes on the
+     * line with however long it is
+     */
     readonly tabsOnly?: boolean;
+    /** Whether the last thing on it is the tab after its list number, which the word after it stays on the line with */
+    readonly afterNumber?: boolean;
     /**
      * Whether it has a tab to a stop past its end in a document in compatibility mode, after which the rest of the
      * paragraph's text stays on it, past the margin
@@ -942,7 +942,7 @@ const widthOfTokens = (tokens: readonly Token[], measurer: TextMeasurer, open?: 
     return tokens.reduce(
         ({ total, border }, token, index) => {
             if (token.type === "box") {
-                return { total: total + roomBetween(border, undefined) + token.width, border: undefined };
+                return { total: total + roomBetween(border, startBorderOf(token)) + token.width, border: endBorderOf(token) };
             }
             return token.type === "word" || token.type === "space"
                 ? {
@@ -1050,10 +1050,9 @@ const shiftAt = (
         return widthBeforeDecimal(tokens, measurer, border);
     }
     const text = textAfterTab(tokens);
-    // The box of text that ends it ends after it, where a picture after the text has closed it already
+    // The box of the text, or picture in a border, that ends it ends after it
     const last = text.findLast((token) => token.type === "word" || token.type === "space" || token.type === "box");
-    const after =
-        widthAfterTab(tokens, measurer, border) + (last === undefined || last.type === "box" ? 0 : (lastBorder(last.pieces)?.room ?? 0));
+    const after = widthAfterTab(tokens, measurer, border) + (last === undefined ? 0 : (endBorderOf(last)?.room ?? 0));
     return alignment === "center" ? after / 2 : after;
 };
 
@@ -1159,7 +1158,7 @@ export const measureContentWidths = (
     const numberTab = numberAlignment === "right" && items[1]?.type === "tab";
     const hyphenating = hyphenation !== undefined && format.suppressAutoHyphens !== true ? hyphenation : undefined;
     // The narrowest it can be, and as narrow as its words and pictures Word doesn't hyphenate let it be
-    const { min, max, whole } = segmentsOf(items, rulesOf(format, breakRules)).reduce(
+    const { min, max, whole } = segmentsOf(measuredBoxes(items, measurer), rulesOf(format, breakRules)).reduce(
         (widths, { tokens }, segmentIndex) => {
             const first = segmentIndex === 0;
             const lineStart = first ? indentLeft + firstLineIndent - beforeStart : indentLeft;
@@ -1179,11 +1178,10 @@ export const measureContentWidths = (
                     border = lastBorder(token.pieces);
                     continue;
                 }
-                // A tab with the border of the text before it keeps its box open, as when laid out
+                // A tab with the border of the text before it keeps its box open, as when laid out, and so does a picture in it
                 const keepsBox = token.type === "tab" && token.font.border !== undefined && token.font.border.key === border?.key;
-                const lead =
-                    token.type === "word" ? roomBetween(border, firstBorder(token.pieces)) : keepsBox ? 0 : roomBetween(border, undefined);
-                border = token.type === "word" ? lastBorder(token.pieces) : keepsBox ? border : undefined;
+                const lead = keepsBox ? 0 : roomBetween(border, startBorderOf(token));
+                border = keepsBox ? border : endBorderOf(token);
                 endBorder = border;
                 if (token.type === "tab") {
                     const stop =
@@ -1200,8 +1198,7 @@ export const measureContentWidths = (
                 // The first word of a line starts where it is, and any other can wrap to the start of a line, where a word in
                 // a border starts its box again. A box ends on its line with the border's room after it
                 const close = border?.room ?? 0;
-                const start =
-                    end === lineStart ? position + lead : indentLeft + (token.type === "word" ? (firstBorder(token.pieces)?.room ?? 0) : 0);
+                const start = end === lineStart ? position + lead : indentLeft + (startBorderOf(token)?.room ?? 0);
                 narrowest = Math.max(narrowest, start + tokenWidth + close + indentRight);
                 if (token.type === "box" || !hyphenating || !dictionaryOf(token.pieces, hyphenating)) {
                     wholeWords = Math.max(wholeWords, start + tokenWidth + close + indentRight);
@@ -1334,11 +1331,27 @@ const startOfText = (tokens: readonly Token[]): "grid" | "word" | undefined => {
 };
 
 /**
+ * A paragraph's content with each box as wide as its text measured: the widest of its text and the other text in it, in
+ * their fonts, as text with a phonetic guide over it is as wide as the wider of the two: kana of 5.5 points 990 twips wide
+ * over two ideographs of 11, and two ideographs of 11 under kana of 5.5, 440 wide (scripts/layout-probes/stops2/word-stops-text2.ts
+ * RF31b, stops2/word-stops-text3.ts RF31e).
+ */
+const measuredBoxes = (items: readonly InlineItem[], measurer: TextMeasurer): readonly InlineItem[] =>
+    items.map((item) => {
+        if (item.type !== "box" || item.asWideAsText !== true) {
+            return item;
+        }
+        const texts = [{ text: item.text ?? "", font: item.font ?? {} }, ...(item.otherText ?? [])];
+        return { ...item, width: Math.max(...texts.map(({ text, font }) => measurer.measureWidth(text, font))) };
+    });
+
+/**
  * A paragraph's content with its text set across in text that runs down the page as pieces of room of their own, as long
- * along the line as a line of their font is tall, and with its ascent and descent across it.
+ * along the line as a line of their font is tall, and with its ascent and descent across it, and its boxes as wide as their
+ * text measured (see {@link measuredBoxes}).
  */
 const withAcross = (items: readonly InlineItem[], measurer: TextMeasurer): readonly InlineItem[] =>
-    items.map((item) => {
+    measuredBoxes(items, measurer).map((item) => {
         if (item.type !== "text" || item.across !== true) {
             return item;
         }
@@ -1620,22 +1633,28 @@ export const layoutLines = (
     };
     /** The heights of a line with the text of the token on it too */
     const withToken = (heights: Heights, token: Exclude<Token, { readonly type: "marker" }>): Heights => {
-        // Text fitted to a width is as tall as it is
+        // Text fitted to a width is as tall as it is, in each of its fonts: "fitted " of 11 points and "text" of 16 fitted
+        // together make a line of Calibri 16's 390.6 twips (stops2/word-stops-text3.ts RF29f). Text with a phonetic guide
+        // over it is as tall as its base and as the guide raised over it (see `otherText`)
         if (token.type === "box" && token.text !== undefined) {
-            return withFont(heights, token.font!, measurer, token.text);
+            const own = withFont(heights, token.font!, measurer, token.text);
+            return (token.otherText ?? []).reduce((all, { text, font }) => withFont(all, font, measurer, text), own);
         }
         if (token.type === "box") {
-            const tallest = token.font ? Math.max(heights.tallest, measurer.measureLineHeight(token.font)) : heights.tallest;
             // A picture in a border stands on the baseline with its box's room below it too: one of 20 points with a border
             // of 1.5 points 2 points away makes a line of Calibri 11 538 twips, 470 of them above the baseline
-            // (scripts/layout-probes/stops2/word-stops-text2.ts RF32b). One that takes room as text does has an ascent and
-            // descent of its own
+            // (scripts/layout-probes/stops2/word-stops-text2.ts RF32b). Its box adds its room above and below its run's own
+            // line as well, which multiple spacing adds its share of, as a border round text does: the same picture at 1.5
+            // lines is 744, half of Calibri 11's 268.55 and twice 70 more (stops2/word-stops-text3.ts RF32c). One that takes
+            // room as text does has an ascent and descent of its own
+            const room = token.below ?? 0;
+            const tallest = token.font ? Math.max(heights.tallest, measurer.measureLineHeight(token.font) + 2 * room) : heights.tallest;
             return token.descent === undefined
                 ? {
                       ...heights,
                       picture: Math.max(heights.picture, token.height),
                       tallest,
-                      ...(token.below === undefined ? {} : { descent: Math.max(heights.descent, token.below), borderedPicture: true }),
+                      ...(token.below === undefined ? {} : { descent: Math.max(heights.descent, token.below) }),
                   }
                 : {
                       ...heights,
@@ -1738,6 +1757,25 @@ export const layoutLines = (
         const between = state.spaces - (state.position - state.end);
         return between <= 0 || slack / between >= STRETCH_TO_SQUEEZE * (over / state.spaces);
     };
+    /**
+     * Whether Word squeezes a line's spaces to fit a longer part of a word before a soft hyphen, whose hyphen ends `longer`
+     * past the end of the line, rather than take a shorter part that fits as it is, with its hyphen: when the spaces, and
+     * on a distributed line the letters, would stretch twice as far with the shorter part as they'd be squeezed for the
+     * longer, as {@link squeezesIn} weighs a word against leaving it to the next line
+     */
+    const squeezesForPart = (
+        state: LineState,
+        shorter: { readonly withHyphen: number; readonly before: readonly Piece[] },
+        longer: number,
+    ): boolean => {
+        const over = longer - limitOf();
+        const slack = limitOf() - shorter.withHyphen;
+        // With the shorter part's letters and its hyphen on the line
+        const letters = state.letters + lengthOf(shorter.before) + 1;
+        return alignment === "distributed"
+            ? (slack * SPACE_TO_LETTER) / (SPACE_TO_LETTER * state.spaceCount + letters) >= STRETCH_TO_SQUEEZE * (over / state.spaceCount)
+            : slack >= STRETCH_TO_SQUEEZE * over;
+    };
     // Word's automatic hyphenation, unless the paragraph suppresses it (HY2)
     const hyphenating = hyphenation !== undefined && format.suppressAutoHyphens !== true ? hyphenation : undefined;
     /**
@@ -1760,43 +1798,40 @@ export const layoutLines = (
     };
     /**
      * Whether a word or picture past the end of a justified line could be squeezed in at a four-per-em space, which Word
-     * hasn't been seen with, or at the ordinary spaces beside en, em or ideographic spaces, which Word doesn't squeeze, and
-     * how it weighs them then hasn't been seen. Past the end by more than a quarter of the ordinary spaces' width, it isn't
-     * squeezed in, though they and the others are four times as wide (scripts/layout-probes/stops2/word-stops-text2.ts JU4a,
-     * JU4b: 10 spaces and 6 en spaces, and "lighthouse" past the end by 27% and 35% of the spaces' width)
+     * hasn't been seen with. Beside en, em or ideographic spaces, which Word doesn't squeeze, it squeezes the ordinary
+     * spaces as elsewhere, by up to a quarter of their width: "lighthouse" past the end by 12% and 20% of 10 ordinary spaces'
+     * width, beside 6 en spaces, is squeezed in, and past it by 27% and 35% it isn't, though the en spaces are four times as
+     * wide (scripts/layout-probes/stops2/word-stops-text3.ts JU5a, JU5b, stops2/word-stops-text2.ts JU4a, JU4b)
      */
-    const unsure = (state: LineState, tokenWidth: number): boolean => {
-        if (!squeezes || older || state.otherSpaces === 0) {
-            return false;
-        }
-        const over = state.position + tokenWidth - limitOf();
-        const ordinary = state.spaces - state.otherSpaces;
-        return state.text.includes("\u2005")
-            ? over <= MOST_SQUEEZE * state.spaces
-            : ordinary > TOLERANCE && over <= MOST_SQUEEZE * ordinary;
-    };
+    const unsure = (state: LineState, tokenWidth: number): boolean =>
+        squeezes &&
+        !older &&
+        state.otherSpaces > 0 &&
+        state.text.includes("\u2005") &&
+        state.position + tokenWidth - limitOf() <= MOST_SQUEEZE * state.spaces;
     /**
      * Why where Word puts the text after a tab to one of the paragraph's own stops past the end of the line isn't
      * known, when it isn't. Its probes had no right indent past the margin; a left stop after text, with first line and
-     * hanging indents too (scripts/layout-probes/stops2/word-stops-tabs.ts TA1a, TA1b), and at the start of a line in a
-     * paragraph indented on the left or right (stops2/word-stops-edges.ts TA9a, TA9b), but not on the first line of one
-     * with a first line indent, nor on any line of one with a hanging indent; and a right indent only with a right stop
-     * after text. Right, centred and decimal stops line their text up with the end of the line whatever the left, first
-     * line and hanging indents, at the start of a line and after text (TA3a to TA3d, stops2/word-stops-text2.ts TA10a
-     * to TA10f, TA10h, TA10i)
+     * hanging indents too (scripts/layout-probes/stops2/word-stops-tabs.ts TA1a, TA1b), at the start of a line in a
+     * paragraph indented on the left or right (stops2/word-stops-edges.ts TA9a, TA9b), and at the start of the first line
+     * of one with a first line indent (stops2/word-stops-text3.ts TA12k), but not at the start of a line of one with a
+     * hanging indent. Right, centred and decimal stops line their text up with the end of the line whatever the left,
+     * first line and hanging indents, at the start of a line and after text (TA3a to TA3d, stops2/word-stops-text2.ts
+     * TA10a to TA10f, TA10h, TA10i), and in a paragraph indented on the right right and centred ones do too (word-stops-text3.ts
+     * TA12i, TA12j), where a decimal one hasn't been seen
      */
-    const pastEndUnknown = ({ alignment: kind }: TabStop, started: boolean, firstLine: boolean): string | undefined => {
+    const pastEndUnknown = ({ alignment: kind }: TabStop, started: boolean): string | undefined => {
         if (indentRight < 0) {
             return "a tab stop past the end of the line in a paragraph indented past the margin";
         }
         if (kind === "left") {
-            return !started && (firstLineIndent < 0 || (firstLine && firstLineIndent > 0))
-                ? "a left tab stop past the end of the line at the start of a line in a paragraph with a first line or hanging indent"
+            return !started && firstLineIndent < 0
+                ? "a left tab stop past the end of the line at the start of a line in a paragraph with a hanging indent"
                 : undefined;
         }
-        return indentRight === 0 || (kind === "right" && started)
+        return indentRight === 0 || kind !== "decimal"
             ? undefined
-            : "a centred or decimal tab stop past the end of the line in a paragraph indented on the right, or a right one at the start of a line there";
+            : "a decimal tab stop past the end of the line in a paragraph indented on the right";
     };
     // A list number that isn't left-aligned starts before its line does, which its text is measured from
     const beforeStart = numberShift(content, numberAlignment, measurer);
@@ -1837,7 +1872,7 @@ export const layoutLines = (
             const { unsupported: unknownHeight, ...height } =
                 linePitch === undefined ? heightOf(heights, spacing) : gridHeightOf(heights, spacing, linePitch);
             const unsupported = state.unknown
-                ? "a justified line that only fits squeezed at a four-per-em space, or at an en, em or ideographic space beside ordinary spaces"
+                ? "a justified line that only fits squeezed at a four-per-em space"
                 : (state.unsupported ??
                   (state.unbroken && state.end > OLDER_TAB_REACH + TOLERANCE
                       ? "text after a tab past the end of the line that goes further past the margin than Word was seen keeping it on the line, in a document in compatibility mode"
@@ -1924,9 +1959,12 @@ export const layoutLines = (
             // points away (scripts/layout-probes/word-run-formatting.ts RF7n). A line has room for its box to end after its
             // last word, whether the box goes on to the next line or not: such a word 70 twips short of the end of the line
             // goes on to the next, and one 110 short stays (word-run-formatting2.ts RF11)
+            // A picture in a border of its run is in its box as a word is, which goes on round text in the same border either
+            // side of it with no room between them: "before", a picture of 20 points and "after" in one border are in one box,
+            // the picture 400 twips after "before" and "after" right after it (stops2/word-stops-text3.ts RF32d)
             const leadOf = (state: LineState, wrapped = false): number =>
-                (token.type === "word" ? roomBetween(state.border, firstBorder(token.pieces)) : 0) + (wrapped || snapping ? 0 : kern);
-            const boxEnd = token.type === "word" ? (lastBorder(token.pieces)?.room ?? 0) : 0;
+                roomBetween(state.border, startBorderOf(token)) + (wrapped || snapping ? 0 : kern);
+            const boxEnd = endBorderOf(token)?.room ?? 0;
             const needs = leadOf(line) + tokenWidth + boxEnd + (unsureAfter ? 0 : after);
             // A word that fits only without the space after it, where whether Word lets that space hang past the end of the
             // line isn't known
@@ -1963,31 +2001,33 @@ export const layoutLines = (
                     placeWord(rest, 0, after, unsureAfter);
                     return;
                 }
-                if (line.tabsOnly === true) {
-                    // Where Word breaks one that doesn't fit after a tab that starts its line, which goes on to the next line with
-                    // it from text before, hasn't been seen. Guessing, it goes on to the next line
-                    line = {
-                        ...line,
-                        unsupported: line.unsupported ?? "a word with soft hyphens that doesn't fit after a tab that starts its line",
-                    };
-                }
-                if (line.started) {
+                if (line.started && line.tabsOnly !== true) {
                     // No part of it fits with a hyphen: it goes on to the next line, where it may break again
                     line = wrap(line);
                     placeWord(token, 0, after, unsureAfter);
                     return;
                 }
-                // Not even its first part fits on a line of its own: Word breaks it after the last character that fits, as it
-                // does a word longer than its line, and the rest of it as any other word (scripts/layout-probes/stops2/word-stops-tabs.ts
-                // SH12: its part of 12000 twips broken across two lines, and the rest of it, with the part after its soft
-                // hyphen, whole on the second)
+                // Not even its first part fits on a line of its own, or after the tabs that start it: Word breaks it after the
+                // last character that fits, as it does a word longer than its line, and the rest of it as any other word
+                // (scripts/layout-probes/stops2/word-stops-tabs.ts SH12: its part of 12000 twips broken across two lines, and
+                // the rest of it, with the part after its soft hyphen, whole on the second; stops2/word-stops-text3.ts TA12f:
+                // "af" after a left stop at 8800, and "terwards and more" on the next line, with no hyphen)
             }
             // A word after only tabs, which went on to the line with it, goes on it, and a word longer than the room left breaks
-            // after the last character that fits (scripts/layout-probes/stops2/word-stops-text2.ts TA11a, TA11b). A picture
-            // there hasn't been seen. Guessing, it goes on to the next line
+            // after the last character that fits (scripts/layout-probes/stops2/word-stops-text2.ts TA11a, TA11b), and after a
+            // list number's tab too (stops2/word-stops-text3.ts TA12h). A picture there goes on to the next line, at its start
+            // (TA12d, TA12g). A word after a list number's tab that would fit on the next line hasn't been seen
             const beyond = line.position + needs > endOf(line) + TOLERANCE;
-            if (beyond && line.tabsOnly === true && token.type === "box") {
-                line = { ...line, unsupported: line.unsupported ?? "a picture that doesn't fit after a tab that starts its line" };
+            if (
+                beyond &&
+                line.afterNumber === true &&
+                token.type === "word" &&
+                startOf(lines.length + 1, false) + needs <= limitOf(lines.length + 1) + TOLERANCE
+            ) {
+                line = {
+                    ...line,
+                    unsupported: line.unsupported ?? "a word that doesn't fit after a list number's tab, and would fit on the next line",
+                };
             }
             const overflows = line.started && beyond && (line.tabsOnly !== true || token.type === "box");
             if (token.type === "box" && token.unbroken !== undefined && beyond) {
@@ -2021,11 +2061,9 @@ export const layoutLines = (
                 skipRooms(needs, hyphens.length > 0);
                 tokenWidth = widthOn(line);
             }
-            // Text fitted to a width goes on to the next line whole where it doesn't fit (stops2/word-stops-text2.ts RF29d), but
-            // one wider than its line hasn't been seen
-            if (token.type === "box" && token.text !== undefined && !squeezed && line.position + tokenWidth > endOf(line) + TOLERANCE) {
-                line = { ...line, unsupported: line.unsupported ?? "text fitted to a width wider than its line" };
-            }
+            // Text fitted to a width goes on to the next line whole where it doesn't fit (stops2/word-stops-text2.ts RF29d), and
+            // one wider than its line takes a line of its own and goes past the end of it, as a picture does: "fitted text"
+            // fitted to 12000 twips, on a line of 9026, after a line of the text before it (stops2/word-stops-text3.ts RF29e)
             line = { ...place(line), position: line.position + leadOf(line, skipped || (overflows && !squeezed)) };
             if (
                 token.type === "word" &&
@@ -2102,8 +2140,9 @@ export const layoutLines = (
                 between: line.spaceCount,
                 heights: withToken(line.heights, token),
                 started: true,
-                border: token.type === "word" ? lastBorder(token.pieces) : undefined,
+                border: endBorderOf(token),
                 tabsOnly: false,
+                afterNumber: false,
             };
         };
         /**
@@ -2133,35 +2172,28 @@ export const layoutLines = (
                 // On a justified line, a part whose hyphen goes past the end of the line ends it when Word can squeeze it on, as
                 // it would a word: the line's spaces squeezed by 17% to fit "Donau-" (scripts/layout-probes/stops2/word-stops-tabs.ts
                 // SH10d). Where a shorter part fits as it is, Word weighs how far the line's spaces would stretch with it against
-                // how far they'd be squeezed for this one, as it weighs a word against leaving it to the next line: "Do-" with 200
-                // twips to spare rather than "Donau-" 136 past the end (stops2/word-stops-text2.ts SH17). Whether it squeezes
-                // the longer one when the shorter would leave twice as much room or more, as it would squeeze a word, and how it
-                // weighs a distributed line's letters for it, haven't been seen. Guessing, it squeezes it
+                // how far they'd be squeezed for this one, as it weighs a word against leaving it to the next line (see
+                // `squeezesForPart`): "Do-" with 200 twips to spare rather than "Donau-" 136 past the end, and "Donau-" squeezed
+                // 96 past the end rather than "Do-" with 240 to spare (stops2/word-stops-text2.ts SH17, stops2/word-stops-text3.ts
+                // SH18a). On a distributed line it weighs the letters too, as for a word: "Do-" with 240 to spare over 16 spaces
+                // and 54 letters, rather than "Donau-" 96 past the end (SH18b). One it would squeeze there hasn't been seen.
+                // Guessing, it squeezes it
                 const squeezed = !fits && line.started && squeezesIn(line, withHyphen - line.position);
                 const shorter = squeezed ? splits.slice(index + 1).find((other) => other.fits) : undefined;
-                if (
-                    shorter !== undefined &&
-                    alignment === "justified" &&
-                    limitOf() - shorter.withHyphen < STRETCH_TO_SQUEEZE * (withHyphen - limitOf())
-                ) {
+                if (shorter !== undefined && !squeezesForPart(line, shorter, withHyphen)) {
                     continue;
                 }
-                if (shorter !== undefined) {
+                if (shorter !== undefined && alignment === "distributed") {
                     line = {
                         ...line,
                         unsupported:
                             line.unsupported ??
-                            "a line that fits a soft hyphen's part squeezed, and a shorter one as it is with twice as much room or more",
+                            "a distributed line that fits a soft hyphen's part squeezed, rather than a shorter one as it is",
                     };
                 }
-                // Whether Word kerns the hyphen it draws at the end of the line with the letter before it hasn't been seen
-                const { font: partFont } = before[before.length - 1];
-                if ((fits || squeezed) && isKerned(partFont) && sameFont(partFont, hyphen.font)) {
-                    line = {
-                        ...line,
-                        unsupported: line.unsupported ?? "a line that breaks at a soft hyphen in kerned text, whose hyphen Word may kern",
-                    };
-                }
+                // Word draws the hyphen as it is, not kerned with the letter before it: "LAST-" and "SURVEY-" in Calibri 11,
+                // kerned from a point, end where their letters kerned and the hyphen measured apart end (stops2/word-stops-text3.ts
+                // SH18c, SH18d)
                 if (fits || squeezed) {
                     const placed = place(line);
                     line = wrap({
@@ -2209,21 +2241,12 @@ export const layoutLines = (
                 };
                 continue;
             }
-            // A picture in a border beside text in the same border, which Word may draw in one box with it, hasn't been seen
-            if (token.type === "box" && token.below !== undefined) {
-                const { key } = token.font!.border!;
-                const following = tokens.slice(index + 1).find((other) => other.type !== "marker");
-                const beside =
-                    line.border?.key === key ||
-                    ((following?.type === "word" || following?.type === "space") && firstBorder(following.pieces)?.key === key);
-                if (beside) {
-                    line = { ...line, unsupported: line.unsupported ?? "a picture in a border beside text in the same border" };
-                }
-            }
-            // A tab or picture after text with a border closes its box, but for a tab with the same border, which the box goes
-            // on round, as text after it in the box starts at its stop (scripts/layout-probes/stops2/word-stops-tabs.ts TA7a)
+            // A tab after text with a border closes its box, but for one with the same border, which the box goes on round, as
+            // text after it in the box starts at its stop (scripts/layout-probes/stops2/word-stops-tabs.ts TA7a). A picture
+            // closes it, or goes on in it, as a word does (see `placeWord`)
             line =
                 token.type === "word" ||
+                token.type === "box" ||
                 (token.type === "tab" && token.font.border !== undefined && token.font.border.key === line.border?.key)
                     ? line
                     : { ...line, position: line.position + roomBetween(line.border, undefined), border: undefined };
@@ -2268,15 +2291,14 @@ export const layoutLines = (
                 const pastEnd = own && next.position > Math.max(limitOf(), marginOf()) + TOLERANCE ? next : undefined;
                 // Past the right indent in a justified line too, the text after a right stop whose text is longer than the room
                 // before it starts where the tab is, and the line goes on to the margin, its spaces stretched to it
-                // (stops2/word-stops-text2.ts TA10g). A distributed line there hasn't been seen
+                // (stops2/word-stops-text2.ts TA10g), and in a distributed line, its letters too (stops2/word-stops-text3.ts
+                // TA12l)
                 const unknown =
-                    pastIndent && squeezes && alignment !== "justified"
-                        ? "a tab stop past the paragraph's right indent in a distributed line"
-                        : pastIndent && next.alignment === "left" && next.position + widthAfterTab(rest, measurer) > marginOf() + TOLERANCE
-                          ? "text after a tab stop past the paragraph's right indent that goes past the margin"
-                          : pastEnd === undefined
-                            ? undefined
-                            : pastEndUnknown(pastEnd, line.started, line.first);
+                    pastIndent && next.alignment === "left" && next.position + widthAfterTab(rest, measurer) > marginOf() + TOLERANCE
+                        ? "text after a tab stop past the paragraph's right indent that goes past the margin"
+                        : pastEnd === undefined
+                          ? undefined
+                          : pastEndUnknown(pastEnd, line.started);
                 if (unknown !== undefined) {
                     line = { ...line, unsupported: line.unsupported ?? unknown };
                 }
@@ -2337,28 +2359,41 @@ export const layoutLines = (
                  */
                 const startAt = (
                     at: NonNullable<typeof stop>,
-                    { position: from, border }: LineState,
-                ): { readonly lineUp?: number; readonly position: number } => {
+                    state: LineState,
+                ): { readonly lineUp?: number; readonly position: number; readonly unsupported?: string } => {
+                    const { position: from, border } = state;
                     const shifted = shiftAt(at.alignment, rest, measurer, border);
                     const textWidth = inCells(at) ? cellsAfterTab(rest) : (shifted ?? widthAfterTab(rest, measurer));
-                    const stopped = Math.max(from, at.position - (inCells(at) && at.alignment === "center" ? textWidth / 2 : textWidth));
+                    // Text at a centred stop that would go past the end of the line ends at the end instead: "afterwards" at a
+                    // centred stop at 8800 twips, in a line of 9026, from 8053 to the end (stops2/word-stops-text3.ts TA12c). At
+                    // a decimal stop, it hasn't been seen
+                    const pastEndAt = at.alignment === "center" && !inCells(at) ? endOf(state) - 2 * textWidth : Infinity;
+                    const stopped = Math.max(
+                        from,
+                        Math.min(pastEndAt, at.position - (inCells(at) && at.alignment === "center" ? textWidth / 2 : textWidth)),
+                    );
                     const cell = cellOn(lines.length);
+                    const pastEndAtDecimal =
+                        at.alignment === "decimal" &&
+                        shifted !== undefined &&
+                        stopped + widthAfterTab(rest, measurer, border) > endOf(state) + TOLERANCE;
                     return {
                         lineUp: shifted,
                         position: cell === undefined || inCells(at) ? stopped : Math.ceil(stopped / cell - GRID_ROUNDING) * cell,
+                        ...(pastEndAtDecimal ? { unsupported: "text at a decimal tab stop that goes past the end of the line" } : {}),
                     };
                 };
                 // A word after a tab goes with it: one that doesn't fit after the tab's stop takes the tab on to the next line
                 // with it, from the text before it, to the stop there, where it breaks after the last character that fits:
                 // "afterwards" after a left stop at 8800 twips, in a line of 9026, its "af" at the stop on the next line and the
                 // rest on the line after (stops2/word-stops-text2.ts TA11a), and past the margin, in a paragraph indented past it
-                // (TA11b, stops2/word-stops-tabs.ts TA1c). A word with soft hyphens breaks at one after the tab, where its part
+                // (TA11b, stops2/word-stops-tabs.ts TA1c). So does a picture, which goes on to the line after that, at its start,
+                // as it can't break (stops2/word-stops-text3.ts TA12d), and a word after tabs in a row takes the last of them, to
+                // the first stop on the next line (TA12e). A word with soft hyphens breaks at one after the tab, where its part
                 // and hyphen fit: "eeeee-" after a left stop that puts its hyphen 3.5 to 19 twips before the end of the line
-                // (stops2/word-stops-text2.ts SH16a to SH16i). A picture after a tab, a word after tabs in a row, and a word with
-                // soft hyphens whose first part doesn't fit, haven't been seen, nor text that doesn't fit after the tab that
-                // follows a list's number. Guessing, the tab stays, and they go on to the next line, but for the word with soft
-                // hyphens, which takes the tab with it. Word 2010 and before keep it on the line after a tab past its end (see
-                // `olderPast`)
+                // (stops2/word-stops-text2.ts SH16a to SH16i), and takes the tab on where its first part doesn't fit (TA12f). Text
+                // after the tab that follows a list's number stays on its line (TA12h, see `placeWord`). Word 2010 and before
+                // keep it on the line after a tab past its end (see `olderPast`)
                 const after = rest.find((other) => other.type !== "marker");
                 if (
                     !numbered &&
@@ -2373,37 +2408,21 @@ export const layoutLines = (
                     const hyphen =
                         after.type === "word" ? after.hyphens?.find(({ at }) => at > 0 && at < lengthOf(after.pieces)) : undefined;
                     const needs =
-                        after.type === "box"
-                            ? after.width
-                            : roomBetween(line.border, firstBorder(after.pieces)) +
-                              (hyphen === undefined
-                                  ? widthOf(after.pieces, measurer) + (lastBorder(after.pieces)?.room ?? 0)
-                                  : widthOf(splitPieces(after.pieces, hyphen.at)[0], measurer) + measurer.measureWidth("-", hyphen.font));
+                        roomBetween(line.border, startBorderOf(after)) +
+                        (after.type === "box"
+                            ? after.width + (endBorderOf(after)?.room ?? 0)
+                            : hyphen === undefined
+                              ? widthOf(after.pieces, measurer) + (lastBorder(after.pieces)?.room ?? 0)
+                              : widthOf(splitPieces(after.pieces, hyphen.at)[0], measurer) + measurer.measureWidth("-", hyphen.font));
                     const nextLine = nextStop(startOf(lines.length + 1, false), stops, defaultTabStop, limitOf(lines.length + 1));
-                    const inRow = tokens.slice(0, index).findLast((before) => before.type !== "marker")?.type === "tab";
                     if (startAt(stop, line).position + needs > endOf(line) + TOLERANCE && nextLine !== undefined) {
-                        if (after.type === "box" || inRow) {
-                            line = {
-                                ...line,
-                                unsupported:
-                                    line.unsupported ??
-                                    (inRow ? "a word that doesn't fit after tabs in a row" : "a picture that doesn't fit after a tab"),
-                            };
-                        } else {
-                            if (hyphen !== undefined) {
-                                line = {
-                                    ...line,
-                                    unsupported: line.unsupported ?? "a word with soft hyphens whose first part doesn't fit after a tab",
-                                };
-                            }
-                            line = wrap(line);
-                            stop = nextLine;
-                        }
+                        line = wrap(line);
+                        stop = nextLine;
                     }
                 }
                 line = { ...place(line), ...(pastIndent ? { pastIndent } : {}), ...(olderPast ? { unbroken: olderPast } : {}) };
-                const { lineUp, position } = startAt(stop, line);
-                const misaligned = lineUp === undefined ? "text at a decimal tab stop that Word hasn't been seen lining up" : undefined;
+                const { lineUp, position, unsupported: pastEndAtStop } = startAt(stop, line);
+                const misaligned = lineUp === undefined ? "text at a decimal tab stop that Word hasn't been seen lining up" : pastEndAtStop;
                 if (snapping && !inCells(stop) && (stop.alignment !== "left" || starting === undefined)) {
                     line = {
                         ...line,
@@ -2422,7 +2441,11 @@ export const layoutLines = (
                     letters: 0,
                     otherSpaces: 0,
                     started: true,
-                    tabsOnly: !line.started || line.tabsOnly === true,
+                    // The tab after a list number starts the line's text as tabs that start a line do: a word longer than the
+                    // room after it breaks after the last character that fits (stops2/word-stops-text3.ts TA12h: 110 letters
+                    // after a number's tab, broken across its line and two more)
+                    tabsOnly: !line.started || line.tabsOnly === true || token.font.listNumber === "separator",
+                    ...(token.font.listNumber === "separator" ? { afterNumber: true } : {}),
                     ...(misaligned === undefined ? {} : { unsupported: line.unsupported ?? misaligned }),
                 };
                 continue;
