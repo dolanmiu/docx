@@ -5348,8 +5348,8 @@ const readHyphenation = (settings: readonly XmlObject[]): Hyphenation =>
  * they are depends on the computer. It puts the limits of a displayed sum or integral that doesn't say where its own go
  * where the settings say (`m:naryLim`, `m:intLim`), and leaves those in a line of text beside it
  * (`word-stops-equation-limits.docx` EQ42). It lays equations out alike with displayed equations' own defaults off
- * (`m:dispDef`), and with small fractions on (`m:smallFrac`) too (`word-stops-equation-small.docx` EQ43), but small
- * fractions with those defaults on haven't been seen. Margins of displayed equations (`m:lMargin`, `m:rMargin`) Word
+ * (`m:dispDef`), and with small fractions on (`m:smallFrac`) too, with those defaults off or on
+ * (`word-stops-equation-small.docx` EQ43, `word-stops-equation-small2.docx` EQ56). Margins of displayed equations (`m:lMargin`, `m:rMargin`) Word
  * centres an equation that fits as without, but breaks one within (`word-stops-equation-settings.docx` EQS1), so one that
  * fits the line but not the room between them would be laid out on one line where Word breaks it. Space around displayed
  * equations, and between equations (`m:interSp`), Word leaves out, even between equations side by side in one paragraph of
@@ -5361,11 +5361,6 @@ const readMathsSettings = (settings: readonly XmlObject[]): Pick<Reader, "maths"
     const valueIn = (name: string): string | undefined => stringOf(attributesOf(find(maths, name))["m:val"]);
     if ((valueIn("m:mathFont") ?? "Cambria Math") !== "Cambria Math") {
         return { maths: "an equation in a maths font other than Cambria Math" };
-    }
-    const off = (name: string): boolean => find(maths, name) !== undefined && isOff(valueIn(name));
-    const on = (name: string): boolean => find(maths, name) !== undefined && !isOff(valueIn(name));
-    if (on("m:smallFrac") && !off("m:dispDef")) {
-        return { maths: "an equation in a document whose maths settings make fractions small" };
     }
     const given = (name: string): boolean => (numberOf(valueIn(name)) ?? 0) !== 0;
     return {
