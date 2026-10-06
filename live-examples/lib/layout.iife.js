@@ -7791,60 +7791,73 @@ var docxLayout = (function(exports) {
 	* scale, superscript and subscript, which draw it smaller, how far it is raised, its border, and its emphasis marks.
 	*/
 	var fontOf = (format) => scripted(plainFontOf(format), format);
-	var HIGH_ANSI = /[\u00a0-\u052f\u1e00-\u27bf\ue000-\uf8ff\ufb00-\ufb1c]/u;
 	var ASCII_FONT_PAST_ASCII = /[\u0590-\u07bf\ufb1d-\ufdff\ufe70-\ufefe]/u;
-	var HINTED_EAST_ASIAN = /[\u00a1\u00a4\u00a7\u00a8\u00aa\u00ad\u00af\u00b0-\u00b4\u00b6-\u00ba\u00bc-\u00bf\u00d7\u00f7\u0100-\u04ff\u2000-\u27bf\ue000-\uf8ff\ufb00-\ufb1c]/u;
-	var HINTED_EAST_ASIAN_IN_CHINESE = /[\u00e0\u00e1\u00e8-\u00ea\u00ec\u00ed\u00f2\u00f3\u00f9\u00fa\u00fc\u1e00-\u1eff]/u;
+	var HINTED_EAST_ASIAN = /[\u00a1\u00a4\u00a7\u00a8\u00aa\u00ad\u00af\u00b0-\u00b4\u00b6-\u00ba\u00bc-\u00bf\u00d7\u00f7\u02b0-\u03cf\u0400-\u04ff\u2000-\u27bf\ue000-\uf8ff\ufb00-\ufb1c]/u;
+	var HINTED_EAST_ASIAN_IN_CHINESE = /[\u00e0\u00e1\u00e8-\u00ea\u00ec\u00ed\u00f2\u00f3\u00f9\u00fa\u00fc\u0100-\u02af\u1e00-\u1eff]/u;
+	var HINTED_EAST_ASIAN_BY_CHARACTER_SET = /[\u0100-\u02af]/u;
+	var LEFT_OUT$1 = /[\u0080-\u009f\u03d0-\u03ff\u0500-\u058f\u07c0-\u10ff\u1200-\u1dff\u27c0-\u2e7f\ua4d0-\uabff\ufe10-\ufe1f\ufeff\ufff0-\uffff\u{10000}-\u{10ffff}]/u;
 	var LAST_ASCII = 127;
 	/** Whether a run has a high ANSI font other than its font for ASCII, so its characters past ASCII are drawn otherwise */
 	var hasOwnHighAnsiFont = ({ font, highAnsiFont }) => highAnsiFont !== void 0 && highAnsiFont.toLowerCase() !== (font === null || font === void 0 ? void 0 : font.toLowerCase());
 	/** Whether a run is right to left or of a complex script, so all of it is in the font for complex scripts */
 	var isComplexRun = ({ rightToLeft, complexScript }) => rightToLeft === true || complexScript === true;
+	/** Whether a run's East Asian language is Chinese, which moves more characters to the East Asian font with the hint */
+	var isChinese = ({ eastAsianLanguage }) => (eastAsianLanguage !== null && eastAsianLanguage !== void 0 ? eastAsianLanguage : "").toLowerCase().startsWith("zh");
+	/** Whether a character of the high ANSI font is drawn in the East Asian font with the run's hint for East Asian text */
+	var isHintedEastAsian = (character, format) => format.fontHint === "eastAsia" && (HINTED_EAST_ASIAN.test(character) || isChinese(format) && HINTED_EAST_ASIAN_IN_CHINESE.test(character));
 	/**
 	* Which of a run's fonts Word draws a character in: the font for complex scripts, in their size, boldness and italics, for
-	* all of a run that is right to left or of a complex script; the East Asian font for Chinese, Japanese and Korean; the
-	* high ANSI font for the characters past ASCII of its blocks, where the run has one other than its font for ASCII, as
-	* Word drew curly quotes in Calibri, the document's, in runs with SimSun for ASCII (`word-stops-fe-layout2.docx` FE2c,
-	* `word-stops-compat2-15.docx` CN10c); the run's font for ASCII for the rest. Hebrew in a run that isn't right to left is
-	* in the run's size, as Word lays it out. A mark is drawn in the font of the character it is on.
+	* all of a run that is right to left or of a complex script; the East Asian font for Chinese, Japanese and Korean, and,
+	* with the run's hint for East Asian text, for the characters the hint moves to it; the high ANSI font for the rest of
+	* the characters past ASCII, where the run has one other than its font for ASCII, as Word drew curly quotes in Calibri,
+	* the document's, in runs with SimSun for ASCII (`word-stops-fe-layout2.docx` FE2c, `word-stops-compat2-15.docx` CN10c),
+	* and accented letters in Arial beside Calibri and Courier New (`word-stops-run-fonts.docx` HA2a, HA2b); the run's font
+	* for ASCII for the rest, and for Hebrew and Arabic in a run that isn't right to left (HA3b). Hebrew in such a run is in
+	* the run's size, as Word lays it out. A mark is drawn in the font of the character it is on.
 	*/
 	var slotOf = (character, previous, format) => {
 		if (isComplexRun(format)) return "complex";
 		if (isEastAsian(character)) return "eastAsian";
 		if (new RegExp("\\p{M}", "u").test(character)) return previous;
-		return hasOwnHighAnsiFont(format) && HIGH_ANSI.test(character) ? "highAnsi" : "latin";
+		if (isHintedEastAsian(character, format)) return "hinted";
+		return hasOwnHighAnsiFont(format) && character.codePointAt(0) > LAST_ASCII && !ASCII_FONT_PAST_ASCII.test(character) ? "highAnsi" : "latin";
 	};
 	/**
-	* Why text can't be laid out in the fonts Word draws it in: a character Word may draw in the run's East Asian font with
-	* the run's hint for it (`w:hint="eastAsia"`), such as a curly quote, a dash or a degree sign, or Chinese, Japanese or
-	* Korean in a run that is right to left or of a complex script with it, and a character of a script the rules leave out,
-	* such as Thai, in a run with a high ANSI font other than its font for ASCII: which font Word draws those in hasn't been
-	* seen.
+	* Why text can't be laid out in the fonts Word draws it in, in a run with the hint for East Asian text
+	* (`w:hint="eastAsia"`): a character the hint moves to the East Asian font in a run whose East Asian font isn't one,
+	* such as Calibri, or that has none; a letter of the Latin Extended-A to IPA Extensions blocks in a language other than
+	* Chinese, which the rules move with an East Asian font of a Chinese character set, which isn't known; a combining mark,
+	* which the rules move on its own where the layout keeps it with the character it is on; Chinese, Japanese or Korean in
+	* a run that is right to left or of a complex script, which the rules put in the East Asian font rather than the complex
+	* script font; and a character of a block the rules leave out, such as Thai, in a run with a high ANSI font other than
+	* its font for ASCII, which Word has drawn in the high ANSI font without the hint alone (HA3a). Which font Word draws
+	* those in hasn't been seen.
 	*/
 	var unknownRunFont = (text, format) => {
+		if (format.fontHint !== "eastAsia") return;
 		const characters = [...text];
-		if (format.fontHint === "eastAsia") {
-			var _format$eastAsianLang;
-			const chinese = ((_format$eastAsianLang = format.eastAsianLanguage) !== null && _format$eastAsianLang !== void 0 ? _format$eastAsianLang : "").toLowerCase().startsWith("zh");
-			if (characters.some((character) => HINTED_EAST_ASIAN.test(character) || chinese && HINTED_EAST_ASIAN_IN_CHINESE.test(character))) return "a character Word may draw in the East Asian font of a run with the hint for East Asian text (w:hint), such as a curly quote";
-			if (isComplexRun(format) && characters.some(isEastAsian)) return "East Asian text in a run that is right to left or of a complex script, with the hint for East Asian text (w:hint)";
-		}
-		return hasOwnHighAnsiFont(format) && !isComplexRun(format) && characters.some((character) => character.codePointAt(0) > LAST_ASCII && !isEastAsian(character) && !new RegExp("\\p{M}", "u").test(character) && !HIGH_ANSI.test(character) && !ASCII_FONT_PAST_ASCII.test(character)) ? "a character of a script Word's run-font rules leave out, such as Thai, in a run with a high ANSI font other than its font for ASCII" : void 0;
+		if (characters.filter((character) => isHintedEastAsian(character, format)).length > 0 && !isComplexRun(format) && !isEastAsianFont(format.eastAsiaFont)) return "a character Word draws in the East Asian font of a run with the hint for East Asian text (w:hint), such as a curly quote, in a run whose East Asian font isn't one, such as Calibri";
+		if (!isChinese(format) && !isComplexRun(format) && characters.some((character) => HINTED_EAST_ASIAN_BY_CHARACTER_SET.test(character))) return "a letter of the Latin Extended-A to IPA Extensions blocks in a run with the hint for East Asian text (w:hint), which Word draws in the East Asian font where that font's character set is Chinese";
+		if (characters.some((character) => new RegExp("\\p{M}", "u").test(character) && HINTED_EAST_ASIAN.test(character))) return "a combining mark in a run with the hint for East Asian text (w:hint), which the rules draw in the East Asian font on its own";
+		if (isComplexRun(format) && characters.some(isEastAsian)) return "East Asian text in a run that is right to left or of a complex script, with the hint for East Asian text (w:hint)";
+		return hasOwnHighAnsiFont(format) && !isComplexRun(format) && characters.some((character) => !new RegExp("\\p{M}", "u").test(character) && LEFT_OUT$1.test(character)) ? "a character of a block Word's run-font rules leave out, such as Thai, in a run with the hint for East Asian text (w:hint) and a high ANSI font other than its font for ASCII" : void 0;
 	};
 	/**
 	* The one font Word draws a text in, such as a list number, by the slots of its characters: the high ANSI font where
-	* all of its characters but spaces are of the high ANSI blocks, and the run's font otherwise. Undefined where its
-	* characters are in both.
+	* all of its characters but spaces are of the high ANSI blocks, the East Asian font where the run's hint for East Asian
+	* text moves all of them to it, and the run's font otherwise. Undefined where its characters are in more than one.
 	*/
 	var singleFontOf = (text, format) => {
 		const font = fontOf(format);
-		if (!hasOwnHighAnsiFont(format) || isComplexRun(format)) return font;
+		if (!hasOwnHighAnsiFont(format) && format.fontHint !== "eastAsia" || isComplexRun(format)) return font;
 		const slots = [...text].reduce((all, character) => {
 			var _all;
 			return [...all, slotOf(character, (_all = all[all.length - 1]) !== null && _all !== void 0 ? _all : "latin", format)];
 		}, []);
-		const high = [...text].flatMap((character, at) => /\s/u.test(character) ? [] : [slots[at] === "highAnsi"]);
-		return high.length > 0 && high.every(Boolean) ? _objectSpread2(_objectSpread2({}, font), {}, { font: format.highAnsiFont }) : high.some(Boolean) ? void 0 : font;
+		const own = [...text].flatMap((character, at) => /\s/u.test(character) ? [] : [slots[at]]).map((slot) => slot === "highAnsi" || slot === "hinted" ? slot : "latin");
+		const [first] = own;
+		if (first === void 0 || own.some((slot) => slot !== first)) return first === void 0 ? font : void 0;
+		return first === "latin" ? font : fontOfSlot(format, first);
 	};
 	var FALLBACK_EAST_ASIAN_FONT = "MS Mincho";
 	/**
@@ -7855,7 +7868,7 @@ var docxLayout = (function(exports) {
 		const font = plainFontOf(format);
 		if (slot === "latin") return scripted(font, format);
 		const { highAnsiFont, eastAsiaFont, complexScriptFont, complexScriptSize, complexScriptBold, complexScriptItalic, rightToLeft } = format;
-		return scripted(slot === "highAnsi" ? _objectSpread2(_objectSpread2({}, font), {}, { font: highAnsiFont }) : slot === "eastAsian" ? _objectSpread2(_objectSpread2({}, font), {}, { font: isEastAsianFont(eastAsiaFont) ? eastAsiaFont : FALLBACK_EAST_ASIAN_FONT }) : withoutUndefined(_objectSpread2(_objectSpread2({}, font), {}, {
+		return scripted(slot === "highAnsi" ? _objectSpread2(_objectSpread2({}, font), {}, { font: highAnsiFont }) : slot === "eastAsian" || slot === "hinted" ? _objectSpread2(_objectSpread2({}, font), {}, { font: isEastAsianFont(eastAsiaFont) ? eastAsiaFont : FALLBACK_EAST_ASIAN_FONT }) : withoutUndefined(_objectSpread2(_objectSpread2({}, font), {}, {
 			font: complexScriptFont,
 			size: complexScriptSize,
 			bold: complexScriptBold,
@@ -7873,7 +7886,8 @@ var docxLayout = (function(exports) {
 		return [...text].reduce((all, character) => {
 			var _last$slot;
 			const last = all[all.length - 1];
-			const slot = slotOf(character, (_last$slot = last === null || last === void 0 ? void 0 : last.slot) !== null && _last$slot !== void 0 ? _last$slot : "latin", format);
+			const own = slotOf(character, (_last$slot = last === null || last === void 0 ? void 0 : last.slot) !== null && _last$slot !== void 0 ? _last$slot : "latin", format);
+			const slot = own === "hinted" ? "eastAsian" : own;
 			return (last === null || last === void 0 ? void 0 : last.slot) === slot ? [...all.slice(0, -1), {
 				slot,
 				text: last.text + character
@@ -37295,12 +37309,8 @@ var docxLayout = (function(exports) {
 			var _twips6;
 			return (_twips6 = twips(attributes[`w:${name}FromText`])) !== null && _twips6 !== void 0 ? _twips6 : 0;
 		};
-		const beside = (name) => {
-			const given = distance(name);
-			return given === 0 ? HALF_POINT : given < HALF_POINT ? "a table that text flows around less than half a point from the text beside it" : given;
-		};
+		const beside = (name) => Math.max(distance(name), HALF_POINT);
 		const [left, right] = [beside("left"), beside("right")];
-		if (typeof left === "string" || typeof right === "string") return typeof left === "string" ? left : right;
 		return {
 			horizontal,
 			vertical,
