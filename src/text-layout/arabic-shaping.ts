@@ -96,41 +96,16 @@ export const arabicFaceOf = (name: string, bold: boolean, italic: boolean): Arab
     return font === undefined || italic ? undefined : decodeFace(bold ? font.bold : font.regular, font.drawnIn);
 };
 
-// The fonts whose Arabic Word kerns by pairs of letters, whether the text asks for kerning or not: it draws ten copies of a
-// letter joined in a word as much as 23 thousandths of an em a letter wider or narrower than their forms, keheh's wider
-// and ain's narrower, and beh's 6 wider, where the same forms with tatweels or a zero-width non-joiner between them are as
-// wide as they are (scripts/layout-probes/stops2/word-stops-more-widths.ts W, word-stops-arabic.ts AR1). Courier New's
-// copies are as wide as their forms, to a tenth of a thousandth
-const KERNED = new Set(["Arial", "Times New Roman", "Cambria"]);
-
-/**
- * Why Word's widths of Arabic text in a font of the tables aren't known, when they aren't: letters side by side, with
- * nothing but marks between them, which Word kerns by pairs the widths don't have, in a font it kerns them in, but for lam
- * and an alef, which it joins into one glyph
- */
-export const unknownArabicKerning = (text: string, name: string): string | undefined => {
-    if (!KERNED.has(name)) {
-        return undefined;
-    }
-    // Lam and the alef after it are one glyph, the ligature, whose width is known
-    const letters = [...text].filter((character) => joiningOf(character) !== "T");
-    const kerned = letters.some(
-        (character, index) =>
-            index > 0 &&
-            ARABIC_LETTERS.includes(character) &&
-            ARABIC_LETTERS.includes(letters[index - 1]) &&
-            !(letters[index - 1] === LAM && LAM_ALEFS.includes(character)),
-    );
-    return kerned ? "Arabic letters side by side, which Word kerns by pairs not yet known" : undefined;
-};
-
 /** Whether a character is one of Arabic's letters the widths have, or the tatweel */
 export const isJoinedLetter = (character: string): boolean => character === TATWEEL || ARABIC_LETTERS.includes(character);
 
 /**
  * The widths of the letters of text Word joins, by the index of each among its characters, in thousandths of an em: each
  * letter in the form the letters beside it join it in, in the text, as Word joins those of a word, and lam and an alef
- * after it as a ligature, whose width is lam's, the alef taking none. A letter joins the letter before it when it joins
+ * after it as a ligature, whose width is lam's, the alef taking none. Word doesn't kern the letters side by side in these
+ * fonts: every pair of the 42 letters, joined as initial and final and as medials, in Arial and Times New Roman, plain and
+ * bold, is as wide as its forms to 8 thousandths of an em, and ten copies of a letter joined are as wide as theirs
+ * (scripts/layout-probes/stops2/word-stops-arabic2.ts AR4, word-stops-more-widths.ts W). A letter joins the letter before it when it joins
  * either way, or only that one, and that letter joins the next too, or is a tatweel, and the letter after it when it joins
  * both and that letter joins the one before it; marks between them leave them joined.
  */

@@ -1396,34 +1396,34 @@ const rightToLeftAt = (pieces: readonly Piece[], edge: "start" | "end"): boolean
 
 /**
  * What the space between two words is at the end of a line, in a left-to-right paragraph, as Word breaks it: room the
- * line has for it, when it is in a right-to-left run between right-to-left words, as a word of Arabic that fits only
- * without it goes on to the next line, where Word puts those that fit with it (stops2/word-stops-arabic.ts AR2e, AR2h,
- * AR2i), or hanging past the end of the line, as it does between left-to-right words, and between right-to-left and
- * left-to-right ones, either way, in runs that aren't right to left: Hebrew's last letters, and a label before the
- * next, end lines a space short of the margin (stops2/word-stops-more-widths.ts W139, W278). Word breaks the lines of a
- * right-to-left paragraph where it breaks those of a left-to-right one (scripts/layout-probes/word-unicode.ts R2, R8). Where
- * it hasn't been seen, it is unknown: in a right-to-left run beside left-to-right text, and between right-to-left words
- * in a run that isn't right to left
+ * line has for it, between right-to-left words, in a right-to-left run or not, and between a right-to-left word and a
+ * left-to-right one, either way, when it is in a right-to-left run, as a word of Arabic that fits only without it goes on
+ * to the next line, where Word puts those that fit with it (stops2/word-stops-arabic.ts AR2e, AR2h, AR2i,
+ * word-stops-east-asian3.ts AR3a to AR3c, AR3e: Arabic before Latin, Latin before Arabic, Hebrew before Hebrew, and Arabic
+ * before Arabic in a run that isn't right to left); or hanging past the end of the line, as it does between left-to-right
+ * words, and between right-to-left and left-to-right ones, either way, in runs that aren't right to left: Hebrew's last
+ * letters, and a label before the next, end lines a space short of the margin (stops2/word-stops-more-widths.ts W139,
+ * W278). Word breaks the lines of a right-to-left paragraph where it breaks those of a left-to-right one, the space after
+ * its last word hanging past the end of the line (scripts/layout-probes/word-unicode.ts R2, R8, AR3d)
  */
-const spaceAtEnd = (before: readonly Piece[], space: readonly Piece[], after: readonly Piece[]): "room" | "hanging" | "unknown" => {
+const spaceAtEnd = (before: readonly Piece[], space: readonly Piece[], after: readonly Piece[]): "room" | "hanging" => {
     const [end, start] = [rightToLeftAt(before, "end"), rightToLeftAt(after, "start")];
-    if (!end && !start) {
-        return "hanging";
-    }
-    const inRightToLeftRun = space.some(({ font }) => font.rightToLeft === true);
-    return end && start ? (inRightToLeftRun ? "room" : "unknown") : inRightToLeftRun ? "unknown" : "hanging";
+    return (end && start) || ((end || start) && space.some(({ font }) => font.rightToLeft === true)) ? "room" : "hanging";
 };
 
 /**
  * A paragraph's indents on a grid that snaps to characters, whose lines start on its cells: the cell an indent of part of
- * one ends in, as Word rounds it up, and a hanging indent's other lines that many more cells in, rounded up too. On a grid
- * of cells of 225.65 twips, a paragraph indented 1.2, 1.5 or 1.7 characters, or 300 twips, starts its lines at the 3rd
- * cell, one with a first line indent of half a character starts its first line at the 2nd and the others at the 1st, and
- * one indented 2 characters and hanging half a character starts its first line at the 3rd and the others at the 4th, past
- * its left indent (scripts/layout-probes/stops2/word-stops-east-asian.ts GR6, word-stops-east-asian2.ts GR14a to GR14e). A
- * right indent of part of a cell leaves the line the cells before it, as the cells that fit do (GR14f). It says why when
- * Word's way with them isn't known: a first line indent of part of a cell beside a left indent of part of one, which may
- * be rounded together or apart, and a line that starts before the margin.
+ * one ends in, as Word rounds it up, each line's on its own. On a grid of cells of 225.65 twips, a paragraph indented 1.2,
+ * 1.5 or 1.7 characters, or 300 twips, starts its lines at the 3rd cell, one with a first line indent of half a character
+ * starts its first line at the 2nd and the others at the 1st, one indented 1.2 characters and its first line half a
+ * character more starts every line at the 3rd, and one indented half a character before the margin starts them at the
+ * 1st (scripts/layout-probes/stops2/word-stops-east-asian.ts GR6, word-stops-east-asian2.ts GR14a to GR14d,
+ * word-stops-east-asian3.ts GR17a, GR17c). With a hanging indent, the first line starts at the cell its indent is rounded
+ * up to and the others that many cells more, rounded up too: indented 2 characters and hanging half a character, the
+ * first line at the 3rd cell and the others at the 4th, past its left indent, and indented half a character and hanging
+ * one, at the 2nd and the 3rd (GR14e, GR17b). A right indent of part of a cell leaves the line the cells before it, as
+ * the cells that fit do (GR14f). It says why when Word's way with them isn't known: a line that starts a character or
+ * more before the margin, by part of one.
  */
 const indentsOnCells = (
     format: ParagraphFormat,
@@ -1435,21 +1435,17 @@ const indentsOnCells = (
     if (cell === undefined || (whole(indentLeft) && whole(firstLineIndent))) {
         return { format };
     }
-    const cells = (length: number): number => (whole(length) ? Math.round(length / cell) : Math.ceil(length / cell)) * cell;
+    const cells = (length: number): number => (whole(length) ? Math.round(length / cell) : Math.ceil(length / cell)) * cell || 0;
     const first = indentLeft + firstLineIndent;
-    if (Math.min(indentLeft, first) < -TOLERANCE) {
-        return { format, unsupported: "an indent of part of a character before the margin on a grid that snaps to characters" };
+    if (Math.min(indentLeft, first) < TOLERANCE - cell) {
+        return {
+            format,
+            unsupported: "an indent of part of a character, a character or more before the margin, on a grid that snaps to characters",
+        };
     }
     if (firstLineIndent < 0) {
         const hanging = cells(-firstLineIndent);
         return { format: { ...format, indentLeft: cells(first) + hanging, firstLineIndent: -hanging }, rounded: true };
-    }
-    if (!whole(indentLeft) && !whole(firstLineIndent)) {
-        return {
-            format,
-            unsupported:
-                "a first line indent of part of a character beside a left indent of part of one on a grid that snaps to characters",
-        };
     }
     return { format: { ...format, indentLeft: cells(indentLeft), firstLineIndent: cells(first) - cells(indentLeft) }, rounded: true };
 };
@@ -1577,13 +1573,7 @@ export const layoutLines = (
     )
         ? "ligatures on a document grid of characters"
         : undefined;
-    const unknownOnGrid =
-        onCells.unsupported ??
-        (onCells.rounded && items.some((item) => item.type === "tab")
-            ? "a tab in a paragraph indented part of a character on a grid that snaps to characters"
-            : undefined) ??
-        spaced?.unsupported ??
-        shapedOnGrid;
+    const unknownOnGrid = onCells.unsupported ?? spaced?.unsupported ?? shapedOnGrid;
     // How tall a line as tall as the paragraph's mark is, measured only where it counts, as a layout stops at a mark in a
     // font the measurer doesn't know
     let markHeight: number | undefined;
@@ -1940,7 +1930,7 @@ export const layoutLines = (
          * Puts a word or picture on the line, or on the next, or breaks it across lines. A word is kerned with the text
          * before it on the line by `kern`, unless it starts the next line
          */
-        const placeWord = (token: Extract<Token, { readonly type: "word" | "box" }>, kern = 0, after = 0, unsureAfter = false): void => {
+        const placeWord = (token: Extract<Token, { readonly type: "word" | "box" }>, kern = 0, after = 0): void => {
             // On a grid that snaps to characters the kerning with the text before is in the cells the word takes, after the
             // other text on the line it is kerned with
             const kernOn = (state: LineState): number => (state.latin === undefined ? 0 : kern);
@@ -1965,21 +1955,7 @@ export const layoutLines = (
             const leadOf = (state: LineState, wrapped = false): number =>
                 roomBetween(state.border, startBorderOf(token)) + (wrapped || snapping ? 0 : kern);
             const boxEnd = endBorderOf(token)?.room ?? 0;
-            const needs = leadOf(line) + tokenWidth + boxEnd + (unsureAfter ? 0 : after);
-            // A word that fits only without the space after it, where whether Word lets that space hang past the end of the
-            // line isn't known
-            if (
-                unsureAfter &&
-                line.position + needs <= endOf(line) + TOLERANCE &&
-                line.position + needs + after > endOf(line) + TOLERANCE
-            ) {
-                line = {
-                    ...line,
-                    unsupported:
-                        line.unsupported ??
-                        "a word beside right-to-left text that fits on its line only without the space after it, which Word hasn't been seen breaking",
-                };
-            }
+            const needs = leadOf(line) + tokenWidth + boxEnd + after;
             const hyphens = token.type === "word" ? (token.hyphens ?? []).filter(({ at }) => at > 0 && at < lengthOf(token.pieces)) : [];
             const skipped = skipRooms(needs, hyphens.length > 0);
             // A justified line Word can squeeze the word onto takes it whole, as it does a word without soft hyphens: at its
@@ -1998,13 +1974,13 @@ export const layoutLines = (
                 }
                 const rest = breakAtHyphen(token, hyphens, kern);
                 if (rest !== undefined) {
-                    placeWord(rest, 0, after, unsureAfter);
+                    placeWord(rest, 0, after);
                     return;
                 }
                 if (line.started && line.tabsOnly !== true) {
                     // No part of it fits with a hyphen: it goes on to the next line, where it may break again
                     line = wrap(line);
-                    placeWord(token, 0, after, unsureAfter);
+                    placeWord(token, 0, after);
                     return;
                 }
                 // Not even its first part fits on a line of its own, or after the tabs that start it: Word breaks it after the
@@ -2451,14 +2427,14 @@ export const layoutLines = (
                 continue;
             }
             // The space after a word at the end of a line, beside right-to-left text in a left-to-right paragraph: taking
-            // room on the line, when it is between right-to-left words in a right-to-left run, or hanging past its end
+            // room on the line, or hanging past its end (see `spaceAtEnd`)
             const [space, nextWord] = token.type === "word" && format.rightToLeft !== true ? nextTwo(tokens, index) : [];
             const spaceAt =
                 token.type === "word" && space?.type === "space" && nextWord?.type === "word"
                     ? spaceAtEnd(token.pieces, space.pieces, nextWord.pieces)
                     : "hanging";
-            const spaceWidth = spaceAt !== "hanging" && space?.type === "space" ? widthOf(space.pieces, measurer) : 0;
-            placeWord(token, kerning[index], spaceWidth, spaceAt === "unknown");
+            const spaceWidth = spaceAt === "room" && space?.type === "space" ? widthOf(space.pieces, measurer) : 0;
+            placeWord(token, kerning[index], spaceWidth);
         }
 
         if (!end) {

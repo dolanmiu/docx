@@ -60,7 +60,7 @@ export type LineBreakRules = {
     readonly lists?: Partial<Record<KinsokuLanguage, KinsokuList>>;
     /**
      * Whether Word's strict rules keep small kana and the prolonged sound mark from starting a line of Japanese too
-     * (`w:strictFirstAndLastChars`). Default is off
+     * (`w:strictFirstAndLastChars`), with Word's list of the other characters in place of the document's own. Default is off
      */
     readonly strict?: boolean;
     /**
@@ -99,11 +99,23 @@ const WORD_LISTS: Readonly<Record<KinsokuLanguage, Required<KinsokuList>>> = {
 };
 // What Word's strict rules add to its list of the characters that can't start a line of Japanese: the small kana and the
 // prolonged sound mark, as its strict list of them (the specification's for `w:strictFirstAndLastChars`) has them, which its
-// normal list lets start a line (word-unicode2.ts S). Its PDF showed small hiragana kept from the start of a line with them
-// (scripts/layout-probes/stops2/word-stops-east-asian2.ts EA4a). The half-width small katakana that list has too, its normal
-// list, unlike the specification's, lets start a line, so whether its strict list keeps them from it isn't known
+// normal list lets start a line (word-unicode2.ts S). Its PDFs showed each of them kept from the start of a line with them,
+// and the small ka and ke of hiragana (ゕ, ゖ), which the list doesn't have, starting one
+// (scripts/layout-probes/stops2/word-stops-east-asian2.ts EA4a, word-stops-east-asian3.ts EA5). The half-width small
+// katakana that list has too, its normal list, unlike the specification's, lets start a line, so whether its strict list
+// keeps them from it isn't known. The rules change nothing in Chinese or Korean, whose lists are as without them (EA5)
 const STRICT_JAPANESE_NO_LINE_START = "ぁぃぅぇぉっゃゅょゎァィゥェォッャュョヮヵヶー";
 /* cspell:enable */
+
+/**
+ * Word's strict list of the characters that can't start or end a line of Japanese, which its strict rules take in place of
+ * the document's own list: ぁ, ー and 」 are kept from the start of a line with them where the document's own list has only
+ * 、 and 。 (scripts/layout-probes/stops2/word-stops-east-asian3.ts EA5L)
+ */
+export const STRICT_JAPANESE_LIST: Required<KinsokuList> = {
+    noLineStart: WORD_LISTS.japanese.noLineStart + STRICT_JAPANESE_NO_LINE_START,
+    noLineEnd: WORD_LISTS.japanese.noLineEnd,
+};
 
 // Chinese, Japanese and Korean characters: Pretext's ranges, with the compatibility forms and enclosed letters and numbers
 // of CJK, and the scripts of Han, kana and Hangul outside them
@@ -160,9 +172,10 @@ type Kinsoku = { readonly noLineStart: ReadonlySet<string>; readonly noLineEnd: 
 const NO_KINSOKU: Kinsoku = { noLineStart: new Set(), noLineEnd: new Set() };
 
 const listOf = (language: KinsokuLanguage, { lists = {}, strict = false }: LineBreakRules): Kinsoku => {
-    const words = WORD_LISTS[language];
-    const wordsStart = strict && language === "japanese" ? words.noLineStart + STRICT_JAPANESE_NO_LINE_START : words.noLineStart;
-    const { noLineStart = wordsStart, noLineEnd = words.noLineEnd } = lists[language] ?? {};
+    // Word's strict rules take their own list of Japanese, in place of the document's
+    const words = strict && language === "japanese" ? STRICT_JAPANESE_LIST : WORD_LISTS[language];
+    const { noLineStart = words.noLineStart, noLineEnd = words.noLineEnd } =
+        strict && language === "japanese" ? {} : (lists[language] ?? {});
     return { noLineStart: new Set(noLineStart), noLineEnd: new Set(noLineEnd) };
 };
 

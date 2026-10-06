@@ -1,6 +1,6 @@
 # The stops batch (lay-stops2)
 
-<!-- cspell:ignore pdftocairo Poppler poppler hhea GPOS -->
+<!-- cspell:ignore pdftocairo Poppler poppler hhea GPOS tatweel tatweels -->
 
 Probe documents for the stops of docx/layout that no Word PDF saved before 2026-10-04 settled, made in one batch from
 docx at `master` a871df8a25 and saved from Word 16 for Mac on 2026-10-04, 2026-10-05 and 2026-10-06 (Save As, PDF,
@@ -44,6 +44,8 @@ committed here are the ones a change to docx/layout has followed, with Word's PD
 | `word-stops-text3.ts`          | RF31e to PB7j                        | RF31e to RF31l: phonetic guides' lines as tall as the guide raised; TA12: a picture or a word after tabs in a row takes the tab on, a word breaks after a list number's tab, centred text ends at the end of the line, stops past the end with a right indent; SH18: the longer part squeezed with twice the room, not distributed, no kerning or ligatures across a soft hyphen; JU5: spaces beside en spaces squeezed; RF24, RF32: shadows and frames of other styles, pictures in borders; RF29: fitted text wider than its line or of two sizes; PB7h to PB7j: a grid's room above footnotes |
 | `word-stops-edges.ts`          | DH2a to DH2d, PB9a to PB9f, HR2, TA9 | DH2a to DH2d: a header's picture against its paragraph or line, at the header's top, and against a column of several, from the margin; the header's lines go round it. PB9a, PB9b, PB9d, PB9e: Normal paragraphs leave out contextual space beside cells and rows, and after a table. HR2: header rows go to the next column, and a heading with them. TA9: a left tab past the line in an indented paragraph                                                                                                                                                                                    |
 | `word-stops-notes2.ts`         | NT2c to NT21, NE4 to NE7             | NT2c to NT21: a footnote's rest before a continuous section shows its footer; a line or row whose footnote can't go with it stays or goes on, the footnote on the next page, those after it continued past its end; in columns, after one that continues; NT16: footnotes in columns of their own; NT18, NT19: numbering; NT20: below the text; NE4 to NE7: endnotes in columns, own marks, at sections' ends, separators                                                                                                                                                                        |
+| `word-stops-east-asian3.ts`    | EA5 to GR15e                         | EA5, EA5L: strict rules keep each small kana and ー from starting a line of Japanese, in place of the document's own list, nothing in Chinese or Korean; EA6a, EA6e: compression leaves justified Japanese and left-aligned Chinese as they are; GR17: indents of part of a cell rounded up line by line; AR3: a space after a right-to-left word takes room beside left-to-right text in a right-to-left run and between right-to-left words in any run; GR15d, GR15e: endnotes after text down the page run down it, and end with their section before a change of direction                   |
+| `word-stops-arabic2.ts`        | AR4                                  | AR4: every pair of the 42 letters, joined as initial and final and as medials, in Arial and Times New Roman, plain and bold, as wide as its forms to 8 thousandths of an em: Word doesn't kern them. Calibri's it kerns by pairs of their glyphs, by as much as 268 thousandths, and with the spaces beside them, which still stops. Read with `word-stops-arabic-kerning.py`, and check the layout's forms by it with `word-stops-arabic-kerning.ts`                                                                                                                                            |
 
 `word-stops-thai-and-compat.ts` writes `word-stops-top-spacing` (ST1 to ST5), whose PDF showed `suppressTopSpacing`
 leaving all but 9.6 points above the text of the first line of a page or column at exact and at-least spacing, and
@@ -144,17 +146,31 @@ borders that meet of which Word draws the wider, or the next cell's over none, a
 that snaps to characters (GR14), the cases around GR3, GR5, GR7, GR8 and GR10 on grids (GR16), which change of grid or
 direction sends endnotes to the end of their own section (GR15), and the strict rules and compression in text in Japanese
 (EA4). Its PDFs, from the final batch, round 25, showed what the table says, and that a change of direction, but not of
-grid, ends endnotes with their own section (GR15b), which isn't followed yet. `word-stops-east-asian3.ts` has what they
-and `word-stops-arabic.ts` left open, for a later batch: each character the strict rules may keep from the start of a
-line, in Japanese, Chinese and Korean, and with the document's own list (EA5), compressed punctuation justified and in
-other fonts and languages (EA6), indents of part of a character Word's PDFs didn't round (GR17), lines that end between
-right-to-left and left-to-right text, in Hebrew and in a right-to-left paragraph (AR3), and endnotes after text that runs
-down the page (GR15d, GR15e). `word-stops-arabic.ts` has the widths of
+grid, ends endnotes with their own section (GR15b), now followed. `word-stops-east-asian3.ts` has what they and
+`word-stops-arabic.ts` left open: each character the strict rules may keep from the start of a line, in Japanese, Chinese
+and Korean, and with the document's own list (EA5, `word-stops-strict2`, `-strict-list`), compressed punctuation justified
+and in other fonts and languages (EA6, `word-stops-compress2`, `-compress-kana2`, whose PDFs are the same but for a byte),
+indents of part of a character Word's PDFs didn't round (GR17, `word-stops-grid-indents2`), lines that end between
+right-to-left and left-to-right text, in Hebrew and in a right-to-left paragraph (AR3, `word-stops-rtl-ends`), and endnotes
+after text that runs down the page (GR15d, GR15e, `word-stops-endnotes-down2`, `-down3`). Their PDFs, saved from Word on
+2026-10-06 (round 26), showed what the table says. EA5's half-width small katakana fitted at the ends of their lines, so
+whether the strict rules keep them from the start of one is still open, and EA6b showed Word fitting more on the lines of
+a distributed paragraph with compression: a full stop or closing bracket at the end of a line took half its width, and a
+line 4 twips too long was squeezed on, which isn't followed. `word-stops-east-asian4.ts` has the cases those leave open,
+for the next batch (EA7, EA8, GR18, GR15f and VL1), with no PDF from Word yet: the half-width small katakana on a line
+they don't fit, the document's own lists beyond the strict list, distributed lines a few twips too long with and without
+compression, in Japanese and Chinese, indents a character or more before the margin, endnotes from a section followed by
+one that runs as it does before one that runs another way, and lines of Latin text down the page, which Word's PDFs put
+278 twips apart in Calibri 11 where across the page they are 268.55 (GR15e, `word-stops-east-asian` VD5), which isn't
+followed either. `word-stops-arabic.ts` has the widths of
 Arabic's letters in each form Word joins them in (AR1), which `word-stops-more-widths` and `word-stops-thai` TH3b, ten of
-each letter in a row, showed joined, and lines of Arabic prose to check them by (AR2). Word kerns Arabic's letters side
-by side, by pairs, in Arial and Times New Roman (as ten joined copies of a letter in `word-stops-more-widths` show) and in
-Calibri, which isn't followed yet: `word-stops-arabic2.ts` writes every pair of the letters, for a later batch
-(`word-stops-arabic-kerning`, AR4). Read Word's PDF of it with `word-stops-arabic.py`, which
+each letter in a row, showed joined, and lines of Arabic prose to check them by (AR2). `word-stops-arabic2.ts` writes
+every pair of the letters, as a word of the two and between tatweels (`word-stops-arabic-kerning`, AR4), whose PDF, from
+round 26, showed Word drawing each as wide as its forms in Arial and Times New Roman: it doesn't kern them, and ten joined
+copies of a letter in `word-stops-more-widths` W are as wide as their glyphs too, read again. Calibri's letters it kerns,
+by pairs of their glyphs, by as much as 268 thousandths of an em, differently in the two contexts, and with the spaces
+beside them, so Calibri's Arabic still stops. Read Word's PDF of it with `word-stops-arabic-kerning.py`, and check the
+layout's forms by it with `word-stops-arabic-kerning.ts`. Read `word-stops-arabic`'s with `word-stops-arabic.py`, which
 reads `word-stops-arabic.json`, and `scripts/generate-arabic-widths.ts` writes `src/text-layout/arabic-widths.ts` from
 what it reads. `word-stops-more-widths.ts` writes
 the same characters as its W in Office's other fonts with `STOPS_FONTS=office` (`word-stops-more-widths-office`), and in

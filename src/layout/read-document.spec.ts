@@ -5443,7 +5443,7 @@ describe("readDocument", () => {
             expect(paragraphOf(across("31", { "w:vertCompress": 1 })).unsupported).to.equal("text across in vertical text");
         });
 
-        it("should read footnotes of text that runs down the page, and stop at its endnotes, which Word ends with their section before text that runs another way (VD6, GR13, GR15b)", () => {
+        it("should read footnotes and endnotes of text that runs down the page, ending endnotes with their section before text that runs another way (VD6, GR13, GR15b, GR15d, GR15e)", () => {
             const noted = (kind: "footnotes" | "endnotes"): DocumentContent =>
                 readWritten({
                     [kind]: { 1: { children: [new Paragraph("Note")] } },
@@ -5464,10 +5464,14 @@ describe("readDocument", () => {
             const footnoted = noted("footnotes");
             expect(footnoted.unsupported).to.equal(undefined);
             expect([...footnoted.footnotes.values()][0][0].unsupported).to.equal(undefined);
-            expect(noted("endnotes").unsupported).to.equal("endnotes after text that runs down the page");
-            // And from text across the page that text down it follows, or down the page that text across it follows
+            // Endnotes after text that runs down the page go at the end of the document, down the page too (GR15d)
+            const endnotedDown = noted("endnotes");
+            expect(endnotedDown.unsupported).to.equal(undefined);
+            expect(endnotedDown.endnotesAfter).to.equal(undefined);
+            // Those from text across the page that text down it follows, or down the page that text across it follows, end
+            // with their own section, whether or not the last section runs as theirs does (GR13, GR15b, GR15e)
             const DOWN = { page: { textDirection: PageTextDirectionType.TOP_TO_BOTTOM_RIGHT_TO_LEFT } };
-            const endnoted = (...properties: readonly ISectionOptions["properties"][]): string | undefined =>
+            const endnoted = (...properties: readonly ISectionOptions["properties"][]): DocumentContent =>
                 readWritten({
                     endnotes: { 1: { children: [new Paragraph("Note")] } },
                     sections: [
@@ -5477,21 +5481,38 @@ describe("readDocument", () => {
                         },
                         ...properties.slice(1).map((more) => ({ properties: more, children: [new Paragraph("More")] })),
                     ],
-                }).unsupported;
-            const STOP = "endnotes from a section followed by one whose text runs another way";
-            expect(endnoted(undefined, DOWN, undefined)).to.equal(STOP);
-            expect(endnoted(DOWN, undefined)).to.equal(STOP);
-            expect(endnoted(DOWN, DOWN)).to.equal("endnotes after text that runs down the page");
-            // But not text down the page before theirs
-            expect(endnoted(DOWN, undefined, undefined)).to.equal(STOP);
+                });
+            /** The sections the endnotes' blocks, their separator's and the note's, go at the end of */
+            const endsOf = (content: DocumentContent): readonly (number | undefined)[] | undefined => {
+                expect(content.unsupported).to.equal(undefined);
+                expect(content.endnotesAfter?.length ?? content.endnotes.length).to.equal(content.endnotes.length);
+                return content.endnotesAfter === undefined ? undefined : [...new Set(content.endnotesAfter)];
+            };
+            expect(endsOf(endnoted(undefined, DOWN, undefined))).to.deep.equal([0]);
+            expect(endsOf(endnoted(DOWN, undefined))).to.deep.equal([0]);
+            expect(endsOf(endnoted(DOWN, undefined, DOWN))).to.deep.equal([0]);
+            expect(endsOf(endnoted(undefined, DOWN, DOWN))).to.deep.equal([0]);
+            // Not after one that runs as it does, which may run on before a change (GR15a, GR15c), or to the end of the document
+            expect(endsOf(endnoted(DOWN, DOWN))).to.equal(undefined);
+            expect(endsOf(endnoted(undefined, undefined))).to.equal(undefined);
+            // Where that section is followed by one that runs another way hasn't been seen
+            expect(endnoted(DOWN, DOWN, undefined).unsupported).to.equal(
+                "endnotes from a section followed by one whose text runs as it does, before one whose text runs another way",
+            );
+            expect(endnoted(undefined, undefined, DOWN, DOWN).unsupported).to.equal(
+                "endnotes from a section followed by one whose text runs as it does, before one whose text runs another way",
+            );
+            // Text down the page before theirs doesn't end them
             expect(
-                readWritten({
-                    endnotes: { 1: { children: [new Paragraph("Note")] } },
-                    sections: [
-                        { properties: DOWN, children: [new Paragraph("First")] },
-                        { children: [new Paragraph({ children: [new TextRun("Text"), new EndnoteReferenceRun(1)] })] },
-                    ],
-                }).unsupported,
+                endsOf(
+                    readWritten({
+                        endnotes: { 1: { children: [new Paragraph("Note")] } },
+                        sections: [
+                            { properties: DOWN, children: [new Paragraph("First")] },
+                            { children: [new Paragraph({ children: [new TextRun("Text"), new EndnoteReferenceRun(1)] })] },
+                        ],
+                    }),
+                ),
             ).to.equal(undefined);
         });
     });
@@ -5564,46 +5585,77 @@ describe("readDocument", () => {
             // cspell:enable
         });
 
-        it("should break Japanese by Word's strict rules, and leave its punctuation compressed as it is, aligned left, and stop at the cases Word hasn't been seen with (EA4)", () => {
-            const inLanguage = (language: string, text = "「測量」は"): object =>
-                p(r(rPr({ "w:lang": { _attr: { "w:eastAsia": language } } }), t(text)));
+        it("should break Japanese by Word's strict rules, with Word's list in place of the document's, leave its punctuation compressed as it is, aligned left or justified, and stop at the cases Word hasn't been seen with (EA4, EA5, EA6)", () => {
+            const inLanguage = (language: string, text = "「測量」は", alignment?: string): object =>
+                p(
+                    ...(alignment === undefined ? [] : [pPr(value("w:jc", alignment))]),
+                    r(rPr({ "w:lang": { _attr: { "w:eastAsia": language } } }), t(text)),
+                );
             const japanese = inLanguage("ja-JP");
             const inNoLanguage = p(r(t("「測量」は")));
             const strict = { "w:strictFirstAndLastChars": {} };
-            // Word's strict rules, which keep small kana from the start of a line (word-stops-east-asian2.ts EA4a)
+            // Word's strict rules, which keep small kana from the start of a line of Japanese (word-stops-east-asian2.ts EA4a),
+            // and change nothing in Chinese or Korean (word-stops-east-asian3.ts EA5)
             const strictly = readWithSettings([japanese], [strict]);
             expect(paragraphOf(strictly).unsupported).to.equal(undefined);
             expect(strictly.breakRules).to.deep.equal({ strict: true });
-            expect(paragraphOf(readWithSettings([inLanguage("zh-CN")], [strict])).unsupported).to.equal(
-                "the strict rules for the characters that can't start a line, in text in Chinese or Korean",
-            );
-            const JAPANESE_STOP =
-                "the strict rules for the characters that can't start a line of Japanese, with the document's own list of them or before half-width small katakana";
+            expect(paragraphOf(readWithSettings([inLanguage("zh-CN")], [strict])).unsupported).to.equal(undefined);
+            expect(paragraphOf(readWithSettings([inLanguage("ko-KR")], [strict])).unsupported).to.equal(undefined);
+            // Whether they keep half-width small katakana from the start of a line hasn't been seen
             // cspell:disable-next-line
-            expect(paragraphOf(readWithSettings([inLanguage("ja-JP", "記録ｧ")], [strict])).unsupported).to.equal(JAPANESE_STOP);
-            const ownList = { "w:noLineBreaksBefore": { _attr: { "w:lang": "ja-JP", "w:val": "、。" } } };
-            const listed = readWithSettings([japanese], [strict, ownList]);
-            expect(paragraphOf(listed).unsupported).to.equal(JAPANESE_STOP);
+            expect(paragraphOf(readWithSettings([inLanguage("ja-JP", "記録ｧ")], [strict])).unsupported).to.equal(
+                "the strict rules for the characters that can't start a line of Japanese, before half-width small katakana",
+            );
+            // Word takes its strict list in place of the document's own list of the characters that can't start a line (EA5L),
+            // but one with characters its list doesn't have, or the document's own list of those that can't end one, hasn't
+            // been seen with them
+            const ownList = (name: string, val: string): object => ({ [name]: { _attr: { "w:lang": "ja-JP", "w:val": val } } });
+            const listed = readWithSettings([japanese], [strict, ownList("w:noLineBreaksBefore", "、。")]);
+            expect(paragraphOf(listed).unsupported).to.equal(undefined);
             expect(listed.breakRules).to.deep.equal({ lists: { japanese: { noLineStart: "、。" } }, strict: true });
-            // Punctuation compressed, and kana, left as it is in Japanese aligned left (EA4b, EA4c)
+            const BEYOND =
+                "the strict rules for the characters that can't start a line of Japanese, with the document's own list of those that can't end one, or of those that can't start one with characters Word's strict list doesn't have";
+            expect(paragraphOf(readWithSettings([japanese], [strict, ownList("w:noLineBreaksBefore", "、。永")])).unsupported).to.equal(
+                BEYOND,
+            );
+            expect(paragraphOf(readWithSettings([japanese], [strict, ownList("w:noLineBreaksAfter", "「")])).unsupported).to.equal(BEYOND);
+            expect(
+                paragraphOf(readWithSettings([inLanguage("zh-CN")], [strict, ownList("w:noLineBreaksAfter", "「")])).unsupported,
+            ).to.equal(undefined);
+            expect(paragraphOf(readWithSettings([japanese], [ownList("w:noLineBreaksAfter", "「")])).unsupported).to.equal(undefined);
+            // Punctuation compressed, and kana, left as it is in Japanese aligned left, centred and justified (EA4b, EA4c, EA6a)
+            // and in Chinese aligned left (EA6e), but not in distributed Japanese, which fits more (EA6b), nor in justified or
+            // distributed Chinese, or in Korean, which haven't been seen
             const compressed = value("w:characterSpacingControl", "compressPunctuationAndJapaneseKana");
             expect(paragraphOf(readWithSettings([japanese], [compressed])).unsupported).to.equal(undefined);
-            const centred = p(pPr(value("w:jc", "center")), r(rPr({ "w:lang": { _attr: { "w:eastAsia": "ja-JP" } } }), t("「測量」は")));
-            expect(paragraphOf(readWithSettings([centred], [compressed])).unsupported).to.equal(undefined);
-            expect(paragraphOf(readWithSettings([inLanguage("ko-KR")], [compressed])).unsupported).to.equal(
-                "punctuation compressed in text in Chinese or Korean",
+            expect(paragraphOf(readWithSettings([inLanguage("ja-JP", "「測量」は", "center")], [compressed])).unsupported).to.equal(
+                undefined,
             );
-            const justified = p(pPr(value("w:jc", "both")), r(rPr({ "w:lang": { _attr: { "w:eastAsia": "ja-JP" } } }), t("「測量」は")));
-            expect(paragraphOf(readWithSettings([justified], [compressed])).unsupported).to.equal(
-                "punctuation compressed in a justified or distributed paragraph of text in Japanese",
+            expect(paragraphOf(readWithSettings([inLanguage("ja-JP", "「測量」は", "both")], [compressed])).unsupported).to.equal(
+                undefined,
+            );
+            expect(paragraphOf(readWithSettings([inLanguage("ja-JP", "「測量」は", "distribute")], [compressed])).unsupported).to.equal(
+                "punctuation compressed in a distributed paragraph of text in Japanese",
+            );
+            expect(paragraphOf(readWithSettings([inLanguage("zh-CN")], [compressed])).unsupported).to.equal(undefined);
+            expect(paragraphOf(readWithSettings([inLanguage("zh-TW", "「測量」は", "both")], [compressed])).unsupported).to.equal(
+                "punctuation compressed in a justified or distributed paragraph of text in Chinese",
+            );
+            expect(paragraphOf(readWithSettings([inLanguage("ko-KR")], [compressed])).unsupported).to.equal(
+                "punctuation compressed in text in Korean",
+            );
+            expect(paragraphOf(readWithSettings([inLanguage("ko-KR", "「測量」は", "both")], [compressed])).unsupported).to.equal(
+                "punctuation compressed in text in Korean",
             );
             // Word lays out Japanese in no language as it does without them (word-stops-east-asian.ts EA1 to EA3)
             const content = readWithSettings([inNoLanguage], [strict, value("w:characterSpacingControl", "compressPunctuation")]);
             expect(content.unsupported).to.equal(undefined);
             expect(paragraphOf(content).unsupported).to.equal(undefined);
-            expect(paragraphOf(readWithSettings([justified], [value("w:characterSpacingControl", "doNotCompress")])).unsupported).to.equal(
-                undefined,
-            );
+            expect(
+                paragraphOf(
+                    readWithSettings([inLanguage("ja-JP", "「測量」は", "both")], [value("w:characterSpacingControl", "doNotCompress")]),
+                ).unsupported,
+            ).to.equal(undefined);
         });
 
         it("should mark a document printed as a booklet folded the other way round, or whose styles Word updates from its template, as unsupported", () => {

@@ -632,13 +632,26 @@ describe("kerning and ligatures", () => {
         expect(comma).to.be.closeTo(-0.68, 0.02);
     });
 
-    it("should say where Word's kerning or ligatures aren't known, so a layout stops there", () => {
-        // Arabic letters side by side, which Word kerns in Arial, Times New Roman and Cambria however the text asks
-        // (stops2/word-stops-more-widths.ts W), but not in Courier New, nor a letter alone
+    it("should measure Arabic's letters in their joined forms as drawn, with ligatures or kerning on, as without them (AR4)", () => {
+        const arial = { font: "Arial", size: 10 } as const;
         // cspell:disable
-        expect(unknownShaping("بلا", { font: "Arial", size: 10 })).to.equal(
-            "Arabic letters side by side, which Word kerns by pairs not yet known",
+        expect(measureTextWidthAsDrawn("بلا كتاب", { ...arial, ligatures: "standardContextual" })).to.equal(
+            measureTextWidth("بلا كتاب", arial),
         );
+        expect(measureTextWidthAsDrawn("بلا", { ...arial, kerning: 1 })).to.equal(measureTextWidth("بلا", arial));
+        expect(measureTextWidthAsDrawn("ab\tبلا", { ...arial, ligatures: "standard" })).to.equal(measureTextWidth("ab\tبلا", arial));
+        // Not Calibri's, whose forms aren't in the tables
+        expect(measureTextWidthAsDrawn("بلا", { font: "Calibri", ligatures: "standard" })).to.equal(
+            measureTextWidth("بلا", { font: "Calibri" }),
+        );
+        // cspell:enable
+    });
+
+    it("should say where Word's kerning or ligatures aren't known, so a layout stops there", () => {
+        // Not Arabic letters side by side, which Word doesn't kern in Arial, Times New Roman and Cambria, nor in Courier New
+        // (stops2/word-stops-arabic2.ts AR4)
+        // cspell:disable
+        expect(unknownShaping("بلا", { font: "Arial", size: 10 })).to.equal(undefined);
         expect(unknownShaping("بلا", { font: "Courier New" })).to.equal(undefined);
         expect(unknownShaping("ب و", { font: "Times New Roman" })).to.equal(undefined);
         expect(unknownShaping("بلا", { font: "Calibri" })).to.equal(undefined);
