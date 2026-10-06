@@ -2149,24 +2149,34 @@ describe("layoutLines on a document grid, as Word lays it out (scripts/layout-pr
             expect(countsOf([mincho(IDEOGRAPH.repeat(80))], { ...GR14, format: { indentRight: 1.5 * cell } })).to.deep.equal([38, 38, 4]);
         });
 
-        it("should stop at indents of part of a cell Word hasn't been seen rounding, and at a tab in a paragraph with one", () => {
+        it("should round a first line indent of part of a cell beside a left indent of part of one, and an indent before the margin, each on its own, and stop at one a cell or more before it (GR17)", () => {
             const cell = WIDTH / 40;
-            const GR14 = { grid: { linePitch: 18, characterPitch: cell } };
-            expect(
-                unsupportedOf([mincho(IDEOGRAPH)], { ...GR14, format: { indentLeft: 1.2 * cell, firstLineIndent: 0.5 * cell } }),
-            ).to.equal("a first line indent of part of a character beside a left indent of part of one on a grid that snaps to characters");
-            expect(unsupportedOf([mincho(IDEOGRAPH)], { ...GR14, format: { indentLeft: 0.5 * cell, firstLineIndent: -cell } })).to.equal(
-                "an indent of part of a character before the margin on a grid that snaps to characters",
-            );
-            expect(unsupportedOf([mincho(IDEOGRAPH)], { ...GR14, format: { indentLeft: -0.5 * cell } })).to.equal(
-                "an indent of part of a character before the margin on a grid that snaps to characters",
-            );
+            const GR17 = { grid: { linePitch: 18, characterPitch: cell } };
+            const startsOf = (format: LineLayoutOptions["format"]): readonly (number | undefined)[] =>
+                linesOf([mincho(IDEOGRAPH.repeat(80))], { ...GR17, format }).map(({ start }) =>
+                    start === undefined ? start : Math.round((start / cell) * 1e6) / 1e6,
+                );
+            // 1.2 characters, and its first line half a character more: every line at the 3rd cell (GR17a)
+            expect(startsOf({ indentLeft: 1.2 * cell, firstLineIndent: 0.5 * cell })).to.deep.equal([2, 2, 2]);
+            expect(startsOf({ indentLeft: 1.2 * cell, firstLineIndent: 0.9 * cell })).to.deep.equal([3, 2, 2]);
+            // Half a character, hanging one: the first line at the 2nd cell, and the others at the 3rd (GR17b)
+            expect(startsOf({ indentLeft: 1.5 * cell, firstLineIndent: -cell })).to.deep.equal([1, 2, 2]);
+            // Half a character before the margin: the 1st cell (GR17c)
+            expect(startsOf({ indentLeft: -0.5 * cell })).to.deep.equal([0, 0]);
+            // A tab in such a paragraph goes to its stop, and the text after it starts at the next cell (GR17d, GR17e)
             expect(
                 unsupportedOf([mincho(IDEOGRAPH), { type: "tab", font: {} }, mincho(IDEOGRAPH)], {
-                    ...GR14,
+                    ...GR17,
                     format: { indentLeft: 0.5 * cell },
                 }),
-            ).to.equal("a tab in a paragraph indented part of a character on a grid that snaps to characters");
+            ).to.equal(undefined);
+            // An indent a character or more before the margin, by part of one, hasn't been seen
+            const BEFORE = "an indent of part of a character, a character or more before the margin, on a grid that snaps to characters";
+            expect(unsupportedOf([mincho(IDEOGRAPH)], { ...GR17, format: { indentLeft: -1.5 * cell } })).to.equal(BEFORE);
+            expect(
+                unsupportedOf([mincho(IDEOGRAPH)], { ...GR17, format: { indentLeft: 0.5 * cell, firstLineIndent: -2 * cell } }),
+            ).to.equal(BEFORE);
+            expect(unsupportedOf([mincho(IDEOGRAPH)], { ...GR17, format: { indentLeft: -cell } })).to.equal(undefined);
         });
 
         it("should start text after a left tab at the next of the grid's cells, and stop at other tabs and text (GR10a, GR16c)", () => {
@@ -2398,9 +2408,6 @@ describe("right-to-left text, as Word lays it out (scripts/layout-probes/stops2/
         layoutLines(items, { width: 21, format });
     const textsOf = (items: readonly InlineItem[], format: ParagraphFormat = {}): readonly string[] =>
         linesOf(items, format).map((line) => line.text);
-    const UNKNOWN =
-        "a word beside right-to-left text that fits on its line only without the space after it, which Word hasn't been seen breaking";
-
     it("should take the space after the last of a line's right-to-left words into the line, in a right-to-left run when a right-to-left word follows it (AR2)", () => {
         // Two words and the space between them, 19.674 points, fit in 21, but not with the space after them
         expect(textsOf([arabic(`${WORD} ${WORD} ${WORD}`)])).to.deep.equal([`${WORD} `, `${WORD} ${WORD}`]);
@@ -2425,13 +2432,24 @@ describe("right-to-left text, as Word lays it out (scripts/layout-probes/stops2/
         expect(starts.map((line) => line.unsupported)).to.deep.equal([undefined, undefined]);
     });
 
-    it("should stop at a word that fits only without the space after it where Word hasn't been seen breaking it", () => {
-        // In a right-to-left run beside left-to-right text, and between right-to-left words in a run that isn't right to left
-        expect(linesOf([arabic(`${WORD} ${WORD} `), arabic("abc", { font: "Arial", size: 10 })])[0].unsupported).to.equal(UNKNOWN);
-        expect(linesOf([arabic(`${WORD} ${WORD} ${WORD}`, { font: "Arial", size: 10 })])[0].unsupported).to.equal(UNKNOWN);
-        // But not where it fits with it too, nor where it doesn't fit without it
-        expect(layoutLines([arabic(`${WORD} ${WORD} abc`)], { width: 30 })[0].unsupported).to.equal(undefined);
-        expect(layoutLines([arabic(`${WORD} ${WORD} abc`)], { width: 18 })[0].unsupported).to.equal(undefined);
+    it("should take the space after the last of a line's right-to-left words into the line beside left-to-right text in a right-to-left run, and between right-to-left words in a run that isn't (AR3)", () => {
+        const plain = { font: "Arial", size: 10 } as const;
+        // Arabic before Latin text, the space in the Arabic's right-to-left run: the second word goes on to the next line (AR3a)
+        expect(textsOf([arabic(`${WORD} ${WORD} `), arabic("a", plain)])).to.deep.equal([`${WORD} `, `${WORD} a`]);
+        // Latin text before Arabic, the space in the Arabic's run: "ab abc", 30.02 points, fits in 31 only without it (AR3b)
+        expect(layoutLines([arabic("ab abc", plain), arabic(` ${WORD}`)], { width: 31 }).map((line) => line.text)).to.deep.equal([
+            "ab ",
+            `abc ${WORD}`,
+        ]);
+        expect(layoutLines([arabic("ab abc ", plain), arabic(WORD)], { width: 31 }).map((line) => line.text)).to.deep.equal([
+            "ab abc ",
+            WORD,
+        ]);
+        // Arabic before Arabic in a run that isn't right to left (AR3e), as in one that is (AR2)
+        expect(textsOf([arabic(`${WORD} ${WORD} ${WORD}`, plain)])).to.deep.equal([`${WORD} `, `${WORD} ${WORD}`]);
+        // Where it fits with it too, or doesn't fit without it, as elsewhere
+        expect(layoutLines([arabic(`${WORD} ${WORD} abc`)], { width: 40 })[0].text).to.equal(`${WORD} ${WORD} abc`);
+        expect(layoutLines([arabic(`${WORD} ${WORD} abc`)], { width: 18 })[0].text).to.equal(`${WORD} `);
     });
     // cspell:enable
 });

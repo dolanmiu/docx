@@ -3,7 +3,9 @@
  * letter's forms as wide as their glyphs in Arial, Times New Roman (which Word draws Cambria's Arabic in) and Courier New,
  * but `word-stops-more-widths.ts` (W) showed ten copies of a letter joined in a word as much as 23 thousandths of an em a
  * letter wider or narrower than their forms in the first two, so Word kerns their letters by pairs, which docx/layout stops
- * at. Calibri's were kerned in AR1 too, an alef before a zero-width non-joiner and alef 34 thousandths narrower.
+ * at. Calibri's were kerned in AR1 too, an alef before a zero-width non-joiner and alef 34 thousandths narrower. Its PDF, saved in round 26, showed Word drawing every pair as wide as its
+ * forms in Arial and Times New Roman, so it doesn't kern them there; Calibri's it kerns by pairs of their glyphs (see the
+ * README).
  *
  * word-stops-arabic-kerning.docx, in Arial, Times New Roman and Calibri, plain and bold, at 10 points, in right-to-left
  * runs:

@@ -74,15 +74,24 @@ describe("findLineBreaks", () => {
         expect(breaksOf("永、永「永", "ja-JP", { kinsoku: false })).to.deep.equal([1, 2, 3, 4]);
     });
 
-    it("should keep small kana and the prolonged sound mark from starting a line of Japanese by Word's strict rules (EA4a)", () => {
+    it("should keep each small kana and the prolonged sound mark from starting a line of Japanese by Word's strict rules, in place of the document's own list (EA4a, EA5, EA5L)", () => {
         expect(breaksOf("記録ぁぃ記ーァ", "ja-JP")).to.deep.equal([1, 2, 3, 4, 5, 6]);
         expect(breaksOf("記録ぁぃ記ーァ", "ja-JP", { strict: true })).to.deep.equal([1, 4]);
-        // Not in Chinese, nor half-width small katakana
+        // Each of the small kana, but not the small ka and ke of hiragana, which Word's list doesn't have
+        // cspell:disable-next-line
+        for (const kana of "ぁぃぅぇぉっゃゅょゎァィゥェォッャュョヮヵヶー") {
+            expect(breaksOf(`記録${kana}`, "ja-JP", { strict: true }), kana).to.deep.equal([1]);
+        }
+        expect(breaksOf("記録ゕゖ", "ja-JP", { strict: true })).to.deep.equal([1, 2, 3]);
+        // Not in Chinese or Korean, nor half-width small katakana
         expect(breaksOf("記録ぁ", "zh-CN", { strict: true })).to.deep.equal([1, 2]);
+        expect(breaksOf("記録ぁ", "ko-KR", { strict: true })).to.deep.equal([1, 2]);
         expect(breaksOf("記録ｧ", "ja-JP", { strict: true })).to.deep.equal([1, 2]);
-        // The document's own list takes their place
-        expect(breaksOf("記録ぁ", "ja-JP", { strict: true, lists: { japanese: { noLineEnd: "" } } })).to.deep.equal([1]);
-        expect(breaksOf("記録ぁ", "ja-JP", { strict: true, lists: { japanese: { noLineStart: "" } } })).to.deep.equal([1, 2]);
+        // Word's strict list takes the place of the document's own, which keeps only 、 and 。 from the start of a line (EA5L)
+        expect(breaksOf("記録ぁー」", "ja-JP", { strict: true, lists: { japanese: { noLineStart: "、。" } } })).to.deep.equal([1]);
+        expect(breaksOf("記録ぁ", "ja-JP", { strict: true, lists: { japanese: { noLineStart: "" } } })).to.deep.equal([1]);
+        expect(breaksOf("記録ぁ「永", "ja-JP", { strict: true, lists: { japanese: { noLineEnd: "" } } })).to.deep.equal([1, 3]);
+        expect(breaksOf("記録ぁ", "zh-CN", { strict: true, lists: { japanese: { noLineStart: "" } } })).to.deep.equal([1, 2]);
     });
 
     it("should take the document's own lists in place of Word's", () => {

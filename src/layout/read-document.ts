@@ -26,6 +26,7 @@ import {
     type ParagraphFormat,
     READING_CONTEXT,
     type RunFormat,
+    STRICT_JAPANESE_LIST,
     TWIPS_PER_POINT,
     type TabStop,
     type TabStopSetting,
@@ -5473,17 +5474,25 @@ const joinedAcrossRuns = (items: readonly LayoutItem[]): boolean => {
 type EastAsianRules = {
     readonly strict: boolean;
     readonly compressed: boolean;
-    /** Whether the document has its own list of the characters that can't start or end a line of Japanese */
-    readonly ownJapaneseList: boolean;
+    /**
+     * Whether the document's own list of the characters that can't start a line of Japanese has characters Word's strict
+     * list doesn't, or it has its own list of those that can't end one
+     */
+    readonly ownJapaneseListBeyondStrict: boolean;
 };
 
 /** The document's settings for text in an East Asian language that Word lays out only in some of it, when it has any */
 const readEastAsianRules = (settings: readonly XmlObject[]): EastAsianRules | undefined => {
     const spacingControl = valueOf(settings, "w:characterSpacingControl");
+    const { japanese } = readKinsokuLists(settings);
     const rules = {
         strict: onOff(settings, "w:strictFirstAndLastChars") === true,
         compressed: spacingControl !== undefined && spacingControl !== "doNotCompress",
-        ownJapaneseList: readKinsokuLists(settings).japanese !== undefined,
+        ownJapaneseListBeyondStrict:
+            japanese !== undefined &&
+            // A list without its own characters that can't end a line has those that can't start one
+            (japanese.noLineEnd !== undefined ||
+                [...japanese.noLineStart!].some((character) => !STRICT_JAPANESE_LIST.noLineStart.includes(character))),
     };
     return rules.strict || rules.compressed ? rules : undefined;
 };
@@ -5498,12 +5507,19 @@ const HALF_WIDTH_SMALL_KANA = /[ｧ-ｯｰ]/u;
  * can't. Word left the lines of Japanese text in no language as they are with them, as it leaves out its rules for the
  * characters that can't start or end a line there (scripts/layout-probes/stops2/word-stops-east-asian.ts EA1 to EA3:
  * small kana, iteration marks and closing brackets started lines, and opening brackets ended them, at 42 ideographs a
- * line). In text in Japanese, its strict rules kept small kana from starting a line: lines of 37 ideographs and kana where
- * 42 fit, ended before the ideograph before them (`word-stops-east-asian2.ts` EA4a). Punctuation compressed, or punctuation
- * and kana, Word left as it is in Japanese text aligned left: lines of 41 ideographs, kana and brackets, as many as without
- * (EA4b, EA4c). Those rules in Chinese and Korean text haven't been seen, nor the strict ones with the document's own list
- * for Japanese, or before the half-width small katakana they may keep from the start of a line, nor compressed punctuation
- * in a justified or distributed line, which may squeeze it to fit more.
+ * line). In text in Japanese, its strict rules kept each small kana and the prolonged sound mark from starting a line:
+ * lines of 41 ideographs where 42 fit, ended before the ideograph before them (`word-stops-east-asian2.ts` EA4a,
+ * `word-stops-east-asian3.ts` EA5), and with the document's own list of the characters that can't start one too, in
+ * place of which Word takes its strict list (EA5L). In Chinese and Korean they changed nothing: small kana and the
+ * prolonged sound mark started lines, as without them (EA5). Whether they keep the half-width small katakana, which
+ * Word's normal list lets start a line, from the start of one hasn't been seen, as EA5's fitted at the ends of their
+ * lines, nor the document's own list of the characters that can't end a line of Japanese with them, or its own list of
+ * those that can't start one with characters the strict list doesn't have. Punctuation compressed, or punctuation and
+ * kana, Word left as it is in Japanese aligned left and justified: lines of 41 ideographs, kana and brackets, as many as
+ * without, as far apart (EA4b, EA4c, EA6a), and in Chinese aligned left (EA6e). In a distributed paragraph of Japanese it
+ * fits more: a full stop or closing bracket at the end of a line takes half its width, and a line 4 twips too long is
+ * squeezed on (EA6b), which isn't followed. Compression in Japanese of other alignments, in justified or distributed
+ * Chinese, and in Korean hasn't been seen.
  */
 const unknownEastAsianRules = (
     rules: EastAsianRules | undefined,
@@ -5516,19 +5532,25 @@ const unknownEastAsianRules = (
         return undefined;
     }
     const japanese = texts.filter((item) => kinsokuLanguageOf(item.language) === "japanese");
-    const otherLanguage = [...languages].some((language) => language !== "japanese");
-    if (rules.strict && (otherLanguage || rules.ownJapaneseList || japanese.some((item) => HALF_WIDTH_SMALL_KANA.test(item.text)))) {
-        return otherLanguage
-            ? "the strict rules for the characters that can't start a line, in text in Chinese or Korean"
-            : "the strict rules for the characters that can't start a line of Japanese, with the document's own list of them or before half-width small katakana";
+    if (rules.strict && japanese.some((item) => HALF_WIDTH_SMALL_KANA.test(item.text))) {
+        return "the strict rules for the characters that can't start a line of Japanese, before half-width small katakana";
+    }
+    if (rules.strict && japanese.length > 0 && rules.ownJapaneseListBeyondStrict) {
+        return "the strict rules for the characters that can't start a line of Japanese, with the document's own list of those that can't end one, or of those that can't start one with characters Word's strict list doesn't have";
+    }
+    if (!rules.compressed) {
+        return undefined;
     }
     const stretched = alignment !== undefined && alignment !== "left" && alignment !== "center" && alignment !== "right";
-    if (rules.compressed && (otherLanguage || stretched)) {
-        return otherLanguage
-            ? "punctuation compressed in text in Chinese or Korean"
-            : "punctuation compressed in a justified or distributed paragraph of text in Japanese";
+    if (languages.has("korean")) {
+        return "punctuation compressed in text in Korean";
     }
-    return undefined;
+    if (stretched && (languages.has("simplifiedChinese") || languages.has("traditionalChinese"))) {
+        return "punctuation compressed in a justified or distributed paragraph of text in Chinese";
+    }
+    return stretched && alignment !== "justified" && japanese.length > 0
+        ? "punctuation compressed in a distributed paragraph of text in Japanese"
+        : undefined;
 };
 
 /**
@@ -5932,9 +5954,6 @@ export const readContent = (writtenBody: XmlObject, writtenParts: DocumentParts,
     // The section of each of the endnotes' blocks' references
     // eslint-disable-next-line functional/prefer-readonly-type
     const endnoteBlockSections: number[] = [];
-    // The section of each endnote's reference
-    // eslint-disable-next-line functional/prefer-readonly-type
-    const endnoteSections: number[] = [];
     const endnoteNumbers = new Map<Block, string>();
     // Each section's properties, which come after its paragraphs, so its notes are numbered as it says as they are read
     const sectionElements = elements.flatMap((element) => {
@@ -6023,8 +6042,6 @@ export const readContent = (writtenBody: XmlObject, writtenParts: DocumentParts,
     /** Keeps a note's blocks, by the marker at its reference, with the number it shows there */
     const keepNote = (kind: NoteKind, marker: string, content: readonly Block[], label: string): void => {
         if (kind === "endnote") {
-            // eslint-disable-next-line functional/immutable-data
-            endnoteSections.push(sections.length);
             // eslint-disable-next-line functional/immutable-data
             endnotes.push(...content);
             // eslint-disable-next-line functional/immutable-data
@@ -6189,24 +6206,41 @@ export const readContent = (writtenBody: XmlObject, writtenParts: DocumentParts,
     // Where the endnotes go: at the end of the document, as Word puts them where the settings don't put them at the end of
     // each section, though its sections do (`word-stops-endnotes.docx` NE2), or, where the settings do, at the end of each
     // section, but those of a section that suppresses its own (`w:noEndnote`), which go at the end of the next that
-    // doesn't, or of the document (stops2/word-stops-notes2.ts NE6)
+    // doesn't, or of the document (stops2/word-stops-notes2.ts NE6). Those of a section followed by one whose text runs
+    // another way, down the page or across it, end with their own section, before it, whether or not a later section runs
+    // as theirs does again, and after text that runs down the page they run down it too (word-stops-east-asian.ts GR13,
+    // word-stops-east-asian2.ts GR15b, word-stops-east-asian3.ts GR15d, GR15e). Sections on other grids don't end them
+    // (GR15a, GR15c). Where those of a section followed by one that runs as it does, before one that runs another way, go
+    // hasn't been seen
     const endnotesAtSectionEnds =
         (readNoteProperties(find(settings, "w:endnotePr")).position ?? NOTE_DEFAULTS.endnote.position) === "sectEnd";
+    /** Whether a section's text runs another way than the one before it */
+    const runsAnotherWay = (section: number): boolean => sections[section].textRunsDown !== sections[section - 1].textRunsDown;
     /**
-     * The section at whose end each endnote's block goes, where the settings put them at the end of each section: its own,
-     * or the next that doesn't suppress its own, found once for each section from the last back, however many in a row do
+     * The section at whose end the endnotes referred to from each section go: where the settings put them at the end of each
+     * section, its own, or the next that doesn't suppress its own, and otherwise its own where the next section's text runs
+     * another way, or the last, found once for each section from the last back, however many in a row do
      */
     const endnoteEnds = (): readonly number[] => {
         const ends = sections.map((_, section) => section);
         for (let section = sections.length - 2; section >= 0; section--) {
-            if (onOff(childrenOf(sectionElements[section]), "w:noEndnote") === true) {
+            if (
+                endnotesAtSectionEnds ? onOff(childrenOf(sectionElements[section]), "w:noEndnote") === true : !runsAnotherWay(section + 1)
+            ) {
                 // eslint-disable-next-line functional/immutable-data
                 ends[section] = ends[section + 1];
             }
         }
-        return endnoteBlockSections.map((section) => ends[section]);
+        return ends;
     };
-    const endnotesAfter = endnotesAtSectionEnds ? endnoteEnds() : [];
+    const endnoteEndsOfSections = endnoteEnds();
+    const endnotesAfter = endnoteBlockSections.map((section) => endnoteEndsOfSections[section]);
+    // Endnotes from a section followed by one that runs as it does, before one that runs another way, go at the end of
+    // neither their own section nor the last, where Word hasn't been seen putting them
+    const endnoteEndsUnsupported =
+        !endnotesAtSectionEnds && endnotesAfter.some((end, index) => end !== endnoteBlockSections[index] && end !== sections.length - 1)
+            ? "endnotes from a section followed by one whose text runs as it does, before one whose text runs another way"
+            : undefined;
 
     /**
      * Why the notes of a kind can't be laid out yet, when Word numbers or places them in a way not yet followed: endnotes
@@ -6225,7 +6259,7 @@ export const readContent = (writtenBody: XmlObject, writtenParts: DocumentParts,
                 : kind === "footnote" &&
                     all.some(({ position }, section) => position === "beneathText" && sections[section].columns.length > 1)
                   ? "footnotes below the text of columns"
-                  : kind === "endnote" && endnotesAtSectionEnds && endnotesAfter.some((section) => onPageBefore(section + 1))
+                  : kind === "endnote" && endnotesAfter.some((section) => onPageBefore(section + 1))
                     ? "endnotes at the end of a section before one that starts on its page"
                     : undefined;
     };
@@ -6246,7 +6280,7 @@ export const readContent = (writtenBody: XmlObject, writtenParts: DocumentParts,
         if (endnotes.length === 0) {
             return { endnotes: [] };
         }
-        if (!endnotesAtSectionEnds) {
+        if (!endnotesAtSectionEnds && endnotesAfter.every((end) => end === sections.length - 1)) {
             return { endnotes: [...readEndnoteSeparator("separator"), ...endnotes] };
         }
         const ends = [...new Set(endnotesAfter)];
@@ -6286,18 +6320,7 @@ export const readContent = (writtenBody: XmlObject, writtenParts: DocumentParts,
                 documentContent.unsupported ??
                 (footnotes.size > 0 ? notesUnsupported("footnote") : undefined) ??
                 (endnotes.length > 0 ? notesUnsupported("endnote") : undefined) ??
-                // Endnotes follow the last section's text, on its grid, after sections on other grids too
-                // (stops2/word-stops-east-asian2.ts GR15a, GR15c). Word ends those of a section followed by one whose text runs
-                // another way, down the page or across it, with their own section, rather than at the end of the document
-                // (word-stops-east-asian.ts GR13, word-stops-east-asian2.ts GR15b), which isn't followed. Where they go
-                // after text that runs down the page hasn't been seen without that
-                (endnoteSections.some((section) =>
-                    sections.slice(section + 1).some(({ textRunsDown }) => textRunsDown !== sections[section].textRunsDown),
-                )
-                    ? "endnotes from a section followed by one whose text runs another way"
-                    : endnoteSections.length > 0 && sections[sections.length - 1].textRunsDown !== undefined
-                      ? "endnotes after text that runs down the page"
-                      : undefined) ??
+                endnoteEndsUnsupported ??
                 (unwrittenNumber ? "notes numbered in a format not yet written" : undefined) ??
                 unseenNumbering,
         }),
