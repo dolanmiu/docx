@@ -163,6 +163,59 @@ describe("Body", () => {
                 expect(propertyNamesOf(elements[0])).to.deep.equal(["w:pStyle", "w:numPr", "w:rPr", "w:sectPr", "w:pPrChange"]);
             });
 
+            it("leaves the paragraph that ends a section as it was, so it can end a section of another body too", () => {
+                const shared = new Paragraph("shared");
+                const other = new Body();
+                for (const target of [body, other]) {
+                    target.addSection({});
+                    target.push(shared);
+                    target.addSection({});
+                    target.push(new Paragraph("second section"));
+                }
+
+                for (const target of [body, other, body]) {
+                    const elements = childrenOf(new Formatter().format(target));
+
+                    expect(elements.map(nameOf)).to.deep.equal(["w:p", "w:p", "w:sectPr"]);
+                    expect(propertyNamesOf(elements[0])).to.deep.equal(["w:sectPr"]);
+                }
+                expect(new Formatter().format(shared)).to.deep.equal(new Formatter().format(new Paragraph("shared")));
+            });
+
+            it("keeps a separate paragraph for the section properties when the paragraph that ends the section is used again later", () => {
+                const repeated = new Paragraph("repeated");
+                body.addSection({});
+                body.push(repeated);
+                body.addSection({});
+                body.push(repeated);
+
+                const elements = formatBody();
+
+                expect(elements.map(nameOf)).to.deep.equal(["w:p", "w:p", "w:p", "w:sectPr"]);
+                expect(propertyNamesOf(elements[0])).to.deep.equal([]);
+                expect(childrenOf(elements[1]).map(nameOf)).to.deep.equal(["w:pPr"]);
+                expect(propertyNamesOf(elements[1])).to.deep.equal(["w:sectPr"]);
+                expect(propertyNamesOf(elements[2])).to.deep.equal([]);
+                expect(countSectionProperties(elements)).to.equal(2);
+            });
+
+            it("keeps a separate paragraph for the section properties when the paragraph that ends the section was used earlier", () => {
+                const repeated = new Paragraph("repeated");
+                body.addSection({});
+                body.push(repeated);
+                body.push(repeated);
+                body.addSection({});
+                body.push(new Paragraph("second section"));
+
+                const elements = formatBody();
+
+                expect(elements.map(nameOf)).to.deep.equal(["w:p", "w:p", "w:p", "w:p", "w:sectPr"]);
+                expect(propertyNamesOf(elements[0])).to.deep.equal([]);
+                expect(propertyNamesOf(elements[1])).to.deep.equal([]);
+                expect(propertyNamesOf(elements[2])).to.deep.equal(["w:sectPr"]);
+                expect(countSectionProperties(elements)).to.equal(2);
+            });
+
             it("writes the same XML when the body is formatted twice", () => {
                 body.addSection({});
                 body.push(new Paragraph("first section"));

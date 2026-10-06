@@ -463,6 +463,18 @@ export class ParagraphProperties extends IgnoreIfEmptyXmlComponent {
     }
 
     /**
+     * Removes the section properties added with {@link addSectionProperties}.
+     *
+     * @param sectionProperties - The properties of the section to remove
+     */
+    public removeSectionProperties(sectionProperties: SectionProperties): void {
+        const index = this.root.indexOf(sectionProperties);
+        if (index !== -1) {
+            this.root.splice(index, 1);
+        }
+    }
+
+    /**
      * Prepares the paragraph properties for XML serialization.
      *
      * This method creates concrete numbering instances for any numbering references
