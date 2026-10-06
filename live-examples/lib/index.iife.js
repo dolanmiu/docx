@@ -9991,7 +9991,8 @@ var docx = (function(exports) {
 		THAI_NUMBERS: "thaiNumbers",
 		THAI_COUNTING: "thaiCounting",
 		BAHT_TEXT: "bahtText",
-		DOLLAR_TEXT: "dollarText"
+		DOLLAR_TEXT: "dollarText",
+		CUSTOM: "custom"
 	};
 	//#endregion
 	//#region src/file/shared/space-type.ts
@@ -22348,6 +22349,168 @@ MAX: 9026 };
 		}
 	});
 	//#endregion
+	//#region src/file/document/body/section-properties/properties/note-properties.ts
+	/**
+	* Where the footnotes of a section are placed.
+	*
+	* ## XSD Schema
+	* ```xml
+	* <xsd:simpleType name="ST_FtnPos">
+	*   <xsd:restriction base="xsd:string">
+	*     <xsd:enumeration value="pageBottom"/>
+	*     <xsd:enumeration value="beneathText"/>
+	*     <xsd:enumeration value="sectEnd"/>
+	*     <xsd:enumeration value="docEnd"/>
+	*   </xsd:restriction>
+	* </xsd:simpleType>
+	* ```
+	*
+	* @publicApi
+	*/
+	var FootnotePosition = {
+		/** At the bottom of each page */
+		PAGE_BOTTOM: "pageBottom",
+		/** Directly below the text on each page */
+		BENEATH_TEXT: "beneathText",
+		/** At the end of the section */
+		SECTION_END: "sectEnd",
+		/** At the end of the document */
+		DOCUMENT_END: "docEnd"
+	};
+	/**
+	* Where the endnotes of a section are placed.
+	*
+	* ## XSD Schema
+	* ```xml
+	* <xsd:simpleType name="ST_EdnPos">
+	*   <xsd:restriction base="xsd:string">
+	*     <xsd:enumeration value="sectEnd"/>
+	*     <xsd:enumeration value="docEnd"/>
+	*   </xsd:restriction>
+	* </xsd:simpleType>
+	* ```
+	*
+	* @publicApi
+	*/
+	var EndnotePosition = {
+		/** At the end of the section */
+		SECTION_END: "sectEnd",
+		/** At the end of the document */
+		DOCUMENT_END: "docEnd"
+	};
+	/**
+	* When the footnote or endnote numbering restarts.
+	*
+	* ## XSD Schema
+	* ```xml
+	* <xsd:simpleType name="ST_RestartNumber">
+	*   <xsd:restriction base="xsd:string">
+	*     <xsd:enumeration value="continuous"/>
+	*     <xsd:enumeration value="eachSect"/>
+	*     <xsd:enumeration value="eachPage"/>
+	*   </xsd:restriction>
+	* </xsd:simpleType>
+	* ```
+	*
+	* @publicApi
+	*/
+	var NoteNumberRestart = {
+		/** Numbering never restarts */
+		CONTINUOUS: "continuous",
+		/** Numbering restarts in each section */
+		EACH_SECTION: "eachSect",
+		/** Numbering restarts on each page */
+		EACH_PAGE: "eachPage"
+	};
+	var createNoteProperties = ({ name, position, numberFormat, start, restart }) => new BuilderElement({
+		name,
+		children: [
+			...position === void 0 ? [] : [new BuilderElement({
+				name: "w:pos",
+				attributes: { val: {
+					key: "w:val",
+					value: position
+				} }
+			})],
+			...numberFormat ? [new BuilderElement({
+				name: "w:numFmt",
+				attributes: {
+					val: {
+						key: "w:val",
+						value: numberFormat.type
+					},
+					format: {
+						key: "w:format",
+						value: numberFormat.format
+					}
+				}
+			})] : [],
+			...start === void 0 ? [] : [new BuilderElement({
+				name: "w:numStart",
+				attributes: { val: {
+					key: "w:val",
+					value: decimalNumber(start)
+				} }
+			})],
+			...restart === void 0 ? [] : [new BuilderElement({
+				name: "w:numRestart",
+				attributes: { val: {
+					key: "w:val",
+					value: restart
+				} }
+			})]
+		]
+	});
+	/**
+	* Creates the footnote properties (footnotePr) of a section.
+	*
+	* ## XSD Schema
+	* ```xml
+	* <xsd:complexType name="CT_FtnProps">
+	*   <xsd:sequence>
+	*     <xsd:element name="pos" type="CT_FtnPos" minOccurs="0"/>
+	*     <xsd:element name="numFmt" type="CT_NumFmt" minOccurs="0"/>
+	*     <xsd:group ref="EG_FtnEdnNumProps" minOccurs="0"/>
+	*   </xsd:sequence>
+	* </xsd:complexType>
+	* ```
+	*
+	* @example
+	* ```typescript
+	* // Footnotes at the end of the section, numbered a, b, c and restarting in each section
+	* createFootnoteProperties({
+	*   position: FootnotePosition.SECTION_END,
+	*   numberFormat: { type: NumberFormat.LOWER_LETTER },
+	*   restart: NoteNumberRestart.EACH_SECTION,
+	* });
+	* ```
+	*/
+	var createFootnoteProperties = (options) => createNoteProperties(_objectSpread2({ name: "w:footnotePr" }, options));
+	/**
+	* Creates the endnote properties (endnotePr) of a section.
+	*
+	* ## XSD Schema
+	* ```xml
+	* <xsd:complexType name="CT_EdnProps">
+	*   <xsd:sequence>
+	*     <xsd:element name="pos" type="CT_EdnPos" minOccurs="0"/>
+	*     <xsd:element name="numFmt" type="CT_NumFmt" minOccurs="0"/>
+	*     <xsd:group ref="EG_FtnEdnNumProps" minOccurs="0"/>
+	*   </xsd:sequence>
+	* </xsd:complexType>
+	* ```
+	*
+	* @example
+	* ```typescript
+	* // Endnotes at the end of the document, numbered 001, 002, 003
+	* createEndnoteProperties({
+	*   position: EndnotePosition.DOCUMENT_END,
+	*   numberFormat: { type: NumberFormat.CUSTOM, format: "001" },
+	* });
+	* ```
+	*/
+	var createEndnoteProperties = (options) => createNoteProperties(_objectSpread2({ name: "w:endnotePr" }, options));
+	//#endregion
 	//#region src/file/document/body/section-properties/properties/page-borders.ts
 	/**
 	* Page borders module for WordprocessingML section properties.
@@ -22938,7 +23101,7 @@ MAX: 9026 };
 	* ```
 	*/
 	var SectionProperties = class SectionProperties extends XmlComponent {
-		constructor({ page: { size: { width = sectionPageSizeDefaults.WIDTH, height = sectionPageSizeDefaults.HEIGHT, orientation = sectionPageSizeDefaults.ORIENTATION, code } = {}, margin: { top = sectionMarginDefaults.TOP, right = sectionMarginDefaults.RIGHT, bottom = sectionMarginDefaults.BOTTOM, left = sectionMarginDefaults.LEFT, header = sectionMarginDefaults.HEADER, footer = sectionMarginDefaults.FOOTER, gutter = sectionMarginDefaults.GUTTER } = {}, pageNumbers = {}, borders, textDirection } = {}, grid: { linePitch = 360, charSpace, type: gridType } = {}, headerWrapperGroup = {}, footerWrapperGroup = {}, lineNumbers, titlePage, verticalAlign, column, type, revision } = {}) {
+		constructor({ page: { size: { width = sectionPageSizeDefaults.WIDTH, height = sectionPageSizeDefaults.HEIGHT, orientation = sectionPageSizeDefaults.ORIENTATION, code } = {}, margin: { top = sectionMarginDefaults.TOP, right = sectionMarginDefaults.RIGHT, bottom = sectionMarginDefaults.BOTTOM, left = sectionMarginDefaults.LEFT, header = sectionMarginDefaults.HEADER, footer = sectionMarginDefaults.FOOTER, gutter = sectionMarginDefaults.GUTTER } = {}, pageNumbers = {}, borders, textDirection } = {}, grid: { linePitch = 360, charSpace, type: gridType } = {}, headerWrapperGroup = {}, footerWrapperGroup = {}, lineNumbers, titlePage, verticalAlign, column, type, footnoteProperties, endnoteProperties, revision } = {}) {
 			super("w:sectPr");
 			_defineProperty(
 				this,
@@ -22961,6 +23124,8 @@ MAX: 9026 };
 			});
 			this.addHeaderFooterGroup(HeaderFooterType.HEADER, headerWrapperGroup);
 			this.addHeaderFooterGroup(HeaderFooterType.FOOTER, footerWrapperGroup);
+			if (footnoteProperties) this.root.push(createFootnoteProperties(footnoteProperties));
+			if (endnoteProperties) this.root.push(createEndnoteProperties(endnoteProperties));
 			if (type) this.root.push(createSectionType(type));
 			this.root.push(createPageSize({
 				width,
@@ -37748,6 +37913,7 @@ while (n === a[++i] && n === a[++i] && n === a[++i] && n === a[++i] && n === a[+
 	exports.EmphasisMarkType = EmphasisMarkType;
 	exports.EmptyElement = EmptyElement;
 	exports.EndnoteIdReference = EndnoteIdReference;
+	exports.EndnotePosition = EndnotePosition;
 	exports.EndnoteReference = EndnoteReference;
 	exports.EndnoteReferenceRun = EndnoteReferenceRun;
 	exports.EndnoteReferenceRunAttributes = EndnoteReferenceRunAttributes;
@@ -37759,6 +37925,7 @@ while (n === a[++i] && n === a[++i] && n === a[++i] && n === a[++i] && n === a[+
 	exports.FootNotes = FootNotes;
 	exports.Footer = Footer;
 	exports.FooterWrapper = FooterWrapper;
+	exports.FootnotePosition = FootnotePosition;
 	exports.FootnoteReference = FootnoteReference;
 	exports.FootnoteReferenceElement = FootnoteReferenceElement;
 	exports.FootnoteReferenceRun = FootnoteReferenceRun;
@@ -37825,6 +37992,7 @@ while (n === a[++i] && n === a[++i] && n === a[++i] && n === a[++i] && n === a[+
 	exports.NextAttributeComponent = NextAttributeComponent;
 	exports.NoBreakHyphen = NoBreakHyphen;
 	exports.NonVisualDrawingProperties = NonVisualDrawingProperties;
+	exports.NoteNumberRestart = NoteNumberRestart;
 	exports.NumberFormat = NumberFormat;
 	exports.NumberProperties = NumberProperties;
 	exports.NumberValueElement = NumberValueElement;
@@ -37939,6 +38107,8 @@ while (n === a[++i] && n === a[++i] && n === a[++i] && n === a[++i] && n === a[+
 	exports.createDocumentGrid = createDocumentGrid;
 	exports.createDotEmphasisMark = createDotEmphasisMark;
 	exports.createEmphasisMark = createEmphasisMark;
+	exports.createEndnoteProperties = createEndnoteProperties;
+	exports.createFootnoteProperties = createFootnoteProperties;
 	exports.createFrameProperties = createFrameProperties;
 	exports.createHeaderFooterReference = createHeaderFooterReference;
 	exports.createHorizontalPosition = createHorizontalPosition;

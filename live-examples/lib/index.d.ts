@@ -1720,6 +1720,57 @@ export declare const createDotEmphasisMark: () => XmlComponent;
 export declare const createEmphasisMark: (emphasisMarkType?: (typeof EmphasisMarkType)[keyof typeof EmphasisMarkType]) => XmlComponent;
 
 /**
+ * Creates the endnote properties (endnotePr) of a section.
+ *
+ * ## XSD Schema
+ * ```xml
+ * <xsd:complexType name="CT_EdnProps">
+ *   <xsd:sequence>
+ *     <xsd:element name="pos" type="CT_EdnPos" minOccurs="0"/>
+ *     <xsd:element name="numFmt" type="CT_NumFmt" minOccurs="0"/>
+ *     <xsd:group ref="EG_FtnEdnNumProps" minOccurs="0"/>
+ *   </xsd:sequence>
+ * </xsd:complexType>
+ * ```
+ *
+ * @example
+ * ```typescript
+ * // Endnotes at the end of the document, numbered 001, 002, 003
+ * createEndnoteProperties({
+ *   position: EndnotePosition.DOCUMENT_END,
+ *   numberFormat: { type: NumberFormat.CUSTOM, format: "001" },
+ * });
+ * ```
+ */
+export declare const createEndnoteProperties: (options: IEndnotePropertiesOptions) => XmlComponent;
+
+/**
+ * Creates the footnote properties (footnotePr) of a section.
+ *
+ * ## XSD Schema
+ * ```xml
+ * <xsd:complexType name="CT_FtnProps">
+ *   <xsd:sequence>
+ *     <xsd:element name="pos" type="CT_FtnPos" minOccurs="0"/>
+ *     <xsd:element name="numFmt" type="CT_NumFmt" minOccurs="0"/>
+ *     <xsd:group ref="EG_FtnEdnNumProps" minOccurs="0"/>
+ *   </xsd:sequence>
+ * </xsd:complexType>
+ * ```
+ *
+ * @example
+ * ```typescript
+ * // Footnotes at the end of the section, numbered a, b, c and restarting in each section
+ * createFootnoteProperties({
+ *   position: FootnotePosition.SECTION_END,
+ *   numberFormat: { type: NumberFormat.LOWER_LETTER },
+ *   restart: NoteNumberRestart.EACH_SECTION,
+ * });
+ * ```
+ */
+export declare const createFootnoteProperties: (options: IFootnotePropertiesOptions) => XmlComponent;
+
+/**
  * Creates a frame properties XML component for paragraph text frames.
  *
  * Frames allow paragraphs to be positioned absolutely on the page with text wrapping.
@@ -3485,6 +3536,28 @@ export declare class EndnoteIdReference extends XmlComponent {
 }
 
 /**
+ * Where the endnotes of a section are placed.
+ *
+ * ## XSD Schema
+ * ```xml
+ * <xsd:simpleType name="ST_EdnPos">
+ *   <xsd:restriction base="xsd:string">
+ *     <xsd:enumeration value="sectEnd"/>
+ *     <xsd:enumeration value="docEnd"/>
+ *   </xsd:restriction>
+ * </xsd:simpleType>
+ * ```
+ *
+ * @publicApi
+ */
+export declare const EndnotePosition: {
+    /** At the end of the section */
+    readonly SECTION_END: "sectEnd";
+    /** At the end of the document */
+    readonly DOCUMENT_END: "docEnd";
+};
+
+/**
  * Represents a reference to an endnote.
  *
  * Used within endnote content to refer back to the endnote marker.
@@ -3957,6 +4030,34 @@ export declare class FooterWrapper implements IViewWrapper {
     get Relationships(): Relationships;
     get Media(): Media;
 }
+
+/**
+ * Where the footnotes of a section are placed.
+ *
+ * ## XSD Schema
+ * ```xml
+ * <xsd:simpleType name="ST_FtnPos">
+ *   <xsd:restriction base="xsd:string">
+ *     <xsd:enumeration value="pageBottom"/>
+ *     <xsd:enumeration value="beneathText"/>
+ *     <xsd:enumeration value="sectEnd"/>
+ *     <xsd:enumeration value="docEnd"/>
+ *   </xsd:restriction>
+ * </xsd:simpleType>
+ * ```
+ *
+ * @publicApi
+ */
+export declare const FootnotePosition: {
+    /** At the bottom of each page */
+    readonly PAGE_BOTTOM: "pageBottom";
+    /** Directly below the text on each page */
+    readonly BENEATH_TEXT: "beneathText";
+    /** At the end of the section */
+    readonly SECTION_END: "sectEnd";
+    /** At the end of the document */
+    readonly DOCUMENT_END: "docEnd";
+};
 
 /**
  * Represents a footnote reference element in WordprocessingML.
@@ -5430,6 +5531,19 @@ export declare type IDrawingOptions = DrawingLinkOptions & {
     readonly effectExtent?: EffectExtentAttributes;
 };
 
+/**
+ * Endnote settings of a section.
+ *
+ * @property position - Where the endnotes are placed
+ * @property numberFormat - Number format of the endnotes
+ * @property start - Number of the first endnote
+ * @property restart - When the numbering restarts
+ */
+export declare type IEndnotePropertiesOptions = INotePropertiesBaseOptions & {
+    /** Where the endnotes are placed */
+    readonly position?: (typeof EndnotePosition)[keyof typeof EndnotePosition];
+};
+
 export declare type IExtendedMediaData = IMediaData | WpsMediaData | WpgMediaData | GraphicMediaData;
 
 /**
@@ -5487,6 +5601,19 @@ export declare type IFontAttributesProperties = {
 declare type IFontOptions = {
     readonly name: string;
     readonly hint?: string;
+};
+
+/**
+ * Footnote settings of a section.
+ *
+ * @property position - Where the footnotes are placed
+ * @property numberFormat - Number format of the footnotes
+ * @property start - Number of the first footnote
+ * @property restart - When the numbering restarts
+ */
+export declare type IFootnotePropertiesOptions = INotePropertiesBaseOptions & {
+    /** Where the footnotes are placed */
+    readonly position?: (typeof FootnotePosition)[keyof typeof FootnotePosition];
 };
 
 /**
@@ -6209,6 +6336,28 @@ declare type INonVisualShapePropertiesOptions = {
 };
 
 /**
+ * Number format of the footnotes or endnotes of a section.
+ *
+ * @property type - Number format (decimal, roman, letter, etc.)
+ * @property format - Pattern used with `NumberFormat.CUSTOM`, such as "001"
+ */
+export declare type INoteNumberFormatOptions = {
+    /** Number format (decimal, roman, letter, etc.) */
+    readonly type: (typeof NumberFormat)[keyof typeof NumberFormat];
+    /** Pattern used with `NumberFormat.CUSTOM`, such as "001" */
+    readonly format?: string;
+};
+
+declare type INotePropertiesBaseOptions = {
+    /** Number format of the notes */
+    readonly numberFormat?: INoteNumberFormatOptions;
+    /** Number of the first note */
+    readonly start?: number;
+    /** When the numbering restarts */
+    readonly restart?: (typeof NoteNumberRestart)[keyof typeof NoteNumberRestart];
+};
+
+/**
  * Supported input data types for document patching.
  *
  * The patcher can accept documents in various formats including buffers,
@@ -6893,6 +7042,8 @@ export declare type ISectionPropertiesChangeOptions = IChangedAttributesProperti
  * @property verticalAlign - Vertical alignment of text on page
  * @property column - Column layout settings
  * @property type - Section break type (next page, continuous, etc.)
+ * @property footnoteProperties - Footnote placement and numbering
+ * @property endnoteProperties - Endnote placement and numbering
  *
  * @see {@link SectionProperties}
  */
@@ -6930,6 +7081,10 @@ export declare type ISectionPropertiesOptionsBase = {
     readonly column?: IColumnsAttributes;
     /** Section break type (next page, continuous, even page, odd page) */
     readonly type?: (typeof SectionType)[keyof typeof SectionType];
+    /** Where the footnotes of the section are placed and how they are numbered */
+    readonly footnoteProperties?: IFootnotePropertiesOptions;
+    /** Where the endnotes of the section are placed and how they are numbered */
+    readonly endnoteProperties?: IEndnotePropertiesOptions;
 };
 
 /**
@@ -9277,6 +9432,31 @@ export declare type NonVisualDrawingPropertiesOptions = DrawingLinkOptions & {
 };
 
 /**
+ * When the footnote or endnote numbering restarts.
+ *
+ * ## XSD Schema
+ * ```xml
+ * <xsd:simpleType name="ST_RestartNumber">
+ *   <xsd:restriction base="xsd:string">
+ *     <xsd:enumeration value="continuous"/>
+ *     <xsd:enumeration value="eachSect"/>
+ *     <xsd:enumeration value="eachPage"/>
+ *   </xsd:restriction>
+ * </xsd:simpleType>
+ * ```
+ *
+ * @publicApi
+ */
+export declare const NoteNumberRestart: {
+    /** Numbering never restarts */
+    readonly CONTINUOUS: "continuous";
+    /** Numbering restarts in each section */
+    readonly EACH_SECTION: "eachSect";
+    /** Numbering restarts on each page */
+    readonly EACH_PAGE: "eachPage";
+};
+
+/**
  * Creates a field/cross reference to a numbered item in the document.
  *
  * The REF field displays the text or page number of a bookmarked paragraph,
@@ -9417,6 +9597,7 @@ export declare const NumberFormat: {
     readonly THAI_COUNTING: "thaiCounting";
     readonly BAHT_TEXT: "bahtText";
     readonly DOLLAR_TEXT: "dollarText";
+    readonly CUSTOM: "custom";
 };
 
 /**
@@ -11368,7 +11549,7 @@ export declare class SectionProperties extends XmlComponent {
      * the width of a single column. Percentage table widths are resolved against it.
      */
     private readonly availableTextWidth;
-    constructor({ page: { size: { width, height, orientation, code, }, margin: { top, right, bottom, left, header, footer, gutter, }, pageNumbers, borders, textDirection, }, grid: { linePitch, charSpace, type: gridType }, headerWrapperGroup, footerWrapperGroup, lineNumbers, titlePage, verticalAlign, column, type, revision, }?: ISectionPropertiesOptions);
+    constructor({ page: { size: { width, height, orientation, code, }, margin: { top, right, bottom, left, header, footer, gutter, }, pageNumbers, borders, textDirection, }, grid: { linePitch, charSpace, type: gridType }, headerWrapperGroup, footerWrapperGroup, lineNumbers, titlePage, verticalAlign, column, type, footnoteProperties, endnoteProperties, revision, }?: ISectionPropertiesOptions);
     /**
      * Width, in twips, available to block-level content (paragraphs and tables) in this section.
      *
