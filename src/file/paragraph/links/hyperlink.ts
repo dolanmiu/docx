@@ -79,7 +79,13 @@ export type IExternalHyperlinkOptions = {
 export class ConcreteHyperlink extends XmlComponent {
     public readonly linkId: string;
 
-    public constructor(children: readonly ParagraphChild[], relationshipId: string, anchor?: string) {
+    /**
+     * @param children - Inline content of the hyperlink
+     * @param relationshipId - Id of the external relationship, without the rId prefix
+     * @param anchor - Bookmark name or external URL fragment
+     * @param external - Keep the relationship id when an external hyperlink also has an anchor
+     */
+    public constructor(children: readonly ParagraphChild[], relationshipId: string, anchor?: string, external: boolean = false) {
         super("w:hyperlink");
 
         this.linkId = relationshipId;
@@ -87,7 +93,7 @@ export class ConcreteHyperlink extends XmlComponent {
         const props: IHyperlinkAttributesProperties = {
             history: 1,
             anchor: anchor ? anchor : undefined,
-            id: !anchor ? `rId${this.linkId}` : undefined,
+            id: !anchor || external ? `rId${this.linkId}` : undefined,
         };
 
         const attributes = new HyperlinkAttributes(props);
@@ -146,6 +152,9 @@ export class InternalHyperlink extends ConcreteHyperlink {
  * External hyperlinks create a relationship to an external resource (URL).
  * The relationship is created during document preparation and the hyperlink
  * is converted to a ConcreteHyperlink with the relationship ID.
+ * URL fragments are written as anchors, preserving any additional # characters.
+ * Word appends the anchor to the relationship target as described in MS-OI29500 §17.16.22:
+ * https://learn.microsoft.com/en-us/openspecs/office_standards/ms-oi29500/df06e423-11a6-4a36-bfb3-82139e531781
  *
  * Reference: http://officeopenxml.com/WPhyperlink.php
  *
@@ -159,6 +168,7 @@ export class InternalHyperlink extends ConcreteHyperlink {
  *   <xsd:group ref="EG_PContent" minOccurs="0" maxOccurs="unbounded"/>
  *   <xsd:attribute ref="r:id"/>
  *   <xsd:attribute name="history" type="s:ST_OnOff" use="optional"/>
+ *   <xsd:attribute name="anchor" type="s:ST_String" use="optional"/>
  * </xsd:complexType>
  * ```
  *

@@ -773,6 +773,50 @@ describe("from-docx", () => {
                 expect(patched.file("word/_rels/styles.xml.rels")).to.equal(null);
             });
 
+            it.each([
+                [PatchType.PARAGRAPH, "document"],
+                [PatchType.PARAGRAPH, "header1"],
+                [PatchType.DOCUMENT, "document"],
+                [PatchType.DOCUMENT, "header1"],
+            ] as const)("should preserve external hyperlink fragments in a %s patch in %s", async (type, part) => {
+                const template = await Packer.toBuffer(
+                    new File({
+                        sections: [
+                            {
+                                children: [new Paragraph(part === "document" ? "{{link}}" : "Body")],
+                                headers: { default: new Header({ children: [new Paragraph(part === "header1" ? "{{link}}" : "Header")] }) },
+                            },
+                        ],
+                    }),
+                );
+                const hyperlink = new ExternalHyperlink({
+                    link: "https://example.com/?a=1&b=2#foo#bar",
+                    children: [new TextRun({ text: "Link", bold: true })],
+                });
+                const patched = await JSZip.loadAsync(
+                    await patchDocument({
+                        data: template,
+                        outputType: "nodebuffer",
+                        patches: {
+                            link:
+                                type === PatchType.PARAGRAPH
+                                    ? { type, children: [hyperlink] }
+                                    : { type, children: [new Paragraph({ children: [hyperlink] })] },
+                        },
+                    }),
+                );
+
+                const xml = await patched.file(`word/${part}.xml`)!.async("text");
+                const [tag] = xml.match(/<w:hyperlink [^>]+>/)!;
+                expect(tag).to.contain('w:anchor="foo#bar"');
+                const [, id] = tag.match(/r:id="([^"]+)"/)!;
+                const relationships = await patched.file(`word/_rels/${part}.xml.rels`)!.async("text");
+                expect(relationships).to.match(
+                    new RegExp(`Id="${id}"[^>]*Target="https://example.com/\\?a=1&amp;b=2" TargetMode="External"`),
+                );
+                expect(xml).to.contain("<w:b/>");
+            });
+
             // https://github.com/dolanmiu/docx/issues/3265
             it("should link to the address, with the link's text formatted as the placeholder is", async () => {
                 vi.spyOn(JSZip, "loadAsync").mockResolvedValue(

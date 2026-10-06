@@ -1,7 +1,12 @@
+import JSZip from "jszip";
 import { beforeEach, describe, expect, it } from "vitest";
 
 import { Formatter } from "@export/formatter";
+import { Packer } from "@export/packer/packer";
+import { File } from "@file/file";
+import { Footer, Header } from "@file/header";
 
+import { Paragraph } from "../paragraph";
 import { TextRun } from "../run";
 import { ConcreteHyperlink, ExternalHyperlink, InternalHyperlink } from "./hyperlink";
 
@@ -79,6 +84,46 @@ describe("ConcreteHyperlink", () => {
 });
 
 describe("ExternalHyperlink", () => {
+    it("should keep complete external fragments and matching relationships when a document is packed again", async () => {
+        const paragraph = (): Paragraph =>
+            new Paragraph({
+                children: [
+                    new ExternalHyperlink({
+                        link: 'https://example.com/?a=1&b=2#foo#bar&"quoted"',
+                        children: [new TextRun("Link")],
+                    }),
+                ],
+            });
+        const document = new File({
+            sections: [
+                {
+                    children: [paragraph()],
+                    headers: { default: new Header({ children: [paragraph()] }) },
+                    footers: { default: new Footer({ children: [paragraph()] }) },
+                },
+            ],
+        });
+
+        for (let pack = 0; pack < 2; pack++) {
+            const zip = await JSZip.loadAsync(await Packer.toBuffer(document));
+            for (const part of ["document", "header1", "footer1"]) {
+                const xml = new DOMParser().parseFromString(await zip.file(`word/${part}.xml`)!.async("text"), "text/xml");
+                const hyperlink = xml.getElementsByTagName("w:hyperlink")[0];
+                expect(hyperlink.getAttribute("w:anchor")).to.equal('foo#bar&"quoted"');
+                const relationships = new DOMParser().parseFromString(
+                    await zip.file(`word/_rels/${part}.xml.rels`)!.async("text"),
+                    "text/xml",
+                );
+                const matches = [...relationships.getElementsByTagName("Relationship")].filter(
+                    (relationship) => relationship.getAttribute("Id") === hyperlink.getAttribute("r:id"),
+                );
+                expect(matches).to.have.length(1);
+                expect(matches[0].getAttribute("Target")).to.equal("https://example.com/?a=1&b=2");
+                expect(matches[0].getAttribute("TargetMode")).to.equal("External");
+            }
+        }
+    });
+
     describe("#constructor()", () => {
         it("should create", () => {
             const externalHyperlink = new ExternalHyperlink({

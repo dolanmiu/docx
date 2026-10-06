@@ -18,6 +18,7 @@ import type { FileChild } from "@file/file-child";
 import { type IMediaData, Media } from "@file/media";
 import { PackageParts } from "@file/package-part/package-part";
 import { Bookmark, ConcreteHyperlink, ExternalHyperlink, type Paragraph, type ParagraphChild } from "@file/paragraph";
+import { externalHyperlinkTarget } from "@file/paragraph/links/external-hyperlink-target";
 import { type RelationshipType, TargetModeType } from "@file/relationships/relationship/relationship";
 import type { IContext } from "@file/xml-components";
 import { encodeUtf8, uniqueId } from "@util/convenience-functions";
@@ -464,13 +465,14 @@ export const patchDocument = async <T extends PatchDocumentOutputType = PatchDoc
                         .map((child) => {
                             // We need to replace external hyperlinks with concrete hyperlinks
                             if (child instanceof ExternalHyperlink) {
-                                const concreteHyperlink = new ConcreteHyperlink(child.options.children, uniqueId());
+                                const { target, anchor } = externalHyperlinkTarget(child.options.link);
+                                const concreteHyperlink = new ConcreteHyperlink(child.options.children, uniqueId(), anchor, true);
                                 // eslint-disable-next-line functional/immutable-data
                                 hyperlinkRelationships.push({
                                     key,
                                     id: concreteHyperlink.linkId,
                                     type: "http://schemas.openxmlformats.org/officeDocument/2006/relationships/hyperlink",
-                                    target: child.options.link,
+                                    target,
                                     targetMode: TargetModeType.EXTERNAL,
                                 });
                                 return concreteHyperlink;

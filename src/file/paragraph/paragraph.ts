@@ -15,6 +15,7 @@ import { TargetModeType } from "../relationships/relationship/relationship";
 import type { DeletedTextRun, InsertedTextRun } from "../track-revision";
 import type { ColumnBreak, PageBreak } from "./formatting/break";
 import { Bookmark, ConcreteHyperlink, ExternalHyperlink, type InternalHyperlink } from "./links";
+import { externalHyperlinkTarget } from "./links/external-hyperlink-target";
 import type { Math } from "./math";
 import { type IParagraphPropertiesOptions, ParagraphProperties } from "./properties";
 import {
@@ -143,11 +144,12 @@ export class Paragraph extends FileChild {
         for (const element of this.root) {
             if (element instanceof ExternalHyperlink) {
                 const index = this.root.indexOf(element);
-                const concreteHyperlink = new ConcreteHyperlink(element.options.children, uniqueId());
+                const { target, anchor } = externalHyperlinkTarget(element.options.link);
+                const concreteHyperlink = new ConcreteHyperlink(element.options.children, uniqueId(), anchor, true);
                 context.viewWrapper.Relationships.addRelationship(
                     concreteHyperlink.linkId,
                     "http://schemas.openxmlformats.org/officeDocument/2006/relationships/hyperlink",
-                    element.options.link,
+                    target,
                     TargetModeType.EXTERNAL,
                 );
                 this.root[index] = concreteHyperlink;
