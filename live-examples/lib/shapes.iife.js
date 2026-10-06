@@ -3414,7 +3414,10 @@ var docxShapes = (function(exports, docx) {
 	/**
 	* The widths of the letters of text Word joins, by the index of each among its characters, in thousandths of an em: each
 	* letter in the form the letters beside it join it in, in the text, as Word joins those of a word, and lam and an alef
-	* after it as a ligature, whose width is lam's, the alef taking none. A letter joins the letter before it when it joins
+	* after it as a ligature, whose width is lam's, the alef taking none. Word doesn't kern the letters side by side in these
+	* fonts: every pair of the 42 letters, joined as initial and final and as medials, in Arial and Times New Roman, plain and
+	* bold, is as wide as its forms to 8 thousandths of an em, and ten copies of a letter joined are as wide as theirs
+	* (scripts/layout-probes/stops2/word-stops-arabic2.ts AR4, word-stops-more-widths.ts W). A letter joins the letter before it when it joins
 	* either way, or only that one, and that letter joins the next too, or is a tatweel, and the letter after it when it joins
 	* both and that letter joins the one before it; marks between them leave them joined.
 	*/
@@ -4618,6 +4621,25 @@ var docxShapes = (function(exports, docx) {
 	};
 	//#endregion
 	//#region src/text-layout/line-break-rules.ts
+	var WORD_LISTS = {
+		japanese: {
+			noLineStart: "!%),.:;?]}¢°’”‰′″℃、。々〉》」』】〕゛゜ゝゞ・ヽヾ！％），．：；？］｝｡｣､･ﾞﾟ￠",
+			noLineEnd: "$([\\{£¥‘“〈《「『【〔＄（［｛｢￡￥"
+		},
+		simplifiedChinese: {
+			noLineStart: "!%),.:;?]}¢°·ˇˉ―‖’”…‰′″›℃∶、。〃〉》」』】〕〗〞︶︺︾﹀﹄﹚﹜﹞！＂％＇），．：；？］｀｜｝～￠",
+			noLineEnd: "$([{£¥·‘“〈《「『【〔〖〝﹙﹛﹝＄（．［｛￡￥"
+		},
+		traditionalChinese: {
+			noLineStart: "!),.:;?]}¢·’”•‥…‧′﹏﹐﹑﹒﹔﹕﹖﹗﹚﹜﹞！），．：；？］｝｜、。〉》」』】〕〞︰︱︳︴︶︸︺︼︾﹀﹂﹄､",
+			noLineEnd: "([{£¥‘“‵〈《「『【〔〝﹙﹛﹝（｛"
+		},
+		korean: {
+			noLineStart: "",
+			noLineEnd: ""
+		}
+	};
+	WORD_LISTS.japanese.noLineStart + "", WORD_LISTS.japanese.noLineEnd;
 	var EAST_ASIAN = new RegExp("[\\u1100-\\u11ff\\u2e80-\\u2fff\\u3000-\\u30ff\\u3130-\\u318f\\u31c0-\\u33ff\\u3400-\\u4dbf\\u4e00-\\u9fff\\ua960-\\ua97f\\uac00-\\ud7ff\\uf900-\\ufaff\\ufe30-\\ufe4f\\uff00-\\uffef\\p{Script=Han}\\p{Script=Hiragana}\\p{Script=Katakana}\\p{Script=Hangul}]", "u");
 	new RegExp("\\p{Script=Hangul}", "u");
 	/** Whether a character is Chinese, Japanese or Korean, or East Asian punctuation, which Word draws in a run's East Asian font */
