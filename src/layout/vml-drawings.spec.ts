@@ -84,6 +84,20 @@ describe("vmlShapeOf", () => {
             ["width", "72pt"],
             ["height", "36pt"],
         ]);
+        // A shape of a type has the type's attributes where it doesn't give its own, as Word's type for pictures gives them no
+        // outline (`word-stops-vml-pictures2.docx` VM30a to VM30h), and not another type's
+        const typed = vmlShapeOf([
+            { "v:shapetype": [{ _attr: { id: "_x0000_t75", stroked: "f", strokeweight: "2pt" } }] },
+            { "v:shapetype": [{ _attr: { id: "_x0000_t1", filled: "f" } }] },
+            shape("width:72pt;height:36pt", [], "v:shape", { type: "#_x0000_t75", strokeweight: "3pt" }),
+        ]);
+        expect(typeof typed === "object" && typed.attributes).to.deep.equal({
+            stroked: "f",
+            strokeweight: "3pt",
+            style: "width:72pt;height:36pt",
+            type: "#_x0000_t75",
+        });
+        expect(shapeOf("width:1pt").attributes).to.deep.equal({ style: "width:1pt" });
     });
 
     it("should read a text box's style and content", () => {

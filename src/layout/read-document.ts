@@ -69,6 +69,7 @@ import {
 import { type DataStores, withBoundTextWritten } from "./bound-controls";
 import { isVerticalWidthKnown, verticalLineOf } from "./column-widths";
 import { type EquationBox, type LimitPlaces, layOutEquations } from "./equations";
+import type { PictureSizes } from "./imported-documents";
 import {
     type FieldCapitals,
     type FieldFormat,
@@ -742,6 +743,11 @@ type Reader = {
      * those it is in, the outermost first
      */
     readonly divisions?: ReadonlyMap<string, readonly (readonly XmlObject[])[]>;
+    /**
+     * The sizes of the images the part being read refers to, by the ids of its relationships to them, when the document
+     * is a .docx whose files are read (see `read-docx.ts`)
+     */
+    readonly pictures?: PictureSizes;
 };
 
 // Word's defaults for a section that doesn't give its page: Letter, with inch margins
@@ -1134,11 +1140,50 @@ const readDrawing = (element: XmlObject, font: TextFont, reader: Reader): readon
 const OLDER_VML = "a VML drawing other than a text box in the line, in a document in compatibility mode 12 or 11";
 // A VML shape with neither a width nor a height is 50 points square (`word-stops-vml-shapes.docx` VM29d)
 const DEFAULT_VML_SIZE = 50;
-// Word draws a VML picture at a size other than its own: one of 72 by 36 points, 36 by 72 or 100 by 100 as 33 points
-// square, and one of 20 by 20 at 20 (`word-vml.docx` VM8, `word-stops-vml-pictures.docx` VM20a to VM20d, VM20f), by no
-// rule found. A picture that is an object's (`o:ole`), and an embedded object (`w:object`), it draws at the size given
-// (`word-stops-vml-objects.docx` VM20e, VM21a, VM21b)
-const VML_PICTURE = "a VML picture";
+// Word draws a VML picture (`v:imagedata`) at its shape's size: pictures of 100 by 50 pixels in shapes of 20 to 150 points
+// (`word-stops-vml-pictures2.docx` VM30b to VM30h, as Word writes them and with the first batch's shape type). But it drew
+// a picture of one pixel 33 points square in shapes of 72 by 36 points, 36 by 72 and 100 by 100, cropped or not, and 20 by
+// 20 in one of 20 (`word-vml.docx` VM8, `word-stops-vml-pictures.docx` VM20a to VM20d, VM20f, VM30a): 33 points a pixel
+// at most, which a picture of one pixel is drawn at, and a picture of more pixels drawn past it hasn't been seen, nor one
+// of a resolution of its own, which Word may take its size by. A picture that is an object's (`o:ole`), and an embedded
+// object (`w:object`), it draws at the size given (`word-stops-vml-objects.docx` VM20e, VM21a, VM21b). A picture placed
+// on the page that text flows around, and one with no size of its own, haven't been seen
+const POINTS_PER_PIXEL = 33;
+const VML_PICTURE_SCALED = "a VML picture drawn past 33 points a pixel of its image";
+const VML_PICTURE_MISSING = "a VML picture whose image isn't a part of the document";
+const VML_PICTURE_FORMAT = "a VML picture whose image isn't a PNG, JPEG, GIF or BMP";
+const VML_PICTURE_FLOATING = "a VML picture placed on the page that text flows around";
+const VML_PICTURE_UNSIZED = "a VML picture with no size of its own";
+// The resolution Word takes an image to have when its file gives none, in dots to the inch
+const DEFAULT_IMAGE_DENSITY = 96;
+
+/**
+ * The size a VML picture is drawn at: its shape's, or 33 points across or down at most for a picture of one pixel, as
+ * Word drew its pictures (see {@link POINTS_PER_PIXEL}). Or why it isn't known: an image that isn't a part of the document,
+ * or in a format whose size isn't read, or a picture of more pixels, or of a resolution of its own, drawn past 33 points
+ * a pixel
+ */
+const pictureSizeOf = (
+    imagedata: unknown,
+    width: number,
+    height: number,
+    reader: Reader,
+): { readonly width: number; readonly height: number } | string => {
+    const id = attributesOf(imagedata)["r:id"];
+    const image = id === undefined ? undefined : reader.pictures?.get(String(id));
+    if (image === undefined) {
+        return id !== undefined && reader.pictures?.has(String(id)) ? VML_PICTURE_FORMAT : VML_PICTURE_MISSING;
+    }
+    const drawn = (points: number, pixels: number): number | string =>
+        points <= pixels * POINTS_PER_PIXEL
+            ? points
+            : pixels === 1 && Math.round(image.density ?? DEFAULT_IMAGE_DENSITY) === DEFAULT_IMAGE_DENSITY
+              ? POINTS_PER_PIXEL
+              : VML_PICTURE_SCALED;
+    const across = drawn(width, image.width);
+    const down = drawn(height, image.height);
+    return typeof across === "string" ? across : typeof down === "string" ? down : { width: across, height: down };
+};
 
 /** Whether the document is in Word 2007's or 2003's compatibility mode, where Word lays out VML drawings otherwise */
 const olderVml = ({ compatibilityMode }: Reader): boolean => compatibilityMode !== undefined && compatibilityMode < WORD_2010_MODE;
@@ -1152,20 +1197,25 @@ const olderVml = ({ compatibilityMode }: Reader): boolean => compatibilityMode !
  * DrawingML one is (VM9 to VM11, VM15, VM24a to VM24c), and one with no wrapping is in front of the text or behind it, and
  * takes no room (VM6), in a header or footer too, as docx's watermarks are. One in a header or footer that text flows
  * around is one the body's text goes round (VM13), as a DrawingML one is, and one in the line of a header or footer takes
- * the room it takes in the body (VM22a to VM22c). It says why where Word's way with it isn't known: a picture, which Word
- * drew at a size other than its own (VM8, VM20), one in the line of a text box, which Word wouldn't open, and a group with a
- * shape with an outline, or that text flows around
+ * the room it takes in the body (VM22a to VM22c). A picture in the line is a box of its shape's size, but for one of a
+ * pixel, which is 33 points at most (VM8, VM20, VM30; see {@link pictureSizeOf}). It says why where Word's way with it
+ * isn't known: a picture placed on the page that text flows around, one in the line of a text box, which Word wouldn't
+ * open, and a group with a shape with an outline, or that text flows around
  */
 const readVml = (pict: unknown, font: TextFont, reader: Reader): readonly LayoutItem[] | string => {
     const shape = vmlShapeOf(pict);
     if (shape === undefined || typeof shape === "string") {
         return shape ?? [];
     }
-    const { style, element } = shape;
+    const { style, element, attributes } = shape;
     const name = nameOf(element);
     const children = childrenOf(element[name]);
-    const attributes = attributesOf(element[name]);
+    const imagedata = find(children, "v:imagedata");
+    const picture = imagedata !== undefined && attributes["o:ole"] === undefined;
     const given = { width: vmlLength(style.get("width")), height: vmlLength(style.get("height")) };
+    if (picture && given.width === undefined && given.height === undefined) {
+        return VML_PICTURE_UNSIZED;
+    }
     const { width, height } =
         given.width === undefined && given.height === undefined ? { width: DEFAULT_VML_SIZE, height: DEFAULT_VML_SIZE } : given;
     const unsized = (): string =>
@@ -1183,7 +1233,6 @@ const readVml = (pict: unknown, font: TextFont, reader: Reader): readonly Layout
     if (typeof outline === "string") {
         return outline;
     }
-    const picture = find(children, "v:imagedata") !== undefined && attributes["o:ole"] === undefined;
     if (style.get("position") === "absolute") {
         const wrap = find(children, "w10:wrap");
         if (wrap === undefined || attributesOf(wrap).type === "none") {
@@ -1196,7 +1245,7 @@ const readVml = (pict: unknown, font: TextFont, reader: Reader): readonly Layout
               : group
                 ? "a VML group of shapes that text flows around"
                 : picture
-                  ? VML_PICTURE
+                  ? VML_PICTURE_FLOATING
                   : typeof width !== "number" || typeof height !== "number"
                     ? unsized()
                     : undefined;
@@ -1223,14 +1272,12 @@ const readVml = (pict: unknown, font: TextFont, reader: Reader): readonly Layout
     if (shape.text !== undefined) {
         return readTextBox(shape, width, height, outline, font, reader);
     }
-    if (picture) {
-        return sized(VML_PICTURE);
-    }
     if (typeof width !== "number" || typeof height !== "number") {
         return unsized();
     }
     const room = outline.drawn ? outline.weight : 0;
-    return [{ type: "box", width: width + room, height: height + room, font }];
+    const drawn = picture ? pictureSizeOf(imagedata, width, height, reader) : { width, height };
+    return typeof drawn === "string" ? sized(drawn) : [{ type: "box", width: drawn.width + room, height: drawn.height + room, font }];
 };
 
 // The room between a text box's edges and its text when it doesn't say (`v:textbox`'s inset): 0.1 inch left and right,
@@ -5506,6 +5553,13 @@ export type DocumentParts = {
     readonly fonts?: readonly FontFace[];
     /** The stores of data its content controls may be bound to: its custom XML and its properties */
     readonly dataStores?: DataStores;
+    /** The sizes of the images its parts refer to, those of a .docx read from their files */
+    readonly pictures?: {
+        readonly body?: PictureSizes;
+        readonly headersAndFooters?: ReadonlyMap<string, PictureSizes>;
+        readonly footnotes?: PictureSizes;
+        readonly endnotes?: PictureSizes;
+    };
 };
 
 /**
@@ -5647,7 +5701,7 @@ export const readContent = (writtenBody: XmlObject, writtenParts: DocumentParts,
     );
     const eastAsianRules = readEastAsianRules(settings);
     const divisions = new Map(divisionsIn(childrenOf(find(childrenOf(parts.webSettings?.["w:webSettings"]), "w:divs"))));
-    const readerOf = (inHeader: boolean): Reader => ({
+    const readerOf = (inHeader: boolean, pictures = parts.pictures?.body): Reader => ({
         styles,
         numbering,
         listIds,
@@ -5664,6 +5718,7 @@ export const readContent = (writtenBody: XmlObject, writtenParts: DocumentParts,
         ...(feLayout ? { feLayout } : {}),
         ...(openTypeFeatures ? { openTypeFeatures } : {}),
         ...(divisions.size > 0 ? { divisions } : {}),
+        ...(pictures === undefined ? {} : { pictures }),
     });
     const elements = unwrap(joinRemovedMarks(contentOf(body), styles, { nested: false, showDeleted: false, part: "body" }), guess);
 
@@ -5673,7 +5728,7 @@ export const readContent = (writtenBody: XmlObject, writtenParts: DocumentParts,
         if (!headersAndFooters.has(id)) {
             const content = parts.headersAndFooters.get(id);
             // eslint-disable-next-line functional/immutable-data
-            headersAndFooters.set(id, content && readBlocks(content, readerOf(true)));
+            headersAndFooters.set(id, content && readBlocks(content, readerOf(true, parts.pictures?.headersAndFooters?.get(id))));
         }
         return headersAndFooters.get(id);
     };
@@ -5728,7 +5783,7 @@ export const readContent = (writtenBody: XmlObject, writtenParts: DocumentParts,
         const grid = separator ? undefined : gridOf(section);
         const down = !separator && downOf(childrenOf(sectionElements[section])) !== undefined;
         const readerOfNote: Reader = {
-            ...readerOf(false),
+            ...readerOf(false, parts.pictures?.[`${kind}s`]),
             inNote: true,
             ...(kind === "endnote" ? { inEndnote: true } : {}),
             ...(separator ? {} : { noteNumber: shows }),

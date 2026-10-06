@@ -31,7 +31,8 @@
  * - word-stops-vml-nested: VM22d, a text box in a text box
  * - word-stops-vml-note: VM26a, a footnote in a text box
  * - word-stops-vml-shape-type: VM29e, a w:pict with only a shape type
- * - word-stops-vml-pictures2: VM30a to VM30h, for the next batch: the pictures as Word writes them
+ * - word-stops-vml-pictures2: VM30a to VM30h, the pictures as Word writes them (round 26)
+ * - word-stops-vml-pictures3: VM31a to VM31h, for the next batch: the pictures round 26 left open
  *
  * VM20a to VM20f: a VML picture (v:imagedata) in the line of 72 by 36 points (a, VM8 again), 36 by 72 (b), 100 by 100
  *   (c), 20 by 20 (d), 72 by 36 with o:ole (e), and with cropping (f)
@@ -57,6 +58,12 @@
  *   o:spid: the pixel in 72 by 36 (a); a PNG of 100 by 50 pixels in 72 by 36 (b), 36 by 72 (c), 20 by 20 (d), 100 by 100
  *   (e) and 150 by 75 (h), as Word writes it (g, with visibility:visible and mso-wrap-style:square); and the PNG of 100
  *   by 50 in 72 by 36 with the shape type without formulas of the first batch (f)
+ * VM31a to VM31h: Word's PDF of word-stops-vml-pictures2 drew the pictures of 100 by 50 pixels at their shapes' sizes, and
+ *   the pixel 33 points square again, so a picture is drawn at its shape's size, 33 points a pixel at most, taken for a
+ *   picture of one pixel. These are what that leaves open: a picture of 100 by 50 placed on the page with square wrapping
+ *   (a); one of 2 by 2 pixels in 100 by 100 (b, past 33 points a pixel) and in 60 by 60 (c); the pixel in 72 by 36 with a
+ *   resolution of 300 dots to the inch (d) and of 96 (e); one of 100 by 50 with an outline of 3 points (f); one with no
+ *   size of its own (g); and one of 4 by 4 pixels in 100 by 100 (h, 25 points a pixel)
  *
  * Usage: npm run run-ts -- scripts/layout-probes/stops2/word-stops-vml.ts [folder]
  */
@@ -266,8 +273,8 @@ const PICTURES2: readonly Case[] = [
     ["VM30h", () => wordPicture("width:150pt;height:75pt", "rIdStopsWide")],
 ];
 
-/** A grey PNG of a size, 8 bits a channel, for a picture of more than one pixel */
-const greyPng = (width: number, height: number): Buffer => {
+/** A grey PNG of a size, 8 bits a channel, for a picture of more than one pixel, with a resolution in dots to the inch if given */
+const greyPng = (width: number, height: number, density?: number): Buffer => {
     const table = Array.from(
         { length: 256 },
         (_, n) => Array.from({ length: 8 }).reduce<number>((c) => (c & 1 ? 0xedb88320 ^ (c >>> 1) : c >>> 1), n) >>> 0,
@@ -288,9 +295,15 @@ const greyPng = (width: number, height: number): Buffer => {
     header[9] = 2;
     // Each row filtered with 0, then grey
     const rows = Buffer.concat(Array.from({ length: height }, () => Buffer.concat([Buffer.from([0]), Buffer.alloc(width * 3, 0x80)])));
+    // The resolution in pixels to the metre, in a pHYs chunk
+    const physical = Buffer.alloc(9);
+    physical.writeUInt32BE(Math.round((density ?? 0) / 0.0254), 0);
+    physical.writeUInt32BE(Math.round((density ?? 0) / 0.0254), 4);
+    physical[8] = 1;
     return Buffer.concat([
         Buffer.from([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a]),
         chunk("IHDR", header),
+        ...(density === undefined ? [] : [chunk("pHYs", physical)]),
         chunk("IDAT", deflateSync(rows)),
         chunk("IEND", Buffer.alloc(0)),
     ]);
@@ -299,6 +312,39 @@ await proseDocument("word-stops-vml-pictures2", PICTURES2, {
     files: { "word/media/stops-wide.png": greyPng(100, 50) },
     injections: [
         relationship("rIdStopsWide", "http://schemas.openxmlformats.org/officeDocument/2006/relationships/image", "media/stops-wide.png"),
+    ],
+});
+
+/** A picture as Word writes one, with attributes of the shape's own and children after its image */
+const wordPictureWith = (style: string, image: string, attributes: string, children = ""): string =>
+    wordPicture(style, image)
+        .replace(` style="${style}"`, ` style="${style}" ${attributes}`)
+        .replace("</v:shape>", `${children}</v:shape>`);
+const PICTURES3: readonly Case[] = [
+    ["VM31a", () => wordPictureWith(PLACED(""), "rIdStopsWide", "", wrap("square"))],
+    ["VM31b", () => wordPicture("width:100pt;height:100pt", "rIdStopsTiny")],
+    ["VM31c", () => wordPicture("width:60pt;height:60pt", "rIdStopsTiny")],
+    ["VM31d", () => wordPicture("width:72pt;height:36pt", "rIdStopsDense")],
+    ["VM31e", () => wordPicture("width:72pt;height:36pt", "rIdStopsScreen")],
+    ["VM31f", () => wordPictureWith("width:72pt;height:36pt", "rIdStopsWide", 'stroked="t" strokeweight="3pt"')],
+    ["VM31g", () => wordPicture("", "rIdStopsWide")],
+    ["VM31h", () => wordPicture("width:100pt;height:100pt", "rIdStopsFour")],
+];
+const IMAGE_TYPE = "http://schemas.openxmlformats.org/officeDocument/2006/relationships/image";
+await proseDocument("word-stops-vml-pictures3", PICTURES3, {
+    files: {
+        "word/media/stops-wide.png": greyPng(100, 50),
+        "word/media/stops-tiny.png": greyPng(2, 2),
+        "word/media/stops-dense.png": greyPng(1, 1, 300),
+        "word/media/stops-screen.png": greyPng(1, 1, 96),
+        "word/media/stops-four.png": greyPng(4, 4),
+    },
+    injections: [
+        relationship("rIdStopsWide", IMAGE_TYPE, "media/stops-wide.png"),
+        relationship("rIdStopsTiny", IMAGE_TYPE, "media/stops-tiny.png"),
+        relationship("rIdStopsDense", IMAGE_TYPE, "media/stops-dense.png"),
+        relationship("rIdStopsScreen", IMAGE_TYPE, "media/stops-screen.png"),
+        relationship("rIdStopsFour", IMAGE_TYPE, "media/stops-four.png"),
     ],
 });
 

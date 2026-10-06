@@ -9,7 +9,8 @@ import type { Element } from "xml-js";
 
 import { type XmlObject, attributesOf, childrenOf, find, readTextStyles, readThemeFonts, stringOf, withoutUndefined } from "../text-layout";
 import type { DataStores } from "./bound-controls";
-import { type DocxPackage, type DocxParts, type ImportedPart, type NotesPart, withImports } from "./imported-documents";
+import { imageSizeOf } from "./image-sizes";
+import { type DocxPackage, type DocxParts, type ImportedPart, type NotesPart, type PictureSizes, withImports } from "./imported-documents";
 import { type DocumentContent, type DocumentParts, type EmbeddedFont, type ReadOptions, facesOf, readContent } from "./read-document";
 
 /** A relationship of a part to another part of the package */
@@ -175,16 +176,30 @@ const readParts = (docx: DocxPackage): DocxParts => {
                     ] as const;
                 }),
         );
+    /** The sizes of the images a part refers to, by the ids of its relationships to them, read from their files */
+    const picturesOf = (path: string): PictureSizes =>
+        new Map(
+            relationshipsOf(parts, path)
+                .filter(({ type }) => type === "image")
+                .flatMap(({ id, path: target }) => {
+                    const data = binaryParts.get(target);
+                    return data === undefined ? [] : [[id, imageSizeOf(data)] as const];
+                }),
+        );
     const fontTable = pathOf("fontTable");
     const headersAndFooters = relationships.filter(({ type }) => type === "header" || type === "footer");
     const document = rootOf(parts.get(documentPath));
-    const notes = (type: string): Pick<NotesPart, "notes" | "imports"> | undefined => {
+    const notes = (type: string): NotesPart | undefined => {
         const path = pathOf(type);
         const root = path === undefined ? undefined : rootOf(parts.get(path));
-        return root && path !== undefined ? { notes: root, imports: importsOf(path) } : undefined;
+        return root && path !== undefined ? { notes: root, imports: importsOf(path), pictures: picturesOf(path) } : undefined;
     };
     return withoutUndefined({
-        body: { content: childrenOf(find(childrenOf(document && contentOf(document)), "w:body")), imports: importsOf(documentPath) },
+        body: {
+            content: childrenOf(find(childrenOf(document && contentOf(document)), "w:body")),
+            imports: importsOf(documentPath),
+            pictures: picturesOf(documentPath),
+        },
         styles: partOf("styles"),
         theme: partOf("theme"),
         numbering: partOf("numbering"),
@@ -193,7 +208,7 @@ const readParts = (docx: DocxPackage): DocxParts => {
         headersAndFooters: new Map(
             headersAndFooters.flatMap(({ id, path }) => {
                 const part = rootOf(parts.get(path));
-                return part ? [[id, { content: contentOf(part), imports: importsOf(path) }] as const] : [];
+                return part ? [[id, { content: contentOf(part), imports: importsOf(path), pictures: picturesOf(path) }] as const] : [];
             }),
         ),
         footnotes: notes("footnotes"),
@@ -259,6 +274,12 @@ export const readDocx = (
         endnotes: read.endnotes?.notes,
         fonts: read.fonts,
         dataStores: dataStoresOf(parts, documentPath),
+        pictures: withoutUndefined({
+            body: read.body.pictures,
+            headersAndFooters: new Map([...read.headersAndFooters].map(([id, { pictures }]) => [id, pictures])),
+            footnotes: read.footnotes?.pictures,
+            endnotes: read.endnotes?.pictures,
+        }),
     };
     return readContent({ "w:body": read.body.content }, documentParts, options);
 };

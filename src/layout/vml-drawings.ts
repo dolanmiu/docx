@@ -98,6 +98,8 @@ export const groupOutlined = (group: XmlObject): boolean =>
 export type VmlShape = {
     /** The shape's element, such as `v:shape` or `v:rect` */
     readonly element: XmlObject;
+    /** Its attributes, with those of the type of shape it is (`v:shapetype`) where it doesn't give its own */
+    readonly attributes: XmlObject;
     readonly style: ReadonlyMap<string, string>;
     /** The text box's content (`w:txbxContent`), when it is a text box */
     readonly text?: readonly unknown[];
@@ -108,20 +110,26 @@ export type VmlShape = {
 /**
  * The shape a VML drawing (`w:pict`) draws, past the types of shapes it defines (`v:shapetype`), or why it can't be laid
  * out: more than one. One of no shape, such as a `w:pict` of a shape type alone, draws nothing (`word-stops-vml-shape-type.docx`
- * VM29e)
+ * VM29e). A shape of a type (`type="#id"`) has the type's attributes where it doesn't give its own, as Word's type for
+ * pictures gives them no outline (`word-stops-vml-pictures2.docx` VM30a to VM30h)
  */
 export const vmlShapeOf = (pict: unknown): VmlShape | undefined | string => {
-    const shapes = childrenOf(pict).filter((child) => SHAPES.has(Object.keys(child)[0]));
+    const children = childrenOf(pict);
+    const shapes = children.filter((child) => SHAPES.has(Object.keys(child)[0]));
     if (shapes.length !== 1) {
         return shapes.length === 0 ? undefined : "a VML drawing of more than one shape";
     }
     const [element] = shapes;
     const [name] = Object.keys(element);
+    const own = attributesOf(element[name]);
+    const type = children.find((child) => "v:shapetype" in child && `#${attributesOf(child["v:shapetype"]).id}` === own.type);
+    const inherited = Object.fromEntries(Object.entries(attributesOf(type?.["v:shapetype"])).filter(([key]) => key !== "id"));
     const textbox = find(childrenOf(element[name]), "v:textbox");
     const content = find(childrenOf(textbox), "w:txbxContent");
     return {
         element,
-        style: readVmlStyle(attributesOf(element[name]).style),
+        attributes: { ...inherited, ...own },
+        style: readVmlStyle(own.style),
         ...(textbox === undefined ? {} : { textStyle: readVmlStyle(attributesOf(textbox).style) }),
         ...(content === undefined ? {} : { text: childrenOf(content).filter(isObject) }),
     };
@@ -236,7 +244,7 @@ const shareOf = (
 export const readVmlFloating = (shape: VmlShape, wrap: XmlObject, width: number, height: number, outline = 0): FloatingDrawing | string => {
     const { style } = shape;
     const attributes = attributesOf(wrap);
-    const shapeAttributes = attributesOf(shape.element[Object.keys(shape.element)[0]]);
+    const shapeAttributes = shape.attributes;
     const wrapType = String(attributes.type);
     const type = WRAPS[wrapType];
     const side = SIDES[String(attributes.side ?? "both")];
