@@ -9,7 +9,7 @@
 # It reads the PDF with word-stops-more-widths.py's functions. Glyphs the PDF's ToUnicode maps to nothing, as Calibri's
 # letters mostly are, are letters all the same, and those of no width are marks, which take no room. Without --json it
 # prints, for each face and context, the words found, the largest kerning and how many words are kerned by more than
-# 10 thousandths; with --json it writes each word's drawn width and its glyphs' advances, by face, context and pair, for
+# 10 thousandths, and fails when the PDF has no AR4 paragraph or one of them hasn't 42 words; with --json it writes each word's drawn width and its glyphs' advances, by face, context and pair, for
 # word-stops-arabic-kerning.ts to check the layout's widths of the forms by.
 # cspell:ignore tatweel tatweels
 import importlib.util
@@ -93,8 +93,7 @@ def main(path):
         first, context = chr(int(match.group(3), 16)), match.group(4)
         words = words_of(drawn)
         if len(words) != len(LETTERS):
-            print(f"{face} {context} {match.group(3)}: {len(words)} words, not {len(LETTERS)}", file=sys.stderr)
-            continue
+            sys.exit(f"{face} {context} {match.group(3)}: {len(words)} words, not {len(LETTERS)}")
         for second, word in zip(LETTERS, words):
             last = word[-1]
             extent = (last["x"] + last["width"] / 1000 * SIZE - word[0]["x"]) * 1000 / SIZE
@@ -102,6 +101,8 @@ def main(path):
                 "width": round(extent, 1),
                 "advances": [round(glyph["width"], 1) for glyph in reversed(word)],
             }
+    if not read:
+        sys.exit(f"No AR4 paragraphs in {path}")
     if "--json" in sys.argv:
         print(json.dumps(read, ensure_ascii=False, sort_keys=True, separators=(",", ":")))
         return
