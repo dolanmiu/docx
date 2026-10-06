@@ -34,11 +34,13 @@ import {
 
 import { type TextGrid, WORD_DEFAULT_STYLES, readTextStyles } from "../text-layout";
 import {
+    type Block,
     type DocumentContent,
     type FloatingDrawing,
     type LayoutItem,
     type ParagraphBlock,
     type ReadOptions,
+    type Section,
     type TableBlock,
     readContent,
     readDocument,
@@ -974,12 +976,24 @@ describe("readDocument", () => {
             expect(after.endnoteContinuationSeparator).to.deep.equal([
                 { ...plain, markFont: (after.endnoteContinuationSeparator[0] as ParagraphBlock).markFont },
             ]);
-            // One with text before the separator or none, more than a paragraph or a table hasn't been seen
-            const unknown = "an endnote separator with text in it, or of more than a paragraph";
+            // Text before the separator and paragraphs after its own are left out too, but for their bookmarks, as Word drew
+            // the separator alone, a line tall (stops2/word-stops-notes2.ts NE7)
+            const more = withSeparators(
+                [
+                    p(r(t("Endnotes ")), r({ "w:separator": {} })),
+                    p({ "w:bookmarkStart": { _attr: { "w:id": 1, "w:name": "second" } } }, r(t("Second paragraph"))),
+                ],
+                [p(r(t("Before ")), r({ "w:continuationSeparator": {} }))],
+            );
+            expect(more.endnotes[0]).to.deep.equal({ ...plain, items: [{ type: "marker", name: "second" }] });
+            expect(more.endnotes).to.have.length(withSeparators([p(r({ "w:separator": {} }))], []).endnotes.length);
+            expect(more.endnoteContinuationSeparator).to.deep.equal([
+                { ...plain, markFont: (more.endnoteContinuationSeparator[0] as ParagraphBlock).markFont },
+            ]);
+            // One of empty paragraphs is a line too, as it was. One with text and no separator, or a table, hasn't been seen
+            expect(withSeparators([p(), p()], []).endnotes[0].unsupported).to.equal(undefined);
+            const unknown = "an endnote separator with a table in it, or text and no separator";
             expect(withSeparators([p(r(t("Endnotes")))], []).endnotes[0].unsupported).to.equal(unknown);
-            expect(withSeparators([p(r(t("Endnotes")), r({ "w:separator": {} }))], []).endnotes[0].unsupported).to.equal(unknown);
-            expect(withSeparators([p(r({ "w:separator": {} })), p(r(t("Endnotes")))], []).endnotes[0].unsupported).to.equal(unknown);
-            expect(withSeparators([p(), p()], []).endnotes[0].unsupported).to.equal(unknown);
             expect(withSeparators([{ "w:tbl": [{ "w:tr": [{ "w:tc": [p()] }] }] }], []).endnotes[0].unsupported).to.equal(unknown);
             // None, when the endnotes have none, or it is empty
             expect(styled.endnoteContinuationSeparator).to.deep.equal([]);
@@ -1055,15 +1069,13 @@ describe("readDocument", () => {
             expect(three.unsupported).to.equal(undefined);
         });
 
-        it("should stop at notes numbered on through the document after a section that numbers its own afresh, which Word hasn't been seen to", () => {
-            const content = twoSections([properties("footnote", value("w:numRestart", "eachSect"))], []);
-            expect(content.unsupported).to.equal("notes numbered on through the document after a section that numbers its own afresh");
-            // Numbered afresh in both, they are laid out
-            const both = twoSections(
-                [properties("footnote", value("w:numRestart", "eachSect"))],
-                [properties("footnote", value("w:numRestart", "eachSect"))],
-            );
-            expect(both.unsupported).to.equal(undefined);
+        it("should number notes on through the document after a section that numbers its own afresh, from all the notes before, as Word does", () => {
+            // stops2/word-stops-notes2.ts NT18: after a section numbering its 2 afresh as 1 and 2, the next section's are
+            // numbered on from them, as they are counted too. Here a section numbering its one from 5 is followed by one
+            // numbered on, whose first is 2
+            const content = twoSections([properties("footnote", value("w:numRestart", "eachSect"), value("w:numStart", 5))], []);
+            expect(numbersOf(content)[0]).to.deep.equal(["5", "2"]);
+            expect(content.unsupported).to.equal(undefined);
         });
 
         it("should number footnotes afresh on each page from where their references are placed, as Word does", () => {
@@ -1102,22 +1114,34 @@ describe("readDocument", () => {
             expect(twoSections([], [], [properties("endnote", value("w:numRestart", "eachPage"))]).unsupported).to.equal(
                 "endnotes numbered afresh on each page",
             );
-            // Footnotes of a section that shares a page with another
+            // Footnotes of a section that shares a page with another numbered on through the document, before it or after it,
+            // or afresh on each page too, which Word numbers on from those of the page numbered so (stops2/word-stops-notes2.ts
+            // NT19a, NT19b), are laid out
             const continuous = [{ "w:type": { _attr: { "w:val": "continuous" } } }];
-            expect(twoSections([], [...continuous, properties("footnote", value("w:numRestart", "eachPage"))]).unsupported).to.equal(
-                "footnotes numbered afresh on each page of a section that shares a page with another",
-            );
-            expect(twoSections([properties("footnote", value("w:numRestart", "eachPage"))], continuous).unsupported).to.equal(
-                "footnotes numbered afresh on each page of a section that shares a page with another",
-            );
-            // The first section shares no page before it
-            expect(
-                twoSections(
-                    [...continuous, properties("footnote", value("w:numRestart", "eachPage"))],
+            const onEachPage = properties("footnote", value("w:numRestart", "eachPage"));
+            expect(twoSections([], [...continuous, onEachPage]).unsupported).to.equal(undefined);
+            expect(twoSections([onEachPage], continuous).unsupported).to.equal(undefined);
+            expect(twoSections([onEachPage], [...continuous, onEachPage]).unsupported).to.equal(undefined);
+            // But not after one numbered otherwise, after one numbered afresh on each page, on the page
+            const three = (second: readonly object[]): DocumentContent =>
+                readWithSettings(
+                    [
+                        p(reference("footnote", 1)),
+                        p(pPr({ "w:sectPr": [onEachPage] })),
+                        p(reference("footnote", 2)),
+                        p(pPr({ "w:sectPr": second })),
+                        p(reference("footnote", 3)),
+                        { "w:sectPr": [...continuous, onEachPage] },
+                    ],
                     [],
-                    [properties("footnote", value("w:numRestart", "eachSect"))],
-                ).unsupported,
-            ).to.equal(undefined);
+                    { ...NOTES, footnotes: { ...NOTES.footnotes, 3: { children: [new Paragraph("Three")] } } },
+                );
+            expect(three(continuous).unsupported).to.equal(
+                "footnotes numbered afresh on each page after a section on the page numbered otherwise",
+            );
+            // The second on a page of its own, or numbered afresh on each page too, is laid out
+            expect(three([]).unsupported).to.equal(undefined);
+            expect(three([...continuous, onEachPage]).unsupported).to.equal(undefined);
             // A deleted footnote reference, which Word counts, on a page it isn't on
             const deleted = readWithSettings(
                 [p({ "w:del": [r({ "w:footnoteReference": { _attr: { "w:id": 1 } } })] })],
@@ -1147,22 +1171,30 @@ describe("readDocument", () => {
 
         it("should add the empty paragraph Word adds after a table that ends a footnote or endnote, in the Normal style", () => {
             // word-watertight-notes.docx FN11, FN12, word-watertight-stops.docx SP3c: a line below the table
-            const withTable = (paragraphStyles: NonNullable<IPropertiesOptions["styles"]>["paragraphStyles"] = []): DocumentContent => {
+            const withTable = (
+                paragraphStyles: NonNullable<IPropertiesOptions["styles"]>["paragraphStyles"] = [],
+                style?: string,
+            ): DocumentContent => {
                 const table = new Table({ rows: [new TableRow({ children: [new TableCell({ children: [new Paragraph("Cell")] })] })] });
                 return readWritten({
                     styles: { paragraphStyles },
-                    footnotes: { 1: { children: [new Paragraph("Note"), table as unknown as Paragraph] } },
+                    footnotes: { 1: { children: [new Paragraph({ text: "Note", style }), table as unknown as Paragraph] } },
                     endnotes: { 1: { children: [new Paragraph("End"), table as unknown as Paragraph] } },
                     sections: [{ children: [new Paragraph({ children: [new FootnoteReferenceRun(1), new EndnoteReferenceRun(1)] })] }],
                 });
             };
-            // docx's note text styles are smaller than Normal, so which Word gives it isn't known
-            const differ = withTable();
-            const [, , after] = [...differ.footnotes.values()][0];
-            expect(after).to.deep.include({
+            // docx's note text styles are smaller than Normal, but its notes' paragraphs are in Normal, and so is the empty
+            // paragraph, as Word made it a line of Normal in such notes (word-notes-final-table.docx NF1, NF2)
+            const [, , normal] = [...withTable().footnotes.values()][0];
+            expect(normal).to.deep.include({ type: "paragraph", items: [] });
+            expect(normal).not.to.have.property("unsupported");
+            // With a paragraph in another style, such as the footnote text style, which Word gives it isn't known
+            const [, , styled] = [...withTable([], "FootnoteText").footnotes.values()][0];
+            expect(styled).to.deep.include({
                 type: "paragraph",
                 items: [],
-                unsupported: "a footnote or endnote that ends with a table, in a document whose Normal and note text styles differ",
+                unsupported:
+                    "a footnote or endnote that ends with a table, with paragraphs of another style than Normal, in a document whose Normal and note text styles differ",
             });
             // Formatted alike, it is Normal's
             const alike = withTable([
@@ -1207,12 +1239,11 @@ describe("readDocument", () => {
             expect(reasonOf([], [columns], [properties("footnote", value("w:pos", "beneathText"))])).to.equal(
                 "footnotes below the text of columns",
             );
-            // Endnotes at the end of each section, when the settings put them there: those a section puts there are at the end
-            // of the document, as Word put them (`word-stops-endnotes.docx` NE2)
-            expect(reasonOf([], [], [properties("endnote", value("w:pos", "sectEnd"))])).to.equal("endnotes at the end of each section");
-            expect(
-                reasonOf([properties("endnote", value("w:pos", "sectEnd"))], [properties("endnote", value("w:pos", "sectEnd"))]),
-            ).to.equal(undefined);
+            // Endnotes at the end of a section before one that starts on its page, when the settings put them there
+            const continuous = { "w:type": { _attr: { "w:val": "continuous" } } };
+            expect(reasonOf([], [continuous], [properties("endnote", value("w:pos", "sectEnd"))])).to.equal(
+                "endnotes at the end of a section before one that starts on its page",
+            );
             expect(reasonOf([], [], [properties("endnote", value("w:numFmt", "bogus"))])).to.equal(
                 "notes numbered in a format not yet written",
             );
@@ -1227,6 +1258,48 @@ describe("readDocument", () => {
             expect(readWithSettings([p(t("a"))], [properties("footnote", value("w:numRestart", "eachPage"))], NOTES).unsupported).to.equal(
                 undefined,
             );
+        });
+
+        it("should put the endnotes at the end of each section when the settings say so, but for a section that suppresses its own, as Word does", () => {
+            // Those a section puts there are at the end of the document, as Word put them (`word-stops-endnotes.docx` NE2)
+            const sectionsSay = twoSections(
+                [properties("endnote", value("w:pos", "sectEnd"))],
+                [properties("endnote", value("w:pos", "sectEnd"))],
+            );
+            expect([sectionsSay.unsupported, sectionsSay.endnotesAfter]).to.deep.equal([undefined, undefined]);
+            // Where the settings say so, each section's after it, after a separator of its own (stops2/word-stops-notes2.ts
+            // NE6)
+            const settingsSay = twoSections([], [], [properties("endnote", value("w:pos", "sectEnd"))]);
+            expect(settingsSay.unsupported).to.equal(undefined);
+            expect(settingsSay.endnotesAfter).to.deep.equal([0, 0, 1, 1]);
+            expect(settingsSay.endnotes.map((block) => settingsSay.endnoteNumbers.get(block))).to.deep.equal([
+                undefined,
+                "i",
+                undefined,
+                "ii",
+            ]);
+            // A section that suppresses its own has them at the end of the next
+            const suppressed = twoSections([{ "w:noEndnote": {} }], [], [properties("endnote", value("w:pos", "sectEnd"))]);
+            expect(suppressed.endnotesAfter).to.deep.equal([1, 1, 1]);
+            // However many in a row do
+            const many = 20000;
+            const manySuppressed = readWithSettings(
+                [
+                    p(reference("endnote", 1)),
+                    ...Array.from({ length: many }, () => p(pPr({ "w:sectPr": [{ "w:noEndnote": {} }] }))),
+                    { "w:sectPr": [] },
+                ],
+                [properties("endnote", value("w:pos", "sectEnd"))],
+                NOTES,
+            );
+            expect(manySuppressed.endnotesAfter).to.deep.equal([many, many]);
+            // At the end of the only section is at the end of the document
+            const oneSection = readWithSettings(
+                [p(reference("endnote", 1)), { "w:sectPr": [{ "w:noEndnote": {} }] }],
+                [properties("endnote", value("w:pos", "sectEnd"))],
+                NOTES,
+            );
+            expect([oneSection.unsupported, oneSection.endnotesAfter]).to.deep.equal([undefined, [0, 0]]);
         });
 
         it("should put a section's footnotes below the text of its pages when it says so, as Word does", () => {
@@ -1285,7 +1358,7 @@ describe("readDocument", () => {
                 footnotes: { 1: { children: [new Paragraph({ children: [new FootnoteReferenceRun(1)] })] } },
             });
             expect((numbered.footnotes.get("footnote 1")![0] as ParagraphBlock).unsupported).to.equal(
-                "a note's number in a footnote with a mark of its own",
+                "a note's number in a footnote or endnote with a mark of its own",
             );
             // Hidden, what Word does with it hasn't been seen
             const hidden = readWithSettings(
@@ -1293,10 +1366,48 @@ describe("readDocument", () => {
                 [],
                 NOTES,
             );
-            expect(paragraphOf(hidden).unsupported).to.equal("a footnote reference with a mark of its own in hidden text");
-            // An endnote with one hasn't been seen, which stops at its paragraph
-            const endnote = readWithSettings([p(reference("endnote", 1, { "w:customMarkFollows": 1 }))], [], NOTES);
-            expect(paragraphOf(endnote).unsupported).to.equal("an endnote with a mark of its own");
+            expect(paragraphOf(hidden).unsupported).to.equal("a footnote or endnote reference with a mark of its own in hidden text");
+        });
+
+        it("should lay out an endnote with a mark of its own without counting it in the numbers, as Word does", () => {
+            // Between endnotes i and ii, Word numbered none ii (stops2/word-stops-notes2.ts NE5)
+            const content = readWithSettings(
+                [
+                    p(reference("endnote", 1)),
+                    p(reference("endnote", 9, { "w:customMarkFollows": 1 }), r(t("*"))),
+                    p(reference("endnote", 2)),
+                ],
+                [],
+                { ...NOTES, endnotes: { ...NOTES.endnotes, 9: { children: [new Paragraph("Own")] } } },
+            );
+            expect(content.endnotes.map((block) => content.endnoteNumbers.get(block))).to.deep.equal([undefined, "i", "", "ii"]);
+            expect([...content.endnoteReferences.keys()]).to.deep.equal(["endnote 1", "endnote 2", "endnote 3"]);
+            expect(itemsOf(content, 1)).to.deep.equal([{ type: "marker", name: "endnote 2" }, ...itemsOf(content, 1).slice(1)]);
+            expect(textOf(content, 1)).to.equal("*");
+            expect(content.unsupported).to.equal(undefined);
+            // What a mark for its number in it shows hasn't been seen, as for a footnote
+            expect(content.endnotes[2].unsupported).to.equal("a note's number in a footnote or endnote with a mark of its own");
+            // Read again to size a table's columns, it isn't counted either, so the endnote after it is i
+            const cell = {
+                "w:tc": [
+                    { "w:tcPr": [{ "w:tcW": { _attr: { "w:w": 2000 } } }] },
+                    p(
+                        r(t("a")),
+                        { "w:del": [r({ "w:delText": ["b"] })] },
+                        reference("endnote", 9, { "w:customMarkFollows": 1 }),
+                        reference("endnote", 1),
+                    ),
+                ],
+            };
+            const table = {
+                "w:tbl": [{ "w:tblPr": [] }, { "w:tblGrid": [{ "w:gridCol": { _attr: { "w:w": 2000 } } }] }, { "w:tr": [cell] }],
+            };
+            const sized = readWithSettings([table], [], {
+                ...NOTES,
+                endnotes: { ...NOTES.endnotes, 9: { children: [new Paragraph("Own")] } },
+            });
+            const sizing = (sized.blocks[0].block as TableBlock).rows[0].cells[0].sizing![0] as ParagraphBlock;
+            expect(sizing.items.map((item) => (item.type === "text" ? item.text : item.type))).to.deep.equal(["a", "b", "i"]);
         });
     });
 
@@ -2133,14 +2244,13 @@ describe("readDocument", () => {
             // word-vml.docx VM13: placed against the page, as a drawing of the page the body's text goes round
             const onPage = "position:absolute;margin-top:216pt;width:100pt;height:72pt;mso-position-vertical-relative:page";
             expect(headerOf(pict(onPage, [SQUARE], UNOUTLINED))).to.deep.equal([["drawing"]]);
-            // Against its paragraph, as it is when it doesn't say, whose place on the page hasn't been seen
-            expect(headerOf(pict("position:absolute;width:100pt;height:72pt", [SQUARE], UNOUTLINED))).to.deep.equal([
-                "a drawing that text flows around in a header or footer, placed against its paragraph or line",
-            ]);
+            // Against its paragraph, as it is when it doesn't say, as a DrawingML one (word-stops-edges.docx DH2a)
+            expect(headerOf(pict("position:absolute;width:100pt;height:72pt", [SQUARE], UNOUTLINED))).to.deep.equal([["drawing"]]);
             // In the header's line, it takes the room it takes in the body's (`word-stops-vml-header.docx` VM22a to VM22c)
             expect(headerOf(pict("width:100pt;height:72pt", [], UNOUTLINED))).to.deep.equal([["box"]]);
             expect(headerOf(textBox(line))).to.deep.equal([["textBox"]]);
-            // A text box that text flows around in a header, against its paragraph, as a shape there
+            // A text box that text flows around in a header, against its paragraph, which Word has been seen with only as a
+            // picture
             const floatingBox = pict(
                 "position:absolute;width:100pt;height:72pt",
                 [SQUARE, { "v:textbox": [{ _attr: { style: "mso-fit-shape-to-text:t" } }, { "w:txbxContent": line }] }],
@@ -2148,8 +2258,20 @@ describe("readDocument", () => {
                 "v:shape",
             );
             expect(headerOf(floatingBox)).to.deep.equal([
-                "a drawing that text flows around in a header or footer, placed against its paragraph or line",
+                "a text box that text flows around in a header or footer, placed against its paragraph or line",
             ]);
+            const boxAt = (style: string): object =>
+                pict(
+                    `position:absolute;width:100pt;height:72pt;${style}`,
+                    [SQUARE, { "v:textbox": [{ _attr: { style: "mso-fit-shape-to-text:t" } }, { "w:txbxContent": line }] }],
+                    {},
+                    "v:shape",
+                );
+            expect(headerOf(boxAt("mso-position-vertical-relative:line"))).to.deep.equal([
+                "a text box that text flows around in a header or footer, placed against its paragraph or line",
+            ]);
+            // Against the page, as a picture there
+            expect(headerOf(boxAt("margin-top:216pt;mso-position-vertical-relative:page"))).to.deep.equal([["drawing"]]);
         });
     });
 
@@ -4308,8 +4430,42 @@ describe("readDocument", () => {
                 });
             });
 
+            it("should leave out the space of Normal paragraphs at the other edges of cells, and after a table, as Word does", () => {
+                const plain = (text: string): Paragraph => new Paragraph(text);
+                // word-stops-edges.docx PB9a, PB9b: beside the cell before, the row before, and the cell after, all Normal
+                expect(leftOut(plain("before"), tableOf([[normal("a")], [normal("b")]]), plain("after"))).to.deep.equal({
+                    cells: [["before after", "before after"]],
+                });
+                expect(leftOut(plain("before"), tableOf([[normal("a")]], [[normal("b")]]))).to.deep.equal({
+                    cells: [["before after"], ["before after"]],
+                });
+                // PB9d: a Normal paragraph after a table is compared with the end of its last row, whatever the style of the
+                // last cell's paragraph, and one of another style isn't
+                const after = (last: Paragraph): Block | undefined =>
+                    readWritten({ styles: STYLES, sections: [{ children: [plain("before"), tableOf([[other("a")]]), last] }] }).blocks[2]
+                        ?.block;
+                expect(after(normal("after"))).to.deep.include({ leftOut: { before: true } });
+                expect(after(other("after"))).to.not.have.property("leftOut");
+                // PB9e: a Normal paragraph at the top of a table at the start of a cell
+                const nested = readWritten({
+                    styles: STYLES,
+                    sections: [{ children: [plain("before"), tableOf([[tableOf([[normal("a")]]), plain("b")]])] }],
+                }).blocks[1].block as TableBlock;
+                const inner = nested.rows[0].cells[0].blocks[0] as TableBlock;
+                expect([nested.unsupported, inner.unsupported]).to.deep.equal([undefined, undefined]);
+                expect((inner.rows[0].cells[0].blocks[0] as ParagraphBlock).leftOut).to.deep.equal({ before: true, after: true });
+                // A Normal paragraph after a table at the end of a cell leaves out its space before, after the table, and its
+                // space after, at the end of the row
+                const afterInner = readWritten({
+                    styles: STYLES,
+                    sections: [{ children: [plain("before"), tableOf([[tableOf([[plain("a")]]), normal("b")]])] }],
+                }).blocks[1].block as TableBlock;
+                expect((afterInner.rows[0].cells[0].blocks[1] as ParagraphBlock).leftOut).to.deep.equal({ before: true, after: true });
+            });
+
             it("should stop where Word would leave out the space at an edge not yet seen, and guessing, leave it out", () => {
-                const unseen = "contextual spacing at the edge of a table cell beside another cell or row, or a table's paragraphs";
+                const unseen =
+                    "contextual spacing at the edge of a table cell beside another cell or row, not all in the default paragraph style, or before a table";
                 const before = new Paragraph({ text: "before", style: "Other" });
                 // Between the cells of a row, and below the end of a row
                 expect(leftOut(before, tableOf([[normal("a")], [normal("b")]]))).to.deep.equal({
@@ -4324,9 +4480,8 @@ describe("readDocument", () => {
                 expect(leftOut(new Paragraph("before"), tableOf([[other("a")], [normal("b")]]))).to.deep.equal({
                     cells: [["- -", "- after"]],
                 });
-                // The paragraphs around the table, compared with its first paragraph and the end of its last row
+                // The paragraph before the table, compared with its first paragraph
                 expect(leftOut(other("before"), tableOf([[other("a")]]))).to.have.property("unsupported", unseen);
-                expect(leftOut(before, tableOf([[other("a")]]), normal("after"))).to.have.property("unsupported", unseen);
                 expect(leftOut(before, tableOf([[other("a")]]), other("after"))).to.not.have.property("unsupported");
                 // After another table, the end of its last row
                 const tables = readWritten({
@@ -4334,9 +4489,13 @@ describe("readDocument", () => {
                     sections: [{ children: [tableOf([[other("a")]]), tableOf([[normal("b")]])] }],
                 });
                 expect(tables.blocks.map(({ block }) => block.unsupported)).to.deep.equal([undefined, unseen]);
-                // A table at the start of a cell, and after a paragraph with paragraphs that take no room after it, after what
-                // isn't known
-                expect(leftOut(before, tableOf([[tableOf([[normal("a")]]), new Paragraph("b")]]))).to.have.property("unsupported", unseen);
+                // A paragraph of another style at the top of a table at the start of a cell, and a table after a paragraph with
+                // paragraphs that take no room after it, after what isn't known
+                const nested = readWritten({
+                    styles: STYLES,
+                    sections: [{ children: [before, tableOf([[tableOf([[other("a")]]), new Paragraph("b")]])] }],
+                }).blocks[1].block as TableBlock;
+                expect(nested.rows[0].cells[0].blocks[0]).to.have.property("unsupported", unseen);
                 const hidden = new Paragraph({ children: [new TextRun({ text: "hidden", vanish: true })], run: { vanish: true } });
                 expect(leftOut(new Paragraph("before"), hidden, tableOf([[normal("a")]]))).to.have.property("unsupported", unseen);
             });
@@ -4547,9 +4706,29 @@ describe("readDocument", () => {
             for (const direction of ["lrTb", "lrTbV", "tb", "tbV"]) {
                 expect(section({ "w:textDirection": { _attr: { "w:val": direction } } }).sections[0].unsupported).to.equal(undefined);
             }
-            expect(section({ "w15:footnoteColumns": { _attr: { "w:val": 2 } } }).sections[0].unsupported).to.equal(
-                "footnotes in columns of their own",
-            );
+        });
+
+        it("should read the columns a section's footnotes are laid out in, of their own, as Word lays them out", () => {
+            const sectionOf = (...children: readonly object[]): Section =>
+                readBody([p(r(t("a"))), { "w:sectPr": [{ "w:pgSz": { _attr: { "w:w": 11906 } } }, ...children] }]).sections[0];
+            // stops2/word-stops-notes2.ts NT16b to NT16e: of the same width, half an inch apart, across the page's text
+            const two = sectionOf({ "w15:footnoteColumns": { _attr: { "w:val": 2 } } });
+            expect(two.unsupported).to.equal(undefined);
+            expect(two.noteColumns!.map((width) => Math.round(width * 100) / 100)).to.deep.equal([207.65, 207.65]);
+            expect(sectionOf({ "w15:footnoteColumns": { _attr: { "w:val": 1 } } })).to.not.have.property("noteColumns");
+            // More than Word's dialog offers, in a section of several columns, of text that runs down the page, or whose columns
+            // are spaced otherwise, which hasn't been seen: more aren't made, as a document can ask for any number
+            const unseen =
+                "footnotes in more than 4 columns of their own, or in columns of their own in a section of several columns, of text that runs down the page, or whose columns are spaced otherwise than half an inch apart";
+            expect(sectionOf({ "w15:footnoteColumns": { _attr: { "w:val": 4 } } }).noteColumns).to.have.length(4);
+            const many = sectionOf({ "w15:footnoteColumns": { _attr: { "w:val": 1e9 } } });
+            expect(many.unsupported).to.equal(unseen);
+            expect(many).to.not.have.property("noteColumns");
+            const footnoteColumns = { "w15:footnoteColumns": { _attr: { "w:val": 2 } } };
+            expect(sectionOf({ "w:cols": { _attr: { "w:num": 2 } } }, footnoteColumns).unsupported).to.equal(unseen);
+            expect(sectionOf({ "w:cols": { _attr: { "w:space": 708 } } }, footnoteColumns).unsupported).to.equal(unseen);
+            expect(sectionOf({ "w:cols": { _attr: { "w:space": 720 } } }, footnoteColumns).unsupported).to.equal(undefined);
+            expect(sectionOf({ "w:textDirection": { _attr: { "w:val": "tbRl" } } }, footnoteColumns).unsupported).to.equal(unseen);
         });
 
         it("should read the headers and footers a section refers to, and those of the section before it doesn't give", () => {
@@ -4634,7 +4813,7 @@ describe("readDocument", () => {
             ]);
         });
 
-        it("should read a drawing in a header that text flows around, which the body's text goes round, but stop at one placed against its line or paragraph, or in a cell", () => {
+        it("should read a drawing in a header that text flows around, which the body's text goes round, but stop at one placed against where it is along its line, or in a cell", () => {
             const anchored = (horizontal: string, vertical: string): object =>
                 r({
                     "w:drawing": [
@@ -4653,10 +4832,12 @@ describe("readDocument", () => {
                 );
             // word-watertight-pages.docx PG4, word-stops-drawings.docx DH1a to DH1d: placed against the page
             expect(read(p(anchored("page", "page"), r(t("text"))))).to.deep.equal([["drawing", "text"]]);
-            const ITS_LINE = "a drawing that text flows around in a header or footer, placed against its paragraph or line";
-            expect(read(p(anchored("column", "paragraph")))).to.deep.equal([ITS_LINE]);
-            expect(read(p(anchored("margin", "line")))).to.deep.equal([ITS_LINE]);
-            expect(read(p(anchored("character", "page")))).to.deep.equal([ITS_LINE]);
+            // word-stops-edges.docx DH2a, DH2b: placed against its paragraph or line, which the layout places it against
+            expect(read(p(anchored("column", "paragraph")))).to.deep.equal([["drawing"]]);
+            expect(read(p(anchored("margin", "line")))).to.deep.equal([["drawing"]]);
+            expect(read(p(anchored("character", "page")))).to.deep.equal([
+                "a drawing that text flows around in a header or footer, placed against where it is anchored along its line",
+            ]);
             // One whose place can't be read stops as in the body
             expect(read(p(r({ "w:drawing": [{ "wp:anchor": [{ "wp:wrapBogus": {} }] }] })))).to.deep.equal([
                 "a drawing that text flows around in a way not yet followed",
@@ -5975,12 +6156,16 @@ describe("readDocument", () => {
                 { type: "text", text: "2", font: {} },
             ]);
             expect([...moved.footnotes.keys()]).to.deep.equal(["footnote 2"]);
-            // A deleted footnote reference with a mark of its own isn't counted, as one that isn't deleted isn't
-            // (`word-stops-notes.docx` NT15), and an endnote one isn't followed, as one that isn't deleted isn't
+            // A deleted footnote or endnote reference with a mark of its own isn't counted, as one that isn't deleted isn't
+            // (`word-stops-notes.docx` NT15, stops2/word-stops-notes2.ts NE5): the endnote after one is i
             const ownMark = reference("w:footnoteReference", 1, { "w:customMarkFollows": 1 });
             expect(readBody([p({ "w:del": [ownMark] })]).blocks[0].block.unsupported).to.equal(undefined);
-            const ownEndnote = reference("w:endnoteReference", 1, { "w:customMarkFollows": 1 });
-            expect(readBody([p({ "w:del": [ownEndnote] })]).blocks[0].block.unsupported).to.equal("an endnote with a mark of its own");
+            const ownEndnote = readBody(
+                [p({ "w:del": [reference("w:endnoteReference", 1, { "w:customMarkFollows": 1 })] }, reference("w:endnoteReference", 2))],
+                { endnotes: { 1: { children: [new Paragraph("One")] }, 2: { children: [new Paragraph("Two")] } } },
+            );
+            expect(ownEndnote.blocks[0].block.unsupported).to.equal(undefined);
+            expect(itemsOf(ownEndnote).at(-1)).to.deep.equal({ type: "text", text: "i", font: {} });
         });
 
         it("should leave out a deleted row, and a table all of whose rows are deleted, with their bookmarks after them, as Word does", () => {
@@ -6256,7 +6441,7 @@ describe("readDocument", () => {
                 { type: "text", text: "3", font: {} },
             ]);
             expect([...noted.footnotes.keys()]).to.deep.equal(["footnote 3"]);
-            // One with a mark of its own isn't counted, and an endnote one isn't followed
+            // One with a mark of its own isn't counted
             const own = readBody(
                 [
                     tableOf(
@@ -6278,14 +6463,20 @@ describe("readDocument", () => {
                 { endnotes: { 1: { children: [new Paragraph("One")] }, 2: { children: [new Paragraph("Two")] } } },
             );
             expect(itemsOf(endnotes, 1)[1]).to.deep.equal({ type: "text", text: "ii", font: {} });
-            const endnote = readBody([
-                tableOf(
-                    [fixed],
-                    row([deletedRow], cell(p(r({ "w:endnoteReference": { _attr: { "w:id": 1, "w:customMarkFollows": 1 } } })))),
-                    row([], cell(p())),
-                ),
-            ]);
-            expect(endnote.blocks[0].block.unsupported).to.equal("an endnote with a mark of its own");
+            // and one with a mark of its own isn't counted, as a footnote isn't: the one after it is i
+            const endnote = readBody(
+                [
+                    tableOf(
+                        [fixed],
+                        row([deletedRow], cell(p(r({ "w:endnoteReference": { _attr: { "w:id": 1, "w:customMarkFollows": 1 } } })))),
+                        row([], cell(p())),
+                    ),
+                    p(r({ "w:endnoteReference": { _attr: { "w:id": 2 } } })),
+                ],
+                { endnotes: { 1: { children: [new Paragraph("One")] }, 2: { children: [new Paragraph("Two")] } } },
+            );
+            expect(endnote.blocks[0].block.unsupported).to.equal(undefined);
+            expect(itemsOf(endnote, 1)[1]).to.deep.equal({ type: "text", text: "i", font: {} });
             // Every row deleted, so the table is only why it stops
             const listed = readWritten({
                 numbering: { config: [{ reference: "list", levels: [{ level: 0, format: LevelFormat.DECIMAL, text: "%1." }] }] },
@@ -7109,30 +7300,25 @@ describe("readDocument", () => {
             expect(inline).to.not.deep.equal(displayed);
         });
 
-        it("should read tabs, soft hyphens and pictures in text with a border, a phonetic guide's base, and an endnote with a mark of its own", () => {
-            const content = guessed(
-                [
-                    p(r(border, { "w:tab": {} })),
-                    p(r(border, t("a\tb"))),
-                    p(r(border, t("a"), { "w:softHyphen": {} }, t("b"))),
-                    p(r(border, { "w:drawing": [{ "wp:inline": [{ "wp:extent": { _attr: { cx: 127000, cy: 127000 } } }] }] })),
-                    p(r({ "w:ruby": [{ "w:rubyPr": [] }, { "w:rt": [r(t("guide"))] }, { "w:rubyBase": [r(t("base"))] }] })),
-                    p(r({ "w:endnoteReference": { _attr: { "w:id": 1, "w:customMarkFollows": 1 } } }), r(t("*"))),
-                    p(r(border, { "w:drawing": [{ "wp:anchor": [{ "wp:wrapNone": {} }] }] }), r(t("behind"))),
-                ],
-                { endnotes: { 1: { children: [new Paragraph("One")] } } },
-            );
+        it("should read tabs, soft hyphens and pictures in text with a border, and a phonetic guide's base", () => {
+            const content = guessed([
+                p(r(border, { "w:tab": {} })),
+                p(r(border, t("a\tb"))),
+                p(r(border, t("a"), { "w:softHyphen": {} }, t("b"))),
+                p(r(border, { "w:drawing": [{ "wp:inline": [{ "wp:extent": { _attr: { cx: 127000, cy: 127000 } } }] }] })),
+                p(r({ "w:ruby": [{ "w:rubyPr": [] }, { "w:rt": [r(t("guide"))] }, { "w:rubyBase": [r(t("base"))] }] })),
+                p(r(border, { "w:drawing": [{ "wp:anchor": [{ "wp:wrapNone": {} }] }] }), r(t("behind"))),
+            ]);
             expect(content.blocks.map(({ block }) => block.unsupported)).to.deep.equal([
                 undefined,
                 undefined,
                 undefined,
                 undefined,
                 "text with a phonetic guide",
-                "an endnote with a mark of its own",
                 "a drawing placed on the page in text with a border",
             ]);
             // Guessing, a drawing behind the text in text with a border takes no room, as elsewhere
-            expect(textOf(content, 6)).to.equal("behind");
+            expect(textOf(content, 5)).to.equal("behind");
             expect([0, 1, 2, 3].map((index) => itemsOf(content, index).map(({ type }) => type))).to.deep.equal([
                 ["tab"],
                 ["text", "tab", "text"],
@@ -7142,14 +7328,8 @@ describe("readDocument", () => {
             // A picture of 10 points in a border of half a point, with its room around it (word-stops-text2.ts RF32b)
             expect(itemsOf(content, 3)[0]).to.deep.include({ width: 11, height: 10.5, below: 0.5 });
             expect(textOf(content, 4)).to.equal("base");
-            // Its note is laid out with it, with its mark after it in place of its number
-            expect(itemsOf(content, 5)).to.deep.equal([
-                { type: "marker", name: "endnote 1" },
-                { type: "text", text: "*", font: {} },
-            ]);
-            expect(content.endnoteReferences.has("endnote 1")).to.equal(true);
-            // One in hidden text is laid out, as a hidden reference's note is (stops2/word-stops-hidden-edges.docx HD9b), and so
-            // is a footnote with a mark of its own in hidden text
+            // A note with a mark of its own in hidden text is laid out, as a hidden reference's note is
+            // (stops2/word-stops-hidden-edges.docx HD9b), an endnote's as a footnote's
             const hidden = guessed(
                 [p(r(rPr({ "w:vanish": {} }), { "w:endnoteReference": { _attr: { "w:id": 1, "w:customMarkFollows": 1 } } }))],
                 {
@@ -7158,7 +7338,7 @@ describe("readDocument", () => {
             );
             expect(paragraphOf(hidden)).to.deep.include({
                 items: [{ type: "marker", name: "endnote 1" }],
-                unsupported: "an endnote with a mark of its own",
+                unsupported: "a footnote or endnote reference with a mark of its own in hidden text",
             });
             const hiddenFootnote = guessed(
                 [p(r(rPr({ "w:vanish": {} }), { "w:footnoteReference": { _attr: { "w:id": 1, "w:customMarkFollows": 1 } } }))],
@@ -7168,7 +7348,7 @@ describe("readDocument", () => {
             );
             expect(paragraphOf(hiddenFootnote)).to.deep.include({
                 items: [{ type: "marker", name: "footnote 1" }],
-                unsupported: "a footnote reference with a mark of its own in hidden text",
+                unsupported: "a footnote or endnote reference with a mark of its own in hidden text",
             });
             // And a soft hyphen in a table whose columns Word sizes to their text
             const table = guessed([{ "w:tbl": [{ "w:tr": [{ "w:tc": [p(r(t("a"), { "w:softHyphen": {} }, t("b")))] }] }] }]);
