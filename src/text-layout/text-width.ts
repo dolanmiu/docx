@@ -764,7 +764,7 @@ export const measureTextWidthAsDrawn = (text: string, font: TextFont = {}, start
         return measureTextWidth(text, font, start);
     }
     // The fonts of the tables, whose kerning and ligatures they have, aren't monospaced East Asian fonts
-    const { widths, more } = measuresOf(font);
+    const { widths, more, arabic } = measuresOf(font);
     const widthOf = (character: string): number => characterWidth(widths, more, character);
     const size = sizeOf(font);
     const { characterSpacing = 0, scale = 100 } = font;
@@ -773,16 +773,22 @@ export const measureTextWidthAsDrawn = (text: string, font: TextFont = {}, start
         text.split("\t").reduce((position, part, index) => {
             const at = index === 0 ? position : (Math.floor(position / TAB_STOP) + 1) * TAB_STOP;
             const glyphs = glyphsOf(part, font, shaping);
-            return glyphs.reduce((total, glyph, glyphIndex) => {
-                const next = glyphs[glyphIndex + 1];
-                // Kerning a pair it doesn't know is left out, where a layout has stopped at it (`unknownShaping`)
-                const kerning = kerned && next !== undefined ? kerningBetween(shaping, glyph, next) || 0 : 0;
-                return (
-                    total +
-                    (((glyph.width ?? widthOf(glyph.text)) + kerning) * size * scale) / 100000 +
-                    characterSpacing * [...glyph.text].length
-                );
-            }, at);
+            // Arabic's letters are as wide as the forms the letters beside them join them in, as `measureTextWidth` measures
+            // them: the ligatures join Latin letters only, so each is a glyph of its own, at its index among the characters
+            const joined = joinedIn([...part], arabic);
+            return glyphs.reduce(
+                ({ total, character }, glyph, glyphIndex) => {
+                    const next = glyphs[glyphIndex + 1];
+                    // Kerning a pair it doesn't know is left out, where a layout has stopped at it (`unknownShaping`)
+                    const kerning = kerned && next !== undefined ? kerningBetween(shaping, glyph, next) || 0 : 0;
+                    const width = joined?.get(character) ?? glyph.width ?? widthOf(glyph.text);
+                    return {
+                        total: total + ((width + kerning) * size * scale) / 100000 + characterSpacing * [...glyph.text].length,
+                        character: character + [...glyph.text].length,
+                    };
+                },
+                { total: at, character: 0 },
+            ).total;
         }, start) - start
     );
 };
