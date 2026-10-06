@@ -15,4 +15,5 @@ export * from "./page-borders";
 export * from "./page-text-direction";
 export * from "./line-number";
 export * from "./section-type";
+export * from "./note-properties";
 export * from "./header-footer-reference";
