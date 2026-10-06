@@ -33,9 +33,11 @@ import {
 } from "docx";
 
 import { type TextGrid, WORD_DEFAULT_STYLES, readTextStyles } from "../text-layout";
+import type { ImageSize } from "./image-sizes";
 import {
     type Block,
     type DocumentContent,
+    type DocumentParts,
     type FloatingDrawing,
     type LayoutItem,
     type ParagraphBlock,
@@ -1985,9 +1987,11 @@ describe("readDocument", () => {
             expect(itemsOf(readBody([p(pict("width:100pt;height:20pt", [], { strokeweight: "3pt" }))]))).to.deep.equal([
                 { type: "box", width: 103, height: 23, font: {} },
             ]);
-            // Word drew a picture at a size other than its own (VM8, `word-stops-vml-pictures.docx` VM20a to VM20f), but one that is
-            // an object's at its size (`word-stops-vml-objects.docx` VM20e)
-            expect(reasonOf(pict("width:72pt;height:36pt", [{ "v:imagedata": {} }], UNOUTLINED, "v:shape"))).to.equal("a VML picture");
+            // A picture is drawn by its image's size, which a document being written has no file of (see the pictures below),
+            // but one that is an object's at its shape's size (`word-stops-vml-objects.docx` VM20e)
+            expect(reasonOf(pict("width:72pt;height:36pt", [{ "v:imagedata": {} }], UNOUTLINED, "v:shape"))).to.equal(
+                "a VML picture whose image isn't a part of the document",
+            );
             expect(
                 itemsOf(readBody([p(pict("width:72pt;height:36pt", [{ "v:imagedata": {} }], { ...UNOUTLINED, "o:ole": "" }, "v:shape"))])),
             ).to.deep.equal([{ type: "box", width: 72, height: 36, font: {} }]);
@@ -2012,7 +2016,10 @@ describe("readDocument", () => {
             expect(reasonOf(pict("width:72pt;height:36pt", [], { strokeweight: "2em" }))).to.equal(
                 "a VML drawing with a length in units not yet followed",
             );
-            expect(reasonOf(pict("width:2em;height:36pt", [{ "v:imagedata": {} }], UNOUTLINED, "v:shape"))).to.equal("a VML picture");
+            // A picture's size in units not followed isn't known either
+            expect(reasonOf(pict("width:2em;height:36pt", [{ "v:imagedata": {} }], UNOUTLINED, "v:shape"))).to.equal(
+                "a VML drawing with a length in units not yet followed",
+            );
             // A drawing with no shape, such as a shape type alone, draws nothing (`word-stops-vml-shape-type.docx` VM29e)
             expect(itemsOf(readBody([p(r({ "w:pict": [{ "v:shapetype": [] }] }))]))).to.deep.equal([]);
             // In hidden text, it takes no room, and in text with a border, which Word hasn't been seen with, it stops
@@ -2153,6 +2160,9 @@ describe("readDocument", () => {
             expect(reasonOf(textBox([p(pict("width:1pt;height:1pt", [], UNOUTLINED))]))).to.equal(
                 "a VML drawing in the line of a text box",
             );
+            expect(reasonOf(textBox([p(pict("width:2em;height:1pt", [], UNOUTLINED))]))).to.equal(
+                "a VML drawing in the line of a text box",
+            );
             expect(
                 reasonOf(textBox([p(pPr({ "w:framePr": { _attr: { "w:hAnchor": "page", "w:vAnchor": "page" } } }), r(t("a")))])),
             ).to.equal("a text frame in a table cell, header, footer or text box");
@@ -2239,9 +2249,107 @@ describe("readDocument", () => {
             expect((plainItem as DrawingItem).drawing.frame?.inset).to.deep.equal({ left: 7.2, right: 7.2, top: 3.6, bottom: 3.6 });
         });
 
+        it("should read a picture in the line as a box of its shape's size, 33 points at most for one of a pixel, as Word draws it (VM20, VM30)", () => {
+            const PICTURE_TYPE = { "v:shapetype": [{ _attr: { id: "_x0000_t75", stroked: "f", filled: "f" } }] };
+            /** A picture as Word writes one: a shape of Word's type for pictures, with its image's relationship */
+            const picture = (style: string, id: string | null = "rId1", attributes: object = {}): object =>
+                r({
+                    "w:pict": [
+                        PICTURE_TYPE,
+                        {
+                            "v:shape": [
+                                { _attr: { style, type: "#_x0000_t75", ...attributes } },
+                                { "v:imagedata": { _attr: id === null ? {} : { "r:id": id } } },
+                            ],
+                        },
+                    ],
+                });
+            const pixel = { width: 1, height: 1 };
+            const wide = { width: 100, height: 50 };
+            /** The sizes of the images the body refers to, by the ids of its relationships to them */
+            const images = (...sizes: readonly (readonly [string, ImageSize | undefined])[]): DocumentParts["pictures"] => ({
+                body: new Map(sizes),
+            });
+            // In Word 2013's compatibility mode, as a document without settings is read as Word 2007's, where VML drawings stop
+            const settings = {
+                "w:settings": [{ "w:compat": [{ "w:compatSetting": { _attr: { "w:name": "compatibilityMode", "w:val": 15 } } }] }],
+            };
+            const read = (elements: readonly unknown[], parts: Partial<DocumentParts>, options: ReadOptions = {}): DocumentContent =>
+                readContent(
+                    { "w:body": elements },
+                    { styles: WORD_DEFAULT_STYLES, settings, headersAndFooters: new Map(), ...parts },
+                    options,
+                );
+            const drawnOf = (element: object, pictures = images(["rId1", wide])): readonly LayoutItem[] | string | undefined => {
+                const paragraph = paragraphOf(read([p(element)], { pictures }));
+                return paragraph.unsupported ?? paragraph.items;
+            };
+            const box = (width: number, height: number): LayoutItem => ({ type: "box", width, height, font: {} });
+            // A picture of 100 by 50 pixels is its shape's size, in shapes of 20 to 150 points (`word-stops-vml-pictures2.docx` VM30b
+            // to VM30h), with no outline, as Word's type for pictures has none
+            expect(drawnOf(picture("width:72pt;height:36pt"))).to.deep.equal([box(72, 36)]);
+            expect(drawnOf(picture("width:20pt;height:20pt"))).to.deep.equal([box(20, 20)]);
+            expect(drawnOf(picture("width:150pt;height:75pt"))).to.deep.equal([box(150, 75)]);
+            // One of a pixel is 33 points at most across and down (`word-vml.docx` VM8, `word-stops-vml-pictures.docx` VM20a to
+            // VM20d, VM20f, VM30a), whether its file says it is 96 dots to the inch or nothing
+            expect(drawnOf(picture("width:72pt;height:36pt"), images(["rId1", pixel]))).to.deep.equal([box(33, 33)]);
+            expect(drawnOf(picture("width:20pt;height:20pt"), images(["rId1", pixel]))).to.deep.equal([box(20, 20)]);
+            expect(drawnOf(picture("width:40pt;height:20pt"), images(["rId1", pixel]))).to.deep.equal([box(33, 20)]);
+            expect(drawnOf(picture("width:72pt;height:36pt"), images(["rId1", { ...pixel, density: 96.012 }]))).to.deep.equal([
+                box(33, 33),
+            ]);
+            // Past 33 points a pixel, a picture of another resolution, or of more pixels, hasn't been seen
+            expect(drawnOf(picture("width:72pt;height:36pt"), images(["rId1", { ...pixel, density: 300 }]))).to.equal(
+                "a VML picture drawn past 33 points a pixel of its image",
+            );
+            expect(drawnOf(picture("width:72pt;height:36pt"), images(["rId1", { width: 2, height: 2 }]))).to.equal(
+                "a VML picture drawn past 33 points a pixel of its image",
+            );
+            expect(drawnOf(picture("width:66pt;height:36pt"), images(["rId1", { width: 2, height: 1 }]))).to.deep.equal([box(66, 33)]);
+            expect(drawnOf(picture("width:60pt;height:100pt"), images(["rId1", { width: 2, height: 2 }]))).to.equal(
+                "a VML picture drawn past 33 points a pixel of its image",
+            );
+            // An outline of the shape's own takes its room, as a shape's does
+            expect(drawnOf(picture("width:72pt;height:36pt", "rId1", { stroked: "t", strokeweight: "2pt" }))).to.deep.equal([box(74, 38)]);
+            // An image the document has no part for, or none the picture refers to, or in a format whose size isn't read
+            expect(drawnOf(picture("width:72pt;height:36pt", "rId2"))).to.equal("a VML picture whose image isn't a part of the document");
+            expect(drawnOf(picture("width:72pt;height:36pt", null))).to.equal("a VML picture whose image isn't a part of the document");
+            expect(drawnOf(picture("width:72pt;height:36pt"), images(["rId1", undefined]))).to.equal(
+                "a VML picture whose image isn't a PNG, JPEG, GIF or BMP",
+            );
+            // One with no size of its own hasn't been seen
+            expect(drawnOf(picture(""))).to.equal("a VML picture with no size of its own");
+            // Guessing, a picture that stops the layout takes its shape's size
+            expect(itemsOf(read([p(picture("width:72pt;height:36pt", "rId2"))], { pictures: images() }, { guess: true }))).to.deep.include(
+                box(72, 36),
+            );
+            // In a header, and in a footnote or endnote, the images are the part's own
+            const header = read([p(r(t("a"))), { "w:sectPr": [{ "w:headerReference": { _attr: { "r:id": "rId1" } } }] }], {
+                headersAndFooters: new Map([["rId1", [p(picture("width:72pt;height:36pt"))]]]),
+                pictures: { body: new Map([["rId1", pixel]]), headersAndFooters: new Map([["rId1", new Map([["rId1", wide]])]]) },
+            });
+            expect((header.sections[0].headers.default![0] as ParagraphBlock).items).to.deep.equal([box(72, 36)]);
+            const noted = read(
+                [p(r({ "w:footnoteReference": { _attr: { "w:id": 1 } } }), r({ "w:endnoteReference": { _attr: { "w:id": 1 } } }))],
+                {
+                    footnotes: { "w:footnotes": [{ "w:footnote": [{ _attr: { "w:id": 1 } }, p(picture("width:72pt;height:36pt"))] }] },
+                    endnotes: { "w:endnotes": [{ "w:endnote": [{ _attr: { "w:id": 1 } }, p(picture("width:66pt;height:36pt"))] }] },
+                    pictures: {
+                        body: new Map([["rId1", pixel]]),
+                        footnotes: new Map([["rId1", wide]]),
+                        endnotes: new Map([["rId1", { width: 2, height: 1 }]]),
+                    },
+                },
+            );
+            expect((noted.footnotes.get("footnote 1")![0] as ParagraphBlock).items).to.deep.include(box(72, 36));
+            expect(noted.endnotes.flatMap((block) => (block as ParagraphBlock).items)).to.deep.include(box(66, 33));
+        });
+
         it("should stop at a shape that text flows around where Word's way with it isn't known", () => {
             const placed = "position:absolute;width:100pt;height:72pt";
-            expect(reasonOf(pict(placed, [SQUARE, { "v:imagedata": {} }], UNOUTLINED, "v:shape"))).to.equal("a VML picture");
+            expect(reasonOf(pict(placed, [SQUARE, { "v:imagedata": {} }], UNOUTLINED, "v:shape"))).to.equal(
+                "a VML picture placed on the page that text flows around",
+            );
             expect(reasonOf(pict("position:absolute;width:100pt", [SQUARE], UNOUTLINED))).to.equal(
                 "a VML drawing with a width but no height, or a height but no width",
             );

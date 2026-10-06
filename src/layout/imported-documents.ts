@@ -47,6 +47,7 @@ import {
     stringOf,
     withoutUndefined,
 } from "../text-layout";
+import type { ImageSize } from "./image-sizes";
 
 /** A .docx's package: its XML parts, parsed, its other parts, and the .docx files it imports, read the same way */
 export type DocxPackage = {
@@ -63,11 +64,28 @@ export type ImportedPart = {
     readonly document?: DocxParts;
 };
 
-/** The content of a part of a document, formatted, with what it imports, by the ids of its relationships to them */
-export type ContentPart = { readonly content: readonly unknown[]; readonly imports: ReadonlyMap<string, ImportedPart> };
+/**
+ * The sizes of the images a part of a document refers to, by the ids of its relationships to them: undefined for an image
+ * in a format whose size isn't read (see `image-sizes.ts`)
+ */
+export type PictureSizes = ReadonlyMap<string, ImageSize | undefined>;
 
-/** A document's footnotes or endnotes (`w:footnotes`, `w:endnotes`), formatted, with what they import */
-export type NotesPart = { readonly notes: XmlObject; readonly imports: ReadonlyMap<string, ImportedPart> };
+/**
+ * The content of a part of a document, formatted, with what it imports, by the ids of its relationships to them, and the
+ * sizes of its images
+ */
+export type ContentPart = {
+    readonly content: readonly unknown[];
+    readonly imports: ReadonlyMap<string, ImportedPart>;
+    readonly pictures: PictureSizes;
+};
+
+/** A document's footnotes or endnotes (`w:footnotes`, `w:endnotes`), formatted, with what they import and the sizes of their images */
+export type NotesPart = {
+    readonly notes: XmlObject;
+    readonly imports: ReadonlyMap<string, ImportedPart>;
+    readonly pictures: PictureSizes;
+};
 
 /** The parts of a .docx the layout reads, formatted as docx formats elements */
 export type DocxParts = {
@@ -727,7 +745,13 @@ export const withImports = (parts: DocxParts): DocxParts => {
     const notesOf = (kind: "footnote" | "endnote", own: XmlObject | undefined, part: NotesPart | undefined): NotesPart | undefined => {
         const { separators, notes } = added[kind];
         const root = own ?? (notes.length > 0 ? { [`w:${kind}s`]: separators } : undefined);
-        return root && { notes: withAdded(root, notes), imports: part?.imports ?? new Map() };
+        return (
+            root && {
+                notes: withAdded(root, notes),
+                imports: part?.imports ?? new Map(),
+                pictures: part?.pictures ?? new Map(),
+            }
+        );
     };
     return {
         ...parts,

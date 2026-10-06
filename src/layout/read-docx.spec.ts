@@ -291,6 +291,97 @@ describe("readDocx", () => {
         expect(pageCount).to.equal(1);
     });
 
+    it("should read the sizes of the images each part refers to from their files, for the part's VML pictures", () => {
+        /** A PNG's signature and header, of a size, which is all the layout reads of it */
+        const png = (width: number, height: number): Uint8Array =>
+            new Uint8Array([
+                0x89,
+                0x50,
+                0x4e,
+                0x47,
+                0x0d,
+                0x0a,
+                0x1a,
+                0x0a,
+                0,
+                0,
+                0,
+                13,
+                73,
+                72,
+                68,
+                82,
+                0,
+                0,
+                0,
+                width,
+                0,
+                0,
+                0,
+                height,
+                8,
+                2,
+                0,
+                0,
+                0,
+            ]);
+        const V = 'xmlns:v="urn:schemas-microsoft-com:vml"';
+        const picture = (id: string): string =>
+            `<w:p><w:r><w:pict><v:shapetype id="_x0000_t75" stroked="f"/><v:shape type="#_x0000_t75" style="width:72pt;height:36pt"><v:imagedata r:id="${id}"/></v:shape></w:pict></w:r></w:p>`;
+        const image = (id: string, target: string): string => `<Relationship Id="${id}" Type="${TRANSITIONAL}/image" Target="${target}"/>`;
+        const parts = new Map([
+            [
+                "word/_rels/document.xml.rels",
+                relationships(
+                    `<Relationship Id="rId1" Type="${TRANSITIONAL}/settings" Target="settings.xml"/>`,
+                    `<Relationship Id="rId2" Type="${TRANSITIONAL}/header" Target="header1.xml"/>`,
+                    `<Relationship Id="rId3" Type="${TRANSITIONAL}/footnotes" Target="footnotes.xml"/>`,
+                    image("rId4", "media/wide.png"),
+                    image("rId5", "media/missing.png"),
+                    image("rId6", "media/drawing.svg"),
+                ),
+            ],
+            ["word/settings.xml", parse(COMPATIBLE)],
+            ["word/_rels/header1.xml.rels", relationships(image("rId1", "media/pixel.png"))],
+            ["word/header1.xml", parse(`<w:hdr ${W} ${R} ${V}>${picture("rId1")}</w:hdr>`)],
+            ["word/_rels/footnotes.xml.rels", relationships(image("rId1", "media/wide.png"))],
+            ["word/footnotes.xml", parse(`<w:footnotes ${W} ${R} ${V}><w:footnote w:id="1">${picture("rId1")}</w:footnote></w:footnotes>`)],
+            [
+                "word/document.xml",
+                parse(
+                    `<w:document ${W} ${R} ${V}><w:body>${picture("rId4")}${picture("rId5")}${picture("rId6")}` +
+                        `<w:p><w:r><w:footnoteReference w:id="1"/></w:r></w:p><w:sectPr><w:headerReference w:type="default" r:id="rId2"/></w:sectPr></w:body></w:document>`,
+                ),
+            ],
+        ]);
+        const binaryParts = new Map([
+            ["word/media/wide.png", png(100, 50)],
+            ["word/media/pixel.png", png(1, 1)],
+            ["word/media/drawing.svg", new TextEncoder().encode("<svg/>")],
+        ]);
+        const content = readDocx(parts, binaryParts);
+        const paragraphs = content.blocks.map(({ block }) => block as ParagraphBlock);
+        // The body's picture of 100 by 50 pixels is its shape's size; the image the package doesn't have, and the one whose
+        // size isn't read, stop the layout
+        expect(paragraphs[0].items).to.deep.equal([{ type: "box", width: 72, height: 36, font: {} }]);
+        expect(paragraphs[1].unsupported).to.equal("a VML picture whose image isn't a part of the document");
+        expect(paragraphs[2].unsupported).to.equal("a VML picture whose image isn't a PNG, JPEG, GIF or BMP");
+        // The header's picture of a pixel is 33 points square, by the header's own relationships, and the footnote's by its own
+        expect((content.sections[0].headers.default![0] as ParagraphBlock).items).to.deep.equal([
+            { type: "box", width: 33, height: 33, font: {} },
+        ]);
+        expect((content.footnotes.get("footnote 1")![0] as ParagraphBlock).items).to.deep.include({
+            type: "box",
+            width: 72,
+            height: 36,
+            font: {},
+        });
+        // Without the package's files, no image is a part of the document
+        expect((readDocx(parts).blocks[0].block as ParagraphBlock).unsupported).to.equal(
+            "a VML picture whose image isn't a part of the document",
+        );
+    });
+
     it("should read a .docx without settings as one in Word 2007's compatibility mode, as Word lays it out", () => {
         const content = readDocx(new Map([["word/document.xml", documentOf("<w:p/>")]]));
         expect(content.compatibilityMode).to.equal(12);
