@@ -377,6 +377,13 @@ export type TableRow = {
      * points: the table's top border, in a table with space between its cells
      */
     readonly breakTop?: number;
+    /**
+     * The room at the table's edge above the row, of `borderTop`, and below it, of `borderBottom`, in points, which a row
+     * of an exact height doesn't include in its height, when there is any: the table's bottom border below the last row,
+     * and, with space between cells, the table's own border and the space inside it above the first row and below the last
+     */
+    readonly edgeTop?: number;
+    readonly edgeBottom?: number;
 };
 
 export type TableBlock = {
@@ -3593,7 +3600,12 @@ const readTable = (element: XmlObject, reader: Reader): TableBlock | undefined =
             ...row,
             borderTop: placed?.borderTop ?? 0,
             borderBottom: placed?.borderBottom ?? 0,
-            ...withoutUndefined({ breakBorder: placed?.breakBorder, breakTop: placed?.breakTop }),
+            ...withoutUndefined({
+                breakBorder: placed?.breakBorder,
+                breakTop: placed?.breakTop,
+                edgeTop: placed?.edgeTop,
+                edgeBottom: placed?.edgeBottom,
+            }),
             cells: cells.map(({ borders: _, margins, gridWidth: __, ...cell }, cellIndex) => {
                 const pending = [...carried, ...cellBookmarks[cellIndex]];
                 const marked = pending.length === 0 ? undefined : startingAtFirst(cell.blocks, pending);

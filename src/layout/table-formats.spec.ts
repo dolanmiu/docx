@@ -17,6 +17,7 @@ import {
 import { BORDER_WIDTHS } from "../text-layout";
 import { layoutDocument } from "./layout-document";
 import {
+    type Border,
     type BorderedCell,
     type PlacedCell,
     conditionalTypesOf,
@@ -159,35 +160,99 @@ describe("rowBorders", () => {
 });
 
 describe("sideBorders", () => {
-    it("should give the border left and right of each cell, its own or the table's, whichever is wider where cells meet", () => {
+    it("should give the border left and right of each cell, its own or the table's, and before the next cell's the one Word draws", () => {
         const cells: readonly BorderedCell[] = [
             { column: 0, borders: {} },
-            { column: 1, borders: { left: single(3) } },
+            { column: 1, borders: { left: of("dotted", 0.5) } },
             { column: 2, borders: { right: NONE } },
         ];
+        // The table's single border between the first cells is drawn over the second's dotted one, which weighs 1, and is no
+        // wider, so the first cell's text is kept from it, and the second's from its own
         expect(sideBorders(cells, { left: single(1), insideV: single(0.5), right: single(2) })).to.deep.equal([
             { left: 1, right: 0.5 },
-            { left: 3, right: 0.5 },
+            { left: 0.5, right: 0.5 },
             { left: 0.5, right: 0 },
         ]);
-        // word-stops-table-borders2.docx BT1a, BT1b: each cell's own, though Word draws the dotted and dashed line of 1 point
-        // over the single one of 6
+        // word-stops-table-borders2.docx BT1a, BT1b, word-stops-tables3.docx BT7a, BT7b: the dotted and dashed line of 1 point,
+        // drawn over the single one of 6 whichever cell's it is, keeps the first cell's text from it, and the second cell's
+        // text is kept from its own
+        const meeting = (first: Border, second: Border): ReturnType<typeof sideBorders> =>
+            sideBorders(
+                [
+                    { column: 0, borders: { right: first } },
+                    { column: 1, borders: { left: second } },
+                ],
+                {},
+            );
+        expect(meeting(of("dotDash", 1), single(6))).to.deep.equal([
+            { left: 0, right: 1 },
+            { left: 6, right: 0 },
+        ]);
+        expect(meeting(single(6), of("dotDash", 1))).to.deep.equal([
+            { left: 0, right: 1 },
+            { left: 1, right: 0 },
+        ]);
+        // BT7c: a thin and thick line of half a point, 2 points of room, drawn over a single one of 3
+        expect(meeting(of("thinThickSmallGap", 0.5), single(3))).to.deep.equal([
+            { left: 0, right: 2 },
+            { left: 3, right: 0 },
+        ]);
+        // Of two as heavy, Word draws the later of their styles in its list: a thick line of 1.5 points over a single one of 3,
+        // and a dashed line over a dotted one, which weigh 1 whatever their width
+        expect(meeting(single(3), of("thick", 1.5))).to.deep.equal([
+            { left: 0, right: 1.5 },
+            { left: 1.5, right: 0 },
+        ]);
+        expect(meeting(of("dotted", 2), of("dashed", 1))).to.deep.equal([
+            { left: 0, right: 1 },
+            { left: 1, right: 0 },
+        ]);
+        // Where Word draws the wider of the two, or the next cell's over none, how far it keeps the first cell's text isn't
+        // known: from the one it draws, or from the narrower, which comes too
+        expect(meeting(single(6), single(1))).to.deep.equal([
+            { left: 0, right: 6, rightUnsettled: 1 },
+            { left: 1, right: 0 },
+        ]);
+        expect(meeting(single(1), single(6))).to.deep.equal([
+            { left: 0, right: 6, rightUnsettled: 1 },
+            { left: 6, right: 0 },
+        ]);
+        expect(meeting(NONE, single(1))).to.deep.equal([
+            { left: 0, right: 1, rightUnsettled: 0 },
+            { left: 1, right: 0 },
+        ]);
+        // word-table-formats.docx BC7 to BC9: a cell's own border beside a cell with none is settled
+        expect(meeting(single(6), NONE)).to.deep.equal([
+            { left: 0, right: 6 },
+            { left: 0, right: 0 },
+        ]);
+        // With space between cells, none meet
         expect(
             sideBorders(
                 [
-                    { column: 0, borders: { right: of("dotDash", 1) } },
-                    { column: 1, borders: { left: single(6) } },
+                    { column: 0, borders: { right: NONE } },
+                    { column: 1, borders: { left: single(1) } },
                 ],
                 {},
+                false,
             ),
         ).to.deep.equal([
-            { left: 0, right: 1 },
-            { left: 6, right: 0 },
+            { left: 0, right: 0 },
+            { left: 1, right: 0 },
         ]);
         expect(sideBorders([], {})).to.deep.equal([]);
         expect(sideBorders([{ column: 0, borders: { left: of("wave", 1.25) } }], {})).to.equal(
             "a table border in a style not yet followed",
         );
+        expect(sideBorders([{ column: 0, borders: { right: of("wave", 1.25) } }], {})).to.equal(
+            "a table border in a style not yet followed",
+        );
+        expect(meeting(of("wave", 1.25), single(1))).to.equal("a table border in a style not yet followed");
+        expect(meeting(single(1), of("wave", 1.25))).to.equal("a table border in a style not yet followed");
+        // A wave of a width Word doesn't offer, whose room isn't known, under the triple one Word draws, and a line style
+        // Word doesn't weigh
+        expect(meeting(of("triple", 6), of("wave", 1.25))).to.equal("a table border in a style not yet followed");
+        expect(meeting(single(1), of("custom", 1))).to.equal("a table border in a style not yet followed");
     });
 
     it("should stop at an art border beside a cell's text, its own or the next cell's", () => {
@@ -259,6 +324,7 @@ describe("tableGeometry", () => {
                 borderBottom: 0.5 + 5,
                 breakBorder: 1,
                 breakTop: 3,
+                edgeTop: 5 + 3,
                 cells: [
                     [10, 5, 85],
                     [5, 10, 85],
@@ -269,6 +335,7 @@ describe("tableGeometry", () => {
                 borderBottom: 1 + 5 + 5 + 1,
                 breakBorder: 1,
                 breakTop: 3,
+                edgeBottom: 5 + 1,
                 cells: [
                     [10, 5, 85],
                     [5, 10, 85],
@@ -294,6 +361,8 @@ describe("tableGeometry", () => {
                 borderTop: 4,
                 borderBottom: 4,
                 breakBorder: 0,
+                edgeTop: 2,
+                edgeBottom: 2,
                 cells: [
                     [2 + 2 + 1, 2 + 0.5, 92.5],
                     [2 + 0.5, 2 + 2 + 3, 90.5],
@@ -302,14 +371,14 @@ describe("tableGeometry", () => {
         ]);
     });
 
-    it("should keep a cell's text from its own border where two of different styles meet, whichever Word draws", () => {
-        const meeting = (right: { readonly style: string; readonly width: number }, margin: number): ReturnType<typeof tableGeometry> =>
+    it("should keep a cell's text from its own border where two of different styles meet, and the cell before them from the one Word draws", () => {
+        const meeting = (right: Border, left: Border, margin: number): ReturnType<typeof tableGeometry> =>
             tableGeometry(
                 [
                     {
                         cells: [
                             placed({ right }, { top: 0, bottom: 0, left: margin, right: margin }),
-                            { ...placed({ left: single(6) }, { top: 0, bottom: 0, left: margin, right: margin }), column: 1 },
+                            { ...placed({ left }, { top: 0, bottom: 0, left: margin, right: margin }), column: 1 },
                         ],
                         spacing: 0,
                     },
@@ -318,7 +387,7 @@ describe("tableGeometry", () => {
             );
         // word-stops-table-borders2.docx BT1a, BT1e: Word draws the dotted and dashed line of 1 point over the single one of
         // 6, but the second cell's text is 3 points from it, more than a margin of 2
-        expect(rounded(meeting(of("dotDash", 1), 0))).to.deep.equal([
+        expect(rounded(meeting(of("dotDash", 1), single(6), 0))).to.deep.equal([
             {
                 borderTop: 0,
                 borderBottom: 0,
@@ -329,7 +398,7 @@ describe("tableGeometry", () => {
                 ],
             },
         ]);
-        expect(rounded(meeting(of("dotDash", 1), 2))).to.deep.equal([
+        expect(rounded(meeting(of("dotDash", 1), single(6), 2))).to.deep.equal([
             {
                 borderTop: 0,
                 borderBottom: 0,
@@ -337,6 +406,35 @@ describe("tableGeometry", () => {
                 cells: [
                     [2, 2, 96],
                     [3, 2, 95],
+                ],
+            },
+        ]);
+        // word-stops-tables3.docx BT7b: the first cell's text is half a point from the second's dotted and dashed line, which
+        // Word draws over the first's single one of 6, where the second's is 3 points from its own
+        expect(rounded(meeting(single(6), of("dotDash", 1), 0))).to.deep.equal([
+            {
+                borderTop: 0,
+                borderBottom: 0,
+                breakBorder: 0,
+                cells: [
+                    [0, 0.5, 99.5],
+                    [0.5, 0, 99.5],
+                ],
+            },
+        ]);
+        // Where Word draws the wider, the layout stops, unless the cell's margin is more than half of either, where the text
+        // is kept its margin away either way
+        const WIDER = "two table cells' borders that meet, of which Word draws the wider, beside text with less margin than half of it";
+        expect(meeting(single(6), single(1), 0)).to.equal(WIDER);
+        expect(meeting(single(6), single(1), 2)).to.equal(WIDER);
+        expect(rounded(meeting(single(6), single(1), 3))).to.deep.equal([
+            {
+                borderTop: 0,
+                borderBottom: 0,
+                breakBorder: 0,
+                cells: [
+                    [3, 3, 94],
+                    [3, 3, 94],
                 ],
             },
         ]);
@@ -352,6 +450,7 @@ describe("tableGeometry", () => {
                 borderBottom: 0.5 + 2,
                 breakBorder: 0.5,
                 breakTop: 0.5,
+                edgeTop: 2 + 0.5,
                 cells: [
                     [4, 2, 94],
                     [2, 4, 94],
@@ -372,6 +471,7 @@ describe("tableGeometry", () => {
                 borderBottom: 0.5 + 2 + 2 + 0.5,
                 breakBorder: 0.5,
                 breakTop: 0.5,
+                edgeBottom: 2 + 0.5,
                 cells: [
                     [4, 2, 94],
                     [2, 4, 94],
@@ -817,7 +917,11 @@ describe("tables laid out as Word lays them out", () => {
         // word-stops-tables2.docx TS15: a first row of exactly 400 twips, borders of half a point; word-stops-tables.docx TS1a:
         // one of at least 1000
         const line = { style: BorderStyle.SINGLE, size: 4, color: "000000" };
-        const rowsOf = (rule: (typeof HeightRule)[keyof typeof HeightRule], value: number): Table =>
+        const rowsOf = (
+            rule: (typeof HeightRule)[keyof typeof HeightRule],
+            value: number,
+            changes: Partial<ConstructorParameters<typeof Table>[0]> = {},
+        ): Table =>
             new Table({
                 width: { size: WIDTH, type: WidthType.DXA },
                 columnWidths: [WIDTH],
@@ -826,9 +930,43 @@ describe("tables laid out as Word lays them out", () => {
                     new TableRow({ height: { value, rule }, children: [new TableCell({ children: [new Paragraph("r1")] })] }),
                     new TableRow({ children: [new TableCell({ children: [new Paragraph("r2")] })] }),
                 ],
+                ...changes,
             });
         expect(rowHeights(layOut([rowsOf(HeightRule.EXACT, 400)]))).to.deep.equal([400, Math.round((LINE + 20) * 10) / 10]);
         expect(rowHeights(layOut([rowsOf(HeightRule.ATLEAST, 1000)]))).to.deep.equal([1010, Math.round((LINE + 20) * 10) / 10]);
+        // word-stops-tables3.docx TS16b: a border of 3 points above a row of exactly 600 is inside it too
+        const thick = { ...line, size: 24 };
+        expect(
+            rowHeights(
+                layOut([
+                    rowsOf(HeightRule.EXACT, 600, {
+                        borders: { top: thick, bottom: line, left: line, right: line, insideHorizontal: line, insideVertical: line },
+                    }),
+                ]),
+            ),
+        ).to.deep.equal([600, Math.round((LINE + 20) * 10) / 10]);
+        // TS16a: with space of 40 twips between cells, the row's own space and its cell's borders are inside its 600, and the
+        // table's top border and the space inside it, 50, outside: 650 to the next row, which is a line, its borders, its
+        // space and the table's bottom edge
+        expect(rowHeights(layOut([rowsOf(HeightRule.EXACT, 600, { cellSpacing: { value: 40, type: WidthType.DXA } })]))).to.deep.equal([
+            650,
+            Math.round((LINE + 10 + 10 + 40 + 40 + 40 + 10) * 10) / 10,
+        ]);
+        // The last row of an exact height keeps the table's bottom border and the space inside it outside its height too
+        const last = new Table({
+            width: { size: WIDTH, type: WidthType.DXA },
+            columnWidths: [WIDTH],
+            borders: { top: line, bottom: line, left: line, right: line, insideHorizontal: line, insideVertical: line },
+            cellSpacing: { value: 40, type: WidthType.DXA },
+            rows: [
+                new TableRow({ children: [new TableCell({ children: [new Paragraph("r1")] })] }),
+                new TableRow({
+                    height: { value: 600, rule: HeightRule.EXACT },
+                    children: [new TableCell({ children: [new Paragraph("r2")] })],
+                }),
+            ],
+        });
+        expect(rowHeights(layOut([last]))).to.deep.equal([Math.round((LINE + 10 + 10 + 40 + 40 + 40 + 10) * 10) / 10, 650]);
     });
 
     it("should apply a table style's first row's size where the table turns it on, and Normal has no size of its own (SP19)", () => {

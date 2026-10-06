@@ -509,7 +509,8 @@ const fitTo = (table: TableBlock, available: number, content: ReadonlyMap<TableC
     // A table that fills the width it is in, or a share of it, has half of each of its left and right borders inside it,
     // outside its columns, as one of a width in twips has them outside it (`word-stops-long-words.docx` LW1,
     // `word-stops-long-words2.docx` LW6, LW8: borders of half a point, its columns 10 twips less than the width or its
-    // share). In compatibility mode, its first and last cells' margins are beside the room, as Word 2010 and before line its
+    // share; `word-stops-tables3.docx` BT8a, BT8b: borders of 3 and 6 points, its columns 60 and 120 less). In
+    // compatibility mode, its first and last cells' margins are beside the room, as Word 2010 and before line its
     // text up with the margins (`word-stops-compat-14.docx` CM4)
     const borders = table.marginsBeside === true ? 0 : ((table.borderLeft ?? 0) + (table.borderRight ?? 0)) / 2;
     const beside = table.marginsBeside === true ? outerMargins(table) : 0;
@@ -540,8 +541,12 @@ const fitTo = (table: TableBlock, available: number, content: ReadonlyMap<TableC
     // two and three words, of a word and three, and a line of three words whose widest is the word that counts;
     // `word-table-widths.docx` TW12, TW13: 595 twips for a column whose widest word is 552, beside one of 12146; LW6a). With
     // cells merged across columns, or a column's cells of different margins, how isn't known. Long words in cells merged
-    // across columns are shared among them in ways not yet followed (see above). Each is sized as the others are, which is
-    // the layout's guess where it is asked to guess past them
+    // across columns are shared among them in ways not yet followed (see above): Word's PDFs of `word-stops-long-words.docx`
+    // LW2f to LW2i, `word-stops-long-words2.docx` LW8a to LW8d and `word-stops-tables3.docx` LW9a to LW9f show the word's
+    // width past the columns' widest words handed to the columns it is across one by one, each taking a share of what is
+    // left, so the first gets more, which fits every case whose columns are alike (within 12 twips), but the shares of
+    // columns that differ fit no rule tried within 45. Each is sized as the others are, which is the layout's guess where
+    // it is asked to guess past them
     const words = proportionalWords(table, columns);
     const least = sum(columns.map(({ min }) => min));
     const overflowing = least > room && tableWidth.width === undefined;

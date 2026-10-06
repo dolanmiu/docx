@@ -1356,20 +1356,19 @@ describe("paginate", () => {
             ]);
             // 20 + 20 + 5 + 10 leaves 15 points: room for b
             expect(pagesOf(content)).to.deep.equal({ margins: "1", atLeast: "1", exact: "1", last: "1", b: "1" });
-            // The border above a row of an exact height is inside that height (word-stops-tables2.docx TS15), but in a table
-            // with space between its cells, outside it, as Word's PDFs haven't shown that
-            const exact = (borderTop: number, spacing?: number): readonly BlockLayout[] =>
-                paginate(
-                    document([
-                        {
-                            ...table([{ ...row([cell("exact")]), height: { value: 15, rule: "exact" }, borderTop }]),
-                            ...(spacing === undefined ? {} : { cellSpacing: spacing }),
-                        },
-                    ]),
-                    { measurer: MEASURER },
-                ).pages[0].body;
-            expect(exact(5)).to.deep.equal([{ type: "table", index: 0, rows: [{ index: 0, y: 10, height: 15 }] }]);
-            expect(exact(5, 1)).to.deep.equal([{ type: "table", index: 0, rows: [{ index: 0, y: 10, height: 20 }] }]);
+            // The border above a row of an exact height is inside that height (word-stops-tables2.docx TS15), and so are
+            // the space between cells and its cells' borders, but the table's edge: its border and the space inside it,
+            // above the first row and below the last (word-stops-tables3.docx TS16a)
+            const exact = (changes: Partial<TableRow>): readonly BlockLayout[] =>
+                paginate(document([table([{ ...row([cell("exact")]), height: { value: 15, rule: "exact" }, ...changes }])]), {
+                    measurer: MEASURER,
+                }).pages[0].body;
+            const rowOf = (height: number): readonly BlockLayout[] => [{ type: "table", index: 0, rows: [{ index: 0, y: 10, height }] }];
+            expect(exact({ borderTop: 5 })).to.deep.equal(rowOf(15));
+            expect(exact({ borderTop: 5, edgeTop: 2 })).to.deep.equal(rowOf(17));
+            expect(exact({ borderTop: 5, edgeTop: 2, borderBottom: 6, edgeBottom: 4 })).to.deep.equal(rowOf(21));
+            // Its own borders and space taller than its height make it taller
+            expect(exact({ borderTop: 25, edgeTop: 5, borderBottom: 6, edgeBottom: 4 })).to.deep.equal(rowOf(31));
             const margined = document([
                 {
                     type: "table",
@@ -2503,7 +2502,8 @@ describe("paginate", () => {
                     ]),
                 });
             }
-            // Two lines of it go on the page, and the rest on the next, below the rest of the row, as a paragraph's
+            // Two lines of it go on the page, and the rest on the next, below the rest of the row, as a paragraph's: Word
+            // put 6 of 10 lines beside the first row and the 4 others beside the second (word-stops-tables3.docx RW21)
             const twoLines = document([
                 paragraph("a", 4),
                 table([

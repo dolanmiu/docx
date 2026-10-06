@@ -1390,7 +1390,7 @@ export const paginate = (
      */
     const rowHeights = (table: TableBlock, merges = mergesOf(table)): readonly number[] => {
         const { rows } = table;
-        const heights = rows.map(({ cells, height, borderTop, borderBottom }) => {
+        const heights = rows.map(({ cells, height, borderTop, borderBottom, edgeTop = 0, edgeBottom = 0 }) => {
             const own = cells.filter(({ verticalMerge }) => verticalMerge === undefined);
             const largest = (lengths: readonly number[]): number => Math.max(0, ...lengths);
             // Text that runs up or down a cell makes no row taller that has cells of text across it: a mark of 20 points
@@ -1405,12 +1405,15 @@ export const paginate = (
                       largest((across.length > 0 ? across : own).map(contentHeight)) +
                       largest(own.map(({ marginBottom }) => marginBottom));
             // A row exactly as tall as it says has its border above it inside that height, where one at least as tall has
-            // it outside, in a table without space between its cells (word-stops-tables2.docx TS15: rows of exactly 400
-            // twips and at least 1000 beside borders of half a point; word-stops-tables.docx TS1a)
-            if (height?.rule === "exact" && table.cellSpacing === undefined) {
-                return Math.max(height.value, borderTop) + borderBottom;
+            // it outside (word-stops-tables2.docx TS15: rows of exactly 400 twips and at least 1000 beside borders of half
+            // a point; word-stops-tables.docx TS1a; word-stops-tables3.docx TS16b: a border of 3 points above a row of
+            // exactly 600). With space between cells, its own space and its cells' borders are inside it too, and only the
+            // table's edge, its border and the space inside it, outside (TS16a: a row of exactly 600 with space of 40 and
+            // borders of half a point took 650 from the table's top edge)
+            if (height?.rule === "exact") {
+                return Math.max(height.value, borderTop - edgeTop + borderBottom - edgeBottom) + edgeTop + edgeBottom;
             }
-            const rowHeight = height === undefined ? natural : height.rule === "exact" ? height.value : Math.max(height.value, natural);
+            const rowHeight = height === undefined ? natural : Math.max(height.value, natural);
             return rowHeight + borderTop + borderBottom;
         });
         // A cell merged down rows has its text between the border above the first of them and the one below the last
@@ -4881,7 +4884,10 @@ export const paginate = (
         const own = row.cells.filter((cell) => !startsMerge(cell)).flatMap((cell) => cell.blocks.flatMap(markersOf));
         const markers = [...own, ...row.cells.filter(startsMerge).flatMap(roomlessOf)];
         const height = linesBottom() - position;
-        const room = row.height?.rule === "exact" ? row.height.value - row.borderTop : height - row.borderTop - row.borderBottom;
+        const room =
+            row.height?.rule === "exact"
+                ? row.height.value - (row.borderTop - (row.edgeTop ?? 0)) - (row.borderBottom - (row.edgeBottom ?? 0))
+                : height - row.borderTop - row.borderBottom;
         // Its footnotes, those of its own cells and of the text of cells merged down it that ends in it. Nothing else is on
         // the page, at whose top it is
         let notes = notesIn(own);

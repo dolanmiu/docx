@@ -137,6 +137,10 @@ describe("fitColumns", () => {
         expect(widthsOf(fitColumns({ ...bordered, fit: { share: 1 } }, 70.5, measure))).to.deep.equal([8.3, 41.7]);
         // Not one of a width of its own in twips, whose borders are outside it
         expect(widthsOf(fitColumns({ ...bordered, fit: { width: 70 } }, 300, measure))).to.deep.equal([20, 100]);
+        // word-stops-tables3.docx BT8a, BT8b: borders of 3 and 6 points too, the columns 1104 and 7862 twips of 9026 at 3,
+        // and 1106 and 7798 at 6, each within 4 of the layout's
+        expect(widthsOf(fitColumns({ ...bordered, borderLeft: 3, borderRight: 3 }, 70.5, measure))).to.deep.equal([7.9, 39.6]);
+        expect(widthsOf(fitColumns({ ...bordered, borderLeft: 6, borderRight: 6 }, 70.5, measure))).to.deep.equal([7.4, 37.1]);
     });
 
     it("should stop at words that don't fit in the room where how Word shares it isn't known", () => {
