@@ -6970,6 +6970,14 @@ export declare type IShadingAttributesProperties = {
 };
 
 /**
+ * Options for a simple field.
+ */
+export declare type ISimpleFieldOptions = {
+    /** Locks the field so Word keeps the cached value when fields are updated. Not locked by default. */
+    readonly locked?: boolean;
+};
+
+/**
  * Properties for configuring paragraph spacing.
  *
  * All values are in twips (twentieths of a point) unless otherwise specified.
@@ -11668,10 +11676,13 @@ export declare const signedTwipsMeasureValue: (val: UniversalMeasure | number) =
  *
  * // Simple field with cached value
  * new SimpleField("DATE", "2024-01-01");
+ *
+ * // Locked field, Word keeps the cached value when fields are updated
+ * new SimpleField("DATE", "2024-01-01", { locked: true });
  * ```
  */
 export declare class SimpleField extends XmlComponent {
-    constructor(instruction: string, cachedValue?: string);
+    constructor(instruction: string, cachedValue?: string, options?: ISimpleFieldOptions);
 }
 
 /**

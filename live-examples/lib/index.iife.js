@@ -16333,7 +16333,10 @@ EXTERNAL: "External" };
 	var FldSimpleAttrs = class extends XmlAttributeComponent {
 		constructor(..._args) {
 			super(..._args);
-			_defineProperty(this, "xmlKeys", { instr: "w:instr" });
+			_defineProperty(this, "xmlKeys", {
+				instr: "w:instr",
+				fldLock: "w:fldLock"
+			});
 		}
 	};
 	/**
@@ -16366,12 +16369,18 @@ EXTERNAL: "External" };
 	*
 	* // Simple field with cached value
 	* new SimpleField("DATE", "2024-01-01");
+	*
+	* // Locked field, Word keeps the cached value when fields are updated
+	* new SimpleField("DATE", "2024-01-01", { locked: true });
 	* ```
 	*/
 	var SimpleField = class extends XmlComponent {
-		constructor(instruction, cachedValue) {
+		constructor(instruction, cachedValue, options = {}) {
 			super("w:fldSimple");
-			this.root.push(new FldSimpleAttrs({ instr: instruction }));
+			this.root.push(new FldSimpleAttrs({
+				instr: instruction,
+				fldLock: options.locked ? true : void 0
+			}));
 			if (cachedValue !== void 0) this.root.push(new TextRun(cachedValue));
 		}
 	};
