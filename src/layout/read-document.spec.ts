@@ -158,6 +158,42 @@ describe("readDocument", () => {
             ]);
         });
 
+        it("should read characters past ASCII in the run's high ANSI font, inherited on its own, and stop where Word's font for them isn't known", () => {
+            // Curly quotes in a run given SimSun for ASCII alone are in the document's Calibri, as Word drew them
+            // (word-stops-fe-layout2.docx FE2c, word-stops-compat2-15.docx CN10c)
+            const simSun = { "w:rFonts": { _attr: { "w:ascii": "SimSun", "w:eastAsia": "SimSun" } } };
+            const calibri = { styles: { default: { document: { run: { font: "Calibri" } } } } };
+            const content = readBody([p(r(rPr(simSun), t("a\u201c\u4e2d\u201d")))], calibri);
+            expect(itemsOf(content)).to.deep.equal([
+                { type: "text", text: "a", font: { font: "SimSun" }, eastAsian: true },
+                { type: "text", text: "\u201c", font: { font: "Calibri" }, eastAsian: true },
+                { type: "text", text: "\u4e2d", font: { font: "SimSun" }, eastAsian: true },
+                { type: "text", text: "\u201d", font: { font: "Calibri" }, eastAsian: true },
+            ]);
+            // Without a high ANSI font in the document, all of it is in the run's font
+            expect(itemsOf(readBody([p(r(rPr(simSun), t("a\u201c")))]))).to.deep.equal([
+                { type: "text", text: "a\u201c", font: { font: "SimSun" }, eastAsian: true },
+            ]);
+            // Which font Word draws them in with the run's hint for East Asian text hasn't been seen, nor Thai in a run with a
+            // high ANSI font other than its font for ASCII; hidden text takes no room in any font
+            const hinted = { "w:rFonts": { _attr: { "w:ascii": "SimSun", "w:eastAsia": "SimSun", "w:hint": "eastAsia" } } };
+            expect(paragraphOf(readBody([p(r(rPr(hinted), t("\u4e2d\u201c")))])).unsupported).to.equal(
+                "a character Word may draw in the East Asian font of a run with the hint for East Asian text (w:hint), such as a curly quote",
+            );
+            expect(paragraphOf(readBody([p(r(rPr(hinted), t("\u4e2d\u6587")))])).unsupported).to.equal(undefined);
+            expect(paragraphOf(readBody([p(r(rPr(simSun), t("\u0e01")))], calibri)).unsupported).to.equal(
+                "a character of a script Word's run-font rules leave out, such as Thai, in a run with a high ANSI font other than its font for ASCII",
+            );
+            expect(paragraphOf(readBody([p(r(rPr(simSun, { "w:vanish": {} }), t("\u0e01")))], calibri)).unsupported).to.equal(undefined);
+            // Read to be laid out with a guess, it is laid out in the layout's fonts
+            const guessed = readDocument(
+                { "w:body": [p(r(rPr(hinted), t("\u4e2d\u201c")))] } as IXmlableObject,
+                contextOf(new File({ sections: [] })),
+                { guess: true },
+            );
+            expect(itemsOf(guessed).flatMap((item) => (item.type === "text" ? [item.text] : []))).to.deep.equal(["\u4e2d", "\u201c"]);
+        });
+
         it("should read an empty paragraph", () => {
             expect(paragraphOf(readBody([{ "w:p": {} }]))).to.deep.include({ items: [], style: "Normal" });
         });
@@ -2916,6 +2952,28 @@ describe("readDocument", () => {
             expect(stopsAt(decimal(0, value("w:suff", "space"), value("w:lvlJc", "right")))).to.equal(undefined);
             expect(stopsAt(decimal(0), [value("w:em", "dot")])).to.equal(undefined);
             expect(stopsAt(decimal(0), [value("w:position", 6)])).to.equal(undefined);
+            // A bullet of the run's high ANSI font, where the level gives a font for ASCII alone, is in the document's; one of
+            // characters of both fonts, or of a run with the hint for East Asian text, hasn't been seen
+            const bullet = (text: string, ...fonts: readonly object[]): object =>
+                lvl(0, value("w:numFmt", "bullet"), value("w:lvlText", text), {
+                    "w:rPr": [{ "w:rFonts": { _attr: { "w:ascii": "Symbol", ...Object.assign({}, ...fonts) } } }],
+                });
+            const numberOf = (level: object): { readonly font?: object } =>
+                itemsOf(
+                    readLists(
+                        [abstractNum(0, level), num(1, 0)],
+                        [p(pPr({ "w:numPr": [value("w:ilvl", 0), value("w:numId", 1)] }), r(t("item")))],
+                    ),
+                )[0] as { readonly font?: object };
+            expect(numberOf(bullet("\u2022", { "w:hAnsi": "Calibri" })).font).to.deep.equal({ font: "Calibri", listNumber: "number" });
+            expect(numberOf(bullet("\u2022")).font).to.deep.equal({ font: "Symbol", listNumber: "number" });
+            expect(numberOf(bullet("1.", { "w:hAnsi": "Calibri" })).font).to.deep.equal({ font: "Symbol", listNumber: "number" });
+            expect(stopsAt(bullet("\u2022 1.", { "w:hAnsi": "Calibri" }))).to.equal(
+                "a list number of characters of both the font for ASCII and the high ANSI font of its run",
+            );
+            expect(stopsAt(bullet("\u2022", { "w:hint": "eastAsia" }))).to.equal(
+                "a character Word may draw in the East Asian font of a run with the hint for East Asian text (w:hint), such as a curly quote",
+            );
             // LI4a: Word put the text right after the number's box, past the hanging indent's stop, which isn't followed
             expect(stopsAt(decimal(0), [{ "w:bdr": { _attr: { "w:val": "single", "w:sz": 4, "w:space": 0 } } }])).to.equal(
                 "a list number with a border",
@@ -3512,11 +3570,22 @@ describe("readDocument", () => {
                 { "w:horzAnchor": "margin", "w:vertAnchor": "page", "w:tblpXSpec": "right", "w:tblpYSpec": "bottom", "w:tblpX": 400 },
                 value("w:tblOverlap", "never"),
             );
+            // Word keeps the text beside it half a point from it with no distance given (`word-stops-compat2-15.docx` CN9);
+            // whether it keeps one under half a point at that hasn't been seen
             expect(lined.float).to.deep.equal({
                 horizontal: { from: "margin", align: "right" },
                 vertical: { from: "page", align: "bottom" },
-                distances: { top: 0, bottom: 0, left: 0, right: 0 },
+                distances: { top: 0, bottom: 0, left: 0.5, right: 0.5 },
                 mayOverlap: false,
+            });
+            const closeReason = "a table that text flows around less than half a point from the text beside it";
+            expect(floatOf({ "w:leftFromText": 9 }).unsupported).to.equal(closeReason);
+            expect(floatOf({ "w:rightFromText": "0.4pt", "w:leftFromText": 10 }).unsupported).to.equal(closeReason);
+            expect(floatOf({ "w:rightFromText": 10, "w:leftFromText": 0, "w:topFromText": 5 }).float!.distances).to.deep.equal({
+                top: 0.25,
+                bottom: 0,
+                left: 0.5,
+                right: 0.5,
             });
             expect(floatOf({ "w:horzAnchor": "page", "w:vertAnchor": "margin" }, value("w:tblOverlap", "overlap")).float).to.deep.include({
                 horizontal: { from: "page", offset: 0 },
@@ -5589,12 +5658,11 @@ describe("readDocument", () => {
             expect(reasonOf(readBody([japanese], in2007))).to.equal(undefined);
             expect(readBody([japanese], in2007).breakRules).to.deep.equal({ ideographs: false });
             expect(readBody([japanese], in2010).breakRules).to.equal(undefined);
-            // In an East Asian language, or beside characters Word draws in a run's font for them past ASCII, it hasn't been seen
-            const older =
-                "East Asian text in an East Asian language, or beside characters past ASCII, in a document in compatibility mode 12 or 11";
+            // In an East Asian language it hasn't been seen; beside curly quotes, in the run's high ANSI font, it has (CN10c)
+            const older = "East Asian text in an East Asian language, in a document in compatibility mode 12 or 11";
             const inJapanese = p(r(rPr({ "w:lang": { _attr: { "w:eastAsia": "ja-JP" } } }), t("日本語の文章")));
             expect(reasonOf(readBody([inJapanese], in2007))).to.equal(older);
-            expect(reasonOf(readBody([p(r(t("\u201c日本語\u201d")))], in2007))).to.equal(older);
+            expect(reasonOf(readBody([p(r(t("\u201c日本語\u201d")))], in2007))).to.equal(undefined);
             expect(reasonOf(readBody([japanese], in2010))).to.equal(undefined);
             // Word 2003's East Asian layout spaces East Asian text apart from Latin letters and digits beside it, with the
             // paragraph's automatic spacing of them on (word-stops-fe-layout2.docx FE2b), and lays it out as without it
@@ -5701,9 +5769,9 @@ describe("readDocument", () => {
                 "a table sized to its text in a table cell, indented or as a share of the width, in a document in compatibility mode";
             expect(tableOf(nestedIn(tableWith(indented))).unsupported).to.equal(inCell);
             expect(tableOf(nestedIn(tableWith(share))).unsupported).to.equal(inCell);
-            // One that text flows around Word places with its first cell's text where it is placed (CM10, CN9), but for one
-            // sized to its text or lined up across the page, and with no distance from the text, beside which Word's text
-            // isn't where the layout puts it in Word 2013's mode either
+            // One that text flows around Word places with its first cell's text where it is placed (CM10, CN9), the text
+            // half a point from it with no distance given, as in Word 2013's mode (CN9), but for one sized to its text or
+            // lined up across the page
             const distant = { "w:leftFromText": 180, "w:rightFromText": 180 };
             const floating = {
                 "w:tblpPr": { _attr: { "w:horzAnchor": "margin", "w:vertAnchor": "text", "w:tblpX": 2000, ...distant } },
@@ -5718,12 +5786,21 @@ describe("readDocument", () => {
                 offset: 100,
             });
             const floatReason =
-                "a table that text flows around, sized to its text, lined up across the page or with no distance from the text beside it, in a document in compatibility mode";
+                "a table that text flows around, sized to its text or lined up across the page, in a document in compatibility mode";
             expect(tableOf(readBody([tableWith(floating), p()], in2010)).unsupported).to.equal(floatReason);
             const touching = { "w:tblpPr": { _attr: { "w:horzAnchor": "margin", "w:vertAnchor": "text", "w:tblpX": 2000 } } };
-            expect(tableOf(readBody([tableWith(own, touching), p()], in2010)).unsupported).to.equal(floatReason);
+            const touched = tableOf(readBody([tableWith(own, touching), p()], in2010));
+            expect([touched.unsupported, touched.float!.distances]).to.deep.equal([
+                undefined,
+                { top: 0, bottom: 0, left: 0.5, right: 0.5 },
+            ]);
             const touchingLeft = { "w:tblpPr": { _attr: { "w:tblpX": 2000, "w:rightFromText": 180 } } };
-            expect(tableOf(readBody([tableWith(own, touchingLeft), p()], in2010)).unsupported).to.equal(floatReason);
+            expect(tableOf(readBody([tableWith(own, touchingLeft), p()], in2010)).float!.distances).to.deep.equal({
+                top: 0,
+                bottom: 0,
+                left: 0.5,
+                right: 9,
+            });
             // Without borders, its first cell's margin to the left; and with no cells in its first row, or no rows, where it is
             const offsetOf = (...table: readonly object[]): number | undefined =>
                 tableOf(readBody([{ "w:tbl": [{ "w:tblPr": [own, floating, margins] }, ...table] }, p()], in2010)).float!.horizontal.offset;

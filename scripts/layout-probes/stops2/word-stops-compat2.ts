@@ -71,9 +71,13 @@
  * - CN8a: an indented table's text at its indent, its columns sized in what the indent leaves and the two margins beside it;
  *   CN8b: a table of half the width 4616 twips wide, 108 more than mode 15's; CN8d: a table in a cell sized as in mode 15,
  *   its borders at the cell's text; CN8e: a table widened for a long word as in mode 15
- * - CN9: a floating table 113 twips left of mode 15's, its text at 2000, and the text beside it in a gap of 1882 twips
+ * - CN9: a floating table 113 twips left of mode 15's, its text at 2000, and the text beside it in a gap of 1882 twips; in
+ *   every mode, the text right of it half a point from its room, at 5019 in mode 15, with no distance from the text given
+ *   (CM10's justified lines left of it end at 1990 too), where 180 and 200 are kept as given (word-stops-floats.docx FT1b,
+ *   word-floats3.docx H2)
  * - CN10a to CN10c: modes 14 and 15 alike; in 12, East Asian text in no language broken only at its spaces, a run longer than
- *   a line after its last character that fits, with no characters kept from starting or ending a line
+ *   a line after its last character that fits, with no characters kept from starting or ending a line. CN10c's curly quotes
+ *   in Calibri, the document's high ANSI font, in every mode, the runs giving SimSun for ASCII and East Asian text alone
  * - CN11a, CN11b: in 12, the text box as large and in the same place, its line 0.72 points shorter and "after" 0.72 points
  *   nearer: no room for its outline
  * - ST6a to ST6e: at least a height X, X less 9.6 points left out, if more than none, whether the line is taller or shorter;
