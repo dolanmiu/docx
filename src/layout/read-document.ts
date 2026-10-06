@@ -89,7 +89,6 @@ import {
     type TableGeometry,
     type TableLook,
     conditionalTypesOf,
-    isDrawn,
     readBorderSet,
     readCellSpacing,
     readTableLook,
@@ -268,6 +267,8 @@ export type ParagraphBlock = {
      * centred its middle is there (`w:lvlJc`)
      */
     readonly numberAlignment?: "center" | "right";
+    /** The room Word 6 gave its list number, when its level is numbered as Word 6 numbered lists (`w:legacy`) */
+    readonly numberLegacy?: LegacyNumbering;
     /** The room its borders take above and below its lines, when it has a border there */
     readonly borders?: ParagraphBorders;
     /** The document grid its lines, or its characters, are laid out on, when its section has one */
@@ -575,6 +576,12 @@ export type DocumentContent = {
     readonly unsupported?: string;
 };
 
+/**
+ * The room Word 6 gave a list's numbers (`w:legacy`), in points: the least between the number and the text
+ * (`w:legacySpace`), and the text's indent from where the number starts (`w:legacyIndent`)
+ */
+type LegacyNumbering = { readonly space: number; readonly indent: number };
+
 type NumberingLevel = {
     /** The paragraph style the level is for, which numbers its paragraphs at this level (`w:pStyle`) */
     readonly style?: string;
@@ -593,6 +600,11 @@ type NumberingLevel = {
     readonly legal?: boolean;
     /** Whether its number is aligned both (`w:lvlJc`), which Word leaves the level out for */
     readonly alignedBoth?: boolean;
+    /**
+     * The room Word 6 gave its numbers (`w:legacy`), in points, when it is numbered as Word 6 numbered lists: the least
+     * between the number and the text (`w:legacySpace`), and the text's indent from the number (`w:legacyIndent`)
+     */
+    readonly legacy?: LegacyNumbering;
     readonly paragraph: ParagraphFormat;
     readonly run: RunFormat;
     /** Why its number isn't written or placed as Word does, when it isn't */
@@ -606,11 +618,6 @@ type NumberingLevel = {
 type ListCount = {
     readonly numbers: readonly (number | undefined)[];
     readonly started: readonly string[];
-    /**
-     * The levels a paragraph at a level Word leaves out above them may have started again, which have numbers from before
-     * it and haven't been counted since, when there are any
-     */
-    readonly uncertain?: readonly number[];
 };
 
 /** A list paragraphs are numbered in (`w:num`) */
@@ -796,6 +803,9 @@ const CASE_FORMATS = new Set(["upper", "lower", "firstcap", "caps"]);
 const BOUND_CONTROL = "a content control Word fills in from custom XML with other text than is written in it";
 const REMOVED_NOTES = new Set(["w:footnoteReference", "w:endnoteReference"]);
 const PARTLY_DELETED_FIELD = "a field partly deleted in a tracked change";
+// Why the layout stops at a deleted footnote or endnote reference with a mark of its own, whose note Word lays out after
+// the others' (`word-stops-tracked2.docx` TR17), in a way not yet followed
+const DELETED_OWN_MARK = "a deleted footnote or endnote reference with a mark of its own";
 
 // The start of the name of a marker that stands in a paragraph's items for what the reader guessed at, read to be laid
 // out with a guess, with why after it. The paragraph takes the first as why it can't be laid out as Word does, and leaves
@@ -2023,15 +2033,13 @@ const REMOVALS = new Set(["w:del", "w:moveFrom"]);
 // An element no document has, which stands in a paragraph's content for why the layout stops there, when the reason is
 // found before the paragraph is read
 const STOP = "docx-layout:unsupported";
-// An element no document has, which stands in a paragraph joined to the one before by its hidden mark for the paragraph of
-// the same list it was, whose number Word counts though it doesn't show it
-const COUNTED = "docx-layout:counted";
 // An element no document has, which stands in a paragraph with nothing shown and its mark hidden, which is read where it
 // is, for its fields and number, and then left out, as it takes no room
 const LEFT_OUT = "docx-layout:left-out";
 // An element no document has, which stands in a paragraph joined to the next by its hidden mark, where the next one's text
-// starts, with the next one's line spacing, where it differs (see {@link joinedToNext})
-const JOINED_SPACING = "docx-layout:joined-spacing";
+// starts, with the next one's paragraph properties (`w:pPr`), for the style its text is in, its mark, its space after,
+// its line spacing and its number (see {@link joinedToNext})
+const JOINED_NEXT = "docx-layout:joined-next";
 // An element no document has, which stands in the document's last paragraph when its mark, which ends a section, is
 // deleted: Word keeps the mark, and the paragraph takes a line, as an empty one does, rather than none, as one that only
 // ends a section does (stops2/word-stops-tracked-edges.docx TR10a)
@@ -2054,7 +2062,9 @@ const itemsOf = (parts: readonly (readonly LayoutItem[] | string)[], reader: Rea
  * the markup area beside the page, and breaks the lines without it, pictures, tabs and breaks too (`word-watertight-markup.docx`
  * MK1, `word-tracked-changes.docx` MK10), but for its bookmarks. Word numbers a note whose reference is deleted, though it
  * doesn't show it or lay the note out: a footnote (MK10e), and an endnote, the kept one after it ii
- * (`stops2/word-stops-tracked-edges.docx` TR3b). It numbers a note whose reference is moved elsewhere the same way, at the
+ * (`stops2/word-stops-tracked-edges.docx` TR3b). One whose reference has a mark of its own it lays out all the same, after
+ * the other endnotes, with i at its mark (`word-stops-tracked2.docx` TR17), which isn't followed yet: the layout stops
+ * there. It numbers a note whose reference is moved elsewhere the same way, at the
  * reference's old place, and lays out the note of its new place: 1 there, and 2 at the new (`word-stops-moves.docx` TR3a).
  * A footnote or endnote reference with a mark of its own isn't counted, as where it isn't deleted.
  */
@@ -2066,10 +2076,13 @@ const readRemoved = (elements: readonly unknown[], reader: Reader): readonly Lay
                 const children = contentOf(element).filter(isObject);
                 // One with a mark of its own isn't counted, as Word counts no footnote or endnote with one
                 // (`word-stops-notes.docx` NT15, stops2/word-stops-notes2.ts NE5)
-                children
-                    .filter((child) => REMOVED_NOTES.has(nameOf(child)))
+                const references = children.filter((child) => REMOVED_NOTES.has(nameOf(child)));
+                references
                     .filter((reference) => !hasOwnMark(reference))
                     .forEach((reference) => reader.notes?.skip("w:endnoteReference" in reference ? "endnote" : "footnote"));
+                if (references.some(hasOwnMark)) {
+                    return DELETED_OWN_MARK;
+                }
                 // Its field characters, which keep the fields' places, so a field partly deleted is found
                 return itemsOf(
                     children.map((child) => (nameOf(child) === "w:fldChar" ? readFieldCharacter(child, {}, reader, true) : [])),
@@ -2230,9 +2243,6 @@ const readInline = (
             if (name === STOP) {
                 return String(element[name]);
             }
-            if (name === JOINED_SPACING) {
-                return [{ type: "marker", name: JOINED_SPACING_MARKER }];
-            }
             return name === "m:oMath" || name === "m:oMathPara" ? readEquation(element, paragraphRun, reader) : [];
         }),
         reader,
@@ -2253,14 +2263,13 @@ const isLevelLeftOut = (level: NumberingLevel, levels: readonly NumberingLevel[]
 
 /**
  * Where the lists made from a definition are in their counting after a paragraph at a level Word leaves out: as they
- * were, as it isn't counted, but for the levels below it that have numbers, which it may start again
+ * were, as it isn't counted, but for the levels below it, which it starts again, as a paragraph at any level does: level
+ * 1's paragraphs either side of one at a left-out level 0 are both 1) (stops2/word-stops-lists2.ts LI14)
  */
-const leftOutIn = (count: ListCount | undefined, index: number): ListCount => {
-    const numbers = count?.numbers ?? [];
-    const below = numbers.flatMap((counted, at) => (at > index && counted !== undefined ? [at] : []));
-    const uncertain = [...new Set([...(count?.uncertain ?? []), ...below])];
-    return { numbers, started: count?.started ?? [], ...(uncertain.length > 0 ? { uncertain } : {}) };
-};
+const leftOutIn = (count: ListCount | undefined, index: number): ListCount => ({
+    numbers: (count?.numbers ?? []).map((counted, at) => (at > index ? undefined : counted)),
+    started: count?.started ?? [],
+});
 
 /**
  * The number of a paragraph in a list, and what follows it, as its list's level writes it, and its number as a chapter
@@ -2280,6 +2289,8 @@ const readListNumber = (
     readonly list?: ParagraphBlock["list"];
     /** How its number lines up at the start of its first line, when not to the left */
     readonly alignment?: "center" | "right";
+    /** The room Word 6 gave its number, when its level is numbered as Word 6 numbered lists */
+    readonly legacy?: LegacyNumbering;
     /** Why its number isn't written or placed as Word does, when it isn't */
     readonly unsupported?: string;
 } => {
@@ -2309,9 +2320,6 @@ const readListNumber = (
         reader.counters.set(list.definition, leftOutIn(reader.counters.get(list.definition), index));
         return { items: [] };
     }
-    const before = reader.counters.get(list.definition);
-    // Whether a level left out above it may have started it again, which Word hasn't shown
-    const restartedByLeftOut = before?.uncertain?.includes(index) === true;
     const current = countIn(reader.counters, id, list, index);
     const { started } = reader.counters.get(list.definition)!;
     // A level not counted yet shows its first number: 1.1 and 3.1 for a list's first paragraph at level 1, whose level 0
@@ -2343,17 +2351,11 @@ const readListNumber = (
         (numberFont === undefined
             ? "a list number of characters of both the font for ASCII and the high ANSI font of its run"
             : undefined) ??
-        (levels.some((other) => other?.alignedBoth === true)
-            ? "a list number at another level of a list with a level aligned both"
-            : restartedByLeftOut
-              ? "a list number after a paragraph at a level Word leaves out above it"
-              : referred.some((at) => numberAt(at) === undefined)
-                ? "a list number in a format not yet written"
-                : referred.some(ownStart)
-                  ? "a list number of a level not counted yet, which its list starts at a number of its own"
-                  : font.border !== undefined
-                    ? "a list number with a border"
-                    : undefined);
+        (referred.some((at) => numberAt(at) === undefined)
+            ? "a list number in a format not yet written"
+            : referred.some(ownStart)
+              ? "a list number of a level not counted yet, which its list starts at a number of its own"
+              : undefined);
     // As a chapter number, Word writes the level's text from its first number to its last, so "Chapter %1" is 1 and
     // "%1.%2" is 1.2
     const numbers = /%[1-9](?:.*%[1-9])?/.exec(level.text)?.[0];
@@ -2374,6 +2376,7 @@ const readListNumber = (
         ...withoutUndefined({
             chapter: numbers?.replace(/%([1-9])/g, (_, digit: string) => numberAt(Number(digit) - 1) ?? ""),
             alignment: text.length > 0 ? level.alignment : undefined,
+            legacy: level.legacy,
             unsupported,
         }),
     };
@@ -2395,7 +2398,7 @@ const countIn = (
     { levels, starts, definition }: NumberingList,
     index: number,
 ): readonly (number | undefined)[] => {
-    const { numbers, started, uncertain = [] } = counters.get(definition) ?? { numbers: [], started: [] };
+    const { numbers, started } = counters.get(definition) ?? { numbers: [], started: [] };
     const level = levels[index];
     const own = starts.get(index);
     const starting = own !== undefined && !started.includes(`${id} ${index}`);
@@ -2410,14 +2413,8 @@ const countIn = (
         const restart = levels[at]?.restart;
         return restart !== undefined && restart <= at && restart <= index ? numbers[at] : undefined;
     });
-    const stillUncertain = uncertain.filter((at) => at !== index && current[at] !== undefined);
     // eslint-disable-next-line functional/immutable-data
-    counters.set(definition, {
-        numbers: current,
-        started: starting ? [...started, `${id} ${index}`] : started,
-        // A level that may have been started again is known once it is counted, or started again by a level above it
-        ...(stillUncertain.length > 0 ? { uncertain: stillUncertain } : {}),
-    });
+    counters.set(definition, { numbers: current, started: starting ? [...started, `${id} ${index}`] : started });
     return current;
 };
 
@@ -2720,6 +2717,33 @@ const readFrameOf = (
 };
 
 /**
+ * Reads a paragraph's content, with the content of each paragraph joined to it by a hidden mark in the formatting of its
+ * own style, from the paragraph's properties that stand where its text starts (see {@link joinedToNext}), and a marker
+ * there where the line spacing changes (`marker`)
+ */
+const readJoinedInline = (
+    children: readonly unknown[],
+    paragraphRun: RunFormat,
+    joined: readonly { readonly element: XmlObject; readonly run: RunFormat; readonly marker?: string }[],
+    reader: Reader,
+): readonly LayoutItem[] | string => {
+    // eslint-disable-next-line functional/prefer-readonly-type
+    const parts: (readonly LayoutItem[] | string)[] = [];
+    let from = 0;
+    let run = paragraphRun;
+    for (const { element, run: nextRun, marker } of joined) {
+        const at = children.indexOf(element);
+        // eslint-disable-next-line functional/immutable-data
+        parts.push(readInline(children.slice(from, at), run, reader), marker === undefined ? [] : [{ type: "marker", name: marker }]);
+        from = at + 1;
+        run = nextRun;
+    }
+    // eslint-disable-next-line functional/immutable-data
+    parts.push(readInline(children.slice(from), run, reader));
+    return itemsOf(parts, reader);
+};
+
+/**
  * Reads a paragraph (`w:p`), in the formatting of its styles, and of its table's style when it is in a table.
  */
 const readParagraph = (element: XmlObject, reader: Reader, tableFormats: TableFormats = []): ParagraphBlock => {
@@ -2729,11 +2753,32 @@ const readParagraph = (element: XmlObject, reader: Reader, tableFormats: TableFo
     const style = valueOf(properties, "w:pStyle") ?? styles.defaultParagraphStyle;
     const paragraphStyles = [...tableFormats, ...styleChain(styles, style, "paragraph")];
     const paragraphRun = combine([styles.run, ...paragraphStyles.map(({ run }) => run)]);
-    const markRun = combine([paragraphRun, readRunFormat(find(properties, "w:rPr"), styles.themeFonts)]);
+    // The paragraphs joined to this one by its hidden mark, whose properties stand where their text starts (see
+    // {@link joinedToNext}): each one's text is in its own style's formatting, and the last one's mark is the paragraph's
+    const joined = children
+        .filter((child): child is XmlObject => isObject(child) && JOINED_NEXT in child)
+        .map((joinedElement) => {
+            const given = childrenOf(joinedElement[JOINED_NEXT]);
+            const joinedStyle = valueOf(given, "w:pStyle") ?? styles.defaultParagraphStyle;
+            const chain = [...tableFormats, ...styleChain(styles, joinedStyle, "paragraph")];
+            const run = combine([styles.run, ...chain.map((inChain) => inChain.run)]);
+            return {
+                element: joinedElement,
+                given,
+                style: joinedStyle,
+                run,
+                markRun: combine([run, readRunFormat(find(given, "w:rPr"), styles.themeFonts)]),
+                format: combine([styles.paragraph, ...chain.map((inChain) => inChain.paragraph), readParagraphFormat(given)]),
+            };
+        });
+    const last = joined[joined.length - 1];
+    const markRun = last?.markRun ?? combine([paragraphRun, readRunFormat(find(properties, "w:rPr"), styles.themeFonts)]);
     const list = readListNumber(properties, style, markRun, reader);
-    // The number of each paragraph of the list joined to this one by its hidden mark is counted, but not shown: of three
+    // The number of each paragraph of a list joined to this one by its hidden mark is counted, but not shown: of three
     // numbered paragraphs, the first's mark hidden, Word numbers them 1 and 3 (`word-breaks-and-tabs.docx` HM4)
-    children.filter((child) => isObject(child) && COUNTED in child).forEach(() => readListNumber(properties, style, markRun, reader));
+    joined
+        .filter(({ given }) => isNumbered({ "w:p": [{ "w:pPr": given }] }, styles))
+        .forEach(({ given, style: joinedStyle, markRun: joinedMarkRun }) => readListNumber(given, joinedStyle, joinedMarkRun, reader));
     const headingLevel = /^heading ([1-9])$/i.exec(styleChain(styles, style, "paragraph").slice(-1)[0]?.name ?? "")?.[1];
     const formats = [
         styles.paragraph,
@@ -2741,13 +2786,33 @@ const readParagraph = (element: XmlObject, reader: Reader, tableFormats: TableFo
         ...(list.level ? [list.level.paragraph] : []),
         readParagraphFormat(properties),
     ];
-    const read = withEquations(withFitted(readInline(children, paragraphRun, reader)), list.items.length > 0, reader);
+    // Where the line spacing changes between the paragraphs joined, from the line the next one's text starts on, each
+    // line is spaced as the paragraph its text ends in (see `lineSpacingFrom`), from a marker there
+    const firstSpacing = combine(formats).lineSpacing;
+    const markerAt = (index: number): string => `${JOINED_SPACING_MARKER}${index === 0 ? "" : ` ${index + 1}`}`;
+    const spacedApart = joined.map(({ format: joinedFormat }, index) => {
+        const before = index === 0 ? firstSpacing : joined[index - 1].format.lineSpacing;
+        return JSON.stringify(joinedFormat.lineSpacing) !== JSON.stringify(before);
+    });
+    const lineSpacingFrom = joined.flatMap(({ format: joinedFormat }, index) =>
+        spacedApart[index] ? [{ marker: markerAt(index), ...withoutUndefined({ lineSpacing: joinedFormat.lineSpacing }) }] : [],
+    );
+    const parts = joined.map((part, index) => ({ ...part, ...(spacedApart[index] ? { marker: markerAt(index) } : {}) }));
+    const read = withEquations(withFitted(readJoinedInline(children, paragraphRun, parts, reader)), list.items.length > 0, reader);
     // Read to be laid out with a guess, the first thing the reader guessed at in the paragraph's content is why it can't be
     // laid out as Word does, and the markers of what it guessed at are left out of its items
     const guessed = typeof read === "string" ? undefined : read.map(guessOf).find((reason) => reason !== undefined);
     const items = typeof read === "string" ? read : read.filter((item) => guessOf(item) === undefined);
+    // A paragraph joined to this one by its hidden mark gives it its space after, the last one's (see {@link joinedToNext})
+    const AFTER = new Set<keyof ParagraphFormat>(["spaceAfter", "spaceAfterLines", "autoSpaceAfter"]);
+    const ownFormat: ParagraphFormat =
+        last === undefined
+            ? combine(formats)
+            : {
+                  ...Object.fromEntries(Object.entries(combine(formats)).filter(([key]) => !AFTER.has(key as keyof ParagraphFormat))),
+                  ...Object.fromEntries(Object.entries(last.format).filter(([key]) => AFTER.has(key as keyof ParagraphFormat))),
+              };
     // A division of a web page (`w:divId`) has margins and borders of its own, in the document's web settings
-    const ownFormat = combine(formats);
     const division = readDivision(properties, ownFormat, reader);
     const combined = division === undefined ? ownFormat : combine([ownFormat, division.format]);
     const own = typeof items === "string" ? [] : items;
@@ -2777,19 +2842,6 @@ const readParagraph = (element: XmlObject, reader: Reader, tableFormats: TableFo
             ? "a table, note or indent in characters on a grid that snaps to characters in columns of different widths"
             : undefined;
     const format = inPoints(combined, { listNumber: list.items, items: own }, markFont, fontOf(paragraphRun), unitsOf(sectionGrid));
-    // The line spacing of a paragraph joined to this one by its hidden mark, in this one's style, with its own, where they
-    // differ. Word's probes had multiple spacing, and one paragraph joined to another: exact and at least spacing, and
-    // more of them, haven't been seen
-    const joined = children.filter((child): child is XmlObject => isObject(child) && JOINED_SPACING in child);
-    const joinedSpacing =
-        joined.length === 0
-            ? undefined
-            : combine([...formats.slice(0, -1), readParagraphFormat(childrenOf(joined[0][JOINED_SPACING]))]).lineSpacing;
-    const unjoinedSpacing =
-        joined.length > 1 ||
-        (joined.length > 0 && [combined.lineSpacing, joinedSpacing].some((spacing) => spacing !== undefined && spacing.rule !== "multiple"))
-            ? "a hidden paragraph mark between paragraphs of exact or at least line spacing, or more than two of other line spacing"
-            : undefined;
     const borders = readBorders(typeof format === "string" ? combined : format);
     // Word breaks the lines of Latin text justified for Thai or with a low kashida as justified ones, and those with a
     // medium or high kashida otherwise (`word-justify.docx` J14, `word-justify2.docx` K08, K09), and of Thai text justified
@@ -2822,7 +2874,6 @@ const readParagraph = (element: XmlObject, reader: Reader, tableFormats: TableFo
                           reader,
                           onOff(properties, "w:autoSpaceDE") !== false || onOff(properties, "w:autoSpaceDN") !== false,
                       ) ??
-                      unjoinedSpacing ??
                       (typeof format === "string" ? format : undefined) ??
                       (typeof borders === "string" ? borders : undefined)));
     return {
@@ -2830,9 +2881,7 @@ const readParagraph = (element: XmlObject, reader: Reader, tableFormats: TableFo
         items: content,
         format: {
             ...(typeof format === "string" ? combined : format),
-            ...(joined.length === 0
-                ? {}
-                : { lineSpacingFrom: { marker: JOINED_SPACING_MARKER, ...withoutUndefined({ lineSpacing: joinedSpacing }) } }),
+            ...(lineSpacingFrom.length === 0 ? {} : { lineSpacingFrom }),
         },
         tabStops,
         markFont,
@@ -2842,6 +2891,7 @@ const readParagraph = (element: XmlObject, reader: Reader, tableFormats: TableFo
             : {}),
         ...(list.list ? { list: list.list } : {}),
         ...(list.alignment ? { numberAlignment: list.alignment } : {}),
+        ...(list.legacy ? { numberLegacy: list.legacy } : {}),
         ...(typeof borders === "object" ? { borders } : {}),
         ...(paragraphGrid !== undefined && Object.keys(paragraphGrid).length > 0 ? { grid: paragraphGrid } : {}),
         ...(typeof frame === "object" ? { frame } : {}),
@@ -3400,16 +3450,17 @@ const readTable = (element: XmlObject, reader: Reader): TableBlock | undefined =
             const widthBefore = skipped > 0 && beforeType === "dxa" ? twips(beforeValue) : undefined;
             const ownSpacing = find(rowProperties, "w:tblCellSpacing");
             const spacing = ownSpacing === undefined ? tableSpacing : readCellSpacing(ownSpacing);
-            // A deleted row is read only as Word sizes the columns by it, with its notes and lists left uncounted, or, where
-            // nothing sizes them, for its bookmarks, with its deleted runs read as nothing
+            // A deleted row is read only as Word sizes the columns by it, with its notes left uncounted, or, where nothing
+            // sizes them, for its bookmarks, with its deleted runs read as nothing. Its lists are counted (see below)
             const deleted = deletedFlags[rowIndex];
             // A deleted row's page references with \p are counted, as docx counts them, but for those in its deleted text
             const rowReader = deleted ? sizingReaderOf(cellReader, sized, true) : cellReader;
-            const counts = deleted ? JSON.stringify([...rowReader.counters]) : "";
             // Word numbers the notes a deleted row refers to, though it doesn't lay them out, as those of deleted text: one
             // after a deleted footnote reference 1 is 2 (stops2/word-stops-tracked.docx TR4b). A footnote or endnote
-            // reference with a mark of its own isn't counted, as where it isn't deleted
-            (deleted ? elementsIn(rowChildren, (inner) => REMOVED_NOTES.has(inner)) : [])
+            // reference with a mark of its own isn't counted, as where it isn't deleted, and its note Word has been seen
+            // laying out after the others' where the reference is deleted in text (see `readRemoved`)
+            const rowReferences = deleted ? elementsIn(rowChildren, (inner) => REMOVED_NOTES.has(inner)) : [];
+            rowReferences
                 .filter((reference) => !hasOwnMark(reference))
                 .forEach((reference) => cellReader.notes?.skip("w:endnoteReference" in reference ? "endnote" : "footnote"));
             // Word applies the parts of the table's style to each row by its place among all the rows, the deleted ones
@@ -3537,6 +3588,14 @@ const readTable = (element: XmlObject, reader: Reader): TableBlock | undefined =
                 },
                 { column: skipped, cells: [], edges: new Map([[skipped, widthBefore ?? gridWidth(0, skipped)]]) },
             );
+            // Word counts the paragraphs of a deleted row in their lists, though it doesn't lay them out: numbered paragraphs
+            // either side of a table whose deleted row has one are 1 and 3 (word-stops-tracked2.docx TR15)
+            if (deleted) {
+                for (const [definition, count] of rowReader.counters) {
+                    // eslint-disable-next-line functional/immutable-data
+                    cellReader.counters.set(definition, count);
+                }
+            }
             // A row of a division of a web page (`w:divId`) Word moves across by the division's left margin, as wide and
             // as tall as it is without, with the division's borders beside it but not above or below
             // (`word-stops-pages.docx` DV1b), so its lines are as they are. One with table properties of its own
@@ -3546,8 +3605,8 @@ const readTable = (element: XmlObject, reader: Reader): TableBlock | undefined =
                 ? BOUND_CONTROL
                 : changesLines(exceptions, FOLLOWED_ROW_TABLE_PROPERTIES)
                   ? "a table row with table properties of its own"
-                  : deleted && JSON.stringify([...rowReader.counters]) !== counts
-                    ? "a list in a deleted table row"
+                  : rowReferences.some(hasOwnMark)
+                    ? DELETED_OWN_MARK
                     : unseenHeaderCount
                       ? "a deleted row in a table's header of several rows, whose style formats some of its rows"
                       : (cellsUnsupported ?? unsupportedVerticalRowOf(cells.filter(({ verticalMerge }) => verticalMerge === undefined)));
@@ -3622,25 +3681,14 @@ const readTable = (element: XmlObject, reader: Reader): TableBlock | undefined =
     const keptGeometry = geometryOf(kept);
     // With space between cells, a deleted row takes no room, nor does the space around it (word-tracked-tables.docx
     // MK14h), and with borders, the rows around it are as they would be without it, each cell's borders and the space
-    // between them as between two rows (stops2/word-stops-tracked.docx TR4c). Which borders Word gives the rows around a
-    // deleted one with borders of its own, or a deleted row at the table's top or bottom, hasn't been seen
-    const bordersOf = (index: number): string => JSON.stringify(read[index]?.cells.map(({ borders }) => borders));
-    const bordered = (): boolean =>
-        ([tableBorders.top, tableBorders.bottom, tableBorders.insideH].some(isDrawn) ||
-            read.some(({ cells }) => cells.some(({ borders }) => isDrawn(borders.top) || isDrawn(borders.bottom)))) &&
-        read.some(({ deleted }, index) => {
-            const above = read.findLastIndex((row, at) => at < index && !row.deleted);
-            const below = read.findIndex((row, at) => at > index && !row.deleted);
-            return deleted && (above < 0 || below < 0 || bordersOf(above) !== bordersOf(index) || bordersOf(below) !== bordersOf(index));
-        });
+    // between them as between two rows (stops2/word-stops-tracked.docx TR4c), at the table's top and bottom too, and
+    // whatever borders of its own the deleted row has: a table of three rows with its first, last or middle row deleted,
+    // the middle one with borders of 3 points, is laid out as one of its other two rows (word-stops-tracked2.docx TR16a to
+    // TR16c)
     const geometry =
-        kept.length === read.length || typeof keptGeometry === "string"
+        kept.length === read.length || typeof keptGeometry === "string" || spaced
             ? keptGeometry
-            : !spaced
-              ? withDeletedBorders(keptGeometry, geometryOf(read), deletedFlags)
-              : bordered()
-                ? "a deleted row in a table with borders and space between its cells, at its top or bottom or with borders of its own"
-                : keptGeometry;
+            : withDeletedBorders(keptGeometry, geometryOf(read), deletedFlags);
     // The room around each cell as the table's columns are sized by it: with its first row's space between cells in each row
     const sizingGeometry = rowSpacings.size > 1 && typeof geometry !== "string" ? geometryOf(kept, followedSpacing) : geometry;
     // The rows laid out. The bookmarks before each row and cell start where the text after them does: in the cell after
@@ -4042,6 +4090,19 @@ const removedMarkOf = (paragraph: XmlObject): string | undefined =>
         .map(nameOf)
         .find((name) => REMOVALS.has(name));
 
+/**
+ * How many footnote references are among elements and in them, but for those in text boxes (`w:txbxContent`), which Word
+ * leaves out, reference and note
+ */
+const countFootnoteReferences = (elements: readonly unknown[]): number =>
+    elements.filter(isObject).reduce((count, element) => {
+        const name = nameOf(element);
+        if (name === "w:footnoteReference") {
+            return count + 1;
+        }
+        return name === "w:txbxContent" || name === "_attr" ? count : count + countFootnoteReferences(contentOf(element));
+    }, 0);
+
 /** The elements of the names given among elements and in them, in order */
 const elementsIn = (elements: readonly unknown[], named: (name: string) => boolean): readonly XmlObject[] =>
     elements
@@ -4116,15 +4177,43 @@ const JOINED_FORMATTING: Readonly<Record<string, readonly string[] | "all" | und
     "w:pBdr": "all",
 };
 
+// The parts of the formatting a paragraph's styles give it that may differ between paragraphs joined by a hidden mark, as
+// above: a style's text is the paragraph's own (stops2/word-stops-hidden2.ts HD15a), and its space before the first's
+// (HD15b)
+const JOINED_STYLE_FORMATTING: ReadonlySet<string> = new Set<keyof ParagraphFormat>([
+    "alignment",
+    "indentLeft",
+    "indentRight",
+    "firstLineIndent",
+    "spaceBefore",
+    "spaceAfter",
+    "spaceBeforeLines",
+    "spaceAfterLines",
+    "autoSpaceBefore",
+    "autoSpaceAfter",
+    "lineSpacing",
+    "tabs",
+    "borderTop",
+    "borderBottom",
+    "borderLeft",
+    "borderRight",
+    "borderBetween",
+    "borderBar",
+]);
+
 /**
- * A paragraph's own formatting, but for its mark's, its style when it names the default one, as none does, and the parts
- * that may differ between paragraphs joined by a hidden mark
+ * A paragraph's formatting, its own and its styles', but for its mark's, its style's name, and the parts that may differ
+ * between paragraphs joined by a hidden mark
  */
-const paragraphFormatOf = (paragraph: XmlObject, styles: TextStyles): string =>
-    JSON.stringify(
-        paragraphPropertiesOf(paragraph).flatMap((child) => {
+const paragraphFormatOf = (paragraph: XmlObject, styles: TextStyles): string => {
+    const properties = paragraphPropertiesOf(paragraph);
+    const style = valueOf(properties, "w:pStyle") ?? styles.defaultParagraphStyle;
+    const fromStyles = combine([styles.paragraph, ...styleChain(styles, style, "paragraph").map((inChain) => inChain.paragraph)]);
+    return JSON.stringify([
+        properties.flatMap((child) => {
             const name = nameOf(child);
-            if (name === "w:rPr" || (name === "w:pStyle" && valueOf([child], "w:pStyle") === styles.defaultParagraphStyle)) {
+            // A section break is joined across where its sections are alike (see `hiddenMarkJoin`)
+            if (name === "w:rPr" || name === "w:pStyle" || name === "w:sectPr") {
                 return [];
             }
             const joined = JOINED_FORMATTING[name];
@@ -4137,7 +4226,9 @@ const paragraphFormatOf = (paragraph: XmlObject, styles: TextStyles): string =>
             const kept = Object.entries(attributesOf(child[name])).filter(([key]) => !joined.includes(key));
             return kept.length === 0 ? [] : [{ [name]: Object.fromEntries(kept) }];
         }),
-    );
+        Object.fromEntries(Object.entries(fromStyles).filter(([key]) => !JOINED_STYLE_FORMATTING.has(key))),
+    ]);
+};
 
 /** The properties of the first section that ends among elements: in a paragraph, or the body's own */
 const nextSectionIn = (elements: readonly XmlObject[]): unknown =>
@@ -4162,44 +4253,33 @@ const joinedParagraph = (first: XmlObject, between: readonly unknown[], next: Xm
 
 /**
  * A paragraph whose mark is hidden, joined to the next, after what is between them: the two paragraphs' text on its lines,
- * in the first one's formatting but for its space after, which is the next one's, with the next one's mark
- * (`word-breaks-and-tabs.docx` HM1a to HM1f). Where their line spacing differs, each line is spaced as the paragraph its
+ * in the first one's formatting, its style's too, but for its space after, which is the next one's, with the next one's
+ * mark (`word-breaks-and-tabs.docx` HM1a to HM1f), and each one's text in the formatting of its own style: 16-point text
+ * of the first one's style on a line with 11-point text of the next one's, and the first one's style's space before
+ * (stops2/word-stops-hidden2.ts HD15a, HD15b). Where their line spacing differs, each line is spaced as the paragraph its
  * text ends in, from the line the next one's text starts on: with the first single and the next one double, or the other
  * way round, or at 1.5 lines, the line that ends the first one's text and starts the next one's, and those after it, are
- * the next one's (HM1h, HM1i, `stops2/word-stops-hidden.docx` HD1f). The next one's number, when they are in a list, is
- * counted (HM4).
+ * the next one's (HM1h, HM1i, `stops2/word-stops-hidden.docx` HD1f), exactly 12 points or at least 20 as much as any (HD16a,
+ * HD16b), and of three paragraphs single, 1.5 and double, the line that ends the second's text and starts the third's is
+ * double (HD16c). The next one's number, when they are in a list, is counted (HM4). The next one's properties stand where
+ * its text starts, for all of that (see {@link JOINED_NEXT}, and `readParagraph`). A section break of the first one's is
+ * left out, as the paragraph is joined into the next section, which is as its own (stops2/word-stops-hidden2.ts HD14a),
+ * and one of the next one's, such as the empty paragraph docx ends each section with, ends the section with the joined
+ * paragraph, as the next one's mark is its own
  */
-const joinedToNext = (first: XmlObject, between: readonly unknown[], next: XmlObject, styles: TextStyles): XmlObject => {
+const joinedToNext = (first: XmlObject, between: readonly unknown[], next: XmlObject): XmlObject => {
     const isHead = (child: unknown): boolean => isObject(child) && (nameOf(child) === "_attr" || nameOf(child) === "w:pPr");
-    const own = paragraphPropertiesOf(first);
-    const nextProperties = paragraphPropertiesOf(next);
-    const lineOf = (given: readonly XmlObject[]): Record<string, unknown> =>
-        Object.fromEntries(
-            Object.entries(attributesOf(find(given, "w:spacing"))).filter(([key]) => key === "w:line" || key === "w:lineRule"),
-        );
-    const nextLine = lineOf(nextProperties);
-    const spacedApart = JSON.stringify(lineOf(own)) !== JSON.stringify(nextLine);
-    const { "w:after": after } = attributesOf(find(nextProperties, "w:spacing"));
-    const spacing = {
-        ...Object.fromEntries(Object.entries(attributesOf(find(own, "w:spacing"))).filter(([key]) => key !== "w:after")),
-        ...(after === undefined ? {} : { "w:after": after }),
-    };
-    const mark = nextProperties.filter((child) => nameOf(child) === "w:rPr");
-    const properties = [
-        ...own.filter((child) => nameOf(child) !== "w:spacing" && nameOf(child) !== "w:rPr"),
-        ...(Object.keys(spacing).length === 0 ? [] : [{ "w:spacing": { _attr: spacing } }]),
-        ...mark,
-    ];
+    const own = paragraphPropertiesOf(first).filter((child) => nameOf(child) !== "w:rPr" && nameOf(child) !== "w:sectPr");
+    const nextSection = paragraphPropertiesOf(next).filter((child) => nameOf(child) === "w:sectPr");
     const content = contentOf(first);
     return {
         "w:p": [
             ...content.filter((child) => isObject(child) && nameOf(child) === "_attr"),
-            { "w:pPr": properties },
+            { "w:pPr": [...own, ...nextSection] },
             ...content.filter((child) => !isHead(child)),
             ...between,
-            ...(spacedApart ? [{ [JOINED_SPACING]: [{ "w:spacing": { _attr: nextLine } }] }] : []),
+            { [JOINED_NEXT]: paragraphPropertiesOf(next) },
             ...contentOf(next).filter((child) => !isHead(child)),
-            ...(isNumbered(next, styles) ? [{ [COUNTED]: {} }] : []),
         ],
     };
 };
@@ -4214,8 +4294,12 @@ const readInPlace = (paragraph: XmlObject, styles: TextStyles): boolean =>
 /** Whether a paragraph is one with nothing shown and its mark hidden, which is left out */
 const isLeftOut = (paragraph: XmlObject): boolean => contentOf(paragraph).some((child) => isObject(child) && LEFT_OUT in child);
 
-/** The part of a document paragraphs are in, by what Word does with a paragraph with nothing shown at its end */
-type Part = "body" | "cell" | "other";
+/**
+ * The part of a document paragraphs are in, by what Word does with a paragraph with nothing shown and its mark hidden at
+ * its end: the body, a table cell, a header or footer, the document's last footnote or another, an endnote, or another
+ * part, such as a text box
+ */
+type Part = "body" | "cell" | "header" | "footer" | "footnote" | "lastFootnote" | "endnote" | "other";
 
 /**
  * How a paragraph whose mark is hidden is laid out, or why it can't be. Word joins it to the next: one whose text is
@@ -4231,12 +4315,18 @@ type Part = "body" | "cell" | "other";
  * sizes to their text, the two are sized as one, as they are laid out: a column as wide as their text on one line
  * (`word-stops-hidden.docx` HD2, and `word-breaks-and-tabs.docx` HM7, narrowed beside a long cell). Where the
  * paragraphs differ in their right and first line indents, tab stops and borders, they are in the first one's (HD1c,
- * HD1d, HD1g, HD1h), and in their line spacing, line by line (see {@link joinedToNext}). Where they differ otherwise,
- * such as in their style (HM1g), and what Word does with a hidden mark at the start of a content control (see
- * {@link openedAtEnds}), with another hidden section break, with one of a paragraph showing nothing at the end of a header or
- * footer, which a header too short to push the body down didn't show (HD4a), or of a note, where Word joins it to the
- * next note's first paragraph (HD4b), and before one showing nothing whose fields, note references or number would be
- * read out of order, isn't followed yet.
+ * HD1d, HD1g, HD1h), in their styles, each one's text in its own (`stops2/word-stops-hidden2.docx` HD15a, HD15b), and in
+ * their line spacing, line by line (see {@link joinedToNext}). One whose section ends with it, with text shown, before a
+ * section that starts on its page and is otherwise alike, is joined to the next section's first paragraph (HD14a), and
+ * one with nothing shown before a section on a new page takes no room, as the section starts its page all the same
+ * (HD14b). One with nothing shown at the end of a header takes no room, and the body starts below the header's other
+ * paragraphs (HD12), as does one at the end of the document's last footnote (HD13). Where they differ otherwise, such as
+ * in their indents in characters, and what Word does with a hidden mark at the end of a content control with nothing
+ * after it, or before one bound to custom XML (see {@link openedAtEnds}), with a hidden section break before a continuous
+ * section formatted otherwise or an even or odd page section, or before something that isn't a paragraph, with one of a
+ * paragraph showing nothing at the end of a footer, an endnote or a text box, or of a footnote with a note after it,
+ * where Word joins it to the next note's first paragraph (HD4b), and before one showing nothing whose fields, note
+ * references or number would be read out of order, isn't followed yet.
  */
 const hiddenMarkJoin = (
     paragraph: XmlObject,
@@ -4251,18 +4341,29 @@ const hiddenMarkJoin = (
     const nextName = next === undefined ? undefined : nameOf(next);
     const shown = showsSomething(contentOf(paragraph), paragraphRunOf(paragraph, styles), styles);
     const section = sectionPropertiesOf(paragraph);
-    if (section !== undefined) {
-        return !shown && startsOnItsPage(section, nextSection()) ? { leftOut: true } : { reason: "a hidden section break" };
+    if (section !== undefined && !shown) {
+        return startsOnItsPage(section, nextSection()) || sectionTypeOf(nextSection()) === "nextPage"
+            ? { leftOut: true }
+            : {
+                  reason: "a hidden section break of a paragraph with nothing shown, before a continuous section formatted otherwise, or an even or odd page section",
+              };
+    }
+    if (section !== undefined && (nextName !== "w:p" || !startsOnItsPage(section, nextSection()))) {
+        return {
+            reason: "a hidden section break of a paragraph with text shown, before something that isn't a paragraph, or a section that doesn't start on its page or is formatted otherwise",
+        };
     }
     if (edge) {
-        return { reason: "a hidden paragraph mark at the edge of a content control" };
+        return { reason: HIDDEN_AT_EDGE };
     }
     if (next === undefined || nextName === "w:sectPr") {
         return shown || part === "cell"
             ? undefined
-            : part === "body"
+            : part === "body" || part === "header" || part === "lastFootnote"
               ? { leftOut: true }
-              : { reason: "a paragraph with nothing shown and its mark hidden at the end of a header, footer or note" };
+              : {
+                    reason: "a paragraph with nothing shown and its mark hidden at the end of a footer, an endnote, a text box, or a footnote with a note after it",
+                };
     }
     if (nextName !== "w:p") {
         return shown
@@ -4280,8 +4381,16 @@ const hiddenMarkJoin = (
     }
     return paragraphFormatOf(paragraph, styles) === paragraphFormatOf(next, styles)
         ? { joins: true }
-        : { reason: "a hidden paragraph mark between paragraphs of other styles, or formatted differently otherwise" };
+        : {
+              reason: "a hidden paragraph mark between paragraphs formatted differently otherwise than in their alignment, indents, space, line spacing, tab stops, borders and styles",
+          };
 };
+
+// Why the layout stops at a hidden or deleted paragraph mark at an edge of a content control Word hasn't been seen with
+const HIDDEN_AT_EDGE =
+    "a hidden paragraph mark at the end of a content control with nothing after it, or before one bound to custom XML or nested in another";
+const DELETED_AT_EDGE =
+    "a deleted paragraph mark at the end of a content control with nothing after it, or before one bound to custom XML or nested in another";
 
 /** How a section starts (`w:type`): on a new page, unless it says otherwise */
 const sectionTypeOf = (section: unknown): string => valueOf(childrenOf(section), "w:type") ?? "nextPage";
@@ -4298,10 +4407,6 @@ const startsOnItsPage = (section: unknown, next: unknown): boolean => {
         (numberOf(attributesOf(find(childrenOf(section), "w:cols"))["w:num"]) ?? 1) <= 1
     );
 };
-
-// An element no document has, which stands where a content control or custom XML started whose content is read in its
-// place, as Word joins its last paragraph to the paragraph after it (see {@link openedAtEnds})
-const CONTROL_START = "docx-layout:control-start";
 
 /** The content of a content control or custom XML, unless it is bound to custom XML, which is laid out as it is */
 const openableContentOf = (element: XmlObject): readonly XmlObject[] | undefined => {
@@ -4320,21 +4425,63 @@ const joinsNext = (paragraph: XmlObject, styles: TextStyles, showDeleted: boolea
     (!showDeleted && removedMarkOf(paragraph) !== undefined) ||
     (isMarkHidden(paragraph, styles) && showsSomething(contentOf(paragraph), paragraphRunOf(paragraph, styles), styles));
 
+/** Whether a block starts with a paragraph: a paragraph, or a content control or custom XML whose first block does */
+const startsWithParagraph = (element: XmlObject): boolean => {
+    const first = openableContentOf(element)?.find((child) => BLOCK_ELEMENTS.has(nameOf(child)));
+    return "w:p" in element || (first !== undefined && startsWithParagraph(first));
+};
+
 /**
- * Elements, with the content of each content control and custom XML whose last paragraph is joined to the paragraph
- * after it in its place, after a marker of where it started. Word joins it as though the control weren't there, with its
- * mark hidden or deleted (`stops2/word-stops-hidden-edges.docx` HD3, `word-stops-tracked-edges.docx` TR8). What it does
- * with a paragraph joined to a control's first one hasn't been seen
+ * Whether a block ends with a paragraph joined to the paragraph after it: such a paragraph, or a content control or custom
+ * XML whose last block does
  */
-const openedAtEnds = (elements: readonly XmlObject[], styles: TextStyles, showDeleted: boolean): readonly XmlObject[] =>
-    elements.flatMap((element, index) => {
+const endsJoining = (element: XmlObject, styles: TextStyles, showDeleted: boolean): boolean => {
+    const last = openableContentOf(element)?.findLast((child) => BLOCK_ELEMENTS.has(nameOf(child)));
+    return "w:p" in element ? joinsNext(element, styles, showDeleted) : last !== undefined && endsJoining(last, styles, showDeleted);
+};
+
+/**
+ * Elements, with the content of each content control and custom XML a paragraph is joined across an edge of in its
+ * place: one whose last paragraph is joined to the paragraph after it, and one whose first paragraph the paragraph before
+ * it is joined to. Word joins them as though the control weren't there, with its mark hidden or deleted, at the end of a
+ * control (`stops2/word-stops-hidden-edges.docx` HD3, `word-stops-tracked-edges.docx` TR8) and before one
+ * (`word-stops-hidden2.docx` HD11, `word-stops-tracked2.docx` TR12)
+ */
+const openedAtEnds = (
+    elements: readonly XmlObject[],
+    styles: TextStyles,
+    showDeleted: boolean,
+    // Whether the block before the elements is joined to their first paragraph, and their last paragraph to the block after
+    { start = false, end = false }: { readonly start?: boolean; readonly end?: boolean } = {},
+): readonly XmlObject[] => {
+    const blocks = elements.filter((element) => BLOCK_ELEMENTS.has(nameOf(element)));
+    return elements.flatMap((element) => {
         const content = openableContentOf(element);
-        const last = content?.findLast((child) => BLOCK_ELEMENTS.has(nameOf(child)));
-        const following = elements.slice(index + 1).find((other) => BLOCK_ELEMENTS.has(nameOf(other)));
-        return last !== undefined && following !== undefined && "w:p" in last && "w:p" in following && joinsNext(last, styles, showDeleted)
-            ? [{ [CONTROL_START]: {} }, ...openedAtEnds(content!, styles, showDeleted)]
+        if (content === undefined) {
+            return [element];
+        }
+        const at = blocks.indexOf(element);
+        const following = blocks[at + 1];
+        const previous = blocks[at - 1];
+        const joinedAfter = endsJoining(element, styles, showDeleted) && (following === undefined ? end : startsWithParagraph(following));
+        const joinedBefore = startsWithParagraph(element) && (previous === undefined ? start : endsJoining(previous, styles, showDeleted));
+        return joinedAfter || joinedBefore
+            ? openedAtEnds(content, styles, showDeleted, { start: joinedBefore, end: joinedAfter })
             : [element];
     });
+};
+
+/**
+ * A block, or the first block of a content control or custom XML that isn't opened (see {@link openedAtEnds}), which a
+ * paragraph before it is before as though the control weren't there, unless it is bound to custom XML
+ */
+const lookedThrough = (element: XmlObject): XmlObject => {
+    const first =
+        nameOf(element) === "w:sdt" && isBound(element)
+            ? undefined
+            : openableContentOf(element)?.find((child) => BLOCK_ELEMENTS.has(nameOf(child)));
+    return first === undefined ? element : lookedThrough(first);
+};
 
 /**
  * Joins each paragraph whose mark is deleted in a tracked change, or moved elsewhere, to the paragraph after it, as Word
@@ -4346,9 +4493,13 @@ const openedAtEnds = (elements: readonly XmlObject[], styles: TextStyles, showDe
  * TR10b). A paragraph with no paragraph after it, before a table or at the end of a table cell or of the document, stays
  * as it is, with its section break at the end of the document (MK8a, MK8b, MK8d, TR10a). Read as Word sizes a table's
  * columns (`showDeleted`), a paragraph with a deleted mark stays as it is written: a column as wide as the longer of the two
- * paragraphs, which are laid out joined on two lines (`word-stops-tracked.docx` TR11). What Word does with a deleted mark
- * at the start of a content control, a deleted section break before a table, or between sections that start differently,
- * other than the document's first, hasn't been seen, so the layout stops there.
+ * paragraphs, which are laid out joined on two lines (`word-stops-tracked.docx` TR11). A section break deleted between
+ * sections that start differently leaves its section to the next too, the next's start and all: a section on a new page
+ * whose break is deleted before a continuous one goes on on the page before (`word-stops-tracked2.docx` TR13). A deleted
+ * section break of a paragraph with nothing shown before a table takes no room, and leaves its section to the table's
+ * (TR14). What Word does with a deleted mark at the end of a content control with nothing after it, or before one bound to
+ * custom XML, and with a deleted section break of a paragraph with text shown before something that isn't a paragraph,
+ * hasn't been seen, so the layout stops there.
  *
  * @param styles - The document's styles, which may hide a paragraph's mark
  * @param options - Whether the elements are in a content control or custom XML (`nested`), whether deleted marks are read
@@ -4363,7 +4514,7 @@ const joinRemovedMarks = (
     // The elements after the one being read, as they are joined, from the last: the next is at the end
     // eslint-disable-next-line functional/prefer-readonly-type
     const after: XmlObject[] = [];
-    for (const [index, element] of [...opened.entries()].reverse()) {
+    for (const element of [...opened].reverse()) {
         const name = nameOf(element);
         const mark = name === "w:p" && !showDeleted ? removedMarkOf(element) : undefined;
         // A paragraph joined to the next goes on past those left out after it, as they show nothing, and their bookmarks go
@@ -4377,16 +4528,12 @@ const joinRemovedMarks = (
                 last = after.findLastIndex((other) => BLOCK_ELEMENTS.has(nameOf(other)));
             }
         }
-        // The next block, past the marks between them, such as bookmarks' starts
+        // The next block, past the marks between them, such as bookmarks' starts, and through a content control not opened
         const at = after.findLastIndex((other) => BLOCK_ELEMENTS.has(nameOf(other)));
-        const next = after[at] as XmlObject | undefined;
+        const next = at < 0 ? undefined : lookedThrough(after[at]);
         const nextName = next === undefined ? undefined : nameOf(next);
-        // Whether the next block is at the start of a content control or custom XML, or there is none in one
-        const edge =
-            nextName === "w:sdt" ||
-            nextName === "w:customXml" ||
-            (next === undefined && nested) ||
-            after.slice(at + 1).some((other) => CONTROL_START in other);
+        // Whether the next block is a content control bound to custom XML, or there is none in one
+        const edge = nextName === "w:sdt" || (next === undefined && nested);
         const nextSection = (): unknown => nextSectionIn([...after].reverse());
         const hidden =
             mark === undefined && name === "w:p" && isMarkHidden(element, styles)
@@ -4395,24 +4542,26 @@ const joinRemovedMarks = (
         const unjoined = hidden !== undefined && "reason" in hidden ? hidden.reason : undefined;
         const joins = (mark !== undefined || (hidden !== undefined && "joins" in hidden)) && nextName === "w:p";
         const section = mark === undefined ? undefined : sectionPropertiesOf(element);
+        // A deleted section break before something that isn't a paragraph, which it can't be joined to
+        const unjoinedSection = section !== undefined && !joins && next !== undefined && nextName !== "w:sectPr";
         const reason =
             mark === undefined
                 ? unjoined
                 : edge
-                  ? "a deleted paragraph mark at the edge of a content control"
+                  ? DELETED_AT_EDGE
                   : joins && isLeftOut(next!)
                     ? "a deleted paragraph mark before a paragraph with nothing shown and its mark hidden"
-                    : section !== undefined && !joins && next !== undefined && nextName !== "w:sectPr"
-                      ? "a deleted section break before something that isn't a paragraph"
-                      : section !== undefined &&
-                          joins &&
-                          sectionTypeOf(section) !== sectionTypeOf(nextSection()) &&
-                          elementsIn(opened.slice(0, index), (inner) => inner === "w:sectPr").length > 0
-                        ? "a deleted section break between sections that start differently, after the first"
-                        : undefined;
+                    : unjoinedSection && showsSomething(contentOf(element), paragraphRunOf(element, styles), styles)
+                      ? "a deleted section break of a paragraph with text shown before something that isn't a paragraph"
+                      : undefined;
         if (reason !== undefined) {
             // eslint-disable-next-line functional/immutable-data
             after.push(stopIn(element, reason));
+        } else if (unjoinedSection) {
+            // The paragraph takes no room, and its section is left to the next, but for its bookmarks, which start with the
+            // next block (TR14)
+            // eslint-disable-next-line functional/immutable-data
+            after.push(...[...elementsIn(contentOf(element), (inner) => inner === "w:bookmarkStart")].reverse());
         } else if (section !== undefined && !joins) {
             // eslint-disable-next-line functional/immutable-data
             after.push({ "w:p": [...contentOf(element), { [KEPT_MARK]: {} }] });
@@ -4427,7 +4576,7 @@ const joinRemovedMarks = (
             // eslint-disable-next-line functional/immutable-data
             after.push(
                 hidden !== undefined && "joins" in hidden
-                    ? joinedToNext(element, inOrder, next!, styles)
+                    ? joinedToNext(element, inOrder, next!)
                     : joinedParagraph(element, inOrder, next!),
             );
         } else if (name === "w:customXml") {
@@ -4454,14 +4603,18 @@ const joinRemovedMarks = (
  * Reads the paragraphs and tables in a part of a document, such as a table cell or a header, and in the content controls
  * and custom XML in it. A bookmark between them starts with the next.
  */
-const readBlocks = (elements: readonly unknown[], reader: Reader, tableFormats?: TableFormats): readonly Block[] => {
+const readBlocks = (
+    elements: readonly unknown[],
+    reader: Reader,
+    tableFormats?: TableFormats,
+    // Only a table's cells are read in their table's formatting
+    part: Part = tableFormats === undefined ? "other" : "cell",
+): readonly Block[] => {
     // eslint-disable-next-line functional/prefer-readonly-type
     const blocks: Block[] = [];
     let bookmarks: readonly string[] = [];
     // The paragraphs left out since the last block, which take no room
     let hidden: readonly ParagraphBlock[] = [];
-    // Only a table's cells are read in their table's formatting
-    const part = tableFormats === undefined ? "other" : "cell";
     for (const element of unwrap(
         joinRemovedMarks(elements, reader.styles, { nested: false, showDeleted: reader.showDeleted === true, part }),
         reader.guess,
@@ -4783,14 +4936,17 @@ const leavesOutAt = (paragraph: ParagraphBlock, side: "before" | "after", next: 
 const readReferences = (
     properties: readonly XmlObject[],
     name: "w:headerReference" | "w:footerReference",
-    readPart: (id: string) => readonly Block[] | undefined,
+    readPart: (id: string, part: "header" | "footer") => readonly Block[] | undefined,
 ): HeadersOrFooters =>
     Object.fromEntries(
         properties
             .filter((child) => name in child)
             .map((child) => {
                 const attributes = attributesOf(child[name]);
-                return [String(attributes["w:type"] ?? "default"), readPart(String(attributes["r:id"]))] as const;
+                return [
+                    String(attributes["w:type"] ?? "default"),
+                    readPart(String(attributes["r:id"]), name === "w:headerReference" ? "header" : "footer"),
+                ] as const;
             })
             .filter(([type, blocks]) => blocks !== undefined && ["default", "first", "even"].includes(type)),
     );
@@ -4899,7 +5055,7 @@ const MOST_NOTE_COLUMNS = 4;
  */
 const readSection = (
     element: unknown,
-    readPart: (id: string) => readonly Block[] | undefined,
+    readPart: (id: string, part: "header" | "footer") => readonly Block[] | undefined,
     previous: Section | undefined,
     { gutterAtTop, mirrorMargins }: PageSettings,
     grid: TextGrid | string | undefined,
@@ -5015,43 +5171,55 @@ const turned = (section: Section, textRunsDown: "fromRight" | "fromLeft", gutter
 // how Word lines it up when the level doesn't say. Word's own lists are aligned to the left, the centre or the right, as
 // docx writes them, and transitional documents may write the start and end of the line for left and right. The schema's
 // other values are a paragraph's alignments, which a number on its own doesn't have: Word leaves out a level aligned
-// both, as though it weren't there (see {@link readLevel}), and what it does with the rest hasn't been seen
+// both, as though it weren't there (see {@link readLevel}), lines up one aligned distribute or with a low kashida to the
+// left, one aligned numTab to the right, and one aligned for Thai in the centre (stops2/word-stops-lists2.ts LI18a to
+// LI18d), and what it does with a medium or high kashida hasn't been seen
 const NUMBER_ALIGNMENTS: Readonly<Record<string, NumberingLevel["alignment"]>> = {
     left: undefined,
     start: undefined,
+    distribute: undefined,
+    lowKashida: undefined,
     center: "center",
+    thaiDistribute: "center",
     right: "right",
     end: "right",
+    numTab: "right",
 };
 
 /**
  * Reads a level of a list (`w:lvl`), in a definition or in a list's override of it. Word leaves out a level whose number
  * is aligned both, as a paragraph's text can be: its paragraphs have no number, nor the level's indents
- * (`stops2/word-stops-list-definitions.docx` LI11). It says why Word's way with it isn't followed, when it isn't: a number
- * aligned in a way the schema has for paragraphs other than both, bullets that are pictures (`w:lvlPicBulletId`), which
- * Word didn't draw (`word-stops-picture-bullets.docx` LI8), and numbers laid out as Word 6 laid them out (`w:legacy`),
- * which Word put where it puts others where the number and its space fit in the indent (LI9), so the two weren't told
- * apart.
+ * (`stops2/word-stops-list-definitions.docx` LI11). Bullets that are pictures (`w:lvlPicBulletId`) Word draws nothing
+ * for, of 9 points or 20, with their shape type or without: the text at the tab's stop, and the line as tall as its text
+ * (`word-stops-picture-bullets.docx` LI8, stops2/word-stops-lists2.ts LI20a, LI20b). A level numbered as Word 6 numbered
+ * lists (`w:legacy`) puts its text after the room Word 6 gave the number (see {@link LegacyNumbering}), where a tab would
+ * follow the number: a number of 10000. with a space of 120 twips and an indent of 360 puts the text 120 after the number,
+ * and 1. with an indent of 720, 720 from the number (LI9, LI19a, LI19b). It says why Word's way with it isn't followed,
+ * when it isn't: a number aligned with a medium or high kashida, and one numbered as Word 6 numbered lists with a space
+ * or nothing after it, or not aligned to the left.
  */
 const readLevel = (element: unknown, styles: TextStyles): { readonly index: number; readonly level: NumberingLevel } => {
     const children = childrenOf(element);
     const jc = valueOf(children, "w:lvlJc") ?? "left";
     const restart = numberOf(attributesOf(find(children, "w:lvlRestart"))["w:val"]);
+    const suffix = valueOf(children, "w:suff") ?? "tab";
+    const legacyAttributes = attributesOf(find(children, "w:legacy"));
+    const legacy: LegacyNumbering | undefined = isOn(legacyAttributes["w:legacy"])
+        ? { space: twips(legacyAttributes["w:legacySpace"]) ?? 0, indent: twips(legacyAttributes["w:legacyIndent"]) ?? 0 }
+        : undefined;
     const unsupported =
         !(jc in NUMBER_ALIGNMENTS) && jc !== "both"
             ? "a list number aligned in a way not yet followed"
-            : find(children, "w:lvlPicBulletId") !== undefined
-              ? "a list whose bullets are pictures"
-              : isOn(attributesOf(find(children, "w:legacy"))["w:legacy"])
-                ? "a list numbered as Word 6 numbered lists"
-                : undefined;
+            : legacy !== undefined && (suffix !== "tab" || NUMBER_ALIGNMENTS[jc] !== undefined)
+              ? "a list numbered as Word 6 numbered lists with a space or nothing after its number, or not aligned to the left"
+              : undefined;
     return {
         index: numberOf(attributesOf(element)["w:ilvl"]) ?? 0,
         level: {
             ...withoutUndefined({ style: valueOf(children, "w:pStyle") }),
             format: valueOf(children, "w:numFmt") ?? "decimal",
             text: stringOf(attributesOf(find(children, "w:lvlText"))["w:val"]) ?? "",
-            suffix: valueOf(children, "w:suff") ?? "tab",
+            suffix,
             // A level that doesn't give its first number starts at 0
             start: numberOf(attributesOf(find(children, "w:start"))["w:val"]) ?? 0,
             ...withoutUndefined({
@@ -5059,6 +5227,7 @@ const readLevel = (element: unknown, styles: TextStyles): { readonly index: numb
                 restart,
                 legal: onOff(children, "w:isLgl") === true ? true : undefined,
                 alignedBoth: jc === "both" ? true : undefined,
+                legacy,
                 unsupported,
             }),
             paragraph: readParagraphFormat(find(children, "w:pPr")),
@@ -5810,11 +5979,14 @@ export const readContent = (writtenBody: XmlObject, writtenParts: DocumentParts,
 
     // Each header and footer, the first time a section refers to it
     const headersAndFooters = new Map<string, readonly Block[] | undefined>();
-    const readPart = (id: string): readonly Block[] | undefined => {
+    const readPart = (id: string, part: "header" | "footer"): readonly Block[] | undefined => {
         if (!headersAndFooters.has(id)) {
             const content = parts.headersAndFooters.get(id);
             // eslint-disable-next-line functional/immutable-data
-            headersAndFooters.set(id, content && readBlocks(content, readerOf(true, parts.pictures?.headersAndFooters?.get(id))));
+            headersAndFooters.set(
+                id,
+                content && readBlocks(content, readerOf(true, parts.pictures?.headersAndFooters?.get(id)), undefined, part),
+            );
         }
         return headersAndFooters.get(id);
     };
@@ -5859,6 +6031,7 @@ export const readContent = (writtenBody: XmlObject, writtenParts: DocumentParts,
         id: string,
         shows?: Reader["noteNumber"],
         content = contentOf(notesByKind[kind].get(id) ?? { [`w:${kind}`]: [] }),
+        last = false,
     ): readonly Block[] => {
         // A footnote's lines are on the grid of the section of its reference, which is being read, and an endnote's on the
         // last section's, which they follow, but not their separators (word-grid.ts G9, word-grid3.ts H2, H3): an endnote's
@@ -5876,7 +6049,12 @@ export const readContent = (writtenBody: XmlObject, writtenParts: DocumentParts,
             ...(grid === undefined ? {} : { grid }),
             ...(down ? { down } : {}),
         };
-        const noteBlocks = readBlocks(content, readerOfNote);
+        const noteBlocks = readBlocks(
+            content,
+            readerOfNote,
+            undefined,
+            kind === "endnote" ? "endnote" : last ? "lastFootnote" : "footnote",
+        );
         return separator || noteBlocks[noteBlocks.length - 1]?.type !== "table"
             ? noteBlocks
             : [...noteBlocks, paragraphAfterTable(kind, readerOfNote, noteBlocks)];
@@ -6059,11 +6237,16 @@ export const readContent = (writtenBody: XmlObject, writtenParts: DocumentParts,
         // eslint-disable-next-line functional/immutable-data
         footnoteNumbers.set(marker, label);
     };
+    // How many footnotes the body refers to, counting those of deleted and moved references, which are numbered though not
+    // laid out, but not those in text boxes, which Word leaves out: the last of them is the document's last footnote
+    const footnoteReferences = countFootnoteReferences(contentOf(body));
+    /** Whether the footnote whose reference was just read is the document's last */
+    const isLast = (kind: NoteKind): boolean => kind === "footnote" && countOf(noteCounts, kind).read === footnoteReferences;
     const readNote = (kind: NoteKind, id: string): NoteReference => {
         const marker = markerNext(kind, noteCounts);
         const numbered = numberNext(kind, noteCounts, marker);
         const { label, onPage } = numbered;
-        const content = readNoteContent(kind, id, onPage === undefined ? label : { onPage });
+        const content = readNoteContent(kind, id, onPage === undefined ? label : { onPage }, undefined, isLast(kind));
         if (onPage !== undefined) {
             const { start, format } = notePropertiesOf(kind, sections.length);
             // eslint-disable-next-line functional/immutable-data
@@ -6078,7 +6261,7 @@ export const readContent = (writtenBody: XmlObject, writtenParts: DocumentParts,
         read: readNote,
         readOwn: (kind, id) => {
             const marker = markerNext(kind, noteCounts);
-            keepNote(kind, marker, readNoteContent(kind, id, null), "");
+            keepNote(kind, marker, readNoteContent(kind, id, null, undefined, isLast(kind)), "");
             return { label: "", marker };
         },
         // A note whose reference is deleted is numbered, though it isn't laid out (MK10e). Where the page it would be on

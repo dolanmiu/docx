@@ -1,6 +1,7 @@
 /**
- * Probes of the list numbers where docx/layout still stops after `word-stops-lists.docx`, `-list-definitions.docx` and
- * `-picture-bullets.docx` (round 25), for the next batch Word saves.
+ * Probes of the list numbers where docx/layout still stopped after `word-stops-lists.docx`, `-list-definitions.docx` and
+ * `-picture-bullets.docx` (round 25), saved from Word in round 26 (`word-stops-lists2.pdf`): see README.md for what they
+ * showed.
  *
  * LI13a to LI13d: a number in a border, which LI4a showed Word putting the text right after the number's box when the box
  * ends past the hanging indent's stop: a border of half a point next to the number, whose box ends before the stop (a), of

@@ -106,7 +106,25 @@ batch's. Word saved those of lists, hidden marks and tracked changes in round 25
 tracked changes out with their markup in balloons beside the page, which it scales down by 0.7422 (the tables' borders
 9026 twips apart) and moves, so lengths read from them with `word-stops.py` are scaled: divide them by it.
 `word-stops-lists2.ts` (`word-stops-lists2`) and `word-stops-marks2.ts` (`word-stops-hidden2`, `word-stops-tracked2`)
-have what those left stopping, for the next batch: LI13 to LI20, HD11 to HD16 and TR12 to TR17.
+have what those left stopping (LI13 to LI20, HD11 to HD16 and TR12 to TR17), saved from Word in round 26, committed here.
+They showed a bordered number's box ending at its tab's stop, or after the border's room from the number where that is
+further, with a tab or a space (LI13a to LI13d), a paragraph at a left-out level starting the levels below it again
+(LI14), a list with a level aligned both numbering its other levels (LI15), the word after a number's tab breaking on the
+number's line rather than leaving the number alone (LI16), Word's automatic spacing between lists made from the same
+definition (LI17), numbers aligned distribute and with a low kashida to the left, numTab to the right and for Thai in the
+centre (LI18a to LI18d), the text after a Word 6 number at the level's indent from the number or after its space from
+the number's end, whichever is further (LI19a, LI19b), no picture drawn for picture bullets, with their shape type or of
+20 points (LI20a, LI20b), a hidden mark before a content control's first paragraph joined (HD11), a header's and the last
+footnote's hidden empty last paragraph taking no room (HD12, HD13), a hidden section break with text shown joined to the
+next section's first paragraph before a continuous section alike (HD14a), and one with nothing shown taking no room
+before a section on a new page (HD14b), paragraphs of other styles joined, each one's text in its own style's
+formatting, with the first's style's space before (HD15a, HD15b), each line spaced as the paragraph it ends in with
+exact and at-least spacing and three paragraphs too (HD16a to HD16c), a deleted mark before a content control's first
+paragraph joined (TR12), a deleted section break between sections that start differently leaving its section to the
+next, start and all (TR13), a deleted section break before a table taking no room (TR14), a list in a deleted row
+counted (TR15), a deleted first, last or own-bordered row in a spaced table laid out as without it (TR16a to TR16c), and
+the note of a deleted endnote reference with a mark of its own laid out after the kept note's, marked i (TR17), which
+isn't followed: the layout stops there. Read `word-stops-tracked2` as round 25's, with its lengths scaled by the balloons.
 
 `word-stops-equations2.ts` has the equations' cases Word's PDFs left open (EQ30 to EQ45), in
 `word-stops-equations2`, `word-stops-equation-limits`, `word-stops-equation-small` and `word-stops-equation-spacing`,
