@@ -1776,20 +1776,21 @@ export const layoutLines = (
             : ordinary > TOLERANCE && over <= MOST_SQUEEZE * ordinary;
     };
     /**
-     * Why where Word puts the text after a tab to one of the paragraph's own stops past the end of the line isn't known,
-     * when it isn't. Its probes had no right indent past the margin; a left stop after text, with first line and
+     * Why where Word puts the text after a tab to one of the paragraph's own stops past the end of the line isn't
+     * known, when it isn't. Its probes had no right indent past the margin; a left stop after text, with first line and
      * hanging indents too (scripts/layout-probes/stops2/word-stops-tabs.ts TA1a, TA1b), and at the start of a line in a
-     * paragraph indented on the left or right (stops2/word-stops-edges.ts TA9a, TA9b), but not with a first line or
-     * hanging indent there; and a right indent only with a right stop after text. Right, centred and decimal stops line
-     * their text up with the end of the line whatever the left, first line and hanging indents, at the start of a line and
-     * after text (TA3a to TA3d, stops2/word-stops-text2.ts TA10a to TA10f, TA10h, TA10i)
+     * paragraph indented on the left or right (stops2/word-stops-edges.ts TA9a, TA9b), but not on the first line of one
+     * with a first line indent, nor on any line of one with a hanging indent; and a right indent only with a right stop
+     * after text. Right, centred and decimal stops line their text up with the end of the line whatever the left, first
+     * line and hanging indents, at the start of a line and after text (TA3a to TA3d, stops2/word-stops-text2.ts TA10a
+     * to TA10f, TA10h, TA10i)
      */
-    const pastEndUnknown = ({ alignment: kind }: TabStop, started: boolean): string | undefined => {
+    const pastEndUnknown = ({ alignment: kind }: TabStop, started: boolean, firstLine: boolean): string | undefined => {
         if (indentRight < 0) {
             return "a tab stop past the end of the line in a paragraph indented past the margin";
         }
         if (kind === "left") {
-            return !started && firstLineIndent !== 0
+            return !started && (firstLineIndent < 0 || (firstLine && firstLineIndent > 0))
                 ? "a left tab stop past the end of the line at the start of a line in a paragraph with a first line or hanging indent"
                 : undefined;
         }
@@ -2275,7 +2276,7 @@ export const layoutLines = (
                           ? "text after a tab stop past the paragraph's right indent that goes past the margin"
                           : pastEnd === undefined
                             ? undefined
-                            : pastEndUnknown(pastEnd, line.started);
+                            : pastEndUnknown(pastEnd, line.started, line.first);
                 if (unknown !== undefined) {
                     line = { ...line, unsupported: line.unsupported ?? unknown };
                 }
