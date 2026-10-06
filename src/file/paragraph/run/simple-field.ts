@@ -16,9 +16,17 @@ import { TextRun } from "./text-run";
 /**
  * @internal
  */
-class FldSimpleAttrs extends XmlAttributeComponent<{ readonly instr: string }> {
-    protected readonly xmlKeys = { instr: "w:instr" };
+class FldSimpleAttrs extends XmlAttributeComponent<{ readonly instr: string; readonly fldLock?: boolean }> {
+    protected readonly xmlKeys = { instr: "w:instr", fldLock: "w:fldLock" };
 }
+
+/**
+ * Options for a simple field.
+ */
+export type ISimpleFieldOptions = {
+    /** Locks the field so Word keeps the cached value when fields are updated. Not locked by default. */
+    readonly locked?: boolean;
+};
 
 /**
  * Represents a simple field in a WordprocessingML document.
@@ -50,12 +58,15 @@ class FldSimpleAttrs extends XmlAttributeComponent<{ readonly instr: string }> {
  *
  * // Simple field with cached value
  * new SimpleField("DATE", "2024-01-01");
+ *
+ * // Locked field, Word keeps the cached value when fields are updated
+ * new SimpleField("DATE", "2024-01-01", { locked: true });
  * ```
  */
 export class SimpleField extends XmlComponent {
-    public constructor(instruction: string, cachedValue?: string) {
+    public constructor(instruction: string, cachedValue?: string, options: ISimpleFieldOptions = {}) {
         super("w:fldSimple");
-        this.root.push(new FldSimpleAttrs({ instr: instruction }));
+        this.root.push(new FldSimpleAttrs({ instr: instruction, fldLock: options.locked ? true : undefined }));
         if (cachedValue !== undefined) {
             this.root.push(new TextRun(cachedValue));
         }
