@@ -4388,6 +4388,57 @@ var docxShapes = (function(exports, docx) {
 	};
 	/** Whether a font is one for Chinese, Japanese or Korean text */
 	var isEastAsianFont = (font) => font !== void 0 && eastAsianFontOf(font) !== void 0;
+	new Map([
+		["calibri", [
+			521,
+			536.1,
+			521,
+			536.6
+		]],
+		["arial", [
+			441.4,
+			478.5,
+			441.4,
+			478.5
+		]],
+		["cambria", [
+			615.2,
+			599.6,
+			542.5,
+			585
+		]],
+		["tahoma", [
+			444.3,
+			505.9,
+			444.3,
+			505.9
+		]],
+		["times new roman", [
+			400.9,
+			426.8,
+			401.9,
+			412.1
+		]],
+		...[
+			"ms mincho",
+			"ms gothic",
+			"simsun",
+			"nsimsun",
+			"simhei",
+			"kaiti",
+			"fangsong",
+			"pmingliu",
+			"mingliu",
+			"batang",
+			"gulim",
+			"dotum"
+		].map((name) => [name, [
+			500,
+			500,
+			500,
+			500
+		]])
+	]);
 	var named = (name) => FONT_WIDTHS.find((known) => known.name.toLowerCase() === name.toLowerCase());
 	/** The widths of a font in the table, or of a font with the same widths as one. Undefined for other fonts */
 	var exactWidthsOf = (font) => {
@@ -4919,6 +4970,8 @@ var docxShapes = (function(exports, docx) {
 			widowControl: onOff(children, "w:widowControl"),
 			tabs: readTabs(find(children, "w:tabs")),
 			kinsoku: onOff(children, "w:kinsoku"),
+			autoSpaceDE: onOff(children, "w:autoSpaceDE"),
+			autoSpaceDN: onOff(children, "w:autoSpaceDN"),
 			rightToLeft: onOff(children, "w:bidi"),
 			wordWrap: onOff(children, "w:wordWrap"),
 			suppressAutoHyphens: onOff(children, "w:suppressAutoHyphens"),
