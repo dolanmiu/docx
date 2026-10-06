@@ -37,7 +37,8 @@
 // - H10 to H12: placed 2000 below the top margin, centred down the margins, and centred across the page, as a drawing is
 // - H13: the paragraph after the paragraph after one taller than it goes round it too
 // - H14: of two that may not overlap, Word moves the second right of the first, to 10 past the first's distance from the
-//   text, which the layout doesn't follow
+//   text: the half a point it keeps the text from a table with no distance from the text given (scripts/layout-probes/
+//   stops2/word-stops-compat2.ts CN9), which the second has on its left, so the layout follows it now
 // - H15: in 2 columns, placed against the column, at its right
 //
 // Usage: npm run run-ts -- scripts/layout-probes/word-floats3.ts, which writes build/word-probes/word-floats3.docx

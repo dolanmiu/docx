@@ -232,6 +232,80 @@ describe("layoutDocument", () => {
         ]);
     });
 
+    it("should keep lines half a point from a table that text flows around with no distance from the text, as Word does", () => {
+        // `word-stops-compat2-15.docx` CN9: a table 3000 wide with borders of half a point, 2000 from the margin and 500
+        // below the paragraph before it, in prose aligned left, whose text beside it Word starts at 5019 twips, not 5010,
+        // and breaks so: "the in foot mouth made on river was and" without "the", which fits in 9 more twips. The layout
+        // puts it at 5020, half a point from the table's room, as Word puts the text 1 twip left of the layout beside a
+        // table placed 2000 from the margin with a distance of 180 too (`word-stops-floats.docx` FT1b)
+        const prose = "the in foot mouth made on river was and the coast boat to the by lighthouse of summer the survey the from".split(
+            " ",
+        );
+        const words = (count: number): string => Array.from({ length: count }, (_, index) => prose[index % prose.length]).join(" ");
+        const border = { style: BorderStyle.SINGLE, size: 4, color: "000000" };
+        const { pages, stoppedAt } = layoutDocument(
+            new Document({
+                styles: {
+                    default: {
+                        document: { run: { font: "Calibri", size: 22 }, paragraph: { spacing: { before: 0, after: 0, line: 240 } } },
+                    },
+                },
+                sections: [
+                    {
+                        children: [
+                            new Paragraph(`CN9 ${words(30)}`),
+                            new Table({
+                                width: { size: 3000, type: WidthType.DXA },
+                                columnWidths: [3000],
+                                borders: {
+                                    top: border,
+                                    bottom: border,
+                                    left: border,
+                                    right: border,
+                                    insideHorizontal: border,
+                                    insideVertical: border,
+                                },
+                                float: {
+                                    horizontalAnchor: TableAnchorType.MARGIN,
+                                    absoluteHorizontalPosition: 2000,
+                                    verticalAnchor: TableAnchorType.TEXT,
+                                    absoluteVerticalPosition: 500,
+                                },
+                                rows: [1, 2, 3].map(
+                                    (row) =>
+                                        new TableRow({
+                                            children: [
+                                                new TableCell({
+                                                    width: { size: 3000, type: WidthType.DXA },
+                                                    children: [new Paragraph(`CN9 row ${row}`)],
+                                                }),
+                                            ],
+                                        }),
+                                ),
+                            }),
+                            new Paragraph(`CN9 after ${words(150)}`),
+                        ],
+                    },
+                ],
+            }),
+        );
+        expect(stoppedAt).to.equal(undefined);
+        const beside = linesOf(pages[0].body).filter(({ width, text }) => width < TEXT_WIDTH - 1 && text.trim() !== "");
+        // Lines are in pixels, 15 twips each, from the page's edge
+        expect(beside.map(({ x, text }) => [Math.round(x * 15 - 1440), text.trim()])).to.deep.equal([
+            [0, "the survey the from"],
+            [5020, "the in foot mouth made on river was and"],
+            [0, "the coast boat to the"],
+            [5020, "by lighthouse of summer the survey the"],
+            [0, "from the in foot"],
+            [5020, "mouth made on river was and the coast"],
+            [0, "boat to the by"],
+            [5020, "lighthouse of summer the survey the from"],
+            [0, "the in foot mouth"],
+            [5020, "made on river was and the coast boat to the"],
+        ]);
+    });
+
     it("should leave the document as it is written", () => {
         const options = (): IPropertiesOptions => ({
             footnotes: { 1: { children: [new Paragraph("A footnote.")] } },

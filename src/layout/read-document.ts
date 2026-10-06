@@ -57,9 +57,11 @@ import {
     readFontFile,
     readParagraphFormat,
     readRunFormat,
+    singleFontOf,
     spansOf,
     stringOf,
     styleChain,
+    unknownRunFont,
     unknownRunFormatting,
     valueOf,
     withoutUndefined,
@@ -1633,6 +1635,8 @@ const readRun = (element: XmlObject, paragraphRun: RunFormat, reader: Reader, re
                     .filter((part) => typeof part === "string")
                     .join("");
                 const across = acrossOf(childrenOf(properties), content, down);
+                // Which of the run's fonts Word draws each character in is known but for a few (see `unknownRunFont`)
+                const unknownFont = typeof across === "string" ? across : format.hidden ? undefined : unknownRunFont(content, format);
                 // A box of borders goes on round a tab in it (scripts/layout-probes/stops2/word-stops-tabs.ts TA7a)
                 const read = (): readonly LayoutItem[] =>
                     content.split("\t").flatMap((part, index): readonly LayoutItem[] => [
@@ -1648,7 +1652,7 @@ const readRun = (element: XmlObject, paragraphRun: RunFormat, reader: Reader, re
                             ...(across === true ? { across } : {}),
                         })),
                     ]);
-                return typeof across === "string" ? guessedOr(reader, across, read) : read();
+                return unknownFont === undefined ? read() : guessedOr(reader, unknownFont, read);
             }
             case "w:tab":
             case "w:ptab":
@@ -2205,9 +2209,18 @@ const readListNumber = (
     // The number is in the formatting of its paragraph's mark, but for what its level gives it: in the mark's 20 points
     // or Courier New, or bold, beside text that isn't, and not bold beside bold text, and in its level's 8 points beside a
     // mark of 20 (LF1 to LF6)
-    const font = fontOf(withFeaturesOf(combine([markRun, level.run]), reader));
+    const numberRun = withFeaturesOf(combine([markRun, level.run]), reader);
+    const text = level.text.replace(/%([1-9])/g, (_, digit: string) => numberAt(Number(digit) - 1) ?? "");
+    // A number of the characters of the run's high ANSI font, such as a bullet, is in that font, where the run has one
+    // other than its font for ASCII, as Word draws them (see `spansOf`). One of characters of both hasn't been seen
+    const numberFont = singleFontOf(text, numberRun);
+    const font = numberFont ?? fontOf(numberRun);
     const unsupported =
         level.unsupported ??
+        unknownRunFont(text, numberRun) ??
+        (numberFont === undefined
+            ? "a list number of characters of both the font for ASCII and the high ANSI font of its run"
+            : undefined) ??
         (levels.some((other) => other?.alignedBoth === true)
             ? "a list number at another level of a list with a level aligned both"
             : restartedByLeftOut
@@ -2219,7 +2232,6 @@ const readListNumber = (
                   : font.border !== undefined
                     ? "a list number with a border"
                     : undefined);
-    const text = level.text.replace(/%([1-9])/g, (_, digit: string) => numberAt(Number(digit) - 1) ?? "");
     // As a chapter number, Word writes the level's text from its first number to its last, so "Chapter %1" is 1 and
     // "%1.%2" is 1.2
     const numbers = /%[1-9](?:.*%[1-9])?/.exec(level.text)?.[0];
@@ -2312,10 +2324,10 @@ const withFeaturesOf = (format: RunFormat, { compatibilityMode, openTypeFeatures
 const unknownInOlderLayout = (items: readonly LayoutItem[], reader: Reader, autoSpaced: boolean): string | undefined => {
     const { compatibilityMode } = reader;
     // Its East Asian text is looked for only where it is laid out otherwise, as the text of every paragraph is long. Word 2007
-    // and 2003 break that of no East Asian language only at its spaces (see `ideographs` in `LineBreakRules`). That of one,
-    // whose characters that can't start or end a line Word knows, hasn't been seen, nor beside characters past ASCII that
-    // aren't East Asian, such as curly quotes, which Word draws in a run's font for them (`w:hAnsi`), where the layout draws
-    // them in its font for ASCII (`word-stops-compat2-12.docx` CN10c)
+    // and 2003 break that of no East Asian language only at its spaces (see `ideographs` in `LineBreakRules`), beside
+    // characters past ASCII that aren't East Asian too, such as curly quotes, in the run's font for them (`w:hAnsi`;
+    // `word-stops-compat2-12.docx` CN10c). That of an East Asian language, whose characters that can't start or end a line
+    // Word knows, hasn't been seen
     const older = compatibilityMode !== undefined && compatibilityMode < WORD_2010_MODE;
     const texts = items.filter((item) => item.type === "text");
     const eastAsian = texts.some((item) => [...item.text].some(isEastAsian));
@@ -2337,12 +2349,8 @@ const unknownInOlderLayout = (items: readonly LayoutItem[], reader: Reader, auto
             ? "East Asian text beside other text, which Word spaces apart, in a document that lays it out as Word 2003 did (useFELayout)"
             : undefined;
     }
-    return texts.some(
-        (item) =>
-            kinsokuLanguageOf(item.language) !== undefined ||
-            [...item.text].some((character) => character.codePointAt(0)! > LAST_ASCII && !isEastAsian(character)),
-    )
-        ? "East Asian text in an East Asian language, or beside characters past ASCII, in a document in compatibility mode 12 or 11"
+    return texts.some((item) => kinsokuLanguageOf(item.language) !== undefined)
+        ? "East Asian text in an East Asian language, in a document in compatibility mode 12 or 11"
         : undefined;
 };
 
@@ -3635,10 +3643,9 @@ const readTable = (element: XmlObject, reader: Reader): TableBlock | undefined =
     // they size as Word 2013 does, its borders at the cell's text (CN8d). How they size one as a share of the width hasn't
     // been seen: wider than the share, by its first cell's margin, at least (CN8b), nor one indented or as a share of the
     // width in a table cell. One that text flows around they place with its text where Word 2013 puts its border, its
-    // first cell's margin and half its left border to the left (CM10, CN9). With no distance from the text beside it, as
-    // those had, Word puts the text 9 twips further from it than the layout does in Word 2013's mode too, so the text beside
-    // those isn't laid out as Word lays it out: those, and one lined up across the page, or sized to its text, which
-    // haven't been seen, stop the layout
+    // first cell's margin and half its left border to the left (CM10, CN9), the text beside it half a point from it with
+    // no distance given, as in Word 2013's mode (CN9; see `readTableFloat`). One lined up across the page, or sized to its
+    // text, which haven't been seen, stop the layout
     const older = reader.compatibilityMode !== undefined;
     const marginsBeside = older && sized && givenWidth.width === undefined && reader.inCell !== true;
     // How wide Word makes a column of text that runs up or down isn't known in every font, so how wide a table sized to its
@@ -3656,10 +3663,8 @@ const readTable = (element: XmlObject, reader: Reader): TableBlock | undefined =
         (float !== undefined && (reader.inCell || reader.inHeader)
             ? "a table that text flows around in a table cell, header or footer"
             : undefined) ??
-        (typeof float === "object" &&
-        older &&
-        (marginsBeside || float.horizontal.align !== undefined || float.distances.left === 0 || float.distances.right === 0)
-            ? "a table that text flows around, sized to its text, lined up across the page or with no distance from the text beside it, in a document in compatibility mode"
+        (typeof float === "object" && older && (marginsBeside || float.horizontal.align !== undefined)
+            ? "a table that text flows around, sized to its text or lined up across the page, in a document in compatibility mode"
             : undefined) ??
         (marginsBeside && fits && givenWidth.share !== undefined
             ? "a table sized to its text as a share of the width, in a document in compatibility mode"
@@ -3784,13 +3789,35 @@ const readTableFloat = (element: unknown, overlap: unknown): TableFloat | string
         return typeof horizontal === "string" ? horizontal : (vertical as string);
     }
     const distance = (name: string): number => twips(attributes[`w:${name}FromText`]) ?? 0;
+    // Word keeps the text beside a table half a point from it with no distance from the text given, where a distance of
+    // 180 or 200 twips is as given: the text right of a table 3000 twips wide placed 2000 from the margin, with borders of
+    // half a point, from 5019 twips with none (`word-stops-compat2-15.docx` CN9, `word-stops-compat-15.docx` CM10, whose
+    // justified lines left of it end at 1990), from 5189 with 180 (`word-stops-floats.docx` FT1b), and 3210 from the
+    // margin's left with 200 beside one at the left of the margins (`word-floats3.docx` H2). Text beside a picture or a
+    // frame with no distance is at its edge (`word-stops-compat2-15.docx` CN6a to CN6d, CN7a, CN7b). Whether a distance
+    // under half a point is kept at half a point hasn't been seen
+    const beside = (name: string): number | string => {
+        const given = distance(name);
+        return given === 0
+            ? HALF_POINT
+            : given < HALF_POINT
+              ? "a table that text flows around less than half a point from the text beside it"
+              : given;
+    };
+    const [left, right] = [beside("left"), beside("right")];
+    if (typeof left === "string" || typeof right === "string") {
+        return typeof left === "string" ? left : (right as string);
+    }
     return {
         horizontal,
         vertical,
-        distances: { top: distance("top"), bottom: distance("bottom"), left: distance("left"), right: distance("right") },
+        distances: { top: distance("top"), bottom: distance("bottom"), left, right },
         mayOverlap: attributesOf(overlap)["w:val"] !== "never",
     };
 };
+
+// How far Word keeps the text beside a table that text flows around from it with no distance given, in points
+const HALF_POINT = 0.5;
 
 /** A block in place of what can't be laid out, with why */
 const unsupportedBlock = (unsupported: string): ParagraphBlock => ({
@@ -5056,7 +5083,6 @@ const WORD_2007_MODE = 12;
 // Word 2010's mode, below which Word lays out East Asian text and VML drawings otherwise
 const WORD_2010_MODE = 14;
 // The last character of ASCII, which Word draws in a run's font for it (`w:ascii`)
-const LAST_ASCII = 0x7f;
 
 // The application Word's own compatibility settings (`w:compatSetting`) are for. Those for other applications are theirs
 const WORD_SETTINGS = "http://schemas.microsoft.com/office/word";

@@ -54,6 +54,12 @@ from Word in the batch of 2026-10-05 (round 25). Its sections after DH2d have DH
 have none of their own: PB9c's table, below a paragraph beside the picture, went below it, which leaves contextual spacing
 before a table open, and so did HR2b's, which moved with its heading all the same.
 
+`word-stops-run-fonts.ts` writes `word-stops-run-fonts` (HA1 to HA3: which of a run's fonts Word draws characters past
+ASCII in, with the hint for East Asian text, in runs given a high ANSI font alone or other than their font for ASCII, and
+for the scripts the run-font rules leave out) and `word-stops-float-distance` (FD1: text beside a floating table 0 to 15
+twips from it, which Word kept half a point from one with no distance given in CN9 and CM10), for the next batch Word
+saves: neither has a PDF from Word yet.
+
 `word-stops-text2.ts` has the cases around what `word-stops-text`, `-tabs` and `-kerning` settled (RF24, RF27, RF29,
 RF31, RF32, PB3, PB5, PB7, SH16, SH17, JU4, TA10, TA11 and KE9), whose PDF, saved from Word in round 25, is followed as
 the table says, but for RF31b to RF31d, phonetic guides, whose line heights don't follow from their raise and sizes yet.

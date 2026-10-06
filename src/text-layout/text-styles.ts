@@ -47,8 +47,18 @@ export type RunFormat = Omit<TextFont, "size" | "lineSize" | "raise" | "border" 
     readonly hidden?: boolean;
     /** Whether the run is laid out on the characters of its section's document grid (`w:snapToGrid`). Default is on */
     readonly snapToGrid?: boolean;
+    /**
+     * The font of characters past ASCII that aren't East Asian or of a complex script, such as accented letters, curly
+     * quotes and dashes (`w:hAnsi`, Word's "high ANSI" font), where the run's font (`w:ascii`) is for ASCII
+     */
+    readonly highAnsiFont?: string;
     /** The font of Chinese, Japanese and Korean text (`w:eastAsia`) */
     readonly eastAsiaFont?: string;
+    /**
+     * Which font the characters Word may draw in either the high ANSI or the East Asian font are in (`w:hint`): "eastAsia"
+     * for the East Asian font, which isn't followed yet
+     */
+    readonly fontHint?: string;
     /**
      * The font, size in points, boldness and italics of complex scripts, such as Arabic, Hebrew and Thai (`w:cs`, `w:szCs`,
      * `w:bCs`, `w:iCs`)
@@ -299,17 +309,18 @@ const readVerticalAlign = (value: string | undefined): RunFormat["verticalAlign"
     value === "superscript" || value === "subscript" ? value : value === undefined ? undefined : "baseline";
 
 /**
- * Reads run properties (`w:rPr`). A font of the theme (`w:asciiTheme`) takes the place of the font named beside it.
+ * Reads run properties (`w:rPr`). A font of the theme (`w:asciiTheme`) takes the place of the font named beside it. Each
+ * of a run's fonts is inherited on its own: a run that gives a font for ASCII alone has its style's for high ANSI
+ * (`word-stops-fe-layout2.docx` FE2c, `word-stops-compat2-15.docx` CN10c, whose curly quotes Word drew in Calibri, the
+ * document's, beside SimSun, the runs' font for ASCII).
  */
 export const readRunFormat = (element: unknown, themeFonts: ThemeFonts): RunFormat => {
     const children = childrenOf(element);
     const fonts = attributesOf(find(children, "w:rFonts"));
     return withoutUndefined({
-        font:
-            themeFontOf(fonts["w:asciiTheme"], themeFonts) ??
-            stringOf(fonts["w:ascii"]) ??
-            themeFontOf(fonts["w:hAnsiTheme"], themeFonts) ??
-            stringOf(fonts["w:hAnsi"]),
+        font: themeFontOf(fonts["w:asciiTheme"], themeFonts) ?? stringOf(fonts["w:ascii"]),
+        highAnsiFont: themeFontOf(fonts["w:hAnsiTheme"], themeFonts) ?? stringOf(fonts["w:hAnsi"]),
+        fontHint: stringOf(fonts["w:hint"]),
         size: sizeOf(attributesOf(find(children, "w:sz"))["w:val"]),
         bold: onOff(children, "w:b"),
         italic: onOff(children, "w:i"),
@@ -835,22 +846,105 @@ export const unknownRunFormatting = ({
  */
 export const fontOf = (format: RunFormat): TextFont => scripted(plainFontOf(format), format);
 
-type FontSlot = "latin" | "eastAsian" | "complex";
+type FontSlot = "latin" | "highAnsi" | "eastAsian" | "complex";
+
+// cspell:ignore Thaana
+// The characters past ASCII that aren't East Asian in the high ANSI font, by their Unicode blocks (ECMA-376 17.3.2.26):
+// the Latin-1 Supplement to Cyrillic, Latin Extended Additional to Dingbats, the private use area and the alphabetic
+// presentation forms before Hebrew's. Hebrew, Arabic, Syriac and Thaana, and their presentation forms, are in the font
+// for ASCII in a run that isn't right to left or of a complex script. The rest, such as Thai, Devanagari and Armenian,
+// which the rules leave out, are laid out in the font for ASCII, where the run's two fonts are the same
+const HIGH_ANSI = /[\u00a0-\u052f\u1e00-\u27bf\ue000-\uf8ff\ufb00-\ufb1c]/u;
+const ASCII_FONT_PAST_ASCII = /[\u0590-\u07bf\ufb1d-\ufdff\ufe70-\ufefe]/u;
+// The characters of the high ANSI font that Word draws in the East Asian font instead with the run's hint for it
+// (`w:hint="eastAsia"`): some symbols of the Latin-1 Supplement, the Latin Extended-A to IPA Extensions blocks in an East
+// Asian font of a Chinese character set, which isn't known, so all of them, the Spacing Modifier Letters to Cyrillic,
+// General Punctuation to Dingbats, the private use area and the alphabetic presentation forms before Hebrew's; and in
+// Chinese, some accented letters and Latin Extended Additional too
+const HINTED_EAST_ASIAN =
+    /[\u00a1\u00a4\u00a7\u00a8\u00aa\u00ad\u00af\u00b0-\u00b4\u00b6-\u00ba\u00bc-\u00bf\u00d7\u00f7\u0100-\u04ff\u2000-\u27bf\ue000-\uf8ff\ufb00-\ufb1c]/u;
+const HINTED_EAST_ASIAN_IN_CHINESE = /[\u00e0\u00e1\u00e8-\u00ea\u00ec\u00ed\u00f2\u00f3\u00f9\u00fa\u00fc\u1e00-\u1eff]/u;
+const LAST_ASCII = 0x7f;
+
+/** Whether a run has a high ANSI font other than its font for ASCII, so its characters past ASCII are drawn otherwise */
+const hasOwnHighAnsiFont = ({ font, highAnsiFont }: RunFormat): boolean =>
+    highAnsiFont !== undefined && highAnsiFont.toLowerCase() !== font?.toLowerCase();
+
+/** Whether a run is right to left or of a complex script, so all of it is in the font for complex scripts */
+const isComplexRun = ({ rightToLeft, complexScript }: RunFormat): boolean => rightToLeft === true || complexScript === true;
 
 /**
  * Which of a run's fonts Word draws a character in: the font for complex scripts, in their size, boldness and italics, for
  * all of a run that is right to left or of a complex script; the East Asian font for Chinese, Japanese and Korean; the
- * run's font for the rest. Hebrew in a run that isn't right to left is in the run's size, as Word lays it out. A mark is
- * drawn in the font of the character it is on.
+ * high ANSI font for the characters past ASCII of its blocks, where the run has one other than its font for ASCII, as
+ * Word drew curly quotes in Calibri, the document's, in runs with SimSun for ASCII (`word-stops-fe-layout2.docx` FE2c,
+ * `word-stops-compat2-15.docx` CN10c); the run's font for ASCII for the rest. Hebrew in a run that isn't right to left is
+ * in the run's size, as Word lays it out. A mark is drawn in the font of the character it is on.
  */
-const slotOf = (character: string, previous: FontSlot, complexRun: boolean): FontSlot => {
-    if (complexRun) {
+const slotOf = (character: string, previous: FontSlot, format: RunFormat): FontSlot => {
+    if (isComplexRun(format)) {
         return "complex";
     }
     if (isEastAsian(character)) {
         return "eastAsian";
     }
-    return /\p{M}/u.test(character) ? previous : "latin";
+    if (/\p{M}/u.test(character)) {
+        return previous;
+    }
+    return hasOwnHighAnsiFont(format) && HIGH_ANSI.test(character) ? "highAnsi" : "latin";
+};
+
+/**
+ * Why text can't be laid out in the fonts Word draws it in: a character Word may draw in the run's East Asian font with
+ * the run's hint for it (`w:hint="eastAsia"`), such as a curly quote, a dash or a degree sign, or Chinese, Japanese or
+ * Korean in a run that is right to left or of a complex script with it, and a character of a script the rules leave out,
+ * such as Thai, in a run with a high ANSI font other than its font for ASCII: which font Word draws those in hasn't been
+ * seen.
+ */
+export const unknownRunFont = (text: string, format: RunFormat): string | undefined => {
+    const characters = [...text];
+    if (format.fontHint === "eastAsia") {
+        const chinese = (format.eastAsianLanguage ?? "").toLowerCase().startsWith("zh");
+        if (
+            characters.some((character) => HINTED_EAST_ASIAN.test(character) || (chinese && HINTED_EAST_ASIAN_IN_CHINESE.test(character)))
+        ) {
+            return "a character Word may draw in the East Asian font of a run with the hint for East Asian text (w:hint), such as a curly quote";
+        }
+        if (isComplexRun(format) && characters.some(isEastAsian)) {
+            return "East Asian text in a run that is right to left or of a complex script, with the hint for East Asian text (w:hint)";
+        }
+    }
+    return hasOwnHighAnsiFont(format) &&
+        !isComplexRun(format) &&
+        characters.some(
+            (character) =>
+                character.codePointAt(0)! > LAST_ASCII &&
+                !isEastAsian(character) &&
+                !/\p{M}/u.test(character) &&
+                !HIGH_ANSI.test(character) &&
+                !ASCII_FONT_PAST_ASCII.test(character),
+        )
+        ? "a character of a script Word's run-font rules leave out, such as Thai, in a run with a high ANSI font other than its font for ASCII"
+        : undefined;
+};
+
+/**
+ * The one font Word draws a text in, such as a list number, by the slots of its characters: the high ANSI font where
+ * all of its characters but spaces are of the high ANSI blocks, and the run's font otherwise. Undefined where its
+ * characters are in both.
+ */
+export const singleFontOf = (text: string, format: RunFormat): TextFont | undefined => {
+    const font = fontOf(format);
+    if (!hasOwnHighAnsiFont(format) || isComplexRun(format)) {
+        return font;
+    }
+    // The slot of each character, a mark's that of the character it is on, as in `spansOf`
+    const slots = [...text].reduce<readonly FontSlot[]>(
+        (all, character) => [...all, slotOf(character, all[all.length - 1] ?? "latin", format)],
+        [],
+    );
+    const high = [...text].flatMap((character, at) => (/\s/u.test(character) ? [] : [slots[at] === "highAnsi"]));
+    return high.length > 0 && high.every(Boolean) ? { ...font, font: format.highAnsiFont } : high.some(Boolean) ? undefined : font;
 };
 
 // The font Word draws Chinese, Japanese and Korean in when the run's East Asian font has none, such as Calibri
@@ -865,18 +959,21 @@ const fontOfSlot = (format: RunFormat, slot: FontSlot): TextFont => {
     if (slot === "latin") {
         return scripted(font, format);
     }
-    const { eastAsiaFont, complexScriptFont, complexScriptSize, complexScriptBold, complexScriptItalic, rightToLeft } = format;
+    const { highAnsiFont, eastAsiaFont, complexScriptFont, complexScriptSize, complexScriptBold, complexScriptItalic, rightToLeft } =
+        format;
     return scripted(
-        slot === "eastAsian"
-            ? { ...font, font: isEastAsianFont(eastAsiaFont) ? eastAsiaFont : FALLBACK_EAST_ASIAN_FONT }
-            : withoutUndefined({
-                  ...font,
-                  font: complexScriptFont,
-                  size: complexScriptSize,
-                  bold: complexScriptBold,
-                  italic: complexScriptItalic,
-                  rightToLeft: rightToLeft === true ? true : undefined,
-              }),
+        slot === "highAnsi"
+            ? { ...font, font: highAnsiFont }
+            : slot === "eastAsian"
+              ? { ...font, font: isEastAsianFont(eastAsiaFont) ? eastAsiaFont : FALLBACK_EAST_ASIAN_FONT }
+              : withoutUndefined({
+                    ...font,
+                    font: complexScriptFont,
+                    size: complexScriptSize,
+                    bold: complexScriptBold,
+                    italic: complexScriptItalic,
+                    rightToLeft: rightToLeft === true ? true : undefined,
+                }),
         format,
     );
 };
@@ -886,15 +983,14 @@ const fontOfSlot = (format: RunFormat, slot: FontSlot): TextFont => {
  * small letters of small caps.
  */
 export const spansOf = (text: string, format: RunFormat): readonly TextSpan[] => {
-    const { allCaps, smallCaps, hidden, rightToLeft, complexScript } = format;
+    const { allCaps, smallCaps, hidden } = format;
     if (hidden) {
         return [];
     }
-    const complexRun = rightToLeft === true || complexScript === true;
     // The parts of the text in each of the run's fonts
     const parts = [...text].reduce<readonly { readonly slot: FontSlot; readonly text: string }[]>((all, character) => {
         const last = all[all.length - 1];
-        const slot = slotOf(character, last?.slot ?? "latin", complexRun);
+        const slot = slotOf(character, last?.slot ?? "latin", format);
         return last?.slot === slot ? [...all.slice(0, -1), { slot, text: last.text + character }] : [...all, { slot, text: character }];
     }, []);
     return parts.flatMap(({ slot, text: part }) => {
