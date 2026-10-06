@@ -112,12 +112,17 @@ whose PDFs Word saved in round 25. Read them with `word-stops-equations.py`, as 
 rounded down to the half point (EQ30), Word's sizes of roots' signs, brackets, accents and braces, and where it puts
 them (EQ31 to EQ37), its spacing of symbols and operators (EQ32, EQ39), bold digits (EQ45), and the maths settings
 followed (EQ42 to EQ44). Equations too long for their line (EQ40) and normal text (EQ41) still stop.
-`word-stops-equations3.ts` has the cases around those, for the next batch: roots, brackets, accents and braces whose
-size Word's PDFs leave between two (EQ46 to EQ49), superscripts in lower limits (EQ50), fractions, sums and functions
-beside brackets (EQ51), symbols not yet seen beside letters (EQ52), a sum in a script's script (EQ53), equation arrays
-lined up otherwise (EQ54), boxes with a side hidden, phantoms that take less room and pre-scripts (EQ55), in
-`word-stops-equations3`, and small fractions with displayed equations' defaults on (EQ56), in
-`word-stops-equation-small2`. They have no PDF from Word yet.
+`word-stops-equations3.ts` has the cases around those: roots, brackets, accents and braces whose size Word's PDFs left
+between two (EQ46 to EQ49), superscripts in lower limits (EQ50), fractions, sums and functions beside brackets (EQ51),
+symbols not yet seen beside letters (EQ52), a sum in a script's script (EQ53), equation arrays lined up otherwise
+(EQ54), boxes with a side hidden, phantoms that take less room and pre-scripts (EQ55), in `word-stops-equations3`, and
+small fractions with displayed equations' defaults on (EQ56), in `word-stops-equation-small2`, whose PDFs Word saved in
+round 26. Read them with `word-stops-equations.py`, as its own: they showed the accent over a letter sized to fit the
+letter's width where the font attaches it (EQ48), lower limits cramped (EQ50), TeX's spaces beside brackets and bars
+(EQ51), the symbols' classes (EQ52), rows of an equation array without ampersands centred and an alignment mark
+(`m:aln`) left as it is (EQ54), boxes struck through as plain, phantoms without their width, ascent or descent, and
+pre-scripts with the space after scripts before them (EQ55), and small fractions laid out as without them (EQ56). A
+second ampersand in a row (EQ54b), which Word spaces by about 0.7 points for a reason not yet known, still stops.
 
 `word-stops-tables3.ts` has what the round-25 table probes left open: long words across cells merged across columns of a
 table narrowed to the page (LW9), the text of the cell before two borders of different styles that meet (BT7), thick outer

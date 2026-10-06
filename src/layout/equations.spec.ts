@@ -376,6 +376,242 @@ describe("layOutEquation", () => {
         }
     });
 
+    it("should build up what Word's PDFs of word-stops-equations3.docx and word-stops-equation-small2.docx show, as wide and as tall as Word makes it", () => {
+        // Word's widths and lines, in points, from its PDFs of scripts/layout-probes/stops2/word-stops-equations3.ts, as
+        // word-stops-equations.py reads them: roots over radicands with a descender (EQ46), brackets around parts between
+        // two sizes (EQ47), accents over letters and parts (EQ48), braces over and under pairs of letters (EQ49),
+        // superscripts in lower limits (EQ50), fractions, sums and functions beside brackets and bars (EQ51), symbols
+        // beside letters (EQ52), a sum and a fraction in a script's script (EQ53), and sums, integrals and fractions with
+        // small fractions on in the document's maths settings (EQ56), each in a line of text, and displayed (the probe's
+        // name ending in "d"). EQ49g's line in a line of text, which Word drew with the line below it a grid unit lower
+        // than EQ49f's, is 0.03 points below Word's pinning, so only its width is checked
+        const probes: readonly (readonly [string, string, boolean, number | undefined, readonly [number, number] | undefined])[] = [
+            ["EQ46a", "\\sqrt{p}", false, 14.446, [15.637, 16.092]],
+            ["EQ46ad", "\\sqrt{p}", true, undefined, [15.877, 16.332]],
+            ["EQ46b", "\\sqrt{q}", false, 14.438, [15.637, 16.092]],
+            ["EQ46bd", "\\sqrt{q}", true, undefined, [15.877, 16.332]],
+            ["EQ46c", "\\sqrt{\\rho}", false, 14.522, [15.637, 16.092]],
+            ["EQ46cd", "\\sqrt{\\rho}", true, undefined, [15.877, 16.332]],
+            ["EQ46d", "\\sqrt{\\eta}", false, 14.271, [15.637, 16.092]],
+            ["EQ46dd", "\\sqrt{\\eta}", true, undefined, [15.877, 16.332]],
+            ["EQ46e", "\\sqrt{\\mu}", false, 13.565, [13.465, 13.705]],
+            ["EQ46ed", "\\sqrt{\\mu}", true, undefined, [15.865, 16.105]],
+            ["EQ46f", "\\sqrt{\\chi}", false, 13.729, [13.477, 13.932]],
+            ["EQ46fd", "\\sqrt{\\chi}", true, undefined, [15.637, 16.092]],
+            ["EQ46g", "\\sqrt{\\gamma}", false, 13.315, [13.477, 13.932]],
+            ["EQ46gd", "\\sqrt{\\gamma}", true, undefined, [15.637, 16.092]],
+            ["EQ46h", "\\sqrt{y}", false, 14.524, [15.877, 16.332]],
+            ["EQ46hd", "\\sqrt{y}", true, undefined, [15.625, 16.092]],
+            ["EQ47a", "\\left( a^{a^{t}} \\right)", false, 25.34, [15.877, 16.332]],
+            ["EQ47ad", "\\left( a^{a^{t}} \\right)", true, undefined, [15.877, 16.332]],
+            ["EQ47b", "\\left[ a^{a^{t}} \\right]", false, 23.291, [16.117, 16.572]],
+            ["EQ47bd", "\\left[ a^{a^{t}} \\right]", true, undefined, [15.877, 16.332]],
+            ["EQ47c", "\\left\\{ a^{a^{t}} \\right\\}", false, 23.977, [15.877, 16.332]],
+            ["EQ47cd", "\\left\\{ a^{a^{t}} \\right\\}", true, undefined, [15.877, 16.332]],
+            ["EQ47d", "\\left| a^{a^{t}} \\right|", false, 22.421, [16.117, 16.572]],
+            ["EQ47dd", "\\left| a^{a^{t}} \\right|", true, undefined, [15.877, 16.332]],
+            ["EQ47e", "\\left( x^{a^{t}} \\right)", false, 25.405, [15.877, 16.332]],
+            ["EQ47ed", "\\left( x^{a^{t}} \\right)", true, undefined, [15.877, 16.332]],
+            ["EQ47f", "\\left( A^{a^{t}} \\right)", false, 25.8, [16.117, 16.572]],
+            ["EQ47fd", "\\left( A^{a^{t}} \\right)", true, undefined, [15.865, 16.332]],
+            ["EQ48a", "\\hat{d}", false, 6.733, [14.197, 14.652]],
+            ["EQ48ad", "\\hat{d}", true, undefined, [13.717, 14.172]],
+            ["EQ48b", "\\hat{g}", false, 6.929, [13.237, 13.692]],
+            ["EQ48bd", "\\hat{g}", true, undefined, [12.517, 12.972]],
+            ["EQ48c", "\\hat{u}", false, 6.599, [13.237, 13.692]],
+            ["EQ48cd", "\\hat{u}", true, undefined, [12.757, 13.212]],
+            ["EQ48d", "\\hat{T}", false, 6.8, [13.717, 14.172]],
+            ["EQ48dd", "\\hat{T}", true, undefined, [13.477, 13.932]],
+            ["EQ48e", "\\hat{W}", false, 10.89, [13.717, 14.172]],
+            ["EQ48ed", "\\hat{W}", true, undefined, [13.465, 13.705]],
+            ["EQ48f", "\\hat{Z}", false, 6.79, [13.945, 14.185]],
+            ["EQ48fd", "\\hat{Z}", true, undefined, [13.237, 13.692]],
+            ["EQ48g", "\\tilde{d}", false, 6.741, [14.197, 14.652]],
+            ["EQ48gd", "\\tilde{d}", true, undefined, [13.477, 13.932]],
+            ["EQ48h", "\\tilde{t}", false, 4.619, [13.237, 13.692]],
+            ["EQ48hd", "\\tilde{t}", true, undefined, [12.517, 12.972]],
+            ["EQ48id", "\\tilde{I}", true, undefined, [13.237, 13.692]],
+            ["EQ48j", "\\hat{a^2}", false, 11.492, [14.677, 15.132]],
+            ["EQ48jd", "\\hat{a^2}", true, undefined, [14.437, 14.892]],
+            ["EQ48k", "\\hat{H_i}", false, 10.641, [13.717, 14.172]],
+            ["EQ48kd", "\\hat{H_i}", true, undefined, [13.465, 13.932]],
+            ["EQ49a", "\\overbrace{cc}^{n}", false, 10.477, [20.437, 20.892]],
+            ["EQ49ad", "\\overbrace{cc}^{n}", true, undefined, [19.957, 20.412]],
+            ["EQ49b", "\\overbrace{ee}^{n}", false, 11.167, [20.437, 20.892]],
+            ["EQ49bd", "\\overbrace{ee}^{n}", true, undefined, [19.957, 20.412]],
+            ["EQ49c", "\\overbrace{mm}^{n}", false, 18.641, [20.437, 20.892]],
+            ["EQ49cd", "\\overbrace{mm}^{n}", true, undefined, [19.957, 20.412]],
+            ["EQ49d", "\\overbrace{rr}^{n}", false, 10.715, [20.437, 20.892]],
+            ["EQ49dd", "\\overbrace{rr}^{n}", true, undefined, [19.957, 20.412]],
+            ["EQ49e", "\\overbrace{ww}^{n}", false, 16.589, [20.197, 20.652]],
+            ["EQ49ed", "\\overbrace{ww}^{n}", true, undefined, [19.957, 20.412]],
+            ["EQ49f", "\\overbrace{DD}^{n}", false, 15.561, [22.597, 23.052]],
+            ["EQ49fd", "\\overbrace{DD}^{n}", true, undefined, [22.105, 22.345]],
+            ["EQ49g", "\\overbrace{OO}^{n}", false, 15.163, undefined],
+            ["EQ49gd", "\\overbrace{OO}^{n}", true, undefined, [22.117, 22.572]],
+            ["EQ49hd", "\\underbrace{cc}_{n}", true, undefined, [22.345, 22.812]],
+            ["EQ50a", "\\sum_{i^2} x", false, 23.255, [13.237, 13.692]],
+            ["EQ50ad", "\\sum_{i^2} x", true, undefined, [29.557, 30.012]],
+            ["EQ50b", "\\lim_{x^2} y", false, 23.382, [17.317, 17.772]],
+            ["EQ50bd", "\\lim_{x^2} y", true, undefined, [17.317, 17.772]],
+            ["EQ50c", "\\int_{a^2}^{b} x", false, 21.641, [17.797, 18.252]],
+            ["EQ50cd", "\\int_{a^2}^{b} x", true, undefined, [29.785, 30.252]],
+            ["EQ51a", "\\frac{a}{b}(x)", false, 22.352, [17.317, 17.772]],
+            ["EQ51ad", "\\frac{a}{b}(x)", true, undefined, [22.357, 22.812]],
+            ["EQ51b", "(x)\\frac{a}{b}", false, 22.354, [17.557, 18.012]],
+            ["EQ51bd", "(x)\\frac{a}{b}", true, undefined, [22.357, 22.812]],
+            ["EQ51c", "\\frac{a}{b}\\sin x", false, 28.976, [17.317, 17.772]],
+            ["EQ51cd", "\\frac{a}{b}\\sin x", true, undefined, [22.585, 22.825]],
+            ["EQ51d", "(a)\\sin x", false, 39.315, [13.225, 13.465]],
+            ["EQ51dd", "(a)\\sin x", true, undefined, [12.757, 13.212]],
+            ["EQ51e", "\\frac{a}{b}|x|", false, 20.187, [17.317, 17.772]],
+            ["EQ51ed", "\\frac{a}{b}|x|", true, undefined, [22.585, 22.825]],
+            ["EQ51f", "\\frac{a}{b}\\sum_i a_i", false, 29.399, [17.545, 17.785]],
+            ["EQ51fd", "\\frac{a}{b}\\sum_i a_i", true, undefined, [29.077, 29.532]],
+            ["EQ51g", "(a)\\sum_i a_i", false, 39.746, [13.237, 13.692]],
+            ["EQ51gd", "(a)\\sum_i a_i", true, undefined, [29.065, 29.532]],
+            ["EQ52a", "a\\lor b", false, 23.954, [13.237, 13.692]],
+            ["EQ52ad", "a\\lor b", true, undefined, [12.517, 12.972]],
+            ["EQ52b", "a\\otimes b", false, 28.414, [13.237, 13.692]],
+            ["EQ52bd", "a\\otimes b", true, undefined, [12.757, 13.212]],
+            ["EQ52c", "A\\subseteq B", false, 28.926, [13.237, 13.692]],
+            ["EQ52cd", "A\\subseteq B", true, undefined, [12.517, 12.972]],
+            ["EQ52d", "A\\supset B", false, 28.928, [13.237, 13.692]],
+            ["EQ52dd", "A\\supset B", true, undefined, [12.757, 13.212]],
+            ["EQ52e", "a\\notin B", false, 27.078, [13.237, 13.692]],
+            ["EQ52ed", "a\\notin B", true, undefined, [12.517, 12.972]],
+            ["EQ52f", "\\exists x", false, 12.65, [13.237, 13.692]],
+            ["EQ52fd", "\\exists x", true, undefined, [12.757, 13.212]],
+            ["EQ52g", "a\\Leftrightarrow b", false, 30.083, [13.237, 13.692]],
+            ["EQ52gd", "a\\Leftrightarrow b", true, undefined, [12.517, 12.972]],
+            ["EQ52h", "a\\leftarrow b", false, 27.907, [13.237, 13.692]],
+            ["EQ52hd", "a\\leftarrow b", true, undefined, [12.757, 13.212]],
+            ["EQ52i", "f\\circ g", false, 23.067, [13.225, 13.692]],
+            ["EQ52id", "f\\circ g", true, undefined, [12.745, 13.212]],
+            ["EQ52j", "a\\cdots b", false, 25.666, [12.997, 13.452]],
+            ["EQ52jd", "a\\cdots b", true, undefined, [12.757, 13.212]],
+            ["EQ52k", "\\lfloor x\\rfloor", false, 13.906, [13.237, 13.692]],
+            ["EQ52kd", "\\lfloor x\\rfloor", true, undefined, [12.757, 13.212]],
+            ["EQ52l", "a\\Longrightarrow b", false, 31.664, [12.997, 13.452]],
+            ["EQ52ld", "a\\Longrightarrow b", true, undefined, [12.757, 13.212]],
+            ["EQ52m", "a\\setminus b", false, 23.564, [13.237, 13.692]],
+            ["EQ52md", "a\\setminus b", true, undefined, [12.745, 12.985]],
+            ["EQ52n", "a\\propto b", false, 26.42, [13.225, 13.465]],
+            ["EQ52nd", "a\\propto b", true, undefined, [12.745, 13.212]],
+            ["EQ53a", "x^{y^{\\sum a}}", false, 22.964, [16.117, 16.572]],
+            ["EQ53ad", "x^{y^{\\sum a}}", true, undefined, [15.637, 16.092]],
+            ["EQ53b", "x^{y^{\\frac{a}{b}}}", false, 17.278, [19.717, 20.172]],
+            ["EQ53bd", "x^{y^{\\frac{a}{b}}}", true, undefined, [19.465, 19.932]],
+            ["EQ56a", "\\sum_{i=1}^{n} i", false, 26.997, [13.237, 13.692]],
+            ["EQ56ad", "\\sum_{i=1}^{n} i", true, undefined, [35.797, 36.252]],
+            ["EQ56b", "\\int_0^1 x", false, 19.111, [17.557, 18.012]],
+            ["EQ56bd", "\\int_0^1 x", true, undefined, [29.557, 30.012]],
+            ["EQ56c", "\\frac{a}{b}", false, 5.2, [17.317, 17.772]],
+            ["EQ56cd", "\\frac{a}{b}", true, undefined, [22.345, 22.812]],
+        ];
+        for (const [name, latex, display, width, line] of probes) {
+            const box = laidOut(latex, display);
+            expect(box, name).to.be.an("object");
+            if (line !== undefined) {
+                expect(lineOf(box as EquationBox, display), `${name}'s line`).to.be.within(line[0] - 1e-6, line[1] + 1e-6);
+            }
+            if (width !== undefined) {
+                expect((box as EquationBox).width, `${name}'s width`).to.be.closeTo(width, 0.03);
+            }
+        }
+        // Equation arrays, boxes, phantoms and pre-scripts (EQ54, EQ55), which docx doesn't write from LaTeX
+        const row = (...parts: readonly (string | object)[]): object => ({ "m:e": equation(...parts) });
+        const boxed = (side: string, ...parts: readonly string[]): object => ({
+            "m:borderBox": [{ "m:borderBoxPr": [property(side, "1")] }, row(...parts)],
+        });
+        const phantom = (...properties: readonly object[]): object => ({ "m:phant": [{ "m:phantPr": properties }, row("x")] });
+        const built: readonly (readonly [string, boolean, readonly object[], number | undefined, readonly [number, number]])[] = [
+            ["EQ54a", false, [{ "m:eqArr": [row("a=b"), row("c=d")] }], 26.906, [22.117, 22.572]],
+            ["EQ54ad", true, [{ "m:eqArr": [row("a=b"), row("c=d")] }], undefined, [21.877, 22.332]],
+            [
+                "EQ54c",
+                false,
+                [{ "m:eqArr": [row("a", run("=b", { "m:aln": {} })), row("cc", run("=d", { "m:aln": {} }))] }],
+                31.531,
+                [22.117, 22.572],
+            ],
+            [
+                "EQ54cd",
+                true,
+                [{ "m:eqArr": [row("a", run("=b", { "m:aln": {} })), row("cc", run("=d", { "m:aln": {} }))] }],
+                undefined,
+                [22.117, 22.572],
+            ],
+            ["EQ55a", false, [boxed("m:hideTop", "x")], 11.331, [12.997, 13.452]],
+            ["EQ55ad", true, [boxed("m:hideTop", "x")], undefined, [12.997, 13.452]],
+            ["EQ55b", false, [boxed("m:strikeH", "x")], 11.333, [13.237, 13.692]],
+            ["EQ55bd", true, [boxed("m:strikeH", "x")], undefined, [12.757, 13.212]],
+            ["EQ55c", false, [phantom(property("m:show", "0"), property("m:zeroWid", "1")), ...equation("y")], 6.352, [13.237, 13.692]],
+            ["EQ55cd", true, [phantom(property("m:show", "0"), property("m:zeroWid", "1")), ...equation("y")], undefined, [12.757, 13.212]],
+            [
+                "EQ55d",
+                false,
+                [{ "m:phant": [{ "m:phantPr": [property("m:show", "0"), property("m:zeroAsc", "1")] }, row("A")] }, ...equation("y")],
+                13.428,
+                [13.237, 13.692],
+            ],
+            [
+                "EQ55dd",
+                true,
+                [{ "m:phant": [{ "m:phantPr": [property("m:show", "0"), property("m:zeroAsc", "1")] }, row("A")] }, ...equation("y")],
+                undefined,
+                [12.517, 12.972],
+            ],
+            [
+                "EQ55e",
+                false,
+                [{ "m:phant": [{ "m:phantPr": [property("m:show", "0"), property("m:zeroDesc", "1")] }, row("g")] }, ...equation("y")],
+                13.275,
+                [13.237, 13.692],
+            ],
+            [
+                "EQ55f",
+                false,
+                [{ "m:phant": [{ "m:phantPr": [property("m:transp", "1")] }, row("+")] }, ...equation("y")],
+                14.567,
+                [13.225, 13.465],
+            ],
+            [
+                "EQ55fd",
+                true,
+                [{ "m:phant": [{ "m:phantPr": [property("m:transp", "1")] }, row("+")] }, ...equation("y")],
+                undefined,
+                [12.745, 12.985],
+            ],
+            ["EQ55g", false, [{ "m:sPre": [{ "m:sub": equation("1") }, { "m:sup": equation("2") }, row("x")] }], 11.289, [13.717, 14.172]],
+            [
+                "EQ55gd",
+                true,
+                [{ "m:sPre": [{ "m:sub": equation("1") }, { "m:sup": equation("2") }, row("x")] }],
+                undefined,
+                [12.985, 13.452],
+            ],
+        ];
+        for (const [name, display, parts, width, [low, high]] of built) {
+            const box = layOutEquation(equation(...parts), 11, display);
+            expect(box, name).to.be.an("object");
+            expect(lineOf(box as EquationBox, display), `${name}'s line`).to.be.within(low - 1e-6, high + 1e-6);
+            if (width !== undefined) {
+                expect((box as EquationBox).width, `${name}'s width`).to.be.closeTo(width, 0.03);
+            }
+        }
+        // A phantom without its ascent or descent is as tall or deep as nothing (EQ55d, EQ55e)
+        const fraction = { "m:f": [{ "m:num": equation("a") }, { "m:den": equation("b") }] };
+        const without = (name: string): EquationBox =>
+            layOutEquation(equation({ "m:phant": [{ "m:phantPr": [property(name, "1")] }, row(fraction)] }), 11, true) as EquationBox;
+        const plain = layOutEquation(equation("x"), 11, true) as EquationBox;
+        const whole = layOutEquation(equation(fraction), 11, true) as EquationBox;
+        expect(without("m:zeroAsc").ascent).to.equal(plain.ascent).and.to.be.lessThan(whole.ascent);
+        expect(without("m:zeroDesc").descent).to.equal(plain.descent).and.to.be.lessThan(whole.descent);
+        // Pre-scripts before a base that isn't a glyph
+        expect(widthOf({ "m:sPre": [{ "m:sub": equation("1") }, { "m:sup": equation("2") }, row(fraction)] })).to.be.a("number");
+    });
+
     it("should space operators next to each other as Word does, and full stops, italic signs and runs of another size", () => {
         // Word's widths, in points (`word-stops-equations.docx` EQ20 to EQ24): no space beside an operator before a
         // relation (EQ20a), the rest as TeX spaces them; a full stop as punctuation but between digits (EQ21); an italic
@@ -465,9 +701,9 @@ describe("layOutEquation", () => {
     it("should say why an equation Word builds up, or spaces or formats in a way not yet followed, can't be laid out", () => {
         const empty = "a part of an equation with nothing in it";
         expect(widthOf({ "m:f": [] })).to.equal(empty);
-        expect(widthOf({ "m:sPre": [{ "m:sub": equation("1") }, { "m:sup": equation("2") }, { "m:e": equation("x") }] })).to.equal(
-            BUILT_UP,
-        );
+        expect(widthOf({ "m:box": [{ "m:e": equation("x") }] })).to.equal(BUILT_UP);
+        expect(widthOf({ "m:acc": [{ "m:e": [] }] })).to.equal(empty);
+        expect(widthOf({ "m:sPre": [{ "m:sub": [] }, { "m:sup": equation("2") }, { "m:e": equation("x") }] })).to.equal(empty);
         expect(widthOf({ "m:sSup": [{ "m:sup": equation("2") }] })).to.equal(empty);
         expect(widthOf({ "m:m": [] })).to.equal(empty);
         expect(widthOf({ "m:m": [{ "m:mr": [] }] })).to.equal(empty);
@@ -475,8 +711,8 @@ describe("layOutEquation", () => {
         // symbols Word has seen only next to themselves
         expect(widthOf("\u2212+a")).to.be.a("number");
         expect(widthOf("a\u2192\u2192b")).to.be.a("number");
-        expect(widthOf("a\u2297b")).to.equal("an equation with a symbol Word hasn't been seen to space");
-        expect(widthOf("\u2297\u2297")).to.be.a("number");
+        expect(widthOf("a\u2a01b")).to.equal("an equation with a symbol Word hasn't been seen to space");
+        expect(widthOf("\u2a01\u2a01")).to.be.a("number");
         expect(widthOf("\u2603")).to.equal("a character in an equation Cambria Math doesn't have");
         expect(widthOf({ "m:r": [{ "w:rPr": [{ "w:i": {} }] }, { "m:t": ["x"] }] })).to.equal(
             "an equation whose text has formatting of its own",
@@ -506,24 +742,16 @@ describe("layOutEquation", () => {
         });
         expect(widthOf(fraction("skw"))).to.equal("a skewed or linear fraction");
         expect(widthOf(fraction("noBar"))).to.be.a("number");
-        // A superscript in a lower limit, which TeX cramps
-        const lower = "a superscript in a lower limit, which Word hasn't been seen to cramp or not";
-        expect(laidOut("\\sum_{i^2} x")).to.equal(lower);
-        expect(laidOut("\\lim_{x^2} y")).to.equal(lower);
+        // A superscript in a lower limit, which Word cramps as TeX does (`word-stops-equations3.docx` EQ50)
         expect(laidOut("\\sum_{\\frac{1}{i^2}} x", true)).to.be.an("object");
-        // Spaces beside a fraction, a sum or a function Word hasn't been seen to put or not, as before a bracket
-        expect(laidOut("\\frac{a}{b}(x)")).to.equal(
-            "an equation with a fraction, a sum or a function beside a bracket or bar, which Word spaces in a way not yet followed",
-        );
         expect(laidOut("=\\frac{a}{b}")).to.be.an("object");
-        // Sums Word hasn't been seen to grow, or put in a script's script, or a character without sizes for a displayed one
+        // Sums Word hasn't been seen to grow, or a character without sizes for a displayed one
         const nary = (...properties: readonly object[]): object => ({
             "m:nary": [{ "m:naryPr": properties }, { "m:sub": equation("i") }, { "m:sup": equation("n") }, { "m:e": equation("x") }],
         });
         expect(widthOf(nary(property("m:chr", "\u2211"), property("m:grow", "1")))).to.equal(BUILT_UP);
         expect(widthOf(nary(property("m:limLoc", "other")))).to.equal(BUILT_UP);
         expect(layOutEquation(equation(nary(property("m:chr", "x"))), 11, true)).to.equal(BUILT_UP);
-        expect(laidOut("x^{y^{\\sum a}}")).to.equal(BUILT_UP);
         expect(widthOf(nary(property("m:chr", "\u2211")))).to.be.a("number");
         expect(widthOf(nary())).to.be.a("number");
         // Brackets Word hasn't been seen to keep from growing, shape, or grow when angled, and brackets taller than any
@@ -540,8 +768,9 @@ describe("layOutEquation", () => {
         );
         const tall = (count: number): object => (count === 0 ? equation("x")[0] : fraction("bar", tall(count - 1)));
         expect(layOutEquation(equation(brackets([], tall(9))), 11, true)).to.equal("brackets taller than Cambria Math's tallest");
-        // A part between two sizes of a bracket, as Word's PDFs leave it
-        expect(laidOut("\\left( x^{a^{t}} \\right)")).to.equal("brackets whose size Word's PDFs leave between two");
+        // A part between two sizes of a bracket, as Word's PDFs leave it, within 0.816 and 0.835 of twice its reach
+        expect(laidOut("\\left( a^{b} \\right)")).to.equal("brackets whose size Word's PDFs leave between two");
+        expect(laidOut("\\left( a^{a^{t}} \\right)")).to.be.an("object");
         // A matrix spaced or lined up otherwise
         const matrix = (properties: readonly object[]): object => ({
             "m:m": [{ "m:mPr": properties }, { "m:mr": [{ "m:e": equation("a") }] }],
@@ -557,7 +786,11 @@ describe("layOutEquation", () => {
                 true,
             ),
         ).to.equal("a root taller than Cambria Math's tallest root sign");
-        expect(laidOut("\\sqrt{p}")).to.equal("a root whose sign's size Word's PDFs leave between two");
+        // A radicand whose depth, 423 units for 𝜍, puts its sign between two sizes in a line of text, as Word's PDFs leave it,
+        // and not displayed, where the gap above it is larger
+        expect(laidOut("\\sqrt{\\varsigma}")).to.equal("a root whose sign's size Word's PDFs leave between two");
+        expect(laidOut("\\sqrt{\\varsigma}", true)).to.be.an("object");
+        expect(laidOut("\\sqrt{p}")).to.be.an("object");
         // A brace or accent between two of its sizes, as Word's PDFs leave it, a character without sizes, and an arrow over a
         // part too narrow for it made of its parts
         const brace = (character: string | undefined, ...parts: readonly (string | object)[]): object => ({
@@ -566,22 +799,46 @@ describe("layOutEquation", () => {
                 { "m:e": equation(...parts) },
             ],
         });
-        expect(widthOf(brace(undefined, "abc"))).to.equal("a brace whose size Word's PDFs leave between two");
-        expect(widthOf({ "m:acc": [{ "m:e": equation("d") }] })).to.equal("an accent whose size Word's PDFs leave between two");
+        expect(widthOf(brace(undefined, "ce"))).to.equal("a brace whose size Word's PDFs leave between two");
+        expect(widthOf(brace(undefined, "abc"))).to.be.a("number");
+        // An accent over more than one glyph, between 0.979 and 1 of their width (𝑐𝑐, 1949 units with 𝑐's italic correction,
+        // under the fourth size of a hat, 1936), but not over one glyph, whose accent fits it or not
+        expect(widthOf({ "m:acc": [{ "m:e": equation("cc") }] })).to.equal("an accent whose size Word's PDFs leave between two");
+        expect(widthOf({ "m:acc": [{ "m:e": equation("d") }] })).to.be.a("number");
         expect(widthOf(brace("x", "a+b+c"))).to.equal("a character grown over or under a part that Cambria Math has no sizes of");
         expect(widthOf(brace("\u2192", "ei"))).to.equal(
             "a character grown over or under a part narrower than the character made of its parts",
         );
         expect(widthOf(brace("\u2192", "xi"))).to.be.a("number");
-        // A box with a side hidden, a phantom that takes less than its part's room, and an equation array lined up otherwise
-        const box = { "m:borderBox": [{ "m:borderBoxPr": [property("m:hideTop", "1")] }, { "m:e": equation("x") }] };
-        expect(widthOf(box)).to.equal("a box with a side hidden or struck through");
-        const phantom = { "m:phant": [{ "m:phantPr": [property("m:zeroWid", "1")] }, { "m:e": equation("x") }] };
-        expect(widthOf(phantom)).to.equal("a phantom that takes less than its part's room");
+        // A box with its left or right side hidden, whose room there Word hasn't been seen to keep or not, and one with its top
+        // or bottom hidden where the room there would decide the line: not over 𝑥 with the top hidden, as Word showed
+        // (`word-stops-equations3.docx` EQ55a), but over a fraction, and under 𝑥, whose box reaches below the line
+        const box = (side: string, ...parts: readonly (string | object)[]): object => ({
+            "m:borderBox": [{ "m:borderBoxPr": [property(side, "1")] }, { "m:e": equation(...parts) }],
+        });
+        expect(widthOf(box("m:hideLeft", "x"))).to.equal("a box with its left or right side hidden");
+        expect(widthOf(box("m:hideRight", "x"))).to.equal("a box with its left or right side hidden");
+        const hidden = "a box with its top or bottom hidden, where the room there would show in its line";
+        expect(widthOf(box("m:hideTop", "x"))).to.be.a("number");
+        expect(widthOf(box("m:hideTop", fraction("bar")))).to.equal(hidden);
+        expect(widthOf(box("m:hideBot", "x"))).to.equal(hidden);
+        expect(widthOf(box("m:strikeV", "x"))).to.equal(widthOf(box("m:hideTop", "x")));
+        expect(laidOut("x^{\\boxed{y}}")).to.be.an("object");
+        // An accent over a digit, which the MATH table attaches no accent to, is centred on it
+        expect(laidOut("\\hat{1}")).to.be.an("object");
+        // A transparent phantom whose part the atoms beside it would space otherwise than an ordinary atom
+        const phantom = (...parts: readonly (string | object)[]): object => ({
+            "m:phant": [{ "m:phantPr": [property("m:transp", "1")] }, { "m:e": equation(...parts) }],
+        });
+        expect(widthOf("a", phantom("+"), "b")).to.equal(
+            "a transparent phantom whose part the atoms beside it would space otherwise than an ordinary atom",
+        );
+        expect(widthOf("a", phantom("x"), "b")).to.equal(widthOf("axb"));
+        expect(widthOf(phantom("+"), "y")).to.equal(widthOf("+y"));
+        // Equation arrays lined up otherwise: spaced at a second ampersand, or with ampersands in some rows only
         const array = (properties: readonly object[], ...rows: readonly (readonly (string | object)[])[]): object => ({
             "m:eqArr": [{ "m:eqArrPr": properties }, ...rows.map((row) => ({ "m:e": equation(...row) }))],
         });
-        const otherwise = "an equation array lined up in a way not yet followed";
         expect(widthOf(array([property("m:baseJc", "top")], ["a&=b"]))).to.equal(
             "an equation array spaced or lined up in a way not yet followed",
         );
@@ -591,9 +848,12 @@ describe("layOutEquation", () => {
         expect(widthOf(array([property("m:rSp", "4")], ["a&=b"]))).to.equal(
             "an equation array spaced or lined up in a way not yet followed",
         );
-        expect(widthOf(array([], ["a=b"]))).to.equal(otherwise);
-        expect(widthOf(array([], ["a&=b&c"]))).to.equal(otherwise);
-        expect(widthOf(array([], [run("a", { "m:aln": {} }), "&=b"]))).to.equal(otherwise);
+        expect(widthOf(array([], ["a&=b&c"]))).to.equal(
+            "an equation array with more than one ampersand in a row, which Word spaces in a way not yet followed",
+        );
+        expect(widthOf(array([], ["a&=b"], ["c=d"]))).to.equal("an equation array with an ampersand in some rows and none in others");
+        expect(widthOf(array([], ["a=b"], ["cc=d"]))).to.equal(widthOf("cc=d"));
+        expect(widthOf(array([], [run("a", { "m:aln": {} }), "&=b"]))).to.equal(widthOf(array([], ["a&=b"])));
         expect(widthOf(array([]))).to.equal("a part of an equation with nothing in it");
     });
 

@@ -733,7 +733,7 @@ describe("readDocument", () => {
             expect(reasonOf(readBody([p(r(t("a")), r(t("b")), { "w:del": [displayed] })]))).to.equal(undefined);
         });
 
-        it("should stop at equations in a maths font other than Cambria Math, or with small fractions, and displayed ones with margins, in a document's maths settings, and put limits where they say", () => {
+        it("should stop at equations in a maths font other than Cambria Math, and displayed ones with margins, in a document's maths settings, and put limits where they say", () => {
             const equation = p(r(t("a ")), { "m:oMath": [{ "m:r": [{ "m:t": ["x"] }] }] });
             const setting = (name: string, val: string): object => ({ [name]: { _attr: { "m:val": val } } });
             const reasonWith = (...settings: readonly object[]): string | undefined =>
@@ -772,13 +772,12 @@ describe("readDocument", () => {
             const pairWith = (...settings: readonly object[]): readonly LayoutItem[] =>
                 itemsOf(readWithSettings([pair], [{ "m:mathPr": settings }]));
             expect(pairWith(setting("m:interSp", "240"))).to.deep.equal(pairWith(...word));
-            // Displayed equations' own defaults off, and small fractions with them, which Word lays out alike, but small
-            // fractions with them on, which haven't been seen (`word-stops-equation-small.docx` EQ43)
-            const small = "an equation in a document whose maths settings make fractions small";
+            // Displayed equations' own defaults off, and small fractions with them off or on, which Word lays out alike
+            // (`word-stops-equation-small.docx` EQ43, `word-stops-equation-small2.docx` EQ56)
             expect(reasonWith(...word, setting("m:dispDef", "0"))).to.equal(undefined);
             expect(reasonWith(...word, setting("m:dispDef", "0"), setting("m:smallFrac", "1"))).to.equal(undefined);
-            expect(reasonWith(...word, setting("m:smallFrac", "1"))).to.equal(small);
-            expect(reasonWith(...word, setting("m:dispDef", "1"), { "m:smallFrac": {} })).to.equal(small);
+            expect(reasonWith(...word, setting("m:smallFrac", "1"))).to.equal(undefined);
+            expect(reasonWith(...word, setting("m:dispDef", "1"), { "m:smallFrac": {} })).to.equal(undefined);
             // A displayed sum's limits, and an integral's, under and over it or beside it as the settings say, unless its own
             // properties say otherwise (`word-stops-equation-limits.docx` EQ42)
             const run = (characters: string): object => ({ "m:r": [{ "m:t": [characters] }] });
@@ -7567,14 +7566,13 @@ describe("readDocument", () => {
         it("should read an equation that can't be laid out in the line, but can displayed, as displayed", () => {
             const run = (characters: string): object => ({ "m:r": [{ "m:t": [characters] }] });
             const eleven = { styles: { default: { document: { run: { size: 22 } } } } };
-            // A sum in a superscript of a fraction's numerator, which in a line of text is in a script's script's style
-            const sum = { "m:nary": [{ "m:naryPr": [] }, { "m:sub": [run("i")] }, { "m:sup": [run("n")] }, { "m:e": [run("a")] }] };
-            const numerator = { "m:sSup": [{ "m:e": [run("x")] }, { "m:sup": [sum] }] };
-            const either = guessed(
-                [p(r(t("a ")), { "m:oMath": [{ "m:f": [{ "m:num": [numerator] }, { "m:den": [run("b")] }] }] })],
-                eleven,
-            );
-            expect(read(either)[0][0]).to.equal("an equation with a part Word builds up in a way not yet followed");
+            // A root over 𝜍, whose sign's size Word's PDFs leave between two in a line of text, where the gap above the
+            // radicand is smaller, but not displayed
+            const root = {
+                "m:rad": [{ "m:radPr": [{ "m:degHide": { _attr: { "m:val": "1" } } }] }, { "m:deg": [] }, { "m:e": [run("\u03c2")] }],
+            };
+            const either = guessed([p(r(t("a ")), { "m:oMath": [root] })], eleven);
+            expect(read(either)[0][0]).to.equal("a root whose sign's size Word's PDFs leave between two");
             expect(itemsOf(either).map(({ type }) => type)).to.deep.equal(["text", "box"]);
         });
 
