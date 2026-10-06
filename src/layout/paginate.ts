@@ -2391,18 +2391,38 @@ export const paginate = (
                   ],
         );
 
+    // The parts of the table rows in footnotes filled on the page, by the rooms they were cut at, which the search for a
+    // row's cut and the notes' heights ask for again and again: filled afresh on each page, as its lines may be measured
+    // with its page number
+    // eslint-disable-next-line functional/prefer-readonly-type
+    let filledNoteParts = { page: 0, rows: new WeakMap<TableRow, Map<string, readonly CellPart[]>>() };
+
     /**
      * Each cell's part of a table row in a footnote that breaks across pages, in the room for the row's last part, after
      * its parts in the rooms before (`cuts`), with the row's margins around it, as a row of the text breaks (see `splitRow`)
      */
-    const notePartsOf = (row: TableRow, cuts: readonly number[]): readonly CellPart[] =>
-        cuts.reduce<readonly CellPart[]>(
-            (parts, cut, at) =>
-                row.cells.map((cell, index) =>
-                    fillCell(at === 0 ? cellParagraphs(cell) : parts[index].rest, cut - rowMarginsOf(row), at === 0),
-                ),
-            [],
+    const notePartsOf = (row: TableRow, cuts: readonly number[]): readonly CellPart[] => {
+        if (cuts.length === 0) {
+            return [];
+        }
+        if (filledNoteParts.page !== pageCount) {
+            filledNoteParts = { page: pageCount, rows: new WeakMap() };
+        }
+        const key = cuts.join(" ");
+        const filled = filledNoteParts.rows.get(row) ?? new Map<string, readonly CellPart[]>();
+        const known = filled.get(key);
+        if (known !== undefined) {
+            return known;
+        }
+        const before = notePartsOf(row, cuts.slice(0, -1));
+        const at = cuts.length - 1;
+        const parts = row.cells.map((cell, index) =>
+            fillCell(at === 0 ? cellParagraphs(cell) : before[index].rest, cuts[at] - rowMarginsOf(row), at === 0),
         );
+        // eslint-disable-next-line functional/immutable-data
+        filledNoteParts.rows.set(row, filled.set(key, parts));
+        return parts;
+    };
 
     /**
      * Why Word's breaking of a table row in a footnote isn't known, when it isn't: one with cells merged down rows, a table
@@ -2422,10 +2442,14 @@ export const paginate = (
      * it fits (`fits`), as a row of the text is: each time the part doesn't fit, just above the bottom of the lowest of its
      * cells' lines. Undefined where a cell with lines left would have none of them, as widow control holds them back, and
      * the row moves to the next page whole, as Word moved a row whose cell of 3 lines couldn't go beside 2 of the other's 6
-     * (`word-notes-across-pages.docx` NP3), as a row of the text does
+     * (`word-notes-across-pages.docx` NP3), as a row of the text does. Where the rest of the row doesn't fit, no part taller
+     * than the page does either, so the search goes on from there, rather than a line at a time from the rest's end, which
+     * would take as many tries as the rest has lines on each page it goes on to
      */
     const noteRowCut = (row: TableRow, fits: (cut: number) => boolean, before: readonly number[] = []): number | undefined => {
         const margins = rowMarginsOf(row);
+        const { pageWidth, pageHeight } = section();
+        const page = Math.max(pageWidth, pageHeight);
         const withLines =
             before.length === 0
                 ? row.cells.map((cell) => cellParagraphs(cell).length > 0)
@@ -2439,7 +2463,7 @@ export const paginate = (
             if (fits(cut)) {
                 return cut;
             }
-            cut = margins + Math.max(...parts.map(({ height }) => height)) - 2 * TOLERANCE;
+            cut = Math.min(margins + Math.max(...parts.map(({ height }) => height)) - 2 * TOLERANCE, page);
         }
     };
 
