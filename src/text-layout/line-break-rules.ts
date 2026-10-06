@@ -63,6 +63,12 @@ export type LineBreakRules = {
      * (`w:strictFirstAndLastChars`). Default is off
      */
     readonly strict?: boolean;
+    /**
+     * Whether lines break between Chinese and Japanese characters, as Word 2010 and later break them. Default is on. Word
+     * 2007 and 2003 break text in no East Asian language only at its spaces and hyphens, as Latin text, and a run of it
+     * longer than a line after the last character that fits
+     */
+    readonly ideographs?: boolean;
 };
 
 /** A piece of text, with what of its run changes where its lines break */
@@ -198,8 +204,7 @@ export const findLineBreaks = (pieces: readonly LanguagePiece[], rules: LineBrea
         const opportunity =
             before === ZERO_WIDTH_SPACE ||
             (DASHES.has(before) && !/[\d-]/.test(after)) ||
-            breaksAround(before) ||
-            breaksAround(after) ||
+            (rules.ideographs !== false && (breaksAround(before) || breaksAround(after))) ||
             (runs[index - 1].anywhere && runs[index].anywhere);
         if (opportunity && !(kinsoku && (listAt(index).noLineStart.has(after) || listAt(index - 1).noLineEnd.has(before)))) {
             // eslint-disable-next-line functional/immutable-data

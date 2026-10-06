@@ -3114,27 +3114,62 @@ describe("layoutLines in compatibility mode, as Word lays it out (scripts/layout
         expect(layoutLines(other, { width: 325, format: { alignment: "justified" }, ...older })).to.have.length(2);
     });
 
-    it("should stop at a tab to a stop past the end of the line, which Word 2010 and before put past the margin", () => {
-        // CM12a and CM12d: a default stop past a right stop at the margin, and a left stop past it, on the same line
+    it("should put a tab to a stop past the end of the line at its stop, with the rest of the paragraph on the line, as Word 2010 and before do", () => {
+        // word-stops-compat-14.docx CM12a, CM12d, word-stops-compat2-14.docx CN5a to CN5e: a left stop past the end with words
+        // after it, a default stop past a right one at the end, centred and decimal stops past it, and a left one between a
+        // right indent and the end, the text after each on the line, past the end
         const tab: InlineItem = { type: "tab", font: {} };
-        const reason = "a tab past the end of the line in a document in compatibility mode";
-        const firstOf = (items: readonly InlineItem[], position: number): LaidOutLine =>
-            layoutLines(items, { width: 100, tabStops: [{ position, alignment: "left" }], ...older })[0];
-        expect(firstOf([text("a"), tab, text("bb")], 150).unsupported).to.equal(reason);
-        expect(firstOf([text("aaaaaaaa"), tab, text("b")], 50).unsupported).to.equal(reason);
-        // One to a stop on the line is as it is
-        expect(firstOf([text("a"), tab, text("bb")], 50).unsupported).to.equal(undefined);
+        const linesOf = (items: readonly InlineItem[], tabStops: readonly TabStop[], options: Partial<LineLayoutOptions> = older) =>
+            layoutLines(items, { width: 100, tabStops, ...options }).map(({ text: value, textWidth, unsupported }) => ({
+                text: value,
+                textWidth,
+                ...(unsupported === undefined ? {} : { unsupported }),
+            }));
+        const left = (position: number): readonly TabStop[] => [{ position, alignment: "left" }];
+        expect(linesOf([text("a"), tab, text("bb cc dd ee ff")], left(150))).to.deep.equal([{ text: "a\tbb cc dd ee ff", textWidth: 290 }]);
+        // Word 2013 puts the tab on a line of its own, and the text after it on the next
+        expect(
+            linesOf([text("a"), tab, text("bb cc dd ee ff")], left(150), { measurer: MEASURER }).map(({ text: value }) => value),
+        ).to.deep.equal(["a", "\t", "bb cc dd ", "ee ff"]);
+        // A default stop past the end, after a right one at the end
+        expect(linesOf([text("a"), tab, text("bb"), tab, text("c")], [{ position: 100, alignment: "right" }])).to.deep.equal([
+            { text: "a\tbb\tc", textWidth: 118 },
+        ]);
+        expect(linesOf([text("a"), tab, text("bb")], [{ position: 200, alignment: "center" }])).to.deep.equal([
+            { text: "a\tbb", textWidth: 210 },
+        ]);
+        expect(linesOf([text("a"), tab, text("12.5")], [{ position: 200, alignment: "decimal" }])).to.deep.equal([
+            { text: "a\t12.5", textWidth: 220 },
+        ]);
+        // One between the paragraph's right indent and the end
+        expect(
+            layoutLines([text("a"), tab, text("bb cc")], { width: 100, tabStops: left(90), format: { indentRight: 20 }, ...older }).map(
+                ({ textWidth }) => textWidth,
+            ),
+        ).to.deep.equal([140]);
+        // Past where Word was seen keeping it on the line, 941.4 points from the margin, how it breaks it hasn't been seen: text
+        // to 930 is laid out, and to 950 isn't
+        expect(linesOf([text("a"), tab, text("b".repeat(78))], left(150))).to.deep.equal([
+            { text: `a\t${"b".repeat(78)}`, textWidth: 930 },
+        ]);
+        expect(linesOf([text("a"), tab, text("b".repeat(80))], left(150))[0].unsupported).to.equal(
+            "text after a tab past the end of the line that goes further past the margin than Word was seen keeping it on the line, in a document in compatibility mode",
+        );
+        // One to a stop on the line is as it is, and the text after it breaks as it does without
+        expect(linesOf([text("a"), tab, text("bb cc dd ee ff")], left(50))).to.deep.equal([
+            { text: "a\tbb cc ", textWidth: 100 },
+            { text: "dd ee ff", textWidth: 80 },
+        ]);
     });
 
-    it("should stop at a page break at the end of a paragraph, whose mark Word 2010 and before put on the next page", () => {
+    it("should keep the mark of a paragraph that ends with a page break on its line, as Word 2010 and 2007 do", () => {
+        // word-stops-compat2-14.docx, -12 CN1a: the next paragraph at the top of the next page, as in Word 2013's mode
         const pageBreak: InlineItem = { type: "break", kind: "page", font: {} };
-        const lines = (items: readonly InlineItem[]): readonly (string | undefined)[] =>
-            layoutLines(items, { width: 100, ...older }).map(({ unsupported }) => unsupported);
-        expect(lines([text("aaaaaaaa aa"), pageBreak])).to.deep.equal([
-            undefined,
-            "a page break at the end of a paragraph in a document in compatibility mode",
-        ]);
-        // With text after it, its mark is on the next page anyway
-        expect(lines([text("aa"), pageBreak, text("bb")])).to.deep.equal([undefined, undefined]);
+        const lines = (options: Partial<LineLayoutOptions>): readonly object[] =>
+            layoutLines([text("aaaaaaaa aa"), pageBreak], { width: 100, measurer: MEASURER, ...options }).map(
+                ({ text: value, breakAfter, unsupported }) => ({ text: value, breakAfter, unsupported }),
+            );
+        expect(lines(older)).to.deep.equal(lines({}));
+        expect(lines(older)).to.have.length(2);
     });
 });

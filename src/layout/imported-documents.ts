@@ -77,6 +77,8 @@ export type DocxParts = {
     readonly theme?: XmlObject;
     readonly numbering?: XmlObject;
     readonly settings?: XmlObject;
+    /** Its web settings (`w:webSettings`), with the divisions of a web page its paragraphs may be in */
+    readonly webSettings?: XmlObject;
     /** The content of each header and footer, by the id of the relationship to it */
     readonly headersAndFooters: ReadonlyMap<string, ContentPart>;
     readonly footnotes?: NotesPart;

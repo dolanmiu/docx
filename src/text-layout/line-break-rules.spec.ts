@@ -30,6 +30,13 @@ describe("findLineBreaks", () => {
         expect(breaksOf("１２")).to.deep.equal([1]);
     });
 
+    it("should break Chinese and Japanese text only after hyphens and dashes in Word 2007's and 2003's modes", () => {
+        // word-stops-compat2-12.docx CN10a to CN10c: as Latin text, broken where it is longer than a line as a long word
+        const pieces = [{ text: "永ab永かな-永" }];
+        expect([...findLineBreaks(pieces, { ideographs: false })]).to.deep.equal([7]);
+        expect([...findLineBreaks(pieces)]).to.deep.equal([1, 3, 4, 5, 6, 7]);
+    });
+
     it("should keep a character and the marks on it together", () => {
         expect(breaksOf("か\u3099か")).to.deep.equal([2]);
         expect(breaksOf("永\u200d永")).to.deep.equal([]);

@@ -58,6 +58,35 @@
  *   a paragraph with a right indent of 1000 (FE2b), Chinese (FE2c), and FE1's Japanese with Latin words with both
  *   autoSpaceDE and autoSpaceDN off (FE2d; FE1b had only autoSpaceDN off), whose lines Word breaks otherwise than without it
  *
+ * What Word showed, in the PDFs saved from Word 16 for Mac in round 25 (word-stops-top-spacing3 and word-stops-booklet3
+ * weren't saved):
+ *
+ * - Modes 14 and 12 laid out CN1a, CN1b, CN2a, CN3, CN6a to CN6d, CN7a, CN7b and CN8c as mode 15 does: the paragraph after a
+ *   page break at the top of the next page, gaps of 1000 to 2500 twips beside a picture and 2000 beside a frame filled
+ * - CN2b: no ligatures without `enableOpenTypeFeatures`, its lines broken where mode 15's are
+ * - CN4a to CN4c: distributed lines, and Latin justified for Thai and with a low kashida, not squeezed: broken as left-aligned
+ * - CN5a to CN5e: each tab at its stop past the end of the line, and the rest of the paragraph on that line, past the margin
+ *   and off the page: CN5a's line to 18827 twips, a default stop at 9360 after a right one at the margin, "centred" and
+ *   "1234.56" lined up at 9800, and the text after a stop between a right indent and the margin to 13496
+ * - CN8a: an indented table's text at its indent, its columns sized in what the indent leaves and the two margins beside it;
+ *   CN8b: a table of half the width 4616 twips wide, 108 more than mode 15's; CN8d: a table in a cell sized as in mode 15,
+ *   its borders at the cell's text; CN8e: a table widened for a long word as in mode 15
+ * - CN9: a floating table 113 twips left of mode 15's, its text at 2000, and the text beside it in a gap of 1882 twips
+ * - CN10a to CN10c: modes 14 and 15 alike; in 12, East Asian text in no language broken only at its spaces, a run longer than
+ *   a line after its last character that fits, with no characters kept from starting or ending a line
+ * - CN11a, CN11b: in 12, the text box as large and in the same place, its line 0.72 points shorter and "after" 0.72 points
+ *   nearer: no room for its outline
+ * - ST6a to ST6e: at least a height X, X less 9.6 points left out, if more than none, whether the line is taller or shorter;
+ *   ST7: multiple spacing as it is; ST8: a paragraph's later line at the top of the next page cut as its first; ST9a to
+ *   ST9c: a table's cells as they are; ST10: cut below the space before a section's first paragraph; ST11: below a border
+ *   above, as it is; ST12: after a page break in the paragraph before, cut
+ * - BK2: each page laid out as the section's A4 page, two to a sheet in the booklet's order
+ * - DV2a, DV2b, DV2d: text indented by the margins, added up for a division in another, with the margin, border and its space
+ *   above the division and below it once; DV2c: with space before and after of its own, 240 twips above and below it, and
+ *   no border drawn above or below
+ * - FE2a, FE2c, FE2d: lines as without `useFELayout`; FE2b: 52.5 twips, a quarter of 10.5 points, between East Asian text
+ *   and Latin letters and digits beside it
+ *
  * Usage: npm run run-ts -- scripts/layout-probes/stops2/word-stops-compat2.ts [folder]
  */
 import {

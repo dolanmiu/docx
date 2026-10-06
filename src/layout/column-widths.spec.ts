@@ -227,11 +227,17 @@ describe("fitColumns", () => {
         // The 10 points of margins more take each column an eighth of the way past its widest word, rather than a tenth
         const older = { ...table([[cell(0, "a"), cell(1, LONG), cell(2, `${LONG} ${LONG}`)]]), marginsBeside: true };
         expect(widthsOf(fitColumns(older, 200, measure))).to.deep.equal([10, 68.1, 101.9]);
-        // How far Word 2010 lets a table whose cells all have widths grow for a long word, with them, hasn't been seen
+        // A table whose cells all have widths Word 2010 widens for a long word as Word 2013 does, when it fits in the room
+        // (word-stops-compat2-14.docx CN8e). How far it lets one grow past the room, with its margins beside it, and how it
+        // evens out its rows, haven't been seen
         const widened = { ...table([[cell(0, "aaaaaa", 30), cell(1, LONG, 150)]]), fit: undefined, widen: {}, marginsBeside: true };
-        expect(fitColumns(widened, 300, measure).unsupported).to.equal(
-            "a table widened for a long word, or its rows evened out, in a document in compatibility mode",
-        );
+        const reason =
+            "a table widened for a long word past the room for it, or with its rows evened out, in a document in compatibility mode";
+        const current = { ...widened, marginsBeside: undefined };
+        expect(fitColumns(widened, 300, measure)).to.deep.equal({ ...fitColumns(current, 300, measure), marginsBeside: true });
+        expect(widthsOf(fitColumns(widened, 300, measure))).to.deep.equal([60, 140]);
+        expect(fitColumns(widened, 200, measure).unsupported).to.equal(reason);
+        expect(fitColumns({ ...widened, widen: { uneven: true } }, 300, measure).unsupported).to.equal(reason);
         // Without one, it keeps its cells' widths
         const kept = { ...table([[cell(0, "aa", 30), cell(1, "bb", 150)]]), fit: undefined, widen: {}, marginsBeside: true };
         expect(fitColumns(kept, 300, measure)).to.equal(kept);

@@ -585,6 +585,21 @@ describe("paginate", () => {
             );
         });
 
+        it("should stop at a paragraph Word hasn't been seen to lay out at the top of a page or column, such as one in an HTML division", () => {
+            // word-stops-divisions.docx DV2a: a division's paragraphs below the text above them
+            const reason = "a paragraph in an HTML division at the top of a page or column";
+            const divided = (name: string, lines: number): ParagraphBlock => ({ ...paragraph(name, lines), unknownAtTop: reason });
+            expect(
+                [
+                    [paragraph("x", 1), divided("a", 2)],
+                    [divided("a", 1)],
+                    [paragraph("x", 7), divided("a", 1)],
+                    // Its lines going on to the next page too
+                    [paragraph("x", 5), divided("a", 3)],
+                ].map((blocks) => numbersOf(document(blocks)).stoppedAt),
+            ).to.deep.equal([undefined, reason, reason, reason]);
+        });
+
         it("should give the borders of the paragraphs in a table cell room in its row, and in a row that breaks across pages", () => {
             const rowsOf = (content: DocumentContent): readonly (readonly number[])[] =>
                 paginate(content, { measurer: MEASURER }).pages.map(({ body }) =>
@@ -911,30 +926,50 @@ describe("paginate", () => {
                 [10],
                 [-12.4],
             ]);
+            // word-stops-top-spacing2.docx ST6b to ST6e: at least a height less than its text's, all but 9.6 points of the
+            // height, so a line of 30 points at least 20 starts 10.4 higher, and ST6a: one of 8 points or less as it is
+            const tall = (format: ParagraphFormat): ParagraphBlock => ({
+                ...paragraph("tall", 0, format),
+                items: [{ type: "text", text: "abcdefgh", font: { size: 30 } }],
+            });
+            expect(topsOf(suppressed([tall(atLeast(20))]))).to.deep.equal([[-0.4]]);
+            expect(topsOf(suppressed([tall(atLeast(5))]))).to.deep.equal([[10]]);
+            // ST7: multiple spacing as it is
+            expect(topsOf(suppressed([paragraph("a", 1, { lineSpacing: { rule: "multiple", multiple: 1.5 } })]))).to.deep.equal([[10]]);
+            // ST8: a paragraph's later line at the top of the next page too
+            expect(topsOf(suppressed([paragraph("a", 3, exact(40))]))).to.deep.equal([[-12.4, 27.6], [-12.4]]);
+            // ST10: below the space before a section's first paragraph, which the first of the document keeps
+            expect(topsOf(suppressed([paragraph("a", 1, { ...exact(40), spaceBefore: 5 })]))).to.deep.equal([[-7.4]]);
+            // ST11: below a border above the paragraph, as it is
+            const borders = { top: 3, bottom: 0, between: 0, betweenSpace: 0, box: "box", outline: "box" };
+            expect(topsOf(suppressed([{ ...paragraph("a", 1, exact(40)), borders }]))).to.deep.equal([[13]]);
         });
 
         it("should stop at the first line of a page at spacing Word hasn't shown with suppressTopSpacing", () => {
-            // Multiple spacing, and at least a height less than its text's (ST2a)
-            expect(stoppedAt(suppressed([paragraph("a", 1, { lineSpacing: { rule: "multiple", multiple: 1.5 } })]))).to.equal(reason);
-            expect(stoppedAt(suppressed([paragraph("a", 1, atLeast(5))]))).to.equal(reason);
-            // A paragraph's third line at the top of the next page, the space before a section's first paragraph, and a line on
-            // a document grid
-            expect(stoppedAt(suppressed([paragraph("a", 3, exact(40))]))).to.equal(reason);
-            expect(stoppedAt(suppressed([paragraph("a", 1, { ...exact(40), spaceBefore: 5 })]))).to.equal(reason);
+            // Multiple spacing of less than a line, a line on a document grid, and a paragraph's later line below a border above
+            // it
+            expect(stoppedAt(suppressed([paragraph("a", 1, { lineSpacing: { rule: "multiple", multiple: 0.8 } })]))).to.equal(reason);
             expect(stoppedAt(suppressed([{ ...paragraph("a", 1, exact(40)), grid: { linePitch: 15 } }]))).to.equal(reason);
+            const borders = { top: 3, bottom: 0, between: 0, betweenSpace: 0, box: "box", outline: "box" };
+            expect(stoppedAt(suppressed([{ ...paragraph("a", 2, exact(40)), borders }]))).to.equal(reason);
             // Below the top of the page, a line of any spacing is as it is
-            expect(stoppedAt(suppressed([paragraph("a", 1), paragraph("b", 1, atLeast(5))]))).to.equal(undefined);
+            expect(
+                stoppedAt(suppressed([paragraph("a", 1), paragraph("b", 1, { lineSpacing: { rule: "multiple", multiple: 0.8 } })])),
+            ).to.equal(undefined);
         });
 
-        it("should stop at a table at the top of a page with lines of other than single spacing in its cells", () => {
+        it("should lay out a table at the top of a page with lines of other than single spacing in its cells as they are", () => {
+            // word-stops-top-spacing2.docx ST9a to ST9c: exact, at least and double spacing in a cell at the top of a page, and
+            // word-stops-top-spacing.docx ST4c below it
+            const rowsOf = (content: DocumentContent): readonly (readonly number[])[] =>
+                paginate(content, { measurer: MEASURER }).pages.map(({ body }) =>
+                    body.flatMap((block) => (block.type === "table" ? block.rows.map(({ y }) => Math.round(y * 10) / 10) : [])),
+                );
             const spacedRow = row([[paragraph("cell", 1, exact(40))]]);
-            expect(stoppedAt(suppressed([table([spacedRow])]))).to.equal(reason);
-            // Below the top, as Word lays it out (ST4c), but not at the top of the next page it goes on to
-            expect(stoppedAt(suppressed([paragraph("a", 1), table([spacedRow])]))).to.equal(undefined);
-            expect(stoppedAt(suppressed([paragraph("a", 1), table([spacedRow, spacedRow])]))).to.equal(reason);
-            // One of single spacing, in a table in a cell too, is as it is
-            const nested = row([[paragraph("cell", 1), table([row([[paragraph("in", 1)]])])]]);
-            expect(stoppedAt(suppressed([table([nested])]))).to.equal(undefined);
+            for (const blocks of [[table([spacedRow])], [paragraph("a", 1), table([spacedRow, spacedRow])]]) {
+                expect(stoppedAt(suppressed(blocks))).to.equal(undefined);
+                expect(rowsOf(suppressed(blocks))).to.deep.equal(rowsOf(document(blocks)));
+            }
         });
     });
 
@@ -6475,16 +6510,56 @@ describe("paginate", () => {
             changes: Partial<DocumentContent> = {},
         ): string | undefined => laidOut(blocks, changes).stoppedAt;
 
-        it("should stop at a line beside a drawing in a gap narrower than 135 points in compatibility mode, as Word 2010 leaves one empty", () => {
-            // word-stops-compat-14.docx CM14: a gap of 1000 twips beside a frame Word 2013 puts text in and 2010 doesn't, and
-            // CM9: one of 2700 beside a picture both do. Here a gap of 130 points, and on a page 400 wide, gaps of 150 and 180
+        it("should stop at a line beside a drawing in a gap narrower than Word 2010 was seen putting text in, in compatibility mode", () => {
+            // word-stops-compat2-14.docx CN6a to CN6d: text aligned left in gaps of 50 points and more beside a picture, CN9: 94
+            // beside a table, CN7a: 100 beside a frame; word-stops-compat-14.docx CM10: justified text in 94 beside a table, and
+            // CM14: a gap of 50 beside a frame, of justified text, Word 2010 leaves empty and Word 2013 doesn't. Here a page 180
+            // wide, with a drawing at its right
             const older = { compatibilityMode: 14 };
-            expect(stopOf([prose("a", 12, [floating()])], older)).to.equal(
-                "a line beside a drawing or frame in a gap narrower than 135 points, in a document in compatibility mode",
+            const reason =
+                "a line beside a drawing or frame in a gap narrower than Word was seen putting text in, in a document in compatibility mode";
+            const gapped = (drawing: Partial<FloatingDrawing>, format: ParagraphFormat = {}): ParagraphBlock =>
+                prose("a", 12, [floating(drawing)], format);
+            const justified: ParagraphFormat = { alignment: "justified" };
+            const framed = { frame: { blocks: [], heightRule: "exact" as const, fitsWidth: false } };
+            expect(stopOf([gapped({})], older)).to.equal(undefined);
+            expect(stopOf([gapped({ width: 140 })], older)).to.equal(reason);
+            expect(stopOf([gapped({ width: 140 })])).to.equal(undefined);
+            expect(stopOf([gapped({ width: 100 })], older)).to.equal(undefined);
+            expect(stopOf([gapped({ width: 100 }, justified)], older)).to.equal(reason);
+            expect(stopOf([gapped({ width: 80 }, justified)], older)).to.equal(undefined);
+            expect(stopOf([gapped({ width: 100, ...framed })], older)).to.equal(reason);
+            expect(stopOf([gapped({ width: 70, ...framed })], older)).to.equal(undefined);
+            // Only the room the paragraph's indents leave counts: a gap of 40 inside a left indent of 60 takes no text, and
+            // one of 80 that an indent of 40 narrows to 40 is as narrow as that
+            expect(stopOf([gapped({ width: 140 }, { indentLeft: 60 })], older)).to.equal(undefined);
+            expect(stopOf([gapped({ width: 100 }, { indentLeft: 40 })], older)).to.equal(reason);
+            // A first line indent of 25 leaves a gap of 20 left of a drawing a line tall no room, and the first line may go in the
+            // gap of 60 right of it, where the indent would leave 35, which Word hasn't been seen putting text in; in one of 90, 65
+            const besideFirst = (width: number): ParagraphBlock =>
+                gapped({ width, height: 10, horizontal: { from: "margin", offset: 20 } }, { firstLineIndent: 25 });
+            expect(stopOf([besideFirst(100)], older)).to.equal(reason);
+            expect(stopOf([besideFirst(70)], older)).to.equal(undefined);
+            // When the first gap takes the first line, a gap of 60 after it takes the second, with all of its room
+            const firstTaken = gapped({ width: 40, height: 10, horizontal: { from: "margin", offset: 80 } }, { firstLineIndent: 25 });
+            expect(stopOf([firstTaken], older)).to.equal(undefined);
+            // A hanging indent widens no gap: one of 80 right of a drawing, of centred text, is narrower than 94 however far
+            // the first line hangs
+            const hanging = gapped(
+                { width: 100, height: 10, horizontal: { from: "margin", offset: 0 } },
+                { firstLineIndent: -25, alignment: "center" },
             );
-            expect(stopOf([prose("a", 12, [floating()])])).to.equal(undefined);
-            const wide = { ...older, sections: [{ ...PAGE, pageWidth: 400, columns: [380] }] };
-            expect(stopOf([prose("a", 12, [floating({ horizontal: { from: "margin", offset: 150 } })])], wide)).to.equal(undefined);
+            expect(stopOf([hanging], older)).to.equal(reason);
+            // A frame lower on the page whose edge is where a picture's is leaves the gap beside the picture one of 80
+            const picture = floating({ width: 100, height: 10 });
+            const frameBelow = floating({ width: 100, height: 10, vertical: { from: "paragraph", offset: 100 }, ...framed });
+            expect(stopOf([prose("a", 12, [picture, frameBelow])], older)).to.equal(undefined);
+            // And one above it, with no text beside it
+            const frameAbove = floating({ width: 100, height: 10, wrap: "topAndBottom", ...framed });
+            expect(stopOf([prose("b", 3, [frameAbove]), prose("a", 12, [picture])], older)).to.equal(undefined);
+            // A frame left of a gap of 80 makes it one beside a frame too
+            const frameLeft = floating({ width: 100, height: 10, horizontal: { from: "margin", offset: 0 }, ...framed });
+            expect(stopOf([prose("a", 12, [frameLeft])], older)).to.equal(reason);
         });
 
         it("should stop at a line beside a drawing on a grid that snaps to characters in columns of different widths", () => {

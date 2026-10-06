@@ -189,6 +189,7 @@ const readParts = (docx: DocxPackage): DocxParts => {
         theme: partOf("theme"),
         numbering: partOf("numbering"),
         settings: partOf("settings"),
+        webSettings: partOf("webSettings"),
         headersAndFooters: new Map(
             headersAndFooters.flatMap(({ id, path }) => {
                 const part = rootOf(parts.get(path));
@@ -252,6 +253,7 @@ export const readDocx = (
         styles: readTextStyles(read.styles ?? { "w:styles": [] }, read.theme && readThemeFonts(read.theme)),
         numbering: read.numbering,
         settings: read.settings,
+        webSettings: read.webSettings,
         headersAndFooters: new Map([...read.headersAndFooters].map(([id, { content }]) => [id, content])),
         footnotes: read.footnotes?.notes,
         endnotes: read.endnotes?.notes,
