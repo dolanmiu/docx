@@ -938,9 +938,12 @@ export const singleFontOf = (text: string, format: RunFormat): TextFont | undefi
     if (!hasOwnHighAnsiFont(format) || isComplexRun(format)) {
         return font;
     }
-    const high = [...text]
-        .filter((character) => !/\s/u.test(character))
-        .map((character) => !isEastAsian(character) && HIGH_ANSI.test(character));
+    // The slot of each character, a mark's that of the character it is on, as in `spansOf`
+    const slots = [...text].reduce<readonly FontSlot[]>(
+        (all, character) => [...all, slotOf(character, all[all.length - 1] ?? "latin", format)],
+        [],
+    );
+    const high = [...text].flatMap((character, at) => (/\s/u.test(character) ? [] : [slots[at] === "highAnsi"]));
     return high.length > 0 && high.every(Boolean) ? { ...font, font: format.highAnsiFont } : high.some(Boolean) ? undefined : font;
 };
 

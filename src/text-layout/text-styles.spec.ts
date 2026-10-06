@@ -874,5 +874,8 @@ describe("singleFontOf", () => {
         expect(singleFontOf("\u2022 1.", { font: "Symbol", size: 11 })).to.deep.equal({ font: "Symbol", size: 11 });
         expect(singleFontOf("\u2022", { ...differ, rightToLeft: true })).to.deep.equal({ font: "Symbol", size: 11 });
         expect(singleFontOf("", differ)).to.deep.equal({ font: "Symbol", size: 11 });
+        // A mark is in the font of the character it is on, as in `spansOf`
+        expect(singleFontOf("1\u0301.", differ)).to.deep.equal({ font: "Symbol", size: 11 });
+        expect(singleFontOf("\u00e9\u0301", differ)).to.deep.equal({ font: "Calibri", size: 11 });
     });
 });
