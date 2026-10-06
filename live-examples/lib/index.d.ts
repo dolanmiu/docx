@@ -4712,10 +4712,10 @@ declare type IBaseFrameOptions = {
     readonly anchorLock?: boolean;
     /** Drop cap effect type */
     readonly dropCap?: (typeof DropCapType)[keyof typeof DropCapType];
-    /** Frame width in twips */
-    readonly width: number;
-    /** Frame height in twips */
-    readonly height: number;
+    /** Frame width in twips. When omitted, the frame is as wide as its content. */
+    readonly width?: number;
+    /** Frame height in twips. When omitted, the frame is as tall as its content. */
+    readonly height?: number;
     /** Text wrapping behavior around the frame */
     readonly wrap?: (typeof FrameWrap)[keyof typeof FrameWrap];
     /** Number of lines for drop cap effect */
