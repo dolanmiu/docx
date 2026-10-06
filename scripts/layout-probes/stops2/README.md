@@ -1,6 +1,6 @@
 # The stops batch (lay-stops2)
 
-<!-- cspell:ignore pdftocairo Poppler poppler hhea GPOS -->
+<!-- cspell:ignore pdftocairo Poppler poppler hhea GPOS tatweel tatweels -->
 
 Probe documents for the stops of docx/layout that no Word PDF saved before 2026-10-04 settled, made in one batch from
 docx at `master` a871df8a25 and saved from Word 16 for Mac on 2026-10-04, 2026-10-05 and 2026-10-06 (Save As, PDF,
