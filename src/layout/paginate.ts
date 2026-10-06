@@ -4296,9 +4296,10 @@ export const paginate = (
         let index = 0;
         let excluded: ReadonlySet<number> = new Set();
         let excludedAt = "";
-        // The footnote of the line being placed that starts on the next page, after its others go on this one
-        let startsAfter: string | undefined;
         for (;;) {
+            // The footnote of the line being placed that starts on the next page, after its others go on this one, found
+            // afresh each time the line is tried, as a line tried again may fit with all of them
+            let startsAfter: string | undefined;
             // Those left for the next page or column are left only where they were found to be
             if (excludedAt !== `${pageCount} ${column} ${index}`) {
                 excluded = new Set();
@@ -4572,7 +4573,6 @@ export const paginate = (
                 if (startsAfter !== undefined) {
                     deferred = startsAfter;
                     carried = { name: deferred, from: { block: 0, line: 0 } };
-                    startsAfter = undefined;
                 }
                 placedInColumn = true;
                 index += placedLines;
