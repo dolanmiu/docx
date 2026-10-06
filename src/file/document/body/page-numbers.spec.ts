@@ -377,7 +377,8 @@ describe("fillPageNumbers", () => {
                 ],
             });
 
-            expect(formatted(file).map(textOf)).to.deep.equal(["3 of 5", "5", "", "2 of 5"]);
+            // The NUMPAGES paragraph ends the first section, so there is no empty paragraph for the section break
+            expect(formatted(file).map(textOf)).to.deep.equal(["3 of 5", "5", "2 of 5"]);
         });
 
         it("should leave the fields of numbers of pages it doesn't know, or written with a picture, as they are, and write those in a format of their own", () => {

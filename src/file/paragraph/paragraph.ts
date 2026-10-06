@@ -5,6 +5,7 @@
  *
  * @module
  */
+import type { SectionProperties } from "@file/document/body/section-properties/section-properties";
 import { FileChild } from "@file/file-child";
 import type { FootnoteReferenceRun } from "@file/footnotes";
 import type { IContext, IXmlableObject } from "@file/xml-components";
@@ -155,6 +156,16 @@ export class Paragraph extends FileChild {
         }
 
         return super.prepForXml(context);
+    }
+
+    /**
+     * Ends a section at this paragraph by adding the section's properties to the paragraph's properties,
+     * as Word does with the last paragraph of each section but the last.
+     *
+     * @param sectionProperties - The properties of the section the paragraph ends
+     */
+    public addSectionProperties(sectionProperties: SectionProperties): void {
+        this.properties.addSectionProperties(sectionProperties);
     }
 
     public addRunToFront(run: Run): Paragraph {

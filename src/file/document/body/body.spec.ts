@@ -1,7 +1,8 @@
 import { beforeEach, describe, expect, it } from "vitest";
 
 import { Formatter } from "@export/formatter";
-import { Paragraph } from "@file/paragraph";
+import { Paragraph, TextRun } from "@file/paragraph";
+import { Table, TableCell, TableRow } from "@file/table";
 
 import { Body } from "./body";
 import { sectionMarginDefaults } from "./section-properties";
@@ -56,6 +57,125 @@ describe("Body", () => {
                 ],
             });
         });
+
+        describe("section breaks", () => {
+            type Element = Record<string, unknown>;
+
+            /** The name of an element of the formatted tree */
+            const nameOf = (element: unknown): string => Object.keys(element as Element)[0];
+
+            /** The children of an element of the formatted tree */
+            const childrenOf = (element: unknown): readonly unknown[] => {
+                const content = (element as Element)[nameOf(element)];
+                return Array.isArray(content) ? content : [];
+            };
+
+            /** The names of the paragraph's properties (`w:pPr`) */
+            const propertyNamesOf = (paragraph: unknown): readonly string[] => {
+                const properties = childrenOf(paragraph).find((child) => nameOf(child) === "w:pPr");
+                return properties === undefined ? [] : childrenOf(properties).map(nameOf);
+            };
+
+            const formatBody = (): readonly unknown[] => childrenOf(new Formatter().format(body));
+
+            const countSectionProperties = (elements: readonly unknown[]): number =>
+                elements.filter((element) => nameOf(element) === "w:sectPr").length +
+                elements
+                    .filter((element) => nameOf(element) === "w:p")
+                    .flatMap(propertyNamesOf)
+                    .filter((name) => name === "w:sectPr").length;
+
+            it("puts the section properties into the last paragraph of the section", () => {
+                body.addSection({});
+                body.push(new Paragraph("first section"));
+                body.addSection({});
+                body.push(new Paragraph("second section"));
+
+                const elements = formatBody();
+
+                expect(elements.map(nameOf)).to.deep.equal(["w:p", "w:p", "w:sectPr"]);
+                expect(propertyNamesOf(elements[0])).to.deep.equal(["w:sectPr"]);
+                expect(childrenOf(elements[0]).map(nameOf)).to.deep.equal(["w:pPr", "w:r"]);
+                expect(propertyNamesOf(elements[1])).to.deep.equal([]);
+            });
+
+            it("keeps a separate paragraph for the section properties when the section ends with a table", () => {
+                body.addSection({});
+                body.push(
+                    new Table({
+                        rows: [new TableRow({ children: [new TableCell({ children: [new Paragraph("cell")] })] })],
+                    }),
+                );
+                body.addSection({});
+                body.push(new Paragraph("second section"));
+
+                const elements = formatBody();
+
+                expect(elements.map(nameOf)).to.deep.equal(["w:tbl", "w:p", "w:p", "w:sectPr"]);
+                expect(childrenOf(elements[1]).map(nameOf)).to.deep.equal(["w:pPr"]);
+                expect(propertyNamesOf(elements[1])).to.deep.equal(["w:sectPr"]);
+            });
+
+            it("keeps a separate paragraph for the section properties of an empty first section", () => {
+                body.addSection({});
+                body.addSection({});
+                body.push(new Paragraph("second section"));
+
+                const elements = formatBody();
+
+                expect(elements.map(nameOf)).to.deep.equal(["w:p", "w:p", "w:sectPr"]);
+                expect(childrenOf(elements[0]).map(nameOf)).to.deep.equal(["w:pPr"]);
+                expect(propertyNamesOf(elements[0])).to.deep.equal(["w:sectPr"]);
+                expect(propertyNamesOf(elements[1])).to.deep.equal([]);
+            });
+
+            it("keeps a separate paragraph for the section properties of an empty section in the middle", () => {
+                body.addSection({});
+                body.push(new Paragraph("first section"));
+                body.addSection({});
+                body.addSection({});
+                body.push(new Paragraph("third section"));
+
+                const elements = formatBody();
+
+                expect(elements.map(nameOf)).to.deep.equal(["w:p", "w:p", "w:p", "w:sectPr"]);
+                expect(propertyNamesOf(elements[0])).to.deep.equal(["w:sectPr"]);
+                expect(childrenOf(elements[1]).map(nameOf)).to.deep.equal(["w:pPr"]);
+                expect(propertyNamesOf(elements[1])).to.deep.equal(["w:sectPr"]);
+                expect(countSectionProperties(elements)).to.equal(3);
+            });
+
+            it("keeps the paragraph's own properties and writes the section properties after its run properties and before its revision", () => {
+                body.addSection({});
+                body.push(
+                    new Paragraph({
+                        bullet: { level: 0 },
+                        run: { bold: true },
+                        revision: { id: 1, author: "Firstname Lastname", date: "123" },
+                        children: [new TextRun("first section")],
+                    }),
+                );
+                body.addSection({});
+                body.push(new Paragraph("second section"));
+
+                const elements = formatBody();
+
+                expect(propertyNamesOf(elements[0])).to.deep.equal(["w:pStyle", "w:numPr", "w:rPr", "w:sectPr", "w:pPrChange"]);
+            });
+
+            it("writes the same XML when the body is formatted twice", () => {
+                body.addSection({});
+                body.push(new Paragraph("first section"));
+                body.addSection({});
+                body.push(new Paragraph("second section"));
+
+                const first = new Formatter().format(body);
+                const second = new Formatter().format(body);
+
+                expect(second).to.deep.equal(first);
+                expect(countSectionProperties(childrenOf(second))).to.equal(2);
+            });
+        });
     });
 
     describe("#getSectionPropertiesFor", () => {
@@ -95,6 +215,16 @@ describe("Body", () => {
 
             expect(body.getSectionPropertiesFor(first)?.AvailableTextWidth).to.equal(FIRST_PAGE_WIDTH - 2880);
             expect(body.getSectionPropertiesFor(second)?.AvailableTextWidth).to.equal(SECOND_PAGE_WIDTH - 2880);
+        });
+
+        it("returns its own section for the paragraph that ends a section", () => {
+            body.addSection({ page: { size: { width: FIRST_PAGE_WIDTH, height: 10000 } } });
+            const last = new Paragraph("end of first section");
+            body.push(last);
+            body.addSection({ page: { size: { width: SECOND_PAGE_WIDTH, height: 10000 } } });
+            body.push(new Paragraph("second section"));
+
+            expect(body.getSectionPropertiesFor(last)?.AvailableTextWidth).to.equal(FIRST_PAGE_WIDTH - 2880);
         });
 
         it("returns the first section when no child is given or the child is not in the body", () => {
