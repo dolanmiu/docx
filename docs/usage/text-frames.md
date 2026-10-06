@@ -18,8 +18,8 @@ To make a `Text Frame`, add the `frame` property on a paragraph. Frames support 
 | Property   | Type                          | Notes    | Description                                             |
 | ---------- | ----------------------------- | -------- | ------------------------------------------------------- |
 | type       | `"absolute"` \| `"alignment"` | Required | Positioning mode                                        |
-| width      | `number`                      | Required | Frame width in twips                                    |
-| height     | `number`                      | Required | Frame height in twips                                   |
+| width      | `number`                      | Optional | Frame width in twips (sizes to content when omitted)    |
+| height     | `number`                      | Optional | Frame height in twips (sizes to content when omitted)   |
 | anchor     | `{ horizontal, vertical }`    | Required | What the frame is anchored to (see Anchor Types below)  |
 | position   | `{ x, y }`                    | Required | X/Y coordinates in twips (only when `type: "absolute"`) |
 | alignment  | `{ x, y }`                    | Required | Alignment values (only when `type: "alignment"`)        |

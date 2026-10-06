@@ -36,6 +36,32 @@ describe("createFrameProperties", () => {
         });
     });
 
+    it("should omit width and height when they are not set", () => {
+        const currentFrameProperties = createFrameProperties({
+            type: "alignment",
+            alignment: {
+                x: HorizontalPositionAlign.RIGHT,
+                y: VerticalPositionAlign.TOP,
+            },
+            anchor: {
+                horizontal: FrameAnchorType.MARGIN,
+                vertical: FrameAnchorType.TEXT,
+            },
+        });
+
+        const tree = new Formatter().format(currentFrameProperties);
+        expect(tree).to.deep.equal({
+            "w:framePr": {
+                _attr: {
+                    "w:hAnchor": "margin",
+                    "w:vAnchor": "text",
+                    "w:xAlign": "right",
+                    "w:yAlign": "top",
+                },
+            },
+        });
+    });
+
     it("should create with the space attribute", () => {
         const currentFrameProperties = createFrameProperties({
             type: "absolute",
