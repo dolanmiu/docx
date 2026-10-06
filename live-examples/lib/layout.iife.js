@@ -34909,18 +34909,24 @@ var docxLayout = (function(exports) {
 	/**
 	* The shape a VML drawing (`w:pict`) draws, past the types of shapes it defines (`v:shapetype`), or why it can't be laid
 	* out: more than one. One of no shape, such as a `w:pict` of a shape type alone, draws nothing (`word-stops-vml-shape-type.docx`
-	* VM29e)
+	* VM29e). A shape of a type (`type="#id"`) has the type's attributes where it doesn't give its own, as Word's type for
+	* pictures gives them no outline (`word-stops-vml-pictures2.docx` VM30a to VM30h)
 	*/
 	var vmlShapeOf = (pict) => {
-		const shapes = childrenOf(pict).filter((child) => SHAPES.has(Object.keys(child)[0]));
+		const children = childrenOf(pict);
+		const shapes = children.filter((child) => SHAPES.has(Object.keys(child)[0]));
 		if (shapes.length !== 1) return shapes.length === 0 ? void 0 : "a VML drawing of more than one shape";
 		const [element] = shapes;
 		const [name] = Object.keys(element);
+		const own = attributesOf(element[name]);
+		const type = children.find((child) => "v:shapetype" in child && `#${attributesOf(child["v:shapetype"]).id}` === own.type);
+		const inherited = Object.fromEntries(Object.entries(attributesOf(type === null || type === void 0 ? void 0 : type["v:shapetype"])).filter(([key]) => key !== "id"));
 		const textbox = find(childrenOf(element[name]), "v:textbox");
 		const content = find(childrenOf(textbox), "w:txbxContent");
 		return _objectSpread2(_objectSpread2({
 			element,
-			style: readVmlStyle(attributesOf(element[name]).style)
+			attributes: _objectSpread2(_objectSpread2({}, inherited), own),
+			style: readVmlStyle(own.style)
 		}, textbox === void 0 ? {} : { textStyle: readVmlStyle(attributesOf(textbox).style) }), content === void 0 ? {} : { text: childrenOf(content).filter(isObject) });
 	};
 	/** What a VML shape is placed against across the page (`mso-position-horizontal-relative`), as DrawingML names it */
@@ -35033,7 +35039,7 @@ var docxLayout = (function(exports) {
 		var _attributes$side, _style$get5, _shapeAttributes$oAl;
 		const { style } = shape;
 		const attributes = attributesOf(wrap);
-		const shapeAttributes = attributesOf(shape.element[Object.keys(shape.element)[0]]);
+		const shapeAttributes = shape.attributes;
 		const wrapType = String(attributes.type);
 		const type = WRAPS$1[wrapType];
 		const side = SIDES$1[String((_attributes$side = attributes.side) !== null && _attributes$side !== void 0 ? _attributes$side : "both")];
@@ -35427,7 +35433,38 @@ var docxLayout = (function(exports) {
 	};
 	var OLDER_VML = "a VML drawing other than a text box in the line, in a document in compatibility mode 12 or 11";
 	var DEFAULT_VML_SIZE = 50;
-	var VML_PICTURE = "a VML picture";
+	var POINTS_PER_PIXEL = 33;
+	var VML_PICTURE_SCALED = "a VML picture drawn past 33 points a pixel of its image";
+	var VML_PICTURE_MISSING = "a VML picture whose image isn't a part of the document";
+	var VML_PICTURE_FORMAT = "a VML picture whose image isn't a PNG, JPEG, GIF or BMP";
+	var VML_PICTURE_FLOATING = "a VML picture placed on the page that text flows around";
+	var VML_PICTURE_UNSIZED = "a VML picture with no size of its own";
+	var DEFAULT_IMAGE_DENSITY = 96;
+	/**
+	* The size a VML picture is drawn at: its shape's, or 33 points across or down at most for a picture of one pixel, as
+	* Word drew its pictures (see {@link POINTS_PER_PIXEL}). Or why it isn't known: an image that isn't a part of the document,
+	* or in a format whose size isn't read, or a picture of more pixels, or of a resolution of its own, drawn past 33 points
+	* a pixel
+	*/
+	var pictureSizeOf = (imagedata, width, height, reader) => {
+		var _reader$pictures;
+		const id = attributesOf(imagedata)["r:id"];
+		const image = id === void 0 ? void 0 : (_reader$pictures = reader.pictures) === null || _reader$pictures === void 0 ? void 0 : _reader$pictures.get(String(id));
+		if (image === void 0) {
+			var _reader$pictures2;
+			return id !== void 0 && ((_reader$pictures2 = reader.pictures) === null || _reader$pictures2 === void 0 ? void 0 : _reader$pictures2.has(String(id))) ? VML_PICTURE_FORMAT : VML_PICTURE_MISSING;
+		}
+		const drawn = (points, pixels) => {
+			var _image$density;
+			return points <= pixels * POINTS_PER_PIXEL ? points : pixels === 1 && Math.round((_image$density = image.density) !== null && _image$density !== void 0 ? _image$density : DEFAULT_IMAGE_DENSITY) === DEFAULT_IMAGE_DENSITY ? POINTS_PER_PIXEL : VML_PICTURE_SCALED;
+		};
+		const across = drawn(width, image.width);
+		const down = drawn(height, image.height);
+		return typeof across === "string" ? across : typeof down === "string" ? down : {
+			width: across,
+			height: down
+		};
+	};
 	/** Whether the document is in Word 2007's or 2003's compatibility mode, where Word lays out VML drawings otherwise */
 	var olderVml = ({ compatibilityMode }) => compatibilityMode !== void 0 && compatibilityMode < WORD_2010_MODE;
 	/**
@@ -35439,21 +35476,24 @@ var docxLayout = (function(exports) {
 	* DrawingML one is (VM9 to VM11, VM15, VM24a to VM24c), and one with no wrapping is in front of the text or behind it, and
 	* takes no room (VM6), in a header or footer too, as docx's watermarks are. One in a header or footer that text flows
 	* around is one the body's text goes round (VM13), as a DrawingML one is, and one in the line of a header or footer takes
-	* the room it takes in the body (VM22a to VM22c). It says why where Word's way with it isn't known: a picture, which Word
-	* drew at a size other than its own (VM8, VM20), one in the line of a text box, which Word wouldn't open, and a group with a
-	* shape with an outline, or that text flows around
+	* the room it takes in the body (VM22a to VM22c). A picture in the line is a box of its shape's size, but for one of a
+	* pixel, which is 33 points at most (VM8, VM20, VM30; see {@link pictureSizeOf}). It says why where Word's way with it
+	* isn't known: a picture placed on the page that text flows around, one in the line of a text box, which Word wouldn't
+	* open, and a group with a shape with an outline, or that text flows around
 	*/
 	var readVml = (pict, font, reader) => {
 		const shape = vmlShapeOf(pict);
 		if (shape === void 0 || typeof shape === "string") return shape !== null && shape !== void 0 ? shape : [];
-		const { style, element } = shape;
+		const { style, element, attributes } = shape;
 		const name = nameOf$1(element);
 		const children = childrenOf(element[name]);
-		const attributes = attributesOf(element[name]);
+		const imagedata = find(children, "v:imagedata");
+		const picture = imagedata !== void 0 && attributes["o:ole"] === void 0;
 		const given = {
 			width: vmlLength(style.get("width")),
 			height: vmlLength(style.get("height"))
 		};
+		if (picture && given.width === void 0 && given.height === void 0) return VML_PICTURE_UNSIZED;
 		const { width, height } = given.width === void 0 && given.height === void 0 ? {
 			width: DEFAULT_VML_SIZE,
 			height: DEFAULT_VML_SIZE
@@ -35466,11 +35506,10 @@ var docxLayout = (function(exports) {
 			drawn: false
 		} : vmlOutline(attributes, style);
 		if (typeof outline === "string") return outline;
-		const picture = find(children, "v:imagedata") !== void 0 && attributes["o:ole"] === void 0;
 		if (style.get("position") === "absolute") {
 			const wrap = find(children, "w10:wrap");
 			if (wrap === void 0 || attributesOf(wrap).type === "none") return [];
-			const reason = olderVml(reader) ? OLDER_VML : reader.inCell || reader.inNote || reader.inTextBox ? IN_CELL_OR_NOTE : group ? "a VML group of shapes that text flows around" : picture ? VML_PICTURE : typeof width !== "number" || typeof height !== "number" ? unsized() : void 0;
+			const reason = olderVml(reader) ? OLDER_VML : reader.inCell || reader.inNote || reader.inTextBox ? IN_CELL_OR_NOTE : group ? "a VML group of shapes that text flows around" : picture ? VML_PICTURE_FLOATING : typeof width !== "number" || typeof height !== "number" ? unsized() : void 0;
 			if (reason !== void 0) return reason;
 			if (shape.text !== void 0) return readFloatingTextBox(shape, wrap, width, height, outline, reader);
 			const floating = readVmlFloating(shape, wrap, width, height, outline.drawn ? outline.weight : 0);
@@ -35485,13 +35524,16 @@ var docxLayout = (function(exports) {
 		if (olderVml(reader) && (shape.text === void 0 || reader.inHeader || reader.inTextBox)) return OLDER_VML;
 		if (reader.inTextBox) return sized("a VML drawing in the line of a text box");
 		if (shape.text !== void 0) return readTextBox(shape, width, height, outline, font, reader);
-		if (picture) return sized(VML_PICTURE);
 		if (typeof width !== "number" || typeof height !== "number") return unsized();
 		const room = outline.drawn ? outline.weight : 0;
-		return [{
+		const drawn = picture ? pictureSizeOf(imagedata, width, height, reader) : {
+			width,
+			height
+		};
+		return typeof drawn === "string" ? sized(drawn) : [{
 			type: "box",
-			width: width + room,
-			height: height + room,
+			width: drawn.width + room,
+			height: drawn.height + room,
 			font
 		}];
 	};
@@ -38540,7 +38582,10 @@ var docxLayout = (function(exports) {
 		const openTypeFeatures = wordSettingsOf(childrenOf(find(settings, "w:compat"))).some(({ "w:name": name, "w:val": value }) => name === "enableOpenTypeFeatures" && isOn(value));
 		const eastAsianRules = readEastAsianRules(settings);
 		const divisions = new Map(divisionsIn(childrenOf(find(childrenOf((_parts$webSettings = parts.webSettings) === null || _parts$webSettings === void 0 ? void 0 : _parts$webSettings["w:webSettings"]), "w:divs"))));
-		const readerOf = (inHeader) => _objectSpread2(_objectSpread2(_objectSpread2(_objectSpread2(_objectSpread2(_objectSpread2(_objectSpread2(_objectSpread2({
+		const readerOf = (inHeader, pictures = (() => {
+			var _parts$pictures;
+			return (_parts$pictures = parts.pictures) === null || _parts$pictures === void 0 ? void 0 : _parts$pictures.body;
+		})()) => _objectSpread2(_objectSpread2(_objectSpread2(_objectSpread2(_objectSpread2(_objectSpread2(_objectSpread2(_objectSpread2(_objectSpread2({
 			styles,
 			numbering,
 			listIds,
@@ -38549,7 +38594,7 @@ var docxLayout = (function(exports) {
 			fields: [],
 			counters: /* @__PURE__ */ new Map(),
 			notesInTextBoxes: /* @__PURE__ */ new Set()
-		}, decimalSymbol === void 0 ? {} : { decimalSymbol }), mathsSettings), eastAsianRules === void 0 ? {} : { eastAsianRules }), guess ? { guess } : {}), compatibilityMode === void 0 ? {} : { compatibilityMode }), feLayout ? { feLayout } : {}), openTypeFeatures ? { openTypeFeatures } : {}), divisions.size > 0 ? { divisions } : {});
+		}, decimalSymbol === void 0 ? {} : { decimalSymbol }), mathsSettings), eastAsianRules === void 0 ? {} : { eastAsianRules }), guess ? { guess } : {}), compatibilityMode === void 0 ? {} : { compatibilityMode }), feLayout ? { feLayout } : {}), openTypeFeatures ? { openTypeFeatures } : {}), divisions.size > 0 ? { divisions } : {}), pictures === void 0 ? {} : { pictures });
 		const elements = unwrap(joinRemovedMarks(contentOf$3(body), styles, {
 			nested: false,
 			showDeleted: false,
@@ -38558,8 +38603,9 @@ var docxLayout = (function(exports) {
 		const headersAndFooters = /* @__PURE__ */ new Map();
 		const readPart = (id) => {
 			if (!headersAndFooters.has(id)) {
+				var _parts$pictures2;
 				const content = parts.headersAndFooters.get(id);
-				headersAndFooters.set(id, content && readBlocks(content, readerOf(true)));
+				headersAndFooters.set(id, content && readBlocks(content, readerOf(true, (_parts$pictures2 = parts.pictures) === null || _parts$pictures2 === void 0 || (_parts$pictures2 = _parts$pictures2.headersAndFooters) === null || _parts$pictures2 === void 0 ? void 0 : _parts$pictures2.get(id))));
 			}
 			return headersAndFooters.get(id);
 		};
@@ -38595,12 +38641,12 @@ var docxLayout = (function(exports) {
 		* none, read from the content of the note given, or its own
 		*/
 		const readNoteContent = (kind, id, shows, content = contentOf$3((_notesByKind$kind$get = notesByKind[kind].get(id)) !== null && _notesByKind$kind$get !== void 0 ? _notesByKind$kind$get : { [`w:${kind}`]: [] })) => {
-			var _noteBlocks;
+			var _parts$pictures3, _noteBlocks;
 			const separator = shows === void 0;
 			const section = kind === "endnote" ? lastSection : sections.length;
 			const grid = separator ? void 0 : gridOf(section);
 			const down = !separator && downOf(childrenOf(sectionElements[section])) !== void 0;
-			const readerOfNote = _objectSpread2(_objectSpread2(_objectSpread2(_objectSpread2(_objectSpread2({}, readerOf(false)), {}, { inNote: true }, kind === "endnote" ? { inEndnote: true } : {}), separator ? {} : { noteNumber: shows }), grid === void 0 ? {} : { grid }), down ? { down } : {});
+			const readerOfNote = _objectSpread2(_objectSpread2(_objectSpread2(_objectSpread2(_objectSpread2({}, readerOf(false, (_parts$pictures3 = parts.pictures) === null || _parts$pictures3 === void 0 ? void 0 : _parts$pictures3[`${kind}s`])), {}, { inNote: true }, kind === "endnote" ? { inEndnote: true } : {}), separator ? {} : { noteNumber: shows }), grid === void 0 ? {} : { grid }), down ? { down } : {});
 			const noteBlocks = readBlocks(content, readerOfNote);
 			return separator || ((_noteBlocks = noteBlocks[noteBlocks.length - 1]) === null || _noteBlocks === void 0 ? void 0 : _noteBlocks.type) !== "table" ? noteBlocks : [...noteBlocks, paragraphAfterTable(kind, readerOfNote, noteBlocks)];
 		};
@@ -43207,6 +43253,103 @@ var docxLayout = (function(exports) {
 		measureDescent
 	});
 	//#endregion
+	//#region src/layout/image-sizes.ts
+	var PNG_SIGNATURE = [
+		137,
+		80,
+		78,
+		71,
+		13,
+		10,
+		26,
+		10
+	];
+	var JPEG_SIGNATURE = [255, 216];
+	var BMP_SIGNATURE = [66, 77];
+	var METRES_PER_INCH = .0254;
+	var startsWith = (data, bytes) => bytes.every((byte, index) => data[index] === byte);
+	var viewOf = (data) => new DataView(data.buffer, data.byteOffset, data.byteLength);
+	var ascii = (data, at, length) => String.fromCharCode(...data.subarray(at, at + length));
+	/** A size with a resolution, when the file gives one in dots to the inch: none, or zero, is left out */
+	var withDensity = (width, height, density) => density === void 0 || density <= 0 || !Number.isFinite(density) ? {
+		width,
+		height
+	} : {
+		width,
+		height,
+		density
+	};
+	/**
+	* A PNG's size is in its first chunk (IHDR), and its resolution in its pHYs chunk, in pixels to the metre when its unit
+	* is the metre, or in no unit, which gives no resolution
+	*/
+	var readPng = (data) => {
+		if (data.length < 24 || ascii(data, 12, 4) !== "IHDR") return;
+		const view = viewOf(data);
+		let density;
+		let at = 8;
+		while (at + 8 <= data.length) {
+			const length = view.getUint32(at);
+			const type = ascii(data, at + 4, 4);
+			if (type === "pHYs" && length === 9 && at + 17 <= data.length) {
+				const perMetre = view.getUint32(at + 8);
+				density = data[at + 16] === 1 ? perMetre * METRES_PER_INCH : void 0;
+			}
+			if (type === "IDAT" || type === "IEND") break;
+			at += 12 + length;
+		}
+		return withDensity(view.getUint32(16), view.getUint32(20), density);
+	};
+	var isFrameStart = (marker) => marker >= 192 && marker <= 207 && ![
+		196,
+		200,
+		204
+	].includes(marker);
+	/**
+	* A JPEG's size is in its frame's header (SOFn), and its resolution in its JFIF segment (APP0), in dots to the inch or
+	* the centimeter, or in no unit, which gives no resolution
+	*/
+	var readJpeg = (data) => {
+		const view = viewOf(data);
+		let density;
+		let at = 2;
+		while (at + 4 <= data.length) {
+			if (data[at] !== 255) return;
+			const marker = data[at + 1];
+			if (marker === 255) {
+				at += 1;
+				continue;
+			}
+			const length = view.getUint16(at + 2);
+			if (marker === 224 && length >= 16 && at + 2 + length <= data.length && ascii(data, at + 4, 5) === "JFIF\0") {
+				const unit = data[at + 11];
+				const perUnit = view.getUint16(at + 12);
+				density = unit === 1 ? perUnit : unit === 2 ? perUnit * 2.54 : void 0;
+			}
+			if (isFrameStart(marker)) return at + 9 <= data.length ? withDensity(view.getUint16(at + 7), view.getUint16(at + 5), density) : void 0;
+			at += 2 + length;
+		}
+	};
+	/** A GIF's size is in its header, little-endian, after its signature and version */
+	var readGif = (data) => data.length < 10 ? void 0 : {
+		width: viewOf(data).getUint16(6, true),
+		height: viewOf(data).getUint16(8, true)
+	};
+	/**
+	* A BMP's size is in its information header, little-endian, its height negative for one stored top down, and its
+	* resolution in pixels to the metre, which may be zero for none
+	*/
+	var readBmp = (data) => {
+		if (data.length < 46) return;
+		const view = viewOf(data);
+		return withDensity(view.getUint32(18, true), Math.abs(view.getInt32(22, true)), view.getUint32(38, true) * METRES_PER_INCH);
+	};
+	/**
+	* The size of an image in pixels, with its resolution when its file gives one, from its PNG, JPEG, GIF or BMP file, or
+	* undefined for a file in another format, or one too short to say.
+	*/
+	var imageSizeOf = (data) => startsWith(data, PNG_SIGNATURE) ? readPng(data) : startsWith(data, JPEG_SIGNATURE) ? readJpeg(data) : data.length >= 6 && ["GIF87a", "GIF89a"].includes(ascii(data, 0, 6)) ? readGif(data) : startsWith(data, BMP_SIGNATURE) ? readBmp(data) : void 0;
+	//#endregion
 	//#region src/layout/imported-documents.ts
 	var nameOf = (element) => Object.keys(element)[0];
 	var contentOf$2 = (element) => {
@@ -43625,12 +43768,13 @@ var docxLayout = (function(exports) {
 		const ownEndnotes = ownNotes(parts.endnotes);
 		/** A document's notes of a kind, its own and those added: with the imported document's separators if it had none */
 		const notesOf = (kind, own, part) => {
-			var _part$imports;
+			var _part$imports, _part$pictures;
 			const { separators, notes } = added[kind];
 			const root = own !== null && own !== void 0 ? own : notes.length > 0 ? { [`w:${kind}s`]: separators } : void 0;
 			return root && {
 				notes: withAdded(root, notes),
-				imports: (_part$imports = part === null || part === void 0 ? void 0 : part.imports) !== null && _part$imports !== void 0 ? _part$imports : /* @__PURE__ */ new Map()
+				imports: (_part$imports = part === null || part === void 0 ? void 0 : part.imports) !== null && _part$imports !== void 0 ? _part$imports : /* @__PURE__ */ new Map(),
+				pictures: (_part$pictures = part === null || part === void 0 ? void 0 : part.pictures) !== null && _part$pictures !== void 0 ? _part$pictures : /* @__PURE__ */ new Map()
 			};
 		};
 		return _objectSpread2(_objectSpread2(_objectSpread2(_objectSpread2({}, parts), {}, {
@@ -43779,6 +43923,11 @@ var docxLayout = (function(exports) {
 				data: binaryParts.get(target)
 			})];
 		}));
+		/** The sizes of the images a part refers to, by the ids of its relationships to them, read from their files */
+		const picturesOf = (path) => new Map(relationshipsOf(parts, path).filter(({ type }) => type === "image").flatMap(({ id, path: target }) => {
+			const data = binaryParts.get(target);
+			return data === void 0 ? [] : [[id, imageSizeOf(data)]];
+		}));
 		const fontTable = pathOf("fontTable");
 		const headersAndFooters = relationships.filter(({ type }) => type === "header" || type === "footer");
 		const document = rootOf(parts.get(documentPath));
@@ -43787,13 +43936,15 @@ var docxLayout = (function(exports) {
 			const root = path === void 0 ? void 0 : rootOf(parts.get(path));
 			return root && path !== void 0 ? {
 				notes: root,
-				imports: importsOf(path)
+				imports: importsOf(path),
+				pictures: picturesOf(path)
 			} : void 0;
 		};
 		return withoutUndefined({
 			body: {
 				content: childrenOf(find(childrenOf(document && contentOf$1(document)), "w:body")),
-				imports: importsOf(documentPath)
+				imports: importsOf(documentPath),
+				pictures: picturesOf(documentPath)
 			},
 			styles: partOf("styles"),
 			theme: partOf("theme"),
@@ -43804,7 +43955,8 @@ var docxLayout = (function(exports) {
 				const part = rootOf(parts.get(path));
 				return part ? [[id, {
 					content: contentOf$1(part),
-					imports: importsOf(path)
+					imports: importsOf(path),
+					pictures: picturesOf(path)
 				}]] : [];
 			})),
 			footnotes: notes("footnotes"),
@@ -43845,7 +43997,7 @@ var docxLayout = (function(exports) {
 	* @param importedDocuments - The .docx files it imports, by their paths, each read as it is
 	*/
 	var readDocx = (parts, binaryParts = /* @__PURE__ */ new Map(), options = {}, importedDocuments = /* @__PURE__ */ new Map()) => {
-		var _relationshipsOf$find4, _relationshipsOf$find5, _read$styles, _read$footnotes, _read$endnotes;
+		var _relationshipsOf$find4, _relationshipsOf$find5, _read$styles, _read$footnotes, _read$endnotes, _read$footnotes2, _read$endnotes2;
 		const read = withImports(readParts({
 			parts,
 			binaryParts,
@@ -43861,7 +44013,13 @@ var docxLayout = (function(exports) {
 			footnotes: (_read$footnotes = read.footnotes) === null || _read$footnotes === void 0 ? void 0 : _read$footnotes.notes,
 			endnotes: (_read$endnotes = read.endnotes) === null || _read$endnotes === void 0 ? void 0 : _read$endnotes.notes,
 			fonts: read.fonts,
-			dataStores: dataStoresOf(parts, documentPath)
+			dataStores: dataStoresOf(parts, documentPath),
+			pictures: withoutUndefined({
+				body: read.body.pictures,
+				headersAndFooters: new Map([...read.headersAndFooters].map(([id, { pictures }]) => [id, pictures])),
+				footnotes: (_read$footnotes2 = read.footnotes) === null || _read$footnotes2 === void 0 ? void 0 : _read$footnotes2.pictures,
+				endnotes: (_read$endnotes2 = read.endnotes) === null || _read$endnotes2 === void 0 ? void 0 : _read$endnotes2.pictures
+			})
 		};
 		return readContent({ "w:body": read.body.content }, documentParts, options);
 	};
