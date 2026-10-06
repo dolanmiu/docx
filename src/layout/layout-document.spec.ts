@@ -232,16 +232,11 @@ describe("layoutDocument", () => {
         ]);
     });
 
-    it("should keep lines half a point from a table that text flows around with no distance from the text, as Word does", () => {
-        // `word-stops-compat2-15.docx` CN9: a table 3000 wide with borders of half a point, 2000 from the margin and 500
-        // below the paragraph before it, in prose aligned left, whose text beside it Word starts at 5019 twips, not 5010,
-        // and breaks so: "the in foot mouth made on river was and" without "the", which fits in 9 more twips. The layout
-        // puts it at 5020, half a point from the table's room, as Word puts the text 1 twip left of the layout beside a
-        // table placed 2000 from the margin with a distance of 180 too (`word-stops-floats.docx` FT1b)
-        const prose = "the in foot mouth made on river was and the coast boat to the by lighthouse of summer the survey the from".split(
-            " ",
-        );
-        const words = (count: number): string => Array.from({ length: count }, (_, index) => prose[index % prose.length]).join(" ");
+    const PROSE = "the in foot mouth made on river was and the coast boat to the by lighthouse of summer the survey the from".split(" ");
+    const wordsOf = (count: number): string => Array.from({ length: count }, (_, index) => PROSE[index % PROSE.length]).join(" ");
+
+    /** The lines beside a table 3000 wide with borders of half a point, 2000 from the margin, in Calibri 11 on A4 */
+    const besideTable = (distance?: number): readonly (readonly [number, string])[] => {
         const border = { style: BorderStyle.SINGLE, size: 4, color: "000000" };
         const { pages, stoppedAt } = layoutDocument(
             new Document({
@@ -253,7 +248,7 @@ describe("layoutDocument", () => {
                 sections: [
                     {
                         children: [
-                            new Paragraph(`CN9 ${words(30)}`),
+                            new Paragraph(`CN9 ${wordsOf(30)}`),
                             new Table({
                                 width: { size: 3000, type: WidthType.DXA },
                                 columnWidths: [3000],
@@ -270,6 +265,7 @@ describe("layoutDocument", () => {
                                     absoluteHorizontalPosition: 2000,
                                     verticalAnchor: TableAnchorType.TEXT,
                                     absoluteVerticalPosition: 500,
+                                    ...(distance === undefined ? {} : { leftFromText: distance, rightFromText: distance }),
                                 },
                                 rows: [1, 2, 3].map(
                                     (row) =>
@@ -283,7 +279,7 @@ describe("layoutDocument", () => {
                                         }),
                                 ),
                             }),
-                            new Paragraph(`CN9 after ${words(150)}`),
+                            new Paragraph(`CN9 after ${wordsOf(150)}`),
                         ],
                     },
                 ],
@@ -292,7 +288,16 @@ describe("layoutDocument", () => {
         expect(stoppedAt).to.equal(undefined);
         const beside = linesOf(pages[0].body).filter(({ width, text }) => width < TEXT_WIDTH - 1 && text.trim() !== "");
         // Lines are in pixels, 15 twips each, from the page's edge
-        expect(beside.map(({ x, text }) => [Math.round(x * 15 - 1440), text.trim()])).to.deep.equal([
+        return beside.map(({ x, text }) => [Math.round(x * 15 - 1440), text.trim()]);
+    };
+
+    it("should keep lines half a point from a table that text flows around with no distance from the text, as Word does", () => {
+        // `word-stops-compat2-15.docx` CN9: a table 3000 wide with borders of half a point, 2000 from the margin and 500
+        // below the paragraph before it, in prose aligned left, whose text beside it Word starts at 5019 twips, not 5010,
+        // and breaks so: "the in foot mouth made on river was and" without "the", which fits in 9 more twips. The layout
+        // puts it at 5020, half a point from the table's room, as Word puts the text 1 twip left of the layout beside a
+        // table placed 2000 from the margin with a distance of 180 too (`word-stops-floats.docx` FT1b)
+        expect(besideTable()).to.deep.equal([
             [0, "the survey the from"],
             [5020, "the in foot mouth made on river was and"],
             [0, "the coast boat to the"],
@@ -304,6 +309,66 @@ describe("layoutDocument", () => {
             [0, "the in foot mouth"],
             [5020, "made on river was and the coast boat to the"],
         ]);
+    });
+
+    it("should keep lines at least half a point from a table that text flows around, as Word does", () => {
+        // `word-stops-float-distance.docx` FD1a to FD1f: CN9's table 0, 1, 5, 9, 10 and 15 twips from the text, in
+        // justified prose. Word starts the text right of it at 5019 twips with 0 to 10, and at 5024 with 15, and ends its
+        // lines left of it at 1990 and 1985: a distance under half a point is kept at half a point, and one over as given
+        const halfPoint = besideTable();
+        expect(besideTable(1)).to.deep.equal(halfPoint);
+        expect(besideTable(9)).to.deep.equal(halfPoint);
+        expect(besideTable(10)).to.deep.equal(halfPoint);
+        expect(halfPoint[1]).to.deep.equal([5020, "the in foot mouth made on river was and"]);
+        const further = besideTable(15);
+        expect(further.map(([x]) => x)).to.deep.equal(halfPoint.map(([x]) => (x === 0 ? 0 : 5025)));
+        expect(further.map(([, text]) => text)).to.deep.equal(halfPoint.map(([, text]) => text));
+    });
+
+    it("should draw curly quotes and dashes in the East Asian font of a run with the hint for East Asian text, as Word does", () => {
+        // `word-stops-run-fonts.docx` HA1c: English in Calibri 11 with the hint, in a run with MS Mincho for East Asian
+        // text and no East Asian character, whose quotes and dashes Word drew in MS Mincho, a full width each but the em
+        // dash, half a width, so its first line ends "was and" where the control's without the hint (HA1d) ends "was and
+        // the"
+        const quotes = `\u201cQuoted\u201d words \u2014 and \u2018more\u2019 \u2013 with dashes: ${wordsOf(40)} \u201cagain\u201d ${wordsOf(40)}`;
+        const firstLines = (hint?: string): readonly string[] => {
+            const { pages, stoppedAt } = layoutDocument(
+                new Document({
+                    styles: {
+                        default: {
+                            document: { run: { font: "Calibri", size: 22 }, paragraph: { spacing: { before: 0, after: 0, line: 240 } } },
+                        },
+                    },
+                    sections: [
+                        {
+                            children: [
+                                new Paragraph({
+                                    children: [
+                                        new TextRun({
+                                            text: `HA1c ${quotes}`,
+                                            font: {
+                                                ascii: "Calibri",
+                                                hAnsi: "Calibri",
+                                                eastAsia: "MS Mincho",
+                                                ...(hint === undefined ? {} : { hint }),
+                                            },
+                                        }),
+                                    ],
+                                }),
+                            ],
+                        },
+                    ],
+                }),
+            );
+            expect(stoppedAt).to.equal(undefined);
+            return linesOf(pages[0].body).map(({ text }) => text.trim());
+        };
+        expect(firstLines("eastAsia")[0]).to.equal(
+            "HA1c \u201cQuoted\u201d words \u2014 and \u2018more\u2019 \u2013 with dashes: the in foot mouth made on river was and",
+        );
+        expect(firstLines()[0]).to.equal(
+            "HA1c \u201cQuoted\u201d words \u2014 and \u2018more\u2019 \u2013 with dashes: the in foot mouth made on river was and the",
+        );
     });
 
     it("should leave the document as it is written", () => {

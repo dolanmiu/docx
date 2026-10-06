@@ -3789,25 +3789,15 @@ const readTableFloat = (element: unknown, overlap: unknown): TableFloat | string
         return typeof horizontal === "string" ? horizontal : (vertical as string);
     }
     const distance = (name: string): number => twips(attributes[`w:${name}FromText`]) ?? 0;
-    // Word keeps the text beside a table half a point from it with no distance from the text given, where a distance of
-    // 180 or 200 twips is as given: the text right of a table 3000 twips wide placed 2000 from the margin, with borders of
-    // half a point, from 5019 twips with none (`word-stops-compat2-15.docx` CN9, `word-stops-compat-15.docx` CM10, whose
-    // justified lines left of it end at 1990), from 5189 with 180 (`word-stops-floats.docx` FT1b), and 3210 from the
-    // margin's left with 200 beside one at the left of the margins (`word-floats3.docx` H2). Text beside a picture or a
-    // frame with no distance is at its edge (`word-stops-compat2-15.docx` CN6a to CN6d, CN7a, CN7b). Whether a distance
-    // under half a point is kept at half a point hasn't been seen
-    const beside = (name: string): number | string => {
-        const given = distance(name);
-        return given === 0
-            ? HALF_POINT
-            : given < HALF_POINT
-              ? "a table that text flows around less than half a point from the text beside it"
-              : given;
-    };
+    // Word keeps the text beside a table at least half a point from it: the text right of a table 3000 twips wide placed
+    // 2000 from the margin, with borders of half a point, starts at 5019 twips with no distance from the text given
+    // (`word-stops-compat2-15.docx` CN9, `word-stops-compat-15.docx` CM10, whose justified lines left of it end at 1990)
+    // and with 1, 5, 9 and 10 twips, at 5024 with 15, its justified lines left of it ending at 1985, at 5189 with 180
+    // (`word-stops-float-distance.docx` FD1a to FD1f, `word-stops-floats.docx` FT1b), and 3210 from the margin's left
+    // with 200 beside one at the left of the margins (`word-floats3.docx` H2). Text beside a picture or a frame with no
+    // distance is at its edge (`word-stops-compat2-15.docx` CN6a to CN6d, CN7a, CN7b)
+    const beside = (name: string): number => Math.max(distance(name), HALF_POINT);
     const [left, right] = [beside("left"), beside("right")];
-    if (typeof left === "string" || typeof right === "string") {
-        return typeof left === "string" ? left : (right as string);
-    }
     return {
         horizontal,
         vertical,
@@ -3816,7 +3806,7 @@ const readTableFloat = (element: unknown, overlap: unknown): TableFloat | string
     };
 };
 
-// How far Word keeps the text beside a table that text flows around from it with no distance given, in points
+// The least Word keeps the text beside a table that text flows around from it, in points
 const HALF_POINT = 0.5;
 
 /** A block in place of what can't be laid out, with why */

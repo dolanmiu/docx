@@ -174,24 +174,32 @@ describe("readDocument", () => {
             expect(itemsOf(readBody([p(r(rPr(simSun), t("a\u201c")))]))).to.deep.equal([
                 { type: "text", text: "a\u201c", font: { font: "SimSun" }, eastAsian: true },
             ]);
-            // Which font Word draws them in with the run's hint for East Asian text hasn't been seen, nor Thai in a run with a
-            // high ANSI font other than its font for ASCII; hidden text takes no room in any font
+            // With the run's hint for East Asian text, a curly quote is in the East Asian font, as Word drew them
+            // (word-stops-run-fonts.docx HA1a to HA1c); Thai, which the rules leave out, is in the high ANSI font, as Word
+            // drew such characters (HA3a); hidden text takes no room in any font
             const hinted = { "w:rFonts": { _attr: { "w:ascii": "SimSun", "w:eastAsia": "SimSun", "w:hint": "eastAsia" } } };
-            expect(paragraphOf(readBody([p(r(rPr(hinted), t("\u4e2d\u201c")))])).unsupported).to.equal(
-                "a character Word may draw in the East Asian font of a run with the hint for East Asian text (w:hint), such as a curly quote",
+            expect(itemsOf(readBody([p(r(rPr(hinted), t("\u4e2d\u201c")))], calibri))).to.deep.equal([
+                { type: "text", text: "\u4e2d\u201c", font: { font: "SimSun" }, eastAsian: true },
+            ]);
+            expect(itemsOf(readBody([p(r(rPr(simSun), t("\u0e01")))], calibri))).to.deep.equal([
+                { type: "text", text: "\u0e01", font: { font: "Calibri" }, eastAsian: true },
+            ]);
+            // Which font Word draws a quote in with the hint in a run whose East Asian font isn't one hasn't been seen
+            const hintedCalibri = { "w:rFonts": { _attr: { "w:hint": "eastAsia" } } };
+            expect(paragraphOf(readBody([p(r(rPr(hintedCalibri), t("\u4e2d\u201c")))], calibri)).unsupported).to.equal(
+                "a character Word draws in the East Asian font of a run with the hint for East Asian text (w:hint), such as a curly quote, in a run whose East Asian font isn't one, such as Calibri",
             );
-            expect(paragraphOf(readBody([p(r(rPr(hinted), t("\u4e2d\u6587")))])).unsupported).to.equal(undefined);
-            expect(paragraphOf(readBody([p(r(rPr(simSun), t("\u0e01")))], calibri)).unsupported).to.equal(
-                "a character of a script Word's run-font rules leave out, such as Thai, in a run with a high ANSI font other than its font for ASCII",
+            expect(paragraphOf(readBody([p(r(rPr(hintedCalibri), t("\u4e2d\u6587")))], calibri)).unsupported).to.equal(undefined);
+            expect(paragraphOf(readBody([p(r(rPr(hintedCalibri, { "w:vanish": {} }), t("\u201c")))], calibri)).unsupported).to.equal(
+                undefined,
             );
-            expect(paragraphOf(readBody([p(r(rPr(simSun, { "w:vanish": {} }), t("\u0e01")))], calibri)).unsupported).to.equal(undefined);
             // Read to be laid out with a guess, it is laid out in the layout's fonts
             const guessed = readDocument(
-                { "w:body": [p(r(rPr(hinted), t("\u4e2d\u201c")))] } as IXmlableObject,
+                { "w:body": [p(r(rPr(hintedCalibri), t("\u4e2d\u201c")))] } as IXmlableObject,
                 contextOf(new File({ sections: [] })),
                 { guess: true },
             );
-            expect(itemsOf(guessed).flatMap((item) => (item.type === "text" ? [item.text] : []))).to.deep.equal(["\u4e2d", "\u201c"]);
+            expect(itemsOf(guessed).flatMap((item) => (item.type === "text" ? [item.text] : []))).to.deep.equal(["\u4e2d\u201c"]);
         });
 
         it("should read an empty paragraph", () => {
@@ -2953,7 +2961,7 @@ describe("readDocument", () => {
             expect(stopsAt(decimal(0), [value("w:em", "dot")])).to.equal(undefined);
             expect(stopsAt(decimal(0), [value("w:position", 6)])).to.equal(undefined);
             // A bullet of the run's high ANSI font, where the level gives a font for ASCII alone, is in the document's; one of
-            // characters of both fonts, or of a run with the hint for East Asian text, hasn't been seen
+            // characters of both fonts hasn't been seen
             const bullet = (text: string, ...fonts: readonly object[]): object =>
                 lvl(0, value("w:numFmt", "bullet"), value("w:lvlText", text), {
                     "w:rPr": [{ "w:rFonts": { _attr: { "w:ascii": "Symbol", ...Object.assign({}, ...fonts) } } }],
@@ -2971,8 +2979,16 @@ describe("readDocument", () => {
             expect(stopsAt(bullet("\u2022 1.", { "w:hAnsi": "Calibri" }))).to.equal(
                 "a list number of characters of both the font for ASCII and the high ANSI font of its run",
             );
+            // With the hint for East Asian text, a bullet is in the East Asian font, where the run has one (HA1a to HA1c)
+            expect(numberOf(bullet("\u2022", { "w:hint": "eastAsia", "w:eastAsia": "SimSun" })).font).to.deep.equal({
+                font: "SimSun",
+                listNumber: "number",
+            });
+            expect(stopsAt(bullet("\u2022 1.", { "w:hint": "eastAsia", "w:eastAsia": "SimSun" }))).to.equal(
+                "a list number of characters of both the font for ASCII and the high ANSI font of its run",
+            );
             expect(stopsAt(bullet("\u2022", { "w:hint": "eastAsia" }))).to.equal(
-                "a character Word may draw in the East Asian font of a run with the hint for East Asian text (w:hint), such as a curly quote",
+                "a character Word draws in the East Asian font of a run with the hint for East Asian text (w:hint), such as a curly quote, in a run whose East Asian font isn't one, such as Calibri",
             );
             // LI4a: Word put the text right after the number's box, past the hanging indent's stop, which isn't followed
             expect(stopsAt(decimal(0), [{ "w:bdr": { _attr: { "w:val": "single", "w:sz": 4, "w:space": 0 } } }])).to.equal(
@@ -3570,17 +3586,22 @@ describe("readDocument", () => {
                 { "w:horzAnchor": "margin", "w:vertAnchor": "page", "w:tblpXSpec": "right", "w:tblpYSpec": "bottom", "w:tblpX": 400 },
                 value("w:tblOverlap", "never"),
             );
-            // Word keeps the text beside it half a point from it with no distance given (`word-stops-compat2-15.docx` CN9);
-            // whether it keeps one under half a point at that hasn't been seen
+            // Word keeps the text beside it at least half a point from it: half a point with no distance given
+            // (`word-stops-compat2-15.docx` CN9) and with one under half a point, and the distance given from half a point
+            // (`word-stops-float-distance.docx` FD1a to FD1f)
             expect(lined.float).to.deep.equal({
                 horizontal: { from: "margin", align: "right" },
                 vertical: { from: "page", align: "bottom" },
                 distances: { top: 0, bottom: 0, left: 0.5, right: 0.5 },
                 mayOverlap: false,
             });
-            const closeReason = "a table that text flows around less than half a point from the text beside it";
-            expect(floatOf({ "w:leftFromText": 9 }).unsupported).to.equal(closeReason);
-            expect(floatOf({ "w:rightFromText": "0.4pt", "w:leftFromText": 10 }).unsupported).to.equal(closeReason);
+            expect(floatOf({ "w:leftFromText": 9 }).float!.distances).to.deep.equal({ top: 0, bottom: 0, left: 0.5, right: 0.5 });
+            expect(floatOf({ "w:rightFromText": "0.4pt", "w:leftFromText": 15 }).float!.distances).to.deep.equal({
+                top: 0,
+                bottom: 0,
+                left: 0.75,
+                right: 0.5,
+            });
             expect(floatOf({ "w:rightFromText": 10, "w:leftFromText": 0, "w:topFromText": 5 }).float!.distances).to.deep.equal({
                 top: 0.25,
                 bottom: 0,

@@ -784,11 +784,12 @@ describe("spansOf", () => {
             { font: "SimSun", size: 10.5, text: "\u4e2d" },
             { font: "Calibri", size: 10.5, text: "\u201d\u00e9" },
         ]);
-        // Hebrew and Arabic are in the font for ASCII, as is Thai, which the rules leave out, and a mark is in the font of
-        // the character it is on
+        // Hebrew and Arabic are in the font for ASCII (word-stops-run-fonts.docx HA3b); Thai, which the rules leave out, is
+        // in the high ANSI font, as Word drew Greek symbols, Cyrillic Supplement letters and a dash the rules leave out in
+        // Arial beside Courier New (HA3a); and a mark is in the font of the character it is on
         expect(spansOf("\u05d0\u0627\u0e01\u00e9\u0301", format)).to.deep.equal([
-            { font: "SimSun", size: 10.5, text: "\u05d0\u0627\u0e01" },
-            { font: "Calibri", size: 10.5, text: "\u00e9\u0301" },
+            { font: "SimSun", size: 10.5, text: "\u05d0\u0627" },
+            { font: "Calibri", size: 10.5, text: "\u0e01\u00e9\u0301" },
         ]);
         // The same font for both, or none for high ANSI, is one span, as before
         expect(spansOf("a\u201c", { font: "Calibri", highAnsiFont: "calibri" })).to.deep.equal([{ font: "Calibri", text: "a\u201c" }]);
@@ -796,6 +797,42 @@ describe("spansOf", () => {
         // All of a right-to-left run is in the font for complex scripts
         expect(spansOf("a\u201c", { ...format, rightToLeft: true, complexScriptFont: "Arial" })).to.deep.equal([
             { font: "Arial", rightToLeft: true, text: "a\u201c" },
+        ]);
+    });
+
+    it("should put the characters the run's hint for East Asian text moves to the East Asian font in it, as Word drew curly quotes and dashes (word-stops-run-fonts.docx HA1a to HA1c)", () => {
+        // With the hint, curly quotes join the East Asian font's span, and an accented letter stays in the high ANSI font
+        // but in Chinese; without it, as before
+        const hinted = { font: "SimSun", highAnsiFont: "Calibri", eastAsiaFont: "SimSun", fontHint: "eastAsia" };
+        expect(spansOf("a\u201c\u4e2d\u201d\u00e9", hinted)).to.deep.equal([
+            { font: "SimSun", text: "a" },
+            { font: "SimSun", text: "\u201c\u4e2d\u201d" },
+            { font: "Calibri", text: "\u00e9" },
+        ]);
+        expect(spansOf("\u201d\u00e9", { ...hinted, eastAsianLanguage: "zh-CN" })).to.deep.equal([
+            { font: "SimSun", text: "\u201d\u00e9" },
+        ]);
+        expect(spansOf("a\u201c\u4e2d\u201d\u00e9", { ...hinted, fontHint: "default" })).to.deep.equal([
+            { font: "SimSun", text: "a" },
+            { font: "Calibri", text: "\u201c" },
+            { font: "SimSun", text: "\u4e2d" },
+            { font: "Calibri", text: "\u201d\u00e9" },
+        ]);
+        // In English with MS Mincho for East Asian text and the hint, the quotes and dashes alone are in MS Mincho (HA1c),
+        // and a mark on a quote goes with it
+        const english = { font: "Calibri", highAnsiFont: "Calibri", eastAsiaFont: "MS Mincho", fontHint: "eastAsia" };
+        expect(spansOf("\u201cQuoted\u201d \u2014 and \u00e9\u0301", english)).to.deep.equal([
+            { font: "MS Mincho", text: "\u201c" },
+            { font: "Calibri", text: "Quoted" },
+            { font: "MS Mincho", text: "\u201d" },
+            { font: "Calibri", text: " " },
+            { font: "MS Mincho", text: "\u2014" },
+            { font: "Calibri", text: " and \u00e9\u0301" },
+        ]);
+        expect(spansOf("\u201c\u0301", english)).to.deep.equal([{ font: "MS Mincho", text: "\u201c\u0301" }]);
+        // All of a right-to-left run is in the font for complex scripts, hint or not
+        expect(spansOf("\u201c\u4e2d", { ...hinted, rightToLeft: true, complexScriptFont: "Arial" })).to.deep.equal([
+            { font: "Arial", rightToLeft: true, text: "\u201c\u4e2d" },
         ]);
     });
 
@@ -839,29 +876,49 @@ describe("spansOf", () => {
 });
 
 describe("unknownRunFont", () => {
-    it("should stop at characters Word may draw in the East Asian font of a run with the hint for it, and at scripts the rules leave out in a run with a high ANSI font of its own", () => {
-        const hinted =
-            "a character Word may draw in the East Asian font of a run with the hint for East Asian text (w:hint), such as a curly quote";
-        expect(unknownRunFont("\u4e2d\u6587\u201c\u5f15\u53f7\u201d", { fontHint: "eastAsia" })).to.equal(hinted);
+    it("should stop in a run with the hint for East Asian text where which font Word draws a character in hasn't been seen", () => {
+        // A character the hint moves to the East Asian font is laid out where that font is East Asian (HA1a to HA1c), and
+        // stops where it isn't one, or the run has none
+        const simSun = { font: "SimSun", highAnsiFont: "Calibri", eastAsiaFont: "SimSun", fontHint: "eastAsia" };
+        const notEastAsian =
+            "a character Word draws in the East Asian font of a run with the hint for East Asian text (w:hint), such as a curly quote, in a run whose East Asian font isn't one, such as Calibri";
+        expect(unknownRunFont("\u4e2d\u6587\u201c\u5f15\u53f7\u201d", simSun)).to.equal(undefined);
+        expect(unknownRunFont("\u201c", { ...simSun, eastAsiaFont: "Calibri" })).to.equal(notEastAsian);
+        expect(unknownRunFont("\u201c", { fontHint: "eastAsia" })).to.equal(notEastAsian);
         expect(unknownRunFont("\u4e2d\u6587 abc \u00e9", { fontHint: "eastAsia" })).to.equal(undefined);
         // In Chinese, some accented letters too
-        expect(unknownRunFont("\u00e9", { fontHint: "eastAsia", eastAsianLanguage: "zh-CN" })).to.equal(hinted);
+        expect(unknownRunFont("\u00e9", { fontHint: "eastAsia", eastAsianLanguage: "zh-CN" })).to.equal(notEastAsian);
+        expect(unknownRunFont("\u00e9", { ...simSun, eastAsianLanguage: "zh-CN" })).to.equal(undefined);
         expect(unknownRunFont("\u00e9", { fontHint: "eastAsia", eastAsianLanguage: "ja-JP" })).to.equal(undefined);
         expect(unknownRunFont("\u201c", { fontHint: "default" })).to.equal(undefined);
+        expect(unknownRunFont("\u201c", { font: "Calibri" })).to.equal(undefined);
+        // A letter of Latin Extended-A to IPA Extensions with the hint is in the East Asian font in Chinese, and with an
+        // East Asian font of a Chinese character set otherwise, which isn't known
+        const characterSet =
+            "a letter of the Latin Extended-A to IPA Extensions blocks in a run with the hint for East Asian text (w:hint), which Word draws in the East Asian font where that font's character set is Chinese";
+        expect(unknownRunFont("\u0141", simSun)).to.equal(characterSet);
+        expect(unknownRunFont("\u0141", { ...simSun, eastAsianLanguage: "zh-TW" })).to.equal(undefined);
+        expect(unknownRunFont("\u0141", { ...simSun, fontHint: undefined })).to.equal(undefined);
+        // A combining mark with the hint, which the rules put in the East Asian font on its own
+        expect(unknownRunFont("e\u0301", simSun)).to.equal(
+            "a combining mark in a run with the hint for East Asian text (w:hint), which the rules draw in the East Asian font on its own",
+        );
+        expect(unknownRunFont("e\u0301", { ...simSun, fontHint: undefined })).to.equal(undefined);
         // East Asian text in a right-to-left run with the hint is in the East Asian font rather than the complex script font
-        expect(unknownRunFont("\u4e2d\u6587", { fontHint: "eastAsia", rightToLeft: true })).to.equal(
+        expect(unknownRunFont("\u4e2d\u6587\u201c", { ...simSun, rightToLeft: true })).to.equal(
             "East Asian text in a run that is right to left or of a complex script, with the hint for East Asian text (w:hint)",
         );
-        expect(unknownRunFont("\u4e2d\u6587", { fontHint: "eastAsia" })).to.equal(undefined);
-        // Thai in a run whose two fonts differ; not in one whose fonts are the same, in a complex script run, nor Hebrew,
-        // East Asian text, a mark or a character of the high ANSI font
-        const differ = { font: "SimSun", highAnsiFont: "Calibri" };
+        expect(unknownRunFont("abc\u201c", { ...simSun, rightToLeft: true })).to.equal(undefined);
+        // Thai, which the rules leave out, in a run with the hint whose two fonts differ; not in one without the hint, which
+        // Word drew in the high ANSI font (HA3a), nor one whose fonts are the same, nor a complex script run
         const leftOut =
-            "a character of a script Word's run-font rules leave out, such as Thai, in a run with a high ANSI font other than its font for ASCII";
-        expect(unknownRunFont("\u0e01", differ)).to.equal(leftOut);
-        expect(unknownRunFont("\u0e01", { font: "Calibri", highAnsiFont: "Calibri" })).to.equal(undefined);
-        expect(unknownRunFont("\u0e01", { ...differ, complexScript: true })).to.equal(undefined);
-        expect(unknownRunFont("a\u05d0\u4e2d\u0301\u201c", differ)).to.equal(undefined);
+            "a character of a block Word's run-font rules leave out, such as Thai, in a run with the hint for East Asian text (w:hint) and a high ANSI font other than its font for ASCII";
+        expect(unknownRunFont("\u0e01", simSun)).to.equal(leftOut);
+        expect(unknownRunFont("\u{1f600}", simSun)).to.equal(leftOut);
+        expect(unknownRunFont("\u0e01", { ...simSun, fontHint: undefined })).to.equal(undefined);
+        expect(unknownRunFont("\u0e01", { ...simSun, highAnsiFont: "SimSun" })).to.equal(undefined);
+        expect(unknownRunFont("\u0e01", { ...simSun, complexScript: true })).to.equal(undefined);
+        expect(unknownRunFont("a\u05d0\u4e2d\u201c\ufe00", simSun)).to.equal(undefined);
     });
 });
 
@@ -877,5 +934,13 @@ describe("singleFontOf", () => {
         // A mark is in the font of the character it is on, as in `spansOf`
         expect(singleFontOf("1\u0301.", differ)).to.deep.equal({ font: "Symbol", size: 11 });
         expect(singleFontOf("\u00e9\u0301", differ)).to.deep.equal({ font: "Calibri", size: 11 });
+        // With the hint for East Asian text, a bullet is in the East Asian font (HA1a to HA1c), and a number of it and
+        // digits is of both fonts
+        const hinted = { font: "Symbol", eastAsiaFont: "SimSun", fontHint: "eastAsia", size: 11 };
+        expect(singleFontOf("\u2022", hinted)).to.deep.equal({ font: "SimSun", size: 11 });
+        expect(singleFontOf("\u2022", { ...hinted, highAnsiFont: "Calibri" })).to.deep.equal({ font: "SimSun", size: 11 });
+        expect(singleFontOf("1.", hinted)).to.deep.equal({ font: "Symbol", size: 11 });
+        expect(singleFontOf("\u2022 1.", hinted)).to.equal(undefined);
+        expect(singleFontOf("\u4e00.", hinted)).to.deep.equal({ font: "Symbol", size: 11 });
     });
 });

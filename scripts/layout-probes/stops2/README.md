@@ -57,8 +57,17 @@ before a table open, and so did HR2b's, which moved with its heading all the sam
 `word-stops-run-fonts.ts` writes `word-stops-run-fonts` (HA1 to HA3: which of a run's fonts Word draws characters past
 ASCII in, with the hint for East Asian text, in runs given a high ANSI font alone or other than their font for ASCII, and
 for the scripts the run-font rules leave out) and `word-stops-float-distance` (FD1: text beside a floating table 0 to 15
-twips from it, which Word kept half a point from one with no distance given in CN9 and CM10), for the next batch Word
-saves: neither has a PDF from Word yet.
+twips from it), saved from Word in the batch of 2026-10-06 (round 26) and followed: with the hint, Word drew curly
+quotes and parentheses in SimSun beside Chinese (HA1a), an ellipsis, dashes, a degree sign, a multiplication sign and a
+section sign in MS Mincho beside Japanese (HA1b), and curly quotes and dashes in MS Mincho in English with no East Asian
+character in the run (HA1c), each a full width but the em dash, half a width, where the control without the hint has
+them in Calibri (HA1d); accented letters in Arial, the high ANSI font given alone or beside Courier New (HA2a, HA2b);
+Greek symbols past U+03CF, Cyrillic Supplement letters and a dash of the Supplemental Punctuation block, which the rules
+leave out, in Arial, the high ANSI font, where the control has them in Courier New, and Thai, Devanagari, Armenian,
+Georgian, Braille and the rest in the fonts it falls back on, the same from either (HA3a); and Hebrew and Arabic in
+Courier New, the font for ASCII (HA3b). The text beside the table starts at 5019 twips with 0, 1, 5, 9 and 10 twips from
+it and at 5024 with 15, and the justified lines left of it end at 1990 and 1985: at least half a point from it (FD1a to
+FD1f).
 
 `word-stops-text2.ts` has the cases around what `word-stops-text`, `-tabs` and `-kerning` settled (RF24, RF27, RF29,
 RF31, RF32, PB3, PB5, PB7, SH16, SH17, JU4, TA10, TA11 and KE9), whose PDF, saved from Word in round 25, is followed as
