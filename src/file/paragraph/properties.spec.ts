@@ -6,6 +6,7 @@ import { DocumentWrapper } from "../document-wrapper";
 import type { File } from "../file";
 import { AlignmentType } from "./formatting";
 import { ParagraphProperties } from "./properties";
+import { SectionProperties } from "../document/body/section-properties/section-properties";
 import { FontWrapper } from "../fonts/font-wrapper";
 
 describe("ParagraphProperties", () => {
@@ -452,6 +453,30 @@ describe("ParagraphProperties", () => {
                     },
                 ],
             });
+        });
+    });
+
+    describe("#removeSectionProperties()", () => {
+        it("should remove the section properties it was given and keep the others", () => {
+            const properties = new ParagraphProperties({ alignment: AlignmentType.CENTER });
+            const section = new SectionProperties();
+            properties.addSectionProperties(section);
+
+            properties.removeSectionProperties(section);
+
+            expect(new Formatter().format(properties)).to.deep.equal({
+                "w:pPr": [{ "w:jc": { _attr: { "w:val": "center" } } }],
+            });
+        });
+
+        it("should leave the properties as they are when they don't have the section properties", () => {
+            const properties = new ParagraphProperties({ alignment: AlignmentType.CENTER });
+            properties.addSectionProperties(new SectionProperties());
+            const before = new Formatter().format(properties);
+
+            properties.removeSectionProperties(new SectionProperties());
+
+            expect(new Formatter().format(properties)).to.deep.equal(before);
         });
     });
 });
