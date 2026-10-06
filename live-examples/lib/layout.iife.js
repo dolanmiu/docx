@@ -34468,6 +34468,79 @@ var docxLayout = (function(exports) {
 	};
 	/** Whether a border is drawn */
 	var isDrawn = (border) => border !== void 0 && border.style !== "none";
+	var WEIGHTS = {
+		single: 1,
+		thick: 2,
+		double: 3,
+		dotDash: 8,
+		dotDotDash: 9,
+		triple: 10,
+		thinThickSmallGap: 11,
+		thickThinSmallGap: 12,
+		thinThickThinSmallGap: 13,
+		thinThickMediumGap: 14,
+		thickThinMediumGap: 15,
+		thinThickThinMediumGap: 16,
+		thinThickLargeGap: 17,
+		thickThinLargeGap: 18,
+		thinThickThinLargeGap: 19,
+		wave: 20,
+		doubleWave: 21,
+		dashSmallGap: 22,
+		dashDotStroked: 23,
+		threeDEmboss: 24,
+		threeDEngrave: 25,
+		outset: 26,
+		inset: 27
+	};
+	var UNWEIGHED = /* @__PURE__ */ new Set(["dotted", "dashed"]);
+	var PRECEDENCE = [
+		"single",
+		"thick",
+		"double",
+		"dotted",
+		"dashed",
+		"dotDash",
+		"dotDotDash",
+		"triple",
+		"thinThickSmallGap",
+		"thickThinSmallGap",
+		"thinThickThinSmallGap",
+		"thinThickMediumGap",
+		"thickThinMediumGap",
+		"thinThickThinMediumGap",
+		"thinThickLargeGap",
+		"thickThinLargeGap",
+		"thinThickThinLargeGap",
+		"wave",
+		"doubleWave",
+		"dashSmallGap",
+		"dashDotStroked",
+		"threeDEmboss",
+		"threeDEngrave",
+		"outset",
+		"inset"
+	];
+	/** How heavy Word counts a border where two cells' borders meet: nothing, for a style it doesn't weigh, such as art */
+	var weightOf = ({ style, width }) => {
+		var _WEIGHTS$style;
+		return UNWEIGHED.has(style) ? 1 : ((_WEIGHTS$style = WEIGHTS[style]) !== null && _WEIGHTS$style !== void 0 ? _WEIGHTS$style : 0) * width * EIGHTHS_PER_POINT$1;
+	};
+	/**
+	* The border Word draws where two cells meet: the one there is, when the other is none, and otherwise the heavier, its
+	* width in eighths of a point times a number for its style, or of two as heavy, the later of their styles in Word's list
+	* (MS-OI29500, Part 1, 17.4.66; `word-stops-table-borders.docx` TB1 and TB2: a double border of half a point over a
+	* single one of 1.5 points, and a single one of 1.5 points over a dotted one; `word-stops-table-borders2.docx` BT1a and
+	* `word-stops-tables3.docx` BT7a, BT7b: a dotted and dashed line of 1 point over a single one of 6, whichever cell's it
+	* is; BT7c: a thin and thick line of half a point over a single one of 3). Two of the same style and width are the same
+	* border.
+	*/
+	var borderBetween = (one, other) => {
+		if (!isDrawn(one) || !isDrawn(other)) return isDrawn(one) ? one : other;
+		const [weight, otherWeight] = [weightOf(one), weightOf(other)];
+		if (weight !== otherWeight) return weight > otherWeight ? one : other;
+		return PRECEDENCE.indexOf(other.style) > PRECEDENCE.indexOf(one.style) ? other : one;
+	};
 	/**
 	* The room a border takes from what is beside it, in points: its line's room and the space between it and the text,
 	* which Word adds to it (BS31). An art border's width is in points, where a line's is in eighths of one, and it takes that
@@ -34543,17 +34616,41 @@ var docxLayout = (function(exports) {
 		};
 	};
 	/**
+	* The room of the border right of a cell's text where its border meets the next cell's, in points: the room of the one
+	* Word draws there (`borderBetween`), which Word's PDFs have shown when it is no wider than the other, and when it is the
+	* cell's own and the next cell has none. Where Word draws the wider of two, or the next cell's over none of the cell's
+	* own, whether it keeps the text from the border it draws or from the narrower isn't known, so the narrower's room comes
+	* too (`unsettled`). Why, where a border's room isn't known.
+	*/
+	var roomBefore = (own, next) => {
+		const drawn = borderBetween(own, next);
+		const [room, otherRoom] = [roomOrWhy(drawn), roomOrWhy(drawn === own ? next : own)];
+		if (typeof room === "string") return room;
+		if (typeof otherRoom === "string") return otherRoom;
+		return room <= otherRoom || !isDrawn(next) ? { room } : {
+			room,
+			unsettled: otherRoom
+		};
+	};
+	/**
 	* The room the borders left and right of each cell of a row take beside its text, in points: its own, or the table's at
-	* the table's edges and between its cells. Where two cells meet, Word draws the heavier of their borders, by Word's weights
-	* for their styles (`word-stops-table-borders.docx` TB1 and TB2), but keeps each cell's text from its own border, whichever
-	* it draws and whichever is wider (`word-stops-table-borders2.docx` BT1a to BT1e, with no margins: the second cell's text
-	* 0.5 points in from its dotted and dashed border of 1 point, which Word drew over the first cell's single one of 6, and 3
-	* and 1.5 points in from its single ones of 6 and 3 points, below the first cell's heavier ones of 1 and 0.5 points). Why,
+	* the table's edges and between its cells. Where two cells meet (`meeting`), Word draws the heavier of their borders, by
+	* Word's weights for their styles (`word-stops-table-borders.docx` TB1 and TB2), and keeps the text of the cell after them
+	* from its own border, whichever it draws and whichever is wider (`word-stops-table-borders2.docx` BT1a to BT1e, with no
+	* margins: the second cell's text 0.5 points in from its dotted and dashed border of 1 point, which Word drew over the
+	* first cell's single one of 6, and 3 and 1.5 points in from its single ones of 6 and 3 points, below the first cell's
+	* heavier ones of 1 and 0.5 points), but the text of the cell before them from the border it draws (`word-stops-tables3.docx`
+	* BT7a to BT7c, with no margins and the text right-aligned: the first cell's text 0.5 points in from the dotted and dashed
+	* line of 1 point, its own or the second cell's, which Word drew over a single one of 6 either way, and 1 point in from its
+	* thin and thick line of half a point, drawn over the second cell's single one of 3; `word-table-formats.docx` BC7 to BC9:
+	* 3 points in from its own single one of 6, beside a cell with none). Word drew the narrower each time, so where it draws
+	* the wider, how far it keeps the first cell's text isn't known, and the narrower's room comes with the drawn one's
+	* (`rightUnsettled`, see `roomBefore`). With space between cells, each cell's borders are its own, and none meet. Why,
 	* where a border's room isn't known, or where an art border is beside the text, whose room there Word's PDFs haven't
 	* settled: apples of 12 points beside a cell's text kept it only 0.75 points from them, where they took 12 points above
 	* and below a cell's (BT1g).
 	*/
-	var sideBorders = (cells, table) => {
+	var sideBorders = (cells, table, meeting = true) => {
 		var _table$insideV;
 		const insideV = (_table$insideV = table.insideV) !== null && _table$insideV !== void 0 ? _table$insideV : NONE;
 		const leftOf = (index) => {
@@ -34566,14 +34663,18 @@ var docxLayout = (function(exports) {
 		};
 		const sides = cells.map((_, index) => {
 			const [left, right] = [leftOf(index), rightOf(index)];
-			return [
+			const next = index < cells.length - 1 ? leftOf(index + 1) : void 0;
+			if ([
 				left,
 				right,
-				...[...index > 0 ? [rightOf(index - 1)] : [], ...index < cells.length - 1 ? [leftOf(index + 1)] : []]
-			].some((border) => isDrawn(border) && isArtBorder(border.style)) ? "an art border beside a table cell's text" : {
+				...[...index > 0 ? [rightOf(index - 1)] : [], ...next === void 0 ? [] : [next]]
+			].some((border) => isDrawn(border) && isArtBorder(border.style))) return "an art border beside a table cell's text";
+			const ownRoom = roomOrWhy(right);
+			const before = next === void 0 || !meeting ? typeof ownRoom === "string" ? ownRoom : { room: ownRoom } : roomBefore(right, next);
+			return typeof before === "string" ? before : _objectSpread2({
 				left: roomOrWhy(left),
-				right: roomOrWhy(right)
-			};
+				right: before.room
+			}, before.unsettled === void 0 ? {} : { rightUnsettled: before.unsettled });
 		});
 		const unsupported = sides.flatMap((side) => typeof side === "string" ? [side] : [side.left, side.right]).find((room) => typeof room === "string");
 		return unsupported !== null && unsupported !== void 0 ? unsupported : sides;
@@ -34661,9 +34762,12 @@ var docxLayout = (function(exports) {
 	* The room around the text of a table's rows and cells: its borders and its cells' (`rowBorders`, `sideBorders`), and
 	* the space between the cells of each row.
 	*
-	* Without space between cells, a cell's text is as far in from its left and right edges as its margin, or half its own
-	* border there when that is more, as in Word (`word-table-formats.docx` BC7 to BC9, `word-table-formats2.docx` BC10 and
-	* BC11, `word-stops-table-borders2.docx` BT1).
+	* Without space between cells, a cell's text is as far in from its left and right edges as its margin, or half its
+	* border there when that is more, its own, or the one Word draws where it meets the next cell's (`sideBorders`), as in
+	* Word (`word-table-formats.docx` BC7 to BC9, `word-table-formats2.docx` BC10 and BC11, `word-stops-table-borders2.docx`
+	* BT1, `word-stops-tables3.docx` BT7). A row of an exact height has the border above it inside its height, and the
+	* table's bottom border, below the last row, outside it (`edgeBottom`; `word-stops-tables2.docx` TS15, `word-stops-tables3.docx`
+	* TS16b: a single border of 3 points above a row of exactly 600 twips, inside it).
 	*
 	* With space between cells, each cell has borders of its own, its own or else the table's: the table's top above the
 	* first row, its bottom below the last, its left before the first cell and its right after the last, and its inside
@@ -34672,7 +34776,10 @@ var docxLayout = (function(exports) {
 	* has space of its own, in place of the table's (`word-stops-table-borders2.docx` BT5a and BT5b: rows of 2 and 5 points
 	* in a table of 2 points and of none). Where the table breaks across pages, the row on the page keeps the space below it,
 	* with the table's bottom border below that, and the next page's starts with the table's top border and the space above
-	* it (CS12, `word-stops-table-borders.docx` TB7a to TB7c). Across, the space is around each cell and inside the table's
+	* it (CS12, `word-stops-table-borders.docx` TB7a to TB7c). A row of an exact height has its own space above and below
+	* its cells and their borders inside its height, and the table's border and the space inside it, above the first row and
+	* below the last, outside it (`edgeTop`, `edgeBottom`; `word-stops-tables3.docx` TS16a: a row of exactly 600 twips with
+	* space of 40 and borders of half a point, 650 from the table's top edge to the next row). Across, the space is around each cell and inside the table's
 	* edges, as margins are, each row's own (`word-watertight-tables.docx` TB4, `word-table-formats.docx` CS5 to CS8,
 	* `word-table-formats2.docx` CS9, CS10, CS14, BT5a, BT5b), and each cell's text is further in by the whole of its own
 	* border left and right of it, where the table's borders there take none of its width (TB5a to TB5l: with space of 2, 5
@@ -34681,27 +34788,31 @@ var docxLayout = (function(exports) {
 	*/
 	var tableGeometry = (rows, borders) => {
 		var _borders$top, _borders$bottom;
-		const across = rows.map(({ cells }) => sideBorders(cells, borders));
+		const withoutSpacing = rows.every(({ spacing }) => spacing === 0);
+		const across = rows.map(({ cells }) => sideBorders(cells, borders, withoutSpacing));
 		const beside = across.find((sides) => typeof sides === "string");
 		const sidesOf = (index) => across[index];
-		if (rows.every(({ spacing }) => spacing === 0)) {
+		if (withoutSpacing) {
 			const vertical = rowBorders(rows.map(({ cells }) => cells), borders);
 			if (typeof vertical === "string" || beside !== void 0) return typeof vertical === "string" ? vertical : beside;
-			return rows.map(({ cells }, index) => ({
+			if (rows.some(({ cells }, index) => cells.some(({ margins }, cell) => {
+				const { right, rightUnsettled } = sidesOf(index)[cell];
+				return rightUnsettled !== void 0 && Math.max(margins.right, right / 2) !== Math.max(margins.right, rightUnsettled / 2);
+			}))) return "two table cells' borders that meet, of which Word draws the wider, beside text with less margin than half of it";
+			return rows.map(({ cells }, index) => _objectSpread2(_objectSpread2({
 				borderTop: vertical.tops[index],
 				borderBottom: index === rows.length - 1 ? vertical.bottom : 0,
-				breakBorder: vertical.breaks[index],
-				cells: cells.map(({ margins, gridWidth }, cell) => {
-					const sides = sidesOf(index)[cell];
-					const left = Math.max(margins.left, sides.left / 2);
-					const right = Math.max(margins.right, sides.right / 2);
-					return {
-						left,
-						right,
-						width: gridWidth - left - right
-					};
-				})
-			}));
+				breakBorder: vertical.breaks[index]
+			}, index === rows.length - 1 && vertical.bottom > 0 ? { edgeBottom: vertical.bottom } : {}), {}, { cells: cells.map(({ margins, gridWidth }, cell) => {
+				const sides = sidesOf(index)[cell];
+				const left = Math.max(margins.left, sides.left / 2);
+				const right = Math.max(margins.right, sides.right / 2);
+				return {
+					left,
+					right,
+					width: gridWidth - left - right
+				};
+			}) }));
 		}
 		const last = rows.length - 1;
 		const rooms = rows.map(({ cells }, index) => ({
@@ -34724,11 +34835,12 @@ var docxLayout = (function(exports) {
 		if (unknown !== void 0) return unknown;
 		return rows.map(({ cells, spacing: own }, index) => {
 			const { tops, bottoms } = rooms[index];
-			return _objectSpread2(_objectSpread2({
-				borderTop: tops + own + (index === 0 ? own + top : 0),
-				borderBottom: bottoms + own + (index === last ? own + bottom : 0),
+			const [edgeTop, edgeBottom] = [index === 0 ? own + top : 0, index === last ? own + bottom : 0];
+			return _objectSpread2(_objectSpread2(_objectSpread2(_objectSpread2({
+				borderTop: tops + own + edgeTop,
+				borderBottom: bottoms + own + edgeBottom,
 				breakBorder: bottom
-			}, top > 0 ? { breakTop: top } : {}), {}, { cells: cells.map(({ margins, gridWidth }, cell) => {
+			}, top > 0 ? { breakTop: top } : {}), edgeTop > 0 ? { edgeTop } : {}), edgeBottom > 0 ? { edgeBottom } : {}), {}, { cells: cells.map(({ margins, gridWidth }, cell) => {
 				const sides = sidesOf(index)[cell];
 				const left = margins.left + own + (cell === 0 ? own : 0) + sides.left;
 				const right = margins.right + own + (cell === cells.length - 1 ? own : 0) + sides.right;
@@ -37167,7 +37279,9 @@ var docxLayout = (function(exports) {
 				borderBottom: (_placed$borderBottom = placed === null || placed === void 0 ? void 0 : placed.borderBottom) !== null && _placed$borderBottom !== void 0 ? _placed$borderBottom : 0
 			}, withoutUndefined({
 				breakBorder: placed === null || placed === void 0 ? void 0 : placed.breakBorder,
-				breakTop: placed === null || placed === void 0 ? void 0 : placed.breakTop
+				breakTop: placed === null || placed === void 0 ? void 0 : placed.breakTop,
+				edgeTop: placed === null || placed === void 0 ? void 0 : placed.edgeTop,
+				edgeBottom: placed === null || placed === void 0 ? void 0 : placed.edgeBottom
 			})), {}, { cells: cells.map((_ref16, cellIndex) => {
 				var _read, _above$cells$find, _unmerged;
 				let { borders: _, margins, gridWidth: __ } = _ref16, cell = _objectWithoutProperties(_ref16, _excluded2);
@@ -39735,13 +39849,13 @@ var docxLayout = (function(exports) {
 		*/
 		const rowHeights = (table, merges = mergesOf(table)) => {
 			const { rows } = table;
-			const heights = rows.map(({ cells, height, borderTop, borderBottom }) => {
+			const heights = rows.map(({ cells, height, borderTop, borderBottom, edgeTop = 0, edgeBottom = 0 }) => {
 				const own = cells.filter(({ verticalMerge }) => verticalMerge === void 0);
 				const largest = (lengths) => Math.max(0, ...lengths);
 				const across = own.filter(({ vertical }) => !vertical);
 				const natural = own.length === 0 ? 0 : largest(own.map(({ marginTop }) => marginTop)) + largest((across.length > 0 ? across : own).map(contentHeight)) + largest(own.map(({ marginBottom }) => marginBottom));
-				if ((height === null || height === void 0 ? void 0 : height.rule) === "exact" && table.cellSpacing === void 0) return Math.max(height.value, borderTop) + borderBottom;
-				return (height === void 0 ? natural : height.rule === "exact" ? height.value : Math.max(height.value, natural)) + borderTop + borderBottom;
+				if ((height === null || height === void 0 ? void 0 : height.rule) === "exact") return Math.max(height.value, borderTop - edgeTop + borderBottom - edgeBottom) + edgeTop + edgeBottom;
+				return (height === void 0 ? natural : Math.max(height.value, natural)) + borderTop + borderBottom;
 			});
 			return merges.reduce((current, { first, last, height }) => {
 				var _rows$last$height;
@@ -42248,11 +42362,11 @@ var docxLayout = (function(exports) {
 		* table goes on the page after the one it ends on (RW5b, RW18)
 		*/
 		const placeCutRow = (row, index) => {
-			var _row$height4;
+			var _row$height4, _row$edgeTop, _row$edgeBottom;
 			const own = row.cells.filter((cell) => !startsMerge(cell)).flatMap((cell) => cell.blocks.flatMap(markersOf));
 			const markers = [...own, ...row.cells.filter(startsMerge).flatMap(roomlessOf)];
 			const height = linesBottom() - position;
-			const room = ((_row$height4 = row.height) === null || _row$height4 === void 0 ? void 0 : _row$height4.rule) === "exact" ? row.height.value - row.borderTop : height - row.borderTop - row.borderBottom;
+			const room = ((_row$height4 = row.height) === null || _row$height4 === void 0 ? void 0 : _row$height4.rule) === "exact" ? row.height.value - (row.borderTop - ((_row$edgeTop = row.edgeTop) !== null && _row$edgeTop !== void 0 ? _row$edgeTop : 0)) - (row.borderBottom - ((_row$edgeBottom = row.edgeBottom) !== null && _row$edgeBottom !== void 0 ? _row$edgeBottom : 0)) : height - row.borderTop - row.borderBottom;
 			let notes = notesIn(own);
 			openMerges = openMerges.flatMap((merge) => {
 				const { lines, rest } = fillCell(merge.rest, room - merge.cell.marginTop - merge.cell.marginBottom, !merge.broken);
