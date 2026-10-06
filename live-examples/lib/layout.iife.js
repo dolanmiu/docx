@@ -8914,16 +8914,18 @@ var docxLayout = (function(exports) {
 			return state.text.includes(" ") ? over <= MOST_SQUEEZE * state.spaces : ordinary > TOLERANCE$2 && over <= MOST_SQUEEZE * ordinary;
 		};
 		/**
-		* Why where Word puts the text after a tab to one of the paragraph's own stops past the end of the line isn't known,
-		* when it isn't. Its probes had no right indent past the margin; a left stop only after text, with first line and
-		* hanging indents too (scripts/layout-probes/stops2/word-stops-tabs.ts TA1a, TA1b); and a right indent only with a right
-		* stop after text. Right, centred and decimal stops line their text up with the end of the line whatever the left,
-		* first line and hanging indents, at the start of a line and after text (TA3a to TA3d, stops2/word-stops-text2.ts TA10a
+		* Why where Word puts the text after a tab to one of the paragraph's own stops past the end of the line isn't
+		* known, when it isn't. Its probes had no right indent past the margin; a left stop after text, with first line and
+		* hanging indents too (scripts/layout-probes/stops2/word-stops-tabs.ts TA1a, TA1b), and at the start of a line in a
+		* paragraph indented on the left or right (stops2/word-stops-edges.ts TA9a, TA9b), but not on the first line of one
+		* with a first line indent, nor on any line of one with a hanging indent; and a right indent only with a right stop
+		* after text. Right, centred and decimal stops line their text up with the end of the line whatever the left, first
+		* line and hanging indents, at the start of a line and after text (TA3a to TA3d, stops2/word-stops-text2.ts TA10a
 		* to TA10f, TA10h, TA10i)
 		*/
-		const pastEndUnknown = ({ alignment: kind }, started) => {
+		const pastEndUnknown = ({ alignment: kind }, started, firstLine) => {
 			if (indentRight < 0) return "a tab stop past the end of the line in a paragraph indented past the margin";
-			if (kind === "left") return !started && (indentLeft !== 0 || indentRight !== 0 || firstLineIndent !== 0) ? "a left tab stop past the end of the line at the start of a line in an indented paragraph" : void 0;
+			if (kind === "left") return !started && (firstLineIndent < 0 || firstLine && firstLineIndent > 0) ? "a left tab stop past the end of the line at the start of a line in a paragraph with a first line or hanging indent" : void 0;
 			return indentRight === 0 || kind === "right" && started ? void 0 : "a centred or decimal tab stop past the end of the line in a paragraph indented on the right, or a right one at the start of a line there";
 		};
 		const beforeStart = numberShift(content, numberAlignment, measurer);
@@ -9252,7 +9254,7 @@ var docxLayout = (function(exports) {
 					const own = !numbered && !olderPast && given.includes(next);
 					const pastIndent = own && indentRight > 0 && next.position > limitOf() + TOLERANCE$2 && next.position <= marginOf() + TOLERANCE$2;
 					const pastEnd = own && next.position > Math.max(limitOf(), marginOf()) + TOLERANCE$2 ? next : void 0;
-					const unknown = pastIndent && squeezes && alignment !== "justified" ? "a tab stop past the paragraph's right indent in a distributed line" : pastIndent && next.alignment === "left" && next.position + widthAfterTab(rest, measurer) > marginOf() + TOLERANCE$2 ? "text after a tab stop past the paragraph's right indent that goes past the margin" : pastEnd === void 0 ? void 0 : pastEndUnknown(pastEnd, line.started);
+					const unknown = pastIndent && squeezes && alignment !== "justified" ? "a tab stop past the paragraph's right indent in a distributed line" : pastIndent && next.alignment === "left" && next.position + widthAfterTab(rest, measurer) > marginOf() + TOLERANCE$2 ? "text after a tab stop past the paragraph's right indent that goes past the margin" : pastEnd === void 0 ? void 0 : pastEndUnknown(pastEnd, line.started, line.first);
 					if (unknown !== void 0) {
 						var _line$unsupported15;
 						line = _objectSpread2(_objectSpread2({}, line), {}, { unsupported: (_line$unsupported15 = line.unsupported) !== null && _line$unsupported15 !== void 0 ? _line$unsupported15 : unknown });
@@ -35089,7 +35091,6 @@ var docxLayout = (function(exports) {
 	var BOUND_CONTROL = "a content control Word fills in from custom XML with other text than is written in it";
 	var REMOVED_NOTES = /* @__PURE__ */ new Set(["w:footnoteReference", "w:endnoteReference"]);
 	var PARTLY_DELETED_FIELD = "a field partly deleted in a tracked change";
-	var OWN_NOTE_MARK = "an endnote with a mark of its own";
 	var GUESS = "docx-layout:guess ";
 	/** A marker that stands in a paragraph's items for what the reader guessed at, for why */
 	var guessMarker = (reason) => ({
@@ -35113,6 +35114,8 @@ var docxLayout = (function(exports) {
 	};
 	/** Whether an attribute that is on or off, such as `w:combine`, is on: it is off when it isn't given */
 	var isOn = (value) => value !== void 0 && !isOff(value);
+	/** Whether an element of a name is among some elements, or in one of them */
+	var hasElement = (elements, name) => elements.some((element) => isObject(element) && (nameOf$1(element) === name || hasElement(childrenOf(element[nameOf$1(element)]), name)));
 	/** Whether a note's reference has a mark of its own in place of its number (`w:customMarkFollows`) */
 	var hasOwnMark = (reference) => isOn(attributesOf(reference[nameOf$1(reference)])["w:customMarkFollows"]);
 	/** Whether a content control (`w:sdt`) is bound to custom XML (`w:dataBinding`), which Word fills it in from */
@@ -35329,17 +35332,18 @@ var docxLayout = (function(exports) {
 	/**
 	* A drawing that text flows around, in a header or footer as in the body: one in a header or footer is on each page that
 	* shows it, and the body's text goes round it, as round one of its own (`word-watertight-pages.docx` PG4,
-	* `word-stops-drawings.docx` DH1a to DH1d, `word-vml.docx` VM13). Or why it can't be laid out: one placed against its
-	* paragraph or line in a header or footer, whose place on the page hasn't been seen, nor what the header's own text does
-	* beside it
+	* `word-stops-drawings.docx` DH1a to DH1d, `word-vml.docx` VM13), placed against its paragraph or line too (see
+	* `headerDrawings` in `paginate.ts`). Or why it can't be laid out: one placed across the page against where it is
+	* anchored along its line in a header or footer, whose place hasn't been seen, and a text box placed against its
+	* paragraph or line there, which Word has been seen with only as a picture (`word-stops-edges.docx` DH2a, DH2b)
 	*/
-	var floatingItem = (floating, reader) => {
-		const { horizontal, vertical } = floating;
-		return reader.inHeader && (vertical.from === "paragraph" || vertical.from === "line" || horizontal.from === "character") ? "a drawing that text flows around in a header or footer, placed against its paragraph or line" : [{
-			type: "drawing",
-			drawing: floating
-		}];
-	};
+	var floatingItem = (floating, reader) => !reader.inHeader ? [{
+		type: "drawing",
+		drawing: floating
+	}] : floating.horizontal.from === "character" ? "a drawing that text flows around in a header or footer, placed against where it is anchored along its line" : floating.frame !== void 0 && (floating.vertical.from === "paragraph" || floating.vertical.from === "line") ? "a text box that text flows around in a header or footer, placed against its paragraph or line" : [{
+		type: "drawing",
+		drawing: floating
+	}];
 	/**
 	* Reads a drawing in a run (`w:drawing`): a picture in the line is a box, with its run's font, and one that text doesn't
 	* flow around, such as one behind the text, takes up no room. A picture in the line in a border of its run has its border's
@@ -35839,7 +35843,7 @@ var docxLayout = (function(exports) {
 				}
 				case "w:footnoteReference":
 				case "w:endnoteReference": {
-					var _reader$notes3;
+					var _reader$notes2;
 					const id = String(attributesOf(child[name])["w:id"]);
 					if (reader.inTextBox) {
 						if (name === "w:endnoteReference") return "an endnote in a text box";
@@ -35852,21 +35856,17 @@ var docxLayout = (function(exports) {
 						type: "marker",
 						name: note.marker
 					}] : [], ...numbered ? [noteNumber(note.onPage === void 0 ? note.label : { onPage: note.onPage }, font)] : []];
-					if (hasOwnMark(child) && name === "w:footnoteReference") {
+					if (hasOwnMark(child)) {
 						const own = () => {
 							var _reader$notes;
-							return reference((_reader$notes = reader.notes) === null || _reader$notes === void 0 ? void 0 : _reader$notes.readOwn(id), false);
+							return reference((_reader$notes = reader.notes) === null || _reader$notes === void 0 ? void 0 : _reader$notes.readOwn(name === "w:footnoteReference" ? "footnote" : "endnote", id), false);
 						};
-						return format.hidden ? guessedOr(reader, "a footnote reference with a mark of its own in hidden text", own) : own();
+						return format.hidden ? guessedOr(reader, "a footnote or endnote reference with a mark of its own in hidden text", own) : own();
 					}
-					if (hasOwnMark(child)) return guessedOr(reader, OWN_NOTE_MARK, () => {
-						var _reader$notes2;
-						return reference((_reader$notes2 = reader.notes) === null || _reader$notes2 === void 0 ? void 0 : _reader$notes2.read("endnote", id), false);
-					});
-					return reference((_reader$notes3 = reader.notes) === null || _reader$notes3 === void 0 ? void 0 : _reader$notes3.read(name === "w:footnoteReference" ? "footnote" : "endnote", id), !format.hidden);
+					return reference((_reader$notes2 = reader.notes) === null || _reader$notes2 === void 0 ? void 0 : _reader$notes2.read(name === "w:footnoteReference" ? "footnote" : "endnote", id), !format.hidden);
 				}
 				case "w:footnoteRef":
-				case "w:endnoteRef": return reader.noteNumber === null ? "a note's number in a footnote with a mark of its own" : reader.noteNumber === void 0 ? [] : [noteNumber(reader.noteNumber, font)];
+				case "w:endnoteRef": return reader.noteNumber === null ? "a note's number in a footnote or endnote with a mark of its own" : reader.noteNumber === void 0 ? [] : [noteNumber(reader.noteNumber, font)];
 				case "w:drawing": return format.hidden ? [] : font.border && !("wp:inline" in childrenOf(child["w:drawing"])[0]) ? guessedOr(reader, "a drawing placed on the page in text with a border", () => readDrawing(child, font, reader)) : readDrawing(child, font, reader);
 				case "mc:AlternateContent": {
 					const choice = childrenOf(child["mc:AlternateContent"]).find((option) => "mc:Choice" in option);
@@ -35997,17 +35997,15 @@ var docxLayout = (function(exports) {
 	* doesn't show it or lay the note out: a footnote (MK10e), and an endnote, the kept one after it ii
 	* (`stops2/word-stops-tracked-edges.docx` TR3b). It numbers a note whose reference is moved elsewhere the same way, at the
 	* reference's old place, and lays out the note of its new place: 1 there, and 2 at the new (`word-stops-moves.docx` TR3a).
-	* A footnote reference with a mark of its own isn't counted, and an endnote one stops the layout, as where it isn't deleted.
+	* A footnote or endnote reference with a mark of its own isn't counted, as where it isn't deleted.
 	*/
 	var readRemoved = (elements, reader) => itemsOf(elements.filter(isObject).map((element) => {
 		const name = nameOf$1(element);
 		if (name === "w:r") {
 			const children = contentOf$3(element).filter(isObject);
-			const references = children.filter((child) => REMOVED_NOTES.has(nameOf$1(child)));
-			if (references.some((reference) => "w:endnoteReference" in reference && hasOwnMark(reference))) return OWN_NOTE_MARK;
-			references.filter((reference) => !hasOwnMark(reference)).forEach((reference) => {
-				var _reader$notes4;
-				return (_reader$notes4 = reader.notes) === null || _reader$notes4 === void 0 ? void 0 : _reader$notes4.skip("w:endnoteReference" in reference ? "endnote" : "footnote");
+			children.filter((child) => REMOVED_NOTES.has(nameOf$1(child))).filter((reference) => !hasOwnMark(reference)).forEach((reference) => {
+				var _reader$notes3;
+				return (_reader$notes3 = reader.notes) === null || _reader$notes3 === void 0 ? void 0 : _reader$notes3.skip("w:endnoteReference" in reference ? "endnote" : "footnote");
 			});
 			return itemsOf(children.map((child) => nameOf$1(child) === "w:fldChar" ? readFieldCharacter(child, {}, reader, true) : []), reader);
 		}
@@ -36903,9 +36901,7 @@ var docxLayout = (function(exports) {
 			const deleted = deletedFlags[rowIndex];
 			const rowReader = deleted ? sizingReaderOf(cellReader, sized, true) : cellReader;
 			const counts = deleted ? JSON.stringify([...rowReader.counters]) : "";
-			const rowNotes = deleted ? elementsIn$1(rowChildren, (inner) => REMOVED_NOTES.has(inner)) : [];
-			const ownEndnote = rowNotes.some((reference) => "w:endnoteReference" in reference && hasOwnMark(reference));
-			rowNotes.filter((reference) => !ownEndnote && !hasOwnMark(reference)).forEach((reference) => {
+			(deleted ? elementsIn$1(rowChildren, (inner) => REMOVED_NOTES.has(inner)) : []).filter((reference) => !hasOwnMark(reference)).forEach((reference) => {
 				var _cellReader$notes;
 				return (_cellReader$notes = cellReader.notes) === null || _cellReader$notes === void 0 ? void 0 : _cellReader$notes.skip("w:endnoteReference" in reference ? "endnote" : "footnote");
 			});
@@ -36982,7 +36978,7 @@ var docxLayout = (function(exports) {
 				cells: [],
 				edges: /* @__PURE__ */ new Map([[skipped, widthBefore !== null && widthBefore !== void 0 ? widthBefore : gridWidth(0, skipped)]])
 			});
-			const rowUnsupported = rowParts.some((part) => "w:sdt" in part) ? BOUND_CONTROL : changesLines(exceptions, FOLLOWED_ROW_TABLE_PROPERTIES) ? "a table row with table properties of its own" : deleted && JSON.stringify([...rowReader.counters]) !== counts ? "a list in a deleted table row" : ownEndnote ? OWN_NOTE_MARK : unseenHeaderCount ? "a deleted row in a table's header of several rows, whose style formats some of its rows" : cellsUnsupported !== null && cellsUnsupported !== void 0 ? cellsUnsupported : unsupportedVerticalRowOf(cells.filter(({ verticalMerge }) => verticalMerge === void 0));
+			const rowUnsupported = rowParts.some((part) => "w:sdt" in part) ? BOUND_CONTROL : changesLines(exceptions, FOLLOWED_ROW_TABLE_PROPERTIES) ? "a table row with table properties of its own" : deleted && JSON.stringify([...rowReader.counters]) !== counts ? "a list in a deleted table row" : unseenHeaderCount ? "a deleted row in a table's header of several rows, whose style formats some of its rows" : cellsUnsupported !== null && cellsUnsupported !== void 0 ? cellsUnsupported : unsupportedVerticalRowOf(cells.filter(({ verticalMerge }) => verticalMerge === void 0));
 			return _objectSpread2(_objectSpread2({
 				cells,
 				deleted,
@@ -37756,7 +37752,7 @@ var docxLayout = (function(exports) {
 		const block = end === "first" ? blocks[0] : blocks[blocks.length - 1];
 		return (block === null || block === void 0 ? void 0 : block.type) === "paragraph" ? { style: block.style } : UNKNOWN_NEXT;
 	};
-	var CONTEXTUAL_EDGE = "contextual spacing at the edge of a table cell beside another cell or row, or a table's paragraphs";
+	var CONTEXTUAL_EDGE = "contextual spacing at the edge of a table cell beside another cell or row, not all in the default paragraph style, or before a table";
 	/**
 	* A stack of blocks with the space Word leaves out at the edges of its tables' cells for contextual spacing. Word compares
 	* a paragraph at a cell's edge with the paragraph next to it in the document's order: the first cell's first paragraph
@@ -37764,50 +37760,66 @@ var docxLayout = (function(exports) {
 	* default paragraph style. So Normal paragraphs with contextual spacing in a cell between Normal paragraphs have neither
 	* the first's space before nor the last's space after, and in a style of their own keep both; between paragraphs of
 	* another style, the first keeps its space before, and the last still leaves out its space after
-	* (`word-stops-text.docx` PB6a to PB6e, `word-compat-settings.docx` CP11). The other edges haven't been seen: the tops of
-	* cells after the first, the bottoms of cells before the last of a row, and the paragraphs around a table, whose space
-	* Word would leave out if it compared them in the document's order too. The layout stops where it would, and guessing,
-	* leaves it out in a cell, and keeps it beside a table
+	* (`word-stops-text.docx` PB6a to PB6e, `word-compat-settings.docx` CP11). Word left out the space of Normal paragraphs
+	* at the other edges of cells, next to Normal paragraphs or rows' ends: the top of a cell beside the one before, and of a
+	* row's after the first, the bottom of a cell before the row's last, and the top of a table first in a cell
+	* (`word-stops-edges.docx` PB9a, PB9b, PB9e). It left out the space before a Normal paragraph after a table whose last
+	* row's paragraph is in a style of its own, so it compares that one with the end of the row (PB9d). Where Word would
+	* leave out the space of a paragraph of another style at those edges, if it compared them in the document's order too,
+	* and before a table, the layout stops. Guessing, it leaves it out in a cell, and keeps it before a table
 	*/
 	var withCellEdges = (stack, reader) => stack.map((block, index) => {
 		var _block$rows$0$cells$, _block$rows$, _block$unsupported2;
-		if (block.type !== "table") return block;
 		const before = stack[index - 1];
-		const after = stack[index + 1];
 		const rowEnd = { style: reader.styles.defaultParagraphStyle };
+		if (block.type !== "table") return (before === null || before === void 0 ? void 0 : before.type) === "table" && block.type === "paragraph" && leavesOutAt(block, "before", rowEnd) ? _objectSpread2(_objectSpread2({}, block), {}, { leftOut: _objectSpread2(_objectSpread2({}, block.leftOut), {}, { before: true }) }) : block;
 		let unseen = false;
 		/** Whether a paragraph's space on one side is left out, next to what is there, and whether that was seen */
 		const leavesOut = (paragraph, side, next, seen) => {
-			if ((paragraph === null || paragraph === void 0 ? void 0 : paragraph.type) !== "paragraph" || paragraph.format.contextualSpacing !== true || next === NOTHING_NEXT) return false;
-			const { spaceBefore = 0, spaceAfter = 0, autoSpaceBefore, autoSpaceAfter } = paragraph.format;
-			const space = side === "before" ? spaceBefore > 0 || autoSpaceBefore === true : spaceAfter > 0 || autoSpaceAfter === true;
-			const same = next !== UNKNOWN_NEXT && next.style === paragraph.style;
-			unseen || (unseen = space && !seen && (same || next === UNKNOWN_NEXT));
-			return space && same;
+			if ((paragraph === null || paragraph === void 0 ? void 0 : paragraph.type) !== "paragraph") return false;
+			const out = leavesOutAt(paragraph, side, next);
+			unseen || (unseen = hasContextualSpace(paragraph, side) && !seen && (out || next === UNKNOWN_NEXT));
+			return out;
 		};
+		/** Whether what is next to a cell's edge is in the default paragraph style, as the end of a row is */
+		const isDefault = (next) => next !== UNKNOWN_NEXT && next !== NOTHING_NEXT && next.style === rowEnd.style;
+		/** Whether a block is a paragraph in the default paragraph style */
+		const isDefaultParagraph = (one) => (one === null || one === void 0 ? void 0 : one.type) === "paragraph" && one.style === rowEnd.style;
 		const above = before === void 0 ? reader.inCell ? UNKNOWN_NEXT : NOTHING_NEXT : before.type === "table" ? rowEnd : before.hiddenAfter === void 0 ? { style: before.style } : UNKNOWN_NEXT;
+		const aboveDefault = above === NOTHING_NEXT || isDefault(above) && (before === null || before === void 0 ? void 0 : before.type) !== "table";
+		/** Whether Word was seen leaving out the space of a paragraph at an edge of a cell beside another, or a row's end */
+		const seenBeside = (paragraph, next) => aboveDefault && isDefaultParagraph(paragraph) && isDefault(next);
 		const rows = block.rows.map((row, rowIndex) => _objectSpread2(_objectSpread2({}, row), {}, { cells: row.cells.map((cell, cellIndex) => {
-			const first = rowIndex === 0 && cellIndex === 0;
 			const end = cellIndex === row.cells.length - 1;
-			const nextAbove = cellIndex > 0 ? endOf(row.cells[cellIndex - 1].blocks, "last") : first ? above : rowEnd;
+			const [top, bottom] = [cell.blocks[0], cell.blocks[cell.blocks.length - 1]];
 			const nextBelow = end ? rowEnd : endOf(row.cells[cellIndex + 1].blocks, "first");
+			const first = rowIndex === 0 && cellIndex === 0;
+			const atCellStart = first && before === void 0 && reader.inCell && isDefaultParagraph(top);
+			const nextAbove = cellIndex > 0 ? endOf(row.cells[cellIndex - 1].blocks, "last") : first && !atCellStart ? above : rowEnd;
+			const seenAbove = atCellStart || (first ? above !== UNKNOWN_NEXT && (before === null || before === void 0 ? void 0 : before.type) !== "table" : seenBeside(top, nextAbove));
 			const leftOut = {
-				before: leavesOut(cell.blocks[0], "before", nextAbove, first && above !== UNKNOWN_NEXT && (before === null || before === void 0 ? void 0 : before.type) !== "table"),
-				after: leavesOut(cell.blocks[cell.blocks.length - 1], "after", nextBelow, end)
+				before: leavesOut(top, "before", nextAbove, seenAbove),
+				after: leavesOut(bottom, "after", nextBelow, end || seenBeside(bottom, nextBelow))
 			};
 			if (!leftOut.before && !leftOut.after) return cell;
 			const last = cell.blocks.length - 1;
 			const blocks = cell.blocks.map((one, at) => {
 				const own = _objectSpread2(_objectSpread2({}, at === 0 && leftOut.before ? { before: true } : {}), at === last && leftOut.after ? { after: true } : {});
-				return one.type === "paragraph" && Object.keys(own).length > 0 ? _objectSpread2(_objectSpread2({}, one), {}, { leftOut: own }) : one;
+				return one.type === "paragraph" && Object.keys(own).length > 0 ? _objectSpread2(_objectSpread2({}, one), {}, { leftOut: _objectSpread2(_objectSpread2({}, one.leftOut), own) }) : one;
 			});
 			return _objectSpread2(_objectSpread2({}, cell), {}, { blocks });
 		}) }));
 		leavesOut(before, "after", endOf((_block$rows$0$cells$ = (_block$rows$ = block.rows[0]) === null || _block$rows$ === void 0 || (_block$rows$ = _block$rows$.cells[0]) === null || _block$rows$ === void 0 ? void 0 : _block$rows$.blocks) !== null && _block$rows$0$cells$ !== void 0 ? _block$rows$0$cells$ : [], "first"), false);
-		leavesOut(after, "before", rowEnd, false);
 		const unsupported = (_block$unsupported2 = block.unsupported) !== null && _block$unsupported2 !== void 0 ? _block$unsupported2 : unseen ? CONTEXTUAL_EDGE : void 0;
 		return _objectSpread2(_objectSpread2({}, block), {}, { rows }, withoutUndefined({ unsupported }));
 	});
+	/** Whether a paragraph with contextual spacing has space on one side, its own or Word's automatic space */
+	var hasContextualSpace = ({ format }, side) => {
+		const { contextualSpacing, spaceBefore = 0, spaceAfter = 0, autoSpaceBefore, autoSpaceAfter } = format;
+		return contextualSpacing === true && (side === "before" ? spaceBefore > 0 || autoSpaceBefore === true : spaceAfter > 0 || autoSpaceAfter === true);
+	};
+	/** Whether contextual spacing leaves out a paragraph's space on one side, next to a paragraph of its style there */
+	var leavesOutAt = (paragraph, side, next) => hasContextualSpace(paragraph, side) && next !== UNKNOWN_NEXT && next !== NOTHING_NEXT && next.style === paragraph.style;
 	/** The headers or footers a section refers to, by the pages they are on */
 	var readReferences = (properties, name, readPart) => Object.fromEntries(properties.filter((child) => name in child).map((child) => {
 		var _attributes$wType;
@@ -37886,6 +37898,7 @@ var docxLayout = (function(exports) {
 			characterPitch: columns[0] / Math.floor(columns[0] / room)
 		};
 	};
+	var MOST_NOTE_COLUMNS = 4;
 	/**
 	* Reads a section's properties (`w:sectPr`): its pages, how it starts, and its headers and footers. A section that
 	* doesn't give a header or footer for a kind of page has the one of the section before. Its gutter is beside the text,
@@ -37893,7 +37906,7 @@ var docxLayout = (function(exports) {
 	* (`word-watertight-settings.docx` ST3).
 	*/
 	var readSection = (element, readPart, previous, { gutterAtTop, mirrorMargins }, grid) => {
-		var _stringOf2, _twips16, _twips17, _twips18, _twips19, _twips20, _CHAPTER_SEPARATORS$S;
+		var _stringOf2, _twips16, _numberOf10, _twips17, _twips18, _twips19, _twips20, _twips21, _CHAPTER_SEPARATORS$S;
 		const properties = childrenOf(element);
 		const size = attributesOf(find(properties, "w:pgSz"));
 		const margins = attributesOf(find(properties, "w:pgMar"));
@@ -37908,26 +37921,27 @@ var docxLayout = (function(exports) {
 		const direction = valueOf(properties, "w:textDirection");
 		const down = downOf(properties);
 		const sectionStart = start !== void 0 && START_TYPES.has(start) ? start : "nextPage";
+		const noteColumnCount = (_numberOf10 = numberOf(attributesOf(find(properties, "w15:footnoteColumns"))["w:val"])) !== null && _numberOf10 !== void 0 ? _numberOf10 : 0;
+		const inNoteColumns = noteColumnCount > 1 && noteColumnCount <= MOST_NOTE_COLUMNS;
 		const marginBottom = (_twips17 = twips(margins["w:bottom"])) !== null && _twips17 !== void 0 ? _twips17 : DEFAULT_SECTION.marginBottom;
-		const unsupported = typeof grid === "string" ? grid : formatPageNumber(1, format) === void 0 ? "page numbers in a format not yet written" : direction !== void 0 && !HORIZONTAL.has(direction) && down === void 0 ? "text in a direction not yet followed" : down !== void 0 && (mirrorMargins || columns.length > 1 || gutter !== 0 && (gutterAtTop || down === "fromLeft")) ? "text that runs down the page with columns, mirrored margins, or a gutter at the top or beside lines from the left" : (previous === null || previous === void 0 ? void 0 : previous.textRunsDown) !== void 0 && (sectionStart === "nextColumn" || sectionStart === "continuous" && down !== previous.textRunsDown) ? "a continuous section break after text that runs down the page, into text that doesn't" : find(properties, "w15:footnoteColumns") !== void 0 ? "footnotes in columns of their own" : void 0;
+		const unsupported = typeof grid === "string" ? grid : formatPageNumber(1, format) === void 0 ? "page numbers in a format not yet written" : direction !== void 0 && !HORIZONTAL.has(direction) && down === void 0 ? "text in a direction not yet followed" : down !== void 0 && (mirrorMargins || columns.length > 1 || gutter !== 0 && (gutterAtTop || down === "fromLeft")) ? "text that runs down the page with columns, mirrored margins, or a gutter at the top or beside lines from the left" : (previous === null || previous === void 0 ? void 0 : previous.textRunsDown) !== void 0 && (sectionStart === "nextColumn" || sectionStart === "continuous" && down !== previous.textRunsDown) ? "a continuous section break after text that runs down the page, into text that doesn't" : noteColumnCount > 1 && (!inNoteColumns || columns.length > 1 || down !== void 0 || ((_twips18 = twips(attributesOf(find(properties, "w:cols"))["w:space"])) !== null && _twips18 !== void 0 ? _twips18 : DEFAULT_COLUMN_SPACE) !== DEFAULT_COLUMN_SPACE) ? "footnotes in more than 4 columns of their own, or in columns of their own in a section of several columns, of text that runs down the page, or whose columns are spaced otherwise than half an inch apart" : void 0;
 		const headers = readReferences(properties, "w:headerReference", readPart);
 		const footers = readReferences(properties, "w:footerReference", readPart);
-		const section = _objectSpread2(_objectSpread2(_objectSpread2({
+		const section = _objectSpread2(_objectSpread2(_objectSpread2(_objectSpread2({
 			pageWidth,
-			pageHeight: (_twips18 = twips(size["w:h"])) !== null && _twips18 !== void 0 ? _twips18 : DEFAULT_SECTION.pageHeight,
+			pageHeight: (_twips19 = twips(size["w:h"])) !== null && _twips19 !== void 0 ? _twips19 : DEFAULT_SECTION.pageHeight,
 			marginTop,
 			marginBottom,
 			marginLeft,
 			marginRight,
-			header: (_twips19 = twips(margins["w:header"])) !== null && _twips19 !== void 0 ? _twips19 : DEFAULT_SECTION.header,
-			footer: (_twips20 = twips(margins["w:footer"])) !== null && _twips20 !== void 0 ? _twips20 : DEFAULT_SECTION.footer,
+			header: (_twips20 = twips(margins["w:header"])) !== null && _twips20 !== void 0 ? _twips20 : DEFAULT_SECTION.header,
+			footer: (_twips21 = twips(margins["w:footer"])) !== null && _twips21 !== void 0 ? _twips21 : DEFAULT_SECTION.footer,
 			gutter: gutterAtTop ? 0 : gutter,
 			topGutter: gutterAtTop ? gutter : 0,
 			start: down !== void 0 && sectionStart === "continuous" && (previous === null || previous === void 0 ? void 0 : previous.textRunsDown) !== down ? "nextPage" : sectionStart,
 			titlePage: onOff(properties, "w:titlePg") === true,
-			columns,
-			numberFormat: format
-		}, chapterLevel === void 0 || chapterLevel < 1 || chapterLevel > 9 ? {} : { chapters: {
+			columns
+		}, inNoteColumns ? { noteColumns: Array.from({ length: noteColumnCount }, () => (columns[0] - DEFAULT_COLUMN_SPACE * (noteColumnCount - 1)) / noteColumnCount) } : {}), {}, { numberFormat: format }, chapterLevel === void 0 || chapterLevel < 1 || chapterLevel > 9 ? {} : { chapters: {
 			level: chapterLevel,
 			separator: (_CHAPTER_SEPARATORS$S = CHAPTER_SEPARATORS[String(numbering["w:chapSep"])]) !== null && _CHAPTER_SEPARATORS$S !== void 0 ? _CHAPTER_SEPARATORS$S : "-"
 		} }), firstNumber === void 0 ? {} : { firstNumber }), {}, {
@@ -37979,18 +37993,18 @@ var docxLayout = (function(exports) {
 	* apart.
 	*/
 	var readLevel = (element, styles) => {
-		var _valueOf9, _numberOf10, _valueOf10, _stringOf3, _valueOf11, _numberOf11;
+		var _valueOf9, _numberOf11, _valueOf10, _stringOf3, _valueOf11, _numberOf12;
 		const children = childrenOf(element);
 		const jc = (_valueOf9 = valueOf(children, "w:lvlJc")) !== null && _valueOf9 !== void 0 ? _valueOf9 : "left";
 		const restart = numberOf(attributesOf(find(children, "w:lvlRestart"))["w:val"]);
 		const unsupported = !(jc in NUMBER_ALIGNMENTS) && jc !== "both" ? "a list number aligned in a way not yet followed" : find(children, "w:lvlPicBulletId") !== void 0 ? "a list whose bullets are pictures" : isOn(attributesOf(find(children, "w:legacy"))["w:legacy"]) ? "a list numbered as Word 6 numbered lists" : void 0;
 		return {
-			index: (_numberOf10 = numberOf(attributesOf(element)["w:ilvl"])) !== null && _numberOf10 !== void 0 ? _numberOf10 : 0,
+			index: (_numberOf11 = numberOf(attributesOf(element)["w:ilvl"])) !== null && _numberOf11 !== void 0 ? _numberOf11 : 0,
 			level: _objectSpread2(_objectSpread2(_objectSpread2({}, withoutUndefined({ style: valueOf(children, "w:pStyle") })), {}, {
 				format: (_valueOf10 = valueOf(children, "w:numFmt")) !== null && _valueOf10 !== void 0 ? _valueOf10 : "decimal",
 				text: (_stringOf3 = stringOf(attributesOf(find(children, "w:lvlText"))["w:val"])) !== null && _stringOf3 !== void 0 ? _stringOf3 : "",
 				suffix: (_valueOf11 = valueOf(children, "w:suff")) !== null && _valueOf11 !== void 0 ? _valueOf11 : "tab",
-				start: (_numberOf11 = numberOf(attributesOf(find(children, "w:start"))["w:val"])) !== null && _numberOf11 !== void 0 ? _numberOf11 : 0
+				start: (_numberOf12 = numberOf(attributesOf(find(children, "w:start"))["w:val"])) !== null && _numberOf12 !== void 0 ? _numberOf12 : 0
 			}, withoutUndefined({
 				alignment: NUMBER_ALIGNMENTS[jc],
 				restart,
@@ -38078,9 +38092,9 @@ var docxLayout = (function(exports) {
 				level
 			})), ...own]);
 			const starts = new Map(overrides.flatMap(({ index, children: given }) => {
-				var _numberOf12;
+				var _numberOf13;
 				const level = childrenOf(find(given, "w:lvl"));
-				const start = (_numberOf12 = numberOf(attributesOf(find(given, "w:startOverride"))["w:val"])) !== null && _numberOf12 !== void 0 ? _numberOf12 : numberOf(attributesOf(find(level, "w:start"))["w:val"]);
+				const start = (_numberOf13 = numberOf(attributesOf(find(given, "w:startOverride"))["w:val"])) !== null && _numberOf13 !== void 0 ? _numberOf13 : numberOf(attributesOf(find(level, "w:start"))["w:val"]);
 				return start === void 0 ? [] : [[index, start]];
 			}));
 			const list = _objectSpread2({
@@ -38207,8 +38221,8 @@ var docxLayout = (function(exports) {
 	* 15 for Word 2013 and later. Word's own setting, as another application's may have the same name
 	*/
 	var compatibilityModeOf = (settings) => {
-		var _numberOf13, _wordSettingsOf$find;
-		return (_numberOf13 = numberOf((_wordSettingsOf$find = wordSettingsOf(childrenOf(find(settings, "w:compat"))).find(({ "w:name": setting }) => setting === "compatibilityMode")) === null || _wordSettingsOf$find === void 0 ? void 0 : _wordSettingsOf$find["w:val"])) !== null && _numberOf13 !== void 0 ? _numberOf13 : WORD_2007_MODE;
+		var _numberOf14, _wordSettingsOf$find;
+		return (_numberOf14 = numberOf((_wordSettingsOf$find = wordSettingsOf(childrenOf(find(settings, "w:compat"))).find(({ "w:name": setting }) => setting === "compatibilityMode")) === null || _wordSettingsOf$find === void 0 ? void 0 : _wordSettingsOf$find["w:val"])) !== null && _numberOf14 !== void 0 ? _numberOf14 : WORD_2007_MODE;
 	};
 	/** The compatibility mode a document is laid out in, when it is one of Word 2010's, 2007's or 2003's */
 	var olderModeOf = (settings) => {
@@ -38281,8 +38295,8 @@ var docxLayout = (function(exports) {
 		const on = (name) => find(maths, name) !== void 0 && !isOff(valueIn(name));
 		if (on("m:smallFrac") && !off("m:dispDef")) return { maths: "an equation in a document whose maths settings make fractions small" };
 		const given = (name) => {
-			var _numberOf14;
-			return ((_numberOf14 = numberOf(valueIn(name))) !== null && _numberOf14 !== void 0 ? _numberOf14 : 0) !== 0;
+			var _numberOf15;
+			return ((_numberOf15 = numberOf(valueIn(name))) !== null && _numberOf15 !== void 0 ? _numberOf15 : 0) !== 0;
 		};
 		return _objectSpread2(_objectSpread2({}, given("m:lMargin") || given("m:rMargin") ? { displayedMaths: "an equation displayed in a document whose maths settings give displayed equations margins" } : {}), {}, { limits: {
 			sums: valueIn("m:naryLim") === "subSup" ? "subSup" : "undOvr",
@@ -38337,7 +38351,7 @@ var docxLayout = (function(exports) {
 	* Reads the parts of the document's settings (`w:settings`) that change how it is laid out.
 	*/
 	var readSettings = (xml) => {
-		var _find4, _twips21;
+		var _find4, _twips22;
 		const settings = childrenOf(xml === null || xml === void 0 ? void 0 : xml["w:settings"]);
 		const compatibility = childrenOf(find(settings, "w:compat"));
 		const lists = readKinsokuLists(settings);
@@ -38352,7 +38366,7 @@ var docxLayout = (function(exports) {
 			[onOff(settings, "w:linkStyles"), "styles updated from the document's template when Word opens it"]
 		].find(([applies]) => applies === true)) === null || _find4 === void 0 ? void 0 : _find4[1];
 		return _objectSpread2(_objectSpread2(_objectSpread2(_objectSpread2(_objectSpread2({
-			defaultTabStop: (_twips21 = twips(attributesOf(find(settings, "w:defaultTabStop"))["w:val"])) !== null && _twips21 !== void 0 ? _twips21 : 36,
+			defaultTabStop: (_twips22 = twips(attributesOf(find(settings, "w:defaultTabStop"))["w:val"])) !== null && _twips22 !== void 0 ? _twips22 : 36,
 			evenAndOddHeaders: onOff(settings, "w:evenAndOddHeaders") === true,
 			addsParagraphSpacing: onOff(compatibility, "w:doNotUseHTMLParagraphAutoSpacing") === true
 		}, Object.keys(rules).length > 0 ? { breakRules: rules } : {}), onOff(settings, "w:autoHyphenation") === true ? { hyphenation: readHyphenation(settings) } : {}), olderMode === void 0 ? {} : { compatibilityMode: olderMode }), onOff(compatibility, "w:suppressTopSpacing") === true ? { suppressesTopSpacing: true } : {}), unsupported ? { unsupported } : {});
@@ -38446,7 +38460,7 @@ var docxLayout = (function(exports) {
 	* Reads a document's body (`w:body`), with the other parts of the document.
 	*/
 	var readContent = (writtenBody, writtenParts, { guess = false } = {}) => {
-		var _writtenParts$dataSto, _parts$otherListIds, _parts$otherListIds2, _parts$settings, _parts$webSettings, _fontOf$size2, _notesByKind$kind$get, _ref32, _ref33, _ref34, _ref35, _documentContent$unsu;
+		var _writtenParts$dataSto, _parts$otherListIds, _parts$otherListIds2, _parts$settings, _parts$webSettings, _fontOf$size2, _notesByKind$kind$get, _readNoteProperties$p, _ref32, _ref33, _ref34, _ref35, _documentContent$unsu;
 		const stores = (_writtenParts$dataSto = writtenParts.dataStores) !== null && _writtenParts$dataSto !== void 0 ? _writtenParts$dataSto : /* @__PURE__ */ new Map();
 		const body = withBoundTextWritten(writtenBody, stores);
 		const parts = _objectSpread2(_objectSpread2({}, writtenParts), {}, {
@@ -38531,57 +38545,48 @@ var docxLayout = (function(exports) {
 			const down = !separator && downOf(childrenOf(sectionElements[section])) !== void 0;
 			const readerOfNote = _objectSpread2(_objectSpread2(_objectSpread2(_objectSpread2(_objectSpread2({}, readerOf(false)), {}, { inNote: true }, kind === "endnote" ? { inEndnote: true } : {}), separator ? {} : { noteNumber: shows }), grid === void 0 ? {} : { grid }), down ? { down } : {});
 			const noteBlocks = readBlocks(content, readerOfNote);
-			return separator || ((_noteBlocks = noteBlocks[noteBlocks.length - 1]) === null || _noteBlocks === void 0 ? void 0 : _noteBlocks.type) !== "table" ? noteBlocks : [...noteBlocks, paragraphAfterTable(kind, readerOfNote)];
+			return separator || ((_noteBlocks = noteBlocks[noteBlocks.length - 1]) === null || _noteBlocks === void 0 ? void 0 : _noteBlocks.type) !== "table" ? noteBlocks : [...noteBlocks, paragraphAfterTable(kind, readerOfNote, noteBlocks)];
 		};
 		/**
 		* The empty paragraph Word adds after a table that ends a footnote or endnote, as a note ends with a paragraph: a line
 		* below the table (`word-watertight-notes.docx` FN11, FN12, `word-watertight-stops.docx` SP3c). Those notes had the
-		* same formatting in the Normal style and the footnote text style, so it is in Normal where they are formatted alike,
-		* and where they aren't, which of them Word gives it isn't known
+		* same formatting in the Normal style and the footnote text style, so it is in Normal where they are formatted alike.
+		* Where they aren't, Word gave it Normal in notes whose paragraphs were all in Normal, a line of Calibri 11 where the
+		* note text styles were 8 points with 24 after (`word-notes-final-table.docx` NF1, NF2), and which it gives it in a
+		* note with paragraphs of another style, such as the note text style itself, isn't known
 		*/
-		const paragraphAfterTable = (kind, readerOfNote) => {
+		const paragraphAfterTable = (kind, readerOfNote, noteBlocks) => {
 			var _find5;
 			const [normal] = readBlocks([{ "w:p": [] }], readerOfNote);
 			const [inStyle] = readBlocks([{ "w:p": [{ "w:pPr": [{ "w:pStyle": { _attr: { "w:val": (_find5 = [...styles.styles].find(([, { type, name }]) => type === "paragraph" && (name === null || name === void 0 ? void 0 : name.toLowerCase()) === `${kind} text`)) === null || _find5 === void 0 ? void 0 : _find5[0] } } }] }] }], readerOfNote);
-			return JSON.stringify([normal.format, normal.markFont]) === JSON.stringify([inStyle.format, inStyle.markFont]) ? normal : _objectSpread2(_objectSpread2({}, normal), {}, { unsupported: "a footnote or endnote that ends with a table, in a document whose Normal and note text styles differ" });
-		};
-		/**
-		* The elements of an endnote separator Word lays out: Word leaves out what follows the separator in its paragraph, as
-		* it left out text there (`word-stops-endnotes.docx` NE3), but for its bookmarks. Those of one of more than a paragraph,
-		* or whose paragraph has no separator, are as they are
-		*/
-		const separatorElements = (type) => {
-			var _notesByKind$endnote$;
-			const noteContent = contentOf$3((_notesByKind$endnote$ = notesByKind.endnote.get(type)) !== null && _notesByKind$endnote$ !== void 0 ? _notesByKind$endnote$ : { "w:endnote": [] });
-			const paragraphs = noteContent.filter((element) => isObject(element) && ![
-				"_attr",
-				"w:bookmarkStart",
-				"w:bookmarkEnd"
-			].includes(nameOf$1(element)));
-			const [paragraph] = paragraphs;
-			if (paragraphs.length !== 1 || !isObject(paragraph) || nameOf$1(paragraph) !== "w:p") return noteContent;
-			const children = contentOf$3(paragraph);
-			const mark = children.findIndex((child) => isObject(child) && nameOf$1(child) === "w:r" && find(childrenOf(child["w:r"]), `w:${type}`) !== void 0);
-			return mark < 0 ? noteContent : noteContent.map((element) => element === paragraph ? { "w:p": [...children.slice(0, mark + 1), ...children.slice(mark + 1).filter((child) => isObject(child) && nameOf$1(child) === "w:bookmarkStart")] } : element);
+			const alike = JSON.stringify([normal.format, normal.markFont]) === JSON.stringify([inStyle.format, inStyle.markFont]);
+			/** The styles of the paragraphs of some blocks, and of their tables' cells */
+			const stylesIn = (stack) => stack.flatMap((block) => block.type === "paragraph" ? [block.style] : block.rows.flatMap(({ cells }) => cells.flatMap((cell) => stylesIn(cell.blocks))));
+			return alike || stylesIn(noteBlocks).every((style) => style === normal.style) ? normal : _objectSpread2(_objectSpread2({}, normal), {}, { unsupported: "a footnote or endnote that ends with a table, with paragraphs of another style than Normal, in a document whose Normal and note text styles differ" });
 		};
 		/**
 		* A separator above the endnotes as Word lays it out: a line of its paragraph style's text, at single spacing and with
 		* no space before or after, whatever its own formatting. Word left out the space before and after, the line spacing
 		* and the size of the text of the separator and the continuation separator alike (`word-continued-endnotes.docx` CE3
-		* to CE5, `word-watertight-endnotes2.docx` EN2, `word-watertight-sections.docx` SC4), and the text after the separator
-		* (NE3). Its bookmarks are kept. One with text before the separator, or more than a paragraph, stops, as Word hasn't
-		* been seen laying one out, and so does one with something in it that stops the layout anywhere, such as an equation
+		* to CE5, `word-watertight-endnotes2.docx` EN2, `word-watertight-sections.docx` SC4), and their text, after the
+		* separator (`word-stops-endnotes.docx` NE3), before it, and in a paragraph after its own (stops2/word-stops-notes2.ts
+		* NE7): it drew the separator a line tall and nothing else. Their bookmarks are kept. One with text and no separator,
+		* or with a table in it, stops, as Word hasn't been seen laying one out, and so does one with something in it that
+		* stops the layout anywhere, such as an equation
 		*/
 		const readEndnoteSeparator = (type) => {
-			const content = readNoteContent("endnote", type, void 0, separatorElements(type));
+			var _notesByKind$endnote$, _content$find$unsuppo, _content$find;
+			const noteContent = contentOf$3((_notesByKind$endnote$ = notesByKind.endnote.get(type)) !== null && _notesByKind$endnote$ !== void 0 ? _notesByKind$endnote$ : { "w:endnote": [] });
+			const content = readNoteContent("endnote", type, void 0, noteContent);
 			const [first] = content;
 			if (content.length === 0) return [];
-			if (content.length > 1 || first.type !== "paragraph" || first.items.some((item) => item.type !== "marker")) return [_objectSpread2(_objectSpread2({}, first), {}, { unsupported: "an endnote separator with text in it, or of more than a paragraph" })];
-			if (first.unsupported !== void 0) return [first];
-			const { items, style } = first;
+			const unseen = content.some((block) => block.type === "table") || !hasElement(noteContent, `w:${type}`) && content.some((block) => block.type === "paragraph" && block.items.some((item) => item.type !== "marker"));
+			const unsupported = (_content$find$unsuppo = (_content$find = content.find((block) => block.unsupported !== void 0)) === null || _content$find === void 0 ? void 0 : _content$find.unsupported) !== null && _content$find$unsuppo !== void 0 ? _content$find$unsuppo : unseen ? "an endnote separator with a table in it, or text and no separator" : void 0;
+			if (unsupported !== void 0) return [_objectSpread2(_objectSpread2({}, first), {}, { unsupported })];
+			const { style } = first;
 			return [_objectSpread2({
 				type: "paragraph",
-				items,
+				items: content.flatMap((block) => block.items.filter((item) => item.type === "marker")),
 				format: {},
 				tabStops: [],
 				markFont: fontOf(combine([styles.run, ...styleChain(styles, style, "paragraph").map(({ run }) => run)]))
@@ -38590,6 +38595,7 @@ var docxLayout = (function(exports) {
 		const footnotes = /* @__PURE__ */ new Map();
 		const footnoteNumbers = /* @__PURE__ */ new Map();
 		const endnotes = [];
+		const endnoteBlockSections = [];
 		const endnoteSections = [];
 		const endnoteNumbers = /* @__PURE__ */ new Map();
 		const sectionElements = elements.flatMap((element) => {
@@ -38608,8 +38614,7 @@ var docxLayout = (function(exports) {
 				read: 0,
 				counted: 0,
 				section: sections.length,
-				inSection: 0,
-				afresh: false
+				inSection: 0
 			};
 		};
 		const noteCounts = /* @__PURE__ */ new Map();
@@ -38628,9 +38633,9 @@ var docxLayout = (function(exports) {
 		* `w:endnotePr`). Word numbers a section's notes on from all those counted before them in the document, from its own
 		* start number: after 27 footnotes, the first of a section that starts them from 5 is 32, and the first of the section
 		* after it, from 1, is 31 after 30 (`word-stops-notes.docx` NT14b, NT14c), which counts those of a section numbered
-		* afresh on each page (NT14a). A section numbered afresh in each section starts from its number, and one numbered on
-		* each page, on each page (NT14a). How Word numbers notes on through the document after a section that numbers its own
-		* afresh in each section hasn't been seen
+		* afresh on each page (NT14a), and in each section: after 9 footnotes, 2 of them numbered 1 and 2 afresh in their
+		* section, the next section's are 10 and 11 (stops2/word-stops-notes2.ts NT18). A section numbered afresh in each
+		* section starts from its number, and one numbered on each page, on each page (NT14a)
 		*/
 		const numberNext = (kind, counts, marker) => {
 			const section = sections.length;
@@ -38640,13 +38645,8 @@ var docxLayout = (function(exports) {
 			counts.set(kind, _objectSpread2(_objectSpread2({}, count), {}, {
 				counted: count.counted + 1,
 				section,
-				inSection: inSection + 1,
-				afresh: count.afresh || restart === "eachSect"
+				inSection: inSection + 1
 			}));
-			if (restart !== "eachSect" && restart !== "eachPage" && count.afresh) {
-				var _unseenNumbering;
-				(_unseenNumbering = unseenNumbering) !== null && _unseenNumbering !== void 0 || (unseenNumbering = "notes numbered on through the document after a section that numbers its own afresh");
-			}
 			if (restart === "eachPage" && kind === "footnote") {
 				unwrittenNumber || (unwrittenNumber = formatNumber(start, format) === void 0);
 				return {
@@ -38663,8 +38663,8 @@ var docxLayout = (function(exports) {
 			const next = new Map(counts);
 			return {
 				read: (kind) => numberNext(kind, next, markerNext(kind, next)),
-				readOwn: () => {
-					markerNext("footnote", next);
+				readOwn: (kind) => {
+					markerNext(kind, next);
 					return { label: "" };
 				},
 				skip: (kind) => {
@@ -38672,6 +38672,19 @@ var docxLayout = (function(exports) {
 				},
 				preview: () => previewFrom(next)
 			};
+		};
+		/** Keeps a note's blocks, by the marker at its reference, with the number it shows there */
+		const keepNote = (kind, marker, content, label) => {
+			if (kind === "endnote") {
+				endnoteSections.push(sections.length);
+				endnotes.push(...content);
+				endnoteBlockSections.push(...content.map(() => sections.length));
+				for (const block of content) endnoteNumbers.set(block, label);
+				endnoteReferences.set(marker, content);
+				return;
+			}
+			footnotes.set(marker, content);
+			footnoteNumbers.set(marker, label);
 		};
 		const readNote = (kind, id) => {
 			const marker = markerNext(kind, noteCounts);
@@ -38686,26 +38699,17 @@ var docxLayout = (function(exports) {
 				});
 				sectionsNumberingOnPages.add(sections.length);
 			}
-			if (kind === "endnote") {
-				endnoteSections.push(sections.length);
-				endnotes.push(...content);
-				for (const block of content) endnoteNumbers.set(block, label);
-				endnoteReferences.set(marker, content);
-				return {
-					label,
-					marker
-				};
-			}
-			footnotes.set(marker, content);
-			footnoteNumbers.set(marker, label);
-			return _objectSpread2(_objectSpread2({}, numbered), {}, { marker });
+			keepNote(kind, marker, content, label);
+			return kind === "endnote" ? {
+				label,
+				marker
+			} : _objectSpread2(_objectSpread2({}, numbered), {}, { marker });
 		};
 		const noteReader = {
 			read: readNote,
-			readOwn: (id) => {
-				const marker = markerNext("footnote", noteCounts);
-				footnotes.set(marker, readNoteContent("footnote", id, null));
-				footnoteNumbers.set(marker, "");
+			readOwn: (kind, id) => {
+				const marker = markerNext(kind, noteCounts);
+				keepNote(kind, marker, readNoteContent(kind, id, null), "");
 				return {
 					label: "",
 					marker
@@ -38714,8 +38718,8 @@ var docxLayout = (function(exports) {
 			skip: (kind) => {
 				const { onPage } = numberNext(kind, noteCounts, markerNext(kind, noteCounts));
 				if (onPage !== void 0) {
-					var _unseenNumbering2;
-					(_unseenNumbering2 = unseenNumbering) !== null && _unseenNumbering2 !== void 0 || (unseenNumbering = "a deleted footnote reference in a section that numbers its footnotes afresh on each page");
+					var _unseenNumbering;
+					(_unseenNumbering = unseenNumbering) !== null && _unseenNumbering !== void 0 || (unseenNumbering = "a deleted footnote reference in a section that numbers its footnotes afresh on each page");
 				}
 			},
 			preview: () => previewFrom(noteCounts)
@@ -38775,32 +38779,72 @@ var docxLayout = (function(exports) {
 		const ending = hidden.length > 0 && final !== void 0 ? endingWith(final.block, bookmarks) : void 0;
 		if (ending !== void 0) blocks[blocks.length - 1] = _objectSpread2(_objectSpread2({}, final), {}, { block: ending });
 		if (sections.length === 0 || blocks.some(({ section }) => section >= sections.length)) addSection(void 0);
-		/** Whether a section shares a page with the section before or after it, as one that starts on the page or column of another */
-		const sharesPage = (section) => [sections[section], sections[section + 1]].some((one, at) => one !== void 0 && (at === 1 || section > 0) && (one.start === "continuous" || one.start === "nextColumn"));
+		/** Whether a section starts on the page of the one before it, in its column or the next */
+		const onPageBefore = (section) => section > 0 && section < sections.length && (sections[section].start === "continuous" || sections[section].start === "nextColumn");
+		/**
+		* Whether a section of footnotes numbered afresh on each page may share a page with one numbered otherwise after one
+		* numbered afresh on each page. Word numbers the footnotes of a section numbered afresh on each page on from those of
+		* the page in sections numbered so too, from the page's first: 3 and 4 after 1 and 2 of the section before, and 1 and
+		* 2 after 12 and 13 of a section numbered on through the document (stops2/word-stops-notes2.ts NT19a, NT19b). Whether
+		* it numbers them on from those before such a section on the page hasn't been seen
+		*/
+		const afterOtherNumbering = (section) => {
+			const onEachPage = (one) => notePropertiesOf("footnote", one).restart === "eachPage";
+			let other = false;
+			for (let before = section; onPageBefore(before); before--) {
+				other || (other = !onEachPage(before - 1));
+				if (other && onEachPage(before - 1)) return true;
+			}
+			return false;
+		};
+		const endnotesAtSectionEnds = ((_readNoteProperties$p = readNoteProperties(find(settings, "w:endnotePr")).position) !== null && _readNoteProperties$p !== void 0 ? _readNoteProperties$p : NOTE_DEFAULTS.endnote.position) === "sectEnd";
+		/**
+		* The section at whose end each endnote's block goes, where the settings put them at the end of each section: its own,
+		* or the next that doesn't suppress its own, found once for each section from the last back, however many in a row do
+		*/
+		const endnoteEnds = () => {
+			const ends = sections.map((_, section) => section);
+			for (let section = sections.length - 2; section >= 0; section--) if (onOff(childrenOf(sectionElements[section]), "w:noEndnote") === true) ends[section] = ends[section + 1];
+			return endnoteBlockSections.map((section) => ends[section]);
+		};
+		const endnotesAfter = endnotesAtSectionEnds ? endnoteEnds() : [];
 		/**
 		* Why the notes of a kind can't be laid out yet, when Word numbers or places them in a way not yet followed: endnotes
-		* afresh on each page, footnotes afresh on each page of a section that shares a page with another, footnotes anywhere
-		* but at the bottom of the page or below the text, below the text of columns, and endnotes at the end of each section. Word put the endnotes of sections that say
-		* they go at the end of each section at the end of the document, as its settings say (`word-stops-endnotes.docx` NE2),
-		* so only the settings place them; how Word places them when the settings put them at the end of each section hasn't
-		* been seen
+		* afresh on each page, footnotes afresh on each page after a section on the page numbered otherwise, footnotes anywhere
+		* but at the bottom of the page or below the text, below the text of columns, and endnotes at the end of a section
+		* before one that starts on its page, in its column or the next, which Word hasn't been seen with
 		*/
 		const notesUnsupported = (kind) => {
-			var _readNoteProperties$p;
 			const all = sections.map((_, section) => notePropertiesOf(kind, section));
-			const endnotesAt = (_readNoteProperties$p = readNoteProperties(find(settings, "w:endnotePr")).position) !== null && _readNoteProperties$p !== void 0 ? _readNoteProperties$p : NOTE_DEFAULTS.endnote.position;
-			return kind === "endnote" && all.some(({ restart }) => restart === "eachPage") ? "endnotes numbered afresh on each page" : kind === "footnote" && [...sectionsNumberingOnPages].some(sharesPage) ? "footnotes numbered afresh on each page of a section that shares a page with another" : kind === "footnote" && all.some(({ position }) => position !== "pageBottom" && position !== "beneathText") ? "footnotes put elsewhere than at the bottom of the page or below the text" : kind === "footnote" && all.some(({ position }, section) => position === "beneathText" && sections[section].columns.length > 1) ? "footnotes below the text of columns" : kind === "endnote" && endnotesAt !== "docEnd" && endnoteSections.some((section) => section < sections.length - 1) ? "endnotes at the end of each section" : void 0;
+			return kind === "endnote" && all.some(({ restart }) => restart === "eachPage") ? "endnotes numbered afresh on each page" : kind === "footnote" && [...sectionsNumberingOnPages].some(afterOtherNumbering) ? "footnotes numbered afresh on each page after a section on the page numbered otherwise" : kind === "footnote" && all.some(({ position }) => position !== "pageBottom" && position !== "beneathText") ? "footnotes put elsewhere than at the bottom of the page or below the text" : kind === "footnote" && all.some(({ position }, section) => position === "beneathText" && sections[section].columns.length > 1) ? "footnotes below the text of columns" : kind === "endnote" && endnotesAtSectionEnds && endnotesAfter.some((section) => onPageBefore(section + 1)) ? "endnotes at the end of a section before one that starts on its page" : void 0;
 		};
 		if (footnotes.size > 0) sections.forEach((section, index) => {
 			if (notePropertiesOf("footnote", index).position === "beneathText") sections[index] = _objectSpread2(_objectSpread2({}, section), {}, { footnotesBeneathText: true });
 		});
-		const documentContent = _objectSpread2(_objectSpread2(_objectSpread2({
+		/**
+		* The endnotes after their separator, or, where the settings put them at the end of each section, each section's after a
+		* separator of its own, with the section each block goes at the end of
+		*/
+		const endnotesWithSeparators = () => {
+			if (endnotes.length === 0) return { endnotes: [] };
+			if (!endnotesAtSectionEnds) return { endnotes: [...readEndnoteSeparator("separator"), ...endnotes] };
+			const groups = [...new Set(endnotesAfter)].map((end) => ({
+				end,
+				separator: readEndnoteSeparator("separator"),
+				notes: endnotes.filter((_, index) => endnotesAfter[index] === end)
+			}));
+			return {
+				endnotes: groups.flatMap(({ separator, notes }) => [...separator, ...notes]),
+				endnotesAfter: groups.flatMap(({ end, separator, notes }) => [...separator, ...notes].map(() => end))
+			};
+		};
+		const documentContent = _objectSpread2(_objectSpread2(_objectSpread2(_objectSpread2({
 			blocks: withDivisions(blocks),
 			sections,
 			footnotes,
 			footnoteSeparator: footnotes.size > 0 ? readNoteContent("footnote", "separator") : [],
-			footnoteContinuationSeparator: footnotes.size > 0 ? readNoteContent("footnote", "continuationSeparator") : [],
-			endnotes: endnotes.length > 0 ? [...readEndnoteSeparator("separator"), ...endnotes] : [],
+			footnoteContinuationSeparator: footnotes.size > 0 ? readNoteContent("footnote", "continuationSeparator") : []
+		}, endnotesWithSeparators()), {}, {
 			endnoteContinuationSeparator: endnotes.length > 0 ? readEndnoteSeparator("continuationSeparator") : [],
 			footnoteNumbers
 		}, footnotesOnEachPage.size > 0 ? { footnotesOnEachPage } : {}), {}, {
@@ -38935,8 +38979,8 @@ var docxLayout = (function(exports) {
 	var UNWRITTEN_NUMBER = "a page number its format isn't written for yet";
 	var FOOTNOTE_IN_COLUMNS = "a footnote across pages in columns";
 	var MOVES_ON_FROM_TOP = "a footnote in columns whose reference moves on to the next page from the top of a column";
+	var NOTE_COLUMN_SPACE = 36;
 	var NOTE_ROOM_STEP = 1;
-	var ENDNOTES_IN_COLUMNS = "endnotes after text in columns";
 	/** The measurers the layout measures with, by those it is given, so the lines laid out with each are kept */
 	var stoppingMeasurers = /* @__PURE__ */ new WeakMap();
 	/**
@@ -38989,13 +39033,26 @@ var docxLayout = (function(exports) {
 	var BESIDE_NOTES = "a drawing that text flows around beside the footnotes at the bottom of its page";
 	/**
 	* Thrown to lay out a table again from the next page or column, when its header rows would be alone at the foot of this
-	* one, with what was guessed at in moving them (`guesses`)
+	* one, with what was guessed at in moving them (`guesses`), or, with the paragraphs kept with the next before it, from the
+	* first of them (`kept`), which go on to the next page with it
 	*/
 	var HeaderRowsAlone = class extends Error {
-		constructor(guesses) {
+		constructor(guesses, kept) {
 			super();
 			_defineProperty(this, "guesses", void 0);
+			_defineProperty(this, "kept", void 0);
 			this.guesses = guesses;
+			this.kept = kept;
+		}
+	};
+	/** Thrown to lay out the page again with a block (`block`) starting the next page (`page`) */
+	var StartsNextPage = class extends Error {
+		constructor(block, page) {
+			super();
+			_defineProperty(this, "block", void 0);
+			_defineProperty(this, "page", void 0);
+			this.block = block;
+			this.page = page;
 		}
 	};
 	/**
@@ -39147,13 +39204,27 @@ var docxLayout = (function(exports) {
 	* Lays out a document's pages, and finds the page each bookmark starts on.
 	*/
 	var paginate = (content, { pageNumbers = /* @__PURE__ */ new Map(), places: givenPlaces = /* @__PURE__ */ new Map(), earlierPlaces = /* @__PURE__ */ new Map(), pageCount: givenPageCount, sectionPageCounts: givenSectionPageCounts = [], measurer = DEFAULT_MEASURER, guess = false } = {}) => {
-		var _laidOutLines$get;
+		var _content$blocks$0$sec, _content$blocks$, _laidOutLines$get;
 		const { sections, defaultTabStop, evenAndOddHeaders, addsParagraphSpacing, footnotes, footnoteSeparator, footnoteContinuationSeparator, endnotes, endnoteContinuationSeparator, breakRules, hyphenation, footnoteNumbers, footnotesOnEachPage = /* @__PURE__ */ new Map(), endnoteNumbers, compatibilityMode, suppressesTopSpacing } = content;
-		const blocks = [...content.blocks, ...endnotes.map((block) => ({
+		const endnoteEnds = endnotes.map((_, index) => {
+			var _content$endnotesAfte, _content$endnotesAfte2;
+			return (_content$endnotesAfte = (_content$endnotesAfte2 = content.endnotesAfter) === null || _content$endnotesAfte2 === void 0 ? void 0 : _content$endnotesAfte2[index]) !== null && _content$endnotesAfte !== void 0 ? _content$endnotesAfte : sections.length - 1;
+		});
+		const endnoteBlocks = (end) => endnotes.flatMap((block, endnote) => endnoteEnds[endnote] === end ? [{
 			block: block.type === "paragraph" && !endnoteNumbers.has(block) ? _objectSpread2(_objectSpread2({}, block), {}, { format: _objectSpread2(_objectSpread2({}, block.format), {}, { keepNext: true }) }) : block,
-			section: sections.length - 1
-		}))];
-		const firstEndnote = content.blocks.length;
+			section: end,
+			endnote
+		}] : []);
+		const sectionsUpTo = (from, to) => Array.from({ length: to - from }, (_, after) => from + after);
+		const blocks = [...sectionsUpTo(0, (_content$blocks$0$sec = (_content$blocks$ = content.blocks[0]) === null || _content$blocks$ === void 0 ? void 0 : _content$blocks$.section) !== null && _content$blocks$0$sec !== void 0 ? _content$blocks$0$sec : sections.length).flatMap(endnoteBlocks), ...content.blocks.flatMap((entry, body) => {
+			var _content$blocks$secti, _content$blocks;
+			return [_objectSpread2(_objectSpread2({}, entry), {}, { body }), ...sectionsUpTo(entry.section, (_content$blocks$secti = (_content$blocks = content.blocks[body + 1]) === null || _content$blocks === void 0 ? void 0 : _content$blocks.section) !== null && _content$blocks$secti !== void 0 ? _content$blocks$secti : sections.length).flatMap(endnoteBlocks)];
+		})];
+		/** Whether a block is one of the endnotes', or their separator's */
+		const isEndnote = (index) => {
+			var _blocks$index;
+			return ((_blocks$index = blocks[index]) === null || _blocks$index === void 0 ? void 0 : _blocks$index.endnote) !== void 0;
+		};
 		/** The space between two paragraphs: the larger of the space after the first and before the second, or both */
 		const between = (after, before) => addsParagraphSpacing ? after + before : Math.max(after, before);
 		let sectionIndex = 0;
@@ -39193,9 +39264,10 @@ var docxLayout = (function(exports) {
 		};
 		/**
 		* The number of a footnote numbered afresh on each page, by the marker at its reference: one more than the footnotes
-		* of its section whose references were before it on its page in the pass before, from the section's start number, as
-		* Word numbered two footnotes on each of three pages 1 and 2 (`word-stops-notes.docx` NT14a). Blank when the pass
-		* before didn't place it. Where sections share a page, which stops the layout, those of another section aren't counted
+		* numbered so whose references were before it on its page in the pass before, from the section's start number, as
+		* Word numbered two footnotes on each of three pages 1 and 2 (`word-stops-notes.docx` NT14a), and those of a section
+		* after two of another numbered so on the page, 3 and 4, but after two numbered on through the document, 1 and 2
+		* (stops2/word-stops-notes2.ts NT19a, NT19b). Blank when the pass before didn't place it
 		*/
 		const onPageNumber = (note) => {
 			const place = givenPlaces.get(note);
@@ -39203,7 +39275,7 @@ var docxLayout = (function(exports) {
 			if (place === void 0) return "";
 			const before = [...footnotesOnEachPage.keys()].filter((other) => {
 				const at = givenPlaces.get(other);
-				return at !== void 0 && at.page === place.page && at.section === place.section && at.order < place.order;
+				return at !== void 0 && at.page === place.page && at.order < place.order;
 			}).length;
 			const text = formatNumber(start + before, format);
 			if (text === void 0) stopAt("notes numbered in a format not yet written");
@@ -39583,6 +39655,7 @@ var docxLayout = (function(exports) {
 		let pageNumber = 0;
 		let restart;
 		let restNumber;
+		let restBefore;
 		const firstPages = /* @__PURE__ */ new Map([[0, 1]]);
 		const lastPages = /* @__PURE__ */ new Map();
 		const sharingPages = /* @__PURE__ */ new Set();
@@ -39763,7 +39836,12 @@ var docxLayout = (function(exports) {
 		*/
 		const noteColumns = () => {
 			const first = pageNotes.length > 0 || continued !== void 0 ? notesInColumns : sectionIndex;
-			return first !== void 0 && sections[first].columns.length > 1 ? sections[first].columns : void 0;
+			return first === void 0 ? void 0 : columnsOfNotes(sections[first]);
+		};
+		/** The columns a section's footnotes are laid out in: their own, or the section's, when it has several */
+		const columnsOfNotes = (current) => {
+			var _current$noteColumns;
+			return (_current$noteColumns = current.noteColumns) !== null && _current$noteColumns !== void 0 ? _current$noteColumns : current.columns.length > 1 ? current.columns : void 0;
 		};
 		/** The width the page's footnotes are laid out in */
 		const noteWidth = () => {
@@ -39808,6 +39886,11 @@ var docxLayout = (function(exports) {
 			if (aboveBorder) stopAt("a line whose room below its text goes below the page, above its paragraph's border");
 			return true;
 		};
+		/** The blocks of the header or footer a page shows, or none */
+		const partBlocks = (parts, isFirst) => {
+			const kind = kindOf(parts, isFirst);
+			return kind === void 0 ? [] : parts[kind];
+		};
 		const partHeight = (parts, isFirst, width = textWidth()) => {
 			var _headerHeights$get, _bySection$get;
 			const kind = kindOf(parts, isFirst);
@@ -39819,8 +39902,18 @@ var docxLayout = (function(exports) {
 			headerHeights.set(part, bySection.set(sectionIndex, height));
 			return height;
 		};
+		/** How many pages the endnotes being laid out are on, those after the same section */
+		const endnotePages = () => {
+			const pages = /* @__PURE__ */ new Set();
+			let page = 0;
+			for (const placement of placements) {
+				page += placement.type === "page" ? 1 : 0;
+				if ((placement.type === "line" || placement.type === "row") && isEndnote(placement.block) && blocks[placement.block].section === blocks[blockIndex].section) pages.add(page);
+			}
+			return pages.size;
+		};
 		/** Whether the endnotes are on the pages before, so they go on below the continuation separator on the next */
-		const endnotesGoOn = () => blockIndex >= firstEndnote && placements.some((placement) => (placement.type === "line" || placement.type === "row") && placement.block >= firstEndnote);
+		const endnotesGoOn = () => isEndnote(blockIndex) && placements.some((placement) => (placement.type === "line" || placement.type === "row") && isEndnote(placement.block) && blocks[placement.block].section === blocks[blockIndex].section);
 		/**
 		* The room the endnotes' continuation separator takes above them, which is read as Word lays it out, a line tall
 		* whatever its own formatting (see `readEndnoteSeparator`)
@@ -39848,13 +39941,32 @@ var docxLayout = (function(exports) {
 			const down = current.textRunsDown;
 			const across = down === void 0 ? textWidth() : current.pageHeight - current.marginTop - current.marginBottom;
 			guessPage = pageCount + 1;
-			const headerBottom = current.header + partHeight(current.headers, first, across);
-			const footerTop = current.footer + partHeight(current.footers, first, across);
+			const shown = restBefore === void 0 ? current : _objectSpread2(_objectSpread2({}, current), {}, {
+				header: sections[restBefore].header,
+				footer: sections[restBefore].footer,
+				headers: sections[restBefore].headers,
+				footers: sections[restBefore].footers
+			});
+			const partsDrawn = [...partDrawings(shown, first, "headers"), ...partDrawings(shown, first, "footers")];
+			const plainHeader = partHeight(shown.headers, first, across);
+			const textLeft = columnLeft(current, 0);
+			/** The drawings beside the text of a header or footer, from its top to its bottom, across the text of the page */
+			const besideText = (from, to) => partsDrawn.filter(({ keepOut }) => overlap(keepOut, {
+				left: textLeft,
+				right: textLeft + textWidth(current),
+				top: from,
+				bottom: to
+			}));
+			const besideHeader = besideText(shown.header, shown.header + plainHeader);
+			const headerBottom = shown.header + (besideHeader.length > 0 ? headerBeside(partBlocks(shown.headers, first), besideHeader, shown.header, shown) : plainHeader);
+			const footerTop = shown.footer + partHeight(shown.footers, first, across);
+			const besideFooter = besideText(shown.pageHeight - footerTop, shown.pageHeight - shown.footer);
+			if (besideFooter.length > 0) stopAt("a drawing that text flows around in a header or footer, beside a footer's text");
 			if (down !== void 0 && footerTop > current.marginRight + TOLERANCE) stopAt("a footer that goes above the bottom margin of text that runs down the page");
 			guessPage = void 0;
 			pageCount++;
-			const header = kindOf(current.headers, first);
-			const footer = kindOf(current.footers, first);
+			const header = kindOf(shown.headers, first);
+			const footer = kindOf(shown.footers, first);
 			placements.push({
 				type: "page",
 				page: _objectSpread2(_objectSpread2(_objectSpread2(_objectSpread2({}, pageNumberOf(current)), {}, {
@@ -39864,12 +39976,15 @@ var docxLayout = (function(exports) {
 				}, down === void 0 ? {} : { textRunsDown: down }), header ? { header } : {}), footer ? { footer } : {})
 			});
 			top = down !== void 0 ? current.marginTop : current.marginTop < 0 ? -current.marginTop + current.topGutter : Math.max(current.marginTop + current.topGutter, headerBottom);
-			const continuation = endnotesGoOn() ? continuationHeight() : 0;
+			const endnotesOn = endnotesGoOn();
+			const continuation = endnotesOn ? continuationHeight() : 0;
+			const endnoteColumns = endnotesOn && current.columns.length > 1;
+			if (endnoteColumns && endnotePages() > 1) stopAt("endnotes in columns across more than two pages");
 			top += continuation;
-			pageBottom = current.pageHeight - (down !== void 0 ? current.marginBottom : current.marginBottom < 0 ? -current.marginBottom : Math.max(current.marginBottom, footerTop)) + continuation;
+			pageBottom = current.pageHeight - (down !== void 0 ? current.marginBottom : current.marginBottom < 0 ? -current.marginBottom : Math.max(current.marginBottom, footerTop)) + (endnoteColumns ? 0 : continuation);
 			position = top;
 			column = 0;
-			columnTop = top;
+			columnTop = endnoteColumns ? top - continuation : top;
 			bottom = columnsBottom();
 			placedInColumn = false;
 			deepest = 0;
@@ -39879,25 +39994,17 @@ var docxLayout = (function(exports) {
 			pageNotes = [];
 			notesInColumns = void 0;
 			filledEnd = 0;
-			drawings = [...withPinned([]), ...headerDrawings(current, first, {
-				headers: {
-					top: current.header,
-					bottom: headerBottom
-				},
-				footers: {
-					top: current.pageHeight - footerTop,
-					bottom: current.pageHeight - current.footer
-				}
-			})];
+			drawings = [...withPinned([]), ...partsDrawn.filter((drawing) => !besideFooter.includes(drawing))];
 			anchored = [];
 			continued = carried;
 			carried = void 0;
-			if (continued !== void 0 && current.columns.length > 1) notesInColumns = sectionIndex;
+			if (continued !== void 0 && columnsOfNotes(current) !== void 0) notesInColumns = sectionIndex;
 			noteArea = Math.max(areaOf([], void 0, continued), reserved());
 			notesSection = sectionIndex;
 			if (noteArea > 0 && drawings.some(({ keepOut }) => keepOut.bottom > linesBottom() + TOLERANCE)) stopAt(BESIDE_NOTES);
 			if (continued !== void 0 && noteArea > bottom - top + TOLERANCE) {
-				if (first) stopAt("a footnote continued across a continuous section break onto a page of its own");
+				var _to$cut, _from$cut;
+				if (first && current.firstNumber !== void 0) stopAt("a footnote that starts on the page after its reference's, before a continuous section numbered afresh");
 				const { name, from } = continued;
 				if (footnotes.get(name).some(boxedOrSpaced)) stopAt(BOXED_NOTE);
 				const to = fillNote(name, from, (point) => areaOf([], void 0, {
@@ -39905,7 +40012,7 @@ var docxLayout = (function(exports) {
 					from,
 					to: point
 				}) <= bottom - top + TOLERANCE, true);
-				if (to.block === from.block && to.line === from.line) throw new Unsupported("a footnote line taller than a page");
+				if (to.block === from.block && to.line === from.line && ((_to$cut = to.cut) === null || _to$cut === void 0 ? void 0 : _to$cut.length) === ((_from$cut = from.cut) === null || _from$cut === void 0 ? void 0 : _from$cut.length)) throw new Unsupported("a footnote line taller than a page");
 				carried = {
 					name,
 					from: to
@@ -39917,7 +40024,10 @@ var docxLayout = (function(exports) {
 				pageNotes = pending;
 				pending = [];
 				noteArea = Math.max(areaOf(pageNotes, void 0, continued), reserved());
-				if (noteArea > bottom - top + TOLERANCE) throw new Unsupported("footnotes after one that starts on the next page that don't fit below its end");
+				if (noteArea > bottom - top + TOLERANCE) {
+					if (leastAreaOf(pageNotes, continued) > bottom - top + TOLERANCE) throw new Unsupported("footnotes after one that starts on the next page, the last of which doesn't start below its end");
+					splitLast(pageNotes.slice(0, -1), pageNotes[pageNotes.length - 1], bottom - top);
+				}
 			}
 		};
 		/** Moves to the top of the next column, or of the next page after the last column */
@@ -39935,8 +40045,8 @@ var docxLayout = (function(exports) {
 		};
 		/** Whether a section starts on the page the section before it ends on: a continuous one, on pages of the same size */
 		const continuesOnPage = (previous, current) => current.start === "continuous" && previous.pageWidth === current.pageWidth && previous.pageHeight === current.pageHeight;
-		/** Whether two sections' pages have the same headers and footers, as far down the page, written alike in parts of their own */
-		const sameHeadersAndFooters = (one, other) => one.header === other.header && one.footer === other.footer && one.titlePage === other.titlePage && JSON.stringify([one.headers, one.footers]) === JSON.stringify([other.headers, other.footers]);
+		/** Whether two sections' pages have the same margins */
+		const sameMargins = (one, other) => one.marginTop === other.marginTop && one.marginBottom === other.marginBottom && one.marginLeft === other.marginLeft && one.marginRight === other.marginRight && one.gutter === other.gutter && one.topGutter === other.topGutter;
 		/**
 		* Whether a section starts in the next column of the page the section before it ends on, as Word starts one that
 		* starts in the next column when the section before has as many columns, on pages of the same size, and one is left
@@ -40010,15 +40120,19 @@ var docxLayout = (function(exports) {
 			const previous = section();
 			const current = sections[index];
 			const restOnPages = carried !== void 0 && !startsInNextColumn(previous, current) && (deferred === void 0 || !continuesOnPage(previous, current));
-			if (carried !== void 0 && previous.columns.length > 1 && (startsInNextColumn(previous, current) || continuesOnPage(previous, current))) throw new Unsupported("a footnote continued from columns before a section on the same page");
+			if (carried !== void 0 && previous.columns.length > 1 && startsInNextColumn(previous, current)) throw new Unsupported("a footnote continued from columns before a section in the next column");
 			if (restOnPages && continuesOnPage(previous, current)) {
-				if (!sameHeadersAndFooters(previous, current)) stopAt("a footnote continued across a continuous section break onto a page of its own", pageCount + 1);
 				sharingPages.add(sectionIndex);
 				restNumber = current.firstNumber;
+				restBefore = index;
+				if (current.titlePage || !sameMargins(previous, current)) stopAt("a footnote continued across a continuous section break onto pages of its own, before a section with a first page or margins of its own", pageCount + 1);
 			}
 			if (restOnPages) {
-				startPage();
+				do
+					startPage();
+				while (carried !== void 0);
 				restNumber = void 0;
+				restBefore = void 0;
 			}
 			lastPages.set(sectionIndex, pageCount);
 			for (let skipped = sectionIndex + 1; skipped < index; skipped++) sharingPages.add(skipped);
@@ -40126,30 +40240,61 @@ var docxLayout = (function(exports) {
 			start: index === from.block ? from.line : 0,
 			end: to !== void 0 && index === to.block ? to.line + (to.cut === void 0 ? 0 : 1) : void 0
 		}, index === from.block && from.cut !== void 0 ? { startCut: from.cut } : {}), to !== void 0 && index === to.block && to.cut !== void 0 ? { endCut: to.cut } : {})]);
+		let filledNoteParts = {
+			page: 0,
+			rows: /* @__PURE__ */ new WeakMap()
+		};
 		/**
-		* Each cell's part of a table row in a footnote that breaks across pages, in a room for the row's (`cut`), with the
-		* row's margins around it, as a row of the text breaks (see `splitRow`)
+		* Each cell's part of a table row in a footnote that breaks across pages, in the room for the row's last part, after
+		* its parts in the rooms before (`cuts`), with the row's margins around it, as a row of the text breaks (see `splitRow`)
 		*/
-		const notePartsOf = (row, cut) => row.cells.map((cell) => fillCell(cellParagraphs(cell), cut - rowMarginsOf(row), true));
+		const notePartsOf = (row, cuts) => {
+			var _filledNoteParts$rows;
+			if (filledNoteParts.page !== pageCount) filledNoteParts = {
+				page: pageCount,
+				rows: /* @__PURE__ */ new WeakMap()
+			};
+			let filled = (_filledNoteParts$rows = filledNoteParts.rows.get(row)) !== null && _filledNoteParts$rows !== void 0 ? _filledNoteParts$rows : /* @__PURE__ */ new Map();
+			filledNoteParts.rows.set(row, filled);
+			let parts = [];
+			for (const [at, cut] of cuts.entries()) {
+				var _filled$get;
+				const before = parts;
+				const known = (_filled$get = filled.get(cut)) !== null && _filled$get !== void 0 ? _filled$get : {
+					parts: row.cells.map((cell, index) => fillCell(at === 0 ? cellParagraphs(cell) : before[index].rest, cut - rowMarginsOf(row), at === 0)),
+					after: /* @__PURE__ */ new Map()
+				};
+				filled.set(cut, known);
+				({parts} = known);
+				filled = known.after;
+			}
+			return parts;
+		};
 		/**
 		* Why Word's breaking of a table row in a footnote isn't known, when it isn't: one with cells merged down rows, a table
 		* in a cell, text that runs up or down a cell, or a height of its own
 		*/
 		const unbrokenInNote = ({ cells, height }) => height !== void 0 || cells.some(({ verticalMerge, vertical, blocks: stack }) => verticalMerge !== void 0 || vertical || stack.some(({ type }) => type === "table")) ? "a table row in a footnote across pages with cells merged down rows, a table in a cell, text running up or down or a height" : void 0;
 		/**
-		* The room a table row in a footnote that breaks across pages is cut at, as low as it fits (`fits`), as a row of the text
-		* is: each time the part doesn't fit, just above the bottom of the lowest of its cells' lines, which a cell can have
-		* none of, as widow control holds them back. Undefined where none of the cells would have any, and the row moves to
-		* the next page whole
+		* The room a table row in a footnote that breaks across pages is cut at, after its parts cut before (`before`), as low as
+		* it fits (`fits`), as a row of the text is: each time the part doesn't fit, just above the bottom of the lowest of its
+		* cells' lines. Undefined where a cell with lines left would have none of them, as widow control holds them back, and
+		* the row moves to the next page whole, as Word moved a row whose cell of 3 lines couldn't go beside 2 of the other's 6
+		* (`word-notes-across-pages.docx` NP3), as a row of the text does. Where the rest of the row doesn't fit, no part taller
+		* than the page does either, so the search goes on from there, rather than a line at a time from the rest's end, which
+		* would take as many tries as the rest has lines on each page it goes on to
 		*/
-		const noteRowCut = (row, fits) => {
+		const noteRowCut = (row, fits, before = []) => {
 			const margins = rowMarginsOf(row);
+			const { pageWidth, pageHeight } = section();
+			const page = Math.max(pageWidth, pageHeight);
+			const withLines = before.length === 0 ? row.cells.map((cell) => cellParagraphs(cell).length > 0) : notePartsOf(row, before).map(({ rest }) => rest.length > 0);
 			let cut = Infinity;
 			for (;;) {
-				const parts = notePartsOf(row, cut);
-				if (parts.every(({ lines }) => lines.length === 0)) return;
+				const parts = notePartsOf(row, [...before, cut]);
+				if (parts.some(({ lines }, cell) => withLines[cell] && lines.length === 0)) return;
 				if (fits(cut)) return cut;
-				cut = margins + Math.max(...parts.map(({ height }) => height)) - 2 * TOLERANCE;
+				cut = Math.min(margins + Math.max(...parts.map(({ height }) => height)) - 2 * TOLERANCE, page);
 			}
 		};
 		/**
@@ -40163,12 +40308,11 @@ var docxLayout = (function(exports) {
 				const index = start + offset;
 				const row = table.rows[index];
 				const tallest = (parts) => rowMarginsOf(row) + Math.max(0, ...parts.map((part) => part.height)) + row.borderTop + row.borderBottom;
-				if (index === start && startCut !== void 0) return tallest(notePartsOf(row, startCut).map(({ rest }) => fillCell(rest, Infinity, false)));
 				if (index === end - 1 && endCut !== void 0) {
 					var _row$breakBorder;
 					return tallest(notePartsOf(row, endCut)) + (index < table.rows.length - 1 ? (_row$breakBorder = row.breakBorder) !== null && _row$breakBorder !== void 0 ? _row$breakBorder : bottomBorder : 0);
 				}
-				return height;
+				return index === start && startCut !== void 0 ? tallest(notePartsOf(row, startCut).map(({ rest }) => fillCell(rest, Infinity, false))) : height;
 			});
 		};
 		/**
@@ -40329,12 +40473,13 @@ var docxLayout = (function(exports) {
 				const noteSection = sections[notesInColumns];
 				stack.fillColumns((paragraph, line, noteColumn, offset, laidOut) => {
 					const { start } = stack.pieces[stack.separatorCount + paragraph];
+					const noteWidths = columnsOfNotes(noteSection);
 					placed[stack.separatorCount + paragraph].push({
 						line: laidOut,
 						isFirst: start + line === 0,
-						left: columnLeft(noteSection, noteColumn),
+						left: noteSection.noteColumns === void 0 ? columnLeft(noteSection, noteColumn) : noteSection.marginLeft + noteSection.gutter + sum(noteWidths.slice(0, noteColumn)) + noteColumn * NOTE_COLUMN_SPACE,
 						y: notesTop + offset,
-						width: noteSection.columns[noteColumn]
+						width: noteWidths[noteColumn]
 					});
 				});
 			} else {
@@ -40404,18 +40549,13 @@ var docxLayout = (function(exports) {
 		* columns (`word-watertight-stops.docx` SP6, `word-watertight-notes.docx` FN14 and FN15). Those referred to after a
 		* footnote that starts on the next page take none, as they go after it
 		*/
-		const moreNoteRoom = (notes) => {
-			if (notes.length === 0 || deferred !== void 0) return 0;
-			stopBelowContinued();
-			return pageArea([...pageNotes, ...notes]) - noteArea;
-		};
+		const moreNoteRoom = (notes) => notes.length === 0 || deferred !== void 0 ? 0 : pageArea([...pageNotes, ...notes]) - noteArea;
 		/**
-		* Stops at footnotes referred to below one that continues on the next page in columns, where the text goes on above
-		* it: whether Word puts them on the page or after the rest of that one isn't known
+		* Whether footnotes referred to below one that continues on the next page in columns, where the text goes on above it,
+		* have no room on the page: Word put the line referring to one on the next page, below the rest of the one that
+		* continues, though the second column had room for it at its top (stops2/word-stops-notes2.ts NT5b)
 		*/
-		const stopBelowContinued = () => {
-			if (carried !== void 0 && columnsSection().columns.length > 1) stopOnPage("a footnote below one that continues on the next page in columns");
-		};
+		const belowContinued = () => carried !== void 0 && columnsSection().columns.length > 1;
 		/**
 		* Puts footnotes at the bottom of the page. Every column of the page ends above them, whichever it is they are
 		* referred to from, as in Word (`word-footnotes-in-columns.docx` N1 and N3), so the columns before the one being
@@ -40437,7 +40577,7 @@ var docxLayout = (function(exports) {
 		};
 		/** Lays the page's footnotes out in the section's columns, when it is in columns and they are its first */
 		const startNoteColumns = () => {
-			if (pageNotes.length === 0 && continued === void 0 && section().columns.length > 1) notesInColumns = sectionIndex;
+			if (pageNotes.length === 0 && continued === void 0 && columnsOfNotes(section()) !== void 0) notesInColumns = sectionIndex;
 		};
 		/**
 		* Puts footnotes at the bottom of the page, the last of them only as far as it fits in a room, with the rest of it
@@ -40470,7 +40610,7 @@ var docxLayout = (function(exports) {
 			if (atStart(to) && columns === void 0) stopOnPage("a footnote that starts with a table row that breaks across pages, none of which fits below its reference");
 			if (atStart(to) || (columns === null || columns === void 0 ? void 0 : columns.some((width) => width !== columns[0]))) stopOnPage(FOOTNOTE_IN_COLUMNS);
 			pageNotes = [...whole, name];
-			noteArea = columns === void 0 ? room : areaOf(whole, {
+			noteArea = columns === void 0 || columnsSection().columns.length === 1 ? room : areaOf(whole, {
 				name,
 				to
 			}, continued);
@@ -40489,14 +40629,13 @@ var docxLayout = (function(exports) {
 		* Lays out a page again whose columns were laid out again to leave room for footnotes that moved a reference to one
 		* of them on to the next page, so the room left is more than the footnotes on the page take: without the room, and
 		* with the page ending above the reference, as Word moves the reference on and leaves the page as it is without the
-		* footnote (`word-watertight-notes.docx` FN1). It stops at a page with table rows on it, which isn't known, and
+		* footnote (`word-watertight-notes.docx` FN1), with table rows on it too (stops2/word-stops-notes2.ts NT6b). It stops
 		* where a reference moves on again, as its line stayed at the top of a later column, as at the top of any column, so
 		* the page would be laid out again for the footnote, and again without it. Whether Word moves the line on from
 		* there, as from below the top, or what is above it too, isn't known. Guessing, it moves on
 		*/
 		const checkReserve = () => {
 			if (reserved() > areaOf(pageNotes, void 0, continued) + TOLERANCE) {
-				if (placements.slice(placements.findLastIndex(({ type }) => type === "page") + 1).some(({ type }) => type === "row")) stopOnPage("a footnote in columns that moves its reference to the next page");
 				const moving = reservedFor.get(pageCount).filter((name) => !pageNotes.includes(name));
 				if (moving.some((name) => movedFromPage().includes(name))) {
 					stopAt(MOVES_ON_FROM_TOP);
@@ -40556,14 +40695,13 @@ var docxLayout = (function(exports) {
 			if (search !== void 0 && !search.found) throw new NotesGrew(nextNoteRoom(search, search.placed), []);
 		};
 		/**
-		* Stops at footnotes below the text of their page that Word hasn't been seen to place: one that goes on from the page
-		* before or on the next page, and below the space after the page's last paragraph, which Word may put above them or not
+		* Stops at footnotes below the text of their page that Word hasn't been seen to place: below the space after the last
+		* paragraph of a page whose text goes on to the next, or of the document, which Word may put above them or not. Word
+		* put them below the space after the last paragraph of a section (stops2/word-stops-notes2.ts NT20a), and the rest of
+		* one that went on across pages below the text of the next page, as a page's own (NT20b)
 		*/
 		const checkBeneathText = () => {
-			if (sections[notesSection].footnotesBeneathText && (pageNotes.length > 0 || continued !== void 0)) {
-				if (continued !== void 0 || carried !== void 0) stopAt("a footnote below the text that goes on across pages");
-				if (spaceAfter > 0) stopAt("footnotes below the text after space below its last paragraph");
-			}
+			if (sections[notesSection].footnotesBeneathText && (pageNotes.length > 0 || continued !== void 0) && spaceAfter > 0) stopAt("footnotes below the text after space below the last paragraph of a page or of the document");
 		};
 		/**
 		* Whether Word keeps a table row with the next: when the first paragraph of its first cell is kept with the next
@@ -40670,12 +40808,23 @@ var docxLayout = (function(exports) {
 		const leastAreaOf = (notes, from, columns = noteColumns()) => {
 			var _noteSearches$get3;
 			const name = notes[notes.length - 1];
-			const continues = columns === void 0 || name !== void 0 && ((_noteSearches$get3 = noteSearches.get(pageCount)) === null || _noteSearches$get3 === void 0 ? void 0 : _noteSearches$get3.marker) === name;
+			const continues = columns === void 0 || columnsSection().columns.length === 1 || name !== void 0 && ((_noteSearches$get3 = noteSearches.get(pageCount)) === null || _noteSearches$get3 === void 0 ? void 0 : _noteSearches$get3.marker) === name;
 			const to = name === void 0 || !continues ? void 0 : leastPart(name);
 			return to === void 0 ? areaOf(notes, void 0, from, columns) : areaOf(notes.slice(0, -1), {
 				name,
 				to
 			}, from, columns);
+		};
+		/**
+		* Whether the least part of a footnote, which goes on the page with its reference, is taller than a page in the page's
+		* columns, as one kept together that is
+		*/
+		const leastTallerThanPage = (name) => {
+			const to = leastPart(name);
+			return (to === void 0 ? areaOf([name], void 0, void 0) : areaOf([], {
+				name,
+				to
+			}, void 0)) > pageBottom - top + TOLERANCE;
 		};
 		/**
 		* Whether a footnote can't go on a page with its reference: the least of it that has to go there, with the separator,
@@ -40688,8 +40837,7 @@ var docxLayout = (function(exports) {
 		*/
 		const leastNoteRoom = (notes) => {
 			if (notes.length === 0 || deferred !== void 0) return 0;
-			stopBelowContinued();
-			return Math.max(reserved(), leastAreaOf([...pageNotes, ...notes], continued)) - noteArea;
+			return belowContinued() ? Infinity : Math.max(reserved(), leastAreaOf([...pageNotes, ...notes], continued)) - noteArea;
 		};
 		/**
 		* Where the part of a footnote on a page ends, from where it starts (`from`), when not all of it fits (`fits`, up to
@@ -40736,7 +40884,18 @@ var docxLayout = (function(exports) {
 					const unknown = unbrokenInNote(row);
 					if (unknown !== void 0) stopAt(unknown);
 					else if (from.cut !== void 0 && index === from.block && line === from.line) {
-						stopAt("a table row in a footnote across more than two pages");
+						const before = from.cut;
+						const cut = noteRowCut(row, (at) => fits({
+							block: index,
+							line,
+							cut: [...before, at]
+						}), before);
+						if (cut !== void 0) return {
+							block: index,
+							line,
+							cut: [...before, cut]
+						};
+						stopAt("the rest of a table row in a footnote across pages, a cell of which would have none of its lines on the page");
 						return {
 							block: index,
 							line: line + 1
@@ -40745,12 +40904,12 @@ var docxLayout = (function(exports) {
 						const cut = noteRowCut(row, (at) => fits({
 							block: index,
 							line,
-							cut: at
+							cut: [at]
 						}));
 						if (cut !== void 0) return {
 							block: index,
 							line,
-							cut
+							cut: [cut]
 						};
 					}
 				}
@@ -40775,7 +40934,7 @@ var docxLayout = (function(exports) {
 		const placeNotes = (notes, below = 0) => {
 			if (notes.length === 0) return;
 			if (deferred !== void 0) {
-				pending = [...pending, ...notes];
+				pending = [...pending, ...notes.filter((name) => name !== deferred)];
 				return;
 			}
 			if (position + below <= linesBottom(moreNoteRoom(notes)) + TOLERANCE) {
@@ -40838,39 +40997,44 @@ var docxLayout = (function(exports) {
 			return block.format.keepLines !== true || columns.length < 2 ? [] : columns.map((width) => heightToFit(linesToBreak(linesOf(block, width), 0)) > pageBottom - top + TOLERANCE);
 		};
 		/**
-		* The drawings that text flows around in the header and footer a page shows, placed on it, which the body's text goes
+		* The drawings that text flows around in the header or footer a page shows, placed on it, which the body's text goes
 		* round as round its own, as Word has it (`word-watertight-pages.docx` PG4, `word-stops-drawings.docx` DH1a to DH1d,
 		* `word-vml.docx` VM13). Those placed against the column are placed against the text across the page, which a header is
-		* in. It stops where Word's way with them isn't known, and guessing, leaves them out: on a page of text that runs down
-		* it, against a column of a section of several, beside the header's or footer's own text (`textOf`, from its top to
-		* its bottom), which may go round it, and beside a footnote continued from the page before
+		* in, as Word placed one 1 inch from the column's left in a section of 2 columns 1 inch from the margin
+		* (`word-stops-edges.docx` DH2d). Word placed one against its paragraph or line, in the first line of a header's first
+		* paragraph, against the top of that line, where the header starts (DH2a, DH2b). It stops where Word's way with them
+		* isn't known, and guessing, leaves them out: on a page of text that runs down it, lined up with a column of a section
+		* of several, which may be the first or the text across the page, placed against its paragraph or line in a footer, or
+		* in a header but in the first line of its first paragraph, and beside a footnote continued from the page before (see
+		* `startPage`)
 		*/
-		const headerDrawings = (current, first, textOf) => ["headers", "footers"].flatMap((parts) => {
+		const partDrawings = (current, first, parts) => {
 			const kind = kindOf(current[parts], first);
-			return (kind === void 0 ? [] : current[parts][kind]).flatMap((block, index) => block.type === "table" ? [] : block.items.flatMap((item, at) => {
+			const part = partBlocks(current[parts], first);
+			const width = textWidth(current);
+			const left = columnLeft(current, 0);
+			return part.flatMap((block, index) => block.type === "table" ? [] : block.items.flatMap((item, at) => {
+				var _firstLine$height;
 				if (item.type !== "drawing") return [];
 				const { drawing } = item;
-				const left = columnLeft(current, 0);
+				const { horizontal, vertical } = drawing;
+				const measured = vertical.from === "paragraph" || vertical.from === "line" ? measureParagraph(block, width, void 0, part[index + 1]) : void 0;
+				const firstLine = measured === null || measured === void 0 ? void 0 : measured.lines[0];
 				const where = placeDrawing(drawing, {
 					section: current,
 					oddPage: pageNumber % 2 === 1,
 					column: {
 						start: left,
-						end: left + textWidth(current)
+						end: left + width
 					},
-					paragraph: 0,
+					paragraph: current.header,
 					line: {
-						top: 0,
-						height: 0
+						top: current.header,
+						height: (_firstLine$height = firstLine === null || firstLine === void 0 ? void 0 : firstLine.height) !== null && _firstLine$height !== void 0 ? _firstLine$height : 0
 					},
 					character: 0
 				});
-				const keepOut = typeof where === "string" ? void 0 : keepOutOf(drawing, where);
-				const text = textOf[parts];
-				const reason = typeof where === "string" ? where : current.textRunsDown !== void 0 ? "a drawing that text flows around in a header or footer of text that runs down the page" : drawing.horizontal.from === "column" && current.columns.length > 1 ? "a drawing that text flows around in a header or footer, placed against a column of several" : overlap(keepOut, _objectSpread2({
-					left,
-					right: left + textWidth(current)
-				}, text)) ? "a drawing that text flows around in a header or footer, beside its text" : void 0;
+				const reason = typeof where === "string" ? where : current.textRunsDown !== void 0 ? "a drawing that text flows around in a header or footer of text that runs down the page" : horizontal.from === "column" && current.columns.length > 1 && (horizontal.align !== void 0 || horizontal.share !== void 0) ? "a drawing that text flows around in a header or footer, lined up with a column of several" : measured !== void 0 && (parts === "footers" || index > 0 || measured.spaceBefore + measured.borderAbove > 0 || !firstLine.markers.includes(drawingMarker(at))) ? "a drawing that text flows around, placed against its paragraph or line in a footer, or below a header's first line" : void 0;
 				if (reason !== void 0 || typeof where === "string") {
 					stopAt(reason);
 					return [];
@@ -40878,11 +41042,67 @@ var docxLayout = (function(exports) {
 				return [{
 					drawing,
 					box: where,
-					keepOut,
+					keepOut: keepOutOf(drawing, where),
 					anchor: `${parts} ${kind} ${index} ${at}`
 				}];
 			}));
-		});
+		};
+		/**
+		* How tall a header is, from its top (`from`), with its lines beside the drawings that text flows around placed on the
+		* page from it and its footer, as Word lays them out beside them, as the body's: a header of 3 lines in the room right
+		* of a picture placed against the page beside them was 4 lines, its first narrowed too (`word-stops-edges.docx` DH2c).
+		* It stops where Word's way isn't known: a line with room either side of a drawing, or below it, and a table beside one.
+		* Guessing, the line is laid out as without it
+		*/
+		const headerBeside = (part, placed, from, current) => {
+			var _stacked$0$before, _stacked$, _stacked$after, _stacked;
+			const width = textWidth(current);
+			const left = columnLeft(current, 0);
+			const within = {
+				start: left,
+				end: left + width
+			};
+			const stacked = stackParts(part, width, false);
+			let y = from + ((_stacked$0$before = (_stacked$ = stacked[0]) === null || _stacked$ === void 0 ? void 0 : _stacked$.before) !== null && _stacked$0$before !== void 0 ? _stacked$0$before : 0);
+			part.forEach((block, index) => {
+				y += index === 0 ? 0 : between(stacked[index - 1].after, stacked[index].before);
+				const besideIt = (height) => placed.some(({ keepOut }) => overlap(keepOut, {
+					left: within.start,
+					right: within.end,
+					top: y,
+					bottom: y + height
+				}));
+				if (block.type === "table") {
+					if (besideIt(stacked[index].height)) stopAt("a table in a header beside a drawing that text flows around");
+					y += stacked[index].height;
+					return;
+				}
+				const { borderAbove, borderBelow } = measureParagraph(block, width, part[index - 1], part[index + 1]);
+				const { indentLeft = 0, indentRight = 0, firstLineIndent = 0 } = block.format;
+				const rooms = /* @__PURE__ */ new Map();
+				let lines = linesOf(block, width);
+				for (let line = 0, lineTop = y + borderAbove; line < lines.length; lineTop += lines[line].height, line++) {
+					const room = roomBeside(placed, lineTop, lines[line].height, within);
+					if (!("spans" in room) || room.spans.length > 1) stopAt("a line of a header with room either side of a drawing that text flows around, or none");
+					else if (room.spans[0].start > within.start + TOLERANCE || room.spans[0].end < within.end - TOLERANCE) {
+						const [span] = room.spans;
+						const start = Math.max(span.start - left, indentLeft) + (line === 0 ? firstLineIndent : 0);
+						const end = Math.min(span.end - left, width - indentRight);
+						if (end <= start + TOLERANCE) {
+							stopAt("a line of a header with room either side of a drawing that text flows around, or none");
+							continue;
+						}
+						rooms.set(line, {
+							start,
+							end
+						});
+						lines = linesOf(block, width, new Map(rooms));
+					}
+				}
+				y += borderAbove + linesHeight(lines) + borderBelow;
+			});
+			return y + ((_stacked$after = (_stacked = stacked[stacked.length - 1]) === null || _stacked === void 0 ? void 0 : _stacked.after) !== null && _stacked$after !== void 0 ? _stacked$after : 0) - from;
+		};
 		/** The drawings placed from the top of the page and those on it, once each */
 		const withPinned = (onPage) => {
 			var _pinned$get2;
@@ -41526,11 +41746,19 @@ var docxLayout = (function(exports) {
 			let excluded = /* @__PURE__ */ new Set();
 			let excludedAt = "";
 			for (;;) {
+				let startsAfter;
 				if (excludedAt !== `${pageCount} ${column} ${index}`) excluded = /* @__PURE__ */ new Set();
 				widths = widthsFrom(widths, index, columnsSection().columns[column]);
 				const isFirstLine = index === 0;
 				if (movesOn && isFirstLine && !placedInColumn && taller[column]) {
 					nextColumn();
+					continue;
+				}
+				const [first] = isFirstLine && !placedInColumn && continued !== void 0 ? linesOf(block, widths) : [];
+				if ((first === null || first === void 0 ? void 0 : first.breakAfter) === "page" && first.textWidth === 0) {
+					mark(first.markers);
+					index = 1;
+					if (index === linesOf(block, widths).length) break;
 					continue;
 				}
 				if (isFirstLine && !placedInColumn && paragraph.joinedUnlike === true) stopAt("a paragraph at the top of a page in one box with the one before, whose between border is another");
@@ -41563,11 +41791,30 @@ var docxLayout = (function(exports) {
 				const referenceMovesOn = movingOn.has(pageCount) && beforeMoved === 0 && column > 0 && !placedInColumn;
 				if (referenceMovesOn) stopAt(MOVES_ON_FROM_TOP);
 				if (count === 0 && !placedInColumn && continued === void 0 && !referenceMovesOn) {
+					if (fits === 0 && lineNotes.length > 0 && belowContinued()) {
+						startPage();
+						continue;
+					}
 					if (fits === 0 && lineNotes.length > 0) {
 						stopIfBalancing();
 						if (!fitsAlone()) throw new Unsupported("a line and its footnote taller than a page");
-						if (columnsSection().columns.length > 1) {
-							if (column > 0 && !(startedInColumn() && column === sectionColumn)) searchNoteRoom(lineNotes[lineNotes.length - 1]);
+						const laterColumn = column > 0 && !(startedInColumn() && column === sectionColumn);
+						if (columnsSection().columns.length > 1 && lineNotes.length === 1 && leastTallerThanPage(lineNotes[0])) {
+							if (laterColumn) {
+								startPage();
+								continue;
+							}
+							[deferred] = lineNotes;
+							carried = {
+								name: deferred,
+								from: {
+									block: 0,
+									line: 0
+								}
+							};
+							count = 1;
+						} else if (columnsSection().columns.length > 1) {
+							if (laterColumn) searchNoteRoom(lineNotes[lineNotes.length - 1]);
 							count = 1;
 						} else if (lineNotes.length === 1 && startsOnNextPage(lineNotes[0])) {
 							[deferred] = lineNotes;
@@ -41578,6 +41825,9 @@ var docxLayout = (function(exports) {
 									line: 0
 								}
 							};
+							count = 1;
+						} else if (lineNotes.length > 1 && linesThatFit(remaining, room, paragraph, isFirstLine, () => noteCost(moreNoteRoom(lineNotes.slice(0, -1))), hangs).fits > 0) {
+							startsAfter = lineNotes[lineNotes.length - 1];
 							count = 1;
 						} else throw new Unsupported("a line and its footnote taller than a page");
 					} else {
@@ -41615,6 +41865,7 @@ var docxLayout = (function(exports) {
 					continue;
 				}
 				if (count > 0) {
+					var _deferred;
 					for (const { drawing, table } of laid.placed) if (table !== void 0) placeFloatingRows(table, drawing.box.top);
 					position += space;
 					checkKept(blockIndex);
@@ -41637,13 +41888,23 @@ var docxLayout = (function(exports) {
 					({rooms} = laid);
 					if (index + placedLines === lines.length) position += paragraph.borderBelow;
 					spaceAfter = 0;
-					const startsLater = deferred;
+					const startsLater = (_deferred = deferred) !== null && _deferred !== void 0 ? _deferred : startsAfter;
 					const notes = notesOf(count).filter((name) => name !== startsLater);
 					if (holdNotes && index + placedLines === lines.length) held = notes;
 					else {
 						held = [];
 						heldLines = void 0;
 						placeNotes(notes);
+					}
+					if (startsAfter !== void 0) {
+						deferred = startsAfter;
+						carried = {
+							name: deferred,
+							from: {
+								block: 0,
+								line: 0
+							}
+						};
 					}
 					placedInColumn = true;
 					index += placedLines;
@@ -42034,7 +42295,18 @@ var docxLayout = (function(exports) {
 				const atTop = !placedInColumn && continued === void 0;
 				if ((!placesLines || !fitsWhole) && atTop) {
 					stopIfBalancing();
-					if (fitsWhole && notesOf(whole).length > 0) throw new Unsupported("a table row and its footnote taller than a page");
+					if (fitsWhole && notesOf(whole).length === 1 && deferred === void 0) {
+						[deferred] = notesOf(whole);
+						carried = {
+							name: deferred,
+							from: {
+								block: 0,
+								line: 0
+							}
+						};
+						continue;
+					}
+					if (fitsWhole && notesOf(whole).length > 0) throw new Unsupported("a table row and its footnotes taller than a page");
 				}
 				if (!placesLines && atTop) {
 					if (isFirstPart && isLastPart) {
@@ -42104,6 +42376,7 @@ var docxLayout = (function(exports) {
 				layOutTable(block, onNextPage);
 			} catch (error) {
 				if (!(error instanceof HeaderRowsAlone)) throw error;
+				if (error.kept !== void 0) throw new StartsNextPage(error.kept, pageCount);
 				unmarkSince(start.marks);
 				restore(start);
 				error.guesses.forEach((reason) => stopAt(reason));
@@ -42130,10 +42403,14 @@ var docxLayout = (function(exports) {
 			const headersAlone = (index) => below !== void 0 && index >= headerRows && below.page === pageCount && below.column === column && placements.slice(below.placed).every((placement) => placement.type !== "row" || placement.row.index < headerRows);
 			const startTablePage = (index, newPage = false, continuing = false) => {
 				if (headersAlone(index)) {
-					const before = blocks[blockIndex - 1];
-					const guesses = [...(before === null || before === void 0 ? void 0 : before.section) === blocks[blockIndex].section && before.block.type === "paragraph" && before.block.format.keepNext ? ["a paragraph kept with the next before a table whose header rows go on to the next page"] : [], ...columnsSection().columns.length > 1 ? ["a table's header rows alone at the foot of a column"] : []];
+					const kept = keptBefore(blockIndex);
+					const pageStart = placements.findLastIndex(({ type }) => type === "page");
+					const first = placements.slice(pageStart).find((placement) => placement.type === "line" || placement.type === "row");
+					const inColumns = columnsSection().columns.length > 1;
+					const moving = kept < blockIndex && !inColumns && first !== void 0 && first.block < kept;
+					const guesses = kept < blockIndex && !moving ? ["a paragraph kept with the next before a table whose header rows go on, at the top of a page or in columns"] : [];
 					guesses.forEach((reason) => stopAt(reason));
-					throw new HeaderRowsAlone(guesses);
+					throw new HeaderRowsAlone(guesses, moving ? kept : void 0);
 				}
 				const page = pageCount;
 				nextColumn();
@@ -42233,15 +42510,27 @@ var docxLayout = (function(exports) {
 				const holding = held.length > 0 && heldLines !== void 0 && index < heldLines;
 				const notes = [...holding && index === heldLines - 1 ? held : [], ...notesIn(markers)];
 				const keptWhole = holding || row.cantSplit || ((_row$height6 = row.height) === null || _row$height6 === void 0 ? void 0 : _row$height6.rule) === "exact";
+				if (notes.length > 0 && belowContinued()) stopOnPage("a table row referring to a footnote below one that continues on the next page in columns");
 				placeKeptRows(index);
 				while (keptWhole && !rowStays(roomNeeded, notes) && (placedInColumn || continued !== void 0)) {
 					closeMerges(position);
 					startTablePage(index);
 				}
+				if (keptWhole && !rowStays(roomNeeded, notes) && notes.length === 1 && position + roomNeeded <= linesBottom() + TOLERANCE) {
+					stopIfBalancing();
+					[deferred] = notes;
+					carried = {
+						name: deferred,
+						from: {
+							block: 0,
+							line: 0
+						}
+					};
+				}
 				const tooTall = keptWhole && !rowStays(roomNeeded, notes);
 				if (tooTall) {
 					stopIfBalancing();
-					if (notes.length > 0 && position + roomNeeded <= linesBottom() + TOLERANCE) throw new Unsupported("a table row and its footnote taller than a page");
+					if (notes.length > 0 && position + roomNeeded <= linesBottom() + TOLERANCE) throw new Unsupported("a table row and its footnotes taller than a page");
 				}
 				const firstColumns = tooTall && section().columns.length > 1;
 				if (firstColumns && column > 0) {
@@ -42278,6 +42567,12 @@ var docxLayout = (function(exports) {
 				if (after.section === blocks[blockIndex].section) startPage();
 				else stopAt("a table whose header row is taller than a page, at the end of its section");
 			}
+		};
+		/** The first of the paragraphs kept with the next, in its section, that go before a block, or the block itself */
+		const keptBefore = (index) => {
+			let first = index;
+			while (first > 0 && blocks[first - 1].section === blocks[index].section && blocks[first - 1].block.type === "paragraph" && blocks[first - 1].block.format.keepNext === true) first--;
+			return first;
 		};
 		/** How many paragraphs from one (`index`) on are kept with the next block of their section, one after the other */
 		const keptChain = (index) => blocks.slice(index).findIndex(({ block, section: blockSection }, offset) => {
@@ -42441,15 +42736,22 @@ var docxLayout = (function(exports) {
 		* (`word-stops-floats.docx` FR1b)
 		*/
 		const endsAfterTable = (index) => {
-			var _blocks$index, _blocks5;
-			const block = (_blocks$index = blocks[index]) === null || _blocks$index === void 0 ? void 0 : _blocks$index.block;
+			var _blocks$index2, _blocks5;
+			const block = (_blocks$index2 = blocks[index]) === null || _blocks$index2 === void 0 ? void 0 : _blocks$index2.block;
 			return (block === null || block === void 0 ? void 0 : block.type) === "paragraph" && block.sectionBreak === true && (((_blocks5 = blocks[index - 1]) === null || _blocks5 === void 0 ? void 0 : _blocks5.block.type) === "table" || block.items.some((item) => item.type === "drawing" && item.drawing.frame !== void 0));
 		};
 		const placeBlock = (block, index) => {
 			var _blocks8, _blocks9;
 			blockIndex = index;
 			stopAtRead(block);
-			if (index === firstEndnote && section().columns.length > 1) stopAt(ENDNOTES_IN_COLUMNS);
+			const endnotesStart = isEndnote(index) && !isEndnote(index - 1) && section().columns.length > 1;
+			if (endnotesStart) {
+				endColumns(index);
+				blockIndex = index;
+				column = 0;
+				columnTop = position;
+				if (block.type !== "paragraph" || endnoteNumbers.has(block)) stopAt("endnotes in columns with no separator above them");
+			}
 			if (keptOn !== void 0 && index > keptOn.next) {
 				stopAt(keptOn.reason);
 				keptOn = void 0;
@@ -42465,11 +42767,7 @@ var docxLayout = (function(exports) {
 			if (block.type === "paragraph" && block.sectionBreak && !endsAfterTable(index)) {
 				var _blocks7;
 				const spaceBefore = block.format.autoSpaceBefore === true ? 0 : measureParagraph(block, width, (_blocks7 = blocks[index - 1]) === null || _blocks7 === void 0 ? void 0 : _blocks7.block).spaceBefore;
-				if (placedInColumn) {
-					position += between(spaceAfter, spaceBefore);
-					spaceAfter = between(spaceAfter, spaceBefore);
-					checkBeneathText();
-				}
+				if (placedInColumn) position += between(spaceAfter, spaceBefore);
 				spaceAfter = 0;
 				return;
 			}
@@ -42553,6 +42851,10 @@ var docxLayout = (function(exports) {
 			}
 			placeParagraph(block, paragraph, holdNotes);
 			sectionSpaceAfter = void 0;
+			if (endnotesStart) {
+				columnTop = position;
+				columnsStart = void 0;
+			}
 		};
 		/**
 		* Puts a drawing on the page from its top, to lay the page out again from the block its columns start with. It stops
@@ -42587,14 +42889,20 @@ var docxLayout = (function(exports) {
 			for (let index = from; index < to; index++) {
 				const { block, section: blockSection } = blocks[index];
 				const startsSection = blockSection !== sectionIndex;
-				if (startsSection) startSection(blockSection, index);
+				if (startsSection) {
+					blockIndex = index;
+					startSection(blockSection, index);
+				}
 				blockStart = snapshot(index);
 				if (startsSection || columnsStart === void 0) columnsStart = blockStart;
 				try {
 					placeBlock(block, index);
 				} catch (error) {
 					if (error instanceof DrawingAbove) placeAbove(error.drawing);
-					else if (error instanceof PushedOn) {
+					else if (error instanceof StartsNextPage) {
+						startsNextPage.set(error.block, error.page);
+						unmarkSince(columnsStart.marks);
+					} else if (error instanceof PushedOn) {
 						startsNextPage.set(error.block, error.page);
 						pinned.set(error.page, pinned.get(error.page).filter(({ anchor }) => Number(anchor.split(" ")[0]) !== error.block));
 					} else if (!(error instanceof NotesGrew)) throw error;
@@ -42604,12 +42912,19 @@ var docxLayout = (function(exports) {
 				}
 			}
 		};
-		/** The number and index of the endnote each of the endnotes' blocks is in, or nothing for those of their separator */
+		const endnoteOf = new Map([...content.endnoteReferences].flatMap(([marker, noteBlocks]) => noteBlocks.map((block) => [block, marker])));
+		/** The note, number and index of the endnote each of the endnotes' blocks is in, or nothing for those of their separator */
 		const endnoteParts = endnotes.map((block, index) => {
+			var _endnoteOf$get;
 			const noteNumber = endnoteNumbers.get(block);
+			const note = (_endnoteOf$get = endnoteOf.get(block)) !== null && _endnoteOf$get !== void 0 ? _endnoteOf$get : noteNumber;
 			return noteNumber === void 0 ? void 0 : {
+				note,
 				noteNumber,
-				index: endnotes.slice(0, index).filter((other) => endnoteNumbers.get(other) === noteNumber).length
+				index: endnotes.slice(0, index).filter((other) => {
+					var _endnoteOf$get2;
+					return ((_endnoteOf$get2 = endnoteOf.get(other)) !== null && _endnoteOf$get2 !== void 0 ? _endnoteOf$get2 : endnoteNumbers.get(other)) === note;
+				}).length
 			};
 		});
 		/**
@@ -42624,17 +42939,20 @@ var docxLayout = (function(exports) {
 				const placed = page + 1 === stoppedOnPage ? [] : placements.slice(start + 1, starts[page + 1]);
 				const pieces = placed.filter((placement) => placement.type === "line" || placement.type === "row");
 				const notes = pieces.flatMap((piece) => {
-					const note = endnoteParts[piece.block - content.blocks.length];
+					const { endnote } = blocks[piece.block];
+					const note = endnote === void 0 ? void 0 : endnoteParts[endnote];
 					return note === void 0 ? [] : [_objectSpread2(_objectSpread2({}, note), {}, { piece })];
-				}).reduce((all, { noteNumber, index, piece }) => {
+				}).reduce((all, { note, noteNumber, index, piece }) => {
 					const last = all[all.length - 1];
-					return (last === null || last === void 0 ? void 0 : last.noteNumber) === noteNumber ? [...all.slice(0, -1), {
+					return (last === null || last === void 0 ? void 0 : last.note) === note ? [...all.slice(0, -1), {
+						note,
 						noteNumber,
 						pieces: [...last.pieces, {
 							index,
 							piece
 						}]
 					}] : [...all, {
+						note,
 						noteNumber,
 						pieces: [{
 							index,
@@ -42643,10 +42961,13 @@ var docxLayout = (function(exports) {
 					}];
 				}, []);
 				return _objectSpread2(_objectSpread2({}, placements[start].page), {}, {
-					body: blocksOf(pieces.filter(({ block }) => block < content.blocks.length).map((piece) => ({
-						index: piece.block,
-						piece
-					}))),
+					body: blocksOf(pieces.flatMap((piece) => {
+						const { body } = blocks[piece.block];
+						return body === void 0 ? [] : [{
+							index: body,
+							piece
+						}];
+					})),
 					footnotes: placed.flatMap((placement) => placement.type === "footnotes" ? placement.notes : []),
 					endnotes: notes.map(({ noteNumber, pieces: notePieces }) => ({
 						noteNumber,
@@ -42683,10 +43004,11 @@ var docxLayout = (function(exports) {
 				restore(columnsStart);
 				placeBlocks(columnsStart.index, blocks.length);
 			}
+			if (isEndnote(blocks.length - 1) && section().columns.length > 1 && columnsStart !== void 0 && isEndnote(columnsStart.index)) endColumns(blocks.length);
 			checkAnchors();
 			checkReserve();
 			checkBeneathText();
-			if (carried !== void 0) startPage();
+			while (carried !== void 0) startPage();
 		} catch (error) {
 			if (!(error instanceof Unsupported)) throw error;
 			finishPage();
