@@ -3402,14 +3402,16 @@ describe("layoutLines in compatibility mode, as Word lays it out (scripts/layout
                 ({ textWidth }) => textWidth,
             ),
         ).to.deep.equal([140]);
-        // Past where Word was seen keeping it on the line, 941.4 points from the margin, how it breaks it hasn't been seen: text
-        // to 930 is laid out, and to 950 isn't
-        expect(linesOf([text("a"), tab, text("b".repeat(78))], left(150))).to.deep.equal([
-            { text: `a\t${"b".repeat(78)}`, textWidth: 930 },
+        // The line goes on to 22 inches from where the lines start, 1584 points, and the word that would go past that starts
+        // the next line, which breaks as the paragraph's lines do (word-stops-compat3-14.docx CN14): 48 words of 30 fit after
+        // the stop at 150, to 1580, and the 49th and the rest go on the next lines
+        expect(linesOf([text("a"), tab, text("b".repeat(80))], left(150))).to.deep.equal([
+            { text: `a\t${"b".repeat(80)}`, textWidth: 950 },
         ]);
-        expect(linesOf([text("a"), tab, text("b".repeat(80))], left(150))[0].unsupported).to.equal(
-            "text after a tab past the end of the line that goes further past the margin than Word was seen keeping it on the line, in a document in compatibility mode",
-        );
+        const long = linesOf([text("a"), tab, text(Array.from({ length: 52 }, () => "bb").join(" "))], left(150));
+        expect(long.map(({ textWidth }) => textWidth)).to.deep.equal([1580, 80, 20]);
+        expect(long[1].text).to.equal("bb bb bb ");
+        expect(long.map(({ unsupported }) => unsupported)).to.deep.equal([undefined, undefined, undefined]);
         // One to a stop on the line is as it is, and the text after it breaks as it does without
         expect(linesOf([text("a"), tab, text("bb cc dd ee ff")], left(50))).to.deep.equal([
             { text: "a\tbb cc ", textWidth: 100 },
@@ -3426,5 +3428,75 @@ describe("layoutLines in compatibility mode, as Word lays it out (scripts/layout
             );
         expect(lines(older)).to.deep.equal(lines({}));
         expect(lines(older)).to.have.length(2);
+    });
+});
+
+describe("layoutLines with Word 2003's East Asian layout (useFELayout; scripts/layout-probes/stops2/word-stops-compat3.ts FE3)", () => {
+    const run = (value: string, font: string, size: number): InlineItem => ({ type: "text", text: value, font: { font, size } });
+    /** The width of each line, in twips, laid out with the setting unless told otherwise */
+    const widthsOf = (items: readonly InlineItem[], options: Partial<LineLayoutOptions> = {}): readonly number[] =>
+        layoutLines(items, { width: 1000, feLayout: true, ...options }).map(({ textWidth }) => Math.round(textWidth * 20 * 100) / 100);
+    const reasonOf = (items: readonly InlineItem[], options: Partial<LineLayoutOptions> = {}): string | undefined =>
+        layoutLines(items, { width: 1000, feLayout: true, ...options })[0].unsupported;
+    const japanese = run("日本語の文章に", "MS Mincho", 10.5);
+    const latin = run("Latin words", "Calibri", 14);
+
+    it("should put half the average width of the font before between East Asian text and the Latin letters or digits beside it, as Word does", () => {
+        // word-stops-fe-layout3.docx FE3a: 52.5 twips after MS Mincho 10.5, a quarter of its em, and 72.94 after Calibri 14,
+        // half of 521 thousandths of an em; word-stops-fe-layout.docx FE1a: 54.7 after Calibri 10.5
+        const [plain] = widthsOf([japanese, latin, japanese], { feLayout: false });
+        expect(widthsOf([japanese, latin, japanese])[0] - plain).to.be.closeTo(52.5 + 72.94, 0.05);
+        const small = run("Latin words", "Calibri", 10.5);
+        expect(widthsOf([japanese, small, japanese])[0] - widthsOf([japanese, small, japanese], { feLayout: false })[0]).to.be.closeTo(
+            52.5 + 54.7,
+            0.05,
+        );
+        // word-stops-fe-layout2.docx FE2b: in one run of MS Mincho, whose Latin letters and digits are half an em, 52.5 either
+        // side of them: 4 gaps round "Latin words" and "123"
+        const mixed = run("日本語にLatin wordsと数字123を", "MS Mincho", 10.5);
+        expect(widthsOf([mixed])).to.deep.equal([3150 + 4 * 52.5]);
+        expect(widthsOf([mixed], { feLayout: false })).to.deep.equal([3150]);
+        // Nothing beside a space (FE2a), nor between East Asian punctuation and East Asian letters
+        expect(widthsOf([run("日本語に Latin words と数字123を", "MS Mincho", 10.5)])).to.deep.equal([3360 + 52.5 + 52.5]);
+        expect(widthsOf([run("日本語。文章にLatin", "MS Mincho", 10.5)])).to.deep.equal([7 * 210 + 5 * 105 + 52.5]);
+        // Nor without the setting, as in Word 2013's mode
+        expect(widthsOf([japanese, latin, japanese], {})).to.deep.equal(widthsOf([japanese, latin, japanese]));
+        // A bookmark's marker, or a character that takes no room, such as a zero-width space, between them leaves the space
+        // as it is, and a tab or a picture between them is no boundary
+        const [spaced] = widthsOf([japanese, latin]);
+        expect(widthsOf([japanese, { type: "marker", name: "m" }, latin])).to.deep.equal([spaced]);
+        expect(widthsOf([run("日本語の文章に\u200b", "MS Mincho", 10.5), latin])).to.deep.equal([spaced]);
+        expect(widthsOf([run("\u200b日本語の文章に", "MS Mincho", 10.5), latin])).to.deep.equal([spaced]);
+        const box: InlineItem = { type: "box", width: 10, height: 10 };
+        expect(widthsOf([japanese, box, latin])).to.deep.equal([spaced - 52.5 + 200]);
+    });
+
+    it("should leave out the space the paragraph turns off, and lay out its lines as they are with both off, as Word does", () => {
+        // FE3b: with autoSpaceDE off, the digits spaced and the letters not; FE3c: the other way round; FE2d: both off
+        const mixed = run("日本語にLatin wordsと数字123を", "MS Mincho", 10.5);
+        expect(widthsOf([mixed], { format: { autoSpaceDE: false } })).to.deep.equal([3150 + 2 * 52.5]);
+        expect(widthsOf([mixed], { format: { autoSpaceDN: false } })).to.deep.equal([3150 + 2 * 52.5]);
+        expect(widthsOf([mixed], { format: { autoSpaceDE: false, autoSpaceDN: false } })).to.deep.equal([3150]);
+        expect(reasonOf([run("日本語。abc", "MS Mincho", 10.5)], { format: { autoSpaceDE: false, autoSpaceDN: false } })).to.equal(
+            undefined,
+        );
+    });
+
+    it("should stop beside letters of another script, East Asian punctuation or full-width forms beside Latin, and a font whose average width isn't known", () => {
+        // cspell:ignore Ａabc
+        // Punctuation beside East Asian text is as it is: FE2c's curly quotes in Calibri between Chinese characters
+        const [plain] = widthsOf([run("日本語(abc)", "MS Mincho", 10.5)], { feLayout: false });
+        expect(widthsOf([run("日本語(abc)", "MS Mincho", 10.5)])).to.deep.equal([plain]);
+        expect(reasonOf([run("日本語(abc)", "MS Mincho", 10.5)])).to.equal(undefined);
+        expect(reasonOf([run("中文\u201c引号\u201d和", "SimSun", 10.5)])).to.equal(undefined);
+        const unknown =
+            "East Asian text beside letters of another script than Latin, or East Asian punctuation or full-width forms beside Latin letters or digits, in a document that lays it out as Word 2003 did (useFELayout)";
+        expect(reasonOf([run("日本語αβγ", "MS Mincho", 10.5)])).to.equal(unknown);
+        expect(reasonOf([run("日本語。abc", "MS Mincho", 10.5)])).to.equal(unknown);
+        expect(reasonOf([run("日本語Ａabc", "MS Mincho", 10.5)])).to.equal(unknown);
+        expect(reasonOf([japanese, run("abc", "Courier New", 10.5), japanese])).to.equal(
+            "East Asian text beside Latin letters or digits in a font whose average character width isn't known, in a document that lays it out as Word 2003 did (useFELayout)",
+        );
+        expect(reasonOf([japanese, run("abc", "Calibri", 10.5), japanese])).to.equal(undefined);
     });
 });

@@ -168,32 +168,42 @@ const EXACT_ABOVE_BASELINE = 0.8;
 // its text is left out (`suppressTopSpacing`), in points, in each font alike (`word-stops-top-spacing.docx` ST1 to ST3)
 const TOP_SPACE_KEPT = 9.6;
 // Why the layout stops where Word's way with the space above the first line of a page or column isn't known
-const TOP_SPACING_UNKNOWN =
-    "the first line of a page or column, at line spacing Word hasn't shown, in a document that suppresses the space above it";
+const TOP_SPACING_UNKNOWN = "the first line of a page or column, on a document grid, in a document that suppresses the space above it";
 
-// The narrowest gaps beside drawings Word 2010 and before were seen putting text in, in points. They put text aligned left
-// in gaps of 1000 to 2500 twips beside a picture (`word-stops-compat2-14.docx`, `-12` CN6a to CN6d), of 1882 beside a
-// table that text flows around (CN9), and of 2000 and 3000 beside a frame (CN7a, CN7b), and justified text in gaps of 1882
-// beside a table (`word-stops-compat-14.docx` CM10) and 2880 beside a picture (CM9), but left one of 1000 beside a frame
-// empty, of justified text (CM14), where Word 2013 puts words. Whether the frame or the justification left it empty isn't
-// known, so narrower gaps beside a frame, or of text aligned otherwise than left, haven't been seen
-const OLDER_LEAST_GAP = 50;
+// The gaps beside drawings Word 2010 and before put text in, or leave empty, in points. Beside a picture or a table that
+// text flows around they put text in gaps as Word 2013 does, as far as seen: text aligned left in gaps of 500 to 2500
+// twips beside a picture (`word-stops-compat2-14.docx`, `-12` CN6a to CN6d, `word-stops-compat3-14.docx`, `-12` CN13f,
+// CN13g) and of 1882 beside a table (CN9), justified text in gaps of 1000 beside a picture (CN13a), 1882 beside a table
+// (`word-stops-compat-14.docx` CM10) and 2880 beside a picture (CM9), and centred text in one of 1500 (CN13h). Beside a
+// frame they leave a gap of 1250 twips or less empty, of text aligned left (CN13b, CN13c) or justified (CM14), where Word
+// 2013 puts words, and put text in one of 1500 or more (CN13d, CN13e, CN7a, CN7b). Narrower gaps beside a picture or a
+// table, gaps between 1250 and 1500 beside a frame, and text aligned right beside a drawing, or centred or right beside a
+// frame, haven't been seen
+const OLDER_LEAST_GAP = 25;
+const OLDER_LEAST_GAP_JUSTIFIED = 50;
+const OLDER_LEAST_GAP_CENTERED = 75;
 const OLDER_LEAST_GAP_ALIGNED = 94;
-const OLDER_LEAST_GAP_BESIDE_FRAME = 100;
+const OLDER_EMPTY_GAP_BESIDE_FRAME = 62.5;
+const OLDER_LEAST_GAP_BESIDE_FRAME = 75;
 
 /**
- * Whether a line's room beside drawings is a gap they cut narrower than Word 2010 and before were seen putting text in, of
- * text aligned as it is: `width` of it, the room the paragraph's indents leave in it, in the line's row from `top` to
- * `bottom`, where a frame beside the row makes the gap one beside a frame
+ * How Word 2010 and before lay out a line's room beside drawings when it is a gap they cut, of text aligned as it is:
+ * `width` of it, the room the paragraph's indents leave in it, in the line's row from `top` to `bottom`, where a frame
+ * beside the row makes the gap one beside a frame. They leave a narrow gap beside a frame empty (`"empty"`), and haven't
+ * been seen with gaps narrower than those they put text in (`"unknown"`). Undefined for a gap they put text in as Word
+ * 2013 does
  */
-const narrowGap = (
+const olderGap = (
     span: Span,
     width: number,
     within: Span,
     row: { readonly top: number; readonly bottom: number },
     around: readonly PlacedDrawing[],
     alignment: ParagraphFormat["alignment"],
-): boolean => {
+): "empty" | "unknown" | undefined => {
+    if (span.start <= within.start + TOLERANCE && span.end >= within.end - TOLERANCE) {
+        return undefined;
+    }
     const beside = (edge: number, at: number): boolean => Math.abs(edge - at) <= TOLERANCE;
     const framed = around.some(
         ({ drawing, keepOut }) =>
@@ -202,12 +212,22 @@ const narrowGap = (
             row.top < keepOut.bottom &&
             (beside(keepOut.left, span.end) || beside(keepOut.right, span.start)),
     );
-    const least = framed
-        ? OLDER_LEAST_GAP_BESIDE_FRAME
-        : alignment === undefined || alignment === "left"
-          ? OLDER_LEAST_GAP
-          : OLDER_LEAST_GAP_ALIGNED;
-    return width < least && (span.start > within.start + TOLERANCE || span.end < within.end - TOLERANCE);
+    const left = alignment === undefined || alignment === "left";
+    if (framed) {
+        return width >= OLDER_LEAST_GAP_BESIDE_FRAME
+            ? undefined
+            : width <= OLDER_EMPTY_GAP_BESIDE_FRAME && (left || alignment === "justified")
+              ? "empty"
+              : "unknown";
+    }
+    const least = left
+        ? OLDER_LEAST_GAP
+        : alignment === "justified"
+          ? OLDER_LEAST_GAP_JUSTIFIED
+          : alignment === "center"
+            ? OLDER_LEAST_GAP_CENTERED
+            : OLDER_LEAST_GAP_ALIGNED;
+    return width < least ? "unknown" : undefined;
 };
 
 // Word's automatic space before and after a paragraph, in points (`word-watertight-text.docx` TX6a, TX6b)
@@ -834,6 +854,7 @@ export const paginate = (
         endnoteNumbers,
         compatibilityMode,
         suppressesTopSpacing,
+        feLayout,
     } = content;
     // The section at whose end each of the endnotes' blocks goes: the last, or each's where the settings say so
     const endnoteEnds = endnotes.map((_, index) => content.endnotesAfter?.[index] ?? sections.length - 1);
@@ -1077,6 +1098,7 @@ export const paginate = (
                 hyphenation,
                 grid: paragraph.grid,
                 compatibilityMode,
+                ...(feLayout ? { feLayout } : {}),
             });
             // The lines are kept with the guess they are, so a pass that lays them out again notes it too
             return guessed === undefined
@@ -4021,28 +4043,40 @@ export const paginate = (
                     end: Math.min(span.end - left, within.end - left - indentRight),
                 },
             }));
-            // Word 2010 and before leave a gap beside a frame 1000 twips wide empty, of justified text, where Word 2013 puts
-            // words, and put text in wider ones as it does (see `OLDER_LEAST_GAP`). How narrow a gap they leave empty isn't
-            // known. One the paragraph's indents leave no room in takes no text anyway, and one they narrow is as narrow as
-            // the room they leave. The paragraph's first line goes in the first gap of its row its first line indent leaves
-            // room in, which is measured with the indent, and a hanging indent widens no gap: where Word starts a first line
-            // that hangs past a drawing's edge hasn't been seen
+            // Word 2010 and before leave a gap beside a frame of 1250 twips or less empty, where Word 2013 puts words, and put
+            // text in wider ones, and in those beside pictures and tables, as it does (see `olderGap`). One the paragraph's
+            // indents leave no room in takes no text anyway, and one they narrow is as narrow as the room they leave. The
+            // paragraph's first line goes in the first gap of its row its first line indent leaves room in, which is
+            // measured with the indent, and a hanging indent widens no gap: where Word starts a first line that hangs past a
+            // drawing's edge hasn't been seen
             const indentOf = (offset: number): number => (offset > 0 ? Math.max(0, firstLineIndent) : 0);
             const firstLine =
                 line === 0 ? rooms.findIndex(({ inIndents: { start, end } }, offset) => end - start - indentOf(offset) > TOLERANCE) : -1;
-            const narrow = ({ span, inIndents: { start, end } }: (typeof rooms)[number], offset: number): boolean => {
+            const gapOf = (
+                { span, inIndents: { start, end } }: (typeof rooms)[number],
+                offset: number,
+            ): "empty" | "unknown" | undefined => {
                 const width = end - Math.max(start, span.start - left) - (offset === firstLine ? indentOf(offset) : 0);
-                return (
-                    end > start + TOLERANCE &&
-                    narrowGap(span, width, within, { top: y, bottom: y + height }, around, block.format.alignment)
-                );
+                return end > start + TOLERANCE && compatibilityMode !== undefined
+                    ? olderGap(span, width, within, { top: y, bottom: y + height }, around, block.format.alignment)
+                    : undefined;
             };
-            if (compatibilityMode !== undefined && rooms.some(narrow)) {
+            const gaps = rooms.map(gapOf);
+            if (gaps.includes("unknown")) {
                 stopAt(
                     "a line beside a drawing or frame in a gap narrower than Word was seen putting text in, in a document in compatibility mode",
                 );
             }
-            const spans = rooms.map(({ inIndents }) => inIndents).filter((span) => span.end > span.start + TOLERANCE);
+            // Where a narrow gap beside a frame is all the room a line has, where Word 2010 puts the line hasn't been seen
+            if (gaps.includes("empty") && gaps.every((gap) => gap !== undefined)) {
+                stopAt(
+                    "a line whose only room is a gap beside a frame that Word 2010 and before leave empty, in a document in compatibility mode",
+                );
+            }
+            const spans = rooms
+                .filter((_, offset) => gaps[offset] !== "empty")
+                .map(({ inIndents }) => inIndents)
+                .filter((span) => span.end > span.start + TOLERANCE);
             const ownRoom = within.end - left - indentRight - (indentLeft + (line === 0 ? firstLineIndent : 0)) > TOLERANCE;
             if (spans.length === 0 && ownRoom) {
                 // The room beside the drawings is outside the paragraph's indents, so the line goes below them, as it does
@@ -4207,22 +4241,21 @@ export const paginate = (
      * a page break, with the space before the paragraph, which is left out there, at the top of a column, and of a section
      * on a new page, below the space before its first paragraph there (`word-stops-top-spacing.docx` ST1 to ST5,
      * `word-stops-top-spacing2.docx` ST6, ST10, ST12), and for a paragraph's later line at the top of the next page too
-     * (ST8). It leaves a line of single or multiple spacing as it is (ST4b, ST7), and the first line of a paragraph with a
-     * border above it (ST11). Multiple spacing of less than a line, a line on a document grid, and a later line of a
-     * paragraph with a border above it haven't been seen. Guessing, nothing is left out
+     * (ST8), in a document whose text is Calibri 20 and below a header too (`word-stops-top-spacing3.docx` ST13, ST14). It
+     * leaves a line of single or multiple spacing as it is, of less than a line too (ST4b, ST7, `word-stops-top-spacing4.docx`
+     * ST16a), and the lines of a paragraph with a border above it, its first (ST11) and a later one at the top of the next
+     * page (ST16b). A line on a document grid hasn't been seen. Guessing, nothing is left out
      */
-    const cutAbove = (block: ParagraphBlock, isFirstLine: boolean, borderAbove: number): number => {
+    const cutAbove = (block: ParagraphBlock, borderAbove: number): number => {
         const spacing = block.format.lineSpacing;
-        if (spacing === undefined || (spacing.rule === "multiple" && spacing.multiple >= 1) || (isFirstLine && borderAbove > 0)) {
+        if (spacing === undefined || spacing.rule === "multiple" || borderAbove > 0) {
             return 0;
         }
         const cut =
             spacing.rule === "exact"
                 ? Math.max(0, EXACT_ABOVE_BASELINE * spacing.height - TOP_SPACE_KEPT)
-                : spacing.rule === "atLeast"
-                  ? Math.max(0, spacing.height - TOP_SPACE_KEPT)
-                  : undefined;
-        if (cut === undefined || (cut > 0 && (borderAbove > 0 || block.grid?.linePitch !== undefined))) {
+                : Math.max(0, spacing.height - TOP_SPACE_KEPT);
+        if (cut > 0 && block.grid?.linePitch !== undefined) {
             stopAt(TOP_SPACING_UNKNOWN);
             return 0;
         }
@@ -4317,12 +4350,12 @@ export const paginate = (
             if (isFirstLine && !placedInColumn && paragraph.joinedUnlike === true) {
                 stopAt("a paragraph at the top of a page in one box with the one before, whose between border is another");
             }
-            if (!placedInColumn && block.unknownAtTop !== undefined) {
+            if (isFirstLine && !placedInColumn && block.unknownAtTop !== undefined) {
                 stopAt(block.unknownAtTop);
             }
             const above = isFirstLine ? spaceAbove() + paragraph.borderAbove : 0;
             const atTop = suppressesTopSpacing === true && !placedInColumn;
-            const space = above - (atTop ? cutAbove(block, isFirstLine, paragraph.borderAbove) : 0);
+            const space = above - (atTop ? cutAbove(block, paragraph.borderAbove) : 0);
             // Its lines in rows down the column, beside the drawings on the page and its own, placed against its top. The space
             // after the paragraph before is that paragraph's, so its top is below it, and only the rest of the space above it
             // is its own (`word-floats2.docx` G7 to G10)

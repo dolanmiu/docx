@@ -554,6 +554,11 @@ export type DocumentContent = {
     readonly compatibilityMode?: number;
     /** Whether the space above the text of the first line of a page or column is left out (`suppressTopSpacing`) */
     readonly suppressesTopSpacing?: boolean;
+    /**
+     * Whether the document lays out East Asian text as Word 2003 did (`useFELayout`), spacing it apart from the Latin letters
+     * and digits beside it (see `layoutLines`)
+     */
+    readonly feLayout?: boolean;
     /** The number each footnote shows, by the name of its marker: empty for those numbered on each page, or with a mark of their own */
     readonly footnoteNumbers: ReadonlyMap<string, string>;
     /**
@@ -1156,9 +1161,13 @@ const readDrawing = (element: XmlObject, font: TextFont, reader: Reader): readon
 
 // Word 2007 and 2003 put the line of docx's text box (VML) 14 twips higher than Word 2010 and 2013 do
 // (`word-stops-compat-12.docx` CM14): they give its outline no room of its own beside the box, across or down, though
-// they draw the box as large, and in the same place (`word-stops-compat2-12.docx` CN11a, CN11b). The layout stops at
-// other VML drawings that take room in a document in their compatibility modes, which haven't been seen there
-const OLDER_VML = "a VML drawing other than a text box in the line, in a document in compatibility mode 12 or 11";
+// they draw the box as large, and in the same place (`word-stops-compat2-12.docx` CN11a, CN11b). So they do a rectangle in
+// the line, whose line is 19 twips shorter and the text after it 19 nearer with an outline of a point
+// (`word-stops-compat3-12.docx` CN18a), and a text box placed on the page that text flows around, the text beside it 21
+// nearer (CN18b). The layout stops at other VML drawings that take room in a document in their compatibility modes, which
+// haven't been seen there
+const OLDER_VML =
+    "a VML shape that text flows around, an embedded object, or a VML drawing in a header, footer or text box, in a document in compatibility mode 12 or 11";
 // A VML shape with neither a width nor a height is 50 points square (`word-stops-vml-shapes.docx` VM29d)
 const DEFAULT_VML_SIZE = 50;
 // Word draws a VML picture (`v:imagedata`) at its shape's size: pictures of 100 by 50 pixels in shapes of 20 to 150 points
@@ -1259,22 +1268,25 @@ const readVml = (pict: unknown, font: TextFont, reader: Reader): readonly Layout
         if (wrap === undefined || attributesOf(wrap).type === "none") {
             return [];
         }
-        const reason = olderVml(reader)
-            ? OLDER_VML
-            : reader.inCell || reader.inNote || reader.inTextBox
-              ? IN_CELL_OR_NOTE
-              : group
-                ? "a VML group of shapes that text flows around"
-                : picture
-                  ? VML_PICTURE_FLOATING
-                  : typeof width !== "number" || typeof height !== "number"
-                    ? unsized()
-                    : undefined;
+        const reason =
+            olderVml(reader) && shape.text === undefined
+                ? OLDER_VML
+                : reader.inCell || reader.inNote || reader.inTextBox
+                  ? IN_CELL_OR_NOTE
+                  : group
+                    ? "a VML group of shapes that text flows around"
+                    : picture
+                      ? VML_PICTURE_FLOATING
+                      : typeof width !== "number" || (typeof height !== "number" && !(shape.text !== undefined && fitsText(shape)))
+                        ? unsized()
+                        : undefined;
         if (reason !== undefined) {
             return reason;
         }
         if (shape.text !== undefined) {
-            return readFloatingTextBox(shape, wrap as XmlObject, width as number, height as number, outline, reader);
+            // A text box sized to its text is as tall as its text, whatever height it gives, or none (`word-vml.docx` VM3,
+            // `word-stops-compat3-15.docx` CN18b: `height:auto`)
+            return readFloatingTextBox(shape, wrap as XmlObject, width as number, typeof height === "number" ? height : 0, outline, reader);
         }
         const floating = readVmlFloating(shape, wrap as XmlObject, width as number, height as number, outline.drawn ? outline.weight : 0);
         return typeof floating === "string" ? floating : floatingItem(floating, reader);
@@ -1284,7 +1296,7 @@ const readVml = (pict: unknown, font: TextFont, reader: Reader): readonly Layout
         typeof width === "number" && typeof height === "number"
             ? guessedOr(reader, reason, () => [{ type: "box", width, height, font }])
             : reason;
-    if (olderVml(reader) && (shape.text === undefined || reader.inHeader || reader.inTextBox)) {
+    if (olderVml(reader) && (reader.inHeader || reader.inTextBox)) {
         return OLDER_VML;
     }
     if (reader.inTextBox) {
@@ -1296,7 +1308,8 @@ const readVml = (pict: unknown, font: TextFont, reader: Reader): readonly Layout
     if (typeof width !== "number" || typeof height !== "number") {
         return unsized();
     }
-    const room = outline.drawn ? outline.weight : 0;
+    // Word 2007 and 2003 give its outline no room (see `OLDER_VML`)
+    const room = outline.drawn && !olderVml(reader) ? outline.weight : 0;
     const drawn = picture ? pictureSizeOf(imagedata, width, height, reader) : { width, height };
     return typeof drawn === "string" ? sized(drawn) : [{ type: "box", width: drawn.width + room, height: drawn.height + room, font }];
 };
@@ -1358,6 +1371,9 @@ const textBoxBlocks = (shape: VmlShape, reader: Reader): readonly Block[] | stri
  * fields in it are where it is, in the paragraph it is in, and a footnote referred to in it is left out, reference and
  * note, as Word leaves it (`word-stops-vml-note.docx` VM26a). Or why it can't be laid out
  */
+/** Whether a text box is sized to its text (`mso-fit-shape-to-text`), as docx writes its text boxes to be */
+const fitsText = (shape: VmlShape): boolean => shape.textStyle?.get("mso-fit-shape-to-text") === "t";
+
 const readTextBox = (
     shape: VmlShape,
     width: number | string | undefined,
@@ -1368,7 +1384,7 @@ const readTextBox = (
 ): readonly LayoutItem[] | string => {
     const textbox = find(childrenOf(shape.element[nameOf(shape.element)]), "v:textbox");
     const insets = textBoxInsets(textbox);
-    const fits = shape.textStyle?.get("mso-fit-shape-to-text") === "t";
+    const fits = fitsText(shape);
     if (typeof width !== "number") {
         return width ?? "a VML drawing with no size";
     }
@@ -1421,7 +1437,7 @@ const readFloatingTextBox = (
     if (typeof insets === "string") {
         return insets;
     }
-    if (shape.textStyle?.get("mso-fit-shape-to-text") !== "t") {
+    if (!fitsText(shape)) {
         return "a text box that text flows around not sized to its text";
     }
     const blocks = textBoxBlocks(shape, reader);
@@ -1432,7 +1448,8 @@ const readFloatingTextBox = (
     if (paragraphs.length !== blocks.length) {
         return "a table in a text box that text flows around";
     }
-    const floating = readVmlFloating(shape, wrap, width, height, outline.drawn ? outline.weight : 0);
+    // Word 2007 and 2003 give its outline no room beside it (see `OLDER_VML`)
+    const floating = readVmlFloating(shape, wrap, width, height, outline.drawn && !olderVml(reader) ? outline.weight : 0);
     if (typeof floating === "string") {
         return floating;
     }
@@ -2431,48 +2448,6 @@ const withFeaturesOf = (format: RunFormat, { compatibilityMode, openTypeFeatures
         ? { ...format, ligatures: undefined }
         : format;
 
-/**
- * Why a paragraph can't be laid out as Word lays it out in the document's compatibility mode, or with Word 2003's layout
- * of East Asian text (`useFELayout`), when it can't. Word 2010 and before don't squeeze the spaces of a justified line,
- * nor of a distributed one, or one justified for Thai or with a low kashida (`word-stops-compat-14.docx` CM1,
- * `word-stops-compat2-14.docx` CN4a to CN4c), which the lines are broken for (see `line-breaking.ts`). Word 2007 and 2003
- * break East Asian text otherwise than Word 2010 and 2013 (CM18, CN10a to CN10c), and Word 2003's East Asian layout
- * spaces it apart from the text beside it (`word-stops-fe-layout.docx` FE1a, FE1b): see below. Paragraphs without East
- * Asian text it lays out as they are without it (FE1c to FE1f).
- */
-const unknownInOlderLayout = (items: readonly LayoutItem[], reader: Reader, autoSpaced: boolean): string | undefined => {
-    const { compatibilityMode } = reader;
-    // Its East Asian text is looked for only where it is laid out otherwise, as the text of every paragraph is long. Word 2007
-    // and 2003 break that of no East Asian language only at its spaces (see `ideographs` in `LineBreakRules`), beside
-    // characters past ASCII that aren't East Asian too, such as curly quotes, in the run's font for them (`w:hAnsi`;
-    // `word-stops-compat2-12.docx` CN10c). That of an East Asian language, whose characters that can't start or end a line
-    // Word knows, hasn't been seen
-    const older = compatibilityMode !== undefined && compatibilityMode < WORD_2010_MODE;
-    const texts = items.filter((item) => item.type === "text");
-    const eastAsian = texts.some((item) => [...item.text].some(isEastAsian));
-    if (!eastAsian || (!older && reader.feLayout !== true)) {
-        return undefined;
-    }
-    // Word 2003's layout of East Asian text puts a quarter of an em between East Asian text and Latin letters and digits
-    // beside it, with the paragraph's automatic spacing of them on (`w:autoSpaceDE`, `w:autoSpaceDN`), as it is unless the
-    // paragraph turns it off: 52.5 twips at 10.5 points (`word-stops-fe-layout2.docx` FE2b, `word-stops-fe-layout.docx` FE1a,
-    // FE1b), which isn't followed yet. Otherwise it lays out its lines as without it: Japanese and Chinese after a space,
-    // and Japanese with Latin words with both turned off (FE2a, FE2c, FE2d)
-    if (!older) {
-        const characters = [...texts.map(({ text }) => text).join("")];
-        const beside = characters.some(
-            (character, at) =>
-                at > 0 && isEastAsian(character) !== isEastAsian(characters[at - 1]) && !/\s/u.test(character + characters[at - 1]),
-        );
-        return autoSpaced && beside
-            ? "East Asian text beside other text, which Word spaces apart, in a document that lays it out as Word 2003 did (useFELayout)"
-            : undefined;
-    }
-    return texts.some((item) => kinsokuLanguageOf(item.language) !== undefined)
-        ? "East Asian text in an East Asian language, in a document in compatibility mode 12 or 11"
-        : undefined;
-};
-
 // A line of space before or after a paragraph, in `w:beforeLines` and `w:afterLines`, is 12 points whatever the font: 100
 // is 240 twips in Calibri 11, whose lines are 268.55 (`word-watertight-text.docx` TX7d)
 const POINTS_PER_LINE = 12;
@@ -2869,13 +2844,7 @@ const readParagraph = (element: XmlObject, reader: Reader, tableFormats: TableFo
                   ? "a paragraph justified for Arabic with a medium or high kashida"
                   : forThaiOrArabic && typeof items !== "string" && items.some((item) => item.type === "text" && ARABIC.test(item.text))
                     ? "Arabic text justified for Thai or with a kashida"
-                    : (unknownInOlderLayout(
-                          content,
-                          reader,
-                          onOff(properties, "w:autoSpaceDE") !== false || onOff(properties, "w:autoSpaceDN") !== false,
-                      ) ??
-                      (typeof format === "string" ? format : undefined) ??
-                      (typeof borders === "string" ? borders : undefined)));
+                    : ((typeof format === "string" ? format : undefined) ?? (typeof borders === "string" ? borders : undefined)));
     return {
         type: "paragraph",
         items: content,
@@ -2895,9 +2864,7 @@ const readParagraph = (element: XmlObject, reader: Reader, tableFormats: TableFo
         ...(typeof borders === "object" ? { borders } : {}),
         ...(paragraphGrid !== undefined && Object.keys(paragraphGrid).length > 0 ? { grid: paragraphGrid } : {}),
         ...(typeof frame === "object" ? { frame } : {}),
-        ...(division?.division === undefined
-            ? {}
-            : { division: division.division, unknownAtTop: "a paragraph in an HTML division at the top of a page or column" }),
+        ...(division?.division === undefined ? {} : { division: division.division }),
         style,
         // Word's chapter numbers are the numbers headings' styles give them, and it passes over headings numbered on their
         // own, or not at all
@@ -2940,10 +2907,9 @@ const divisionsIn = (
  * one box, with its margin above the box and below it as the space before its first paragraph and after its last: 720
  * twips in on each side, and 230 above and below three paragraphs, a margin of 120, a border of 30 and its space of 80
  * (`word-stops-divisions.docx` DV2a, DV2b, `word-stops-pages.docx` DV1a). A division in another with the same margins
- * above and below has them once (DV2d). With the paragraph's own space before or after it, the division's borders and
- * margins above and below aren't laid out that way (DV2c), and its own indents or borders, a division in another with
- * borders or other margins, a quotation or a page's body, and a division in a table cell, a note, a header, a footer or a
- * text box, haven't been seen.
+ * above and below has them once (DV2d). Its paragraphs after other paragraphs, and its margins beside their own space,
+ * are as `withDivisions` says. Its own indents or borders, a division in another with borders or other margins, a
+ * quotation or a page's body, and a division in a table cell, a note, a header, a footer or a text box, haven't been seen.
  */
 const readDivision = (
     properties: readonly XmlObject[],
@@ -2971,7 +2937,6 @@ const readDivision = (
         const border = find(division, "w:divBdr");
         return border === undefined ? [] : [border];
     });
-    const spaced = [own.spaceBefore, own.spaceAfter, own.spaceBeforeLines, own.spaceAfterLines].some((space) => (space ?? 0) !== 0);
     const indented = [own.indentLeft, own.indentRight, own.firstLineIndent, own.indentLeftChars, own.indentRightChars, own.firstLineChars];
     const bordered = [own.borderTop, own.borderBottom, own.borderLeft, own.borderRight, own.borderBetween, own.borderBar];
     const unsupported =
@@ -2981,11 +2946,9 @@ const readDivision = (
               ? "an HTML division that is a quotation or a page's body"
               : above.size > 1 || below.size > 1 || (chain.length > 1 && borders.length > 0)
                 ? "an HTML division in another, with borders, or other margins above or below"
-                : spaced || own.autoSpaceBefore === true || own.autoSpaceAfter === true
-                  ? "a paragraph in an HTML division with space before or after it"
-                  : indented.some((indent) => (indent ?? 0) !== 0) || bordered.some((border) => border !== undefined)
-                    ? "a paragraph in an HTML division with indents or borders of its own"
-                    : undefined;
+                : indented.some((indent) => (indent ?? 0) !== 0) || bordered.some((border) => border !== undefined)
+                  ? "a paragraph in an HTML division with indents or borders of its own"
+                  : undefined;
     const sum = (name: string): number => margin(name).reduce((total, length) => total + length, 0);
     return {
         format: readParagraphFormat([
@@ -2999,42 +2962,109 @@ const readDivision = (
 
 /**
  * The body's blocks with the margins of the divisions of a web page their paragraphs are in as space before the first
- * paragraph of each division and after its last (see `readDivision`). Space after the paragraph before a division, or
- * before the one after it, or a division next to another, haven't been seen
+ * paragraph of each run of them and after its last (see `readDivision`), and the division's borders above and below its
+ * first run only. Word draws a division's box once, round the first run of its paragraphs in the document: three
+ * paragraphs in one with margins of 120 twips and borders of 30 with 80 of space are in one box, 230 above the first and
+ * below the last (`word-stops-divisions.docx` DV2a), and so is one at the top of a page, below the border and its space
+ * without the margin (`word-stops-divisions2.docx` DV3a). Its paragraphs after other paragraphs have its left and right
+ * borders beside their lines, and its margins above their first and below their last, but no border above or below (DV3b
+ * to DV3f), and so a margin is beside the paragraph's own space before or after, where the larger of the two is taken,
+ * 120 with 60 of its own and 240 with 240 (DV3c, DV3d, DV2c), as the larger of a paragraph's space after and the next
+ * one's space before is between them, 120 after a paragraph with 60 after it (DV3e) and between two divisions (DV3b).
+ * Where the box's border is above or below, a paragraph with space of its own, or next to one with space between them,
+ * or another division, hasn't been seen, nor has a division without a border above at the top of a page or column, a
+ * paragraph with automatic space or space in lines, or a division next to a paragraph with space between them, or to
+ * another division, in a document that adds the space after a paragraph to the space before the next
+ * (`w:doNotUseHTMLParagraphAutoSpacing`)
  */
 const withDivisions = (
     blocks: readonly { readonly block: Block; readonly section: number }[],
+    addsParagraphSpacing: boolean,
 ): readonly { readonly block: Block; readonly section: number }[] => {
     const divisionOf = (at: number): ParagraphBlock["division"] => {
         const block = blocks[at]?.block;
         return block?.type === "paragraph" ? block.division : undefined;
     };
+    // Whether each block is in a run of its division's paragraphs after the first
+    const seen = new Set<string>();
+    let inLaterRun = false;
+    const laterRun = blocks.map((_, at) => {
+        const division = divisionOf(at);
+        if (division === undefined) {
+            return false;
+        }
+        if (divisionOf(at - 1)?.id !== division.id) {
+            inLaterRun = seen.has(division.id);
+            // eslint-disable-next-line functional/immutable-data
+            seen.add(division.id);
+        }
+        return inLaterRun;
+    });
+    /**
+     * Whether the division's box has a border above the paragraph at `at`, the first of its run, or below it, the last. Only
+     * asked of a paragraph in a division
+     */
+    const boxed = (at: number, side: "borderTop" | "borderBottom"): boolean =>
+        laterRun[at] === false && (blocks[at].block as ParagraphBlock).format[side] !== undefined;
     return blocks.map((placed, at) => {
         const { block } = placed;
         if (block.type !== "paragraph" || block.division === undefined) {
             return placed;
         }
         const { id, above, below } = block.division;
+        const { format } = block;
         const [before, after] = [at - 1, at + 1].map(divisionOf);
         const [previous, next] = [blocks[at - 1]?.block, blocks[at + 1]?.block];
         const first = before?.id !== id;
         const last = after?.id !== id;
+        const boxedAbove = first && boxed(at, "borderTop");
+        const boxedBelow = last && boxed(at, "borderBottom");
+        const own = { before: format.spaceBefore ?? 0, after: format.spaceAfter ?? 0 };
         const spacedBefore =
             previous?.type === "paragraph" && ((previous.format.spaceAfter ?? 0) > 0 || previous.format.autoSpaceAfter === true);
         const spacedAfter = next?.type === "paragraph" && ((next.format.spaceBefore ?? 0) > 0 || next.format.autoSpaceBefore === true);
+        // Whether the division before this one's run ends with its box's border, or the one after starts with its
+        const boxedBefore = first && before !== undefined && boxed(at - 1, "borderBottom");
+        const boxedAfter = last && after !== undefined && boxed(at + 1, "borderTop");
         const unsupported =
-            (first && before !== undefined) || (last && after !== undefined)
-                ? "an HTML division next to another"
-                : (first && spacedBefore) || (last && spacedAfter)
-                  ? "an HTML division next to a paragraph with space before or after it"
-                  : undefined;
+            format.autoSpaceBefore === true ||
+            format.autoSpaceAfter === true ||
+            (format.spaceBeforeLines ?? 0) !== 0 ||
+            (format.spaceAfterLines ?? 0) !== 0
+                ? "a paragraph in an HTML division with automatic space before or after it, or space in lines"
+                : (own.before > 0 && (!first || boxedAbove)) || (own.after > 0 && (!last || boxedBelow))
+                  ? "a paragraph in an HTML division with space before or after it, where the division has a border there or another paragraph of it"
+                  : (first && spacedBefore && boxedAbove) ||
+                      (last && spacedAfter && boxedBelow) ||
+                      (first && before !== undefined && (boxedAbove || boxedBefore)) ||
+                      (last && after !== undefined && (boxedBelow || boxedAfter))
+                    ? "an HTML division with a border above or below it next to a paragraph with space between them, or next to another division"
+                    : addsParagraphSpacing &&
+                        ((first && (spacedBefore || before !== undefined)) || (last && (spacedAfter || after !== undefined)))
+                      ? "an HTML division next to a paragraph with space between them, or to another division, in a document that adds the space after a paragraph to the space before the next"
+                      : undefined;
+        // After the division's first run, the box has no border above or below its paragraphs, so no room above or below
+        // for them, which `readBorders` could only fail to read
+        const withoutBox: ParagraphFormat = laterRun[at]
+            ? withoutUndefined({ ...format, borderTop: undefined, borderBottom: undefined })
+            : format;
+        const borders = laterRun[at] ? readBorders(withoutBox) : block.borders;
         return {
             ...placed,
-            block: {
+            block: withoutUndefined({
                 ...block,
-                format: { ...block.format, spaceBefore: first ? above : 0, spaceAfter: last ? below : 0 },
-                ...(block.unsupported === undefined && unsupported !== undefined ? { unsupported } : {}),
-            },
+                format: {
+                    ...withoutBox,
+                    spaceBefore: first ? (boxedAbove ? above : Math.max(above, own.before)) : own.before,
+                    spaceAfter: last ? (boxedBelow ? below : Math.max(below, own.after)) : own.after,
+                },
+                borders: typeof borders === "object" ? borders : undefined,
+                unknownAtTop:
+                    first && !boxedAbove
+                        ? "a paragraph in an HTML division without a border above it at the top of a page or column"
+                        : undefined,
+                unsupported: block.unsupported ?? unsupported,
+            }),
         };
     });
 };
@@ -3814,13 +3844,13 @@ const readTable = (element: XmlObject, reader: Reader): TableBlock | undefined =
     const float = floatElement === undefined ? undefined : readTableFloat(floatElement, find(properties, "w:tblOverlap"));
     // In compatibility mode, Word 2010 and before put a table's text, rather than its borders, at its indent, and give one
     // sized to its text its cells' margins beside the room for it, the page's text or what its indent leaves of it
-    // (`word-stops-compat-14.docx` CM4, CM5, CM11, CM16, `word-stops-compat2-14.docx`, `-12` CN8a). One in a table cell
-    // they size as Word 2013 does, its borders at the cell's text (CN8d). How they size one as a share of the width hasn't
-    // been seen: wider than the share, by its first cell's margin, at least (CN8b), nor one indented or as a share of the
-    // width in a table cell. One that text flows around they place with its text where Word 2013 puts its border, its
-    // first cell's margin and half its left border to the left (CM10, CN9), the text beside it half a point from it with
-    // no distance given, as in Word 2013's mode (CN9; see `readTableFloat`). One lined up across the page, or sized to its
-    // text, which haven't been seen, stop the layout
+    // (`word-stops-compat-14.docx` CM4, CM5, CM11, CM16, `word-stops-compat2-14.docx`, `-12` CN8a), or a share of the room
+    // with the margins (CN8b, `word-stops-compat3-14.docx`, `-12` CN12a to CN12c; see `fitTo`). One in a table cell they
+    // size as Word 2013 does, its borders at the cell's text (CN8d), but one indented or as a share of the width in a table
+    // cell hasn't been seen. One that text flows around they place with its text where Word 2013 puts its border, its
+    // first cell's margin and half its left border to the left (CM10, CN9), one sized to its text too (CN15a), the text
+    // beside it half a point from it with no distance given, as in Word 2013's mode (CN9; see `readTableFloat`), and one
+    // lined up across the page as Word 2013 does (CN15b)
     const older = reader.compatibilityMode !== undefined;
     const marginsBeside = older && sized && givenWidth.width === undefined && reader.inCell !== true;
     // How wide Word makes a column of text that runs up or down isn't known in every font, so how wide a table sized to its
@@ -3837,12 +3867,6 @@ const readTable = (element: XmlObject, reader: Reader): TableBlock | undefined =
         (reader.down === true ? "a table on text that runs down the page" : undefined) ??
         (float !== undefined && (reader.inCell || reader.inHeader)
             ? "a table that text flows around in a table cell, header or footer"
-            : undefined) ??
-        (typeof float === "object" && older && (marginsBeside || float.horizontal.align !== undefined)
-            ? "a table that text flows around, sized to its text or lined up across the page, in a document in compatibility mode"
-            : undefined) ??
-        (marginsBeside && fits && givenWidth.share !== undefined
-            ? "a table sized to its text as a share of the width, in a document in compatibility mode"
             : undefined) ??
         (older &&
         sized &&
@@ -5736,6 +5760,7 @@ const readSettings = (
     | "hyphenation"
     | "compatibilityMode"
     | "suppressesTopSpacing"
+    | "feLayout"
     | "unsupported"
 > => {
     const settings = childrenOf(xml?.["w:settings"]);
@@ -5752,11 +5777,11 @@ const readSettings = (
     const ideographsUnbroken = olderMode !== undefined && olderMode < WORD_2010_MODE;
     const rules: LineBreakRules = ideographsUnbroken ? { ...breakRules, ideographs: false } : breakRules;
     // Pages printed folded as a booklet Word lays out as the section's pages, as it does without, and prints two to a sheet
-    // in the booklet's order: 50 lines of A4 to the first, as wide as without (`word-stops-booklet2.docx` BK2). Those
-    // folded the other way round (`w:bookFoldRevPrinting`), for text that runs right to left, haven't been seen, and Word
-    // updates a document's styles from its template when it opens it, with `w:linkStyles`. Pages printed two to a sheet
-    // (`w:printTwoOnOne`) Word lays out as the section's pages too: 51 lines on the first of 62
-    // (`word-stops-two-on-one.docx` TO1)
+    // in the booklet's order: 50 lines of A4 to the first, as wide as without (`word-stops-booklet2.docx` BK2), and so it
+    // does those folded the other way round (`w:bookFoldRevPrinting`), for text that runs right to left, with the two
+    // pages of each sheet the other way round (`word-stops-booklet3.docx` BK3). Word updates a document's styles from its
+    // template when it opens it, with `w:linkStyles`. Pages printed two to a sheet (`w:printTwoOnOne`) Word lays out as
+    // the section's pages too: 51 lines on the first of 62 (`word-stops-two-on-one.docx` TO1)
     const unsupported = (
         [
             [
@@ -5764,10 +5789,6 @@ const readSettings = (
                 "a document in a compatibility mode Word hasn't been seen laying out",
             ],
             [asksForUnfollowedCompatibility(compatibility, olderMode !== undefined), "a compatibility setting not yet followed"],
-            [
-                onOff(settings, "w:bookFoldRevPrinting"),
-                "pages printed as a booklet folded the other way round, for text that runs right to left",
-            ],
             [onOff(settings, "w:linkStyles"), "styles updated from the document's template when Word opens it"],
         ] as const
     ).find(([applies]) => applies === true)?.[1];
@@ -5779,6 +5800,7 @@ const readSettings = (
         ...(onOff(settings, "w:autoHyphenation") === true ? { hyphenation: readHyphenation(settings) } : {}),
         ...(olderMode === undefined ? {} : { compatibilityMode: olderMode }),
         ...(onOff(compatibility, "w:suppressTopSpacing") === true ? { suppressesTopSpacing: true } : {}),
+        ...(onOff(compatibility, "w:useFELayout") === true ? { feLayout: true } : {}),
         ...(unsupported ? { unsupported } : {}),
     };
 };
@@ -6478,8 +6500,9 @@ export const readContent = (writtenBody: XmlObject, writtenParts: DocumentParts,
         };
     };
 
+    const documentSettings = readSettings(parts.settings);
     const documentContent: DocumentContent = {
-        blocks: withDivisions(blocks),
+        blocks: withDivisions(blocks, documentSettings.addsParagraphSpacing),
         sections,
         footnotes,
         footnoteSeparator: footnotes.size > 0 ? readNoteContent("footnote", "separator") : [],
@@ -6492,7 +6515,7 @@ export const readContent = (writtenBody: XmlObject, writtenParts: DocumentParts,
         relativeReferences: markers.relative,
         endnoteReferences,
         ...(parts.fonts !== undefined && parts.fonts.length > 0 ? { fonts: parts.fonts } : {}),
-        ...readSettings(parts.settings),
+        ...documentSettings,
     };
     // Notes numbered or placed in a way not yet followed stop the layout before anything, as any paragraph may refer to
     // them

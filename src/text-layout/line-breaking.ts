@@ -12,7 +12,7 @@
  */
 // cspell:ignore Aptos Donaudampf schifffahrtsgesellschaftkapitän
 import { hasLigatures } from "./kerning";
-import { type LineBreakRules, extendsCharacter, findLineBreaks, joinsNext } from "./line-break-rules";
+import { type LineBreakRules, extendsCharacter, findLineBreaks, isEastAsian, joinsNext } from "./line-break-rules";
 import {
     DEFAULT_FONT,
     DEFAULT_FONT_SIZE,
@@ -20,6 +20,7 @@ import {
     type ParagraphFormat,
     type TextBorder,
     type TextFont,
+    averageCharacterWidth,
     isEastAsianFont,
     isGridCharacter,
     isKerned,
@@ -250,6 +251,12 @@ export type LineLayoutOptions = {
      * or 2003 (11). None for Word 2013 and later
      */
     readonly compatibilityMode?: number;
+    /**
+     * Whether the document lays out East Asian text as Word 2003 did (`useFELayout`), which puts half the average width of
+     * a character between a Chinese, Japanese or Korean character and the Latin letter or digit beside it (see
+     * `spacedBesideEastAsian`)
+     */
+    readonly feLayout?: boolean;
 };
 
 /**
@@ -330,10 +337,12 @@ type Segment = {
 const DEFAULT_TAB_STOP = 36;
 // How far past its end a line may go before it wraps, for the rounding of the widths
 const TOLERANCE = 0.01;
-// How far from where its lines start, at the margin, Word 2010 and before were seen keeping the text after a tab past the
-// end of a line on it, in points: to 18827 twips, past the margin's 9026 (`word-stops-compat2-14.docx` CN5a). Whether they
-// break a longer line hasn't been seen. A line's positions are from where the paragraph's lines start, as its tab stops are
-const OLDER_TAB_REACH = 941.4;
+// How far from where its lines start, at the margin, Word 2010 and before keep the text after a tab past the end of a
+// line on it, in points: 22 inches, Word's widest page. 250 words after a tab to a stop at 9500 twips went on to 31580
+// twips, and the word after went to the start of the next line, which breaks as a line of the paragraph does
+// (`word-stops-compat3-14.docx`, `-12` CN14; `word-stops-compat2-14.docx` CN5a's went to 18827). A line's positions are
+// from where the paragraph's lines start, as its tab stops are
+const OLDER_LINE_LIMIT = 1584;
 
 // Word squeezes one more word onto a justified line when its spaces would otherwise stretch by a share of their width
 // more than twice as large as the share they're squeezed by: 2.022 times as large, and not 2.008 (`word-justify.docx` J01
@@ -1356,6 +1365,111 @@ const spacedOnGrid = (
     };
 };
 
+/**
+ * What a character is next to another for the space Word 2003's East Asian layout puts between them: a Chinese, Japanese
+ * or Korean letter, East Asian punctuation, symbols or full-width forms, a Latin letter, a letter of another script, a
+ * digit, a space, or other text, such as punctuation
+ */
+const kindBesideEastAsian = (
+    character: string,
+): "eastAsian" | "eastAsianOther" | "latin" | "otherLetter" | "digit" | "space" | "other" | undefined =>
+    takesNoRoom(character)
+        ? undefined
+        : /[\p{Script=Han}\p{Script=Hiragana}\p{Script=Katakana}\p{Script=Hangul}]/u.test(character)
+          ? "eastAsian"
+          : isEastAsian(character)
+            ? "eastAsianOther"
+            : /\p{Script=Latin}/u.test(character)
+              ? "latin"
+              : /\p{L}/u.test(character)
+                ? "otherLetter"
+                : /[0-9]/.test(character)
+                  ? "digit"
+                  : /\s/u.test(character)
+                    ? "space"
+                    : "other";
+
+// Why a paragraph's text can't be spaced as Word 2003's East Asian layout spaces it, where it can't
+const UNKNOWN_FE_SPACING =
+    "East Asian text beside letters of another script than Latin, or East Asian punctuation or full-width forms beside Latin letters or digits, in a document that lays it out as Word 2003 did (useFELayout)";
+const UNKNOWN_FE_FONT =
+    "East Asian text beside Latin letters or digits in a font whose average character width isn't known, in a document that lays it out as Word 2003 did (useFELayout)";
+
+/**
+ * A paragraph's content in a document that lays out East Asian text as Word 2003 did (`useFELayout`), which puts half the
+ * average width of a character of the font of the character before, at its size, between a Chinese, Japanese or Korean
+ * character and a Latin letter beside it, either way, with the paragraph's automatic spacing of them on (`w:autoSpaceDE`),
+ * and between one and a digit with the other on (`w:autoSpaceDN`), as they are unless the paragraph turns them off: 52.5
+ * twips after MS Mincho 10.5, whose Latin letters and digits are half an em too, 54.7 after Calibri 10.5 and 72.9 after
+ * Calibri 14 (scripts/layout-probes/stops2/word-stops-fe-layout.ts FE1a, FE1b, word-stops-fe-layout2.ts FE2b,
+ * word-stops-compat3.ts FE3a to FE3c), and nothing beside a space (FE2a) or punctuation, such as curly quotes in Calibri
+ * between Chinese characters (FE2c). Beside letters of another script, East Asian punctuation or full-width forms beside
+ * Latin letters or digits, and a font whose average isn't known, haven't been seen
+ */
+const spacedBesideEastAsian = (
+    items: readonly InlineItem[],
+    spacing: { readonly letters: boolean; readonly digits: boolean },
+): { readonly items: readonly InlineItem[]; readonly unsupported?: string } => {
+    // eslint-disable-next-line functional/prefer-readonly-type
+    const spaced: InlineItem[] = [];
+    let unsupported: string | undefined;
+    // The last character, its item in what is laid out and its kind
+    let last: { readonly index: number; readonly kind: NonNullable<ReturnType<typeof kindBesideEastAsian>> } | undefined;
+    for (const item of items) {
+        if (item.type !== "text") {
+            // eslint-disable-next-line functional/immutable-data
+            spaced.push(item);
+            last = item.type === "marker" ? last : undefined;
+            continue;
+        }
+        for (const character of item.text) {
+            const kind = kindBesideEastAsian(character);
+            const lastKind = last?.kind;
+            const beside = (one: string, other: string): boolean =>
+                kind !== undefined &&
+                lastKind !== undefined &&
+                ((lastKind === one && kind === other) || (lastKind === other && kind === one));
+            const spacedApart = (spacing.letters && beside("eastAsian", "latin")) || (spacing.digits && beside("eastAsian", "digit"));
+            if (beside("eastAsian", "otherLetter") || beside("eastAsianOther", "latin") || beside("eastAsianOther", "digit")) {
+                unsupported ??= UNKNOWN_FE_SPACING;
+            }
+            if (spacedApart) {
+                // The space goes after the character before, the last of its item, which it is split from
+                const before = spaced[last!.index] as Extract<InlineItem, { readonly type: "text" }>;
+                const characters = [...before.text];
+                const average = averageCharacterWidth(before.font);
+                if (average === undefined) {
+                    unsupported ??= UNKNOWN_FE_FONT;
+                }
+                // eslint-disable-next-line functional/immutable-data
+                spaced.splice(
+                    last!.index,
+                    1,
+                    { ...before, text: characters.slice(0, -1).join("") },
+                    {
+                        ...before,
+                        text: characters[characters.length - 1],
+                        font: { ...before.font, characterSpacing: (before.font.characterSpacing ?? 0) + (average ?? 0) / 2 },
+                    },
+                );
+            }
+            const current = spaced[spaced.length - 1];
+            if (!spacedApart && current?.type === "text" && current.font === item.font) {
+                // eslint-disable-next-line functional/immutable-data
+                spaced[spaced.length - 1] = { ...current, text: current.text + character };
+            } else {
+                // eslint-disable-next-line functional/immutable-data
+                spaced.push({ ...item, text: character });
+            }
+            last = kind === undefined ? last && { ...last, index: spaced.length - 1 } : { index: spaced.length - 1, kind };
+        }
+    }
+    return {
+        items: spaced.filter((item) => item.type !== "text" || item.text.length > 0),
+        ...(unsupported === undefined ? {} : { unsupported }),
+    };
+};
+
 // Why a tab on a grid that snaps to characters can't be laid out as Word does, where it can't
 const GRID_TAB =
     "a tab on a grid that snaps to characters, but for a left one before text, or a right or centred one before Chinese, Japanese or Korean text";
@@ -1512,6 +1626,7 @@ export const layoutLines = (
         hyphenation,
         grid = {},
         compatibilityMode,
+        feLayout,
     }: LineLayoutOptions,
 ): readonly LaidOutLine[] => {
     const items = withAcross(paragraphItems, measurer);
@@ -1542,7 +1657,15 @@ export const layoutLines = (
     // that doesn't snap to the grid is as it is without it (scripts/layout-probes/word-grid.ts CA1 to CA5, CA9, CB1 to
     // CB5)
     const spaced = characterSpace === undefined ? undefined : spacedOnGrid(items, characterSpace);
-    const content = spaced?.items ?? items;
+    // Word 2003's East Asian layout spaces East Asian text from the Latin letters and digits beside it (see
+    // `spacedBesideEastAsian`), unless the paragraph turns both of its automatic spacings off, which leaves its lines as
+    // they are without it (`word-stops-fe-layout2.docx` FE2d)
+    const eastAsianSpacing = { letters: format.autoSpaceDE !== false, digits: format.autoSpaceDN !== false };
+    const spacedApart =
+        feLayout === true && (eastAsianSpacing.letters || eastAsianSpacing.digits)
+            ? spacedBesideEastAsian(spaced?.items ?? items, eastAsianSpacing)
+            : undefined;
+    const content = spacedApart?.items ?? spaced?.items ?? items;
     /** The width of the cells a width of text takes on a grid that snaps to characters */
     const cellsOf = (textWidth: number): number => {
         const cell = cellOn(lines.length)!;
@@ -1616,7 +1739,7 @@ export const layoutLines = (
     )
         ? "ligatures on a document grid of characters"
         : undefined;
-    const unknownOnGrid = onCells.unsupported ?? spaced?.unsupported ?? shapedOnGrid;
+    const unknownOnGrid = onCells.unsupported ?? spaced?.unsupported ?? spacedApart?.unsupported ?? shapedOnGrid;
     // How tall a line as tall as the paragraph's mark is, measured only where it counts, as a layout stops at a mark in a
     // font the measurer doesn't know
     let markHeight: number | undefined;
@@ -1760,10 +1883,10 @@ export const layoutLines = (
     };
     /**
      * Where the line being filled ends: the margin after a tab to one of the paragraph's stops past its right indent, which
-     * Word lines text up with on the line (scripts/layout-probes/word-breaks-and-tabs.ts TP6, TP9), and nowhere after a tab
-     * past its end in a document in compatibility mode
+     * Word lines text up with on the line (scripts/layout-probes/word-breaks-and-tabs.ts TP6, TP9), and 22 inches from where
+     * the lines start after a tab past its end in a document in compatibility mode
      */
-    const endOf = (state: LineState): number => (state.unbroken ? Infinity : state.pastIndent ? marginOf() : limitOf());
+    const endOf = (state: LineState): number => (state.unbroken ? OLDER_LINE_LIMIT : state.pastIndent ? marginOf() : limitOf());
     /**
      * Whether Word squeezes a word or picture this wide onto a justified or distributed line it goes past the end of,
      * rather than move it to the next line. It squeezes the line's spaces in proportion to their widths, and does when that
@@ -1905,9 +2028,6 @@ export const layoutLines = (
             const unsupported = state.unknown
                 ? "a justified line that only fits squeezed at a four-per-em space"
                 : (state.unsupported ??
-                  (state.unbroken && state.end > OLDER_TAB_REACH + TOLERANCE
-                      ? "text after a tab past the end of the line that goes further past the margin than Word was seen keeping it on the line, in a document in compatibility mode"
-                      : undefined) ??
                   (markMatters(withNumber(heights))
                       ? "a picture alone in a line of a paragraph whose mark is larger, with multiple line spacing"
                       : typeof marked === "string"

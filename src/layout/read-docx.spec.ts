@@ -602,40 +602,105 @@ describe("readDocx", () => {
             [5.5, 5.5],
         ]);
         expect(new Set(boxed.map(({ borders }) => borders?.box)).size).to.equal(1);
-        expect(boxed.map(({ unsupported, division, unknownAtTop }) => [unsupported, division, unknownAtTop])).to.deep.include([
-            undefined,
-            { id: "1001", above: 6, below: 6 },
-            "a paragraph in an HTML division at the top of a page or column",
+        // At the top of a page, below the border without the margin (word-stops-divisions2.docx DV3a): nothing to stop at
+        expect(boxed.map(({ unsupported, division, unknownAtTop }) => [unsupported, division, unknownAtTop])).to.deep.equal([
+            [undefined, { id: "1001", above: 6, below: 6 }, undefined],
+            [undefined, { id: "1001", above: 6, below: 6 }, undefined],
+            [undefined, { id: "1001", above: 6, below: 6 }, undefined],
         ]);
         // DV2b, DV2d: one without borders, and one in another, its margins left and right added up and those above and
-        // below once
+        // below once; without a border above, how Word lays it out at the top of a page hasn't been seen
+        const atTop = "a paragraph in an HTML division without a border above it at the top of a page or column";
         const [, , nested] = paragraphs(read(plain + inDivision(1002) + plain + inDivision(1003) + plain)).slice(1);
         expect(paragraphs(read(plain + inDivision(1002) + plain))[1].format).to.deep.include({
             indentLeft: 36,
             spaceBefore: 6,
             spaceAfter: 6,
         });
+        expect(paragraphs(read(plain + inDivision(1002) + plain))[1].unknownAtTop).to.equal(atTop);
         expect(nested.format).to.deep.include({ indentLeft: 72, indentRight: 72, spaceBefore: 6, spaceAfter: 6 });
         expect(nested.borders).to.equal(undefined);
         const reasonOf = (body: string, index = 1): string | undefined => read(body).blocks[index].block.unsupported;
-        // DV2c: with space of its own before or after it, or next to one with space after it or before it
-        expect(reasonOf(plain + inDivision(1001, '<w:spacing w:before="240"/>') + plain)).to.equal(
-            "a paragraph in an HTML division with space before or after it",
-        );
+        // A division's paragraphs after other paragraphs have its borders left and right, but none above or below, and its
+        // margins above the first and below the last (DV3b to DV3f)
+        const again = plain + inDivision(1001) + plain + inDivision(1001) + inDivision(1001) + plain;
+        const later = paragraphs(read(again)).slice(3, 5);
+        expect(
+            later.map(({ format: { spaceBefore, spaceAfter, borderTop, borderLeft }, unsupported }) => [
+                spaceBefore,
+                spaceAfter,
+                borderTop,
+                borderLeft?.size,
+                unsupported,
+            ]),
+        ).to.deep.equal([
+            [6, 0, undefined, 12, undefined],
+            [0, 6, undefined, 12, undefined],
+        ]);
+        // Borders left and right take no room above or below, so there is no box to join (see `readBorders`)
+        expect(later.map(({ borders }) => borders)).to.deep.equal([undefined, undefined]);
+        expect(later[0].unknownAtTop).to.equal(atTop);
+        expect(later[1].unknownAtTop).to.equal(undefined);
+        // There the margins stand in for less space before or after of the paragraph's own, and give way to more (DV3c,
+        // DV3d, DV2c), and the larger of a margin and the space of the paragraph next to it is between them (DV3e), as of two
+        // divisions' margins (DV3b)
+        const spaced = (before: number, after: number): string => inDivision(1001, `<w:spacing w:before="${before}" w:after="${after}"/>`);
         const spacedAfter = '<w:p><w:pPr><w:spacing w:after="240"/></w:pPr></w:p>';
         const spacedBefore = '<w:p><w:pPr><w:spacing w:before="240"/></w:pPr></w:p>';
-        expect(reasonOf(`${spacedAfter}${inDivision(1001)}${plain}`)).to.equal(
-            "an HTML division next to a paragraph with space before or after it",
+        const ownSpace = paragraphs(read(plain + inDivision(1001) + plain + spaced(60, 240) + plain))[3];
+        expect([ownSpace.format, ownSpace.unsupported]).to.deep.equal([{ ...later[0].format, spaceBefore: 6, spaceAfter: 12 }, undefined]);
+        const between = paragraphs(read(plain + inDivision(1001) + spacedAfter + inDivision(1001) + spacedBefore))[3];
+        expect([between.format, between.unsupported]).to.deep.equal([{ ...later[0].format, spaceBefore: 6, spaceAfter: 6 }, undefined]);
+        const nextTo = paragraphs(read(plain + inDivision(1001) + plain + inDivision(1001) + inDivision(1002) + plain)).slice(3, 5);
+        expect(nextTo.map(({ format: { spaceBefore, spaceAfter }, unsupported }) => [spaceBefore, spaceAfter, unsupported])).to.deep.equal([
+            [6, 6, undefined],
+            [6, 6, undefined],
+        ]);
+        // Where the box's border is above or below, a paragraph's own space, a paragraph with space between them, and another
+        // division haven't been seen (DV2c's and word-stops-divisions.docx DV2a's borders were drawn once)
+        const own =
+            "a paragraph in an HTML division with space before or after it, where the division has a border there or another paragraph of it";
+        expect(reasonOf(plain + spaced(240, 0) + plain)).to.equal(own);
+        expect(reasonOf(plain + inDivision(1001) + spaced(0, 240) + inDivision(1001) + plain, 2)).to.equal(own);
+        expect(reasonOf(plain + inDivision(1001) + plain + inDivision(1001) + spaced(60, 0) + plain, 4)).to.equal(own);
+        const bordered =
+            "an HTML division with a border above or below it next to a paragraph with space between them, or next to another division";
+        expect(reasonOf(`${spacedAfter}${inDivision(1001)}${plain}`)).to.equal(bordered);
+        expect(reasonOf(`${plain}${inDivision(1001)}${spacedBefore}`)).to.equal(bordered);
+        expect(reasonOf(plain + inDivision(1001) + inDivision(1002) + plain)).to.equal(bordered);
+        expect(reasonOf(plain + inDivision(1002) + inDivision(1001) + plain, 2)).to.equal(bordered);
+        // Nor, in a document that adds the space after a paragraph to the space before the next, a division next to either
+        const adding = (body: string): DocumentContent =>
+            readDocx(
+                new Map([
+                    [
+                        "word/_rels/document.xml.rels",
+                        relationships(
+                            `<Relationship Id="rId1" Type="${TRANSITIONAL}/settings" Target="settings.xml"/>` +
+                                `<Relationship Id="rId2" Type="${TRANSITIONAL}/webSettings" Target="webSettings.xml"/>`,
+                        ),
+                    ],
+                    ["word/settings.xml", parse(COMPATIBLE.replace("</w:compat>", "<w:doNotUseHTMLParagraphAutoSpacing/></w:compat>"))],
+                    ["word/webSettings.xml", parse(web)],
+                    ["word/document.xml", documentOf(body)],
+                ]),
+            );
+        const adds =
+            "an HTML division next to a paragraph with space between them, or to another division, in a document that adds the space after a paragraph to the space before the next";
+        expect(adding(plain + inDivision(1001) + spacedAfter + inDivision(1001) + plain).blocks[3].block.unsupported).to.equal(adds);
+        expect(adding(plain + inDivision(1001) + plain + inDivision(1001) + inDivision(1002) + plain).blocks[3].block.unsupported).to.equal(
+            adds,
         );
-        expect(reasonOf(`${plain}${inDivision(1001)}${spacedBefore}`)).to.equal(
-            "an HTML division next to a paragraph with space before or after it",
+        expect(adding(plain + inDivision(1001) + plain + inDivision(1001) + plain).blocks[3].block.unsupported).to.equal(undefined);
+        // Automatic space, and space in lines, haven't been seen in a division
+        expect(reasonOf(plain + inDivision(1001, '<w:spacing w:beforeAutospacing="1"/>') + plain)).to.equal(
+            "a paragraph in an HTML division with automatic space before or after it, or space in lines",
         );
-        // And with indents or borders of its own, next to another division, in another with other margins or borders, the
-        // page's body, or not in the web settings at all
+        // And with indents or borders of its own, in another with other margins or borders, the page's body, or not in the
+        // web settings at all
         expect(reasonOf(plain + inDivision(1001, '<w:ind w:left="100"/>') + plain)).to.equal(
             "a paragraph in an HTML division with indents or borders of its own",
         );
-        expect(reasonOf(plain + inDivision(1001) + inDivision(1002) + plain)).to.equal("an HTML division next to another");
         // A table next to one is as it is
         const table = `<w:tbl><w:tr><w:tc>${plain}</w:tc></w:tr></w:tbl>`;
         expect(paragraphs(read(table + inDivision(1001) + table))[1].format).to.deep.include({ spaceBefore: 6, spaceAfter: 6 });

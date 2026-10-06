@@ -480,6 +480,8 @@ export const readParagraphFormat = (element: unknown): ParagraphFormat => {
         widowControl: onOff(children, "w:widowControl"),
         tabs: readTabs(find(children, "w:tabs")),
         kinsoku: onOff(children, "w:kinsoku"),
+        autoSpaceDE: onOff(children, "w:autoSpaceDE"),
+        autoSpaceDN: onOff(children, "w:autoSpaceDN"),
         rightToLeft: onOff(children, "w:bidi"),
         wordWrap: onOff(children, "w:wordWrap"),
         suppressAutoHyphens: onOff(children, "w:suppressAutoHyphens"),
