@@ -1,7 +1,10 @@
 import JSZip from "jszip";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
+import { Document, Packer, Paragraph, TextRun } from "../index";
+import { type IPatch, patchDocument } from "./from-docx";
 import { patchDetector } from "./patch-detector";
+import { PatchType } from "./patch-type";
 
 const MOCK_XML = `
 <?xml version="1.0" encoding="UTF-8" standalone="yes"?>
@@ -338,6 +341,31 @@ const MOCK_XML_2 = `
 // cspell:enable
 
 describe("patch-detector", () => {
+    it("should build only detected registered patches and replace them in a real document", async () => {
+        const data = await Packer.toBuffer(
+            new Document({
+                sections: [{ children: [new Paragraph("Hello {{name}}"), new Paragraph("{{name}}"), new Paragraph("{{unknown}}")] }],
+            }),
+        );
+        const name = vi.fn((): Promise<IPatch> => Promise.resolve({ type: PatchType.PARAGRAPH, children: [new TextRun("Ada")] }));
+        const photos = vi.fn((): Promise<IPatch> => Promise.reject(new Error("An absent placeholder must not start expensive work")));
+        const builders: Readonly<Record<string, () => Promise<IPatch>>> = { name, photos };
+        const keys = await patchDetector({ data });
+        const entries = await Promise.all(
+            keys.filter((key) => Object.hasOwn(builders, key)).map(async (key) => [key, await builders[key]()] as const),
+        );
+        const output = await patchDocument({ outputType: "nodebuffer", data, patches: Object.fromEntries(entries) });
+        const zip = await JSZip.loadAsync(output);
+        const xml = await zip.file("word/document.xml")!.async("string");
+
+        expect(keys).toEqual(["name", "unknown"]);
+        expect(name).toHaveBeenCalledOnce();
+        expect(photos).not.toHaveBeenCalled();
+        expect(xml.match(/<w:t[^>]*>Ada<\/w:t>/g)).toHaveLength(2);
+        expect(xml).not.toContain("{{name}}");
+        expect(xml).toContain("{{unknown}}");
+    });
+
     describe("patchDetector", () => {
         describe("document.xml and [Content_Types].xml", () => {
             beforeEach(() => {
