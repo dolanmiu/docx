@@ -27,6 +27,8 @@ fs.writeFileSync("My Patched Document.docx", doc);
 
 Use `patchDetector({ data })` to find the placeholder keys in a template before calling `patchDocument`. It returns distinct keys without the `{{` and `}}` delimiters. This is useful when templates differ: an expensive patch, such as downloading images, only needs to be built when its placeholder is present.
 
+This discovery workflow supports only `{{...}}` placeholders. `patchDetector` does not accept the custom `placeholderDelimiters` supported by `patchDocument`.
+
 The following example uses the existing [simple-template.docx](https://github.com/dolanmiu/docx/blob/master/demo/assets/simple-template.docx). Keep patch builders as functions so that discovering placeholders does not run every builder. Reuse the same template data for detection and patching.
 
 ```ts live
