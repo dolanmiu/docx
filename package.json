@@ -161,7 +161,7 @@
         "eslint-plugin-jsdoc": "^65.0.0",
         "eslint-plugin-no-null": "^1.0.2",
         "eslint-plugin-prefer-arrow": "^1.2.3",
-        "eslint-plugin-unicorn": "^76.0.0",
+        "eslint-plugin-unicorn": "^77.0.0",
         "execa": "^10.0.1",
         "glob": "^13.0.3",
         "globals": "^17.12.0",
