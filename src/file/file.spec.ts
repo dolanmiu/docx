@@ -165,6 +165,29 @@ describe("File", () => {
                 ],
             });
         });
+
+        it("should end each section but the last in its last paragraph, the same way each time the document is written", () => {
+            const doc = new File({
+                numbering: { config: [{ reference: "list", levels: [{ level: 0, format: "decimal", text: "%1." }] }] },
+                sections: [
+                    { children: [new Paragraph({ style: "Heading1", numbering: { reference: "list", level: 0 }, text: "First" })] },
+                    { children: [new Paragraph("Second")] },
+                ],
+            });
+            const write = (): string =>
+                JSON.stringify(new Formatter().format(doc.Document.View, { file: doc, viewWrapper: doc.Document, stack: [] }));
+
+            const xml = write();
+
+            expect(write()).to.equal(xml);
+            expect(xml.match(/"w:sectPr"/g)).to.have.length(2);
+            const paragraphs = xml.split(`{"w:p":`).slice(1);
+            expect(paragraphs).to.have.length(2);
+            const [first] = paragraphs;
+            expect(first).to.include("First");
+            expect(first.indexOf(`{"w:pStyle":`)).to.be.lessThan(first.indexOf(`{"w:numPr":`));
+            expect(first.indexOf(`{"w:numPr":`)).to.be.lessThan(first.indexOf(`{"w:sectPr":`));
+        });
     });
 
     describe("#createFootnote", () => {

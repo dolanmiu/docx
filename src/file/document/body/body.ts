@@ -5,7 +5,7 @@
  *
  * @module
  */
-import { Paragraph, ParagraphProperties } from "@file/paragraph";
+import { Paragraph } from "@file/paragraph";
 import { HeadingBookmarkIds, fillTablesOfContents } from "@file/table-of-contents/heading-entries";
 import { type IContext, type IXmlableObject, XmlComponent } from "@file/xml-components";
 
@@ -68,7 +68,8 @@ export class Body extends XmlComponent {
     /**
      * Section properties that were moved into a paragraph at the end of their section
      * by {@link addSection}, keyed by that paragraph. Used to find the section that
-     * governs a given child of the body.
+     * governs a given child of the body, and to write each section's properties into
+     * its paragraph while the body is written.
      */
     private readonly sectionParagraphs = new Map<Paragraph, SectionProperties>();
     private readonly headingBookmarkIds = new HeadingBookmarkIds();
@@ -92,7 +93,8 @@ export class Body extends XmlComponent {
      * @returns The governing section properties, or undefined if the body has no sections
      */
     public getSectionPropertiesFor(child?: XmlComponent): SectionProperties | undefined {
-        const start = child ? this.root.indexOf(child) + 1 : 0;
+        // The paragraph that ends a section has that section's properties, so the search starts at the child itself
+        const start = child ? Math.max(this.root.indexOf(child), 0) : 0;
         for (let i = start; i < this.root.length; i++) {
             const component = this.root[i];
             if (component instanceof SectionProperties) {
@@ -110,8 +112,10 @@ export class Body extends XmlComponent {
     /**
      * Adds new section properties to the document body.
      *
-     * Creates a new section by moving the previous section's properties into a paragraph
-     * at the end of that section, and then adding the new section as the current section.
+     * Creates a new section by moving the previous section's properties into the last
+     * paragraph of that section, and then adding the new section as the current section.
+     * When that section doesn't end with a paragraph of its own (it ends with a table, or
+     * it is empty), an empty paragraph is added to hold its properties.
      *
      * According to the OOXML specification:
      * - Section properties for all sections except the last must be stored in a paragraph's
@@ -122,11 +126,18 @@ export class Body extends XmlComponent {
      */
     public addSection(options: ISectionPropertiesOptions): void {
         const currentSection = this.sections.pop() as SectionProperties;
-        const sectionParagraph = this.createSectionParagraph(currentSection);
-        this.root.push(sectionParagraph);
-        if (currentSection) {
+        const lastParagraph = this.lastParagraphOfSection();
+        if (currentSection && lastParagraph) {
+            // The paragraph is the user's, so the section's properties are only added to it while the body is written
             // eslint-disable-next-line functional/immutable-data
-            this.sectionParagraphs.set(sectionParagraph, currentSection);
+            this.sectionParagraphs.set(lastParagraph, currentSection);
+        } else {
+            const sectionParagraph = this.createSectionParagraph();
+            this.root.push(sectionParagraph);
+            if (currentSection) {
+                // eslint-disable-next-line functional/immutable-data
+                this.sectionParagraphs.set(sectionParagraph, currentSection);
+            }
         }
 
         this.sections.push(new SectionProperties(options));
@@ -151,7 +162,19 @@ export class Body extends XmlComponent {
             this.root.push(this.sections.pop() as SectionProperties);
         }
 
-        const xml = super.prepForXml(context) as IXmlableObject;
+        // Each section's properties are written into the paragraph that ends it, and taken out again afterwards so the
+        // paragraph is left as it was given, ready to be written again or used in another document
+        for (const [paragraph, section] of this.sectionParagraphs) {
+            paragraph.addSectionProperties(section);
+        }
+        let xml: IXmlableObject;
+        try {
+            xml = super.prepForXml(context) as IXmlableObject;
+        } finally {
+            for (const [paragraph, section] of this.sectionParagraphs) {
+                paragraph.removeSectionProperties(section);
+            }
+        }
         fillTablesOfContents(xml, context, this.headingBookmarkIds);
         if (this.pageNumbers) {
             fillSequenceNumbers(xml, context);
@@ -169,14 +192,43 @@ export class Body extends XmlComponent {
      * @param component - The XML component to add (paragraph, table, etc.)
      */
     public push(component: XmlComponent): void {
+        const section = component instanceof Paragraph ? this.sectionParagraphs.get(component) : undefined;
+        if (section) {
+            // The paragraph ends an earlier section and is used again, so that section's properties move to a paragraph
+            // of their own after it, or both places would end a section
+            const sectionParagraph = this.createSectionParagraph();
+            this.root.splice(this.root.indexOf(component) + 1, 0, sectionParagraph);
+            // eslint-disable-next-line functional/immutable-data
+            this.sectionParagraphs.delete(component as Paragraph);
+            // eslint-disable-next-line functional/immutable-data
+            this.sectionParagraphs.set(sectionParagraph, section);
+        }
         this.root.push(component);
     }
 
-    private createSectionParagraph(section: SectionProperties): Paragraph {
-        const paragraph = new Paragraph({});
-        const properties = new ParagraphProperties({});
-        properties.push(section);
-        paragraph.addChildElement(properties);
-        return paragraph;
+    /**
+     * The paragraph the current section ends with, which can hold its properties.
+     *
+     * There is none when the section ends with something other than a paragraph, or is empty:
+     * its last child is then the placeholder at the start of the body (removed when the body is
+     * written) or the paragraph that ends the section before, which has properties of its own.
+     */
+    private lastParagraphOfSection(): Paragraph | undefined {
+        const last = this.root[this.root.length - 1];
+        // A paragraph used more than once in the body would end a section in each place, so only one used once can
+        const canHoldSection =
+            last instanceof Paragraph &&
+            last !== this.root[0] &&
+            !this.sectionParagraphs.has(last) &&
+            this.root.indexOf(last) === this.root.length - 1;
+        return canHoldSection ? last : undefined;
+    }
+
+    /**
+     * An empty paragraph to end a section that has no paragraph of its own to end it. The section's
+     * properties are written into it with the others, when the body is written.
+     */
+    private createSectionParagraph(): Paragraph {
+        return new Paragraph({});
     }
 }

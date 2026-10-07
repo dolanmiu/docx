@@ -5,6 +5,7 @@
  *
  * @module
  */
+import type { SectionProperties } from "@file/document/body/section-properties/section-properties";
 import { FileChild } from "@file/file-child";
 import type { FootnoteReferenceRun } from "@file/footnotes";
 import type { IContext, IXmlableObject } from "@file/xml-components";
@@ -155,6 +156,30 @@ export class Paragraph extends FileChild {
         }
 
         return super.prepForXml(context);
+    }
+
+    /**
+     * Ends a section at this paragraph by adding the section's properties to the paragraph's properties,
+     * as Word does with the last paragraph of each section but the last.
+     *
+     * The body adds them only while it is written and removes them afterwards with
+     * {@link removeSectionProperties}, so the same paragraph can be used in other documents.
+     *
+     * @internal
+     * @param sectionProperties - The properties of the section the paragraph ends
+     */
+    public addSectionProperties(sectionProperties: SectionProperties): void {
+        this.properties.addSectionProperties(sectionProperties);
+    }
+
+    /**
+     * Removes the section properties added with {@link addSectionProperties}.
+     *
+     * @internal
+     * @param sectionProperties - The properties of the section to remove
+     */
+    public removeSectionProperties(sectionProperties: SectionProperties): void {
+        this.properties.removeSectionProperties(sectionProperties);
     }
 
     public addRunToFront(run: Run): Paragraph {

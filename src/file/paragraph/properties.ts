@@ -10,6 +10,7 @@
  *
  * @module
  */
+import type { SectionProperties } from "@file/document/body/section-properties/section-properties";
 import { ChangeAttributes, type IChangedAttributesProperties } from "@file/track-revision/track-revision";
 import { type IContext, type IXmlableObject, IgnoreIfEmptyXmlComponent, OnOffElement, XmlComponent } from "@file/xml-components";
 
@@ -442,6 +443,35 @@ export class ParagraphProperties extends IgnoreIfEmptyXmlComponent {
      */
     public push(item: XmlComponent): void {
         this.root.push(item);
+    }
+
+    /**
+     * Adds the section properties (`w:sectPr`) of the section this paragraph ends.
+     *
+     * They go after the paragraph's run properties and before its revision (`w:pPrChange`),
+     * the order CT_PPr gives them.
+     *
+     * @param sectionProperties - The properties of the section the paragraph ends
+     */
+    public addSectionProperties(sectionProperties: SectionProperties): void {
+        const revisionIndex = this.root.findIndex((item) => item instanceof ParagraphPropertiesChange);
+        if (revisionIndex === -1) {
+            this.root.push(sectionProperties);
+            return;
+        }
+        this.root.splice(revisionIndex, 0, sectionProperties);
+    }
+
+    /**
+     * Removes the section properties added with {@link addSectionProperties}.
+     *
+     * @param sectionProperties - The properties of the section to remove
+     */
+    public removeSectionProperties(sectionProperties: SectionProperties): void {
+        const index = this.root.indexOf(sectionProperties);
+        if (index !== -1) {
+            this.root.splice(index, 1);
+        }
     }
 
     /**
