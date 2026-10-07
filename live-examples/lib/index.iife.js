@@ -19990,18 +19990,6 @@ MAX: 9026 };
 	//#endregion
 	//#region src/file/paragraph/properties.ts
 	/**
-	* Paragraph properties module for WordprocessingML documents.
-	*
-	* This module provides the paragraph properties (pPr) element which specifies
-	* the formatting applied to a paragraph.
-	*
-	* Reference: http://officeopenxml.com/WPparagraphProperties.php
-	*
-	* @see https://c-rex.net/projects/samples/ooxml/e1/Part4/OOXML_P4_DOCX_suppressLineNumbers_topic_ID0ECJAO.html
-	*
-	* @module
-	*/
-	/**
 	* The alignment to write for each side of the page in a right-to-left paragraph.
 	*
 	* Word and LibreOffice read `w:jc` `left` and `right` as the start and end of the paragraph, the same as
@@ -20193,6 +20181,31 @@ MAX: 9026 };
 			this.root.push(item);
 		}
 		/**
+		* Adds the section properties (`w:sectPr`) of the section this paragraph ends.
+		*
+		* They go after the paragraph's run properties and before its revision (`w:pPrChange`),
+		* the order CT_PPr gives them.
+		*
+		* @param sectionProperties - The properties of the section the paragraph ends
+		*/
+		addSectionProperties(sectionProperties) {
+			const revisionIndex = this.root.findIndex((item) => item instanceof ParagraphPropertiesChange);
+			if (revisionIndex === -1) {
+				this.root.push(sectionProperties);
+				return;
+			}
+			this.root.splice(revisionIndex, 0, sectionProperties);
+		}
+		/**
+		* Removes the section properties added with {@link addSectionProperties}.
+		*
+		* @param sectionProperties - The properties of the section to remove
+		*/
+		removeSectionProperties(sectionProperties) {
+			const index = this.root.indexOf(sectionProperties);
+			if (index !== -1) this.root.splice(index, 1);
+		}
+		/**
 		* Prepares the paragraph properties for XML serialization.
 		*
 		* This method creates concrete numbering instances for any numbering references
@@ -20219,13 +20232,6 @@ MAX: 9026 };
 	};
 	//#endregion
 	//#region src/file/paragraph/paragraph.ts
-	/**
-	* Paragraph module for WordprocessingML documents.
-	*
-	* Reference: http://officeopenxml.com/WPparagraph.php
-	*
-	* @module
-	*/
 	/**
 	* Represents a paragraph in a WordprocessingML document.
 	*
@@ -20292,6 +20298,28 @@ MAX: 9026 };
 				this.root[index] = concreteHyperlink;
 			}
 			return super.prepForXml(context);
+		}
+		/**
+		* Ends a section at this paragraph by adding the section's properties to the paragraph's properties,
+		* as Word does with the last paragraph of each section but the last.
+		*
+		* The body adds them only while it is written and removes them afterwards with
+		* {@link removeSectionProperties}, so the same paragraph can be used in other documents.
+		*
+		* @internal
+		* @param sectionProperties - The properties of the section the paragraph ends
+		*/
+		addSectionProperties(sectionProperties) {
+			this.properties.addSectionProperties(sectionProperties);
+		}
+		/**
+		* Removes the section properties added with {@link addSectionProperties}.
+		*
+		* @internal
+		* @param sectionProperties - The properties of the section to remove
+		*/
+		removeSectionProperties(sectionProperties) {
+			this.properties.removeSectionProperties(sectionProperties);
 		}
 		addRunToFront(run) {
 			this.root.splice(1, 0, run);
@@ -23258,7 +23286,8 @@ MAX: 9026 };
 				/**
 				* Section properties that were moved into a paragraph at the end of their section
 				* by {@link addSection}, keyed by that paragraph. Used to find the section that
-				* governs a given child of the body.
+				* governs a given child of the body, and to write each section's properties into
+				* its paragraph while the body is written.
 				*/
 				"sectionParagraphs",
 				/* @__PURE__ */ new Map()
@@ -23280,7 +23309,7 @@ MAX: 9026 };
 		* @returns The governing section properties, or undefined if the body has no sections
 		*/
 		getSectionPropertiesFor(child) {
-			const start = child ? this.root.indexOf(child) + 1 : 0;
+			const start = child ? Math.max(this.root.indexOf(child), 0) : 0;
 			for (let i = start; i < this.root.length; i++) {
 				const component = this.root[i];
 				if (component instanceof SectionProperties) return component;
@@ -23292,8 +23321,10 @@ MAX: 9026 };
 		/**
 		* Adds new section properties to the document body.
 		*
-		* Creates a new section by moving the previous section's properties into a paragraph
-		* at the end of that section, and then adding the new section as the current section.
+		* Creates a new section by moving the previous section's properties into the last
+		* paragraph of that section, and then adding the new section as the current section.
+		* When that section doesn't end with a paragraph of its own (it ends with a table, or
+		* it is empty), an empty paragraph is added to hold its properties.
 		*
 		* According to the OOXML specification:
 		* - Section properties for all sections except the last must be stored in a paragraph's
@@ -23304,9 +23335,13 @@ MAX: 9026 };
 		*/
 		addSection(options) {
 			const currentSection = this.sections.pop();
-			const sectionParagraph = this.createSectionParagraph(currentSection);
-			this.root.push(sectionParagraph);
-			if (currentSection) this.sectionParagraphs.set(sectionParagraph, currentSection);
+			const lastParagraph = this.lastParagraphOfSection();
+			if (currentSection && lastParagraph) this.sectionParagraphs.set(lastParagraph, currentSection);
+			else {
+				const sectionParagraph = this.createSectionParagraph();
+				this.root.push(sectionParagraph);
+				if (currentSection) this.sectionParagraphs.set(sectionParagraph, currentSection);
+			}
 			this.sections.push(new SectionProperties(options));
 		}
 		/**
@@ -23327,7 +23362,13 @@ MAX: 9026 };
 				this.root.splice(0, 1);
 				this.root.push(this.sections.pop());
 			}
-			const xml = super.prepForXml(context);
+			for (const [paragraph, section] of this.sectionParagraphs) paragraph.addSectionProperties(section);
+			let xml;
+			try {
+				xml = super.prepForXml(context);
+			} finally {
+				for (const [paragraph, section] of this.sectionParagraphs) paragraph.removeSectionProperties(section);
+			}
 			fillTablesOfContents(xml, context, this.headingBookmarkIds);
 			if (this.pageNumbers) {
 				fillSequenceNumbers(xml, context);
@@ -23344,14 +23385,32 @@ MAX: 9026 };
 		* @param component - The XML component to add (paragraph, table, etc.)
 		*/
 		push(component) {
+			const section = component instanceof Paragraph ? this.sectionParagraphs.get(component) : void 0;
+			if (section) {
+				const sectionParagraph = this.createSectionParagraph();
+				this.root.splice(this.root.indexOf(component) + 1, 0, sectionParagraph);
+				this.sectionParagraphs.delete(component);
+				this.sectionParagraphs.set(sectionParagraph, section);
+			}
 			this.root.push(component);
 		}
-		createSectionParagraph(section) {
-			const paragraph = new Paragraph({});
-			const properties = new ParagraphProperties({});
-			properties.push(section);
-			paragraph.addChildElement(properties);
-			return paragraph;
+		/**
+		* The paragraph the current section ends with, which can hold its properties.
+		*
+		* There is none when the section ends with something other than a paragraph, or is empty:
+		* its last child is then the placeholder at the start of the body (removed when the body is
+		* written) or the paragraph that ends the section before, which has properties of its own.
+		*/
+		lastParagraphOfSection() {
+			const last = this.root[this.root.length - 1];
+			return last instanceof Paragraph && last !== this.root[0] && !this.sectionParagraphs.has(last) && this.root.indexOf(last) === this.root.length - 1 ? last : void 0;
+		}
+		/**
+		* An empty paragraph to end a section that has no paragraph of its own to end it. The section's
+		* properties are written into it with the others, when the body is written.
+		*/
+		createSectionParagraph() {
+			return new Paragraph({});
 		}
 	};
 	//#endregion

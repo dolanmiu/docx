@@ -383,7 +383,8 @@ declare class Body_2 extends XmlComponent {
     /**
      * Section properties that were moved into a paragraph at the end of their section
      * by {@link addSection}, keyed by that paragraph. Used to find the section that
-     * governs a given child of the body.
+     * governs a given child of the body, and to write each section's properties into
+     * its paragraph while the body is written.
      */
     private readonly sectionParagraphs;
     private readonly headingBookmarkIds;
@@ -405,8 +406,10 @@ declare class Body_2 extends XmlComponent {
     /**
      * Adds new section properties to the document body.
      *
-     * Creates a new section by moving the previous section's properties into a paragraph
-     * at the end of that section, and then adding the new section as the current section.
+     * Creates a new section by moving the previous section's properties into the last
+     * paragraph of that section, and then adding the new section as the current section.
+     * When that section doesn't end with a paragraph of its own (it ends with a table, or
+     * it is empty), an empty paragraph is added to hold its properties.
      *
      * According to the OOXML specification:
      * - Section properties for all sections except the last must be stored in a paragraph's
@@ -439,6 +442,18 @@ declare class Body_2 extends XmlComponent {
      * @param component - The XML component to add (paragraph, table, etc.)
      */
     push(component: XmlComponent): void;
+    /**
+     * The paragraph the current section ends with, which can hold its properties.
+     *
+     * There is none when the section ends with something other than a paragraph, or is empty:
+     * its last child is then the placeholder at the start of the body (removed when the body is
+     * written) or the paragraph that ends the section before, which has properties of its own.
+     */
+    private lastParagraphOfSection;
+    /**
+     * An empty paragraph to end a section that has no paragraph of its own to end it. The section's
+     * properties are written into it with the others, when the body is written.
+     */
     private createSectionParagraph;
 }
 export { Body_2 as Body }
@@ -10546,6 +10561,24 @@ export declare class Paragraph extends FileChild {
     private readonly properties;
     constructor(options: string | IParagraphOptions);
     prepForXml(context: IContext): IXmlableObject | undefined;
+    /**
+     * Ends a section at this paragraph by adding the section's properties to the paragraph's properties,
+     * as Word does with the last paragraph of each section but the last.
+     *
+     * The body adds them only while it is written and removes them afterwards with
+     * {@link removeSectionProperties}, so the same paragraph can be used in other documents.
+     *
+     * @internal
+     * @param sectionProperties - The properties of the section the paragraph ends
+     */
+    addSectionProperties(sectionProperties: SectionProperties): void;
+    /**
+     * Removes the section properties added with {@link addSectionProperties}.
+     *
+     * @internal
+     * @param sectionProperties - The properties of the section to remove
+     */
+    removeSectionProperties(sectionProperties: SectionProperties): void;
     addRunToFront(run: Run): Paragraph;
 }
 
@@ -10688,6 +10721,21 @@ export declare class ParagraphProperties extends IgnoreIfEmptyXmlComponent {
      * @param item - The XML component to add to the paragraph properties
      */
     push(item: XmlComponent): void;
+    /**
+     * Adds the section properties (`w:sectPr`) of the section this paragraph ends.
+     *
+     * They go after the paragraph's run properties and before its revision (`w:pPrChange`),
+     * the order CT_PPr gives them.
+     *
+     * @param sectionProperties - The properties of the section the paragraph ends
+     */
+    addSectionProperties(sectionProperties: SectionProperties): void;
+    /**
+     * Removes the section properties added with {@link addSectionProperties}.
+     *
+     * @param sectionProperties - The properties of the section to remove
+     */
+    removeSectionProperties(sectionProperties: SectionProperties): void;
     /**
      * Prepares the paragraph properties for XML serialization.
      *
