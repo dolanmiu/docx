@@ -7,8 +7,18 @@
  * @module
  */
 
-/** Splits a nonempty fragment from an external URL without decoding or normalizing either part. */
+// Word supports at most 255 characters in w:anchor. Count UTF-16 units conservatively: astral
+// characters take two units, and percent-encoded characters keep their literal encoded length.
+const MAX_ANCHOR_LENGTH = 255;
+
+/**
+ * Splits a nonempty fragment that fits Word's anchor limit without decoding or normalizing either part.
+ * Longer fragments stay in the original relationship URI, retaining its existing multi-hash limitations.
+ */
 export const externalHyperlinkTarget = (link: string): { readonly target: string; readonly anchor?: string } => {
     const index = link.indexOf("#");
-    return index > 0 && index < link.length - 1 ? { target: link.slice(0, index), anchor: link.slice(index + 1) } : { target: link };
+    const fragmentLength = link.length - index - 1;
+    return index > 0 && fragmentLength > 0 && fragmentLength <= MAX_ANCHOR_LENGTH
+        ? { target: link.slice(0, index), anchor: link.slice(index + 1) }
+        : { target: link };
 };

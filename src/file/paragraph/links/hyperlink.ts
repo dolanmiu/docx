@@ -152,7 +152,9 @@ export class InternalHyperlink extends ConcreteHyperlink {
  * External hyperlinks create a relationship to an external resource (URL).
  * The relationship is created during document preparation and the hyperlink
  * is converted to a ConcreteHyperlink with the relationship ID.
- * URL fragments are written as anchors, preserving any additional # characters.
+ * URL fragments of at most 255 UTF-16 units are written as anchors, preserving any additional # characters.
+ * Longer fragments stay in the original relationship URI to avoid exceeding Word's anchor limit;
+ * those links retain the existing limitations for fragments with multiple # characters.
  * Word appends the anchor to the relationship target as described in MS-OI29500 §17.16.22:
  * https://learn.microsoft.com/en-us/openspecs/office_standards/ms-oi29500/df06e423-11a6-4a36-bfb3-82139e531781
  *

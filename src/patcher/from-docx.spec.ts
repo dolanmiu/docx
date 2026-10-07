@@ -741,6 +741,49 @@ describe("from-docx", () => {
         });
 
         describe("Hyperlinks", () => {
+            it.each([
+                ["255 literal characters", "a".repeat(255), true],
+                ["256 literal characters", "a".repeat(256), false],
+                ["255 characters including another hash", `${"a".repeat(127)}#${"b".repeat(127)}`, true],
+                ["256 characters including another hash", `${"a".repeat(127)}#${"b".repeat(128)}`, false],
+                ["255 characters of percent-encoded hashes", "%23".repeat(85), true],
+                ["256 characters of percent-encoded hashes", `${"%23".repeat(85)}x`, false],
+                ["255 UTF-16 units including astral characters", `${"😀".repeat(127)}a`, true],
+                ["256 UTF-16 units including astral characters", "😀".repeat(128), false],
+            ] as const)("should preserve the full URL in an inline patch with %s", async (_description, fragment, useAnchor) => {
+                const template = await Packer.toBuffer(new File({ sections: [{ children: [new Paragraph("{{link}}")] }] }));
+                const target = "https://example.com/?a=1&b=2";
+                const link = `${target}#${fragment}`;
+                const zip = await JSZip.loadAsync(
+                    await patchDocument({
+                        data: template,
+                        outputType: "nodebuffer",
+                        patches: {
+                            link: {
+                                type: PatchType.PARAGRAPH,
+                                children: [new ExternalHyperlink({ link, children: [new TextRun("Link")] })],
+                            },
+                        },
+                    }),
+                );
+                const xml = new DOMParser().parseFromString(await zip.file("word/document.xml")!.async("text"), "text/xml");
+                const hyperlink = xml.getElementsByTagName("w:hyperlink")[0];
+                expect(hyperlink.hasAttribute("w:anchor")).to.equal(useAnchor);
+                if (useAnchor) {
+                    expect(hyperlink.getAttribute("w:anchor")).to.equal(fragment);
+                }
+                const relationships = new DOMParser().parseFromString(
+                    await zip.file("word/_rels/document.xml.rels")!.async("text"),
+                    "text/xml",
+                );
+                const matches = [...relationships.getElementsByTagName("Relationship")].filter(
+                    (relationship) => relationship.getAttribute("Id") === hyperlink.getAttribute("r:id"),
+                );
+                expect(matches).to.have.length(1);
+                expect(matches[0].getAttribute("Target")).to.equal(useAnchor ? target : link);
+                expect(matches[0].getAttribute("TargetMode")).to.equal("External");
+            });
+
             afterEach(() => {
                 vi.restoreAllMocks();
             });
