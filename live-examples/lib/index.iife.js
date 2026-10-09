@@ -12787,7 +12787,7 @@ DOT: "dot" };
 		hash.sha512 = hash.sha.sha512;
 		hash.ripemd160 = hash.ripemd.ripemd160;
 	})))(), 1);
-	var urlAlphabet = "57X6y3wQZNzYjJB2L_10pxbackgroundhimselfUTF-8DEMOGRAPHICSVqvt4KW9";
+	var urlAlphabet = "useandom-26T198340PX75pxJACKVERYMINDBUSHWOLF_GQZbfghjklqvwyzrict";
 	//#endregion
 	//#region node_modules/nanoid/non-secure/index.js
 	var customAlphabet = (alphabet, defaultSize = 21) => {
