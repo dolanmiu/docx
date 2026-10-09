@@ -173,7 +173,7 @@ export class Compiler {
         // Target paths set in FontWrapper. Word rejects embedded-font paths
         // containing spaces or non-ASCII when those characters appear in the
         // package zip entry; see https://github.com/dolanmiu/docx/issues/3019.
-        for (const [i, { data: buffer, fontKey }] of file.FontTable.fontOptionsWithKey.entries()) {
+        for (const [i, { data: buffer, fontKey }] of file.FontTable.files.entries()) {
             zip.file(`word/fonts/font${i + 1}.odttf`, obfuscate(buffer, fontKey));
         }
 

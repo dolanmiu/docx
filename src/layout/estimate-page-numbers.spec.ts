@@ -1027,6 +1027,39 @@ describe("estimatePageNumbersWith", () => {
             expect(pageNumbersOf(bold)).to.deep.equal({ first: "1" });
         });
 
+        it.each([
+            ["bold", { bold: true }],
+            ["italic", { italics: true }],
+            ["boldItalic", { bold: true, italics: true }],
+        ] as const)("should measure text in the %s face a document embeds of a font from that face's file", (face, formatting) => {
+            // Half as wide as Probe Wide, so the 30 paragraphs take fewer pages measured from it than from the regular face
+            const narrow = buildTestFont({
+                name: "Probe Wide",
+                advances: Object.fromEntries([..." abcdefghijklmnopqrstuvwxyz"].map((letter) => [letter, 500])),
+                windows: { ascent: 1000, descent: 1000 },
+                hhea: { ascender: 1000, descender: -1000, lineGap: 0 },
+            });
+            const embedded: IPropertiesOptions = {
+                fonts: [{ name: "Probe Wide", data: Buffer.from(WIDE), [face]: Buffer.from(narrow) }],
+                sections: [
+                    {
+                        children: [
+                            heading("First", "first"),
+                            ...Array.from(
+                                { length: 30 },
+                                () =>
+                                    new Paragraph({
+                                        children: [new TextRun({ text: words, font: "Probe Wide", size: 18, ...formatting })],
+                                    }),
+                            ),
+                            heading("Last", "last"),
+                        ],
+                    },
+                ],
+            };
+            expect(pageNumbersOf(embedded)).to.deep.include({ first: "1", last: "4" });
+        });
+
         it("should stop at text in a font Office offers a copy of its own of, given or embedded, and measure the file guessing", () => {
             // Word for Mac drew Pacifico, which a document embedded, in Office's copy of it (word-stops-office-fonts.docx MB4)
             const given = estimatePageNumbersWith({ fonts: [{ data: WIDE, name: "Pacifico" }] });

@@ -41,13 +41,58 @@ const doc = new Document({
 
 The `name` property can contain spaces and non-ASCII characters (e.g. `"EB Garamond"`, `"Noto Sans JP"`). Internally, docx uses sequential filenames (`font1.odttf`, `font2.odttf`, …) for the embedded font data in the zip package, so the font name you choose has no effect on file compatibility.
 
+## Bold and Italic Faces
+
+`data` is the font's regular face. To embed the font's other faces, give their files too. Word then draws bold and italic text in the font with those faces, rather than making the regular face bolder or slanting it:
+
+```ts live
+import * as fs from "fs";
+import { Document, Paragraph, TextRun } from "docx";
+
+const doc = new Document({
+    fonts: [
+        {
+            name: "Crimson Text",
+            data: fs.readFileSync("./demo/assets/CrimsonText-Regular.ttf"),
+            bold: fs.readFileSync("./demo/assets/CrimsonText-Bold.ttf"),
+            italic: fs.readFileSync("./demo/assets/CrimsonText-Italic.ttf"),
+            boldItalic: fs.readFileSync("./demo/assets/CrimsonText-BoldItalic.ttf"),
+        },
+    ],
+    styles: {
+        default: {
+            document: {
+                run: { font: "Crimson Text", size: 32 },
+            },
+        },
+    },
+    sections: [
+        {
+            children: [
+                new Paragraph("Regular text in the embedded regular face"),
+                new Paragraph({ children: [new TextRun({ text: "Bold text in the embedded bold face", bold: true })] }),
+                new Paragraph({ children: [new TextRun({ text: "Italic text in the embedded italic face", italics: true })] }),
+                new Paragraph({
+                    children: [new TextRun({ text: "Bold italic text in the embedded bold italic face", bold: true, italics: true })],
+                }),
+            ],
+        },
+    ],
+});
+```
+
+Each face is embedded as a file of its own.
+
 ## Font Options
 
-| Property     | Type           | Notes    | Description                |
-| ------------ | -------------- | -------- | -------------------------- |
-| name         | `string`       | Required | Font name to reference     |
-| data         | `Buffer`       | Required | Font file data             |
-| characterSet | `CharacterSet` | Optional | Character set for the font |
+| Property     | Type           | Notes    | Description                            |
+| ------------ | -------------- | -------- | -------------------------------------- |
+| name         | `string`       | Required | Font name to reference                 |
+| data         | `Buffer`       | Required | Font file data of the regular face     |
+| bold         | `Buffer`       | Optional | Font file data of the bold face        |
+| italic       | `Buffer`       | Optional | Font file data of the italic face      |
+| boldItalic   | `Buffer`       | Optional | Font file data of the bold italic face |
+| characterSet | `CharacterSet` | Optional | Character set for the font             |
 
 ## Character Sets
 
