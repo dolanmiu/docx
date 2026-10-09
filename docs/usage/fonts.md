@@ -45,25 +45,35 @@ The `name` property can contain spaces and non-ASCII characters (e.g. `"EB Garam
 
 `data` is the font's regular face. To embed the font's other faces, give their files too. Word then draws bold and italic text in the font with those faces, rather than making the regular face bolder or slanting it:
 
-```ts
+```ts live
 import * as fs from "fs";
 import { Document, Paragraph, TextRun } from "docx";
 
 const doc = new Document({
     fonts: [
         {
-            name: "Noto Sans",
-            data: fs.readFileSync("./NotoSans-Regular.ttf"),
-            bold: fs.readFileSync("./NotoSans-Bold.ttf"),
-            italic: fs.readFileSync("./NotoSans-Italic.ttf"),
-            boldItalic: fs.readFileSync("./NotoSans-BoldItalic.ttf"),
+            name: "Crimson Text",
+            data: fs.readFileSync("./demo/assets/CrimsonText-Regular.ttf"),
+            bold: fs.readFileSync("./demo/assets/CrimsonText-Bold.ttf"),
+            italic: fs.readFileSync("./demo/assets/CrimsonText-Italic.ttf"),
+            boldItalic: fs.readFileSync("./demo/assets/CrimsonText-BoldItalic.ttf"),
         },
     ],
+    styles: {
+        default: {
+            document: {
+                run: { font: "Crimson Text", size: 32 },
+            },
+        },
+    },
     sections: [
         {
             children: [
+                new Paragraph("Regular text in the embedded regular face"),
+                new Paragraph({ children: [new TextRun({ text: "Bold text in the embedded bold face", bold: true })] }),
+                new Paragraph({ children: [new TextRun({ text: "Italic text in the embedded italic face", italics: true })] }),
                 new Paragraph({
-                    children: [new TextRun({ text: "Bold text in the embedded bold face", font: "Noto Sans", bold: true })],
+                    children: [new TextRun({ text: "Bold italic text in the embedded bold italic face", bold: true, italics: true })],
                 }),
             ],
         },

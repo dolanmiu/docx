@@ -61,6 +61,7 @@ const FACES = [
 export class FontWrapper implements IViewWrapper {
     private readonly fontTable: XmlComponent;
     private readonly relationships: Relationships;
+    /** @deprecated Use `files`, which has the file and key of each face a font embeds, not only the regular face's key */
     public readonly fontOptionsWithKey: readonly FontOptionsWithKey[] = [];
     /** The files of the faces the fonts embed, in order: the Nth is `fonts/font<N>.odttf`, with the relationship `rId<N>` */
     public readonly files: readonly EmbeddedFontFile[] = [];
