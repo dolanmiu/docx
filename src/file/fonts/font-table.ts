@@ -9,9 +9,8 @@
  */
 import { BuilderElement, type XmlComponent } from "@file/xml-components";
 
-import { createRegularFont } from "./create-regular-font";
+import { type EmbeddedFontOptions, createEmbeddedFont } from "./create-embedded-font";
 import type { CharacterSet } from "./font";
-import type { FontOptionsWithKey } from "./font-wrapper";
 
 // <xsd:complexType name="CT_FontsList">
 //     <xsd:sequence>
@@ -25,8 +24,14 @@ import type { FontOptionsWithKey } from "./font-wrapper";
 export type FontOptions = {
     /** Font family name */
     readonly name: string;
-    /** Font file data (TTF, OTF, etc.) */
+    /** Font file data (TTF, OTF, etc.) of the regular face */
     readonly data: Buffer;
+    /** Font file data of the bold face, embedded as `w:embedBold` */
+    readonly bold?: Buffer;
+    /** Font file data of the italic face, embedded as `w:embedItalic` */
+    readonly italic?: Buffer;
+    /** Font file data of the bold italic face, embedded as `w:embedBoldItalic` */
+    readonly boldItalic?: Buffer;
     /** Character set/encoding for the font */
     readonly characterSet?: (typeof CharacterSet)[keyof typeof CharacterSet];
 };
@@ -48,7 +53,7 @@ export type FontOptions = {
  * </xsd:complexType>
  * ```
  */
-export const createFontTable = (fonts: readonly FontOptionsWithKey[]): XmlComponent =>
+export const createFontTable = (fonts: readonly EmbeddedFontOptions[]): XmlComponent =>
     // https://c-rex.net/projects/samples/ooxml/e1/Part4/OOXML_P4_DOCX_Font_topic_ID0ERNCU.html
     // http://www.datypic.com/sc/ooxml/e-w_fonts.html
     new BuilderElement({
@@ -66,12 +71,5 @@ export const createFontTable = (fonts: readonly FontOptionsWithKey[]): XmlCompon
             w16se: { key: "xmlns:w16se", value: "http://schemas.microsoft.com/office/word/2015/wordml/symex" },
             Ignorable: { key: "mc:Ignorable", value: "w14 w15 w16se w16cid w16 w16cex w16sdtdh" },
         },
-        children: fonts.map((font, i) =>
-            createRegularFont({
-                name: font.name,
-                index: i + 1,
-                fontKey: font.fontKey,
-                characterSet: font.characterSet,
-            }),
-        ),
+        children: fonts.map(createEmbeddedFont),
     });

@@ -2,6 +2,7 @@ import type JSZip from "jszip";
 import { afterAll, beforeAll, beforeEach, describe, expect, it, vi } from "vitest";
 
 import { File } from "@file/file";
+import { obfuscate } from "@file/fonts/obfuscate-ttf-to-odttf";
 import { Footer, Header } from "@file/header";
 import { LevelFormat } from "@file/numbering";
 import { Bookmark, ExternalHyperlink, ImageRun, Paragraph, TextRun, WpsShapeRun } from "@file/paragraph";
@@ -601,6 +602,26 @@ describe("Compiler", () => {
             expect(fileNames).to.include("word/fonts/font2.odttf");
             expect(fileNames).to.not.include("word/fonts/EB Garamond.odttf");
             expect(fileNames).to.not.include("word/fonts/Source Serif 4.odttf");
+        });
+
+        it("should write each face of an embedded font to a file of its own, obfuscated with its own key", async () => {
+            const file = new File({
+                sections: [],
+                fonts: [
+                    {
+                        name: "Probe",
+                        data: Buffer.alloc(64, 1),
+                        bold: Buffer.alloc(64, 2),
+                        italic: Buffer.alloc(64, 3),
+                        boldItalic: Buffer.alloc(64, 4),
+                    },
+                ],
+            });
+
+            const zip = compiler.compile(file);
+            const written = await Promise.all([1, 2, 3, 4].map((n) => zip.file(`word/fonts/font${n}.odttf`)?.async("uint8array")));
+            expect(written).to.deep.equal(file.FontTable.files.map(({ data, fontKey }) => obfuscate(data, fontKey)));
+            expect(Object.keys(zip.files)).to.not.include("word/fonts/font5.odttf");
         });
     });
 });

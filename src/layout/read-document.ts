@@ -5899,8 +5899,8 @@ const partsOfFile = (context: IContext): DocumentParts => {
         ),
         footnotes: format(file.FootNotes),
         endnotes: format(file.Endnotes),
-        // docx embeds each font of its fonts option as the font's regular face
-        fonts: facesOf(file.FontTable.options.map(({ name, data }) => ({ name, data, bold: false, italic: false }))),
+        // docx embeds each face of each font its fonts option gives
+        fonts: facesOf(file.FontTable.files),
     };
 };
 
