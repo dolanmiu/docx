@@ -3466,6 +3466,23 @@ export declare type EffectExtentAttributes = {
 export declare const eighthPointMeasureValue: (val: number) => number;
 
 /**
+ * A font file the document embeds: one face of one of its fonts, with the unique key it is obfuscated with.
+ *
+ * @property name - Font family name
+ * @property data - Font file data of the face
+ * @property bold - Whether the face is bold
+ * @property italic - Whether the face is italic
+ * @property fontKey - Unique key (GUID) the file is obfuscated with
+ */
+declare type EmbeddedFontFile = {
+    readonly name: string;
+    readonly data: Buffer;
+    readonly bold: boolean;
+    readonly italic: boolean;
+    readonly fontKey: string;
+};
+
+/**
  * A file of a package that is embedded in the document, such as a sheet of an embedded workbook.
  */
 export declare type EmbeddedPackageFile = {
@@ -3908,14 +3925,20 @@ export declare const fillSequenceNumbers: (body: IXmlableObject, context: IConte
 declare type FontOptions = {
     /** Font family name */
     readonly name: string;
-    /** Font file data (TTF, OTF, etc.) */
+    /** Font file data (TTF, OTF, etc.) of the regular face */
     readonly data: Buffer;
+    /** Font file data of the bold face, embedded as `w:embedBold` */
+    readonly bold?: Buffer;
+    /** Font file data of the italic face, embedded as `w:embedItalic` */
+    readonly italic?: Buffer;
+    /** Font file data of the bold italic face, embedded as `w:embedBoldItalic` */
+    readonly boldItalic?: Buffer;
     /** Character set/encoding for the font */
     readonly characterSet?: (typeof CharacterSet)[keyof typeof CharacterSet];
 };
 
 /**
- * Font options extended with a unique font key.
+ * Font options extended with the unique key of the regular face's file.
  */
 declare type FontOptionsWithKey = FontOptions & {
     readonly fontKey: string;
@@ -3925,12 +3948,13 @@ declare type FontOptionsWithKey = FontOptions & {
  * Wrapper class for managing the font table and its relationships.
  *
  * Creates a font table with embedded font files and manages the relationships
- * required for font embedding. Each font is assigned a unique key for obfuscation.
+ * required for font embedding. Each face of a font is embedded as a file of its own,
+ * with a unique key for obfuscation.
  *
  * @example
  * ```typescript
  * const fontWrapper = new FontWrapper([
- *   { name: "CustomFont", data: fontBuffer }
+ *   { name: "CustomFont", data: fontBuffer, bold: boldFontBuffer }
  * ]);
  * ```
  */
@@ -3938,7 +3962,10 @@ declare class FontWrapper implements IViewWrapper {
     readonly options: readonly FontOptions[];
     private readonly fontTable;
     private readonly relationships;
+    /** @deprecated Use `files`, which has the file and key of each face a font embeds, not only the regular face's key */
     readonly fontOptionsWithKey: readonly FontOptionsWithKey[];
+    /** The files of the faces the fonts embed, in order: the Nth is `fonts/font<N>.odttf`, with the relationship `rId<N>` */
+    readonly files: readonly EmbeddedFontFile[];
     constructor(options: readonly FontOptions[]);
     get View(): XmlComponent;
     get Relationships(): Relationships;

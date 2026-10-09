@@ -19619,32 +19619,26 @@ MAX: 9026 };
 		]
 	});
 	//#endregion
-	//#region src/file/fonts/create-regular-font.ts
+	//#region src/file/fonts/create-embedded-font.ts
 	/**
-	* Creates a regular embedded font with default settings.
+	* Creates an embedded font with default settings.
 	*
 	* This helper function creates a font definition with standard font signature
 	* values that work for most common fonts. The signature specifies Unicode
 	* and code page ranges supported by the font.
 	*
-	* @param options - Font creation options
-	* @param options.name - Font name
-	* @param options.index - Font relationship index
-	* @param options.fontKey - Unique font key (GUID) for obfuscation
-	* @param options.characterSet - Optional character set identifier
-	*
 	* @returns XmlComponent representing the font definition
 	*
 	* @example
 	* ```typescript
-	* const font = createRegularFont({
+	* const font = createEmbeddedFont({
 	*   name: "Arial",
-	*   index: 1,
-	*   fontKey: "12345678-1234-1234-1234-123456789012"
+	*   embedRegular: { id: "rId1", fontKey: "12345678-1234-1234-1234-123456789012" },
+	*   embedBold: { id: "rId2", fontKey: "12345678-1234-1234-1234-123456789013" },
 	* });
 	* ```
 	*/
-	var createRegularFont = ({ name, index, fontKey, characterSet }) => createFont({
+	var createEmbeddedFont = ({ name, characterSet, embedRegular, embedBold, embedItalic, embedBoldItalic }) => createFont({
 		name,
 		sig: {
 			usb0: "E0002AFF",
@@ -19657,10 +19651,10 @@ MAX: 9026 };
 		charset: characterSet,
 		family: "auto",
 		pitch: "variable",
-		embedRegular: {
-			fontKey,
-			id: `rId${index}`
-		}
+		embedRegular,
+		embedBold,
+		embedItalic,
+		embedBoldItalic
 	});
 	//#endregion
 	//#region src/file/fonts/font-table.ts
@@ -19738,25 +19732,47 @@ MAX: 9026 };
 				value: "w14 w15 w16se w16cid w16 w16cex w16sdtdh"
 			}
 		},
-		children: fonts.map((font, i) => createRegularFont({
-			name: font.name,
-			index: i + 1,
-			fontKey: font.fontKey,
-			characterSet: font.characterSet
-		}))
+		children: fonts.map(createEmbeddedFont)
 	});
 	//#endregion
 	//#region src/file/fonts/font-wrapper.ts
+	var FACES = [
+		{
+			option: "data",
+			element: "embedRegular",
+			bold: false,
+			italic: false
+		},
+		{
+			option: "bold",
+			element: "embedBold",
+			bold: true,
+			italic: false
+		},
+		{
+			option: "italic",
+			element: "embedItalic",
+			bold: false,
+			italic: true
+		},
+		{
+			option: "boldItalic",
+			element: "embedBoldItalic",
+			bold: true,
+			italic: true
+		}
+	];
 	/**
 	* Wrapper class for managing the font table and its relationships.
 	*
 	* Creates a font table with embedded font files and manages the relationships
-	* required for font embedding. Each font is assigned a unique key for obfuscation.
+	* required for font embedding. Each face of a font is embedded as a file of its own,
+	* with a unique key for obfuscation.
 	*
 	* @example
 	* ```typescript
 	* const fontWrapper = new FontWrapper([
-	*   { name: "CustomFont", data: fontBuffer }
+	*   { name: "CustomFont", data: fontBuffer, bold: boldFontBuffer }
 	* ]);
 	* ```
 	*/
@@ -19765,12 +19781,43 @@ MAX: 9026 };
 			_defineProperty(this, "options", void 0);
 			_defineProperty(this, "fontTable", void 0);
 			_defineProperty(this, "relationships", void 0);
-			_defineProperty(this, "fontOptionsWithKey", []);
+			_defineProperty(
+				this,
+				/** @deprecated Use `files`, which has the file and key of each face a font embeds, not only the regular face's key */
+				"fontOptionsWithKey",
+				[]
+			);
+			_defineProperty(
+				this,
+				/** The files of the faces the fonts embed, in order: the Nth is `fonts/font<N>.odttf`, with the relationship `rId<N>` */
+				"files",
+				[]
+			);
 			this.options = options;
-			this.fontOptionsWithKey = options.map((o) => _objectSpread2(_objectSpread2({}, o), {}, { fontKey: uniqueUuid() }));
-			this.fontTable = createFontTable(this.fontOptionsWithKey);
+			const faces = options.map((font) => FACES.flatMap(({ option, element, bold, italic }) => {
+				const data = font[option];
+				return data ? [{
+					element,
+					file: {
+						name: font.name,
+						data,
+						bold,
+						italic,
+						fontKey: uniqueUuid()
+					}
+				}] : [];
+			}));
+			this.files = faces.flatMap((ofFont) => ofFont.map(({ file }) => file));
+			this.fontOptionsWithKey = options.map((font, index) => _objectSpread2(_objectSpread2({}, font), {}, { fontKey: faces[index][0].file.fontKey }));
+			this.fontTable = createFontTable(options.map((font, index) => _objectSpread2({
+				name: font.name,
+				characterSet: font.characterSet
+			}, Object.fromEntries(faces[index].map(({ element, file }) => [element, {
+				id: `rId${this.files.indexOf(file) + 1}`,
+				fontKey: file.fontKey
+			}])))));
 			this.relationships = new Relationships();
-			for (let i = 0; i < options.length; i++) this.relationships.addRelationship(i + 1, "http://schemas.openxmlformats.org/officeDocument/2006/relationships/font", `fonts/font${i + 1}.odttf`);
+			for (let i = 0; i < this.files.length; i++) this.relationships.addRelationship(i + 1, "http://schemas.openxmlformats.org/officeDocument/2006/relationships/font", `fonts/font${i + 1}.odttf`);
 		}
 		get View() {
 			return this.fontTable;
@@ -35469,7 +35516,7 @@ while (n === a[++i] && n === a[++i] && n === a[++i] && n === a[++i] && n === a[+
 				zip.file(`word/media/${data.fileName}`, data.data);
 				zip.file(`word/media/${data.fallback.fileName}`, data.fallback.data);
 			}
-			for (const [i, { data: buffer, fontKey }] of file.FontTable.fontOptionsWithKey.entries()) zip.file(`word/fonts/font${i + 1}.odttf`, obfuscate(buffer, fontKey));
+			for (const [i, { data: buffer, fontKey }] of file.FontTable.files.entries()) zip.file(`word/fonts/font${i + 1}.odttf`, obfuscate(buffer, fontKey));
 			return zip;
 		}
 		xmlifyFile(file, prettify) {

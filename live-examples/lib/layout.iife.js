@@ -45183,12 +45183,7 @@ var docxLayout = (function(exports) {
 			headersAndFooters: new Map([...file.Headers, ...file.Footers].map((wrapper) => [`rId${wrapper.View.ReferenceId}`, Object.values(format(wrapper))[0]])),
 			footnotes: format(file.FootNotes),
 			endnotes: format(file.Endnotes),
-			fonts: facesOf(file.FontTable.options.map(({ name, data }) => ({
-				name,
-				data,
-				bold: false,
-				italic: false
-			})))
+			fonts: facesOf(file.FontTable.files)
 		};
 	};
 	/**
