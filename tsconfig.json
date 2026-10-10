@@ -28,13 +28,13 @@
         "rootDir": "./src",
         "declaration": true,
         "esModuleInterop": true,
-        "baseUrl": "./src",
         "paths": {
-            "@util/*": ["./util/*"],
-            "@export/*": ["./export/*"],
-            "@file/*": ["./file/*"],
-            "@shared": ["./shared/index.ts"],
-            "docx": ["./index.ts"]
+            "@util/*": ["./src/util/*"],
+            "@export/*": ["./src/export/*"],
+            "@file/*": ["./src/file/*"],
+            "@shared": ["./src/shared/index.ts"],
+            "tests/*": ["./src/tests/*"],
+            "docx": ["./src/index.ts"]
         }
     },
     "include": ["src"]

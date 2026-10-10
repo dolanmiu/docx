@@ -13,6 +13,10 @@ export default defineConfig({
                 extractorConfig: {
                     dtsRollup: { publicTrimmedFilePath: "", untrimmedFilePath: resolve(__dirname, "dist/index.d.ts") },
                 },
+                // API Extractor reads the declarations with the TypeScript it comes with, so it needs that version's
+                // lib files too. The plugin would point it at the project's TypeScript, which is a newer version whose
+                // lib files it can't follow symbols such as Readonly into
+                invokeOptions: { typescriptCompilerFolder: undefined },
             },
             // tsconfig.json removes comments, but the JSDoc in declarations is what users see in their editors
             compilerOptions: { removeComments: false },
