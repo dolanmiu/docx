@@ -7808,7 +7808,12 @@ export declare type ITableRowPropertiesOptions = ITableRowPropertiesOptionsBase 
 export declare type ITableRowPropertiesOptionsBase = {
     /** Whether the row can be split across pages (cantSplit) */
     readonly cantSplit?: boolean;
-    /** Whether the row should be repeated as a header row on each page (tblHeader) */
+    /**
+     * Whether the row should be repeated as a header row on each page (tblHeader).
+     *
+     * Only the table's first row and the rows straight after it that also set this repeat. Word ignores it on
+     * any row further down, so to repeat a different header for each part of a table, make each part a table of its own.
+     */
     readonly tableHeader?: boolean;
     /** Row height configuration (trHeight) */
     readonly height?: {
