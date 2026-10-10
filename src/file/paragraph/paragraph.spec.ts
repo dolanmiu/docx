@@ -1038,6 +1038,37 @@ describe("Paragraph", () => {
     });
 
     describe("#prepForXml", () => {
+        it.each([
+            ["https://example.com/#foo#bar", "https://example.com/", "foo#bar"],
+            ["https://example.com/?q=a%23b#section", "https://example.com/?q=a%23b", "section"],
+            ["../document.docx#bookmark", "../document.docx", "bookmark"],
+            ["https://example.com/%23literal", "https://example.com/%23literal", undefined],
+            ["https://example.com/", "https://example.com/", undefined],
+            ["https://example.com/#", "https://example.com/#", undefined],
+            ["#bookmark", "#bookmark", undefined],
+            ["", "", undefined],
+        ])("should preserve the external hyperlink fragment in %s", (link, target, anchor) => {
+            const paragraph = new Paragraph({ children: [new ExternalHyperlink({ link, children: [new TextRun("Link")] })] });
+            const addRelationship = vi.fn();
+            const tree = new Formatter().format(paragraph, {
+                viewWrapper: { Relationships: { addRelationship } } as unknown as IViewWrapper,
+                file: {} as File,
+                stack: [],
+            });
+
+            expect(tree["w:p"][0]["w:hyperlink"][0]._attr).to.deep.equal({
+                "w:history": 1,
+                "r:id": "rIdtest-unique-id",
+                ...(anchor ? { "w:anchor": anchor } : {}),
+            });
+            expect(addRelationship).toHaveBeenCalledWith(
+                "test-unique-id",
+                "http://schemas.openxmlformats.org/officeDocument/2006/relationships/hyperlink",
+                target,
+                "External",
+            );
+        });
+
         it("should set Internal Hyperlink", () => {
             const paragraph = new Paragraph({
                 children: [
