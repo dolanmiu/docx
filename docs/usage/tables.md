@@ -239,6 +239,35 @@ const doc = new Document({
 });
 ```
 
+Only rows at the top of a table repeat. Word repeats the table's first row, and the rows straight after it that also set `tableHeader`, and ignores `tableHeader` on any row further down. So a table has one set of header rows, and a row with `tableHeader` in the middle of it neither repeats nor stops the header rows above it from repeating.
+
+To give each part of a long table a header of its own, make each part a table, with its header row first. Word joins tables that are next to each other into one, so put a paragraph between them, such as a heading for the part:
+
+```ts live
+import { Document, HeadingLevel, Paragraph, Table, TableCell, TableRow } from "docx";
+
+const cell = (text: string) => new TableCell({ children: [new Paragraph(text)] });
+
+const part = (name: string) => [
+    new Paragraph({ text: name, heading: HeadingLevel.HEADING_2 }),
+    new Table({
+        rows: [
+            // The first row of each table repeats on each page that table runs onto
+            new TableRow({ children: [cell(`${name} item`), cell("Quantity")], tableHeader: true }),
+            ...Array.from({ length: 40 }, (_, index) => new TableRow({ children: [cell(`${name} ${index + 1}`), cell(`${index + 1}`)] })),
+        ],
+    }),
+];
+
+const doc = new Document({
+    sections: [
+        {
+            children: [...part("Fruit"), ...part("Vegetable"), ...part("Grain")],
+        },
+    ],
+});
+```
+
 ### Pagination
 
 #### Prevent row pagination
