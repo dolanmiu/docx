@@ -7,7 +7,7 @@ import { File } from "@file/file";
 import { Footer, Header } from "@file/header";
 
 import { Paragraph } from "../paragraph";
-import { TextRun } from "../run";
+import { ImageRun, TextRun } from "../run";
 import { ConcreteHyperlink, ExternalHyperlink, InternalHyperlink } from "./hyperlink";
 
 describe("ConcreteHyperlink", () => {
@@ -151,6 +151,49 @@ describe("ExternalHyperlink", () => {
                 expect(matches).to.have.length(1);
                 expect(matches[0].getAttribute("Target")).to.equal("https://example.com/?a=1&b=2");
                 expect(matches[0].getAttribute("TargetMode")).to.equal("External");
+            }
+        }
+    });
+
+    it("should link a picture in the hyperlink to the full address, as a picture's link has no anchor", async () => {
+        const document = new File({
+            sections: [
+                {
+                    children: [
+                        new Paragraph({
+                            children: [
+                                new ExternalHyperlink({
+                                    link: "https://example.com/page#section",
+                                    children: [
+                                        new ImageRun({ type: "png", data: Buffer.from(""), transformation: { width: 10, height: 10 } }),
+                                    ],
+                                }),
+                            ],
+                        }),
+                    ],
+                },
+            ],
+        });
+
+        for (let pack = 0; pack < 2; pack++) {
+            const zip = await JSZip.loadAsync(await Packer.toBuffer(document));
+            const xml = new DOMParser().parseFromString(await zip.file("word/document.xml")!.async("text"), "text/xml");
+            const relationships = [
+                ...new DOMParser()
+                    .parseFromString(await zip.file("word/_rels/document.xml.rels")!.async("text"), "text/xml")
+                    .getElementsByTagName("Relationship"),
+            ];
+            const targetOf = (id: string | null): readonly (string | null)[] =>
+                relationships.filter((relationship) => relationship.getAttribute("Id") === id).map((r) => r.getAttribute("Target"));
+
+            const hyperlink = xml.getElementsByTagName("w:hyperlink")[0];
+            expect(hyperlink.getAttribute("w:anchor")).to.equal("section");
+            expect(targetOf(hyperlink.getAttribute("r:id"))).to.deep.equal(["https://example.com/page"]);
+            // The picture's wp:docPr and pic:cNvPr
+            const clicks = [...xml.getElementsByTagName("a:hlinkClick")];
+            expect(clicks).to.have.length(2);
+            for (const click of clicks) {
+                expect(targetOf(click.getAttribute("r:id"))).to.deep.equal(["https://example.com/page#section"]);
             }
         }
     });

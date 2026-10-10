@@ -145,7 +145,8 @@ export class Paragraph extends FileChild {
             if (element instanceof ExternalHyperlink) {
                 const index = this.root.indexOf(element);
                 const { target, anchor } = externalHyperlinkTarget(element.options.link);
-                const concreteHyperlink = new ConcreteHyperlink(element.options.children, uniqueId(), anchor, true);
+                // The full link goes with the split one, so pictures in the hyperlink can link to the address with its fragment
+                const concreteHyperlink = new ConcreteHyperlink(element.options.children, uniqueId(), anchor, element.options.link);
                 context.viewWrapper.Relationships.addRelationship(
                     concreteHyperlink.linkId,
                     "http://schemas.openxmlformats.org/officeDocument/2006/relationships/hyperlink",

@@ -8,7 +8,6 @@
  *
  * @module
  */
-import { createHyperlinkClick } from "@file/drawing/doc-properties/doc-properties-children";
 import { ConcreteHyperlink } from "@file/paragraph";
 import { type IContext, type IXmlableObject, XmlComponent } from "@file/xml-components";
 
@@ -63,7 +62,8 @@ export class NonVisualProperties extends XmlComponent {
                 continue;
             }
 
-            this.root.push(createHyperlinkClick(element.linkId, false));
+            // The hyperlink picks the relationship, as its own may be missing the fragment it moved to its anchor
+            this.root.push(element.createDrawingClick(context, false));
 
             break;
         }

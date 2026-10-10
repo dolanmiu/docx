@@ -12,7 +12,6 @@ import { ConcreteHyperlink } from "@file/paragraph";
 import { type IContext, type IXmlableObject, NextAttributeComponent, XmlComponent } from "@file/xml-components";
 import { docPropertiesUniqueNumericId } from "@util/convenience-functions";
 
-import { createHyperlinkClick } from "./doc-properties-children";
 import { DrawingLink, type DrawingLinkOptions, createDecorativeExtensionList } from "./non-visual-drawing-properties";
 
 // <complexType name="CT_NonVisualDrawingProps">
@@ -114,7 +113,8 @@ export class DocProperties extends XmlComponent {
                     continue;
                 }
 
-                this.root.push(createHyperlinkClick(element.linkId, true));
+                // The hyperlink picks the relationship, as its own may be missing the fragment it moved to its anchor
+                this.root.push(element.createDrawingClick(context, true));
                 break;
             }
         }

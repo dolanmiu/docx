@@ -466,7 +466,14 @@ export const patchDocument = async <T extends PatchDocumentOutputType = PatchDoc
                             // We need to replace external hyperlinks with concrete hyperlinks
                             if (child instanceof ExternalHyperlink) {
                                 const { target, anchor } = externalHyperlinkTarget(child.options.link);
-                                const concreteHyperlink = new ConcreteHyperlink(child.options.children, uniqueId(), anchor, true);
+                                // The full link goes with the split one, so pictures in the hyperlink can link to the
+                                // address with its fragment
+                                const concreteHyperlink = new ConcreteHyperlink(
+                                    child.options.children,
+                                    uniqueId(),
+                                    anchor,
+                                    child.options.link,
+                                );
                                 // eslint-disable-next-line functional/immutable-data
                                 hyperlinkRelationships.push({
                                     key,
