@@ -14584,48 +14584,6 @@ DOT: "dot" };
 		}
 	};
 	//#endregion
-	//#region src/file/drawing/doc-properties/doc-properties-children.ts
-	/**
-	* Child elements for document properties.
-	*
-	* This module provides hyperlink elements that can be attached to
-	* drawing elements for interactive behavior.
-	*
-	* @module
-	*/
-	/**
-	* Creates a click hyperlink element for a drawing.
-	*
-	* This element defines what happens when a user clicks on a drawing element.
-	*
-	* ## XSD Schema
-	* ```xml
-	* <xsd:complexType name="CT_Hyperlink">
-	*   <xsd:group ref="EG_PContent" minOccurs="0" maxOccurs="unbounded"/>
-	*   <xsd:attribute name="tgtFrame" type="s:ST_String"/>
-	*   <xsd:attribute name="tooltip" type="s:ST_String"/>
-	*   <xsd:attribute name="docLocation" type="s:ST_String"/>
-	*   <xsd:attribute name="history" type="s:ST_OnOff"/>
-	*   <xsd:attribute name="anchor" type="s:ST_String"/>
-	*   <xsd:attribute ref="r:id"/>
-	* </xsd:complexType>
-	* ```
-	*
-	* @param linkId - The relationship ID for the hyperlink target
-	* @param hasXmlNs - Whether to include the XML namespace declaration
-	* @returns An XML component representing the click hyperlink
-	*/
-	var createHyperlinkClick = (linkId, hasXmlNs) => new BuilderElement({
-		name: "a:hlinkClick",
-		attributes: _objectSpread2(_objectSpread2({}, hasXmlNs ? { xmlns: {
-			key: "xmlns:a",
-			value: "http://schemas.openxmlformats.org/drawingml/2006/main"
-		} } : {}), {}, { id: {
-			key: "r:id",
-			value: `rId${linkId}`
-		} })
-	});
-	//#endregion
 	//#region src/file/drawing/inline/graphic/graphic-data/pic/non-visual-pic-properties/non-visual-properties/non-visual-properties-attributes.ts
 	/**
 	* Non-visual properties attributes module.
@@ -14706,7 +14664,7 @@ DOT: "dot" };
 			for (let i = context.stack.length - 1; i >= 0; i--) {
 				const element = context.stack[i];
 				if (!(element instanceof ConcreteHyperlink)) continue;
-				this.root.push(createHyperlinkClick(element.linkId, false));
+				this.root.push(element.createDrawingClick(context, false));
 				break;
 			}
 			const result = super.prepForXml(context);
@@ -15376,6 +15334,48 @@ EXTERNAL: "External" };
 		}
 	});
 	//#endregion
+	//#region src/file/drawing/doc-properties/doc-properties-children.ts
+	/**
+	* Child elements for document properties.
+	*
+	* This module provides hyperlink elements that can be attached to
+	* drawing elements for interactive behavior.
+	*
+	* @module
+	*/
+	/**
+	* Creates a click hyperlink element for a drawing.
+	*
+	* This element defines what happens when a user clicks on a drawing element.
+	*
+	* ## XSD Schema
+	* ```xml
+	* <xsd:complexType name="CT_Hyperlink">
+	*   <xsd:group ref="EG_PContent" minOccurs="0" maxOccurs="unbounded"/>
+	*   <xsd:attribute name="tgtFrame" type="s:ST_String"/>
+	*   <xsd:attribute name="tooltip" type="s:ST_String"/>
+	*   <xsd:attribute name="docLocation" type="s:ST_String"/>
+	*   <xsd:attribute name="history" type="s:ST_OnOff"/>
+	*   <xsd:attribute name="anchor" type="s:ST_String"/>
+	*   <xsd:attribute ref="r:id"/>
+	* </xsd:complexType>
+	* ```
+	*
+	* @param linkId - The relationship ID for the hyperlink target
+	* @param hasXmlNs - Whether to include the XML namespace declaration
+	* @returns An XML component representing the click hyperlink
+	*/
+	var createHyperlinkClick = (linkId, hasXmlNs) => new BuilderElement({
+		name: "a:hlinkClick",
+		attributes: _objectSpread2(_objectSpread2({}, hasXmlNs ? { xmlns: {
+			key: "xmlns:a",
+			value: "http://schemas.openxmlformats.org/drawingml/2006/main"
+		} } : {}), {}, { id: {
+			key: "r:id",
+			value: `rId${linkId}`
+		} })
+	});
+	//#endregion
 	//#region src/file/drawing/doc-properties/non-visual-drawing-properties.ts
 	/**
 	* Non-visual drawing properties (`CT_NonVisualDrawingProps`) of the shapes, pictures and groups inside a drawing:
@@ -15570,7 +15570,7 @@ EXTERNAL: "External" };
 			} else for (let i = context.stack.length - 1; i >= 0; i--) {
 				const element = context.stack[i];
 				if (!(element instanceof ConcreteHyperlink)) continue;
-				this.root.push(createHyperlinkClick(element.linkId, true));
+				this.root.push(element.createDrawingClick(context, true));
 				break;
 			}
 			if (this.decorative) this.root.push(createDecorativeExtensionList(true));
@@ -18958,19 +18958,43 @@ MAX: 9026 };
 	* ```
 	*/
 	var ConcreteHyperlink = class extends XmlComponent {
-		constructor(children, relationshipId, anchor) {
+		/**
+		* @param children - Inline content of the hyperlink
+		* @param relationshipId - Id of the external relationship, without the rId prefix
+		* @param anchor - Bookmark name or external URL fragment
+		* @param externalLink - The full address of an external hyperlink, so the relationship id is kept alongside its anchor
+		*/
+		constructor(children, relationshipId, anchor, externalLink) {
 			super("w:hyperlink");
 			_defineProperty(this, "linkId", void 0);
+			_defineProperty(this, "drawingLink", void 0);
 			this.linkId = relationshipId;
+			this.drawingLink = anchor && externalLink !== void 0 ? new DrawingLink(externalLink) : void 0;
 			const attributes = new HyperlinkAttributes({
 				history: 1,
 				anchor: anchor ? anchor : void 0,
-				id: !anchor ? `rId${this.linkId}` : void 0
+				id: !anchor || externalLink !== void 0 ? `rId${this.linkId}` : void 0
 			});
 			this.root.push(attributes);
 			children.forEach((child) => {
 				this.root.push(child);
 			});
+		}
+		/**
+		* Creates the `a:hlinkClick` of a picture in the hyperlink, which links to the same address.
+		*
+		* The hyperlink decides which relationship its pictures use, rather than the pictures reading `linkId`, because only it
+		* knows whether that relationship has lost the fragment to `w:anchor`. The picture's relationship is added as the
+		* picture is written, through the context's relationships, so it lands in the part the picture is in, both when
+		* packing and when patching.
+		*
+		* @param context - The context the picture is written in, whose relationships get the picture's link if it has its own
+		* @param declareNamespace - Declares the DrawingML namespace, for elements outside `a:graphic` such as `wp:docPr`
+		*/
+		createDrawingClick(context, declareNamespace) {
+			if (!this.drawingLink) return createHyperlinkClick(this.linkId, declareNamespace);
+			this.drawingLink.addRelationship(context);
+			return this.drawingLink.createClick(declareNamespace);
 		}
 	};
 	/**
@@ -19020,6 +19044,11 @@ MAX: 9026 };
 	* External hyperlinks create a relationship to an external resource (URL).
 	* The relationship is created during document preparation and the hyperlink
 	* is converted to a ConcreteHyperlink with the relationship ID.
+	* URL fragments of at most 255 UTF-16 units are written as anchors, preserving any additional # characters.
+	* Longer fragments stay in the original relationship URI to avoid exceeding Word's anchor limit;
+	* those links retain the existing limitations for fragments with multiple # characters.
+	* Word appends the anchor to the relationship target as described in MS-OI29500 §17.16.22:
+	* https://learn.microsoft.com/en-us/openspecs/office_standards/ms-oi29500/df06e423-11a6-4a36-bfb3-82139e531781
 	*
 	* Reference: http://officeopenxml.com/WPhyperlink.php
 	*
@@ -19033,6 +19062,7 @@ MAX: 9026 };
 	*   <xsd:group ref="EG_PContent" minOccurs="0" maxOccurs="unbounded"/>
 	*   <xsd:attribute ref="r:id"/>
 	*   <xsd:attribute name="history" type="s:ST_OnOff" use="optional"/>
+	*   <xsd:attribute name="anchor" type="s:ST_String" use="optional"/>
 	* </xsd:complexType>
 	* ```
 	*
@@ -19479,6 +19509,29 @@ MAX: 9026 };
 				createEnd()
 			] });
 		}
+	};
+	//#endregion
+	//#region src/file/paragraph/links/external-hyperlink-target.ts
+	/**
+	* External hyperlink targets and fragments for WordprocessingML.
+	*
+	* Word appends the anchor to the relationship target, separated by a # character.
+	* Reference: https://learn.microsoft.com/en-us/openspecs/office_standards/ms-oi29500/df06e423-11a6-4a36-bfb3-82139e531781
+	*
+	* @module
+	*/
+	var MAX_ANCHOR_LENGTH = 255;
+	/**
+	* Splits a nonempty fragment that fits Word's anchor limit without decoding or normalizing either part.
+	* Longer fragments stay in the original relationship URI, retaining its existing multi-hash limitations.
+	*/
+	var externalHyperlinkTarget = (link) => {
+		const index = link.indexOf("#");
+		const fragmentLength = link.length - index - 1;
+		return index > 0 && fragmentLength > 0 && fragmentLength <= MAX_ANCHOR_LENGTH ? {
+			target: link.slice(0, index),
+			anchor: link.slice(index + 1)
+		} : { target: link };
 	};
 	//#endregion
 	//#region src/file/fonts/font.ts
@@ -20340,8 +20393,9 @@ MAX: 9026 };
 		prepForXml(context) {
 			for (const element of this.root) if (element instanceof ExternalHyperlink) {
 				const index = this.root.indexOf(element);
-				const concreteHyperlink = new ConcreteHyperlink(element.options.children, uniqueId());
-				context.viewWrapper.Relationships.addRelationship(concreteHyperlink.linkId, "http://schemas.openxmlformats.org/officeDocument/2006/relationships/hyperlink", element.options.link, TargetModeType.EXTERNAL);
+				const { target, anchor } = externalHyperlinkTarget(element.options.link);
+				const concreteHyperlink = new ConcreteHyperlink(element.options.children, uniqueId(), anchor, element.options.link);
+				context.viewWrapper.Relationships.addRelationship(concreteHyperlink.linkId, "http://schemas.openxmlformats.org/officeDocument/2006/relationships/hyperlink", target, TargetModeType.EXTERNAL);
 				this.root[index] = concreteHyperlink;
 			}
 			return super.prepForXml(context);
@@ -37811,12 +37865,13 @@ while (n === a[++i] && n === a[++i] && n === a[++i] && n === a[++i] && n === a[+
 						json: element,
 						patch: _objectSpread2(_objectSpread2({}, patchValue), {}, { children: patchValue.children.flatMap((child) => child instanceof Bookmark ? child.writtenAs : [child]).map((child) => {
 							if (child instanceof ExternalHyperlink) {
-								const concreteHyperlink = new ConcreteHyperlink(child.options.children, uniqueId());
+								const { target, anchor } = externalHyperlinkTarget(child.options.link);
+								const concreteHyperlink = new ConcreteHyperlink(child.options.children, uniqueId(), anchor, child.options.link);
 								hyperlinkRelationships.push({
 									key,
 									id: concreteHyperlink.linkId,
 									type: "http://schemas.openxmlformats.org/officeDocument/2006/relationships/hyperlink",
-									target: child.options.link,
+									target,
 									targetMode: TargetModeType.EXTERNAL
 								});
 								return concreteHyperlink;

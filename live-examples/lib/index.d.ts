@@ -1307,7 +1307,26 @@ declare const CompoundLine: {
  */
 export declare class ConcreteHyperlink extends XmlComponent {
     readonly linkId: string;
-    constructor(children: readonly ParagraphChild[], relationshipId: string, anchor?: string);
+    private readonly drawingLink?;
+    /**
+     * @param children - Inline content of the hyperlink
+     * @param relationshipId - Id of the external relationship, without the rId prefix
+     * @param anchor - Bookmark name or external URL fragment
+     * @param externalLink - The full address of an external hyperlink, so the relationship id is kept alongside its anchor
+     */
+    constructor(children: readonly ParagraphChild[], relationshipId: string, anchor?: string, externalLink?: string);
+    /**
+     * Creates the `a:hlinkClick` of a picture in the hyperlink, which links to the same address.
+     *
+     * The hyperlink decides which relationship its pictures use, rather than the pictures reading `linkId`, because only it
+     * knows whether that relationship has lost the fragment to `w:anchor`. The picture's relationship is added as the
+     * picture is written, through the context's relationships, so it lands in the part the picture is in, both when
+     * packing and when patching.
+     *
+     * @param context - The context the picture is written in, whose relationships get the picture's link if it has its own
+     * @param declareNamespace - Declares the DrawingML namespace, for elements outside `a:graphic` such as `wp:docPr`
+     */
+    createDrawingClick(context: IContext, declareNamespace: boolean): XmlComponent;
 }
 
 /**
@@ -3674,6 +3693,11 @@ export declare type EstimatedPageNumbers = {
  * External hyperlinks create a relationship to an external resource (URL).
  * The relationship is created during document preparation and the hyperlink
  * is converted to a ConcreteHyperlink with the relationship ID.
+ * URL fragments of at most 255 UTF-16 units are written as anchors, preserving any additional # characters.
+ * Longer fragments stay in the original relationship URI to avoid exceeding Word's anchor limit;
+ * those links retain the existing limitations for fragments with multiple # characters.
+ * Word appends the anchor to the relationship target as described in MS-OI29500 §17.16.22:
+ * https://learn.microsoft.com/en-us/openspecs/office_standards/ms-oi29500/df06e423-11a6-4a36-bfb3-82139e531781
  *
  * Reference: http://officeopenxml.com/WPhyperlink.php
  *
@@ -3687,6 +3711,7 @@ export declare type EstimatedPageNumbers = {
  *   <xsd:group ref="EG_PContent" minOccurs="0" maxOccurs="unbounded"/>
  *   <xsd:attribute ref="r:id"/>
  *   <xsd:attribute name="history" type="s:ST_OnOff" use="optional"/>
+ *   <xsd:attribute name="anchor" type="s:ST_String" use="optional"/>
  * </xsd:complexType>
  * ```
  *
