@@ -398,7 +398,7 @@ export class RunProperties extends IgnoreIfEmptyXmlComponent {
 
         if (options.specVanish) {
             // https://c-rex.net/projects/samples/ooxml/e1/Part4/OOXML_P4_DOCX_specVanish_topic_ID0EIE1O.html
-            this.push(new OnOffElement("w:specVanish", options.vanish));
+            this.push(new OnOffElement("w:specVanish", options.specVanish));
         }
 
         if (options.math) {

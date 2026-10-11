@@ -594,6 +594,47 @@ describe("Run", () => {
             });
         });
 
+        it("should set both vanish and specVanish", () => {
+            const run = new Run({
+                vanish: true,
+                specVanish: true,
+            });
+            const tree = new Formatter().format(run);
+            expect(tree).to.deep.equal({
+                "w:r": [
+                    {
+                        "w:rPr": [
+                            {
+                                "w:vanish": {},
+                            },
+                            {
+                                "w:specVanish": {},
+                            },
+                        ],
+                    },
+                ],
+            });
+        });
+
+        it("should set specVanish from its own option when vanish is false", () => {
+            const run = new Run({
+                vanish: false,
+                specVanish: true,
+            });
+            const tree = new Formatter().format(run);
+            expect(tree).to.deep.equal({
+                "w:r": [
+                    {
+                        "w:rPr": [
+                            {
+                                "w:specVanish": {},
+                            },
+                        ],
+                    },
+                ],
+            });
+        });
+
         describe("#scale", () => {
             it("should correctly set the border", () => {
                 const run = new Run({
