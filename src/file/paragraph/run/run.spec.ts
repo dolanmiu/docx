@@ -594,6 +594,84 @@ describe("Run", () => {
             });
         });
 
+        it("should set both vanish and specVanish", () => {
+            const run = new Run({
+                vanish: true,
+                specVanish: true,
+            });
+            const tree = new Formatter().format(run);
+            expect(tree).to.deep.equal({
+                "w:r": [
+                    {
+                        "w:rPr": [
+                            {
+                                "w:vanish": {},
+                            },
+                            {
+                                "w:specVanish": {},
+                            },
+                        ],
+                    },
+                ],
+            });
+        });
+
+        it("should set specVanish from its own option when vanish is false", () => {
+            const run = new Run({
+                vanish: false,
+                specVanish: true,
+            });
+            const tree = new Formatter().format(run);
+            expect(tree).to.deep.equal({
+                "w:r": [
+                    {
+                        "w:rPr": [
+                            {
+                                "w:vanish": {
+                                    _attr: {
+                                        "w:val": false,
+                                    },
+                                },
+                            },
+                            {
+                                "w:specVanish": {},
+                            },
+                        ],
+                    },
+                ],
+            });
+        });
+
+        it("should write vanish and specVanish when they are false, so a run can show text its style hides", () => {
+            const run = new Run({
+                vanish: false,
+                specVanish: false,
+            });
+            const tree = new Formatter().format(run);
+            expect(tree).to.deep.equal({
+                "w:r": [
+                    {
+                        "w:rPr": [
+                            {
+                                "w:vanish": {
+                                    _attr: {
+                                        "w:val": false,
+                                    },
+                                },
+                            },
+                            {
+                                "w:specVanish": {
+                                    _attr: {
+                                        "w:val": false,
+                                    },
+                                },
+                            },
+                        ],
+                    },
+                ],
+            });
+        });
+
         describe("#scale", () => {
             it("should correctly set the border", () => {
                 const run = new Run({
@@ -708,6 +786,28 @@ describe("Run", () => {
                             "w:rPr": [
                                 {
                                     "w:oMath": {},
+                                },
+                            ],
+                        },
+                    ],
+                });
+            });
+
+            it("should write math when it is false, to turn off math its style sets", () => {
+                const run = new Run({
+                    math: false,
+                });
+                const tree = new Formatter().format(run);
+                expect(tree).to.deep.equal({
+                    "w:r": [
+                        {
+                            "w:rPr": [
+                                {
+                                    "w:oMath": {
+                                        _attr: {
+                                            "w:val": false,
+                                        },
+                                    },
                                 },
                             ],
                         },
