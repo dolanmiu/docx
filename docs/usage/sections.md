@@ -206,16 +206,56 @@ const doc = new Document({
 });
 ```
 
+### Document Grid
+
+The document grid sets a fixed number of lines per page and characters per line, as East Asian documents often do. It's Word's Layout → Page Setup → Document Grid, and is set with `grid` in a section's `properties`:
+
+- `type`: `DocumentGridType.LINES` fixes only the line pitch. `LINES_AND_CHARS` fixes the line pitch and the character pitch. `SNAP_TO_CHARS` snaps characters to the grid. `DEFAULT` has no grid.
+- `linePitch`: the height of each line, in twips (twentieths of a point).
+- `charSpace`: how much wider each character is than the Normal font size, in 4096ths of a point. For a number of characters per line, use `(text width in points / characters per line - Normal font size in points) * 4096`.
+
+This example has 28 characters per line: the text of an A4 page with the default margins is 451.3pt wide, so with 10.5pt text, `charSpace` is `(451.3 / 28 - 10.5) * 4096`, which is about 23010.
+
+```ts live
+import { Document, DocumentGridType, Paragraph } from "docx";
+
+const doc = new Document({
+    styles: {
+        default: {
+            // 10.5pt Normal text
+            document: { run: { size: 21 } },
+        },
+    },
+    sections: [
+        {
+            properties: {
+                grid: {
+                    type: DocumentGridType.LINES_AND_CHARS,
+                    linePitch: 312,
+                    charSpace: 23010,
+                },
+            },
+            children: [
+                new Paragraph("这一段的每一行有二十八个字。文档网格让每个汉字占据相同的宽度，所以每行的字数是固定的，就像稿纸一样。"),
+            ],
+        },
+    ],
+});
+```
+
 ## Section Properties Reference
 
-| Property      | Type                    | Description                             |
-| ------------- | ----------------------- | --------------------------------------- |
-| type          | `SectionType`           | How section starts relative to previous |
-| page          | `IPageSizeAttributes`   | Page size, margins, borders             |
-| column        | `IColumnsAttributes`    | Multi-column configuration              |
-| titlePage     | `boolean`               | Different first page header/footer      |
-| lineNumbers   | `ILineNumberAttributes` | Line numbering configuration            |
-| verticalAlign | `VerticalAlign`         | Vertical alignment of content           |
+| Property           | Type                           | Description                                                                                                     |
+| ------------------ | ------------------------------ | --------------------------------------------------------------------------------------------------------------- |
+| type               | `SectionType`                  | How section starts relative to previous                                                                         |
+| page               | `IPageSizeAttributes`          | Page size, margins, borders                                                                                     |
+| column             | `IColumnsAttributes`           | Multi-column configuration                                                                                      |
+| titlePage          | `boolean`                      | Different first page header/footer                                                                              |
+| lineNumbers        | `ILineNumberAttributes`        | Line numbering configuration                                                                                    |
+| verticalAlign      | `VerticalAlign`                | Vertical alignment of content                                                                                   |
+| grid               | `IDocGridAttributesProperties` | Lines per page and characters per line, see [Document Grid](#document-grid)                                     |
+| footnoteProperties | `IFootnotePropertiesOptions`   | Where footnotes go and how they're numbered, see [Footnotes](usage/footnotes.md#position-and-numbering)         |
+| endnoteProperties  | `IEndnotePropertiesOptions`    | Where endnotes go and how they're numbered, with the same options as `footnoteProperties` and `EndnotePosition` |
 
 ## Related Topics
 

@@ -20,9 +20,9 @@ import { BuilderElement, type XmlComponent } from "@file/xml-components";
 export const LineRuleType = {
     /** Line spacing is at least the specified value */
     AT_LEAST: "atLeast",
-    /** Line spacing is exactly the specified value */
+    /** Writes `exactly`, which isn't a value the schema allows, so Word ignores it. Use {@link LineRuleType.EXACT} for an exact line height. */
     EXACTLY: "exactly",
-    /** Line spacing is exactly the specified value (alias for EXACTLY) */
+    /** Line spacing is exactly the specified value */
     EXACT: "exact",
     /** Line spacing is automatically determined based on content */
     AUTO: "auto",
