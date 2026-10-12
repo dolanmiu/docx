@@ -373,23 +373,24 @@ const doc = new Document({
 });
 ```
 
-`SpecVanish` was typically used to ensure that a paragraph style can be applied to a part of a paragraph, and still appear as in the Table of Contents (which in previous word processors would ignore the use of the style if it were being used as a character style).
+Set `vanish: false` to show text that its style hides.
+
+`SpecVanish` is for a paragraph's mark, together with `vanish`, which you set with the paragraph's `run` option. Hiding a paragraph's mark runs the paragraph on into the next one, and `specVanish` keeps them joined even when hidden text is shown. This is Word's style separator: a heading can share a line with the text after it, and the Table of Contents still lists only the heading. On its own, `specVanish` doesn't hide anything.
 
 ```ts live
-import { Document, Paragraph, TextRun } from "docx";
+import { Document, HeadingLevel, Paragraph, TextRun } from "docx";
 
 const doc = new Document({
     sections: [
         {
             children: [
                 new Paragraph({
-                    children: [
-                        new TextRun("This text is shown. "),
-                        new TextRun({
-                            text: "This text will be hidden forever.",
-                            specVanish: true,
-                        }),
-                    ],
+                    heading: HeadingLevel.HEADING_1,
+                    run: { vanish: true, specVanish: true },
+                    children: [new TextRun("Introduction.")],
+                }),
+                new Paragraph({
+                    children: [new TextRun(" This text is on the same line as the heading.")],
                 }),
             ],
         },

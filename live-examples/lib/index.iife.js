@@ -11033,7 +11033,7 @@ DOT: "dot" };
 			if (options.imprint !== void 0) this.push(new OnOffElement("w:imprint", options.imprint));
 			if (options.noProof !== void 0) this.push(new OnOffElement("w:noProof", options.noProof));
 			if (options.snapToGrid !== void 0) this.push(new OnOffElement("w:snapToGrid", options.snapToGrid));
-			if (options.vanish) this.push(new OnOffElement("w:vanish", options.vanish));
+			if (options.vanish !== void 0) this.push(new OnOffElement("w:vanish", options.vanish));
 			if (options.color) this.push(new Color(options.color));
 			if (options.characterSpacing) this.push(new CharacterSpacing(options.characterSpacing));
 			if (options.scale !== void 0) this.push(new NumberValueElement("w:w", options.scale));
@@ -11052,8 +11052,8 @@ DOT: "dot" };
 			if (options.rightToLeft !== void 0) this.push(new OnOffElement("w:rtl", options.rightToLeft));
 			if (options.emphasisMark) this.push(createEmphasisMark(options.emphasisMark.type));
 			if (options.language) this.push(createLanguageComponent(options.language));
-			if (options.specVanish) this.push(new OnOffElement("w:specVanish", options.vanish));
-			if (options.math) this.push(new OnOffElement("w:oMath", options.math));
+			if (options.specVanish !== void 0) this.push(new OnOffElement("w:specVanish", options.specVanish));
+			if (options.math !== void 0) this.push(new OnOffElement("w:oMath", options.math));
 			if (options.revision) this.push(new RunPropertiesChange(options.revision));
 		}
 		push(item) {

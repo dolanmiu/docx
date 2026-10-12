@@ -7045,7 +7045,13 @@ export declare type IRunStylePropertiesOptions = {
     readonly language?: ILanguageOptions;
     readonly border?: IBorderOptions;
     readonly snapToGrid?: boolean;
+    /** Hides the text. `false` shows text that the run's style hides. */
     readonly vanish?: boolean;
+    /**
+     * Keeps a hidden paragraph mark hidden even when hidden text is shown, so its paragraph always runs on into the next one,
+     * as Word's style separator does. It is meant for a paragraph's mark, with `vanish`:
+     * `new Paragraph({ run: { vanish: true, specVanish: true } })`. Without `vanish`, Word doesn't hide the mark.
+     */
     readonly specVanish?: boolean;
     readonly scale?: number;
     readonly math?: boolean;
