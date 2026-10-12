@@ -299,6 +299,39 @@ const doc = new Document({
 });
 ```
 
+#### Keep a table on one page
+
+Word has no setting that keeps a whole table on one page. Instead, set `keepNext` on the paragraphs of every row except the last, so each row stays on the same page as the row after it, and `cantSplit` on every row. If the last row has `keepNext` too, the table is also kept with whatever follows it. A table taller than a page still splits.
+
+```ts live
+import { Document, Paragraph, Table, TableCell, TableRow } from "docx";
+
+const fruit = ["Apples", "Pears", "Figs", "Plums"];
+
+const table = new Table({
+    rows: fruit.map(
+        (name, index) =>
+            new TableRow({
+                cantSplit: true,
+                children: [
+                    new TableCell({
+                        // Every row but the last is kept with the next row
+                        children: [new Paragraph({ text: name, keepNext: index < fruit.length - 1 })],
+                    }),
+                ],
+            }),
+    ),
+});
+
+const doc = new Document({
+    sections: [
+        {
+            children: [new Paragraph("If the table doesn't fit at the bottom of a page, all of it moves to the next page."), table],
+        },
+    ],
+});
+```
+
 ## Table Cells
 
 Cells need to be added in the `table row`, you can create a table cell like:
@@ -343,16 +376,17 @@ const doc = new Document({
 
 ### Options
 
-| Property      | Type                               | Notes                                                       |
-| ------------- | ---------------------------------- | ----------------------------------------------------------- |
-| children      | `Array<Paragraph or Table>`        | Required. You can nest tables by adding a table into a cell |
-| shading       | `IShadingAttributesProperties`     | Optional                                                    |
-| margins       | `ITableCellMarginOptions`          | Optional                                                    |
-| verticalAlign | `VerticalAlignTable`               | Optional                                                    |
-| columnSpan    | `number`                           | Optional                                                    |
-| rowSpan       | `number`                           | Optional                                                    |
-| borders       | `BorderOptions`                    | Optional                                                    |
-| width         | `{ size: number type: WidthType }` | Optional                                                    |
+| Property      | Type                               | Notes                                                                                                     |
+| ------------- | ---------------------------------- | --------------------------------------------------------------------------------------------------------- |
+| children      | `Array<Paragraph or Table>`        | Required. You can nest tables by adding a table into a cell                                               |
+| shading       | `IShadingAttributesProperties`     | Optional                                                                                                  |
+| margins       | `ITableCellMarginOptions`          | Optional                                                                                                  |
+| verticalAlign | `VerticalAlignTable`               | Optional                                                                                                  |
+| textDirection | `TextDirection`                    | Optional. `BOTTOM_TO_TOP_LEFT_TO_RIGHT` or `TOP_TO_BOTTOM_RIGHT_TO_LEFT` turns the text to run vertically |
+| columnSpan    | `number`                           | Optional                                                                                                  |
+| rowSpan       | `number`                           | Optional                                                                                                  |
+| borders       | `BorderOptions`                    | Optional                                                                                                  |
+| width         | `{ size: number type: WidthType }` | Optional                                                                                                  |
 
 #### Border Options
 

@@ -268,14 +268,16 @@ Adding spacing between paragraphs
 
 ### ISpacingProperties
 
-| Property | Type           | Notes    | Possible Values                        |
-| -------- | -------------- | -------- | -------------------------------------- |
-| after    | `number`       | Optional |                                        |
-| before   | `number`       | Optional |                                        |
-| line     | `number`       | Optional |                                        |
-| lineRule | `LineRuleType` | Optional | `AT_LEAST`, `EXACTLY`, `EXACT`, `AUTO` |
+| Property | Type           | Notes    | Possible Values             |
+| -------- | -------------- | -------- | --------------------------- |
+| after    | `number`       | Optional |                             |
+| before   | `number`       | Optional |                             |
+| line     | `number`       | Optional |                             |
+| lineRule | `LineRuleType` | Optional | `AT_LEAST`, `EXACT`, `AUTO` |
 
-Note: The `lineRule` property has different values depending on the version of Word you are using. The `EXACTLY` value is only available in Word 2016 and above. Use `EXACT` for greater support, including LibreOffice etc. Read this issue for more information: https://github.com/dolanmiu/docx/issues/1773.
+With `AUTO`, the default, `line` is in 240ths of a line, so `240` is single spacing and `360` is one and a half lines. With `EXACT` or `AT_LEAST`, `line` is a height in twips, so `360` is 18pt.
+
+Note: Use `EXACT` for an exact line height. `LineRuleType.EXACTLY` writes `exactly`, which isn't a value the OOXML schema allows (it allows `auto`, `exact` and `atLeast`), so Word ignores it. It's kept so existing code still compiles. Read this issue for more information: https://github.com/dolanmiu/docx/issues/1773.
 
 **Example:**
 
