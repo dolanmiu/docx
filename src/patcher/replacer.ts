@@ -19,7 +19,8 @@ import { toJson } from "./util";
 const formatter = new Formatter();
 
 /**
- * Renumbers the ids in content that is about to be inserted, such as its bookmarks', so they are unique in the document.
+ * Renumbers the ids in content that is about to be inserted, such as its bookmarks', so they are unique in the document,
+ * and records the styles it uses, so those the document doesn't have are added to it.
  */
 type RenumberIds = (elements: readonly Element[]) => readonly Element[];
 
@@ -52,7 +53,7 @@ type IReplacerResult = {
  * @param keepOriginalStyles - Whether to preserve original text formatting
  * @param recursive - Whether to replace every occurrence in a paragraph, rather than only the first
  * @param renumberIds - Renumbers the bookmarks and note references the patch inserts, so they don't take an id the
- * document uses
+ * document uses, and records the styles it uses
  * @returns Result containing the modified element and whether a replacement occurred
  */
 export const replacer = ({

@@ -8,7 +8,6 @@ import type { Element } from "xml-js";
 
 import { Formatter } from "@export/formatter";
 import type { ConcreteNumbering, Numbering } from "@file/numbering";
-import { ListParagraph } from "@file/styles/style/default-styles";
 import type { IContext, XmlComponent } from "@file/xml-components";
 import { uniqueId } from "@util/convenience-functions";
 
@@ -48,8 +47,7 @@ export type NumberingPatcher = {
     readonly renumber: (elements: readonly Element[]) => readonly Element[];
     /**
      * Writes the lists that were renumbered to the document's numbering part, with abstract lists of their own. A
-     * document without a numbering part is given one, and the style of a paragraph in a list is added to the document's
-     * styles if it doesn't have it.
+     * document without a numbering part is given one.
      */
     readonly write: () => void;
 };
@@ -218,17 +216,6 @@ export const patchNumbering = (
                 ),
             })),
         );
-
-        // A paragraph in a list is given the style ListParagraph, as in a Document. LibreOffice leaves out the number of a
-        // paragraph whose style the document doesn't have
-        const stylesPart = parts.get("word/styles.xml");
-        if (stylesPart) {
-            const styles = getFirstLevelElements(stylesPart, "w:styles");
-            if (!styles.some((style) => style.attributes?.["w:styleId"] === "ListParagraph")) {
-                // eslint-disable-next-line functional/immutable-data
-                styles.push(formatElement(new ListParagraph({}), context));
-            }
-        }
     };
 
     return { renumber: (elements) => elements.map(renumber), write };
