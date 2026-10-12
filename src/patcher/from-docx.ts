@@ -26,6 +26,7 @@ import type { OutputByType, OutputType } from "@util/output-type";
 
 import { findBookmarkIds, renumberBookmarksAvoiding } from "./bookmark-ids";
 import { appendContentType, appendContentTypeOverride } from "./content-types-manager";
+import { findDrawingIds, renumberDrawingsAvoiding } from "./drawing-ids";
 import { type DrawingPatch, patchDrawings, relationshipsPathOf } from "./drawing-patch";
 import { patchNotes } from "./notes";
 import { type TemplatePageNumberEstimator, fillTemplatePageNumbers } from "./page-numbers";
@@ -383,6 +384,8 @@ export const patchDocument = async <T extends PatchDocumentOutputType = PatchDoc
 
     // Bookmark ids must be unique within the document, so the bookmarks patches insert are kept clear of the template's
     const renumberBookmarks = renumberBookmarksAvoiding([...map.values()].flatMap(findBookmarkIds));
+    // So are the ids of drawings, even in different parts, so the drawings patches insert get ids no drawing has
+    const renumberDrawings = renumberDrawingsAvoiding([...map.values()].flatMap(findDrawingIds));
 
     const createContext = (key: string): IContext => ({
         file,
@@ -408,6 +411,7 @@ export const patchDocument = async <T extends PatchDocumentOutputType = PatchDoc
         // eslint-disable-next-line functional/immutable-data
         addContentTypeOverride: (contentType, partName) => contentTypeOverrides.push({ contentType, partName }),
         renumberBookmarks,
+        renumberDrawings,
     });
 
     // Drawings whose alt text holds a placeholder, such as charts, are patched first, so their patches only see the
@@ -443,7 +447,14 @@ export const patchDocument = async <T extends PatchDocumentOutputType = PatchDoc
         // Patches a placeholder in an element of the part: its root, or a copy of the rows of a table that a patch repeats
         const patchPlaceholder = (element: Element, patchKey: string, patchValue: IPatch | TableRowsPatch): void => {
             if (patchValue.type === PatchType.TABLE_ROWS) {
-                patchTableRows({ json: element, key: patchKey, patch: patchValue, delimiters: { start, end }, patchPlaceholder });
+                patchTableRows({
+                    json: element,
+                    key: patchKey,
+                    patch: patchValue,
+                    delimiters: { start, end },
+                    patchPlaceholder,
+                    renumberDrawings,
+                });
                 return;
             }
 
@@ -493,7 +504,7 @@ export const patchDocument = async <T extends PatchDocumentOutputType = PatchDoc
                 context,
                 keepOriginalStyles,
                 recursive,
-                renumberIds: (elements) => notes.renumber(renumberBookmarks(elements)),
+                renumberIds: (elements) => notes.renumber(renumberBookmarks(renumberDrawings(elements))),
             });
 
             if (didFindOccurrence) {

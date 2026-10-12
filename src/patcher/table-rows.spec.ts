@@ -5,6 +5,7 @@ import type { IViewWrapper } from "@file/document-wrapper";
 import type { File } from "@file/file";
 import { Paragraph, TextRun } from "@file/paragraph";
 
+import { findDrawingIds, renumberDrawingsAvoiding } from "./drawing-ids";
 import type { IPatch, TableRowsPatch } from "./from-docx";
 import { PatchType } from "./patch-type";
 import { replacer } from "./replacer";
@@ -27,9 +28,10 @@ const patchBody = (
     delimiters: { readonly start: string; readonly end: string } = { start: "{{", end: "}}" },
 ): ReturnType<typeof toJson> => {
     const json = toJson(`<w:body>${body}</w:body>`);
+    const renumberDrawings = renumberDrawingsAvoiding(findDrawingIds(json));
     const patchPlaceholder = (element: ReturnType<typeof toJson>, key: string, patch: IPatch | TableRowsPatch): void => {
         if (patch.type === PatchType.TABLE_ROWS) {
-            patchTableRows({ json: element, key, patch, delimiters, patchPlaceholder });
+            patchTableRows({ json: element, key, patch, delimiters, patchPlaceholder, renumberDrawings });
         } else {
             replacer({ json: element, patch, patchText: `${delimiters.start}${key}${delimiters.end}`, context });
         }
@@ -229,6 +231,17 @@ describe("patchTableRows", () => {
         // What doesn't need to be unique is kept
         expect(second).to.contain('<w:tag w:val="name"/>');
         expect(traverse({ elements: [toJson(second)] })[0].text).to.equal("Pears");
+    });
+
+    it("should give a drawing in each copy but the first an id no other drawing in the document has", () => {
+        const drawing = (id: number): string =>
+            `<w:r><w:drawing><wp:inline><wp:docPr id="${id}" name="Logo"/></wp:inline></w:drawing></w:r>`;
+        const json = patchBody(
+            `<w:p>${drawing(2)}</w:p>${table(`<w:tr><w:tc><w:p>${drawing(1)}<w:r><w:t>{{items.name}}</w:t></w:r></w:p></w:tc></w:tr>`)}`,
+            { items: ITEMS },
+        );
+
+        expect(findDrawingIds(json)).to.deep.equal([2, 1, 3]);
     });
 
     it("should copy a row in a table in a repeated row with it, and repeat its rows with a table rows patch for its field", () => {
