@@ -8500,9 +8500,9 @@ export declare const LineNumberRestartFormat: {
 export declare const LineRuleType: {
     /** Line spacing is at least the specified value */
     readonly AT_LEAST: "atLeast";
-    /** Line spacing is exactly the specified value */
+    /** Writes `exactly`, which isn't a value the schema allows, so Word ignores it. Use {@link LineRuleType.EXACT} for an exact line height. */
     readonly EXACTLY: "exactly";
-    /** Line spacing is exactly the specified value (alias for EXACTLY) */
+    /** Line spacing is exactly the specified value */
     readonly EXACT: "exact";
     /** Line spacing is automatically determined based on content */
     readonly AUTO: "auto";

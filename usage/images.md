@@ -541,6 +541,50 @@ const doc = new Document({
 | right    | `number` | Optional | `0` to `100`    |
 | bottom   | `number` | Optional | `0` to `100`    |
 
+## Outline
+
+Draw a border around an image with `outline`. Its `width` is in EMUs, where 12700 is one point and 9525 is one pixel:
+
+```ts live
+import { Document, ImageRun, Paragraph } from "docx";
+import * as fs from "fs";
+
+const image = new ImageRun({
+    type: "png",
+    data: fs.readFileSync("./demo/assets/images/dog.png"),
+    transformation: {
+        width: 166,
+        height: 150,
+    },
+    outline: {
+        type: "solidFill",
+        solidFillType: "rgb",
+        value: "1F4E79",
+        width: 38100,
+    },
+});
+
+const doc = new Document({
+    sections: [
+        {
+            children: [new Paragraph({ children: [image] })],
+        },
+    ],
+});
+```
+
+### Options
+
+| Property      | Type                                                              | Notes                                                                                           |
+| ------------- | ----------------------------------------------------------------- | ----------------------------------------------------------------------------------------------- |
+| type          | `"solidFill"` or `"noFill"`                                       | Required. `"noFill"` draws no outline                                                           |
+| solidFillType | `"rgb"` or `"scheme"`                                             | Required with `"solidFill"`                                                                     |
+| value         | `string`                                                          | Required with `"solidFill"`. A hex colour such as `"FF0000"`, or a `SchemeColor` for `"scheme"` |
+| width         | `number`                                                          | Optional. In EMUs                                                                               |
+| cap           | `"ROUND"`, `"SQUARE"` or `"FLAT"`                                 | Optional. The shape of the line's ends                                                          |
+| compoundLine  | `"SINGLE"`, `"DOUBLE"`, `"THICK_THIN"`, `"THIN_THICK"` or `"TRI"` | Optional. Draws the outline as several lines                                                    |
+| align         | `"CENTER"` or `"INSET"`                                           | Optional. Whether the line is centred on the image's edge or drawn inside it                    |
+
 ## Track Changes
 
 Images can be marked as inserted or deleted revisions for change tracking. Pass an `insertion` or `deletion` property to `ImageRun`, or both for an image that was inserted and then deleted, such as by another author:

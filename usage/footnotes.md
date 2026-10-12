@@ -150,6 +150,51 @@ const doc = new Document({
 });
 ```
 
+## Position and Numbering
+
+`footnoteProperties` in a section's `properties` sets where the section's footnotes go and how they're numbered. `NumberFormat.CHICAGO` marks them with \*, †, ‡, § and so on instead of numbers:
+
+```ts live
+import { Document, FootnoteReferenceRun, NoteNumberRestart, NumberFormat, Paragraph, TextRun } from "docx";
+
+const doc = new Document({
+    footnotes: {
+        1: { children: [new Paragraph("The first footnote is marked with an asterisk.")] },
+        2: { children: [new Paragraph("The second is marked with a dagger.")] },
+    },
+    sections: [
+        {
+            properties: {
+                footnoteProperties: {
+                    numberFormat: { type: NumberFormat.CHICAGO },
+                    restart: NoteNumberRestart.EACH_PAGE,
+                },
+            },
+            children: [
+                new Paragraph({
+                    children: [
+                        new TextRun("Symbols instead of numbers"),
+                        new FootnoteReferenceRun(1),
+                        new TextRun(" for each footnote"),
+                        new FootnoteReferenceRun(2),
+                        new TextRun("."),
+                    ],
+                }),
+            ],
+        },
+    ],
+});
+```
+
+| Property     | Type                                      | Notes                                                                                  |
+| ------------ | ----------------------------------------- | -------------------------------------------------------------------------------------- |
+| numberFormat | `{ type: NumberFormat; format?: string }` | How the marks are numbered, such as `NumberFormat.DECIMAL`, `LOWER_ROMAN` or `CHICAGO` |
+| start        | `number`                                  | The number of the first footnote                                                       |
+| restart      | `NoteNumberRestart`                       | `CONTINUOUS`, `EACH_SECTION` or `EACH_PAGE`                                            |
+| position     | `FootnotePosition`                        | `PAGE_BOTTOM`, `BENEATH_TEXT`, `SECTION_END` or `DOCUMENT_END`                         |
+
+Endnotes take the same options as `endnoteProperties`, with `EndnotePosition` (`SECTION_END` or `DOCUMENT_END`) for `position`.
+
 ## Options
 
 | Property  | Type                                        | Notes    | Description                                    |

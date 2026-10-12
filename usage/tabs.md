@@ -225,7 +225,7 @@ const doc = new Document({
 });
 ```
 
-This will create a tab stop on the very edge of the right hand side. Handy for right aligning and left aligning text on the same line.
+`TabStopPosition.MAX` is a fixed 9026 twips from the left margin: the width of the text on an A4 page with the default 1 inch margins. With other margins or page sizes it isn't at the right margin. Work out the position from your own page width minus the left and right margins, or use a [positional tab](#positional-tabs), which lines up with the right margin whatever the margins are.
 
 ## Positional Tabs
 

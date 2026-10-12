@@ -146,17 +146,15 @@ const doc = new Document({
 });
 ```
 
-2. In browsers, ensure proper data conversion:
+2. In browsers, read the image as an `ArrayBuffer` and pass it straight in. `data` takes an `ArrayBuffer`, `Uint8Array`, `Buffer` or base64 string, but not a `Blob`, and browsers have no `Buffer`:
 
 ```ts
-// Convert fetch response to ArrayBuffer
 const response = await fetch(imageUrl);
-const arrayBuffer = await response.arrayBuffer();
-const buffer = Buffer.from(arrayBuffer);
+const data = await response.arrayBuffer();
 
 new ImageRun({
     type: "png",
-    data: buffer,
+    data,
     transformation: { width: 100, height: 100 },
 });
 ```

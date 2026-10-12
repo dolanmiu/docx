@@ -446,3 +446,26 @@ const doc = new Document({
     ],
 });
 ```
+
+## Hyphens
+
+`NoBreakHyphen` is a hyphen that a line never breaks at, the character Word inserts for Ctrl+Shift+-. It keeps a negative number or a hyphenated name on one line. `SoftHyphen` is an optional hyphen: it's hidden unless Word breaks the line there.
+
+```ts live
+import { Document, NoBreakHyphen, Paragraph, SoftHyphen, TextRun } from "docx";
+
+const doc = new Document({
+    sections: [
+        {
+            children: [
+                new Paragraph({
+                    children: [new TextRun({ children: ["The balance is ", new NoBreakHyphen(), "1,234.56"] })],
+                }),
+                new Paragraph({
+                    children: [new TextRun({ children: ["Extra", new SoftHyphen(), "ordinary"] })],
+                }),
+            ],
+        },
+    ],
+});
+```
