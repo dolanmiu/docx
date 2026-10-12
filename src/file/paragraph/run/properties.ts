@@ -202,7 +202,13 @@ export type IRunStylePropertiesOptions = {
     readonly language?: ILanguageOptions;
     readonly border?: IBorderOptions;
     readonly snapToGrid?: boolean;
+    /** Hides the text. `false` shows text that the run's style hides. */
     readonly vanish?: boolean;
+    /**
+     * Keeps a hidden paragraph mark hidden even when hidden text is shown, so its paragraph always runs on into the next one,
+     * as Word's style separator does. It is meant for a paragraph's mark, with `vanish`:
+     * `new Paragraph({ run: { vanish: true, specVanish: true } })`. Without `vanish`, Word doesn't hide the mark.
+     */
     readonly specVanish?: boolean;
     readonly scale?: number;
     readonly math?: boolean;
@@ -321,7 +327,7 @@ export class RunProperties extends IgnoreIfEmptyXmlComponent {
             this.push(new OnOffElement("w:snapToGrid", options.snapToGrid));
         }
 
-        if (options.vanish) {
+        if (options.vanish !== undefined) {
             // https://c-rex.net/projects/samples/ooxml/e1/Part4/OOXML_P4_DOCX_vanish_topic_ID0E6W3O.html
             // http://www.datypic.com/sc/ooxml/e-w_vanish-1.html
             this.push(new OnOffElement("w:vanish", options.vanish));
@@ -396,12 +402,12 @@ export class RunProperties extends IgnoreIfEmptyXmlComponent {
             this.push(createLanguageComponent(options.language));
         }
 
-        if (options.specVanish) {
+        if (options.specVanish !== undefined) {
             // https://c-rex.net/projects/samples/ooxml/e1/Part4/OOXML_P4_DOCX_specVanish_topic_ID0EIE1O.html
             this.push(new OnOffElement("w:specVanish", options.specVanish));
         }
 
-        if (options.math) {
+        if (options.math !== undefined) {
             this.push(new OnOffElement("w:oMath", options.math));
         }
 

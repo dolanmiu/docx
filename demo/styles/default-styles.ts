@@ -198,10 +198,6 @@ const doc = new Document({
                             text: "This text will be invisible!",
                             vanish: true,
                         }),
-                        new TextRun({
-                            text: "This text will be VERY invisible! Word processors cannot override this!",
-                            specVanish: true,
-                        }),
                     ],
                 }),
                 new Paragraph({
