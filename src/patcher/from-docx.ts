@@ -35,6 +35,7 @@ import { type TemplatePageNumberEstimator, fillTemplatePageNumbers } from "./pag
 import { PatchType } from "./patch-type";
 import { appendRelationship, createRelationshipFile, getNextRelationshipIndex } from "./relationship-manager";
 import { replacer } from "./replacer";
+import { patchStyles } from "./styles";
 import { patchTableRows } from "./table-rows";
 import { readThemeColors } from "./theme-colors";
 import { toJson } from "./util";
@@ -421,6 +422,8 @@ export const patchDocument = async <T extends PatchDocumentOutputType = PatchDoc
         // eslint-disable-next-line functional/immutable-data
         contentTypeOverrides.push({ contentType, partName });
     };
+    // The styles that patches use, such as a heading's, are added once they and the notes are in, if the template lacks them
+    const styles = patchStyles(map, createContext);
     // The lists that the patches use are written once the patches and notes are in, with ids the template's lists don't have
     const lists = patchNumbering(file.Numbering, map, { createContext, addContentTypeOverride });
     // The footnotes and endnotes that the patches refer to are written once the patches are in, one for each reference
@@ -430,6 +433,7 @@ export const patchDocument = async <T extends PatchDocumentOutputType = PatchDoc
         renumberBookmarks,
         renumberDrawings,
         renumberLists: lists.renumber,
+        useStyles: styles.use,
     });
 
     // Drawings whose alt text holds a placeholder, such as charts, are patched first, so their patches only see the
@@ -522,7 +526,7 @@ export const patchDocument = async <T extends PatchDocumentOutputType = PatchDoc
                 context,
                 keepOriginalStyles,
                 recursive,
-                renumberIds: (elements) => lists.renumber(notes.renumber(renumberBookmarks(renumberDrawings(elements)))),
+                renumberIds: (elements) => styles.use(lists.renumber(notes.renumber(renumberBookmarks(renumberDrawings(elements))))),
             });
 
             if (didFindOccurrence) {
@@ -538,6 +542,7 @@ export const patchDocument = async <T extends PatchDocumentOutputType = PatchDoc
 
     notes.write();
     lists.write();
+    styles.write();
 
     for (const [key, json] of map) {
         if (!key.startsWith("word/") || key.endsWith(".xml.rels")) {

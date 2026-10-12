@@ -9,7 +9,8 @@ import { FootnoteReferenceRun } from "@file/footnotes";
 import { Header } from "@file/header";
 import { LevelFormat } from "@file/numbering";
 import { PackagePart } from "@file/package-part";
-import { Bookmark, ExternalHyperlink, ImageRun, Paragraph, Run, TextRun } from "@file/paragraph";
+import { Bookmark, ExternalHyperlink, HeadingLevel, ImageRun, Paragraph, Run, TextRun } from "@file/paragraph";
+import { Table, TableCell, TableRow } from "@file/table";
 import { BuilderElement, type IContext, type IXmlableObject, XmlComponent } from "@file/xml-components";
 
 import { type IPatch, type PatchDocumentOptions, PatchType, type TableRowsPatch, patchDocument } from "./from-docx";
@@ -2040,6 +2041,144 @@ describe("from-docx", () => {
                 ).rejects.toThrowError(
                     `A paragraph in a patch uses the numbering "my-list-2", which isn't in the numbering option of patchDocument`,
                 );
+            });
+        });
+
+        describe("Styles", () => {
+            const W = "http://schemas.openxmlformats.org/wordprocessingml/2006/main";
+            // The styles of a template made in Word, which only saves the styles that a document uses, so it has no headings
+            const WORD_STYLES = `<w:docDefaults/><w:style w:type="paragraph" w:default="1" w:styleId="Normal"><w:name w:val="Normal"/></w:style>`;
+
+            // Patches {{content}} in a template with these styles, and returns a reader for the patched parts
+            const patchTemplate = async (
+                styles: string | undefined,
+                options: Omit<PatchDocumentOptions, "outputType" | "data">,
+            ): Promise<(path: string) => Promise<string | undefined>> => {
+                const template = new JSZip()
+                    .file(
+                        "[Content_Types].xml",
+                        `<?xml version="1.0" encoding="UTF-8" standalone="yes"?><Types xmlns="http://schemas.openxmlformats.org/package/2006/content-types"/>`,
+                    )
+                    .file(
+                        "word/document.xml",
+                        `<w:document xmlns:w="${W}"><w:body><w:p><w:r><w:t>{{content}}</w:t></w:r></w:p></w:body></w:document>`,
+                    );
+                if (styles !== undefined) {
+                    template.file("word/styles.xml", `<w:styles xmlns:w="${W}">${styles}</w:styles>`);
+                }
+                const zip = await JSZip.loadAsync(await patchDocument({ outputType: "nodebuffer", data: template, ...options }));
+                return (path) => zip.file(path)?.async("text") ?? Promise.resolve(undefined);
+            };
+
+            const content = (...children: readonly (Paragraph | Table)[]): PatchDocumentOptions["patches"] => ({
+                content: { type: PatchType.DOCUMENT, children },
+            });
+            const styleIdsIn = (xml: string | undefined): readonly string[] =>
+                [...xml!.matchAll(/w:styleId="([^"]*)"/g)].map(([, id]) => id);
+            const styleReferencesIn = (xml: string | undefined): readonly string[] =>
+                [...xml!.matchAll(/<w:(?:pStyle|rStyle|basedOn|next|link) w:val="([^"]*)"\/>/g)].map(([, id]) => id);
+
+            it("should add the styles of headings to a template that doesn't have them, as a Document writes them", async () => {
+                const read = await patchTemplate(WORD_STYLES, {
+                    patches: content(
+                        new Paragraph({ text: "Chapter", heading: HeadingLevel.HEADING_1 }),
+                        new Paragraph({ text: "Section", heading: HeadingLevel.HEADING_2 }),
+                        new Paragraph({ text: "Another chapter", heading: HeadingLevel.HEADING_1 }),
+                    ),
+                });
+
+                expect(styleReferencesIn(await read("word/document.xml"))).to.deep.equal(["Heading1", "Heading2", "Heading1"]);
+                expect(styleIdsIn(await read("word/styles.xml"))).to.deep.equal(["Normal", "Heading1", "Heading2"]);
+                expect(await read("word/styles.xml")).to.contain(
+                    `<w:style w:type="paragraph" w:styleId="Heading1"><w:name w:val="Heading 1"/><w:basedOn w:val="Normal"/><w:next w:val="Normal"/>`,
+                );
+            });
+
+            it("should keep a template's own style, rather than add docx's", async () => {
+                const heading = `<w:style w:type="paragraph" w:styleId="Heading1"><w:name w:val="heading 1"/><w:rPr><w:sz w:val="40"/></w:rPr></w:style>`;
+                const read = await patchTemplate(`${WORD_STYLES}${heading}`, {
+                    patches: content(new Paragraph({ text: "Chapter", heading: HeadingLevel.HEADING_1 })),
+                });
+
+                expect(await read("word/styles.xml")).to.equal(`<w:styles xmlns:w="${W}">${WORD_STYLES}${heading}</w:styles>`);
+            });
+
+            it("should use the template's style of the same name, as in a template saved by Word in another language", async () => {
+                // The ids German Word gives Normal and Heading 1
+                const read = await patchTemplate(
+                    `<w:style w:type="paragraph" w:default="1" w:styleId="Standard"><w:name w:val="Normal"/></w:style>` +
+                        `<w:style w:type="paragraph" w:styleId="berschrift1"><w:name w:val="heading 1"/></w:style>`,
+                    {
+                        patches: content(
+                            new Paragraph({ text: "Chapter", heading: HeadingLevel.HEADING_1 }),
+                            new Paragraph({ text: "Section", heading: HeadingLevel.HEADING_2 }),
+                        ),
+                    },
+                );
+
+                expect(styleReferencesIn(await read("word/document.xml"))).to.deep.equal(["berschrift1", "Heading2"]);
+                // A style that is added is based on the template's Normal
+                expect(styleIdsIn(await read("word/styles.xml"))).to.deep.equal(["Standard", "berschrift1", "Heading2"]);
+                expect(styleReferencesIn(await read("word/styles.xml"))).to.deep.equal(["Standard", "Standard"]);
+            });
+
+            it("should only use a template's style of the same name that is of the same type", async () => {
+                // Word's Strong is a character style, which a paragraph can't have, and docx's is a paragraph style
+                const read = await patchTemplate(
+                    `${WORD_STYLES}<w:style w:type="character" w:styleId="Fett"><w:name w:val="Strong"/></w:style>`,
+                    {
+                        patches: content(new Paragraph({ text: "Important", style: "Strong" })),
+                    },
+                );
+
+                expect(styleReferencesIn(await read("word/document.xml"))).to.deep.equal(["Strong"]);
+                expect(styleIdsIn(await read("word/styles.xml"))).to.deep.equal(["Normal", "Fett", "Strong"]);
+            });
+
+            it("should add the styles that an added style is based on or linked to, if the template doesn't have them", async () => {
+                const read = await patchTemplate("<w:docDefaults/>", {
+                    patches: content(new Paragraph({ text: "Note", style: "FootnoteText" })),
+                });
+
+                expect(styleIdsIn(await read("word/styles.xml"))).to.deep.equal(["FootnoteText", "Normal", "FootnoteTextChar"]);
+            });
+
+            it("should add the styles of runs in a paragraph patch, and of paragraphs in tables and footnotes", async () => {
+                const heading = (text: string): Paragraph => new Paragraph({ text, heading: HeadingLevel.HEADING_3 });
+                const read = await patchTemplate(WORD_STYLES, {
+                    patches: {
+                        content: {
+                            type: PatchType.PARAGRAPH,
+                            children: [new TextRun({ text: "Link", style: "Hyperlink" }), new FootnoteReferenceRun(1)],
+                        },
+                    },
+                    footnotes: { 1: { children: [heading("In a footnote")] } },
+                });
+                const readTable = await patchTemplate(WORD_STYLES, {
+                    patches: content(
+                        new Table({ rows: [new TableRow({ children: [new TableCell({ children: [heading("In a table")] })] })] }),
+                    ),
+                });
+
+                expect(styleIdsIn(await read("word/styles.xml"))).to.include.members(["Hyperlink", "Heading3"]);
+                expect(styleReferencesIn(await read("word/footnotes.xml"))).to.include("Heading3");
+                expect(styleIdsIn(await readTable("word/styles.xml"))).to.deep.equal(["Normal", "Heading3"]);
+            });
+
+            it("should leave a style that docx doesn't have as it is", async () => {
+                const read = await patchTemplate(WORD_STYLES, { patches: content(new Paragraph({ text: "Mine", style: "MyStyle" })) });
+
+                expect(styleReferencesIn(await read("word/document.xml"))).to.deep.equal(["MyStyle"]);
+                expect(styleIdsIn(await read("word/styles.xml"))).to.deep.equal(["Normal"]);
+            });
+
+            it("should leave a template without a styles part without one", async () => {
+                const read = await patchTemplate(undefined, {
+                    patches: content(new Paragraph({ text: "Chapter", heading: HeadingLevel.HEADING_1 })),
+                });
+
+                expect(styleReferencesIn(await read("word/document.xml"))).to.deep.equal(["Heading1"]);
+                expect(await read("word/styles.xml")).to.equal(undefined);
             });
         });
 
