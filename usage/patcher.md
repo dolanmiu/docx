@@ -73,6 +73,8 @@ interface Patch {
 
 A patch can also repeat the rows of a table in the template, once for each row of data, keeping the table's look: `{ type: PatchType.TABLE_ROWS, rows: [...] }`, where each row gives the patches for its copy's fields, such as `{{items.name}}`. See [TABLE_ROWS Type](usage/templates.md#table_rows-type).
 
+A paragraph in a patch can be a heading. Its style is added to a template that doesn't have it yet. See [Headings and styles](usage/templates.md#headings-and-styles).
+
 The patcher also takes in a `keepOriginalStyles` boolean, which will preserve the styles of the patched text when set to true.
 
 It also takes in `footnotes` and `endnotes`, for the notes that patches refer to with a `FootnoteReferenceRun` or an `EndnoteReferenceRun`. See [Footnotes and endnotes](usage/templates.md#footnotes-and-endnotes).

@@ -411,6 +411,38 @@ const doc = await patchDocument({
 fs.writeFileSync("My Document.docx", doc);
 ```
 
+### Headings and styles
+
+A paragraph in a patch is made a heading with `heading`, as in a `Document`:
+
+```ts live
+import * as fs from "fs";
+import { HeadingLevel, Paragraph, patchDocument, PatchType } from "docx";
+
+const doc = await patchDocument({
+    outputType: "nodebuffer",
+    data: fs.readFileSync("./demo/assets/simple-template.docx"),
+    patches: {
+        paragraph_replace: {
+            type: PatchType.DOCUMENT,
+            children: [
+                new Paragraph({ text: "Introduction", heading: HeadingLevel.HEADING_1 }),
+                new Paragraph({ text: "Background", heading: HeadingLevel.HEADING_2 }),
+                new Paragraph("The project started in the spring."),
+            ],
+        },
+    },
+});
+
+fs.writeFileSync("My Document.docx", doc);
+```
+
+A heading has the look of the template's heading style. Word only saves the styles that a document uses, so a template may not have it yet, and Word would show the heading as body text. A heading style that the template doesn't have, or another of docx's styles such as `ListParagraph` or `Hyperlink`, is added to it as a `Document` writes it. To give the headings a look of your own, change the heading style in the template in Word, which saves it with the template.
+
+A template saved by Word in another language has its styles under other ids, such as `berschrift1` for Heading 1 in German. A heading is given the template's style of the same name, such as `heading 1`, so it has the template's look there too.
+
+A style of your own, given with `style`, has to be in the template.
+
 ### Page numbers
 
 A template's table of contents, page references and numbers of pages show the page numbers the template was saved with, which the patches can change. Give `patchDocument` `estimatePageNumbers` from `docx/layout` as its `pageNumbers`, and it lays out the filled-in document's pages as Word would, and writes their numbers:
