@@ -16,6 +16,7 @@ import type { IViewWrapper } from "@file/document-wrapper";
 import type { File } from "@file/file";
 import type { FileChild } from "@file/file-child";
 import { type IMediaData, Media } from "@file/media";
+import { type INumberingOptions, Numbering } from "@file/numbering";
 import { PackageParts } from "@file/package-part/package-part";
 import { Bookmark, ConcreteHyperlink, ExternalHyperlink, type Paragraph, type ParagraphChild } from "@file/paragraph";
 import { externalHyperlinkTarget } from "@file/paragraph/links/external-hyperlink-target";
@@ -29,6 +30,7 @@ import { appendContentType, appendContentTypeOverride } from "./content-types-ma
 import { findDrawingIds, renumberDrawingsAvoiding } from "./drawing-ids";
 import { type DrawingPatch, patchDrawings, relationshipsPathOf } from "./drawing-patch";
 import { patchNotes } from "./notes";
+import { patchNumbering } from "./numbering";
 import { type TemplatePageNumberEstimator, fillTemplatePageNumbers } from "./page-numbers";
 import { PatchType } from "./patch-type";
 import { appendRelationship, createRelationshipFile, getNextRelationshipIndex } from "./relationship-manager";
@@ -166,6 +168,7 @@ export type PatchDocumentOutputType = OutputType;
  * @property recursive - Whether to replace every occurrence of a placeholder in a paragraph, rather than only the first
  * @property footnotes - The footnotes that patches refer to with a `FootnoteReferenceRun`
  * @property endnotes - The endnotes that patches refer to with an `EndnoteReferenceRun`
+ * @property numbering - The lists that the paragraphs in patches use, by their references
  * @property pageNumbers - Works out the page each bookmark is on, to write the page numbers of page references
  */
 export type PatchDocumentOptions<T extends PatchDocumentOutputType = PatchDocumentOutputType> = {
@@ -194,6 +197,12 @@ export type PatchDocumentOptions<T extends PatchDocumentOutputType = PatchDocume
     readonly footnotes?: Readonly<Record<string, { readonly children: readonly Paragraph[] }>>;
     /** The endnotes that patches refer to, by the id given to their `EndnoteReferenceRun`s, as with footnotes */
     readonly endnotes?: Readonly<Record<string, { readonly children: readonly Paragraph[] }>>;
+    /**
+     * The lists that the paragraphs in patches use, as in a `Document`. A paragraph is put in one with
+     * `numbering: { reference, level }`. Each list that patches use is added to the document's numbering, with ids that
+     * none of the template's lists have, and so is the bullet list of `bullet` paragraphs
+     */
+    readonly numbering?: INumberingOptions;
     /**
      * Works out the page each bookmark of the patched document is on, and how many pages it has, so the page numbers of
      * its tables of contents and page references, and its numbers of pages, are written with it, rather than left as they
@@ -301,6 +310,7 @@ export const patchDocument = async <T extends PatchDocumentOutputType = PatchDoc
     recursive = true,
     footnotes,
     endnotes,
+    numbering = { config: [] },
     pageNumbers,
 }: PatchDocumentOptions<T>): Promise<OutputByType[T]> => {
     const zipContent = data instanceof JSZip ? data : await JSZip.loadAsync(data);
@@ -312,6 +322,8 @@ export const patchDocument = async <T extends PatchDocumentOutputType = PatchDoc
     const contentTypeOverrides: { readonly contentType: string; readonly partName: string }[] = [];
     const file = {
         Media: new Media(),
+        // The paragraphs in patches add the lists they use to it as they're written, as in a Document
+        Numbering: new Numbering(numbering),
         Theme: themeColors && { Colors: themeColors },
         PackageParts: new PackageParts(
             {
@@ -405,13 +417,19 @@ export const patchDocument = async <T extends PatchDocumentOutputType = PatchDoc
         stack: [],
     });
 
+    const addContentTypeOverride = (contentType: string, partName: string): void => {
+        // eslint-disable-next-line functional/immutable-data
+        contentTypeOverrides.push({ contentType, partName });
+    };
+    // The lists that the patches use are written once the patches and notes are in, with ids the template's lists don't have
+    const lists = patchNumbering(file.Numbering, map, { createContext, addContentTypeOverride });
     // The footnotes and endnotes that the patches refer to are written once the patches are in, one for each reference
     const notes = patchNotes({ footnotes, endnotes }, map, {
         createContext,
-        // eslint-disable-next-line functional/immutable-data
-        addContentTypeOverride: (contentType, partName) => contentTypeOverrides.push({ contentType, partName }),
+        addContentTypeOverride,
         renumberBookmarks,
         renumberDrawings,
+        renumberLists: lists.renumber,
     });
 
     // Drawings whose alt text holds a placeholder, such as charts, are patched first, so their patches only see the
@@ -504,7 +522,7 @@ export const patchDocument = async <T extends PatchDocumentOutputType = PatchDoc
                 context,
                 keepOriginalStyles,
                 recursive,
-                renumberIds: (elements) => notes.renumber(renumberBookmarks(renumberDrawings(elements))),
+                renumberIds: (elements) => lists.renumber(notes.renumber(renumberBookmarks(renumberDrawings(elements)))),
             });
 
             if (didFindOccurrence) {
@@ -519,6 +537,7 @@ export const patchDocument = async <T extends PatchDocumentOutputType = PatchDoc
     }
 
     notes.write();
+    lists.write();
 
     for (const [key, json] of map) {
         if (!key.startsWith("word/") || key.endsWith(".xml.rels")) {

@@ -7,6 +7,7 @@ import { EndnoteReferenceRun } from "@file/endnotes";
 import { File } from "@file/file";
 import { FootnoteReferenceRun } from "@file/footnotes";
 import { Header } from "@file/header";
+import { LevelFormat } from "@file/numbering";
 import { PackagePart } from "@file/package-part";
 import { Bookmark, ExternalHyperlink, ImageRun, Paragraph, Run, TextRun } from "@file/paragraph";
 import { BuilderElement, type IContext, type IXmlableObject, XmlComponent } from "@file/xml-components";
@@ -1766,6 +1767,281 @@ describe("from-docx", () => {
                     ),
                 );
                 expect(await read("word/_rels/document.xml.rels")).not.to.contain("relationships/image");
+            });
+        });
+
+        describe("Lists", () => {
+            const W = "http://schemas.openxmlformats.org/wordprocessingml/2006/main";
+            const NUMBERING_RELATIONSHIP = "http://schemas.openxmlformats.org/officeDocument/2006/relationships/numbering";
+            // A template made in Word with two lists of its own
+            const TEMPLATE_NUMBERING =
+                `<w:numbering xmlns:w="${W}" xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006" mc:Ignorable="w16se">` +
+                `<w:abstractNum w:abstractNumId="0"><w:lvl w:ilvl="0"><w:numFmt w:val="decimal"/></w:lvl></w:abstractNum>` +
+                `<w:abstractNum w:abstractNumId="1"><w:lvl w:ilvl="0"><w:numFmt w:val="upperRoman"/></w:lvl></w:abstractNum>` +
+                `<w:num w:numId="1"><w:abstractNumId w:val="0"/></w:num><w:num w:numId="2"><w:abstractNumId w:val="1"/></w:num>` +
+                `<w:numIdMacAtCleanup w:val="1"/></w:numbering>`;
+            const STEPS = {
+                config: [
+                    {
+                        reference: "steps",
+                        levels: [
+                            { level: 0, format: LevelFormat.DECIMAL, text: "%1." },
+                            { level: 1, format: LevelFormat.LOWER_LETTER, text: "%2)" },
+                        ],
+                    },
+                ],
+            };
+
+            // Patches a template with this body, and the parts given, and returns a reader for the patched parts
+            const patchTemplate = async (
+                { body, numbering, styles }: { readonly body: string; readonly numbering?: string; readonly styles?: string },
+                options: Omit<PatchDocumentOptions, "outputType" | "data">,
+            ): Promise<(path: string) => Promise<string | undefined>> => {
+                const template = new JSZip()
+                    .file(
+                        "[Content_Types].xml",
+                        `<?xml version="1.0" encoding="UTF-8" standalone="yes"?><Types xmlns="http://schemas.openxmlformats.org/package/2006/content-types"/>`,
+                    )
+                    .file("word/document.xml", `<w:document xmlns:w="${W}"><w:body>${body}</w:body></w:document>`);
+                if (numbering !== undefined) {
+                    template
+                        .file("word/numbering.xml", numbering)
+                        .file(
+                            "word/_rels/document.xml.rels",
+                            `<?xml version="1.0" encoding="UTF-8" standalone="yes"?><Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships">` +
+                                `<Relationship Id="rId1" Type="${NUMBERING_RELATIONSHIP}" Target="numbering.xml"/></Relationships>`,
+                        );
+                }
+                if (styles !== undefined) {
+                    template.file("word/styles.xml", `<w:styles xmlns:w="${W}">${styles}</w:styles>`);
+                }
+                vi.spyOn(JSZip, "loadAsync").mockResolvedValue(template);
+
+                const output = await patchDocument({ outputType: "uint8array", data: Buffer.from(""), ...options });
+                // `JSZip.loadAsync` is mocked; the instance method reads the real output
+                const zip = await new JSZip().loadAsync(output);
+                return (path) => zip.file(path)?.async("text") ?? Promise.resolve(undefined);
+            };
+
+            const placeholder = (key: string): string => `<w:p><w:r><w:t>{{${key}}}</w:t></w:r></w:p>`;
+            const numIdsIn = (xml: string | undefined): readonly string[] =>
+                [...xml!.matchAll(/<w:numId w:val="([^"]*)"\/>/g)].map(([, id]) => id);
+            // The ids of the lists and abstract lists in a numbering part, in order, and the abstract list each list is of
+            const listsIn = (xml: string | undefined): readonly string[] =>
+                [
+                    ...xml!.matchAll(
+                        /<w:(abstractNum) w:abstractNumId="(\d+)"|<w:(num) w:numId="(\d+)"><w:abstractNumId w:val="(\d+)"\/>|<w:(numIdMacAtCleanup)/g,
+                    ),
+                ].map(([, abstractNum, abstractNumId, num, numId, ofAbstractNumId, cleanup]) =>
+                    abstractNum ? `abstractNum ${abstractNumId}` : num ? `num ${numId} of ${ofAbstractNumId}` : cleanup,
+                );
+
+            afterEach(() => {
+                vi.restoreAllMocks();
+            });
+
+            it("should put the paragraphs in lists from the numbering option, with ids none of the template's lists have", async () => {
+                const read = await patchTemplate(
+                    { body: placeholder("list"), numbering: TEMPLATE_NUMBERING },
+                    {
+                        numbering: STEPS,
+                        patches: {
+                            list: {
+                                type: PatchType.DOCUMENT,
+                                children: [
+                                    new Paragraph({ text: "First", numbering: { reference: "steps", level: 0 } }),
+                                    new Paragraph({ text: "Detail", numbering: { reference: "steps", level: 1 } }),
+                                    new Paragraph({ text: "Again", numbering: { reference: "steps", level: 0, instance: 1 } }),
+                                ],
+                            },
+                        },
+                    },
+                );
+
+                expect(numIdsIn(await read("word/document.xml"))).to.deep.equal(["3", "3", "4"]);
+                const numbering = await read("word/numbering.xml");
+                // Both instances of the list are of one abstract list, after the template's, and its lists are before numIdMacAtCleanup
+                expect(listsIn(numbering)).to.deep.equal([
+                    "abstractNum 0",
+                    "abstractNum 1",
+                    "abstractNum 2",
+                    "num 1 of 0",
+                    "num 2 of 1",
+                    "num 3 of 2",
+                    "num 4 of 2",
+                    "numIdMacAtCleanup",
+                ]);
+                expect(numbering).to.match(
+                    /<w:abstractNum w:abstractNumId="2"[^>]*>.*?<w:numFmt w:val="decimal"\/>.*?<w:numFmt w:val="lowerLetter"\/>/,
+                );
+                expect(numbering).to.contain(
+                    '<w:num w:numId="4"><w:abstractNumId w:val="2"/><w:lvlOverride w:ilvl="0"><w:startOverride w:val="1"/>',
+                );
+            });
+
+            it("should keep a list's id from one patch to the next, so it is numbered on", async () => {
+                const step = (text: string): IPatch => ({
+                    type: PatchType.DOCUMENT,
+                    children: [new Paragraph({ text, numbering: { reference: "steps", level: 0 } })],
+                });
+                const read = await patchTemplate(
+                    { body: placeholder("first") + placeholder("second"), numbering: TEMPLATE_NUMBERING },
+                    { numbering: STEPS, patches: { first: step("First"), second: step("Second") } },
+                );
+
+                expect(numIdsIn(await read("word/document.xml"))).to.deep.equal(["3", "3"]);
+                expect(listsIn(await read("word/numbering.xml")))
+                    .to.contain("num 3 of 2")
+                    .and.not.contain("num 4 of 2");
+            });
+
+            it("should put a bullet paragraph in a bullet list of its own, rather than in the template's list with its id", async () => {
+                const read = await patchTemplate(
+                    { body: placeholder("bullet"), numbering: TEMPLATE_NUMBERING },
+                    {
+                        patches: {
+                            bullet: { type: PatchType.DOCUMENT, children: [new Paragraph({ text: "Point", bullet: { level: 0 } })] },
+                        },
+                    },
+                );
+
+                expect(numIdsIn(await read("word/document.xml"))).to.deep.equal(["3"]);
+                const numbering = await read("word/numbering.xml");
+                expect(listsIn(numbering)).to.include.members(["abstractNum 2", "num 3 of 2"]);
+                expect(numbering).to.match(/<w:abstractNum w:abstractNumId="2"[^>]*>.*?<w:numFmt w:val="bullet"\/>/);
+            });
+
+            it("should add the namespaces the lists are written with to the template's numbering part, keeping its own", async () => {
+                const read = await patchTemplate(
+                    { body: placeholder("list"), numbering: TEMPLATE_NUMBERING },
+                    {
+                        numbering: STEPS,
+                        patches: {
+                            list: {
+                                type: PatchType.DOCUMENT,
+                                children: [new Paragraph({ text: "First", numbering: { reference: "steps", level: 0 } })],
+                            },
+                        },
+                    },
+                );
+
+                const root = toJson((await read("word/numbering.xml"))!).elements![0];
+                expect(root.attributes).to.include({
+                    "xmlns:w": W,
+                    "xmlns:w15": "http://schemas.microsoft.com/office/word/2012/wordml",
+                    "mc:Ignorable": "w16se w14 w15 wp14",
+                });
+            });
+
+            it("should write the lists to a numbering part without attributes", async () => {
+                const read = await patchTemplate(
+                    { body: placeholder("list"), numbering: "<w:numbering/>" },
+                    {
+                        numbering: STEPS,
+                        patches: {
+                            list: {
+                                type: PatchType.DOCUMENT,
+                                children: [new Paragraph({ text: "First", numbering: { reference: "steps", level: 0 } })],
+                            },
+                        },
+                    },
+                );
+
+                const numbering = await read("word/numbering.xml");
+                expect(listsIn(numbering)).to.deep.equal(["abstractNum 1", "num 1 of 1"]);
+                expect(toJson(numbering!).elements![0].attributes).to.include({ "mc:Ignorable": "w14 w15 wp14" });
+            });
+
+            it("should add a numbering part, its relationship and its content type to a template without one", async () => {
+                const read = await patchTemplate(
+                    { body: placeholder("list") },
+                    {
+                        numbering: STEPS,
+                        patches: {
+                            list: {
+                                type: PatchType.DOCUMENT,
+                                children: [new Paragraph({ text: "First", numbering: { reference: "steps", level: 0 } })],
+                            },
+                        },
+                    },
+                );
+
+                expect(numIdsIn(await read("word/document.xml"))).to.deep.equal(["1"]);
+                expect(listsIn(await read("word/numbering.xml"))).to.deep.equal(["abstractNum 1", "num 1 of 1"]);
+                expect(await read("word/_rels/document.xml.rels")).to.match(
+                    new RegExp(`Type="${NUMBERING_RELATIONSHIP}" Target="numbering.xml"`),
+                );
+                expect(await read("[Content_Types].xml")).to.contain(
+                    `<Override ContentType="application/vnd.openxmlformats-officedocument.wordprocessingml.numbering+xml" PartName="/word/numbering.xml"/>`,
+                );
+            });
+
+            it("should add the ListParagraph style that list paragraphs have to a template without it, and only then", async () => {
+                const patches = {
+                    list: {
+                        type: PatchType.DOCUMENT,
+                        children: [new Paragraph({ text: "First", numbering: { reference: "steps", level: 0 } })],
+                    },
+                } as const;
+                const withoutStyle = await patchTemplate(
+                    { body: placeholder("list"), styles: `<w:docDefaults/><w:style w:type="paragraph" w:styleId="Normal"/>` },
+                    { numbering: STEPS, patches },
+                );
+                const withStyle = await patchTemplate(
+                    {
+                        body: placeholder("list"),
+                        styles: `<w:style w:type="paragraph" w:styleId="ListParagraph"><w:name w:val="Mine"/></w:style>`,
+                    },
+                    { numbering: STEPS, patches },
+                );
+
+                expect(await withoutStyle("word/styles.xml")).to.match(
+                    /<w:style w:type="paragraph" w:styleId="ListParagraph">.*<w:basedOn w:val="Normal"\/>/,
+                );
+                expect((await withStyle("word/styles.xml"))!.match(/w:styleId="ListParagraph"/g)).to.have.length(1);
+                expect(await withStyle("word/styles.xml")).to.contain('<w:name w:val="Mine"/>');
+            });
+
+            it("should write the lists of the paragraphs in a footnote", async () => {
+                const read = await patchTemplate(
+                    { body: placeholder("note"), numbering: TEMPLATE_NUMBERING },
+                    {
+                        numbering: STEPS,
+                        patches: { note: { type: PatchType.PARAGRAPH, children: [new FootnoteReferenceRun(1)] } },
+                        footnotes: { 1: { children: [new Paragraph({ text: "First", numbering: { reference: "steps", level: 0 } })] } },
+                    },
+                );
+
+                expect(numIdsIn(await read("word/footnotes.xml"))).to.deep.equal(["3"]);
+                expect(listsIn(await read("word/numbering.xml"))).to.contain("num 3 of 2");
+            });
+
+            it("should leave a paragraph taken out of a list with numbering: false as it is, without writing lists", async () => {
+                const read = await patchTemplate(
+                    { body: placeholder("plain") },
+                    { patches: { plain: { type: PatchType.DOCUMENT, children: [new Paragraph({ text: "Plain", numbering: false })] } } },
+                );
+
+                expect(numIdsIn(await read("word/document.xml"))).to.deep.equal(["0"]);
+                expect(await read("word/numbering.xml")).to.equal(undefined);
+            });
+
+            it("should throw for a paragraph whose list isn't in the numbering option, rather than write an id Word can't read", async () => {
+                await expect(
+                    patchTemplate(
+                        { body: placeholder("list") },
+                        {
+                            patches: {
+                                list: {
+                                    type: PatchType.DOCUMENT,
+                                    children: [new Paragraph({ text: "First", numbering: { reference: "my-list-2", level: 0 } })],
+                                },
+                            },
+                        },
+                    ),
+                ).rejects.toThrowError(
+                    `A paragraph in a patch uses the numbering "my-list-2", which isn't in the numbering option of patchDocument`,
+                );
             });
         });
 

@@ -337,6 +337,80 @@ The ids only link each reference to its note. In the patched document, each note
 
 A template that has no footnotes or endnotes yet is given what they need, including the styles that show their numbers as superscript.
 
+### Lists
+
+A paragraph in a patch is put in a numbered list with `numbering`, and the lists go in `numbering`, as they do in a `Document` (see [Bullets and Numbering](usage/numbering.md)). A paragraph with `bullet` is put in a bullet list, as in a `Document`:
+
+```ts live
+import * as fs from "fs";
+import { LevelFormat, Paragraph, patchDocument, PatchType } from "docx";
+
+const doc = await patchDocument({
+    outputType: "nodebuffer",
+    data: fs.readFileSync("./demo/assets/simple-template.docx"),
+    numbering: {
+        config: [
+            {
+                reference: "steps",
+                levels: [
+                    { level: 0, format: LevelFormat.DECIMAL, text: "%1.", style: { paragraph: { indent: { left: 720, hanging: 360 } } } },
+                    {
+                        level: 1,
+                        format: LevelFormat.LOWER_LETTER,
+                        text: "%2)",
+                        style: { paragraph: { indent: { left: 1440, hanging: 360 } } },
+                    },
+                ],
+            },
+        ],
+    },
+    patches: {
+        paragraph_replace: {
+            type: PatchType.DOCUMENT,
+            children: [
+                new Paragraph({ text: "Open the box", numbering: { reference: "steps", level: 0 } }),
+                new Paragraph({ text: "Check that every part is there", numbering: { reference: "steps", level: 1 } }),
+                new Paragraph({ text: "Put it together", numbering: { reference: "steps", level: 0 } }),
+                new Paragraph({ text: "Keep the receipt", bullet: { level: 0 } }),
+            ],
+        },
+    },
+});
+
+fs.writeFileSync("My Document.docx", doc);
+```
+
+Each list that the patches use is added to the template's lists, with an id that none of them has, so the template's own lists stay as they are. A list is numbered on from one patch to the next, as it is in a `Document`, and a paragraph with another `instance` starts it again. A template that has no lists yet is given what they need.
+
+To add an item to a list that is already in the template, put its placeholder in a paragraph of the list, and patch it with `PatchType.PARAGRAPH`. The paragraph stays in the list, and the items after it are numbered on from it. For an item that is optional, a `PatchType.DOCUMENT` patch with no children removes the paragraph:
+
+```ts live
+import * as fs from "fs";
+import { Document, LevelFormat, Packer, Paragraph, patchDocument, PatchType, TextRun } from "docx";
+
+// A template with a list, whose second item is a placeholder
+const item = (text: string): Paragraph => new Paragraph({ text, numbering: { reference: "packing-list", level: 0 } });
+const template = await Packer.toBuffer(
+    new Document({
+        numbering: { config: [{ reference: "packing-list", levels: [{ level: 0, format: LevelFormat.DECIMAL, text: "%1." }] }] },
+        sections: [{ children: [item("Water bottle"), item("{{lunch}}"), item("Raincoat")] }],
+    }),
+);
+
+const bringsLunch = true;
+const doc = await patchDocument({
+    outputType: "nodebuffer",
+    data: template,
+    patches: {
+        lunch: bringsLunch
+            ? { type: PatchType.PARAGRAPH, children: [new TextRun("A packed lunch")] }
+            : { type: PatchType.DOCUMENT, children: [] },
+    },
+});
+
+fs.writeFileSync("My Document.docx", doc);
+```
+
 ### Page numbers
 
 A template's table of contents, page references and numbers of pages show the page numbers the template was saved with, which the patches can change. Give `patchDocument` `estimatePageNumbers` from `docx/layout` as its `pageNumbers`, and it lays out the filled-in document's pages as Word would, and writes their numbers:
