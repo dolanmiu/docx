@@ -36379,6 +36379,81 @@ while (n === a[++i] && n === a[++i] && n === a[++i] && n === a[++i] && n === a[+
 		});
 	};
 	//#endregion
+	//#region src/patcher/drawing-ids.ts
+	var DRAWINGS = /* @__PURE__ */ new Set(["wp:inline", "wp:anchor"]);
+	var ID_ELEMENTS = /* @__PURE__ */ new Set([
+		"wp:docPr",
+		"wps:cNvPr",
+		"wpg:cNvPr"
+	]);
+	var REFERENCE_ELEMENTS = /* @__PURE__ */ new Set(["a:stCxn", "a:endCxn"]);
+	var idOf = (element, names) => {
+		var _element$name, _element$attributes;
+		if (!names.has((_element$name = element.name) !== null && _element$name !== void 0 ? _element$name : "")) return;
+		const id = Number((_element$attributes = element.attributes) === null || _element$attributes === void 0 ? void 0 : _element$attributes.id);
+		return Number.isInteger(id) ? id : void 0;
+	};
+	/**
+	* Finds the id of every drawing in an element, at any depth, and of the shapes in them, such as in a group.
+	*
+	* @param element - The element to search, such as a part's root
+	* @returns The ids, once for each element that has one
+	*/
+	var findDrawingIds = (element) => {
+		var _element$elements;
+		const id = idOf(element, ID_ELEMENTS);
+		return [...id === void 0 ? [] : [id], ...((_element$elements = element.elements) !== null && _element$elements !== void 0 ? _element$elements : []).flatMap(findDrawingIds)];
+	};
+	var ownIdsOf = (drawing) => {
+		const idsIn = (element) => {
+			var _element$elements2;
+			const id = idOf(element, ID_ELEMENTS);
+			return [...id === void 0 ? [] : [id], ...((_element$elements2 = element.elements) !== null && _element$elements2 !== void 0 ? _element$elements2 : []).flatMap((child) => {
+				var _child$name;
+				return DRAWINGS.has((_child$name = child.name) !== null && _child$name !== void 0 ? _child$name : "") ? [] : idsIn(child);
+			})];
+		};
+		return idsIn(drawing);
+	};
+	/**
+	* Creates a function that renumbers the drawings in content being inserted, so none has an id another drawing in the
+	* document has. Word finds a document whose drawings share an id unreadable, even when they are in different parts,
+	* such as a header and the body. A drawing's id is chosen when it is created, without knowing which ids the template
+	* has, and content inserted more than once would have the same ids each time.
+	*
+	* A drawing keeps its ids if nothing in the document has them yet, and otherwise gets the next unused ones. The
+	* connectors in a drawing then still join the shapes they did.
+	*
+	* @param idsInDocument - The ids of the drawings already in the document, and of the shapes in them
+	* @returns A function that returns the elements with their drawings renumbered
+	*/
+	var renumberDrawingsAvoiding = (idsInDocument) => {
+		const usedIds = new Set(idsInDocument);
+		let highestId = idsInDocument.reduce((highest, id) => Math.max(highest, id), 0);
+		const newIdFor = (id) => {
+			const newId = usedIds.has(id) ? highestId + 1 : id;
+			highestId = Math.max(highestId, newId);
+			usedIds.add(newId);
+			return newId;
+		};
+		const renumberDrawing = (drawing) => {
+			const newIds = new Map([...new Set(ownIdsOf(drawing))].map((id) => [id, newIdFor(id)]));
+			const renumberIn = (element) => {
+				var _element$name2, _idOf;
+				if (element !== drawing && DRAWINGS.has((_element$name2 = element.name) !== null && _element$name2 !== void 0 ? _element$name2 : "")) return renumberDrawing(element);
+				const id = (_idOf = idOf(element, ID_ELEMENTS)) !== null && _idOf !== void 0 ? _idOf : idOf(element, REFERENCE_ELEMENTS);
+				const newId = id === void 0 ? void 0 : newIds.get(id);
+				return _objectSpread2(_objectSpread2(_objectSpread2({}, element), newId === void 0 ? {} : { attributes: _objectSpread2(_objectSpread2({}, element.attributes), {}, { id: String(newId) }) }), element.elements === void 0 ? {} : { elements: element.elements.map(renumberIn) });
+			};
+			return renumberIn(drawing);
+		};
+		const renumber = (element) => {
+			var _element$name3;
+			return DRAWINGS.has((_element$name3 = element.name) !== null && _element$name3 !== void 0 ? _element$name3 : "") ? renumberDrawing(element) : _objectSpread2(_objectSpread2({}, element), element.elements === void 0 ? {} : { elements: element.elements.map(renumber) });
+		};
+		return (elements) => elements.map(renumber);
+	};
+	//#endregion
 	//#region src/patcher/patch-type.ts
 	/**
 	* The types of patch `patchDocument` applies.
@@ -36774,7 +36849,7 @@ while (n === a[++i] && n === a[++i] && n === a[++i] && n === a[++i] && n === a[+
 			...elements.slice(index)
 		] });
 	};
-	var patchNotesOfKind = (kind, notes, parts, { createContext, addContentTypeOverride, renumberBookmarks }) => {
+	var patchNotesOfKind = (kind, notes, parts, { createContext, addContentTypeOverride, renumberBookmarks, renumberDrawings }) => {
 		const givenNotes = new Map(Object.entries(notes).map(([id, note]) => [Number(id), note]));
 		const noteOfId = /* @__PURE__ */ new Map();
 		let highestId;
@@ -36819,7 +36894,7 @@ while (n === a[++i] && n === a[++i] && n === a[++i] && n === a[++i] && n === a[+
 				type: "element",
 				name: kind.noteName,
 				attributes: { "w:id": String(id) },
-				elements: [...contentOfNote.get(note)]
+				elements: [...renumberDrawings(contentOfNote.get(note))]
 			})));
 			const stylesPart = parts.get("word/styles.xml");
 			if (stylesPart) {
@@ -37497,8 +37572,9 @@ while (n === a[++i] && n === a[++i] && n === a[++i] && n === a[++i] && n === a[+
 	* @param patch - The rows of data
 	* @param delimiters - The placeholders' delimiters
 	* @param patchPlaceholder - Patches a field in a copy of the rows, as `patchDocument` patches a placeholder
+	* @param renumberDrawings - Gives the drawings in a copy of the rows ids no other drawing in the document has
 	*/
-	var patchTableRows = ({ json, key, patch, delimiters: { start, end }, patchPlaceholder }) => {
+	var patchTableRows = ({ json, key, patch, delimiters: { start, end }, patchPlaceholder, renumberDrawings }) => {
 		const fieldStart = `${start}${key}.`;
 		for (const rows of findRowsToRepeat(json, fieldStart)) {
 			const fields = fieldsIn(rows.elements, fieldStart, end);
@@ -37506,7 +37582,7 @@ while (n === a[++i] && n === a[++i] && n === a[++i] && n === a[++i] && n === a[+
 				const copy = {
 					type: "element",
 					name: "w:tbl",
-					elements: [...index === 0 ? rows.elements.map(copyOf) : withoutIds(rows.elements)]
+					elements: [...index === 0 ? rows.elements.map(copyOf) : renumberDrawings(withoutIds(rows.elements))]
 				};
 				const fieldPatches = new Map(Object.entries(row).flatMap(([field, p]) => p === void 0 ? [] : [[field, p]]));
 				for (const [field, fieldPatch] of fieldPatches) patchPlaceholder(copy, `${key}.${field}`, fieldPatch);
@@ -37806,6 +37882,7 @@ while (n === a[++i] && n === a[++i] && n === a[++i] && n === a[++i] && n === a[+
 				map.set(key, json);
 			}
 			const renumberBookmarks = renumberBookmarksAvoiding([...map.values()].flatMap(findBookmarkIds));
+			const renumberDrawings = renumberDrawingsAvoiding([...map.values()].flatMap(findDrawingIds));
 			const createContext = (key) => ({
 				file,
 				viewWrapper: { Relationships: { addRelationship: (id, type, target, targetMode) => {
@@ -37828,7 +37905,8 @@ while (n === a[++i] && n === a[++i] && n === a[++i] && n === a[++i] && n === a[+
 					contentType,
 					partName
 				}),
-				renumberBookmarks
+				renumberBookmarks,
+				renumberDrawings
 			});
 			patchDrawings({
 				parts: map,
@@ -37856,7 +37934,8 @@ while (n === a[++i] && n === a[++i] && n === a[++i] && n === a[++i] && n === a[+
 								start,
 								end
 							},
-							patchPlaceholder
+							patchPlaceholder,
+							renumberDrawings
 						});
 						return;
 					}
@@ -37881,7 +37960,7 @@ while (n === a[++i] && n === a[++i] && n === a[++i] && n === a[++i] && n === a[+
 						context,
 						keepOriginalStyles,
 						recursive,
-						renumberIds: (elements) => notes.renumber(renumberBookmarks(elements))
+						renumberIds: (elements) => notes.renumber(renumberBookmarks(renumberDrawings(elements)))
 					});
 					if (didFindOccurrence) relationshipAdditions.push(...hyperlinkRelationships);
 				};
