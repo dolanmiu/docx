@@ -35449,11 +35449,11 @@ while (n === a[++i] && n === a[++i] && n === a[++i] && n === a[++i] && n === a[+
 	*
 	* @module
 	*/
-	var formatter$3 = new Formatter();
+	var formatter$4 = new Formatter();
 	/**
 	* Formats a part's XML, with the relationships that anything in it that refers to other parts adds to.
 	*/
-	var xmlifyPart = (file, content, prettify, relationships, standalone = true) => (0, import_xml.default)(formatter$3.format(content, {
+	var xmlifyPart = (file, content, prettify, relationships, standalone = true) => (0, import_xml.default)(formatter$4.format(content, {
 		viewWrapper: {
 			View: content,
 			Relationships: relationships
@@ -36223,7 +36223,7 @@ while (n === a[++i] && n === a[++i] && n === a[++i] && n === a[++i] && n === a[+
 	*
 	* @module
 	*/
-	var formatter$2 = new Formatter();
+	var formatter$3 = new Formatter();
 	/**
 	* Converts XML string to JSON element structure.
 	*
@@ -36263,7 +36263,7 @@ while (n === a[++i] && n === a[++i] && n === a[++i] && n === a[++i] && n === a[+
 	*/
 	var createTextElementContents = (text) => {
 		var _textJson$elements$0$;
-		return (_textJson$elements$0$ = toJson((0, import_xml.default)(formatter$2.format(new Text({ text })))).elements[0].elements) !== null && _textJson$elements$0$ !== void 0 ? _textJson$elements$0$ : [];
+		return (_textJson$elements$0$ = toJson((0, import_xml.default)(formatter$3.format(new Text({ text })))).elements[0].elements) !== null && _textJson$elements$0$ !== void 0 ? _textJson$elements$0$ : [];
 	};
 	/**
 	* Adds xml:space="preserve" attribute to an element.
@@ -36797,8 +36797,8 @@ while (n === a[++i] && n === a[++i] && n === a[++i] && n === a[++i] && n === a[+
 	*
 	* @module
 	*/
-	var formatter$1 = new Formatter();
-	var DOCUMENT_PATH = "word/document.xml";
+	var formatter$2 = new Formatter();
+	var DOCUMENT_PATH$1 = "word/document.xml";
 	var FOOTNOTES = {
 		path: "word/footnotes.xml",
 		rootName: "w:footnotes",
@@ -36833,7 +36833,7 @@ while (n === a[++i] && n === a[++i] && n === a[++i] && n === a[++i] && n === a[+
 			]
 		}
 	};
-	var formatElement = (component, context) => toJson((0, import_xml.default)(formatter$1.format(component, context))).elements[0];
+	var formatElement$1 = (component, context) => toJson((0, import_xml.default)(formatter$2.format(component, context))).elements[0];
 	var findIds = (element, names) => {
 		var _element$name, _element$attributes, _element$elements;
 		const id = names.includes((_element$name = element.name) !== null && _element$name !== void 0 ? _element$name : "") ? Number((_element$attributes = element.attributes) === null || _element$attributes === void 0 ? void 0 : _element$attributes["w:id"]) : NaN;
@@ -36849,7 +36849,7 @@ while (n === a[++i] && n === a[++i] && n === a[++i] && n === a[++i] && n === a[+
 			...elements.slice(index)
 		] });
 	};
-	var patchNotesOfKind = (kind, notes, parts, { createContext, addContentTypeOverride, renumberBookmarks, renumberDrawings }) => {
+	var patchNotesOfKind = (kind, notes, parts, { createContext, addContentTypeOverride, renumberBookmarks, renumberDrawings, renumberLists }) => {
 		const givenNotes = new Map(Object.entries(notes).map(([id, note]) => [Number(id), note]));
 		const noteOfId = /* @__PURE__ */ new Map();
 		let highestId;
@@ -36863,11 +36863,11 @@ while (n === a[++i] && n === a[++i] && n === a[++i] && n === a[++i] && n === a[+
 		};
 		const findOrAddPart = () => {
 			var _parts$get;
-			const relationship = getFirstLevelElements((_parts$get = parts.get(relationshipsPathOf(DOCUMENT_PATH))) !== null && _parts$get !== void 0 ? _parts$get : {}, "Relationships").find((element) => {
+			const relationship = getFirstLevelElements((_parts$get = parts.get(relationshipsPathOf(DOCUMENT_PATH$1))) !== null && _parts$get !== void 0 ? _parts$get : {}, "Relationships").find((element) => {
 				var _element$attributes3;
 				return ((_element$attributes3 = element.attributes) === null || _element$attributes3 === void 0 ? void 0 : _element$attributes3.Type) === kind.relationshipType;
 			});
-			const path = relationship ? resolveTarget(DOCUMENT_PATH, String(relationship.attributes.Target)) : kind.path;
+			const path = relationship ? resolveTarget(DOCUMENT_PATH$1, String(relationship.attributes.Target)) : kind.path;
 			if (!parts.has(path)) {
 				parts.set(path, {
 					declaration: { attributes: {
@@ -36875,11 +36875,11 @@ while (n === a[++i] && n === a[++i] && n === a[++i] && n === a[++i] && n === a[+
 						encoding: "UTF-8",
 						standalone: "yes"
 					} },
-					elements: [formatElement(kind.create.part(), createContext(path))]
+					elements: [formatElement$1(kind.create.part(), createContext(path))]
 				});
 				addContentTypeOverride(kind.contentType, `/${path}`);
 			}
-			if (!relationship) createContext(DOCUMENT_PATH).viewWrapper.Relationships.addRelationship(uniqueId(), kind.relationshipType, relativeTarget(DOCUMENT_PATH, path));
+			if (!relationship) createContext(DOCUMENT_PATH$1).viewWrapper.Relationships.addRelationship(uniqueId(), kind.relationshipType, relativeTarget(DOCUMENT_PATH$1, path));
 			return path;
 		};
 		const write = () => {
@@ -36887,8 +36887,8 @@ while (n === a[++i] && n === a[++i] && n === a[++i] && n === a[++i] && n === a[+
 			const path = findOrAddPart();
 			const context = createContext(path);
 			const contentOfNote = new Map([...new Set(noteOfId.values())].map((note) => {
-				const mark = formatElement(kind.create.mark(), context);
-				return [note, renumberBookmarks(note.children.map((paragraph) => formatElement(paragraph, context)).map((paragraph, index) => index === 0 ? withMark(paragraph, mark) : paragraph))];
+				const mark = formatElement$1(kind.create.mark(), context);
+				return [note, renumberLists(renumberBookmarks(note.children.map((paragraph) => formatElement$1(paragraph, context)).map((paragraph, index) => index === 0 ? withMark(paragraph, mark) : paragraph)))];
 			}));
 			getFirstLevelElements(parts.get(path), kind.rootName).push(...[...noteOfId].map(([id, note]) => ({
 				type: "element",
@@ -36903,7 +36903,7 @@ while (n === a[++i] && n === a[++i] && n === a[++i] && n === a[++i] && n === a[+
 					var _style$attributes;
 					return (_style$attributes = style.attributes) === null || _style$attributes === void 0 ? void 0 : _style$attributes["w:styleId"];
 				}));
-				styles.push(...kind.create.styles().map((style) => formatElement(style, context)).filter((style) => {
+				styles.push(...kind.create.styles().map((style) => formatElement$1(style, context)).filter((style) => {
 					var _style$attributes2;
 					return !styleIds.has((_style$attributes2 = style.attributes) === null || _style$attributes2 === void 0 ? void 0 : _style$attributes2["w:styleId"]);
 				}));
@@ -36931,6 +36931,128 @@ while (n === a[++i] && n === a[++i] && n === a[++i] && n === a[++i] && n === a[+
 			write: () => {
 				for (const patcher of patchers) patcher.write();
 			}
+		};
+	};
+	//#endregion
+	//#region src/patcher/numbering.ts
+	/**
+	* Lists in content inserted into an existing document.
+	*
+	* @module
+	*/
+	var formatter$1 = new Formatter();
+	var DOCUMENT_PATH = "word/document.xml";
+	var NUMBERING_PATH = "word/numbering.xml";
+	var NUMBERING_CONTENT_TYPE = "application/vnd.openxmlformats-officedocument.wordprocessingml.numbering+xml";
+	var NUMBERING_RELATIONSHIP = "http://schemas.openxmlformats.org/officeDocument/2006/relationships/numbering";
+	var BULLET_REFERENCE = "default-bullet-numbering";
+	var BULLET_NUM_ID = "1";
+	var formatElement = (component, context) => toJson((0, import_xml.default)(formatter$1.format(component, context))).elements[0];
+	var highestOf = (ids) => ids.reduce((highest, id) => Math.max(highest, id), 0);
+	/**
+	* Creates the writer of the lists that patches use.
+	*
+	* A paragraph in a patch is put in a list as in a Document, with `numbering: { reference, level }` for one of the
+	* numbering's references, or with `bullet`. It is written with a placeholder for its list's id, or for a bullet, with
+	* the id a Document's bullet list has, which a template's lists may have too.
+	*
+	* @param numbering - The numbering the patches' paragraphs add their lists to as they are written
+	* @param parts - The document's XML parts, parsed, by their paths, which the lists are written to
+	* @param helpers - The patcher's helpers for the numbering part
+	*/
+	var patchNumbering = (numbering, parts, { createContext, addContentTypeOverride }) => {
+		const newNumIds = /* @__PURE__ */ new Map();
+		let highestNumId;
+		const numberingRelationship = () => {
+			var _parts$get;
+			return getFirstLevelElements((_parts$get = parts.get(relationshipsPathOf(DOCUMENT_PATH))) !== null && _parts$get !== void 0 ? _parts$get : {}, "Relationships").find((element) => {
+				var _element$attributes;
+				return ((_element$attributes = element.attributes) === null || _element$attributes === void 0 ? void 0 : _element$attributes.Type) === NUMBERING_RELATIONSHIP;
+			});
+		};
+		const numberingPath = (relationship = numberingRelationship()) => relationship ? resolveTarget(DOCUMENT_PATH, String(relationship.attributes.Target)) : NUMBERING_PATH;
+		const idsInTemplate = (name, attribute) => {
+			var _parts$get2;
+			return getFirstLevelElements((_parts$get2 = parts.get(numberingPath())) !== null && _parts$get2 !== void 0 ? _parts$get2 : {}, "w:numbering").filter((element) => element.name === name).map((element) => Number(element.attributes[attribute]));
+		};
+		const listOf = (numId) => {
+			if (numId === BULLET_NUM_ID) return numbering.ConcreteNumbering.find(({ reference }) => reference === BULLET_REFERENCE);
+			if (!numId.startsWith("{")) return;
+			const list = numbering.ConcreteNumbering.find(({ reference, instance }) => numId === `{${reference}-${instance}}`);
+			if (!list) {
+				const reference = numId.slice(1, -1).replace(/-\d+$/, "");
+				throw new Error(`A paragraph in a patch uses the numbering "${reference}", which isn't in the numbering option of patchDocument. Add it there with its levels, as in a Document`);
+			}
+			return list;
+		};
+		const newNumIdOf = (list) => {
+			var _highestNumId;
+			const knownId = newNumIds.get(list.numId);
+			if (knownId !== void 0) return knownId;
+			highestNumId = ((_highestNumId = highestNumId) !== null && _highestNumId !== void 0 ? _highestNumId : highestOf(idsInTemplate("w:num", "w:numId"))) + 1;
+			newNumIds.set(list.numId, highestNumId);
+			return highestNumId;
+		};
+		const renumber = (element) => {
+			const list = element.name === "w:numId" ? listOf(String(element.attributes["w:val"])) : void 0;
+			if (list === void 0) return element.elements === void 0 ? element : _objectSpread2(_objectSpread2({}, element), {}, { elements: element.elements.map(renumber) });
+			return _objectSpread2(_objectSpread2({}, element), {}, { attributes: _objectSpread2(_objectSpread2({}, element.attributes), {}, { "w:val": String(newNumIdOf(list)) }) });
+		};
+		const findOrAddPart = (written) => {
+			const relationship = numberingRelationship();
+			const path = numberingPath(relationship);
+			if (!parts.has(path)) {
+				parts.set(path, {
+					declaration: { attributes: {
+						version: "1.0",
+						encoding: "UTF-8",
+						standalone: "yes"
+					} },
+					elements: [_objectSpread2(_objectSpread2({}, written), {}, { elements: [] })]
+				});
+				addContentTypeOverride(NUMBERING_CONTENT_TYPE, `/${path}`);
+			}
+			if (!relationship) createContext(DOCUMENT_PATH).viewWrapper.Relationships.addRelationship(uniqueId(), NUMBERING_RELATIONSHIP, relativeTarget(DOCUMENT_PATH, path));
+			return path;
+		};
+		const write = () => {
+			var _root$attributes$mcI, _root$attributes;
+			if (newNumIds.size === 0) return;
+			const context = createContext(numberingPath());
+			const written = formatElement(numbering, context);
+			const abstractNumIdOf = (list) => Number(list.elements.find((element) => element.name === "w:abstractNumId").attributes["w:val"]);
+			const lists = written.elements.filter((element) => element.name === "w:num" && newNumIds.has(Number(element.attributes["w:numId"])));
+			const highestAbstractNumId = highestOf(idsInTemplate("w:abstractNum", "w:abstractNumId"));
+			const newAbstractNumIds = new Map([...new Set(lists.map(abstractNumIdOf))].map((id, index) => [id, highestAbstractNumId + index + 1]));
+			const abstractLists = written.elements.flatMap((element) => {
+				const newId = element.name === "w:abstractNum" ? newAbstractNumIds.get(Number(element.attributes["w:abstractNumId"])) : void 0;
+				return newId === void 0 ? [] : [_objectSpread2(_objectSpread2({}, element), {}, { attributes: _objectSpread2(_objectSpread2({}, element.attributes), {}, { "w:abstractNumId": String(newId) }) })];
+			});
+			const path = findOrAddPart(written);
+			const root = parts.get(path).elements.find((element) => element.name === "w:numbering");
+			root.attributes = _objectSpread2(_objectSpread2(_objectSpread2({}, Object.fromEntries(Object.entries(written.attributes).filter(([name]) => name.startsWith("xmlns:")))), root.attributes), {}, { "mc:Ignorable": [.../* @__PURE__ */ new Set([...String((_root$attributes$mcI = (_root$attributes = root.attributes) === null || _root$attributes === void 0 ? void 0 : _root$attributes["mc:Ignorable"]) !== null && _root$attributes$mcI !== void 0 ? _root$attributes$mcI : "").split(" "), ...String(written.attributes["mc:Ignorable"]).split(" ")])].filter((prefix) => prefix !== "").join(" ") });
+			const elements = getFirstLevelElements(parts.get(path), "w:numbering");
+			const firstIndexOf = (names) => {
+				const index = elements.findIndex((element) => names.includes(element.name));
+				return index === -1 ? elements.length : index;
+			};
+			elements.splice(firstIndexOf(["w:num", "w:numIdMacAtCleanup"]), 0, ...abstractLists);
+			elements.splice(firstIndexOf(["w:numIdMacAtCleanup"]), 0, ...lists.map((list) => _objectSpread2(_objectSpread2({}, list), {}, {
+				attributes: _objectSpread2(_objectSpread2({}, list.attributes), {}, { "w:numId": String(newNumIds.get(Number(list.attributes["w:numId"]))) }),
+				elements: list.elements.map((element) => element.name === "w:abstractNumId" ? _objectSpread2(_objectSpread2({}, element), {}, { attributes: { "w:val": String(newAbstractNumIds.get(abstractNumIdOf(list))) } }) : element)
+			})));
+			const stylesPart = parts.get("word/styles.xml");
+			if (stylesPart) {
+				const styles = getFirstLevelElements(stylesPart, "w:styles");
+				if (!styles.some((style) => {
+					var _style$attributes;
+					return ((_style$attributes = style.attributes) === null || _style$attributes === void 0 ? void 0 : _style$attributes["w:styleId"]) === "ListParagraph";
+				})) styles.push(formatElement(new ListParagraph({}), context));
+			}
+		};
+		return {
+			renumber: (elements) => elements.map(renumber),
+			write
 		};
 	};
 	//#endregion
@@ -37832,13 +37954,14 @@ while (n === a[++i] && n === a[++i] && n === a[++i] && n === a[++i] && n === a[+
 		var _ref = _asyncToGenerator(function* ({ outputType, data, patches, keepOriginalStyles, placeholderDelimiters = {
 			start: "{{",
 			end: "}}"
-		}, recursive = true, footnotes, endnotes, pageNumbers }) {
+		}, recursive = true, footnotes, endnotes, numbering = { config: [] }, pageNumbers }) {
 			const zipContent = data instanceof import_jszip_min.default ? data : yield import_jszip_min.default.loadAsync(data);
 			const contexts = /* @__PURE__ */ new Map();
 			const themeColors = yield readThemeColors(zipContent);
 			const contentTypeOverrides = [];
 			const file = {
 				Media: new Media(),
+				Numbering: new Numbering(numbering),
 				Theme: themeColors && { Colors: themeColors },
 				PackageParts: new PackageParts({ addOverride: (contentType, partName) => contentTypeOverrides.push({
 					contentType,
@@ -37896,17 +38019,25 @@ while (n === a[++i] && n === a[++i] && n === a[++i] && n === a[++i] && n === a[+
 				} } },
 				stack: []
 			});
+			const addContentTypeOverride = (contentType, partName) => {
+				contentTypeOverrides.push({
+					contentType,
+					partName
+				});
+			};
+			const lists = patchNumbering(file.Numbering, map, {
+				createContext,
+				addContentTypeOverride
+			});
 			const notes = patchNotes({
 				footnotes,
 				endnotes
 			}, map, {
 				createContext,
-				addContentTypeOverride: (contentType, partName) => contentTypeOverrides.push({
-					contentType,
-					partName
-				}),
+				addContentTypeOverride,
 				renumberBookmarks,
-				renumberDrawings
+				renumberDrawings,
+				renumberLists: lists.renumber
 			});
 			patchDrawings({
 				parts: map,
@@ -37960,13 +38091,14 @@ while (n === a[++i] && n === a[++i] && n === a[++i] && n === a[++i] && n === a[+
 						context,
 						keepOriginalStyles,
 						recursive,
-						renumberIds: (elements) => notes.renumber(renumberBookmarks(renumberDrawings(elements)))
+						renumberIds: (elements) => lists.renumber(notes.renumber(renumberBookmarks(renumberDrawings(elements))))
 					});
 					if (didFindOccurrence) relationshipAdditions.push(...hyperlinkRelationships);
 				};
 				for (const [patchKey, patchValue] of patchesInOrder) patchPlaceholder(json, patchKey, patchValue);
 			}
 			notes.write();
+			lists.write();
 			for (const [key, json] of map) {
 				if (!key.startsWith("word/") || key.endsWith(".xml.rels")) continue;
 				const mediaDatas = imageReplacer.getMediaData(JSON.stringify(json), file.Media);

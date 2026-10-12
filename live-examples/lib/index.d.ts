@@ -10915,7 +10915,7 @@ declare type PatchDetectorOptions = {
  *
  * @publicApi
  */
-export declare const patchDocument: <T extends PatchDocumentOutputType = PatchDocumentOutputType>({ outputType, data, patches, keepOriginalStyles, placeholderDelimiters, recursive, footnotes, endnotes, pageNumbers, }: PatchDocumentOptions<T>) => Promise<OutputByType[T]>;
+export declare const patchDocument: <T extends PatchDocumentOutputType = PatchDocumentOutputType>({ outputType, data, patches, keepOriginalStyles, placeholderDelimiters, recursive, footnotes, endnotes, numbering, pageNumbers, }: PatchDocumentOptions<T>) => Promise<OutputByType[T]>;
 
 /**
  * Options for patching a document.
@@ -10928,6 +10928,7 @@ export declare const patchDocument: <T extends PatchDocumentOutputType = PatchDo
  * @property recursive - Whether to replace every occurrence of a placeholder in a paragraph, rather than only the first
  * @property footnotes - The footnotes that patches refer to with a `FootnoteReferenceRun`
  * @property endnotes - The endnotes that patches refer to with an `EndnoteReferenceRun`
+ * @property numbering - The lists that the paragraphs in patches use, by their references
  * @property pageNumbers - Works out the page each bookmark is on, to write the page numbers of page references
  */
 export declare type PatchDocumentOptions<T extends PatchDocumentOutputType = PatchDocumentOutputType> = {
@@ -10960,6 +10961,12 @@ export declare type PatchDocumentOptions<T extends PatchDocumentOutputType = Pat
     readonly endnotes?: Readonly<Record<string, {
         readonly children: readonly Paragraph[];
     }>>;
+    /**
+     * The lists that the paragraphs in patches use, as in a `Document`. A paragraph is put in one with
+     * `numbering: { reference, level }`. Each list that patches use is added to the document's numbering, with ids that
+     * none of the template's lists have, and so is the bullet list of `bullet` paragraphs
+     */
+    readonly numbering?: INumberingOptions;
     /**
      * Works out the page each bookmark of the patched document is on, and how many pages it has, so the page numbers of
      * its tables of contents and page references, and its numbers of pages, are written with it, rather than left as they
