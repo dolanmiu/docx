@@ -99,6 +99,8 @@ type NotesHelpers = {
     readonly addContentTypeOverride: (contentType: string, partName: string) => void;
     readonly renumberBookmarks: RenumberBookmarks;
     readonly renumberDrawings: RenumberDrawings;
+    /** Gives the lists that the notes' paragraphs are in ids in the document */
+    readonly renumberLists: (elements: readonly Element[]) => readonly Element[];
 };
 
 /**
@@ -138,7 +140,7 @@ const patchNotesOfKind = (
     notes: PatchNotes,
     // eslint-disable-next-line functional/prefer-readonly-type
     parts: Map<string, Element>,
-    { createContext, addContentTypeOverride, renumberBookmarks, renumberDrawings }: NotesHelpers,
+    { createContext, addContentTypeOverride, renumberBookmarks, renumberDrawings, renumberLists }: NotesHelpers,
 ): NotesPatcher => {
     const givenNotes = new Map(Object.entries(notes).map(([id, note]) => [Number(id), note]));
     // The note each new id is for, in the order the ids were given
@@ -202,7 +204,9 @@ const patchNotesOfKind = (
                 const paragraphs = note.children.map((paragraph) => formatElement(paragraph, context));
                 return [
                     note,
-                    renumberBookmarks(paragraphs.map((paragraph, index) => (index === 0 ? withMark(paragraph, mark) : paragraph))),
+                    renumberLists(
+                        renumberBookmarks(paragraphs.map((paragraph, index) => (index === 0 ? withMark(paragraph, mark) : paragraph))),
+                    ),
                 ];
             }),
         );

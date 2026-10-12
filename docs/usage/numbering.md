@@ -338,6 +338,10 @@ const doc = new Document({
 
 The `style.style` value must match the `id` of a paragraph style defined in `styles.paragraphStyles`. This creates a `<w:pStyle>` element inside the numbering level definition, linking the two.
 
+## Lists in templates
+
+`patchDocument` takes the same `numbering` option, for the lists that the paragraphs in patches use. See [Lists](usage/templates.md#lists).
+
 ## Examples
 
 ### Numbering and Bullet Points
