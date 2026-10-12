@@ -5,6 +5,7 @@
  */
 import type { Element } from "xml-js";
 
+import type { RenumberDrawings } from "./drawing-ids";
 import type { IPatch, TableRowsPatch } from "./from-docx";
 import { PatchType } from "./patch-type";
 import { findLocationOfText } from "./traverser";
@@ -48,6 +49,7 @@ const EMPTY: IPatch = { type: PatchType.PARAGRAPH, children: [] };
  * @param patch - The rows of data
  * @param delimiters - The placeholders' delimiters
  * @param patchPlaceholder - Patches a field in a copy of the rows, as `patchDocument` patches a placeholder
+ * @param renumberDrawings - Gives the drawings in a copy of the rows ids no other drawing in the document has
  */
 export const patchTableRows = ({
     json,
@@ -55,23 +57,26 @@ export const patchTableRows = ({
     patch,
     delimiters: { start, end },
     patchPlaceholder,
+    renumberDrawings,
 }: {
     readonly json: Element;
     readonly key: string;
     readonly patch: TableRowsPatch;
     readonly delimiters: { readonly start: string; readonly end: string };
     readonly patchPlaceholder: PatchPlaceholder;
+    readonly renumberDrawings: RenumberDrawings;
 }): void => {
     const fieldStart = `${start}${key}.`;
 
     for (const rows of findRowsToRepeat(json, fieldStart)) {
         const fields = fieldsIn(rows.elements, fieldStart, end);
         const copies = patch.rows.flatMap((row, index) => {
-            // Like content pasted in Word, only the first copy keeps what must be unique in the document, such as bookmarks
+            // Like content pasted in Word, only the first copy keeps what must be unique in the document, such as bookmarks,
+            // and the drawings in the others get new ids
             const copy: Element = {
                 type: "element",
                 name: "w:tbl",
-                elements: [...(index === 0 ? rows.elements.map(copyOf) : withoutIds(rows.elements))],
+                elements: [...(index === 0 ? rows.elements.map(copyOf) : renumberDrawings(withoutIds(rows.elements)))],
             };
             const fieldPatches = new Map(Object.entries(row).flatMap(([field, p]) => (p === undefined ? [] : [[field, p] as const])));
 

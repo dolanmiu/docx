@@ -1298,6 +1298,88 @@ describe("from-docx", () => {
             });
         });
 
+        describe("Drawings", () => {
+            // Patches a template with this body, and a header if there is one, and returns a reader for the patched parts
+            const patchTemplate = async (
+                { body, header }: { readonly body: string; readonly header?: string },
+                options: Omit<PatchDocumentOptions, "outputType" | "data">,
+            ): Promise<(path: string) => Promise<string | undefined>> => {
+                const template = new JSZip()
+                    .file("[Content_Types].xml", `<?xml version="1.0" encoding="UTF-8" standalone="yes"?><Types/>`)
+                    .file("word/document.xml", `<w:document><w:body>${body}</w:body></w:document>`);
+                if (header) {
+                    template.file("word/header1.xml", `<w:hdr>${header}</w:hdr>`);
+                }
+                vi.spyOn(JSZip, "loadAsync").mockResolvedValue(template);
+
+                const output = await patchDocument({ outputType: "uint8array", data: Buffer.from(""), ...options });
+                // `JSZip.loadAsync` is mocked; the instance method reads the real output
+                const zip = await new JSZip().loadAsync(output);
+                return (path) => zip.file(path)?.async("text") ?? Promise.resolve(undefined);
+            };
+
+            const drawing = (id: number): string =>
+                `<w:r><w:drawing><wp:inline><wp:docPr id="${id}" name="Template"/></wp:inline></w:drawing></w:r>`;
+            // An image whose drawing has the id 1, as the first drawing made after docx is loaded does
+            const image = (): ImageRun =>
+                new ImageRun({
+                    type: "png",
+                    data: Buffer.from(""),
+                    transformation: { width: 10, height: 10 },
+                    altText: { name: "Inserted", id: "1" },
+                });
+            const drawingIdsIn = (xml: string | undefined): readonly number[] =>
+                [...xml!.matchAll(/<wp:docPr id="(\d+)"/g)].map(([, id]) => Number(id));
+
+            afterEach(() => {
+                vi.restoreAllMocks();
+            });
+
+            it("should give an inserted drawing an id no drawing in the template has, in any part", async () => {
+                const read = await patchTemplate(
+                    {
+                        body: `<w:p>${drawing(1)}</w:p><w:p><w:r><w:t>{{image}}</w:t></w:r></w:p>`,
+                        header: `<w:p>${drawing(2)}<w:r><w:t>{{image}}</w:t></w:r></w:p>`,
+                    },
+                    { patches: { image: { type: PatchType.PARAGRAPH, children: [image()] } } },
+                );
+
+                expect(drawingIdsIn(await read("word/document.xml"))).to.deep.equal([1, 3]);
+                expect(drawingIdsIn(await read("word/header1.xml"))).to.deep.equal([2, 4]);
+            });
+
+            it("should keep an inserted drawing's id when no drawing in the template has it", async () => {
+                const read = await patchTemplate(
+                    { body: `<w:p>${drawing(5)}</w:p><w:p><w:r><w:t>{{image}}</w:t></w:r></w:p>` },
+                    { patches: { image: { type: PatchType.DOCUMENT, children: [new Paragraph({ children: [image()] })] } } },
+                );
+
+                expect(drawingIdsIn(await read("word/document.xml"))).to.deep.equal([5, 1]);
+            });
+
+            it("should give a drawing a new id for each occurrence of its placeholder", async () => {
+                const read = await patchTemplate(
+                    { body: `<w:p><w:r><w:t>{{image}} and {{image}}</w:t></w:r></w:p>` },
+                    { patches: { image: { type: PatchType.PARAGRAPH, children: [image()] } } },
+                );
+
+                expect(drawingIdsIn(await read("word/document.xml"))).to.deep.equal([1, 2]);
+            });
+
+            it("should give the drawings in each copy of a footnote ids of their own", async () => {
+                const read = await patchTemplate(
+                    { body: `<w:p>${drawing(1)}<w:r><w:t>{{note}} and {{note}}</w:t></w:r></w:p>` },
+                    {
+                        patches: { note: { type: PatchType.PARAGRAPH, children: [new FootnoteReferenceRun(1)] } },
+                        footnotes: { 1: { children: [new Paragraph({ children: [image()] })] } },
+                    },
+                );
+
+                expect(drawingIdsIn(await read("word/document.xml"))).to.deep.equal([1]);
+                expect(drawingIdsIn(await read("word/footnotes.xml"))).to.deep.equal([2, 3]);
+            });
+        });
+
         describe("Table rows", () => {
             // Patches a template with this body, and a header if there is one, and returns a reader for the patched parts
             const patchTemplate = async (

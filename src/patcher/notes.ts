@@ -25,6 +25,7 @@ import type { IContext, XmlComponent } from "@file/xml-components";
 import { uniqueId } from "@util/convenience-functions";
 
 import type { RenumberBookmarks } from "./bookmark-ids";
+import type { RenumberDrawings } from "./drawing-ids";
 import { relationshipsPathOf, relativeTarget, resolveTarget } from "./drawing-patch";
 import { getFirstLevelElements, toJson } from "./util";
 
@@ -97,6 +98,7 @@ type NotesHelpers = {
     readonly createContext: (path: string) => IContext;
     readonly addContentTypeOverride: (contentType: string, partName: string) => void;
     readonly renumberBookmarks: RenumberBookmarks;
+    readonly renumberDrawings: RenumberDrawings;
 };
 
 /**
@@ -136,7 +138,7 @@ const patchNotesOfKind = (
     notes: PatchNotes,
     // eslint-disable-next-line functional/prefer-readonly-type
     parts: Map<string, Element>,
-    { createContext, addContentTypeOverride, renumberBookmarks }: NotesHelpers,
+    { createContext, addContentTypeOverride, renumberBookmarks, renumberDrawings }: NotesHelpers,
 ): NotesPatcher => {
     const givenNotes = new Map(Object.entries(notes).map(([id, note]) => [Number(id), note]));
     // The note each new id is for, in the order the ids were given
@@ -211,7 +213,8 @@ const patchNotesOfKind = (
                 type: "element",
                 name: kind.noteName,
                 attributes: { "w:id": String(id) },
-                elements: [...contentOfNote.get(note)!],
+                // Each copy of a note gets drawings of its own, as drawings can't share an id
+                elements: [...renumberDrawings(contentOfNote.get(note)!)],
             })),
         );
 
