@@ -1968,9 +1968,7 @@ describe("from-docx", () => {
 
                 expect(numIdsIn(await read("word/document.xml"))).to.deep.equal(["1"]);
                 expect(listsIn(await read("word/numbering.xml"))).to.deep.equal(["abstractNum 1", "num 1 of 1"]);
-                expect(await read("word/_rels/document.xml.rels")).to.match(
-                    new RegExp(`Type="${NUMBERING_RELATIONSHIP}" Target="numbering.xml"`),
-                );
+                expect(await read("word/_rels/document.xml.rels")).to.contain(`Type="${NUMBERING_RELATIONSHIP}" Target="numbering.xml"`);
                 expect(await read("[Content_Types].xml")).to.contain(
                     `<Override ContentType="application/vnd.openxmlformats-officedocument.wordprocessingml.numbering+xml" PartName="/word/numbering.xml"/>`,
                 );
