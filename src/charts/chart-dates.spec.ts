@@ -25,8 +25,8 @@ describe("checkDate", () => {
     it("should accept dates Excel can hold, from 1 March 1900 to 31 December 9999", () => {
         expect(() => checkDate(new Date("1900-03-01"))).to.not.throw();
         expect(() => checkDate(new Date("9999-12-31T23:59:59.999Z"))).to.not.throw();
-        // Year 10000 needs the expanded year format to be read in UTC. "10000-01-01" is read in local time, which is
-        // still 9999 in UTC east of Greenwich.
+        // "10000-01-01" isn't in the date time string format, which writes years past 9999 as "+010000", so Node reads it
+        // in local time. In time zones ahead of UTC, that is still 9999 in UTC.
         expect(() => checkDate(new Date("+010000-01-01T00:00:00Z"))).to.throw("Invalid category date");
     });
 
