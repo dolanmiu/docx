@@ -110,6 +110,11 @@ type NotesHelpers = {
  */
 export type NotesPatcher = {
     /**
+     * Gives the note that a reference run brings with it, such as `new FootnoteReferenceRun({ children })`, an id
+     * among the notes given, which is renumbered as theirs are. A run has the same id each time it is written.
+     */
+    readonly carry: (kind: "footnotes" | "endnotes", reference: object, note: Note) => number;
+    /**
      * Gives each reference to one of the notes, in content that is about to be inserted, a new id that no note of its
      * kind in the document has. Each reference gets a note of its own, so a patch that is inserted twice has two.
      */
@@ -143,8 +148,11 @@ const patchNotesOfKind = (
     // eslint-disable-next-line functional/prefer-readonly-type
     parts: Map<string, Element>,
     { createContext, addContentTypeOverride, renumberBookmarks, renumberDrawings, renumberLists, useStyles }: NotesHelpers,
-): NotesPatcher => {
+): Omit<NotesPatcher, "carry"> & { readonly carry: (reference: object, note: Note) => number } => {
     const givenNotes = new Map(Object.entries(notes).map(([id, note]) => [Number(id), note]));
+    // The ids of the notes that reference runs bring with them, by their runs, after the ids of the notes given
+    const carriedIds = new Map<object, number>();
+    let highestGivenId = [...givenNotes.keys()].filter(Number.isFinite).reduce((highest, id) => Math.max(highest, Math.floor(id)), 0);
     // The note each new id is for, in the order the ids were given
     const noteOfId = new Map<number, Note>();
     // Always the highest id in use, so the one after it is free. The document is only searched for its notes' ids when
@@ -240,14 +248,29 @@ const patchNotesOfKind = (
         }
     };
 
-    return { renumber: (elements) => elements.map(renumber), write };
+    const carry = (reference: object, note: Note): number => {
+        const existing = carriedIds.get(reference);
+        if (existing !== undefined) {
+            return existing;
+        }
+        highestGivenId++;
+        // eslint-disable-next-line functional/immutable-data
+        givenNotes.set(highestGivenId, note);
+        // eslint-disable-next-line functional/immutable-data
+        carriedIds.set(reference, highestGivenId);
+        return highestGivenId;
+    };
+
+    return { renumber: (elements) => elements.map(renumber), write, carry };
 };
 
 /**
  * Creates the writer of the footnotes and endnotes that patches refer to.
  *
  * A patch refers to a note with a reference run, such as `new FootnoteReferenceRun(1)`, whose id is the note's in
- * `footnotes`. Only references to the given notes are renumbered, and only the notes that are referred to are written.
+ * `footnotes`, or with a run that brings its note with it, such as `new FootnoteReferenceRun({ children })`, which is
+ * given an id with `carry` as it is written. Only references to these notes are renumbered, and only the notes that
+ * are referred to are written.
  *
  * @param notes - The footnotes and endnotes, by the id the patches' reference runs are given
  * @param parts - The document's XML parts, parsed, by their paths, which the notes are written to
@@ -259,12 +282,16 @@ export const patchNotes = (
     parts: Map<string, Element>,
     helpers: NotesHelpers,
 ): NotesPatcher => {
-    const patchers = [patchNotesOfKind(FOOTNOTES, footnotes, parts, helpers), patchNotesOfKind(ENDNOTES, endnotes, parts, helpers)];
+    const patchers = {
+        footnotes: patchNotesOfKind(FOOTNOTES, footnotes, parts, helpers),
+        endnotes: patchNotesOfKind(ENDNOTES, endnotes, parts, helpers),
+    };
 
     return {
-        renumber: (elements) => patchers.reduce((renumbered, patcher) => patcher.renumber(renumbered), elements),
+        carry: (kind, reference, note) => patchers[kind].carry(reference, note),
+        renumber: (elements) => Object.values(patchers).reduce((renumbered, patcher) => patcher.renumber(renumbered), elements),
         write: () => {
-            for (const patcher of patchers) {
+            for (const patcher of Object.values(patchers)) {
                 patcher.write();
             }
         },

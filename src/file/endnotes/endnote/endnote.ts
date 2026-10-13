@@ -1,3 +1,4 @@
+import { FirstNoteParagraph } from "@file/footnotes/footnote/note-paragraph";
 import type { Paragraph } from "@file/paragraph";
 import { XmlComponent } from "@file/xml-components";
 
@@ -26,14 +27,8 @@ export class Endnote extends XmlComponent {
             }),
         );
 
-        for (let i = 0; i < options.children.length; i++) {
-            const child = options.children[i];
-
-            if (i === 0) {
-                child.addRunToFront(new EndnoteRefRun());
-            }
-
-            this.root.push(child);
+        for (const [index, child] of options.children.entries()) {
+            this.root.push(index === 0 ? new FirstNoteParagraph(child, new EndnoteRefRun()) : child);
         }
     }
 }
