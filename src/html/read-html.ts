@@ -46,11 +46,12 @@ import { type CascadedStyle, compileUserAgentStyleSheet, createCascade } from ".
 import { isForPrint } from "./css/css-syntax";
 import { presentationalHints } from "./css/presentational-hints";
 import { USER_AGENT_STYLES } from "./css/user-agent-styles";
-import { descendantsOf, elementsOf, isElement, textOf } from "./dom";
+import { decodeFragment, descendantsOf, elementsOf, isElement, textOf } from "./dom";
 import { type Flow, type InlineFormat, borderOf, paragraphFormatOf, runFormatOf, twips } from "./formats";
 import { imageOf, resolveUrl, svgImageOf } from "./images";
 import { DEEPEST_LEVEL, HANGING, LIST_INDENT, listLevelOf } from "./lists";
 import { editorLatexOf, isMathRendering, mathOf } from "./math";
+import { type Notes, notesOf } from "./notes";
 import type { HtmlOptions, HtmlWarning } from "./options";
 
 /** How deep in elements content is read with its formatting. Deeper content's text is kept, as a browser stops nesting too */
@@ -64,6 +65,8 @@ type Conversion = {
     readonly options: HtmlOptions;
     /** The bookmark names of the ids and anchor names that links in the HTML go to */
     readonly bookmarks: ReadonlyMap<string, string>;
+    /** The HTML's notes, which are Word's footnotes or endnotes */
+    readonly notes: Notes;
     /** The lists of the paragraphs that Word's HTML puts in lists, by their list and level */
     // eslint-disable-next-line functional/prefer-readonly-type
     readonly wordLists: Map<string, object>;
@@ -147,14 +150,18 @@ const bookmarkNameOf = (id: string, taken: ReadonlySet<string>): string => {
     return unique;
 };
 
-/** The ids that links in the document go to, and their bookmark names */
-const bookmarksOf = (body: Element): ReadonlyMap<string, string> => {
+/**
+ * The ids that links in the document go to, and their bookmark names
+ *
+ * @param skipped - Links that aren't written as links: notes' references, and their notes' links back to them
+ */
+const bookmarksOf = (body: Element, skipped: ReadonlySet<Element>): ReadonlyMap<string, string> => {
     const elements = descendantsOf(body);
     const ids = new Set(elements.flatMap((element) => [element.attribs.id, ...(element.name === "a" ? [element.attribs.name] : [])]));
     const targets = new Map<string, string>();
     const taken = new Set<string>();
     for (const element of elements) {
-        const href = element.name === "a" ? element.attribs.href?.trim() : undefined;
+        const href = element.name === "a" && !skipped.has(element) ? element.attribs.href?.trim() : undefined;
         const id = href?.startsWith("#") ? decodeFragment(href.slice(1)) : undefined;
         if (id === undefined || targets.has(id)) {
             continue;
@@ -169,14 +176,6 @@ const bookmarksOf = (body: Element): ReadonlyMap<string, string> => {
     return targets;
 };
 
-const decodeFragment = (fragment: string): string => {
-    try {
-        return decodeURIComponent(fragment);
-    } catch {
-        return fragment;
-    }
-};
-
 const isBlockDisplay = (display: string): boolean => !INLINE_DISPLAYS.has(display);
 
 /** Whether inline content has anything to show, rather than only spaces that are collapsed away and bookmarks */
@@ -185,6 +184,7 @@ const hasContent = (content: readonly Inline[]): boolean =>
         (item) =>
             item.type === "atom" ||
             item.type === "break" ||
+            item.type === "note" ||
             (item.type === "text" &&
                 (/[^ \t\n\r\f]/.test(item.text) || (item.whiteSpace !== "normal" && item.whiteSpace !== "nowrap" && item.text !== ""))),
     );
@@ -297,6 +297,10 @@ const stateIn = (style: ComputedStyle, state: State, inline: State["inline"], fl
 });
 
 const readElement = (element: Element, parentState: State, conversion: Conversion): readonly Content[] => {
+    // Links back from notes to their references, and what goes with them
+    if (conversion.notes.hidden.has(element)) {
+        return [];
+    }
     if (parentState.depth >= DEEPEST_ELEMENT) {
         conversion.warn({
             code: "too-deep",
@@ -317,6 +321,21 @@ const readElement = (element: Element, parentState: State, conversion: Conversio
     }
     const { name } = element;
     const state: State = { ...parentState, style };
+
+    if (readNote(element, style, parentState, conversion)) {
+        return [];
+    }
+    if (conversion.notes.containers.has(element)) {
+        // A list of notes, or another element with only notes, is read for its notes, and left out
+        readNodes(element.children, stateIn(style, parentState, {}), conversion);
+        return [];
+    }
+    const note = conversion.notes.references.get(element);
+    if (note) {
+        // A note's reference, which is written as it is in the HTML if the note isn't read, such as when it's hidden
+        const inLink = stateIn(style, parentState, inlineOf(element, style, parentState, conversion, cascaded));
+        return [{ type: "note", note, fallback: readNodes(element.children, inLink, conversion).filter((item) => !isBlock(item)) }];
+    }
 
     const latex = editorLatexOf(element);
     if (latex !== undefined) {
@@ -440,8 +459,9 @@ const linkOf = (element: Element, conversion: Conversion): Link | undefined => {
         return undefined;
     }
     if (href.startsWith("#")) {
-        // Every link in the document to an id has a bookmark name
-        return { anchor: conversion.bookmarks.get(decodeFragment(href.slice(1)))! };
+        // Every link in the document to an id has a bookmark name, but notes' references, which aren't links
+        const anchor = conversion.bookmarks.get(decodeFragment(href.slice(1)));
+        return anchor === undefined ? undefined : { anchor };
     }
     if (UNSAFE_LINK.test(href)) {
         conversion.warn({
@@ -451,6 +471,73 @@ const linkOf = (element: Element, conversion: Conversion): Link | undefined => {
         return undefined;
     }
     return { href: resolveUrl(href, conversion.options.baseUrl) ?? href };
+};
+
+/**
+ * Reads a note, when an element is one, into the paragraphs its references' footnotes or endnotes have, in the style
+ * of Word's notes. They aren't indented, or in the lists and links the note is in, and start with a space after the
+ * note's number, as Word's do, without the spaces around the HTML's mark and its link back.
+ *
+ * @returns Whether the element is a note, which is left out where it is
+ */
+const readNote = (element: Element, style: ComputedStyle, state: State, conversion: Conversion): boolean => {
+    const note = conversion.notes.notes.get(element);
+    if (note === undefined) {
+        return false;
+    }
+    const textStyle = note.kind === "endnote" ? "EndnoteText" : "FootnoteText";
+    const blocks = readBlock(element, style, { ...state, inline: {}, flow: { indentLeft: 0, indentRight: 0 } }, conversion, {
+        box: false,
+    });
+    const paragraphs = paragraphsOfNote(blocks, conversion).map((paragraph) =>
+        paragraph.format.style || paragraph.format.heading
+            ? paragraph
+            : { ...paragraph, format: { ...paragraph.format, style: textStyle } },
+    );
+    const written: readonly ParagraphBlock[] =
+        paragraphs.length > 0 ? paragraphs : [{ type: "paragraph", format: { style: textStyle }, content: [] }];
+    // A link to the note, other than its references, goes to the start of the footnote
+    const bookmark = withBookmark(element, [], conversion) as readonly Inline[];
+    const space: Inline = { type: "text", text: " ", format: {}, whiteSpace: "pre" };
+    // eslint-disable-next-line functional/immutable-data
+    note.content = written.map((paragraph, index) => {
+        const started = index === 0 ? trimmed(paragraph.content, "start") : paragraph.content;
+        const content = index === written.length - 1 ? trimmed(started, "end") : started;
+        return { ...paragraph, content: index === 0 ? [space, ...bookmark, ...content] : content };
+    });
+    return true;
+};
+
+/** A note's paragraphs: those of its tables' cells, with a warning, and none of its breaks, as notes have neither */
+const paragraphsOfNote = (blocks: readonly Block[], conversion: Conversion): readonly ParagraphBlock[] =>
+    blocks.flatMap((block): readonly ParagraphBlock[] => {
+        if (block.type === "paragraph") {
+            return [block];
+        }
+        if (block.type === "block-break") {
+            return [];
+        }
+        conversion.warn({
+            code: "table-in-note",
+            message: "A footnote or endnote here has only paragraphs, so the paragraphs of a note's table are kept without it",
+        });
+        return block.rows.flatMap((row) => row.cells.flatMap((cell) => paragraphsOfNote(cell.content, conversion)));
+    });
+
+/** Content without the spaces at its start or end, which leaves out text that is only spaces, and keeps bookmarks */
+const trimmed = (content: readonly Inline[], edge: "start" | "end"): readonly Inline[] => {
+    const items = edge === "start" ? content : [...content].reverse();
+    const index = items.findIndex((other) => other.type !== "bookmark" && (other.type !== "text" || /\S/.test(other.text)));
+    if (index === -1) {
+        return items.filter((other) => other.type === "bookmark");
+    }
+    const item = items[index];
+    const kept = [
+        ...items.slice(0, index).filter((other) => other.type === "bookmark"),
+        item.type === "text" ? { ...item, text: edge === "start" ? item.text.replace(/^\s+/, "") : item.text.replace(/\s+$/, "") } : item,
+        ...items.slice(index + 1),
+    ];
+    return edge === "start" ? kept : [...kept].reverse();
 };
 
 /** An image, or other content of its own, inline, or in a paragraph of its own when it is a block */
@@ -658,7 +745,7 @@ const readList = (element: Element, style: ComputedStyle, state: State, conversi
                 return readNode(child, { ...inner, flow: { ...inner.flow, listDepth: depth } }, conversion);
             }
             const itemStyle = computeStyle(conversion.cascade(child, inner.style.customProperties), inner.style, child.attribs.lang);
-            if (itemStyle.display === "none") {
+            if (itemStyle.display === "none" || readNote(child, itemStyle, inner, conversion)) {
                 return [];
             }
             if (isListWrapper(child)) {
@@ -689,13 +776,17 @@ const readList = (element: Element, style: ComputedStyle, state: State, conversi
             // eslint-disable-next-line functional/immutable-data
             lists.set(itemDepth, { kind, list });
             itemNumber += itemDepth !== depth ? 0 : reversed ? -1 : 1;
-            return readItem(
+            return withBookmark(
                 child,
-                itemStyle,
-                { ...inner, flow: { ...inner.flow, listDepth: itemDepth } },
+                readItem(
+                    child,
+                    itemStyle,
+                    { ...inner, flow: { ...inner.flow, listDepth: itemDepth } },
+                    conversion,
+                    { depth: itemDepth, level, list },
+                    checkbox,
+                ),
                 conversion,
-                { depth: itemDepth, level, list },
-                checkbox,
             );
         });
 
@@ -1049,11 +1140,12 @@ export const readHtml = (html: string, options: HtmlOptions): readonly Block[] =
         .join("\n");
     const cascade = createCascade(
         USER_AGENT_STYLE_SHEET,
-        [...styleElements.map(textOf), options.stylesheet ?? "", styleMap],
+        [...styleElements.map((element) => textOf(element)), options.stylesheet ?? "", styleMap],
         presentationalHints,
     );
 
     const warnings = new Set<string>();
+    const notes = notesOf(body, options.notes === "endnotes" ? "endnote" : "footnote");
     const conversion: Conversion = {
         options,
         warn: (warning) => {
@@ -1065,7 +1157,8 @@ export const readHtml = (html: string, options: HtmlOptions): readonly Block[] =
             }
         },
         cascade,
-        bookmarks: bookmarksOf(body),
+        bookmarks: bookmarksOf(body, new Set([...notes.references.keys(), ...notes.hidden])),
+        notes,
         wordLists: new Map(),
     };
 

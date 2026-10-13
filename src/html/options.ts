@@ -28,7 +28,9 @@ export type HtmlWarningCode =
     /** Content in more than a thousand elements in each other, whose text is kept without its formatting */
     | "too-deep"
     /** A table, list or other block in HTML given to `htmlToRuns`, whose content is kept in the paragraph */
-    | "block-in-paragraph";
+    | "block-in-paragraph"
+    /** A table in a note, whose cells' paragraphs are kept in the footnote or endnote without it */
+    | "table-in-note";
 
 /** Something in the HTML that the document leaves out or has differently */
 export type HtmlWarning = {
@@ -74,6 +76,12 @@ export type HtmlOptions = {
      * `2026-10-13T09:30:00Z`. Without it, they are underlined and struck through, as a browser shows them.
      */
     readonly trackChanges?: { readonly author: string; readonly date?: string };
+    /**
+     * What the HTML's notes are in Word, such as the footnotes of Markdown, Pandoc and Google Docs: `"footnotes"`, at
+     * the foot of the page each is referred to on, by default, or `"endnotes"`, at the end of the document, as a web
+     * page has them. Word's own HTML says which of its notes are footnotes and which are endnotes, which they stay.
+     */
+    readonly notes?: "footnotes" | "endnotes";
     /** Called with each thing in the HTML that the document leaves out or has differently */
     readonly onWarning?: (warning: HtmlWarning) => void;
 };

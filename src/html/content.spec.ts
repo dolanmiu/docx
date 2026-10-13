@@ -155,6 +155,12 @@ describe("htmlToContent: links", () => {
             );
         });
 
+        it("writes a bookmark at an item of a list", () => {
+            expect(html('<ol><li>One</li><li id="second">Two</li></ol><p><a href="#second">See</a></p>')).toMatch(
+                /<w:numId w:val="\{list-0\}"\/><\/w:numPr><\/w:pPr><w:bookmarkStart w:name="second" w:id="0"\/><w:bookmarkEnd w:id="0"\/><w:r><w:t xml:space="preserve">Two<\/w:t>/,
+            );
+        });
+
         it("only writes bookmarks at ids that links go to", () => {
             expect(html('<p id="unused">a</p>')).toBe(formatted([new Paragraph({ children: [text("a")] })]));
         });

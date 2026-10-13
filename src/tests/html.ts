@@ -45,6 +45,30 @@ export const written = (children: readonly (Paragraph | Table)[]): string => {
  */
 export const formatted = (children: readonly (Paragraph | Table)[]): string => normalized(written(children));
 
+/**
+ * Paragraphs and tables written as WordprocessingML in one document's body, with the footnotes and endnotes they bring
+ * with them, other than the separators every document's notes have, each with its ids made the same each time.
+ */
+export const formattedWithNotes = (
+    children: readonly (Paragraph | Table)[],
+): { readonly body: string; readonly footnotes: string; readonly endnotes: string } => {
+    const context = contextOf();
+    const body = children.map((child) => xml(new Formatter().format(child, context))).join("");
+    const notesOf = (wrapper: typeof context.file.FootNotes | typeof context.file.Endnotes, kind: string): string =>
+        [
+            ...xml(new Formatter().format(wrapper.View, { ...context, viewWrapper: wrapper })).matchAll(
+                new RegExp(`<w:${kind} w:id="\\d+">.*?</w:${kind}>`, "g"),
+            ),
+        ]
+            .map(([note]) => note)
+            .join("");
+    return {
+        body: normalized(body),
+        footnotes: normalized(notesOf(context.file.FootNotes, "footnote")),
+        endnotes: normalized(notesOf(context.file.Endnotes, "endnote")),
+    };
+};
+
 /** A paragraph of a list, as Word reads it: its list, numbered from 0 in the order lists start, its level and its text */
 export type ListParagraph = { readonly list: number; readonly level: number; readonly text: string };
 

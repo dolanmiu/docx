@@ -5,7 +5,7 @@
  */
 import { Bookmark, DeletedTextRun, ExternalHyperlink, InsertedTextRun, InternalHyperlink, type ParagraphChild, Tab, TextRun } from "docx";
 
-import type { Inline, Link, Revision, RunFormat } from "./content";
+import type { Link, Revision, RunFormat, WrittenInline } from "./content";
 
 /** A piece of a paragraph, after its spaces are collapsed */
 type Piece =
@@ -48,7 +48,7 @@ const transformed = (text: string, transform: "lowercase" | "capitalize" | undef
  * between. Preserved text, such as `<pre>`'s, keeps its spaces, and its tabs and new lines are tabs and line breaks.
  * A line break that ends the paragraph is left out, as it starts a line with nothing on it.
  */
-const collapse = (content: readonly Inline[]): readonly Piece[] => {
+const collapse = (content: readonly WrittenInline[]): readonly Piece[] => {
     // eslint-disable-next-line functional/prefer-readonly-type
     const pieces: Piece[] = [];
     let lineStart = true;
@@ -64,7 +64,7 @@ const collapse = (content: readonly Inline[]): readonly Piece[] => {
             space = undefined;
         }
     };
-    const addText = (text: string, item: Extract<Inline, { readonly type: "text" }>): void => {
+    const addText = (text: string, item: Extract<WrittenInline, { readonly type: "text" }>): void => {
         const valid = withoutInvalidCharacters(text);
         if (valid !== "") {
             addSpace();
@@ -233,7 +233,7 @@ const childrenOf = (pieces: readonly Exclude<Piece, { readonly type: "bookmark" 
  * @param content - The paragraph's content
  * @param idOf - Gives each tracked change an id no other in the document has
  */
-export const writeInline = (content: readonly Inline[], idOf: () => number): readonly ParagraphChild[] => {
+export const writeInline = (content: readonly WrittenInline[], idOf: () => number): readonly ParagraphChild[] => {
     const pieces = collapse(content);
     // eslint-disable-next-line functional/prefer-readonly-type
     const children: ParagraphChild[] = [];

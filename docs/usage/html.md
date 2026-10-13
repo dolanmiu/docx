@@ -1,6 +1,6 @@
 # HTML
 
-<!-- cspell:ignore EMEA htmldiff katex taskList taskItem -->
+<!-- cspell:ignore EMEA htmldiff katex taskList taskItem fnref -->
 
 `htmlToContent` turns HTML into paragraphs and tables, and `htmlToRuns` turns it into the content of a paragraph. They go in a document as any others do: in its sections, headers, footers, table cells and text boxes, or in a template that `patchDocument` fills.
 
@@ -44,6 +44,7 @@ It reads HTML as a browser does: HTML that isn't valid is read as a browser read
 | `<table>`                                                   | Tables, with merged cells, header rows, widths, borders, backgrounds and alignment         |
 | `<img>`, `<svg>`                                            | Images, with their sizes and alt text, floating when they float                            |
 | `<a href>`                                                  | Hyperlinks in the Hyperlink style, and links to elements in the HTML as links to bookmarks |
+| Notes, such as Markdown's footnotes                         | Word's footnotes, or endnotes                                                              |
 | `<blockquote>`, `<pre>`, `<hr>`                             | Indented paragraphs, paragraphs that keep their spaces, and a line across the page         |
 | `<input type="checkbox">`, editors' lists of to-dos         | Checkboxes                                                                                 |
 | `<math>`, LaTeX that editors and KaTeX keep                 | Equations, as Word's own                                                                   |
@@ -198,6 +199,37 @@ const doc = new Document({
 
 A link to a web address is a hyperlink in the Hyperlink style, resolved against `baseUrl` when it is relative. A link to an element in the HTML, such as `<a href="#results">`, is a link to a bookmark at the element, whose name is its id, made into a name Word allows. `#` and `#top` go to the top of the document. Links to addresses that could run code, such as `javascript:`, are left out, and their text kept.
 
+## Footnotes
+
+The HTML's notes are Word's footnotes, at the foot of the page that refers to each, with their paragraphs, formatting, lists, links and images. It reads the notes that Markdown becomes, with markdown-it, GitHub, Pandoc, Python-Markdown, kramdown, Hugo and reStructuredText, and those of Google Docs, Word, Wikipedia and EPUB.
+
+A link is a note's reference when it goes to an element after it whose block links back to it, as all of these write them, and its text is a mark, such as `1`, `[2]` or `*`, or when it or its note says it is one, such as with the `doc-noteref` and `doc-footnote` roles. The links back to the references, the list of the notes, and the rule and heading above it, are left out. A note that two references go to is a footnote for each, as Word has one reference for each note. Links to headings, back to the top and in tables of contents stay links.
+
+`notes: "endnotes"` makes them endnotes, at the end of the document, as a web page has them. Word's own HTML says which of its notes are footnotes and which are endnotes, which they stay.
+
+```ts live
+import { Document } from "docx";
+import { htmlToContent } from "docx/html";
+
+const doc = new Document({
+    sections: [
+        {
+            children: htmlToContent(`
+                <p>Sales were up 12%<sup><a href="#fn1" id="fnref1">1</a></sup>, led by EMEA<sup><a href="#fn2" id="fnref2">2</a></sup>.</p>
+                <section class="footnotes">
+                    <ol>
+                        <li id="fn1"><p>Compared with the same quarter last year. <a href="#fnref1">↩</a></p></li>
+                        <li id="fn2"><p>Europe, the Middle East and Africa. <a href="#fnref2">↩</a></p></li>
+                    </ol>
+                </section>
+            `),
+        },
+    ],
+});
+```
+
+Notes are only in a document's body, as Word has no footnotes in headers, footers or other notes, so a reference in a header, or in a note, is left out. A table in a note is written as the paragraphs of its cells, with a warning.
+
 ## Math
 
 MathML is written as Word's equations, which Word shows and edits as it does those typed into it. The LaTeX that KaTeX keeps in its MathML, and that editors keep, such as Quill's formulas, TipTap's math and CKEditor's, is read with docx/math's `latexToMath`. A web page that loads `docx/html` with a `<script>` loads `docx/math` before it.
@@ -293,7 +325,7 @@ It reads the HTML of rich-text editors, with the styles of the classes they writ
 - **TipTap**: its highlights, colours, lists of tasks, tables and math.
 - **Lexical**: its spaces, lists in lists and checklists.
 
-It reads what **Word** and **Google Docs** put on the clipboard: Word's style sheet, its lists of numbered paragraphs, and its page breaks, and Google Docs' formatting, line spacing and lists, without the bold of the `<b>` it puts around everything. It reads the HTML that **Markdown** becomes too, with its task lists and KaTeX's math.
+It reads what **Word** and **Google Docs** put on the clipboard: Word's style sheet, its lists of numbered paragraphs, its page breaks and its footnotes and endnotes, and Google Docs' formatting, line spacing and lists, without the bold of the `<b>` it puts around everything. It reads the HTML that **Markdown** becomes too, with its task lists, footnotes and KaTeX's math.
 
 [Example](https://raw.githubusercontent.com/dolanmiu/docx/master/demo/html/editors.ts ":include")
 
@@ -312,6 +344,7 @@ What the HTML has that the document leaves out, or has differently, is told to `
 | `invalid-math`        | Math that can't be read, whose text is kept                                                |
 | `too-deep`            | Content in more than 512 elements in each other, whose text is kept without its formatting |
 | `block-in-paragraph`  | A table or list in HTML given to `htmlToRuns`, whose content is kept                       |
+| `table-in-note`       | A table in a note, whose cells' paragraphs are kept in the footnote without it             |
 
 ```ts
 htmlToContent(html, {
@@ -350,3 +383,9 @@ _Source: https://github.com/dolanmiu/docx/blob/master/demo/html/html-in-template
 [Example](https://raw.githubusercontent.com/dolanmiu/docx/master/demo/html/tracked-changes.ts ":include")
 
 _Source: https://github.com/dolanmiu/docx/blob/master/demo/html/tracked-changes.ts_
+
+### Footnotes
+
+[Example](https://raw.githubusercontent.com/dolanmiu/docx/master/demo/html/footnotes.ts ":include")
+
+_Source: https://github.com/dolanmiu/docx/blob/master/demo/html/footnotes.ts_

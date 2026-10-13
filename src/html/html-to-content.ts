@@ -8,7 +8,7 @@ import type { Paragraph, ParagraphChild, Table } from "docx";
 import type { Block, Inline } from "./content";
 import type { HtmlOptions } from "./options";
 import { readHtml } from "./read-html";
-import { writeBlocks } from "./write-blocks";
+import { withNotes, writeBlocks } from "./write-blocks";
 import { writeInline } from "./write-inline";
 
 // Tracked changes need ids no others in the document have. They are counted from a million, past the ids written by hand
@@ -92,7 +92,10 @@ export const htmlToRuns = (html: string, options: HtmlOptions = {}): readonly Pa
         return { type: "break", format: last?.format ?? {} };
     };
     return writeInline(
-        lines.flatMap((line, index) => (index === lines.length - 1 ? line : [...line, breakAfter(line)])),
+        withNotes(
+            lines.flatMap((line, index) => (index === lines.length - 1 ? line : [...line, breakAfter(line)])),
+            nextRevisionId,
+        ),
         nextRevisionId,
     );
 };

@@ -11,14 +11,21 @@ export const isElement = (node: ChildNode): node is Element => node.type === "ta
 /** An element's children that are elements */
 export const elementsOf = (element: Element): readonly Element[] => element.children.filter(isElement);
 
-/** The text in a node and the elements in it, in order, read without recursion, so no depth of elements is too deep */
-export const textOf = (node: ChildNode): string => {
+/**
+ * The text in a node and the elements in it, in order, read without recursion, so no depth of elements is too deep
+ *
+ * @param skipped - Elements in it whose text is left out
+ */
+export const textOf = (node: ChildNode, skipped: ReadonlySet<ChildNode> = new Set()): string => {
     // eslint-disable-next-line functional/prefer-readonly-type
     const stack: ChildNode[] = [node];
     let text = "";
     while (stack.length > 0) {
         // eslint-disable-next-line functional/immutable-data
         const current = stack.pop()!;
+        if (skipped.has(current)) {
+            continue;
+        }
         if (current.type === "text") {
             text += current.data;
         } else if ("children" in current) {
@@ -53,3 +60,12 @@ export const descendantsOf = (element: Element): readonly Element[] => {
 
 /** Whether an element has a class */
 export const hasClass = (element: Element, name: string): boolean => (element.attribs.class ?? "").split(/\s+/).includes(name);
+
+/** The id in a link's fragment, such as `fn:1` for `#fn%3A1` */
+export const decodeFragment = (fragment: string): string => {
+    try {
+        return decodeURIComponent(fragment);
+    } catch {
+        return fragment;
+    }
+};

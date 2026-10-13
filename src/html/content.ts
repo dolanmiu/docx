@@ -24,6 +24,17 @@ export type ParagraphFormat = Omit<IParagraphOptions, "children" | "text" | "num
  */
 export type Link = { readonly href: string } | { readonly anchor: string };
 
+/**
+ * A note of the HTML, such as a footnote of Markdown's, which is a footnote or an endnote in Word: what it is, and its
+ * paragraphs, which are read where the note is in the HTML, after its references, often. A note that isn't read, such
+ * as one that is hidden, has none, and its references are written as they are in the HTML.
+ */
+export type Note = {
+    readonly kind: "footnote" | "endnote";
+    // eslint-disable-next-line functional/prefer-readonly-type
+    content?: readonly ParagraphBlock[];
+};
+
 /** A tracked change: content inserted or deleted, by an author, at a time */
 export type Revision = { readonly kind: "insertion" | "deletion"; readonly author: string; readonly date: string };
 
@@ -42,7 +53,12 @@ export type Inline =
     /** Content that is one thing, such as an image or a checkbox, which spaces either side of aren't collapsed into */
     | { readonly type: "atom"; readonly child: ParagraphChild; readonly link?: Link }
     /** The start of an element that a link in the HTML goes to */
-    | { readonly type: "bookmark"; readonly name: string };
+    | { readonly type: "bookmark"; readonly name: string }
+    /** A note's reference, with what it is written as if the note isn't read */
+    | { readonly type: "note"; readonly note: Note; readonly fallback: readonly Inline[] };
+
+/** A paragraph's content, with its notes' references written as the references or as they are in the HTML */
+export type WrittenInline = Exclude<Inline, { readonly type: "note" }>;
 
 /** A level of a list: how its items are numbered, or the bullet they have */
 export type ListLevel = {

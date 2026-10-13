@@ -3,7 +3,7 @@ import { describe, expect, it, vi } from "vitest";
 
 // docx's own entry is loaded before its parts that the helpers import, as its modules refer to each other
 import "docx";
-import { formatted, written as writtenOf } from "tests/html";
+import { formatted, formattedWithNotes, written as writtenOf } from "tests/html";
 
 import { htmlToContent } from "./html-to-content";
 import type { HtmlWarning } from "./options";
@@ -37,6 +37,9 @@ const ENTITIES: ReadonlyMap<string, string> = new Map([
     ["apos", "'"],
 ]);
 
+// The number a footnote starts with
+const NOTE_MARK = `<w:r><w:rPr><w:rStyle w:val="FootnoteReference"/></w:rPr><w:footnoteRef/></w:r>`;
+
 // How the outline shows what isn't text
 const SYMBOLS: ReadonlyMap<string, string> = new Map([
     ["<w:br/>", "/"],
@@ -44,6 +47,7 @@ const SYMBOLS: ReadonlyMap<string, string> = new Map([
     ["<m:oMath>", "[math]"],
     ["<wp:inline", "[image]"],
     ["<wp:anchor", "[floating image]"],
+    ["<w:footnoteReference", "[footnote]"],
 ]);
 
 /**
@@ -65,7 +69,7 @@ const outline = (name: string): { readonly lines: readonly string[]; readonly wa
         const numbering = /<w:ilvl w:val="(\d+)"\/><w:numId w:val="([^"]*)"/.exec(paragraph);
         const content = [
             ...paragraph.matchAll(
-                /<w:t[^>]*>([^<]*)<\/w:t>|<w:br\/>|<w:tab\/>|<m:oMath>|<wp:inline|<wp:anchor|<w14:checkbox>.*?<w14:checked w14:val="(\d)"|w:pageBreakBefore/g,
+                /<w:t[^>]*>([^<]*)<\/w:t>|<w:br\/>|<w:tab\/>|<m:oMath>|<wp:inline|<wp:anchor|<w:footnoteReference|<w14:checkbox>.*?<w14:checked w14:val="(\d)"|w:pageBreakBefore/g,
             ),
         ]
             .map(([part, text, checked]) => {
@@ -265,11 +269,11 @@ describe("htmlToContent: editors' HTML", () => {
         );
     });
 
-    it("reads what Markdown becomes, with its task lists, tables, code and KaTeX", () => {
+    it("reads what Markdown becomes, with its task lists, tables, code, KaTeX and footnotes", () => {
         const { lines, warnings } = outline("markdown");
         expect(lines).toEqual([
             "Heading1: Quarterly report",
-            "p: Sales were up 12%, led by EMEA. See the details.[1]",
+            "p: Sales were up 12%, led by EMEA. See the details.[footnote]",
             "p: A quotation.",
             "list 0.0: [x] Done",
             "list 0.0: [ ] To do",
@@ -282,9 +286,12 @@ describe("htmlToContent: editors' HTML", () => {
             "p: const total = sales.reduce((sum, sale) => sum + sale, 0);",
             "p: Inline code, emphasis, deleted and an image: [image]",
             "p: KaTeX: [math]",
-            "p: ",
-            "list 1.0: A footnote. ↩︎",
         ]);
         expect(warnings).toEqual([]);
+        // eslint-disable-next-line @typescript-eslint/naming-convention -- an address, as the option is given
+        expect(formattedWithNotes(htmlToContent(fixture("markdown"), { images: { "logo.png": logo as string } })).footnotes).toBe(
+            `<w:footnote w:id="0"><w:p><w:pPr><w:pStyle w:val="FootnoteText"/></w:pPr>${NOTE_MARK}` +
+                `<w:r><w:t xml:space="preserve"> A footnote.</w:t></w:r></w:p></w:footnote>`,
+        );
     });
 });

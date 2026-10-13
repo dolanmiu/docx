@@ -94,7 +94,7 @@ In a page without a bundler, load `dist/shapes.umd.cjs`, `dist/watermarks.umd.cj
 
 # HTML
 
-HTML, such as what people write in a rich-text editor, becomes a document's paragraphs, lists, tables, images, links and equations with `docx/html`, written in the document's own styles:
+HTML, such as what people write in a rich-text editor, becomes a document's paragraphs, lists, tables, images, links, equations and footnotes with `docx/html`, written in the document's own styles:
 
 ```ts
 import { Document } from "docx";

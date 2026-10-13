@@ -1,12 +1,12 @@
 /**
- * Writes blocks as docx's paragraphs and tables, with their lists numbered, and each page or column break in the
- * block after it.
+ * Writes blocks as docx's paragraphs and tables, with their lists numbered, each page or column break in the block
+ * after it, and their notes' references as footnotes' and endnotes' references.
  *
  * @module
  */
-import { ColumnBreak, Paragraph, Table, TableCell, TableRow } from "docx";
+import { ColumnBreak, EndnoteReferenceRun, FootnoteReferenceRun, Paragraph, Table, TableCell, TableRow } from "docx";
 
-import type { Block } from "./content";
+import type { Block, Inline, WrittenInline } from "./content";
 import { numberLists } from "./lists";
 import { writeInline } from "./write-inline";
 
@@ -28,7 +28,7 @@ export const writeBlocks = (blocks: readonly Block[], idOf: () => number): reado
         }
         if (block.type === "paragraph") {
             const list = numbering.get(block);
-            const children = writeInline(block.content, idOf);
+            const children = writeInline(withNotes(block.content, idOf), idOf);
             // eslint-disable-next-line functional/immutable-data
             written.push(
                 new Paragraph({
@@ -70,3 +70,30 @@ export const writeBlocks = (blocks: readonly Block[], idOf: () => number): reado
     }
     return written;
 };
+
+/**
+ * A paragraph's content, with each note's reference written as a footnote's or endnote's reference with the note's
+ * paragraphs, which each reference has a copy of, as Word's notes have one reference each. The reference to a note that
+ * isn't read, such as a hidden one, is written as it is in the HTML.
+ *
+ * @param content - The paragraph's content
+ * @param idOf - Gives each tracked change an id no other in the document has
+ */
+export const withNotes = (content: readonly Inline[], idOf: () => number): readonly WrittenInline[] =>
+    content.flatMap((item): readonly WrittenInline[] => {
+        if (item.type !== "note") {
+            return [item];
+        }
+        const { note } = item;
+        if (note.content === undefined) {
+            return withNotes(item.fallback, idOf);
+        }
+        // A note has only paragraphs, so they are written as paragraphs
+        const children = writeBlocks(note.content, idOf) as readonly Paragraph[];
+        return [
+            {
+                type: "atom",
+                child: note.kind === "endnote" ? new EndnoteReferenceRun({ children }) : new FootnoteReferenceRun({ children }),
+            },
+        ];
+    });
