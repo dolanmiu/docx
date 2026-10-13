@@ -1,7 +1,13 @@
+import JSZip from "jszip";
 import { describe, expect, it } from "vitest";
 
 import { Formatter } from "@export/formatter";
+import { Packer } from "@export/packer/packer";
+import { File } from "@file/file";
+import { Paragraph } from "@file/paragraph";
+import { Table, TableCell, TableRow } from "@file/table";
 
+import { LevelFormat } from "./level";
 import { Numbering } from "./numbering";
 
 describe("Numbering", () => {
@@ -103,6 +109,71 @@ describe("Numbering", () => {
 
                 expect(numbering.ConcreteNumbering).to.have.length(2);
             });
+
+            it("should add a list's own definition, and number the list from its first level's start", () => {
+                const numbering = new Numbering({ config: [] });
+
+                numbering.createConcreteNumberingInstance("own-list", 0, {
+                    reference: "own-list",
+                    levels: [{ level: 0, format: LevelFormat.UPPER_ROMAN, text: "%1)", start: 4 }],
+                });
+
+                expect(numbering.ConcreteNumbering.map(({ reference }) => reference)).to.deep.equal([
+                    "default-bullet-numbering",
+                    "own-list",
+                ]);
+                expect(numbering.ReferenceConfig).to.deep.equal([[{ level: 0, format: LevelFormat.UPPER_ROMAN, text: "%1)", start: 4 }]]);
+                const written = JSON.stringify(new Formatter().format(numbering));
+                expect(written).to.include('{"w:numFmt":{"_attr":{"w:val":"upperRoman"}}}');
+                expect(written).to.include('{"w:lvlText":{"_attr":{"w:val":"%1)"}}}');
+                expect(written).to.include('{"w:startOverride":{"_attr":{"w:val":4}}}');
+            });
+
+            it("should add a list's own definition once, however many paragraphs and instances give it", () => {
+                const numbering = new Numbering({ config: [] });
+                const definition = { reference: "own-list", levels: [{ level: 0, format: LevelFormat.DECIMAL, text: "%1." }] };
+
+                numbering.createConcreteNumberingInstance("own-list", 0, definition);
+                numbering.createConcreteNumberingInstance("own-list", 0, definition);
+                numbering.createConcreteNumberingInstance("own-list", 1, definition);
+
+                expect(numbering.ConcreteNumbering.map(({ instance }) => instance)).to.deep.equal([0, 0, 1]);
+                expect(numbering.ReferenceConfig).to.have.length(1);
+                expect(JSON.stringify(new Formatter().format(numbering)).split('"w:abstractNum"').length - 1).to.equal(2);
+            });
+
+            it("should keep the document's own definition of a reference, rather than one a paragraph gives", () => {
+                const numbering = new Numbering({
+                    config: [{ reference: "steps", levels: [{ level: 0, format: LevelFormat.DECIMAL, text: "%1.", start: 7 }] }],
+                });
+
+                numbering.createConcreteNumberingInstance("steps", 0, {
+                    reference: "steps",
+                    levels: [{ level: 0, format: LevelFormat.LOWER_LETTER, text: "%1)" }],
+                });
+
+                const written = JSON.stringify(new Formatter().format(numbering));
+                expect(written).to.include('{"w:numFmt":{"_attr":{"w:val":"decimal"}}}');
+                expect(written).not.to.include("lowerLetter");
+                expect(written).to.include('{"w:startOverride":{"_attr":{"w:val":7}}}');
+            });
+
+            it("should keep the first definition a paragraph gives of a reference", () => {
+                const numbering = new Numbering({ config: [] });
+
+                numbering.createConcreteNumberingInstance("own-list", 0, {
+                    reference: "own-list",
+                    levels: [{ level: 0, format: LevelFormat.LOWER_ROMAN, text: "%1." }],
+                });
+                numbering.createConcreteNumberingInstance("own-list", 1, {
+                    reference: "own-list",
+                    levels: [{ level: 0, format: LevelFormat.UPPER_LETTER, text: "%1." }],
+                });
+
+                const written = JSON.stringify(new Formatter().format(numbering));
+                expect(written).to.include("lowerRoman");
+                expect(written).not.to.include("upperLetter");
+            });
         });
         describe("#referenceConfigMap", () => {
             it("should store level configs into referenceConfigMap", () => {
@@ -140,6 +211,58 @@ describe("Numbering", () => {
             // eslint-disable-next-line @typescript-eslint/no-explicit-any
             const names = tree["w:numbering"].map((element: any) => Object.keys(element)[0]);
             expect(names).to.deep.equal(["_attr", "w:abstractNum", "w:abstractNum", "w:num", "w:num", "w:num"]);
+        });
+    });
+
+    describe("lists that paragraphs give the definitions of", () => {
+        it("should write each list once, in a document with no numbering option, with the paragraphs' list ids", async () => {
+            const roman = { reference: "roman", levels: [{ level: 0, format: LevelFormat.UPPER_ROMAN, text: "%1." }] };
+            const letters = { reference: "letters", levels: [{ level: 0, format: LevelFormat.LOWER_LETTER, text: "%1)", start: 3 }] };
+            const file = new File({
+                sections: [
+                    {
+                        children: [
+                            new Paragraph({ text: "One", numbering: { reference: roman, level: 0 } }),
+                            new Paragraph({ text: "Two", numbering: { reference: roman, level: 0 } }),
+                            new Table({
+                                rows: [
+                                    new TableRow({
+                                        children: [
+                                            new TableCell({
+                                                children: [new Paragraph({ text: "Cell", numbering: { reference: letters, level: 0 } })],
+                                            }),
+                                        ],
+                                    }),
+                                ],
+                            }),
+                        ],
+                    },
+                ],
+            });
+
+            const zip = await JSZip.loadAsync(await Packer.toBuffer(file));
+            const document = await zip.file("word/document.xml")!.async("text");
+            const numbering = await zip.file("word/numbering.xml")!.async("text");
+
+            expect([...document.matchAll(/<w:numId w:val="([^"]*)"\/>/g)].map(([, id]) => id)).to.deep.equal(["2", "2", "3"]);
+            expect(numbering.split("<w:abstractNum ").length - 1).to.equal(3);
+            expect(numbering).to.match(/<w:num w:numId="2"><w:abstractNumId w:val="\d+"\/>/);
+            expect(numbering).to.contain('<w:numFmt w:val="upperRoman"/>');
+            expect(numbering).to.contain('<w:lvlText w:val="%1)"/>');
+            expect(numbering).to.contain('<w:startOverride w:val="3"/>');
+        });
+
+        it("should write the lists again when the document is packed again", async () => {
+            const roman = { reference: "roman", levels: [{ level: 0, format: LevelFormat.UPPER_ROMAN, text: "%1." }] };
+            const file = new File({
+                sections: [{ children: [new Paragraph({ text: "One", numbering: { reference: roman, level: 0 } })] }],
+            });
+
+            const first = await (await JSZip.loadAsync(await Packer.toBuffer(file))).file("word/numbering.xml")!.async("text");
+            const second = await (await JSZip.loadAsync(await Packer.toBuffer(file))).file("word/numbering.xml")!.async("text");
+
+            expect(second).to.equal(first);
+            expect(second.split("<w:abstractNum ").length - 1).to.equal(2);
         });
     });
 });

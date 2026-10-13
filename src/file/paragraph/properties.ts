@@ -11,6 +11,7 @@
  * @module
  */
 import type { SectionProperties } from "@file/document/body/section-properties/section-properties";
+import type { NumberingDefinition } from "@file/numbering/numbering";
 import { ChangeAttributes, type IChangedAttributesProperties } from "@file/track-revision/track-revision";
 import { type IContext, type IXmlableObject, IgnoreIfEmptyXmlComponent, OnOffElement, XmlComponent } from "@file/xml-components";
 
@@ -75,8 +76,13 @@ export type IParagraphStylePropertiesOptions = {
     /** Numbering configuration for lists, or false to remove numbering */
     readonly numbering?:
         | {
-              /** Reference ID of the numbering definition to use */
-              readonly reference: string;
+              /**
+               * The list the paragraph is in: the reference of one of the document's `numbering` configs, or a list's
+               * definition, its reference and its levels, for a list the document's `numbering` option doesn't have.
+               * The definition is added to the document's numbering when the paragraph is written, unless it already has
+               * a list with that reference, which is kept
+               */
+              readonly reference: string | NumberingDefinition;
               /** Level in the numbering hierarchy (0-8) */
               readonly level: number;
               /** Instance number for multiple lists with same reference */
@@ -290,7 +296,11 @@ const RIGHT_TO_LEFT_ALIGNMENTS: Partial<Record<AlignmentValue, AlignmentValue>> 
  */
 export class ParagraphProperties extends IgnoreIfEmptyXmlComponent {
     // eslint-disable-next-line functional/prefer-readonly-type
-    private readonly numberingReferences: { readonly reference: string; readonly instance: number }[] = [];
+    private readonly numberingReferences: {
+        readonly reference: string;
+        readonly instance: number;
+        readonly definition?: NumberingDefinition;
+    }[] = [];
 
     /**
      * Creates paragraph properties.
@@ -348,12 +358,11 @@ export class ParagraphProperties extends IgnoreIfEmptyXmlComponent {
         }
 
         if (options.numbering) {
-            this.numberingReferences.push({
-                reference: options.numbering.reference,
-                instance: options.numbering.instance ?? 0,
-            });
+            const { reference: list, instance = 0, level } = options.numbering;
+            const reference = typeof list === "string" ? list : list.reference;
+            this.numberingReferences.push({ reference, instance, definition: typeof list === "string" ? undefined : list });
 
-            this.push(new NumberProperties(`${options.numbering.reference}-${options.numbering.instance ?? 0}`, options.numbering.level));
+            this.push(new NumberProperties(`${reference}-${instance}`, level));
         } else if (options.numbering === false) {
             this.push(new NumberProperties(0, 0));
         }
@@ -485,8 +494,8 @@ export class ParagraphProperties extends IgnoreIfEmptyXmlComponent {
      */
     public prepForXml(context: IContext): IXmlableObject | undefined {
         if (!(context.viewWrapper instanceof FontWrapper)) {
-            for (const reference of this.numberingReferences) {
-                context.file.Numbering.createConcreteNumberingInstance(reference.reference, reference.instance);
+            for (const { reference, instance, definition } of this.numberingReferences) {
+                context.file.Numbering.createConcreteNumberingInstance(reference, instance, definition);
             }
         }
 

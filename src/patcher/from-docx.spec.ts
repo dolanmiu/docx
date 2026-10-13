@@ -1880,6 +1880,55 @@ describe("from-docx", () => {
                 );
             });
 
+            it("should put the paragraphs in a list they give the definition of, with no numbering option", async () => {
+                const ownList = { reference: "own-list", levels: [{ level: 0, format: LevelFormat.UPPER_ROMAN, text: "%1." }] };
+                const read = await patchTemplate(
+                    { body: placeholder("list"), numbering: TEMPLATE_NUMBERING },
+                    {
+                        patches: {
+                            list: {
+                                type: PatchType.DOCUMENT,
+                                children: [
+                                    new Paragraph({ text: "First", numbering: { reference: ownList, level: 0 } }),
+                                    new Paragraph({ text: "Second", numbering: { reference: ownList, level: 0 } }),
+                                ],
+                            },
+                        },
+                    },
+                );
+
+                expect(numIdsIn(await read("word/document.xml"))).to.deep.equal(["3", "3"]);
+                const numbering = await read("word/numbering.xml");
+                expect(listsIn(numbering)).to.deep.equal([
+                    "abstractNum 0",
+                    "abstractNum 1",
+                    "abstractNum 2",
+                    "num 1 of 0",
+                    "num 2 of 1",
+                    "num 3 of 2",
+                    "numIdMacAtCleanup",
+                ]);
+                expect(numbering).to.match(/<w:abstractNum w:abstractNumId="2"[^>]*>.*?<w:numFmt w:val="upperRoman"\/>/);
+            });
+
+            it("should put the paragraphs in a list they give the definition of, in a template without a numbering part", async () => {
+                const ownList = { reference: "own-list", levels: [{ level: 0, format: LevelFormat.DECIMAL, text: "%1." }] };
+                const read = await patchTemplate(
+                    { body: placeholder("list") },
+                    {
+                        patches: {
+                            list: {
+                                type: PatchType.DOCUMENT,
+                                children: [new Paragraph({ text: "First", numbering: { reference: ownList, level: 0 } })],
+                            },
+                        },
+                    },
+                );
+
+                expect(numIdsIn(await read("word/document.xml"))).to.deep.equal(["1"]);
+                expect(listsIn(await read("word/numbering.xml"))).to.deep.equal(["abstractNum 1", "num 1 of 1"]);
+            });
+
             it("should keep a list's id from one patch to the next, so it is numbered on", async () => {
                 const step = (text: string): IPatch => ({
                     type: PatchType.DOCUMENT,
