@@ -102,6 +102,38 @@ const doc = new Document({
 });
 ```
 
+### Lists that bring their own definition
+
+A paragraph's `numbering` can give its list's definition, its `reference` and its `levels`, rather than the reference of one in the document's `numbering` option. The definition is added to the document's numbering when the paragraph is written, unless the document already has a list with its reference. It is how content made before the document it goes in, such as by a function that returns paragraphs, brings its lists with it.
+
+```ts live
+import { AlignmentType, Document, LevelFormat, Paragraph } from "docx";
+
+const steps = {
+    reference: "steps",
+    levels: [
+        {
+            level: 0,
+            format: LevelFormat.UPPER_ROMAN,
+            text: "Step %1.",
+            alignment: AlignmentType.START,
+            style: { paragraph: { indent: { left: 1080, hanging: 1080 } } },
+        },
+    ],
+};
+
+const doc = new Document({
+    sections: [
+        {
+            children: [
+                new Paragraph({ text: "Measure the flour", numbering: { reference: steps, level: 0 } }),
+                new Paragraph({ text: "Mix in the water", numbering: { reference: steps, level: 0 } }),
+            ],
+        },
+    ],
+});
+```
+
 ### Numbering options
 
 Along with `reference` and `level`, the `numbering` object supports an optional `instance` property:

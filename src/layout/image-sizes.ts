@@ -3,6 +3,9 @@
  * at their shapes' sizes but for the smallest, which it draws by their pixels (see `read-document.ts`). PNG, JPEG, GIF
  * and BMP files are read; another format's size isn't.
  *
+ * `src/html/images/image-files.ts` has a copy of its reading of sizes, without the resolutions, as `docx/layout` and
+ * `docx/html` are separate entries that import only `docx`. Make a fix in both.
+ *
  * @module
  */
 // cspell:ignore IHDR IDAT IEND JFIF

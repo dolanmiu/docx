@@ -46,6 +46,19 @@ describe("Paragraph", () => {
         });
     });
 
+    describe("#addRunToFront()", () => {
+        it("should put the run before the paragraph's content, after its properties", () => {
+            const paragraph = new Paragraph({ style: "Quote", children: [new TextRun("Second")] }).addRunToFront(new TextRun("First"));
+            expect(new Formatter().format(paragraph)).to.deep.equal({
+                "w:p": [
+                    { "w:pPr": [{ "w:pStyle": { _attr: { "w:val": "Quote" } } }] },
+                    { "w:r": [{ "w:t": [{ _attr: { "xml:space": "preserve" } }, "First"] }] },
+                    { "w:r": [{ "w:t": [{ _attr: { "xml:space": "preserve" } }, "Second"] }] },
+                ],
+            });
+        });
+    });
+
     describe("#heading1()", () => {
         it("should add heading style to JSON", () => {
             const paragraph = new Paragraph({
@@ -683,6 +696,43 @@ describe("Paragraph", () => {
                     },
                 ],
             });
+        });
+
+        it("should put the paragraph in a list it gives the definition of, adding the definition as it is written", () => {
+            const definition = { reference: "own-list", levels: [{ level: 0, text: "%1." }] };
+            const createConcreteNumberingInstance = vi.fn();
+            const paragraph = new Paragraph({ numbering: { reference: definition, level: 0, instance: 2 } });
+
+            const tree = new Formatter().format(paragraph, {
+                ...createNumberingContext(),
+                file: { Numbering: { createConcreteNumberingInstance } } as unknown as File,
+            });
+
+            expect(createConcreteNumberingInstance).toHaveBeenCalledWith("own-list", 2, definition);
+            expect(tree).to.deep.equal({
+                "w:p": [
+                    {
+                        "w:pPr": [
+                            { "w:pStyle": { _attr: { "w:val": "ListParagraph" } } },
+                            {
+                                "w:numPr": [{ "w:ilvl": { _attr: { "w:val": 0 } } }, { "w:numId": { _attr: { "w:val": "{own-list-2}" } } }],
+                            },
+                        ],
+                    },
+                ],
+            });
+        });
+
+        it("should not give the numbering a definition for a paragraph in one of the document's lists", () => {
+            const createConcreteNumberingInstance = vi.fn();
+            const paragraph = new Paragraph({ numbering: { reference: "steps", level: 0 } });
+
+            new Formatter().format(paragraph, {
+                ...createNumberingContext(),
+                file: { Numbering: { createConcreteNumberingInstance } } as unknown as File,
+            });
+
+            expect(createConcreteNumberingInstance).toHaveBeenCalledWith("steps", 0, undefined);
         });
 
         it("should not add ListParagraph style when custom is true", () => {

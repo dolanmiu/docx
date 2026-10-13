@@ -12,6 +12,7 @@ import type { Paragraph } from "@file/paragraph";
 import { XmlComponent } from "@file/xml-components";
 
 import { FootnoteAttributes } from "./footnote-attributes";
+import { FirstNoteParagraph } from "./note-paragraph";
 import { FootnoteRefRun } from "./run/footnote-ref-run";
 
 /**
@@ -90,14 +91,8 @@ export class Footnote extends XmlComponent {
             }),
         );
 
-        for (let i = 0; i < options.children.length; i++) {
-            const child = options.children[i];
-
-            if (i === 0) {
-                child.addRunToFront(new FootnoteRefRun());
-            }
-
-            this.root.push(child);
+        for (const [index, child] of options.children.entries()) {
+            this.root.push(index === 0 ? new FirstNoteParagraph(child, new FootnoteRefRun()) : child);
         }
     }
 }

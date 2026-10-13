@@ -396,7 +396,8 @@ const config: Linter.Config<Linter.RulesRecord>[] = [
     // docx/layout (src/layout), are built on docx's public API. They import docx by name, so their builds leave docx out
     // and the package has one copy of each class and id counter. docx doesn't import them. Specs may import docx's
     // internals, such as the Formatter. docx/math (src/math) re-exports docx's math, which docx still exports and keeps in
-    // src/file/paragraph/math. src/text-layout measures text for docx/shapes and docx/layout, and each bundles a copy
+    // src/file/paragraph/math. src/text-layout measures text for docx/shapes and docx/layout, and each bundles a copy.
+    // docx/html (src/html) imports docx/math by name too, for the math in HTML
     {
         files: ["src/**/*.ts"],
         ignores: [
@@ -405,6 +406,7 @@ const config: Linter.Config<Linter.RulesRecord>[] = [
             "src/charts/**",
             "src/math/**",
             "src/layout/**",
+            "src/html/**",
             "src/text-layout/**",
             "**/*.spec.ts",
         ],
@@ -416,7 +418,7 @@ const config: Linter.Config<Linter.RulesRecord>[] = [
                     patterns: [
                         { group: ["docx/*"], message: "docx doesn't import its optional entries, such as docx/shapes" },
                         {
-                            regex: "(^|/)(shapes|watermarks|charts|layout|text-layout)(/|$)",
+                            regex: "(^|/)(shapes|watermarks|charts|layout|html|text-layout)(/|$)",
                             message: "docx doesn't import its optional entries, such as docx/shapes",
                         },
                     ],
@@ -425,7 +427,15 @@ const config: Linter.Config<Linter.RulesRecord>[] = [
         },
     },
     {
-        files: ["src/shapes/*.ts", "src/watermarks/*.ts", "src/charts/*.ts", "src/math/*.ts", "src/layout/*.ts", "src/text-layout/*.ts"],
+        files: [
+            "src/shapes/*.ts",
+            "src/watermarks/*.ts",
+            "src/charts/*.ts",
+            "src/math/*.ts",
+            "src/layout/*.ts",
+            "src/html/*.ts",
+            "src/text-layout/*.ts",
+        ],
         ignores: ["**/*.spec.ts"],
         rules: {
             "no-restricted-imports": [
@@ -443,7 +453,7 @@ const config: Linter.Config<Linter.RulesRecord>[] = [
         },
     },
     {
-        files: ["src/shapes/*/*.ts", "src/watermarks/*/*.ts", "src/charts/*/*.ts", "src/layout/*/*.ts"],
+        files: ["src/shapes/*/*.ts", "src/watermarks/*/*.ts", "src/charts/*/*.ts", "src/layout/*/*.ts", "src/html/*/*.ts"],
         ignores: ["**/*.spec.ts"],
         rules: {
             "no-restricted-imports": [

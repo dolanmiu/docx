@@ -15,6 +15,7 @@ import { DocumentAttributeNamespaces } from "@file/document";
 import type { IViewWrapper } from "@file/document-wrapper";
 import type { File } from "@file/file";
 import type { FileChild } from "@file/file-child";
+import type { NoteContent } from "@file/footnotes";
 import { type IMediaData, Media } from "@file/media";
 import { type INumberingOptions, Numbering } from "@file/numbering";
 import { PackageParts } from "@file/package-part/package-part";
@@ -326,6 +327,13 @@ export const patchDocument = async <T extends PatchDocumentOutputType = PatchDoc
         // The paragraphs in patches add the lists they use to it as they're written, as in a Document
         Numbering: new Numbering(numbering),
         Theme: themeColors && { Colors: themeColors },
+        // The notes that reference runs in patches bring with them are given to the notes patcher as they're written
+        FootNotes: {
+            View: { idOf: (reference: object, note: NoteContent, context: IContext) => carryNote("footnotes", reference, note, context) },
+        },
+        Endnotes: {
+            View: { idOf: (reference: object, note: NoteContent, context: IContext) => carryNote("endnotes", reference, note, context) },
+        },
         PackageParts: new PackageParts(
             {
                 // eslint-disable-next-line functional/immutable-data
@@ -400,9 +408,14 @@ export const patchDocument = async <T extends PatchDocumentOutputType = PatchDoc
     // So are the ids of drawings, even in different parts, so the drawings patches insert get ids no drawing has
     const renumberDrawings = renumberDrawingsAvoiding([...map.values()].flatMap(findDrawingIds));
 
-    const createContext = (key: string): IContext => ({
-        file,
-        viewWrapper: {
+    // Each part has one view wrapper, so content can tell which part it is written in, as notes are only in the body
+    const viewWrappers = new Map<string, IViewWrapper>();
+    const viewWrapperOf = (key: string): IViewWrapper => {
+        const existing = viewWrappers.get(key);
+        if (existing) {
+            return existing;
+        }
+        const viewWrapper = {
             Relationships: {
                 addRelationship: (
                     id: string | number,
@@ -414,9 +427,12 @@ export const patchDocument = async <T extends PatchDocumentOutputType = PatchDoc
                     relationshipAdditions.push({ key, id, type, target, targetMode });
                 },
             },
-        } as unknown as IViewWrapper,
-        stack: [],
-    });
+        } as unknown as IViewWrapper;
+        // eslint-disable-next-line functional/immutable-data
+        viewWrappers.set(key, viewWrapper);
+        return viewWrapper;
+    };
+    const createContext = (key: string): IContext => ({ file, viewWrapper: viewWrapperOf(key), stack: [] });
 
     const addContentTypeOverride = (contentType: string, partName: string): void => {
         // eslint-disable-next-line functional/immutable-data
@@ -435,6 +451,9 @@ export const patchDocument = async <T extends PatchDocumentOutputType = PatchDoc
         renumberLists: lists.renumber,
         useStyles: styles.use,
     });
+    // Word has notes only in a document's body, so a reference run with its own note is left out of other parts
+    const carryNote = (kind: "footnotes" | "endnotes", reference: object, note: NoteContent, context: IContext): number | undefined =>
+        context.viewWrapper === viewWrapperOf("word/document.xml") ? notes.carry(kind, reference, note) : undefined;
 
     // Drawings whose alt text holds a placeholder, such as charts, are patched first, so their patches only see the
     // template's own drawings, and not those the other patches add

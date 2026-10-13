@@ -19,6 +19,22 @@ import { ConcreteNumbering } from "./num";
 import { DocumentAttributes } from "../document/document-attributes";
 
 /**
+ * A list's definition: its reference and its levels.
+ *
+ * A document's `numbering` option has a definition for each of its lists. A paragraph can also be given a list's
+ * definition as its `numbering`'s `reference`, for a list the document's `numbering` option doesn't have, which is added
+ * to the document's numbering when the paragraph is written.
+ *
+ * @see {@link Numbering}
+ */
+export type NumberingDefinition = {
+    /** Array of level definitions for this numbering configuration. */
+    readonly levels: readonly ILevelsOptions[];
+    /** Unique reference name for this numbering configuration. */
+    readonly reference: string;
+};
+
+/**
  * Options for configuring numbering definitions.
  *
  * @property config - Array of numbering configurations
@@ -27,12 +43,7 @@ import { DocumentAttributes } from "../document/document-attributes";
  */
 export type INumberingOptions = {
     /** Array of numbering configurations, each with levels and a reference name. */
-    readonly config: readonly {
-        /** Array of level definitions for this numbering configuration. */
-        readonly levels: readonly ILevelsOptions[];
-        /** Unique reference name for this numbering configuration. */
-        readonly reference: string;
-    }[];
+    readonly config: readonly NumberingDefinition[];
 };
 
 /**
@@ -274,8 +285,21 @@ export class Numbering extends XmlComponent {
      *
      * @param reference - The reference name of the abstract numbering definition
      * @param instance - The instance number for this concrete numbering
+     * @param definition - The list's definition, for a list a paragraph gives its own definition of. It is added with
+     * its reference, unless the numbering already has a list with that reference, such as one of the document's
+     * `numbering` option, which is kept
      */
-    public createConcreteNumberingInstance(reference: string, instance: number): void {
+    public createConcreteNumberingInstance(reference: string, instance: number, definition?: NumberingDefinition): void {
+        if (definition && !this.abstractNumberingMap.has(definition.reference)) {
+            // eslint-disable-next-line functional/immutable-data
+            this.abstractNumberingMap.set(
+                definition.reference,
+                new AbstractNumbering(this.abstractNumUniqueNumericId(), definition.levels),
+            );
+            // eslint-disable-next-line functional/immutable-data
+            this.referenceConfigMap.set(definition.reference, definition.levels);
+        }
+
         const abstractNumbering = this.abstractNumberingMap.get(reference);
 
         if (!abstractNumbering) {

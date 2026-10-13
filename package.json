@@ -66,6 +66,16 @@
                 "types": "./dist/layout.d.cts",
                 "default": "./dist/layout.cjs"
             }
+        },
+        "./html": {
+            "import": {
+                "types": "./dist/html.d.ts",
+                "default": "./dist/html.mjs"
+            },
+            "require": {
+                "types": "./dist/html.d.cts",
+                "default": "./dist/html.cjs"
+            }
         }
     },
     "typesVersions": {
@@ -84,6 +94,9 @@
             ],
             "layout": [
                 "./dist/layout.d.ts"
+            ],
+            "html": [
+                "./dist/html.d.ts"
             ]
         }
     },
@@ -91,14 +104,14 @@
         "dist"
     ],
     "scripts": {
-        "build": "tsc && vite build && vite build --config vite.entries.config.ts --mode shapes && vite build --config vite.entries.config.ts --mode watermarks && vite build --config vite.entries.config.ts --mode charts && vite build --config vite.entries.config.ts --mode math && vite build --config vite.entries.config.ts --mode layout",
+        "build": "tsc && vite build && vite build --config vite.entries.config.ts --mode shapes && vite build --config vite.entries.config.ts --mode watermarks && vite build --config vite.entries.config.ts --mode charts && vite build --config vite.entries.config.ts --mode math && vite build --config vite.entries.config.ts --mode layout && vite build --config vite.entries.config.ts --mode html",
         "test": "vitest --ui --coverage",
         "test:ci": "vitest run --coverage",
         "prepublishOnly": "npm run build --omit=dev",
         "lint": "eslint --config eslint.config.ts",
         "predemo": "npm run build",
         "demo": "tsx ./demo/index.ts",
-        "typedoc": "typedoc src/index.ts src/shapes/index.ts src/watermarks/index.ts src/charts/index.ts src/math/index.ts src/layout/index.ts --tsconfig tsconfig.typedoc.json",
+        "typedoc": "typedoc src/index.ts src/shapes/index.ts src/watermarks/index.ts src/charts/index.ts src/math/index.ts src/layout/index.ts src/html/index.ts --tsconfig tsconfig.typedoc.json",
         "prettier": "prettier -l \"{src,scripts,demo,docs}/**/*.{ts,html,md}\"",
         "prettier:fix": "npm run prettier -- --write",
         "cspell": "cspell \"{src,demo,docs,scripts}/**/*.{ts,scss,html,md}\" && cspell \"./*.*\"",
@@ -154,7 +167,10 @@
         "@vitest/coverage-v8": "^5.0.2",
         "@vitest/ui": "^5.0.2",
         "cspell": "^10.0.0",
+        "css-select": "^7.0.0",
+        "css-what": "^8.0.0",
         "docsify-cli": "^5.0.0",
+        "domhandler": "^6.0.1",
         "eslint": "^10.11.0",
         "eslint-import-resolver-typescript": "^4.3.2",
         "eslint-plugin-functional": "^10.0.1",
@@ -169,6 +185,8 @@
         "inquirer": "^14.0.0",
         "jiti": "^2.3.3",
         "jsdom": "^30.1.0",
+        "parse5": "^8.0.1",
+        "parse5-htmlparser2-tree-adapter": "^8.0.1",
         "pixelmatch": "^8.0.0",
         "pngjs": "^7.0.0",
         "pre-commit": "^2.0.0",

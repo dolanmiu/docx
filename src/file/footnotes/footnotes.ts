@@ -14,6 +14,7 @@ import { type IContext, type IXmlableObject, XmlComponent } from "@file/xml-comp
 import { LineRuleType, Paragraph } from "../paragraph";
 import { Footnote, FootnoteType } from "./footnote/footnote";
 import { ContinuationSeperatorRun } from "./footnote/run/continuation-seperator-run";
+import type { NoteContent } from "./footnote/run/reference-run";
 import { SeperatorRun } from "./footnote/run/seperator-run";
 import { FootnotesAttributes } from "./footnotes-attributes";
 
@@ -60,6 +61,12 @@ import { FootnotesAttributes } from "./footnotes-attributes";
  * ```
  */
 export class FootNotes extends XmlComponent {
+    // The footnotes that reference runs bring with them, by their runs, with the ids they are given
+    private readonly ownNotes = new Map<object, number>();
+    // The highest id of the footnotes, so the one after it is free
+    // eslint-disable-next-line functional/prefer-readonly-type
+    private highestId = 0;
+
     public constructor() {
         super("w:footnotes");
 
@@ -133,6 +140,36 @@ export class FootNotes extends XmlComponent {
         });
 
         this.root.push(footnote);
+        if (Number.isFinite(id)) {
+            // eslint-disable-next-line functional/immutable-data
+            this.highestId = Math.max(this.highestId, Math.floor(id));
+        }
+    }
+
+    /**
+     * The id of the footnote that a reference run brings with it, which is added to the footnotes the first time the
+     * run is written, with an id no other footnote has. Word has footnotes only in a document's body, so a run written
+     * anywhere else, such as in a header, has none, and its footnote isn't added.
+     *
+     * @internal
+     * @param reference - The run, which has the same footnote each time it is written
+     * @param footnote - The footnote's content
+     * @param context - The context the run is written in
+     * @returns The footnote's id, or undefined outside the document's body
+     */
+    public idOf(reference: object, footnote: NoteContent, context: IContext): number | undefined {
+        if (context.viewWrapper !== context.file.Document) {
+            return undefined;
+        }
+        const existing = this.ownNotes.get(reference);
+        if (existing !== undefined) {
+            return existing;
+        }
+        const id = this.highestId + 1;
+        this.createFootNote(id, footnote.children);
+        // eslint-disable-next-line functional/immutable-data
+        this.ownNotes.set(reference, id);
+        return id;
     }
 
     /**

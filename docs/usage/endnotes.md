@@ -71,9 +71,33 @@ Add endnotes to the `endnotes` property in the `Document` constructor:
 
 Insert `EndnoteReferenceRun` in paragraphs to create reference markers:
 
-- Takes a single `id` parameter matching the endnote key
+- Takes the `id` of one of the endnotes, its key, or the endnote's content (see below)
 - Automatically styled as superscript
 - References the corresponding endnote content
+
+## Endnotes With Their Content
+
+An `EndnoteReferenceRun` can be given its endnote's content, its `children`, instead of the id of one of the document's `endnotes`, as a [footnote](usage/footnotes.md#footnotes-with-their-content) can. The endnote is added to the document's endnotes when the document is written, with an id none of them has:
+
+```ts live
+import { Document, EndnoteReferenceRun, Paragraph, TextRun } from "docx";
+
+const doc = new Document({
+    sections: [
+        {
+            children: [
+                new Paragraph({
+                    children: [
+                        new TextRun("The method is described elsewhere"),
+                        new EndnoteReferenceRun({ children: [new Paragraph("Smith, A Book, 2001, page 12.")] }),
+                        new TextRun("."),
+                    ],
+                }),
+            ],
+        },
+    ],
+});
+```
 
 ## Options
 

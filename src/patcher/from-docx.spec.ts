@@ -1769,6 +1769,110 @@ describe("from-docx", () => {
                 );
                 expect(await read("word/_rels/document.xml.rels")).not.to.contain("relationships/image");
             });
+
+            it("should write the footnote a reference run brings with it, with an id none of the template's footnotes have", async () => {
+                const template = await Packer.toBuffer(
+                    new File({
+                        sections: [
+                            {
+                                children: [
+                                    new Paragraph({ children: [new TextRun("Existing"), new FootnoteReferenceRun(1)] }),
+                                    new Paragraph("{{note}}"),
+                                ],
+                            },
+                        ],
+                        footnotes: { 1: noteWithText("Existing footnote") },
+                    }),
+                );
+                const read = await patchWith(template, {
+                    patches: {
+                        note: {
+                            type: PatchType.PARAGRAPH,
+                            children: [new TextRun("New"), new FootnoteReferenceRun(noteWithText("Its own"))],
+                        },
+                    },
+                });
+
+                expect((await read("word/document.xml"))!.match(/<w:footnoteReference w:id="\d+"\/>/g)).to.deep.equal([
+                    '<w:footnoteReference w:id="1"/>',
+                    '<w:footnoteReference w:id="2"/>',
+                ]);
+                expect(await read("word/footnotes.xml")).to.contain(
+                    `<w:footnote w:id="2"><w:p>${FOOTNOTE_MARK}<w:r><w:t xml:space="preserve">Its own</w:t></w:r></w:p></w:footnote>`,
+                );
+            });
+
+            it("should write the notes reference runs bring with them alongside the notes given, without mixing their ids up", async () => {
+                const read = await patchWith(templateWithoutNotes({ body: `<w:p><w:r><w:t>{{note}}</w:t></w:r></w:p>` }), {
+                    patches: {
+                        note: {
+                            type: PatchType.PARAGRAPH,
+                            children: [
+                                new FootnoteReferenceRun(noteWithText("Carried")),
+                                new FootnoteReferenceRun(1),
+                                new EndnoteReferenceRun(noteWithText("Carried endnote")),
+                                new EndnoteReferenceRun(2),
+                            ],
+                        },
+                    },
+                    footnotes: { 1: noteWithText("Given") },
+                    endnotes: { 2: noteWithText("Given endnote") },
+                });
+
+                const footnotes = (await read("word/footnotes.xml"))!;
+                expect(footnotes).to.contain(`<w:footnote w:id="1"><w:p>${FOOTNOTE_MARK}<w:r><w:t xml:space="preserve">Carried</w:t>`);
+                expect(footnotes).to.contain(`<w:footnote w:id="2"><w:p>${FOOTNOTE_MARK}<w:r><w:t xml:space="preserve">Given</w:t>`);
+                const endnotes = (await read("word/endnotes.xml"))!;
+                expect(
+                    endnotes.match(
+                        /<w:endnote w:id="\d+"><w:p><w:r><w:rPr><w:rStyle w:val="EndnoteReference"\/><\/w:rPr><w:endnoteRef\/><\/w:r><w:r><w:t xml:space="preserve">[^<]+/g,
+                    ),
+                ).to.deep.equal([
+                    '<w:endnote w:id="1"><w:p><w:r><w:rPr><w:rStyle w:val="EndnoteReference"/></w:rPr><w:endnoteRef/></w:r><w:r><w:t xml:space="preserve">Carried endnote',
+                    '<w:endnote w:id="2"><w:p><w:r><w:rPr><w:rStyle w:val="EndnoteReference"/></w:rPr><w:endnoteRef/></w:r><w:r><w:t xml:space="preserve">Given endnote',
+                ]);
+                expect((await read("word/document.xml"))!.match(/<w:(?:foot|end)noteReference w:id="\d+"\/>/g)).to.deep.equal([
+                    '<w:footnoteReference w:id="1"/>',
+                    '<w:footnoteReference w:id="2"/>',
+                    '<w:endnoteReference w:id="1"/>',
+                    '<w:endnoteReference w:id="2"/>',
+                ]);
+            });
+
+            it("should give each place a reference run with its own footnote is inserted a footnote of its own", async () => {
+                const reference = new FootnoteReferenceRun(noteWithText("Twice"));
+                const read = await patchWith(templateWithoutNotes({ body: `<w:p><w:r><w:t>{{note}} and {{note}}</w:t></w:r></w:p>` }), {
+                    patches: { note: { type: PatchType.PARAGRAPH, children: [reference] } },
+                });
+
+                expect((await read("word/document.xml"))!.match(/<w:footnoteReference w:id="\d+"\/>/g)).to.deep.equal([
+                    '<w:footnoteReference w:id="1"/>',
+                    '<w:footnoteReference w:id="2"/>',
+                ]);
+                expect((await read("word/footnotes.xml"))!.match(/<w:footnote w:id="\d+"><w:p>.*?Twice/g)).to.have.length(2);
+            });
+
+            it("should leave out a reference run with its own footnote in a header, as Word has footnotes only in the body", async () => {
+                const template = await Packer.toBuffer(
+                    new File({
+                        sections: [{ headers: { default: new Header({ children: [new Paragraph("{{note}}")] }) }, children: [] }],
+                    }),
+                );
+                const read = await patchWith(template, {
+                    patches: {
+                        note: {
+                            type: PatchType.PARAGRAPH,
+                            children: [new TextRun("Header"), new FootnoteReferenceRun(noteWithText("Nowhere"))],
+                        },
+                    },
+                });
+
+                const header = (await read("word/header1.xml"))!;
+                expect(header).to.contain("Header");
+                expect(header).not.to.contain("footnoteReference");
+                expect(header).not.to.contain("FootnoteReference");
+                expect(await read("word/footnotes.xml")).not.to.contain("Nowhere");
+            });
         });
 
         describe("Lists", () => {
@@ -1878,6 +1982,55 @@ describe("from-docx", () => {
                 expect(numbering).to.contain(
                     '<w:num w:numId="4"><w:abstractNumId w:val="2"/><w:lvlOverride w:ilvl="0"><w:startOverride w:val="1"/>',
                 );
+            });
+
+            it("should put the paragraphs in a list they give the definition of, with no numbering option", async () => {
+                const ownList = { reference: "own-list", levels: [{ level: 0, format: LevelFormat.UPPER_ROMAN, text: "%1." }] };
+                const read = await patchTemplate(
+                    { body: placeholder("list"), numbering: TEMPLATE_NUMBERING },
+                    {
+                        patches: {
+                            list: {
+                                type: PatchType.DOCUMENT,
+                                children: [
+                                    new Paragraph({ text: "First", numbering: { reference: ownList, level: 0 } }),
+                                    new Paragraph({ text: "Second", numbering: { reference: ownList, level: 0 } }),
+                                ],
+                            },
+                        },
+                    },
+                );
+
+                expect(numIdsIn(await read("word/document.xml"))).to.deep.equal(["3", "3"]);
+                const numbering = await read("word/numbering.xml");
+                expect(listsIn(numbering)).to.deep.equal([
+                    "abstractNum 0",
+                    "abstractNum 1",
+                    "abstractNum 2",
+                    "num 1 of 0",
+                    "num 2 of 1",
+                    "num 3 of 2",
+                    "numIdMacAtCleanup",
+                ]);
+                expect(numbering).to.match(/<w:abstractNum w:abstractNumId="2"[^>]*>.*?<w:numFmt w:val="upperRoman"\/>/);
+            });
+
+            it("should put the paragraphs in a list they give the definition of, in a template without a numbering part", async () => {
+                const ownList = { reference: "own-list", levels: [{ level: 0, format: LevelFormat.DECIMAL, text: "%1." }] };
+                const read = await patchTemplate(
+                    { body: placeholder("list") },
+                    {
+                        patches: {
+                            list: {
+                                type: PatchType.DOCUMENT,
+                                children: [new Paragraph({ text: "First", numbering: { reference: ownList, level: 0 } })],
+                            },
+                        },
+                    },
+                );
+
+                expect(numIdsIn(await read("word/document.xml"))).to.deep.equal(["1"]);
+                expect(listsIn(await read("word/numbering.xml"))).to.deep.equal(["abstractNum 1", "num 1 of 1"]);
             });
 
             it("should keep a list's id from one patch to the next, so it is numbered on", async () => {

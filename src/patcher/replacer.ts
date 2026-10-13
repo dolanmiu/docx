@@ -6,7 +6,6 @@
 import xml from "xml";
 import type { Element } from "xml-js";
 
-import { Formatter } from "@export/formatter";
 import type { IContext, XmlComponent } from "@file/xml-components";
 
 import { type IPatch, PatchType } from "./from-docx";
@@ -15,8 +14,6 @@ import { replaceTokenInParagraphElement } from "./paragraph-token-replacer";
 import { type IRenderedParagraphNode, renderParagraphNode } from "./run-renderer";
 import { findLocationOfText } from "./traverser";
 import { toJson } from "./util";
-
-const formatter = new Formatter();
 
 /**
  * Renumbers the ids in content that is about to be inserted, such as its bookmarks', so they are unique in the document,
@@ -134,8 +131,11 @@ const formatChildren = (patch: IPatch, context: IContext, renumberIds: RenumberI
     renumberIds(
         patch.children
             .flatMap((c) => (c as XmlComponent).writtenAs ?? (c as XmlComponent))
-            .map((c) => toJson(xml(formatter.format(c, context))))
-            .map((c) => c.elements![0]),
+            // A child written as nothing in this part, such as a footnote's reference in a header, is left out
+            .flatMap((c) => {
+                const formatted = c.prepForXml(context);
+                return formatted ? [toJson(xml(formatted)).elements![0]] : [];
+            }),
     );
 
 /**

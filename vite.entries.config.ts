@@ -25,6 +25,7 @@ const ENTRIES: Readonly<Record<string, Entry>> = {
     charts: { name: "charts", global: "docxCharts" },
     math: { name: "math", global: "docxMath" },
     layout: { name: "layout", global: "docxLayout" },
+    html: { name: "html", global: "docxHtml" },
 };
 
 // API Extractor, which bundles the declarations, copies in those of any module that isn't a library, so it would copy
@@ -159,9 +160,11 @@ export default defineConfig(({ mode }) => {
                 },
                 formats: ["iife", "es", "cjs", "umd"],
             },
+            // docx/html turns math into docx/math's equations, so it leaves docx/math out too, and a page loads
+            // math.umd.cjs before html.umd.cjs
             rolldownOptions: {
-                external: ["docx"],
-                output: { globals: { docx: "docx" } },
+                external: ["docx", "docx/math"],
+                output: { globals: { docx: "docx", "docx/math": "docxMath" } },
             },
             outDir: resolve(__dirname, "dist"),
         },

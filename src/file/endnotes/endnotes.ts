@@ -5,9 +5,16 @@ import { EndnotesAttributes } from "./endnotes-attributes";
 import { LineRuleType, Paragraph } from "../paragraph";
 import { Endnote, EndnoteType } from "./endnote/endnote";
 import { ContinuationSeperatorRun } from "../footnotes/footnote/run/continuation-seperator-run";
+import type { NoteContent } from "../footnotes/footnote/run/reference-run";
 import { SeperatorRun } from "../footnotes/footnote/run/seperator-run";
 
 export class Endnotes extends XmlComponent {
+    // The endnotes that reference runs bring with them, by their runs, with the ids they are given
+    private readonly ownNotes = new Map<object, number>();
+    // The highest id of the endnotes, so the one after it is free
+    // eslint-disable-next-line functional/prefer-readonly-type
+    private highestId = 0;
+
     public constructor() {
         super("w:endnotes");
 
@@ -75,6 +82,36 @@ export class Endnotes extends XmlComponent {
         });
 
         this.root.push(endnote);
+        if (Number.isFinite(id)) {
+            // eslint-disable-next-line functional/immutable-data
+            this.highestId = Math.max(this.highestId, Math.floor(id));
+        }
+    }
+
+    /**
+     * The id of the endnote that a reference run brings with it, which is added to the endnotes the first time the run
+     * is written, with an id no other endnote has. Word has endnotes only in a document's body, so a run written
+     * anywhere else, such as in a header, has none, and its endnote isn't added.
+     *
+     * @internal
+     * @param reference - The run, which has the same endnote each time it is written
+     * @param endnote - The endnote's content
+     * @param context - The context the run is written in
+     * @returns The endnote's id, or undefined outside the document's body
+     */
+    public idOf(reference: object, endnote: NoteContent, context: IContext): number | undefined {
+        if (context.viewWrapper !== context.file.Document) {
+            return undefined;
+        }
+        const existing = this.ownNotes.get(reference);
+        if (existing !== undefined) {
+            return existing;
+        }
+        const id = this.highestId + 1;
+        this.createEndnote(id, endnote.children);
+        // eslint-disable-next-line functional/immutable-data
+        this.ownNotes.set(reference, id);
+        return id;
     }
 
     /**
