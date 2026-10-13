@@ -153,10 +153,8 @@ const rulesOf = (css: string): readonly StyleRule[] => {
     let index = 0;
     while (index < css.length) {
         const blockStart = indexOfTopLevel(css, index, "{;");
-        const prelude = css
-            .slice(index, blockStart)
-            .replace(/<!--|-->/g, " ")
-            .trim();
+        // CSS's CDO and CDC tokens, which a style sheet in an old <style> has around it, separate what is either side
+        const prelude = css.slice(index, blockStart).split("<!--").join(" ").split("-->").join(" ").trim();
         if (css[blockStart] !== "{") {
             // A statement at-rule, such as @import, or what is left at the end
             index = blockStart + 1;

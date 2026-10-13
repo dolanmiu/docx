@@ -30,6 +30,13 @@ import word from "../../demo/assets/html/word.html?raw";
 const FIXTURES = { ckeditor5, googleDocs, lexical, markdown, quill, tinymce, tiptap, word } as Readonly<Record<string, string>>;
 const fixture = (name: string): string => FIXTURES[name];
 
+// The entities XML's text has, which the outline reads
+const ENTITIES: ReadonlyMap<string, string> = new Map([
+    ["amp", "&"],
+    ["gt", ">"],
+    ["apos", "'"],
+]);
+
 // How the outline shows what isn't text
 const SYMBOLS: ReadonlyMap<string, string> = new Map([
     ["<w:br/>", "/"],
@@ -63,10 +70,8 @@ const outline = (name: string): { readonly lines: readonly string[]; readonly wa
         ]
             .map(([part, text, checked]) => {
                 if (text !== undefined) {
-                    return text
-                        .replace(/&amp;/g, "&")
-                        .replace(/&gt;/g, ">")
-                        .replace(/&apos;/g, "'");
+                    // Each entity once, so &amp;gt; is &gt;
+                    return text.replace(/&(amp|gt|apos);/g, (entity, entityName: string) => ENTITIES.get(entityName) ?? entity);
                 }
                 if (checked !== undefined) {
                     return checked === "1" ? "[x]" : "[ ]";
