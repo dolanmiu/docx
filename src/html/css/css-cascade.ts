@@ -119,9 +119,11 @@ const compareCandidates = (a: Candidate, b: Candidate): number =>
 // The longest a value can be with its var()s replaced. A longer one is invalid, as browsers limit them, so custom
 // properties that refer to each other many times can't make a value grow without end
 const LONGEST_VALUE = 65_536;
-// How many var()s can be in each other's fallbacks, and how many custom properties can refer to each other in turn, so
-// a long chain of them can't run out of stack. Deeper ones are invalid
+// How many custom properties can refer to each other in turn, so a long chain of them can't run out of stack, and how
+// many var()s can be in each other's fallbacks, so a value takes as long to read as a few times its length. Deeper ones
+// are invalid
 const DEEPEST_REFERENCE = 256;
+const DEEPEST_FALLBACK = 32;
 
 /**
  * A value with each `var()` replaced by the custom property's value, or its fallback when the element has no such
@@ -139,11 +141,13 @@ export const substituteVariables = (value: string, variableOf: (name: string) =>
     for (let match = references.exec(value); match; match = references.exec(value)) {
         const start = match.index + match[0].length;
         const end = indexOfTopLevel(value, start, ")");
-        const [name, ...fallback] = splitTopLevel(value.slice(start, end), ",");
+        const inside = value.slice(start, end);
+        // The name, and its fallback after the first comma, if it has one
+        const comma = indexOfTopLevel(inside, 0, ",");
         const replacement =
-            variableOf(name.trim()) ??
-            (fallback.length > 0 && depth < DEEPEST_REFERENCE
-                ? substituteVariables(fallback.join(",").trim(), variableOf, depth + 1)
+            variableOf(inside.slice(0, comma).trim()) ??
+            (comma < inside.length && depth < DEEPEST_FALLBACK
+                ? substituteVariables(inside.slice(comma + 1).trim(), variableOf, depth + 1)
                 : undefined);
         if (replacement === undefined) {
             return undefined;
