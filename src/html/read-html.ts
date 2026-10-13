@@ -46,7 +46,7 @@ import { type CascadedStyle, compileUserAgentStyleSheet, createCascade } from ".
 import { isForPrint } from "./css/css-syntax";
 import { presentationalHints } from "./css/presentational-hints";
 import { USER_AGENT_STYLES } from "./css/user-agent-styles";
-import { decodeFragment, descendantsOf, elementsOf, isElement, textOf } from "./dom";
+import { decodeFragment, descendantsOf, elementsOf, hrefOf, isElement, textOf } from "./dom";
 import { type Flow, type InlineFormat, borderOf, paragraphFormatOf, runFormatOf, twips } from "./formats";
 import { imageOf, resolveUrl, svgImageOf } from "./images";
 import { DEEPEST_LEVEL, HANGING, LIST_INDENT, listLevelOf } from "./lists";
@@ -132,7 +132,7 @@ const UNSUPPORTED: ReadonlySet<string> = new Set([
 const LISTS: ReadonlySet<string> = new Set(["ul", "ol", "menu", "dir"]);
 
 // Links to addresses of these schemes could run code, so they are left out
-const UNSAFE_LINK = /^\s*(?:javascript|vbscript|data|livescript):/i;
+const UNSAFE_LINK = /^(?:javascript|vbscript|data|livescript):/i;
 
 const QUOTES = [
     ["\u201C", "\u201D"],
@@ -161,7 +161,7 @@ const bookmarksOf = (body: Element, skipped: ReadonlySet<Element>): ReadonlyMap<
     const targets = new Map<string, string>();
     const taken = new Set<string>();
     for (const element of elements) {
-        const href = element.name === "a" && !skipped.has(element) ? element.attribs.href?.trim() : undefined;
+        const href = element.name === "a" && !skipped.has(element) ? hrefOf(element) : undefined;
         const id = href?.startsWith("#") ? decodeFragment(href.slice(1)) : undefined;
         if (id === undefined || targets.has(id)) {
             continue;
@@ -434,7 +434,11 @@ const inlineOf = (
             ? {
                   kind: element.name === "ins" ? "insertion" : "deletion",
                   author: tracked.author,
-                  date: element.attribs.datetime ?? tracked.date ?? new Date().toISOString().replace(/\.\d+Z$/, "Z"),
+                  // An HTML diff's date, or the option's, or now
+                  date:
+                      revisionDateOf(element.attribs.datetime) ??
+                      revisionDateOf(tracked.date) ??
+                      new Date().toISOString().replace(/\.\d+Z$/, "Z"),
               }
             : state.inline.revision;
     const script =
@@ -452,9 +456,40 @@ const inlineOf = (
     };
 };
 
-/** Where a link goes, or undefined, with a warning, for an address that could run code */
+// A date, or a date and time, as HTML's `datetime` and ISO 8601 write them, with an offset from UTC or not
+const DATE_TIME = /^(\d{4})-(\d{2})-(\d{2})(?:[T ](\d{2}):(\d{2})(?::(\d{2})(?:\.\d+)?)?\s*(Z|[+-]\d{2}:?\d{2})?)?$/i;
+
+/**
+ * A tracked change's date and time as Word writes them, such as `2026-10-13T09:30:00Z`, from a date, or a date and
+ * time, in UTC when it has an offset, and as it is when it hasn't, as Word writes its own. Undefined for any other
+ * text, or a date there isn't, such as the 30th of February, as Word can't open a document with it.
+ */
+const revisionDateOf = (text: string | undefined): string | undefined => {
+    const parts = DATE_TIME.exec(text?.trim() ?? "");
+    if (!parts) {
+        return undefined;
+    }
+    const [year, month, day, hour, minute, second] = parts.slice(1, 7).map((part) => Number(part ?? 0));
+    const zone = parts[7]?.toUpperCase() ?? "Z";
+    const offset = zone === "Z" ? 0 : (zone.startsWith("-") ? -1 : 1) * (Number(zone.slice(1, 3)) * 60 + Number(zone.slice(-2)));
+    const time = Date.UTC(year, month - 1, day, hour, minute, second);
+    const date = new Date(time);
+    const exists =
+        date.getUTCFullYear() === year &&
+        date.getUTCMonth() === month - 1 &&
+        date.getUTCDate() === day &&
+        hour < 24 &&
+        minute < 60 &&
+        second < 60;
+    return exists ? new Date(time - offset * 60_000).toISOString().replace(/\.\d+Z$/, "Z") : undefined;
+};
+
+/**
+ * Where a link goes, or undefined, with a warning, for an address that could run code, as it is written or resolved,
+ * after the tabs and new lines a URL parser leaves out, as in `java&#9;script:`
+ */
 const linkOf = (element: Element, conversion: Conversion): Link | undefined => {
-    const href = element.attribs.href?.trim();
+    const href = hrefOf(element);
     if (href === undefined || href === "") {
         return undefined;
     }
@@ -463,14 +498,15 @@ const linkOf = (element: Element, conversion: Conversion): Link | undefined => {
         const anchor = conversion.bookmarks.get(decodeFragment(href.slice(1)));
         return anchor === undefined ? undefined : { anchor };
     }
-    if (UNSAFE_LINK.test(href)) {
+    const resolved = resolveUrl(href, conversion.options.baseUrl) ?? href;
+    if (UNSAFE_LINK.test(href) || UNSAFE_LINK.test(resolved)) {
         conversion.warn({
             code: "unsafe-link",
             message: `The link to "${href.slice(0, 60)}" could run code, so its text is kept without it`,
         });
         return undefined;
     }
-    return { href: resolveUrl(href, conversion.options.baseUrl) ?? href };
+    return { href: resolved };
 };
 
 /**

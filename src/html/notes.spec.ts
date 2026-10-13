@@ -9,6 +9,9 @@ import { formattedWithNotes, pngDataUrl } from "tests/html";
 import { htmlToContent, htmlToRuns } from "./html-to-content";
 import type { HtmlOptions, HtmlWarningCode } from "./options";
 
+// The entities XML's text has
+const ENTITIES: Readonly<Record<string, string>> = { amp: "&", gt: ">", lt: "<" };
+
 /** A paragraph as a line: its style, and its content, with what isn't text as words in brackets */
 const linesOf = (written: string): readonly string[] =>
     [...written.matchAll(/<w:p>(.*?)<\/w:p>|<w:p\/>/g)].map(([, paragraph = ""]) => {
@@ -21,7 +24,8 @@ const linesOf = (written: string): readonly string[] =>
         ]
             .map(([part, text, reference, bookmark, link]) => {
                 if (text !== undefined) {
-                    return text.replace(/&amp;/g, "&").replace(/&gt;/g, ">").replace(/&lt;/g, "<");
+                    // Each entity once, so &amp;lt; is &lt;
+                    return text.replace(/&(amp|gt|lt);/g, (_, name: string) => ENTITIES[name]);
                 }
                 if (reference !== undefined) {
                     return `[${reference}note]`;

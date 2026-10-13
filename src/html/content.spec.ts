@@ -117,6 +117,33 @@ describe("htmlToContent: links", () => {
         ]);
     });
 
+    it("leaves out links that could run code once a URL parser reads them, with tabs, new lines or controls in them", () => {
+        const links = [
+            '<a href="java&#9;script:alert(1)">a</a>',
+            '<a href="java\nscript:alert(1)">b</a>',
+            '<a href="&#1;&#31; javascript:alert(1)">c</a>',
+            '<a href="VBScript&#13;:x">d</a>',
+        ].join("");
+        const withoutLinks = formatted([new Paragraph({ children: [text("abcd")] })]);
+        expect(html(`<p>${links}</p>`)).toBe(withoutLinks);
+        expect(html(`<p>${links}</p>`, { baseUrl: "https://example.com/blog/" })).toBe(withoutLinks);
+        expect(warningsOf('<a href="java&#9;script:alert(1)">a</a>').map(({ code }) => code)).toEqual(["unsafe-link"]);
+    });
+
+    it("writes a link's address as a URL parser reads it, without spaces around it and with controls percent-encoded", () => {
+        expect(html('<p><a href=" https://exa&#9;mple.com/a&#1;b ">a</a><a href="#se&#10;ction">b</a></p><p id="section">c</p>')).toBe(
+            formatted([
+                new Paragraph({
+                    children: [
+                        new ExternalHyperlink({ link: "https://example.com/a%01b", children: [link("a")] }),
+                        new InternalHyperlink({ anchor: "section", children: [link("b")] }),
+                    ],
+                }),
+                new Paragraph({ children: [new Bookmark({ id: "section", children: [] }), text("c")] }),
+            ]),
+        );
+    });
+
     it("writes an <a> with no href, or an empty one, as its text", () => {
         expect(html('<p><a>a</a><a href="">b</a><a href="  ">c</a></p>')).toBe(formatted([new Paragraph({ children: [text("abc")] })]));
     });
@@ -288,6 +315,36 @@ describe("htmlToContent: tracked changes", () => {
                 '<w:ins w:id="0" w:author="Ada" w:date="2026-01-02T03:04:05Z"><w:r><w:t xml:space="preserve">b</w:t></w:r></w:ins>' +
                 '<w:del w:id="0" w:author="Ada" w:date="2026-10-13T09:00:00Z"><w:r><w:delText xml:space="preserve">c</w:delText></w:r></w:del></w:p>',
         );
+    });
+
+    it("writes a tracked change's datetime as Word writes dates: a date, or a date and time in UTC, without its fraction", () => {
+        const dateOf = (datetime: string, date?: string): string | undefined =>
+            /w:date="([^"]*)"/.exec(html(`<p><ins datetime="${datetime}">a</ins></p>`, { trackChanges: { author: "Ada", date } }))?.[1];
+        expect(dateOf("2026-10-13")).toBe("2026-10-13T00:00:00Z");
+        expect(dateOf("2026-10-13T09:30")).toBe("2026-10-13T09:30:00Z");
+        expect(dateOf("2026-10-13 09:30:15.25")).toBe("2026-10-13T09:30:15Z");
+        expect(dateOf("2026-10-13T09:30:00+02:00")).toBe("2026-10-13T07:30:00Z");
+        expect(dateOf("2026-10-13T23:30-0130")).toBe("2026-10-14T01:00:00Z");
+        expect(dateOf(" 2026-10-13T09:30:00z ")).toBe("2026-10-13T09:30:00Z");
+        expect(dateOf("2024-02-29")).toBe("2024-02-29T00:00:00Z");
+    });
+
+    it("writes the time of trackChanges, or now, for a tracked change's datetime that isn't a date there is", () => {
+        const dateOf = (datetime: string, date?: string): string | undefined =>
+            /w:date="([^"]*)"/.exec(html(`<p><ins datetime="${datetime}">a</ins></p>`, { trackChanges: { author: "Ada", date } }))?.[1];
+        for (const datetime of [
+            "yesterday",
+            "2026-02-30",
+            "2025-02-29",
+            "2026-13-01",
+            "2026-10-13T24:00",
+            "2026-10-13T09:60",
+            "0050-01-01",
+            "13/10/2026",
+        ]) {
+            expect(dateOf(datetime, "2026-10-13T09:00:00.123+01:00")).toBe("2026-10-13T08:00:00Z");
+        }
+        expect(dateOf("yesterday", "today")).toMatch(/^\d{4}-\d\d-\d\dT\d\d:\d\d:\d\dZ$/);
     });
 
     it("writes the time of a tracked change as now when neither its datetime nor trackChanges gives one", () => {

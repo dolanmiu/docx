@@ -493,6 +493,12 @@ describe("htmlToContent: text", () => {
             ).toBe(paragraphs(paragraph(text("a", { color: "FF0000" }), text("b", { color: "0000FF" }))));
         });
 
+        it("gives a shorthand's CSS-wide keyword to each property it sets, as a reset style sheet's font: inherit", () => {
+            expect(html('<style>b { font: inherit }</style><p style="font-size: 12px"><b style="background: inherit">a</b></p>')).toBe(
+                paragraphs(paragraph(text("a", { size: 18 }))),
+            );
+        });
+
         it("writes !important's value over a later one", () => {
             expect(html('<style>span { color: blue !important }</style><p><span style="color: red">a</span></p>')).toBe(
                 paragraphs(paragraph(text("a", { color: "0000FF" }))),

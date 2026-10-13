@@ -13,7 +13,7 @@ import { type Selector, parse as parseSelectors } from "css-what";
 import type { Element } from "domhandler";
 
 import { expandShorthand } from "./css-shorthands";
-import { type Declaration, parseDeclarations, parseStyleSheet, splitTopLevel } from "./css-syntax";
+import { type Declaration, indexOfTopLevel, parseDeclarations, parseStyleSheet, splitTopLevel } from "./css-syntax";
 
 /**
  * Where a declaration comes from, from the least important: a browser's own style sheet, the styles an element's
@@ -115,45 +115,93 @@ const compareCandidates = (a: Candidate, b: Candidate): number =>
     b.specificity - a.specificity ||
     b.order - a.order;
 
-const VAR = /var\(/i;
+// The longest a value can be with its var()s replaced. A longer one is invalid, as browsers limit them, so custom
+// properties that refer to each other many times can't make a value grow without end
+const LONGEST_VALUE = 65_536;
+// How many var()s can be in each other's fallbacks, and how many custom properties can refer to each other in turn, so
+// a long chain of them can't run out of stack. Deeper ones are invalid
+const DEEPEST_REFERENCE = 256;
 
 /**
  * A value with each `var()` replaced by the custom property's value, or its fallback when the element has no such
- * property, or undefined when it has neither, as the value is then invalid.
+ * property, or undefined when it has neither, as the value is then invalid, as is one longer than browsers allow.
  *
  * @param value - The value, such as `1px solid var(--border-color, black)`
- * @param variableOf - The value of each of the element's custom properties, by its name
+ * @param variableOf - The value of each of the element's custom properties, by its name, with its own `var()`s replaced
+ * @param depth - How many fallbacks the value is in
  */
-export const substituteVariables = (value: string, variableOf: (name: string) => string | undefined): string | undefined => {
-    const match = VAR.exec(value);
-    if (!match) {
-        return value;
+export const substituteVariables = (value: string, variableOf: (name: string) => string | undefined, depth = 0): string | undefined => {
+    // Each var() is replaced in turn, without reading the values put in its place again, as theirs are replaced already
+    const references = /var\(/gi;
+    let substituted = "";
+    let from = 0;
+    for (let match = references.exec(value); match; match = references.exec(value)) {
+        const start = match.index + match[0].length;
+        const end = indexOfTopLevel(value, start, ")");
+        const [name, ...fallback] = splitTopLevel(value.slice(start, end), ",");
+        const replacement =
+            variableOf(name.trim()) ??
+            (fallback.length > 0 && depth < DEEPEST_REFERENCE
+                ? substituteVariables(fallback.join(",").trim(), variableOf, depth + 1)
+                : undefined);
+        if (replacement === undefined) {
+            return undefined;
+        }
+        substituted += value.slice(from, match.index) + replacement;
+        if (substituted.length > LONGEST_VALUE) {
+            return undefined;
+        }
+        from = end + 1;
+        // eslint-disable-next-line functional/immutable-data
+        references.lastIndex = from;
     }
-    const start = match.index + match[0].length;
-    const [inside] = splitTopLevel(value.slice(start), ")");
-    const [name, ...fallback] = splitTopLevel(inside, ",");
-    const replacement =
-        variableOf(name.trim()) ?? (fallback.length > 0 ? substituteVariables(fallback.join(",").trim(), variableOf) : undefined);
-    return replacement === undefined
-        ? undefined
-        : substituteVariables(value.slice(0, match.index) + replacement + value.slice(start + inside.length + 1), variableOf);
+    substituted += value.slice(from);
+    return substituted.length > LONGEST_VALUE ? undefined : substituted;
 };
 
 /**
- * The custom properties an element has: those it inherits, and its own, whose `var()`s are worked out with each other.
- * One that refers to itself, through others or not, is invalid, and left out.
+ * The custom properties an element has: those it inherits, and its own, whose `var()`s are worked out with each other,
+ * each once. Those that refer to each other in a cycle are invalid, and left out, as are those more than 256 references
+ * deep, and those longer than browsers allow.
  */
 const customPropertiesOf = (own: ReadonlyMap<string, string>, inherited: ReadonlyMap<string, string>): ReadonlyMap<string, string> => {
-    const resolve = (name: string, visiting: ReadonlySet<string>): string | undefined => {
+    const resolved = new Map<string, string | undefined>();
+    // The properties being worked out, each referring to the next, and those found to be in a cycle
+    // eslint-disable-next-line functional/prefer-readonly-type
+    const resolving: string[] = [];
+    const cyclic = new Set<string>();
+    const resolve = (name: string): string | undefined => {
         const value = own.get(name);
         if (value === undefined) {
             return inherited.get(name);
         }
-        return visiting.has(name) ? undefined : substituteVariables(value, (other) => resolve(other, new Set([...visiting, name])));
+        if (resolved.has(name)) {
+            return resolved.get(name);
+        }
+        const index = resolving.indexOf(name);
+        if (index !== -1) {
+            for (const member of resolving.slice(index)) {
+                // eslint-disable-next-line functional/immutable-data
+                cyclic.add(member);
+            }
+            return undefined;
+        }
+        if (resolving.length >= DEEPEST_REFERENCE) {
+            return undefined;
+        }
+        // eslint-disable-next-line functional/immutable-data
+        resolving.push(name);
+        const substituted = substituteVariables(value, resolve);
+        // eslint-disable-next-line functional/immutable-data
+        resolving.pop();
+        const result = cyclic.has(name) ? undefined : substituted;
+        // eslint-disable-next-line functional/immutable-data
+        resolved.set(name, result);
+        return result;
     };
     return new Map(
         [...new Set([...inherited.keys(), ...own.keys()])].flatMap((name): readonly (readonly [string, string])[] => {
-            const value = resolve(name, new Set());
+            const value = resolve(name);
             return value === undefined ? [] : [[name, value]];
         }),
     );

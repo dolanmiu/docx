@@ -183,6 +183,31 @@ describe("CSS", () => {
             expect(expandShorthand("margin", "")).toBeUndefined();
         });
 
+        it("gives a CSS-wide keyword to each property a shorthand sets", () => {
+            expect(expandShorthand("font", "inherit")).toEqual([
+                ["font-style", "inherit"],
+                ["font-variant-caps", "inherit"],
+                ["font-weight", "inherit"],
+                ["font-size", "inherit"],
+                ["line-height", "inherit"],
+                ["font-family", "inherit"],
+            ]);
+            expect(expandShorthand("border", " INITIAL ")).toHaveLength(12);
+            expect(new Set(expandShorthand("border", " INITIAL ")!.map(([, value]) => value))).toEqual(new Set(["INITIAL"]));
+            expect(expandShorthand("background", "unset")).toEqual([["background-color", "unset"]]);
+            expect(expandShorthand("text-decoration", "revert")).toEqual([
+                ["text-decoration-line", "revert"],
+                ["text-decoration-style", "revert"],
+                ["text-decoration-color", "revert"],
+            ]);
+            expect(expandShorthand("margin-inline", "inherit")).toEqual([
+                ["margin-left", "inherit"],
+                ["margin-right", "inherit"],
+            ]);
+            expect(expandShorthand("page-break-before", "inherit")).toEqual([["break-before", "inherit"]]);
+            expect(expandShorthand("color", "inherit")).toEqual([["color", "inherit"]]);
+        });
+
         it("expands the logical margins and paddings as those of left-to-right text", () => {
             expect(expandShorthand("margin-inline", "1px 2px")).toEqual([
                 ["margin-left", "1px"],
@@ -360,6 +385,62 @@ describe("CSS", () => {
             expect(substituteVariables("var(--c, 3, 4)", lookUp)).toBe("3, 4");
             expect(substituteVariables("var(--c)", lookUp)).toBeUndefined();
             expect(substituteVariables("plain", lookUp)).toBe("plain");
+            expect(substituteVariables("var(--a", lookUp)).toBe("1");
+        });
+
+        it("doesn't replace the var()s in what it puts in a value, as custom properties' values have theirs replaced", () => {
+            expect(substituteVariables("var(--a) var(--b)", (name) => (name === "--a" ? "var(--b)" : "2"))).toBe("var(--b) 2");
+        });
+
+        it("replaces many var()s, and fallbacks in each other, without running out of stack, and leaves out ones too deep", () => {
+            const lookUp = (name: string): string | undefined => (name === "--a" ? "1" : undefined);
+            expect(substituteVariables(Array.from({ length: 50_000 }, () => "var(--a)").join(""), lookUp)).toBe("1".repeat(50_000));
+            const nested = (depth: number): string => `${"var(--x, ".repeat(depth)}1${")".repeat(depth)}`;
+            expect(substituteVariables(nested(256), lookUp)).toBe("1");
+            expect(substituteVariables(nested(5_000), lookUp)).toBeUndefined();
+        });
+
+        it("leaves out a value longer than browsers allow, as one that refers to custom properties many times would be", () => {
+            const lookUp = (): string => "x".repeat(1_000);
+            expect(substituteVariables(Array.from({ length: 65 }, () => "var(--a)").join(""), lookUp)).toHaveLength(65_000);
+            expect(substituteVariables(Array.from({ length: 66 }, () => "var(--a)").join(""), lookUp)).toBeUndefined();
+            expect(substituteVariables(`var(--a)${"y".repeat(65_000)}`, lookUp)).toBeUndefined();
+        });
+
+        it("works out custom properties that double each other once each, leaving out those that grow too long", () => {
+            const declarations = Array.from({ length: 41 }, (_, index) =>
+                index === 0 ? "--a0: x" : `--a${index}: var(--a${index - 1}) var(--a${index - 1})`,
+            );
+            const { element, cascade } = cascadeOf(`<p id="a" style="${declarations.join("; ")}; color: var(--a40, red)">x</p>`);
+            const started = Date.now();
+            const { values, customProperties } = cascade(element("a"), new Map());
+            expect(Date.now() - started).toBeLessThan(2_000);
+            expect(customProperties.get("--a10")).toHaveLength(2 ** 11 - 1);
+            expect(customProperties.has("--a16")).toBe(false);
+            expect(customProperties.has("--a40")).toBe(false);
+            expect(values.get("color")).toEqual(["red", "gray"]);
+        });
+
+        it("leaves out each custom property in a cycle, though it has a fallback, and keeps those that fall back past it", () => {
+            const { element, cascade } = cascadeOf(
+                '<p id="a" style="--a: var(--b, 1); --b: var(--c); --c: var(--a); --d: var(--a, 2); --e: 3">x</p>',
+            );
+            expect(cascade(element("a"), new Map()).customProperties).toEqual(
+                new Map([
+                    ["--d", "2"],
+                    ["--e", "3"],
+                ]),
+            );
+        });
+
+        it("works out a long chain of custom properties without running out of stack, leaving out those too deep", () => {
+            const declarations = Array.from({ length: 2_000 }, (_, index) =>
+                index === 0 ? "--c0: 1" : `--c${index}: var(--c${index - 1})`,
+            );
+            const { element, cascade } = cascadeOf(`<p id="a" style="${declarations.join("; ")}">x</p>`);
+            const { customProperties } = cascade(element("a"), new Map());
+            expect(customProperties.get("--c0")).toBe("1");
+            expect(customProperties.get("--c1999")).toBeUndefined();
         });
     });
 

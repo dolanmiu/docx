@@ -65,15 +65,15 @@ const endOfString = (css: string, start: number): number => {
 };
 
 /**
- * Splits CSS without comments at each of the characters given that isn't in a string or in brackets. A closing
- * bracket without an opening one is skipped over, as is anything after a backslash.
+ * The index of the first of the characters given, from `start`, that isn't in a string or in brackets, in CSS without
+ * comments, or its length if there is none. A closing bracket without an opening one is skipped over, as is anything
+ * after a backslash.
  */
-export const splitTopLevel = (css: string, separators: string): readonly string[] => {
+export const indexOfTopLevel = (css: string, start: number, characters: string): number => {
+    // The brackets that are open, the innermost last
     // eslint-disable-next-line functional/prefer-readonly-type
-    const parts: string[] = [];
-    let closing: readonly string[] = [];
-    let start = 0;
-    let index = 0;
+    const closing: string[] = [];
+    let index = start;
     while (index < css.length) {
         const character = css[index];
         if (character === "\\") {
@@ -85,16 +85,35 @@ export const splitTopLevel = (css: string, separators: string): readonly string[
             continue;
         }
         const closer = OPENING.get(character);
-        if (closing.length === 0 && separators.includes(character)) {
+        if (closing.length === 0 && characters.includes(character)) {
+            return index;
+        }
+        if (closer !== undefined) {
             // eslint-disable-next-line functional/immutable-data
-            parts.push(css.slice(start, index));
-            start = index + 1;
-        } else if (closer !== undefined) {
-            closing = [closer, ...closing];
-        } else if (character === closing[0]) {
-            closing = closing.slice(1);
+            closing.push(closer);
+        } else if (character === closing[closing.length - 1]) {
+            // eslint-disable-next-line functional/immutable-data
+            closing.pop();
         }
         index++;
+    }
+    return css.length;
+};
+
+/**
+ * Splits CSS without comments at each of the characters given that isn't in a string or in brackets. A closing
+ * bracket without an opening one is skipped over, as is anything after a backslash.
+ */
+export const splitTopLevel = (css: string, separators: string): readonly string[] => {
+    // eslint-disable-next-line functional/prefer-readonly-type
+    const parts: string[] = [];
+    let start = 0;
+    let end = indexOfTopLevel(css, start, separators);
+    while (end < css.length) {
+        // eslint-disable-next-line functional/immutable-data
+        parts.push(css.slice(start, end));
+        start = end + 1;
+        end = indexOfTopLevel(css, start, separators);
     }
     // eslint-disable-next-line functional/immutable-data
     parts.push(css.slice(start));
@@ -178,7 +197,3 @@ const rulesOf = (css: string): readonly StyleRule[] => {
     }
     return rules;
 };
-
-/** The index of the first of the characters given, from `start`, that isn't in a string or brackets, or the length */
-const indexOfTopLevel = (css: string, start: number, characters: string): number =>
-    start + splitTopLevel(css.slice(start), characters)[0].length;

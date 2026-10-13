@@ -69,3 +69,15 @@ export const decodeFragment = (fragment: string): string => {
         return fragment;
     }
 };
+
+/**
+ * A link's address as a URL parser reads it, without the tabs and new lines anywhere in it, and the control characters
+ * and spaces around it, with any other control characters percent-encoded, as XML can't have them
+ */
+export const hrefOf = (element: Element): string | undefined =>
+    element.attribs.href
+        ?.replace(/[\t\n\r]/g, "")
+        // eslint-disable-next-line no-control-regex
+        .replace(/^[\u0000-\u0020]+|[\u0000-\u0020]+$/g, "")
+        // eslint-disable-next-line no-control-regex
+        .replace(/[\u0000-\u001F\u007F]/g, (character) => encodeURIComponent(character));

@@ -13,7 +13,7 @@
 import type { Element } from "domhandler";
 
 import type { Note } from "./content";
-import { decodeFragment, descendantsOf, elementsOf, hasClass, isElement, textOf } from "./dom";
+import { decodeFragment, descendantsOf, elementsOf, hasClass, hrefOf, isElement, textOf } from "./dom";
 
 /** The notes of HTML, and the elements that go with them */
 export type Notes = {
@@ -123,7 +123,7 @@ const isIn = (element: Element, container: Element, body: Element): boolean =>
  */
 export const notesOf = (body: Element, kind: "footnote" | "endnote"): Notes => {
     const elements = descendantsOf(body);
-    const links = elements.filter((element) => element.name === "a" && element.attribs.href?.trim().startsWith("#"));
+    const links = elements.filter((element) => element.name === "a" && hrefOf(element)?.startsWith("#"));
     if (links.length === 0) {
         return NO_NOTES;
     }
@@ -143,7 +143,7 @@ export const notesOf = (body: Element, kind: "footnote" | "endnote"): Notes => {
         }
     }
     const targetOf = (link: Element): Element | undefined => {
-        const id = decodeFragment(link.attribs.href.trim().slice(1));
+        const id = decodeFragment(hrefOf(link)!.slice(1));
         return byId.get(id) ?? byName.get(id);
     };
     const targets = new Set(links.flatMap((link) => targetOf(link) ?? []));
@@ -203,7 +203,7 @@ export const notesOf = (body: Element, kind: "footnote" | "endnote"): Notes => {
         const ids = idsOf(link);
         const linksBack = descendantsOf(note).filter(
             (element) =>
-                element.name === "a" && element.attribs.href !== undefined && ids.has(decodeFragment(element.attribs.href.trim().slice(1))),
+                element.name === "a" && hrefOf(element)?.startsWith("#") === true && ids.has(decodeFragment(hrefOf(element)!.slice(1))),
         );
         const isReference =
             saysItIsReference(link) ||

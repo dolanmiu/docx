@@ -6,7 +6,7 @@
  * @module
  */
 import { parseColor } from "./css-color";
-import { listOf, parseLength, wordsOf } from "./css-values";
+import { isCssWideKeyword, listOf, parseLength, wordsOf } from "./css-values";
 
 /** A property and its value */
 export type PropertyValue = readonly [property: string, value: string];
@@ -151,9 +151,15 @@ const PAGE_BREAKS: Readonly<Record<string, string>> = { always: "page", left: "p
 /**
  * The properties a shorthand sets, or another name for a property sets, a property as it is, and undefined for a
  * shorthand whose value isn't valid, which is left out, as a browser leaves it out. Logical properties, such as
- * `margin-inline-start`, are the physical ones of left-to-right text.
+ * `margin-inline-start`, are the physical ones of left-to-right text. A CSS-wide keyword, such as `inherit`, is the
+ * value of each property a shorthand sets.
  */
 export const expandShorthand = (property: string, value: string): readonly PropertyValue[] | undefined => {
+    if (isCssWideKeyword(value)) {
+        // A keyword such as `inherit` is the value of each property the shorthand sets, which a value of it sets too
+        const keyword = value.trim();
+        return expandShorthand(property, property === "font" ? "medium serif" : "medium")!.map(([longhand]) => [longhand, keyword]);
+    }
     switch (property) {
         case "margin":
         case "padding":
