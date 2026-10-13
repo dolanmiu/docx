@@ -335,6 +335,8 @@ fs.writeFileSync("My Document.docx", doc);
 
 The ids only link each reference to its note. In the patched document, each note is given an id that none of the template's own notes have, and Word numbers the notes in the order they appear. Each reference a patch inserts gets a note of its own, so a placeholder that is in the template twice gets two. Only the notes that a patch refers to are written.
 
+A reference run can be given its note's content instead of an id, as in a `Document`, such as `new FootnoteReferenceRun({ children: [new Paragraph("Our new head of sales.")] })`, and then needs nothing in `footnotes`. The HTML of `htmlToContent` and `htmlToRuns` brings its footnotes this way. Word has notes only in a document's body, so a reference run with its own note is left out of a patch in a header or footer.
+
 A template that has no footnotes or endnotes yet is given what they need, including the styles that show their numbers as superscript.
 
 ### Lists

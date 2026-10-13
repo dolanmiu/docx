@@ -51,9 +51,39 @@ Add footnotes to the `footnotes` property in the `Document` constructor:
 
 Insert `FootnoteReferenceRun` in paragraphs to create reference markers:
 
-- Takes a single `id` parameter matching the footnote key
+- Takes the `id` of one of the footnotes, its key, or the footnote's content (see below)
 - Automatically styled as superscript
 - References the corresponding footnote content
+
+## Footnotes With Their Content
+
+A `FootnoteReferenceRun` can be given its footnote's content, its `children`, instead of the id of one of the document's `footnotes`. The footnote is added to the document's footnotes when the document is written, with an id none of them has. Content made before the document it goes in, such as paragraphs a function makes, or the paragraphs of [HTML](usage/html.md#footnotes), then brings its footnotes with it:
+
+```ts live
+import { Document, FootnoteReferenceRun, Paragraph, TextRun } from "docx";
+
+const sourced = (claim: string, source: string): Paragraph =>
+    new Paragraph({
+        children: [new TextRun(claim), new FootnoteReferenceRun({ children: [new Paragraph(source)] })],
+    });
+
+const doc = new Document({
+    footnotes: {
+        1: { children: [new Paragraph("A footnote of the document's own.")] },
+    },
+    sections: [
+        {
+            children: [
+                new Paragraph({ children: [new TextRun("A claim"), new FootnoteReferenceRun(1)] }),
+                sourced("Sales were up 12%.", "The quarterly figures, page 4."),
+                sourced("Costs fell.", "The annual report."),
+            ],
+        },
+    ],
+});
+```
+
+Each run has a footnote of its own, so two runs given the same content have a footnote each. Word has footnotes only in a document's body, so a run with its footnote's content is left out of headers, footers, comments and footnotes. It works in [templates](usage/templates.md#footnotes-and-endnotes) too.
 
 ## Images in Footnotes
 

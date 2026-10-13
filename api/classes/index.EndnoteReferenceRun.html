@@ -12,29 +12,26 @@
 <li><a href="" aria-current="page">EndnoteReferenceRun</a></li></ul>
 <h1>Class EndnoteReferenceRun</h1></div>
 <section class="tsd-panel tsd-comment">
-<div class="tsd-comment tsd-typography"><p>Represents a run of text with uniform formatting in a WordprocessingML document.</p>
-<p>A run is the lowest level unit of text in a paragraph. All content within a run
-shares the same formatting properties (bold, italic, font, size, etc.).</p>
-<p>Reference: <a href="http://officeopenxml.com/WPtext.php">http://officeopenxml.com/WPtext.php</a></p>
-<h2 id="xsd-schema" class="tsd-anchor-link">XSD Schema<a href="#xsd-schema" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="../assets/icons.svg#icon-anchor"></use></svg></a></h2>
-<pre><code class="xml"><span class="hl-9">&lt;</span><span class="hl-10">xsd:complexType</span><span class="hl-1"> </span><span class="hl-11">name</span><span class="hl-1">=</span><span class="hl-12">&quot;CT_R&quot;</span><span class="hl-9">&gt;</span><br/><span class="hl-1">  </span><span class="hl-9">&lt;</span><span class="hl-10">xsd:sequence</span><span class="hl-9">&gt;</span><br/><span class="hl-1">    </span><span class="hl-9">&lt;</span><span class="hl-10">xsd:group</span><span class="hl-1"> </span><span class="hl-11">ref</span><span class="hl-1">=</span><span class="hl-12">&quot;EG_RPr&quot;</span><span class="hl-1"> </span><span class="hl-11">minOccurs</span><span class="hl-1">=</span><span class="hl-12">&quot;0&quot;</span><span class="hl-9">/&gt;</span><br/><span class="hl-1">    </span><span class="hl-9">&lt;</span><span class="hl-10">xsd:group</span><span class="hl-1"> </span><span class="hl-11">ref</span><span class="hl-1">=</span><span class="hl-12">&quot;EG_RunInnerContent&quot;</span><span class="hl-1"> </span><span class="hl-11">minOccurs</span><span class="hl-1">=</span><span class="hl-12">&quot;0&quot;</span><span class="hl-1"> </span><span class="hl-11">maxOccurs</span><span class="hl-1">=</span><span class="hl-12">&quot;unbounded&quot;</span><span class="hl-9">/&gt;</span><br/><span class="hl-1">  </span><span class="hl-9">&lt;/</span><span class="hl-10">xsd:sequence</span><span class="hl-9">&gt;</span><br/><span class="hl-1">  </span><span class="hl-9">&lt;</span><span class="hl-10">xsd:attribute</span><span class="hl-1"> </span><span class="hl-11">name</span><span class="hl-1">=</span><span class="hl-12">&quot;rsidRPr&quot;</span><span class="hl-1"> </span><span class="hl-11">type</span><span class="hl-1">=</span><span class="hl-12">&quot;ST_LongHexNumber&quot;</span><span class="hl-9">/&gt;</span><br/><span class="hl-1">  </span><span class="hl-9">&lt;</span><span class="hl-10">xsd:attribute</span><span class="hl-1"> </span><span class="hl-11">name</span><span class="hl-1">=</span><span class="hl-12">&quot;rsidDel&quot;</span><span class="hl-1"> </span><span class="hl-11">type</span><span class="hl-1">=</span><span class="hl-12">&quot;ST_LongHexNumber&quot;</span><span class="hl-9">/&gt;</span><br/><span class="hl-1">  </span><span class="hl-9">&lt;</span><span class="hl-10">xsd:attribute</span><span class="hl-1"> </span><span class="hl-11">name</span><span class="hl-1">=</span><span class="hl-12">&quot;rsidR&quot;</span><span class="hl-1"> </span><span class="hl-11">type</span><span class="hl-1">=</span><span class="hl-12">&quot;ST_LongHexNumber&quot;</span><span class="hl-9">/&gt;</span><br/><span class="hl-9">&lt;/</span><span class="hl-10">xsd:complexType</span><span class="hl-9">&gt;</span>
-</code><button type="button">Copy</button></pre>
-
+<div class="tsd-comment tsd-typography"><p>A run with an endnote's reference mark, its number, in the document's text.</p>
+<p>It refers to one of the document's <code>endnotes</code> by its id, or is given its endnote's content, for an endnote of its
+own, which is added to the document's endnotes when the run is written.</p>
 </div>
 <div class="tsd-comment tsd-typography">
+<div class="tsd-tag-publicApi">
+<h4 class="tsd-anchor-link" id="public-api">Public Api<a href="#public-api" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="../assets/icons.svg#icon-anchor"></use></svg></a></h4></div>
 <div class="tsd-tag-example">
-<h4 class="tsd-anchor-link" id="example">Example<a href="#example" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="../assets/icons.svg#icon-anchor"></use></svg></a></h4><pre><code class="typescript"><span class="hl-8">// Simple run with text</span><br/><span class="hl-4">new</span><span class="hl-1"> </span><span class="hl-6">Run</span><span class="hl-1">({ </span><span class="hl-2">text:</span><span class="hl-1"> </span><span class="hl-3">&quot;Hello World&quot;</span><span class="hl-1"> });</span><br/><br/><span class="hl-8">// Bold and italic run</span><br/><span class="hl-4">new</span><span class="hl-1"> </span><span class="hl-6">Run</span><span class="hl-1">({ </span><span class="hl-2">text:</span><span class="hl-1"> </span><span class="hl-3">&quot;Formatted&quot;</span><span class="hl-1">, </span><span class="hl-2">bold:</span><span class="hl-1"> </span><span class="hl-4">true</span><span class="hl-1">, </span><span class="hl-2">italics:</span><span class="hl-1"> </span><span class="hl-4">true</span><span class="hl-1"> });</span><br/><br/><span class="hl-8">// Run with page number</span><br/><span class="hl-4">new</span><span class="hl-1"> </span><span class="hl-6">Run</span><span class="hl-1">({ </span><span class="hl-2">children:</span><span class="hl-1"> [</span><span class="hl-2">PageNumber</span><span class="hl-1">.</span><span class="hl-5">CURRENT</span><span class="hl-1">] });</span>
+<h4 class="tsd-anchor-link" id="example">Example<a href="#example" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="../assets/icons.svg#icon-anchor"></use></svg></a></h4><pre><code class="typescript"><span class="hl-4">new</span><span class="hl-1"> </span><span class="hl-6">Paragraph</span><span class="hl-1">({</span><br/><span class="hl-1">  </span><span class="hl-2">children:</span><span class="hl-1"> [</span><span class="hl-4">new</span><span class="hl-1"> </span><span class="hl-6">TextRun</span><span class="hl-1">(</span><span class="hl-3">&quot;A claim&quot;</span><span class="hl-1">), </span><span class="hl-4">new</span><span class="hl-1"> </span><span class="hl-6">EndnoteReferenceRun</span><span class="hl-1">({ </span><span class="hl-2">children:</span><span class="hl-1"> [</span><span class="hl-4">new</span><span class="hl-1"> </span><span class="hl-6">Paragraph</span><span class="hl-1">(</span><span class="hl-3">&quot;Its source.&quot;</span><span class="hl-1">)] })],</span><br/><span class="hl-1">});</span>
 </code><button type="button">Copy</button></pre>
 
 </div></div></section>
-<section class="tsd-panel tsd-hierarchy" data-refl="3857">
+<section class="tsd-panel tsd-hierarchy" data-refl="3879">
 <h4>Hierarchy (<a href="../hierarchy.html#index.EndnoteReferenceRun">View Summary</a>)</h4>
 <ul class="tsd-hierarchy">
 <li class="tsd-hierarchy-item"><a href="index.Run.html" class="tsd-signature-type tsd-kind-class">Run</a>
 <ul class="tsd-hierarchy">
 <li class="tsd-hierarchy-item"><span class="tsd-hierarchy-target">EndnoteReferenceRun</span></li></ul></li></ul></section><aside class="tsd-sources">
 <ul>
-<li>Defined in <a href="https://github.com/dolanmiu/docx/blob/413c8eb9090050fbd815f197b2cf9cb6896277e8/src/file/endnotes/endnote/run/reference-run.ts#L24">file/endnotes/endnote/run/reference-run.ts:24</a></li></ul></aside>
+<li>Defined in <a href="https://github.com/dolanmiu/docx/blob/a61c85d64e66b1c00c5ec08f9dd5a5be3b9016d8/src/file/endnotes/endnote/run/reference-run.ts#L40">file/endnotes/endnote/run/reference-run.ts:40</a></li></ul></aside>
 <section class="tsd-panel-group tsd-index-group">
 <section class="tsd-panel tsd-index-panel">
 <details class="tsd-index-content tsd-accordion" open><summary class="tsd-accordion-summary tsd-index-summary"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" aria-hidden="true"><use href="../assets/icons.svg#icon-chevronDown"></use></svg>
@@ -51,7 +48,7 @@ shares the same formatting properties (bold, italic, font, size, etc.).</p>
 <section class="tsd-index-section">
 <h3 class="tsd-index-heading tsd-anchor-link" id="methods">Methods<a href="#methods" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="../assets/icons.svg#icon-anchor"></use></svg></a></h3>
 <div class="tsd-index-list"><a href="#addchildelement" class="tsd-index-link deprecated tsd-is-inherited"><svg class="tsd-kind-icon" viewBox="0 0 24 24" aria-label="Method"><use href="../assets/icons.svg#icon-2048"></use></svg><span>add<wbr/>Child<wbr/>Element</span></a>
-<a href="#prepforxml" class="tsd-index-link tsd-is-inherited"><svg class="tsd-kind-icon" viewBox="0 0 24 24" aria-label="Method"><use href="../assets/icons.svg#icon-2048"></use></svg><span>prep<wbr/>For<wbr/>Xml</span></a>
+<a href="#prepforxml" class="tsd-index-link"><svg class="tsd-kind-icon" viewBox="0 0 24 24" aria-label="Method"><use href="../assets/icons.svg#icon-2048"></use></svg><span>prep<wbr/>For<wbr/>Xml</span></a>
 </div></section></div></details></section></section>
 <details class="tsd-panel-group tsd-member-group tsd-accordion" open><summary class="tsd-accordion-summary" data-key="section-Constructors"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" aria-hidden="true"><use href="../assets/icons.svg#icon-chevronDown"></use></svg>
 <h2 class="tsd-anchor-link" id="constructors-1">Constructors<a href="#constructors-1" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="../assets/icons.svg#icon-anchor"></use></svg></a></h2></summary>
@@ -60,16 +57,20 @@ shares the same formatting properties (bold, italic, font, size, etc.).</p>
 <h3 class="tsd-anchor-link" id="constructor"><span>constructor</span><a href="#constructor" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="../assets/icons.svg#icon-anchor"></use></svg></a></h3>
 <ul class="tsd-signatures">
 <li class="">
-<div class="tsd-signature tsd-anchor-link" id="constructorendnotereferencerun"><span class="tsd-signature-keyword">new</span> <span class="tsd-kind-constructor-signature">EndnoteReferenceRun</span><span class="tsd-signature-symbol">(</span><span class="tsd-kind-parameter">id</span><span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">number</span><span class="tsd-signature-symbol">)</span><span class="tsd-signature-symbol">:</span> <a href="" class="tsd-signature-type tsd-kind-class">EndnoteReferenceRun</a><a href="#constructorendnotereferencerun" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="../assets/icons.svg#icon-anchor"></use></svg></a></div>
+<div class="tsd-signature tsd-anchor-link" id="constructorendnotereferencerun"><span class="tsd-signature-keyword">new</span> <span class="tsd-kind-constructor-signature">EndnoteReferenceRun</span><span class="tsd-signature-symbol">(</span><span class="tsd-kind-parameter">endnote</span><span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">number</span> <span class="tsd-signature-symbol">|</span> <a href="../types/index.NoteContent.html" class="tsd-signature-type tsd-kind-type-alias">NoteContent</a><span class="tsd-signature-symbol">)</span><span class="tsd-signature-symbol">:</span> <a href="" class="tsd-signature-type tsd-kind-class">EndnoteReferenceRun</a><a href="#constructorendnotereferencerun" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="../assets/icons.svg#icon-anchor"></use></svg></a></div>
 <div class="tsd-description">
 <div class="tsd-parameters">
 <h4 class="tsd-parameters-title">Parameters</h4>
 <ul class="tsd-parameter-list">
-<li><span><span class="tsd-kind-parameter">id</span>: <span class="tsd-signature-type">number</span></span></li></ul></div>
+<li><span><span class="tsd-kind-parameter">endnote</span>: <span class="tsd-signature-type">number</span> <span class="tsd-signature-symbol">|</span> <a href="../types/index.NoteContent.html" class="tsd-signature-type tsd-kind-type-alias">NoteContent</a></span>
+<div class="tsd-comment tsd-typography"><p>The id of one of the document's <code>endnotes</code>, or the endnote's content, for an endnote of the run's
+own. Word has endnotes only in a document's body, so a run with its endnote's content is left out of headers,
+footers, comments and notes</p>
+</div></li></ul></div>
 <h4 class="tsd-returns-title">Returns <a href="" class="tsd-signature-type tsd-kind-class">EndnoteReferenceRun</a></h4><aside class="tsd-sources">
 <p>Overrides <a href="index.Run.html">Run</a>.<a href="index.Run.html#constructor">constructor</a></p>
 <ul>
-<li>Defined in <a href="https://github.com/dolanmiu/docx/blob/413c8eb9090050fbd815f197b2cf9cb6896277e8/src/file/endnotes/endnote/run/reference-run.ts#L25">file/endnotes/endnote/run/reference-run.ts:25</a></li></ul></aside></div></li></ul></section></section></details>
+<li>Defined in <a href="https://github.com/dolanmiu/docx/blob/a61c85d64e66b1c00c5ec08f9dd5a5be3b9016d8/src/file/endnotes/endnote/run/reference-run.ts#L48">file/endnotes/endnote/run/reference-run.ts:48</a></li></ul></aside></div></li></ul></section></section></details>
 <details class="tsd-panel-group tsd-member-group tsd-accordion" open><summary class="tsd-accordion-summary" data-key="section-Accessors"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" aria-hidden="true"><use href="../assets/icons.svg#icon-chevronDown"></use></svg>
 <h2 class="tsd-anchor-link" id="accessors-1">Accessors<a href="#accessors-1" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="../assets/icons.svg#icon-anchor"></use></svg></a></h2></summary>
 <section>
@@ -85,7 +86,7 @@ such as a run with another run in its children. Undefined when it is written as 
 <h4 class="tsd-returns-title">Returns <span class="tsd-signature-keyword">readonly</span> <a href="index.BaseXmlComponent.html" class="tsd-signature-type tsd-kind-class">BaseXmlComponent</a><span class="tsd-signature-symbol">[]</span> <span class="tsd-signature-symbol">|</span> <span class="tsd-signature-type">undefined</span></h4><aside class="tsd-sources">
 <p>Inherited from Run.writtenAs</p>
 <ul>
-<li>Defined in <a href="https://github.com/dolanmiu/docx/blob/413c8eb9090050fbd815f197b2cf9cb6896277e8/src/file/paragraph/run/run.ts#L235">file/paragraph/run/run.ts:235</a></li></ul></aside></div></li></ul></section></section></details>
+<li>Defined in <a href="https://github.com/dolanmiu/docx/blob/a61c85d64e66b1c00c5ec08f9dd5a5be3b9016d8/src/file/paragraph/run/run.ts#L235">file/paragraph/run/run.ts:235</a></li></ul></aside></div></li></ul></section></section></details>
 <details class="tsd-panel-group tsd-member-group tsd-accordion" open><summary class="tsd-accordion-summary" data-key="section-Methods"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" aria-hidden="true"><use href="../assets/icons.svg#icon-chevronDown"></use></svg>
 <h2 class="tsd-anchor-link" id="methods-1">Methods<a href="#methods-1" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="../assets/icons.svg#icon-anchor"></use></svg></a></h2></summary>
 <section>
@@ -111,38 +112,23 @@ such as a run with another run in its children. Undefined when it is written as 
 </div></div><aside class="tsd-sources">
 <p>Inherited from <a href="index.Run.html">Run</a>.<a href="index.Run.html#addchildelement">addChildElement</a></p>
 <ul>
-<li>Defined in <a href="https://github.com/dolanmiu/docx/blob/413c8eb9090050fbd815f197b2cf9cb6896277e8/src/file/xml-components/xml-component.ts#L128">file/xml-components/xml-component.ts:128</a></li></ul></aside></div></li></ul></section>
-<section class="tsd-panel tsd-member tsd-is-inherited">
+<li>Defined in <a href="https://github.com/dolanmiu/docx/blob/a61c85d64e66b1c00c5ec08f9dd5a5be3b9016d8/src/file/xml-components/xml-component.ts#L128">file/xml-components/xml-component.ts:128</a></li></ul></aside></div></li></ul></section>
+<section class="tsd-panel tsd-member">
 <h3 class="tsd-anchor-link" id="prepforxml"><span>prep<wbr/>For<wbr/>Xml</span><a href="#prepforxml" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="../assets/icons.svg#icon-anchor"></use></svg></a></h3>
-<ul class="tsd-signatures tsd-is-inherited">
-<li class="tsd-is-inherited">
+<ul class="tsd-signatures">
+<li class="">
 <div class="tsd-signature tsd-anchor-link" id="prepforxml-1"><span class="tsd-kind-call-signature">prepForXml</span><span class="tsd-signature-symbol">(</span><span class="tsd-kind-parameter">context</span><span class="tsd-signature-symbol">:</span> <a href="../types/index.IContext.html" class="tsd-signature-type tsd-kind-type-alias">IContext</a><span class="tsd-signature-symbol">)</span><span class="tsd-signature-symbol">:</span> <a href="../interfaces/index.IXmlableObject.html" class="tsd-signature-type tsd-kind-interface">IXmlableObject</a> <span class="tsd-signature-symbol">|</span> <span class="tsd-signature-type">undefined</span><a href="#prepforxml-1" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="../assets/icons.svg#icon-anchor"></use></svg></a></div>
 <div class="tsd-description">
-<div class="tsd-comment tsd-typography"><p>Prepares this component and its children for XML serialization.</p>
-<p>This method is called by the Formatter to convert the component tree into
-an object structure compatible with the xml library (<a href="https://www.npmjs.com/package/xml">https://www.npmjs.com/package/xml</a>).
-It recursively processes all children and handles special cases like
-attribute-only elements and empty elements.</p>
-<p>The method can be overridden by subclasses to customize XML representation
-or execute side effects during serialization (e.g., creating relationships).</p>
+<div class="tsd-comment tsd-typography"><p>Formats the run, with its own endnote added to the document's endnotes, and referred to by the id it has there.</p>
 </div>
 <div class="tsd-parameters">
 <h4 class="tsd-parameters-title">Parameters</h4>
 <ul class="tsd-parameter-list">
-<li><span><span class="tsd-kind-parameter">context</span>: <a href="../types/index.IContext.html" class="tsd-signature-type tsd-kind-type-alias">IContext</a></span>
-<div class="tsd-comment tsd-typography"><p>The serialization context containing document state</p>
-</div></li></ul></div>
-<h4 class="tsd-returns-title">Returns <a href="../interfaces/index.IXmlableObject.html" class="tsd-signature-type tsd-kind-interface">IXmlableObject</a> <span class="tsd-signature-symbol">|</span> <span class="tsd-signature-type">undefined</span></h4><p>The XML-serializable object, or undefined to exclude from output</p>
-
-<div class="tsd-comment tsd-typography">
-<div class="tsd-tag-example">
-<h4 class="tsd-anchor-link" id="example-1">Example<a href="#example-1" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="../assets/icons.svg#icon-anchor"></use></svg></a></h4><pre><code class="typescript"><span class="hl-8">// Override to add custom serialization logic</span><br/><span class="hl-6">prepForXml</span><span class="hl-1">(</span><span class="hl-2">context</span><span class="hl-1">: </span><span class="hl-2">IContext</span><span class="hl-1">): </span><span class="hl-2">IXmlableObject</span><span class="hl-1"> | </span><span class="hl-4">undefined</span><span class="hl-1"> {</span><br/><span class="hl-1">  </span><span class="hl-8">// Custom logic here</span><br/><span class="hl-1">  </span><span class="hl-0">return</span><span class="hl-1"> </span><span class="hl-4">super</span><span class="hl-1">.</span><span class="hl-6">prepForXml</span><span class="hl-1">(</span><span class="hl-2">context</span><span class="hl-1">);</span><br/><span class="hl-1">}</span>
-</code><button type="button">Copy</button></pre>
-
-</div></div><aside class="tsd-sources">
-<p>Inherited from <a href="index.Run.html">Run</a>.<a href="index.Run.html#prepforxml">prepForXml</a></p>
+<li><span><span class="tsd-kind-parameter">context</span>: <a href="../types/index.IContext.html" class="tsd-signature-type tsd-kind-type-alias">IContext</a></span></li></ul></div>
+<h4 class="tsd-returns-title">Returns <a href="../interfaces/index.IXmlableObject.html" class="tsd-signature-type tsd-kind-interface">IXmlableObject</a> <span class="tsd-signature-symbol">|</span> <span class="tsd-signature-type">undefined</span></h4><aside class="tsd-sources">
+<p>Overrides <a href="index.Run.html">Run</a>.<a href="index.Run.html#prepforxml">prepForXml</a></p>
 <ul>
-<li>Defined in <a href="https://github.com/dolanmiu/docx/blob/413c8eb9090050fbd815f197b2cf9cb6896277e8/src/file/xml-components/xml-component.ts#L88">file/xml-components/xml-component.ts:88</a></li></ul></aside></div></li></ul></section></section></details></div>
+<li>Defined in <a href="https://github.com/dolanmiu/docx/blob/a61c85d64e66b1c00c5ec08f9dd5a5be3b9016d8/src/file/endnotes/endnote/run/reference-run.ts#L61">file/endnotes/endnote/run/reference-run.ts:61</a></li></ul></aside></div></li></ul></section></section></details></div>
 <div class="col-sidebar">
 <div class="page-menu">
 <div class="tsd-navigation settings">
@@ -156,13 +142,13 @@ or execute side effects during serialization (e.g., creating relationships).</p>
 <div class="tsd-theme-toggle"><label class="settings-label" for="tsd-theme">Theme</label><select id="tsd-theme"><option value="os">OS</option><option value="light">Light</option><option value="dark">Dark</option></select></div></div></details></div>
 <details open class="tsd-accordion tsd-page-navigation"><summary class="tsd-accordion-summary"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" aria-hidden="true"><use href="../assets/icons.svg#icon-chevronDown"></use></svg>
 <h3>On This Page</h3></summary>
-<div class="tsd-accordion-details"><a href="#xsd-schema"><span>XSD <wbr/>Schema</span></a>
+<div class="tsd-accordion-details">
 <details open class="tsd-accordion tsd-page-navigation-section"><summary class="tsd-accordion-summary" data-key="section-Constructors"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" aria-hidden="true"><use href="../assets/icons.svg#icon-chevronDown"></use></svg>Constructors</summary>
 <div><a href="#constructor"><svg class="tsd-kind-icon" viewBox="0 0 24 24" aria-label="Constructor"><use href="../assets/icons.svg#icon-512"></use></svg><span>constructor</span></a></div></details>
 <details open class="tsd-accordion tsd-page-navigation-section"><summary class="tsd-accordion-summary" data-key="section-Accessors"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" aria-hidden="true"><use href="../assets/icons.svg#icon-chevronDown"></use></svg>Accessors</summary>
 <div><a href="#writtenas" class="tsd-is-inherited"><svg class="tsd-kind-icon" viewBox="0 0 24 24" aria-label="Accessor"><use href="../assets/icons.svg#icon-262144"></use></svg><span>written<wbr/>As</span></a></div></details>
 <details open class="tsd-accordion tsd-page-navigation-section"><summary class="tsd-accordion-summary" data-key="section-Methods"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" aria-hidden="true"><use href="../assets/icons.svg#icon-chevronDown"></use></svg>Methods</summary>
-<div><a href="#addchildelement" class="tsd-is-inherited"><svg class="tsd-kind-icon" viewBox="0 0 24 24" aria-label="Method"><use href="../assets/icons.svg#icon-2048"></use></svg><span>add<wbr/>Child<wbr/>Element</span></a><a href="#prepforxml" class="tsd-is-inherited"><svg class="tsd-kind-icon" viewBox="0 0 24 24" aria-label="Method"><use href="../assets/icons.svg#icon-2048"></use></svg><span>prep<wbr/>For<wbr/>Xml</span></a></div></details></div></details></div>
+<div><a href="#addchildelement" class="tsd-is-inherited"><svg class="tsd-kind-icon" viewBox="0 0 24 24" aria-label="Method"><use href="../assets/icons.svg#icon-2048"></use></svg><span>add<wbr/>Child<wbr/>Element</span></a><a href="#prepforxml"><svg class="tsd-kind-icon" viewBox="0 0 24 24" aria-label="Method"><use href="../assets/icons.svg#icon-2048"></use></svg><span>prep<wbr/>For<wbr/>Xml</span></a></div></details></div></details></div>
 <div class="site-menu">
 <nav class="tsd-navigation"><a href="../modules.html">docx</a>
 <ul class="tsd-small-nested-navigation" id="tsd-nav-container">

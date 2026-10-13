@@ -20230,12 +20230,14 @@ MAX: 9026 };
 			if (options.widowControl !== void 0) this.push(new OnOffElement("w:widowControl", options.widowControl));
 			if (options.bullet) this.push(new NumberProperties(1, options.bullet.level));
 			if (options.numbering) {
-				var _options$numbering$in, _options$numbering$in2;
+				const { reference: list, instance = 0, level } = options.numbering;
+				const reference = typeof list === "string" ? list : list.reference;
 				this.numberingReferences.push({
-					reference: options.numbering.reference,
-					instance: (_options$numbering$in = options.numbering.instance) !== null && _options$numbering$in !== void 0 ? _options$numbering$in : 0
+					reference,
+					instance,
+					definition: typeof list === "string" ? void 0 : list
 				});
-				this.push(new NumberProperties(`${options.numbering.reference}-${(_options$numbering$in2 = options.numbering.instance) !== null && _options$numbering$in2 !== void 0 ? _options$numbering$in2 : 0}`, options.numbering.level));
+				this.push(new NumberProperties(`${reference}-${instance}`, level));
 			} else if (options.numbering === false) this.push(new NumberProperties(0, 0));
 			if (options.border) this.push(new Border(options.border));
 			if (options.thematicBreak) this.push(new ThematicBreak());
@@ -20315,7 +20317,7 @@ MAX: 9026 };
 		* @returns The prepared XML object, or undefined if the component should be ignored
 		*/
 		prepForXml(context) {
-			if (!(context.viewWrapper instanceof FontWrapper)) for (const reference of this.numberingReferences) context.file.Numbering.createConcreteNumberingInstance(reference.reference, reference.instance);
+			if (!(context.viewWrapper instanceof FontWrapper)) for (const { reference, instance, definition } of this.numberingReferences) context.file.Numbering.createConcreteNumberingInstance(reference, instance, definition);
 			return super.prepForXml(context);
 		}
 	};
@@ -26649,6 +26651,35 @@ MAX: 9026 };
 		}
 	};
 	//#endregion
+	//#region src/file/footnotes/footnote/note-paragraph.ts
+	/**
+	* The first paragraph of a footnote or endnote, written with the run that shows the note's number before its content.
+	*
+	* The run is added to what the paragraph is written as, rather than to the paragraph, so a paragraph in more than one
+	* note, such as the notes of two documents, or two notes with the same content, has one number in each.
+	*
+	* @internal
+	*/
+	var FirstNoteParagraph = class extends XmlComponent {
+		constructor(paragraph, mark) {
+			super("w:p");
+			_defineProperty(this, "paragraph", void 0);
+			_defineProperty(this, "mark", void 0);
+			this.paragraph = paragraph;
+			this.mark = mark;
+		}
+		prepForXml(context) {
+			const content = this.paragraph.prepForXml(context)["w:p"];
+			const children = Array.isArray(content) ? content : [];
+			const index = children.length > 0 && "w:pPr" in children[0] ? 1 : 0;
+			return { "w:p": [
+				...children.slice(0, index),
+				this.mark.prepForXml(context),
+				...children.slice(index)
+			] };
+		}
+	};
+	//#endregion
 	//#region src/file/endnotes/endnote/endnote-attributes.ts
 	var EndnoteAttributes = class extends XmlAttributeComponent {
 		constructor(..._args) {
@@ -26680,11 +26711,7 @@ MAX: 9026 };
 				type: options.type,
 				id: options.id
 			}));
-			for (let i = 0; i < options.children.length; i++) {
-				const child = options.children[i];
-				if (i === 0) child.addRunToFront(new EndnoteRefRun());
-				this.root.push(child);
-			}
+			for (const [index, child] of options.children.entries()) this.root.push(index === 0 ? new FirstNoteParagraph(child, new EndnoteRefRun()) : child);
 		}
 	};
 	//#endregion
@@ -26803,6 +26830,8 @@ MAX: 9026 };
 	var Endnotes = class extends XmlComponent {
 		constructor() {
 			super("w:endnotes");
+			_defineProperty(this, "ownNotes", /* @__PURE__ */ new Map());
+			_defineProperty(this, "highestId", 0);
 			this.root.push(new EndnotesAttributes({
 				wpc: "http://schemas.microsoft.com/office/word/2010/wordprocessingCanvas",
 				mc: "http://schemas.openxmlformats.org/markup-compatibility/2006",
@@ -26855,6 +26884,27 @@ MAX: 9026 };
 				children: paragraph
 			});
 			this.root.push(endnote);
+			if (Number.isFinite(id)) this.highestId = Math.max(this.highestId, Math.floor(id));
+		}
+		/**
+		* The id of the endnote that a reference run brings with it, which is added to the endnotes the first time the run
+		* is written, with an id no other endnote has. Word has endnotes only in a document's body, so a run written
+		* anywhere else, such as in a header, has none, and its endnote isn't added.
+		*
+		* @internal
+		* @param reference - The run, which has the same endnote each time it is written
+		* @param endnote - The endnote's content
+		* @param context - The context the run is written in
+		* @returns The endnote's id, or undefined outside the document's body
+		*/
+		idOf(reference, endnote, context) {
+			if (context.viewWrapper !== context.file.Document) return;
+			const existing = this.ownNotes.get(reference);
+			if (existing !== void 0) return existing;
+			const id = this.highestId + 1;
+			this.createEndnote(id, endnote.children);
+			this.ownNotes.set(reference, id);
+			return id;
 		}
 		/**
 		* Formats the endnotes, with the page numbers worked out for their document written into their fields, when the
@@ -27199,11 +27249,7 @@ MAX: 9026 };
 				type: options.type,
 				id: options.id
 			}));
-			for (let i = 0; i < options.children.length; i++) {
-				const child = options.children[i];
-				if (i === 0) child.addRunToFront(new FootnoteRefRun());
-				this.root.push(child);
-			}
+			for (const [index, child] of options.children.entries()) this.root.push(index === 0 ? new FirstNoteParagraph(child, new FootnoteRefRun()) : child);
 		}
 	};
 	//#endregion
@@ -27306,6 +27352,8 @@ MAX: 9026 };
 	var FootNotes = class extends XmlComponent {
 		constructor() {
 			super("w:footnotes");
+			_defineProperty(this, "ownNotes", /* @__PURE__ */ new Map());
+			_defineProperty(this, "highestId", 0);
 			this.root.push(new FootnotesAttributes({
 				wpc: "http://schemas.microsoft.com/office/word/2010/wordprocessingCanvas",
 				mc: "http://schemas.openxmlformats.org/markup-compatibility/2006",
@@ -27364,6 +27412,27 @@ MAX: 9026 };
 				children: paragraph
 			});
 			this.root.push(footnote);
+			if (Number.isFinite(id)) this.highestId = Math.max(this.highestId, Math.floor(id));
+		}
+		/**
+		* The id of the footnote that a reference run brings with it, which is added to the footnotes the first time the
+		* run is written, with an id no other footnote has. Word has footnotes only in a document's body, so a run written
+		* anywhere else, such as in a header, has none, and its footnote isn't added.
+		*
+		* @internal
+		* @param reference - The run, which has the same footnote each time it is written
+		* @param footnote - The footnote's content
+		* @param context - The context the run is written in
+		* @returns The footnote's id, or undefined outside the document's body
+		*/
+		idOf(reference, footnote, context) {
+			if (context.viewWrapper !== context.file.Document) return;
+			const existing = this.ownNotes.get(reference);
+			if (existing !== void 0) return existing;
+			const id = this.highestId + 1;
+			this.createFootNote(id, footnote.children);
+			this.ownNotes.set(reference, id);
+			return id;
 		}
 		/**
 		* Formats the footnotes, with the page numbers worked out for their document written into their fields, when the
@@ -28572,8 +28641,15 @@ MAX: 9026 };
 		*
 		* @param reference - The reference name of the abstract numbering definition
 		* @param instance - The instance number for this concrete numbering
+		* @param definition - The list's definition, for a list a paragraph gives its own definition of. It is added with
+		* its reference, unless the numbering already has a list with that reference, such as one of the document's
+		* `numbering` option, which is kept
 		*/
-		createConcreteNumberingInstance(reference, instance) {
+		createConcreteNumberingInstance(reference, instance, definition) {
+			if (definition && !this.abstractNumberingMap.has(definition.reference)) {
+				this.abstractNumberingMap.set(definition.reference, new AbstractNumbering(this.abstractNumUniqueNumericId(), definition.levels));
+				this.referenceConfigMap.set(definition.reference, definition.levels);
+			}
 			const abstractNumbering = this.abstractNumberingMap.get(reference);
 			if (!abstractNumbering) return;
 			const fullReference = `${reference}-${instance}`;
@@ -31155,16 +31231,6 @@ MAX: 9026 };
 	//#endregion
 	//#region src/file/footnotes/footnote/run/reference-run.ts
 	/**
-	* Footnote reference run module for WordprocessingML documents.
-	*
-	* This module provides the footnote reference marker that appears in the
-	* main document text to indicate a footnote.
-	*
-	* Reference: http://officeopenxml.com/WPfootnotes.php
-	*
-	* @module
-	*/
-	/**
 	* Represents the attributes for a footnote reference element.
 	*
 	* @internal
@@ -31204,6 +31270,10 @@ MAX: 9026 };
 	* (typically a superscript number) that appears in the main document text.
 	* Clicking this marker navigates to the corresponding footnote content.
 	*
+	* It refers to one of the document's `footnotes` by its id, or is given its footnote's content, for a footnote of its
+	* own, which is added to the document's footnotes when the run is written. Content made before the document it goes
+	* in, such as by a function that makes paragraphs, then brings its footnotes with it.
+	*
 	* Reference: http://officeopenxml.com/WPfootnotes.php
 	*
 	* @publicApi
@@ -31217,17 +31287,44 @@ MAX: 9026 };
 	*     new FootnoteReferenceRun(1),
 	*   ],
 	* });
+	*
+	* // Or with the footnote's content
+	* new Paragraph({
+	*   children: [
+	*     new TextRun("This text has a footnote of its own"),
+	*     new FootnoteReferenceRun({ children: [new Paragraph("The footnote.")] }),
+	*   ],
+	* });
 	* ```
 	*/
 	var FootnoteReferenceRun = class extends Run {
 		/**
 		* Creates a new footnote reference run.
 		*
-		* @param id - Unique identifier linking to the footnote content
+		* @param footnote - The id of one of the document's `footnotes`, or the footnote's content, for a footnote of the
+		* run's own. Word has footnotes only in a document's body, so a run with its footnote's content is left out of
+		* headers, footers, comments and notes
 		*/
-		constructor(id) {
+		constructor(footnote) {
 			super({ style: "FootnoteReference" });
+			_defineProperty(this, "footnote", void 0);
+			if (typeof footnote === "number") this.root.push(new FootnoteReference(footnote));
+			else this.footnote = footnote;
+		}
+		/**
+		* Formats the run, with its own footnote added to the document's footnotes, and referred to by the id it has there.
+		*/
+		prepForXml(context) {
+			var _context$file;
+			if (this.footnote === void 0) return super.prepForXml(context);
+			const id = (_context$file = context.file) === null || _context$file === void 0 ? void 0 : _context$file.FootNotes.View.idOf(this, this.footnote, context);
+			if (id === void 0) return;
 			this.root.push(new FootnoteReference(id));
+			try {
+				return super.prepForXml(context);
+			} finally {
+				this.root.pop();
+			}
 		}
 	};
 	//#endregion
@@ -31244,10 +31341,47 @@ MAX: 9026 };
 			this.root.push(new EndnoteReferenceRunAttributes({ id }));
 		}
 	};
+	/**
+	* A run with an endnote's reference mark, its number, in the document's text.
+	*
+	* It refers to one of the document's `endnotes` by its id, or is given its endnote's content, for an endnote of its
+	* own, which is added to the document's endnotes when the run is written.
+	*
+	* @publicApi
+	*
+	* @example
+	* ```typescript
+	* new Paragraph({
+	*   children: [new TextRun("A claim"), new EndnoteReferenceRun({ children: [new Paragraph("Its source.")] })],
+	* });
+	* ```
+	*/
 	var EndnoteReferenceRun = class extends Run {
-		constructor(id) {
+		/**
+		* @param endnote - The id of one of the document's `endnotes`, or the endnote's content, for an endnote of the run's
+		* own. Word has endnotes only in a document's body, so a run with its endnote's content is left out of headers,
+		* footers, comments and notes
+		*/
+		constructor(endnote) {
 			super({ style: "EndnoteReference" });
+			_defineProperty(this, "endnote", void 0);
+			if (typeof endnote === "number") this.root.push(new EndnoteIdReference(endnote));
+			else this.endnote = endnote;
+		}
+		/**
+		* Formats the run, with its own endnote added to the document's endnotes, and referred to by the id it has there.
+		*/
+		prepForXml(context) {
+			var _context$file;
+			if (this.endnote === void 0) return super.prepForXml(context);
+			const id = (_context$file = context.file) === null || _context$file === void 0 ? void 0 : _context$file.Endnotes.View.idOf(this, this.endnote, context);
+			if (id === void 0) return;
 			this.root.push(new EndnoteIdReference(id));
+			try {
+				return super.prepForXml(context);
+			} finally {
+				this.root.pop();
+			}
 		}
 	};
 	//#endregion
@@ -35449,11 +35583,11 @@ while (n === a[++i] && n === a[++i] && n === a[++i] && n === a[++i] && n === a[+
 	*
 	* @module
 	*/
-	var formatter$5 = new Formatter();
+	var formatter$4 = new Formatter();
 	/**
 	* Formats a part's XML, with the relationships that anything in it that refers to other parts adds to.
 	*/
-	var xmlifyPart = (file, content, prettify, relationships, standalone = true) => (0, import_xml.default)(formatter$5.format(content, {
+	var xmlifyPart = (file, content, prettify, relationships, standalone = true) => (0, import_xml.default)(formatter$4.format(content, {
 		viewWrapper: {
 			View: content,
 			Relationships: relationships
@@ -36223,7 +36357,7 @@ while (n === a[++i] && n === a[++i] && n === a[++i] && n === a[++i] && n === a[+
 	*
 	* @module
 	*/
-	var formatter$4 = new Formatter();
+	var formatter$3 = new Formatter();
 	/**
 	* Converts XML string to JSON element structure.
 	*
@@ -36263,7 +36397,7 @@ while (n === a[++i] && n === a[++i] && n === a[++i] && n === a[++i] && n === a[+
 	*/
 	var createTextElementContents = (text) => {
 		var _textJson$elements$0$;
-		return (_textJson$elements$0$ = toJson((0, import_xml.default)(formatter$4.format(new Text({ text })))).elements[0].elements) !== null && _textJson$elements$0$ !== void 0 ? _textJson$elements$0$ : [];
+		return (_textJson$elements$0$ = toJson((0, import_xml.default)(formatter$3.format(new Text({ text })))).elements[0].elements) !== null && _textJson$elements$0$ !== void 0 ? _textJson$elements$0$ : [];
 	};
 	/**
 	* Adds xml:space="preserve" attribute to an element.
@@ -36797,7 +36931,7 @@ while (n === a[++i] && n === a[++i] && n === a[++i] && n === a[++i] && n === a[+
 	*
 	* @module
 	*/
-	var formatter$3 = new Formatter();
+	var formatter$2 = new Formatter();
 	var DOCUMENT_PATH$1 = "word/document.xml";
 	var FOOTNOTES = {
 		path: "word/footnotes.xml",
@@ -36833,7 +36967,7 @@ while (n === a[++i] && n === a[++i] && n === a[++i] && n === a[++i] && n === a[+
 			]
 		}
 	};
-	var formatElement$1 = (component, context) => toJson((0, import_xml.default)(formatter$3.format(component, context))).elements[0];
+	var formatElement$1 = (component, context) => toJson((0, import_xml.default)(formatter$2.format(component, context))).elements[0];
 	var findIds = (element, names) => {
 		var _element$name, _element$attributes, _element$elements;
 		const id = names.includes((_element$name = element.name) !== null && _element$name !== void 0 ? _element$name : "") ? Number((_element$attributes = element.attributes) === null || _element$attributes === void 0 ? void 0 : _element$attributes["w:id"]) : NaN;
@@ -36851,6 +36985,8 @@ while (n === a[++i] && n === a[++i] && n === a[++i] && n === a[++i] && n === a[+
 	};
 	var patchNotesOfKind = (kind, notes, parts, { createContext, addContentTypeOverride, renumberBookmarks, renumberDrawings, renumberLists, useStyles }) => {
 		const givenNotes = new Map(Object.entries(notes).map(([id, note]) => [Number(id), note]));
+		const carriedIds = /* @__PURE__ */ new Map();
+		let highestGivenId = [...givenNotes.keys()].filter(Number.isFinite).reduce((highest, id) => Math.max(highest, Math.floor(id)), 0);
 		const noteOfId = /* @__PURE__ */ new Map();
 		let highestId;
 		const renumber = (element) => {
@@ -36909,27 +37045,42 @@ while (n === a[++i] && n === a[++i] && n === a[++i] && n === a[++i] && n === a[+
 				}));
 			}
 		};
+		const carry = (reference, note) => {
+			const existing = carriedIds.get(reference);
+			if (existing !== void 0) return existing;
+			highestGivenId++;
+			givenNotes.set(highestGivenId, note);
+			carriedIds.set(reference, highestGivenId);
+			return highestGivenId;
+		};
 		return {
 			renumber: (elements) => elements.map(renumber),
-			write
+			write,
+			carry
 		};
 	};
 	/**
 	* Creates the writer of the footnotes and endnotes that patches refer to.
 	*
 	* A patch refers to a note with a reference run, such as `new FootnoteReferenceRun(1)`, whose id is the note's in
-	* `footnotes`. Only references to the given notes are renumbered, and only the notes that are referred to are written.
+	* `footnotes`, or with a run that brings its note with it, such as `new FootnoteReferenceRun({ children })`, which is
+	* given an id with `carry` as it is written. Only references to these notes are renumbered, and only the notes that
+	* are referred to are written.
 	*
 	* @param notes - The footnotes and endnotes, by the id the patches' reference runs are given
 	* @param parts - The document's XML parts, parsed, by their paths, which the notes are written to
 	* @param helpers - The patcher's helpers for what the notes refer to
 	*/
 	var patchNotes = ({ footnotes = {}, endnotes = {} }, parts, helpers) => {
-		const patchers = [patchNotesOfKind(FOOTNOTES, footnotes, parts, helpers), patchNotesOfKind(ENDNOTES, endnotes, parts, helpers)];
+		const patchers = {
+			footnotes: patchNotesOfKind(FOOTNOTES, footnotes, parts, helpers),
+			endnotes: patchNotesOfKind(ENDNOTES, endnotes, parts, helpers)
+		};
 		return {
-			renumber: (elements) => patchers.reduce((renumbered, patcher) => patcher.renumber(renumbered), elements),
+			carry: (kind, reference, note) => patchers[kind].carry(reference, note),
+			renumber: (elements) => Object.values(patchers).reduce((renumbered, patcher) => patcher.renumber(renumbered), elements),
 			write: () => {
-				for (const patcher of patchers) patcher.write();
+				for (const patcher of Object.values(patchers)) patcher.write();
 			}
 		};
 	};
@@ -36940,14 +37091,14 @@ while (n === a[++i] && n === a[++i] && n === a[++i] && n === a[++i] && n === a[+
 	*
 	* @module
 	*/
-	var formatter$2 = new Formatter();
+	var formatter$1 = new Formatter();
 	var DOCUMENT_PATH = "word/document.xml";
 	var NUMBERING_PATH = "word/numbering.xml";
 	var NUMBERING_CONTENT_TYPE = "application/vnd.openxmlformats-officedocument.wordprocessingml.numbering+xml";
 	var NUMBERING_RELATIONSHIP = "http://schemas.openxmlformats.org/officeDocument/2006/relationships/numbering";
 	var BULLET_REFERENCE = "default-bullet-numbering";
 	var BULLET_NUM_ID = "1";
-	var formatElement = (component, context) => toJson((0, import_xml.default)(formatter$2.format(component, context))).elements[0];
+	var formatElement = (component, context) => toJson((0, import_xml.default)(formatter$1.format(component, context))).elements[0];
 	var highestOf = (ids) => ids.reduce((highest, id) => Math.max(highest, id), 0);
 	/**
 	* Creates the writer of the lists that patches use.
@@ -37474,7 +37625,6 @@ while (n === a[++i] && n === a[++i] && n === a[++i] && n === a[++i] && n === a[+
 	*
 	* @module
 	*/
-	var formatter$1 = new Formatter();
 	var SPLIT_TOKEN = "￿";
 	/**
 	* Replaces placeholder text in XML with new content from a patch.
@@ -37547,7 +37697,10 @@ while (n === a[++i] && n === a[++i] && n === a[++i] && n === a[++i] && n === a[+
 	var formatChildren = (patch, context, renumberIds) => renumberIds(patch.children.flatMap((c) => {
 		var _c$writtenAs;
 		return (_c$writtenAs = c.writtenAs) !== null && _c$writtenAs !== void 0 ? _c$writtenAs : c;
-	}).map((c) => toJson((0, import_xml.default)(formatter$1.format(c, context)))).map((c) => c.elements[0]));
+	}).flatMap((c) => {
+		const formatted = c.prepForXml(context);
+		return formatted ? [toJson((0, import_xml.default)(formatted)).elements[0]] : [];
+	}));
 	/**
 	* Replaces the first occurrence of the placeholder from `fromIndex` on, splitting the run it starts in.
 	*
@@ -38039,6 +38192,8 @@ while (n === a[++i] && n === a[++i] && n === a[++i] && n === a[++i] && n === a[+
 				Media: new Media(),
 				Numbering: new Numbering(numbering),
 				Theme: themeColors && { Colors: themeColors },
+				FootNotes: { View: { idOf: (reference, note, context) => carryNote("footnotes", reference, note, context) } },
+				Endnotes: { View: { idOf: (reference, note, context) => carryNote("endnotes", reference, note, context) } },
 				PackageParts: new PackageParts({ addOverride: (contentType, partName) => contentTypeOverrides.push({
 					contentType,
 					partName
@@ -38082,9 +38237,11 @@ while (n === a[++i] && n === a[++i] && n === a[++i] && n === a[++i] && n === a[+
 			}
 			const renumberBookmarks = renumberBookmarksAvoiding([...map.values()].flatMap(findBookmarkIds));
 			const renumberDrawings = renumberDrawingsAvoiding([...map.values()].flatMap(findDrawingIds));
-			const createContext = (key) => ({
-				file,
-				viewWrapper: { Relationships: { addRelationship: (id, type, target, targetMode) => {
+			const viewWrappers = /* @__PURE__ */ new Map();
+			const viewWrapperOf = (key) => {
+				const existing = viewWrappers.get(key);
+				if (existing) return existing;
+				const viewWrapper = { Relationships: { addRelationship: (id, type, target, targetMode) => {
 					relationshipAdditions.push({
 						key,
 						id,
@@ -38092,7 +38249,13 @@ while (n === a[++i] && n === a[++i] && n === a[++i] && n === a[++i] && n === a[+
 						target,
 						targetMode
 					});
-				} } },
+				} } };
+				viewWrappers.set(key, viewWrapper);
+				return viewWrapper;
+			};
+			const createContext = (key) => ({
+				file,
+				viewWrapper: viewWrapperOf(key),
 				stack: []
 			});
 			const addContentTypeOverride = (contentType, partName) => {
@@ -38117,6 +38280,7 @@ while (n === a[++i] && n === a[++i] && n === a[++i] && n === a[++i] && n === a[+
 				renumberLists: lists.renumber,
 				useStyles: styles.use
 			});
+			const carryNote = (kind, reference, note, context) => context.viewWrapper === viewWrapperOf("word/document.xml") ? notes.carry(kind, reference, note) : void 0;
 			patchDrawings({
 				parts: map,
 				binaryParts: binaryContentMap,

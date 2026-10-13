@@ -32,6 +32,8 @@
         "docx/charts": { file: "charts", global: "docxCharts" },
         "docx/math": { file: "math", global: "docxMath" },
         "docx/layout": { file: "layout", global: "docxLayout" },
+        // docx/html writes math with docx/math, so it is loaded after it
+        "docx/html": { file: "html", global: "docxHtml", after: ["docx/math"] },
     };
 
     // Packages from npm an example can import too, from jsDelivr at the version the docs are written for: where each is, and
@@ -112,11 +114,18 @@ declare module "stream" {
     const loadSucrase = once(() => import(SUCRASE));
     const loadDocxPreview = once(() => import(DOCX_PREVIEW));
     const loadDocx = once(() => loadScript(`${LIB}index.iife.js`));
-    // docx's entries, such as docx/shapes, use the docx global, so they're loaded after it
+    // docx's entries, such as docx/shapes, use the docx global, so they're loaded after it, and after the entries they use
     const entryLoaders = Object.fromEntries(
         Object.entries(MODULES)
             .filter(([name]) => name !== "docx")
-            .map(([name, { file }]) => [name, once(() => loadDocx().then(() => loadScript(`${LIB}${file}.iife.js`)))]),
+            .map(([name, { file, after = [] }]) => [
+                name,
+                once(() =>
+                    loadDocx()
+                        .then(() => Promise.all(after.map((other) => entryLoaders[other]())))
+                        .then(() => loadScript(`${LIB}${file}.iife.js`)),
+                ),
+            ]),
     );
     const loadModule = (name) => (name === "docx" ? loadDocx() : entryLoaders[name]());
     const packageLoaders = Object.fromEntries(

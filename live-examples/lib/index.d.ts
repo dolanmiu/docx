@@ -3617,8 +3617,33 @@ export declare class EndnoteReference extends EmptyElement {
     constructor();
 }
 
+/**
+ * A run with an endnote's reference mark, its number, in the document's text.
+ *
+ * It refers to one of the document's `endnotes` by its id, or is given its endnote's content, for an endnote of its
+ * own, which is added to the document's endnotes when the run is written.
+ *
+ * @publicApi
+ *
+ * @example
+ * ```typescript
+ * new Paragraph({
+ *   children: [new TextRun("A claim"), new EndnoteReferenceRun({ children: [new Paragraph("Its source.")] })],
+ * });
+ * ```
+ */
 export declare class EndnoteReferenceRun extends Run {
-    constructor(id: number);
+    private readonly endnote?;
+    /**
+     * @param endnote - The id of one of the document's `endnotes`, or the endnote's content, for an endnote of the run's
+     * own. Word has endnotes only in a document's body, so a run with its endnote's content is left out of headers,
+     * footers, comments and notes
+     */
+    constructor(endnote: number | NoteContent);
+    /**
+     * Formats the run, with its own endnote added to the document's endnotes, and referred to by the id it has there.
+     */
+    prepForXml(context: IContext): IXmlableObject | undefined;
 }
 
 export declare class EndnoteReferenceRunAttributes extends XmlAttributeComponent<{
@@ -3630,8 +3655,22 @@ export declare class EndnoteReferenceRunAttributes extends XmlAttributeComponent
 }
 
 export declare class Endnotes extends XmlComponent {
+    private readonly ownNotes;
+    private highestId;
     constructor();
     createEndnote(id: number, paragraph: readonly Paragraph[]): void;
+    /**
+     * The id of the endnote that a reference run brings with it, which is added to the endnotes the first time the run
+     * is written, with an id no other endnote has. Word has endnotes only in a document's body, so a run written
+     * anywhere else, such as in a header, has none, and its endnote isn't added.
+     *
+     * @internal
+     * @param reference - The run, which has the same endnote each time it is written
+     * @param endnote - The endnote's content
+     * @param context - The context the run is written in
+     * @returns The endnote's id, or undefined outside the document's body
+     */
+    idOf(reference: object, endnote: NoteContent, context: IContext): number | undefined;
     /**
      * Formats the endnotes, with the page numbers worked out for their document written into their fields, when the
      * document's body is written with an estimate of its pages.
@@ -4162,6 +4201,10 @@ export declare class FootnoteReferenceElement extends EmptyElement {
  * (typically a superscript number) that appears in the main document text.
  * Clicking this marker navigates to the corresponding footnote content.
  *
+ * It refers to one of the document's `footnotes` by its id, or is given its footnote's content, for a footnote of its
+ * own, which is added to the document's footnotes when the run is written. Content made before the document it goes
+ * in, such as by a function that makes paragraphs, then brings its footnotes with it.
+ *
  * Reference: http://officeopenxml.com/WPfootnotes.php
  *
  * @publicApi
@@ -4175,15 +4218,30 @@ export declare class FootnoteReferenceElement extends EmptyElement {
  *     new FootnoteReferenceRun(1),
  *   ],
  * });
+ *
+ * // Or with the footnote's content
+ * new Paragraph({
+ *   children: [
+ *     new TextRun("This text has a footnote of its own"),
+ *     new FootnoteReferenceRun({ children: [new Paragraph("The footnote.")] }),
+ *   ],
+ * });
  * ```
  */
 export declare class FootnoteReferenceRun extends Run {
+    private readonly footnote?;
     /**
      * Creates a new footnote reference run.
      *
-     * @param id - Unique identifier linking to the footnote content
+     * @param footnote - The id of one of the document's `footnotes`, or the footnote's content, for a footnote of the
+     * run's own. Word has footnotes only in a document's body, so a run with its footnote's content is left out of
+     * headers, footers, comments and notes
      */
-    constructor(id: number);
+    constructor(footnote: number | NoteContent);
+    /**
+     * Formats the run, with its own footnote added to the document's footnotes, and referred to by the id it has there.
+     */
+    prepForXml(context: IContext): IXmlableObject | undefined;
 }
 
 /**
@@ -4243,6 +4301,8 @@ export declare class FootNoteReferenceRunAttributes extends XmlAttributeComponen
  * ```
  */
 export declare class FootNotes extends XmlComponent {
+    private readonly ownNotes;
+    private highestId;
     constructor();
     /**
      * Creates and adds a new footnote to the collection.
@@ -4251,6 +4311,18 @@ export declare class FootNotes extends XmlComponent {
      * @param paragraph - Array of paragraphs that make up the footnote content
      */
     createFootNote(id: number, paragraph: readonly Paragraph[]): void;
+    /**
+     * The id of the footnote that a reference run brings with it, which is added to the footnotes the first time the
+     * run is written, with an id no other footnote has. Word has footnotes only in a document's body, so a run written
+     * anywhere else, such as in a header, has none, and its footnote isn't added.
+     *
+     * @internal
+     * @param reference - The run, which has the same footnote each time it is written
+     * @param footnote - The footnote's content
+     * @param context - The context the run is written in
+     * @returns The footnote's id, or undefined outside the document's body
+     */
+    idOf(reference: object, footnote: NoteContent, context: IContext): number | undefined;
     /**
      * Formats the footnotes, with the page numbers worked out for their document written into their fields, when the
      * document's body is written with an estimate of its pages.
@@ -6545,12 +6617,7 @@ export declare type INumberedItemReferenceOptions = {
  */
 export declare type INumberingOptions = {
     /** Array of numbering configurations, each with levels and a reference name. */
-    readonly config: readonly {
-        /** Array of level definitions for this numbering configuration. */
-        readonly levels: readonly ILevelsOptions[];
-        /** Unique reference name for this numbering configuration. */
-        readonly reference: string;
-    }[];
+    readonly config: readonly NumberingDefinition[];
 };
 
 /**
@@ -6866,8 +6933,13 @@ export declare type IParagraphStylePropertiesOptions = {
     readonly shading?: IShadingAttributesProperties;
     /** Numbering configuration for lists, or false to remove numbering */
     readonly numbering?: {
-        /** Reference ID of the numbering definition to use */
-        readonly reference: string;
+        /**
+         * The list the paragraph is in: the reference of one of the document's `numbering` configs, or a list's
+         * definition, its reference and its levels, for a list the document's `numbering` option doesn't have.
+         * The definition is added to the document's numbering when the paragraph is written, unless it already has
+         * a list with that reference, which is kept
+         */
+        readonly reference: string | NumberingDefinition;
         /** Level in the numbering hierarchy (0-8) */
         readonly level: number;
         /** Instance number for multiple lists with same reference */
@@ -9510,6 +9582,18 @@ export declare type NonVisualDrawingPropertiesOptions = DrawingLinkOptions & {
 };
 
 /**
+ * A footnote's or endnote's content: its paragraphs.
+ *
+ * A {@link FootnoteReferenceRun} or {@link EndnoteReferenceRun} can be given its note's content, rather than the id of
+ * one of the document's `footnotes` or `endnotes`, for a note of its own. The note is added to the document's notes,
+ * with an id none of them has, when the run is written in the document's body.
+ */
+export declare type NoteContent = {
+    /** The note's paragraphs */
+    readonly children: readonly Paragraph[];
+};
+
+/**
  * When the footnote or endnote numbering restarts.
  *
  * ## XSD Schema
@@ -9772,8 +9856,11 @@ export declare class Numbering extends XmlComponent {
      *
      * @param reference - The reference name of the abstract numbering definition
      * @param instance - The instance number for this concrete numbering
+     * @param definition - The list's definition, for a list a paragraph gives its own definition of. It is added with
+     * its reference, unless the numbering already has a list with that reference, such as one of the document's
+     * `numbering` option, which is kept
      */
-    createConcreteNumberingInstance(reference: string, instance: number): void;
+    createConcreteNumberingInstance(reference: string, instance: number, definition?: NumberingDefinition): void;
     /**
      * Gets all concrete numbering instances.
      *
@@ -9787,6 +9874,22 @@ export declare class Numbering extends XmlComponent {
      */
     get ReferenceConfig(): readonly Record<string, any>[];
 }
+
+/**
+ * A list's definition: its reference and its levels.
+ *
+ * A document's `numbering` option has a definition for each of its lists. A paragraph can also be given a list's
+ * definition as its `numbering`'s `reference`, for a list the document's `numbering` option doesn't have, which is added
+ * to the document's numbering when the paragraph is written.
+ *
+ * @see {@link Numbering}
+ */
+export declare type NumberingDefinition = {
+    /** Array of level definitions for this numbering configuration. */
+    readonly levels: readonly ILevelsOptions[];
+    /** Unique reference name for this numbering configuration. */
+    readonly reference: string;
+};
 
 /**
  * Represents numbering properties for a paragraph.
