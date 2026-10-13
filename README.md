@@ -92,6 +92,21 @@ const doc = new Document({
 
 In a page without a bundler, load `dist/shapes.umd.cjs`, `dist/watermarks.umd.cjs` or `dist/charts.umd.cjs` after `dist/index.umd.cjs`. They add the `docxShapes`, `docxWatermarks` and `docxCharts` globals. See the [shapes](https://docx.js.org/#/usage/shapes), [watermarks](https://docx.js.org/#/usage/watermarks) and [charts](https://docx.js.org/#/usage/charts) documentation.
 
+# HTML
+
+HTML, such as what people write in a rich-text editor, becomes a document's paragraphs, lists, tables, images, links and equations with `docx/html`, written in the document's own styles:
+
+```ts
+import { Document } from "docx";
+import { htmlToContent } from "docx/html";
+
+const doc = new Document({
+    sections: [{ children: htmlToContent("<h1>Report</h1><p>Sales were <b>up 12%</b>.</p><ul><li>EMEA</li><li>APAC</li></ul>") }],
+});
+```
+
+In a page without a bundler, load `dist/html.umd.cjs` after `dist/index.umd.cjs` and `dist/math.umd.cjs`. It adds the `docxHtml` global. See the [HTML](https://docx.js.org/#/usage/html) documentation.
+
 # Playground
 
 Experience `docx` in action through [Docx.js Editor][docxjs-editor-url], an interactive playground where you can code and preview the results in real-time.

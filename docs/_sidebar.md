@@ -67,6 +67,7 @@
     - [Change Tracking](usage/change-tracking.md)
     - [Math](usage/math.md)
         - [Math from LaTeX](usage/math-latex.md)
+    - [HTML](usage/html.md)
     - [Comments](usage/comments.md)
     - [Footnotes](usage/footnotes.md)
     - [Endnotes](usage/endnotes.md)

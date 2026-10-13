@@ -94,6 +94,8 @@
         "docs/api",
         "docs/live-examples/lib",
         "*.docx",
+        // HTML in the shapes editors and other programs write, which tests and demos read
+        "demo/assets/html",
         "build"
     ],
     "allowCompoundWords": true,
