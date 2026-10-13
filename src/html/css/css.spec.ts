@@ -421,6 +421,29 @@ describe("CSS", () => {
             expect(values.get("color")).toEqual(["red", "gray"]);
         });
 
+        it("leaves out a custom property that is initial, so a var() of it falls back, and inherits one that is inherit, unset or revert", () => {
+            const { element, cascade } = cascadeOf(
+                '<p id="a" style="--tone: initial; --a: inherit; --b: UNSET; --c: revert ; --d: inherit; color: var(--tone, blue)">x</p>',
+            );
+            const { values, customProperties } = cascade(
+                element("a"),
+                new Map([
+                    ["--tone", "red"],
+                    ["--a", "1"],
+                    ["--b", "2"],
+                    ["--c", "3"],
+                ]),
+            );
+            expect(customProperties).toEqual(
+                new Map([
+                    ["--a", "1"],
+                    ["--b", "2"],
+                    ["--c", "3"],
+                ]),
+            );
+            expect(values.get("color")).toEqual(["blue", "gray"]);
+        });
+
         it("leaves out each custom property in a cycle, though it has a fallback, and keeps those that fall back past it", () => {
             const { element, cascade } = cascadeOf(
                 '<p id="a" style="--a: var(--b, 1); --b: var(--c); --c: var(--a); --d: var(--a, 2); --e: 3">x</p>',

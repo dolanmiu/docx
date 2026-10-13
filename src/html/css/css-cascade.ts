@@ -14,6 +14,7 @@ import type { Element } from "domhandler";
 
 import { expandShorthand } from "./css-shorthands";
 import { type Declaration, indexOfTopLevel, parseDeclarations, parseStyleSheet, splitTopLevel } from "./css-syntax";
+import { isCssWideKeyword } from "./css-values";
 
 /**
  * Where a declaration comes from, from the least important: a browser's own style sheet, the styles an element's
@@ -162,7 +163,8 @@ export const substituteVariables = (value: string, variableOf: (name: string) =>
 /**
  * The custom properties an element has: those it inherits, and its own, whose `var()`s are worked out with each other,
  * each once. Those that refer to each other in a cycle are invalid, and left out, as are those more than 256 references
- * deep, and those longer than browsers allow.
+ * deep, those longer than browsers allow, and those that are `initial`. One that is `inherit`, `unset` or `revert` is
+ * the one it inherits.
  */
 const customPropertiesOf = (own: ReadonlyMap<string, string>, inherited: ReadonlyMap<string, string>): ReadonlyMap<string, string> => {
     const resolved = new Map<string, string | undefined>();
@@ -174,6 +176,11 @@ const customPropertiesOf = (own: ReadonlyMap<string, string>, inherited: Readonl
         const value = own.get(name);
         if (value === undefined) {
             return inherited.get(name);
+        }
+        if (isCssWideKeyword(value)) {
+            // `initial` is a custom property's initial value, which is invalid, so a var() of it falls back. The others
+            // are its parent's value, as custom properties are inherited, and browsers have none of their own
+            return value.trim().toLowerCase() === "initial" ? undefined : inherited.get(name);
         }
         if (resolved.has(name)) {
             return resolved.get(name);
