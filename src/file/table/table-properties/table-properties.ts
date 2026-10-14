@@ -141,7 +141,8 @@ export class TableProperties extends IgnoreIfEmptyXmlComponent {
         }
 
         if (options.borders) {
-            this.root.push(new TableBorders(options.borders));
+            // A table with a style takes the sides it isn't given from the style
+            this.root.push(new TableBorders(options.borders, { fillMissingSides: !options.style }));
         }
 
         if (options.shading) {
