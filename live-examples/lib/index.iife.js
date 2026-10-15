@@ -16885,14 +16885,14 @@ EXTERNAL: "External" };
 		}
 	};
 	/** The name of a formatted element, or `_attr` for its parent's attributes */
-	var nameOf$3 = (element) => typeof element === "object" && element !== null ? Object.keys(element)[0] : void 0;
+	var nameOf$4 = (element) => typeof element === "object" && element !== null ? Object.keys(element)[0] : void 0;
 	/** The children of a formatted element. An element with only attributes has them as its one child */
-	var childrenOf = (element) => {
-		const name = nameOf$3(element);
+	var childrenOf$1 = (element) => {
+		const name = nameOf$4(element);
 		const content = name === void 0 ? void 0 : element[name];
 		return Array.isArray(content) ? content : content === void 0 ? [] : [content];
 	};
-	var childOf = (element, name) => childrenOf(element).find((child) => nameOf$3(child) === name);
+	var childOf = (element, name) => childrenOf$1(element).find((child) => nameOf$4(child) === name);
 	var attributeOf = (element, attribute) => {
 		var _childOf;
 		return (_childOf = childOf(element, "_attr")) === null || _childOf === void 0 || (_childOf = _childOf._attr) === null || _childOf === void 0 ? void 0 : _childOf[attribute];
@@ -16916,9 +16916,9 @@ EXTERNAL: "External" };
 	* so the paragraphs in it aren't taken for headings. Nor are paragraphs in text boxes, as in Word.
 	*/
 	var blocksOf = (elements) => elements.flatMap((element) => {
-		const name = nameOf$3(element);
+		const name = nameOf$4(element);
 		if (name === "w:p" || writtenTables.has(element)) return [element];
-		return name !== void 0 && BLOCK_CONTAINERS.has(name) ? blocksOf(childrenOf(element)) : [];
+		return name !== void 0 && BLOCK_CONTAINERS.has(name) ? blocksOf(childrenOf$1(element)) : [];
 	});
 	/** The elements in a paragraph that its text is in. Deleted text, field instructions and drawings aren't */
 	var TEXT_CONTAINERS = /* @__PURE__ */ new Set([
@@ -16936,8 +16936,8 @@ EXTERNAL: "External" };
 	]);
 	/** The text an element in a run stands for, such as `\t` for a tab. A page or column break isn't text */
 	var textOfRunContent = (element) => {
-		switch (nameOf$3(element)) {
-			case "w:t": return childrenOf(element).filter((child) => typeof child === "string").join("");
+		switch (nameOf$4(element)) {
+			case "w:t": return childrenOf$1(element).filter((child) => typeof child === "string").join("");
 			case "w:tab": return "	";
 			case "w:br": return [void 0, "textWrapping"].includes(attributeOf(element, "w:type")) ? "\n" : "";
 			case "w:cr": return "\n";
@@ -16949,8 +16949,8 @@ EXTERNAL: "External" };
 	var textOf = (paragraph) => {
 		const fields = [];
 		const read = (element) => {
-			const name = nameOf$3(element);
-			if (name !== void 0 && TEXT_CONTAINERS.has(name)) return childrenOf(element).map(read).join("");
+			const name = nameOf$4(element);
+			if (name !== void 0 && TEXT_CONTAINERS.has(name)) return childrenOf$1(element).map(read).join("");
 			if (name === "w:fldChar") {
 				const type = attributeOf(element, "w:fldCharType");
 				if (type === "begin") fields.push(false);
@@ -16960,11 +16960,11 @@ EXTERNAL: "External" };
 			}
 			return fields.every(Boolean) ? textOfRunContent(element) : "";
 		};
-		return childrenOf(paragraph).map(read).join("");
+		return childrenOf$1(paragraph).map(read).join("");
 	};
 	/** The bookmarks started and ended in an element, in order */
 	var bookmarkMarksOf = (element) => {
-		const name = nameOf$3(element);
+		const name = nameOf$4(element);
 		if (name === "w:bookmarkStart") return [{
 			start: true,
 			id: attributeOf(element, "w:id"),
@@ -16974,7 +16974,7 @@ EXTERNAL: "External" };
 			start: false,
 			id: attributeOf(element, "w:id")
 		}];
-		return name === void 0 || name === "_attr" ? [] : childrenOf(element).flatMap(bookmarkMarksOf);
+		return name === void 0 || name === "_attr" ? [] : childrenOf$1(element).flatMap(bookmarkMarksOf);
 	};
 	/**
 	* The names of the bookmarks each paragraph is in, for the `\b` switch: those open where it starts, followed through the
@@ -17009,7 +17009,7 @@ EXTERNAL: "External" };
 	var stylesOf = (context) => {
 		var _context$file;
 		const styles = (_context$file = context.file) === null || _context$file === void 0 || (_context$file = _context$file.Styles) === null || _context$file === void 0 ? void 0 : _context$file.prepForXml(context);
-		return new Map(childrenOf(styles).filter((style) => nameOf$3(style) === "w:style" && ["paragraph", void 0].includes(attributeOf(style, "w:type"))).map((style) => [attributeOf(style, "w:styleId"), {
+		return new Map(childrenOf$1(styles).filter((style) => nameOf$4(style) === "w:style" && ["paragraph", void 0].includes(attributeOf(style, "w:type"))).map((style) => [attributeOf(style, "w:styleId"), {
 			name: attributeOf(childOf(style, "w:name"), "w:val"),
 			basedOn: attributeOf(childOf(style, "w:basedOn"), "w:val"),
 			outlineLevel: numberAttributeOf(childOf(childOf(style, "w:pPr"), "w:outlineLvl"), "w:val")
@@ -17136,8 +17136,8 @@ EXTERNAL: "External" };
 	};
 	/** Puts a bookmark around the content of a formatted paragraph */
 	var bookmark = (paragraph, name, id, context) => {
-		const children = childrenOf(paragraph);
-		const start = children.findIndex((child) => nameOf$3(child) === "w:pPr") + 1;
+		const children = childrenOf$1(paragraph);
+		const start = children.findIndex((child) => nameOf$4(child) === "w:pPr") + 1;
 		paragraph["w:p"] = [
 			...children.slice(0, start),
 			new BookmarkStart(name, id).prepForXml(context),
@@ -17150,7 +17150,7 @@ EXTERNAL: "External" };
 	* table of contents that doesn't list any heading is left empty, for Word to fill in.
 	*/
 	var fillTablesOfContents = (body, context, bookmarkIds) => {
-		const blocks = blocksOf(childrenOf(body));
+		const blocks = blocksOf(childrenOf$1(body));
 		const tables = blocks.flatMap((block) => {
 			const options = writtenTables.get(block);
 			return options ? [[block, options]] : [];
@@ -17158,7 +17158,7 @@ EXTERNAL: "External" };
 		if (tables.length === 0) return;
 		const styles = stylesOf(context);
 		const followBookmarks = tables.some(([, { properties }]) => Boolean(properties.entriesFromBookmark));
-		const headings = paragraphDetailsOf(blocks.filter((block) => nameOf$3(block) === "w:p"), followBookmarks).map((paragraph) => ({
+		const headings = paragraphDetailsOf(blocks.filter((block) => nameOf$4(block) === "w:p"), followBookmarks).map((paragraph) => ({
 			paragraph,
 			levels: tables.map(([, { properties }]) => levelIn(properties, paragraph, styles))
 		})).filter(({ levels }) => levels.some((level) => level !== void 0)).map((heading, index) => _objectSpread2(_objectSpread2({}, heading), {}, { id: bookmarkIds.get(index) }));
@@ -17173,7 +17173,7 @@ EXTERNAL: "External" };
 				}];
 			});
 			if (entries.length === 0) return;
-			table["w:sdt"] = childrenOf(table).map((child) => nameOf$3(child) === "w:sdtContent" ? contentOf(options, entries, styles, context) : child);
+			table["w:sdt"] = childrenOf$1(table).map((child) => nameOf$4(child) === "w:sdtContent" ? contentOf(options, entries, styles, context) : child);
 		});
 	};
 	//#endregion
@@ -17353,21 +17353,21 @@ EXTERNAL: "External" };
 	*
 	* @module
 	*/
-	var nameOf$2 = (element) => {
+	var nameOf$3 = (element) => {
 		const name = typeof element === "object" && element !== null && !Array.isArray(element) ? Object.keys(element)[0] : void 0;
 		return name === "_attr" ? void 0 : name;
 	};
 	var textElement = (text) => ({ "w:t": [{ _attr: { "xml:space": "preserve" } }, text] });
 	/** The elements docx formats to write a document */
 	var FORMATTED = {
-		nameOf: nameOf$2,
+		nameOf: nameOf$3,
 		contentOf: (element) => {
-			const content = element[nameOf$2(element)];
+			const content = element[nameOf$3(element)];
 			return Array.isArray(content) ? content : void 0;
 		},
 		attributeOf: (element, attribute) => {
 			var _holder$_attr;
-			const content = element[nameOf$2(element)];
+			const content = element[nameOf$3(element)];
 			const holder = Array.isArray(content) ? content.find((child) => typeof child === "object" && child !== null && "_attr" in child) : content;
 			return holder === null || holder === void 0 || (_holder$_attr = holder._attr) === null || _holder$_attr === void 0 ? void 0 : _holder$_attr[attribute];
 		},
@@ -25435,6 +25435,29 @@ MAX: 9026 };
 	*
 	* @module
 	*/
+	var childrenOf = (element, name) => {
+		const content = element[name];
+		return Array.isArray(content) ? content : [];
+	};
+	var nameOf$2 = (element) => Object.keys(element)[0];
+	/**
+	* The paragraph with `keepNext` in its properties, unless it has its own. It goes after the paragraph's style, as
+	* the schema orders them.
+	*/
+	var withKeepNext = (paragraph, keepNext) => {
+		const children = childrenOf(paragraph, "w:p");
+		const properties = children.find((child) => nameOf$2(child) === "w:pPr");
+		if (!properties) return { "w:p": [{ "w:pPr": [keepNext] }, ...children] };
+		const settings = childrenOf(properties, "w:pPr");
+		if (settings.some((setting) => nameOf$2(setting) === "w:keepNext")) return paragraph;
+		const before = settings.filter((setting) => nameOf$2(setting) === "w:pStyle").length;
+		const newProperties = { "w:pPr": [
+			...settings.slice(0, before),
+			keepNext,
+			...settings.slice(before)
+		] };
+		return { "w:p": children.map((child) => child === properties ? newProperties : child) };
+	};
 	/**
 	* Represents a table row in a WordprocessingML document.
 	*
@@ -25477,6 +25500,12 @@ MAX: 9026 };
 			this.options = options;
 			this.root.push(new TableRowProperties(options));
 			for (const child of options.children) this.root.push(child);
+		}
+		prepForXml(context) {
+			const xml = super.prepForXml(context);
+			if (!xml || this.options.keepNext === void 0) return xml;
+			const keepNext = new OnOffElement("w:keepNext", this.options.keepNext).prepForXml(context);
+			return { "w:tr": childrenOf(xml, "w:tr").map((child) => nameOf$2(child) === "w:tc" ? { "w:tc": childrenOf(child, "w:tc").map((content) => nameOf$2(content) === "w:p" ? withKeepNext(content, keepNext) : content) } : child) };
 		}
 		get CellCount() {
 			return this.options.children.length;

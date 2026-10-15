@@ -7883,6 +7883,14 @@ export declare type ITablePropertiesOptionsBase = {
 export declare type ITableRowOptions = {
     /** Array of TableCell elements that make up the row */
     readonly children: readonly TableCell[];
+    /**
+     * Keeps the row on the same page as the next row (keep with next), by setting `keepNext` on each paragraph in
+     * its cells that doesn't set its own. That includes the cells docx adds below a cell merged down several rows
+     * (`rowSpan`), which have no paragraphs of yours to set it on. Word keeps a row with the next when the
+     * paragraphs of its first cell are kept with the next, so set it on every row of a group but the last to keep
+     * the group on one page.
+     */
+    readonly keepNext?: boolean;
 } & ITableRowPropertiesOptions;
 
 export declare type ITableRowPropertiesChangeOptions = ITableRowPropertiesOptionsBase & IChangedAttributesProperties;
@@ -12860,6 +12868,7 @@ export declare class TableProperties extends IgnoreIfEmptyXmlComponent {
 export declare class TableRow extends XmlComponent {
     private readonly options;
     constructor(options: ITableRowOptions);
+    prepForXml(context: IContext): IXmlableObject | undefined;
     get CellCount(): number;
     get cells(): readonly TableCell[];
     addCellToIndex(cell: TableCell, index: number): void;
