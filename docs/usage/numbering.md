@@ -71,7 +71,7 @@ const doc = new Document({
                         alignment: AlignmentType.START,
                         style: {
                             paragraph: {
-                                indent: { left: 2880, hanging: 2420 },
+                                indent: { left: 720, hanging: 360 },
                             },
                         },
                     },

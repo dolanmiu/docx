@@ -5,6 +5,7 @@ import { Paragraph } from "@file/paragraph";
 import { HeightRule } from "@file/table/table-row/table-row-height";
 import { EMPTY_OBJECT } from "@file/xml-components";
 
+import { Table } from "../table";
 import { TableCell } from "../table-cell";
 import { TableRow } from "./table-row";
 import { CellSpacingType } from "../table-cell-spacing";
@@ -284,6 +285,112 @@ describe("TableRow", () => {
                     },
                 ],
             });
+        });
+    });
+
+    describe("#keepNext", () => {
+        it("keeps each paragraph in the row's cells with the next, after its style", () => {
+            const tableRow = new TableRow({
+                keepNext: true,
+                children: [
+                    new TableCell({ children: [new Paragraph("a")] }),
+                    new TableCell({ children: [new Paragraph({ text: "b", style: "Strong", keepLines: true })] }),
+                ],
+            });
+            const tree = new Formatter().format(tableRow);
+            expect(tree).to.deep.equal({
+                "w:tr": [
+                    {
+                        "w:tc": [
+                            {
+                                "w:p": [
+                                    { "w:pPr": [{ "w:keepNext": EMPTY_OBJECT }] },
+                                    { "w:r": [{ "w:t": [{ _attr: { "xml:space": "preserve" } }, "a"] }] },
+                                ],
+                            },
+                        ],
+                    },
+                    {
+                        "w:tc": [
+                            {
+                                "w:p": [
+                                    {
+                                        "w:pPr": [
+                                            { "w:pStyle": { _attr: { "w:val": "Strong" } } },
+                                            { "w:keepNext": EMPTY_OBJECT },
+                                            { "w:keepLines": EMPTY_OBJECT },
+                                        ],
+                                    },
+                                    { "w:r": [{ "w:t": [{ _attr: { "xml:space": "preserve" } }, "b"] }] },
+                                ],
+                            },
+                        ],
+                    },
+                ],
+            });
+        });
+
+        it("keeps the paragraph a cell is given when it has none", () => {
+            const tableRow = new TableRow({ keepNext: true, children: [new TableCell({ children: [] })] });
+            const tree = new Formatter().format(tableRow);
+            expect(tree).to.deep.equal({
+                "w:tr": [{ "w:tc": [{ "w:p": [{ "w:pPr": [{ "w:keepNext": EMPTY_OBJECT }] }] }] }],
+            });
+        });
+
+        it("leaves a paragraph's own keepNext as it is", () => {
+            const tableRow = new TableRow({
+                keepNext: true,
+                children: [new TableCell({ children: [new Paragraph({ keepNext: false })] })],
+            });
+            const tree = new Formatter().format(tableRow);
+            expect(tree).to.deep.equal({
+                "w:tr": [{ "w:tc": [{ "w:p": [{ "w:pPr": [{ "w:keepNext": { _attr: { "w:val": false } } }] }] }] }],
+            });
+        });
+
+        it("turns keepNext off with false", () => {
+            const tableRow = new TableRow({ keepNext: false, children: [new TableCell({ children: [new Paragraph({})] })] });
+            const tree = new Formatter().format(tableRow);
+            expect(tree).to.deep.equal({
+                "w:tr": [{ "w:tc": [{ "w:p": [{ "w:pPr": [{ "w:keepNext": { _attr: { "w:val": false } } }] }] }] }],
+            });
+        });
+
+        it("leaves the paragraphs of a table nested in a cell alone", () => {
+            const tableRow = new TableRow({
+                keepNext: true,
+                children: [
+                    new TableCell({
+                        children: [new Table({ rows: [new TableRow({ children: [new TableCell({ children: [new Paragraph({})] })] })] })],
+                    }),
+                ],
+            });
+            const tree = new Formatter().format(tableRow);
+            const [nestedTable, lastParagraph] = tree["w:tr"][0]["w:tc"];
+            expect(JSON.stringify(nestedTable)).not.to.contain("w:keepNext");
+            expect(lastParagraph).to.deep.equal({ "w:p": [{ "w:pPr": [{ "w:keepNext": EMPTY_OBJECT }] }] });
+        });
+
+        it("leaves the row's own properties as they are", () => {
+            const tableRow = new TableRow({
+                keepNext: true,
+                cantSplit: true,
+                children: [new TableCell({ children: [new Paragraph({})] })],
+            });
+            const tree = new Formatter().format(tableRow);
+            expect(tree).to.deep.equal({
+                "w:tr": [
+                    { "w:trPr": [{ "w:cantSplit": EMPTY_OBJECT }] },
+                    { "w:tc": [{ "w:p": [{ "w:pPr": [{ "w:keepNext": EMPTY_OBJECT }] }] }] },
+                ],
+            });
+        });
+
+        it("writes nothing more without it", () => {
+            const tableRow = new TableRow({ children: [new TableCell({ children: [new Paragraph({})] })] });
+            const tree = new Formatter().format(tableRow);
+            expect(tree).to.deep.equal({ "w:tr": [{ "w:tc": [{ "w:p": EMPTY_OBJECT }] }] });
         });
     });
 

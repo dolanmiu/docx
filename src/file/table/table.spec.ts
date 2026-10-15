@@ -484,6 +484,35 @@ describe("Table", () => {
         });
     });
 
+    describe("#keepNext", () => {
+        it("keeps the cells inserted below a cell merged down rows with the next row, in rows kept with the next", () => {
+            // A group of three rows with its name merged down the first column, kept on one page
+            const table = new Table({
+                rows: [
+                    new TableRow({
+                        keepNext: true,
+                        children: [
+                            new TableCell({ rowSpan: 3, children: [new Paragraph("Group")] }),
+                            new TableCell({ children: [new Paragraph("1")] }),
+                        ],
+                    }),
+                    new TableRow({ keepNext: true, children: [new TableCell({ children: [new Paragraph("2")] })] }),
+                    new TableRow({ children: [new TableCell({ children: [new Paragraph("3")] })] }),
+                ],
+            });
+            const tree = new Formatter().format(table);
+            const firstCells = tree["w:tbl"].slice(2).map((row: any) => row["w:tr"].find((child: any) => child["w:tc"])["w:tc"]);
+            const paragraphsOf = (cell: readonly any[]): readonly any[] => cell.filter((child) => child["w:p"]);
+
+            expect(paragraphsOf(firstCells[0])[0]["w:p"][0]).to.deep.equal({ "w:pPr": [{ "w:keepNext": {} }] });
+            // The continuation cell docx inserts in the second row
+            expect(firstCells[1][0]["w:tcPr"]).to.deep.include({ "w:vMerge": { _attr: { "w:val": "continue" } } });
+            expect(paragraphsOf(firstCells[1])).to.deep.equal([{ "w:p": [{ "w:pPr": [{ "w:keepNext": {} }] }] }]);
+            // The last row of the group may break from the next
+            expect(paragraphsOf(firstCells[2])).to.deep.equal([{ "w:p": {} }]);
+        });
+    });
+
     describe("#columnWidths", () => {
         const col = (width: number): any => ({ "w:gridCol": { _attr: { "w:w": width } } });
         const gridOf = (tableTree: any): any => tableTree["w:tbl"].find((x: any) => x["w:tblGrid"])["w:tblGrid"];

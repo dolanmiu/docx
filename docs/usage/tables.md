@@ -235,6 +235,7 @@ Here is a list of options you can add to the `table row`:
 | ----------- | ------------------------------------- | -------- |
 | children    | `Array<TableCell>`                    | Required |
 | cantSplit   | `boolean`                             | Optional |
+| keepNext    | `boolean`                             | Optional |
 | tableHeader | `boolean`                             | Optional |
 | height      | `{ value: number, rule: HeightRule }` | Optional |
 
@@ -338,7 +339,7 @@ const doc = new Document({
 
 #### Keep a table on one page
 
-Word has no setting that keeps a whole table on one page. Instead, set `keepNext` on the paragraphs of every row except the last, so each row stays on the same page as the row after it, and `cantSplit` on every row. If the last row has `keepNext` too, the table is also kept with whatever follows it. A table taller than a page still splits.
+Word has no setting that keeps a whole table on one page. Instead, set `keepNext` on every row except the last, so each row stays on the same page as the row after it, and `cantSplit` on every row. A row's `keepNext` keeps each paragraph in its cells with the next, unless the paragraph sets `keepNext` itself. If the last row has `keepNext` too, the table is also kept with whatever follows it. A table taller than a page still splits.
 
 ```ts live
 import { Document, Paragraph, Table, TableCell, TableRow } from "docx";
@@ -350,12 +351,9 @@ const table = new Table({
         (name, index) =>
             new TableRow({
                 cantSplit: true,
-                children: [
-                    new TableCell({
-                        // Every row but the last is kept with the next row
-                        children: [new Paragraph({ text: name, keepNext: index < fruit.length - 1 })],
-                    }),
-                ],
+                // Every row but the last is kept with the next row
+                keepNext: index < fruit.length - 1,
+                children: [new TableCell({ children: [new Paragraph(name)] })],
             }),
     ),
 });
@@ -364,6 +362,52 @@ const doc = new Document({
     sections: [
         {
             children: [new Paragraph("If the table doesn't fit at the bottom of a page, all of it moves to the next page."), table],
+        },
+    ],
+});
+```
+
+#### Keep rows merged together on one page
+
+A cell merged down several rows (`rowSpan`) is written as a cell in each of them, and docx adds the cells below the first, so they have no paragraphs of yours to set `keepNext` on. Word keeps a row with the next when its first cell's paragraphs are, so with the merged cell in the first column, use the row's `keepNext`, which sets it on those cells too. Set it on every row of a group but the last, and each group stays on one page while the table can still break between groups.
+
+```ts live
+import { Document, Paragraph, Table, TableCell, TableRow, VerticalAlignTable } from "docx";
+
+const groups = [
+    { name: "Fruit", items: ["Apples", "Pears", "Figs"] },
+    { name: "Vegetables", items: ["Leeks", "Carrots", "Peas", "Beans"] },
+];
+
+const table = new Table({
+    rows: groups.flatMap(({ name, items }) =>
+        items.map(
+            (item, index) =>
+                new TableRow({
+                    cantSplit: true,
+                    // Keep each row with the next, but for the group's last
+                    keepNext: index < items.length - 1,
+                    children: [
+                        ...(index === 0
+                            ? [
+                                  new TableCell({
+                                      rowSpan: items.length,
+                                      verticalAlign: VerticalAlignTable.CENTER,
+                                      children: [new Paragraph(name)],
+                                  }),
+                              ]
+                            : []),
+                        new TableCell({ children: [new Paragraph(item)] }),
+                    ],
+                }),
+        ),
+    ),
+});
+
+const doc = new Document({
+    sections: [
+        {
+            children: [new Paragraph("If a group doesn't fit at the bottom of a page, all of it moves to the next page."), table],
         },
     ],
 });

@@ -1,4 +1,7 @@
 // Numbering and bullet points example
+//
+// Each level's number hangs into the indent, in front of its text: the paragraph is indented by `left`, and its first
+// line, where the number is, starts `hanging` before that. So the deeper a level's `left`, the further in its number is
 
 import * as fs from "fs";
 import { AlignmentType, convertInchesToTwip, Document, Footer, Header, HeadingLevel, LevelFormat, Packer, Paragraph } from "docx";
@@ -27,7 +30,7 @@ const doc = new Document({
                         alignment: AlignmentType.START,
                         style: {
                             paragraph: {
-                                indent: { left: convertInchesToTwip(1), hanging: convertInchesToTwip(0.68) },
+                                indent: { left: convertInchesToTwip(1), hanging: convertInchesToTwip(0.18) },
                             },
                         },
                     },
@@ -38,7 +41,7 @@ const doc = new Document({
                         alignment: AlignmentType.START,
                         style: {
                             paragraph: {
-                                indent: { left: convertInchesToTwip(1.5), hanging: convertInchesToTwip(1.18) },
+                                indent: { left: convertInchesToTwip(1.5), hanging: convertInchesToTwip(0.18) },
                             },
                         },
                     },
@@ -49,7 +52,7 @@ const doc = new Document({
                         alignment: AlignmentType.START,
                         style: {
                             paragraph: {
-                                indent: { left: 2880, hanging: 2420 },
+                                indent: { left: convertInchesToTwip(2), hanging: convertInchesToTwip(0.18) },
                             },
                         },
                     },
