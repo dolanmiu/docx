@@ -5,6 +5,8 @@
  */
 import type { ConcreteNumbering } from "@file/numbering";
 
+import { replacePlaceholders } from "./placeholders";
+
 /**
  * Replaces numbering instance placeholders with actual numbering IDs in XML content.
  *
@@ -30,15 +32,9 @@ export class NumberingReplacer {
      * @returns XML string with placeholders replaced by numbering IDs
      */
     public replace(xmlData: string, concreteNumberings: readonly ConcreteNumbering[]): string {
-        let currentXmlData = xmlData;
-
-        for (const concreteNumbering of concreteNumberings) {
-            currentXmlData = currentXmlData.replace(
-                new RegExp(`{${concreteNumbering.reference}-${concreteNumbering.instance}}`, "g"),
-                concreteNumbering.numId.toString(),
-            );
-        }
-
-        return currentXmlData;
+        return replacePlaceholders(
+            xmlData,
+            new Map(concreteNumberings.map(({ reference, instance, numId }) => [`${reference}-${instance}`, numId.toString()])),
+        );
     }
 }
