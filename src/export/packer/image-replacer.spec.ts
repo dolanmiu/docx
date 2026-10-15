@@ -58,5 +58,14 @@ describe("ImageReplacer", () => {
 
             expect(result).to.have.length(1);
         });
+
+        it("finds only the images whose names are in the XML as they are written", () => {
+            const image = (fileName: string) => ({ fileName }) as unknown as Media["Array"][number];
+            const result = new ImageReplacer().getMediaData("<a>{image1Xpng}</a><b>{image2.png}</b>", {
+                Array: [image("image1.png"), image("image2.png")],
+            } as unknown as Media);
+
+            expect(result.map(({ fileName }) => fileName)).to.deep.equal(["image2.png"]);
+        });
     });
 });

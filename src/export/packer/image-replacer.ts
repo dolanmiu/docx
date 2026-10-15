@@ -5,6 +5,8 @@
  */
 import type { IMediaData, Media } from "@file/media";
 
+import { findPlaceholders, replacePlaceholders } from "./placeholders";
+
 /**
  * Replaces image placeholders with relationship IDs in XML content.
  *
@@ -29,13 +31,7 @@ export class ImageReplacer {
      * @returns XML string with placeholders replaced by relationship IDs
      */
     public replace(xmlData: string, mediaData: readonly IMediaData[], offset: number): string {
-        let currentXmlData = xmlData;
-
-        mediaData.forEach((image, i) => {
-            currentXmlData = currentXmlData.replace(new RegExp(`{${image.fileName}}`, "g"), (offset + i).toString());
-        });
-
-        return currentXmlData;
+        return replacePlaceholders(xmlData, new Map(mediaData.map((image, i) => [image.fileName, (offset + i).toString()])));
     }
 
     /**
@@ -46,6 +42,7 @@ export class ImageReplacer {
      * @returns Array of media data found in the XML
      */
     public getMediaData(xmlData: string, media: Media): readonly IMediaData[] {
-        return media.Array.filter((image) => xmlData.search(`{${image.fileName}}`) > 0);
+        const placeholders = findPlaceholders(xmlData);
+        return media.Array.filter((image) => placeholders.has(image.fileName));
     }
 }
