@@ -5,7 +5,7 @@
  *
  * @module
  */
-import { XmlComponent } from "@file/xml-components";
+import { type IContext, type IXmlableObject, OnOffElement, XmlComponent } from "@file/xml-components";
 
 import { TableCell } from "../table-cell";
 import { type ITableRowPropertiesOptions, TableRowProperties } from "./table-row-properties";
@@ -18,7 +18,43 @@ import { type ITableRowPropertiesOptions, TableRowProperties } from "./table-row
 export type ITableRowOptions = {
     /** Array of TableCell elements that make up the row */
     readonly children: readonly TableCell[];
+    /**
+     * Keeps the row on the same page as the next row (keep with next), by setting `keepNext` on each paragraph in
+     * its cells that doesn't set its own. That includes the cells docx adds below a cell merged down several rows
+     * (`rowSpan`), which have no paragraphs of yours to set it on. Word keeps a row with the next when the
+     * paragraphs of its first cell are kept with the next, so set it on every row of a group but the last to keep
+     * the group on one page.
+     */
+    readonly keepNext?: boolean;
 } & ITableRowPropertiesOptions;
+
+const childrenOf = (element: IXmlableObject, name: string): readonly unknown[] => {
+    const content = element[name];
+    return Array.isArray(content) ? content : content?._attr ? [content] : [];
+};
+
+const nameOf = (element: unknown): string | undefined => Object.keys(element as object)[0];
+
+/**
+ * The paragraph with `keepNext` in its properties, unless it has its own. It goes after the paragraph's style, as
+ * the schema orders them.
+ */
+const withKeepNext = (paragraph: IXmlableObject, keepNext: IXmlableObject): IXmlableObject => {
+    const children = childrenOf(paragraph, "w:p");
+    const properties = children.find((child) => nameOf(child) === "w:pPr") as IXmlableObject | undefined;
+    if (!properties) {
+        const attributes = children.filter((child) => nameOf(child) === "_attr");
+        return { "w:p": [...attributes, { "w:pPr": [keepNext] }, ...children.slice(attributes.length)] };
+    }
+
+    const settings = childrenOf(properties, "w:pPr");
+    if (settings.some((setting) => nameOf(setting) === "w:keepNext")) {
+        return paragraph;
+    }
+    const before = settings.filter((setting) => ["_attr", "w:pStyle"].includes(nameOf(setting) as string)).length;
+    const newProperties = { "w:pPr": [...settings.slice(0, before), keepNext, ...settings.slice(before)] };
+    return { "w:p": children.map((child) => (child === properties ? newProperties : child)) };
+};
 
 /**
  * Represents a table row in a WordprocessingML document.
@@ -63,6 +99,27 @@ export class TableRow extends XmlComponent {
         for (const child of options.children) {
             this.root.push(child);
         }
+    }
+
+    public prepForXml(context: IContext): IXmlableObject | undefined {
+        const xml = super.prepForXml(context);
+        if (!xml || this.options.keepNext === undefined) {
+            return xml;
+        }
+
+        const keepNext = new OnOffElement("w:keepNext", this.options.keepNext).prepForXml(context) as IXmlableObject;
+        // Only the paragraphs right in the cells, not those of tables nested in them, which have rows of their own
+        return {
+            "w:tr": childrenOf(xml, "w:tr").map((child) =>
+                nameOf(child) === "w:tc"
+                    ? {
+                          "w:tc": childrenOf(child as IXmlableObject, "w:tc").map((content) =>
+                              nameOf(content) === "w:p" ? withKeepNext(content as IXmlableObject, keepNext) : content,
+                          ),
+                      }
+                    : child,
+            ),
+        };
     }
 
     public get CellCount(): number {
