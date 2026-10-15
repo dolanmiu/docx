@@ -35536,6 +35536,33 @@ while (n === a[++i] && n === a[++i] && n === a[++i] && n === a[++i] && n === a[+
 		}
 	};
 	//#endregion
+	//#region src/export/packer/placeholders.ts
+	/**
+	* Placeholder module for the `{key}` tokens docx writes before it knows an image's or a list's id.
+	*
+	* @module
+	*/
+	var PLACEHOLDER = /\{([^{}]+)\}/g;
+	/**
+	* Replaces each `{key}` in the XML whose key has a value, in one pass over the XML. Other text in braces, such as a
+	* font's key, is left as it is.
+	*
+	* @param xmlData - The XML string containing placeholders
+	* @param values - The value to write for each key
+	* @returns XML string with the placeholders replaced
+	*/
+	var replacePlaceholders = (xmlData, values) => values.size === 0 ? xmlData : xmlData.replace(PLACEHOLDER, (placeholder, key) => {
+		var _values$get;
+		return (_values$get = values.get(key)) !== null && _values$get !== void 0 ? _values$get : placeholder;
+	});
+	/**
+	* Finds the keys of the `{key}` placeholders in the XML, in one pass over the XML.
+	*
+	* @param xmlData - The XML string to search
+	* @returns The key of every placeholder in the XML
+	*/
+	var findPlaceholders = (xmlData) => new Set(Array.from(xmlData.matchAll(PLACEHOLDER), ([, key]) => key));
+	//#endregion
 	//#region src/export/packer/image-replacer.ts
 	/**
 	* Replaces image placeholders with relationship IDs in XML content.
@@ -35561,11 +35588,7 @@ while (n === a[++i] && n === a[++i] && n === a[++i] && n === a[++i] && n === a[+
 		* @returns XML string with placeholders replaced by relationship IDs
 		*/
 		replace(xmlData, mediaData, offset) {
-			let currentXmlData = xmlData;
-			mediaData.forEach((image, i) => {
-				currentXmlData = currentXmlData.replace(new RegExp(`{${image.fileName}}`, "g"), (offset + i).toString());
-			});
-			return currentXmlData;
+			return replacePlaceholders(xmlData, new Map(mediaData.map((image, i) => [image.fileName, (offset + i).toString()])));
 		}
 		/**
 		* Extracts media data referenced in the XML content.
@@ -35575,7 +35598,8 @@ while (n === a[++i] && n === a[++i] && n === a[++i] && n === a[++i] && n === a[+
 		* @returns Array of media data found in the XML
 		*/
 		getMediaData(xmlData, media) {
-			return media.Array.filter((image) => xmlData.search(`{${image.fileName}}`) > 0);
+			const placeholders = findPlaceholders(xmlData);
+			return media.Array.filter((image) => placeholders.has(image.fileName));
 		}
 	};
 	//#endregion
@@ -35605,9 +35629,7 @@ while (n === a[++i] && n === a[++i] && n === a[++i] && n === a[++i] && n === a[+
 		* @returns XML string with placeholders replaced by numbering IDs
 		*/
 		replace(xmlData, concreteNumberings) {
-			let currentXmlData = xmlData;
-			for (const concreteNumbering of concreteNumberings) currentXmlData = currentXmlData.replace(new RegExp(`{${concreteNumbering.reference}-${concreteNumbering.instance}}`, "g"), concreteNumbering.numId.toString());
-			return currentXmlData;
+			return replacePlaceholders(xmlData, new Map(concreteNumberings.map(({ reference, instance, numId }) => [`${reference}-${instance}`, numId.toString()])));
 		}
 	};
 	//#endregion
