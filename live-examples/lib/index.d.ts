@@ -7415,6 +7415,17 @@ export declare type ITableBordersOptions = {
 };
 
 /**
+ * Options for how {@link TableBorders} writes the sides it isn't given.
+ */
+export declare type ITableBordersWriteOptions = {
+    /**
+     * Whether a side that isn't given gets a thin single line. Defaults to true. When false, the sides that aren't given
+     * are left out, so the table takes them from its table style.
+     */
+    readonly fillMissingSides?: boolean;
+};
+
+/**
  * Options for configuring table cell borders.
  *
  * Defines border settings for individual edges of a table cell. Border settings
@@ -7823,7 +7834,12 @@ export declare type ITableOptions = {
     readonly indent?: ITableWidthProperties;
     readonly float?: ITableFloatOptions;
     readonly layout?: (typeof TableLayoutType)[keyof typeof TableLayoutType];
+    /** The id of a table style, such as one from `externalStyles`, whose borders, shading and margins the table takes. */
     readonly style?: string;
+    /**
+     * Borders of the table. Without a `style`, the sides not given are thin single lines. With a `style`, only the
+     * sides given are written, and the rest come from the style.
+     */
     readonly borders?: ITableBordersOptions;
     readonly alignment?: (typeof AlignmentType)[keyof typeof AlignmentType];
     readonly visuallyRightToLeft?: boolean;
@@ -12587,7 +12603,8 @@ export declare const TableAnchorType: {
 /**
  * Represents table borders in a WordprocessingML document.
  *
- * The tblBorders element specifies the borders for all cells in the table.
+ * The tblBorders element specifies the borders for all cells in the table. Each side that isn't given is a thin single
+ * line, unless `fillMissingSides` is false, when it is left to the table's style.
  *
  * Reference: http://officeopenxml.com/WPtableBorders.php
  *
@@ -12604,7 +12621,7 @@ export declare const TableAnchorType: {
  * new TableBorders(TableBorders.NONE);
  * ```
  */
-export declare class TableBorders extends XmlComponent {
+export declare class TableBorders extends IgnoreIfEmptyXmlComponent {
     /**
      * No borders. Its borders are declared with hex colors, as they were before borders took colors of the document's
      * theme, so that code reading them still compiles.
@@ -12612,7 +12629,7 @@ export declare class TableBorders extends XmlComponent {
     static readonly NONE: {
         readonly [Side in keyof ITableBordersOptions]: HexColorBorderOptions;
     };
-    constructor(options: ITableBordersOptions);
+    constructor(options: ITableBordersOptions, { fillMissingSides }?: ITableBordersWriteOptions);
 }
 
 /**

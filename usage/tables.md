@@ -140,6 +140,43 @@ const doc = new Document({
 });
 ```
 
+### Borders and table styles
+
+A table without a `style` has thin single borders, unless `borders` gives it others. Each side that `borders` leaves out stays a thin single line.
+
+A table with a `style` takes its borders from the style. Only the sides that `borders` gives are written, so they replace the style's borders on those sides, and the style keeps the rest. To take away a style's border on one side, give that side `BorderStyle.NONE`.
+
+```ts live
+import { BorderStyle, Document, Paragraph, Table, TableCell, TableRow } from "docx";
+import * as fs from "fs";
+
+const table = new Table({
+    rows: [
+        new TableRow({
+            children: [new TableCell({ children: [new Paragraph("Hello")] }), new TableCell({ children: [new Paragraph("World")] })],
+        }),
+        new TableRow({
+            children: [new TableCell({ children: [new Paragraph("Foo")] }), new TableCell({ children: [new Paragraph("Bar")] })],
+        }),
+    ],
+    // A table style with red dashed borders, from demo/assets/custom-styles.xml
+    style: "MyCustomTableStyle",
+    // Replaces the style's top border, and keeps its other borders
+    borders: {
+        top: { style: BorderStyle.DOUBLE, size: 12, color: "0000FF" },
+    },
+});
+
+const doc = new Document({
+    externalStyles: fs.readFileSync("./demo/assets/custom-styles.xml", "utf-8"),
+    sections: [
+        {
+            children: [table],
+        },
+    ],
+});
+```
+
 ## Table Row
 
 A table consists of multiple `table rows`. Table rows have a list of `children` which accepts a list of `table cells` explained below. You can create a simple `table row` like so:

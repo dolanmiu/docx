@@ -24785,7 +24785,8 @@ MAX: 9026 };
 	/**
 	* Represents table borders in a WordprocessingML document.
 	*
-	* The tblBorders element specifies the borders for all cells in the table.
+	* The tblBorders element specifies the borders for all cells in the table. Each side that isn't given is a thin single
+	* line, unless `fillMissingSides` is false, when it is left to the table's style.
 	*
 	* Reference: http://officeopenxml.com/WPtableBorders.php
 	*
@@ -24802,16 +24803,21 @@ MAX: 9026 };
 	* new TableBorders(TableBorders.NONE);
 	* ```
 	*/
-	var TableBorders = class extends XmlComponent {
-		constructor(options) {
-			var _options$top, _options$left, _options$bottom, _options$right, _options$insideHorizo, _options$insideVertic;
+	var TableBorders = class extends IgnoreIfEmptyXmlComponent {
+		constructor(options, { fillMissingSides = true } = {}) {
 			super("w:tblBorders");
-			this.root.push(createBorderElement("w:top", (_options$top = options.top) !== null && _options$top !== void 0 ? _options$top : DEFAULT_BORDER));
-			this.root.push(createBorderElement("w:left", (_options$left = options.left) !== null && _options$left !== void 0 ? _options$left : DEFAULT_BORDER));
-			this.root.push(createBorderElement("w:bottom", (_options$bottom = options.bottom) !== null && _options$bottom !== void 0 ? _options$bottom : DEFAULT_BORDER));
-			this.root.push(createBorderElement("w:right", (_options$right = options.right) !== null && _options$right !== void 0 ? _options$right : DEFAULT_BORDER));
-			this.root.push(createBorderElement("w:insideH", (_options$insideHorizo = options.insideHorizontal) !== null && _options$insideHorizo !== void 0 ? _options$insideHorizo : DEFAULT_BORDER));
-			this.root.push(createBorderElement("w:insideV", (_options$insideVertic = options.insideVertical) !== null && _options$insideVertic !== void 0 ? _options$insideVertic : DEFAULT_BORDER));
+			const sides = [
+				["w:top", options.top],
+				["w:left", options.left],
+				["w:bottom", options.bottom],
+				["w:right", options.right],
+				["w:insideH", options.insideHorizontal],
+				["w:insideV", options.insideVertical]
+			];
+			for (const [elementName, border] of sides) {
+				const resolved = border !== null && border !== void 0 ? border : fillMissingSides ? DEFAULT_BORDER : void 0;
+				if (resolved) this.root.push(createBorderElement(elementName, resolved));
+			}
 		}
 	};
 	_defineProperty(TableBorders, "NONE", {
@@ -25233,7 +25239,7 @@ MAX: 9026 };
 			if (options.alignment) this.root.push(createAlignment(options.alignment));
 			if (options.cellSpacing) this.root.push(createTableCellSpacing(options.cellSpacing));
 			if (options.indent) this.root.push(createTableWidthElement("w:tblInd", options.indent));
-			if (options.borders) this.root.push(new TableBorders(options.borders));
+			if (options.borders) this.root.push(new TableBorders(options.borders, { fillMissingSides: !options.style }));
 			if (options.shading) this.root.push(createShading(options.shading));
 			if (options.layout) this.root.push(createTableLayout(options.layout));
 			if (options.cellMargin) {
@@ -25600,7 +25606,7 @@ MAX: 9026 };
 				availableWidth: DEFAULT_AVAILABLE_WIDTH
 			});
 			this.root.push(new TableProperties({
-				borders: borders !== null && borders !== void 0 ? borders : {},
+				borders: style ? borders : borders !== null && borders !== void 0 ? borders : {},
 				width: this.width,
 				indent,
 				float,
