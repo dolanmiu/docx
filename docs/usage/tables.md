@@ -711,6 +711,45 @@ const doc = new Document({
 });
 ```
 
+#### Merge cells by hand
+
+`rowSpan` writes the merged cell as a cell in each of its rows, and docx adds the ones below the first, with no settings of their own. They take the table's margins, so each row below is at least as tall as the table's margins above and below. To give the merged cell's part in each row settings of its own, such as its margins or borders, write each part yourself with `verticalMerge`: `VerticalMergeType.RESTART` on the first, and `VerticalMergeType.CONTINUE` on each one below, in its own row. Their text goes in the first. Leave out `rowSpan` when you merge cells by hand.
+
+Here the table's margins are 720 twips, and the rows below the first are kept to a line by giving the merged cell no margins in them:
+
+```ts live
+import { Document, Paragraph, Table, TableCell, TableRow, VerticalMergeType } from "docx";
+
+const noMargins = { top: 0, bottom: 0, left: 0, right: 0 };
+
+const table = new Table({
+    margins: { top: 720, bottom: 720, left: 720, right: 720 },
+    rows: [
+        new TableRow({
+            children: [
+                new TableCell({ verticalMerge: VerticalMergeType.RESTART, children: [new Paragraph("I like big margins")] }),
+                new TableCell({ children: [new Paragraph("Not gonna lie")] }),
+            ],
+        }),
+        new TableRow({
+            children: [
+                // The merged cell's part in this row, with no margins, so the row is a line tall
+                new TableCell({ verticalMerge: VerticalMergeType.CONTINUE, margins: noMargins, children: [] }),
+                new TableCell({ margins: noMargins, children: [new Paragraph("No margins plz")] }),
+            ],
+        }),
+    ],
+});
+
+const doc = new Document({
+    sections: [
+        {
+            children: [table],
+        },
+    ],
+});
+```
+
 ### Column Merge
 
 When cell columns are merged, it counts as multiple columns, so be sure to remove excess cells. It is similar to how HTML's `colspan` works.
