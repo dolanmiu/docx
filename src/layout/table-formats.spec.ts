@@ -11,6 +11,7 @@ import {
     TableRow,
     TextDirection,
     TextRun,
+    VerticalMergeType,
     WidthType,
 } from "docx";
 
@@ -760,6 +761,35 @@ describe("tables laid out as Word lays them out", () => {
         });
         expect(rowHeights(layOut([table(margins(300, 0), [new Paragraph("left")])]))).to.deep.equal([837.1]);
         expect(rowHeights(layOut([table(margins(200, 200), [new Paragraph("left")])]))).to.deep.equal([937.1]);
+    });
+
+    it("should make a row below a cell merged down rows as tall as the margins the merge has in it (word-merged-cell-margins)", () => {
+        // word-merged-cell-margins.docx: with a table's margins of 720 above and below, a row of a cell without margins
+        // beside a cell merged down from the row above was as tall as the row above, the merge's margins and a line (A and
+        // B), and a line where the merge had no margins in it (C)
+        const none = { top: 0, bottom: 0, left: 0, right: 0 };
+        const table = (below: readonly TableCell[]): Table =>
+            new Table({
+                borders: TableBorders.NONE,
+                margins: { top: 720, bottom: 720, left: 0, right: 0 },
+                rows: [
+                    new TableRow({
+                        children: [
+                            new TableCell({ verticalMerge: VerticalMergeType.RESTART, children: [new Paragraph("merged")] }),
+                            new TableCell({ children: [new Paragraph("first")] }),
+                        ],
+                    }),
+                    new TableRow({ children: [...below, new TableCell({ margins: none, children: [new Paragraph("second")] })] }),
+                ],
+            });
+        const tall = Math.round((1440 + LINE) * 10) / 10;
+        expect(rowHeights(layOut([table([new TableCell({ verticalMerge: VerticalMergeType.CONTINUE, children: [] })])]))).to.deep.equal([
+            tall,
+            tall,
+        ]);
+        expect(
+            rowHeights(layOut([table([new TableCell({ verticalMerge: VerticalMergeType.CONTINUE, margins: none, children: [] })])])),
+        ).to.deep.equal([tall, Math.round(LINE * 10) / 10]);
     });
 
     it("should make rows taller by the room of each style of border (BS)", () => {

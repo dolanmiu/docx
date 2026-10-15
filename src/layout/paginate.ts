@@ -1402,6 +1402,10 @@ export const paginate = (
         const { rows } = table;
         const heights = rows.map(({ cells, height, borderTop, borderBottom, edgeTop = 0, edgeBottom = 0 }) => {
             const own = cells.filter(({ verticalMerge }) => verticalMerge === undefined);
+            // A cell merged down from a row above has its margins in this row, as Word makes a row below a merged cell as
+            // tall as its margins above and below, where the row's own cells have none (word-merged-cell-margins.docx B,
+            // and C: with none of its own, the row is a line)
+            const margined = cells.filter(({ verticalMerge }) => verticalMerge !== "restart");
             const largest = (lengths: readonly number[]): number => Math.max(0, ...lengths);
             // Text that runs up or down a cell makes no row taller that has cells of text across it: a mark of 20 points
             // beside a line of 11 doesn't (word-stops-vertical-cells.docx TV5b, word-stops-vertical-cells2.docx VC1g, VC1h)
@@ -1411,9 +1415,9 @@ export const paginate = (
             const natural =
                 own.length === 0
                     ? 0
-                    : largest(own.map(({ marginTop }) => marginTop)) +
+                    : largest(margined.map(({ marginTop }) => marginTop)) +
                       largest((across.length > 0 ? across : own).map(contentHeight)) +
-                      largest(own.map(({ marginBottom }) => marginBottom));
+                      largest(margined.map(({ marginBottom }) => marginBottom));
             // A row exactly as tall as it says has its border above it inside that height, where one at least as tall has
             // it outside (word-stops-tables2.docx TS15: rows of exactly 400 twips and at least 1000 beside borders of half
             // a point; word-stops-tables.docx TS1a; word-stops-tables3.docx TS16b: a border of 3 points above a row of
