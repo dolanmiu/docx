@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 
 import { Formatter } from "@export/formatter";
 import { BorderStyle } from "@file/border";
+import type { IContext } from "@file/xml-components";
 
 import { TableBorders } from "./table-borders";
 
@@ -574,6 +575,26 @@ describe("TableBorders", () => {
                         },
                     ],
                 });
+            });
+        });
+
+        describe("without filling missing sides", () => {
+            it("should write only the sides it is given", () => {
+                const tableBorders = new TableBorders(
+                    { bottom: { style: BorderStyle.DOUBLE, size: 8, color: "0000FF" } },
+                    { fillMissingSides: false },
+                );
+                const tree = new Formatter().format(tableBorders);
+
+                expect(tree).to.deep.equal({
+                    "w:tblBorders": [{ "w:bottom": { _attr: { "w:color": "0000FF", "w:sz": 8, "w:val": "double" } } }],
+                });
+            });
+
+            it("should be left out when it is given no sides", () => {
+                const tableBorders = new TableBorders({}, { fillMissingSides: false });
+
+                expect(tableBorders.prepForXml({ stack: [] } as unknown as IContext)).to.equal(undefined);
             });
         });
     });

@@ -53,7 +53,12 @@ export type ITableOptions = {
     readonly indent?: ITableWidthProperties;
     readonly float?: ITableFloatOptions;
     readonly layout?: (typeof TableLayoutType)[keyof typeof TableLayoutType];
+    /** The id of a table style, such as one from `externalStyles`, whose borders, shading and margins the table takes. */
     readonly style?: string;
+    /**
+     * Borders of the table. Without a `style`, the sides not given are thin single lines. With a `style`, only the
+     * sides given are written, and the rest come from the style.
+     */
     readonly borders?: ITableBordersOptions;
     readonly alignment?: (typeof AlignmentType)[keyof typeof AlignmentType];
     readonly visuallyRightToLeft?: boolean;
@@ -169,7 +174,8 @@ export class Table extends FileChild {
 
         this.root.push(
             new TableProperties({
-                borders: borders ?? {},
+                // Without a style, a table has thin single borders unless it is given others; with one, it has the style's
+                borders: style ? borders : (borders ?? {}),
                 width: this.width,
                 indent,
                 float,

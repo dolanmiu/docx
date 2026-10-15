@@ -2,6 +2,7 @@
 import { describe, expect, it } from "vitest";
 
 import { Formatter } from "@export/formatter";
+import { BorderStyle } from "@file/border";
 import { PageOrientation } from "@file/document/body/section-properties/properties/page-size";
 import { File } from "@file/file";
 import { Header } from "@file/header";
@@ -258,6 +259,60 @@ describe("Table", () => {
             expect(tree).to.have.property("w:tbl").which.is.an("array").with.has.length.at.least(1);
             expect(tree["w:tbl"][0]).to.deep.equal({
                 "w:tblPr": [WIDTHS, { "w:jc": { _attr: { "w:val": "center" } } }, BORDERS],
+            });
+        });
+
+        it("should leave the borders to the table's style when it has a style and no borders", () => {
+            const table = new Table({
+                rows: [new TableRow({ children: [new TableCell({ children: [new Paragraph("hello")] })] })],
+                style: "MyCustomTableStyle",
+            });
+            const tree = new Formatter().format(table);
+            expect(tree["w:tbl"][0]).to.deep.equal({
+                "w:tblPr": [{ "w:tblStyle": { _attr: { "w:val": "MyCustomTableStyle" } } }, WIDTHS],
+            });
+        });
+
+        it("should write only the borders it is given when it has a style, leaving the other sides to the style", () => {
+            const table = new Table({
+                rows: [new TableRow({ children: [new TableCell({ children: [new Paragraph("hello")] })] })],
+                style: "MyCustomTableStyle",
+                borders: {
+                    top: { style: BorderStyle.DOUBLE, size: 8, color: "FF0000" },
+                    insideVertical: { style: BorderStyle.NONE },
+                },
+            });
+            const tree = new Formatter().format(table);
+            expect(tree["w:tbl"][0]).to.deep.equal({
+                "w:tblPr": [
+                    { "w:tblStyle": { _attr: { "w:val": "MyCustomTableStyle" } } },
+                    WIDTHS,
+                    {
+                        "w:tblBorders": [
+                            { "w:top": { _attr: { "w:val": "double", "w:sz": 8, "w:color": "FF0000" } } },
+                            { "w:insideV": { _attr: { "w:val": "none" } } },
+                        ],
+                    },
+                ],
+            });
+        });
+
+        it("should give a table without a style thin single lines on the sides its borders don't give", () => {
+            const table = new Table({
+                rows: [new TableRow({ children: [new TableCell({ children: [new Paragraph("hello")] })] })],
+                borders: { top: { style: BorderStyle.DOUBLE, size: 8, color: "FF0000" } },
+            });
+            const tree = new Formatter().format(table);
+            expect(tree["w:tbl"][0]).to.deep.equal({
+                "w:tblPr": [
+                    WIDTHS,
+                    {
+                        "w:tblBorders": [
+                            { "w:top": { _attr: { "w:val": "double", "w:sz": 8, "w:color": "FF0000" } } },
+                            ...BORDERS["w:tblBorders"].slice(1),
+                        ],
+                    },
+                ],
             });
         });
 
