@@ -372,6 +372,21 @@ describe("TableRow", () => {
             expect(lastParagraph).to.deep.equal({ "w:p": [{ "w:pPr": [{ "w:keepNext": EMPTY_OBJECT }] }] });
         });
 
+        it("leaves the row's own properties as they are", () => {
+            const tableRow = new TableRow({
+                keepNext: true,
+                cantSplit: true,
+                children: [new TableCell({ children: [new Paragraph({})] })],
+            });
+            const tree = new Formatter().format(tableRow);
+            expect(tree).to.deep.equal({
+                "w:tr": [
+                    { "w:trPr": [{ "w:cantSplit": EMPTY_OBJECT }] },
+                    { "w:tc": [{ "w:p": [{ "w:pPr": [{ "w:keepNext": EMPTY_OBJECT }] }] }] },
+                ],
+            });
+        });
+
         it("writes nothing more without it", () => {
             const tableRow = new TableRow({ children: [new TableCell({ children: [new Paragraph({})] })] });
             const tree = new Formatter().format(tableRow);

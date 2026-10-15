@@ -28,9 +28,10 @@ export type ITableRowOptions = {
     readonly keepNext?: boolean;
 } & ITableRowPropertiesOptions;
 
+// Rows, cells, paragraphs and their properties have no attributes, so their content is their children, or empty
 const childrenOf = (element: IXmlableObject, name: string): readonly unknown[] => {
     const content = element[name];
-    return Array.isArray(content) ? content : content?._attr ? [content] : [];
+    return Array.isArray(content) ? content : [];
 };
 
 const nameOf = (element: unknown): string | undefined => Object.keys(element as object)[0];
@@ -43,15 +44,14 @@ const withKeepNext = (paragraph: IXmlableObject, keepNext: IXmlableObject): IXml
     const children = childrenOf(paragraph, "w:p");
     const properties = children.find((child) => nameOf(child) === "w:pPr") as IXmlableObject | undefined;
     if (!properties) {
-        const attributes = children.filter((child) => nameOf(child) === "_attr");
-        return { "w:p": [...attributes, { "w:pPr": [keepNext] }, ...children.slice(attributes.length)] };
+        return { "w:p": [{ "w:pPr": [keepNext] }, ...children] };
     }
 
     const settings = childrenOf(properties, "w:pPr");
     if (settings.some((setting) => nameOf(setting) === "w:keepNext")) {
         return paragraph;
     }
-    const before = settings.filter((setting) => ["_attr", "w:pStyle"].includes(nameOf(setting) as string)).length;
+    const before = settings.filter((setting) => nameOf(setting) === "w:pStyle").length;
     const newProperties = { "w:pPr": [...settings.slice(0, before), keepNext, ...settings.slice(before)] };
     return { "w:p": children.map((child) => (child === properties ? newProperties : child)) };
 };
