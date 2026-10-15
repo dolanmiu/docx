@@ -46403,9 +46403,10 @@ var docxLayout = (function(exports) {
 			const { rows } = table;
 			const heights = rows.map(({ cells, height, borderTop, borderBottom, edgeTop = 0, edgeBottom = 0 }) => {
 				const own = cells.filter(({ verticalMerge }) => verticalMerge === void 0);
+				const margined = cells.filter(({ verticalMerge }) => verticalMerge !== "restart");
 				const largest = (lengths) => Math.max(0, ...lengths);
 				const across = own.filter(({ vertical }) => !vertical);
-				const natural = own.length === 0 ? 0 : largest(own.map(({ marginTop }) => marginTop)) + largest((across.length > 0 ? across : own).map(contentHeight)) + largest(own.map(({ marginBottom }) => marginBottom));
+				const natural = own.length === 0 ? 0 : largest(margined.map(({ marginTop }) => marginTop)) + largest((across.length > 0 ? across : own).map(contentHeight)) + largest(margined.map(({ marginBottom }) => marginBottom));
 				if ((height === null || height === void 0 ? void 0 : height.rule) === "exact") return Math.max(height.value, borderTop - edgeTop + borderBottom - edgeBottom) + edgeTop + edgeBottom;
 				return (height === void 0 ? natural : Math.max(height.value, natural)) + borderTop + borderBottom;
 			});
