@@ -176,6 +176,20 @@ describe("Numbering", () => {
                 });
             });
 
+            it("should restart only the first level of a new instance of the default bullet list, which has no configuration", () => {
+                const numbering = new Numbering({ config: [] });
+
+                numbering.createConcreteNumberingInstance("default-bullet-numbering", 1);
+
+                expect(new Formatter().format(numbering.ConcreteNumbering[1])).to.deep.equal({
+                    "w:num": [
+                        { _attr: { "w:numId": 2 } },
+                        { "w:abstractNumId": { _attr: { "w:val": 1 } } },
+                        { "w:lvlOverride": [{ _attr: { "w:ilvl": 0 } }, { "w:startOverride": { _attr: { "w:val": 1 } } }] },
+                    ],
+                });
+            });
+
             it("should add a list's own definition once, however many paragraphs and instances give it", () => {
                 const numbering = new Numbering({ config: [] });
                 const definition = { reference: "own-list", levels: [{ level: 0, format: LevelFormat.DECIMAL, text: "%1." }] };
