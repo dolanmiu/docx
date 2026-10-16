@@ -81,7 +81,7 @@ export type IStyleOptions = {
      * Note that if the type of the current style must match the type of the style upon which it is based or the basedOn element will be ignored.
      * However, if the current style is a numbering style, then the `basedOn` element is ignored.
      *
-     * **WARNING**: You cannot set `basedOn` to be the same as `name`. This is akin to inheriting from itself. This creates a cyclic dependency and cause undesirable behavior.
+     * A style can't be based on itself, so `basedOn` is left out when it is the style's own id, as Word leaves it out.
      */
     readonly basedOn?: string;
     /** Style to automatically apply to the next paragraph */
@@ -168,7 +168,9 @@ export class Style extends XmlComponent {
             this.root.push(new Name(options.name));
         }
 
-        if (options.basedOn) {
+        // A style based on itself isn't based on another, so it isn't written, as Word leaves it out when it saves the
+        // document. Google Docs can't open a document with one, and shows a blank page
+        if (options.basedOn && options.basedOn !== attributes.styleId) {
             this.root.push(new StringValueElement("w:basedOn", options.basedOn));
         }
 

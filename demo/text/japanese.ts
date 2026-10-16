@@ -9,7 +9,6 @@ const doc = new Document({
             {
                 id: "Normal",
                 name: "Normal",
-                basedOn: "Normal",
                 next: "Normal",
                 quickFormat: true,
                 run: {
