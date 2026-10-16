@@ -17324,8 +17324,7 @@ EXTERNAL: "External" };
 			const headingAt = Math.max(-1, ...headingsAt.slice(1, level + 1).filter((at) => at !== void 0));
 			const since = ((_counted$get = counted.get(key)) !== null && _counted$get !== void 0 ? _counted$get : []).filter((field) => field.paragraph >= headingAt);
 			const followed = since.every(({ step }) => (step === null || step === void 0 ? void 0 : step.type) === "next" || (step === null || step === void 0 ? void 0 : step.type) === "heading" && step.level === level);
-			if (unclearAt > headingAt || !followed) return;
-			return since.length + 1;
+			return unclearAt > headingAt || !followed ? void 0 : since.length + 1;
 		};
 		return {
 			startParagraph: (element) => {

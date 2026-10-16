@@ -11476,8 +11476,7 @@ var docxLayout = (function(exports) {
 		return {
 			measureWidth: (text, font) => {
 				const face = faceOf(font);
-				if (!face) return fallback.measureWidth(text, font);
-				return text.split("	").reduce((position, part, index) => (index === 0 ? 0 : (Math.floor(position / TAB_STOP$1) + 1) * TAB_STOP$1) + widthIn(face, part, font), 0);
+				return face ? text.split("	").reduce((position, part, index) => (index === 0 ? 0 : (Math.floor(position / TAB_STOP$1) + 1) * TAB_STOP$1) + widthIn(face, part, font), 0) : fallback.measureWidth(text, font);
 			},
 			measureLineHeight: (font) => {
 				var _ref2, _font$lineSize;
@@ -42625,8 +42624,7 @@ var docxLayout = (function(exports) {
 				var _reader$notes3;
 				return (_reader$notes3 = reader.notes) === null || _reader$notes3 === void 0 ? void 0 : _reader$notes3.skip("w:endnoteReference" in reference ? "endnote" : "footnote");
 			});
-			if (references.some(hasOwnMark)) return DELETED_OWN_MARK;
-			return itemsOf(children.map((child) => nameOf$1(child) === "w:fldChar" ? readFieldCharacter(child, {}, reader, true) : []), reader);
+			return references.some(hasOwnMark) ? DELETED_OWN_MARK : itemsOf(children.map((child) => nameOf$1(child) === "w:fldChar" ? readFieldCharacter(child, {}, reader, true) : []), reader);
 		}
 		if (name === "w:bookmarkStart") return markerOf(element);
 		if (name === "w:sdt") return readRemoved(childrenOf(find(childrenOf(element[name]), "w:sdtContent")), reader);
@@ -49228,8 +49226,7 @@ var docxLayout = (function(exports) {
 			const heightAt = (index) => {
 				var _table$rows$index$hei;
 				const ending = openMerges.filter(({ last }) => last === index);
-				if (!ending.some(({ broken, moved }) => broken || moved) || ((_table$rows$index$hei = table.rows[index].height) === null || _table$rows$index$hei === void 0 ? void 0 : _table$rows$index$hei.rule) === "exact") return heights[index];
-				return Math.max(ownHeights[index], ...ending.map(({ cell, rest, start = position, startTop = table.rows[index].borderTop, broken }) => start + startTop + cell.marginTop + fillCell(rest, Infinity, !broken).height + cell.marginBottom + table.rows[index].borderBottom - position));
+				return !ending.some(({ broken, moved }) => broken || moved) || ((_table$rows$index$hei = table.rows[index].height) === null || _table$rows$index$hei === void 0 ? void 0 : _table$rows$index$hei.rule) === "exact" ? heights[index] : Math.max(ownHeights[index], ...ending.map(({ cell, rest, start = position, startTop = table.rows[index].borderTop, broken }) => start + startTop + cell.marginTop + fillCell(rest, Infinity, !broken).height + cell.marginBottom + table.rows[index].borderBottom - position));
 			};
 			/**
 			* What the table's last row is kept with when it is kept with the next: the first lines of the paragraph after the

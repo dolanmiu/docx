@@ -726,13 +726,12 @@ var docxMath = (function(exports, docx) {
 			subScript: orSpace(atomsToMath(sub)),
 			superScript: orSpace(atomsToMath(sup))
 		});
-		if (sub !== void 0) return new docx.MathSubScript({
-			children,
-			subScript: orSpace(atomsToMath(sub))
-		});
-		return new docx.MathSuperScript({
+		return sub === void 0 ? new docx.MathSuperScript({
 			children,
 			superScript: orSpace(atomsToMath(sup))
+		}) : new docx.MathSubScript({
+			children,
+			subScript: orSpace(atomsToMath(sub))
 		});
 	};
 	var createOperator = (atom, argument) => {

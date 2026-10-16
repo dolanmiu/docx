@@ -11110,8 +11110,7 @@ var docxHtml = (function(exports, docx, docx_math) {
 		const width = words.filter(isBorderWidth);
 		const style = words.filter((word) => BORDER_STYLES.has(word.toLowerCase()));
 		const color = words.filter((word) => !isBorderWidth(word) && !BORDER_STYLES.has(word.toLowerCase()));
-		if (words.length === 0 || width.length > 1 || style.length > 1 || color.length > 1 || color.length === 1 && !parseColor(color[0])) return;
-		return [
+		return words.length === 0 || width.length > 1 || style.length > 1 || color.length > 1 || color.length === 1 && !parseColor(color[0]) ? void 0 : [
 			(_width$ = width[0]) !== null && _width$ !== void 0 ? _width$ : "medium",
 			(_style$ = style[0]) !== null && _style$ !== void 0 ? _style$ : "none",
 			(_color$ = color[0]) !== null && _color$ !== void 0 ? _color$ : "currentcolor"
