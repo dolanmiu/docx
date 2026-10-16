@@ -8,7 +8,7 @@
 
 ## Text Frames or Text Boxes
 
-A text frame is a paragraph with a position, written as `w:framePr`. It is not the text box Word makes when you insert one: Word draws that as a shape with text in it. Not every application positions text frames: Google Docs doesn't.
+A text frame is a paragraph with a position, written as `w:framePr`. It is not the text box Word makes when you insert one: Word draws that as a shape with text in it. Not every application positions text frames: Google Docs leaves them in line with the paragraphs around them, as wide as the column.
 
 For a text box like Word's, use a [`ShapeRun`](usage/shapes.md#text-in-shapes) from `docx/shapes`, with paragraphs in `children` and [`floating`](usage/shapes.md#inline-and-floating) to position it:
 
