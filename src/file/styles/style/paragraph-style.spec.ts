@@ -48,6 +48,18 @@ describe("ParagraphStyle", () => {
             });
         });
 
+        it("should leave out basedOn when it is the style's own id, as a style can't be based on itself", () => {
+            const style = new StyleForParagraph({ id: "Normal", name: "Normal", basedOn: "Normal", next: "Normal" });
+            const tree = new Formatter().format(style);
+            expect(tree).to.deep.equal({
+                "w:style": [
+                    { _attr: { "w:type": "paragraph", "w:styleId": "Normal" } },
+                    { "w:name": { _attr: { "w:val": "Normal" } } },
+                    { "w:next": { _attr: { "w:val": "Normal" } } },
+                ],
+            });
+        });
+
         it("#quickFormat", () => {
             const style = new StyleForParagraph({ id: "myStyleId", quickFormat: true });
             const tree = new Formatter().format(style);
