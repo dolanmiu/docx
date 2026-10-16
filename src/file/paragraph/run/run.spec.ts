@@ -383,71 +383,65 @@ describe("Run", () => {
         });
     });
 
-    describe("#numberOfTotalPages", () => {
-        it("should set the run to the RTL mode", () => {
-            const run = new Run({
-                children: [PageNumber.TOTAL_PAGES],
-            });
+    describe("#page numbers", () => {
+        const text = (value: string) => ({ "w:t": [{ _attr: { "xml:space": "preserve" } }, value] });
+        const fieldChar = (type: string) => ({ "w:fldChar": { _attr: { "w:fldCharType": type } } });
+        const instruction = (code: string) => ({ "w:instrText": [{ _attr: { "xml:space": "preserve" } }, code] });
+        const font = { "w:rFonts": { _attr: { "w:ascii": "Arial", "w:cs": "Arial", "w:eastAsia": "Arial", "w:hAnsi": "Arial" } } };
+        const properties = { "w:rPr": [font, { "w:b": {} }, { "w:bCs": {} }] };
 
-            const tree = new Formatter().format(run);
+        it.each([
+            [PageNumber.TOTAL_PAGES, "NUMPAGES"],
+            [PageNumber.TOTAL_PAGES_IN_SECTION, "SECTIONPAGES"],
+            [PageNumber.CURRENT, "PAGE"],
+            [PageNumber.CURRENT_SECTION, "SECTION"],
+        ])("should write %s as a field whose characters and instruction are each in a run of their own", (pageNumber, code) => {
+            const paragraph = new Paragraph({ children: [new Run({ children: [pageNumber] })] });
+
+            const tree = new Formatter().format(paragraph);
             expect(tree).to.deep.equal({
-                "w:r": [
-                    { "w:fldChar": { _attr: { "w:fldCharType": "begin" } } },
-                    { "w:instrText": [{ _attr: { "xml:space": "preserve" } }, "NUMPAGES"] },
-                    { "w:fldChar": { _attr: { "w:fldCharType": "separate" } } },
-                    { "w:fldChar": { _attr: { "w:fldCharType": "end" } } },
+                "w:p": [
+                    { "w:r": [fieldChar("begin")] },
+                    { "w:r": [instruction(code)] },
+                    { "w:r": [fieldChar("separate")] },
+                    { "w:r": [fieldChar("end")] },
                 ],
             });
         });
-    });
 
-    describe("#numberOfTotalPagesSection", () => {
-        it("should set the run to the RTL mode", () => {
-            const run = new Run({
-                children: [PageNumber.TOTAL_PAGES_IN_SECTION],
+        it("should give each run of a field, and the text either side of it, the run's properties", () => {
+            const paragraph = new Paragraph({
+                children: [new Run({ font: "Arial", bold: true, children: ["Page ", PageNumber.CURRENT, " of ", PageNumber.TOTAL_PAGES] })],
             });
 
-            const tree = new Formatter().format(run);
+            const tree = new Formatter().format(paragraph);
             expect(tree).to.deep.equal({
-                "w:r": [
-                    { "w:fldChar": { _attr: { "w:fldCharType": "begin" } } },
-                    { "w:instrText": [{ _attr: { "xml:space": "preserve" } }, "SECTIONPAGES"] },
-                    { "w:fldChar": { _attr: { "w:fldCharType": "separate" } } },
-                    { "w:fldChar": { _attr: { "w:fldCharType": "end" } } },
+                "w:p": [
+                    { "w:r": [properties, text("Page ")] },
+                    { "w:r": [properties, fieldChar("begin")] },
+                    { "w:r": [properties, instruction("PAGE")] },
+                    { "w:r": [properties, fieldChar("separate")] },
+                    { "w:r": [properties, fieldChar("end")] },
+                    { "w:r": [properties, text(" of ")] },
+                    { "w:r": [properties, fieldChar("begin")] },
+                    { "w:r": [properties, instruction("NUMPAGES")] },
+                    { "w:r": [properties, fieldChar("separate")] },
+                    { "w:r": [properties, fieldChar("end")] },
                 ],
             });
         });
-    });
 
-    describe("#pageNumber", () => {
-        it("should set the run to the RTL mode", () => {
-            const run = new Run({
-                children: [PageNumber.CURRENT],
-            });
-            const tree = new Formatter().format(run);
-            expect(tree).to.deep.equal({
-                "w:r": [
-                    { "w:fldChar": { _attr: { "w:fldCharType": "begin" } } },
-                    { "w:instrText": [{ _attr: { "xml:space": "preserve" } }, "PAGE"] },
-                    { "w:fldChar": { _attr: { "w:fldCharType": "separate" } } },
-                    { "w:fldChar": { _attr: { "w:fldCharType": "end" } } },
-                ],
-            });
-        });
-    });
+        it("should break only before the field when it comes first", () => {
+            const paragraph = new Paragraph({ children: [new Run({ break: 1, children: [PageNumber.CURRENT] })] });
 
-    describe("#section", () => {
-        it("should set the run to the RTL mode", () => {
-            const run = new Run({
-                children: [PageNumber.CURRENT_SECTION],
-            });
-            const tree = new Formatter().format(run);
+            const tree = new Formatter().format(paragraph);
             expect(tree).to.deep.equal({
-                "w:r": [
-                    { "w:fldChar": { _attr: { "w:fldCharType": "begin" } } },
-                    { "w:instrText": [{ _attr: { "xml:space": "preserve" } }, "SECTION"] },
-                    { "w:fldChar": { _attr: { "w:fldCharType": "separate" } } },
-                    { "w:fldChar": { _attr: { "w:fldCharType": "end" } } },
+                "w:p": [
+                    { "w:r": [{ "w:br": {} }] },
+                    { "w:r": [fieldChar("begin")] },
+                    { "w:r": [instruction("PAGE")] },
+                    { "w:r": [fieldChar("separate")] },
+                    { "w:r": [fieldChar("end")] },
                 ],
             });
         });

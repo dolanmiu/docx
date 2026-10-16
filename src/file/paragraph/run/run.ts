@@ -133,6 +133,22 @@ export const PageNumber = {
     CURRENT_SECTION: "SECTION",
 } as const;
 
+/** The parts of the field a page number child shows, in order, or undefined when the child is text */
+const pageNumberFieldOf = (child: string): readonly XmlComponent[] | undefined => {
+    switch (child) {
+        case PageNumber.CURRENT:
+            return [createBegin(), new Page(), createSeparate(), createEnd()];
+        case PageNumber.TOTAL_PAGES:
+            return [createBegin(), new NumberOfPages(), createSeparate(), createEnd()];
+        case PageNumber.TOTAL_PAGES_IN_SECTION:
+            return [createBegin(), new NumberOfPagesSection(), createSeparate(), createEnd()];
+        case PageNumber.CURRENT_SECTION:
+            return [createBegin(), new CurrentSection(), createSeparate(), createEnd()];
+        default:
+            return undefined;
+    }
+};
+
 /**
  * Represents a run of text with uniform formatting in a WordprocessingML document.
  *
@@ -168,7 +184,8 @@ export const PageNumber = {
  */
 export class Run extends XmlComponent {
     protected readonly properties: RunProperties;
-    // A run given in the children, such as a FootnoteReferenceRun, and the run of the children after it
+    // A run given in the children, such as a FootnoteReferenceRun, or the runs of a page number field, then the run of
+    // the children after it
     private readonly following: readonly Run[] = [];
 
     public constructor(options: IRunOptions) {
@@ -193,35 +210,26 @@ export class Run extends XmlComponent {
                 }
 
                 if (typeof child === "string") {
-                    switch (child) {
-                        case PageNumber.CURRENT:
-                            this.root.push(createBegin());
-                            this.root.push(new Page());
-                            this.root.push(createSeparate());
-                            this.root.push(createEnd());
-                            break;
-                        case PageNumber.TOTAL_PAGES:
-                            this.root.push(createBegin());
-                            this.root.push(new NumberOfPages());
-                            this.root.push(createSeparate());
-                            this.root.push(createEnd());
-                            break;
-                        case PageNumber.TOTAL_PAGES_IN_SECTION:
-                            this.root.push(createBegin());
-                            this.root.push(new NumberOfPagesSection());
-                            this.root.push(createSeparate());
-                            this.root.push(createEnd());
-                            break;
-                        case PageNumber.CURRENT_SECTION:
-                            this.root.push(createBegin());
-                            this.root.push(new CurrentSection());
-                            this.root.push(createSeparate());
-                            this.root.push(createEnd());
-                            break;
-                        default:
-                            this.root.push(new Text(child));
-                            break;
+                    const field = pageNumberFieldOf(child);
+                    if (field) {
+                        // Each part of the field is written in a run of its own with this run's properties, as Word
+                        // writes fields. LibreOffice doesn't format a field in a run with other content by the run's
+                        // properties, nor the text after it, so a page number in a run's font was drawn in the default
+                        // one. The field begins this run when it is the first thing in it, and the children after it go
+                        // in a run with this run's properties
+                        const rest = options.children.slice(index + 1);
+                        const runOf = (children: NonNullable<IRunOptions["children"]>): Run =>
+                            new Run({ ...options, break: undefined, children });
+                        const beginsHere = this.root.length === 1;
+                        if (beginsHere) {
+                            this.root.push(field[0]);
+                        }
+                        const parts = beginsHere ? field.slice(1) : field;
+                        this.following = [...parts.map((part) => runOf([part])), ...(rest.length > 0 ? [runOf(rest)] : [])];
+                        break;
                     }
+
+                    this.root.push(new Text(child));
                     continue;
                 }
 

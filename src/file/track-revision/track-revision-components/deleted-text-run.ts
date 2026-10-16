@@ -26,6 +26,20 @@ import { ChangeAttributes, type IChangedAttributesProperties } from "../track-re
  */
 type IDeletedRunOptions = IRunOptions & IChangedAttributesProperties;
 
+/** The parts of the deleted field a page number child shows, in order, or undefined when the child is text */
+const deletedPageNumberFieldOf = (child: string): readonly XmlComponent[] | undefined => {
+    switch (child) {
+        case PageNumber.CURRENT:
+            return [createBegin(), new DeletedPage(), createSeparate(), createEnd()];
+        case PageNumber.TOTAL_PAGES:
+            return [createBegin(), new DeletedNumberOfPages(), createSeparate(), createEnd()];
+        case PageNumber.TOTAL_PAGES_IN_SECTION:
+            return [createBegin(), new DeletedNumberOfPagesSection(), createSeparate(), createEnd()];
+        default:
+            return undefined;
+    }
+};
+
 /**
  * Represents a deleted text run in a tracked changes document.
  *
@@ -101,7 +115,8 @@ export class DeletedTextRun extends XmlComponent {
  * @internal
  */
 class DeletedTextRunWrapper extends XmlComponent {
-    // A run given in the children, such as a FootnoteReferenceRun, and the run of the children after it
+    // A run given in the children, such as a FootnoteReferenceRun, or the runs of a page number field, then the run of
+    // the children after it
     private readonly following: readonly XmlComponent[] = [];
 
     public constructor(options: IRunOptions) {
@@ -122,29 +137,23 @@ class DeletedTextRunWrapper extends XmlComponent {
                 }
 
                 if (typeof child === "string") {
-                    switch (child) {
-                        case PageNumber.CURRENT:
-                            this.root.push(createBegin());
-                            this.root.push(new DeletedPage());
-                            this.root.push(createSeparate());
-                            this.root.push(createEnd());
-                            break;
-                        case PageNumber.TOTAL_PAGES:
-                            this.root.push(createBegin());
-                            this.root.push(new DeletedNumberOfPages());
-                            this.root.push(createSeparate());
-                            this.root.push(createEnd());
-                            break;
-                        case PageNumber.TOTAL_PAGES_IN_SECTION:
-                            this.root.push(createBegin());
-                            this.root.push(new DeletedNumberOfPagesSection());
-                            this.root.push(createSeparate());
-                            this.root.push(createEnd());
-                            break;
-                        default:
-                            this.root.push(new DeletedText(child));
-                            break;
+                    const field = deletedPageNumberFieldOf(child);
+                    if (field) {
+                        // Each part of the field is written in a run of its own with this run's properties, as Word
+                        // writes fields, so LibreOffice formats it and the text after it by them (see Run)
+                        const rest = options.children.slice(index + 1);
+                        const runOf = (children: NonNullable<IRunOptions["children"]>): DeletedTextRunWrapper =>
+                            new DeletedTextRunWrapper({ ...options, break: undefined, children });
+                        const beginsHere = this.root.length === 1;
+                        if (beginsHere) {
+                            this.root.push(field[0]);
+                        }
+                        const parts = beginsHere ? field.slice(1) : field;
+                        this.following = [...parts.map((part) => runOf([part])), ...(rest.length > 0 ? [runOf(rest)] : [])];
+                        break;
                     }
+
+                    this.root.push(new DeletedText(child));
                     continue;
                 }
 

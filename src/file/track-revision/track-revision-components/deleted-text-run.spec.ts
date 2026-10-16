@@ -144,75 +144,35 @@ describe("DeletedTextRun", () => {
     });
 
     describe("page numbering", () => {
-        it("should be able to delete the total pages", () => {
-            const deletedTextRun = new DeletedTextRun({
-                children: [" to ", PageNumber.TOTAL_PAGES],
-                id: 0,
-                date: "123",
-                author: "Author",
-            });
+        const attributes = { _attr: { "w:author": "Author", "w:date": "123", "w:id": 0 } };
+        const bold = { "w:rPr": [{ "w:b": {} }, { "w:bCs": {} }] };
+        const deleted = (text: string) => ({ "w:delText": [{ _attr: { "xml:space": "preserve" } }, text] });
+        const fieldChar = (type: string) => ({ "w:fldChar": { _attr: { "w:fldCharType": type } } });
+        const instruction = (text: string) => ({ "w:delInstrText": [{ _attr: { "xml:space": "preserve" } }, text] });
+
+        it.each([
+            [PageNumber.TOTAL_PAGES, "NUMPAGES"],
+            [PageNumber.TOTAL_PAGES_IN_SECTION, "SECTIONPAGES"],
+            [PageNumber.CURRENT, "PAGE"],
+        ])("should delete %s as a field whose characters and instruction are each in a run of their own", (pageNumber, code) => {
+            const deletedTextRun = new DeletedTextRun({ children: [" to ", pageNumber], id: 0, date: "123", author: "Author" });
             const tree = new Formatter().format(deletedTextRun);
             expect(tree).to.deep.equal({
                 "w:del": [
-                    {
-                        _attr: {
-                            "w:author": "Author",
-                            "w:date": "123",
-                            "w:id": 0,
-                        },
-                    },
-                    {
-                        "w:r": [
-                            {
-                                "w:delText": [
-                                    {
-                                        _attr: {
-                                            "xml:space": "preserve",
-                                        },
-                                    },
-                                    " to ",
-                                ],
-                            },
-                            {
-                                "w:fldChar": {
-                                    _attr: {
-                                        "w:fldCharType": "begin",
-                                    },
-                                },
-                            },
-                            {
-                                "w:delInstrText": [
-                                    {
-                                        _attr: {
-                                            "xml:space": "preserve",
-                                        },
-                                    },
-                                    "NUMPAGES",
-                                ],
-                            },
-                            {
-                                "w:fldChar": {
-                                    _attr: {
-                                        "w:fldCharType": "separate",
-                                    },
-                                },
-                            },
-                            {
-                                "w:fldChar": {
-                                    _attr: {
-                                        "w:fldCharType": "end",
-                                    },
-                                },
-                            },
-                        ],
-                    },
+                    attributes,
+                    { "w:r": [deleted(" to ")] },
+                    { "w:r": [fieldChar("begin")] },
+                    { "w:r": [instruction(code)] },
+                    { "w:r": [fieldChar("separate")] },
+                    { "w:r": [fieldChar("end")] },
                 ],
             });
         });
 
-        it("should be able to delete the total pages in section", () => {
+        it("should give each run of the field, and the text after it, the run's properties", () => {
             const deletedTextRun = new DeletedTextRun({
-                children: [" to ", PageNumber.TOTAL_PAGES_IN_SECTION],
+                children: [PageNumber.CURRENT, " of ", PageNumber.TOTAL_PAGES],
+                bold: true,
                 id: 0,
                 date: "123",
                 author: "Author",
@@ -220,124 +180,16 @@ describe("DeletedTextRun", () => {
             const tree = new Formatter().format(deletedTextRun);
             expect(tree).to.deep.equal({
                 "w:del": [
-                    {
-                        _attr: {
-                            "w:author": "Author",
-                            "w:date": "123",
-                            "w:id": 0,
-                        },
-                    },
-                    {
-                        "w:r": [
-                            {
-                                "w:delText": [
-                                    {
-                                        _attr: {
-                                            "xml:space": "preserve",
-                                        },
-                                    },
-                                    " to ",
-                                ],
-                            },
-                            {
-                                "w:fldChar": {
-                                    _attr: {
-                                        "w:fldCharType": "begin",
-                                    },
-                                },
-                            },
-                            {
-                                "w:delInstrText": [
-                                    {
-                                        _attr: {
-                                            "xml:space": "preserve",
-                                        },
-                                    },
-                                    "SECTIONPAGES",
-                                ],
-                            },
-                            {
-                                "w:fldChar": {
-                                    _attr: {
-                                        "w:fldCharType": "separate",
-                                    },
-                                },
-                            },
-                            {
-                                "w:fldChar": {
-                                    _attr: {
-                                        "w:fldCharType": "end",
-                                    },
-                                },
-                            },
-                        ],
-                    },
-                ],
-            });
-        });
-
-        it("should be able to delete the current page", () => {
-            const deletedTextRun = new DeletedTextRun({
-                children: [" to ", PageNumber.CURRENT],
-                id: 0,
-                date: "123",
-                author: "Author",
-            });
-            const tree = new Formatter().format(deletedTextRun);
-            expect(tree).to.deep.equal({
-                "w:del": [
-                    {
-                        _attr: {
-                            "w:author": "Author",
-                            "w:date": "123",
-                            "w:id": 0,
-                        },
-                    },
-                    {
-                        "w:r": [
-                            {
-                                "w:delText": [
-                                    {
-                                        _attr: {
-                                            "xml:space": "preserve",
-                                        },
-                                    },
-                                    " to ",
-                                ],
-                            },
-                            {
-                                "w:fldChar": {
-                                    _attr: {
-                                        "w:fldCharType": "begin",
-                                    },
-                                },
-                            },
-                            {
-                                "w:delInstrText": [
-                                    {
-                                        _attr: {
-                                            "xml:space": "preserve",
-                                        },
-                                    },
-                                    "PAGE",
-                                ],
-                            },
-                            {
-                                "w:fldChar": {
-                                    _attr: {
-                                        "w:fldCharType": "separate",
-                                    },
-                                },
-                            },
-                            {
-                                "w:fldChar": {
-                                    _attr: {
-                                        "w:fldCharType": "end",
-                                    },
-                                },
-                            },
-                        ],
-                    },
+                    attributes,
+                    { "w:r": [bold, fieldChar("begin")] },
+                    { "w:r": [bold, instruction("PAGE")] },
+                    { "w:r": [bold, fieldChar("separate")] },
+                    { "w:r": [bold, fieldChar("end")] },
+                    { "w:r": [bold, deleted(" of ")] },
+                    { "w:r": [bold, fieldChar("begin")] },
+                    { "w:r": [bold, instruction("NUMPAGES")] },
+                    { "w:r": [bold, fieldChar("separate")] },
+                    { "w:r": [bold, fieldChar("end")] },
                 ],
             });
         });
