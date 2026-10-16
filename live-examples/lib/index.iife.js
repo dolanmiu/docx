@@ -29346,7 +29346,7 @@ MAX: 9026 };
 			super("w:style");
 			this.root.push(new StyleAttributes(attributes));
 			if (options.name) this.root.push(new Name(options.name));
-			if (options.basedOn) this.root.push(new StringValueElement("w:basedOn", options.basedOn));
+			if (options.basedOn && options.basedOn !== attributes.styleId) this.root.push(new StringValueElement("w:basedOn", options.basedOn));
 			if (options.next) this.root.push(new StringValueElement("w:next", options.next));
 			if (options.link) this.root.push(new StringValueElement("w:link", options.link));
 			if (options.uiPriority !== void 0) this.root.push(new UiPriority(options.uiPriority));
