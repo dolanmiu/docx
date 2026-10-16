@@ -129,6 +129,36 @@ describe("Numbering", () => {
                 expect(written).to.include('{"w:startOverride":{"_attr":{"w:val":4}}}');
             });
 
+            it("should restart every configured level in a new instance, each from its own start", () => {
+                const numbering = new Numbering({
+                    config: [
+                        {
+                            reference: "nested",
+                            levels: [
+                                { level: 0, format: LevelFormat.DECIMAL, text: "%1." },
+                                { level: 1, format: LevelFormat.DECIMAL, text: "%2.", start: 3 },
+                                { level: 2, format: LevelFormat.DECIMAL, text: "%3." },
+                            ],
+                        },
+                    ],
+                });
+
+                numbering.createConcreteNumberingInstance("nested", 1);
+
+                const written = JSON.stringify(new Formatter().format(numbering.ConcreteNumbering[1]));
+                expect(written).to.equal(
+                    JSON.stringify({
+                        "w:num": [
+                            { _attr: { "w:numId": 2 } },
+                            { "w:abstractNumId": { _attr: { "w:val": 2 } } },
+                            { "w:lvlOverride": [{ _attr: { "w:ilvl": 0 } }, { "w:startOverride": { _attr: { "w:val": 1 } } }] },
+                            { "w:lvlOverride": [{ _attr: { "w:ilvl": 1 } }, { "w:startOverride": { _attr: { "w:val": 3 } } }] },
+                            { "w:lvlOverride": [{ _attr: { "w:ilvl": 2 } }, { "w:startOverride": { _attr: { "w:val": 1 } } }] },
+                        ],
+                    }),
+                );
+            });
+
             it("should add a list's own definition once, however many paragraphs and instances give it", () => {
                 const numbering = new Numbering({ config: [] });
                 const definition = { reference: "own-list", levels: [{ level: 0, format: LevelFormat.DECIMAL, text: "%1." }] };

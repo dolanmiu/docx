@@ -312,25 +312,21 @@ export class Numbering extends XmlComponent {
             return;
         }
 
-        const referenceConfigLevels = this.referenceConfigMap.get(reference);
-        const firstLevelStartNumber = referenceConfigLevels && referenceConfigLevels[0].start;
+        const referenceConfigLevels = (this.referenceConfigMap.get(reference) ?? [{ level: 0 }]) as readonly Pick<
+            ILevelsOptions,
+            "level" | "start"
+        >[];
 
+        // Every configured level starts over in a new instance, not only the first, so a list restarts at each of its levels
         const concreteNumberingSettings = {
             numId: this.concreteNumUniqueNumericId(),
             abstractNumId: abstractNumbering.id,
             reference,
             instance,
-            overrideLevels: [
-                typeof firstLevelStartNumber === "number" && Number.isInteger(firstLevelStartNumber)
-                    ? {
-                          num: 0,
-                          start: firstLevelStartNumber,
-                      }
-                    : {
-                          num: 0,
-                          start: 1,
-                      },
-            ],
+            overrideLevels: referenceConfigLevels.map(({ level, start }) => ({
+                num: level,
+                start: typeof start === "number" && Number.isInteger(start) ? start : 1,
+            })),
         };
 
         // eslint-disable-next-line functional/immutable-data
