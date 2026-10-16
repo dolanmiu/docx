@@ -83,7 +83,7 @@ export class DocProperties extends XmlComponent {
             },
         };
 
-        // Leave out empty alt text, as Word 2007 will not open a document with descr="" and title="" here. See #1113.
+        // Leave out empty alt text, as Word 2007 will not open a document with an empty description and title here. See #1113.
         if (description) {
             attributes.description = {
                 key: "descr",
