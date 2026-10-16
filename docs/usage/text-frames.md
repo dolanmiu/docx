@@ -6,6 +6,41 @@
 
 > Text frames are paragraphs of text in a document which are positioned in a separate region or frame in the document, and can be positioned with a specific size and position relative to non-frame paragraphs in the current document.
 
+## Text Frames or Text Boxes
+
+A text frame is a paragraph with a position, written as `w:framePr`. It is not the text box Word makes when you insert one: Word draws that as a shape with text in it. Not every application positions text frames: Google Docs leaves them in line with the paragraphs around them, as wide as the column.
+
+For a text box like Word's, use a [`ShapeRun`](usage/shapes.md#text-in-shapes) from `docx/shapes`, with paragraphs in `children` and [`floating`](usage/shapes.md#inline-and-floating) to position it:
+
+```ts live
+import { Document, HorizontalPositionRelativeFrom, Paragraph, VerticalPositionRelativeFrom } from "docx";
+import { ShapeRun } from "docx/shapes";
+
+const doc = new Document({
+    sections: [
+        {
+            children: [
+                new Paragraph({
+                    children: [
+                        new ShapeRun({
+                            type: "rectangle",
+                            transformation: { width: 200, height: 80 },
+                            children: [new Paragraph("Hello from a text box!")],
+                            floating: {
+                                horizontalPosition: { relative: HorizontalPositionRelativeFrom.MARGIN, offset: 914400 },
+                                verticalPosition: { relative: VerticalPositionRelativeFrom.MARGIN, offset: 1828800 },
+                            },
+                        }),
+                    ],
+                }),
+            ],
+        },
+    ],
+});
+```
+
+Use a text frame for a drop cap, or to position paragraphs without a shape around them.
+
 ## Overview
 
 To make a `Text Frame`, add the `frame` property on a paragraph. Frames support two positioning modes:
