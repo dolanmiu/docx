@@ -110,8 +110,7 @@ export type INumberingOptions = {
 export class Numbering extends XmlComponent {
     private readonly abstractNumberingMap = new Map<string, AbstractNumbering>();
     private readonly concreteNumberingMap = new Map<string, ConcreteNumbering>();
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    private readonly referenceConfigMap = new Map<string, Record<string, any>>();
+    private readonly referenceConfigMap = new Map<string, readonly ILevelsOptions[]>();
     private readonly abstractNumUniqueNumericId = abstractNumUniqueNumericIdGen();
     private readonly concreteNumUniqueNumericId = concreteNumUniqueNumericIdGen();
 
@@ -312,10 +311,7 @@ export class Numbering extends XmlComponent {
             return;
         }
 
-        const referenceConfigLevels = (this.referenceConfigMap.get(reference) ?? [{ level: 0 }]) as readonly Pick<
-            ILevelsOptions,
-            "level" | "start"
-        >[];
+        const referenceConfigLevels = this.referenceConfigMap.get(reference) ?? [{ level: 0 }];
 
         // Every configured level starts over in a new instance, not only the first, so a list restarts at each of its levels
         const concreteNumberingSettings = {
