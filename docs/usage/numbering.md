@@ -138,11 +138,11 @@ const doc = new Document({
 
 Along with `reference` and `level`, the `numbering` object supports an optional `instance` property:
 
-| Property  | Type     | Notes                                                                                                                                                                                                                       |
-| --------- | -------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| reference | `string` | The numbering style reference, must match a defined config                                                                                                                                                                  |
-| level     | `number` | The list level (0 = top-level, 1 = sub-list, etc.)                                                                                                                                                                          |
-| instance  | `number` | _(Optional)_ Identifies the instance of the list. Lists with the same `instance` (or none) continue numbering across paragraphs. A new `instance` value restarts numbering from the first level's `start` (`1` by default). |
+| Property  | Type     | Notes                                                                                                                                                                                                                                  |
+| --------- | -------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| reference | `string` | The numbering style reference, must match a defined config                                                                                                                                                                             |
+| level     | `number` | The list level (0 = top-level, 1 = sub-list, etc.)                                                                                                                                                                                     |
+| instance  | `number` | _(Optional)_ Identifies the instance of the list. Lists with the same `instance` (or none) continue numbering across paragraphs. A new `instance` value restarts numbering at every level, each from its own `start` (`1` by default). |
 
 Example:
 
