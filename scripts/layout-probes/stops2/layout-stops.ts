@@ -10,7 +10,7 @@
  */
 import { readFileSync } from "node:fs";
 
-import type { Element } from "xml-js";
+import type { XmlElement as Element } from "../../../src/util/xml";
 
 import { patchDocument } from "../../../src/index";
 import { layOutPasses } from "../../../src/layout/layout-passes";

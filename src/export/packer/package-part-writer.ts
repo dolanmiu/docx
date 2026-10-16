@@ -5,13 +5,13 @@
  * @module
  */
 import JSZip from "jszip";
-import xml from "xml";
 
 import type { File } from "@file/file";
 import type { PackagePart } from "@file/package-part/package-part";
 import { Relationships } from "@file/relationships";
 import type { XmlComponent } from "@file/xml-components";
 import { encodeUtf8 } from "@util/convenience-functions";
+import { stringifyXmlable } from "@util/xml";
 
 import { Formatter } from "../formatter";
 import type { PrettifyType } from "./packer";
@@ -33,7 +33,7 @@ const formatter = new Formatter();
  * Formats a part's XML, with the relationships that anything in it that refers to other parts adds to.
  */
 const xmlifyPart = (file: File, content: XmlComponent, prettify: Prettify, relationships: Relationships, standalone = true): string =>
-    xml(formatter.format(content, { viewWrapper: { View: content, Relationships: relationships }, file, stack: [] }), {
+    stringifyXmlable(formatter.format(content, { viewWrapper: { View: content, Relationships: relationships }, file, stack: [] }), {
         indent: prettify,
         declaration: standalone ? { standalone: "yes", encoding: "UTF-8" } : { encoding: "UTF-8" },
     });

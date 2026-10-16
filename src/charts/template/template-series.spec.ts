@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
-import { type Element, js2xml, xml2js } from "xml-js";
+
+import { type XmlElement as Element, parseXml, stringifyElement } from "@util/xml";
 
 import { CHART_SPACE_ORDER } from "./patch-chart";
 import {
@@ -17,9 +18,9 @@ import {
 
 // cspell:ignore srgbClr schemeClr lumMod lumOff dLbls dLbl dPt extLst errBars trendline uniqueId spPr gradFill gsLst prstClr sysClr
 
-const parse = (text: string): Element => (xml2js(text, { compact: false, captureSpacesBetweenElements: true }) as Element).elements![0];
+const parse = (text: string): Element => parseXml(text, { keepWhitespaceText: true }).elements![0];
 
-const write = (element: Element | undefined): string => (element === undefined ? "" : js2xml({ elements: [element] }));
+const write = (element: Element | undefined): string => (element === undefined ? "" : stringifyElement({ elements: [element] }));
 
 // The children of each type in ooxml-schemas/ISO-IEC29500-4_2016/dml-chart.xsd, in order, with the children of the
 // groups it refers to (EG_SerShared) in their places

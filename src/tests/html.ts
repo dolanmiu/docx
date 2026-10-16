@@ -8,7 +8,6 @@
 // cspell:ignore IHDR IDAT IEND
 import JSZip from "jszip";
 import { deflateSync } from "node:zlib";
-import xml from "xml";
 
 import { Formatter } from "@export/formatter";
 import { Packer } from "@export/packer/packer";
@@ -16,6 +15,7 @@ import { File } from "@file/file";
 import type { Paragraph } from "@file/paragraph";
 import type { Table } from "@file/table";
 import type { IContext } from "@file/xml-components";
+import { stringifyXmlable } from "@util/xml";
 
 /**
  * Written content with its ids made the same each time: relationships', bookmarks', tracked changes' and drawings'
@@ -37,7 +37,7 @@ const contextOf = (): IContext => {
 /** Paragraphs and tables written as WordprocessingML, in one document */
 export const written = (children: readonly (Paragraph | Table)[]): string => {
     const context = contextOf();
-    return children.map((child) => xml(new Formatter().format(child, context))).join("");
+    return children.map((child) => stringifyXmlable(new Formatter().format(child, context))).join("");
 };
 
 /**
@@ -53,10 +53,10 @@ export const formattedWithNotes = (
     children: readonly (Paragraph | Table)[],
 ): { readonly body: string; readonly footnotes: string; readonly endnotes: string } => {
     const context = contextOf();
-    const body = children.map((child) => xml(new Formatter().format(child, context))).join("");
+    const body = children.map((child) => stringifyXmlable(new Formatter().format(child, context))).join("");
     const notesOf = (wrapper: typeof context.file.FootNotes | typeof context.file.Endnotes, kind: string): string =>
         [
-            ...xml(new Formatter().format(wrapper.View, { ...context, viewWrapper: wrapper })).matchAll(
+            ...stringifyXmlable(new Formatter().format(wrapper.View, { ...context, viewWrapper: wrapper })).matchAll(
                 new RegExp(`<w:${kind} w:id="\\d+">.*?</w:${kind}>`, "g"),
             ),
         ]

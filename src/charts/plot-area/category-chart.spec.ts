@@ -1,8 +1,7 @@
 import { describe, expect, it } from "vitest";
-import xml from "xml";
-import { type Element, xml2js } from "xml-js";
 
 import { Formatter } from "@export/formatter";
+import { type XmlElement as Element, parseXml, stringifyXmlable } from "@util/xml";
 import type { XmlComponent } from "docx";
 
 import { createChartData } from "../chart-data";
@@ -11,7 +10,7 @@ import { createCategoryCharts } from "./category-chart";
 
 type Options = ColumnChartOptions | BarChartOptions | LineChartOptions | AreaChartOptions;
 
-const parse = (component: XmlComponent): Element => (xml2js(xml(new Formatter().format(component))) as Element).elements![0];
+const parse = (component: XmlComponent): Element => parseXml(stringifyXmlable(new Formatter().format(component))).elements![0];
 const names = (element: Element): readonly string[] => (element.elements ?? []).map(({ name }) => name!);
 const children = (element: Element, name: string): readonly Element[] => element.elements!.filter((one) => one.name === name);
 const value = (element: Element, name: string): unknown => children(element, name)[0]?.attributes?.val;
@@ -223,7 +222,7 @@ describe("createCategoryCharts", () => {
     it("should write the chart's font on its axes", () => {
         const full: ColumnChartOptions = { type: "column", categories: ["A"], series: [{ name: "A", values: [1] }] };
         const written = createCategoryCharts(full, createChartData(full), { name: "Arial" })
-            .axes.map((axis) => xml(new Formatter().format(axis)))
+            .axes.map((axis) => stringifyXmlable(new Formatter().format(axis)))
             .join("");
 
         expect(written.match(/<a:latin typeface="Arial"\/>/g)).to.have.length(2);
@@ -238,7 +237,7 @@ describe("createCategoryCharts' series", () => {
         const point = children(series, "c:dPt")[0];
         expect(names(point)).to.deep.equal(["c:idx", "c:invertIfNegative", "c:bubble3D", "c:spPr"]);
         expect(value(point, "c:idx")).to.equal("1");
-        expect(xml(new Formatter().format(createCategoryCharts(...colored()).groups[0]))).to.contain(
+        expect(stringifyXmlable(new Formatter().format(createCategoryCharts(...colored()).groups[0]))).to.contain(
             '<c:dPt><c:idx val="1"/><c:invertIfNegative val="0"/><c:bubble3D val="0"/><c:spPr><a:solidFill><a:srgbClr val="FF0000"/></a:solidFill><a:ln><a:noFill/></a:ln><a:effectLst/></c:spPr></c:dPt>',
         );
     });
@@ -315,7 +314,7 @@ describe("createCategoryCharts' series", () => {
         expect(value(marker, "c:symbol")).to.equal("square");
         expect(value(marker, "c:size")).to.equal("8");
         expect(value(series, "c:smooth")).to.equal("1");
-        expect(xml(new Formatter().format(createCategoryCharts(...dashed()).groups[0]))).to.contain(
+        expect(stringifyXmlable(new Formatter().format(createCategoryCharts(...dashed()).groups[0]))).to.contain(
             '<c:spPr><a:ln w="12700" cap="rnd"><a:solidFill><a:srgbClr val="00FF00"/></a:solidFill><a:prstDash val="dash"/><a:round/></a:ln>',
         );
     });

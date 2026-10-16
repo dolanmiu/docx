@@ -145,9 +145,7 @@
         "@types/node": "^26.6.2",
         "hash.js": "^1.1.7",
         "jszip": "^3.10.1",
-        "nanoid": "^6.0.1",
-        "xml": "^1.0.1",
-        "xml-js": "^1.6.8"
+        "nanoid": "^6.0.1"
     },
     "author": "Dolan Miu",
     "license": "MIT",
@@ -160,7 +158,6 @@
         "@microsoft/api-extractor": "^7.58.7",
         "@types/pngjs": "^6.0.5",
         "@types/unzipper": "^0.10.4",
-        "@types/xml": "^1.0.8",
         "@typescript-eslint/eslint-plugin": "^8.8.1",
         "@typescript-eslint/parser": "^8.8.1",
         "@typescript/native": "npm:typescript@7.0.2",

@@ -1,8 +1,7 @@
 import { describe, expect, it } from "vitest";
-import xml from "xml";
-import { type Element, xml2js } from "xml-js";
 
 import { Formatter } from "@export/formatter";
+import { type XmlElement as Element, parseXml, stringifyXmlable } from "@util/xml";
 import { Math, type MathComponent, MathFraction, MathIntegral, MathRun, MathSum, MathSuperScript } from "docx";
 
 import { latexToMath } from "./latex-to-math";
@@ -21,7 +20,7 @@ import mathSchema from "../../ooxml-schemas/ISO-IEC29500-4_2016/shared-math.xsd?
 
 // The math schema, which docx/math's elements are checked against: each element's children are ones its type has, in
 // its type's order. The Open XML SDK validator checks this too, for the demos only
-const schema = xml2js(mathSchema as string) as Element;
+const schema = parseXml(mathSchema as string);
 
 const definitions = new Map(
     schema
@@ -103,8 +102,8 @@ const problemsIn = (element: Element, type: string, path: string): readonly stri
 };
 
 const problemsOf = (children: readonly MathComponent[]): readonly string[] => {
-    const written = xml(new Formatter().format(new Math({ children })));
-    return problemsIn((xml2js(written) as Element).elements![0], "CT_OMath", "m:oMath");
+    const written = stringifyXmlable(new Formatter().format(new Math({ children })));
+    return problemsIn(parseXml(written).elements![0], "CT_OMath", "m:oMath");
 };
 
 const run = (text: string): MathRun => new MathRun(text);

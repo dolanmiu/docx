@@ -1,12 +1,12 @@
 import { describe, expect, it } from "vitest";
-import xml from "xml";
 
 import { Formatter } from "@export/formatter";
+import { stringifyXmlable } from "@util/xml";
 import { Math, MathRun } from "docx";
 
 import { MathBox } from "./math-box";
 
-const toXml = (component: MathBox): string => xml(new Formatter().format(component));
+const toXml = (component: MathBox): string => stringifyXmlable(new Formatter().format(component));
 
 describe("MathBox", () => {
     it("draws a box around its children, with no properties, as all four sides are drawn by default", () => {

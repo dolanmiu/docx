@@ -1,12 +1,12 @@
 import { describe, expect, it } from "vitest";
-import xml from "xml";
 
 import { Formatter } from "@export/formatter";
+import { stringifyXmlable } from "@util/xml";
 import { Math, MathRun } from "docx";
 
 import { MathPhantom } from "./math-phantom";
 
-const toXml = (component: MathPhantom): string => xml(new Formatter().format(component));
+const toXml = (component: MathPhantom): string => stringifyXmlable(new Formatter().format(component));
 
 describe("MathPhantom", () => {
     it("hides its children, which still take up their room, by default", () => {

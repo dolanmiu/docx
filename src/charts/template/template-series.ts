@@ -4,7 +4,8 @@
  *
  * @module
  */
-import type { Element } from "xml-js";
+
+import type { XmlElement as Element } from "docx";
 
 import {
     childOf,

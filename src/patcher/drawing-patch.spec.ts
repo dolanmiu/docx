@@ -1,11 +1,11 @@
 /* eslint-disable @typescript-eslint/naming-convention -- The keys of objects here are paths of parts in a package */
 import JSZip from "jszip";
 import { describe, expect, it } from "vitest";
-import type { Element } from "xml-js";
 
 import { PackagePart } from "@file/package-part";
 import { ExternalHyperlink, ImageRun, TextRun } from "@file/paragraph";
 import { BuilderElement } from "@file/xml-components";
+import type { XmlElement as Element } from "@util/xml";
 
 import {
     DrawingPatch,

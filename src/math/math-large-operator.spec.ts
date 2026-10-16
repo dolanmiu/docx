@@ -1,12 +1,12 @@
 import { describe, expect, it } from "vitest";
-import xml from "xml";
 
 import { Formatter } from "@export/formatter";
+import { stringifyXmlable } from "@util/xml";
 import { Math, MathRun } from "docx";
 
 import { LARGE_OPERATORS, MathLargeOperator, type MathLargeOperatorName } from "./math-large-operator";
 
-const toXml = (component: MathLargeOperator): string => xml(new Formatter().format(component));
+const toXml = (component: MathLargeOperator): string => stringifyXmlable(new Formatter().format(component));
 
 describe("MathLargeOperator", () => {
     it("writes the operator with its limits above and below, and what it applies to", () => {

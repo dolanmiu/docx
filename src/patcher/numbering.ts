@@ -3,13 +3,12 @@
  *
  * @module
  */
-import xml from "xml";
-import type { Element } from "xml-js";
 
 import { Formatter } from "@export/formatter";
 import type { ConcreteNumbering, Numbering } from "@file/numbering";
 import type { IContext, XmlComponent } from "@file/xml-components";
 import { uniqueId } from "@util/convenience-functions";
+import { type XmlElement as Element, stringifyXmlable } from "@util/xml";
 
 import { relationshipsPathOf, relativeTarget, resolveTarget } from "./drawing-patch";
 import { getFirstLevelElements, toJson } from "./util";
@@ -53,7 +52,7 @@ export type NumberingPatcher = {
 };
 
 const formatElement = (component: XmlComponent, context: IContext): Element =>
-    toJson(xml(formatter.format(component, context))).elements![0];
+    toJson(stringifyXmlable(formatter.format(component, context))).elements![0];
 
 const highestOf = (ids: readonly number[]): number => ids.reduce((highest, id) => Math.max(highest, id), 0);
 

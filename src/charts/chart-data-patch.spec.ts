@@ -1,8 +1,8 @@
 /* eslint-disable @typescript-eslint/naming-convention -- The keys of objects here are paths of parts in a package */
 import JSZip from "jszip";
 import { describe, expect, it } from "vitest";
-import { type Element, xml2js } from "xml-js";
 
+import { type XmlElement as Element, parseXml } from "@util/xml";
 import {
     Document,
     DrawingPatch,
@@ -41,7 +41,7 @@ import { attributeOf, childOf, childrenOf, descendantsOf, elementsOf, textOf, va
 // ---------------------------------------------------------------------------------------------------------------------
 
 // Parsed with the spaces in text, such as a category that is a space
-const parse = (text: string): Element => xml2js(text, { compact: false, captureSpacesBetweenElements: true }) as Element;
+const parse = (text: string): Element => parseXml(text, { keepWhitespaceText: true });
 
 const readText = async (zip: JSZip, path: string): Promise<string> => (await zip.file(path)?.async("text")) ?? "";
 

@@ -1,10 +1,10 @@
 /**
- * Small helpers for reading and changing a template's XML, as `patchDocument` parses it (xml-js elements). Changes make
+ * Small helpers for reading and changing a template's XML, as `patchDocument` parses it (`XmlElement`s). Changes make
  * new elements rather than changing the template's, and keep its text, comments and elements they don't know.
  *
  * @module
  */
-import type { Element } from "xml-js";
+import type { XmlElement as Element } from "docx";
 
 /**
  * An element's name, such as "c:ser", or "" for text and comments, which have none.

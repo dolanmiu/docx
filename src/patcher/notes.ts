@@ -3,8 +3,6 @@
  *
  * @module
  */
-import xml from "xml";
-import type { Element } from "xml-js";
 
 import { Formatter } from "@export/formatter";
 import { EndnoteRefRun } from "@file/endnotes/endnote/run/endnote-ref-run";
@@ -23,6 +21,7 @@ import {
 } from "@file/styles/style/default-styles";
 import type { IContext, XmlComponent } from "@file/xml-components";
 import { uniqueId } from "@util/convenience-functions";
+import { type XmlElement as Element, stringifyXmlable } from "@util/xml";
 
 import type { RenumberBookmarks } from "./bookmark-ids";
 import type { RenumberDrawings } from "./drawing-ids";
@@ -127,7 +126,7 @@ export type NotesPatcher = {
 };
 
 const formatElement = (component: XmlComponent, context: IContext): Element =>
-    toJson(xml(formatter.format(component, context))).elements![0];
+    toJson(stringifyXmlable(formatter.format(component, context))).elements![0];
 
 const findIds = (element: Element, names: readonly string[]): readonly number[] => {
     const id = names.includes(element.name ?? "") ? Number(element.attributes?.["w:id"]) : NaN;

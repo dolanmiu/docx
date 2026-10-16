@@ -5,9 +5,8 @@
  * @module
  */
 // cspell:ignore sqref
-import type { Element } from "xml-js";
 
-import type { XmlComponent } from "docx";
+import type { XmlElement as Element, XmlComponent } from "docx";
 
 import type { ChartData, ChartSeriesData } from "../chart-data";
 import type { TimeUnit } from "../chart-dates";

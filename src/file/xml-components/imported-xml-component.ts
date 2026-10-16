@@ -7,26 +7,28 @@
  *
  * @module
  */
-import { type Element as XmlElement, xml2js } from "xml-js";
 
 import { type IXmlableObject, XmlAttributeComponent, XmlComponent } from "@file/xml-components";
+import { type XmlElement, parseXml } from "@util/xml";
 
 import type { IContext } from "./base";
 
 /**
- * Converts an xml-js Element into an XmlComponent tree.
+ * Converts an XML element, in the shape of xml-js's non-compact `Element`, into an XmlComponent tree.
  *
- * This function recursively processes XML elements in JSON format (from xml-js)
- * and creates a tree of ImportedXmlComponent objects that match the structure
- * of the original XML.
+ * This function recursively processes the element and creates a tree of
+ * ImportedXmlComponent objects that match the structure of the original XML.
  *
- * @param element - The XML element in JSON representation from xml-js
+ * @param element - The XML element as an {@link XmlElement}
  * @returns An ImportedXmlComponent tree, text string, or undefined
  *
  * @example
  * ```typescript
- * const xmlElement = xml2js('<w:p><w:r><w:t>Hello</w:t></w:r></w:p>');
- * const component = convertToXmlComponent(xmlElement);
+ * const component = convertToXmlComponent({
+ *   type: "element",
+ *   name: "w:p",
+ *   elements: [{ type: "element", name: "w:r", elements: [{ type: "element", name: "w:t", elements: [{ type: "text", text: "Hello" }] }] }],
+ * });
  * ```
  */
 export const convertToXmlComponent = (element: XmlElement): ImportedXmlComponent | string | undefined => {
@@ -85,7 +87,7 @@ export class ImportedXmlComponent extends XmlComponent {
      * Parses an XML string and converts it to an ImportedXmlComponent tree.
      *
      * This static method is the primary way to import external XML content.
-     * It uses xml-js to parse the XML string into a JSON representation,
+     * It parses the XML string into an {@link XmlElement} tree,
      * then converts that into a tree of XmlComponent objects.
      *
      * @param importedContent - The XML content as a string
@@ -98,7 +100,7 @@ export class ImportedXmlComponent extends XmlComponent {
      * ```
      */
     public static fromXmlString(importedContent: string): ImportedXmlComponent {
-        const xmlObj = xml2js(importedContent, { compact: false }) as XmlElement;
+        const xmlObj = parseXml(importedContent);
         return convertToXmlComponent(xmlObj) as ImportedXmlComponent;
     }
 

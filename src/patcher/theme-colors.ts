@@ -6,10 +6,10 @@
  */
 // cspell:ignore hlink Hlink
 import type JSZip from "jszip";
-import type { Element } from "xml-js";
 
 import { type ThemeColorValues, themeColorValues } from "@file/theme/color-scheme";
 import type { ThemeColorName } from "@file/theme/theme-color";
+import type { XmlElement as Element } from "@util/xml";
 
 import { resolveTarget } from "./drawing-patch";
 import { toJson } from "./util";

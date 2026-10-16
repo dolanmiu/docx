@@ -1,15 +1,14 @@
 import { describe, expect, it } from "vitest";
-import xml from "xml";
-import { type Element, xml2js } from "xml-js";
 
 import { Formatter } from "@export/formatter";
+import { type XmlElement as Element, parseXml, stringifyXmlable } from "@util/xml";
 import type { XmlComponent } from "docx";
 
 import { createChartData } from "../chart-data";
 import type { LineChartOptions } from "../chart-options";
 import { createCategoryCharts } from "./category-chart";
 
-const parse = (component: XmlComponent): Element => (xml2js(xml(new Formatter().format(component))) as Element).elements![0];
+const parse = (component: XmlComponent): Element => parseXml(stringifyXmlable(new Formatter().format(component))).elements![0];
 const names = (element: Element): readonly string[] => (element.elements ?? []).map(({ name }) => name!);
 const children = (element: Element, name: string): readonly Element[] => element.elements!.filter((one) => one.name === name);
 const value = (element: Element, name: string): unknown => children(element, name)[0]?.attributes?.val;
@@ -40,7 +39,7 @@ describe("createLineChart", () => {
         expect(value(children(series, "c:marker")[0], "c:symbol")).to.equal("none");
         expect(value(series, "c:smooth")).to.equal("0");
         expect(
-            xml(
+            stringifyXmlable(
                 new Formatter().format(
                     createCategoryCharts(
                         { type: "line", categories: ["A"], series: [{ name: "A", values: [1] }] },
@@ -57,7 +56,7 @@ describe("createLineChart", () => {
 
         expect(names(group)).to.deep.equal(["c:grouping", "c:varyColors", "c:ser", "c:dLbls", "c:marker", "c:axId", "c:axId"]);
         expect(value(group, "c:marker")).to.equal("1");
-        const marker = xml(
+        const marker = stringifyXmlable(
             new Formatter().format(
                 createCategoryCharts(
                     { type: "line", markers: true, categories: ["A"], series: [{ name: "Red", values: [1], color: "FF0000" }] },

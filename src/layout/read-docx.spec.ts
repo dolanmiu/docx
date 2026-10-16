@@ -1,8 +1,8 @@
 import JSZip from "jszip";
 import { describe, expect, it } from "vitest";
-import { type Element, xml2js } from "xml-js";
 
 import { obfuscate } from "@file/fonts/obfuscate-ttf-to-odttf";
+import { type XmlElement as Element, parseXml } from "@util/xml";
 import {
     AlignmentType,
     Document,
@@ -31,7 +31,7 @@ import { type DocumentContent, type ParagraphBlock, readDocument } from "./read-
 import { readDocx } from "./read-docx";
 
 /** Parses XML as patchDocument parses a template's parts */
-const parse = (xml: string): Element => xml2js(xml, { compact: false, captureSpacesBetweenElements: true }) as Element;
+const parse = (xml: string): Element => parseXml(xml, { keepWhitespaceText: true });
 
 /** The XML parts of a .docx, parsed, by their paths */
 const partsOf = async (buffer: Buffer): Promise<ReadonlyMap<string, Element>> => {

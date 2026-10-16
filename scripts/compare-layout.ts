@@ -26,7 +26,7 @@ import { existsSync, readFileSync, readdirSync } from "node:fs";
 import { join } from "node:path";
 
 import JSZip from "jszip";
-import { type Element, xml2js } from "xml-js";
+import { type XmlElement as Element, parseXml } from "../src/util/xml";
 
 import { estimatePageNumbers } from "../src/layout/estimate-page-numbers";
 
@@ -55,7 +55,7 @@ const paragraphsIn = (element: Element): readonly Element[] =>
 /** Each entry of the document's tables of contents: its heading's text, and the page number written for it */
 const entriesOf = async (path: string): Promise<readonly { readonly title: string; readonly page: string }[]> => {
     const zip = await JSZip.loadAsync(readFileSync(path));
-    const document = xml2js(await zip.file("word/document.xml")!.async("string"), { compact: false }) as Element;
+    const document = parseXml(await zip.file("word/document.xml")!.async("string"));
     return paragraphsIn(document)
         .filter((paragraph) => JSON.stringify(paragraph).includes("PAGEREF _Toc"))
         .map((paragraph) => {
@@ -96,7 +96,7 @@ const pageCountsOf = async (path: string): Promise<readonly string[]> => {
         }
     };
     for (const part of parts) {
-        read(xml2js(await zip.file(part)!.async("string"), { compact: false }) as Element);
+        read(parseXml(await zip.file(part)!.async("string")));
     }
     return results;
 };
@@ -113,13 +113,7 @@ const partsOf = async (path: string): Promise<ReadonlyMap<string, Element>> => {
     const paths = Object.keys(zip.files).filter((file) => file.endsWith(".xml") || file.endsWith(".rels"));
     return new Map(
         await Promise.all(
-            paths.map(
-                async (file) =>
-                    [
-                        file,
-                        xml2js(await zip.file(file)!.async("string"), { compact: false, captureSpacesBetweenElements: true }) as Element,
-                    ] as const,
-            ),
+            paths.map(async (file) => [file, parseXml(await zip.file(file)!.async("string"), { keepWhitespaceText: true })] as const),
         ),
     );
 };

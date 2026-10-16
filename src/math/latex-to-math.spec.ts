@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
-import xml from "xml";
 
 import { Formatter } from "@export/formatter";
+import { stringifyXmlable } from "@util/xml";
 import {
     Math,
     type MathComponent,
@@ -29,7 +29,7 @@ import { MathLargeOperator } from "./math-large-operator";
 import { MathMatrix } from "./math-matrix";
 import { MathPhantom } from "./math-phantom";
 
-const written = (...children: readonly MathComponent[]): string => xml(new Formatter().format(new Math({ children })));
+const written = (...children: readonly MathComponent[]): string => stringifyXmlable(new Formatter().format(new Math({ children })));
 
 /** The math the LaTeX is read as, written, to compare with the same math built by hand */
 const read = (latex: string): string => written(...latexToMath(latex));

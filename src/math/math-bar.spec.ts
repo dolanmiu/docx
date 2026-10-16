@@ -1,12 +1,12 @@
 import { describe, expect, it } from "vitest";
-import xml from "xml";
 
 import { Formatter } from "@export/formatter";
+import { stringifyXmlable } from "@util/xml";
 import { Math, MathRun } from "docx";
 
 import { MathBar } from "./math-bar";
 
-const toXml = (component: MathBar): string => xml(new Formatter().format(component));
+const toXml = (component: MathBar): string => stringifyXmlable(new Formatter().format(component));
 
 describe("MathBar", () => {
     it("puts a line above its children by default, writing the position, as the schema's default is below", () => {

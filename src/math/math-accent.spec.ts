@@ -1,12 +1,12 @@
 import { describe, expect, it } from "vitest";
-import xml from "xml";
 
 import { Formatter } from "@export/formatter";
+import { stringifyXmlable } from "@util/xml";
 import { Math, MathRun } from "docx";
 
 import { MathAccent, type MathAccentName } from "./math-accent";
 
-const toXml = (component: MathAccent): string => xml(new Formatter().format(component));
+const toXml = (component: MathAccent): string => stringifyXmlable(new Formatter().format(component));
 
 const x = "<m:e><m:r><m:t>x</m:t></m:r></m:e>";
 

@@ -7,13 +7,12 @@
  * @module
  */
 // cspell:ignore descr
-import xml from "xml";
-import type { Element } from "xml-js";
 
 import { Formatter } from "@export/formatter";
 import type { File } from "@file/file";
 import type { PackagePart } from "@file/package-part";
 import type { IContext, XmlComponent } from "@file/xml-components";
+import { type XmlElement as Element, stringifyXmlable } from "@util/xml";
 
 import { removeContentTypeOverride } from "./content-types-manager";
 import { PatchType } from "./patch-type";
@@ -320,7 +319,7 @@ const createTemplatePackage = (
             return String(relationship.attributes.Id);
         },
 
-        format: (content) => toJson(xml(formatter.format(content, context))).elements![0],
+        format: (content) => toJson(stringifyXmlable(formatter.format(content, context))).elements![0],
     };
 };
 

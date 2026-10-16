@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
-import { type Element, js2xml, xml2js } from "xml-js";
+
+import { type XmlElement as Element, parseXml, stringifyElement } from "@util/xml";
 
 import {
     attributeOf,
@@ -21,9 +22,9 @@ import {
 } from "./template-xml";
 
 // Parsed as patchDocument parses a template's parts, with the spaces between elements
-const parse = (text: string): Element => (xml2js(text, { compact: false, captureSpacesBetweenElements: true }) as Element).elements![0];
+const parse = (text: string): Element => parseXml(text, { keepWhitespaceText: true }).elements![0];
 
-const write = (element: Element): string => js2xml({ elements: [element] });
+const write = (element: Element): string => stringifyElement({ elements: [element] });
 
 describe("template-xml", () => {
     describe("nameOf", () => {

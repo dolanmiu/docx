@@ -1,10 +1,9 @@
 import { describe, expect, it } from "vitest";
-import xml from "xml";
-import { type Element, xml2js } from "xml-js";
 
 import { Formatter } from "@export/formatter";
 import { File } from "@file/file";
 import { Relationships } from "@file/relationships";
+import { type XmlElement as Element, parseXml, stringifyXmlable } from "@util/xml";
 import { type IContext, PackagePart, type XmlComponent } from "docx";
 
 import { createChartData } from "./chart-data";
@@ -21,7 +20,7 @@ const workbook = new PackagePart({
 });
 
 const format = (component: XmlComponent, relationships = new Relationships()): string =>
-    xml(
+    stringifyXmlable(
         new Formatter().format(component, {
             file: new File({ sections: [] }),
             viewWrapper: { View: component, Relationships: relationships },
@@ -31,7 +30,7 @@ const format = (component: XmlComponent, relationships = new Relationships()): s
 
 const chartSpace = (options: Partial<ChartRunOptions> = {}): Element => {
     const full = { type: "column", categories: ["A"], series: [{ name: "S", values: [1] }], ...options } as ChartRunOptions;
-    return (xml2js(format(createChartSpace(full, createChartData(full), workbook))) as Element).elements![0];
+    return parseXml(format(createChartSpace(full, createChartData(full), workbook))).elements![0];
 };
 const names = (element: Element): readonly string[] => (element.elements ?? []).map(({ name }) => name!);
 const child = (element: Element, name: string): Element => element.elements!.find((one) => one.name === name)!;

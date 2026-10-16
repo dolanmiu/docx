@@ -1,7 +1,7 @@
 import { beforeEach, describe, expect, it } from "vitest";
-import { type Element, xml2js } from "xml-js";
 
 import { EMPTY_OBJECT } from "@file/xml-components";
+import { type XmlElement as Element, parseXml } from "@util/xml";
 
 import type { IContext } from "./base";
 import { ImportedRootElementAttributes, ImportedXmlComponent, convertToXmlComponent } from "./imported-xml-component";
@@ -85,7 +85,7 @@ describe("ImportedXmlComponent", () => {
 
     describe("convertToXmlComponent", () => {
         it("should convert to xml component", () => {
-            const xmlObj = xml2js(xmlString, { compact: false }) as Element;
+            const xmlObj = parseXml(xmlString);
             const converted = convertToXmlComponent(xmlObj);
             expect(JSON.parse(JSON.stringify(converted))).to.deep.equal(convertedXmlElement);
         });
