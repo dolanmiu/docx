@@ -272,13 +272,13 @@ Packer.toBuffer(doc).then((buffer) => {
 
 ## Text Box vs Text Frame
 
-| Feature       | Text Box            | Text Frame        |
-| ------------- | ------------------- | ----------------- |
-| Based on      | VML Shape           | Paragraph framing |
-| Positioning   | More flexible       | Limited           |
-| Compatibility | Older Word versions | Modern Word       |
+| Feature       | Text Box (`Textbox`) | Text Frame (`frame`) | Shape (`ShapeRun`)  |
+| ------------- | -------------------- | -------------------- | ------------------- |
+| Based on      | VML shape            | Paragraph framing    | DrawingML shape     |
+| Fill, outline | No                   | Paragraph borders    | Yes                 |
+| Compatibility | All Word versions    | All Word versions    | Word 2010 and later |
 
-For most use cases, **Text Frames** are recommended. See [Text Frames](usage/text-frames.md) for more information.
+For new documents, use a [`ShapeRun`](usage/shapes.md#text-in-shapes) from `docx/shapes`, with paragraphs in `children`. It is the text box Word makes when you insert one, and the one other applications such as Google Docs and LibreOffice expect. See [Text Frames](usage/text-frames.md#text-frames-or-text-boxes) for when to use a text frame instead.
 
 ## Demo
 
