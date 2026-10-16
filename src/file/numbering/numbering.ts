@@ -12,6 +12,7 @@
 import { AlignmentType } from "@file/paragraph";
 import { type IContext, type IXmlableObject, XmlComponent } from "@file/xml-components";
 import { abstractNumUniqueNumericIdGen, concreteNumUniqueNumericIdGen, convertInchesToTwip } from "@util/convenience-functions";
+import { decimalNumber } from "@util/values";
 
 import { AbstractNumbering } from "./abstract-numbering";
 import { type ILevelsOptions, LevelFormat } from "./level";
@@ -110,8 +111,7 @@ export type INumberingOptions = {
 export class Numbering extends XmlComponent {
     private readonly abstractNumberingMap = new Map<string, AbstractNumbering>();
     private readonly concreteNumberingMap = new Map<string, ConcreteNumbering>();
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    private readonly referenceConfigMap = new Map<string, Record<string, any>>();
+    private readonly referenceConfigMap = new Map<string, readonly ILevelsOptions[]>();
     private readonly abstractNumUniqueNumericId = abstractNumUniqueNumericIdGen();
     private readonly concreteNumUniqueNumericId = concreteNumUniqueNumericIdGen();
 
@@ -312,25 +312,19 @@ export class Numbering extends XmlComponent {
             return;
         }
 
-        const referenceConfigLevels = this.referenceConfigMap.get(reference);
-        const firstLevelStartNumber = referenceConfigLevels && referenceConfigLevels[0].start;
+        const referenceConfigLevels = this.referenceConfigMap.get(reference) ?? [{ level: 0 }];
 
+        // Every configured level starts over in a new instance, not only the first, so a list restarts at each of its levels.
+        // Each starts at the number its level is written with, as `Level` writes it
         const concreteNumberingSettings = {
             numId: this.concreteNumUniqueNumericId(),
             abstractNumId: abstractNumbering.id,
             reference,
             instance,
-            overrideLevels: [
-                typeof firstLevelStartNumber === "number" && Number.isInteger(firstLevelStartNumber)
-                    ? {
-                          num: 0,
-                          start: firstLevelStartNumber,
-                      }
-                    : {
-                          num: 0,
-                          start: 1,
-                      },
-            ],
+            overrideLevels: referenceConfigLevels.map(({ level, start = 1 }) => ({
+                num: level,
+                start: decimalNumber(start),
+            })),
         };
 
         // eslint-disable-next-line functional/immutable-data
