@@ -28715,6 +28715,7 @@ MAX: 9026 };
 		* `numbering` option, which is kept
 		*/
 		createConcreteNumberingInstance(reference, instance, definition) {
+			var _this$referenceConfig;
 			if (definition && !this.abstractNumberingMap.has(definition.reference)) {
 				this.abstractNumberingMap.set(definition.reference, new AbstractNumbering(this.abstractNumUniqueNumericId(), definition.levels));
 				this.referenceConfigMap.set(definition.reference, definition.levels);
@@ -28723,20 +28724,16 @@ MAX: 9026 };
 			if (!abstractNumbering) return;
 			const fullReference = `${reference}-${instance}`;
 			if (this.concreteNumberingMap.has(fullReference)) return;
-			const referenceConfigLevels = this.referenceConfigMap.get(reference);
-			const firstLevelStartNumber = referenceConfigLevels && referenceConfigLevels[0].start;
+			const referenceConfigLevels = (_this$referenceConfig = this.referenceConfigMap.get(reference)) !== null && _this$referenceConfig !== void 0 ? _this$referenceConfig : [{ level: 0 }];
 			const concreteNumberingSettings = {
 				numId: this.concreteNumUniqueNumericId(),
 				abstractNumId: abstractNumbering.id,
 				reference,
 				instance,
-				overrideLevels: [typeof firstLevelStartNumber === "number" && Number.isInteger(firstLevelStartNumber) ? {
-					num: 0,
-					start: firstLevelStartNumber
-				} : {
-					num: 0,
-					start: 1
-				}]
+				overrideLevels: referenceConfigLevels.map(({ level, start = 1 }) => ({
+					num: level,
+					start: decimalNumber(start)
+				}))
 			};
 			this.concreteNumberingMap.set(fullReference, new ConcreteNumbering(concreteNumberingSettings));
 		}
