@@ -44,6 +44,18 @@ describe("DocProperties", () => {
         expect(tree["wp:docPr"]._attr).not.to.have.property("title");
     });
 
+    it("should omit empty description and title, which Word 2007 cannot open", () => {
+        const dp = new DocProperties({ name: "test", description: "", title: "", id: "1" });
+        const tree = new Formatter().format(dp);
+        expect(tree).to.deep.equal({ "wp:docPr": { _attr: { id: "1", name: "test" } } });
+    });
+
+    it("should write only an id and an empty name when given no options", () => {
+        const tree = new Formatter().format(new DocProperties());
+        expect(tree["wp:docPr"]._attr).to.have.all.keys("id", "name");
+        expect(tree["wp:docPr"]._attr.name).to.equal("");
+    });
+
     it("should give each drawing its own id when none is supplied", () => {
         const first = new Formatter().format(new DocProperties({ name: "first" }));
         const second = new Formatter().format(new DocProperties({ name: "second" }));

@@ -77,10 +77,8 @@ describe("Drawing", () => {
                             {
                                 "wp:docPr": {
                                     _attr: {
-                                        descr: "",
                                         id: 1,
                                         name: "",
-                                        title: "",
                                     },
                                 },
                             },
@@ -306,10 +304,8 @@ describe("Drawing", () => {
                             {
                                 "wp:docPr": {
                                     _attr: {
-                                        descr: "",
                                         id: 1,
                                         name: "",
-                                        title: "",
                                     },
                                 },
                             },
@@ -538,10 +534,8 @@ describe("Drawing", () => {
                                 "wp:docPr": [
                                     {
                                         _attr: {
-                                            descr: "",
                                             id: 1,
                                             name: "",
-                                            title: "",
                                         },
                                     },
                                     {

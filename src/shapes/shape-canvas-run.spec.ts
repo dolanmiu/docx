@@ -257,7 +257,7 @@ describe("ShapeCanvasRun", () => {
         );
         const drawing = tree["w:r"][0]["w:drawing"];
         expect(drawing[0]["wp:inline"].find((child: IXmlableObject) => "wp:docPr" in child)).to.deep.equal({
-            "wp:docPr": { _attr: { id: "2", name: "", descr: "", title: "" } },
+            "wp:docPr": { _attr: { id: "2", name: "" } },
         });
         expect(tree["w:r"]).to.have.length(1);
     });

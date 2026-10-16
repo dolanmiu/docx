@@ -38,7 +38,7 @@ describe("ShapeRun", () => {
                                 { _attr: { distT: 0, distB: 0, distL: 0, distR: 0 } },
                                 { "wp:extent": { _attr: { cx: 1905000, cy: 38100 } } },
                                 { "wp:effectExtent": { _attr: { t: 0, r: 0, b: 0, l: 0 } } },
-                                { "wp:docPr": { _attr: { id: "1", name: "", descr: "", title: "" } } },
+                                { "wp:docPr": { _attr: { id: "1", name: "" } } },
                                 {
                                     "wp:cNvGraphicFramePr": [
                                         {
