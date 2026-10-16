@@ -134,10 +134,11 @@ describe("Numbering", () => {
                     config: [
                         {
                             reference: "nested",
+                            // Out of order, so each override is of the level its `level` names, not of its place in the list
                             levels: [
                                 { level: 0, format: LevelFormat.DECIMAL, text: "%1." },
-                                { level: 1, format: LevelFormat.DECIMAL, text: "%2.", start: 3 },
                                 { level: 2, format: LevelFormat.DECIMAL, text: "%3." },
+                                { level: 1, format: LevelFormat.DECIMAL, text: "%2.", start: 3 },
                             ],
                         },
                     ],
@@ -145,18 +146,15 @@ describe("Numbering", () => {
 
                 numbering.createConcreteNumberingInstance("nested", 1);
 
-                const written = JSON.stringify(new Formatter().format(numbering.ConcreteNumbering[1]));
-                expect(written).to.equal(
-                    JSON.stringify({
-                        "w:num": [
-                            { _attr: { "w:numId": 2 } },
-                            { "w:abstractNumId": { _attr: { "w:val": 2 } } },
-                            { "w:lvlOverride": [{ _attr: { "w:ilvl": 0 } }, { "w:startOverride": { _attr: { "w:val": 1 } } }] },
-                            { "w:lvlOverride": [{ _attr: { "w:ilvl": 1 } }, { "w:startOverride": { _attr: { "w:val": 3 } } }] },
-                            { "w:lvlOverride": [{ _attr: { "w:ilvl": 2 } }, { "w:startOverride": { _attr: { "w:val": 1 } } }] },
-                        ],
-                    }),
-                );
+                expect(new Formatter().format(numbering.ConcreteNumbering[1])).to.deep.equal({
+                    "w:num": [
+                        { _attr: { "w:numId": 2 } },
+                        { "w:abstractNumId": { _attr: { "w:val": 2 } } },
+                        { "w:lvlOverride": [{ _attr: { "w:ilvl": 0 } }, { "w:startOverride": { _attr: { "w:val": 1 } } }] },
+                        { "w:lvlOverride": [{ _attr: { "w:ilvl": 2 } }, { "w:startOverride": { _attr: { "w:val": 1 } } }] },
+                        { "w:lvlOverride": [{ _attr: { "w:ilvl": 1 } }, { "w:startOverride": { _attr: { "w:val": 3 } } }] },
+                    ],
+                });
             });
 
             it("should restart a level of a new instance at the number its level is written with, when its start isn't an integer", () => {
