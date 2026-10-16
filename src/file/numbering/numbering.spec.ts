@@ -159,6 +159,23 @@ describe("Numbering", () => {
                 );
             });
 
+            it("should restart a level of a new instance at the number its level is written with, when its start isn't an integer", () => {
+                const numbering = new Numbering({
+                    config: [{ reference: "fraction", levels: [{ level: 0, format: LevelFormat.DECIMAL, text: "%1.", start: 2.5 }] }],
+                });
+
+                numbering.createConcreteNumberingInstance("fraction", 1);
+
+                expect(JSON.stringify(new Formatter().format(numbering))).to.include('{"w:start":{"_attr":{"w:val":2}}}');
+                expect(new Formatter().format(numbering.ConcreteNumbering[1])).to.deep.equal({
+                    "w:num": [
+                        { _attr: { "w:numId": 2 } },
+                        { "w:abstractNumId": { _attr: { "w:val": 2 } } },
+                        { "w:lvlOverride": [{ _attr: { "w:ilvl": 0 } }, { "w:startOverride": { _attr: { "w:val": 2 } } }] },
+                    ],
+                });
+            });
+
             it("should add a list's own definition once, however many paragraphs and instances give it", () => {
                 const numbering = new Numbering({ config: [] });
                 const definition = { reference: "own-list", levels: [{ level: 0, format: LevelFormat.DECIMAL, text: "%1." }] };

@@ -12,6 +12,7 @@
 import { AlignmentType } from "@file/paragraph";
 import { type IContext, type IXmlableObject, XmlComponent } from "@file/xml-components";
 import { abstractNumUniqueNumericIdGen, concreteNumUniqueNumericIdGen, convertInchesToTwip } from "@util/convenience-functions";
+import { decimalNumber } from "@util/values";
 
 import { AbstractNumbering } from "./abstract-numbering";
 import { type ILevelsOptions, LevelFormat } from "./level";
@@ -313,15 +314,16 @@ export class Numbering extends XmlComponent {
 
         const referenceConfigLevels = this.referenceConfigMap.get(reference) ?? [{ level: 0 }];
 
-        // Every configured level starts over in a new instance, not only the first, so a list restarts at each of its levels
+        // Every configured level starts over in a new instance, not only the first, so a list restarts at each of its levels.
+        // Each starts at the number its level is written with, as `Level` writes it
         const concreteNumberingSettings = {
             numId: this.concreteNumUniqueNumericId(),
             abstractNumId: abstractNumbering.id,
             reference,
             instance,
-            overrideLevels: referenceConfigLevels.map(({ level, start }) => ({
+            overrideLevels: referenceConfigLevels.map(({ level, start = 1 }) => ({
                 num: level,
-                start: typeof start === "number" && Number.isInteger(start) ? start : 1,
+                start: decimalNumber(start),
             })),
         };
 
