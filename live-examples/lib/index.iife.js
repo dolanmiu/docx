@@ -15550,11 +15550,7 @@ EXTERNAL: "External" };
 	* ```
 	*/
 	var DocProperties = class extends XmlComponent {
-		constructor({ name, description, title, id } = {
-			name: "",
-			description: "",
-			title: ""
-		}, { link, decorative } = {}) {
+		constructor({ name, description, title, id } = { name: "" }, { link, decorative } = {}) {
 			super("wp:docPr");
 			_defineProperty(this, "link", void 0);
 			_defineProperty(this, "decorative", void 0);
@@ -15568,11 +15564,11 @@ EXTERNAL: "External" };
 					value: name
 				}
 			};
-			if (description !== null && description !== void 0) attributes.description = {
+			if (description) attributes.description = {
 				key: "descr",
 				value: description
 			};
-			if (title !== null && title !== void 0) attributes.title = {
+			if (title) attributes.title = {
 				key: "title",
 				value: title
 			};
