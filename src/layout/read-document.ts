@@ -2097,14 +2097,13 @@ const readRemoved = (elements: readonly unknown[], reader: Reader): readonly Lay
                 references
                     .filter((reference) => !hasOwnMark(reference))
                     .forEach((reference) => reader.notes?.skip("w:endnoteReference" in reference ? "endnote" : "footnote"));
-                if (references.some(hasOwnMark)) {
-                    return DELETED_OWN_MARK;
-                }
-                // Its field characters, which keep the fields' places, so a field partly deleted is found
-                return itemsOf(
-                    children.map((child) => (nameOf(child) === "w:fldChar" ? readFieldCharacter(child, {}, reader, true) : [])),
-                    reader,
-                );
+                // Otherwise its field characters, which keep the fields' places, so a field partly deleted is found
+                return references.some(hasOwnMark)
+                    ? DELETED_OWN_MARK
+                    : itemsOf(
+                          children.map((child) => (nameOf(child) === "w:fldChar" ? readFieldCharacter(child, {}, reader, true) : [])),
+                          reader,
+                      );
             }
             if (name === "w:bookmarkStart") {
                 return markerOf(element);

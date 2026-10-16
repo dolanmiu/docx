@@ -52,11 +52,10 @@ const borderParts = (value: string): readonly [width: string, style: string, col
     const width = words.filter(isBorderWidth);
     const style = words.filter((word) => BORDER_STYLES.has(word.toLowerCase()));
     const color = words.filter((word) => !isBorderWidth(word) && !BORDER_STYLES.has(word.toLowerCase()));
-    if (words.length === 0 || width.length > 1 || style.length > 1 || color.length > 1 || (color.length === 1 && !parseColor(color[0]))) {
-        return undefined;
-    }
     // What a border leaves out is its initial value: medium, none, and the text's colour
-    return [width[0] ?? "medium", style[0] ?? "none", color[0] ?? "currentcolor"];
+    return words.length === 0 || width.length > 1 || style.length > 1 || color.length > 1 || (color.length === 1 && !parseColor(color[0]))
+        ? undefined
+        : [width[0] ?? "medium", style[0] ?? "none", color[0] ?? "currentcolor"];
 };
 
 const border = (sides: readonly string[], value: string): readonly PropertyValue[] | undefined => {

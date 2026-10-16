@@ -5353,25 +5353,24 @@ export const paginate = (
          */
         const heightAt = (index: number): number => {
             const ending = openMerges.filter(({ last }) => last === index);
-            if (!ending.some(({ broken, moved }) => broken || moved) || table.rows[index].height?.rule === "exact") {
-                return heights[index];
-            }
-            return Math.max(
-                ownHeights[index],
-                // Their rows on the page start with the rest of the row that broke on the page before, below the border above
-                // the first of them, and end above the last's border below (`word-stops-tables.docx` RW4a, RW4b)
-                // Those whose text went on from a page before with none of their rows on this one yet start with this one
-                ...ending.map(
-                    ({ cell, rest, start = position, startTop = table.rows[index].borderTop, broken }) =>
-                        start +
-                        startTop +
-                        cell.marginTop +
-                        fillCell(rest, Infinity, !broken).height +
-                        cell.marginBottom +
-                        table.rows[index].borderBottom -
-                        position,
-                ),
-            );
+            return !ending.some(({ broken, moved }) => broken || moved) || table.rows[index].height?.rule === "exact"
+                ? heights[index]
+                : Math.max(
+                      ownHeights[index],
+                      // Their rows on the page start with the rest of the row that broke on the page before, below the border above
+                      // the first of them, and end above the last's border below (`word-stops-tables.docx` RW4a, RW4b)
+                      // Those whose text went on from a page before with none of their rows on this one yet start with this one
+                      ...ending.map(
+                          ({ cell, rest, start = position, startTop = table.rows[index].borderTop, broken }) =>
+                              start +
+                              startTop +
+                              cell.marginTop +
+                              fillCell(rest, Infinity, !broken).height +
+                              cell.marginBottom +
+                              table.rows[index].borderBottom -
+                              position,
+                      ),
+                  );
         };
         /**
          * What the table's last row is kept with when it is kept with the next: the first lines of the paragraph after the

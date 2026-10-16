@@ -752,18 +752,17 @@ export const createFontFileMeasurer = (faces: readonly FontFace[], fallback: Tex
     return {
         measureWidth: (text, font) => {
             const face = faceOf(font);
-            if (!face) {
-                return fallback.measureWidth(text, font);
-            }
             // A tab typed in the text, rather than written as a tab, moves to the next half inch from the start of the text, as
             // the width tables measure it
-            return text
-                .split("\t")
-                .reduce(
-                    (position, part, index) =>
-                        (index === 0 ? 0 : (Math.floor(position / TAB_STOP) + 1) * TAB_STOP) + widthIn(face, part, font),
-                    0,
-                );
+            return face
+                ? text
+                      .split("\t")
+                      .reduce(
+                          (position, part, index) =>
+                              (index === 0 ? 0 : (Math.floor(position / TAB_STOP) + 1) * TAB_STOP) + widthIn(face, part, font),
+                          0,
+                      )
+                : fallback.measureWidth(text, font);
         },
         // Superscript, subscript and small capitals take up the line of their run's size
         measureLineHeight: (font) => {
