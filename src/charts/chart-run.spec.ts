@@ -92,7 +92,7 @@ describe("ChartRun", () => {
 
     it("should describe the chart for screen readers when its alternative text has no description", () => {
         expect(find(format(new ChartRun(column)), "wp:docPr")).to.deep.equal({
-            _attr: { id: 1, name: "", descr: "Column chart. S: A 1, B 2.", title: "" },
+            _attr: { id: 1, name: "", descr: "Column chart. S: A 1, B 2." },
         });
         expect(find(format(new ChartRun({ ...column, altText: { name: "Chart 1" } })), "wp:docPr")).to.deep.equal({
             _attr: { id: 1, name: "Chart 1", descr: "Column chart. S: A 1, B 2." },

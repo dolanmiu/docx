@@ -67,7 +67,7 @@ describe("ShapeGroupRun", () => {
         // Children take ids 1-3 when they are created, before the group's docPr
         // Described from the names of its shapes, as it has no description of its own
         expect(getChild(container, "wp:docPr")).to.deep.equal({
-            "wp:docPr": { _attr: { id: "4", name: "", descr: "Start. End.", title: "" } },
+            "wp:docPr": { _attr: { id: "4", name: "", descr: "Start. End." } },
         });
 
         const group = getGroup(tree);

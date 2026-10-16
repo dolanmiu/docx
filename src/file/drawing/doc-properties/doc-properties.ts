@@ -67,7 +67,7 @@ export class DocProperties extends XmlComponent {
     private readonly decorative?: boolean;
 
     public constructor(
-        { name, description, title, id }: DocPropertiesOptions = { name: "", description: "", title: "" },
+        { name, description, title, id }: DocPropertiesOptions = { name: "" },
         { link, decorative }: DrawingLinkOptions = {},
     ) {
         super("wp:docPr");
@@ -83,14 +83,15 @@ export class DocProperties extends XmlComponent {
             },
         };
 
-        if (description !== null && description !== undefined) {
+        // Leave out empty alt text, as Word 2007 will not open a document with an empty description and title here. See #1113.
+        if (description) {
             attributes.description = {
                 key: "descr",
                 value: description,
             };
         }
 
-        if (title !== null && title !== undefined) {
+        if (title) {
             attributes.title = {
                 key: "title",
                 value: title,
