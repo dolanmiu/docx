@@ -122,11 +122,10 @@ const withScripts = (base: readonly MathComponent[], sub: readonly Atom[] | unde
     if (sub !== undefined && sup !== undefined) {
         return new MathSubSuperScript({ children, subScript: orSpace(atomsToMath(sub)), superScript: orSpace(atomsToMath(sup)) });
     }
-    if (sub !== undefined) {
-        return new MathSubScript({ children, subScript: orSpace(atomsToMath(sub)) });
-    }
     // A script atom has a subscript, a superscript or both
-    return new MathSuperScript({ children, superScript: orSpace(atomsToMath(sup!)) });
+    return sub === undefined
+        ? new MathSuperScript({ children, superScript: orSpace(atomsToMath(sup!)) })
+        : new MathSubScript({ children, subScript: orSpace(atomsToMath(sub)) });
 };
 
 const createOperator = (atom: AtomWithLimits, argument: readonly MathComponent[]): MathComponent => {

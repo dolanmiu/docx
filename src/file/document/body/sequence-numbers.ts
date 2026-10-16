@@ -194,11 +194,8 @@ export const sequenceNumbering = (context: IContext): SequenceNumbering => {
         const headingAt = Math.max(-1, ...headingsAt.slice(1, level + 1).filter((at) => at !== undefined));
         const since = (counted.get(key) ?? []).filter((field) => field.paragraph >= headingAt);
         const followed = since.every(({ step }) => step?.type === "next" || (step?.type === "heading" && step.level === level));
-        if (unclearAt > headingAt || !followed) {
-            return undefined;
-        }
         // Before the first heading, the fields since are all of them, each one more than the one before
-        return since.length + 1;
+        return unclearAt > headingAt || !followed ? undefined : since.length + 1;
     };
 
     return {
