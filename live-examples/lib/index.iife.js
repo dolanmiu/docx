@@ -11144,6 +11144,36 @@ DOT: "dot" };
 		/** Inserts the current section number */
 		CURRENT_SECTION: "SECTION"
 	};
+	/** The parts of the field a page number child shows, in order, or undefined when the child is text */
+	var pageNumberFieldOf = (child) => {
+		switch (child) {
+			case PageNumber.CURRENT: return [
+				createBegin(),
+				new Page(),
+				createSeparate(),
+				createEnd()
+			];
+			case PageNumber.TOTAL_PAGES: return [
+				createBegin(),
+				new NumberOfPages(),
+				createSeparate(),
+				createEnd()
+			];
+			case PageNumber.TOTAL_PAGES_IN_SECTION: return [
+				createBegin(),
+				new NumberOfPagesSection(),
+				createSeparate(),
+				createEnd()
+			];
+			case PageNumber.CURRENT_SECTION: return [
+				createBegin(),
+				new CurrentSection(),
+				createSeparate(),
+				createEnd()
+			];
+			default: return;
+		}
+	};
 	/**
 	* Represents a run of text with uniform formatting in a WordprocessingML document.
 	*
@@ -11195,33 +11225,20 @@ DOT: "dot" };
 					break;
 				}
 				if (typeof child === "string") {
-					switch (child) {
-						case PageNumber.CURRENT:
-							this.root.push(createBegin());
-							this.root.push(new Page());
-							this.root.push(createSeparate());
-							this.root.push(createEnd());
-							break;
-						case PageNumber.TOTAL_PAGES:
-							this.root.push(createBegin());
-							this.root.push(new NumberOfPages());
-							this.root.push(createSeparate());
-							this.root.push(createEnd());
-							break;
-						case PageNumber.TOTAL_PAGES_IN_SECTION:
-							this.root.push(createBegin());
-							this.root.push(new NumberOfPagesSection());
-							this.root.push(createSeparate());
-							this.root.push(createEnd());
-							break;
-						case PageNumber.CURRENT_SECTION:
-							this.root.push(createBegin());
-							this.root.push(new CurrentSection());
-							this.root.push(createSeparate());
-							this.root.push(createEnd());
-							break;
-						default: this.root.push(new Text(child));
+					const field = pageNumberFieldOf(child);
+					if (field) {
+						const rest = options.children.slice(index + 1);
+						const runOf = (children) => new Run(_objectSpread2(_objectSpread2({}, options), {}, {
+							break: void 0,
+							children
+						}));
+						const beginsHere = this.root.length === 1;
+						if (beginsHere) this.root.push(field[0]);
+						const parts = beginsHere ? field.slice(1) : field;
+						this.following = [...parts.map((part) => runOf([part])), ...rest.length > 0 ? [runOf(rest)] : []];
+						break;
 					}
+					this.root.push(new Text(child));
 					continue;
 				}
 				this.root.push(child);
@@ -24012,6 +24029,30 @@ MAX: 9026 };
 	*
 	* @module
 	*/
+	/** The parts of the deleted field a page number child shows, in order, or undefined when the child is text */
+	var deletedPageNumberFieldOf = (child) => {
+		switch (child) {
+			case PageNumber.CURRENT: return [
+				createBegin(),
+				new DeletedPage(),
+				createSeparate(),
+				createEnd()
+			];
+			case PageNumber.TOTAL_PAGES: return [
+				createBegin(),
+				new DeletedNumberOfPages(),
+				createSeparate(),
+				createEnd()
+			];
+			case PageNumber.TOTAL_PAGES_IN_SECTION: return [
+				createBegin(),
+				new DeletedNumberOfPagesSection(),
+				createSeparate(),
+				createEnd()
+			];
+			default: return;
+		}
+	};
 	/**
 	* Represents a deleted text run in a tracked changes document.
 	*
@@ -24097,27 +24138,20 @@ MAX: 9026 };
 					break;
 				}
 				if (typeof child === "string") {
-					switch (child) {
-						case PageNumber.CURRENT:
-							this.root.push(createBegin());
-							this.root.push(new DeletedPage());
-							this.root.push(createSeparate());
-							this.root.push(createEnd());
-							break;
-						case PageNumber.TOTAL_PAGES:
-							this.root.push(createBegin());
-							this.root.push(new DeletedNumberOfPages());
-							this.root.push(createSeparate());
-							this.root.push(createEnd());
-							break;
-						case PageNumber.TOTAL_PAGES_IN_SECTION:
-							this.root.push(createBegin());
-							this.root.push(new DeletedNumberOfPagesSection());
-							this.root.push(createSeparate());
-							this.root.push(createEnd());
-							break;
-						default: this.root.push(new DeletedText(child));
+					const field = deletedPageNumberFieldOf(child);
+					if (field) {
+						const rest = options.children.slice(index + 1);
+						const runOf = (children) => new DeletedTextRunWrapper(_objectSpread2(_objectSpread2({}, options), {}, {
+							break: void 0,
+							children
+						}));
+						const beginsHere = this.root.length === 1;
+						if (beginsHere) this.root.push(field[0]);
+						const parts = beginsHere ? field.slice(1) : field;
+						this.following = [...parts.map((part) => runOf([part])), ...rest.length > 0 ? [runOf(rest)] : []];
+						break;
 					}
+					this.root.push(new DeletedText(child));
 					continue;
 				}
 				this.root.push(child);
