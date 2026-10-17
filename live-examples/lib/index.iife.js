@@ -12944,6 +12944,12 @@ MAX: 9026 };
 		constructor(options, { implicitListParagraphStyle = true, inListOrder = true } = {}) {
 			super("w:pPr", options === null || options === void 0 ? void 0 : options.includeIfEmpty);
 			_defineProperty(this, "numbering", void 0);
+			_defineProperty(
+				this,
+				/** The paragraph's `w:numPr`, which is written again with its list's id each time the paragraph is written */
+				"numberProperties",
+				void 0
+			);
 			if (!options) return this;
 			if (options.heading) this.push(createParagraphStyle(options.heading));
 			if (implicitListParagraphStyle) {
@@ -12966,9 +12972,9 @@ MAX: 9026 };
 					level,
 					instance,
 					restartedListId: restart && inListOrder && instance === void 0 ? restartedListIds() : void 0,
-					definition: typeof list === "string" ? void 0 : list,
-					numberProperties
+					definition: typeof list === "string" ? void 0 : list
 				};
+				this.numberProperties = numberProperties;
 				this.push(numberProperties);
 			} else if (options.numbering === false) this.push(new NumberProperties(0, 0));
 			if (options.border) this.push(new Border(options.border));
@@ -13049,19 +13055,22 @@ MAX: 9026 };
 		* @returns The prepared XML object, or undefined if the component should be ignored
 		*/
 		prepForXml(context) {
+			var _this$numbering;
 			if (this.numbering) {
 				var _this$numbering$resta, _currentRestartedList;
-				const { reference, level, instance = 0, definition, numberProperties } = this.numbering;
+				const { reference, level, instance = 0, definition } = this.numbering;
 				const restartedListId = this.numbering.instance === void 0 ? (_this$numbering$resta = this.numbering.restartedListId) !== null && _this$numbering$resta !== void 0 ? _this$numbering$resta : (_currentRestartedList = currentRestartedLists.get(context)) === null || _currentRestartedList === void 0 ? void 0 : _currentRestartedList.get(reference) : void 0;
-				if (this.numbering.restartedListId !== void 0) {
-					var _currentRestartedList2;
-					currentRestartedLists.set(context, new Map([...(_currentRestartedList2 = currentRestartedLists.get(context)) !== null && _currentRestartedList2 !== void 0 ? _currentRestartedList2 : [], [reference, this.numbering.restartedListId]]));
-				}
 				if (!(context.viewWrapper instanceof FontWrapper)) context.file.Numbering.createConcreteNumberingInstance(reference, instance, definition, restartedListId);
-				const index = this.root.indexOf(numberProperties);
-				this.root[index] = new NumberProperties(listKey(reference, instance, restartedListId), level);
+				const numberProperties = new NumberProperties(listKey(reference, instance, restartedListId), level);
+				this.root.splice(this.root.indexOf(this.numberProperties), 1, numberProperties);
+				this.numberProperties = numberProperties;
 			}
-			return super.prepForXml(context);
+			const result = super.prepForXml(context);
+			if (((_this$numbering = this.numbering) === null || _this$numbering === void 0 ? void 0 : _this$numbering.restartedListId) !== void 0) {
+				var _currentRestartedList2;
+				currentRestartedLists.set(context, new Map([...(_currentRestartedList2 = currentRestartedLists.get(context)) !== null && _currentRestartedList2 !== void 0 ? _currentRestartedList2 : [], [this.numbering.reference, this.numbering.restartedListId]]));
+			}
+			return result;
 		}
 	};
 	var ParagraphPropertiesChange = class extends XmlComponent {

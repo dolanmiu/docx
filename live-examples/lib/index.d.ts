@@ -10932,6 +10932,8 @@ declare type ParagraphPatch = {
  */
 export declare class ParagraphProperties extends IgnoreIfEmptyXmlComponent {
     private readonly numbering?;
+    /** The paragraph's `w:numPr`, which is written again with its list's id each time the paragraph is written */
+    private numberProperties?;
     /**
      * Creates paragraph properties.
      *
