@@ -30,6 +30,7 @@ import { findBookmarkIds, renumberBookmarksAvoiding } from "./bookmark-ids";
 import { appendContentType, appendContentTypeOverride } from "./content-types-manager";
 import { findDrawingIds, renumberDrawingsAvoiding } from "./drawing-ids";
 import { type DrawingPatch, patchDrawings, relationshipsPathOf } from "./drawing-patch";
+import { loadZip } from "./load-zip";
 import { patchNotes } from "./notes";
 import { patchNumbering } from "./numbering";
 import { type TemplatePageNumberEstimator, fillTemplatePageNumbers } from "./page-numbers";
@@ -315,7 +316,7 @@ export const patchDocument = async <T extends PatchDocumentOutputType = PatchDoc
     numbering = { config: [] },
     pageNumbers,
 }: PatchDocumentOptions<T>): Promise<OutputByType[T]> => {
-    const zipContent = data instanceof JSZip ? data : await JSZip.loadAsync(data);
+    const zipContent = await loadZip(data);
     const contexts = new Map<string, IContext>();
     // Theme colors in patches are written with the hex color they come to in the document's theme
     const themeColors = await readThemeColors(zipContent);

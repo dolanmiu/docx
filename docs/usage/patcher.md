@@ -23,6 +23,8 @@ const doc = await patchDocument({
 fs.writeFileSync("My Patched Document.docx", doc);
 ```
 
+`data` can be a `Buffer`, `Uint8Array`, `ArrayBuffer`, `Blob`, `JSZip` instance, or a Node.js stream such as `fs.createReadStream("My Document.docx")`. A stream can be read only once, so to pass the same template to both `patchDetector` and `patchDocument`, read it into a `Buffer` first.
+
 ## Discover placeholders before building patches
 
 Use `patchDetector({ data })` to find the placeholder keys in a template before calling `patchDocument`. It returns distinct keys without the `{{` and `}}` delimiters. This is useful when templates differ: an expensive patch, such as downloading images, only needs to be built when its placeholder is present.

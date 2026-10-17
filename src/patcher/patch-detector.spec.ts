@@ -420,6 +420,28 @@ describe("patch-detector", () => {
         });
     });
 
+    it("should detect and patch placeholders in a template read from a stream", async () => {
+        const data = await Packer.toBuffer(new Document({ sections: [{ children: [new Paragraph("Hello {{name}}")] }] }));
+        // A stream such as fs.createReadStream gives a template in chunks, and can be read only once
+        const streamOf = (): AsyncIterable<Uint8Array> =>
+            (async function* () {
+                yield data.subarray(0, 100);
+                yield data.subarray(100);
+            })();
+
+        const keys = await patchDetector({ data: streamOf() as unknown as NodeJS.ReadableStream });
+        const output = await patchDocument({
+            outputType: "nodebuffer",
+            data: streamOf() as unknown as NodeJS.ReadableStream,
+            patches: { name: { type: PatchType.PARAGRAPH, children: [new TextRun("Ada")] } },
+        });
+        const xml = await (await JSZip.loadAsync(output)).file("word/document.xml")!.async("string");
+
+        expect(keys).toEqual(["name"]);
+        expect(xml).toMatch(/<w:t[^>]*>Ada<\/w:t>/);
+        expect(xml).not.toContain("{{name}}");
+    });
+
     describe("with JSZip instance", () => {
         it("should accept a JSZip instance directly", async () => {
             const zip = new JSZip();
