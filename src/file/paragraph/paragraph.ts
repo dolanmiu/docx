@@ -8,14 +8,14 @@
 import type { SectionProperties } from "@file/document/body/section-properties/section-properties";
 import { FileChild } from "@file/file-child";
 import type { FootnoteReferenceRun } from "@file/footnotes";
-import type { IContext, IXmlableObject } from "@file/xml-components";
+import { type IContext, type IXmlableObject, elementOf } from "@file/xml-components";
 import { uniqueId } from "@util/convenience-functions";
 
 import type { CheckBox } from "../checkbox";
 import { TargetModeType } from "../relationships/relationship/relationship";
 import type { DeletedTextRun, InsertedTextRun } from "../track-revision";
 import type { ColumnBreak, PageBreak } from "./formatting/break";
-import { Bookmark, ConcreteHyperlink, ExternalHyperlink, type InternalHyperlink } from "./links";
+import { Bookmark, ConcreteHyperlink, type ExternalHyperlink, type InternalHyperlink } from "./links";
 import { externalHyperlinkTarget } from "./links/external-hyperlink-target";
 import type { Math } from "./math";
 import { type IParagraphPropertiesOptions, ParagraphProperties } from "./properties";
@@ -146,11 +146,17 @@ export class Paragraph extends FileChild {
 
     public prepForXml(context: IContext): IXmlableObject | undefined {
         for (const element of this.root) {
-            if (element instanceof ExternalHyperlink) {
+            // An external hyperlink is known by its element, so one from another copy of docx gets its relationship too.
+            // Otherwise it is written as itself, `w:externalHyperlink`, which isn't an element of WordprocessingML, and
+            // the link has no relationship to point to
+            if (elementOf(element) === "w:externalHyperlink") {
                 const index = this.root.indexOf(element);
-                const { target, anchor } = externalHyperlinkTarget(element.options.link);
+                // Only `ExternalHyperlink` writes that element, and its options are the same in every copy of docx, so
+                // reading them from another copy's hyperlink is safe
+                const { options } = element as ExternalHyperlink;
+                const { target, anchor } = externalHyperlinkTarget(options.link);
                 // The full link goes with the split one, so pictures in the hyperlink can link to the address with its fragment
-                const concreteHyperlink = new ConcreteHyperlink(element.options.children, uniqueId(), anchor, element.options.link);
+                const concreteHyperlink = new ConcreteHyperlink(options.children, uniqueId(), anchor, options.link);
                 context.viewWrapper.Relationships.addRelationship(
                     concreteHyperlink.linkId,
                     "http://schemas.openxmlformats.org/officeDocument/2006/relationships/hyperlink",

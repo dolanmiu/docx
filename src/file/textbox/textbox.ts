@@ -7,8 +7,8 @@
  * @module
  */
 import { FileChild } from "@file/file-child";
-import { type IParagraphOptions, Paragraph, ParagraphProperties } from "@file/paragraph";
-import { BuilderElement, type IContext, type IXmlableObject, type XmlComponent } from "@file/xml-components";
+import { type IParagraphOptions, ParagraphProperties } from "@file/paragraph";
+import { BuilderElement, type IContext, type IXmlableObject, type XmlComponent, elementOf } from "@file/xml-components";
 import { uniqueId } from "@util/convenience-functions";
 
 import { createPictElement } from "./pict-element/pict-element";
@@ -117,7 +117,8 @@ export class Textbox extends FileChild {
     }
 
     public prepForXml(context: IContext): IXmlableObject | undefined {
-        // A paragraph can't contain another, so in a paragraph's children, the textbox is only its run
-        return context.stack[context.stack.length - 1] instanceof Paragraph ? this.run.prepForXml(context) : super.prepForXml(context);
+        // A paragraph can't contain another, so in a paragraph's children, the textbox is only its run. The paragraph is
+        // known by its element, so in another copy of docx's paragraph, the textbox isn't written as a `w:p` inside it
+        return elementOf(context.stack[context.stack.length - 1]) === "w:p" ? this.run.prepForXml(context) : super.prepForXml(context);
     }
 }

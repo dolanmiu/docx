@@ -7,7 +7,7 @@
  *
  * @module
  */
-import { BaseXmlComponent, type IContext } from "./base";
+import { BaseXmlComponent, type IContext, isXmlComponent } from "./base";
 import type { IXmlableObject } from "./xmlable-object";
 
 /**
@@ -95,7 +95,11 @@ export abstract class XmlComponent extends BaseXmlComponent {
         // a run in its children, is written as each of them in turn
         const children = this.root
             .flatMap((comp) => {
-                if (comp instanceof BaseXmlComponent) {
+                // A component from another copy of docx, such as one a plugin was bundled with, isn't an instance of
+                // this copy's classes. Taken for an object to write as XML, its fields, such as `rootKey`, are written
+                // as elements, and Word can't open the document. So components are known by the method that writes
+                // them, and that method is given this document's context, so it adds its relationships and media here
+                if (isXmlComponent(comp)) {
                     const parts = comp.writtenAs;
                     return parts ? parts.map((part) => part.prepForXml(context)) : comp.prepForXml(context);
                 }

@@ -5,9 +5,9 @@
  *
  * @module
  */
-import { type IContext, type IXmlableObject, OnOffElement, XmlComponent } from "@file/xml-components";
+import { type IContext, type IXmlableObject, OnOffElement, XmlComponent, elementOf } from "@file/xml-components";
 
-import { TableCell } from "../table-cell";
+import type { TableCell } from "../table-cell";
 import { type ITableRowPropertiesOptions, TableRowProperties } from "./table-row-properties";
 
 /**
@@ -127,7 +127,10 @@ export class TableRow extends XmlComponent {
     }
 
     public get cells(): readonly TableCell[] {
-        return this.root.filter((xmlComponent) => xmlComponent instanceof TableCell);
+        // Including cells from another copy of docx, known by their element. The table counts columns across these
+        // cells to put the cells it adds below a `rowSpan` cell, so leaving any out puts those cells in the wrong column
+        // and breaks the merge
+        return this.root.filter((xmlComponent) => elementOf(xmlComponent) === "w:tc");
     }
 
     public addCellToIndex(cell: TableCell, index: number): void {
