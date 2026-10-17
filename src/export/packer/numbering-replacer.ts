@@ -4,6 +4,7 @@
  * @module
  */
 import type { ConcreteNumbering } from "@file/numbering";
+import { listKey } from "@file/numbering/list-key";
 
 import { replacePlaceholders } from "./placeholders";
 
@@ -34,7 +35,12 @@ export class NumberingReplacer {
     public replace(xmlData: string, concreteNumberings: readonly ConcreteNumbering[]): string {
         return replacePlaceholders(
             xmlData,
-            new Map(concreteNumberings.map(({ reference, instance, numId }) => [`${reference}-${instance}`, numId.toString()])),
+            new Map(
+                concreteNumberings.map(({ reference, instance, restartedListId, numId }) => [
+                    listKey(reference, instance, restartedListId),
+                    numId.toString(),
+                ]),
+            ),
         );
     }
 }

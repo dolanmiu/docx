@@ -708,7 +708,7 @@ describe("Paragraph", () => {
                 file: { Numbering: { createConcreteNumberingInstance } } as unknown as File,
             });
 
-            expect(createConcreteNumberingInstance).toHaveBeenCalledWith("own-list", 2, definition);
+            expect(createConcreteNumberingInstance).toHaveBeenCalledWith("own-list", 2, definition, undefined);
             expect(tree).to.deep.equal({
                 "w:p": [
                     {
@@ -732,7 +732,7 @@ describe("Paragraph", () => {
                 file: { Numbering: { createConcreteNumberingInstance } } as unknown as File,
             });
 
-            expect(createConcreteNumberingInstance).toHaveBeenCalledWith("steps", 0, undefined);
+            expect(createConcreteNumberingInstance).toHaveBeenCalledWith("steps", 0, undefined, undefined);
         });
 
         describe("restart", () => {
@@ -768,7 +768,12 @@ describe("Paragraph", () => {
                     file: { Numbering: { createConcreteNumberingInstance } } as unknown as File,
                 });
 
-                expect(createConcreteNumberingInstance).toHaveBeenCalledWith("steps", id.replace("steps-", ""), undefined);
+                expect(createConcreteNumberingInstance).toHaveBeenCalledWith(
+                    "steps",
+                    0,
+                    undefined,
+                    Number(id.replace("steps-restart ", "")),
+                );
             });
 
             it("should only restart lists of the same reference", () => {

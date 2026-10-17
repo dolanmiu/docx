@@ -11,6 +11,7 @@
  * @module
  */
 import type { SectionProperties } from "@file/document/body/section-properties/section-properties";
+import { listKey } from "@file/numbering/list-key";
 import type { NumberingDefinition } from "@file/numbering/numbering";
 import { ChangeAttributes, type IChangedAttributesProperties } from "@file/track-revision/track-revision";
 import { type IContext, type IXmlableObject, IgnoreIfEmptyXmlComponent, OnOffElement, XmlComponent } from "@file/xml-components";
@@ -200,13 +201,14 @@ export type IParagraphPropertiesConfig = {
 };
 
 /**
- * The list instance that paragraphs leaving out `instance` are in, by list reference, for each part being written.
- * A paragraph that restarts a list moves the paragraphs after it in the part onto its own instance. Each part is written
+ * The restarted list that paragraphs leaving out `instance` are in, by list reference, for each part being written, as
+ * the id of the restart. A paragraph that restarts a list moves the paragraphs after it in the part onto its own list,
+ * and before any does, they are in instance 0. Each part is written
  * with a context of its own, so the lists of one part, or of the same part written again, start from the first list.
  */
-const currentListInstances = new WeakMap<IContext, ReadonlyMap<string, number | string>>();
+const currentRestartedLists = new WeakMap<IContext, ReadonlyMap<string, number>>();
 
-const restartedListId = uniqueNumericIdCreator();
+const restartedListIds = uniqueNumericIdCreator();
 
 type AlignmentValue = (typeof AlignmentType)[keyof typeof AlignmentType];
 
@@ -333,8 +335,8 @@ export class ParagraphProperties extends IgnoreIfEmptyXmlComponent {
         readonly reference: string;
         readonly level: number;
         readonly instance?: number;
-        /** The restarted list's own instance, for a paragraph that restarts its list */
-        readonly restartedInstance?: string;
+        /** The id of the restart, for a paragraph that restarts its list */
+        readonly restartedListId?: number;
         readonly definition?: NumberingDefinition;
         readonly numberProperties: NumberProperties;
     };
@@ -400,12 +402,12 @@ export class ParagraphProperties extends IgnoreIfEmptyXmlComponent {
         if (options.numbering) {
             const { reference: list, instance, level, restart } = options.numbering;
             const reference = typeof list === "string" ? list : list.reference;
-            const numberProperties = new NumberProperties(`${reference}-${instance ?? 0}`, level);
+            const numberProperties = new NumberProperties(listKey(reference, instance ?? 0), level);
             this.numbering = {
                 reference,
                 level,
                 instance,
-                restartedInstance: restart && inListOrder && instance === undefined ? `restart ${restartedListId()}` : undefined,
+                restartedListId: restart && inListOrder && instance === undefined ? restartedListIds() : undefined,
                 definition: typeof list === "string" ? undefined : list,
                 numberProperties,
             };
@@ -542,20 +544,26 @@ export class ParagraphProperties extends IgnoreIfEmptyXmlComponent {
      */
     public prepForXml(context: IContext): IXmlableObject | undefined {
         if (this.numbering) {
-            const { reference, level, restartedInstance, definition, numberProperties } = this.numbering;
-            const instance = this.numbering.instance ?? restartedInstance ?? currentListInstances.get(context)?.get(reference) ?? 0;
+            const { reference, level, instance = 0, definition, numberProperties } = this.numbering;
+            const restartedListId =
+                this.numbering.instance === undefined
+                    ? (this.numbering.restartedListId ?? currentRestartedLists.get(context)?.get(reference))
+                    : undefined;
 
-            if (restartedInstance !== undefined) {
-                currentListInstances.set(context, new Map([...(currentListInstances.get(context) ?? []), [reference, restartedInstance]]));
+            if (this.numbering.restartedListId !== undefined) {
+                currentRestartedLists.set(
+                    context,
+                    new Map([...(currentRestartedLists.get(context) ?? []), [reference, this.numbering.restartedListId]]),
+                );
             }
 
             if (!(context.viewWrapper instanceof FontWrapper)) {
-                context.file.Numbering.createConcreteNumberingInstance(reference, instance, definition);
+                context.file.Numbering.createConcreteNumberingInstance(reference, instance, definition, restartedListId);
             }
 
             // The paragraph's place in its part's lists is only known now, so its list id is written for it here
             const index = this.root.indexOf(numberProperties);
-            this.root[index] = new NumberProperties(`${reference}-${instance}`, level);
+            this.root[index] = new NumberProperties(listKey(reference, instance, restartedListId), level);
         }
 
         return super.prepForXml(context);
