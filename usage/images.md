@@ -6,14 +6,15 @@
 
 ## Common Use Cases
 
-| I want to...                           | Use                     | Example                      |
-| -------------------------------------- | ----------------------- | ---------------------------- |
-| Insert an image inline with text       | Inline (default)        | Logo next to company name    |
-| Position image at specific coordinates | Floating with offset    | Letterhead logo at top-right |
-| Have text wrap around an image         | Floating with wrap      | Magazine-style layout        |
-| Put an image in a table cell           | Inline in TableCell     | Product catalog              |
-| Add image to header/footer             | Inline in Header/Footer | Company letterhead           |
-| Trim edges off an image                | `crop` option           | Removing unwanted borders    |
+| I want to...                             | Use                             | Example                      |
+| ---------------------------------------- | ------------------------------- | ---------------------------- |
+| Insert an image inline with text         | Inline (default)                | Logo next to company name    |
+| Position image at specific coordinates   | Floating with offset            | Letterhead logo at top-right |
+| Have text wrap around an image           | Floating with wrap              | Magazine-style layout        |
+| Put an image in a table cell             | Inline in TableCell             | Product catalog              |
+| Add image to header/footer               | Inline in Header/Footer         | Company letterhead           |
+| Trim edges off an image                  | `crop` option                   | Removing unwanted borders    |
+| Insert an image that's sharp at any size | `type: "svg"` with a `fallback` | Vector logo                  |
 
 ## Inline vs Floating: When to Use Which
 
@@ -127,9 +128,88 @@ const doc = new Document({
 });
 ```
 
-`docx` supports `jpeg`, `jpg`, `bmp`, `gif` and `png`
+The `type` is `jpg` (for JPEG files), `png`, `gif`, `bmp` or [`svg`](#svg-images).
 
 The `width` and `height` in `transformation` are in pixels, at 96 to the inch, so `width: 528` is 5.5 inches wide. They aren't in EMUs, which floating offsets use. Word won't open a document with an image more than 225457 pixels wide or tall, so `docx` throws an error for one, such as an image sized in EMUs by mistake.
+
+## SVG Images
+
+An SVG image stays sharp at any size. Give it `type: "svg"` and a `fallback`: a `png`, `jpg`, `gif` or `bmp` copy of the same picture, which apps that can't draw SVG show instead. Word for Microsoft 365 and Word 2019 or later draw the SVG, and so does LibreOffice. Older Word and Apple Pages draw the fallback.
+
+```ts live
+import { Document, ImageRun, Paragraph } from "docx";
+import * as fs from "fs";
+
+const doc = new Document({
+    sections: [
+        {
+            children: [
+                new Paragraph({
+                    children: [
+                        new ImageRun({
+                            type: "svg",
+                            data: fs.readFileSync("./demo/assets/images/linux-svg.svg"),
+                            fallback: {
+                                type: "png",
+                                data: fs.readFileSync("./demo/assets/images/linux-png.png"),
+                            },
+                            transformation: {
+                                width: 200,
+                                height: 200,
+                            },
+                        }),
+                    ],
+                }),
+            ],
+        },
+    ],
+});
+```
+
+The fallback is drawn at the SVG's size, from the same `transformation`, so give it the same proportions. All the other options, such as [`floating`](#floating), [`altText`](#alternative-text) and [`outline`](#outline), work the same as for other images.
+
+The `data` of an SVG is the file's bytes, or a base64 data URI, as for other images. To use SVG markup that is in a string, such as one from an API or a charting library, turn it into bytes with `TextEncoder`. A string of markup on its own isn't read as an SVG, and `docx` throws an error:
+
+```ts live
+import { Document, ImageRun, Paragraph } from "docx";
+import * as fs from "fs";
+
+// SVG markup in a string
+const svg = fs.readFileSync("./demo/assets/images/linux-svg.svg", "utf8");
+
+const doc = new Document({
+    sections: [
+        {
+            children: [
+                new Paragraph({
+                    children: [
+                        new ImageRun({
+                            type: "svg",
+                            data: new TextEncoder().encode(svg),
+                            fallback: {
+                                type: "png",
+                                data: fs.readFileSync("./demo/assets/images/linux-png.png"),
+                            },
+                            transformation: {
+                                width: 200,
+                                height: 200,
+                            },
+                        }),
+                    ],
+                }),
+            ],
+        },
+    ],
+});
+```
+
+### Options
+
+| Property | Type                                                    | Notes    | Possible Values                                    |
+| -------- | ------------------------------------------------------- | -------- | -------------------------------------------------- |
+| type     | `"svg"`                                                 | Required | `"svg"`                                            |
+| data     | `Buffer`, `Uint8Array`, `ArrayBuffer` or `string`       | Required | The SVG file's bytes, or a base64 data URI         |
+| fallback | `{ type: "png" \| "jpg" \| "gif" \| "bmp", data: ... }` | Required | A copy of the picture for apps that can't draw SVG |
 
 ## Positioning
 
