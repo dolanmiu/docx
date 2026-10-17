@@ -6,6 +6,7 @@ import { FootnoteReferenceRun } from "@file/footnotes/footnote/run/reference-run
 import { Paragraph } from "@file/paragraph";
 import { ShadingType } from "@file/shading";
 
+import { TwoLinesInOneBrackets } from "./east-asian-layout";
 import { EmphasisMarkType } from "./emphasis-mark";
 import { HighlightColor, TextEffect } from "./properties";
 import { PageNumber, Run } from "./run";
@@ -115,6 +116,38 @@ describe("Run", () => {
             const tree = new Formatter().format(run);
             expect(tree).to.deep.equal({
                 "w:r": [{ "w:rPr": [{ "w:em": { _attr: { "w:val": "dot" } } }] }],
+            });
+        });
+    });
+
+    describe("#eastAsianLayout()", () => {
+        it("should set the text as two lines in one in brackets", () => {
+            const run = new Run({
+                eastAsianLayout: { twoLinesInOne: true, brackets: TwoLinesInOneBrackets.ROUND },
+            });
+            const tree = new Formatter().format(run);
+            expect(tree).to.deep.equal({
+                "w:r": [{ "w:rPr": [{ "w:eastAsianLayout": { _attr: { "w:combine": true, "w:combineBrackets": "round" } } }] }],
+            });
+        });
+
+        it("should write w:eastAsianLayout after w:lang, as the schema orders them", () => {
+            const run = new Run({
+                eastAsianLayout: { horizontalInVertical: true },
+                language: { eastAsia: "ja-JP" },
+                specVanish: true,
+            });
+            const tree = new Formatter().format(run);
+            expect(tree).to.deep.equal({
+                "w:r": [
+                    {
+                        "w:rPr": [
+                            { "w:lang": { _attr: { "w:eastAsia": "ja-JP" } } },
+                            { "w:eastAsianLayout": { _attr: { "w:vert": true } } },
+                            { "w:specVanish": {} },
+                        ],
+                    },
+                ],
             });
         });
     });

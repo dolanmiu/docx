@@ -155,6 +155,75 @@ const doc = new Document({
 });
 ```
 
+### Two Lines in One
+
+`eastAsianLayout` gives a run Word's East Asian typography (`w:eastAsianLayout`). `twoLinesInOne` sets the run's text in two lines within one line, each at half the text's size, as Word's Two Lines in One does, and `brackets` draws `"round"`, `"square"`, `"angle"` or `"curly"` brackets around it. Runs next to each other with the same `group` are set together, so the two lines can be formatted differently.
+
+```ts live
+import { Document, Paragraph, TextRun, TwoLinesInOneBrackets } from "docx";
+
+const doc = new Document({
+    sections: [
+        {
+            children: [
+                new Paragraph({
+                    children: [
+                        new TextRun({ text: "财政部", size: 32 }),
+                        new TextRun({ text: "国家税务总局", size: 32, eastAsianLayout: { twoLinesInOne: true } }),
+                        new TextRun({ text: "文件", size: 32 }),
+                    ],
+                }),
+                new Paragraph({
+                    children: [
+                        new TextRun({ text: "Meeting ", size: 32 }),
+                        new TextRun({
+                            text: "October 2026",
+                            size: 32,
+                            eastAsianLayout: { twoLinesInOne: true, brackets: TwoLinesInOneBrackets.ROUND },
+                        }),
+                    ],
+                }),
+                new Paragraph({
+                    children: [
+                        new TextRun({ text: "One group: ", size: 32 }),
+                        new TextRun({ text: "bold ", size: 32, bold: true, eastAsianLayout: { twoLinesInOne: true, group: 1 } }),
+                        new TextRun({ text: "and italic", size: 32, italics: true, eastAsianLayout: { twoLinesInOne: true, group: 1 } }),
+                    ],
+                }),
+            ],
+        },
+    ],
+});
+```
+
+In text that runs down the page, `horizontalInVertical` sets the run's text across the line, as Word's Horizontal in Vertical does, and `fitToLine` squeezes it into the line's width:
+
+```ts live
+import { Document, PageTextDirectionType, Paragraph, TextRun } from "docx";
+
+const doc = new Document({
+    sections: [
+        {
+            properties: {
+                page: { textDirection: PageTextDirectionType.TOP_TO_BOTTOM_RIGHT_TO_LEFT },
+            },
+            children: [
+                new Paragraph({
+                    children: [
+                        new TextRun("令和"),
+                        new TextRun({ text: "8", eastAsianLayout: { horizontalInVertical: true } }),
+                        new TextRun("年"),
+                        new TextRun({ text: "10", eastAsianLayout: { horizontalInVertical: true } }),
+                        new TextRun("月"),
+                        new TextRun({ text: "2026", eastAsianLayout: { horizontalInVertical: true, fitToLine: true } }),
+                    ],
+                }),
+            ],
+        },
+    ],
+});
+```
+
 ### Shading and Highlighting
 
 ```ts live

@@ -25,6 +25,7 @@ import {
 } from "@file/xml-components";
 import type { PositiveUniversalMeasure, UniversalMeasure } from "@util/values";
 
+import { type IEastAsianLayoutOptions, createEastAsianLayout } from "./east-asian-layout";
 import { type EmphasisMarkType, createEmphasisMark } from "./emphasis-mark";
 import { CharacterSpacing, Color, Highlight } from "./formatting";
 import { type ILanguageOptions, createLanguageComponent } from "./language";
@@ -200,6 +201,12 @@ export type IRunStylePropertiesOptions = {
     readonly imprint?: boolean;
     readonly revision?: IRunPropertiesChangeOptions;
     readonly language?: ILanguageOptions;
+    /**
+     * Word's East Asian typography for the run's text: two lines in one, which sets it in two half-size lines within
+     * one line, optionally in brackets, and horizontal in vertical, which sets it across the line in text that runs
+     * down the page
+     */
+    readonly eastAsianLayout?: IEastAsianLayoutOptions;
     readonly border?: IBorderOptions;
     readonly snapToGrid?: boolean;
     /** Hides the text. `false` shows text that the run's style hides. */
@@ -400,6 +407,10 @@ export class RunProperties extends IgnoreIfEmptyXmlComponent {
 
         if (options.language) {
             this.push(createLanguageComponent(options.language));
+        }
+
+        if (options.eastAsianLayout) {
+            this.push(createEastAsianLayout(options.eastAsianLayout));
         }
 
         if (options.specVanish !== undefined) {
