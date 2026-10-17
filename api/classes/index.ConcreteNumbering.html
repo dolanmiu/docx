@@ -28,14 +28,14 @@ to apply list formatting.</p>
 </code><button type="button">Copy</button></pre>
 
 </div></div></section>
-<section class="tsd-panel tsd-hierarchy" data-refl="2427">
+<section class="tsd-panel tsd-hierarchy" data-refl="2434">
 <h4>Hierarchy (<a href="../hierarchy.html#index.ConcreteNumbering">View Summary</a>)</h4>
 <ul class="tsd-hierarchy">
 <li class="tsd-hierarchy-item"><a href="index.XmlComponent.html" class="tsd-signature-type tsd-kind-class">XmlComponent</a>
 <ul class="tsd-hierarchy">
 <li class="tsd-hierarchy-item"><span class="tsd-hierarchy-target">ConcreteNumbering</span></li></ul></li></ul></section><aside class="tsd-sources">
 <ul>
-<li>Defined in <a href="https://github.com/dolanmiu/docx/blob/7907016816ab5264e25701366f52ac0e9674f287/src/file/numbering/num.ts#L111">file/numbering/num.ts:111</a></li></ul></aside>
+<li>Defined in <a href="https://github.com/dolanmiu/docx/blob/225e8c8cbb215d282651b341f829adb5d90c4c02/src/file/numbering/num.ts#L116">file/numbering/num.ts:116</a></li></ul></aside>
 <section class="tsd-panel-group tsd-index-group">
 <section class="tsd-panel tsd-index-panel">
 <details class="tsd-index-content tsd-accordion" open><summary class="tsd-accordion-summary tsd-index-summary"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" aria-hidden="true"><use href="../assets/icons.svg#icon-chevronDown"></use></svg>
@@ -50,6 +50,7 @@ to apply list formatting.</p>
 <div class="tsd-index-list"><a href="#instance" class="tsd-index-link"><svg class="tsd-kind-icon" viewBox="0 0 24 24" aria-label="Property"><use href="../assets/icons.svg#icon-1024"></use></svg><span>instance</span></a>
 <a href="#numid" class="tsd-index-link"><svg class="tsd-kind-icon" viewBox="0 0 24 24" aria-label="Property"><use href="../assets/icons.svg#icon-1024"></use></svg><span>num<wbr/>Id</span></a>
 <a href="#reference" class="tsd-index-link"><svg class="tsd-kind-icon" viewBox="0 0 24 24" aria-label="Property"><use href="../assets/icons.svg#icon-1024"></use></svg><span>reference</span></a>
+<a href="#restartedlistid" class="tsd-index-link"><svg class="tsd-kind-icon" viewBox="0 0 24 24" aria-label="Property"><use href="../assets/icons.svg#icon-1024"></use></svg><span>restarted<wbr/>List<wbr/>Id?</span></a>
 </div></section>
 <section class="tsd-index-section">
 <h3 class="tsd-index-heading tsd-anchor-link" id="accessors">Accessors<a href="#accessors" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="../assets/icons.svg#icon-anchor"></use></svg></a></h3>
@@ -80,7 +81,7 @@ to apply list formatting.</p>
 <h4 class="tsd-returns-title">Returns <a href="" class="tsd-signature-type tsd-kind-class">ConcreteNumbering</a></h4><aside class="tsd-sources">
 <p>Overrides <a href="index.XmlComponent.html">XmlComponent</a>.<a href="index.XmlComponent.html#constructor">constructor</a></p>
 <ul>
-<li>Defined in <a href="https://github.com/dolanmiu/docx/blob/7907016816ab5264e25701366f52ac0e9674f287/src/file/numbering/num.ts#L124">file/numbering/num.ts:124</a></li></ul></aside></div></li></ul></section></section></details>
+<li>Defined in <a href="https://github.com/dolanmiu/docx/blob/225e8c8cbb215d282651b341f829adb5d90c4c02/src/file/numbering/num.ts#L131">file/numbering/num.ts:131</a></li></ul></aside></div></li></ul></section></section></details>
 <details class="tsd-panel-group tsd-member-group tsd-accordion" open><summary class="tsd-accordion-summary" data-key="section-Properties"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" aria-hidden="true"><use href="../assets/icons.svg#icon-chevronDown"></use></svg>
 <h2 class="tsd-anchor-link" id="properties-1">Properties<a href="#properties-1" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="../assets/icons.svg#icon-anchor"></use></svg></a></h2></summary>
 <section>
@@ -90,21 +91,28 @@ to apply list formatting.</p>
 <div class="tsd-comment tsd-typography"><p>The instance number for tracking multiple uses.</p>
 </div><aside class="tsd-sources">
 <ul>
-<li>Defined in <a href="https://github.com/dolanmiu/docx/blob/7907016816ab5264e25701366f52ac0e9674f287/src/file/numbering/num.ts#L117">file/numbering/num.ts:117</a></li></ul></aside></section>
+<li>Defined in <a href="https://github.com/dolanmiu/docx/blob/225e8c8cbb215d282651b341f829adb5d90c4c02/src/file/numbering/num.ts#L122">file/numbering/num.ts:122</a></li></ul></aside></section>
 <section class="tsd-panel tsd-member">
 <h3 class="tsd-anchor-link" id="numid"><code class="tsd-tag">Readonly</code><span>num<wbr/>Id</span><a href="#numid" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="../assets/icons.svg#icon-anchor"></use></svg></a></h3>
 <div class="tsd-signature"><span class="tsd-kind-property">numId</span><span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">number</span></div>
 <div class="tsd-comment tsd-typography"><p>The unique identifier for this numbering instance.</p>
 </div><aside class="tsd-sources">
 <ul>
-<li>Defined in <a href="https://github.com/dolanmiu/docx/blob/7907016816ab5264e25701366f52ac0e9674f287/src/file/numbering/num.ts#L113">file/numbering/num.ts:113</a></li></ul></aside></section>
+<li>Defined in <a href="https://github.com/dolanmiu/docx/blob/225e8c8cbb215d282651b341f829adb5d90c4c02/src/file/numbering/num.ts#L118">file/numbering/num.ts:118</a></li></ul></aside></section>
 <section class="tsd-panel tsd-member">
 <h3 class="tsd-anchor-link" id="reference"><code class="tsd-tag">Readonly</code><span>reference</span><a href="#reference" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="../assets/icons.svg#icon-anchor"></use></svg></a></h3>
 <div class="tsd-signature"><span class="tsd-kind-property">reference</span><span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">string</span></div>
 <div class="tsd-comment tsd-typography"><p>The reference name for this numbering instance.</p>
 </div><aside class="tsd-sources">
 <ul>
-<li>Defined in <a href="https://github.com/dolanmiu/docx/blob/7907016816ab5264e25701366f52ac0e9674f287/src/file/numbering/num.ts#L115">file/numbering/num.ts:115</a></li></ul></aside></section></section></details>
+<li>Defined in <a href="https://github.com/dolanmiu/docx/blob/225e8c8cbb215d282651b341f829adb5d90c4c02/src/file/numbering/num.ts#L120">file/numbering/num.ts:120</a></li></ul></aside></section>
+<section class="tsd-panel tsd-member">
+<h3 class="tsd-anchor-link" id="restartedlistid"><code class="tsd-tag">Optional</code> <code class="tsd-tag">Readonly</code><span>restarted<wbr/>List<wbr/>Id</span><a href="#restartedlistid" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="../assets/icons.svg#icon-anchor"></use></svg></a></h3>
+<div class="tsd-signature"><span class="tsd-kind-property">restartedListId</span><span class="tsd-signature-symbol">?:</span> <span class="tsd-signature-type">number</span></div>
+<div class="tsd-comment tsd-typography"><p>For a list a paragraph restarts, the id of that restart, as <a href="../types/index.IConcreteNumberingOptions.html#restartedlistid" class="tsd-kind-property">IConcreteNumberingOptions.restartedListId</a> describes.</p>
+</div><aside class="tsd-sources">
+<ul>
+<li>Defined in <a href="https://github.com/dolanmiu/docx/blob/225e8c8cbb215d282651b341f829adb5d90c4c02/src/file/numbering/num.ts#L124">file/numbering/num.ts:124</a></li></ul></aside></section></section></details>
 <details class="tsd-panel-group tsd-member-group tsd-accordion" open><summary class="tsd-accordion-summary" data-key="section-Accessors"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" aria-hidden="true"><use href="../assets/icons.svg#icon-chevronDown"></use></svg>
 <h2 class="tsd-anchor-link" id="accessors-1">Accessors<a href="#accessors-1" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="../assets/icons.svg#icon-anchor"></use></svg></a></h2></summary>
 <section>
@@ -120,7 +128,7 @@ such as a run with another run in its children. Undefined when it is written as 
 <h4 class="tsd-returns-title">Returns <span class="tsd-signature-keyword">readonly</span> <a href="index.BaseXmlComponent.html" class="tsd-signature-type tsd-kind-class">BaseXmlComponent</a><span class="tsd-signature-symbol">[]</span> <span class="tsd-signature-symbol">|</span> <span class="tsd-signature-type">undefined</span></h4><aside class="tsd-sources">
 <p>Inherited from XmlComponent.writtenAs</p>
 <ul>
-<li>Defined in <a href="https://github.com/dolanmiu/docx/blob/7907016816ab5264e25701366f52ac0e9674f287/src/file/xml-components/base.ts#L84">file/xml-components/base.ts:84</a></li></ul></aside></div></li></ul></section></section></details>
+<li>Defined in <a href="https://github.com/dolanmiu/docx/blob/225e8c8cbb215d282651b341f829adb5d90c4c02/src/file/xml-components/base.ts#L84">file/xml-components/base.ts:84</a></li></ul></aside></div></li></ul></section></section></details>
 <details class="tsd-panel-group tsd-member-group tsd-accordion" open><summary class="tsd-accordion-summary" data-key="section-Methods"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" aria-hidden="true"><use href="../assets/icons.svg#icon-chevronDown"></use></svg>
 <h2 class="tsd-anchor-link" id="methods-1">Methods<a href="#methods-1" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="../assets/icons.svg#icon-anchor"></use></svg></a></h2></summary>
 <section>
@@ -146,7 +154,7 @@ such as a run with another run in its children. Undefined when it is written as 
 </div></div><aside class="tsd-sources">
 <p>Inherited from <a href="index.XmlComponent.html">XmlComponent</a>.<a href="index.XmlComponent.html#addchildelement">addChildElement</a></p>
 <ul>
-<li>Defined in <a href="https://github.com/dolanmiu/docx/blob/7907016816ab5264e25701366f52ac0e9674f287/src/file/xml-components/xml-component.ts#L128">file/xml-components/xml-component.ts:128</a></li></ul></aside></div></li></ul></section>
+<li>Defined in <a href="https://github.com/dolanmiu/docx/blob/225e8c8cbb215d282651b341f829adb5d90c4c02/src/file/xml-components/xml-component.ts#L128">file/xml-components/xml-component.ts:128</a></li></ul></aside></div></li></ul></section>
 <section class="tsd-panel tsd-member tsd-is-inherited">
 <h3 class="tsd-anchor-link" id="prepforxml"><span>prep<wbr/>For<wbr/>Xml</span><a href="#prepforxml" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="../assets/icons.svg#icon-anchor"></use></svg></a></h3>
 <ul class="tsd-signatures tsd-is-inherited">
@@ -177,7 +185,7 @@ or execute side effects during serialization (e.g., creating relationships).</p>
 </div></div><aside class="tsd-sources">
 <p>Inherited from <a href="index.XmlComponent.html">XmlComponent</a>.<a href="index.XmlComponent.html#prepforxml">prepForXml</a></p>
 <ul>
-<li>Defined in <a href="https://github.com/dolanmiu/docx/blob/7907016816ab5264e25701366f52ac0e9674f287/src/file/xml-components/xml-component.ts#L88">file/xml-components/xml-component.ts:88</a></li></ul></aside></div></li></ul></section></section></details></div>
+<li>Defined in <a href="https://github.com/dolanmiu/docx/blob/225e8c8cbb215d282651b341f829adb5d90c4c02/src/file/xml-components/xml-component.ts#L88">file/xml-components/xml-component.ts:88</a></li></ul></aside></div></li></ul></section></section></details></div>
 <div class="col-sidebar">
 <div class="page-menu">
 <div class="tsd-navigation settings">
@@ -195,7 +203,7 @@ or execute side effects during serialization (e.g., creating relationships).</p>
 <details open class="tsd-accordion tsd-page-navigation-section"><summary class="tsd-accordion-summary" data-key="section-Constructors"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" aria-hidden="true"><use href="../assets/icons.svg#icon-chevronDown"></use></svg>Constructors</summary>
 <div><a href="#constructor"><svg class="tsd-kind-icon" viewBox="0 0 24 24" aria-label="Constructor"><use href="../assets/icons.svg#icon-512"></use></svg><span>constructor</span></a></div></details>
 <details open class="tsd-accordion tsd-page-navigation-section"><summary class="tsd-accordion-summary" data-key="section-Properties"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" aria-hidden="true"><use href="../assets/icons.svg#icon-chevronDown"></use></svg>Properties</summary>
-<div><a href="#instance"><svg class="tsd-kind-icon" viewBox="0 0 24 24" aria-label="Property"><use href="../assets/icons.svg#icon-1024"></use></svg><span>instance</span></a><a href="#numid"><svg class="tsd-kind-icon" viewBox="0 0 24 24" aria-label="Property"><use href="../assets/icons.svg#icon-1024"></use></svg><span>num<wbr/>Id</span></a><a href="#reference"><svg class="tsd-kind-icon" viewBox="0 0 24 24" aria-label="Property"><use href="../assets/icons.svg#icon-1024"></use></svg><span>reference</span></a></div></details>
+<div><a href="#instance"><svg class="tsd-kind-icon" viewBox="0 0 24 24" aria-label="Property"><use href="../assets/icons.svg#icon-1024"></use></svg><span>instance</span></a><a href="#numid"><svg class="tsd-kind-icon" viewBox="0 0 24 24" aria-label="Property"><use href="../assets/icons.svg#icon-1024"></use></svg><span>num<wbr/>Id</span></a><a href="#reference"><svg class="tsd-kind-icon" viewBox="0 0 24 24" aria-label="Property"><use href="../assets/icons.svg#icon-1024"></use></svg><span>reference</span></a><a href="#restartedlistid"><svg class="tsd-kind-icon" viewBox="0 0 24 24" aria-label="Property"><use href="../assets/icons.svg#icon-1024"></use></svg><span>restarted<wbr/>List<wbr/>Id</span></a></div></details>
 <details open class="tsd-accordion tsd-page-navigation-section"><summary class="tsd-accordion-summary" data-key="section-Accessors"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" aria-hidden="true"><use href="../assets/icons.svg#icon-chevronDown"></use></svg>Accessors</summary>
 <div><a href="#writtenas" class="tsd-is-inherited"><svg class="tsd-kind-icon" viewBox="0 0 24 24" aria-label="Accessor"><use href="../assets/icons.svg#icon-262144"></use></svg><span>written<wbr/>As</span></a></div></details>
 <details open class="tsd-accordion tsd-page-navigation-section"><summary class="tsd-accordion-summary" data-key="section-Methods"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" aria-hidden="true"><use href="../assets/icons.svg#icon-chevronDown"></use></svg>Methods</summary>

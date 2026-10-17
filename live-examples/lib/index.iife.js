@@ -12235,6 +12235,25 @@ MAX: 9026 };
 		} : { target: link };
 	};
 	//#endregion
+	//#region src/file/numbering/list-key.ts
+	/**
+	* The key a list's numbering id is found by while a document is written, which paragraphs write as a placeholder for it.
+	*
+	* Internal: not exported from the numbering module.
+	*
+	* @module
+	*/
+	/**
+	* Gives the key of a list of a numbering reference: the list of an `instance` paragraphs give, or a list a paragraph
+	* restarts with `restart`, which has an id of its own so it is never mistaken for one of the numbered instances.
+	*
+	* @param reference - The list's numbering reference
+	* @param instance - The `instance` that paragraphs give, used when the list isn't a restarted one
+	* @param restartedListId - For a list a paragraph restarts, the id of that restart
+	* @returns The list's key
+	*/
+	var listKey = (reference, instance, restartedListId) => restartedListId === void 0 ? `${reference}-${instance}` : `${reference}-restart ${restartedListId}`;
+	//#endregion
 	//#region src/file/fonts/font.ts
 	/**
 	* Font module for WordprocessingML documents.
@@ -12791,6 +12810,14 @@ MAX: 9026 };
 	//#endregion
 	//#region src/file/paragraph/properties.ts
 	/**
+	* The restarted list that paragraphs leaving out `instance` are in, by list reference, for each part being written, as
+	* the id of the restart. A paragraph that restarts a list moves the paragraphs after it in the part onto its own list,
+	* and before any does, they are in instance 0. Each part is written
+	* with a context of its own, so the lists of one part, or of the same part written again, start from the first list.
+	*/
+	var currentRestartedLists = /* @__PURE__ */ new WeakMap();
+	var restartedListIds = uniqueNumericIdCreator();
+	/**
 	* The alignment to write for each side of the page in a right-to-left paragraph.
 	*
 	* Word and LibreOffice read `w:jc` `left` and `right` as the start and end of the paragraph, the same as
@@ -12914,9 +12941,9 @@ MAX: 9026 };
 		* @param options - The paragraph formatting to emit
 		* @param config - Controls how the element is assembled; see {@link IParagraphPropertiesConfig}
 		*/
-		constructor(options, { implicitListParagraphStyle = true } = {}) {
+		constructor(options, { implicitListParagraphStyle = true, inListOrder = true } = {}) {
 			super("w:pPr", options === null || options === void 0 ? void 0 : options.includeIfEmpty);
-			_defineProperty(this, "numberingReferences", []);
+			_defineProperty(this, "numbering", void 0);
 			if (!options) return this;
 			if (options.heading) this.push(createParagraphStyle(options.heading));
 			if (implicitListParagraphStyle) {
@@ -12931,14 +12958,18 @@ MAX: 9026 };
 			if (options.widowControl !== void 0) this.push(new OnOffElement("w:widowControl", options.widowControl));
 			if (options.bullet) this.push(new NumberProperties(1, options.bullet.level));
 			if (options.numbering) {
-				const { reference: list, instance = 0, level } = options.numbering;
+				const { reference: list, instance, level, restart } = options.numbering;
 				const reference = typeof list === "string" ? list : list.reference;
-				this.numberingReferences.push({
+				const numberProperties = new NumberProperties(listKey(reference, instance !== null && instance !== void 0 ? instance : 0), level);
+				this.numbering = {
 					reference,
+					level,
 					instance,
-					definition: typeof list === "string" ? void 0 : list
-				});
-				this.push(new NumberProperties(`${reference}-${instance}`, level));
+					restartedListId: restart && inListOrder && instance === void 0 ? restartedListIds() : void 0,
+					definition: typeof list === "string" ? void 0 : list,
+					numberProperties
+				};
+				this.push(numberProperties);
 			} else if (options.numbering === false) this.push(new NumberProperties(0, 0));
 			if (options.border) this.push(new Border(options.border));
 			if (options.thematicBreak) this.push(new ThematicBreak());
@@ -13011,14 +13042,25 @@ MAX: 9026 };
 		/**
 		* Prepares the paragraph properties for XML serialization.
 		*
-		* This method creates concrete numbering instances for any numbering references
-		* before the properties are converted to XML.
+		* This method works out which list instance a numbered paragraph is in, from where it is in its part when it
+		* leaves out `instance`, and creates the concrete numbering instance for it before the properties are converted to XML.
 		*
 		* @param context - The XML context containing document and file information
 		* @returns The prepared XML object, or undefined if the component should be ignored
 		*/
 		prepForXml(context) {
-			if (!(context.viewWrapper instanceof FontWrapper)) for (const { reference, instance, definition } of this.numberingReferences) context.file.Numbering.createConcreteNumberingInstance(reference, instance, definition);
+			if (this.numbering) {
+				var _this$numbering$resta, _currentRestartedList;
+				const { reference, level, instance = 0, definition, numberProperties } = this.numbering;
+				const restartedListId = this.numbering.instance === void 0 ? (_this$numbering$resta = this.numbering.restartedListId) !== null && _this$numbering$resta !== void 0 ? _this$numbering$resta : (_currentRestartedList = currentRestartedLists.get(context)) === null || _currentRestartedList === void 0 ? void 0 : _currentRestartedList.get(reference) : void 0;
+				if (this.numbering.restartedListId !== void 0) {
+					var _currentRestartedList2;
+					currentRestartedLists.set(context, new Map([...(_currentRestartedList2 = currentRestartedLists.get(context)) !== null && _currentRestartedList2 !== void 0 ? _currentRestartedList2 : [], [reference, this.numbering.restartedListId]]));
+				}
+				if (!(context.viewWrapper instanceof FontWrapper)) context.file.Numbering.createConcreteNumberingInstance(reference, instance, definition, restartedListId);
+				const index = this.root.indexOf(numberProperties);
+				this.root[index] = new NumberProperties(listKey(reference, instance, restartedListId), level);
+			}
 			return super.prepForXml(context);
 		}
 	};
@@ -13030,7 +13072,7 @@ MAX: 9026 };
 				author: options.author,
 				date: options.date
 			}));
-			this.root.push(new ParagraphProperties(_objectSpread2(_objectSpread2({}, options), {}, { includeIfEmpty: true })));
+			this.root.push(new ParagraphProperties(_objectSpread2(_objectSpread2({}, options), {}, { includeIfEmpty: true }), { inListOrder: false }));
 		}
 	};
 	//#endregion
@@ -20764,7 +20806,10 @@ MAX: 9026 };
 			if (suffix) this.root.push(new Suffix(suffix));
 			if (text) this.root.push(new LevelText(text));
 			this.root.push(new LevelJc(alignment));
-			this.paragraphProperties = new ParagraphProperties(style && style.paragraph, { implicitListParagraphStyle: false });
+			this.paragraphProperties = new ParagraphProperties(style && style.paragraph, {
+				implicitListParagraphStyle: false,
+				inListOrder: false
+			});
 			this.runProperties = new RunProperties((style === null || style === void 0 ? void 0 : style.run) && _objectSpread2(_objectSpread2({}, style.run), {}, {
 				highlight: void 0,
 				math: void 0,
@@ -21063,9 +21108,16 @@ MAX: 9026 };
 				"instance",
 				void 0
 			);
+			_defineProperty(
+				this,
+				/** For a list a paragraph restarts, the id of that restart, as {@link IConcreteNumberingOptions.restartedListId} describes. */
+				"restartedListId",
+				void 0
+			);
 			this.numId = options.numId;
 			this.reference = options.reference;
 			this.instance = options.instance;
+			this.restartedListId = options.restartedListId;
 			this.root.push(new NumAttributes({ numId: decimalNumber(options.numId) }));
 			this.root.push(new AbstractNumId(decimalNumber(options.abstractNumId)));
 			if (options.overrideLevels && options.overrideLevels.length) for (const level of options.overrideLevels) this.root.push(new LevelOverride(level.num, level.start));
@@ -21375,8 +21427,10 @@ MAX: 9026 };
 		* @param definition - The list's definition, for a list a paragraph gives its own definition of. It is added with
 		* its reference, unless the numbering already has a list with that reference, such as one of the document's
 		* `numbering` option, which is kept
+		* @param restartedListId - For a list a paragraph starts again with `restart`, the id of that restart. The list is
+		* then that restart's own, not the `instance`'s
 		*/
-		createConcreteNumberingInstance(reference, instance, definition) {
+		createConcreteNumberingInstance(reference, instance, definition, restartedListId) {
 			var _this$referenceConfig;
 			if (definition && !this.abstractNumberingMap.has(definition.reference)) {
 				this.abstractNumberingMap.set(definition.reference, new AbstractNumbering(this.abstractNumUniqueNumericId(), definition.levels));
@@ -21384,7 +21438,7 @@ MAX: 9026 };
 			}
 			const abstractNumbering = this.abstractNumberingMap.get(reference);
 			if (!abstractNumbering) return;
-			const fullReference = `${reference}-${instance}`;
+			const fullReference = listKey(reference, instance, restartedListId);
 			if (this.concreteNumberingMap.has(fullReference)) return;
 			const referenceConfigLevels = (_this$referenceConfig = this.referenceConfigMap.get(reference)) !== null && _this$referenceConfig !== void 0 ? _this$referenceConfig : [{ level: 0 }];
 			const concreteNumberingSettings = {
@@ -21392,6 +21446,7 @@ MAX: 9026 };
 				abstractNumId: abstractNumbering.id,
 				reference,
 				instance,
+				restartedListId,
 				overrideLevels: referenceConfigLevels.map(({ level, start = 1 }) => ({
 					num: level,
 					start: decimalNumber(start)
@@ -22074,7 +22129,10 @@ MAX: 9026 };
 			}, options);
 			_defineProperty(this, "paragraphProperties", void 0);
 			_defineProperty(this, "runProperties", void 0);
-			this.paragraphProperties = new ParagraphProperties(options.paragraph, { implicitListParagraphStyle: false });
+			this.paragraphProperties = new ParagraphProperties(options.paragraph, {
+				implicitListParagraphStyle: false,
+				inListOrder: false
+			});
 			this.runProperties = new RunProperties(options.run);
 			this.root.push(this.paragraphProperties);
 			this.root.push(this.runProperties);
@@ -22606,7 +22664,10 @@ MAX: 9026 };
 	var ParagraphPropertiesDefaults = class extends XmlComponent {
 		constructor(options) {
 			super("w:pPrDefault");
-			this.root.push(new ParagraphProperties(options, { implicitListParagraphStyle: false }));
+			this.root.push(new ParagraphProperties(options, {
+				implicitListParagraphStyle: false,
+				inListOrder: false
+			}));
 		}
 	};
 	//#endregion
@@ -33964,7 +34025,7 @@ while (n === a[++i] && n === a[++i] && n === a[++i] && n === a[++i] && n === a[+
 		* @returns XML string with placeholders replaced by numbering IDs
 		*/
 		replace(xmlData, concreteNumberings) {
-			return replacePlaceholders(xmlData, new Map(concreteNumberings.map(({ reference, instance, numId }) => [`${reference}-${instance}`, numId.toString()])));
+			return replacePlaceholders(xmlData, new Map(concreteNumberings.map(({ reference, instance, restartedListId, numId }) => [listKey(reference, instance, restartedListId), numId.toString()])));
 		}
 	};
 	//#endregion

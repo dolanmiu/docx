@@ -1372,6 +1372,8 @@ export declare class ConcreteNumbering extends XmlComponent {
     readonly reference: string;
     /** The instance number for tracking multiple uses. */
     readonly instance: number;
+    /** For a list a paragraph restarts, the id of that restart, as {@link IConcreteNumberingOptions.restartedListId} describes. */
+    readonly restartedListId?: number;
     /**
      * Creates a new concrete numbering instance.
      *
@@ -5388,6 +5390,11 @@ export declare type IConcreteNumberingOptions = {
     readonly reference: string;
     /** Instance number for tracking multiple uses. */
     readonly instance: number;
+    /**
+     * For a list a paragraph starts again with `restart`, the id of that restart, which tells the list apart from the
+     * reference's numbered instances.
+     */
+    readonly restartedListId?: number;
     /** Array of level overrides to customize specific levels. */
     readonly overrideLevels?: readonly IOverrideLevel[];
 };
@@ -6845,6 +6852,17 @@ export declare type IParagraphPropertiesConfig = {
      * @default true
      */
     readonly implicitListParagraphStyle?: boolean;
+    /**
+     * Whether the paragraph has a place in the order of its part's lists, where a `numbering.restart` starts its list
+     * again for it and the paragraphs after it.
+     *
+     * This is the default for document paragraphs. Paragraph style, numbering level and document default definitions,
+     * and the earlier formatting a revision keeps, must pass `false`: they are not where the list is in the part, so they
+     * leave `restart` out and do not move the paragraphs after them onto another list.
+     *
+     * @default true
+     */
+    readonly inListOrder?: boolean;
 };
 
 /**
@@ -6943,8 +6961,21 @@ export declare type IParagraphStylePropertiesOptions = {
         readonly reference: string | NumberingDefinition;
         /** Level in the numbering hierarchy (0-8) */
         readonly level: number;
-        /** Instance number for multiple lists with same reference */
+        /**
+         * Which list of this reference the paragraph is in. Paragraphs with the same `instance` are one list, numbered
+         * on from each other, and a new `instance` starts a new list, at every level's `start` (`1` by default).
+         * Paragraphs that leave it out are in the list that the last paragraph to `restart` it started, or, before
+         * any did, the first list of the reference
+         */
         readonly instance?: number;
+        /**
+         * Whether the paragraph starts its list again, numbering it and the paragraphs after it from every level's
+         * `start` (`1` by default), as when a list carries on after other paragraphs, such as a heading, and should
+         * count from 1 again. The paragraphs after it that leave out `instance` continue the restarted list, until a
+         * paragraph restarts it again. Has no effect with `instance`, which says the list itself.
+         * Only affects document paragraphs; style, numbering level and document default definitions are not in a list.
+         */
+        readonly restart?: boolean;
         /**
          * Whether the numbering is fully custom, in which case the paragraph is not given the
          * built-in `ListParagraph` style. Only affects document paragraphs; style, numbering level
@@ -9884,8 +9915,10 @@ export declare class Numbering extends XmlComponent {
      * @param definition - The list's definition, for a list a paragraph gives its own definition of. It is added with
      * its reference, unless the numbering already has a list with that reference, such as one of the document's
      * `numbering` option, which is kept
+     * @param restartedListId - For a list a paragraph starts again with `restart`, the id of that restart. The list is
+     * then that restart's own, not the `instance`'s
      */
-    createConcreteNumberingInstance(reference: string, instance: number, definition?: NumberingDefinition): void;
+    createConcreteNumberingInstance(reference: string, instance: number, definition?: NumberingDefinition, restartedListId?: number): void;
     /**
      * Gets all concrete numbering instances.
      *
@@ -10898,14 +10931,14 @@ declare type ParagraphPatch = {
  * ```
  */
 export declare class ParagraphProperties extends IgnoreIfEmptyXmlComponent {
-    private readonly numberingReferences;
+    private readonly numbering?;
     /**
      * Creates paragraph properties.
      *
      * @param options - The paragraph formatting to emit
      * @param config - Controls how the element is assembled; see {@link IParagraphPropertiesConfig}
      */
-    constructor(options?: IParagraphPropertiesOptions, { implicitListParagraphStyle }?: IParagraphPropertiesConfig);
+    constructor(options?: IParagraphPropertiesOptions, { implicitListParagraphStyle, inListOrder }?: IParagraphPropertiesConfig);
     /**
      * Adds a property element to the paragraph properties.
      *
@@ -10930,8 +10963,8 @@ export declare class ParagraphProperties extends IgnoreIfEmptyXmlComponent {
     /**
      * Prepares the paragraph properties for XML serialization.
      *
-     * This method creates concrete numbering instances for any numbering references
-     * before the properties are converted to XML.
+     * This method works out which list instance a numbered paragraph is in, from where it is in its part when it
+     * leaves out `instance`, and creates the concrete numbering instance for it before the properties are converted to XML.
      *
      * @param context - The XML context containing document and file information
      * @returns The prepared XML object, or undefined if the component should be ignored
