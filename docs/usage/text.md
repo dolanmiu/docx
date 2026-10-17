@@ -196,7 +196,7 @@ const doc = new Document({
 });
 ```
 
-In text that runs down the page, `horizontalInVertical` sets the run's text across the line, as Word's Horizontal in Vertical does, and `fitToLine` squeezes it into the line's width:
+In text that runs down the page, `horizontalInVertical` sets the run's text across the line, as Word's Horizontal in Vertical does. Word ignores it on a run that is also `twoLinesInOne`. `fitToLine` (`w:vertCompress`) asks for that text to be squeezed into the line's width, but Word ignores it ([MS-OI29500](https://learn.microsoft.com/en-us/openspecs/office_standards/ms-oi29500/efbc3ed1-1349-4572-93a0-a4e0f71e2a8b)), so keep text set across the line to a character or two:
 
 ```ts live
 import { Document, PageTextDirectionType, Paragraph, TextRun } from "docx";
@@ -215,7 +215,6 @@ const doc = new Document({
                         new TextRun("年"),
                         new TextRun({ text: "10", eastAsianLayout: { horizontalInVertical: true } }),
                         new TextRun("月"),
-                        new TextRun({ text: "2026", eastAsianLayout: { horizontalInVertical: true, fitToLine: true } }),
                     ],
                 }),
             ],

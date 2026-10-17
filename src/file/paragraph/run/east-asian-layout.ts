@@ -52,9 +52,15 @@ export type IEastAsianLayoutOptions = {
     readonly twoLinesInOne?: boolean;
     /** The brackets drawn around text set as two lines in one (`w:combineBrackets`). Without them, none are drawn. */
     readonly brackets?: (typeof TwoLinesInOneBrackets)[keyof typeof TwoLinesInOneBrackets];
-    /** Sets the run's text across the line in text that runs down the page, as Word's Horizontal in Vertical does (`w:vert`) */
+    /**
+     * Sets the run's text across the line in text that runs down the page, as Word's Horizontal in Vertical does (`w:vert`).
+     * Word ignores it when `twoLinesInOne` is on.
+     */
     readonly horizontalInVertical?: boolean;
-    /** Squeezes text set across the line in vertical text so that it fits in the width of the line (`w:vertCompress`) */
+    /**
+     * Asks for text set across the line in vertical text to be squeezed so that it fits in the width of the line
+     * (`w:vertCompress`). Word ignores it (MS-OI29500, 17.3.2.10), so only other applications may squeeze the text.
+     */
     readonly fitToLine?: boolean;
     /**
      * Runs next to each other with the same group are laid out together, as one two lines in one or one piece of

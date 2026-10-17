@@ -55,7 +55,6 @@ const doc = new Document({
                         new TextRun("年"),
                         new TextRun({ text: "10", eastAsianLayout: { horizontalInVertical: true } }),
                         new TextRun("月"),
-                        new TextRun({ text: "2026", eastAsianLayout: { horizontalInVertical: true, fitToLine: true } }),
                     ],
                 }),
             ],
