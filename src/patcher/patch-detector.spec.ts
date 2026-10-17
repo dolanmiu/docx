@@ -1,4 +1,5 @@
 import JSZip from "jszip";
+import { Readable } from "stream";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 import { Document, Packer, Paragraph, TextRun } from "../index";
@@ -423,16 +424,12 @@ describe("patch-detector", () => {
     it("should detect and patch placeholders in a template read from a stream", async () => {
         const data = await Packer.toBuffer(new Document({ sections: [{ children: [new Paragraph("Hello {{name}}")] }] }));
         // A stream such as fs.createReadStream gives a template in chunks, and can be read only once
-        const streamOf = (): AsyncIterable<Uint8Array> =>
-            (async function* () {
-                yield data.subarray(0, 100);
-                yield data.subarray(100);
-            })();
+        const streamOf = (): Readable => Readable.from([data.subarray(0, 100), data.subarray(100)]);
 
-        const keys = await patchDetector({ data: streamOf() as unknown as NodeJS.ReadableStream });
+        const keys = await patchDetector({ data: streamOf() });
         const output = await patchDocument({
             outputType: "nodebuffer",
-            data: streamOf() as unknown as NodeJS.ReadableStream,
+            data: streamOf(),
             patches: { name: { type: PatchType.PARAGRAPH, children: [new TextRun("Ada")] } },
         });
         const xml = await (await JSZip.loadAsync(output)).file("word/document.xml")!.async("string");

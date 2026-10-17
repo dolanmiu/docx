@@ -1,6 +1,8 @@
 import JSZip from "jszip";
+import { Readable, Stream } from "stream";
 import { describe, expect, it } from "vitest";
 
+import { Document, Packer, Paragraph } from "../index";
 import type { InputDataType } from "./from-docx";
 import { loadZip } from "./load-zip";
 
@@ -9,12 +11,6 @@ const zipBytes = (): Promise<Uint8Array> => {
     zip.file("word/document.xml", "<w:document/>");
     return zip.generateAsync({ type: "uint8array" });
 };
-
-/** A stream that gives its chunks one at a time, as a Node.js `Readable` does when read with `for await` */
-const streamOf = (...chunks: readonly unknown[]): InputDataType =>
-    (async function* () {
-        yield* chunks;
-    })() as unknown as InputDataType;
 
 const documentXmlOf = async (data: InputDataType): Promise<string | undefined> =>
     (await loadZip(data)).file("word/document.xml")?.async("string");
@@ -32,15 +28,31 @@ describe("loadZip", () => {
 
     it("opens a zip file from a stream that gives its bytes in chunks", async () => {
         const bytes = await zipBytes();
+        const stream = Readable.from([bytes.subarray(0, 10), bytes.subarray(10, 50), bytes.subarray(50)]);
 
-        expect(await documentXmlOf(streamOf(bytes.subarray(0, 10), bytes.subarray(10, 50), bytes.subarray(50)))).toBe("<w:document/>");
+        expect(await documentXmlOf(stream)).toBe("<w:document/>");
     });
 
     it("opens a zip file from a stream that gives each byte as a number, as Readable.from of a Uint8Array does", async () => {
-        expect(await documentXmlOf(streamOf(...(await zipBytes())))).toBe("<w:document/>");
+        expect(await documentXmlOf(Readable.from(await zipBytes()))).toBe("<w:document/>");
+    });
+
+    it("opens a zip file from a stream with no iterator, such as Packer.toStream's", async () => {
+        const stream = Packer.toStream(new Document({ sections: [{ children: [new Paragraph("Hello")] }] }));
+
+        expect(Symbol.asyncIterator in stream).toBe(false);
+        expect(await documentXmlOf(stream)).toContain("Hello");
     });
 
     it("rejects a stream that gives text, naming what it gave", async () => {
-        await expect(loadZip(streamOf("PK"))).rejects.toThrow("A template stream must give bytes, but it gave a string");
+        await expect(loadZip(Readable.from(["PK"]))).rejects.toThrow("A template stream must give bytes, but it gave a string");
+    });
+
+    it("rejects with a stream's error", async () => {
+        const stream = new Stream();
+        const zip = loadZip(stream);
+        stream.emit("error", new Error("The file could not be read"));
+
+        await expect(zip).rejects.toThrow("The file could not be read");
     });
 });

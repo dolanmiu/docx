@@ -7,6 +7,7 @@
  * @module
  */
 import JSZip from "jszip";
+import type { Stream } from "stream";
 
 import { ImageReplacer } from "@export/packer/image-replacer";
 import { xmlifyPackageParts } from "@export/packer/package-part-writer";
@@ -46,10 +47,10 @@ import { toJson } from "./util";
  * Supported input data types for document patching.
  *
  * The patcher can accept documents in various formats including buffers,
- * arrays, and streams.
+ * arrays, and streams, such as `fs.createReadStream`'s or `Packer.toStream`'s.
  */
 // eslint-disable-next-line functional/prefer-readonly-type
-export type InputDataType = Buffer | string | number[] | Uint8Array | ArrayBuffer | Blob | NodeJS.ReadableStream | JSZip;
+export type InputDataType = Buffer | string | number[] | Uint8Array | ArrayBuffer | Blob | NodeJS.ReadableStream | Stream | JSZip;
 
 export { PatchType } from "./patch-type";
 export { DrawingPatch } from "./drawing-patch";
