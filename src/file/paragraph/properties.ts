@@ -552,13 +552,6 @@ export class ParagraphProperties extends IgnoreIfEmptyXmlComponent {
                     ? (this.numbering.restartedListId ?? currentRestartedLists.get(context)?.get(reference))
                     : undefined;
 
-            if (this.numbering.restartedListId !== undefined) {
-                currentRestartedLists.set(
-                    context,
-                    new Map([...(currentRestartedLists.get(context) ?? []), [reference, this.numbering.restartedListId]]),
-                );
-            }
-
             if (!(context.viewWrapper instanceof FontWrapper)) {
                 context.file.Numbering.createConcreteNumberingInstance(reference, instance, definition, restartedListId);
             }
@@ -571,7 +564,18 @@ export class ParagraphProperties extends IgnoreIfEmptyXmlComponent {
             this.numberProperties = numberProperties;
         }
 
-        return super.prepForXml(context);
+        const result = super.prepForXml(context);
+
+        // Only once the paragraph's own properties are written, so the earlier formatting a revision keeps is still in the
+        // list the paragraph was in before it restarted, and only the paragraphs after it are moved onto the new list
+        if (this.numbering?.restartedListId !== undefined) {
+            currentRestartedLists.set(
+                context,
+                new Map([...(currentRestartedLists.get(context) ?? []), [this.numbering.reference, this.numbering.restartedListId]]),
+            );
+        }
+
+        return result;
     }
 }
 
