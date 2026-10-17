@@ -48,7 +48,12 @@ describe("createEastAsianLayout", () => {
         });
     });
 
-    it("should throw for a group that isn't a number", () => {
+    it("should throw for a group that isn't a number, rather than write it as w:id", () => {
         expect(() => createEastAsianLayout({ group: NaN })).to.throw();
+    });
+
+    it("should throw for an infinite group, rather than write it as w:id", () => {
+        expect(() => createEastAsianLayout({ group: Infinity })).to.throw();
+        expect(() => createEastAsianLayout({ group: -Infinity })).to.throw();
     });
 });
