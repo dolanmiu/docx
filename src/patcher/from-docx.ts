@@ -7,6 +7,7 @@
  * @module
  */
 import JSZip from "jszip";
+import type { Stream } from "stream";
 
 import { ImageReplacer } from "@export/packer/image-replacer";
 import { xmlifyPackageParts } from "@export/packer/package-part-writer";
@@ -30,6 +31,7 @@ import { findBookmarkIds, renumberBookmarksAvoiding } from "./bookmark-ids";
 import { appendContentType, appendContentTypeOverride } from "./content-types-manager";
 import { findDrawingIds, renumberDrawingsAvoiding } from "./drawing-ids";
 import { type DrawingPatch, patchDrawings, relationshipsPathOf } from "./drawing-patch";
+import { loadZip } from "./load-zip";
 import { patchNotes } from "./notes";
 import { patchNumbering } from "./numbering";
 import { type TemplatePageNumberEstimator, fillTemplatePageNumbers } from "./page-numbers";
@@ -45,10 +47,10 @@ import { toJson } from "./util";
  * Supported input data types for document patching.
  *
  * The patcher can accept documents in various formats including buffers,
- * arrays, and streams.
+ * arrays, and streams, such as `fs.createReadStream`'s or `Packer.toStream`'s.
  */
 // eslint-disable-next-line functional/prefer-readonly-type
-export type InputDataType = Buffer | string | number[] | Uint8Array | ArrayBuffer | Blob | NodeJS.ReadableStream | JSZip;
+export type InputDataType = Buffer | string | number[] | Uint8Array | ArrayBuffer | Blob | NodeJS.ReadableStream | Stream | JSZip;
 
 export { PatchType } from "./patch-type";
 export { DrawingPatch } from "./drawing-patch";
@@ -315,7 +317,7 @@ export const patchDocument = async <T extends PatchDocumentOutputType = PatchDoc
     numbering = { config: [] },
     pageNumbers,
 }: PatchDocumentOptions<T>): Promise<OutputByType[T]> => {
-    const zipContent = data instanceof JSZip ? data : await JSZip.loadAsync(data);
+    const zipContent = await loadZip(data);
     const contexts = new Map<string, IContext>();
     // Theme colors in patches are written with the hex color they come to in the document's theme
     const themeColors = await readThemeColors(zipContent);

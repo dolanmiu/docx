@@ -3,10 +3,9 @@
  *
  * @module
  */
-import JSZip from "jszip";
-
 import { altTextOf, findDrawings } from "./drawing-patch";
 import type { InputDataType } from "./from-docx";
+import { loadZip } from "./load-zip";
 import { traverse } from "./traverser";
 import { toJson } from "./util";
 
@@ -47,7 +46,7 @@ type PatchDetectorOptions = {
  * ```
  */
 export const patchDetector = async ({ data }: PatchDetectorOptions): Promise<readonly string[]> => {
-    const zipContent = data instanceof JSZip ? data : await JSZip.loadAsync(data);
+    const zipContent = await loadZip(data);
     const patches = new Set<string>();
 
     for (const [key, value] of Object.entries(zipContent.files)) {
