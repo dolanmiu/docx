@@ -284,12 +284,12 @@ export class Numbering extends XmlComponent {
      * numbering configurations.
      *
      * @param reference - The reference name of the abstract numbering definition
-     * @param instance - The instance number for this concrete numbering
+     * @param instance - The instance of the list: the `instance` that paragraphs give, or a restarted list's own id
      * @param definition - The list's definition, for a list a paragraph gives its own definition of. It is added with
      * its reference, unless the numbering already has a list with that reference, such as one of the document's
      * `numbering` option, which is kept
      */
-    public createConcreteNumberingInstance(reference: string, instance: number, definition?: NumberingDefinition): void {
+    public createConcreteNumberingInstance(reference: string, instance: number | string, definition?: NumberingDefinition): void {
         if (definition && !this.abstractNumberingMap.has(definition.reference)) {
             // eslint-disable-next-line functional/immutable-data
             this.abstractNumberingMap.set(

@@ -55,7 +55,7 @@ type IOverrideLevel = {
  * @property numId - Unique identifier for this numbering instance
  * @property abstractNumId - ID of the abstract numbering definition to reference
  * @property reference - Reference name for this numbering instance
- * @property instance - Instance number for tracking multiple uses
+ * @property instance - The instance of the list the numbering is for
  * @property overrideLevels - Array of level overrides to customize specific levels
  */
 export type IConcreteNumberingOptions = {
@@ -65,8 +65,11 @@ export type IConcreteNumberingOptions = {
     readonly abstractNumId: number;
     /** Reference name for this numbering instance. */
     readonly reference: string;
-    /** Instance number for tracking multiple uses. */
-    readonly instance: number;
+    /**
+     * The instance of the list the numbering is for: the `instance` that paragraphs give, or, for a list a paragraph
+     * restarts with `restart`, an id of the list's own.
+     */
+    readonly instance: number | string;
     /** Array of level overrides to customize specific levels. */
     readonly overrideLevels?: readonly IOverrideLevel[];
 };
@@ -113,8 +116,8 @@ export class ConcreteNumbering extends XmlComponent {
     public readonly numId: number;
     /** The reference name for this numbering instance. */
     public readonly reference: string;
-    /** The instance number for tracking multiple uses. */
-    public readonly instance: number;
+    /** The instance of the list the numbering is for, as {@link IConcreteNumberingOptions.instance} describes. */
+    public readonly instance: number | string;
 
     /**
      * Creates a new concrete numbering instance.

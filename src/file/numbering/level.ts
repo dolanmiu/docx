@@ -430,7 +430,10 @@ export class LevelBase extends XmlComponent {
         this.root.push(new LevelJc(alignment));
 
         // A level's paragraph properties are a definition, so no implicit `ListParagraph` reference belongs here.
-        this.paragraphProperties = new ParagraphProperties(style && style.paragraph, { implicitListParagraphStyle: false });
+        this.paragraphProperties = new ParagraphProperties(style && style.paragraph, {
+            implicitListParagraphStyle: false,
+            inListOrder: false,
+        });
         // Office's schema has no w:highlight, w:oMath or w:rPrChange in a level's run properties
         this.runProperties = new RunProperties(style?.run && { ...style.run, highlight: undefined, math: undefined, revision: undefined });
 

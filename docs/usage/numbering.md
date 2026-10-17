@@ -136,15 +136,64 @@ const doc = new Document({
 
 ### Numbering options
 
-Along with `reference` and `level`, the `numbering` object supports an optional `instance` property:
+Along with `reference` and `level`, the `numbering` object supports the optional `restart` and `instance` properties:
 
-| Property  | Type     | Notes                                                                                                                                                                                                                                  |
-| --------- | -------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| reference | `string` | The numbering style reference, must match a defined config                                                                                                                                                                             |
-| level     | `number` | The list level (0 = top-level, 1 = sub-list, etc.)                                                                                                                                                                                     |
-| instance  | `number` | _(Optional)_ Identifies the instance of the list. Lists with the same `instance` (or none) continue numbering across paragraphs. A new `instance` value restarts numbering at every level, each from its own `start` (`1` by default). |
+| Property  | Type      | Notes                                                                                                                                                                                                                                            |
+| --------- | --------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| reference | `string`  | The numbering style reference, must match a defined config                                                                                                                                                                                       |
+| level     | `number`  | The list level (0 = top-level, 1 = sub-list, etc.)                                                                                                                                                                                               |
+| restart   | `boolean` | _(Optional)_ Starts the list again at this paragraph, at every level's `start` (`1` by default). The paragraphs after it continue the restarted list, until another paragraph restarts it.                                                       |
+| instance  | `number`  | _(Optional)_ Identifies the instance of the list. Paragraphs with the same `instance` continue numbering across paragraphs, and a new `instance` value starts a new list, at every level's `start`. With an `instance`, `restart` has no effect. |
 
-Example:
+### Restarting a list
+
+Paragraphs that use the same `reference` are numbered as one list, even with other paragraphs, such as headings, between them. To count from 1 again, give the first paragraph of the new list `restart: true`. The paragraphs after it carry on from it:
+
+```ts live
+import { AlignmentType, Document, HeadingLevel, LevelFormat, Paragraph } from "docx";
+
+const doc = new Document({
+    numbering: {
+        config: [
+            {
+                reference: "my-numbering",
+                levels: [
+                    {
+                        level: 0,
+                        format: LevelFormat.DECIMAL,
+                        text: "%1.",
+                        alignment: AlignmentType.START,
+                        style: {
+                            paragraph: {
+                                indent: { left: 720, hanging: 260 },
+                            },
+                        },
+                    },
+                ],
+            },
+        ],
+    },
+    sections: [
+        {
+            children: [
+                new Paragraph({ text: "Ingredients", heading: HeadingLevel.HEADING_1 }),
+                new Paragraph({ text: "Flour", numbering: { reference: "my-numbering", level: 0 } }),
+                new Paragraph({ text: "Water", numbering: { reference: "my-numbering", level: 0 } }),
+                new Paragraph({ text: "Method", heading: HeadingLevel.HEADING_1 }),
+                new Paragraph({
+                    text: "Mix the flour and water, numbered 1 again",
+                    numbering: { reference: "my-numbering", level: 0, restart: true },
+                }),
+                new Paragraph({ text: "Knead the dough, numbered 2", numbering: { reference: "my-numbering", level: 0 } }),
+            ],
+        },
+    ],
+});
+```
+
+### Lists by instance
+
+To say which list each paragraph is in, rather than where a list starts again, give the paragraphs an `instance`. Paragraphs with the same `instance` are one list, wherever they are in the document:
 
 ```ts live
 import { AlignmentType, Document, LevelFormat, Paragraph } from "docx";
