@@ -1,5 +1,4 @@
 import { default as default_2 } from 'jszip';
-import { Element as Element_2 } from 'xml-js';
 import { Stream } from 'stream';
 
 /**
@@ -1492,22 +1491,24 @@ export declare const convertInchesToTwip: (inches: number) => number;
 export declare const convertMillimetersToTwip: (millimeters: number) => number;
 
 /**
- * Converts an xml-js Element into an XmlComponent tree.
+ * Converts an XML element, in the shape of xml-js's non-compact `Element`, into an XmlComponent tree.
  *
- * This function recursively processes XML elements in JSON format (from xml-js)
- * and creates a tree of ImportedXmlComponent objects that match the structure
- * of the original XML.
+ * This function recursively processes the element and creates a tree of
+ * ImportedXmlComponent objects that match the structure of the original XML.
  *
- * @param element - The XML element in JSON representation from xml-js
+ * @param element - The XML element as an {@link XmlElement}
  * @returns An ImportedXmlComponent tree, text string, or undefined
  *
  * @example
  * ```typescript
- * const xmlElement = xml2js('<w:p><w:r><w:t>Hello</w:t></w:r></w:p>');
- * const component = convertToXmlComponent(xmlElement);
+ * const component = convertToXmlComponent({
+ *   type: "element",
+ *   name: "w:p",
+ *   elements: [{ type: "element", name: "w:r", elements: [{ type: "element", name: "w:t", elements: [{ type: "text", text: "Hello" }] }] }],
+ * });
  * ```
  */
-export declare const convertToXmlComponent: (element: Element_2) => ImportedXmlComponent | string | undefined;
+export declare const convertToXmlComponent: (element: XmlElement) => ImportedXmlComponent | string | undefined;
 
 declare type CoreGroupOptions = {
     readonly children: readonly IGroupChildMediaData[];
@@ -6408,7 +6409,7 @@ export declare class ImportedXmlComponent extends XmlComponent {
      * Parses an XML string and converts it to an ImportedXmlComponent tree.
      *
      * This static method is the primary way to import external XML content.
-     * It uses xml-js to parse the XML string into a JSON representation,
+     * It parses the XML string into an {@link XmlElement} tree,
      * then converts that into a tree of XmlComponent objects.
      *
      * @param importedContent - The XML content as a string
@@ -11121,10 +11122,10 @@ export declare type PatchDocumentOutputType = OutputType;
 export declare type PatchedTemplate = {
     /**
      * Each XML part of the template's package, by its path in the package, such as "word/document.xml". Each is parsed as
-     * `patchDocument` parses it, with xml-js's `xml2js`, not compact, and keeping the spaces between elements
-     * (`captureSpacesBetweenElements`), as the spaces in a text element are its text
+     * `patchDocument` parses it, with `parseXml` keeping the text that is only whitespace (`keepWhitespaceText`), as the
+     * spaces in a text element are its text
      */
-    readonly parts: ReadonlyMap<string, Element_2>;
+    readonly parts: ReadonlyMap<string, XmlElement>;
     /** Each of its other parts, such as its pictures and the fonts it embeds, by its path in the package, as bytes */
     readonly binaryParts?: ReadonlyMap<string, Uint8Array>;
     /**
@@ -13056,9 +13057,9 @@ export declare type TemplateDrawing = {
      * The drawing, `wp:inline` or `wp:anchor`, or in a group or drawing canvas, its `graphicFrame`, which a patch can
      * change in place
      */
-    readonly element: Element_2;
+    readonly element: XmlElement;
     /** The drawing's non-visual properties, `wp:docPr` or `wpg:cNvPr`, whose `descr` and `title` are its alt text */
-    readonly properties: Element_2;
+    readonly properties: XmlElement;
     /** The part the drawing is in, such as the document or a header */
     readonly part: TemplatePart;
 };
@@ -13086,7 +13087,7 @@ export declare type TemplatePackage = {
      */
     readonly replaceRelatedPart: (from: TemplatePart, relationshipId: string | undefined, part: PackagePart) => string;
     /** Formats XML as the template's parts are parsed, to put in one of them */
-    readonly format: (content: XmlComponent) => Element_2;
+    readonly format: (content: XmlComponent) => XmlElement;
 };
 
 /**
@@ -13109,7 +13110,7 @@ export declare type TemplatePart = {
     /** The part's path in the package, such as "word/charts/chart1.xml" */
     readonly path: string;
     /** The part's XML, parsed, which a patch can change in place, or undefined if the part isn't XML, such as a workbook */
-    readonly xml: Element_2 | undefined;
+    readonly xml: XmlElement | undefined;
 };
 
 /**
@@ -14071,6 +14072,17 @@ export declare abstract class XmlAttributeComponent<T extends Record<string, any
 }
 
 /**
+ * The tree that docx reads XML into, such as the parts of a document it patches or the XML given to
+ * `convertToXmlComponent`.
+ *
+ * @module
+ */
+/**
+ * The attributes of an element, by name.
+ */
+export declare type XmlAttributes = Record<string, string | number | undefined>;
+
+/**
  * Base class for all XML components in WordprocessingML documents.
  *
  * XmlComponent provides the infrastructure for building XML element trees
@@ -14141,6 +14153,43 @@ export declare abstract class XmlComponent extends BaseXmlComponent {
 }
 
 /**
+ * The attributes of an XML declaration, such as `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>`.
+ */
+export declare type XmlDeclarationAttributes = {
+    version?: string | number;
+    encoding?: string;
+    standalone?: "yes" | "no";
+};
+
+/**
+ * A node of an XML document, or the document itself.
+ *
+ * It has the shape of xml-js's non-compact `Element`, which docx used before it read XML itself, so a tree from
+ * xml-js can still be given wherever docx takes one. `type` says which of the other fields the node has:
+ *
+ * - The document has no `type`. It has its `declaration`, if it has one, and the nodes at its top level in `elements`.
+ * - `"element"` has its `name`, and its `attributes` and `elements` if it has any.
+ * - `"text"` has its `text`, with entities such as `&amp;` decoded.
+ * - `"cdata"`, `"comment"` and `"doctype"` have their content in the field of their name.
+ * - `"instruction"`, a processing instruction such as `<?mso-application progid="Word.Document"?>`, has its `name`
+ *   and the rest in `instruction`.
+ */
+export declare type XmlElement = {
+    declaration?: {
+        attributes?: XmlDeclarationAttributes;
+    };
+    instruction?: string;
+    attributes?: XmlAttributes;
+    cdata?: string;
+    doctype?: string;
+    comment?: string;
+    text?: string | number | boolean;
+    type?: string;
+    name?: string;
+    elements?: XmlElement[];
+};
+
+/**
  * Represents the current year in long format (e.g., "2024").
  *
  * Inserts a dynamic field showing the year portion of the current date in four digits.
@@ -14159,3 +14208,15 @@ export declare class YearShort extends EmptyElement {
 }
 
 export { }
+
+
+/**
+ * Checks parseXml and stringifyElement against every XML part in the repository: the parts of each Word document, such
+ * as those Word saved for the layout probes, and the OOXML schemas. jsdom's DOMParser, a separate XML parser, says what
+ * each part holds, so a mistake parseXml and stringifyElement make alike still shows.
+ */
+declare global {
+    interface ImportMeta {
+        readonly glob: ImportGlobFunction;
+    }
+}

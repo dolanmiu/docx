@@ -14,29 +14,28 @@
 <section class="tsd-panel">
 <ul class="tsd-signatures">
 <li class="">
-<div class="tsd-signature tsd-anchor-link" id="converttoxmlcomponent"><span class="tsd-kind-call-signature">convertToXmlComponent</span><span class="tsd-signature-symbol">(</span><br/>    <span class="tsd-kind-parameter">element</span><span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">Element</span><span class="tsd-signature-symbol">,</span><br/><span class="tsd-signature-symbol">)</span><span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">string</span> <span class="tsd-signature-symbol">|</span> <a href="../classes/index.ImportedXmlComponent.html" class="tsd-signature-type tsd-kind-class">ImportedXmlComponent</a> <span class="tsd-signature-symbol">|</span> <span class="tsd-signature-type">undefined</span><a href="#converttoxmlcomponent" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="../assets/icons.svg#icon-anchor"></use></svg></a></div>
+<div class="tsd-signature tsd-anchor-link" id="converttoxmlcomponent"><span class="tsd-kind-call-signature">convertToXmlComponent</span><span class="tsd-signature-symbol">(</span><br/>    <span class="tsd-kind-parameter">element</span><span class="tsd-signature-symbol">:</span> <a href="../types/index.XmlElement.html" class="tsd-signature-type tsd-kind-type-alias">XmlElement</a><span class="tsd-signature-symbol">,</span><br/><span class="tsd-signature-symbol">)</span><span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">string</span> <span class="tsd-signature-symbol">|</span> <a href="../classes/index.ImportedXmlComponent.html" class="tsd-signature-type tsd-kind-class">ImportedXmlComponent</a> <span class="tsd-signature-symbol">|</span> <span class="tsd-signature-type">undefined</span><a href="#converttoxmlcomponent" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="../assets/icons.svg#icon-anchor"></use></svg></a></div>
 <div class="tsd-description">
-<div class="tsd-comment tsd-typography"><p>Converts an xml-js Element into an XmlComponent tree.</p>
-<p>This function recursively processes XML elements in JSON format (from xml-js)
-and creates a tree of ImportedXmlComponent objects that match the structure
-of the original XML.</p>
+<div class="tsd-comment tsd-typography"><p>Converts an XML element, in the shape of xml-js's non-compact <code>Element</code>, into an XmlComponent tree.</p>
+<p>This function recursively processes the element and creates a tree of
+ImportedXmlComponent objects that match the structure of the original XML.</p>
 </div>
 <div class="tsd-parameters">
 <h4 class="tsd-parameters-title">Parameters</h4>
 <ul class="tsd-parameter-list">
-<li><span><span class="tsd-kind-parameter">element</span>: <span class="tsd-signature-type">Element</span></span>
-<div class="tsd-comment tsd-typography"><p>The XML element in JSON representation from xml-js</p>
+<li><span><span class="tsd-kind-parameter">element</span>: <a href="../types/index.XmlElement.html" class="tsd-signature-type tsd-kind-type-alias">XmlElement</a></span>
+<div class="tsd-comment tsd-typography"><p>The XML element as an <a href="../types/index.XmlElement.html" class="tsd-kind-type-alias">XmlElement</a></p>
 </div></li></ul></div>
 <h4 class="tsd-returns-title">Returns <span class="tsd-signature-type">string</span> <span class="tsd-signature-symbol">|</span> <a href="../classes/index.ImportedXmlComponent.html" class="tsd-signature-type tsd-kind-class">ImportedXmlComponent</a> <span class="tsd-signature-symbol">|</span> <span class="tsd-signature-type">undefined</span></h4><p>An ImportedXmlComponent tree, text string, or undefined</p>
 
 <div class="tsd-comment tsd-typography">
 <div class="tsd-tag-example">
-<h4 class="tsd-anchor-link" id="example">Example<a href="#example" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="../assets/icons.svg#icon-anchor"></use></svg></a></h4><pre><code class="typescript"><span class="hl-4">const</span><span class="hl-1"> </span><span class="hl-5">xmlElement</span><span class="hl-1"> = </span><span class="hl-6">xml2js</span><span class="hl-1">(</span><span class="hl-3">&#39;&lt;w:p&gt;&lt;w:r&gt;&lt;w:t&gt;Hello&lt;/w:t&gt;&lt;/w:r&gt;&lt;/w:p&gt;&#39;</span><span class="hl-1">);</span><br/><span class="hl-4">const</span><span class="hl-1"> </span><span class="hl-5">component</span><span class="hl-1"> = </span><span class="hl-6">convertToXmlComponent</span><span class="hl-1">(</span><span class="hl-2">xmlElement</span><span class="hl-1">);</span>
+<h4 class="tsd-anchor-link" id="example">Example<a href="#example" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="../assets/icons.svg#icon-anchor"></use></svg></a></h4><pre><code class="typescript"><span class="hl-4">const</span><span class="hl-1"> </span><span class="hl-5">component</span><span class="hl-1"> = </span><span class="hl-6">convertToXmlComponent</span><span class="hl-1">({</span><br/><span class="hl-1">  </span><span class="hl-2">type:</span><span class="hl-1"> </span><span class="hl-3">&quot;element&quot;</span><span class="hl-1">,</span><br/><span class="hl-1">  </span><span class="hl-2">name:</span><span class="hl-1"> </span><span class="hl-3">&quot;w:p&quot;</span><span class="hl-1">,</span><br/><span class="hl-1">  </span><span class="hl-2">elements:</span><span class="hl-1"> [{ </span><span class="hl-2">type:</span><span class="hl-1"> </span><span class="hl-3">&quot;element&quot;</span><span class="hl-1">, </span><span class="hl-2">name:</span><span class="hl-1"> </span><span class="hl-3">&quot;w:r&quot;</span><span class="hl-1">, </span><span class="hl-2">elements:</span><span class="hl-1"> [{ </span><span class="hl-2">type:</span><span class="hl-1"> </span><span class="hl-3">&quot;element&quot;</span><span class="hl-1">, </span><span class="hl-2">name:</span><span class="hl-1"> </span><span class="hl-3">&quot;w:t&quot;</span><span class="hl-1">, </span><span class="hl-2">elements:</span><span class="hl-1"> [{ </span><span class="hl-2">type:</span><span class="hl-1"> </span><span class="hl-3">&quot;text&quot;</span><span class="hl-1">, </span><span class="hl-2">text:</span><span class="hl-1"> </span><span class="hl-3">&quot;Hello&quot;</span><span class="hl-1"> }] }] }],</span><br/><span class="hl-1">});</span>
 </code><button type="button">Copy</button></pre>
 
 </div></div><aside class="tsd-sources">
 <ul>
-<li>Defined in <a href="https://github.com/dolanmiu/docx/blob/be1b7d460ae8e7cccb96c34488f197ac79abcf92/src/file/xml-components/imported-xml-component.ts#L32">file/xml-components/imported-xml-component.ts:32</a></li></ul></aside></div></li></ul></section></div>
+<li>Defined in <a href="https://github.com/dolanmiu/docx/blob/7907016816ab5264e25701366f52ac0e9674f287/src/file/xml-components/imported-xml-component.ts#L34">file/xml-components/imported-xml-component.ts:34</a></li></ul></aside></div></li></ul></section></div>
 <div class="col-sidebar">
 <div class="page-menu">
 <div class="tsd-navigation settings">

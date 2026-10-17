@@ -4459,6 +4459,11 @@ var docxCharts = (function(exports, docx) {
 	};
 	//#endregion
 	//#region src/charts/chart-data-patch.ts
+	/**
+	* Replaces the data of charts in a template, such as charts made in Word, with `patchDocument`, keeping their look.
+	*
+	* @module
+	*/
 	var STOCK_OPTIONS = [
 		"open",
 		"high",
