@@ -85,3 +85,23 @@ export abstract class BaseXmlComponent {
         return undefined;
     }
 }
+
+/**
+ * Whether a value is a component, from this copy of docx or from another, such as the copy a plugin or another
+ * library that builds on docx was bundled with. A component from another copy isn't an instance of this copy's
+ * classes, so it is known by the method that writes it.
+ *
+ * @internal
+ */
+export const isXmlComponent = (value: unknown): value is BaseXmlComponent =>
+    value instanceof BaseXmlComponent ||
+    (typeof value === "object" && value !== null && typeof (value as { readonly prepForXml?: unknown }).prepForXml === "function");
+
+/**
+ * The element a component writes, such as `w:p` for a paragraph, from this copy of docx or from another. Undefined
+ * when the value isn't a component.
+ *
+ * @internal
+ */
+export const elementOf = (value: unknown): string | undefined =>
+    isXmlComponent(value) ? (value as unknown as { readonly rootKey: string }).rootKey : undefined;

@@ -7,7 +7,7 @@
  *
  * @module
  */
-import { BaseXmlComponent, type IContext } from "./base";
+import { BaseXmlComponent, type IContext, isXmlComponent } from "./base";
 import type { IXmlableObject } from "./xmlable-object";
 
 /**
@@ -95,7 +95,7 @@ export abstract class XmlComponent extends BaseXmlComponent {
         // a run in its children, is written as each of them in turn
         const children = this.root
             .flatMap((comp) => {
-                if (comp instanceof BaseXmlComponent) {
+                if (isXmlComponent(comp)) {
                     const parts = comp.writtenAs;
                     return parts ? parts.map((part) => part.prepForXml(context)) : comp.prepForXml(context);
                 }

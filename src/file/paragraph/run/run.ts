@@ -10,7 +10,7 @@
  */
 import type { FootnoteReferenceRun } from "@file/footnotes/footnote/run/reference-run";
 import type { FieldInstruction } from "@file/table-of-contents/field-instruction";
-import { type BaseXmlComponent, XmlComponent } from "@file/xml-components";
+import { type BaseXmlComponent, XmlComponent, elementOf } from "@file/xml-components";
 
 import { createBreak } from "./break";
 import type {
@@ -201,11 +201,14 @@ export class Run extends XmlComponent {
 
         if (options.children) {
             for (const [index, child] of options.children.entries()) {
-                if (child instanceof Run) {
+                if (elementOf(child) === "w:r") {
                     // A run can't be inside another, so this run ends before it, and the children after it go in a run
-                    // with this run's properties
+                    // with this run's properties. The run may be from another copy of docx
                     const rest = options.children.slice(index + 1);
-                    this.following = [child, ...(rest.length > 0 ? [new Run({ ...options, break: undefined, children: rest })] : [])];
+                    this.following = [
+                        child as Run,
+                        ...(rest.length > 0 ? [new Run({ ...options, break: undefined, children: rest })] : []),
+                    ];
                     break;
                 }
 
