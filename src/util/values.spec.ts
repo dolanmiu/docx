@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 
 import {
     dateTimeValue,
+    decimalNumber,
     hexColorValue,
     hpsMeasureValue,
     longHexNumber,
@@ -86,6 +87,18 @@ describe("values", () => {
         });
     });
 
+    describe("decimalNumber", () => {
+        it("should floor a number to an integer", () => {
+            expect(decimalNumber(10.7)).to.eq(10);
+            expect(decimalNumber(-5.3)).to.eq(-6);
+        });
+        it("should throw on NaN and infinities, which aren't integers ST_DecimalNumber can hold", () => {
+            expect(() => decimalNumber(NaN)).to.throw();
+            expect(() => decimalNumber(Infinity)).to.throw();
+            expect(() => decimalNumber(-Infinity)).to.throw();
+        });
+    });
+
     describe("unsignedDecimalNumber", () => {
         it("should allow valid values", () => {
             expect(unsignedDecimalNumber(1243)).to.eq(1243);
@@ -94,6 +107,7 @@ describe("values", () => {
         });
         it("should throw on invalid values", () => {
             expect(() => unsignedDecimalNumber(NaN)).to.throw();
+            expect(() => unsignedDecimalNumber(Infinity)).to.throw();
             expect(() => unsignedDecimalNumber(-10)).to.throw();
         });
     });

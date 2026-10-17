@@ -88,16 +88,16 @@ export type RelativeMeasure = `${"-" | ""}${number}${"em" | "ex"}`;
  *
  * @param val - The number to validate and convert
  * @returns The floored integer value
- * @throws Error if the value is NaN
+ * @throws Error if the value is NaN or infinite, which no integer can be written as
  *
  * @example
  * ```typescript
  * const num = decimalNumber(10.7); // Returns 10
- * const negative = decimalNumber(-5.3); // Returns -5
+ * const negative = decimalNumber(-5.3); // Returns -6
  * ```
  */
 export const decimalNumber = (val: number): number => {
-    if (isNaN(val)) {
+    if (!Number.isFinite(val)) {
         throw new Error(`Invalid value '${val}' specified. Must be an integer.`);
     }
     return Math.floor(val);
@@ -110,7 +110,7 @@ export const decimalNumber = (val: number): number => {
  *
  * @param val - The number to validate and convert
  * @returns The floored positive integer value
- * @throws Error if the value is NaN or negative
+ * @throws Error if the value is NaN, infinite or negative
  *
  * @example
  * ```typescript
