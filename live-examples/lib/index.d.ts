@@ -3509,6 +3509,22 @@ export declare type EffectExtentAttributes = {
 export declare const eighthPointMeasureValue: (val: number) => number;
 
 /**
+ * The element a component writes, such as `w:p` for a paragraph, from this copy of docx or from another. Undefined
+ * when the value isn't a component.
+ *
+ * Checks that need to know what kind of component a child is, such as whether a cell ends with a paragraph, compare
+ * this rather than the child's class, so they hold for components from another copy too. The element is also what
+ * those checks are really about, because the rules they enforce are rules of the XML: a cell must end with a `w:p`,
+ * and a `w:r` can't be inside another.
+ *
+ * `rootKey` is protected, so it is read through a cast. That is safe for any copy of docx, because every component
+ * is constructed with its element as `rootKey`.
+ *
+ * @internal
+ */
+export declare const elementOf: (value: unknown) => string | undefined;
+
+/**
  * A font file the document embeds: one face of one of its fonts, with the unique key it is obfuscated with.
  *
  * @property name - Font family name
@@ -7472,6 +7488,23 @@ export declare type IStylesOptions = {
     /** Array of styles imported from external sources */
     readonly importedStyles?: readonly (XmlComponent | StyleForParagraph | StyleForCharacter | ImportedXmlComponent)[];
 };
+
+/**
+ * Whether a value is a component, from this copy of docx or from another, such as the copy a plugin or another
+ * library that builds on docx was bundled with. A component from another copy isn't an instance of this copy's
+ * classes, so it is known by the method that writes it.
+ *
+ * The method is checked, rather than a marker such as a `Symbol.for` brand, because copies of docx that predate any
+ * marker wouldn't carry it, while every copy's components have `prepForXml`. Overriding `Symbol.hasInstance` on the
+ * base class isn't an option either: subclasses inherit it, so `instanceof Paragraph` would match any component.
+ *
+ * What it doesn't take for a component stays safe: an object to write as XML, such as `{ "w:b": {} }`, has no
+ * methods, and neither has a component copied without its class (with `Object.assign` or spread), which has lost the
+ * method that would write it.
+ *
+ * @internal
+ */
+export declare const isXmlComponent: (value: unknown) => value is BaseXmlComponent;
 
 /**
  * Options for creating a SymbolRun.

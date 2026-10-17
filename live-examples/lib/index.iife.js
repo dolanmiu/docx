@@ -113,6 +113,37 @@ var docx = (function(exports) {
 		*/
 		get writtenAs() {}
 	};
+	/**
+	* Whether a value is a component, from this copy of docx or from another, such as the copy a plugin or another
+	* library that builds on docx was bundled with. A component from another copy isn't an instance of this copy's
+	* classes, so it is known by the method that writes it.
+	*
+	* The method is checked, rather than a marker such as a `Symbol.for` brand, because copies of docx that predate any
+	* marker wouldn't carry it, while every copy's components have `prepForXml`. Overriding `Symbol.hasInstance` on the
+	* base class isn't an option either: subclasses inherit it, so `instanceof Paragraph` would match any component.
+	*
+	* What it doesn't take for a component stays safe: an object to write as XML, such as `{ "w:b": {} }`, has no
+	* methods, and neither has a component copied without its class (with `Object.assign` or spread), which has lost the
+	* method that would write it.
+	*
+	* @internal
+	*/
+	var isXmlComponent = (value) => value instanceof BaseXmlComponent || typeof value === "object" && value !== null && typeof value.prepForXml === "function";
+	/**
+	* The element a component writes, such as `w:p` for a paragraph, from this copy of docx or from another. Undefined
+	* when the value isn't a component.
+	*
+	* Checks that need to know what kind of component a child is, such as whether a cell ends with a paragraph, compare
+	* this rather than the child's class, so they hold for components from another copy too. The element is also what
+	* those checks are really about, because the rules they enforce are rules of the XML: a cell must end with a `w:p`,
+	* and a `w:r` can't be inside another.
+	*
+	* `rootKey` is protected, so it is read through a cast. That is safe for any copy of docx, because every component
+	* is constructed with its element as `rootKey`.
+	*
+	* @internal
+	*/
+	var elementOf = (value) => isXmlComponent(value) ? value.rootKey : void 0;
 	//#endregion
 	//#region src/file/xml-components/xml-component.ts
 	/**
@@ -203,7 +234,7 @@ var docx = (function(exports) {
 			var _children$;
 			context.stack.push(this);
 			const children = this.root.flatMap((comp) => {
-				if (comp instanceof BaseXmlComponent) {
+				if (isXmlComponent(comp)) {
 					const parts = comp.writtenAs;
 					return parts ? parts.map((part) => part.prepForXml(context)) : comp.prepForXml(context);
 				}
@@ -3968,7 +3999,7 @@ DOT: "dot" };
 			this.root.push(this.properties);
 			if (options.break) for (let i = 0; i < options.break; i++) this.root.push(createBreak());
 			if (options.children) for (const [index, child] of options.children.entries()) {
-				if (child instanceof Run) {
+				if (elementOf(child) === "w:r") {
 					const rest = options.children.slice(index + 1);
 					this.following = [child, ...rest.length > 0 ? [new Run(_objectSpread2(_objectSpread2({}, options), {}, {
 						break: void 0,
@@ -13238,10 +13269,11 @@ MAX: 9026 };
 			}
 		}
 		prepForXml(context) {
-			for (const element of this.root) if (element instanceof ExternalHyperlink) {
+			for (const element of this.root) if (elementOf(element) === "w:externalHyperlink") {
 				const index = this.root.indexOf(element);
-				const { target, anchor } = externalHyperlinkTarget(element.options.link);
-				const concreteHyperlink = new ConcreteHyperlink(element.options.children, uniqueId(), anchor, element.options.link);
+				const { options } = element;
+				const { target, anchor } = externalHyperlinkTarget(options.link);
+				const concreteHyperlink = new ConcreteHyperlink(options.children, uniqueId(), anchor, options.link);
 				context.viewWrapper.Relationships.addRelationship(concreteHyperlink.linkId, "http://schemas.openxmlformats.org/officeDocument/2006/relationships/hyperlink", target, TargetModeType.EXTERNAL);
 				this.root[index] = concreteHyperlink;
 			}
@@ -17580,7 +17612,7 @@ MAX: 9026 };
 			this.properties.setColumnWidth(twips);
 		}
 		prepForXml(context) {
-			if (!(this.root[this.root.length - 1] instanceof Paragraph)) this.root.push(new Paragraph({}));
+			if (elementOf(this.root[this.root.length - 1]) !== "w:p") this.root.push(new Paragraph({}));
 			return super.prepForXml(context);
 		}
 	};
@@ -18360,7 +18392,7 @@ MAX: 9026 };
 			return this.options.children.length;
 		}
 		get cells() {
-			return this.root.filter((xmlComponent) => xmlComponent instanceof TableCell);
+			return this.root.filter((xmlComponent) => elementOf(xmlComponent) === "w:tc");
 		}
 		addCellToIndex(cell, index) {
 			this.root.splice(index + 1, 0, cell);
@@ -25013,7 +25045,7 @@ MAX: 9026 };
 			this.root.push(this.run);
 		}
 		prepForXml(context) {
-			return context.stack[context.stack.length - 1] instanceof Paragraph ? this.run.prepForXml(context) : super.prepForXml(context);
+			return elementOf(context.stack[context.stack.length - 1]) === "w:p" ? this.run.prepForXml(context) : super.prepForXml(context);
 		}
 	};
 	//#endregion
@@ -37327,6 +37359,7 @@ while (n === a[++i] && n === a[++i] && n === a[++i] && n === a[++i] && n === a[+
 	exports.docPropertiesUniqueNumericId = docPropertiesUniqueNumericId;
 	exports.docPropertiesUniqueNumericIdGen = docPropertiesUniqueNumericIdGen;
 	exports.eighthPointMeasureValue = eighthPointMeasureValue;
+	exports.elementOf = elementOf;
 	exports.encodeUtf8 = encodeUtf8;
 	exports.fillPageNumbers = fillPageNumbers;
 	exports.fillPartPageNumbers = fillPartPageNumbers;
@@ -37334,6 +37367,7 @@ while (n === a[++i] && n === a[++i] && n === a[++i] && n === a[++i] && n === a[+
 	exports.hashedId = hashedId;
 	exports.hexColorValue = hexColorValue;
 	exports.hpsMeasureValue = hpsMeasureValue;
+	exports.isXmlComponent = isXmlComponent;
 	exports.longHexNumber = longHexNumber;
 	exports.measurementOrPercentValue = measurementOrPercentValue;
 	exports.patchDetector = patchDetector;
